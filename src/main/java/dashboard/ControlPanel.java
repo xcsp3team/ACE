@@ -363,7 +363,7 @@ public class ControlPanel {
 
 	public final SettingCtrs settingCtrs = new SettingCtrs();
 
-	public class Global extends SettingGroup {
+	public class SettingGlobal extends SettingGroup {
 		String s1 = "Type 0 for propagators will be the priority choice in case of export.";
 		String s = "Allows the user to select the propagator for ";
 
@@ -388,7 +388,7 @@ public class ControlPanel {
 		public final boolean smartTable = addB("smartTable", "st", false, r3);
 	}
 
-	public final Global global = new Global();
+	public final SettingGlobal settingGlobal = new SettingGlobal();
 
 	public class SettingExtension extends SettingGroup {
 		String s_positive = "For (non-binary) constraints defined in extension, there are many ways of representing and propagating them."
