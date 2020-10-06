@@ -1,0 +1,15 @@
+To run AbsCon, you must use a command like:
+  java abscon.Resolution {<problem>} <problemParameters> <solverParameters>
+
+  <problem> is the name of a class that extends Problem. Some of such classes are put in subfolders of the folder problems
+	For example, we can find the subfolders acad, patt, real and xcsp.
+	So possibilities for <problem> are for example problems.acad.Queens, problems.real.Crossword and problems.xcsp.ProblemXCSP.
+	<problem> is optionnal, in which case, we have problems.xcsp3.XCSP3 as a default value.
+
+  <problemParameters> is the list of parameters (separated by whitespace) specific for the chosen problem.
+	For problems.acad.Queens, this list is composed of two integers.
+	For problems.xcsp3.XCSP3, this is the name of a file (potentially compressed with bz2) representing an instance in format XCSP3
+
+  <solverParameters> is the list of parameters  (separated by whitespace) used for solving the instance.
+	Any such parameter is of the form -name=value (potentially -name for some flag parameters).
+	The different parameters and their values are listed below.

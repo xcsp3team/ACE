@@ -1,0 +1,10 @@
+*~
+bin/
+build/
+.gradle/
+.classpath
+.project
+.settings/
+TODO.txt
+xcsp3-tools-1.0.1-SNAPSHOT.jar
+

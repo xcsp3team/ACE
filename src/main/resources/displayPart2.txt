@@ -1,0 +1,75 @@
+By the way, there are also two other optional (command line) parameters that can be put just after abscon.Resolution: 
+  java abscon.Resolution {configurationFile} {nbInstances} {<problem>} <problemParameters> <configurationParameters>
+
+  <nbInstances> is the number of instances to be solved.
+
+  <configurationFile> is the name of a XML file that contains the setting for some configuration parameters.
+	For example, you can generate such a file with a command like : java ios.Configuration.
+
+Let us consider some examples:
+
+  java abscon.Resolution queens-12.xml -s=10
+	The instance queens-12.xml in format XCSP is solved (10 solutions).
+
+  java abscon.Resolution queens-12.xml -s=10 -varh=Dom -wvarh=min
+	The instance queens-12.xml in format XCSP is solved (10 solutions) using the variable ordering heuristic 'min Dom'.
+	Note that, contrary to -varh, the value for -wvarh is case insensitive, so you could have used -wvarh=MIN or -wvarh=Min for example.
+
+  java abscon.Resolution scen11-f8.xml -rn=1000 -rc=10
+	The instance scen11-f8.xml in format XCSP is solved by using restarts.
+	The solver will restart up to 1000 times, and the cutoff value that is used for determining the moment the solver has to restart is initially set to 10 (backtracks).
+	The cutoff value is increased at each retart by a factor set to 1.1 (default value).
+
+  java abscon.Resolution problems.acad.Queens 12 2
+	The instance from the class Queens in package acad is solved using problem parameters 12 and 2.
+
+  java abscon.Resolution mac.xml queens-12.xml -s=10
+	The instance queens-12.xml in format XCSP is solved using the configuration set in the XML file called mac.xml (but -s=10 has the priority).
+
+  java abscon.Resolution problems.acad.Queens 12 2 -prepro=no -search=no -si=extension
+	The instance from the class Queens (using problem parameters 12 and 2) in package acad is loaded and directly saved in extensional form using format XCSP 2.1
+
+  java abscon.Resolution scenw-7-sub0_ext.xml.bz2 -f=maxcsp -s=all -propagation/class=RDAC -lb=40
+	A solution with a minimal number of violated constraints (because the specified framework is MaxCSP) is sought.
+	For propagation, we use RDAC, and the solver is stopped as soon as a solution with a value less than or equal to 40 is found.
+
+  java abscon.Resolution problems.acad.ChessboardColoration 9 9 7 -f=cop -s=all -valh=Last
+	The COP instance (9,9,7) of the chessboard coloration problem is solved using the value ordering heuristic Last.
+
+  java abscon.Resolution celar6-sub0_wcsp.xml.bz2 -f=wcsp -s=all -p=WRDAC
+	The WCSP instance celar6-sub0_wcsp.xml.bz2 is solved using the propagation class WRDAC.
+
+  java abscon.Extraction scen11-f8.xml.bz2
+	A minimal unsatisfiable core is extracted: this core is in the file 'extraction_0_xx.xml' where xx stands for the highest value among all (intermediate) generated files.
+
+  java abscon.Extraction scen11-f8.xml.bz2 -nbCores=all -ce=con
+	All minimal unsatisfiable cores will be extracted iteratively using the extraction method 'con'.
+	When a core is identified, it is removed from the current problem before resuming search of cores.
+
+  java abscon.Resolution crossoft-ogd-puzzle02_ext.xml.bz2 -p=SoftAC -ct=delta -positive=V -varh=WDegOnDom -valh=WCost0 -f=wcsp -s=all
+	The WCSP instance crossoft-ogd-puzzle02_ext.xml.bz2 in format XCSP is solved.
+	A solution with a minimal cost (because the specified framework is WCSP) is sought. All solutions are shown while optimum is not found.
+	For propagation, we use 'AC*'. 
+	For transfers of tuple costs, we use 'delta' wich consists to keep unchanged table while recording in an auxiliary structure 'deltas' the cumulated cost of all projections.
+	For represent and propagate constraints defined in extension, we use 'V' for GAC-valid. See -positive.
+
+  java abscon.Resolution crossoft-ogd-puzzle02_ext.xml.bz2 -p=FDAC -ct=update -positive=V -varh=WDegOnDom -valh=WCost0 -f=wcsp -s=all
+	For propagation, we use 'FDAC'.
+	For transfers of tuple costs, we use 'update' wich consists to update directly table with respect to the cumulated cost of all projections.
+
+  java abscon.Resolution crossoft-ogd-puzzle02_ext.xml.bz2 -p=EDAC -ct=delta -positive=V -varh=WDegOnDom -valh=WCost0 -f=wcsp -s=all
+	For propagation, we use 'EDAC'.
+	Note that 'SoftAC', 'FDAC' and 'EDAC' require tranfers of cost 'update' or 'delta'.
+
+  java abscon.Resolution crossoft-ogd-puzzle02_ext.xml.bz2 -p=SoftAC -ct=delta -positive=STR1 -varh=WDegOnDom -valh=WCost0 -f=wcsp -s=all
+	For propagating constraints defined in extension, we use 'str' for simple tabular reduction.
+	Note that 'SoftAC' associated with 'str' representation corresponds to algorithm 'GACw-WSTR'.
+
+  java abscon.Resolution crossoft-ogd-puzzle02_ext.xml.bz2 -p=RDAC_WCSP -ct=invariable -positive=V -varh=WDegOnDom -valh=MinCost -f=wcsp -s=all
+	For propagation, we use 'PFC-MRDAC'.
+	Note that 'PFC-MRDAC' does not exploit cost transfer operations ('invariable').
+
+  java abscon.Resolution crossoft-ogd-puzzle02_ext.xml.bz2 -p=RDAC_WCSP_STR -ct=invariable -positive=STR1 -varh=WDegOnDom -valh=MinCost -f=wcsp -s=all
+	For propagation, we use 'PFC-MRDAC'.
+	Note that 'PFC-MRDAC' associated with 'str' representation corresponds to algorithm 'PFC-MRDAC-WSTR' and that 'WSTR' requires 'str'1 as positive representation
+

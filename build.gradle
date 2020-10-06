@@ -1,0 +1,43 @@
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8 
+
+archivesBaseName = "AbsCon"
+version = '20-09'
+ 
+repositories {
+ mavenCentral()
+}
+
+dependencies {
+  implementation fileTree(dir: 'lib', include: ['*.jar']) 
+  testImplementation 'junit:junit:4.12'
+}
+// with this statement below (jar { }), we build a fat jar, i.e. a jar with included dependencies
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'executables.Resolution'
+        )
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+ }
+	
+test {
+	//executable = "/path/to/jdk/bin/java"
+	
+   // show standard out and standard error of the test JVM(s) on the console
+  testLogging.showStandardStreams = true
+ 
+   
+ // set heap size for the test JVM(s)
+  minHeapSize = "128m"
+  maxHeapSize = "1024m"
+  
+  // set JVM arguments for the test JVM(s)
+  jvmArgs "-da" 
+  jvmArgs "-Xmx12G"  // -d64 
+}
