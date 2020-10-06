@@ -67,7 +67,6 @@ import search.local.HeuristicNeighbors.BestGlobal;
 import search.local.TabuManager.TabuManagerVariableValue;
 import utility.Enums.EBinaryEncoding;
 import utility.Enums.EBranching;
-import utility.Enums.EExport;
 import utility.Enums.EExportMoment;
 import utility.Enums.EExtension;
 import utility.Enums.EExtractionMethod;
@@ -154,7 +153,7 @@ public class ControlPanel {
 		public final String discardedClasses = addS("discardedClasses", "dc", EMPTY_STRING, s_dc);
 		public final boolean indentAndCompressUnderLinux = addB("indentAndCompressUnderLinux", "ic", true, s_ic);
 		public final boolean competitionMode = addB("competitionMode", "cm", true, s_cm);
-		public final EExport export = addE("export", "export", EExport.NO, s_export);
+		// public final EExport export = addE("export", "export", EExport.NO, s_export);
 		public final EExportMoment exportMoment = addE("exportMoment", "exportMoment", EExportMoment.CONSTRUCTION, s_exportMoment, HIDDEN);
 		public final String dirForCampaign = addS("dirForCampaign", "dir", EMPTY_STRING, s_dir);
 		public final boolean keepInstanceName = addB("keepInstanceName", "kin", false, s_kin, HIDDEN);
@@ -164,7 +163,7 @@ public class ControlPanel {
 	}
 
 	public final SettingXml settingXml = new SettingXml();
-	public final boolean export = settingXml.export != EExport.NO;
+	// public final boolean export = settingXml.export != EExport.NO;
 	public final boolean competitionMode = settingXml.competitionMode;
 
 	public class SettingGeneral extends SettingGroup {
@@ -192,7 +191,7 @@ public class ControlPanel {
 		public TypeFramework framework = addE("framework", "f", TypeFramework.CSP, s_framework);
 		public long nSearchedSolutions = addL("nSearchedSolutions", "s", framework == TypeFramework.CSP ? 1 : PLUS_INFINITY, s_s);
 		public final long timeout = addL("timeout", "t", PLUS_INFINITY, s_timeout);
-		public final int verbose = addI("verbose", "v", settingXml.export != EExport.NO ? 0 : 1, s_verbose);
+		public final int verbose = addI("verbose", "v", 1, s_verbose);
 		public final String trace = addS("trace", "trace", EMPTY_STRING, s_trace);
 		public final long seed = addL("seed", "seed", 0, s_seed);
 		public final boolean makeExceptionsVisible = addB("makeExceptionsVisible", "ev", false, s_ev);

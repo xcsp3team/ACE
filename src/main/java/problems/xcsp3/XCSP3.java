@@ -92,8 +92,6 @@ public class XCSP3 extends ProblemFile implements XCallbacks2 {
 	@Override
 	public void model() {
 		try {
-			if (imp().rs.cp.export)
-				implem.rawParameters();
 			Kit.log.info("Discarded classes " + imp().rs.cp.settingXml.discardedClasses);
 			if (imp().rs.cp.verbose > 1)
 				XParser.VERBOSE = true;

@@ -28,7 +28,6 @@ import static org.xcsp.common.predicates.XNodeParent.ne;
 import static org.xcsp.common.predicates.XNodeParent.or;
 import static org.xcsp.modeler.definitions.ICtr.MATRIX;
 
-import java.io.File;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,7 +44,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.w3c.dom.Document;
 import org.xcsp.common.Condition;
 import org.xcsp.common.Condition.ConditionIntset;
 import org.xcsp.common.Condition.ConditionIntvl;
@@ -84,8 +82,6 @@ import org.xcsp.common.structures.AbstractTuple;
 import org.xcsp.common.structures.Automaton;
 import org.xcsp.common.structures.Transition;
 import org.xcsp.modeler.api.ProblemAPI;
-import org.xcsp.modeler.definitions.ICtr;
-import org.xcsp.modeler.definitions.ICtr.ICtrExtension;
 import org.xcsp.modeler.entities.CtrEntities.CtrAlone;
 import org.xcsp.modeler.entities.CtrEntities.CtrArray;
 import org.xcsp.modeler.entities.CtrEntities.CtrEntity;
@@ -97,23 +93,6 @@ import org.xcsp.modeler.implementation.ProblemIMP;
 import constraints.Constraint;
 import constraints.CtrHard;
 import constraints.CtrRaw.RawAllDifferent;
-import constraints.CtrRaw.RawCardinality;
-import constraints.CtrRaw.RawChannel;
-import constraints.CtrRaw.RawCircuit;
-import constraints.CtrRaw.RawClause;
-import constraints.CtrRaw.RawCount;
-import constraints.CtrRaw.RawCumulative;
-import constraints.CtrRaw.RawElement;
-import constraints.CtrRaw.RawExtremum;
-import constraints.CtrRaw.RawIfThen;
-import constraints.CtrRaw.RawIfThenElse;
-import constraints.CtrRaw.RawInstantiation;
-import constraints.CtrRaw.RawMdd;
-import constraints.CtrRaw.RawNValues;
-import constraints.CtrRaw.RawNoOverlap;
-import constraints.CtrRaw.RawRegular;
-import constraints.CtrRaw.RawSlide;
-import constraints.CtrRaw.RawStretch;
 import constraints.hard.CtrExtension;
 import constraints.hard.CtrHardFalse;
 import constraints.hard.CtrHardTrue;
@@ -194,9 +173,7 @@ import propagation.order2.path.PC8;
 import search.Solver;
 import search.backtrack.RestarterLocalBranching.LocalBranchingConstraint;
 import search.backtrack.RestarterLocalBranching.LocalBranchingConstraint.LBAtLeastEqual;
-import utility.Enums.EExport;
 import utility.Enums.EExportMode;
-import utility.Enums.EExportMoment;
 import utility.Kit;
 import utility.Reflector;
 import utility.exceptions.MissingImplementationException;
@@ -676,8 +653,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private final void reduceDomainsOfIsolatedVariables() {
 		// TODO other frameworks ?
-		boolean reduceIsolatedVars = rs.cp.settingVars.reduceIsolatedVars && rs.cp.setingGeneral.nSearchedSolutions == 1 && !rs.cp.export
-				&& !rs.cp.symmetryBreaking && rs.cp.framework == TypeFramework.CSP;
+		boolean reduceIsolatedVars = rs.cp.settingVars.reduceIsolatedVars && rs.cp.setingGeneral.nSearchedSolutions == 1 && !rs.cp.symmetryBreaking
+				&& rs.cp.framework == TypeFramework.CSP;
 		List<Variable> isolatedVars = new ArrayList<>(), fixedVars = new ArrayList<>();
 		int nRemovedValues = 0;
 		for (Variable x : stuff.collectedVarsAtInit) {
@@ -823,32 +800,31 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		api.prettyDisplay(values);
 	}
 
-	private String savingName() {
-		if (rs.cp.settingXml.keepInstanceName)
-			return name();
-		String s = name();
-		int start = s.lastIndexOf(File.separator) + 1;
-		int end = s.lastIndexOf(".xml.bz2") != -1 ? s.lastIndexOf(".xml.bz2") : s.lastIndexOf(".xml.lzma") != -1 ? s.lastIndexOf(".xml.lzma") : s.length();
-		s = s.substring(start, end) + (stuff.nMergedCtrs > 0 ? "_mgd" : "");
-		// + (rs.cp.extension.wcnConversion != EWCNConversion.NO ? "_ub" + rs.cp.optimizing.upperBound : "");
-		if (rs.cp.setingGeneral.limitForSatisfaction != Long.MAX_VALUE)
-			s += "_lfs" + rs.cp.setingGeneral.limitForSatisfaction;
-		return s;
-	}
+	// private String savingName() {
+	// if (rs.cp.settingXml.keepInstanceName)
+	// return name();
+	// String s = name();
+	// int start = s.lastIndexOf(File.separator) + 1;
+	// int end = s.lastIndexOf(".xml.bz2") != -1 ? s.lastIndexOf(".xml.bz2") : s.lastIndexOf(".xml.lzma") != -1 ? s.lastIndexOf(".xml.lzma") :
+	// s.length();
+	// s = s.substring(start, end) + (stuff.nMergedCtrs > 0 ? "_mgd" : "");
+	// // + (rs.cp.extension.wcnConversion != EWCNConversion.NO ? "_ub" + rs.cp.optimizing.upperBound : "");
+	// if (rs.cp.setingGeneral.limitForSatisfaction != Long.MAX_VALUE)
+	// s += "_lfs" + rs.cp.setingGeneral.limitForSatisfaction;
+	// return s;
+	// }
 
 	/**
 	 * Method that saves the problem instance into a XCSP file. Should not be called when modeling.
 	 */
-	public final void saveIntoXCSP(EExportMoment moment) {
-		if (!rs.cp.export || rs.cp.settingXml.exportMoment != moment)
-			return;
-		// Kit.control(resolution.cfg.exportMode != EExportMode.NO);
-		Document document = new Compiler3Abscon(new Subproblem(this)).buildDocument();
-		String fileName = rs.cp.settingXml.export == EExport.STD ? null : savingName() + ".xml";
-		save(document, fileName);
-		if (rs.cp.settingXml.indentAndCompressUnderLinux)
-			indentAndCompressXmlUnderLinux(fileName);
-	}
+	// public final void saveIntoXCSP(EExportMoment moment) {
+	// // Kit.control(resolution.cfg.exportMode != EExportMode.NO);
+	// Document document = new Compiler3Abscon(new Subproblem(this)).buildDocument();
+	// String fileName = rs.cp.settingXml.export == EExport.STD ? null : savingName() + ".xml";
+	// save(document, fileName);
+	// if (rs.cp.settingXml.indentAndCompressUnderLinux)
+	// indentAndCompressXmlUnderLinux(fileName);
+	// }
 
 	// ************************************************************************
 	// *****
@@ -925,7 +901,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	/*********************************************************************************************/
 
 	public boolean isBasicType(int type) {
-		return type == 0 || (rs.cp.settingGlobal.priorityType0 && rs.cp.export);
+		return type == 0;
 	}
 
 	private CtrEntity unimplemented(String msg) {
@@ -977,7 +953,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			return ctrEntities.new CtrAloneDummy("Removed unary constraint by domain reduction");
 		}
 		// System.out.println("kkkk" + Variable.nValidTuplesBoundedAtMaxValueFor(scp));
-		if (!rs.cp.export && scp.length <= rs.cp.settingExtension.arityLimitForIntensionToExtension
+		if (scp.length <= rs.cp.settingExtension.arityLimitForIntensionToExtension
 				&& Variable.nValidTuplesBoundedAtMaxValueFor(scp) <= rs.cp.settingExtension.validLimitForIntensionToExtension
 				&& Stream.of(scp).allMatch(x -> x instanceof Var))
 			return extension(tree);
@@ -1022,7 +998,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrAlone extension(Var[] scp, int[][] tuples, boolean positive) {
-		if (!rs.cp.export && tuples.length == 0)
+		if (tuples.length == 0)
 			return addCtr(positive ? new CtrHardFalse(this, translate(scp), "Table constraint with 0 support") : new CtrHardTrue(this, translate(scp)));
 		return extension(scp, tuples, positive, DONT_KNOW);
 	}
@@ -1043,9 +1019,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrAlone regular(Var[] list, Automaton automaton) {
-		if (rs.cp.export)
-			return addCtr(RawRegular.buildFrom(this, list, varEntities.compactOrdered(list),
-					Stream.of(automaton.transitions).map(t -> t.toString()).collect(Collectors.joining()), automaton.startState, automaton.finalStates));
 		return addCtr(new CtrExtensionMDD(this, translate(list), automaton));
 	}
 
@@ -1055,9 +1028,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrAlone mdd(Var[] list, Transition[] transitions) {
-		if (rs.cp.export)
-			return addCtr(RawMdd.buildFrom(this, list, varEntities.compactOrdered(list),
-					Stream.of(transitions).map(t -> t.toString()).collect(Collectors.joining())));
 		return addCtr(new CtrExtensionMDD(this, translate(list), transitions));
 	}
 
@@ -1105,8 +1075,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity allDifferent(Var[] scp, int[] exceptValues) {
 		Kit.control(exceptValues.length >= 1);
-		if (rs.cp.export)
-			return addCtr(RawAllDifferent.buildFrom(this, scp, ICtr.LIST, varEntities.compact(scp), Kit.join(exceptValues)));
 		if (rs.cp.settingGlobal.typeAllDifferent <= 1)
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
 				if (i < j)
@@ -1118,7 +1086,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	private CtrAlone distinctVectors(Variable[] t1, Variable[] t2) {
-		Kit.control(rs.cp.export || Variable.areAllDistinct(vars(t1, t2)), () -> "For the moment not handled");
+		Kit.control(Variable.areAllDistinct(vars(t1, t2)), () -> "For the moment not handled");
 		if (isBasicType(rs.cp.settingGlobal.typeDistinctVectors2))
 			return addCtr(CtrExtensionSmart.buildDistinctVectors(this, t1, t2)); // return addCtr(new DistinctVectors2(this, t1, t2)); // BUG TO BE
 																					// FIXED
@@ -1174,10 +1142,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public CtrEntity allDifferent(XNode<IVar>[] trees) {
-		if (rs.cp.export) {
-			String s = Stream.of(trees).map(t -> t.toString()).collect(Collectors.joining(" "));
-			return addCtr(RawAllDifferent.buildFrom(this, scope(Stream.of(trees).map(t -> t.vars())), ICtr.LIST, s, null));
-		}
 		return forall(range(trees.length).range(trees.length), (i, j) -> {
 			if (i < j)
 				different(trees[i], trees[j]);
@@ -1633,8 +1597,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity count(Var[] list, int[] values, Condition condition) {
 		list = clean(list);
-		if (rs.cp.export)
-			return addCtr(RawCount.buildFrom(this, scope(list, condition), varEntities.compact(list), Kit.join(values), condition));
 		if (condition instanceof ConditionVal)
 			return count1((VariableInteger[]) list, values, ((ConditionVal) condition).operator, ((ConditionVal) condition).k);
 		if (condition instanceof ConditionVar)
@@ -1647,8 +1609,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity count(Var[] list, Var[] values, Condition condition) {
 		list = clean(list);
 		values = clean(values);
-		if (rs.cp.export)
-			return addCtr(RawCount.buildFrom(this, scope(list, values, condition), varEntities.compact(list), varEntities.compact(values), condition));
 		return unimplemented("count");
 	}
 
@@ -1659,8 +1619,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public CtrEntity nValues(Var[] list, Condition condition) {
 		list = clean(list);
-		if (rs.cp.export)
-			return addCtr(RawNValues.buildFrom(this, scope(list, condition), varEntities.compact(list), null, condition));
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			int k = Utilities.safeInt(((ConditionVal) condition).k);
@@ -1687,8 +1645,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public CtrEntity nValues(Var[] list, Condition condition, int[] exceptValues) {
 		list = clean(list);
-		if (rs.cp.export)
-			return addCtr(RawNValues.buildFrom(this, scope(list, condition), varEntities.compact(list), Kit.join(exceptValues), condition));
 		return unimplemented("nValues");
 	}
 
@@ -1708,8 +1664,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, int[] occurs) {
 		Kit.control(values.length == occurs.length);
 		list = clean(list);
-		if (rs.cp.export)
-			return addCtr(RawCardinality.buildFrom(this, list, varEntities.compact(list), Kit.join(values), mustBeClosed, Kit.join(occurs)));
 		if (mustBeClosed && Stream.of(list).anyMatch(x -> !((VariableInteger) x).dom.areInitValuesSubsetOf(values))) // 2nd part =
 			// relevance of closed
 			postClosed((VariableInteger[]) list, values);
@@ -1721,9 +1675,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, Var[] occurs) {
 		Kit.control(values.length == occurs.length && Stream.of(occurs).noneMatch(x -> x == null));
 		list = clean(list);
-		if (rs.cp.export)
-			return addCtr(RawCardinality.buildFrom(this, scope(list, occurs), varEntities.compact(list), Kit.join(values), mustBeClosed,
-					varEntities.compactOrdered(occurs)));
 		if (mustBeClosed && Stream.of(list).anyMatch(x -> !((VariableInteger) x).dom.areInitValuesSubsetOf(values)))
 			// 2nd part = relevance of closed
 			postClosed((VariableInteger[]) list, values);
@@ -1736,9 +1687,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, int[] occursMin, int[] occursMax) {
 		Kit.control(values.length == occursMin.length && values.length == occursMax.length);
 		list = clean(list);
-		if (rs.cp.export)
-			return addCtr(
-					RawCardinality.buildFrom(this, list, varEntities.compact(list), Kit.join(values), mustBeClosed, intervalAsString(occursMin, occursMax)));
 		return addCtr(new CardinalityConstant(this, (VariableInteger[]) list, values, occursMin, occursMax));
 	}
 
@@ -1746,9 +1694,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity cardinality(Var[] list, Var[] values, boolean mustBeClosed, int[] occurs) {
 		Kit.control(values.length == occurs.length && Stream.of(values).noneMatch(x -> x == null));
 		list = clean(list);
-		if (rs.cp.export)
-			return addCtr(RawCardinality.buildFrom(this, scope(list, values), varEntities.compact(list), varEntities.compactOrdered(values), mustBeClosed,
-					Kit.join(occurs)));
 		return unimplemented("cardinality");
 	}
 
@@ -1756,9 +1701,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity cardinality(Var[] list, Var[] values, boolean mustBeClosed, Var[] occurs) {
 		Kit.control(values.length == occurs.length && Stream.of(values).noneMatch(x -> x == null) && Stream.of(occurs).noneMatch(x -> x == null));
 		list = clean(list);
-		if (rs.cp.export)
-			return addCtr(RawCardinality.buildFrom(this, scope(list, values, occurs), varEntities.compact(list), varEntities.compactOrdered(values),
-					mustBeClosed, varEntities.compactOrdered(occurs)));
 		return unimplemented("cardinality");
 	}
 
@@ -1766,9 +1708,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity cardinality(Var[] list, Var[] values, boolean mustBeClosed, int[] occursMin, int[] occursMax) {
 		Kit.control(values.length == occursMin.length && values.length == occursMax.length && Stream.of(values).noneMatch(x -> x == null));
 		list = clean(list);
-		if (rs.cp.export)
-			return addCtr(RawCardinality.buildFrom(this, scope(list, values), varEntities.compact(list), varEntities.compactOrdered(values), mustBeClosed,
-					intervalAsString(occursMin, occursMax)));
 		return unimplemented("cardinality");
 	}
 
@@ -1778,8 +1717,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private final CtrEntity extremum(final Var[] list, Condition condition, boolean minimum) {
 		Variable[] vars = (Variable[]) clean(list);
-		if (rs.cp.export)
-			return addCtr(RawExtremum.buildFrom(this, scope(vars, condition), varEntities.compact(vars), null, null, null, condition, minimum));
 		if (condition instanceof ConditionVar) {
 			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
 			if (op != EQ)
@@ -1817,9 +1754,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private final CtrEntity extremum(Var[] list, int startIndex, Var index, TypeRank rank, Condition condition, boolean minimum) {
 		Kit.control(Stream.of(list).noneMatch(x -> x == null));
-		if (rs.cp.export)
-			return addCtr(
-					RawExtremum.buildFrom(this, scope(list, index, condition), varEntities.compactOrdered(list), startIndex, index, rank, condition, minimum));
 		return unimplemented(minimum ? "minimum" : "maximum");
 	}
 
@@ -1871,23 +1805,17 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrAlone element(Var[] list, int value) {
-		if (rs.cp.export)
-			return addCtr(RawElement.buildFrom(this, list, varEntities.compact(list), null, null, null, value));
 		return (CtrAlone) atLeast(list, value, 1);
 	}
 
 	@Override
 	public final CtrAlone element(Var[] list, Var value) {
-		if (rs.cp.export)
-			return addCtr(RawElement.buildFrom(this, scope(list, value), varEntities.compact(list), null, null, null, value));
 		// TODO using sentinelVal1, sentinelVal2 (for two values in dom(value)), and sentinelVar1, sentinelVar2 for two variables in list
 		return (CtrAlone) unimplemented("element");
 	}
 
 	@Override
 	public final CtrAlone element(Var[] list, int startIndex, Var index, TypeRank rank, int value) {
-		if (rs.cp.export)
-			return addCtr(RawElement.buildFrom(this, scope(list, index), varEntities.compactOrdered(list), startIndex, index, rank, value));
 		unimplementedIf(startIndex != 0 || (rank != null && rank != TypeRank.ANY), "element");
 		if (rs.cp.settingGlobal.jokerTable)
 			return extension(vars(index, list), Table.shortTuplesForElement(translate(list), (Variable) index, value), true);
@@ -1897,8 +1825,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrAlone element(Var[] list, int startIndex, Var index, TypeRank rank, Var value) {
-		if (rs.cp.export)
-			return addCtr(RawElement.buildFrom(this, scope(list, index, value), varEntities.compactOrdered(list), startIndex, index, rank, value));
 		unimplementedIf(startIndex != 0 || (rank != null && rank != TypeRank.ANY), "element");
 		if (rs.cp.settingGlobal.smartTable)
 			return addCtr(CtrExtensionSmart.buildElement(this, (VariableInteger[]) list, (VariableInteger) index, (VariableInteger) value));
@@ -2083,17 +2009,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public CtrEntity channel(Var[] list, int startIndex) {
 		Kit.control(Stream.of(list).noneMatch(x -> x == null));
-		if (rs.cp.export)
-			return addCtr(RawChannel.buildFrom(this, list, varEntities.compactOrdered(list), startIndex, null, null, null));
 		return unimplemented("channel");
 	}
 
 	@Override
 	public CtrEntity channel(Var[] list1, int startIndex1, Var[] list2, int startIndex2) {
 		Kit.control(Stream.of(list1).noneMatch(x -> x == null) && Stream.of(list2).noneMatch(x -> x == null));
-		if (rs.cp.export)
-			return addCtr(RawChannel.buildFrom(this, scope(list1, list2), varEntities.compactOrdered(list1), startIndex1, varEntities.compactOrdered(list2),
-					startIndex2, null));
 		Kit.control(startIndex1 == 0 && startIndex2 == 0, () -> "unimplemented case for channel");
 		// TODO : the two constraints above are not included in the object that is returned. Is that a problem?
 		if (list1.length == list2.length) {
@@ -2106,8 +2027,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity channel(Var[] list, int startIndex, Var value) {
 		Kit.control(Stream.of(list).noneMatch(x -> x == null));
-		if (rs.cp.export)
-			return addCtr(RawChannel.buildFrom(this, scope(list, value), varEntities.compactOrdered(list), startIndex, null, null, value));
 		Kit.control(Variable.areAllInitiallyBoolean((VariableInteger[]) list) && ((VariableInteger) value).dom.areInitValuesExactly(range(list.length)));
 		return forall(range(list.length), i -> intension(iff(list[i], eq(value, i))));
 	}
@@ -2121,10 +2040,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Kit.control(values.length == widthsMin.length && values.length == widthsMax.length);
 		Kit.control(IntStream.range(0, values.length).allMatch(i -> widthsMin[i] <= widthsMax[i]));
 		Kit.control(patterns == null || Stream.of(patterns).allMatch(t -> t.length == 2));
-		if (rs.cp.export) {
-			String t = patterns == null ? null : ICtrExtension.tableAsString(org.xcsp.common.structures.Table.clean(patterns));
-			return addCtr(RawStretch.buildFrom(this, list, varEntities.compactOrdered(list), Kit.join(values), intervalAsString(widthsMin, widthsMax), t));
-		}
 		return unimplemented("strtech");
 	}
 
@@ -2146,8 +2061,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity noOverlap(Var[] origins, int[] lengths, boolean zeroIgnored) {
-		if (rs.cp.export)
-			return addCtr(RawNoOverlap.buildFrom(this, origins, varEntities.compactOrdered(origins), Kit.join(lengths), zeroIgnored));
 		unimplementedIf(!zeroIgnored, "noOverlap");
 		return forall(range(origins.length).range(origins.length), (i, j) -> {
 			if (i < j)
@@ -2157,9 +2070,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity noOverlap(Var[] origins, Var[] lengths, boolean zeroIgnored) {
-		if (rs.cp.export)
-			return addCtr(RawNoOverlap.buildFrom(this, scope(origins, lengths), varEntities.compactOrdered(origins), varEntities.compactOrdered(lengths),
-					zeroIgnored));
 		return unimplemented("noOverlap");
 	}
 
@@ -2195,9 +2105,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity noOverlap(Var[][] origins, int[][] lengths, boolean zeroIgnored) {
 		// Kit.control(Kit.isRectangular(origins) && Kit.isRectangular(lengths) )
-		if (rs.cp.export)
-			return addCtr(
-					RawNoOverlap.buildFrom(this, vars(origins), varEntities.compactMatrix(origins), "(" + Kit.join(lengths, ")(", ",") + ")", zeroIgnored));
 		unimplementedIf(!zeroIgnored, "noOverlap");
 		return forall(range(origins.length).range(origins.length), (i, j) -> {
 			if (i < j)
@@ -2215,9 +2122,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity noOverlap(Var[][] origins, Var[][] lengths, boolean zeroIgnored) {
-		if (rs.cp.export)
-			return addCtr(RawNoOverlap.buildFrom(this, scope(origins, lengths), varEntities.compactMatrix(origins), "(" + Kit.join(lengths, ")(", ",") + ")",
-					zeroIgnored));
 		unimplementedIf(!zeroIgnored, "noOverlap");
 		return forall(range(origins.length).range(origins.length), (i, j) -> {
 			if (i < j)
@@ -2232,9 +2136,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity cumulative(Var[] origins, int[] lengths, Var[] ends, int[] heights, Condition condition) {
-		if (rs.cp.export)
-			return addCtr(RawCumulative.buildFrom(this, scope(origins, ends, condition), varEntities.compactOrdered(origins), Kit.join(lengths),
-					ends == null ? null : varEntities.compactOrdered(ends), Kit.join(heights), condition));
 		if (ends == null && condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			Kit.control(op == LT || op == LE);
@@ -2246,26 +2147,16 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity cumulative(Var[] origins, Var[] lengths, Var[] ends, int[] heights, Condition condition) {
-		if (rs.cp.export)
-			return addCtr(RawCumulative.buildFrom(this, scope(origins, lengths, ends, condition), varEntities.compactOrdered(origins),
-					varEntities.compactOrdered(lengths), ends == null ? null : varEntities.compactOrdered(ends), Kit.join(heights), condition));
 		return unimplemented("cumulative");
 	}
 
 	@Override
 	public final CtrEntity cumulative(Var[] origins, int[] lengths, Var[] ends, Var[] heights, Condition condition) {
-		if (rs.cp.export)
-			return addCtr(RawCumulative.buildFrom(this, scope(origins, ends, heights, condition), varEntities.compactOrdered(origins), Kit.join(lengths),
-					ends == null ? null : varEntities.compactOrdered(ends), varEntities.compactOrdered(heights), condition));
 		return unimplemented("cumulative");
 	}
 
 	@Override
 	public final CtrEntity cumulative(Var[] origins, Var[] lengths, Var[] ends, Var[] heights, Condition condition) {
-		if (rs.cp.export)
-			return addCtr(RawCumulative.buildFrom(this, scope(origins, lengths, ends, heights, condition), varEntities.compactOrdered(origins),
-					varEntities.compactOrdered(lengths), ends == null ? null : varEntities.compactOrdered(ends), varEntities.compactOrdered(heights),
-					condition));
 		return unimplemented("cumulative");
 	}
 
@@ -2275,23 +2166,17 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public CtrEntity circuit(Var[] list, int startIndex) {
-		if (rs.cp.export)
-			return addCtr(RawCircuit.buildFrom(this, list, varEntities.compactOrdered(list), startIndex, null));
 		unimplementedIf(startIndex != 0, "circuit");
 		return addCtr(new Circuit(this, translate(list)));
 	}
 
 	@Override
 	public CtrEntity circuit(Var[] list, int startIndex, int size) {
-		if (rs.cp.export)
-			return addCtr(RawCircuit.buildFrom(this, list, varEntities.compactOrdered(list), startIndex, size));
 		return unimplemented("circuit");
 	}
 
 	@Override
 	public CtrEntity circuit(Var[] list, int startIndex, Var size) {
-		if (rs.cp.export)
-			return addCtr(RawCircuit.buildFrom(this, scope(list, size), varEntities.compactOrdered(list), startIndex, size));
 		return unimplemented("circuit");
 	}
 
@@ -2304,10 +2189,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Utilities.control(Stream.of(list).noneMatch(x -> x == null), "A variable in array list is null");
 		Utilities.control(list.length == phases.length, "Bad form of clause");
 		Utilities.control(Variable.areAllInitiallyBoolean((VariableInteger[]) list), "A variable is not Boolean in the array list.");
-		if (rs.cp.export) {
-			String s = IntStream.range(0, list.length).mapToObj(i -> phases[i] ? list[i].id() : "not(" + list[i].id() + ")").collect(Collectors.joining(" "));
-			return addCtr(RawClause.buildFrom(this, list, s));
-		}
 		if (rs.cp.settingGlobal.typeClause == 1)
 			return api.sum(list, Stream.of(phases).mapToInt(p -> p ? 1 : -1).toArray(), NE, -Stream.of(phases).filter(p -> !p).count());
 		return unimplemented("clause");
@@ -2321,8 +2202,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity instantiation(Var[] list, int[] values) {
 		Kit.control(list.length == values.length && list.length > 0);
 		Kit.control(IntStream.range(0, list.length).noneMatch(i -> !((Variable) list[i]).dom.isPresentValue(values[i])), () -> "Pb");
-		if (rs.cp.export)
-			return addCtr(RawInstantiation.buildFrom(this, list, varEntities.compactOrdered(list), Kit.join(values)));
 		if (rs.cp.settingGlobal.typeInstantiation == 1)
 			return forall(range(list.length), i -> equal(list[i], values[i]));
 		return unimplemented("instantiation");
@@ -2350,19 +2229,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Kit.control(range.start == 0 && range.length() > 0);
 		if (range.length() == 1)
 			return template.apply(0);
-		if (rs.cp.export) {
-			CtrAlone[] cas = range.stream().mapToObj(i -> template.apply(i)).toArray(CtrAlone[]::new);
-			for (int i = cas.length - 1; i >= 0; i--)
-				removeCtr((CtrHard) cas[i].ctr); // we remove them since a slide is posted (useful for saving into XCSP3)
-			IVar[][] scopes = Stream.of(cas).map(ca -> ca.ctr.scope()).toArray(IVar[][]::new);
-			Kit.control(IntStream.range(1, scopes.length).noneMatch(i -> scopes[i].length != scopes[0].length));
-			IVar[][] lists = new IVar[][] { list };
-			boolean circular = Stream.of(scopes[scopes.length - 1]).anyMatch(x -> x == lists[0][0]);
-			int[] offsets = computeOffsets(lists, scopes[0], scopes[1]);
-			int[] collects = computeCollects(lists, scopes[0]);
-			// todo many other controls to do
-			return addCtr(RawSlide.buildFrom(this, list, circular, lists, offsets, collects, cas));
-		}
 		return manageLoop(() -> IntStream.range(0, range.stop).filter(i -> i % range.step == 0).mapToObj(i -> (CtrHard) ((CtrAlone) template.apply(i)).ctr)
 				.toArray(CtrHard[]::new));
 	}
@@ -2386,11 +2252,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity ifThen(CtrEntity c1, CtrEntity c2) {
 		Utilities.control(c1 instanceof CtrAlone && c2 instanceof CtrAlone, "unimplemented for the moment");
-		if (rs.cp.export) {
-			for (CtrEntity c : new CtrEntity[] { c2, c1 }) // int i = cas.length - 1; i >= 0; i--)
-				removeCtr((Constraint) ((CtrAlone) c).ctr); // we remove them
-			return addCtr(RawIfThen.buildFrom(this, scope(((CtrAlone) c1).ctr.scope(), ((CtrAlone) c2).ctr.scope()), (CtrAlone) c1, (CtrAlone) c2));
-		}
 		return (CtrEntity) Kit.exit("unimplemented case for ifThen");
 	}
 
@@ -2401,12 +2262,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity ifThenElse(CtrEntity c1, CtrEntity c2, CtrEntity c3) {
 		Utilities.control(c1 instanceof CtrAlone && c2 instanceof CtrAlone && c3 instanceof CtrAlone, "unimplemented for the moment");
-		if (rs.cp.export) {
-			for (CtrEntity c : new CtrEntity[] { c3, c2, c1 }) // int i = cas.length - 1; i >= 0; i--)
-				removeCtr((Constraint) ((CtrAlone) c).ctr); // we remove them
-			return addCtr(RawIfThenElse.buildFrom(this, scope(((CtrAlone) c1).ctr.scope(), ((CtrAlone) c2).ctr.scope(), ((CtrAlone) c3).ctr.scope()),
-					(CtrAlone) c1, (CtrAlone) c2, (CtrAlone) c3));
-		}
 		return (CtrEntity) Kit.exit("unimplemented case for ifThenElse");
 	}
 

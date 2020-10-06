@@ -27,7 +27,6 @@ import propagation.Propagation;
 import search.backtrack.RestarterLNS;
 import search.backtrack.RestarterLocalBranching;
 import search.statistics.Statistics;
-import utility.Enums.EExportMoment;
 import utility.Enums.EStopping;
 import utility.Kit;
 import utility.Reflector;
@@ -149,7 +148,7 @@ public abstract class Solver {
 		for (ObserverSearch observer : observersSearch)
 			observer.afterPreprocessing();
 		// rs.output.printAfterPreprocessing();
-		pb.saveIntoXCSP(EExportMoment.PREPROCESSING);
+		// pb.saveIntoXCSP(EExportMoment.PREPROCESSING);
 		// Graphviz.saveGraph(problem);
 	}
 
