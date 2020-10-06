@@ -925,7 +925,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	/*********************************************************************************************/
 
 	public boolean isBasicType(int type) {
-		return type == 0 || (rs.cp.global.priorityType0 && rs.cp.export);
+		return type == 0 || (rs.cp.settingGlobal.priorityType0 && rs.cp.export);
 	}
 
 	private CtrEntity unimplemented(String msg) {
@@ -1076,18 +1076,18 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private CtrEntity allDifferent(Variable[] scp) {
 		if (scp.length <= 1)
 			return ctrEntities.new CtrAloneDummy("Removed alldiff constraint with scope length = " + scp.length);
-		if (isBasicType(rs.cp.global.typeAllDifferent))
+		if (isBasicType(rs.cp.settingGlobal.typeAllDifferent))
 			return addCtr(Variable.isPermutationElligible(scp) ? new AllDifferentPermutation(this, scp) : new AllDifferent(this, scp));
-		if (rs.cp.global.typeAllDifferent == 1)
+		if (rs.cp.settingGlobal.typeAllDifferent == 1)
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
 				if (i < j)
 					addCtr(new NE(this, scp[i], 0, scp[j])); // different(scp[i], scp[j]);
 			});
-		if (rs.cp.global.typeAllDifferent == 2)
+		if (rs.cp.settingGlobal.typeAllDifferent == 2)
 			return addCtr(new AllDifferentWeak(this, scp));
-		if (rs.cp.global.typeAllDifferent == 3)
+		if (rs.cp.settingGlobal.typeAllDifferent == 3)
 			return addCtr(new AllDifferentCounting(this, scp));
-		if (rs.cp.global.typeAllDifferent == 4)
+		if (rs.cp.settingGlobal.typeAllDifferent == 4)
 			return addCtr(new AllDifferentBound(this, scp));
 		throw new MissingImplementationException();
 	}
@@ -1107,25 +1107,25 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Kit.control(exceptValues.length >= 1);
 		if (rs.cp.export)
 			return addCtr(RawAllDifferent.buildFrom(this, scp, ICtr.LIST, varEntities.compact(scp), Kit.join(exceptValues)));
-		if (rs.cp.global.typeAllDifferent <= 1)
+		if (rs.cp.settingGlobal.typeAllDifferent <= 1)
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
 				if (i < j)
 					intension(or(ne(scp[i], scp[j]), exceptValues.length == 1 ? eq(scp[i], exceptValues[0]) : in(scp[i], exceptValues)));
 			});
-		if (rs.cp.global.typeAllDifferent == 2)
+		if (rs.cp.settingGlobal.typeAllDifferent == 2)
 			return addCtr(new AllDifferentExceptWeak(this, translate(scp), exceptValues));
 		throw new MissingImplementationException();
 	}
 
 	private CtrAlone distinctVectors(Variable[] t1, Variable[] t2) {
 		Kit.control(rs.cp.export || Variable.areAllDistinct(vars(t1, t2)), () -> "For the moment not handled");
-		if (isBasicType(rs.cp.global.typeDistinctVectors2))
+		if (isBasicType(rs.cp.settingGlobal.typeDistinctVectors2))
 			return addCtr(CtrExtensionSmart.buildDistinctVectors(this, t1, t2)); // return addCtr(new DistinctVectors2(this, t1, t2)); // BUG TO BE
 																					// FIXED
-		if (rs.cp.global.typeDistinctVectors2 == 1) {
-			if (rs.cp.global.smartTable)
+		if (rs.cp.settingGlobal.typeDistinctVectors2 == 1) {
+			if (rs.cp.settingGlobal.smartTable)
 				return addCtr(CtrExtensionSmart.buildDistinctVectors(this, t1, t2));
-			if (rs.cp.global.jokerTable)
+			if (rs.cp.settingGlobal.jokerTable)
 				return extension(vars(t1, t2), Table.shortTuplesFordNotEqualVectors(t1, t2), true);
 		}
 		throw new MissingImplementationException();
@@ -1137,12 +1137,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 * parameter.
 	 */
 	private CtrEntity distinctVectors(Variable[][] lists) {
-		if (rs.cp.global.typeDistinctVectorsK == 1)
+		if (rs.cp.settingGlobal.typeDistinctVectorsK == 1)
 			return forall(range(lists.length).range(lists.length), (i, j) -> {
 				if (i < j) {
-					if (rs.cp.global.smartTable)
+					if (rs.cp.settingGlobal.smartTable)
 						addCtr(CtrExtensionSmart.buildDistinctVectors(this, lists[i], lists[j]));
-					else if (rs.cp.global.jokerTable)
+					else if (rs.cp.settingGlobal.jokerTable)
 						extension(vars(lists[i], lists[j]), Table.shortTuplesFordNotEqualVectors(lists[i], lists[j]), true);
 					else
 						addCtr(CtrExtensionSmart.buildDistinctVectors(this, lists[i], lists[j])); // addCtr(new DistinctVectors2(this,
@@ -1162,9 +1162,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity allDifferentMatrix(Var[][] matrix) {
-		if (isBasicType(rs.cp.global.typeAllDifferentMatrix))
+		if (isBasicType(rs.cp.settingGlobal.typeAllDifferentMatrix))
 			return addCtr(RawAllDifferent.buildFrom(this, vars(matrix), MATRIX, varEntities.compactMatrix(matrix), null));
-		if (rs.cp.global.typeAllDifferentMatrix == 1) {
+		if (rs.cp.settingGlobal.typeAllDifferentMatrix == 1) {
 			CtrArray ctrSet1 = forall(range(matrix.length), i -> allDifferent(matrix[i]));
 			CtrArray ctrSet2 = forall(range(matrix[0].length), i -> allDifferent(api.columnOf(matrix, i)));
 			return ctrSet1.append(ctrSet2);
@@ -1665,9 +1665,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			int k = Utilities.safeInt(((ConditionVal) condition).k);
 			if (op == GT && k == 1 || op == GE && k == 2) {
-				if (isBasicType(rs.cp.global.typeNotAllEqual))
+				if (isBasicType(rs.cp.settingGlobal.typeNotAllEqual))
 					return addCtr(new NotAllEqual(this, (VariableInteger[]) list));
-				if (rs.cp.global.typeNotAllEqual == 1) {
+				if (rs.cp.settingGlobal.typeNotAllEqual == 1) {
 					VariableInteger[] clone = (VariableInteger[]) list.clone();
 					return intension(or(IntStream.range(0, list.length - 1).mapToObj(i -> XNodeParent.ne(clone[i], clone[i + 1])).toArray(Object[]::new)));
 				}
@@ -1795,7 +1795,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 						else
 							greaterEqual(y, vars[i]);
 				});
-			if (rs.cp.global.smartTable)
+			if (rs.cp.settingGlobal.smartTable)
 				return addCtr(minimum ? CtrExtensionSmart.buildMinimum(this, vars, y) : CtrExtensionSmart.buildMaximum(this, vars, y));
 			return addCtr(minimum ? new Minimum(this, vars, y) : new Maximum(this, vars, y));
 		}
@@ -1889,7 +1889,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (rs.cp.export)
 			return addCtr(RawElement.buildFrom(this, scope(list, index), varEntities.compactOrdered(list), startIndex, index, rank, value));
 		unimplementedIf(startIndex != 0 || (rank != null && rank != TypeRank.ANY), "element");
-		if (rs.cp.global.jokerTable)
+		if (rs.cp.settingGlobal.jokerTable)
 			return extension(vars(index, list), Table.shortTuplesForElement(translate(list), (Variable) index, value), true);
 		VariableInteger[] lst = Arrays.stream(list).map(v -> (VariableInteger) v).toArray(VariableInteger[]::new);
 		return addCtr(new ElementConstant(this, lst, (VariableInteger) index, value));
@@ -1900,9 +1900,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (rs.cp.export)
 			return addCtr(RawElement.buildFrom(this, scope(list, index, value), varEntities.compactOrdered(list), startIndex, index, rank, value));
 		unimplementedIf(startIndex != 0 || (rank != null && rank != TypeRank.ANY), "element");
-		if (rs.cp.global.smartTable)
+		if (rs.cp.settingGlobal.smartTable)
 			return addCtr(CtrExtensionSmart.buildElement(this, (VariableInteger[]) list, (VariableInteger) index, (VariableInteger) value));
-		if (rs.cp.global.jokerTable)
+		if (rs.cp.settingGlobal.jokerTable)
 			return extension(Utilities.indexOf(value, list) == -1 ? vars(index, list, value) : vars(index, list),
 					Table.shortTuplesForElement((Variable[]) list, (Variable) index, (Variable) value), true);
 		VariableInteger[] lst = Arrays.stream(list).map(v -> (VariableInteger) v).toArray(VariableInteger[]::new);
@@ -2133,11 +2133,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	// ************************************************************************
 
 	private CtrAlone noOverlap(Var x1, Var x2, int w1, int w2) {
-		if (isBasicType(rs.cp.global.typeNoOverlap))
+		if (isBasicType(rs.cp.settingGlobal.typeNoOverlap))
 			return addCtr(new Disjonctive(this, (Variable) x1, w1, (Variable) x2, w2));
-		if (rs.cp.global.typeNoOverlap == 2)
+		if (rs.cp.settingGlobal.typeNoOverlap == 2)
 			return intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1)));
-		if (rs.cp.global.typeNoOverlap == 10) // rs.cp.global.smartTable)
+		if (rs.cp.settingGlobal.typeNoOverlap == 10) // rs.cp.global.smartTable)
 			return addCtr(CtrExtensionSmart.buildNoOverlap(this, (Variable) x1, (Variable) x2, w1, w2));
 		// if (rs.cp.constraints.useGlobalCtrs)
 		// return addCtr(new Disjonctive(this, (Variable) x1, w1, (Variable) x2, w2));
@@ -2185,9 +2185,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	private CtrAlone noOverlap(VariableInteger x1, VariableInteger x2, VariableInteger y1, VariableInteger y2, int w1, int w2, int h1, int h2) {
-		if (rs.cp.global.smartTable)
+		if (rs.cp.settingGlobal.smartTable)
 			return addCtr(CtrExtensionSmart.buildNoOverlap(this, x1, y1, x2, y2, w1, h1, w2, h2));
-		if (rs.cp.global.jokerTable)
+		if (rs.cp.settingGlobal.jokerTable)
 			return extension(vars(x1, x2, y1, y2), computeTable(x1, x2, y1, y2, w1, w2, h1, h2), true, true);
 		return intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1), le(add(y1, h1), y2), le(add(y2, h2), y1)));
 	}
@@ -2208,7 +2208,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private CtrAlone noOverlap(VariableInteger x1, VariableInteger x2, VariableInteger y1, VariableInteger y2, VariableInteger w1, VariableInteger w2,
 			VariableInteger h1, VariableInteger h2) {
-		if (rs.cp.global.smartTable && Stream.of(w1, w2, h1, h2).allMatch(x -> x.dom.initSize() == 2))
+		if (rs.cp.settingGlobal.smartTable && Stream.of(w1, w2, h1, h2).allMatch(x -> x.dom.initSize() == 2))
 			return addCtr(CtrExtensionSmart.buildNoOverlap(this, x1, y1, x2, y2, w1, h1, w2, h2));
 		return intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1), le(add(y1, h1), y2), le(add(y2, h2), y1)));
 	}
@@ -2308,7 +2308,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			String s = IntStream.range(0, list.length).mapToObj(i -> phases[i] ? list[i].id() : "not(" + list[i].id() + ")").collect(Collectors.joining(" "));
 			return addCtr(RawClause.buildFrom(this, list, s));
 		}
-		if (rs.cp.global.typeClause == 1)
+		if (rs.cp.settingGlobal.typeClause == 1)
 			return api.sum(list, Stream.of(phases).mapToInt(p -> p ? 1 : -1).toArray(), NE, -Stream.of(phases).filter(p -> !p).count());
 		return unimplemented("clause");
 	}
@@ -2323,7 +2323,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Kit.control(IntStream.range(0, list.length).noneMatch(i -> !((Variable) list[i]).dom.isPresentValue(values[i])), () -> "Pb");
 		if (rs.cp.export)
 			return addCtr(RawInstantiation.buildFrom(this, list, varEntities.compactOrdered(list), Kit.join(values)));
-		if (rs.cp.global.typeInstantiation == 1)
+		if (rs.cp.settingGlobal.typeInstantiation == 1)
 			return forall(range(list.length), i -> equal(list[i], values[i]));
 		return unimplemented("instantiation");
 	}
