@@ -75,8 +75,8 @@ public class ACPartial extends SAC implements TagExperimental {
 	public ACPartial(Solver solver) {
 		super(solver);
 		int length = 250;
-		if (cp().shaving.limitedPropagationSamplingSize >= 0)
-			pickThresholdManager = new PickThresholdManager(length, cp().shaving.limitedPropagationSamplingSize);
+		if (cp().settingShaving.limitedPropagationSamplingSize >= 0)
+			pickThresholdManager = new PickThresholdManager(length, cp().settingShaving.limitedPropagationSamplingSize);
 		if (displayEffectif) {
 			effectifTrueACPartial = new int[length];
 			effectifFalseACPartial = new int[length];

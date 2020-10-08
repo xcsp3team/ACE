@@ -48,7 +48,7 @@ import constraints.hard.extension.structures.Bits;
 import constraints.hard.extension.structures.Table;
 import constraints.hard.extension.structures.TableSmart;
 import dashboard.Arguments;
-import dashboard.ControlPanel.Optimizing;
+import dashboard.ControlPanel.SettingOptimization;
 import dashboard.ControlPanel.SettingVars;
 import dashboard.Output;
 import objectives.OptimizationPilot.OptimizationPilotBasic;
@@ -394,7 +394,7 @@ public final class ProblemStuff {
 		MapAtt m = new MapAtt("Instance");
 		m.put(NAME, pb.name());
 		m.put(FRAMEWORK, pb.framework);
-		Optimizing opt = pb.rs.cp.optimizing;
+		SettingOptimization opt = pb.rs.cp.settingOptimization;
 		m.put("bounds", (opt.lowerBound == Long.MIN_VALUE ? "-infty" : opt.lowerBound) + ".." + (opt.upperBound == Long.MAX_VALUE ? "+infty" : opt.upperBound),
 				pb.framework == TypeFramework.COP);
 		m.put(NUMBER, instanceNumber, Arguments.nInstancesToSolve > 1);

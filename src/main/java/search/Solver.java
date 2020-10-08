@@ -112,15 +112,15 @@ public abstract class Solver {
 		this.pb = resolution.problem;
 		this.pb.solver = this;
 		this.futVars = new FutureVariables(pb.variables);
-		this.solManager = new SolutionManager(this, resolution.cp.setingGeneral.nSearchedSolutions);
+		this.solManager = new SolutionManager(this, resolution.cp.settingGeneral.nSearchedSolutions);
 		// build solutionManager before propagation
-		this.propagation = resolution.cp.solving.enablePrepro || resolution.cp.solving.enableSearch
-				? Reflector.buildObject(resolution.cp.propagating.clazz, Propagation.class, this)
+		this.propagation = resolution.cp.settingSolving.enablePrepro || resolution.cp.settingSolving.enableSearch
+				? Reflector.buildObject(resolution.cp.settingPropagation.clazz, Propagation.class, this)
 				: null;
-		Kit.control(!(resolution.cp.lns.enabled && resolution.cp.lb.enabled), () -> "Cannot use LNS and LB (local branching) at the same time.");
-		this.restarter = resolution.cp.lns.enabled ? new RestarterLNS(this)
-				: resolution.cp.lb.enabled ? new RestarterLocalBranching(this) : new Restarter(this);
-		if (!resolution.cp.propagating.useAuxiliaryQueues)
+		Kit.control(!(resolution.cp.settingLNS.enabled && resolution.cp.settingLB.enabled), () -> "Cannot use LNS and LB (local branching) at the same time.");
+		this.restarter = resolution.cp.settingLNS.enabled ? new RestarterLNS(this)
+				: resolution.cp.settingLB.enabled ? new RestarterLocalBranching(this) : new Restarter(this);
+		if (!resolution.cp.settingPropagation.useAuxiliaryQueues)
 			Stream.of(pb.constraints).forEach(c -> c.filteringComplexity = 0);
 		observersSearch = Stream.of(pb.constraints).filter(c -> c instanceof ObserverSearch).map(c -> (ObserverSearch) c)
 				.collect(Collectors.toCollection(ArrayList::new));
@@ -181,9 +181,9 @@ public abstract class Solver {
 			observer.beforeSolving();
 		if (Variable.firstWipeoutVariableIn(pb.variables) != null)
 			stoppingType = FULL_EXPLORATION;
-		if (!finished() && rs.cp.solving.enablePrepro)
+		if (!finished() && rs.cp.settingSolving.enablePrepro)
 			doPrepro();
-		if (!finished() && rs.cp.solving.enableSearch)
+		if (!finished() && rs.cp.settingSolving.enableSearch)
 			doSearch();
 		for (ObserverSearch observer : observersSearch)
 			observer.afterSolving();

@@ -22,7 +22,7 @@ public abstract class SecondOrderConsistency extends AC implements TagBinaryRela
 	public SecondOrderConsistency(Solver solver) {
 		super(solver);
 		solver.pb.stuff.cloneStructuresOfConstraintsWithArity(2, false);
-		variant = cp().propagating.variant;
+		variant = cp().settingPropagation.variant;
 		// TODO control the fact that we do not use SupportUnitRmbo as residues can become incorrect when tuples are removed
 		Kit.control(!cp().settingProblem.shareBitVectors);
 	}

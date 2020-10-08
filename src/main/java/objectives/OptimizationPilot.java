@@ -97,8 +97,8 @@ public abstract class OptimizationPilot {
 		Kit.control(opt != null);
 		this.minimization = opt == TypeOptimization.MINIMIZE;
 		this.ctr = ctr; // may be null for some basic cases
-		this.minBound = Math.max(pb.rs.cp.optimizing.lowerBound, ctr != null ? ctr.minComputableObjectiveValue() : Long.MIN_VALUE);
-		this.maxBound = Math.min(pb.rs.cp.optimizing.upperBound, ctr != null ? ctr.maxComputableObjectiveValue() : Long.MAX_VALUE);
+		this.minBound = Math.max(pb.rs.cp.settingOptimization.lowerBound, ctr != null ? ctr.minComputableObjectiveValue() : Long.MIN_VALUE);
+		this.maxBound = Math.min(pb.rs.cp.settingOptimization.upperBound, ctr != null ? ctr.maxComputableObjectiveValue() : Long.MAX_VALUE);
 	}
 
 	/**
@@ -123,14 +123,14 @@ public abstract class OptimizationPilot {
 	protected abstract void shiftLimitWhenFailure();
 
 	public void afterRun() {
-		Kit.control(pb.rs.cp.framework == TypeFramework.COP);
+		Kit.control(pb.rs.cp.settingGeneral.framework == TypeFramework.COP);
 		if (pb.solver.solManager.lastSolutionRun == pb.solver.restarter.numRun) { // a better solution has been found during the last run
 			if (minimization)
 				maxBound = pb.solver.solManager.bestBound - 1;
 			else
 				minBound = pb.solver.solManager.bestBound + 1;
 			possiblyUpdateLocalBounds();
-			Kit.control(minBound - 1 <= maxBound || pb.rs.cp.optimizing.upperBound != Long.MAX_VALUE, () -> " minB=" + minBound + " maxB=" + maxBound);
+			Kit.control(minBound - 1 <= maxBound || pb.rs.cp.settingOptimization.upperBound != Long.MAX_VALUE, () -> " minB=" + minBound + " maxB=" + maxBound);
 			possiblyUpdateSharedBounds();
 			if (minBound > maxBound)
 				pb.solver.stoppingType = EStopping.FULL_EXPLORATION;

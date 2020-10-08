@@ -92,7 +92,7 @@ public final class ReductionOperator {
 		isGACGuaranteed = solver.propagation.getClass() == AC.class && Constraint.isGuaranteedGACOn(solver.pb.constraints);
 		binaryNetwork = solver.pb.stuff.maxCtrArity() == 2;
 		tmpVariable = new int[solver.pb.variables.length];
-		parseReductionMode(learner.solver.rs.cp.learning.stateOperators);
+		parseReductionMode(learner.solver.rs.cp.settingLearning.stateOperators);
 		// Kit.control(!eliminateNotInProofVariables || !(stateRecordingManager instanceof StateEquivalenceManager));
 		selectedVariables = new boolean[solver.pb.variables.length];
 	}

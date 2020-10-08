@@ -54,7 +54,7 @@ public class CtrExtensionGAC4 extends CtrExtension implements FilteringGlobal, T
 
 	public CtrExtensionGAC4(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		Kit.control(pb.rs.cp.solving.enablePrepro);
+		Kit.control(pb.rs.cp.settingSolving.enablePrepro);
 	}
 
 	@Override

@@ -273,13 +273,13 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public final int computeGenericFilteringThreshold() {
 		if (this instanceof FilteringSpecific || this instanceof CtrExtension)
 			return Integer.MAX_VALUE; // because not concerned
-		int arityLimit = pb.rs.cp.propagating.arityLimitForGACGuaranteed;
+		int arityLimit = pb.rs.cp.settingPropagation.arityLimitForGACGuaranteed;
 		if (scp.length <= arityLimit)
 			return Integer.MAX_VALUE;
-		int futureLimitation = pb.rs.cp.propagating.futureLimitation;
+		int futureLimitation = pb.rs.cp.settingPropagation.futureLimitation;
 		if (futureLimitation != -1)
 			return futureLimitation < scp.length ? Math.max(arityLimit, futureLimitation) : Integer.MAX_VALUE;
-		int spaceLimitation = pb.rs.cp.propagating.spaceLimitation;
+		int spaceLimitation = pb.rs.cp.settingPropagation.spaceLimitation;
 		if (spaceLimitation != -1)
 			return Math.max(arityLimit, howManyVarsWithin(scp, spaceLimitation));
 		return Integer.MAX_VALUE;

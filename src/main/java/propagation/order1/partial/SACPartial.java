@@ -36,9 +36,9 @@ public class SACPartial extends SAC implements TagExperimental {
 	public SACPartial(Solver solver) {
 		super(solver);
 		residues = new int[solver.pb.variables.length];
-		cp().propagating.strongOnlyAtPreprocessing = false;
-		if (cp().shaving.limitedPropagationSamplingSize >= 0)
-			pickThresholdManager = new PickThresholdManager(250, cp().shaving.limitedPropagationSamplingSize);
+		cp().settingPropagation.strongOnlyAtPreprocessing = false;
+		if (cp().settingShaving.limitedPropagationSamplingSize >= 0)
+			pickThresholdManager = new PickThresholdManager(250, cp().settingShaving.limitedPropagationSamplingSize);
 	}
 
 	private boolean isEligible(Variable x) {
@@ -47,7 +47,7 @@ public class SACPartial extends SAC implements TagExperimental {
 			return false;
 		int nDeletedElements = 0;
 		long wsumOfDeletedElements = 0;
-		int k = cp().shaving.parameter;
+		int k = cp().settingShaving.parameter;
 		int prevDepth = -1, depth = solver.depth(), stopDepth = depth < k ? -1 : depth - k;
 		int delCntOfLevel = 0;
 		for (int a = dom.lastRemoved(); a != -1 && dom.getRemovedLevelOf(a) > stopDepth; a = dom.prevRemoved(a)) {
@@ -63,7 +63,7 @@ public class SACPartial extends SAC implements TagExperimental {
 		double score = wsumOfDeletedElements / (double) (dom.size() + nDeletedElements);
 		// if (score > GlobalData.shavingEligibilityThreshod)
 		// System.out.println("score = " + score + " sum=" + weightedSumOfDroppedElements + " nb=" + nbDroppedElements);
-		return score > cp().shaving.eligibilityThreshod;
+		return score > cp().settingShaving.eligibilityThreshod;
 	}
 
 	@Override

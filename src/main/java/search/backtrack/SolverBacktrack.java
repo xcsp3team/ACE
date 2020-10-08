@@ -288,18 +288,18 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		super(resolution);
 		this.dr = new DecisionRecorder(this);
 		Set<Class<?>> classes = resolution.handlerClasses.map.get(HeuristicVariables.class);
-		this.heuristicVars = resolution.cp.solving.enableSearch || propagation instanceof GIC2
+		this.heuristicVars = resolution.cp.settingSolving.enableSearch || propagation instanceof GIC2
 				? Reflector.buildObject2(resolution.cp.varh.classForVarHeuristic, classes, this, resolution.cp.varh.anti)
 				: null;
 		this.lcReasoner = new LastConflictReasoner(this, resolution.cp.varh.lastConflictSize);
 		if (heuristicVars != null)
 			Stream.of(pb.variables).forEach(x -> x.buildValueOrderingHeuristic());
 
-		this.learnerNogoods = resolution.cp.solving.enableSearch && resolution.cp.learning.nogood != ELearningNogood.NO && propagation.queue != null
+		this.learnerNogoods = resolution.cp.settingSolving.enableSearch && resolution.cp.settingLearning.nogood != ELearningNogood.NO && propagation.queue != null
 				? new LearnerNogoods(this)
 				: null;
-		this.learnerStates = resolution.cp.learning.state == ELearningState.EQUIVALENCE ? new LearnerStatesEquivalence(this)
-				: resolution.cp.learning.state == ELearningState.DOMINANCE ? new LearnerStatesDominance(this) : null;
+		this.learnerStates = resolution.cp.settingLearning.state == ELearningState.EQUIVALENCE ? new LearnerStatesEquivalence(this)
+				: resolution.cp.settingLearning.state == ELearningState.DOMINANCE ? new LearnerStatesDominance(this) : null;
 		this.proofer = new Proofer(learnerStates);
 
 		int nLevels = pb.variables.length + 1;
@@ -309,7 +309,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		this.observersRuns = collectObserversRuns();
 		this.observersPropagation = collectObserversPropagation();
 
-		this.tracer = new Tracer(resolution.cp.setingGeneral.trace);
+		this.tracer = new Tracer(resolution.cp.settingGeneral.trace);
 		this.stats = this.backtrackStatistics = new StatisticsBacktrack(this);
 		observersSearch.add(0, this.stats);
 
@@ -416,7 +416,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		x.dom.removeElementary(a);
 		boolean consistent = x.dom.size() > 0;
 		if (consistent) {
-			if (rs.cp.solving.branching == EBranching.NON)
+			if (rs.cp.settingSolving.branching == EBranching.NON)
 				return true;
 			stats.nVisitedNodes++;
 			stats.nDecisions++;
@@ -435,7 +435,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	private void manageContradiction() {
 		for (boolean consistent = false; !consistent && stoppingType != EStopping.FULL_EXPLORATION;) {
 			Variable x = futVars.lastPast();
-			if (x == lastPastBeforeRun[nRecursiveRuns - 1] && !rs.cp.lns.enabled)
+			if (x == lastPastBeforeRun[nRecursiveRuns - 1] && !rs.cp.settingLNS.enabled)
 				stoppingType = EStopping.FULL_EXPLORATION;
 			else {
 				int a = x.dom.unique();
@@ -459,7 +459,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			}
 			if (futVars.size() == 0) {
 				solManager.handleNewSolutionAndPossiblyOptimizeIt();
-				if (rs.problem.framework == TypeFramework.COP && !rs.cp.restarting.restartAfterSolution) {
+				if (rs.problem.framework == TypeFramework.COP && !rs.cp.settingRestarts.restartAfterSolution) {
 					// we need to backtrack to the level where a value for a variable in the scope of the objective constraint has been removed for
 					// the last time
 					Constraint c = (Constraint) rs.problem.optimizationPilot.ctr;
@@ -655,7 +655,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 				}
 				return null;
 			}
-			while (backgroundConsistent && 0 < positionOfLastFoundTransitionDecision && nbFoundTransitionDecisions < rs.cp.learning.nogoodArityLimit) {
+			while (backgroundConsistent && 0 < positionOfLastFoundTransitionDecision && nbFoundTransitionDecisions < rs.cp.settingLearning.nogoodArityLimit) {
 				if (positionOfLastFoundTransitionDecision == 1) {
 					tmp[nbFoundTransitionDecisions++] = decs[0];
 					break;
@@ -787,7 +787,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			while (decs[initialLeftOffset] < 0)
 				initialLeftOffset++;
 			int right = nbDecs - 1; // right excluded
-			while (consistent && nbFoundTransitionDecisions < rs.cp.learning.nogoodArityLimit && initialLeftOffset < right) {
+			while (consistent && nbFoundTransitionDecisions < rs.cp.settingLearning.nogoodArityLimit && initialLeftOffset < right) {
 				assert decs[initialLeftOffset] > 0;
 				int IndexOfTransitionDecision = searchTransitionDecision(initialLeftOffset, right, decs, nbDecs, depth());
 				if (IndexOfTransitionDecision == -1)
@@ -798,7 +798,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 				}
 			}
 			restoreProblem();
-			if (consistent && nbFoundTransitionDecisions >= rs.cp.learning.nogoodArityLimit || (right == -1 && nbDecs >= rs.cp.learning.nogoodArityLimit))
+			if (consistent && nbFoundTransitionDecisions >= rs.cp.settingLearning.nogoodArityLimit || (right == -1 && nbDecs >= rs.cp.settingLearning.nogoodArityLimit))
 				return null;
 			int[] nogood = null;
 			if (right == -1) {

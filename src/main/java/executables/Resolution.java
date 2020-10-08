@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xcsp.common.Constants;
 import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Utilities;
 import org.xcsp.modeler.api.ProblemAPI;
@@ -261,11 +260,11 @@ public class Resolution extends Thread {
 	 */
 
 	public boolean mustPreserveUnaryConstraints() {
-		return cp.settingCtrs.preserveUnaryCtrs || this instanceof Extraction || cp.symmetryBreaking || cp.framework == TypeFramework.MAXCSP;
+		return cp.settingCtrs.preserveUnaryCtrs || this instanceof Extraction || cp.symmetryBreaking || cp.settingGeneral.framework == TypeFramework.MAXCSP;
 	}
 
 	public boolean isTimeExpiredForCurrentInstance() {
-		return cp.setingGeneral.timeout <= instanceStopwatch.getWckTime();
+		return cp.settingGeneral.timeout <= instanceStopwatch.getWckTime();
 	}
 
 	public Resolution(String configurationFileName) {
@@ -283,7 +282,7 @@ public class Resolution extends Thread {
 
 	public Problem buildProblem(int instanceNumber) {
 		this.instanceNumber = instanceNumber;
-		random.setSeed(cp.setingGeneral.seed + instanceNumber);
+		random.setSeed(cp.settingGeneral.seed + instanceNumber);
 		ProblemAPI api = null;
 		try {
 			if (Arguments.problemPackageName.equals(XCSP3.class.getName()))
@@ -310,9 +309,9 @@ public class Resolution extends Thread {
 	}
 
 	protected final Solver buildSolver(Problem problem) {
-		Kit.log.config((problem.rs.cp.competitionMode ? "" : "\n") + Output.COMMENT_PREFIX + "Solver " + cp.solving.clazz + " being built..."
-				+ (problem.rs.cp.competitionMode ? "\n" : ""));
-		solver = Reflector.buildObject(cp.solving.clazz, Solver.class, this);
+		boolean cm = problem.rs.cp.settingXml.competitionMode;
+		Kit.log.config((cm ? "" : "\n") + Output.COMMENT_PREFIX + "Solver " + cp.settingSolving.clazz + " being built..." + (cm ? "\n" : ""));
+		solver = Reflector.buildObject(cp.settingSolving.clazz, Solver.class, this);
 		for (ObserverConstruction obs : observersConstruction)
 			obs.onConstructionSolverFinished();
 		return solver;
@@ -320,24 +319,24 @@ public class Resolution extends Thread {
 
 	private int[] localSearchAtPreprocessing() {
 		int[] solution = null;
-		if (cp.hardCoding.localSearchAtPreprocessing) {
-			String solverClassName = cp.solving.clazz;
-			cp.solving.clazz = SolverLocal.class.getSimpleName();
-			int nRuns = cp.restarting.nRunsLimit;
-			cp.restarting.nRunsLimit = 10;
-			long cutoff = cp.restarting.cutoff;
-			cp.restarting.cutoff = 10000;
-			boolean prepro = cp.solving.enablePrepro;
-			cp.solving.enablePrepro = false;
+		if (cp.settingHardCoding.localSearchAtPreprocessing) {
+			String solverClassName = cp.settingSolving.clazz;
+			cp.settingSolving.clazz = SolverLocal.class.getSimpleName();
+			int nRuns = cp.settingRestarts.nRunsLimit;
+			cp.settingRestarts.nRunsLimit = 10;
+			long cutoff = cp.settingRestarts.cutoff;
+			cp.settingRestarts.cutoff = 10000;
+			boolean prepro = cp.settingSolving.enablePrepro;
+			cp.settingSolving.enablePrepro = false;
 			solver = buildSolver(problem);
 			solver.solve();
 			solution = solver.solManager.lastSolution;
-			cp.optimizing.upperBound = ((SolverLocal) solver).nMinViolatedCtrs;
+			cp.settingOptimization.upperBound = ((SolverLocal) solver).nMinViolatedCtrs;
 			if (solver.stoppingType != EStopping.REACHED_GOAL) {
-				cp.solving.clazz = solverClassName;
-				cp.restarting.nRunsLimit = nRuns;
-				cp.restarting.cutoff = cutoff;
-				cp.solving.enablePrepro = prepro;
+				cp.settingSolving.clazz = solverClassName;
+				cp.settingRestarts.nRunsLimit = nRuns;
+				cp.settingRestarts.cutoff = cutoff;
+				cp.settingSolving.enablePrepro = prepro;
 			}
 		}
 		return solution;
@@ -351,11 +350,10 @@ public class Resolution extends Thread {
 		observersConstruction.clear();
 		observersConstruction.add(output);
 		problem = buildProblem(instanceNumber);
-		if (!cp.setingGeneral.saveNetworkGraph.equals(Constants.EMPTY_STRING))
-			Graphviz.saveGraph(problem, cp.setingGeneral.saveNetworkGraph);
+		Graphviz.saveGraph(problem, cp.settingGeneral.saveNetworkGraph);
 		problem.display();
 
-		if (cp.competitionMode && problem.framework == TypeFramework.COP) {
+		if (cp.settingXml.competitionMode && problem.framework == TypeFramework.COP) {
 			Runtime.getRuntime().addShutdownHook(new Thread() {
 				@Override
 				public void run() {
@@ -375,7 +373,7 @@ public class Resolution extends Thread {
 			});
 		}
 
-		if (cp.solving.enablePrepro || cp.solving.enableSearch) {
+		if (cp.settingSolving.enablePrepro || cp.settingSolving.enableSearch) {
 			int[] solution = localSearchAtPreprocessing();
 			solver = buildSolver(problem);
 			if (solution != null)
@@ -398,7 +396,7 @@ public class Resolution extends Thread {
 			} catch (Throwable e) {
 				crashed = true;
 				Kit.log.warning("Instance with exception");
-				if (cp.setingGeneral.makeExceptionsVisible)
+				if (cp.settingGeneral.makeExceptionsVisible)
 					e.printStackTrace();
 			}
 			statisticsMultiresolution.update(crashed);

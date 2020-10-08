@@ -27,7 +27,7 @@ public final class Reviser3 extends Reviser2 {
 	public Reviser3(PropagationForward propagation) {
 		super(propagation);
 		long nbResidues = 0;
-		if (!propagation.solver.rs.cp.propagating.bitResidues) {
+		if (!propagation.solver.rs.cp.settingPropagation.bitResidues) {
 			bitRmResidues = new short[0][][];
 			return;
 		}
@@ -38,14 +38,14 @@ public final class Reviser3 extends Reviser2 {
 			if (c.extStructure() instanceof Bits) {
 				int size0 = c.scp[0].dom.initSize(), size1 = c.scp[1].dom.initSize();
 				bitRmResidues[c.num] = new short[2][];
-				if (size0 > propagation.cp().propagating.residueLimitForBitRm)
+				if (size0 > propagation.cp().settingPropagation.residueLimitForBitRm)
 					bitRmResidues[c.num][1] = new short[size1];
-				if (size1 > propagation.cp().propagating.residueLimitForBitRm)
+				if (size1 > propagation.cp().settingPropagation.residueLimitForBitRm)
 					bitRmResidues[c.num][0] = new short[size0];
-				nbResidues += (size0 > propagation.cp().propagating.residueLimitForBitRm ? size1 : 0)
-						+ (size1 > propagation.cp().propagating.residueLimitForBitRm ? size0 : 0);
+				nbResidues += (size0 > propagation.cp().settingPropagation.residueLimitForBitRm ? size1 : 0)
+						+ (size1 > propagation.cp().settingPropagation.residueLimitForBitRm ? size0 : 0);
 			}
-			if (nbResidues * 2 + Kit.getUsedMemory() > propagation.cp().propagating.memoryLimitForBitRm) {
+			if (nbResidues * 2 + Kit.getUsedMemory() > propagation.cp().settingPropagation.memoryLimitForBitRm) {
 				Kit.log.info("Stop creating residues for RevisionManagerBitRm");
 				break;
 			}

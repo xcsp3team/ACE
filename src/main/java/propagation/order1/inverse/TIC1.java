@@ -27,7 +27,7 @@ public class TIC1 extends GIC1 {
 	public TIC1(Solver solver) {
 		super(solver);
 		Kit.control(
-				solver.rs.cp.experimental.testI1 > 0 || Stream.of(solver.pb.constraints).allMatch(c -> c.getClass().isAssignableFrom(CtrExtensionSTR2.class)));
+				solver.rs.cp.settingExperimental.testI1 > 0 || Stream.of(solver.pb.constraints).allMatch(c -> c.getClass().isAssignableFrom(CtrExtensionSTR2.class)));
 	}
 
 	protected boolean isInverse(Variable[] scope, int[] tuple) {
@@ -75,9 +75,9 @@ public class TIC1 extends GIC1 {
 
 	@Override
 	public boolean enforceStrongConsistency() {
-		if (solver.rs.cp.experimental.testI1 > 0) {
+		if (solver.rs.cp.settingExperimental.testI1 > 0) {
 			performingProperSearch = true;
-			Variable[] vars = new Variable[solver.rs.cp.experimental.testI1];
+			Variable[] vars = new Variable[solver.rs.cp.settingExperimental.testI1];
 			int[] t = Kit.range(solver.pb.variables.length);
 			for (int i = 0; i < vars.length; i++) {
 				int id = solver.rs.random.nextInt(t.length - i);
@@ -95,7 +95,7 @@ public class TIC1 extends GIC1 {
 					cnt++;
 			Kit.log.info(cnt + " tuples removed from " + Kit.join(vars));
 			performingProperSearch = false;
-			cp().solving.enableSearch = false;
+			cp().settingSolving.enableSearch = false;
 			return true;
 		} else {
 			boolean consistent = super.enforceStrongConsistency();

@@ -20,7 +20,7 @@ public class Activity extends ActivityImpactAbstract {
 	@Override
 	public void beforeRun() {
 		super.beforeRun();
-		if (solver.restarter.numRun != 0 && solver.restarter.numRun % solver.rs.cp.restarting.dataResetPeriod == 0) {
+		if (solver.restarter.numRun != 0 && solver.restarter.numRun % solver.rs.cp.settingRestarts.dataResetPeriod == 0) {
 			Kit.log.info("Reset of activities");
 			Arrays.fill(activities, 0);
 		}

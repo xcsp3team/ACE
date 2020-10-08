@@ -64,8 +64,8 @@ public final class SolutionManager {
 	public SolutionManager(Solver solver, long nSolutionsLimit) {
 		this.solver = solver;
 		this.nSolutionsLimit = nSolutionsLimit;
-		this.bestBound = solver.rs.cp.optimizing.upperBound;
-		this.allSolutions = solver.rs.cp.setingGeneral.recordSolutions ? new ArrayList<int[]>() : null;
+		this.bestBound = solver.rs.cp.settingOptimization.upperBound;
+		this.allSolutions = solver.rs.cp.settingGeneral.recordSolutions ? new ArrayList<int[]>() : null;
 		this.solutionOptimizer = new SolutionOptimizer(this);
 	}
 
@@ -116,7 +116,7 @@ public final class SolutionManager {
 			bestBound = solver.pb.optimizationPilot.value();
 			Kit.control(solver.pb.optimizationPilot.isBetterBound(bestBound));
 			// solver.restarter.forceRootPropagation = true;
-			if (solver.rs.cp.competitionMode)
+			if (solver.rs.cp.settingXml.competitionMode)
 				System.out.println("o " + bestBound + "  (hamming: " + h1 + ", in_objective: " + h2 + ")");
 		}
 		solver.pb.prettyDisplay();
@@ -134,7 +134,7 @@ public final class SolutionManager {
 
 	public void displayFinalResults() {
 		boolean fullExploration = solver.stoppingType == EStopping.FULL_EXPLORATION;
-		if (solver.rs.cp.competitionMode) {
+		if (solver.rs.cp.settingXml.competitionMode) {
 			synchronized (solver.rs.competitionLock) {
 				if (!solver.rs.competitionLock.get()) {
 					solver.rs.competitionLock.set(true);

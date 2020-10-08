@@ -64,10 +64,10 @@ public class ACPartialLevel extends SAC implements TagExperimental {
 	public ACPartialLevel(Solver solver) {
 		super(solver);
 		int length = 250, nbVariables = solver.pb.variables.length;
-		if (cp().shaving.limitedPropagationSamplingSize >= 0) {
+		if (cp().settingShaving.limitedPropagationSamplingSize >= 0) {
 			pickThresholdManagers = new PickThresholdManager[nbVariables + 1];
 			for (int i = 0; i < pickThresholdManagers.length; i++)
-				pickThresholdManagers[i] = new PickThresholdManager(length, cp().shaving.limitedPropagationSamplingSize);
+				pickThresholdManagers[i] = new PickThresholdManager(length, cp().settingShaving.limitedPropagationSamplingSize);
 		}
 		if (displayEffectif) {
 			effectifTrue = new int[nbVariables + 1][length];

@@ -15,6 +15,8 @@ import java.util.Scanner;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.xcsp.common.Constants;
+
 import constraints.Constraint;
 import constraints.CtrHard;
 import problem.Problem;
@@ -262,6 +264,8 @@ public class Graphviz {
 	}
 
 	public static void saveGraph(Problem pb, String patternForSaving) {
+		if (patternForSaving.equals(Constants.EMPTY_STRING))
+			return;
 		// Kit.control(patternSaving.m 3 bits
 		if (--countdown != 0)
 			return;

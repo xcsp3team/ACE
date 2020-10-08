@@ -36,8 +36,8 @@ public abstract class ActivityImpactAbstract extends HeuristicVariables implemen
 	public ActivityImpactAbstract(SolverBacktrack solver, boolean antiHeuristic) {
 		super(solver, antiHeuristic);
 		this.lastSizes = Stream.of(solver.pb.variables).mapToInt(x -> x.dom.size()).toArray();
-		Kit.control(solver.rs.cp.solving.branching == EBranching.BIN);
-		Kit.control(solver.rs.cp.restarting.dataResetPeriod != 0);
+		Kit.control(solver.rs.cp.settingSolving.branching == EBranching.BIN);
+		Kit.control(solver.rs.cp.settingRestarts.dataResetPeriod != 0);
 	}
 
 	protected abstract void update();

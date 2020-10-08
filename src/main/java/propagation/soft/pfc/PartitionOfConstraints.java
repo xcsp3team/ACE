@@ -81,7 +81,7 @@ public abstract class PartitionOfConstraints {
 		Arrays.fill(first, -1);
 		Arrays.fill(size, 0);
 		firstPast = -1;
-		distance = solver.rs.cp.optimizing.lowerBound;
+		distance = solver.rs.cp.settingOptimization.lowerBound;
 		for (Constraint ctr : ctrs)
 			if (ctr.futvars.size() == 0)
 				dealWithPastConstraint(ctr);

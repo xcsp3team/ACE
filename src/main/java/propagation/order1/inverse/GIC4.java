@@ -47,7 +47,7 @@ public class GIC4 extends GICAdvanced {
 		valVariableNums = new int[variables.length];
 		lastSizes = Kit.repeat(-2, variables.length);
 
-		algo = solver.rs.cp.experimental.testI3;
+		algo = solver.rs.cp.settingExperimental.testI3;
 	}
 
 	private void handleSolution(int[] solution) {
@@ -123,7 +123,7 @@ public class GIC4 extends GICAdvanced {
 
 	@Override
 	public boolean runAfterAssignment(Variable x) {
-		return !performingProperSearch && !x.dom.isModifiedAtCurrentDepth() && solver.depth() != solver.rs.cp.experimental.testI1 ? true
+		return !performingProperSearch && !x.dom.isModifiedAtCurrentDepth() && solver.depth() != solver.rs.cp.settingExperimental.testI1 ? true
 				: super.runAfterAssignment(x);
 	}
 
@@ -356,8 +356,8 @@ public class GIC4 extends GICAdvanced {
 	// private long cpu;
 
 	private void restoreAfterDeletingOneDecision() {
-		origin = solver.rs.cp.experimental.testI1;
-		target = solver.rs.cp.experimental.testI2;
+		origin = solver.rs.cp.settingExperimental.testI1;
+		target = solver.rs.cp.settingExperimental.testI2;
 		if (nTurns == 0 && origin > 0 && solver.depth() == origin) {
 			nTurns++;
 			int nbItestsBefore = this.nITests;

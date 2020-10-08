@@ -39,9 +39,9 @@ public final class PropagationQueue extends SetSparse {
 	public PropagationQueue(PropagationForward propagation) {
 		super(propagation.pb().variables.length);
 		this.propagation = propagation;
-		String className = propagation.pb().stuff.maxDomSize() <= 4 ? First.class.getSimpleName() : propagation.cp().revh.classForRevHeuristic;
+		String className = propagation.pb().stuff.maxDomSize() <= 4 ? First.class.getSimpleName() : propagation.cp().settingRevh.classForRevHeuristic;
 		Set<Class<?>> classes = propagation.solver.rs.handlerClasses.map.get(HeuristicRevisions.class);
-		this.heuristic = Reflector.buildObject2(className, classes, this, propagation.cp().revh.anti);
+		this.heuristic = Reflector.buildObject2(className, classes, this, propagation.cp().settingRevh.anti);
 		this.variables = propagation.pb().variables;
 	}
 

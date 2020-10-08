@@ -60,10 +60,10 @@ public final class SolverLocal extends Solver {
 
 	public SolverLocal(Resolution resolution) {
 		super(resolution);
-		this.neighborHeuristic = Reflector.buildObject(resolution.cp.nghh.classForNeighborHeuristic, HeuristicNeighbors.class, this);
+		this.neighborHeuristic = Reflector.buildObject(resolution.cp.settingLocalSearch.classForNeighborHeuristic, HeuristicNeighbors.class, this);
 		this.conflictManager = new ConflictManager(this);
 		stats = this.localStatistics = new StatisticsLocal(this);
-		this.nIterations = resolution.cp.restarting.cutoff == -2 ? 10 * pb.variables.length : resolution.cp.restarting.cutoff;
+		this.nIterations = resolution.cp.settingRestarts.cutoff == -2 ? 10 * pb.variables.length : resolution.cp.settingRestarts.cutoff;
 	}
 
 	// @Override

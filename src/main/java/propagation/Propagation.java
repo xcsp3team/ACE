@@ -143,7 +143,7 @@ public abstract class Propagation {
 	public Propagation(Solver solver) {
 		this.solver = solver;
 		this.queue = this instanceof PropagationForward ? new PropagationQueue((PropagationForward) this) : null;
-		int nAuxQueues = cp().propagating.useAuxiliaryQueues ? Constraint.MAX_FILTERING_COMPLEXITY : 0;
+		int nAuxQueues = cp().settingPropagation.useAuxiliaryQueues ? Constraint.MAX_FILTERING_COMPLEXITY : 0;
 		this.auxiliaryQueues = this instanceof PropagationForward ? SetSparseMap.buildArray(nAuxQueues, solver.pb.constraints.length) : null;
 		this.hards = Stream.of(solver.pb.constraints).filter(c -> c instanceof CtrHard).map(c -> (CtrHard) c).toArray(CtrHard[]::new);
 	}

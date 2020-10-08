@@ -58,10 +58,10 @@ public class ACPartialVariable extends SAC implements TagExperimental {
 	public ACPartialVariable(Solver solver) {
 		super(solver);
 		int length = 250, nVariables = solver.pb.variables.length;
-		if (cp().shaving.limitedPropagationSamplingSize >= 0) {
+		if (cp().settingShaving.limitedPropagationSamplingSize >= 0) {
 			pickThresholdManagers = new PickThresholdManager[nVariables];
 			for (int i = 0; i < pickThresholdManagers.length; i++)
-				pickThresholdManagers[i] = new PickThresholdManager(length, cp().shaving.limitedPropagationSamplingSize);
+				pickThresholdManagers[i] = new PickThresholdManager(length, cp().settingShaving.limitedPropagationSamplingSize);
 		}
 		if (displayEffectif) {
 			effectifTrue = new int[nVariables][length];

@@ -94,9 +94,9 @@ public abstract class CtrHard extends Constraint {
 
 	@Override
 	public void buildSupporter() {
-		if (pb.rs.cp.propagating.residues != (supporter != null))
-			if (pb.rs.cp.propagating.residues && scp.length > 1 && !(this instanceof FilteringSpecific)
-					&& !(pb.rs.cp.propagating.classForRevisions.equals(Reviser3.class.getSimpleName()) && extStructure() instanceof Bits))
+		if (pb.rs.cp.settingPropagation.residues != (supporter != null))
+			if (pb.rs.cp.settingPropagation.residues && scp.length > 1 && !(this instanceof FilteringSpecific)
+					&& !(pb.rs.cp.settingPropagation.classForRevisions.equals(Reviser3.class.getSimpleName()) && extStructure() instanceof Bits))
 				supporter = scp.length == 2 ? new SupporterHardBary(this) : new SupporterHardNary(this);
 			else
 				supporter = null;

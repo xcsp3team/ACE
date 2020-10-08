@@ -92,7 +92,7 @@ public class XCSP3 extends ProblemFile implements XCallbacks2 {
 	@Override
 	public void model() {
 		try {
-			Kit.log.info("Discarded classes " + imp().rs.cp.settingXml.discardedClasses);
+			// Kit.log.info("Discarded classes " + imp().rs.cp.settingXml.discardedClasses);
 			if (imp().rs.cp.verbose > 1)
 				XParser.VERBOSE = true;
 			if (imp().rs.cp.settingXml.discardedClasses.indexOf(',') < 0)
@@ -114,8 +114,8 @@ public class XCSP3 extends ProblemFile implements XCallbacks2 {
 	@Override
 	public void beginInstance(TypeFramework type) {
 		if (type == TypeFramework.COP) { // && this.framework == TypeFramework.CSP) {
-			imp().rs.cp.framework = TypeFramework.COP;
-			imp().rs.cp.setingGeneral.nSearchedSolutions = Long.MAX_VALUE;
+			imp().rs.cp.settingGeneral.framework = TypeFramework.COP;
+			imp().rs.cp.settingGeneral.nSearchedSolutions = Long.MAX_VALUE;
 			imp().framework = TypeFramework.COP;
 		}
 	}

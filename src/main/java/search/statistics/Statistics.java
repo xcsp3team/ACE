@@ -233,17 +233,17 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		@Override
 		public MapAtt runAttributes() {
 			MapAtt m = new MapAtt("Run");
-			if (solver.rs.cp.competitionMode) {
+			if (solver.rs.cp.settingXml.competitionMode) {
 				m.put("run", solver.restarter.numRun);
 				m.put(Output.DEPTH, solver.minDepth + ".." + solver.maxDepth);
-				m.put("#filters", nEffectiveFilterings());
-				m.put("#wrong", nWrongDecisions);
+				m.put("nFilters", nEffectiveFilterings());
+				m.put("nWrong", nWrongDecisions);
 				m.put(Output.MEM, Kit.getFormattedUsedMemorySize());
 				m.put(Output.WCK, stopwatch.getWckTime() / 1000.0);
 				if (solver.learnerNogoods != null)
-					m.putPositive("#nogoods", solver.learnerNogoods.nNogoods);
+					m.putPositive("nNogoods", solver.learnerNogoods.nNogoods);
 				if (solver.solManager.nSolutionsFound > 0) {
-					m.put("#sols", solver.solManager.nSolutionsFound);
+					m.put("nSols", solver.solManager.nSolutionsFound);
 					if (solver.pb.framework != TypeFramework.CSP)
 						m.put("bound", nformat.format(solver.solManager.bestBound));
 				}

@@ -30,7 +30,7 @@ public class Weak3 extends Weak1 implements TagExperimental {
 		int topStack = ((SolverBacktrack) solver).observerVars.top;
 		for (int i = 0; i < c.scp.length; i++)
 			c.scp[i].dom.reduceToElementary(tuple[i]);
-		solver.restarter.currCutoff = cp().propagating.weakCutoff;
+		solver.restarter.currCutoff = cp().settingPropagation.weakCutoff;
 		solver.doRun();
 		boolean consistent = !(solver.isFullExploration() && solver.solManager.nSolutionsFound == 0);
 		if (solver.isFullExploration())
@@ -105,7 +105,7 @@ public class Weak3 extends Weak1 implements TagExperimental {
 		nPreproRemovals = pb().nValuesRemoved - before;
 		Kit.log.finest(() -> "\n   nbACRemovals = " + nPreproRemovals);
 
-		cp().restarting.nRunsLimit = 0;
+		cp().settingRestarts.nRunsLimit = 0;
 		return true;
 	}
 }

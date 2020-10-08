@@ -14,7 +14,8 @@ import org.xcsp.common.Types.TypeFramework;
 
 import constraints.hard.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
 import constraints.hard.global.ObjVar;
-import dashboard.ControlPanel.Restarting;
+import dashboard.ControlPanel.SettingGeneral;
+import dashboard.ControlPanel.SettingRestarts;
 import interfaces.ObserverRuns;
 import search.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
@@ -48,7 +49,7 @@ public class Restarter implements ObserverRuns {
 		// boolean b = forceRootPropagation;
 		// if (!b && solver.rs.cp.framework == TypeFramework.COP)
 		// b = numRun - 1 == solver.solManager.lastSolutionRun; // || !(solver.pb.optimizationPilot instanceof OptimizationPilotDecreasing);
-		if (forceRootPropagation || (solver.rs.cp.framework == TypeFramework.COP && numRun - 1 == solver.solManager.lastSolutionRun)) {
+		if (forceRootPropagation || (settingsGeneral.framework == TypeFramework.COP && numRun - 1 == solver.solManager.lastSolutionRun)) {
 			forceRootPropagation = false;
 			nRestartsSinceLastReset = 0;
 			if (solver.propagation.runInitially() == false)
@@ -58,7 +59,7 @@ public class Restarter implements ObserverRuns {
 
 	@Override
 	public void afterRun() {
-		if (solver.rs.cp.framework == TypeFramework.COP)
+		if (settingsGeneral.framework == TypeFramework.COP)
 			solver.pb.optimizationPilot.afterRun();
 	}
 
@@ -70,7 +71,9 @@ public class Restarter implements ObserverRuns {
 	/**
 	 * The settings used for piloting the restarter (redundant field).
 	 */
-	private Restarting setting;
+	private SettingRestarts setting;
+
+	private SettingGeneral settingsGeneral;
 
 	/**
 	 * The measure used for handling cutoff values.
@@ -120,9 +123,10 @@ public class Restarter implements ObserverRuns {
 
 	public Restarter(Solver solver) {
 		this.solver = solver;
-		this.setting = solver.rs.cp.restarting;
+		this.setting = solver.rs.cp.settingRestarts;
+		this.settingsGeneral = solver.rs.cp.settingGeneral;
 		this.measureSupplier = measureSupplier();
-		if (solver.rs.cp.framework == TypeFramework.COP)
+		if (settingsGeneral.framework == TypeFramework.COP)
 			setting.cutoff *= 10;
 		reset();
 	}
@@ -134,7 +138,7 @@ public class Restarter implements ObserverRuns {
 			solver.pb.optimizationPilot.possiblyUpdateLocalBounds();
 		if (measureSupplier.get() >= currCutoff)
 			return true;
-		if (solver.rs.cp.framework != TypeFramework.COP || numRun != solver.solManager.lastSolutionRun)
+		if (settingsGeneral.framework != TypeFramework.COP || numRun != solver.solManager.lastSolutionRun)
 			return false;
 		if (setting.restartAfterSolution)
 			return true;

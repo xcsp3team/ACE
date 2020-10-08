@@ -192,13 +192,13 @@ public abstract class StatisticsMultiResolution {
 					map.put(Output.CPU, resolution.stopwatch.getCpuTime() / (double) nbTreatedInstances);
 					map.put(Output.MEM, (long) (memory / (double) nbTreatedInstances));
 
-					if (resolution.cp.experimental.helene)
+					if (resolution.cp.settingExperimental.helene)
 						map.put("NbRemovedValues", Kit.join(nbRemovedValues, ";"));
 
 					if (outputElement == TypeOutput.UNSAT)
 						map.put(Output.N_PREPRO_INCONSISTENCIES, nbPreproInconsistencies);
 
-					if (resolution.cp.experimental.helene) {
+					if (resolution.cp.settingExperimental.helene) {
 						map.put("nbVals", nbVals / (double) nbTreatedInstances);
 						map.put("nbUnks", nbUnks / (double) nbTreatedInstances);
 						map.put("nbUnksAfterAC", nbUnksAfterAC / (double) nbTreatedInstances);

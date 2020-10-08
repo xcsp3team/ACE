@@ -39,7 +39,7 @@ public abstract class StrongConsistency extends AC {
 		int nBefore = pb().nValuesRemoved;
 		if (enforceArcConsistency() == false)
 			return false;
-		if (cp().propagating.strongOnlyWhenACEffective && pb().nValuesRemoved == nBefore)
+		if (cp().settingPropagation.strongOnlyWhenACEffective && pb().nValuesRemoved == nBefore)
 			return true;
 		return enforceMore();
 	}
@@ -49,9 +49,9 @@ public abstract class StrongConsistency extends AC {
 		int nBefore = pb().nValuesRemoved;
 		if (enforceArcConsistencyAfterAssignment(x) == false)
 			return false;
-		return performingProperSearch || cp().propagating.strongOnlyAtPreprocessing
-				|| (cp().propagating.strongOnlyWhenACEffective && pb().nValuesRemoved == nBefore)
-				|| (cp().propagating.strongOnlyWhenNotSingleton && !x.dom.isModifiedAtCurrentDepth() && hasSolverPropagatedAfterLastButOneDecision()) ? true
+		return performingProperSearch || cp().settingPropagation.strongOnlyAtPreprocessing
+				|| (cp().settingPropagation.strongOnlyWhenACEffective && pb().nValuesRemoved == nBefore)
+				|| (cp().settingPropagation.strongOnlyWhenNotSingleton && !x.dom.isModifiedAtCurrentDepth() && hasSolverPropagatedAfterLastButOneDecision()) ? true
 						: enforceMore();
 	}
 
@@ -60,8 +60,8 @@ public abstract class StrongConsistency extends AC {
 		int nBefore = pb().nValuesRemoved;
 		if (enforceArcConsistencyAfterRefutation(x) == false)
 			return false;
-		return performingProperSearch || cp().propagating.strongOnlyAtPreprocessing
-				|| (cp().propagating.strongOnlyWhenACEffective && pb().nValuesRemoved == nBefore) ? true : enforceMore();
+		return performingProperSearch || cp().settingPropagation.strongOnlyAtPreprocessing
+				|| (cp().settingPropagation.strongOnlyWhenACEffective && pb().nValuesRemoved == nBefore) ? true : enforceMore();
 	}
 
 }

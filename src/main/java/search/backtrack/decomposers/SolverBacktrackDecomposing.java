@@ -46,7 +46,7 @@ public final class SolverBacktrackDecomposing extends SolverBacktrack implements
 	private void branchingFor(Variable x) {
 		top++;
 		if (decomposers[top] == null)
-			decomposers[top] = Reflector.buildObject(rs.cp.hardCoding.classForDecompositionSolver, Decomposer.class, this);
+			decomposers[top] = Reflector.buildObject(rs.cp.settingHardCoding.classForDecompositionSolver, Decomposer.class, this);
 		Decomposer decomposer = decomposers[top];
 		decomposer.initialize(x);
 		int a = x.heuristicVal.bestIndex();

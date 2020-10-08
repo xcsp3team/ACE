@@ -26,11 +26,11 @@ public abstract class PropagationForward extends Propagation {
 
 	public PropagationForward(Solver solver) {
 		super(solver);
-		this.reviser = Reflector.buildObject(cp().propagating.classForRevisions, Reviser.class, this);
+		this.reviser = Reflector.buildObject(cp().settingPropagation.classForRevisions, Reviser.class, this);
 	}
 
 	protected final boolean hasSolverPropagatedAfterLastButOneDecision() {
-		return cp().solving.branching != EBranching.NON || !((SolverBacktrack) solver).dr.isLastButOneDecisionNegative();
+		return cp().settingSolving.branching != EBranching.NON || !((SolverBacktrack) solver).dr.isLastButOneDecisionNegative();
 	}
 
 	@Override

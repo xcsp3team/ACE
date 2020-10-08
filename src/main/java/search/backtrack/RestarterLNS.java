@@ -5,7 +5,7 @@ import static utility.Kit.control;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import dashboard.ControlPanel.LargeNeighborhoodSearch;
+import dashboard.ControlPanel.SettingLNS;
 import search.Restarter;
 import search.Solver;
 import search.backtrack.RestarterLNS.HeuristicFreezing.Impact;
@@ -20,7 +20,7 @@ public class RestarterLNS extends Restarter {
 
 	public RestarterLNS(Solver solver) {
 		super(solver);
-		if (solver.rs.cp.lns.freezingHeuristic.equals(Impact.class.getName()))
+		if (solver.rs.cp.settingLNS.freezingHeuristic.equals(Impact.class.getName()))
 			this.h = new Impact(this);
 		else
 			this.h = new Rand(this);
@@ -61,11 +61,11 @@ public class RestarterLNS extends Restarter {
 		public HeuristicFreezing(RestarterLNS restarter) {
 			this.restarter = restarter;
 			int n = restarter.solver.pb.variables.length;
-			LargeNeighborhoodSearch setting = restarter.solver.rs.cp.lns;
+			SettingLNS setting = restarter.solver.rs.cp.settingLNS;
 
 			this.freezingShuffled = IntStream.range(0, n).toArray();
 			if (0 < setting.nVariablesToFreeze && setting.nVariablesToFreeze < n)
-				this.freezingSize = restarter.solver.rs.cp.lns.nVariablesToFreeze;
+				this.freezingSize = restarter.solver.rs.cp.settingLNS.nVariablesToFreeze;
 			else if (0 < setting.pVariablesToFreeze && setting.pVariablesToFreeze < 100)
 				this.freezingSize = 1 + (setting.pVariablesToFreeze * n) / 100;
 			else

@@ -11,13 +11,13 @@ package utility.sets;
 import java.util.function.Consumer;
 
 /**
- * This class allows representing a list of elements perceived as indexes, i.e., elements whose values range from 0 to a specified capacity
- * -1. For instance, if the initial size (capacity) of the object is 10, then the list of indexes/elements is 0, 1, 2... , 9. One can remove
- * elements of the list. Then, one can iterate, in a forward way, currently present elements by using the methods <code> getFirst </code>
- * and <code> getNext </code>. Also, one can iterate, in a backward way, currently present elements by using the methods
- * <code> getLast </code> and <code> getPrev </code>. Initially, the set is full. On can iterate over deleted elements by using the methods
- * <code> getLastDel </code> and <code> getPrevDel </code>. Each deleted elements has an associated level that can be obtained by using the
- * method getDelLevelFor. This kind of object is used for managing the indexes of values of variable domains.
+ * This class allows representing a list of elements perceived as indexes, i.e., elements whose values range from 0 to a specified capacity -1. For
+ * instance, if the initial size (capacity) of the object is 10, then the list of indexes/elements is 0, 1, 2... , 9. One can remove elements of the
+ * list. Then, one can iterate, in a forward way, currently present elements by using the methods <code> getFirst </code> and <code> getNext </code>.
+ * Also, one can iterate, in a backward way, currently present elements by using the methods <code> getLast </code> and <code> getPrev </code>.
+ * Initially, the set is full. On can iterate over deleted elements by using the methods <code> getLastDel </code> and <code> getPrevDel </code>. Each
+ * deleted elements has an associated level that can be obtained by using the method getDelLevelFor. This kind of object is used for managing the
+ * indexes of values of variable domains.
  */
 public interface LinkedSet {
 
@@ -88,8 +88,7 @@ public interface LinkedSet {
 	int prev(int a);
 
 	/**
-	 * Returns the ith element (index of value) of the current set. Be careful: with most of the implementations, this operation is not
-	 * O(1).
+	 * Returns the ith element (index of value) of the current set. Be careful: with most of the implementations, this operation is not O(1).
 	 * 
 	 * @param i
 	 *            the position of an element
@@ -141,8 +140,8 @@ public interface LinkedSet {
 	int getRemovedLevelOf(int a);
 
 	/**
-	 * Removes the specified element (index of value) at the specified level. The value is assumed to be currently present. BE CAREFUL: this
-	 * method should normally not be called directly.
+	 * Removes the specified element (index of value) at the specified level. The value is assumed to be currently present. BE CAREFUL: this method
+	 * should normally not be called directly.
 	 * 
 	 * @param a
 	 *            the index of a value
@@ -152,8 +151,8 @@ public interface LinkedSet {
 	void remove(int a, int level);
 
 	/**
-	 * Reduces the set to the specified element (index of value) at the specified level. BE CAREFUL: this method should normally not be
-	 * called directly.
+	 * Reduces the set to the specified element (index of value) at the specified level. BE CAREFUL: this method should normally not be called
+	 * directly.
 	 * 
 	 * @param a
 	 *            the index of a value
@@ -223,17 +222,17 @@ public interface LinkedSet {
 	}
 
 	/**
-	 * Returns the state of the object under the form of a sequence of bits. In other words, returns a binary representation corresponding
-	 * to the present/deleted elements. If the ith bit of the jth long of the returned array is 1, it means that the (j*64)+ith value is
-	 * currently present in the set. When not defined, null is returned.
+	 * Returns the state of the object under the form of a sequence of bits. In other words, returns a binary representation corresponding to the
+	 * present/deleted elements. If the ith bit of the jth long of the returned array is 1, it means that the (j*64)+ith value is currently present in
+	 * the set. When not defined, null is returned.
 	 * 
 	 * @return the binary representation of the set
 	 */
 	long[] binaryRepresentation();
 
 	/**
-	 * Returns an array with all elements (indexes) from the current set. This method should not be called at the heart of the solving
-	 * process, for efficiency reasons.
+	 * Returns an array with all elements (indexes) from the current set. This method should not be called at the heart of the solving process, for
+	 * efficiency reasons.
 	 * 
 	 * @return an array with all elements (indexes) of the current set
 	 */
@@ -259,7 +258,7 @@ public interface LinkedSet {
 	 * @return a string showing the state of the main data structures
 	 */
 	default String stringOfStructures() {
-		StringBuilder sb = new StringBuilder().append("Size=" + size() + " #rems=" + nRemoved() + "\nForward :");
+		StringBuilder sb = new StringBuilder().append("Size=" + size() + " nRems=" + nRemoved() + "\nForward :");
 		execute(a -> sb.append(' ').append(a));
 		sb.append("\nBackward :");
 		execute(a -> sb.append(' ').append(a), true);

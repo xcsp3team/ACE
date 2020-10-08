@@ -220,7 +220,7 @@ public final class QueueOfCells {
 		positions = Stream.of(solver.pb.variables).map(x -> new Cell[x.dom.initSize()]).toArray(Cell[][]::new);
 		IntStream.range(0, Variable.nInitValuesFor(solver.pb.variables)).forEach(i -> trash = new Cell(trash));
 		sizes = new int[solver.pb.variables.length];
-		String s = solver.rs.cp.propagating.classForSACSelector.substring(solver.rs.cp.propagating.classForSACSelector.lastIndexOf('$') + 1);
+		String s = solver.rs.cp.settingPropagation.classForSACSelector.substring(solver.rs.cp.settingPropagation.classForSACSelector.lastIndexOf('$') + 1);
 		cellSelector = Reflector.buildObject(s, CellSelector.class, this);
 		// this is needed when calling an intern class constructor by reflection
 	}

@@ -67,7 +67,6 @@ import search.local.HeuristicNeighbors.BestGlobal;
 import search.local.TabuManager.TabuManagerVariableValue;
 import utility.Enums.EBinaryEncoding;
 import utility.Enums.EBranching;
-import utility.Enums.EExportMoment;
 import utility.Enums.EExtension;
 import utility.Enums.EExtractionMethod;
 import utility.Enums.ELearningNogood;
@@ -139,10 +138,7 @@ public class ControlPanel {
 
 	public class SettingXml extends SettingGroup {
 		String s_dc = "Names of classes (tags) to discard (use comma as separator if several classes). Effective iff an XCSP3 file is loaded.";
-		String s_ic = "Operations to perform when saving an XCSP3 file.";
 		String s_cm = "Output made compatible with XCSP3 competitions";
-		String s_export = "Indicates if the instance must be printed in XCSP3 format on the standard output, or in a file. No export by default.";
-		String s_exportMoment = "Indicates at which moment the export operation should be conducted.";
 		String s_dir = "Indicates the name of a directory where results (XML files) for a campaign will be stored."
 				+ "\n\tIf the value is the empty string, results are not saved.";
 		String s_kin = "When saving in XCSP3, indicates if the initial name of the instance must be preserved.";
@@ -151,10 +147,7 @@ public class ControlPanel {
 		String s_dpri = "Displays recognized primitives, at parsing time";
 
 		public final String discardedClasses = addS("discardedClasses", "dc", EMPTY_STRING, s_dc);
-		public final boolean indentAndCompressUnderLinux = addB("indentAndCompressUnderLinux", "ic", true, s_ic);
 		public final boolean competitionMode = addB("competitionMode", "cm", true, s_cm);
-		// public final EExport export = addE("export", "export", EExport.NO, s_export);
-		public final EExportMoment exportMoment = addE("exportMoment", "exportMoment", EExportMoment.CONSTRUCTION, s_exportMoment, HIDDEN);
 		public final String dirForCampaign = addS("dirForCampaign", "dir", EMPTY_STRING, s_dir);
 		public final boolean keepInstanceName = addB("keepInstanceName", "kin", false, s_kin, HIDDEN);
 		public final boolean ignoreAutomaticGroups = addB("ignoreAutomaticGroups", "iag", false, s_iag, HIDDEN);
@@ -163,8 +156,6 @@ public class ControlPanel {
 	}
 
 	public final SettingXml settingXml = new SettingXml();
-	// public final boolean export = settingXml.export != EExport.NO;
-	public final boolean competitionMode = settingXml.competitionMode;
 
 	public class SettingGeneral extends SettingGroup {
 		String s_framework = "The kind of problem instance to be solved (the specified value is case-insensitive).";
@@ -203,14 +194,12 @@ public class ControlPanel {
 				"Three bits indicating if we need respectively a macro, positive and primal graph");
 	}
 
-	public final SettingGeneral setingGeneral = new SettingGeneral();
-	public TypeFramework framework = setingGeneral.framework;
-	public final int verbose = setingGeneral.verbose;
+	public final SettingGeneral settingGeneral = new SettingGeneral();
+	public final int verbose = settingGeneral.verbose;
 
 	public void toCOP() {
-		setingGeneral.framework = TypeFramework.COP;
-		setingGeneral.nSearchedSolutions = PLUS_INFINITY;
-		framework = TypeFramework.COP;
+		settingGeneral.framework = TypeFramework.COP;
+		settingGeneral.nSearchedSolutions = PLUS_INFINITY;
 		valh.bestSolution = 1;
 	}
 
@@ -421,7 +410,7 @@ public class ControlPanel {
 
 	public final SettingExtension settingExtension = new SettingExtension();
 
-	public class Optimizing extends SettingGroup {
+	public class SettingOptimization extends SettingGroup {
 		String s_lb = "The specified value indicates the initial lower bound. When the solver gets a solution less than or equal to this value, it stops.";
 		String s_ub = "The specified value indicates the initial upper bound."
 				+ "\n\tFor a WCSP instance, this is the initial forbidden cost (allowed maximal cost plus one).";
@@ -430,7 +419,7 @@ public class ControlPanel {
 		String s_astr = "The specified value indicates the arity that determines the use of Soft STR constraints (if required by other configuration parameters; for a WCSP instance.";
 		String s_estr = "The specified value indicates if GAC or GACw is enforced for Soft STR constraints, for a WCSP instance.";
 
-		public long lowerBound = addL("lowerBound", "lb", framework == TypeFramework.MAXCSP ? 0L : MINUS_INFINITY, s_lb);
+		public long lowerBound = addL("lowerBound", "lb", settingGeneral.framework == TypeFramework.MAXCSP ? 0L : MINUS_INFINITY, s_lb);
 		public long upperBound = addL("upperBound", "ub", PLUS_INFINITY, s_ub);
 		public final EOptimizationStrategy optimizationStrategy = addE("optimizationStrategy", "os", EOptimizationStrategy.DECREASING, s_os);
 		// public final ECostTranfer costTranfer = addE("costTranfer", "ct", ECostTranfer.INVARIABLE, s_ct);
@@ -440,9 +429,9 @@ public class ControlPanel {
 		public final int softSubstituability = addI("softSubstituability", "ss", 0, "", HIDDEN);
 	}
 
-	public final Optimizing optimizing = new Optimizing();
+	public final SettingOptimization settingOptimization = new SettingOptimization();
 
-	public class Propagating extends SettingGroup {
+	public class SettingPropagation extends SettingGroup {
 		String s_p = "The name of the class used to propagate constraints."
 				+ "\n\tFor (G)AC, use AC. Among other possible values, we find SAC1, SAC3, ESAC3, CDC1, CPC1, DC1, DC2.";
 		String s_pv = "Variant for a second order consistency";
@@ -481,9 +470,9 @@ public class ControlPanel {
 		public final String classForFailedValues = addS("classForFailedValues", "fvc", null, FailedValueBasedConsistency.class, "", HIDDEN);
 	}
 
-	public final Propagating propagating = new Propagating();
+	public final SettingPropagation settingPropagation = new SettingPropagation();
 
-	public class Shaving extends SettingGroup {
+	public class SettingShaving extends SettingGroup {
 		public int parameter = addI("parameter", "s_p", 1, "", HIDDEN);
 		public final double eligibilityThreshod = addD("eligibilityThreshod", "s_et", 3.0, "", HIDDEN);
 		public final int limitedPropagationSamplingSize = addI("limitedPropagationSamplingSize", "s_lpss", 100, "", HIDDEN);
@@ -491,9 +480,9 @@ public class ControlPanel {
 		public final double alpha = addD("alpha", "s_a", 0.0, "");
 	}
 
-	public final Shaving shaving = new Shaving();
+	public final SettingShaving settingShaving = new SettingShaving();
 
-	public class LargeNeighborhoodSearch extends SettingGroup {
+	public class SettingLNS extends SettingGroup {
 		String s_e = "If true, large neighborhood search is activated.";
 		String s_n = "The number of variables to freeze when restarting.";
 		String s_p = "The percentage of variables to freeze when restarting.";
@@ -505,23 +494,23 @@ public class ControlPanel {
 		public final String freezingHeuristic = addS("freezingHeuristic", "lns_frzh", Rand.class, HeuristicFreezing.class, s_frzh);
 	}
 
-	public final LargeNeighborhoodSearch lns = new LargeNeighborhoodSearch();
+	public final SettingLNS settingLNS = new SettingLNS();
 
-	public class LocalBranching extends SettingGroup {
+	public class SettingLB extends SettingGroup {
 		private String s_e = "If true, local branching search is activated.";
 		private String s_n = "The name of the class used for local branching constraints.";
 		private String s_bd = "The maximum distance when exploring the neighborhood.";
 		private String s_mr = "The max number of restarts for local branching before switching to classical search.";
 
 		public final boolean enabled = addB("enabled", "lb_e", false, s_e);
-		public final String neighborhood = addS("neighborhood", "lb_n", LBAtMostDistanceSum.class, LocalBranching.class, s_n);
+		public final String neighborhood = addS("neighborhood", "lb_n", LBAtMostDistanceSum.class, SettingLB.class, s_n);
 		public final int baseDistance = addI("baseDistance", "lb_bd", 1, s_bd);
 		public final int maxRestarts = addI("maxRestarts", "lb_mr", 10, s_mr);
 	}
 
-	public final LocalBranching lb = new LocalBranching();
+	public final SettingLB settingLB = new SettingLB();
 
-	public class Solving extends SettingGroup {
+	public class SettingSolving extends SettingGroup {
 		String s_class = "The name of the class used to explore the search space.\n\tTypically, this is " + SolverBacktrack.class.getSimpleName();
 		String s_prepro = "If true, a preprocessing stage must be performed.";
 		String s_search = "If true, search must be performed.";
@@ -534,9 +523,9 @@ public class ControlPanel {
 		public final EBranching branching = addE("branching", "branching", EBranching.BIN, s_branching);
 	}
 
-	public final Solving solving = new Solving();
+	public final SettingSolving settingSolving = new SettingSolving();
 
-	public class Restarting extends SettingGroup {
+	public class SettingRestarts extends SettingGroup {
 		String s_n = "The maximal number of runs (restarts) to be performed.\n\tA value strictly greater than 1 is relevant only if a cutoff value is given.";
 		String s_c = "The number of the counter (number of backtracks, number of failed assignments, ...) before the solver restarts."
 				+ "\n\tWhen no value is given, the cutoff is set to Integer.MAX_VALUE.";
@@ -557,9 +546,9 @@ public class ControlPanel {
 		public boolean luby = addB("luby", "r_luby", false, "");
 	}
 
-	public final Restarting restarting = new Restarting();
+	public final SettingRestarts settingRestarts = new SettingRestarts();
 
-	public class Learning extends SettingGroup {
+	public class SettingLearning extends SettingGroup {
 		String s_ng = "Indicates the way nogoods are collected." + "\nBy default, this is nogood recording from restarts.";
 		String s_bgbl = "The limit, in term of number of nogoods, for the base.";
 		String s_ps = "Indicates the way partial states are collected." + "\nBy default, no such learning.";
@@ -578,9 +567,9 @@ public class ControlPanel {
 		public final int compressionLimitForStateEquivalence = addI("compressionLimitForStateEquivalence", "l_climit", 300, "", HIDDEN);
 	}
 
-	public final Learning learning = new Learning();
+	public final SettingLearning settingLearning = new SettingLearning();
 
-	public class Extracting extends SettingGroup {
+	public class SettingExtraction extends SettingGroup {
 		String s_m = "The way the unsatisfiable cores will be identified." + "\n\tValid only with the command: java " + Extraction.class.getName();
 		String s_nc = "The number of cores (MUCs) that must be found." + "\n\tValid only with the command: java " + Extraction.class.getName();
 		String s_sc = "Indicates if cores must be saved in XCSP";
@@ -590,7 +579,7 @@ public class ControlPanel {
 		public final boolean saveCores = addB("saveCores", "e_sc", false, s_sc);
 	}
 
-	public final Extracting extracting = new Extracting();
+	public final SettingExtraction settingExtraction = new SettingExtraction();
 
 	public class SettingVarh extends SettingGroup {
 		String s1 = "The name of the class that selects the variables to be assigned."
@@ -631,7 +620,7 @@ public class ControlPanel {
 
 	public final SettingValh valh = new SettingValh();
 
-	public class RevisionHeuristic extends SettingGroup {
+	public class SettingRevh extends SettingGroup {
 		String s1 = "The name of the class that represents the revision ordering heuristic.";
 		String s2 = "Indicates if we must follow the anti-heuristic.";
 
@@ -639,9 +628,9 @@ public class ControlPanel {
 		public final boolean anti = addB("anti", "anti_revh", false, s2);
 	}
 
-	public final RevisionHeuristic revh = new RevisionHeuristic();
+	public final SettingRevh settingRevh = new SettingRevh();
 
-	public class NeighborHeuristic extends SettingGroup {
+	public class SettingLocalSearch extends SettingGroup {
 		public final String classForNeighborHeuristic = addS("classForNeighborHeuristic", "cnh", BestGlobal.class, "");
 		public final String classForTabu = addS("classForTabu", "cft", TabuManagerVariableValue.class, "");
 		public final int tabuListSize = addI("tabuListSize", "tabs", 5, "");
@@ -649,9 +638,9 @@ public class ControlPanel {
 		public final double thresholdForRandomValueSelection = addD("thresholdForRandomValueSelection", "trvals", 0.0, "");
 	}
 
-	public final NeighborHeuristic nghh = new NeighborHeuristic();
+	public final SettingLocalSearch settingLocalSearch = new SettingLocalSearch();
 
-	public class Integrating extends SettingGroup {
+	public class SettingIntegrating extends SettingGroup {
 		String s_much = "The available heuristics for extraction of MUCS in wcsp context approach."
 				+ "\n\tIf the value of this parameter is 1, then random relaxation of MUC."
 				+ "\n\tIf the value of this parameter is 2, then relaxation of MUC with minimal cost and greater random score of the current constraint relaxed."
@@ -668,9 +657,9 @@ public class ControlPanel {
 		public final boolean mucCompleteApproach = addB("mucCompleteApproach", "i_ca", true, s_ca);
 	}
 
-	public final Integrating integrating = new Integrating();
+	public final SettingIntegrating settingIntegrating = new SettingIntegrating();
 
-	public class Experimental extends SettingGroup {
+	public class SettingExperimental extends SettingGroup {
 		public final boolean testB = addB("testB", "test", false, "", HIDDEN);
 		public int testI1 = addI("testI1", "testI1", 0, "", HIDDEN);
 		public int testI2 = addI("testI2", "testI2", 0, "", HIDDEN);
@@ -679,9 +668,9 @@ public class ControlPanel {
 		public final boolean save4Baudouin = addB("save4Baudouin", "s4b", false, "for synthetizing smart tables", HIDDEN);
 	}
 
-	public final Experimental experimental = new Experimental();
+	public final SettingExperimental settingExperimental = new SettingExperimental();
 
-	public class HardCoding extends SettingGroup {
+	public class SettingHardCoding extends SettingGroup {
 		public final boolean localSearchAtPreprocessing = false;
 		public final int limitOfNbValuesForStrongConsistency = 50000;
 		public boolean splitMDDConstraints = false;
@@ -691,30 +680,30 @@ public class ControlPanel {
 		public boolean convertBooleanSumAsCountingCtr = false;
 	}
 
-	public final HardCoding hardCoding = new HardCoding();
+	public final SettingHardCoding settingHardCoding = new SettingHardCoding();
 
 	public final boolean mustBuildConflictStructures = settings.addB(3, "constraints", "mustBuildConflictStructures", "mbcs",
-			!propagating.classForRevisions.equals(Reviser1.class.getSimpleName())
+			!settingPropagation.classForRevisions.equals(Reviser1.class.getSimpleName())
 					|| (!valh.classForValHeuristic.equals(First.class.getSimpleName()) && !valh.classForValHeuristic.equals(Last.class.getSimpleName())),
 			"");
 
 	private ControlPanel() {
 		Kit.control(verbose >= 0 && verbose <= 3, () -> "Verbose must be in 0..3");
 		Kit.log.setLevel(verbose == 0 ? Level.CONFIG : verbose == 1 ? Level.FINE : verbose == 2 ? Level.FINER : Level.FINEST);
-		if (setingGeneral.conditionForSatisfaction.trim().length() != 0) {
-			String s = setingGeneral.conditionForSatisfaction;
+		if (settingGeneral.conditionForSatisfaction.trim().length() != 0) {
+			String s = settingGeneral.conditionForSatisfaction;
 			Kit.control(s.matches("\\((lt|le|ge|gt|ne|eq),\\d+\\)"), () -> "Bad form of the condition for satisfaction : " + s);
 		}
 		// () -> "The value of operatorForSatisfaction must be in {eq,ne,lt,le,gt,ge}.");
-		Kit.control(0 <= lns.pVariablesToFreeze && lns.pVariablesToFreeze < 100, () -> "percentageOfVariablesToFreeze should be between 0 and 100 (excluded)");
+		Kit.control(0 <= settingLNS.pVariablesToFreeze && settingLNS.pVariablesToFreeze < 100, () -> "percentageOfVariablesToFreeze should be between 0 and 100 (excluded)");
 
-		Kit.control(settingProblem.symmetryBreaking == ESymmetryBreaking.REC || learning.nogood != ELearningNogood.RST_SYM);
-		Kit.control(optimizing.lowerBound <= optimizing.upperBound);
+		Kit.control(settingProblem.symmetryBreaking == ESymmetryBreaking.REC || settingLearning.nogood != ELearningNogood.RST_SYM);
+		Kit.control(settingOptimization.lowerBound <= settingOptimization.upperBound);
 		// as
 		// C0
-		Kit.control(!settingCtrs.normalizeCtrs || (!symmetryBreaking && framework != TypeFramework.MAXCSP));
+		Kit.control(!settingCtrs.normalizeCtrs || (!symmetryBreaking && settingGeneral.framework != TypeFramework.MAXCSP));
 		settings.controlKeys();
-		if (setingGeneral.makeExceptionsVisible)
+		if (settingGeneral.makeExceptionsVisible)
 			org.xcsp.modeler.Compiler.ev = true;
 	}
 

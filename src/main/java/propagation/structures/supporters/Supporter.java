@@ -19,7 +19,7 @@ public abstract class Supporter<T extends Constraint> {
 
 	public Supporter(T c) {
 		this.c = c;
-		this.multidirectionality = c.pb.rs.cp.propagating.multidirectionality;
+		this.multidirectionality = c.pb.rs.cp.settingPropagation.multidirectionality;
 		this.buffer = c.tupleManager.localTuple;
 	}
 }

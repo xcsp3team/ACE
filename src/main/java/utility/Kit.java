@@ -118,7 +118,7 @@ public final class Kit {
 						System.err.println("From " + ((Resolution) Thread.currentThread()).cp.settingsFilename + " :");
 					// c.setTimeInMillis(record.getMillis());
 					Thread t = Resolution.currentThread();
-					if (t instanceof Resolution && !((Resolution) t).cp.competitionMode)
+					if (t instanceof Resolution && !((Resolution) t).cp.settingXml.competitionMode)
 						System.err.println("\n" + record.getLevel() + " : " + record.getMessage()); // + " " + c.getTime());
 					if (record.getLevel() == Level.SEVERE) {
 						System.err.println(record.getLevel() + " forces us to stop");
@@ -140,7 +140,7 @@ public final class Kit {
 	}
 
 	public static Object exit(String message, Throwable e) {
-		if (!(Thread.currentThread() instanceof Resolution) || ((Resolution) Thread.currentThread()).cp.setingGeneral.makeExceptionsVisible)
+		if (!(Thread.currentThread() instanceof Resolution) || ((Resolution) Thread.currentThread()).cp.settingGeneral.makeExceptionsVisible)
 			e.printStackTrace();
 		System.out.println(message);
 		System.exit(1);

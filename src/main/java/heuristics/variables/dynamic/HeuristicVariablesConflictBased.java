@@ -47,7 +47,7 @@ public abstract class HeuristicVariablesConflictBased extends HeuristicVariables
 
 	@Override
 	public void beforeRun() {
-		if (solver.restarter.numRun > 0 && solver.restarter.numRun % solver.rs.cp.restarting.dataResetPeriod == 0)
+		if (solver.restarter.numRun > 0 && solver.restarter.numRun % solver.rs.cp.settingRestarts.dataResetPeriod == 0)
 			reset();
 		alpha = ALPHA0;
 		if (settings.weighting == EWeighting.CHS) { // smoothing

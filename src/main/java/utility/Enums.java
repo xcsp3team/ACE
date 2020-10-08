@@ -101,10 +101,6 @@ public class Enums {
 		EXTENSION_CONFLICTS;
 	}
 
-	public static enum EExportMoment {
-		CONSTRUCTION, PREPROCESSING;
-	}
-
 	public enum ESemantics {
 		SUPPORTS, CONFLICTS, SOFT;
 	}

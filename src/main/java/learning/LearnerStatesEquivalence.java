@@ -61,8 +61,8 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 		currentOpenNodesNbFoundSolutions = new int[variables.length];
 		moreThanOneSolution = solver.solManager.nSolutionsLimit > 1;
 		nbBytesPerVariableId = (variables.length <= Math.pow(2, 8) ? 1 : variables.length <= Math.pow(2, 16) ? 2 : variables.length <= Math.pow(2, 24) ? 3 : 4);
-		if (solver.rs.cp.learning.compressionLevelForStateEquivalence != Deflater.NO_COMPRESSION)
-			compressor = new Deflater(solver.rs.cp.learning.compressionLevelForStateEquivalence);
+		if (solver.rs.cp.settingLearning.compressionLevelForStateEquivalence != Deflater.NO_COMPRESSION)
+			compressor = new Deflater(solver.rs.cp.settingLearning.compressionLevelForStateEquivalence);
 	}
 
 	@Override
@@ -74,7 +74,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 	}
 
 	private byte[] compress(int limit) {
-		assert limit >= solver.rs.cp.learning.compressionLimitForStateEquivalence;
+		assert limit >= solver.rs.cp.settingLearning.compressionLimitForStateEquivalence;
 
 		compressor.reset();
 		compressor.setInput(tmpInput, 0, limit);
@@ -116,7 +116,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 			nbTooLargeKeys++;
 		} else {
 			byte[] t = null;
-			if (compressor == null || keySize < solver.rs.cp.learning.compressionLimitForStateEquivalence) {
+			if (compressor == null || keySize < solver.rs.cp.settingLearning.compressionLimitForStateEquivalence) {
 				t = new byte[keySize];
 				System.arraycopy(tmpInput, 0, t, 0, keySize);
 			} else

@@ -32,7 +32,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	protected final Variable bestUnpriorityVar() {
 		assert solver.futVars.size() > 0;
 
-		if (solver.rs.cp.solving.branching != EBranching.BIN) {
+		if (solver.rs.cp.settingSolving.branching != EBranching.BIN) {
 			Variable x = solver.dr.varOfLastDecisionIf(false);
 			if (x != null)
 				return x;

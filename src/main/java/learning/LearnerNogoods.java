@@ -93,8 +93,8 @@ public class LearnerNogoods {
 			}
 			this.nogoodsSetsBySize = new TreeSet[nVariables + 1];
 			this.tmps = new int[nVariables + 1][];
-			this.unaryLimit = solver.rs.cp.learning.unarySymmetryLimit;
-			this.nonunaryLimit = solver.rs.cp.learning.nonunarySymmetryLimit;
+			this.unaryLimit = solver.rs.cp.settingLearning.unarySymmetryLimit;
+			this.nonunaryLimit = solver.rs.cp.settingLearning.nonunarySymmetryLimit;
 		}
 
 		private void addNogood(int[] decs) {
@@ -189,11 +189,11 @@ public class LearnerNogoods {
 	public LearnerNogoods(SolverBacktrack solver) {
 		this.solver = solver;
 		this.dr = solver.dr;
-		this.nogoods = new Nogood[solver.rs.cp.learning.nogoodBaseLimit];
+		this.nogoods = new Nogood[solver.rs.cp.settingLearning.nogoodBaseLimit];
 		this.pws = Stream.of(solver.pb.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
 		this.nws = Stream.of(solver.pb.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
 		this.tmp = new int[solver.pb.variables.length];
-		if (solver.rs.cp.learning.nogood == ELearningNogood.RST_SYM)
+		if (solver.rs.cp.settingLearning.nogood == ELearningNogood.RST_SYM)
 			this.symmetryHandler = new SymmetryHandler(solver.pb.variables.length);
 		solver.propagation.queue.setLearnerNogood(this);
 	}
@@ -308,7 +308,7 @@ public class LearnerNogoods {
 	}
 
 	public void addNogoodsOfCurrentBranch() {
-		if (!solver.rs.cp.learning.nogood.isRstType() || dr.decisions.size() < 2)
+		if (!solver.rs.cp.settingLearning.nogood.isRstType() || dr.decisions.size() < 2)
 			return;
 		int nMetPositiveDecisions = 0;
 		for (int i = 0; i <= dr.decisions.limit; i++) {
@@ -317,7 +317,7 @@ public class LearnerNogoods {
 				tmp[nMetPositiveDecisions++] = d;
 			else if (nMetPositiveDecisions > 0) {
 				int[] currentNogood = new int[nMetPositiveDecisions + 1];
-				if (solver.rs.cp.learning.nogood == ELearningNogood.RST_MIN && dr.isFailedAssignment(i)) {
+				if (solver.rs.cp.settingLearning.nogood == ELearningNogood.RST_MIN && dr.isFailedAssignment(i)) {
 					boolean bottomUp = true; // hard coding TODO
 					if (bottomUp)
 						for (int j = 0; j < nMetPositiveDecisions; j++)

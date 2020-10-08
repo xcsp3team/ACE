@@ -97,8 +97,8 @@ public class ESAC3 extends SACGreedy {
 		// DomThenDDeg((BacktrackSearchSolver) solver, OptimizationType.MIN),
 		// new WDegOnDom((BacktrackSearchSolver) solver, OptimizationType.MAX)
 		// };
-		this.shavingEvaluator = cp().shaving.ratio != 0
-				? new ShavingEvaluator(solver.pb.variables.length, cp().shaving.alpha, cp().shaving.ratio) : null;
+		this.shavingEvaluator = cp().settingShaving.ratio != 0
+				? new ShavingEvaluator(solver.pb.variables.length, cp().settingShaving.alpha, cp().settingShaving.ratio) : null;
 	}
 
 	private void makeSelection() {

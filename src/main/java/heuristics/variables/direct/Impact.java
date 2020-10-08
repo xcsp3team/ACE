@@ -20,7 +20,7 @@ public final class Impact extends ActivityImpactAbstract {
 	@Override
 	public void beforeRun() {
 		super.beforeRun();
-		if (solver.restarter.numRun != 0 && solver.restarter.numRun % solver.rs.cp.restarting.dataResetPeriod == 0) {
+		if (solver.restarter.numRun != 0 && solver.restarter.numRun % solver.rs.cp.settingRestarts.dataResetPeriod == 0) {
 			Kit.log.info("Reset of impacts");
 			// for (int i = 0; i < solver.problem.variables.length; i++) impacts[i] = solver.problem.variables[i].getStaticDegree(); // TODO
 			// better init ?

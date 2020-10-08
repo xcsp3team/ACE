@@ -41,7 +41,7 @@ public abstract class PFC extends AC implements LowerBoundCapability {
 
 	public PFC(Solver solver) {
 		super(solver);
-		Kit.control(cp().solving.branching != EBranching.NON, () -> "Non-binary branching not possible for WCSP or MaxCSP");
+		Kit.control(cp().settingSolving.branching != EBranching.NON, () -> "Non-binary branching not possible for WCSP or MaxCSP");
 		sumMinCosts = Variable.litterals(solver.pb.variables).longArray();
 		argMinSumMinCosts = new int[solver.pb.variables.length];
 		argMaxSumMinCosts = new int[solver.pb.variables.length];

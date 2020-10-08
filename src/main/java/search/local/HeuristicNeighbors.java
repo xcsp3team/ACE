@@ -46,7 +46,7 @@ public abstract class HeuristicNeighbors {
 
 	public HeuristicNeighbors(SolverLocal solver) {
 		this.solver = solver;
-		this.tabuManager = Reflector.buildObject(solver.rs.cp.nghh.classForTabu, TabuManager.class, solver, solver.rs.cp.nghh.tabuListSize);
+		this.tabuManager = Reflector.buildObject(solver.rs.cp.settingLocalSearch.classForTabu, TabuManager.class, solver, solver.rs.cp.settingLocalSearch.tabuListSize);
 		this.counters = new int[solver.pb.variables.length];
 		this.random = solver.rs.random;
 	}
@@ -197,11 +197,11 @@ public abstract class HeuristicNeighbors {
 		}
 
 		private boolean randomlySelectNeighbor() {
-			if (random.nextFloat() < solver.rs.cp.nghh.thresholdForRandomVariableSelection) {
+			if (random.nextFloat() < solver.rs.cp.settingLocalSearch.thresholdForRandomVariableSelection) {
 				Variable[] variables = solver.pb.variables;
 				bestVariable = variables[random.nextInt(variables.length)];
 				// variable in conflict instead ??
-				if (random.nextFloat() < solver.rs.cp.nghh.thresholdForRandomValueSelection) {
+				if (random.nextFloat() < solver.rs.cp.settingLocalSearch.thresholdForRandomValueSelection) {
 					bestIndex = bestVariable.dom.random();
 					int evaluation = solver.conflictManager.currEvaluation() + solver.conflictManager.computeEvolutionFor(bestVariable, bestIndex);
 					if (evaluation < bestEvaluationEverSeen)

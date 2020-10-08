@@ -424,7 +424,7 @@ public class PropagationIsomorphism extends AC {
 	@Override
 	public boolean runAfterAssignment(Variable x) {
 		// if (!variable.domain.isModifiedAtCurrentDepth()) return true;
-		if (!cp().propagating.strongOnlyAtPreprocessing) {
+		if (!cp().settingPropagation.strongOnlyAtPreprocessing) {
 			Boolean result = filterFromAdjacences();
 			if (result == Boolean.FALSE)
 				return false;

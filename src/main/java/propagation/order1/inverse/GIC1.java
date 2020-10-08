@@ -34,7 +34,7 @@ public class GIC1 extends StrongConsistency {
 
 	public GIC1(Solver solver) {
 		super(solver);
-		Kit.control(cp().restarting.cutoff == Long.MAX_VALUE, () -> "With Inverse, there is currently no possibility of restarts.");
+		Kit.control(cp().settingRestarts.cutoff == Long.MAX_VALUE, () -> "With Inverse, there is currently no possibility of restarts.");
 		Kit.control(!Stream.of(solver.pb.constraints).anyMatch(c -> c.getClass().isAssignableFrom(CtrExtensionSTR3.class)),
 				() -> "Inverse currently not compatible with STR3");
 		variableHeuristicForInverse = new WDegOnDom((SolverBacktrack) solver, false);
