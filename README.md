@@ -19,9 +19,8 @@ AbsCon is distributed under License CeCILL (Copyright (c) 2000-2018, CRIL, Artoi
 
 1. clone the repository : `git clone https://forge.univ-artois.fr/christophe.lecoutre/AbsCon.git`
 1. change directory : `cd AbsCon`
-1. copy the last version of XCSP3-Java-Tools (e.g., target/xcsp3-tools-X-Y-Z.jar) in `./lib`
 1. run Gradle : `gradle build -x test`  (of course, you need Gradle to be installed)
-1. test the JAR : `java -cp build/libs/AbsCon-YY-MM.jar:lib/toolX-YY-MM.jar abscon.Resolution` where you give the right values for YY and MM.
+1. test the JAR : `java -jar build/libs/AbsCon-YY-MM.jar` where you give the right values for YY and MM.
 If the usage of AbsCon is displayed, you are fine. 
 
 With this JAR, you can run AbsCon on any XCSP3 instance.

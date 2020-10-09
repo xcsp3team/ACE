@@ -92,7 +92,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 				}
 			}
 			String[] t = s.split(Constants.REG_WS);
-			Kit.control(t.length == pb.variables.length);
+			Kit.control(t.length == pb.variables.length,
+					() -> t.length + " vs " + pb.variables.length + (t.length == 1 ? " did you control the path for the file?" : ""));
 			this.sol = new int[t.length];
 			for (int i = 0; i < sol.length; i++) {
 				if (t[i].equals("*"))
