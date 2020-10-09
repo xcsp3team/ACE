@@ -200,7 +200,7 @@ public class ControlPanel {
 	public void toCOP() {
 		settingGeneral.framework = TypeFramework.COP;
 		settingGeneral.nSearchedSolutions = PLUS_INFINITY;
-		valh.bestSolution = 1;
+		// valh.bestSolution = true;
 	}
 
 	public class SettingProblem extends SettingGroup {
@@ -611,10 +611,13 @@ public class ControlPanel {
 		public String classForValHeuristic = addS("classForValHeuristic", "valh", heuristics.values.HeuristicValuesDirect.First.class, HeuristicValues.class,
 				s1);
 		public final boolean anti = addB("anti", "anti_valh", false, s2);
-		// bestSolution breaks determinism because it depends in which order domains are pruned (and becomes singleton or not)
-		public int bestSolution = addI("bestSolution", "bs", 0, "0: desactivated, 1: normal mode, 2: variant"); // If COP, will be changed to 1 in
-																												// method toCOP
+		// bestSolution breaks determinism of search trees because it depends in which order domains are pruned (and becomes singleton or not)
+
+		public boolean runProgressSaving = addB("runProgressSaving", "rps", false, "");
+		public boolean bestSolution = addB("bestSolution", "bs", true, "");
 		public final int bestSolutionGap = addI("bestSolutionGap", "bsg", Integer.MAX_VALUE, "");
+		public String warmStart = addS("warmStart", "warm", "", "").trim();
+
 		public final boolean optValHeuristic = addB("optValHeuristic", "ovh", false, "");
 	}
 
@@ -695,7 +698,8 @@ public class ControlPanel {
 			Kit.control(s.matches("\\((lt|le|ge|gt|ne|eq),\\d+\\)"), () -> "Bad form of the condition for satisfaction : " + s);
 		}
 		// () -> "The value of operatorForSatisfaction must be in {eq,ne,lt,le,gt,ge}.");
-		Kit.control(0 <= settingLNS.pVariablesToFreeze && settingLNS.pVariablesToFreeze < 100, () -> "percentageOfVariablesToFreeze should be between 0 and 100 (excluded)");
+		Kit.control(0 <= settingLNS.pVariablesToFreeze && settingLNS.pVariablesToFreeze < 100,
+				() -> "percentageOfVariablesToFreeze should be between 0 and 100 (excluded)");
 
 		Kit.control(settingProblem.symmetryBreaking == ESymmetryBreaking.REC || settingLearning.nogood != ELearningNogood.RST_SYM);
 		Kit.control(settingOptimization.lowerBound <= settingOptimization.upperBound);

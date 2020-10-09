@@ -30,7 +30,7 @@ public final class SolutionManager {
 	public final Solver solver;
 
 	/**
-	 * Number of solutions to be found, before stopping. When equal to -1, all solutions are searched for (no limit is fixed).
+	 * Number of solutions to be found, before stopping. When equal to PLUS_INFINITY, all solutions are searched for (no limit is fixed).
 	 */
 	public long nSolutionsLimit;
 
@@ -49,7 +49,7 @@ public final class SolutionManager {
 	 */
 	public int[] lastSolution;
 
-	public int lastSolutionRun = -1; // num of the run where the last solution has been found
+	public int lastSolutionRun = -1; // number of the run where the last solution has been found
 
 	public String lastSolutionX;
 

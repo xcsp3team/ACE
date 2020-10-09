@@ -15,6 +15,7 @@ import java.util.stream.IntStream;
 import dashboard.ControlPanel.SettingValh;
 import heuristics.Heuristic;
 import interfaces.TagExperimental;
+import search.SolutionManager;
 import search.Solver;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;
@@ -55,15 +56,20 @@ public abstract class HeuristicValues extends Heuristic {
 	public abstract int identifyBestValueIndex();
 
 	public int bestIndex() {
-		if (settings.bestSolution != 0) {
+		SolutionManager solManager = x.pb.solver.solManager;
+		if (solManager.nSolutionsFound == 0) {
+			if (settings.warmStart.length() > 0) {
+				int a = ((SolverBacktrack) x.pb.solver).warmStarter.valueOf(x);
+				if (a != -1 && dx.isPresent(a))
+					return a;
+			} else if (settings.runProgressSaving) {
+				int a = ((SolverBacktrack) x.pb.solver).runProgressSaver.valueOf(x);
+				if (a != -1 && dx.isPresent(a))
+					return a;
+			}
+		} else if (settings.bestSolution) {
 			Solver solver = x.pb.solver;
-			if (solver.solManager.nSolutionsFound == 0) {
-				if (((SolverBacktrack) solver).prevSize != 0) { // not at the first run
-					int a = ((SolverBacktrack) solver).prevLongestRunBranch[x.num];
-					if (a != -1 && dx.isPresent(a))
-						return a;
-				}
-			} else if (solver.restarter.numRun % settings.bestSolutionGap != 0) { // every bestSolutionGap runs, we do not use bs
+			if (solver.restarter.numRun % settings.bestSolutionGap != 0) { // every bestSolutionGap runs, we do not use bs
 				int a = solver.solManager.lastSolution[x.num];
 				if (dx.isPresent(a)) // && (!priorityVar || solver.rs.random.nextDouble() < 0.5))
 					return a;

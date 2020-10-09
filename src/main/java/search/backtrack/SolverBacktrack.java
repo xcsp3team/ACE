@@ -8,6 +8,10 @@
  */
 package search.backtrack;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,6 +19,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.stream.Stream;
 
+import org.xcsp.common.Constants;
 import org.xcsp.common.Types.TypeFramework;
 
 import constraints.Constraint;
@@ -52,17 +57,14 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	@Override
 	public void beforeRun() {
-		minDepth = pb.variables.length + 1;
-		maxDepth = 0;
-		currSize = 0;
-
+		if (runProgressSaver != null)
+			runProgressSaver.beforeRun();
 	}
 
 	@Override
 	public void afterRun() {
-		for (int i = 0; i < prevLongestRunBranch.length; i++)
-			prevLongestRunBranch[i] = currLongestRunBranch[i];
-		prevSize = currSize;
+		if (runProgressSaver != null)
+			runProgressSaver.afterRun();
 	}
 
 	@Override
@@ -70,10 +72,89 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		observerVars.restoreBefore(depth);
 	}
 
-	public int[] prevLongestRunBranch;
-	public int prevSize;
-	private int[] currLongestRunBranch;
-	private int currSize;
+	/**********************************************************************************************
+	 * classes for warm starts and run progress saving
+	 *********************************************************************************************/
+
+	public class WarmStarter {
+		public int[] sol;
+
+		public WarmStarter(String s) {
+			File file = new File(s);
+			if (file.exists()) {
+				try (BufferedReader in = new BufferedReader(new FileReader(s))) {
+					StringBuilder sb = new StringBuilder();
+					for (String line = in.readLine(); line != null; line = in.readLine())
+						sb.append(line);
+					s = sb.toString().trim();
+				} catch (IOException e) {
+					Kit.exit(e);
+				}
+			}
+			String[] t = s.split(Constants.REG_WS);
+			Kit.control(t.length == pb.variables.length);
+			this.sol = new int[t.length];
+			for (int i = 0; i < sol.length; i++) {
+				if (t[i].equals("*"))
+					sol[i] = -1;
+				else {
+					int a = pb.variables[i].dom.toPresentIdx(Integer.parseInt(t[i]));
+					Kit.control(a != -1);
+					sol[i] = a;
+				}
+			}
+		}
+
+		public int valueOf(Variable x) {
+			return sol[x.num];
+		}
+	}
+
+	public class RunProgressSaver {
+		int[] prevLongestRunBranch;
+		int prevSize;
+		int[] currLongestRunBranch;
+		int currSize;
+
+		RunProgressSaver() {
+			this.prevLongestRunBranch = new int[pb.variables.length];
+			this.currLongestRunBranch = new int[pb.variables.length];
+		}
+
+		boolean desactivated() {
+			return solManager.nSolutionsFound > 0 && rs.cp.valh.bestSolution;
+		}
+
+		void manageEmptyDomainBeforeBacktracking() {
+			if (desactivated())
+				return;
+			int d = depth(); // or Variable.nSingletonVariablesIn(pb.variables) ??
+			if (d >= currSize) {
+				currSize = d;
+				for (int i = 0; i < prevLongestRunBranch.length; i++)
+					prevLongestRunBranch[i] = pb.variables[i].dom.size() == 1 ? pb.variables[i].dom.unique() : -1;
+				// System.out.println("new " + Kit.join(prevLongestRunBranch));
+			}
+		}
+
+		void beforeRun() {
+			minDepth = pb.variables.length + 1;
+			maxDepth = 0;
+			currSize = 0;
+		}
+
+		void afterRun() {
+			if (desactivated())
+				return;
+			for (int i = 0; i < prevLongestRunBranch.length; i++)
+				prevLongestRunBranch[i] = currLongestRunBranch[i];
+			prevSize = currSize;
+		}
+
+		public int valueOf(Variable x) {
+			return prevSize == 0 ? -1 : prevLongestRunBranch[x.num]; // prevSize == 0 means to be at the first run
+		}
+	}
 
 	/**********************************************************************************************
 	 * Intern class Tracer
@@ -161,13 +242,15 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	public final GlobalObserver observerVars;
 
-	// public final GlobalObserver observerCtrsSoft;
-
 	public final List<ObserverBacktrackingSystematic> observersBacktrackingSystematic;
 
 	public final Tracer tracer;
 
 	public StatisticsBacktrack backtrackStatistics;
+
+	public final RunProgressSaver runProgressSaver;
+
+	public final WarmStarter warmStarter;
 
 	public final class GlobalObserver {
 
@@ -295,9 +378,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		if (heuristicVars != null)
 			Stream.of(pb.variables).forEach(x -> x.buildValueOrderingHeuristic());
 
-		this.learnerNogoods = resolution.cp.settingSolving.enableSearch && resolution.cp.settingLearning.nogood != ELearningNogood.NO && propagation.queue != null
-				? new LearnerNogoods(this)
-				: null;
+		this.learnerNogoods = resolution.cp.settingSolving.enableSearch && resolution.cp.settingLearning.nogood != ELearningNogood.NO
+				&& propagation.queue != null ? new LearnerNogoods(this) : null;
 		this.learnerStates = resolution.cp.settingLearning.state == ELearningState.EQUIVALENCE ? new LearnerStatesEquivalence(this)
 				: resolution.cp.settingLearning.state == ELearningState.DOMINANCE ? new LearnerStatesDominance(this) : null;
 		this.proofer = new Proofer(learnerStates);
@@ -315,8 +397,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 		minimalNogoodExtractor = new MinimalNogoodExtractor();
 
-		this.prevLongestRunBranch = new int[pb.variables.length];
-		this.currLongestRunBranch = new int[pb.variables.length];
+		runProgressSaver = resolution.cp.valh.runProgressSaving ? new RunProgressSaver() : null;
+		warmStarter = resolution.cp.valh.warmStart.length() > 0 ? new WarmStarter(resolution.cp.valh.warmStart) : null;
 	}
 
 	@Override
@@ -360,13 +442,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	 * Called when an empty domain has been encountered.
 	 */
 	protected void manageEmptyDomainBeforeBacktracking() {
-		int d = rs.cp.valh.bestSolution == 2 ? Variable.nSingletonVariablesIn(pb.variables) : depth();
-		if (d >= currSize) { // experimental
-			currSize = d;
-			for (int i = 0; i < prevLongestRunBranch.length; i++)
-				prevLongestRunBranch[i] = pb.variables[i].dom.size() == 1 ? pb.variables[i].dom.unique() : -1;
-			// System.out.println("new " + Kit.join(prevLongestRunBranch));
-		}
+		if (runProgressSaver != null)
+			runProgressSaver.manageEmptyDomainBeforeBacktracking();
 
 		tracer.onBacktrack();
 		backtrackStatistics.nBacktracks++;
@@ -460,7 +537,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			if (futVars.size() == 0) {
 				solManager.handleNewSolutionAndPossiblyOptimizeIt();
 				if (rs.problem.framework == TypeFramework.COP && !rs.cp.settingRestarts.restartAfterSolution) {
-					// we need to backtrack to the level where a value for a variable in the scope of the objective constraint has been removed for
+					// we need to backtrack to the level where a value for a variable in the scope of the objective constraint has been removed
+					// for
 					// the last time
 					Constraint c = (Constraint) rs.problem.optimizationPilot.ctr;
 					((OptimizationCompatible) c).setLimit(((OptimizationCompatible) c).objectiveValue() + (rs.problem.optimizationPilot.minimization ? -1 : 1));
@@ -798,7 +876,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 				}
 			}
 			restoreProblem();
-			if (consistent && nbFoundTransitionDecisions >= rs.cp.settingLearning.nogoodArityLimit || (right == -1 && nbDecs >= rs.cp.settingLearning.nogoodArityLimit))
+			if (consistent && nbFoundTransitionDecisions >= rs.cp.settingLearning.nogoodArityLimit
+					|| (right == -1 && nbDecs >= rs.cp.settingLearning.nogoodArityLimit))
 				return null;
 			int[] nogood = null;
 			if (right == -1) {
