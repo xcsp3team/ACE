@@ -17,6 +17,8 @@ import constraints.hard.global.ObjVar;
 import dashboard.ControlPanel.SettingGeneral;
 import dashboard.ControlPanel.SettingRestarts;
 import interfaces.ObserverRuns;
+import search.backtrack.RestarterLNS;
+import search.backtrack.RestarterLocalBranching;
 import search.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
 import utility.Kit;
@@ -26,6 +28,15 @@ import utility.exceptions.UnreachableCodeException;
  * A restarter is used by a solver in order to manage restarts (successive runs from the root node).
  */
 public class Restarter implements ObserverRuns {
+
+	public static Restarter buildFor(Solver solver) {
+		Kit.control(!(solver.rs.cp.settingLNS.enabled && solver.rs.cp.settingLB.enabled), () -> "Cannot use LNS and LB (local branching) at the same time.");
+		if (solver.rs.cp.settingLNS.enabled)
+			return new RestarterLNS(solver);
+		if (solver.rs.cp.settingLB.enabled)
+			return new RestarterLocalBranching(solver);
+		return new Restarter(solver);
+	}
 
 	private long lubyCutoffFor(long i) {
 		int k = (int) Math.floor(Math.log(i) / Math.log(2)) + 1;

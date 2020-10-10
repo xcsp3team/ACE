@@ -27,8 +27,10 @@ public abstract class StatisticsMultiResolution {
 
 	public abstract void outputGlobalStatistics();
 
-	public static StatisticsMultiResolution build(final Resolution resolution) {
-		return Arguments.nInstancesToSolve > 1 ? new ActiveStatisticsMultiResolution(resolution) : new VoidStatisticsMultiResolution();
+	public static StatisticsMultiResolution buildFor(final Resolution resolution) {
+		if (Arguments.nInstancesToSolve > 1)
+			return new ActiveStatisticsMultiResolution(resolution);
+		return new VoidStatisticsMultiResolution();
 	}
 
 	private static class VoidStatisticsMultiResolution extends StatisticsMultiResolution {

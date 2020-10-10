@@ -8,13 +8,16 @@
  */
 package heuristics.variables;
 
+import java.util.Set;
 import java.util.stream.Stream;
 
 import dashboard.ControlPanel.SettingVarh;
 import dashboard.ControlPanel.SettingVars;
 import heuristics.Heuristic;
+import propagation.order1.inverse.GIC2;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;
+import utility.Reflector;
 import variables.Variable;
 import variables.domains.DomainHuge;
 
@@ -24,6 +27,13 @@ import variables.domains.DomainHuge;
  * NB : do not modify the name of this class as it is used by reflection.
  */
 public abstract class HeuristicVariables extends Heuristic {
+
+	public static HeuristicVariables buildFor(SolverBacktrack solver) {
+		Set<Class<?>> classes = solver.rs.handlerClasses.map.get(HeuristicVariables.class);
+		if (solver.rs.cp.settingSolving.enableSearch || solver.propagation instanceof GIC2)
+			return Reflector.buildObject2(solver.rs.cp.settingVarh.classForVarHeuristic, classes, solver, solver.rs.cp.settingVarh.anti);
+		return null;
+	}
 
 	public static class BestScoredVariable {
 		public Variable variable;
@@ -94,7 +104,7 @@ public abstract class HeuristicVariables extends Heuristic {
 			this.priorityVars = solver.pb.priorityVars;
 			this.nStrictlyPriorityVars = solver.pb.nStrictPriorityVars;
 		}
-		this.settings = solver.rs.cp.varh;
+		this.settings = solver.rs.cp.settingVarh;
 	}
 
 	/** Returns the score of the specified variable. This is the method to override when defining a new heuristic. */

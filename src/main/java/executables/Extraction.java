@@ -324,7 +324,7 @@ public class Extraction extends Resolution {
 	public static void main(String[] args) {
 		Arguments.loadArguments(args);
 		Extraction extraction = new Extraction();
-		Kit.control(!extraction.cp.symmetryBreaking, () -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
+		Kit.control(!extraction.cp.settingProblem.isSymmetryBreaking(), () -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
 		Kit.control(extraction.cp.settingLearning.state == ELearningState.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
 		// Kit.control(extraction.configuration.restartsCutoff == Long.MAX_VALUE || extraction.configuration.nogoodType == null,
 		// "Be careful of nogood recording from restarts.");

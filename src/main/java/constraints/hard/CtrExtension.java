@@ -189,13 +189,13 @@ public abstract class CtrExtension extends CtrHard implements TagGACGuaranteed, 
 
 		if (key == null || !map.containsKey(key)) {
 			extStructure = buildExtensionStructure();
-			extStructure.originalTuples = pb.rs.cp.symmetryBreaking ? tuples : null;
+			extStructure.originalTuples = pb.rs.cp.settingProblem.isSymmetryBreaking() ? tuples : null;
 			extStructure.originalPositive = positive;
 			extStructure.storeTuples(tuples, positive);
 			if (key != null) {
 				map.put(key, extStructure);
 				// below, "necessary" to let this code here because tuples and positive are easily accessible
-				if (pb.rs.cp.symmetryBreaking) {
+				if (pb.rs.cp.settingProblem.isSymmetryBreaking()) {
 					Constraint.putSymmetryMatching(key, extStructure.computeVariableSymmetryMatching(tuples, positive));
 				}
 			}

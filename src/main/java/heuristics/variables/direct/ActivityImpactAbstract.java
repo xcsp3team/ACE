@@ -49,13 +49,13 @@ public abstract class ActivityImpactAbstract extends HeuristicVariables implemen
 			update();
 		bestScoredVariable.reset(true);
 		solver.futVars.execute(x -> {
-			if (x.dom.size() > 1 || solver.rs.cp.varh.singletonAssignment != ESingletonAssignment.LAST) {
+			if (x.dom.size() > 1 || settings.singletonAssignment != ESingletonAssignment.LAST) {
 				lastSizes[x.num] = x.dom.size();
 				bestScoredVariable.update(x, scoreOptimizedOf(x));
 			}
 		});
 		if (bestScoredVariable.variable == null) {
-			assert solver.rs.cp.varh.singletonAssignment == ESingletonAssignment.LAST;
+			assert settings.singletonAssignment == ESingletonAssignment.LAST;
 			return solver.futVars.first();
 		}
 		lastVar = bestScoredVariable.variable.dom.size() == 1 ? null : bestScoredVariable.variable;

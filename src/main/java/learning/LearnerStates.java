@@ -10,10 +10,19 @@ package learning;
 
 import interfaces.ObserverRuns;
 import search.backtrack.SolverBacktrack;
+import utility.Enums.ELearningState;
 import utility.Kit;
 import variables.Variable;
 
 public abstract class LearnerStates implements ObserverRuns {
+
+	public static LearnerStates buildFor(SolverBacktrack solver) {
+		if (solver.rs.cp.settingLearning.state == ELearningState.EQUIVALENCE)
+			return new LearnerStatesEquivalence(solver);
+		if (solver.rs.cp.settingLearning.state == ELearningState.DOMINANCE)
+			return new LearnerStatesDominance(solver);
+		return null;
+	}
 
 	@Override
 	public void afterRun() {

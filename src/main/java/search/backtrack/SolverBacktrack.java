@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.stream.Stream;
 
@@ -33,19 +32,13 @@ import interfaces.ObserverRuns;
 import interfaces.OptimizationCompatible;
 import learning.LearnerNogoods;
 import learning.LearnerStates;
-import learning.LearnerStatesDominance;
-import learning.LearnerStatesEquivalence;
 import propagation.order1.AC;
 import propagation.order1.PropagationForward;
-import propagation.order1.inverse.GIC2;
 import search.Solver;
 import search.statistics.Statistics.StatisticsBacktrack;
 import utility.Enums.EBranching;
-import utility.Enums.ELearningNogood;
-import utility.Enums.ELearningState;
 import utility.Enums.EStopping;
 import utility.Kit;
-import utility.Reflector;
 import utility.sets.SetDense;
 import variables.Variable;
 import variables.domains.Domain;
@@ -123,7 +116,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		}
 
 		boolean desactivated() {
-			return solManager.nSolutionsFound > 0 && rs.cp.valh.bestSolution;
+			return solManager.nSolutionsFound > 0 && rs.cp.settingValh.bestSolution;
 		}
 
 		void manageEmptyDomainBeforeBacktracking() {
@@ -371,18 +364,12 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	public SolverBacktrack(Resolution resolution) {
 		super(resolution);
 		this.dr = new DecisionRecorder(this);
-		Set<Class<?>> classes = resolution.handlerClasses.map.get(HeuristicVariables.class);
-		this.heuristicVars = resolution.cp.settingSolving.enableSearch || propagation instanceof GIC2
-				? Reflector.buildObject2(resolution.cp.varh.classForVarHeuristic, classes, this, resolution.cp.varh.anti)
-				: null;
-		this.lcReasoner = new LastConflictReasoner(this, resolution.cp.varh.lastConflictSize);
-		if (heuristicVars != null)
-			Stream.of(pb.variables).forEach(x -> x.buildValueOrderingHeuristic());
-
-		this.learnerNogoods = resolution.cp.settingSolving.enableSearch && resolution.cp.settingLearning.nogood != ELearningNogood.NO
-				&& propagation.queue != null ? new LearnerNogoods(this) : null;
-		this.learnerStates = resolution.cp.settingLearning.state == ELearningState.EQUIVALENCE ? new LearnerStatesEquivalence(this)
-				: resolution.cp.settingLearning.state == ELearningState.DOMINANCE ? new LearnerStatesDominance(this) : null;
+		this.heuristicVars = HeuristicVariables.buildFor(this);
+		for (Variable x : pb.variables)
+			x.buildValueOrderingHeuristic();
+		this.lcReasoner = new LastConflictReasoner(this, resolution.cp.settingVarh.lastConflictSize);
+		this.learnerNogoods = LearnerNogoods.buildFor(this); // may be null
+		this.learnerStates = LearnerStates.buildFor(this); // may be null
 		this.proofer = new Proofer(learnerStates);
 
 		int nLevels = pb.variables.length + 1;
@@ -394,12 +381,12 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 		this.tracer = new Tracer(resolution.cp.settingGeneral.trace);
 		this.stats = this.backtrackStatistics = new StatisticsBacktrack(this);
-		observersSearch.add(0, this.stats);
+		observersSearch.add(0, this.stats); // this list is initialized in the super-class
 
-		minimalNogoodExtractor = new MinimalNogoodExtractor();
+		this.runProgressSaver = resolution.cp.settingValh.runProgressSaving ? new RunProgressSaver() : null;
+		this.warmStarter = resolution.cp.settingValh.warmStart.length() > 0 ? new WarmStarter(resolution.cp.settingValh.warmStart) : null;
 
-		runProgressSaver = resolution.cp.valh.runProgressSaving ? new RunProgressSaver() : null;
-		warmStarter = resolution.cp.valh.warmStart.length() > 0 ? new WarmStarter(resolution.cp.valh.warmStart) : null;
+		this.minimalNogoodExtractor = new MinimalNogoodExtractor();
 	}
 
 	@Override

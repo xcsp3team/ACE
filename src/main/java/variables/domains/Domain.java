@@ -658,8 +658,12 @@ public interface Domain extends LinkedSet {
 	 */
 	Object allValues();
 
-	default Object prettyValueOf(int a) {
-		return toVal(a);
+	default String prettyValueOf(int a) {
+		return toVal(a) + "";
+	}
+
+	default String prettyAssignedValue() {
+		return prettyValueOf(unique());
 	}
 
 	/**

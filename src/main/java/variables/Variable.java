@@ -384,7 +384,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 		if (obj == null)
 			return "*";
 		if (obj instanceof Variable)
-			return ((Variable) obj).dom.prettyValueOf(((Variable) obj).dom.unique()).toString();
+			return ((Variable) obj).lastSolutionPrettyAssignedValue; // dom.prettyAssignedValue();
 		assert obj.getClass().isArray();
 		if (obj instanceof Variable[]) {
 			assert Stream.of((Variable[]) obj).noneMatch(x -> x != null && x.dom.size() != 1);
@@ -394,13 +394,15 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 					+ "]";
 	}
 
-	/** Only whitespace as separator */
-	public static String rawInstantiationOf(Object array, String prefix) {
+	/** Only whitespace as separator. The array only contains variables, and can be of any dimension. */
+	public static String rawInstantiationOf(Object array) {
 		if (array instanceof Variable[]) {
 			assert Stream.of((Variable[]) array).noneMatch(x -> x != null && x.dom.size() != 1);
-			return Stream.of((Variable[]) array).map(x -> instantiationOf(x, prefix)).collect(Collectors.joining(" "));
-		} else
-			return Stream.of((Object[]) array).map(o -> rawInstantiationOf(o, prefix)).collect(Collectors.joining(" "));
+			return Stream.of((Variable[]) array).map(x -> instantiationOf(x, "")).collect(Collectors.joining(" ")); // we need instantiation
+																													// because of possible *; the
+																													// prefix is useless
+		} else // recursive call
+			return Stream.of((Object[]) array).map(o -> rawInstantiationOf(o)).collect(Collectors.joining(" "));
 	}
 
 	/**********************************************************************************************
@@ -444,6 +446,8 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 
 	/** An object associated with the variable. Of course, may be null. The object can be used for example by an heuristic. */
 	public Object data;
+
+	public String lastSolutionPrettyAssignedValue;
 
 	/** The weighted degree of the variable. Basically, it is equal to the sum of the weighted degree of the constraints involving it. */
 	// public double wdeg;
@@ -522,9 +526,9 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 
 	public final void buildValueOrderingHeuristic() {
 		if (heuristicVal == null) {
-			String className = this.dom instanceof DomainHuge ? First.class.getName() : pb.rs.cp.valh.classForValHeuristic;
+			String className = this.dom instanceof DomainHuge ? First.class.getName() : pb.rs.cp.settingValh.classForValHeuristic;
 			Set<Class<?>> classes = pb.rs.handlerClasses.map.get(HeuristicValues.class);
-			heuristicVal = Reflector.buildObject2(className, classes, this, pb.rs.cp.valh.anti);
+			heuristicVal = Reflector.buildObject2(className, classes, this, pb.rs.cp.settingValh.anti);
 		}
 	}
 

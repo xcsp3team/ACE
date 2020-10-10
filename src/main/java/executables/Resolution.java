@@ -1,5 +1,7 @@
 package executables;
 
+import static utility.Kit.log;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.lang.reflect.Modifier;
@@ -13,7 +15,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.stream.Collectors;
@@ -49,7 +50,7 @@ import utility.Reflector;
 import utility.XMLManager;
 
 /**
- * This is the main class of the <code>AbsSol</code> prototype. <br>
+ * This is the main class in charge of solving a problem instance
  */
 public class Resolution extends Thread {
 
@@ -57,7 +58,7 @@ public class Resolution extends Thread {
 	 * Static
 	 *********************************************************************************************/
 
-	public static final String VERSION = "AbsCon 2";
+	public static final String VERSION = "AbsCon 3";
 
 	public static final int UNDEFINED = -10;
 
@@ -238,8 +239,6 @@ public class Resolution extends Thread {
 
 	private final StatisticsMultiResolution statisticsMultiresolution;
 
-	public AtomicBoolean competitionLock = new AtomicBoolean();
-
 	/*
 	 * UNSTATIFIED FIELDS + METHODS
 	 */
@@ -260,7 +259,8 @@ public class Resolution extends Thread {
 	 */
 
 	public boolean mustPreserveUnaryConstraints() {
-		return cp.settingCtrs.preserveUnaryCtrs || this instanceof Extraction || cp.symmetryBreaking || cp.settingGeneral.framework == TypeFramework.MAXCSP;
+		return cp.settingCtrs.preserveUnaryCtrs || this instanceof Extraction || cp.settingProblem.isSymmetryBreaking()
+				|| cp.settingGeneral.framework == TypeFramework.MAXCSP;
 	}
 
 	public boolean isTimeExpiredForCurrentInstance() {
@@ -271,7 +271,7 @@ public class Resolution extends Thread {
 		this.cp = ControlPanel.buildControlPanelFor(configurationFileName);
 		this.output = new Output(this, configurationFileName);
 		observersConstruction.add(this.output);
-		this.statisticsMultiresolution = StatisticsMultiResolution.build(this);
+		this.statisticsMultiresolution = StatisticsMultiResolution.buildFor(this);
 	}
 
 	public Resolution() {
@@ -305,6 +305,8 @@ public class Resolution extends Thread {
 		problem = new Problem(api, settings.variant, settings.data, settings.dataFormat, settings.dataexport, Arguments.argsForPb, this);
 		for (ObserverConstruction obs : observersConstruction)
 			obs.onConstructionProblemFinished();
+		problem.display();
+		Graphviz.saveGraph(problem, cp.settingGeneral.saveNetworkGraph);
 		return problem;
 	}
 
@@ -350,28 +352,6 @@ public class Resolution extends Thread {
 		observersConstruction.clear();
 		observersConstruction.add(output);
 		problem = buildProblem(instanceNumber);
-		Graphviz.saveGraph(problem, cp.settingGeneral.saveNetworkGraph);
-		problem.display();
-
-		if (cp.settingXml.competitionMode && problem.framework == TypeFramework.COP) {
-			Runtime.getRuntime().addShutdownHook(new Thread() {
-				@Override
-				public void run() {
-					synchronized (competitionLock) {
-						if (!competitionLock.get()) {
-							competitionLock.set(true);
-							System.out.println();
-							if (solver.solManager.lastSolutionX == null)
-								System.out.println("s UNKNOWN");
-							else {
-								System.out.println("v " + solver.solManager.lastSolutionX);
-								System.out.println("s SATISFIABLE");
-							}
-						}
-					}
-				}
-			});
-		}
 
 		if (cp.settingSolving.enablePrepro || cp.settingSolving.enableSearch) {
 			int[] solution = localSearchAtPreprocessing();
@@ -387,7 +367,7 @@ public class Resolution extends Thread {
 	@Override
 	public void run() {
 		stopwatch.start();
-		Kit.log.config("\n" + Resolution.VERSION + " " + Kit.dateOf(Resolution.class)); // + " - " + Arguments.configurationFileName
+		log.config("\n" + VERSION + " " + Kit.dateOf(Resolution.class) + "\n"); // + " - " + Arguments.configurationFileName
 		boolean crashed = false;
 		for (int i = 0; i < Arguments.nInstancesToSolve; i++) {
 			try {
@@ -395,7 +375,7 @@ public class Resolution extends Thread {
 				solveInstance(i);
 			} catch (Throwable e) {
 				crashed = true;
-				Kit.log.warning("Instance with exception");
+				log.warning("Instance with exception");
 				if (cp.settingGeneral.makeExceptionsVisible)
 					e.printStackTrace();
 			}

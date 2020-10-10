@@ -12,7 +12,7 @@ AbsCon focuses on:
 - search heuristics (wdeg, impact, activity, last-conflict, cos, ...),
 - mono-criterion optimization, including optimization over cost functions
 
-AbsCon is distributed under License CeCILL (Copyright (c) 2000-2018, CRIL, Artois University).
+AbsCon is distributed under License MIT
 
 
 ## Building a JAR

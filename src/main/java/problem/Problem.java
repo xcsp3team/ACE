@@ -27,6 +27,7 @@ import static org.xcsp.common.predicates.XNodeParent.le;
 import static org.xcsp.common.predicates.XNodeParent.ne;
 import static org.xcsp.common.predicates.XNodeParent.or;
 import static org.xcsp.modeler.definitions.ICtr.MATRIX;
+import static utility.Kit.log;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -86,8 +87,6 @@ import org.xcsp.modeler.entities.CtrEntities.CtrAlone;
 import org.xcsp.modeler.entities.CtrEntities.CtrArray;
 import org.xcsp.modeler.entities.CtrEntities.CtrEntity;
 import org.xcsp.modeler.entities.ObjEntities.ObjEntity;
-import org.xcsp.modeler.entities.VarEntities.VarAlone;
-import org.xcsp.modeler.entities.VarEntities.VarArray;
 import org.xcsp.modeler.implementation.ProblemIMP;
 
 import constraints.Constraint;
@@ -169,7 +168,6 @@ import objectives.OptimizationPilot.OptimizationPilotDecreasing;
 import objectives.OptimizationPilot.OptimizationPilotDichotomic;
 import objectives.OptimizationPilot.OptimizationPilotIncreasing;
 import propagation.order1.PropagationForward;
-import propagation.order2.path.PC8;
 import search.Solver;
 import search.backtrack.RestarterLocalBranching.LocalBranchingConstraint;
 import search.backtrack.RestarterLocalBranching.LocalBranchingConstraint.LBAtLeastEqual;
@@ -238,7 +236,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 		boolean strong = false;
 
-		if (framework == TypeFramework.COP && rs.cp.valh.optValHeuristic) {
+		if (framework == TypeFramework.COP && rs.cp.settingValh.optValHeuristic) {
 			Constraint c = ((Constraint) optimizationPilot.ctr);
 			if (c instanceof ObjVar) {
 				Variable x = c.scp[0];
@@ -568,19 +566,19 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	private void makeGraphComplete() {
-		if (!rs.cp.settingProblem.completeGraph || !rs.cp.settingPropagation.clazz.equals(PC8.class.getSimpleName()))
-			return;
-		int sizeBefore = stuff.collectedCtrsAtInit.size();
-		// TODO : improve the complexity of finding missing binary constraints below
-		IntStream.range(0, variables.length).forEach(i -> IntStream.range(i + 1, variables.length).forEach(j -> {
-			if (!stuff.collectedCtrsAtInit.stream().anyMatch(c -> c.scp.length == 2 && c.involves(variables[i], variables[j])))
-				buildCtrTrue(variables[i], variables[j]);
-		}));
-		stuff.nAddedCtrs += stuff.collectedCtrsAtInit.size() - sizeBefore;
+		if (rs.cp.settingProblem.completeGraph) {
+			int sizeBefore = stuff.collectedCtrsAtInit.size();
+			// TODO : improve the complexity of finding missing binary constraints below
+			IntStream.range(0, variables.length).forEach(i -> IntStream.range(i + 1, variables.length).forEach(j -> {
+				if (!stuff.collectedCtrsAtInit.stream().anyMatch(c -> c.scp.length == 2 && c.involves(variables[i], variables[j])))
+					buildCtrTrue(variables[i], variables[j]);
+			}));
+			stuff.nAddedCtrs += stuff.collectedCtrsAtInit.size() - sizeBefore;
+		}
 	}
 
 	private void buildSymmetries() {
-		if (rs.cp.symmetryBreaking) {
+		if (rs.cp.settingProblem.isSymmetryBreaking()) {
 			int nBefore = stuff.collectedCtrsAtInit.size();
 			for (Constraint c : stuff.collectedCtrsAtInit)
 				if (Constraint.getSymmetryMatching(c.key) == null)
@@ -652,8 +650,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private final void reduceDomainsOfIsolatedVariables() {
 		// TODO other frameworks ?
-		boolean reduceIsolatedVars = rs.cp.settingVars.reduceIsolatedVars && rs.cp.settingGeneral.nSearchedSolutions == 1 && !rs.cp.symmetryBreaking
-				&& rs.cp.settingGeneral.framework == TypeFramework.CSP;
+		boolean reduceIsolatedVars = rs.cp.settingVars.reduceIsolatedVars && rs.cp.settingGeneral.nSearchedSolutions == 1
+				&& !rs.cp.settingProblem.isSymmetryBreaking() && rs.cp.settingGeneral.framework == TypeFramework.CSP;
 		List<Variable> isolatedVars = new ArrayList<>(), fixedVars = new ArrayList<>();
 		int nRemovedValues = 0;
 		for (Variable x : stuff.collectedVarsAtInit) {
@@ -743,7 +741,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	public final void display() {
 		if (rs.cp.verbose >= 2) {
-			Kit.log.finer("\nProblem " + name());
+			log.finer("\nProblem " + name());
 			Stream.of(variables).forEach(x -> x.display(rs.cp.verbose == 3));
 			Stream.of(constraints).forEach(c -> c.display(rs.cp.verbose == 3));
 		}
@@ -754,50 +752,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public void undisplay(String... names) {
 		// Kit.control(Arrays.stream(names).allMatch(s -> varIds.contains(s)));
 		undisplay = Arrays.asList(names);
-	}
-
-	public String lastSolutionX(String PREFIX) {
-		String s = "<instantiation id='sol" + solver.solManager.nSolutionsFound + "' type='solution'"
-				+ (framework != TypeFramework.CSP ? " cost='" + solver.solManager.bestBound + "'" : "") + ">";
-		String list = " " + varEntities.allEntities.stream().filter(va -> !undisplay.contains(va.id) && !va.id.startsWith(AUXILIARY_VARIABLE_PREFIX)).map(
-				va -> va instanceof VarAlone ? va.id : va.id + Arrays.stream(VarArray.class.cast(va).sizes).mapToObj(d -> "[]").collect(Collectors.joining("")))
-				.collect(Collectors.joining(" ")) + " ";
-		String values = " " + varEntities.allEntities.stream().filter(va -> !undisplay.contains(va.id) && !va.id.startsWith(AUXILIARY_VARIABLE_PREFIX))
-				.map(va -> va instanceof VarAlone ? Variable.instantiationOf(VarAlone.class.cast(va).var, PREFIX)
-						: Variable.rawInstantiationOf(VarArray.class.cast(va).vars, PREFIX))
-				.collect(Collectors.joining(" ")) + " ";
-		return s + "  <list>" + list + "</list>  <values>" + values + "</values>  </instantiation>";
-	}
-
-	/**
-	 * Method called to print any new solution found by the solver. .
-	 */
-	public final void prettyDisplay() {
-		boolean cm = rs.cp.settingXml.competitionMode;
-		if (!cm && solver.solManager.nSolutionsFound != 1 && rs.cp.verbose < 1)
-			return;
-		String PREFIX = cm ? "v " : "   ";
-		boolean displayJ = !cm;
-		if (displayJ) {
-			String s = PREFIX + "{\n";
-			s += varEntities.allEntities.stream().filter(va -> !undisplay.contains(va.id))
-					.map(va -> PREFIX + " " + va.id + ": " + (va instanceof VarAlone ? Variable.instantiationOf(VarAlone.class.cast(va).var, PREFIX)
-							: Variable.instantiationOf(VarArray.class.cast(va).vars, PREFIX)))
-					.collect(Collectors.joining(",\n"));
-			s += "\n" + PREFIX + "}";
-			Kit.log.config(s + "\n");
-		}
-		String s = lastSolutionX(PREFIX);
-		solver.solManager.lastSolutionX = s;
-		if (!cm)
-			Kit.log.config(PREFIX + s + "\n");
-
-		String[] values = varEntities.allEntities.stream().filter(va -> !undisplay.contains(va.id))
-				.map(va -> va instanceof VarAlone ? Variable.instantiationOf(VarAlone.class.cast(va).var, PREFIX)
-						: Variable.rawInstantiationOf(VarArray.class.cast(va).vars, PREFIX))
-				.collect(Collectors.joining(" ")).split("\\s+");
-
-		api.prettyDisplay(values);
 	}
 
 	// private String savingName() {

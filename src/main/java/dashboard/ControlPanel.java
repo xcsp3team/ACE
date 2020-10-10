@@ -222,14 +222,18 @@ public class ControlPanel {
 		public final boolean dataexport = addB("dataexport", "dataexport", false, s_dataexport);
 		public final String variant = addS("variant", "variant", EMPTY_STRING, s_variant);
 
-		public final ESymmetryBreaking symmetryBreaking = addE("symmetryBreaking", "sb", ESymmetryBreaking.NO, s_sb);
 		public final boolean shareBitVectors = addB("shareBitVectors", "sbv", false, s_sbv, HIDDEN);
 		public final boolean completeGraph = addB("completeGraph", "cg", false, s_cg, HIDDEN); // used for PC8
 		public final EBinaryEncoding binaryEncoding = addE("binaryEncoding", "be", EBinaryEncoding.NO, s_be, TO_IMPLEMENT);
+
+		public final ESymmetryBreaking symmetryBreaking = addE("symmetryBreaking", "sb", ESymmetryBreaking.NO, s_sb);
+
+		public boolean isSymmetryBreaking() {
+			return symmetryBreaking != ESymmetryBreaking.NO;
+		}
 	}
 
 	public final SettingProblem settingProblem = new SettingProblem();
-	public final boolean symmetryBreaking = settingProblem.symmetryBreaking != ESymmetryBreaking.NO;
 
 	public class SettingVars extends SettingGroup {
 		String s_sel = "Allows us to give a list of variable that will form the subproblem to be solved."
@@ -601,7 +605,7 @@ public class ControlPanel {
 		public final ESingletonAssignment singletonAssignment = addE("singletonAssignment", "sing", ESingletonAssignment.LAST, s6);
 	}
 
-	public final SettingVarh varh = new SettingVarh();
+	public final SettingVarh settingVarh = new SettingVarh();
 
 	public class SettingValh extends SettingGroup {
 		String s1 = "The name of the class that selects the next value to be assigned to the last selected variable."
@@ -621,7 +625,7 @@ public class ControlPanel {
 		public final boolean optValHeuristic = addB("optValHeuristic", "ovh", false, "");
 	}
 
-	public final SettingValh valh = new SettingValh();
+	public final SettingValh settingValh = new SettingValh();
 
 	public class SettingRevh extends SettingGroup {
 		String s1 = "The name of the class that represents the revision ordering heuristic.";
@@ -642,25 +646,6 @@ public class ControlPanel {
 	}
 
 	public final SettingLocalSearch settingLocalSearch = new SettingLocalSearch();
-
-	public class SettingIntegrating extends SettingGroup {
-		String s_much = "The available heuristics for extraction of MUCS in wcsp context approach."
-				+ "\n\tIf the value of this parameter is 1, then random relaxation of MUC."
-				+ "\n\tIf the value of this parameter is 2, then relaxation of MUC with minimal cost and greater random score of the current constraint relaxed."
-				+ "\n\tIf the value of this parameter is 3, then relaxation of MUC with minimal cost and greater weighted degreee of the current constraint relaxed."
-				+ "\n\tIf the value of this parameter is 4, then relaxation of MUC with minimal cost and greater nb filterings of the current constraint relaxed."
-				+ "\n\tIf the value of this parameter is 5, then relaxation of MUC with minimal cost and greater product of weighted degrees of variables of the scope of the current constraint relaxed."
-				+ "\n\tIf the value of this parameter is 6, then relaxation of MUC with minimal cost and greater age of the current constraint relaxed.";
-		String s_ca = "If the value of this parameter is true, then complete approach of relaxation of MUC is used, otherwiwe greedy approach is used.";
-		String QueuePatternAndDominance = "If the value of this parameter is true, then complete approach of relaxation of MUC is used with a queue and patterns.";
-		String StackPattern = "If the value of this parameter is true, then complete approach of relaxation of MUC is used with a stack and patterns.";
-		String MustBuildConflictStructures = "";
-
-		public final int mucHeuristic = addI("mucHeuristic", "i_much", 5, s_much);
-		public final boolean mucCompleteApproach = addB("mucCompleteApproach", "i_ca", true, s_ca);
-	}
-
-	public final SettingIntegrating settingIntegrating = new SettingIntegrating();
 
 	public class SettingExperimental extends SettingGroup {
 		public final boolean testB = addB("testB", "test", false, "", HIDDEN);
@@ -687,7 +672,8 @@ public class ControlPanel {
 
 	public final boolean mustBuildConflictStructures = settings.addB(3, "constraints", "mustBuildConflictStructures", "mbcs",
 			!settingPropagation.classForRevisions.equals(Reviser1.class.getSimpleName())
-					|| (!valh.classForValHeuristic.equals(First.class.getSimpleName()) && !valh.classForValHeuristic.equals(Last.class.getSimpleName())),
+					|| (!settingValh.classForValHeuristic.equals(First.class.getSimpleName())
+							&& !settingValh.classForValHeuristic.equals(Last.class.getSimpleName())),
 			"");
 
 	private ControlPanel() {
@@ -705,7 +691,7 @@ public class ControlPanel {
 		Kit.control(settingOptimization.lowerBound <= settingOptimization.upperBound);
 		// as
 		// C0
-		Kit.control(!settingCtrs.normalizeCtrs || (!symmetryBreaking && settingGeneral.framework != TypeFramework.MAXCSP));
+		Kit.control(!settingCtrs.normalizeCtrs || (!settingProblem.isSymmetryBreaking() && settingGeneral.framework != TypeFramework.MAXCSP));
 		settings.controlKeys();
 		if (settingGeneral.makeExceptionsVisible)
 			org.xcsp.modeler.Compiler.ev = true;

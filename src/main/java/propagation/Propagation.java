@@ -19,6 +19,7 @@ import problem.Problem;
 import propagation.order1.PropagationForward;
 import search.Solver;
 import utility.Kit;
+import utility.Reflector;
 import utility.sets.SetSparse;
 import variables.Variable;
 
@@ -30,6 +31,12 @@ import variables.Variable;
  * 
  */
 public abstract class Propagation {
+
+	public static Propagation buildFor(Solver solver) {
+		if (solver.rs.cp.settingSolving.enablePrepro || solver.rs.cp.settingSolving.enableSearch)
+			return Reflector.buildObject(solver.rs.cp.settingPropagation.clazz, Propagation.class, solver);
+		return null;
+	}
 
 	/*************************************************************************
 	 * Fields

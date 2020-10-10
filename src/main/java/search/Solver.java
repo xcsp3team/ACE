@@ -24,12 +24,9 @@ import interfaces.ObserverSearch;
 import interfaces.TagBinaryRelationFiltering;
 import problem.Problem;
 import propagation.Propagation;
-import search.backtrack.RestarterLNS;
-import search.backtrack.RestarterLocalBranching;
 import search.statistics.Statistics;
 import utility.Enums.EStopping;
 import utility.Kit;
-import utility.Reflector;
 import variables.Variable;
 
 public abstract class Solver {
@@ -112,17 +109,12 @@ public abstract class Solver {
 		this.pb = resolution.problem;
 		this.pb.solver = this;
 		this.futVars = new FutureVariables(pb.variables);
-		this.solManager = new SolutionManager(this, resolution.cp.settingGeneral.nSearchedSolutions);
-		// build solutionManager before propagation
-		this.propagation = resolution.cp.settingSolving.enablePrepro || resolution.cp.settingSolving.enableSearch
-				? Reflector.buildObject(resolution.cp.settingPropagation.clazz, Propagation.class, this)
-				: null;
-		Kit.control(!(resolution.cp.settingLNS.enabled && resolution.cp.settingLB.enabled), () -> "Cannot use LNS and LB (local branching) at the same time.");
-		this.restarter = resolution.cp.settingLNS.enabled ? new RestarterLNS(this)
-				: resolution.cp.settingLB.enabled ? new RestarterLocalBranching(this) : new Restarter(this);
+		this.solManager = new SolutionManager(this, resolution.cp.settingGeneral.nSearchedSolutions); // build solutionManager before propagation
+		this.propagation = Propagation.buildFor(this); // may be null
 		if (!resolution.cp.settingPropagation.useAuxiliaryQueues)
 			Stream.of(pb.constraints).forEach(c -> c.filteringComplexity = 0);
-		observersSearch = Stream.of(pb.constraints).filter(c -> c instanceof ObserverSearch).map(c -> (ObserverSearch) c)
+		this.restarter = Restarter.buildFor(this);
+		this.observersSearch = Stream.of(pb.constraints).filter(c -> c instanceof ObserverSearch).map(c -> (ObserverSearch) c)
 				.collect(Collectors.toCollection(ArrayList::new));
 		observersSearch.add(resolution.output);
 	}

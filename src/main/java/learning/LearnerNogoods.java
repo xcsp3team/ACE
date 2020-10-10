@@ -32,6 +32,12 @@ import variables.domains.Domain;
 
 public class LearnerNogoods {
 
+	public static LearnerNogoods buildFor(SolverBacktrack solver) {
+		if (solver.rs.cp.settingSolving.enableSearch && solver.rs.cp.settingLearning.nogood != ELearningNogood.NO && solver.propagation.queue != null)
+			return new LearnerNogoods(solver);
+		return null;
+	}
+
 	private class WatchCell {
 
 		private Nogood nogood;
