@@ -59,7 +59,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 			stop = true;
 		currentOpenNodesKeys = new ByteArrayHashKey[variables.length];
 		currentOpenNodesNbFoundSolutions = new int[variables.length];
-		moreThanOneSolution = solver.solManager.nSolutionsLimit > 1;
+		moreThanOneSolution = solver.solManager.limit > 1;
 		nbBytesPerVariableId = (variables.length <= Math.pow(2, 8) ? 1 : variables.length <= Math.pow(2, 16) ? 2 : variables.length <= Math.pow(2, 24) ? 3 : 4);
 		if (solver.rs.cp.settingLearning.compressionLevelForStateEquivalence != Deflater.NO_COMPRESSION)
 			compressor = new Deflater(solver.rs.cp.settingLearning.compressionLevelForStateEquivalence);
@@ -148,7 +148,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 			nbInferences++;
 			if (value > 0) {
 				nbInferredSolutions += value;
-				solver.solManager.nSolutionsFound += value;
+				solver.solManager.found += value;
 
 			}
 			// Kit.prn("inferrence");
@@ -159,7 +159,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 
 		currentOpenNodesKeys[level] = currentHashKey;
 		currentHashKey = null;
-		currentOpenNodesNbFoundSolutions[level] = (int) solver.solManager.nSolutionsFound;
+		currentOpenNodesNbFoundSolutions[level] = (int) solver.solManager.found;
 		return true;
 	}
 
@@ -184,7 +184,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 			solver.stoppingType = EStopping.FULL_EXPLORATION;
 		}
 
-		int nbSolutions = (int) solver.solManager.nSolutionsFound - currentOpenNodesNbFoundSolutions[solver.depth()];
+		int nbSolutions = (int) solver.solManager.found - currentOpenNodesNbFoundSolutions[solver.depth()];
 		mapOfHashKeys.put(hashKey, nbSolutions == 0 ? zero : nbSolutions);
 	}
 

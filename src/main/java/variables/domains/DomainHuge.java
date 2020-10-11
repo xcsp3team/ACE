@@ -29,7 +29,7 @@ public abstract class DomainHuge implements Domain {
 
 	@Override
 	public final int typeIdentifier() {
-		return typeIdentifier != null ? typeIdentifier : (typeIdentifier = typeIdentifierFor(new int[] { -1, -1, firstValue, lastValue }));
+		return typeIdentifier != null ? typeIdentifier : (typeIdentifier = Domain.typeIdentifierFor(new int[] { -1, -1, firstValue, lastValue }));
 		// -1 -1for avoiding confusion with other types of domains
 	}
 

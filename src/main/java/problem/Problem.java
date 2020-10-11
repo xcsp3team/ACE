@@ -169,8 +169,6 @@ import objectives.OptimizationPilot.OptimizationPilotDichotomic;
 import objectives.OptimizationPilot.OptimizationPilotIncreasing;
 import propagation.order1.PropagationForward;
 import search.Solver;
-import search.backtrack.RestarterLocalBranching.LocalBranchingConstraint;
-import search.backtrack.RestarterLocalBranching.LocalBranchingConstraint.LBAtLeastEqual;
 import utility.Enums.EExportMode;
 import utility.Kit;
 import utility.Reflector;
@@ -320,14 +318,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public void onConstructionSolverFinished() {
-		// Stream.of(variables).forEach(x -> x.dom.propagation = solver.propagation);
 		Stream.of(variables).forEach(x -> x.dom.setSolver(solver));
-
-		// for (VarArray a : varEntities.varArrays) {
-		// System.out.println(a.id);
-		// for (IVar x : a.flatVars)
-		// System.out.println("\t" + x + " " + x.getClass().getName());
-		// }
 	}
 
 	// ************************************************************************
@@ -391,14 +382,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 * The list of observers on domains. Whenever a domain is reduced, a callback function is called.
 	 */
 	public final Collection<ObserverDomainReduction> observersDomainReduction = new ArrayList<>();
-
-	public LocalBranchingConstraint localBranchingConstraints;
-
-	public final List<int[]> domainTypes = new ArrayList<int[]>();
-
-	public final Range range(int length) {
-		return new Range(length);
-	}
 
 	// ************************************************************************
 	// ***** Parameters
@@ -604,9 +587,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		makeGraphComplete();
 		buildSymmetries();
 		inferAllDifferents();
-		if (rs.cp.settingLB.enabled)
-			localBranchingConstraints = symbolic != null ? Reflector.buildObject(LBAtLeastEqual.class.getSimpleName(), LocalBranchingConstraint.class, this)
-					: Reflector.buildObject(rs.cp.settingLB.neighborhood, LocalBranchingConstraint.class, this);
 		constraints = stuff.collectedCtrsAtInit.toArray(new Constraint[0]);
 		for (Variable var : variables) {
 			var.whenFinishedProblemConstruction();
@@ -754,34 +734,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		undisplay = Arrays.asList(names);
 	}
 
-	// private String savingName() {
-	// if (rs.cp.settingXml.keepInstanceName)
-	// return name();
-	// String s = name();
-	// int start = s.lastIndexOf(File.separator) + 1;
-	// int end = s.lastIndexOf(".xml.bz2") != -1 ? s.lastIndexOf(".xml.bz2") : s.lastIndexOf(".xml.lzma") != -1 ? s.lastIndexOf(".xml.lzma") :
-	// s.length();
-	// s = s.substring(start, end) + (stuff.nMergedCtrs > 0 ? "_mgd" : "");
-	// // + (rs.cp.extension.wcnConversion != EWCNConversion.NO ? "_ub" + rs.cp.optimizing.upperBound : "");
-	// if (rs.cp.setingGeneral.limitForSatisfaction != Long.MAX_VALUE)
-	// s += "_lfs" + rs.cp.setingGeneral.limitForSatisfaction;
-	// return s;
-	// }
-
-	/**
-	 * Method that saves the problem instance into a XCSP file. Should not be called when modeling.
-	 */
-	// public final void saveIntoXCSP(EExportMoment moment) {
-	// // Kit.control(resolution.cfg.exportMode != EExportMode.NO);
-	// Document document = new Compiler3Abscon(new Subproblem(this)).buildDocument();
-	// String fileName = rs.cp.settingXml.export == EExport.STD ? null : savingName() + ".xml";
-	// save(document, fileName);
-	// if (rs.cp.settingXml.indentAndCompressUnderLinux)
-	// indentAndCompressXmlUnderLinux(fileName);
-	// }
-
 	// ************************************************************************
-	// *****
+	// ***** Posting variables
 	// ************************************************************************
 
 	@Override
@@ -885,6 +839,10 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// throw new RuntimeException();
 		System.exit(1);
 		return null;
+	}
+
+	private Range range(int length) {
+		return new Range(length);
 	}
 
 	// ************************************************************************

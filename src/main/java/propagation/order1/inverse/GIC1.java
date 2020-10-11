@@ -39,7 +39,7 @@ public class GIC1 extends StrongConsistency {
 				() -> "Inverse currently not compatible with STR3");
 		variableHeuristicForInverse = new WDegOnDom((SolverBacktrack) solver, false);
 		nInverseTests = new int[solver.pb.variables.length + 1];
-		baseNbSolutionsLimit = solver.solManager.nSolutionsLimit;
+		baseNbSolutionsLimit = solver.solManager.limit;
 	}
 
 	protected void handleNewSolution(Variable x, int a) {}
@@ -51,9 +51,9 @@ public class GIC1 extends StrongConsistency {
 		solver.assign(x, a);
 		HeuristicVariables h = ((SolverBacktrack) solver).heuristicVars;
 		((SolverBacktrack) solver).heuristicVars = variableHeuristicForInverse;
-		solver.solManager.nSolutionsLimit = 1;
+		solver.solManager.limit = 1;
 		boolean inverse = enforceArcConsistencyAfterAssignment(x) && solver.doRun().stoppingType == EStopping.REACHED_GOAL;
-		solver.solManager.nSolutionsLimit = baseNbSolutionsLimit;
+		solver.solManager.limit = baseNbSolutionsLimit;
 		((SolverBacktrack) solver).heuristicVars = h;
 		if (inverse)
 			handleNewSolution(x, a);
@@ -74,14 +74,14 @@ public class GIC1 extends StrongConsistency {
 
 	protected long before() {
 		performingProperSearch = true;
-		return solver.solManager.nSolutionsFound;
+		return solver.solManager.found;
 	}
 
 	protected void after(long nSolutionsBefore, int nValuesRemoved) {
 		if (cp().verbose >= 1) // && nbValuesRemoved > 0)
 			Kit.log.info("nbGICInconsistentValues=" + nValuesRemoved + " at depth=" + solver.depth() + " for " + nInverseTests[solver.depth()] + " tests");
 		solver.resetNoSolutions();
-		solver.solManager.nSolutionsFound = nSolutionsBefore;
+		solver.solManager.found = nSolutionsBefore;
 		updateSTRStructures();
 		performingProperSearch = false;
 	}

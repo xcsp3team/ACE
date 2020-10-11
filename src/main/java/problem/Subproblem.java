@@ -47,7 +47,7 @@ public final class Subproblem {
 		boolean[] presentCtrs = new boolean[pb.constraints.length];
 		boolean[] connectedVars = removeDisconnectedVars ? new boolean[presentVars.length] : null;
 		for (int i = 0; i < presentCtrs.length; i++) {
-			presentCtrs[i] = !Constraint.isInvolvingAbsentVar(pb.constraints[i], presentVars);
+			presentCtrs[i] = Constraint.isPresentScope(pb.constraints[i], presentVars);
 			if (removeDisconnectedVars && presentCtrs[i])
 				for (Variable x : pb.constraints[i].scp)
 					connectedVars[x.num] = true;
@@ -91,7 +91,7 @@ public final class Subproblem {
 			return false;
 		if (pb.variables.length != presentVars.length || pb.constraints.length != presentCtrs.length)
 			return false;
-		IntStream.range(0, presentCtrs.length).forEach(i -> Kit.control(!presentCtrs[i] || !Constraint.isInvolvingAbsentVar(pb.constraints[i], presentVars),
+		IntStream.range(0, presentCtrs.length).forEach(i -> Kit.control(!presentCtrs[i] || Constraint.isPresentScope(pb.constraints[i], presentVars),
 				() -> "constraint " + pb.constraints[i] + " involving one absent variable "));
 		IntStream.range(0, presentVars.length).forEach(i -> Kit.control(!presentVars[i] || !Variable.isInducedBy(pb.variables[i], presentCtrs),
 				() -> "variable " + pb.variables[i] + " involving in no present constraint"));

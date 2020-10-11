@@ -229,8 +229,6 @@ public class Resolution extends Thread {
 
 	public final List<ObserverConstruction> observersConstruction = new ArrayList<>();
 
-	// public final List<ObserverConstructionSolver> observersConstructionSolver = new ArrayList<>();
-
 	/**
 	 * The <code> Random </code> object used in resolution (randomization of heuristics, generation of random solutions,...). <br>
 	 * However, note that it is not used when generating random lists (see package <code> randomLists </code>).

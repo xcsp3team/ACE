@@ -118,15 +118,13 @@ public class Restarter implements ObserverRuns {
 		SolverBacktrack sb = solver instanceof SolverBacktrack ? ((SolverBacktrack) solver) : null;
 		switch (setting.measure) {
 		case FAILED:
-			return () -> sb.backtrackStatistics.nFailedAssignments;
+			return () -> sb.stats.nFailedAssignments;
 		case WRONG:
-			return () -> sb.backtrackStatistics.nWrongDecisions;
+			return () -> sb.stats.nWrongDecisions;
 		case BACKTRACK:
-			return () -> sb.backtrackStatistics.nBacktracks;
-		case MAX_DEPTH:
-			return () -> (long) sb.maxDepth;
+			return () -> sb.stats.nBacktracks;
 		case SOLUTION:
-			return () -> solver.solManager.nSolutionsFound;
+			return () -> solver.solManager.found;
 		default:
 			throw new UnreachableCodeException();
 		}

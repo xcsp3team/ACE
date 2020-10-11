@@ -45,7 +45,7 @@ public class Weak1 extends StrongConsistency implements TagExperimental {
 		solver.setDomainsMarks();
 		solver.assign(x, a);
 		solver.restarter.currCutoff = solver.restarter.measureSupplier.get() + cp().settingPropagation.weakCutoff;
-		boolean inconsistent = !enforceArcConsistencyAfterAssignment(x) || (solver.doRun().solManager.nSolutionsFound == 0 && solver.isFullExploration());
+		boolean inconsistent = !enforceArcConsistencyAfterAssignment(x) || (solver.doRun().solManager.found == 0 && solver.isFullExploration());
 		// if (!inverse) System.out.println(variable + "=" + index + " is not inverse");
 		solver.backtrack(x);
 		solver.restoreDomainsAtMarks();

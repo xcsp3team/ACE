@@ -80,6 +80,25 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		searchWck = stopwatch.getWckTime();
 	}
 
+	public void onAssignment(Variable x) {
+		nVisitedNodes++;
+		if (x.dom.size() > 1)
+			nDecisions++;
+		// nAssignments++; done elsewhere
+	}
+
+	// public void onRefutation() {
+	// nVisitedNodes++;
+	// nDecisions++;
+	// }
+
+	public void onRefutation(Variable x) {
+		if (x.dom.size() > 1) {
+			nVisitedNodes++;
+			nDecisions++;
+		}
+	}
+
 	private static NumberFormat nformat = NumberFormat.getInstance();
 
 	public final Solver solver;
@@ -140,7 +159,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 
 	public void manageSolution() {
 		long cpu = solver.rs.stopwatch.getCpuTime(), wck = solver.rs.instanceStopwatch.getWckTime();
-		if (solver.solManager.nSolutionsFound == 1) {
+		if (solver.solManager.found == 1) {
 			firstSolCpu = cpu;
 			firstSolWck = wck;
 		}
@@ -175,8 +194,8 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			}
 			m.separator();
 		}
-		if (solver.solManager.nSolutionsFound > 0) {
-			m.put("foundSolutions", solver.solManager.nSolutionsFound);
+		if (solver.solManager.found > 0) {
+			m.put("foundSolutions", solver.solManager.found);
 			m.put("firstSolCpu", firstSolCpu / 1000.0);
 			m.separator();
 		}
@@ -201,13 +220,13 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		// if (statMouny && solver.propagation instanceof ACPartial) {
 		// int[] t = ((ACPartial) solver.propagation).statistics;
 		// map.put("nbWOs", t[0] + ""); map.put("nbFPs", t[1] + ""); map.put("avgWOs", t[2] + ""); map.put("avgFPs", t[3] + ""); }
-		if (solver.solManager.nSolutionsFound > 0) {
+		if (solver.solManager.found > 0) {
 			if (solver.pb.framework != TypeFramework.CSP) {
 				m.put("bestBound", solver.solManager.bestBound);
 				m.put("bestBoundWck", lastSolWck / 1000.0);
 				m.put("bestBoundCpu", lastSolCpu / 1000.0);
 			}
-			m.put("foundSolutions", solver.solManager.nSolutionsFound);
+			m.put("foundSolutions", solver.solManager.found);
 			m.put("firstSolCpu", firstSolCpu / 1000.0);
 			m.separator();
 		}
@@ -242,8 +261,8 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 				m.put(Output.WCK, stopwatch.getWckTime() / 1000.0);
 				if (solver.learnerNogoods != null)
 					m.putPositive("nNogoods", solver.learnerNogoods.nNogoods);
-				if (solver.solManager.nSolutionsFound > 0) {
-					m.put("nSols", solver.solManager.nSolutionsFound);
+				if (solver.solManager.found > 0) {
+					m.put("nSols", solver.solManager.found);
 					if (solver.pb.framework != TypeFramework.CSP)
 						m.put("bound", nformat.format(solver.solManager.bestBound));
 				}
@@ -278,8 +297,8 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			// m.put(Output.N_VISITED_NODES, nVisitedNodes);
 			if (solver.learnerNogoods != null)
 				m.putPositive("nogoods", solver.learnerNogoods.nNogoods);
-			if (solver.solManager.nSolutionsFound > 0) {
-				m.put("foundSolutions", solver.solManager.nSolutionsFound);
+			if (solver.solManager.found > 0) {
+				m.put("foundSolutions", solver.solManager.found);
 				if (solver.pb.framework != TypeFramework.CSP)
 					m.put(Output.BEST_BOUND, solver.solManager.bestBound);
 			}

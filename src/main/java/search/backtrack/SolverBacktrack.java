@@ -8,6 +8,8 @@
  */
 package search.backtrack;
 
+import static utility.Kit.log;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -26,6 +28,7 @@ import executables.Resolution;
 import heuristics.values.HeuristicValuesDynamic.Failures;
 import heuristics.variables.HeuristicVariables;
 import heuristics.variables.dynamic.HeuristicVariablesConflictBased;
+import interfaces.ObserverAssignment;
 import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.ObserverPropagation;
 import interfaces.ObserverRuns;
@@ -45,8 +48,6 @@ import variables.domains.Domain;
 import variables.domains.DomainHuge;
 
 public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBacktrackingSystematic {
-
-	public int minDepth, maxDepth;
 
 	@Override
 	public void beforeRun() {
@@ -116,7 +117,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		}
 
 		boolean desactivated() {
-			return solManager.nSolutionsFound > 0 && rs.cp.settingValh.bestSolution;
+			return solManager.found > 0 && rs.cp.settingValh.solutionSaving;
 		}
 
 		void manageEmptyDomainBeforeBacktracking() {
@@ -132,8 +133,6 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		}
 
 		void beforeRun() {
-			minDepth = pb.variables.length + 1;
-			maxDepth = 0;
 			currSize = 0;
 		}
 
@@ -165,20 +164,24 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			maxDepthLimit = st != null && st.hasMoreTokens() ? Integer.parseInt(st.nextToken()) : Integer.MAX_VALUE;
 		}
 
+		private boolean canCurrentlyPrint() {
+			return active && !propagation.performingProperSearch && minDepthLimit <= depth() && depth() <= maxDepthLimit;
+		}
+
 		public void onBacktrack() {
-			if (active && !propagation.performingProperSearch && minDepthLimit <= depth() && depth() <= maxDepthLimit)
-				Kit.log.fine("        Backtrack ");
+			if (canCurrentlyPrint())
+				log.fine("        Backtrack ");
 		}
 
 		public void onAssignment(Variable x, int a) {
-			if (active && !propagation.performingProperSearch && minDepthLimit <= depth() && depth() <= maxDepthLimit)
-				Kit.log.fine("At " + depth() + ", " + x + " = " + a + (x.dom.indexesMatchValues() ? "" : "(" + x.dom.toVal(a) + ") ")
+			if (canCurrentlyPrint())
+				log.fine("At " + depth() + ", " + x + " = " + a + (x.dom.indexesMatchValues() ? "" : "(" + x.dom.toVal(a) + ") ")
 						+ (x.dom.size() == 1 ? " singleton" : ""));
 		}
 
 		public void onRefutation(Variable x, int a) {
-			if (active && !propagation.performingProperSearch && minDepthLimit <= depth() && depth() <= maxDepthLimit)
-				Kit.log.fine("At " + depth() + ", " + x + " != " + a);
+			if (canCurrentlyPrint())
+				log.fine("At " + depth() + ", " + x + " != " + a);
 		}
 	}
 
@@ -211,6 +214,13 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		return list;
 	}
 
+	protected List<ObserverAssignment> collectObserversAssignment() {
+		List<ObserverAssignment> list = new ArrayList<>();
+		if (heuristicVars instanceof ObserverAssignment)
+			list.add((ObserverAssignment) heuristicVars);
+		return list;
+	}
+
 	protected List<ObserverPropagation> collectObserversPropagation() {
 		List<ObserverPropagation> list = new ArrayList<>();
 		if (heuristicVars instanceof ObserverPropagation)
@@ -240,11 +250,11 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	public final Tracer tracer;
 
-	public StatisticsBacktrack backtrackStatistics;
-
 	public final RunProgressSaver runProgressSaver;
 
 	public final WarmStarter warmStarter;
+
+	public int minDepth, maxDepth;
 
 	public final class GlobalObserver {
 
@@ -357,7 +367,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		Kit.control(learnerStates == null);
 		Kit.control(observerVars.top == -1, () -> "Top= " + observerVars.top);
 		// Kit.control(observerCtrsSoft.top == -1);
-		stats = backtrackStatistics = new StatisticsBacktrack(this);
+		stats = new StatisticsBacktrack(this);
 		Kit.control(!proofer.active);
 	}
 
@@ -377,10 +387,11 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		this.observerVars = new GlobalObserver(this, size + nLevels);
 		this.observersBacktrackingSystematic = collectObserversBacktrackingSystematic();
 		this.observersRuns = collectObserversRuns();
+		this.observersAssignment = collectObserversAssignment();
 		this.observersPropagation = collectObserversPropagation();
 
 		this.tracer = new Tracer(resolution.cp.settingGeneral.trace);
-		this.stats = this.backtrackStatistics = new StatisticsBacktrack(this);
+		this.stats = new StatisticsBacktrack(this);
 		observersSearch.add(0, this.stats); // this list is initialized in the super-class
 
 		this.runProgressSaver = resolution.cp.settingValh.runProgressSaving ? new RunProgressSaver() : null;
@@ -398,23 +409,22 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	public void assign(Variable x, int a) {
 		assert !x.isAssigned();
 		reduceWithUniversalValues();
-		backtrackStatistics.nAssignments++;
+		stats.nAssignments++;
 		futVars.assign(x);
 		x.doAssignment(a);
 		dr.addPositiveDecision(x, a);
-		for (ObserverPropagation obs : observersPropagation)
+		for (ObserverAssignment obs : observersAssignment)
 			obs.afterAssignment(x, a);
 	}
 
 	@Override
-	public final void backtrack(Variable x) {
+	public final void backtrack(Variable x) { // should we call it unassign instead?
 		int depthBeforeBacktrack = depth();
 		futVars.unassign(x);
 		x.undoAssignment();
 		dr.delPositiveDecision(x);
-		for (ObserverPropagation obs : observersPropagation)
+		for (ObserverAssignment obs : observersAssignment)
 			obs.afterUnassignment(x);
-
 		for (ObserverBacktrackingSystematic obs : observersBacktrackingSystematic)
 			obs.restoreBefore(depthBeforeBacktrack);
 		if (propagation instanceof PropagationForward)
@@ -426,28 +436,10 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		backtrack(futVars.lastPast());
 	}
 
-	/**
-	 * Called when an empty domain has been encountered.
-	 */
-	protected void manageEmptyDomainBeforeBacktracking() {
-		if (runProgressSaver != null)
-			runProgressSaver.manageEmptyDomainBeforeBacktracking();
-
-		tracer.onBacktrack();
-		backtrackStatistics.nBacktracks++;
-		if (learnerStates != null)
-			learnerStates.dealWhenClosingNode();
-		if (futVars.nDiscarded() == 0)
-			stoppingType = EStopping.FULL_EXPLORATION;
-	}
-
 	public final boolean tryAssignment(Variable x, int a) {
-		stats.nVisitedNodes++;
-		if (x.dom.size() > 1)
-			stats.nDecisions++;
 		tracer.onAssignment(x, a);
-		maxDepth = Math.max(maxDepth, depth());
-		lcReasoner.doWhenAssignment(x);
+		stats.onAssignment(x);
+		lcReasoner.onAssignment(x);
 		assign(x, a);
 		proofer.reset();
 		boolean consistent = propagation.runAfterAssignment(x) && (learnerStates == null || learnerStates.dealWhenOpeningNode());
@@ -455,9 +447,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			((Failures) x.heuristicVal).updateWith(a, depth(), consistent);
 		if (!consistent) {
 			stats.nWrongDecisions++;
-			backtrackStatistics.nFailedAssignments++;
+			stats.nFailedAssignments++;
 			// if (learnerNogoods != null) learnerNogoods.addCurrentNogood();
-			// if (variableOrderingHeuristic instanceof Activity) ((Activity) variableOrderingHeuristic).update();
 			return false;
 		}
 		// if (stateRecordingManager != null && !stateRecordingManager.dealWhenOpeningNode()) return false;
@@ -468,14 +459,27 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		return tryAssignment(x, x.heuristicVal.bestIndex());
 	}
 
+	/**
+	 * Called when an empty domain has been encountered.
+	 */
+	protected void manageEmptyDomainBeforeBacktracking() {
+		if (runProgressSaver != null)
+			runProgressSaver.manageEmptyDomainBeforeBacktracking();
+
+		tracer.onBacktrack();
+		stats.nBacktracks++;
+		if (learnerStates != null)
+			learnerStates.dealWhenClosingNode();
+		if (futVars.nDiscarded() == 0)
+			stoppingType = EStopping.FULL_EXPLORATION;
+	}
+
 	protected final boolean tryRefutation(Variable x, int a) {
 		if (x.dom instanceof DomainHuge)
 			return false;
-
 		tracer.onRefutation(x, a);
-		minDepth = Math.min(minDepth, depth());
-
-		lcReasoner.doWhenRefutation(x, a);
+		stats.onRefutation(x);
+		lcReasoner.onRefutation(x, a);
 		dr.addNegativeDecision(x, a);
 		proofer.recopy();
 		x.dom.removeElementary(a);
@@ -483,12 +487,11 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		if (consistent) {
 			if (rs.cp.settingSolving.branching == EBranching.NON)
 				return true;
-			stats.nVisitedNodes++;
-			stats.nDecisions++;
 			consistent = propagation.runAfterRefutation(x);
 			if (!consistent)
 				stats.nWrongDecisions++;
 		}
+
 		if (!consistent)
 			manageEmptyDomainBeforeBacktracking();
 		return consistent;
@@ -515,10 +518,12 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	 * principle of this method is to choose a variable and some values for this variable (maybe, all) until a domain becomes empty.
 	 */
 	public void explore() {
+		maxDepth = 0;
 		while (!finished() && !restarter.currRunFinished()) {
 			while (!finished() && !restarter.currRunFinished()) {
 				if (futVars.size() == 0)
 					break;
+				maxDepth = Math.max(maxDepth, depth());
 				if (tryAssignment(heuristicVars.bestVar()) == false)
 					manageContradiction();
 			}
@@ -526,8 +531,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 				solManager.handleNewSolutionAndPossiblyOptimizeIt();
 				if (rs.problem.framework == TypeFramework.COP && !rs.cp.settingRestarts.restartAfterSolution) {
 					// we need to backtrack to the level where a value for a variable in the scope of the objective constraint has been removed
-					// for
-					// the last time
+					// for the last time
 					Constraint c = (Constraint) rs.problem.optimizationPilot.ctr;
 					((OptimizationCompatible) c).setLimit(((OptimizationCompatible) c).objectiveValue() + (rs.problem.optimizationPilot.minimization ? -1 : 1));
 					int backtrackLevel = -1;
@@ -546,8 +550,10 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 				}
 			}
 		}
+		minDepth = dr.minDepth(); // need to be recorded before backtracking to the root
 		if (learnerNogoods != null && !finished() && !restarter.allRunsFinished())
 			learnerNogoods.addNogoodsOfCurrentBranch();
+
 	}
 
 	private final Variable[] lastPastBeforeRun = new Variable[2];

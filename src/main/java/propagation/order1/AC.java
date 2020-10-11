@@ -39,7 +39,7 @@ public class AC extends PropagationForward {
 
 	public AC(Solver solver) {
 		super(solver);
-		this.guaranteed = Constraint.isGuaranteedGACOn(solver.pb.constraints);
+		this.guaranteed = Constraint.isGuaranteedGAC(solver.pb.constraints);
 		String s = cp().settingPropagation.classForFailedValues;
 		if (s == null || s.length() == 0)
 			this.fvbc = null;

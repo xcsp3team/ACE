@@ -51,6 +51,8 @@ public final class DecisionRecorder {
 	 * Decisions recorded during search
 	 *********************************************************************************************/
 
+	SolverBacktrack solver;
+
 	/**
 	 * The set of current decisions.
 	 */
@@ -70,6 +72,7 @@ public final class DecisionRecorder {
 	}
 
 	public DecisionRecorder(SolverBacktrack solver) {
+		this.solver = solver;
 		int n1 = (int) Math.ceil(Math.log(solver.pb.variables.length) / Math.log(2));
 		int n2 = (int) Math.ceil(Math.log(solver.pb.stuff.maxDomSize()) / Math.log(2));
 		Kit.control(n1 + n2 <= 32);
@@ -112,6 +115,15 @@ public final class DecisionRecorder {
 				limit--; // for discarding the negative decisions that follow the positive decision
 		assert dense[limit] > 0 && numIn(dense[limit]) == x.num : toString();
 		decisions.limit = limit - 1; // -1 for discarding the positive decision
+	}
+
+	public int minDepth() {
+		int[] dense = decisions.dense;
+		int limit = decisions.limit;
+		for (int i = 0; i <= limit; i++)
+			if (dense[i] < 0)
+				return i;
+		return -1;
 	}
 
 	public final String stringOf(int dec) {

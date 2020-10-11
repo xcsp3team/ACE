@@ -32,7 +32,7 @@ public class Weak3 extends Weak1 implements TagExperimental {
 			c.scp[i].dom.reduceToElementary(tuple[i]);
 		solver.restarter.currCutoff = cp().settingPropagation.weakCutoff;
 		solver.doRun();
-		boolean consistent = !(solver.isFullExploration() && solver.solManager.nSolutionsFound == 0);
+		boolean consistent = !(solver.isFullExploration() && solver.solManager.found == 0);
 		if (solver.isFullExploration())
 			solver.stoppingType = null;
 		for (Variable x : c.scp)

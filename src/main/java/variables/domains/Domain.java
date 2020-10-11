@@ -8,6 +8,7 @@
  */
 package variables.domains;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -35,8 +36,9 @@ public interface Domain extends LinkedSet {
 		return doms1.length == doms2.length && IntStream.range(0, doms1.length).allMatch(i -> doms1[i].typeIdentifier() == doms2[i].typeIdentifier());
 	}
 
-	default int typeIdentifierFor(int[] values) {
-		List<int[]> domainTypes = var().pb.domainTypes;
+	static final List<int[]> domainTypes = new ArrayList<int[]>();
+
+	static int typeIdentifierFor(int[] values) {
 		int j = IntStream.range(0, domainTypes.size()).filter(i -> Arrays.equals(values, domainTypes.get(i))).findFirst().orElse(-1);
 		if (j != -1)
 			return j;

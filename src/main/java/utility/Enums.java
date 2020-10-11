@@ -80,7 +80,7 @@ public class Enums {
 	}
 
 	public static enum ERestartsMeasure {
-		FAILED, WRONG, BACKTRACK, MAX_DEPTH, SOLUTION;
+		FAILED, WRONG, BACKTRACK, SOLUTION;
 	}
 
 	// public static enum EWCNConversion {

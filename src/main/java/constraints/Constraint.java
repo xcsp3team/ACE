@@ -115,11 +115,11 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		return IntStream.range(0, ctrs.length).noneMatch(i -> i != ctrs[i].num);
 	}
 
-	public static final boolean isInvolvingAbsentVar(Constraint c, boolean[] presentVars) {
-		return Stream.of(c.scp).anyMatch(x -> !presentVars[x.num]);
+	public static final boolean isPresentScope(Constraint c, boolean[] presentVars) {
+		return Stream.of(c.scp).allMatch(x -> presentVars[x.num]);
 	}
 
-	public static final boolean isGuaranteedGACOn(Constraint[] ctrs) {
+	public static final boolean isGuaranteedGAC(Constraint[] ctrs) {
 		return Stream.of(ctrs).allMatch(c -> c.isGuaranteedGAC());
 	}
 
@@ -146,6 +146,24 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	public static final int howManyVarsWithin(Variable[] vars, int spaceLimitation) {
 		return howManyVarsWithin(Stream.of(vars).mapToInt(x -> x.dom.size()).toArray(), spaceLimitation);
+	}
+
+	public static Constraint firstUnsatisfiedHardConstraint(Constraint[] constraints, int[] solution) {
+		for (Constraint c : constraints) {
+			if (c.ignored || !(c instanceof CtrHard))
+				continue;
+			int[] tmp = c.tupleManager.localTuple;
+			for (int i = 0; i < tmp.length; i++)
+				tmp[i] = solution != null ? solution[c.scp[i].num] : c.scp[i].dom.unique();
+			if (((CtrHard) c).checkIndexes(tmp) == false)
+				return c;
+		}
+		return null;
+	}
+
+	public static Constraint firstUnsatisfiedHardConstraint(Constraint[] constraints) {
+		return firstUnsatisfiedHardConstraint(constraints, null);
+
 	}
 
 	/*************************************************************************

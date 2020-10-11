@@ -33,7 +33,7 @@ public final class DomainBinary extends LinkedSetBinary implements Domain {
 
 	@Override
 	public final int typeIdentifier() {
-		return typeIdentifier != null ? typeIdentifier : (typeIdentifier = typeIdentifierFor(new int[] { firstValue, secondValue }));
+		return typeIdentifier != null ? typeIdentifier : (typeIdentifier = Domain.typeIdentifierFor(new int[] { firstValue, secondValue }));
 	}
 
 	@Override

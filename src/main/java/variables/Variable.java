@@ -388,19 +388,19 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 		assert obj.getClass().isArray();
 		if (obj instanceof Variable[]) {
 			assert Stream.of((Variable[]) obj).noneMatch(x -> x != null && x.dom.size() != 1);
-			return "[" + Stream.of((Variable[]) obj).map(x -> instantiationOf(x, prefix)).collect(Collectors.joining(", ")) + "]";
+			return "[" + Stream.of((Variable[]) obj).map(x -> instantiationOf(x, null)).collect(Collectors.joining(", ")) + "]";
 		} else
-			return "[\n" + prefix + " " + Stream.of((Object[]) obj).map(o -> instantiationOf(o, prefix)).collect(Collectors.joining(",\n" + prefix + " "))
-					+ "]";
+			return "[\n" + prefix + "  " + Stream.of((Object[]) obj).map(o -> instantiationOf(o, prefix)).collect(Collectors.joining(",\n" + prefix + "  "))
+					+ "\n" + prefix + " ]";
 	}
 
 	/** Only whitespace as separator. The array only contains variables, and can be of any dimension. */
 	public static String rawInstantiationOf(Object array) {
 		if (array instanceof Variable[]) {
 			assert Stream.of((Variable[]) array).noneMatch(x -> x != null && x.dom.size() != 1);
-			return Stream.of((Variable[]) array).map(x -> instantiationOf(x, "")).collect(Collectors.joining(" ")); // we need instantiation
-																													// because of possible *; the
-																													// prefix is useless
+			return Stream.of((Variable[]) array).map(x -> instantiationOf(x, null)).collect(Collectors.joining(" ")); // we need instantiation
+																														// because of possible *; the
+																														// prefix is useless
 		} else // recursive call
 			return Stream.of((Object[]) array).map(o -> rawInstantiationOf(o)).collect(Collectors.joining(" "));
 	}

@@ -12,11 +12,11 @@ import constraints.Constraint;
 import variables.Variable;
 
 public interface ObserverPropagation {
-	public void afterAssignment(Variable x, int a);
-
-	public void afterUnassignment(Variable x);
+	// public void afterAssignment(Variable x, int a);
+	//
+	// public void afterUnassignment(Variable x);
 
 	public void whenWipeout(Constraint c, Variable x);
 
-	public void whenReduction(Constraint c, Variable x);
+	// public void whenReduction(Constraint c, Variable x);
 }

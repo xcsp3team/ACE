@@ -305,7 +305,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	public void onConstructionSolverFinished() {
 		MapAtt sa = new MapAtt("Solver");
 		if (resolution.solver.propagation.getClass() == AC.class)
-			sa.put(Output.GUARANTEED_GAC, Constraint.isGuaranteedGACOn(resolution.problem.constraints));
+			sa.put(Output.GUARANTEED_GAC, Constraint.isGuaranteedGAC(resolution.problem.constraints));
 		sa.separator();
 		sa.put(Output.WCK, resolution.instanceStopwatch.getWckTime() / 1000.0);
 		sa.put(Output.CPU, resolution.stopwatch.getCpuTimeInSeconds());

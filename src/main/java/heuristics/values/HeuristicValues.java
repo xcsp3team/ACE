@@ -57,7 +57,7 @@ public abstract class HeuristicValues extends Heuristic {
 
 	public int bestIndex() {
 		SolutionManager solManager = x.pb.solver.solManager;
-		if (solManager.nSolutionsFound == 0) {
+		if (solManager.found == 0) {
 			if (settings.warmStart.length() > 0) {
 				int a = ((SolverBacktrack) x.pb.solver).warmStarter.valueOf(x);
 				if (a != -1 && dx.isPresent(a))
@@ -67,9 +67,9 @@ public abstract class HeuristicValues extends Heuristic {
 				if (a != -1 && dx.isPresent(a))
 					return a;
 			}
-		} else if (settings.bestSolution) {
+		} else if (settings.solutionSaving) {
 			Solver solver = x.pb.solver;
-			if (solver.restarter.numRun % settings.bestSolutionGap != 0) { // every bestSolutionGap runs, we do not use bs
+			if (solver.restarter.numRun % settings.solutionSavingGap != 0) { // every bestSolutionGap runs, we do not use bs
 				int a = solver.solManager.lastSolution[x.num];
 				if (dx.isPresent(a)) // && (!priorityVar || solver.rs.random.nextDouble() < 0.5))
 					return a;

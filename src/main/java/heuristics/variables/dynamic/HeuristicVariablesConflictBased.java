@@ -12,6 +12,7 @@ import java.util.Arrays;
 
 import constraints.Constraint;
 import heuristics.variables.HeuristicVariablesDynamic;
+import interfaces.ObserverAssignment;
 import interfaces.ObserverPropagation;
 import interfaces.ObserverRuns;
 import interfaces.TagMaximize;
@@ -21,7 +22,8 @@ import utility.sets.SetDense;
 import variables.Variable;
 import variables.domains.Domain;
 
-public abstract class HeuristicVariablesConflictBased extends HeuristicVariablesDynamic implements ObserverRuns, ObserverPropagation, TagMaximize {
+public abstract class HeuristicVariablesConflictBased extends HeuristicVariablesDynamic
+		implements ObserverRuns, ObserverAssignment, ObserverPropagation, TagMaximize {
 
 	private int time; // corresponds to the number of times a wipe-out occurred
 	private int[] ctime; // ctime[i] corresponds to the last time a wipe-out occurred for constraint i
@@ -128,8 +130,8 @@ public abstract class HeuristicVariablesConflictBased extends HeuristicVariables
 		// System.out.println(); }
 	}
 
-	@Override
-	public void whenReduction(Constraint c, Variable x) {}
+	// @Override
+	// public void whenReduction(Constraint c, Variable x) {}
 
 	public HeuristicVariablesConflictBased(SolverBacktrack solver, boolean antiHeuristic) {
 		super(solver, antiHeuristic);

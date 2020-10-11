@@ -90,7 +90,7 @@ public class TIInverse1 extends StrongConsistency {
 		SetDenseReversible denseSetOfTuples = ((CtrExtensionSTR1) ctr).set;
 		int[] dense = denseSetOfTuples.dense;
 		for (int i = denseSetOfTuples.limit; i >= 0; i--) {
-			if (residues[dense[i]] != null && solver.solManager.firstUnsatisfiedConstraint(residues[dense[i]]) != null)
+			if (residues[dense[i]] != null && Constraint.firstUnsatisfiedHardConstraint(solver.pb.constraints, residues[dense[i]]) != null)
 				continue;
 			denseSetOfTuples.swapAtPositions(0, i);
 			int prevLimit = denseSetOfTuples.limit;

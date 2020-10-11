@@ -107,12 +107,12 @@ public final class LastConflictReasoner implements ObserverRuns {
 		return vars[nVars - 1];
 	}
 
-	public final void doWhenAssignment(Variable x) {
+	public final void onAssignment(Variable x) {
 		if (k > 0 && nVars == 0)
 			lastAssigned = x;
 	}
 
-	public void doWhenRefutation(Variable x, int a) {
+	public void onRefutation(Variable x, int a) {
 		if (k == 0)
 			return;
 		// is variable the candidate for next insertion (after potentially lastAssigned)

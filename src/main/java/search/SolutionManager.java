@@ -27,7 +27,6 @@ import problem.Problem;
 import search.backtrack.RestarterLocalBranching;
 import search.backtrack.SolverBacktrack;
 import search.local.SolutionOptimizer;
-import search.local.SolverLocal;
 import utility.Enums.EStopping;
 import utility.Kit;
 import variables.Variable;
@@ -39,15 +38,15 @@ public final class SolutionManager {
 	/**
 	 * Number of solutions to be found, before stopping. When equal to PLUS_INFINITY, all solutions are searched for (no limit is fixed).
 	 */
-	public long nSolutionsLimit;
+	public long limit;
 
 	/**
 	 * Number of solutions found by the solver so far. Initially, 0.
 	 */
-	public long nSolutionsFound;
+	public long found;
 
 	/**
-	 * For optimization problems, the best bound found by the solver if nbSolutionsFound > 0, the specified upper bound initially given otherwise
+	 * For optimization problems, the best bound found by the solver if found > 0, the specified upper bound initially given otherwise
 	 */
 	public long bestBound;
 
@@ -68,7 +67,7 @@ public final class SolutionManager {
 
 	private SolutionOptimizer solutionOptimizer;
 
-	private AtomicBoolean competitionLock = new AtomicBoolean();
+	private AtomicBoolean lock = new AtomicBoolean(); // important for competition
 
 	public final String listVars, listVarsWithoutAuxiliary;
 
@@ -77,30 +76,34 @@ public final class SolutionManager {
 		for (VarEntity va : solver.pb.varEntities.allEntities) {
 			if (solver.pb.undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
 				continue;
+			if (sb.length() > 0)
+				sb.append(" ");
 			if (considerVars)
-				sb.append(" ").append(va.id).append(va instanceof VarArray ? ((VarArray) va).getEmptyStringSize() : "");
+				sb.append(va.id).append(va instanceof VarArray ? ((VarArray) va).getEmptyStringSize() : "");
 			else {
 				if (va instanceof VarAlone)
-					sb.append(" ").append(((Variable) ((VarAlone) va).var).lastSolutionPrettyAssignedValue); // .dom.prettyAssignedValue());
+					sb.append(((Variable) ((VarAlone) va).var).lastSolutionPrettyAssignedValue); // .dom.prettyAssignedValue());
 				else
-					sb.append(" ").append(Variable.rawInstantiationOf(VarArray.class.cast(va).vars));
+					sb.append(Variable.rawInstantiationOf(VarArray.class.cast(va).vars));
 			}
 		}
-		return sb.append(" ").toString(); // one whitespace at both ends
+		return sb.toString();
 	}
 
 	public String lastSolutionInXmlFormat() { // auxiliary variables are not considered
-		StringBuilder sb = new StringBuilder("<instantiation id='sol").append(nSolutionsFound).append("' type='solution'");
+		assert found > 0;
+		StringBuilder sb = new StringBuilder("<instantiation id='sol").append(found).append("' type='solution'");
 		sb.append(solver.pb.framework != TypeFramework.CSP ? " cost='" + bestBound + "'" : "").append(">");
-		sb.append(" <list>").append(listVarsWithoutAuxiliary).append(" </list> <values>").append(vars_values(false, true));
-		String s = sb.append("</values> </instantiation>").toString();
+		sb.append(" <list> ").append(listVarsWithoutAuxiliary).append(" </list> <values> ").append(vars_values(false, true));
+		String s = sb.append(" </values> </instantiation>").toString();
 		if (lastSolutionXml != null)
 			lastSolutionXml = s;
 		return s;
 	}
 
 	public String lastSolutionInJsonFormat(boolean discardAuxiliary) {
-		String PREFIX = "   ";
+		assert found > 0;
+		String PREFIX = " ";
 		StringBuilder sb = new StringBuilder(PREFIX).append("{\n");
 		for (VarEntity va : solver.pb.varEntities.allEntities) {
 			if (solver.pb.undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
@@ -118,7 +121,7 @@ public final class SolutionManager {
 
 	public SolutionManager(Solver solver, long nSolutionsLimit) {
 		this.solver = solver;
-		this.nSolutionsLimit = nSolutionsLimit;
+		this.limit = nSolutionsLimit;
 		this.bestBound = solver.rs.cp.settingOptimization.upperBound;
 		this.allSolutions = solver.rs.cp.settingGeneral.recordSolutions ? new ArrayList<int[]>() : null;
 		this.solutionOptimizer = new SolutionOptimizer(this);
@@ -126,36 +129,34 @@ public final class SolutionManager {
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
 		this.listVars = vars_values(true, false);
 		this.listVarsWithoutAuxiliary = vars_values(true, true);
-		// this.lastSolutionXml = ""; // security hard coding
+		// this.lastSolutionXml = ""; // uncomment for security when really running a competition (hard coding)
 	}
 
 	public void displayFinalResults() {
 		boolean fullExploration = solver.stoppingType == EStopping.FULL_EXPLORATION;
-		synchronized (competitionLock) {
-			if (!competitionLock.get()) {
-				competitionLock.set(true);
+		synchronized (lock) {
+			if (!lock.get()) {
+				lock.set(true);
 				System.out.println();
-				if (nSolutionsFound > 0)
-					System.out.println("\nLast Solution in JSON format:\n" + lastSolutionInJsonFormat(true));
+				if (found > 0)
+					System.out.println("\nSolution " + found + " in JSON format:\n" + lastSolutionInJsonFormat(true) + "\n");
 				if (fullExploration) {
-					if (nSolutionsFound == 0)
+					if (found == 0)
 						System.out.println("s UNSATISFIABLE");
 					else
-						System.out.println(solver.pb.framework == TypeFramework.COP ? "s OPTIMUM FOUND" : "s SATISFIABLE");
+						System.out.println(solver.pb.framework == TypeFramework.COP ? "s OPTIMUM " + bestBound : "s SATISFIABLE");
 				} else {
-					if (nSolutionsFound == 0)
+					if (found == 0)
 						System.out.println("s UNKNOWN");
 					else
-						System.out.println(solver.pb.framework == TypeFramework.COP ? "s BOUND FOUND " + bestBound : "s SATISFIABLE");
+						System.out.println(solver.pb.framework == TypeFramework.COP ? "s BOUND " + bestBound : "s SATISFIABLE");
 				}
-				if (nSolutionsFound > 0)
-					System.out.println("v " + (lastSolutionXml != null ? lastSolutionXml : lastSolutionInXmlFormat()));
-
-				System.out.println("\nd WRONG_DECISIONS " + solver.stats.nWrongDecisions);
-				if (solver.solManager.nSolutionsFound > 1)
-					System.out.println("d N_SOLUTIONS " + solver.solManager.nSolutionsFound);
-				if (fullExploration)
-					System.out.println("d COMPLETE");
+				if (found > 0)
+					System.out.println("\nv " + (lastSolutionXml != null ? lastSolutionXml : lastSolutionInXmlFormat()));
+				System.out.println("\nd WRONG DECISIONS " + solver.stats.nWrongDecisions);
+				if (fullExploration && solver.pb.framework == TypeFramework.CSP)
+					System.out.println("d NUMBER OF SOLUTIONS " + found);
+				System.out.println(fullExploration ? "d COMPLETE EXPLORATION" : "d INCOMPLETE EXPLORATION");
 				System.out.flush();
 			}
 		}
@@ -174,7 +175,7 @@ public final class SolutionManager {
 	private int h1 = -1, h2 = -1;
 
 	private void solutionHamming() {
-		if (nSolutionsFound <= 1)
+		if (found <= 1)
 			return;
 		h1 = (int) IntStream.range(0, lastSolution.length).filter(i -> lastSolution[i] != solver.pb.variables[i].dom.unique()).count();
 		if (solver.pb.optimizationPilot != null) {
@@ -189,10 +190,10 @@ public final class SolutionManager {
 	 */
 	public void handleNewSolution(boolean controlSolution) {
 		Kit.control(!controlSolution || controlFoundSolution());
-		nSolutionsFound++;
+		found++;
 		lastSolutionRun = solver.restarter.numRun;
 		solutionHamming();
-		if (nSolutionsFound >= nSolutionsLimit)
+		if (found >= limit)
 			solver.stoppingType = EStopping.REACHED_GOAL;
 		storeSolution(null);
 		if (allSolutions != null)
@@ -222,9 +223,6 @@ public final class SolutionManager {
 			log.config(lastSolutionInJsonFormat(false) + "\n");
 		// solver.pb.api.prettyDisplay(vars_values(false, false).split("\\s+"));
 
-		if (nSolutionsFound % 100000 == 0)
-			log.fine("    " + nSolutionsFound + " solutions found " + " mem=" + Kit.getFormattedUsedMemorySize());
-
 		if (solver.restarter instanceof RestarterLocalBranching)
 			((RestarterLocalBranching) solver.restarter).enterLocalBranching();
 	}
@@ -234,61 +232,14 @@ public final class SolutionManager {
 		solutionOptimizer.optimizeCurrentSolution();
 	}
 
-	// public void displayFinalResults() {
-	// boolean fullExploration = solver.stoppingType == EStopping.FULL_EXPLORATION;
-	// if (solver.rs.cp.settingXml.competitionMode) {
-	// synchronized (solver.rs.competitionLock) {
-	// if (!solver.rs.competitionLock.get()) {
-	// solver.rs.competitionLock.set(true);
-	// System.out.println();
-	// if (lastSolutionX != null)
-	// System.out.println("v " + lastSolutionX);
-	// if (nSolutionsFound == 0)
-	// System.out.println(fullExploration ? "s UNSATISFIABLE" : "s UNKNOWN");
-	// else {
-	// System.out.println(fullExploration && solver.pb.framework == TypeFramework.COP ? "s OPTIMUM FOUND" : "s SATISFIABLE");
-	// }
-	// System.out.println("\nd WRONG_DECISIONS " + solver.stats.nWrongDecisions);
-	// if (solver.solManager.nSolutionsFound > 1)
-	// System.out.println("d N_SOLUTIONS " + solver.solManager.nSolutionsFound);
-	// System.out.flush();
-	// }
-	// }
-	// } else {
-	// Kit.log.config("\n<wrong> " + solver.stats.nWrongDecisions + " </wrong>");
-	// if (nSolutionsFound == 0)
-	// Kit.log.config(fullExploration ? "<unsatisfiable/>" : "<unknown/>");
-	// else {
-	// Kit.log.config((solver.pb.framework == TypeFramework.CSP ? "<satisfiable/>"
-	// : fullExploration ? "<optimum> " + bestBound + " </optimum>" : "<bound> " + bestBound + " </bound>"));
-	// if (solver.pb.framework == TypeFramework.CSP)
-	// Kit.log.config("<nbSolutions> " + (fullExploration ? "" : "at least ") + nSolutionsFound + " </nbSolutions>");
-	// }
-	// System.out.flush();
-	// }
-	// }
-
-	public Constraint firstUnsatisfiedConstraint(int[] solution) {
-		for (Constraint c : solver.pb.constraints) {
-			if (c.ignored || !(c instanceof CtrHard))
-				continue;
-			int[] tmp = c.tupleManager.localTuple;
-			for (int i = 0; i < tmp.length; i++)
-				tmp[i] = solution != null ? solution[c.scp[i].num] : c.scp[i].dom.unique();
-			if (((CtrHard) c).checkIndexes(tmp) == false)
-				return c;
-		}
-		return null;
-	}
-
 	private boolean controlFoundSolution() {
-		if (!(solver instanceof SolverLocal)) {
+		if (solver instanceof SolverBacktrack) {
 			Variable x = Variable.firstNonSingletonVariableIn(solver.pb.variables);
 			Kit.control(x == null, () -> "Problem with last solution: variable " + x + " has not a unique value");
+			if (solver.pb.framework == TypeFramework.MAXCSP)
+				return true;
 		}
-		if (solver instanceof SolverBacktrack && solver.pb.framework == TypeFramework.MAXCSP)
-			return true;
-		Constraint c = firstUnsatisfiedConstraint(null);
+		Constraint c = Constraint.firstUnsatisfiedHardConstraint(solver.pb.constraints);
 		Kit.control(c == null, () -> "Problem with last solution: constraint " + c + " not satisfied : ");
 		return true;
 	}

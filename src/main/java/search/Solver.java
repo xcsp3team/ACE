@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import executables.Resolution;
+import interfaces.ObserverAssignment;
 import interfaces.ObserverBacktracking.ObserverBacktrackingUnsystematic;
 import interfaces.ObserverPropagation;
 import interfaces.ObserverRuns;
@@ -38,6 +39,8 @@ public abstract class Solver {
 	public final List<ObserverSearch> observersSearch;
 
 	public List<ObserverRuns> observersRuns;
+
+	public List<ObserverAssignment> observersAssignment;
 
 	public List<ObserverPropagation> observersPropagation;
 
@@ -89,7 +92,7 @@ public abstract class Solver {
 
 	public final void resetNoSolutions() {
 		stoppingType = null;
-		solManager.nSolutionsFound = 0;
+		solManager.found = 0;
 	}
 
 	public void reset(boolean preserveWeightedDegrees) {

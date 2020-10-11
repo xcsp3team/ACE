@@ -277,7 +277,7 @@ public abstract class Propagation {
 			// }
 			for (ObserverPropagation obs : solver.observersPropagation)
 				obs.whenWipeout(currFilteringCtr, x);
-
+			// queue.clear();
 			return false;
 			// return handleWipeout(lastWipeoutVar = x);
 		}

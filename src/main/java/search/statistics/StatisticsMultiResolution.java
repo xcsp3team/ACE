@@ -123,7 +123,7 @@ public abstract class StatisticsMultiResolution {
 				sumOfNbPropagations = statistics.nEffectiveFilterings();
 				sumOfNbAssignments += statistics.nAssignments;
 				sumOfNbFailedAssignments += statistics.nFailedAssignments;
-				sumOfNbSolutions += statistics.solver.solManager.nSolutionsFound;
+				sumOfNbSolutions += statistics.solver.solManager.found;
 
 				nbPreproValuesRemoved += statistics.nPreproRemovedValues;
 				nbPreproTuplesRemoved += statistics.nPreproRemovedTuples;
@@ -258,7 +258,7 @@ public abstract class StatisticsMultiResolution {
 				Statistics stats = resolution.solver.stats;
 				if (resolution.isTimeExpiredForCurrentInstance())
 					expiredStatistics[0].updateStatisticsWith(stats);
-				else if (stats.solver.solManager.nSolutionsFound > 0)
+				else if (stats.solver.solManager.found > 0)
 					satStatistics[0].updateStatisticsWith(stats);
 				else if (resolution.solver.isFullExploration())
 					unsatStatistics[0].updateStatisticsWith(stats);
@@ -266,7 +266,7 @@ public abstract class StatisticsMultiResolution {
 					unknownStatistics[0].updateStatisticsWith(stats);
 				allStatistics[0].updateStatisticsWith(stats);
 				allStatistics[0].updateForMedian(stats.solvingWck, !resolution.isTimeExpiredForCurrentInstance()
-						&& (stats.solver.solManager.nSolutionsFound > 0 || resolution.solver.isFullExploration()));
+						&& (stats.solver.solManager.found > 0 || resolution.solver.isFullExploration()));
 			}
 		}
 

@@ -35,7 +35,7 @@ public final class SolverBacktrackDecomposing extends SolverBacktrack implements
 
 	@Override
 	protected void manageEmptyDomainBeforeBacktracking() {
-		backtrackStatistics.nBacktracks++;
+		stats.nBacktracks++;
 	}
 
 	public SolverBacktrackDecomposing(Resolution resolution) {

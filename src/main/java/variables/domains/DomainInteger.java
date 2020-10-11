@@ -109,7 +109,7 @@ public abstract class DomainInteger extends LinkedSetOrderedWithBits implements 
 		@Override
 		protected int computeTypeIdentifier() {
 			// TAG_RANGE used specially to avoid confusion with a domain only containing the two values min and max
-			return typeIdentifierFor(new int[] { min, max, TAG_RANGE });
+			return Domain.typeIdentifierFor(new int[] { min, max, TAG_RANGE });
 		}
 
 		public DomainRange(Variable var, int min, int max) {
@@ -144,7 +144,7 @@ public abstract class DomainInteger extends LinkedSetOrderedWithBits implements 
 
 		@Override
 		protected int computeTypeIdentifier() {
-			return typeIdentifierFor(this.values);
+			return Domain.typeIdentifierFor(this.values);
 		}
 
 		public DomainValues(Variable var, int... vals) {
@@ -181,7 +181,7 @@ public abstract class DomainInteger extends LinkedSetOrderedWithBits implements 
 		protected int computeTypeIdentifier() {
 			// TAG_SYMBOLS used to avoid confusion with a "normal" domain containing exactly the same values as those associated with the
 			// symbols
-			return typeIdentifierFor(Utilities.collectInt(this.values, TAG_SYMBOLS));
+			return Domain.typeIdentifierFor(Utilities.collectInt(this.values, TAG_SYMBOLS));
 		}
 
 		public DomainSymbols(Variable var, int[] vals, String[] symbols) {

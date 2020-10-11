@@ -114,7 +114,7 @@ public class Extraction extends Resolution {
 
 	private boolean[] updatePresentConstraintsFrom(boolean[] presentVars, boolean[] presentCtrs) {
 		for (int i = 0; i < presentCtrs.length; i++)
-			presentCtrs[i] = presentCtrs[i] && !Constraint.isInvolvingAbsentVar(problem.constraints[i], presentVars);
+			presentCtrs[i] = presentCtrs[i] && Constraint.isPresentScope(problem.constraints[i], presentVars);
 		return presentCtrs;
 	}
 
@@ -123,7 +123,7 @@ public class Extraction extends Resolution {
 			presentVars[currVars[i].num] = false;
 		for (int i = 0; i < presentCtrs.length; i++)
 			if (presentCtrs[i])
-				presentCtrs[i] = !Constraint.isInvolvingAbsentVar(problem.constraints[i], presentVars);
+				presentCtrs[i] = Constraint.isPresentScope(problem.constraints[i], presentVars);
 	}
 
 	private void updatePossiblyArrays(Constraint[] currCtrs, int min) {
@@ -139,7 +139,7 @@ public class Extraction extends Resolution {
 		problem.reduceTo(presentVars, presentCtrs);
 		solver.reset(preserveWeightedDegrees);
 		solver.solve();
-		return solver.solManager.nSolutionsFound > 0;
+		return solver.solManager.found > 0;
 	}
 
 	private boolean solveFor(boolean[] presentVars, Variable[] currVars, int min, int max, int center) {

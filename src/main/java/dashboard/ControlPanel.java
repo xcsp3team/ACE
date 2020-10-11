@@ -427,10 +427,6 @@ public class ControlPanel {
 		public long upperBound = addL("upperBound", "ub", PLUS_INFINITY, s_ub);
 		public final EOptimizationStrategy optimizationStrategy = addE("optimizationStrategy", "os", EOptimizationStrategy.DECREASING, s_os);
 		// public final ECostTranfer costTranfer = addE("costTranfer", "ct", ECostTranfer.INVARIABLE, s_ct);
-
-		public final int arityLimitForSoftSTR = addI("arityLimitForSoftSTR", "astr", 2, s_astr, HIDDEN);
-		public final boolean ecostForSoftSTR = addB("ecostForSoftSTR", "estr", false, s_estr, HIDDEN);
-		public final int softSubstituability = addI("softSubstituability", "ss", 0, "", HIDDEN);
 	}
 
 	public final SettingOptimization settingOptimization = new SettingOptimization();
@@ -615,11 +611,11 @@ public class ControlPanel {
 		public String classForValHeuristic = addS("classForValHeuristic", "valh", heuristics.values.HeuristicValuesDirect.First.class, HeuristicValues.class,
 				s1);
 		public final boolean anti = addB("anti", "anti_valh", false, s2);
-		// bestSolution breaks determinism of search trees because it depends in which order domains are pruned (and becomes singleton or not)
 
 		public boolean runProgressSaving = addB("runProgressSaving", "rps", false, "");
-		public boolean bestSolution = addB("bestSolution", "bs", true, "");
-		public final int bestSolutionGap = addI("bestSolutionGap", "bsg", Integer.MAX_VALUE, "");
+		// bestSolution breaks determinism of search trees because it depends in which order domains are pruned (and becomes singleton or not)
+		public boolean solutionSaving = addB("solutionSaving", "ss", true, "");
+		public final int solutionSavingGap = addI("solutionSavingGap", "ssg", Integer.MAX_VALUE, "");
 		public String warmStart = addS("warmStart", "warm", "", "").trim();
 
 		public final boolean optValHeuristic = addB("optValHeuristic", "ovh", false, "");

@@ -170,6 +170,6 @@ public class TestAllSolutions {
 
 	@Test
 	public void test() {
-		assertEquals(nSolutions, runResolution(args, false).solver.solManager.nSolutionsFound);
+		assertEquals(nSolutions, runResolution(args, false).solver.solManager.found);
 	}
 }
