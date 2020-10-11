@@ -23,12 +23,12 @@ public final class DecisionRecorder {
 
 	private final int OFFSET;
 
-	public final int positiveDecisionFor(int num, int idx) {
-		return 1 + idx + OFFSET * num;
+	public final int positiveDecisionFor(int num, int a) {
+		return 1 + a + OFFSET * num;
 	}
 
-	public final int negativeDecisionFor(int num, int idx) {
-		return -(1 + idx + OFFSET * num);
+	public final int negativeDecisionFor(int num, int a) {
+		return -(1 + a + OFFSET * num);
 	}
 
 	public final int numIn(int dec) {
@@ -76,7 +76,7 @@ public final class DecisionRecorder {
 		int n1 = (int) Math.ceil(Math.log(solver.pb.variables.length) / Math.log(2));
 		int n2 = (int) Math.ceil(Math.log(solver.pb.stuff.maxDomSize()) / Math.log(2));
 		Kit.control(n1 + n2 <= 32);
-		OFFSET = (int) Math.pow(2, n2 + 1); // +1 because 0 excluded ???
+		this.OFFSET = (int) Math.pow(2, n2 + 1); // +1 because 0 excluded ???
 		int nValues = Variable.nInitValuesFor(solver.pb.variables);
 		this.decisions = new SetDense(nValues);
 		this.failedAssignments = new byte[nValues / 8 + 1];

@@ -30,7 +30,7 @@ import heuristics.variables.HeuristicVariables;
 import heuristics.variables.dynamic.HeuristicVariablesConflictBased;
 import interfaces.ObserverAssignment;
 import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.ObserverPropagation;
+import interfaces.ObserverConflicts;
 import interfaces.ObserverRuns;
 import interfaces.OptimizationCompatible;
 import learning.LearnerNogoods;
@@ -221,10 +221,10 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		return list;
 	}
 
-	protected List<ObserverPropagation> collectObserversPropagation() {
-		List<ObserverPropagation> list = new ArrayList<>();
-		if (heuristicVars instanceof ObserverPropagation)
-			list.add((ObserverPropagation) heuristicVars);
+	protected List<ObserverConflicts> collectObserversPropagation() {
+		List<ObserverConflicts> list = new ArrayList<>();
+		if (heuristicVars instanceof ObserverConflicts)
+			list.add((ObserverConflicts) heuristicVars);
 		return list;
 	}
 
@@ -248,11 +248,11 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	public final List<ObserverBacktrackingSystematic> observersBacktrackingSystematic;
 
-	public final Tracer tracer;
-
 	public final RunProgressSaver runProgressSaver;
 
 	public final WarmStarter warmStarter;
+
+	public final Tracer tracer;
 
 	public int minDepth, maxDepth;
 
@@ -388,7 +388,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		this.observersBacktrackingSystematic = collectObserversBacktrackingSystematic();
 		this.observersRuns = collectObserversRuns();
 		this.observersAssignment = collectObserversAssignment();
-		this.observersPropagation = collectObserversPropagation();
+		this.observersConflicts = collectObserversPropagation();
 
 		this.tracer = new Tracer(resolution.cp.settingGeneral.trace);
 		this.stats = new StatisticsBacktrack(this);

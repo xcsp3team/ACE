@@ -35,7 +35,7 @@ public class RestarterLNS extends Restarter {
 			h.freezeVariables(solution);
 			for (int i = 0; i < h.freezingSize; i++)
 				solver.assign(solver.pb.variables[h.freezingShuffled[i]], solution[h.freezingShuffled[i]]);
-			// TODO : while a covered constraint is unsatisfied : remove one assigned frozen variable from irs scope
+			// TODO : while a covered constraint is unsatisfied : remove one assigned frozen variable from its scope
 			// runInitially add all variables, which breaks an assert : how to manage that?
 			solver.propagation.runInitially();
 		}

@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 import constraints.Constraint;
 import constraints.CtrHard;
 import dashboard.ControlPanel;
-import interfaces.ObserverPropagation;
+import interfaces.ObserverConflicts;
 import problem.Problem;
 import propagation.order1.PropagationForward;
 import search.Solver;
@@ -275,7 +275,7 @@ public abstract class Propagation {
 			// else if (currFilteringCtr != null)
 			// currFilteringCtr.incrementWdegBy(1);
 			// }
-			for (ObserverPropagation obs : solver.observersPropagation)
+			for (ObserverConflicts obs : solver.observersConflicts)
 				obs.whenWipeout(currFilteringCtr, x);
 			// queue.clear();
 			return false;

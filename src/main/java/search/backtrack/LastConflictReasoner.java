@@ -43,8 +43,6 @@ public final class LastConflictReasoner implements ObserverRuns {
 
 	private Statistics statistics;
 
-	// private int[] progressSaving;
-
 	private class Statistics {
 		private int startLevel;
 		private int[] cnts; // cnts[i] is the number of times we stop reasoning at level i
@@ -75,7 +73,6 @@ public final class LastConflictReasoner implements ObserverRuns {
 		this.k = k;
 		this.vars = new Variable[k];
 		this.statistics = new Statistics(k);
-		// progressSaving = Kit.repeat(-1, solver.problem.variables.length);
 	}
 
 	public Variable lastConflictPriorityVar() {
@@ -85,7 +82,6 @@ public final class LastConflictReasoner implements ObserverRuns {
 		if (nVars == 0) {
 			if (lastAssigned == null || lastAssigned.isAssigned())
 				return null;
-			// Arrays.fill(progressSaving, -1);
 			statistics.startLevel = solver.depth() + 1;
 			vars[nVars++] = lastAssigned;
 			return lastAssigned;
@@ -125,7 +121,5 @@ public final class LastConflictReasoner implements ObserverRuns {
 					return;
 			candidate = x;
 		}
-		// if (nVars == 1 && x != vars[0]) progressSaving[x.num] = a;
 	}
-
 }

@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 import executables.Resolution;
 import interfaces.ObserverAssignment;
 import interfaces.ObserverBacktracking.ObserverBacktrackingUnsystematic;
-import interfaces.ObserverPropagation;
+import interfaces.ObserverConflicts;
 import interfaces.ObserverRuns;
 import interfaces.ObserverSearch;
 import interfaces.TagBinaryRelationFiltering;
@@ -42,7 +42,7 @@ public abstract class Solver {
 
 	public List<ObserverAssignment> observersAssignment;
 
-	public List<ObserverPropagation> observersPropagation;
+	public List<ObserverConflicts> observersConflicts;
 
 	/**********************************************************************************************
 	 * Fields
@@ -142,9 +142,6 @@ public abstract class Solver {
 			stoppingType = FULL_EXPLORATION;
 		for (ObserverSearch observer : observersSearch)
 			observer.afterPreprocessing();
-		// rs.output.printAfterPreprocessing();
-		// pb.saveIntoXCSP(EExportMoment.PREPROCESSING);
-		// Graphviz.saveGraph(problem);
 	}
 
 	/**
@@ -162,7 +159,6 @@ public abstract class Solver {
 				doRun();
 			for (ObserverRuns observer : observersRuns)
 				observer.afterRun();
-			// rs.output.printAfterRun();
 		}
 		for (ObserverSearch observer : observersSearch)
 			observer.afterSearch();
@@ -182,7 +178,6 @@ public abstract class Solver {
 			doSearch();
 		for (ObserverSearch observer : observersSearch)
 			observer.afterSolving();
-		// rs.output.printAfterSolving();
 	}
 
 	public void setDomainsMarks() {

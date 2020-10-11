@@ -11,7 +11,7 @@ package interfaces;
 import constraints.Constraint;
 import variables.Variable;
 
-public interface ObserverPropagation {
+public interface ObserverConflicts {
 	// public void afterAssignment(Variable x, int a);
 	//
 	// public void afterUnassignment(Variable x);
