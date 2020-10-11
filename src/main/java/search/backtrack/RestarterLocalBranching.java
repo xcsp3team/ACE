@@ -207,8 +207,6 @@ public final class RestarterLocalBranching extends Restarter {
 				((HammingProximityConstantSumLE) c).setTarget(decisionVals);
 				((HammingProximityConstantSumLE) c).setK(newDist);
 			}
-
 		}
-
 	}
 }

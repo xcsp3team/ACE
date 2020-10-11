@@ -27,7 +27,7 @@ public class Weak3 extends Weak1 implements TagExperimental {
 	}
 
 	protected boolean tryRefutationOf(Constraint c, int[] tuple) {
-		int topStack = ((SolverBacktrack) solver).observerVars.top;
+		int topStack = ((SolverBacktrack) solver).stackedVariables.top;
 		for (int i = 0; i < c.scp.length; i++)
 			c.scp[i].dom.reduceToElementary(tuple[i]);
 		solver.restarter.currCutoff = cp().settingPropagation.weakCutoff;
@@ -37,7 +37,7 @@ public class Weak3 extends Weak1 implements TagExperimental {
 			solver.stoppingType = null;
 		for (Variable x : c.scp)
 			x.dom.restoreAtMark();
-		((SolverBacktrack) solver).observerVars.top = topStack;
+		((SolverBacktrack) solver).stackedVariables.top = topStack;
 		// consistent = true;
 		if (!consistent)
 			nEffectiveSingletonTests++;

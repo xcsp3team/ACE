@@ -18,7 +18,6 @@ import java.util.stream.Stream;
 
 import executables.Resolution;
 import interfaces.ObserverAssignment;
-import interfaces.ObserverBacktracking.ObserverBacktrackingUnsystematic;
 import interfaces.ObserverConflicts;
 import interfaces.ObserverRuns;
 import interfaces.ObserverSearch;
@@ -127,7 +126,7 @@ public abstract class Solver {
 	 */
 	public abstract int depth();
 
-	public abstract void pushVariable(ObserverBacktrackingUnsystematic x);
+	public abstract void pushVariable(Variable x);
 
 	public abstract void assign(Variable x, int a);
 
@@ -178,15 +177,5 @@ public abstract class Solver {
 			doSearch();
 		for (ObserverSearch observer : observersSearch)
 			observer.afterSolving();
-	}
-
-	public void setDomainsMarks() {
-		for (Variable x : pb.variables)
-			x.dom.setMark();
-	}
-
-	public void restoreDomainsAtMarks() {
-		for (Variable x : pb.variables)
-			x.dom.restoreAtMark();
 	}
 }

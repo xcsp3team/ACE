@@ -32,7 +32,7 @@ public abstract class DualBasedConsistency extends SecondOrderConsistency {
 	}
 
 	protected void actAfterFirstPropagationStep() {
-		solver.setDomainsMarks();
+		Domain.setMarks(solver.pb.variables);
 		performingTest = false;
 	}
 
@@ -101,8 +101,7 @@ public abstract class DualBasedConsistency extends SecondOrderConsistency {
 		return modified;
 	}
 
-	protected void updateStructures(Variable uniqueModifiedVariable) {
-	}
+	protected void updateStructures(Variable uniqueModifiedVariable) {}
 
 	@Override
 	public boolean enforceSecondOrderConsistency() {

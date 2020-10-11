@@ -63,7 +63,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	@Override
 	public void restoreBefore(int depth) {
-		observerVars.restoreBefore(depth);
+		stackedVariables.restoreBefore(depth);
 	}
 
 	/**********************************************************************************************
@@ -150,117 +150,14 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	}
 
 	/**********************************************************************************************
-	 * Intern class Tracer
+	 * Classes for StackedVariables and Proofer
 	 *********************************************************************************************/
 
-	public class Tracer {
-		private boolean active;
-		private int minDepthLimit, maxDepthLimit;
-
-		private Tracer(String s) {
-			active = s.length() != 0;
-			StringTokenizer st = active && s.contains("-") ? new StringTokenizer(s, "-") : null;
-			minDepthLimit = st != null && st.hasMoreTokens() ? Integer.parseInt(st.nextToken()) : Integer.MIN_VALUE;
-			maxDepthLimit = st != null && st.hasMoreTokens() ? Integer.parseInt(st.nextToken()) : Integer.MAX_VALUE;
-		}
-
-		private boolean canCurrentlyPrint() {
-			return active && !propagation.performingProperSearch && minDepthLimit <= depth() && depth() <= maxDepthLimit;
-		}
-
-		public void onBacktrack() {
-			if (canCurrentlyPrint())
-				log.fine("        Backtrack ");
-		}
-
-		public void onAssignment(Variable x, int a) {
-			if (canCurrentlyPrint())
-				log.fine("At " + depth() + ", " + x + " = " + a + (x.dom.indexesMatchValues() ? "" : "(" + x.dom.toVal(a) + ") ")
-						+ (x.dom.size() == 1 ? " singleton" : ""));
-		}
-
-		public void onRefutation(Variable x, int a) {
-			if (canCurrentlyPrint())
-				log.fine("At " + depth() + ", " + x + " != " + a);
-		}
-	}
-
-	/**********************************************************************************************
-	 * Observers
-	 *********************************************************************************************/
-
-	@Override
-	public final void pushVariable(ObserverBacktrackingUnsystematic x) {
-		observerVars.push(x);
-	}
-
-	private List<ObserverBacktrackingSystematic> collectObserversBacktrackingSystematic() {
-		List<ObserverBacktrackingSystematic> list = new ArrayList<>();
-		list.add(this); // because must be at first position in the list
-		Stream.of(pb.constraints).filter(c -> c instanceof ObserverBacktrackingSystematic).forEach(c -> list.add((ObserverBacktrackingSystematic) c));
-		if (propagation instanceof ObserverBacktrackingSystematic)
-			list.add((ObserverBacktrackingSystematic) propagation);
-		return list;
-	}
-
-	protected List<ObserverRuns> collectObserversRuns() {
-		List<ObserverRuns> list = new ArrayList<>();
-		Stream.of(this, restarter, learnerNogoods.symmetryHandler, learnerStates, heuristicVars, lcReasoner, stats).filter(o -> o instanceof ObserverRuns)
-				.forEach(o -> list.add((ObserverRuns) o));
-		Stream.of(pb.constraints).filter(c -> c instanceof ObserverRuns).forEach(c -> list.add((ObserverRuns) c));
-		if (propagation instanceof ObserverRuns)
-			list.add((ObserverRuns) propagation);
-		list.add(rs.output);
-		return list;
-	}
-
-	protected List<ObserverAssignment> collectObserversAssignment() {
-		List<ObserverAssignment> list = new ArrayList<>();
-		if (heuristicVars instanceof ObserverAssignment)
-			list.add((ObserverAssignment) heuristicVars);
-		return list;
-	}
-
-	protected List<ObserverConflicts> collectObserversPropagation() {
-		List<ObserverConflicts> list = new ArrayList<>();
-		if (heuristicVars instanceof ObserverConflicts)
-			list.add((ObserverConflicts) heuristicVars);
-		return list;
-	}
-
-	/**********************************************************************************************
-	 * Fields
-	 *********************************************************************************************/
-
-	public final DecisionRecorder dr;
-
-	public HeuristicVariables heuristicVars;
-
-	public final LastConflictReasoner lcReasoner;
-
-	public final LearnerNogoods learnerNogoods;
-
-	public final LearnerStates learnerStates;
-
-	public final Proofer proofer;
-
-	public final GlobalObserver observerVars;
-
-	public final List<ObserverBacktrackingSystematic> observersBacktrackingSystematic;
-
-	public final RunProgressSaver runProgressSaver;
-
-	public final WarmStarter warmStarter;
-
-	public final Tracer tracer;
-
-	public int minDepth, maxDepth;
-
-	public final class GlobalObserver {
+	public final class StackedVariables {
 
 		private SolverBacktrack solver;
 
-		public final ObserverBacktrackingUnsystematic[] stack;
+		public final Variable[] stack;
 
 		public int top = -1;
 
@@ -268,13 +165,13 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			top = -1;
 		}
 
-		public GlobalObserver(SolverBacktrack solver, int size) {
+		public StackedVariables(SolverBacktrack solver, int size) {
 			this.solver = solver;
-			this.stack = new ObserverBacktrackingUnsystematic[size];
+			this.stack = new Variable[size];
 		}
 
 		// must be called before making modifications (e.g. for a variable, before reducing the domain of the variable)
-		public void push(ObserverBacktrackingUnsystematic observer) {
+		public void push(Variable observer) {
 			if (top == -1 || stack[top].lastModificationDepth() != solver.depth())
 				stack[++top] = null; // null is used as a separator
 			stack[++top] = observer;
@@ -354,6 +251,113 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		}
 	}
 
+	/**********************************************************************************************
+	 * Intern class Tracer
+	 *********************************************************************************************/
+
+	public class Tracer {
+		private boolean active;
+		private int minDepthLimit, maxDepthLimit;
+
+		private Tracer(String s) {
+			active = s.length() != 0;
+			StringTokenizer st = active && s.contains("-") ? new StringTokenizer(s, "-") : null;
+			minDepthLimit = st != null && st.hasMoreTokens() ? Integer.parseInt(st.nextToken()) : Integer.MIN_VALUE;
+			maxDepthLimit = st != null && st.hasMoreTokens() ? Integer.parseInt(st.nextToken()) : Integer.MAX_VALUE;
+		}
+
+		private boolean canCurrentlyPrint() {
+			return active && !propagation.performingProperSearch && minDepthLimit <= depth() && depth() <= maxDepthLimit;
+		}
+
+		public void onBacktrack() {
+			if (canCurrentlyPrint())
+				log.fine("        Backtrack ");
+		}
+
+		public void onAssignment(Variable x, int a) {
+			if (canCurrentlyPrint())
+				log.fine("At " + depth() + ", " + x + " = " + x.dom.toVal(a) + (x.dom.indexesMatchValues() ? "" : " (index " + a + ") ")
+						+ (x.dom.size() == 1 ? " singleton" : ""));
+		}
+
+		public void onRefutation(Variable x, int a) {
+			if (canCurrentlyPrint())
+				log.fine("At " + depth() + ", " + x + " != " + x.dom.toVal(a));
+		}
+	}
+
+	/**********************************************************************************************
+	 * Observers
+	 *********************************************************************************************/
+
+	@Override
+	public void pushVariable(Variable x) {
+		stackedVariables.push(x);
+	}
+
+	private List<ObserverBacktrackingSystematic> collectObserversBacktrackingSystematic() {
+		List<ObserverBacktrackingSystematic> list = new ArrayList<>();
+		list.add(this); // because must be at first position in the list
+		Stream.of(pb.constraints).filter(c -> c instanceof ObserverBacktrackingSystematic).forEach(c -> list.add((ObserverBacktrackingSystematic) c));
+		if (propagation instanceof ObserverBacktrackingSystematic)
+			list.add((ObserverBacktrackingSystematic) propagation);
+		return list;
+	}
+
+	protected List<ObserverRuns> collectObserversRuns() {
+		List<ObserverRuns> list = new ArrayList<>();
+		Stream.of(this, restarter, learnerNogoods.symmetryHandler, learnerStates, heuristicVars, lcReasoner, stats).filter(o -> o instanceof ObserverRuns)
+				.forEach(o -> list.add((ObserverRuns) o));
+		Stream.of(pb.constraints).filter(c -> c instanceof ObserverRuns).forEach(c -> list.add((ObserverRuns) c));
+		if (propagation instanceof ObserverRuns)
+			list.add((ObserverRuns) propagation);
+		list.add(rs.output);
+		return list;
+	}
+
+	protected List<ObserverAssignment> collectObserversAssignment() {
+		List<ObserverAssignment> list = new ArrayList<>();
+		if (heuristicVars instanceof ObserverAssignment)
+			list.add((ObserverAssignment) heuristicVars);
+		return list;
+	}
+
+	protected List<ObserverConflicts> collectObserversPropagation() {
+		List<ObserverConflicts> list = new ArrayList<>();
+		if (heuristicVars instanceof ObserverConflicts)
+			list.add((ObserverConflicts) heuristicVars);
+		return list;
+	}
+
+	/**********************************************************************************************
+	 * Fields
+	 *********************************************************************************************/
+
+	public final DecisionRecorder dr;
+
+	public HeuristicVariables heuristicVars;
+
+	public final LastConflictReasoner lcReasoner;
+
+	public final LearnerNogoods learnerNogoods;
+
+	public final LearnerStates learnerStates;
+
+	public final Proofer proofer;
+
+	public final StackedVariables stackedVariables;
+
+	public final List<ObserverBacktrackingSystematic> observersBacktrackingSystematic;
+
+	public final RunProgressSaver runProgressSaver;
+
+	public final WarmStarter warmStarter;
+
+	public final Tracer tracer;
+
+	public int minDepth, maxDepth;
+
 	@Override
 	public void reset(boolean preserveWeightedDegrees) {
 		super.reset(preserveWeightedDegrees);
@@ -365,7 +369,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		if (learnerNogoods != null)
 			learnerNogoods.reset();
 		Kit.control(learnerStates == null);
-		Kit.control(observerVars.top == -1, () -> "Top= " + observerVars.top);
+		Kit.control(stackedVariables.top == -1, () -> "Top= " + stackedVariables.top);
 		// Kit.control(observerCtrsSoft.top == -1);
 		stats = new StatisticsBacktrack(this);
 		Kit.control(!proofer.active);
@@ -384,7 +388,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 		int nLevels = pb.variables.length + 1;
 		int size = Stream.of(pb.variables).mapToInt(x -> x.dom.initSize()).reduce(0, (sum, domSize) -> sum + Math.min(nLevels, domSize));
-		this.observerVars = new GlobalObserver(this, size + nLevels);
+		this.stackedVariables = new StackedVariables(this, size + nLevels);
 		this.observersBacktrackingSystematic = collectObserversBacktrackingSystematic();
 		this.observersRuns = collectObserversRuns();
 		this.observersAssignment = collectObserversAssignment();
@@ -584,7 +588,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	public final void restoreProblem() {
 		backtrackToTheRoot();
 		// we also undo preprocessing propagation
-		observerVars.restoreBefore(0);
+		stackedVariables.restoreBefore(0);
 		// we have to deal with definitively removed values
 		// if (stoppingType != StoppingType.FULL_EXPLORATION) // pb with methods that need to restart
 		observersBacktrackingSystematic.stream().forEach(obs -> obs.restoreBefore(0));

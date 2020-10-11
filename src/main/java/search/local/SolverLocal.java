@@ -11,7 +11,6 @@ package search.local;
 import org.xcsp.common.Types.TypeFramework;
 
 import executables.Resolution;
-import interfaces.ObserverBacktracking.ObserverBacktrackingUnsystematic;
 import search.Solver;
 import search.local.functionalPropagators.FunctionalPropagator;
 import search.statistics.Statistics.StatisticsLocal;
@@ -266,7 +265,7 @@ public final class SolverLocal extends Solver {
 	// }
 
 	@Override
-	public void pushVariable(ObserverBacktrackingUnsystematic variable) {}
+	public void pushVariable(Variable variable) {}
 
 	@Override
 	public int depth() {

@@ -12,6 +12,7 @@ import constraints.Constraint;
 import propagation.PropagationQueue;
 import search.Solver;
 import variables.Variable;
+import variables.domains.Domain;
 
 public abstract class DC2Abstract extends DCAbstract {
 
@@ -60,7 +61,7 @@ public abstract class DC2Abstract extends DCAbstract {
 	@Override
 	protected final int performSingletonTest(Variable x, int a) {
 		if (time > solver.pb.variables.length)
-			solver.setDomainsMarks(); // not a problem even if futureVariable is not assigned yet
+			Domain.setMarks(solver.pb.variables); // not a problem even if futureVariable is not assigned yet
 		return super.performSingletonTest(x, a);
 	}
 

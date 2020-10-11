@@ -14,22 +14,13 @@ import search.backtrack.SolverBacktrack;
 import search.backtrack.decomposers.Decomposer.DecomposerRDAC2;
 import utility.Reflector;
 import variables.Variable;
+import variables.domains.Domain;
 
 public final class SolverBacktrackDecomposing extends SolverBacktrack implements TagExperimental {
 
 	public Decomposer[] decomposers;
 
 	public int top = -1;
-
-	public void setDomainsMarks(int level) {
-		for (Variable x : pb.variables)
-			x.dom.setMark(level);
-	}
-
-	public void restoreDomainsAtMarks(int level) {
-		for (Variable x : pb.variables)
-			x.dom.restoreAtMark(level);
-	}
 
 	public void pushVariable(Variable var) {}
 
@@ -59,7 +50,7 @@ public final class SolverBacktrackDecomposing extends SolverBacktrack implements
 			if (decomposer.getNbPieces() == 1)
 				explore();
 			else {
-				setDomainsMarks(top);
+				Domain.setMarks(pb.variables, top);
 				for (int num = 0; num < decomposer.getNbPieces(); num++) {
 					int res = decomposer.buildPiece(num);
 					if (res == -1)
@@ -67,7 +58,7 @@ public final class SolverBacktrackDecomposing extends SolverBacktrack implements
 					if (res == 1)
 						explore();
 					if (num < decomposer.getNbPieces() - 1)
-						restoreDomainsAtMarks(top);
+						Domain.restoreAtMarks(pb.variables, top);
 				}
 			}
 		}

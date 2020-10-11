@@ -46,6 +46,26 @@ public interface Domain extends LinkedSet {
 		return domainTypes.size() - 1;
 	}
 
+	public static void setMarks(Variable[] variables) {
+		for (Variable x : variables)
+			x.dom.setMark();
+	}
+
+	public static void restoreAtMarks(Variable[] variables) {
+		for (Variable x : variables)
+			x.dom.restoreAtMark();
+	}
+
+	public static void setMarks(Variable[] variables, int level) {
+		for (Variable x : variables)
+			x.dom.setMark(level);
+	}
+
+	public static void restoreAtMarks(Variable[] variables, int level) {
+		for (Variable x : variables)
+			x.dom.restoreAtMark(level);
+	}
+
 	default boolean areInitValuesExactly(Range range) {
 		return initSize() == range.length() && IntStream.range(0, initSize()).allMatch(a -> toVal(a) == range.start + a);
 	}

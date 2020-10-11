@@ -207,7 +207,7 @@ public abstract class Decomposer {
 				}
 				if (dom.size() == 0 || !rdac.go(false))
 					return -1;
-				solver.setDomainsMarks(solver.top);
+				Domain.setMarks(solver.pb.variables, solver.top);
 			}
 
 			Variable neighbor = variables[idOfACNeighbors[num]];

@@ -134,7 +134,6 @@ public class RestarterLNS extends Restarter {
 				}
 				((SolverBacktrack) restarter.solver).backtrackToTheRoot();
 			}
-
 		}
 
 		public static class Rand extends HeuristicFreezing {
@@ -148,7 +147,5 @@ public class RestarterLNS extends Restarter {
 				shuffle();
 			}
 		}
-
 	}
-
 }

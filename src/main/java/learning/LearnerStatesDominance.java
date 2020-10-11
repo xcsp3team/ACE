@@ -10,7 +10,7 @@ package learning;
 
 import interfaces.ObserverBacktracking.ObserverBacktrackingUnsystematic;
 import search.backtrack.SolverBacktrack;
-import search.backtrack.SolverBacktrack.GlobalObserver;
+import search.backtrack.SolverBacktrack.StackedVariables;
 import utility.Enums.EStopping;
 import utility.Kit;
 import utility.operations.Bit;
@@ -203,7 +203,7 @@ public final class LearnerStatesDominance extends LearnerStates {
 	}
 
 	private void preparePartialBacktrack(int level) {
-		GlobalObserver variablesObserver = solver.observerVars;
+		StackedVariables variablesObserver = solver.stackedVariables;
 		int topStack = variablesObserver.top;
 		ObserverBacktrackingUnsystematic[] globalStack = variablesObserver.stack;
 		topBeforeRefutations[level] = topStack;
@@ -228,7 +228,7 @@ public final class LearnerStatesDominance extends LearnerStates {
 	}
 
 	private void performPartialBacktrack(int topBefore, int depth) {
-		GlobalObserver variablesObserver = solver.observerVars;
+		StackedVariables variablesObserver = solver.stackedVariables;
 		int topStack = variablesObserver.top;
 		ObserverBacktrackingUnsystematic[] globalStack = variablesObserver.stack;
 		// Possible d'eliminer ci-dessous : semble pas possible ces cas ? //TODO
