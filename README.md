@@ -17,15 +17,22 @@ AbsCon is distributed under License MIT
 
 ## Building a JAR
 
-1. clone the repository : `git clone https://forge.univ-artois.fr/christophe.lecoutre/AbsCon.git`
-1. change directory : `cd AbsCon`
-1. run Gradle : `gradle build -x test`  (of course, you need Gradle to be installed)
-1. test the JAR : `java -jar build/libs/AbsCon-YY-MM.jar` where you give the right values for YY and MM.
+1. clone the repository:  
+   `git clone https://forge.univ-artois.fr/christophe.lecoutre/AbsCon.git`
+1. change directory:  
+   `cd AbsCon`
+1. run Gradle (of course, you need Gradle to be installed):  
+   `gradle build -x test`  
+1. test the JAR:  
+   `java -jar build/libs/AbsCon-YY-MM.jar`   
+where you give the right values for YY and MM.
 If the usage of AbsCon is displayed, you are fine. 
 
 With this JAR, you can run AbsCon on any XCSP3 instance.
 
 ## Running Unit Tests
 
-1. run Gradle : `gradle test`
-1. see results in `AbsCon/build/reports/tests/index.html`
+1. run Gradle:  
+   `gradle test`
+1. see results in:  
+   `AbsCon/build/reports/tests/index.html`
