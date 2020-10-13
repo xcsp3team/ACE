@@ -139,7 +139,7 @@ public final class SolutionManager {
 				lock.set(true);
 				System.out.println();
 				if (found > 0)
-					System.out.println("\nSolution " + found + " in JSON format:\n" + lastSolutionInJsonFormat(true) + "\n");
+					System.out.println("\nSolution " + found + " in JSON format:\n" + lastSolutionInJsonFormat(false) + "\n");
 				if (fullExploration) {
 					if (found == 0)
 						System.out.println("s UNSATISFIABLE");
@@ -213,7 +213,7 @@ public final class SolutionManager {
 			Kit.control(solver.pb.optimizationPilot.isBetterBound(bestBound));
 			// solver.restarter.forceRootPropagation = true;
 			if (solver.rs.cp.settingXml.competitionMode)
-				System.out.println("o " + bestBound + "  (hamming: " + h1 + ", in_objective: " + h2 + ")");
+				System.out.println("o " + bestBound); // + "); // (hamming: " + h1 + ", in_objective: " + h2 + ")");
 		}
 		// The following code must stay after storeSolution
 		String s = lastSolutionInXmlFormat(); // keep the call separated in order to possibly secure its quick output (see code)

@@ -268,18 +268,19 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	// return map.toString();
 	// }
 
-	public void beforeLoading() { // not a method from an observer
+	public void beforeData() { // not a method from an observer
+		resolElt = record(TypeOutput.RESOLUTION, null, root);
+		save(resolution.instanceStopwatch.getWckTime());
+	}
+
+	public void afterData() { // not a method from an observer
 		MapAtt ia = resolution.problem.stuff.instanceAttributes(resolution.instanceNumber);
 		if (outputFileName == null) {
 			String name = ia.entries().stream().filter(e -> e.getKey().equals(Output.NAME)).map(e -> e.getValue().toString()).findFirst().get();
 			outputFileName = outputFileNameFrom(name, resolution.cp.settingsFilename);
 		}
-		Kit.log.config(ia.toString());
-		if (document != null) {
-			resolElt = record(TypeOutput.RESOLUTION, null, root);
-			record(TypeOutput.INSTANCE, ia.entries(), resolElt);
-			save(resolution.instanceStopwatch.getWckTime());
-		}
+		Kit.log.config(ia.toString() + "\n");
+		record(TypeOutput.INSTANCE, ia.entries(), resolElt);
 	}
 
 	@Override
@@ -287,18 +288,18 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		Kit.control(resolution.problem.variables.length > 0, () -> "No variable in your model");
 		MapAtt da = resolution.problem.stuff.domainsAttributes();
 		MapAtt va = resolution.problem.stuff.variablesAttributes();
-		MapAtt oa = resolution.problem.optimizationPilot != null ? resolution.problem.stuff.objsAttributes() : null;
 		MapAtt ca = resolution.problem.stuff.ctrsAttributes();
+		MapAtt oa = resolution.problem.optimizationPilot != null ? resolution.problem.stuff.objsAttributes() : null;
 		record(TypeOutput.DOMAINS, da.entries(), resolElt);
 		record(TypeOutput.VARIABLES, va.entries(), resolElt);
-		if (oa != null)
-			record(TypeOutput.OBJECTIVES, oa.entries(), resolElt);
 		record(TypeOutput.CONSTRAINTS, ca.entries(), resolElt);
+		if (oa != null)
+			record(TypeOutput.OBJECTIVE, oa.entries(), resolElt);
 		Kit.log.config("\n\n" + da.toString());
 		Kit.log.config(va.toString());
+		Kit.log.config(ca.toString());
 		if (oa != null)
 			Kit.log.config(oa.toString());
-		Kit.log.config(ca.toString());
 	}
 
 	@Override

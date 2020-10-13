@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.modeler.api.ProblemAPI;
 
 import dashboard.Arguments;
@@ -46,9 +45,8 @@ public abstract class ProblemFile implements ProblemAPI {
 			Arguments.nInstancesToSolve = listOfFileNames.size();
 		}
 		((Problem) imp()).parameters.get(0).setValue(currFileName());
-		// ((Problem) imp()).rs.cp.framework = TypeFramework.CSP;
-		((Problem) imp()).rs.cp.settingGeneral.framework = TypeFramework.CSP;
-		((Problem) imp()).framework = TypeFramework.CSP;
+		// ((Problem) imp()).rs.cp.settingGeneral.framework = TypeFramework.CSP;
+		// ((Problem) imp()).framework = TypeFramework.CSP;
 		System.out.println();
 	}
 

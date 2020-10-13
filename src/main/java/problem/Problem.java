@@ -167,6 +167,7 @@ import objectives.OptimizationPilot.OptimizationPilotBasic;
 import objectives.OptimizationPilot.OptimizationPilotDecreasing;
 import objectives.OptimizationPilot.OptimizationPilotDichotomic;
 import objectives.OptimizationPilot.OptimizationPilotIncreasing;
+import problems.ProblemFile;
 import propagation.order1.PropagationForward;
 import search.Solver;
 import utility.Enums.EExportMode;
@@ -390,7 +391,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final String name() {
 		String s = super.name();
-		return s.matches("XCSP[23]-.*") ? s.substring(6) : s;
+		return s.matches("XCSP[23]-.*") ? s.substring(6)
+				: s.startsWith(ProblemFile.class.getSimpleName()) ? s.substring(ProblemFile.class.getSimpleName().length() + 1) : s;
 	}
 
 	/**
@@ -703,8 +705,10 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// rs.observersConstructionSolver.add(this);
 		this.framework = rs.cp.settingGeneral.framework;
 		this.stuff = new ProblemStuff(this);
-		this.rs.output.beforeLoading();
-		loadDataAndModel(data, dataFormat, dataSaving);
+		this.rs.output.beforeData();
+		loadData(data, dataFormat, dataSaving);
+		this.rs.output.afterData();
+		api.model();
 
 		// storeVariablesToArray();
 		// fixNamesOfVariables();
@@ -866,8 +870,10 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// System.out.println("kkkk" + Variable.nValidTuplesBoundedAtMaxValueFor(scp));
 		if (scp.length <= rs.cp.settingExtension.arityLimitForIntensionToExtension
 				&& Variable.nValidTuplesBoundedAtMaxValueFor(scp) <= rs.cp.settingExtension.validLimitForIntensionToExtension
-				&& Stream.of(scp).allMatch(x -> x instanceof Var))
+				&& Stream.of(scp).allMatch(x -> x instanceof Var)) {
+			stuff.nConvertedConstraints++;
 			return extension(tree);
+		}
 		return addCtr(new CtrIntension(this, scp, tree));
 	}
 

@@ -134,7 +134,6 @@ public class Resolution extends Thread {
 
 		private HandlerClasses() {
 			loadClasses();
-			// System.out.println(this);
 		}
 
 		private boolean dealWith(Class<?> clazz, Class<?> rootClass) {
@@ -310,7 +309,7 @@ public class Resolution extends Thread {
 
 	protected final Solver buildSolver(Problem problem) {
 		boolean cm = problem.rs.cp.settingXml.competitionMode;
-		Kit.log.config((cm ? "" : "\n") + Output.COMMENT_PREFIX + "Solver " + cp.settingSolving.clazz + " being built..." + (cm ? "\n" : ""));
+		Kit.log.config("\n" + Output.COMMENT_PREFIX + "Building solver... " + (cm ? "\n" : ""));
 		solver = Reflector.buildObject(cp.settingSolving.clazz, Solver.class, this);
 		for (ObserverConstruction obs : observersConstruction)
 			obs.onConstructionSolverFinished();

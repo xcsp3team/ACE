@@ -10,7 +10,6 @@ package problem;
 
 import static dashboard.Output.ARITIES;
 import static dashboard.Output.DEFAULT_COSTS;
-import static dashboard.Output.FRAMEWORK;
 import static dashboard.Output.MEM;
 import static dashboard.Output.NAME;
 import static dashboard.Output.NUMBER;
@@ -161,7 +160,7 @@ public final class ProblemStuff {
 	 * It is equal to <code> -1 </code> when it is unknown.
 	 */
 	public int nIsolatedVars, nFixedVars;
-	public int nRemovedUnaryCtrs;
+	public int nRemovedUnaryCtrs, nConvertedConstraints; // conversion intension to extension
 	public int nSpecificCtrs, nGlobalCtrs, nMergedCtrs, nDiscardedCtrs, nAddedCtrs, nUniversalCtrs;
 
 	public long nCcks;
@@ -393,7 +392,7 @@ public final class ProblemStuff {
 	public MapAtt instanceAttributes(int instanceNumber) {
 		MapAtt m = new MapAtt("Instance");
 		m.put(NAME, pb.name());
-		m.put(FRAMEWORK, pb.framework);
+		// m.put(FRAMEWORK, pb.framework);
 		SettingOptimization opt = pb.rs.cp.settingOptimization;
 		m.put("bounds", (opt.lowerBound == Long.MIN_VALUE ? "-infty" : opt.lowerBound) + ".." + (opt.upperBound == Long.MAX_VALUE ? "+infty" : opt.upperBound),
 				pb.framework == TypeFramework.COP);
@@ -436,6 +435,7 @@ public final class ProblemStuff {
 		MapAtt m = new MapAtt("Constraints");
 		m.put("count", pb.constraints.length);
 		m.putPositive("nRemovedUnary", nRemovedUnaryCtrs);
+		m.putPositive("nConverted", nConvertedConstraints);
 		m.putPositive("nSpecific", nSpecificCtrs);
 		m.putPositive("nMerged", nMergedCtrs);
 		m.putPositive("nDiscarded", nDiscardedCtrs);
@@ -490,7 +490,7 @@ public final class ProblemStuff {
 	}
 
 	public MapAtt objsAttributes() {
-		MapAtt m = new MapAtt("Objectives");
+		MapAtt m = new MapAtt("Objective");
 		m.put("way", (pb.optimizationPilot.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName());
 		if (pb.optimizationPilot.ctr != null)
 			m.put("type", pb.optimizationPilot.ctr.getClass().getSimpleName());

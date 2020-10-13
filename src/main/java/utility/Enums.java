@@ -59,6 +59,7 @@ public class Enums {
 		CONSTRAINTS,
 		CONSTRAINT_TYPES,
 		OBJECTIVES,
+		OBJECTIVE,
 		SOLVER,
 		PREPROCESSING,
 		RUN,
@@ -128,7 +129,7 @@ public class Enums {
 	}
 
 	public static enum EWeighting {
-		VAR, UNIT, CACD, CHS;
+		VAR, UNIT, CACD, CHS; // UNIT is for classical wdeg, cacd its variant (ICTAI'19) and CHS (from Marseille guys)
 	}
 
 	public static enum EZip {

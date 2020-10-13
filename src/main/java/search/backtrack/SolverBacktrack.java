@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Constants;
@@ -86,8 +87,12 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 				}
 			}
 			String[] t = s.split(Constants.REG_WS);
-			Kit.control(t.length == pb.variables.length,
-					() -> t.length + " vs " + pb.variables.length + (t.length == 1 ? " did you control the path for the file?" : ""));
+			int p = t.length, n = pb.variables.length;
+			Kit.control(1 < p && p <= n, () -> p + " vs " + n + (p == 1 ? " did you control the path for the file?" : ""));
+			if (p < n) {
+				Kit.log.warning("Missing values are completed with * (for presumably auxiliary variables). Is that correct?");
+				t = Stream.concat(Stream.of(t), IntStream.range(0, n - p).mapToObj(i -> "*")).toArray(String[]::new);
+			}
 			this.sol = new int[t.length];
 			for (int i = 0; i < sol.length; i++) {
 				if (t[i].equals("*"))
@@ -422,7 +427,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	}
 
 	@Override
-	public final void backtrack(Variable x) { // should we call it unassign instead?
+	public final void backtrack(Variable x) { // should we call it unassign or retract instead?
 		int depthBeforeBacktrack = depth();
 		futVars.unassign(x);
 		x.undoAssignment();
