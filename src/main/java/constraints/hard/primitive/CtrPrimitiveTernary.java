@@ -11,10 +11,10 @@ package constraints.hard.primitive;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.modeler.entities.CtrEntities.CtrAlone;
 
+import constraints.hard.global.SumWeighted;
 import interfaces.TagGACGuaranteed;
 import problem.Problem;
 import utility.Kit;
-import utility.exceptions.MissingImplementationException;
 import variables.Variable;
 import variables.domains.Domain;
 
@@ -39,7 +39,8 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive { // implements T
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			if (op == TypeConditionOperatorRel.EQ)
 				return pb.addCtr(new TernaryEQ(pb, x, y, z));
-			throw new MissingImplementationException();
+			else
+				return pb.addCtr(SumWeighted.buildFrom(pb, pb.api.vars(x, y, z), pb.api.vals(1, 1, -1), op, 0));
 		}
 
 		public CtrPrimitiveTernaryAdd(Problem pb, Variable x, Variable y, Variable z) {
@@ -71,17 +72,13 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive { // implements T
 			public boolean runPropagator(Variable dummy) {
 				for (int a = domx.first(); a != -1; a = domx.next(a)) {
 					int v = domx.toVal(a);
-					if (resx[a] != -1 && domy.isPresent(resx[a]))
-						if (domz.isPresentValue(v + domy.toVal(resx[a])))
-							continue;
+					if (resx[a] != -1 && domy.isPresent(resx[a]) && domz.isPresentValue(v + domy.toVal(resx[a])))
+						continue;
 					boolean found = false;
 					for (int b = domy.first(); b != -1; b = domy.next(b)) {
 						int w = v + domy.toVal(b);
-						if (w > domz.lastValue()) {
-							// if (domx.remove(a) == false)
-							// return false;
+						if (w > domz.lastValue())
 							break;
-						}
 						if (domz.isPresentValue(w)) {
 							resx[a] = b;
 							found = true;
@@ -93,17 +90,13 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive { // implements T
 				}
 				for (int b = domy.first(); b != -1; b = domy.next(b)) {
 					int v = domy.toVal(b);
-					if (resy[b] != -1 && domx.isPresent(resy[b]))
-						if (domz.isPresentValue(v + domx.toVal(resy[b])))
-							continue;
+					if (resy[b] != -1 && domx.isPresent(resy[b]) && domz.isPresentValue(v + domx.toVal(resy[b])))
+						continue;
 					boolean found = false;
 					for (int a = domx.first(); a != -1; a = domx.next(a)) {
 						int w = v + domx.toVal(a);
-						if (w > domz.lastValue()) {
-							// if (domy.remove(b) == false)
-							// return false;
+						if (w > domz.lastValue())
 							break;
-						}
 						if (domz.isPresentValue(w)) {
 							resy[b] = a;
 							found = true;
@@ -115,17 +108,13 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive { // implements T
 				}
 				for (int c = domz.first(); c != -1; c = domz.next(c)) {
 					int v = domz.toVal(c);
-					if (resz[c] != -1 && domx.isPresent(resz[c]))
-						if (domy.isPresentValue(v - domx.toVal(resz[c])))
-							continue;
+					if (resz[c] != -1 && domx.isPresent(resz[c]) && domy.isPresentValue(v - domx.toVal(resz[c])))
+						continue;
 					boolean found = false;
 					for (int a = domx.last(); a != -1; a = domx.prev(a)) {
 						int w = v - domx.toVal(a);
-						if (w > domy.lastValue()) {
-							// if (domz.remove(c) == false)
-							// return false;
+						if (w > domy.lastValue())
 							break;
-						}
 						if (domy.isPresentValue(w)) {
 							resz[c] = a;
 							found = true;
@@ -135,15 +124,6 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive { // implements T
 					if (!found && domz.remove(c) == false)
 						return false;
 				}
-				// System.out.println(this + " hereee");
-				// for (int i = 0; i < scp.length; i++)
-				// for (int a = doms[i].first(); a != -1; a = doms[i].next(a))
-				// if (!seekFirstSupportWith(i, a)) {
-				// Kit.log.warning(" " + scp[i] + "=" + a + " not supported by " + this);
-				// display(true);
-				// return false;
-				// }
-				// this.controlArcConsistency();
 				return true;
 			}
 		}
