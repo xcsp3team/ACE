@@ -266,7 +266,7 @@ public interface Domain extends LinkedSet {
 	/**
 	 * Removes the value at the specified index. <br />
 	 * The value is assumed to be present. <br />
-	 * Returns true if an inconsistency is detected (because this is the index of the last value of the domain). <br />
+	 * Returns false if an inconsistency is detected (because this is the index of the last value of the domain). <br />
 	 * The management of this removal with respect to propagation is handled.
 	 */
 	default boolean remove(int a) {

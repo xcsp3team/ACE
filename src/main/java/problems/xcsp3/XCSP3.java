@@ -64,6 +64,7 @@ import constraints.hard.primitive.CtrFalse;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryAdd;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryAdd.EQ;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryDist;
+import constraints.hard.primitive.CtrPrimitiveTernary.CtrPrimitiveTernaryAdd;
 import problem.Problem;
 import problems.ProblemFile;
 import utility.Kit;
@@ -438,7 +439,10 @@ public class XCSP3 extends ProblemFile implements XCallbacks2 {
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeArithmeticOperator aop, XVarInteger y, TypeConditionOperatorRel op, XVarInteger z) {
 		displayPrimitives("(" + x + " " + aop + " " + y + ") " + op + " " + z);
-		repost(id);
+		if (aop == TypeArithmeticOperator.ADD && op == TypeConditionOperatorRel.EQ)
+			CtrPrimitiveTernaryAdd.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
+		else
+			repost(id);
 	}
 
 	@Override
