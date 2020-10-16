@@ -244,7 +244,7 @@ public interface Domain extends LinkedSet {
 		if (lastRemovedLevel() != depth)
 			solver().pushVariable(var()); // push must always be performed before domain reduction
 		remove(a, depth);
-		// Kit.log.info("removing " + var() + "=" + a + " (" + var().dom.toVal(a) + ") by constraint " + solver().propagation.currFilteringCtr);
+		// Kit.log.info("removing " + var() + "=" + var().dom.toVal(a) + " (index " + a + ") by constraint " + solver().propagation.currFilteringCtr);
 		var().pb.nValuesRemoved++;
 		for (ObserverDomainReduction observer : var().pb.observersDomainReduction)
 			observer.actAfterRemoval(var(), a);

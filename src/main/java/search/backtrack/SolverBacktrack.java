@@ -312,8 +312,9 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	protected List<ObserverRuns> collectObserversRuns() {
 		List<ObserverRuns> list = new ArrayList<>();
-		Stream.of(this, restarter, learnerNogoods.symmetryHandler, learnerStates, heuristicVars, lcReasoner, stats).filter(o -> o instanceof ObserverRuns)
-				.forEach(o -> list.add((ObserverRuns) o));
+		if (rs.cp.settingSolving.enableSearch)
+			Stream.of(this, restarter, learnerNogoods.symmetryHandler, learnerStates, heuristicVars, lcReasoner, stats).filter(o -> o instanceof ObserverRuns)
+					.forEach(o -> list.add((ObserverRuns) o));
 		Stream.of(pb.constraints).filter(c -> c instanceof ObserverRuns).forEach(c -> list.add((ObserverRuns) c));
 		if (propagation instanceof ObserverRuns)
 			list.add((ObserverRuns) propagation);

@@ -65,6 +65,7 @@ import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryAdd;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryAdd.EQ;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryDist;
 import constraints.hard.primitive.CtrPrimitiveTernary.CtrPrimitiveTernaryAdd;
+import constraints.hard.primitive.CtrPrimitiveTernary.CtrPrimitiveTernaryMod;
 import problem.Problem;
 import problems.ProblemFile;
 import utility.Kit;
@@ -439,8 +440,10 @@ public class XCSP3 extends ProblemFile implements XCallbacks2 {
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeArithmeticOperator aop, XVarInteger y, TypeConditionOperatorRel op, XVarInteger z) {
 		displayPrimitives("(" + x + " " + aop + " " + y + ") " + op + " " + z);
-		if (aop == TypeArithmeticOperator.ADD && op == TypeConditionOperatorRel.EQ)
+		if (aop == TypeArithmeticOperator.ADD)
 			CtrPrimitiveTernaryAdd.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
+		else if (aop == TypeArithmeticOperator.MOD && op == TypeConditionOperatorRel.EQ)
+			CtrPrimitiveTernaryMod.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
 		else
 			repost(id);
 	}
@@ -459,6 +462,12 @@ public class XCSP3 extends ProblemFile implements XCallbacks2 {
 		repost(id);
 		// TypeExpr ep = Types.valueOf(TypeExpr.class, op.name()), lep = Types.valueOf(TypeExpr.class, lop.name());
 		// intension(build(ep, trVar(x), build(lep, (Object[]) trVars(vars))));
+	}
+
+	@Override
+	public void buildCtrLogic(String id, XVarInteger x, XVarInteger y, TypeConditionOperatorRel op, int k) {
+		displayPrimitives(x + " = " + y + " " + op + " " + k);
+		repost(id);
 	}
 
 	// ************************************************************************

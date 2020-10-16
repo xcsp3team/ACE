@@ -327,7 +327,7 @@ public abstract class CtrHard extends Constraint {
 		if (pb.framework == TypeFramework.CSP) {
 			if (futvars.size() == 0) {
 				if (isGuaranteedGAC()) {
-					assert checkCurrentInstantiation();
+					assert checkCurrentInstantiation() : "Unsatisfied constraint " + this;
 					return true;
 				} else
 					return checkCurrentInstantiation();
