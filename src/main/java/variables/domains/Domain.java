@@ -193,6 +193,10 @@ public interface Domain extends LinkedSet {
 		return lastRemovedLevel() == solver().depth();
 	}
 
+	default boolean is01() {
+		return initSize() == 2 && toIdx(0) == 0 && toIdx(1) == 1;
+	}
+
 	/**********************************************************************************************
 	 * Section about removals
 	 *********************************************************************************************/
@@ -394,6 +398,17 @@ public interface Domain extends LinkedSet {
 	}
 
 	/**
+	 * Removes the values that are different from the specified value. <br />
+	 * Returns false if an inconsistency is detected (domain wipe-out). <br />
+	 * Important: the specified value is not necessarily present in the domain. <br />
+	 * The propagation queue is updated (if necessary).
+	 */
+	default boolean reduceToValue(int v) {
+		int a = toPresentIdx(v);
+		return a == -1 ? fail() : reduceToElementary(a) == 0 || solver().propagation.handleReductionSafely(var());
+	}
+
+	/**
 	 * Notify (to propagation process) that the domain has just been reduced (without any domain wipe-out).
 	 */
 	default void notifyReduction() {
@@ -439,17 +454,6 @@ public interface Domain extends LinkedSet {
 	}
 
 	/**
-	 * Removes the values that are different from the specified value. <br />
-	 * Returns false if an inconsistency is detected (domain wipe-out). <br />
-	 * Important: the specified value is not necessarily present in the domain. <br />
-	 * The propagation queue is updated (if necessary).
-	 */
-	default boolean reduceToValue(int v) {
-		int a = toPresentIdx(v);
-		return a == -1 ? fail() : reduceToElementary(a) == 0 || solver().propagation.handleReductionSafely(var());
-	}
-
-	/**
 	 * Removes the values that satisfies the relational operation. <br />
 	 * Returns false if an inconsistency is detected (domain wipe-out). <br />
 	 * The management of these possible removals with respect to propagation is handled.
@@ -484,8 +488,16 @@ public interface Domain extends LinkedSet {
 		return removeValues(TypeOperatorRel.LT, limit);
 	}
 
+	default boolean removeValuesLessThanOrEqual(long limit) {
+		return removeValues(TypeOperatorRel.LE, limit);
+	}
+
 	default boolean removeValuesGreaterThan(long limit) {
 		return removeValues(TypeOperatorRel.GT, limit);
+	}
+
+	default boolean removeValuesGreaterThanOrEqual(long limit) {
+		return removeValues(TypeOperatorRel.GE, limit);
 	}
 
 	default boolean removeValues(TypeOperatorRel type, long limit, int coeff) {
@@ -619,6 +631,10 @@ public interface Domain extends LinkedSet {
 			removeValue(v);
 		}
 		return afterElementaryCalls(sizeBefore);
+	}
+
+	default boolean removeValuesInRange(int start, int stop) {
+		return removeValues(TypeConditionOperatorSet.IN, start, stop);
 	}
 
 	default boolean removeIndexesChecking(Predicate<Integer> p) {

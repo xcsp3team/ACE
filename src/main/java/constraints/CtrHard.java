@@ -287,8 +287,9 @@ public abstract class CtrHard extends Constraint {
 	 */
 	@Override
 	public final boolean filterFrom(Variable x) {
+		// System.out.println("fileting " + this + " " + x);
 		if (this.hugeDomainVars.length > 0) {
-			// System.out.println("fileting " + this + " " + x);
+
 			if (futvars.size() == 0)
 				return this.checkCurrentInstantiation();
 			if (futvars.size() == 1) {

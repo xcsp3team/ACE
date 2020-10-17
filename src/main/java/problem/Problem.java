@@ -149,8 +149,8 @@ import constraints.hard.global.SumSimple.SumSimpleLE;
 import constraints.hard.global.SumWeighted;
 import constraints.hard.global.SumWeighted.SumWeightedGE;
 import constraints.hard.global.SumWeighted.SumWeightedLE;
-import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryAdd;
-import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryAdd.NE;
+import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub;
+import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub.SubNE2;
 import constraints.hard.primitive.CtrPrimitiveBinary.Disjonctive;
 import dashboard.ControlPanel.SettingVars;
 import dashboard.Output;
@@ -968,7 +968,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (rs.cp.settingGlobal.typeAllDifferent == 1)
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
 				if (i < j)
-					addCtr(new NE(this, scp[i], 0, scp[j])); // different(scp[i], scp[j]);
+					addCtr(new SubNE2(this, scp[i], scp[j], 0)); // different(scp[i], scp[j]);
 			});
 		if (rs.cp.settingGlobal.typeAllDifferent == 2)
 			return addCtr(new AllDifferentWeak(this, scp));
@@ -1143,7 +1143,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity ordered(Var[] list, int[] lengths, TypeOperatorRel op) {
 		control(list != null && lengths != null && list.length == lengths.length + 1 && op != null);
 		TypeConditionOperatorRel cop = op.toConditionOperator();
-		return forall(range(list.length - 1), i -> CtrPrimitiveBinaryAdd.buildFrom(this, (Variable) list[i], lengths[i], cop, (Variable) list[i + 1]));
+		return forall(range(list.length - 1), i -> CtrPrimitiveBinarySub.buildFrom(this, (Variable) list[i], (Variable) list[i + 1], cop, -lengths[i]));
 	}
 
 	/**

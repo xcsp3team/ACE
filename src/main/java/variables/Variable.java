@@ -104,7 +104,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	public static final boolean areAllInitiallyBoolean(Variable... vars) {
-		return Stream.of(vars).allMatch(x -> x.dom.initSize() == 2 && x.dom.toIdx(0) == 0 && x.dom.toIdx(1) == 1);
+		return Stream.of(vars).allMatch(x -> x.dom.is01());
 	}
 
 	public static final boolean haveAllSameDomainType(Variable... vars) {

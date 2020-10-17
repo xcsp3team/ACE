@@ -41,8 +41,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive { // implements T
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			if (op == TypeConditionOperatorRel.EQ)
 				return pb.addCtr(new TernaryEQ(pb, x, y, z));
-			else
-				return pb.addCtr(SumWeighted.buildFrom(pb, pb.api.vars(x, y, z), pb.api.vals(1, 1, -1), op, 0));
+			return pb.addCtr(SumWeighted.buildFrom(pb, pb.api.vars(x, y, z), pb.api.vals(1, 1, -1), op, 0));
 		}
 
 		public CtrPrimitiveTernaryAdd(Problem pb, Variable x, Variable y, Variable z) {
@@ -72,15 +71,12 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive { // implements T
 				return false;
 			}
 
-			// using labels and continue label is very inefficient. is that sure?
-
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				extern: for (int a = domx.first(); a != -1; a = domx.next(a)) {
 					int va = domx.toVal(a);
 					if (resx[a] != -1 && domy.isPresent(resx[a]) && domz.isPresentValue(va + domy.toVal(resx[a])))
 						continue;
-					// boolean found = false;
 					for (int b = domy.first(); b != -1; b = domy.next(b)) {
 						int vc = va + domy.toVal(b);
 						if (vc > domz.lastValue())
@@ -92,11 +88,8 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive { // implements T
 								resz[domz.toIdx(vc)] = a;
 							}
 							continue extern;
-							// found = true;
-							// break;
 						}
 					}
-					// if (!found && domx.remove(a) == false)
 					if (domx.remove(a) == false)
 						return false;
 				}
@@ -104,7 +97,6 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive { // implements T
 					int vb = domy.toVal(b);
 					if (resy[b] != -1 && domx.isPresent(resy[b]) && domz.isPresentValue(vb + domx.toVal(resy[b])))
 						continue;
-					// boolean found = false;
 					for (int a = domx.first(); a != -1; a = domx.next(a)) {
 						int vc = vb + domx.toVal(a);
 						if (vc > domz.lastValue())
@@ -114,11 +106,8 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive { // implements T
 							if (multidirectional)
 								resz[domz.toIdx(vc)] = a;
 							continue extern;
-							// found = true;
-							// break;
 						}
 					}
-					// if (!found && domy.remove(b) == false)
 					if (domy.remove(b) == false)
 						return false;
 				}
@@ -126,7 +115,6 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive { // implements T
 					int vc = domz.toVal(c);
 					if (resz[c] != -1 && domx.isPresent(resz[c]) && domy.isPresentValue(vc - domx.toVal(resz[c])))
 						continue;
-					// boolean found = false;
 					for (int a = domx.last(); a != -1; a = domx.prev(a)) {
 						int vb = vc - domx.toVal(a);
 						if (vb > domy.lastValue())
@@ -134,11 +122,8 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive { // implements T
 						if (domy.isPresentValue(vb)) {
 							resz[c] = a;
 							continue extern;
-							// found = true;
-							// break;
 						}
 					}
-					// if (!found &&domz.remove(c) == false)
 					if (domz.remove(c) == false)
 						return false;
 				}
@@ -184,29 +169,26 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive { // implements T
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				for (int a = domx.first(); a != -1; a = domx.next(a)) {
+				extern: for (int a = domx.first(); a != -1; a = domx.next(a)) {
 					int va = domx.toVal(a);
 					if (va < domy.lastValue() && domz.isPresentValue(va)) // remainder in z is then necessarily va
 						continue;
 					if (resx[a] != -1 && domy.isPresent(resx[a]) && domz.isPresentValue(va % domy.toVal(resx[a])))
 						continue;
-					boolean found = false;
 					for (int b = domy.first(); b != -1; b = domy.next(b)) {
 						int vb = domy.toVal(b);
 						if (va < vb) // means that the remainder with remaining values of y lead to va (and this has been considered earlier)
 							break;
 						if (domz.isPresentValue(va % vb)) {
 							resx[a] = b;
-							found = true;
-							break;
+							continue extern;
 						}
 					}
-					if (!found && domx.remove(a) == false)
+					if (domx.remove(a) == false)
 						return false;
 				}
-				for (int b = domy.first(); b != -1; b = domy.next(b)) {
+				extern: for (int b = domy.first(); b != -1; b = domy.next(b)) {
 					int vb = domy.toVal(b);
-					boolean found = false;
 					if (vb <= domz.firstValue()) {
 						if (domy.remove(b) == false)
 							return false;
@@ -214,25 +196,22 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive { // implements T
 					}
 					if (resy[b] != -1 && domx.isPresent(resy[b]) && domz.isPresentValue(domx.toVal(resy[b]) % vb))
 						continue;
-
 					for (int a = domx.first(); a != -1; a = domx.next(a)) {
 						int vc = domx.toVal(a) % vb;
 						if (domz.isPresentValue(vc)) {
 							resy[b] = a;
-							found = true;
-							break;
+							continue extern;
 						}
 					}
-					if (!found && domy.remove(b) == false)
+					if (domy.remove(b) == false)
 						return false;
 				}
 				if (domz.removeValues(TypeOperatorRel.GE, domy.lastValue()) == false) // because remainder is less than the denominator
 					return false;
-				for (int c = domz.first(); c != -1; c = domz.next(c)) {
+				extern: for (int c = domz.first(); c != -1; c = domz.next(c)) {
 					int vc = domz.toVal(c);
 					if (resz1[c] != -1 && domx.isPresent(resz1[c]) && domy.isPresent(resz2[c]))
 						continue;
-					boolean found = false;
 					for (int b = domy.last(); b != -1; b = domy.prev(b)) {
 						int vb = domy.toVal(b);
 						if (vb < vc)
@@ -243,8 +222,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive { // implements T
 								if (domx.toVal(a) % vb == vc) {
 									resz1[c] = a;
 									resz2[c] = b;
-									found = true;
-									break;
+									continue extern;
 								}
 							}
 						} else {
@@ -255,17 +233,13 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive { // implements T
 								if (domx.isPresentValue(multiple)) {
 									resz1[c] = domx.toIdx(multiple);
 									resz2[c] = b;
-									found = true;
-									break;
+									continue extern;
 								}
 								multiple += vb;
 							}
 						}
-						if (found)
-							break;
-
 					}
-					if (!found && domz.remove(c) == false)
+					if (domz.remove(c) == false)
 						return false;
 				}
 				return true;
