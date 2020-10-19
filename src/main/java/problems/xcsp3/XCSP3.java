@@ -3,6 +3,7 @@ package problems.xcsp3;
 import static org.xcsp.common.Types.TypeArithmeticOperator.ADD;
 import static org.xcsp.common.Types.TypeArithmeticOperator.DIST;
 import static org.xcsp.common.Types.TypeArithmeticOperator.MOD;
+import static org.xcsp.common.Types.TypeArithmeticOperator.MUL;
 import static org.xcsp.common.Types.TypeArithmeticOperator.SUB;
 import static org.xcsp.common.Utilities.join;
 import static org.xcsp.common.Utilities.safeInt;
@@ -67,10 +68,13 @@ import constraints.hard.global.BinPackingSimple;
 import constraints.hard.primitive.CtrFalse;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryAdd;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryDist;
+import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryLog;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub.SubEQ2;
 import constraints.hard.primitive.CtrPrimitiveTernary.CtrPrimitiveTernaryAdd;
+import constraints.hard.primitive.CtrPrimitiveTernary.CtrPrimitiveTernaryLog;
 import constraints.hard.primitive.CtrPrimitiveTernary.CtrPrimitiveTernaryMod;
+import constraints.hard.primitive.CtrPrimitiveTernary.CtrPrimitiveTernaryMul;
 import problem.Problem;
 import problems.ProblemFile;
 import utility.Kit;
@@ -435,7 +439,7 @@ public class XCSP3 extends ProblemFile implements XCallbacks2 {
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeArithmeticOperator aop, int k, TypeConditionOperatorRel op, XVarInteger y) {
 		displayPrimitives("(" + x + " " + aop + " " + k + ") " + op + " " + y);
-		if (op == TypeConditionOperatorRel.EQ && (aop == ADD || aop == SUB))
+		if (op == EQ && (aop == ADD || aop == SUB))
 			imp().addCtr(new SubEQ2(imp(), trVar(x), trVar(y), aop == ADD ? -k : k));
 		else
 			repost(id);
@@ -446,10 +450,13 @@ public class XCSP3 extends ProblemFile implements XCallbacks2 {
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeArithmeticOperator aop, XVarInteger y, TypeConditionOperatorRel op, XVarInteger z) {
 		displayPrimitives("(" + x + " " + aop + " " + y + ") " + op + " " + z);
+
 		if (aop == ADD)
 			CtrPrimitiveTernaryAdd.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
-		else if (aop == MOD && op == TypeConditionOperatorRel.EQ)
+		else if (aop == MOD && op == EQ)
 			CtrPrimitiveTernaryMod.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
+		else if (aop == MUL && op == EQ && (trVar(x).dom.is01() || trVar(y).dom.is01()))
+			CtrPrimitiveTernaryMul.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
 		else
 			repost(id);
 	}
@@ -472,8 +479,16 @@ public class XCSP3 extends ProblemFile implements XCallbacks2 {
 
 	@Override
 	public void buildCtrLogic(String id, XVarInteger x, XVarInteger y, TypeConditionOperatorRel op, int k) {
-		displayPrimitives(x + " = " + y + " " + op + " " + k);
-		repost(id);
+		displayPrimitives(x + " = (" + y + " " + op + " " + k + ")");
+		CtrPrimitiveBinaryLog.buildFrom(imp(), trVar(x), trVar(y), op, k);
+		// repost(id);
+	}
+
+	@Override
+	public void buildCtrLogic(String id, XVarInteger x, XVarInteger y, TypeConditionOperatorRel op, XVarInteger z) {
+		displayPrimitives(x + " = (" + y + " " + op + " " + z + ")");
+		CtrPrimitiveTernaryLog.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
+		// repost(id);
 	}
 
 	// ************************************************************************

@@ -36,18 +36,18 @@ public class EQADD extends CtrPrimitiveTernary implements TagUnsymmetric, TagGAC
 		while (true) {
 			int nb = pb.nValuesRemoved;
 			// boundZ on sup values
-			if (domx.removeValues(GT, domy.lastValue() + domz.lastValue()) == false)
+			if (dx.removeValues(GT, dy.lastValue() + dz.lastValue()) == false)
 				return false;
-			if (domy.removeValues(GT, domx.lastValue() - domz.firstValue()) == false)
+			if (dy.removeValues(GT, dx.lastValue() - dz.firstValue()) == false)
 				return false;
-			if (domz.removeValues(GT, domx.lastValue() - domy.firstValue()) == false)
+			if (dz.removeValues(GT, dx.lastValue() - dy.firstValue()) == false)
 				return false;
 			// boundZ on inf values
-			if (domx.removeValues(LT, domy.firstValue() + domz.firstValue()) == false)
+			if (dx.removeValues(LT, dy.firstValue() + dz.firstValue()) == false)
 				return false;
-			if (domy.removeValues(LT, domx.firstValue() - domz.lastValue()) == false)
+			if (dy.removeValues(LT, dx.firstValue() - dz.lastValue()) == false)
 				return false;
-			if (domz.removeValues(LT, domx.firstValue() - domy.lastValue()) == false)
+			if (dz.removeValues(LT, dx.firstValue() - dy.lastValue()) == false)
 				return false;
 			if (nb == pb.nValuesRemoved)
 				break;
@@ -66,17 +66,17 @@ public class EQADD extends CtrPrimitiveTernary implements TagUnsymmetric, TagGAC
 	}
 
 	private int seekBoundDSupportX(int bnd, int residue) {
-		if (domy.isPresentValue(residue) && domz.isPresentValue(bnd - residue) || domz.isPresentValue(residue) && domy.isPresentValue(bnd - residue))
+		if (dy.isPresentValue(residue) && dz.isPresentValue(bnd - residue) || dz.isPresentValue(residue) && dy.isPresentValue(bnd - residue))
 			return residue;
-		return domy.size() < domz.size() ? seekBoundX(bnd, domy, domz) : seekBoundX(bnd, domz, domy);
+		return dy.size() < dz.size() ? seekBoundX(bnd, dy, dz) : seekBoundX(bnd, dz, dy);
 	}
 
 	private int seekBoundDSupportYZ(int bnd, int residue, Domain dom) {
-		if (domx.isPresentValue(residue) && dom.isPresentValue(residue - bnd) || dom.isPresentValue(residue) && domx.isPresentValue(residue + bnd))
+		if (dx.isPresentValue(residue) && dom.isPresentValue(residue - bnd) || dom.isPresentValue(residue) && dx.isPresentValue(residue + bnd))
 			return residue;
-		if (domx.size() < dom.size()) {
-			for (int idx = domx.last(); idx != -1; idx = domx.prev(idx)) {
-				int val = domx.toVal(idx);
+		if (dx.size() < dom.size()) {
+			for (int idx = dx.last(); idx != -1; idx = dx.prev(idx)) {
+				int val = dx.toVal(idx);
 				if (dom.isPresentValue(val - bnd))
 					return val;
 				// else
@@ -84,7 +84,7 @@ public class EQADD extends CtrPrimitiveTernary implements TagUnsymmetric, TagGAC
 		} else {
 			for (int idx = dom.last(); idx != -1; idx = dom.prev(idx)) {
 				int val = dom.toVal(idx);
-				if (domx.isPresentValue(val + bnd))
+				if (dx.isPresentValue(val + bnd))
 					return val;
 				// else
 			}
@@ -95,7 +95,7 @@ public class EQADD extends CtrPrimitiveTernary implements TagUnsymmetric, TagGAC
 	private Boolean manageBoundFor(int vap, int BND) {
 		Domain dom = scp[vap].dom;
 		int bnd = BND == INF ? dom.firstValue() : dom.lastValue();
-		int support = dom == domx ? seekBoundDSupportX(bnd, residues[vap][BND]) : seekBoundDSupportYZ(bnd, residues[vap][BND], dom == domy ? domz : domy);
+		int support = dom == dx ? seekBoundDSupportX(bnd, residues[vap][BND]) : seekBoundDSupportYZ(bnd, residues[vap][BND], dom == dy ? dz : dy);
 		if (support == NONE) {
 			if (dom.removeValue(bnd) == false)
 				return Boolean.FALSE;

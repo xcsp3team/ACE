@@ -8,8 +8,6 @@
  */
 package constraints.hard.global;
 
-import static org.xcsp.common.Types.TypeConditionOperatorSet.NOTIN;
-
 import java.util.stream.IntStream;
 
 import org.xcsp.common.Utilities;
@@ -188,7 +186,7 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 			// If index is singleton, we update dom(list[index]) and dom(value) so that they are both equal to the intersection of the two domains
 			if (index.dom.size() == 1) {
 				Domain dom = domAt(index.dom.unique());
-				if (dom.removeValues(NOTIN, value.dom) == false || value.dom.removeValues(NOTIN, dom) == false)
+				if (dom.removeValuesNotIn(value.dom) == false || value.dom.removeValuesNotIn(dom) == false)
 					return false;
 			}
 			assert controlGAC();

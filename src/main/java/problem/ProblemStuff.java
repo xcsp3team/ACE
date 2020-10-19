@@ -295,7 +295,7 @@ public final class ProblemStuff {
 		varDegrees = new Repartitioner<>(verbose);
 		domSizes = new Repartitioner<>(verbose);
 		ctrArities = new Repartitioner<>(verbose);
-		ctrTypes = new Repartitioner<>(verbose);
+		ctrTypes = new Repartitioner<>(true);
 		tableSizes = new Repartitioner<>(verbose);
 		defaultCosts = new Repartitioner<>(verbose);
 	}

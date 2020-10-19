@@ -186,6 +186,10 @@ public interface Domain extends LinkedSet {
 		return toVal(unique());
 	}
 
+	default boolean hasUniqueValue(int v) {
+		return size() == 1 && v == toVal(first());
+	}
+
 	/**
 	 * Determines if a value has been removed at the current depth of the (tree) solver.
 	 */
@@ -255,7 +259,7 @@ public interface Domain extends LinkedSet {
 	}
 
 	/**
-	 * Removes the values at the specified index. <br />
+	 * Removes the value at the specified index. <br />
 	 * The value is assumed to be present. <br />
 	 * When called, we have the guarantee that no inconsistency can be detected (because the value is present and the domain contains at least another
 	 * value). <br />
@@ -573,6 +577,14 @@ public interface Domain extends LinkedSet {
 			if (dom.isPresentValue(toVal(a)) == present)
 				removeElementary(a);
 		return afterElementaryCalls(sizeBefore);
+	}
+
+	default boolean removeValuesIn(Domain dom) {
+		return removeValues(TypeConditionOperatorSet.IN, dom);
+	}
+
+	default boolean removeValuesNotIn(Domain dom) {
+		return removeValues(TypeConditionOperatorSet.NOTIN, dom);
 	}
 
 	default boolean removeValues(TypeConditionOperatorSet type, Set<Integer> set) {

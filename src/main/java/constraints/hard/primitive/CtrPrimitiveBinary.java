@@ -46,9 +46,9 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 		this.dy = y.dom;
 	}
 
-	public static class Disjonctive extends CtrPrimitiveBinary {
+	public static final class Disjonctive extends CtrPrimitiveBinary {
 
-		private final int kx, ky;
+		final int kx, ky;
 
 		@Override
 		public boolean checkValues(int[] t) {
@@ -81,11 +81,22 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 		}
 	}
 
+	public static abstract class CtrPrimitiveBinaryWithCst extends CtrPrimitiveBinary {
+
+		protected final int k;
+
+		public CtrPrimitiveBinaryWithCst(Problem pb, Variable x, Variable y, int k) {
+			super(pb, x, y);
+			this.k = k;
+			defineKey(k);
+		}
+	}
+
 	// ************************************************************************
 	// ***** Classes for x - y <op> k (CtrPrimitiveBinarySub)
 	// ************************************************************************
 
-	public static abstract class CtrPrimitiveBinarySub extends CtrPrimitiveBinary {
+	public static abstract class CtrPrimitiveBinarySub extends CtrPrimitiveBinaryWithCst {
 
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			assert op != null;
@@ -104,15 +115,11 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			return pb.addCtr(new SubNE2(pb, x, y, k));
 		}
 
-		protected final int k;
-
 		public CtrPrimitiveBinarySub(Problem pb, Variable x, Variable y, int k) {
-			super(pb, x, y);
-			this.k = k;
-			defineKey(k);
+			super(pb, x, y, k);
 		}
 
-		public static class SubLE2 extends CtrPrimitiveBinarySub implements TagUnsymmetric {
+		public static final class SubLE2 extends CtrPrimitiveBinarySub implements TagUnsymmetric {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -129,7 +136,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			}
 		}
 
-		public static class SubGE2 extends CtrPrimitiveBinarySub implements TagUnsymmetric {
+		public static final class SubGE2 extends CtrPrimitiveBinarySub implements TagUnsymmetric {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -211,7 +218,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 	// ***** Classes for x + y <op> k (CtrPrimitiveBinaryAdd)
 	// ************************************************************************
 
-	public static abstract class CtrPrimitiveBinaryAdd extends CtrPrimitiveBinary implements TagSymmetric {
+	public static abstract class CtrPrimitiveBinaryAdd extends CtrPrimitiveBinaryWithCst implements TagSymmetric {
 
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			assert op != null;
@@ -228,15 +235,11 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			return pb.addCtr(new AddNE2(pb, x, y, k));
 		}
 
-		protected final int k;
-
 		public CtrPrimitiveBinaryAdd(Problem pb, Variable x, Variable y, int k) {
-			super(pb, x, y);
-			this.k = k;
-			defineKey(k);
+			super(pb, x, y, k);
 		}
 
-		public static class AddLE2 extends CtrPrimitiveBinaryAdd implements TagUnsymmetric {
+		public static final class AddLE2 extends CtrPrimitiveBinaryAdd implements TagUnsymmetric {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -253,7 +256,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			}
 		}
 
-		public static class AddGE2 extends CtrPrimitiveBinaryAdd implements TagUnsymmetric {
+		public static final class AddGE2 extends CtrPrimitiveBinaryAdd implements TagUnsymmetric {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -301,7 +304,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 	// ***** Classes for |x - y| <op> k (CtrPrimitiveBinaryDist)
 	// ************************************************************************
 
-	public static abstract class CtrPrimitiveBinaryDist extends CtrPrimitiveBinary implements TagSymmetric {
+	public static abstract class CtrPrimitiveBinaryDist extends CtrPrimitiveBinaryWithCst implements TagSymmetric {
 
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			assert op != null;
@@ -318,16 +321,12 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			return pb.addCtr(new DistNE2(pb, x, y, k));
 		}
 
-		protected final int k;
-
 		public CtrPrimitiveBinaryDist(Problem pb, Variable x, Variable y, int k) {
-			super(pb, x, y);
-			this.k = k;
-			defineKey(k);
+			super(pb, x, y, k);
 			Utilities.control(k >= 0, "k should be positive");
 		}
 
-		public static class DistGE2 extends CtrPrimitiveBinaryDist { // code similar to Disjunctive
+		public static final class DistGE2 extends CtrPrimitiveBinaryDist { // code similar to Disjunctive
 
 			@Override
 			public boolean checkValues(int[] t) {
@@ -352,7 +351,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			}
 		}
 
-		public static class DistNE2 extends CtrPrimitiveBinaryDist {
+		public static final class DistNE2 extends CtrPrimitiveBinaryDist {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -378,7 +377,11 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 		}
 	}
 
-	public static abstract class CtrPrimitiveBinaryLog extends CtrPrimitiveBinary implements TagUnsymmetric {
+	// ************************************************************************
+	// ***** Classes for x = (y <op> k) (CtrPrimitiveBinaryLog)
+	// ************************************************************************
+
+	public static abstract class CtrPrimitiveBinaryLog extends CtrPrimitiveBinaryWithCst implements TagUnsymmetric {
 
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			assert op != null;
@@ -395,16 +398,12 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			return pb.addCtr(new LogNE2(pb, x, y, k));
 		}
 
-		protected final int k;
-
 		public CtrPrimitiveBinaryLog(Problem pb, Variable x, Variable y, int k) {
-			super(pb, x, y);
-			this.k = k;
-			defineKey(k);
+			super(pb, x, y, k);
 			Utilities.control(dx.is01(), "The first variable should be of type 01");
 		}
 
-		public static class LogLE2 extends CtrPrimitiveBinaryLog {
+		public static final class LogLE2 extends CtrPrimitiveBinaryLog {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -429,7 +428,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			}
 		}
 
-		public static class LogGE2 extends CtrPrimitiveBinaryLog {
+		public static final class LogGE2 extends CtrPrimitiveBinaryLog {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -454,7 +453,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			}
 		}
 
-		public static class LogEQ2 extends CtrPrimitiveBinaryLog {
+		public static final class LogEQ2 extends CtrPrimitiveBinaryLog {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -484,7 +483,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			}
 		}
 
-		public static class LogNE2 extends CtrPrimitiveBinaryLog {
+		public static final class LogNE2 extends CtrPrimitiveBinaryLog {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -515,92 +514,4 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 		}
 
 	}
-
-	public static abstract class CtrPrimitiveTernaryLog extends CtrPrimitiveTernary implements TagUnsymmetric {
-
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
-			// assert op != null;
-			// if (op == LT)
-			// return pb.addCtr(new LogLE2(pb, x, y, k - 1));
-			// if (op == LE)
-			// return pb.addCtr(new LogLE2(pb, x, y, k));
-			// if (op == GE)
-			// return pb.addCtr(new LogGE2(pb, x, y, k));
-			// if (op == GT)
-			// return pb.addCtr(new LogGE2(pb, x, y, k + 1));
-			// if (op == EQ)
-			// pb.addCtr(new LogEQ2(pb, x, y, k));
-			// return pb.addCtr(new LogNE2(pb, x, y, k));
-			return null;
-		}
-
-		public CtrPrimitiveTernaryLog(Problem pb, Variable x, Variable y, Variable z) {
-			super(pb, x, y, z);
-			Utilities.control(domx.is01(), "The first variable should be of type 01");
-		}
-
-		public static class LogLE3 extends CtrPrimitiveTernaryLog {
-
-			@Override
-			public final boolean checkValues(int[] t) {
-				return (t[0] == 1) == (t[1] <= t[2]);
-			}
-
-			public LogLE3(Problem pb, Variable x, Variable y, Variable z) {
-				super(pb, x, y, z);
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				if (domx.first() == 0 && domy.lastValue() <= domz.firstValue() && domx.remove(0) == false)
-					return false;
-				if (domx.last() == 1 && domy.firstValue() > domz.lastValue() && domx.remove(1) == false)
-					return false;
-				if (domx.first() != 0) { // only 1
-					if (domy.removeValuesGreaterThan(domz.lastValue()) == false && domz.removeValuesLessThan(domy.firstValue()) == false)
-						return false;
-				}
-				if (domx.last() != 1) { // only 0
-					if (domy.removeValuesLessThanOrEqual(domz.firstValue()) == false && domz.removeValuesGreaterThanOrEqual(domy.lastValue()) == false)
-						return false;
-				}
-				return true;
-			}
-		}
-	}
-
 }
-
-// public static class LT extends CtrPrimitiveBinaryCst implements TagUnsymmetric {
-//
-// @Override
-// public final boolean checkValues(int[] t) {
-// return t[0] + k < t[1];
-// }
-//
-// public LT(Problem pb, Variable x, int k, Variable y) {
-// super(pb, x, y, k);
-// }
-//
-// @Override
-// public boolean runPropagator(Variable dummy) {
-// return dx.removeValues(GT, dy.lastValue() - 1 - k) && dy.removeValues(LT, dx.firstValue() + 1 + k);
-// }
-// }
-
-// public static class GT extends CtrPrimitiveBinaryCst implements TagUnsymmetric {
-//
-// @Override
-// public final boolean checkValues(int[] t) {
-// return t[0] + k > t[1];
-// }
-//
-// public GT(Problem pb, Variable x, int k, Variable y) {
-// super(pb, x, y, k);
-// }
-//
-// @Override
-// public boolean runPropagator(Variable dummy) {
-// return dx.removeValues(LT, dy.firstValue() + 1 - k) && dy.removeValues(GT, dx.lastValue() - 1 + k);
-// }
-// }
