@@ -67,7 +67,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 	public static abstract class CtrPrimitiveTernaryAdd extends CtrPrimitiveTernary {
 
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
-			if (op == TypeConditionOperatorRel.EQ)
+			if (op == EQ)
 				return pb.addCtr(new AddEQ3(pb, x, y, z));
 			return pb.addCtr(SumWeighted.buildFrom(pb, pb.api.vars(x, y, z), pb.api.vals(1, 1, -1), op, 0));
 		}
@@ -89,69 +89,105 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 
 			public AddEQ3(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
-				this.resx = Kit.repeat(-1, dx.initSize());
-				this.resy = Kit.repeat(-1, dy.initSize());
-				this.resz = Kit.repeat(-1, dz.initSize());
-			}
-
-			@Override
-			public Boolean isSymmetric() {
-				return false;
+				this.resx = new int[dx.initSize()];
+				this.resy = new int[dy.initSize()];
+				this.resz = new int[dz.initSize()];
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 					int va = dx.toVal(a);
-					if (resx[a] != -1 && dy.isPresent(resx[a]) && dz.isPresentValue(va + dy.toVal(resx[a])))
+					if (dy.isPresent(resx[a]) && dz.isPresentValue(va + dy.toVal(resx[a])))
 						continue;
-					for (int b = dy.first(); b != -1; b = dy.next(b)) {
-						int vc = va + dy.toVal(b);
-						if (vc > dz.lastValue())
-							break;
-						if (dz.isPresentValue(vc)) {
-							resx[a] = b;
-							if (multidirectional) {
-								resy[b] = a;
-								resz[dz.toIdx(vc)] = a;
+					// System.out.println("dy " + dy.size() + " vs dz = " + dz.size());
+					if (dy.size() <= dz.size())
+						for (int b = dy.first(); b != -1; b = dy.next(b)) {
+							int vc = va + dy.toVal(b);
+							if (vc > dz.lastValue())
+								break;
+							if (dz.isPresentValue(vc)) {
+								resx[a] = b;
+								if (multidirectional) {
+									resy[b] = a;
+									resz[dz.toIdx(vc)] = a;
+								}
+								continue extern;
 							}
-							continue extern;
 						}
-					}
+					else
+						for (int c = dz.first(); c != -1; c = dz.next(c)) {
+							int vb = dz.toVal(c) - va;
+							if (vb > dy.lastValue())
+								break;
+							if (dy.isPresentValue(vb)) {
+								resx[a] = dy.toIdx(vb);
+								if (multidirectional) {
+									resy[dy.toIdx(vb)] = a;
+									resz[c] = a;
+								}
+								continue extern;
+							}
+						}
 					if (dx.remove(a) == false)
 						return false;
 				}
 				extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
 					int vb = dy.toVal(b);
-					if (resy[b] != -1 && dx.isPresent(resy[b]) && dz.isPresentValue(vb + dx.toVal(resy[b])))
+					if (dx.isPresent(resy[b]) && dz.isPresentValue(vb + dx.toVal(resy[b])))
 						continue;
-					for (int a = dx.first(); a != -1; a = dx.next(a)) {
-						int vc = vb + dx.toVal(a);
-						if (vc > dz.lastValue())
-							break;
-						if (dz.isPresentValue(vc)) {
-							resy[b] = a;
-							if (multidirectional)
-								resz[dz.toIdx(vc)] = a;
-							continue extern;
+					if (dx.size() <= dz.size())
+						for (int a = dx.first(); a != -1; a = dx.next(a)) {
+							int vc = vb + dx.toVal(a);
+							if (vc > dz.lastValue())
+								break;
+							if (dz.isPresentValue(vc)) {
+								resy[b] = a;
+								if (multidirectional)
+									resz[dz.toIdx(vc)] = a;
+								continue extern;
+							}
 						}
-					}
+					else
+						for (int c = dz.first(); c != -1; c = dz.next(c)) {
+							int va = dz.toVal(c) - vb;
+							if (va > dx.lastValue())
+								break;
+							if (dx.isPresentValue(va)) {
+								resy[b] = dx.toIdx(va);
+								if (multidirectional)
+									resz[c] = dx.toIdx(va);
+								continue extern;
+							}
+						}
 					if (dy.remove(b) == false)
 						return false;
 				}
 				extern: for (int c = dz.first(); c != -1; c = dz.next(c)) {
 					int vc = dz.toVal(c);
-					if (resz[c] != -1 && dx.isPresent(resz[c]) && dy.isPresentValue(vc - dx.toVal(resz[c])))
+					if (dx.isPresent(resz[c]) && dy.isPresentValue(vc - dx.toVal(resz[c])))
 						continue;
-					for (int a = dx.last(); a != -1; a = dx.prev(a)) {
-						int vb = vc - dx.toVal(a);
-						if (vb > dy.lastValue())
-							break;
-						if (dy.isPresentValue(vb)) {
-							resz[c] = a;
-							continue extern;
+					if (dx.size() <= dy.size())
+						for (int a = dx.last(); a != -1; a = dx.prev(a)) {
+							int vb = vc - dx.toVal(a);
+							if (vb > dy.lastValue())
+								break;
+							if (dy.isPresentValue(vb)) {
+								resz[c] = a;
+								continue extern;
+							}
 						}
-					}
+					else
+						for (int b = dy.last(); b != -1; b = dy.prev(b)) {
+							int va = vc - dy.toVal(b);
+							if (va > dx.lastValue())
+								break;
+							if (dx.isPresentValue(va)) {
+								resz[c] = dx.toIdx(va);
+								continue extern;
+							}
+						}
+
 					if (dz.remove(c) == false)
 						return false;
 				}
@@ -230,7 +266,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 				}
 				assert dx.size() == 2 && dz.isPresentValue(0) && dz.size() > 1;
 				// every value of dy is supported (by both 0 in x and z); we still need to filter z (and possibly 1 out of dx)
-
+				// TODO using a residue here ?
 				int sizeBefore = dz.size();
 				for (int c = dz.first(); c != -1; c = dz.next(c)) {
 					int vc = dz.toVal(c);
@@ -361,6 +397,176 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 					if (dz.remove(c) == false)
 						return false;
 				}
+				return true;
+			}
+		}
+	}
+
+	// ************************************************************************
+	// ***** Classes for |x - y| <op> z (CtrPrimitiveTernaryDist)
+	// ************************************************************************
+
+	public static abstract class CtrPrimitiveTernaryDist extends CtrPrimitiveTernary {
+
+		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
+			if (op == EQ)
+				return pb.addCtr(new DistEQ3(pb, x, y, z));
+			throw new MissingImplementationException();
+		}
+
+		public CtrPrimitiveTernaryDist(Problem pb, Variable x, Variable y, Variable z) {
+			super(pb, x, y, z);
+		}
+
+		public static final class DistEQ3 extends CtrPrimitiveTernaryDist implements TagGACGuaranteed {
+
+			int[] resx, resy, resz1, resz2; // residues for values in the domains of x, y and z
+
+			boolean multidirectional = true; // hard coding
+
+			@Override
+			public final boolean checkValues(int[] t) {
+				return Math.abs(t[0] - t[1]) == t[2];
+			}
+
+			public DistEQ3(Problem pb, Variable x, Variable y, Variable z) {
+				super(pb, x, y, z);
+				this.resx = new int[dx.initSize()];
+				this.resy = new int[dy.initSize()];
+				this.resz1 = Kit.repeat(-1, dz.initSize());
+				this.resz2 = Kit.repeat(-1, dz.initSize());
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
+					int va = dx.toVal(a);
+					if (dy.isPresent(resx[a]) && dz.isPresentValue(Math.abs(va - dy.toVal(resx[a]))))
+						continue;
+					if (dy.size() <= dz.size())
+						for (int b = dy.first(); b != -1; b = dy.next(b)) {
+							int vc = Math.abs(va - dy.toVal(b));
+							if (dz.isPresentValue(vc)) {
+								resx[a] = b;
+								if (multidirectional) {
+									resy[b] = a;
+									resz1[dz.toIdx(vc)] = a;
+									resz2[dz.toIdx(vc)] = b;
+								}
+								continue extern;
+							}
+						}
+					else
+						for (int c = dz.first(); c != -1; c = dz.next(c)) {
+							int vb = va - dz.toVal(c);
+							if (dy.isPresentValue(vb)) {
+								resx[a] = dy.toIdx(vb);
+								if (multidirectional) {
+									resy[dy.toIdx(vb)] = a;
+									resz1[c] = a;
+									resz2[c] = dy.toIdx(vb);
+								}
+								continue extern;
+							}
+							vb = va + dz.toVal(c);
+							if (dy.isPresentValue(vb)) {
+								resx[a] = dy.toIdx(vb);
+								if (multidirectional) {
+									resy[dy.toIdx(vb)] = a;
+									resz1[c] = a;
+									resz2[c] = dy.toIdx(vb);
+								}
+								continue extern;
+							}
+						}
+					if (dx.remove(a) == false)
+						return false;
+				}
+				extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
+					int vb = dy.toVal(b);
+					if (dx.isPresent(resy[b]) && dz.isPresentValue(Math.abs(vb - dx.toVal(resy[b]))))
+						continue;
+					if (dx.size() <= dz.size())
+						for (int a = dx.first(); a != -1; a = dx.next(a)) {
+							int vc = Math.abs(vb - dx.toVal(a));
+							if (dz.isPresentValue(vc)) {
+								resy[b] = a;
+								if (multidirectional) {
+									resz1[dz.toIdx(vc)] = a;
+									resz2[dz.toIdx(vc)] = b;
+								}
+								continue extern;
+							}
+						}
+					else
+						for (int c = dz.first(); c != -1; c = dz.next(c)) {
+							int va = vb - dz.toVal(c);
+							if (dx.isPresentValue(va)) {
+								resy[b] = dx.toIdx(va);
+								if (multidirectional) {
+									resz1[c] = dx.toIdx(va);
+									resz2[c] = b;
+
+								}
+								continue extern;
+							}
+							va = vb + dz.toVal(c);
+							if (dx.isPresentValue(va)) {
+								resy[b] = dx.toIdx(va);
+								if (multidirectional) {
+									resz1[c] = dx.toIdx(va);
+									resz2[c] = b;
+								}
+								continue extern;
+							}
+						}
+					if (dy.remove(b) == false)
+						return false;
+				}
+				extern: for (int c = dz.first(); c != -1; c = dz.next(c)) {
+					int vc = dz.toVal(c);
+					if (resz1[c] != -1 && dx.isPresent(resz1[c]) && dy.isPresentValue(resz2[c]))
+						continue;
+					if (dx.size() <= dy.size())
+						for (int a = dx.first(); a != -1; a = dx.next(a)) {
+							int vb = dx.toVal(a) - vc;
+							if (dy.isPresentValue(vb)) {
+								resz1[c] = a;
+								resz2[c] = dy.toIdx(vb);
+								continue extern;
+							}
+							vb = dx.toVal(a) + vc;
+							if (dy.isPresentValue(vb)) {
+								resz1[c] = a;
+								resz2[c] = dy.toIdx(vb);
+								continue extern;
+							}
+						}
+					else
+						for (int b = dy.first(); b != -1; b = dy.next(b)) {
+							int va = dy.toVal(b) - vc;
+							if (dx.isPresentValue(va)) {
+								resz1[c] = dx.toIdx(va);
+								resz2[c] = b;
+								continue extern;
+							}
+							va = dy.toVal(b) + vc;
+							if (dx.isPresentValue(va)) {
+								resz1[c] = dx.toIdx(va);
+								resz2[c] = b;
+								continue extern;
+							}
+						}
+					if (dz.remove(c) == false)
+						return false;
+				}
+				// for (int i = 0; i < scp.length; i++)
+				// for (int a = doms[i].first(); a != -1; a = doms[i].next(a))
+				// if (!seekFirstSupportWith(i, a)) {
+				// Kit.log.warning(" " + scp[i] + "=" + a + " not supported by " + this);
+				// display(true);
+				// return false;
+				// }
 				return true;
 			}
 		}

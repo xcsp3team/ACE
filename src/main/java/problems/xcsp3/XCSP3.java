@@ -420,29 +420,42 @@ public class XCSP3 extends ProblemFile implements XCallbacks2 {
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeUnaryArithmeticOperator aop, XVarInteger y) {
 		displayPrimitives(x + " " + aop + " " + y);
-		repost(id);
+		if (imp().rs.cp.settingCtrs.ignorePrimitives)
+			repost(id);
+		else {
+			repost(id);
+		}
 	}
 
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeArithmeticOperator aop, XVarInteger y, TypeConditionOperatorRel op, int k) {
 		displayPrimitives("(" + x + " " + aop + " " + y + ") " + op + " " + k);
-		if (aop == ADD)
-			CtrPrimitiveBinaryAdd.buildFrom(imp(), trVar(x), trVar(y), op, k);
-		else if (aop == SUB)
-			CtrPrimitiveBinarySub.buildFrom(imp(), trVar(x), trVar(y), op, k);
-		else if (aop == DIST)
-			CtrPrimitiveBinaryDist.buildFrom(imp(), trVar(x), trVar(y), op, k);
-		else
+		if (imp().rs.cp.settingCtrs.ignorePrimitives)
 			repost(id);
+		else {
+			if (aop == ADD)
+				CtrPrimitiveBinaryAdd.buildFrom(imp(), trVar(x), trVar(y), op, k);
+			else if (aop == SUB)
+				CtrPrimitiveBinarySub.buildFrom(imp(), trVar(x), trVar(y), op, k);
+			else if (aop == DIST)
+				CtrPrimitiveBinaryDist.buildFrom(imp(), trVar(x), trVar(y), op, k);
+			else
+				repost(id);
+		}
 	}
 
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeArithmeticOperator aop, int k, TypeConditionOperatorRel op, XVarInteger y) {
 		displayPrimitives("(" + x + " " + aop + " " + k + ") " + op + " " + y);
-		if (op == EQ && (aop == ADD || aop == SUB))
-			imp().addCtr(new SubEQ2(imp(), trVar(x), trVar(y), aop == ADD ? -k : k));
-		else
+		if (imp().rs.cp.settingCtrs.ignorePrimitives)
 			repost(id);
+		else {
+
+			if (op == EQ && (aop == ADD || aop == SUB))
+				imp().addCtr(new SubEQ2(imp(), trVar(x), trVar(y), aop == ADD ? -k : k));
+			else
+				repost(id);
+		}
 	}
 
 	// ternary primitives
@@ -450,45 +463,56 @@ public class XCSP3 extends ProblemFile implements XCallbacks2 {
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeArithmeticOperator aop, XVarInteger y, TypeConditionOperatorRel op, XVarInteger z) {
 		displayPrimitives("(" + x + " " + aop + " " + y + ") " + op + " " + z);
-
-		if (aop == ADD)
-			CtrPrimitiveTernaryAdd.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
-		else if (aop == MOD && op == EQ)
-			CtrPrimitiveTernaryMod.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
-		else if (aop == MUL && op == EQ && (trVar(x).dom.is01() || trVar(y).dom.is01()))
-			CtrPrimitiveTernaryMul.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
-		else
+		if (imp().rs.cp.settingCtrs.ignorePrimitives)
 			repost(id);
+		else {
+			if (aop == ADD)
+				CtrPrimitiveTernaryAdd.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
+			else if (aop == MOD && op == EQ)
+				CtrPrimitiveTernaryMod.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
+			else if (aop == MUL && op == EQ && (trVar(x).dom.is01() || trVar(y).dom.is01()))
+				CtrPrimitiveTernaryMul.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
+			else
+				repost(id);
+		}
 	}
 
 	@Override
 	public void buildCtrLogic(String id, TypeLogicalOperator lop, XVarInteger[] vars) {
 		assert Stream.of(vars).allMatch(x -> x.isZeroOne());
 		displayPrimitives(lop + " " + Kit.join(vars));
-		repost(id);
+		if (imp().rs.cp.settingCtrs.ignorePrimitives)
+			repost(id);
+		else
+			repost(id);
 	}
 
 	@Override
 	public void buildCtrLogic(String id, XVarInteger x, TypeEqNeOperator op, TypeLogicalOperator lop, XVarInteger[] vars) {
 		assert Stream.of(vars).allMatch(y -> y.isZeroOne());
 		displayPrimitives(x + " " + op + " " + lop + " " + Kit.join(vars));
-		repost(id);
-		// TypeExpr ep = Types.valueOf(TypeExpr.class, op.name()), lep = Types.valueOf(TypeExpr.class, lop.name());
-		// intension(build(ep, trVar(x), build(lep, (Object[]) trVars(vars))));
+		if (imp().rs.cp.settingCtrs.ignorePrimitives)
+			repost(id);
+		else
+			repost(id);
 	}
 
 	@Override
 	public void buildCtrLogic(String id, XVarInteger x, XVarInteger y, TypeConditionOperatorRel op, int k) {
 		displayPrimitives(x + " = (" + y + " " + op + " " + k + ")");
-		CtrPrimitiveBinaryLog.buildFrom(imp(), trVar(x), trVar(y), op, k);
-		// repost(id);
+		if (imp().rs.cp.settingCtrs.ignorePrimitives)
+			repost(id);
+		else
+			CtrPrimitiveBinaryLog.buildFrom(imp(), trVar(x), trVar(y), op, k);
 	}
 
 	@Override
 	public void buildCtrLogic(String id, XVarInteger x, XVarInteger y, TypeConditionOperatorRel op, XVarInteger z) {
 		displayPrimitives(x + " = (" + y + " " + op + " " + z + ")");
-		CtrPrimitiveTernaryLog.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
-		// repost(id);
+		if (imp().rs.cp.settingCtrs.ignorePrimitives)
+			repost(id);
+		else
+			CtrPrimitiveTernaryLog.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
 	}
 
 	// ************************************************************************

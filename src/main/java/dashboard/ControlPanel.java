@@ -341,6 +341,7 @@ public class ControlPanel {
 		public boolean preserveUnaryCtrs = addB("preserveUnaryCtrs", "puc", true, "");
 		public final TypeCtr ignoredCtrType = org.xcsp.common.Types.valueOf(TypeCtr.class, addS("ignoreCtrType", "ignoreType", "", s_ignoreType));
 		public final int ignoreCtrArity = addI("ignoreCtrArity", "ignoreArity", -1, s_ignoreArity);
+		public boolean ignorePrimitives = addB("ignorePrimitives", "ip", false, "");
 
 		public final int inferAllDifferentNb = addI("inferAllDifferentNb", "iad", 0, r2);
 		public final int inferAllDifferentSize = addI("inferAllDifferentSize", "iadsz", 5, "");

@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.summingLong;
 import static org.xcsp.common.Constants.ALL;
 import static org.xcsp.common.Constants.PLUS_INFINITY;
 import static org.xcsp.common.Constants.STAR;
+import static org.xcsp.common.Types.TypeArithmeticOperator.DIST;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.EQ;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.GE;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.GT;
@@ -88,6 +89,7 @@ import org.xcsp.modeler.entities.CtrEntities.CtrArray;
 import org.xcsp.modeler.entities.CtrEntities.CtrEntity;
 import org.xcsp.modeler.entities.ObjEntities.ObjEntity;
 import org.xcsp.modeler.implementation.ProblemIMP;
+import org.xcsp.parser.loaders.ConstraintRecognizer;
 
 import constraints.Constraint;
 import constraints.CtrHard;
@@ -152,6 +154,7 @@ import constraints.hard.global.SumWeighted.SumWeightedLE;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub.SubNE2;
 import constraints.hard.primitive.CtrPrimitiveBinary.Disjonctive;
+import constraints.hard.primitive.CtrPrimitiveTernary.CtrPrimitiveTernaryDist;
 import dashboard.ControlPanel.SettingVars;
 import dashboard.Output;
 import executables.Resolution;
@@ -874,6 +877,16 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			stuff.nConvertedConstraints++;
 			return extension(tree);
 		}
+
+		System.out.println(tree);
+		tree = (XNodeParent<IVar>) tree.canonization();
+		if (ConstraintRecognizer.x_ariop_y__relop_z.matches(tree)) {
+			if (tree.ariop(0) == DIST && tree.relop(0) == EQ)
+				return CtrPrimitiveTernaryDist.buildFrom(this, (Variable) tree.var(0), (Variable) tree.var(1), EQ, (Variable) tree.var(2));
+		}
+
+		System.out.println("hhhhh " + tree);
+
 		return addCtr(new CtrIntension(this, scp, tree));
 	}
 
@@ -1059,10 +1072,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public CtrEntity allDifferent(XNode<IVar>[] trees) {
-		return forall(range(trees.length).range(trees.length), (i, j) -> {
-			if (i < j)
-				different(trees[i], trees[j]);
-		});
+		Var[] aux = replaceByVariables(trees);
+		return allDifferent(aux);
+		// return forall(range(trees.length).range(trees.length), (i, j) -> {
+		// if (i < j)
+		// different(trees[i], trees[j]);
+		// });
 	}
 
 	// ************************************************************************
@@ -1239,7 +1254,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			Object values = trees[i].possibleValues();
 			return values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
 		};
-		if (trees.length > 1 && IntStream.range(1, trees.length).allMatch(i -> areSimilar(trees[0], trees[i]))) {
+		if (trees.length > 1 && IntStream.range(1, trees.length).allMatch(i -> areSimilar(trees[0], trees[i])) && false) {
 			Var[] aux = api.array(idAux(), api.size(trees.length), doms.apply(0), "auxiliary variables");
 			int[][] tuples = Constraint.howManyVarsWithin(vars(trees[0]), rs.cp.settingPropagation.spaceLimitation) == ALL
 					? new TreeEvaluator(trees[0]).computeTuples(Variable.initDomainValues(vars(trees[0])))
@@ -1255,7 +1270,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 		Var[] aux = api.array(idAux(), api.size(trees.length), doms, "auxiliary variables");
 		for (int i = 0; i < trees.length; i++) {
-			if (Constraint.howManyVarsWithin(vars(trees[i]), rs.cp.settingPropagation.spaceLimitation) == ALL) {
+			if (Constraint.howManyVarsWithin(vars(trees[i]), rs.cp.settingPropagation.spaceLimitation) == ALL && false) {
 				int[][] tuples = new TreeEvaluator(trees[i]).computeTuples(Variable.currDomainValues(vars(trees[i])));
 				extension(vars(trees[i], aux[i]), tuples, true); // extension(eq(aux[i], trees[i]));
 			} else
