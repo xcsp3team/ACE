@@ -99,7 +99,6 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 
 		@Override
 		public boolean runPropagator(Variable x) {
-			// System.out.println("filter sumsimplel " + x + " " + limit);
 			recomputeBounds();
 			if (max <= limit)
 				return true;

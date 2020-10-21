@@ -9,10 +9,8 @@
 package constraints.hard.primitive;
 
 import static org.xcsp.common.Types.TypeConditionOperatorRel.EQ;
-import static org.xcsp.common.Types.TypeConditionOperatorRel.GE;
-import static org.xcsp.common.Types.TypeConditionOperatorRel.GT;
-import static org.xcsp.common.Types.TypeConditionOperatorRel.LE;
-import static org.xcsp.common.Types.TypeConditionOperatorRel.LT;
+
+import java.math.BigInteger;
 
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Types.TypeOperatorRel;
@@ -26,6 +24,7 @@ import interfaces.TagUnsymmetric;
 import problem.Problem;
 import utility.Kit;
 import utility.exceptions.MissingImplementationException;
+import utility.exceptions.UnreachableCodeException;
 import variables.Variable;
 import variables.domains.Domain;
 
@@ -43,21 +42,6 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 		this.dx = x.dom;
 		this.dy = y.dom;
 		this.dz = z.dom;
-	}
-
-	// ************************************************************************
-	// ***** Classes for x - y <op> z (CtrPrimitiveTernarySub)
-	// ************************************************************************
-
-	public static abstract class CtrPrimitiveTernarySub extends CtrPrimitiveTernary {
-
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
-			return CtrPrimitiveTernaryAdd.buildFrom(pb, y, z, op, x); // x - y <op> z is equivalent to y + z <op> x
-		}
-
-		public CtrPrimitiveTernarySub(Problem pb, Variable x, Variable y, Variable z) {
-			super(pb, x, y, z);
-		}
 	}
 
 	// ************************************************************************
@@ -100,7 +84,6 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 					int va = dx.toVal(a);
 					if (dy.isPresent(resx[a]) && dz.isPresentValue(va + dy.toVal(resx[a])))
 						continue;
-					// System.out.println("dy " + dy.size() + " vs dz = " + dz.size());
 					if (dy.size() <= dz.size())
 						for (int b = dy.first(); b != -1; b = dy.next(b)) {
 							int vc = va + dy.toVal(b);
@@ -197,6 +180,21 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 	}
 
 	// ************************************************************************
+	// ***** Classes for x - y <op> z (CtrPrimitiveTernarySub)
+	// ************************************************************************
+
+	public static abstract class CtrPrimitiveTernarySub extends CtrPrimitiveTernary {
+
+		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
+			return CtrPrimitiveTernaryAdd.buildFrom(pb, y, z, op, x); // x - y <op> z is equivalent to y + z <op> x
+		}
+
+		public CtrPrimitiveTernarySub(Problem pb, Variable x, Variable y, Variable z) {
+			super(pb, x, y, z);
+		}
+	}
+
+	// ************************************************************************
 	// ***** Classes for x * y <op> z (CtrPrimitiveTernaryMul)
 	// ************************************************************************
 
@@ -281,6 +279,99 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 				return true;
 			}
 		}
+
+		public static final class MulEQ3 extends CtrPrimitiveTernaryMul implements TagGACGuaranteed {
+
+			int[] resx, resy, resz1, resz2; // residues for values in the domains of x, y and z
+
+			@Override
+			public final boolean checkValues(int[] t) {
+				return t[0] * t[1] == t[2];
+			}
+
+			public MulEQ3(Problem pb, Variable x, Variable y, Variable z) {
+				super(pb, x, y, z);
+				Kit.control(Utilities.isSafeInt(BigInteger.valueOf(dx.firstValue()).multiply(BigInteger.valueOf(dy.firstValue())).longValueExact()));
+				Kit.control(Utilities.isSafeInt(BigInteger.valueOf(dx.lastValue()).multiply(BigInteger.valueOf(dy.lastValue())).longValueExact()));
+				this.resx = new int[dx.initSize()];
+				this.resy = new int[dy.initSize()];
+				this.resz1 = Kit.repeat(-1, dz.initSize());
+				this.resz2 = Kit.repeat(-1, dz.initSize());
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				if (!dy.isPresentValue(0) || !dz.isPresentValue(0))
+					extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
+						int va = dx.toVal(a);
+						if (va == 0) {
+							if (!dz.isPresentValue(0) && dx.remove(a) == false)
+								return false;
+							continue;
+						}
+						if (dy.isPresent(resx[a]) && dz.isPresentValue(va * dy.toVal(resx[a])))
+							continue;
+						for (int b = dy.first(); b != -1; b = dy.next(b)) {
+							int vc = va * dy.toVal(b);
+							if ((va > 0 && vc > dz.lastValue()) || (va < 0 && vc < dz.firstValue()))
+								break;
+							if (dz.isPresentValue(vc)) {
+								resx[a] = b;
+								continue extern;
+							}
+						}
+						if (dx.remove(a) == false)
+							return false;
+					}
+				if (!dx.isPresentValue(0) || !dz.isPresentValue(0))
+					extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
+						int vb = dy.toVal(b);
+						if (vb == 0) {
+							if (!dz.isPresentValue(0) && dy.remove(b) == false)
+								return false;
+							continue;
+						}
+						if (dx.isPresent(resy[b]) && dz.isPresentValue(vb * dx.toVal(resy[b])))
+							continue;
+						for (int a = dx.first(); a != -1; a = dx.next(a)) {
+							int vc = vb * dx.toVal(a);
+							if ((vb > 0 && vc > dz.lastValue()) || (vb < 0 && vc < dz.firstValue()))
+								break;
+							if (dz.isPresentValue(vc)) {
+								resy[b] = a;
+								continue extern;
+							}
+						}
+						if (dy.remove(b) == false)
+							return false;
+					}
+				extern: for (int c = dz.first(); c != -1; c = dz.next(c)) {
+					int vc = dz.toVal(c);
+					if (vc == 0) {
+						if (!dx.isPresentValue(0) && !dy.isPresentValue(0) && dz.remove(c) == false)
+							return false;
+						continue;
+					}
+					if (resz1[c] != -1 && dx.isPresent(resz1[c]) && dy.isPresent(resz2[c]))
+						continue;
+					for (int a = dx.first(); a != -1; a = dx.next(a)) {
+						int va = dx.toVal(a);
+						int vb = vc / va;
+						// if (va > 0 && vc > 0 && va > vc / 2) // TODO is that correct? other ways of breaking?
+						// break;
+						if (vc % va == 0 && dy.isPresentValue(vb)) {
+							resz1[c] = a;
+							resz2[c] = dy.toIdx(vb);
+							continue extern;
+						}
+					}
+					if (dz.remove(c) == false)
+						return false;
+				}
+
+				return true;
+			}
+		}
 	}
 
 	// ************************************************************************
@@ -311,8 +402,8 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 			public ModEQ3(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
 				Kit.control(x.dom.firstValue() >= 0 && y.dom.firstValue() > 0 && z.dom.firstValue() >= 0);
-				this.resx = Kit.repeat(-1, dx.initSize());
-				this.resy = Kit.repeat(-1, dy.initSize());
+				this.resx = new int[dx.initSize()];
+				this.resy = new int[dy.initSize()];
 				this.resz1 = Kit.repeat(-1, dz.initSize());
 				this.resz2 = Kit.repeat(-1, dz.initSize());
 			}
@@ -328,7 +419,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 					int va = dx.toVal(a);
 					if (va < dy.lastValue() && dz.isPresentValue(va)) // remainder in z is then necessarily va
 						continue;
-					if (resx[a] != -1 && dy.isPresent(resx[a]) && dz.isPresentValue(va % dy.toVal(resx[a])))
+					if (dy.isPresent(resx[a]) && dz.isPresentValue(va % dy.toVal(resx[a])))
 						continue;
 					for (int b = dy.first(); b != -1; b = dy.next(b)) {
 						int vb = dy.toVal(b);
@@ -349,7 +440,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 							return false;
 						continue;
 					}
-					if (resy[b] != -1 && dx.isPresent(resy[b]) && dz.isPresentValue(dx.toVal(resy[b]) % vb))
+					if (dx.isPresent(resy[b]) && dz.isPresentValue(dx.toVal(resy[b]) % vb))
 						continue;
 					for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int vc = dx.toVal(a) % vb;
@@ -418,6 +509,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 			super(pb, x, y, z);
 		}
 
+		// time java ac GolombRuler-10.xml -varh=Dom => same search tree with CT, Intension and DistEQ3
 		public static final class DistEQ3 extends CtrPrimitiveTernaryDist implements TagGACGuaranteed {
 
 			int[] resx, resy, resz1, resz2; // residues for values in the domains of x, y and z
@@ -560,13 +652,6 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 					if (dz.remove(c) == false)
 						return false;
 				}
-				// for (int i = 0; i < scp.length; i++)
-				// for (int a = doms[i].first(); a != -1; a = doms[i].next(a))
-				// if (!seekFirstSupportWith(i, a)) {
-				// Kit.log.warning(" " + scp[i] + "=" + a + " not supported by " + this);
-				// display(true);
-				// return false;
-				// }
 				return true;
 			}
 		}
@@ -580,18 +665,21 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 			implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, TagUnsymmetric {
 
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
-			assert op != null;
-			if (op == LT)
+			switch (op) {
+			case LT:
 				return pb.addCtr(new LogLT3(pb, x, y, z));
-			if (op == LE)
+			case LE:
 				return pb.addCtr(new LogLE3(pb, x, y, z));
-			if (op == GE)
+			case GE:
 				return pb.addCtr(new LogGE3(pb, x, y, z));
-			if (op == GT)
+			case GT:
 				return pb.addCtr(new LogGT3(pb, x, y, z));
-			if (op == EQ)
-				pb.addCtr(new LogEQ3(pb, x, y, z));
-			return pb.addCtr(new LogNE3(pb, x, y, z));
+			case EQ:
+				return pb.addCtr(new LogEQ3(pb, x, y, z));
+			case NE:
+				return pb.addCtr(new LogNE3(pb, x, y, z));
+			}
+			throw new UnreachableCodeException();
 		}
 
 		public CtrPrimitiveTernaryLog(Problem pb, Variable x, Variable y, Variable z) {
@@ -616,14 +704,10 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 					return false;
 				if (dx.last() == 1 && dy.firstValue() >= dz.lastValue() && dx.remove(1) == false)
 					return false;
-				if (dx.first() == 1) { // only 1 remaining => y < z
-					if (dy.removeValuesGreaterThanOrEqual(dz.lastValue()) == false && dz.removeValuesLessThanOrEqual(dy.firstValue()) == false)
-						return false;
-				}
-				if (dx.last() == 0) { // only 0 remaining => y >= z
-					if (dy.removeValuesLessThan(dz.firstValue()) == false && dz.removeValuesGreaterThan(dy.lastValue()) == false)
-						return false;
-				}
+				if (dx.first() == 1 && CtrPrimitiveBinary.enforceLT(dy, dz) == false)
+					return false; // because only 1 remaining implies y < z
+				if (dx.last() == 0 && CtrPrimitiveBinary.enforceGE(dy, dz) == false)
+					return false; // because only 0 remaining implies y >= z
 				return true;
 			}
 		}
@@ -645,14 +729,10 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 					return false;
 				if (dx.last() == 1 && dy.firstValue() > dz.lastValue() && dx.remove(1) == false)
 					return false;
-				if (dx.first() == 1) { // only 1 remaining => y <= z
-					if (dy.removeValuesGreaterThan(dz.lastValue()) == false && dz.removeValuesLessThan(dy.firstValue()) == false)
-						return false;
-				}
-				if (dx.last() == 0) { // only 0 remaining => y > z
-					if (dy.removeValuesLessThanOrEqual(dz.firstValue()) == false && dz.removeValuesGreaterThanOrEqual(dy.lastValue()) == false)
-						return false;
-				}
+				if (dx.first() == 1 && CtrPrimitiveBinary.enforceLE(dy, dz) == false)
+					return false; // because only 1 remaining implies y <= z
+				if (dx.last() == 0 && CtrPrimitiveBinary.enforceGT(dy, dz) == false)
+					return false; // because only 0 remaining implies y > z
 				return true;
 			}
 		}
@@ -674,14 +754,10 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 					return false;
 				if (dx.last() == 1 && dy.lastValue() < dz.firstValue() && dx.remove(1) == false)
 					return false;
-				if (dx.first() == 1) { // only 1 remaining => y >= z
-					if (dy.removeValuesLessThan(dz.firstValue()) == false && dz.removeValuesGreaterThan(dy.lastValue()) == false)
-						return false;
-				}
-				if (dx.last() == 0) { // only 0 remaining => y < z
-					if (dy.removeValuesGreaterThanOrEqual(dz.lastValue()) == false && dz.removeValuesLessThanOrEqual(dy.firstValue()) == false)
-						return false;
-				}
+				if (dx.first() == 1 && CtrPrimitiveBinary.enforceGE(dy, dz) == false)
+					return false; // because only 1 remaining implies y >= z
+				if (dx.last() == 0 && CtrPrimitiveBinary.enforceLT(dy, dz) == false)
+					return false; // because only 0 remaining implies y < z
 				return true;
 			}
 		}
@@ -703,26 +779,22 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 					return false;
 				if (dx.last() == 1 && dy.lastValue() <= dz.firstValue() && dx.remove(1) == false)
 					return false;
-				if (dx.first() == 1) { // only 1 remaining => y > z
-					if (dy.removeValuesLessThanOrEqual(dz.firstValue()) == false && dz.removeValuesGreaterThanOrEqual(dy.lastValue()) == false)
-						return false;
-				}
-				if (dx.last() == 0) { // only 0 remaining => y <= z
-					if (dy.removeValuesGreaterThan(dz.lastValue()) == false && dz.removeValuesLessThan(dy.firstValue()) == false)
-						return false;
-				}
+				if (dx.first() == 1 && CtrPrimitiveBinary.enforceGT(dy, dz) == false)
+					return false; // because only 1 remaining implies y > z
+				if (dx.last() == 0 && CtrPrimitiveBinary.enforceLE(dy, dz) == false)
+					return false; // because only 0 remaining implies y <= z
 				return true;
 			}
 		}
 
 		public static final class LogEQ3 extends CtrPrimitiveTernaryLog {
 
-			int residue; // for a common value in the domains of y and z, supporting (x,0)
-
 			@Override
 			public final boolean checkValues(int[] t) {
 				return (t[0] == 1) == (t[1] == t[2]);
 			}
+
+			private int residue; // for a common value in the domains of y and z, supporting (x,1)
 
 			public LogEQ3(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
@@ -732,48 +804,32 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 			public boolean runPropagator(Variable dummy) {
 				if (dy.size() == 1 && dz.size() == 1)
 					return dx.remove(dy.firstValue() == dz.firstValue() ? 0 : 1, false); // remember that indexes and values match for x
-				if (dx.first() == 1) { // only 1 remaining => y = z
-					if (dy.removeValuesNotIn(dz) == false)
-						return false;
-					assert dy.size() <= dz.size();
-					if (dy.size() == dz.size())
-						return true;
-					boolean consistent = dz.removeValuesNotIn(dy);
-					assert consistent;
-					return true;
-				}
-				if (dx.last() == 0) { // only 0 remaining => y != z
-					if (dy.size() == 1 && dz.removeValue(dy.uniqueValue(), false) == false)
-						return false;
-					if (dz.size() == 1 && dy.removeValue(dz.uniqueValue(), false) == false)
-						return false;
-					return true;
-				}
+				if (dx.first() == 1 && CtrPrimitiveBinary.enforceEQ(dy, dz) == false)
+					return false; // because only 1 remaining implies y = z
+				if (dx.last() == 0 && CtrPrimitiveBinary.enforceNE(dy, dz) == false)
+					return false; // because only 0 remaining implies y != z
 				assert dx.size() == 2;
 				// we know that 0 for x is supported because the domain of y or z is not singleton
 				if (dy.isPresentValue(residue) && dz.isPresentValue(residue))
 					return true;
 				// we look for a support for (x,1), and record it as a residue
-				for (int a = dy.first(); a != -1; a = dy.next(a)) {
-					int va = dy.toVal(a);
-					if (dy.isPresentValue(va)) {
-						residue = va;
-						return true;
-					}
-				}
-				dx.removeSafely(1);
+				int v = CtrPrimitiveBinary.commonValueIn(dy, dz);
+				if (v != Integer.MAX_VALUE)
+					residue = v;
+				else
+					dx.removeSafely(1);
 				return true;
 			}
 		}
 
 		public static final class LogNE3 extends CtrPrimitiveTernaryLog {
 
-			int residue; // for a common value in the domains of y and z, supporting (x,0)
-
 			@Override
 			public final boolean checkValues(int[] t) {
 				return (t[0] == 1) == (t[1] != t[2]);
 			}
+
+			int residue; // for a common value in the domains of y and z, supporting (x,0)
 
 			public LogNE3(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
@@ -783,40 +839,22 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 			public boolean runPropagator(Variable dummy) {
 				if (dy.size() == 1 && dz.size() == 1)
 					return dx.remove(dy.firstValue() != dz.firstValue() ? 0 : 1, false); // remember that indexes and values match for x
-				if (dx.first() == 1) { // only 1 remaining => y != z
-					if (dy.size() == 1 && dz.removeValue(dy.uniqueValue(), false) == false)
-						return false;
-					if (dz.size() == 1 && dy.removeValue(dz.uniqueValue(), false) == false)
-						return false;
-					return true;
-				}
-				if (dx.last() == 0) { // only 0 remaining => y = z
-					if (dy.removeValuesNotIn(dz) == false)
-						return false;
-					assert dy.size() <= dz.size();
-					if (dy.size() == dz.size())
-						return true;
-					boolean consistent = dz.removeValuesNotIn(dy);
-					assert consistent;
-					return true;
-				}
+				if (dx.first() == 1 && CtrPrimitiveBinary.enforceNE(dy, dz) == false)
+					return false; // because only 1 remaining implies y != z
+				if (dx.last() == 0 && CtrPrimitiveBinary.enforceEQ(dy, dz) == false)
+					return false; // because only 0 remaining implies y = z
 				assert dx.size() == 2;
 				// we know that 1 for x is supported because the domain of y or z is not singleton
 				if (dy.isPresentValue(residue) && dz.isPresentValue(residue))
 					return true;
 				// we look for a support for (x,0), and record it as a residue
-				for (int a = dy.first(); a != -1; a = dy.next(a)) {
-					int va = dy.toVal(a);
-					if (dy.isPresentValue(va)) {
-						residue = va;
-						return true;
-					}
-				}
-				dx.removeSafely(0);
+				int v = CtrPrimitiveBinary.commonValueIn(dy, dz);
+				if (v != Integer.MAX_VALUE)
+					residue = v;
+				else
+					dx.removeSafely(0);
 				return true;
 			}
 		}
-
 	}
-
 }

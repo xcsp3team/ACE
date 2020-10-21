@@ -25,6 +25,7 @@ import org.xcsp.common.Constants;
 import org.xcsp.common.Types.TypeFramework;
 
 import constraints.Constraint;
+import constraints.CtrHard;
 import executables.Resolution;
 import heuristics.values.HeuristicValuesDynamic.Failures;
 import heuristics.variables.HeuristicVariables;
@@ -542,7 +543,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 				if (rs.problem.framework == TypeFramework.COP && !rs.cp.settingRestarts.restartAfterSolution) {
 					// we need to backtrack to the level where a value for a variable in the scope of the objective constraint has been removed
 					// for the last time
-					Constraint c = (Constraint) rs.problem.optimizationPilot.ctr;
+					CtrHard c = (CtrHard) rs.problem.optimizationPilot.ctr;
 					((OptimizationCompatible) c).setLimit(((OptimizationCompatible) c).objectiveValue() + (rs.problem.optimizationPilot.minimization ? -1 : 1));
 					int backtrackLevel = -1;
 					for (int i = 0; i < c.scp.length; i++) {
@@ -552,8 +553,14 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 						backtrackLevel = Math.max(backtrackLevel, c.scp[x].dom.lastRemovedLevel());
 					}
 					assert backtrackLevel != -1;
-					while (depth() != backtrackLevel)
+					while (depth() > backtrackLevel)
 						backtrack(futVars.lastPast());
+
+					// while (depth() > backtrackLevel || propagation.runInitially() == false) // we run constraint propagation to be sure that we
+					// // backtrack high enough
+					// backtrack(futVars.lastPast());
+					// TODO we need to identify the right level where to backtrack (runInitially causes some problems)
+
 				}
 				if (!finished() && !restarter.currRunFinished()) {
 					manageContradiction();

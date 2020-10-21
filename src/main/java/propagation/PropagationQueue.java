@@ -68,7 +68,8 @@ public final class PropagationQueue extends SetSparse {
 	@Override
 	public PropagationQueue fill() {
 		for (Variable x : variables)
-			add(x);
+			if (!x.isAssigned() || x == propagation.solver.futVars.lastPast())
+				add(x);
 		return this;
 	}
 

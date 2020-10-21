@@ -23,6 +23,7 @@ import interfaces.OptimizationCompatible;
 import interfaces.TagGACGuaranteed;
 import problem.Problem;
 import utility.Kit;
+import utility.exceptions.UnreachableCodeException;
 import variables.Variable;
 import variables.domains.Domain;
 import variables.domains.DomainHuge;
@@ -41,9 +42,10 @@ public abstract class SumWeighted extends SumAbstract {
 			return new SumWeightedGE(pb, vs, coeffs, limit + 1);
 		case EQ:
 			return new SumWeightedEQ(pb, vs, coeffs, limit);
-		default:
+		case NE:
 			return new SumWeightedNE(pb, vs, coeffs, limit);
 		}
+		throw new UnreachableCodeException();
 	}
 
 	public long minComputableObjectiveValue() {
