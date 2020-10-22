@@ -7,8 +7,8 @@ import org.xcsp.common.Types.TypeConditionOperatorRel;
 
 import constraints.hard.CtrGlobal;
 import interfaces.TagFilteringCompleteAtEachCall;
-import interfaces.TagGACGuaranteed;
 import interfaces.TagFilteringPartialAtEachCall;
+import interfaces.TagGACGuaranteed;
 import interfaces.TagSymmetric;
 import problem.Problem;
 import utility.Kit;
@@ -82,7 +82,7 @@ public abstract class Count extends CtrGlobal {
 				for (int i = futvars.limit; i >= 0; i--) {
 					Domain dom = scp[futvars.dense[i]].dom;
 					if (dom.size() > 1)
-						dom.removeValueSafelyIfPresent(value);
+						dom.removeValueIfPresent(value);
 				}
 				// for (Variable y : scp)
 				// if (y.dom.size() > 1)
@@ -107,7 +107,7 @@ public abstract class Count extends CtrGlobal {
 			if (!x.dom.onlyContainsValue(value))
 				return true;
 			for (Variable y : scp)
-				if (y != x && !y.dom.removeValue(value, false))
+				if (y != x && !y.dom.removeValueIfPresent(value))
 					return false;
 			return true;
 		}
@@ -236,7 +236,7 @@ public abstract class Count extends CtrGlobal {
 				for (int i = futvars.limit; i >= 0; i--) {
 					Domain dom = scp[futvars.dense[i]].dom;
 					if (dom.size() > 1) // && dom.isPresentValue(value))
-						dom.removeValue(value, false);
+						dom.removeValueIfPresent(value);
 				}
 				return true;
 			}

@@ -8,6 +8,15 @@
  */
 package variables.domains;
 
+import static org.xcsp.common.Types.TypeConditionOperatorSet.IN;
+import static org.xcsp.common.Types.TypeConditionOperatorSet.NOTIN;
+import static org.xcsp.common.Types.TypeOperatorRel.GE;
+import static org.xcsp.common.Types.TypeOperatorRel.GT;
+import static org.xcsp.common.Types.TypeOperatorRel.LE;
+import static org.xcsp.common.Types.TypeOperatorRel.LT;
+import static utility.Kit.control;
+import static utility.Kit.log;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -110,7 +119,7 @@ public interface Domain extends LinkedSet {
 
 	/**
 	 * Returns the index of the specified value, or a negative integer if the specified value does not belong to the initial domain. No assumption is
-	 * made about the fact that the specified value belongs to the current domain.
+	 * made about the fact that the specified value belongs or not to the current domain.
 	 */
 	int toIdx(int v);
 
@@ -129,7 +138,6 @@ public interface Domain extends LinkedSet {
 	default boolean isPresentValue(int v) {
 		int a = toIdx(v);
 		return a >= 0 && isPresent(a);
-		// return indexes.isPresent(toIdx(val));
 	}
 
 	/**
@@ -143,7 +151,7 @@ public interface Domain extends LinkedSet {
 	 * Returns true iff the domain has only one remaining value, the one that is specified.
 	 */
 	default boolean onlyContainsValue(int v) {
-		return size() == 1 && toPresentIdx(v) >= 0;
+		return size() == 1 && v == toVal(first());
 	}
 
 	/**
@@ -175,19 +183,11 @@ public interface Domain extends LinkedSet {
 		return toVal(last());
 	}
 
-	default long highestValueDistance() {
-		return Math.abs((long) firstValue() - lastValue());
-	}
-
 	/**
-	 * Returns the unique value of the domain. This is similar to getFirstVal(), but with an assert/control.
+	 * Returns the unique value of the domain. This is similar to firstValue(), but with an assert/control.
 	 */
 	default int uniqueValue() {
 		return toVal(unique());
-	}
-
-	default boolean hasUniqueValue(int v) {
-		return size() == 1 && v == toVal(first());
 	}
 
 	/**
@@ -199,6 +199,10 @@ public interface Domain extends LinkedSet {
 
 	default boolean is01() {
 		return initSize() == 2 && toIdx(0) == 0 && toIdx(1) == 1;
+	}
+
+	default long highestValueDistance() {
+		return Math.abs((long) firstValue() - lastValue());
 	}
 
 	/**********************************************************************************************
@@ -215,14 +219,11 @@ public interface Domain extends LinkedSet {
 	 * Important: this method must only called when building the problem.
 	 */
 	default void removeValueAtConstructionTime(int v) {
-		Kit.control(var().pb.solver == null, () -> "Must be called before the solver being built.");
+		control(var().pb.solver == null, () -> "Must be called before the solver being built.");
 		remove(toIdx(v), 0);
 		var().pb.nValuesRemoved++;
 		var().pb.stuff.nValuesRemovedAtConstructionTime++;
 	}
-
-	// default void removeEverythingAtConstructionTime() {
-	// execute(a -> removeAtConstructionTime(a)); }
 
 	default void reduceToValueAtConstructionTime(int v) {
 		for (int a = first(); a != -1; a = next(a))
@@ -234,41 +235,24 @@ public interface Domain extends LinkedSet {
 		return size() == sizeBefore ? true : size() == 0 ? fail() : solver().propagation.handleReductionSafely(var());
 	}
 
-	default boolean afterElementaryCalls() {
-		return size() == 0 ? fail() : solver().propagation.handleReductionSafely(var());
-	}
-
 	/**
 	 * Removes the value at the specified index. <br />
 	 * The value is assumed to be present, and the variable to which the domain is attached is assumed to be future. <br />
 	 * Important: the management of this removal with respect to propagation is not handled.
 	 */
 	default void removeElementary(int a) {
+		Variable x = var();
 		int depth = solver().depth();
+		assert !x.isAssigned() && isPresent(a) && lastRemovedLevel() <= depth : x + " " + x.isAssigned() + " " + isPresent(a) + " " + lastRemovedLevel() + " "
+				+ depth;
+		// log.info("removing " + x + "=" + toVal(a) + " (index " + a + ") by constraint " + solver().propagation.currFilteringCtr);
 
-		assert !var().isAssigned() && isPresent(a) && lastRemovedLevel() <= depth : var() + " " + var().isAssigned() + " " + isPresent(a) + " "
-				+ lastRemovedLevel() + " " + depth;
-		// System.out.println(depth + " " + set.lastDelLevel());
-		if (lastRemovedLevel() != depth)
-			solver().pushVariable(var()); // push must always be performed before domain reduction
+		if (depth != lastRemovedLevel())
+			solver().pushVariable(x); // push must always be performed before domain reduction
 		remove(a, depth);
-		// Kit.log.info("removing " + var() + "=" + var().dom.toVal(a) + " (index " + a + ") by constraint " + solver().propagation.currFilteringCtr);
-		var().pb.nValuesRemoved++;
-		for (ObserverDomainReduction observer : var().pb.observersDomainReduction)
-			observer.actAfterRemoval(var(), a);
-	}
-
-	/**
-	 * Removes the value at the specified index. <br />
-	 * The value is assumed to be present. <br />
-	 * When called, we have the guarantee that no inconsistency can be detected (because the value is present and the domain contains at least another
-	 * value). <br />
-	 * The management of this removal with respect to propagation is handled.
-	 */
-	default void removeSafely(int a) {
-		assert isPresent(a) && size() > 1;
-		removeElementary(a);
-		solver().propagation.handleReductionSafely(var());
+		for (ObserverDomainReduction observer : x.pb.observersDomainReduction)
+			observer.actAfterRemoval(x, a);
+		x.pb.nValuesRemoved++;
 	}
 
 	/**
@@ -287,26 +271,25 @@ public interface Domain extends LinkedSet {
 
 	/**
 	 * Removes the value at the specified index, if present.<br />
-	 * If the value is not present, either returns false (detected inconsistency) if the aggressive mode is activated, or true. <br />
+	 * Returns false if an inconsistency is detected (because this is the index of the last value of the domain). <br />
+	 * But if the index is not present, returns true (non aggressive mode). <br />
 	 * The management of this removal with respect to propagation is handled.
 	 */
-	default boolean remove(int a, boolean agressive) {
-		return isPresent(a) ? remove(a) : !agressive || fail();
+	default boolean removeIfPresent(int a) {
+		return !isPresent(a) || remove(a);
 	}
 
 	/**
-	 * Removes the values at the indexes specified by the interval (from,to)
-	 * 
-	 * @param from
-	 * @param to
-	 * @param agressive
-	 * @return
+	 * Removes the value at the specified index. <br />
+	 * The value is assumed to be present. <br />
+	 * When called, we have the guarantee that no inconsistency can be detected (because the value is present and the domain contains at least another
+	 * value). <br />
+	 * The management of this removal with respect to propagation is handled.
 	 */
-	default boolean remove(int from, int to, boolean agressive) {
-		for (int a = from; a <= to; a++)
-			if (remove(a, agressive) == false)
-				return false;
-		return true;
+	default void removeSafely(int a) {
+		assert isPresent(a) && size() > 1;
+		removeElementary(a);
+		solver().propagation.handleReductionSafely(var());
 	}
 
 	/**
@@ -376,16 +359,18 @@ public interface Domain extends LinkedSet {
 	 * Important: the management of this removal with respect to propagation is not handled.
 	 */
 	default int reduceToElementary(int a) {
-		assert isPresent(a) : var() + " has lost " + a;
+		assert isPresent(a) : a + " is not present";
 		if (size() == 1)
 			return 0; // 0 removal
+		Variable x = var();
 		int depth = solver().depth();
+
 		if (lastRemovedLevel() != depth)
-			solver().pushVariable(var()); // push above must always be performed before domain reduction
+			solver().pushVariable(x); // push above must always be performed before domain reduction
 		int nRemovals = reduceTo(a, depth);
-		var().pb.nValuesRemoved += nRemovals;
-		for (ObserverDomainReduction observer : var().pb.observersDomainReduction)
-			observer.actAfterRemovals(var(), nRemovals);
+		for (ObserverDomainReduction observer : x.pb.observersDomainReduction)
+			observer.actAfterRemovals(x, nRemovals);
+		x.pb.nValuesRemoved += nRemovals;
 		assert nRemovals >= 0 && size() == 1 : "nRemovals: " + nRemovals + " size:" + size();
 		return nRemovals;
 	}
@@ -413,14 +398,6 @@ public interface Domain extends LinkedSet {
 	}
 
 	/**
-	 * Notify (to propagation process) that the domain has just been reduced (without any domain wipe-out).
-	 */
-	default void notifyReduction() {
-		assert size() > 0;
-		solver().propagation.handleReductionSafely(var());
-	}
-
-	/**
 	 * Forces failure through this domain.
 	 */
 	default boolean fail() {
@@ -441,20 +418,13 @@ public interface Domain extends LinkedSet {
 
 	/**
 	 * Removes the specified value, if present. <br />
-	 * If the value is not present, the method either returns false by failing (aggressive mode) or true (non aggressive mode). <br />
+	 * If the value is not present, the method returns true (non aggressive mode). <br />
 	 * Otherwise, returns false if an inconsistency is detected (domain wipe-out). <br />
 	 * The management of this (possible) removal with respect to propagation is handled.
 	 */
-	default boolean removeValue(int v, boolean agressive) {
+	default boolean removeValueIfPresent(int v) {
 		int a = toPresentIdx(v);
-		return a != -1 ? remove(a) : !agressive || fail();
-	}
-
-	default void removeValueSafelyIfPresent(int v) {
-		assert size() > 1;
-		int a = toPresentIdx(v);
-		if (a != -1)
-			remove(a);
+		return a == -1 || remove(a);
 	}
 
 	/**
@@ -489,42 +459,48 @@ public interface Domain extends LinkedSet {
 	}
 
 	default boolean removeValuesLessThan(long limit) {
-		return removeValues(TypeOperatorRel.LT, limit);
+		return removeValues(LT, limit);
 	}
 
 	default boolean removeValuesLessThanOrEqual(long limit) {
-		return removeValues(TypeOperatorRel.LE, limit);
+		return removeValues(LE, limit);
 	}
 
 	default boolean removeValuesGreaterThan(long limit) {
-		return removeValues(TypeOperatorRel.GT, limit);
+		return removeValues(GT, limit);
 	}
 
 	default boolean removeValuesGreaterThanOrEqual(long limit) {
-		return removeValues(TypeOperatorRel.GE, limit);
+		return removeValues(GE, limit);
 	}
 
 	default boolean removeValues(TypeOperatorRel type, long limit, int coeff) {
-		// System.out.println("removing " + this.var());
-		assert coeff != 0;
-		// long newLimit = limit;
-		// TypeOperatorRel newType = type;
-		// if (coeff < 0) {
-		// coeff = -coeff;
-		// newType = newType.arithmeticInversion();
-		// newLimit = -newLimit;
-		// }
-		// if (newType == TypeOperatorRel.LT) {
-		// newType = TypeOperatorRel.LE;
-		// newLimit = newLimit != Long.MIN_VALUE ? newLimit - 1 : newLimit;
-		// } else if (newType == TypeOperatorRel.GT) {
-		// newType = TypeOperatorRel.GE;
-		// newLimit = newLimit != Long.MAX_VALUE ? newLimit + 1 : newLimit;
-		// }
-		// newLimit = (int) (newType == TypeOperatorRel.LE ? Math.floor(newLimit / (double) coeff) : Math.ceil(newLimit / (double) coeff));
-		// return removeValues(newType, newLimit);
+		// System.out.println("removing " + var());
+		// System.out.println(var() + " " + type + " " + limit + " " + coeff);
+		assert coeff != 0 && limit != Long.MIN_VALUE && limit != Long.MAX_VALUE;
+		if (type == LT) {
+			type = LE;
+			limit--;
+		} else if (type == GT) {
+			type = GE;
+			limit++;
+		}
+		if (coeff < 0) {
+			coeff = -coeff;
+			type = type.arithmeticInversion();
+			limit = -limit;
+		}
+		long newLimit = (Math.abs(limit) / coeff) * (limit < 0 ? -1 : 1);
+		if (limit > 0 && type == GE && limit % coeff != 0)
+			newLimit++;
+		if (limit < 0 && type == LE && -limit % coeff != 0)
+			newLimit--;
+		// System.out.println(var() + " " + type + " " + newLimit);
+		return removeValues(type, newLimit);
+	}
 
-		// OLD ALTERNATIVE BELOW : keep it the time to be sure that the code above is correct
+	default boolean removeValuesOld(TypeOperatorRel type, long limit, int coeff) {
+		// OLD ALTERNATIVE: keep it the time to be sure that the code above is correct
 		int sizeBefore = size();
 		switch (type) {
 		case LT:
@@ -557,7 +533,7 @@ public interface Domain extends LinkedSet {
 
 	default boolean removeValues(TypeConditionOperatorSet type, Domain dom, int offset) {
 		assert type != null;
-		boolean present = type == TypeConditionOperatorSet.IN;
+		boolean present = type == IN;
 		if (size() == 1)
 			return dom.isPresentValue(firstValue() - offset) == present ? fail() : true;
 		int sizeBefore = size();
@@ -569,7 +545,7 @@ public interface Domain extends LinkedSet {
 
 	default boolean removeValues(TypeConditionOperatorSet type, Domain dom) {
 		assert type != null;
-		boolean present = type == TypeConditionOperatorSet.IN;
+		boolean present = type == IN;
 		if (size() == 1)
 			return dom.isPresentValue(firstValue()) == present ? fail() : true;
 		int sizeBefore = size();
@@ -580,16 +556,16 @@ public interface Domain extends LinkedSet {
 	}
 
 	default boolean removeValuesIn(Domain dom) {
-		return removeValues(TypeConditionOperatorSet.IN, dom);
+		return removeValues(IN, dom);
 	}
 
 	default boolean removeValuesNotIn(Domain dom) {
-		return removeValues(TypeConditionOperatorSet.NOTIN, dom);
+		return removeValues(NOTIN, dom);
 	}
 
 	default boolean removeValues(TypeConditionOperatorSet type, Set<Integer> set) {
 		assert type != null;
-		boolean present = type == TypeConditionOperatorSet.IN;
+		boolean present = type == IN;
 		if (size() == 1)
 			return set.contains(firstValue()) == present ? fail() : true;
 		int sizeBefore = size();
@@ -625,7 +601,7 @@ public interface Domain extends LinkedSet {
 
 	default boolean removeValues(TypeConditionOperatorSet type, int start, int stop) {
 		assert type != null;
-		Kit.control(type == TypeConditionOperatorSet.IN, () -> "NOTIN not currently implemented");
+		Kit.control(type == IN, () -> "NOTIN not currently implemented");
 		int first = firstValue(), last = lastValue();
 		int v = Math.max(start, first);
 		int limit = Math.min(stop - 1, last);
@@ -646,7 +622,7 @@ public interface Domain extends LinkedSet {
 	}
 
 	default boolean removeValuesInRange(int start, int stop) {
-		return removeValues(TypeConditionOperatorSet.IN, start, stop);
+		return removeValues(IN, start, stop);
 	}
 
 	default boolean removeIndexesChecking(Predicate<Integer> p) {
@@ -692,16 +668,6 @@ public interface Domain extends LinkedSet {
 	 *********************************************************************************************/
 
 	/**
-	 * Returns an array with all values (and not indexes of values) from the current domain. This method should not be called at the heart of the
-	 * solving process, for efficiency reasons.
-	 * 
-	 * @return an array with all values of the current domain
-	 */
-	default int[] currValues() {
-		return IntStream.of(indexes()).map(a -> toVal(a)).toArray();
-	}
-
-	/**
 	 * Returns either an object Range or an array with all values of the initial domain
 	 * 
 	 * @return either an object Range or an array with all values of the initial domain
@@ -723,13 +689,13 @@ public interface Domain extends LinkedSet {
 	 *            a boolean for getting more information
 	 */
 	default void display(boolean exhaustively) {
-		Kit.log.fine("  Domain " + this + " (ivs=" + indexesMatchValues() + ", domainType=" + typeIdentifier() + ")");
-		Kit.log.fine("\t initSize = " + initSize() + " and size = " + size());
-		Kit.log.fine("\t first=" + first() + " and last=" + last());
+		log.fine("  Domain " + this + " (ivs=" + indexesMatchValues() + ", domainType=" + typeIdentifier() + ")");
+		log.fine("\t initSize = " + initSize() + " and size = " + size());
+		log.fine("\t first=" + first() + " and last=" + last());
 		if (size() != 0)
-			Kit.log.fine("\t first value = " + firstValue() + " and last value = " + lastValue());
+			log.fine("\t first value = " + firstValue() + " and last value = " + lastValue());
 		if (exhaustively)
-			Kit.log.fine("\t values = {" + stringListOfValues() + "}" + "\nStructures\n" + stringOfStructures());
+			log.fine("\t values = {" + stringListOfValues() + "}" + "\nStructures\n" + stringOfStructures());
 	}
 
 	/**
@@ -756,6 +722,37 @@ public interface Domain extends LinkedSet {
 
 }
 
+// /**
+// * Removes the specified value, if present. <br />
+// * If the value is not present, the method either returns false by failing (aggressive mode) or true (non aggressive mode). <br />
+// * Otherwise, returns false if an inconsistency is detected (domain wipe-out). <br />
+// * The management of this (possible) removal with respect to propagation is handled.
+// */
+// default boolean removeValue(int v, boolean agressive) {
+// int a = toPresentIdx(v);
+// return a != -1 ? remove(a) : !agressive || fail();
+// }
+
+/// **
+// * Notify (to propagation process) that the domain has just been reduced (without any domain wipe-out).
+// */
+// default void notifyReduction() {
+// assert size() > 0;
+// solver().propagation.handleReductionSafely(var());
+// }
+
+// default boolean afterElementaryCalls() {
+// return size() == 0 ? fail() : solver().propagation.handleReductionSafely(var());
+// }
+
+/// **
+// * Removes the value at the specified index, if present.<br />
+// * If the value is not present, either returns false (detected inconsistency) if the aggressive mode is activated, or true. <br />
+// * The management of this removal with respect to propagation is handled.
+// */
+// default boolean remove(int a, boolean aggressive) {
+// return isPresent(a) ? remove(a) : !aggressive || fail();
+// }
 // default boolean removeValsGT(long limit, int coeff) {
 // if (var.isAssigned())
 // return coeff * uniqueVal() > limit ? fail() : true;

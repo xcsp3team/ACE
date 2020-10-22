@@ -69,7 +69,7 @@ public final class Circuit extends AllDifferent {
 					continue; // because self-loop
 				set.clear();
 				set.add(i);
-				if (scp[j].dom.remove(j, false) == false)
+				if (scp[j].dom.removeIfPresent(j) == false)
 					return false;
 				while (set.size() + 1 < minimalCircuitLength) {
 					if (scp[j].dom.remove(set, true) == false)
@@ -77,7 +77,7 @@ public final class Circuit extends AllDifferent {
 					if (scp[j].dom.size() == 1) {
 						set.add(j);
 						j = scp[j].dom.unique(); // we know for sure here that the new value of j is different from the previous one
-						if (scp[j].dom.remove(j, false) == false)
+						if (scp[j].dom.removeIfPresent(j) == false)
 							return false;
 					} else
 						break;

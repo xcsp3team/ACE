@@ -36,7 +36,7 @@ public final class AllDifferentWeak extends AllDifferentAbstract implements TagF
 			int v = x.dom.uniqueValue();
 			for (int i = futvars.limit; i >= 0; i--) {
 				Variable y = scp[futvars.dense[i]];
-				if (y != x && y.dom.removeValue(v, false) == false)
+				if (y != x && y.dom.removeValueIfPresent(v) == false)
 					return false;
 			}
 		}

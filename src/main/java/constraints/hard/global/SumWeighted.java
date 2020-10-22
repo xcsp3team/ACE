@@ -318,7 +318,7 @@ public abstract class SumWeighted extends SumAbstract {
 			long v = (limit - sum) / coeffs[p];
 			Kit.control(v * coeffs[p] + sum == limit);
 			if ((limit - sum) % coeffs[p] == 0 && Integer.MIN_VALUE <= v && v <= Integer.MAX_VALUE)
-				sentinel.dom.removeValue((int) v, false); // no inconsistency possible since at least two values
+				sentinel.dom.removeValueIfPresent((int) v); // no inconsistency possible since at least two values
 			return true;
 		}
 

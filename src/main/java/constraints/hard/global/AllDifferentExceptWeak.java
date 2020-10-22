@@ -33,7 +33,7 @@ public class AllDifferentExceptWeak extends AllDifferentAbstract implements TagG
 				return true;
 			for (int i = futvars.limit; i >= 0; i--) {
 				Variable y = scp[futvars.dense[i]];
-				if (y != x && y.dom.removeValue(v, false) == false)
+				if (y != x && y.dom.removeValueIfPresent(v) == false)
 					return false;
 			}
 		}

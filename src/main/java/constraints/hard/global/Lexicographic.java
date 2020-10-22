@@ -108,12 +108,12 @@ public abstract class Lexicographic extends CtrGlobal implements TagUnsymmetric,
 		int min1 = dom1.firstValue(), min2 = dom2.firstValue();
 		assert min1 <= min2;
 		if (min1 == min2 && !isConsistentPair(list1[alpha], min1, list2[alpha], min2))
-			if (dom2.removeValue(min2, false) == false)
+			if (dom2.removeValueIfPresent(min2) == false)
 				return false;
 		int max1 = dom1.lastValue(), max2 = dom2.lastValue();
 		assert max1 <= max2;
 		if (max1 == max2 && !isConsistentPair(list1[alpha], max1, list2[alpha], max2))
-			if (dom1.removeValue(max1, false) == false)
+			if (dom1.removeValueIfPresent(max1) == false)
 				return false;
 		assert dom1.firstValue() < dom2.lastValue();
 		return true;

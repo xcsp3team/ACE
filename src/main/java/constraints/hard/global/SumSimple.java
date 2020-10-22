@@ -260,7 +260,7 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 					sum += x.dom.uniqueValue(); // no overflow possible because int values are added to a long
 			long v = limit - sum;
 			if (sum + v == limit && Integer.MIN_VALUE <= v && v <= Integer.MAX_VALUE) // if no overflow and within Integer bounds
-				sentinel.dom.removeValue((int) v, false); // no inconsistency possible since at least two values in the domain
+				sentinel.dom.removeValueIfPresent((int) v); // no inconsistency possible since at least two values in the domain
 			return true;
 		}
 

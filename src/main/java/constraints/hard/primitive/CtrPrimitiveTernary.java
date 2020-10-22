@@ -8,6 +8,13 @@
  */
 package constraints.hard.primitive;
 
+import static constraints.hard.primitive.CtrPrimitiveBinary.commonValueIn;
+import static constraints.hard.primitive.CtrPrimitiveBinary.enforceEQ;
+import static constraints.hard.primitive.CtrPrimitiveBinary.enforceGE;
+import static constraints.hard.primitive.CtrPrimitiveBinary.enforceGT;
+import static constraints.hard.primitive.CtrPrimitiveBinary.enforceLE;
+import static constraints.hard.primitive.CtrPrimitiveBinary.enforceLT;
+import static constraints.hard.primitive.CtrPrimitiveBinary.enforceNE;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.EQ;
 
 import java.math.BigInteger;
@@ -28,7 +35,7 @@ import utility.exceptions.UnreachableCodeException;
 import variables.Variable;
 import variables.domains.Domain;
 
-public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUnsymmetric { // implements TagGuaranteedGAC
+public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, TagUnsymmetric {
 
 	protected final Variable x, y, z;
 
@@ -60,7 +67,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 			super(pb, x, y, z);
 		}
 
-		public static final class AddEQ3 extends CtrPrimitiveTernaryAdd implements TagGACGuaranteed {
+		public static final class AddEQ3 extends CtrPrimitiveTernaryAdd {
 
 			int[] resx, resy, resz; // residues for values in the domains of x, y and z
 
@@ -216,7 +223,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 			super(pb, x, y, z);
 		}
 
-		public static final class MulEQ3b extends CtrPrimitiveTernaryMul implements TagGACGuaranteed {
+		public static final class MulEQ3b extends CtrPrimitiveTernaryMul {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -232,9 +239,9 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 			public boolean runPropagator(Variable dummy) {
 				if (dx.last() == 0) // only 0 remaining in dx => z must be 0
 					return dz.reduceToValue(0);
-				if (dy.hasUniqueValue(0)) // only 0 remaining in dy => z must be 0
+				if (dy.onlyContainsValue(0)) // only 0 remaining in dy => z must be 0
 					return dz.reduceToValue(0);
-				if (dz.hasUniqueValue(0)) { // only 0 remaining in dz
+				if (dz.onlyContainsValue(0)) { // only 0 remaining in dz
 					if (dx.first() == 0 && dy.isPresentValue(0)) // if 0 in the domains of x and y, every value is supported
 						return true;
 					if (dx.first() == 0)
@@ -247,9 +254,9 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 					if (dx.first() == 1 && !dy.isPresentValue(0) && dz.removeValue(0) == false)
 						return false;
 				} else {
-					if (dx.first() == 0 && dx.remove(0) == false)
+					if (dx.removeIfPresent(0) == false)
 						return false;
-					if (dy.isPresentValue(0) && dy.removeValue(0) == false)
+					if (dy.removeValueIfPresent(0) == false)
 						return false;
 				}
 				if (dx.first() == 1) { // only 1 remaining in dx => y = z
@@ -273,14 +280,14 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 				}
 				dz.afterElementaryCalls(sizeBefore);
 				if (dz.size() == 1) {
-					assert dz.hasUniqueValue(0);
+					assert dz.onlyContainsValue(0);
 					dx.removeSafely(1);
 				}
 				return true;
 			}
 		}
 
-		public static final class MulEQ3 extends CtrPrimitiveTernaryMul implements TagGACGuaranteed {
+		public static final class MulEQ3 extends CtrPrimitiveTernaryMul {
 
 			int[] resx, resy, resz1, resz2; // residues for values in the domains of x, y and z
 
@@ -390,7 +397,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 			super(pb, x, y, z);
 		}
 
-		public static final class ModEQ3 extends CtrPrimitiveTernaryMod implements TagGACGuaranteed {
+		public static final class ModEQ3 extends CtrPrimitiveTernaryMod {
 
 			int[] resx, resy, resz1, resz2; // residues for values in the domains of x, y and z
 
@@ -510,7 +517,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 		}
 
 		// time java ac GolombRuler-10.xml -varh=Dom => same search tree with CT, Intension and DistEQ3
-		public static final class DistEQ3 extends CtrPrimitiveTernaryDist implements TagGACGuaranteed {
+		public static final class DistEQ3 extends CtrPrimitiveTernaryDist {
 
 			int[] resx, resy, resz1, resz2; // residues for values in the domains of x, y and z
 
@@ -661,8 +668,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 	// ***** Classes for x = (y <op> z) (CtrPrimitiveTernaryLog)
 	// ************************************************************************
 
-	public static abstract class CtrPrimitiveTernaryLog extends CtrPrimitiveTernary
-			implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, TagUnsymmetric {
+	public static abstract class CtrPrimitiveTernaryLog extends CtrPrimitiveTernary {
 
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			switch (op) {
@@ -704,9 +710,9 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 					return false;
 				if (dx.last() == 1 && dy.firstValue() >= dz.lastValue() && dx.remove(1) == false)
 					return false;
-				if (dx.first() == 1 && CtrPrimitiveBinary.enforceLT(dy, dz) == false)
+				if (dx.first() == 1 && enforceLT(dy, dz) == false)
 					return false; // because only 1 remaining implies y < z
-				if (dx.last() == 0 && CtrPrimitiveBinary.enforceGE(dy, dz) == false)
+				if (dx.last() == 0 && enforceGE(dy, dz) == false)
 					return false; // because only 0 remaining implies y >= z
 				return true;
 			}
@@ -729,9 +735,9 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 					return false;
 				if (dx.last() == 1 && dy.firstValue() > dz.lastValue() && dx.remove(1) == false)
 					return false;
-				if (dx.first() == 1 && CtrPrimitiveBinary.enforceLE(dy, dz) == false)
+				if (dx.first() == 1 && enforceLE(dy, dz) == false)
 					return false; // because only 1 remaining implies y <= z
-				if (dx.last() == 0 && CtrPrimitiveBinary.enforceGT(dy, dz) == false)
+				if (dx.last() == 0 && enforceGT(dy, dz) == false)
 					return false; // because only 0 remaining implies y > z
 				return true;
 			}
@@ -754,9 +760,9 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 					return false;
 				if (dx.last() == 1 && dy.lastValue() < dz.firstValue() && dx.remove(1) == false)
 					return false;
-				if (dx.first() == 1 && CtrPrimitiveBinary.enforceGE(dy, dz) == false)
+				if (dx.first() == 1 && enforceGE(dy, dz) == false)
 					return false; // because only 1 remaining implies y >= z
-				if (dx.last() == 0 && CtrPrimitiveBinary.enforceLT(dy, dz) == false)
+				if (dx.last() == 0 && enforceLT(dy, dz) == false)
 					return false; // because only 0 remaining implies y < z
 				return true;
 			}
@@ -779,9 +785,9 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 					return false;
 				if (dx.last() == 1 && dy.lastValue() <= dz.firstValue() && dx.remove(1) == false)
 					return false;
-				if (dx.first() == 1 && CtrPrimitiveBinary.enforceGT(dy, dz) == false)
+				if (dx.first() == 1 && enforceGT(dy, dz) == false)
 					return false; // because only 1 remaining implies y > z
-				if (dx.last() == 0 && CtrPrimitiveBinary.enforceLE(dy, dz) == false)
+				if (dx.last() == 0 && enforceLE(dy, dz) == false)
 					return false; // because only 0 remaining implies y <= z
 				return true;
 			}
@@ -803,17 +809,17 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dy.size() == 1 && dz.size() == 1)
-					return dx.remove(dy.firstValue() == dz.firstValue() ? 0 : 1, false); // remember that indexes and values match for x
-				if (dx.first() == 1 && CtrPrimitiveBinary.enforceEQ(dy, dz) == false)
-					return false; // because only 1 remaining implies y = z
-				if (dx.last() == 0 && CtrPrimitiveBinary.enforceNE(dy, dz) == false)
-					return false; // because only 0 remaining implies y != z
+					return dx.removeIfPresent(dy.firstValue() == dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
+				if (dx.first() == 1 && enforceEQ(dy, dz) == false) // because only 1 remaining implies y = z
+					return false;
+				if (dx.last() == 0 && enforceNE(dy, dz) == false) // because only 0 remaining implies y != z
+					return false;
 				assert dx.size() == 2;
 				// we know that 0 for x is supported because the domain of y or z is not singleton
 				if (dy.isPresentValue(residue) && dz.isPresentValue(residue))
 					return true;
 				// we look for a support for (x,1), and record it as a residue
-				int v = CtrPrimitiveBinary.commonValueIn(dy, dz);
+				int v = commonValueIn(dy, dz);
 				if (v != Integer.MAX_VALUE)
 					residue = v;
 				else
@@ -838,17 +844,17 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagUns
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dy.size() == 1 && dz.size() == 1)
-					return dx.remove(dy.firstValue() != dz.firstValue() ? 0 : 1, false); // remember that indexes and values match for x
-				if (dx.first() == 1 && CtrPrimitiveBinary.enforceNE(dy, dz) == false)
-					return false; // because only 1 remaining implies y != z
-				if (dx.last() == 0 && CtrPrimitiveBinary.enforceEQ(dy, dz) == false)
-					return false; // because only 0 remaining implies y = z
+					return dx.removeIfPresent(dy.firstValue() != dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
+				if (dx.first() == 1 && enforceNE(dy, dz) == false) // because only 1 remaining implies y != z
+					return false;
+				if (dx.last() == 0 && enforceEQ(dy, dz) == false) // because only 0 remaining implies y = z
+					return false;
 				assert dx.size() == 2;
-				// we know that 1 for x is supported because the domain of y or z is not singleton
+				// we know that (x,1) is supported because the domain of y and/or the domain of z is not singleton
 				if (dy.isPresentValue(residue) && dz.isPresentValue(residue))
 					return true;
 				// we look for a support for (x,0), and record it as a residue
-				int v = CtrPrimitiveBinary.commonValueIn(dy, dz);
+				int v = commonValueIn(dy, dz);
 				if (v != Integer.MAX_VALUE)
 					residue = v;
 				else

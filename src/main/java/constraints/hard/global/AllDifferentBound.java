@@ -205,7 +205,7 @@ public class AllDifferentBound extends AllDifferentAbstract implements ObserverB
 
 		boolean remove(Domain dom, int from, int to) {
 			for (int a = from; a <= to; a++)
-				if (!absentIdxs.isPresent(a) && dom.remove(a, false) == false)
+				if (!absentIdxs.isPresent(a) && dom.removeIfPresent(a) == false)
 					return false;
 			return true;
 		}
@@ -433,7 +433,7 @@ public class AllDifferentBound extends AllDifferentAbstract implements ObserverB
 				Variable y = scp[futvars.dense[i]];
 				if (y == x)
 					continue;
-				if (!y.dom.removeValue(v, false))
+				if (!y.dom.removeValueIfPresent(v))
 					return false;
 			}
 		}

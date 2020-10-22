@@ -16,10 +16,10 @@ import java.util.stream.IntStream;
 import org.xcsp.common.Utilities;
 
 import constraints.hard.CtrGlobal;
-import interfaces.TagFilteringCompleteAtEachCall;
-import interfaces.TagGACGuaranteed;
 import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagFilteringPartialAtEachCall;
+import interfaces.TagGACGuaranteed;
 import problem.Problem;
 import utility.Kit;
 import utility.sets.SetSparse;
@@ -87,7 +87,7 @@ public abstract class HammingProximityConstant extends CtrGlobal implements TagG
 			if (cnt == k)
 				for (int i = 0; i < scp.length; i++)
 					if (scp[i].dom.size() != 1)
-						scp[i].dom.removeValue(target[i], false);
+						scp[i].dom.removeValueIfPresent(target[i]);
 			return true;
 		}
 	}

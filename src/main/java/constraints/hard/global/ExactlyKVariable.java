@@ -8,9 +8,6 @@
  */
 package constraints.hard.global;
 
-import static org.xcsp.common.Types.TypeOperatorRel.GT;
-import static org.xcsp.common.Types.TypeOperatorRel.LT;
-
 import java.util.stream.IntStream;
 
 import org.xcsp.common.Utilities;
@@ -98,10 +95,10 @@ public final class ExactlyKVariable extends CtrGlobal implements TagGACGuarantee
 					if (deleted)
 						nPossibleOccurrences--;
 				} else {
-					if (domK.removeValues(LT, nGuaranteedOccurrences) == false || domK.removeValues(GT, nPossibleOccurrences) == false)
+					if (domK.removeValuesLessThan(nGuaranteedOccurrences) == false || domK.removeValuesGreaterThan(nPossibleOccurrences) == false)
 						return false;
 				}
-			} else if (domK.removeValues(LT, nGuaranteedOccurrences) == false || domK.removeValues(GT, nPossibleOccurrences) == false)
+			} else if (domK.removeValuesLessThan(nGuaranteedOccurrences) == false || domK.removeValuesGreaterThan(nPossibleOccurrences) == false)
 				return false;
 		}
 		// if k is singleton, updating the domain of the other variables

@@ -71,6 +71,6 @@ public class NotAllEqual extends CtrGlobal implements TagSymmetric, TagGACGuaran
 		if (unfixed == null)
 			return evt.dom.fail(); // because all variables are assigned to the same value
 		assert uniqueFixedVal != Integer.MAX_VALUE;
-		return unfixed.dom.removeValue(uniqueFixedVal, false);
+		return unfixed.dom.removeValueIfPresent(uniqueFixedVal);
 	}
 }

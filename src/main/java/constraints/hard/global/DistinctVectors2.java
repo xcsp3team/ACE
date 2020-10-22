@@ -86,9 +86,9 @@ public final class DistinctVectors2 extends CtrGlobal implements TagUnsymmetric,
 		assert isPossibleInferenceFor(sentinel);
 		// no wipe-out possible
 		if (list1[sentinel].dom.size() == 1)
-			list2[sentinel].dom.removeValue(list1[sentinel].dom.uniqueValue(), false);
+			list2[sentinel].dom.removeValueIfPresent(list1[sentinel].dom.uniqueValue());
 		else
-			list1[sentinel].dom.removeValue(list2[sentinel].dom.uniqueValue(), false);
+			list1[sentinel].dom.removeValueIfPresent(list2[sentinel].dom.uniqueValue());
 	}
 
 	private int findAnotherSentinel() {

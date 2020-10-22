@@ -4,9 +4,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.hard.CtrGlobal;
-import interfaces.TagGACGuaranteed;
 import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.TagFilteringPartialAtEachCall;
+import interfaces.TagGACGuaranteed;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
@@ -66,12 +66,12 @@ public class AtLeast1Reified extends CtrGlobal implements ObserverBacktrackingSy
 			assert reif.dom.size() == 1;
 			if (reif.dom.first() == 0) {
 				for (Variable y : list)
-					if (y.dom.removeValue(value, false) == false)
+					if (y.dom.removeValueIfPresent(value) == false)
 						return false;
 				return entailed = true;
 			}
 		} else if (x.dom.onlyContainsValue(value)) {
-			if (reif.dom.removeValue(0, false) == false)
+			if (reif.dom.removeValueIfPresent(0) == false)
 				return false;
 			return entailed = true;
 		}

@@ -71,7 +71,7 @@ public final class AllDifferentCounting extends AllDifferentAbstract
 			int v = x.dom.uniqueValue();
 			for (int j = futvars.limit; j >= 0; j--) {
 				Variable y = scp[futvars.dense[j]];
-				if (y != x && y.dom.removeValue(v, false) == false)
+				if (y != x && y.dom.removeValueIfPresent(v) == false)
 					return false;
 			}
 			unfixedVars.remove(p, pb.solver.depth());
@@ -87,13 +87,13 @@ public final class AllDifferentCounting extends AllDifferentAbstract
 
 		for (int i = sets[1].limit; i >= 0; i--) { // TODO try to manage all new fixed variables
 			int vapFixed = sets[1].dense[i];
-			Variable varFixed = scp[vapFixed];
-			int valFixed = varFixed.dom.uniqueValue();
+			Variable x = scp[vapFixed];
+			int v = x.dom.uniqueValue();
 			for (int j = futvars.limit; j >= 0; j--) {
-				Variable var = scp[futvars.dense[j]];
-				if (var == varFixed)
+				Variable y = scp[futvars.dense[j]];
+				if (y == x)
 					continue;
-				if (!var.dom.removeValue(valFixed, false))
+				if (!y.dom.removeValueIfPresent(v))
 					return false;
 			}
 			unfixedVars.remove(vapFixed, pb.solver.depth());

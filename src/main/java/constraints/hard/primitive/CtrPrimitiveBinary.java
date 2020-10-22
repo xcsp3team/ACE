@@ -87,17 +87,17 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 	}
 
 	public static boolean enforceNE(Domain dx, Domain dy) { // x != y
-		if (dx.size() == 1 && dy.removeValue(dx.uniqueValue(), false) == false)
+		if (dx.size() == 1 && dy.removeValueIfPresent(dx.uniqueValue()) == false)
 			return false;
-		if (dy.size() == 1 && dx.removeValue(dy.uniqueValue(), false) == false)
+		if (dy.size() == 1 && dx.removeValueIfPresent(dy.uniqueValue()) == false)
 			return false;
 		return true;
 	}
 
 	public static boolean enforceNE(Domain dx, Domain dy, int k) { // x != y + k
-		if (dx.size() == 1 && dy.removeValue(dx.uniqueValue() - k, false) == false)
+		if (dx.size() == 1 && dy.removeValueIfPresent(dx.uniqueValue() - k) == false)
 			return false;
-		if (dy.size() == 1 && dx.removeValue(dy.uniqueValue() + k, false) == false)
+		if (dy.size() == 1 && dx.removeValueIfPresent(dy.uniqueValue() + k) == false)
 			return false;
 		return true;
 	}
@@ -284,9 +284,9 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.size() == 1 && dy.removeValue(k - dx.uniqueValue(), false) == false)
+				if (dx.size() == 1 && dy.removeValueIfPresent(k - dx.uniqueValue()) == false)
 					return false;
-				if (dy.size() == 1 && dx.removeValue(k - dy.uniqueValue(), false) == false)
+				if (dy.size() == 1 && dx.removeValueIfPresent(k - dy.uniqueValue()) == false)
 					return false;
 				return true;
 			}
@@ -568,9 +568,9 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 
 			private boolean revise(Domain dom1, Domain dom2) {
 				if (dom1.size() == 1)
-					return dom2.removeValue(dom1.uniqueValue() - k, false) && dom2.removeValue(dom1.uniqueValue() + k, false);
+					return dom2.removeValueIfPresent(dom1.uniqueValue() - k) && dom2.removeValueIfPresent(dom1.uniqueValue() + k);
 				if (dom1.size() == 2 && dom1.lastValue() - dom1.firstValue() == 2 * k)
-					return dom2.removeValue(dom1.lastValue() - k, false);
+					return dom2.removeValueIfPresent(dom1.lastValue() - k);
 				return true;
 			}
 
@@ -681,7 +681,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 						return false;
 				}
 				if (dx.size() == 1) {
-					if (dx.first() == 0 && dy.removeValue(k, false) == false)
+					if (dx.first() == 0 && dy.removeValueIfPresent(k) == false)
 						return false;
 					if (dx.first() == 1 && dy.reduceToValue(k) == false)
 						return false;
@@ -713,7 +713,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 				if (dx.size() == 1) {
 					if (dx.first() == 0 && dy.reduceToValue(k) == false)
 						return false;
-					if (dx.first() == 1 && dy.removeValue(k, false) == false)
+					if (dx.first() == 1 && dy.removeValueIfPresent(k) == false)
 						return false;
 				}
 				return true;
