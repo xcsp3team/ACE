@@ -11,6 +11,7 @@ package dashboard;
 import static org.xcsp.common.Constants.EMPTY_STRING;
 import static org.xcsp.common.Constants.MINUS_INFINITY;
 import static org.xcsp.common.Constants.PLUS_INFINITY;
+import static org.xcsp.common.Constants.PLUS_INFINITY_INT;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -187,7 +188,7 @@ public class ControlPanel {
 		public final long seed = addL("seed", "seed", 0, s_seed);
 		public final boolean makeExceptionsVisible = addB("makeExceptionsVisible", "ev", false, s_ev);
 		public final boolean enableAnnotations = addB("enableAnnotations", "ea", false, s_ea);
-		public final long limitForSatisfaction = addL("limitForSatisfaction", "lfs", PLUS_INFINITY, l_cfs);
+		public final int limitForSatisfaction = addI("limitForSatisfaction", "lfs", PLUS_INFINITY_INT, l_cfs);
 		public final String conditionForSatisfaction = addS("conditionForSatisfaction", "cfs", EMPTY_STRING, s_cfs, TO_IMPLEMENT);
 		public final boolean recordSolutions = addB("recordSolutions", "rs", false, s_rs, HIDDEN);
 		public final String saveNetworkGraph = addS("saveNetworkGraph", "sng", EMPTY_STRING,

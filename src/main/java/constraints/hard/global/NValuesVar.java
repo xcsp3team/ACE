@@ -14,7 +14,6 @@ import static org.xcsp.common.Types.TypeOperatorRel.LT;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.xcsp.common.Types.TypeConditionOperatorSet;
 import org.xcsp.modeler.definitions.DefXCSP;
 
 import problem.Problem;
@@ -49,13 +48,13 @@ public final class NValuesVar extends NValuesAbstract {
 				if (fixedVals.size() == limit) {
 					for (int i = unfixedVars.limit; i >= 0; i--) {
 						Domain dom = list[unfixedVars.dense[i]].dom;
-						if (dom.removeValues(TypeConditionOperatorSet.NOTIN, fixedVals) == false)
+						if (dom.removeValuesNotIn(fixedVals) == false)
 							return false;
 					}
 				} else if (fixedVals.size() + unfixedVars.size() == limit) {
 					for (int i = unfixedVars.limit; i >= 0; i--) {
 						Domain dom = list[unfixedVars.dense[i]].dom;
-						if (dom.removeValues(TypeConditionOperatorSet.IN, fixedVals) == false)
+						if (dom.removeValuesIn(fixedVals) == false)
 							return false;
 					}
 				}

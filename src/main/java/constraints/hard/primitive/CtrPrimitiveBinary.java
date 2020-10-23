@@ -8,12 +8,6 @@
  */
 package constraints.hard.primitive;
 
-import static org.xcsp.common.Types.TypeConditionOperatorSet.NOTIN;
-import static org.xcsp.common.predicates.XNodeParent.dist;
-import static org.xcsp.common.predicates.XNodeParent.eq;
-import static org.xcsp.common.predicates.XNodeParent.le;
-import static org.xcsp.common.predicates.XNodeParent.lt;
-
 import java.math.BigInteger;
 
 import org.xcsp.common.Types.TypeConditionOperatorRel;
@@ -65,23 +59,23 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 	}
 
 	public static boolean enforceEQ(Domain dx, Domain dy) { // x = y
-		if (dx.removeValues(NOTIN, dy) == false)
+		if (dx.removeValuesNotIn(dy) == false)
 			return false;
 		if (dx.size() == dy.size())
 			return true;
 		assert dx.size() < dy.size();
-		boolean consistent = dy.removeValues(NOTIN, dx);
+		boolean consistent = dy.removeValuesNotIn(dx);
 		assert consistent;
 		return true;
 	}
 
 	public static boolean enforceEQ(Domain dx, Domain dy, int k) { // x = y + k
-		if (dx.removeValues(NOTIN, dy, k) == false)
+		if (dx.removeValuesNotIn(dy, k) == false)
 			return false;
 		if (dx.size() == dy.size())
 			return true;
 		assert dx.size() < dy.size();
-		boolean consistent = dy.removeValues(NOTIN, dx, -k);
+		boolean consistent = dy.removeValuesNotIn(dx, -k);
 		assert consistent;
 		return true;
 	}
@@ -168,15 +162,8 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			int start = dy.lastValue() - kx + 1;
-			int stop = dy.firstValue() + ky;
-			if (start < stop && dx.removeValuesInRange(start, stop) == false)
-				return false;
-			start = dx.lastValue() - ky + 1;
-			stop = dx.firstValue() + kx;
-			if (start < stop && dy.removeValuesInRange(start, stop) == false)
-				return false;
-			return true;
+			return dx.removeValuesInRange(dy.lastValue() - kx + 1, dy.firstValue() + ky)
+					&& dy.removeValuesInRange(dx.lastValue() - ky + 1, dx.firstValue() + kx);
 		}
 	}
 
@@ -197,8 +184,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			case GT:
 				return pb.addCtr(new AddGE2(pb, x, y, k + 1));
 			case EQ:
-				return pb.addCtr(new AddEQ2(pb, x, y, k));
-			// return pb.extension(eq(add(x, y), k));
+				return pb.addCtr(new AddEQ2(pb, x, y, k)); // return pb.extension(eq(add(x, y), k));
 			case NE:
 				return pb.addCtr(new AddNE2(pb, x, y, k));
 			}
@@ -256,13 +242,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				for (int a = dx.first(); a != -1; a = dx.next(a))
-					if (dy.isPresentValue(k - dx.toVal(a)) == false && dx.remove(a) == false)
-						return false;
-				for (int b = dy.first(); b != -1; b = dy.next(b))
-					if (dx.isPresentValue(k - dy.toVal(b)) == false && dy.remove(b) == false)
-						return false;
-				return true;
+				return dx.removeValuesAtOffsetNE(k, dy) && dy.removeValuesAtOffsetNE(k, dx);
 			}
 		}
 
@@ -480,18 +460,17 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case LT:
-				return pb.extension(lt(dist(x, y), k));
+				return pb.addCtr(new DistLE2(pb, x, y, k - 1)); // return pb.extension(lt(dist(x, y), k));
 			case LE:
-				return pb.extension(le(dist(x, y), k));
+				return pb.addCtr(new DistLE2(pb, x, y, k)); // return pb.extension(le(dist(x, y), k));
 			case GE:
 				return pb.addCtr(new DistGE2(pb, x, y, k));
 			case GT:
 				return pb.addCtr(new DistGE2(pb, x, y, k + 1));
 			case EQ:
-				// return pb.addCtr(new DistEQ2(pb, x, y, k)); ok for java ac
-				// /home/lecoutre/workspace/AbsCon/build/resources/main/csp/Rlfap-scen-11-f06.xml.lzma -cm -ev -varh=Dom but not for domOnwdeg.
-				// is that normal?
-				return pb.extension(eq(dist(x, y), k)); //
+				return pb.addCtr(new DistEQ2(pb, x, y, k)); // return pb.extension(eq(dist(x, y), k));
+			// ok for java ac csp/Rlfap-scen-11-f06.xml.lzma -cm -ev -varh=Dom but not for domOnwdeg. Must be because of failing may occur on assigned
+			// variables in DISTEQ2
 			case NE:
 				return pb.addCtr(new DistNE2(pb, x, y, k));
 			}
@@ -500,7 +479,24 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 
 		public CtrPrimitiveBinaryDist(Problem pb, Variable x, Variable y, int k) {
 			super(pb, x, y, k);
-			Utilities.control(k >= 0, "k should be positive");
+			Utilities.control(k > 0, "k should be strictly positive");
+		}
+
+		public static final class DistLE2 extends CtrPrimitiveBinaryDist {
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return Math.abs(t[0] - t[1]) <= k;
+			}
+
+			public DistLE2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				return dx.removeValuesAtDistanceGT(k, dy) && dy.removeValuesAtDistanceGT(k, dx);
+			}
 		}
 
 		public static final class DistGE2 extends CtrPrimitiveBinaryDist { // code similar to Disjunctive
@@ -516,15 +512,8 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				int start = dy.lastValue() - k + 1;
-				int stop = dy.firstValue() + k;
-				if (start < stop && dx.removeValuesInRange(start, stop) == false)
-					return false;
-				start = dx.lastValue() - k + 1;
-				stop = dx.firstValue() + k;
-				if (start < stop && dy.removeValuesInRange(start, stop) == false)
-					return false;
-				return true;
+				return dx.removeValuesInRange(dy.lastValue() - k + 1, dy.firstValue() + k)
+						&& dy.removeValuesInRange(dx.lastValue() - k + 1, dx.firstValue() + k);
 			}
 		}
 
@@ -541,17 +530,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				for (int a = dx.first(); a != -1; a = dx.next(a)) {
-					int va = dx.toVal(a);
-					if (!dy.isPresentValue(va + k) && !dy.isPresentValue(va - k) && dx.remove(a) == false)
-						return false;
-				}
-				for (int b = dy.first(); b != -1; b = dy.next(b)) {
-					int vb = dy.toVal(b);
-					if (!dx.isPresentValue(vb + k) && !dx.isPresentValue(vb - k) && dy.remove(b) == false)
-						return false;
-				}
-				return true;
+				return dx.removeValuesAtDistanceNE(k, dy) && dy.removeValuesAtDistanceNE(k, dx);
 			}
 		}
 
@@ -569,7 +548,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			private boolean revise(Domain dom1, Domain dom2) {
 				if (dom1.size() == 1)
 					return dom2.removeValueIfPresent(dom1.uniqueValue() - k) && dom2.removeValueIfPresent(dom1.uniqueValue() + k);
-				if (dom1.size() == 2 && dom1.lastValue() - dom1.firstValue() == 2 * k)
+				if (dom1.size() == 2 && dom1.intervalValue() == 2 * k)
 					return dom2.removeValueIfPresent(dom1.lastValue() - k);
 				return true;
 			}
@@ -627,9 +606,9 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 					return false;
 				if (dx.last() == 1 && dy.firstValue() > k && dx.remove(1) == false)
 					return false;
-				if (dx.first() != 0 && dy.lastValue() > k && dy.removeValuesGreaterThan(k) == false)
+				if (dx.first() == 1 && dy.lastValue() > k && dy.removeValuesGreaterThan(k) == false)
 					return false;
-				if (dx.last() != 1 && dy.firstValue() <= k && dy.removeValuesLessThanOrEqual(k) == false)
+				if (dx.last() == 0 && dy.firstValue() <= k && dy.removeValuesLessThanOrEqual(k) == false)
 					return false;
 				return true;
 			}
@@ -652,9 +631,9 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 					return false;
 				if (dx.last() == 1 && dy.lastValue() < k && dx.remove(1) == false)
 					return false;
-				if (dx.first() != 0 && dy.firstValue() < k && dy.removeValuesLessThan(k) == false)
+				if (dx.first() == 1 && dy.firstValue() < k && dy.removeValuesLessThan(k) == false)
 					return false;
-				if (dx.last() != 1 && dy.lastValue() >= k && dy.removeValuesGreaterThanOrEqual(k) == false)
+				if (dx.last() == 0 && dy.lastValue() >= k && dy.removeValuesGreaterThanOrEqual(k) == false)
 					return false;
 				return true;
 			}
@@ -674,10 +653,10 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (!dy.isPresentValue(k)) {
-					if (dx.last() == 1 && dx.remove(1) == false)
+					if (dx.removeIfPresent(1) == false)
 						return false;
 				} else if (dy.size() == 1) {
-					if (dx.first() == 0 && dx.remove(0) == false)
+					if (dx.removeIfPresent(0) == false)
 						return false;
 				}
 				if (dx.size() == 1) {
@@ -704,10 +683,10 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (!dy.isPresentValue(k)) {
-					if (dx.first() == 0 && dx.remove(0) == false)
+					if (dx.removeIfPresent(0) == false)
 						return false;
 				} else if (dy.size() == 1) {
-					if (dx.last() == 1 && dx.remove(1) == false)
+					if (dx.removeIfPresent(1) == false)
 						return false;
 				}
 				if (dx.size() == 1) {

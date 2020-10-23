@@ -40,8 +40,7 @@ public abstract class ObjVar extends CtrGlobal implements OptimizationCompatible
 
 	@Override
 	public final void setLimit(long newLimit) {
-		Kit.control(Integer.MIN_VALUE <= newLimit && newLimit <= Integer.MAX_VALUE);
-		this.limit = (int) newLimit;
+		this.limit = Math.toIntExact(newLimit);
 		entailed = false;
 	}
 
@@ -52,14 +51,14 @@ public abstract class ObjVar extends CtrGlobal implements OptimizationCompatible
 
 	protected Variable x;
 
-	protected long limit;
+	protected int limit;
 
 	protected boolean entailed;
 
 	public ObjVar(Problem pb, Variable x, long limit) {
 		super(pb, new Variable[] { x });
 		this.x = x;
-		this.limit = limit;
+		this.limit = Math.toIntExact(limit);
 	}
 
 	public static final class ObjVarLE extends ObjVar {

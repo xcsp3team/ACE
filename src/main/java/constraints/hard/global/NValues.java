@@ -10,7 +10,6 @@ package constraints.hard.global;
 
 import java.util.Arrays;
 
-import org.xcsp.common.Types.TypeConditionOperatorSet;
 import org.xcsp.modeler.definitions.DefXCSP;
 
 import interfaces.OptimizationCompatible;
@@ -40,9 +39,8 @@ public abstract class NValues extends NValuesAbstract implements OptimizationCom
 
 	@Override
 	public void setLimit(long newLimit) {
-		Kit.control(Integer.MIN_VALUE <= newLimit && newLimit <= Integer.MAX_VALUE);
 		// Kit.control(newLimit < limit, () -> newLimit + " replacing " + limit);
-		limit = (int) newLimit;
+		limit = Math.toIntExact(newLimit);
 	}
 
 	@Override
@@ -89,7 +87,7 @@ public abstract class NValues extends NValuesAbstract implements OptimizationCom
 				if (fixedVals.size() == limit)
 					for (int i = unfixedVars.limit; i >= 0; i--) {
 						Domain dom = list[unfixedVars.dense[i]].dom;
-						if (dom.removeValues(TypeConditionOperatorSet.NOTIN, fixedVals) == false)
+						if (dom.removeValuesNotIn(fixedVals) == false)
 							return false;
 					}
 			}
@@ -124,7 +122,7 @@ public abstract class NValues extends NValuesAbstract implements OptimizationCom
 				if (fixedVals.size() + unfixedVars.size() == limit)
 					for (int i = unfixedVars.limit; i >= 0; i--) {
 						Domain dom = list[unfixedVars.dense[i]].dom;
-						if (dom.removeValues(TypeConditionOperatorSet.IN, fixedVals) == false)
+						if (dom.removeValuesIn(fixedVals) == false)
 							return false;
 					}
 			}

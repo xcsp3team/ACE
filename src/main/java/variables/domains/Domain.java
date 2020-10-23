@@ -8,8 +8,6 @@
  */
 package variables.domains;
 
-import static org.xcsp.common.Types.TypeConditionOperatorSet.IN;
-import static org.xcsp.common.Types.TypeConditionOperatorSet.NOTIN;
 import static org.xcsp.common.Types.TypeOperatorRel.GE;
 import static org.xcsp.common.Types.TypeOperatorRel.GT;
 import static org.xcsp.common.Types.TypeOperatorRel.LE;
@@ -26,7 +24,6 @@ import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
 import org.xcsp.common.Range;
-import org.xcsp.common.Types.TypeConditionOperatorSet;
 import org.xcsp.common.Types.TypeOperatorRel;
 
 import interfaces.ObserverDomainReduction;
@@ -190,6 +187,10 @@ public interface Domain extends LinkedSet {
 		return toVal(unique());
 	}
 
+	default int intervalValue() {
+		return toVal(last()) - toVal(first());
+	}
+
 	/**
 	 * Determines if a value has been removed at the current depth of the (tree) solver.
 	 */
@@ -199,10 +200,6 @@ public interface Domain extends LinkedSet {
 
 	default boolean is01() {
 		return initSize() == 2 && toIdx(0) == 0 && toIdx(1) == 1;
-	}
-
-	default long highestValueDistance() {
-		return Math.abs((long) firstValue() - lastValue());
 	}
 
 	/**********************************************************************************************
@@ -454,6 +451,22 @@ public interface Domain extends LinkedSet {
 		return afterElementaryCalls(sizeBefore);
 	}
 
+	default boolean removeValuesLessThan(int limit) {
+		return removeValues(LT, limit);
+	}
+
+	default boolean removeValuesLessThanOrEqual(int limit) {
+		return removeValues(LE, limit);
+	}
+
+	default boolean removeValuesGreaterThan(int limit) {
+		return removeValues(GT, limit);
+	}
+
+	default boolean removeValuesGreaterThanOrEqual(int limit) {
+		return removeValues(GE, limit);
+	}
+
 	default boolean removeValues(TypeOperatorRel type, long limit) {
 		return removeValues(type, limit <= Integer.MIN_VALUE ? Integer.MIN_VALUE : limit >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) limit);
 	}
@@ -462,21 +475,11 @@ public interface Domain extends LinkedSet {
 		return removeValues(LT, limit);
 	}
 
-	default boolean removeValuesLessThanOrEqual(long limit) {
-		return removeValues(LE, limit);
-	}
-
 	default boolean removeValuesGreaterThan(long limit) {
 		return removeValues(GT, limit);
 	}
 
-	default boolean removeValuesGreaterThanOrEqual(long limit) {
-		return removeValues(GE, limit);
-	}
-
 	default boolean removeValues(TypeOperatorRel type, long limit, int coeff) {
-		// System.out.println("removing " + var());
-		// System.out.println(var() + " " + type + " " + limit + " " + coeff);
 		assert coeff != 0 && limit != Long.MIN_VALUE && limit != Long.MAX_VALUE;
 		if (type == LT) {
 			type = LE;
@@ -495,88 +498,88 @@ public interface Domain extends LinkedSet {
 			newLimit++;
 		if (limit < 0 && type == LE && -limit % coeff != 0)
 			newLimit--;
-		// System.out.println(var() + " " + type + " " + newLimit);
 		return removeValues(type, newLimit);
 	}
 
-	default boolean removeValuesOld(TypeOperatorRel type, long limit, int coeff) {
-		// OLD ALTERNATIVE: keep it the time to be sure that the code above is correct
+	default boolean removeValuesIn(Domain dom) {
 		int sizeBefore = size();
-		switch (type) {
-		case LT:
-			limit = limit != Long.MIN_VALUE ? limit - 1 : limit;
-		case LE:
-			if (size() == 1)
-				return coeff * firstValue() <= limit ? fail() : true;
-			if (coeff > 0)
-				for (int a = first(); a != -1 && coeff * toVal(a) <= limit; a = next(a))
+		if (sizeBefore == 1)
+			return !dom.isPresentValue(firstValue()) || fail();
+		if (size() < dom.size()) {
+			for (int a = first(); a != -1; a = next(a))
+				if (dom.isPresentValue(toVal(a)))
 					removeElementary(a);
-			else
-				for (int a = last(); a != -1 && coeff * toVal(a) <= limit; a = prev(a))
-					removeElementary(a);
-			break;
-		case GT:
-			limit = limit != Long.MAX_VALUE ? limit + 1 : limit;
-		case GE:
-			if (size() == 1)
-				return coeff * firstValue() >= limit ? fail() : true;
-			if (coeff > 0)
-				for (int a = last(); a != -1 && coeff * toVal(a) >= limit; a = prev(a)) {
-					removeElementary(a);
-				}
-			else
-				for (int a = first(); a != -1 && coeff * toVal(a) >= limit; a = next(a))
-					removeElementary(a);
+		} else {
+			for (int a = dom.first(); a != -1; a = dom.next(a))
+				if (isPresentValue(dom.toVal(a)))
+					removeElementary(toIdx(dom.toVal(a)));
 		}
 		return afterElementaryCalls(sizeBefore);
 	}
 
-	default boolean removeValues(TypeConditionOperatorSet type, Domain dom, int offset) {
-		assert type != null;
-		boolean present = type == IN;
-		if (size() == 1)
-			return dom.isPresentValue(firstValue() - offset) == present ? fail() : true;
-		int sizeBefore = size();
-		for (int a = first(); a != -1; a = next(a))
-			if (dom.isPresentValue(toVal(a) - offset) == present)
-				removeElementary(a);
-		return afterElementaryCalls(sizeBefore);
-	}
-
-	default boolean removeValues(TypeConditionOperatorSet type, Domain dom) {
-		assert type != null;
-		boolean present = type == IN;
-		if (size() == 1)
-			return dom.isPresentValue(firstValue()) == present ? fail() : true;
-		int sizeBefore = size();
-		for (int a = first(); a != -1; a = next(a))
-			if (dom.isPresentValue(toVal(a)) == present)
-				removeElementary(a);
-		return afterElementaryCalls(sizeBefore);
-	}
-
-	default boolean removeValuesIn(Domain dom) {
-		return removeValues(IN, dom);
-	}
-
 	default boolean removeValuesNotIn(Domain dom) {
-		return removeValues(NOTIN, dom);
+		int sizeBefore = size();
+		if (sizeBefore == 1)
+			return dom.isPresentValue(firstValue()) || fail();
+		for (int a = first(); a != -1; a = next(a))
+			if (dom.isPresentValue(toVal(a)) == false)
+				removeElementary(a);
+		return afterElementaryCalls(sizeBefore);
 	}
 
-	default boolean removeValues(TypeConditionOperatorSet type, Set<Integer> set) {
-		assert type != null;
-		boolean present = type == IN;
-		if (size() == 1)
-			return set.contains(firstValue()) == present ? fail() : true;
+	default boolean removeValuesNotIn(Domain dom, int offset) {
+		int sizeBefore = size();
+		if (sizeBefore == 1)
+			return dom.isPresentValue(firstValue() - offset) || fail();
+		for (int a = first(); a != -1; a = next(a))
+			if (dom.isPresentValue(toVal(a) - offset) == false)
+				removeElementary(a);
+		return afterElementaryCalls(sizeBefore);
+	}
+
+	default boolean removeValuesAtOffsetNE(int k, Domain dom) {
 		int sizeBefore = size();
 		for (int a = first(); a != -1; a = next(a))
-			if (set.contains(toVal(a)) == present)
+			if (!dom.isPresentValue(k - toVal(a)))
 				removeElementary(a);
+		return afterElementaryCalls(sizeBefore);
+	}
+
+	default boolean removeValuesAtDistanceNE(int k, Domain dom) {
+		int sizeBefore = size();
+		for (int a = first(); a != -1; a = next(a)) {
+			int va = toVal(a);
+			if (!dom.isPresentValue(va + k) && !dom.isPresentValue(va - k))
+				removeElementary(a);
+		}
+		return afterElementaryCalls(sizeBefore);
+	}
+
+	default boolean removeValuesAtDistanceGT(int k, Domain dom) {
+		int sizeBefore = size();
+		boolean overk = k * 2 < dom.size();
+		extern: for (int a = first(); a != -1; a = next(a)) {
+			int va = toVal(a);
+			if (dom.isPresentValue(va))
+				continue;
+			if (overk) {
+				for (int i = 1; i <= k; i++)
+					if (dom.isPresentValue(va + k) || dom.isPresentValue(va - k))
+						continue extern;
+			} else
+				for (int b = dom.first(); b != -1; b = dom.next(b)) {
+					if (Math.abs(va - dom.toVal(b)) <= k)
+						continue extern;
+				}
+			removeElementary(a);
+		}
 		return afterElementaryCalls(sizeBefore);
 	}
 
 	default boolean removeValuesIn(Set<Integer> set) {
 		int sizeBefore = size();
+		if (sizeBefore == 1)
+			return !set.contains(firstValue()) || fail();
 		if (size() < set.size()) {
 			for (int a = first(); a != -1; a = next(a))
 				if (set.contains(toVal(a)))
@@ -586,6 +589,16 @@ public interface Domain extends LinkedSet {
 				if (isPresentValue(v))
 					removeElementary(toIdx(v));
 		}
+		return afterElementaryCalls(sizeBefore);
+	}
+
+	default boolean removeValuesNotIn(Set<Integer> set) {
+		int sizeBefore = size();
+		if (sizeBefore == 1)
+			return set.contains(firstValue()) || fail();
+		for (int a = first(); a != -1; a = next(a))
+			if (set.contains(toVal(a)) == false)
+				removeElementary(a);
 		return afterElementaryCalls(sizeBefore);
 	}
 
@@ -599,9 +612,9 @@ public interface Domain extends LinkedSet {
 		return afterElementaryCalls(sizeBefore);
 	}
 
-	default boolean removeValues(TypeConditionOperatorSet type, int start, int stop) {
-		assert type != null;
-		Kit.control(type == IN, () -> "NOTIN not currently implemented");
+	default boolean removeValuesInRange(int start, int stop) {
+		if (start >= stop)
+			return true;
 		int first = firstValue(), last = lastValue();
 		int v = Math.max(start, first);
 		int limit = Math.min(stop - 1, last);
@@ -621,14 +634,10 @@ public interface Domain extends LinkedSet {
 		return afterElementaryCalls(sizeBefore);
 	}
 
-	default boolean removeValuesInRange(int start, int stop) {
-		return removeValues(IN, start, stop);
-	}
-
 	default boolean removeIndexesChecking(Predicate<Integer> p) {
-		if (size() == 1)
-			return p.test(first()) ? fail() : true;
 		int sizeBefore = size();
+		if (sizeBefore == 1)
+			return !p.test(first()) || fail();
 		for (int a = first(); a != -1; a = next(a))
 			if (p.test(a))
 				removeElementary(a);
@@ -721,6 +730,38 @@ public interface Domain extends LinkedSet {
 	}
 
 }
+
+// default boolean removeValuesOld(TypeOperatorRel type, long limit, int coeff) {
+// // OLD ALTERNATIVE: keep it the time to be sure that the code above is correct
+// int sizeBefore = size();
+// switch (type) {
+// case LT:
+// limit = limit != Long.MIN_VALUE ? limit - 1 : limit;
+// case LE:
+// if (size() == 1)
+// return coeff * firstValue() <= limit ? fail() : true;
+// if (coeff > 0)
+// for (int a = first(); a != -1 && coeff * toVal(a) <= limit; a = next(a))
+// removeElementary(a);
+// else
+// for (int a = last(); a != -1 && coeff * toVal(a) <= limit; a = prev(a))
+// removeElementary(a);
+// break;
+// case GT:
+// limit = limit != Long.MAX_VALUE ? limit + 1 : limit;
+// case GE:
+// if (size() == 1)
+// return coeff * firstValue() >= limit ? fail() : true;
+// if (coeff > 0)
+// for (int a = last(); a != -1 && coeff * toVal(a) >= limit; a = prev(a)) {
+// removeElementary(a);
+// }
+// else
+// for (int a = first(); a != -1 && coeff * toVal(a) >= limit; a = next(a))
+// removeElementary(a);
+// }
+// return afterElementaryCalls(sizeBefore);
+// }
 
 // /**
 // * Removes the specified value, if present. <br />

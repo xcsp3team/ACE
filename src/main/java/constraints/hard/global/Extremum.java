@@ -221,7 +221,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 	public static abstract class ExtremumCst extends Extremum implements OptimizationCompatible, TagSymmetric {
 
-		protected long limit;
+		protected int limit;
 
 		protected boolean entailed;
 
@@ -242,12 +242,11 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 		@Override
 		public final void setLimit(long newLimit) {
-			Kit.control(Integer.MIN_VALUE <= newLimit && newLimit <= Integer.MAX_VALUE);
-			this.limit = (int) newLimit;
+			this.limit = Math.toIntExact(newLimit);
 			entailed = false;
 		}
 
-		public ExtremumCst(Problem pb, Variable[] list, long limit) {
+		public ExtremumCst(Problem pb, Variable[] list, int limit) {
 			super(pb, list);
 			this.limit = limit;
 		}
@@ -259,7 +258,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 				return Stream.of(doms).mapToInt(dom -> dom.uniqueValue()).max().getAsInt();
 			}
 
-			public MaximumCst(Problem pb, Variable[] scp, long limit) {
+			public MaximumCst(Problem pb, Variable[] scp, int limit) {
 				super(pb, scp, limit);
 			}
 
@@ -270,7 +269,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 					return IntStream.of(vals).max().getAsInt() <= limit;
 				}
 
-				public MaximumCstLE(Problem pb, Variable[] scp, long limit) {
+				public MaximumCstLE(Problem pb, Variable[] scp, int limit) {
 					super(pb, scp, limit);
 				}
 
@@ -297,7 +296,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 				private int sentinel1, sentinel2;
 
-				public MaximumCstGE(Problem pb, Variable[] scp, long limit) {
+				public MaximumCstGE(Problem pb, Variable[] scp, int limit) {
 					super(pb, scp, limit);
 					sentinel1 = 0;
 					sentinel2 = scp.length - 1;
@@ -346,7 +345,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 				return Stream.of(doms).mapToInt(dom -> dom.uniqueValue()).min().getAsInt();
 			}
 
-			public MinimumCst(Problem pb, Variable[] scp, long limit) {
+			public MinimumCst(Problem pb, Variable[] scp, int limit) {
 				super(pb, scp, limit);
 			}
 
@@ -359,7 +358,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 				private int sentinel1, sentinel2;
 
-				public MinimumCstLE(Problem pb, Variable[] scp, long limit) {
+				public MinimumCstLE(Problem pb, Variable[] scp, int limit) {
 					super(pb, scp, limit);
 					sentinel1 = 0;
 					sentinel2 = scp.length - 1;
@@ -405,7 +404,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 					return IntStream.of(vals).min().getAsInt() >= limit;
 				}
 
-				public MinimumCstGE(Problem pb, Variable[] scp, long limit) {
+				public MinimumCstGE(Problem pb, Variable[] scp, int limit) {
 					super(pb, scp, limit);
 				}
 

@@ -184,14 +184,12 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 
 	public static final int nInitValuesFor(Variable... vars) {
 		long l = Stream.of(vars).mapToLong(x -> x.dom.initSize()).sum();
-		Kit.control(0 < l && l <= Integer.MAX_VALUE);
-		return (int) l;
+		return Math.toIntExact(l);
 	}
 
 	public static int nValidValuesFor(Variable... vars) {
 		long l = Stream.of(vars).mapToLong(x -> x.dom.size()).sum();
-		Utilities.control(0 < l && l <= Integer.MAX_VALUE, "l= " + l);
-		return (int) l;
+		return Math.toIntExact(l);
 	}
 
 	// no overflow possible because at construction time, we check that the nb of values is less than Integer.MAX_VALUE

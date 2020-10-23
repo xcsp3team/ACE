@@ -12,8 +12,6 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.xcsp.common.Types.TypeConditionOperatorSet;
-
 import constraints.hard.CtrGlobal;
 import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.TagFilteringCompleteAtEachCall;
@@ -164,7 +162,7 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 					assert slots[k].height != 0;
 					int rs = slots[k].start, re = slots[k].end;
 					if (me <= ms || me <= rs || re <= ms) { // if no mandatory part or if the rectangle and the mandatory parts are disjoint
-						if (scp[i].dom.removeValues(TypeConditionOperatorSet.IN, rs - lengths[i] + 1, re) == false)
+						if (scp[i].dom.removeValuesInRange(rs - lengths[i] + 1, re) == false)
 							return false;
 					} else {
 						// something else ?

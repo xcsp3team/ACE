@@ -3,7 +3,7 @@ package problem;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingLong;
 import static org.xcsp.common.Constants.ALL;
-import static org.xcsp.common.Constants.PLUS_INFINITY;
+import static org.xcsp.common.Constants.PLUS_INFINITY_INT;
 import static org.xcsp.common.Constants.STAR;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.EQ;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.GE;
@@ -192,12 +192,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Term[] terms = new Term[Math.min(scp.length, 2 * LIM)];
 		if (terms.length == scp.length)
 			for (int i = 0; i < terms.length; i++)
-				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * scp[i].dom.highestValueDistance(), scp[i]);
+				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * scp[i].dom.intervalValue(), scp[i]);
 		else {
 			for (int i = 0; i < LIM; i++)
-				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * scp[i].dom.highestValueDistance(), scp[i]);
+				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * scp[i].dom.intervalValue(), scp[i]);
 			for (int i = 0; i < LIM; i++)
-				terms[LIM + i] = new Term((coeffs == null ? 1 : coeffs[scp.length - 1 - i]) * scp[scp.length - 1 - i].dom.highestValueDistance(),
+				terms[LIM + i] = new Term((coeffs == null ? 1 : coeffs[scp.length - 1 - i]) * scp[scp.length - 1 - i].dom.intervalValue(),
 						scp[scp.length - 1 - i]);
 		}
 		terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new); // we discard terms of small coeffs
@@ -2257,8 +2257,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	private boolean switchToSatisfaction(TypeOptimization opt, TypeObjective obj, int[] coeffs, IVar... list) {
-		long limit = rs.cp.settingGeneral.limitForSatisfaction;
-		if (limit == PLUS_INFINITY)
+		int limit = rs.cp.settingGeneral.limitForSatisfaction;
+		if (limit == PLUS_INFINITY_INT)
 			return false;
 		framework = TypeFramework.CSP;
 		rs.cp.settingGeneral.framework = TypeFramework.CSP;
@@ -2280,7 +2280,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				else if (obj == MAXIMUM)
 					forall(range(list.length), i -> lessEqual(list[i], limit));
 				else
-					addCtr(new NValuesLE(this, translate(list), (int) limit));
+					addCtr(new NValuesLE(this, translate(list), limit));
 			} else {
 				if (obj == SUM)
 					addCtr(new SumSimpleGE(this, translate(list), limit));
@@ -2289,7 +2289,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				else if (obj == MAXIMUM)
 					addCtr(new MaximumCstGE(this, translate(list), limit));
 				else
-					addCtr(new NValuesGE(this, translate(list), (int) limit));
+					addCtr(new NValuesGE(this, translate(list), limit));
 			}
 		}
 		return true;

@@ -28,7 +28,7 @@ public abstract class SumScalarBoolean extends CtrGlobal {
 
 	protected final int half; // number of terms (products) on the left
 
-	protected long min, max; // used to store computed bounds when filtering
+	protected int min, max; // used to store computed bounds when filtering
 	protected final SetDense set01vs1; // used to store the indexes of terms such that one variable has domain {0,1} and the other domain {1}
 
 	public SumScalarBoolean(Problem pb, Variable[] list, Variable[] coeffs, Variable limit) {
