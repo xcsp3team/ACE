@@ -65,7 +65,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 				sentinels[a] = findSentinelFor(domExt.toVal(a));
 			for (int a = domExt.first(); a != -1; a = domExt.next(a))
 				if (sentinels[a] == null)
-					domExt.removeValueAtConstructionTime(domExt.toVal(a));
+					domExt.removeAtConstructionTime(a);
 			Kit.control(list.length > 1 && Stream.of(list).noneMatch(x -> x == ext), () -> "vector length = " + list.length);
 		}
 

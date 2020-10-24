@@ -17,9 +17,9 @@ import constraints.hard.CtrExtension;
 import constraints.hard.extension.structures.ExtensionStructureHard;
 import constraints.hard.extension.structures.Table;
 import interfaces.FilteringGlobal;
+import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.TagGACGuaranteed;
 import interfaces.TagPositive;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import problem.Problem;
 import utility.Kit;
 import utility.sets.SetDenseReversible;
@@ -86,7 +86,7 @@ public class CtrExtensionGAC4 extends CtrExtension implements FilteringGlobal, T
 			SetDenseReversible[] set = sups[i];
 			dom.execute(a -> {
 				if (set[a].size() == 0)
-					dom.removeValueAtConstructionTime(dom.toVal(a));
+					dom.removeAtConstructionTime(a);
 			});
 		}
 	}

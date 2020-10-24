@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.xcsp.common.Utilities;
 import org.xcsp.modeler.definitions.ICtr;
 
 import constraints.hard.ConflictsStructure;
@@ -573,8 +574,12 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	public abstract boolean controlArcConsistency();
 
+	public void control(boolean conditionToBeRespected, String message) {
+		Utilities.control(conditionToBeRespected, message);
+	}
+
 	public void control(boolean conditionToBeRespected) {
-		Kit.control(conditionToBeRespected);
+		Utilities.control(conditionToBeRespected, "");
 	}
 
 	public StringBuilder signature() {

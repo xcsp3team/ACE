@@ -19,7 +19,6 @@ import interfaces.TagGACGuaranteed;
 import interfaces.TagSymmetric;
 import interfaces.TagUnsymmetric;
 import problem.Problem;
-import utility.Kit;
 import utility.exceptions.UnreachableCodeException;
 import variables.Variable;
 import variables.domains.Domain;
@@ -242,7 +241,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				return dx.removeValuesAtOffsetNE(k, dy) && dy.removeValuesAtOffsetNE(k, dx);
+				return dx.removeValuesWhoseNegationNotIn(dy, -k) && dy.removeValuesWhoseNegationNotIn(dx, -k);
 			}
 		}
 
@@ -391,27 +390,27 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 	public static abstract class CtrPrimitiveBinaryMul extends CtrPrimitiveBinaryWithCst implements TagSymmetric {
 
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
-			// switch (op) {
-			// case LT:
-			// return pb.extension(lt(dist(x, y), k));
-			// case LE:
-			// return pb.extension(le(dist(x, y), k));
-			// case GE:
-			// return pb.addCtr(new DistGE2(pb, x, y, k));
-			// case GT:
-			// return pb.addCtr(new DistGE2(pb, x, y, k + 1));
+			switch (op) {
+			case LT:
+				return pb.addCtr(new MulLE2(pb, x, y, k - 1));
+			case LE:
+				return pb.addCtr(new MulLE2(pb, x, y, k));
+			case GE:
+				return pb.addCtr(new MulGE2(pb, x, y, k));
+			case GT:
+				return pb.addCtr(new MulGE2(pb, x, y, k + 1));
 			// case EQ:
-			// return pb.addCtr(new DistEQ2(pb, x, y, k)); // return pb.extension(eq(dist(x, y), k));
+			// return pb.addCtr(new MulEQ2(pb, x, y, k));
 			// case NE:
-			// return pb.addCtr(new DistNE2(pb, x, y, k));
-			// }
+			// return pb.addCtr(new MulNE2(pb, x, y, k));
+			}
 			throw new UnreachableCodeException();
 		}
 
 		public CtrPrimitiveBinaryMul(Problem pb, Variable x, Variable y, int k) {
 			super(pb, x, y, k);
-			Kit.control(Utilities.isSafeInt(BigInteger.valueOf(dx.firstValue()).multiply(BigInteger.valueOf(dy.firstValue())).longValueExact()));
-			Kit.control(Utilities.isSafeInt(BigInteger.valueOf(dx.lastValue()).multiply(BigInteger.valueOf(dy.lastValue())).longValueExact()));
+			control(Utilities.isSafeInt(BigInteger.valueOf(dx.firstValue()).multiply(BigInteger.valueOf(dy.firstValue())).longValueExact()));
+			control(Utilities.isSafeInt(BigInteger.valueOf(dx.lastValue()).multiply(BigInteger.valueOf(dy.lastValue())).longValueExact()));
 		}
 
 		public static final class MulLE2 extends CtrPrimitiveBinaryMul {
@@ -425,30 +424,227 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 				super(pb, x, y, k);
 			}
 
+			// (3,-5) => -2; (3,10) => 3; (-3,-5) => 2; (-3,10) => -3; (3,0) => 0; (-3,0) => 0
+			// 3y <= -5 => y <= -2; 3y <= 10 => y <= 3; -3y <= -5 => y >= 2; -3y <= 10 => y >= -3; 3y <= 0 => y <= 0; -3y <= 0 => y >= 0
+			private boolean checkLimit(int c, int k, Domain dom) { // c*y <= k
+				if (c == 0)
+					return k >= 0;
+				int cc = c >= 0 ? c : -c;
+				int kk = k >= 0 ? k : -k;
+				int limit = (kk / cc + (k < 0 && kk % cc != 0 ? 1 : 0)) * ((c < 0) != (k < 0) ? -1 : 1);
+				return c > 0 ? dom.firstValue() <= limit : dom.lastValue() >= limit;
+			}
+
+			private boolean revise(Domain d1, Domain d2) {
+				int sizeBefore = d1.size();
+				for (int a = d1.last(); a != -1; a = d1.prev(a)) {
+					int va = d1.toVal(a);
+					if ((va > 0 && d2.firstValue() >= 0 && va * d2.firstValue() <= k) || (va < 0 && d2.lastValue() >= 0 && va * d2.lastValue() <= k))
+						break; // because all values of d1 are necessarily supported
+					if (checkLimit(va, k, d2))
+						continue;
+					d1.removeElementary(a);
+				}
+				return d1.afterElementaryCalls(sizeBefore);
+			}
+
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				// if (k >= 0) {
-				//
-				//
-				// }
-				// for (int a = dx.last(); a != -1; a = dx.prev(a)) {
-				// int va = dx.toVal(a);
-				// if (va < 0)
-				// break;
-				// if (va*dy.firstValue() <= k) {
-				// if (dy.firstValue() >=
-				// }
-				// if (va*dy.firstValue() > k && dx.remove(a) == false)
-				// return false;
-				//
-				// if (!dy.isPresentValue(va + k) && !dy.isPresentValue(va - k) && dx.remove(a) == false)
-				// return false;
-				// }
-				//
+				return revise(dx, dy) && revise(dy, dx);
+			}
+		}
+
+		public static final class MulGE2 extends CtrPrimitiveBinaryMul {
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return t[0] * t[1] >= k;
+			}
+
+			public MulGE2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+			}
+
+			// (3,-5) => -1; (3,10) => 4; (-3,-5) => 1; (-3,10) => -4; (3,0) => 0; (-3,0) => 0
+			// 3y >= -5 => y >= -1; 3y >= 10 => y >= 4; -3y >= -5 => y <= 1; -3y >= 10 => y <= -4; 3y >= 0 => y>= 0; -3y >= 0 => y <= 0
+			private boolean checkLimit(int c, int k, Domain dom) { // c*y >= k
+				if (c == 0)
+					return k <= 0;
+				int cc = c >= 0 ? c : -c;
+				int kk = k >= 0 ? k : -k;
+				int limit = (kk / cc + (k > 0 && kk % cc != 0 ? 1 : 0)) * ((c < 0) != (k < 0) ? -1 : 1);
+				return c > 0 ? dom.lastValue() >= limit : dom.firstValue() <= limit;
+			}
+
+			private boolean revise(Domain d1, Domain d2) {
+				int sizeBefore = d1.size();
+				for (int a = d1.first(); a != -1; a = d1.next(a)) {
+					int va = d1.toVal(a);
+					if ((va > 0 && d2.lastValue() >= 0 && va * d2.lastValue() >= k) || (va < 0 && d2.firstValue() >= 0 && va * d2.firstValue() >= k))
+						break; // because all values of d1 are necessarily supported
+					if (checkLimit(va, k, d2))
+						continue;
+					d1.removeElementary(a);
+				}
+				return d1.afterElementaryCalls(sizeBefore);
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				return revise(dx, dy) && revise(dy, dx);
+			}
+		}
+
+		public static final class MulEQ2 extends CtrPrimitiveBinaryMul {
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return t[0] * t[1] == k;
+			}
+
+			public MulEQ2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+				control(k != 0);
+				for (int a = dx.first(); a != -1; a = dx.next(a)) {
+					int va = dx.toVal(a);
+					if ((va == 0 && k != 0) || (va != 0 && Math.abs(k) % Math.abs(va) != 0))
+						dx.removeAtConstructionTime(a);
+				}
+				for (int b = dy.first(); b != -1; b = dy.next(b)) {
+					int vb = dy.toVal(b);
+					if ((vb == 0 && k != 0) || (vb != 0 && Math.abs(k) % Math.abs(vb) != 0))
+						dy.removeAtConstructionTime(b);
+				}
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
 
 				return true;
 			}
 		}
+
+	}
+
+	// ************************************************************************
+	// ***** Classes for x / y <op> k (CtrPrimitiveBinaryDiv)
+	// ************************************************************************
+
+	public static abstract class CtrPrimitiveBinaryDiv extends CtrPrimitiveBinaryWithCst implements TagSymmetric {
+
+		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
+			switch (op) {
+			case LT:
+				return pb.addCtr(new DivLE2(pb, x, y, k - 1));
+			case LE:
+				return pb.addCtr(new DivLE2(pb, x, y, k));
+			case GE:
+				return pb.addCtr(new DivGE2(pb, x, y, k));
+			case GT:
+				return pb.addCtr(new DivGE2(pb, x, y, k + 1));
+			case EQ:
+				return pb.addCtr(new DivEQ2(pb, x, y, k));
+			// case NE:
+			// return pb.addCtr(new DivNE2(pb, x, y, k));
+			}
+			throw new UnreachableCodeException();
+		}
+
+		public CtrPrimitiveBinaryDiv(Problem pb, Variable x, Variable y, int k) {
+			super(pb, x, y, k);
+			control(dx.firstValue() >= 0 && dy.firstValue() > 0 && k >= 0);
+		}
+
+		public static final class DivLE2 extends CtrPrimitiveBinaryDiv {
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return t[0] / t[1] <= k;
+			}
+
+			public DivLE2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				return dx.removeValuesNumeratorsGT(k, dy.lastValue()) && dy.removeValuesDenumeratorsGT(k, dx.firstValue());
+			}
+		}
+
+		public static final class DivGE2 extends CtrPrimitiveBinaryDiv {
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return t[0] / t[1] >= k;
+			}
+
+			public DivGE2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				return dx.removeValuesNumeratorsLT(k, dy.firstValue()) && dy.removeValuesDenumeratorsLT(k, dx.lastValue());
+			}
+		}
+
+		// Be careful: x/y = k is not equivalent to x/k = y (for example, 13/5 = 2 while 13/2 = 6)
+		public static final class DivEQ2 extends CtrPrimitiveBinaryDiv {
+
+			int[] resx, resy;
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return t[0] / t[1] == k;
+			}
+
+			public DivEQ2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+				this.resx = new int[dx.initSize()];
+				this.resy = new int[dy.initSize()];
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				if ((dx.lastValue() / dy.firstValue() < k) || (dx.firstValue() / dy.lastValue() > k))
+					return dx.fail();
+				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
+					int va = dx.toVal(a);
+					if (dy.isPresent(resx[a]) && va / dy.toVal(resx[a]) == k)
+						continue;
+					for (int b = dy.first(); b != -1; b = dy.next(b)) {
+						int res = va / dy.toVal(b);
+						if (res < k)
+							break;
+						if (res == k) {
+							resx[a] = b;
+							continue extern;
+						}
+					}
+					if (dx.remove(a) == false)
+						return false;
+				}
+				extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
+					int vb = dy.toVal(b);
+					if (dx.isPresent(resy[b]) && dx.toVal(resy[b]) / vb == k)
+						continue;
+					for (int a = dx.first(); a != -1; a = dx.next(b)) {
+						int res = dx.toVal(a) / vb;
+						if (res > k)
+							break;
+						if (res == k) {
+							resy[b] = a;
+							continue extern;
+						}
+					}
+					if (dy.remove(b) == false)
+						return false;
+				}
+				return true;
+			}
+		}
+
 	}
 
 	// ************************************************************************
@@ -479,7 +675,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 
 		public CtrPrimitiveBinaryDist(Problem pb, Variable x, Variable y, int k) {
 			super(pb, x, y, k);
-			Utilities.control(k > 0, "k should be strictly positive");
+			control(k > 0, "k should be strictly positive");
 		}
 
 		public static final class DistLE2 extends CtrPrimitiveBinaryDist {
@@ -545,11 +741,11 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 				super(pb, x, y, k);
 			}
 
-			private boolean revise(Domain dom1, Domain dom2) {
-				if (dom1.size() == 1)
-					return dom2.removeValueIfPresent(dom1.uniqueValue() - k) && dom2.removeValueIfPresent(dom1.uniqueValue() + k);
-				if (dom1.size() == 2 && dom1.intervalValue() == 2 * k)
-					return dom2.removeValueIfPresent(dom1.lastValue() - k);
+			private boolean revise(Domain d1, Domain d2) {
+				if (d1.size() == 1)
+					return d2.removeValueIfPresent(d1.uniqueValue() - k) && d2.removeValueIfPresent(d1.uniqueValue() + k);
+				if (d1.size() == 2 && d1.intervalValue() == 2 * k)
+					return d2.removeValueIfPresent(d1.lastValue() - k);
 				return true;
 			}
 
@@ -586,7 +782,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 
 		public CtrPrimitiveBinaryLog(Problem pb, Variable x, Variable y, int k) {
 			super(pb, x, y, k);
-			Utilities.control(dx.is01(), "The first variable should be of type 01");
+			control(dx.is01(), "The first variable should be of type 01");
 		}
 
 		public static final class LogLE2 extends CtrPrimitiveBinaryLog {

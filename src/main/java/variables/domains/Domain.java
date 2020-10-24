@@ -199,7 +199,7 @@ public interface Domain extends LinkedSet {
 	}
 
 	default boolean is01() {
-		return initSize() == 2 && toIdx(0) == 0 && toIdx(1) == 1;
+		return initSize() == 2 && toVal(0) == 0 && toVal(1) == 1;
 	}
 
 	/**********************************************************************************************
@@ -215,17 +215,25 @@ public interface Domain extends LinkedSet {
 	 * Removes definitively the value at the specified index. <br />
 	 * Important: this method must only called when building the problem.
 	 */
-	default void removeValueAtConstructionTime(int v) {
+	default void removeAtConstructionTime(int a) {
 		control(var().pb.solver == null, () -> "Must be called before the solver being built.");
-		remove(toIdx(v), 0);
+		remove(a, 0);
 		var().pb.nValuesRemoved++;
 		var().pb.stuff.nValuesRemovedAtConstructionTime++;
+	}
+
+	/**
+	 * Removes definitively the value at the specified index. <br />
+	 * Important: this method must only called when building the problem.
+	 */
+	default void removeValueAtConstructionTime(int v) {
+		removeAtConstructionTime(toIdx(v));
 	}
 
 	default void reduceToValueAtConstructionTime(int v) {
 		for (int a = first(); a != -1; a = next(a))
 			if (toVal(a) != v)
-				removeValueAtConstructionTime(toVal(a));
+				removeAtConstructionTime(a);
 	}
 
 	default boolean afterElementaryCalls(int sizeBefore) {
@@ -537,10 +545,12 @@ public interface Domain extends LinkedSet {
 		return afterElementaryCalls(sizeBefore);
 	}
 
-	default boolean removeValuesAtOffsetNE(int k, Domain dom) {
+	default boolean removeValuesWhoseNegationNotIn(Domain dom, int offset) {
 		int sizeBefore = size();
+		if (sizeBefore == 1)
+			return dom.isPresentValue(-firstValue() - offset) || fail();
 		for (int a = first(); a != -1; a = next(a))
-			if (!dom.isPresentValue(k - toVal(a)))
+			if (dom.isPresentValue(-toVal(a) - offset) == false)
 				removeElementary(a);
 		return afterElementaryCalls(sizeBefore);
 	}
@@ -572,6 +582,54 @@ public interface Domain extends LinkedSet {
 						continue extern;
 				}
 			removeElementary(a);
+		}
+		return afterElementaryCalls(sizeBefore);
+	}
+
+	default boolean removeValuesNumeratorsGT(int k, int denominator) {
+		int sizeBefore = size();
+		for (int a = last(); a != -1; a = prev(a)) {
+			int va = toVal(a);
+			if (va / denominator > k)
+				removeElementary(a);
+			else
+				break;
+		}
+		return afterElementaryCalls(sizeBefore);
+	}
+
+	default boolean removeValuesDenumeratorsGT(int k, int numerator) {
+		int sizeBefore = size();
+		for (int a = first(); a != -1; a = next(a)) {
+			int va = toVal(a);
+			if (numerator / va > k)
+				removeElementary(a);
+			else
+				break;
+		}
+		return afterElementaryCalls(sizeBefore);
+	}
+
+	default boolean removeValuesNumeratorsLT(int k, int denominator) {
+		int sizeBefore = size();
+		for (int a = first(); a != -1; a = next(a)) {
+			int va = toVal(a);
+			if (va / denominator < k)
+				removeElementary(a);
+			else
+				break;
+		}
+		return afterElementaryCalls(sizeBefore);
+	}
+
+	default boolean removeValuesDenumeratorsLT(int k, int numerator) {
+		int sizeBefore = size();
+		for (int a = last(); a != -1; a = prev(a)) {
+			int va = toVal(a);
+			if (numerator / va < k)
+				removeElementary(a);
+			else
+				break;
 		}
 		return afterElementaryCalls(sizeBefore);
 	}
