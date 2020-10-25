@@ -32,6 +32,7 @@ public abstract class SumAbstract extends CtrGlobal implements TagFilteringCompl
 	public SumAbstract(Problem pb, Variable[] scp, long limit) {
 		super(pb, scp);
 		this.limit = limit;
+		control(scp.length > 1);
 	}
 
 	/**

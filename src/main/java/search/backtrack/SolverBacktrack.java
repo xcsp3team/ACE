@@ -615,6 +615,10 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	@Override
 	public final void solve() {
+		// for (int[] t : new int[][] { { 10, 2 }, { -10, 2 }, { -10, -2 }, { 10, -2 }, { 12, 5 }, { -12, 5 }, { 12, -5 }, { -12, -5 }, { -5, 7 } })
+		// System.out.println(t[0] / t[1]);
+		// for (int[] t : new int[][] { { 5, 2 }, { 3, -5 }, { 3, 10 }, { -3, -5 }, { -3, 10 } })
+		// System.out.println(CtrPrimitiveBinaryMul.MulGE2.checkLimit(t[0], t[1], pb.variables[0].dom));
 		super.solve();
 		restoreProblem();
 	}

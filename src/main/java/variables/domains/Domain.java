@@ -535,12 +535,36 @@ public interface Domain extends LinkedSet {
 		return afterElementaryCalls(sizeBefore);
 	}
 
-	default boolean removeValuesNotIn(Domain dom, int offset) {
+	// default boolean removeValues(Domain dom, Predicate<Integer> predicate) {
+	// int sizeBefore = size();
+	// for (int a = first(); a != -1; a = next(a))
+	// if (dom.isPresentValue(toVal(a) - offset) == false)
+	// removeElementary(a);
+	// return afterElementaryCalls(sizeBefore);
+	// }
+
+	default boolean removeValuesNotSummation(Domain dom, int offset) {
 		int sizeBefore = size();
-		if (sizeBefore == 1)
-			return dom.isPresentValue(firstValue() - offset) || fail();
 		for (int a = first(); a != -1; a = next(a))
 			if (dom.isPresentValue(toVal(a) - offset) == false)
+				removeElementary(a);
+		return afterElementaryCalls(sizeBefore);
+	}
+
+	default boolean removeValuesNotMultiple(Domain dom, int coeff) {
+		assert iterateOnValuesStoppingWhen(v -> v != 0 && v % coeff != 0) == false; // we assume that trivial inconsistent values have been deleted
+																					// initially (for code efficiency, avoiding systematic check)
+		int sizeBefore = size();
+		for (int a = first(); a != -1; a = next(a))
+			if (dom.isPresentValue(toVal(a) / coeff) == false)
+				removeElementary(a);
+		return afterElementaryCalls(sizeBefore);
+	}
+
+	default boolean removeValuesNotDivisor(Domain dom, int coeff) {
+		int sizeBefore = size();
+		for (int a = first(); a != -1; a = next(a))
+			if (dom.isPresentValue(toVal(a) * coeff) == false)
 				removeElementary(a);
 		return afterElementaryCalls(sizeBefore);
 	}
@@ -599,6 +623,7 @@ public interface Domain extends LinkedSet {
 	}
 
 	default boolean removeValuesDenumeratorsGT(int k, int numerator) {
+		assert !isPresentValue(0);
 		int sizeBefore = size();
 		for (int a = first(); a != -1; a = next(a)) {
 			int va = toVal(a);
