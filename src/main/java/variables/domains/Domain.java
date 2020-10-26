@@ -590,6 +590,16 @@ public interface Domain extends LinkedSet {
 		return afterElementaryCalls(sizeBefore);
 	}
 
+	default boolean removeValuesMulNotIn(Domain dom, int coeff) {
+		int sizeBefore = size();
+		if (sizeBefore == 1)
+			return dom.isPresentValue(firstValue() * coeff) || fail();
+		for (int a = first(); a != -1; a = next(a))
+			if (!dom.isPresentValue(toVal(a) * coeff))
+				removeElementary(a);
+		return afterElementaryCalls(sizeBefore);
+	}
+
 	default boolean removeValuesDivNotIn(Domain dom, int coeff) {
 		int sizeBefore = size();
 		if (sizeBefore == 1)
@@ -600,12 +610,22 @@ public interface Domain extends LinkedSet {
 		return afterElementaryCalls(sizeBefore);
 	}
 
-	default boolean removeValuesMulNotIn(Domain dom, int coeff) {
+	default boolean removeValuesModIn(Domain dom, int coeff) {
 		int sizeBefore = size();
 		if (sizeBefore == 1)
-			return dom.isPresentValue(firstValue() * coeff) || fail();
+			return !dom.isPresentValue(firstValue() % coeff) || fail();
 		for (int a = first(); a != -1; a = next(a))
-			if (!dom.isPresentValue(toVal(a) * coeff))
+			if (dom.isPresentValue(toVal(a) % coeff))
+				removeElementary(a);
+		return afterElementaryCalls(sizeBefore);
+	}
+
+	default boolean removeValuesModNotIn(Domain dom, int coeff) {
+		int sizeBefore = size();
+		if (sizeBefore == 1)
+			return dom.isPresentValue(firstValue() % coeff) || fail();
+		for (int a = first(); a != -1; a = next(a))
+			if (!dom.isPresentValue(toVal(a) % coeff))
 				removeElementary(a);
 		return afterElementaryCalls(sizeBefore);
 	}
@@ -779,20 +799,35 @@ public interface Domain extends LinkedSet {
 		if (start >= stop)
 			return true;
 		int first = firstValue(), last = lastValue();
-		int v = Math.max(start, first);
-		int limit = Math.min(stop - 1, last);
-		if (v == first && limit == last)
-			return fail();
-		while (!isPresentValue(v) && v <= limit)
-			v++;
-		if (v > limit)
+		if (start > last || stop < first)
+			return true; // because there is no overlapping
+		int left = Math.max(start, first);
+		int right = Math.min(stop - 1, last);
+		if (left == first) {
+			if (right == last)
+				return fail(); // because the domain is contained in the range
+		} else if (!isPresentValue(left)) { // we know that first < start <= last, and start < stop, so start <= right
+			// finding the first value in the domain contained in the range
+			if (size() < (right - left))
+				for (int a = first(); a != -1; a = next(a)) {
+					left = toVal(a);
+					if (left >= start)
+						break;
+				}
+			else {
+				left++;
+				while (!isPresentValue(left) && left <= right)
+					left++;
+			}
+		}
+		if (left > right)
 			return true;
 		int sizeBefore = size();
-		for (int a = toIdx(v); a != -1; a = next(a)) {
-			v = toVal(a);
-			if (v > limit)
+		for (int a = toIdx(left); a != -1; a = next(a)) {
+			left = toVal(a);
+			if (left > right)
 				break;
-			removeValue(v);
+			removeValue(left);
 		}
 		return afterElementaryCalls(sizeBefore);
 	}

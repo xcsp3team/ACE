@@ -138,13 +138,26 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 		return Integer.MAX_VALUE;
 	}
 
+	public final static int UNITIALIZED = -1;
+
 	// ************************************************************************
 	// ***** Root class and Disjonctive
 	// ************************************************************************
 
 	protected final Variable x, y;
 
-	protected final Domain dx, dy;
+	protected final Domain dx, dy; // domains of x and y
+
+	protected int[] rx, ry; // residues for x and y
+
+	protected void buildResiduesForFirstVariable() {
+		this.rx = Kit.repeat(UNITIALIZED, dx.initSize());
+	}
+
+	protected void buildResiduesForBothVariables() {
+		this.rx = Kit.repeat(UNITIALIZED, dx.initSize());
+		this.ry = Kit.repeat(UNITIALIZED, dy.initSize());
+	}
 
 	public CtrPrimitiveBinary(Problem pb, Variable x, Variable y) {
 		super(pb, pb.api.vars(x, y));
@@ -720,8 +733,6 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 		// Be careful: x/y = k is not equivalent to x/k = y (for example, 13/5 = 2 while 13/2 = 6)
 		public static final class DivEQ2 extends CtrPrimitiveBinaryDiv {
 
-			int[] resx, resy;
-
 			@Override
 			public boolean checkValues(int[] t) {
 				return t[0] / t[1] == k;
@@ -729,8 +740,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 
 			public DivEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
-				this.resx = new int[dx.initSize()];
-				this.resy = new int[dy.initSize()];
+				buildResiduesForBothVariables();
 			}
 
 			@Override
@@ -739,14 +749,14 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 					return dx.fail();
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 					int va = dx.toVal(a);
-					if (dy.isPresent(resx[a]) && va / dy.toVal(resx[a]) == k)
+					if (rx[a] != UNITIALIZED && dy.isPresent(rx[a]))
 						continue;
 					for (int b = dy.first(); b != -1; b = dy.next(b)) {
 						int res = va / dy.toVal(b);
 						if (res < k)
 							break;
 						if (res == k) {
-							resx[a] = b;
+							rx[a] = b;
 							continue extern;
 						}
 					}
@@ -755,14 +765,14 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 				}
 				extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
 					int vb = dy.toVal(b);
-					if (dx.isPresent(resy[b]) && dx.toVal(resy[b]) / vb == k)
+					if (ry[b] != UNITIALIZED && dx.isPresent(ry[b]))
 						continue;
 					for (int a = dx.first(); a != -1; a = dx.next(b)) {
 						int res = dx.toVal(a) / vb;
 						if (res > k)
 							break;
 						if (res == k) {
-							resy[b] = a;
+							ry[b] = a;
 							continue extern;
 						}
 					}
@@ -792,8 +802,8 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			// return pb.addCtr(new DivbGE2(pb, x, y, k + 1));
 			case EQ:
 				return pb.addCtr(new DivbEQ2(pb, x, y, k));
-			// case NE:
-			// return pb.addCtr(new DivNE2(pb, x, y, k));
+			case NE:
+				return pb.addCtr(new DivbNE2(pb, x, y, k));
 			}
 			throw new UnreachableCodeException();
 		}
@@ -810,43 +820,58 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 				return t[0] == t[1] / k;
 			}
 
-			int[] resx;
-
 			public DivbEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
-				this.resx = Kit.repeat(-1, dx.initSize());
+				buildResiduesForFirstVariable();
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
+				int sizeBefore = dx.size();
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
-					if (resx[a] != -1 && dy.isPresent(resx[a]))
+					if (rx[a] != UNITIALIZED && dy.isPresent(rx[a]))
 						continue;
 					int va = dx.toVal(a);
 					if (dy.size() < k) {
-						for (int b = dy.first(); b != -1; b = dy.next(b)) {
-							if (dy.toVal(b) / k == va) {
-								resx[a] = b;
+						for (int b = dy.first(); b != -1; b = dy.next(b))
+							if (va == dy.toVal(b) / k) {
+								rx[a] = b;
 								continue extern;
 							}
-						}
 					} else {
 						int base = va * k;
 						for (int i = 0; i < k; i++)
 							if (dy.isPresentValue(base + i)) {
-								resx[a] = dy.toIdx(base + i);
+								rx[a] = dy.toIdx(base + i);
 								continue extern;
 							}
 					}
-					if (dx.remove(a) == false)
-						return false;
+					dx.removeElementary(a);
 				}
+				if (dx.afterElementaryCalls(sizeBefore) == false)
+					return false;
 				return dy.removeValuesDivNotIn(dx, k);
-				// for (int b = dy.first(); b != -1; b = dy.next(b)) {
-				// if (dx.isPresentValue(dy.toVal(b) / k) == false && dy.remove(b) == false)
-				// return false;
-				// }
-				// return true;
+			}
+		}
+
+		public static final class DivbNE2 extends CtrPrimitiveBinaryDivb {
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return t[0] != t[1] / k;
+			}
+
+			public DivbNE2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				if (dx.size() == 1 && dy.removeValuesInRange(dx.uniqueValue() * k, dx.uniqueValue() * k + k) == false)
+					return false;
+				if (dy.firstValue() / k == dy.lastValue() / k && dx.removeValueIfPresent(dy.firstValue() / k) == false)
+					return false;
+				return true;
 			}
 		}
 	}
@@ -875,21 +900,18 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 				return t[0] % t[1] == k;
 			}
 
-			int[] resx, resy; // residues for values in the domains of x, and y
-
 			public ModEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
+				buildResiduesForBothVariables();
 				dx.removeValuesAtConstructionTimeLT(k); // because the remainder is at most k-1, whatever the value of y
 				dy.removeValuesAtConstructionTimeLE(k); // because the remainder is at most k-1, whatever the value for x
-				this.resx = Kit.repeat(-1, dx.initSize());
-				this.resy = Kit.repeat(-1, dy.initSize());
 				// note that k for x is always supported, whatever the remaining value in y
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
-					if (resx[a] != -1 && dy.isPresent(resx[a]))
+					if (rx[a] != UNITIALIZED && dy.isPresent(rx[a]))
 						continue;
 					int va = dx.toVal(a);
 					if (va == k)
@@ -897,7 +919,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 					for (int b = dy.first(); b != -1; b = dy.next(b)) {
 						int vb = dy.toVal(b);
 						if (va % vb == k) {
-							resx[a] = b;
+							rx[a] = b;
 							continue extern;
 						} else {
 							if (va < vb) // means that the remainder with remaining values of y always lead to va (and it is not k)
@@ -907,7 +929,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 								assert va / vb == 1;
 								if (va - k <= vb || dy.isPresentValue(va - k) == false)
 									break;
-								resx[a] = dy.toVal(va - k);
+								rx[a] = dy.toVal(va - k);
 								continue extern;
 							}
 						}
@@ -916,7 +938,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 						return false;
 				}
 				extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
-					if (resy[b] != -1 && dx.isPresent(resy[b]))
+					if (ry[b] != UNITIALIZED && dx.isPresent(ry[b]))
 						continue;
 					int vb = dy.toVal(b);
 					int nMultiples = dx.lastValue() / vb;
@@ -924,7 +946,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 						for (int a = dx.first(); a != -1; a = dx.next(a)) {
 							int va = dx.toVal(a);
 							if (va % vb == k) {
-								resy[b] = a;
+								ry[b] = a;
 								continue extern;
 							}
 						}
@@ -934,7 +956,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 						while (va <= dx.lastValue()) {
 							assert va % vb == k;
 							if (dx.isPresentValue(va)) {
-								resy[b] = dx.toIdx(va);
+								ry[b] = dx.toIdx(va);
 								continue extern;
 							}
 							va += vb;
@@ -972,26 +994,24 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 				return t[0] == t[1] % k;
 			}
 
-			int[] resx; // residues for values in the domain of x
-
 			public ModbEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
+				buildResiduesForFirstVariable();
 				dx.removeValuesAtConstructionTimeGE(k); // because the remainder is at most k-1, whatever the value of y
-				this.resx = Kit.repeat(-1, dx.initSize());
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 					int va = dx.toVal(a);
-					if (resx[a] != -1 && dy.isPresent(resx[a]))
+					if (rx[a] != UNITIALIZED && dy.isPresent(rx[a]))
 						continue;
 					int nMultiples = dy.lastValue() / k;
 					if (dy.size() <= nMultiples) {
 						for (int b = dy.first(); b != -1; b = dy.next(b)) {
 							int vb = dy.toVal(b);
 							if (vb % k == va) {
-								resx[a] = b;
+								rx[a] = b;
 								continue extern;
 							}
 						}
@@ -1000,7 +1020,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 						while (vb <= dy.lastValue()) {
 							assert vb % k == va;
 							if (dy.isPresentValue(vb)) {
-								resx[a] = dy.toIdx(vb);
+								rx[a] = dy.toIdx(vb);
 								continue extern;
 							}
 							vb += k;
@@ -1017,6 +1037,51 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 				return true;
 			}
 		}
+
+		public static final class ModbNE2 extends CtrPrimitiveBinaryModb {
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return t[0] != t[1] % k;
+			}
+
+			int watch1 = -1, watch2 = -1;
+
+			private int findWatch(int other) {
+				for (int b = dy.first(); b != -1; b = dy.next(b))
+					if (dy.toVal(b) % k != other)
+						return b;
+				return -1;
+			}
+
+			public ModbNE2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				// we should use entailment to avoid making systematically O(d)
+
+				if (dx.size() == 1)
+					return dy.removeValuesModIn(dx, k);
+				if (watch1 == -1 || !dy.isPresent(watch1))
+					watch1 = findWatch(watch2);
+				if (watch1 == -1) {
+					// watch2 is the only remaining valid watch (we know that it is still valid)
+					assert watch2 != -1 && dy.isPresent(watch2);
+					if (dx.removeValueIfPresent(dy.toVal(watch2) % k) == false)
+						return false;
+				} else {
+					if (watch2 == -1 || !dy.isPresent(watch2))
+						watch2 = findWatch(watch1);
+					if (watch2 == -1)
+						if (dx.removeValueIfPresent(dy.toVal(watch1) % k) == false)
+							return false;
+				}
+				return true;
+			}
+		}
+
 	}
 
 	// ************************************************************************
