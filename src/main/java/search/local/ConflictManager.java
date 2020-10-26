@@ -95,7 +95,7 @@ public class ConflictManager {
 		// if (((CtrHard) ctr).getDependantVariablePosition() == -1 && !((CtrHard) ctr).checkCurrentInstantiation())
 		// addConflictingConstraint(ctr);
 		recomputeEvaluations();
-		if (solver.pb.framework == TypeFramework.COP)
+		if (solver.pb.settings.framework == TypeFramework.COP)
 			currCost = solver.pb.optimizationPilot.value();
 	}
 
@@ -149,7 +149,7 @@ public class ConflictManager {
 			if (evaluation > acceptableEvaluationLimit)
 				break;
 		}
-		if (solver.pb.framework == TypeFramework.COP) {
+		if (solver.pb.settings.framework == TypeFramework.COP) {
 			assert currCostEvolution != null;
 			currCostEvolution = solver.pb.optimizationPilot.value() - currCost;
 		}

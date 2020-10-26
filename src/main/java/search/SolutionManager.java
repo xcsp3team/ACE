@@ -93,7 +93,7 @@ public final class SolutionManager {
 	public String lastSolutionInXmlFormat() { // auxiliary variables are not considered
 		assert found > 0;
 		StringBuilder sb = new StringBuilder("<instantiation id='sol").append(found).append("' type='solution'");
-		sb.append(solver.pb.framework != TypeFramework.CSP ? " cost='" + bestBound + "'" : "").append(">");
+		sb.append(solver.pb.settings.framework != TypeFramework.CSP ? " cost='" + bestBound + "'" : "").append(">");
 		sb.append(" <list> ").append(listVarsWithoutAuxiliary).append(" </list> <values> ").append(vars_values(false, true));
 		String s = sb.append(" </values> </instantiation>").toString();
 		if (lastSolutionXml != null)
@@ -133,6 +133,7 @@ public final class SolutionManager {
 	}
 
 	public void displayFinalResults() {
+		TypeFramework framework = solver.pb.settings.framework;
 		boolean fullExploration = solver.stoppingType == EStopping.FULL_EXPLORATION;
 		synchronized (lock) {
 			if (!lock.get()) {
@@ -144,17 +145,17 @@ public final class SolutionManager {
 					if (found == 0)
 						System.out.println("s UNSATISFIABLE");
 					else
-						System.out.println(solver.pb.framework == TypeFramework.COP ? "s OPTIMUM " + bestBound : "s SATISFIABLE");
+						System.out.println(framework == TypeFramework.COP ? "s OPTIMUM " + bestBound : "s SATISFIABLE");
 				} else {
 					if (found == 0)
 						System.out.println("s UNKNOWN");
 					else
-						System.out.println(solver.pb.framework == TypeFramework.COP ? "s BOUND " + bestBound : "s SATISFIABLE");
+						System.out.println(framework == TypeFramework.COP ? "s SATISFIABLE - BOUND " + bestBound : "s SATISFIABLE");
 				}
 				if (found > 0)
 					System.out.println("\nv " + (lastSolutionXml != null ? lastSolutionXml : lastSolutionInXmlFormat()));
 				System.out.println("\nd WRONG DECISIONS " + solver.stats.nWrongDecisions);
-				if (fullExploration && solver.pb.framework == TypeFramework.CSP)
+				if (fullExploration && framework == TypeFramework.CSP)
 					System.out.println("d NUMBER OF SOLUTIONS " + found);
 				System.out.println(fullExploration ? "d COMPLETE EXPLORATION" : "d INCOMPLETE EXPLORATION");
 				System.out.flush();
@@ -202,7 +203,7 @@ public final class SolutionManager {
 
 		if (solver.propagation.performingProperSearch)
 			return;
-		if (solver.pb.framework == TypeFramework.MAXCSP) {
+		if (solver.pb.settings.framework == TypeFramework.MAXCSP) {
 			int z = (int) Stream.of(solver.pb.constraints).filter(c -> !((CtrHard) c).checkCurrentInstantiation()).count();
 			Kit.control(z < bestBound, () -> "z=" + z + " bb=" + bestBound);
 			bestBound = z;
@@ -219,7 +220,7 @@ public final class SolutionManager {
 		String s = lastSolutionInXmlFormat(); // keep the call separated in order to possibly secure its quick output (see code)
 		if (!solver.rs.cp.settingXml.competitionMode)
 			log.config(" " + s + "\n");
-		if (solver.rs.cp.verbose > 1)
+		if (solver.rs.cp.settingGeneral.verbose > 1)
 			log.config(lastSolutionInJsonFormat(false) + "\n");
 		// solver.pb.api.prettyDisplay(vars_values(false, false).split("\\s+"));
 
@@ -236,7 +237,7 @@ public final class SolutionManager {
 		if (solver instanceof SolverBacktrack) {
 			Variable x = Variable.firstNonSingletonVariableIn(solver.pb.variables);
 			Kit.control(x == null, () -> "Problem with last solution: variable " + x + " has not a unique value");
-			if (solver.pb.framework == TypeFramework.MAXCSP)
+			if (solver.pb.settings.framework == TypeFramework.MAXCSP)
 				return true;
 		}
 		Constraint c = Constraint.firstUnsatisfiedHardConstraint(solver.pb.constraints);

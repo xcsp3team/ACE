@@ -75,7 +75,7 @@ public class RDAC extends RDACAbstract {
 
 	public RDAC(Solver solver) {
 		super(solver);
-		Kit.control(solver.pb.framework == TypeFramework.MAXCSP, () -> "MaxCSP is not indicated in your configuration");
+		Kit.control(solver.pb.settings.framework == TypeFramework.MAXCSP, () -> "MaxCSP is not indicated in your configuration");
 		aic = Variable.litterals(solver.pb.variables).intArray();
 		partitionOfConstraints = new PartitionOfConstraintsMax(solver);
 	}

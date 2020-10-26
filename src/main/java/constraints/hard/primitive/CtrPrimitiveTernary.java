@@ -408,7 +408,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 
 			public ModEQ3(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
-				Kit.control(x.dom.firstValue() >= 0 && y.dom.firstValue() > 0 && z.dom.firstValue() >= 0);
+				control(x.dom.firstValue() >= 0 && y.dom.firstValue() > 0 && z.dom.firstValue() >= 0);
 				this.resx = new int[dx.initSize()];
 				this.resy = new int[dy.initSize()];
 				this.resz1 = Kit.repeat(-1, dz.initSize());

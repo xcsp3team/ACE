@@ -143,7 +143,7 @@ public class TIC4 extends GIC4 {
 		int nTuplesRemoved = 0;
 		for (Constraint ctr : solver.pb.constraints)
 			nTuplesRemoved += filterConstraint(ctr);
-		if (cp().verbose >= 1 && nTuplesRemoved > 0)
+		if (verbose >= 1 && nTuplesRemoved > 0)
 			Kit.log.info("nbTICInconsistentTuples=" + nTuplesRemoved + " at depth=" + solver.depth() + "\n");
 		solver.resetNoSolutions();
 		performingProperSearch = false;

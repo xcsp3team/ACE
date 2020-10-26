@@ -26,8 +26,8 @@ public class TIC1 extends GIC1 {
 
 	public TIC1(Solver solver) {
 		super(solver);
-		Kit.control(
-				solver.rs.cp.settingExperimental.testI1 > 0 || Stream.of(solver.pb.constraints).allMatch(c -> c.getClass().isAssignableFrom(CtrExtensionSTR2.class)));
+		Kit.control(solver.rs.cp.settingExperimental.testI1 > 0
+				|| Stream.of(solver.pb.constraints).allMatch(c -> c.getClass().isAssignableFrom(CtrExtensionSTR2.class)));
 	}
 
 	protected boolean isInverse(Variable[] scope, int[] tuple) {
@@ -106,7 +106,7 @@ public class TIC1 extends GIC1 {
 			int nbTuplesRemoved = 0;
 			for (Constraint ctr : solver.pb.constraints)
 				nbTuplesRemoved += filterConstraint(ctr);
-			if (cp().verbose >= 1 && nbTuplesRemoved > 0)
+			if (verbose >= 1 && nbTuplesRemoved > 0)
 				Kit.log.info("nbTICInconsistentTuples=" + nbTuplesRemoved + " at depth=" + solver.depth() + "\n");
 			solver.resetNoSolutions();
 			performingProperSearch = false;

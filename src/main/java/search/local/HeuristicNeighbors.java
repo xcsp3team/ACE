@@ -46,7 +46,8 @@ public abstract class HeuristicNeighbors {
 
 	public HeuristicNeighbors(SolverLocal solver) {
 		this.solver = solver;
-		this.tabuManager = Reflector.buildObject(solver.rs.cp.settingLocalSearch.classForTabu, TabuManager.class, solver, solver.rs.cp.settingLocalSearch.tabuListSize);
+		this.tabuManager = Reflector.buildObject(solver.rs.cp.settingLocalSearch.classForTabu, TabuManager.class, solver,
+				solver.rs.cp.settingLocalSearch.tabuListSize);
 		this.counters = new int[solver.pb.variables.length];
 		this.random = solver.rs.random;
 	}
@@ -70,11 +71,11 @@ public abstract class HeuristicNeighbors {
 				tieSize = 1;
 				bestIndex = a;
 				localBestEvolution = evolution;
-				if (solver.pb.framework == TypeFramework.COP)
+				if (solver.pb.settings.framework == TypeFramework.COP)
 					bestCost = currentCost.longValue();
 			} else {
 				assert evolution == localBestEvolution;
-				if (solver.pb.framework == TypeFramework.COP) {
+				if (solver.pb.settings.framework == TypeFramework.COP) {
 					if (currentCost > bestCost)
 						continue;
 					if (currentCost < bestCost) {

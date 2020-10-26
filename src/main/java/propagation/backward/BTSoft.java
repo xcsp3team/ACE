@@ -25,7 +25,7 @@ public final class BTSoft extends PropagationBackward implements LowerBoundCapab
 
 	public BTSoft(Solver solver) {
 		super(solver);
-		Kit.control(pb().framework == TypeFramework.MAXCSP, () -> "MaxCSP is not indicated in your settings");
+		Kit.control(solver.pb.settings.framework == TypeFramework.MAXCSP, () -> "MaxCSP is not indicated in your settings");
 	}
 
 	@Override

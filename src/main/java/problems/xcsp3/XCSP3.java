@@ -104,7 +104,7 @@ public class XCSP3 extends ProblemFile implements XCallbacks2 {
 	public void model() {
 		try {
 			// Kit.log.info("Discarded classes " + imp().rs.cp.settingXml.discardedClasses);
-			if (imp().rs.cp.verbose > 1)
+			if (imp().rs.cp.settingGeneral.verbose > 1)
 				XParser.VERBOSE = true;
 			if (imp().rs.cp.settingXml.discardedClasses.indexOf(',') < 0)
 				loadInstance(currFileName(), imp().rs.cp.settingXml.discardedClasses);
@@ -124,11 +124,8 @@ public class XCSP3 extends ProblemFile implements XCallbacks2 {
 
 	@Override
 	public void beginInstance(TypeFramework type) {
-		if (type == TypeFramework.COP) { // && this.framework == TypeFramework.CSP) {
-			imp().rs.cp.settingGeneral.framework = TypeFramework.COP;
-			imp().rs.cp.settingGeneral.nSearchedSolutions = Long.MAX_VALUE;
-			imp().framework = TypeFramework.COP;
-		}
+		if (type == TypeFramework.COP)
+			imp().rs.cp.toCOP();
 	}
 
 	private void copyBasicAttributes(ModelingEntity entity, ParsingEntry entry) {
@@ -353,7 +350,7 @@ public class XCSP3 extends ProblemFile implements XCallbacks2 {
 
 	@Override
 	public void buildCtrFalse(String id, XVar[] list) {
-		if (imp().framework == TypeFramework.MAXCSP)
+		if (imp().settings.framework == TypeFramework.MAXCSP)
 			imp().addCtr(new CtrFalse(imp(), trVars(Stream.of(list).map(x -> (XVarInteger) x).toArray(XVarInteger[]::new))));
 		// extension((VarInteger[]) trVars(Stream.of(list).map(x -> (XVarInteger) x).toArray(XVarInteger[]::new)), new int[][] { {} });
 		else

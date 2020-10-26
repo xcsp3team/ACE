@@ -44,7 +44,7 @@ public abstract class SingletonConsistency extends StrongConsistency {
 				if (solver.finished())
 					return true;
 			}
-			if (cp().verbose > 1)
+			if (verbose > 1)
 				displayPassInfo(cnt, nEffectiveSingletonTests - nBefore, nEffectiveSingletonTests - nBefore == 0);
 			if (nBefore == nEffectiveSingletonTests)
 				break;

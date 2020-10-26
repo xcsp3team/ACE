@@ -67,7 +67,7 @@ public class Weak1 extends StrongConsistency implements TagExperimental {
 		} else {
 			for (int a = dom.first(); a != -1;) {
 				int b = dom.next(a);
-				if (cp().verbose > 2)
+				if (verbose > 2)
 					Kit.log.finest("try " + x + " " + a);
 				// if (initializeWeights)
 				// pb().resetWdeg();
@@ -93,7 +93,7 @@ public class Weak1 extends StrongConsistency implements TagExperimental {
 				((SolverBacktrack) solver).heuristicVars.setPriorityVars(priorityVariable, 1);
 				int nbRemovals = performInferencesFrom(x);
 				((SolverBacktrack) solver).heuristicVars.resetPriorityVars();
-				if (cp().verbose > 2)
+				if (verbose > 2)
 					Kit.log.info("   check of " + x + " give " + nbRemovals + " removals");
 				if (nbRemovals > 0) {
 					nbTotalRemovals += nbRemovals;
@@ -105,7 +105,7 @@ public class Weak1 extends StrongConsistency implements TagExperimental {
 				if (solver.finished())
 					return true;
 			}
-			if (cp().verbose > 1)
+			if (verbose > 1)
 				Kit.log.info("Weak1 Pass " + cnt + " nbTotalRemovals=" + nbTotalRemovals + " nbValuesRemoved=" + Variable.nRemovedValuesFor(solver.pb.variables)
 						+ (nbTotalRemovals == 0 ? "\n" : ""));
 			if (nbTotalRemovals == 0)

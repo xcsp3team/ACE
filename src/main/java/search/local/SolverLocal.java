@@ -152,9 +152,9 @@ public final class SolverLocal extends Solver {
 			// conflictManager.displayConflictingConstraints();
 			// }
 			if (conflictManager.nConflictingConstraints() == 0) {
-				if (pb.framework != TypeFramework.COP || pb.optimizationPilot.value() < solManager.bestBound)
+				if (pb.settings.framework != TypeFramework.COP || pb.optimizationPilot.value() < solManager.bestBound)
 					solManager.handleNewSolution(true);
-				if (!finished() && pb.framework == TypeFramework.CSP)
+				if (!finished() && pb.settings.framework == TypeFramework.CSP)
 					buildInitialCompleteInstantiation();
 			}
 			if (finished())

@@ -78,7 +78,7 @@ public class GIC1 extends StrongConsistency {
 	}
 
 	protected void after(long nSolutionsBefore, int nValuesRemoved) {
-		if (cp().verbose >= 1) // && nbValuesRemoved > 0)
+		if (verbose >= 1) // && nbValuesRemoved > 0)
 			Kit.log.info("nbGICInconsistentValues=" + nValuesRemoved + " at depth=" + solver.depth() + " for " + nInverseTests[solver.depth()] + " tests");
 		solver.resetNoSolutions();
 		solver.solManager.found = nSolutionsBefore;

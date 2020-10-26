@@ -152,8 +152,8 @@ import constraints.hard.global.SumWeighted.SumWeightedLE;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub.SubNE2;
 import constraints.hard.primitive.CtrPrimitiveBinary.Disjonctive;
+import dashboard.ControlPanel.SettingGeneral;
 import dashboard.ControlPanel.SettingVars;
-import dashboard.Output;
 import executables.Resolution;
 import heuristics.values.HeuristicValues;
 import heuristics.values.HeuristicValuesDirect.First;
@@ -216,10 +216,10 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public void onConstructionProblemFinished() {
-		Kit.control(Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints), () -> "Non normalized nums in the problem");
+		control(Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints), "Non normalized nums in the problem");
 		for (Variable x : variables) {
 			x.dom.finalizeConstructionWith(variables.length + 1);
-			Kit.control(Stream.of(x.ctrs).noneMatch(c -> c.num == -1), () -> "Pb with a non posted constraint ");
+			control(Stream.of(x.ctrs).noneMatch(c -> c.num == -1), "Pb with a non posted constraint ");
 		}
 		Set<String> allIds = new HashSet<>();
 		for (Variable x : variables) {
@@ -227,7 +227,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			Kit.control(!allIds.contains(name));
 			allIds.add(name);
 		}
-		Kit.control((framework == TypeFramework.COP) == (optimizationPilot != null), () -> "Not a COP " + framework + " " + (optimizationPilot == null));
+		control((settings.framework == TypeFramework.COP) == (optimizationPilot != null),
+				"Not a COP " + settings.framework + " " + (optimizationPilot == null));
 		if (rs.cp.settingExperimental.save4Baudouin)
 			Stream.of(constraints).forEach(c -> ((CtrHard) c).save4Baudouin());
 		if (priorityVars.length == 0 && annotations.decision != null)
@@ -235,7 +236,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 		boolean strong = false;
 
-		if (framework == TypeFramework.COP && rs.cp.settingValh.optValHeuristic) {
+		if (settings.framework == TypeFramework.COP && rs.cp.settingValh.optValHeuristic) {
 			Constraint c = ((Constraint) optimizationPilot.ctr);
 			if (c instanceof ObjVar) {
 				Variable x = c.scp[0];
@@ -328,11 +329,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	public final Resolution rs;
 
-	/**
-	 * The kind of problem, i.e. the framework (CSP, COP, WCSP, ...) to which it belongs. Alias for resolution.cfg.framework.
-	 */
-	public TypeFramework framework;
-
 	/** The solver used to solve the problem. Alias for rs.solver. */
 	public Solver solver;
 
@@ -384,6 +380,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 */
 	public final Collection<ObserverDomainReduction> observersDomainReduction = new ArrayList<>();
 
+	public final SettingGeneral settings;
+
 	// ************************************************************************
 	// ***** Parameters
 	// ************************************************************************
@@ -406,7 +404,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Integer v = Utilities.toInteger(ask(message));
 		Utilities.control(v != null, "Value " + v + " for " + message + " is not valid (not an integer)");
 		v += (incrementWhenSeries ? rs.instanceNumber : 0);
-		Utilities.control(control == null || control.test(v), "Value " + v + " for " + message + " does not respect the control " + control);
+		control(control == null || control.test(v), "Value " + v + " for " + message + " does not respect the control " + control);
 		return (Integer) addParameter(v, format == null ? null : format.apply(v));
 	}
 
@@ -440,7 +438,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 */
 	public void removeCtr(Constraint c) {
 		// System.out.println("removed " + c + "size=" + stuff.collectedCtrsAtInit.size());
-		Kit.control(constraints == null, () -> "too late");
+		control(constraints == null, "too late");
 		stuff.collectedCtrsAtInit.remove(c);
 		// maybe was not present
 		Stream.of(c.scp).forEach(x -> x.collectedCtrs.remove(c));
@@ -469,13 +467,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// return ctrEntities.new CtrAloneDummy("Discarded constraint due to the set of selected variables");
 		// }
 		// }
-		if (stuff.collectedCtrsAtInit.isEmpty()) // first call
-			System.out.println("\n" + Output.COMMENT_PREFIX + "Loading constraints...");
-		if (rs.cp.verbose > 1 && !rs.cp.settingXml.competitionMode) {
-			int n = stuff.collectedCtrsAtInit.size(), nDigits = (int) Math.log10(n) + 1;
-			IntStream.range(0, nDigits).forEach(i -> System.out.print("\b"));
-			System.out.print((n + 1) + "");
-		}
 
 		c.num = stuff.addCollectedConstraint(c);
 		// System.out.println("adding " + c);
@@ -483,14 +474,14 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	public void annotateVarhStatic(Variable[] vars) {
-		if (rs.cp.settingGeneral.enableAnnotations) {
+		if (settings.enableAnnotations) {
 			priorityVars = vars;
 			nStrictPriorityVars = priorityVars.length;
 		}
 	}
 
 	public void annotateValh(Var[] vars, Class<? extends HeuristicValues> clazz) {
-		if (rs.cp.settingGeneral.enableAnnotations) {
+		if (settings.enableAnnotations) {
 			Stream.of(vars)
 					.forEach(x -> ((Variable) x).heuristicVal = Reflector.buildObject(clazz.getSimpleName(), HeuristicValues.class, new Object[] { x, null }));
 		}
@@ -506,12 +497,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Stream.of(constraints).forEach(c -> c.ignored = false);
 		// stuff = new ProblemStuff(this); // TODO reset or building a new object ?
 		nTuplesRemoved = nValuesRemoved = 0;
-		if (rs.cp.verbose > 0)
-			Kit.log.info("Reset of problem instance");
+		if (settings.verbose > 0)
+			log.info("Reset of problem instance");
 	}
 
 	public void reduceTo(boolean[] presentVariables, boolean[] presentConstraints) {
-		Kit.control(symmetryGroupGenerators.size() == 0 && presentVariables.length == variables.length && presentConstraints.length == constraints.length);
+		control(symmetryGroupGenerators.size() == 0 && presentVariables.length == variables.length && presentConstraints.length == constraints.length);
 		assert Variable.firstWipeoutVariableIn(variables) == null && Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints);
 		priorityVars = IntStream.range(0, variables.length).filter(i -> presentVariables[i]).mapToObj(i -> variables[i]).toArray(Variable[]::new);
 		for (Variable x : priorityVars)
@@ -522,8 +513,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// stuff = new ProblemStuff(this); // TODO reset or building a new
 		// object ?
 		nTuplesRemoved = nValuesRemoved = 0;
-		if (rs.cp.verbose >= 0)
-			Kit.log.info("Reduction to (#V=" + priorityVars.length + ",#C=" + Kit.countIn(true, presentConstraints) + ")");
+		if (settings.verbose >= 0)
+			log.info("Reduction to (#V=" + priorityVars.length + ",#C=" + Kit.countIn(true, presentConstraints) + ")");
 	}
 
 	private CtrAlone buildCtrTrue(Variable x, Variable y) {
@@ -601,28 +592,27 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public Variable findVarWithNumOrId(Object o) {
 		if (o instanceof Integer) {
 			int num = (Integer) o;
-			Kit.control(0 <= num && num < variables.length, () -> num + " is not a valid variable num. Check your configuration parameters -ins -pr1 or -pr2.");
-			Kit.control(variables[num].num != Variable.UNSET_NUM,
-					() -> "You cannot use the discarded variable whose (initial) num is " + num + ". Check your configuration parameters -ins -pr1 or -pr2.");
+			control(0 <= num && num < variables.length, num + " is not a valid variable num. Check your configuration parameters -ins -pr1 or -pr2.");
+			control(variables[num].num != Variable.UNSET_NUM,
+					"You cannot use the discarded variable whose (initial) num is " + num + ". Check your configuration parameters -ins -pr1 or -pr2.");
 			return variables[num];
 		} else {
 			Variable var = mapForVars.get(o);
-			Kit.control(var != null, () -> "The variable " + o + " cannot be found. Check your configuration parameters -ins -pr1 or -pr2.");
-			Kit.control(var.num != Variable.UNSET_NUM,
-					() -> "You cannot use the discarded variable " + o + ". Check your configuration parameters. -ins -pr1 or -pr2.");
+			control(var != null, "The variable " + o + " cannot be found. Check your configuration parameters -ins -pr1 or -pr2.");
+			control(var.num != Variable.UNSET_NUM, "You cannot use the discarded variable " + o + ". Check your configuration parameters. -ins -pr1 or -pr2.");
 			return var;
 		}
 	}
 
 	private final void addUnaryConstraintsOfUserInstantiation() {
 		SettingVars settings = rs.cp.settingVars;
-		Kit.control(settings.instantiatedVars.length == settings.instantiatedVals.length,
-				() -> "In the given instantiation, the number of variables (ids or names) is different from the number of values.");
+		control(settings.instantiatedVars.length == settings.instantiatedVals.length,
+				"In the given instantiation, the number of variables (ids or names) is different from the number of values.");
 		boolean removeValues = true; // hard coding TODO
 		for (int i = 0; i < settings.instantiatedVars.length; i++) {
 			Variable x = findVarWithNumOrId(settings.instantiatedVars[i]);
 			int v = settings.instantiatedVals[i];
-			Kit.control(x.dom.toPresentIdx(v) != -1, () -> "Value " + v + " not present in domain of " + x + ". Check  -ins.");
+			control(x.dom.toPresentIdx(v) != -1, "Value " + v + " not present in domain of " + x + ". Check  -ins.");
 			if (removeValues)
 				x.dom.reduceToValueAtConstructionTime(v);
 			else
@@ -632,8 +622,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private final void reduceDomainsOfIsolatedVariables() {
 		// TODO other frameworks ?
-		boolean reduceIsolatedVars = rs.cp.settingVars.reduceIsolatedVars && rs.cp.settingGeneral.nSearchedSolutions == 1
-				&& !rs.cp.settingProblem.isSymmetryBreaking() && rs.cp.settingGeneral.framework == TypeFramework.CSP;
+		boolean reduceIsolatedVars = rs.cp.settingVars.reduceIsolatedVars && settings.nSearchedSolutions == 1 && !rs.cp.settingProblem.isSymmetryBreaking()
+				&& settings.framework == TypeFramework.CSP;
 		List<Variable> isolatedVars = new ArrayList<>(), fixedVars = new ArrayList<>();
 		int nRemovedValues = 0;
 		for (Variable x : stuff.collectedVarsAtInit) {
@@ -649,12 +639,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		}
 		if (isolatedVars.size() > 0) {
 			stuff.nIsolatedVars += isolatedVars.size();
-			Kit.log.info("Isolated variables : " + Kit.join(isolatedVars));
-			Kit.log.info("Nb values removed due to isolated variables : " + nRemovedValues + "\n");
+			log.info("Isolated variables : " + Kit.join(isolatedVars));
+			log.info("Nb values removed due to isolated variables : " + nRemovedValues + "\n");
 		}
 		if (fixedVars.size() > 0) {
 			stuff.nFixedVars += fixedVars.size();
-			Kit.log.info("Fixed variables : " + (fixedVars.size() <= 100 ? Kit.join(fixedVars) : "more than 100") + "\n");
+			log.info("Fixed variables : " + (fixedVars.size() <= 100 ? Kit.join(fixedVars) : "more than 100") + "\n");
 		}
 	}
 
@@ -699,15 +689,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public Problem(ProblemAPI api, String modelVariant, String data, String dataFormat, boolean dataSaving, String[] argsForPb, Resolution rs) {
 		super(api, modelVariant, argsForPb);
 		this.rs = rs;
-		rs.problem = this; // required because needed during initialization of some objects
+		rs.problem = this; // required because it is needed during the initialization of some objects
 		rs.observersConstruction.add(0, this); // "Must be the first in the list when calling onConstructionSolverFinished
-		// Kit.control(rs.observersConstructionSolver.size() == 0, () -> "Must be the first in the list " + rs.observersConstructionSolver.size());
-		// rs.observersConstructionSolver.add(this);
-		this.framework = rs.cp.settingGeneral.framework;
+		this.settings = rs.cp.settingGeneral;
 		this.stuff = new ProblemStuff(this);
-		this.rs.output.beforeData();
+		rs.output.beforeData();
 		loadData(data, dataFormat, dataSaving);
-		this.rs.output.afterData();
+		rs.output.afterData();
 		api.model();
 
 		// storeVariablesToArray();
@@ -724,10 +712,10 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	public final void display() {
-		if (rs.cp.verbose >= 2) {
+		if (settings.verbose >= 2) {
 			log.finer("\nProblem " + name());
-			Stream.of(variables).forEach(x -> x.display(rs.cp.verbose == 3));
-			Stream.of(constraints).forEach(c -> c.display(rs.cp.verbose == 3));
+			Stream.of(variables).forEach(x -> x.display(settings.verbose == 3));
+			Stream.of(constraints).forEach(c -> c.display(settings.verbose == 3));
 		}
 	}
 
@@ -757,23 +745,16 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public TypeFramework typeFramework() {
-		return framework;
+		return settings.framework;
 	}
 
 	/**
 	 * Adds a variable that has already be built. Should not be called directly when modeling.
 	 */
 	public final Variable addVar(Variable x) {
-		Kit.control(!mapForVars.containsKey(x.id()), () -> x.id() + " duplicated");
+		control(!mapForVars.containsKey(x.id()), x.id() + " duplicated");
 		if (stuff.mustDiscard(x))
 			return null;
-		if (stuff.collectedVarsAtInit.isEmpty())
-			System.out.print(Output.COMMENT_PREFIX + "Loading variables...\n");
-		if (rs.cp.verbose > 1 && !rs.cp.settingXml.competitionMode) {
-			int n = stuff.collectedVarsAtInit.size(), nDigits = n < 10 ? 1 : n < 100 ? 2 : n < 1000 ? 3 : n < 10000 ? 4 : n < 100000 ? 5 : n < 1000000 ? 6 : 7;
-			IntStream.range(0, nDigits).forEach(i -> System.out.print("\b"));
-			System.out.print((n + 1) + "");
-		}
 		x.num = stuff.addCollectedVariable(x);
 		mapForVars.put(x.id(), x);
 		return x;
@@ -1001,7 +982,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity allDifferent(Var[] scp, int[] exceptValues) {
-		Kit.control(exceptValues.length >= 1);
+		control(exceptValues.length >= 1);
 		if (rs.cp.settingGlobal.typeAllDifferent <= 1)
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
 				if (i < j)
@@ -1013,7 +994,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	private CtrAlone distinctVectors(Variable[] t1, Variable[] t2) {
-		Kit.control(Variable.areAllDistinct(vars(t1, t2)), () -> "For the moment not handled");
+		control(Variable.areAllDistinct(vars(t1, t2)), "For the moment not handled");
 		if (isBasicType(rs.cp.settingGlobal.typeDistinctVectors2))
 			return addCtr(CtrExtensionSmart.buildDistinctVectors(this, t1, t2)); // return addCtr(new DistinctVectors2(this, t1, t2)); // BUG TO BE
 																					// FIXED
@@ -1050,7 +1031,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity allDifferentList(Var[]... lists) {
-		Kit.control(lists.length >= 2);
+		control(lists.length >= 2);
 		Variable[][] m = translate2D(lists);
 		return lists.length == 2 ? distinctVectors(m[0], m[1]) : distinctVectors(m);
 	}
@@ -1289,11 +1270,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (!Variable.areAllDistinct(list)) {
 			Set<Entry<Variable, Long>> entries = Stream.of(terms).collect(groupingBy(t -> t.var, summingLong((Term t) -> (int) t.coeff))).entrySet();
 			terms = entries.stream().map(e -> new Term(e.getValue(), e.getKey())).toArray(Term[]::new);
-			Kit.log.info("Sum constraint with several ocurrences of the same variable");
+			log.info("Sum constraint with several ocurrences of the same variable");
 		}
 		terms = Stream.of(terms).filter(t -> t.coeff != 0).sorted().toArray(Term[]::new); // we discard terms of coeff 0 and sort them
 		list = Stream.of(terms).map(t -> t.var).toArray(Variable[]::new);
-		Kit.control(Stream.of(terms).allMatch(t -> Utilities.isSafeInt(t.coeff)));
+		control(Stream.of(terms).allMatch(t -> Utilities.isSafeInt(t.coeff)));
 		coeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
 
 		// we reverse if possible (to have some opportunity to have only coeffs equal to 1)
@@ -1429,7 +1410,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	// ************************************************************************
 
 	private CtrEntity atLeast(Var[] list, int value, int k) {
-		Kit.control(list.length != 0 && k >= 0);
+		control(list.length != 0 && k >= 0);
 		Variable[] scp = Stream.of(list).filter(x -> ((VariableInteger) x).dom.isPresentValue(value) && ((VariableInteger) x).dom.size() > 1)
 				.toArray(Variable[]::new);
 		int newK = k - (int) Stream.of(list).filter(x -> ((VariableInteger) x).dom.onlyContainsValue(value)).count();
@@ -1445,7 +1426,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private CtrEntity atMost(Var[] list, int value, int k) {
 		if (list.length == 0)
 			return ctrEntities.new CtrAloneDummy("atMost with empty set");
-		Kit.control(k >= 0);
+		control(k >= 0);
 		Variable[] scp = Stream.of(list).filter(x -> ((VariableInteger) x).dom.isPresentValue(value) && ((VariableInteger) x).dom.size() > 1)
 				.toArray(Variable[]::new);
 		int newK = k - (int) Stream.of(list).filter(x -> ((VariableInteger) x).dom.onlyContainsValue(value)).count();
@@ -1459,22 +1440,21 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	private CtrEntity exactly(Var[] list, int value, int k) {
-		Kit.control(list.length != 0 && k >= 0);
+		control(list.length != 0 && k >= 0);
 		Variable[] scp = Stream.of(list).filter(x -> ((VariableInteger) x).dom.isPresentValue(value) && ((VariableInteger) x).dom.size() > 1)
 				.toArray(Variable[]::new);
 		int newK = k - (int) Stream.of(list).filter(x -> ((VariableInteger) x).dom.onlyContainsValue(value)).count();
-		Kit.control(newK >= 0, () -> "UNSAT, constraint Exactly with scope " + Kit.join(list) + " has already more than " + k + " variables equal to " + value);
+		control(newK >= 0, "UNSAT, constraint Exactly with scope " + Kit.join(list) + " has already more than " + k + " variables equal to " + value);
 		if (newK == 0)
 			return forall(range(scp.length), i -> different(scp[i], value));
 		if (newK == scp.length)
 			return forall(range(scp.length), i -> equal(scp[i], value));
-		Kit.control(newK < scp.length,
-				() -> "Instance is UNSAT, constraint Exactly with scope " + Kit.join(list) + " cannot have " + k + " variables equal to " + value);
+		control(newK < scp.length, "Instance is UNSAT, constraint Exactly with scope " + Kit.join(list) + " cannot have " + k + " variables equal to " + value);
 		return newK == 1 ? addCtr(new Exactly1(this, scp, value)) : addCtr(new ExactlyK(this, scp, value, newK));
 	}
 
 	private CtrEntity among(Var[] list, int[] values, int k) {
-		Kit.control(list.length >= k);
+		control(list.length >= k);
 		if (list.length == k) {
 			for (Var x : list) {
 				Domain dom = ((VariableInteger) x).dom;
@@ -1582,7 +1562,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	// ************************************************************************
 
 	private CtrArray postClosed(VariableInteger[] list, int[] values) {
-		Kit.control(Stream.of(list).anyMatch(x -> !x.dom.areInitValuesSubsetOf(values)));
+		control(Stream.of(list).anyMatch(x -> !x.dom.areInitValuesSubsetOf(values)));
 		return forall(range(list.length), i -> {
 			if (!list[i].dom.areInitValuesSubsetOf(values))
 				api.extension(list[i], api.select(values, v -> list[i].dom.isPresentValue(v)));
@@ -1591,7 +1571,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, int[] occurs) {
-		Kit.control(values.length == occurs.length);
+		control(values.length == occurs.length);
 		list = clean(list);
 		if (mustBeClosed && Stream.of(list).anyMatch(x -> !((VariableInteger) x).dom.areInitValuesSubsetOf(values))) // 2nd part =
 			// relevance of closed
@@ -1602,7 +1582,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, Var[] occurs) {
-		Kit.control(values.length == occurs.length && Stream.of(occurs).noneMatch(x -> x == null));
+		control(values.length == occurs.length && Stream.of(occurs).noneMatch(x -> x == null));
 		list = clean(list);
 		if (mustBeClosed && Stream.of(list).anyMatch(x -> !((VariableInteger) x).dom.areInitValuesSubsetOf(values)))
 			// 2nd part = relevance of closed
@@ -1614,28 +1594,28 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, int[] occursMin, int[] occursMax) {
-		Kit.control(values.length == occursMin.length && values.length == occursMax.length);
+		control(values.length == occursMin.length && values.length == occursMax.length);
 		list = clean(list);
 		return addCtr(new CardinalityConstant(this, (VariableInteger[]) list, values, occursMin, occursMax));
 	}
 
 	@Override
 	public final CtrEntity cardinality(Var[] list, Var[] values, boolean mustBeClosed, int[] occurs) {
-		Kit.control(values.length == occurs.length && Stream.of(values).noneMatch(x -> x == null));
+		control(values.length == occurs.length && Stream.of(values).noneMatch(x -> x == null));
 		list = clean(list);
 		return unimplemented("cardinality");
 	}
 
 	@Override
 	public final CtrEntity cardinality(Var[] list, Var[] values, boolean mustBeClosed, Var[] occurs) {
-		Kit.control(values.length == occurs.length && Stream.of(values).noneMatch(x -> x == null) && Stream.of(occurs).noneMatch(x -> x == null));
+		control(values.length == occurs.length && Stream.of(values).noneMatch(x -> x == null) && Stream.of(occurs).noneMatch(x -> x == null));
 		list = clean(list);
 		return unimplemented("cardinality");
 	}
 
 	@Override
 	public final CtrEntity cardinality(Var[] list, Var[] values, boolean mustBeClosed, int[] occursMin, int[] occursMax) {
-		Kit.control(values.length == occursMin.length && values.length == occursMax.length && Stream.of(values).noneMatch(x -> x == null));
+		control(values.length == occursMin.length && values.length == occursMax.length && Stream.of(values).noneMatch(x -> x == null));
 		list = clean(list);
 		return unimplemented("cardinality");
 	}
@@ -1667,7 +1647,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		}
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
-			Kit.control(op != EQ && op != NE);
+			control(op != EQ && op != NE);
 			int k = Utilities.safeInt(((ConditionVal) condition).k);
 			if (op == LT || op == LE) {
 				k = op == LE ? k : k - 1;
@@ -1682,7 +1662,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	private final CtrEntity extremum(Var[] list, int startIndex, Var index, TypeRank rank, Condition condition, boolean minimum) {
-		Kit.control(Stream.of(list).noneMatch(x -> x == null));
+		control(Stream.of(list).noneMatch(x -> x == null));
 		return unimplemented(minimum ? "minimum" : "maximum");
 	}
 
@@ -1924,7 +1904,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public CtrEntity element(Var[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, int value) {
 		unimplementedIf(startRowIndex != 0 && startColIndex != 0, "element");
 		if (rowIndex == colIndex) {
-			Kit.control(matrix.length == matrix[0].length);
+			control(matrix.length == matrix[0].length);
 			Var[] t = IntStream.range(0, matrix.length).mapToObj(i -> matrix[i][i]).toArray(Var[]::new);
 			return element(t, startRowIndex, rowIndex, null, value);
 		}
@@ -1937,14 +1917,14 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public CtrEntity channel(Var[] list, int startIndex) {
-		Kit.control(Stream.of(list).noneMatch(x -> x == null));
+		control(Stream.of(list).noneMatch(x -> x == null));
 		return unimplemented("channel");
 	}
 
 	@Override
 	public CtrEntity channel(Var[] list1, int startIndex1, Var[] list2, int startIndex2) {
-		Kit.control(Stream.of(list1).noneMatch(x -> x == null) && Stream.of(list2).noneMatch(x -> x == null));
-		Kit.control(startIndex1 == 0 && startIndex2 == 0, () -> "unimplemented case for channel");
+		control(Stream.of(list1).noneMatch(x -> x == null) && Stream.of(list2).noneMatch(x -> x == null));
+		control(startIndex1 == 0 && startIndex2 == 0, "unimplemented case for channel");
 		// TODO : the two constraints above are not included in the object that is returned. Is that a problem?
 		if (list1.length == list2.length) {
 			allDifferent(list1);
@@ -1955,8 +1935,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity channel(Var[] list, int startIndex, Var value) {
-		Kit.control(Stream.of(list).noneMatch(x -> x == null));
-		Kit.control(Variable.areAllInitiallyBoolean((VariableInteger[]) list) && ((VariableInteger) value).dom.areInitValuesExactly(range(list.length)));
+		control(Stream.of(list).noneMatch(x -> x == null));
+		control(Variable.areAllInitiallyBoolean((VariableInteger[]) list) && ((VariableInteger) value).dom.areInitValuesExactly(range(list.length)));
 		return forall(range(list.length), i -> intension(iff(list[i], eq(value, i))));
 	}
 
@@ -1966,9 +1946,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public CtrEntity stretch(Var[] list, int[] values, int[] widthsMin, int[] widthsMax, int[][] patterns) {
-		Kit.control(values.length == widthsMin.length && values.length == widthsMax.length);
-		Kit.control(IntStream.range(0, values.length).allMatch(i -> widthsMin[i] <= widthsMax[i]));
-		Kit.control(patterns == null || Stream.of(patterns).allMatch(t -> t.length == 2));
+		control(values.length == widthsMin.length && values.length == widthsMax.length);
+		control(IntStream.range(0, values.length).allMatch(i -> widthsMin[i] <= widthsMax[i]));
+		control(patterns == null || Stream.of(patterns).allMatch(t -> t.length == 2));
 		return unimplemented("strtech");
 	}
 
@@ -2067,7 +2047,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity cumulative(Var[] origins, int[] lengths, Var[] ends, int[] heights, Condition condition) {
 		if (ends == null && condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
-			Kit.control(op == LT || op == LE);
+			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
 			return addCtr(new Cumulative(this, (Variable[]) origins, lengths, heights, op == LT ? limit + 1 : limit));
 		}
@@ -2129,8 +2109,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity instantiation(Var[] list, int[] values) {
-		Kit.control(list.length == values.length && list.length > 0);
-		Kit.control(IntStream.range(0, list.length).noneMatch(i -> !((Variable) list[i]).dom.isPresentValue(values[i])), () -> "Pb");
+		control(list.length == values.length && list.length > 0);
+		control(IntStream.range(0, list.length).noneMatch(i -> !((Variable) list[i]).dom.isPresentValue(values[i])), "Pb");
 		if (rs.cp.settingGlobal.typeInstantiation == 1)
 			return forall(range(list.length), i -> equal(list[i], values[i]));
 		return unimplemented("instantiation");
@@ -2144,7 +2124,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return IntStream.range(0, lists.length).map(i -> {
 			int pos0 = Stream.of(scp0).filter(x -> Utilities.indexOf(x, lists[i]) >= 0).mapToInt(x -> Utilities.indexOf(x, lists[i])).min().orElse(-1);
 			int pos1 = Stream.of(scp1).filter(x -> Utilities.indexOf(x, lists[i]) >= 0).mapToInt(x -> Utilities.indexOf(x, lists[i])).min().orElse(-1);
-			Kit.control(pos0 != -1 && pos1 != -1);
+			control(pos0 != -1 && pos1 != -1);
 			return pos1 - pos0;
 		}).toArray();
 	}
@@ -2155,7 +2135,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity slide(IVar[] list, Range range, IntFunction<CtrEntity> template) {
-		Kit.control(range.start == 0 && range.length() > 0);
+		control(range.start == 0 && range.length() > 0);
 		if (range.length() == 1)
 			return template.apply(0);
 		return manageLoop(() -> IntStream.range(0, range.stop).filter(i -> i % range.step == 0).mapToObj(i -> (CtrHard) ((CtrAlone) template.apply(i)).ctr)
@@ -2207,7 +2187,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 * Builds a constraint that holds when at least k variables of the scope take the corresponding value in the specified tuple.
 	 */
 	public CtrEntity tupleProximityGE(IVar[] scope, int[] tuple, int k, boolean noModidictaion) {
-		Kit.control(scope.length != 0);
+		control(scope.length != 0);
 		if (noModidictaion)
 			return addCtr(new HammingProximityConstantGE(this, (Variable[]) scope, tuple, k));
 		List<IVar> newScope = new ArrayList<>();
@@ -2224,7 +2204,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			return ctrEntities.new CtrAloneDummy("Removed constraint due to newk <= 0");
 		if (newK == newScope.size())
 			return forall(range(scope.length), i -> equal(scope[i], tuple[i]));
-		Kit.control(newK < newScope.size(), () -> "Instance is UNSAT, constraint with scope " + Kit.join(scope) + " cannot have more than " + k
+		control(newK < newScope.size(), "Instance is UNSAT, constraint with scope " + Kit.join(scope) + " cannot have more than " + k
 				+ " variables equal to their corresponding value in " + Kit.join(tuple));
 		return addCtr(new HammingProximityConstantGE(this, newScope.toArray(new Variable[newScope.size()]), Kit.intArray(newTuple), newK));
 	}
@@ -2242,7 +2222,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private OptimizationPilot buildOptimizationPilot(TypeOptimization opt, CtrAlone c) {
 		control(optimizationPilot == null, "Only mono-objective currently supported");
 		control(c.ctr instanceof OptimizationCompatible);
-		framework = TypeFramework.COP;
 		rs.cp.toCOP();
 		String suffix = Kit.camelCaseOf(rs.cp.settingOptimization.optimizationStrategy.name());
 		if (suffix.equals("Decreasing"))
@@ -2257,12 +2236,10 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	private boolean switchToSatisfaction(TypeOptimization opt, TypeObjective obj, int[] coeffs, IVar... list) {
-		int limit = rs.cp.settingGeneral.limitForSatisfaction;
+		int limit = settings.limitForSatisfaction;
 		if (limit == PLUS_INFINITY_INT)
 			return false;
-		framework = TypeFramework.CSP;
-		rs.cp.settingGeneral.framework = TypeFramework.CSP;
-		rs.cp.settingGeneral.nSearchedSolutions = 1;
+		rs.cp.toCSP();
 		if (obj == EXPRESSION) {
 			control(list.length == 1 && coeffs == null);
 			intension(opt == MINIMIZE ? XNodeParent.le(list[0], limit) : XNodeParent.ge(list[0], limit));
@@ -2404,7 +2381,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public void decisionVariables(IVar[] list) {
-		if (rs.cp.settingGeneral.enableAnnotations)
+		if (settings.enableAnnotations)
 			super.decisionVariables(list);
 	}
 

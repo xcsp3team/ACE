@@ -22,8 +22,8 @@ public class SAC3 extends SACGreedy {
 	protected final QueueOfCells queueOfCells;
 
 	/**
-	 * 0 = desactivated ; 1 = select last failed value (when starting a new branch) ; 2 = select last failed value + last failed variable (if last branch of
-	 * size 0)
+	 * 0 = desactivated ; 1 = select last failed value (when starting a new branch) ; 2 = select last failed value + last failed variable (if last
+	 * branch of size 0)
 	 */
 	protected final int lastConflictMode;
 
@@ -42,6 +42,7 @@ public class SAC3 extends SACGreedy {
 		return true;
 	}
 
+	@Override
 	protected void eraseLastBuiltBranch(int branchSize) {
 		if (branchSize > 0)
 			super.eraseLastBuiltBranch(branchSize);
@@ -95,7 +96,7 @@ public class SAC3 extends SACGreedy {
 				if (stopSACWhenFoundSolution && solver.finished())
 					return true; // TODO no more compatible with solver.reset()
 			}
-			if (cp().verbose > 1)
+			if (verbose > 1)
 				displayPassInfo(cnt, nEffectiveSingletonTests - nBefore, nEffectiveSingletonTests - nBefore == 0);
 			if (nBefore == nEffectiveSingletonTests)
 				break;

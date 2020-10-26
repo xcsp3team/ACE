@@ -17,8 +17,11 @@ public abstract class StrongConsistency extends AC {
 	protected int nPassesLimit = Integer.MAX_VALUE; // TODO hard coding
 	protected boolean onlyBounds, onlyNeighbours; // TODO hard coding
 
+	protected final int verbose;
+
 	public StrongConsistency(Solver solver) {
 		super(solver);
+		this.verbose = solver.rs.cp.settingGeneral.verbose;
 		Kit.control(solver.observersSearch == null || solver.observersSearch.size() == 0);
 	}
 
@@ -51,7 +54,8 @@ public abstract class StrongConsistency extends AC {
 			return false;
 		return performingProperSearch || cp().settingPropagation.strongOnlyAtPreprocessing
 				|| (cp().settingPropagation.strongOnlyWhenACEffective && pb().nValuesRemoved == nBefore)
-				|| (cp().settingPropagation.strongOnlyWhenNotSingleton && !x.dom.isModifiedAtCurrentDepth() && hasSolverPropagatedAfterLastButOneDecision()) ? true
+				|| (cp().settingPropagation.strongOnlyWhenNotSingleton && !x.dom.isModifiedAtCurrentDepth() && hasSolverPropagatedAfterLastButOneDecision())
+						? true
 						: enforceMore();
 	}
 

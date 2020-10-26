@@ -325,7 +325,7 @@ public abstract class CtrHard extends Constraint {
 
 		// For CSP, there are first some conditions that allow us to directly return true (because we know then that there is no filtering
 		// possibility)
-		if (pb.framework == TypeFramework.CSP) {
+		if (pb.settings.framework == TypeFramework.CSP) {
 			if (futvars.size() == 0) {
 				if (isGuaranteedGAC()) {
 					assert checkCurrentInstantiation() : "Unsatisfied constraint " + this;

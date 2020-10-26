@@ -28,7 +28,7 @@ public final class GTSoft extends PropagationBackward implements LowerBoundCapab
 
 	public GTSoft(Solver solver) {
 		super(solver);
-		Kit.control(pb().framework == TypeFramework.MAXCSP, () -> "MaxCSP is not indicated in your settings");
+		Kit.control(solver.pb.settings.framework == TypeFramework.MAXCSP, () -> "MaxCSP is not indicated in your settings");
 	}
 
 	@Override

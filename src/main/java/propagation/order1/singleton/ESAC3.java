@@ -98,7 +98,8 @@ public class ESAC3 extends SACGreedy {
 		// new WDegOnDom((BacktrackSearchSolver) solver, OptimizationType.MAX)
 		// };
 		this.shavingEvaluator = cp().settingShaving.ratio != 0
-				? new ShavingEvaluator(solver.pb.variables.length, cp().settingShaving.alpha, cp().settingShaving.ratio) : null;
+				? new ShavingEvaluator(solver.pb.variables.length, cp().settingShaving.alpha, cp().settingShaving.ratio)
+				: null;
 	}
 
 	private void makeSelection() {
@@ -163,7 +164,7 @@ public class ESAC3 extends SACGreedy {
 			// > 40 && lastBuiltBranchSize > 0) {
 			// OutputManager.printInfo("Stopping ESAC"); break; }
 		}
-		if (cp().verbose > 1)
+		if (verbose > 1)
 			displayPassInfo(0, nEffectiveSingletonTests - nbEffectiveSingletonTestsBefore, true);
 		return true;
 	}

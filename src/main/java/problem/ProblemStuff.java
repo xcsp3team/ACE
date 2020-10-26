@@ -254,7 +254,19 @@ public final class ProblemStuff {
 		return (int) Stream.of(pb.variables).mapToInt(x -> x.dom.typeIdentifier()).distinct().count();
 	}
 
+	private void printNumber(int n) {
+		if (pb.rs.cp.settingGeneral.verbose > 1 && !pb.rs.cp.settingXml.competitionMode) {
+			int nDigits = (int) Math.log10(n) + 1;
+			IntStream.range(0, nDigits).forEach(i -> System.out.print("\b")); // we need to discard previous characters
+			System.out.print((n + 1) + "");
+		}
+	}
+
 	public final int addCollectedVariable(Variable x) {
+		if (collectedVarsAtInit.isEmpty()) // first call
+			System.out.print(Output.COMMENT_PREFIX + "Loading variables...\n");
+		printNumber(collectedVarsAtInit.size());
+
 		int num = collectedVarsAtInit.size();
 		collectedVarsAtInit.add(x);
 		domSizes.add(x.dom.initSize());
@@ -262,6 +274,10 @@ public final class ProblemStuff {
 	}
 
 	public final int addCollectedConstraint(Constraint c) {
+		if (collectedCtrsAtInit.isEmpty()) // first call
+			System.out.println("\n" + Output.COMMENT_PREFIX + "Loading constraints...");
+		printNumber(collectedCtrsAtInit.size());
+
 		int num = collectedCtrsAtInit.size();
 		collectedCtrsAtInit.add(c);
 		ctrArities.add(c.scp.length);
@@ -291,7 +307,7 @@ public final class ProblemStuff {
 
 	protected ProblemStuff(Problem problem) {
 		this.pb = problem;
-		boolean verbose = problem.rs.cp.verbose > 1;
+		boolean verbose = problem.rs.cp.settingGeneral.verbose > 1;
 		varDegrees = new Repartitioner<>(verbose);
 		domSizes = new Repartitioner<>(verbose);
 		ctrArities = new Repartitioner<>(verbose);
@@ -395,7 +411,7 @@ public final class ProblemStuff {
 		// m.put(FRAMEWORK, pb.framework);
 		SettingOptimization opt = pb.rs.cp.settingOptimization;
 		m.put("bounds", (opt.lowerBound == Long.MIN_VALUE ? "-infty" : opt.lowerBound) + ".." + (opt.upperBound == Long.MAX_VALUE ? "+infty" : opt.upperBound),
-				pb.framework == TypeFramework.COP);
+				pb.settings.framework == TypeFramework.COP);
 		m.put(NUMBER, instanceNumber, Arguments.nInstancesToSolve > 1);
 		// m.put(PARAMETERS, pb.formattedPbParameters(), instanceNumber == 0 && !Arguments.problemPackageName.equals(XCSP2.class.getName()));
 		SettingVars settings = pb.rs.cp.settingVars;

@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -540,7 +541,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			}
 			if (futVars.size() == 0) {
 				solManager.handleNewSolutionAndPossiblyOptimizeIt();
-				if (rs.problem.framework == TypeFramework.COP && !rs.cp.settingRestarts.restartAfterSolution) {
+				if (rs.problem.settings.framework == TypeFramework.COP && !rs.cp.settingRestarts.restartAfterSolution) {
 					// we need to backtrack to the level where a value for a variable in the scope of the objective constraint has been removed
 					// for the last time
 					CtrHard c = (CtrHard) rs.problem.optimizationPilot.ctr;
@@ -613,12 +614,27 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		assert Stream.of(pb.variables).allMatch(x -> x.dom.controlStructures());
 	}
 
+	static Function<Integer, Integer> ff = v -> v - 10000;
+
 	@Override
 	public final void solve() {
 		// for (int[] t : new int[][] { { 10, 2 }, { -10, 2 }, { -10, -2 }, { 10, -2 }, { 12, 5 }, { -12, 5 }, { 12, -5 }, { -12, -5 }, { -5, 7 } })
 		// System.out.println(t[0] / t[1]);
 		// for (int[] t : new int[][] { { 5, 2 }, { 3, -5 }, { 3, 10 }, { -3, -5 }, { -3, 10 } })
 		// System.out.println(CtrPrimitiveBinaryMul.MulGE2.checkLimit(t[0], t[1], pb.variables[0].dom));
+
+		// rs.stopwatch.start();
+		// System.out.println("before");
+		// for (int i = 0; i < 100000000; i++)
+		// pb.variables[0].dom.removeValuesTest(pb.variables[1].dom, ff);
+		// System.out.println("after " + rs.stopwatch.getCpuTime() + " " + rs.stopwatch.getWckTime());
+		//
+		// rs.stopwatch.start();
+		// System.out.println("before");
+		// for (int i = 0; i < 100000000; i++)
+		// pb.variables[0].dom.removeValuesTest(pb.variables[1].dom, 10000);
+		// System.out.println("after " + rs.stopwatch.getCpuTime() + " " + rs.stopwatch.getWckTime());
+
 		super.solve();
 		restoreProblem();
 	}

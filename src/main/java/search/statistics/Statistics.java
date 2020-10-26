@@ -221,7 +221,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		// int[] t = ((ACPartial) solver.propagation).statistics;
 		// map.put("nbWOs", t[0] + ""); map.put("nbFPs", t[1] + ""); map.put("avgWOs", t[2] + ""); map.put("avgFPs", t[3] + ""); }
 		if (solver.solManager.found > 0) {
-			if (solver.pb.framework != TypeFramework.CSP) {
+			if (solver.pb.settings.framework != TypeFramework.CSP) {
 				m.put("bestBound", solver.solManager.bestBound);
 				m.put("bestBoundWck", lastSolWck / 1000.0);
 				m.put("bestBoundCpu", lastSolCpu / 1000.0);
@@ -263,7 +263,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 					m.putPositive("nNogoods", solver.learnerNogoods.nNogoods);
 				if (solver.solManager.found > 0) {
 					m.put("nSols", solver.solManager.found);
-					if (solver.pb.framework != TypeFramework.CSP)
+					if (solver.pb.settings.framework != TypeFramework.CSP)
 						m.put("bound", nformat.format(solver.solManager.bestBound));
 				}
 				return m;
@@ -299,7 +299,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 				m.putPositive("nogoods", solver.learnerNogoods.nNogoods);
 			if (solver.solManager.found > 0) {
 				m.put("foundSolutions", solver.solManager.found);
-				if (solver.pb.framework != TypeFramework.CSP)
+				if (solver.pb.settings.framework != TypeFramework.CSP)
 					m.put(Output.BEST_BOUND, solver.solManager.bestBound);
 			}
 			m.separator();

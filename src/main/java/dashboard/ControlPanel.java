@@ -196,12 +196,15 @@ public class ControlPanel {
 	}
 
 	public final SettingGeneral settingGeneral = new SettingGeneral();
-	public final int verbose = settingGeneral.verbose;
+
+	public void toCSP() {
+		settingGeneral.framework = TypeFramework.CSP;
+		settingGeneral.nSearchedSolutions = 1;
+	}
 
 	public void toCOP() {
 		settingGeneral.framework = TypeFramework.COP;
 		settingGeneral.nSearchedSolutions = PLUS_INFINITY;
-		// valh.bestSolution = true;
 	}
 
 	public class SettingProblem extends SettingGroup {
@@ -675,6 +678,7 @@ public class ControlPanel {
 			"");
 
 	private ControlPanel() {
+		int verbose = settingGeneral.verbose;
 		Kit.control(verbose >= 0 && verbose <= 3, () -> "Verbose must be in 0..3");
 		Kit.log.setLevel(verbose == 0 ? Level.CONFIG : verbose == 1 ? Level.FINE : verbose == 2 ? Level.FINER : Level.FINEST);
 		if (settingGeneral.conditionForSatisfaction.trim().length() != 0) {
