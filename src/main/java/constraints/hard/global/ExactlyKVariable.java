@@ -95,10 +95,10 @@ public final class ExactlyKVariable extends CtrGlobal implements TagGACGuarantee
 					if (deleted)
 						nPossibleOccurrences--;
 				} else {
-					if (domK.removeValuesLessThan(nGuaranteedOccurrences) == false || domK.removeValuesGreaterThan(nPossibleOccurrences) == false)
+					if (domK.removeValuesLT(nGuaranteedOccurrences) == false || domK.removeValuesGT(nPossibleOccurrences) == false)
 						return false;
 				}
-			} else if (domK.removeValuesLessThan(nGuaranteedOccurrences) == false || domK.removeValuesGreaterThan(nPossibleOccurrences) == false)
+			} else if (domK.removeValuesLT(nGuaranteedOccurrences) == false || domK.removeValuesGT(nPossibleOccurrences) == false)
 				return false;
 		}
 		// if k is singleton, updating the domain of the other variables

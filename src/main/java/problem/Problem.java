@@ -614,7 +614,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			int v = settings.instantiatedVals[i];
 			control(x.dom.toPresentIdx(v) != -1, "Value " + v + " not present in domain of " + x + ". Check  -ins.");
 			if (removeValues)
-				x.dom.reduceToValueAtConstructionTime(v);
+				x.dom.removeValuesAtConstructionTime(w -> w != v);
 			else
 				equal(x, v);
 		}
@@ -631,7 +631,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				isolatedVars.add(x);
 				if (reduceIsolatedVars) {
 					nRemovedValues += x.dom.size() - 1;
-					x.dom.reduceToValueAtConstructionTime(x.dom.firstValue());
+					x.dom.removeValuesAtConstructionTime(v -> v != x.dom.firstValue()); // we arbitrarily keep the first value
 				}
 			}
 			if (x.dom.size() == 1)
@@ -841,10 +841,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (scp.length == 1 && !rs.mustPreserveUnaryConstraints()) {
 			Variable x = scp[0];
 			TreeEvaluator evaluator = x instanceof VariableInteger ? new TreeEvaluator(tree) : new TreeEvaluator(tree, symbolic.mapOfSymbols);
-			x.dom.executeOnValues(v -> {
-				if (evaluator.evaluate(v) != 1)
-					x.dom.removeValueAtConstructionTime(v);
-			});
+			x.dom.removeValuesAtConstructionTime(v -> evaluator.evaluate(v) != 1);
 			stuff.nRemovedUnaryCtrs++;
 			return ctrEntities.new CtrAloneDummy("Removed unary constraint by domain reduction");
 		}

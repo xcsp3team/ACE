@@ -8,9 +8,6 @@
  */
 package constraints.hard.global;
 
-import static org.xcsp.common.Types.TypeOperatorRel.GT;
-import static org.xcsp.common.Types.TypeOperatorRel.LT;
-
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -41,7 +38,7 @@ public final class NValuesVar extends NValuesAbstract {
 	public boolean runPropagator(Variable x) {
 		if (x.dom.size() == 1) {
 			initializeSets();
-			if (k.dom.removeValues(LT, fixedVals.size()) == false || k.dom.removeValues(GT, fixedVals.size() + unfixedVars.size()) == false)
+			if (k.dom.removeValuesLT(fixedVals.size()) == false || k.dom.removeValuesGT(fixedVals.size() + unfixedVars.size()) == false)
 				return false;
 			if (k.dom.size() == 1) {
 				int limit = k.dom.uniqueValue();

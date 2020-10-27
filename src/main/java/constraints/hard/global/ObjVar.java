@@ -77,7 +77,7 @@ public abstract class ObjVar extends CtrGlobal implements OptimizationCompatible
 			if (entailed)
 				return true;
 			Kit.control(pb.solver.depth() == 0);
-			if (x.dom.removeValuesGreaterThan(limit) == false)
+			if (x.dom.removeValuesGT(limit) == false)
 				return false;
 			entailed = true;
 			assert x.dom.size() > 0;
@@ -101,7 +101,7 @@ public abstract class ObjVar extends CtrGlobal implements OptimizationCompatible
 			if (entailed)
 				return true;
 			Kit.control(pb.solver.depth() == 0);
-			if (x.dom.removeValuesLessThan(limit) == false)
+			if (x.dom.removeValuesLT(limit) == false)
 				return false;
 			entailed = true;
 			assert x.dom.size() > 0;

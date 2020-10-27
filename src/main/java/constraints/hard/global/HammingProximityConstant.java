@@ -8,9 +8,6 @@
  */
 package constraints.hard.global;
 
-import static org.xcsp.common.Types.TypeOperatorRel.GT;
-import static org.xcsp.common.Types.TypeOperatorRel.LT;
-
 import java.util.stream.IntStream;
 
 import org.xcsp.common.Utilities;
@@ -193,9 +190,9 @@ public abstract class HammingProximityConstant extends CtrGlobal implements TagG
 				sumMinDist += minDist[i];
 			}
 			for (int i = 0; i < scp.length; i++) {
-				if (!scp[i].dom.removeValues(LT, target[i] - (k - sumMinDist + minDist[i])))
+				if (!scp[i].dom.removeValuesLT(target[i] - (k - sumMinDist + minDist[i])))
 					return false;
-				if (!scp[i].dom.removeValues(GT, target[i] + (k - sumMinDist + minDist[i])))
+				if (!scp[i].dom.removeValuesGT(target[i] + (k - sumMinDist + minDist[i])))
 					return false;
 			}
 			return true;

@@ -8,10 +8,6 @@
  */
 package constraints.hard.global;
 
-import static org.xcsp.common.Types.TypeOperatorRel.GE;
-import static org.xcsp.common.Types.TypeOperatorRel.GT;
-import static org.xcsp.common.Types.TypeOperatorRel.LE;
-import static org.xcsp.common.Types.TypeOperatorRel.LT;
 import static org.xcsp.modeler.definitions.IRootForCtrAndObj.map;
 
 import java.util.Map;
@@ -73,10 +69,10 @@ public abstract class Ordered extends CtrGlobal implements TagUnsymmetric, TagGA
 		@Override
 		public boolean runPropagator(Variable dummy) {
 			for (int i = scp.length - 2; i >= 0; i--)
-				if (!scp[i].dom.removeValues(GE, scp[i + 1].dom.lastValue() - lengths[i]))
+				if (!scp[i].dom.removeValuesGE(scp[i + 1].dom.lastValue() - lengths[i]))
 					return false;
 			for (int i = 0; i < scp.length - 1; i++)
-				if (!scp[i + 1].dom.removeValues(LE, scp[i].dom.firstValue() + lengths[i]))
+				if (!scp[i + 1].dom.removeValuesLE(scp[i].dom.firstValue() + lengths[i]))
 					return false;
 			return true;
 		}
@@ -101,10 +97,10 @@ public abstract class Ordered extends CtrGlobal implements TagUnsymmetric, TagGA
 		@Override
 		public boolean runPropagator(Variable dummy) {
 			for (int i = scp.length - 2; i >= 0; i--)
-				if (!scp[i].dom.removeValues(GT, scp[i + 1].dom.lastValue() - lengths[i]))
+				if (!scp[i].dom.removeValuesGT(scp[i + 1].dom.lastValue() - lengths[i]))
 					return false;
 			for (int i = 0; i < scp.length - 1; i++)
-				if (!scp[i + 1].dom.removeValues(LT, scp[i].dom.firstValue() + lengths[i]))
+				if (!scp[i + 1].dom.removeValuesLT(scp[i].dom.firstValue() + lengths[i]))
 					return false;
 			return true;
 		}
@@ -128,10 +124,10 @@ public abstract class Ordered extends CtrGlobal implements TagUnsymmetric, TagGA
 		@Override
 		public boolean runPropagator(Variable dummy) {
 			for (int i = 0; i < scp.length - 1; i++)
-				if (!scp[i + 1].dom.removeValues(GT, scp[i].dom.lastValue() + lengths[i]))
+				if (!scp[i + 1].dom.removeValuesGT(scp[i].dom.lastValue() + lengths[i]))
 					return false;
 			for (int i = scp.length - 2; i >= 0; i--)
-				if (!scp[i].dom.removeValues(LT, scp[i + 1].dom.firstValue() - lengths[i]))
+				if (!scp[i].dom.removeValuesLT(scp[i + 1].dom.firstValue() - lengths[i]))
 					return false;
 			return true;
 		}
@@ -155,10 +151,10 @@ public abstract class Ordered extends CtrGlobal implements TagUnsymmetric, TagGA
 		@Override
 		public boolean runPropagator(Variable dummy) {
 			for (int i = 0; i < scp.length - 1; i++)
-				if (!scp[i + 1].dom.removeValues(GE, scp[i].dom.lastValue() + lengths[i]))
+				if (!scp[i + 1].dom.removeValuesGE(scp[i].dom.lastValue() + lengths[i]))
 					return false;
 			for (int i = scp.length - 2; i >= 0; i--)
-				if (!scp[i].dom.removeValues(LE, scp[i + 1].dom.firstValue() - lengths[i]))
+				if (!scp[i].dom.removeValuesLE(scp[i + 1].dom.firstValue() - lengths[i]))
 					return false;
 			return true;
 		}

@@ -1,8 +1,5 @@
 package constraints.hard.global;
 
-import static org.xcsp.common.Types.TypeOperatorRel.GT;
-import static org.xcsp.common.Types.TypeOperatorRel.LT;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,8 +67,8 @@ public class SeqBin extends CtrGlobal implements TagGACGuaranteed, TagFilteringC
 	public SeqBin(Problem pb, VariableInteger k, VariableInteger[] vector, TypeConditionOperatorRel cOp, TypeConditionOperatorRel bOp) {
 		super(pb, pb.api.vars(k, vector));
 		Kit.control(Variable.haveAllSameDomainType(vector));
-		k.dom.removeValues(LT, 1);
-		k.dom.removeValues(GT, vector.length);
+		k.dom.removeValuesLT(1);
+		k.dom.removeValuesGT(vector.length);
 		this.k = k;
 		this.vector = vector;
 		c = new TreeEvaluator[vector.length - 1];
@@ -84,7 +81,7 @@ public class SeqBin extends CtrGlobal implements TagGACGuaranteed, TagFilteringC
 			// .toArray(new String[0]);
 			XNodeParent<IVar> tree = XNodeParent.build(ce, vector[varPos], vector[varPos + 1]);
 			c[varPos] = new TreeEvaluator(tree); // pb.vars(vector[varPos], vector[varPos + 1]), pb.build(ce,
-														// vector[varPos], vector[varPos + 1]));
+													// vector[varPos], vector[varPos + 1]));
 			if (smallestDomVal > vector[varPos].dom.firstValue())
 				smallestDomVal = vector[varPos].dom.firstValue();
 			if (greatestDomVal < vector[varPos].dom.lastValue())

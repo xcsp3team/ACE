@@ -8,7 +8,6 @@
  */
 package constraints.hard.primitive;
 
-import static constraints.hard.primitive.CtrPrimitiveBinary.commonValueIn;
 import static constraints.hard.primitive.CtrPrimitiveBinary.enforceEQ;
 import static constraints.hard.primitive.CtrPrimitiveBinary.enforceGE;
 import static constraints.hard.primitive.CtrPrimitiveBinary.enforceGT;
@@ -20,7 +19,6 @@ import static org.xcsp.common.Types.TypeConditionOperatorRel.EQ;
 import java.math.BigInteger;
 
 import org.xcsp.common.Types.TypeConditionOperatorRel;
-import org.xcsp.common.Types.TypeOperatorRel;
 import org.xcsp.common.Utilities;
 import org.xcsp.modeler.entities.CtrEntities.CtrAlone;
 
@@ -213,8 +211,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 					return pb.addCtr(new MulEQ3b(pb, x, y, z));
 				if (y.dom.is01())
 					return pb.addCtr(new MulEQ3b(pb, y, x, z));
-				throw new MissingImplementationException();
-				// return null; // pb.addCtr(new MulEQ3(pb, x, y, z));
+				return pb.addCtr(new MulEQ3(pb, y, x, z));
 			}
 			throw new MissingImplementationException();
 		}
@@ -459,7 +456,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 					if (dy.remove(b) == false)
 						return false;
 				}
-				if (dz.removeValues(TypeOperatorRel.GE, dy.lastValue()) == false) // because remainder is less than the denominator
+				if (dz.removeValuesGE(dy.lastValue()) == false) // because remainder is less than the denominator
 					return false;
 				extern: for (int c = dz.first(); c != -1; c = dz.next(c)) {
 					int vc = dz.toVal(c);
@@ -819,7 +816,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 				if (dy.isPresentValue(residue) && dz.isPresentValue(residue))
 					return true;
 				// we look for a support for (x,1), and record it as a residue
-				int v = commonValueIn(dy, dz);
+				int v = dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) : dz.firstCommonValueWith(dy); // commonValueIn(dy, dz);
 				if (v != Integer.MAX_VALUE)
 					residue = v;
 				else
@@ -854,7 +851,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 				if (dy.isPresentValue(residue) && dz.isPresentValue(residue))
 					return true;
 				// we look for a support for (x,0), and record it as a residue
-				int v = commonValueIn(dy, dz);
+				int v = dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) : dz.firstCommonValueWith(dy); // commonValueIn(dy, dz);
 				if (v != Integer.MAX_VALUE)
 					residue = v;
 				else

@@ -250,7 +250,7 @@ public abstract class SumScalarBoolean extends CtrGlobal {
 			@Override
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
-				if (!limit.dom.removeValuesLessThan(min))
+				if (!limit.dom.removeValuesLT(min))
 					return false;
 				int vlimit = limit.dom.lastValue();
 				if (max <= vlimit)
@@ -277,7 +277,7 @@ public abstract class SumScalarBoolean extends CtrGlobal {
 			@Override
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
-				if (!limit.dom.removeValuesGreaterThan(max))
+				if (!limit.dom.removeValuesGT(max))
 					return false;
 				int vlimit = limit.dom.firstValue();
 				if (min >= vlimit)

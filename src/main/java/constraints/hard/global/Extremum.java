@@ -1,8 +1,5 @@
 package constraints.hard.global;
 
-import static org.xcsp.common.Types.TypeOperatorRel.GT;
-import static org.xcsp.common.Types.TypeOperatorRel.LT;
-
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -103,7 +100,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 						maxLast = x.dom.lastValue();
 				}
 				// Filtering the domain of the extremum (max) variable
-				if (domExt.removeValues(LT, maxFirst) == false || domExt.removeValues(GT, maxLast) == false)
+				if (domExt.removeValuesLT(maxFirst) == false || domExt.removeValuesGT(maxLast) == false)
 					return false;
 				int sizeBefore = domExt.size();
 
@@ -122,7 +119,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 				// Filtering the domains of variables in the vector
 				int lastMax = domExt.lastValue();
 				for (Variable x : list)
-					if (x.dom.removeValues(GT, lastMax) == false)
+					if (x.dom.removeValuesGT(lastMax) == false)
 						return false;
 
 				// Possibly filtering the domain of the sentinel from the last value of the Max variable
@@ -178,7 +175,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 				}
 
 				// filtering the domain of the Min variable
-				if (domExt.removeValues(GT, minLast) == false || domExt.removeValues(LT, minFirst) == false)
+				if (domExt.removeValuesGT(minLast) == false || domExt.removeValuesLT(minFirst) == false)
 					return false;
 				int sizeBefore = domExt.size();
 				for (int a = domExt.first(); a != -1; a = domExt.next(a)) {
@@ -197,7 +194,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 				// Filtering the domains of variables in the vector
 				int firstMin = domExt.firstValue();
 				for (Variable x : list)
-					if (x.dom.removeValues(LT, firstMin) == false)
+					if (x.dom.removeValuesLT(firstMin) == false)
 						return false;
 
 				// Possibly filtering the domain of the sentinel for the first value of the Min variable
@@ -279,7 +276,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 						return true;
 					Kit.control(pb.solver.depth() == 0);
 					for (Variable y : scp)
-						if (y.dom.removeValuesGreaterThan(limit) == false) {
+						if (y.dom.removeValuesGT(limit) == false) {
 							return false;
 						}
 					entailed = true;
@@ -316,7 +313,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 							if (scp[sentinel2].dom.lastValue() < limit)
 								return x.dom.fail();
 							else
-								return scp[sentinel2].dom.removeValues(LT, limit); // necessarily true returned
+								return scp[sentinel2].dom.removeValuesLT(limit); // necessarily true returned
 						}
 					}
 					if (scp[sentinel2].dom.lastValue() < limit) {
@@ -328,7 +325,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 							sentinel2 = i;
 						else {
 							assert scp[sentinel1].dom.lastValue() >= limit;
-							return scp[sentinel2].dom.removeValuesLessThan(limit); // necessarily true returned
+							return scp[sentinel2].dom.removeValuesLT(limit); // necessarily true returned
 						}
 					}
 					return true;
@@ -378,7 +375,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 							if (scp[sentinel2].dom.firstValue() > limit)
 								return x.dom.fail();
 							else
-								return scp[sentinel2].dom.removeValues(GT, limit); // necessarily true returned
+								return scp[sentinel2].dom.removeValuesGT(limit); // necessarily true returned
 						}
 					}
 					if (scp[sentinel2].dom.firstValue() > limit) {
@@ -390,7 +387,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 							sentinel2 = i;
 						else {
 							assert scp[sentinel1].dom.firstValue() <= limit;
-							return scp[sentinel2].dom.removeValuesGreaterThan(limit); // necessarily true returned
+							return scp[sentinel2].dom.removeValuesGT(limit); // necessarily true returned
 						}
 					}
 					return true;
@@ -414,7 +411,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 						return true;
 					assert pb.solver.depth() == 0;
 					for (Variable y : scp)
-						if (y.dom.removeValuesLessThan(limit) == false)
+						if (y.dom.removeValuesLT(limit) == false)
 							return false;
 					entailed = true;
 					return Variable.firstWipeoutVariableIn(scp) == null;

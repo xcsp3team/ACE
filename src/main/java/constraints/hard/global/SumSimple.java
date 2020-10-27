@@ -109,7 +109,7 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 				if (dom.size() == 1)
 					continue;
 				max -= dom.lastValue();
-				dom.removeValuesGreaterThan(limit - (min - dom.firstValue()));
+				dom.removeValuesGT(limit - (min - dom.firstValue()));
 				assert dom.size() > 0;
 				max += dom.lastValue();
 				if (max <= limit)
@@ -151,7 +151,7 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 				if (dom.size() == 1)
 					continue;
 				min -= dom.firstValue();
-				dom.removeValuesLessThan(limit - (max - dom.lastValue()));
+				dom.removeValuesLT(limit - (max - dom.lastValue()));
 				assert dom.size() > 0;
 				min += dom.firstValue();
 				if (min >= limit)
@@ -197,7 +197,7 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 					if (sizeBefore > 1) {
 						min -= dom.firstValue();
 						max -= dom.lastValue();
-						if (dom.removeValuesLessThan(limit - max) == false || dom.removeValuesGreaterThan(limit - min) == false)
+						if (dom.removeValuesLT(limit - max) == false || dom.removeValuesGT(limit - min) == false)
 							return false;
 						if (sizeBefore != dom.size())
 							lastModified = i;

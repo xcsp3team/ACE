@@ -8,9 +8,6 @@
  */
 package constraints.hard.primitive;
 
-import static org.xcsp.common.Types.TypeOperatorRel.GT;
-import static org.xcsp.common.Types.TypeOperatorRel.LT;
-
 import interfaces.TagGACUnguaranteed;
 import interfaces.TagUnsymmetric;
 import problem.Problem;
@@ -36,18 +33,18 @@ public class EQADD extends CtrPrimitiveTernary implements TagUnsymmetric, TagGAC
 		while (true) {
 			int nb = pb.nValuesRemoved;
 			// boundZ on sup values
-			if (dx.removeValues(GT, dy.lastValue() + dz.lastValue()) == false)
+			if (dx.removeValuesGT(dy.lastValue() + dz.lastValue()) == false)
 				return false;
-			if (dy.removeValues(GT, dx.lastValue() - dz.firstValue()) == false)
+			if (dy.removeValuesGT(dx.lastValue() - dz.firstValue()) == false)
 				return false;
-			if (dz.removeValues(GT, dx.lastValue() - dy.firstValue()) == false)
+			if (dz.removeValuesGT(dx.lastValue() - dy.firstValue()) == false)
 				return false;
 			// boundZ on inf values
-			if (dx.removeValues(LT, dy.firstValue() + dz.firstValue()) == false)
+			if (dx.removeValuesLT(dy.firstValue() + dz.firstValue()) == false)
 				return false;
-			if (dy.removeValues(LT, dx.firstValue() - dz.lastValue()) == false)
+			if (dy.removeValuesLT(dx.firstValue() - dz.lastValue()) == false)
 				return false;
-			if (dz.removeValues(LT, dx.firstValue() - dy.lastValue()) == false)
+			if (dz.removeValuesLT(dx.firstValue() - dy.lastValue()) == false)
 				return false;
 			if (nb == pb.nValuesRemoved)
 				break;

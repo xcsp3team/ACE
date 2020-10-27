@@ -95,7 +95,7 @@ public abstract class Lexicographic extends CtrGlobal implements TagUnsymmetric,
 		alpha = 0;
 		while (alpha < half) {
 			Domain dom1 = list1[alpha].dom, dom2 = list2[alpha].dom;
-			if (dom1.removeValuesGreaterThan(dom2.lastValue()) == false || dom2.removeValuesLessThan(dom1.firstValue()) == false) // establishAC
+			if (dom1.removeValuesGT(dom2.lastValue()) == false || dom2.removeValuesLT(dom1.firstValue()) == false) // establishAC
 				return false;
 			if (dom1.size() == 1 && dom2.size() == 1 && dom1.firstValue() == dom2.firstValue())
 				alpha++;
