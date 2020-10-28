@@ -571,9 +571,6 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 		assignmentLevel = pb.solver.depth(); // keep at this position
 		for (Constraint c : ctrs)
 			c.doPastVariable(this);
-		// for (Constraint c : ctrs)
-		// if (c.wdegs != null && c.futvars.size() == 1) // TODO rather using observers?
-		// c.updateNegativelyWdegOf(c.futvars.dense[0]);
 	}
 
 	/**
@@ -583,9 +580,6 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 		assert !isFuture();
 		for (Constraint c : ctrs)
 			c.undoPastVariable(this);
-		// for (Constraint c : ctrs)
-		// if (c.wdegs != null && c.futvars.size() == 2) // TODO rather using observers?
-		// c.updatePositivelyWdegOf(c.futvars.dense[0]);
 		assignmentLevel = UNASSIGNED;
 		// restoration of domains is done by the solver
 	}

@@ -8,24 +8,18 @@
  */
 package constraints;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Types.TypeFramework;
 
 import constraints.hard.ConflictsStructure;
-import constraints.hard.CtrExtension;
 import constraints.hard.extension.structures.Bits;
 import constraints.hard.global.SumSimple.SumSimpleEQ;
 import constraints.hard.global.SumWeighted.SumWeightedEQ;
 import executables.Resolution;
 import interfaces.FilteringSpecific;
+import interfaces.TagFilteringCompleteAtEachCall;
+import interfaces.TagGACGuaranteed;
 import problem.Problem;
 import propagation.order1.PropagationForward;
 import propagation.structures.revisers.Reviser;
@@ -36,10 +30,45 @@ import propagation.structures.supporters.SupporterHardNary;
 import utility.Kit;
 import variables.Variable;
 import variables.domains.Domain;
-import variables.domains.DomainInteger.DomainRange;
-import variables.domains.DomainInteger.DomainValues;
 
 public abstract class CtrHard extends Constraint {
+
+	public static class CtrHardFalse extends CtrHard implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagGACGuaranteed {
+
+		@Override
+		public boolean checkValues(int[] t) {
+			return false;
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			return false;
+		}
+
+		public String message;
+
+		public CtrHardFalse(Problem pb, Variable[] scp, String message) {
+			super(pb, scp);
+			this.message = message;
+		}
+	}
+
+	public static class CtrHardTrue extends CtrHard implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagGACGuaranteed {
+
+		@Override
+		public boolean checkValues(int[] t) {
+			return true;
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			return true;
+		}
+
+		public CtrHardTrue(Problem pb, Variable[] scp) {
+			super(pb, scp);
+		}
+	}
 
 	/**
 	 * The assistant which manages information about the number of conflicts of the constraint.
@@ -94,12 +123,20 @@ public abstract class CtrHard extends Constraint {
 
 	@Override
 	public void buildSupporter() {
-		if (pb.rs.cp.settingPropagation.residues != (supporter != null))
+		// System.out.println("supporterbef " + supporter + " " +
+		// !(pb.rs.cp.settingPropagation.classForRevisions.equals(Reviser3.class.getSimpleName())));
+
+		if (pb.rs.cp.settingPropagation.residues != (supporter != null)) {
 			if (pb.rs.cp.settingPropagation.residues && scp.length > 1 && !(this instanceof FilteringSpecific)
-					&& !(pb.rs.cp.settingPropagation.classForRevisions.equals(Reviser3.class.getSimpleName()) && extStructure() instanceof Bits))
+					&& !(pb.rs.cp.settingPropagation.classForRevisions.equals(Reviser3.class.getSimpleName()) && extStructure() instanceof Bits)) {
+				// System.out.println("supporter in" + supporter + " " +
+				// !(pb.rs.cp.settingPropagation.classForRevisions.equals(Reviser3.class.getSimpleName())));
 				supporter = scp.length == 2 ? new SupporterHardBary(this) : new SupporterHardNary(this);
-			else
+			} else
 				supporter = null;
+		}
+		// System.out.println("supporter " + supporter + " " +
+		// !(pb.rs.cp.settingPropagation.classForRevisions.equals(Reviser3.class.getSimpleName())));
 	}
 
 	/**********************************************************************************************
@@ -124,7 +161,6 @@ public abstract class CtrHard extends Constraint {
 	 * @return true iff the tuple of values corresponding to the given tuple of indexes is a support of the constraint
 	 */
 	public boolean checkIndexes(int[] t) {
-		pb.stuff.nCcks++;
 		return indexesMatchValues ? checkValues(t) : checkValues(toVals(t));
 	}
 
@@ -248,7 +284,6 @@ public abstract class CtrHard extends Constraint {
 			long[] t1 = ((Bits) extStructure()).bitSupsFor(x)[a];
 			long[] t2 = scp[x == 0 ? 1 : 0].dom.binaryRepresentation();
 			for (int i = 0; i < t1.length; i++) {
-				pb.stuff.nCcks++;
 				if ((t1[i] & t2[i]) != 0)
 					return true;
 			}
@@ -287,9 +322,9 @@ public abstract class CtrHard extends Constraint {
 	 */
 	@Override
 	public final boolean filterFrom(Variable x) {
-		// System.out.println("fileting " + this + " " + x);
-		if (this.hugeDomainVars.length > 0) {
+		// System.out.println("filtering " + this + " " + x);
 
+		if (this.hugeDomainVars.length > 0) { // TODO huge domains are not finalized
 			if (futvars.size() == 0)
 				return this.checkCurrentInstantiation();
 			if (futvars.size() == 1) {
@@ -301,17 +336,10 @@ public abstract class CtrHard extends Constraint {
 					((SumWeightedEQ) this).deduce();
 					return true;
 				}
-
-				// Variable y = scp[futvars.dense[0]];
-				// assert y.dom instanceof DomainHuge;
-				// if (this instanceof )
-
 			}
-
 			// for (Variable y : hugeDomainVars)
 			// if (!y.isAssigned())
 			// return true; // we have to wait
-
 			if (futvars.size() > 0)
 				return true;
 		}
@@ -325,7 +353,9 @@ public abstract class CtrHard extends Constraint {
 
 		// For CSP, there are first some conditions that allow us to directly return true (because we know then that there is no filtering
 		// possibility)
-		if (pb.settings.framework == TypeFramework.CSP) {
+		if (pb.settings.framework == TypeFramework.CSP) { // TODO why not != MACSP; pb with java ac
+															// main/cop/GraphColoring-sum-GraphColoring_1-fullins-3.xml.lzma
+															// -cm -ev
 			if (futvars.size() == 0) {
 				if (isGuaranteedGAC()) {
 					assert checkCurrentInstantiation() : "Unsatisfied constraint " + this;
@@ -349,19 +379,17 @@ public abstract class CtrHard extends Constraint {
 		}
 		if (!consistent || pb.nValuesRemoved != nBefore)
 			this.handleEffectiveFilterings();
-		if (consistent == false)
-			return false;
 		timestamp = pb.solver.propagation.incrementTime();
-		return true;
+		return consistent;
 	}
 
 	public boolean isIrreflexive() {
-		Kit.control(scp.length == 2);
+		control(scp.length == 2);
 		int[] tuple = tupleManager.localTuple;
 		int p = scp[0].dom.size() > scp[1].dom.size() ? 1 : 0, q = p == 0 ? 1 : 0;
-		Domain dom = scp[p].dom, domSib = scp[q].dom;
-		for (int a = dom.first(); a != -1; a = dom.next(a)) {
-			int b = domSib.toIdx(dom.toVal(a));
+		Domain dx = scp[p].dom, dy = scp[q].dom;
+		for (int a = dx.first(); a != -1; a = dx.next(a)) {
+			int b = dy.toIdx(dx.toVal(a));
 			if (b < 0)
 				continue;
 			tuple[p] = a;
@@ -401,65 +429,4 @@ public abstract class CtrHard extends Constraint {
 		return true;
 	}
 
-	public void save4Baudouin() {
-		if (!(this instanceof CtrExtension))
-			return;
-		boolean toIdx = true;
-		int[][] tuples = null;
-		if (this instanceof CtrExtension && ((CtrExtension) this).extStructure().originalTuples != null
-				&& ((CtrExtension) this).extStructure().originalPositive) {
-			// System.out.println("Direct");
-			tuples = ((CtrExtension) this).extStructure().originalTuples;
-			if (toIdx)
-				for (int i = 0; i < tuples.length; i++) {
-					int[] t = tuples[i];
-					tuples[i] = IntStream.range(0, scp.length).map(j -> scp[j].dom.toIdx(t[j])).toArray();
-				}
-		} else {
-			List<int[]> list = new ArrayList<>();
-			tupleManager.firstValidTuple();
-			tupleManager.overValidTuples(t -> {
-				if (checkIndexes(t))
-					list.add(toIdx ? t.clone() : toVals(t).clone());
-			});
-			tuples = Kit.intArray2D(list);
-		}
-
-		System.out.println(pb.name());
-		int first = pb.name().lastIndexOf(File.separator) + 1, last = pb.name().indexOf(".xml");
-		String s = (last != -1 ? pb.name().substring(first, last) : pb.name().substring(first)) + "-" + (this.num == 0 ? tuples.length : "tab" + this.num);
-		System.out.println("Saving Baudouin Data in filename = " + s);
-
-		try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(s)))) {
-			out.println(scp.length + " variables");
-			if (toIdx)
-				Stream.of(scp).forEach(x -> out.println(x.id() + " " + 0 + ".." + (x.dom.initSize() - 1)));
-			else
-				Stream.of(scp).forEach(x -> out.println(x.id() + " "
-						+ (x.dom instanceof DomainRange ? x.dom.firstValue() + ".." + x.dom.lastValue() : Kit.join(((DomainValues) x.dom).values))));
-			// if (this instanceof CtrExtension && ((CtrExtension) this).extStructure().originalTuples != null
-			// && ((CtrExtension) this).extStructure().originalPositive) {
-			// System.out.println("Direct");
-			// int[][] tuples = ((CtrExtension) this).extStructure().originalTuples;
-			// out.println(tuples.length + " tuples");
-			// for (int[] t : tuples)
-			// out.println(Kit.join(toIdx ? IntStream.range(0, scp.length).map(i -> scp[i].dom.toIdx(t[i])).toArray() : t));
-			// } else {
-			// List<int[]> list = new ArrayList<>();
-			// int[] tuple = tupleManager.setFirstValidTuple();
-			// while (true) {
-			// if (checkIdxs(tuple))
-			// list.add(toIdx ? tuple.clone() : toVals(tuple).clone());
-			// if (tupleManager.setNextValidTuple() == -1)
-			// break;
-			// }
-			// }
-			out.println(tuples.length + " tuples");
-			for (int[] t : tuples)
-				out.println(Kit.join(t));
-
-		} catch (Exception e) {
-			Kit.exit("Pb " + e);
-		}
-	}
 }

@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import org.xcsp.common.IVar;
-import org.xcsp.common.Utilities;
 import org.xcsp.common.predicates.TreeEvaluator.Evaluator;
 import org.xcsp.common.predicates.TreeEvaluator.F1Evaluator;
 import org.xcsp.common.predicates.TreeEvaluator.F2Evaluator;
@@ -83,39 +82,6 @@ public final class CtrIntension extends CtrHard implements ICtrIntension {
 				((F1Evaluator) evaluator).function = pb.stuff.externFunctionArity1;
 			else if (evaluator instanceof F2Evaluator)
 				((F2Evaluator) evaluator).function = pb.stuff.externFunctionArity2;
-	}
-
-	public void updateWithLessThanOrEqual(Variable v1, Variable v2) {
-		Kit.control(scp.length == 2 && Utilities.indexOf(v1, scp) != -1 && Utilities.indexOf(v2, scp) != -1);
-		setId(explicitId() == null ? null : explicitId() + "_modified");
-		this.tree = pb.api.and(tree, pb.api.le(v1, v2));
-		Kit.control(tree.exactlyVars(scp));
-		defineKey();
-
-		// this.key += " " + Kit.join(universalFragmentPredicateExpression) + " " + TypeExpr.AND.lcname;
-		evaluationManager.unregister(this);
-		if (conflictsStructure != null)
-			conflictsStructure.unregister(this);
-		// String[] t = new String[canonicalPredicate.length + universalFragmentPredicateExpression.length + 1];
-		// for (int i = 0; i < canonicalPredicate.length; i++)
-		// t[i] = canonicalPredicate[i];
-		// for (int i = canonicalPredicate.length; i < t.length - 1; i++)
-		// t[i] = universalFragmentPredicateExpression[i - canonicalPredicate.length];
-		// t[t.length - 1] = TypeExpr.AND.lcname;
-		// this.canonicalPredicate = t;
-		if (!pb.rs.mapOfEvaluationManagers.containsKey(key)) {
-			evaluationManager = scp[0] instanceof VariableInteger ? new CtrEvaluationManager(tree) : new CtrEvaluationManager(tree, pb.symbolic.mapOfSymbols);
-			evaluationManager.register(this);
-			conflictsStructure = ConflictsStructure.build(this);
-			pb.rs.mapOfEvaluationManagers.put(key, evaluationManager);
-		} else {
-			evaluationManager = pb.rs.mapOfEvaluationManagers.get(key);
-			evaluationManager.register(this);
-			conflictsStructure = evaluationManager.firstRegisteredCtr().conflictsStructure();
-			if (conflictsStructure != null)
-				conflictsStructure.register(this);
-		}
-		// updatePredicateExpression(new String[] { "%" + positionOf(v2), "%" + positionOf(v1), TypeExpr.LE.lcname });
 	}
 
 	@Override

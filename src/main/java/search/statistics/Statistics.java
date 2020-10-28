@@ -133,10 +133,6 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		nBacktracks = tmpNbBacktracks;
 	}
 
-	public final long nCcks() {
-		return solver.pb.stuff.nCcks;
-	}
-
 	public final long nEffectiveFilterings() {
 		return solver.pb.stuff.nEffectiveFilterings;
 	}
@@ -171,7 +167,6 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		MapAtt m = new MapAtt("Preprocessing");
 		m.put("filters", nEffectiveFilterings());
 		m.put("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
-		m.putPositive("ccks", nCcks());
 		if (solver.propagation instanceof AC)
 			m.put("nACremovedValues", ((AC) (solver.propagation)).nPreproRemovals);
 		m.put("nTotalRemovedValues", nPreproRemovedValues);
@@ -273,7 +268,6 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			m.put(Output.DEPTH, solver.minDepth + ".." + solver.maxDepth);
 			m.put("filters", nEffectiveFilterings());
 			m.put("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
-			m.putPositive("ccks", nCcks());
 			if (nSingletonTests() > 0) { // solver.getPreproPropagationTechnique() instanceof SingletonArcConsistency) {
 				m.put(Output.N_SINGLETON_TESTS, nSingletonTests());
 				m.put(Output.N_EFFECTIVE_SINGLETON_TESTS, nEffectiveSingletonTests());
@@ -335,7 +329,6 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			MapAtt m = new MapAtt("Global");
 			m.put("filters", nEffectiveFilterings());
 			m.put("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
-			m.putPositive("ccks", nCcks());
 			if (nSingletonTests() > 0) { // solver.getPreproPropagationTechnique() instanceof SingletonArcConsistency) {
 				m.put(Output.N_SINGLETON_TESTS, nSingletonTests());
 				m.put(Output.N_EFFECTIVE_SINGLETON_TESTS, nEffectiveSingletonTests());
@@ -365,7 +358,6 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		public MapAtt runAttributes() {
 			MapAtt m = new MapAtt("Run");
 			m.put("number", (solver.restarter.numRun == -1 ? "all" : solver.restarter.numRun));
-			m.put("ccks", nCcks());
 			m.put(Output.N_ASSIGNMENTS, nAssignments);
 			m.put(Output.WCK, searchWck / 1000.0);
 			m.put(Output.CPU, solver.rs.stopwatch.getCpuTimeInSeconds());
@@ -376,7 +368,6 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		@Override
 		public MapAtt cumulatedAttributes() {
 			MapAtt m = new MapAtt("Global");
-			m.put("ccks", nCcks());
 			m.put(Output.N_ASSIGNMENTS, nAssignments);
 			return m;
 		}

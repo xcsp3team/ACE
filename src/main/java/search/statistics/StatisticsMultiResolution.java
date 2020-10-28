@@ -84,7 +84,6 @@ public abstract class StatisticsMultiResolution {
 			private int nbTreatedInstances;
 			private long preproWckTime, searchWckTime, allCpuTime;
 			private long sumOfNbSingletonTests, sumOfNbEffectiveSingletonTests;
-			private long sumOfNbConstraintChecks;
 			private long sumOfNbPropagations;
 			private long sumOfNbAssignments, sumOfNbFailedAssignments;
 			private long sumOfNbSolutions;
@@ -119,7 +118,6 @@ public abstract class StatisticsMultiResolution {
 				sumOfNbSingletonTests += statistics.nSingletonTests();
 				sumOfNbEffectiveSingletonTests += statistics.nEffectiveSingletonTests();
 
-				sumOfNbConstraintChecks += statistics.nCcks();
 				sumOfNbPropagations = statistics.nEffectiveFilterings();
 				sumOfNbAssignments += statistics.nAssignments;
 				sumOfNbFailedAssignments += statistics.nFailedAssignments;
@@ -181,7 +179,6 @@ public abstract class StatisticsMultiResolution {
 					if (sumOfNbEffectiveSingletonTests != 0)
 						map.put(Output.N_EFFECTIVE_SINGLETON_TESTS, (sumOfNbEffectiveSingletonTests / nbTreatedInstances));
 
-					map.put(Output.N_CONSTRAINT_CHECKS, (sumOfNbConstraintChecks / nbTreatedInstances));
 					map.put(Output.N_EFFECTIVE_FILTERINGS, (sumOfNbPropagations / nbTreatedInstances));
 					map.put(Output.N_ASSIGNMENTS, (sumOfNbAssignments / (double) nbTreatedInstances));
 					map.put(Output.N_FAILED_ASSIGNMENTS, sumOfNbFailedAssignments);
@@ -265,8 +262,8 @@ public abstract class StatisticsMultiResolution {
 				else
 					unknownStatistics[0].updateStatisticsWith(stats);
 				allStatistics[0].updateStatisticsWith(stats);
-				allStatistics[0].updateForMedian(stats.solvingWck, !resolution.isTimeExpiredForCurrentInstance()
-						&& (stats.solver.solManager.found > 0 || resolution.solver.isFullExploration()));
+				allStatistics[0].updateForMedian(stats.solvingWck,
+						!resolution.isTimeExpiredForCurrentInstance() && (stats.solver.solManager.found > 0 || resolution.solver.isFullExploration()));
 			}
 		}
 

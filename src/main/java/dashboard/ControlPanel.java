@@ -352,8 +352,8 @@ public class ControlPanel {
 		public final boolean recognizePermutations = addB("recognizePermutations", "perm", false, r5);
 		public final boolean recognizeBoundOrientedCtrs = addB("recognizeBoundOrientedCtrs", "boc", false, ""); // TODO control this
 		public final int recognizeBoundOrientedCtrsLimit = addI("recognizeBoundOrientedCtrLimit", "bocl", 300, "");
-		public final int arityLimitForVapArray = addI("arityLimitForVapArray", "alvalb", 2, "");
-		public final int arityLimitForVapArrayUB = addI("arityLimitForVapArrayUB", "alvaub", 100000, "");
+		public final int arityLimitForVapArrayLb = addI("arityLimitForVapArrayLb", "alvalb", 2, "");
+		public final int arityLimitForVapArrayUb = addI("arityLimitForVapArrayUb", "alvaub", 100000, "");
 
 		public boolean normalizeCtrs = addB("normalizeCtrs", "nc", false, "Merging constraints of similar scope (when possible)", TO_IMPLEMENT);
 	}
@@ -689,7 +689,7 @@ public class ControlPanel {
 		Kit.control(0 <= settingLNS.pVariablesToFreeze && settingLNS.pVariablesToFreeze < 100,
 				() -> "percentageOfVariablesToFreeze should be between 0 and 100 (excluded)");
 
-		Kit.control(settingProblem.symmetryBreaking == ESymmetryBreaking.REC || settingLearning.nogood != ELearningNogood.RST_SYM);
+		Kit.control(settingLearning.nogood != ELearningNogood.RST_SYM);
 		Kit.control(settingOptimization.lowerBound <= settingOptimization.upperBound);
 		// as
 		// C0
@@ -925,8 +925,8 @@ public class ControlPanel {
 				return tag + "/" + attribute; // (attributeAmbiguity ? tag + "/" : "") + attribute;
 			}
 
-			private final String[] experimentalNames = Kit.sort(new String[] { ESymmetryBreaking.VAL.name(), ESymmetryBreaking.REC.name(), EExtension.STRCPRS
-					.name(), EExtractionMethod.MAX_CSP.name(), EExtractionMethod.INC.name(), EExtractionMethod.INC_FIRST.name() });
+			private final String[] experimentalNames = Kit.sort(new String[] { EExtension.STRCPRS.name(), EExtractionMethod.MAX_CSP
+					.name(), EExtractionMethod.INC.name(), EExtractionMethod.INC_FIRST.name() });
 
 			@Override
 			public String toString() {

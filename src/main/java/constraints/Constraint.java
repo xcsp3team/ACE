@@ -23,6 +23,7 @@ import org.xcsp.modeler.definitions.ICtr;
 import constraints.hard.ConflictsStructure;
 import constraints.hard.CtrExtension;
 import constraints.hard.extension.structures.ExtensionStructure;
+import dashboard.ControlPanel.SettingCtrs;
 import heuristics.variables.dynamic.HeuristicVariablesConflictBased;
 import interfaces.FilteringGlobal;
 import interfaces.FilteringSpecific;
@@ -64,15 +65,12 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public void onConstructionProblemFinished() {
 		// sets the position of all the variables of the problem with respect to the set of variables of the constraint.
 		// If a variable does not belong to the constraint, then its position is set to -1
-		if (pb.rs.cp.settingCtrs.arityLimitForVapArray < scp.length
-				&& (pb.variables.length < pb.rs.cp.settingCtrs.arityLimitForVapArrayUB || scp.length > pb.variables.length / 3)) {
+		if (settings.arityLimitForVapArrayLb < scp.length && (pb.variables.length < settings.arityLimitForVapArrayUb || scp.length > pb.variables.length / 3)) {
 			this.vaps = Kit.repeat(-1, pb.variables.length);
 			for (int i = 0; i < scp.length; i++)
 				this.vaps[scp[i].num] = i;
-
 		} else
 			this.vaps = null;
-		// this.variableManager = new VariableManagerConstraint(vaps == null, scp.length);
 		control(true);
 	}
 
@@ -204,19 +202,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	protected Supporter<? extends Constraint> supporter;
 
-	/**
-	 * The weighted degree of this constraint. <br />
-	 * Its value is equal to 1 + the number of times this constraint has been involved in a revision generating a domain wipeout. <br />
-	 * It used by conflict-directed variable ordering heuristics [Boussemart, Hemery, Lecoutre, Sais 2004].
-	 */
-	// private double wdeg;
-
-	/**
-	 * The weighted degrees attached to the variables involved in the scope. wdegs[x] gives the weighted degree of the variable (at position) x in the
-	 * scope.
-	 */
-	// public double[] wdegs;
-
 	/** Indicates if for each domain of a variable involved in the constraint, the index of any value corresponds to this value. */
 	public final boolean indexesMatchValues;
 
@@ -242,6 +227,8 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public Variable[] hugeDomainVars;
 
 	public Object data;
+
+	public SettingCtrs settings;
 
 	/**********************************************************************************************
 	 * Accessors
@@ -472,6 +459,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		this.doms = Variable.buildDomainsArrayFor(scp);
 		this.tupleManager = new TupleManager(this.doms.clone());
 		this.vals = new int[scp.length];
+		this.settings = pb.rs.cp.settingCtrs;
 
 		this.genericFilteringThreshold = computeGenericFilteringThreshold();
 		this.indexesMatchValues = Stream.of(scp).allMatch(x -> x.dom.indexesMatchValues());
@@ -483,7 +471,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		if (this instanceof ObserverConstruction)
 			pb.rs.observersConstruction.add(this);
 		// below scp.length <= pb.rs.cp.arityLimitForVapArray means vap==null
-		this.futvars = scp.length <= pb.rs.cp.settingCtrs.arityLimitForVapArray ? new SetDense(scp.length, true) : new SetSparse(scp.length, true);
+		this.futvars = scp.length <= settings.arityLimitForVapArrayLb ? new SetDense(scp.length, true) : new SetSparse(scp.length, true);
 
 	}
 

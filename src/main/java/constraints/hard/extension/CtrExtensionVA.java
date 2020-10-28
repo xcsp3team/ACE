@@ -39,7 +39,6 @@ public class CtrExtensionVA extends CtrExtension implements TagPositive {
 		else if (tupleManager.nextValidTupleCautiously() == -1)
 			return false;
 		while (true) {
-			pb.stuff.nCcks++;
 			int[] t = extStructure.nextSupport(x, a, tuple);
 			if (t == tuple)
 				break;

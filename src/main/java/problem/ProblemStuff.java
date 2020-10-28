@@ -163,7 +163,6 @@ public final class ProblemStuff {
 	public int nRemovedUnaryCtrs, nConvertedConstraints; // conversion intension to extension
 	public int nSpecificCtrs, nGlobalCtrs, nMergedCtrs, nDiscardedCtrs, nAddedCtrs, nUniversalCtrs;
 
-	public long nCcks;
 	public long nEffectiveFilterings;
 
 	public int nSharedBinaryRepresentations;

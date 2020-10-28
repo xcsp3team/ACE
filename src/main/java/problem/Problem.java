@@ -26,7 +26,6 @@ import static org.xcsp.common.predicates.XNodeParent.in;
 import static org.xcsp.common.predicates.XNodeParent.le;
 import static org.xcsp.common.predicates.XNodeParent.ne;
 import static org.xcsp.common.predicates.XNodeParent.or;
-import static org.xcsp.modeler.definitions.ICtr.MATRIX;
 import static utility.Kit.log;
 
 import java.util.AbstractMap.SimpleEntry;
@@ -58,7 +57,6 @@ import org.xcsp.common.IVar;
 import org.xcsp.common.IVar.Var;
 import org.xcsp.common.IVar.VarSymbolic;
 import org.xcsp.common.Range;
-import org.xcsp.common.Types.TypeArithmeticOperator;
 import org.xcsp.common.Types.TypeClass;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Types.TypeConditionOperatorSet;
@@ -89,14 +87,12 @@ import org.xcsp.modeler.entities.CtrEntities.CtrArray;
 import org.xcsp.modeler.entities.CtrEntities.CtrEntity;
 import org.xcsp.modeler.entities.ObjEntities.ObjEntity;
 import org.xcsp.modeler.implementation.ProblemIMP;
-import org.xcsp.parser.loaders.ConstraintRecognizer;
 
 import constraints.Constraint;
 import constraints.CtrHard;
-import constraints.CtrRaw.RawAllDifferent;
+import constraints.CtrHard.CtrHardFalse;
+import constraints.CtrHard.CtrHardTrue;
 import constraints.hard.CtrExtension;
-import constraints.hard.CtrHardFalse;
-import constraints.hard.CtrHardTrue;
 import constraints.hard.CtrIntension;
 import constraints.hard.extension.CtrExtensionMDD;
 import constraints.hard.extension.CtrExtensionOrMDD;
@@ -154,7 +150,6 @@ import constraints.hard.global.SumWeighted.SumWeightedLE;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub.SubNE2;
 import constraints.hard.primitive.CtrPrimitiveBinary.Disjonctive;
-import constraints.hard.primitive.CtrPrimitiveTernary.CtrPrimitiveTernaryDist;
 import dashboard.ControlPanel.SettingGeneral;
 import dashboard.ControlPanel.SettingVars;
 import executables.Resolution;
@@ -232,8 +227,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		}
 		control((settings.framework == TypeFramework.COP) == (optimizationPilot != null),
 				"Not a COP " + settings.framework + " " + (optimizationPilot == null));
-		if (rs.cp.settingExperimental.save4Baudouin)
-			Stream.of(constraints).forEach(c -> ((CtrHard) c).save4Baudouin());
 		if (priorityVars.length == 0 && annotations.decision != null)
 			priorityVars = (Variable[]) annotations.decision;
 
@@ -851,12 +844,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			return extension(tree);
 		}
 
-		System.out.println(tree);
-		tree = (XNodeParent<IVar>) tree.canonization();
-		if (ConstraintRecognizer.x_ariop_y__relop_z.matches(tree)) {
-			if (tree.ariop(0) == TypeArithmeticOperator.DIST && tree.relop(0) == EQ)
-				return CtrPrimitiveTernaryDist.buildFrom(this, (Variable) tree.var(0), (Variable) tree.var(1), EQ, (Variable) tree.var(2));
-		}
+		// System.out.println(tree);
+		// XNodeParent<IVar> tree2 = (XNodeParent<IVar>) tree.canonization();
+		// if (ConstraintRecognizer.x_ariop_y__relop_z.matches(tree2)) {
+		// if (tree2.ariop(0) == TypeArithmeticOperator.DIST && tree2.relop(0) == EQ)
+		// return CtrPrimitiveTernaryDist.buildFrom(this, (Variable) tree2.var(0), (Variable) tree2.var(1), EQ, (Variable) tree2.var(2));
+		// }
 
 		// System.out.println("hhhhh " + tree);
 
@@ -1033,8 +1026,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity allDifferentMatrix(Var[][] matrix) {
-		if (isBasicType(rs.cp.settingGlobal.typeAllDifferentMatrix))
-			return addCtr(RawAllDifferent.buildFrom(this, vars(matrix), MATRIX, varEntities.compactMatrix(matrix), null));
+		// if (isBasicType(rs.cp.settingGlobal.typeAllDifferentMatrix))
+		// return addCtr(RawAllDifferent.buildFrom(this, vars(matrix), MATRIX, varEntities.compactMatrix(matrix), null));
 		if (rs.cp.settingGlobal.typeAllDifferentMatrix == 1) {
 			CtrArray ctrSet1 = forall(range(matrix.length), i -> allDifferent(matrix[i]));
 			CtrArray ctrSet2 = forall(range(matrix[0].length), i -> allDifferent(api.columnOf(matrix, i)));

@@ -24,7 +24,6 @@ import java.util.Random;
 import java.util.StringTokenizer;
 
 import constraints.Constraint;
-import constraints.hard.CtrExtension;
 import constraints.hard.CtrIntension;
 import constraints.hard.global.Lexicographic.LexicographicLE;
 import dashboard.Output;
@@ -153,14 +152,13 @@ public final class IdentificationAutomorphism {
 	private void buildConstraintNodes(Collection<Constraint> ctrs) {
 		mapOfRelationColors = new HashMap<>();
 		constraintNodes = new ArrayList<>();
-		for (Constraint ctr : ctrs) {
-			Variable[] scope = ctr.scp;
-			String key = ctr.key;
-			// Kit.prn(constraint + " " + key);
+		for (Constraint c : ctrs) {
+			Variable[] scope = c.scp;
+			String key = c.key; // TODO : pb with key null for pb HSp
 			int[] t = mapOfRelationColors.get(key);
 
 			if (t == null) {
-				int[] symmetryMatching = ctr.getSymmetryMatching();
+				int[] symmetryMatching = c.getSymmetryMatching();
 				t = new int[scope.length + 1];
 				if (symmetryMatching != null) {
 					t[t.length - 1] = nCurrentColors++;
@@ -177,6 +175,7 @@ public final class IdentificationAutomorphism {
 				}
 				mapOfRelationColors.put(key, t);
 			}
+
 			int v = nCurrentNodes;
 			constraintNodes.add(new Node(nCurrentNodes, t[t.length - 1]));
 			addColorNode(nCurrentNodes++, t[t.length - 1]);
@@ -299,37 +298,14 @@ public final class IdentificationAutomorphism {
 
 	private List<Constraint> buildConstraintsFor(Variable[] variables, Collection<Constraint> collectedConstraints) {
 		List<Constraint> constraintList = new ArrayList<>();
-		ESymmetryBreaking symmetryType = pb.rs.cp.settingProblem.symmetryBreaking;
-		if (symmetryType == ESymmetryBreaking.REC)
-			return constraintList;
-
-		boolean mustTryToMerge = symmetryType != ESymmetryBreaking.LE && symmetryType != ESymmetryBreaking.LEX;
 
 		for (List<int[]> generator : generators) {
 			int[] cycle1 = generator.get(0);
 			Variable x = variables[cycle1[0]];
 			Variable y = variables[cycle1[1]];
 
-			boolean merged = false;
-			if (mustTryToMerge)
-				for (Constraint ctr : collectedConstraints) {
-					if (ctr.positionOf(x) == -1 || ctr.positionOf(y) == -1)
-						continue;
-					if (ctr.scp.length > 2) // && constraint instanceof ExtensionConstraint)
-						continue;
-					if (ctr.scp.length == 2)
-						merged = true;
-					if (ctr instanceof CtrExtension) {
-						((CtrExtension) ctr).logicalAndWithLessThanOrEqual(x, y);
-						nbFusions++; // System.out.println("fusion extension");
-					} else if (ctr instanceof CtrIntension) {
-						((CtrIntension) ctr).updateWithLessThanOrEqual(x, y);
-						nbFusions++; // System.out.println("fusion intension");
-					}
-				}
-			if (symmetryType == ESymmetryBreaking.LE || symmetryType == ESymmetryBreaking.LE_MERGED) {
-				if (!merged)
-					constraintList.add(new CtrIntension(pb, pb.api.vars(x, (Object) y), pb.api.le(x, y)));
+			if (pb.rs.cp.settingProblem.symmetryBreaking == ESymmetryBreaking.LE) { // we only consider the two first variables
+				constraintList.add(new CtrIntension(pb, pb.api.vars(x, (Object) y), pb.api.le(x, y)));
 			} else {
 				List<Variable> list1 = new ArrayList<>(), list2 = new ArrayList<>();
 				for (int[] cycle : generator)

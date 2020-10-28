@@ -15,10 +15,6 @@ import java.util.stream.IntStream;
 import org.xcsp.common.IVar.Var;
 import org.xcsp.modeler.api.ProblemAPI;
 
-import constraints.hard.primitive.EQADD;
-import problem.Problem;
-import variables.Variable;
-
 public class TestGauss implements ProblemAPI {
 	int d;
 
@@ -39,9 +35,7 @@ public class TestGauss implements ProblemAPI {
 		Var y = var("y", dom(t));
 		Var z = var("z", dom(t));
 
-		if (modelVariant("m1"))
-			((Problem) imp()).addCtr(new EQADD(((Problem) imp()), (Variable) x, (Variable) y, (Variable) z));
-		else if (modelVariant("m2"))
+		if (modelVariant("m2"))
 			equal(x, add(y, z));
 		else
 			sum(vars(y, z), EQ, x);

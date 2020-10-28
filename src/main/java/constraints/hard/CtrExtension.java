@@ -45,7 +45,6 @@ import propagation.structures.supporters.SupporterHard;
 import utility.Enums.EExtension;
 import utility.Kit;
 import utility.Reflector;
-import utility.exceptions.MissingImplementationException;
 import variables.Variable;
 import variables.VariableInteger;
 import variables.VariableSymbolic;
@@ -283,7 +282,6 @@ public abstract class CtrExtension extends CtrHard implements TagGACGuaranteed, 
 	 */
 	@Override
 	public final boolean checkIndexes(int[] t) {
-		pb.stuff.nCcks++;
 		return extStructure.checkIdxs(t);
 	}
 
@@ -327,54 +325,6 @@ public abstract class CtrExtension extends CtrHard implements TagGACGuaranteed, 
 	// ;
 	// }
 	// }
-
-	public void logicalAndWithLessThanOrEqual(Variable x, Variable y) {
-		throw new MissingImplementationException();
-
-		// Kit.control(scp.length == 2);
-		// this.id = id == null ? null : id + "_sble";
-		// this.key += " " + "_sble"; //Kit.join(tree.canonicalForm(new ArrayList<>(), tree.vars()).toArray(new String[0]));
-		// extStructure.removeDependentCtr(this);
-		// if (conflictsStructure != null) {
-		// conflictsStructure.getExploitingConstraints().remove(this);
-		// conflictsStructure = new ConflictsStructure(conflictsStructure, this);
-		// }
-		// Map<String, ExtensionStructure> mapOfExtensionStructures = pb.resolution.mapOfExtensionStructures;
-		// if (!mapOfExtensionStructures.containsKey(key)) {
-		// extStructure = new Bits(this, (Bits) extStructure);
-		// EvaluationManager evaluationManager = new EvaluationManager(tree); // Symbolic.replaceSymbols(pb.symbolic,
-		// universalFragmentPredicateExpression));
-		// int cnt = 0;
-		// Domain dom0 = scp[0].dom, dom1 = scp[1].dom;
-		// int[] tmpOfValues = tupleManager.localTuple, tmpOfIndexes = new int[2];
-		// for (int idx0 = 0; idx0 < dom0.initSize(); idx0++) {
-		// tmpOfValues[0] = dom0.toVal(idx0);
-		// tmpOfIndexes[0] = idx0;
-		// for (int idx1 = 0; idx1 < dom1.initSize(); idx1++) {
-		// tmpOfValues[1] = dom1.toVal(idx1);
-		// cnt++;
-		// if (evaluationManager.evaluate(tmpOfValues) != 1) {
-		// tmpOfIndexes[1] = idx1;
-		// removeTuple(tmpOfIndexes);
-		// }
-		// }
-		// }
-		// pb.stuff.nConvertionCcks += cnt;
-		// mapOfExtensionStructures.put(key, extStructure);
-		// } else {
-		// extStructure = (ExtensionStructureHard) mapOfExtensionStructures.get(key);
-		// extStructure.addDependentCtr(this);
-		// conflictsStructure = extStructure.getFirstDependentCtr().getConflictsStructure();
-		// if (conflictsStructure != null)
-		// conflictsStructure.getExploitingConstraints().add(this);
-		// ;
-		// }
-		//
-		//
-		// //updateBitsFrom((XNodeParent<? extends IVarInteger>) pb.le(x, y)); // new String[] { "%" + positionOf(v2), "%" + positionOf(v1),
-		// TypeExpr.LE.lcname
-		// });
-	}
 
 	@Override
 	public boolean removeTuple(int... idxs) {

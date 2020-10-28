@@ -119,13 +119,7 @@ public class Enums {
 	}
 
 	public static enum ESymmetryBreaking {
-		NO,
-		LE,
-		LEX,
-		LE_MERGED,
-		LEX_MERGED,
-		VAL, // VAL is not finalized
-		REC;
+		NO, LE, LEX;
 	}
 
 	public static enum EWeighting {
