@@ -58,6 +58,7 @@ import org.xcsp.common.IVar;
 import org.xcsp.common.IVar.Var;
 import org.xcsp.common.IVar.VarSymbolic;
 import org.xcsp.common.Range;
+import org.xcsp.common.Types.TypeArithmeticOperator;
 import org.xcsp.common.Types.TypeClass;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Types.TypeConditionOperatorSet;
@@ -88,6 +89,7 @@ import org.xcsp.modeler.entities.CtrEntities.CtrArray;
 import org.xcsp.modeler.entities.CtrEntities.CtrEntity;
 import org.xcsp.modeler.entities.ObjEntities.ObjEntity;
 import org.xcsp.modeler.implementation.ProblemIMP;
+import org.xcsp.parser.loaders.ConstraintRecognizer;
 
 import constraints.Constraint;
 import constraints.CtrHard;
@@ -152,6 +154,7 @@ import constraints.hard.global.SumWeighted.SumWeightedLE;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub.SubNE2;
 import constraints.hard.primitive.CtrPrimitiveBinary.Disjonctive;
+import constraints.hard.primitive.CtrPrimitiveTernary.CtrPrimitiveTernaryDist;
 import dashboard.ControlPanel.SettingGeneral;
 import dashboard.ControlPanel.SettingVars;
 import executables.Resolution;
@@ -581,26 +584,26 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		buildSymmetries();
 		inferAllDifferents();
 		constraints = stuff.collectedCtrsAtInit.toArray(new Constraint[0]);
-		for (Variable var : variables) {
-			var.whenFinishedProblemConstruction();
-			stuff.varDegrees.add(var.deg());
+		for (Variable x : variables) {
+			x.whenFinishedProblemConstruction();
+			stuff.varDegrees.add(x.deg());
 		}
 		assert Variable.areNumsNormalized(variables);// && Constraint.areIdsNormalized(constraints); TODO
 		rs.clearMapsUsedByConstraints();
 	}
 
 	public Variable findVarWithNumOrId(Object o) {
+		String msg = "Check your configuration parameters -ins -pr1 or -pr2";
 		if (o instanceof Integer) {
 			int num = (Integer) o;
-			control(0 <= num && num < variables.length, num + " is not a valid variable num. Check your configuration parameters -ins -pr1 or -pr2.");
-			control(variables[num].num != Variable.UNSET_NUM,
-					"You cannot use the discarded variable whose (initial) num is " + num + ". Check your configuration parameters -ins -pr1 or -pr2.");
+			control(0 <= num && num < variables.length, num + " is not a valid variable num. " + msg);
+			control(variables[num].num != Variable.UNSET_NUM, "You cannot use the discarded variable whose (initial) num is " + num + ". " + msg);
 			return variables[num];
 		} else {
-			Variable var = mapForVars.get(o);
-			control(var != null, "The variable " + o + " cannot be found. Check your configuration parameters -ins -pr1 or -pr2.");
-			control(var.num != Variable.UNSET_NUM, "You cannot use the discarded variable " + o + ". Check your configuration parameters. -ins -pr1 or -pr2.");
-			return var;
+			Variable x = mapForVars.get(o);
+			control(x != null, "The variable " + o + " cannot be found. " + msg);
+			control(x.num != Variable.UNSET_NUM, "You cannot use the discarded variable " + o + ". " + msg);
+			return x;
 		}
 	}
 
@@ -608,15 +611,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		SettingVars settings = rs.cp.settingVars;
 		control(settings.instantiatedVars.length == settings.instantiatedVals.length,
 				"In the given instantiation, the number of variables (ids or names) is different from the number of values.");
-		boolean removeValues = true; // hard coding TODO
 		for (int i = 0; i < settings.instantiatedVars.length; i++) {
 			Variable x = findVarWithNumOrId(settings.instantiatedVars[i]);
 			int v = settings.instantiatedVals[i];
-			control(x.dom.toPresentIdx(v) != -1, "Value " + v + " not present in domain of " + x + ". Check  -ins.");
-			if (removeValues)
-				x.dom.removeValuesAtConstructionTime(w -> w != v);
-			else
-				equal(x, v);
+			control(x.dom.isPresentValue(v), "Value " + v + " not present in domain of " + x + ". Check  -ins.");
+			x.dom.removeValuesAtConstructionTime(w -> w != v);
 		}
 	}
 
@@ -839,9 +838,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Variable[] scp = (Variable[]) tree.vars();
 		assert Stream.of(scp).allMatch(x -> x instanceof Var) || Stream.of(scp).allMatch(x -> x instanceof VarSymbolic);
 		if (scp.length == 1 && !rs.mustPreserveUnaryConstraints()) {
-			Variable x = scp[0];
-			TreeEvaluator evaluator = x instanceof VariableInteger ? new TreeEvaluator(tree) : new TreeEvaluator(tree, symbolic.mapOfSymbols);
-			x.dom.removeValuesAtConstructionTime(v -> evaluator.evaluate(v) != 1);
+			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
+			scp[0].dom.removeValuesAtConstructionTime(v -> evaluator.evaluate(v) != 1);
 			stuff.nRemovedUnaryCtrs++;
 			return ctrEntities.new CtrAloneDummy("Removed unary constraint by domain reduction");
 		}
@@ -853,12 +851,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			return extension(tree);
 		}
 
-		// System.out.println(tree);
-		// tree = (XNodeParent<IVar>) tree.canonization();
-		// if (ConstraintRecognizer.x_ariop_y__relop_z.matches(tree)) {
-		// if (tree.ariop(0) == DIST && tree.relop(0) == EQ)
-		// return CtrPrimitiveTernaryDist.buildFrom(this, (Variable) tree.var(0), (Variable) tree.var(1), EQ, (Variable) tree.var(2));
-		// }
+		System.out.println(tree);
+		tree = (XNodeParent<IVar>) tree.canonization();
+		if (ConstraintRecognizer.x_ariop_y__relop_z.matches(tree)) {
+			if (tree.ariop(0) == TypeArithmeticOperator.DIST && tree.relop(0) == EQ)
+				return CtrPrimitiveTernaryDist.buildFrom(this, (Variable) tree.var(0), (Variable) tree.var(1), EQ, (Variable) tree.var(2));
+		}
 
 		// System.out.println("hhhhh " + tree);
 
@@ -1231,9 +1229,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		};
 		if (trees.length > 1 && IntStream.range(1, trees.length).allMatch(i -> areSimilar(trees[0], trees[i]))) {
 			Var[] aux = api.array(idAux(), api.size(trees.length), doms.apply(0), "auxiliary variables");
-			int[][] tuples = Constraint.howManyVarsWithin(vars(trees[0]), rs.cp.settingPropagation.spaceLimitation) == ALL
-					? new TreeEvaluator(trees[0]).computeTuples(Variable.initDomainValues(vars(trees[0])))
-					: null;
+			int arity = trees[0].vars().length;
+			int[][] tuples = arity <= rs.cp.settingExtension.arityLimitForIntensionToExtension
+					&& Constraint.howManyVarsWithin(vars(trees[0]), rs.cp.settingPropagation.spaceLimitation) == ALL
+							? new TreeEvaluator(trees[0]).computeTuples(Variable.initDomainValues(vars(trees[0])))
+							: null;
 			for (int i = 0; i < trees.length; i++) {
 				if (tuples != null)
 					extension(vars(trees[i], aux[i]), tuples, true); // extension(eq(aux[i], trees[i]));
@@ -1245,7 +1245,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 		Var[] aux = api.array(idAux(), api.size(trees.length), doms, "auxiliary variables");
 		for (int i = 0; i < trees.length; i++) {
-			if (Constraint.howManyVarsWithin(vars(trees[i]), rs.cp.settingPropagation.spaceLimitation) == ALL) {
+			int arity = trees[i].vars().length;
+			if (arity <= rs.cp.settingExtension.arityLimitForIntensionToExtension
+					&& Constraint.howManyVarsWithin(vars(trees[i]), rs.cp.settingPropagation.spaceLimitation) == ALL) {
 				int[][] tuples = new TreeEvaluator(trees[i]).computeTuples(Variable.currDomainValues(vars(trees[i])));
 				extension(vars(trees[i], aux[i]), tuples, true); // extension(eq(aux[i], trees[i]));
 			} else

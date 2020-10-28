@@ -50,8 +50,15 @@ public abstract class NValuesAbstract extends CtrGlobal implements TagGACUnguara
 					continue;
 				if (dom.size() > 4) // hard coding for avoiding iterating systematically over all values
 					continue;
-				if (dom.iterateOnValuesStoppingWhen(v -> !fixedVals.contains(v)) == false)
+				boolean found = false;
+				for (int a = dom.first(); a != -1 && !found; a = dom.next(a))
+					if (!fixedVals.contains(dom.toVal(a)))
+						found = true;
+				if (!found)
 					unfixedVars.removeAtPosition(i);
+
+				// if (dom.iterateOnValuesStoppingWhen(v -> !fixedVals.contains(v)) == false)
+				// unfixedVars.removeAtPosition(i);
 			}
 		}
 	}

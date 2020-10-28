@@ -231,6 +231,12 @@ public interface Domain extends LinkedSet {
 		var().pb.stuff.nValuesRemovedAtConstructionTime++;
 	}
 
+	default void removeAtConstructionTime(Predicate<Integer> p) {
+		for (int a = first(); a != -1; a = next(a))
+			if (p.test(a))
+				removeAtConstructionTime(a);
+	}
+
 	/**
 	 * Removes definitively the value at the specified index. <br />
 	 * Important: this method must only called when building the problem.

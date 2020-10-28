@@ -12,6 +12,7 @@ import static org.xcsp.common.Constants.STAR;
 import static org.xcsp.common.Constants.STAR_SYMBOL;
 import static org.xcsp.modeler.definitions.IRootForCtrAndObj.map;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -104,8 +105,8 @@ public abstract class CtrExtension extends CtrHard implements TagGACGuaranteed, 
 
 	public static CtrExtension build(Problem pb, Variable[] scp, Object tuples, boolean positive, Boolean starred) {
 		Kit.control(Stream.of(scp).allMatch(x -> x instanceof VariableInteger) || Stream.of(scp).allMatch(x -> x instanceof VariableSymbolic));
-		Kit.control(java.lang.reflect.Array.getLength(tuples) == 0 || java.lang.reflect.Array.getLength(java.lang.reflect.Array.get(tuples, 0)) == scp.length,
-				() -> "Badly formed extensional constraint " + scp.length + " " + java.lang.reflect.Array.getLength(tuples));
+		Kit.control(Array.getLength(tuples) == 0 || Array.getLength(Array.get(tuples, 0)) == scp.length,
+				() -> "Badly formed extensional constraint " + scp.length + " " + Array.getLength(tuples));
 		assert starred == null || (starred == Boolean.TRUE) == isStarPresent(tuples) : starred + " \n" + Kit.join(tuples);
 		starred = starred != null ? starred : isStarPresent(tuples);
 
@@ -377,7 +378,6 @@ public abstract class CtrExtension extends CtrHard implements TagGACGuaranteed, 
 
 	@Override
 	public boolean removeTuple(int... idxs) {
-		// assert checkValidityOf(tuple);
 		if (extStructure.removeTuple(idxs)) {
 			if (conflictsStructure != null)
 				conflictsStructure.manageRemovedTuple(idxs);

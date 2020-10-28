@@ -122,24 +122,6 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 		return true;
 	}
 
-	// public static int commonValueIn(Domain dx, Domain dy) {
-	// return dx.size() <= dy.size() ? dx.firstCommonValueWith(dy) : dy.firstCommonValueWith(dx);
-	//
-	// // if (dx.size() <= dy.size())
-	// // for (int a = dx.first(); a != -1; a = dx.next(a)) {
-	// // int va = dx.toVal(a);
-	// // if (dy.isPresentValue(va))
-	// // return va;
-	// // }
-	// // else
-	// // for (int b = dy.first(); b != -1; b = dy.next(b)) {
-	// // int vb = dy.toVal(b);
-	// // if (dx.isPresentValue(vb))
-	// // return vb;
-	// // }
-	// // return Integer.MAX_VALUE;
-	// }
-
 	public final static int UNITIALIZED = -1;
 
 	// ************************************************************************
@@ -546,7 +528,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 
 			public MulEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
-				control(k != 0);
+				control(k > 1, "if k is 0 or 1, other constraints should be posted");
 				dx.removeValuesAtConstructionTime(v -> v == 0 || k % v != 0);
 				dy.removeValuesAtConstructionTime(v -> v == 0 || k % v != 0);
 			}
@@ -566,7 +548,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 
 			public MulNE2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
-				control(k != 0);
+				control(k > 1, "if k is 0 or 1, other constraints should be posted");
 			}
 
 			@Override
@@ -590,7 +572,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 	// ***** Classes for x <op> k * y (CtrPrimitiveBinaryMulb)
 	// ************************************************************************
 
-	public static abstract class CtrPrimitiveBinaryMulb extends CtrPrimitiveBinaryWithCst {
+	public static abstract class CtrPrimitiveBinaryMulb extends CtrPrimitiveBinaryWithCst implements TagUnsymmetric {
 
 		public static CtrAlone buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, int k, Variable y) {
 			switch (op) {
@@ -655,7 +637,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 	// ***** Classes for x / y <op> k (CtrPrimitiveBinaryDiv)
 	// ************************************************************************
 
-	public static abstract class CtrPrimitiveBinaryDiv extends CtrPrimitiveBinaryWithCst {
+	public static abstract class CtrPrimitiveBinaryDiv extends CtrPrimitiveBinaryWithCst implements TagUnsymmetric {
 
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
@@ -670,7 +652,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			case EQ:
 				return pb.addCtr(new DivEQ2(pb, x, y, k));
 			// case NE:
-			// return pb.addCtr(new DivNE2(pb, x, y, k));
+			// return pb.addCtr(new DivNE2(pb, x, y, k)); // TODO
 			}
 			throw new UnreachableCodeException();
 		}
@@ -772,12 +754,12 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 	// ***** Classes for x <op> y / k (CtrPrimitiveBinaryDivb)
 	// ************************************************************************
 
-	public static abstract class CtrPrimitiveBinaryDivb extends CtrPrimitiveBinaryWithCst {
+	public static abstract class CtrPrimitiveBinaryDivb extends CtrPrimitiveBinaryWithCst implements TagUnsymmetric {
 
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			// case LT:
-			// return pb.addCtr(new DivbLE2(pb, x, y, k - 1));
+			// return pb.addCtr(new DivbLE2(pb, x, y, k - 1)); // TODO
 			// case LE:
 			// return pb.addCtr(new DivbLE2(pb, x, y, k));
 			// case GE:
@@ -864,7 +846,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 	// ***** Classes for x % y <op> k (CtrPrimitiveBinaryMod)
 	// ************************************************************************
 
-	public static abstract class CtrPrimitiveBinaryMod extends CtrPrimitiveBinaryWithCst implements TagSymmetric {
+	public static abstract class CtrPrimitiveBinaryMod extends CtrPrimitiveBinaryWithCst implements TagUnsymmetric {
 
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			if (op == TypeConditionOperatorRel.EQ)
@@ -958,11 +940,13 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 	// ***** Classes for x <op> y % k (CtrPrimitiveBinaryModb)
 	// ************************************************************************
 
-	public static abstract class CtrPrimitiveBinaryModb extends CtrPrimitiveBinaryWithCst {
+	public static abstract class CtrPrimitiveBinaryModb extends CtrPrimitiveBinaryWithCst implements TagUnsymmetric {
 
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			if (op == TypeConditionOperatorRel.EQ)
 				return pb.addCtr(new ModbEQ2(pb, x, y, k));
+			if (op == TypeConditionOperatorRel.NE)
+				return pb.addCtr(new ModbNE2(pb, x, y, k));
 			throw new UnreachableCodeException();
 		}
 
@@ -1176,7 +1160,7 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 	// ***** Classes for x <op> |y - k| (CtrPrimitiveBinaryDistb)
 	// ************************************************************************
 
-	public static abstract class CtrPrimitiveBinaryDistb extends CtrPrimitiveBinaryWithCst {
+	public static abstract class CtrPrimitiveBinaryDistb extends CtrPrimitiveBinaryWithCst implements TagUnsymmetric {
 
 		public static CtrAlone buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
 			switch (op) {

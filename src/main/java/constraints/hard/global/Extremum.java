@@ -57,13 +57,9 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 		public ExtremumVar(Problem pb, Variable[] list, Variable ext) {
 			super(pb, list, ext);
 			this.domExt = ext.dom;
-			this.sentinels = new Variable[ext.dom.initSize()];
-			for (int a = domExt.first(); a != -1; a = domExt.next(a))
-				sentinels[a] = findSentinelFor(domExt.toVal(a));
-			for (int a = domExt.first(); a != -1; a = domExt.next(a))
-				if (sentinels[a] == null)
-					domExt.removeAtConstructionTime(a);
-			Kit.control(list.length > 1 && Stream.of(list).noneMatch(x -> x == ext), () -> "vector length = " + list.length);
+			this.sentinels = IntStream.range(0, domExt.initSize()).mapToObj(a -> findSentinelFor(domExt.toVal(a))).toArray(Variable[]::new);
+			domExt.removeAtConstructionTime(a -> sentinels[a] == null);
+			control(list.length > 1 && Stream.of(list).noneMatch(x -> x == ext), "vector length = " + list.length);
 		}
 
 		// ************************************************************************

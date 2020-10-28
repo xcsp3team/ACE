@@ -39,6 +39,8 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 
 	protected Domain dx, dy, dz;
 
+	int[] rx, ry, rzx, rzy; // residues for values in the domains of x, y and z
+
 	public CtrPrimitiveTernary(Problem pb, Variable x, Variable y, Variable z) {
 		super(pb, pb.api.vars(x, y, z));
 		this.x = x;
@@ -47,6 +49,19 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 		this.dx = x.dom;
 		this.dy = y.dom;
 		this.dz = z.dom;
+	}
+
+	protected void buildThreeResidueStructure() {
+		this.rx = new int[dx.initSize()];
+		this.ry = new int[dy.initSize()];
+		this.rzx = new int[dz.initSize()];
+	}
+
+	protected void buildFourResidueStructure() {
+		this.rx = new int[dx.initSize()];
+		this.ry = new int[dy.initSize()];
+		this.rzx = Kit.repeat(-1, dz.initSize());
+		this.rzy = Kit.repeat(-1, dz.initSize());
 	}
 
 	// ************************************************************************
@@ -67,8 +82,6 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 
 		public static final class AddEQ3 extends CtrPrimitiveTernaryAdd {
 
-			int[] resx, resy, resz; // residues for values in the domains of x, y and z
-
 			boolean multidirectional = false; // hard coding
 
 			@Override
@@ -78,16 +91,14 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 
 			public AddEQ3(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
-				this.resx = new int[dx.initSize()];
-				this.resy = new int[dy.initSize()];
-				this.resz = new int[dz.initSize()];
+				buildThreeResidueStructure();
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 					int va = dx.toVal(a);
-					if (dy.isPresent(resx[a]) && dz.isPresentValue(va + dy.toVal(resx[a])))
+					if (dy.isPresent(rx[a]) && dz.isPresentValue(va + dy.toVal(rx[a])))
 						continue;
 					if (dy.size() <= dz.size())
 						for (int b = dy.first(); b != -1; b = dy.next(b)) {
@@ -95,10 +106,10 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 							if (vc > dz.lastValue())
 								break;
 							if (dz.isPresentValue(vc)) {
-								resx[a] = b;
+								rx[a] = b;
 								if (multidirectional) {
-									resy[b] = a;
-									resz[dz.toIdx(vc)] = a;
+									ry[b] = a;
+									rzx[dz.toIdx(vc)] = a;
 								}
 								continue extern;
 							}
@@ -109,10 +120,10 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 							if (vb > dy.lastValue())
 								break;
 							if (dy.isPresentValue(vb)) {
-								resx[a] = dy.toIdx(vb);
+								rx[a] = dy.toIdx(vb);
 								if (multidirectional) {
-									resy[dy.toIdx(vb)] = a;
-									resz[c] = a;
+									ry[dy.toIdx(vb)] = a;
+									rzx[c] = a;
 								}
 								continue extern;
 							}
@@ -122,7 +133,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 				}
 				extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
 					int vb = dy.toVal(b);
-					if (dx.isPresent(resy[b]) && dz.isPresentValue(vb + dx.toVal(resy[b])))
+					if (dx.isPresent(ry[b]) && dz.isPresentValue(vb + dx.toVal(ry[b])))
 						continue;
 					if (dx.size() <= dz.size())
 						for (int a = dx.first(); a != -1; a = dx.next(a)) {
@@ -130,9 +141,9 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 							if (vc > dz.lastValue())
 								break;
 							if (dz.isPresentValue(vc)) {
-								resy[b] = a;
+								ry[b] = a;
 								if (multidirectional)
-									resz[dz.toIdx(vc)] = a;
+									rzx[dz.toIdx(vc)] = a;
 								continue extern;
 							}
 						}
@@ -142,9 +153,9 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 							if (va > dx.lastValue())
 								break;
 							if (dx.isPresentValue(va)) {
-								resy[b] = dx.toIdx(va);
+								ry[b] = dx.toIdx(va);
 								if (multidirectional)
-									resz[c] = dx.toIdx(va);
+									rzx[c] = dx.toIdx(va);
 								continue extern;
 							}
 						}
@@ -153,7 +164,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 				}
 				extern: for (int c = dz.first(); c != -1; c = dz.next(c)) {
 					int vc = dz.toVal(c);
-					if (dx.isPresent(resz[c]) && dy.isPresentValue(vc - dx.toVal(resz[c])))
+					if (dx.isPresent(rzx[c]) && dy.isPresentValue(vc - dx.toVal(rzx[c])))
 						continue;
 					if (dx.size() <= dy.size())
 						for (int a = dx.last(); a != -1; a = dx.prev(a)) {
@@ -161,7 +172,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 							if (vb > dy.lastValue())
 								break;
 							if (dy.isPresentValue(vb)) {
-								resz[c] = a;
+								rzx[c] = a;
 								continue extern;
 							}
 						}
@@ -171,7 +182,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 							if (va > dx.lastValue())
 								break;
 							if (dx.isPresentValue(va)) {
-								resz[c] = dx.toIdx(va);
+								rzx[c] = dx.toIdx(va);
 								continue extern;
 							}
 						}
@@ -206,13 +217,8 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 	public static abstract class CtrPrimitiveTernaryMul extends CtrPrimitiveTernary {
 
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
-			if (op == TypeConditionOperatorRel.EQ) {
-				if (x.dom.is01())
-					return pb.addCtr(new MulEQ3b(pb, x, y, z));
-				if (y.dom.is01())
-					return pb.addCtr(new MulEQ3b(pb, y, x, z));
-				return pb.addCtr(new MulEQ3(pb, y, x, z));
-			}
+			if (op == TypeConditionOperatorRel.EQ)
+				return pb.addCtr(x.dom.is01() ? new MulEQ3b(pb, x, y, z) : y.dom.is01() ? new MulEQ3b(pb, y, x, z) : new MulEQ3(pb, y, x, z));
 			throw new MissingImplementationException();
 		}
 
@@ -229,46 +235,30 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 
 			public MulEQ3b(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
-				Utilities.control(dx.is01(), "The first variable should be of type 01");
+				control(dx.is01(), "The first variable should be of type 01");
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.last() == 0) // only 0 remaining in dx => z must be 0
-					return dz.reduceToValue(0);
-				if (dy.onlyContainsValue(0)) // only 0 remaining in dy => z must be 0
+				if (dx.last() == 0 || dy.onlyContainsValue(0)) // only 0 remaining in dx or dy => z must be 0
 					return dz.reduceToValue(0);
 				if (dz.onlyContainsValue(0)) { // only 0 remaining in dz
 					if (dx.first() == 0 && dy.isPresentValue(0)) // if 0 in the domains of x and y, every value is supported
 						return true;
-					if (dx.first() == 0)
-						return dx.reduceTo(0);
-					if (dy.isPresentValue(0))
-						return dy.reduceToValue(0);
-					return dz.fail();
+					return dx.first() == 0 ? dx.reduceTo(0) : dy.reduceToValue(0); // if 0 not in dy => x must be 0, else => y must be 0
 				}
 				if (dz.isPresentValue(0)) {
 					if (dx.first() == 1 && !dy.isPresentValue(0) && dz.removeValue(0) == false)
 						return false;
-				} else {
-					if (dx.removeIfPresent(0) == false)
-						return false;
-					if (dy.removeValueIfPresent(0) == false)
-						return false;
-				}
-				if (dx.first() == 1) { // only 1 remaining in dx => y = z
-					if (dy.removeValuesNotIn(dz) == false)
-						return false;
-					assert dy.size() <= dz.size();
-					if (dy.size() == dz.size())
-						return true;
-					boolean consistent = dz.removeValuesNotIn(dy);
-					assert consistent;
-					return true;
-				}
-				assert dx.size() == 2 && dz.isPresentValue(0) && dz.size() > 1;
+				} else if (dx.removeIfPresent(0) == false || dy.removeValueIfPresent(0) == false)
+					return false;
+
+				if (dx.first() == 1) // only 1 remaining in dx => y = z
+					return CtrPrimitiveBinary.enforceEQ(dy, dz);
+
+				assert dx.size() == 2 && dz.isPresentValue(0) && dz.size() > 1; // because if 0 not in z, dx.size() cannot be 2
 				// every value of dy is supported (by both 0 in x and z); we still need to filter z (and possibly 1 out of dx)
-				// TODO using a residue here ?
+
 				int sizeBefore = dz.size();
 				for (int c = dz.first(); c != -1; c = dz.next(c)) {
 					int vc = dz.toVal(c);
@@ -286,8 +276,6 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 
 		public static final class MulEQ3 extends CtrPrimitiveTernaryMul {
 
-			int[] resx, resy, resz1, resz2; // residues for values in the domains of x, y and z
-
 			@Override
 			public final boolean checkValues(int[] t) {
 				return t[0] * t[1] == t[2];
@@ -295,17 +283,14 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 
 			public MulEQ3(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
+				buildFourResidueStructure();
 				Kit.control(Utilities.isSafeInt(BigInteger.valueOf(dx.firstValue()).multiply(BigInteger.valueOf(dy.firstValue())).longValueExact()));
 				Kit.control(Utilities.isSafeInt(BigInteger.valueOf(dx.lastValue()).multiply(BigInteger.valueOf(dy.lastValue())).longValueExact()));
-				this.resx = new int[dx.initSize()];
-				this.resy = new int[dy.initSize()];
-				this.resz1 = Kit.repeat(-1, dz.initSize());
-				this.resz2 = Kit.repeat(-1, dz.initSize());
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (!dy.isPresentValue(0) || !dz.isPresentValue(0))
+				if (!dy.isPresentValue(0) || !dz.isPresentValue(0)) // if 0 is present in dy and dz, all values of x are supported
 					extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int va = dx.toVal(a);
 						if (va == 0) {
@@ -313,21 +298,21 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 								return false;
 							continue;
 						}
-						if (dy.isPresent(resx[a]) && dz.isPresentValue(va * dy.toVal(resx[a])))
+						if (dy.isPresent(rx[a]) && dz.isPresentValue(va * dy.toVal(rx[a])))
 							continue;
 						for (int b = dy.first(); b != -1; b = dy.next(b)) {
 							int vc = va * dy.toVal(b);
 							if ((va > 0 && vc > dz.lastValue()) || (va < 0 && vc < dz.firstValue()))
 								break;
 							if (dz.isPresentValue(vc)) {
-								resx[a] = b;
+								rx[a] = b;
 								continue extern;
 							}
 						}
 						if (dx.remove(a) == false)
 							return false;
 					}
-				if (!dx.isPresentValue(0) || !dz.isPresentValue(0))
+				if (!dx.isPresentValue(0) || !dz.isPresentValue(0)) // if 0 is present in dx and dz, all values of y are supported
 					extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
 						int vb = dy.toVal(b);
 						if (vb == 0) {
@@ -335,14 +320,14 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 								return false;
 							continue;
 						}
-						if (dx.isPresent(resy[b]) && dz.isPresentValue(vb * dx.toVal(resy[b])))
+						if (dx.isPresent(ry[b]) && dz.isPresentValue(vb * dx.toVal(ry[b])))
 							continue;
 						for (int a = dx.first(); a != -1; a = dx.next(a)) {
 							int vc = vb * dx.toVal(a);
 							if ((vb > 0 && vc > dz.lastValue()) || (vb < 0 && vc < dz.firstValue()))
 								break;
 							if (dz.isPresentValue(vc)) {
-								resy[b] = a;
+								ry[b] = a;
 								continue extern;
 							}
 						}
@@ -356,16 +341,16 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 							return false;
 						continue;
 					}
-					if (resz1[c] != -1 && dx.isPresent(resz1[c]) && dy.isPresent(resz2[c]))
+					if (rzx[c] != -1 && dx.isPresent(rzx[c]) && dy.isPresent(rzy[c]))
 						continue;
 					for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int va = dx.toVal(a);
 						int vb = vc / va;
-						// if (va > 0 && vc > 0 && va > vc / 2) // TODO is that correct? other ways of breaking?
-						// break;
+						if (va > 0 && vc > 0 && (va > vc / 2 || va * dy.firstValue() > vc)) // TODO correct. right? other ways of breaking?
+							break;
 						if (vc % va == 0 && dy.isPresentValue(vb)) {
-							resz1[c] = a;
-							resz2[c] = dy.toIdx(vb);
+							rzx[c] = a;
+							rzy[c] = dy.toIdx(vb);
 							continue extern;
 						}
 					}
@@ -373,6 +358,118 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 						return false;
 				}
 
+				return true;
+			}
+		}
+	}
+
+	// ************************************************************************
+	// ***** Classes for x / y <op> z (CtrPrimitiveTernaryDiv)
+	// ************************************************************************
+
+	public static abstract class CtrPrimitiveTernaryDiv extends CtrPrimitiveTernary {
+
+		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
+			if (op == TypeConditionOperatorRel.EQ)
+				return pb.addCtr(new DivEQ3(pb, x, y, z));
+			throw new MissingImplementationException();
+		}
+
+		public CtrPrimitiveTernaryDiv(Problem pb, Variable x, Variable y, Variable z) {
+			super(pb, x, y, z);
+		}
+
+		public static final class DivEQ3 extends CtrPrimitiveTernaryDiv {
+
+			@Override
+			public final boolean checkValues(int[] t) {
+				return t[0] / t[1] == t[2];
+			}
+
+			public DivEQ3(Problem pb, Variable x, Variable y, Variable z) {
+				super(pb, x, y, z);
+				buildFourResidueStructure();
+				control(x.dom.firstValue() >= 0 && y.dom.firstValue() > 0 && z.dom.firstValue() >= 0);
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				if (dx.firstValue() >= dy.lastValue() && dz.removeValueIfPresent(0) == false)
+					return false;
+				boolean zero = dz.isPresentValue(0);
+				if (!zero || dx.lastValue() >= dy.lastValue())
+					extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
+						int va = dx.toVal(a);
+						if (va == 0) {
+							if (!zero && dx.remove(a) == false)
+								return false;
+							continue;
+						}
+						if (zero && va < dy.lastValue())
+							continue;
+						if (dy.isPresent(rx[a]) && dz.isPresentValue(va / dy.toVal(rx[a])))
+							continue;
+						for (int b = dy.first(); b != -1; b = dy.next(b)) {
+							int vc = va / dy.toVal(b);
+							if (vc < dz.firstValue())
+								break;
+							if (dz.isPresentValue(vc)) {
+								rx[a] = b;
+								continue extern;
+							}
+						}
+						if (dx.remove(a) == false)
+							return false;
+					}
+				if (!zero || !dx.isPresentValue(0))
+					extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
+						int vb = dy.toVal(b);
+						if (zero && dx.firstValue() < vb)
+							break; // all remaining values are supported
+						if (dx.isPresent(ry[b]) && dz.isPresentValue(dx.toVal(ry[b]) / vb))
+							continue;
+						for (int a = dx.last(); a != -1; a = dx.prev(a)) {
+							int va = dx.toVal(a);
+							if (va < vb) {
+								assert !zero;
+								break;
+							}
+							if (dz.isPresentValue(va / vb)) {
+								ry[b] = a;
+								continue extern;
+							}
+						}
+						if (dy.remove(b) == false)
+							return false;
+					}
+				extern: for (int c = dz.first(); c != -1; c = dz.next(c)) {
+					int vc = dz.toVal(c);
+					if (vc == 0) {
+						assert dx.firstValue() < dy.lastValue();
+						continue; // already treated at the beginning of the method
+					}
+					if (rzx[c] != -1 && dx.isPresent(rzx[c]) && dy.isPresent(rzy[c]))
+						continue;
+					for (int a = dx.first(); a != -1; a = dx.next(a)) {
+						int va = dx.toVal(a);
+						if (va / dy.lastValue() > vc)
+							break;
+						if (va / dy.firstValue() < vc)
+							continue;
+						for (int b = dy.first(); b != -1; b = dy.next(b)) {
+							int res = va / dy.toVal(b);
+							if (res < vc)
+								break;
+							if (res == vc) {
+								rzx[c] = a;
+								rzy[c] = b;
+								continue extern;
+							}
+						}
+					}
+					if (dz.remove(c) == false)
+						return false;
+				}
 				return true;
 			}
 		}
@@ -396,8 +493,6 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 
 		public static final class ModEQ3 extends CtrPrimitiveTernaryMod {
 
-			int[] resx, resy, resz1, resz2; // residues for values in the domains of x, y and z
-
 			@Override
 			public final boolean checkValues(int[] t) {
 				return t[0] % t[1] == t[2];
@@ -405,32 +500,24 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 
 			public ModEQ3(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
+				buildFourResidueStructure();
 				control(x.dom.firstValue() >= 0 && y.dom.firstValue() > 0 && z.dom.firstValue() >= 0);
-				this.resx = new int[dx.initSize()];
-				this.resy = new int[dy.initSize()];
-				this.resz1 = Kit.repeat(-1, dz.initSize());
-				this.resz2 = Kit.repeat(-1, dz.initSize());
-			}
-
-			@Override
-			public Boolean isSymmetric() {
-				return false;
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 					int va = dx.toVal(a);
-					if (va < dy.lastValue() && dz.isPresentValue(va)) // remainder in z is then necessarily va
+					if (va < dy.lastValue() && dz.isPresentValue(va)) // remainder is necessarily va because va < vb
 						continue;
-					if (dy.isPresent(resx[a]) && dz.isPresentValue(va % dy.toVal(resx[a])))
+					if (dy.isPresent(rx[a]) && dz.isPresentValue(va % dy.toVal(rx[a])))
 						continue;
 					for (int b = dy.first(); b != -1; b = dy.next(b)) {
 						int vb = dy.toVal(b);
 						if (va < vb) // means that the remainder with remaining values of y lead to va (and this has been considered earlier)
 							break;
 						if (dz.isPresentValue(va % vb)) {
-							resx[a] = b;
+							rx[a] = b;
 							continue extern;
 						}
 					}
@@ -444,12 +531,12 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 							return false;
 						continue;
 					}
-					if (dx.isPresent(resy[b]) && dz.isPresentValue(dx.toVal(resy[b]) % vb))
+					if (dx.isPresent(ry[b]) && dz.isPresentValue(dx.toVal(ry[b]) % vb))
 						continue;
 					for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int vc = dx.toVal(a) % vb;
 						if (dz.isPresentValue(vc)) {
-							resy[b] = a;
+							ry[b] = a;
 							continue extern;
 						}
 					}
@@ -460,18 +547,18 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 					return false;
 				extern: for (int c = dz.first(); c != -1; c = dz.next(c)) {
 					int vc = dz.toVal(c);
-					if (resz1[c] != -1 && dx.isPresent(resz1[c]) && dy.isPresent(resz2[c]))
+					if (rzx[c] != -1 && dx.isPresent(rzx[c]) && dy.isPresent(rzy[c]))
 						continue;
 					for (int b = dy.last(); b != -1; b = dy.prev(b)) {
 						int vb = dy.toVal(b);
-						if (vb < vc)
+						if (vb <= vc)
 							break;
 						int nMultiples = dx.lastValue() / vb;
 						if (dx.size() <= nMultiples) {
 							for (int a = dx.first(); a != -1; a = dx.next(a)) {
 								if (dx.toVal(a) % vb == vc) {
-									resz1[c] = a;
-									resz2[c] = b;
+									rzx[c] = a;
+									rzy[c] = b;
 									continue extern;
 								}
 							}
@@ -481,8 +568,8 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 								if (multiple > dx.lastValue())
 									break;
 								if (dx.isPresentValue(multiple)) {
-									resz1[c] = dx.toIdx(multiple);
-									resz2[c] = b;
+									rzx[c] = dx.toIdx(multiple);
+									rzy[c] = b;
 									continue extern;
 								}
 								multiple += vb;
@@ -516,8 +603,6 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 		// time java ac GolombRuler-10.xml -varh=Dom => same search tree with CT, Intension and DistEQ3
 		public static final class DistEQ3 extends CtrPrimitiveTernaryDist {
 
-			int[] resx, resy, resz1, resz2; // residues for values in the domains of x, y and z
-
 			boolean multidirectional = true; // hard coding
 
 			@Override
@@ -527,131 +612,110 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 
 			public DistEQ3(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
-				this.resx = new int[dx.initSize()];
-				this.resy = new int[dy.initSize()];
-				this.resz1 = Kit.repeat(-1, dz.initSize());
-				this.resz2 = Kit.repeat(-1, dz.initSize());
+				buildFourResidueStructure();
+			}
+
+			private boolean supportx(Domain d, int v, int a, int b, int c) {
+				if (d.isPresentValue(v)) {
+					rx[a] = b;
+					if (multidirectional) {
+						ry[b] = a;
+						rzx[c] = a;
+						rzy[c] = b;
+					}
+					return true;
+				}
+				return false;
+			}
+
+			private boolean supporty(Domain d, int v, int a, int b, int c) {
+				if (d.isPresentValue(v)) {
+					ry[b] = a;
+					if (multidirectional) {
+						rzx[c] = a;
+						rzy[c] = b;
+					}
+					return true;
+				}
+				return false;
+			}
+
+			private boolean supportz(Domain d, int v, int a, int b, int c) {
+				if (d.isPresentValue(v)) {
+					rzx[c] = a;
+					rzy[c] = b;
+					return true;
+				}
+				return false;
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 					int va = dx.toVal(a);
-					if (dy.isPresent(resx[a]) && dz.isPresentValue(Math.abs(va - dy.toVal(resx[a]))))
+					if (dy.isPresent(rx[a]) && dz.isPresentValue(Math.abs(va - dy.toVal(rx[a]))))
 						continue;
 					if (dy.size() <= dz.size())
 						for (int b = dy.first(); b != -1; b = dy.next(b)) {
 							int vc = Math.abs(va - dy.toVal(b));
-							if (dz.isPresentValue(vc)) {
-								resx[a] = b;
-								if (multidirectional) {
-									resy[b] = a;
-									resz1[dz.toIdx(vc)] = a;
-									resz2[dz.toIdx(vc)] = b;
-								}
+							if (supportx(dz, vc, a, b, dz.toIdx(vc)))
 								continue extern;
-							}
 						}
 					else
 						for (int c = dz.first(); c != -1; c = dz.next(c)) {
 							int vb = va - dz.toVal(c);
-							if (dy.isPresentValue(vb)) {
-								resx[a] = dy.toIdx(vb);
-								if (multidirectional) {
-									resy[dy.toIdx(vb)] = a;
-									resz1[c] = a;
-									resz2[c] = dy.toIdx(vb);
-								}
+							if (supportx(dy, vb, a, dy.toIdx(vb), c))
 								continue extern;
-							}
 							vb = va + dz.toVal(c);
-							if (dy.isPresentValue(vb)) {
-								resx[a] = dy.toIdx(vb);
-								if (multidirectional) {
-									resy[dy.toIdx(vb)] = a;
-									resz1[c] = a;
-									resz2[c] = dy.toIdx(vb);
-								}
+							if (supportx(dy, vb, a, dy.toIdx(vb), c))
 								continue extern;
-							}
 						}
 					if (dx.remove(a) == false)
 						return false;
 				}
 				extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
 					int vb = dy.toVal(b);
-					if (dx.isPresent(resy[b]) && dz.isPresentValue(Math.abs(vb - dx.toVal(resy[b]))))
+					if (dx.isPresent(ry[b]) && dz.isPresentValue(Math.abs(vb - dx.toVal(ry[b]))))
 						continue;
 					if (dx.size() <= dz.size())
 						for (int a = dx.first(); a != -1; a = dx.next(a)) {
 							int vc = Math.abs(vb - dx.toVal(a));
-							if (dz.isPresentValue(vc)) {
-								resy[b] = a;
-								if (multidirectional) {
-									resz1[dz.toIdx(vc)] = a;
-									resz2[dz.toIdx(vc)] = b;
-								}
+							if (supporty(dz, vc, a, b, dz.toIdx(vc)))
 								continue extern;
-							}
 						}
 					else
 						for (int c = dz.first(); c != -1; c = dz.next(c)) {
 							int va = vb - dz.toVal(c);
-							if (dx.isPresentValue(va)) {
-								resy[b] = dx.toIdx(va);
-								if (multidirectional) {
-									resz1[c] = dx.toIdx(va);
-									resz2[c] = b;
-
-								}
+							if (supporty(dx, va, dx.toIdx(va), b, c))
 								continue extern;
-							}
 							va = vb + dz.toVal(c);
-							if (dx.isPresentValue(va)) {
-								resy[b] = dx.toIdx(va);
-								if (multidirectional) {
-									resz1[c] = dx.toIdx(va);
-									resz2[c] = b;
-								}
+							if (supporty(dx, va, dx.toIdx(va), b, c))
 								continue extern;
-							}
 						}
 					if (dy.remove(b) == false)
 						return false;
 				}
 				extern: for (int c = dz.first(); c != -1; c = dz.next(c)) {
 					int vc = dz.toVal(c);
-					if (resz1[c] != -1 && dx.isPresent(resz1[c]) && dy.isPresentValue(resz2[c]))
+					if (rzx[c] != -1 && dx.isPresent(rzx[c]) && dy.isPresentValue(rzy[c]))
 						continue;
 					if (dx.size() <= dy.size())
 						for (int a = dx.first(); a != -1; a = dx.next(a)) {
 							int vb = dx.toVal(a) - vc;
-							if (dy.isPresentValue(vb)) {
-								resz1[c] = a;
-								resz2[c] = dy.toIdx(vb);
+							if (supportz(dy, vb, a, dy.toIdx(vb), c))
 								continue extern;
-							}
 							vb = dx.toVal(a) + vc;
-							if (dy.isPresentValue(vb)) {
-								resz1[c] = a;
-								resz2[c] = dy.toIdx(vb);
+							if (supportz(dy, vb, a, dy.toIdx(vb), c))
 								continue extern;
-							}
 						}
 					else
 						for (int b = dy.first(); b != -1; b = dy.next(b)) {
 							int va = dy.toVal(b) - vc;
-							if (dx.isPresentValue(va)) {
-								resz1[c] = dx.toIdx(va);
-								resz2[c] = b;
+							if (supportz(dx, va, dx.toIdx(va), b, c))
 								continue extern;
-							}
 							va = dy.toVal(b) + vc;
-							if (dx.isPresentValue(va)) {
-								resz1[c] = dx.toIdx(va);
-								resz2[c] = b;
+							if (supportz(dx, va, dx.toIdx(va), b, c))
 								continue extern;
-							}
 						}
 					if (dz.remove(c) == false)
 						return false;
@@ -687,7 +751,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 
 		public CtrPrimitiveTernaryLog(Problem pb, Variable x, Variable y, Variable z) {
 			super(pb, x, y, z);
-			Utilities.control(dx.is01(), "The first variable should be of type 01");
+			control(dx.is01(), "The first variable should be of type 01");
 		}
 
 		public static final class LogLT3 extends CtrPrimitiveTernaryLog {
@@ -707,10 +771,10 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 					return false;
 				if (dx.last() == 1 && dy.firstValue() >= dz.lastValue() && dx.remove(1) == false)
 					return false;
-				if (dx.first() == 1 && enforceLT(dy, dz) == false)
-					return false; // because only 1 remaining implies y < z
-				if (dx.last() == 0 && enforceGE(dy, dz) == false)
-					return false; // because only 0 remaining implies y >= z
+				if (dx.first() == 1 && enforceLT(dy, dz) == false) // because only 1 remaining implies y < z
+					return false;
+				if (dx.last() == 0 && enforceGE(dy, dz) == false) // because only 0 remaining implies y >= z
+					return false;
 				return true;
 			}
 		}
@@ -732,10 +796,10 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 					return false;
 				if (dx.last() == 1 && dy.firstValue() > dz.lastValue() && dx.remove(1) == false)
 					return false;
-				if (dx.first() == 1 && enforceLE(dy, dz) == false)
-					return false; // because only 1 remaining implies y <= z
-				if (dx.last() == 0 && enforceGT(dy, dz) == false)
-					return false; // because only 0 remaining implies y > z
+				if (dx.first() == 1 && enforceLE(dy, dz) == false) // because only 1 remaining implies y <= z
+					return false;
+				if (dx.last() == 0 && enforceGT(dy, dz) == false) // because only 0 remaining implies y > z
+					return false;
 				return true;
 			}
 		}
@@ -757,10 +821,10 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 					return false;
 				if (dx.last() == 1 && dy.lastValue() < dz.firstValue() && dx.remove(1) == false)
 					return false;
-				if (dx.first() == 1 && enforceGE(dy, dz) == false)
-					return false; // because only 1 remaining implies y >= z
-				if (dx.last() == 0 && enforceLT(dy, dz) == false)
-					return false; // because only 0 remaining implies y < z
+				if (dx.first() == 1 && enforceGE(dy, dz) == false) // because only 1 remaining implies y >= z
+					return false;
+				if (dx.last() == 0 && enforceLT(dy, dz) == false) // because only 0 remaining implies y < z
+					return false;
 				return true;
 			}
 		}
@@ -782,10 +846,10 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 					return false;
 				if (dx.last() == 1 && dy.lastValue() <= dz.firstValue() && dx.remove(1) == false)
 					return false;
-				if (dx.first() == 1 && enforceGT(dy, dz) == false)
-					return false; // because only 1 remaining implies y > z
-				if (dx.last() == 0 && enforceLE(dy, dz) == false)
-					return false; // because only 0 remaining implies y <= z
+				if (dx.first() == 1 && enforceGT(dy, dz) == false) // because only 1 remaining implies y > z
+					return false;
+				if (dx.last() == 0 && enforceLE(dy, dz) == false) // because only 0 remaining implies y <= z
+					return false;
 				return true;
 			}
 		}

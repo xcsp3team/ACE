@@ -25,20 +25,22 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 
 	protected final Variable[] list;
 	protected final int startAt;
-	protected final Variable index;
-	protected final int indexPosition; // in scope
+	protected final Variable ivar; // index variable
+	protected final Domain idom;
+	protected final int ipos; // index position in scope
 
 	public Element(Problem pb, Variable[] list, int startAt, Variable index, Object value) {
 		super(pb, Utilities.collect(Variable.class, list, index, value)); // before, was collectDistinct (but put in the constructor of Constraint)
 		this.list = list;
 		this.startAt = startAt;
-		this.index = index;
-		this.indexPosition = IntStream.range(0, scp.length).filter(i -> scp[i] == index).findFirst().getAsInt();
-		Kit.control(startAt == 0, () -> "Starting at a value different from 0 not implemented yet");
-		Kit.control(Variable.areAllDistinct(list) && index != value, () -> "i=" + index + " x=" + Kit.join(list) + " v=" + value);
-		// Kit.control(this instanceof ElementConstant || Stream.of(list).allMatch(x -> x != index), () -> "i=" + index + " X=" + Kit.join(list) + "
+		this.ivar = index;
+		this.idom = index.dom;
+		this.ipos = IntStream.range(0, scp.length).filter(i -> scp[i] == index).findFirst().getAsInt();
+		control(startAt == 0, "Starting at a value different from 0 not implemented yet");
+		control(Variable.areAllDistinct(list) && index != value, "i=" + index + " x=" + Kit.join(list) + " v=" + value);
+		// control(this instanceof ElementConstant || Stream.of(list).allMatch(x -> x != index), "i=" + index + " X=" + Kit.join(list) + "
 		// v=" + value);
-		Kit.control(index.dom.areInitValuesExactly(pb.api.range(startAt, startAt + list.length)), () -> " pb with " + this + " " + startAt);
+		control(idom.areInitValuesExactly(pb.api.range(startAt, startAt + list.length)), " pb with " + this + " " + startAt);
 	}
 
 	// returns the domain of the variable in list whose position is given by the specified integer (note that startAt is paid attention to)
@@ -51,20 +53,20 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 	// ************************************************************************
 
 	public static class ElementConstant extends Element implements TagFilteringCompleteAtEachCall {
-		private final int value;
+		private final int k;
 
 		@Override
 		public boolean checkValues(int[] t) {
-			return t[t[indexPosition] - startAt] == value;
+			return t[t[ipos] - startAt] == k;
 		}
 
 		public ElementConstant(Problem pb, Variable[] list, int startAt, Variable index, int value) {
 			super(pb, list, startAt, index, value);
-			this.value = value;
+			this.k = value;
 			defineKey(value, startAt);
-			Kit.control(Variable.areAllDomainsContainingValue(list, value));
-			if (indexPosition < list.length && indexPosition + startAt != value) // special case (index in list)
-				index.dom.removeValueAtConstructionTime(value);
+			control(Variable.areAllDomainsContainingValue(list, k));
+			if (ipos < list.length && ipos + startAt != k) // special case (index in list)
+				idom.removeValueAtConstructionTime(k);
 		}
 
 		public ElementConstant(Problem pb, Variable[] list, Variable index, int value) {
@@ -73,14 +75,11 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			if (index.dom.size() > 1) // checking that the values of index are still valid
-				if (index.dom.removeIndexesChecking(a -> !domAt(a).isPresentValue(value)) == false)
+			if (idom.size() > 1) // checking that the values of index are still valid
+				if (idom.removeIndexesChecking(a -> !domAt(a).isPresentValue(k)) == false)
 					return false;
 			// be careful : not a else because of statements above that may modify the domain of index
-			if (index.dom.size() == 1)
-				if (domAt(index.dom.unique()).reduceToValue(value) == false)
-					return false;
-			return true;
+			return idom.size() > 1 || domAt(idom.unique()).reduceToValue(k);
 		}
 	}
 
@@ -92,13 +91,14 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 	 * Such a constraint is satisfied iff list[index] = value
 	 */
 	public static class ElementVariable extends Element implements TagFilteringCompleteAtEachCall {
-		private final Variable value;
+		private final Variable vvar; // value variable
+		private final Domain vdom;
 
-		private final int valuePosition; // in scope
+		private final int vpos; // value variable position in scope
 
 		@Override
 		public boolean checkValues(int[] t) {
-			return t[t[indexPosition] - startAt] == t[valuePosition];
+			return t[t[ipos] - startAt] == t[vpos];
 		}
 
 		/**
@@ -113,8 +113,9 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 
 		public ElementVariable(Problem pb, Variable[] list, int startAt, Variable index, Variable value) {
 			super(pb, list, startAt, index, value);
-			this.value = value;
-			this.valuePosition = IntStream.range(0, scp.length).filter(i -> scp[i] == value).findFirst().getAsInt();
+			this.vvar = value;
+			this.vdom = value.dom;
+			this.vpos = IntStream.range(0, scp.length).filter(i -> scp[i] == value).findFirst().getAsInt();
 			this.valueSentinels = Kit.repeat(-1, value.dom.initSize());
 			this.listSentinels = Kit.repeat(-1, list.length);
 			defineKey();
@@ -126,35 +127,39 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 		}
 
 		private boolean findSentinelForListAt(int i) {
-			return domAt(i).iterateOnValuesStoppingWhen(v -> {
-				boolean present = value.dom.isPresentValue(v);
-				if (present)
+			Domain dom = domAt(i);
+			for (int a = dom.first(); a != -1; a = dom.next(a)) {
+				int v = dom.toVal(a);
+				if (vdom.isPresentValue(v)) {
 					listSentinels[i] = v;
-				return present;
-			});
+					return true;
+				}
+			}
+			return false;
 		}
 
 		private boolean findSentinelForValue(int a) {
-			int v = value.dom.toVal(a);
-			return index.dom.iterateStoppingWhen(i -> {
-				boolean present = domAt(i).toPresentIdx(v) >= 0;
-				if (present)
+			int v = vdom.toVal(a);
+			for (int i = idom.first(); i != -1; i = idom.next(i)) {
+				if (domAt(i).isPresentValue(v)) {
 					valueSentinels[a] = i;
-				return present;
-			});
+					return true;
+				}
+			}
+			return false;
 		}
 
 		private boolean reduceDomainOfValue() {
-			return value.dom.removeIndexesChecking(a -> {
+			return vdom.removeIndexesChecking(a -> {
 				int sentinel = valueSentinels[a];
-				return (sentinel == -1 || !index.dom.isPresent(sentinel) || !domAt(sentinel).isPresentValue(value.dom.toVal(a))) && !findSentinelForValue(a);
+				return (sentinel == -1 || !idom.isPresent(sentinel) || !domAt(sentinel).isPresentValue(vdom.toVal(a))) && !findSentinelForValue(a);
 			});
 		}
 
 		private boolean reduceDomainOfIndex() {
-			return index.dom.removeIndexesChecking(i -> {
+			return idom.removeIndexesChecking(i -> {
 				int sentinel = listSentinels[i];
-				return (sentinel == -1 || !domAt(i).isPresentValue(sentinel) || !value.dom.isPresentValue(sentinel)) && !findSentinelForListAt(i);
+				return (sentinel == -1 || !domAt(i).isPresentValue(sentinel) || !vdom.isPresentValue(sentinel)) && !findSentinelForListAt(i);
 			});
 		}
 
@@ -164,29 +169,29 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 			// - in value's domain, we prune the values which aren't in any of list variables'domains
 			// - in index's domain, we prune the values v for which there is no value j such that list[v] and value both have j in their
 			// domains
-			if (index.dom.size() > 1) {
+			if (idom.size() > 1) {
 				// Update valueSentinels and dom(value)
 				if (reduceDomainOfValue() == false)
 					return false;
 				while (true) {
 					// Update listSentinels and dom(index)
-					int sizeBefore = index.dom.size();
+					int sizeBefore = idom.size();
 					if (reduceDomainOfIndex() == false)
 						return false;
-					if (sizeBefore == index.dom.size())
+					if (sizeBefore == idom.size())
 						break;
 					// Update valueSentinels and dom(value)
-					sizeBefore = value.dom.size();
+					sizeBefore = vdom.size();
 					if (reduceDomainOfValue() == false)
 						return false;
-					if (sizeBefore == value.dom.size())
+					if (sizeBefore == vdom.size())
 						break;
 				}
 			}
 			// If index is singleton, we update dom(list[index]) and dom(value) so that they are both equal to the intersection of the two domains
-			if (index.dom.size() == 1) {
-				Domain dom = domAt(index.dom.unique());
-				if (dom.removeValuesNotIn(value.dom) == false || value.dom.removeValuesNotIn(dom) == false)
+			if (idom.size() == 1) {
+				Domain dom = domAt(idom.unique());
+				if (dom.removeValuesNotIn(vdom) == false || vdom.removeValuesNotIn(dom) == false)
 					return false;
 			}
 			assert controlGAC();
@@ -194,14 +199,13 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 		}
 
 		private boolean controlGAC() {
-			Kit.control(index.dom.size() != 1 || domAt(index.dom.unique()).subsetOf(value.dom),
-					() -> "index is singleton and dom(index) is not included in dom(result).");
-			for (int a = index.dom.first(); a != -1; a = index.dom.next(a))
-				Kit.control(domAt(a).overlapWith(value.dom), () -> "One var has no value in dom(result).");
-			for (int a = value.dom.first(); a != -1; a = value.dom.next(a)) {
-				int v = value.dom.toVal(a);
+			Kit.control(idom.size() != 1 || domAt(idom.unique()).subsetOf(vdom), () -> "index is singleton and dom(index) is not included in dom(result).");
+			for (int a = idom.first(); a != -1; a = idom.next(a))
+				Kit.control(domAt(a).overlapWith(vdom), () -> "One var has no value in dom(result).");
+			for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
+				int v = vdom.toVal(a);
 				int b;
-				for (b = index.dom.first(); b != -1; b = index.dom.next(b))
+				for (b = idom.first(); b != -1; b = idom.next(b))
 					if (domAt(b).isPresentValue(v))
 						break;
 				Kit.control(b != -1, () -> "value " + v + " is in dom(value) but in no list variable whose index is still in dom(index).");
