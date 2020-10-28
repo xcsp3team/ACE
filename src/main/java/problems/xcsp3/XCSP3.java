@@ -64,8 +64,8 @@ import org.xcsp.parser.entries.XVariables.XVar;
 import org.xcsp.parser.entries.XVariables.XVarInteger;
 import org.xcsp.parser.entries.XVariables.XVarSymbolic;
 
+import constraints.hard.CtrHardFalse;
 import constraints.hard.global.BinPackingSimple;
-import constraints.hard.primitive.CtrFalse;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryAdd;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryDist;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryLog;
@@ -351,7 +351,7 @@ public class XCSP3 extends ProblemFile implements XCallbacks2 {
 	@Override
 	public void buildCtrFalse(String id, XVar[] list) {
 		if (imp().settings.framework == TypeFramework.MAXCSP)
-			imp().addCtr(new CtrFalse(imp(), trVars(Stream.of(list).map(x -> (XVarInteger) x).toArray(XVarInteger[]::new))));
+			imp().addCtr(new CtrHardFalse(imp(), trVars(Stream.of(list).map(x -> (XVarInteger) x).toArray(XVarInteger[]::new)), "CtrHard False for MaxCSP"));
 		// extension((VarInteger[]) trVars(Stream.of(list).map(x -> (XVarInteger) x).toArray(XVarInteger[]::new)), new int[][] { {} });
 		else
 			throw new RuntimeException("Constraint with only conflicts");
