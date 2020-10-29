@@ -8,6 +8,7 @@
  */
 package search.backtrack;
 
+import static org.xcsp.common.Types.TypeFramework.COP;
 import static utility.Kit.log;
 
 import java.io.BufferedReader;
@@ -23,10 +24,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Constants;
-import org.xcsp.common.Types.TypeFramework;
 
 import constraints.Constraint;
-import constraints.CtrHard;
+import constraints.hard.CtrGlobal;
 import executables.Resolution;
 import heuristics.values.HeuristicValuesDynamic.Failures;
 import heuristics.variables.HeuristicVariables;
@@ -503,7 +503,6 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			if (!consistent)
 				stats.nWrongDecisions++;
 		}
-
 		if (!consistent)
 			manageEmptyDomainBeforeBacktracking();
 		return consistent;
@@ -512,7 +511,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	/**
 	 * Called when a contradiction has been encountered.
 	 */
-	private void manageContradiction() {
+	private void manageContradiction(CtrGlobal objectiveToCheck) {
 		for (boolean consistent = false; !consistent && stoppingType != EStopping.FULL_EXPLORATION;) {
 			Variable x = futVars.lastPast();
 			if (x == lastPastBeforeRun[nRecursiveRuns - 1] && !rs.cp.settingLNS.enabled)
@@ -520,7 +519,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			else {
 				int a = x.dom.unique();
 				backtrack(x);
-				consistent = tryRefutation(x, a);
+				consistent = tryRefutation(x, a) && propagation.propagate(objectiveToCheck);
 			}
 		}
 	}
@@ -537,35 +536,32 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 					break;
 				maxDepth = Math.max(maxDepth, depth());
 				if (tryAssignment(heuristicVars.bestVar()) == false)
-					manageContradiction();
+					manageContradiction(null);
 			}
 			if (futVars.size() == 0) {
 				solManager.handleNewSolutionAndPossiblyOptimizeIt();
-				if (rs.problem.settings.framework == TypeFramework.COP && !rs.cp.settingRestarts.restartAfterSolution) {
-					// we need to backtrack to the level where a value for a variable in the scope of the objective constraint has been removed
-					// for the last time
-					CtrHard c = (CtrHard) rs.problem.optimizationPilot.ctr;
-					((OptimizationCompatible) c).setLimit(((OptimizationCompatible) c).objectiveValue() + (rs.problem.optimizationPilot.minimization ? -1 : 1));
+				CtrGlobal objectiveToCheck = pb.settings.framework == COP && !rs.cp.settingRestarts.restartAfterSolution ? (CtrGlobal) pb.optimizationPilot.ctr
+						: null;
+				if (pb.settings.framework == COP && !rs.cp.settingRestarts.restartAfterSolution) {
+					// first, we backtrack to the level where a value for a variable in the scope of the objective was removed for the last time
+					objectiveToCheck = (CtrGlobal) pb.optimizationPilot.ctr;
+					((OptimizationCompatible) objectiveToCheck)
+							.setLimit(((OptimizationCompatible) objectiveToCheck).objectiveValue() + (pb.optimizationPilot.minimization ? -1 : 1));
 					int backtrackLevel = -1;
-					for (int i = 0; i < c.scp.length; i++) {
-						int x = c.futvars.dense[i];
-						if (c.scp[x].assignmentLevel() <= backtrackLevel)
+					for (int i = 0; i < objectiveToCheck.scp.length; i++) {
+						int x = objectiveToCheck.futvars.dense[i]; // variables (of the objective) from the last assigned to the first assigned
+						if (objectiveToCheck.scp[x].assignmentLevel() <= backtrackLevel)
 							break;
-						backtrackLevel = Math.max(backtrackLevel, c.scp[x].dom.lastRemovedLevel());
+						backtrackLevel = Math.max(backtrackLevel, objectiveToCheck.scp[x].dom.lastRemovedLevel());
 					}
 					assert backtrackLevel != -1;
 					while (depth() > backtrackLevel)
 						backtrack(futVars.lastPast());
-
-					// while (depth() > backtrackLevel || propagation.runInitially() == false) // we run constraint propagation to be sure that we
-					// // backtrack high enough
-					// backtrack(futVars.lastPast());
-					// TODO we need to identify the right level where to backtrack (runInitially causes some problems)
-
+					// check with java -ea ac /home/lecoutre/workspace/AbsCon/build/resources/main/cop/Photo.xml.lzma -cm -ev
+					// java -ea ac /home/lecoutre/workspace/AbsCon/build/resources/main/cop/Recipe.xml.lzma -cm -
 				}
-				if (!finished() && !restarter.currRunFinished()) {
-					manageContradiction();
-				}
+				if (!finished() && !restarter.currRunFinished())
+					manageContradiction(objectiveToCheck);
 			}
 		}
 		minDepth = dr.minDepth(); // need to be recorded before backtracking to the root

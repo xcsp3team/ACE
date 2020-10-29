@@ -11,6 +11,8 @@ package propagation.order1;
 
 import java.util.stream.Stream;
 
+import org.xcsp.common.Types.TypeFramework;
+
 import constraints.Constraint;
 import propagation.order1.FailedValueBasedConsistency.ArcFailedValueConsistency;
 import propagation.order1.FailedValueBasedConsistency.FailedValueConsistency;
@@ -92,12 +94,15 @@ public class AC extends PropagationForward {
 	}
 
 	/**
-	 * Can be called by suclasses to enforce AC.
+	 * Can be called by subclasses to enforce AC.
 	 */
 	public boolean enforceArcConsistencyAfterRefutation(Variable x) {
 		if (!super.runAfterRefutation(x))
 			return false;
-		assert controlArcConsistency();
+		// Todo also checking the objective when not in the phase following a new solution
+		assert !guaranteed || Stream.of(solver.pb.constraints)
+				.allMatch(c -> solver.pb.settings.framework == TypeFramework.COP && c == solver.pb.optimizationPilot.ctr || c.controlArcConsistency());
+		// assert controlArcConsistency();
 		return true;
 	}
 
@@ -106,7 +111,7 @@ public class AC extends PropagationForward {
 		return enforceArcConsistencyAfterRefutation(x);
 	}
 
-	public boolean controlArcConsistency() {
+	public final boolean controlArcConsistency() {
 		return !guaranteed || Stream.of(solver.pb.constraints).allMatch(c -> c.controlArcConsistency());
 	}
 }

@@ -10,17 +10,25 @@ package constraints.hard.global;
 
 import java.util.Arrays;
 
-import org.xcsp.modeler.definitions.DefXCSP;
-
 import interfaces.OptimizationCompatible;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 import variables.domains.Domain;
 
-public abstract class NValues extends NValuesAbstract implements OptimizationCompatible {
+public abstract class NValuesCst extends NValuesAbstract implements OptimizationCompatible {
 
 	protected int limit;
+
+	@Override
+	public long getLimit() {
+		return limit;
+	}
+
+	@Override
+	public void setLimit(long newLimit) {
+		limit = Math.toIntExact(newLimit);
+	}
 
 	@Override
 	public long minComputableObjectiveValue() {
@@ -33,48 +41,31 @@ public abstract class NValues extends NValuesAbstract implements OptimizationCom
 	}
 
 	@Override
-	public long getLimit() {
-		return limit;
-	}
-
-	@Override
-	public void setLimit(long newLimit) {
-		// Kit.control(newLimit < limit, () -> newLimit + " replacing " + limit);
-		limit = Math.toIntExact(newLimit);
-	}
-
-	@Override
 	public long objectiveValue() {
 		return Arrays.stream(scp).mapToInt(x -> x.dom.uniqueValue()).distinct().count();
 	}
 
-	public NValues(Problem pb, Variable[] list, int k) {
+	public NValuesCst(Problem pb, Variable[] list, int k) {
 		super(pb, list, list);
 		Kit.control(1 <= k && k <= list.length);
 		this.limit = k;
 		defineKey(k);
 	}
 
-	@Override
-	public DefXCSP defXCSP() {
-		String operator = this instanceof NValuesLE ? "le" : "ge";
-		return new DefXCSP(NVALUES).addSon(LIST, compact(list)).addSon(CONDITION, "(" + operator + "," + limit + ")");
-	}
-
-	public final static class NValuesLE extends NValues {
+	public final static class NValuesCstLE extends NValuesCst {
 
 		@Override
 		public boolean checkValues(int[] t) {
 			return Arrays.stream(t).distinct().count() <= limit;
 		}
 
-		public NValuesLE(Problem pb, Variable[] list, int k) {
+		public NValuesCstLE(Problem pb, Variable[] list, int k) {
 			super(pb, list, k);
 		}
 
 		@Override
 		public boolean runPropagator(Variable x) {
-			if (x.dom.size() == 1) {
+			if (x == null || x.dom.size() == 1) {
 				fixedVals.clear();
 				unfixedVars.clear();
 				for (int i = 0; i < list.length; i++)
@@ -83,7 +74,7 @@ public abstract class NValues extends NValuesAbstract implements OptimizationCom
 					else
 						unfixedVars.add(i);
 				if (fixedVals.size() > limit)
-					return x.dom.fail();
+					return x == null ? false : x.dom.fail();
 				if (fixedVals.size() == limit)
 					for (int i = unfixedVars.limit; i >= 0; i--) {
 						Domain dom = list[unfixedVars.dense[i]].dom;
@@ -95,20 +86,20 @@ public abstract class NValues extends NValuesAbstract implements OptimizationCom
 		}
 	}
 
-	public final static class NValuesGE extends NValues {
+	public final static class NValuesCstGE extends NValuesCst {
 
 		@Override
 		public boolean checkValues(int[] t) {
 			return Arrays.stream(t).distinct().count() >= limit;
 		}
 
-		public NValuesGE(Problem pb, Variable[] list, int k) {
+		public NValuesCstGE(Problem pb, Variable[] list, int k) {
 			super(pb, list, k);
 		}
 
 		@Override
 		public boolean runPropagator(Variable x) {
-			if (x.dom.size() == 1) {
+			if (x == null || x.dom.size() == 1) {
 				initializeSets();
 				// fixedVals.clear();
 				// unfixedVars.clear();
@@ -118,7 +109,7 @@ public abstract class NValues extends NValuesAbstract implements OptimizationCom
 				// else
 				// unfixedVars.add(i);
 				if (fixedVals.size() + unfixedVars.size() < limit)
-					return x.dom.fail();
+					return x == null ? false : x.dom.fail();
 				if (fixedVals.size() + unfixedVars.size() == limit)
 					for (int i = unfixedVars.limit; i >= 0; i--) {
 						Domain dom = list[unfixedVars.dense[i]].dom;

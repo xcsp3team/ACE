@@ -19,6 +19,7 @@ import interfaces.TagGACGuaranteed;
 import interfaces.TagSymmetric;
 import problem.Problem;
 import utility.Kit;
+import utility.exceptions.UnreachableCodeException;
 import variables.Variable;
 import variables.domains.Domain;
 import variables.domains.DomainHuge;
@@ -44,9 +45,10 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 			return new SumSimpleGE(pb, scp, limit + 1);
 		case EQ:
 			return new SumSimpleEQ(pb, scp, limit);
-		default: // NE
+		case NE:
 			return new SumSimpleNE(pb, scp, limit);
 		}
+		throw new UnreachableCodeException();
 	}
 
 	public long minComputableObjectiveValue() {
@@ -103,7 +105,7 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 			if (max <= limit)
 				return true;
 			if (min > limit)
-				return x.dom.fail();
+				return x == null ? false : x.dom.fail();
 			for (int i = futvars.limit; i >= 0; i--) {
 				Domain dom = scp[futvars.dense[i]].dom;
 				if (dom.size() == 1)
@@ -145,7 +147,7 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 			if (min >= limit)
 				return true;
 			if (max < limit)
-				return x.dom.fail();
+				return x == null ? false : x.dom.fail();
 			for (int i = futvars.limit; i >= 0; i--) {
 				Domain dom = scp[futvars.dense[i]].dom;
 				if (dom.size() == 1)

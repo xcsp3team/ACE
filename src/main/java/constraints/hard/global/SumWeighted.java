@@ -132,7 +132,7 @@ public abstract class SumWeighted extends SumAbstract {
 			if (max <= limit)
 				return true;
 			if (min > limit)
-				return x.dom.fail();
+				return x == null ? false : x.dom.fail();
 			for (int i = futvars.limit; i >= 0; i--) {
 				Domain dom = scp[futvars.dense[i]].dom;
 				if (dom.size() == 1)
@@ -182,7 +182,7 @@ public abstract class SumWeighted extends SumAbstract {
 			if (min >= limit)
 				return true;
 			if (max < limit)
-				return x.dom.fail();
+				return x == null ? false : x.dom.fail();
 			for (int i = futvars.limit; i >= 0; i--) {
 				Domain dom = scp[futvars.dense[i]].dom;
 				if (dom.size() == 1)

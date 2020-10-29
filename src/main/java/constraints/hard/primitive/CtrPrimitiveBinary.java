@@ -312,7 +312,8 @@ public abstract class CtrPrimitiveBinary extends CtrPrimitive implements TagGACG
 			case GT:
 				return pb.addCtr(new SubGE2(pb, x, y, k + 1));
 			case EQ:
-				return pb.addCtr(new SubEQ2(pb, x, y, k)); // return pb.extension(pb.api.eq(pb.api.sub(x, y), k));
+				return pb.addCtr(new SubEQ2(pb, x, y, k)); //
+			// return pb.extension(pb.api.eq(pb.api.sub(x, y), k));
 			case NE:
 				return pb.addCtr(new SubNE2(pb, x, y, k));
 			}

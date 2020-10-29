@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import constraints.Constraint;
 import constraints.CtrHard;
+import constraints.hard.CtrGlobal;
 import dashboard.ControlPanel;
 import interfaces.ObserverConflicts;
 import problem.Problem;
@@ -209,6 +210,14 @@ public abstract class Propagation {
 				break;
 		}
 		return true;
+	}
+
+	public boolean propagate(CtrGlobal c) {
+		if (c == null)
+			return true;
+		if (c.runPropagator(null) == false)
+			return false;
+		return propagate(); // because the queue may be not empty
 	}
 
 	/**

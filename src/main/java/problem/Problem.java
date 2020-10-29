@@ -131,10 +131,10 @@ import constraints.hard.global.Extremum.ExtremumVar.Minimum;
 import constraints.hard.global.HammingProximityConstant.HammingProximityConstantGE;
 import constraints.hard.global.HammingProximityConstant.HammingProximityConstantSumLE;
 import constraints.hard.global.Lexicographic;
-import constraints.hard.global.NValues;
-import constraints.hard.global.NValues.NValuesGE;
-import constraints.hard.global.NValues.NValuesLE;
-import constraints.hard.global.NValuesVar;
+import constraints.hard.global.NValuesCst;
+import constraints.hard.global.NValuesCst.NValuesCstGE;
+import constraints.hard.global.NValuesCst.NValuesCstLE;
+import constraints.hard.global.NValuesVar.NValuesVarEQ;
 import constraints.hard.global.NotAllEqual;
 import constraints.hard.global.ObjVar;
 import constraints.hard.global.ObjVar.ObjVarGE;
@@ -242,8 +242,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				if (strong)
 					for (Variable x : c.scp)
 						x.heuristicVal = optimizationPilot.minimization ? new First(x, false) : new Last(x, false); // the boolean is dummy
-			} else if (c instanceof NValues) {
-				assert c instanceof NValuesLE;
+			} else if (c instanceof NValuesCst) {
+				assert c instanceof NValuesCstLE;
 				if (strong)
 					for (Variable x : c.scp)
 						x.heuristicVal = new Values(x, false, c.scp);
@@ -261,57 +261,61 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 					this.priorityVars = scp;
 				}
 			}
-
-			// Variable[] scp = c.scp;
-			// if (c instanceof SumSimple || c instanceof ExtremumCst || c instanceof ObjVar) {
-			// for (Variable x : scp)
-			// x.heuristicVal = optimizationPilot.minimization ? new First(x, false) : new Last(x, false); // the boolean is dummy
-			// } else if (c instanceof SumWeighted) {
-			// int[] coeffs = ((SumWeighted) optimizationPilot.ctr).coeffs;
-			// // for (int i = 0; i < scp.length; i++) {
-			// // boolean f = optimizationPilot.minimization && coeffs[i] >= 0 || !optimizationPilot.minimization && coeffs[i] < 0;
-			// // System.out.println("before " + scp[i].heuristicVal);
-			// // scp[i].heuristicVal = f ? new First(scp[i], false) : new Last(scp[i], false); // the boolean is dummy
-			// // System.out.println("after " + scp[i].heuristicVal);
-			// // }
-			// } else {
-			// assert c instanceof NValuesLE;
-			// for (Variable x : scp)
-			// x.heuristicVal = new Values(x, false, scp);
-			// }
-			// if (c instanceof ObjVar)
-			// this.priorityVars = new Variable[] { scp[0] };
-			// else if (c instanceof SumWeighted) {
-			// int[] coeffs = ((SumWeighted) c).coeffs;
-			// assert IntStream.range(0, coeffs.length - 1).allMatch(i -> coeffs[i] <= coeffs[i + 1]);
-			// int LIM = 3;
-			// Term[] terms = new Term[Math.min(scp.length, 2 * LIM)];
-			// if (terms.length == scp.length)
-			// for (int i = 0; i < terms.length; i++)
-			// terms[i] = new Term(coeffs[i] * scp[i].dom.highestValueDistance(), scp[i]);
-			// else {
-			// for (int i = 0; i < LIM; i++)
-			// terms[i] = new Term(coeffs[i] * scp[i].dom.highestValueDistance(), scp[i]);
-			// for (int i = 0; i < LIM; i++)
-			// terms[LIM + i] = new Term(coeffs[scp.length - 1 - i] * scp[scp.length - 1 - i].dom.highestValueDistance(), scp[scp.length - 1 - i]);
-			// }
-			// terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new); // we discard terms of small coeffs
-			// if (terms.length > 0) {
-			// Variable[] t = Stream.of(terms).map(term -> term.var).toArray(Variable[]::new);
-			//
-			// if (t.length > LIM)
-			// t = Arrays.copyOfRange(t, t.length - LIM, t.length);
-			// Variable[] tt = new Variable[t.length];
-			// for (int i = 0; i < t.length; i++)
-			// tt[i] = t[t.length - 1 - i];
-			// // for (int i = 0; i < tt.length; i++) {
-			// // boolean f = optimizationPilot.minimization && coeffs[i] >= 0 || !optimizationPilot.minimization && coeffs[i] < 0;
-			// // scp[i].heuristicVal = f ? new First(scp[i], false) : new Last(scp[i], false); // the boolean is dummy
-			// // }
-			// // this.priorityVars = tt;
-			// }
-			// }
 		}
+		if (settings.framework == TypeFramework.COP
+				&& (optimizationPilot.ctr instanceof ObjVar || optimizationPilot.ctr instanceof MaximumCstLE || optimizationPilot.ctr instanceof MinimumCstGE))
+			rs.cp.settingRestarts.restartAfterSolution = true;
+
+		// Variable[] scp = c.scp;
+		// if (c instanceof SumSimple || c instanceof ExtremumCst || c instanceof ObjVar) {
+		// for (Variable x : scp)
+		// x.heuristicVal = optimizationPilot.minimization ? new First(x, false) : new Last(x, false); // the boolean is dummy
+		// } else if (c instanceof SumWeighted) {
+		// int[] coeffs = ((SumWeighted) optimizationPilot.ctr).coeffs;
+		// // for (int i = 0; i < scp.length; i++) {
+		// // boolean f = optimizationPilot.minimization && coeffs[i] >= 0 || !optimizationPilot.minimization && coeffs[i] < 0;
+		// // System.out.println("before " + scp[i].heuristicVal);
+		// // scp[i].heuristicVal = f ? new First(scp[i], false) : new Last(scp[i], false); // the boolean is dummy
+		// // System.out.println("after " + scp[i].heuristicVal);
+		// // }
+		// } else {
+		// assert c instanceof NValuesLE;
+		// for (Variable x : scp)
+		// x.heuristicVal = new Values(x, false, scp);
+		// }
+		// if (c instanceof ObjVar)
+		// this.priorityVars = new Variable[] { scp[0] };
+		// else if (c instanceof SumWeighted) {
+		// int[] coeffs = ((SumWeighted) c).coeffs;
+		// assert IntStream.range(0, coeffs.length - 1).allMatch(i -> coeffs[i] <= coeffs[i + 1]);
+		// int LIM = 3;
+		// Term[] terms = new Term[Math.min(scp.length, 2 * LIM)];
+		// if (terms.length == scp.length)
+		// for (int i = 0; i < terms.length; i++)
+		// terms[i] = new Term(coeffs[i] * scp[i].dom.highestValueDistance(), scp[i]);
+		// else {
+		// for (int i = 0; i < LIM; i++)
+		// terms[i] = new Term(coeffs[i] * scp[i].dom.highestValueDistance(), scp[i]);
+		// for (int i = 0; i < LIM; i++)
+		// terms[LIM + i] = new Term(coeffs[scp.length - 1 - i] * scp[scp.length - 1 - i].dom.highestValueDistance(), scp[scp.length - 1 - i]);
+		// }
+		// terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new); // we discard terms of small coeffs
+		// if (terms.length > 0) {
+		// Variable[] t = Stream.of(terms).map(term -> term.var).toArray(Variable[]::new);
+		//
+		// if (t.length > LIM)
+		// t = Arrays.copyOfRange(t, t.length - LIM, t.length);
+		// Variable[] tt = new Variable[t.length];
+		// for (int i = 0; i < t.length; i++)
+		// tt[i] = t[t.length - 1 - i];
+		// // for (int i = 0; i < tt.length; i++) {
+		// // boolean f = optimizationPilot.minimization && coeffs[i] >= 0 || !optimizationPilot.minimization && coeffs[i] < 0;
+		// // scp[i].heuristicVal = f ? new First(scp[i], false) : new Last(scp[i], false); // the boolean is dummy
+		// // }
+		// // this.priorityVars = tt;
+		// }
+		// }
+
 	}
 
 	@Override
@@ -822,9 +826,39 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return new Range(length);
 	}
 
+	private String idAux() {
+		return AUXILIARY_VARIABLE_PREFIX + varEntities.allEntities.size();
+	}
+
+	public Variable replaceByVariable(XNode<IVar> tree) {
+		// int[] values = tree.getType().isPredicateOperator() ? new int[] { 0, 1 } : new
+		// EvaluationManager(tree).generatePossibleValues(Variable.initDomainValues(vars(tree)));
+
+		Object values = tree.possibleValues();
+		Dom dom = values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
+		Var aux = api.var(idAux(), dom, "auxiliary variable");
+		if (Constraint.howManyVarsWithin(vars(tree), rs.cp.settingPropagation.spaceLimitation) == ALL) {
+			int[][] tuples = new TreeEvaluator(tree).computeTuples(Variable.initDomainValues(vars(tree)));
+			extension(vars(tree, aux), tuples, true); // extension(eq(aux, tree));
+		} else
+			equal(aux, tree);
+		return (Variable) aux;
+	}
+
 	// ************************************************************************
 	// ***** Constraint intension
 	// ************************************************************************
+
+	private XNode change(XNodeParent<IVar> tree) {
+		System.out.println("change " + tree);
+		for (int i = 0; i < tree.sons.length; i++) {
+			if (tree.sons[i] instanceof XNodeParent)
+				tree.sons[i] = change((XNodeParent) tree.sons[i]);
+		}
+		assert Stream.of(tree.sons).allMatch(son -> son instanceof XNodeLeaf);
+		Variable aux = replaceByVariable(tree);
+		return new XNodeLeaf<>(TypeExpr.VAR, aux);
+	}
 
 	@Override
 	public final CtrAlone intension(XNodeParent<IVar> tree) {
@@ -836,6 +870,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			stuff.nRemovedUnaryCtrs++;
 			return ctrEntities.new CtrAloneDummy("Removed unary constraint by domain reduction");
 		}
+		// System.out.println("tree " + tree);
 		// System.out.println("kkkk" + Variable.nValidTuplesBoundedAtMaxValueFor(scp));
 		if (scp.length <= rs.cp.settingExtension.arityLimitForIntensionToExtension
 				&& Variable.nValidTuplesBoundedAtMaxValueFor(scp) <= rs.cp.settingExtension.validLimitForIntensionToExtension
@@ -843,17 +878,29 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			stuff.nConvertedConstraints++;
 			return extension(tree);
 		}
+		//
+		XNodeParent<IVar> tree2 = (XNodeParent<IVar>) tree.canonization();
+		// System.out.println("tree2 " + tree2);
+		// if (ConstraintRecognizer.x_ariop_k__relop_y.matches(tree2)) {
+		// if (tree2.ariop(0) == TypeArithmeticOperator.ADD && tree2.relop(0) == EQ)
+		// return CtrPrimitiveBinarySub.buildFrom(this, (Variable) tree2.var(0), (Variable) tree2.var(1), EQ, -tree2.val(0));
+		// }
 
-		// System.out.println(tree);
-		// XNodeParent<IVar> tree2 = (XNodeParent<IVar>) tree.canonization();
 		// if (ConstraintRecognizer.x_ariop_y__relop_z.matches(tree2)) {
 		// if (tree2.ariop(0) == TypeArithmeticOperator.DIST && tree2.relop(0) == EQ)
 		// return CtrPrimitiveTernaryDist.buildFrom(this, (Variable) tree2.var(0), (Variable) tree2.var(1), EQ, (Variable) tree2.var(2));
 		// }
 
-		// System.out.println("hhhhh " + tree);
-
-		return addCtr(new CtrIntension(this, scp, tree));
+		// boolean replace = true;
+		// boolean b = tree2.type == TypeExpr.EQ && tree2.sons.length == 2 && tree2.sons[1].type == TypeExpr.VAR;
+		// if (!b) {
+		// for (int i = 0; i < tree2.sons.length; i++) {
+		// if (tree2.sons[i] instanceof XNodeParent)
+		// tree2.sons[i] = change((XNodeParent) tree2.sons[i]);
+		// }
+		// }
+		// System.out.println("tree3 " + tree2);
+		return addCtr(new CtrIntension(this, (Variable[]) tree2.vars(), tree2));
 	}
 
 	// ************************************************************************
@@ -1186,25 +1233,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		}
 	}
 
-	private String idAux() {
-		return AUXILIARY_VARIABLE_PREFIX + varEntities.allEntities.size();
-	}
-
-	public Variable replaceByVariable(XNode<IVar> tree) {
-		// int[] values = tree.getType().isPredicateOperator() ? new int[] { 0, 1 } : new
-		// EvaluationManager(tree).generatePossibleValues(Variable.initDomainValues(vars(tree)));
-
-		Object values = tree.possibleValues();
-		Dom dom = values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
-		Var aux = api.var(idAux(), dom, "auxiliary variable");
-		if (Constraint.howManyVarsWithin(vars(tree), rs.cp.settingPropagation.spaceLimitation) == ALL) {
-			int[][] tuples = new TreeEvaluator(tree).computeTuples(Variable.initDomainValues(vars(tree)));
-			extension(vars(tree, aux), tuples, true); // extension(eq(aux, tree));
-		} else
-			equal(aux, tree);
-		return (Variable) aux;
-	}
-
 	private boolean areSimilar(XNode<IVar> tree1, XNode<IVar> tree2) {
 		if (tree1.type != tree2.type || tree1.arity() != tree2.arity())
 			return false;
@@ -1532,13 +1560,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				}
 			}
 			if (op == LE || op == LT)
-				return addCtr(new NValuesLE(this, (VariableInteger[]) list, op == LE ? k : k - 1));
+				return addCtr(new NValuesCstLE(this, (VariableInteger[]) list, op == LE ? k : k - 1));
 			if (op == GE || op == GT)
-				return addCtr(new NValuesGE(this, (VariableInteger[]) list, op == GE ? k : k + 1));
+				return addCtr(new NValuesCstGE(this, (VariableInteger[]) list, op == GE ? k : k + 1));
 		} else if (condition instanceof ConditionVar) {
 			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
 			if (op == EQ)
-				return addCtr(new NValuesVar(this, (VariableInteger[]) list, (VariableInteger) ((ConditionVar) condition).x));
+				return addCtr(new NValuesVarEQ(this, (VariableInteger[]) list, (VariableInteger) ((ConditionVar) condition).x));
 		}
 		return unimplemented("nValues");
 	}
@@ -2249,7 +2277,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				else if (obj == MAXIMUM)
 					forall(range(list.length), i -> lessEqual(list[i], limit));
 				else
-					addCtr(new NValuesLE(this, translate(list), limit));
+					addCtr(new NValuesCstLE(this, translate(list), limit));
 			} else {
 				if (obj == SUM)
 					addCtr(new SumSimpleGE(this, translate(list), limit));
@@ -2258,7 +2286,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				else if (obj == MAXIMUM)
 					addCtr(new MaximumCstGE(this, translate(list), limit));
 				else
-					addCtr(new NValuesGE(this, translate(list), limit));
+					addCtr(new NValuesCstGE(this, translate(list), limit));
 			}
 		}
 		return true;
@@ -2306,7 +2334,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			else if (type == MAXIMUM)
 				c = addCtr(new MaximumCstLE(this, translate(list), limit));
 			else
-				c = addCtr(new NValuesLE(this, translate(list), limit));
+				c = addCtr(new NValuesCstLE(this, translate(list), limit));
 			optimizationPilot = buildOptimizationPilot(MINIMIZE, c);
 		}
 		return null;
@@ -2325,7 +2353,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			else if (type == MAXIMUM)
 				c = addCtr(new MaximumCstGE(this, translate(list), limit));
 			else
-				c = addCtr(new NValuesGE(this, translate(list), limit));
+				c = addCtr(new NValuesCstGE(this, translate(list), limit));
 			optimizationPilot = buildOptimizationPilot(MAXIMIZE, c);
 		}
 		return null;

@@ -344,18 +344,10 @@ public abstract class CtrHard extends Constraint {
 				return true;
 		}
 
-		/*
-		 * The test below remains valid if filtering is performed after every assignment (no two direct assignments can be performed without an
-		 * intermediary filtering), nFC0 must also be guaranteed (our hypothesis). variableManager.nbFutureVars() == 1 && evt.isFuture()remains valid
-		 * as long as all constraints involving the last assigned variable are considered first (because a variable might have been assigned, and evt
-		 * reduced before considering the constraint). Watch the second condition when modifying code.
-		 */
-
 		// For CSP, there are first some conditions that allow us to directly return true (because we know then that there is no filtering
 		// possibility)
-		if (pb.settings.framework == TypeFramework.CSP) { // TODO why not != MACSP; pb with java ac
-															// main/cop/GraphColoring-sum-GraphColoring_1-fullins-3.xml.lzma
-															// -cm -ev
+		if (pb.settings.framework == TypeFramework.CSP) { // if != MACSP, pb with java -ea ac PlaneparkingTask.xml -ea -cm=false -ev -trace
+															// possibly too with GraphColoring-sum-GraphColoring_1-fullins-3.xml.lzma
 			if (futvars.size() == 0) {
 				if (isGuaranteedGAC()) {
 					assert checkCurrentInstantiation() : "Unsatisfied constraint " + this;

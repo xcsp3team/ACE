@@ -16,7 +16,7 @@ import constraints.hard.CtrGlobal;
 import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import problem.Problem;
-import utility.exceptions.UnreachableCodeException;
+import utility.exceptions.MissingImplementationException;
 import utility.sets.SetDense;
 import variables.Variable;
 import variables.domains.Domain;
@@ -94,7 +94,7 @@ public abstract class SumScalarBoolean extends CtrGlobal {
 			case EQ:
 				return new SumScalarBooleanEQ(pb, list, coeffs, limit);
 			default:
-				throw new UnreachableCodeException("NE is not implemented"); // TODO useful to have a propagator ?
+				throw new MissingImplementationException("NE is not implemented"); // TODO useful to have a propagator ?
 			}
 		}
 
@@ -225,7 +225,7 @@ public abstract class SumScalarBoolean extends CtrGlobal {
 			case GT:
 				return new SumScalarBooleanVarLE(pb, list, coeffs, pb.replaceByVariable(pb.api.add(limit, 1)));
 			default:
-				throw new UnreachableCodeException("NE and EQ are not implemented"); // TODO useful to have propagators
+				throw new MissingImplementationException("NE and EQ are not implemented"); // TODO useful to have propagators?
 			}
 		}
 

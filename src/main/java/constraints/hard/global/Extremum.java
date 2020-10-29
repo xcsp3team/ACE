@@ -9,7 +9,6 @@ import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import interfaces.TagSymmetric;
 import problem.Problem;
-import utility.Kit;
 import variables.Variable;
 import variables.domains.Domain;
 
@@ -267,10 +266,10 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 				}
 
 				@Override
-				public boolean runPropagator(Variable x) {
+				public boolean runPropagator(Variable dummy) {
 					if (entailed)
 						return true;
-					Kit.control(pb.solver.depth() == 0);
+					control(pb.solver.depth() == 0);
 					for (Variable y : scp)
 						if (y.dom.removeValuesGT(limit) == false) {
 							return false;
@@ -293,7 +292,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 					super(pb, scp, limit);
 					sentinel1 = 0;
 					sentinel2 = scp.length - 1;
-					Kit.control(scp[sentinel1].dom.lastValue() >= limit && scp[sentinel2].dom.lastValue() >= limit, () -> "unsound sentinels");
+					control(scp[sentinel1].dom.lastValue() >= limit && scp[sentinel2].dom.lastValue() >= limit, "unsound sentinels");
 				}
 
 				@Override
@@ -307,7 +306,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 							sentinel1 = i;
 						else {
 							if (scp[sentinel2].dom.lastValue() < limit)
-								return x.dom.fail();
+								return x == null ? false : x.dom.fail();
 							else
 								return scp[sentinel2].dom.removeValuesLT(limit); // necessarily true returned
 						}
@@ -355,7 +354,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 					super(pb, scp, limit);
 					sentinel1 = 0;
 					sentinel2 = scp.length - 1;
-					Kit.control(scp[sentinel1].dom.firstValue() <= limit && scp[sentinel2].dom.firstValue() <= limit, () -> "unsound sentinels");
+					control(scp[sentinel1].dom.firstValue() <= limit && scp[sentinel2].dom.firstValue() <= limit, "unsound sentinels");
 				}
 
 				@Override
@@ -369,7 +368,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 							sentinel1 = i;
 						else {
 							if (scp[sentinel2].dom.firstValue() > limit)
-								return x.dom.fail();
+								return x == null ? false : x.dom.fail();
 							else
 								return scp[sentinel2].dom.removeValuesGT(limit); // necessarily true returned
 						}
@@ -402,10 +401,10 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 				}
 
 				@Override
-				public boolean runPropagator(Variable x) {
+				public boolean runPropagator(Variable dummy) {
 					if (entailed)
 						return true;
-					assert pb.solver.depth() == 0;
+					control(pb.solver.depth() == 0);
 					for (Variable y : scp)
 						if (y.dom.removeValuesLT(limit) == false)
 							return false;
