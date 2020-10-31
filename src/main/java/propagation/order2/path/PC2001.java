@@ -19,8 +19,8 @@ public class PC2001 extends PC8 {
 
 	public PC2001(Solver solver) {
 		super(solver);
-		last = new int[hards.length][][][];
-		for (Constraint c : hards)
+		last = new int[constraints.length][][][];
+		for (Constraint c : constraints)
 			if (c.scp.length == 2)
 				last[c.num] = new int[c.scp[0].dom.initSize()][c.scp[1].dom.initSize()][solver.pb.variables.length];
 	}

@@ -10,6 +10,7 @@
  */
 package propagation.order2;
 
+import constraints.Constraint;
 import interfaces.TagBinaryRelationFiltering;
 import propagation.order1.AC;
 import search.Solver;
@@ -19,12 +20,15 @@ public abstract class SecondOrderConsistency extends AC implements TagBinaryRela
 
 	protected int variant;
 
+	protected Constraint[] constraints;
+
 	public SecondOrderConsistency(Solver solver) {
 		super(solver);
 		solver.pb.stuff.cloneStructuresOfConstraintsWithArity(2, false);
 		variant = cp().settingPropagation.variant;
 		// TODO control the fact that we do not use SupportUnitRmbo as residues can become incorrect when tuples are removed
 		Kit.control(!cp().settingProblem.shareBitVectors);
+		this.constraints = solver.pb.constraints;
 	}
 
 	public abstract boolean enforceSecondOrderConsistency();

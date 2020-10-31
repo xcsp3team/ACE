@@ -25,6 +25,6 @@ public final class BT extends PropagationBackward {
 	@Override
 	public boolean runAfterAssignment(Variable x) {
 		assert x.isAssigned();
-		return Stream.of(hards).allMatch(c -> c.ignored || c.futvars.size() > 0 || c.seekFirstSupport());
+		return Stream.of(solver.pb.constraints).allMatch(c -> c.ignored || c.futvars.size() > 0 || c.seekFirstSupport());
 	}
 }

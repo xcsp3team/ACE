@@ -215,15 +215,15 @@ public class PropagationIsomorphism2 extends AC {
 
 	private List<int[]> computePatternEdges() {
 		List<int[]> edges = new ArrayList<>();
-		for (Constraint ctr : solver.pb.constraints)
-			if (ctr.scp.length == 2)
-				edges.add(new int[] { ctr.scp[0].num, ctr.scp[1].num });
+		for (Constraint c : solver.pb.constraints)
+			if (c.scp.length == 2)
+				edges.add(new int[] { c.scp[0].num, c.scp[1].num });
 		return edges;
 	}
 
 	private List<int[]> computeTargetEdges() {
 		List<int[]> edges = new ArrayList<>();
-		for (Constraint c : hards)
+		for (Constraint c : solver.pb.constraints)
 			if (c.scp.length == 2) {
 				c.tupleManager.firstValidTuple();
 				c.tupleManager.overValidTuples(t -> {

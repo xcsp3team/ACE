@@ -110,14 +110,6 @@ public abstract class CtrExtensionSTROptimized extends CtrExtensionSTR1 {
 			sSup[sSupSize++] = x;
 			Arrays.fill(ac[x], false);
 		}
-		// System.out.println("sSup :");
-		// for (int i = 0; i < sSupSize; i++)
-		// System.out.print(sSup[i]);
-		// System.out.println();
-		// System.out.println("sVal :");
-		// for (int i = 0; i < sValSize; i++)
-		// System.out.print(sVal[i]);
-		// System.out.println();
 
 		// TODO to experiment the code below
 		// if (sValSize == 1) { int x = sVal[0]; for (int i = 0; i < sSupSize; i++) if (sSup[i] == x) { sSup[i] = sSup[--sSupSize]; break; } }

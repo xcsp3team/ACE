@@ -13,11 +13,11 @@ import java.util.function.Consumer;
 /**
  * This class allows representing a list of elements perceived as indexes, i.e., elements whose values range from 0 to a specified capacity -1. For
  * instance, if the initial size (capacity) of the object is 10, then the list of indexes/elements is 0, 1, 2... , 9. One can remove elements of the
- * list. Then, one can iterate, in a forward way, currently present elements by using the methods <code> getFirst </code> and <code> getNext </code>.
- * Also, one can iterate, in a backward way, currently present elements by using the methods <code> getLast </code> and <code> getPrev </code>.
- * Initially, the set is full. On can iterate over deleted elements by using the methods <code> getLastDel </code> and <code> getPrevDel </code>. Each
- * deleted elements has an associated level that can be obtained by using the method getDelLevelFor. This kind of object is used for managing the
- * indexes of values of variable domains.
+ * list. Then, one can iterate, in a forward way, currently present elements by using the methods <code> first </code> and <code> next </code>. Also,
+ * one can iterate, in a backward way, currently present elements by using the methods <code> lLast </code> and <code> prev </code>. Initially, the
+ * set is full. On can iterate over deleted elements by using the methods <code> lastRemoved </code> and <code> prevRemoved </code>. Each deleted
+ * elements has an associated level that can be obtained by using the method getDelLevelFor. This kind of object is used for managing the indexes of
+ * values of variable domains.
  */
 public interface LinkedSet {
 

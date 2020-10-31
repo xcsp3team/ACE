@@ -14,8 +14,8 @@ import constraints.hard.CtrExtension;
 import constraints.hard.extension.structures.ExtensionStructureHard;
 import constraints.hard.extension.structures.Table;
 import interfaces.FilteringGlobal;
-import interfaces.TagGACGuaranteed;
 import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.TagGACGuaranteed;
 import problem.Problem;
 import utility.Kit;
 import utility.sets.SetDenseReversible;
@@ -58,7 +58,7 @@ public class CtrExtensionSTR1 extends CtrExtension implements FilteringGlobal, T
 
 	public CtrExtensionSTR1(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		Kit.control(scp.length > 1, () -> "Arity must be at least 2");
+		control(scp.length > 1, "Arity must be at least 2");
 	}
 
 	@Override

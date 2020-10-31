@@ -63,7 +63,7 @@ public class CPC1 extends SecondOrderConsistency {
 	}
 
 	public boolean establishOnePass() {
-		for (Constraint c : hards)
+		for (Constraint c : constraints)
 			if (c.scp.length == 2 && filterConstraint(c) == false)
 				return false;
 		return true;

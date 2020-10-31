@@ -29,9 +29,9 @@ public class PC8 extends SecondOrderConsistency {
 
 	public PC8(Solver solver) {
 		super(solver);
-		constraintsAccess = IntStream.range(0, hards.length).mapToObj(i -> new Constraint[i]).toArray(Constraint[][]::new);
+		constraintsAccess = IntStream.range(0, constraints.length).mapToObj(i -> new Constraint[i]).toArray(Constraint[][]::new);
 		int cnt = 0;
-		for (Constraint c : hards) {
+		for (Constraint c : constraints) {
 			if (c.scp.length != 2)
 				continue;
 			cnt++;
@@ -83,7 +83,7 @@ public class PC8 extends SecondOrderConsistency {
 	}
 
 	protected boolean initialize() {
-		for (Constraint c : hards)
+		for (Constraint c : constraints)
 			if (c.scp.length == 2 && !filterConstraint(c))
 				return false;
 		return true;

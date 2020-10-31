@@ -24,6 +24,6 @@ public final class GT extends PropagationBackward {
 	@Override
 	public boolean runAfterAssignment(Variable x) {
 		assert x.isAssigned();
-		return solver.futVars.size() > 0 || Stream.of(hards).allMatch(c -> c.ignored || c.seekFirstSupport());
+		return solver.futVars.size() > 0 || Stream.of(solver.pb.constraints).allMatch(c -> c.ignored || c.seekFirstSupport());
 	}
 }

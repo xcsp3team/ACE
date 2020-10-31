@@ -19,7 +19,7 @@ public class CPC2001 extends CPC8 {
 	public CPC2001(Solver solver) {
 		super(solver);
 		last = new int[solver.pb.constraints.length][][][];
-		for (Constraint c : hards) {
+		for (Constraint c : constraints) {
 			if (c.scp.length != 2)
 				continue;
 			int k = cliqueManager.cliques[c.num].length;

@@ -9,7 +9,6 @@
 package propagation;
 
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import constraints.Constraint;
 import constraints.hard.CtrGlobal;
@@ -86,8 +85,6 @@ public abstract class Propagation {
 	 */
 	public boolean performingProperSearch;
 
-	public final Constraint[] hards;
-
 	public int nTuplesRemoved;
 
 	/*************************************************************************
@@ -155,7 +152,6 @@ public abstract class Propagation {
 		this.queue = this instanceof PropagationForward ? new PropagationQueue((PropagationForward) this) : null;
 		int nAuxQueues = cp().settingPropagation.useAuxiliaryQueues ? Constraint.MAX_FILTERING_COMPLEXITY : 0;
 		this.auxiliaryQueues = this instanceof PropagationForward ? SetSparseMap.buildArray(nAuxQueues, solver.pb.constraints.length) : null;
-		this.hards = Stream.of(solver.pb.constraints).toArray(Constraint[]::new);
 	}
 
 	/**

@@ -64,7 +64,7 @@ public class CPC8 extends SecondOrderConsistency {
 	}
 
 	protected boolean initialize() {
-		for (Constraint c : hards)
+		for (Constraint c : constraints)
 			if (c.scp.length == 2 && cliqueManager.cliques[c.num].length > 0 && filterConstraint(c) == false)
 				return false;
 		return true;
@@ -87,7 +87,7 @@ public class CPC8 extends SecondOrderConsistency {
 
 	// for strong CPC
 	private void removeArcConsistentValues() {
-		for (Constraint c : hards) {
+		for (Constraint c : constraints) {
 			if (c.scp.length != 2)
 				continue;
 			Domain[] doms = c.doms;
