@@ -97,7 +97,7 @@ public class Weak3 extends Weak1 implements TagExperimental {
 				// for (Constraint d : solver.pb.constraints)
 				// d.resetWdeg();
 			}
-			Kit.log.finest(() -> "   after pass, nbTuplesRemoved = " + pb().nTuplesRemoved + " \n");
+			Kit.log.finest(() -> "   after pass, nbTuplesRemoved = " + nTuplesRemoved + " \n");
 		}
 		int before = pb().nValuesRemoved;
 		if (!enforceArcConsistency())

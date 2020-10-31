@@ -8,7 +8,7 @@
  */
 package propagation.structures.revisers;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import propagation.order1.PropagationForward;
 import variables.Variable;
 
@@ -31,11 +31,11 @@ public abstract class Reviser {
 		this.propagation = propagation;
 	}
 
-	public abstract boolean mustBeAppliedTo(CtrHard c, Variable x);
+	public abstract boolean mustBeAppliedTo(Constraint c, Variable x);
 
-	public abstract void applyTo(CtrHard c, Variable x);
+	public abstract void applyTo(Constraint c, Variable x);
 
-	public final boolean revise(CtrHard c, Variable x) {
+	public final boolean revise(Constraint c, Variable x) {
 		assert !x.isAssigned() && c.involves(x);
 		if (mustBeAppliedTo(c, x)) {
 			nRevisions++;

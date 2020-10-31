@@ -10,13 +10,13 @@ package constraints.hard.primitive;
 
 import java.util.stream.Stream;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import interfaces.FilteringSpecific;
 import interfaces.TagFilteringCompleteAtEachCall;
 import problem.Problem;
 import variables.Variable;
 
-public abstract class CtrPrimitive extends CtrHard implements FilteringSpecific, TagFilteringCompleteAtEachCall {
+public abstract class CtrPrimitive extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall {
 
 	protected final void defineKey(Object... datas) {
 		StringBuilder sb = signature().append(' ').append(getClass().getSimpleName());

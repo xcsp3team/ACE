@@ -34,7 +34,7 @@ public abstract class DCAbstract extends DualBasedConsistency {
 
 	@Override
 	protected int removeTuplesAfterSingletonTestOn(Variable x, int a) {
-		int nbTuplesBefore = pb().nTuplesRemoved;
+		int nbTuplesBefore = nTuplesRemoved;
 		sparseSet.fill();
 		sparseSet.remove(x.num);
 		for (Constraint c : x.ctrs)
@@ -45,6 +45,6 @@ public abstract class DCAbstract extends DualBasedConsistency {
 		Variable[] variables = solver.pb.variables;
 		for (int i = 0; i <= sparseSet.limit; i++)
 			removeAdditionalTuples(x, a, variables[sparseSet.dense[i]]);
-		return pb().nTuplesRemoved - nbTuplesBefore;
+		return nTuplesRemoved - nbTuplesBefore;
 	}
 }

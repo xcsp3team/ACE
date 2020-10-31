@@ -16,7 +16,6 @@ import java.util.stream.IntStream;
 import org.xcsp.common.Types.TypeFramework;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import dashboard.ControlPanel;
 import utility.Kit;
 import utility.sets.SetSparse;
@@ -50,7 +49,7 @@ public class ConflictManager {
 		int evaluation = currVariableEvaluations[x.num] + currVariableEvaluations[y.num];
 		// now supress double countings
 		for (Constraint c : x.ctrs)
-			if (c.involves(y) && !((CtrHard) c).checkCurrentInstantiation())
+			if (c.involves(y) && !c.checkCurrentInstantiation())
 				evaluation -= c.wdeg();
 		return evaluation;
 	}
@@ -96,7 +95,7 @@ public class ConflictManager {
 		// addConflictingConstraint(ctr);
 		recomputeEvaluations();
 		if (solver.pb.settings.framework == TypeFramework.COP)
-			currCost = solver.pb.optimizationPilot.value();
+			currCost = solver.pb.optimizer.value();
 	}
 
 	//
@@ -124,10 +123,10 @@ public class ConflictManager {
 
 	public boolean checkConflictingConstraints() {
 		for (Constraint c : solver.pb.constraints)
-			if (!((CtrHard) c).checkCurrentInstantiation() && !set.isPresent(c.num)) {
+			if (!c.checkCurrentInstantiation() && !set.isPresent(c.num)) {
 				Kit.log.severe(c + " not satisfied and absent in sparse set.");
 				return false;
-			} else if (((CtrHard) c).checkCurrentInstantiation() && set.isPresent(c.num)) {
+			} else if (c.checkCurrentInstantiation() && set.isPresent(c.num)) {
 				Kit.log.severe(c + " satisfied but present in sparse set.");
 				return false;
 			}
@@ -144,14 +143,14 @@ public class ConflictManager {
 			for (Constraint c : solver.pb.variables[i].ctrs)
 				constraintsToCheck.add(c);
 		for (Constraint c : constraintsToCheck) {
-			if (!((CtrHard) c).checkCurrentInstantiation())
+			if (!c.checkCurrentInstantiation())
 				evaluation += c.wdeg();
 			if (evaluation > acceptableEvaluationLimit)
 				break;
 		}
 		if (solver.pb.settings.framework == TypeFramework.COP) {
 			assert currCostEvolution != null;
-			currCostEvolution = solver.pb.optimizationPilot.value() - currCost;
+			currCostEvolution = solver.pb.optimizer.value() - currCost;
 		}
 		// var.dom.forcedIndex = currentIndex;
 		return evaluation;
@@ -165,7 +164,7 @@ public class ConflictManager {
 		int evaluation = -currEvaluationOf(x, y);
 		solver.propagateDependentVariables();
 		for (Constraint c : x.ctrs) {
-			if (!((CtrHard) c).checkCurrentInstantiation())
+			if (!c.checkCurrentInstantiation())
 				evaluation += c.wdeg();
 			if (evaluation > acceptableEvaluationLimit)
 				break;
@@ -173,7 +172,7 @@ public class ConflictManager {
 		for (Constraint c : y.ctrs) {
 			if (c.involves(x))
 				continue;
-			if (!((CtrHard) c).checkCurrentInstantiation())
+			if (!c.checkCurrentInstantiation())
 				evaluation += c.wdeg();
 			if (evaluation > acceptableEvaluationLimit)
 				break;

@@ -40,7 +40,7 @@ public class LinkedSetBinary implements LinkedSet {
 	protected int nLevels;
 
 	@Override
-	public void finalizeConstructionWith(int nLevels) {
+	public void finalizeConstruction(int nLevels) {
 		this.nLevels = nLevels;
 	}
 
@@ -53,7 +53,7 @@ public class LinkedSetBinary implements LinkedSet {
 
 	public LinkedSetBinary(int nLevels) {
 		this();
-		finalizeConstructionWith(nLevels);
+		finalizeConstruction(nLevels);
 	}
 
 	@Override

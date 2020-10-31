@@ -12,7 +12,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import constraints.hard.CtrGlobal;
 import dashboard.ControlPanel;
 import interfaces.ObserverConflicts;
@@ -87,7 +86,9 @@ public abstract class Propagation {
 	 */
 	public boolean performingProperSearch;
 
-	public final CtrHard[] hards;
+	public final Constraint[] hards;
+
+	public int nTuplesRemoved;
 
 	/*************************************************************************
 	 * Methods
@@ -131,6 +132,7 @@ public abstract class Propagation {
 		queue.clear();
 		for (SetSparseMap auxiliaryQueue : auxiliaryQueues)
 			auxiliaryQueue.clear();
+		nTuplesRemoved = 0;
 	}
 
 	/**
@@ -153,7 +155,7 @@ public abstract class Propagation {
 		this.queue = this instanceof PropagationForward ? new PropagationQueue((PropagationForward) this) : null;
 		int nAuxQueues = cp().settingPropagation.useAuxiliaryQueues ? Constraint.MAX_FILTERING_COMPLEXITY : 0;
 		this.auxiliaryQueues = this instanceof PropagationForward ? SetSparseMap.buildArray(nAuxQueues, solver.pb.constraints.length) : null;
-		this.hards = Stream.of(solver.pb.constraints).filter(c -> c instanceof CtrHard).map(c -> (CtrHard) c).toArray(CtrHard[]::new);
+		this.hards = Stream.of(solver.pb.constraints).toArray(Constraint[]::new);
 	}
 
 	/**

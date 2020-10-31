@@ -101,7 +101,7 @@ public class AC extends PropagationForward {
 			return false;
 		// Todo also checking the objective when not in the phase following a new solution
 		assert !guaranteed || Stream.of(solver.pb.constraints)
-				.allMatch(c -> solver.pb.settings.framework == TypeFramework.COP && c == solver.pb.optimizationPilot.ctr || c.controlArcConsistency());
+				.allMatch(c -> solver.pb.settings.framework == TypeFramework.COP && c == solver.pb.optimizer.ctr || c.controlArcConsistency());
 		// assert controlArcConsistency();
 		return true;
 	}

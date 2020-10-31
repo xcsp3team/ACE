@@ -289,7 +289,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		MapAtt da = resolution.problem.stuff.domainsAttributes();
 		MapAtt va = resolution.problem.stuff.variablesAttributes();
 		MapAtt ca = resolution.problem.stuff.ctrsAttributes();
-		MapAtt oa = resolution.problem.optimizationPilot != null ? resolution.problem.stuff.objsAttributes() : null;
+		MapAtt oa = resolution.problem.optimizer != null ? resolution.problem.stuff.objsAttributes() : null;
 		record(TypeOutput.DOMAINS, da.entries(), resolElt);
 		record(TypeOutput.VARIABLES, va.entries(), resolElt);
 		record(TypeOutput.CONSTRAINTS, ca.entries(), resolElt);

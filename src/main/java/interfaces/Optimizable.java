@@ -1,6 +1,6 @@
 package interfaces;
 
-public interface OptimizationCompatible {
+public interface Optimizable {
 
 	long getLimit();
 

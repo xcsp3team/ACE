@@ -10,7 +10,7 @@
  */
 package propagation.order2.path;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import problem.cliques.Clique;
 import problem.cliques.CliqueManager;
 import propagation.order2.SecondOrderConsistency;
@@ -35,7 +35,7 @@ public class CPC8 extends SecondOrderConsistency {
 		this.nSupports = new int[solver.pb.constraints.length];
 	}
 
-	protected boolean checkPathConsistencyOfSupport(CtrHard c, int[] tuple, Clique clique) {
+	protected boolean checkPathConsistencyOfSupport(Constraint c, int[] tuple, Clique clique) {
 		if (cliqueManager.getPathSupport(c, tuple, clique, -1) == -1) {
 			c.removeTuple(tuple);
 			queue.add(c, c.scp[0], tuple[0]).add(c, c.scp[1], tuple[1]);
@@ -44,15 +44,15 @@ public class CPC8 extends SecondOrderConsistency {
 		return true;
 	}
 
-	private boolean isCurrTupleConsistentForCliques(CtrHard c) {
-		int[] tuple = c.tupleManager.currTuple();
+	private boolean isCurrTupleConsistentForCliques(Constraint c) {
+		int[] tuple = c.tupleManager.currTuple;
 		for (Clique clique : cliqueManager.cliques[c.num])
 			if (checkPathConsistencyOfSupport(c, tuple, clique) == false)
 				return false;
 		return true;
 	}
 
-	private boolean filterConstraint(CtrHard c) {
+	private boolean filterConstraint(Constraint c) {
 		int cnt = 0;
 		for (boolean foundSupport = c.seekFirstSupport(); foundSupport; foundSupport = c.seekNextSupport())
 			if (isCurrTupleConsistentForCliques(c))
@@ -64,15 +64,15 @@ public class CPC8 extends SecondOrderConsistency {
 	}
 
 	protected boolean initialize() {
-		for (CtrHard c : hards)
+		for (Constraint c : hards)
 			if (c.scp.length == 2 && cliqueManager.cliques[c.num].length > 0 && filterConstraint(c) == false)
 				return false;
 		return true;
 	}
 
-	private boolean revisePath(CtrHard c, Variable x, int a) {
+	private boolean revisePath(Constraint c, Variable x, int a) {
 		for (Clique clique : cliqueManager.cliques[c.num]) {
-			CtrHard cxy = (CtrHard) clique.getEdgeConstraint(c, x);
+			Constraint cxy = clique.getEdgeConstraint(c, x);
 			int p = cxy.positionOf(x);
 			int[] tuple = cxy.tupleManager.localTuple;
 			for (boolean foundSupport = cxy.seekFirstSupportWith(p, a); foundSupport; foundSupport = cxy.seekNextSupport()) // ConsideringPotentialInvalidity(p,
@@ -87,7 +87,7 @@ public class CPC8 extends SecondOrderConsistency {
 
 	// for strong CPC
 	private void removeArcConsistentValues() {
-		for (CtrHard c : hards) {
+		for (Constraint c : hards) {
 			if (c.scp.length != 2)
 				continue;
 			Domain[] doms = c.doms;
@@ -96,23 +96,23 @@ public class CPC8 extends SecondOrderConsistency {
 					if (c.seekFirstSupportWith(i, a) == false)
 						doms[i].removeElementary(a);
 		}
-		Kit.log.info("after removeAC, nbTuplesRemoved=" + pb().nTuplesRemoved + " nbValuesRemoved=" + pb().nValuesRemoved);
+		Kit.log.info("after removeAC, nbTuplesRemoved=" + nTuplesRemoved + " nbValuesRemoved=" + pb().nValuesRemoved);
 	}
 
 	@Override
 	public boolean enforceSecondOrderConsistency() {
 		if (!initialize())
 			return false;
-		Kit.log.info("after init PC, nbTuplesRemoved=" + pb().nTuplesRemoved + " nbValuesRemoved=" + pb().nValuesRemoved);
+		Kit.log.info("after init PC, nbTuplesRemoved=" + nTuplesRemoved + " nbValuesRemoved=" + pb().nValuesRemoved);
 		while (queue.size() > 0) {
-			CtrHard c = queue.firstConstraint();
+			Constraint c = queue.firstConstraint();
 			Variable x = queue.firstVariable();
 			int a = queue.firstIndex();
 			queue.remove(0);
 			if (!revisePath(c, x, a))
 				return false;
 		}
-		Kit.log.info("after revise PC, nbTuplesRemoved=" + pb().nTuplesRemoved + " nbValuesRemoved=" + pb().nValuesRemoved);
+		Kit.log.info("after revise PC, nbTuplesRemoved=" + nTuplesRemoved + " nbValuesRemoved=" + pb().nValuesRemoved);
 		if (strongCPC)
 			removeArcConsistentValues();
 		return true;

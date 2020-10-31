@@ -45,7 +45,7 @@ public final class LinkedSetUnordered implements LinkedSet {
 	protected int nLevels;
 
 	@Override
-	public void finalizeConstructionWith(int nLevels) {
+	public void finalizeConstruction(int nLevels) {
 		this.nLevels = nLevels;
 		this.limits = IntStream.range(0, nLevels).map(i -> UNITIALIZED).toArray();
 		this.initLimit = limit; // useful if some values have been deleted at construction time
@@ -63,7 +63,7 @@ public final class LinkedSetUnordered implements LinkedSet {
 
 	public LinkedSetUnordered(int initSize, int nLevels) {
 		this(initSize);
-		finalizeConstructionWith(nLevels);
+		finalizeConstruction(nLevels);
 	}
 
 	@Override

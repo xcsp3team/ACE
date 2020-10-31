@@ -35,7 +35,7 @@ import interfaces.ObserverAssignment;
 import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.ObserverConflicts;
 import interfaces.ObserverRuns;
-import interfaces.OptimizationCompatible;
+import interfaces.Optimizable;
 import learning.LearnerNogoods;
 import learning.LearnerStates;
 import propagation.order1.AC;
@@ -540,13 +540,13 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			}
 			if (futVars.size() == 0) {
 				solManager.handleNewSolutionAndPossiblyOptimizeIt();
-				CtrGlobal objectiveToCheck = pb.settings.framework == COP && !rs.cp.settingRestarts.restartAfterSolution ? (CtrGlobal) pb.optimizationPilot.ctr
+				CtrGlobal objectiveToCheck = pb.settings.framework == COP && !rs.cp.settingRestarts.restartAfterSolution ? (CtrGlobal) pb.optimizer.ctr
 						: null;
 				if (pb.settings.framework == COP && !rs.cp.settingRestarts.restartAfterSolution) {
 					// first, we backtrack to the level where a value for a variable in the scope of the objective was removed for the last time
-					objectiveToCheck = (CtrGlobal) pb.optimizationPilot.ctr;
-					((OptimizationCompatible) objectiveToCheck)
-							.setLimit(((OptimizationCompatible) objectiveToCheck).objectiveValue() + (pb.optimizationPilot.minimization ? -1 : 1));
+					objectiveToCheck = (CtrGlobal) pb.optimizer.ctr;
+					((Optimizable) objectiveToCheck)
+							.setLimit(((Optimizable) objectiveToCheck).objectiveValue() + (pb.optimizer.minimization ? -1 : 1));
 					int backtrackLevel = -1;
 					for (int i = 0; i < objectiveToCheck.scp.length; i++) {
 						int x = objectiveToCheck.futvars.dense[i]; // variables (of the objective) from the last assigned to the first assigned

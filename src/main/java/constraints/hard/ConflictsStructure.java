@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import constraints.TupleManager;
 import constraints.hard.extension.CtrExtensionCT;
 import constraints.hard.extension.CtrExtensionCT2;
@@ -105,7 +104,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 	}
 
 	private ConflictsStructure initializeFrom(int[][] tuples, boolean positive) {
-		CtrHard c = (CtrHard) firstRegisteredCtr();
+		Constraint c = firstRegisteredCtr();
 		assert registeredCtrs.size() == 1 && !c.usePredefinedMaxNumberOfConflicts();
 		Variable[] scp = firstRegisteredCtr().scp;
 		int nbValidTuples = Variable.nValidTuples(scp, false).intValueExact();
@@ -130,7 +129,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 
 	private ConflictsStructure initialize() {
 		assert registeredCtrs.size() == 1;
-		CtrHard c = (CtrHard) firstRegisteredCtr();
+		Constraint c = firstRegisteredCtr();
 		if (c.usePredefinedMaxNumberOfConflicts()) {
 			for (int i = 0; i < nConflicts.length; i++) {
 				Variable x = c.scp[i];
@@ -164,7 +163,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 
 	public void updateCounters(int[] domainsFrontier) {
 		assert registeredCtrs.size() == 1;
-		CtrHard constraint = (CtrHard) firstRegisteredCtr();
+		Constraint constraint = firstRegisteredCtr();
 		if (constraint.usePredefinedMaxNumberOfConflicts())
 			return;
 		Variable reducedDomainVariable = getReducedDomainVariable(constraint.scp, domainsFrontier);
@@ -185,7 +184,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 	 * It is assumed that only the domain of the specified variable has been reduced (when considering the scope of the exploiting constraint).
 	 */
 	public void manageRemovedValues(Variable x, int sentinel) {
-		CtrHard c = (CtrHard) firstRegisteredCtr();
+		Constraint c = firstRegisteredCtr();
 		assert registeredCtrs.size() == 1 && !c.usePredefinedMaxNumberOfConflicts();
 		int p = c.positionOf(x);
 		TupleManager tupleManager = c.tupleManager;
@@ -215,7 +214,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 	 * We assume that the given array corresponds to an allowed tuple of indexes (and not to a tuple of values) that has just been removed.
 	 */
 	public final void manageRemovedTuple(int... idxs) {
-		assert registeredCtrs.size() == 1 && !((CtrHard) firstRegisteredCtr()).usePredefinedMaxNumberOfConflicts();
+		assert registeredCtrs.size() == 1 && !firstRegisteredCtr().usePredefinedMaxNumberOfConflicts();
 		for (int i = 0; i < idxs.length; i++)
 			if (++nConflicts[i][idxs[i]] > nbMaxConflicts[i])
 				nbMaxConflicts[i]++;
@@ -238,7 +237,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 	}
 
 	public boolean controlStructures() {
-		CtrHard c = (CtrHard) firstRegisteredCtr();
+		Constraint c = firstRegisteredCtr();
 		if (c.usePredefinedMaxNumberOfConflicts())
 			return true;
 		if (Variable.nValidTuples(c.scp, false).compareTo(BigInteger.valueOf(LIMIT_FOR_NARY)) > 0) {

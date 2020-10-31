@@ -2,7 +2,7 @@ package search.local.functionalPropagators;
 
 import java.util.List;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import variables.Variable;
 
 public abstract class FunctionalPropagator {
@@ -21,7 +21,7 @@ public abstract class FunctionalPropagator {
 	 *            : the position of the variable which value can be inferred from the values of the others.
 	 * @return A FunctionalPropagatorPreComputed if the cartesian product of the domains is small enough, a FunctionalPropagatorDirect otherwise.
 	 */
-	public static FunctionalPropagator buildFunctionalPropagator(CtrHard constraint, int outputPos) {
+	public static FunctionalPropagator buildFunctionalPropagator(Constraint constraint, int outputPos) {
 		int encodingSize = 1;
 		for (int i = 0; i < constraint.scp.length; i++)
 			if (i != outputPos)
@@ -64,10 +64,10 @@ public abstract class FunctionalPropagator {
 	 * End of static section
 	 *********************************************************************************************/
 
-	public final CtrHard ctr;
+	public final Constraint ctr;
 	public final int outputPos;
 
-	public FunctionalPropagator(CtrHard constraint, int outputPos) {
+	public FunctionalPropagator(Constraint constraint, int outputPos) {
 		this.ctr = constraint;
 		this.outputPos = outputPos;
 	}

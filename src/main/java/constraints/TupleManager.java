@@ -37,14 +37,14 @@ public final class TupleManager {
 	public final int[] localTuple;
 
 	/**
-	 * The tuple used by the assistant. It can be the local tuple or an external tuple (avoids bidirectional copy during search of support).
-	 */
-	private int[] currTuple;
-
-	/**
 	 * Indicates which values must be kept fixed.
 	 */
 	private final boolean[] fixed;
+
+	/**
+	 * The tuple used by the assistant. It can be the local tuple or an external tuple (avoids bidirectional copy during search of support).
+	 */
+	public int[] currTuple;
 
 	public TupleManager(Domain[] doms) {
 		this.doms = doms;
@@ -53,9 +53,9 @@ public final class TupleManager {
 		this.fixed = new boolean[arity];
 	}
 
-	public int[] currTuple() {
-		return currTuple;
-	}
+	// public int[] currTuple() {
+	// return currTuple;
+	// }
 
 	private boolean isValidCurrTuple() {
 		for (int i = currTuple.length - 1; i >= 0; i--)

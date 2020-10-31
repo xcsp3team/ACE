@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import propagation.order1.AC;
 import search.Solver;
 import utility.Kit;
@@ -206,7 +205,7 @@ public class PropagationIsomorphism extends AC {
 
 	private List<int[]> computeTargetEdges() {
 		List<int[]> edges = new ArrayList<>();
-		for (CtrHard c : hards)
+		for (Constraint c : hards)
 			if (c.scp.length == 2) {
 				c.tupleManager.firstValidTuple();
 				c.tupleManager.overValidTuples(t -> {

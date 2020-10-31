@@ -13,7 +13,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import dashboard.Output;
 import problem.Problem;
 import utility.Kit;
@@ -103,7 +102,7 @@ public class CliqueManager {
 		for (int idx3 = idxStart3; idx3 != -1; idx3 = dom3.next(idx3)) {
 			tuple1[bro1] = idx3;
 			tuple2[bro2] = idx3;
-			if (((CtrHard) c1).checkIndexes(tuple1) && ((CtrHard) c2).checkIndexes(tuple2))
+			if (c1.checkIndexes(tuple1) && c2.checkIndexes(tuple2))
 				return idx3;
 		}
 		return -1;

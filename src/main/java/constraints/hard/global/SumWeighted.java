@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
-import interfaces.OptimizationCompatible;
+import interfaces.Optimizable;
 import interfaces.TagGACGuaranteed;
 import problem.Problem;
 import utility.Kit;
@@ -110,7 +110,7 @@ public abstract class SumWeighted extends SumAbstract {
 	// ***** Constraint SumWeightedLE
 	// ************************************************************************
 
-	public static final class SumWeightedLE extends SumWeighted implements TagGACGuaranteed, OptimizationCompatible {
+	public static final class SumWeightedLE extends SumWeighted implements TagGACGuaranteed, Optimizable {
 
 		@Override
 		public boolean checkValues(int[] t) {
@@ -160,7 +160,7 @@ public abstract class SumWeighted extends SumAbstract {
 	// ***** Constraint SumWeightedGE
 	// ************************************************************************
 
-	public static class SumWeightedGE extends SumWeighted implements TagGACGuaranteed, OptimizationCompatible {
+	public static class SumWeightedGE extends SumWeighted implements TagGACGuaranteed, Optimizable {
 
 		@Override
 		public boolean checkValues(int[] t) {
@@ -226,7 +226,7 @@ public abstract class SumWeighted extends SumAbstract {
 		}
 
 		@Override
-		public boolean isGuaranteedGAC() {
+		public boolean isGuaranteedAC() {
 			return guaranteedGAC;
 		}
 

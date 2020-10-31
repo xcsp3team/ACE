@@ -10,7 +10,7 @@
  */
 package propagation.order2.path;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import problem.cliques.CliqueManager;
 import propagation.order2.SecondOrderConsistency;
 import search.Solver;
@@ -29,7 +29,7 @@ public class CPC1 extends SecondOrderConsistency {
 		nSupports = new int[solver.pb.constraints.length];
 	}
 
-	private boolean filterConstraint(CtrHard c) {
+	private boolean filterConstraint(Constraint c) {
 		Domain dom0 = c.scp[0].dom, dom1 = c.scp[1].dom;
 		int sizeBefore0 = dom0.size(), sizeBefore1 = dom1.size();
 		int[] tuple = c.tupleManager.localTuple;
@@ -63,7 +63,7 @@ public class CPC1 extends SecondOrderConsistency {
 	}
 
 	public boolean establishOnePass() {
-		for (CtrHard c : hards)
+		for (Constraint c : hards)
 			if (c.scp.length == 2 && filterConstraint(c) == false)
 				return false;
 		return true;
@@ -75,7 +75,7 @@ public class CPC1 extends SecondOrderConsistency {
 			modified = false;
 			if (establishOnePass() == false)
 				return false;
-			System.out.println(" CPC : " + pb().nTuplesRemoved + " tuples removed " + pb().nValuesRemoved + " values removed");
+			System.out.println(" CPC : " + nTuplesRemoved + " tuples removed " + pb().nValuesRemoved + " values removed");
 		} while (modified);
 		return true;
 	}

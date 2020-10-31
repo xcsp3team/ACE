@@ -14,7 +14,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import heuristics.values.HeuristicValuesDynamic.Aic;
 import problem.Problem;
 import propagation.soft.pfc.RDAC;
@@ -176,7 +175,7 @@ public abstract class Decomposer {
 				Domain dom = neighbor.dom;
 				for (int b = dom.first(); b != -1; b = dom.next(b)) {
 					tmp[neighborPosition] = b;
-					if (((CtrHard) c).checkIndexes(tmp))
+					if (c.checkIndexes(tmp))
 						t[cnt++] = b;
 				}
 				nbConsistentValuesOfACNeighbors[nbACNeighbors] = cnt;
@@ -294,7 +293,7 @@ public abstract class Decomposer {
 				if (c.futvars.size() == 1)
 					continue; // optim coreccte a priori
 				int i = c.num, j = c.positionOf(x);
-				assert ((CtrHard) c).seekFirstSupportWith(j, a) != (minCosts[i][j][a] > 0);
+				assert c.seekFirstSupportWith(j, a) != (minCosts[i][j][a] > 0);
 				if (minCosts[i][j][a] > 0)
 					continue;
 				// if (!constraint.seekConflict(j, index))
@@ -320,7 +319,7 @@ public abstract class Decomposer {
 				return true;
 			int cnt = 0;
 			for (int i = 0; cnt < k && i < nbConstraintsToBeViolated; i++)
-				if (((CtrHard) constraintsToBeViolated[i]).seekFirstConflictWith(constraintsToBeViolated[i].positionOf(var), a)) {
+				if (constraintsToBeViolated[i].seekFirstConflictWith(constraintsToBeViolated[i].positionOf(var), a)) {
 					if (cnt < i)
 						Kit.swap(constraintsToBeViolated, cnt, i);
 					cnt++;

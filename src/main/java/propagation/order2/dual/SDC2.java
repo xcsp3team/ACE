@@ -11,7 +11,6 @@
 package propagation.order2.dual;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import constraints.hard.CtrExtension;
 import interfaces.FilteringSpecific;
 import propagation.order2.SecondOrderConsistency;
@@ -38,7 +37,7 @@ public class SDC2 extends SecondOrderConsistency {
 	}
 
 	private int removeConservativelyTuplesFrom(Variable x, int a) {
-		int before = pb().nTuplesRemoved;
+		int before = nTuplesRemoved;
 		for (Constraint c : x.ctrs) {
 			if (c.scp.length != 2 || !(c instanceof CtrExtension))
 				continue;
@@ -57,10 +56,10 @@ public class SDC2 extends SecondOrderConsistency {
 				lastModifications[y.num] = counter;
 			}
 		}
-		return (pb().nTuplesRemoved - before); // nbTuplesRemoved;
+		return nTuplesRemoved - before; // nbTuplesRemoved;
 	}
 
-	protected int performSingletonTest(Variable x, int a) {
+	protected final boolean singletonTest(Variable x, int a) {
 		Variable[] variables = solver.pb.variables;
 		nSingletonTests++;
 		int before = pb().nValuesRemoved;
@@ -79,7 +78,7 @@ public class SDC2 extends SecondOrderConsistency {
 
 				} else {
 					Variable y = Variable.firstDifferentVariableIn(c.scp, x);
-					reviser.applyTo((CtrHard) c, y);
+					reviser.applyTo(c, y);
 					if (y.dom.size() == 0) {
 						consistent = false;
 						break;
@@ -117,7 +116,7 @@ public class SDC2 extends SecondOrderConsistency {
 
 		// boolean consistent = super.checkConsistencyAfterAssignmentOf(futureVariable);
 		assert !consistent || controlArcConsistency() : "problem after singleton test: " + x + " = " + a;
-		int nbTuplesRemoved = (consistent ? removeConservativelyTuplesFrom(x, a) : -1);
+		int nbTuplesRemoved = consistent ? removeConservativelyTuplesFrom(x, a) : -1;
 
 		solver.backtrack(x);
 		pb().nValuesRemoved = before;
@@ -127,14 +126,14 @@ public class SDC2 extends SecondOrderConsistency {
 			x.dom.removeElementary(a);
 			// System.out.println("Sac removal of " + variable + " " + index + " nbRe=" + Domain.getNbRemovals());
 		}
-		return nbTuplesRemoved;
+		return nbTuplesRemoved != 0;
 	}
 
 	private boolean performSingletonTestsOf(Variable x) {
 		boolean modified = false;
 		Domain dom = x.dom;
 		for (int a = dom.first(); a != -1; a = dom.next(a))
-			if (performSingletonTest(x, a) != 0)
+			if (singletonTest(x, a))
 				modified = true;
 		return modified;
 	}
@@ -163,9 +162,9 @@ public class SDC2 extends SecondOrderConsistency {
 			}
 			x = solver.pb.variables[x.num == solver.pb.variables.length - 1 ? 0 : x.num + 1];
 			if (x.num == 0)
-				Kit.log.info("after turn, nbTuplesRemoved=" + pb().nTuplesRemoved + " nbValuesRemoved=" + pb().nValuesRemoved);
+				Kit.log.info("after turn, nbTuplesRemoved=" + nTuplesRemoved + " nbValuesRemoved=" + pb().nValuesRemoved);
 		} while (x != lastEffectiveVar);
-		Kit.log.info("finished, nbTuplesRemoved=" + pb().nTuplesRemoved + " nbValuesRemoved=" + pb().nValuesRemoved);
+		Kit.log.info("finished, nbTuplesRemoved=" + nTuplesRemoved + " nbValuesRemoved=" + pb().nValuesRemoved);
 		return true;
 	}
 }

@@ -21,7 +21,7 @@ import java.util.function.Consumer;
  */
 public interface LinkedSet {
 
-	void finalizeConstructionWith(int nLevels);
+	void finalizeConstruction(int nLevels);
 
 	/**
 	 * Returns the initial size of the set, i.e., the number of elements initially present in the set.

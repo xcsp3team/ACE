@@ -9,7 +9,6 @@
 package heuristics.values;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import interfaces.TagExperimental;
 import propagation.soft.pfc.RDAC;
 import utility.Kit;
@@ -54,7 +53,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 			assert x.isFuture() && dx.isPresent(a);
 			long nConflicts = 0;
 			for (Constraint c : x.ctrs)
-				nConflicts += ((CtrHard) c).nConflictsFor(c.positionOf(x), a);
+				nConflicts += c.nConflictsFor(c.positionOf(x), a);
 			return nConflicts;
 		}
 	}

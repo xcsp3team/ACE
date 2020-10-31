@@ -59,10 +59,10 @@ public abstract class DC2Abstract extends DCAbstract {
 	}
 
 	@Override
-	protected final int performSingletonTest(Variable x, int a) {
+	protected final boolean singletonTest(Variable x, int a) {
 		if (time > solver.pb.variables.length)
 			Domain.setMarks(solver.pb.variables); // not a problem even if futureVariable is not assigned yet
-		return super.performSingletonTest(x, a);
+		return super.singletonTest(x, a);
 	}
 
 	@Override

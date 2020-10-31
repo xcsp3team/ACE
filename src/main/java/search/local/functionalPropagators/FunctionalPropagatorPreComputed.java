@@ -2,7 +2,7 @@ package search.local.functionalPropagators;
 
 import org.xcsp.common.enumerations.EnumerationCartesian;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import utility.Kit;
 import variables.Variable;
 
@@ -17,7 +17,7 @@ public class FunctionalPropagatorPreComputed extends FunctionalPropagator {
 		return m;
 	}
 
-	public FunctionalPropagatorPreComputed(CtrHard constraint, int outputPos, int encodingSize) {
+	public FunctionalPropagatorPreComputed(Constraint constraint, int outputPos, int encodingSize) {
 		super(constraint, outputPos);
 		// Kit.pr("Constraint : ");
 		// constraint.display(false);

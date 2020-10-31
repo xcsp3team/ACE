@@ -11,7 +11,6 @@ package propagation.order2.path;
 import java.util.Arrays;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import problem.Problem;
 import variables.Variable;
 
@@ -22,7 +21,7 @@ public class PropagationSetOfValues {
 
 	private int size;
 
-	private final CtrHard[] ctrs;
+	private final Constraint[] ctrs;
 
 	private final Variable[] vars;
 
@@ -30,7 +29,7 @@ public class PropagationSetOfValues {
 
 	private int head;
 
-	public CtrHard firstConstraint() {
+	public Constraint firstConstraint() {
 		return ctrs[head];
 	}
 
@@ -58,12 +57,12 @@ public class PropagationSetOfValues {
 				capacity += c.scp[j].dom.initSize();
 			}
 		}
-		ctrs = new CtrHard[capacity];
+		ctrs = new Constraint[capacity];
 		vars = new Variable[capacity];
 		idxs = new int[capacity];
 	}
 
-	public PropagationSetOfValues add(CtrHard c, Variable x, int a) {
+	public PropagationSetOfValues add(Constraint c, Variable x, int a) {
 		int p = c.positionOf(x);
 		if (positions[c.num][p][a] != -1)
 			return this;

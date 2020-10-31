@@ -64,7 +64,7 @@ import org.xcsp.parser.entries.XVariables.XVar;
 import org.xcsp.parser.entries.XVariables.XVarInteger;
 import org.xcsp.parser.entries.XVariables.XVarSymbolic;
 
-import constraints.CtrHard.CtrHardFalse;
+import constraints.Constraint.CtrHardFalse;
 import constraints.hard.global.BinPackingSimple;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryAdd;
 import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryDist;

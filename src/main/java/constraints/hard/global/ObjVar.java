@@ -11,7 +11,7 @@ package constraints.hard.global;
 import java.util.stream.Stream;
 
 import constraints.hard.CtrGlobal;
-import interfaces.OptimizationCompatible;
+import interfaces.Optimizable;
 import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import interfaces.TagSymmetric;
@@ -19,7 +19,7 @@ import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 
-public abstract class ObjVar extends CtrGlobal implements OptimizationCompatible, TagFilteringCompleteAtEachCall, TagSymmetric, TagGACGuaranteed {
+public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilteringCompleteAtEachCall, TagSymmetric, TagGACGuaranteed {
 
 	@Override
 	public long minComputableObjectiveValue() {

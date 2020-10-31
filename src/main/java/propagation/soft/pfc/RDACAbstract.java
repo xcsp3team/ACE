@@ -155,9 +155,11 @@ public abstract class RDACAbstract extends PFC implements ObserverRuns {
 		for (Constraint c : solver.pb.constraints)
 			for (Variable x : c.scp)
 				if (!x.isAssigned()) {
-					for (int a = x.dom.first(); a != -1; a = x.dom.next(a))
-						Kit.control(Math.min(c.minCostOfTuplesWith(c.positionOf(x), a), solver.solManager.bestBound) == minCosts[c.num][c.positionOf(x)][a],
+					for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
+						long v = c.seekFirstSupportWith(c.positionOf(x), a) ? 0 : c.cost;
+						Kit.control(Math.min(v, solver.solManager.bestBound) == minCosts[c.num][c.positionOf(x)][a],
 								() -> "Recomputed value is different from stored value");
+					}
 				}
 		return true;
 	}

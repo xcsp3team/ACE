@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import interfaces.ObserverConstruction;
 import search.backtrack.DecisionRecorder;
 import search.backtrack.SolverBacktrack;
@@ -63,13 +62,13 @@ public abstract class FailedValueBasedConsistency implements ObserverConstructio
 		private Constraint seekConflictingConstraintFor(Variable x, int a) {
 			Constraint residue = residues[x.num][a];
 			int p = residue.positionOf(x);
-			if (Variable.nValidTuplesBoundedAtMaxValueFor(residue.scp, p) > CONFLICT_SEEKING_LIMIT || ((CtrHard) residue).seekFirstConflictWith(p, a))
+			if (Variable.nValidTuplesBoundedAtMaxValueFor(residue.scp, p) > CONFLICT_SEEKING_LIMIT || residue.seekFirstConflictWith(p, a))
 				return residue;
 			for (Constraint c : x.ctrs) {
 				if (c == residue)
 					continue;
 				p = c.positionOf(x);
-				if (Variable.nValidTuplesBoundedAtMaxValueFor(c.scp, p) > CONFLICT_SEEKING_LIMIT || ((CtrHard) c).seekFirstConflictWith(p, a))
+				if (Variable.nValidTuplesBoundedAtMaxValueFor(c.scp, p) > CONFLICT_SEEKING_LIMIT || c.seekFirstConflictWith(p, a))
 					return c;
 			}
 			return null;
@@ -116,7 +115,7 @@ public abstract class FailedValueBasedConsistency implements ObserverConstructio
 				int p = c.positionOf(x);
 				if (Variable.nValidTuplesBoundedAtMaxValueFor(c.scp, p) > CONFLICT_SEEKING_LIMIT)
 					return Constraint.TAG;
-				if (((CtrHard) c).seekFirstConflictWith(p, a)) {
+				if (c.seekFirstConflictWith(p, a)) {
 					if (ctr == null && c.scp.length == 2 && c.scp[p == 1 ? 0 : 1].dom.size() > 1)
 						ctr = c;
 					else
@@ -147,7 +146,7 @@ public abstract class FailedValueBasedConsistency implements ObserverConstructio
 					Domain domy = y.dom;
 					int sizeBefore = domy.size();
 					for (int b = domy.first(); b != -1; b = domy.next(b))
-						if (((CtrHard) c).seekFirstSupportWith(p, a, q, b))
+						if (c.seekFirstSupportWith(p, a, q, b))
 							y.dom.removeElementary(b);
 					int nRemovals = (sizeBefore - domy.size());
 					if (nRemovals > 0) {
@@ -169,7 +168,7 @@ public abstract class FailedValueBasedConsistency implements ObserverConstructio
 
 	public static class ArcFailedValueConsistency extends FailedValueBasedConsistency {
 
-		private void updateConflictsList(CtrHard c) {
+		private void updateConflictsList(Constraint c) {
 			assert c.scp.length == 2;
 			Variable x = c.scp[0], y = c.scp[1];
 			int[] tuple = c.tupleManager.localTuple;
@@ -207,7 +206,7 @@ public abstract class FailedValueBasedConsistency implements ObserverConstructio
 			}
 
 			for (Constraint ctr : constraints)
-				updateConflictsList((CtrHard) ctr);
+				updateConflictsList(ctr);
 
 			conflictsVariable = new Variable[variables.length][][];
 			conflictsIndex = new int[variables.length][][];
@@ -232,11 +231,11 @@ public abstract class FailedValueBasedConsistency implements ObserverConstructio
 					}
 			}
 
-			binaryConstraints = new CtrHard[variables.length][variables.length];
+			binaryConstraints = new Constraint[variables.length][variables.length];
 			for (Constraint c : constraints) {
 				Variable x = c.scp[0], y = c.scp[1];
-				binaryConstraints[x.num][y.num] = (CtrHard) c;
-				binaryConstraints[y.num][x.num] = (CtrHard) c;
+				binaryConstraints[x.num][y.num] = c;
+				binaryConstraints[y.num][x.num] = c;
 			}
 			// displayConflictsLists();
 		}
@@ -249,7 +248,7 @@ public abstract class FailedValueBasedConsistency implements ObserverConstructio
 
 		private int[][][][] residuesIndex;
 
-		private CtrHard[][] binaryConstraints; // 1D = variable id , 2D=variale ID
+		private Constraint[][] binaryConstraints; // 1D = variable id , 2D=variale ID
 
 		private List<Variable>[][] conflictsVariableList; // 1D = variable index; 2D=index; 3D =order
 
@@ -291,7 +290,7 @@ public abstract class FailedValueBasedConsistency implements ObserverConstructio
 							if (!convar[j].dom.isPresent(conind[j]))
 								continue;
 
-							CtrHard binaryConstraint = binaryConstraints[convar[j].num][x.num];
+							Constraint binaryConstraint = binaryConstraints[convar[j].num][x.num];
 							if (binaryConstraint == null) {
 								resvar2[a] = convar[j];
 								resind2[a] = conind[j];

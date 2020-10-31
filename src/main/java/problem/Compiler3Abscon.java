@@ -70,7 +70,7 @@ public final class Compiler3Abscon extends org.xcsp.modeler.Compiler {
 
 	@Override
 	protected void handleCtr(Element parent, ICtr ctr) {
-		if (((Constraint) ctr).pb.optimizationPilot != null && ((Constraint) ctr).pb.optimizationPilot.ctr == ctr)
+		if (((Constraint) ctr).pb.optimizer != null && ((Constraint) ctr).pb.optimizer.ctr == ctr)
 			return;
 		super.handleCtr(parent, ctr);
 	}

@@ -1,11 +1,11 @@
 package search.local.functionalPropagators;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import variables.domains.Domain;
 
 public class FunctionalPropagatorDirect extends FunctionalPropagator {
 
-	public FunctionalPropagatorDirect(CtrHard constraint, int outputPos) {
+	public FunctionalPropagatorDirect(Constraint constraint, int outputPos) {
 		super(constraint, outputPos);
 	}
 

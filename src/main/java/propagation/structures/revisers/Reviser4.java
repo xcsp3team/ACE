@@ -9,14 +9,13 @@
 package propagation.structures.revisers;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import constraints.hard.extension.structures.Bits;
 import interfaces.FilteringSpecific;
 import propagation.order1.PropagationForward;
 import utility.Kit;
 import utility.sets.LinkedSet;
-import utility.sets.SetSparse;
 import utility.sets.LinkedSetOrdered.LinkedSetOrderedWithBits2;
+import utility.sets.SetSparse;
 import variables.Variable;
 import variables.domains.Domain;
 
@@ -74,7 +73,7 @@ public final class Reviser4 extends Reviser2 {
 	}
 
 	@Override
-	public void applyTo(CtrHard c, Variable x) {
+	public void applyTo(Constraint c, Variable x) {
 		if (!(c.extStructure() instanceof Bits))
 			super.applyTo(c, x);
 		else {

@@ -16,7 +16,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import utility.Kit;
 import utility.sets.SetSparse;
 import variables.Variable;
@@ -40,7 +39,7 @@ public final class IdentificationAllDifferent {
 	private int[][] computeIrreflexivesNeigbours(int nVariables, List<Constraint> constraints) {
 		Set<Integer>[] neighbours = Stream.of(pb.variables).map(x -> new TreeSet<>()).toArray(TreeSet[]::new);
 		for (Constraint c : constraints)
-			if (c.scp.length == 2 && ((CtrHard) c).isIrreflexive()) {
+			if (c.scp.length == 2 && c.isIrreflexive()) {
 				neighbours[c.scp[0].num].add(c.scp[1].num);
 				neighbours[c.scp[1].num].add(c.scp[0].num);
 			}
@@ -105,7 +104,7 @@ public final class IdentificationAllDifferent {
 		for (int i = 0; i < vars.length; i++)
 			for (int j = i + 1; j < vars.length; j++) {
 				Variable x = vars[i], y = vars[j];
-				Kit.control(constraints.stream().anyMatch(c -> c.scp.length == 2 && ((CtrHard) c).isIrreflexive() && c.involves(x, y)),
+				Kit.control(constraints.stream().anyMatch(c -> c.scp.length == 2 && c.isIrreflexive() && c.involves(x, y)),
 						() -> "not a clique with " + x + " " + y);
 			}
 		return true;

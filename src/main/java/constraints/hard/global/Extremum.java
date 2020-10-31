@@ -4,7 +4,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.hard.CtrGlobal;
-import interfaces.OptimizationCompatible;
+import interfaces.Optimizable;
 import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import interfaces.TagSymmetric;
@@ -211,7 +211,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 		}
 	}
 
-	public static abstract class ExtremumCst extends Extremum implements OptimizationCompatible, TagSymmetric {
+	public static abstract class ExtremumCst extends Extremum implements Optimizable, TagSymmetric {
 
 		protected int limit;
 

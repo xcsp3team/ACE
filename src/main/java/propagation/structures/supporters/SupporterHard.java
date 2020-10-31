@@ -8,17 +8,17 @@
  */
 package propagation.structures.supporters;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import variables.Variable;
 
-public abstract class SupporterHard extends Supporter<CtrHard> {
+public abstract class SupporterHard extends Supporter<Constraint> {
 
 	/**
 	 * MUST be called when the constraint relation is modified
 	 */
 	public abstract void reset();
 
-	public SupporterHard(CtrHard c) {
+	public SupporterHard(Constraint c) {
 		super(c);
 	}
 

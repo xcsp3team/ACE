@@ -11,7 +11,7 @@ import constraints.Constraint;
 import constraints.hard.global.HammingProximityConstant.HammingProximityConstantGE;
 import constraints.hard.global.HammingProximityConstant.HammingProximityConstantSumLE;
 import interfaces.FilteringSpecific;
-import objectives.OptimizationPilot.OptimizationPilotDecreasing;
+import objectives.Optimizer.OptimizerDecreasing;
 import problem.Problem;
 import search.Restarter;
 import search.Solver;
@@ -34,7 +34,7 @@ public final class RestarterLocalBranching extends Restarter {
 	public RestarterLocalBranching(Solver solver) {
 		super(solver);
 		Kit.control(solver instanceof SolverBacktrack, () -> "For local branching, only a SolverBacktrack can be used.");
-		Kit.control(solver.pb.optimizationPilot instanceof OptimizationPilotDecreasing,
+		Kit.control(solver.pb.optimizer instanceof OptimizerDecreasing,
 				() -> "For local branching, only OptimizationPilotDecreasing can be used.");
 
 		this.localBranchingConstraints = solver.pb.symbolic != null
@@ -69,7 +69,7 @@ public final class RestarterLocalBranching extends Restarter {
 				if (solver.stoppingType == EStopping.FULL_EXPLORATION) {
 					solver.stoppingType = null;
 					currDistance++;
-					if (solver.pb.optimizationPilot.areBoundsConsistent())
+					if (solver.pb.optimizer.areBoundsConsistent())
 						forceRootPropagation = true;
 				}
 				if (forceRootPropagation) {
@@ -81,7 +81,7 @@ public final class RestarterLocalBranching extends Restarter {
 				((SolverBacktrack) solver).restoreProblem();
 				if (((SolverBacktrack) solver).learnerNogoods != null)
 					((SolverBacktrack) solver).learnerNogoods.reset();
-				((FilteringSpecific) solver.pb.optimizationPilot.ctr).runPropagator(null);
+				((FilteringSpecific) solver.pb.optimizer.ctr).runPropagator(null);
 			}
 			if (nRestartsSinceActive > solver.rs.cp.settingLB.maxRestarts)
 				leaveLocalBranching();

@@ -10,13 +10,13 @@ package constraints.hard.global;
 
 import java.util.Arrays;
 
-import interfaces.OptimizationCompatible;
+import interfaces.Optimizable;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 import variables.domains.Domain;
 
-public abstract class NValuesCst extends NValuesAbstract implements OptimizationCompatible {
+public abstract class NValuesCst extends NValuesAbstract implements Optimizable {
 
 	protected int limit;
 

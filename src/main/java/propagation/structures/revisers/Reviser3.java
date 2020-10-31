@@ -9,7 +9,6 @@
 package propagation.structures.revisers;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import constraints.hard.extension.structures.Bits;
 import interfaces.FilteringSpecific;
 import propagation.order1.PropagationForward;
@@ -62,7 +61,7 @@ public final class Reviser3 extends Reviser2 {
 	}
 
 	@Override
-	public void applyTo(CtrHard c, Variable x) {
+	public void applyTo(Constraint c, Variable x) {
 		if (!(c.extStructure() instanceof Bits))
 			super.applyTo(c, x);
 		else {

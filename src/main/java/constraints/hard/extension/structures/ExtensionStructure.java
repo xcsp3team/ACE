@@ -36,7 +36,7 @@ public abstract class ExtensionStructure implements RegisteringCtrs {
 	}
 
 	protected final void incrementNbTuplesRemoved() {
-		firstRegisteredCtr().pb.nTuplesRemoved++;
+		firstRegisteredCtr().pb.solver.propagation.nTuplesRemoved++;
 	}
 
 }

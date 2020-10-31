@@ -152,7 +152,7 @@ public final class SolverLocal extends Solver {
 			// conflictManager.displayConflictingConstraints();
 			// }
 			if (conflictManager.nConflictingConstraints() == 0) {
-				if (pb.settings.framework != TypeFramework.COP || pb.optimizationPilot.value() < solManager.bestBound)
+				if (pb.settings.framework != TypeFramework.COP || pb.optimizer.value() < solManager.bestBound)
 					solManager.handleNewSolution(true);
 				if (!finished() && pb.settings.framework == TypeFramework.CSP)
 					buildInitialCompleteInstantiation();
@@ -165,7 +165,7 @@ public final class SolverLocal extends Solver {
 
 			// resolution.output.prn(conflictManager.getNbConflictingConstraints() + " conflicting constraints");
 			if (conflictManager.nConflictingConstraints() == 0)
-				Kit.log.fine("Current cost : " + pb.optimizationPilot.value());
+				Kit.log.fine("Current cost : " + pb.optimizer.value());
 
 			if (conflictManager.nConflictingConstraints() < nMinViolatedCtrs) {
 				nMinViolatedCtrs = conflictManager.nConflictingConstraints();

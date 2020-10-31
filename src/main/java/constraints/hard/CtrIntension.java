@@ -20,7 +20,7 @@ import org.xcsp.common.predicates.TreeEvaluator.F2Evaluator;
 import org.xcsp.common.predicates.XNodeParent;
 import org.xcsp.modeler.definitions.ICtr.ICtrIntension;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import constraints.hard.intension.CanonicalExpressionParser;
 import constraints.hard.intension.CtrEvaluationManager;
 import problem.Problem;
@@ -29,7 +29,7 @@ import variables.Variable;
 import variables.VariableInteger;
 import variables.VariableSymbolic;
 
-public final class CtrIntension extends CtrHard implements ICtrIntension {
+public final class CtrIntension extends Constraint implements ICtrIntension {
 
 	public XNodeParent<IVar> tree;
 

@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import problem.Problem;
 import propagation.order1.PropagationForward;
 import search.Solver;
@@ -30,7 +29,7 @@ public final class Substitutabiliter {
 		this.queue = new PropagationQueue((PropagationForward) solver.propagation);
 	}
 
-	public boolean isSubstitutableBy(CtrHard c, Variable x, int a, int b) {
+	public boolean isSubstitutableBy(Constraint c, Variable x, int a, int b) {
 		int p = c.positionOf(x);
 		c.tupleManager.firstValidTupleWith(p, a);
 		return !c.tupleManager.findValidTupleSuchThat(t -> {
@@ -46,7 +45,7 @@ public final class Substitutabiliter {
 
 	public boolean isSubstitutableBy(Variable x, int a, int b) {
 		for (Constraint c : x.ctrs)
-			if (!isSubstitutableBy((CtrHard) c, x, a, b))
+			if (!isSubstitutableBy(c, x, a, b))
 				return false;
 		return true;
 	}

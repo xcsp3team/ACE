@@ -8,7 +8,7 @@
  */
 package propagation.order2.path;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import problem.cliques.Clique;
 import search.Solver;
 
@@ -19,7 +19,7 @@ public class CPC2001 extends CPC8 {
 	public CPC2001(Solver solver) {
 		super(solver);
 		last = new int[solver.pb.constraints.length][][][];
-		for (CtrHard c : hards) {
+		for (Constraint c : hards) {
 			if (c.scp.length != 2)
 				continue;
 			int k = cliqueManager.cliques[c.num].length;
@@ -29,7 +29,7 @@ public class CPC2001 extends CPC8 {
 	}
 
 	@Override
-	protected boolean checkPathConsistencyOfSupport(CtrHard cxy, int[] tuple, Clique clique) {
+	protected boolean checkPathConsistencyOfSupport(Constraint cxy, int[] tuple, Clique clique) {
 		int cliquePosition = clique.getPositionOf(cxy);
 		int c = cliqueManager.getPathSupport(cxy, tuple, clique, last[cxy.num][tuple[0]][tuple[1]][cliquePosition]);
 		if (c == -1) {

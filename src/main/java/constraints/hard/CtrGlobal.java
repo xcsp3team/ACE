@@ -8,12 +8,12 @@
  */
 package constraints.hard;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import interfaces.FilteringGlobal;
 import problem.Problem;
 import variables.Variable;
 
-public abstract class CtrGlobal extends CtrHard implements FilteringGlobal {
+public abstract class CtrGlobal extends Constraint implements FilteringGlobal {
 
 	protected final void defineKey(Object... specificData) {
 		StringBuilder sb = signature().append(' ').append(getClass().getSimpleName());

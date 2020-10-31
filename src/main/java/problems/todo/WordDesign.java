@@ -20,7 +20,7 @@ import java.util.List;
 import org.xcsp.common.IVar.Var;
 import org.xcsp.modeler.api.ProblemAPI;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
@@ -94,7 +94,7 @@ public class WordDesign implements ProblemAPI {
 		return list;
 	}
 
-	class DistinctPositions extends CtrHard {
+	class DistinctPositions extends Constraint {
 		public DistinctPositions(Problem problem, Variable[] scope) {
 			super(problem, scope);
 		}

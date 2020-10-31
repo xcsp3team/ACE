@@ -23,7 +23,6 @@ import java.util.stream.Stream;
 import org.xcsp.modeler.definitions.ICtr.ICtrExtension;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import constraints.TupleManager;
 import constraints.hard.extension.CtrExtensionCT;
 import constraints.hard.extension.CtrExtensionCT2;
@@ -49,7 +48,7 @@ import variables.Variable;
 import variables.VariableInteger;
 import variables.VariableSymbolic;
 
-public abstract class CtrExtension extends CtrHard implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, ICtrExtension {
+public abstract class CtrExtension extends Constraint implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, ICtrExtension {
 
 	/**********************************************************************************************
 	 ***** Static

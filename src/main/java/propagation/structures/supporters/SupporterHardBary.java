@@ -8,7 +8,7 @@
  */
 package propagation.structures.supporters;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import interfaces.TagBinaryRelationFiltering;
 import utility.Kit;
 import variables.Variable;
@@ -22,7 +22,7 @@ public final class SupporterHardBary extends SupporterHard {
 		Kit.fill(residues, -1);
 	}
 
-	public SupporterHardBary(CtrHard c) {
+	public SupporterHardBary(Constraint c) {
 		super(c);
 		Kit.control(c.scp.length == 2);
 		this.residues = Variable.litterals(c.scp).intArray(-1);

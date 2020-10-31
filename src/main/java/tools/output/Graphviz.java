@@ -18,7 +18,6 @@ import java.util.stream.Stream;
 import org.xcsp.common.Constants;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import problem.Problem;
 import search.backtrack.DecisionRecorder;
 import search.backtrack.SolverBacktrack;
@@ -212,13 +211,11 @@ public class Graphviz {
 		for (Constraint c : pb.constraints) {
 			if (c.futvars.size() != c.scp.length && !displayAll)
 				continue;
-			if (!(c instanceof CtrHard))
-				continue;
 			cnt++;
 			Variable x = c.scp[0], y = c.scp[1];
 			for (int a = 0; a < x.dom.initSize(); a++) {
 				for (int b = 0; b < y.dom.initSize(); b++) {
-					if (((CtrHard) c).seekFirstSupportWith(0, a, 1, b)) {
+					if (c.seekFirstSupportWith(0, a, 1, b)) {
 						String edge = "  " + varName(pb, x) + "_" + a + " -- " + varName(pb, y) + "_" + b;
 						if (x.dom.isPresent(a) && y.dom.isPresent(b))
 							out.println(edge + (pb.constraints.length < BLUES.length ? " [color=" + BLUES[cnt] + "]  " : "") + ";");

@@ -94,6 +94,7 @@ public class TestAllSolutions {
 		add("/csp/QuasiGroup-base-v5-8", 720);
 		add("/csp/QuasiGroup-base-v6-8", 1440);
 		// add("/csp/QuasiGroup-base-v7-9", 5040); // long
+		add("/csp/QueensKnights-6-4", 1664);
 		add("/csp/SchurrLemma-6-6", 39870);
 		add("/csp/SchurrLemma-mod-8-8", 141120);
 		add("/csp/SocialGolfers-01-4-4-5", 2);

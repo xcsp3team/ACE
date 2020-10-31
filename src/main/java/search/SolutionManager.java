@@ -22,7 +22,6 @@ import org.xcsp.modeler.entities.VarEntities.VarArray;
 import org.xcsp.modeler.entities.VarEntities.VarEntity;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import problem.Problem;
 import search.backtrack.RestarterLocalBranching;
 import search.backtrack.SolverBacktrack;
@@ -179,8 +178,8 @@ public final class SolutionManager {
 		if (found <= 1)
 			return;
 		h1 = (int) IntStream.range(0, lastSolution.length).filter(i -> lastSolution[i] != solver.pb.variables[i].dom.unique()).count();
-		if (solver.pb.optimizationPilot != null) {
-			Constraint c = (Constraint) solver.pb.optimizationPilot.ctr;
+		if (solver.pb.optimizer != null) {
+			Constraint c = (Constraint) solver.pb.optimizer.ctr;
 			h2 = (int) IntStream.range(0, lastSolution.length)
 					.filter(i -> lastSolution[i] != solver.pb.variables[i].dom.unique() && c.involves(solver.pb.variables[i])).count();
 		}
@@ -204,14 +203,14 @@ public final class SolutionManager {
 		if (solver.propagation.performingProperSearch)
 			return;
 		if (solver.pb.settings.framework == TypeFramework.MAXCSP) {
-			int z = (int) Stream.of(solver.pb.constraints).filter(c -> !((CtrHard) c).checkCurrentInstantiation()).count();
+			int z = (int) Stream.of(solver.pb.constraints).filter(c -> !c.checkCurrentInstantiation()).count();
 			Kit.control(z < bestBound, () -> "z=" + z + " bb=" + bestBound);
 			bestBound = z;
 			// solver.restarter.forceRootPropagation = true; // a garder ?
 
-		} else if (solver.pb.optimizationPilot != null) {
-			bestBound = solver.pb.optimizationPilot.value();
-			Kit.control(solver.pb.optimizationPilot.isBetterBound(bestBound));
+		} else if (solver.pb.optimizer != null) {
+			bestBound = solver.pb.optimizer.value();
+			Kit.control(solver.pb.optimizer.isBetterBound(bestBound));
 			// solver.restarter.forceRootPropagation = true;
 			if (solver.rs.cp.settingXml.competitionMode)
 				System.out.println("o " + bestBound); // + "); // (hamming: " + h1 + ", in_objective: " + h2 + ")");

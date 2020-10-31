@@ -71,7 +71,7 @@ public class Restarter implements ObserverRuns {
 	@Override
 	public void afterRun() {
 		if (settingsGeneral.framework == TypeFramework.COP)
-			solver.pb.optimizationPilot.afterRun();
+			solver.pb.optimizer.afterRun();
 	}
 
 	/**
@@ -143,15 +143,15 @@ public class Restarter implements ObserverRuns {
 	private long cnt;
 
 	public boolean currRunFinished() {
-		if (solver.pb.optimizationPilot != null && ((cnt++) % 5) == 0)
-			solver.pb.optimizationPilot.possiblyUpdateLocalBounds();
+		if (solver.pb.optimizer != null && ((cnt++) % 5) == 0)
+			solver.pb.optimizer.possiblyUpdateLocalBounds();
 		if (measureSupplier.get() >= currCutoff)
 			return true;
 		if (settingsGeneral.framework != TypeFramework.COP || numRun != solver.solManager.lastSolutionRun)
 			return false;
 		if (setting.restartAfterSolution)
 			return true;
-		if (solver.pb.optimizationPilot.ctr instanceof MaximumCstLE || solver.pb.optimizationPilot.ctr instanceof ObjVar)
+		if (solver.pb.optimizer.ctr instanceof MaximumCstLE || solver.pb.optimizer.ctr instanceof ObjVar)
 			return true;
 		return false;
 	}

@@ -11,7 +11,7 @@ package constraints.hard.intension;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import interfaces.TagUnsymmetric;
 import problem.Problem;
 import variables.Variable;
@@ -21,7 +21,7 @@ import variables.Variable;
  * All supports (allowed tuples) or all conflicts (disallowed tuples) are not recorded in a list but computed when necessary. Note that indexes of
  * values and values match.
  */
-public final class CtrHardRandomImplicit extends CtrHard implements TagUnsymmetric {
+public final class CtrHardRandomImplicit extends Constraint implements TagUnsymmetric {
 	@Override
 	public final boolean checkValues(int[] t) {
 		return Arrays.equals(requiredSupport, t) ? true : implicitRandomList.randomByteFor(t) >= tightness;

@@ -8,14 +8,10 @@
  */
 package problems.g3_pattern;
 
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.IVar.Var;
 import org.xcsp.modeler.api.ProblemAPI;
-
-import problem.Problem;
-import variables.Variable;
 
 /*
  * "Rectangle packing problem." + "\nSee Simonis and O'Sullivan. Search strategies for rectangle packing. In Proceedings of CP 2008." +
@@ -48,8 +44,8 @@ public class RectPacking implements ProblemAPI {
 				lessEqual(y[nBoxes - 1], x[nBoxes - 1]);
 			}).tag(SYMMETRY_BREAKING);
 
-		if (imp() instanceof Problem)
-			((Problem) imp()).annotateVarhStatic(
-					IntStream.range(0, nBoxes * 2).mapToObj(i -> i % 2 == 0 ? x[nBoxes - 1 - i / 2] : y[nBoxes - 1 - i / 2]).toArray(Variable[]::new));
+		// if (imp() instanceof Problem)
+		// ((Problem) imp()).annotateVarhStatic(
+		// IntStream.range(0, nBoxes * 2).mapToObj(i -> i % 2 == 0 ? x[nBoxes - 1 - i / 2] : y[nBoxes - 1 - i / 2]).toArray(Variable[]::new));
 	}
 }

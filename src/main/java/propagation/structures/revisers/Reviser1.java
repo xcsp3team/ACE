@@ -8,7 +8,7 @@
  */
 package propagation.structures.revisers;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import propagation.order1.PropagationForward;
 import variables.Variable;
 import variables.domains.Domain;
@@ -23,12 +23,12 @@ public class Reviser1 extends Reviser {
 	}
 
 	@Override
-	public boolean mustBeAppliedTo(CtrHard c, Variable x) {
+	public boolean mustBeAppliedTo(Constraint c, Variable x) {
 		return true;
 	}
 
 	@Override
-	public void applyTo(CtrHard c, Variable x) {
+	public void applyTo(Constraint c, Variable x) {
 		int px = c.positionOf(x);
 		Domain dom = x.dom;
 		for (int a = dom.first(); a != -1; a = dom.next(a)) {

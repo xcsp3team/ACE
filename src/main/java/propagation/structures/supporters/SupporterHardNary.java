@@ -10,7 +10,7 @@ package propagation.structures.supporters;
 
 import java.util.stream.Stream;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import utility.Kit;
 
 public final class SupporterHardNary extends SupporterHard {
@@ -22,7 +22,7 @@ public final class SupporterHardNary extends SupporterHard {
 		Stream.of(residues).forEach(m -> Kit.fill(m, -1));
 	}
 
-	public SupporterHardNary(CtrHard c) {
+	public SupporterHardNary(Constraint c) {
 		super(c);
 		Kit.control(c.scp.length > 2);
 		this.residues = Stream.of(c.scp).map(x -> Kit.repeat(-1, x.dom.initSize(), c.scp.length)).toArray(int[][][]::new);

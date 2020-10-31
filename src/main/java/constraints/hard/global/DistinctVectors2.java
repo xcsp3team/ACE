@@ -70,7 +70,7 @@ public final class DistinctVectors2 extends CtrGlobal implements TagUnsymmetric,
 	}
 
 	@Override
-	public boolean isGuaranteedGAC() {
+	public boolean isGuaranteedAC() {
 		return mm == null;
 	}
 

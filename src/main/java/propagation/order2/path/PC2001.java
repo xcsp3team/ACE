@@ -8,7 +8,7 @@
  */
 package propagation.order2.path;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import problem.cliques.CliqueManager;
 import search.Solver;
 import variables.Variable;
@@ -20,17 +20,17 @@ public class PC2001 extends PC8 {
 	public PC2001(Solver solver) {
 		super(solver);
 		last = new int[hards.length][][][];
-		for (CtrHard c : hards)
+		for (Constraint c : hards)
 			if (c.scp.length == 2)
 				last[c.num] = new int[c.scp[0].dom.initSize()][c.scp[1].dom.initSize()][solver.pb.variables.length];
 	}
 
 	@Override
-	protected boolean checkPathConsistencyOfSupport(CtrHard cxy, int[] support, Variable z) {
+	protected boolean checkPathConsistencyOfSupport(Constraint cxy, int[] support, Variable z) {
 		Variable x = cxy.scp[0], y = cxy.scp[1];
 		int a = support[0], b = support[1];
-		CtrHard cxz = (z.num > x.num ? constraintsAccess[z.num][x.num] : constraintsAccess[x.num][z.num]);
-		CtrHard cyz = (z.num > y.num ? constraintsAccess[z.num][y.num] : constraintsAccess[y.num][z.num]);
+		Constraint cxz = (z.num > x.num ? constraintsAccess[z.num][x.num] : constraintsAccess[x.num][z.num]);
+		Constraint cyz = (z.num > y.num ? constraintsAccess[z.num][y.num] : constraintsAccess[y.num][z.num]);
 		int c = CliqueManager.getPathSupport(x, y, a, b, z, last[cxy.num][support[0]][support[1]][z.num], cxz, cyz);
 		if (c == -1) {
 			cxy.removeTuple(support);

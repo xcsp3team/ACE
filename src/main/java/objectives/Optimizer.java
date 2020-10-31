@@ -5,7 +5,7 @@ import org.xcsp.common.Types.TypeOptimization;
 
 import dashboard.Arguments;
 import dashboard.Output;
-import interfaces.OptimizationCompatible;
+import interfaces.Optimizable;
 import problem.Problem;
 import propagation.soft.LowerBoundCapability;
 import search.backtrack.SolverBacktrack;
@@ -15,13 +15,7 @@ import utility.Kit;
 import utility.exceptions.UnreachableCodeException;
 import variables.Variable;
 
-/**
- * An objective is represented by a constraint.
- * 
- * @author lecoutre
- *
- */
-public abstract class OptimizationPilot {
+public abstract class Optimizer { // Pilot for (mono-objective) optimization
 
 	/**********************************************************************************************
 	 * Sharing bounds between workers
@@ -80,7 +74,7 @@ public abstract class OptimizationPilot {
 
 	public final boolean minimization;
 
-	public final OptimizationCompatible ctr;
+	public final Optimizable ctr;
 
 	/**
 	 * Solutions searched for must have a cost greater than or equal to this bound (valid for minimization and maximization).
@@ -92,7 +86,7 @@ public abstract class OptimizationPilot {
 	 */
 	protected long maxBound;
 
-	public OptimizationPilot(Problem pb, TypeOptimization opt, OptimizationCompatible ctr) {
+	public Optimizer(Problem pb, TypeOptimization opt, Optimizable ctr) {
 		this.pb = pb;
 		Kit.control(opt != null);
 		this.minimization = opt == TypeOptimization.MINIMIZE;
@@ -183,11 +177,11 @@ public abstract class OptimizationPilot {
 	// SVal not correctly updated in STR2
 	// Increasing and Dichotomic to be totally revised
 
-	public static final class OptimizationPilotBasic extends OptimizationPilot {
+	public static final class OptimizerBasic extends Optimizer {
 
 		public final String optimizationExpression;
 
-		public OptimizationPilotBasic(Problem pb, String optimizationExpression) {
+		public OptimizerBasic(Problem pb, String optimizationExpression) {
 			super(pb, TypeOptimization.MINIMIZE, null);
 			this.optimizationExpression = optimizationExpression;
 		}
@@ -204,9 +198,9 @@ public abstract class OptimizationPilot {
 		}
 	}
 
-	public static final class OptimizationPilotDecreasing extends OptimizationPilot {
+	public static final class OptimizerDecreasing extends Optimizer {
 
-		public OptimizationPilotDecreasing(Problem pb, TypeOptimization opt, OptimizationCompatible ctr) {
+		public OptimizerDecreasing(Problem pb, TypeOptimization opt, Optimizable ctr) {
 			super(pb, opt, ctr);
 		}
 
@@ -221,11 +215,11 @@ public abstract class OptimizationPilot {
 		}
 	}
 
-	public static final class OptimizationPilotIncreasing extends OptimizationPilot {
+	public static final class OptimizerIncreasing extends Optimizer {
 
 		boolean first = true;
 
-		public OptimizationPilotIncreasing(Problem pb, TypeOptimization opt, OptimizationCompatible ctr) {
+		public OptimizerIncreasing(Problem pb, TypeOptimization opt, Optimizable ctr) {
 			super(pb, opt, ctr);
 
 		}
@@ -246,9 +240,9 @@ public abstract class OptimizationPilot {
 		}
 	}
 
-	public static final class OptimizationPilotDichotomic extends OptimizationPilot {
+	public static final class OptimizerDichotomic extends Optimizer {
 
-		public OptimizationPilotDichotomic(Problem pb, TypeOptimization opt, OptimizationCompatible ctr) {
+		public OptimizerDichotomic(Problem pb, TypeOptimization opt, Optimizable ctr) {
 			super(pb, opt, ctr);
 		}
 

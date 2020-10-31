@@ -23,7 +23,7 @@ public final class DomainHugeInfinite extends DomainHuge {
 	// private boolean removed;
 
 	@Override
-	public void finalizeConstructionWith(int nLevels) {}
+	public void finalizeConstruction(int nLevels) {}
 
 	public DomainHugeInfinite(Variable var, int firstValue, int lastValue) {
 		super(var, firstValue, lastValue);

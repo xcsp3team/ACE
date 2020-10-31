@@ -50,7 +50,7 @@ public final class Circuit extends AllDifferent {
 	}
 
 	@Override
-	public boolean isGuaranteedGAC() {
+	public boolean isGuaranteedAC() {
 		return false;
 	}
 

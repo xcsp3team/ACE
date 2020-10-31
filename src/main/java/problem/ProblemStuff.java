@@ -50,7 +50,7 @@ import dashboard.Arguments;
 import dashboard.ControlPanel.SettingOptimization;
 import dashboard.ControlPanel.SettingVars;
 import dashboard.Output;
-import objectives.OptimizationPilot.OptimizationPilotBasic;
+import objectives.Optimizer.OptimizerBasic;
 import search.local.functionalPropagators.FunctionalPropagator;
 import utility.Kit;
 import utility.sets.SetDense;
@@ -280,7 +280,13 @@ public final class ProblemStuff {
 		int num = collectedCtrsAtInit.size();
 		collectedCtrsAtInit.add(c);
 		ctrArities.add(c.scp.length);
-		ctrTypes.add(c.getClass().getSimpleName() + (c instanceof CtrExtension ? "-" + ((CtrExtension) c).extStructure().getClass().getSimpleName() : ""));
+		if (c.scp.length == 1) {
+			if (c instanceof CtrExtension || c instanceof CtrIntension)
+				ctrTypes.add(c.getClass().getSimpleName() + "1");
+			// else
+			// throw new UnreachableCodeException();
+		} else
+			ctrTypes.add(c.getClass().getSimpleName() + (c instanceof CtrExtension ? "-" + ((CtrExtension) c).extStructure().getClass().getSimpleName() : ""));
 		if (c instanceof CtrExtensionSmart)
 			tableSizes.add(((TableSmart) ((CtrExtensionSmart) c).extStructure()).smartTuples.length);
 		if (c instanceof CtrExtension && ((CtrExtension) c).extStructure() instanceof Table)
@@ -506,11 +512,11 @@ public final class ProblemStuff {
 
 	public MapAtt objsAttributes() {
 		MapAtt m = new MapAtt("Objective");
-		m.put("way", (pb.optimizationPilot.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName());
-		if (pb.optimizationPilot.ctr != null)
-			m.put("type", pb.optimizationPilot.ctr.getClass().getSimpleName());
+		m.put("way", (pb.optimizer.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName());
+		if (pb.optimizer.ctr != null)
+			m.put("type", pb.optimizer.ctr.getClass().getSimpleName());
 		else
-			m.put(" exp=", ((OptimizationPilotBasic) pb.optimizationPilot).optimizationExpression);
+			m.put(" exp=", ((OptimizerBasic) pb.optimizer).optimizationExpression);
 		return m;
 	}
 

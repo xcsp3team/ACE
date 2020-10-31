@@ -11,6 +11,7 @@ import static org.xcsp.common.Types.TypeConditionOperatorRel.GT;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.LE;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.LT;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.NE;
+import static org.xcsp.common.Types.TypeFramework.COP;
 import static org.xcsp.common.Types.TypeObjective.EXPRESSION;
 import static org.xcsp.common.Types.TypeObjective.MAXIMUM;
 import static org.xcsp.common.Types.TypeObjective.MINIMUM;
@@ -33,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -89,9 +89,8 @@ import org.xcsp.modeler.entities.ObjEntities.ObjEntity;
 import org.xcsp.modeler.implementation.ProblemIMP;
 
 import constraints.Constraint;
-import constraints.CtrHard;
-import constraints.CtrHard.CtrHardFalse;
-import constraints.CtrHard.CtrHardTrue;
+import constraints.Constraint.CtrHardFalse;
+import constraints.Constraint.CtrHardTrue;
 import constraints.hard.CtrExtension;
 import constraints.hard.CtrIntension;
 import constraints.hard.extension.CtrExtensionMDD;
@@ -159,12 +158,12 @@ import heuristics.values.HeuristicValuesDirect.Last;
 import heuristics.values.HeuristicValuesDirect.Values;
 import interfaces.ObserverConstruction;
 import interfaces.ObserverDomainReduction;
-import interfaces.OptimizationCompatible;
-import objectives.OptimizationPilot;
-import objectives.OptimizationPilot.OptimizationPilotBasic;
-import objectives.OptimizationPilot.OptimizationPilotDecreasing;
-import objectives.OptimizationPilot.OptimizationPilotDichotomic;
-import objectives.OptimizationPilot.OptimizationPilotIncreasing;
+import interfaces.Optimizable;
+import objectives.Optimizer;
+import objectives.Optimizer.OptimizerBasic;
+import objectives.Optimizer.OptimizerDecreasing;
+import objectives.Optimizer.OptimizerDichotomic;
+import objectives.Optimizer.OptimizerIncreasing;
 import problems.ProblemFile;
 import propagation.order1.PropagationForward;
 import search.Solver;
@@ -215,33 +214,25 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public void onConstructionProblemFinished() {
 		control(Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints), "Non normalized nums in the problem");
-		for (Variable x : variables) {
-			x.dom.finalizeConstructionWith(variables.length + 1);
-			control(Stream.of(x.ctrs).noneMatch(c -> c.num == -1), "Pb with a non posted constraint ");
-		}
-		Set<String> allIds = new HashSet<>();
-		for (Variable x : variables) {
-			String name = x.id();
-			Kit.control(!allIds.contains(name));
-			allIds.add(name);
-		}
-		control((settings.framework == TypeFramework.COP) == (optimizationPilot != null),
-				"Not a COP " + settings.framework + " " + (optimizationPilot == null));
-		if (priorityVars.length == 0 && annotations.decision != null)
-			priorityVars = (Variable[]) annotations.decision;
+		control(Stream.of(variables).map(x -> x.id()).distinct().count() == variables.length, "Two variables have the same id");
+		control((settings.framework == COP) == (optimizer != null), "Not a COP " + settings.framework + " " + (optimizer == null));
+
+		Stream.of(variables).peek(x -> control(Stream.of(x.ctrs).noneMatch(c -> c.num == -1))).forEach(x -> x.dom.finalizeConstruction(variables.length + 1));
+		priorityVars = priorityVars.length == 0 && annotations.decision != null ? (Variable[]) annotations.decision : priorityVars;
+		if (settings.framework == COP && (optimizer.ctr instanceof ObjVar || optimizer.ctr instanceof MaximumCstLE || optimizer.ctr instanceof MinimumCstGE))
+			rs.cp.settingRestarts.restartAfterSolution = true;
 
 		boolean strong = false;
-
-		if (settings.framework == TypeFramework.COP && rs.cp.settingValh.optValHeuristic) {
-			Constraint c = ((Constraint) optimizationPilot.ctr);
+		if (settings.framework == COP && rs.cp.settingValh.optValHeuristic) {
+			Constraint c = ((Constraint) optimizer.ctr);
 			if (c instanceof ObjVar) {
 				Variable x = c.scp[0];
-				x.heuristicVal = optimizationPilot.minimization ? new First(x, false) : new Last(x, false);
+				x.heuristicVal = optimizer.minimization ? new First(x, false) : new Last(x, false);
 				this.priorityVars = new Variable[] { x };
 			} else if (c instanceof ExtremumCst) {
 				if (strong)
 					for (Variable x : c.scp)
-						x.heuristicVal = optimizationPilot.minimization ? new First(x, false) : new Last(x, false); // the boolean is dummy
+						x.heuristicVal = optimizer.minimization ? new First(x, false) : new Last(x, false); // the boolean is dummy
 			} else if (c instanceof NValuesCst) {
 				assert c instanceof NValuesCstLE;
 				if (strong)
@@ -253,7 +244,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				if (scp != null) {
 					for (Variable x : scp) {
 						int coeff = c instanceof SumSimple ? 1 : coeffs[c.positionOf(x)];
-						boolean f = optimizationPilot.minimization && coeff >= 0 || !optimizationPilot.minimization && coeff < 0;
+						boolean f = optimizer.minimization && coeff >= 0 || !optimizer.minimization && coeff < 0;
 						System.out.println("before " + x + " " + x.heuristicVal);
 						x.heuristicVal = f ? new First(x, false) : new Last(x, false); // the boolean is dummy
 						System.out.println("after " + x.heuristicVal);
@@ -262,9 +253,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				}
 			}
 		}
-		if (settings.framework == TypeFramework.COP
-				&& (optimizationPilot.ctr instanceof ObjVar || optimizationPilot.ctr instanceof MaximumCstLE || optimizationPilot.ctr instanceof MinimumCstGE))
-			rs.cp.settingRestarts.restartAfterSolution = true;
 
 		// Variable[] scp = c.scp;
 		// if (c instanceof SumSimple || c instanceof ExtremumCst || c instanceof ObjVar) {
@@ -342,8 +330,10 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 */
 	public Constraint[] constraints;
 
-	/** The objective of the problem. Maybe null. */
-	public OptimizationPilot optimizationPilot;
+	/**
+	 * The pilot for the objective of the problem. Maybe null.
+	 */
+	public Optimizer optimizer;
 
 	/**
 	 * The priority variables. For example, those that have to be assigned in priority by a backtrack search solver. There is 0 priority variable by
@@ -365,8 +355,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 * The object used to manage symbolic values. Basically, it transforms symbols into integers, but this is not visible for the user (modeler).
 	 */
 	public Symbolic symbolic;
-
-	public int nTuplesRemoved;
 
 	public int nValuesRemoved; // sum over all variable domains
 
@@ -424,9 +412,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return askInt(message, null, (IntFunction<String>) null, incrementWhenSeries);
 	}
 
-	public final Var[][] project3(Var[][][] m) {
-		return IntStream.range(0, m[0][0].length).mapToObj(i -> api.select(m, (w, g, p) -> p == i)).toArray(Var[][]::new);
-	}
+	// public final Var[][] project3(Var[][][] m) {
+	// return IntStream.range(0, m[0][0].length).mapToObj(i -> api.select(m, (w, g, p) -> p == i)).toArray(Var[][]::new);
+	// }
 
 	// public final void removeVariable(Variable var) {
 	// collectedVariables.remove(var); collectedConstraints.remove(var.ctrs);
@@ -469,15 +457,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// }
 
 		c.num = stuff.addCollectedConstraint(c);
-		// System.out.println("adding " + c);
 		return ctrEntities.new CtrAlone(c, classes);
-	}
-
-	public void annotateVarhStatic(Variable[] vars) {
-		if (settings.enableAnnotations) {
-			priorityVars = vars;
-			nStrictPriorityVars = priorityVars.length;
-		}
 	}
 
 	public void annotateValh(Var[] vars, Class<? extends HeuristicValues> clazz) {
@@ -496,7 +476,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Stream.of(constraints).forEach(c -> c.reset());
 		Stream.of(constraints).forEach(c -> c.ignored = false);
 		// stuff = new ProblemStuff(this); // TODO reset or building a new object ?
-		nTuplesRemoved = nValuesRemoved = 0;
+		nValuesRemoved = 0;
 		if (settings.verbose > 0)
 			log.info("Reset of problem instance");
 	}
@@ -510,9 +490,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		for (int i = 0; i < constraints.length; i++)
 			if (!(constraints[i].ignored = !presentConstraints[i]))
 				constraints[i].reset();
-		// stuff = new ProblemStuff(this); // TODO reset or building a new
-		// object ?
-		nTuplesRemoved = nValuesRemoved = 0;
+		// stuff = new ProblemStuff(this); // TODO reset or building a new object ?
+		nValuesRemoved = 0;
 		if (settings.verbose >= 0)
 			log.info("Reduction to (#V=" + priorityVars.length + ",#C=" + Kit.countIn(true, presentConstraints) + ")");
 	}
@@ -650,12 +629,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			// by unary constraints and reduceDomainsOfIsolatedVariables ");
 			int[] domainFrontiers = Kit.repeat(-1, variables.length);
 			for (Constraint ctr : constraints)
-				if (ctr instanceof CtrHard)
-					((CtrHard) ctr).updateConflictsStructures(domainFrontiers);
+				ctr.updateConflictsStructures(domainFrontiers);
 		}
 	}
 
-	public static int[][] buildTable(Variable[] scp, CtrHard... ctrs) {
+	public static int[][] buildTable(Variable[] scp, Constraint... ctrs) {
 		// Var[] scp = distinct(vars(Stream.of(ctrs).map(c -> c.scp).toArray()));
 		int[][] vaps = Stream.of(ctrs).map(c -> IntStream.range(0, c.scp.length).map(i -> Utilities.indexOf(c.scp[i], scp)).toArray()).toArray(int[][]::new);
 		int[][] tmps = Stream.of(ctrs).map(c -> c.tupleManager.localTuple).toArray(int[][]::new);
@@ -678,7 +656,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return Kit.intArray2D(list);
 	}
 
-	public int[][] buildTable(CtrHard... ctrs) {
+	public int[][] buildTable(Constraint... ctrs) {
 		return buildTable(distinctSorted(vars(Stream.of(ctrs).map(c -> c.scp).toArray())), ctrs);
 	}
 
@@ -694,14 +672,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		rs.output.afterData();
 		api.model();
 
-		// storeVariablesToArray();
-		// fixNamesOfVariables();
-		variables = stuff.collectedVarsAtInit.toArray(new Variable[stuff.collectedVarsAtInit.size()]);
+		this.variables = stuff.collectedVarsAtInit.toArray(new Variable[stuff.collectedVarsAtInit.size()]);
 		addUnaryConstraintsOfUserInstantiation();
 		storeConstraintsToArray();
 		// currently, only mono-objective optimization supported
 		if (Solver.class.getSimpleName().equals(rs.cp.settingSolving.clazz))
-			optimizationPilot = new OptimizationPilotBasic(this, "#violatedConstraints");
+			optimizer = new OptimizerBasic(this, "#violatedConstraints");
 
 		reduceDomainsOfIsolatedVariables();
 		updateConflictsStructuresIfReducedDomains();
@@ -864,13 +840,15 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrAlone intension(XNodeParent<IVar> tree) {
 		Variable[] scp = (Variable[]) tree.vars();
 		assert Stream.of(scp).allMatch(x -> x instanceof Var) || Stream.of(scp).allMatch(x -> x instanceof VarSymbolic);
+		// if (scp.length > 1)
+		// System.out.println("tree " + tree);
 		if (scp.length == 1 && !rs.mustPreserveUnaryConstraints()) {
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 			scp[0].dom.removeValuesAtConstructionTime(v -> evaluator.evaluate(v) != 1);
 			stuff.nRemovedUnaryCtrs++;
 			return ctrEntities.new CtrAloneDummy("Removed unary constraint by domain reduction");
 		}
-		// System.out.println("tree " + tree);
+
 		// System.out.println("kkkk" + Variable.nValidTuplesBoundedAtMaxValueFor(scp));
 		if (scp.length <= rs.cp.settingExtension.arityLimitForIntensionToExtension
 				&& Variable.nValidTuplesBoundedAtMaxValueFor(scp) <= rs.cp.settingExtension.validLimitForIntensionToExtension
@@ -2158,8 +2136,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		control(range.start == 0 && range.length() > 0);
 		if (range.length() == 1)
 			return template.apply(0);
-		return manageLoop(() -> IntStream.range(0, range.stop).filter(i -> i % range.step == 0).mapToObj(i -> (CtrHard) ((CtrAlone) template.apply(i)).ctr)
-				.toArray(CtrHard[]::new));
+		return manageLoop(() -> IntStream.range(0, range.stop).filter(i -> i % range.step == 0).mapToObj(i -> (Constraint) ((CtrAlone) template.apply(i)).ctr)
+				.toArray(Constraint[]::new));
 	}
 
 	// public final CtrEntity slide(IVar[] list1, IVar[] list2, Range range, IntFunction<CtrAlone> template, TypeClass... classes) {
@@ -2239,17 +2217,17 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	public final static String vfsComment = "Either you set -f=cop or you set -f=csp together with -vfs=v where v is an integer value forcing the value of the objective.";
 
-	private OptimizationPilot buildOptimizationPilot(TypeOptimization opt, CtrAlone c) {
-		control(optimizationPilot == null, "Only mono-objective currently supported");
-		control(c.ctr instanceof OptimizationCompatible);
+	private Optimizer buildOptimizationPilot(TypeOptimization opt, CtrAlone c) {
+		control(optimizer == null, "Only mono-objective currently supported");
+		control(c.ctr instanceof Optimizable);
 		rs.cp.toCOP();
 		String suffix = Kit.camelCaseOf(rs.cp.settingOptimization.optimizationStrategy.name());
 		if (suffix.equals("Decreasing"))
-			return new OptimizationPilotDecreasing(this, opt, (OptimizationCompatible) c.ctr);
+			return new OptimizerDecreasing(this, opt, (Optimizable) c.ctr);
 		if (suffix.equals("Increasing"))
-			return new OptimizationPilotIncreasing(this, opt, (OptimizationCompatible) c.ctr);
+			return new OptimizerIncreasing(this, opt, (Optimizable) c.ctr);
 		control(suffix.equals("Dichotomic"));
-		return new OptimizationPilotDichotomic(this, opt, (OptimizationCompatible) c.ctr);
+		return new OptimizerDichotomic(this, opt, (Optimizable) c.ctr);
 
 		// the code below does not work (certainly because the target class is intern)
 		// return Reflector.buildObject("OptimizationPilotDecreasing", OptimizationPilot.class, this, opt, c.ctr);
@@ -2296,7 +2274,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final ObjEntity minimize(IVar x) {
 		if (!switchToSatisfaction(MINIMIZE, EXPRESSION, null, x)) {
 			CtrAlone c = addCtr(new ObjVarLE(this, (VariableInteger) x, Math.min(rs.cp.settingOptimization.upperBound, Integer.MAX_VALUE)));
-			optimizationPilot = buildOptimizationPilot(MINIMIZE, c);
+			optimizer = buildOptimizationPilot(MINIMIZE, c);
 		}
 		return null;
 	}
@@ -2305,7 +2283,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final ObjEntity maximize(IVar x) {
 		if (!switchToSatisfaction(MAXIMIZE, EXPRESSION, null, x)) {
 			CtrAlone c = addCtr(new ObjVarGE(this, (VariableInteger) x, Math.max(rs.cp.settingOptimization.lowerBound, Integer.MIN_VALUE)));
-			optimizationPilot = buildOptimizationPilot(MAXIMIZE, c);
+			optimizer = buildOptimizationPilot(MAXIMIZE, c);
 		}
 		return null;
 
@@ -2335,7 +2313,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				c = addCtr(new MaximumCstLE(this, translate(list), limit));
 			else
 				c = addCtr(new NValuesCstLE(this, translate(list), limit));
-			optimizationPilot = buildOptimizationPilot(MINIMIZE, c);
+			optimizer = buildOptimizationPilot(MINIMIZE, c);
 		}
 		return null;
 	}
@@ -2354,7 +2332,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				c = addCtr(new MaximumCstGE(this, translate(list), limit));
 			else
 				c = addCtr(new NValuesCstGE(this, translate(list), limit));
-			optimizationPilot = buildOptimizationPilot(MAXIMIZE, c);
+			optimizer = buildOptimizationPilot(MAXIMIZE, c);
 		}
 		return null;
 	}
@@ -2363,7 +2341,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final ObjEntity minimize(TypeObjective type, IVar[] list, int[] coeffs) {
 		control(type == SUM && coeffs != null);
 		if (!switchToSatisfaction(MINIMIZE, type, coeffs, list))
-			optimizationPilot = buildOptimizationPilot(MINIMIZE, sum(list, coeffs, LE, rs.cp.settingOptimization.upperBound, false));
+			optimizer = buildOptimizationPilot(MINIMIZE, sum(list, coeffs, LE, rs.cp.settingOptimization.upperBound, false));
 		return null;
 	}
 
@@ -2371,7 +2349,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final ObjEntity maximize(TypeObjective type, IVar[] list, int[] coeffs) {
 		control(type == SUM && coeffs != null);
 		if (!switchToSatisfaction(MAXIMIZE, type, coeffs, list))
-			optimizationPilot = buildOptimizationPilot(MAXIMIZE, sum(list, coeffs, GE, rs.cp.settingOptimization.lowerBound, false));
+			optimizer = buildOptimizationPilot(MAXIMIZE, sum(list, coeffs, GE, rs.cp.settingOptimization.lowerBound, false));
 		return null;
 	}
 

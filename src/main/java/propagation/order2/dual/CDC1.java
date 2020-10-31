@@ -23,11 +23,11 @@ public final class CDC1 extends DualBasedConsistency {
 
 	@Override
 	protected int removeTuplesAfterSingletonTestOn(Variable x, int a) {
-		int nbTuplesBefore = pb().nTuplesRemoved;
+		int nbTuplesBefore = nTuplesRemoved;
 		for (Constraint c : x.ctrs)
 			if (c.scp.length == 2 && c instanceof CtrExtension)
 				removeTuplesFrom(x, a, c);
-		return pb().nTuplesRemoved - nbTuplesBefore;
+		return nTuplesRemoved - nbTuplesBefore;
 	}
 
 }

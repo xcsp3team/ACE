@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
-import interfaces.OptimizationCompatible;
+import interfaces.Optimizable;
 import interfaces.TagGACGuaranteed;
 import interfaces.TagSymmetric;
 import problem.Problem;
@@ -83,7 +83,7 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 	// ***** Constraint SumSimpleLE
 	// ************************************************************************
 
-	public static class SumSimpleLE extends SumSimple implements TagGACGuaranteed, OptimizationCompatible {
+	public static class SumSimpleLE extends SumSimple implements TagGACGuaranteed, Optimizable {
 
 		@Override
 		public final boolean checkValues(int[] t) {
@@ -125,7 +125,7 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 	// ***** Constraint SumSimpleGE
 	// ************************************************************************
 
-	public static class SumSimpleGE extends SumSimple implements TagGACGuaranteed, OptimizationCompatible {
+	public static class SumSimpleGE extends SumSimple implements TagGACGuaranteed, Optimizable {
 
 		@Override
 		public final boolean checkValues(int[] t) {
@@ -182,7 +182,7 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 		}
 
 		@Override
-		public boolean isGuaranteedGAC() {
+		public boolean isGuaranteedAC() {
 			return guaranteedGAC;
 		}
 

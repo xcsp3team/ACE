@@ -74,7 +74,7 @@ public abstract class DualBasedConsistency extends SecondOrderConsistency {
 
 	protected abstract int removeTuplesAfterSingletonTestOn(Variable var, int idx);
 
-	protected int performSingletonTest(Variable x, int a) {
+	protected boolean singletonTest(Variable x, int a) {
 		nSingletonTests++;
 		int nbValuesBefore = pb().nValuesRemoved;
 		solver.assign(x, a);
@@ -89,14 +89,14 @@ public abstract class DualBasedConsistency extends SecondOrderConsistency {
 			nEffectiveSingletonTests++;
 			x.dom.removeElementary(a);
 		}
-		return nbTuplesRemoved;
+		return nbTuplesRemoved != 0;
 	}
 
 	protected boolean performDecisionTestsOf(Variable x) {
 		boolean modified = false;
 		Domain dom = x.dom;
 		for (int a = dom.first(); a != -1; a = dom.next(a))
-			if (performSingletonTest(x, a) != 0)
+			if (singletonTest(x, a))
 				modified = true;
 		return modified;
 	}
@@ -107,7 +107,7 @@ public abstract class DualBasedConsistency extends SecondOrderConsistency {
 	public boolean enforceSecondOrderConsistency() {
 		int nbValuesBefore = pb().nValuesRemoved;
 		int nbNogoodsBefore = solver instanceof SolverBacktrack ? (((SolverBacktrack) solver).learnerNogoods).nNogoods : 0;
-		int nbTuplesBefore = pb().nTuplesRemoved;
+		int nbTuplesBefore = nTuplesRemoved;
 		int nbConstraintsBefore = solver.pb.constraints.length;
 		Variable x = solver.pb.variables[0], markedVar = x;
 		do {
@@ -132,7 +132,7 @@ public abstract class DualBasedConsistency extends SecondOrderConsistency {
 	}
 
 	private void displayInfo(String prefix, int n1, int n2, int n3, int n4) {
-		Kit.log.info(prefix + ", nbAddedConstraints=" + (solver.pb.constraints.length - n1) + " nbTuplesRemoved=" + (pb().nTuplesRemoved - n2)
+		Kit.log.info(prefix + ", nbAddedConstraints=" + (solver.pb.constraints.length - n1) + " nbTuplesRemoved=" + (nTuplesRemoved - n2)
 				+ (solver instanceof SolverBacktrack ? " nbNogoodsRemoved=" + ((((SolverBacktrack) solver).learnerNogoods).nNogoods - n3) : "")
 				+ " nbValuesRemoved=" + (pb().nValuesRemoved - n4));
 	}

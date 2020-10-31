@@ -28,7 +28,7 @@ public final class DomainHugeBounded extends DomainHuge {
 	private boolean singleton; // true when reduceTo has been called
 
 	@Override
-	public void finalizeConstructionWith(int nLevels) {
+	public void finalizeConstruction(int nLevels) {
 		this.limits = IntStream.range(0, nLevels).map(i -> UNITIALIZED).toArray();
 	}
 

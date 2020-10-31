@@ -13,7 +13,6 @@ import java.util.Arrays;
 import org.xcsp.common.Types.TypeFramework;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import heuristics.variables.HeuristicVariablesDynamic;
 import interfaces.TagExperimental;
 import interfaces.TagMaximize;
@@ -87,10 +86,9 @@ public class RDAC extends RDACAbstract {
 		}
 
 		@Override
-		protected double evaluate(Constraint ctr, Variable x, boolean incremental) {
-			int vap = ctr.positionOf(x);
-			long[] mc = minCosts[ctr.num][vap];
-			CtrHard c = (CtrHard) ctr;
+		protected double evaluate(Constraint c, Variable x, boolean incremental) {
+			int vap = c.positionOf(x);
+			long[] mc = minCosts[c.num][vap];
 
 			int nbInconsistentValues = 0;
 			Domain dom = x.dom;
@@ -118,8 +116,7 @@ public class RDAC extends RDACAbstract {
 		}
 
 		@Override
-		protected void updateStructures(Constraint ctr, Variable x) {
-			CtrHard c = (CtrHard) ctr;
+		protected void updateStructures(Constraint c, Variable x) {
 			int vap = c.positionOf(x);
 			long[] mc = minCosts[c.num][vap];
 			if (reviser.mustBeAppliedTo(c, x)) {
@@ -160,11 +157,10 @@ public class RDAC extends RDACAbstract {
 	protected void updateStructuresFromRemovals() {
 		while (queue.size() > 0) {
 			Variable x = queue.pickAndDelete(0);
-			for (Constraint ctr : x.ctrs) {
-				if (ctr.futvars.size() == 0)
+			for (Constraint c : x.ctrs) {
+				if (c.futvars.size() == 0)
 					continue;
-				CtrHard c = (CtrHard) ctr;
-				Variable partitionVariable = solver.pb.variables[partitionOfConstraints.membership[ctr.num]];
+				Variable partitionVariable = solver.pb.variables[partitionOfConstraints.membership[c.num]];
 				long[] t = sumMinCosts[partitionVariable.num];
 				for (int j = 0; j < c.scp.length; j++) {
 					Variable y = c.scp[j];

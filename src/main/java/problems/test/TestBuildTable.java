@@ -13,7 +13,7 @@ import org.xcsp.modeler.api.ProblemAPI;
 import org.xcsp.modeler.entities.CtrEntities.CtrAlone;
 import org.xcsp.modeler.entities.CtrEntities.CtrEntity;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import problem.Problem;
 import utility.Kit;
 
@@ -30,7 +30,7 @@ public class TestBuildTable implements ProblemAPI {
 		CtrEntity c2 = lessEqual(x, y);
 		CtrEntity c3 = equal(w, y);
 
-		int[][] t = ((Problem) imp()).buildTable((CtrHard) ((CtrAlone) c1).ctr, (CtrHard) ((CtrAlone) c2).ctr, (CtrHard) ((CtrAlone) c3).ctr);
+		int[][] t = ((Problem) imp()).buildTable((Constraint) ((CtrAlone) c1).ctr, (Constraint) ((CtrAlone) c2).ctr, (Constraint) ((CtrAlone) c3).ctr);
 		System.out.println("Tuples = " + Kit.join(t));
 	}
 }

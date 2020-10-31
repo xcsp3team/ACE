@@ -8,7 +8,7 @@
  */
 package propagation.structures.revisers;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import propagation.order1.PropagationForward;
 import variables.Variable;
 import variables.domains.Domain;
@@ -23,7 +23,7 @@ public class Reviser2 extends Reviser1 {
 	}
 
 	@Override
-	public boolean mustBeAppliedTo(CtrHard c, Variable x) {
+	public boolean mustBeAppliedTo(Constraint c, Variable x) {
 		if (c.conflictsStructure() == null)
 			return true;
 		int px = c.positionOf(x);
@@ -31,7 +31,7 @@ public class Reviser2 extends Reviser1 {
 	}
 
 	@Override
-	public void applyTo(CtrHard c, Variable x) {
+	public void applyTo(Constraint c, Variable x) {
 		if (c.conflictsStructure() == null)
 			super.applyTo(c, x);
 		else {

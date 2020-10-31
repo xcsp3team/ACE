@@ -9,7 +9,6 @@
 package propagation.soft.pfc;
 
 import constraints.Constraint;
-import constraints.CtrHard;
 import search.Solver;
 import variables.Variable;
 import variables.domains.Domain;
@@ -26,6 +25,7 @@ public class PRDAC extends RDAC {
 		// traite = new boolean[constraints.length];
 	}
 
+	@Override
 	protected long computeMniOf(Variable x, boolean recomputeNbInconsistencies) {
 		long[] t = sumMinCosts[x.num];
 		Domain dom = x.dom;
@@ -102,6 +102,7 @@ public class PRDAC extends RDAC {
 		return bestOffset;
 	}
 
+	@Override
 	protected long computeOffset(Variable x, int a) {
 		long cnt = 0;
 		for (Variable y = solver.futVars.first(); y != null; y = solver.futVars.next(y)) {
@@ -126,7 +127,7 @@ public class PRDAC extends RDAC {
 			int[] tmp = c.tupleManager.localTuple;
 			tmp[p] = b;
 			tmp[p == 1 ? 0 : 1] = a;
-			if (!((CtrHard) c).checkIndexes(tmp))
+			if (!c.checkIndexes(tmp))
 				cnt += c.cost;
 		}
 		return cnt;

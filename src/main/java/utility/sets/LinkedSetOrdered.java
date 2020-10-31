@@ -71,7 +71,7 @@ public class LinkedSetOrdered implements LinkedSet {
 	protected int nLevels;
 
 	@Override
-	public void finalizeConstructionWith(int nLevels) {
+	public void finalizeConstruction(int nLevels) {
 		this.nLevels = nLevels;
 		this.lastRemoved = -1; // useful if some values have been deleted at construction time
 	}
@@ -92,7 +92,7 @@ public class LinkedSetOrdered implements LinkedSet {
 
 	public LinkedSetOrdered(int initSize, int nLevels) {
 		this(initSize);
-		finalizeConstructionWith(nLevels);
+		finalizeConstruction(nLevels);
 	}
 
 	@Override

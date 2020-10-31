@@ -12,7 +12,7 @@ package propagation.order2.path;
 
 import java.util.stream.IntStream;
 
-import constraints.CtrHard;
+import constraints.Constraint;
 import problem.cliques.CliqueManager;
 import propagation.order2.SecondOrderConsistency;
 import search.Solver;
@@ -21,7 +21,7 @@ import variables.Variable;
 
 public class PC8 extends SecondOrderConsistency {
 
-	protected CtrHard[][] constraintsAccess;
+	protected Constraint[][] constraintsAccess;
 
 	protected PropagationSetOfValues queue;
 
@@ -29,9 +29,9 @@ public class PC8 extends SecondOrderConsistency {
 
 	public PC8(Solver solver) {
 		super(solver);
-		constraintsAccess = IntStream.range(0, hards.length).mapToObj(i -> new CtrHard[i]).toArray(CtrHard[][]::new);
+		constraintsAccess = IntStream.range(0, hards.length).mapToObj(i -> new Constraint[i]).toArray(Constraint[][]::new);
 		int cnt = 0;
-		for (CtrHard c : hards) {
+		for (Constraint c : hards) {
 			if (c.scp.length != 2)
 				continue;
 			cnt++;
@@ -47,11 +47,11 @@ public class PC8 extends SecondOrderConsistency {
 		nSupports = new int[solver.pb.constraints.length];
 	}
 
-	protected boolean checkPathConsistencyOfSupport(CtrHard c, int[] support, Variable z) {
+	protected boolean checkPathConsistencyOfSupport(Constraint c, int[] support, Variable z) {
 		Variable x = c.scp[0], y = c.scp[1];
 		int a = support[0], b = support[1];
-		CtrHard cxz = (z.num > x.num ? constraintsAccess[z.num][x.num] : constraintsAccess[x.num][z.num]);
-		CtrHard cyz = (z.num > y.num ? constraintsAccess[z.num][y.num] : constraintsAccess[y.num][z.num]);
+		Constraint cxz = (z.num > x.num ? constraintsAccess[z.num][x.num] : constraintsAccess[x.num][z.num]);
+		Constraint cyz = (z.num > y.num ? constraintsAccess[z.num][y.num] : constraintsAccess[y.num][z.num]);
 		if (CliqueManager.getPathSupport(x, y, a, b, z, -1, cxz, cyz) == -1) {
 			c.removeTuple(support);
 			queue.add(c, x, a).add(c, y, b);
@@ -60,7 +60,7 @@ public class PC8 extends SecondOrderConsistency {
 		return true;
 	}
 
-	private boolean filterConstraint(CtrHard c) {
+	private boolean filterConstraint(Constraint c) {
 		int cnt = 0;
 		int[] tuple = c.tupleManager.localTuple;
 		for (boolean foundSupport = c.seekFirstSupport(); foundSupport; foundSupport = c.seekNextSupport()) {
@@ -83,18 +83,18 @@ public class PC8 extends SecondOrderConsistency {
 	}
 
 	protected boolean initialize() {
-		for (CtrHard c : hards)
+		for (Constraint c : hards)
 			if (c.scp.length == 2 && !filterConstraint(c))
 				return false;
 		return true;
 	}
 
-	private boolean revisePath(CtrHard c, Variable x, int a) {
+	private boolean revisePath(Constraint c, Variable x, int a) {
 		Variable z = c.scp[c.scp[0] == x ? 1 : 0];
 		for (Variable y : solver.pb.variables) {
 			if (y == c.scp[0] || y == c.scp[1])
 				continue;
-			CtrHard cxy = (y.num > x.num ? constraintsAccess[y.num][x.num] : constraintsAccess[x.num][y.num]);
+			Constraint cxy = (y.num > x.num ? constraintsAccess[y.num][x.num] : constraintsAccess[x.num][y.num]);
 			int p = cxy.positionOf(x);
 			int[] tuple = cxy.tupleManager.localTuple;
 			for (boolean foundSupport = cxy.seekFirstSupportWith(p, a); foundSupport; foundSupport = cxy.seekNextSupport()) // ConsideringPotentialInvalidity(p,
@@ -112,7 +112,7 @@ public class PC8 extends SecondOrderConsistency {
 		if (!initialize())
 			return false;
 		while (queue.size() > 0) {
-			CtrHard c = queue.firstConstraint();
+			Constraint c = queue.firstConstraint();
 			Variable x = queue.firstVariable();
 			int a = queue.firstIndex();
 			queue.remove(0);
@@ -121,7 +121,7 @@ public class PC8 extends SecondOrderConsistency {
 		}
 		if (!enforceArcConsistency())
 			return false;
-		Kit.log.info("after revise PC, nbTuplesRemoved=" + pb().nTuplesRemoved + " nbValuesRemoved=" + pb().nValuesRemoved);
+		Kit.log.info("after revise PC, nbTuplesRemoved=" + nTuplesRemoved + " nbValuesRemoved=" + pb().nValuesRemoved);
 		return true;
 	}
 }

@@ -61,7 +61,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			nPreproAddedNogoods = (((SolverBacktrack) solver).learnerNogoods).nNogoods - nPreproAddedNogoods;
 		nPreproAddedCtrs = solver.pb.constraints.length - nPreproAddedCtrs;
 		nPreproRemovedValues = Variable.nRemovedValuesFor(solver.pb.variables);
-		nPreproRemovedTuples = solver.pb.nTuplesRemoved;
+		nPreproRemovedTuples = solver.propagation.nTuplesRemoved;
 		nPreproInconsistencies = solver.stoppingType == EStopping.FULL_EXPLORATION ? 1 : 0;
 	}
 
