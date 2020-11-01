@@ -55,8 +55,8 @@ public final class Symbolic {
 		return m;
 	}
 
-	public void store(Constraint ctr, String[][] m) {
-		mapOfTuples.put(ctr, m);
+	public void store(Constraint c, String[][] m) {
+		mapOfTuples.put(c, m);
 	}
 
 	// public String replaceSymbols(String s) {

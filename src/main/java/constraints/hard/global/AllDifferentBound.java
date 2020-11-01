@@ -414,7 +414,7 @@ public class AllDifferentBound extends AllDifferentAbstract implements ObserverB
 
 	public AllDifferentBound(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		Kit.control(Variable.haveAllSameDomainType(scp));
+		Kit.control(Variable.haveSameDomainType(scp));
 		d = scp[0].dom.initSize();
 		minReasoner = new MinBoundReasoner();
 		maxReasoner = new MaxBoundReasoner();

@@ -11,14 +11,11 @@ package constraints.hard.extension;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import constraints.hard.CtrExtension;
+import constraints.hard.CtrExtension.CtrExtensionGlobal;
 import constraints.hard.extension.structures.ExtensionStructureHard;
 import constraints.hard.extension.structures.SubTable;
 import constraints.hard.extension.structures.Table;
-import interfaces.FilteringGlobal;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.ObserverSearch;
-import interfaces.TagGACGuaranteed;
 import interfaces.TagPositive;
 import problem.Problem;
 import utility.Kit;
@@ -28,8 +25,7 @@ import utility.sets.SetSparseReversible;
 import variables.Variable;
 import variables.domains.Domain;
 
-public final class CtrExtensionSTR3 extends CtrExtension
-		implements FilteringGlobal, TagGACGuaranteed, TagPositive, ObserverBacktrackingSystematic, ObserverSearch {
+public final class CtrExtensionSTR3 extends CtrExtensionGlobal implements TagPositive, ObserverSearch {
 
 	public final class SetSparseMapSTR3 extends SetSparse {
 		public short[] positions;
@@ -57,6 +53,26 @@ public final class CtrExtensionSTR3 extends CtrExtension
 			}
 			return added;
 		}
+	}
+
+	@Override
+	public void onConstructionProblemFinished() {
+		super.onConstructionProblemFinished();
+		this.tuples = ((Table) extStructure).tuples;
+		this.set = new SetSparseReversible(tuples.length, pb.variables.length + 1);
+
+		this.offsetsForMaps = new int[scp.length];
+		for (int i = 1; i < offsetsForMaps.length; i++)
+			offsetsForMaps[i] = offsetsForMaps[i - 1] + scp[i - 1].dom.initSize();
+		int nValues = Variable.nInitValuesFor(scp);
+		this.separatorsMaps = IntStream.rangeClosed(0, pb.variables.length).mapToObj(i -> new SetSparseMapSTR3(nValues, false))
+				.toArray(SetSparseMapSTR3[]::new);
+		// above do we need rangeClosed ?
+		this.deps = IntStream.range(0, set.dense.length).mapToObj(i -> new LocalSetSparseByte(scp.length, false)).toArray(LocalSetSparseByte[]::new);
+		if (set.capacity() >= Short.MAX_VALUE)
+			separators = Variable.litterals(scp).intArray();
+		else
+			separatorsShort = Variable.litterals(scp).shortArray();
 	}
 
 	@Override
@@ -171,26 +187,6 @@ public final class CtrExtensionSTR3 extends CtrExtension
 			return true; // removed
 		}
 
-	}
-
-	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
-		this.tuples = ((Table) extStructure).tuples;
-		this.set = new SetSparseReversible(tuples.length, pb.variables.length + 1);
-
-		this.offsetsForMaps = new int[scp.length];
-		for (int i = 1; i < offsetsForMaps.length; i++)
-			offsetsForMaps[i] = offsetsForMaps[i - 1] + scp[i - 1].dom.initSize();
-		int nValues = Variable.nInitValuesFor(scp);
-		this.separatorsMaps = IntStream.rangeClosed(0, pb.variables.length).mapToObj(i -> new SetSparseMapSTR3(nValues, false))
-				.toArray(SetSparseMapSTR3[]::new);
-		// above do we need rangeClosed ?
-		this.deps = IntStream.range(0, set.dense.length).mapToObj(i -> new LocalSetSparseByte(scp.length, false)).toArray(LocalSetSparseByte[]::new);
-		if (set.capacity() >= Short.MAX_VALUE)
-			separators = Variable.litterals(scp).intArray();
-		else
-			separatorsShort = Variable.litterals(scp).shortArray();
 	}
 
 	@Override

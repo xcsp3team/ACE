@@ -10,32 +10,32 @@ package constraints.hard.extension;
 
 import java.util.Arrays;
 
-import constraints.hard.CtrExtension;
+import constraints.hard.CtrExtension.CtrExtensionGlobal;
 import constraints.hard.extension.structures.ExtensionStructureHard;
 import constraints.hard.extension.structures.Table;
-import interfaces.FilteringGlobal;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.TagGACGuaranteed;
 import problem.Problem;
 import utility.Kit;
 import utility.sets.SetDenseReversible;
 import variables.Variable;
 
-public class CtrExtensionSTR1 extends CtrExtension implements FilteringGlobal, TagGACGuaranteed, ObserverBacktrackingSystematic {
+public class CtrExtensionSTR1 extends CtrExtensionGlobal {
+
+	@Override
+	public void onConstructionProblemFinished() {
+		super.onConstructionProblemFinished();
+		this.tuples = ((Table) extStructure).tuples;
+		this.set = new SetDenseReversible(tuples.length, pb.variables.length + 1);
+		Kit.control(tuples.length > 0);
+	}
 
 	@Override
 	public void restoreBefore(int depth) {
-		if (set != null)
-			set.restoreLimitAtLevel(depth);
+		set.restoreLimitAtLevel(depth);
 	}
-
-	// ************************************************************************
-	// ***** Fields
-	// ************************************************************************
 
 	protected int[][] tuples; // redundant field (reference to tuples in Table)
 
-	public SetDenseReversible set; // not necessarily used in all subclasses
+	public SetDenseReversible set; // storing the indexes of the current table
 
 	/**
 	 * ac[x][a] indicates if a support has been found for (x,a)
@@ -52,21 +52,9 @@ public class CtrExtensionSTR1 extends CtrExtension implements FilteringGlobal, T
 	 */
 	protected int cnt;
 
-	// ************************************************************************
-	// ***** Methods
-	// ************************************************************************
-
 	public CtrExtensionSTR1(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		control(scp.length > 1, "Arity must be at least 2");
-	}
-
-	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
-		this.tuples = ((Table) extStructure).tuples;
-		this.set = new SetDenseReversible(tuples.length, pb.variables.length + 1);
-		Kit.control(tuples.length > 0);
 	}
 
 	@Override
@@ -99,7 +87,7 @@ public class CtrExtensionSTR1 extends CtrExtension implements FilteringGlobal, T
 			int nRemovals = cnts[x];
 			if (nRemovals == 0)
 				continue;
-			if (scp[x].dom.remove(ac[x], nRemovals) == false)
+			if (doms[x].remove(ac[x], nRemovals) == false)
 				return false;
 			cnt -= nRemovals;
 		}
@@ -108,7 +96,7 @@ public class CtrExtensionSTR1 extends CtrExtension implements FilteringGlobal, T
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
-		pb.stuff.updateStatsForSTR(set);
+		// pb.stuff.updateStatsForSTR(set);
 		int depth = pb.solver.depth();
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {

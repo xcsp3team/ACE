@@ -13,12 +13,9 @@ import static org.xcsp.common.Constants.STAR;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-import constraints.hard.CtrExtension;
+import constraints.hard.CtrExtension.CtrExtensionGlobal;
 import constraints.hard.extension.structures.ExtensionStructureHard;
 import constraints.hard.extension.structures.Table;
-import interfaces.FilteringGlobal;
-import interfaces.TagGACGuaranteed;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import problem.Problem;
 import propagation.order1.StrongConsistency;
 import utility.Kit;
@@ -26,14 +23,26 @@ import utility.sets.SetDenseReversible;
 import variables.Variable;
 
 // why not using a counter 'time' and replace boolean[][] ac by int[][] ac (we just do time++ instead of Arrays.fill(ac[x],false)
-public class CtrExtensionSTR2S extends CtrExtension implements FilteringGlobal, TagGACGuaranteed, ObserverBacktrackingSystematic {
+public final class CtrExtensionSTR2S extends CtrExtensionGlobal {
 
 	protected final static int UNITIALIZED = -2;
 
 	@Override
+	public void onConstructionProblemFinished() {
+		super.onConstructionProblemFinished();
+		this.tuples = ((Table) extStructure).tuples;
+		this.set = new SetDenseReversible(tuples.length, pb.variables.length + 1);
+		Kit.control(tuples.length > 0);
+		if (decremental) {
+			this.lastSizesStack = new int[pb.variables.length + 1][scp.length];
+			Arrays.fill(lastSizesStack[0], UNITIALIZED);
+		} else
+			this.lastSizes = Kit.repeat(UNITIALIZED, scp.length);
+	}
+
+	@Override
 	public void restoreBefore(int depth) {
-		if (set != null)
-			set.restoreLimitAtLevel(depth);
+		set.restoreLimitAtLevel(depth);
 		if (decremental)
 			lastDepth = Math.max(0, Math.min(lastDepth, depth - 1));
 		else
@@ -46,7 +55,7 @@ public class CtrExtensionSTR2S extends CtrExtension implements FilteringGlobal, 
 
 	protected int[][] tuples; // redundant field (reference to tuples in Table)
 
-	public SetDenseReversible set; // not necessarily used in all subclasses
+	public SetDenseReversible set;
 
 	/**
 	 * ac[x][a] indicates if a support has been found for (x,a)
@@ -90,19 +99,6 @@ public class CtrExtensionSTR2S extends CtrExtension implements FilteringGlobal, 
 	@Override
 	protected ExtensionStructureHard buildExtensionStructure() {
 		return new Table(this);
-	}
-
-	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
-		this.tuples = ((Table) extStructure).tuples;
-		this.set = new SetDenseReversible(tuples.length, pb.variables.length + 1);
-		Kit.control(tuples.length > 0);
-		if (decremental) {
-			this.lastSizesStack = new int[pb.variables.length + 1][scp.length];
-			Arrays.fill(lastSizesStack[0], UNITIALIZED);
-		} else
-			this.lastSizes = Kit.repeat(UNITIALIZED, scp.length);
 	}
 
 	@Override

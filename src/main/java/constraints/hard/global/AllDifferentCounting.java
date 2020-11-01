@@ -48,7 +48,7 @@ public final class AllDifferentCounting extends AllDifferentAbstract
 
 	public AllDifferentCounting(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		Kit.control(Variable.haveAllSameDomainType(scp) && scp[0].dom.initSize() < 1000); // current use restrictions
+		Kit.control(Variable.haveSameDomainType(scp) && scp[0].dom.initSize() < 1000); // current use restrictions
 		sets = SetSparse.factoryArray(scp.length, scp[0].dom.initSize() + 1);
 		workingDomSet = new SetSparse(scp[0].dom.initSize());
 		workingVarSet = new SetSparse(scp.length);

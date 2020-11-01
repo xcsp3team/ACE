@@ -168,7 +168,7 @@ public final class Bits extends ExtensionStructureHard {
 
 	@Override
 	public int[] computeVariableSymmetryMatching() {
-		if (!Variable.haveAllSameDomainType(firstRegisteredCtr().scp))
+		if (!Variable.haveSameDomainType(firstRegisteredCtr().scp))
 			return new int[] { 1, 2 };
 		for (int i = 0; i < bitSups0.length; i++)
 			for (int j = i + 1; j < bitSups0.length; j++) {

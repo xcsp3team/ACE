@@ -52,7 +52,7 @@ public abstract class ExtensionStructureHard extends ExtensionStructure {
 	public int[] computeVariableSymmetryMatching(int[][] tuples, boolean positive) {
 		Kit.control(firstRegisteredCtr().pb.rs.cp.settingProblem.isSymmetryBreaking());
 		Constraint ctr = firstRegisteredCtr();
-		if (!Variable.haveAllSameDomainType(ctr.scp)) {
+		if (!Variable.haveSameDomainType(ctr.scp)) {
 			return Kit.range(1, ctr.scp.length);
 		}
 		// TODO just above, there exists a possibility of finding symmetry of variables (but not a single group)

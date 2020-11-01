@@ -294,19 +294,19 @@ public class Reflector {
 		}
 	}
 
-	public static <T> T buildObject(String className, Object... parameters) {
-		try {
-			Class<?> cn = Class.forName(className);
-			Kit.control(!Modifier.isAbstract(cn.getModifiers()), () -> className + " is abstract");
-			for (Constructor<?> constructor : cn.getConstructors())
-				if (constructor.getGenericParameterTypes().length == parameters.length)
-					return (T) constructor.newInstance(parameters);
-			return null;
-		} catch (Exception e) {
-			(e.getCause() == null ? e : e.getCause()).printStackTrace();
-			return null;
-		}
-	}
+	// public static <T> T buildObject(String className, Object... parameters) {
+	// try {
+	// Class<?> cn = Class.forName(className);
+	// Kit.control(!Modifier.isAbstract(cn.getModifiers()), () -> className + " is abstract");
+	// for (Constructor<?> constructor : cn.getConstructors())
+	// if (constructor.getGenericParameterTypes().length == parameters.length)
+	// return (T) constructor.newInstance(parameters);
+	// return null;
+	// } catch (Exception e) {
+	// (e.getCause() == null ? e : e.getCause()).printStackTrace();
+	// return null;
+	// }
+	// }
 
 	// public static <T> T buildObject(Class<?> cn, Object... parameters) {
 	// try {
@@ -329,13 +329,9 @@ public class Reflector {
 	 * @return an object of the class whose name is given
 	 */
 	public static Object buildObject(String className) throws Exception {
-		// try {
 		Constructor<?> c = Class.forName(className).getDeclaredConstructors()[0];
 		c.setAccessible(true);
 		return c.newInstance();
-		// } catch (Exception e) {
-		// return Kit.exit("The class " + className + " cannot be found.", e);
-		// }
 	}
 
 	public static Class<?> getLastButOneSuperclassOf(Class<?> clazz) {

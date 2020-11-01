@@ -61,7 +61,7 @@ import variables.domains.DomainHuge;
 
 /**
  * This class gives the description of a constraint. <br>
- * A constraint is attached to a problem and is uniquely identified by a number called <code>id</code>.<br>
+ * A constraint is attached to a problem and is uniquely identified by a number <code>num</code> and an identifier <code>id</code>.<br>
  * A constraint involves a subset of variables of the problem.
  */
 public abstract class Constraint implements ICtr, ObserverConstruction, Comparable<Constraint> {
@@ -74,19 +74,21 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	@Override
 	public void onConstructionProblemFinished() {
-		// sets the position of all the variables of the problem with respect to the set of variables of the constraint.
 		// If a variable does not belong to the constraint, then its position is set to -1
 		if (settings.arityLimitForVapArrayLb < scp.length && (pb.variables.length < settings.arityLimitForVapArrayUb || scp.length > pb.variables.length / 3)) {
-			this.vaps = Kit.repeat(-1, pb.variables.length);
+			this.positions = Kit.repeat(-1, pb.variables.length);
 			for (int i = 0; i < scp.length; i++)
-				this.vaps[scp[i].num] = i;
-		} else
-			this.vaps = null;
+				this.positions[scp[i].num] = i;
+			this.futvars = new SetSparse(scp.length, true);
+		} else {
+			this.positions = null;
+			this.futvars = new SetDense(scp.length, true);
+		}
 		control(true);
 	}
 
 	/*************************************************************************
-	 ***** Two special kinds of constraints
+	 ***** Two very special kinds of constraints
 	 *************************************************************************/
 
 	public static class CtrHardFalse extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagGACGuaranteed {
@@ -224,19 +226,17 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	/** The number of the constraint; it is <code>-1</code> when not fully initialized or not a direct constraint of the problem. */
 	public int num = -1;
 
-	/** The id (name) of the constraint. */
+	/** The id (identifier or name) of the constraint. */
 	private String id;
 
 	/** The scope of the constraint, i.e. the set of variables involved in the constraint. */
 	public final Variable[] scp;
 
 	/**
-	 * The position of all variables of the problem in the constraint. vaps[vid] gives the position of the variable with id vid in the scope of the
-	 * constraint, or -1 if it is not involved. For example, <code> vaps[i] = j </code> iff the variable x such that <code> x.id = i </code> is the
-	 * jth variable involved in the constraint. For constraint of small arity, not necessarily built. So, you need to call <code> positionOf </code>
-	 * instead of accessing directly this field.
+	 * The position of all variables of the problem in the constraint. It is -1 when not involved.For constraint of small arity, not necessarily
+	 * built. So, you need to call <code> positionOf </code> instead of accessing directly this field.
 	 */
-	private int[] vaps;
+	private int[] positions;
 
 	public SetDense futvars;
 
@@ -302,8 +302,8 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 * @return the position of the variable or <code>-1</code> if the variable is not involved in the constraint
 	 */
 	public final int positionOf(Variable x) {
-		if (vaps != null)
-			return vaps[x.num];
+		if (positions != null)
+			return positions[x.num];
 		for (int i = scp.length - 1; i >= 0; i--)
 			if (scp[i] == x)
 				return i;
@@ -353,13 +353,12 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		return true;
 	}
 
-	public boolean isSubstitutableBy(Variable x, int a, int b) {
-		int px = positionOf(x);
-		tupleManager.firstValidTupleWith(px, a);
+	public boolean isSubstitutableBy(int x, int a, int b) {
+		tupleManager.firstValidTupleWith(x, a);
 		return !tupleManager.findValidTupleSuchThat(t -> {
-			t[px] = a;
+			t[x] = a;
 			boolean b1 = checkIndexes(t);
-			t[px] = b;
+			t[x] = b;
 			boolean b2 = checkIndexes(t);
 			return b1 && !b2;
 		});
@@ -461,6 +460,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	private final int computeGenericFilteringThreshold() {
 		if (this instanceof FilteringSpecific || this instanceof CtrExtension)
 			return Integer.MAX_VALUE; // because not concerned
+
 		int arityLimit = pb.rs.cp.settingPropagation.arityLimitForGACGuaranteed;
 		if (scp.length <= arityLimit)
 			return Integer.MAX_VALUE;
@@ -475,14 +475,13 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	public Constraint(Problem pb, Variable[] scp) {
 		this.pb = pb;
-		scp = Stream.of(scp).distinct().toArray(Variable[]::new);
-		this.scp = scp;
-		assert scp.length >= 1 && Stream.of(scp).allMatch(x -> x != null) && Variable.areAllDistinct(scp) : this + " with a scope badly formed ";
+		this.scp = scp = Stream.of(scp).distinct().toArray(Variable[]::new);
+		control(scp.length >= 1 && Stream.of(scp).allMatch(x -> x != null), this + " with a scope badly formed ");
 		Stream.of(scp).forEach(x -> x.collectedCtrs.add(this));
 		this.hugeDomainVars = Stream.of(scp).filter(x -> x.dom instanceof DomainHuge).toArray(Variable[]::new);
 
 		this.doms = Variable.buildDomainsArrayFor(scp);
-		this.tupleManager = new TupleManager(this.doms.clone());
+		this.tupleManager = new TupleManager(scp);
 		this.vals = new int[scp.length];
 		this.settings = pb.rs.cp.settingCtrs;
 
@@ -495,8 +494,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 			pb.stuff.nGlobalCtrs++;
 		if (this instanceof ObserverConstruction)
 			pb.rs.observersConstruction.add(this);
-		// below scp.length <= pb.rs.cp.arityLimitForVapArray means vap==null
-		this.futvars = scp.length <= settings.arityLimitForVapArrayLb ? new SetDense(scp.length, true) : new SetSparse(scp.length, true);
 
 		if (pb.rs.cp.settingPropagation.residues && scp.length > 1 && !(this instanceof FilteringSpecific)
 				&& !(pb.rs.cp.settingPropagation.classForRevisions.equals(Reviser3.class.getSimpleName()) && extStructure() instanceof Bits)) {
@@ -516,8 +513,8 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 *********************************************************************************************/
 
 	public final void doPastVariable(Variable x) {
-		if (vaps != null && futvars instanceof SetSparse)
-			((SetSparse) futvars).remove(vaps[x.num]);
+		if (positions != null)
+			((SetSparse) futvars).remove(positions[x.num]);
 		else
 			for (int i = futvars.limit; i >= 0; i--) {
 				if (scp[futvars.dense[i]] == x) {

@@ -11,6 +11,7 @@ package constraints;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import variables.Variable;
 import variables.domains.Domain;
 
 /**
@@ -53,9 +54,9 @@ public final class TupleManager {
 		this.fixed = new boolean[arity];
 	}
 
-	// public int[] currTuple() {
-	// return currTuple;
-	// }
+	public TupleManager(Variable[] vars) {
+		this(Variable.buildDomainsArrayFor(vars));
+	}
 
 	private boolean isValidCurrTuple() {
 		for (int i = currTuple.length - 1; i >= 0; i--)

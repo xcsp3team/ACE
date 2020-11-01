@@ -415,6 +415,10 @@ public class ControlPanel {
 
 		public final boolean miningApriori = addB("miningApriori", "ma", false, s_ma, HIDDEN);
 		public double miningThreshold = addD("miningThreshold", "mt", 0.1, s_mt, HIDDEN);
+
+		public boolean mustReverse(int arity, boolean positive) {
+			return (positive && arity <= arityLimitForSwitchingToNegative) || (!positive && arity <= arityLimitForSwitchingToPositive);
+		}
 	}
 
 	public final SettingExtension settingExtension = new SettingExtension();

@@ -94,7 +94,6 @@ import constraints.Constraint.CtrHardTrue;
 import constraints.hard.CtrExtension;
 import constraints.hard.CtrIntension;
 import constraints.hard.extension.CtrExtensionMDD;
-import constraints.hard.extension.CtrExtensionOrMDD;
 import constraints.hard.extension.CtrExtensionSmart;
 import constraints.hard.extension.structures.MDDCD;
 import constraints.hard.extension.structures.SmartTuple;
@@ -109,6 +108,7 @@ import constraints.hard.global.AllEqual;
 import constraints.hard.global.Among;
 import constraints.hard.global.CardinalityConstant;
 import constraints.hard.global.Circuit;
+import constraints.hard.global.CtrOrMDD;
 import constraints.hard.global.Count.AtLeast1;
 import constraints.hard.global.Count.AtLeastK;
 import constraints.hard.global.Count.AtMost1;
@@ -957,7 +957,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	public final CtrAlone mddOr(Var[] scp, MDDCD[] t) {
-		return addCtr(new CtrExtensionOrMDD(this, translate(scp), t));
+		return addCtr(new CtrOrMDD(this, translate(scp), t));
 	}
 
 	// ************************************************************************

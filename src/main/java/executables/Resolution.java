@@ -25,6 +25,7 @@ import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Utilities;
 import org.xcsp.modeler.api.ProblemAPI;
 
+import constraints.hard.CtrExtension;
 import constraints.hard.extension.structures.Bits;
 import constraints.hard.extension.structures.ExtensionStructure;
 import constraints.hard.intension.CtrEvaluationManager;
@@ -147,7 +148,8 @@ public class Resolution extends Thread {
 		private boolean dealWith(Class<?> clazz) {
 			if (Modifier.isAbstract(clazz.getModifiers()))
 				return false;
-			return dealWith(clazz, HeuristicVariables.class) || dealWith(clazz, HeuristicValues.class) || dealWith(clazz, HeuristicRevisions.class);
+			return dealWith(clazz, HeuristicVariables.class) || dealWith(clazz, HeuristicValues.class) || dealWith(clazz, HeuristicRevisions.class)
+					|| dealWith(clazz, CtrExtension.class);
 		}
 
 		private void loadRecursively(File directory, String packageName) throws ClassNotFoundException {

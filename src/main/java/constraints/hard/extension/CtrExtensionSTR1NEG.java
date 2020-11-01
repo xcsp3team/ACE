@@ -10,14 +10,12 @@ package constraints.hard.extension;
 
 import java.util.Arrays;
 
-import interfaces.FilteringGlobal;
 import interfaces.TagNegative;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import problem.Problem;
 import variables.Variable;
 import variables.domains.Domain;
 
-public class CtrExtensionSTR1NEG extends CtrExtensionSTR1 implements FilteringGlobal, TagNegative, ObserverBacktrackingSystematic {
+public class CtrExtensionSTR1NEG extends CtrExtensionSTR1 implements TagNegative {
 
 	protected int[][] nConflicts; // 1D = variable position ; 2D = index
 
@@ -40,7 +38,7 @@ public class CtrExtensionSTR1NEG extends CtrExtensionSTR1 implements FilteringGl
 
 	@Override
 	public boolean runPropagator(Variable evt) {
-		pb.stuff.updateStatsForSTR(set);
+		// pb.stuff.updateStatsForSTR(set);
 		int depth = pb.solver.depth();
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {

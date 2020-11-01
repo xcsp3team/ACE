@@ -13,12 +13,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import constraints.hard.CtrExtension;
+import constraints.hard.CtrExtension.CtrExtensionGlobal;
 import constraints.hard.extension.structures.ExtensionStructureHard;
 import constraints.hard.extension.structures.Table;
-import interfaces.FilteringGlobal;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.TagGACGuaranteed;
 import interfaces.TagPositive;
 import problem.Problem;
 import utility.Kit;
@@ -26,7 +23,7 @@ import utility.sets.SetDenseReversible;
 import variables.Variable;
 import variables.domains.Domain;
 
-public class CtrExtensionGAC4 extends CtrExtension implements FilteringGlobal, TagPositive, TagGACGuaranteed, ObserverBacktrackingSystematic {
+public class CtrExtensionGAC4 extends CtrExtensionGlobal implements TagPositive {
 
 	@Override
 	public void restoreBefore(int depth) {
@@ -54,7 +51,7 @@ public class CtrExtensionGAC4 extends CtrExtension implements FilteringGlobal, T
 
 	public CtrExtensionGAC4(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		Kit.control(pb.rs.cp.settingSolving.enablePrepro);
+		control(pb.rs.cp.settingSolving.enablePrepro);
 	}
 
 	@Override

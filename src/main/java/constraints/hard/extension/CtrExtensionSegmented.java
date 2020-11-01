@@ -12,21 +12,18 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import constraints.hard.CtrExtension;
+import constraints.hard.CtrExtension.CtrExtensionGlobal;
 import constraints.hard.extension.structures.ExtensionStructureHard;
 import constraints.hard.extension.structures.SegmentedTuple;
 import constraints.hard.extension.structures.SegmentedTuple.RestrictionTable;
 import constraints.hard.extension.structures.TableSplit;
-import interfaces.FilteringGlobal;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.TagGACGuaranteed;
 import problem.Problem;
 import propagation.order1.StrongConsistency;
 import utility.sets.SetDenseReversible;
 import utility.sets.SetSparse;
 import variables.Variable;
 
-public final class CtrExtensionSegmented extends CtrExtension implements FilteringGlobal, TagGACGuaranteed, ObserverBacktrackingSystematic {
+public final class CtrExtensionSegmented extends CtrExtensionGlobal {
 
 	/**********************************************************************************************
 	 * Restoration

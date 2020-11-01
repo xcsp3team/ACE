@@ -6,7 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package constraints.hard.extension;
+package constraints.hard.global;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -15,10 +15,9 @@ import java.util.stream.Stream;
 import constraints.hard.CtrGlobal;
 import constraints.hard.extension.structures.MDDCD;
 import constraints.hard.extension.structures.MDDNodeCD;
-import interfaces.FilteringGlobal;
+import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import problem.Problem;
 import utility.Kit;
 import utility.sets.SetDenseReversible;
@@ -26,8 +25,7 @@ import utility.sets.SetSparseReversible;
 import variables.Variable;
 import variables.domains.Domain;
 
-public final class CtrExtensionOrMDD extends CtrGlobal
-		implements FilteringGlobal, TagGACGuaranteed, ObserverBacktrackingSystematic, TagFilteringCompleteAtEachCall {
+public final class CtrOrMDD extends CtrGlobal implements TagGACGuaranteed, ObserverBacktrackingSystematic, TagFilteringCompleteAtEachCall {
 
 	@Override
 	public final boolean checkValues(int[] t) {
@@ -79,7 +77,7 @@ public final class CtrExtensionOrMDD extends CtrGlobal
 
 	protected int[] earlyCutoff;
 
-	public CtrExtensionOrMDD(Problem pb, Variable[] scp, MDDCD[] mdds) {
+	public CtrOrMDD(Problem pb, Variable[] scp, MDDCD[] mdds) {
 		super(pb, scp);
 		Kit.control(scp.length >= 1);
 		this.mdds = mdds;

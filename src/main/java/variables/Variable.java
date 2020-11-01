@@ -107,8 +107,12 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 		return Stream.of(vars).allMatch(x -> x.dom.is01());
 	}
 
-	public static final boolean haveAllSameDomainType(Variable... vars) {
-		return IntStream.range(0, vars.length - 1).allMatch(i -> vars[i].dom.typeIdentifier() == vars[i + 1].dom.typeIdentifier());
+	public static final boolean haveSameDomainType(Variable... vars) {
+		return IntStream.range(1, vars.length).allMatch(i -> vars[i].dom.typeIdentifier() == vars[0].dom.typeIdentifier());
+	}
+
+	public static final boolean haveSameType(Variable... vars) {
+		return IntStream.range(1, vars.length).allMatch(i -> vars[i].getClass() == vars[0].getClass());
 	}
 
 	/**
@@ -321,7 +325,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	public static final boolean isPermutationElligible(Variable... vars) {
-		return vars[0].pb.rs.cp.settingCtrs.recognizePermutations && vars[0].dom.initSize() == vars.length && haveAllSameDomainType(vars);
+		return vars[0].pb.rs.cp.settingCtrs.recognizePermutations && vars[0].dom.initSize() == vars.length && haveSameDomainType(vars);
 	}
 
 	public static final int[] domSizeArrayOf(Variable[] vars, boolean initSize) {

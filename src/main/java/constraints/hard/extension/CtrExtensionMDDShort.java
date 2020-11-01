@@ -17,22 +17,18 @@ import org.xcsp.common.Constants;
 import org.xcsp.modeler.definitions.DefXCSP;
 import org.xcsp.modeler.definitions.ICtr.ICtrMdd;
 
-import constraints.hard.CtrExtension;
+import constraints.hard.CtrExtension.CtrExtensionGlobal;
 import constraints.hard.extension.structures.ExtensionStructureHard;
 import constraints.hard.extension.structures.MDDNodeShort;
 import constraints.hard.extension.structures.MDDShort;
-import interfaces.FilteringGlobal;
-import interfaces.TagGACGuaranteed;
 import interfaces.TagPositive;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import problem.Problem;
 import utility.Kit;
 import utility.sets.SetSparseReversible;
 import variables.Variable;
 import variables.domains.Domain;
 
-public final class CtrExtensionMDDShort extends CtrExtension
-		implements FilteringGlobal, TagPositive, TagGACGuaranteed, ObserverBacktrackingSystematic, ICtrMdd {
+public final class CtrExtensionMDDShort extends CtrExtensionGlobal implements TagPositive, ICtrMdd {
 
 	/**********************************************************************************************
 	 * Implementing Interfaces

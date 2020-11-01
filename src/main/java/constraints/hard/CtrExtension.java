@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -30,11 +31,13 @@ import constraints.hard.extension.CtrExtensionMDD;
 import constraints.hard.extension.CtrExtensionMDDShort;
 import constraints.hard.extension.CtrExtensionSTR2;
 import constraints.hard.extension.CtrExtensionSTR2S;
-import constraints.hard.extension.CtrExtensionV;
-import constraints.hard.extension.structures.Bits;
 import constraints.hard.extension.structures.ExtensionStructure;
 import constraints.hard.extension.structures.ExtensionStructureHard;
-import executables.Resolution;
+import constraints.hard.extension.structures.Table;
+import constraints.hard.extension.structures.TableWithSubtables;
+import constraints.hard.extension.structures.Tries;
+import interfaces.FilteringGlobal;
+import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import interfaces.TagNegative;
@@ -51,10 +54,81 @@ import variables.VariableSymbolic;
 public abstract class CtrExtension extends Constraint implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, ICtrExtension {
 
 	/**********************************************************************************************
+	 ***** Generic and Global classes
+	 *********************************************************************************************/
+
+	/**
+	 * Involves iterating lists of valid tuples in order to find a support.
+	 */
+	public static final class CtrExtensionV extends CtrExtension {
+
+		@Override
+		protected ExtensionStructureHard buildExtensionStructure() {
+			if (scp.length == 2)
+				return Reflector.buildObject(pb.rs.cp.settingExtension.classForBinaryExtensionStructure, ExtensionStructureHard.class, this);
+			if (scp.length == 3)
+				return Reflector.buildObject(pb.rs.cp.settingExtension.classForTernaryExtensionStructure, ExtensionStructureHard.class, this);
+			return new Table(this); // MDD(this);
+		}
+
+		public CtrExtensionV(Problem pb, Variable[] scp) {
+			super(pb, scp);
+		}
+	}
+
+	public static final class CtrExtensionVA extends CtrExtension implements TagPositive {
+
+		@Override
+		protected ExtensionStructureHard buildExtensionStructure() {
+			if (pb.rs.cp.settingExtension.variant == 0)
+				return new TableWithSubtables(this);
+			assert pb.rs.cp.settingExtension.variant == 1 || pb.rs.cp.settingExtension.variant == 11;
+			return new Tries(this, pb.rs.cp.settingExtension.variant == 11);
+		}
+
+		public CtrExtensionVA(Problem pb, Variable[] scp) {
+			super(pb, scp);
+		}
+
+		private final boolean seekSupportVA(int x, int a, int[] tuple, boolean another) {
+			if (!another)
+				tupleManager.firstValidTupleWith(x, a, tuple);
+			else if (tupleManager.nextValidTupleCautiously() == -1)
+				return false;
+			while (true) {
+				int[] t = extStructure.nextSupport(x, a, tuple);
+				if (t == tuple)
+					break;
+				if (t == null)
+					return false;
+				Kit.copy(t, tuple);
+				if (isValid(tuple))
+					break;
+				if (tupleManager.nextValidTupleCautiously() == -1)
+					return false;
+			}
+			return true;
+		}
+
+		@Override
+		public final boolean seekFirstSupportWith(int x, int a, int[] buffer) {
+			buffer[x] = a;
+			return seekSupportVA(x, a, buffer, false);
+		}
+	}
+
+	public abstract static class CtrExtensionGlobal extends CtrExtension implements FilteringGlobal, ObserverBacktrackingSystematic {
+
+		public CtrExtensionGlobal(Problem pb, Variable[] scp) {
+			super(pb, scp);
+		}
+	}
+
+	/**********************************************************************************************
 	 ***** Static
 	 *********************************************************************************************/
 
-	private static Constraint build(Problem pb, Variable[] scp, boolean positive, boolean presentStar) {
+	private static CtrExtension build(Problem pb, Variable[] scp, boolean positive, boolean presentStar) {
 		if (presentStar) {
 			if (pb.rs.cp.settingExtension.positive == EExtension.MDD)
 				return new CtrExtensionMDD(pb, scp);
@@ -76,14 +150,16 @@ public abstract class CtrExtension extends Constraint implements TagGACGuarantee
 			// return new CtrExtensionSTR2(pb, scp);
 			return new CtrExtensionV(pb, scp); // for example for maxCSP ?
 		String suffix = (positive ? pb.rs.cp.settingExtension.positive : pb.rs.cp.settingExtension.negative).toString();
-		return Reflector.buildObject(CtrExtension.class.getSimpleName() + suffix, CtrExtension.class, pb, scp);
+
+		Set<Class<?>> classes = pb.rs.handlerClasses.map.get(CtrExtension.class);
+		return (CtrExtension) Reflector.buildObject2(CtrExtension.class.getSimpleName() + suffix, classes, pb, scp);
 	}
 
 	private static int[][] reverseTuples(Variable[] variables, int[][] tuples) {
 		Kit.control(Variable.areDomainsFull(variables));
 		assert Kit.isLexIncreasing(tuples);
 		int cnt = 0;
-		TupleManager tupleManager = new TupleManager(Variable.buildDomainsArrayFor(variables));
+		TupleManager tupleManager = new TupleManager(variables);
 		int[] idxs = tupleManager.firstValidTuple(), vals = new int[idxs.length];
 		List<int[]> list = new ArrayList<>();
 		do {
@@ -102,51 +178,33 @@ public abstract class CtrExtension extends Constraint implements TagGACGuarantee
 	}
 
 	public static CtrExtension build(Problem pb, Variable[] scp, Object tuples, boolean positive, Boolean starred) {
-		Kit.control(Stream.of(scp).allMatch(x -> x instanceof VariableInteger) || Stream.of(scp).allMatch(x -> x instanceof VariableSymbolic));
+		Kit.control(Variable.haveSameType(scp));
 		Kit.control(Array.getLength(tuples) == 0 || Array.getLength(Array.get(tuples, 0)) == scp.length,
 				() -> "Badly formed extensional constraint " + scp.length + " " + Array.getLength(tuples));
-		assert starred == null || (starred == Boolean.TRUE) == isStarPresent(tuples) : starred + " \n" + Kit.join(tuples);
-		starred = starred != null ? starred : isStarPresent(tuples);
+		if (starred == null)
+			starred = isStarPresent(tuples);
+		else
+			assert starred == isStarPresent(tuples) : starred + " \n" + Kit.join(tuples);
+		CtrExtension c = build(pb, scp, positive, starred);
 
-		int[][] ts = scp[0] instanceof VariableInteger ? (int[][]) tuples : pb.symbolic.replaceSymbols((String[][]) tuples);
-		if (scp[0] instanceof VariableInteger && !starred)
-			if ((!positive && scp.length <= pb.rs.cp.settingExtension.arityLimitForSwitchingToPositive)
-					|| (positive && scp.length <= pb.rs.cp.settingExtension.arityLimitForSwitchingToNegative)) {
-				ts = reverseTuples(scp, ts);
+		int[][] m = null;
+		if (scp[0] instanceof VariableSymbolic) {
+			m = pb.symbolic.replaceSymbols((String[][]) tuples);
+			pb.symbolic.store(c, (String[][]) tuples);
+		} else {
+			m = (int[][]) tuples;
+			if (!starred && pb.rs.cp.settingExtension.mustReverse(scp.length, positive)) {
+				m = reverseTuples(scp, m);
 				positive = !positive;
 			}
-		CtrExtension c = (CtrExtension) build(pb, scp, positive, starred);
-		String stuffKey = c.signature() + " " + ts + " " + positive; // TDODO be careful, we assume that the address of tuples can be used
+		}
+
+		String stuffKey = c.signature() + " " + m + " " + positive; // TODO be careful, we assume that the address of tuples can be used
 		c.key = pb.stuff.collectedTuples.computeIfAbsent(stuffKey, k -> c.signature() + "r" + pb.stuff.collectedTuples.size());
-		// TODO something tomodify above ; don't seem to be compatible (keys)
-		c.storeTuples(ts, positive);
-		if (scp[0] instanceof VariableSymbolic)
-			pb.symbolic.store(c, (String[][]) tuples);
+		// TODO something to modify above ; don't seem to be compatible (keys)
+		c.storeTuples(m, positive);
 		return c;
 	}
-
-	// public static CtrExtension build(Problem pb, Variable[] scp, int[][] tuples, boolean positive, Boolean starred) {
-	// Kit.control(tuples.length == 0 || tuples[0].length == scp.length, () -> "Badly formed extensional constraint");
-	// assert starred == null || (starred == Boolean.TRUE && Kit.isPresent(Table.STAR, tuples))
-	// || (starred == Boolean.FALSE && !Kit.isPresent(Table.STAR, tuples)) : starred + " " + Kit.join(scp) + "\n" + Kit.join(tuples);
-	// starred = starred == null ? Kit.isPresent(Table.STAR, tuples) : starred;
-	// if ((!positive && scp.length <= pb.resolution.cp.arityLimitForSwitchingToPositive)
-	// || (positive && scp.length <= pb.resolution.cp.arityLimitForSwitchingToNegative)) {
-	// Kit.control(!starred);
-	// tuples = reverseTuples(scp, tuples);
-	// positive = !positive;
-	// }
-	// CtrExtension constraint = (CtrExtension) build(pb, scp, positive, starred);
-	// String stuffKey = constraint.signature() + " " + tuples + " " + positive; // TDODO be careful, we assume that the address of tuples
-	// can be used
-	// String stuffValue = pb.stuff.collectedTuples.get(stuffKey);
-	// if (stuffValue != null)
-	// constraint.key = stuffValue;
-	// else
-	// pb.stuff.collectedTuples.put(stuffKey, constraint.key = constraint.signature() + "r" + pb.stuff.collectedTuples.size());
-	// constraint.storeTuples(tuples, positive);
-	// return constraint;
-	// }
 
 	/**********************************************************************************************
 	 * End of static section
@@ -178,8 +236,8 @@ public abstract class CtrExtension extends Constraint implements TagGACGuarantee
 	protected void initSpecificStructures() {}
 
 	public final void storeTuples(int[][] tuples, boolean positive) {
-		Kit.control((positive && this instanceof TagPositive) || (!positive && this instanceof TagNegative)
-				|| (!(this instanceof TagPositive) && !(this instanceof TagNegative)), () -> positive + " " + this.getClass().getName());
+		control((positive && this instanceof TagPositive) || (!positive && this instanceof TagNegative)
+				|| (!(this instanceof TagPositive) && !(this instanceof TagNegative)), positive + " " + this.getClass().getName());
 		// System.out.println("Storing tuples for " + this + " " + Kit.join(tuples) + " " + positive);
 
 		if (supporter != null)
@@ -211,60 +269,10 @@ public abstract class CtrExtension extends Constraint implements TagGACGuarantee
 		initSpecificStructures();
 	}
 
-	@SuppressWarnings("unused")
-	private String searchSimilarBits(Bits bits) {
-		Resolution resolution = pb.rs;
-		for (String key : resolution.mapOfExtensionStructures.keySet()) {
-			ExtensionStructure es = resolution.mapOfExtensionStructures.get(key);
-			if (!(es instanceof Bits))
-				continue;
-			if (scp[0].dom.typeIdentifier() != bits.firstRegisteredCtr().scp[0].dom.typeIdentifier())
-				continue;
-			if (scp[1].dom.typeIdentifier() != bits.firstRegisteredCtr().scp[1].dom.typeIdentifier())
-				continue;
-			if (bits.hasSameSupportsThan((Bits) es))
-				return es.firstRegisteredCtr().key;
-		}
-		return null;
-	}
-
 	@Override
 	public int[] defineSymmetryMatching() {
-		// above because necessarily from a predicate
 		return extStructure.computeVariableSymmetryMatching();
 	}
-
-	// public Constraint storeTuples(String[] canonicalPredicate) {
-	// assert scp.length == 2;
-	// this.key = signature().append(new CanonicalExpressionParser(scp, canonicalPredicate).getKey()).toString();
-	// // System.out.println("key = " + key + " " + Toolkit.buildStringFromTokens(canonicalPredicate));
-	// Resolution resolution = pb.resolution;
-	//
-	// boolean firstOccurrenceOfKey = !resolution.mapOfExtensionStructures.containsKey(key);
-	// String equivalentKeyMet = null;
-	// if (firstOccurrenceOfKey) {
-	// extensionStructure = new Bits(this);
-	// conflictsStructure = new ConflictsStructure(this);
-	// ((Bits) extensionStructure).storeTuplesAndUpdateConflictsStructure(canonicalPredicate);
-	// // structures of conflictStructures updated
-	// // ((Bits) extensionStructure).fixSymmetric();
-	//
-	// equivalentKeyMet = searchSimilarBits((Bits) extensionStructure);
-	// if (equivalentKeyMet == null) {
-	// resolution.mapOfExtensionStructures.put(key, extensionStructure);
-	// } else
-	// key = equivalentKeyMet;
-	// }
-	// if (!firstOccurrenceOfKey || equivalentKeyMet != null) {
-	// extensionStructure = (ExtensionStructureHard) resolution.mapOfExtensionStructures.get(key);
-	// extensionStructure.addDependentCtr(this);
-	// conflictsStructure = extensionStructure.getFirstDependentCtr().getConflictsStructure();
-	// conflictsStructure.getExploitingConstraints().add(this);
-	// assert areIdxsEqualToVals == extensionStructure.getFirstDependentCtr().areIdxsEqualToVals;
-	// }
-	// initializeAdditionalFieldsUsedWithExtensionStructure();
-	// return this;
-	// }
 
 	public CtrExtension(Problem pb, Variable[] scp) {
 		super(pb, scp);
@@ -283,47 +291,6 @@ public abstract class CtrExtension extends Constraint implements TagGACGuarantee
 	public final boolean checkIndexes(int[] t) {
 		return extStructure.checkIdxs(t);
 	}
-
-	// private void updateBitsFrom(XNodeParent<? extends IVarInteger> tree) {
-	// Kit.control(scp.length == 2);
-	// this.id = id == null ? null : id + "_modified";
-	// this.key += " " + Kit.join(tree.canonicalForm(new ArrayList<>(), tree.vars()).toArray(new String[0]));
-	// extStructure.removeDependentCtr(this);
-	// if (conflictsStructure != null) {
-	// conflictsStructure.getExploitingConstraints().remove(this);
-	// conflictsStructure = new ConflictsStructure(conflictsStructure, this);
-	// }
-	// Map<String, ExtensionStructure> mapOfExtensionStructures = pb.resolution.mapOfExtensionStructures;
-	// if (!mapOfExtensionStructures.containsKey(key)) {
-	// extStructure = new Bits(this, (Bits) extStructure);
-	// EvaluationManager evaluationManager = new EvaluationManager(tree); // Symbolic.replaceSymbols(pb.symbolic,
-	// universalFragmentPredicateExpression));
-	// int cnt = 0;
-	// Domain dom0 = scp[0].dom, dom1 = scp[1].dom;
-	// int[] tmpOfValues = tupleManager.localTuple, tmpOfIndexes = new int[2];
-	// for (int idx0 = 0; idx0 < dom0.initSize(); idx0++) {
-	// tmpOfValues[0] = dom0.toVal(idx0);
-	// tmpOfIndexes[0] = idx0;
-	// for (int idx1 = 0; idx1 < dom1.initSize(); idx1++) {
-	// tmpOfValues[1] = dom1.toVal(idx1);
-	// cnt++;
-	// if (evaluationManager.evaluate(tmpOfValues) != 1) {
-	// tmpOfIndexes[1] = idx1;
-	// removeTuple(tmpOfIndexes);
-	// }
-	// }
-	// }
-	// pb.stuff.nConvertionCcks += cnt;
-	// mapOfExtensionStructures.put(key, extStructure);
-	// } else {
-	// extStructure = (ExtensionStructureHard) mapOfExtensionStructures.get(key);
-	// extStructure.addDependentCtr(this);
-	// conflictsStructure = extStructure.getFirstDependentCtr().getConflictsStructure();
-	// if (conflictsStructure != null)
-	// conflictsStructure.getExploitingConstraints().add(this);
-	// ;
-	// }
-	// }
 
 	@Override
 	public boolean removeTuple(int... idxs) {

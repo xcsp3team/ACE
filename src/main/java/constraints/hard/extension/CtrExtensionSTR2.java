@@ -52,7 +52,7 @@ public class CtrExtensionSTR2 extends CtrExtensionSTROptimized {
 	@Override
 	public boolean runPropagator(Variable dummy) {
 		// System.out.println("tuu1 " + this + " " + futvars + " " + decremental);
-		pb.stuff.updateStatsForSTR(set);
+		// pb.stuff.updateStatsForSTR(set);
 		int depth = pb.solver.depth();
 		// if (entailedDepth >= depth) return true;
 		beforeFiltering();

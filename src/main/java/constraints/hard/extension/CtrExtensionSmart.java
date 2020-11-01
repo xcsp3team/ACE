@@ -27,13 +27,10 @@ import org.xcsp.modeler.definitions.DefXCSP;
 import org.xcsp.modeler.definitions.ICtr.ICtrSmart;
 
 import constraints.Constraint;
-import constraints.hard.CtrExtension;
+import constraints.hard.CtrExtension.CtrExtensionGlobal;
 import constraints.hard.extension.structures.ExtensionStructureHard;
 import constraints.hard.extension.structures.SmartTuple;
 import constraints.hard.extension.structures.TableSmart;
-import interfaces.FilteringGlobal;
-import interfaces.TagGACGuaranteed;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import problem.Problem;
 import propagation.order1.StrongConsistency;
 import utility.Kit;
@@ -42,7 +39,7 @@ import utility.sets.SetSparse;
 import variables.Variable;
 import variables.domains.Domain;
 
-public final class CtrExtensionSmart extends CtrExtension implements FilteringGlobal, TagGACGuaranteed, ObserverBacktrackingSystematic, ICtrSmart {
+public final class CtrExtensionSmart extends CtrExtensionGlobal implements ICtrSmart {
 
 	/**********************************************************************************************
 	 * Static

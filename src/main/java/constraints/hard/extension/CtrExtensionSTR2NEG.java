@@ -10,18 +10,15 @@ package constraints.hard.extension;
 
 import java.util.Arrays;
 
-import constraints.hard.CtrExtension;
+import constraints.hard.CtrExtension.CtrExtensionGlobal;
 import constraints.hard.extension.structures.ExtensionStructureHard;
 import constraints.hard.extension.structures.Table;
-import interfaces.FilteringGlobal;
-import interfaces.TagGACGuaranteed;
 import interfaces.TagNegative;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import problem.Problem;
 import utility.sets.SetDenseReversible;
 import variables.Variable;
 
-public class CtrExtensionSTR2NEG extends CtrExtension implements FilteringGlobal, TagGACGuaranteed, TagNegative, ObserverBacktrackingSystematic {
+public class CtrExtensionSTR2NEG extends CtrExtensionGlobal implements TagNegative {
 
 	/**********************************************************************************************
 	 * Interfaces

@@ -50,7 +50,7 @@ public final class AllEqual extends CtrGlobal implements ObserverBacktrackingSys
 
 	public AllEqual(Problem pb, Variable[] list) {
 		super(pb, list);
-		Kit.control(list.length >= 2 && Variable.haveAllSameDomainType(list));
+		Kit.control(list.length >= 2 && Variable.haveSameDomainType(list));
 		this.frontier = Kit.repeat(-1, list.length);
 		this.set = new SetSparse(list[0].dom.initSize());
 		// this.vals = new TreeSet<>(); // Hashset is very slow

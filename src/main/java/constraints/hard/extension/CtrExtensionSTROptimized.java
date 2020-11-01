@@ -20,8 +20,17 @@ public abstract class CtrExtensionSTROptimized extends CtrExtensionSTR1 {
 	protected final static int UNITIALIZED = -2;
 
 	@Override
+	public void onConstructionProblemFinished() {
+		super.onConstructionProblemFinished();
+		if (decremental) {
+			this.lastSizesStack = new int[pb.variables.length + 1][scp.length];
+			Arrays.fill(lastSizesStack[0], UNITIALIZED);
+		} else
+			this.lastSizes = Kit.repeat(UNITIALIZED, scp.length);
+	}
+
+	@Override
 	public void restoreBefore(int depth) {
-		// System.out.println("restoring " + this + " at " + depth);
 		super.restoreBefore(depth);
 		if (decremental)
 			lastDepth = Math.max(0, Math.min(lastDepth, depth - 1));
@@ -54,16 +63,6 @@ public abstract class CtrExtensionSTROptimized extends CtrExtensionSTR1 {
 	public CtrExtensionSTROptimized(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		this.decremental = pb.rs.cp.settingExtension.decremental;
-	}
-
-	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
-		if (decremental) {
-			this.lastSizesStack = new int[pb.variables.length + 1][scp.length];
-			Arrays.fill(lastSizesStack[0], UNITIALIZED);
-		} else
-			this.lastSizes = Kit.repeat(UNITIALIZED, scp.length);
 	}
 
 	protected void buildBasicOptimizationSets() {
@@ -121,9 +120,9 @@ public abstract class CtrExtensionSTROptimized extends CtrExtensionSTR1 {
 			int x = sSup[i];
 			int nRemovals = cnts[x];
 			assert nRemovals > 0;
-			if (scp[x].dom.remove(ac[x], nRemovals) == false)
+			if (doms[x].remove(ac[x], nRemovals) == false)
 				return false;
-			lastSizes[x] = scp[x].dom.size();
+			lastSizes[x] = doms[x].size();
 		}
 		return true;
 	}

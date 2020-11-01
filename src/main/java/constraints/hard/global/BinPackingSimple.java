@@ -38,7 +38,7 @@ public final class BinPackingSimple extends CtrGlobal implements TagGACUnguarant
 
 	public BinPackingSimple(Problem pb, Variable[] scp, int[] sizes, int limit) {
 		super(pb, scp);
-		Kit.control(scp.length >= 2 && Variable.haveAllSameDomainType(scp));
+		Kit.control(scp.length >= 2 && Variable.haveSameDomainType(scp));
 		defineKey(Kit.join(sizes) + " " + limit);
 		this.sizes = sizes;
 		this.limit = limit;
