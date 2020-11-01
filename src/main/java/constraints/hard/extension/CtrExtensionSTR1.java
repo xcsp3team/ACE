@@ -11,27 +11,36 @@ package constraints.hard.extension;
 import java.util.Arrays;
 
 import constraints.hard.CtrExtension.CtrExtensionGlobal;
-import constraints.hard.extension.structures.ExtensionStructureHard;
+import constraints.hard.extension.structures.ExtensionStructure;
 import constraints.hard.extension.structures.Table;
 import problem.Problem;
-import utility.Kit;
 import utility.sets.SetDenseReversible;
 import variables.Variable;
 
 public class CtrExtensionSTR1 extends CtrExtensionGlobal {
+
+	/**********************************************************************************************
+	 * Interfaces
+	 *********************************************************************************************/
 
 	@Override
 	public void onConstructionProblemFinished() {
 		super.onConstructionProblemFinished();
 		this.tuples = ((Table) extStructure).tuples;
 		this.set = new SetDenseReversible(tuples.length, pb.variables.length + 1);
-		Kit.control(tuples.length > 0);
+		this.ac = Variable.litterals(scp).booleanArray();
+		this.cnts = new int[scp.length];
+		control(tuples.length > 0);
 	}
 
 	@Override
 	public void restoreBefore(int depth) {
 		set.restoreLimitAtLevel(depth);
 	}
+
+	/**********************************************************************************************
+	 * Fields
+	 *********************************************************************************************/
 
 	protected int[][] tuples; // redundant field (reference to tuples in Table)
 
@@ -52,24 +61,18 @@ public class CtrExtensionSTR1 extends CtrExtensionGlobal {
 	 */
 	protected int cnt;
 
+	/**********************************************************************************************
+	 * Methods
+	 *********************************************************************************************/
+
 	public CtrExtensionSTR1(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		control(scp.length > 1, "Arity must be at least 2");
 	}
 
 	@Override
-	protected ExtensionStructureHard buildExtensionStructure() {
+	protected ExtensionStructure buildExtensionStructure() {
 		return new Table(this);
-	}
-
-	protected final void buildBasicCollectingStructures() {
-		this.ac = Variable.litterals(scp).booleanArray();
-		this.cnts = new int[scp.length];
-	}
-
-	@Override
-	protected void initSpecificStructures() {
-		buildBasicCollectingStructures();
 	}
 
 	protected void beforeFiltering() {

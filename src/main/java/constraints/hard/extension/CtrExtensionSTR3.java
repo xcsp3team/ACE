@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import constraints.hard.CtrExtension.CtrExtensionGlobal;
-import constraints.hard.extension.structures.ExtensionStructureHard;
+import constraints.hard.extension.structures.ExtensionStructure;
 import constraints.hard.extension.structures.SubTable;
 import constraints.hard.extension.structures.Table;
 import interfaces.ObserverSearch;
@@ -26,34 +26,6 @@ import variables.Variable;
 import variables.domains.Domain;
 
 public final class CtrExtensionSTR3 extends CtrExtensionGlobal implements TagPositive, ObserverSearch {
-
-	public final class SetSparseMapSTR3 extends SetSparse {
-		public short[] positions;
-
-		public int[] separators;
-
-		public SetSparseMapSTR3(int capacity, boolean initiallyFull) {
-			super(capacity, initiallyFull);
-			Kit.control(0 < capacity && capacity <= Short.MAX_VALUE);
-			positions = Kit.range((short) capacity);
-			separators = Kit.range(capacity);
-		}
-
-		@Override
-		public final boolean add(int e) {
-			throw new RuntimeException("Must not be called without a second argument");
-		}
-
-		public boolean add(int e, int position, int separator) {
-			assert position < Byte.MAX_VALUE;
-			boolean added = super.add(e);
-			if (added) {
-				positions[e] = (short) position;
-				separators[e] = separator;
-			}
-			return added;
-		}
-	}
 
 	@Override
 	public void onConstructionProblemFinished() {
@@ -73,6 +45,12 @@ public final class CtrExtensionSTR3 extends CtrExtensionGlobal implements TagPos
 			separators = Variable.litterals(scp).intArray();
 		else
 			separatorsShort = Variable.litterals(scp).shortArray();
+
+		this.ac = Variable.litterals(scp).booleanArray();
+		this.cnts = new int[scp.length];
+		this.frontiers = new int[scp.length];
+		this.subtables = ((SubTable) extStructure).subtables;
+		this.subtablesShort = ((SubTable) extStructure).subtablesShort;
 	}
 
 	@Override
@@ -99,6 +77,34 @@ public final class CtrExtensionSTR3 extends CtrExtensionGlobal implements TagPos
 		for (int i = futvars.limit; i >= 0; i--) {
 			int x = futvars.dense[i];
 			frontiers[x] = doms[x].lastRemoved();
+		}
+	}
+
+	public final class SetSparseMapSTR3 extends SetSparse {
+		public short[] positions;
+
+		public int[] separators;
+
+		public SetSparseMapSTR3(int capacity, boolean initiallyFull) {
+			super(capacity, initiallyFull);
+			Kit.control(0 < capacity && capacity <= Short.MAX_VALUE);
+			positions = Kit.range((short) capacity);
+			separators = Kit.range(capacity);
+		}
+
+		@Override
+		public final boolean add(int e) {
+			throw new RuntimeException("Must not be called without a second argument");
+		}
+
+		public boolean add(int e, int position, int separator) {
+			assert position < Byte.MAX_VALUE;
+			boolean added = super.add(e);
+			if (added) {
+				positions[e] = (short) position;
+				separators[e] = separator;
+			}
+			return added;
 		}
 	}
 
@@ -190,18 +196,14 @@ public final class CtrExtensionSTR3 extends CtrExtensionGlobal implements TagPos
 	}
 
 	@Override
-	protected ExtensionStructureHard buildExtensionStructure() {
+	protected ExtensionStructure buildExtensionStructure() {
 		return new SubTable(this);
 	}
 
-	@Override
-	protected void initSpecificStructures() {
-		ac = Variable.litterals(scp).booleanArray();
-		cnts = new int[scp.length];
-		frontiers = new int[scp.length];
-		subtables = ((SubTable) extStructure).subtables;
-		subtablesShort = ((SubTable) extStructure).subtablesShort;
-	}
+	// @Override
+	// protected void initSpecificStructures() {
+	//
+	// }
 
 	/**********************************************************************************************
 	 * Methods related to propagation at preprocessing

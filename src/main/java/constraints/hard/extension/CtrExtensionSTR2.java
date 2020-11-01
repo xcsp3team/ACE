@@ -12,21 +12,16 @@ import static org.xcsp.common.Constants.STAR;
 
 import java.util.stream.Stream;
 
+import interfaces.TagShort;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 
 // why not using a counter 'time' and replace boolean[][] ac by int[][] ac (we just do time++ instead of Arrays.fill(ac[x],false)
-public class CtrExtensionSTR2 extends CtrExtensionSTROptimized {
+public class CtrExtensionSTR2 extends CtrExtensionSTROptimized implements TagShort {
 
 	public CtrExtensionSTR2(Problem pb, Variable... scp) {
 		super(pb, scp);
-	}
-
-	@Override
-	protected void initSpecificStructures() {
-		buildBasicCollectingStructures();
-		buildBasicOptimizationSets();
 	}
 
 	protected boolean isValidTuple(int[] tuple) {
@@ -38,28 +33,14 @@ public class CtrExtensionSTR2 extends CtrExtensionSTROptimized {
 		return true;
 	}
 
-	@SuppressWarnings("unused")
-	private void removeInitialSequenceOfInvalidTuples() {
-		int cnt = 0;
-		for (int i = set.limit; i >= 0 && !isValidTuple(tuples[set.dense[i]]); i--)
-			cnt++;
-		if (cnt > 0)
-			set.moveLimitAtLevel(cnt, pb.solver.depth());
-	}
-
-	// private boolean earlyBreak = false;
-
 	@Override
 	public boolean runPropagator(Variable dummy) {
-		// System.out.println("tuu1 " + this + " " + futvars + " " + decremental);
 		// pb.stuff.updateStatsForSTR(set);
 		int depth = pb.solver.depth();
 		// if (entailedDepth >= depth) return true;
 		beforeFiltering();
-		// removeInitialSequenceOfInvalidTuples();
 		for (int i = set.limit; i >= 0; i--) {
 			int[] tuple = tuples[set.dense[i]];
-			// System.out.println("tuu " + Kit.join(tuple));
 			if (isValidTuple(tuple)) {
 				for (int j = sSupSize - 1; j >= 0; j--) {
 					int x = sSup[j];
@@ -72,10 +53,6 @@ public class CtrExtensionSTR2 extends CtrExtensionSTROptimized {
 						if (--cnts[x] == 0)
 							sSup[j] = sSup[--sSupSize];
 					}
-					// if (earlyBreak && sSupSize == 0) {
-					// // System.out.println("gain " + i);
-					// i = 0;
-					// }
 				}
 			} else
 				set.removeAtPosition(i, depth);

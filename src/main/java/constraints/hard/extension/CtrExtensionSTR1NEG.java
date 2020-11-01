@@ -17,16 +17,16 @@ import variables.domains.Domain;
 
 public class CtrExtensionSTR1NEG extends CtrExtensionSTR1 implements TagNegative {
 
-	protected int[][] nConflicts; // 1D = variable position ; 2D = index
+	@Override
+	public void onConstructionProblemFinished() {
+		super.onConstructionProblemFinished();
+		this.nConflicts = Variable.litterals(scp).intArray();
+	}
+
+	protected int[][] nConflicts;
 
 	public CtrExtensionSTR1NEG(Problem pb, Variable[] scp) {
 		super(pb, scp);
-	}
-
-	@Override
-	protected void initSpecificStructures() {
-		super.initSpecificStructures();
-		nConflicts = Variable.litterals(scp).intArray();
 	}
 
 	@Override
@@ -38,7 +38,6 @@ public class CtrExtensionSTR1NEG extends CtrExtensionSTR1 implements TagNegative
 
 	@Override
 	public boolean runPropagator(Variable evt) {
-		// pb.stuff.updateStatsForSTR(set);
 		int depth = pb.solver.depth();
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {

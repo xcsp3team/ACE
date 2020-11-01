@@ -17,11 +17,17 @@ import variables.Variable;
 
 public abstract class CtrExtensionSTROptimized extends CtrExtensionSTR1 {
 
-	protected final static int UNITIALIZED = -2;
+	/**********************************************************************************************
+	 * Interfaces
+	 *********************************************************************************************/
+
+	private final static int UNITIALIZED = -2;
 
 	@Override
 	public void onConstructionProblemFinished() {
 		super.onConstructionProblemFinished();
+		this.sVal = new int[scp.length];
+		this.sSup = new int[scp.length];
 		if (decremental) {
 			this.lastSizesStack = new int[pb.variables.length + 1][scp.length];
 			Arrays.fill(lastSizesStack[0], UNITIALIZED);
@@ -38,9 +44,9 @@ public abstract class CtrExtensionSTROptimized extends CtrExtensionSTR1 {
 			Arrays.fill(lastSizes, UNITIALIZED);
 	}
 
-	// ************************************************************************
-	// ***** Fields
-	// ************************************************************************
+	/**********************************************************************************************
+	 * Fields
+	 *********************************************************************************************/
 
 	protected boolean decremental; // true if we exploit decrementality
 
@@ -56,18 +62,13 @@ public abstract class CtrExtensionSTROptimized extends CtrExtensionSTR1 {
 	protected int[][] lastSizesStack; // lastSizesStack[i][x] is the domain size of x at the last call at level i
 	protected int lastDepth; // the depth at the last call
 
-	// ************************************************************************
-	// ***** Methods
-	// ************************************************************************
+	/**********************************************************************************************
+	 * Method
+	 *********************************************************************************************/
 
 	public CtrExtensionSTROptimized(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		this.decremental = pb.rs.cp.settingExtension.decremental;
-	}
-
-	protected void buildBasicOptimizationSets() {
-		this.sVal = new int[scp.length];
-		this.sSup = new int[scp.length];
 	}
 
 	protected void initRestorationStructuresBeforeFiltering() {

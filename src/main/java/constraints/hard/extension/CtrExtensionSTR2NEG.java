@@ -11,7 +11,7 @@ package constraints.hard.extension;
 import java.util.Arrays;
 
 import constraints.hard.CtrExtension.CtrExtensionGlobal;
-import constraints.hard.extension.structures.ExtensionStructureHard;
+import constraints.hard.extension.structures.ExtensionStructure;
 import constraints.hard.extension.structures.Table;
 import interfaces.TagNegative;
 import problem.Problem;
@@ -23,6 +23,17 @@ public class CtrExtensionSTR2NEG extends CtrExtensionGlobal implements TagNegati
 	/**********************************************************************************************
 	 * Interfaces
 	 *********************************************************************************************/
+
+	@Override
+	public void onConstructionProblemFinished() {
+		super.onConstructionProblemFinished();
+		this.tuples = ((Table) extStructure).tuples;
+		this.set = new SetDenseReversible(tuples.length, pb.variables.length + 1);
+		this.nConflicts = Variable.litterals(scp).intArray();
+		this.nMaxConflicts = new int[scp.length];
+		this.nValidTuples = new long[scp.length];
+		this.sSup = new int[scp.length];
+	}
 
 	@Override
 	public void restoreBefore(int depth) {
@@ -52,18 +63,7 @@ public class CtrExtensionSTR2NEG extends CtrExtensionGlobal implements TagNegati
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
-		this.tuples = ((Table) extStructure).tuples;
-		this.set = new SetDenseReversible(tuples.length, pb.variables.length + 1);
-		this.nConflicts = Variable.litterals(scp).intArray();
-		this.nMaxConflicts = new int[scp.length];
-		this.nValidTuples = new long[scp.length];
-		this.sSup = new int[scp.length];
-	}
-
-	@Override
-	protected ExtensionStructureHard buildExtensionStructure() {
+	protected ExtensionStructure buildExtensionStructure() {
 		return new Table(this);
 	}
 

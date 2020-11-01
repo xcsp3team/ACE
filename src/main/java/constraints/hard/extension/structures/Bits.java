@@ -25,7 +25,7 @@ import utility.operations.Bit;
 import variables.Variable;
 import variables.domains.Domain;
 
-public final class Bits extends ExtensionStructureHard {
+public final class Bits extends ExtensionStructure {
 
 	// used to share arrays so as to save space TODO tune the constant
 	public static final Map<LongArrayHashKey, long[]> globalMap = Collections.synchronizedMap(new HashMap<LongArrayHashKey, long[]>(2000));

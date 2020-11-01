@@ -87,8 +87,8 @@ public class CtrExtensionRPWC extends CtrExtensionSTR1 {
 	}
 
 	private boolean controlStamps(int[] tuple) {
-		return IntStream.range(0, intersections.length).allMatch(i -> intersections[i].getLeafFor(tuple,
-				intersectionPositions[i]).stamps[intersectionPositions[i]] == lastCallTime);
+		return IntStream.range(0, intersections.length)
+				.allMatch(i -> intersections[i].getLeafFor(tuple, intersectionPositions[i]).stamps[intersectionPositions[i]] == lastCallTime);
 	}
 
 	protected final void setIntersectionsToBeChecked() {
@@ -117,7 +117,7 @@ public class CtrExtensionRPWC extends CtrExtensionSTR1 {
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
-		pb.stuff.updateStatsForSTR(set);
+		// pb.stuff.updateStatsForSTR(set);
 		int depth = pb.solver.depth();
 		beforeFiltering();
 		setIntersectionsToBeChecked();

@@ -16,7 +16,7 @@ import utility.exceptions.UnreachableCodeException;
  * This class denote any constraint defined in extension. All supports (allowed tuples) or all conflicts (disallowed tuples) are recorded in a list.
  * Note that tuples are recorded as indexes (of values).
  */
-public class TableSplit extends ExtensionStructureHard {
+public class TableSegmented extends ExtensionStructure {
 
 	public final SegmentedTuple[] splitTuples;
 
@@ -25,7 +25,7 @@ public class TableSplit extends ExtensionStructureHard {
 		throw new UnreachableCodeException();
 	}
 
-	public TableSplit(Constraint c, SegmentedTuple[] splitTuples) {
+	public TableSegmented(Constraint c, SegmentedTuple[] splitTuples) {
 		super(c);
 		this.splitTuples = splitTuples;
 	}

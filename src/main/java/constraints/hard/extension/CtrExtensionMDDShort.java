@@ -18,21 +18,36 @@ import org.xcsp.modeler.definitions.DefXCSP;
 import org.xcsp.modeler.definitions.ICtr.ICtrMdd;
 
 import constraints.hard.CtrExtension.CtrExtensionGlobal;
-import constraints.hard.extension.structures.ExtensionStructureHard;
+import constraints.hard.extension.structures.ExtensionStructure;
 import constraints.hard.extension.structures.MDDNodeShort;
 import constraints.hard.extension.structures.MDDShort;
 import interfaces.TagPositive;
+import interfaces.TagShort;
 import problem.Problem;
 import utility.Kit;
 import utility.sets.SetSparseReversible;
 import variables.Variable;
 import variables.domains.Domain;
 
-public final class CtrExtensionMDDShort extends CtrExtensionGlobal implements TagPositive, ICtrMdd {
+public final class CtrExtensionMDDShort extends CtrExtensionGlobal implements TagPositive, TagShort, ICtrMdd {
 
 	/**********************************************************************************************
-	 * Implementing Interfaces
+	 * Interfaces
 	 *********************************************************************************************/
+
+	@Override
+	public void onConstructionProblemFinished() {
+		super.onConstructionProblemFinished();
+		int nNodes = ((MDDShort) extStructure).nNodes();
+		trueNodes = new int[nNodes];
+		if (pb.rs.cp.settingExtension.decremental)
+			set = new SetSparseReversible(nNodes, false, pb.variables.length + 1);
+		else
+			falseNodes = new int[nNodes];
+
+		ac = Variable.litterals(scp).booleanArray();
+		cnts = new int[scp.length];
+	}
 
 	@Override
 	public void restoreBefore(int depth) {
@@ -62,6 +77,10 @@ public final class CtrExtensionMDDShort extends CtrExtensionGlobal implements Ta
 
 	protected int earlyCutoff;
 
+	/**********************************************************************************************
+	 * Methods
+	 *********************************************************************************************/
+
 	public CtrExtensionMDDShort(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		Kit.control(scp.length >= 1);
@@ -76,29 +95,11 @@ public final class CtrExtensionMDDShort extends CtrExtensionGlobal implements Ta
 	public CtrExtensionMDDShort(Problem pb, Variable[] scp, MDDNodeShort root) {
 		this(pb, scp);
 		extStructure = new MDDShort(this, root);
-		initSpecificStructures();
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
-		int nNodes = ((MDDShort) extStructure).nNodes();
-		trueNodes = new int[nNodes];
-		if (pb.rs.cp.settingExtension.decremental)
-			set = new SetSparseReversible(nNodes, false, pb.variables.length + 1);
-		else
-			falseNodes = new int[nNodes];
-	}
-
-	@Override
-	protected ExtensionStructureHard buildExtensionStructure() {
+	protected ExtensionStructure buildExtensionStructure() {
 		return new MDDShort(this);
-	}
-
-	@Override
-	protected void initSpecificStructures() {
-		ac = Variable.litterals(scp).booleanArray();
-		cnts = new int[scp.length];
 	}
 
 	protected void beforeFiltering() {

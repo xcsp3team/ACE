@@ -13,10 +13,10 @@ import utility.Kit;
 import utility.exceptions.UnreachableCodeException;
 
 /**
- * This class denote any constraint defined in extension. All supports (allowed tuples) or all conflicts (disallowed tuples) are recorded in a list. Note that
- * tuples are recorded as indexes (of values).
+ * This class denote any constraint defined in extension. All supports (allowed tuples) or all conflicts (disallowed tuples) are recorded in a list.
+ * Note that tuples are recorded as indexes (of values).
  */
-public class TableSmart extends ExtensionStructureHard {
+public class TableSmart extends ExtensionStructure {
 
 	/** The set of smart rows (composed of one tuple and several restrictions). */
 	public final SmartTuple[] smartTuples;

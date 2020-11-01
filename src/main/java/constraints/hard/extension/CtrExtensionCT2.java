@@ -15,6 +15,7 @@ import java.util.stream.LongStream;
 import org.xcsp.common.Constants;
 
 import constraints.hard.extension.structures.Table;
+import interfaces.TagShort;
 import problem.Problem;
 import utility.Kit;
 import utility.operations.Bit;
@@ -23,10 +24,66 @@ import variables.Variable;
 import variables.domains.Domain;
 
 // works for short tables ; to be merged with CT later
-public final class CtrExtensionCT2 extends CtrExtensionSTROptimized {
+public final class CtrExtensionCT2 extends CtrExtensionSTROptimized implements TagShort {
 
 	private static final int MASK_COMPRESION_LIMIT = 12;
 	private static final int MASK_COMPRESION_TRIGGER_SIZE = 300;
+
+	@Override
+	public void onConstructionProblemFinished() {
+		super.onConstructionProblemFinished();
+
+		int nWords = (int) Math.ceil(tuples.length / 64.0);
+		this.tmp = new long[nWords];
+		this.tmp2 = new long[nWords];
+		this.lastWord1Then0 = tuples.length % 64 != 0 ? Bit.bitsA1To(tuples.length % 64) : Bit.ALL_LONG_BITS_TO_1;
+		this.lastWord0Then1 = tuples.length % 64 != 0 ? Bit.bitsAt1From(tuples.length % 64) : 0L;
+		this.current = new long[nWords];
+		fillTo1(current);
+
+		this.isShort = ((Table) extStructure).isShort;
+		this.masks = Variable.litterals(scp).longArray(nWords);
+		if (!this.isShort) {
+			for (int x = 0; x < scp.length; x++) {
+				long[][] m = masks[x];
+				for (int j = 0; j < tuples.length; j++)
+					Bit.setTo1(m[tuples[j][x]], j);
+				maskCompression(m);
+			}
+		} else {
+			for (int x = 0; x < scp.length; x++) {
+				long[][] m = masks[x];
+				for (int j = 0; j < tuples.length; j++)
+					if (tuples[j][x] != Constants.STAR)
+						Bit.setTo1(m[tuples[j][x]], j);
+					else
+						for (int a = 0; a < m.length; a++)
+							Bit.setTo1(m[a], j);
+				// System.out.println("Before " + Kit.join(m));
+				maskCompression(m);
+				// System.out.println("After " + Kit.join(m));
+			}
+			this.masksS = Variable.litterals(scp).longArray(nWords);
+			for (int x = 0; x < scp.length; x++) {
+				long[][] m = masksS[x];
+				for (int j = 0; j < tuples.length; j++)
+					if (tuples[j][x] != Constants.STAR)
+						Bit.setTo1(m[tuples[j][x]], j);
+				// System.out.println("Before " + Kit.join(m));
+				maskCompression(m);
+				// System.out.println("After " + Kit.join(m));
+			}
+		}
+
+		this.stackedWords = new long[nWords * factorStacked];
+		this.stackedIndexes = new int[nWords * factorStacked];
+		this.stackStructure = new int[nWords * factorStack];
+		this.modifiedWords = new boolean[nWords];
+
+		this.deltaSizes = new int[scp.length];
+		this.nonZeros = new SetDenseReversible(current.length, pb.variables.length + 1);
+		this.residues = Variable.litterals(scp).intArray();
+	}
 
 	@Override
 	public void restoreBefore(int depth) {
@@ -72,12 +129,6 @@ public final class CtrExtensionCT2 extends CtrExtensionSTROptimized {
 		Kit.control(decremental);
 	}
 
-	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
-		nonZeros = new SetDenseReversible(current.length, pb.variables.length + 1);
-	}
-
 	private void fillTo1(long[] t) {
 		Arrays.fill(t, Bit.ALL_LONG_BITS_TO_1);
 		t[t.length - 1] = lastWord1Then0;
@@ -117,61 +168,6 @@ public final class CtrExtensionCT2 extends CtrExtensionSTROptimized {
 				masks[a] = LongStream.range(0, 2 + cnt).map(i -> i == 0 ? def : i == 1 ? way : maskCollect[(int) i - 2]).toArray();
 			}
 		}
-	}
-
-	@Override
-	protected void initSpecificStructures() {
-		sVal = new int[scp.length];
-		sSup = new int[scp.length];
-		deltaSizes = new int[scp.length];
-		tuples = ((Table) extStructure).tuples;
-		int nWords = (int) Math.ceil(tuples.length / 64.0);
-		tmp = new long[nWords];
-		tmp2 = new long[nWords];
-		lastWord1Then0 = tuples.length % 64 != 0 ? Bit.bitsA1To(tuples.length % 64) : Bit.ALL_LONG_BITS_TO_1;
-		lastWord0Then1 = tuples.length % 64 != 0 ? Bit.bitsAt1From(tuples.length % 64) : 0L;
-		current = new long[nWords];
-		fillTo1(current);
-
-		this.isShort = ((Table) extStructure).isShort;
-		masks = Variable.litterals(scp).longArray(nWords);
-		if (!this.isShort) {
-			for (int x = 0; x < scp.length; x++) {
-				long[][] m = masks[x];
-				for (int j = 0; j < tuples.length; j++)
-					Bit.setTo1(m[tuples[j][x]], j);
-				maskCompression(m);
-			}
-		} else {
-			for (int x = 0; x < scp.length; x++) {
-				long[][] m = masks[x];
-				for (int j = 0; j < tuples.length; j++)
-					if (tuples[j][x] != Constants.STAR)
-						Bit.setTo1(m[tuples[j][x]], j);
-					else
-						for (int a = 0; a < m.length; a++)
-							Bit.setTo1(m[a], j);
-				// System.out.println("Before " + Kit.join(m));
-				maskCompression(m);
-				// System.out.println("After " + Kit.join(m));
-			}
-			masksS = Variable.litterals(scp).longArray(nWords);
-			for (int x = 0; x < scp.length; x++) {
-				long[][] m = masksS[x];
-				for (int j = 0; j < tuples.length; j++)
-					if (tuples[j][x] != Constants.STAR)
-						Bit.setTo1(m[tuples[j][x]], j);
-				// System.out.println("Before " + Kit.join(m));
-				maskCompression(m);
-				// System.out.println("After " + Kit.join(m));
-			}
-		}
-
-		stackedWords = new long[nWords * factorStacked];
-		stackedIndexes = new int[nWords * factorStacked];
-		stackStructure = new int[nWords * factorStack];
-		modifiedWords = new boolean[nWords];
-		residues = Variable.litterals(scp).intArray();
 	}
 
 	private void wordModified(int index, long oldValue) {
@@ -282,7 +278,7 @@ public final class CtrExtensionCT2 extends CtrExtensionSTROptimized {
 
 	@Override
 	public boolean runPropagator(Variable z) {
-		pb.stuff.updateStatsForSTR(set);
+		// pb.stuff.updateStatsForSTR(set);
 		if (firstCall)
 			return firstCall();
 		beforeFiltering();

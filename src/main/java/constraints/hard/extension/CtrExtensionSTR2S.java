@@ -14,8 +14,9 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 
 import constraints.hard.CtrExtension.CtrExtensionGlobal;
-import constraints.hard.extension.structures.ExtensionStructureHard;
+import constraints.hard.extension.structures.ExtensionStructure;
 import constraints.hard.extension.structures.Table;
+import interfaces.TagShort;
 import problem.Problem;
 import propagation.order1.StrongConsistency;
 import utility.Kit;
@@ -23,16 +24,25 @@ import utility.sets.SetDenseReversible;
 import variables.Variable;
 
 // why not using a counter 'time' and replace boolean[][] ac by int[][] ac (we just do time++ instead of Arrays.fill(ac[x],false)
-public final class CtrExtensionSTR2S extends CtrExtensionGlobal {
+public final class CtrExtensionSTR2S extends CtrExtensionGlobal implements TagShort {
 
-	protected final static int UNITIALIZED = -2;
+	/**********************************************************************************************
+	 * Interfaces
+	 *********************************************************************************************/
+
+	private final static int UNITIALIZED = -2;
 
 	@Override
 	public void onConstructionProblemFinished() {
 		super.onConstructionProblemFinished();
 		this.tuples = ((Table) extStructure).tuples;
 		this.set = new SetDenseReversible(tuples.length, pb.variables.length + 1);
-		Kit.control(tuples.length > 0);
+		this.ac = Variable.litterals(scp).booleanArray();
+		this.cnts = new int[scp.length];
+		this.sVal = new int[scp.length];
+		this.sSup = new int[scp.length];
+
+		control(tuples.length > 0);
 		if (decremental) {
 			this.lastSizesStack = new int[pb.variables.length + 1][scp.length];
 			Arrays.fill(lastSizesStack[0], UNITIALIZED);
@@ -49,9 +59,9 @@ public final class CtrExtensionSTR2S extends CtrExtensionGlobal {
 			Arrays.fill(lastSizes, UNITIALIZED);
 	}
 
-	// ************************************************************************
-	// ***** Fields
-	// ************************************************************************
+	/**********************************************************************************************
+	 * Fields
+	 *********************************************************************************************/
 
 	protected int[][] tuples; // redundant field (reference to tuples in Table)
 
@@ -86,9 +96,9 @@ public final class CtrExtensionSTR2S extends CtrExtensionGlobal {
 	protected int[][] lastSizesStack; // lastSizesStack[i][x] is the domain size of x at the last call at level i
 	protected int lastDepth; // the depth at the last call
 
-	// ************************************************************************
-	// ***** Methods
-	// ************************************************************************
+	/**********************************************************************************************
+	 * Methods
+	 *********************************************************************************************/
 
 	public CtrExtensionSTR2S(Problem pb, Variable[] scp) {
 		super(pb, scp);
@@ -97,16 +107,8 @@ public final class CtrExtensionSTR2S extends CtrExtensionGlobal {
 	}
 
 	@Override
-	protected ExtensionStructureHard buildExtensionStructure() {
+	protected ExtensionStructure buildExtensionStructure() {
 		return new Table(this);
-	}
-
-	@Override
-	protected void initSpecificStructures() {
-		this.ac = Variable.litterals(scp).booleanArray();
-		this.cnts = new int[scp.length];
-		this.sVal = new int[scp.length];
-		this.sSup = new int[scp.length];
 	}
 
 	protected void initRestorationStructuresBeforeFiltering() {

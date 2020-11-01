@@ -16,27 +16,17 @@ import variables.Variable;
 
 public final class CtrExtensionRPWC2 extends CtrExtensionRPWC {
 
-	/**********************************************************************************************
-	 * Restoration
-	 *********************************************************************************************/
-
-	private boolean decremental; // true if we exploit decrementality
-
-	private int lastDepth;
-
-	private int[] lastSizes; // 1D = variable position ; value = last domain sizes
-
-	private int[][] lastSizesStack; // 1D = level ; 2D = variable position
-
-	private void initializeRestorationStructuresBeforeFiltering() {
-		if (decremental) {
-			int depth = pb.solver.depth();
-			assert depth >= lastDepth && lastDepth >= 0;
-			for (int i = lastDepth + 1; i <= depth; i++)
-				System.arraycopy(lastSizesStack[lastDepth], 0, lastSizesStack[i], 0, scp.length);
-			lastSizes = lastSizesStack[depth];
-			lastDepth = depth;
+	@Override
+	public void onConstructionProblemFinished() {
+		super.onConstructionProblemFinished();
+		if (!decremental) {
+			this.lastSizes = Kit.repeat(-2, scp.length);
+		} else {
+			this.lastSizesStack = new int[pb.variables.length + 1][scp.length];
+			Arrays.fill(lastSizesStack[0], -2);
 		}
+		this.ac = Variable.litterals(scp).booleanArray();
+		this.cnts = new int[scp.length];
 	}
 
 	@Override
@@ -53,6 +43,14 @@ public final class CtrExtensionRPWC2 extends CtrExtensionRPWC {
 	 * Fields
 	 *********************************************************************************************/
 
+	private boolean decremental; // true if we exploit decrementality
+
+	private int lastDepth;
+
+	private int[] lastSizes; // 1D = variable position ; value = last domain sizes
+
+	private int[][] lastSizesStack; // 1D = level ; 2D = variable position
+
 	private int sValSize;
 	private int[] sVal; // positions of the variables for which validity must be checked
 
@@ -66,22 +64,15 @@ public final class CtrExtensionRPWC2 extends CtrExtensionRPWC {
 		decremental = pb.rs.cp.settingExtension.decremental;
 	}
 
-	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
-		if (!decremental) {
-			lastSizes = Kit.repeat(-2, scp.length);
-		} else {
-			lastSizesStack = new int[pb.variables.length + 1][scp.length];
-			Arrays.fill(lastSizesStack[0], -2);
+	private void initializeRestorationStructuresBeforeFiltering() {
+		if (decremental) {
+			int depth = pb.solver.depth();
+			assert depth >= lastDepth && lastDepth >= 0;
+			for (int i = lastDepth + 1; i <= depth; i++)
+				System.arraycopy(lastSizesStack[lastDepth], 0, lastSizesStack[i], 0, scp.length);
+			lastSizes = lastSizesStack[depth];
+			lastDepth = depth;
 		}
-	}
-
-	@Override
-	protected void initSpecificStructures() {
-		super.initSpecificStructures();
-		sVal = new int[scp.length];
-		sSup = new int[scp.length];
 	}
 
 	protected void manageLastPastVariable() {

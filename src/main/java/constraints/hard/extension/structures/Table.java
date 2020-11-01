@@ -29,7 +29,7 @@ import variables.domains.Domain;
  * This class is useful for table constraints, i.e., constraints defined in extension. All supports (allowed tuples) or all conflicts (disallowed
  * tuples) are recorded in a list. Note that tuples are recorded as indexes (of values).
  */
-public class Table extends ExtensionStructureHard {
+public class Table extends ExtensionStructure {
 
 	/**********************************************************************************************
 	 * Static

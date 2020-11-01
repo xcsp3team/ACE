@@ -11,7 +11,7 @@ package constraints.hard.extension.structures;
 import constraints.Constraint;
 import utility.Kit;
 
-public class Matrix3D extends ExtensionStructureHard {
+public class Matrix3D extends ExtensionStructure {
 	protected boolean[][][] supports;
 
 	@Override

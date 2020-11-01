@@ -23,7 +23,7 @@ import utility.Kit;
 import utility.Kit.IntArrayHashKey;
 import variables.Variable;
 
-public final class MDDShort extends ExtensionStructureHard {
+public final class MDDShort extends ExtensionStructure {
 
 	public MDDNodeShort root;
 

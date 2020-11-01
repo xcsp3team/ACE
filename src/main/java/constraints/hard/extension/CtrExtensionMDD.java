@@ -20,7 +20,7 @@ import org.xcsp.modeler.definitions.DefXCSP;
 import org.xcsp.modeler.definitions.ICtr.ICtrMdd;
 
 import constraints.hard.CtrExtension.CtrExtensionGlobal;
-import constraints.hard.extension.structures.ExtensionStructureHard;
+import constraints.hard.extension.structures.ExtensionStructure;
 import constraints.hard.extension.structures.MDD;
 import constraints.hard.extension.structures.MDDNode;
 import interfaces.TagPositive;
@@ -35,6 +35,20 @@ public final class CtrExtensionMDD extends CtrExtensionGlobal implements TagPosi
 	/**********************************************************************************************
 	 * Implementing Interfaces
 	 *********************************************************************************************/
+
+	@Override
+	public void onConstructionProblemFinished() {
+		super.onConstructionProblemFinished();
+		int nNodes = ((MDD) extStructure).nNodes();
+		this.trueNodes = new int[nNodes];
+		if (pb.rs.cp.settingExtension.decremental)
+			this.set = new SetSparseReversible(nNodes, false, pb.variables.length + 1);
+		else
+			this.falseNodes = new int[nNodes];
+
+		this.ac = Variable.litterals(scp).booleanArray();
+		this.cnts = new int[scp.length];
+	}
 
 	@Override
 	public void restoreBefore(int depth) {
@@ -64,6 +78,10 @@ public final class CtrExtensionMDD extends CtrExtensionGlobal implements TagPosi
 
 	protected int earlyCutoff;
 
+	/**********************************************************************************************
+	 * Methods
+	 *********************************************************************************************/
+
 	public CtrExtensionMDD(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		Kit.control(scp.length >= 1);
@@ -78,20 +96,17 @@ public final class CtrExtensionMDD extends CtrExtensionGlobal implements TagPosi
 	public CtrExtensionMDD(Problem pb, Variable[] scp, MDDNode root) {
 		this(pb, scp);
 		extStructure = new MDD(this, root);
-		initSpecificStructures();
 	}
 
 	public CtrExtensionMDD(Problem pb, Variable[] scp, Transition[] transitions) {
 		this(pb, scp);
 		// key = signature() + " " + transitions; // TDODO be careful, we assume that the address of tuples can be used
 		extStructure = new MDD(this, Stream.of(transitions).map(t -> new Object[] { t.firstState, t.symbol, t.secondState }).toArray(Object[][]::new));
-		initSpecificStructures();
 	}
 
 	public CtrExtensionMDD(Problem problem, Variable[] scope, Automaton automata) {
 		this(problem, scope);
 		extStructure = new MDD(this, automata);
-		initSpecificStructures();
 	}
 
 	public CtrExtensionMDD(Problem problem, Variable[] scope, int[] coeffs, Object limits) {
@@ -99,29 +114,11 @@ public final class CtrExtensionMDD extends CtrExtensionGlobal implements TagPosi
 		System.out.println("before mdd");
 		extStructure = new MDD(this, coeffs, limits);
 		System.out.println("after mdd");
-		initSpecificStructures();
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
-		int nNodes = ((MDD) extStructure).nNodes();
-		trueNodes = new int[nNodes];
-		if (pb.rs.cp.settingExtension.decremental)
-			set = new SetSparseReversible(nNodes, false, pb.variables.length + 1);
-		else
-			falseNodes = new int[nNodes];
-	}
-
-	@Override
-	protected ExtensionStructureHard buildExtensionStructure() {
+	protected ExtensionStructure buildExtensionStructure() {
 		return new MDD(this);
-	}
-
-	@Override
-	protected void initSpecificStructures() {
-		ac = Variable.litterals(scp).booleanArray();
-		cnts = new int[scp.length];
 	}
 
 	protected void beforeFiltering() {

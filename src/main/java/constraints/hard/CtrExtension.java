@@ -25,14 +25,8 @@ import org.xcsp.modeler.definitions.ICtr.ICtrExtension;
 
 import constraints.Constraint;
 import constraints.TupleManager;
-import constraints.hard.extension.CtrExtensionCT;
-import constraints.hard.extension.CtrExtensionCT2;
-import constraints.hard.extension.CtrExtensionMDD;
 import constraints.hard.extension.CtrExtensionMDDShort;
-import constraints.hard.extension.CtrExtensionSTR2;
-import constraints.hard.extension.CtrExtensionSTR2S;
 import constraints.hard.extension.structures.ExtensionStructure;
-import constraints.hard.extension.structures.ExtensionStructureHard;
 import constraints.hard.extension.structures.Table;
 import constraints.hard.extension.structures.TableWithSubtables;
 import constraints.hard.extension.structures.Tries;
@@ -42,9 +36,9 @@ import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import interfaces.TagNegative;
 import interfaces.TagPositive;
+import interfaces.TagShort;
 import problem.Problem;
 import propagation.structures.supporters.SupporterHard;
-import utility.Enums.EExtension;
 import utility.Kit;
 import utility.Reflector;
 import variables.Variable;
@@ -63,11 +57,11 @@ public abstract class CtrExtension extends Constraint implements TagGACGuarantee
 	public static final class CtrExtensionV extends CtrExtension {
 
 		@Override
-		protected ExtensionStructureHard buildExtensionStructure() {
+		protected ExtensionStructure buildExtensionStructure() {
 			if (scp.length == 2)
-				return Reflector.buildObject(pb.rs.cp.settingExtension.classForBinaryExtensionStructure, ExtensionStructureHard.class, this);
+				return Reflector.buildObject(pb.rs.cp.settingExtension.classForBinaryExtensionStructure, ExtensionStructure.class, this);
 			if (scp.length == 3)
-				return Reflector.buildObject(pb.rs.cp.settingExtension.classForTernaryExtensionStructure, ExtensionStructureHard.class, this);
+				return Reflector.buildObject(pb.rs.cp.settingExtension.classForTernaryExtensionStructure, ExtensionStructure.class, this);
 			return new Table(this); // MDD(this);
 		}
 
@@ -79,7 +73,7 @@ public abstract class CtrExtension extends Constraint implements TagGACGuarantee
 	public static final class CtrExtensionVA extends CtrExtension implements TagPositive {
 
 		@Override
-		protected ExtensionStructureHard buildExtensionStructure() {
+		protected ExtensionStructure buildExtensionStructure() {
 			if (pb.rs.cp.settingExtension.variant == 0)
 				return new TableWithSubtables(this);
 			assert pb.rs.cp.settingExtension.variant == 1 || pb.rs.cp.settingExtension.variant == 11;
@@ -129,29 +123,16 @@ public abstract class CtrExtension extends Constraint implements TagGACGuarantee
 	 *********************************************************************************************/
 
 	private static CtrExtension build(Problem pb, Variable[] scp, boolean positive, boolean presentStar) {
+		Set<Class<?>> classes = pb.rs.handlerClasses.map.get(CtrExtension.class);
 		if (presentStar) {
-			if (pb.rs.cp.settingExtension.positive == EExtension.MDD)
-				return new CtrExtensionMDD(pb, scp);
-			if (pb.rs.cp.settingExtension.positive == EExtension.MDDSHORT)
-				return new CtrExtensionMDDShort(pb, scp);
-			if (pb.rs.cp.settingExtension.positive == EExtension.STR2)
-				return new CtrExtensionSTR2(pb, scp);
-			if (pb.rs.cp.settingExtension.positive == EExtension.STR2S)
-				return new CtrExtensionSTR2S(pb, scp);
-			if (pb.rs.cp.settingExtension.positive == EExtension.CT)
-				return new CtrExtensionCT(pb, scp);
-			if (pb.rs.cp.settingExtension.positive == EExtension.CT2)
-				return new CtrExtensionCT2(pb, scp);
-			// if (pb.rs.cp.extension.positive == EExtension.VA)
-			// return new CtrExtensionVA(pb, scp);
-			throw new IllegalArgumentException("Unimplemented table constraint for short tables");
+			Kit.control(positive);
+			CtrExtension c = (CtrExtension) Reflector.buildObject2(CtrExtension.class.getSimpleName() + pb.rs.cp.settingExtension.positive, classes, pb, scp);
+			Kit.control(c instanceof TagShort); // currently, STR2, STR2S, CT, CT2 and MDDSHORT
+			return c;
 		}
 		if (scp.length == 1 || scp.length == 2 && pb.rs.cp.settingExtension.validForBinary)
-			// return new CtrExtensionSTR2(pb, scp);
-			return new CtrExtensionV(pb, scp); // for example for maxCSP ?
+			return new CtrExtensionV(pb, scp); // return new CtrExtensionSTR2(pb, scp);
 		String suffix = (positive ? pb.rs.cp.settingExtension.positive : pb.rs.cp.settingExtension.negative).toString();
-
-		Set<Class<?>> classes = pb.rs.handlerClasses.map.get(CtrExtension.class);
 		return (CtrExtension) Reflector.buildObject2(CtrExtension.class.getSimpleName() + suffix, classes, pb, scp);
 	}
 
@@ -210,30 +191,25 @@ public abstract class CtrExtension extends Constraint implements TagGACGuarantee
 	 * End of static section
 	 *********************************************************************************************/
 
-	protected ExtensionStructureHard extStructure;
+	protected ExtensionStructure extStructure;
 
 	@Override
-	public ExtensionStructureHard extStructure() {
+	public ExtensionStructure extStructure() {
 		return extStructure;
 	}
 
-	protected abstract ExtensionStructureHard buildExtensionStructure();
+	protected abstract ExtensionStructure buildExtensionStructure();
 
 	@Override
 	public void cloneStructures(boolean onlyConflictsStructure) {
 		super.cloneStructures(onlyConflictsStructure);
 		if (!onlyConflictsStructure && extStructure.registeredCtrs().size() > 1) {
 			extStructure.unregister(this);
-			extStructure = Reflector.buildObject(extStructure.getClass().getSimpleName(), ExtensionStructureHard.class, this, extStructure);
+			extStructure = Reflector.buildObject(extStructure.getClass().getSimpleName(), ExtensionStructure.class, this, extStructure);
 			// IF NECESSARY, add another constructor in the class instance of
 			// ExtensionStructure
 		}
 	}
-
-	// These additional fields are typically not shared (except for a redundant
-	// field that represents an overriding of the field 'extensionStructure' --
-	// this is interesting for avoiding casting)
-	protected void initSpecificStructures() {}
 
 	public final void storeTuples(int[][] tuples, boolean positive) {
 		control((positive && this instanceof TagPositive) || (!positive && this instanceof TagNegative)
@@ -259,14 +235,13 @@ public abstract class CtrExtension extends Constraint implements TagGACGuarantee
 			if (!(this instanceof CtrExtensionMDDShort))
 				conflictsStructure = ConflictsStructure.build(this, tuples, positive);
 		} else {
-			extStructure = (ExtensionStructureHard) map.get(key);
+			extStructure = map.get(key);
 			extStructure.register(this);
 			conflictsStructure = extStructure.firstRegisteredCtr().conflictsStructure();
 			if (conflictsStructure != null)
 				conflictsStructure.register(this);
 			assert indexesMatchValues == extStructure.firstRegisteredCtr().indexesMatchValues;
 		}
-		initSpecificStructures();
 	}
 
 	@Override

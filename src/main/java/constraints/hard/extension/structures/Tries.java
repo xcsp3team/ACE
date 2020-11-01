@@ -13,7 +13,7 @@ package constraints.hard.extension.structures;
 import constraints.Constraint;
 import variables.Variable;
 
-public class Tries extends ExtensionStructureHard {
+public class Tries extends ExtensionStructure {
 
 	/**
 	 * The roots of tries. There is a trie per variable as in [Gent et al. Data structures for GAC for extensional constraints. CP'07]
@@ -61,8 +61,8 @@ public class Tries extends ExtensionStructureHard {
 
 		// in the ith trie, the ith variable has been put as first variable ; see [Gent et al. CP'07]
 		int adjustedPosition = position == 0 ? currentTrieIndex : position <= currentTrieIndex ? position - 1 : position;
-		int idx = firstRegisteredCtr().indexesMatchValues ? tuple[adjustedPosition] : firstRegisteredCtr().scp[adjustedPosition].dom
-				.toIdx(tuple[adjustedPosition]);
+		int idx = firstRegisteredCtr().indexesMatchValues ? tuple[adjustedPosition]
+				: firstRegisteredCtr().scp[adjustedPosition].dom.toIdx(tuple[adjustedPosition]);
 
 		Node previousChild = null;
 		Node currentChild = node.firstChild;
@@ -191,6 +191,7 @@ public class Tries extends ExtensionStructureHard {
 		return tmp;
 	}
 
+	@Override
 	public int[] nextSupport(int vap, int idx, int[] current) {
 		currentTrieIndex = vap;
 		this.current = current;

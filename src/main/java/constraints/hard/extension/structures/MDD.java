@@ -33,7 +33,7 @@ import utility.Kit.IntArrayHashKey;
 import variables.Variable;
 import variables.domains.Domain;
 
-public final class MDD extends ExtensionStructureHard {
+public final class MDD extends ExtensionStructure {
 
 	public MDDNode root;
 

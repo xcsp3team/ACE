@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import constraints.hard.CtrExtension.CtrExtensionGlobal;
-import constraints.hard.extension.structures.ExtensionStructureHard;
+import constraints.hard.extension.structures.ExtensionStructure;
 import constraints.hard.extension.structures.Table;
 import interfaces.TagPositive;
 import problem.Problem;
@@ -24,35 +24,6 @@ import variables.Variable;
 import variables.domains.Domain;
 
 public class CtrExtensionGAC4 extends CtrExtensionGlobal implements TagPositive {
-
-	@Override
-	public void restoreBefore(int depth) {
-		for (int i = 0; i < sups.length; i++)
-			for (int j = 0; j < sups[i].length; j++)
-				if (sups[i][j] != null)
-					sups[i][j].restoreLimitAtLevel(depth);
-		Arrays.fill(lastRemoved, -1);
-	}
-
-	// private Boolean finishedPreprocessing;
-
-	protected int[][] ptrs; // The set of pointers. The first array index corresponds to the order of the tuples. The second array index
-							// corresponds to the
-							// position of the tuple in the subtable for the value at that position in the tuple
-
-	protected SetDenseReversible[][] sups; // 1d = vap ; 2D = idx
-
-	private int[] lastRemoved; // 1D = variable position ; value = last index (of value) removed
-
-	@Override
-	protected ExtensionStructureHard buildExtensionStructure() {
-		return new Table(this);
-	}
-
-	public CtrExtensionGAC4(Problem pb, Variable[] scp) {
-		super(pb, scp);
-		control(pb.rs.cp.settingSolving.enablePrepro);
-	}
 
 	@Override
 	public void onConstructionProblemFinished() {
@@ -86,6 +57,35 @@ public class CtrExtensionGAC4 extends CtrExtensionGlobal implements TagPositive 
 					dom.removeAtConstructionTime(a);
 			});
 		}
+	}
+
+	@Override
+	public void restoreBefore(int depth) {
+		for (int i = 0; i < sups.length; i++)
+			for (int j = 0; j < sups[i].length; j++)
+				if (sups[i][j] != null)
+					sups[i][j].restoreLimitAtLevel(depth);
+		Arrays.fill(lastRemoved, -1);
+	}
+
+	// private Boolean finishedPreprocessing;
+
+	protected int[][] ptrs; // The set of pointers. The first array index corresponds to the order of the tuples. The second array index
+							// corresponds to the
+							// position of the tuple in the subtable for the value at that position in the tuple
+
+	protected SetDenseReversible[][] sups; // 1d = vap ; 2D = idx
+
+	private int[] lastRemoved; // 1D = variable position ; value = last index (of value) removed
+
+	@Override
+	protected ExtensionStructure buildExtensionStructure() {
+		return new Table(this);
+	}
+
+	public CtrExtensionGAC4(Problem pb, Variable[] scp) {
+		super(pb, scp);
+		control(pb.rs.cp.settingSolving.enablePrepro);
 	}
 
 	private boolean handleVariableAt(int vap) {

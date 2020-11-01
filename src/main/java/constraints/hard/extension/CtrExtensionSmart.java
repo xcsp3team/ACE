@@ -28,7 +28,7 @@ import org.xcsp.modeler.definitions.ICtr.ICtrSmart;
 
 import constraints.Constraint;
 import constraints.hard.CtrExtension.CtrExtensionGlobal;
-import constraints.hard.extension.structures.ExtensionStructureHard;
+import constraints.hard.extension.structures.ExtensionStructure;
 import constraints.hard.extension.structures.SmartTuple;
 import constraints.hard.extension.structures.TableSmart;
 import problem.Problem;
@@ -166,6 +166,13 @@ public final class CtrExtensionSmart extends CtrExtensionGlobal implements ICtrS
 	}
 
 	@Override
+	public void onConstructionProblemFinished() {
+		super.onConstructionProblemFinished();
+		set = new SetDenseReversible(smartTuples.length, pb.variables.length + 1);
+		Arrays.fill((lastSizesStack = new int[pb.variables.length + 1][scp.length])[0], UNINITIALIZED_VALUE);
+	}
+
+	@Override
 	public void restoreBefore(int depth) {
 		set.restoreLimitAtLevel(depth);
 		// buildRestorationStructures();
@@ -208,14 +215,7 @@ public final class CtrExtensionSmart extends CtrExtensionGlobal implements ICtrS
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
-		set = new SetDenseReversible(smartTuples.length, pb.variables.length + 1);
-		Arrays.fill((lastSizesStack = new int[pb.variables.length + 1][scp.length])[0], UNINITIALIZED_VALUE);
-	}
-
-	@Override
-	public ExtensionStructureHard buildExtensionStructure() {
+	public ExtensionStructure buildExtensionStructure() {
 		return new TableSmart(this, smartTuples);
 	}
 

@@ -13,10 +13,10 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.hard.CtrExtension.CtrExtensionGlobal;
-import constraints.hard.extension.structures.ExtensionStructureHard;
+import constraints.hard.extension.structures.ExtensionStructure;
 import constraints.hard.extension.structures.SegmentedTuple;
 import constraints.hard.extension.structures.SegmentedTuple.RestrictionTable;
-import constraints.hard.extension.structures.TableSplit;
+import constraints.hard.extension.structures.TableSegmented;
 import problem.Problem;
 import propagation.order1.StrongConsistency;
 import utility.sets.SetDenseReversible;
@@ -43,6 +43,16 @@ public final class CtrExtensionSegmented extends CtrExtensionGlobal {
 			System.arraycopy(lastSizesStack[lastDepth], 0, lastSizesStack[i], 0, lastSizesStack[lastDepth].length);
 		lastSizes = lastSizesStack[depth];
 		lastDepth = depth;
+	}
+
+	@Override
+	public void onConstructionProblemFinished() {
+		super.onConstructionProblemFinished();
+		set = new SetDenseReversible(segmentedTuples.length, pb.variables.length + 1);
+		Arrays.fill((lastSizesStack = new int[pb.variables.length + 1][scp.length])[0], UNINITIALIZED_VALUE);
+		for (SegmentedTuple st : segmentedTuples)
+			for (RestrictionTable rt : st.restrictions)
+				rt.onConstructionProblemFinished(this.pb);
 	}
 
 	@Override
@@ -91,18 +101,8 @@ public final class CtrExtensionSegmented extends CtrExtensionGlobal {
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
-		set = new SetDenseReversible(segmentedTuples.length, pb.variables.length + 1);
-		Arrays.fill((lastSizesStack = new int[pb.variables.length + 1][scp.length])[0], UNINITIALIZED_VALUE);
-		for (SegmentedTuple st : segmentedTuples)
-			for (RestrictionTable rt : st.restrictions)
-				rt.onConstructionProblemFinished(this.pb);
-	}
-
-	@Override
-	public ExtensionStructureHard buildExtensionStructure() {
-		return new TableSplit(this, segmentedTuples);
+	public ExtensionStructure buildExtensionStructure() {
+		return new TableSegmented(this, segmentedTuples);
 	}
 
 	protected void manageLastPastVariable() {
