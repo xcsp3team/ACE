@@ -49,10 +49,9 @@ public final class Among extends CtrGlobal implements TagSymmetric, TagGACGuaran
 		this.mixedVariables = new SetSparse(list.length);
 		this.linearSearch = values.length < SEARCH_THRESHOLD;
 		defineKey(Kit.join(values), k);
-		Kit.control(Kit.isStrictlyIncreasing(values), () -> "Values must be given in increasing order");
-		Kit.control(0 < k && k < list.length, () -> "Bad value of k=" + k);
-		Kit.control(Stream.of(list).allMatch(x -> x.dom.size() > 1 && IntStream.of(values).anyMatch(v -> x.dom.isPresentValue(v))),
-				() -> "Badly formed scope.");
+		control(Kit.isStrictlyIncreasing(values), "Values must be given in increasing order");
+		control(0 < k && k < list.length, "Bad value of k=" + k);
+		control(Stream.of(list).allMatch(x -> x.dom.size() > 1 && IntStream.of(values).anyMatch(v -> x.dom.isPresentValue(v))), "Badly formed scope.");
 	}
 
 	@Override

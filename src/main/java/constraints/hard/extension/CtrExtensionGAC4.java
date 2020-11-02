@@ -28,30 +28,31 @@ public class CtrExtensionGAC4 extends CtrExtensionGlobal implements TagPositive 
 	@Override
 	public void onConstructionProblemFinished() {
 		super.onConstructionProblemFinished();
-		lastRemoved = Kit.repeat(-1, scp.length);
+
 		int[][] tuples = ((Table) extStructure).tuples;
 		assert tuples.length > 0;
 		List<Integer>[][] tmp = IntStream.range(0, scp.length)
 				.mapToObj(i -> IntStream.range(0, scp[i].dom.initSize()).mapToObj(j -> new ArrayList<Integer>()).toArray(List[]::new)).toArray(List[][]::new);
 
-		ptrs = new int[tuples.length][scp.length];
+		this.ptrs = new int[tuples.length][scp.length];
 		for (int i = 0; i < tuples.length; i++)
-			for (int j = 0; j < tuples[i].length; j++) {
-				int a = tuples[i][j];
-				tmp[j][a].add(i);
-				ptrs[i][j] = tmp[j][a].size() - 1;
+			for (int x = 0; x < tuples[i].length; x++) {
+				int a = tuples[i][x];
+				tmp[x][a].add(i);
+				ptrs[i][x] = tmp[x][a].size() - 1;
 			}
-		sups = new SetDenseReversible[scp.length][];
-		for (int i = 0; i < sups.length; i++) {
-			sups[i] = new SetDenseReversible[scp[i].dom.initSize()];
-			for (int j = 0; j < sups[i].length; j++)
-				sups[i][j] = new SetDenseReversible(Kit.intArray(tmp[i][j]), true, pb.variables.length + 1);
-			// sups[i][j] = tmp[i][j].size() == 0 ? null : new DenseSetMultiLevel(Kit.toIntArray(tmp[i][j]), true, pb.variables.length + 1);
+		this.sups = new SetDenseReversible[scp.length][];
+		for (int x = 0; x < sups.length; x++) {
+			sups[x] = new SetDenseReversible[scp[x].dom.initSize()];
+			for (int a = 0; a < sups[x].length; a++)
+				sups[x][a] = new SetDenseReversible(Kit.intArray(tmp[x][a]), true, pb.variables.length + 1);
 		}
+		this.lastRemoved = Kit.repeat(-1, scp.length);
+
 		assert controlStructures();
-		for (int i = 0; i < scp.length; i++) {
-			Domain dom = scp[i].dom;
-			SetDenseReversible[] set = sups[i];
+		for (int x = 0; x < scp.length; x++) {
+			Domain dom = scp[x].dom;
+			SetDenseReversible[] set = sups[x];
 			dom.execute(a -> {
 				if (set[a].size() == 0)
 					dom.removeAtConstructionTime(a);
@@ -71,12 +72,11 @@ public class CtrExtensionGAC4 extends CtrExtensionGlobal implements TagPositive 
 	// private Boolean finishedPreprocessing;
 
 	protected int[][] ptrs; // The set of pointers. The first array index corresponds to the order of the tuples. The second array index
-							// corresponds to the
-							// position of the tuple in the subtable for the value at that position in the tuple
+							// corresponds to the position of the tuple in the subtable for the value at that position in the tuple
 
-	protected SetDenseReversible[][] sups; // 1d = vap ; 2D = idx
+	protected SetDenseReversible[][] sups;
 
-	private int[] lastRemoved; // 1D = variable position ; value = last index (of value) removed
+	private int[] lastRemoved;
 
 	@Override
 	protected ExtensionStructure buildExtensionStructure() {
@@ -88,42 +88,39 @@ public class CtrExtensionGAC4 extends CtrExtensionGlobal implements TagPositive 
 		control(pb.rs.cp.settingSolving.enablePrepro);
 	}
 
-	private boolean handleVariableAt(int vap) {
-		Domain dom = scp[vap].dom;
-		int level = pb.solver.depth();
+	private boolean handleVariableAt(int x) {
+		Domain dom = scp[x].dom;
+		int depth = pb.solver.depth();
 		int[][] tuples = ((Table) extStructure).tuples;
-		for (int a = dom.lastRemoved(); a != lastRemoved[vap]; a = dom.prevRemoved(a)) {
-			// Kit.prn(this + " " + dropped + " from " + scope[pos] + " " + lastRemoved[pos]);
-			SetDenseReversible droppedSet = sups[vap][a];
+		for (int a = dom.lastRemoved(); a != lastRemoved[x]; a = dom.prevRemoved(a)) {
+			SetDenseReversible droppedSet = sups[x][a];
 			for (int j = droppedSet.limit; j >= 0; j--) {
 				int droppedTuplePosition = droppedSet.dense[j];
 				int[] tuple = tuples[droppedTuplePosition];
 				assert !isValid(tuple);
-				for (int k = 0; k < scp.length; k++) {
-					Domain domK = scp[k].dom;
-					if (domK.isPresent(tuple[k])) {
-						SetDenseReversible set = sups[k][tuple[k]];
-						int ptr = ptrs[droppedTuplePosition][k];
+				for (int y = 0; y < scp.length; y++) {
+					if (scp[y].dom.isPresent(tuple[y])) {
+						SetDenseReversible set = sups[y][tuple[y]];
+						int ptr = ptrs[droppedTuplePosition][y];
 						if (ptr > set.limit)
 							continue; // because already removed
 						if (ptr < set.limit) {
 							int last = set.last();
-							assert ptrs[last][k] == set.limit && set.dense[ptr] == droppedTuplePosition;
-							set.removeAtPosition(ptr, level);
-							ptrs[droppedTuplePosition][k] = set.limit + 1;
-							ptrs[last][k] = ptr;
+							assert ptrs[last][y] == set.limit && set.dense[ptr] == droppedTuplePosition;
+							set.removeAtPosition(ptr, depth);
+							ptrs[droppedTuplePosition][y] = set.limit + 1;
+							ptrs[last][y] = ptr;
 							assert set.dense[set.limit + 1] == droppedTuplePosition && set.dense[ptr] == last;
 						} else
-							set.moveLimitAtLevel(1, level);
-						if (set.size() == 0 && !domK.remove(tuple[k])) {
+							set.moveLimitAtLevel(1, depth);
+						if (set.size() == 0 && !scp[y].dom.remove(tuple[y])) {
 							return false;
-							// Kit.prn("removal : " + this + " " + scope[k] + " != " + tuple[k] + " (" + k + ")");
 						}
 					}
 				}
 			}
 			// droppedSet.clearLimitAtLevel(level);
-			droppedSet.storeLimitAtLevel(level);
+			droppedSet.storeLimitAtLevel(depth);
 			droppedSet.clear();
 		}
 		return true;
@@ -148,9 +145,9 @@ public class CtrExtensionGAC4 extends CtrExtensionGlobal implements TagPositive 
 		int[][] tuples = table.tuples;
 		for (int i = 0; i < ptrs.length; i++) {
 			int[] tuple = tuples[i];
-			for (int vap = 0; vap < tuple.length; vap++) {
-				int ptr = ptrs[i][vap];
-				if (sups[vap][tuple[vap]].dense[ptr] != i)
+			for (int x = 0; x < tuple.length; x++) {
+				int ptr = ptrs[i][x];
+				if (sups[x][tuple[x]].dense[ptr] != i)
 					return false;
 			}
 		}

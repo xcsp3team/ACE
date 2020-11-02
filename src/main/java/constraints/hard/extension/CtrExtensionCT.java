@@ -10,23 +10,67 @@ package constraints.hard.extension;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import org.xcsp.common.Constants;
 
 import constraints.hard.extension.structures.Table;
 import interfaces.TagShort;
 import problem.Problem;
-import utility.Kit;
 import utility.operations.Bit;
 import utility.sets.SetDenseReversible;
 import variables.Variable;
 import variables.domains.Domain;
 
-public final class CtrExtensionCT extends CtrExtensionSTROptimized implements TagShort {
+public class CtrExtensionCT extends CtrExtensionSTROptimized implements TagShort {
+
+	public final static class CtrExtensionCT2 extends CtrExtensionCT implements TagShort {
+
+		static final int MASK_COMPRESION_LIMIT = 12;
+		static final int MASK_COMPRESION_TRIGGER_SIZE = 300;
+
+		long[] maskCollect = new long[MASK_COMPRESION_LIMIT * 2];
+
+		@Override
+		protected void maskCompression(long[][] masks) {
+			if (masks[0].length <= MASK_COMPRESION_TRIGGER_SIZE)
+				return;
+			for (int a = 0; a < masks.length; a++) {
+				long[] mask = masks[a];
+				int cnt = 0;
+				Long defaultWord = null; // uninitialized
+				boolean compressible = true;
+				for (int i = 0; compressible && i < mask.length; i++) {
+					if (mask[i] == 0L && defaultWord == null)
+						defaultWord = 0L;
+					else if (mask[i] == -1L && defaultWord == null)
+						defaultWord = -1L;
+					else if (defaultWord == null || mask[i] != defaultWord)
+						if (cnt + 1 >= maskCollect.length)
+							compressible = false;
+						else {
+							maskCollect[cnt++] = i;
+							maskCollect[cnt++] = mask[i];
+						}
+				}
+				if (compressible) {
+					long def = defaultWord == null ? 0 : (long) defaultWord, way = 0L; // way todo
+					masks[a] = LongStream.range(0, 2 + cnt).map(i -> i == 0 ? def : i == 1 ? way : maskCollect[(int) i - 2]).toArray();
+				}
+			}
+		}
+
+		public CtrExtensionCT2(Problem pb, Variable[] scp) {
+			super(pb, scp);
+		}
+
+	}
 
 	/**********************************************************************************************
 	 * Interfaces
 	 *********************************************************************************************/
+
+	protected void maskCompression(long[][] masks) {}
 
 	@Override
 	public void onConstructionProblemFinished() {
@@ -47,6 +91,7 @@ public final class CtrExtensionCT extends CtrExtensionSTROptimized implements Ta
 				long[][] mask = masks[x];
 				for (int j = 0; j < tuples.length; j++)
 					Bit.setTo1(mask[tuples[j][x]], j);
+				maskCompression(mask);
 			}
 		} else {
 			for (int x = 0; x < scp.length; x++) {
@@ -57,6 +102,7 @@ public final class CtrExtensionCT extends CtrExtensionSTROptimized implements Ta
 					else
 						for (int a = 0; a < mask.length; a++)
 							Bit.setTo1(mask[a], j);
+				maskCompression(mask);
 			}
 			this.masksS = Variable.litterals(scp).longArray(nWords);
 			for (int x = 0; x < scp.length; x++) {
@@ -64,6 +110,7 @@ public final class CtrExtensionCT extends CtrExtensionSTROptimized implements Ta
 				for (int j = 0; j < tuples.length; j++)
 					if (tuples[j][x] != Constants.STAR)
 						Bit.setTo1(mask[tuples[j][x]], j);
+				maskCompression(mask);
 			}
 		}
 
@@ -126,7 +173,7 @@ public final class CtrExtensionCT extends CtrExtensionSTROptimized implements Ta
 
 	public CtrExtensionCT(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		Kit.control(decremental);
+		control(decremental);
 	}
 
 	private void fillTo1(long[] t) {
@@ -217,10 +264,7 @@ public final class CtrExtensionCT extends CtrExtensionSTROptimized implements Ta
 		for (int x = 0; x < scp.length; x++) {
 			Domain dom = doms[x];
 			for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a))
-				if (!isShort)
-					Bit.or(tmp, masks[x][a], nonZeros);
-				else
-					Bit.or(tmp, masksS[x][a], nonZeros);
+				Bit.or2(tmp, !isShort ? masks[x][a] : masksS[x][a], nonZeros);
 		}
 		Bit.inverse(tmp, nonZeros);
 		for (int i = nonZeros.limit; i >= 0; i--) {
@@ -235,7 +279,7 @@ public final class CtrExtensionCT extends CtrExtensionSTROptimized implements Ta
 		for (int x = 0; x < scp.length; x++) {
 			Domain dom = doms[x];
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
-				int r = Bit.firstNonNullWord(current, masks[x][a], nonZeros);
+				int r = Bit.firstNonNullWord2(current, masks[x][a], nonZeros);
 				if (r != -1)
 					residues[x][a] = r;
 				else if (dom.remove(a) == false)
@@ -260,19 +304,16 @@ public final class CtrExtensionCT extends CtrExtensionSTROptimized implements Ta
 			Domain dom = doms[x];
 			if (deltaSizes[x] <= dom.size()) {
 				for (int cnt = deltaSizes[x] - 1, a = dom.lastRemoved(); cnt >= 0; cnt--) {
-					if (!isShort)
-						Bit.or(tmp, masks[x][a], nonZeros);
-					else
-						Bit.or(tmp, masksS[x][a], nonZeros);
+					Bit.or2(tmp, !isShort ? masks[x][a] : masksS[x][a], nonZeros);
 					a = dom.prevRemoved(a);
 				}
 			} else if (dom.size() == 1) {
-				Bit.orInverse(tmp, masks[x][dom.first()], nonZeros);
+				Bit.orInverse2(tmp, masks[x][dom.first()], nonZeros);
 			} else {
 				fillTo0(tmp2);
 				for (int a = dom.first(); a != -1; a = dom.next(a))
-					Bit.or(tmp2, masks[x][a], nonZeros);
-				Bit.orInverse(tmp, tmp2, nonZeros); // Bit.or(tmp, Bit.inverse(tmp2, nonZeros), nonZeros);
+					Bit.or2(tmp2, masks[x][a], nonZeros);
+				Bit.orInverse2(tmp, tmp2, nonZeros); // Bit.or(tmp, Bit.inverse(tmp2, nonZeros), nonZeros);
 			}
 		}
 		// we update the current table (array 'current') while possibly deleting words at 0 in nonZeros
@@ -295,9 +336,9 @@ public final class CtrExtensionCT extends CtrExtensionSTROptimized implements Ta
 			Domain dom = doms[x];
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
 				int r = residues[x][a];
-				if ((current[r] & masks[x][a][r]) != 0L)
+				if (Bit.nonNullIntersection2(current, masks[x][a], r)) // if ((current[r] & masks[x][a][r]) != 0L)
 					continue;
-				r = Bit.firstNonNullWord(current, masks[x][a], nonZeros);
+				r = Bit.firstNonNullWord2(current, masks[x][a], nonZeros);
 				if (r != -1) {
 					residues[x][a] = r;
 				} else

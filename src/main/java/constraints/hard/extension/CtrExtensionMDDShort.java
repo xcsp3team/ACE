@@ -24,7 +24,6 @@ import constraints.hard.extension.structures.MDDShort;
 import interfaces.TagPositive;
 import interfaces.TagShort;
 import problem.Problem;
-import utility.Kit;
 import utility.sets.SetSparseReversible;
 import variables.Variable;
 import variables.domains.Domain;
@@ -39,14 +38,13 @@ public final class CtrExtensionMDDShort extends CtrExtensionGlobal implements Ta
 	public void onConstructionProblemFinished() {
 		super.onConstructionProblemFinished();
 		int nNodes = ((MDDShort) extStructure).nNodes();
-		trueNodes = new int[nNodes];
+		this.trueNodes = new int[nNodes];
 		if (pb.rs.cp.settingExtension.decremental)
-			set = new SetSparseReversible(nNodes, false, pb.variables.length + 1);
+			this.set = new SetSparseReversible(nNodes, false, pb.variables.length + 1);
 		else
-			falseNodes = new int[nNodes];
-
-		ac = Variable.litterals(scp).booleanArray();
-		cnts = new int[scp.length];
+			this.falseNodes = new int[nNodes];
+		this.ac = Variable.litterals(scp).booleanArray();
+		this.cnts = new int[scp.length];
 	}
 
 	@Override
@@ -83,7 +81,7 @@ public final class CtrExtensionMDDShort extends CtrExtensionGlobal implements Ta
 
 	public CtrExtensionMDDShort(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		Kit.control(scp.length >= 1);
+		control(scp.length >= 1);
 	}
 
 	public CtrExtensionMDDShort(Problem pb, Variable[] scp, int[][] tuples) {

@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
 import constraints.Constraint;
 import constraints.TupleManager;
 import constraints.hard.extension.CtrExtensionCT;
-import constraints.hard.extension.CtrExtensionCT2;
+import constraints.hard.extension.CtrExtensionCT.CtrExtensionCT2;
 import constraints.hard.extension.CtrExtensionSTR2;
 import dashboard.ControlPanel;
 import interfaces.RegisteringCtrs;

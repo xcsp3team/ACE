@@ -16,7 +16,6 @@ import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import interfaces.TagSymmetric;
 import problem.Problem;
-import utility.Kit;
 import variables.Variable;
 
 public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilteringCompleteAtEachCall, TagSymmetric, TagGACGuaranteed {
@@ -76,7 +75,7 @@ public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilter
 		public boolean runPropagator(Variable dummy) {
 			if (entailed)
 				return true;
-			Kit.control(pb.solver.depth() == 0);
+			control(pb.solver.depth() == 0);
 			if (x.dom.removeValuesGT(limit) == false)
 				return false;
 			entailed = true;
@@ -100,7 +99,7 @@ public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilter
 		public boolean runPropagator(Variable dummy) {
 			if (entailed)
 				return true;
-			Kit.control(pb.solver.depth() == 0);
+			control(pb.solver.depth() == 0);
 			if (x.dom.removeValuesLT(limit) == false)
 				return false;
 			entailed = true;

@@ -25,7 +25,6 @@ import constraints.hard.extension.structures.MDD;
 import constraints.hard.extension.structures.MDDNode;
 import interfaces.TagPositive;
 import problem.Problem;
-import utility.Kit;
 import utility.sets.SetSparseReversible;
 import variables.Variable;
 import variables.domains.Domain;
@@ -45,7 +44,6 @@ public final class CtrExtensionMDD extends CtrExtensionGlobal implements TagPosi
 			this.set = new SetSparseReversible(nNodes, false, pb.variables.length + 1);
 		else
 			this.falseNodes = new int[nNodes];
-
 		this.ac = Variable.litterals(scp).booleanArray();
 		this.cnts = new int[scp.length];
 	}
@@ -84,7 +82,7 @@ public final class CtrExtensionMDD extends CtrExtensionGlobal implements TagPosi
 
 	public CtrExtensionMDD(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		Kit.control(scp.length >= 1);
+		control(scp.length >= 1);
 	}
 
 	public CtrExtensionMDD(Problem pb, Variable[] scp, int[][] tuples) {
@@ -104,16 +102,14 @@ public final class CtrExtensionMDD extends CtrExtensionGlobal implements TagPosi
 		extStructure = new MDD(this, Stream.of(transitions).map(t -> new Object[] { t.firstState, t.symbol, t.secondState }).toArray(Object[][]::new));
 	}
 
-	public CtrExtensionMDD(Problem problem, Variable[] scope, Automaton automata) {
+	public CtrExtensionMDD(Problem problem, Variable[] scope, Automaton automaton) {
 		this(problem, scope);
-		extStructure = new MDD(this, automata);
+		extStructure = new MDD(this, automaton);
 	}
 
 	public CtrExtensionMDD(Problem problem, Variable[] scope, int[] coeffs, Object limits) {
 		this(problem, scope);
-		System.out.println("before mdd");
 		extStructure = new MDD(this, coeffs, limits);
-		System.out.println("after mdd");
 	}
 
 	@Override

@@ -13,7 +13,6 @@ import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import interfaces.TagSymmetric;
 import problem.Problem;
-import utility.Kit;
 import variables.Variable;
 import variables.domains.Domain;
 
@@ -32,7 +31,7 @@ public class NotAllEqual extends CtrGlobal implements TagSymmetric, TagGACGuaran
 
 	public NotAllEqual(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		Kit.control(scp.length > 2);
+		control(scp.length > 2);
 		defineKey();
 	}
 

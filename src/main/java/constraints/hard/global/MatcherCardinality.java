@@ -3,6 +3,7 @@ package constraints.hard.global;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import constraints.hard.global.Cardinality.CardinalityConstant;
 import utility.Kit;
 import utility.sets.SetSparse;
 import variables.Variable;

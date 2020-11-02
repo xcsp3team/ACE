@@ -70,8 +70,8 @@ public abstract class SumWeighted extends SumAbstract {
 		super(pb, scp, limit);
 		this.coeffs = coeffs;
 		defineKey(Kit.join(coeffs), limit);
-		Kit.control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])));
-		Kit.control(minComputableObjectiveValue() <= maxComputableObjectiveValue()); // Important: we check this way that no overflow is possible
+		control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])));
+		control(minComputableObjectiveValue() <= maxComputableObjectiveValue()); // Important: we check this way that no overflow is possible
 	}
 
 	@Override
@@ -294,7 +294,7 @@ public abstract class SumWeighted extends SumAbstract {
 
 		public SumWeightedNE(Problem pb, Variable[] scp, int[] coeffs, long limit) {
 			super(pb, scp, coeffs, limit);
-			Kit.control(scp.length >= 2 && !Arrays.stream(scp).anyMatch(x -> x.dom.size() == 1));
+			control(scp.length >= 2 && !Arrays.stream(scp).anyMatch(x -> x.dom.size() == 1));
 			this.sentinel1 = scp[0];
 			this.sentinel2 = scp[scp.length - 1];
 		}

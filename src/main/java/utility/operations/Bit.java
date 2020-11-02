@@ -133,9 +133,37 @@ public final class Bit {
 		return -1;
 	}
 
+	public static boolean nonNullIntersection2(long[] t1, long[] t2, int j) {
+		if (t1.length != t2.length) { // mask compression mode used for t2
+			if (t2[1] == 0L) {
+				for (int k = 2; k < t2.length; k += 2)
+					if (t2[k] == j)
+						return (t1[j] & t2[k + 1]) != 0L;
+					else if (t2[k] > j)
+						break;
+			} else {
+				for (int k = t2.length - 2; k >= 2; k -= 2)
+					if (t2[k] == j) {
+						return (t1[j] & t2[k + 1]) != 0L;
+					} else if (t2[k] < j)
+						break;
+			}
+			return (t1[j] & t2[0]) != 0L;
+		}
+		return (t1[j] & t2[j]) != 0L;
+	}
+
+	// public static void or(long[] inout, long[] in, SetDense dset) {
+	// int[] dense = dset.dense;
+	// for (int i = dset.limit; i >= 0; i--) {
+	// int j = dense[i];
+	// inout[j] |= in[j];
+	// }
+	// }
+
 	public static void or2(long[] inout, long[] in, SetDense dset) {
 		int[] dense = dset.dense;
-		if (inout.length != in.length) { // mask compression mode for in
+		if (inout.length != in.length) { // mask compression mode used for 'in'
 			for (int i = dset.limit; i >= 0; i--) {
 				int j = dense[i];
 				boolean found = false;
@@ -165,9 +193,17 @@ public final class Bit {
 		}
 	}
 
+	// public static void orInverse(long[] inout, long[] in, SetDense dset) {
+	// int[] dense = dset.dense;
+	// for (int i = dset.limit; i >= 0; i--) {
+	// int j = dense[i];
+	// inout[j] |= ~in[j];
+	// }
+	// }
+
 	public static void orInverse2(long[] inout, long[] in, SetDense dset) {
 		int[] dense = dset.dense;
-		if (inout.length != in.length) { // mask compression mode for in
+		if (inout.length != in.length) { // mask compression mode used for in
 			for (int i = dset.limit; i >= 0; i--) {
 				int j = dense[i];
 				boolean found = false;
@@ -197,29 +233,27 @@ public final class Bit {
 		}
 	}
 
-	public static boolean nonNullIntersection2(long[] t1, long[] t2, int j) {
-		if (t1.length != t2.length) { // mask compression mode for t2
-			if (t2[1] == 0L) {
-				for (int k = 2; k < t2.length; k += 2)
-					if (t2[k] == j)
-						return (t1[j] & t2[k + 1]) != 0L;
-					else if (t2[k] > j)
-						break;
-			} else {
-				for (int k = t2.length - 2; k >= 2; k -= 2)
-					if (t2[k] == j) {
-						return (t1[j] & t2[k + 1]) != 0L;
-					} else if (t2[k] < j)
-						break;
-			}
-			return (t1[j] & t2[0]) != 0L;
+	public static void and(long[] inout, long[] in, SetDense dset) {
+		int[] dense = dset.dense;
+		for (int i = dset.limit; i >= 0; i--) {
+			int j = dense[i];
+			inout[j] &= in[j];
 		}
-		return (t1[j] & t2[j]) != 0L;
 	}
+
+	// public static int firstNonNullWord(long[] t1, long[] t2, SetDense dset) {
+	// int[] dense = dset.dense;
+	// for (int i = dset.limit; i >= 0; i--) {
+	// int j = dense[i];
+	// if ((t1[j] & t2[j]) != 0L)
+	// return j;
+	// }
+	// return -1;
+	// }
 
 	public static int firstNonNullWord2(long[] t1, long[] t2, SetDense dset) {
 		int[] dense = dset.dense;
-		if (t1.length != t2.length) { // mask compression mode for t2
+		if (t1.length != t2.length) { // mask compression mode used for t2
 			for (int i = dset.limit; i >= 0; i--) {
 				int j = dense[i];
 				boolean found = false;
@@ -253,42 +287,6 @@ public final class Bit {
 			}
 			return -1;
 		}
-	}
-
-	public static void or(long[] inout, long[] in, SetDense dset) {
-		int[] dense = dset.dense;
-		for (int i = dset.limit; i >= 0; i--) {
-			int j = dense[i];
-			inout[j] |= in[j];
-		}
-	}
-
-	public static void orInverse(long[] inout, long[] in, SetDense dset) {
-		int[] dense = dset.dense;
-		for (int i = dset.limit; i >= 0; i--) {
-			int j = dense[i];
-			inout[j] |= ~in[j];
-		}
-	}
-
-	public static void and(long[] inout, long[] in, SetDense dset) {
-		int[] dense = dset.dense;
-		for (int i = dset.limit; i >= 0; i--) {
-			int j = dense[i];
-			inout[j] &= in[j];
-		}
-	}
-
-	public static int firstNonNullWord(long[] t1, long[] t2, SetDense dset) {
-		int[] dense = dset.dense;
-		for (int i = dset.limit; i >= 0; i--) {
-			int j = dense[i];
-			if ((t1[j] & t2[j]) != 0L) {
-				// System.out.println(dset.limit() - i);
-				return j;
-			}
-		}
-		return -1;
 	}
 
 	public static int firstErasingWord(long[] t1, long[] t2, SetDense dset) {
