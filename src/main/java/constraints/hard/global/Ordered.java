@@ -34,7 +34,7 @@ public abstract class Ordered extends CtrGlobal implements TagUnsymmetric, TagGA
 			return new OrderedLE(pb, x, lengths);
 		case GE:
 			return new OrderedGE(pb, x, lengths);
-		default: // Gt
+		default: // GT
 			return new OrderedGT(pb, x, lengths);
 		}
 	}

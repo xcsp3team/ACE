@@ -33,12 +33,17 @@ import heuristics.values.HeuristicValuesDirect.First;
 import heuristics.variables.dynamic.HeuristicVariablesConflictBased;
 import interfaces.ObserverBacktracking.ObserverBacktrackingUnsystematic;
 import problem.Problem;
+import problem.Symbolic;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;
 import utility.Reflector;
 import variables.domains.Domain;
+import variables.domains.DomainBinary;
 import variables.domains.DomainHuge;
+import variables.domains.DomainHugeInfinite;
+import variables.domains.DomainInteger.DomainRange;
 import variables.domains.DomainInteger.DomainSymbols;
+import variables.domains.DomainInteger.DomainValues;
 
 /**
  * This class gives the description of a variable. <br>
@@ -48,6 +53,59 @@ import variables.domains.DomainInteger.DomainSymbols;
  * which value must be tried first. A variable can occur in different constraints of the problem to which it is attached.
  */
 public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic, Comparable<Variable> {
+
+	/**********************************************************************************************
+	 * Subclasses
+	 *********************************************************************************************/
+
+	public static class VariableInteger extends Variable implements IVar.Var {
+
+		/**
+		 * Builds a variable with a domain composed of all specified integer values. A range can be specified by giving an array of values composed of
+		 * three int, the last one being the special value Domain.TAG_RANGE
+		 */
+		public VariableInteger(Problem problem, String name, int[] values) {
+			super(problem, name);
+			if (values.length == 1)
+				this.dom = new DomainRange(this, values[0], values[0]);
+			else if (values.length == 2)
+				this.dom = new DomainBinary(this, values[0], values[1]);
+			else if (values.length == 3 && values[2] == Domain.TAG_RANGE)
+				this.dom = new DomainRange(this, values[0], values[1]);
+			else
+				this.dom = new DomainValues(this, values);
+		}
+
+		public VariableInteger(Problem problem, String name, int min, int max) {
+			super(problem, name);
+			if (min == Constants.MINUS_INFINITY_INT && max == Constants.PLUS_INFINITY_INT)
+				this.dom = new DomainHugeInfinite(this, min, max);
+			// else if (max - min > 20000)
+			// this.dom = new DomainHugeBounded(this, min, max);
+			else
+				this.dom = new DomainRange(this, min, max);
+		}
+
+		@Override
+		public Object allValues() {
+			return dom.allValues();
+		}
+
+	}
+
+	public static class VariableSymbolic extends Variable implements IVar.VarSymbolic {
+
+		/**
+		 * Builds a variable with a domain composed of all specified symbolic values.
+		 */
+		public VariableSymbolic(Problem problem, String name, String[] symbols) {
+			super(problem, name);
+			if (problem.symbolic == null)
+				problem.symbolic = new Symbolic();
+			int[] values = problem.symbolic.manageSymbols(symbols); // values associated with symbols
+			this.dom = new DomainSymbols(this, values, symbols);
+		}
+	}
 
 	/**********************************************************************************************
 	 * Interfaces

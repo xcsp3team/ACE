@@ -25,7 +25,7 @@ import org.xcsp.modeler.api.ProblemAPI;
 import org.xcsp.modeler.entities.CtrEntities.CtrEntity;
 
 import utility.Kit;
-import variables.VariableInteger;
+import variables.Variable.VariableInteger;
 
 public class FappCSP implements ProblemAPI {
 

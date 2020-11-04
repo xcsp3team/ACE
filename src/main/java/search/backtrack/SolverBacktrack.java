@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -38,16 +37,14 @@ import interfaces.ObserverRuns;
 import interfaces.Optimizable;
 import learning.LearnerNogoods;
 import learning.LearnerStates;
-import propagation.order1.AC;
+import learning.NogoodMinimizer;
 import propagation.order1.PropagationForward;
 import search.Solver;
 import search.statistics.Statistics.StatisticsBacktrack;
 import utility.Enums.EBranching;
 import utility.Enums.EStopping;
 import utility.Kit;
-import utility.sets.SetDense;
 import variables.Variable;
-import variables.domains.Domain;
 import variables.domains.DomainHuge;
 
 public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBacktrackingSystematic {
@@ -366,6 +363,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	public int minDepth, maxDepth;
 
+	public NogoodMinimizer nogoodMinimizer;
+
 	@Override
 	public void reset(boolean preserveWeightedDegrees) {
 		super.reset(preserveWeightedDegrees);
@@ -409,7 +408,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		this.runProgressSaver = resolution.cp.settingValh.runProgressSaving ? new RunProgressSaver() : null;
 		this.warmStarter = resolution.cp.settingValh.warmStart.length() > 0 ? new WarmStarter(resolution.cp.settingValh.warmStart) : null;
 
-		this.minimalNogoodExtractor = new MinimalNogoodExtractor();
+		this.nogoodMinimizer = new NogoodMinimizer(this);
 	}
 
 	@Override
@@ -420,7 +419,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	@Override
 	public void assign(Variable x, int a) {
 		assert !x.isAssigned();
-		reduceWithUniversalValues();
+
 		stats.nAssignments++;
 		futVars.assign(x);
 		x.doAssignment(a);
@@ -540,13 +539,11 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			}
 			if (futVars.size() == 0) {
 				solManager.handleNewSolutionAndPossiblyOptimizeIt();
-				CtrGlobal objectiveToCheck = pb.settings.framework == COP && !rs.cp.settingRestarts.restartAfterSolution ? (CtrGlobal) pb.optimizer.ctr
-						: null;
+				CtrGlobal objectiveToCheck = pb.settings.framework == COP && !rs.cp.settingRestarts.restartAfterSolution ? (CtrGlobal) pb.optimizer.ctr : null;
 				if (pb.settings.framework == COP && !rs.cp.settingRestarts.restartAfterSolution) {
 					// first, we backtrack to the level where a value for a variable in the scope of the objective was removed for the last time
 					objectiveToCheck = (CtrGlobal) pb.optimizer.ctr;
-					((Optimizable) objectiveToCheck)
-							.setLimit(((Optimizable) objectiveToCheck).objectiveValue() + (pb.optimizer.minimization ? -1 : 1));
+					((Optimizable) objectiveToCheck).setLimit(((Optimizable) objectiveToCheck).objectiveValue() + (pb.optimizer.minimization ? -1 : 1));
 					int backtrackLevel = -1;
 					for (int i = 0; i < objectiveToCheck.scp.length; i++) {
 						int x = objectiveToCheck.futvars.dense[i]; // variables (of the objective) from the last assigned to the first assigned
@@ -605,385 +602,13 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 		dr.reset();
 		// assert pb.stuff.nPurgedValues > 0 || Variable.areDomainsFull(pb.variables) : pb.stuff.nPurgedValues + " " + pb.nbValuesRemoved;
-		// // nPurged not updated
-		// see java -ea abscon.Resolution problems.patt.QuasiGroup -data=6 -model=v5 -ev -cm=fals
+		// nPurged not updated; see java -ea abscon.Resolution problems.patt.QuasiGroup -data=6 -model=v5 -ev -cm=false
 		assert Stream.of(pb.variables).allMatch(x -> x.dom.controlStructures());
 	}
 
-	static Function<Integer, Integer> ff = v -> v - 10000;
-
 	@Override
 	public final void solve() {
-		// for (int[] t : new int[][] { { 10, 2 }, { -10, 2 }, { -10, -2 }, { 10, -2 }, { 12, 5 }, { -12, 5 }, { 12, -5 }, { -12, -5 }, { -5, 7 } })
-		// System.out.println(t[0] / t[1]);
-		// for (int[] t : new int[][] { { 5, 2 }, { 3, -5 }, { 3, 10 }, { -3, -5 }, { -3, 10 } })
-		// System.out.println(CtrPrimitiveBinaryMul.MulGE2.checkLimit(t[0], t[1], pb.variables[0].dom));
-
-		// rs.stopwatch.start();
-		// System.out.println("before");
-		// for (int i = 0; i < 100000000; i++)
-		// pb.variables[0].dom.removeValuesTest(pb.variables[1].dom, ff);
-		// System.out.println("after " + rs.stopwatch.getCpuTime() + " " + rs.stopwatch.getWckTime());
-		//
-		// rs.stopwatch.start();
-		// System.out.println("before");
-		// for (int i = 0; i < 100000000; i++)
-		// pb.variables[0].dom.removeValuesTest(pb.variables[1].dom, 10000);
-		// System.out.println("after " + rs.stopwatch.getCpuTime() + " " + rs.stopwatch.getWckTime());
-
 		super.solve();
 		restoreProblem();
 	}
-
-	// public final int mark() {
-	// assert observerCtrsSoft.stack.length == 0;
-	// setDomainsMarks();
-	// for (ObserverBacktrackingSystematic obs : observersBacktrackingSystematic)
-	// obs.setMark();
-	// return observerVars.top;
-	// }
-	//
-	// public final void unmark(int top) {
-	// assert observerCtrsSoft.stack.length == 0;
-	// for (ObserverBacktrackingSystematic obs : observersBacktrackingSystematic)
-	// obs.restoreAtMark();
-	// restoreDomainsAtMarks();
-	// observerVars.top = top;
-	// }
-
-	/**********************************************************************************************
-	 * Start of experimental section
-	 *********************************************************************************************/
-
-	// experimental
-	private void reduceWithUniversalValues() {
-		boolean test = false;
-		if (test)
-			for (Variable x : pb.variables) {
-				Domain dom = x.dom;
-				if (dom.size() == 1)
-					continue;
-				for (int a = dom.first(); a != -1; a = dom.next(a)) {
-					boolean universal = true;
-					for (Constraint ctr : x.ctrs) {
-						boolean found = false;
-						for (Variable y : ctr.scp) {
-							if (y == x)
-								continue;
-							if (!y.dom.isPresent(a))
-								found = true;
-						}
-						if (!found) {
-							universal = false;
-							break;
-						}
-					}
-					if (universal) {
-						x.dom.reduceTo(a);
-					}
-				}
-			}
-	}
-
-	public int doGreedy(int[] vids, int[] idxs, int limit) {
-		int i = 0, max = limit;
-		Variable[] variables = pb.variables;
-		for (; i <= max; i++) {
-			if (!variables[vids[i]].dom.isPresent(idxs[i]))
-				break;
-			assign(variables[vids[i]], idxs[i]);
-			if (!propagation.runAfterAssignment(variables[vids[i]]))
-				break;
-		}
-		if (i > limit)
-			i--;
-		backtrackToTheRoot();
-		// restoreProblem();
-		return i; // limit;
-	}
-
-	public MinimalNogoodExtractor minimalNogoodExtractor;
-
-	public class MinimalNogoodExtractor {
-
-		private boolean addPositiveTransitionDecisionTo(int positiveDecision, int[] tmp, int nbFoundTransitionDecisions) {
-			tmp[nbFoundTransitionDecisions] = positiveDecision;
-			Variable var = dr.varIn(positiveDecision);
-			int idx = dr.idxIn(positiveDecision);
-			if (!var.dom.isPresent(idx))
-				return false;
-			assign(var, idx);
-			return propagation.runAfterAssignment(var);
-		}
-
-		private int searchPositiveTransitionDecision(int right, int[] decs, int limitDepth) {
-			boolean consistent = true;
-			int left = 0;
-			for (; consistent && left < right; left++) {
-				Variable var = dr.varIn(decs[left]);
-				int idx = dr.idxIn(decs[left]);
-				if (!var.dom.isPresent(idx)) {
-					consistent = false;
-				} else {
-					assign(var, idx);
-					consistent = propagation.runAfterAssignment(var);
-				}
-				assert !consistent || !(propagation instanceof AC) || ((AC) propagation).controlArcConsistency();
-			}
-			if (consistent)
-				return -1;
-			while (futVars.size() > 0 && depth() != limitDepth - 1)
-				backtrack();
-			// for (Variable var = futVars.lastPast(); var != null; var = futVars.prevPast(var))
-			// if (getDepth() == limitDepth - 1)
-			// break;
-			// else
-			// backtrack(var);
-			return left - 1;
-		}
-
-		public int[] extractMinimalNogoodFrom(int[] decs) {
-			int[] tmp = new int[decs.length];
-			int positionOfLastFoundTransitionDecision = decs.length - 1; // right excluded
-			int nbFoundTransitionDecisions = 0;
-			boolean backgroundConsistent = addPositiveTransitionDecisionTo(decs[positionOfLastFoundTransitionDecision], tmp, nbFoundTransitionDecisions++);
-			if (!backgroundConsistent) {
-				Variable x = futVars.lastPast();
-				int a = x.dom.unique();
-				backtrack(x);
-				x.dom.removeElementary(a);
-				// Kit.prn("Nogood size 1");
-				backgroundConsistent = x.dom.size() > 0 && propagation.runAfterRefutation(x);
-				if (!backgroundConsistent) {
-					stoppingType = EStopping.FULL_EXPLORATION;
-					return new int[0];
-				}
-				return null;
-			}
-			while (backgroundConsistent && 0 < positionOfLastFoundTransitionDecision && nbFoundTransitionDecisions < rs.cp.settingLearning.nogoodArityLimit) {
-				if (positionOfLastFoundTransitionDecision == 1) {
-					tmp[nbFoundTransitionDecisions++] = decs[0];
-					break;
-				}
-				positionOfLastFoundTransitionDecision = searchPositiveTransitionDecision(positionOfLastFoundTransitionDecision, decs, depth());
-				if (positionOfLastFoundTransitionDecision != -1)
-					backgroundConsistent = addPositiveTransitionDecisionTo(decs[positionOfLastFoundTransitionDecision], tmp, nbFoundTransitionDecisions++);
-			}
-			backtrackToTheRoot();
-
-			// if (consistent && nbFoundTransitionDecisions >=
-			// NogoodManager.NOGOOD_SIZE_LIMIT || (right == -1 && nbDecisions >=
-			// NogoodManager.NOGOOD_SIZE_LIMIT))
-			// return null;
-
-			if (positionOfLastFoundTransitionDecision == -1) {
-				int[] t = new int[decs.length];
-				for (int i = 0; i < t.length; i++)
-					t[i] = -decs[i];
-				return t;
-			} else {
-				// Kit.prn("Nogood reduction from " + decisions.length + " to "
-				// + nbFoundTransitionDecisions);
-				int[] t = new int[nbFoundTransitionDecisions];
-				for (int i = 0; i < t.length; i++)
-					t[i] = -tmp[i];
-				return t;
-			}
-		}
-
-		// ****************************************/
-
-		private boolean addTransitionDecisionTo(int indexOfLastTransitionDecision, int[] tmp, int nbFoundTransitionDecisions, int[] decs, int nbDecs) {
-			tmp[nbFoundTransitionDecisions] = decs[indexOfLastTransitionDecision];
-			int limit = Math.max(0, nbFoundTransitionDecisions - 1);
-			while (tmp[limit] < 0)
-				limit--;
-			for (int i = limit; i < nbFoundTransitionDecisions; i++) {
-				Variable var = dr.varIn(tmp[i]);
-				int idx = dr.idxIn(tmp[i]);
-				if (tmp[i] > 0) {
-					assert var.dom.isPresent(idx);
-					assign(var, idx);
-					boolean consistent = propagation.runAfterAssignment(var);
-					assert consistent;
-				} else {
-					assert var.dom.size() > 1 || !var.dom.isPresent(idx);
-					if (var.dom.isPresent(idx)) {
-						var.dom.removeElementary(idx);
-						boolean consistent = var.dom.size() > 0 && propagation.runAfterRefutation(var);
-						assert consistent;
-					}
-				}
-			}
-			Variable var = dr.varIn(decs[indexOfLastTransitionDecision]);
-			int idx = dr.idxIn(decs[indexOfLastTransitionDecision]);
-			boolean consistent = true;
-			if (decs[indexOfLastTransitionDecision] > 0) {
-				if (!var.dom.isPresent(idx))
-					return false;
-				assign(var, idx);
-				consistent = propagation.runAfterAssignment(var);
-			} else {
-				if (var.dom.size() == 1 && var.dom.isPresent(idx))
-					return false;
-				if (var.dom.isPresent(idx)) {
-					var.dom.removeElementary(idx);
-					consistent = var.dom.size() > 0 && propagation.runAfterRefutation(var);
-				}
-			}
-			return consistent;
-		}
-
-		/**
-		 * Returns the index in decisions of the transition decision, or -1 if it is not found. It is possible since we just use the original
-		 * constraints of the problem and not the noggods recorded so far (it ssem rather difficult).
-		 */
-		private int searchTransitionDecision(int left, int right, int[] decs, int nbDecs, int limitDepth) {
-			boolean consistent = true;
-			for (; left < right && consistent; left++) {
-				Variable x = dr.varIn(decs[left]);
-				int a = dr.idxIn(decs[left]);
-				if (decs[left] > 0) {
-					if (!x.dom.isPresent(a)) {
-						consistent = false;
-					} else {
-						assign(x, a);
-						consistent = propagation.runAfterAssignment(x);
-					}
-				} else {
-					if (x.dom.size() == 1 && x.dom.isPresent(a))
-						consistent = false;
-					else if (x.dom.isPresent(a)) {
-						x.dom.removeElementary(a);
-						consistent = x.dom.size() > 0 && propagation.runAfterRefutation(x);
-					}
-				}
-				assert !consistent || !(propagation instanceof AC) || ((AC) propagation).controlArcConsistency();
-			}
-			if (left == nbDecs - 1 && consistent)
-				return -1;
-			assert !consistent && (left - 1) < right : "cons = " + consistent + " lastPositive = " + (left - 1);
-			while (futVars.size() > 0 && depth() != limitDepth - 1)
-				backtrack();
-			// for (Variable y = futVars.lastPast(); y != null; y = futVars.prevPast(y))
-			// if (getDepth() == limitDepth - 1)
-			// break;
-			// else
-			// backtrack(y);
-			return left - 1;
-		}
-
-		public int[] extractMinimalNogoodFrom(SolverBacktrack solver, int[] decs, int nbDecs) {
-			propagation.queue.clear();
-			Variable[] variables = pb.variables;
-			// copy of the original problem at depth 0 : it means that all
-			// negative decisions that occur before the first positive one have
-			// been taken into account
-			for (int i = 0; i < variables.length; i++) {
-				Domain dom = solver.pb.variables[i].dom;
-				for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a))
-					if (dom.isRemovedAtLevel(a, 0))
-						variables[i].dom.remove(a, 0);
-			}
-			int[] tmp = new int[nbDecs];
-			int nbFoundTransitionDecisions = 0;
-			boolean consistent = addTransitionDecisionTo(nbDecs - 1, tmp, nbFoundTransitionDecisions++, decs, nbDecs);
-			int initialLeftOffset = 0;
-			while (decs[initialLeftOffset] < 0)
-				initialLeftOffset++;
-			int right = nbDecs - 1; // right excluded
-			while (consistent && nbFoundTransitionDecisions < rs.cp.settingLearning.nogoodArityLimit && initialLeftOffset < right) {
-				assert decs[initialLeftOffset] > 0;
-				int IndexOfTransitionDecision = searchTransitionDecision(initialLeftOffset, right, decs, nbDecs, depth());
-				if (IndexOfTransitionDecision == -1)
-					right = -1;
-				else {
-					right = IndexOfTransitionDecision;
-					consistent = addTransitionDecisionTo(IndexOfTransitionDecision, tmp, nbFoundTransitionDecisions++, decs, nbDecs);
-				}
-			}
-			restoreProblem();
-			if (consistent && nbFoundTransitionDecisions >= rs.cp.settingLearning.nogoodArityLimit
-					|| (right == -1 && nbDecs >= rs.cp.settingLearning.nogoodArityLimit))
-				return null;
-			int[] nogood = null;
-			if (right == -1) {
-				int nbPositiveDecisions = 0;
-				for (int i = 0; i < nbDecs; i++)
-					if (decs[i] > 0)
-						nbPositiveDecisions++;
-				nogood = new int[nbPositiveDecisions + 2];
-				int cnt = 2;
-				for (int i = 0; i < nbDecs; i++)
-					if (decs[i] > 0)
-						nogood[cnt++] = -decs[i];
-			} else {
-				nogood = new int[nbFoundTransitionDecisions + 2];
-				for (int i = 2; i < nogood.length; i++)
-					nogood[i] = -tmp[i - 2];
-			}
-			assert controlMinimalNogood(solver, nogood);
-			return nogood;
-		}
-
-		public int[] extractMinimalNogoodFrom(SolverBacktrack solver, SetDense denseSet) {
-			return extractMinimalNogoodFrom(solver, denseSet.dense, denseSet.size());
-		}
-
-		public boolean controlMinimalNogood(SolverBacktrack solver, int[] t) {
-			if (t == null)
-				return true;
-			propagation.queue.clear();
-			// copy of the original problem at depth 0 : it means that all
-			// negative decisions that occur befor the first positive one have
-			// been taken into account
-			for (int i = 0; i < pb.variables.length; i++) {
-				Domain dom = solver.pb.variables[i].dom, auxiliaryDom = pb.variables[i].dom;
-				for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a))
-					if (dom.isRemovedAtLevel(a, 0))
-						auxiliaryDom.remove(a, 0);
-			}
-			boolean notMinimal = false;
-			for (int i = 2; !notMinimal && i < t.length; i++) {
-				int decision = -t[i];
-				Variable var = dr.varIn(decision);
-				int idx = dr.idxIn(decision);
-				if (decision > 0) {
-					if (!var.dom.isPresent(idx)) {
-						if (i != t.length - 1) {
-							Kit.log.info("nogood not minimal 1 " + var + " " + idx);
-							notMinimal = true;
-						}
-					} else {
-						assign(var, idx);
-						boolean consistent = propagation.runAfterAssignment(var);
-						if (!consistent && i != t.length - 1) {
-							Kit.log.info("nogood not minimal 2 " + var + " " + idx);
-							notMinimal = true;
-						}
-					}
-				} else {
-					if (var.dom.size() == 1 && var.dom.isPresent(idx)) {
-						if (i != t.length - 1) {
-							Kit.log.info("nogood not minimal 3 " + var + " " + idx);
-							notMinimal = true;
-						}
-					} else if (var.dom.isPresent(idx)) {
-						var.dom.removeElementary(idx);
-						boolean consistent = var.dom.size() > 0 && propagation.runAfterRefutation(var);
-						if (!consistent && i != t.length - 1) {
-							Kit.log.info("nogood not minimal 4 " + var + " " + idx);
-							notMinimal = true;
-						}
-					}
-				}
-			}
-			restoreProblem();
-			return !notMinimal;
-		}
-	}
-
-	/**********************************************************************************************
-	 * End of experimental section
-	 *********************************************************************************************/
 }

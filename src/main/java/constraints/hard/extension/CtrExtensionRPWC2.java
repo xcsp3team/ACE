@@ -25,8 +25,6 @@ public final class CtrExtensionRPWC2 extends CtrExtensionRPWC {
 			this.lastSizesStack = new int[pb.variables.length + 1][scp.length];
 			Arrays.fill(lastSizesStack[0], -2);
 		}
-		this.ac = Variable.litterals(scp).booleanArray();
-		this.cnts = new int[scp.length];
 	}
 
 	@Override
@@ -61,18 +59,7 @@ public final class CtrExtensionRPWC2 extends CtrExtensionRPWC {
 
 	public CtrExtensionRPWC2(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		decremental = pb.rs.cp.settingExtension.decremental;
-	}
-
-	private void initializeRestorationStructuresBeforeFiltering() {
-		if (decremental) {
-			int depth = pb.solver.depth();
-			assert depth >= lastDepth && lastDepth >= 0;
-			for (int i = lastDepth + 1; i <= depth; i++)
-				System.arraycopy(lastSizesStack[lastDepth], 0, lastSizesStack[i], 0, scp.length);
-			lastSizes = lastSizesStack[depth];
-			lastDepth = depth;
-		}
+		this.decremental = pb.rs.cp.settingExtension.decremental;
 	}
 
 	protected void manageLastPastVariable() {
@@ -90,7 +77,14 @@ public final class CtrExtensionRPWC2 extends CtrExtensionRPWC {
 
 	@Override
 	protected final void beforeFiltering() {
-		initializeRestorationStructuresBeforeFiltering();
+		if (decremental) {
+			int depth = pb.solver.depth();
+			assert depth >= lastDepth && lastDepth >= 0;
+			for (int i = lastDepth + 1; i <= depth; i++)
+				System.arraycopy(lastSizesStack[lastDepth], 0, lastSizesStack[i], 0, scp.length);
+			lastSizes = lastSizesStack[depth];
+			lastDepth = depth;
+		}
 		sValSize = sSupSize = 0;
 		manageLastPastVariable();
 		for (int i = futvars.limit; i >= 0; i--) {

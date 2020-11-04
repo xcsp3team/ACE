@@ -40,7 +40,6 @@ public abstract class DomainInteger extends LinkedSetOrderedWithBits implements 
 		for (int a = first; a != -1; a = next(a))
 			if (!d.isPresent(a))
 				return false;
-		// System.out.println("ggg");
 		return true;
 	}
 

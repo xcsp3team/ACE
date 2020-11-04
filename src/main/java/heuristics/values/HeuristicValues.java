@@ -15,8 +15,6 @@ import java.util.stream.IntStream;
 import dashboard.ControlPanel.SettingValh;
 import heuristics.Heuristic;
 import interfaces.TagExperimental;
-import search.SolutionManager;
-import search.Solver;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;
 import utility.exceptions.UnreachableCodeException;
@@ -53,23 +51,22 @@ public abstract class HeuristicValues extends Heuristic {
 	/**
 	 * Returns the (index of the) preferred value in the domain of the variable.
 	 */
-	public abstract int identifyBestValueIndex();
+	protected abstract int identifyBestValueIndex();
 
 	public int bestIndex() {
-		SolutionManager solManager = x.pb.solver.solManager;
-		if (solManager.found == 0) {
+		SolverBacktrack solver = (SolverBacktrack) x.pb.solver;
+		if (solver.solManager.found == 0) {
 			if (settings.warmStart.length() > 0) {
-				int a = ((SolverBacktrack) x.pb.solver).warmStarter.valueOf(x);
+				int a = solver.warmStarter.valueOf(x);
 				if (a != -1 && dx.isPresent(a))
 					return a;
 			} else if (settings.runProgressSaving) {
-				int a = ((SolverBacktrack) x.pb.solver).runProgressSaver.valueOf(x);
+				int a = solver.runProgressSaver.valueOf(x);
 				if (a != -1 && dx.isPresent(a))
 					return a;
 			}
 		} else if (settings.solutionSaving) {
-			Solver solver = x.pb.solver;
-			if (solver.restarter.numRun % settings.solutionSavingGap != 0) { // every bestSolutionGap runs, we do not use bs
+			if (solver.restarter.numRun % settings.solutionSavingGap != 0) { // every k runs, we do not use solution saving
 				int a = solver.solManager.lastSolution[x.num];
 				if (dx.isPresent(a)) // && (!priorityVar || solver.rs.random.nextDouble() < 0.5))
 					return a;
@@ -96,11 +93,11 @@ public abstract class HeuristicValues extends Heuristic {
 			Map<Integer, Double> map = IntStream.range(0, dx.initSize()).filter(a -> dx.isPresent(a)).boxed()
 					.collect(Collectors.toMap(a -> a, a -> scoreOf(a) * scoreCoeff));
 			map = Kit.sort(map, (e1, e2) -> e1.getValue() > e2.getValue() ? -1 : e1.getValue() < e2.getValue() ? 1 : e1.getKey() - e2.getKey());
-			fixed = map.entrySet().stream().mapToInt(e -> e.getKey()).toArray();
+			this.fixed = map.entrySet().stream().mapToInt(e -> e.getKey()).toArray();
 		}
 
 		@Override
-		public final int identifyBestValueIndex() {
+		protected final int identifyBestValueIndex() {
 			assert dx.size() > 0 : "The domain is empty";
 			for (int a : fixed)
 				if (dx.isPresent(a))

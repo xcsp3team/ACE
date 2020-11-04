@@ -80,8 +80,8 @@ import problems.ProblemFile;
 import utility.Kit;
 import utility.exceptions.UnreachableCodeException;
 import variables.Variable;
-import variables.VariableInteger;
-import variables.VariableSymbolic;
+import variables.Variable.VariableInteger;
+import variables.Variable.VariableSymbolic;
 
 /**
  * This class corresponds to a problem loading instances in XCSP3 format.

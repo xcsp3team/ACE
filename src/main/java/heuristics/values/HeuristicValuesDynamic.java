@@ -26,16 +26,16 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	@Override
 	public int identifyBestValueIndex() {
 		assert dx.size() != 0 : "The domain is empty";
-		int bestIdx = dx.first();
-		double bestScore = scoreOf(bestIdx) * scoreCoeff;
-		for (int a = dx.next(bestIdx); a != -1; a = dx.next(a)) {
+		int best = dx.first();
+		double bestScore = scoreOf(best) * scoreCoeff;
+		for (int a = dx.next(best); a != -1; a = dx.next(a)) {
 			double score = scoreOf(a) * scoreCoeff;
 			if (score > bestScore) {
-				bestIdx = a;
+				best = a;
 				bestScore = score;
 			}
 		}
-		return bestIdx;
+		return best;
 	}
 
 	// ************************************************************************
@@ -60,29 +60,29 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 	public static final class Failures extends HeuristicValuesDynamic {
 
-		private int[] nbDecisions;
-		private int[] nbFailedDecisions;
+		private int[] nDecisions;
+		private int[] nFailedDecisions;
 		private long[] sumFailedDecisionsHeights; // for the moment, unused
 
 		public void updateWith(int a, int depth, boolean consistent) {
-			nbDecisions[a]++;
+			nDecisions[a]++;
 			if (!consistent) {
-				nbFailedDecisions[a]++;
+				nFailedDecisions[a]++;
 				sumFailedDecisionsHeights[a] += depth;
 			}
 		}
 
 		public Failures(Variable x, boolean antiHeuristic) {
 			super(x, antiHeuristic);
-			this.nbDecisions = Kit.repeat(1, dx.initSize()); // we use 1 for avoiding divisions by 0
-			this.nbFailedDecisions = new int[dx.initSize()];
+			this.nDecisions = Kit.repeat(1, dx.initSize()); // we use 1 for avoiding divisions by 0
+			this.nFailedDecisions = new int[dx.initSize()];
 			this.sumFailedDecisionsHeights = new long[dx.initSize()];
 		}
 
 		@Override
 		public double scoreOf(int a) {
 			// combining with sumFailedDecisionsHeights ?
-			return nbFailedDecisions[a] / (double) nbDecisions[a];
+			return nFailedDecisions[a] / (double) nDecisions[a];
 		}
 	}
 

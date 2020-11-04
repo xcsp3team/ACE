@@ -19,7 +19,7 @@ import constraints.Constraint;
 import utility.Kit;
 import utility.sets.SetSparse;
 import variables.Variable;
-import variables.VariableInteger;
+import variables.Variable.VariableInteger;
 
 public final class IdentificationAllDifferent {
 	private Problem pb;

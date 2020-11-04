@@ -332,7 +332,7 @@ public class LearnerNogoods {
 						for (int j = 0; j < nMetPositiveDecisions; j++)
 							currentNogood[j] = tmp[j];
 					currentNogood[currentNogood.length - 1] = -d;
-					int[] minimizedNogood = solver.minimalNogoodExtractor.extractMinimalNogoodFrom(currentNogood);
+					int[] minimizedNogood = solver.nogoodMinimizer.extractMinimalNogoodFrom(currentNogood);
 					if (minimizedNogood != null) {
 						if (minimizedNogood.length == 0) {
 							Kit.log.fine("Empty nogood => Inconistency");

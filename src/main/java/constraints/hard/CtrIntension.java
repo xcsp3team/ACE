@@ -26,8 +26,8 @@ import constraints.hard.intension.CtrEvaluationManager;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
-import variables.VariableInteger;
-import variables.VariableSymbolic;
+import variables.Variable.VariableInteger;
+import variables.Variable.VariableSymbolic;
 
 public final class CtrIntension extends Constraint implements ICtrIntension {
 

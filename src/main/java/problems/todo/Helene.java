@@ -25,7 +25,7 @@ import org.xcsp.common.IVar;
 import org.xcsp.modeler.api.ProblemAPI;
 
 import utility.Kit;
-import variables.VariableSymbolic;
+import variables.Variable.VariableSymbolic;
 
 public class Helene implements ProblemAPI {
 

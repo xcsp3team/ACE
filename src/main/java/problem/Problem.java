@@ -172,8 +172,8 @@ import utility.Kit;
 import utility.Reflector;
 import utility.exceptions.MissingImplementationException;
 import variables.Variable;
-import variables.VariableInteger;
-import variables.VariableSymbolic;
+import variables.Variable.VariableInteger;
+import variables.Variable.VariableSymbolic;
 import variables.domains.Domain;
 
 public class Problem extends ProblemIMP implements ObserverConstruction {

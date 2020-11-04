@@ -42,8 +42,8 @@ import propagation.structures.supporters.SupporterHard;
 import utility.Kit;
 import utility.Reflector;
 import variables.Variable;
-import variables.VariableInteger;
-import variables.VariableSymbolic;
+import variables.Variable.VariableInteger;
+import variables.Variable.VariableSymbolic;
 
 public abstract class CtrExtension extends Constraint implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, ICtrExtension {
 

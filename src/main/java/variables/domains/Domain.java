@@ -265,7 +265,8 @@ public interface Domain extends LinkedSet {
 		int depth = solver().depth();
 		assert !x.isAssigned() && isPresent(a) && lastRemovedLevel() <= depth : x + " " + x.isAssigned() + " " + isPresent(a) + " " + lastRemovedLevel() + " "
 				+ depth;
-		// log.info("removing " + x + "=" + toVal(a) + " (index " + a + ") by constraint " + solver().propagation.currFilteringCtr);
+		// log.info("removing " + x + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " by constraint " +
+		// solver().propagation.currFilteringCtr);
 
 		if (depth != lastRemovedLevel())
 			solver().pushVariable(x); // push must always be performed before domain reduction
