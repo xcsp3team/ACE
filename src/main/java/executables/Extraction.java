@@ -294,7 +294,7 @@ public class Extraction extends Resolution {
 			cores.add(core);
 			Kit.log.config("New Core " + (nCalls++) + " with #C=" + core.size() + ",#V=" + core.stream().collect(Collectors.toCollection(HashSet::new)).size()
 					+ " => { " + Kit.join(core) + " }");
-			Kit.log.config("in wck = " + (stopwatch.getWckTime() / 1000.0) + " and nRuns = " + nRuns);
+			Kit.log.config("in wck = " + (stopwatch.getWckTimeInSeconds()) + " and nRuns = " + nRuns);
 		}
 	}
 

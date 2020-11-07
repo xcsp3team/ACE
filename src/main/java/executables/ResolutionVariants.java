@@ -32,35 +32,33 @@ public final class ResolutionVariants {
 		List<String> list = new ArrayList<>();
 		Document variantsDocument = XMLManager.load(configurationVariantsFileName);
 
-		NodeList nodeList = variantsDocument.getElementsByTagName(ResolutionVariants.VARIANT);
+		NodeList nodeList = variantsDocument.getElementsByTagName(VARIANT);
 		for (int i = 0; i < nodeList.getLength(); i++) {
 			Element variantElement = (Element) nodeList.item(i);
 			Element variantParent = (Element) variantElement.getParentNode();
 			if (!variantsDocument.getDocumentElement().getTagName().equals(VARIANT_PARALLEL) && variantParent.getTagName().equals(VARIANT_PARALLEL))
 				continue;
 			Document variantDocument = XMLManager.load(configurationFileName);
-			String variantFileName = prefix
-					+ (variantParent.getTagName().equals(VARIANT_PARALLEL) ? variantParent.getAttribute(ResolutionVariants.NAME) + "_" : "")
-					+ variantElement.getAttribute(ResolutionVariants.NAME) + ".xml";
-			NodeList modificationList = variantElement.getElementsByTagName(ResolutionVariants.MODIFICATION);
+			String variantFileName = prefix + (variantParent.getTagName().equals(VARIANT_PARALLEL) ? variantParent.getAttribute(NAME) + "_" : "")
+					+ variantElement.getAttribute(NAME) + ".xml";
+			NodeList modificationList = variantElement.getElementsByTagName(MODIFICATION);
 			int nModifications = modificationList.getLength();
-			boolean iteration = nModifications > 0 && !((Element) modificationList.item(nModifications - 1)).getAttribute(ResolutionVariants.MIN).equals("");
+			boolean iteration = nModifications > 0 && !((Element) modificationList.item(nModifications - 1)).getAttribute(MIN).equals("");
 			int limit = nModifications - (iteration ? 1 : 0);
 			for (int j = 0; j < limit; j++) {
 				Element modificationElement = (Element) modificationList.item(j);
-				String path = modificationElement.getAttribute(ResolutionVariants.PATH);
-				String attributeName = modificationElement.getAttribute(ResolutionVariants.ATTRIBUTE);
-				String attributeValue = modificationElement.getAttribute(ResolutionVariants.VALUE);
+				String path = modificationElement.getAttribute(PATH);
+				String attributeName = modificationElement.getAttribute(ATTRIBUTE);
+				String attributeValue = modificationElement.getAttribute(VALUE);
 				XMLManager.modify(variantDocument, path, attributeName, attributeValue);
 			}
 			if (iteration) {
 				Element modification = (Element) modificationList.item(nModifications - 1);
-				String path = modification.getAttribute(ResolutionVariants.PATH);
+				String path = modification.getAttribute(PATH);
 				Kit.control(path.equals(SEED));
-				String attributeName = modification.getAttribute(ResolutionVariants.ATTRIBUTE);
-				int min = Integer.parseInt(modification.getAttribute(ResolutionVariants.MIN)),
-						max = Integer.parseInt(modification.getAttribute(ResolutionVariants.MAX)),
-						step = Integer.parseInt(modification.getAttribute(ResolutionVariants.STEP));
+				String attributeName = modification.getAttribute(ATTRIBUTE);
+				int min = Integer.parseInt(modification.getAttribute(MIN)), max = Integer.parseInt(modification.getAttribute(MAX)),
+						step = Integer.parseInt(modification.getAttribute(STEP));
 				String basis = variantFileName.substring(0, variantFileName.lastIndexOf(".xml"));
 				for (int cnt = min; cnt <= max; cnt += step) {
 					XMLManager.modify(variantDocument, path, attributeName, cnt + "");
@@ -81,7 +79,7 @@ public final class ResolutionVariants {
 				Document document = XMLManager.createNewDocument();
 				Element element = (Element) document.importNode(nodeList.item(i), true);
 				document.appendChild(element);
-				list.add(Utilities.save(document, prefix + element.getAttribute(ResolutionVariants.NAME) + ".xml"));
+				list.add(Utilities.save(document, prefix + element.getAttribute(NAME) + ".xml"));
 			}
 		}
 		return list.toArray(new String[list.size()]);
@@ -89,7 +87,7 @@ public final class ResolutionVariants {
 
 	public final static String[] loadVariantNames() {
 		if (Arguments.multiThreads) {
-			String prefix = XMLManager.getAttValueFor(Arguments.userSettingsFilename, "xml", "exportMode");
+			String prefix = XMLManager.attValueFor(Arguments.userSettingsFilename, "xml", "exportMode");
 			if (prefix.equals("NO"))
 				prefix = ".";
 			if (prefix != "")

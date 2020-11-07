@@ -126,14 +126,14 @@ public abstract class CtrExtension extends Constraint implements TagGACGuarantee
 		Set<Class<?>> classes = pb.rs.handlerClasses.map.get(CtrExtension.class);
 		if (presentStar) {
 			Kit.control(positive);
-			CtrExtension c = (CtrExtension) Reflector.buildObject2(CtrExtension.class.getSimpleName() + pb.rs.cp.settingExtension.positive, classes, pb, scp);
+			CtrExtension c = (CtrExtension) Reflector.buildObject(CtrExtension.class.getSimpleName() + pb.rs.cp.settingExtension.positive, classes, pb, scp);
 			Kit.control(c instanceof TagShort); // currently, STR2, STR2S, CT, CT2 and MDDSHORT
 			return c;
 		}
 		if (scp.length == 1 || scp.length == 2 && pb.rs.cp.settingExtension.validForBinary)
 			return new CtrExtensionV(pb, scp); // return new CtrExtensionSTR2(pb, scp);
 		String suffix = (positive ? pb.rs.cp.settingExtension.positive : pb.rs.cp.settingExtension.negative).toString();
-		return (CtrExtension) Reflector.buildObject2(CtrExtension.class.getSimpleName() + suffix, classes, pb, scp);
+		return (CtrExtension) Reflector.buildObject(CtrExtension.class.getSimpleName() + suffix, classes, pb, scp);
 	}
 
 	private static int[][] reverseTuples(Variable[] variables, int[][] tuples) {

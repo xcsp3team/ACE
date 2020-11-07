@@ -20,14 +20,14 @@ import problem.ProblemStuff.Repartitioner;
 import utility.Kit;
 import utility.Kit.Stopwatch;
 import utility.operations.CombinatorOfTwoInts;
-import utility.operations.mining.Miner;
-import utility.operations.mining.MinerApriori;
-import utility.operations.mining.MinerFPTree;
+import utility.operations.Miner;
+import utility.operations.Miner.MinerApriori;
+import utility.operations.Miner.MinerFPTree;
 import variables.Variable;
 
 /**
- * This class denote any constraint defined in extension. All supports (allowed tuples) or all conflicts (disallowed tuples) are recorded in
- * a list. Note that tuples are recorded as indexes (of values).
+ * This class denote any constraint defined in extension. All supports (allowed tuples) or all conflicts (disallowed tuples) are recorded in a list.
+ * Note that tuples are recorded as indexes (of values).
  */
 public class TableSliced extends Table {
 

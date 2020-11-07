@@ -919,11 +919,6 @@ public final class Kit {
 		return sb.toString();
 	}
 
-	public static String getFileNameOf(String pathAndFileName) {
-		int last = pathAndFileName.lastIndexOf("/");
-		return last == -1 ? pathAndFileName.trim() : pathAndFileName.substring(last + 1);
-	}
-
 	public static String getPathOf(String pathAndFileName) {
 		int last = pathAndFileName.lastIndexOf("/");
 		return last == -1 ? "" : pathAndFileName.substring(0, last + 1);
@@ -1226,6 +1221,9 @@ public final class Kit {
 	// public static class Int { // more efficient than AtomicInteger
 	// public int value = -1;
 	// }
+	public static DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+	public static DecimalFormat df2 = new DecimalFormat("0.00", symbols);
+	public static DecimalFormat df1 = new DecimalFormat("0.0", symbols);
 
 	public static class Stopwatch {
 
@@ -1252,6 +1250,11 @@ public final class Kit {
 		/** Returns the current duration given by the stopwatch while it is being currently running. */
 		public long getWckTime() {
 			return System.currentTimeMillis() - startWallClockTime;
+		}
+
+		public String getWckTimeInSeconds() {
+			double l = (System.currentTimeMillis() - startWallClockTime) / 1000.0;
+			return l < 10 ? df2.format(l) : df1.format(l);
 		}
 
 		/** Returns the cpu time in milliseconds */

@@ -149,7 +149,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	public static final String AVG_FAILED_DEPTH = "avgFailedDepth";
 	public static final String N_WRONG = "wrong";
 	public static final String N_BACKTRACKS = "nBacktracks";
-	public static final String N_VISITED_NODES = "nVisitedNodes";
+	public static final String N_NODES = "nNodes";
 	public static final String N_ADDED_NOGOODS = "nAddedNogoods";
 	public static final String N_INFERRED_BACKTRACKS = "nInferredBacktracks";
 	public static final String N_INFERRED_REMOVALS = "nInferredRemovals";
@@ -308,7 +308,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		if (resolution.solver.propagation.getClass() == AC.class)
 			sa.put(Output.GUARANTEED_GAC, Constraint.isGuaranteedGAC(resolution.problem.constraints));
 		sa.separator();
-		sa.put(Output.WCK, resolution.instanceStopwatch.getWckTime() / 1000.0);
+		sa.put(Output.WCK, resolution.instanceStopwatch.getWckTimeInSeconds());
 		sa.put(Output.CPU, resolution.stopwatch.getCpuTimeInSeconds());
 		sa.put(Output.MEM, Kit.getFormattedUsedMemorySize());
 		solverElt = record(TypeOutput.SOLVER, sa.entries(), resolElt);

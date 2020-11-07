@@ -247,8 +247,6 @@ public class Reflector {
 		return null;
 	}
 
-	// static int nb = 0;
-
 	private static String computeAbsoluteClassName(String className, Class<?> rootClass) {
 		String classPackageName = rootClass.getPackage().getName();
 		int i = rootClass.getName().lastIndexOf('$');
@@ -294,33 +292,6 @@ public class Reflector {
 		}
 	}
 
-	// public static <T> T buildObject(String className, Object... parameters) {
-	// try {
-	// Class<?> cn = Class.forName(className);
-	// Kit.control(!Modifier.isAbstract(cn.getModifiers()), () -> className + " is abstract");
-	// for (Constructor<?> constructor : cn.getConstructors())
-	// if (constructor.getGenericParameterTypes().length == parameters.length)
-	// return (T) constructor.newInstance(parameters);
-	// return null;
-	// } catch (Exception e) {
-	// (e.getCause() == null ? e : e.getCause()).printStackTrace();
-	// return null;
-	// }
-	// }
-
-	// public static <T> T buildObject(Class<?> cn, Object... parameters) {
-	// try {
-	// Kit.control(!Modifier.isAbstract(cn.getModifiers()), () -> cn + " is abstract");
-	// for (Constructor<?> constructor : cn.getConstructors())
-	// if (constructor.getGenericParameterTypes().length == parameters.length)
-	// return (T) constructor.newInstance(parameters);
-	// return null;
-	// } catch (Exception e) {
-	// (e.getCause() == null ? e : e.getCause()).printStackTrace();
-	// return null;
-	// }
-	// }
-
 	/**
 	 * An object of the class whose name is given is built. Be careful: the default constructor is used.
 	 * 
@@ -334,15 +305,7 @@ public class Reflector {
 		return c.newInstance();
 	}
 
-	public static Class<?> getLastButOneSuperclassOf(Class<?> clazz) {
-		for (Class<?> superclass = clazz.getSuperclass(); superclass != Object.class; superclass = superclass.getSuperclass())
-			clazz = superclass;
-		return clazz;
-	}
-
-	public static <T> T buildObject2(String className, Set<Class<?>> classes, Object... parameters) {
-		// System.out.println(classes.stream().map(c -> c.getSimpleName()).collect(Collectors.joining(",")));
-
+	public static <T> T buildObject(String className, Set<Class<?>> classes, Object... parameters) {
 		try {
 			Class<?> clazz = null;
 			if (className.indexOf('$') != -1 || className.indexOf('.') != -1)
@@ -358,5 +321,11 @@ public class Reflector {
 			(e.getCause() == null ? e : e.getCause()).printStackTrace();
 			return null;
 		}
+	}
+
+	public static Class<?> getLastButOneSuperclassOf(Class<?> clazz) {
+		for (Class<?> superclass = clazz.getSuperclass(); superclass != Object.class; superclass = superclass.getSuperclass())
+			clazz = superclass;
+		return clazz;
 	}
 }

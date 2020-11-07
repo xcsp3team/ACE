@@ -754,6 +754,29 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		throw new MissingImplementationException(getClass().getName()); // to force the user to tag constraints or override the function
 	}
 
+	private Boolean handleHugeDomains() {
+		assert hugeDomainVars.length > 0;
+		// TODO huge domains are not finalized
+		if (futvars.size() == 0)
+			return this.checkCurrentInstantiation();
+		if (futvars.size() == 1) {
+			if (this instanceof SumSimpleEQ) {
+				((SumSimpleEQ) this).deduce();
+				return true;
+			}
+			if (this instanceof SumWeightedEQ) {
+				((SumWeightedEQ) this).deduce();
+				return true;
+			}
+		}
+		// for (Variable y : hugeDomainVars)
+		// if (!y.isAssigned())
+		// return true; // we have to wait
+		if (futvars.size() > 0)
+			return true;
+		return null;
+	}
+
 	/**
 	 * This is the method that is called for filtering. We know that the domain of the specified variable has been recently reduced, but this is not
 	 * necessarily the only one in that situation.
@@ -761,24 +784,10 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public final boolean filterFrom(Variable x) {
 		// System.out.println("filtering " + this + " " + x);
 
-		if (this.hugeDomainVars.length > 0) { // TODO huge domains are not finalized
-			if (futvars.size() == 0)
-				return this.checkCurrentInstantiation();
-			if (futvars.size() == 1) {
-				if (this instanceof SumSimpleEQ) {
-					((SumSimpleEQ) this).deduce();
-					return true;
-				}
-				if (this instanceof SumWeightedEQ) {
-					((SumWeightedEQ) this).deduce();
-					return true;
-				}
-			}
-			// for (Variable y : hugeDomainVars)
-			// if (!y.isAssigned())
-			// return true; // we have to wait
-			if (futvars.size() > 0)
-				return true;
+		if (this.hugeDomainVars.length > 0) {
+			Boolean b = handleHugeDomains();
+			if (b != null)
+				return b;
 		}
 
 		// For CSP, there are first some conditions that allow us to directly return true (because we know then that there is no filtering

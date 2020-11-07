@@ -18,17 +18,9 @@ public class Enums {
 		NO, DUAL, HIDDEN, DOUBLE;
 	}
 
-	// public static enum ECostTranfer {
-	// INVARIABLE, DELTA, UPDATE;
-	// }
-
 	public static enum EOptimizationStrategy {
 		INCREASING, DECREASING, DICHOTOMIC;
 	}
-
-	// public static enum EDefaultCost {
-	// ZERO, K, INTERMEDIATE;
-	// }
 
 	public static enum EExtension {
 		V, A, VA, STR1, STR2, STR3, STR2S, STR1NEG, STR2NEG, STRCPRS, CT, CT2, MDD, MDDSHORT, GAC4, RPWC, RPWC2;
@@ -83,10 +75,6 @@ public class Enums {
 	public static enum ERestartsMeasure {
 		FAILED, WRONG, BACKTRACK, SOLUTION;
 	}
-
-	// public static enum EWCNConversion {
-	// NO, NATURAL, RANDOM;
-	// }
 
 	public static enum EExport {
 		NO,

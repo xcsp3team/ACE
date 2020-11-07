@@ -31,7 +31,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	public static HeuristicVariables buildFor(SolverBacktrack solver) {
 		Set<Class<?>> classes = solver.rs.handlerClasses.map.get(HeuristicVariables.class);
 		if (solver.rs.cp.settingSolving.enableSearch || solver.propagation instanceof GIC2)
-			return Reflector.buildObject2(solver.rs.cp.settingVarh.classForVarHeuristic, classes, solver, solver.rs.cp.settingVarh.anti);
+			return Reflector.buildObject(solver.rs.cp.settingVarh.classForVarHeuristic, classes, solver, solver.rs.cp.settingVarh.anti);
 		return null;
 	}
 

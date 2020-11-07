@@ -16,7 +16,6 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.net.URL;
 import java.text.MessageFormat;
-import java.util.stream.IntStream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -36,10 +35,6 @@ import org.xml.sax.helpers.DefaultHandler;
 public class XMLManager {
 
 	public static final String W3C_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema";
-
-	/**********************************************************************************************
-	 * Create, load and Save
-	 *********************************************************************************************/
 
 	private static Object handleException(Exception e) {
 		if (e instanceof SAXException) { // superclass of SAXParseException
@@ -68,10 +63,12 @@ public class XMLManager {
 					new MessageFormat("({0}: {1}, {2}): {3}").format(new Object[] { x.getSystemId(), x.getLineNumber(), x.getColumnNumber(), x.getMessage() }));
 		}
 
+		@Override
 		public void warning(SAXParseException x) {
 			print(x);
 		}
 
+		@Override
 		public void error(SAXParseException x) {
 			print(x);
 		}
@@ -86,7 +83,7 @@ public class XMLManager {
 	 *            the schema to be used (<code> null </code> if not used) to validate the document
 	 * @return a DOM object
 	 */
-	public static Document load(InputStream is, URL schema) {
+	private static Document load(InputStream is, URL schema) {
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			factory.setNamespaceAware(true);
@@ -100,27 +97,19 @@ public class XMLManager {
 		}
 	}
 
-	public static Document load(InputStream is) {
-		return load(is, null);
-	}
-
-	public static Document load(File file, URL schema) {
+	public static Document load(File file) {
 		try {
-			return load(new FileInputStream(file), schema);
+			return load(new FileInputStream(file), null); // no schema
 		} catch (FileNotFoundException e) {
 			return (Document) Kit.exit("File " + file.getName() + " does not exist", e);
 		}
-	}
-
-	public static Document load(File file) {
-		return load(file, null);
 	}
 
 	public static Document load(String fileName) {
 		if (fileName.endsWith("xml.bz2") || fileName.endsWith("xml.lzma"))
 			try {
 				Process p = Runtime.getRuntime().exec((fileName.endsWith("xml.bz2") ? "bunzip2 -c " : "lzma -c -d ") + fileName);
-				Document document = load(p.getInputStream());
+				Document document = load(p.getInputStream(), null);
 				p.waitFor();
 				p.exitValue();
 				p.destroy();
@@ -128,35 +117,7 @@ public class XMLManager {
 			} catch (Exception e) {
 				return (Document) Kit.exit("Problem with " + fileName, e);
 			}
-		return load(new File(fileName), null);
-	}
-
-	/**********************************************************************************************
-	 * Various methods
-	 *********************************************************************************************/
-
-	public static Element getChildByTagNameAt(Element element, String tagName, int i) {
-		NodeList nodeList = element.getElementsByTagName(tagName);
-		return (nodeList == null || nodeList.getLength() <= i) ? null : (Element) (nodeList.item(i));
-	}
-
-	public static Element getFirstElementByTagNameFromRoot(Document document, String tagName) {
-		return getChildByTagNameAt(document.getDocumentElement(), tagName, 0);
-	}
-
-	public static int firstMatchPosition(Document document, String tagName) {
-		NodeList nodeList = document.getDocumentElement().getChildNodes();
-		return IntStream.range(0, nodeList.getLength()).filter(i -> nodeList.item(i).getNodeName().equals(tagName)).findFirst().orElse(-1);
-	}
-
-	public static boolean isPresent(Document document, String tagName) {
-		return firstMatchPosition(document, tagName) != -1;
-	}
-
-	public static boolean areOrderedChilds(Document document, String tagName1, String tagName2) {
-		int i1 = firstMatchPosition(document, tagName1);
-		int i2 = firstMatchPosition(document, tagName2);
-		return i1 != -1 && i2 != -1 && i1 < i2;
+		return load(new File(fileName));
 	}
 
 	public static void modify(Document document, String path, String attName, String attValue) {
@@ -169,9 +130,8 @@ public class XMLManager {
 		}
 	}
 
-	public static String getAttValueFor(String fileName, String tagName, String attName) {
-		NodeList list = load(fileName).getElementsByTagName(tagName);
-		return ((Element) list.item(0)).getAttribute(attName);
+	public static String attValueFor(String fileName, String tagName, String attName) {
+		return ((Element) load(fileName).getElementsByTagName(tagName).item(0)).getAttribute(attName);
 	}
 
 	public static boolean isXMLFileWithRoot(String fileName, String rootToken) {

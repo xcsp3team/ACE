@@ -14,8 +14,6 @@ import static org.xcsp.common.Constants.PLUS_INFINITY;
 import static org.xcsp.common.Constants.PLUS_INFINITY_INT;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -728,16 +726,12 @@ public class ControlPanel {
 			private XPath xPath;
 
 			private UserSettings(String userSettingsFilename) {
-				try {
-					if (userSettingsFilename == null)
-						userSettingsFilename = Arguments.userSettingsFilename;
-					if (userSettingsFilename != null && !userSettingsFilename.equals(ControlPanel.DEFAULT_CONFIGURATION)) {
-						// Loads the XML file containing all settings from the user.
-						document = XMLManager.load(new FileInputStream(new File(userSettingsFilename)));
-						xPath = XPathFactory.newInstance().newXPath();
-					}
-				} catch (FileNotFoundException e) {
-					Kit.exit(e);
+				if (userSettingsFilename == null)
+					userSettingsFilename = Arguments.userSettingsFilename;
+				if (userSettingsFilename != null && !userSettingsFilename.equals(ControlPanel.DEFAULT_CONFIGURATION)) {
+					// Loads the XML file containing all settings from the user.
+					document = XMLManager.load(new File(userSettingsFilename));
+					xPath = XPathFactory.newInstance().newXPath();
 				}
 			}
 

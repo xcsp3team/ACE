@@ -81,20 +81,15 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 	}
 
 	public void onAssignment(Variable x) {
-		nVisitedNodes++;
+		nNodes++;
 		if (x.dom.size() > 1)
 			nDecisions++;
 		// nAssignments++; done elsewhere
 	}
 
-	// public void onRefutation() {
-	// nVisitedNodes++;
-	// nDecisions++;
-	// }
-
 	public void onRefutation(Variable x) {
 		if (x.dom.size() > 1) {
-			nVisitedNodes++;
+			nNodes++;
 			nDecisions++;
 		}
 	}
@@ -105,7 +100,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 
 	public final Stopwatch stopwatch = new Stopwatch();
 
-	public long nVisitedNodes = 1, nDecisions, nWrongDecisions, nBacktracks, nAssignments, nFailedAssignments;
+	public long nNodes = 1, nDecisions, nWrongDecisions, nBacktracks, nAssignments, nFailedAssignments;
 
 	public long nPreproRemovedValues, nPreproRemovedTuples, nPreproAddedCtrs, nPreproAddedNogoods, nPreproInconsistencies;
 
@@ -118,7 +113,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 	}
 
 	public long numberSafe() {
-		return nVisitedNodes + nAssignments + nBacktracks;
+		return nNodes + nAssignments + nBacktracks;
 	}
 
 	public void store() {
@@ -196,6 +191,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		}
 		m.put(WCK, preproWck / 1000.0);
 		m.put(CPU, solver.rs.stopwatch.getCpuTimeInSeconds());
+
 		m.put(MEM, Kit.getFormattedUsedMemorySize());
 		return m;
 	}
@@ -225,7 +221,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			m.put("firstSolCpu", firstSolCpu / 1000.0);
 			m.separator();
 		}
-		m.put(WCK, solver.rs.instanceStopwatch.getWckTime() / 1000.0);
+		m.put(WCK, solver.rs.instanceStopwatch.getWckTimeInSeconds());
 		m.put(CPU, solver.rs.stopwatch.getCpuTimeInSeconds());
 		m.put(MEM, Kit.getFormattedUsedMemorySize());
 		return m;
@@ -249,17 +245,18 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			MapAtt m = new MapAtt("Run");
 			if (solver.rs.cp.settingXml.competitionMode) {
 				m.put("run", solver.restarter.numRun);
-				m.put(Output.DEPTH, solver.minDepth + ".." + solver.maxDepth);
-				m.put("nFilters", nEffectiveFilterings());
-				m.put("nWrong", nWrongDecisions);
-				m.put(Output.MEM, Kit.getFormattedUsedMemorySize());
-				m.put(Output.WCK, stopwatch.getWckTime() / 1000.0);
+				m.put("dpt", solver.minDepth + ".." + solver.maxDepth);
+				m.put("eff", nEffectiveFilterings());
+				m.put("wrg", nWrongDecisions);
+				if (Kit.getUsedMemory() > 10000000000L)
+					m.put(Output.MEM, Kit.getFormattedUsedMemorySize());
+				m.put(Output.WCK, stopwatch.getWckTimeInSeconds());
 				if (solver.learnerNogoods != null)
-					m.putPositive("nNogoods", solver.learnerNogoods.nNogoods);
+					m.putPositive("ngd", solver.learnerNogoods.nNogoods);
 				if (solver.solManager.found > 0) {
-					m.put("nSols", solver.solManager.found);
+					// m.put("nSols", solver.solManager.found);
 					if (solver.pb.settings.framework != TypeFramework.CSP)
-						m.put("bound", nformat.format(solver.solManager.bestBound));
+						m.put("bnd", nformat.format(solver.solManager.bestBound));
 				}
 				return m;
 			}
@@ -272,8 +269,9 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 				m.put(Output.N_SINGLETON_TESTS, nSingletonTests());
 				m.put(Output.N_EFFECTIVE_SINGLETON_TESTS, nEffectiveSingletonTests());
 			}
-			m.put(Output.WCK, stopwatch.getWckTime() / 1000.0);
-			m.put(Output.MEM, Kit.getFormattedUsedMemorySize());
+			m.put(Output.WCK, stopwatch.getWckTimeInSeconds());
+			if (Kit.getUsedMemory() > 10000000000L)
+				m.put(Output.MEM, Kit.getFormattedUsedMemorySize());
 			m.separator();
 
 			// if (solver.propagation instanceof AC) {

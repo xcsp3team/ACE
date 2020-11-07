@@ -71,7 +71,7 @@ public class Resolution extends Thread {
 	public synchronized static void saveMultithreadResultsFiles(Resolution resolution) {
 		String fileName = resolution.output.save(resolution.stopwatch.getWckTime());
 		if (fileName != null) {
-			String variantParallelName = XMLManager.getAttValueFor(Arguments.lastArgument(), ResolutionVariants.VARIANT_PARALLEL, ResolutionVariants.NAME);
+			String variantParallelName = XMLManager.attValueFor(Arguments.lastArgument(), ResolutionVariants.VARIANT_PARALLEL, ResolutionVariants.NAME);
 			String resultsFileName = resolution.cp.settingXml.dirForCampaign;
 			if (resultsFileName != "")
 				resultsFileName += File.separator;
@@ -84,12 +84,12 @@ public class Resolution extends Thread {
 			long totalVisitedNodes = 0;
 			for (Resolution r : resolutions) {
 				totalWCKTime += r.instanceStopwatch.getWckTime();
-				totalVisitedNodes += r.solver.stats.nVisitedNodes;
+				totalVisitedNodes += r.solver.stats.nNodes;
 			}
 			Element root = document.getDocumentElement();
 			Element multiThreadedResults = document.createElement(Output.MULTITHREAD_RESULTS);
 			multiThreadedResults.setAttribute(Output.WCK, Double.toString((double) totalWCKTime / 1000));
-			multiThreadedResults.setAttribute(Output.N_VISITED_NODES, Long.toString(totalVisitedNodes));
+			multiThreadedResults.setAttribute(Output.N_NODES, Long.toString(totalVisitedNodes));
 			root.appendChild(multiThreadedResults);
 			Utilities.save(document, resultsFileName);
 		}

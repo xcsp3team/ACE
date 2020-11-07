@@ -588,7 +588,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 		if (heuristicVal == null) {
 			String className = this.dom instanceof DomainHuge ? First.class.getName() : pb.rs.cp.settingValh.classForValHeuristic;
 			Set<Class<?>> classes = pb.rs.handlerClasses.map.get(HeuristicValues.class);
-			heuristicVal = Reflector.buildObject2(className, classes, this, pb.rs.cp.settingValh.anti);
+			heuristicVal = Reflector.buildObject(className, classes, this, pb.rs.cp.settingValh.anti);
 		}
 	}
 

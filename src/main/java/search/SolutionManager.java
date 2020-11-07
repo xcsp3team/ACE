@@ -144,7 +144,7 @@ public final class SolutionManager {
 					if (found == 0)
 						System.out.println("s UNSATISFIABLE");
 					else
-						System.out.println(framework == TypeFramework.COP ? "s OPTIMUM " + bestBound : "s SATISFIABLE");
+						System.out.println(framework == TypeFramework.COP ? "s OPTIMUM \t" + bestBound : "s SATISFIABLE");
 				} else {
 					if (found == 0)
 						System.out.println("s UNKNOWN");
@@ -157,6 +157,7 @@ public final class SolutionManager {
 				if (fullExploration && framework == TypeFramework.CSP)
 					System.out.println("d NUMBER OF SOLUTIONS " + found);
 				System.out.println(fullExploration ? "d COMPLETE EXPLORATION" : "d INCOMPLETE EXPLORATION");
+				System.out.println("c real time : " + solver.rs.stopwatch.getCpuTimeInSeconds());
 				System.out.flush();
 			}
 		}
@@ -213,7 +214,8 @@ public final class SolutionManager {
 			Kit.control(solver.pb.optimizer.isBetterBound(bestBound));
 			// solver.restarter.forceRootPropagation = true;
 			if (solver.rs.cp.settingXml.competitionMode)
-				System.out.println("o " + bestBound); // + "); // (hamming: " + h1 + ", in_objective: " + h2 + ")");
+				System.out.println("o " + bestBound + " \t" + (solver.rs.instanceStopwatch.getWckTimeInSeconds()));
+			// + " \t#" + found); // + "); (hamming: " + h1 + ", in_objective: " + h2 + ")");
 		}
 		// The following code must stay after storeSolution
 		String s = lastSolutionInXmlFormat(); // keep the call separated in order to possibly secure its quick output (see code)

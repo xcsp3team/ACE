@@ -104,16 +104,16 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		@Override
 		public int bestPosition() {
-			int bestPos = 0;
+			int pos = 0;
 			double bestScore = scoreOf(queue.var(0)) * scoreCoeff;
 			for (int i = 1; i <= queue.limit; i++) {
 				double score = scoreOf(queue.var(i)) * scoreCoeff;
 				if (score > bestScore) {
-					bestPos = i;
+					pos = i;
 					bestScore = score;
 				}
 			}
-			return bestPos;
+			return pos;
 		}
 
 		// ************************************************************************
