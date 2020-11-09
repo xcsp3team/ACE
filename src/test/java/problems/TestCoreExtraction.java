@@ -22,7 +22,7 @@ public class TestCoreExtraction {
 	static Collection<Object[]> collection = new LinkedList<>();
 
 	static void add(Object instance, int nWrongDecisions, String pars) {
-		pars += " -v=0 -cm -ev";
+		pars += " -v=0 -ev";
 		URL url = Resolution.class.getResource(instance + ".xml.lzma");
 		Utilities.control(url != null, "not found: " + instance + ".xml.lzma");
 		collection.add(new Object[] { url.getPath() + " " + pars, nWrongDecisions });

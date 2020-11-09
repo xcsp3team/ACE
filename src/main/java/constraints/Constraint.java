@@ -135,8 +135,8 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public static final int MAX_FILTERING_COMPLEXITY = 2;
 
 	/**
-	 * A special constraint that can be used (for instance) by methods that requires returning three-state values (null,a problem constraint, this
-	 * special marker).
+	 * A special constraint that can be used (for instance) by methods that requires returning three-state values (null,a problem constraint, this special
+	 * marker).
 	 */
 	public static final Constraint TAG = new Constraint() {
 		@Override
@@ -233,8 +233,8 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public final Variable[] scp;
 
 	/**
-	 * The position of all variables of the problem in the constraint. It is -1 when not involved.For constraint of small arity, not necessarily
-	 * built. So, you need to call <code> positionOf </code> instead of accessing directly this field.
+	 * The position of all variables of the problem in the constraint. It is -1 when not involved.For constraint of small arity, not necessarily built. So, you
+	 * need to call <code> positionOf </code> instead of accessing directly this field.
 	 */
 	private int[] positions;
 
@@ -266,8 +266,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public int filteringComplexity;
 
 	/**
-	 * Indicates if filtering (e.g. GAC) must be controlled. If the number of uninstantiated variables is greater than this value, filtering is not
-	 * achieved.
+	 * Indicates if filtering (e.g. GAC) must be controlled. If the number of uninstantiated variables is greater than this value, filtering is not achieved.
 	 */
 	public final int genericFilteringThreshold;
 
@@ -424,8 +423,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	/**
-	 * This function must be such that if (an upper bound of) the number of max conflicts is known for one pair (variable, index) then it is known for
-	 * any pair
+	 * This function must be such that if (an upper bound of) the number of max conflicts is known for one pair (variable, index) then it is known for any pair
 	 */
 	public int giveUpperBoundOfMaxNumberOfConflictsFor(Variable x, int a) {
 		return Resolution.UNDEFINED; // by default
@@ -530,17 +528,16 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	/**
-	 * Determines if the given tuple is a support of the constraint, i.e., if the given tuple belongs to the relation associated with the constraint.
-	 * Be careful: although indexes of values are managed in the core of the solver, at this stage, the given tuple contains values (and not indexes
-	 * of values).
+	 * Determines if the given tuple is a support of the constraint, i.e., if the given tuple belongs to the relation associated with the constraint. Be
+	 * careful: although indexes of values are managed in the core of the solver, at this stage, the given tuple contains values (and not indexes of values).
 	 * 
 	 * @return true iff the tuple is a support of the constraint
 	 */
 	public abstract boolean checkValues(int[] t);
 
 	/**
-	 * Determines if the given tuple is a support of the constraint, i.e., if the given tuple belongs to the relation associated with the constraint.
-	 * Be careful: the given tuple must contains indexes of values.
+	 * Determines if the given tuple is a support of the constraint, i.e., if the given tuple belongs to the relation associated with the constraint. Be
+	 * careful: the given tuple must contains indexes of values.
 	 * 
 	 * @param target
 	 *            a given tuple of indexes (of values)
@@ -571,8 +568,8 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	/**
-	 * Transforms all indexes of the given tuple into values. Elements of the tuple must then correspond to index of values occurring in the domains
-	 * of the variables involved in the constraint.
+	 * Transforms all indexes of the given tuple into values. Elements of the tuple must then correspond to index of values occurring in the domains of the
+	 * variables involved in the constraint.
 	 */
 	public int[] toVals(int[] idxs) {
 		for (int i = vals.length - 1; i >= 0; i--)
@@ -587,8 +584,8 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	/**
-	 * Determines if the given tuple (usually a support) is still valid. We have just to test that all indexes are still in the domains of the
-	 * variables involved in the constraint. Do not call the <code> check </code> method instead since it can not take into account removed values.
+	 * Determines if the given tuple (usually a support) is still valid. We have just to test that all indexes are still in the domains of the variables
+	 * involved in the constraint. Do not call the <code> check </code> method instead since it can not take into account removed values.
 	 * 
 	 * @param tuple
 	 *            a given tuple of indexes (of values)
@@ -602,8 +599,8 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	/**
-	 * Seeks a support for the constraint when considering the current state of the domains and the tuple currently managed by the tuple manager
-	 * (initial value of the current tuple included in search). A lexicographic order is used.
+	 * Seeks a support for the constraint when considering the current state of the domains and the tuple currently managed by the tuple manager (initial value
+	 * of the current tuple included in search). A lexicographic order is used.
 	 */
 	private final boolean seekSupport() {
 		return tupleManager.findValidTupleSuchThat(t -> checkIndexes(t));
@@ -778,8 +775,8 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	/**
-	 * This is the method that is called for filtering. We know that the domain of the specified variable has been recently reduced, but this is not
-	 * necessarily the only one in that situation.
+	 * This is the method that is called for filtering. We know that the domain of the specified variable has been recently reduced, but this is not necessarily
+	 * the only one in that situation.
 	 */
 	public final boolean filterFrom(Variable x) {
 		// System.out.println("filtering " + this + " " + x);

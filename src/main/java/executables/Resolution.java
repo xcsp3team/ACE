@@ -191,6 +191,9 @@ public class Resolution extends Thread {
 				// as the one below which is commented
 				// Class<?> _ = Propagation.class;
 				for (Package p : Package.getPackages()) {
+					String name = p.getName();
+					if (!name.startsWith("constraints") && !name.startsWith("heuristics"))
+						continue;
 					for (URL url : Collections.list(classLoader.getResources(p.getName().replace('.', '/'))))
 						if (url.getProtocol().equals("file") && new File(url.getFile()).exists())
 							loadRecursively(new File(url.getFile()), p.getName());

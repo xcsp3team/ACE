@@ -22,7 +22,7 @@ public class TestWrongDecisions {
 	static Collection<Object[]> collection = new LinkedList<>();
 
 	static void add(Object instance, int nWrongDecisions, String pars) {
-		pars += " -cm -ev";
+		pars += " -ev";
 		URL url = Resolution.class.getResource(instance + ".xml.lzma");
 		Utilities.control(url != null, "not found: " + instance + ".xml.lzma");
 		collection.add(new Object[] { url.getPath() + " " + pars, nWrongDecisions });

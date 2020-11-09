@@ -22,7 +22,7 @@ public class TestOptimumCost {
 	static Collection<Object[]> collection = new LinkedList<>();
 
 	static void add(Object instance, String variant, String data, int value) {
-		String pars = " -cm -ev";
+		String pars = " -ev";
 		if (instance instanceof Class<?>) {
 			variant = variant != null ? " -variant=" + variant : "";
 			data = data != null ? " -data=" + data : "";

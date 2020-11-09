@@ -28,7 +28,7 @@ public class TestAllSolutions {
 	static Collection<Object[]> collection = new LinkedList<>();
 
 	static void add(Object instance, String variant, String data, int nSolutions) {
-		String pars = " -s=all -cm -ev";
+		String pars = " -s=all -ev";
 		if (instance instanceof Class<?>) {
 			variant = variant != null ? " -variant=" + variant : "";
 			data = data != null ? " -data=" + data : "";
