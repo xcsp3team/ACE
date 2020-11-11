@@ -24,20 +24,20 @@ public class Reviser2 extends Reviser1 {
 
 	@Override
 	public boolean mustBeAppliedTo(Constraint c, Variable x) {
-		if (c.conflictsStructure() == null)
+		if (c.conflictsStructure == null)
 			return true;
 		int px = c.positionOf(x);
-		return c.conflictsStructure().nMaxConflicts()[px] >= Variable.nValidTuplesBoundedAtMaxValueFor(c.scp, px);
+		return c.conflictsStructure.nMaxConflicts()[px] >= Variable.nValidTuplesBoundedAtMaxValueFor(c.scp, px);
 	}
 
 	@Override
 	public void applyTo(Constraint c, Variable x) {
-		if (c.conflictsStructure() == null)
+		if (c.conflictsStructure == null)
 			super.applyTo(c, x);
 		else {
 			int px = c.positionOf(x);
 			long nbValids = Variable.nValidTuplesBoundedAtMaxValueFor(c.scp, px);
-			int[] nbConflicts = c.conflictsStructure().nConflicts()[px];
+			int[] nbConflicts = c.conflictsStructure.nConflicts()[px];
 			Domain dom = x.dom;
 			for (int a = dom.first(); a != -1; a = dom.next(a))
 				if (nbConflicts[a] >= nbValids && !c.findArcSupportFor(px, a))

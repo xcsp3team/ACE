@@ -6,9 +6,7 @@ import java.util.List;
 import org.xcsp.common.enumerations.EnumerationOfPermutations;
 
 import search.SolutionManager;
-import search.local.functionalPropagators.FunctionalPropagator;
 import utility.Kit;
-import utility.exceptions.MissingImplementationException;
 import variables.Variable;
 
 public class SolutionOptimizer {
@@ -42,7 +40,7 @@ public class SolutionOptimizer {
 			for (Variable[][] permutationSet : satPreservingPermutations)
 				optimizeCurrentSolution(permutationSet);
 		else
-			throw new MissingImplementationException(); // TODO
+			throw new UnsupportedOperationException(); // TODO
 	}
 
 	private void optimizeCurrentSolution(Variable[][] permutationSet) {

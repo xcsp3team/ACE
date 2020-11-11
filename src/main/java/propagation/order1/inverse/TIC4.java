@@ -11,9 +11,9 @@ package propagation.order1.inverse;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import constraints.hard.extension.CtrExtensionSTR1;
-import constraints.hard.extension.CtrExtensionSTR2;
-import constraints.hard.extension.structures.Table;
+import constraints.extension.CtrExtensionSTR1;
+import constraints.extension.CtrExtensionSTR2;
+import constraints.extension.structures.Table;
 import search.Solver;
 import utility.Enums.EStopping;
 import utility.Kit;

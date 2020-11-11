@@ -11,8 +11,6 @@ package variables.domains;
 import org.xcsp.common.Constants;
 
 import utility.Kit;
-import utility.exceptions.MissingImplementationException;
-import utility.exceptions.UnreachableCodeException;
 import variables.Variable;
 
 public final class DomainHugeInfinite extends DomainHuge {
@@ -75,34 +73,34 @@ public final class DomainHugeInfinite extends DomainHuge {
 
 	@Override
 	public int next(int a) {
-		throw new UnreachableCodeException();
+		throw new AssertionError();
 	}
 
 	@Override
 	public int last() {
 		// if (assignedValue != null)
 		// return assignedValue;
-		throw new UnreachableCodeException();
+		throw new AssertionError();
 	}
 
 	@Override
 	public int prev(int a) {
-		throw new UnreachableCodeException();
+		throw new AssertionError();
 	}
 
 	@Override
 	public int get(int i) {
-		throw new UnreachableCodeException();
+		throw new AssertionError();
 	}
 
 	@Override
 	public int lastRemoved() {
-		throw new UnreachableCodeException();
+		throw new AssertionError();
 	}
 
 	@Override
 	public int prevRemoved(int a) {
-		throw new UnreachableCodeException();
+		throw new AssertionError();
 	}
 
 	@Override
@@ -114,19 +112,19 @@ public final class DomainHugeInfinite extends DomainHuge {
 
 	@Override
 	public boolean isRemovedAtLevel(int a, int level) {
-		throw new UnreachableCodeException();
+		throw new AssertionError();
 	}
 
 	@Override
 	public int getRemovedLevelOf(int a) {
-		throw new MissingImplementationException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public void remove(int a, int level) {
 		// Kit.control(a == assignedValue);
 		// removed = true;
-		throw new UnreachableCodeException();
+		throw new AssertionError();
 	}
 
 	@Override
@@ -150,7 +148,7 @@ public final class DomainHugeInfinite extends DomainHuge {
 
 	@Override
 	public Object allValues() {
-		throw new MissingImplementationException();
+		throw new UnsupportedOperationException();
 	}
 
 }

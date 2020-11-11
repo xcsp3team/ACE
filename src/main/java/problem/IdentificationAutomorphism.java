@@ -24,8 +24,8 @@ import java.util.Random;
 import java.util.StringTokenizer;
 
 import constraints.Constraint;
-import constraints.hard.CtrIntension;
-import constraints.hard.global.Lexicographic.LexicographicLE;
+import constraints.CtrIntension;
+import constraints.global.Lexicographic.LexicographicLE;
 import dashboard.Output;
 import utility.Enums.ESymmetryBreaking;
 import utility.Kit;

@@ -11,12 +11,11 @@
 package propagation.order2.dual;
 
 import constraints.Constraint;
-import constraints.hard.CtrExtension;
+import constraints.extension.CtrExtension;
 import interfaces.FilteringSpecific;
 import propagation.order2.SecondOrderConsistency;
 import search.Solver;
 import utility.Kit;
-import utility.exceptions.MissingImplementationException;
 import variables.Variable;
 import variables.domains.Domain;
 
@@ -74,7 +73,7 @@ public class SDC2 extends SecondOrderConsistency {
 					// consistent = false;
 					// break;
 					// }
-					throw new MissingImplementationException();
+					throw new UnsupportedOperationException();
 
 				} else {
 					Variable y = Variable.firstDifferentVariableIn(c.scp, x);

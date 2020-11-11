@@ -12,7 +12,6 @@ import org.xcsp.common.Types.TypeFramework;
 
 import executables.Resolution;
 import search.Solver;
-import search.local.functionalPropagators.FunctionalPropagator;
 import search.statistics.Statistics.StatisticsLocal;
 import utility.Kit;
 import utility.Reflector;
@@ -35,14 +34,14 @@ public final class SolverLocal extends Solver {
 	public Variable[] decisionVars;
 
 	/**
-	 * Size : nbVars Values : -1 if the corresponding variable is not a decision variable its index in the successors array if the corresponding
-	 * variable is a decision variable
+	 * Size : nbVars Values : -1 if the corresponding variable is not a decision variable its index in the successors array if the corresponding variable is a
+	 * decision variable
 	 */
 	private int[] num2DecisionVarsIndex;
 
 	/**
-	 * For each decision variable v, we store an array containing all the indices of the variables that might be modified by propagating the
-	 * dependency constraints after modifying v
+	 * For each decision variable v, we store an array containing all the indices of the variables that might be modified by propagating the dependency
+	 * constraints after modifying v
 	 */
 	private int[][] successors;
 
@@ -112,9 +111,9 @@ public final class SolverLocal extends Solver {
 	private double initialBiasForForcedSolution = 0; // Data.initialBiasForForcedSolution
 
 	protected void buildInitialCompleteInstantiation() {
-		if (forcedInstantiation == null && pb.api instanceof problems.rand.ExplicitRandomQuestion
-				&& ((problems.rand.ExplicitRandomQuestion) pb.api).forcedSolution != null)
-			forcedInstantiation = ((problems.rand.ExplicitRandomQuestion) pb.api).forcedSolution;
+		// if (forcedInstantiation == null && pb.api instanceof problems.rand.ExplicitRandomQuestion
+		// && ((problems.rand.ExplicitRandomQuestion) pb.api).forcedSolution != null)
+		// forcedInstantiation = ((problems.rand.ExplicitRandomQuestion) pb.api).forcedSolution;
 		// else if (forcedInstantiation == null && problem instanceof problems.real.agapes.problem.AgapesProblem
 		// && ((problems.real.agapes.problem.AgapesProblem) problem).getForcedSolution() != null)
 		// forcedInstantiation = ((problems.real.agapes.problem.AgapesProblem) problem).getForcedSolution();
@@ -265,7 +264,8 @@ public final class SolverLocal extends Solver {
 	// }
 
 	@Override
-	public void pushVariable(Variable variable) {}
+	public void pushVariable(Variable variable) {
+	}
 
 	@Override
 	public int depth() {

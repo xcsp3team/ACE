@@ -53,7 +53,7 @@ public final class FutureVariables implements Iterable<Variable> {
 			return iterator2;
 		}
 		System.out.println("CURSORS=" + iterator1.cursor + " " + iterator2.cursor);
-		Kit.control(true, () -> "Only two nested iterations can only be used for the moment");
+		Kit.control(false, () -> "Only two nested iterations can only be used for the moment");
 		return null;
 	}
 
@@ -68,14 +68,13 @@ public final class FutureVariables implements Iterable<Variable> {
 	public int last;
 
 	/**
-	 * Backward linking (i.e., from last to first). With i being the number of a variable x, {@code prevs[i]} gives the number of the
-	 * variable y that precedes x.
+	 * Backward linking (i.e., from last to first). With i being the number of a variable x, {@code prevs[i]} gives the number of the variable y that precedes
+	 * x.
 	 */
 	public final int[] prevs;
 
 	/**
-	 * Forward linking (i.e., from first to last). With i being the number of a variable x, {@code nexts[i]} gives the number of the
-	 * variable y that follows x.
+	 * Forward linking (i.e., from first to last). With i being the number of a variable x, {@code nexts[i]} gives the number of the variable y that follows x.
 	 */
 	public final int[] nexts;
 
@@ -108,8 +107,8 @@ public final class FutureVariables implements Iterable<Variable> {
 	}
 
 	/**
-	 * Returns {@code true} if the specified element (number of variable) is currently present (i.e., if the associated variable is
-	 * currently future). BE CAREFUL: this operation is not in O(1).
+	 * Returns {@code true} if the specified element (number of variable) is currently present (i.e., if the associated variable is currently future). BE
+	 * CAREFUL: this operation is not in O(1).
 	 * 
 	 * @param e
 	 *            the number of a variable

@@ -15,8 +15,8 @@ import java.util.List;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
-import constraints.hard.extension.CtrExtensionRPWC;
-import constraints.hard.extension.structures.Table;
+import constraints.extension.CtrExtensionRPWC;
+import constraints.extension.structures.Table;
 import search.Solver;
 import utility.Kit;
 import variables.Variable;

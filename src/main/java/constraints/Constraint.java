@@ -21,13 +21,11 @@ import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Utilities;
 import org.xcsp.modeler.definitions.ICtr;
 
-import constraints.hard.ConflictsStructure;
-import constraints.hard.CtrExtension;
-import constraints.hard.CtrIntension;
-import constraints.hard.extension.structures.Bits;
-import constraints.hard.extension.structures.ExtensionStructure;
-import constraints.hard.global.SumSimple.SumSimpleEQ;
-import constraints.hard.global.SumWeighted.SumWeightedEQ;
+import constraints.extension.CtrExtension;
+import constraints.extension.structures.Bits;
+import constraints.extension.structures.ExtensionStructure;
+import constraints.global.SumSimple.SumSimpleEQ;
+import constraints.global.SumWeighted.SumWeightedEQ;
 import dashboard.ControlPanel.SettingCtrs;
 import executables.Resolution;
 import heuristics.variables.dynamic.HeuristicVariablesConflictBased;
@@ -50,8 +48,6 @@ import propagation.structures.supporters.SupporterHardBary;
 import propagation.structures.supporters.SupporterHardNary;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;
-import utility.exceptions.MissingImplementationException;
-import utility.exceptions.UnreachableCodeException;
 import utility.operations.Calculator;
 import utility.sets.SetDense;
 import utility.sets.SetSparse;
@@ -141,7 +137,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public static final Constraint TAG = new Constraint() {
 		@Override
 		public boolean checkValues(int[] t) {
-			throw new UnreachableCodeException();
+			throw new AssertionError();
 		}
 	};
 
@@ -371,7 +367,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		if (this instanceof TagGACUnguaranteed)
 			return false;
 		if (this instanceof FilteringSpecific)
-			throw new MissingImplementationException(getClass().getName()); // to force the user to tag constraints or override the function
+			throw new UnsupportedOperationException(getClass().getName()); // to force the user to tag constraints or override the function
 		else
 			return genericFilteringThreshold == Integer.MAX_VALUE;
 	}
@@ -401,11 +397,11 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	/**
 	 * The assistant which manages information about the number of conflicts of the constraint.
 	 */
-	protected ConflictsStructure conflictsStructure;
+	public ConflictsStructure conflictsStructure;
 
-	public ConflictsStructure conflictsStructure() {
-		return conflictsStructure;
-	}
+	// public final ConflictsStructure conflictsStructure() {
+	// return conflictsStructure;
+	// }
 
 	public void cloneStructures(boolean onlyConflictsStructure) {
 		if (conflictsStructure != null && conflictsStructure.registeredCtrs().size() > 1) {
@@ -706,7 +702,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 *            the tuple to be removed
 	 */
 	public boolean removeTuple(int... idxs) {
-		throw new UnreachableCodeException();
+		throw new AssertionError();
 	}
 
 	/**********************************************************************************************
@@ -748,7 +744,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 			return true;
 		if (this instanceof TagFilteringPartialAtEachCall)
 			return false;
-		throw new MissingImplementationException(getClass().getName()); // to force the user to tag constraints or override the function
+		throw new UnsupportedOperationException(getClass().getName()); // to force the user to tag constraints or override the function
 	}
 
 	private Boolean handleHugeDomains() {

@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Constants;
 
 import constraints.Constraint;
-import constraints.hard.CtrGlobal;
+import constraints.CtrGlobal;
 import executables.Resolution;
 import heuristics.values.HeuristicValuesDynamic.Failures;
 import heuristics.variables.HeuristicVariables;

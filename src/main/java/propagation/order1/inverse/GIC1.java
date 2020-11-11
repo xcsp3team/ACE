@@ -11,8 +11,8 @@ package propagation.order1.inverse;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import constraints.hard.extension.CtrExtensionSTR1;
-import constraints.hard.extension.CtrExtensionSTR3;
+import constraints.extension.CtrExtensionSTR1;
+import constraints.extension.CtrExtensionSTR3;
 import heuristics.variables.HeuristicVariables;
 import heuristics.variables.dynamic.WDegOnDom;
 import propagation.order1.StrongConsistency;

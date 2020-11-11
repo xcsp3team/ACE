@@ -17,10 +17,9 @@ import org.xcsp.common.IVar;
 import org.xcsp.modeler.definitions.ICtr;
 
 import constraints.Constraint;
-import constraints.hard.CtrExtension;
-import constraints.hard.CtrIntension;
+import constraints.CtrIntension;
+import constraints.extension.CtrExtension;
 import utility.Kit;
-import utility.exceptions.MissingImplementationException;
 import variables.Variable;
 
 /**
@@ -60,7 +59,7 @@ public final class Compiler3Abscon extends org.xcsp.modeler.Compiler {
 	@Override
 	protected Element variables() {
 		if (!subpb.isFullProblem()) {
-			throw new MissingImplementationException();
+			throw new UnsupportedOperationException();
 			// for each varAlone, if not present then remove from the map. for each VarArray, if not all variables are present, then remove
 			// from the map and build VarAlone variables for those present and put them in the map of stuff. After that execute the code
 			// below
@@ -78,7 +77,7 @@ public final class Compiler3Abscon extends org.xcsp.modeler.Compiler {
 	@Override
 	protected Element constraints() {
 		if (!subpb.isFullProblem()) {
-			throw new MissingImplementationException();
+			throw new UnsupportedOperationException();
 			// IntStream.range(0, ctrs.length).filter(i -> subpb.isPresentCtr(i)).forEach(i -> handleCtr(root, ctrs[i]));
 		}
 		return super.constraints();

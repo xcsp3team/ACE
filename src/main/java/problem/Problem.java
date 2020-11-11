@@ -91,64 +91,64 @@ import org.xcsp.modeler.implementation.ProblemIMP;
 import constraints.Constraint;
 import constraints.Constraint.CtrHardFalse;
 import constraints.Constraint.CtrHardTrue;
-import constraints.hard.CtrExtension;
-import constraints.hard.CtrIntension;
-import constraints.hard.extension.CtrExtensionMDD;
-import constraints.hard.extension.CtrExtensionSmart;
-import constraints.hard.extension.structures.MDDCD;
-import constraints.hard.extension.structures.SmartTuple;
-import constraints.hard.extension.structures.Table;
-import constraints.hard.global.AllDifferent;
-import constraints.hard.global.AllDifferentBound;
-import constraints.hard.global.AllDifferentCounting;
-import constraints.hard.global.AllDifferentExceptWeak;
-import constraints.hard.global.AllDifferentPermutation;
-import constraints.hard.global.AllDifferentWeak;
-import constraints.hard.global.AllEqual;
-import constraints.hard.global.Among;
-import constraints.hard.global.Cardinality.CardinalityConstant;
-import constraints.hard.global.Circuit;
-import constraints.hard.global.Count.AtLeast1;
-import constraints.hard.global.Count.AtLeastK;
-import constraints.hard.global.Count.AtMost1;
-import constraints.hard.global.Count.AtMostK;
-import constraints.hard.global.Count.Exactly1;
-import constraints.hard.global.Count.ExactlyK;
-import constraints.hard.global.CtrOrMDD;
-import constraints.hard.global.Cumulative;
-import constraints.hard.global.Element.ElementConstant;
-import constraints.hard.global.Element.ElementVariable;
-import constraints.hard.global.ElementMatrix;
-import constraints.hard.global.ExactlyKVariable;
-import constraints.hard.global.Extremum.ExtremumCst;
-import constraints.hard.global.Extremum.ExtremumCst.MaximumCst.MaximumCstGE;
-import constraints.hard.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
-import constraints.hard.global.Extremum.ExtremumCst.MinimumCst.MinimumCstGE;
-import constraints.hard.global.Extremum.ExtremumCst.MinimumCst.MinimumCstLE;
-import constraints.hard.global.Extremum.ExtremumVar.Maximum;
-import constraints.hard.global.Extremum.ExtremumVar.Minimum;
-import constraints.hard.global.HammingProximityConstant.HammingProximityConstantGE;
-import constraints.hard.global.HammingProximityConstant.HammingProximityConstantSumLE;
-import constraints.hard.global.Lexicographic;
-import constraints.hard.global.NValues.NValuesCst;
-import constraints.hard.global.NValues.NValuesCst.NValuesCstGE;
-import constraints.hard.global.NValues.NValuesCst.NValuesCstLE;
-import constraints.hard.global.NValues.NValuesVar.NValuesVarEQ;
-import constraints.hard.global.NotAllEqual;
-import constraints.hard.global.ObjVar;
-import constraints.hard.global.ObjVar.ObjVarGE;
-import constraints.hard.global.ObjVar.ObjVarLE;
-import constraints.hard.global.SumScalarBoolean.SumScalarBooleanCst;
-import constraints.hard.global.SumScalarBoolean.SumScalarBooleanVar;
-import constraints.hard.global.SumSimple;
-import constraints.hard.global.SumSimple.SumSimpleGE;
-import constraints.hard.global.SumSimple.SumSimpleLE;
-import constraints.hard.global.SumWeighted;
-import constraints.hard.global.SumWeighted.SumWeightedGE;
-import constraints.hard.global.SumWeighted.SumWeightedLE;
-import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub;
-import constraints.hard.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub.SubNE2;
-import constraints.hard.primitive.CtrPrimitiveBinary.Disjonctive;
+import constraints.CtrIntension;
+import constraints.extension.CtrExtension;
+import constraints.extension.CtrExtensionMDD;
+import constraints.extension.CtrExtensionSmart;
+import constraints.extension.structures.MDDCD;
+import constraints.extension.structures.SmartTuple;
+import constraints.extension.structures.Table;
+import constraints.global.AllDifferent;
+import constraints.global.AllDifferentBound;
+import constraints.global.AllDifferentCounting;
+import constraints.global.AllDifferentExceptWeak;
+import constraints.global.AllDifferentPermutation;
+import constraints.global.AllDifferentWeak;
+import constraints.global.AllEqual;
+import constraints.global.Among;
+import constraints.global.Cardinality.CardinalityConstant;
+import constraints.global.Circuit;
+import constraints.global.Count.AtLeast1;
+import constraints.global.Count.AtLeastK;
+import constraints.global.Count.AtMost1;
+import constraints.global.Count.AtMostK;
+import constraints.global.Count.Exactly1;
+import constraints.global.Count.ExactlyK;
+import constraints.global.CtrOrMDD;
+import constraints.global.Cumulative;
+import constraints.global.Element.ElementConstant;
+import constraints.global.Element.ElementVariable;
+import constraints.global.ElementMatrix;
+import constraints.global.ExactlyKVariable;
+import constraints.global.Extremum.ExtremumCst;
+import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstGE;
+import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
+import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstGE;
+import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstLE;
+import constraints.global.Extremum.ExtremumVar.Maximum;
+import constraints.global.Extremum.ExtremumVar.Minimum;
+import constraints.global.HammingProximityConstant.HammingProximityConstantGE;
+import constraints.global.HammingProximityConstant.HammingProximityConstantSumLE;
+import constraints.global.Lexicographic;
+import constraints.global.NValues.NValuesCst;
+import constraints.global.NValues.NValuesCst.NValuesCstGE;
+import constraints.global.NValues.NValuesCst.NValuesCstLE;
+import constraints.global.NValues.NValuesVar.NValuesVarEQ;
+import constraints.global.NotAllEqual;
+import constraints.global.ObjVar;
+import constraints.global.ObjVar.ObjVarGE;
+import constraints.global.ObjVar.ObjVarLE;
+import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
+import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
+import constraints.global.SumSimple;
+import constraints.global.SumSimple.SumSimpleGE;
+import constraints.global.SumSimple.SumSimpleLE;
+import constraints.global.SumWeighted;
+import constraints.global.SumWeighted.SumWeightedGE;
+import constraints.global.SumWeighted.SumWeightedLE;
+import constraints.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub;
+import constraints.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub.SubNE2;
+import constraints.primitive.CtrPrimitiveBinary.Disjonctive;
 import dashboard.ControlPanel.SettingGeneral;
 import dashboard.ControlPanel.SettingVars;
 import executables.Resolution;
@@ -164,13 +164,11 @@ import objectives.Optimizer.OptimizerBasic;
 import objectives.Optimizer.OptimizerDecreasing;
 import objectives.Optimizer.OptimizerDichotomic;
 import objectives.Optimizer.OptimizerIncreasing;
-import problems.ProblemFile;
 import propagation.order1.PropagationForward;
 import search.Solver;
 import utility.Enums.EExportMode;
 import utility.Kit;
 import utility.Reflector;
-import utility.exceptions.MissingImplementationException;
 import variables.Variable;
 import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
@@ -336,8 +334,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public Optimizer optimizer;
 
 	/**
-	 * The priority variables. For example, those that have to be assigned in priority by a backtrack search solver. There is 0 priority variable by
-	 * default.
+	 * The priority variables. For example, those that have to be assigned in priority by a backtrack search solver. There is 0 priority variable by default.
 	 */
 	public Variable[] priorityVars = new Variable[0];
 
@@ -377,8 +374,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final String name() {
 		String s = super.name();
-		return s.matches("XCSP[23]-.*") ? s.substring(6)
-				: s.startsWith(ProblemFile.class.getSimpleName()) ? s.substring(ProblemFile.class.getSimpleName().length() + 1) : s;
+		return s.matches("XCSP[23]-.*") ? s.substring(6) : s;
+		// : s.startsWith(ProblemFile.class.getSimpleName()) ? s.substring(ProblemFile.class.getSimpleName().length() + 1) : s;
 	}
 
 	/**
@@ -468,8 +465,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	/**
-	 * Method that resets the problem instance. Each variable and each constraint is reset. The specified Boolean parameter indicates whether the
-	 * weighted degrees values must not be reset or not.
+	 * Method that resets the problem instance. Each variable and each constraint is reset. The specified Boolean parameter indicates whether the weighted
+	 * degrees values must not be reset or not.
 	 */
 	public void reset() {
 		Stream.of(variables).forEach(x -> x.reset());
@@ -980,7 +977,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			return addCtr(new AllDifferentCounting(this, scp));
 		if (rs.cp.settingGlobal.typeAllDifferent == 4)
 			return addCtr(new AllDifferentBound(this, scp));
-		throw new MissingImplementationException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -1003,7 +1000,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			});
 		if (rs.cp.settingGlobal.typeAllDifferent == 2)
 			return addCtr(new AllDifferentExceptWeak(this, translate(scp), exceptValues));
-		throw new MissingImplementationException();
+		throw new UnsupportedOperationException();
 	}
 
 	private CtrAlone distinctVectors(Variable[] t1, Variable[] t2) {
@@ -1017,13 +1014,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			if (rs.cp.settingGlobal.jokerTable)
 				return extension(vars(t1, t2), Table.shortTuplesFordNotEqualVectors(t1, t2), true);
 		}
-		throw new MissingImplementationException();
+		throw new UnsupportedOperationException();
 	}
 
 	/**
-	 * Builds a DistinctVectors constraint. The tuple of values corresponding to the assignment of the variables in the array specified as first
-	 * parameter must be different from the tuple of values corresponding to the assignment of the variables in the array specified as second
-	 * parameter.
+	 * Builds a DistinctVectors constraint. The tuple of values corresponding to the assignment of the variables in the array specified as first parameter must
+	 * be different from the tuple of values corresponding to the assignment of the variables in the array specified as second parameter.
 	 */
 	private CtrEntity distinctVectors(Variable[][] lists) {
 		if (rs.cp.settingGlobal.typeDistinctVectorsK == 1)
@@ -1039,7 +1035,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 																									// FIXED
 				}
 			});
-		throw new MissingImplementationException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -1058,7 +1054,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			CtrArray ctrSet2 = forall(range(matrix[0].length), i -> allDifferent(api.columnOf(matrix, i)));
 			return ctrSet1.append(ctrSet2);
 		}
-		throw new MissingImplementationException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -1128,13 +1124,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity allEqual(VarSymbolic... scp) {
-		throw new MissingImplementationException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public final CtrEntity allEqualList(Var[]... lists) {
 		control(lists.length >= 2);
-		throw new MissingImplementationException();
+		throw new UnsupportedOperationException();
 	}
 
 	// ************************************************************************
@@ -1142,8 +1138,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	// ************************************************************************
 
 	/**
-	 * Ensures that the specified array of variables is ordered according to the specified operator, when considering the associated lengths. We must
-	 * have x[i]+lengths[i] op x[i+1]. Can be decomposed into a sequence of binary constraints.
+	 * Ensures that the specified array of variables is ordered according to the specified operator, when considering the associated lengths. We must have
+	 * x[i]+lengths[i] op x[i+1]. Can be decomposed into a sequence of binary constraints.
 	 */
 	@Override
 	public final CtrEntity ordered(Var[] list, int[] lengths, TypeOperatorRel op) {
@@ -1153,8 +1149,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	/**
-	 * Ensures that the specified array of variables is ordered according to the specified operator, when considering the associated lengths. We must
-	 * have list[i]+lengths[i] op list[i+1]. Can be decomposed into a sequence of binary constraints.
+	 * Ensures that the specified array of variables is ordered according to the specified operator, when considering the associated lengths. We must have
+	 * list[i]+lengths[i] op list[i+1]. Can be decomposed into a sequence of binary constraints.
 	 */
 	@Override
 	public final CtrEntity ordered(Var[] list, Var[] lengths, TypeOperatorRel op) {
@@ -1166,9 +1162,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	/**
-	 * Builds and returns a Lexicographic constraint. The tuple of values corresponding to the assignment of the variables in the array specified as
-	 * first parameter must be before the tuple of values corresponding to the assignment of the variables in the array specified as second parameter.
-	 * The meaning of the relation "before" is given by the value of the specified operator that must be one value among LT, LE, GT, and GE.
+	 * Builds and returns a Lexicographic constraint. The tuple of values corresponding to the assignment of the variables in the array specified as first
+	 * parameter must be before the tuple of values corresponding to the assignment of the variables in the array specified as second parameter. The meaning of
+	 * the relation "before" is given by the value of the specified operator that must be one value among LT, LE, GT, and GE.
 	 */
 	private final CtrAlone lexSimple(Var[] t1, Var[] t2, TypeOperatorRel op) {
 		return addCtr(Lexicographic.buildFrom(this, translate(t1), translate(t2), op));

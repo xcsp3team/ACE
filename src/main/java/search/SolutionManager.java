@@ -22,7 +22,7 @@ import org.xcsp.modeler.entities.VarEntities.VarArray;
 import org.xcsp.modeler.entities.VarEntities.VarEntity;
 
 import constraints.Constraint;
-import constraints.hard.global.SumAbstract;
+import constraints.global.SumAbstract;
 import problem.Problem;
 import search.backtrack.RestarterLocalBranching;
 import search.backtrack.SolverBacktrack;

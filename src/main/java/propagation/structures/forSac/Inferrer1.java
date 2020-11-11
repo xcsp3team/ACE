@@ -9,7 +9,7 @@
 package propagation.structures.forSac;
 
 import constraints.Constraint;
-import constraints.hard.CtrExtension;
+import constraints.extension.CtrExtension;
 import propagation.order1.singleton.SACSharing;
 import variables.Variable;
 import variables.domains.Domain;

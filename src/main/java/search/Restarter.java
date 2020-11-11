@@ -12,8 +12,8 @@ import java.util.function.Supplier;
 
 import org.xcsp.common.Types.TypeFramework;
 
-import constraints.hard.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
-import constraints.hard.global.ObjVar;
+import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
+import constraints.global.ObjVar;
 import dashboard.ControlPanel.SettingGeneral;
 import dashboard.ControlPanel.SettingRestarts;
 import interfaces.ObserverRuns;
@@ -22,7 +22,6 @@ import search.backtrack.RestarterLocalBranching;
 import search.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
 import utility.Kit;
-import utility.exceptions.UnreachableCodeException;
 
 /**
  * A restarter is used by a solver in order to manage restarts (successive runs from the root node).
@@ -126,7 +125,7 @@ public class Restarter implements ObserverRuns {
 		case SOLUTION:
 			return () -> solver.solManager.found;
 		default:
-			throw new UnreachableCodeException();
+			throw new AssertionError();
 		}
 	}
 

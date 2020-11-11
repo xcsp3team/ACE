@@ -8,8 +8,8 @@ import java.util.stream.Stream;
 import org.xcsp.modeler.entities.CtrEntities.CtrAlone;
 
 import constraints.Constraint;
-import constraints.hard.global.HammingProximityConstant.HammingProximityConstantGE;
-import constraints.hard.global.HammingProximityConstant.HammingProximityConstantSumLE;
+import constraints.global.HammingProximityConstant.HammingProximityConstantGE;
+import constraints.global.HammingProximityConstant.HammingProximityConstantSumLE;
 import interfaces.FilteringSpecific;
 import objectives.Optimizer.OptimizerDecreasing;
 import problem.Problem;

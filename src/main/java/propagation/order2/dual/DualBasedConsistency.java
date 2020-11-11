@@ -15,7 +15,6 @@ import propagation.order2.SecondOrderConsistency;
 import search.Solver;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;
-import utility.exceptions.UnreachableCodeException;
 import variables.Variable;
 import variables.domains.Domain;
 
@@ -66,7 +65,7 @@ public abstract class DualBasedConsistency extends SecondOrderConsistency {
 		for (int b = dy.lastRemoved(); b != stop; b = dy.prevRemoved(b)) {
 			tmp[q] = b;
 			if (!c.removeTuple(tmp))
-				throw new UnreachableCodeException();
+				throw new AssertionError();
 		}
 		dy.setMark(); // in order to avoid dealing again with these nogoods later
 		return true;

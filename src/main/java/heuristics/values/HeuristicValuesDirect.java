@@ -11,8 +11,6 @@ package heuristics.values;
 import interfaces.TagExperimental;
 import propagation.soft.pfc.PFC;
 import utility.Kit;
-import utility.exceptions.MissingImplementationException;
-import utility.exceptions.UnreachableCodeException;
 import variables.Variable;
 
 public abstract class HeuristicValuesDirect extends HeuristicValues {
@@ -22,7 +20,7 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 
 	@Override
 	protected double scoreOf(int a) {
-		throw new UnreachableCodeException("The value must be directly selected without any iteration");
+		throw new AssertionError("The value must be directly selected without any iteration");
 	}
 
 	// ************************************************************************
@@ -129,7 +127,7 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 					}
 				return dx.first();
 			} else { // to maximize the number of distinct values
-				throw new MissingImplementationException();
+				throw new UnsupportedOperationException();
 			}
 		}
 	}

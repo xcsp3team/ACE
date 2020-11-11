@@ -17,7 +17,6 @@ import heuristics.Heuristic;
 import interfaces.TagExperimental;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;
-import utility.exceptions.UnreachableCodeException;
 import variables.Variable;
 import variables.domains.Domain;
 
@@ -106,7 +105,7 @@ public abstract class HeuristicValues extends Heuristic {
 			for (int a : fixed)
 				if (dx.isPresent(a))
 					return a;
-			throw new UnreachableCodeException();
+			throw new AssertionError();
 		}
 
 		public static class LetterFrequency extends HeuristicValuesFixed implements TagExperimental {

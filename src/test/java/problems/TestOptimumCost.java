@@ -12,10 +12,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.xcsp.common.IVar.Var;
 import org.xcsp.common.Utilities;
+import org.xcsp.modeler.api.ProblemAPI;
 
 import executables.Resolution;
-import problems.test.SimpleObjectiveProblem;
 
 @RunWith(Parameterized.class)
 public class TestOptimumCost {
@@ -139,6 +140,17 @@ public class TestOptimumCost {
 		add(SimpleObjectiveProblem.class, null, null, 3);
 
 		return collection;
+	}
+
+	static class SimpleObjectiveProblem implements ProblemAPI {
+		@Override
+		public void model() {
+			Var[] x = array("x", size(6), dom(range(-2, 4)));
+			Var y = var("y", dom(rangeClosed(-100, 100)));
+			allDifferent(x);
+			equal(y, min(add(x[0], mul(max(x[1], x[2]), sub(x[3], x[4]))), x[5]));
+			maximize(y);
+		}
 	}
 
 	@Parameter(0)

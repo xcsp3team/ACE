@@ -11,7 +11,7 @@
 package propagation.order2.dual;
 
 import constraints.Constraint;
-import constraints.hard.CtrExtension;
+import constraints.extension.CtrExtension;
 import search.Solver;
 import variables.Variable;
 

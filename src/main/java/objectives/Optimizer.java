@@ -12,7 +12,6 @@ import search.backtrack.SolverBacktrack;
 import search.local.SolverLocal;
 import utility.Enums.EStopping;
 import utility.Kit;
-import utility.exceptions.UnreachableCodeException;
 import variables.Variable;
 
 public abstract class Optimizer { // Pilot for (mono-objective) optimization
@@ -231,7 +230,7 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 				Kit.log.info("limit=" + ctr.getLimit());
 				first = false;
 			} else
-				throw new UnreachableCodeException();
+				throw new AssertionError();
 		}
 
 		@Override

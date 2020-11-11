@@ -9,7 +9,6 @@
 package heuristics.variables;
 
 import search.backtrack.SolverBacktrack;
-import utility.exceptions.UnreachableCodeException;
 import variables.Variable;
 
 public abstract class HeuristicVariablesDirect extends HeuristicVariables {
@@ -20,7 +19,7 @@ public abstract class HeuristicVariablesDirect extends HeuristicVariables {
 
 	@Override
 	public double scoreOf(Variable x) {
-		throw new UnreachableCodeException("The variable must be directly selected without any iteration");
+		throw new AssertionError("The variable must be directly selected without any iteration");
 	}
 
 }

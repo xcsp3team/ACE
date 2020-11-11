@@ -9,8 +9,8 @@
 package propagation.order1.weak;
 
 import constraints.Constraint;
-import constraints.hard.extension.CtrExtensionSTR1;
-import constraints.hard.extension.structures.Table;
+import constraints.extension.CtrExtensionSTR1;
+import constraints.extension.structures.Table;
 import interfaces.TagExperimental;
 import search.Solver;
 import search.backtrack.SolverBacktrack;

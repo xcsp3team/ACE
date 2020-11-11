@@ -11,7 +11,7 @@ package propagation;
 import java.util.stream.IntStream;
 
 import constraints.Constraint;
-import constraints.hard.CtrGlobal;
+import constraints.CtrGlobal;
 import dashboard.ControlPanel;
 import interfaces.ObserverConflicts;
 import problem.Problem;

@@ -40,18 +40,18 @@ import org.xcsp.common.predicates.TreeEvaluator.ExternFunctionArity1;
 import org.xcsp.common.predicates.TreeEvaluator.ExternFunctionArity2;
 
 import constraints.Constraint;
-import constraints.hard.CtrExtension;
-import constraints.hard.CtrIntension;
-import constraints.hard.extension.CtrExtensionSmart;
-import constraints.hard.extension.structures.Bits;
-import constraints.hard.extension.structures.Table;
-import constraints.hard.extension.structures.TableSmart;
+import constraints.CtrIntension;
+import constraints.extension.CtrExtension;
+import constraints.extension.CtrExtensionSmart;
+import constraints.extension.structures.Bits;
+import constraints.extension.structures.Table;
+import constraints.extension.structures.TableSmart;
 import dashboard.Arguments;
 import dashboard.ControlPanel.SettingOptimization;
 import dashboard.ControlPanel.SettingVars;
 import dashboard.Output;
 import objectives.Optimizer.OptimizerBasic;
-import search.local.functionalPropagators.FunctionalPropagator;
+import search.local.FunctionalPropagator;
 import utility.Kit;
 import utility.sets.SetDense;
 import variables.Variable;
@@ -221,15 +221,15 @@ public final class ProblemStuff {
 	 *********************************************************************************************/
 
 	private boolean controlConstraintsOfConflictStructures() {
-		Stream.of(pb.constraints).forEach(c -> Kit.control(c.conflictsStructure() == null || c.conflictsStructure().registeredCtrs().contains(c),
-				() -> "pb cloneConstraitnStructure " + c + " " + c.conflictsStructure().firstRegisteredCtr()));
+		Stream.of(pb.constraints).forEach(c -> Kit.control(c.conflictsStructure == null || c.conflictsStructure.registeredCtrs().contains(c),
+				() -> "pb cloneConstraitnStructure " + c + " " + c.conflictsStructure.firstRegisteredCtr()));
 		return true;
 	}
 
 	private boolean controlUnitListsOfConflictStructures() {
-		Stream.of(pb.constraints).filter(c -> c.conflictsStructure() != null)
-				.forEach(c -> Kit.control(c.conflictsStructure().registeredCtrs().contains(c) && c.conflictsStructure().registeredCtrs().size() == 1,
-						() -> "pb cloneConstraitnStructure " + c + " " + c.conflictsStructure().firstRegisteredCtr()));
+		Stream.of(pb.constraints).filter(c -> c.conflictsStructure != null)
+				.forEach(c -> Kit.control(c.conflictsStructure.registeredCtrs().contains(c) && c.conflictsStructure.registeredCtrs().size() == 1,
+						() -> "pb cloneConstraitnStructure " + c + " " + c.conflictsStructure.firstRegisteredCtr()));
 		return true;
 	}
 
@@ -334,7 +334,7 @@ public final class ProblemStuff {
 	}
 
 	public boolean hasSharedConflictsStructures() {
-		return Stream.of(pb.constraints).anyMatch(c -> c.conflictsStructure() != null && c.conflictsStructure().firstRegisteredCtr() != c);
+		return Stream.of(pb.constraints).anyMatch(c -> c.conflictsStructure != null && c.conflictsStructure.firstRegisteredCtr() != c);
 	}
 
 	protected void addToMapForAutomorphismIdentification(IdentificationAutomorphism automorphismIdentification) {
@@ -483,13 +483,13 @@ public final class ProblemStuff {
 				else
 					nSharedExtensionStructures++;
 			if (c instanceof CtrIntension)
-				if (((CtrIntension) c).evaluationManager.firstRegisteredCtr() == c)
+				if (((CtrIntension) c).treeEvaluator.firstRegisteredCtr() == c)
 					nEvaluationManagers++;
 				else
 					nSharedEvaluationManagers++;
-			if (c.conflictsStructure() == null)
+			if (c.conflictsStructure == null)
 				nUnbuiltConflictsStructures++;
-			else if (c.conflictsStructure().firstRegisteredCtr() == c)
+			else if (c.conflictsStructure.firstRegisteredCtr() == c)
 				nConflictsStructures++;
 			else
 				nSharedConflictsStructures++;

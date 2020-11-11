@@ -25,10 +25,10 @@ import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Utilities;
 import org.xcsp.modeler.api.ProblemAPI;
 
-import constraints.hard.CtrExtension;
-import constraints.hard.extension.structures.Bits;
-import constraints.hard.extension.structures.ExtensionStructure;
-import constraints.hard.intension.CtrEvaluationManager;
+import constraints.CtrIntension.SharedTreeEvaluator;
+import constraints.extension.CtrExtension;
+import constraints.extension.structures.Bits;
+import constraints.extension.structures.ExtensionStructure;
 import dashboard.Arguments;
 import dashboard.ControlPanel;
 import dashboard.ControlPanel.SettingProblem;
@@ -38,17 +38,17 @@ import heuristics.values.HeuristicValues;
 import heuristics.variables.HeuristicVariables;
 import interfaces.ObserverConstruction;
 import problem.Problem;
-import problems.xcsp3.XCSP3;
 import search.Solver;
 import search.local.SolverLocal;
 import search.statistics.StatisticsMultiResolution;
-import tools.output.Graphviz;
 import utility.Enums.EStopping;
 import utility.Enums.TypeOutput;
+import utility.Graphviz;
 import utility.Kit;
 import utility.Kit.Stopwatch;
 import utility.Reflector;
 import utility.XMLManager;
+import xcsp3.XCSP3;
 
 /**
  * This is the main class in charge of solving a problem instance
@@ -247,13 +247,13 @@ public class Resolution extends Thread {
 
 	public Map<String, ExtensionStructure> mapOfExtensionStructures = new HashMap<>();
 
-	public Map<String, CtrEvaluationManager> mapOfEvaluationManagers = new HashMap<>();
+	public Map<String, SharedTreeEvaluator> mapOfEvaluationManagers = new HashMap<>();
 
 	public void clearMapsUsedByConstraints() {
 		mapOfExtensionStructures.clear();
+		mapOfEvaluationManagers.clear();
 		if (Bits.globalMap != null)
 			Bits.globalMap.clear();
-		mapOfEvaluationManagers.clear();
 	}
 
 	/*

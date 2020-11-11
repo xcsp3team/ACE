@@ -9,7 +9,6 @@
 package variables.domains;
 
 import search.Solver;
-import utility.exceptions.UnreachableCodeException;
 import variables.Variable;
 
 public abstract class DomainHuge implements Domain {
@@ -71,41 +70,41 @@ public abstract class DomainHuge implements Domain {
 
 	@Override
 	public void setMark() {
-		throw new UnreachableCodeException();
+		throw new AssertionError();
 
 	}
 
 	@Override
 	public void setMark(int level) {
-		throw new UnreachableCodeException();
+		throw new AssertionError();
 
 	}
 
 	@Override
 	public void restoreAtMark() {
-		throw new UnreachableCodeException();
+		throw new AssertionError();
 
 	}
 
 	@Override
 	public void restoreAtMark(int level) {
-		throw new UnreachableCodeException();
+		throw new AssertionError();
 
 	}
 
 	@Override
 	public int indexAtMark() {
-		throw new UnreachableCodeException();
+		throw new AssertionError();
 	}
 
 	@Override
 	public long[] binaryRepresentation() {
-		throw new UnreachableCodeException();
+		throw new AssertionError();
 	}
 
 	@Override
 	public int[] indexes() {
-		throw new UnreachableCodeException();
+		throw new AssertionError();
 	}
 
 	@Override

@@ -9,7 +9,7 @@
 package propagation.structures.revisers;
 
 import constraints.Constraint;
-import constraints.hard.extension.structures.Bits;
+import constraints.extension.structures.Bits;
 import interfaces.FilteringSpecific;
 import propagation.order1.PropagationForward;
 import utility.Kit;

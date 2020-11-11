@@ -38,8 +38,8 @@ import org.xcsp.common.Types.TypeCtr;
 import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Utilities;
 
-import constraints.hard.extension.structures.Bits;
-import constraints.hard.extension.structures.Matrix3D;
+import constraints.extension.structures.Bits;
+import constraints.extension.structures.Matrix3D;
 import executables.Extraction;
 import executables.Resolution;
 import heuristics.revisions.HeuristicRevisions;

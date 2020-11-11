@@ -12,15 +12,13 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.xcsp.common.IVar.Var;
 import org.xcsp.common.Utilities;
+import org.xcsp.modeler.api.ProblemAPI;
 import org.xcsp.modeler.problems.AllInterval;
 
 import executables.Resolution;
-import problems.g2_academic.Queens;
-import problems.test.AllDifferentExcept0Problem;
-import problems.test.AtLeastEqualProblem;
-import problems.test.AtMostDistanceSumProblem;
-import problems.test.ElementVariableProblem;
+import problem.Problem;
 
 @RunWith(Parameterized.class)
 public class TestAllSolutions {
@@ -28,28 +26,27 @@ public class TestAllSolutions {
 	static Collection<Object[]> collection = new LinkedList<>();
 
 	static void add(Object instance, String variant, String data, int nSolutions) {
-		String pars = " -s=all -ev";
-		if (instance instanceof Class<?>) {
-			variant = variant != null ? " -variant=" + variant : "";
-			data = data != null ? " -data=" + data : "";
-			collection.add(new Object[] { ((Class<?>) instance).getName() + variant + data + pars, nSolutions });
-		} else {
+		String s = null;
+		if (instance instanceof Class<?>)
+			s = ((Class<?>) instance).getName() + (variant != null ? " -variant=" + variant : "") + (data != null ? " -data=" + data : "");
+		else {
 			URL url = Resolution.class.getResource(instance + ".xml.lzma");
 			Utilities.control(url != null, "not found: " + instance + ".xml.lzma");
-			collection.add(new Object[] { url.getPath() + pars, nSolutions });
+			s = url.getPath();
 		}
+		collection.add(new Object[] { s + " -s=all ", nSolutions });
 	}
 
 	static void add(String instance, int nSolutions) {
 		add(instance, null, null, nSolutions);
 	}
 
-	static void add(Class<?> clazz, int... t) {
-		add(clazz, null, t[0] + "", t[1]);
-	}
-
 	static void add(Class<?> clazz, String variant, int[] t) {
 		add(clazz, variant, t[0] + "", t[1]);
+	}
+
+	static void add(Class<?> clazz, int... t) {
+		add(clazz, null, t);
 	}
 
 	@Parameters(name = "{index}: {0} has {1} solutions")
@@ -161,6 +158,50 @@ public class TestAllSolutions {
 			add(ElementVariableProblem.class, t);
 
 		return collection;
+	}
+
+	static class AllDifferentExcept0Problem implements ProblemAPI {
+		int n;
+
+		@Override
+		public void model() {
+			Var[] x = array("x", size(n), dom(range(3)));
+			allDifferent(x, exceptValue(0));
+		}
+	}
+
+	static class AtLeastEqualProblem implements ProblemAPI {
+		int n;
+
+		@Override
+		public void model() {
+			Var[] x = array("x", size(n), dom(rangeClosed(1, n)));
+			allDifferent(x);
+			((Problem) imp()).tupleProximityGE(x, vals(rangeClosed(1, n)), 6, true);
+		}
+	}
+
+	static class AtMostDistanceSumProblem implements ProblemAPI {
+		int n;
+
+		@Override
+		public void model() {
+			Var[] x = array("x", size(n), dom(rangeClosed(1, n)));
+			allDifferent(x);
+			((Problem) imp()).tupleProximityDistanceSum(x, vals(rangeClosed(1, n)), 4);
+		}
+	}
+
+	static class ElementVariableProblem implements ProblemAPI {
+		int n;
+
+		@Override
+		public void model() {
+			Var[] list = array("x", size(n), dom(0, 1, 2));
+			Var index = var("i", dom(range(n)));
+			Var result = var("r", dom(0, 1, 2));
+			element(list, index, result);
+		}
 	}
 
 	@Parameter(0)

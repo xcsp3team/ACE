@@ -17,7 +17,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import constraints.hard.extension.CtrExtensionSTR1;
+import constraints.extension.CtrExtensionSTR1;
 import search.Solver;
 import utility.Kit;
 import utility.Kit.Stopwatch;

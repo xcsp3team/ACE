@@ -10,7 +10,6 @@ package variables.domains;
 
 import java.util.stream.IntStream;
 
-import utility.exceptions.MissingImplementationException;
 import variables.Variable;
 
 public final class DomainHugeBounded extends DomainHuge {
@@ -127,7 +126,7 @@ public final class DomainHugeBounded extends DomainHuge {
 
 	@Override
 	public int getRemovedLevelOf(int a) {
-		throw new MissingImplementationException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -171,6 +170,6 @@ public final class DomainHugeBounded extends DomainHuge {
 
 	@Override
 	public Object allValues() {
-		throw new MissingImplementationException();
+		throw new UnsupportedOperationException();
 	}
 }

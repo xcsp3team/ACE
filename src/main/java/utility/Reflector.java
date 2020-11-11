@@ -26,7 +26,6 @@ import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
 import interfaces.TagExperimental;
-import utility.exceptions.UnreachableCodeException;
 
 /**
  * This class allows performing some operations based on reflection.
@@ -62,7 +61,7 @@ public class Reflector {
 				if (field.get(parentObject) == fieldObject)
 					return field.getName();
 			} catch (Exception e) {
-				throw new UnreachableCodeException();
+				throw new AssertionError();
 			}
 		}
 		return null;

@@ -20,9 +20,9 @@ import java.util.stream.Stream;
 import org.xcsp.common.Utilities;
 
 import executables.ResolutionVariants;
-import problems.xcsp3.XCSP3;
 import utility.Kit;
 import utility.XMLManager;
+import xcsp3.XCSP3;
 
 /**
  * This class allows us to handle arguments given by the user on the command line.

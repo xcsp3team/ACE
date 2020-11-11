@@ -9,7 +9,6 @@
 package propagation.structures.forSac;
 
 import propagation.order1.singleton.SACSharing;
-import utility.exceptions.MissingImplementationException;
 import variables.Variable;
 
 /**
@@ -31,7 +30,7 @@ public abstract class Inferrer {
 	 * Returns an object that record the inferences (deleted values) recorded for a specified target variable when considering the assignment (x,a).
 	 */
 	public InferenceUnit inferenceUnit(Variable x, int a, Variable target) {
-		throw new MissingImplementationException();
+		throw new UnsupportedOperationException();
 	}
 
 	/**

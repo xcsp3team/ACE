@@ -13,7 +13,6 @@ import java.util.stream.IntStream;
 import org.xcsp.common.Constants;
 
 import utility.Kit;
-import utility.exceptions.MissingImplementationException;
 
 public final class LinkedSetUnordered implements LinkedSet {
 
@@ -159,7 +158,7 @@ public final class LinkedSetUnordered implements LinkedSet {
 
 	@Override
 	public int getRemovedLevelOf(int a) {
-		throw new MissingImplementationException();
+		throw new UnsupportedOperationException();
 	}
 
 	private void swap(int i, int j) {
