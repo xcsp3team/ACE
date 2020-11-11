@@ -8,7 +8,10 @@
  */
 package constraints.hard.global;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Types.TypeConditionOperatorRel;
@@ -25,8 +28,8 @@ import variables.domains.Domain;
 import variables.domains.DomainHuge;
 
 /**
- * Root class for managing simple sum constraints (i.e., sum constraints without integer coefficients associated with variables). Note that no
- * overflow is possible because all sum of integer values (int) cannot exceed long values.
+ * Root class for managing simple sum constraints (i.e., sum constraints without integer coefficients associated with variables). Note that no overflow is
+ * possible because all sum of integer values (int) cannot exceed long values.
  * 
  * @author lecoutre
  *
@@ -118,6 +121,24 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 					return true;
 			}
 			return true;
+		}
+
+		public Variable mostImpacting() {
+			int[] solution = pb.solver.solManager.lastSolution;
+			List<Variable> list = new ArrayList<>();
+			int bestGap = Integer.MIN_VALUE;
+			for (Variable x : scp) {
+				int gap = x.dom.toVal(solution[x.num]) - x.dom.firstValue();
+				if (gap > bestGap) {
+					list.clear();
+					list.add(x);
+					bestGap = gap;
+				} else if (gap == bestGap)
+					list.add(x);
+			}
+			System.out.println("bestgap " + bestGap);
+			Random r = pb.rs.random;
+			return list.get(r.nextInt(list.size()));
 		}
 	}
 

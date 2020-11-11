@@ -43,7 +43,7 @@ public class Auction implements ProblemAPI {
 				atMost1(select(b, itemBids), takingValue(1));
 		}).note("avoiding intersection of bids");
 
-		maximize(SUM, b, weightedBy(bidValues())).note("maximizing summed value of selected bids");
+		maximize(SUM, b, weightedBy(bidValues()));
 	}
 }
 

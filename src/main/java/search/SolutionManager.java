@@ -22,6 +22,7 @@ import org.xcsp.modeler.entities.VarEntities.VarArray;
 import org.xcsp.modeler.entities.VarEntities.VarEntity;
 
 import constraints.Constraint;
+import constraints.hard.global.SumAbstract;
 import problem.Problem;
 import search.backtrack.RestarterLocalBranching;
 import search.backtrack.SolverBacktrack;
@@ -59,8 +60,8 @@ public final class SolutionManager {
 	public String lastSolutionXml;
 
 	/**
-	 * Stores all solutions found by the solver. Only used (different from null) if the tag <code> recordSolutions </code> in the configuration file
-	 * is set to <code> true </code>.
+	 * Stores all solutions found by the solver. Only used (different from null) if the tag <code> recordSolutions </code> in the configuration file is set to
+	 * <code> true </code>.
 	 */
 	public final List<int[]> allSolutions;
 
@@ -171,6 +172,11 @@ public final class SolutionManager {
 			lastSolution[i] = t != null ? t[i] : variables[i].dom.unique();
 			variables[i].lastSolutionPrettyAssignedValue = variables[i].dom.prettyAssignedValue();
 		}
+
+		// SumSimpleLE c = (SumSimpleLE) solver.pb.optimizer.ctr;
+		// Variable x = c.mostImpacting();
+		// System.out.println("ccccc most " + x + " " + x.dom.toVal(lastSolution[x.num]));
+
 	}
 
 	private int h1 = -1, h2 = -1;
@@ -184,6 +190,14 @@ public final class SolutionManager {
 			h2 = (int) IntStream.range(0, lastSolution.length)
 					.filter(i -> lastSolution[i] != solver.pb.variables[i].dom.unique() && c.involves(solver.pb.variables[i])).count();
 		}
+	}
+
+	private Variable selectMostImpactingVariable() {
+		Kit.control(solver.pb.optimizer != null && solver.pb.optimizer.ctr instanceof SumAbstract);
+		Constraint c = (Constraint) solver.pb.optimizer.ctr;
+
+		return null;
+
 	}
 
 	/**

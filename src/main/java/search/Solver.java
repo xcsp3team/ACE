@@ -148,14 +148,38 @@ public abstract class Solver {
 	 */
 	public abstract Solver doRun();
 
+	// public Variable impacting;
+
+	int diviser = 1;
+
 	protected final void doSearch() {
 		for (ObserverSearch observer : observersSearch)
 			observer.beforeSearch();
 		while (!finished() && !restarter.allRunsFinished()) {
 			for (ObserverRuns observer : observersRuns)
 				observer.beforeRun();
+
+			// boolean b = restarter.numRun % diviser == 0;
+			// if (restarter.numRun % 20 == 0)
+			// diviser++;
+			// System.out.println("bbbb " + b);
+			// if (b) {
+			// Domain.setMarks(pb.variables);
+			// if (solManager.found > 0) {
+			// SumSimpleLE c = (SumSimpleLE) pb.optimizer.ctr;
+			// Variable x = c.mostImpacting();
+			// int v = x.dom.toVal(solManager.lastSolution[x.num]);
+			// x.dom.removeValuesGE(v);
+			// System.out.println("ccccc most " + x + " " + x.dom.toVal(solManager.lastSolution[x.num]));
+			// }
+			// }
+
 			if (stoppingType != FULL_EXPLORATION) // an observer might modify the object stoppingType
 				doRun();
+
+			// if (b)
+			// Domain.restoreAtMarks(pb.variables);
+
 			for (ObserverRuns observer : observersRuns)
 				observer.afterRun();
 		}

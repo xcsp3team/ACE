@@ -73,7 +73,7 @@ public abstract class CtrPrimitiveTernary extends CtrPrimitive implements TagGAC
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			if (op == EQ)
 				return pb.addCtr(new AddEQ3(pb, x, y, z));
-			return pb.addCtr(SumWeighted.buildFrom(pb, pb.api.vars(x, y, z), pb.api.vals(1, 1, -1), op, 0));
+			return pb.addCtr(SumWeighted.buildFrom(pb, pb.api.vars(z, x, y), pb.api.vals(-1, 1, 1), op, 0)); // we order variables according to coeffs
 		}
 
 		public CtrPrimitiveTernaryAdd(Problem pb, Variable x, Variable y, Variable z) {

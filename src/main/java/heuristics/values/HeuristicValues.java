@@ -67,6 +67,10 @@ public abstract class HeuristicValues extends Heuristic {
 			}
 		} else if (settings.solutionSaving) {
 			if (solver.restarter.numRun % settings.solutionSavingGap != 0) { // every k runs, we do not use solution saving
+				// int a = -1;
+				// if (x == solver.impacting)
+				// a = dx.first();
+				// else
 				int a = solver.solManager.lastSolution[x.num];
 				if (dx.isPresent(a)) // && (!priorityVar || solver.rs.random.nextDouble() < 0.5))
 					return a;
