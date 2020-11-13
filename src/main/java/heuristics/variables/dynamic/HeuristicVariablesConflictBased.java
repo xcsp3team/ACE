@@ -17,8 +17,8 @@ import interfaces.ObserverConflicts;
 import interfaces.ObserverRuns;
 import interfaces.TagMaximize;
 import search.backtrack.SolverBacktrack;
+import sets.SetDense;
 import utility.Enums.EWeighting;
-import utility.sets.SetDense;
 import variables.Variable;
 import variables.domains.Domain;
 

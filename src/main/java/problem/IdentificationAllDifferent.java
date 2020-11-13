@@ -16,8 +16,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
+import sets.SetSparse;
 import utility.Kit;
-import utility.sets.SetSparse;
 import variables.Variable;
 import variables.Variable.VariableInteger;
 

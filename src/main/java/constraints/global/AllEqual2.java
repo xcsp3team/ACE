@@ -13,15 +13,15 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import constraints.CtrGlobal;
+import constraints.Constraint.CtrGlobal;
 import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import interfaces.TagSymmetric;
 import problem.Problem;
+import sets.SetDense;
+import sets.SetSparseReversible;
 import utility.Kit;
-import utility.sets.SetDense;
-import utility.sets.SetSparseReversible;
 import variables.Variable;
 import variables.domains.Domain;
 

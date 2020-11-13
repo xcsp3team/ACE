@@ -25,10 +25,10 @@ import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Utilities;
 import org.xcsp.modeler.api.ProblemAPI;
 
-import constraints.CtrIntension.SharedTreeEvaluator;
-import constraints.extension.CtrExtension;
+import constraints.extension.Extension;
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.ExtensionStructure;
+import constraints.intension.Intension.SharedTreeEvaluator;
 import dashboard.Arguments;
 import dashboard.ControlPanel;
 import dashboard.ControlPanel.SettingProblem;
@@ -38,6 +38,7 @@ import heuristics.values.HeuristicValues;
 import heuristics.variables.HeuristicVariables;
 import interfaces.ObserverConstruction;
 import problem.Problem;
+import propagation.Propagation;
 import search.Solver;
 import search.local.SolverLocal;
 import search.statistics.StatisticsMultiResolution;
@@ -149,7 +150,7 @@ public class Resolution extends Thread {
 			if (Modifier.isAbstract(clazz.getModifiers()))
 				return false;
 			return dealWith(clazz, HeuristicVariables.class) || dealWith(clazz, HeuristicValues.class) || dealWith(clazz, HeuristicRevisions.class)
-					|| dealWith(clazz, CtrExtension.class);
+					|| dealWith(clazz, Extension.class) || dealWith(clazz, Propagation.class);
 		}
 
 		private void loadRecursively(File directory, String packageName) throws ClassNotFoundException {
@@ -192,7 +193,7 @@ public class Resolution extends Thread {
 				// Class<?> _ = Propagation.class;
 				for (Package p : Package.getPackages()) {
 					String name = p.getName();
-					if (!name.startsWith("constraints") && !name.startsWith("heuristics"))
+					if (!name.startsWith("constraints") && !name.startsWith("heuristics") && !name.startsWith("propagation"))
 						continue;
 					for (URL url : Collections.list(classLoader.getResources(p.getName().replace('.', '/'))))
 						if (url.getProtocol().equals("file") && new File(url.getFile()).exists())

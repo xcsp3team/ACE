@@ -14,11 +14,6 @@ import java.util.function.Predicate;
 import variables.Variable;
 import variables.domains.Domain;
 
-/**
- * This class gives the description of a constraint assistant. <br>
- * An assistant is used to manage supports and candidates.
- */
-
 public final class TupleManager {
 
 	/**
@@ -151,8 +146,7 @@ public final class TupleManager {
 	}
 
 	/**
-	 * Sets the first available tuple strictly greater than the current one, which is not assumed to be necessarily valid (hence, the term
-	 * 'cautiously').
+	 * Sets the first available tuple strictly greater than the current one, which is not assumed to be necessarily valid (hence, the term 'cautiously').
 	 * 
 	 * @return the position (the closest to 0) of the last modified index, or <code> -1 </code> if there is no more available tuple
 	 */

@@ -17,15 +17,13 @@ import constraints.Constraint;
 import propagation.order1.FailedValueBasedConsistency.ArcFailedValueConsistency;
 import propagation.order1.FailedValueBasedConsistency.FailedValueConsistency;
 import propagation.order1.FailedValueBasedConsistency.PartialArcFailedValueConsistency;
-import propagation.order1.isomorphism.PropagationIsomorphism;
 import search.Solver;
 import variables.Variable;
 
 public class AC extends PropagationForward {
 
 	/**
-	 * Indicates if GAC is guaranteed, either by a generic scheme that does not requires to wait for a certain number of assigned, or by a global
-	 * constraint.
+	 * Indicates if GAC is guaranteed, either by a generic scheme that does not requires to wait for a certain number of assigned, or by a global constraint.
 	 */
 	public final boolean guaranteed;
 
@@ -78,7 +76,7 @@ public class AC extends PropagationForward {
 	 * Can be called by subclasses to enforce AC.
 	 */
 	public final boolean enforceArcConsistencyAfterAssignment(Variable x) {
-		assert x.isAssigned() && (queue.size() == 0 || this instanceof PropagationIsomorphism) : queue.size() + " " + x.isAssigned();
+		assert x.isAssigned() && queue.size() == 0 : queue.size() + " " + x.isAssigned(); // (queue.size() == 0 || this instanceof PropagationIsomorphism)
 		if (getClass() != AC.class || x.dom.isModifiedAtCurrentDepth() || !guaranteed || !hasSolverPropagatedAfterLastButOneDecision()) {
 			queue.add(x);
 			if (propagate() == false)

@@ -19,7 +19,7 @@ import search.backtrack.SolverBacktrack;
 import utility.Kit;
 import utility.Reflector;
 import variables.Variable;
-import variables.domains.DomainHuge;
+import variables.domains.DomainInfinite;
 
 /**
  * This class gives the description of a variable ordering heuristic. <br>
@@ -73,10 +73,9 @@ public abstract class HeuristicVariables extends Heuristic {
 	protected Variable[] priorityVars;
 
 	/**
-	 * Relevant only if priorityVariables is not an array of size 0. Variables must be assigned in the order strictly given by priorityVariables from
-	 * 0 to nbStrictPriorityVariables-1. Variables in priorityVariables recorded between nbStrictPriorityVariables and priorityVariables.length-1 must
-	 * then be assigned in priority but in any order given by the heuristic. Beyond priorityVariables.length-1, the heuristic can select any future
-	 * variable.
+	 * Relevant only if priorityVariables is not an array of size 0. Variables must be assigned in the order strictly given by priorityVariables from 0 to
+	 * nbStrictPriorityVariables-1. Variables in priorityVariables recorded between nbStrictPriorityVariables and priorityVariables.length-1 must then be
+	 * assigned in priority but in any order given by the heuristic. Beyond priorityVariables.length-1, the heuristic can select any future variable.
 	 */
 	private int nStrictlyPriorityVars;
 
@@ -112,7 +111,7 @@ public abstract class HeuristicVariables extends Heuristic {
 
 	/** Returns the score of the specified variable, while considering the optimization coeff (i.e., minimization or maximization). */
 	public final double scoreOptimizedOf(Variable x) {
-		if (x.dom instanceof DomainHuge)
+		if (x.dom instanceof DomainInfinite)
 			return scoreCoeff == -1 ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY; // because such variables must be computed (and not
 																							// assigned)
 		return scoreOf(x) * scoreCoeff;

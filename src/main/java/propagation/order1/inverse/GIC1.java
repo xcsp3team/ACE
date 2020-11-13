@@ -11,8 +11,8 @@ package propagation.order1.inverse;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import constraints.extension.CtrExtensionSTR1;
-import constraints.extension.CtrExtensionSTR3;
+import constraints.extension.ExtensionSTR1;
+import constraints.extension.ExtensionSTR3;
 import heuristics.variables.HeuristicVariables;
 import heuristics.variables.dynamic.WDegOnDom;
 import propagation.order1.StrongConsistency;
@@ -35,7 +35,7 @@ public class GIC1 extends StrongConsistency {
 	public GIC1(Solver solver) {
 		super(solver);
 		Kit.control(cp().settingRestarts.cutoff == Long.MAX_VALUE, () -> "With Inverse, there is currently no possibility of restarts.");
-		Kit.control(!Stream.of(solver.pb.constraints).anyMatch(c -> c.getClass().isAssignableFrom(CtrExtensionSTR3.class)),
+		Kit.control(!Stream.of(solver.pb.constraints).anyMatch(c -> c.getClass().isAssignableFrom(ExtensionSTR3.class)),
 				() -> "Inverse currently not compatible with STR3");
 		variableHeuristicForInverse = new WDegOnDom((SolverBacktrack) solver, false);
 		nInverseTests = new int[solver.pb.variables.length + 1];
@@ -65,9 +65,9 @@ public class GIC1 extends StrongConsistency {
 
 	protected void updateSTRStructures() {
 		for (Constraint c : solver.pb.constraints)
-			if (c instanceof CtrExtensionSTR1) { // || constraint instanceof AllDifferent) {
+			if (c instanceof ExtensionSTR1) { // || constraint instanceof AllDifferent) {
 				int bef = solver.pb.nValuesRemoved;
-				((CtrExtensionSTR1) c).runPropagator(null); // to update tables
+				((ExtensionSTR1) c).runPropagator(null); // to update tables
 				Kit.control(solver.pb.nValuesRemoved == bef);
 			}
 	}

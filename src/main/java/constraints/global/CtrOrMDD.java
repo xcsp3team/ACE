@@ -12,16 +12,16 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import constraints.CtrGlobal;
+import constraints.Constraint.CtrGlobal;
 import constraints.extension.structures.MDDCD;
 import constraints.extension.structures.MDDNodeCD;
 import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import problem.Problem;
+import sets.SetDenseReversible;
+import sets.SetSparseReversible;
 import utility.Kit;
-import utility.sets.SetDenseReversible;
-import utility.sets.SetSparseReversible;
 import variables.Variable;
 import variables.domains.Domain;
 

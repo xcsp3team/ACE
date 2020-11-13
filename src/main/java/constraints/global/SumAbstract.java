@@ -8,7 +8,7 @@
  */
 package constraints.global;
 
-import constraints.CtrGlobal;
+import constraints.Constraint.CtrGlobal;
 import interfaces.TagFilteringCompleteAtEachCall;
 import problem.Problem;
 import utility.Kit;

@@ -8,23 +8,24 @@
  */
 package propagation;
 
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import constraints.Constraint;
-import constraints.CtrGlobal;
+import constraints.Constraint.CtrGlobal;
 import dashboard.ControlPanel;
 import interfaces.ObserverConflicts;
 import problem.Problem;
 import propagation.order1.PropagationForward;
 import search.Solver;
+import sets.SetSparse;
 import utility.Kit;
 import utility.Reflector;
-import utility.sets.SetSparse;
 import variables.Variable;
 
 /**
- * The root class of all classes that can be used to manage constraint propagation. For simplicity, propagation and consistency concepts are not
- * distinguished, So, some subclasses are given the name of consistencies.
+ * The root class of all classes that can be used to manage constraint propagation. For simplicity, propagation and consistency concepts are not distinguished,
+ * So, some subclasses are given the name of consistencies.
  * 
  * @author lecoutre
  * 
@@ -32,8 +33,10 @@ import variables.Variable;
 public abstract class Propagation {
 
 	public static Propagation buildFor(Solver solver) {
-		if (solver.rs.cp.settingSolving.enablePrepro || solver.rs.cp.settingSolving.enableSearch)
-			return Reflector.buildObject(solver.rs.cp.settingPropagation.clazz, Propagation.class, solver);
+		if (solver.rs.cp.settingSolving.enablePrepro || solver.rs.cp.settingSolving.enableSearch) {
+			Set<Class<?>> classes = solver.rs.handlerClasses.map.get(Propagation.class);
+			return Reflector.buildObject(solver.rs.cp.settingPropagation.clazz, classes, solver);
+		}
 		return null;
 	}
 
@@ -57,15 +60,14 @@ public abstract class Propagation {
 	public final SetSparseMap[] auxiliaryQueues;
 
 	/**
-	 * This field is used to count time. It is used to avoid performing some useless calls of constraint propagators by comparing time-stamps attached
-	 * to variables with time-stamps attached to constraints.
+	 * This field is used to count time. It is used to avoid performing some useless calls of constraint propagators by comparing time-stamps attached to
+	 * variables with time-stamps attached to constraints.
 	 * 
 	 */
 	public long time;
 
 	/**
-	 * The constraint that is used currently to filter domains. This is null if no constraint is currently used for filtering. This is relevant for
-	 * AC.
+	 * The constraint that is used currently to filter domains. This is null if no constraint is currently used for filtering. This is relevant for AC.
 	 */
 	public Constraint currFilteringCtr;
 
@@ -80,8 +82,8 @@ public abstract class Propagation {
 	public long nSingletonTests, nEffectiveSingletonTests;
 
 	/**
-	 * When true, indicates that the object is currently performing a form of search during propagation. This may be the case for some forms of
-	 * propagation based on strong consistencies.
+	 * When true, indicates that the object is currently performing a form of search during propagation. This may be the case for some forms of propagation
+	 * based on strong consistencies.
 	 */
 	public boolean performingProperSearch;
 
@@ -155,8 +157,8 @@ public abstract class Propagation {
 	}
 
 	/**
-	 * Pick and delete a variable from the queue and call filtering algorithms associated with the constraints involving the variable. Possibly
-	 * postpone filtering if auxiliary queues are used.
+	 * Pick and delete a variable from the queue and call filtering algorithms associated with the constraints involving the variable. Possibly postpone
+	 * filtering if auxiliary queues are used.
 	 * 
 	 * @return false iff an inconsistency is detected
 	 */
@@ -240,9 +242,9 @@ public abstract class Propagation {
 	public abstract boolean runAfterAssignment(Variable x);
 
 	/**
-	 * This method is called when a binary branching scheme is used by the solver. Indeed, after a positive decision (value assigned to a variable),
-	 * one can proceed with a negative decision (value removed from the domain of the variable), and to run constraint propagation before selecting
-	 * another variable. This method is always called with a variable whose domain is not empty.
+	 * This method is called when a binary branching scheme is used by the solver. Indeed, after a positive decision (value assigned to a variable), one can
+	 * proceed with a negative decision (value removed from the domain of the variable), and to run constraint propagation before selecting another variable.
+	 * This method is always called with a variable whose domain is not empty.
 	 * 
 	 * @param x
 	 *            the variable that has just been subject to a refutation (negative decision).
@@ -251,8 +253,8 @@ public abstract class Propagation {
 	public abstract boolean runAfterRefutation(Variable x);
 
 	/**
-	 * Manages the fact that the domain for the specified variable has been wiped-out . This allows us to update conflict counters. The value
-	 * <code>false</code> is returned.
+	 * Manages the fact that the domain for the specified variable has been wiped-out . This allows us to update conflict counters. The value <code>false</code>
+	 * is returned.
 	 * 
 	 * @param x
 	 *            a variable with empty domain
@@ -270,8 +272,8 @@ public abstract class Propagation {
 
 	/**
 	 * To be called when the domain of the specified variable has just been reduced. <br />
-	 * Be careful: the domain of the specified variable is not necessarily already reduced, and so may be different from the specified value
-	 * newDomSize, which is the (virtual) size of the domain of the specified variable.
+	 * Be careful: the domain of the specified variable is not necessarily already reduced, and so may be different from the specified value newDomSize, which
+	 * is the (virtual) size of the domain of the specified variable.
 	 */
 	public final boolean handleReduction(Variable x, int newDomSize) {
 		if (newDomSize == 0) {

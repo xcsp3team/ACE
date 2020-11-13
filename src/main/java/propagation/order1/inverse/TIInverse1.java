@@ -11,14 +11,14 @@ package propagation.order1.inverse;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import constraints.extension.CtrExtensionSTR1;
-import constraints.extension.CtrExtensionSTR2;
+import constraints.extension.ExtensionSTR1;
+import constraints.extension.ExtensionSTR2;
 import constraints.extension.structures.Table;
 import propagation.order1.StrongConsistency;
 import search.Solver;
+import sets.SetDenseReversible;
 import utility.Enums.EStopping;
 import utility.Kit;
-import utility.sets.SetDenseReversible;
 import variables.Variable;
 
 public class TIInverse1 extends StrongConsistency {
@@ -61,7 +61,7 @@ public class TIInverse1 extends StrongConsistency {
 
 	public TIInverse1(Solver solver) {
 		super(solver);
-		Kit.control(Stream.of(solver.pb.constraints).allMatch(c -> c.getClass().isAssignableFrom(CtrExtensionSTR2.class)));
+		Kit.control(Stream.of(solver.pb.constraints).allMatch(c -> c.getClass().isAssignableFrom(ExtensionSTR2.class)));
 		selectConstraints();
 
 	}
@@ -87,7 +87,7 @@ public class TIInverse1 extends StrongConsistency {
 	private int filterConstraint(Constraint ctr) {
 		int cnt = 0;
 		int[][] tuples = ((Table) ctr.extStructure()).tuples;
-		SetDenseReversible denseSetOfTuples = ((CtrExtensionSTR1) ctr).set;
+		SetDenseReversible denseSetOfTuples = ((ExtensionSTR1) ctr).set;
 		int[] dense = denseSetOfTuples.dense;
 		for (int i = denseSetOfTuples.limit; i >= 0; i--) {
 			if (residues[dense[i]] != null && Constraint.firstUnsatisfiedHardConstraint(solver.pb.constraints, residues[dense[i]]) != null)

@@ -10,9 +10,9 @@ package search.backtrack;
 
 import java.util.stream.IntStream;
 
+import sets.SetDense;
 import utility.Kit;
 import utility.operations.Bit;
-import utility.sets.SetDense;
 import variables.Variable;
 
 public final class DecisionRecorder {

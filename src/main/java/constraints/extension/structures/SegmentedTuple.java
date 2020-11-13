@@ -9,12 +9,12 @@ import java.util.stream.Stream;
 
 import org.xcsp.common.Utilities;
 
-import constraints.extension.CtrExtensionSegmented;
+import constraints.extension.ExtensionSegmented;
 import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import problem.Problem;
+import sets.SetDenseReversible;
+import sets.SetSparse;
 import utility.Kit;
-import utility.sets.SetDenseReversible;
-import utility.sets.SetSparse;
 import variables.Variable;
 import variables.domains.Domain;
 
@@ -46,7 +46,7 @@ public final class SegmentedTuple {
 		this.restrictions = restrictions == null ? new RestrictionTable[0] : restrictions;
 	}
 
-	public void attach(CtrExtensionSegmented ctr) {
+	public void attach(ExtensionSegmented ctr) {
 		this.scp = ctr.scp;
 		this.prefixWithValues = prefixWithValues != null ? prefixWithValues : Kit.repeat(STAR, scp.length);
 		this.prefix = IntStream.range(0, scp.length).map(i -> prefixWithValues[i] == STAR ? STAR : scp[i].dom.toIdx(prefixWithValues[i])).toArray();

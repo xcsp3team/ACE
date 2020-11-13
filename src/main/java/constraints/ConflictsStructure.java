@@ -13,9 +13,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import constraints.extension.CtrExtensionCT;
-import constraints.extension.CtrExtensionCT.CtrExtensionCT2;
-import constraints.extension.CtrExtensionSTR2;
+import constraints.extension.ExtensionCT;
+import constraints.extension.ExtensionCT.CtrExtensionCT2;
+import constraints.extension.ExtensionSTR2;
 import dashboard.ControlPanel;
 import interfaces.RegisteringCtrs;
 import utility.Kit;
@@ -33,7 +33,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 	public static final int LIMIT_FOR_BARY = 1000000;
 
 	private static boolean canBuildConflictsStructureFor(Constraint c, int limit) {
-		if (c instanceof CtrExtensionSTR2 || c instanceof CtrExtensionCT || c instanceof CtrExtensionCT2 || c.hugeDomainVars.length > 0)
+		if (c instanceof ExtensionSTR2 || c instanceof ExtensionCT || c instanceof CtrExtensionCT2 || c.infiniteDomainVars.length > 0)
 			return false;
 		ControlPanel cfg = c.pb.rs.cp;
 		if (!cfg.mustBuildConflictStructures || c.scp.length == 1 || Kit.getUsedMemory() > 400000000L)

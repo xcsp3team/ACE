@@ -254,8 +254,9 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 				if (solver.learnerNogoods != null)
 					m.putPositive("ngd", solver.learnerNogoods.nNogoods);
 				if (solver.solManager.found > 0) {
-					// m.put("nSols", solver.solManager.found);
-					if (solver.pb.settings.framework != TypeFramework.CSP)
+					if (solver.pb.settings.framework == TypeFramework.CSP)
+						m.put("nSols", solver.solManager.found);
+					else
 						m.put("bnd", nformat.format(solver.solManager.bestBound));
 				}
 				return m;

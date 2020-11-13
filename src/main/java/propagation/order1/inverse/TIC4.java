@@ -11,13 +11,13 @@ package propagation.order1.inverse;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import constraints.extension.CtrExtensionSTR1;
-import constraints.extension.CtrExtensionSTR2;
+import constraints.extension.ExtensionSTR1;
+import constraints.extension.ExtensionSTR2;
 import constraints.extension.structures.Table;
 import search.Solver;
+import sets.SetDenseReversible;
 import utility.Enums.EStopping;
 import utility.Kit;
-import utility.sets.SetDenseReversible;
 import variables.Variable;
 
 public class TIC4 extends GIC4 {
@@ -79,7 +79,7 @@ public class TIC4 extends GIC4 {
 
 	public TIC4(Solver solver) {
 		super(solver);
-		Kit.control(Stream.of(solver.pb.constraints).allMatch(c -> c.getClass().isAssignableFrom(CtrExtensionSTR2.class)));
+		Kit.control(Stream.of(solver.pb.constraints).allMatch(c -> c.getClass().isAssignableFrom(ExtensionSTR2.class)));
 		Kit.control(Variable.areNumsNormalized(solver.pb.variables));
 		tsolutions = new int[solver.pb.constraints.length * 100][];
 		currentLimitOfTSolutions = -1;
@@ -110,7 +110,7 @@ public class TIC4 extends GIC4 {
 		int cnt = 0;
 		Kit.log.info("Filter tuples from " + ctr);
 		int[][] tuples = ((Table) ctr.extStructure()).tuples;
-		SetDenseReversible denseSetOfTuples = ((CtrExtensionSTR1) ctr).set;
+		SetDenseReversible denseSetOfTuples = ((ExtensionSTR1) ctr).set;
 		int[] dense = denseSetOfTuples.dense;
 		for (int i = denseSetOfTuples.limit; i >= 0; i--) {
 			if (isSupported(ctr.scp, tuples[dense[i]]))

@@ -25,7 +25,7 @@ import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 import variables.domains.Domain;
-import variables.domains.DomainHuge;
+import variables.domains.DomainInfinite;
 
 public abstract class SumWeighted extends SumAbstract {
 
@@ -259,10 +259,10 @@ public abstract class SumWeighted extends SumAbstract {
 
 		int cnt = 0;
 
-		public int deduce() {
+		public int deduce() { // experimental for infinite domains (to be finalized)
 			Kit.control(futvars.size() == 1);
 			int pos = futvars.dense[0];
-			Kit.control(scp[pos].dom instanceof DomainHuge, () -> " " + scp[pos]);
+			control(scp[pos].dom instanceof DomainInfinite, " " + scp[pos]);
 			long sum = 0;
 			for (int i = 0; i < scp.length; i++)
 				if (i != pos)
@@ -270,8 +270,6 @@ public abstract class SumWeighted extends SumAbstract {
 			Kit.control((limit - sum) % coeffs[pos] == 0);
 			long res = (limit - sum) / coeffs[pos];
 			Kit.control(Utilities.isSafeInt(res));
-			// if (cnt++ % 1000 == 0)
-			// System.out.println("dudicung " + scp[pos] + " = " + res);
 			// pb.solver.pushVariable(scp[pos]);
 			scp[pos].dom.reduceTo((int) res); // , pb.solver.depth());
 			return (int) res;

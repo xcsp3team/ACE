@@ -9,7 +9,7 @@
 package propagation.structures.forSac;
 
 import constraints.Constraint;
-import constraints.extension.CtrExtension;
+import constraints.extension.Extension;
 import propagation.order1.singleton.SACSharing;
 import variables.Variable;
 import variables.domains.Domain;
@@ -38,7 +38,7 @@ public class Inferrer1 extends Inferrer {
 		if (!enforceSPAC || sac.solver.depth() != 1)
 			return;
 		for (Constraint c : x.ctrs) {
-			if (c.scp.length != 2 || !(c instanceof CtrExtension))
+			if (c.scp.length != 2 || !(c instanceof Extension))
 				continue;
 			int p = c.positionOf(x);
 			tuple[p] = a;
@@ -47,7 +47,7 @@ public class Inferrer1 extends Inferrer {
 			for (int b = dom.lastRemoved(); b != -1; b = dom.prevRemoved(b)) {
 				if (dom.isRemovedAtLevel(b, 1)) {
 					tuple[q] = b;
-					((CtrExtension) c).removeTuple(tuple);
+					((Extension) c).removeTuple(tuple);
 				}
 			}
 		}

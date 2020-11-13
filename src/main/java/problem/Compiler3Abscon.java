@@ -17,8 +17,8 @@ import org.xcsp.common.IVar;
 import org.xcsp.modeler.definitions.ICtr;
 
 import constraints.Constraint;
-import constraints.CtrIntension;
-import constraints.extension.CtrExtension;
+import constraints.extension.Extension;
+import constraints.intension.Intension;
 import utility.Kit;
 import variables.Variable;
 
@@ -86,10 +86,10 @@ public final class Compiler3Abscon extends org.xcsp.modeler.Compiler {
 	private void specificAbscon() {
 		Kit.control(subpb.isFullProblem(), () -> "currently, only full problems handled");
 		if (pb.ctrEntities.ctrToCtrArray.size() == 0 && !ignoreAutomaticGroups) {
-			CtrExtension[] ces = Stream.of(pb.constraints).filter(c -> c instanceof CtrExtension).map(c -> (CtrExtension) c).toArray(CtrExtension[]::new);
+			Extension[] ces = Stream.of(pb.constraints).filter(c -> c instanceof Extension).map(c -> (Extension) c).toArray(Extension[]::new);
 			if (ces.length > 1)
 				pb.ctrEntities.newCtrArrayEntity(ces, false); // .note("Automatic set of extension constraints");
-			CtrIntension[] cis = Stream.of(pb.constraints).filter(c -> c instanceof CtrIntension).map(c -> (CtrIntension) c).toArray(CtrIntension[]::new);
+			Intension[] cis = Stream.of(pb.constraints).filter(c -> c instanceof Intension).map(c -> (Intension) c).toArray(Intension[]::new);
 			if (cis.length > 1)
 				pb.ctrEntities.newCtrArrayEntity(cis, false); // .note("Automatic set of intension constraints");
 		}

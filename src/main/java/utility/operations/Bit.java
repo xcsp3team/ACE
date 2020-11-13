@@ -8,7 +8,7 @@
  */
 package utility.operations;
 
-import utility.sets.SetDense;
+import sets.SetDense;
 
 public final class Bit {
 

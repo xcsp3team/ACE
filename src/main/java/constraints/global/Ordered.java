@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
 import org.xcsp.common.Types.TypeOperatorRel;
 import org.xcsp.modeler.definitions.ICtr.ICtrOrdered;
 
-import constraints.CtrGlobal;
+import constraints.Constraint.CtrGlobal;
 import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import interfaces.TagUnsymmetric;

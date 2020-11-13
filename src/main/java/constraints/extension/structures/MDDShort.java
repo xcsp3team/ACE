@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Constants;
 
 import constraints.Constraint;
-import constraints.extension.CtrExtensionMDDShort;
+import constraints.extension.ExtensionMDDShort;
 import utility.Kit;
 import utility.Kit.IntArrayHashKey;
 import variables.Variable;
@@ -41,11 +41,11 @@ public final class MDDShort extends ExtensionStructure {
 		return nCreatedNodes++;
 	}
 
-	public MDDShort(CtrExtensionMDDShort c) {
+	public MDDShort(ExtensionMDDShort c) {
 		super(c);
 	}
 
-	public MDDShort(CtrExtensionMDDShort c, MDDNodeShort root) {
+	public MDDShort(ExtensionMDDShort c, MDDNodeShort root) {
 		this(c);
 		this.root = root;
 	}

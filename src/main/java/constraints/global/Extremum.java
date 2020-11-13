@@ -3,7 +3,7 @@ package constraints.global;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import constraints.CtrGlobal;
+import constraints.Constraint.CtrGlobal;
 import interfaces.Optimizable;
 import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;

@@ -28,9 +28,9 @@ import org.xcsp.common.Types.TypeOperatorRel;
 
 import interfaces.ObserverDomainReduction;
 import search.Solver;
+import sets.LinkedSet;
+import sets.SetDense;
 import utility.Kit;
-import utility.sets.LinkedSet;
-import utility.sets.SetDense;
 import variables.Variable;
 
 public interface Domain extends LinkedSet {

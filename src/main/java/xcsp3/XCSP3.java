@@ -69,15 +69,15 @@ import org.xcsp.parser.entries.XVariables.XVarSymbolic;
 
 import constraints.Constraint.CtrHardFalse;
 import constraints.global.BinPackingSimple;
-import constraints.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryAdd;
-import constraints.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryDist;
-import constraints.primitive.CtrPrimitiveBinary.CtrPrimitiveBinaryLog;
-import constraints.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub;
-import constraints.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub.SubEQ2;
-import constraints.primitive.CtrPrimitiveTernary.CtrPrimitiveTernaryAdd;
-import constraints.primitive.CtrPrimitiveTernary.CtrPrimitiveTernaryLog;
-import constraints.primitive.CtrPrimitiveTernary.CtrPrimitiveTernaryMod;
-import constraints.primitive.CtrPrimitiveTernary.CtrPrimitiveTernaryMul;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryAdd;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryDist;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryLog;
+import constraints.intension.PrimitiveBinary.PrimitiveBinarySub;
+import constraints.intension.PrimitiveBinary.PrimitiveBinarySub.SubEQ2;
+import constraints.intension.PrimitiveTernary.PrimitiveTernaryAdd;
+import constraints.intension.PrimitiveTernary.PrimitiveTernaryLog;
+import constraints.intension.PrimitiveTernary.PrimitiveTernaryMod;
+import constraints.intension.PrimitiveTernary.PrimitiveTernaryMul;
 import dashboard.Arguments;
 import problem.Problem;
 import utility.Kit;
@@ -453,11 +453,11 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 			repost(id);
 		else {
 			if (aop == ADD)
-				CtrPrimitiveBinaryAdd.buildFrom(imp(), trVar(x), trVar(y), op, k);
+				PrimitiveBinaryAdd.buildFrom(imp(), trVar(x), trVar(y), op, k);
 			else if (aop == SUB)
-				CtrPrimitiveBinarySub.buildFrom(imp(), trVar(x), trVar(y), op, k);
+				PrimitiveBinarySub.buildFrom(imp(), trVar(x), trVar(y), op, k);
 			else if (aop == DIST)
-				CtrPrimitiveBinaryDist.buildFrom(imp(), trVar(x), trVar(y), op, k);
+				PrimitiveBinaryDist.buildFrom(imp(), trVar(x), trVar(y), op, k);
 			else
 				repost(id);
 		}
@@ -486,11 +486,11 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 			repost(id);
 		else {
 			if (aop == ADD)
-				CtrPrimitiveTernaryAdd.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
+				PrimitiveTernaryAdd.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
 			else if (aop == MOD && op == EQ)
-				CtrPrimitiveTernaryMod.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
+				PrimitiveTernaryMod.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
 			else if (aop == MUL && op == EQ && (trVar(x).dom.is01() || trVar(y).dom.is01()))
-				CtrPrimitiveTernaryMul.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
+				PrimitiveTernaryMul.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
 			else
 				repost(id);
 		}
@@ -522,7 +522,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		if (imp().rs.cp.settingCtrs.ignorePrimitives)
 			repost(id);
 		else
-			CtrPrimitiveBinaryLog.buildFrom(imp(), trVar(x), trVar(y), op, k);
+			PrimitiveBinaryLog.buildFrom(imp(), trVar(x), trVar(y), op, k);
 	}
 
 	@Override
@@ -531,7 +531,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		if (imp().rs.cp.settingCtrs.ignorePrimitives)
 			repost(id);
 		else
-			CtrPrimitiveTernaryLog.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
+			PrimitiveTernaryLog.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));
 	}
 
 	// ************************************************************************

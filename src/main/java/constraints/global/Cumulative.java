@@ -12,13 +12,13 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import constraints.CtrGlobal;
+import constraints.Constraint.CtrGlobal;
 import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACUnguaranteed;
 import problem.Problem;
-import utility.sets.SetSparse;
-import utility.sets.SetSparseReversible;
+import sets.SetSparse;
+import sets.SetSparseReversible;
 import variables.Variable;
 
 public final class Cumulative extends CtrGlobal implements TagFilteringCompleteAtEachCall, TagGACUnguaranteed, ObserverBacktrackingSystematic {

@@ -26,9 +26,9 @@ import org.xcsp.common.predicates.XNode;
 import org.xcsp.common.predicates.XNodeLeaf;
 import org.xcsp.common.predicates.XNodeParent;
 
-import constraints.extension.CtrExtensionSmart;
+import constraints.extension.ExtensionSmart;
+import sets.SetSparse;
 import utility.Kit;
-import utility.sets.SetSparse;
 import variables.Variable;
 import variables.domains.Domain;
 import variables.domains.DomainInteger.DomainRange;
@@ -166,7 +166,7 @@ public final class SmartTuple {
 		return this;
 	}
 
-	public void attach(CtrExtensionSmart ctr) {
+	public void attach(ExtensionSmart ctr) {
 		this.scp = ctr.scp;
 		this.prefixWithValues = prefixWithValues != null ? prefixWithValues : Kit.repeat(STAR, scp.length);
 		this.prefix = IntStream.range(0, scp.length).map(i -> prefixWithValues[i] == STAR ? STAR : scp[i].dom.toIdx(prefixWithValues[i])).toArray();

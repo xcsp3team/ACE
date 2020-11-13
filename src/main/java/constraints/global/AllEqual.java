@@ -10,14 +10,14 @@ package constraints.global;
 
 import java.util.stream.IntStream;
 
-import constraints.CtrGlobal;
+import constraints.Constraint.CtrGlobal;
 import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import interfaces.TagSymmetric;
 import problem.Problem;
+import sets.SetSparse;
 import utility.Kit;
-import utility.sets.SetSparse;
 import variables.Variable;
 
 /**

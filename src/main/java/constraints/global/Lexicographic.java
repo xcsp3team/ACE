@@ -10,7 +10,7 @@ package constraints.global;
 
 import org.xcsp.common.Types.TypeOperatorRel;
 
-import constraints.CtrGlobal;
+import constraints.Constraint.CtrGlobal;
 import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import interfaces.TagUnsymmetric;

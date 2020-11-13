@@ -14,12 +14,12 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import constraints.CtrGlobal;
+import constraints.Constraint.CtrGlobal;
 import interfaces.Optimizable;
 import interfaces.TagFilteringPartialAtEachCall;
 import interfaces.TagGACUnguaranteed;
 import problem.Problem;
-import utility.sets.SetDense;
+import sets.SetDense;
 import variables.Variable;
 import variables.Variable.VariableInteger;
 import variables.domains.Domain;

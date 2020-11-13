@@ -17,14 +17,14 @@ import heuristics.revisions.HeuristicRevisions.HeuristicRevisionsDirect.First;
 import learning.LearnerNogoods;
 import learning.LearnerStatesDominance;
 import propagation.order1.PropagationForward;
+import sets.SetSparse;
 import utility.Reflector;
-import utility.sets.SetSparse;
 import variables.Variable;
 import variables.domains.Domain;
 
 /**
- * This class is used to store the elements that have to be taken into account by constraint propagation. Constraint propagation iteratively involves
- * picking one element in this set (by means of a so-called revision ordering heuristic) and then performs some filtering.
+ * This class is used to store the elements that have to be taken into account by constraint propagation. Constraint propagation iteratively involves picking
+ * one element in this set (by means of a so-called revision ordering heuristic) and then performs some filtering.
  */
 public final class PropagationQueue extends SetSparse {
 
@@ -133,9 +133,9 @@ public final class PropagationQueue extends SetSparse {
 
 	private LearnerStatesDominance stateDominanceManager;
 
-	private int[] absentValuesSentinel; // [vid]
+	private int[] absentValuesSentinel;
 
-	private long[] sentinelLevel; // [vid]
+	private long[] sentinelLevel;
 
 	public void setLearnerNogood(LearnerNogoods nogoodManager) {
 		this.learnerNogood = nogoodManager;

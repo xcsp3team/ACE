@@ -11,12 +11,12 @@ package constraints.global;
 import java.util.Arrays;
 import java.util.stream.LongStream;
 
-import constraints.CtrGlobal;
+import constraints.Constraint.CtrGlobal;
 import interfaces.TagFilteringPartialAtEachCall;
 import interfaces.TagGACUnguaranteed;
 import problem.Problem;
+import sets.SetDense;
 import utility.Kit;
-import utility.sets.SetDense;
 import variables.Variable;
 import variables.domains.Domain;
 

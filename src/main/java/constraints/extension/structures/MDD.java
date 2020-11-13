@@ -27,7 +27,7 @@ import org.xcsp.common.structures.Automaton;
 import org.xcsp.common.structures.Transition;
 
 import constraints.Constraint;
-import constraints.extension.CtrExtensionMDD;
+import constraints.extension.ExtensionMDD;
 import utility.Kit;
 import utility.Kit.IntArrayHashKey;
 import variables.Variable;
@@ -51,26 +51,26 @@ public final class MDD extends ExtensionStructure {
 		return nCreatedNodes++;
 	}
 
-	public MDD(CtrExtensionMDD c) {
+	public MDD(ExtensionMDD c) {
 		super(c);
 	}
 
-	public MDD(CtrExtensionMDD c, MDDNode root) {
+	public MDD(ExtensionMDD c, MDDNode root) {
 		this(c);
 		this.root = root;
 	}
 
-	public MDD(CtrExtensionMDD c, Automaton automata) {
+	public MDD(ExtensionMDD c, Automaton automata) {
 		this(c);
 		storeTuplesFromAutomata(automata, c.scp.length, Stream.of(c.scp).map(x -> x.dom).toArray(Domain[]::new));
 	}
 
-	public MDD(CtrExtensionMDD c, Object[][] transitions) {
+	public MDD(ExtensionMDD c, Object[][] transitions) {
 		this(c);
 		storeTuplesFromTransitions(transitions, Stream.of(c.scp).map(x -> x.dom).toArray(Domain[]::new));
 	}
 
-	public MDD(CtrExtensionMDD c, int[] coeffs, Object limits) {
+	public MDD(ExtensionMDD c, int[] coeffs, Object limits) {
 		this(c);
 		// Kit.control(Variable.haveSameDomainType(c.scp));
 		// int[] values = IntStream.range(0, c.scp[0].dom.initSize()).map(i -> c.scp[0].dom.toVal(i)).toArray();

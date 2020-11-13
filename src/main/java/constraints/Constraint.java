@@ -21,11 +21,12 @@ import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Utilities;
 import org.xcsp.modeler.definitions.ICtr;
 
-import constraints.extension.CtrExtension;
+import constraints.extension.Extension;
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.global.SumSimple.SumSimpleEQ;
 import constraints.global.SumWeighted.SumWeightedEQ;
+import constraints.intension.Intension;
 import dashboard.ControlPanel.SettingCtrs;
 import executables.Resolution;
 import heuristics.variables.dynamic.HeuristicVariablesConflictBased;
@@ -40,20 +41,17 @@ import interfaces.TagSymmetric;
 import interfaces.TagUnsymmetric;
 import problem.Problem;
 import propagation.order1.PropagationForward;
+import propagation.structures.Supporter;
+import propagation.structures.Supporter.SupporterHard;
 import propagation.structures.revisers.Reviser;
-import propagation.structures.revisers.Reviser3;
-import propagation.structures.supporters.Supporter;
-import propagation.structures.supporters.SupporterHard;
-import propagation.structures.supporters.SupporterHardBary;
-import propagation.structures.supporters.SupporterHardNary;
 import search.backtrack.SolverBacktrack;
+import sets.SetDense;
+import sets.SetSparse;
 import utility.Kit;
 import utility.operations.Calculator;
-import utility.sets.SetDense;
-import utility.sets.SetSparse;
 import variables.Variable;
 import variables.domains.Domain;
-import variables.domains.DomainHuge;
+import variables.domains.DomainInfinite;
 
 /**
  * This class gives the description of a constraint. <br>
@@ -84,7 +82,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	/*************************************************************************
-	 ***** Two very special kinds of constraints
+	 ***** Two very special kinds of constraints and CtrGlobal
 	 *************************************************************************/
 
 	public static class CtrHardFalse extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagGACGuaranteed {
@@ -121,6 +119,21 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 		public CtrHardTrue(Problem pb, Variable[] scp) {
 			super(pb, scp);
+		}
+	}
+
+	public static abstract class CtrGlobal extends Constraint implements FilteringGlobal {
+
+		protected final void defineKey(Object... specificData) {
+			StringBuilder sb = signature().append(' ').append(getClass().getSimpleName());
+			for (Object data : specificData)
+				sb.append(' ').append(data.toString());
+			this.key = sb.toString(); // getSignature().append(' ').append(this.getClass().getSimpleName()).append(' ') + o.toString();
+		}
+
+		public CtrGlobal(Problem pb, Variable[] scp) {
+			super(pb, scp);
+			filteringComplexity = 1;
 		}
 	}
 
@@ -245,7 +258,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	/** The assistant which manages the tuples of the constraint. */
 	public final TupleManager tupleManager;
 
-	protected final Supporter<? extends Constraint> supporter;
+	protected final Supporter supporter;
 
 	/** Indicates if for each domain of a variable involved in the constraint, the index of any value corresponds to this value. */
 	public final boolean indexesMatchValues;
@@ -268,7 +281,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	public int nEffectiveFilterings;
 
-	public Variable[] hugeDomainVars;
+	public Variable[] infiniteDomainVars;
 
 	public SettingCtrs settings;
 
@@ -360,7 +373,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	public boolean isGuaranteedAC() {
-		if (this.hugeDomainVars.length > 0)
+		if (this.infiniteDomainVars.length > 0)
 			return false;
 		if (this instanceof TagGACGuaranteed)
 			return true;
@@ -447,12 +460,12 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		this.doms = null;
 		this.genericFilteringThreshold = Integer.MAX_VALUE;
 		this.indexesMatchValues = false;
-		this.hugeDomainVars = new Variable[0];
+		this.infiniteDomainVars = new Variable[0];
 		this.supporter = null;
 	}
 
 	private final int computeGenericFilteringThreshold() {
-		if (this instanceof FilteringSpecific || this instanceof CtrExtension)
+		if (this instanceof FilteringSpecific || this instanceof Extension)
 			return Integer.MAX_VALUE; // because not concerned
 
 		int arityLimit = pb.rs.cp.settingPropagation.arityLimitForGACGuaranteed;
@@ -472,7 +485,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		this.scp = scp = Stream.of(scp).distinct().toArray(Variable[]::new);
 		control(scp.length >= 1 && Stream.of(scp).allMatch(x -> x != null), this + " with a scope badly formed ");
 		Stream.of(scp).forEach(x -> x.collectedCtrs.add(this));
-		this.hugeDomainVars = Stream.of(scp).filter(x -> x.dom instanceof DomainHuge).toArray(Variable[]::new);
+		this.infiniteDomainVars = Stream.of(scp).filter(x -> x.dom instanceof DomainInfinite).toArray(Variable[]::new);
 
 		this.doms = Variable.buildDomainsArrayFor(scp);
 		this.tupleManager = new TupleManager(scp);
@@ -489,11 +502,13 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		if (this instanceof ObserverConstruction)
 			pb.rs.observersConstruction.add(this);
 
-		if (pb.rs.cp.settingPropagation.residues && scp.length > 1 && !(this instanceof FilteringSpecific)
-				&& !(pb.rs.cp.settingPropagation.classForRevisions.equals(Reviser3.class.getSimpleName()) && extStructure() instanceof Bits)) {
-			this.supporter = scp.length == 2 ? new SupporterHardBary(this) : new SupporterHardNary(this);
-		} else
-			this.supporter = null;
+		this.supporter = Supporter.buildFor(this);
+
+		// if (pb.rs.cp.settingPropagation.residues && scp.length > 1 && !(this instanceof FilteringSpecific)
+		// && !(pb.rs.cp.settingPropagation.classForRevisions.equals(Reviser3.class.getSimpleName()) && extStructure() instanceof Bits)) {
+		// this.supporter = scp.length == 2 ? new SupporterHardBary(this) : new SupporterHardNary(this);
+		// } else
+		// this.supporter = null;
 	}
 
 	public final void reset() {
@@ -748,7 +763,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	private Boolean handleHugeDomains() {
-		assert hugeDomainVars.length > 0;
+		assert infiniteDomainVars.length > 0;
 		// TODO huge domains are not finalized
 		if (futvars.size() == 0)
 			return this.checkCurrentInstantiation();
@@ -777,7 +792,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public final boolean filterFrom(Variable x) {
 		// System.out.println("filtering " + this + " " + x);
 
-		if (this.hugeDomainVars.length > 0) {
+		if (this.infiniteDomainVars.length > 0) {
 			Boolean b = handleHugeDomains();
 			if (b != null)
 				return b;
@@ -852,10 +867,10 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	public void display(boolean exhaustively) {
 		Kit.log.finer("Constraint " + toString());
-		Kit.log.finer("\tClass = " + getClass().getName()
-				+ (this instanceof CtrExtension ? ":" + ((CtrExtension) this).extStructure().getClass().getSimpleName() : ""));
-		if (this instanceof CtrIntension)
-			Kit.log.finer("\tPredicate: " + ((CtrIntension) this).tree.toFunctionalExpression(null));
+		Kit.log.finer(
+				"\tClass = " + getClass().getName() + (this instanceof Extension ? ":" + ((Extension) this).extStructure().getClass().getSimpleName() : ""));
+		if (this instanceof Intension)
+			Kit.log.finer("\tPredicate: " + ((Intension) this).tree.toFunctionalExpression(null));
 		Kit.log.finer("\tKey = " + key);
 		int[] t = getSymmetryMatching(key);
 		Kit.log.finest("\tSymmetryMatching = " + (t == null ? " undefined " : Kit.join(t)));

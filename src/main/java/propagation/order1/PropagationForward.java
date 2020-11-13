@@ -9,7 +9,6 @@
 package propagation.order1;
 
 import propagation.Propagation;
-import propagation.order1.isomorphism.PropagationIsomorphism;
 import propagation.structures.revisers.Reviser;
 import search.Solver;
 import search.backtrack.SolverBacktrack;
@@ -35,7 +34,7 @@ public abstract class PropagationForward extends Propagation {
 
 	@Override
 	public boolean runAfterAssignment(Variable x) {
-		assert x.isAssigned() && (queue.size() == 0 || this instanceof PropagationIsomorphism) : queue.size() + " " + x.isAssigned();
+		assert x.isAssigned() && queue.size() == 0 : queue.size() + " " + x.isAssigned(); // (queue.size() == 0 || this instanceof PropagationIsomorphism)
 		queue.add(x);
 		return propagate();
 	}

@@ -17,8 +17,8 @@ import org.xcsp.common.Types.TypeFramework;
 
 import constraints.Constraint;
 import dashboard.ControlPanel;
+import sets.SetSparse;
 import utility.Kit;
-import utility.sets.SetSparse;
 import variables.Variable;
 
 public class ConflictManager {

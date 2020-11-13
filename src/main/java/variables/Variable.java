@@ -39,18 +39,17 @@ import utility.Kit;
 import utility.Reflector;
 import variables.domains.Domain;
 import variables.domains.DomainBinary;
-import variables.domains.DomainHuge;
-import variables.domains.DomainHugeInfinite;
+import variables.domains.DomainInfinite;
 import variables.domains.DomainInteger.DomainRange;
 import variables.domains.DomainInteger.DomainSymbols;
 import variables.domains.DomainInteger.DomainValues;
 
 /**
  * This class gives the description of a variable. <br>
- * A variable is attached to a problem and is uniquely identified by a number called <code>num</code>. A domain is attached to a variable and
- * corresponds to the (finite) set of values which can be assigned to it. When a value is assigned to a variable, the domain of this variable is
- * reduced to this value. When a solver tries to assign a value to a variable, it uses a <code>ValueOrderingHeuristic</code> object in order to know
- * which value must be tried first. A variable can occur in different constraints of the problem to which it is attached.
+ * A variable is attached to a problem and is uniquely identified by a number called <code>num</code>. A domain is attached to a variable and corresponds to the
+ * (finite) set of values which can be assigned to it. When a value is assigned to a variable, the domain of this variable is reduced to this value. When a
+ * solver tries to assign a value to a variable, it uses a <code>ValueOrderingHeuristic</code> object in order to know which value must be tried first. A
+ * variable can occur in different constraints of the problem to which it is attached.
  */
 public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic, Comparable<Variable> {
 
@@ -61,8 +60,8 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	public static class VariableInteger extends Variable implements IVar.Var {
 
 		/**
-		 * Builds a variable with a domain composed of all specified integer values. A range can be specified by giving an array of values composed of
-		 * three int, the last one being the special value Domain.TAG_RANGE
+		 * Builds a variable with a domain composed of all specified integer values. A range can be specified by giving an array of values composed of three
+		 * int, the last one being the special value Domain.TAG_RANGE
 		 */
 		public VariableInteger(Problem problem, String name, int[] values) {
 			super(problem, name);
@@ -78,12 +77,12 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 
 		public VariableInteger(Problem problem, String name, int min, int max) {
 			super(problem, name);
-			if (min == Constants.MINUS_INFINITY_INT && max == Constants.PLUS_INFINITY_INT)
-				this.dom = new DomainHugeInfinite(this, min, max);
-			// else if (max - min > 20000)
-			// this.dom = new DomainHugeBounded(this, min, max);
-			else
-				this.dom = new DomainRange(this, min, max);
+			this.dom = new DomainRange(this, min, max);
+		}
+
+		public VariableInteger(Problem problem, String name) {
+			super(problem, name);
+			this.dom = new DomainInfinite(this);
 		}
 
 		@Override
@@ -139,10 +138,11 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	private static final int NB_NEIGHBOURS_LIMIT_FOR_STORING_NEIGHBOURS = 300;
 
 	/**
-	 * A special variable that can be used (for instance) by methods that requires returning three-state values: null,a variable of the problem, or
-	 * this special marker.
+	 * A special variable that can be used (for instance) by methods that requires returning three-state values: null,a variable of the problem, or this special
+	 * marker.
 	 */
-	public static final Variable TAG = new Variable(null, null) {};
+	public static final Variable TAG = new Variable(null, null) {
+	};
 
 	public static final Comparator<Variable> decreasingDomSizeComparator = (x, y) -> Integer.compare(y.dom.size(), x.dom.size());
 
@@ -490,8 +490,8 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	public Constraint[] ctrs;
 
 	/**
-	 * The set of variables that are neighbors to the variable. A variable x is a neighbor if both x and the variable belongs to a same scope. This
-	 * array may be null if this is too space-consuming.
+	 * The set of variables that are neighbors to the variable. A variable x is a neighbor if both x and the variable belongs to a same scope. This array may be
+	 * null if this is too space-consuming.
 	 */
 	public Variable[] nghs;
 
@@ -527,8 +527,8 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	/**
-	 * This method is called when the initialization is finished in order to update some data structures in relation with the constraints of the
-	 * problem. This method is called by the <code>storeConstraintsToArray</code> method of the <code>Problem</code> class.
+	 * This method is called when the initialization is finished in order to update some data structures in relation with the constraints of the problem. This
+	 * method is called by the <code>storeConstraintsToArray</code> method of the <code>Problem</code> class.
 	 */
 	public final void whenFinishedProblemConstruction() {
 		this.ctrs = collectedCtrs.stream().sorted((c1, c2) -> c1.scp.length - c2.scp.length).toArray(Constraint[]::new);
@@ -586,7 +586,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 
 	public final void buildValueOrderingHeuristic() {
 		if (heuristicVal == null) {
-			String className = this.dom instanceof DomainHuge ? First.class.getName() : pb.rs.cp.settingValh.classForValHeuristic;
+			String className = this.dom instanceof DomainInfinite ? First.class.getName() : pb.rs.cp.settingValh.classForValHeuristic;
 			Set<Class<?>> classes = pb.rs.handlerClasses.map.get(HeuristicValues.class);
 			heuristicVal = Reflector.buildObject(className, classes, this, pb.rs.cp.settingValh.anti);
 		}

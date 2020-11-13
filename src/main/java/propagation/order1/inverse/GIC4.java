@@ -17,7 +17,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import constraints.extension.CtrExtensionSTR1;
+import constraints.extension.ExtensionSTR1;
 import search.Solver;
 import utility.Kit;
 import utility.Kit.Stopwatch;
@@ -222,15 +222,11 @@ public class GIC4 extends GICAdvanced {
 	private int finalizeIntervals() {
 		int nbTests = 0;
 		int nbUselessTests = 0;
-		// unknown.stream().forEach(interval -> System.out.println("interval " + interval));
 		// int cnt = 0;
 		while (unknown.size() > 0) {
 			// cnt++;
-			// System.out.println("cnt=" + cnt + " nbUnkn=" + unknown.size());
 			assert inTransfer.size() == 0;
 			if (algo == 3) {
-				// System.out.println(" sorting " + unknown.size());
-				// unknown.stream().forEach(u -> System.out.println(u));
 				Collections.sort(unknown);
 				// System.out.println(" sorted " + unknown.size());
 				int depthBefore = solver.depth();
@@ -309,7 +305,6 @@ public class GIC4 extends GICAdvanced {
 							interval.decreaseMax(interval.maxDepth - 1);
 						// }
 					} else {
-						// System.out.println("Test at " + interval.minDepth + " int=" + interval);
 						int nbDecisions = interval.minDepth - solver.depth();
 						assert nbDecisions > 0;
 						for (int i = 0; i < nbDecisions; i++) {
@@ -319,7 +314,6 @@ public class GIC4 extends GICAdvanced {
 						boolean inverse = isInverse(x, a);
 						nbTests++;
 						if (inverse) {
-							// Kit.log.info("tests useful" + var + " " + idx + " : " + inverse + " at " + solver.getDepth());
 							nbUselessTests++;
 						}
 						for (int i = 0; i < nbDecisions; i++)
@@ -340,14 +334,9 @@ public class GIC4 extends GICAdvanced {
 				}
 			unknown.removeAll(inTransfer);
 			inTransfer.clear();
-			// Kit.prn("NbUn = " + unknown.size() + " nbTests=" + nbTests);
 		}
 		solver.resetNoSolutions();
 		Kit.log.info("nbUselessTests=" + nbUselessTests);
-		// for (Interval[] ints : allIntervals)
-		// for (Interval in : ints)
-		// System.out.println("Int " + in);
-
 		return nbTests;
 	}
 
@@ -458,10 +447,10 @@ public class GIC4 extends GICAdvanced {
 						else
 							assert interval.var.dom.getRemovedLevelOf(interval.idx) == solver.depth();
 					for (Constraint c : solver.pb.constraints)
-						if (c instanceof CtrExtensionSTR1) {
+						if (c instanceof ExtensionSTR1) {
 							int nbValuesBefore = solver.pb.nValuesRemoved;
 							// int nbTuplesBefore = ((ConstraintHardExtensionSTR) constraint).getSetOfTuples().getCurrentLimit();
-							((CtrExtensionSTR1) c).runPropagator(null);
+							((ExtensionSTR1) c).runPropagator(null);
 							assert solver.pb.nValuesRemoved == nbValuesBefore;
 							// if (((ConstraintHardExtensionSTR) constraint).getSetOfTuples().getCurrentLimit() != nbTuplesBefore)
 							// Kit.prn("tuples from " + constraint);

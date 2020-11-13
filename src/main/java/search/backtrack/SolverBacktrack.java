@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Constants;
 
 import constraints.Constraint;
-import constraints.CtrGlobal;
+import constraints.Constraint.CtrGlobal;
 import executables.Resolution;
 import heuristics.values.HeuristicValuesDynamic.Failures;
 import heuristics.variables.HeuristicVariables;
@@ -45,7 +45,7 @@ import utility.Enums.EBranching;
 import utility.Enums.EStopping;
 import utility.Kit;
 import variables.Variable;
-import variables.domains.DomainHuge;
+import variables.domains.DomainInfinite;
 
 public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 
@@ -195,7 +195,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 				return false;
 			if (top >= 0)
 				if (stack[top] instanceof Variable) {
-					Variable x = Stream.of(solver.pb.variables).filter(y -> !(y.dom instanceof DomainHuge) && y.lastModificationDepth() >= depth).findFirst()
+					Variable x = Stream.of(solver.pb.variables).filter(y -> !(y.dom instanceof DomainInfinite) && y.lastModificationDepth() >= depth).findFirst()
 							.orElse(null);
 					if (x != null) {
 						System.out.println("Pb with " + x);
@@ -311,9 +311,12 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	protected List<ObserverRuns> collectObserversRuns() {
 		List<ObserverRuns> list = new ArrayList<>();
-		if (rs.cp.settingSolving.enableSearch)
-			Stream.of(this, restarter, learnerNogoods.symmetryHandler, learnerStates, heuristicVars, lcReasoner, stats).filter(o -> o instanceof ObserverRuns)
+		if (rs.cp.settingSolving.enableSearch) {
+			if (learnerNogoods != null && learnerNogoods.symmetryHandler != null)
+				list.add((ObserverRuns) learnerNogoods.symmetryHandler);
+			Stream.of(this, restarter, learnerStates, heuristicVars, lcReasoner, stats).filter(o -> o instanceof ObserverRuns)
 					.forEach(o -> list.add((ObserverRuns) o));
+		}
 		Stream.of(pb.constraints).filter(c -> c instanceof ObserverRuns).forEach(c -> list.add((ObserverRuns) c));
 		if (propagation instanceof ObserverRuns)
 			list.add((ObserverRuns) propagation);
@@ -486,7 +489,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	}
 
 	protected final boolean tryRefutation(Variable x, int a) {
-		if (x.dom instanceof DomainHuge)
+		if (x.dom instanceof DomainInfinite)
 			return false;
 		tracer.onRefutation(x, a);
 		stats.onRefutation(x);
@@ -524,8 +527,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	}
 
 	/**
-	 * This method allows to keep running the solver from the given level. Initially, this method is called from the level <code>0</code>. The
-	 * principle of this method is to choose a variable and some values for this variable (maybe, all) until a domain becomes empty.
+	 * This method allows to keep running the solver from the given level. Initially, this method is called from the level <code>0</code>. The principle of this
+	 * method is to choose a variable and some values for this variable (maybe, all) until a domain becomes empty.
 	 */
 	public void explore() {
 		maxDepth = 0;

@@ -12,11 +12,11 @@ import java.util.stream.IntStream;
 
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 
-import constraints.CtrGlobal;
+import constraints.Constraint.CtrGlobal;
 import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import problem.Problem;
-import utility.sets.SetDense;
+import sets.SetDense;
 import variables.Variable;
 import variables.domains.Domain;
 

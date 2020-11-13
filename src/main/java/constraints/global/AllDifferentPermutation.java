@@ -14,8 +14,8 @@ import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.TagFilteringPartialAtEachCall;
 import interfaces.TagGACUnguaranteed;
 import problem.Problem;
+import sets.SetSparseReversible;
 import utility.Kit;
-import utility.sets.SetSparseReversible;
 import variables.Variable;
 import variables.domains.Domain;
 

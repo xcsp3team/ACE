@@ -91,10 +91,9 @@ import org.xcsp.modeler.implementation.ProblemIMP;
 import constraints.Constraint;
 import constraints.Constraint.CtrHardFalse;
 import constraints.Constraint.CtrHardTrue;
-import constraints.CtrIntension;
-import constraints.extension.CtrExtension;
-import constraints.extension.CtrExtensionMDD;
-import constraints.extension.CtrExtensionSmart;
+import constraints.extension.Extension;
+import constraints.extension.ExtensionMDD;
+import constraints.extension.ExtensionSmart;
 import constraints.extension.structures.MDDCD;
 import constraints.extension.structures.SmartTuple;
 import constraints.extension.structures.Table;
@@ -146,9 +145,10 @@ import constraints.global.SumSimple.SumSimpleLE;
 import constraints.global.SumWeighted;
 import constraints.global.SumWeighted.SumWeightedGE;
 import constraints.global.SumWeighted.SumWeightedLE;
-import constraints.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub;
-import constraints.primitive.CtrPrimitiveBinary.CtrPrimitiveBinarySub.SubNE2;
-import constraints.primitive.CtrPrimitiveBinary.Disjonctive;
+import constraints.intension.Intension;
+import constraints.intension.PrimitiveBinary.Disjonctive;
+import constraints.intension.PrimitiveBinary.PrimitiveBinarySub;
+import constraints.intension.PrimitiveBinary.PrimitiveBinarySub.SubNE2;
 import dashboard.ControlPanel.SettingGeneral;
 import dashboard.ControlPanel.SettingVars;
 import executables.Resolution;
@@ -875,7 +875,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// }
 		// }
 		// System.out.println("tree3 " + tree2);
-		return addCtr(new CtrIntension(this, (Variable[]) tree2.vars(), tree2));
+		return addCtr(new Intension(this, (Variable[]) tree2.vars(), tree2));
 	}
 
 	// ************************************************************************
@@ -911,7 +911,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	// ************************************************************************
 
 	public final CtrAlone extension(IVar[] scp, Object tuples, boolean positive, Boolean starred) {
-		return addCtr(CtrExtension.build(this, translate(scp), tuples, positive, starred));
+		return addCtr(Extension.build(this, translate(scp), tuples, positive, starred));
 	}
 
 	@Override
@@ -937,7 +937,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrAlone regular(Var[] list, Automaton automaton) {
-		return addCtr(new CtrExtensionMDD(this, translate(list), automaton));
+		return addCtr(new ExtensionMDD(this, translate(list), automaton));
 	}
 
 	// ************************************************************************
@@ -946,11 +946,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrAlone mdd(Var[] list, Transition[] transitions) {
-		return addCtr(new CtrExtensionMDD(this, translate(list), transitions));
+		return addCtr(new ExtensionMDD(this, translate(list), transitions));
 	}
 
 	public final CtrAlone mdd(Var[] scp, int[][] tuples) {
-		return addCtr(new CtrExtensionMDD(this, translate(scp), tuples));
+		return addCtr(new ExtensionMDD(this, translate(scp), tuples));
 	}
 
 	public final CtrAlone mddOr(Var[] scp, MDDCD[] t) {
@@ -1006,11 +1006,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private CtrAlone distinctVectors(Variable[] t1, Variable[] t2) {
 		control(Variable.areAllDistinct(vars(t1, t2)), "For the moment not handled");
 		if (isBasicType(rs.cp.settingGlobal.typeDistinctVectors2))
-			return addCtr(CtrExtensionSmart.buildDistinctVectors(this, t1, t2)); // return addCtr(new DistinctVectors2(this, t1, t2)); // BUG TO BE
+			return addCtr(ExtensionSmart.buildDistinctVectors(this, t1, t2)); // return addCtr(new DistinctVectors2(this, t1, t2)); // BUG TO BE
 																					// FIXED
 		if (rs.cp.settingGlobal.typeDistinctVectors2 == 1) {
 			if (rs.cp.settingGlobal.smartTable)
-				return addCtr(CtrExtensionSmart.buildDistinctVectors(this, t1, t2));
+				return addCtr(ExtensionSmart.buildDistinctVectors(this, t1, t2));
 			if (rs.cp.settingGlobal.jokerTable)
 				return extension(vars(t1, t2), Table.shortTuplesFordNotEqualVectors(t1, t2), true);
 		}
@@ -1026,11 +1026,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			return forall(range(lists.length).range(lists.length), (i, j) -> {
 				if (i < j) {
 					if (rs.cp.settingGlobal.smartTable)
-						addCtr(CtrExtensionSmart.buildDistinctVectors(this, lists[i], lists[j]));
+						addCtr(ExtensionSmart.buildDistinctVectors(this, lists[i], lists[j]));
 					else if (rs.cp.settingGlobal.jokerTable)
 						extension(vars(lists[i], lists[j]), Table.shortTuplesFordNotEqualVectors(lists[i], lists[j]), true);
 					else
-						addCtr(CtrExtensionSmart.buildDistinctVectors(this, lists[i], lists[j])); // addCtr(new DistinctVectors2(this,
+						addCtr(ExtensionSmart.buildDistinctVectors(this, lists[i], lists[j])); // addCtr(new DistinctVectors2(this,
 																									// lists[i], lists[j])); // BUG TO BE
 																									// FIXED
 				}
@@ -1145,7 +1145,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity ordered(Var[] list, int[] lengths, TypeOperatorRel op) {
 		control(list != null && lengths != null && list.length == lengths.length + 1 && op != null);
 		TypeConditionOperatorRel cop = op.toConditionOperator();
-		return forall(range(list.length - 1), i -> CtrPrimitiveBinarySub.buildFrom(this, (Variable) list[i], (Variable) list[i + 1], cop, -lengths[i]));
+		return forall(range(list.length - 1), i -> PrimitiveBinarySub.buildFrom(this, (Variable) list[i], (Variable) list[i + 1], cop, -lengths[i]));
 	}
 
 	/**
@@ -1343,7 +1343,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			if (op == TypeConditionOperatorSet.IN) {
 				boolean mdd = false; // hard coding for the moment
 				if (mdd)
-					return addCtr(new CtrExtensionMDD(this, translate(list), coeffs, rightTerm));
+					return addCtr(new ExtensionMDD(this, translate(list), coeffs, rightTerm));
 				sum(list, coeffs, GE, min);
 				sum(list, coeffs, LE, max);
 				if (condition instanceof ConditionIntset) {
@@ -1636,7 +1636,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 							greaterEqual(y, vars[i]);
 				});
 			if (rs.cp.settingGlobal.smartTable)
-				return addCtr(minimum ? CtrExtensionSmart.buildMinimum(this, vars, y) : CtrExtensionSmart.buildMaximum(this, vars, y));
+				return addCtr(minimum ? ExtensionSmart.buildMinimum(this, vars, y) : ExtensionSmart.buildMaximum(this, vars, y));
 			return addCtr(minimum ? new Minimum(this, vars, y) : new Maximum(this, vars, y));
 		}
 		if (condition instanceof ConditionVal) {
@@ -1730,7 +1730,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrAlone element(Var[] list, int startIndex, Var index, TypeRank rank, Var value) {
 		unimplementedIf(startIndex != 0 || (rank != null && rank != TypeRank.ANY), "element");
 		if (rs.cp.settingGlobal.smartTable)
-			return addCtr(CtrExtensionSmart.buildElement(this, (VariableInteger[]) list, (VariableInteger) index, (VariableInteger) value));
+			return addCtr(ExtensionSmart.buildElement(this, (VariableInteger[]) list, (VariableInteger) index, (VariableInteger) value));
 		if (rs.cp.settingGlobal.jokerTable)
 			return extension(Utilities.indexOf(value, list) == -1 ? vars(index, list, value) : vars(index, list),
 					Table.shortTuplesForElement((Variable[]) list, (Variable) index, (Variable) value), true);
@@ -1956,7 +1956,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (rs.cp.settingGlobal.typeNoOverlap == 2)
 			return intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1)));
 		if (rs.cp.settingGlobal.typeNoOverlap == 10) // rs.cp.global.smartTable)
-			return addCtr(CtrExtensionSmart.buildNoOverlap(this, (Variable) x1, (Variable) x2, w1, w2));
+			return addCtr(ExtensionSmart.buildNoOverlap(this, (Variable) x1, (Variable) x2, w1, w2));
 		// if (rs.cp.constraints.useGlobalCtrs)
 		// return addCtr(new Disjonctive(this, (Variable) x1, w1, (Variable) x2, w2));
 		return (CtrAlone) Kit.exit("Bad value for the choice of the propagator");
@@ -1999,7 +1999,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private CtrAlone noOverlap(VariableInteger x1, VariableInteger x2, VariableInteger y1, VariableInteger y2, int w1, int w2, int h1, int h2) {
 		if (rs.cp.settingGlobal.smartTable)
-			return addCtr(CtrExtensionSmart.buildNoOverlap(this, x1, y1, x2, y2, w1, h1, w2, h2));
+			return addCtr(ExtensionSmart.buildNoOverlap(this, x1, y1, x2, y2, w1, h1, w2, h2));
 		if (rs.cp.settingGlobal.jokerTable)
 			return extension(vars(x1, x2, y1, y2), computeTable(x1, x2, y1, y2, w1, w2, h1, h2), true, true);
 		return intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1), le(add(y1, h1), y2), le(add(y2, h2), y1)));
@@ -2019,7 +2019,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private CtrAlone noOverlap(VariableInteger x1, VariableInteger x2, VariableInteger y1, VariableInteger y2, VariableInteger w1, VariableInteger w2,
 			VariableInteger h1, VariableInteger h2) {
 		if (rs.cp.settingGlobal.smartTable && Stream.of(w1, w2, h1, h2).allMatch(x -> x.dom.initSize() == 2))
-			return addCtr(CtrExtensionSmart.buildNoOverlap(this, x1, y1, x2, y2, w1, h1, w2, h2));
+			return addCtr(ExtensionSmart.buildNoOverlap(this, x1, y1, x2, y2, w1, h1, w2, h2));
 		return intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1), le(add(y1, h1), y2), le(add(y2, h2), y1)));
 	}
 
@@ -2174,7 +2174,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	/** Builds and returns a smart constraint. */
 	public final CtrAlone smart(IVar[] scp, SmartTuple... smartTuples) {
-		return addCtr(new CtrExtensionSmart(this, translate(scp), smartTuples));
+		return addCtr(new ExtensionSmart(this, translate(scp), smartTuples));
 	}
 
 	/**

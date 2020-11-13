@@ -24,7 +24,7 @@ import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 import variables.domains.Domain;
-import variables.domains.DomainHuge;
+import variables.domains.DomainInfinite;
 
 /**
  * Root class for managing simple sum constraints (i.e., sum constraints without integer coefficients associated with variables). Note that no overflow is
@@ -233,10 +233,10 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 			return true;
 		}
 
-		public int deduce() {
+		public int deduce() { // experimental for infinite domains (to be finalized)
 			Kit.control(futvars.size() == 1);
 			int pos = futvars.dense[0];
-			Kit.control(scp[pos].dom instanceof DomainHuge);
+			control(scp[pos].dom instanceof DomainInfinite);
 			long sum = 0;
 			for (int i = 0; i < scp.length; i++)
 				if (i != pos)

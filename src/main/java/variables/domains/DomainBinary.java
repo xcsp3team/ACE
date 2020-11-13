@@ -11,7 +11,7 @@ package variables.domains;
 import java.util.stream.IntStream;
 
 import search.Solver;
-import utility.sets.LinkedSetBinary;
+import sets.LinkedSetBinary;
 import variables.Variable;
 
 public final class DomainBinary extends LinkedSetBinary implements Domain {

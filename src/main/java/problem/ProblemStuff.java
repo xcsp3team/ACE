@@ -40,20 +40,20 @@ import org.xcsp.common.predicates.TreeEvaluator.ExternFunctionArity1;
 import org.xcsp.common.predicates.TreeEvaluator.ExternFunctionArity2;
 
 import constraints.Constraint;
-import constraints.CtrIntension;
-import constraints.extension.CtrExtension;
-import constraints.extension.CtrExtensionSmart;
+import constraints.extension.Extension;
+import constraints.extension.ExtensionSmart;
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart;
+import constraints.intension.Intension;
 import dashboard.Arguments;
 import dashboard.ControlPanel.SettingOptimization;
 import dashboard.ControlPanel.SettingVars;
 import dashboard.Output;
 import objectives.Optimizer.OptimizerBasic;
 import search.local.FunctionalPropagator;
+import sets.SetDense;
 import utility.Kit;
-import utility.sets.SetDense;
 import variables.Variable;
 import variables.domains.Domain;
 
@@ -281,16 +281,16 @@ public final class ProblemStuff {
 		collectedCtrsAtInit.add(c);
 		ctrArities.add(c.scp.length);
 		if (c.scp.length == 1) {
-			if (c instanceof CtrExtension || c instanceof CtrIntension)
+			if (c instanceof Extension || c instanceof Intension)
 				ctrTypes.add(c.getClass().getSimpleName() + "1");
 			// else
 			// throw new UnreachableCodeException();
 		} else
-			ctrTypes.add(c.getClass().getSimpleName() + (c instanceof CtrExtension ? "-" + ((CtrExtension) c).extStructure().getClass().getSimpleName() : ""));
-		if (c instanceof CtrExtensionSmart)
-			tableSizes.add(((TableSmart) ((CtrExtensionSmart) c).extStructure()).smartTuples.length);
-		if (c instanceof CtrExtension && ((CtrExtension) c).extStructure() instanceof Table)
-			tableSizes.add(((Table) ((CtrExtension) c).extStructure()).tuples.length);
+			ctrTypes.add(c.getClass().getSimpleName() + (c instanceof Extension ? "-" + ((Extension) c).extStructure().getClass().getSimpleName() : ""));
+		if (c instanceof ExtensionSmart)
+			tableSizes.add(((TableSmart) ((Extension) c).extStructure()).smartTuples.length);
+		if (c instanceof Extension && ((Extension) c).extStructure() instanceof Table)
+			tableSizes.add(((Table) ((Extension) c).extStructure()).tuples.length);
 		return num;
 	}
 
@@ -477,13 +477,13 @@ public final class ProblemStuff {
 		int nConflictsStructures = 0, nSharedConflictsStructures = 0, nUnbuiltConflictsStructures = 0;
 		int nExtensionStructures = 0, nSharedExtensionStructures = 0, nEvaluationManagers = 0, nSharedEvaluationManagers = 0;
 		for (Constraint c : pb.constraints) {
-			if (c instanceof CtrExtension)
+			if (c instanceof Extension)
 				if (c.extStructure().firstRegisteredCtr() == c)
 					nExtensionStructures++;
 				else
 					nSharedExtensionStructures++;
-			if (c instanceof CtrIntension)
-				if (((CtrIntension) c).treeEvaluator.firstRegisteredCtr() == c)
+			if (c instanceof Intension)
+				if (((Intension) c).treeEvaluator.firstRegisteredCtr() == c)
 					nEvaluationManagers++;
 				else
 					nSharedEvaluationManagers++;

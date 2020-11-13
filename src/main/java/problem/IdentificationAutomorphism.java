@@ -24,8 +24,8 @@ import java.util.Random;
 import java.util.StringTokenizer;
 
 import constraints.Constraint;
-import constraints.CtrIntension;
 import constraints.global.Lexicographic.LexicographicLE;
+import constraints.intension.Intension;
 import dashboard.Output;
 import utility.Enums.ESymmetryBreaking;
 import utility.Kit;
@@ -305,7 +305,7 @@ public final class IdentificationAutomorphism {
 			Variable y = variables[cycle1[1]];
 
 			if (pb.rs.cp.settingProblem.symmetryBreaking == ESymmetryBreaking.LE) { // we only consider the two first variables
-				constraintList.add(new CtrIntension(pb, pb.api.vars(x, (Object) y), pb.api.le(x, y)));
+				constraintList.add(new Intension(pb, pb.api.vars(x, (Object) y), pb.api.le(x, y)));
 			} else {
 				List<Variable> list1 = new ArrayList<>(), list2 = new ArrayList<>();
 				for (int[] cycle : generator)

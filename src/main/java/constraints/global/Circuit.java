@@ -16,8 +16,8 @@ import java.util.stream.Stream;
 import org.xcsp.modeler.definitions.DefXCSP;
 
 import problem.Problem;
+import sets.SetDense;
 import utility.Kit;
-import utility.sets.SetDense;
 import variables.Variable;
 
 public final class Circuit extends AllDifferent {

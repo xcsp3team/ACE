@@ -1,7 +1,7 @@
 package constraints.global;
 
+import sets.SetSparse;
 import utility.Kit;
-import utility.sets.SetSparse;
 import variables.domains.Domain;
 
 /**

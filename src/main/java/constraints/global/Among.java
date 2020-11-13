@@ -12,13 +12,13 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import constraints.CtrGlobal;
+import constraints.Constraint.CtrGlobal;
 import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import interfaces.TagSymmetric;
 import problem.Problem;
+import sets.SetSparse;
 import utility.Kit;
-import utility.sets.SetSparse;
 import variables.Variable;
 import variables.domains.Domain;
 

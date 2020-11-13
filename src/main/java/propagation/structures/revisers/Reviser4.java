@@ -12,10 +12,10 @@ import constraints.Constraint;
 import constraints.extension.structures.Bits;
 import interfaces.FilteringSpecific;
 import propagation.order1.PropagationForward;
+import sets.LinkedSet;
+import sets.LinkedSetOrdered.LinkedSetOrderedWithBits2;
+import sets.SetSparse;
 import utility.Kit;
-import utility.sets.LinkedSet;
-import utility.sets.LinkedSetOrdered.LinkedSetOrderedWithBits2;
-import utility.sets.SetSparse;
 import variables.Variable;
 import variables.domains.Domain;
 

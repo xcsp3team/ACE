@@ -13,13 +13,13 @@ import java.util.stream.Stream;
 import org.xcsp.common.enumerations.EnumerationCartesian;
 
 import constraints.Constraint;
-import constraints.extension.CtrExtensionSTR1;
-import constraints.extension.CtrExtensionSTR2;
+import constraints.extension.ExtensionSTR1;
+import constraints.extension.ExtensionSTR2;
 import constraints.extension.structures.Table;
 import search.Solver;
+import sets.SetDenseReversible;
 import utility.Enums.EStopping;
 import utility.Kit;
-import utility.sets.SetDenseReversible;
 import variables.Variable;
 
 public class TIC1 extends GIC1 {
@@ -27,7 +27,7 @@ public class TIC1 extends GIC1 {
 	public TIC1(Solver solver) {
 		super(solver);
 		Kit.control(solver.rs.cp.settingExperimental.testI1 > 0
-				|| Stream.of(solver.pb.constraints).allMatch(c -> c.getClass().isAssignableFrom(CtrExtensionSTR2.class)));
+				|| Stream.of(solver.pb.constraints).allMatch(c -> c.getClass().isAssignableFrom(ExtensionSTR2.class)));
 	}
 
 	protected boolean isInverse(Variable[] scope, int[] tuple) {
@@ -53,7 +53,7 @@ public class TIC1 extends GIC1 {
 		int cnt = 0;
 		Kit.log.info("Filter tuples from " + ctr);
 		int[][] tuples = ((Table) ctr.extStructure()).tuples;
-		SetDenseReversible denseSetOfTuples = ((CtrExtensionSTR1) ctr).set;
+		SetDenseReversible denseSetOfTuples = ((ExtensionSTR1) ctr).set;
 		int[] dense = denseSetOfTuples.dense;
 		for (int i = denseSetOfTuples.limit; i >= 0; i--) {
 			denseSetOfTuples.swapAtPositions(0, i);

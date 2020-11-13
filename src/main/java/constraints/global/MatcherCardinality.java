@@ -4,8 +4,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import constraints.global.Cardinality.CardinalityConstant;
+import sets.SetSparse;
 import utility.Kit;
-import utility.sets.SetSparse;
 import variables.Variable;
 import variables.domains.Domain;
 

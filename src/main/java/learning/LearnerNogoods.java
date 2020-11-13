@@ -385,15 +385,6 @@ public class LearnerNogoods {
 		return true;
 	}
 
-	// protected void display(int[] decs) {
-	// Kit.log.fine(Arrays.stream(decs).mapToObj(dec -> dr.stringOf(dec)).collect(Collectors.joining(" ")));
-	// }
-	//
-	// public void display() {
-	// Kit.log.fine(nNogoods + " nogoods");
-	// IntStream.range(0, nNogoods).forEach(i -> display(nogoods[i].decisions));
-	// }
-
 	// public void addNogoodFrom(int[] decs) {
 	// addNogood(decs, true);
 	// }
@@ -431,19 +422,6 @@ public class LearnerNogoods {
 	// return false;
 	// }
 
-	// public static void main(String[] args) {
-	// Set<int[]> set = new TreeSet<>(Utilities.lexComparatorInt);
-	// int[] t1 = {
-	// 3,
-	// 4
-	// };
-	// int[] t2 = {
-	// 3,
-	// 4
-	// };
-	// set.add(t1);
-	// System.out.println(set.contains(t2));
-	// }
 }
 
 // public void addAllNogoodsOfCurrentBranch() { // en test methode de Julien -

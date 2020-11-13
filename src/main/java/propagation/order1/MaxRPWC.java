@@ -15,7 +15,7 @@ import java.util.List;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
-import constraints.extension.CtrExtensionRPWC;
+import constraints.extension.ExtensionRPWC;
 import constraints.extension.structures.Table;
 import search.Solver;
 import utility.Kit;
@@ -48,13 +48,13 @@ public final class MaxRPWC extends AC {
 	 *********************************************************************************************/
 
 	public class Intersection {
-		public CtrExtensionRPWC[] ctrs;
+		public ExtensionRPWC[] ctrs;
 		private int[][] sharedPositions; // positions of the shared variables in the scope of each constraint
 		private Node root;
 		private int size; // number of shared variables
 
-		private Intersection(CtrExtensionRPWC c1, CtrExtensionRPWC c2, int[] vaps1, int[] vaps2) {
-			this.ctrs = new CtrExtensionRPWC[] { c1, c2 };
+		private Intersection(ExtensionRPWC c1, ExtensionRPWC c2, int[] vaps1, int[] vaps2) {
+			this.ctrs = new ExtensionRPWC[] { c1, c2 };
 			this.sharedPositions = new int[][] { vaps1, vaps2 };
 			this.root = new Node(c1.scp[vaps1[0]].dom.initSize());
 			this.size = vaps1.length;
@@ -136,7 +136,7 @@ public final class MaxRPWC extends AC {
 	 * Methods
 	 *********************************************************************************************/
 
-	private Intersection intersectionOf(CtrExtensionRPWC c1, CtrExtensionRPWC c2) {
+	private Intersection intersectionOf(ExtensionRPWC c1, ExtensionRPWC c2) {
 		t1 = t1 == null ? new int[solver.pb.stuff.maxCtrArity()] : t1;
 		t2 = t2 == null ? new int[solver.pb.stuff.maxCtrArity()] : t2;
 		int cnt = 0;
@@ -168,13 +168,13 @@ public final class MaxRPWC extends AC {
 		List<Intersection>[] lists = new List[ctrs.length];
 		int cnt = 0;
 		for (int i = 0; i < ctrs.length; i++)
-			if (ctrs[i] instanceof CtrExtensionRPWC)
+			if (ctrs[i] instanceof ExtensionRPWC)
 				for (int j = i + 1; j < ctrs.length; j++)
-					if (ctrs[j] instanceof CtrExtensionRPWC) {
-						Intersection intersection = intersectionOf((CtrExtensionRPWC) ctrs[i], (CtrExtensionRPWC) ctrs[j]);
+					if (ctrs[j] instanceof ExtensionRPWC) {
+						Intersection intersection = intersectionOf((ExtensionRPWC) ctrs[i], (ExtensionRPWC) ctrs[j]);
 						if (intersection != null) {
 							cnt++;
-							for (CtrExtensionRPWC c : intersection.ctrs) {
+							for (ExtensionRPWC c : intersection.ctrs) {
 								if (lists[c.num] == null)
 									lists[c.num] = new ArrayList<>();
 								lists[c.num].add(intersection);
@@ -182,8 +182,8 @@ public final class MaxRPWC extends AC {
 						}
 					}
 		for (Constraint c : ctrs)
-			if (c instanceof CtrExtensionRPWC && lists[c.num] != null)
-				((CtrExtensionRPWC) c).addIntersections(lists[c.num]);
+			if (c instanceof ExtensionRPWC && lists[c.num] != null)
+				((ExtensionRPWC) c).addIntersections(lists[c.num]);
 		Kit.log.info("Nb pairs of intersecting constraints : " + cnt + "\n");
 	}
 
