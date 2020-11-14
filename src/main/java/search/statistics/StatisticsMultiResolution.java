@@ -188,7 +188,7 @@ public abstract class StatisticsMultiResolution {
 					map.put(Output.N_FILTER_CALLS, nbFilterCallsSTR / (double) nbTreatedInstances);
 					map.put(Output.AVG_TABLE_PROPORTION, sumTableProportionsSTR / nbTreatedInstances);
 					map.put(Output.AVG_TABLE_SIZE, sumTableSizesSTR / nbTreatedInstances);
-					map.put(Output.CPU, resolution.stopwatch.getCpuTime() / (double) nbTreatedInstances);
+					map.put(Output.CPU, resolution.stopwatch.cpuTime() / (double) nbTreatedInstances);
 					map.put(Output.MEM, (long) (memory / (double) nbTreatedInstances));
 
 					if (resolution.cp.settingExperimental.helene)

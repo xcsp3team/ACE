@@ -461,7 +461,7 @@ public class GIC4 extends GICAdvanced {
 				performingProperSearch = false;
 			}
 			nItestsRestor = nITests - nbItestsBefore;
-			wck = stopwatch.getWckTime();
+			wck = stopwatch.wckTime();
 			System.out.println("Wck=" + wck + " nbITestsR=" + nItestsRestor);
 		}
 	}

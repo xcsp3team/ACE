@@ -6,9 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL
  * LIBRE CeCILL which accompanies this distribution, and is available at http://www.cecill.info
  */
-package utility.operations;
-
-import utility.Kit;
+package utility;
 
 /*
  * This class allows to represent two integer values inside a single int or long value. 

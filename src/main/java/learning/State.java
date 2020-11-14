@@ -8,8 +8,8 @@
  */
 package learning;
 
+import utility.Bit;
 import utility.Kit;
-import utility.operations.Bit;
 
 public class State {
 

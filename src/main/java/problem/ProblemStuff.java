@@ -503,8 +503,8 @@ public final class ProblemStuff {
 			m.putPositive(N_SHARED_BINARY_REPRESENTATIONS, nSharedBinaryRepresentations);
 		}
 		m.separator();
-		m.put("wck", pb.rs.instanceStopwatch.getWckTimeInSeconds());
-		m.put("cpu", pb.rs.stopwatch.getCpuTimeInSeconds());
+		m.put("wck", pb.rs.instanceStopwatch.wckTimeInSeconds());
+		m.put("cpu", pb.rs.stopwatch.cpuTimeInSeconds());
 		m.put(MEM, Kit.getFormattedUsedMemorySize());
 		// m.putPositive( COMPRESSION, TableCompressed3.compression);
 		return m;

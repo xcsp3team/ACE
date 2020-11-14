@@ -38,8 +38,8 @@ public class Reflector {
 	private final static Map<String, String> mapOfClassNames = Collections.synchronizedMap(new HashMap<String, String>());
 
 	/**
-	 * Returns the absolute name of the given class (without the extension .class) wrt the given package name. Hence, this name starts with the given
-	 * package name (and not with the root of a file system).
+	 * Returns the absolute name of the given class (without the extension .class) wrt the given package name. Hence, this name starts with the given package
+	 * name (and not with the root of a file system).
 	 * 
 	 * @param classFile
 	 *            a given File denoting a class.
@@ -322,9 +322,4 @@ public class Reflector {
 		}
 	}
 
-	public static Class<?> getLastButOneSuperclassOf(Class<?> clazz) {
-		for (Class<?> superclass = clazz.getSuperclass(); superclass != Object.class; superclass = superclass.getSuperclass())
-			clazz = superclass;
-		return clazz;
-	}
 }

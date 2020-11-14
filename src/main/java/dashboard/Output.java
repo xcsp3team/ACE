@@ -270,7 +270,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 
 	public void beforeData() { // not a method from an observer
 		resolElt = record(TypeOutput.RESOLUTION, null, root);
-		save(resolution.instanceStopwatch.getWckTime());
+		save(resolution.instanceStopwatch.wckTime());
 	}
 
 	public void afterData() { // not a method from an observer
@@ -308,8 +308,8 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		if (resolution.solver.propagation.getClass() == AC.class)
 			sa.put(Output.GUARANTEED_GAC, Constraint.isGuaranteedGAC(resolution.problem.constraints));
 		sa.separator();
-		sa.put(Output.WCK, resolution.instanceStopwatch.getWckTimeInSeconds());
-		sa.put(Output.CPU, resolution.stopwatch.getCpuTimeInSeconds());
+		sa.put(Output.WCK, resolution.instanceStopwatch.wckTimeInSeconds());
+		sa.put(Output.CPU, resolution.stopwatch.cpuTimeInSeconds());
 		sa.put(Output.MEM, Kit.getFormattedUsedMemorySize());
 		solverElt = record(TypeOutput.SOLVER, sa.entries(), resolElt);
 		Kit.log.config("\n" + sa.toString());

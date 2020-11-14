@@ -177,7 +177,7 @@ public final class SolverLocal extends Solver {
 			}
 			if (cnt % 100 == 0)
 				Kit.log.fine("\tconflicts=" + conflictManager.nConflictingConstraints() + "(" + conflictManager.currEvaluation() + "), upperBound="
-						+ nMinViolatedCtrs + " time=" + rs.instanceStopwatch.getWckTime() + " nbIterations=" + cnt);
+						+ nMinViolatedCtrs + " time=" + rs.instanceStopwatch.wckTime() + " nbIterations=" + cnt);
 		}
 		return this;
 	}

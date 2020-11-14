@@ -340,7 +340,7 @@ public final class IdentificationAutomorphism {
 	public void putInMap(Map<String, String> map) {
 		map.put(Output.N_GENERATORS, generators.size() + "");
 		map.put("nbFusions", nbFusions + "");
-		map.put(Output.SYMMETRY_WALL_CLOCK_TIME, stopwatch.getWckTimeInSeconds() + "");
+		map.put(Output.SYMMETRY_WALL_CLOCK_TIME, stopwatch.wckTimeInSeconds() + "");
 	}
 
 	void displayGenerators() {

@@ -48,7 +48,6 @@ import search.backtrack.SolverBacktrack;
 import sets.SetDense;
 import sets.SetSparse;
 import utility.Kit;
-import utility.operations.Calculator;
 import variables.Variable;
 import variables.domains.Domain;
 import variables.domains.DomainInfinite;
@@ -221,7 +220,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		long cost = 0;
 		for (Constraint c : ctrs)
 			if (c.futvars.size() == 0)
-				cost = Calculator.add(cost, c.costOfCurrInstantiation());
+				cost = Kit.addSafe(cost, c.costOfCurrInstantiation());
 		return cost;
 	}
 

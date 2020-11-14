@@ -13,7 +13,6 @@ import propagation.soft.LowerBoundCapability;
 import search.Solver;
 import utility.Enums.EBranching;
 import utility.Kit;
-import utility.operations.Calculator;
 import variables.Variable;
 
 public abstract class PFC extends AC implements LowerBoundCapability {
@@ -55,13 +54,13 @@ public abstract class PFC extends AC implements LowerBoundCapability {
 		long greatestImpact = -1;
 		long ub = solver.solManager.bestBound;
 		for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
-			sumMnis = Calculator.add(sumMnis, computeMniOf(x, recomputeNbInconsistencies));
+			sumMnis = Kit.addSafe(sumMnis, computeMniOf(x, recomputeNbInconsistencies));
 			long impact = sumMinCosts[x.num][argMinSumMinCosts[x.num]];
 			if (impact > greatestImpact) {
 				greatestImpactVariable = x;
 				greatestImpact = impact;
 			}
-			if (Calculator.add(partitionOfConstraints.distance, sumMnis) >= ub) {
+			if (Kit.addSafe(partitionOfConstraints.distance, sumMnis) >= ub) {
 				// greatestImpactVariable.wdeg++; // TODO how to do that, after refactoring of constraint weighting
 				return false;
 			}

@@ -70,7 +70,7 @@ public class Resolution extends Thread {
 	private static Resolution[] resolutions;
 
 	public synchronized static void saveMultithreadResultsFiles(Resolution resolution) {
-		String fileName = resolution.output.save(resolution.stopwatch.getWckTime());
+		String fileName = resolution.output.save(resolution.stopwatch.wckTime());
 		if (fileName != null) {
 			String variantParallelName = XMLManager.attValueFor(Arguments.lastArgument(), ResolutionVariants.VARIANT_PARALLEL, ResolutionVariants.NAME);
 			String resultsFileName = resolution.cp.settingXml.dirForCampaign;
@@ -84,7 +84,7 @@ public class Resolution extends Thread {
 			long totalWCKTime = 0;
 			long totalVisitedNodes = 0;
 			for (Resolution r : resolutions) {
-				totalWCKTime += r.instanceStopwatch.getWckTime();
+				totalWCKTime += r.instanceStopwatch.wckTime();
 				totalVisitedNodes += r.solver.stats.nNodes;
 			}
 			Element root = document.getDocumentElement();
@@ -267,7 +267,7 @@ public class Resolution extends Thread {
 	}
 
 	public boolean isTimeExpiredForCurrentInstance() {
-		return cp.settingGeneral.timeout <= instanceStopwatch.getWckTime();
+		return cp.settingGeneral.timeout <= instanceStopwatch.wckTime();
 	}
 
 	public Resolution(String configurationFileName) {
@@ -391,7 +391,7 @@ public class Resolution extends Thread {
 				System.exit(0);
 			}
 		} else
-			output.save(stopwatch.getWckTime());
+			output.save(stopwatch.wckTime());
 	}
 
 }

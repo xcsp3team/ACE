@@ -13,7 +13,6 @@ import java.util.Arrays;
 import constraints.Constraint;
 import search.Solver;
 import utility.Kit;
-import utility.operations.Calculator;
 import variables.Variable;
 
 public abstract class PartitionOfConstraints {
@@ -53,7 +52,7 @@ public abstract class PartitionOfConstraints {
 		membership[c.num] = -1; // because past constraint (i.e. constraint covered by the current solver instantiation)
 		next[c.num] = firstPast;
 		firstPast = c.num;
-		distance = Calculator.add(distance, c.costOfCurrInstantiation());
+		distance = Kit.addSafe(distance, c.costOfCurrInstantiation());
 	}
 
 	protected abstract double evaluate(Constraint c, Variable x, boolean incremental);

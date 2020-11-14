@@ -56,7 +56,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 
 	@Override
 	public final void afterPreprocessing() {
-		preproWck += stopwatch.getWckTime();
+		preproWck += stopwatch.wckTime();
 		if (solver instanceof SolverBacktrack && (((SolverBacktrack) solver).learnerNogoods != null))
 			nPreproAddedNogoods = (((SolverBacktrack) solver).learnerNogoods).nNogoods - nPreproAddedNogoods;
 		nPreproAddedCtrs = solver.pb.constraints.length - nPreproAddedCtrs;
@@ -72,12 +72,12 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 
 	@Override
 	public final void afterSolving() {
-		solvingWck += stopwatch.getWckTime();
+		solvingWck += stopwatch.wckTime();
 	}
 
 	@Override
 	public void afterRun() {
-		searchWck = stopwatch.getWckTime();
+		searchWck = stopwatch.wckTime();
 	}
 
 	public void onAssignment(Variable x) {
@@ -149,7 +149,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 	}
 
 	public void manageSolution() {
-		long cpu = solver.rs.stopwatch.getCpuTime(), wck = solver.rs.instanceStopwatch.getWckTime();
+		long cpu = solver.rs.stopwatch.cpuTime(), wck = solver.rs.instanceStopwatch.wckTime();
 		if (solver.solManager.found == 1) {
 			firstSolCpu = cpu;
 			firstSolWck = wck;
@@ -190,7 +190,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			m.separator();
 		}
 		m.put(WCK, preproWck / 1000.0);
-		m.put(CPU, solver.rs.stopwatch.getCpuTimeInSeconds());
+		m.put(CPU, solver.rs.stopwatch.cpuTimeInSeconds());
 
 		m.put(MEM, Kit.getFormattedUsedMemorySize());
 		return m;
@@ -221,8 +221,8 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			m.put("firstSolCpu", firstSolCpu / 1000.0);
 			m.separator();
 		}
-		m.put(WCK, solver.rs.instanceStopwatch.getWckTimeInSeconds());
-		m.put(CPU, solver.rs.stopwatch.getCpuTimeInSeconds());
+		m.put(WCK, solver.rs.instanceStopwatch.wckTimeInSeconds());
+		m.put(CPU, solver.rs.stopwatch.cpuTimeInSeconds());
 		m.put(MEM, Kit.getFormattedUsedMemorySize());
 		return m;
 	}
@@ -250,7 +250,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 				m.put("wrg", nWrongDecisions);
 				if (Kit.getUsedMemory() > 10000000000L)
 					m.put(Output.MEM, Kit.getFormattedUsedMemorySize());
-				m.put(Output.WCK, stopwatch.getWckTimeInSeconds());
+				m.put(Output.WCK, stopwatch.wckTimeInSeconds());
 				if (solver.learnerNogoods != null)
 					m.putPositive("ngd", solver.learnerNogoods.nNogoods);
 				if (solver.solManager.found > 0) {
@@ -270,7 +270,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 				m.put(Output.N_SINGLETON_TESTS, nSingletonTests());
 				m.put(Output.N_EFFECTIVE_SINGLETON_TESTS, nEffectiveSingletonTests());
 			}
-			m.put(Output.WCK, stopwatch.getWckTimeInSeconds());
+			m.put(Output.WCK, stopwatch.wckTimeInSeconds());
 			if (Kit.getUsedMemory() > 10000000000L)
 				m.put(Output.MEM, Kit.getFormattedUsedMemorySize());
 			m.separator();
@@ -359,7 +359,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			m.put("number", (solver.restarter.numRun == -1 ? "all" : solver.restarter.numRun));
 			m.put(Output.N_ASSIGNMENTS, nAssignments);
 			m.put(Output.WCK, searchWck / 1000.0);
-			m.put(Output.CPU, solver.rs.stopwatch.getCpuTimeInSeconds());
+			m.put(Output.CPU, solver.rs.stopwatch.cpuTimeInSeconds());
 			m.put(Output.MEM, Kit.getFormattedUsedMemorySize());
 			return m;
 		}

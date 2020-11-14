@@ -16,7 +16,6 @@ import learning.LearnerNogoods;
 import search.Solver;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;
-import utility.operations.Calculator;
 import variables.Variable;
 import variables.domains.Domain;
 
@@ -86,15 +85,15 @@ public abstract class RDACAbstract extends PFC implements ObserverRuns {
 		do {
 			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 				long[] t = sumMinCosts[x.num];
-				long base = Calculator.add(partitionOfConstraints.distance, sumMnis, -t[argMinSumMinCosts[x.num]]);
-				if (Calculator.add(base, t[argMaxSumMinCosts[x.num]]) < ub)
+				long base = Kit.addSafe(Kit.addSafe(partitionOfConstraints.distance, sumMnis), -t[argMinSumMinCosts[x.num]]);
+				if (Kit.addSafe(base, t[argMaxSumMinCosts[x.num]]) < ub)
 					continue;
 				// from here, we have the guarantee to remove at least one value
 				Domain dom = x.dom;
 				// int sizeBefore = dom.size();
 				for (int a = dom.first(); a != -1; a = dom.next(a)) {
 					assert (t[a] == ub && controlMinCostEqualToUpperBound(x, a)) || t[a] == partitionOfConstraints.computeSumMinCostsOf(x, a);
-					if (Calculator.add(base, t[a], computeOffset(x, a)) >= ub)
+					if (Kit.addSafe(Kit.addSafe(base, t[a]), computeOffset(x, a)) >= ub)
 						dom.removeElementary(a);
 				}
 				// Kit.control(sizeBefore - dom.size() > 0); // BUG

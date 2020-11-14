@@ -11,8 +11,8 @@ package search.backtrack;
 import java.util.stream.IntStream;
 
 import sets.SetDense;
+import utility.Bit;
 import utility.Kit;
-import utility.operations.Bit;
 import variables.Variable;
 
 public final class DecisionRecorder {

@@ -10,9 +10,9 @@ package heuristics.variables;
 
 import interfaces.TagMaximize;
 import search.backtrack.SolverBacktrack;
+import utility.CombinatorOfTwoInts;
 import utility.Enums.EBranching;
 import utility.Enums.ESingletonAssignment;
-import utility.operations.CombinatorOfTwoInts;
 import variables.Variable;
 
 /**

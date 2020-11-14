@@ -12,7 +12,7 @@ import heuristics.variables.HeuristicVariables.BestScoredVariable;
 import interfaces.TagExperimental;
 import propagation.structures.forSac.Branch;
 import search.Solver;
-import utility.operations.CombinatorOfTwoInts;
+import utility.CombinatorOfTwoInts;
 import variables.Variable;
 
 public class SingletonMaxCSP3Single extends PRDAC implements TagExperimental {

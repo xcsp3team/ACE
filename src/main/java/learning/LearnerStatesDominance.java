@@ -12,8 +12,8 @@ import interfaces.ObserverBacktracking.ObserverBacktrackingUnsystematic;
 import search.backtrack.SolverBacktrack;
 import search.backtrack.SolverBacktrack.StackedVariables;
 import utility.Enums.EStopping;
+import utility.Bit;
 import utility.Kit;
-import utility.operations.Bit;
 import variables.Variable;
 import variables.domains.Domain;
 

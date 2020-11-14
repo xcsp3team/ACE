@@ -56,7 +56,8 @@ import dashboard.Arguments;
 import executables.Resolution;
 
 public final class Kit {
-	private Kit() {}
+	private Kit() {
+	}
 
 	public static final DecimalFormat decimalFormat = new DecimalFormat("###.##", new DecimalFormatSymbols(Locale.ENGLISH));
 
@@ -165,9 +166,9 @@ public final class Kit {
 	}
 
 	/**
-	 * Builds a 1-dimensional array of objects from the specified sequence of parameters. Each element of the sequence must only contain variables
-	 * (and possibly null values), either stand-alone or present in arrays (of any dimension). All variables are collected in order, and concatenated
-	 * to form a 1-dimensional array. Note that null values are simply discarded.
+	 * Builds a 1-dimensional array of objects from the specified sequence of parameters. Each element of the sequence must only contain variables (and possibly
+	 * null values), either stand-alone or present in arrays (of any dimension). All variables are collected in order, and concatenated to form a 1-dimensional
+	 * array. Note that null values are simply discarded.
 	 */
 	public static Object[] concat(Object first, Object... next) {
 		List<Object> list = new ArrayList<>();
@@ -614,6 +615,12 @@ public final class Kit {
 		return sum;
 	}
 
+	public static final long addSafe(long left, long right) {
+		if (right > 0 ? left > Long.MAX_VALUE - right : left < Long.MIN_VALUE - right)
+			Kit.exit("pb overflow " + left + " " + right);
+		return left + right;
+	}
+
 	public static double computeAnp(int n, int p) {
 		Kit.control(n >= p);
 		double d = 1;
@@ -908,8 +915,8 @@ public final class Kit {
 	}
 
 	/**
-	 * Replaces all occurrences of the given old char with the given new char. This method is used as the standard method of the String class do not
-	 * behave correctly for some characters.
+	 * Replaces all occurrences of the given old char with the given new char. This method is used as the standard method of the String class do not behave
+	 * correctly for some characters.
 	 */
 	public static String replaceAll(String s, char oldChar, char newChar) {
 		StringBuilder sb = new StringBuilder(s);
@@ -1008,7 +1015,8 @@ public final class Kit {
 	public static class ByteArrayHashKey {
 		public byte[] t;
 
-		public ByteArrayHashKey() {}
+		public ByteArrayHashKey() {
+		}
 
 		public ByteArrayHashKey(byte[] t) {
 			this.t = t;
@@ -1028,7 +1036,8 @@ public final class Kit {
 	public static class IntArrayHashKey {
 		public int[] t;
 
-		public IntArrayHashKey() {}
+		public IntArrayHashKey() {
+		}
 
 		public IntArrayHashKey(int[] t) {
 			this.t = t;
@@ -1048,7 +1057,8 @@ public final class Kit {
 	public static class LongArrayHashKey {
 		public long[] t;
 
-		public LongArrayHashKey() {}
+		public LongArrayHashKey() {
+		}
 
 		public LongArrayHashKey(long[] t) {
 			this.t = t;
@@ -1065,162 +1075,6 @@ public final class Kit {
 		}
 	}
 
-	public static class IntArrayWithScore implements Comparable<IntArrayWithScore> {
-		public int[] t;
-
-		public int score;
-
-		public IntArrayWithScore(int[] t, int score) {
-			this.t = t;
-			this.score = score;
-		}
-
-		@Override
-		public int compareTo(IntArrayWithScore o) {
-			return score < o.score ? -1 : score > o.score ? 1 : lexComparatorGeneral.compare(t, o.t);
-		}
-	}
-
-	public static class IntArrayWithLongScore implements Comparable<IntArrayWithLongScore> {
-		public int[] t;
-
-		public long score;
-
-		public void set(int[] t, long score) {
-			this.t = t;
-			this.score = score;
-		}
-
-		@Override
-		public int compareTo(IntArrayWithLongScore o) {
-			return score < o.score ? -1 : score > o.score ? 1 : lexComparatorGeneral.compare(t, o.t);
-		}
-	}
-
-	public static class IntLongPair implements Comparable<IntLongPair> {
-		public int index;
-
-		public long value;
-
-		public IntLongPair() {}
-
-		public IntLongPair(int index, long value) {
-			this.index = index;
-			this.value = value;
-		}
-
-		@Override
-		public int compareTo(IntLongPair o) {
-			return value < o.value ? -1 : value > o.value ? 1 : 0;
-		}
-
-		@Override
-		public String toString() {
-			return "(" + index + "," + value + ")";
-		}
-	}
-
-	public static class IntLongPairReverse implements Comparable<IntLongPairReverse> {
-		public int index;
-
-		public long value;
-
-		public IntLongPairReverse() {}
-
-		public IntLongPairReverse(int index) {
-			this.index = index;
-		}
-
-		public IntLongPairReverse(int index, long value) {
-			this.index = index;
-			this.value = value;
-		}
-
-		@Override
-		public int compareTo(IntLongPairReverse o) {
-			return value < o.value ? 1 : value > o.value ? -1 : index - o.index;
-		}
-
-		@Override
-		public String toString() {
-			return "(" + index + "," + value + ")";
-		}
-	}
-
-	public static class IntWithLongArrayScoreReverse implements Comparable<IntWithLongArrayScoreReverse> {
-		public int index;
-
-		public long[] score;
-
-		public IntWithLongArrayScoreReverse() {}
-
-		public IntWithLongArrayScoreReverse(int index) {
-			this.index = index;
-		}
-
-		public IntWithLongArrayScoreReverse(int index, long[] score) {
-			this.index = index;
-			this.score = score.clone();
-		}
-
-		private int comp(long[] t1, long[] t2) {
-			int d = t2.length - t1.length;
-			for (int i = t1.length - 1; i >= 0; i--) {
-				// if (t1[i] < t2[i+d]) {
-				// //Kit.prn(i);
-				// return -1;
-				// }
-				if (t1[i] > t2[i + d]) {
-					// Kit.prn(i);
-					return +1;
-				}
-			}
-			return 0;
-		}
-
-		@Override
-		public int compareTo(IntWithLongArrayScoreReverse o) {
-			int r = comp(score, o.score);
-			return r != 0 ? r : index - o.index;
-		}
-
-		@Override
-		public String toString() {
-			return "(" + index + "," + Kit.join(score) + ")";
-		}
-	}
-
-	// public static class IntDoublePair implements Comparable<IntDoublePair> {
-	// public int index;
-	//
-	// public double value;
-	//
-	// public IntDoublePair set(int index, double value) {
-	// this.index = index;
-	// this.value = value;
-	// return this;
-	// }
-	//
-	// public IntDoublePair() {
-	// }
-	//
-	// public IntDoublePair(int index, double value) {
-	// this.index = index;
-	// this.value = value;
-	// }
-	//
-	// public int compareTo(IntDoublePair o) {
-	// return value < o.value ? -1 : value > o.value ? 1 : index - o.index;
-	// }
-	//
-	// public String toString() {
-	// return "(" + index + "," + value + ")";
-	// }
-	// }
-
-	// public static class Int { // more efficient than AtomicInteger
-	// public int value = -1;
-	// }
 	public static DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
 	public static DecimalFormat df2 = new DecimalFormat("0.00", symbols);
 	public static DecimalFormat df1 = new DecimalFormat("0.0", symbols);
@@ -1248,23 +1102,23 @@ public final class Kit {
 		}
 
 		/** Returns the current duration given by the stopwatch while it is being currently running. */
-		public long getWckTime() {
+		public long wckTime() {
 			return System.currentTimeMillis() - startWallClockTime;
 		}
 
-		public String getWckTimeInSeconds() {
+		public String wckTimeInSeconds() {
 			double l = (System.currentTimeMillis() - startWallClockTime) / 1000.0;
 			return l < 10 ? df2.format(l) : df1.format(l);
 		}
 
 		/** Returns the cpu time in milliseconds */
-		public long getCpuTime() {
+		public long cpuTime() {
 			return cpuTimeSupported ? computeCpuTime() / 1000000 : -1;
 		}
 
 		/** Returns the cpu time in seconds */
-		public String getCpuTimeInSeconds() {
-			return cpuTimeSupported ? getCpuTime() / 1000.0 + "" : "-1";
+		public String cpuTimeInSeconds() {
+			return cpuTimeSupported ? cpuTime() / 1000.0 + "" : "-1";
 		}
 	}
 }

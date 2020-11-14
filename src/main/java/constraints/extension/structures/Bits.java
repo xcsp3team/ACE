@@ -19,9 +19,9 @@ import java.util.stream.Stream;
 import constraints.Constraint;
 import executables.Resolution;
 import problem.Problem;
+import utility.Bit;
 import utility.Kit;
 import utility.Kit.LongArrayHashKey;
-import utility.operations.Bit;
 import variables.Variable;
 import variables.domains.Domain;
 

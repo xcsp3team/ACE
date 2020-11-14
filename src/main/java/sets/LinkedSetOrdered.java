@@ -12,8 +12,8 @@ import java.util.Arrays;
 
 import org.xcsp.common.Constants;
 
+import utility.Bit;
 import utility.Kit;
-import utility.operations.Bit;
 
 public class LinkedSetOrdered implements LinkedSet {
 	/**

@@ -126,8 +126,14 @@ public class ControlPanel {
 			return settings.addS(pr(priority), tag(), attribute, shortcut, defaultValue, root, description);
 		}
 
+		private Class<?> getLastButOneSuperclassOf(Class<?> clazz) {
+			for (Class<?> superclass = clazz.getSuperclass(); superclass != Object.class; superclass = superclass.getSuperclass())
+				clazz = superclass;
+			return clazz;
+		}
+
 		protected String addS(String attribute, String shortcut, Class<?> defaultValue, String description, int... priority) {
-			return addS(attribute, shortcut, defaultValue, Reflector.getLastButOneSuperclassOf(defaultValue), description);
+			return addS(attribute, shortcut, defaultValue, getLastButOneSuperclassOf(defaultValue), description);
 		}
 
 		protected <T extends Enum<T>> T addE(String attribute, String shortcut, T defaultValue, String description, int... priority) {
@@ -923,8 +929,8 @@ public class ControlPanel {
 				return tag + "/" + attribute; // (attributeAmbiguity ? tag + "/" : "") + attribute;
 			}
 
-			private final String[] experimentalNames = Kit.sort(new String[] { EExtension.STRCPRS.name(), EExtractionMethod.MAX_CSP
-					.name(), EExtractionMethod.INC.name(), EExtractionMethod.INC_FIRST.name() });
+			private final String[] experimentalNames = Kit.sort(new String[] { EExtension.STRCPRS.name(), EExtractionMethod.MAX_CSP.name(),
+					EExtractionMethod.INC.name(), EExtractionMethod.INC_FIRST.name() });
 
 			@Override
 			public String toString() {

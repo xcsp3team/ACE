@@ -18,7 +18,7 @@ import constraints.extension.structures.Table;
 import interfaces.TagShort;
 import problem.Problem;
 import sets.SetDenseReversible;
-import utility.operations.Bit;
+import utility.Bit;
 import variables.Variable;
 import variables.domains.Domain;
 

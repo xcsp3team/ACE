@@ -14,9 +14,9 @@ import java.util.zip.Deflater;
 
 import search.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
+import utility.Bit;
 import utility.Kit;
 import utility.Kit.ByteArrayHashKey;
-import utility.operations.Bit;
 import variables.Variable;
 import variables.domains.Domain;
 

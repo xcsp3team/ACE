@@ -158,7 +158,7 @@ public final class SolutionManager {
 				if (fullExploration && framework == TypeFramework.CSP)
 					System.out.println("d NUMBER OF SOLUTIONS " + found);
 				System.out.println(fullExploration ? "d COMPLETE EXPLORATION" : "d INCOMPLETE EXPLORATION");
-				System.out.println("c real time : " + solver.rs.stopwatch.getCpuTimeInSeconds());
+				System.out.println("c real time : " + solver.rs.stopwatch.cpuTimeInSeconds());
 				System.out.flush();
 			}
 		}
@@ -228,7 +228,7 @@ public final class SolutionManager {
 			Kit.control(solver.pb.optimizer.isBetterBound(bestBound));
 			// solver.restarter.forceRootPropagation = true;
 			if (solver.rs.cp.settingXml.competitionMode)
-				System.out.println("o " + bestBound + " \t" + (solver.rs.instanceStopwatch.getWckTimeInSeconds()));
+				System.out.println("o " + bestBound + " \t" + (solver.rs.instanceStopwatch.wckTimeInSeconds()));
 			// + " \t#" + found); // + "); (hamming: " + h1 + ", in_objective: " + h2 + ")");
 		}
 		// The following code must stay after storeSolution

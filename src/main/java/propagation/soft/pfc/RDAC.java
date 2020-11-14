@@ -13,46 +13,12 @@ import java.util.Arrays;
 import org.xcsp.common.Types.TypeFramework;
 
 import constraints.Constraint;
-import heuristics.variables.HeuristicVariablesDynamic;
-import interfaces.TagExperimental;
-import interfaces.TagMaximize;
 import search.Solver;
-import search.backtrack.SolverBacktrack;
 import utility.Kit;
-import utility.operations.CombinatorOfTwoInts;
 import variables.Variable;
 import variables.domains.Domain;
 
 public class RDAC extends RDACAbstract {
-
-	public static class DDegOnDomOffset extends HeuristicVariablesDynamic implements TagExperimental, TagMaximize {
-
-		public DDegOnDomOffset(SolverBacktrack solver, boolean antiHeuristic) {
-			super(solver, antiHeuristic);
-		}
-
-		@Override
-		public double scoreOf(Variable x) {
-			RDAC maxCSP = (RDAC) (solver.propagation);
-			return maxCSP.getAicOffsetOf(x) * x.ddegOnDom();
-		}
-	}
-
-	public static class OffsetThenDom extends HeuristicVariablesDynamic implements TagExperimental {
-
-		private CombinatorOfTwoInts combinator;
-
-		public OffsetThenDom(SolverBacktrack solver, boolean antiHeuristic) {
-			super(solver, antiHeuristic);
-			this.combinator = new CombinatorOfTwoInts(solver.pb.stuff.maxDomSize());
-		}
-
-		@Override
-		public double scoreOf(Variable x) {
-			RDAC maxCSP = (RDAC) (solver.propagation);
-			return combinator.combinedLongValueFor(maxCSP.getAicOffsetOf(x), x.dom.size());
-		}
-	}
 
 	/** aic[x][a] is the number of constraints with no support for (x,a) */
 	public final int[][] aic;
