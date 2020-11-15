@@ -32,16 +32,15 @@ public class LinkedSetOrdered implements LinkedSet {
 	protected int last;
 
 	/**
-	 * The backward linking of all present elements of the list (from last to first). An array index corresponds to an element. An array
-	 * value gives the previous present element of the list or -1 if it does not exist. Hence, <code> prevs[i] == j </code> means that j is
-	 * the previous present element in the list before i.
+	 * The backward linking of all present elements of the list (from last to first). An array index corresponds to an element. An array value gives the
+	 * previous present element of the list or -1 if it does not exist. Hence, <code> prevs[i] == j </code> means that j is the previous present element in the
+	 * list before i.
 	 */
 	protected int[] prevs;
 
 	/**
-	 * The forward linking of all present elements of the list (from first to last). An array index corresponds to an element. An array
-	 * value gives the next present element of the list or -1 if it does not exist. Hence, <code> nexts[i] == j </code> means that j is the
-	 * next present element in the list after i.
+	 * The forward linking of all present elements of the list (from first to last). An array index corresponds to an element. An array value gives the next
+	 * present element of the list or -1 if it does not exist. Hence, <code> nexts[i] == j </code> means that j is the next present element in the list after i.
 	 */
 	protected int[] nexts;
 
@@ -51,16 +50,16 @@ public class LinkedSetOrdered implements LinkedSet {
 	protected int lastRemoved;
 
 	/**
-	 * The backward linking of all absent elements of the list (from last to first). An array index corresponds to an element. An array
-	 * value gives the previous absent element of the list or -1 if it does not exist. Hence, <code> prevsDel[i] == j </code> means that j
-	 * is the previously deleted element of the list before i.
+	 * The backward linking of all absent elements of the list (from last to first). An array index corresponds to an element. An array value gives the previous
+	 * absent element of the list or -1 if it does not exist. Hence, <code> prevsDel[i] == j </code> means that j is the previously deleted element of the list
+	 * before i.
 	 */
 	protected int[] prevRemoved;
 
 	/**
-	 * The level at which absent elements have been removed from the list. An array index corresponds to an element. An array value gives
-	 * the level at which the corresponding element has been removed from the list. Hence, <code> absentLevels[i] == j </code> means that j
-	 * is the removal level of the element i and <code> absentLevels[i] == -1 </code> means that the element i is present.
+	 * The level at which absent elements have been removed from the list. An array index corresponds to an element. An array value gives the level at which the
+	 * corresponding element has been removed from the list. Hence, <code> absentLevels[i] == j </code> means that j is the removal level of the element i and
+	 * <code> absentLevels[i] == -1 </code> means that the element i is present.
 	 */
 	protected int[] removedLevels;
 
@@ -347,7 +346,7 @@ public class LinkedSetOrdered implements LinkedSet {
 		public LinkedSetOrderedWithBits(int initSize) {
 			super(initSize);
 			binaryRepresentation = new long[initSize / Long.SIZE + (initSize % Long.SIZE != 0 ? 1 : 0)];
-			Arrays.fill(binaryRepresentation, Bit.ALL_LONG_BITS_TO_1); // Kit.prn(BitManager.decrypt(binaryRepresentation));
+			Arrays.fill(binaryRepresentation, Bit.ALL_LONG_BITS_TO_1);
 			binaryRepresentation[binaryRepresentation.length - 1] = Bit.bitsA1To(initSize - ((binaryRepresentation.length - 1) * Long.SIZE));
 		}
 

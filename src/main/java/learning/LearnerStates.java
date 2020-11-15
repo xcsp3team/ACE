@@ -57,7 +57,7 @@ public abstract class LearnerStates implements ObserverRuns {
 	}
 
 	protected boolean mustStop() {
-		return Kit.getUsedMemory() > memoryLimit;
+		return Kit.memory() > memoryLimit;
 	}
 
 	public abstract boolean dealWhenOpeningNode();

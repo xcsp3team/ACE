@@ -12,7 +12,7 @@ import org.xcsp.common.Utilities;
 import dashboard.Arguments;
 import dashboard.Output;
 import utility.Kit;
-import utility.XMLManager;
+import utility.DocumentHandler;
 
 public final class ResolutionVariants {
 
@@ -30,7 +30,7 @@ public final class ResolutionVariants {
 
 	public final static String[] loadSequentialVariants(String configurationFileName, String configurationVariantsFileName, String prefix) {
 		List<String> list = new ArrayList<>();
-		Document variantsDocument = XMLManager.load(configurationVariantsFileName);
+		Document variantsDocument = DocumentHandler.load(configurationVariantsFileName);
 
 		NodeList nodeList = variantsDocument.getElementsByTagName(VARIANT);
 		for (int i = 0; i < nodeList.getLength(); i++) {
@@ -38,7 +38,7 @@ public final class ResolutionVariants {
 			Element variantParent = (Element) variantElement.getParentNode();
 			if (!variantsDocument.getDocumentElement().getTagName().equals(VARIANT_PARALLEL) && variantParent.getTagName().equals(VARIANT_PARALLEL))
 				continue;
-			Document variantDocument = XMLManager.load(configurationFileName);
+			Document variantDocument = DocumentHandler.load(configurationFileName);
 			String variantFileName = prefix + (variantParent.getTagName().equals(VARIANT_PARALLEL) ? variantParent.getAttribute(NAME) + "_" : "")
 					+ variantElement.getAttribute(NAME) + ".xml";
 			NodeList modificationList = variantElement.getElementsByTagName(MODIFICATION);
@@ -50,7 +50,7 @@ public final class ResolutionVariants {
 				String path = modificationElement.getAttribute(PATH);
 				String attributeName = modificationElement.getAttribute(ATTRIBUTE);
 				String attributeValue = modificationElement.getAttribute(VALUE);
-				XMLManager.modify(variantDocument, path, attributeName, attributeValue);
+				DocumentHandler.modify(variantDocument, path, attributeName, attributeValue);
 			}
 			if (iteration) {
 				Element modification = (Element) modificationList.item(nModifications - 1);
@@ -61,7 +61,7 @@ public final class ResolutionVariants {
 						step = Integer.parseInt(modification.getAttribute(STEP));
 				String basis = variantFileName.substring(0, variantFileName.lastIndexOf(".xml"));
 				for (int cnt = min; cnt <= max; cnt += step) {
-					XMLManager.modify(variantDocument, path, attributeName, cnt + "");
+					DocumentHandler.modify(variantDocument, path, attributeName, cnt + "");
 					list.add(Utilities.save(variantDocument, basis + cnt + ".xml"));
 				}
 			} else
@@ -72,11 +72,11 @@ public final class ResolutionVariants {
 
 	public final static String[] loadParallelVariants(String configurationVariantsFileName, String prefix) {
 		List<String> list = new ArrayList<>();
-		Document variantsDocument = XMLManager.load(configurationVariantsFileName);
+		Document variantsDocument = DocumentHandler.load(configurationVariantsFileName);
 		if (!variantsDocument.getDocumentElement().getTagName().equals(VARIANT_PARALLEL)) {
 			NodeList nodeList = variantsDocument.getElementsByTagName(VARIANT_PARALLEL);
 			for (int i = 0; i < nodeList.getLength(); i++) {
-				Document document = XMLManager.createNewDocument();
+				Document document = DocumentHandler.createNewDocument();
 				Element element = (Element) document.importNode(nodeList.item(i), true);
 				document.appendChild(element);
 				list.add(Utilities.save(document, prefix + element.getAttribute(NAME) + ".xml"));
@@ -87,7 +87,7 @@ public final class ResolutionVariants {
 
 	public final static String[] loadVariantNames() {
 		if (Arguments.multiThreads) {
-			String prefix = XMLManager.attValueFor(Arguments.userSettingsFilename, "xml", "exportMode");
+			String prefix = DocumentHandler.attValueFor(Arguments.userSettingsFilename, "xml", "exportMode");
 			if (prefix.equals("NO"))
 				prefix = ".";
 			if (prefix != "")

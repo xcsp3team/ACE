@@ -10,15 +10,15 @@ package heuristics.variables;
 
 import interfaces.TagMaximize;
 import search.backtrack.SolverBacktrack;
-import utility.CombinatorOfTwoInts;
 import utility.Enums.EBranching;
 import utility.Enums.ESingletonAssignment;
+import utility.Kit.CombinatorOfTwoInts;
 import variables.Variable;
 
 /**
  * This class gives the description of a dynamic variable ordering heuristic. <br>
- * It means that at each step of the search, this kind of object is solicited in order to determine which variable has to be selected according to the
- * current state of the problem.
+ * It means that at each step of the search, this kind of object is solicited in order to determine which variable has to be selected according to the current
+ * state of the problem.
  */
 public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 

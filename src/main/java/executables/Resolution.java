@@ -2,8 +2,11 @@ package executables;
 
 import static utility.Kit.log;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.ArrayList;
@@ -48,7 +51,7 @@ import utility.Graphviz;
 import utility.Kit;
 import utility.Kit.Stopwatch;
 import utility.Reflector;
-import utility.XMLManager;
+import utility.DocumentHandler;
 import xcsp3.XCSP3;
 
 /**
@@ -69,18 +72,29 @@ public class Resolution extends Thread {
 	 */
 	private static Resolution[] resolutions;
 
+	public static void copy(String srcFileName, String dstFileName) {
+		try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(srcFileName));
+				BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(dstFileName));) {
+			byte[] bytes = new byte[1024];
+			for (int nb = in.read(bytes, 0, bytes.length); nb > 0; nb = in.read(bytes, 0, bytes.length))
+				out.write(bytes, 0, nb);
+		} catch (Exception e) {
+			Kit.exit(e);
+		}
+	}
+
 	public synchronized static void saveMultithreadResultsFiles(Resolution resolution) {
 		String fileName = resolution.output.save(resolution.stopwatch.wckTime());
 		if (fileName != null) {
-			String variantParallelName = XMLManager.attValueFor(Arguments.lastArgument(), ResolutionVariants.VARIANT_PARALLEL, ResolutionVariants.NAME);
+			String variantParallelName = DocumentHandler.attValueFor(Arguments.lastArgument(), ResolutionVariants.VARIANT_PARALLEL, ResolutionVariants.NAME);
 			String resultsFileName = resolution.cp.settingXml.dirForCampaign;
 			if (resultsFileName != "")
 				resultsFileName += File.separator;
 			resultsFileName += Output.RESULTS_DIRECTORY_NAME + File.separator
 					+ resolution.output.outputFileNameFrom(resolution.problem.name(), variantParallelName);
-			Kit.copy(fileName, resultsFileName);
-			Document document = XMLManager.load(resultsFileName);
-			XMLManager.modify(document, TypeOutput.RESOLUTIONS.toString(), Output.CONFIGURATION_FILE_NAME, variantParallelName);
+			copy(fileName, resultsFileName);
+			Document document = DocumentHandler.load(resultsFileName);
+			DocumentHandler.modify(document, TypeOutput.RESOLUTIONS.toString(), Output.CONFIGURATION_FILE_NAME, variantParallelName);
 			long totalWCKTime = 0;
 			long totalVisitedNodes = 0;
 			for (Resolution r : resolutions) {

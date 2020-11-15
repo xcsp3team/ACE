@@ -36,7 +36,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 		if (c instanceof ExtensionSTR2 || c instanceof ExtensionCT || c instanceof CtrExtensionCT2 || c.infiniteDomainVars.length > 0)
 			return false;
 		ControlPanel cfg = c.pb.rs.cp;
-		if (!cfg.mustBuildConflictStructures || c.scp.length == 1 || Kit.getUsedMemory() > 400000000L)
+		if (!cfg.mustBuildConflictStructures || c.scp.length == 1 || Kit.memory() > 400000000L)
 			return false;
 		return Variable.nValidTuples(c.scp, false).compareTo(BigInteger.valueOf(limit)) <= 0;
 	}

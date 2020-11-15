@@ -38,6 +38,18 @@ public class Reflector {
 	private final static Map<String, String> mapOfClassNames = Collections.synchronizedMap(new HashMap<String, String>());
 
 	/**
+	 * Replaces all occurrences of the given old char with the given new char. This method is used as the standard method of the String class do not behave
+	 * correctly for some characters.
+	 */
+	static String replaceAll(String s, char oldChar, char newChar) {
+		StringBuilder sb = new StringBuilder(s);
+		for (int i = 0; i < sb.length(); i++)
+			if (sb.charAt(i) == oldChar)
+				sb.setCharAt(i, newChar);
+		return sb.toString();
+	}
+
+	/**
 	 * Returns the absolute name of the given class (without the extension .class) wrt the given package name. Hence, this name starts with the given package
 	 * name (and not with the root of a file system).
 	 * 
@@ -47,7 +59,7 @@ public class Reflector {
 	 *            a given package name
 	 */
 	private static String absoluteClassNameOf(File classFile, String basicPackageName) {
-		String s = Kit.replaceAll(classFile.getAbsolutePath(), File.separatorChar, '.');
+		String s = replaceAll(classFile.getAbsolutePath(), File.separatorChar, '.');
 		int firstIndex = s.indexOf(basicPackageName);
 		assert firstIndex != -1;
 		int lastIndex = s.lastIndexOf(".");
@@ -123,12 +135,12 @@ public class Reflector {
 				return list;
 			while (enumeration.hasMoreElements()) {
 				String name = enumeration.nextElement().getName();
-				String packTmp = Kit.replaceAll(rootClass.getPackage().getName(), '.', JAR_SEPARATOR_CHAR);
+				String packTmp = replaceAll(rootClass.getPackage().getName(), '.', JAR_SEPARATOR_CHAR);
 				if (!name.endsWith(".class") || !name.startsWith(packTmp))
 					continue;
 				// .class is removed and each '/' is replaced by '.' as in jar '/'
 				// is always the class separator
-				name = Kit.replaceAll(name.substring(0, name.lastIndexOf(".")), JAR_SEPARATOR_CHAR, '.');
+				name = replaceAll(name.substring(0, name.lastIndexOf(".")), JAR_SEPARATOR_CHAR, '.');
 				updateListIfSubclassing(list, rootClass, name, requiredModifiers, forbiddenModifiers);
 			}
 		} catch (IOException e) {
@@ -146,8 +158,7 @@ public class Reflector {
 	 *            a given class
 	 */
 	private static File getDirectoryOf(String classPathToken, String basicDirectory) {
-		return new File(
-				classPathToken + (classPathToken.endsWith(File.separator) ? "" : File.separator) + Kit.replaceAll(basicDirectory, '.', File.separatorChar));
+		return new File(classPathToken + (classPathToken.endsWith(File.separator) ? "" : File.separator) + replaceAll(basicDirectory, '.', File.separatorChar));
 	}
 
 	/**
@@ -207,7 +218,7 @@ public class Reflector {
 					continue;
 				// Kit.prn("found for " + jarName + " " + basicDirectory + " " +
 				// className + " : " + name);
-				return Kit.replaceAll(name.substring(0, name.lastIndexOf(".")), JAR_SEPARATOR_CHAR, '.');
+				return replaceAll(name.substring(0, name.lastIndexOf(".")), JAR_SEPARATOR_CHAR, '.');
 			}
 		} catch (IOException e) {
 			return null;
@@ -228,7 +239,7 @@ public class Reflector {
 		while (st.hasMoreTokens()) {
 			String classPathToken = st.nextToken();
 			if (classPathToken.endsWith(".jar")) {
-				String basicDirectory = Kit.replaceAll(basicPackage, '.', JAR_SEPARATOR_CHAR); // in jar '/' is always the class separator
+				String basicDirectory = replaceAll(basicPackage, '.', JAR_SEPARATOR_CHAR); // in jar '/' is always the class separator
 				String path = searchClassInJar(classPathToken, basicDirectory, className + ".class");
 				if (path != null)
 					return path;
@@ -238,7 +249,7 @@ public class Reflector {
 					String path = searchClassInDirectory(f, className + ".class");
 					if (path != null) {
 						path = path.substring(classPathToken.length() + (classPathToken.endsWith(File.separator) ? 0 : 1), path.lastIndexOf("."));
-						return Kit.replaceAll(path, File.separatorChar, '.');
+						return replaceAll(path, File.separatorChar, '.');
 					}
 				}
 			}

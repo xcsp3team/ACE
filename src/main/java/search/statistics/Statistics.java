@@ -192,7 +192,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		m.put(WCK, preproWck / 1000.0);
 		m.put(CPU, solver.rs.stopwatch.cpuTimeInSeconds());
 
-		m.put(MEM, Kit.getFormattedUsedMemorySize());
+		m.put(MEM, Kit.memoryInMb());
 		return m;
 	}
 
@@ -223,7 +223,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		}
 		m.put(WCK, solver.rs.instanceStopwatch.wckTimeInSeconds());
 		m.put(CPU, solver.rs.stopwatch.cpuTimeInSeconds());
-		m.put(MEM, Kit.getFormattedUsedMemorySize());
+		m.put(MEM, Kit.memoryInMb());
 		return m;
 	}
 
@@ -248,8 +248,8 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 				m.put("dpt", solver.minDepth + ".." + solver.maxDepth);
 				m.put("eff", nEffectiveFilterings());
 				m.put("wrg", nWrongDecisions);
-				if (Kit.getUsedMemory() > 10000000000L)
-					m.put(Output.MEM, Kit.getFormattedUsedMemorySize());
+				if (Kit.memory() > 10000000000L)
+					m.put(Output.MEM, Kit.memoryInMb());
 				m.put(Output.WCK, stopwatch.wckTimeInSeconds());
 				if (solver.learnerNogoods != null)
 					m.putPositive("ngd", solver.learnerNogoods.nNogoods);
@@ -271,8 +271,8 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 				m.put(Output.N_EFFECTIVE_SINGLETON_TESTS, nEffectiveSingletonTests());
 			}
 			m.put(Output.WCK, stopwatch.wckTimeInSeconds());
-			if (Kit.getUsedMemory() > 10000000000L)
-				m.put(Output.MEM, Kit.getFormattedUsedMemorySize());
+			if (Kit.memory() > 10000000000L)
+				m.put(Output.MEM, Kit.memoryInMb());
 			m.separator();
 
 			// if (solver.propagation instanceof AC) {
@@ -360,7 +360,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			m.put(Output.N_ASSIGNMENTS, nAssignments);
 			m.put(Output.WCK, searchWck / 1000.0);
 			m.put(Output.CPU, solver.rs.stopwatch.cpuTimeInSeconds());
-			m.put(Output.MEM, Kit.getFormattedUsedMemorySize());
+			m.put(Output.MEM, Kit.memoryInMb());
 			return m;
 		}
 

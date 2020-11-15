@@ -76,7 +76,7 @@ public abstract class RDACAbstract extends PFC implements ObserverRuns {
 		assert queue.size() == 0 && Kit.withNoNegativeValues(sumMinCosts);
 		LearnerNogoods nm = ((SolverBacktrack) solver).learnerNogoods;
 		Variable lastPast = solver.futVars.lastPast();
-		boolean consistent = lastPast == null || nm == null || nm.checkWatchesOf(lastPast, lastPast.dom.first(), false);
+		boolean consistent = true; // lastPast == null || nm == null || nm.checkWatchesOf(lastPast, lastPast.dom.first(), false); // TO BE FIXED
 		if (!consistent) {
 			Kit.log.info("quick stop with nogood recording from restarts used");
 			return false;

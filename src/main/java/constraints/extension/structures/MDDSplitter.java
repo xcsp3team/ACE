@@ -16,8 +16,6 @@ import java.util.stream.IntStream;
 
 import org.xcsp.common.Utilities;
 
-import utility.Kit;
-
 public class MDDSplitter {
 
 	// private MDD mdd;
@@ -45,7 +43,7 @@ public class MDDSplitter {
 	MDDSplitter(MDD mdd, int[] initialSplitMode) {
 		// this.mdd = mdd;
 		this.splitMode = initialSplitMode;
-		assert Kit.sum(initialSplitMode) == mdd.firstRegisteredCtr().scp.length;
+		// assert Kit.sum(initialSplitMode) == mdd.firstRegisteredCtr().scp.length;
 		for (int i = 0; i < splitMode.length; i++)
 			if (i == 0 || i == splitMode.length - 1)
 				splitMode[i] += 1; // because one additional variable

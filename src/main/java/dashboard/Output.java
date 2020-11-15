@@ -29,11 +29,11 @@ import problem.ProblemStuff.MapAtt;
 import propagation.order1.AC;
 import utility.Enums.TypeOutput;
 import utility.Kit;
-import utility.XMLManager;
+import utility.DocumentHandler;
 
 /**
- * The role of this class is to output data concerning the resolution of problem instances. These data are collected by means of a XML document that
- * may be saved and/or directly displayed at screen.
+ * The role of this class is to output data concerning the resolution of problem instances. These data are collected by means of a XML document that may be
+ * saved and/or directly displayed at screen.
  */
 public class Output implements ObserverConstruction, ObserverSearch, ObserverRuns {
 
@@ -234,12 +234,14 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	public Output(Resolution resolution, String configFileName) {
 		this.resolution = resolution;
 		if (resolution.cp.settingXml.dirForCampaign.equals(EMPTY_STRING) == false) {
-			document = XMLManager.createNewDocument();
+			document = DocumentHandler.createNewDocument();
 			root = document.createElement(TypeOutput.RESOLUTIONS.toString());
 			root.setAttribute(Output.CONFIGURATION_FILE_NAME, configFileName);
 			document.appendChild(root);
 			document.normalize();
 		}
+
+		System.out.println("hhhhhhh " + Kit.date());
 	}
 
 	public String outputFileNameFrom(String fullInstanceName, String configurationFileName) {
@@ -249,7 +251,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
-		return getOutputFileNamePrefixFrom(fullInstanceName, configurationFileName) + hostName + "_" + Kit.getFormattedCurrentDate() + ".xml";
+		return getOutputFileNamePrefixFrom(fullInstanceName, configurationFileName) + hostName + "_" + Kit.date() + ".xml";
 	}
 
 	public Element record(TypeOutput output, Collection<Entry<String, Object>> entries, Element parent) {
@@ -310,7 +312,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		sa.separator();
 		sa.put(Output.WCK, resolution.instanceStopwatch.wckTimeInSeconds());
 		sa.put(Output.CPU, resolution.stopwatch.cpuTimeInSeconds());
-		sa.put(Output.MEM, Kit.getFormattedUsedMemorySize());
+		sa.put(Output.MEM, Kit.memoryInMb());
 		solverElt = record(TypeOutput.SOLVER, sa.entries(), resolElt);
 		Kit.log.config("\n" + sa.toString());
 	}

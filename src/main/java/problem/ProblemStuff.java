@@ -42,7 +42,6 @@ import org.xcsp.common.predicates.TreeEvaluator.ExternFunctionArity2;
 import constraints.Constraint;
 import constraints.extension.Extension;
 import constraints.extension.ExtensionSmart;
-import constraints.extension.structures.Bits;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart;
 import constraints.intension.Intension;
@@ -55,7 +54,6 @@ import search.local.FunctionalPropagator;
 import sets.SetDense;
 import utility.Kit;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class ProblemStuff {
 
@@ -235,9 +233,9 @@ public final class ProblemStuff {
 
 	public void cloneStructuresOfConstraintsWithArity(int arity, boolean onlyConflictsStructure) {
 		assert controlConstraintsOfConflictStructures();
-		Kit.log.info("   Before cloning, mem=" + Kit.getFormattedUsedMemorySize());
+		Kit.log.info("   Before cloning, mem=" + Kit.memoryInMb());
 		Stream.of(pb.constraints).filter(c -> arity == -1 || c.scp.length == arity).forEach(c -> c.cloneStructures(onlyConflictsStructure));
-		Kit.log.info("   After cloning, mem=" + Kit.getFormattedUsedMemorySize());
+		Kit.log.info("   After cloning, mem=" + Kit.memoryInMb());
 		assert controlUnitListsOfConflictStructures();
 	}
 
@@ -505,7 +503,7 @@ public final class ProblemStuff {
 		m.separator();
 		m.put("wck", pb.rs.instanceStopwatch.wckTimeInSeconds());
 		m.put("cpu", pb.rs.stopwatch.cpuTimeInSeconds());
-		m.put(MEM, Kit.getFormattedUsedMemorySize());
+		m.put(MEM, Kit.memoryInMb());
 		// m.putPositive( COMPRESSION, TableCompressed3.compression);
 		return m;
 	}
@@ -518,75 +516,6 @@ public final class ProblemStuff {
 		else
 			m.put(" exp=", ((OptimizerBasic) pb.optimizer).optimizationExpression);
 		return m;
-	}
-
-	/**********************************************************************************************
-	 * Experimental
-	 *********************************************************************************************/
-
-	public int countUniversalConstraints() {
-		int cnt = 0;
-		for (Constraint c : pb.constraints) {
-			if (!(c.extStructure() instanceof Bits))
-				continue;
-			Variable x = (c.scp[0].dom.size() < c.scp[1].dom.size() ? c.scp[0] : c.scp[1]);
-			long[] t2 = Variable.firstDifferentVariableIn(c.scp, x).dom.binaryRepresentation();
-			long[][] t1s = ((Bits) c.extStructure()).bitSupsFor(c.positionOf(x));
-			Domain dom = x.dom;
-			boolean universal = true;
-			for (int a = dom.first(); universal && a != -1; a = dom.next(a)) {
-				long[] t1 = t1s[a];
-				for (int i = 0; universal && i < t1.length; i++)
-					if ((t1[i] & t2[i]) != t2[i])
-						universal = false;
-			}
-			if (universal)
-				cnt++;
-		}
-		return cnt;
-	}
-
-	public void computeCharacteristicPathLength() {
-		Variable[] variables = pb.variables;
-		int n = variables.length;
-		double sum = 0;
-		double[] clusteringCoefficients = new double[n];
-		for (int i = 0; i < clusteringCoefficients.length; i++) {
-			int cnt = 0;
-			Variable[] neighbours = variables[i].nghs;
-			for (int j = 0; j < neighbours.length - 1; j++)
-				for (int k = j + 1; k < neighbours.length; k++)
-					if (neighbours[j].isNeighbourOf(neighbours[k]))
-						cnt++;
-			clusteringCoefficients[i] = neighbours.length == 0 ? 0 : neighbours.length == 1 ? 1 : (cnt * 2.0) / (neighbours.length * (neighbours.length - 1));
-			sum += clusteringCoefficients[i];
-		}
-		Kit.log.info("\nclustering coefficient (global) " + sum / pb.variables.length);
-		double[] q4 = Kit.computeQuantileOf(clusteringCoefficients, 4, true);
-		Kit.log.info("4-quantiles of local clustering coeffcients : " + Kit.join(q4));
-		double[] q10 = Kit.computeQuantileOf(clusteringCoefficients, 10, true);
-		Kit.log.info("10-quantiles of local clustering coeffcients : " + Kit.join(q10));
-		int[][] matrix = new int[n][n];
-		for (int i = 0; i < n; i++)
-			for (int j = 0; j < n; j++)
-				matrix[i][j] = i == j ? 0 : variables[i].isNeighbourOf(variables[j]) ? 1 : Integer.MAX_VALUE;
-		// int[][] matrix = { { 0, 3, Integer.MAX_VALUE, 3 }, { 2, 0, 2, 2 }, {
-		// -2, Integer.MAX_VALUE, 0, 1 }, { Integer.MAX_VALUE, 4, 4, 0 } };
-		// int n = 4;
-		for (int k = 0; k < n; k++)
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < n; j++) {
-					if (matrix[i][k] == Integer.MAX_VALUE || matrix[k][j] == Integer.MAX_VALUE)
-						continue;
-					if (matrix[i][k] + matrix[k][j] < matrix[i][j])
-						matrix[i][j] = matrix[i][k] + matrix[k][j];
-				}
-		// Kit.prn(Toolkit.buildStringFromInts(matrix));
-		if (Kit.isPresent(Integer.MAX_VALUE, matrix))
-			Kit.log.warning("Pb : graph not connex");
-		long l = Kit.sum(matrix);
-		Kit.log.info("characteristic path length : " + (l * 2.0) / (n * (n - 1)));
-		Kit.log.info("diameter : " + Kit.computeMaxOf(matrix));
 	}
 
 }

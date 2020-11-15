@@ -77,7 +77,7 @@ import utility.Enums.ESymmetryBreaking;
 import utility.Enums.EWeighting;
 import utility.Kit;
 import utility.Reflector;
-import utility.XMLManager;
+import utility.DocumentHandler;
 
 public class ControlPanel {
 
@@ -736,7 +736,7 @@ public class ControlPanel {
 					userSettingsFilename = Arguments.userSettingsFilename;
 				if (userSettingsFilename != null && !userSettingsFilename.equals(ControlPanel.DEFAULT_CONFIGURATION)) {
 					// Loads the XML file containing all settings from the user.
-					document = XMLManager.load(new File(userSettingsFilename));
+					document = DocumentHandler.load(new File(userSettingsFilename));
 					xPath = XPathFactory.newInstance().newXPath();
 				}
 			}
@@ -966,7 +966,7 @@ public class ControlPanel {
 		}
 
 		public static void saveControlPanelSettings(ControlPanel cp, String outputFilename, int maximumPriority) {
-			Document document = XMLManager.createNewDocument();
+			Document document = DocumentHandler.createNewDocument();
 			Node root = document.appendChild(document.createElement(ControlPanel.CONFIGURATION));
 			for (Setting<?> setting : cp.settings.settings)
 				if (setting.priority <= maximumPriority) {

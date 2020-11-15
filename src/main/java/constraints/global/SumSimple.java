@@ -53,6 +53,13 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 		throw new AssertionError();
 	}
 
+	public static long sum(int[] t) {
+		long l = 0;
+		for (int v : t)
+			l += v;
+		return l;
+	}
+
 	public long minComputableObjectiveValue() {
 		return Stream.of(scp).mapToLong(x -> x.dom.toVal(0)).sum();
 	}
@@ -89,7 +96,7 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 
 		@Override
 		public final boolean checkValues(int[] t) {
-			return Kit.sum(t) <= limit;
+			return sum(t) <= limit;
 		}
 
 		@Override
@@ -149,7 +156,7 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 
 		@Override
 		public final boolean checkValues(int[] t) {
-			return Kit.sum(t) >= limit;
+			return sum(t) >= limit;
 		}
 
 		@Override
@@ -191,7 +198,7 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 
 		@Override
 		public final boolean checkValues(int[] t) {
-			return Kit.sum(t) == limit;
+			return sum(t) == limit;
 		}
 
 		private boolean guaranteedGAC;
@@ -255,7 +262,7 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 
 		@Override
 		public final boolean checkValues(int[] t) {
-			return Kit.sum(t) != limit;
+			return sum(t) != limit;
 		}
 
 		private Variable sentinel1, sentinel2;
@@ -313,7 +320,7 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 
 		@Override
 		public final boolean checkValues(int[] t) {
-			return Kit.sum(t) == limit;
+			return sum(t) == limit;
 		}
 
 		public SumSimpleEQBoolean(Problem pb, Variable[] scp, long limit) {

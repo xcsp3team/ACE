@@ -16,7 +16,6 @@ import constraints.Constraint.CtrGlobal;
 import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import problem.Problem;
-import utility.Kit;
 import variables.Variable;
 import variables.domains.Domain;
 
@@ -28,7 +27,7 @@ public final class ExactlyKVariable extends CtrGlobal implements TagGACGuarantee
 
 	@Override
 	public boolean checkValues(int[] t) {
-		return indexOfKInList != -1 ? Kit.countIn(value, t) == t[indexOfKInList] : Kit.countIn(value, t, 0, t.length - 1) == t[t.length - 1];
+		return indexOfKInList != -1 ? Count.countIn(value, t) == t[indexOfKInList] : Count.countIn(value, t, 0, t.length - 1) == t[t.length - 1];
 	}
 
 	protected Variable[] list;

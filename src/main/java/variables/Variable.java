@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Constants;
 import org.xcsp.common.IVar;
 import org.xcsp.common.Utilities;
+import org.xcsp.common.domains.Values.IntegerInterval;
 import org.xcsp.modeler.entities.VarEntities;
 
 import constraints.Constraint;
@@ -75,9 +76,9 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 				this.dom = new DomainValues(this, values);
 		}
 
-		public VariableInteger(Problem problem, String name, int min, int max) {
+		public VariableInteger(Problem problem, String name, IntegerInterval interval) {
 			super(problem, name);
-			this.dom = new DomainRange(this, min, max);
+			this.dom = new DomainRange(this, Utilities.safeIntWhileHandlingInfinity(interval.inf), Utilities.safeIntWhileHandlingInfinity(interval.sup));
 		}
 
 		public VariableInteger(Problem problem, String name) {

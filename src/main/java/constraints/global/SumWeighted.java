@@ -47,6 +47,15 @@ public abstract class SumWeighted extends SumAbstract {
 		throw new AssertionError();
 	}
 
+	public static long weightedSum(int[] t, int[] coeffs) {
+		assert t.length == coeffs.length;
+		// note that no overflow control is performed here
+		long sum = 0;
+		for (int i = 0; i < t.length; i++)
+			sum += coeffs[i] * t[i];
+		return sum;
+	}
+
 	public long minComputableObjectiveValue() {
 		BigInteger sum = BigInteger.valueOf(0);
 		for (int i = 0; i < scp.length; i++)
@@ -113,7 +122,7 @@ public abstract class SumWeighted extends SumAbstract {
 
 		@Override
 		public boolean checkValues(int[] t) {
-			return Kit.weightedSum(t, coeffs) <= limit;
+			return weightedSum(t, coeffs) <= limit;
 		}
 
 		@Override
@@ -163,7 +172,7 @@ public abstract class SumWeighted extends SumAbstract {
 
 		@Override
 		public boolean checkValues(int[] t) {
-			return Kit.weightedSum(t, coeffs) >= limit;
+			return weightedSum(t, coeffs) >= limit;
 		}
 
 		@Override
@@ -214,7 +223,7 @@ public abstract class SumWeighted extends SumAbstract {
 
 		@Override
 		public boolean checkValues(int[] t) {
-			return Kit.weightedSum(t, coeffs) == limit;
+			return weightedSum(t, coeffs) == limit;
 		}
 
 		private boolean guaranteedGAC;
@@ -284,7 +293,7 @@ public abstract class SumWeighted extends SumAbstract {
 
 		@Override
 		public boolean checkValues(int[] t) {
-			return Kit.weightedSum(t, coeffs) != limit;
+			return weightedSum(t, coeffs) != limit;
 		}
 
 		private Variable sentinel1, sentinel2;

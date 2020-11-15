@@ -169,7 +169,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 			return;
 		if (mustStop()) {
 			Kit.log.info("Stopping use of transposition table (mapSize=" + mapOfHashKeys.size() + ", nbTooLargekeys=" + nbTooLargeKeys + ", mem="
-					+ Kit.getFormattedUsedMemorySize() + ")");
+					+ Kit.memoryInMb() + ")");
 			mapOfHashKeys.clear();
 			stop = true;
 			// display();
@@ -219,7 +219,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 	public void displayStats() {
 		if (!stop) // && !Data.competitionMode)
 			Kit.log.finer("  mapSize=" + mapOfHashKeys.size() + "  nbInferences=" + nbInferences + "  nbInferredSolutions=" + nbInferredSolutions + "  usedMem="
-					+ Kit.getFormattedUsedMemorySize() + "  nbTooLargeKeys=" + nbTooLargeKeys);
+					+ Kit.memoryInMb() + "  nbTooLargeKeys=" + nbTooLargeKeys);
 	}
 
 }

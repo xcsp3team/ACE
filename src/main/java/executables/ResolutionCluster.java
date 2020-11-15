@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.stream.IntStream;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -27,7 +28,7 @@ import org.w3c.dom.NodeList;
 import dashboard.ControlPanel;
 import dashboard.Output;
 import utility.Kit;
-import utility.XMLManager;
+import utility.DocumentHandler;
 
 public class ResolutionCluster {
 
@@ -49,11 +50,11 @@ public class ResolutionCluster {
 
 	private final static String suffixCommand = ",nodes=1:ppn=1 -m n -- "; // -j oe "; -o /dev/null -- ";
 
-	private final static String[] queueCommands = { "qadd -q short2 -l cput=00:30:00" + suffixCommand, "qadd -q normal2 -l cput=05:00:00"
-			+ suffixCommand, "qadd -q long2 -l cput=48:00:00" + suffixCommand, "qadd -q short8 -l cput=00:30:00"
-					+ suffixCommand, "qadd -q normal8 -l cput=05:00:00" + suffixCommand, "qadd -q long8 -l cput=48:00:00"
-							+ suffixCommand, "qadd -q shortmulti -l cput=00:30:00" + suffixCommand, "qadd -q normalmulti -l cput=05:00:00"
-									+ suffixCommand, "qadd -q longmulti -l cput=48:00:00" + suffixCommand };
+	private final static String[] queueCommands = { "qadd -q short2 -l cput=00:30:00" + suffixCommand, "qadd -q normal2 -l cput=05:00:00" + suffixCommand,
+			"qadd -q long2 -l cput=48:00:00" + suffixCommand, "qadd -q short8 -l cput=00:30:00" + suffixCommand,
+			"qadd -q normal8 -l cput=05:00:00" + suffixCommand, "qadd -q long8 -l cput=48:00:00" + suffixCommand,
+			"qadd -q shortmulti -l cput=00:30:00" + suffixCommand, "qadd -q normalmulti -l cput=05:00:00" + suffixCommand,
+			"qadd -q longmulti -l cput=48:00:00" + suffixCommand };
 
 	// private final static String[] queueCommands = { "qadd -q short2 -l cput=00:30:00" + suffixCommand, "qadd -q normal2 -l cput=05:00:00"
 	// + suffixCommand, "qadd -q long2 -l cput=48:00:00" + suffixCommand, "qadd -q short_B -l cput=00:30:00"
@@ -108,15 +109,15 @@ public class ResolutionCluster {
 			file.mkdirs();
 		else
 			Kit.control(file.isDirectory());
-		Kit.copy(defaultSettingsFileName, directoryNameOfContext + File.separator + defaultSettingsFileName);
-		Kit.copy(selectedInstancesFileName, directoryNameOfContext + File.separator + selectedInstancesFileName);
+		Resolution.copy(defaultSettingsFileName, directoryNameOfContext + File.separator + defaultSettingsFileName);
+		Resolution.copy(selectedInstancesFileName, directoryNameOfContext + File.separator + selectedInstancesFileName);
 		if (settingsVariantsFileName != null)
-			Kit.copy(settingsVariantsFileName, directoryNameOfContext + File.separator + settingsVariantsFileName);
+			Resolution.copy(settingsVariantsFileName, directoryNameOfContext + File.separator + settingsVariantsFileName);
 		String jarName = System.getProperty("java.class.path");
 		if (jarName.indexOf(File.pathSeparator) == -1 && jarName.endsWith(".jar")) {
 			int index = jarName.lastIndexOf(File.separator);
 			index = (index == -1 ? 0 : index + 1);
-			Kit.copy(jarName, directoryNameOfContext + File.separator + jarName.substring(index));
+			Resolution.copy(jarName, directoryNameOfContext + File.separator + jarName.substring(index));
 		}
 	}
 
@@ -227,7 +228,7 @@ public class ResolutionCluster {
 	public void runVariant(String variant, boolean b) {
 		currVariantFileName = variant;
 		currVariantParallel = b;
-		Document document = XMLManager.load(selectedInstancesFileName);
+		Document document = DocumentHandler.load(selectedInstancesFileName);
 		NodeList directoryList = document.getElementsByTagName(DIRECTORY);
 		for (int i = 0; i < directoryList.getLength(); i++) {
 			Element element = (Element) directoryList.item(i);
@@ -242,7 +243,7 @@ public class ResolutionCluster {
 				String packageName = elt.getAttribute(PACKAGE);
 				String value = elt.getAttribute(VALUE);
 				// System.out.println(nbInstances + " " + packageName + " " + value);
-				int nb = Kit.countIn('?', value);
+				int nb = (int) IntStream.range(0, value.length()).filter(j -> value.charAt(j) == '?').count();
 				Kit.control(0 <= nb && nb <= 2, () -> "More than two ? in the expression");
 				if (nb == 0)
 					addJob(solverCommandPrefix + " " + currVariantFileName + " " + nInstances + " " + packageName + " " + value);
@@ -292,7 +293,7 @@ public class ResolutionCluster {
 		try {
 			PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(file, true)));
 			out.println("----------------------");
-			out.println("  Current time : " + Kit.getFormattedCurrentDate());
+			out.println("  Current time : " + Kit.date());
 			out.println("  Command : " + "java abscon.ResolutionCluster " + defaultSettingsFileName + " " + selectedInstancesFileName + " "
 					+ settingsVariantsFileName + " " + solverCommandPrefix + " " + queueCommands[queueMode]);
 			out.println("  Nb Sequential Variants : " + sequentialVariants.length);

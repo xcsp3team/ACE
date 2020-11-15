@@ -32,7 +32,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class XMLManager {
+public class DocumentHandler {
 
 	public static final String W3C_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema";
 
@@ -88,7 +88,7 @@ public class XMLManager {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			factory.setNamespaceAware(true);
 			if (schema != null)
-				factory.setSchema(SchemaFactory.newInstance(XMLManager.W3C_XML_SCHEMA).newSchema(schema));
+				factory.setSchema(SchemaFactory.newInstance(DocumentHandler.W3C_XML_SCHEMA).newSchema(schema));
 			DocumentBuilder builder = factory.newDocumentBuilder();
 			builder.setErrorHandler(new ErrorHandler());
 			return builder.parse(is);

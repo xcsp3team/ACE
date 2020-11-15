@@ -44,7 +44,7 @@ public final class Reviser3 extends Reviser2 {
 				nbResidues += (size0 > propagation.cp().settingPropagation.residueLimitForBitRm ? size1 : 0)
 						+ (size1 > propagation.cp().settingPropagation.residueLimitForBitRm ? size0 : 0);
 			}
-			if (nbResidues * 2 + Kit.getUsedMemory() > propagation.cp().settingPropagation.memoryLimitForBitRm) {
+			if (nbResidues * 2 + Kit.memory() > propagation.cp().settingPropagation.memoryLimitForBitRm) {
 				Kit.log.info("Stop creating residues for RevisionManagerBitRm");
 				break;
 			}

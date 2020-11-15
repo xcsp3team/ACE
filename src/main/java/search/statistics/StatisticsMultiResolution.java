@@ -126,7 +126,7 @@ public abstract class StatisticsMultiResolution {
 				nbPreproValuesRemoved += statistics.nPreproRemovedValues;
 				nbPreproTuplesRemoved += statistics.nPreproRemovedTuples;
 				nbPreproInconsistencies += statistics.nPreproInconsistencies;
-				memory += Kit.getUsedMemory();
+				memory += Kit.memory();
 
 				if (resolution.solver.propagation instanceof GIC4) {
 					nbVals += ((GIC4) resolution.solver.propagation).nVals;

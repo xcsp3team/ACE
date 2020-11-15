@@ -124,8 +124,8 @@ public abstract class HeuristicVariablesConflictBased extends HeuristicVariables
 					cvscores[c.num][futvars.dense[i]] += increment;
 				}
 			}
+			ctime[c.num] = time;
 		}
-		ctime[c.num] = time;
 		// if (cnt++ % 100 == 0) {
 		// System.out.println("fff " + pb.rs.cp.varh.weighting + " " + increment);
 		// for (Variable x : pb.variables) System.out.print(x.wdeg + " ");

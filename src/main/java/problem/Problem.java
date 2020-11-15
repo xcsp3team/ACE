@@ -29,7 +29,6 @@ import static org.xcsp.common.predicates.XNodeParent.ne;
 import static org.xcsp.common.predicates.XNodeParent.or;
 import static utility.Kit.log;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,7 +38,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.IntFunction;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -72,7 +70,6 @@ import org.xcsp.common.domains.Domains.Dom;
 import org.xcsp.common.domains.Domains.DomSymbolic;
 import org.xcsp.common.domains.Values.IntegerEntity;
 import org.xcsp.common.domains.Values.IntegerInterval;
-import org.xcsp.common.domains.Values.IntegerValue;
 import org.xcsp.common.enumerations.EnumerationCartesian;
 import org.xcsp.common.predicates.TreeEvaluator;
 import org.xcsp.common.predicates.XNode;
@@ -381,33 +378,33 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	/**
 	 * This method can be used for modifying the value of a parameter. This is an advanced tool for handling series of instances.
 	 */
-	public final void modifyAskedParameter(int index, Object value) {
-		parameters.set(index, new SimpleEntry<>(value, parameters.get(index).getValue()));
-	}
+	// public final void modifyAskedParameter(int index, Object value) {
+	// parameters.set(index, new SimpleEntry<>(value, parameters.get(index).getValue()));
+	// }
 
-	public int askInt(String message, Predicate<Integer> control, IntFunction<String> format, boolean incrementWhenSeries) {
-		Integer v = Utilities.toInteger(ask(message));
-		Utilities.control(v != null, "Value " + v + " for " + message + " is not valid (not an integer)");
-		v += (incrementWhenSeries ? rs.instanceNumber : 0);
-		control(control == null || control.test(v), "Value " + v + " for " + message + " does not respect the control " + control);
-		return (Integer) addParameter(v, format == null ? null : format.apply(v));
-	}
+	// public int askInt(String message, Predicate<Integer> control, IntFunction<String> format, boolean incrementWhenSeries) {
+	// Integer v = Utilities.toInteger(ask(message));
+	// Utilities.control(v != null, "Value " + v + " for " + message + " is not valid (not an integer)");
+	// v += (incrementWhenSeries ? rs.instanceNumber : 0);
+	// control(control == null || control.test(v), "Value " + v + " for " + message + " does not respect the control " + control);
+	// return (Integer) addParameter(v, format == null ? null : format.apply(v));
+	// }
 
-	public int askInt(String message, Predicate<Integer> control, String format, boolean incrementWhenSeries) {
-		return askInt(message, control, v -> format, incrementWhenSeries);
-	}
-
-	public int askInt(String message, Predicate<Integer> control, boolean incrementWhenSeries) {
-		return askInt(message, control, (IntFunction<String>) null, incrementWhenSeries);
-	}
-
-	public int askInt(String message, String format, boolean incrementWhenSeries) {
-		return askInt(message, null, format, incrementWhenSeries);
-	}
-
-	public int askInt(String message, boolean incrementWhenSeries) {
-		return askInt(message, null, (IntFunction<String>) null, incrementWhenSeries);
-	}
+	// public int askInt(String message, Predicate<Integer> control, String format, boolean incrementWhenSeries) {
+	// return askInt(message, control, v -> format, incrementWhenSeries);
+	// }
+	//
+	// public int askInt(String message, Predicate<Integer> control, boolean incrementWhenSeries) {
+	// return askInt(message, control, (IntFunction<String>) null, incrementWhenSeries);
+	// }
+	//
+	// public int askInt(String message, String format, boolean incrementWhenSeries) {
+	// return askInt(message, null, format, incrementWhenSeries);
+	// }
+	//
+	// public int askInt(String message, boolean incrementWhenSeries) {
+	// return askInt(message, null, (IntFunction<String>) null, incrementWhenSeries);
+	// }
 
 	// public final Var[][] project3(Var[][][] m) {
 	// return IntStream.range(0, m[0][0].length).mapToObj(i -> api.select(m, (w, g, p) -> p == i)).toArray(Var[][]::new);
@@ -731,19 +728,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public VariableInteger buildVarInteger(String id, Dom dom) {
-		Object[] values = dom.values;
 		VariableInteger x = null;
-		if (values.length == 1 && values[0] instanceof IntegerInterval) {
-			IntegerInterval ii = (IntegerInterval) values[0];
-			int min = Utilities.safeIntWhileHandlingInfinity(ii.inf), max = Utilities.safeIntWhileHandlingInfinity(ii.sup);
-			x = new VariableInteger(this, id, min, max);
-		} else if (values.length == 3 && values[0] instanceof IntegerValue && values[1] instanceof IntegerValue && values[2] instanceof IntegerValue
-				&& ((IntegerValue) values[2]).v == Domain.TAG_RANGE) { // necessary for XCSP2 instances
-			x = new VariableInteger(this, id, Utilities.safeIntWhileHandlingInfinity(((IntegerValue) values[0]).v),
-					Utilities.safeIntWhileHandlingInfinity(((IntegerValue) values[1]).v));
-		} else {
-			// TODO use a cache here to avoid building the array of values several times
-			x = new VariableInteger(this, id, IntegerEntity.toIntArray((IntegerEntity[]) values, Integer.MAX_VALUE));
+		if (dom.values.length == 1 && dom.values[0] instanceof IntegerInterval)
+			x = new VariableInteger(this, id, (IntegerInterval) dom.values[0]);
+		else {
+			// TODO use a cache here to avoid building the array of values several times?
+			x = new VariableInteger(this, id, IntegerEntity.toIntArray((IntegerEntity[]) dom.values, Integer.MAX_VALUE)); // MAX_VALUE is a limit
 		}
 		return (VariableInteger) addVar(x);
 	}
@@ -1007,7 +997,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		control(Variable.areAllDistinct(vars(t1, t2)), "For the moment not handled");
 		if (isBasicType(rs.cp.settingGlobal.typeDistinctVectors2))
 			return addCtr(ExtensionSmart.buildDistinctVectors(this, t1, t2)); // return addCtr(new DistinctVectors2(this, t1, t2)); // BUG TO BE
-																					// FIXED
+																				// FIXED
 		if (rs.cp.settingGlobal.typeDistinctVectors2 == 1) {
 			if (rs.cp.settingGlobal.smartTable)
 				return addCtr(ExtensionSmart.buildDistinctVectors(this, t1, t2));
@@ -1031,8 +1021,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 						extension(vars(lists[i], lists[j]), Table.shortTuplesFordNotEqualVectors(lists[i], lists[j]), true);
 					else
 						addCtr(ExtensionSmart.buildDistinctVectors(this, lists[i], lists[j])); // addCtr(new DistinctVectors2(this,
-																									// lists[i], lists[j])); // BUG TO BE
-																									// FIXED
+																								// lists[i], lists[j])); // BUG TO BE
+																								// FIXED
 				}
 			});
 		throw new UnsupportedOperationException();

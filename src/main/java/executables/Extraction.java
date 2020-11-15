@@ -16,12 +16,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.xcsp.common.Utilities;
-
 import constraints.Constraint;
 import dashboard.Arguments;
 import problem.Problem;
-import problem.Subproblem;
 import search.backtrack.SolverBacktrack;
 import utility.Enums.EExtractionMethod;
 import utility.Enums.ELearningState;
@@ -41,8 +38,7 @@ public class Extraction extends Resolution {
 	/**
 	 * 
 	 * 
-	 * Global array to denote the constraints that are currently present. If presentCtrs[i] = false, then this constraint has been removed
-	 * (logically).
+	 * Global array to denote the constraints that are currently present. If presentCtrs[i] = false, then this constraint has been removed (logically).
 	 */
 	private boolean[] presentCtrs;
 
@@ -285,12 +281,12 @@ public class Extraction extends Resolution {
 			if (cp.settingExtraction.method == EExtractionMethod.VAR)
 				minimalCoreOfVars();
 			List<Constraint> core = minimalCoreOfCtrs();
-			if (cp.settingExtraction.saveCores) {
-				String name = problem.name().substring(problem.name().lastIndexOf("/") + 1);
-				if (name.indexOf(".") != -1)
-					name = name.substring(0, name.indexOf("."));
-				Utilities.save(new Subproblem(problem, presentVars, presentCtrs).documentXCSP(), "core" + nCalls + "_" + i + "-" + name + ".xml");
-			}
+			// if (cp.settingExtraction.saveCores) {
+			// String name = problem.name().substring(problem.name().lastIndexOf("/") + 1);
+			// if (name.indexOf(".") != -1)
+			// name = name.substring(0, name.indexOf("."));
+			// Utilities.save(new Subproblem(problem, presentVars, presentCtrs).documentXCSP(), "core" + nCalls + "_" + i + "-" + name + ".xml");
+			// }
 			cores.add(core);
 			Kit.log.config("New Core " + (nCalls++) + " with #C=" + core.size() + ",#V=" + core.stream().collect(Collectors.toCollection(HashSet::new)).size()
 					+ " => { " + Kit.join(core) + " }");
@@ -311,7 +307,8 @@ public class Extraction extends Resolution {
 		return cores.size() == 0 ? null : cores.get(cores.size() - 1);
 	}
 
-	public Extraction() {}
+	public Extraction() {
+	}
 
 	public Extraction(String configurationFileName) {
 		super(configurationFileName);

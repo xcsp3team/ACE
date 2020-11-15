@@ -35,6 +35,22 @@ public abstract class Count extends CtrGlobal {
 		}
 	}
 
+	public static int countIn(int value, int[] t, int from, int to) {
+		int cnt = 0;
+		for (int i = from; i < to; i++)
+			if (t[i] == value)
+				cnt++;
+		return cnt;
+	}
+
+	public static int countIn(int value, int[] t) {
+		int cnt = 0;
+		for (int v : t)
+			if (v == value)
+				cnt++;
+		return cnt;
+	}
+
 	/**
 	 * The value that must be counted in the scope of the constraint.
 	 */
@@ -62,7 +78,7 @@ public abstract class Count extends CtrGlobal {
 
 		@Override
 		public boolean checkValues(int[] t) {
-			return Kit.countIn(value, t) <= k;
+			return countIn(value, t) <= k;
 		}
 
 		public AtMostK(Problem pb, Variable[] list, int value, int k) {
@@ -119,7 +135,7 @@ public abstract class Count extends CtrGlobal {
 
 		@Override
 		public boolean checkValues(int[] t) {
-			return Kit.countIn(value, t) >= k;
+			return countIn(value, t) >= k;
 		}
 
 		/**
@@ -212,7 +228,7 @@ public abstract class Count extends CtrGlobal {
 
 		@Override
 		public boolean checkValues(int[] t) {
-			return Kit.countIn(value, t) == k;
+			return countIn(value, t) == k;
 		}
 
 		public ExactlyK(Problem pb, Variable[] list, int value, int k) {
