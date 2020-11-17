@@ -18,19 +18,19 @@ import variables.Variable;
 public class Branch {
 	protected final Solver solver;
 
-	public int size;
-
 	public final Variable[] vars;
 
 	public final int[] idxs;
 
 	protected final int[] positions;
 
+	public int size;
+
 	public Branch(Solver solver) {
 		this.solver = solver;
-		vars = new Variable[solver.pb.variables.length];
-		idxs = new int[solver.pb.variables.length];
-		positions = new int[solver.pb.variables.length];
+		this.vars = new Variable[solver.pb.variables.length];
+		this.idxs = new int[solver.pb.variables.length];
+		this.positions = new int[solver.pb.variables.length];
 	}
 
 	public void clear() {

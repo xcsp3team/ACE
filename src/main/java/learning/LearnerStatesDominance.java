@@ -11,11 +11,11 @@ package learning;
 import interfaces.ObserverBacktracking.ObserverBacktrackingUnsystematic;
 import search.backtrack.SolverBacktrack;
 import search.backtrack.SolverBacktrack.StackedVariables;
-import utility.Enums.EStopping;
 import utility.Bit;
+import utility.Enums.EStopping;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class LearnerStatesDominance extends LearnerStates {
 	protected State[] waitingNogoods;

@@ -6,7 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package variables.domains;
+package variables;
 
 import static org.xcsp.common.Types.TypeOperatorRel.GE;
 import static org.xcsp.common.Types.TypeOperatorRel.GT;
@@ -31,7 +31,6 @@ import search.Solver;
 import sets.LinkedSet;
 import sets.SetDense;
 import utility.Kit;
-import variables.Variable;
 
 public interface Domain extends LinkedSet {
 

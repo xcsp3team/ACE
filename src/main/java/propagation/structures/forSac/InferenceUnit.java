@@ -11,7 +11,7 @@ package propagation.structures.forSac;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import variables.domains.Domain;
+import variables.Domain;
 
 public final class InferenceUnit {
 

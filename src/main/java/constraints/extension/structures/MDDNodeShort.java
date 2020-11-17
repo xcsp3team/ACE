@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Constants;
 
 import utility.Kit;
-import variables.domains.Domain;
+import variables.Domain;
 
 public final class MDDNodeShort {
 

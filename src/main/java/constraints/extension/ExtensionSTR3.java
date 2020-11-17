@@ -22,8 +22,8 @@ import sets.SetDense;
 import sets.SetSparse;
 import sets.SetSparseReversible;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class ExtensionSTR3 extends ExtensionGlobal implements TagPositive, ObserverSearch {
 

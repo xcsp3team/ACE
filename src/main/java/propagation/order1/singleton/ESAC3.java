@@ -10,9 +10,9 @@ package propagation.order1.singleton;
 
 import java.util.stream.IntStream;
 
-import heuristics.variables.HeuristicVariables;
-import heuristics.variables.HeuristicVariables.BestScoredVariable;
-import heuristics.variables.dynamic.WDegOnDom;
+import heuristics.HeuristicVariables;
+import heuristics.HeuristicVariables.BestScoredVariable;
+import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import search.Solver;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;
@@ -91,7 +91,7 @@ public class ESAC3 extends SACGreedy {
 	public ESAC3(Solver solver) {
 		super(solver);
 		this.queueESAC = new QueueESAC();
-		this.varHeuristics = new HeuristicVariables[] { new WDegOnDom((SolverBacktrack) solver, false) };
+		this.varHeuristics = new HeuristicVariables[] { new WdegVariant.WdegOnDom((SolverBacktrack) solver, false) };
 		// this.variableOrderingHeuristics = new VariableOrderingHeuristic[] {
 		// new Dom((BacktrackSearchSolver) solver, OptimizationType.MIN), new
 		// DomThenDDeg((BacktrackSearchSolver) solver, OptimizationType.MIN),

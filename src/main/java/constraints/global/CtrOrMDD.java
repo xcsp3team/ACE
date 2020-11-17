@@ -22,8 +22,8 @@ import problem.Problem;
 import sets.SetDenseReversible;
 import sets.SetSparseReversible;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class CtrOrMDD extends CtrGlobal implements TagGACGuaranteed, ObserverBacktrackingSystematic, TagFilteringCompleteAtEachCall {
 

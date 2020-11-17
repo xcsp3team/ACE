@@ -18,8 +18,8 @@ import interfaces.TagGACGuaranteed;
 import interfaces.TagUnsymmetric;
 import problem.Problem;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGACGuaranteed {
 

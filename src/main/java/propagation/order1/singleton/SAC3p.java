@@ -15,8 +15,8 @@ import propagation.structures.forSac.BranchExtended;
 import propagation.structures.forSac.InferenceUnit;
 import propagation.structures.forSac.QueueOfCells.Cell;
 import search.Solver;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class SAC3p extends SAC3 {
 

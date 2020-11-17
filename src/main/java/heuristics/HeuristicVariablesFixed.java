@@ -6,7 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package heuristics.variables;
+package heuristics;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -96,9 +96,9 @@ public abstract class HeuristicVariablesFixed extends HeuristicVariables impleme
 		}
 	}
 
-	public static final class SRand extends HeuristicVariablesFixed {
+	public static final class Srand extends HeuristicVariablesFixed {
 
-		public SRand(SolverBacktrack solver, boolean antiHeuristic) {
+		public Srand(SolverBacktrack solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 		}
 

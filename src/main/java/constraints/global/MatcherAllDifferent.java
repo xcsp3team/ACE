@@ -2,7 +2,7 @@ package constraints.global;
 
 import sets.SetSparse;
 import utility.Kit;
-import variables.domains.Domain;
+import variables.Domain;
 
 /**
  * Class used to perform GAC filtering in the AllDifferent constraint

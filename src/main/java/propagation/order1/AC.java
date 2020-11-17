@@ -14,9 +14,6 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeFramework;
 
 import constraints.Constraint;
-import propagation.order1.FailedValueBasedConsistency.ArcFailedValueConsistency;
-import propagation.order1.FailedValueBasedConsistency.FailedValueConsistency;
-import propagation.order1.FailedValueBasedConsistency.PartialArcFailedValueConsistency;
 import search.Solver;
 import variables.Variable;
 
@@ -35,22 +32,12 @@ public class AC extends PropagationForward {
 	/**
 	 * Additional consistency enforced after positive decisions. Possibly, null.
 	 */
-	public final FailedValueBasedConsistency fvbc;
+	// public final FailedValueBasedConsistency fvbc;
 
 	public AC(Solver solver) {
 		super(solver);
 		this.guaranteed = Constraint.isGuaranteedGAC(solver.pb.constraints);
-		String s = cp().settingPropagation.classForFailedValues;
-		if (s == null || s.length() == 0)
-			this.fvbc = null;
-		else if (s.equals("FailedValueConsistency"))
-			this.fvbc = new FailedValueConsistency(this);
-		else if (s.equals("PartialArcFailedValueConsistency"))
-			this.fvbc = new PartialArcFailedValueConsistency(this);
-		else if (s.equals("ArcFailedValueConsistency"))
-			this.fvbc = new ArcFailedValueConsistency(this);
-		else
-			this.fvbc = null;
+		// this.fvbc = FailedValueBasedConsistency.buildFor(cp().settingPropagation.classForFailedValues, this)
 	}
 
 	/**
@@ -83,7 +70,8 @@ public class AC extends PropagationForward {
 				return false;
 		}
 		assert controlArcConsistency();
-		return fvbc != null ? fvbc.enforce() : true;
+		// return fvbc != null ? fvbc.enforce() : true;
+		return true;
 	}
 
 	@Override

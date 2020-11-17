@@ -29,7 +29,7 @@ import constraints.global.SumWeighted.SumWeightedEQ;
 import constraints.intension.Intension;
 import dashboard.ControlPanel.SettingCtrs;
 import executables.Resolution;
-import heuristics.variables.dynamic.HeuristicVariablesConflictBased;
+import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.FilteringGlobal;
 import interfaces.FilteringSpecific;
 import interfaces.ObserverConstruction;
@@ -48,9 +48,9 @@ import search.backtrack.SolverBacktrack;
 import sets.SetDense;
 import sets.SetSparse;
 import utility.Kit;
+import variables.Domain;
+import variables.DomainInfinite;
 import variables.Variable;
-import variables.domains.Domain;
-import variables.domains.DomainInfinite;
 
 /**
  * This class gives the description of a constraint. <br>
@@ -340,7 +340,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 * Returns the weighted degree of the constraint.
 	 */
 	public final double wdeg() {
-		return ((HeuristicVariablesConflictBased) ((SolverBacktrack) pb.solver).heuristicVars).cscores[num];
+		return ((WdegVariant) ((SolverBacktrack) pb.solver).heuristicVars).cscores[num];
 	}
 
 	public boolean isIrreflexive() {

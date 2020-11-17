@@ -29,10 +29,10 @@ import org.xcsp.common.predicates.XNodeParent;
 import constraints.extension.ExtensionSmart;
 import sets.SetSparse;
 import utility.Kit;
+import variables.Domain;
+import variables.DomainInteger.DomainRange;
+import variables.DomainInteger.DomainSymbols;
 import variables.Variable;
-import variables.domains.Domain;
-import variables.domains.DomainInteger.DomainRange;
-import variables.domains.DomainInteger.DomainSymbols;
 
 public final class SmartTuple {
 

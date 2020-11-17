@@ -75,7 +75,7 @@ public final class DecisionRecorder {
 		this.solver = solver;
 		int n1 = (int) Math.ceil(Math.log(solver.pb.variables.length) / Math.log(2));
 		int n2 = (int) Math.ceil(Math.log(solver.pb.stuff.maxDomSize()) / Math.log(2));
-		Kit.control(n1 + n2 <= 32);
+		Kit.control(n1 + n2 <= 32, () -> "Cannot represent decisions " + n1 + " " + n2);
 		this.OFFSET = (int) Math.pow(2, n2 + 1); // +1 because 0 excluded ???
 		int nValues = Variable.nInitValuesFor(solver.pb.variables);
 		this.decisions = new SetDense(nValues);

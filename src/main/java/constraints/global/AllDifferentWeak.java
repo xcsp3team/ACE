@@ -14,8 +14,8 @@ import java.util.Set;
 import interfaces.TagFilteringPartialAtEachCall;
 import interfaces.TagGACUnguaranteed;
 import problem.Problem;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 /**
  * This class establishes that the values assigned to the involved variables of the constraint must be all different.

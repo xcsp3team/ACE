@@ -6,9 +6,8 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package heuristics.revisions;
+package heuristics;
 
-import heuristics.Heuristic;
 import interfaces.TagMaximize;
 import propagation.PropagationQueue;
 import variables.Variable;
@@ -132,9 +131,9 @@ public abstract class HeuristicRevisions extends Heuristic {
 			}
 		}
 
-		public final static class DDeg extends HeuristicRevisionsDynamic implements TagMaximize {
+		public final static class Ddeg extends HeuristicRevisionsDynamic implements TagMaximize {
 
-			public DDeg(PropagationQueue queue, boolean antiHeuristic) {
+			public Ddeg(PropagationQueue queue, boolean antiHeuristic) {
 				super(queue, antiHeuristic);
 			}
 
@@ -144,9 +143,9 @@ public abstract class HeuristicRevisions extends Heuristic {
 			}
 		}
 
-		public final static class DDegOnDom extends HeuristicRevisionsDynamic implements TagMaximize {
+		public final static class DdegOnDom extends HeuristicRevisionsDynamic implements TagMaximize {
 
-			public DDegOnDom(PropagationQueue queue, boolean antiHeuristic) {
+			public DdegOnDom(PropagationQueue queue, boolean antiHeuristic) {
 				super(queue, antiHeuristic);
 			}
 
@@ -156,9 +155,9 @@ public abstract class HeuristicRevisions extends Heuristic {
 			}
 		}
 
-		public final static class WDeg extends HeuristicRevisionsDynamic implements TagMaximize {
+		public final static class Wdeg extends HeuristicRevisionsDynamic implements TagMaximize {
 
-			public WDeg(PropagationQueue queue, boolean antiHeuristic) {
+			public Wdeg(PropagationQueue queue, boolean antiHeuristic) {
 				super(queue, antiHeuristic);
 			}
 
@@ -168,9 +167,9 @@ public abstract class HeuristicRevisions extends Heuristic {
 			}
 		}
 
-		public final static class WDegOnDom extends HeuristicRevisionsDynamic implements TagMaximize {
+		public final static class WdegOnDom extends HeuristicRevisionsDynamic implements TagMaximize {
 
-			public WDegOnDom(PropagationQueue queue, boolean antiHeuristic) {
+			public WdegOnDom(PropagationQueue queue, boolean antiHeuristic) {
 				super(queue, antiHeuristic);
 			}
 

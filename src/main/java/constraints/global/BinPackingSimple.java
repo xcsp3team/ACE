@@ -17,8 +17,8 @@ import interfaces.TagGACUnguaranteed;
 import problem.Problem;
 import sets.SetDense;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class BinPackingSimple extends CtrGlobal implements TagGACUnguaranteed, TagFilteringPartialAtEachCall {
 	@Override

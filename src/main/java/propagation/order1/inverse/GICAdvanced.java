@@ -10,8 +10,8 @@ package propagation.order1.inverse;
 
 import search.Solver;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public abstract class GICAdvanced extends GIC1 {
 

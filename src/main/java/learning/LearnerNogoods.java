@@ -28,8 +28,8 @@ import search.backtrack.SolverBacktrack;
 import utility.Enums.ELearningNogood;
 import utility.Enums.EStopping;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class LearnerNogoods {
 

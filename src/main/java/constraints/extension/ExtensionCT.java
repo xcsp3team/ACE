@@ -19,8 +19,8 @@ import interfaces.TagShort;
 import problem.Problem;
 import sets.SetDenseReversible;
 import utility.Bit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public class ExtensionCT extends ExtensionSTROptimized implements TagShort {
 

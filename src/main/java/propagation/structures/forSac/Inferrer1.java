@@ -11,8 +11,8 @@ package propagation.structures.forSac;
 import constraints.Constraint;
 import constraints.extension.Extension;
 import propagation.order1.singleton.SACSharing;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 /**
  * Basic form of inference.

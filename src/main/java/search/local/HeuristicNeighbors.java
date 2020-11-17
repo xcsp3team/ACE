@@ -13,8 +13,8 @@ import java.util.Random;
 import org.xcsp.common.Types.TypeFramework;
 
 import utility.Reflector;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public abstract class HeuristicNeighbors {
 

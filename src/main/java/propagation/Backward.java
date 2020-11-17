@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeFramework;
 
 import constraints.Constraint;
-import propagation.soft.LowerBoundCapability;
+import interfaces.LowerBoundCapability;
 import search.Solver;
 import utility.Kit;
 import variables.Variable;

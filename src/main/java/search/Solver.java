@@ -94,7 +94,7 @@ public abstract class Solver {
 		solManager.found = 0;
 	}
 
-	public void reset(boolean preserveWeightedDegrees) {
+	public void reset() { // called by very special objects (for example, when extracting a MUC)
 		Kit.control(futVars.nDiscarded() == 0);
 		Kit.control(!(propagation instanceof TagBinaryRelationFiltering), () -> "for the moment");
 		propagation.reset();

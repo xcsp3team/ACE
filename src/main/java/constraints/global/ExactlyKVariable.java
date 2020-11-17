@@ -16,8 +16,8 @@ import constraints.Constraint.CtrGlobal;
 import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import problem.Problem;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 /**
  * Exactly k variables of the specified vector of variables, where k is a variable, must be assigned to the specified value

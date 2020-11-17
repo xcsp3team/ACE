@@ -9,8 +9,8 @@ import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import interfaces.TagSymmetric;
 import problem.Problem;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public abstract class Extremum extends CtrGlobal implements TagFilteringCompleteAtEachCall, TagGACGuaranteed {
 

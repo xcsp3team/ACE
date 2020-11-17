@@ -12,10 +12,10 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import heuristics.variables.HeuristicVariables;
-import heuristics.variables.HeuristicVariablesDynamic.DDegOnDom;
-import heuristics.variables.HeuristicVariablesDynamic.Dom;
-import heuristics.variables.dynamic.WDegOnDom;
+import heuristics.HeuristicVariables;
+import heuristics.HeuristicVariablesDynamic.DdegOnDom;
+import heuristics.HeuristicVariablesDynamic.Dom;
+import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import search.backtrack.SolverBacktrack;
 import utility.Reflector;
 import variables.Variable;
@@ -122,15 +122,15 @@ public final class QueueOfCells {
 		}
 	}
 
-	public final class DDegOnDomSelector extends HeuristicSelector {
-		public DDegOnDomSelector() {
-			varHeuristic = new DDegOnDom(solver, false);
+	public final class DdegOnDomSelector extends HeuristicSelector {
+		public DdegOnDomSelector() {
+			varHeuristic = new DdegOnDom(solver, false);
 		}
 	}
 
-	public final class WDegOnDomSelector extends HeuristicSelector {
-		public WDegOnDomSelector() {
-			varHeuristic = new WDegOnDom(solver, false);
+	public final class WdegOnDomSelector extends HeuristicSelector {
+		public WdegOnDomSelector() {
+			varHeuristic = new WdegVariant.WdegOnDom(solver, false);
 		}
 	}
 

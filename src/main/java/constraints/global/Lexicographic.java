@@ -15,8 +15,8 @@ import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import interfaces.TagUnsymmetric;
 import problem.Problem;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public abstract class Lexicographic extends CtrGlobal implements TagUnsymmetric, TagFilteringCompleteAtEachCall, TagGACGuaranteed {
 

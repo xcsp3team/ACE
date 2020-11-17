@@ -6,19 +6,18 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package heuristics.values;
+package heuristics;
 
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import dashboard.ControlPanel.SettingValh;
-import heuristics.Heuristic;
 import interfaces.TagExperimental;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 /**
  * This class gives the description of a value ordering heuristic. <br>
@@ -124,9 +123,9 @@ public abstract class HeuristicValues extends Heuristic {
 			}
 		}
 
-		public static final class SRand extends HeuristicValuesFixed {
+		public static final class Srand extends HeuristicValuesFixed {
 
-			public SRand(Variable x, boolean antiHeuristic) {
+			public Srand(Variable x, boolean antiHeuristic) {
 				super(x, antiHeuristic);
 			}
 

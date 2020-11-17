@@ -36,22 +36,22 @@ import dashboard.Arguments;
 import dashboard.ControlPanel;
 import dashboard.ControlPanel.SettingProblem;
 import dashboard.Output;
-import heuristics.revisions.HeuristicRevisions;
-import heuristics.values.HeuristicValues;
-import heuristics.variables.HeuristicVariables;
+import heuristics.HeuristicRevisions;
+import heuristics.HeuristicValues;
+import heuristics.HeuristicVariables;
 import interfaces.ObserverConstruction;
 import problem.Problem;
 import propagation.Propagation;
 import search.Solver;
 import search.local.SolverLocal;
 import search.statistics.StatisticsMultiResolution;
+import utility.DocumentHandler;
 import utility.Enums.EStopping;
 import utility.Enums.TypeOutput;
 import utility.Graphviz;
 import utility.Kit;
 import utility.Kit.Stopwatch;
 import utility.Reflector;
-import utility.DocumentHandler;
 import xcsp3.XCSP3;
 
 /**

@@ -22,8 +22,8 @@ import problem.Problem;
 import sets.SetDense;
 import sets.SetSparseReversible;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 /**
  * This constraint ensures that all values assigned to the variables of its cope are all equal.

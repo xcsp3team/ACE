@@ -6,11 +6,9 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package heuristics.values;
+package heuristics;
 
 import interfaces.TagExperimental;
-import propagation.soft.pfc.PFC;
-import utility.Kit;
 import variables.Variable;
 
 public abstract class HeuristicValuesDirect extends HeuristicValues {
@@ -132,20 +130,20 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 		}
 	}
 
-	public static final class MinCost extends HeuristicValuesDirect implements TagExperimental {
-		private int[] argMinSumMinCosts;
-
-		public MinCost(Variable x, boolean dummy) {
-			super(x, dummy);
-			Kit.control(x.pb.solver.propagation instanceof PFC);
-			argMinSumMinCosts = ((PFC) x.pb.solver.propagation).argMinSumMinCosts;
-		}
-
-		@Override
-		public int identifyBestValueIndex() {
-			assert dx.isPresent(argMinSumMinCosts[x.num]);
-			return argMinSumMinCosts[x.num];
-		}
-	}
+	// public static final class MinCost extends HeuristicValuesDirect implements TagExperimental {
+	// private int[] argMinSumMinCosts;
+	//
+	// public MinCost(Variable x, boolean dummy) {
+	// super(x, dummy);
+	// Kit.control(x.pb.solver.propagation instanceof PFC);
+	// argMinSumMinCosts = ((PFC) x.pb.solver.propagation).argMinSumMinCosts;
+	// }
+	//
+	// @Override
+	// public int identifyBestValueIndex() {
+	// assert dx.isPresent(argMinSumMinCosts[x.num]);
+	// return argMinSumMinCosts[x.num];
+	// }
+	// }
 
 }

@@ -13,8 +13,8 @@ import interfaces.TagSymmetric;
 import problem.Problem;
 import sets.SetSparse;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public abstract class Count extends CtrGlobal {
 

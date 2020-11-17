@@ -11,7 +11,7 @@ package interfaces;
 import java.util.List;
 
 import constraints.Constraint;
-import variables.domains.Domain;
+import variables.Domain;
 
 public interface RegisteringCtrs {
 

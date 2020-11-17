@@ -17,8 +17,8 @@ import interfaces.TagFilteringCompleteAtEachCall;
 import interfaces.TagGACGuaranteed;
 import problem.Problem;
 import sets.SetDense;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public abstract class SumScalarBoolean extends CtrGlobal {
 

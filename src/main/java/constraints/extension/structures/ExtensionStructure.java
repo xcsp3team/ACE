@@ -17,8 +17,8 @@ import constraints.Constraint;
 import interfaces.RegisteringCtrs;
 import utility.Kit;
 import utility.Kit.IntArrayHashKey;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public abstract class ExtensionStructure implements RegisteringCtrs {
 

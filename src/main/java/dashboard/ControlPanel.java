@@ -42,18 +42,17 @@ import constraints.extension.structures.Bits;
 import constraints.extension.structures.Matrix3D;
 import executables.Extraction;
 import executables.Resolution;
-import heuristics.revisions.HeuristicRevisions;
-import heuristics.revisions.HeuristicRevisions.HeuristicRevisionsDirect.First;
-import heuristics.revisions.HeuristicRevisions.HeuristicRevisionsDirect.Last;
-import heuristics.revisions.HeuristicRevisions.HeuristicRevisionsDynamic.Dom;
-import heuristics.values.HeuristicValues;
-import heuristics.variables.HeuristicVariables;
-import heuristics.variables.dynamic.WDeg;
+import heuristics.HeuristicRevisions;
+import heuristics.HeuristicRevisions.HeuristicRevisionsDirect.First;
+import heuristics.HeuristicRevisions.HeuristicRevisionsDirect.Last;
+import heuristics.HeuristicRevisions.HeuristicRevisionsDynamic.Dom;
+import heuristics.HeuristicValues;
+import heuristics.HeuristicVariables;
+import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.TagExperimental;
 import interfaces.TagInvisible;
 import propagation.order1.AC;
-import propagation.order1.FailedValueBasedConsistency;
-import propagation.structures.forSac.QueueOfCells.WDegOnDomSelector;
+import propagation.structures.forSac.QueueOfCells.WdegOnDomSelector;
 import propagation.structures.revisers.Reviser;
 import propagation.structures.revisers.Reviser1;
 import propagation.structures.revisers.Reviser3;
@@ -64,6 +63,7 @@ import search.backtrack.RestarterLocalBranching.LocalBranchingConstraint.LBAtMos
 import search.backtrack.SolverBacktrack;
 import search.local.HeuristicNeighbors.BestGlobal;
 import search.local.TabuManager.TabuManagerVariableValue;
+import utility.DocumentHandler;
 import utility.Enums.EBinaryEncoding;
 import utility.Enums.EBranching;
 import utility.Enums.EExtension;
@@ -77,7 +77,6 @@ import utility.Enums.ESymmetryBreaking;
 import utility.Enums.EWeighting;
 import utility.Kit;
 import utility.Reflector;
-import utility.DocumentHandler;
 
 public class ControlPanel {
 
@@ -478,9 +477,9 @@ public class ControlPanel {
 		public boolean strongOnlyAtPreprocessing = addB("strongOnlyAtPreprocessing", "sop", false, "");
 		public final boolean strongOnlyWhenACEffective = addB("strongOnlyWhenACEffective", "soe", false, "");
 		public final boolean strongOnlyWhenNotSingleton = addB("strongOnlyWhenNotSingleton", "sons", true, "");
-		public final String classForSACSelector = addS("classForSACSelector", "csac", WDegOnDomSelector.class, "");
+		public final String classForSACSelector = addS("classForSACSelector", "csac", WdegOnDomSelector.class, "");
 		public final int weakCutoff = addI("weakCutoff", "wc", 15, "");
-		public final String classForFailedValues = addS("classForFailedValues", "fvc", null, FailedValueBasedConsistency.class, "", HIDDEN);
+		public final String classForFailedValues = addS("classForFailedValues", "fvc", "", "", HIDDEN);
 	}
 
 	public final SettingPropagation settingPropagation = new SettingPropagation();
@@ -606,7 +605,7 @@ public class ControlPanel {
 		String s5 = "";
 		String s6 = "";
 
-		public String classForVarHeuristic = addS("classForVarHeuristic", "varh", WDeg.class, HeuristicVariables.class, s1);
+		public String classForVarHeuristic = addS("classForVarHeuristic", "varh", WdegVariant.Wdeg.class, HeuristicVariables.class, s1);
 		public final boolean anti = addB("anti", "anti_varh", false, s2);
 		public int lastConflictSize = addI("lastConflictSize", "lc", 2, s3);
 		public final int initialWdeg = addI("initialWdeg", "iwd", 1, s4);
@@ -621,8 +620,7 @@ public class ControlPanel {
 				+ "\n\tAn example is valh=First that indicates that at each step the next value to be assigned is the first value in the current domain (a kind of lexicographic order).";
 		String s2 = "Indicates if we must follow the anti-heuristic.";
 
-		public String classForValHeuristic = addS("classForValHeuristic", "valh", heuristics.values.HeuristicValuesDirect.First.class, HeuristicValues.class,
-				s1);
+		public String classForValHeuristic = addS("classForValHeuristic", "valh", heuristics.HeuristicValuesDirect.First.class, HeuristicValues.class, s1);
 		public final boolean anti = addB("anti", "anti_valh", false, s2);
 
 		public boolean runProgressSaving = addB("runProgressSaving", "rps", false, "");

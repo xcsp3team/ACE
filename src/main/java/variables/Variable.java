@@ -29,21 +29,18 @@ import org.xcsp.common.domains.Values.IntegerInterval;
 import org.xcsp.modeler.entities.VarEntities;
 
 import constraints.Constraint;
-import heuristics.values.HeuristicValues;
-import heuristics.values.HeuristicValuesDirect.First;
-import heuristics.variables.dynamic.HeuristicVariablesConflictBased;
+import heuristics.HeuristicValues;
+import heuristics.HeuristicValuesDirect.First;
+import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.ObserverBacktracking.ObserverBacktrackingUnsystematic;
 import problem.Problem;
 import problem.Symbolic;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;
 import utility.Reflector;
-import variables.domains.Domain;
-import variables.domains.DomainBinary;
-import variables.domains.DomainInfinite;
-import variables.domains.DomainInteger.DomainRange;
-import variables.domains.DomainInteger.DomainSymbols;
-import variables.domains.DomainInteger.DomainValues;
+import variables.DomainInteger.DomainRange;
+import variables.DomainInteger.DomainSymbols;
+import variables.DomainInteger.DomainValues;
 
 /**
  * This class gives the description of a variable. <br>
@@ -670,7 +667,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	public final double wdeg() {
-		return ((HeuristicVariablesConflictBased) ((SolverBacktrack) pb.solver).heuristicVars).vscores[num];
+		return ((WdegVariant) ((SolverBacktrack) pb.solver).heuristicVars).vscores[num];
 	}
 
 	public final double wdegOnDom() {

@@ -16,8 +16,8 @@ import sets.LinkedSet;
 import sets.LinkedSetOrdered.LinkedSetOrderedWithBits2;
 import sets.SetSparse;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 /**
  * Performing revisions using bitwise operations (when possible), as in AC3^bit+rm

@@ -20,9 +20,9 @@ import interfaces.TagFilteringPartialAtEachCall;
 import interfaces.TagGACUnguaranteed;
 import problem.Problem;
 import sets.SetDense;
+import variables.Domain;
 import variables.Variable;
 import variables.Variable.VariableInteger;
-import variables.domains.Domain;
 
 public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed, TagFilteringPartialAtEachCall {
 

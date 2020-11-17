@@ -21,8 +21,8 @@ import constraints.extension.ExtensionSTR1;
 import search.Solver;
 import utility.Kit;
 import utility.Kit.Stopwatch;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public class GIC4 extends GICAdvanced {
 

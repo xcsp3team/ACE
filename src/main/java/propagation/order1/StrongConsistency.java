@@ -8,6 +8,7 @@
  */
 package propagation.order1;
 
+import dashboard.ControlPanel.SettingPropagation;
 import search.Solver;
 import utility.Kit;
 import variables.Variable;
@@ -19,9 +20,12 @@ public abstract class StrongConsistency extends AC {
 
 	protected final int verbose;
 
+	protected SettingPropagation settings;
+
 	public StrongConsistency(Solver solver) {
 		super(solver);
 		this.verbose = solver.rs.cp.settingGeneral.verbose;
+		this.settings = solver.rs.cp.settingPropagation;
 		Kit.control(solver.observersSearch == null || solver.observersSearch.size() == 0);
 	}
 
@@ -39,24 +43,23 @@ public abstract class StrongConsistency extends AC {
 
 	@Override
 	public boolean runInitially() {
-		int nBefore = pb().nValuesRemoved;
+		int nBefore = solver.pb.nValuesRemoved;
 		if (enforceArcConsistency() == false)
 			return false;
-		if (cp().settingPropagation.strongOnlyWhenACEffective && pb().nValuesRemoved == nBefore)
+		if (settings.strongOnlyWhenACEffective && pb().nValuesRemoved == nBefore)
 			return true;
 		return enforceMore();
 	}
 
 	@Override
 	public boolean runAfterAssignment(Variable x) {
-		int nBefore = pb().nValuesRemoved;
+		int nBefore = solver.pb.nValuesRemoved;
 		if (enforceArcConsistencyAfterAssignment(x) == false)
 			return false;
-		return performingProperSearch || cp().settingPropagation.strongOnlyAtPreprocessing
-				|| (cp().settingPropagation.strongOnlyWhenACEffective && pb().nValuesRemoved == nBefore)
-				|| (cp().settingPropagation.strongOnlyWhenNotSingleton && !x.dom.isModifiedAtCurrentDepth() && hasSolverPropagatedAfterLastButOneDecision())
-						? true
-						: enforceMore();
+		if (performingProperSearch || settings.strongOnlyAtPreprocessing || (settings.strongOnlyWhenACEffective && pb().nValuesRemoved == nBefore)
+				|| (settings.strongOnlyWhenNotSingleton && !x.dom.isModifiedAtCurrentDepth() && hasSolverPropagatedAfterLastButOneDecision()))
+			return true;
+		return enforceMore();
 	}
 
 	@Override
@@ -64,8 +67,9 @@ public abstract class StrongConsistency extends AC {
 		int nBefore = pb().nValuesRemoved;
 		if (enforceArcConsistencyAfterRefutation(x) == false)
 			return false;
-		return performingProperSearch || cp().settingPropagation.strongOnlyAtPreprocessing
-				|| (cp().settingPropagation.strongOnlyWhenACEffective && pb().nValuesRemoved == nBefore) ? true : enforceMore();
+		if (performingProperSearch || settings.strongOnlyAtPreprocessing || (settings.strongOnlyWhenACEffective && pb().nValuesRemoved == nBefore))
+			return true;
+		return enforceMore();
 	}
 
 }

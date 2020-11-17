@@ -133,7 +133,7 @@ public class Extraction extends Resolution {
 	private boolean solveCurrentNetwork(boolean[] presentVars, boolean[] presentCtrs, boolean preserveWeightedDegrees) {
 		nRuns++;
 		problem.reduceTo(presentVars, presentCtrs);
-		solver.reset(preserveWeightedDegrees);
+		solver.reset();
 		solver.solve();
 		return solver.solManager.found > 0;
 	}

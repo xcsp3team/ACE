@@ -13,12 +13,12 @@ import java.util.Map;
 import java.util.zip.Deflater;
 
 import search.backtrack.SolverBacktrack;
-import utility.Enums.EStopping;
 import utility.Bit;
+import utility.Enums.EStopping;
 import utility.Kit;
 import utility.Kit.ByteArrayHashKey;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class LearnerStatesEquivalence extends LearnerStates {
 

@@ -27,9 +27,9 @@ import interfaces.ObserverRuns;
 import interfaces.ObserverSearch;
 import problem.ProblemStuff.MapAtt;
 import propagation.order1.AC;
+import utility.DocumentHandler;
 import utility.Enums.TypeOutput;
 import utility.Kit;
-import utility.DocumentHandler;
 
 /**
  * The role of this class is to output data concerning the resolution of problem instances. These data are collected by means of a XML document that may be

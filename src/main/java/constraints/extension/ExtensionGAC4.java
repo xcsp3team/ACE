@@ -20,8 +20,8 @@ import interfaces.TagPositive;
 import problem.Problem;
 import sets.SetDenseReversible;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public class ExtensionGAC4 extends ExtensionGlobal implements TagPositive {
 

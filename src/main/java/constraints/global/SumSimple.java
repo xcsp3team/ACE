@@ -22,9 +22,9 @@ import interfaces.TagGACGuaranteed;
 import interfaces.TagSymmetric;
 import problem.Problem;
 import utility.Kit;
+import variables.Domain;
+import variables.DomainInfinite;
 import variables.Variable;
-import variables.domains.Domain;
-import variables.domains.DomainInfinite;
 
 /**
  * Root class for managing simple sum constraints (i.e., sum constraints without integer coefficients associated with variables). Note that no overflow is

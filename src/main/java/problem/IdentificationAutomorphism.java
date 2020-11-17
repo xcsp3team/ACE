@@ -30,8 +30,8 @@ import dashboard.Output;
 import utility.Enums.ESymmetryBreaking;
 import utility.Kit;
 import utility.Kit.Stopwatch;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class IdentificationAutomorphism {
 
@@ -187,7 +187,6 @@ public final class IdentificationAutomorphism {
 	}
 
 	private void buildGAPEdges(PrintWriter out) {
-		// int cnt = 0;
 		out.print('[');
 		Iterator<Node> it = constraintNodes.iterator();
 		while (it.hasNext()) {
@@ -204,7 +203,6 @@ public final class IdentificationAutomorphism {
 			}
 		}
 		out.print(']');
-		// System.out.println("nbNodes=" + nbCurrentNodes + " nbEdges=" + cnt);
 	}
 
 	private void buildGAPGroups(PrintWriter out) {

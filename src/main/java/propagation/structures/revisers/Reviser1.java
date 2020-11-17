@@ -10,8 +10,8 @@ package propagation.structures.revisers;
 
 import constraints.Constraint;
 import propagation.order1.PropagationForward;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 /**
  * Basic object to perform revisions, as in AC3

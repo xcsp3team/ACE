@@ -16,8 +16,8 @@ import interfaces.TagGACUnguaranteed;
 import problem.Problem;
 import sets.SetSparseReversible;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class AllDifferentPermutation extends AllDifferentAbstract
 		implements TagGACUnguaranteed, TagFilteringPartialAtEachCall, ObserverBacktrackingSystematic {

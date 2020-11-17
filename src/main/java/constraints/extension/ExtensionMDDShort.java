@@ -25,8 +25,8 @@ import interfaces.TagPositive;
 import interfaces.TagShort;
 import problem.Problem;
 import sets.SetSparseReversible;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class ExtensionMDDShort extends ExtensionGlobal implements TagPositive, TagShort, ICtrMdd {
 

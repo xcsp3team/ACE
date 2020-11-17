@@ -11,8 +11,8 @@ package constraints;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class TupleManager {
 

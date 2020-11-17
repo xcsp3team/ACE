@@ -13,8 +13,8 @@ import constraints.extension.structures.Bits;
 import interfaces.FilteringSpecific;
 import propagation.order1.PropagationForward;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 /**
  * Performing revisions using bitwise operations (when possible), as in AC3^bit+rm

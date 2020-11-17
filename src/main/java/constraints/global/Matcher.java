@@ -7,8 +7,8 @@ import interfaces.ObserverConstruction;
 import sets.SetSparse;
 import sets.SetSparseReversible;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public abstract class Matcher implements ObserverConstruction {
 

@@ -23,9 +23,9 @@ import interfaces.Optimizable;
 import interfaces.TagGACGuaranteed;
 import problem.Problem;
 import utility.Kit;
+import variables.Domain;
+import variables.DomainInfinite;
 import variables.Variable;
-import variables.domains.Domain;
-import variables.domains.DomainInfinite;
 
 public abstract class SumWeighted extends SumAbstract {
 

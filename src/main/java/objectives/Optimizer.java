@@ -5,9 +5,9 @@ import org.xcsp.common.Types.TypeOptimization;
 
 import dashboard.Arguments;
 import dashboard.Output;
+import interfaces.LowerBoundCapability;
 import interfaces.Optimizable;
 import problem.Problem;
-import propagation.soft.LowerBoundCapability;
 import search.backtrack.SolverBacktrack;
 import search.local.SolverLocal;
 import utility.Enums.EStopping;
@@ -186,10 +186,12 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 		}
 
 		@Override
-		protected void shiftLimitWhenSuccess() {}
+		protected void shiftLimitWhenSuccess() {
+		}
 
 		@Override
-		protected void shiftLimitWhenFailure() {}
+		protected void shiftLimitWhenFailure() {
+		}
 
 		@Override
 		public String toString() {

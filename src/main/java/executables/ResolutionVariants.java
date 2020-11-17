@@ -11,8 +11,8 @@ import org.xcsp.common.Utilities;
 
 import dashboard.Arguments;
 import dashboard.Output;
-import utility.Kit;
 import utility.DocumentHandler;
+import utility.Kit;
 
 public final class ResolutionVariants {
 

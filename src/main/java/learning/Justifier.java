@@ -12,8 +12,8 @@ import constraints.Constraint;
 import interfaces.ObserverDomainReduction;
 import search.Solver;
 import utility.Enums.ELearningState;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class Justifier implements ObserverDomainReduction {
 

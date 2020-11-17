@@ -13,15 +13,15 @@ import java.util.stream.Stream;
 import constraints.Constraint;
 import constraints.extension.ExtensionSTR1;
 import constraints.extension.ExtensionSTR3;
-import heuristics.variables.HeuristicVariables;
-import heuristics.variables.dynamic.WDegOnDom;
+import heuristics.HeuristicVariables;
+import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import propagation.order1.StrongConsistency;
 import search.Solver;
 import search.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public class GIC1 extends StrongConsistency {
 
@@ -37,12 +37,13 @@ public class GIC1 extends StrongConsistency {
 		Kit.control(cp().settingRestarts.cutoff == Long.MAX_VALUE, () -> "With Inverse, there is currently no possibility of restarts.");
 		Kit.control(!Stream.of(solver.pb.constraints).anyMatch(c -> c.getClass().isAssignableFrom(ExtensionSTR3.class)),
 				() -> "Inverse currently not compatible with STR3");
-		variableHeuristicForInverse = new WDegOnDom((SolverBacktrack) solver, false);
+		variableHeuristicForInverse = new WdegVariant.WdegOnDom((SolverBacktrack) solver, false);
 		nInverseTests = new int[solver.pb.variables.length + 1];
 		baseNbSolutionsLimit = solver.solManager.limit;
 	}
 
-	protected void handleNewSolution(Variable x, int a) {}
+	protected void handleNewSolution(Variable x, int a) {
+	}
 
 	protected boolean isInverse(Variable x, int a) {
 		nInverseTests[solver.depth()]++;

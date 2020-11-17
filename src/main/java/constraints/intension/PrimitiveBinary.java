@@ -21,8 +21,8 @@ import interfaces.TagSymmetric;
 import interfaces.TagUnsymmetric;
 import problem.Problem;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 // Important: in Java, integer division rounds toward 0
 // this implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 = 3

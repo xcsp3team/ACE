@@ -12,15 +12,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import heuristics.revisions.HeuristicRevisions;
-import heuristics.revisions.HeuristicRevisions.HeuristicRevisionsDirect.First;
+import heuristics.HeuristicRevisions;
+import heuristics.HeuristicRevisions.HeuristicRevisionsDirect.First;
 import learning.LearnerNogoods;
 import learning.LearnerStatesDominance;
 import propagation.order1.PropagationForward;
 import sets.SetSparse;
 import utility.Reflector;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 /**
  * This class is used to store the elements that have to be taken into account by constraint propagation. Constraint propagation iteratively involves picking

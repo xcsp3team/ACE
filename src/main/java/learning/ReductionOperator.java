@@ -15,8 +15,8 @@ import propagation.order1.AC;
 import search.Solver;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class ReductionOperator {
 	private LearnerStates learner;

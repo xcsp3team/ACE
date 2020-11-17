@@ -15,8 +15,8 @@ import problem.Problem;
 import sets.SetDenseReversible;
 import sets.SetSparse;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class SegmentedTuple {
 

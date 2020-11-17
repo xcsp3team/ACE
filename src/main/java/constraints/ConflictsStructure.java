@@ -19,8 +19,8 @@ import constraints.extension.ExtensionSTR2;
 import dashboard.ControlPanel;
 import interfaces.RegisteringCtrs;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class ConflictsStructure implements RegisteringCtrs {
 

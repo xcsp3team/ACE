@@ -6,7 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package heuristics.variables;
+package heuristics;
 
 import search.backtrack.SolverBacktrack;
 import variables.Variable;
@@ -20,6 +20,22 @@ public abstract class HeuristicVariablesDirect extends HeuristicVariables {
 	@Override
 	public double scoreOf(Variable x) {
 		throw new AssertionError("The variable must be directly selected without any iteration");
+	}
+
+	/*************************************************************************
+	 * Subclasses
+	 *************************************************************************/
+
+	public static final class Rand extends HeuristicVariablesDirect {
+
+		public Rand(SolverBacktrack solver, boolean antiHeuristic) {
+			super(solver, antiHeuristic);
+		}
+
+		@Override
+		protected Variable bestUnpriorityVar() {
+			return solver.futVars.get(solver.rs.random.nextInt(solver.futVars.size()));
+		}
 	}
 
 }

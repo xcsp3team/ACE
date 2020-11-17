@@ -6,7 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package variables.domains;
+package variables;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -18,7 +18,6 @@ import org.xcsp.common.Utilities;
 import search.Solver;
 import sets.LinkedSetOrdered.LinkedSetOrderedWithBits;
 import utility.Kit;
-import variables.Variable;
 
 /**
  * This class gives the description of the finite domain of a variable. <br>

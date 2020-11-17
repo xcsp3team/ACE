@@ -22,8 +22,8 @@ import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 /**
  * This class is useful for table constraints, i.e., constraints defined in extension. All supports (allowed tuples) or all conflicts (disallowed

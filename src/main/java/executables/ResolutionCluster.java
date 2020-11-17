@@ -27,8 +27,8 @@ import org.w3c.dom.NodeList;
 
 import dashboard.ControlPanel;
 import dashboard.Output;
-import utility.Kit;
 import utility.DocumentHandler;
+import utility.Kit;
 
 public class ResolutionCluster {
 

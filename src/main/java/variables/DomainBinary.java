@@ -6,13 +6,12 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package variables.domains;
+package variables;
 
 import java.util.stream.IntStream;
 
 import search.Solver;
 import sets.LinkedSetBinary;
-import variables.Variable;
 
 public final class DomainBinary extends LinkedSetBinary implements Domain {
 

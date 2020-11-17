@@ -30,8 +30,8 @@ import constraints.Constraint;
 import constraints.extension.ExtensionMDD;
 import utility.Kit;
 import utility.Kit.IntArrayHashKey;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class MDD extends ExtensionStructure {
 

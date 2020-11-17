@@ -149,10 +149,10 @@ import constraints.intension.PrimitiveBinary.PrimitiveBinarySub.SubNE2;
 import dashboard.ControlPanel.SettingGeneral;
 import dashboard.ControlPanel.SettingVars;
 import executables.Resolution;
-import heuristics.values.HeuristicValues;
-import heuristics.values.HeuristicValuesDirect.First;
-import heuristics.values.HeuristicValuesDirect.Last;
-import heuristics.values.HeuristicValuesDirect.Values;
+import heuristics.HeuristicValues;
+import heuristics.HeuristicValuesDirect.First;
+import heuristics.HeuristicValuesDirect.Last;
+import heuristics.HeuristicValuesDirect.Values;
 import interfaces.ObserverConstruction;
 import interfaces.ObserverDomainReduction;
 import interfaces.Optimizable;
@@ -166,10 +166,10 @@ import search.Solver;
 import utility.Enums.EExportMode;
 import utility.Kit;
 import utility.Reflector;
+import variables.Domain;
 import variables.Variable;
 import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
-import variables.domains.Domain;
 
 public class Problem extends ProblemIMP implements ObserverConstruction {
 	public static final Boolean DONT_KNOW = null;

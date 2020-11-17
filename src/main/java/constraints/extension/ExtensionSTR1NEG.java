@@ -12,8 +12,8 @@ import java.util.Arrays;
 
 import interfaces.TagNegative;
 import problem.Problem;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class ExtensionSTR1NEG extends ExtensionSTR1 implements TagNegative {
 

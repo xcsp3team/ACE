@@ -22,8 +22,8 @@ import problem.Problem;
 import utility.Bit;
 import utility.Kit;
 import utility.Kit.LongArrayHashKey;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class Bits extends ExtensionStructure {
 

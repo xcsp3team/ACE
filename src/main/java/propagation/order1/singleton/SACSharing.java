@@ -12,8 +12,8 @@ import org.xcsp.common.Types.TypeOptimization;
 
 import propagation.structures.forSac.Inferrer;
 import search.Solver;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public abstract class SACSharing extends SAC {
 

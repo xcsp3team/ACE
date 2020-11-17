@@ -27,9 +27,8 @@ import org.xcsp.common.Constants;
 import constraints.Constraint;
 import constraints.Constraint.CtrGlobal;
 import executables.Resolution;
-import heuristics.values.HeuristicValuesDynamic.Failures;
-import heuristics.variables.HeuristicVariables;
-import heuristics.variables.dynamic.HeuristicVariablesConflictBased;
+import heuristics.HeuristicValuesDynamic.Failures;
+import heuristics.HeuristicVariables;
 import interfaces.ObserverAssignment;
 import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.ObserverConflicts;
@@ -44,8 +43,8 @@ import search.statistics.Statistics.StatisticsBacktrack;
 import utility.Enums.EBranching;
 import utility.Enums.EStopping;
 import utility.Kit;
+import variables.DomainInfinite;
 import variables.Variable;
-import variables.domains.DomainInfinite;
 
 public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 
@@ -195,8 +194,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 				return false;
 			if (top >= 0)
 				if (stack[top] instanceof Variable) {
-					Variable x = Stream.of(solver.pb.variables).filter(y -> !(y.dom instanceof DomainInfinite) && y.lastModificationDepth() >= depth).findFirst()
-							.orElse(null);
+					Variable x = Stream.of(solver.pb.variables).filter(y -> !(y.dom instanceof DomainInfinite) && y.lastModificationDepth() >= depth)
+							.findFirst().orElse(null);
 					if (x != null) {
 						System.out.println("Pb with " + x);
 						x.dom.display(true);
@@ -369,11 +368,11 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	public NogoodMinimizer nogoodMinimizer;
 
 	@Override
-	public void reset(boolean preserveWeightedDegrees) {
-		super.reset(preserveWeightedDegrees);
+	public void reset() {
+		super.reset();
 		dr.reset();
-		if (!(heuristicVars instanceof HeuristicVariablesConflictBased) || !preserveWeightedDegrees)
-			heuristicVars.reset();
+		// if (!(heuristicVars instanceof HeuristicVariablesConflictBased) || !preserveWeightedDegrees)
+		// heuristicVars.reset();
 		heuristicVars.setPriorityVars(pb.priorityVars, 0);
 		lcReasoner.beforeRun();
 		if (learnerNogoods != null)

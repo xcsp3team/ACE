@@ -6,8 +6,8 @@ import java.util.stream.IntStream;
 import constraints.global.Cardinality.CardinalityConstant;
 import sets.SetSparse;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public class MatcherCardinality extends Matcher {
 

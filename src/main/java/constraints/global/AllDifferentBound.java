@@ -23,8 +23,8 @@ import problem.Problem;
 import sets.SetSparse;
 import sets.SetSparseReversible;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public class AllDifferentBound extends AllDifferentAbstract implements ObserverBacktrackingSystematic, TagGACUnguaranteed, TagFilteringPartialAtEachCall {
 

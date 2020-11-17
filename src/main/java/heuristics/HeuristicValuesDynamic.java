@@ -6,11 +6,9 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package heuristics.values;
+package heuristics;
 
 import constraints.Constraint;
-import interfaces.TagExperimental;
-import propagation.soft.pfc.RDAC;
 import utility.Kit;
 import variables.Variable;
 
@@ -102,34 +100,6 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 				if (y.dom.onlyContainsValue(v))
 					cnt++;
 			return cnt;
-		}
-	}
-
-	public static final class Aic extends HeuristicValuesDynamic implements TagExperimental {
-		private int[] aic;
-
-		public Aic(Variable x, boolean antiHeuristic) {
-			super(x, antiHeuristic);
-			this.aic = ((RDAC) x.pb.solver.propagation).aic[x.num];
-		}
-
-		@Override
-		public double scoreOf(int a) {
-			return aic[a];
-		}
-	}
-
-	public static final class SumMinCosts extends HeuristicValuesDynamic implements TagExperimental {
-		private long[] sumMinCosts;
-
-		public SumMinCosts(Variable x, boolean antiHeuristic) {
-			super(x, antiHeuristic);
-			this.sumMinCosts = ((RDAC) x.pb.solver.propagation).sumMinCosts[x.num];
-		}
-
-		@Override
-		public double scoreOf(int a) {
-			return sumMinCosts[a];
 		}
 	}
 

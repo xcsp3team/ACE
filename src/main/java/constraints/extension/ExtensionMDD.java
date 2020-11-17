@@ -26,8 +26,8 @@ import constraints.extension.structures.MDDNode;
 import interfaces.TagPositive;
 import problem.Problem;
 import sets.SetSparseReversible;
+import variables.Domain;
 import variables.Variable;
-import variables.domains.Domain;
 
 public final class ExtensionMDD extends ExtensionGlobal implements TagPositive, ICtrMdd {
 
