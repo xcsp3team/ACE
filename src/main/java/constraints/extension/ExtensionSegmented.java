@@ -18,7 +18,7 @@ import constraints.extension.structures.SegmentedTuple;
 import constraints.extension.structures.SegmentedTuple.RestrictionTable;
 import constraints.extension.structures.TableSegmented;
 import problem.Problem;
-import propagation.order1.StrongConsistency;
+import propagation.StrongConsistency;
 import sets.SetDenseReversible;
 import sets.SetSparse;
 import variables.Variable;

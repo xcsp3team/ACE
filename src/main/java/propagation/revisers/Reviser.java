@@ -6,10 +6,10 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL
  * LIBRE CeCILL which accompanies this distribution, and is available at http://www.cecill.info
  */
-package propagation.structures.revisers;
+package propagation.revisers;
 
 import constraints.Constraint;
-import propagation.order1.PropagationForward;
+import propagation.Forward;
 import variables.Variable;
 
 /**
@@ -20,14 +20,14 @@ public abstract class Reviser {
 	/**
 	 * The propagation technique to which the reviser is attached.
 	 */
-	protected PropagationForward propagation;
+	protected Forward propagation;
 
 	/**
 	 * The number of revisions, i.e., the number of calls to <code> revise(c,x) </code>
 	 */
 	public long nRevisions, nUselessRevisions;
 
-	public Reviser(PropagationForward propagation) {
+	public Reviser(Forward propagation) {
 		this.propagation = propagation;
 	}
 

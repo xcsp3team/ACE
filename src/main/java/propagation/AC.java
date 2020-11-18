@@ -7,7 +7,7 @@
  * terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies
  * this distribution, and is available at http://www.cecill.info
  */
-package propagation.order1;
+package propagation;
 
 import java.util.stream.Stream;
 
@@ -17,7 +17,7 @@ import constraints.Constraint;
 import search.Solver;
 import variables.Variable;
 
-public class AC extends PropagationForward {
+public class AC extends Forward {
 
 	/**
 	 * Indicates if GAC is guaranteed, either by a generic scheme that does not requires to wait for a certain number of assigned, or by a global constraint.

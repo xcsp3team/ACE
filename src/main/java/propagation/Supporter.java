@@ -6,7 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL
  * LIBRE CeCILL which accompanies this distribution, and is available at http://www.cecill.info
  */
-package propagation.structures;
+package propagation;
 
 import java.util.stream.Stream;
 
@@ -14,7 +14,7 @@ import constraints.Constraint;
 import constraints.extension.structures.Bits;
 import interfaces.FilteringSpecific;
 import interfaces.TagBinaryRelationFiltering;
-import propagation.structures.revisers.Reviser3;
+import propagation.revisers.Reviser3;
 import utility.Kit;
 import variables.Variable;
 

@@ -9,7 +9,7 @@
 package heuristics;
 
 import interfaces.TagMaximize;
-import propagation.PropagationQueue;
+import propagation.Queue;
 import variables.Variable;
 
 /**
@@ -21,9 +21,9 @@ public abstract class HeuristicRevisions extends Heuristic {
 	/**
 	 * The queue (propagation set) to which the revision ordering heuristic is attached.
 	 */
-	protected final PropagationQueue queue;
+	protected final Queue queue;
 
-	public HeuristicRevisions(PropagationQueue queue, boolean antiHeuristic) {
+	public HeuristicRevisions(Queue queue, boolean antiHeuristic) {
 		super(antiHeuristic);
 		this.queue = queue;
 	}
@@ -39,7 +39,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 	public static abstract class HeuristicRevisionsDirect extends HeuristicRevisions {
 
-		public HeuristicRevisionsDirect(PropagationQueue queue, boolean dummy) {
+		public HeuristicRevisionsDirect(Queue queue, boolean dummy) {
 			super(queue, dummy);
 		}
 
@@ -49,7 +49,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class First extends HeuristicRevisionsDirect {
 
-			public First(PropagationQueue queue, boolean dummy) {
+			public First(Queue queue, boolean dummy) {
 				super(queue, dummy);
 			}
 
@@ -61,7 +61,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class Last extends HeuristicRevisionsDirect {
 
-			public Last(PropagationQueue queue, boolean dummy) {
+			public Last(Queue queue, boolean dummy) {
 				super(queue, dummy);
 			}
 
@@ -73,7 +73,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class Rand extends HeuristicRevisionsDirect {
 
-			public Rand(PropagationQueue queue, boolean dummy) {
+			public Rand(Queue queue, boolean dummy) {
 				super(queue, dummy);
 			}
 
@@ -91,7 +91,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 	public abstract static class HeuristicRevisionsDynamic extends HeuristicRevisions {
 
-		public HeuristicRevisionsDynamic(PropagationQueue queue, boolean antiHeuristic) {
+		public HeuristicRevisionsDynamic(Queue queue, boolean antiHeuristic) {
 			super(queue, antiHeuristic);
 		}
 
@@ -121,7 +121,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class Dom extends HeuristicRevisionsDynamic {
 
-			public Dom(PropagationQueue queue, boolean antiHeuristic) {
+			public Dom(Queue queue, boolean antiHeuristic) {
 				super(queue, antiHeuristic);
 			}
 
@@ -133,7 +133,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class Ddeg extends HeuristicRevisionsDynamic implements TagMaximize {
 
-			public Ddeg(PropagationQueue queue, boolean antiHeuristic) {
+			public Ddeg(Queue queue, boolean antiHeuristic) {
 				super(queue, antiHeuristic);
 			}
 
@@ -145,7 +145,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class DdegOnDom extends HeuristicRevisionsDynamic implements TagMaximize {
 
-			public DdegOnDom(PropagationQueue queue, boolean antiHeuristic) {
+			public DdegOnDom(Queue queue, boolean antiHeuristic) {
 				super(queue, antiHeuristic);
 			}
 
@@ -157,7 +157,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class Wdeg extends HeuristicRevisionsDynamic implements TagMaximize {
 
-			public Wdeg(PropagationQueue queue, boolean antiHeuristic) {
+			public Wdeg(Queue queue, boolean antiHeuristic) {
 				super(queue, antiHeuristic);
 			}
 
@@ -169,7 +169,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class WdegOnDom extends HeuristicRevisionsDynamic implements TagMaximize {
 
-			public WdegOnDom(PropagationQueue queue, boolean antiHeuristic) {
+			public WdegOnDom(Queue queue, boolean antiHeuristic) {
 				super(queue, antiHeuristic);
 			}
 
@@ -181,7 +181,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class Lexico extends HeuristicRevisionsDynamic {
 
-			public Lexico(PropagationQueue queue, boolean antiHeuristic) {
+			public Lexico(Queue queue, boolean antiHeuristic) {
 				super(queue, antiHeuristic);
 			}
 

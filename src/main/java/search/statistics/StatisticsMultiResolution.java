@@ -17,7 +17,7 @@ import java.util.Set;
 import dashboard.Arguments;
 import dashboard.Output;
 import executables.Resolution;
-import propagation.order1.inverse.GIC4;
+import propagation.inverse.GIC4;
 import utility.Enums.TypeOutput;
 import utility.Kit;
 

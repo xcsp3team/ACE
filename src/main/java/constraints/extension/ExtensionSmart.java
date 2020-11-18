@@ -32,7 +32,7 @@ import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.SmartTuple;
 import constraints.extension.structures.TableSmart;
 import problem.Problem;
-import propagation.order1.StrongConsistency;
+import propagation.StrongConsistency;
 import sets.SetDenseReversible;
 import sets.SetSparse;
 import utility.Kit;

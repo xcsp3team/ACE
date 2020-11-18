@@ -40,10 +40,10 @@ import interfaces.TagGACUnguaranteed;
 import interfaces.TagSymmetric;
 import interfaces.TagUnsymmetric;
 import problem.Problem;
-import propagation.order1.PropagationForward;
-import propagation.structures.Supporter;
-import propagation.structures.Supporter.SupporterHard;
-import propagation.structures.revisers.Reviser;
+import propagation.Forward;
+import propagation.Supporter;
+import propagation.Supporter.SupporterHard;
+import propagation.revisers.Reviser;
 import search.backtrack.SolverBacktrack;
 import sets.SetDense;
 import sets.SetSparse;
@@ -724,7 +724,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 *********************************************************************************************/
 
 	private boolean genericFiltering(Variable x) {
-		Reviser reviser = ((PropagationForward) pb.solver.propagation).reviser;
+		Reviser reviser = ((Forward) pb.solver.propagation).reviser;
 		if (x.isAssigned()) {
 			for (int i = futvars.limit; i >= 0; i--)
 				if (reviser.revise(this, scp[futvars.dense[i]]) == false)

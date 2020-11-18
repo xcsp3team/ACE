@@ -16,7 +16,6 @@ import constraints.Constraint.CtrGlobal;
 import dashboard.ControlPanel;
 import interfaces.ObserverConflicts;
 import problem.Problem;
-import propagation.order1.PropagationForward;
 import search.Solver;
 import sets.SetSparse;
 import utility.Kit;
@@ -52,7 +51,7 @@ public abstract class Propagation {
 	/**
 	 * The queue (actually, set) used for propagation. During propagation, it contains variables.
 	 */
-	public final PropagationQueue queue;
+	public final Queue queue;
 
 	/**
 	 * Auxiliary queues for handling constraint with expensive propagators. Currently, its usage is experimental.
@@ -151,9 +150,9 @@ public abstract class Propagation {
 
 	public Propagation(Solver solver) {
 		this.solver = solver;
-		this.queue = this instanceof PropagationForward ? new PropagationQueue((PropagationForward) this) : null;
+		this.queue = this instanceof Forward ? new Queue((Forward) this) : null;
 		int nAuxQueues = cp().settingPropagation.useAuxiliaryQueues ? Constraint.MAX_FILTERING_COMPLEXITY : 0;
-		this.auxiliaryQueues = this instanceof PropagationForward ? SetSparseMap.buildArray(nAuxQueues, solver.pb.constraints.length) : null;
+		this.auxiliaryQueues = this instanceof Forward ? SetSparseMap.buildArray(nAuxQueues, solver.pb.constraints.length) : null;
 	}
 
 	/**
@@ -253,24 +252,6 @@ public abstract class Propagation {
 	public abstract boolean runAfterRefutation(Variable x);
 
 	/**
-	 * Manages the fact that the domain for the specified variable has been wiped-out . This allows us to update conflict counters. The value <code>false</code>
-	 * is returned.
-	 * 
-	 * @param x
-	 *            a variable with empty domain
-	 * @return false
-	 */
-	// public final boolean handleWipeout(Variable x) {
-	// if (solver instanceof SolverBacktrack && ((SolverBacktrack) solver).heuristicVars instanceof WDegAbstract) {
-	// if (cp().varh.weighting == EWeighting.VAR)
-	// x.wdeg++;
-	// else if (currFilteringCtr != null)
-	// currFilteringCtr.incrementWdegBy(1);
-	// }
-	// return false;
-	// }
-
-	/**
 	 * To be called when the domain of the specified variable has just been reduced. <br />
 	 * Be careful: the domain of the specified variable is not necessarily already reduced, and so may be different from the specified value newDomSize, which
 	 * is the (virtual) size of the domain of the specified variable.
@@ -278,17 +259,10 @@ public abstract class Propagation {
 	public final boolean handleReduction(Variable x, int newDomSize) {
 		if (newDomSize == 0) {
 			lastWipeoutVar = x;
-			// if (solver instanceof SolverBacktrack && ((SolverBacktrack) solver).heuristicVars instanceof WDegAbstract) {
-			// if (cp().varh.weighting == EWeighting.VAR)
-			// x.wdeg++;
-			// else if (currFilteringCtr != null)
-			// currFilteringCtr.incrementWdegBy(1);
-			// }
 			for (ObserverConflicts obs : solver.observersConflicts)
 				obs.whenWipeout(currFilteringCtr, x);
 			// queue.clear();
 			return false;
-			// return handleWipeout(lastWipeoutVar = x);
 		}
 		queue.add(x);
 		return true;

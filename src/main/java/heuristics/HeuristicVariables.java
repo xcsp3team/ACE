@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 import dashboard.ControlPanel.SettingVarh;
 import dashboard.ControlPanel.SettingVars;
 import interfaces.ObserverRuns;
-import propagation.order1.inverse.GIC2;
+import propagation.inverse.GIC2;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;
 import utility.Reflector;

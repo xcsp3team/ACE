@@ -37,7 +37,7 @@ import interfaces.Optimizable;
 import learning.LearnerNogoods;
 import learning.LearnerStates;
 import learning.NogoodMinimizer;
-import propagation.order1.PropagationForward;
+import propagation.Forward;
 import search.Solver;
 import search.statistics.Statistics.StatisticsBacktrack;
 import utility.Enums.EBranching;
@@ -440,7 +440,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			obs.afterUnassignment(x);
 		for (ObserverBacktrackingSystematic obs : observersBacktrackingSystematic)
 			obs.restoreBefore(depthBeforeBacktrack);
-		if (propagation instanceof PropagationForward)
+		if (propagation instanceof Forward)
 			propagation.queue.clear();
 	}
 

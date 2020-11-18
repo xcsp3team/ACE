@@ -11,7 +11,7 @@ package learning;
 import java.util.Arrays;
 
 import constraints.Constraint;
-import propagation.order1.AC;
+import propagation.AC;
 import search.Solver;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;

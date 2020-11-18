@@ -38,7 +38,7 @@ import interfaces.TagNegative;
 import interfaces.TagPositive;
 import interfaces.TagShort;
 import problem.Problem;
-import propagation.structures.Supporter.SupporterHard;
+import propagation.Supporter.SupporterHard;
 import utility.Kit;
 import utility.Reflector;
 import variables.Variable;

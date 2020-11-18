@@ -11,7 +11,7 @@ package constraints.extension;
 import java.util.Arrays;
 
 import problem.Problem;
-import propagation.order1.StrongConsistency;
+import propagation.StrongConsistency;
 import utility.Kit;
 import variables.Variable;
 

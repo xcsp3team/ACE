@@ -16,7 +16,6 @@ import heuristics.HeuristicRevisions;
 import heuristics.HeuristicRevisions.HeuristicRevisionsDirect.First;
 import learning.LearnerNogoods;
 import learning.LearnerStatesDominance;
-import propagation.order1.PropagationForward;
 import sets.SetSparse;
 import utility.Reflector;
 import variables.Domain;
@@ -26,9 +25,9 @@ import variables.Variable;
  * This class is used to store the elements that have to be taken into account by constraint propagation. Constraint propagation iteratively involves picking
  * one element in this set (by means of a so-called revision ordering heuristic) and then performs some filtering.
  */
-public final class PropagationQueue extends SetSparse {
+public final class Queue extends SetSparse {
 
-	public final PropagationForward propagation;
+	public final Forward propagation;
 
 	private final HeuristicRevisions heuristic;
 
@@ -36,7 +35,7 @@ public final class PropagationQueue extends SetSparse {
 
 	public int nPicks;
 
-	public PropagationQueue(PropagationForward propagation) {
+	public Queue(Forward propagation) {
 		super(propagation.pb().variables.length);
 		this.propagation = propagation;
 		String className = propagation.pb().stuff.maxDomSize() <= 4 ? First.class.getSimpleName() : propagation.cp().settingRevh.classForRevHeuristic;
@@ -66,7 +65,7 @@ public final class PropagationQueue extends SetSparse {
 	 * Add all variables to the queue.
 	 */
 	@Override
-	public PropagationQueue fill() {
+	public Queue fill() {
 		for (Variable x : variables)
 			if (!x.isAssigned() || x == propagation.solver.futVars.lastPast())
 				add(x);

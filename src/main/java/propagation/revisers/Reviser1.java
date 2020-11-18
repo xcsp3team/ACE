@@ -6,10 +6,10 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL
  * LIBRE CeCILL which accompanies this distribution, and is available at http://www.cecill.info
  */
-package propagation.structures.revisers;
+package propagation.revisers;
 
 import constraints.Constraint;
-import propagation.order1.PropagationForward;
+import propagation.Forward;
 import variables.Domain;
 import variables.Variable;
 
@@ -18,7 +18,7 @@ import variables.Variable;
  */
 public class Reviser1 extends Reviser {
 
-	public Reviser1(PropagationForward propagation) {
+	public Reviser1(Forward propagation) {
 		super(propagation);
 	}
 

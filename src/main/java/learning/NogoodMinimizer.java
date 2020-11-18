@@ -1,7 +1,7 @@
 package learning;
 
+import propagation.AC;
 import propagation.Propagation;
-import propagation.order1.AC;
 import search.backtrack.DecisionRecorder;
 import search.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;

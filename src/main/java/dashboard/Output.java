@@ -26,7 +26,7 @@ import interfaces.ObserverConstruction;
 import interfaces.ObserverRuns;
 import interfaces.ObserverSearch;
 import problem.ProblemStuff.MapAtt;
-import propagation.order1.AC;
+import propagation.AC;
 import utility.DocumentHandler;
 import utility.Enums.TypeOutput;
 import utility.Kit;

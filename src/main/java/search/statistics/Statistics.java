@@ -28,10 +28,10 @@ import interfaces.ObserverSearch;
 import learning.LearnerStatesEquivalence;
 import learning.ReductionOperator;
 import problem.ProblemStuff.MapAtt;
-import propagation.order1.AC;
-import propagation.order1.PropagationForward;
-import propagation.order1.singleton.SACGreedy;
-import propagation.order1.singleton.SingletonConsistency;
+import propagation.AC;
+import propagation.Forward;
+import propagation.SAC;
+import propagation.SAC.SACGreedy;
 import search.Solver;
 import search.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
@@ -133,11 +133,11 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 	}
 
 	public final long nRevisions() {
-		return solver.propagation instanceof PropagationForward ? ((PropagationForward) solver.propagation).reviser.nRevisions : 0;
+		return solver.propagation instanceof Forward ? ((Forward) solver.propagation).reviser.nRevisions : 0;
 	}
 
 	public final long nUselessRevisions() {
-		return solver.propagation instanceof PropagationForward ? ((PropagationForward) solver.propagation).reviser.nUselessRevisions : 0;
+		return solver.propagation instanceof Forward ? ((Forward) solver.propagation).reviser.nUselessRevisions : 0;
 	}
 
 	public final long nSingletonTests() {
@@ -176,8 +176,8 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		if (nSingletonTests() > 0) {
 			m.put(N_SINGLETON_TESTS, nSingletonTests());
 			m.put(N_EFFECTIVE_SINGLETON_TESTS, nEffectiveSingletonTests());
-			if (solver.propagation instanceof SingletonConsistency)
-				m.put(N_FOUND_SINGLETONS, ((SingletonConsistency) (solver.propagation)).nFoundSingletons);
+			if (solver.propagation instanceof SAC)
+				m.put(N_FOUND_SINGLETONS, ((SAC) (solver.propagation)).nFoundSingletons);
 			if (solver.propagation instanceof SACGreedy) {
 				m.put(N_BUILT_BRANCHES, ((SACGreedy) (solver.propagation)).nBranchesBuilt);
 				m.put(SUM_BRANCH_SIZES, ((SACGreedy) (solver.propagation)).sumBranchSizes);

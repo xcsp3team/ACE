@@ -6,12 +6,15 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package propagation.structures.revisers;
+package propagation.revisers;
 
 import constraints.Constraint;
 import constraints.extension.structures.Bits;
 import interfaces.FilteringSpecific;
-import propagation.order1.PropagationForward;
+import propagation.Forward;
+import sets.LinkedSet;
+import sets.LinkedSetOrdered.LinkedSetOrderedWithBits2;
+import sets.SetSparse;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -19,11 +22,11 @@ import variables.Variable;
 /**
  * Performing revisions using bitwise operations (when possible), as in AC3^bit+rm
  */
-public final class Reviser3 extends Reviser2 {
+public final class Reviser4 extends Reviser2 {
 
 	private short[][][] bitRmResidues; // 1d = constraint num; 2D = variable position ; 3D = index
 
-	public Reviser3(PropagationForward propagation) {
+	public Reviser4(Forward propagation) {
 		super(propagation);
 		long nbResidues = 0;
 		if (!propagation.solver.rs.cp.settingPropagation.bitResidues) {
@@ -51,12 +54,21 @@ public final class Reviser3 extends Reviser2 {
 		}
 	}
 
-	private short seekSupportPosition(long[] bitSup, long[] bitDom) {
-		// if ((cnt++) % 100000000 == 0)
-		// System.out.println("cntSeek=" + cnt);
-		for (short i = 0; i < bitSup.length; i++)
-			if ((bitSup[i] & bitDom[i]) != 0)
-				return i;
+	private short seekSupportPosition(long[] bitSup, int[] bitSupDense, long[] bitDom, SetSparse sset) {
+		if (sset.size() <= bitSupDense.length) {
+			int[] dense = sset.dense;
+			for (int i = sset.limit; i >= 0; i--) {
+				int j = dense[i];
+				if ((bitSup[j] & bitDom[j]) != 0)
+					return (short) j;
+			}
+		} else {
+			for (int i = bitSupDense.length - 1; i >= 0; i--) {
+				int j = bitSupDense[i];
+				if ((bitSup[j] & bitDom[j]) != 0)
+					return (short) j;
+			}
+		}
 		return -1;
 	}
 
@@ -66,25 +78,28 @@ public final class Reviser3 extends Reviser2 {
 			super.applyTo(c, x);
 		else {
 			int px = c.positionOf(x);
-			Domain dom = x.dom;
-			long[] bitDom = c.scp[px == 0 ? 1 : 0].dom.binaryRepresentation();
+			Domain dx = x.dom;
+			Variable y = c.scp[px == 0 ? 1 : 0];
+			LinkedSetOrderedWithBits2 sety = (LinkedSetOrderedWithBits2) ((LinkedSet) y.dom);
+			long[] bitDom = y.dom.binaryRepresentation();
 			long[][] bitSups = ((Bits) c.extStructure()).bitSupsFor(px);
+			int[][] bitSupsDense = ((Bits) c.extStructure()).bitSupsDenseFor(px);
 			short[][] residues = c.num < bitRmResidues.length ? bitRmResidues[c.num] : null; // TODO
 			if (residues != null && residues[px] != null) {
-				for (int a = dom.first(); a != -1; a = dom.next(a)) {
+				for (int a = dx.first(); a != -1; a = dx.next(a)) {
 					short i = residues[px][a];
 					if ((bitSups[a][i] & bitDom[i]) != 0)
 						continue;
-					i = seekSupportPosition(bitSups[a], bitDom);
+					i = seekSupportPosition(bitSups[a], bitSupsDense[a], bitDom, sety.sset);
 					if (i == -1)
-						dom.removeElementary(a);
+						x.dom.removeElementary(a);
 					else
 						residues[px][a] = i;
 				}
 			} else
-				for (int a = dom.first(); a != -1; a = dom.next(a))
-					if (seekSupportPosition(bitSups[a], bitDom) == -1)
-						dom.removeElementary(a);
+				for (int a = dx.first(); a != -1; a = dx.next(a))
+					if (seekSupportPosition(bitSups[a], bitSupsDense[a], bitDom, sety.sset) == -1)
+						x.dom.removeElementary(a);
 		}
 	}
 }

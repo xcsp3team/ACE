@@ -6,24 +6,23 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL
  * LIBRE CeCILL which accompanies this distribution, and is available at http://www.cecill.info
  */
-package propagation.order1;
+package propagation;
 
-import propagation.Propagation;
-import propagation.structures.revisers.Reviser;
+import propagation.revisers.Reviser;
 import search.Solver;
 import search.backtrack.SolverBacktrack;
 import utility.Enums.EBranching;
 import utility.Reflector;
 import variables.Variable;
 
-public abstract class PropagationForward extends Propagation {
+public abstract class Forward extends Propagation {
 
 	/**
 	 * The reviser object attached to the forward propagation object.
 	 */
 	public Reviser reviser;
 
-	public PropagationForward(Solver solver) {
+	public Forward(Solver solver) {
 		super(solver);
 		this.reviser = Reflector.buildObject(cp().settingPropagation.classForRevisions, Reviser.class, this);
 	}

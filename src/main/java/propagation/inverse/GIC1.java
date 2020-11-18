@@ -6,7 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package propagation.order1.inverse;
+package propagation.inverse;
 
 import java.util.stream.Stream;
 
@@ -15,7 +15,7 @@ import constraints.extension.ExtensionSTR1;
 import constraints.extension.ExtensionSTR3;
 import heuristics.HeuristicVariables;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
-import propagation.order1.StrongConsistency;
+import propagation.StrongConsistency;
 import search.Solver;
 import search.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;

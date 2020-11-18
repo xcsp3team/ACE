@@ -18,7 +18,7 @@ import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import interfaces.TagShort;
 import problem.Problem;
-import propagation.order1.StrongConsistency;
+import propagation.StrongConsistency;
 import sets.SetDenseReversible;
 import utility.Kit;
 import variables.Variable;

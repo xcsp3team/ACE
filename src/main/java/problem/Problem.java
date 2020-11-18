@@ -161,7 +161,7 @@ import objectives.Optimizer.OptimizerBasic;
 import objectives.Optimizer.OptimizerDecreasing;
 import objectives.Optimizer.OptimizerDichotomic;
 import objectives.Optimizer.OptimizerIncreasing;
-import propagation.order1.PropagationForward;
+import propagation.Forward;
 import search.Solver;
 import utility.Enums.EExportMode;
 import utility.Kit;
@@ -498,7 +498,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final Constraint addUniversalConstraintDynamicallyBetween(Variable x, Variable y) {
 		assert x.getClass() == y.getClass();
 		assert !Stream.of(y.ctrs).anyMatch(c -> c.scp.length == 2 && c.involves(x));
-		assert solver.propagation instanceof PropagationForward;
+		assert solver.propagation instanceof Forward;
 
 		CtrAlone ca = extension(vars(x, y), new int[0][], false, DONT_KNOW);
 		Constraint c = (Constraint) ca.ctr; // (Constraint) buildCtrTrue(x, y).ctr;

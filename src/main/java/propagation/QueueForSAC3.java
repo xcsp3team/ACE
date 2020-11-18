@@ -6,7 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package propagation.structures.forSac;
+package propagation;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -20,7 +20,7 @@ import search.backtrack.SolverBacktrack;
 import utility.Reflector;
 import variables.Variable;
 
-public final class QueueOfCells {
+public final class QueueForSAC3 {
 
 	public final class Cell {
 		public Variable x;
@@ -214,7 +214,7 @@ public final class QueueOfCells {
 		return cell;
 	}
 
-	public QueueOfCells(SolverBacktrack solver, boolean priorityToSingletons) {
+	public QueueForSAC3(SolverBacktrack solver, boolean priorityToSingletons) {
 		this.solver = solver;
 		this.priorityToSingletons = priorityToSingletons;
 		positions = Stream.of(solver.pb.variables).map(x -> new Cell[x.dom.initSize()]).toArray(Cell[][]::new);
