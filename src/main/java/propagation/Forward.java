@@ -8,7 +8,6 @@
  */
 package propagation;
 
-import propagation.revisers.Reviser;
 import search.Solver;
 import search.backtrack.SolverBacktrack;
 import utility.Enums.EBranching;
@@ -24,7 +23,7 @@ public abstract class Forward extends Propagation {
 
 	public Forward(Solver solver) {
 		super(solver);
-		this.reviser = Reflector.buildObject(cp().settingPropagation.classForRevisions, Reviser.class, this);
+		this.reviser = Reflector.buildObject(settings.classForRevisions, Reviser.class, this);
 	}
 
 	protected final boolean hasSolverPropagatedAfterLastButOneDecision() {

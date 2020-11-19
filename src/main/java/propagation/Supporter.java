@@ -14,7 +14,7 @@ import constraints.Constraint;
 import constraints.extension.structures.Bits;
 import interfaces.FilteringSpecific;
 import interfaces.TagBinaryRelationFiltering;
-import propagation.revisers.Reviser3;
+import propagation.Reviser.Reviser3;
 import utility.Kit;
 import variables.Variable;
 

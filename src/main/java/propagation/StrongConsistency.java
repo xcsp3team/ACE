@@ -8,7 +8,6 @@
  */
 package propagation;
 
-import dashboard.ControlPanel.SettingPropagation;
 import search.Solver;
 import utility.Kit;
 import variables.Variable;
@@ -20,12 +19,9 @@ public abstract class StrongConsistency extends AC {
 
 	protected final int verbose;
 
-	protected SettingPropagation settings;
-
 	public StrongConsistency(Solver solver) {
 		super(solver);
 		this.verbose = solver.rs.cp.settingGeneral.verbose;
-		this.settings = solver.rs.cp.settingPropagation;
 		Kit.control(solver.observersSearch == null || solver.observersSearch.size() == 0);
 	}
 

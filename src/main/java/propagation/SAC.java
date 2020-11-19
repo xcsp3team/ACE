@@ -19,8 +19,7 @@ import search.backtrack.SolverBacktrack;
 import utility.Kit;
 import variables.Variable;
 
-// SAC1
-public class SAC extends StrongConsistency {
+public class SAC extends StrongConsistency { // SAC is SAC1
 
 	public int nFoundSingletons;
 

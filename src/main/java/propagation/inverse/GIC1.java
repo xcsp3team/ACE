@@ -14,7 +14,7 @@ import constraints.Constraint;
 import constraints.extension.ExtensionSTR1;
 import constraints.extension.ExtensionSTR3;
 import heuristics.HeuristicVariables;
-import heuristics.HeuristicVariablesDynamic.WdegVariant;
+import heuristics.HeuristicVariablesDynamic.WdegOnDom;
 import propagation.StrongConsistency;
 import search.Solver;
 import search.backtrack.SolverBacktrack;
@@ -25,7 +25,7 @@ import variables.Variable;
 
 public class GIC1 extends StrongConsistency {
 
-	protected HeuristicVariables variableHeuristicForInverse;
+	protected HeuristicVariables heuristic;
 
 	public int[] nInverseTests;
 	public int nITests;
@@ -34,12 +34,13 @@ public class GIC1 extends StrongConsistency {
 
 	public GIC1(Solver solver) {
 		super(solver);
-		Kit.control(cp().settingRestarts.cutoff == Long.MAX_VALUE, () -> "With Inverse, there is currently no possibility of restarts.");
+		this.heuristic = new WdegOnDom((SolverBacktrack) solver, false);
+		this.nInverseTests = new int[solver.pb.variables.length + 1];
+		this.baseNbSolutionsLimit = solver.solManager.limit;
+		Kit.control(solver.rs.cp.settingRestarts.cutoff == Long.MAX_VALUE, () -> "With GIC, there is currently no possibility of restarts.");
 		Kit.control(!Stream.of(solver.pb.constraints).anyMatch(c -> c.getClass().isAssignableFrom(ExtensionSTR3.class)),
-				() -> "Inverse currently not compatible with STR3");
-		variableHeuristicForInverse = new WdegVariant.WdegOnDom((SolverBacktrack) solver, false);
-		nInverseTests = new int[solver.pb.variables.length + 1];
-		baseNbSolutionsLimit = solver.solManager.limit;
+				() -> "GIC currently not compatible with STR3");
+
 	}
 
 	protected void handleNewSolution(Variable x, int a) {
@@ -51,7 +52,7 @@ public class GIC1 extends StrongConsistency {
 		solver.resetNoSolutions();
 		solver.assign(x, a);
 		HeuristicVariables h = ((SolverBacktrack) solver).heuristicVars;
-		((SolverBacktrack) solver).heuristicVars = variableHeuristicForInverse;
+		((SolverBacktrack) solver).heuristicVars = heuristic;
 		solver.solManager.limit = 1;
 		boolean inverse = enforceArcConsistencyAfterAssignment(x) && solver.doRun().stoppingType == EStopping.REACHED_GOAL;
 		solver.solManager.limit = baseNbSolutionsLimit;

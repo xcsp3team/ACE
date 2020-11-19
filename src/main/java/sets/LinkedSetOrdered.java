@@ -371,17 +371,17 @@ public class LinkedSetOrdered implements LinkedSet {
 
 	public static final class LinkedSetOrderedWithBits2 extends LinkedSetOrderedWithBits {
 
-		public final SetSparse sset;
+		public final SetSparse set;
 
 		public LinkedSetOrderedWithBits2(int initSize) {
 			super(initSize);
-			sset = new SetSparse(binaryRepresentation.length, true);
+			set = new SetSparse(binaryRepresentation.length, true);
 		}
 
 		@Override
 		protected void addElement(int a) {
 			super.addElement(a);
-			sset.add(a / Long.SIZE);
+			set.add(a / Long.SIZE);
 
 		}
 
@@ -390,7 +390,7 @@ public class LinkedSetOrdered implements LinkedSet {
 			super.removeElement(a);
 			int i = a / Long.SIZE;
 			if (binaryRepresentation[i] == 0)
-				sset.remove(i);
+				set.remove(i);
 		}
 	}
 

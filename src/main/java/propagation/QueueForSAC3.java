@@ -13,9 +13,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import heuristics.HeuristicVariables;
-import heuristics.HeuristicVariablesDynamic.DdegOnDom;
-import heuristics.HeuristicVariablesDynamic.Dom;
-import heuristics.HeuristicVariablesDynamic.WdegVariant;
+import heuristics.HeuristicVariablesDynamic.WdegOnDom;
 import search.backtrack.SolverBacktrack;
 import utility.Reflector;
 import variables.Variable;
@@ -44,32 +42,42 @@ public final class QueueForSAC3 {
 		Cell select();
 	}
 
-	public final class FifoSelector implements CellSelector {
+	public final class Fifo implements CellSelector {
 		@Override
 		public Cell select() {
 			if (priorityToSingletons) {
-				Cell cell = getFirstSingletonCell();
+				Cell cell = firstSingletonCell();
 				if (cell != null)
 					return cell;
 			}
-			return getFirstValidCell();
+			for (Cell cell = head; cell != null; cell = cell.next) // first valid cell
+				if (cell.x.dom.isPresent(cell.a))
+					return cell;
+			return null;
 		}
 	}
 
-	public final class LifoSelector implements CellSelector {
+	public final class Lifo implements CellSelector {
 		@Override
 		public Cell select() {
 			if (priorityToSingletons) {
-				Cell cell = getFirstSingletonCell();
+				Cell cell = firstSingletonCell();
 				if (cell != null)
 					return cell;
 			}
-			return getLastValidCell();
+			for (Cell cell = tail; cell != null; cell = cell.prev) // last valid cell
+				if (cell.x.dom.isPresent(cell.a))
+					return cell;
+			return null;
 		}
 	}
 
-	private abstract class VariableIteratingSelector implements CellSelector {
-		protected abstract double evaluate(Variable x);
+	public final class CellIterator implements CellSelector {
+		protected HeuristicVariables heuristic;
+
+		public CellIterator() {
+			this.heuristic = new WdegOnDom(solver, false); // hard coding ; alternatives: null, new Dom(solver, false), new DdegOnDom(solver, false) ...
+		}
 
 		@Override
 		public Cell select() {
@@ -83,7 +91,7 @@ public final class QueueForSAC3 {
 					if (cell != null)
 						return cell;
 				} else {
-					double evaluation = evaluate(x);
+					double evaluation = heuristic == null ? sizes[x.num] : heuristic.scoreOptimizedOf(x);
 					if (bestCell == null || evaluation > bestEvaluation) {
 						for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
 							Cell cell = positions[x.num][a];
@@ -100,40 +108,6 @@ public final class QueueForSAC3 {
 		}
 	}
 
-	public final class SizeSelector extends VariableIteratingSelector {
-		@Override
-		protected double evaluate(Variable x) {
-			return sizes[x.num];
-		}
-	}
-
-	private abstract class HeuristicSelector extends VariableIteratingSelector {
-		protected HeuristicVariables varHeuristic;
-
-		@Override
-		protected double evaluate(Variable x) {
-			return varHeuristic.scoreOptimizedOf(x);
-		}
-	}
-
-	public final class DomSelector extends HeuristicSelector {
-		public DomSelector() {
-			varHeuristic = new Dom(solver, false);
-		}
-	}
-
-	public final class DdegOnDomSelector extends HeuristicSelector {
-		public DdegOnDomSelector() {
-			varHeuristic = new DdegOnDom(solver, false);
-		}
-	}
-
-	public final class WdegOnDomSelector extends HeuristicSelector {
-		public WdegOnDomSelector() {
-			varHeuristic = new WdegVariant.WdegOnDom(solver, false);
-		}
-	}
-
 	private SolverBacktrack solver;
 
 	private boolean priorityToSingletons;
@@ -143,9 +117,9 @@ public final class QueueForSAC3 {
 
 	public int size;
 
-	private Cell[][] positions; // 1D = variable id; 2D = index;
+	private Cell[][] positions;
 
-	private int[] sizes; // 1D = variable id
+	private int[] sizes;
 
 	private CellSelector cellSelector;
 
@@ -160,32 +134,18 @@ public final class QueueForSAC3 {
 
 	public void setPriorityOf(Variable x) {
 		assert priorityCell == null;
-		if (sizes[x.num] != 0) {
-			for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
-				Cell cell = positions[x.num][a];
-				if (cell != null) {
-					priorityCell = cell;
-					break;
-				}
+		if (sizes[x.num] == 0)
+			return;
+		for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
+			Cell cell = positions[x.num][a];
+			if (cell != null) {
+				priorityCell = cell;
+				break;
 			}
 		}
 	}
 
-	public Cell getFirstValidCell() {
-		for (Cell cell = head; cell != null; cell = cell.next)
-			if (cell.x.dom.isPresent(cell.a))
-				return cell;
-		return null;
-	}
-
-	public Cell getLastValidCell() {
-		for (Cell cell = tail; cell != null; cell = cell.prev)
-			if (cell.x.dom.isPresent(cell.a))
-				return cell;
-		return null;
-	}
-
-	private Cell getFirstSingletonCell() {
+	private Cell firstSingletonCell() {
 		for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 			if (x.dom.size() == 1) {
 				Cell cell = positions[x.num][x.dom.first()];
@@ -196,33 +156,24 @@ public final class QueueForSAC3 {
 		return null;
 	}
 
-	public Cell getNextCell() {
+	public Cell pickNextCell() {
 		if (size == 0)
 			return null;
-		if (priorityCell != null) {
-			Cell cell = priorityCell;
-			priorityCell = null;
-			return cell;
-		}
-		return cellSelector.select();
-	}
-
-	public Cell pickNextCell() {
-		Cell cell = getNextCell();
+		Cell cell = priorityCell != null ? priorityCell : cellSelector.select();
+		priorityCell = null;
 		if (cell != null)
 			remove(cell);
-		return cell;
+		return cell; // even if removed, fields x and a are still operational (if cell is not null)
 	}
 
 	public QueueForSAC3(SolverBacktrack solver, boolean priorityToSingletons) {
 		this.solver = solver;
 		this.priorityToSingletons = priorityToSingletons;
-		positions = Stream.of(solver.pb.variables).map(x -> new Cell[x.dom.initSize()]).toArray(Cell[][]::new);
+		this.positions = Stream.of(solver.pb.variables).map(x -> new Cell[x.dom.initSize()]).toArray(Cell[][]::new);
 		IntStream.range(0, Variable.nInitValuesFor(solver.pb.variables)).forEach(i -> trash = new Cell(trash));
-		sizes = new int[solver.pb.variables.length];
+		this.sizes = new int[solver.pb.variables.length];
 		String s = solver.rs.cp.settingPropagation.classForSACSelector.substring(solver.rs.cp.settingPropagation.classForSACSelector.lastIndexOf('$') + 1);
-		cellSelector = Reflector.buildObject(s, CellSelector.class, this);
-		// this is needed when calling an intern class constructor by reflection
+		this.cellSelector = Reflector.buildObject(s, CellSelector.class, this);
 	}
 
 	public void clear() {
@@ -287,14 +238,14 @@ public final class QueueForSAC3 {
 
 	public void fill(boolean onlyBounds) {
 		clear();
-		solver.futVars.execute(x -> {
+		for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 			if (onlyBounds) {
 				add(x, x.dom.first());
 				add(x, x.dom.last());
 			} else
 				for (int a = x.dom.first(); a != -1; a = x.dom.next(a))
 					add(x, a);
-		});
+		}
 	}
 
 	public void fill() {

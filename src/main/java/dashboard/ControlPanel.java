@@ -52,10 +52,9 @@ import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.TagExperimental;
 import interfaces.TagInvisible;
 import propagation.AC;
-import propagation.QueueForSAC3.WdegOnDomSelector;
-import propagation.revisers.Reviser;
-import propagation.revisers.Reviser1;
-import propagation.revisers.Reviser3;
+import propagation.Reviser;
+import propagation.QueueForSAC3.CellIterator;
+import propagation.Reviser.Reviser3;
 import search.SolutionManager;
 import search.backtrack.RestarterLNS.HeuristicFreezing;
 import search.backtrack.RestarterLNS.HeuristicFreezing.Rand;
@@ -477,7 +476,7 @@ public class ControlPanel {
 		public boolean strongOnlyAtPreprocessing = addB("strongOnlyAtPreprocessing", "sop", false, "");
 		public final boolean strongOnlyWhenACEffective = addB("strongOnlyWhenACEffective", "soe", false, "");
 		public final boolean strongOnlyWhenNotSingleton = addB("strongOnlyWhenNotSingleton", "sons", true, "");
-		public final String classForSACSelector = addS("classForSACSelector", "csac", WdegOnDomSelector.class, "");
+		public final String classForSACSelector = addS("classForSACSelector", "csac", CellIterator.class, "");
 		public final int weakCutoff = addI("weakCutoff", "wc", 15, "");
 		public final String classForFailedValues = addS("classForFailedValues", "fvc", "", "", HIDDEN);
 	}
@@ -678,7 +677,7 @@ public class ControlPanel {
 	public final SettingHardCoding settingHardCoding = new SettingHardCoding();
 
 	public final boolean mustBuildConflictStructures = settings.addB(3, "constraints", "mustBuildConflictStructures", "mbcs",
-			!settingPropagation.classForRevisions.equals(Reviser1.class.getSimpleName())
+			!settingPropagation.classForRevisions.equals(Reviser.class.getSimpleName())
 					|| (!settingValh.classForValHeuristic.equals(First.class.getSimpleName())
 							&& !settingValh.classForValHeuristic.equals(Last.class.getSimpleName())),
 			"");

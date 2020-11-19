@@ -198,7 +198,7 @@ public final class Bits extends ExtensionStructure {
 
 	public Bits(Constraint ctr) {
 		super(ctr);
-		assert (ctr.scp.length == 2);
+		Kit.control(ctr.scp.length == 2);
 	}
 
 	public Bits(Constraint ctr, Bits bits) {

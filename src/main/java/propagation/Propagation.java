@@ -14,6 +14,7 @@ import java.util.stream.IntStream;
 import constraints.Constraint;
 import constraints.Constraint.CtrGlobal;
 import dashboard.ControlPanel;
+import dashboard.ControlPanel.SettingPropagation;
 import interfaces.ObserverConflicts;
 import problem.Problem;
 import search.Solver;
@@ -88,6 +89,8 @@ public abstract class Propagation {
 
 	public int nTuplesRemoved;
 
+	protected final SettingPropagation settings;
+
 	/*************************************************************************
 	 * Methods
 	 *************************************************************************/
@@ -150,9 +153,11 @@ public abstract class Propagation {
 
 	public Propagation(Solver solver) {
 		this.solver = solver;
+		this.settings = solver.rs.cp.settingPropagation;
 		this.queue = this instanceof Forward ? new Queue((Forward) this) : null;
-		int nAuxQueues = cp().settingPropagation.useAuxiliaryQueues ? Constraint.MAX_FILTERING_COMPLEXITY : 0;
+		int nAuxQueues = settings.useAuxiliaryQueues ? Constraint.MAX_FILTERING_COMPLEXITY : 0;
 		this.auxiliaryQueues = this instanceof Forward ? SetSparseMap.buildArray(nAuxQueues, solver.pb.constraints.length) : null;
+
 	}
 
 	/**
