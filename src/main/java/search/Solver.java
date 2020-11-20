@@ -16,12 +16,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import executables.Resolution;
 import interfaces.ObserverAssignment;
 import interfaces.ObserverConflicts;
 import interfaces.ObserverRuns;
 import interfaces.ObserverSearch;
 import interfaces.TagBinaryRelationFiltering;
+import main.Head;
 import problem.Problem;
 import propagation.Propagation;
 import search.statistics.Statistics;
@@ -50,12 +50,12 @@ public abstract class Solver {
 	/**
 	 * The main object
 	 */
-	public final Resolution rs;
+	public final Head head;
 
 	/**
 	 * The problem to be solved
 	 */
-	public final Problem pb;
+	public final Problem problem;
 
 	public final FutureVariables futVars;
 
@@ -71,26 +71,26 @@ public abstract class Solver {
 	/**
 	 * when null, the solver is still running
 	 */
-	public EStopping stoppingType;
+	public EStopping stopping;
 
 	public Statistics stats;
 
 	public final boolean isFullExploration() {
-		return stoppingType == FULL_EXPLORATION;
+		return stopping == FULL_EXPLORATION;
 	}
 
 	public final boolean finished() {
-		if (stoppingType != null)
+		if (stopping != null)
 			return true;
-		if (rs.isTimeExpiredForCurrentInstance()) {
-			stoppingType = EXCEEDED_TIME;
+		if (head.isTimeExpiredForCurrentInstance()) {
+			stopping = EXCEEDED_TIME;
 			return true;
 		}
 		return false;
 	}
 
 	public final void resetNoSolutions() {
-		stoppingType = null;
+		stopping = null;
 		solManager.found = 0;
 	}
 
@@ -106,19 +106,19 @@ public abstract class Solver {
 	 * Constructor + methods
 	 *********************************************************************************************/
 
-	public Solver(Resolution resolution) {
-		this.rs = resolution;
-		this.pb = resolution.problem;
-		this.pb.solver = this;
-		this.futVars = new FutureVariables(pb.variables);
-		this.solManager = new SolutionManager(this, resolution.cp.settingGeneral.nSearchedSolutions); // build solutionManager before propagation
+	public Solver(Head head) {
+		this.head = head;
+		this.problem = head.problem;
+		this.problem.solver = this;
+		this.futVars = new FutureVariables(problem.variables);
+		this.solManager = new SolutionManager(this, head.control.settingGeneral.nSearchedSolutions); // build solutionManager before propagation
 		this.propagation = Propagation.buildFor(this); // may be null
-		if (!resolution.cp.settingPropagation.useAuxiliaryQueues)
-			Stream.of(pb.constraints).forEach(c -> c.filteringComplexity = 0);
+		if (!head.control.settingPropagation.useAuxiliaryQueues)
+			Stream.of(problem.constraints).forEach(c -> c.filteringComplexity = 0);
 		this.restarter = Restarter.buildFor(this);
-		this.observersSearch = Stream.of(pb.constraints).filter(c -> c instanceof ObserverSearch).map(c -> (ObserverSearch) c)
+		this.observersSearch = Stream.of(problem.constraints).filter(c -> c instanceof ObserverSearch).map(c -> (ObserverSearch) c)
 				.collect(Collectors.toCollection(ArrayList::new));
-		observersSearch.add(resolution.output);
+		observersSearch.add(head.output);
 	}
 
 	/**
@@ -138,7 +138,7 @@ public abstract class Solver {
 		for (ObserverSearch observer : observersSearch)
 			observer.beforePreprocessing();
 		if (propagation.runInitially() == false)
-			stoppingType = FULL_EXPLORATION;
+			stopping = FULL_EXPLORATION;
 		for (ObserverSearch observer : observersSearch)
 			observer.afterPreprocessing();
 	}
@@ -174,7 +174,7 @@ public abstract class Solver {
 			// }
 			// }
 
-			if (stoppingType != FULL_EXPLORATION) // an observer might modify the object stoppingType
+			if (stopping != FULL_EXPLORATION) // an observer might modify the object stoppingType
 				doRun();
 
 			// if (b)
@@ -193,11 +193,11 @@ public abstract class Solver {
 	public void solve() {
 		for (ObserverSearch observer : observersSearch)
 			observer.beforeSolving();
-		if (Variable.firstWipeoutVariableIn(pb.variables) != null)
-			stoppingType = FULL_EXPLORATION;
-		if (!finished() && rs.cp.settingSolving.enablePrepro)
+		if (Variable.firstWipeoutVariableIn(problem.variables) != null)
+			stopping = FULL_EXPLORATION;
+		if (!finished() && head.control.settingSolving.enablePrepro)
 			doPrepro();
-		if (!finished() && rs.cp.settingSolving.enableSearch)
+		if (!finished() && head.control.settingSolving.enableSearch)
 			doSearch();
 		for (ObserverSearch observer : observersSearch)
 			observer.afterSolving();

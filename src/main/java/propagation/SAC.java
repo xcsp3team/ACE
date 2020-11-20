@@ -111,7 +111,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 	}
 
 	protected final void displayPassInfo(int cnt, long nEffective, boolean lastMessage) {
-		Kit.log.info("Singleton Pass " + cnt + " nEfectiveTests=" + nEffective + " nbValuesRemoved=" + Variable.nRemovedValuesFor(solver.pb.variables)
+		Kit.log.info("Singleton Pass " + cnt + " nEfectiveTests=" + nEffective + " nbValuesRemoved=" + Variable.nRemovedValuesFor(solver.problem.variables)
 				+ (lastMessage ? "\n" : ""));
 	}
 
@@ -263,7 +263,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				assert !x.isAssigned() && x.dom.isPresent(a) && queue.isEmpty();
 				solver.assign(x, a);
 				if (enforceArcConsistencyAfterAssignment(x)) {
-					if (solver.depth() == solver.pb.variables.length && stopSACWhenFoundSolution)
+					if (solver.depth() == solver.problem.variables.length && stopSACWhenFoundSolution)
 						solver.solManager.handleNewSolution(true);
 				} else {
 					solver.backtrack(x);
@@ -333,7 +333,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			private BestScoredVariable bestScoredVariable = new BestScoredVariable();
 
 			private QueueESAC() {
-				this.uncheckedVars = new Variable[solver.pb.variables.length];
+				this.uncheckedVars = new Variable[solver.problem.variables.length];
 			}
 
 			public void initialize() {
@@ -387,9 +387,8 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			// DomThenDDeg((BacktrackSearchSolver) solver, OptimizationType.MIN),
 			// new WDegOnDom((BacktrackSearchSolver) solver, OptimizationType.MAX)
 			// };
-			this.shavingEvaluator = cp().settingShaving.ratio != 0
-					? new ShavingEvaluator(solver.pb.variables.length, cp().settingShaving.alpha, cp().settingShaving.ratio)
-					: null;
+			double ratio = solver.head.control.settingShaving.ratio, alpha = solver.head.control.settingShaving.alpha;
+			this.shavingEvaluator = ratio != 0 ? new ShavingEvaluator(solver.problem.variables.length, alpha, ratio) : null;
 		}
 
 		private void makeSelection() {
@@ -412,7 +411,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				nSingletonTests++;
 				solver.assign(currSelectedVar, currSelectedIdx);
 				if (enforceArcConsistencyAfterAssignment(currSelectedVar)) {
-					if (solver.depth() == solver.pb.variables.length) {
+					if (solver.depth() == solver.problem.variables.length) {
 						solver.solManager.handleNewSolution(true);
 						finished = true;
 					}

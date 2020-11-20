@@ -21,12 +21,12 @@ import org.w3c.dom.Element;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
-import executables.Resolution;
 import interfaces.ObserverConstruction;
 import interfaces.ObserverRuns;
 import interfaces.ObserverSearch;
+import main.Head;
 import problem.ProblemStuff.MapAtt;
-import propagation.AC;
+import propagation.GAC;
 import utility.DocumentHandler;
 import utility.Enums.TypeOutput;
 import utility.Kit;
@@ -221,7 +221,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	 * Fields and methods
 	 *********************************************************************************************/
 
-	private final Resolution resolution;
+	private final Head resolution;
 
 	private Document document;
 
@@ -231,17 +231,15 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 
 	public static final String COMMENT_PREFIX = "  ";
 
-	public Output(Resolution resolution, String configFileName) {
+	public Output(Head resolution, String configFileName) {
 		this.resolution = resolution;
-		if (resolution.cp.settingXml.dirForCampaign.equals(EMPTY_STRING) == false) {
+		if (resolution.control.settingXml.dirForCampaign.equals(EMPTY_STRING) == false) {
 			document = DocumentHandler.createNewDocument();
 			root = document.createElement(TypeOutput.RESOLUTIONS.toString());
 			root.setAttribute(Output.CONFIGURATION_FILE_NAME, configFileName);
 			document.appendChild(root);
 			document.normalize();
 		}
-
-		System.out.println("hhhhhhh " + Kit.date());
 	}
 
 	public String outputFileNameFrom(String fullInstanceName, String configurationFileName) {
@@ -279,7 +277,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		MapAtt ia = resolution.problem.stuff.instanceAttributes(resolution.instanceNumber);
 		if (outputFileName == null) {
 			String name = ia.entries().stream().filter(e -> e.getKey().equals(Output.NAME)).map(e -> e.getValue().toString()).findFirst().get();
-			outputFileName = outputFileNameFrom(name, resolution.cp.settingsFilename);
+			outputFileName = outputFileNameFrom(name, resolution.control.settingsFilename);
 		}
 		Kit.log.config(ia.toString() + "\n");
 		record(TypeOutput.INSTANCE, ia.entries(), resolElt);
@@ -307,7 +305,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	@Override
 	public void onConstructionSolverFinished() {
 		MapAtt sa = new MapAtt("Solver");
-		if (resolution.solver.propagation.getClass() == AC.class)
+		if (resolution.solver.propagation.getClass() == GAC.class)
 			sa.put(Output.GUARANTEED_GAC, Constraint.isGuaranteedGAC(resolution.problem.constraints));
 		sa.separator();
 		sa.put(Output.WCK, resolution.instanceStopwatch.wckTimeInSeconds());
@@ -342,7 +340,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		if (document == null)
 			return null;
 		root.setAttribute(Output.TOTAL_WCK_TIME, totalWck + "");
-		String dirName = resolution.cp.settingXml.dirForCampaign + File.separator + Output.RESULTS_DIRECTORY_NAME;
+		String dirName = resolution.control.settingXml.dirForCampaign + File.separator + Output.RESULTS_DIRECTORY_NAME;
 		File file = new File(dirName);
 		if (!file.exists())
 			file.mkdirs();

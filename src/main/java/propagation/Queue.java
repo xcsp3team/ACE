@@ -16,6 +16,7 @@ import heuristics.HeuristicRevisions;
 import heuristics.HeuristicRevisions.HeuristicRevisionsDirect.First;
 import learning.LearnerNogoods;
 import learning.LearnerStatesDominance;
+import main.Head;
 import sets.SetSparse;
 import utility.Reflector;
 import variables.Domain;
@@ -36,12 +37,13 @@ public final class Queue extends SetSparse {
 	public int nPicks;
 
 	public Queue(Forward propagation) {
-		super(propagation.pb().variables.length);
+		super(propagation.solver.head.problem.variables.length);
 		this.propagation = propagation;
-		String className = propagation.pb().stuff.maxDomSize() <= 4 ? First.class.getSimpleName() : propagation.cp().settingRevh.classForRevHeuristic;
-		Set<Class<?>> classes = propagation.solver.rs.handlerClasses.map.get(HeuristicRevisions.class);
-		this.heuristic = Reflector.buildObject(className, classes, this, propagation.cp().settingRevh.anti);
-		this.variables = propagation.pb().variables;
+		Head head = propagation.solver.head;
+		String className = head.problem.stuff.maxDomSize() <= 4 ? First.class.getSimpleName() : head.control.settingRevh.classForRevHeuristic;
+		Set<Class<?>> classes = head.handlerClasses.map.get(HeuristicRevisions.class);
+		this.heuristic = Reflector.buildObject(className, classes, this, head.control.settingRevh.anti);
+		this.variables = head.problem.variables;
 	}
 
 	/**
@@ -142,7 +144,7 @@ public final class Queue extends SetSparse {
 
 	public void setStateDominanceManager(LearnerStatesDominance stateDominanceManager) {
 		this.stateDominanceManager = stateDominanceManager;
-		this.absentValuesSentinel = new int[propagation.solver.pb.variables.length];
+		this.absentValuesSentinel = new int[propagation.solver.problem.variables.length];
 		this.sentinelLevel = new long[absentValuesSentinel.length];
 	}
 

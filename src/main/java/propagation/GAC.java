@@ -17,7 +17,7 @@ import constraints.Constraint;
 import search.Solver;
 import variables.Variable;
 
-public class AC extends Forward {
+public class GAC extends Forward {
 
 	/**
 	 * Indicates if GAC is guaranteed, either by a generic scheme that does not requires to wait for a certain number of assigned, or by a global constraint.
@@ -34,20 +34,20 @@ public class AC extends Forward {
 	 */
 	// public final FailedValueBasedConsistency fvbc;
 
-	public AC(Solver solver) {
+	public GAC(Solver solver) {
 		super(solver);
-		this.guaranteed = Constraint.isGuaranteedGAC(solver.pb.constraints);
-		// this.fvbc = FailedValueBasedConsistency.buildFor(cp().settingPropagation.classForFailedValues, this)
+		this.guaranteed = Constraint.isGuaranteedGAC(solver.problem.constraints);
+		// this.fvbc = FailedValueBasedConsistency.buildFor(settings.classForFailedValues, this)
 	}
 
 	/**
 	 * Can be called by subclasses to enforce AC.
 	 */
 	public final boolean enforceArcConsistency() {
-		int nBefore = pb().nValuesRemoved;
+		int nBefore = solver.problem.nValuesRemoved;
 		queue.fill();
 		boolean consistent = propagate();
-		nPreproRemovals = pb().nValuesRemoved - nBefore;
+		nPreproRemovals = solver.problem.nValuesRemoved - nBefore;
 		if (!consistent)
 			return false;
 		assert controlArcConsistency();
@@ -64,7 +64,7 @@ public class AC extends Forward {
 	 */
 	public final boolean enforceArcConsistencyAfterAssignment(Variable x) {
 		assert x.isAssigned() && queue.size() == 0 : queue.size() + " " + x.isAssigned(); // (queue.size() == 0 || this instanceof PropagationIsomorphism)
-		if (getClass() != AC.class || x.dom.isModifiedAtCurrentDepth() || !guaranteed || !hasSolverPropagatedAfterLastButOneDecision()) {
+		if (getClass() != GAC.class || x.dom.isModifiedAtCurrentDepth() || !guaranteed || !hasSolverPropagatedAfterLastButOneDecision()) {
 			queue.add(x);
 			if (propagate() == false)
 				return false;
@@ -86,8 +86,8 @@ public class AC extends Forward {
 		if (!super.runAfterRefutation(x))
 			return false;
 		// Todo also checking the objective when not in the phase following a new solution
-		assert !guaranteed || Stream.of(solver.pb.constraints)
-				.allMatch(c -> solver.pb.settings.framework == TypeFramework.COP && c == solver.pb.optimizer.ctr || c.controlArcConsistency());
+		assert !guaranteed || Stream.of(solver.problem.constraints)
+				.allMatch(c -> solver.problem.settings.framework == TypeFramework.COP && c == solver.problem.optimizer.ctr || c.controlArcConsistency());
 		// assert controlArcConsistency();
 		return true;
 	}
@@ -98,6 +98,6 @@ public class AC extends Forward {
 	}
 
 	public final boolean controlArcConsistency() {
-		return !guaranteed || Stream.of(solver.pb.constraints).allMatch(c -> c.controlArcConsistency());
+		return !guaranteed || Stream.of(solver.problem.constraints).allMatch(c -> c.controlArcConsistency());
 	}
 }

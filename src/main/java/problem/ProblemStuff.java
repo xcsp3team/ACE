@@ -180,7 +180,7 @@ public final class ProblemStuff {
 	Set<String> discardedScps = new HashSet<>();
 
 	public final boolean mustDiscard(IVar x) {
-		Object[] selectedVars = pb.rs.cp.settingVars.selectedVars;
+		Object[] selectedVars = pb.head.control.settingVars.selectedVars;
 		if (selectedVars.length == 0)
 			return false;
 		int num = collectedVarsAtInit.size() + discardedVars.size();
@@ -191,7 +191,7 @@ public final class ProblemStuff {
 	}
 
 	public final boolean mustDiscard(IVar[] scp) {
-		if (pb.rs.cp.settingVars.selectedVars.length == 0)
+		if (pb.head.control.settingVars.selectedVars.length == 0)
 			return false;
 		boolean mustDiscard = Stream.of(scp).map(x -> x.id()).anyMatch(id -> discardedVars.contains(id));
 		if (mustDiscard)
@@ -252,7 +252,7 @@ public final class ProblemStuff {
 	}
 
 	private void printNumber(int n) {
-		if (pb.rs.cp.settingGeneral.verbose > 1 && !pb.rs.cp.settingXml.competitionMode) {
+		if (pb.head.control.settingGeneral.verbose > 1 && !pb.head.control.settingXml.competitionMode) {
 			int nDigits = (int) Math.log10(n) + 1;
 			IntStream.range(0, nDigits).forEach(i -> System.out.print("\b")); // we need to discard previous characters
 			System.out.print((n + 1) + "");
@@ -310,7 +310,7 @@ public final class ProblemStuff {
 
 	protected ProblemStuff(Problem problem) {
 		this.pb = problem;
-		boolean verbose = problem.rs.cp.settingGeneral.verbose > 1;
+		boolean verbose = problem.head.control.settingGeneral.verbose > 1;
 		varDegrees = new Repartitioner<>(verbose);
 		domSizes = new Repartitioner<>(verbose);
 		ctrArities = new Repartitioner<>(verbose);
@@ -412,12 +412,12 @@ public final class ProblemStuff {
 		MapAtt m = new MapAtt("Instance");
 		m.put(NAME, pb.name());
 		// m.put(FRAMEWORK, pb.framework);
-		SettingOptimization opt = pb.rs.cp.settingOptimization;
+		SettingOptimization opt = pb.head.control.settingOptimization;
 		m.put("bounds", (opt.lowerBound == Long.MIN_VALUE ? "-infty" : opt.lowerBound) + ".." + (opt.upperBound == Long.MAX_VALUE ? "+infty" : opt.upperBound),
 				pb.settings.framework == TypeFramework.COP);
 		m.put(NUMBER, instanceNumber, Arguments.nInstancesToSolve > 1);
 		// m.put(PARAMETERS, pb.formattedPbParameters(), instanceNumber == 0 && !Arguments.problemPackageName.equals(XCSP2.class.getName()));
-		SettingVars settings = pb.rs.cp.settingVars;
+		SettingVars settings = pb.head.control.settingVars;
 		if (settings.selectedVars.length > 0 || settings.instantiatedVars.length > 0 || settings.priorityVars.length > 0) {
 			m.separator();
 			m.put("selection", Stream.of(settings.selectedVars).map(o -> o.toString()).collect(Collectors.joining(",")), settings.selectedVars.length > 0);
@@ -501,8 +501,8 @@ public final class ProblemStuff {
 			m.putPositive(N_SHARED_BINARY_REPRESENTATIONS, nSharedBinaryRepresentations);
 		}
 		m.separator();
-		m.put("wck", pb.rs.instanceStopwatch.wckTimeInSeconds());
-		m.put("cpu", pb.rs.stopwatch.cpuTimeInSeconds());
+		m.put("wck", pb.head.instanceStopwatch.wckTimeInSeconds());
+		m.put("cpu", pb.head.stopwatch.cpuTimeInSeconds());
 		m.put(MEM, Kit.memoryInMb());
 		// m.putPositive( COMPRESSION, TableCompressed3.compression);
 		return m;

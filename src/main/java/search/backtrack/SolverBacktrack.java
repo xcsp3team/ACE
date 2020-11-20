@@ -26,7 +26,6 @@ import org.xcsp.common.Constants;
 
 import constraints.Constraint;
 import constraints.Constraint.CtrGlobal;
-import executables.Resolution;
 import heuristics.HeuristicValuesDynamic.Failures;
 import heuristics.HeuristicVariables;
 import interfaces.ObserverAssignment;
@@ -37,6 +36,7 @@ import interfaces.Optimizable;
 import learning.LearnerNogoods;
 import learning.LearnerStates;
 import learning.NogoodMinimizer;
+import main.Head;
 import propagation.Forward;
 import search.Solver;
 import search.statistics.Statistics.StatisticsBacktrack;
@@ -85,7 +85,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 				}
 			}
 			String[] t = s.split(Constants.REG_WS);
-			int p = t.length, n = pb.variables.length;
+			int p = t.length, n = problem.variables.length;
 			Kit.control(1 < p && p <= n, () -> p + " vs " + n + (p == 1 ? " did you control the path for the file?" : ""));
 			if (p < n) {
 				Kit.log.warning("Missing values are completed with * (for presumably auxiliary variables). Is that correct?");
@@ -96,7 +96,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 				if (t[i].equals("*"))
 					sol[i] = -1;
 				else {
-					int a = pb.variables[i].dom.toPresentIdx(Integer.parseInt(t[i]));
+					int a = problem.variables[i].dom.toPresentIdx(Integer.parseInt(t[i]));
 					Kit.control(a != -1);
 					sol[i] = a;
 				}
@@ -115,12 +115,12 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		int currSize;
 
 		RunProgressSaver() {
-			this.prevLongestRunBranch = new int[pb.variables.length];
-			this.currLongestRunBranch = new int[pb.variables.length];
+			this.prevLongestRunBranch = new int[problem.variables.length];
+			this.currLongestRunBranch = new int[problem.variables.length];
 		}
 
 		boolean desactivated() {
-			return solManager.found > 0 && rs.cp.settingValh.solutionSaving;
+			return solManager.found > 0 && head.control.settingValh.solutionSaving;
 		}
 
 		void manageEmptyDomainBeforeBacktracking() {
@@ -130,7 +130,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			if (d >= currSize) {
 				currSize = d;
 				for (int i = 0; i < prevLongestRunBranch.length; i++)
-					prevLongestRunBranch[i] = pb.variables[i].dom.size() == 1 ? pb.variables[i].dom.unique() : -1;
+					prevLongestRunBranch[i] = problem.variables[i].dom.size() == 1 ? problem.variables[i].dom.unique() : -1;
 				// System.out.println("new " + Kit.join(prevLongestRunBranch));
 			}
 		}
@@ -194,14 +194,14 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 				return false;
 			if (top >= 0)
 				if (stack[top] instanceof Variable) {
-					Variable x = Stream.of(solver.pb.variables).filter(y -> !(y.dom instanceof DomainInfinite) && y.lastModificationDepth() >= depth)
+					Variable x = Stream.of(solver.problem.variables).filter(y -> !(y.dom instanceof DomainInfinite) && y.lastModificationDepth() >= depth)
 							.findFirst().orElse(null);
 					if (x != null) {
 						System.out.println("Pb with " + x);
 						x.dom.display(true);
 						return false;
 					}
-				} else if (Stream.of(solver.pb.constraints).anyMatch(c -> c.extStructure() instanceof ObserverBacktrackingUnsystematic
+				} else if (Stream.of(solver.problem.constraints).anyMatch(c -> c.extStructure() instanceof ObserverBacktrackingUnsystematic
 						&& ((ObserverBacktrackingUnsystematic) c.extStructure()).lastModificationDepth() >= depth))
 					return false;
 			return true;
@@ -215,7 +215,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 		public Proofer(LearnerStates learner) {
 			this.active = learner != null && learnerStates.reductionOperator.enablePElimination();
-			this.proofVariables = this.active ? new boolean[pb.variables.length + 1][pb.variables.length] : null;
+			this.proofVariables = this.active ? new boolean[problem.variables.length + 1][problem.variables.length] : null;
 		}
 
 		public boolean[] getProofVariablesAt(int depth) {
@@ -247,7 +247,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		public void recopy() {
 			if (active) {
 				int d = depth();
-				for (int i = pb.variables.length - 1; i >= 0; i--)
+				for (int i = problem.variables.length - 1; i >= 0; i--)
 					if (proofVariables[d + 1][i])
 						proofVariables[d][i] = true;
 			}
@@ -302,7 +302,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	private List<ObserverBacktrackingSystematic> collectObserversBacktrackingSystematic() {
 		List<ObserverBacktrackingSystematic> list = new ArrayList<>();
 		list.add(this); // because must be at first position in the list
-		Stream.of(pb.constraints).filter(c -> c instanceof ObserverBacktrackingSystematic).forEach(c -> list.add((ObserverBacktrackingSystematic) c));
+		Stream.of(problem.constraints).filter(c -> c instanceof ObserverBacktrackingSystematic).forEach(c -> list.add((ObserverBacktrackingSystematic) c));
 		if (propagation instanceof ObserverBacktrackingSystematic)
 			list.add((ObserverBacktrackingSystematic) propagation);
 		return list;
@@ -310,16 +310,16 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	protected List<ObserverRuns> collectObserversRuns() {
 		List<ObserverRuns> list = new ArrayList<>();
-		if (rs.cp.settingSolving.enableSearch) {
+		if (head.control.settingSolving.enableSearch) {
 			if (learnerNogoods != null && learnerNogoods.symmetryHandler != null)
 				list.add((ObserverRuns) learnerNogoods.symmetryHandler);
 			Stream.of(this, restarter, learnerStates, heuristicVars, lcReasoner, stats).filter(o -> o instanceof ObserverRuns)
 					.forEach(o -> list.add((ObserverRuns) o));
 		}
-		Stream.of(pb.constraints).filter(c -> c instanceof ObserverRuns).forEach(c -> list.add((ObserverRuns) c));
+		Stream.of(problem.constraints).filter(c -> c instanceof ObserverRuns).forEach(c -> list.add((ObserverRuns) c));
 		if (propagation instanceof ObserverRuns)
 			list.add((ObserverRuns) propagation);
-		list.add(rs.output);
+		list.add(head.output);
 		return list;
 	}
 
@@ -373,7 +373,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		dr.reset();
 		// if (!(heuristicVars instanceof HeuristicVariablesConflictBased) || !preserveWeightedDegrees)
 		// heuristicVars.reset();
-		heuristicVars.setPriorityVars(pb.priorityVars, 0);
+		heuristicVars.setPriorityVars(problem.priorityVars, 0);
 		lcReasoner.beforeRun();
 		if (learnerNogoods != null)
 			learnerNogoods.reset();
@@ -384,31 +384,31 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		Kit.control(!proofer.active);
 	}
 
-	public SolverBacktrack(Resolution resolution) {
+	public SolverBacktrack(Head resolution) {
 		super(resolution);
 		this.dr = new DecisionRecorder(this);
 		this.heuristicVars = HeuristicVariables.buildFor(this);
-		for (Variable x : pb.variables)
+		for (Variable x : problem.variables)
 			x.buildValueOrderingHeuristic();
-		this.lcReasoner = new LastConflictReasoner(this, resolution.cp.settingVarh.lastConflictSize);
+		this.lcReasoner = new LastConflictReasoner(this, resolution.control.settingVarh.lastConflictSize);
 		this.learnerNogoods = LearnerNogoods.buildFor(this); // may be null
 		this.learnerStates = LearnerStates.buildFor(this); // may be null
 		this.proofer = new Proofer(learnerStates);
 
-		int nLevels = pb.variables.length + 1;
-		int size = Stream.of(pb.variables).mapToInt(x -> x.dom.initSize()).reduce(0, (sum, domSize) -> sum + Math.min(nLevels, domSize));
+		int nLevels = problem.variables.length + 1;
+		int size = Stream.of(problem.variables).mapToInt(x -> x.dom.initSize()).reduce(0, (sum, domSize) -> sum + Math.min(nLevels, domSize));
 		this.stackedVariables = new StackedVariables(this, size + nLevels);
 		this.observersBacktrackingSystematic = collectObserversBacktrackingSystematic();
 		this.observersRuns = collectObserversRuns();
 		this.observersAssignment = collectObserversAssignment();
 		this.observersConflicts = collectObserversPropagation();
 
-		this.tracer = new Tracer(resolution.cp.settingGeneral.trace);
+		this.tracer = new Tracer(resolution.control.settingGeneral.trace);
 		this.stats = new StatisticsBacktrack(this);
 		observersSearch.add(0, this.stats); // this list is initialized in the super-class
 
-		this.runProgressSaver = resolution.cp.settingValh.runProgressSaving ? new RunProgressSaver() : null;
-		this.warmStarter = resolution.cp.settingValh.warmStart.length() > 0 ? new WarmStarter(resolution.cp.settingValh.warmStart) : null;
+		this.runProgressSaver = resolution.control.settingValh.runProgressSaving ? new RunProgressSaver() : null;
+		this.warmStarter = resolution.control.settingValh.warmStart.length() > 0 ? new WarmStarter(resolution.control.settingValh.warmStart) : null;
 
 		this.nogoodMinimizer = new NogoodMinimizer(this);
 	}
@@ -484,7 +484,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		if (learnerStates != null)
 			learnerStates.dealWhenClosingNode();
 		if (futVars.nDiscarded() == 0)
-			stoppingType = EStopping.FULL_EXPLORATION;
+			stopping = EStopping.FULL_EXPLORATION;
 	}
 
 	protected final boolean tryRefutation(Variable x, int a) {
@@ -498,7 +498,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		x.dom.removeElementary(a);
 		boolean consistent = x.dom.size() > 0;
 		if (consistent) {
-			if (rs.cp.settingSolving.branching == EBranching.NON)
+			if (head.control.settingSolving.branching == EBranching.NON)
 				return true;
 			consistent = propagation.runAfterRefutation(x);
 			if (!consistent)
@@ -513,10 +513,10 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	 * Called when a contradiction has been encountered.
 	 */
 	private void manageContradiction(CtrGlobal objectiveToCheck) {
-		for (boolean consistent = false; !consistent && stoppingType != EStopping.FULL_EXPLORATION;) {
+		for (boolean consistent = false; !consistent && stopping != EStopping.FULL_EXPLORATION;) {
 			Variable x = futVars.lastPast();
-			if (x == lastPastBeforeRun[nRecursiveRuns - 1] && !rs.cp.settingLNS.enabled)
-				stoppingType = EStopping.FULL_EXPLORATION;
+			if (x == lastPastBeforeRun[nRecursiveRuns - 1] && !head.control.settingLNS.enabled)
+				stopping = EStopping.FULL_EXPLORATION;
 			else {
 				int a = x.dom.unique();
 				backtrack(x);
@@ -541,11 +541,11 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			}
 			if (futVars.size() == 0) {
 				solManager.handleNewSolutionAndPossiblyOptimizeIt();
-				CtrGlobal objectiveToCheck = pb.settings.framework == COP && !rs.cp.settingRestarts.restartAfterSolution ? (CtrGlobal) pb.optimizer.ctr : null;
-				if (pb.settings.framework == COP && !rs.cp.settingRestarts.restartAfterSolution) {
+				CtrGlobal objectiveToCheck = problem.settings.framework == COP && !head.control.settingRestarts.restartAfterSolution ? (CtrGlobal) problem.optimizer.ctr : null;
+				if (problem.settings.framework == COP && !head.control.settingRestarts.restartAfterSolution) {
 					// first, we backtrack to the level where a value for a variable in the scope of the objective was removed for the last time
-					objectiveToCheck = (CtrGlobal) pb.optimizer.ctr;
-					((Optimizable) objectiveToCheck).setLimit(((Optimizable) objectiveToCheck).objectiveValue() + (pb.optimizer.minimization ? -1 : 1));
+					objectiveToCheck = (CtrGlobal) problem.optimizer.ctr;
+					((Optimizable) objectiveToCheck).setLimit(((Optimizable) objectiveToCheck).objectiveValue() + (problem.optimizer.minimization ? -1 : 1));
 					int backtrackLevel = -1;
 					for (int i = 0; i < objectiveToCheck.scp.length; i++) {
 						int x = objectiveToCheck.futvars.dense[i]; // variables (of the objective) from the last assigned to the first assigned
@@ -605,7 +605,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		dr.reset();
 		// assert pb.stuff.nPurgedValues > 0 || Variable.areDomainsFull(pb.variables) : pb.stuff.nPurgedValues + " " + pb.nbValuesRemoved;
 		// nPurged not updated; see java -ea abscon.Resolution problems.patt.QuasiGroup -data=6 -model=v5 -ev -cm=false
-		assert Stream.of(pb.variables).allMatch(x -> x.dom.controlStructures());
+		assert Stream.of(problem.variables).allMatch(x -> x.dom.controlStructures());
 	}
 
 	@Override

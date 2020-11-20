@@ -40,7 +40,7 @@ public abstract class HeuristicVariablesFixed extends HeuristicVariables impleme
 
 	private void buildOrdering() {
 		// we build an ordered map with entries of the form (x, heuristic score of x multiplied by the optimization coefficient) for every variable x
-		Map<Variable, Double> map = Stream.of(solver.pb.variables).collect(Collectors.toMap(x -> x, x -> scoreOptimizedOf(x)));
+		Map<Variable, Double> map = Stream.of(solver.problem.variables).collect(Collectors.toMap(x -> x, x -> scoreOptimizedOf(x)));
 		map = Kit.sort(map, (e1, e2) -> e1.getValue() < e2.getValue() ? -1 : e1.getValue() > e2.getValue() ? 1 : e1.getKey().num - e2.getKey().num);
 		ordering = map.entrySet().stream().map(e -> e.getKey()).toArray(Variable[]::new);
 		Kit.log.info("Static order of variables : " + Kit.join(ordering));
@@ -53,7 +53,7 @@ public abstract class HeuristicVariablesFixed extends HeuristicVariables impleme
 
 	@Override
 	protected Variable bestUnpriorityVar() {
-		assert solver.pb.priorityVars.length == 0;
+		assert solver.problem.priorityVars.length == 0;
 		for (int i = solver.propagation.performingProperSearch ? 0 : solver.futVars.nDiscarded(); i < ordering.length; i++)
 			if (ordering[i].isFuture()) // required in all cases because some variables may have been disconnected
 				return ordering[i];
@@ -104,7 +104,7 @@ public abstract class HeuristicVariablesFixed extends HeuristicVariables impleme
 
 		@Override
 		public double scoreOf(Variable x) {
-			return solver.rs.random.nextDouble();
+			return solver.head.random.nextDouble();
 		}
 	}
 

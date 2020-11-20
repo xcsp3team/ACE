@@ -25,9 +25,9 @@ public final class LearnerStatesDominance extends LearnerStates {
 
 	protected WatchCell free; // reference to the first free cell (i.e. the pool of free cells)
 
-	protected int nbTotalRemovals, nbWipeout, nbHyperNogoods;
+	protected int nTotalRemovals, nWipeouts, nHyperNogoods;
 
-	public int nbGeneratedHyperNogoods;
+	public int nGeneratedHyperNogoods;
 
 	private int[] offsets;
 
@@ -55,10 +55,10 @@ public final class LearnerStatesDominance extends LearnerStates {
 		Kit.control(solver.propagation != null);
 
 		int capacity = 0;
-		offsets = new int[solver.pb.variables.length];
+		offsets = new int[variables.length];
 		for (int i = 0; i < offsets.length; i++) {
 			offsets[i] = capacity;
-			capacity += solver.pb.variables[i].dom.initSize();
+			capacity += variables[i].dom.initSize();
 		}
 		watches = new WatchCell[capacity];
 		if (reductionOperator.enablePElimination())
@@ -147,26 +147,26 @@ public final class LearnerStatesDominance extends LearnerStates {
 	}
 
 	protected boolean dealWithInference(State hyperNogood, int pos) {
-		Variable var = solver.pb.variables[hyperNogood.vids[pos]];
+		Variable x = variables[hyperNogood.vids[pos]];
 		long[] domainRepresentation = hyperNogood.getDomainRepresentationAt(pos);
-		Domain dom = var.dom;
-		if (var.isAssigned() && Bit.isPresent(domainRepresentation, dom.first())) {
+		Domain dom = x.dom;
+		if (x.isAssigned() && Bit.isPresent(domainRepresentation, dom.first())) {
 			solver.proofer.updateProof(hyperNogood.vids);
-			nbWipeout++;
+			nWipeouts++;
 			return false;
 		}
 
 		int sizeBefore = dom.size();
-		for (int idx = dom.first(); idx != -1; idx = dom.next(idx))
-			if (Bit.isPresent(domainRepresentation, idx))
-				dom.removeElementary(idx);
-		int nbRemovals = sizeBefore - dom.size();
-		if (nbRemovals > 0) {
+		for (int a = dom.first(); a != -1; a = dom.next(a))
+			if (Bit.isPresent(domainRepresentation, a))
+				dom.removeElementary(a);
+		int nRemovals = sizeBefore - dom.size();
+		if (nRemovals > 0) {
 			solver.proofer.updateProof(hyperNogood.vids);
 			if (dom.size() == 0)
-				nbWipeout++;
+				nWipeouts++;
 			else
-				nbTotalRemovals += nbRemovals;
+				nTotalRemovals += nRemovals;
 			if (dom.afterElementaryCalls(sizeBefore) == false)
 				return false;
 		}
@@ -183,7 +183,7 @@ public final class LearnerStatesDominance extends LearnerStates {
 			} else {
 				if (!canFindAWatch(hyperNogood, -1)) {
 					solver.proofer.updateProof(hyperNogood.vids);
-					nbWipeout++;
+					nWipeouts++;
 					return false;
 				}
 				int pos = hyperNogood.getVariablePositionAt(0);
@@ -192,7 +192,7 @@ public final class LearnerStatesDominance extends LearnerStates {
 					insertHyperNogood(hyperNogood, offsets[hyperNogood.getVariableIdWatchedAt(1)] + hyperNogood.getIndexWatchedAt(1));
 					quarantineSize--;
 					quarantine[i--] = quarantine[quarantineSize];
-					nbHyperNogoods++;
+					nHyperNogoods++;
 				} else {
 					if (!dealWithInference(hyperNogood, pos))
 						return false;
@@ -269,7 +269,7 @@ public final class LearnerStatesDominance extends LearnerStates {
 		assert state != null;
 		if (state.vids.length == 0) {
 			Kit.log.info("empty nogood");
-			solver.stoppingType = EStopping.FULL_EXPLORATION;
+			solver.stopping = EStopping.FULL_EXPLORATION;
 		} else {
 			if (quarantineSize + 1 > quarantine.length) {
 				State[] t = new State[quarantine.length * 2];
@@ -282,13 +282,13 @@ public final class LearnerStatesDominance extends LearnerStates {
 
 	@Override
 	public void displayStats() {
-		Kit.log.info("nbHyperNogoods=" + nbGeneratedHyperNogoods + " nbTotalRemovals=" + nbTotalRemovals + " nbWipeouts=" + nbWipeout);
+		Kit.log.info("nbHyperNogoods=" + nGeneratedHyperNogoods + " nbTotalRemovals=" + nTotalRemovals + " nbWipeouts=" + nWipeouts);
 	}
 
 	public void display() {
-		Kit.log.fine("Nb Hyper Nogoods = " + nbHyperNogoods);
+		Kit.log.fine("Nb Hyper Nogoods = " + nHyperNogoods);
 		for (int i = 0; i < watches.length; i++) {
-			String s = "Watches for " + solver.pb.variables[i] + " ";
+			String s = "Watches for " + solver.problem.variables[i] + " ";
 			for (WatchCell cell = watches[i]; cell != null; cell = cell.nextCell)
 				s += cell.state.toString();
 			Kit.log.fine(s);

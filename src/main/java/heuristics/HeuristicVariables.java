@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 import dashboard.ControlPanel.SettingVarh;
 import dashboard.ControlPanel.SettingVars;
 import interfaces.ObserverRuns;
-import propagation.inverse.GIC2;
+import propagation.GIC.GIC2;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;
 import utility.Reflector;
@@ -29,9 +29,9 @@ import variables.Variable;
 public abstract class HeuristicVariables extends Heuristic {
 
 	public static HeuristicVariables buildFor(SolverBacktrack solver) {
-		Set<Class<?>> classes = solver.rs.handlerClasses.map.get(HeuristicVariables.class);
-		if (solver.rs.cp.settingSolving.enableSearch || solver.propagation instanceof GIC2)
-			return Reflector.buildObject(solver.rs.cp.settingVarh.classForVarHeuristic, classes, solver, solver.rs.cp.settingVarh.anti);
+		Set<Class<?>> classes = solver.head.handlerClasses.map.get(HeuristicVariables.class);
+		if (solver.head.control.settingSolving.enableSearch || solver.propagation instanceof GIC2)
+			return Reflector.buildObject(solver.head.control.settingVarh.classForVarHeuristic, classes, solver, solver.head.control.settingVarh.anti);
 		return null;
 	}
 
@@ -95,15 +95,15 @@ public abstract class HeuristicVariables extends Heuristic {
 		super(antiHeuristic); // anti ? (this instanceof TagMinimize ? TypeOptimization.MAX : TypeOptimization.MIN ) : (this instanceof TagMinimize ?
 								// TypeOptimization.MAX : TypeOptimization.MIN );
 		this.solver = solver;
-		SettingVars settingVars = solver.rs.cp.settingVars;
+		SettingVars settingVars = solver.head.control.settingVars;
 		if (settingVars.priorityVars.length > 0) {
-			this.priorityVars = Stream.of(settingVars.priorityVars).map(o -> solver.pb.findVarWithNumOrId(o)).toArray(Variable[]::new);
+			this.priorityVars = Stream.of(settingVars.priorityVars).map(o -> solver.problem.findVarWithNumOrId(o)).toArray(Variable[]::new);
 			this.nStrictlyPriorityVars = settingVars.nStrictPriorityVars;
 		} else {
-			this.priorityVars = solver.pb.priorityVars;
-			this.nStrictlyPriorityVars = solver.pb.nStrictPriorityVars;
+			this.priorityVars = solver.problem.priorityVars;
+			this.nStrictlyPriorityVars = solver.problem.nStrictPriorityVars;
 		}
-		this.settings = solver.rs.cp.settingVarh;
+		this.settings = solver.head.control.settingVarh;
 	}
 
 	/** Returns the score of the specified variable. This is the method to override when defining a new heuristic. */
@@ -170,14 +170,14 @@ public abstract class HeuristicVariables extends Heuristic {
 
 		public Memory(SolverBacktrack solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
-			order = new int[solver.pb.variables.length];
+			order = new int[solver.problem.variables.length];
 		}
 
 		@Override
 		protected final Variable bestUnpriorityVar() {
 			int pos = -1;
 			for (int i = 0; i < nbOrdered; i++)
-				if (!solver.pb.variables[order[i]].isAssigned()) {
+				if (!solver.problem.variables[order[i]].isAssigned()) {
 					pos = i;
 					break;
 				}
@@ -195,7 +195,7 @@ public abstract class HeuristicVariables extends Heuristic {
 				pos = posLastConflict = nbOrdered;
 				order[nbOrdered++] = bestScoredVariable.variable.num;
 			}
-			return solver.pb.variables[order[pos]];
+			return solver.problem.variables[order[pos]];
 		}
 
 		@Override

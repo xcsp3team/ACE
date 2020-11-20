@@ -396,13 +396,13 @@ public final class Intension extends Constraint implements ICtrIntension {
 		// Kit.control(tree.exactlyVars(scp));
 		Kit.control(Stream.of(scp).allMatch(x -> x instanceof VariableInteger) || Stream.of(scp).allMatch(x -> x instanceof VariableSymbolic));
 		defineKey();
-		if (!pb.rs.mapOfEvaluationManagers.containsKey(key)) {
+		if (!pb.head.mapOfEvaluationManagers.containsKey(key)) {
 			treeEvaluator = scp[0] instanceof VariableInteger ? new SharedTreeEvaluator(tree) : new SharedTreeEvaluator(tree, pb.symbolic.mapOfSymbols);
 			treeEvaluator.register(this);
 			conflictsStructure = ConflictsStructure.build(this); // potentially null
-			pb.rs.mapOfEvaluationManagers.put(key, treeEvaluator);
+			pb.head.mapOfEvaluationManagers.put(key, treeEvaluator);
 		} else {
-			treeEvaluator = pb.rs.mapOfEvaluationManagers.get(key);
+			treeEvaluator = pb.head.mapOfEvaluationManagers.get(key);
 			treeEvaluator.register(this);
 			conflictsStructure = treeEvaluator.firstRegisteredCtr().conflictsStructure;
 			if (conflictsStructure != null)

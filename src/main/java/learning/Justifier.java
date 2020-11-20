@@ -30,8 +30,8 @@ public final class Justifier implements ObserverDomainReduction {
 	public Justifier(LearnerStates learner) {
 		// this.learner = learner;
 		this.solver = learner.solver;
-		if (solver.rs.cp.settingLearning.state != ELearningState.NO) {
-			Variable[] vars = learner.solver.pb.variables;
+		if (solver.head.control.settingLearning.state != ELearningState.NO) {
+			Variable[] vars = learner.solver.problem.variables;
 			this.justifications = new Constraint[vars.length][];
 			for (int i = 0; i < justifications.length; i++) {
 				Domain dom = vars[i].dom;
@@ -40,7 +40,7 @@ public final class Justifier implements ObserverDomainReduction {
 					if (!dom.isPresent(idx))
 						justifications[i][idx] = Constraint.TAG; // because values removed at construction time
 			}
-			solver.pb.observersDomainReduction.add(this);
+			solver.problem.observersDomainReduction.add(this);
 		} else
 			this.justifications = null;
 	}

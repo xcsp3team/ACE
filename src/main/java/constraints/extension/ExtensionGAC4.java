@@ -85,7 +85,7 @@ public class ExtensionGAC4 extends ExtensionGlobal implements TagPositive {
 
 	public ExtensionGAC4(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		control(pb.rs.cp.settingSolving.enablePrepro);
+		control(pb.head.control.settingSolving.enablePrepro);
 	}
 
 	private boolean handleVariableAt(int x) {

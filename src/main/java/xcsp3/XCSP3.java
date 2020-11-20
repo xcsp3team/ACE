@@ -101,7 +101,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public String name() {
-		return listOfFileNames.get(((Problem) imp()).rs.instanceNumber);
+		return listOfFileNames.get(((Problem) imp()).head.instanceNumber);
 	}
 
 	private List<String> collect(List<String> list, File f) {
@@ -126,12 +126,12 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	public void model() {
 		try {
 			// Kit.log.info("Discarded classes " + imp().rs.cp.settingXml.discardedClasses);
-			if (imp().rs.cp.settingGeneral.verbose > 1)
+			if (imp().head.control.settingGeneral.verbose > 1)
 				XParser.VERBOSE = true;
-			if (imp().rs.cp.settingXml.discardedClasses.indexOf(',') < 0)
-				loadInstance(name(), imp().rs.cp.settingXml.discardedClasses);
+			if (imp().head.control.settingXml.discardedClasses.indexOf(',') < 0)
+				loadInstance(name(), imp().head.control.settingXml.discardedClasses);
 			else
-				loadInstance(name(), imp().rs.cp.settingXml.discardedClasses.split(",")); // imp().rs.cp.xml.discardedClasses.split(","));
+				loadInstance(name(), imp().head.control.settingXml.discardedClasses.split(",")); // imp().rs.cp.xml.discardedClasses.split(","));
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("Problem when parsing the instance. Fix the problem.");
@@ -147,7 +147,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void beginInstance(TypeFramework type) {
 		if (type == TypeFramework.COP)
-			imp().rs.cp.toCOP();
+			imp().head.control.toCOP();
 	}
 
 	private void copyBasicAttributes(ModelingEntity entity, ParsingEntry entry) {
@@ -353,11 +353,11 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	public void loadCtr(XCtr c) {
 		if (imp().stuff.mustDiscard(c.vars()))
 			return;
-		if (imp().rs.cp.settingCtrs.ignoredCtrType == c.type) {
+		if (imp().head.control.settingCtrs.ignoredCtrType == c.type) {
 			imp().stuff.nDiscardedCtrs++;
 			return;
 		}
-		if (imp().rs.cp.settingCtrs.ignoreCtrArity == c.vars().length) {
+		if (imp().head.control.settingCtrs.ignoreCtrArity == c.vars().length) {
 			imp().stuff.nDiscardedCtrs++;
 			return;
 		}
@@ -386,7 +386,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	private int nPrimitiveCalls = 0;
 
 	private void displayPrimitives(String s) {
-		if (imp().rs.cp.settingXml.displayPrimitives)
+		if (imp().head.control.settingXml.displayPrimitives)
 			System.out.println((nPrimitiveCalls++ == 0 ? "\n" : "") + "Primitive in class XCSP3 : " + s);
 	}
 
@@ -439,7 +439,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeUnaryArithmeticOperator aop, XVarInteger y) {
 		displayPrimitives(x + " " + aop + " " + y);
-		if (imp().rs.cp.settingCtrs.ignorePrimitives)
+		if (imp().head.control.settingCtrs.ignorePrimitives)
 			repost(id);
 		else {
 			repost(id);
@@ -449,7 +449,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeArithmeticOperator aop, XVarInteger y, TypeConditionOperatorRel op, int k) {
 		displayPrimitives("(" + x + " " + aop + " " + y + ") " + op + " " + k);
-		if (imp().rs.cp.settingCtrs.ignorePrimitives)
+		if (imp().head.control.settingCtrs.ignorePrimitives)
 			repost(id);
 		else {
 			if (aop == ADD)
@@ -466,7 +466,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeArithmeticOperator aop, int k, TypeConditionOperatorRel op, XVarInteger y) {
 		displayPrimitives("(" + x + " " + aop + " " + k + ") " + op + " " + y);
-		if (imp().rs.cp.settingCtrs.ignorePrimitives)
+		if (imp().head.control.settingCtrs.ignorePrimitives)
 			repost(id);
 		else {
 
@@ -482,7 +482,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeArithmeticOperator aop, XVarInteger y, TypeConditionOperatorRel op, XVarInteger z) {
 		displayPrimitives("(" + x + " " + aop + " " + y + ") " + op + " " + z);
-		if (imp().rs.cp.settingCtrs.ignorePrimitives)
+		if (imp().head.control.settingCtrs.ignorePrimitives)
 			repost(id);
 		else {
 			if (aop == ADD)
@@ -500,7 +500,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	public void buildCtrLogic(String id, TypeLogicalOperator lop, XVarInteger[] vars) {
 		assert Stream.of(vars).allMatch(x -> x.isZeroOne());
 		displayPrimitives(lop + " " + Kit.join(vars));
-		if (imp().rs.cp.settingCtrs.ignorePrimitives)
+		if (imp().head.control.settingCtrs.ignorePrimitives)
 			repost(id);
 		else
 			repost(id);
@@ -510,7 +510,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	public void buildCtrLogic(String id, XVarInteger x, TypeEqNeOperator op, TypeLogicalOperator lop, XVarInteger[] vars) {
 		assert Stream.of(vars).allMatch(y -> y.isZeroOne());
 		displayPrimitives(x + " " + op + " " + lop + " " + Kit.join(vars));
-		if (imp().rs.cp.settingCtrs.ignorePrimitives)
+		if (imp().head.control.settingCtrs.ignorePrimitives)
 			repost(id);
 		else
 			repost(id);
@@ -519,7 +519,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void buildCtrLogic(String id, XVarInteger x, XVarInteger y, TypeConditionOperatorRel op, int k) {
 		displayPrimitives(x + " = (" + y + " " + op + " " + k + ")");
-		if (imp().rs.cp.settingCtrs.ignorePrimitives)
+		if (imp().head.control.settingCtrs.ignorePrimitives)
 			repost(id);
 		else
 			PrimitiveBinaryLog.buildFrom(imp(), trVar(x), trVar(y), op, k);
@@ -528,7 +528,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void buildCtrLogic(String id, XVarInteger x, XVarInteger y, TypeConditionOperatorRel op, XVarInteger z) {
 		displayPrimitives(x + " = (" + y + " " + op + " " + z + ")");
-		if (imp().rs.cp.settingCtrs.ignorePrimitives)
+		if (imp().head.control.settingCtrs.ignorePrimitives)
 			repost(id);
 		else
 			PrimitiveTernaryLog.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z));

@@ -114,8 +114,8 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 
 		public Reviser3(Forward propagation) {
 			super(propagation);
-			Problem pb = propagation.solver.pb;
-			SettingPropagation settings = pb.rs.cp.settingPropagation;
+			Problem pb = propagation.solver.problem;
+			SettingPropagation settings = pb.head.control.settingPropagation;
 			if (settings.bitResidues) {
 				long nResidues = 0;
 				this.bitRmResidues = new short[pb.constraints.length][][];

@@ -59,9 +59,9 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 		@Override
 		protected ExtensionStructure buildExtensionStructure() {
 			if (scp.length == 2)
-				return Reflector.buildObject(pb.rs.cp.settingExtension.classForBinaryExtensionStructure, ExtensionStructure.class, this);
+				return Reflector.buildObject(pb.head.control.settingExtension.classForBinaryExtensionStructure, ExtensionStructure.class, this);
 			if (scp.length == 3)
-				return Reflector.buildObject(pb.rs.cp.settingExtension.classForTernaryExtensionStructure, ExtensionStructure.class, this);
+				return Reflector.buildObject(pb.head.control.settingExtension.classForTernaryExtensionStructure, ExtensionStructure.class, this);
 			return new Table(this); // MDD(this);
 		}
 
@@ -74,10 +74,10 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 
 		@Override
 		protected ExtensionStructure buildExtensionStructure() {
-			if (pb.rs.cp.settingExtension.variant == 0)
+			if (pb.head.control.settingExtension.variant == 0)
 				return new TableWithSubtables(this);
-			assert pb.rs.cp.settingExtension.variant == 1 || pb.rs.cp.settingExtension.variant == 11;
-			return new Tries(this, pb.rs.cp.settingExtension.variant == 11);
+			assert pb.head.control.settingExtension.variant == 1 || pb.head.control.settingExtension.variant == 11;
+			return new Tries(this, pb.head.control.settingExtension.variant == 11);
 		}
 
 		public ExtensionVA(Problem pb, Variable[] scp) {
@@ -123,16 +123,16 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 	 *********************************************************************************************/
 
 	private static Extension build(Problem pb, Variable[] scp, boolean positive, boolean presentStar) {
-		Set<Class<?>> classes = pb.rs.handlerClasses.map.get(Extension.class);
+		Set<Class<?>> classes = pb.head.handlerClasses.map.get(Extension.class);
 		if (presentStar) {
 			Kit.control(positive);
-			Extension c = (Extension) Reflector.buildObject(Extension.class.getSimpleName() + pb.rs.cp.settingExtension.positive, classes, pb, scp);
+			Extension c = (Extension) Reflector.buildObject(Extension.class.getSimpleName() + pb.head.control.settingExtension.positive, classes, pb, scp);
 			Kit.control(c instanceof TagShort); // currently, STR2, STR2S, CT, CT2 and MDDSHORT
 			return c;
 		}
-		if (scp.length == 1 || scp.length == 2 && pb.rs.cp.settingExtension.validForBinary)
+		if (scp.length == 1 || scp.length == 2 && pb.head.control.settingExtension.validForBinary)
 			return new ExtensionV(pb, scp); // return new CtrExtensionSTR2(pb, scp);
-		String suffix = (positive ? pb.rs.cp.settingExtension.positive : pb.rs.cp.settingExtension.negative).toString();
+		String suffix = (positive ? pb.head.control.settingExtension.positive : pb.head.control.settingExtension.negative).toString();
 		return (Extension) Reflector.buildObject(Extension.class.getSimpleName() + suffix, classes, pb, scp);
 	}
 
@@ -174,7 +174,7 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 			pb.symbolic.store(c, (String[][]) tuples);
 		} else {
 			m = (int[][]) tuples;
-			if (!starred && pb.rs.cp.settingExtension.mustReverse(scp.length, positive)) {
+			if (!starred && pb.head.control.settingExtension.mustReverse(scp.length, positive)) {
 				m = reverseTuples(scp, m);
 				positive = !positive;
 			}
@@ -241,17 +241,17 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 
 		if (supporter != null)
 			((SupporterHard) supporter).reset();
-		Map<String, ExtensionStructure> map = pb.rs.mapOfExtensionStructures;
+		Map<String, ExtensionStructure> map = pb.head.mapOfExtensionStructures;
 
 		if (key == null || !map.containsKey(key)) {
 			extStructure = buildExtensionStructure();
-			extStructure.originalTuples = pb.rs.cp.settingProblem.isSymmetryBreaking() ? tuples : null;
+			extStructure.originalTuples = pb.head.control.settingProblem.isSymmetryBreaking() ? tuples : null;
 			extStructure.originalPositive = positive;
 			extStructure.storeTuples(tuples, positive);
 			if (key != null) {
 				map.put(key, extStructure);
 				// below, "necessary" to let this code here because tuples and positive are easily accessible
-				if (pb.rs.cp.settingProblem.isSymmetryBreaking()) {
+				if (pb.head.control.settingProblem.isSymmetryBreaking()) {
 					Constraint.putSymmetryMatching(key, extStructure.computeVariableSymmetryMatching(tuples, positive));
 				}
 			}

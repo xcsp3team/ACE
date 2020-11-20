@@ -43,7 +43,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	protected final Variable bestUnpriorityVar() {
 		assert solver.futVars.size() > 0;
 
-		if (solver.rs.cp.settingSolving.branching != EBranching.BIN) {
+		if (solver.head.control.settingSolving.branching != EBranching.BIN) {
 			Variable x = solver.dr.varOfLastDecisionIf(false);
 			if (x != null)
 				return x;
@@ -124,7 +124,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		public DomThenDeg(SolverBacktrack solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
-			this.combinator = new CombinatorOfTwoInts(solver.pb.stuff.maxVarDegree());
+			this.combinator = new CombinatorOfTwoInts(solver.problem.stuff.maxVarDegree());
 		}
 
 		@Override
@@ -163,7 +163,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void beforeRun() {
-			if (solver.restarter.numRun > 0 && solver.restarter.numRun % solver.rs.cp.settingRestarts.dataResetPeriod == 0) {
+			if (solver.restarter.runMultipleOf(solver.head.control.settingRestarts.dataResetPeriod)) {
 				// System.out.println("Reset weights");
 				reset();
 			}
@@ -244,12 +244,12 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		public WdegVariant(SolverBacktrack solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
-			this.ctime = new int[solver.pb.constraints.length];
-			this.vscores = new double[solver.pb.variables.length];
-			this.cscores = new double[solver.pb.constraints.length];
-			this.cvscores = new double[solver.pb.constraints.length][0];
+			this.ctime = new int[solver.problem.constraints.length];
+			this.vscores = new double[solver.problem.variables.length];
+			this.cscores = new double[solver.problem.constraints.length];
+			this.cvscores = new double[solver.problem.constraints.length][0];
 			for (int i = 0; i < cvscores.length; i++)
-				this.cvscores[i] = new double[solver.pb.constraints[i].scp.length];
+				this.cvscores[i] = new double[solver.problem.constraints[i].scp.length];
 		}
 
 	}
@@ -307,15 +307,15 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public void beforeRun() {
 			lastVar = null;
 			lastDepth = -1;
-			for (int i = 0; i < solver.pb.variables.length; i++)
-				lastSizes[i] = solver.pb.variables[i].dom.size();
+			for (int i = 0; i < solver.problem.variables.length; i++)
+				lastSizes[i] = solver.problem.variables[i].dom.size();
 		}
 
 		public ActivityImpactAbstract(SolverBacktrack solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
-			this.lastSizes = Stream.of(solver.pb.variables).mapToInt(x -> x.dom.size()).toArray();
-			Kit.control(solver.rs.cp.settingSolving.branching == EBranching.BIN);
-			Kit.control(solver.rs.cp.settingRestarts.dataResetPeriod != 0);
+			this.lastSizes = Stream.of(solver.problem.variables).mapToInt(x -> x.dom.size()).toArray();
+			Kit.control(solver.head.control.settingSolving.branching == EBranching.BIN);
+			Kit.control(solver.head.control.settingRestarts.dataResetPeriod != 0);
 		}
 
 		protected abstract void update();
@@ -348,7 +348,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			super.beforeRun();
-			if (solver.restarter.numRun != 0 && solver.restarter.numRun % solver.rs.cp.settingRestarts.dataResetPeriod == 0) {
+			if (solver.restarter.runMultipleOf(solver.head.control.settingRestarts.dataResetPeriod)) {
 				Kit.log.info("Reset of activities");
 				Arrays.fill(activities, 0);
 			}
@@ -357,7 +357,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public Activity(SolverBacktrack solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 			alpha = 0.99; // alpha as an aging decay
-			activities = new double[solver.pb.variables.length];
+			activities = new double[solver.problem.variables.length];
 		}
 
 		@Override
@@ -380,7 +380,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			super.beforeRun();
-			if (solver.restarter.numRun != 0 && solver.restarter.numRun % solver.rs.cp.settingRestarts.dataResetPeriod == 0) {
+			if (solver.restarter.runMultipleOf(solver.head.control.settingRestarts.dataResetPeriod)) {
 				Kit.log.info("Reset of impacts");
 				// for (int i = 0; i < solver.problem.variables.length; i++) impacts[i] = solver.problem.variables[i].getStaticDegree(); // TODO
 				// better init ?
@@ -391,7 +391,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public Impact(SolverBacktrack solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 			alpha = 0.1;
-			impacts = new double[solver.pb.variables.length];
+			impacts = new double[solver.problem.variables.length];
 		}
 
 		@Override

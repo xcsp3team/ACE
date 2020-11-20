@@ -46,10 +46,10 @@ public abstract class HeuristicNeighbors {
 
 	public HeuristicNeighbors(SolverLocal solver) {
 		this.solver = solver;
-		this.tabuManager = Reflector.buildObject(solver.rs.cp.settingLocalSearch.classForTabu, TabuManager.class, solver,
-				solver.rs.cp.settingLocalSearch.tabuListSize);
-		this.counters = new int[solver.pb.variables.length];
-		this.random = solver.rs.random;
+		this.tabuManager = Reflector.buildObject(solver.head.control.settingLocalSearch.classForTabu, TabuManager.class, solver,
+				solver.head.control.settingLocalSearch.tabuListSize);
+		this.counters = new int[solver.problem.variables.length];
+		this.random = solver.head.random;
 	}
 
 	protected int selectIndexWithLowestEvolution(Variable x, int evolutionLimit) {
@@ -71,11 +71,11 @@ public abstract class HeuristicNeighbors {
 				tieSize = 1;
 				bestIndex = a;
 				localBestEvolution = evolution;
-				if (solver.pb.settings.framework == TypeFramework.COP)
+				if (solver.problem.settings.framework == TypeFramework.COP)
 					bestCost = currentCost.longValue();
 			} else {
 				assert evolution == localBestEvolution;
-				if (solver.pb.settings.framework == TypeFramework.COP) {
+				if (solver.problem.settings.framework == TypeFramework.COP) {
 					if (currentCost > bestCost)
 						continue;
 					if (currentCost < bestCost) {
@@ -180,7 +180,7 @@ public abstract class HeuristicNeighbors {
 			Variable bestVariable = null;
 			int bestEvaluation = Integer.MAX_VALUE;
 
-			for (Variable x : solver.pb.variables) {
+			for (Variable x : solver.problem.variables) {
 				if (x == lastAssignedVariable)
 					continue;
 				int evaluation = solver.conflictManager.currEvaluationOf(x);
@@ -198,11 +198,11 @@ public abstract class HeuristicNeighbors {
 		}
 
 		private boolean randomlySelectNeighbor() {
-			if (random.nextFloat() < solver.rs.cp.settingLocalSearch.thresholdForRandomVariableSelection) {
-				Variable[] variables = solver.pb.variables;
+			if (random.nextFloat() < solver.head.control.settingLocalSearch.thresholdForRandomVariableSelection) {
+				Variable[] variables = solver.problem.variables;
 				bestVariable = variables[random.nextInt(variables.length)];
 				// variable in conflict instead ??
-				if (random.nextFloat() < solver.rs.cp.settingLocalSearch.thresholdForRandomValueSelection) {
+				if (random.nextFloat() < solver.head.control.settingLocalSearch.thresholdForRandomValueSelection) {
 					bestIndex = bestVariable.dom.random();
 					int evaluation = solver.conflictManager.currEvaluation() + solver.conflictManager.computeEvolutionFor(bestVariable, bestIndex);
 					if (evaluation < bestEvaluationEverSeen)

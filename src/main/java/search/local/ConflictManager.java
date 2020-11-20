@@ -61,16 +61,16 @@ public class ConflictManager {
 
 	public ConflictManager(SolverLocal localSolver) {
 		this.solver = localSolver;
-		this.set = new SetSparse(localSolver.pb.constraints.length);
-		currVariableEvaluations = new int[localSolver.pb.variables.length];
+		this.set = new SetSparse(localSolver.problem.constraints.length);
+		currVariableEvaluations = new int[localSolver.problem.variables.length];
 	}
 
 	public void recomputeEvaluations() {
 		currEvaluation = 0;
 		Arrays.fill(currVariableEvaluations, 0);
-		Constraint[] ctrs = solver.pb.constraints;
+		Constraint[] ctrs = solver.problem.constraints;
 
-		ControlPanel cp = solver.rs.cp;
+		ControlPanel cp = solver.head.control;
 		for (int i = set.limit; i >= 0; i--) {
 			Constraint c = ctrs[set.dense[i]];
 			// if (cp.hardCoding.weightingIncrementInConflictManager) // TODO because of refactoring, this must be updated
@@ -94,8 +94,8 @@ public class ConflictManager {
 		// if (((CtrHard) ctr).getDependantVariablePosition() == -1 && !((CtrHard) ctr).checkCurrentInstantiation())
 		// addConflictingConstraint(ctr);
 		recomputeEvaluations();
-		if (solver.pb.settings.framework == TypeFramework.COP)
-			currCost = solver.pb.optimizer.value();
+		if (solver.problem.settings.framework == TypeFramework.COP)
+			currCost = solver.problem.optimizer.value();
 	}
 
 	//
@@ -122,7 +122,7 @@ public class ConflictManager {
 	// }
 
 	public boolean checkConflictingConstraints() {
-		for (Constraint c : solver.pb.constraints)
+		for (Constraint c : solver.problem.constraints)
 			if (!c.checkCurrentInstantiation() && !set.isPresent(c.num)) {
 				Kit.log.severe(c + " not satisfied and absent in sparse set.");
 				return false;
@@ -140,7 +140,7 @@ public class ConflictManager {
 		solver.propagateDependentVariables();
 		Set<Constraint> constraintsToCheck = new HashSet<>();
 		for (int i : solver.getSuccessors(x.num))
-			for (Constraint c : solver.pb.variables[i].ctrs)
+			for (Constraint c : solver.problem.variables[i].ctrs)
 				constraintsToCheck.add(c);
 		for (Constraint c : constraintsToCheck) {
 			if (!c.checkCurrentInstantiation())
@@ -148,9 +148,9 @@ public class ConflictManager {
 			if (evaluation > acceptableEvaluationLimit)
 				break;
 		}
-		if (solver.pb.settings.framework == TypeFramework.COP) {
+		if (solver.problem.settings.framework == TypeFramework.COP) {
 			assert currCostEvolution != null;
-			currCostEvolution = solver.pb.optimizer.value() - currCost;
+			currCostEvolution = solver.problem.optimizer.value() - currCost;
 		}
 		// var.dom.forcedIndex = currentIndex;
 		return evaluation;
@@ -185,7 +185,7 @@ public class ConflictManager {
 	}
 
 	public void displayConflictingConstraints() {
-		IntStream.rangeClosed(0, set.limit).mapToObj(i -> solver.pb.constraints[set.dense[i]]).forEach(c -> c.display(false));
+		IntStream.rangeClosed(0, set.limit).mapToObj(i -> solver.problem.constraints[set.dense[i]]).forEach(c -> c.display(false));
 	}
 
 }

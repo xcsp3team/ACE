@@ -54,7 +54,7 @@ public abstract class Backward extends Propagation {
 		@Override
 		public boolean runAfterAssignment(Variable x) {
 			assert x.isAssigned();
-			return Stream.of(solver.pb.constraints).allMatch(c -> c.ignored || c.futvars.size() > 0 || c.seekFirstSupport());
+			return Stream.of(solver.problem.constraints).allMatch(c -> c.ignored || c.futvars.size() > 0 || c.seekFirstSupport());
 		}
 	}
 
@@ -69,7 +69,7 @@ public abstract class Backward extends Propagation {
 		@Override
 		public boolean runAfterAssignment(Variable x) {
 			assert x.isAssigned();
-			return solver.futVars.size() > 0 || Stream.of(solver.pb.constraints).allMatch(c -> c.ignored || c.seekFirstSupport());
+			return solver.futVars.size() > 0 || Stream.of(solver.problem.constraints).allMatch(c -> c.ignored || c.seekFirstSupport());
 		}
 	}
 
@@ -77,17 +77,17 @@ public abstract class Backward extends Propagation {
 
 		@Override
 		public final long getLowerBound() {
-			return Constraint.costOfCoveredConstraintsIn(solver.pb.constraints);
+			return Constraint.costOfCoveredConstraintsIn(solver.problem.constraints);
 		}
 
 		public BTSoft(Solver solver) {
 			super(solver);
-			Kit.control(solver.pb.settings.framework == TypeFramework.MAXCSP, () -> "MaxCSP is not indicated in your settings");
+			Kit.control(solver.problem.settings.framework == TypeFramework.MAXCSP, () -> "MaxCSP is not indicated in your settings");
 		}
 
 		@Override
 		public boolean runAfterAssignment(Variable x) {
-			return Constraint.costOfCoveredConstraintsIn(solver.pb.constraints) < solver.solManager.bestBound;
+			return Constraint.costOfCoveredConstraintsIn(solver.problem.constraints) < solver.solManager.bestBound;
 		}
 
 	}
@@ -96,19 +96,19 @@ public abstract class Backward extends Propagation {
 
 		@Override
 		public final long getLowerBound() {
-			return Constraint.costOfCoveredConstraintsIn(solver.pb.constraints);
+			return Constraint.costOfCoveredConstraintsIn(solver.problem.constraints);
 		}
 
 		public GTSoft(Solver solver) {
 			super(solver);
-			Kit.control(solver.pb.settings.framework == TypeFramework.MAXCSP, () -> "MaxCSP is not indicated in your settings");
+			Kit.control(solver.problem.settings.framework == TypeFramework.MAXCSP, () -> "MaxCSP is not indicated in your settings");
 		}
 
 		@Override
 		public boolean runAfterAssignment(Variable x) {
 			assert x.isAssigned();
 			if (solver.futVars.size() == 0)
-				return Constraint.costOfCoveredConstraintsIn(solver.pb.constraints) < solver.solManager.bestBound;
+				return Constraint.costOfCoveredConstraintsIn(solver.problem.constraints) < solver.solManager.bestBound;
 			return true;
 		}
 	}

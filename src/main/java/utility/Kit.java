@@ -46,7 +46,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Utilities;
 
 import dashboard.Arguments;
-import executables.Resolution;
+import main.Head;
 
 public final class Kit {
 	private Kit() {
@@ -67,14 +67,14 @@ public final class Kit {
 			public void publish(LogRecord record) {
 				if (record.getLevel().intValue() < Level.INFO.intValue()) {
 					if (Arguments.multiThreads)
-						System.out.println("From " + ((Resolution) Thread.currentThread()).cp.settingsFilename + " :");
+						System.out.println("From " + ((Head) Thread.currentThread()).control.settingsFilename + " :");
 					System.out.println(record.getMessage());
 				} else {
 					if (Arguments.multiThreads)
-						System.err.println("From " + ((Resolution) Thread.currentThread()).cp.settingsFilename + " :");
+						System.err.println("From " + ((Head) Thread.currentThread()).control.settingsFilename + " :");
 					// c.setTimeInMillis(record.getMillis());
-					Thread t = Resolution.currentThread();
-					if (t instanceof Resolution && !((Resolution) t).cp.settingXml.competitionMode)
+					Thread t = Head.currentThread();
+					if (t instanceof Head && !((Head) t).control.settingXml.competitionMode)
 						System.err.println("\n" + record.getLevel() + " : " + record.getMessage()); // + " " + c.getTime());
 					if (record.getLevel() == Level.SEVERE) {
 						System.err.println(record.getLevel() + " forces us to stop");
@@ -96,7 +96,7 @@ public final class Kit {
 	}
 
 	public static Object exit(String message, Throwable e) {
-		if (!(Thread.currentThread() instanceof Resolution) || ((Resolution) Thread.currentThread()).cp.settingGeneral.makeExceptionsVisible)
+		if (!(Thread.currentThread() instanceof Head) || ((Head) Thread.currentThread()).control.settingGeneral.makeExceptionsVisible)
 			e.printStackTrace();
 		System.out.println(message);
 		System.exit(1);

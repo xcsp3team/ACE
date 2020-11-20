@@ -1,4 +1,4 @@
-package executables;
+package main;
 
 import static utility.Kit.log;
 
@@ -55,22 +55,22 @@ import utility.Reflector;
 import xcsp3.XCSP3;
 
 /**
- * This is the main class in charge of solving a problem instance
+ * This is the class of the head in charge of solving a problem instance
  */
-public class Resolution extends Thread {
+public class Head extends Thread {
 
 	/**********************************************************************************************
 	 * Static
 	 *********************************************************************************************/
 
-	public static final String VERSION = "AbsCon 3";
+	public static final String VERSION = "ACE (AbsCon Essence) 1.0";
 
 	public static final int UNDEFINED = -10;
 
 	/**
 	 * The set of resolution objects. For portfolio mode, contains more than one object.
 	 */
-	private static Resolution[] resolutions;
+	private static Head[] heads;
 
 	public static void copy(String srcFileName, String dstFileName) {
 		try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(srcFileName));
@@ -83,11 +83,11 @@ public class Resolution extends Thread {
 		}
 	}
 
-	public synchronized static void saveMultithreadResultsFiles(Resolution resolution) {
+	public synchronized static void saveMultithreadResultsFiles(Head resolution) {
 		String fileName = resolution.output.save(resolution.stopwatch.wckTime());
 		if (fileName != null) {
 			String variantParallelName = DocumentHandler.attValueFor(Arguments.lastArgument(), ResolutionVariants.VARIANT_PARALLEL, ResolutionVariants.NAME);
-			String resultsFileName = resolution.cp.settingXml.dirForCampaign;
+			String resultsFileName = resolution.control.settingXml.dirForCampaign;
 			if (resultsFileName != "")
 				resultsFileName += File.separator;
 			resultsFileName += Output.RESULTS_DIRECTORY_NAME + File.separator
@@ -97,9 +97,9 @@ public class Resolution extends Thread {
 			DocumentHandler.modify(document, TypeOutput.RESOLUTIONS.toString(), Output.CONFIGURATION_FILE_NAME, variantParallelName);
 			long totalWCKTime = 0;
 			long totalVisitedNodes = 0;
-			for (Resolution r : resolutions) {
-				totalWCKTime += r.instanceStopwatch.wckTime();
-				totalVisitedNodes += r.solver.stats.nNodes;
+			for (Head h : heads) {
+				totalWCKTime += h.instanceStopwatch.wckTime();
+				totalVisitedNodes += h.solver.stats.nNodes;
 			}
 			Element root = document.getDocumentElement();
 			Element multiThreadedResults = document.createElement(Output.MULTITHREAD_RESULTS);
@@ -126,13 +126,13 @@ public class Resolution extends Thread {
 	public static void main(String[] args) {
 		// Class.forName("AbsCon").getDeclaredMethod("main", String[].class).invoke(null, (Object) args);
 		if (args.length == 0 && !isAvailableIn())
-			new Resolution().cp.settings.display(); // the usage is displayed
+			new Head().control.settings.display(); // the usage is displayed
 		else {
 			Arguments.loadArguments(args); // Always start with that
 			String[] variants = ResolutionVariants.loadVariantNames();
-			resolutions = new Resolution[variants.length];
-			for (int i = 0; i < resolutions.length; i++)
-				(resolutions[i] = new Resolution(variants[i])).start();
+			heads = new Head[variants.length];
+			for (int i = 0; i < heads.length; i++)
+				(heads[i] = new Head(variants[i])).start();
 		}
 	}
 
@@ -242,7 +242,7 @@ public class Resolution extends Thread {
 	/**
 	 * The object that stores all parameters to pilot resolution.java AbsCon test.TestTreeOptim -trace -varh=Lexico
 	 */
-	public final ControlPanel cp;
+	public final ControlPanel control;
 
 	public final Output output;
 
@@ -276,22 +276,22 @@ public class Resolution extends Thread {
 	 */
 
 	public boolean mustPreserveUnaryConstraints() {
-		return cp.settingCtrs.preserveUnaryCtrs || this instanceof Extraction || cp.settingProblem.isSymmetryBreaking()
-				|| cp.settingGeneral.framework == TypeFramework.MAXCSP;
+		return control.settingCtrs.preserveUnaryCtrs || this instanceof Extraction || control.settingProblem.isSymmetryBreaking()
+				|| control.settingGeneral.framework == TypeFramework.MAXCSP;
 	}
 
 	public boolean isTimeExpiredForCurrentInstance() {
-		return cp.settingGeneral.timeout <= instanceStopwatch.wckTime();
+		return control.settingGeneral.timeout <= instanceStopwatch.wckTime();
 	}
 
-	public Resolution(String configurationFileName) {
-		this.cp = ControlPanel.buildControlPanelFor(configurationFileName);
+	public Head(String configurationFileName) {
+		this.control = ControlPanel.buildControlPanelFor(configurationFileName);
 		this.output = new Output(this, configurationFileName);
 		observersConstruction.add(this.output);
 		this.statisticsMultiresolution = StatisticsMultiResolution.buildFor(this);
 	}
 
-	public Resolution() {
+	public Head() {
 		this((String) null);
 	}
 
@@ -299,7 +299,7 @@ public class Resolution extends Thread {
 
 	public Problem buildProblem(int instanceNumber) {
 		this.instanceNumber = instanceNumber;
-		random.setSeed(cp.settingGeneral.seed + instanceNumber);
+		random.setSeed(control.settingGeneral.seed + instanceNumber);
 		ProblemAPI api = null;
 		try {
 			if (Arguments.problemPackageName.equals(XCSP3.class.getName()))
@@ -318,19 +318,19 @@ public class Resolution extends Thread {
 		} catch (Exception e) {
 			return (Problem) Kit.exit("The class " + Arguments.problemPackageName + " cannot be found.", e);
 		}
-		SettingProblem settings = cp.settingProblem;
+		SettingProblem settings = control.settingProblem;
 		problem = new Problem(api, settings.variant, settings.data, settings.dataFormat, settings.dataexport, Arguments.argsForPb, this);
 		for (ObserverConstruction obs : observersConstruction)
 			obs.onConstructionProblemFinished();
 		problem.display();
-		Graphviz.saveGraph(problem, cp.settingGeneral.saveNetworkGraph);
+		Graphviz.saveGraph(problem, control.settingGeneral.saveNetworkGraph);
 		return problem;
 	}
 
 	protected final Solver buildSolver(Problem problem) {
-		boolean cm = problem.rs.cp.settingXml.competitionMode;
+		boolean cm = problem.head.control.settingXml.competitionMode;
 		Kit.log.config("\n" + Output.COMMENT_PREFIX + "Building solver... " + (cm ? "\n" : ""));
-		solver = Reflector.buildObject(cp.settingSolving.clazz, Solver.class, this);
+		solver = Reflector.buildObject(control.settingSolving.clazz, Solver.class, this);
 		for (ObserverConstruction obs : observersConstruction)
 			obs.onConstructionSolverFinished();
 		return solver;
@@ -338,24 +338,24 @@ public class Resolution extends Thread {
 
 	private int[] localSearchAtPreprocessing() {
 		int[] solution = null;
-		if (cp.settingHardCoding.localSearchAtPreprocessing) {
-			String solverClassName = cp.settingSolving.clazz;
-			cp.settingSolving.clazz = SolverLocal.class.getSimpleName();
-			int nRuns = cp.settingRestarts.nRunsLimit;
-			cp.settingRestarts.nRunsLimit = 10;
-			long cutoff = cp.settingRestarts.cutoff;
-			cp.settingRestarts.cutoff = 10000;
-			boolean prepro = cp.settingSolving.enablePrepro;
-			cp.settingSolving.enablePrepro = false;
+		if (control.settingHardCoding.localSearchAtPreprocessing) {
+			String solverClassName = control.settingSolving.clazz;
+			control.settingSolving.clazz = SolverLocal.class.getSimpleName();
+			int nRuns = control.settingRestarts.nRunsLimit;
+			control.settingRestarts.nRunsLimit = 10;
+			long cutoff = control.settingRestarts.cutoff;
+			control.settingRestarts.cutoff = 10000;
+			boolean prepro = control.settingSolving.enablePrepro;
+			control.settingSolving.enablePrepro = false;
 			solver = buildSolver(problem);
 			solver.solve();
 			solution = solver.solManager.lastSolution;
-			cp.settingOptimization.upperBound = ((SolverLocal) solver).nMinViolatedCtrs;
-			if (solver.stoppingType != EStopping.REACHED_GOAL) {
-				cp.settingSolving.clazz = solverClassName;
-				cp.settingRestarts.nRunsLimit = nRuns;
-				cp.settingRestarts.cutoff = cutoff;
-				cp.settingSolving.enablePrepro = prepro;
+			control.settingOptimization.upperBound = ((SolverLocal) solver).nMinViolatedCtrs;
+			if (solver.stopping != EStopping.REACHED_GOAL) {
+				control.settingSolving.clazz = solverClassName;
+				control.settingRestarts.nRunsLimit = nRuns;
+				control.settingRestarts.cutoff = cutoff;
+				control.settingSolving.enablePrepro = prepro;
 			}
 		}
 		return solution;
@@ -370,12 +370,12 @@ public class Resolution extends Thread {
 		observersConstruction.add(output);
 		problem = buildProblem(instanceNumber);
 
-		if (cp.settingSolving.enablePrepro || cp.settingSolving.enableSearch) {
+		if (control.settingSolving.enablePrepro || control.settingSolving.enableSearch) {
 			int[] solution = localSearchAtPreprocessing();
 			solver = buildSolver(problem);
 			if (solution != null)
 				solver.solManager.storeSolution(solution);
-			solver.stoppingType = null;
+			solver.stopping = null;
 			solver.solve();
 			solver.solManager.displayFinalResults();
 		}
@@ -384,7 +384,7 @@ public class Resolution extends Thread {
 	@Override
 	public void run() {
 		stopwatch.start();
-		log.config("\n" + VERSION + " " + Kit.dateOf(Resolution.class) + "\n"); // + " - " + Arguments.configurationFileName
+		log.config("\n" + VERSION + " " + Kit.dateOf(Head.class) + "\n"); // + " - " + Arguments.configurationFileName
 		boolean crashed = false;
 		for (int i = 0; i < Arguments.nInstancesToSolve; i++) {
 			try {
@@ -393,7 +393,7 @@ public class Resolution extends Thread {
 			} catch (Throwable e) {
 				crashed = true;
 				log.warning("Instance with exception");
-				if (cp.settingGeneral.makeExceptionsVisible)
+				if (control.settingGeneral.makeExceptionsVisible)
 					e.printStackTrace();
 			}
 			statisticsMultiresolution.update(crashed);
@@ -401,7 +401,7 @@ public class Resolution extends Thread {
 		statisticsMultiresolution.outputGlobalStatistics();
 		if (Arguments.multiThreads) {
 			if (!crashed) {
-				Resolution.saveMultithreadResultsFiles(this);
+				Head.saveMultithreadResultsFiles(this);
 				System.exit(0);
 			}
 		} else

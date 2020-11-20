@@ -26,7 +26,7 @@ public abstract class TabuManager {
 
 		public TabuManagerVariable(SolverLocal solver, int tabuListSize) {
 			if (tabuListSize > 0) {
-				this.tabus = new boolean[solver.pb.variables.length];
+				this.tabus = new boolean[solver.problem.variables.length];
 				this.t1 = new int[tabuListSize];
 			}
 		}
@@ -58,7 +58,7 @@ public abstract class TabuManager {
 
 		public TabuManagerVariableValue(SolverLocal solver, int tabuListSize) {
 			if (tabuListSize > 0) {
-				this.tabus = Variable.litterals(solver.pb.variables).booleanArray();
+				this.tabus = Variable.litterals(solver.problem.variables).booleanArray();
 				this.t1 = new int[tabuListSize];
 				this.t2 = new int[tabuListSize];
 			}

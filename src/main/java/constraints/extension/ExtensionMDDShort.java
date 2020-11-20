@@ -39,7 +39,7 @@ public final class ExtensionMDDShort extends ExtensionGlobal implements TagPosit
 		super.onConstructionProblemFinished();
 		int nNodes = ((MDDShort) extStructure).nNodes();
 		this.trueNodes = new int[nNodes];
-		if (pb.rs.cp.settingExtension.decremental)
+		if (pb.head.control.settingExtension.decremental)
 			this.set = new SetSparseReversible(nNodes, false, pb.variables.length + 1);
 		else
 			this.falseNodes = new int[nNodes];
@@ -128,7 +128,7 @@ public final class ExtensionMDDShort extends ExtensionGlobal implements TagPosit
 			return false;
 		}
 
-		int cutoffVariant = pb.rs.cp.settingExtension.variant;
+		int cutoffVariant = pb.head.control.settingExtension.variant;
 		if (cutoffVariant == 2) {
 			if (scp[level].isFuture()) {
 				if (!ac[level][a]) {

@@ -105,8 +105,8 @@ public class State {
 		this.vids = variableIndices;
 		this.domainRepresentations = new long[variableIndices.length][];
 		for (int i = 0; i < domainRepresentations.length; i++)
-			domainRepresentations[i] = stateDominanceManager.solver.pb.variables[variableIndices[i]].dom.binaryRepresentation().clone();
-		stateDominanceManager.nbGeneratedHyperNogoods++;
+			domainRepresentations[i] = stateDominanceManager.solver.problem.variables[variableIndices[i]].dom.binaryRepresentation().clone();
+		stateDominanceManager.nGeneratedHyperNogoods++;
 		// System.out.println(this);
 		// DotSaver.setVariableIndices(variableIndices);
 		// DotSaver.saveGraph(solver.problem);
@@ -120,14 +120,14 @@ public class State {
 		for (int i = 0; i < proof.length; i++) {
 			if (proof[i]) {
 				vids[cnt] = i;
-				domainRepresentations[cnt] = stateDominanceManager.solver.pb.variables[i].dom.binaryRepresentation().clone();
+				domainRepresentations[cnt] = stateDominanceManager.solver.problem.variables[i].dom.binaryRepresentation().clone();
 				// domainRepresentations[cnt] = solver != null ?
 				// solver.problem.getVariable(i).domain.getElements().getBinaryRepresentation().clone() :
 				// hn.domainRepresentations[i];
 				cnt++;
 			}
 		}
-		stateDominanceManager.nbGeneratedHyperNogoods++;
+		stateDominanceManager.nGeneratedHyperNogoods++;
 		// System.out.println(this);
 	}
 

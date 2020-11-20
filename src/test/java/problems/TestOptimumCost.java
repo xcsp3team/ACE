@@ -16,7 +16,7 @@ import org.xcsp.common.IVar.Var;
 import org.xcsp.common.Utilities;
 import org.xcsp.modeler.api.ProblemAPI;
 
-import executables.Resolution;
+import main.Head;
 
 @RunWith(Parameterized.class)
 public class TestOptimumCost {
@@ -29,7 +29,7 @@ public class TestOptimumCost {
 			data = data != null ? " -data=" + data : "";
 			collection.add(new Object[] { ((Class<?>) instance).getName() + variant + data + pars, value });
 		} else {
-			URL url = Resolution.class.getResource(instance + ".xml.lzma");
+			URL url = Head.class.getResource(instance + ".xml.lzma");
 			Utilities.control(url != null, "not found: " + instance + ".xml.lzma");
 			collection.add(new Object[] { url.getPath() + pars, value });
 		}

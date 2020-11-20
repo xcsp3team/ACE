@@ -1,6 +1,6 @@
 package learning;
 
-import propagation.AC;
+import propagation.GAC;
 import propagation.Propagation;
 import search.backtrack.DecisionRecorder;
 import search.backtrack.SolverBacktrack;
@@ -18,7 +18,7 @@ public class NogoodMinimizer {
 		this.solver = solver;
 		this.propagation = solver.propagation;
 		this.dr = solver.dr;
-		this.arityLimit = solver.rs.cp.settingLearning.nogoodArityLimit;
+		this.arityLimit = solver.head.control.settingLearning.nogoodArityLimit;
 	}
 
 	private boolean addPositiveTransitionDecision(int positiveDecision, int[] tmp, int nTransitions) {
@@ -43,7 +43,7 @@ public class NogoodMinimizer {
 				solver.assign(x, a);
 				consistent = propagation.runAfterAssignment(x);
 			}
-			assert !consistent || !(propagation instanceof AC) || ((AC) propagation).controlArcConsistency();
+			assert !consistent || !(propagation instanceof GAC) || ((GAC) propagation).controlArcConsistency();
 		}
 		if (consistent)
 			return -1;
@@ -64,7 +64,7 @@ public class NogoodMinimizer {
 			x.dom.removeElementary(a);
 			consistent = x.dom.size() > 0 && propagation.runAfterRefutation(x);
 			if (!consistent) {
-				solver.stoppingType = EStopping.FULL_EXPLORATION;
+				solver.stopping = EStopping.FULL_EXPLORATION;
 				return new int[0];
 			}
 			return null;

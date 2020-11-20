@@ -27,7 +27,7 @@ public abstract class Forward extends Propagation {
 	}
 
 	protected final boolean hasSolverPropagatedAfterLastButOneDecision() {
-		return cp().settingSolving.branching != EBranching.NON || !((SolverBacktrack) solver).dr.isLastButOneDecisionNegative();
+		return solver.head.control.settingSolving.branching != EBranching.NON || !((SolverBacktrack) solver).dr.isLastButOneDecisionNegative();
 	}
 
 	@Override

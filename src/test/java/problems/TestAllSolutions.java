@@ -17,7 +17,7 @@ import org.xcsp.common.Utilities;
 import org.xcsp.modeler.api.ProblemAPI;
 import org.xcsp.modeler.problems.AllInterval;
 
-import executables.Resolution;
+import main.Head;
 import problem.Problem;
 
 @RunWith(Parameterized.class)
@@ -30,7 +30,7 @@ public class TestAllSolutions {
 		if (instance instanceof Class<?>)
 			s = ((Class<?>) instance).getName() + (variant != null ? " -variant=" + variant : "") + (data != null ? " -data=" + data : "");
 		else {
-			URL url = Resolution.class.getResource(instance + ".xml.lzma");
+			URL url = Head.class.getResource(instance + ".xml.lzma");
 			Utilities.control(url != null, "not found: " + instance + ".xml.lzma");
 			s = url.getPath();
 		}

@@ -169,10 +169,10 @@ public final class QueueForSAC3 {
 	public QueueForSAC3(SolverBacktrack solver, boolean priorityToSingletons) {
 		this.solver = solver;
 		this.priorityToSingletons = priorityToSingletons;
-		this.positions = Stream.of(solver.pb.variables).map(x -> new Cell[x.dom.initSize()]).toArray(Cell[][]::new);
-		IntStream.range(0, Variable.nInitValuesFor(solver.pb.variables)).forEach(i -> trash = new Cell(trash));
-		this.sizes = new int[solver.pb.variables.length];
-		String s = solver.rs.cp.settingPropagation.classForSACSelector.substring(solver.rs.cp.settingPropagation.classForSACSelector.lastIndexOf('$') + 1);
+		this.positions = Stream.of(solver.problem.variables).map(x -> new Cell[x.dom.initSize()]).toArray(Cell[][]::new);
+		IntStream.range(0, Variable.nInitValuesFor(solver.problem.variables)).forEach(i -> trash = new Cell(trash));
+		this.sizes = new int[solver.problem.variables.length];
+		String s = solver.head.control.settingPropagation.classForSACSelector.substring(solver.head.control.settingPropagation.classForSACSelector.lastIndexOf('$') + 1);
 		this.cellSelector = Reflector.buildObject(s, CellSelector.class, this);
 	}
 

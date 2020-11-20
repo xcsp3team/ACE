@@ -86,9 +86,9 @@ public final class IdentificationAllDifferent {
 		this.levels = new int[pb.variables.length];
 		this.tmp = new int[pb.variables.length];
 		this.set = new SetSparse(pb.variables.length, true);
-		for (int k = 1; k <= pb.rs.cp.settingCtrs.inferAllDifferentNb; k++) {
+		for (int k = 1; k <= pb.head.control.settingCtrs.inferAllDifferentNb; k++) {
 			int cliqueSize = buildClique(k);
-			if (cliqueSize <= pb.rs.cp.settingCtrs.inferAllDifferentSize)
+			if (cliqueSize <= pb.head.control.settingCtrs.inferAllDifferentSize)
 				break;
 			VariableInteger[] scp = IntStream.range(0, cliqueSize).mapToObj(i -> pb.variables[tmp[i]]).sorted().toArray(VariableInteger[]::new);
 			pb.allDifferent(scp);

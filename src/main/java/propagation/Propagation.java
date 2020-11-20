@@ -13,10 +13,8 @@ import java.util.stream.IntStream;
 
 import constraints.Constraint;
 import constraints.Constraint.CtrGlobal;
-import dashboard.ControlPanel;
 import dashboard.ControlPanel.SettingPropagation;
 import interfaces.ObserverConflicts;
-import problem.Problem;
 import search.Solver;
 import sets.SetSparse;
 import utility.Kit;
@@ -33,9 +31,9 @@ import variables.Variable;
 public abstract class Propagation {
 
 	public static Propagation buildFor(Solver solver) {
-		if (solver.rs.cp.settingSolving.enablePrepro || solver.rs.cp.settingSolving.enableSearch) {
-			Set<Class<?>> classes = solver.rs.handlerClasses.map.get(Propagation.class);
-			return Reflector.buildObject(solver.rs.cp.settingPropagation.clazz, classes, solver);
+		if (solver.head.control.settingSolving.enablePrepro || solver.head.control.settingSolving.enableSearch) {
+			Set<Class<?>> classes = solver.head.handlerClasses.map.get(Propagation.class);
+			return Reflector.buildObject(solver.head.control.settingPropagation.clazz, classes, solver);
 		}
 		return null;
 	}
@@ -143,20 +141,12 @@ public abstract class Propagation {
 		return ++time;
 	}
 
-	public ControlPanel cp() {
-		return solver.rs.cp;
-	}
-
-	public Problem pb() {
-		return solver.rs.problem;
-	}
-
 	public Propagation(Solver solver) {
 		this.solver = solver;
-		this.settings = solver.rs.cp.settingPropagation;
+		this.settings = solver.head.control.settingPropagation;
 		this.queue = this instanceof Forward ? new Queue((Forward) this) : null;
 		int nAuxQueues = settings.useAuxiliaryQueues ? Constraint.MAX_FILTERING_COMPLEXITY : 0;
-		this.auxiliaryQueues = this instanceof Forward ? SetSparseMap.buildArray(nAuxQueues, solver.pb.constraints.length) : null;
+		this.auxiliaryQueues = this instanceof Forward ? SetSparseMap.buildArray(nAuxQueues, solver.problem.constraints.length) : null;
 
 	}
 
@@ -197,8 +187,8 @@ public abstract class Propagation {
 				while (!auxiliaryQueue.isEmpty()) {
 					int cnum = auxiliaryQueue.shift();
 					int xnum = auxiliaryQueue.values[cnum];
-					Constraint c = solver.pb.constraints[cnum];
-					Variable x = solver.pb.variables[xnum];
+					Constraint c = solver.problem.constraints[cnum];
+					Variable x = solver.problem.variables[xnum];
 					// TODO : next instruction forces filtering, code may be improved to filter only when necessary
 					c.timestamp = x.timestamp;
 					if (!c.ignored) {
@@ -266,6 +256,7 @@ public abstract class Propagation {
 			lastWipeoutVar = x;
 			for (ObserverConflicts obs : solver.observersConflicts)
 				obs.whenWipeout(currFilteringCtr, x);
+
 			// queue.clear();
 			return false;
 		}

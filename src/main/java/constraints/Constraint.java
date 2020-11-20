@@ -28,7 +28,6 @@ import constraints.global.SumSimple.SumSimpleEQ;
 import constraints.global.SumWeighted.SumWeightedEQ;
 import constraints.intension.Intension;
 import dashboard.ControlPanel.SettingCtrs;
-import executables.Resolution;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.FilteringGlobal;
 import interfaces.FilteringSpecific;
@@ -39,6 +38,7 @@ import interfaces.TagGACGuaranteed;
 import interfaces.TagGACUnguaranteed;
 import interfaces.TagSymmetric;
 import interfaces.TagUnsymmetric;
+import main.Head;
 import problem.Problem;
 import propagation.Forward;
 import propagation.Reviser;
@@ -77,7 +77,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 			this.positions = null;
 			this.futvars = new SetDense(scp.length, true);
 		}
-		control(true);
 	}
 
 	/*************************************************************************
@@ -434,14 +433,14 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 * This function must be such that if (an upper bound of) the number of max conflicts is known for one pair (variable, index) then it is known for any pair
 	 */
 	public int giveUpperBoundOfMaxNumberOfConflictsFor(Variable x, int a) {
-		return Resolution.UNDEFINED; // by default
+		return Head.UNDEFINED; // by default
 	}
 
 	/**
 	 * we assume that if the number of max conflicts is known for one pair (variable, index) then it is known for any pair
 	 */
 	public boolean usePredefinedMaxNumberOfConflicts() {
-		return giveUpperBoundOfMaxNumberOfConflictsFor(scp[0], scp[0].dom.first()) != Resolution.UNDEFINED;
+		return giveUpperBoundOfMaxNumberOfConflictsFor(scp[0], scp[0].dom.first()) != Head.UNDEFINED;
 	}
 
 	/**********************************************************************************************
@@ -467,13 +466,13 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		if (this instanceof FilteringSpecific || this instanceof Extension)
 			return Integer.MAX_VALUE; // because not concerned
 
-		int arityLimit = pb.rs.cp.settingPropagation.arityLimitForGACGuaranteed;
+		int arityLimit = pb.head.control.settingPropagation.arityLimitForGACGuaranteed;
 		if (scp.length <= arityLimit)
 			return Integer.MAX_VALUE;
-		int futureLimitation = pb.rs.cp.settingPropagation.futureLimitation;
+		int futureLimitation = pb.head.control.settingPropagation.futureLimitation;
 		if (futureLimitation != -1)
 			return futureLimitation < scp.length ? Math.max(arityLimit, futureLimitation) : Integer.MAX_VALUE;
-		int spaceLimitation = pb.rs.cp.settingPropagation.spaceLimitation;
+		int spaceLimitation = pb.head.control.settingPropagation.spaceLimitation;
 		if (spaceLimitation != -1)
 			return Math.max(arityLimit, howManyVarsWithin(scp, spaceLimitation));
 		return Integer.MAX_VALUE;
@@ -489,7 +488,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		this.doms = Variable.buildDomainsArrayFor(scp);
 		this.tupleManager = new TupleManager(scp);
 		this.vals = new int[scp.length];
-		this.settings = pb.rs.cp.settingCtrs;
+		this.settings = pb.head.control.settingCtrs;
 
 		this.genericFilteringThreshold = computeGenericFilteringThreshold();
 		this.indexesMatchValues = Stream.of(scp).allMatch(x -> x.dom.indexesMatchValues());
@@ -499,7 +498,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		if (this instanceof FilteringGlobal)
 			pb.stuff.nGlobalCtrs++;
 		if (this instanceof ObserverConstruction)
-			pb.rs.observersConstruction.add(this);
+			pb.head.observersConstruction.add(this);
 
 		this.supporter = Supporter.buildFor(this);
 

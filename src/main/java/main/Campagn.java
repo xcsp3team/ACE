@@ -6,7 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package executables;
+package main;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -30,7 +30,7 @@ import dashboard.Output;
 import utility.DocumentHandler;
 import utility.Kit;
 
-public class ResolutionCluster {
+public class Campagn { // using the cluster
 
 	private static final String VALUE = "value";
 	private static final String MIN = "min";
@@ -109,21 +109,21 @@ public class ResolutionCluster {
 			file.mkdirs();
 		else
 			Kit.control(file.isDirectory());
-		Resolution.copy(defaultSettingsFileName, directoryNameOfContext + File.separator + defaultSettingsFileName);
-		Resolution.copy(selectedInstancesFileName, directoryNameOfContext + File.separator + selectedInstancesFileName);
+		Head.copy(defaultSettingsFileName, directoryNameOfContext + File.separator + defaultSettingsFileName);
+		Head.copy(selectedInstancesFileName, directoryNameOfContext + File.separator + selectedInstancesFileName);
 		if (settingsVariantsFileName != null)
-			Resolution.copy(settingsVariantsFileName, directoryNameOfContext + File.separator + settingsVariantsFileName);
+			Head.copy(settingsVariantsFileName, directoryNameOfContext + File.separator + settingsVariantsFileName);
 		String jarName = System.getProperty("java.class.path");
 		if (jarName.indexOf(File.pathSeparator) == -1 && jarName.endsWith(".jar")) {
 			int index = jarName.lastIndexOf(File.separator);
 			index = (index == -1 ? 0 : index + 1);
-			Resolution.copy(jarName, directoryNameOfContext + File.separator + jarName.substring(index));
+			Head.copy(jarName, directoryNameOfContext + File.separator + jarName.substring(index));
 		}
 	}
 
 	private boolean timeForCluster = true;
 
-	public ResolutionCluster(String[] args) {
+	public Campagn(String[] args) {
 		this.defaultSettingsFileName = args[0];
 		this.selectedInstancesFileName = args[1];
 		this.settingsVariantsFileName = args[2];
@@ -310,14 +310,14 @@ public class ResolutionCluster {
 	public static void main(String[] args) throws Exception {
 		if (args.length != 5) {
 			System.out.println(
-					"Usage : java abscon.ResolutionCluster <defaultSettingsFileName> <selectedInstancesFileName> <settingsVariantsFileName> <command>  <queueMode>");
+					"Usage : java main.Campagn <defaultSettingsFileName> <selectedInstancesFileName> <settingsVariantsFileName> <command>  <queueMode>");
 			System.out.println("\n  Queue mode:");
 			for (int i = 0; i < queueCommands.length; i++)
 				System.out.println("   - queue = " + i + " => " + queueCommands[i]);
 			System.out.println("\n  NB: set no to <settingsVariantsFileName> to not take into account variants");
 		} else
-			new ResolutionCluster(args); // [0], args[1], args[2], configurationVariantsFileName,
-											// queueMode).run(args[1], configurationVariantsFileName);
+			new Campagn(args); // [0], args[1], args[2], configurationVariantsFileName,
+								// queueMode).run(args[1], configurationVariantsFileName);
 	}
 }
 

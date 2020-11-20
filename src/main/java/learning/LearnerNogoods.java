@@ -34,7 +34,7 @@ import variables.Variable;
 public final class LearnerNogoods {
 
 	public static LearnerNogoods buildFor(SolverBacktrack solver) {
-		if (solver.rs.cp.settingSolving.enableSearch && solver.rs.cp.settingLearning.nogood != ELearningNogood.NO && solver.propagation.queue != null)
+		if (solver.head.control.settingSolving.enableSearch && solver.head.control.settingLearning.nogood != ELearningNogood.NO && solver.propagation.queue != null)
 			return new LearnerNogoods(solver);
 		return null;
 	}
@@ -165,12 +165,12 @@ public final class LearnerNogoods {
 	public LearnerNogoods(SolverBacktrack solver) {
 		this.solver = solver;
 		this.dr = solver.dr;
-		this.settings = solver.rs.cp.settingLearning;
+		this.settings = solver.head.control.settingLearning;
 		this.nogoods = new Nogood[settings.nogoodBaseLimit];
-		this.pws = Stream.of(solver.pb.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
-		this.nws = Stream.of(solver.pb.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
-		this.tmp = new int[solver.pb.variables.length];
-		this.symmetryHandler = settings.nogood == ELearningNogood.RST_SYM ? new SymmetryHandler(solver.pb.variables.length) : null;
+		this.pws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
+		this.nws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
+		this.tmp = new int[solver.problem.variables.length];
+		this.symmetryHandler = settings.nogood == ELearningNogood.RST_SYM ? new SymmetryHandler(solver.problem.variables.length) : null;
 		solver.propagation.queue.setLearnerNogood(this);
 	}
 
@@ -308,15 +308,15 @@ public final class LearnerNogoods {
 					x.dom.removeElementary(a);
 					Kit.log.info("Remove Unary sym nogood : " + dr.stringOf(decision));
 					if (x.dom.size() == 0) {
-						solver.stoppingType = EStopping.FULL_EXPLORATION;
+						solver.stopping = EStopping.FULL_EXPLORATION;
 						break;
 					}
 					effective = true;
 				}
 			}
 			decisionsToBePerformedAtNextRun.clear();
-			if (solver.stoppingType != EStopping.FULL_EXPLORATION && effective && !solver.propagation.runInitially())
-				solver.stoppingType = EStopping.FULL_EXPLORATION;
+			if (solver.stopping != EStopping.FULL_EXPLORATION && effective && !solver.propagation.runInitially())
+				solver.stopping = EStopping.FULL_EXPLORATION;
 		}
 
 		private Map<Integer, Integer>[] mapOfSymmetryGroupGenerators;
@@ -334,9 +334,9 @@ public final class LearnerNogoods {
 		private LinkedList<int[]> naryNogoodsToHandle = new LinkedList<>();
 
 		private SymmetryHandler(int nVariables) {
-			this.mapOfSymmetryGroupGenerators = new Map[solver.pb.symmetryGroupGenerators.size()];
+			this.mapOfSymmetryGroupGenerators = new Map[solver.problem.symmetryGroupGenerators.size()];
 			int cnt = 0;
-			for (List<int[]> generator : solver.pb.symmetryGroupGenerators) {
+			for (List<int[]> generator : solver.problem.symmetryGroupGenerators) {
 				Map<Integer, Integer> map = mapOfSymmetryGroupGenerators[cnt] = new HashMap<>();
 				for (int[] cycle : generator)
 					for (int i = 0; i < cycle.length; i++)

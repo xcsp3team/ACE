@@ -29,10 +29,11 @@ import utility.Kit;
 public class Restarter implements ObserverRuns {
 
 	public static Restarter buildFor(Solver solver) {
-		Kit.control(!(solver.rs.cp.settingLNS.enabled && solver.rs.cp.settingLB.enabled), () -> "Cannot use LNS and LB (local branching) at the same time.");
-		if (solver.rs.cp.settingLNS.enabled)
+		Kit.control(!(solver.head.control.settingLNS.enabled && solver.head.control.settingLB.enabled),
+				() -> "Cannot use LNS and LB (local branching) at the same time.");
+		if (solver.head.control.settingLNS.enabled)
 			return new RestarterLNS(solver);
-		if (solver.rs.cp.settingLB.enabled)
+		if (solver.head.control.settingLB.enabled)
 			return new RestarterLocalBranching(solver);
 		return new Restarter(solver);
 	}
@@ -63,14 +64,14 @@ public class Restarter implements ObserverRuns {
 			forceRootPropagation = false;
 			nRestartsSinceLastReset = 0;
 			if (solver.propagation.runInitially() == false)
-				solver.stoppingType = EStopping.FULL_EXPLORATION;
+				solver.stopping = EStopping.FULL_EXPLORATION;
 		}
 	}
 
 	@Override
 	public void afterRun() {
 		if (settingsGeneral.framework == TypeFramework.COP)
-			solver.pb.optimizer.afterRun();
+			solver.problem.optimizer.afterRun();
 	}
 
 	/**
@@ -131,8 +132,8 @@ public class Restarter implements ObserverRuns {
 
 	public Restarter(Solver solver) {
 		this.solver = solver;
-		this.setting = solver.rs.cp.settingRestarts;
-		this.settingsGeneral = solver.rs.cp.settingGeneral;
+		this.setting = solver.head.control.settingRestarts;
+		this.settingsGeneral = solver.head.control.settingGeneral;
 		this.measureSupplier = measureSupplier();
 		if (settingsGeneral.framework == TypeFramework.COP)
 			setting.cutoff *= 10;
@@ -142,15 +143,15 @@ public class Restarter implements ObserverRuns {
 	private long cnt;
 
 	public boolean currRunFinished() {
-		if (solver.pb.optimizer != null && ((cnt++) % 5) == 0)
-			solver.pb.optimizer.possiblyUpdateLocalBounds();
+		if (solver.problem.optimizer != null && ((cnt++) % 5) == 0)
+			solver.problem.optimizer.possiblyUpdateLocalBounds();
 		if (measureSupplier.get() >= currCutoff)
 			return true;
 		if (settingsGeneral.framework != TypeFramework.COP || numRun != solver.solManager.lastSolutionRun)
 			return false;
 		if (setting.restartAfterSolution)
 			return true;
-		if (solver.pb.optimizer.ctr instanceof MaximumCstLE || solver.pb.optimizer.ctr instanceof ObjVar)
+		if (solver.problem.optimizer.ctr instanceof MaximumCstLE || solver.problem.optimizer.ctr instanceof ObjVar)
 			return true;
 		return false;
 	}
@@ -161,4 +162,9 @@ public class Restarter implements ObserverRuns {
 	public boolean allRunsFinished() {
 		return numRun + 1 >= setting.nRunsLimit;
 	}
+
+	public boolean runMultipleOf(int v) {
+		return numRun > 0 && numRun % v == 0;
+	}
+
 }

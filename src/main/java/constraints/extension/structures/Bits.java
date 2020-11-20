@@ -17,7 +17,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import executables.Resolution;
+import main.Head;
 import problem.Problem;
 import utility.Bit;
 import utility.Kit;
@@ -118,8 +118,8 @@ public final class Bits extends ExtensionStructure {
 	}
 
 	private void saveSpace() {
-		Resolution resolution = firstRegisteredCtr().pb.rs;
-		if (resolution.cp.settingProblem.shareBitVectors) {
+		Head resolution = firstRegisteredCtr().pb.head;
+		if (resolution.control.settingProblem.shareBitVectors) {
 			int nSharedRepresentationsBefore = firstRegisteredCtr().pb.stuff.nSharedBinaryRepresentations;
 			saveSpace(bitSups0, 1);
 			saveSpace(bitSups1, 0);

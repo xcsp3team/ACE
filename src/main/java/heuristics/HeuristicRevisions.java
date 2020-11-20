@@ -13,8 +13,8 @@ import propagation.Queue;
 import variables.Variable;
 
 /**
- * A revision ordering heuristic is attached to a propagation set and involves selecting an element among those contained in it. NB : do not modify
- * the name of this class as it is used by reflection.
+ * A revision ordering heuristic is attached to a propagation set and involves selecting an element among those contained in it. NB : do not modify the name of
+ * this class as it is used by reflection.
  */
 public abstract class HeuristicRevisions extends Heuristic {
 
@@ -79,7 +79,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 			@Override
 			public int bestPosition() {
-				return queue.propagation.solver.rs.random.nextInt(queue.size());
+				return queue.propagation.solver.head.random.nextInt(queue.size());
 			}
 		}
 
@@ -89,15 +89,15 @@ public abstract class HeuristicRevisions extends Heuristic {
 	// ***** HeuristicRevisionDynamic
 	// ************************************************************************
 
-	public abstract static class HeuristicRevisionsDynamic extends HeuristicRevisions {
+	public static abstract class HeuristicRevisionsDynamic extends HeuristicRevisions {
 
 		public HeuristicRevisionsDynamic(Queue queue, boolean antiHeuristic) {
 			super(queue, antiHeuristic);
 		}
 
 		/**
-		 * Returns the (raw) score of the element in the queue at the specified position. It is usually the method to be overridden in order to define
-		 * a new heuristic.
+		 * Returns the (raw) score of the element in the queue at the specified position. It is usually the method to be overridden in order to define a new
+		 * heuristic.
 		 */
 		protected abstract double scoreOf(Variable x);
 

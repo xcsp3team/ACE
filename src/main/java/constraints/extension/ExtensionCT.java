@@ -24,7 +24,7 @@ import variables.Variable;
 
 public class ExtensionCT extends ExtensionSTROptimized implements TagShort {
 
-	public final static class CtrExtensionCT2 extends ExtensionCT implements TagShort {
+	public final static class ExtensionCT2 extends ExtensionCT implements TagShort {
 
 		static final int MASK_COMPRESION_LIMIT = 12;
 		static final int MASK_COMPRESION_TRIGGER_SIZE = 300;
@@ -60,7 +60,7 @@ public class ExtensionCT extends ExtensionSTROptimized implements TagShort {
 			}
 		}
 
-		public CtrExtensionCT2(Problem pb, Variable[] scp) {
+		public ExtensionCT2(Problem pb, Variable[] scp) {
 			super(pb, scp);
 		}
 

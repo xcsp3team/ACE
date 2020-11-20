@@ -48,33 +48,33 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 		return mapOfHashKeys.size();
 	}
 
-	@Override
-	public void clear() {
-		mapOfHashKeys.clear();
-	}
+	// @Override
+	// public void clear() {
+	// mapOfHashKeys.clear();
+	// }
 
 	public LearnerStatesEquivalence(SolverBacktrack solver) {
 		super(solver);
-		if (solver.pb.variables.length > 1500)
-			stop = true;
+		if (variables.length > 1500)
+			stopped = true;
 		currentOpenNodesKeys = new ByteArrayHashKey[variables.length];
 		currentOpenNodesNbFoundSolutions = new int[variables.length];
 		moreThanOneSolution = solver.solManager.limit > 1;
 		nbBytesPerVariableId = (variables.length <= Math.pow(2, 8) ? 1 : variables.length <= Math.pow(2, 16) ? 2 : variables.length <= Math.pow(2, 24) ? 3 : 4);
-		if (solver.rs.cp.settingLearning.compressionLevelForStateEquivalence != Deflater.NO_COMPRESSION)
-			compressor = new Deflater(solver.rs.cp.settingLearning.compressionLevelForStateEquivalence);
+		if (settings.compressionLevelForStateEquivalence != Deflater.NO_COMPRESSION)
+			compressor = new Deflater(settings.compressionLevelForStateEquivalence);
 	}
 
 	@Override
 	protected boolean mustStop() {
 		if (super.mustStop())
 			return true;
-		int nbGlobalKeys = mapOfHashKeys.size() + nbTooLargeKeys;
-		return (nbGlobalKeys > 1000 && nbGlobalKeys > 1000 * nbInferences);
+		int nGlobalKeys = mapOfHashKeys.size() + nbTooLargeKeys;
+		return (nGlobalKeys > 1000 && nGlobalKeys > 1000 * nInferences);
 	}
 
 	private byte[] compress(int limit) {
-		assert limit >= solver.rs.cp.settingLearning.compressionLimitForStateEquivalence;
+		assert limit >= settings.compressionLimitForStateEquivalence;
 
 		compressor.reset();
 		compressor.setInput(tmpInput, 0, limit);
@@ -97,7 +97,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 		int[] ids = moreThanOneSolution ? reductionOperator.extractForAllSolutions() : reductionOperator.extract();
 		int keySize = 0;
 		for (int i = 0; i < ids.length; i++) {
-			Variable var = solver.pb.variables[ids[i]];
+			Variable var = solver.problem.variables[ids[i]];
 			Domain dom = var.dom;
 			if (keySize + nbBytesPerVariableId + dom.initSize() / 8 >= tmpInput.length) {
 				keySize = -1;
@@ -116,7 +116,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 			nbTooLargeKeys++;
 		} else {
 			byte[] t = null;
-			if (compressor == null || keySize < solver.rs.cp.settingLearning.compressionLimitForStateEquivalence) {
+			if (compressor == null || keySize < settings.compressionLimitForStateEquivalence) {
 				t = new byte[keySize];
 				System.arraycopy(tmpInput, 0, t, 0, keySize);
 			} else
@@ -127,7 +127,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 
 	@Override
 	public boolean dealWhenOpeningNode() {
-		if (stop)
+		if (stopped)
 			return true;
 
 		int level = solver.depth();
@@ -145,7 +145,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 
 		Integer value = mapOfHashKeys.get(currentHashKey);
 		if (value != null) {
-			nbInferences++;
+			nInferences++;
 			if (value > 0) {
 				nbInferredSolutions += value;
 				solver.solManager.found += value;
@@ -165,13 +165,13 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 
 	@Override
 	public void dealWhenClosingNode() {
-		if (stop)
+		if (stopped)
 			return;
 		if (mustStop()) {
 			Kit.log.info("Stopping use of transposition table (mapSize=" + mapOfHashKeys.size() + ", nbTooLargekeys=" + nbTooLargeKeys + ", mem="
 					+ Kit.memoryInMb() + ")");
 			mapOfHashKeys.clear();
-			stop = true;
+			stopped = true;
 			// display();
 			return;
 		}
@@ -181,7 +181,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 			return; // since the key was too large and so not recorded
 
 		if (hashKey.t.length == 0) {
-			solver.stoppingType = EStopping.FULL_EXPLORATION;
+			solver.stopping = EStopping.FULL_EXPLORATION;
 		}
 
 		int nbSolutions = (int) solver.solManager.found - currentOpenNodesNbFoundSolutions[solver.depth()];
@@ -217,8 +217,8 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 
 	@Override
 	public void displayStats() {
-		if (!stop) // && !Data.competitionMode)
-			Kit.log.finer("  mapSize=" + mapOfHashKeys.size() + "  nbInferences=" + nbInferences + "  nbInferredSolutions=" + nbInferredSolutions + "  usedMem="
+		if (!stopped) // && !Data.competitionMode)
+			Kit.log.finer("  mapSize=" + mapOfHashKeys.size() + "  nbInferences=" + nInferences + "  nbInferredSolutions=" + nbInferredSolutions + "  usedMem="
 					+ Kit.memoryInMb() + "  nbTooLargeKeys=" + nbTooLargeKeys);
 	}
 

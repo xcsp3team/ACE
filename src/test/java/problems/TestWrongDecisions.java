@@ -14,7 +14,7 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.xcsp.common.Utilities;
 
-import executables.Resolution;
+import main.Head;
 
 @RunWith(Parameterized.class)
 public class TestWrongDecisions {
@@ -23,7 +23,7 @@ public class TestWrongDecisions {
 
 	static void add(Object instance, int nWrongDecisions, String pars) {
 		pars += " -ev";
-		URL url = Resolution.class.getResource(instance + ".xml.lzma");
+		URL url = Head.class.getResource(instance + ".xml.lzma");
 		Utilities.control(url != null, "not found: " + instance + ".xml.lzma");
 		collection.add(new Object[] { url.getPath() + " " + pars, nWrongDecisions });
 	}

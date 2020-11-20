@@ -12,7 +12,7 @@ import search.Solver;
 import utility.Kit;
 import variables.Variable;
 
-public abstract class StrongConsistency extends AC {
+public abstract class StrongConsistency extends GAC {
 
 	protected int nPassesLimit = Integer.MAX_VALUE; // TODO hard coding
 	protected boolean onlyBounds, onlyNeighbours; // TODO hard coding
@@ -21,7 +21,7 @@ public abstract class StrongConsistency extends AC {
 
 	public StrongConsistency(Solver solver) {
 		super(solver);
-		this.verbose = solver.rs.cp.settingGeneral.verbose;
+		this.verbose = solver.head.control.settingGeneral.verbose;
 		Kit.control(solver.observersSearch == null || solver.observersSearch.size() == 0);
 	}
 
@@ -39,20 +39,20 @@ public abstract class StrongConsistency extends AC {
 
 	@Override
 	public boolean runInitially() {
-		int nBefore = solver.pb.nValuesRemoved;
+		int nBefore = solver.problem.nValuesRemoved;
 		if (enforceArcConsistency() == false)
 			return false;
-		if (settings.strongOnlyWhenACEffective && pb().nValuesRemoved == nBefore)
+		if (settings.strongOnlyWhenACEffective && solver.problem.nValuesRemoved == nBefore)
 			return true;
 		return enforceMore();
 	}
 
 	@Override
 	public boolean runAfterAssignment(Variable x) {
-		int nBefore = solver.pb.nValuesRemoved;
+		int nBefore = solver.problem.nValuesRemoved;
 		if (enforceArcConsistencyAfterAssignment(x) == false)
 			return false;
-		if (performingProperSearch || settings.strongOnlyAtPreprocessing || (settings.strongOnlyWhenACEffective && pb().nValuesRemoved == nBefore)
+		if (performingProperSearch || settings.strongOnlyAtPreprocessing || (settings.strongOnlyWhenACEffective && solver.problem.nValuesRemoved == nBefore)
 				|| (settings.strongOnlyWhenNotSingleton && !x.dom.isModifiedAtCurrentDepth() && hasSolverPropagatedAfterLastButOneDecision()))
 			return true;
 		return enforceMore();
@@ -60,10 +60,10 @@ public abstract class StrongConsistency extends AC {
 
 	@Override
 	public boolean runAfterRefutation(Variable x) {
-		int nBefore = pb().nValuesRemoved;
+		int nBefore = solver.problem.nValuesRemoved;
 		if (enforceArcConsistencyAfterRefutation(x) == false)
 			return false;
-		if (performingProperSearch || settings.strongOnlyAtPreprocessing || (settings.strongOnlyWhenACEffective && pb().nValuesRemoved == nBefore))
+		if (performingProperSearch || settings.strongOnlyAtPreprocessing || (settings.strongOnlyWhenACEffective && solver.problem.nValuesRemoved == nBefore))
 			return true;
 		return enforceMore();
 	}

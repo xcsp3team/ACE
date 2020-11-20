@@ -143,7 +143,7 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 					list.add(x);
 			}
 			System.out.println("bestgap " + bestGap);
-			Random r = pb.rs.random;
+			Random r = pb.head.random;
 			return list.get(r.nextInt(list.size()));
 		}
 	}

@@ -40,8 +40,6 @@ import org.xcsp.common.Utilities;
 
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.Matrix3D;
-import executables.Extraction;
-import executables.Resolution;
 import heuristics.HeuristicRevisions;
 import heuristics.HeuristicRevisions.HeuristicRevisionsDirect.First;
 import heuristics.HeuristicRevisions.HeuristicRevisionsDirect.Last;
@@ -51,7 +49,9 @@ import heuristics.HeuristicVariables;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.TagExperimental;
 import interfaces.TagInvisible;
-import propagation.AC;
+import main.Extraction;
+import main.Head;
+import propagation.GAC;
 import propagation.Reviser;
 import propagation.QueueForSAC3.CellIterator;
 import propagation.Reviser.Reviser3;
@@ -459,7 +459,7 @@ public class ControlPanel {
 				+ "\n\tGAC is not enforced if the size of the current Cartesian product is more than than 2 up the specified value.";
 		String q3 = "For intension constraints, GAC is guaranteed to be enforced if the arity is not more than the specified value.";
 
-		public String clazz = addS("clazz", "p", AC.class, s_p);
+		public String clazz = addS("clazz", "p", GAC.class, s_p);
 		public final int variant = addI("variant", "pv", 0, s_pv, HIDDEN);
 		public final boolean useAuxiliaryQueues = addB("useAuxiliaryQueues", "uaq", false, s_uaq);
 		public String classForRevisions = addS("classForRevisions", "cr", Reviser3.class, Reviser.class, s_rm);
@@ -854,8 +854,8 @@ public class ControlPanel {
 		}
 
 		public void display() {
-			try (Scanner scanner1 = new Scanner(Resolution.class.getResource("/displayPart1.txt").openStream());
-					Scanner scanner2 = new Scanner(Resolution.class.getResourceAsStream("/displayPart2.txt"));) {
+			try (Scanner scanner1 = new Scanner(Head.class.getResource("/displayPart1.txt").openStream());
+					Scanner scanner2 = new Scanner(Head.class.getResourceAsStream("/displayPart2.txt"));) {
 				while (scanner1.hasNext())
 					System.out.println(scanner1.nextLine());
 				String tag = null;

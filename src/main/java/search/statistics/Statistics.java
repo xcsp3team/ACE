@@ -28,7 +28,7 @@ import interfaces.ObserverSearch;
 import learning.LearnerStatesEquivalence;
 import learning.ReductionOperator;
 import problem.ProblemStuff.MapAtt;
-import propagation.AC;
+import propagation.GAC;
 import propagation.Forward;
 import propagation.SAC;
 import propagation.SAC.SACGreedy;
@@ -51,7 +51,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		stopwatch.start();
 		if (solver instanceof SolverBacktrack && (((SolverBacktrack) solver).learnerNogoods != null))
 			nPreproAddedNogoods = (((SolverBacktrack) solver).learnerNogoods).nNogoods;
-		nPreproAddedCtrs = solver.pb.constraints.length;
+		nPreproAddedCtrs = solver.problem.constraints.length;
 	}
 
 	@Override
@@ -59,10 +59,10 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		preproWck += stopwatch.wckTime();
 		if (solver instanceof SolverBacktrack && (((SolverBacktrack) solver).learnerNogoods != null))
 			nPreproAddedNogoods = (((SolverBacktrack) solver).learnerNogoods).nNogoods - nPreproAddedNogoods;
-		nPreproAddedCtrs = solver.pb.constraints.length - nPreproAddedCtrs;
-		nPreproRemovedValues = Variable.nRemovedValuesFor(solver.pb.variables);
+		nPreproAddedCtrs = solver.problem.constraints.length - nPreproAddedCtrs;
+		nPreproRemovedValues = Variable.nRemovedValuesFor(solver.problem.variables);
 		nPreproRemovedTuples = solver.propagation.nTuplesRemoved;
-		nPreproInconsistencies = solver.stoppingType == EStopping.FULL_EXPLORATION ? 1 : 0;
+		nPreproInconsistencies = solver.stopping == EStopping.FULL_EXPLORATION ? 1 : 0;
 	}
 
 	@Override
@@ -129,7 +129,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 	}
 
 	public final long nEffectiveFilterings() {
-		return solver.pb.stuff.nEffectiveFilterings;
+		return solver.problem.stuff.nEffectiveFilterings;
 	}
 
 	public final long nRevisions() {
@@ -149,7 +149,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 	}
 
 	public void manageSolution() {
-		long cpu = solver.rs.stopwatch.cpuTime(), wck = solver.rs.instanceStopwatch.wckTime();
+		long cpu = solver.head.stopwatch.cpuTime(), wck = solver.head.instanceStopwatch.wckTime();
 		if (solver.solManager.found == 1) {
 			firstSolCpu = cpu;
 			firstSolWck = wck;
@@ -162,8 +162,8 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		MapAtt m = new MapAtt("Preprocessing");
 		m.put("filters", nEffectiveFilterings());
 		m.put("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
-		if (solver.propagation instanceof AC)
-			m.put("nACremovedValues", ((AC) (solver.propagation)).nPreproRemovals);
+		if (solver.propagation instanceof GAC)
+			m.put("nACremovedValues", ((GAC) (solver.propagation)).nPreproRemovals);
 		m.put("nTotalRemovedValues", nPreproRemovedValues);
 		m.put("inconsistency", nPreproInconsistencies > 0);
 		m.separator();
@@ -190,7 +190,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			m.separator();
 		}
 		m.put(WCK, preproWck / 1000.0);
-		m.put(CPU, solver.rs.stopwatch.cpuTimeInSeconds());
+		m.put(CPU, solver.head.stopwatch.cpuTimeInSeconds());
 
 		m.put(MEM, Kit.memoryInMb());
 		return m;
@@ -206,13 +206,13 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		MapAtt m = cumulatedAttributes();
 		// m.put(EXPIRED_TIME, solver.rs.isTimeExpiredForCurrentInstance());
 		// m.put(TOTAL_EXPLORATION, solver.isFullExploration());
-		m.put(STOP, solver.stoppingType == null ? "no" : solver.stoppingType.toString());
+		m.put(STOP, solver.stopping == null ? "no" : solver.stopping.toString());
 		m.put("wrong", solver.stats.nWrongDecisions);
 		// if (statMouny && solver.propagation instanceof ACPartial) {
 		// int[] t = ((ACPartial) solver.propagation).statistics;
 		// map.put("nbWOs", t[0] + ""); map.put("nbFPs", t[1] + ""); map.put("avgWOs", t[2] + ""); map.put("avgFPs", t[3] + ""); }
 		if (solver.solManager.found > 0) {
-			if (solver.pb.settings.framework != TypeFramework.CSP) {
+			if (solver.problem.settings.framework != TypeFramework.CSP) {
 				m.put("bestBound", solver.solManager.bestBound);
 				m.put("bestBoundWck", lastSolWck / 1000.0);
 				m.put("bestBoundCpu", lastSolCpu / 1000.0);
@@ -221,8 +221,8 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			m.put("firstSolCpu", firstSolCpu / 1000.0);
 			m.separator();
 		}
-		m.put(WCK, solver.rs.instanceStopwatch.wckTimeInSeconds());
-		m.put(CPU, solver.rs.stopwatch.cpuTimeInSeconds());
+		m.put(WCK, solver.head.instanceStopwatch.wckTimeInSeconds());
+		m.put(CPU, solver.head.stopwatch.cpuTimeInSeconds());
 		m.put(MEM, Kit.memoryInMb());
 		return m;
 	}
@@ -243,7 +243,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		@Override
 		public MapAtt runAttributes() {
 			MapAtt m = new MapAtt("Run");
-			if (solver.rs.cp.settingXml.competitionMode) {
+			if (solver.head.control.settingXml.competitionMode) {
 				m.put("run", solver.restarter.numRun);
 				m.put("dpt", solver.minDepth + ".." + solver.maxDepth);
 				m.put("eff", nEffectiveFilterings());
@@ -254,7 +254,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 				if (solver.learnerNogoods != null)
 					m.putPositive("ngd", solver.learnerNogoods.nNogoods);
 				if (solver.solManager.found > 0) {
-					if (solver.pb.settings.framework == TypeFramework.CSP)
+					if (solver.problem.settings.framework == TypeFramework.CSP)
 						m.put("nSols", solver.solManager.found);
 					else
 						m.put("bnd", nformat.format(solver.solManager.bestBound));
@@ -292,20 +292,20 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 				m.putPositive("nogoods", solver.learnerNogoods.nNogoods);
 			if (solver.solManager.found > 0) {
 				m.put("foundSolutions", solver.solManager.found);
-				if (solver.pb.settings.framework != TypeFramework.CSP)
+				if (solver.problem.settings.framework != TypeFramework.CSP)
 					m.put(Output.BEST_BOUND, solver.solManager.bestBound);
 			}
 			m.separator();
-			if (solver.pb.stuff.nFilterCallsSTR > 0) {
-				m.put(Output.N_FILTER_CALLS, solver.pb.stuff.nFilterCallsSTR);
-				m.put(Output.AVG_TABLE_PROPORTION, (int) ((solver.pb.stuff.sumTableProportionsSTR / solver.pb.stuff.nFilterCallsSTR) * 100));
-				m.put(Output.AVG_TABLE_SIZE, (int) (solver.pb.stuff.sumTableSizesSTR / solver.pb.stuff.nFilterCallsSTR));
+			if (solver.problem.stuff.nFilterCallsSTR > 0) {
+				m.put(Output.N_FILTER_CALLS, solver.problem.stuff.nFilterCallsSTR);
+				m.put(Output.AVG_TABLE_PROPORTION, (int) ((solver.problem.stuff.sumTableProportionsSTR / solver.problem.stuff.nFilterCallsSTR) * 100));
+				m.put(Output.AVG_TABLE_SIZE, (int) (solver.problem.stuff.sumTableSizesSTR / solver.problem.stuff.nFilterCallsSTR));
 				m.separator();
 			}
-			if (solver.learnerStates != null && solver.learnerStates instanceof LearnerStatesEquivalence && !solver.learnerStates.isStopped()) {
+			if (solver.learnerStates != null && solver.learnerStates instanceof LearnerStatesEquivalence && !solver.learnerStates.stopped) {
 				LearnerStatesEquivalence learner = (LearnerStatesEquivalence) solver.learnerStates;
 				m.put(Output.MAP_SIZE, learner.getMapSize());
-				m.put(Output.N_INFERENCES, learner.nbInferences);
+				m.put(Output.N_INFERENCES, learner.nInferences);
 				// map.put("nbInferredSolutions", solutionCounter.nbInferredSolutions );
 				m.put(Output.N_TOO_LARGE_KEYS, learner.nbTooLargeKeys);
 				m.separator();
@@ -359,7 +359,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			m.put("number", (solver.restarter.numRun == -1 ? "all" : solver.restarter.numRun));
 			m.put(Output.N_ASSIGNMENTS, nAssignments);
 			m.put(Output.WCK, searchWck / 1000.0);
-			m.put(Output.CPU, solver.rs.stopwatch.cpuTimeInSeconds());
+			m.put(Output.CPU, solver.head.stopwatch.cpuTimeInSeconds());
 			m.put(Output.MEM, Kit.memoryInMb());
 			return m;
 		}

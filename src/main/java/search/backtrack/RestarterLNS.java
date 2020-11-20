@@ -20,7 +20,7 @@ public class RestarterLNS extends Restarter {
 
 	public RestarterLNS(Solver solver) {
 		super(solver);
-		if (solver.rs.cp.settingLNS.freezingHeuristic.equals(Impact.class.getName()))
+		if (solver.head.control.settingLNS.freezingHeuristic.equals(Impact.class.getName()))
 			this.h = new Impact(this);
 		else
 			this.h = new Rand(this);
@@ -34,7 +34,7 @@ public class RestarterLNS extends Restarter {
 		if (solution != null) {
 			h.freezeVariables(solution);
 			for (int i = 0; i < h.freezingSize; i++)
-				solver.assign(solver.pb.variables[h.freezingShuffled[i]], solution[h.freezingShuffled[i]]);
+				solver.assign(solver.problem.variables[h.freezingShuffled[i]], solution[h.freezingShuffled[i]]);
 			// TODO : while a covered constraint is unsatisfied : remove one assigned frozen variable from its scope
 			// runInitially add all variables, which breaks an assert : how to manage that?
 			solver.propagation.runInitially();
@@ -60,22 +60,22 @@ public class RestarterLNS extends Restarter {
 
 		public HeuristicFreezing(RestarterLNS restarter) {
 			this.restarter = restarter;
-			int n = restarter.solver.pb.variables.length;
-			SettingLNS setting = restarter.solver.rs.cp.settingLNS;
+			int n = restarter.solver.problem.variables.length;
+			SettingLNS setting = restarter.solver.head.control.settingLNS;
 
 			this.freezingShuffled = IntStream.range(0, n).toArray();
 			if (0 < setting.nVariablesToFreeze && setting.nVariablesToFreeze < n)
-				this.freezingSize = restarter.solver.rs.cp.settingLNS.nVariablesToFreeze;
+				this.freezingSize = restarter.solver.head.control.settingLNS.nVariablesToFreeze;
 			else if (0 < setting.pVariablesToFreeze && setting.pVariablesToFreeze < 100)
 				this.freezingSize = 1 + (setting.pVariablesToFreeze * n) / 100;
 			else
 				Kit.exit("You must specify the number or percentage of variables to freeze for LNS.");
-			Kit.control(0 < freezingSize && freezingSize < restarter.solver.pb.variables.length, () -> "");
+			Kit.control(0 < freezingSize && freezingSize < restarter.solver.problem.variables.length, () -> "");
 		}
 
 		// Implementing Fisher–Yates shuffle (see https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle)
 		protected void shuffle() {
-			Random random = restarter.solver.rs.random;
+			Random random = restarter.solver.head.random;
 			for (int i = freezingShuffled.length - 1; i > 0; i--) {
 				int j = random.nextInt(i + 1);
 				int tmp = freezingShuffled[i];
@@ -94,7 +94,7 @@ public class RestarterLNS extends Restarter {
 
 			public Impact(RestarterLNS restarter) {
 				super(restarter);
-				this.variables = restarter.solver.pb.variables;
+				this.variables = restarter.solver.problem.variables;
 				this.domainSizesBeforeFreezing = new int[variables.length];
 				this.domainSizesAfterFreezing = new int[variables.length];
 

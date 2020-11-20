@@ -64,7 +64,7 @@ public class SolutionOptimizer {
 			// sets[i][j].dom.forcedIndex = initialPartialInstantiation[permutation[i]][j];
 			for (FunctionalPropagator propagator : costVarsPropagators)
 				propagator.propagate();
-		long cost = solManager.solver.pb.optimizer.value();
+		long cost = solManager.solver.problem.optimizer.value();
 		if (cost < solManager.bestBound)
 			solManager.handleNewSolution(false);
 		return cost;
@@ -72,7 +72,7 @@ public class SolutionOptimizer {
 
 	private void runTabuSearch(Variable[][] permutationSet, int[][] initialPartialInstantiation) {
 		int[] permutation = Kit.range(permutationSet.length);
-		boolean minimization = solManager.solver.pb.optimizer.minimization;
+		boolean minimization = solManager.solver.problem.optimizer.minimization;
 		int tabuSize = 2 * permutationSet.length;
 		int[] tabuIdxs = Kit.repeat(0, tabuSize);
 		int[] tabuVals = Kit.repeat(-1, tabuSize);

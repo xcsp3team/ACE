@@ -10,7 +10,7 @@ package search.local;
 
 import org.xcsp.common.Types.TypeFramework;
 
-import executables.Resolution;
+import main.Head;
 import search.Solver;
 import search.statistics.Statistics.StatisticsLocal;
 import utility.Kit;
@@ -56,12 +56,12 @@ public final class SolverLocal extends Solver {
 	 */
 	protected FunctionalPropagator[] propagators;
 
-	public SolverLocal(Resolution resolution) {
+	public SolverLocal(Head resolution) {
 		super(resolution);
-		this.neighborHeuristic = Reflector.buildObject(resolution.cp.settingLocalSearch.classForNeighborHeuristic, HeuristicNeighbors.class, this);
+		this.neighborHeuristic = Reflector.buildObject(resolution.control.settingLocalSearch.classForNeighborHeuristic, HeuristicNeighbors.class, this);
 		this.conflictManager = new ConflictManager(this);
 		stats = this.localStatistics = new StatisticsLocal(this);
-		this.nIterations = resolution.cp.settingRestarts.cutoff == -2 ? 10 * pb.variables.length : resolution.cp.settingRestarts.cutoff;
+		this.nIterations = resolution.control.settingRestarts.cutoff == -2 ? 10 * problem.variables.length : resolution.control.settingRestarts.cutoff;
 	}
 
 	// @Override
@@ -75,17 +75,17 @@ public final class SolverLocal extends Solver {
 	private int[] tmp;
 
 	private int[] buildNewCompleteInstantiationFrom(int[] initialCompleteInstantiation, double bias) {
-		assert pb.variables.length == initialCompleteInstantiation.length;
-		Variable[] variables = pb.variables;
+		assert problem.variables.length == initialCompleteInstantiation.length;
+		Variable[] variables = problem.variables;
 		if (forced == null) {
 			forced = new boolean[variables.length];
 			tmp = new int[variables.length];
 		}
 		long nPreservedValues = Math.round(bias * variables.length);
 		for (int i = 0; i < nPreservedValues; i++) {
-			int position = rs.random.nextInt(variables.length);
+			int position = head.random.nextInt(variables.length);
 			while (forced[position])
-				position = rs.random.nextInt(variables.length);
+				position = head.random.nextInt(variables.length);
 			tmp[position] = initialCompleteInstantiation[position];
 			forced[position] = true;
 		}
@@ -151,9 +151,9 @@ public final class SolverLocal extends Solver {
 			// conflictManager.displayConflictingConstraints();
 			// }
 			if (conflictManager.nConflictingConstraints() == 0) {
-				if (pb.settings.framework != TypeFramework.COP || pb.optimizer.value() < solManager.bestBound)
+				if (problem.settings.framework != TypeFramework.COP || problem.optimizer.value() < solManager.bestBound)
 					solManager.handleNewSolution(true);
-				if (!finished() && pb.settings.framework == TypeFramework.CSP)
+				if (!finished() && problem.settings.framework == TypeFramework.CSP)
 					buildInitialCompleteInstantiation();
 			}
 			if (finished())
@@ -164,7 +164,7 @@ public final class SolverLocal extends Solver {
 
 			// resolution.output.prn(conflictManager.getNbConflictingConstraints() + " conflicting constraints");
 			if (conflictManager.nConflictingConstraints() == 0)
-				Kit.log.fine("Current cost : " + pb.optimizer.value());
+				Kit.log.fine("Current cost : " + problem.optimizer.value());
 
 			if (conflictManager.nConflictingConstraints() < nMinViolatedCtrs) {
 				nMinViolatedCtrs = conflictManager.nConflictingConstraints();
@@ -177,7 +177,7 @@ public final class SolverLocal extends Solver {
 			}
 			if (cnt % 100 == 0)
 				Kit.log.fine("\tconflicts=" + conflictManager.nConflictingConstraints() + "(" + conflictManager.currEvaluation() + "), upperBound="
-						+ nMinViolatedCtrs + " time=" + rs.instanceStopwatch.wckTime() + " nbIterations=" + cnt);
+						+ nMinViolatedCtrs + " time=" + head.instanceStopwatch.wckTime() + " nbIterations=" + cnt);
 		}
 		return this;
 	}

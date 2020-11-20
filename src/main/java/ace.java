@@ -1,5 +1,5 @@
 
-import executables.Resolution;
+import main.Head;
 
 /**
  * This is the main class of the solver <code>AbsCon</code>
@@ -7,6 +7,6 @@ import executables.Resolution;
 public class ace {
 
 	public static void main(String[] args) {
-		Resolution.main(args);
+		Head.main(args);
 	}
 }

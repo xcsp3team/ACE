@@ -21,8 +21,8 @@ import variables.Variable;
 public abstract class Supporter {
 
 	public static Supporter buildFor(Constraint c) {
-		if (c.pb.rs.cp.settingPropagation.residues && c.scp.length > 1 && !(c instanceof FilteringSpecific)
-				&& !(c.pb.rs.cp.settingPropagation.classForRevisions.equals(Reviser3.class.getSimpleName()) && c.extStructure() instanceof Bits)) {
+		if (c.pb.head.control.settingPropagation.residues && c.scp.length > 1 && !(c instanceof FilteringSpecific)
+				&& !(c.pb.head.control.settingPropagation.classForRevisions.equals(Reviser3.class.getSimpleName()) && c.extStructure() instanceof Bits)) {
 			return c.scp.length == 2 ? new SupporterHardBary(c) : new SupporterHardNary(c);
 		} else
 			return null;
@@ -36,7 +36,7 @@ public abstract class Supporter {
 
 	public Supporter(Constraint c) {
 		this.c = c;
-		this.multidirectionality = c.pb.rs.cp.settingPropagation.multidirectionality;
+		this.multidirectionality = c.pb.head.control.settingPropagation.multidirectionality;
 		this.buffer = c.tupleManager.localTuple;
 	}
 

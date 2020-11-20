@@ -116,7 +116,7 @@ public abstract class Matcher implements ObserverConstruction {
 		this.maxValue = Stream.of(scp).mapToInt(x -> x.dom.lastValue()).max().getAsInt();
 		this.intervalSize = maxValue - minValue + 1;
 
-		ctr.pb.rs.observersConstruction.add(this);
+		ctr.pb.head.observersConstruction.add(this);
 
 		// TODO use classical sets (not sparse sets or arrays) if big gap between
 		// minValue and maxValue AND number of values is a lot smaller than maxValue-minValue

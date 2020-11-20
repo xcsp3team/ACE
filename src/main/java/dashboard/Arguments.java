@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 
 import org.xcsp.common.Utilities;
 
-import executables.ResolutionVariants;
+import main.ResolutionVariants;
 import utility.DocumentHandler;
 import utility.Kit;
 import xcsp3.XCSP3;

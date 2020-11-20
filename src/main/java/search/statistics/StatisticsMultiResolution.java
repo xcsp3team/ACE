@@ -16,8 +16,8 @@ import java.util.Set;
 
 import dashboard.Arguments;
 import dashboard.Output;
-import executables.Resolution;
-import propagation.inverse.GIC4;
+import main.Head;
+import propagation.GIC.GIC4;
 import utility.Enums.TypeOutput;
 import utility.Kit;
 
@@ -27,7 +27,7 @@ public abstract class StatisticsMultiResolution {
 
 	public abstract void outputGlobalStatistics();
 
-	public static StatisticsMultiResolution buildFor(final Resolution resolution) {
+	public static StatisticsMultiResolution buildFor(final Head resolution) {
 		if (Arguments.nInstancesToSolve > 1)
 			return new ActiveStatisticsMultiResolution(resolution);
 		return new VoidStatisticsMultiResolution();
@@ -36,16 +36,18 @@ public abstract class StatisticsMultiResolution {
 	private static class VoidStatisticsMultiResolution extends StatisticsMultiResolution {
 
 		@Override
-		public void update(boolean crashed) {}
+		public void update(boolean crashed) {
+		}
 
 		@Override
-		public void outputGlobalStatistics() {}
+		public void outputGlobalStatistics() {
+		}
 
 	}
 
 	private static class ActiveStatisticsMultiResolution extends StatisticsMultiResolution {
 
-		private Resolution resolution;
+		private Head resolution;
 
 		/**
 		 * The statistics of (proved) satisfiable instances. Interesting when there are more than 1 instance to be solved.
@@ -75,8 +77,7 @@ public abstract class StatisticsMultiResolution {
 		private QuickStatistics[] crashedStatistics;
 
 		/**
-		 * Some statistical measures (including the number of constraint checks and the cpu time) are gathered (in case there are several instances to
-		 * solve).
+		 * Some statistical measures (including the number of constraint checks and the cpu time) are gathered (in case there are several instances to solve).
 		 */
 		private class QuickStatistics {
 			private TypeOutput outputElement;
@@ -191,13 +192,13 @@ public abstract class StatisticsMultiResolution {
 					map.put(Output.CPU, resolution.stopwatch.cpuTime() / (double) nbTreatedInstances);
 					map.put(Output.MEM, (long) (memory / (double) nbTreatedInstances));
 
-					if (resolution.cp.settingExperimental.helene)
+					if (resolution.control.settingExperimental.helene)
 						map.put("NbRemovedValues", Kit.join(nbRemovedValues, ";"));
 
 					if (outputElement == TypeOutput.UNSAT)
 						map.put(Output.N_PREPRO_INCONSISTENCIES, nbPreproInconsistencies);
 
-					if (resolution.cp.settingExperimental.helene) {
+					if (resolution.control.settingExperimental.helene) {
 						map.put("nbVals", nbVals / (double) nbTreatedInstances);
 						map.put("nbUnks", nbUnks / (double) nbTreatedInstances);
 						map.put("nbUnksAfterAC", nbUnksAfterAC / (double) nbTreatedInstances);
@@ -220,7 +221,7 @@ public abstract class StatisticsMultiResolution {
 			}
 		}
 
-		public ActiveStatisticsMultiResolution(Resolution resolution) {
+		public ActiveStatisticsMultiResolution(Head resolution) {
 			this.resolution = resolution;
 			int nbAbstractionLevels = 0;
 			if (Arguments.nInstancesToSolve > 1) {

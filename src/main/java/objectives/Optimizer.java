@@ -90,8 +90,8 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 		Kit.control(opt != null);
 		this.minimization = opt == TypeOptimization.MINIMIZE;
 		this.ctr = ctr; // may be null for some basic cases
-		this.minBound = Math.max(pb.rs.cp.settingOptimization.lowerBound, ctr != null ? ctr.minComputableObjectiveValue() : Long.MIN_VALUE);
-		this.maxBound = Math.min(pb.rs.cp.settingOptimization.upperBound, ctr != null ? ctr.maxComputableObjectiveValue() : Long.MAX_VALUE);
+		this.minBound = Math.max(pb.head.control.settingOptimization.lowerBound, ctr != null ? ctr.minComputableObjectiveValue() : Long.MIN_VALUE);
+		this.maxBound = Math.min(pb.head.control.settingOptimization.upperBound, ctr != null ? ctr.maxComputableObjectiveValue() : Long.MAX_VALUE);
 	}
 
 	/**
@@ -116,20 +116,20 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	protected abstract void shiftLimitWhenFailure();
 
 	public void afterRun() {
-		Kit.control(pb.rs.cp.settingGeneral.framework == TypeFramework.COP);
+		Kit.control(pb.head.control.settingGeneral.framework == TypeFramework.COP);
 		if (pb.solver.solManager.lastSolutionRun == pb.solver.restarter.numRun) { // a better solution has been found during the last run
 			if (minimization)
 				maxBound = pb.solver.solManager.bestBound - 1;
 			else
 				minBound = pb.solver.solManager.bestBound + 1;
 			possiblyUpdateLocalBounds();
-			Kit.control(minBound - 1 <= maxBound || pb.rs.cp.settingOptimization.upperBound != Long.MAX_VALUE, () -> " minB=" + minBound + " maxB=" + maxBound);
+			Kit.control(minBound - 1 <= maxBound || pb.head.control.settingOptimization.upperBound != Long.MAX_VALUE, () -> " minB=" + minBound + " maxB=" + maxBound);
 			possiblyUpdateSharedBounds();
 			if (minBound > maxBound)
-				pb.solver.stoppingType = EStopping.FULL_EXPLORATION;
+				pb.solver.stopping = EStopping.FULL_EXPLORATION;
 			else
 				shiftLimitWhenSuccess();
-		} else if (pb.solver.stoppingType == EStopping.FULL_EXPLORATION) { // last run leads to no new solution
+		} else if (pb.solver.stopping == EStopping.FULL_EXPLORATION) { // last run leads to no new solution
 			long limit = ctr.getLimit();
 			if (minimization)
 				minBound = limit == Long.MAX_VALUE ? Long.MAX_VALUE : limit + 1;
@@ -137,7 +137,7 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 				maxBound = limit == Long.MIN_VALUE ? Long.MIN_VALUE : limit - 1;
 			Kit.log.fine("\n" + Output.COMMENT_PREFIX + "New Bounds: " + stringBounds());
 			if (minBound <= maxBound) {
-				pb.solver.stoppingType = null;
+				pb.solver.stopping = null;
 				Kit.control(pb.stuff.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
 				pb.solver.restarter.forceRootPropagation = true;
 				((SolverBacktrack) pb.solver).restoreProblem();

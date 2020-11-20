@@ -162,7 +162,7 @@ public interface Domain extends LinkedSet {
 	 * Returns randomly the index of a current value in the domain.
 	 */
 	default int random() {
-		return get(solver().rs.random.nextInt(size()));
+		return get(solver().head.random.nextInt(size()));
 	}
 
 	/**

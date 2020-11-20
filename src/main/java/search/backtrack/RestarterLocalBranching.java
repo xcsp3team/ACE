@@ -29,18 +29,18 @@ public final class RestarterLocalBranching extends Restarter {
 
 	private LocalBranchingConstraint localBranchingConstraints;
 
-	private int currDistance = solver.rs.cp.settingLB.baseDistance;
+	private int currDistance = solver.head.control.settingLB.baseDistance;
 
 	public RestarterLocalBranching(Solver solver) {
 		super(solver);
 		Kit.control(solver instanceof SolverBacktrack, () -> "For local branching, only a SolverBacktrack can be used.");
-		Kit.control(solver.pb.optimizer instanceof OptimizerDecreasing,
+		Kit.control(solver.problem.optimizer instanceof OptimizerDecreasing,
 				() -> "For local branching, only OptimizationPilotDecreasing can be used.");
 
-		this.localBranchingConstraints = solver.pb.symbolic != null
-				? Reflector.buildObject(LBAtLeastEqual.class.getSimpleName(), LocalBranchingConstraint.class, solver.pb)
-				: Reflector.buildObject(solver.rs.cp.settingLB.neighborhood, LocalBranchingConstraint.class, solver.pb);
-		this.currDistance = solver.rs.cp.settingLB.baseDistance;
+		this.localBranchingConstraints = solver.problem.symbolic != null
+				? Reflector.buildObject(LBAtLeastEqual.class.getSimpleName(), LocalBranchingConstraint.class, solver.problem)
+				: Reflector.buildObject(solver.head.control.settingLB.neighborhood, LocalBranchingConstraint.class, solver.problem);
+		this.currDistance = solver.head.control.settingLB.baseDistance;
 	}
 
 	public void enterLocalBranching() {
@@ -51,7 +51,7 @@ public final class RestarterLocalBranching extends Restarter {
 	private void leaveLocalBranching() {
 		currentlyBranching = false;
 		localBranchingConstraints.setIgnored(true);
-		currDistance = solver.rs.cp.settingLB.baseDistance;
+		currDistance = solver.head.control.settingLB.baseDistance;
 	}
 
 	@Override
@@ -64,26 +64,26 @@ public final class RestarterLocalBranching extends Restarter {
 	@Override
 	public void afterRun() {
 		if (currentlyBranching) {
-			if (solver.stoppingType == EStopping.FULL_EXPLORATION || forceRootPropagation) {
-				Kit.control(solver.pb.stuff.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
-				if (solver.stoppingType == EStopping.FULL_EXPLORATION) {
-					solver.stoppingType = null;
+			if (solver.stopping == EStopping.FULL_EXPLORATION || forceRootPropagation) {
+				Kit.control(solver.problem.stuff.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
+				if (solver.stopping == EStopping.FULL_EXPLORATION) {
+					solver.stopping = null;
 					currDistance++;
-					if (solver.pb.optimizer.areBoundsConsistent())
+					if (solver.problem.optimizer.areBoundsConsistent())
 						forceRootPropagation = true;
 				}
 				if (forceRootPropagation) {
 					super.afterRun();
-					currDistance = solver.rs.cp.settingLB.baseDistance;
+					currDistance = solver.head.control.settingLB.baseDistance;
 				}
 				localBranchingConstraints.updateWithNewSolution(solver.solManager.lastSolution, currDistance);
 				localBranchingConstraints.setIgnored(false);
 				((SolverBacktrack) solver).restoreProblem();
 				if (((SolverBacktrack) solver).learnerNogoods != null)
 					((SolverBacktrack) solver).learnerNogoods.reset();
-				((FilteringSpecific) solver.pb.optimizer.ctr).runPropagator(null);
+				((FilteringSpecific) solver.problem.optimizer.ctr).runPropagator(null);
 			}
-			if (nRestartsSinceActive > solver.rs.cp.settingLB.maxRestarts)
+			if (nRestartsSinceActive > solver.head.control.settingLB.maxRestarts)
 				leaveLocalBranching();
 		} else {
 			super.afterRun();
@@ -181,7 +181,7 @@ public final class RestarterLocalBranching extends Restarter {
 			public LBAtLeastEqual(Problem problem) {
 				super(problem);
 				int[] tuple = Stream.of(decisionVars).mapToInt(x -> x.dom.firstValue()).toArray();
-				c = (Constraint) ((CtrAlone) problem.tupleProximityGE(decisionVars, tuple, decisionVars.length - problem.rs.cp.settingLB.baseDistance,
+				c = (Constraint) ((CtrAlone) problem.tupleProximityGE(decisionVars, tuple, decisionVars.length - problem.head.control.settingLB.baseDistance,
 						true)).ctr;
 				c.ignored = true;
 			}
@@ -198,7 +198,7 @@ public final class RestarterLocalBranching extends Restarter {
 			public LBAtMostDistanceSum(Problem problem) {
 				super(problem);
 				c = (Constraint) ((CtrAlone) problem.tupleProximityDistanceSum(decisionVars, new int[decisionVars.length],
-						problem.rs.cp.settingLB.baseDistance)).ctr;
+						problem.head.control.settingLB.baseDistance)).ctr;
 				c.ignored = true;
 			}
 

@@ -37,7 +37,7 @@ public abstract class HeuristicValues extends Heuristic {
 		super(antiHeuristic);
 		this.x = x;
 		this.dx = x.dom;
-		this.settings = x.pb.rs.cp.settingValh;
+		this.settings = x.pb.head.control.settingValh;
 		// this.priorityVar = x.pb.priorityVars != null && Kit.isPresent(x, x.pb.priorityVars);
 	}
 
@@ -131,7 +131,7 @@ public abstract class HeuristicValues extends Heuristic {
 
 			@Override
 			public double scoreOf(int a) {
-				return x.pb.rs.random.nextDouble();
+				return x.pb.head.random.nextDouble();
 			}
 		}
 

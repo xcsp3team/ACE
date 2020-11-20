@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import constraints.extension.ExtensionCT;
-import constraints.extension.ExtensionCT.CtrExtensionCT2;
+import constraints.extension.ExtensionCT.ExtensionCT2;
 import constraints.extension.ExtensionSTR2;
 import dashboard.ControlPanel;
 import interfaces.RegisteringCtrs;
@@ -33,9 +33,9 @@ public final class ConflictsStructure implements RegisteringCtrs {
 	public static final int LIMIT_FOR_BARY = 1000000;
 
 	private static boolean canBuildConflictsStructureFor(Constraint c, int limit) {
-		if (c instanceof ExtensionSTR2 || c instanceof ExtensionCT || c instanceof CtrExtensionCT2 || c.infiniteDomainVars.length > 0)
+		if (c instanceof ExtensionSTR2 || c instanceof ExtensionCT || c instanceof ExtensionCT2 || c.infiniteDomainVars.length > 0)
 			return false;
-		ControlPanel cfg = c.pb.rs.cp;
+		ControlPanel cfg = c.pb.head.control;
 		if (!cfg.mustBuildConflictStructures || c.scp.length == 1 || Kit.memory() > 400000000L)
 			return false;
 		return Variable.nValidTuples(c.scp, false).compareTo(BigInteger.valueOf(limit)) <= 0;

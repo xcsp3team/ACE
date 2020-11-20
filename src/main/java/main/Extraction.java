@@ -6,7 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package executables;
+package main;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,7 +26,7 @@ import utility.Kit;
 import utility.Kit.Stopwatch;
 import variables.Variable;
 
-public class Extraction extends Resolution {
+public class Extraction extends Head {
 
 	public List<List<Constraint>> cores = new ArrayList<>();
 
@@ -271,14 +271,14 @@ public class Extraction extends Resolution {
 		solver = buildSolver(problem);
 		Stopwatch stopwatch = new Stopwatch();
 		cores.clear(); // = new ArrayList<List<Constraint>>();
-		for (int i = 0; i < cp.settingExtraction.nCores; i++) {
+		for (int i = 0; i < control.settingExtraction.nCores; i++) {
 			stopwatch.start();
 			buildOrInitializeStructures(cores);
 			if (!wcore()) {
 				Kit.log.info("No more cores");
 				break;
 			}
-			if (cp.settingExtraction.method == EExtractionMethod.VAR)
+			if (control.settingExtraction.method == EExtractionMethod.VAR)
 				minimalCoreOfVars();
 			List<Constraint> core = minimalCoreOfCtrs();
 			// if (cp.settingExtraction.saveCores) {
@@ -321,11 +321,11 @@ public class Extraction extends Resolution {
 	public static void main(String[] args) {
 		Arguments.loadArguments(args);
 		Extraction extraction = new Extraction();
-		Kit.control(!extraction.cp.settingProblem.isSymmetryBreaking(), () -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
-		Kit.control(extraction.cp.settingLearning.state == ELearningState.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
+		Kit.control(!extraction.control.settingProblem.isSymmetryBreaking(), () -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
+		Kit.control(extraction.control.settingLearning.state == ELearningState.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
 		// Kit.control(extraction.configuration.restartsCutoff == Long.MAX_VALUE || extraction.configuration.nogoodType == null,
 		// "Be careful of nogood recording from restarts.");
-		Kit.control(extraction.cp.settingSolving.clazz.equals(SolverBacktrack.class.getSimpleName()), () -> extraction.cp.settingSolving.clazz);
+		Kit.control(extraction.control.settingSolving.clazz.equals(SolverBacktrack.class.getSimpleName()), () -> extraction.control.settingSolving.clazz);
 		extraction.start();
 	}
 

@@ -8,6 +8,7 @@
  */
 package learning;
 
+import dashboard.ControlPanel.SettingLearning;
 import interfaces.ObserverRuns;
 import search.backtrack.SolverBacktrack;
 import utility.Enums.ELearningState;
@@ -17,9 +18,9 @@ import variables.Variable;
 public abstract class LearnerStates implements ObserverRuns {
 
 	public static LearnerStates buildFor(SolverBacktrack solver) {
-		if (solver.rs.cp.settingLearning.state == ELearningState.EQUIVALENCE)
+		if (solver.head.control.settingLearning.state == ELearningState.EQUIVALENCE)
 			return new LearnerStatesEquivalence(solver);
-		if (solver.rs.cp.settingLearning.state == ELearningState.DOMINANCE)
+		if (solver.head.control.settingLearning.state == ELearningState.DOMINANCE)
 			return new LearnerStatesDominance(solver);
 		return null;
 	}
@@ -29,42 +30,38 @@ public abstract class LearnerStates implements ObserverRuns {
 		displayStats();
 	}
 
-	protected int memoryLimit = 600000000;
+	protected final SolverBacktrack solver;
 
-	protected SolverBacktrack solver;
+	protected final Variable[] variables;
 
-	protected Variable[] variables;
+	public final ReductionOperator reductionOperator;
 
-	public ReductionOperator reductionOperator;
+	protected final Justifier justifier;
 
-	protected Justifier justifier;
+	protected final SettingLearning settings;
 
-	protected boolean stop = false;
+	public boolean stopped = false;
 
-	public int nbInferences;
-
-	public boolean isStopped() {
-		return stop;
-	}
-
-	public void clear() {}
+	public int nInferences;
 
 	public LearnerStates(SolverBacktrack solver) {
 		this.solver = solver;
-		this.variables = solver.pb.variables;
-		reductionOperator = new ReductionOperator(this);
+		this.variables = solver.problem.variables;
+		this.reductionOperator = new ReductionOperator(this);
 		this.justifier = new Justifier(this);
+		this.settings = solver.head.control.settingLearning;
 	}
 
 	protected boolean mustStop() {
-		return Kit.memory() > memoryLimit;
+		return Kit.memory() > 600000000; // TODO hard coding
 	}
 
 	public abstract boolean dealWhenOpeningNode();
 
 	public abstract void dealWhenClosingNode();
 
-	public void displayStats() {}
+	public void displayStats() {
+	}
 }
 
 //
