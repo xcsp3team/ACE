@@ -3,8 +3,8 @@ apply plugin: 'java'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8 
 
-archivesBaseName = "AbsCon"
-version = '20-09'
+archivesBaseName = "ACE"
+version = '20-11'
  
 repositories {
  mavenCentral()
