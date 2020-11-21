@@ -32,7 +32,7 @@ import constraints.Constraint;
 import heuristics.HeuristicValues;
 import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
-import interfaces.ObserverBacktracking.ObserverBacktrackingUnsystematic;
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingUnsystematic;
 import problem.Problem;
 import problem.Symbolic;
 import search.backtrack.SolverBacktrack;

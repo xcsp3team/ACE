@@ -23,13 +23,13 @@ import java.text.NumberFormat;
 import org.xcsp.common.Types.TypeFramework;
 
 import dashboard.Output;
-import interfaces.ObserverRuns;
-import interfaces.ObserverSearch;
-import learning.LearnerStatesEquivalence;
+import interfaces.Observers.ObserverRuns;
+import interfaces.Observers.ObserverSearch;
+import learning.IpsRecorderForEquivalence;
 import learning.ReductionOperator;
 import problem.ProblemStuff.MapAtt;
-import propagation.GAC;
 import propagation.Forward;
+import propagation.GAC;
 import propagation.SAC;
 import propagation.SAC.SACGreedy;
 import search.Solver;
@@ -49,16 +49,16 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 	@Override
 	public final void beforePreprocessing() {
 		stopwatch.start();
-		if (solver instanceof SolverBacktrack && (((SolverBacktrack) solver).learnerNogoods != null))
-			nPreproAddedNogoods = (((SolverBacktrack) solver).learnerNogoods).nNogoods;
+		if (solver instanceof SolverBacktrack && (((SolverBacktrack) solver).nogoodRecorder != null))
+			nPreproAddedNogoods = (((SolverBacktrack) solver).nogoodRecorder).nNogoods;
 		nPreproAddedCtrs = solver.problem.constraints.length;
 	}
 
 	@Override
 	public final void afterPreprocessing() {
 		preproWck += stopwatch.wckTime();
-		if (solver instanceof SolverBacktrack && (((SolverBacktrack) solver).learnerNogoods != null))
-			nPreproAddedNogoods = (((SolverBacktrack) solver).learnerNogoods).nNogoods - nPreproAddedNogoods;
+		if (solver instanceof SolverBacktrack && (((SolverBacktrack) solver).nogoodRecorder != null))
+			nPreproAddedNogoods = (((SolverBacktrack) solver).nogoodRecorder).nNogoods - nPreproAddedNogoods;
 		nPreproAddedCtrs = solver.problem.constraints.length - nPreproAddedCtrs;
 		nPreproRemovedValues = Variable.nRemovedValuesFor(solver.problem.variables);
 		nPreproRemovedTuples = solver.propagation.nTuplesRemoved;
@@ -251,8 +251,8 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 				if (Kit.memory() > 10000000000L)
 					m.put(Output.MEM, Kit.memoryInMb());
 				m.put(Output.WCK, stopwatch.wckTimeInSeconds());
-				if (solver.learnerNogoods != null)
-					m.putPositive("ngd", solver.learnerNogoods.nNogoods);
+				if (solver.nogoodRecorder != null)
+					m.putPositive("ngd", solver.nogoodRecorder.nNogoods);
 				if (solver.solManager.found > 0) {
 					if (solver.problem.settings.framework == TypeFramework.CSP)
 						m.put("nSols", solver.solManager.found);
@@ -288,8 +288,8 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			// m.put(Output.N_ASSIGNMENTS, nAssignments);
 			m.put("failedAssignments", nFailedAssignments);
 			// m.put(Output.N_VISITED_NODES, nVisitedNodes);
-			if (solver.learnerNogoods != null)
-				m.putPositive("nogoods", solver.learnerNogoods.nNogoods);
+			if (solver.nogoodRecorder != null)
+				m.putPositive("nogoods", solver.nogoodRecorder.nNogoods);
 			if (solver.solManager.found > 0) {
 				m.put("foundSolutions", solver.solManager.found);
 				if (solver.problem.settings.framework != TypeFramework.CSP)
@@ -302,16 +302,16 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 				m.put(Output.AVG_TABLE_SIZE, (int) (solver.problem.stuff.sumTableSizesSTR / solver.problem.stuff.nFilterCallsSTR));
 				m.separator();
 			}
-			if (solver.learnerStates != null && solver.learnerStates instanceof LearnerStatesEquivalence && !solver.learnerStates.stopped) {
-				LearnerStatesEquivalence learner = (LearnerStatesEquivalence) solver.learnerStates;
+			if (solver.ipsRecorder != null && solver.ipsRecorder instanceof IpsRecorderForEquivalence && !solver.ipsRecorder.stopped) {
+				IpsRecorderForEquivalence learner = (IpsRecorderForEquivalence) solver.ipsRecorder;
 				m.put(Output.MAP_SIZE, learner.getMapSize());
 				m.put(Output.N_INFERENCES, learner.nInferences);
 				// map.put("nbInferredSolutions", solutionCounter.nbInferredSolutions );
-				m.put(Output.N_TOO_LARGE_KEYS, learner.nbTooLargeKeys);
+				m.put(Output.N_TOO_LARGE_KEYS, learner.nTooLargeKeys);
 				m.separator();
 			}
-			if (solver.learnerStates != null) {
-				ReductionOperator ro = solver.learnerStates.reductionOperator;
+			if (solver.ipsRecorder != null) {
+				ReductionOperator ro = solver.ipsRecorder.reductionOperator;
 				// DecimalFormat df = new DecimalFormat("###.##",new DecimalFormatSymbols(Locale.ENGLISH));
 				m.put(Output.N_SELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbSEliminableVariables()));
 				m.put(Output.N_RELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbREliminableVariables()));
@@ -333,8 +333,8 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 				m.put(Output.N_EFFECTIVE_SINGLETON_TESTS, nEffectiveSingletonTests());
 			}
 
-			if (solver.learnerNogoods != null)
-				m.putPositive("nogoods", solver.learnerNogoods.nNogoods);
+			if (solver.nogoodRecorder != null)
+				m.putPositive("nogoods", solver.nogoodRecorder.nNogoods);
 			m.separator();
 			return m;
 		}

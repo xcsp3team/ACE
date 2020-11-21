@@ -8,7 +8,7 @@
  */
 package heuristics;
 
-import interfaces.TagExperimental;
+import interfaces.Tags.TagExperimental;
 import variables.Variable;
 
 public abstract class HeuristicValuesDirect extends HeuristicValues {

@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 import constraints.Constraint;
 import constraints.Constraint.CtrGlobal;
 import dashboard.ControlPanel.SettingPropagation;
-import interfaces.ObserverConflicts;
+import interfaces.Observers.ObserverConflicts;
 import search.Solver;
 import sets.SetSparse;
 import utility.Kit;

@@ -109,15 +109,15 @@ public class Campagn { // using the cluster
 			file.mkdirs();
 		else
 			Kit.control(file.isDirectory());
-		Head.copy(defaultSettingsFileName, directoryNameOfContext + File.separator + defaultSettingsFileName);
-		Head.copy(selectedInstancesFileName, directoryNameOfContext + File.separator + selectedInstancesFileName);
+		Kit.copy(defaultSettingsFileName, directoryNameOfContext + File.separator + defaultSettingsFileName);
+		Kit.copy(selectedInstancesFileName, directoryNameOfContext + File.separator + selectedInstancesFileName);
 		if (settingsVariantsFileName != null)
-			Head.copy(settingsVariantsFileName, directoryNameOfContext + File.separator + settingsVariantsFileName);
+			Kit.copy(settingsVariantsFileName, directoryNameOfContext + File.separator + settingsVariantsFileName);
 		String jarName = System.getProperty("java.class.path");
 		if (jarName.indexOf(File.pathSeparator) == -1 && jarName.endsWith(".jar")) {
 			int index = jarName.lastIndexOf(File.separator);
 			index = (index == -1 ? 0 : index + 1);
-			Head.copy(jarName, directoryNameOfContext + File.separator + jarName.substring(index));
+			Kit.copy(jarName, directoryNameOfContext + File.separator + jarName.substring(index));
 		}
 	}
 

@@ -49,8 +49,8 @@ public class MatcherCardinality extends Matcher {
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		// valToVars = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparseReversible(arity, false, ctr.pb.variables.length + 1))
 		// .toArray(SetSparseReversible[]::new);
 		valToVars = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparse(arity, false)).toArray(SetSparse[]::new);

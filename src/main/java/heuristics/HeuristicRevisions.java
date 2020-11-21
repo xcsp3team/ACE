@@ -8,7 +8,7 @@
  */
 package heuristics;
 
-import interfaces.TagMaximize;
+import interfaces.Tags.TagMaximize;
 import propagation.Queue;
 import variables.Variable;
 

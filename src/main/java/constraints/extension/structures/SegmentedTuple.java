@@ -10,7 +10,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Utilities;
 
 import constraints.extension.ExtensionSegmented;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
 import problem.Problem;
 import sets.SetDenseReversible;
 import sets.SetSparse;

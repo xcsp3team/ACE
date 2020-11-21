@@ -16,8 +16,8 @@ import java.util.stream.Stream;
 
 import constraints.Constraint.CtrGlobal;
 import interfaces.Optimizable;
-import interfaces.TagFilteringPartialAtEachCall;
-import interfaces.TagGACUnguaranteed;
+import interfaces.Tags.TagFilteringPartialAtEachCall;
+import interfaces.Tags.TagGACUnguaranteed;
 import problem.Problem;
 import sets.SetDense;
 import variables.Domain;
@@ -86,6 +86,14 @@ public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed, T
 		@Override
 		public long maxComputableObjectiveValue() {
 			return list.length;
+		}
+
+		public long minCurrentObjectiveValue() {
+			throw new UnsupportedOperationException("not implemented"); // how to compute that?
+		}
+
+		public long maxCurrentObjectiveValue() {
+			throw new UnsupportedOperationException("not implemented"); // how to compute that?
 		}
 
 		@Override

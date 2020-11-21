@@ -46,8 +46,8 @@ public final class Intension extends Constraint implements ICtrIntension {
 	 *********************************************************************************************/
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		for (Evaluator evaluator : treeEvaluator.evaluators)
 			if (evaluator instanceof F1Evaluator)
 				((F1Evaluator) evaluator).function = pb.stuff.externFunctionArity1;

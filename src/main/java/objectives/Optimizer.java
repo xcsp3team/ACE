@@ -143,8 +143,8 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 				((SolverBacktrack) pb.solver).restoreProblem();
 				shiftLimitWhenFailure();
 			}
-			if (((SolverBacktrack) pb.solver).learnerNogoods != null)
-				((SolverBacktrack) pb.solver).learnerNogoods.reset();
+			if (((SolverBacktrack) pb.solver).nogoodRecorder != null)
+				((SolverBacktrack) pb.solver).nogoodRecorder.reset();
 		}
 	}
 

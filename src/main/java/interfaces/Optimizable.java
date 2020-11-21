@@ -10,5 +10,9 @@ public interface Optimizable {
 
 	long maxComputableObjectiveValue();
 
+	long minCurrentObjectiveValue();
+
+	long maxCurrentObjectiveValue();
+
 	long objectiveValue();
 }

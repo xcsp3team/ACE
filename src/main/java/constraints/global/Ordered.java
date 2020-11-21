@@ -17,9 +17,9 @@ import org.xcsp.common.Types.TypeOperatorRel;
 import org.xcsp.modeler.definitions.ICtr.ICtrOrdered;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.TagFilteringCompleteAtEachCall;
-import interfaces.TagGACGuaranteed;
-import interfaces.TagUnsymmetric;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagUnsymmetric;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;

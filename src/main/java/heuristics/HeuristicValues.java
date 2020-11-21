@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import dashboard.ControlPanel.SettingValh;
-import interfaces.TagExperimental;
+import interfaces.Tags.TagExperimental;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;
 import variables.Domain;

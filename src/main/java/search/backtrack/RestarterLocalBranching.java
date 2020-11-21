@@ -79,8 +79,8 @@ public final class RestarterLocalBranching extends Restarter {
 				localBranchingConstraints.updateWithNewSolution(solver.solManager.lastSolution, currDistance);
 				localBranchingConstraints.setIgnored(false);
 				((SolverBacktrack) solver).restoreProblem();
-				if (((SolverBacktrack) solver).learnerNogoods != null)
-					((SolverBacktrack) solver).learnerNogoods.reset();
+				if (((SolverBacktrack) solver).nogoodRecorder != null)
+					((SolverBacktrack) solver).nogoodRecorder.reset();
 				((FilteringSpecific) solver.problem.optimizer.ctr).runPropagator(null);
 			}
 			if (nRestartsSinceActive > solver.head.control.settingLB.maxRestarts)

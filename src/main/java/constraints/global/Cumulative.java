@@ -13,9 +13,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.TagFilteringCompleteAtEachCall;
-import interfaces.TagGACUnguaranteed;
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagGACUnguaranteed;
 import problem.Problem;
 import sets.SetSparse;
 import sets.SetSparseReversible;
@@ -37,8 +37,8 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		this.omega = new SetSparseReversible(scp.length, pb.variables.length + 1);
 	}
 

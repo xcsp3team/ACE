@@ -19,7 +19,7 @@ import variables.Domain;
 import variables.Variable;
 
 public final class ReductionOperator {
-	private LearnerStates learner;
+	private IpsRecorder recorder;
 
 	private boolean isGACGuaranteed;
 
@@ -78,7 +78,7 @@ public final class ReductionOperator {
 		eliminateDegreeVariables = parse(s.charAt(2));
 		eliminateJustifiedVariables = parse(s.charAt(3));
 		eliminateNotInProofVariables = parse(s.charAt(4));
-		if (eliminateNotInProofVariables && learner instanceof LearnerStatesEquivalence) {
+		if (eliminateNotInProofVariables && recorder instanceof IpsRecorderForEquivalence) {
 			eliminateNotInProofVariables = false;
 			Kit.log.warning("partial state operator 'eliminateNotInProofVariables' set to false");
 
@@ -86,13 +86,13 @@ public final class ReductionOperator {
 
 	}
 
-	public ReductionOperator(LearnerStates learner) {
-		this.learner = learner;
-		Solver solver = learner.solver;
+	public ReductionOperator(IpsRecorder recorder) {
+		this.recorder = recorder;
+		Solver solver = recorder.solver;
 		isGACGuaranteed = solver.propagation.getClass() == GAC.class && Constraint.isGuaranteedGAC(solver.problem.constraints);
 		binaryNetwork = solver.problem.stuff.maxCtrArity() == 2;
 		tmpVariable = new int[solver.problem.variables.length];
-		parseReductionMode(learner.solver.head.control.settingLearning.stateOperators);
+		parseReductionMode(recorder.solver.head.control.settingLearning.stateOperators);
 		// Kit.control(!eliminateNotInProofVariables || !(stateRecordingManager instanceof StateEquivalenceManager));
 		selectedVariables = new boolean[solver.problem.variables.length];
 	}
@@ -121,10 +121,10 @@ public final class ReductionOperator {
 
 	private void initEliminateDegree() {
 		if (nonUniversal == null)
-			nonUniversal = new Constraint[learner.solver.problem.variables.length];
+			nonUniversal = new Constraint[recorder.solver.problem.variables.length];
 		else
 			Arrays.fill(nonUniversal, null);
-		for (Constraint c : learner.solver.problem.constraints) {
+		for (Constraint c : recorder.solver.problem.constraints) {
 			if (getNbFreeVariablesIn(c) < 2)
 				continue; // as the constraint is necessarily universal
 			for (Variable x : c.scp) {
@@ -169,7 +169,7 @@ public final class ReductionOperator {
 	private boolean canEliminateDeduced(Variable x) {
 		Domain dom = x.dom;
 		for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a)) {
-			Constraint explanation = learner.justifier.justifications[x.num][a];
+			Constraint explanation = recorder.justifier.justifications[x.num][a];
 			if (explanation == null)
 				return false;
 			if (explanation == Constraint.TAG)
@@ -188,7 +188,7 @@ public final class ReductionOperator {
 		Arrays.fill(selectedVariables, false);
 		if (eliminateDegreeVariables)
 			initEliminateDegree();
-		Solver solver = learner.solver;
+		Solver solver = recorder.solver;
 		Variable[] variables = solver.problem.variables;
 		if (eliminateNotInProofVariables) {
 			// System.out.println(" proof at level = " + (solver.getCurrentDepth() + 1));
@@ -237,7 +237,7 @@ public final class ReductionOperator {
 	}
 
 	public int[] extractForAllSolutions() {
-		Solver solver = learner.solver;
+		Solver solver = recorder.solver;
 		int selectionLimit = 0;
 		if (solver.problem.stuff.maxCtrArity() == 2) {
 			nbSEliminableVariables += solver.futVars.nDiscarded();
@@ -263,7 +263,7 @@ public final class ReductionOperator {
 
 	public int[] extract2() {
 		nbExtractions++;
-		Solver solver = learner.solver;
+		Solver solver = recorder.solver;
 		boolean[] proofVariables = ((SolverBacktrack) solver).proofer.getProofVariablesAt(solver.depth());
 		int selectionLimit = 0;
 		for (int i = 0; i < solver.problem.variables.length; i++) {

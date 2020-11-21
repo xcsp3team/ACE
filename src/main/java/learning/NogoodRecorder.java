@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Utilities;
 
 import dashboard.ControlPanel.SettingLearning;
-import interfaces.ObserverRuns;
+import interfaces.Observers.ObserverRuns;
 import search.backtrack.DecisionRecorder;
 import search.backtrack.SolverBacktrack;
 import utility.Enums.ELearningNogood;
@@ -31,11 +31,12 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public final class LearnerNogoods {
+public final class NogoodRecorder {
 
-	public static LearnerNogoods buildFor(SolverBacktrack solver) {
-		if (solver.head.control.settingSolving.enableSearch && solver.head.control.settingLearning.nogood != ELearningNogood.NO && solver.propagation.queue != null)
-			return new LearnerNogoods(solver);
+	public static NogoodRecorder buildFor(SolverBacktrack solver) {
+		if (solver.head.control.settingSolving.enableSearch && solver.head.control.settingLearning.nogood != ELearningNogood.NO
+				&& solver.propagation.queue != null)
+			return new NogoodRecorder(solver);
 		return null;
 	}
 
@@ -59,7 +60,7 @@ public final class LearnerNogoods {
 	private boolean dealWithInference(int inferenceDecision) {
 		Variable x = dr.varIn(inferenceDecision);
 		int a = dr.idxIn(inferenceDecision);
-		solver.propagation.currFilteringCtr=null;
+		solver.propagation.currFilteringCtr = null;
 		Domain dom = x.dom;
 		if (inferenceDecision > 0)
 			return dom.reduceTo(a);
@@ -162,7 +163,7 @@ public final class LearnerNogoods {
 		Kit.control(symmetryHandler == null);
 	}
 
-	public LearnerNogoods(SolverBacktrack solver) {
+	public NogoodRecorder(SolverBacktrack solver) {
 		this.solver = solver;
 		this.dr = solver.dr;
 		this.settings = solver.head.control.settingLearning;
@@ -171,7 +172,7 @@ public final class LearnerNogoods {
 		this.nws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
 		this.tmp = new int[solver.problem.variables.length];
 		this.symmetryHandler = settings.nogood == ELearningNogood.RST_SYM ? new SymmetryHandler(solver.problem.variables.length) : null;
-		solver.propagation.queue.setLearnerNogood(this);
+		solver.propagation.queue.nogoodRecorder = this;
 	}
 
 	private void addWatchFor(Nogood nogood, int position, boolean firstWatch) {
@@ -402,7 +403,7 @@ public final class LearnerNogoods {
 						Arrays.sort(currentSymmetricNogood);
 						if (!nogoodsSetsBySize[currentSymmetricNogood.length].contains(currentSymmetricNogood)) {
 							int[] symmetricNogood = currentSymmetricNogood.clone();
-							LearnerNogoods.this.addNogood(symmetricNogood, false);
+							NogoodRecorder.this.addNogood(symmetricNogood, false);
 							naryNogoodsToHandle.add(symmetricNogood);
 							currentSpace += symmetricNogood.length * symmetricNogood.length;
 							// display(symmetricNogood);

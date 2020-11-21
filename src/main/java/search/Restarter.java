@@ -16,7 +16,7 @@ import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
 import constraints.global.ObjVar;
 import dashboard.ControlPanel.SettingGeneral;
 import dashboard.ControlPanel.SettingRestarts;
-import interfaces.ObserverRuns;
+import interfaces.Observers.ObserverRuns;
 import search.backtrack.RestarterLNS;
 import search.backtrack.RestarterLocalBranching;
 import search.backtrack.SolverBacktrack;

@@ -18,8 +18,8 @@ import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
 import interfaces.Optimizable;
-import interfaces.TagGACGuaranteed;
-import interfaces.TagSymmetric;
+import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import utility.Kit;
 import variables.Domain;
@@ -66,6 +66,20 @@ public abstract class SumSimple extends SumAbstract implements TagSymmetric {
 
 	public long maxComputableObjectiveValue() {
 		return Stream.of(scp).mapToLong(x -> x.dom.toVal(x.dom.initSize() - 1)).sum();
+	}
+
+	public long minCurrentObjectiveValue() {
+		long sum = 0;
+		for (Variable x : scp)
+			sum += x.dom.firstValue();
+		return sum;
+	}
+
+	public long maxCurrentObjectiveValue() {
+		long sum = 0;
+		for (Variable x : scp)
+			sum += x.dom.lastValue();
+		return sum;
 	}
 
 	public SumSimple(Problem pb, Variable[] scp, long limit) {

@@ -8,9 +8,9 @@
  */
 package constraints.global;
 
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.TagFilteringCompleteAtEachCall;
-import interfaces.TagGACGuaranteed;
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagGACGuaranteed;
 import problem.Problem;
 import variables.Variable;
 

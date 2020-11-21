@@ -12,8 +12,8 @@ import java.util.Arrays;
 import java.util.stream.LongStream;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.TagFilteringPartialAtEachCall;
-import interfaces.TagGACUnguaranteed;
+import interfaces.Tags.TagFilteringPartialAtEachCall;
+import interfaces.Tags.TagGACUnguaranteed;
 import problem.Problem;
 import sets.SetDense;
 import utility.Kit;

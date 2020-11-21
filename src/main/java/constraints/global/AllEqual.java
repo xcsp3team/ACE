@@ -11,10 +11,10 @@ package constraints.global;
 import java.util.stream.IntStream;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.TagFilteringCompleteAtEachCall;
-import interfaces.TagGACGuaranteed;
-import interfaces.TagSymmetric;
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import sets.SetSparse;
 import utility.Kit;

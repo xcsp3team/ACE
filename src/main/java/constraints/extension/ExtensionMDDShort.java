@@ -21,8 +21,8 @@ import constraints.extension.Extension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.MDDNodeShort;
 import constraints.extension.structures.MDDShort;
-import interfaces.TagPositive;
-import interfaces.TagShort;
+import interfaces.Tags.TagPositive;
+import interfaces.Tags.TagShort;
 import problem.Problem;
 import sets.SetSparseReversible;
 import variables.Domain;
@@ -35,8 +35,8 @@ public final class ExtensionMDDShort extends ExtensionGlobal implements TagPosit
 	 *********************************************************************************************/
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		int nNodes = ((MDDShort) extStructure).nNodes();
 		this.trueNodes = new int[nNodes];
 		if (pb.head.control.settingExtension.decremental)

@@ -193,7 +193,7 @@ public final class DomainInfinite implements Domain {
 	}
 
 	@Override
-	public long[] binaryRepresentation() {
+	public long[] binary() {
 		throw new AssertionError();
 	}
 

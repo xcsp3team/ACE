@@ -226,7 +226,7 @@ public interface LinkedSet {
 	 * 
 	 * @return the binary representation of the set
 	 */
-	long[] binaryRepresentation();
+	long[] binary();
 
 	/**
 	 * Returns an array with all elements (indexes) from the current set. This method should not be called at the heart of the solving process, for efficiency

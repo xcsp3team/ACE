@@ -47,13 +47,13 @@ import heuristics.HeuristicRevisions.HeuristicRevisionsDynamic.Dom;
 import heuristics.HeuristicValues;
 import heuristics.HeuristicVariables;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
-import interfaces.TagExperimental;
-import interfaces.TagInvisible;
-import main.Extraction;
+import interfaces.Tags.TagExperimental;
+import interfaces.Tags.TagInvisible;
 import main.Head;
+import main.HeadExtraction;
 import propagation.GAC;
-import propagation.Reviser;
 import propagation.QueueForSAC3.CellIterator;
+import propagation.Reviser;
 import propagation.Reviser.Reviser3;
 import search.SolutionManager;
 import search.backtrack.RestarterLNS.HeuristicFreezing;
@@ -581,8 +581,8 @@ public class ControlPanel {
 	public final SettingLearning settingLearning = new SettingLearning();
 
 	public class SettingExtraction extends SettingGroup {
-		String s_m = "The way the unsatisfiable cores will be identified." + "\n\tValid only with the command: java " + Extraction.class.getName();
-		String s_nc = "The number of cores (MUCs) that must be found." + "\n\tValid only with the command: java " + Extraction.class.getName();
+		String s_m = "The way the unsatisfiable cores will be identified." + "\n\tValid only with the command: java " + HeadExtraction.class.getName();
+		String s_nc = "The number of cores (MUCs) that must be found." + "\n\tValid only with the command: java " + HeadExtraction.class.getName();
 		String s_sc = "Indicates if cores must be saved in XCSP";
 
 		public final EExtractionMethod method = addE("method", "e_m", EExtractionMethod.VAR, s_m);
@@ -714,7 +714,7 @@ public class ControlPanel {
 
 		private List<Setting<?>> settings = new ArrayList<>();
 
-		protected ControlPanelSettings(String settingsFilename) {
+		public ControlPanelSettings(String settingsFilename) {
 			this.userSettings = new UserSettings(settingsFilename);
 		}
 

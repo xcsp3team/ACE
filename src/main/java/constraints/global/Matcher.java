@@ -3,7 +3,7 @@ package constraints.global;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import interfaces.ObserverConstruction;
+import interfaces.Observers.ObserverConstruction;
 import sets.SetSparse;
 import sets.SetSparseReversible;
 import utility.Kit;
@@ -123,7 +123,7 @@ public abstract class Matcher implements ObserverConstruction {
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
+	public void afterProblemConstruction() {
 		unfixedVars = new SetSparseReversible(arity, ctr.pb.variables.length + 1);
 
 		neighborsOfValues = SetSparse.factoryArray(arity + 1, intervalSize);

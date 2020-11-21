@@ -8,13 +8,11 @@
  */
 package constraints.global;
 
-import java.util.stream.Stream;
-
 import constraints.Constraint.CtrGlobal;
 import interfaces.Optimizable;
-import interfaces.TagFilteringCompleteAtEachCall;
-import interfaces.TagGACGuaranteed;
-import interfaces.TagSymmetric;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import variables.Variable;
 
@@ -22,14 +20,22 @@ public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilter
 
 	@Override
 	public long minComputableObjectiveValue() {
-		return Stream.of(scp).mapToLong(x -> x.dom.toVal(0)).min().getAsLong();
-		// No problem to use a stream because only called once at construction time
+		return x.dom.toVal(0);
 	}
 
 	@Override
 	public long maxComputableObjectiveValue() {
-		return Stream.of(scp).mapToLong(x -> x.dom.toVal(x.dom.initSize() - 1)).max().getAsLong();
-		// No problem to use a stream because only called once at construction time
+		return x.dom.toVal(x.dom.initSize() - 1);
+	}
+
+	@Override
+	public long minCurrentObjectiveValue() {
+		return x.dom.firstValue();
+	}
+
+	@Override
+	public long maxCurrentObjectiveValue() {
+		return x.dom.lastValue();
 	}
 
 	@Override

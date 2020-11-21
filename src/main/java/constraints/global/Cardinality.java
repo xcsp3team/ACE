@@ -9,9 +9,9 @@ import java.util.stream.IntStream;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.TagFilteringCompleteAtEachCall;
-import interfaces.TagGACGuaranteed;
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagGACGuaranteed;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;

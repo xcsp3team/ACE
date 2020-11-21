@@ -12,8 +12,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import interfaces.ObserverRuns;
-import interfaces.TagMaximize;
+import interfaces.Observers.ObserverRuns;
+import interfaces.Tags.TagMaximize;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;
 import variables.Variable;

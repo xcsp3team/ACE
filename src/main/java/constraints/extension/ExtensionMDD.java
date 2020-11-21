@@ -23,7 +23,7 @@ import constraints.extension.Extension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.MDD;
 import constraints.extension.structures.MDDNode;
-import interfaces.TagPositive;
+import interfaces.Tags.TagPositive;
 import problem.Problem;
 import sets.SetSparseReversible;
 import variables.Domain;
@@ -36,8 +36,8 @@ public final class ExtensionMDD extends ExtensionGlobal implements TagPositive, 
 	 *********************************************************************************************/
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		int nNodes = ((MDD) extStructure).nNodes();
 		this.trueNodes = new int[nNodes];
 		if (pb.head.control.settingExtension.decremental)

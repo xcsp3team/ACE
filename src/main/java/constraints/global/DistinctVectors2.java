@@ -17,8 +17,8 @@ import org.xcsp.common.Utilities;
 import org.xcsp.modeler.definitions.ICtr.ICtrAllDifferent;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.TagFilteringPartialAtEachCall;
-import interfaces.TagUnsymmetric;
+import interfaces.Tags.TagFilteringPartialAtEachCall;
+import interfaces.Tags.TagUnsymmetric;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;

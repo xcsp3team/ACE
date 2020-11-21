@@ -1,15 +1,15 @@
 package problems;
 
 import dashboard.Arguments;
-import main.Extraction;
 import main.Head;
+import main.HeadExtraction;
 
 public class UtilityForTests {
 
 	public static Head runResolution(String args, boolean extraction) {
 		System.out.println("Command : " + args);
 		Arguments.loadArguments(args.split("\\s+"));
-		Head resolution = extraction ? new Extraction() : new Head();
+		Head resolution = extraction ? new HeadExtraction() : new Head();
 		try {
 			resolution.start();
 			resolution.join();
@@ -24,7 +24,7 @@ public class UtilityForTests {
 		return runResolution(args, false);
 	}
 
-	public static Extraction runExtraction(String args) {
-		return (Extraction) runResolution(args, true);
+	public static HeadExtraction runExtraction(String args) {
+		return (HeadExtraction) runResolution(args, true);
 	}
 }

@@ -10,9 +10,9 @@ package constraints.global;
 
 import java.util.Arrays;
 
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.TagFilteringPartialAtEachCall;
-import interfaces.TagGACUnguaranteed;
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Tags.TagFilteringPartialAtEachCall;
+import interfaces.Tags.TagGACUnguaranteed;
 import problem.Problem;
 import sets.SetSparseReversible;
 import utility.Kit;
@@ -66,8 +66,8 @@ public final class AllDifferentPermutation extends AllDifferentAbstract
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		unfixedVars = new SetSparseReversible(scp.length, pb.variables.length + 1);
 		unfixedIdxs = new SetSparseReversible(scp[0].dom.initSize(), pb.variables.length + 1);
 	}

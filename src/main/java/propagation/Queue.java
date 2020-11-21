@@ -14,8 +14,8 @@ import java.util.stream.IntStream;
 
 import heuristics.HeuristicRevisions;
 import heuristics.HeuristicRevisions.HeuristicRevisionsDirect.First;
-import learning.LearnerNogoods;
-import learning.LearnerStatesDominance;
+import learning.IpsRecorderForDominance;
+import learning.NogoodRecorder;
 import main.Head;
 import sets.SetSparse;
 import utility.Reflector;
@@ -92,10 +92,10 @@ public final class Queue extends SetSparse {
 	}
 
 	public boolean isNogoodConsistent(Variable x) {
-		if (learnerNogood != null) {
+		if (nogoodRecorder != null) {
 			// if (propagation.getSolver().getResolution().getAuxiliarySolver() == propagation.getSolver()) return true;
 			// for the moment the auxiliary solver does not exploit nogoods
-			if (x.dom.size() == 1 && learnerNogood.checkWatchesOf(x, x.dom.first(), false) == false)
+			if (x.dom.size() == 1 && nogoodRecorder.checkWatchesOf(x, x.dom.first(), false) == false)
 				return false;
 		}
 		if (sentinelLevel != null) {
@@ -107,7 +107,7 @@ public final class Queue extends SetSparse {
 			for (int a = dom.lastRemoved(); a != absentValuesSentinel[x.num] && dom.isRemovedAtLevel(a, depth); a = dom.prevRemoved(a)) {
 				// if (elements.getAbsentLevelOf(index) < depth) // TODO ex version, the new one (with isAtLevel) must be controlled
 				// break;
-				if (!stateDominanceManager.checkWatchesOf(x.num, a))
+				if (!ipsRecorder.checkWatchesOf(x.num, a))
 					return false;
 			}
 			sentinelLevel[x.num] = propagation.solver.stats.numberSafe();
@@ -130,20 +130,16 @@ public final class Queue extends SetSparse {
 	 * Fields below, together with setter methods, are for learning ; not necessarily used
 	 *********************************************************************************************/
 
-	private LearnerNogoods learnerNogood;
+	public NogoodRecorder nogoodRecorder;
 
-	private LearnerStatesDominance stateDominanceManager;
+	private IpsRecorderForDominance ipsRecorder;
 
 	private int[] absentValuesSentinel;
 
 	private long[] sentinelLevel;
 
-	public void setLearnerNogood(LearnerNogoods nogoodManager) {
-		this.learnerNogood = nogoodManager;
-	}
-
-	public void setStateDominanceManager(LearnerStatesDominance stateDominanceManager) {
-		this.stateDominanceManager = stateDominanceManager;
+	public void setStateDominanceManager(IpsRecorderForDominance recorder) {
+		this.ipsRecorder = recorder;
 		this.absentValuesSentinel = new int[propagation.solver.problem.variables.length];
 		this.sentinelLevel = new long[absentValuesSentinel.length];
 	}

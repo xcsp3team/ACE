@@ -16,9 +16,9 @@ import java.util.stream.Stream;
 
 import org.xcsp.common.Utilities;
 
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.TagFilteringPartialAtEachCall;
-import interfaces.TagGACUnguaranteed;
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Tags.TagFilteringPartialAtEachCall;
+import interfaces.Tags.TagGACUnguaranteed;
 import problem.Problem;
 import sets.SetSparse;
 import sets.SetSparseReversible;
@@ -51,8 +51,8 @@ public class AllDifferentBound extends AllDifferentAbstract implements ObserverB
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		fixedIdxs = new SetSparseReversible(scp[0].dom.initSize(), false, pb.variables.length + 1);
 		storer = new HallIntervalStored(scp[0].dom.initSize(), pb.variables.length + 1);
 

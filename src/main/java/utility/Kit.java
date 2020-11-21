@@ -8,7 +8,11 @@
  */
 package utility;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Array;
@@ -85,6 +89,17 @@ public final class Kit {
 			}
 		};
 		log.addHandler(handler);
+	}
+
+	public static void copy(String srcFileName, String dstFileName) {
+		try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(srcFileName));
+				BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(dstFileName));) {
+			byte[] bytes = new byte[1024];
+			for (int nb = in.read(bytes, 0, bytes.length); nb > 0; nb = in.read(bytes, 0, bytes.length))
+				out.write(bytes, 0, nb);
+		} catch (Exception e) {
+			Kit.exit(e);
+		}
 	}
 
 	public static Object control(boolean conditionToBeRespected, Supplier<String> message) {

@@ -15,10 +15,10 @@ import org.xcsp.common.Utilities;
 import org.xcsp.modeler.entities.CtrEntities.CtrAlone;
 
 import constraints.global.SumWeighted;
-import interfaces.TagFilteringCompleteAtEachCall;
-import interfaces.TagGACGuaranteed;
-import interfaces.TagSymmetric;
-import interfaces.TagUnsymmetric;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagSymmetric;
+import interfaces.Tags.TagUnsymmetric;
 import problem.Problem;
 import utility.Kit;
 import variables.Domain;

@@ -14,10 +14,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.TagFilteringCompleteAtEachCall;
-import interfaces.TagGACGuaranteed;
-import interfaces.TagSymmetric;
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import sets.SetDense;
 import sets.SetSparseReversible;
@@ -41,8 +41,8 @@ public final class AllEqual2 extends CtrGlobal implements ObserverBacktrackingSy
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		this.remainingValues = new SetSparseReversible(map.size(), pb.variables.length + 1);
 		this.lastRemovedValues = new SetDense(map.size());
 	}

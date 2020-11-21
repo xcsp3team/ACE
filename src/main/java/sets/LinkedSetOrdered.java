@@ -284,7 +284,7 @@ public class LinkedSetOrdered implements LinkedSet {
 	}
 
 	@Override
-	public long[] binaryRepresentation() {
+	public long[] binary() {
 		return null;
 	}
 
@@ -339,7 +339,7 @@ public class LinkedSetOrdered implements LinkedSet {
 		protected long[] binaryRepresentation;
 
 		@Override
-		public long[] binaryRepresentation() {
+		public long[] binary() {
 			return binaryRepresentation;
 		}
 

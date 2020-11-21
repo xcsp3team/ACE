@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 import constraints.extension.Extension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
-import interfaces.TagShort;
+import interfaces.Tags.TagShort;
 import problem.Problem;
 import propagation.StrongConsistency;
 import sets.SetDenseReversible;
@@ -33,8 +33,8 @@ public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
 	private final static int UNITIALIZED = -2;
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		this.tuples = ((Table) extStructure).tuples;
 		this.set = new SetDenseReversible(tuples.length, pb.variables.length + 1);
 		this.ac = Variable.litterals(scp).booleanArray();

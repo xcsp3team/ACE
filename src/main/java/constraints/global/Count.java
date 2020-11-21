@@ -6,10 +6,10 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.TagFilteringCompleteAtEachCall;
-import interfaces.TagFilteringPartialAtEachCall;
-import interfaces.TagGACGuaranteed;
-import interfaces.TagSymmetric;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagFilteringPartialAtEachCall;
+import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import sets.SetSparse;
 import utility.Kit;

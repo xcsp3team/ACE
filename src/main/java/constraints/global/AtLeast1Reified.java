@@ -4,9 +4,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.TagFilteringPartialAtEachCall;
-import interfaces.TagGACGuaranteed;
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Tags.TagFilteringPartialAtEachCall;
+import interfaces.Tags.TagGACGuaranteed;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;

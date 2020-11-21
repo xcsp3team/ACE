@@ -25,7 +25,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
-import interfaces.TagExperimental;
+import interfaces.Tags.TagExperimental;
 
 /**
  * This class allows performing some operations based on reflection.

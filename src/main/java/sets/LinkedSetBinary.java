@@ -204,7 +204,7 @@ public class LinkedSetBinary implements LinkedSet {
 	}
 
 	@Override
-	public long[] binaryRepresentation() {
+	public long[] binary() {
 		return size == 2 ? binaryFor01 : size == 0 ? binaryEmpty : removedlevels[1] == -1 ? binaryFor1 : binaryFor0;
 	}
 

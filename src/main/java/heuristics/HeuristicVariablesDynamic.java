@@ -12,10 +12,10 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import interfaces.ObserverAssignment;
-import interfaces.ObserverConflicts;
-import interfaces.ObserverRuns;
-import interfaces.TagMaximize;
+import interfaces.Observers.ObserverAssignment;
+import interfaces.Observers.ObserverConflicts;
+import interfaces.Observers.ObserverRuns;
+import interfaces.Tags.TagMaximize;
 import search.backtrack.SolverBacktrack;
 import sets.SetDense;
 import utility.Enums.EBranching;

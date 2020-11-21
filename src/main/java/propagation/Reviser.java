@@ -177,7 +177,7 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 			int px = c.positionOf(x);
 			Domain dom = x.dom;
 			Variable y = c.scp[px == 0 ? 1 : 0];
-			long[] bitDom = y.dom.binaryRepresentation();
+			long[] bitDom = y.dom.binary();
 			long[][] bitSups = ((Bits) c.extStructure()).bitSupsFor(px);
 			short[] residues = bitRmResidues != null ? bitRmResidues[c.num][px] : null;
 			if (!variant) {

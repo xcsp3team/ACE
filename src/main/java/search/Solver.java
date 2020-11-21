@@ -16,11 +16,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import interfaces.ObserverAssignment;
-import interfaces.ObserverConflicts;
-import interfaces.ObserverRuns;
-import interfaces.ObserverSearch;
-import interfaces.TagBinaryRelationFiltering;
+import interfaces.Observers.ObserverAssignment;
+import interfaces.Observers.ObserverConflicts;
+import interfaces.Observers.ObserverRuns;
+import interfaces.Observers.ObserverSearch;
+import interfaces.Tags.TagBinaryRelationFiltering;
 import main.Head;
 import problem.Problem;
 import propagation.Propagation;

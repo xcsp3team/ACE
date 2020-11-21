@@ -24,8 +24,8 @@ public class ExtensionSTR1 extends ExtensionGlobal {
 	 *********************************************************************************************/
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		this.tuples = ((Table) extStructure).tuples;
 		this.set = new SetDenseReversible(tuples.length, pb.variables.length + 1);
 		this.ac = Variable.litterals(scp).booleanArray();

@@ -10,7 +10,7 @@ package constraints.extension;
 
 import java.util.Arrays;
 
-import interfaces.TagNegative;
+import interfaces.Tags.TagNegative;
 import problem.Problem;
 import variables.Domain;
 import variables.Variable;
@@ -18,8 +18,8 @@ import variables.Variable;
 public final class ExtensionSTR1NEG extends ExtensionSTR1 implements TagNegative {
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		this.nConflicts = Variable.litterals(scp).intArray();
 	}
 

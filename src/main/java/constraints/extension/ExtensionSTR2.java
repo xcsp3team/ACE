@@ -12,7 +12,7 @@ import static org.xcsp.common.Constants.STAR;
 
 import java.util.stream.Stream;
 
-import interfaces.TagShort;
+import interfaces.Tags.TagShort;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;

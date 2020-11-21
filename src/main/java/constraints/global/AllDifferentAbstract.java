@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
 import org.xcsp.modeler.definitions.ICtr.ICtrAllDifferent;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.TagSymmetric;
+import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import variables.Variable;
 

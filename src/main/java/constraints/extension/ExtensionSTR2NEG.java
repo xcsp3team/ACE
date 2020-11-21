@@ -13,7 +13,7 @@ import java.util.Arrays;
 import constraints.extension.Extension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
-import interfaces.TagNegative;
+import interfaces.Tags.TagNegative;
 import problem.Problem;
 import sets.SetDenseReversible;
 import variables.Variable;
@@ -25,8 +25,8 @@ public class ExtensionSTR2NEG extends ExtensionGlobal implements TagNegative {
 	 *********************************************************************************************/
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		this.tuples = ((Table) extStructure).tuples;
 		this.set = new SetDenseReversible(tuples.length, pb.variables.length + 1);
 		this.nConflicts = Variable.litterals(scp).intArray();

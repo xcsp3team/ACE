@@ -15,7 +15,7 @@ import java.util.stream.LongStream;
 import org.xcsp.common.Constants;
 
 import constraints.extension.structures.Table;
-import interfaces.TagShort;
+import interfaces.Tags.TagShort;
 import problem.Problem;
 import sets.SetDenseReversible;
 import utility.Bit;
@@ -73,8 +73,8 @@ public class ExtensionCT extends ExtensionSTROptimized implements TagShort {
 	protected void maskCompression(long[][] masks) {}
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 
 		int nWords = (int) Math.ceil(tuples.length / 64.0);
 		this.current = new long[nWords];

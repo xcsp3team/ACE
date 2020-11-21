@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 import org.xcsp.common.Range;
 import org.xcsp.common.Types.TypeOperatorRel;
 
-import interfaces.ObserverDomainReduction;
+import interfaces.Observers.ObserverDomainReduction;
 import search.Solver;
 import sets.LinkedSet;
 import sets.SetDense;
@@ -271,7 +271,7 @@ public interface Domain extends LinkedSet {
 			solver().pushVariable(x); // push must always be performed before domain reduction
 		remove(a, depth);
 		for (ObserverDomainReduction observer : x.pb.observersDomainReduction)
-			observer.actAfterRemoval(x, a);
+			observer.afterRemoval(x, a);
 		x.pb.nValuesRemoved++;
 	}
 
@@ -389,7 +389,7 @@ public interface Domain extends LinkedSet {
 			solver().pushVariable(x); // push above must always be performed before domain reduction
 		int nRemovals = reduceTo(a, depth);
 		for (ObserverDomainReduction observer : x.pb.observersDomainReduction)
-			observer.actAfterRemovals(x, nRemovals);
+			observer.afterRemovals(x, nRemovals);
 		x.pb.nValuesRemoved += nRemovals;
 		assert nRemovals >= 0 && size() == 1 : "nRemovals: " + nRemovals + " size:" + size();
 		return nRemovals;

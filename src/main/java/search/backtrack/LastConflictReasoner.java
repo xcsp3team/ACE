@@ -11,7 +11,7 @@ package search.backtrack;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import interfaces.ObserverRuns;
+import interfaces.Observers.ObserverRuns;
 import utility.Kit;
 import variables.Variable;
 

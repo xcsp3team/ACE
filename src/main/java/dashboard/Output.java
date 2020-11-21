@@ -21,9 +21,9 @@ import org.w3c.dom.Element;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
-import interfaces.ObserverConstruction;
-import interfaces.ObserverRuns;
-import interfaces.ObserverSearch;
+import interfaces.Observers.ObserverConstruction;
+import interfaces.Observers.ObserverRuns;
+import interfaces.Observers.ObserverSearch;
 import main.Head;
 import problem.ProblemStuff.MapAtt;
 import propagation.GAC;
@@ -284,7 +284,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
+	public void afterProblemConstruction() {
 		Kit.control(resolution.problem.variables.length > 0, () -> "No variable in your model");
 		MapAtt da = resolution.problem.stuff.domainsAttributes();
 		MapAtt va = resolution.problem.stuff.variablesAttributes();
@@ -303,7 +303,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	}
 
 	@Override
-	public void onConstructionSolverFinished() {
+	public void afterSolverConstruction() {
 		MapAtt sa = new MapAtt("Solver");
 		if (resolution.solver.propagation.getClass() == GAC.class)
 			sa.put(Output.GUARANTEED_GAC, Constraint.isGuaranteedGAC(resolution.problem.constraints));

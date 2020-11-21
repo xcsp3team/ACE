@@ -8,7 +8,7 @@
  */
 package heuristics;
 
-import interfaces.TagMaximize;
+import interfaces.Tags.TagMaximize;
 
 public abstract class Heuristic {
 

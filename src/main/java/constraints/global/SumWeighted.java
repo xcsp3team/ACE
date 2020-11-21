@@ -20,7 +20,7 @@ import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
 import interfaces.Optimizable;
-import interfaces.TagGACGuaranteed;
+import interfaces.Tags.TagGACGuaranteed;
 import problem.Problem;
 import utility.Kit;
 import variables.Domain;
@@ -70,6 +70,20 @@ public abstract class SumWeighted extends SumAbstract {
 			sum = sum.add(BigInteger.valueOf(coeffs[i])
 					.multiply(BigInteger.valueOf(coeffs[i] >= 0 ? scp[i].dom.toVal(scp[i].dom.initSize() - 1) : scp[i].dom.toVal(0))));
 		return sum.longValueExact();
+	}
+
+	public long minCurrentObjectiveValue() {
+		long sum = 0;
+		for (int i = 0; i < scp.length; i++)
+			sum += coeffs[i] * (coeffs[i] >= 0 ? scp[i].dom.firstValue() : scp[i].dom.lastValue());
+		return sum;
+	}
+
+	public long maxCurrentObjectiveValue() {
+		long sum = 0;
+		for (int i = 0; i < scp.length; i++)
+			sum += coeffs[i] * (coeffs[i] >= 0 ? scp[i].dom.lastValue() : scp[i].dom.firstValue());
+		return sum;
 	}
 
 	public final int[] coeffs;

@@ -26,7 +26,7 @@ import utility.Kit;
 import utility.Kit.Stopwatch;
 import variables.Variable;
 
-public class Extraction extends Head {
+public class HeadExtraction extends Head {
 
 	public List<List<Constraint>> cores = new ArrayList<>();
 
@@ -307,20 +307,20 @@ public class Extraction extends Head {
 		return cores.size() == 0 ? null : cores.get(cores.size() - 1);
 	}
 
-	public Extraction() {
+	public HeadExtraction() {
 	}
 
-	public Extraction(String configurationFileName) {
+	public HeadExtraction(String configurationFileName) {
 		super(configurationFileName);
 	}
 
-	public Extraction(Problem pb) {
+	public HeadExtraction(Problem pb) {
 		this.problem = pb;
 	}
 
 	public static void main(String[] args) {
 		Arguments.loadArguments(args);
-		Extraction extraction = new Extraction();
+		HeadExtraction extraction = new HeadExtraction();
 		Kit.control(!extraction.control.settingProblem.isSymmetryBreaking(), () -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
 		Kit.control(extraction.control.settingLearning.state == ELearningState.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
 		// Kit.control(extraction.configuration.restartsCutoff == Long.MAX_VALUE || extraction.configuration.nogoodType == null,

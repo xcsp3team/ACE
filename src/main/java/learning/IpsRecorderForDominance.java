@@ -8,30 +8,29 @@
  */
 package learning;
 
-import interfaces.ObserverBacktracking.ObserverBacktrackingUnsystematic;
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingUnsystematic;
 import search.backtrack.SolverBacktrack;
-import search.backtrack.SolverBacktrack.StackedVariables;
 import utility.Bit;
 import utility.Enums.EStopping;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public final class LearnerStatesDominance extends LearnerStates {
-	protected State[] waitingNogoods;
+public final class IpsRecorderForDominance extends IpsRecorder {
+	protected Ips[] waitingNogoods;
 
 	protected WatchCell[] watches; // 1D = variable id ; value = reference to the first cell involving the variable as watch in a
 									// hypernogood
 
 	protected WatchCell free; // reference to the first free cell (i.e. the pool of free cells)
 
-	protected int nTotalRemovals, nWipeouts, nHyperNogoods;
+	protected int nTotalRemovals, nWipeouts, nIps;
 
-	public int nGeneratedHyperNogoods;
+	public int nGeneratedIps;
 
 	private int[] offsets;
 
-	private State[] quarantine = new State[100];
+	private Ips[] quarantine = new Ips[100];
 
 	private int quarantineSize;
 
@@ -40,17 +39,17 @@ public final class LearnerStatesDominance extends LearnerStates {
 	// private int[][] frontiers;
 
 	class WatchCell {
-		State state;
+		Ips state;
 
 		WatchCell nextCell;
 
-		WatchCell(State state, WatchCell nextCell) {
+		WatchCell(Ips state, WatchCell nextCell) {
 			this.state = state;
 			this.nextCell = nextCell;
 		}
 	}
 
-	public LearnerStatesDominance(SolverBacktrack solver) {
+	public IpsRecorderForDominance(SolverBacktrack solver) {
 		super(solver);
 		Kit.control(solver.propagation != null);
 
@@ -64,55 +63,55 @@ public final class LearnerStatesDominance extends LearnerStates {
 		if (reductionOperator.enablePElimination())
 			topBeforeRefutations = new int[offsets.length + 1]; // offsets.length is equal to the nb of variables
 		else
-			waitingNogoods = new State[offsets.length + 1];
+			waitingNogoods = new Ips[offsets.length + 1];
 
 		solver.propagation.queue.setStateDominanceManager(this);
 	}
 
-	private void insertHyperNogood(State hyperNogood, int accessKey) {
+	private void insertIps(Ips ips, int accessKey) {
 		if (free == null)
-			watches[accessKey] = new WatchCell(hyperNogood, watches[accessKey]);
+			watches[accessKey] = new WatchCell(ips, watches[accessKey]);
 		else {
 			WatchCell cell = free;
 			free = free.nextCell;
-			cell.state = hyperNogood;
+			cell.state = ips;
 			cell.nextCell = watches[accessKey];
 			watches[accessKey] = cell;
 		}
 	}
 
-	private boolean canFindAnotherWatch(State hyperNogood, int watchPosition) {
-		long[] binDom = variables[hyperNogood.getVariableIdWatchedAt(watchPosition)].dom.binaryRepresentation();
-		int pos = Bit.firstPositionOfNonInclusion(binDom, hyperNogood.getDomainRepresentationOfWatchedVariableAt(watchPosition));
-		if (pos != -1) {
-			insertHyperNogood(hyperNogood, offsets[hyperNogood.getVariableIdWatchedAt(watchPosition)] + pos);
-			hyperNogood.setIndex(watchPosition, pos);
+	private boolean canFindAnotherWatch(Ips ips, int watchPosition) {
+		int x = ips.varNumFor(watchPosition);
+		long[] binDom = variables[x].dom.binary();
+		int a = Bit.firstPositionOfNonInclusion(binDom, ips.binDomFor(watchPosition));
+		if (a != -1) {
+			insertIps(ips, offsets[x] + a);
+			ips.setIndex(watchPosition, a);
 			return true;
 		}
-
-		int[] vids = hyperNogood.vids;
-		for (int i = 0; i < vids.length; i++) {
-			if (hyperNogood.isWatched(vids[i]))
+		for (int i = 0; i < ips.nums.length; i++) {
+			int y = ips.nums[i];
+			if (ips.isWatched(y))
 				continue;
-			binDom = variables[vids[i]].dom.binaryRepresentation();
-			pos = Bit.firstPositionOfNonInclusion(binDom, hyperNogood.getDomainRepresentationOfVariableAtPosition(i));
-			if (pos != -1) {
-				insertHyperNogood(hyperNogood, offsets[vids[i]] + pos);
-				hyperNogood.setWatch(watchPosition, i, pos); // indexPosition);addWatch(hyperNogood, watchPosition, i, pos);
+			binDom = variables[y].dom.binary();
+			a = Bit.firstPositionOfNonInclusion(binDom, ips.binDoms[i]);
+			if (a != -1) {
+				insertIps(ips, offsets[y] + a);
+				ips.setWatch(watchPosition, i, a); // indexPosition);addWatch(ips, watchPosition, i, &);
 				return true;
 			}
 		}
 		return false;
 	}
 
-	public boolean checkWatchesOf(int vid, int idx) {
-		int lit = offsets[vid] + idx;
+	public boolean checkWatchesOf(int x, int a) {
+		int lit = offsets[x] + a;
 		WatchCell previous = null;
 		WatchCell current = watches[lit];
 		while (current != null) {
-			State hyperNogood = current.state;
-			int watchPosition = hyperNogood.getWatchPositionOf(vid);
-			if (canFindAnotherWatch(hyperNogood, watchPosition)) {
+			Ips ips = current.state;
+			int watch = ips.watchFor(x); // watch is 0 or 1 (first or second watch)
+			if (canFindAnotherWatch(ips, watch)) {
 				WatchCell tmp = current.nextCell;
 				if (previous == null)
 					watches[lit] = current.nextCell;
@@ -124,34 +123,34 @@ public final class LearnerStatesDominance extends LearnerStates {
 			} else {
 				previous = current;
 				current = current.nextCell;
-				if (!dealWithInference(hyperNogood, hyperNogood.getVariablePositionAt(watchPosition == 0 ? 1 : 0)))
+				if (!dealWithInference(ips, ips.watchVarFor(watch == 0 ? 1 : 0)))
 					return false;
 			}
 		}
 		return true;
 	}
 
-	private boolean canFindAWatch(State hyperNogood, int pos) {
-		int[] vids = hyperNogood.vids;
-		for (int i = 0; i < vids.length; i++) {
+	private boolean canFindAWatch(Ips ips, int pos) {
+		int[] nums = ips.nums;
+		for (int i = 0; i < nums.length; i++) {
 			if (i == pos)
 				continue;
-			long[] binDom = variables[vids[i]].dom.binaryRepresentation();
-			int indexPosition = Bit.firstPositionOfNonInclusion(binDom, hyperNogood.getDomainRepresentationOfVariableAtPosition(i));
-			if (indexPosition != -1) {
-				hyperNogood.setWatch(pos == -1 ? 0 : 1, i, indexPosition);
+			long[] binDom = variables[nums[i]].dom.binary();
+			int a = Bit.firstPositionOfNonInclusion(binDom, ips.binDoms[i]);
+			if (a != -1) {
+				ips.setWatch(pos == -1 ? 0 : 1, i, a);
 				return true;
 			}
 		}
 		return false;
 	}
 
-	protected boolean dealWithInference(State hyperNogood, int pos) {
-		Variable x = variables[hyperNogood.vids[pos]];
-		long[] domainRepresentation = hyperNogood.getDomainRepresentationAt(pos);
+	protected boolean dealWithInference(Ips ips, int pos) {
+		Variable x = variables[ips.nums[pos]];
+		long[] domainRepresentation = ips.binDoms[pos];
 		Domain dom = x.dom;
 		if (x.isAssigned() && Bit.isPresent(domainRepresentation, dom.first())) {
-			solver.proofer.updateProof(hyperNogood.vids);
+			solver.proofer.updateProof(ips.nums);
 			nWipeouts++;
 			return false;
 		}
@@ -162,7 +161,7 @@ public final class LearnerStatesDominance extends LearnerStates {
 				dom.removeElementary(a);
 		int nRemovals = sizeBefore - dom.size();
 		if (nRemovals > 0) {
-			solver.proofer.updateProof(hyperNogood.vids);
+			solver.proofer.updateProof(ips.nums);
 			if (dom.size() == 0)
 				nWipeouts++;
 			else
@@ -175,26 +174,26 @@ public final class LearnerStatesDominance extends LearnerStates {
 
 	private boolean manageQuarantine() {
 		for (int i = 0; i < quarantineSize; i++) {
-			State hyperNogood = quarantine[i];
-			int[] vids = hyperNogood.vids;
-			if (vids.length == 1) {
-				if (!dealWithInference(hyperNogood, 0))
+			Ips ips = quarantine[i];
+			int[] nums = ips.nums;
+			if (nums.length == 1) {
+				if (!dealWithInference(ips, 0))
 					return false;
 			} else {
-				if (!canFindAWatch(hyperNogood, -1)) {
-					solver.proofer.updateProof(hyperNogood.vids);
+				if (!canFindAWatch(ips, -1)) {
+					solver.proofer.updateProof(ips.nums);
 					nWipeouts++;
 					return false;
 				}
-				int pos = hyperNogood.getVariablePositionAt(0);
-				if (canFindAWatch(hyperNogood, pos)) {
-					insertHyperNogood(hyperNogood, offsets[hyperNogood.getVariableIdWatchedAt(0)] + hyperNogood.getIndexWatchedAt(0));
-					insertHyperNogood(hyperNogood, offsets[hyperNogood.getVariableIdWatchedAt(1)] + hyperNogood.getIndexWatchedAt(1));
+				int pos = ips.watchVarFor(0);
+				if (canFindAWatch(ips, pos)) {
+					insertIps(ips, offsets[ips.varNumFor(0)] + ips.watchIdxFor(0));
+					insertIps(ips, offsets[ips.varNumFor(1)] + ips.watchIdxFor(1));
 					quarantineSize--;
 					quarantine[i--] = quarantine[quarantineSize];
-					nHyperNogoods++;
+					nIps++;
 				} else {
-					if (!dealWithInference(hyperNogood, pos))
+					if (!dealWithInference(ips, pos))
 						return false;
 				}
 			}
@@ -203,14 +202,13 @@ public final class LearnerStatesDominance extends LearnerStates {
 	}
 
 	private void preparePartialBacktrack(int level) {
-		StackedVariables variablesObserver = solver.stackedVariables;
-		int topStack = variablesObserver.top;
-		ObserverBacktrackingUnsystematic[] globalStack = variablesObserver.stack;
-		topBeforeRefutations[level] = topStack;
-		if (topStack == -1 || ((Variable) globalStack[topStack]).dom.lastRemovedLevel() < level)
+		int top = solver.stackedVariables.top;
+		ObserverBacktrackingUnsystematic[] stack = solver.stackedVariables.stack;
+		topBeforeRefutations[level] = top;
+		if (top == -1 || ((Variable) stack[top]).dom.lastRemovedLevel() < level)
 			return;
-		for (int i = topStack; globalStack[i] != null; i--)
-			((Variable) globalStack[i]).dom.setMark(level); // getLastDropped();
+		for (int i = top; stack[i] != null; i--)
+			((Variable) stack[i]).dom.setMark(level); // getLastDropped();
 	}
 
 	@Override
@@ -221,30 +219,29 @@ public final class LearnerStatesDominance extends LearnerStates {
 			return false;
 		if (reductionOperator.enablePElimination()) {
 			preparePartialBacktrack(solver.depth());
-			// waitingNogoods[solver.getCurrentDepth()] = new HyperNogood(solver, reductionOperator.copy());
+			// waitingNogoods[solver.getCurrentDepth()] = new Ips(solver, reductionOperator.copy());
 		} else
-			waitingNogoods[solver.depth()] = new State(this, reductionOperator.extract());
+			waitingNogoods[solver.depth()] = new Ips(this, reductionOperator.extract());
 		return true;
 	}
 
 	private void performPartialBacktrack(int topBefore, int depth) {
-		StackedVariables variablesObserver = solver.stackedVariables;
-		int topStack = variablesObserver.top;
-		ObserverBacktrackingUnsystematic[] globalStack = variablesObserver.stack;
+		int top = solver.stackedVariables.top;
+		ObserverBacktrackingUnsystematic[] stack = solver.stackedVariables.stack;
 		// Possible d'eliminer ci-dessous : semble pas possible ces cas ? //TODO
-		if (topStack == -1 || ((Variable) globalStack[topStack]).dom.lastRemovedLevel() < depth)
+		if (top == -1 || ((Variable) stack[top]).dom.lastRemovedLevel() < depth)
 			return;
-		variablesObserver.top = topBefore; // keep it at this position
-		for (int i = topStack; i > topBefore; i--) {
-			if (globalStack[i] == null) {
+		solver.stackedVariables.top = topBefore; // keep it at this position
+		for (int i = top; i > topBefore; i--) {
+			if (stack[i] == null) {
 				assert (i == topBefore + 1);
 				return;
 			}
-			((Variable) globalStack[i]).dom.restoreBefore(depth);
+			((Variable) stack[i]).dom.restoreBefore(depth);
 		}
 		// int[] currentFrontiers = frontiers[level];
-		for (int i = topBefore; globalStack[i] != null; i--)
-			((Variable) globalStack[i]).dom.restoreAtMark(depth); // restoreElementsDroppedStrictlyAfter(currentFrontiers[cnt]);
+		for (int i = topBefore; stack[i] != null; i--)
+			((Variable) stack[i]).dom.restoreAtMark(depth); // restoreElementsDroppedStrictlyAfter(currentFrontiers[cnt]);
 	}
 
 	@Override
@@ -252,41 +249,38 @@ public final class LearnerStatesDominance extends LearnerStates {
 		int level = solver.depth();
 		if (level == 0)
 			return;
-		State state = null;
+		Ips ips = null;
 		if (reductionOperator.enablePElimination()) {
 			int topBefore = topBeforeRefutations[level];
 			if (topBefore == -2)
 				return;
 			performPartialBacktrack(topBefore, level);
-			state = new State(this, reductionOperator.extract());
-			// // hyperNogood = new HyperNogood(solver, ((SystematicSolver)
-			// solver).getProofVariablesAt(solver.getCurrentDepth()));
-
-			// hyperNogood = new HyperNogood(waitingNogoods[level], ((SystematicSolver)
-			// solver).getProofVariablesAt(solver.getCurrentDepth() ));
+			ips = new Ips(this, reductionOperator.extract());
+			// ips = new Ips(solver, ((SystematicSolver) solver).getProofVariablesAt(solver.getCurrentDepth()));
+			// ips = new Ips(waitingNogoods[level], ((SystematicSolver)solver).getProofVariablesAt(solver.getCurrentDepth() ));
 		} else
-			state = waitingNogoods[level];
-		assert state != null;
-		if (state.vids.length == 0) {
+			ips = waitingNogoods[level];
+		assert ips != null;
+		if (ips.nums.length == 0) {
 			Kit.log.info("empty nogood");
 			solver.stopping = EStopping.FULL_EXPLORATION;
 		} else {
 			if (quarantineSize + 1 > quarantine.length) {
-				State[] t = new State[quarantine.length * 2];
+				Ips[] t = new Ips[quarantine.length * 2];
 				System.arraycopy(quarantine, 0, t, 0, quarantine.length);
 				quarantine = t;
 			}
-			quarantine[quarantineSize++] = state;
+			quarantine[quarantineSize++] = ips;
 		}
 	}
 
 	@Override
 	public void displayStats() {
-		Kit.log.info("nbHyperNogoods=" + nGeneratedHyperNogoods + " nbTotalRemovals=" + nTotalRemovals + " nbWipeouts=" + nWipeouts);
+		Kit.log.info("nIps=" + nGeneratedIps + " nTotalRemovals=" + nTotalRemovals + " nWipeouts=" + nWipeouts);
 	}
 
 	public void display() {
-		Kit.log.fine("Nb Hyper Nogoods = " + nHyperNogoods);
+		Kit.log.fine("nIps = " + nIps);
 		for (int i = 0; i < watches.length; i++) {
 			String s = "Watches for " + solver.problem.variables[i] + " ";
 			for (WatchCell cell = watches[i]; cell != null; cell = cell.nextCell)

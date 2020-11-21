@@ -4,8 +4,8 @@ import java.util.Map;
 
 import org.xcsp.common.Utilities;
 
-import interfaces.TagFilteringPartialAtEachCall;
-import interfaces.TagGACUnguaranteed;
+import interfaces.Tags.TagFilteringPartialAtEachCall;
+import interfaces.Tags.TagGACUnguaranteed;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;

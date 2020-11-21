@@ -20,7 +20,7 @@ import utility.Kit.ByteArrayHashKey;
 import variables.Domain;
 import variables.Variable;
 
-public final class LearnerStatesEquivalence extends LearnerStates {
+public final class IpsRecorderForEquivalence extends IpsRecorder {
 
 	private static final Integer zero = new Integer(0);
 
@@ -34,7 +34,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 
 	private boolean moreThanOneSolution;
 
-	private int nbBytesPerVariableId;
+	private int nBytesPerVariableId;
 
 	private Deflater compressor;
 
@@ -42,7 +42,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 
 	private byte[] tmpOutput = new byte[20000];
 
-	public int nbTooLargeKeys, nbInferredSolutions;
+	public int nTooLargeKeys, nInferredSolutions;
 
 	public int getMapSize() {
 		return mapOfHashKeys.size();
@@ -53,14 +53,14 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 	// mapOfHashKeys.clear();
 	// }
 
-	public LearnerStatesEquivalence(SolverBacktrack solver) {
+	public IpsRecorderForEquivalence(SolverBacktrack solver) {
 		super(solver);
-		if (variables.length > 1500)
+		if (variables.length > 1500) // hard coding
 			stopped = true;
 		currentOpenNodesKeys = new ByteArrayHashKey[variables.length];
 		currentOpenNodesNbFoundSolutions = new int[variables.length];
 		moreThanOneSolution = solver.solManager.limit > 1;
-		nbBytesPerVariableId = (variables.length <= Math.pow(2, 8) ? 1 : variables.length <= Math.pow(2, 16) ? 2 : variables.length <= Math.pow(2, 24) ? 3 : 4);
+		nBytesPerVariableId = (variables.length <= Math.pow(2, 8) ? 1 : variables.length <= Math.pow(2, 16) ? 2 : variables.length <= Math.pow(2, 24) ? 3 : 4);
 		if (settings.compressionLevelForStateEquivalence != Deflater.NO_COMPRESSION)
 			compressor = new Deflater(settings.compressionLevelForStateEquivalence);
 	}
@@ -69,7 +69,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 	protected boolean mustStop() {
 		if (super.mustStop())
 			return true;
-		int nGlobalKeys = mapOfHashKeys.size() + nbTooLargeKeys;
+		int nGlobalKeys = mapOfHashKeys.size() + nTooLargeKeys;
 		return (nGlobalKeys > 1000 && nGlobalKeys > 1000 * nInferences);
 	}
 
@@ -79,15 +79,12 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 		compressor.reset();
 		compressor.setInput(tmpInput, 0, limit);
 		compressor.finish();
-
 		int count = compressor.deflate(tmpOutput);
 		if (!compressor.finished()) {
 			byte[] t = new byte[limit];
 			System.arraycopy(tmpInput, 0, t, 0, limit);
 			return t;
 		}
-		// Kit.pr(" bef " + limit + " after =" + count);
-
 		byte[] t = new byte[count];
 		System.arraycopy(tmpOutput, 0, t, 0, count);
 		return t;
@@ -99,21 +96,21 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 		for (int i = 0; i < ids.length; i++) {
 			Variable var = solver.problem.variables[ids[i]];
 			Domain dom = var.dom;
-			if (keySize + nbBytesPerVariableId + dom.initSize() / 8 >= tmpInput.length) {
+			if (keySize + nBytesPerVariableId + dom.initSize() / 8 >= tmpInput.length) {
 				keySize = -1;
 				break;
 			}
-			keySize = Bit.convert(var.num, nbBytesPerVariableId, tmpInput, keySize);
+			keySize = Bit.convert(var.num, nBytesPerVariableId, tmpInput, keySize);
 			// if (elements.getNbPresentElements() == elements.getMaximumSize()) // decomment if all solutions are
 			// seeked
 			// continue;
-			keySize = Bit.convert(dom.binaryRepresentation(), dom.initSize(), tmpInput, keySize);
+			keySize = Bit.convert(dom.binary(), dom.initSize(), tmpInput, keySize);
 		}
 		if (currentHashKey == null)
 			currentHashKey = new ByteArrayHashKey();
 		if (keySize == -1) {
 			currentHashKey.t = null;
-			nbTooLargeKeys++;
+			nTooLargeKeys++;
 		} else {
 			byte[] t = null;
 			if (compressor == null || keySize < settings.compressionLimitForStateEquivalence) {
@@ -140,19 +137,15 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 			currentOpenNodesKeys[level] = null;
 			return true;
 		}
-		// if (currentHashKey.t.length == 0)
-		// Kit.prn("open empty noggod");
+		// if (currentHashKey.t.length == 0) Kit.prn("open empty noggod");
 
 		Integer value = mapOfHashKeys.get(currentHashKey);
 		if (value != null) {
 			nInferences++;
 			if (value > 0) {
-				nbInferredSolutions += value;
+				nInferredSolutions += value;
 				solver.solManager.found += value;
-
 			}
-			// Kit.prn("inferrence");
-			// DotSaver.saveGraph(solver.problem);
 			// else mapOfHashKeys.put(currentHashKey, value - 1);
 			return false;
 		}
@@ -168,7 +161,7 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 		if (stopped)
 			return;
 		if (mustStop()) {
-			Kit.log.info("Stopping use of transposition table (mapSize=" + mapOfHashKeys.size() + ", nbTooLargekeys=" + nbTooLargeKeys + ", mem="
+			Kit.log.info("Stopping use of transposition table (mapSize=" + mapOfHashKeys.size() + ", nbTooLargekeys=" + nTooLargeKeys + ", mem="
 					+ Kit.memoryInMb() + ")");
 			mapOfHashKeys.clear();
 			stopped = true;
@@ -179,13 +172,10 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 		ByteArrayHashKey hashKey = currentOpenNodesKeys[solver.depth()];
 		if (hashKey == null)
 			return; // since the key was too large and so not recorded
-
-		if (hashKey.t.length == 0) {
+		if (hashKey.t.length == 0)
 			solver.stopping = EStopping.FULL_EXPLORATION;
-		}
-
-		int nbSolutions = (int) solver.solManager.found - currentOpenNodesNbFoundSolutions[solver.depth()];
-		mapOfHashKeys.put(hashKey, nbSolutions == 0 ? zero : nbSolutions);
+		int nSolutions = (int) solver.solManager.found - currentOpenNodesNbFoundSolutions[solver.depth()];
+		mapOfHashKeys.put(hashKey, nSolutions == 0 ? zero : nSolutions);
 	}
 
 	// public boolean dealWhenOpeningRefutationNode() {
@@ -218,8 +208,8 @@ public final class LearnerStatesEquivalence extends LearnerStates {
 	@Override
 	public void displayStats() {
 		if (!stopped) // && !Data.competitionMode)
-			Kit.log.finer("  mapSize=" + mapOfHashKeys.size() + "  nbInferences=" + nInferences + "  nbInferredSolutions=" + nbInferredSolutions + "  usedMem="
-					+ Kit.memoryInMb() + "  nbTooLargeKeys=" + nbTooLargeKeys);
+			Kit.log.finer("  mapSize=" + mapOfHashKeys.size() + "  nbInferences=" + nInferences + "  nbInferredSolutions=" + nInferredSolutions + "  usedMem="
+					+ Kit.memoryInMb() + "  nbTooLargeKeys=" + nTooLargeKeys);
 	}
 
 }

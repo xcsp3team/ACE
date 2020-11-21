@@ -15,9 +15,9 @@ import java.util.stream.Stream;
 import constraints.Constraint.CtrGlobal;
 import constraints.extension.structures.MDDCD;
 import constraints.extension.structures.MDDNodeCD;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.TagFilteringCompleteAtEachCall;
-import interfaces.TagGACGuaranteed;
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagGACGuaranteed;
 import problem.Problem;
 import sets.SetDenseReversible;
 import sets.SetSparseReversible;
@@ -90,8 +90,8 @@ public final class CtrOrMDD extends CtrGlobal implements TagGACGuaranteed, Obser
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		// trueNodes = new HashSet<>();new int[nNodes];
 		// if (pb.rs.cp.extension.decremental)
 		trueNodes = IntStream.range(0, mdds.length).mapToObj(i -> new int[mdds[i].nNodes()]).toArray(int[][]::new);

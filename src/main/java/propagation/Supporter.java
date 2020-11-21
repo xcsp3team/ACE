@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 import constraints.Constraint;
 import constraints.extension.structures.Bits;
 import interfaces.FilteringSpecific;
-import interfaces.TagBinaryRelationFiltering;
+import interfaces.Tags.TagBinaryRelationFiltering;
 import propagation.Reviser.Reviser3;
 import utility.Kit;
 import variables.Variable;

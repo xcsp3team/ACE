@@ -46,8 +46,8 @@ public final class ExtensionSegmented extends ExtensionGlobal {
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		set = new SetDenseReversible(segmentedTuples.length, pb.variables.length + 1);
 		Arrays.fill((lastSizesStack = new int[pb.variables.length + 1][scp.length])[0], UNINITIALIZED_VALUE);
 		for (SegmentedTuple st : segmentedTuples)

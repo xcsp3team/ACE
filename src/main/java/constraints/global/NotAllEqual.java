@@ -9,9 +9,9 @@
 package constraints.global;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.TagFilteringCompleteAtEachCall;
-import interfaces.TagGACGuaranteed;
-import interfaces.TagSymmetric;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import variables.Domain;
 import variables.Variable;

@@ -13,8 +13,8 @@ import java.util.stream.IntStream;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.TagFilteringCompleteAtEachCall;
-import interfaces.TagGACGuaranteed;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagGACGuaranteed;
 import problem.Problem;
 import variables.Domain;
 import variables.Variable;

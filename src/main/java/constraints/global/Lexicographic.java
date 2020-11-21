@@ -11,9 +11,9 @@ package constraints.global;
 import org.xcsp.common.Types.TypeOperatorRel;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.TagFilteringCompleteAtEachCall;
-import interfaces.TagGACGuaranteed;
-import interfaces.TagUnsymmetric;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagUnsymmetric;
 import problem.Problem;
 import variables.Domain;
 import variables.Variable;

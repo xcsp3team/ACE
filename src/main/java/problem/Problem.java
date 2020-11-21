@@ -152,8 +152,8 @@ import heuristics.HeuristicValues;
 import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicValuesDirect.Last;
 import heuristics.HeuristicValuesDirect.Values;
-import interfaces.ObserverConstruction;
-import interfaces.ObserverDomainReduction;
+import interfaces.Observers.ObserverConstruction;
+import interfaces.Observers.ObserverDomainReduction;
 import interfaces.Optimizable;
 import main.Head;
 import objectives.Optimizer;
@@ -207,7 +207,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
+	public void afterProblemConstruction() {
 		control(Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints), "Non normalized nums in the problem");
 		control(Stream.of(variables).map(x -> x.id()).distinct().count() == variables.length, "Two variables have the same id");
 		control((settings.framework == COP) == (optimizer != null), "Not a COP " + settings.framework + " " + (optimizer == null));
@@ -302,7 +302,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	@Override
-	public void onConstructionSolverFinished() {
+	public void afterSolverConstruction() {
 		Stream.of(variables).forEach(x -> x.dom.setSolver(solver));
 	}
 

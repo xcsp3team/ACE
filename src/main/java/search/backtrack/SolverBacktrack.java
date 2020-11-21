@@ -28,13 +28,13 @@ import constraints.Constraint;
 import constraints.Constraint.CtrGlobal;
 import heuristics.HeuristicValuesDynamic.Failures;
 import heuristics.HeuristicVariables;
-import interfaces.ObserverAssignment;
-import interfaces.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.ObserverConflicts;
-import interfaces.ObserverRuns;
+import interfaces.Observers.ObserverAssignment;
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Observers.ObserverConflicts;
+import interfaces.Observers.ObserverRuns;
 import interfaces.Optimizable;
-import learning.LearnerNogoods;
-import learning.LearnerStates;
+import learning.NogoodRecorder;
+import learning.IpsRecorder;
 import learning.NogoodMinimizer;
 import main.Head;
 import propagation.Forward;
@@ -213,8 +213,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 		private final boolean[][] proofVariables;
 
-		public Proofer(LearnerStates learner) {
-			this.active = learner != null && learnerStates.reductionOperator.enablePElimination();
+		public Proofer(IpsRecorder recorder) {
+			this.active = recorder != null && ipsRecorder.reductionOperator.enablePElimination();
 			this.proofVariables = this.active ? new boolean[problem.variables.length + 1][problem.variables.length] : null;
 		}
 
@@ -311,9 +311,9 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	protected List<ObserverRuns> collectObserversRuns() {
 		List<ObserverRuns> list = new ArrayList<>();
 		if (head.control.settingSolving.enableSearch) {
-			if (learnerNogoods != null && learnerNogoods.symmetryHandler != null)
-				list.add((ObserverRuns) learnerNogoods.symmetryHandler);
-			Stream.of(this, restarter, learnerStates, heuristicVars, lcReasoner, stats).filter(o -> o instanceof ObserverRuns)
+			if (nogoodRecorder != null && nogoodRecorder.symmetryHandler != null)
+				list.add((ObserverRuns) nogoodRecorder.symmetryHandler);
+			Stream.of(this, restarter, ipsRecorder, heuristicVars, lcReasoner, stats).filter(o -> o instanceof ObserverRuns)
 					.forEach(o -> list.add((ObserverRuns) o));
 		}
 		Stream.of(problem.constraints).filter(c -> c instanceof ObserverRuns).forEach(c -> list.add((ObserverRuns) c));
@@ -347,9 +347,9 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	public final LastConflictReasoner lcReasoner;
 
-	public final LearnerNogoods learnerNogoods;
+	public final NogoodRecorder nogoodRecorder;
 
-	public final LearnerStates learnerStates;
+	public final IpsRecorder ipsRecorder;
 
 	public final Proofer proofer;
 
@@ -375,9 +375,9 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		// heuristicVars.reset();
 		heuristicVars.setPriorityVars(problem.priorityVars, 0);
 		lcReasoner.beforeRun();
-		if (learnerNogoods != null)
-			learnerNogoods.reset();
-		Kit.control(learnerStates == null);
+		if (nogoodRecorder != null)
+			nogoodRecorder.reset();
+		Kit.control(ipsRecorder == null);
 		Kit.control(stackedVariables.top == -1, () -> "Top= " + stackedVariables.top);
 		// Kit.control(observerCtrsSoft.top == -1);
 		stats = new StatisticsBacktrack(this);
@@ -391,9 +391,9 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		for (Variable x : problem.variables)
 			x.buildValueOrderingHeuristic();
 		this.lcReasoner = new LastConflictReasoner(this, resolution.control.settingVarh.lastConflictSize);
-		this.learnerNogoods = LearnerNogoods.buildFor(this); // may be null
-		this.learnerStates = LearnerStates.buildFor(this); // may be null
-		this.proofer = new Proofer(learnerStates);
+		this.nogoodRecorder = NogoodRecorder.buildFor(this); // may be null
+		this.ipsRecorder = IpsRecorder.buildFor(this); // may be null
+		this.proofer = new Proofer(ipsRecorder);
 
 		int nLevels = problem.variables.length + 1;
 		int size = Stream.of(problem.variables).mapToInt(x -> x.dom.initSize()).reduce(0, (sum, domSize) -> sum + Math.min(nLevels, domSize));
@@ -455,7 +455,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		lcReasoner.onAssignment(x);
 		assign(x, a);
 		proofer.reset();
-		boolean consistent = propagation.runAfterAssignment(x) && (learnerStates == null || learnerStates.dealWhenOpeningNode());
+		boolean consistent = propagation.runAfterAssignment(x) && (ipsRecorder == null || ipsRecorder.dealWhenOpeningNode());
 		if (x.heuristicVal instanceof Failures)
 			((Failures) x.heuristicVal).updateWith(a, depth(), consistent);
 		if (!consistent) {
@@ -481,8 +481,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 		tracer.onBacktrack();
 		stats.nBacktracks++;
-		if (learnerStates != null)
-			learnerStates.dealWhenClosingNode();
+		if (ipsRecorder != null)
+			ipsRecorder.dealWhenClosingNode();
 		if (futVars.nDiscarded() == 0)
 			stopping = EStopping.FULL_EXPLORATION;
 	}
@@ -541,7 +541,9 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			}
 			if (futVars.size() == 0) {
 				solManager.handleNewSolutionAndPossiblyOptimizeIt();
-				CtrGlobal objectiveToCheck = problem.settings.framework == COP && !head.control.settingRestarts.restartAfterSolution ? (CtrGlobal) problem.optimizer.ctr : null;
+				CtrGlobal objectiveToCheck = problem.settings.framework == COP && !head.control.settingRestarts.restartAfterSolution
+						? (CtrGlobal) problem.optimizer.ctr
+						: null;
 				if (problem.settings.framework == COP && !head.control.settingRestarts.restartAfterSolution) {
 					// first, we backtrack to the level where a value for a variable in the scope of the objective was removed for the last time
 					objectiveToCheck = (CtrGlobal) problem.optimizer.ctr;
@@ -564,8 +566,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			}
 		}
 		minDepth = dr.minDepth(); // need to be recorded before backtracking to the root
-		if (learnerNogoods != null && !finished() && !restarter.allRunsFinished())
-			learnerNogoods.addNogoodsOfCurrentBranch();
+		if (nogoodRecorder != null && !finished() && !restarter.allRunsFinished())
+			nogoodRecorder.addNogoodsOfCurrentBranch();
 
 	}
 

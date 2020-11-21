@@ -166,8 +166,8 @@ public final class ExtensionSmart extends ExtensionGlobal implements ICtrSmart {
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		set = new SetDenseReversible(smartTuples.length, pb.variables.length + 1);
 		Arrays.fill((lastSizesStack = new int[pb.variables.length + 1][scp.length])[0], UNINITIALIZED_VALUE);
 	}

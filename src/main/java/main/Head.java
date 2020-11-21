@@ -2,11 +2,8 @@ package main;
 
 import static utility.Kit.log;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.ArrayList;
@@ -21,6 +18,7 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -39,7 +37,7 @@ import dashboard.Output;
 import heuristics.HeuristicRevisions;
 import heuristics.HeuristicValues;
 import heuristics.HeuristicVariables;
-import interfaces.ObserverConstruction;
+import interfaces.Observers.ObserverConstruction;
 import problem.Problem;
 import propagation.Propagation;
 import search.Solver;
@@ -63,25 +61,10 @@ public class Head extends Thread {
 	 * Static
 	 *********************************************************************************************/
 
-	public static final String VERSION = "ACE (AbsCon Essence) 1.0";
-
-	public static final int UNDEFINED = -10;
-
 	/**
-	 * The set of resolution objects. For portfolio mode, contains more than one object.
+	 * The set of objects in charge of solving a problem. For portfolio mode, contains more than one object.
 	 */
 	private static Head[] heads;
-
-	public static void copy(String srcFileName, String dstFileName) {
-		try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(srcFileName));
-				BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(dstFileName));) {
-			byte[] bytes = new byte[1024];
-			for (int nb = in.read(bytes, 0, bytes.length); nb > 0; nb = in.read(bytes, 0, bytes.length))
-				out.write(bytes, 0, nb);
-		} catch (Exception e) {
-			Kit.exit(e);
-		}
-	}
 
 	public synchronized static void saveMultithreadResultsFiles(Head resolution) {
 		String fileName = resolution.output.save(resolution.stopwatch.wckTime());
@@ -92,7 +75,7 @@ public class Head extends Thread {
 				resultsFileName += File.separator;
 			resultsFileName += Output.RESULTS_DIRECTORY_NAME + File.separator
 					+ resolution.output.outputFileNameFrom(resolution.problem.name(), variantParallelName);
-			copy(fileName, resultsFileName);
+			Kit.copy(fileName, resultsFileName);
 			Document document = DocumentHandler.load(resultsFileName);
 			DocumentHandler.modify(document, TypeOutput.RESOLUTIONS.toString(), Output.CONFIGURATION_FILE_NAME, variantParallelName);
 			long totalWCKTime = 0;
@@ -118,21 +101,30 @@ public class Head extends Thread {
 		}
 	}
 
-	/**
-	 * Use directly <code>main</code> in class <code>AbsCon</code> instead.
-	 * 
-	 * @param args
-	 */
+	public final static String[] loadVariantNames() {
+		if (Arguments.multiThreads) {
+			String prefix = DocumentHandler.attValueFor(Arguments.userSettingsFilename, "xml", "exportMode");
+			if (prefix.equals("NO"))
+				prefix = ".";
+			if (prefix != "")
+				prefix += File.separator;
+			prefix += Output.CONFIGURATION_DIRECTORY_NAME + File.separator;
+			File file = new File(prefix);
+			if (!file.exists())
+				file.mkdirs();
+			else
+				Kit.control(file.isDirectory());
+			return ResolutionVariants.loadSequentialVariants(Arguments.userSettingsFilename, Arguments.lastArgument(), prefix);
+		} else
+			return new String[] { Arguments.userSettingsFilename };
+	}
+
 	public static void main(String[] args) {
-		// Class.forName("AbsCon").getDeclaredMethod("main", String[].class).invoke(null, (Object) args);
 		if (args.length == 0 && !isAvailableIn())
 			new Head().control.settings.display(); // the usage is displayed
 		else {
 			Arguments.loadArguments(args); // Always start with that
-			String[] variants = ResolutionVariants.loadVariantNames();
-			heads = new Head[variants.length];
-			for (int i = 0; i < heads.length; i++)
-				(heads[i] = new Head(variants[i])).start();
+			heads = Stream.of(loadVariantNames()).map(v -> new Head(v)).peek(h -> h.start()).toArray(Head[]::new); // threads built and started
 		}
 	}
 
@@ -276,7 +268,7 @@ public class Head extends Thread {
 	 */
 
 	public boolean mustPreserveUnaryConstraints() {
-		return control.settingCtrs.preserveUnaryCtrs || this instanceof Extraction || control.settingProblem.isSymmetryBreaking()
+		return control.settingCtrs.preserveUnaryCtrs || this instanceof HeadExtraction || control.settingProblem.isSymmetryBreaking()
 				|| control.settingGeneral.framework == TypeFramework.MAXCSP;
 	}
 
@@ -321,7 +313,7 @@ public class Head extends Thread {
 		SettingProblem settings = control.settingProblem;
 		problem = new Problem(api, settings.variant, settings.data, settings.dataFormat, settings.dataexport, Arguments.argsForPb, this);
 		for (ObserverConstruction obs : observersConstruction)
-			obs.onConstructionProblemFinished();
+			obs.afterProblemConstruction();
 		problem.display();
 		Graphviz.saveGraph(problem, control.settingGeneral.saveNetworkGraph);
 		return problem;
@@ -332,7 +324,7 @@ public class Head extends Thread {
 		Kit.log.config("\n" + Output.COMMENT_PREFIX + "Building solver... " + (cm ? "\n" : ""));
 		solver = Reflector.buildObject(control.settingSolving.clazz, Solver.class, this);
 		for (ObserverConstruction obs : observersConstruction)
-			obs.onConstructionSolverFinished();
+			obs.afterSolverConstruction();
 		return solver;
 	}
 
@@ -384,7 +376,7 @@ public class Head extends Thread {
 	@Override
 	public void run() {
 		stopwatch.start();
-		log.config("\n" + VERSION + " " + Kit.dateOf(Head.class) + "\n"); // + " - " + Arguments.configurationFileName
+		log.config("\n ACE (AbsCon Essence) v0.9 " + Kit.dateOf(Head.class) + "\n");
 		boolean crashed = false;
 		for (int i = 0; i < Arguments.nInstancesToSolve; i++) {
 			try {

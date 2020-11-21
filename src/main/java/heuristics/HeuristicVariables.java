@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 import dashboard.ControlPanel.SettingVarh;
 import dashboard.ControlPanel.SettingVars;
-import interfaces.ObserverRuns;
+import interfaces.Observers.ObserverRuns;
 import propagation.GIC.GIC2;
 import search.backtrack.SolverBacktrack;
 import utility.Kit;

@@ -11,8 +11,8 @@ package constraints.global;
 import java.util.HashSet;
 import java.util.Set;
 
-import interfaces.TagFilteringPartialAtEachCall;
-import interfaces.TagGACUnguaranteed;
+import interfaces.Tags.TagFilteringPartialAtEachCall;
+import interfaces.Tags.TagGACUnguaranteed;
 import problem.Problem;
 import variables.Domain;
 import variables.Variable;

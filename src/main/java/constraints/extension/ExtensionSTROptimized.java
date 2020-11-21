@@ -24,8 +24,8 @@ public abstract class ExtensionSTROptimized extends ExtensionSTR1 {
 	private final static int UNITIALIZED = -2;
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		this.sVal = new int[scp.length];
 		this.sSup = new int[scp.length];
 		if (decremental) {

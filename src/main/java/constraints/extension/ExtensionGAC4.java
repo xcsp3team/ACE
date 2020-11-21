@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
 import constraints.extension.Extension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
-import interfaces.TagPositive;
+import interfaces.Tags.TagPositive;
 import problem.Problem;
 import sets.SetDenseReversible;
 import utility.Kit;
@@ -26,8 +26,8 @@ import variables.Variable;
 public class ExtensionGAC4 extends ExtensionGlobal implements TagPositive {
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 
 		int[][] tuples = ((Table) extStructure).tuples;
 		assert tuples.length > 0;

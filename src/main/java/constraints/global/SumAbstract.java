@@ -9,7 +9,7 @@
 package constraints.global;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;

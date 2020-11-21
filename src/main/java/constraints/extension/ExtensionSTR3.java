@@ -15,8 +15,8 @@ import constraints.extension.Extension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.SubTable;
 import constraints.extension.structures.Table;
-import interfaces.ObserverSearch;
-import interfaces.TagPositive;
+import interfaces.Observers.ObserverSearch;
+import interfaces.Tags.TagPositive;
 import problem.Problem;
 import sets.SetDense;
 import sets.SetSparse;
@@ -28,8 +28,8 @@ import variables.Variable;
 public final class ExtensionSTR3 extends ExtensionGlobal implements TagPositive, ObserverSearch {
 
 	@Override
-	public void onConstructionProblemFinished() {
-		super.onConstructionProblemFinished();
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
 		this.tuples = ((Table) extStructure).tuples;
 		this.set = new SetSparseReversible(tuples.length, pb.variables.length + 1);
 

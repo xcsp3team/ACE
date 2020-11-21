@@ -31,14 +31,13 @@ import dashboard.ControlPanel.SettingCtrs;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.FilteringGlobal;
 import interfaces.FilteringSpecific;
-import interfaces.ObserverConstruction;
-import interfaces.TagFilteringCompleteAtEachCall;
-import interfaces.TagFilteringPartialAtEachCall;
-import interfaces.TagGACGuaranteed;
-import interfaces.TagGACUnguaranteed;
-import interfaces.TagSymmetric;
-import interfaces.TagUnsymmetric;
-import main.Head;
+import interfaces.Observers.ObserverConstruction;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagFilteringPartialAtEachCall;
+import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagGACUnguaranteed;
+import interfaces.Tags.TagSymmetric;
+import interfaces.Tags.TagUnsymmetric;
 import problem.Problem;
 import propagation.Forward;
 import propagation.Reviser;
@@ -66,7 +65,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	@Override
-	public void onConstructionProblemFinished() {
+	public void afterProblemConstruction() {
 		// If a variable does not belong to the constraint, then its position is set to -1
 		if (settings.arityLimitForVapArrayLb < scp.length && (pb.variables.length < settings.arityLimitForVapArrayUb || scp.length > pb.variables.length / 3)) {
 			this.positions = Kit.repeat(-1, pb.variables.length);
@@ -429,18 +428,20 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		}
 	}
 
+	static final int UNDEFINED = -10;
+
 	/**
 	 * This function must be such that if (an upper bound of) the number of max conflicts is known for one pair (variable, index) then it is known for any pair
 	 */
 	public int giveUpperBoundOfMaxNumberOfConflictsFor(Variable x, int a) {
-		return Head.UNDEFINED; // by default
+		return UNDEFINED; // by default
 	}
 
 	/**
 	 * we assume that if the number of max conflicts is known for one pair (variable, index) then it is known for any pair
 	 */
 	public boolean usePredefinedMaxNumberOfConflicts() {
-		return giveUpperBoundOfMaxNumberOfConflictsFor(scp[0], scp[0].dom.first()) != Head.UNDEFINED;
+		return giveUpperBoundOfMaxNumberOfConflictsFor(scp[0], scp[0].dom.first()) != UNDEFINED;
 	}
 
 	/**********************************************************************************************
@@ -697,7 +698,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 			return ((SupporterHard) supporter).findArcSupportFor(x, a);
 		if (extStructure() instanceof Bits) {
 			long[] t1 = ((Bits) extStructure()).bitSupsFor(x)[a];
-			long[] t2 = scp[x == 0 ? 1 : 0].dom.binaryRepresentation();
+			long[] t2 = scp[x == 0 ? 1 : 0].dom.binary();
 			for (int i = 0; i < t1.length; i++) {
 				if ((t1[i] & t2[i]) != 0)
 					return true;

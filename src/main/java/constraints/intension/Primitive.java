@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 
 import constraints.Constraint;
 import interfaces.FilteringSpecific;
-import interfaces.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import problem.Problem;
 import variables.Variable;
 
