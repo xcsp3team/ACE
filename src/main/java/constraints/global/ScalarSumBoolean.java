@@ -20,7 +20,7 @@ import sets.SetDense;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class SumScalarBoolean extends CtrGlobal {
+public abstract class ScalarSumBoolean extends CtrGlobal {
 
 	protected final Variable[] list;
 	protected final Variable[] coeffs;
@@ -30,7 +30,7 @@ public abstract class SumScalarBoolean extends CtrGlobal {
 	protected int min, max; // used to store computed bounds when filtering
 	protected final SetDense set01vs1; // used to store the indexes of terms such that one variable has domain {0,1} and the other domain {1}
 
-	public SumScalarBoolean(Problem pb, Variable[] list, Variable[] coeffs, Variable limit) {
+	public ScalarSumBoolean(Problem pb, Variable[] list, Variable[] coeffs, Variable limit) {
 		super(pb, pb.api.vars(list, coeffs, limit)); // limit is null if the object is from a subclass of SumScalarBooleanCst
 		this.list = list;
 		this.coeffs = coeffs;
@@ -39,7 +39,7 @@ public abstract class SumScalarBoolean extends CtrGlobal {
 		assert list.length == coeffs.length && Variable.areAllInitiallyBoolean(pb.api.vars(list, coeffs));
 	}
 
-	public SumScalarBoolean(Problem pb, Variable[] list, Variable[] coeffs) {
+	public ScalarSumBoolean(Problem pb, Variable[] list, Variable[] coeffs) {
 		this(pb, list, coeffs, null);
 	}
 
@@ -78,7 +78,7 @@ public abstract class SumScalarBoolean extends CtrGlobal {
 	// ***** Constraint SumScalarBooleanCst
 	// ************************************************************************
 
-	public static abstract class SumScalarBooleanCst extends SumScalarBoolean implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
+	public static abstract class SumScalarBooleanCst extends ScalarSumBoolean implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
 
 		public static SumScalarBooleanCst buildFrom(Problem pb, Variable[] list, Variable[] coeffs, TypeConditionOperatorRel op, int limit) {
 			switch (op) {
@@ -211,7 +211,7 @@ public abstract class SumScalarBoolean extends CtrGlobal {
 	// ***** Constraint SumScalarBooleanVar
 	// ************************************************************************
 
-	public static abstract class SumScalarBooleanVar extends SumScalarBoolean implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
+	public static abstract class SumScalarBooleanVar extends ScalarSumBoolean implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
 
 		public static SumScalarBooleanVar buildFrom(Problem pb, Variable[] list, Variable[] coeffs, TypeConditionOperatorRel op, Variable limit) {
 			switch (op) {

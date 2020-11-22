@@ -12,8 +12,8 @@ import java.util.Arrays;
 
 import constraints.Constraint;
 import propagation.GAC;
-import search.Solver;
-import search.backtrack.SolverBacktrack;
+import solver.Solver;
+import solver.backtrack.SolverBacktrack;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -192,7 +192,7 @@ public final class ReductionOperator {
 		Variable[] variables = solver.problem.variables;
 		if (eliminateNotInProofVariables) {
 			// System.out.println(" proof at level = " + (solver.getCurrentDepth() + 1));
-			boolean[] proofVariables = ((SolverBacktrack) solver).proofer.getProofVariablesAt(solver.depth());
+			boolean[] proofVariables = ((SolverBacktrack) solver).proofer.proofVariables[solver.depth()];
 			// TODO paS PLUS 1 A PRIORI
 			for (int i = 0; i < proofVariables.length; i++)
 				if (proofVariables[i]) {
@@ -264,7 +264,7 @@ public final class ReductionOperator {
 	public int[] extract2() {
 		nbExtractions++;
 		Solver solver = recorder.solver;
-		boolean[] proofVariables = ((SolverBacktrack) solver).proofer.getProofVariablesAt(solver.depth());
+		boolean[] proofVariables = ((SolverBacktrack) solver).proofer.proofVariables[solver.depth()];
 		int selectionLimit = 0;
 		for (int i = 0; i < solver.problem.variables.length; i++) {
 			if (proofVariables[i]) {

@@ -55,13 +55,13 @@ import propagation.GAC;
 import propagation.QueueForSAC3.CellIterator;
 import propagation.Reviser;
 import propagation.Reviser.Reviser3;
-import search.SolutionManager;
-import search.backtrack.RestarterLNS.HeuristicFreezing;
-import search.backtrack.RestarterLNS.HeuristicFreezing.Rand;
-import search.backtrack.RestarterLocalBranching.LocalBranchingConstraint.LBAtMostDistanceSum;
-import search.backtrack.SolverBacktrack;
-import search.local.HeuristicNeighbors.BestGlobal;
-import search.local.TabuManager.TabuManagerVariableValue;
+import solver.SolutionManager;
+import solver.backtrack.RestarterLNS.HeuristicFreezing;
+import solver.backtrack.RestarterLNS.HeuristicFreezing.Rand;
+import solver.backtrack.RestarterLocalBranching.LocalBranchingConstraint.LBAtMostDistanceSum;
+import solver.backtrack.SolverBacktrack;
+import solver.local.HeuristicNeighbors.BestGlobal;
+import solver.local.TabuManager.TabuManagerVariableValue;
 import utility.DocumentHandler;
 import utility.Enums.EBinaryEncoding;
 import utility.Enums.EBranching;
@@ -77,7 +77,7 @@ import utility.Enums.EWeighting;
 import utility.Kit;
 import utility.Reflector;
 
-public class ControlPanel {
+public class Control {
 
 	public final String settingsFilename = staticUserSettingsFilename;
 
@@ -682,7 +682,7 @@ public class ControlPanel {
 							&& !settingValh.classForValHeuristic.equals(Last.class.getSimpleName())),
 			"");
 
-	private ControlPanel() {
+	private Control() {
 		int verbose = settingGeneral.verbose;
 		Kit.control(verbose >= 0 && verbose <= 3, () -> "Verbose must be in 0..3");
 		Kit.log.setLevel(verbose == 0 ? Level.CONFIG : verbose == 1 ? Level.FINE : verbose == 2 ? Level.FINER : Level.FINEST);
@@ -731,7 +731,7 @@ public class ControlPanel {
 			private UserSettings(String userSettingsFilename) {
 				if (userSettingsFilename == null)
 					userSettingsFilename = Arguments.userSettingsFilename;
-				if (userSettingsFilename != null && !userSettingsFilename.equals(ControlPanel.DEFAULT_CONFIGURATION)) {
+				if (userSettingsFilename != null && !userSettingsFilename.equals(Control.DEFAULT_CONFIGURATION)) {
 					// Loads the XML file containing all settings from the user.
 					document = DocumentHandler.load(new File(userSettingsFilename));
 					xPath = XPathFactory.newInstance().newXPath();
@@ -766,9 +766,9 @@ public class ControlPanel {
 
 			private Number numberFor(String shortcut, String tag, String att, Object defaultValue, boolean longValue) {
 				String s = stringFor(shortcut, tag, att, defaultValue).toLowerCase();
-				if (s.equals(ControlPanel.MIN))
+				if (s.equals(Control.MIN))
 					return longValue ? Long.MIN_VALUE : (Number) Integer.MIN_VALUE; // problem if cast omitted
-				if (s.equals(ControlPanel.MAX) || s.equals(ControlPanel.ALL))
+				if (s.equals(Control.MAX) || s.equals(Control.ALL))
 					return longValue ? Long.MAX_VALUE : (Number) Integer.MAX_VALUE; // problem if cast omitted
 				char lastCharacter = s.charAt(s.length() - 1);
 				Long baseValue = Kit.parseLong(Character.isDigit(lastCharacter) ? s : s.substring(0, s.length() - 1));
@@ -860,7 +860,7 @@ public class ControlPanel {
 					System.out.println(scanner1.nextLine());
 				String tag = null;
 				for (Setting<?> setting : settings)
-					if (setting.priority != ControlPanel.SettingGroup.HIDDEN && setting.priority != ControlPanel.SettingGroup.TO_IMPLEMENT)
+					if (setting.priority != Control.SettingGroup.HIDDEN && setting.priority != Control.SettingGroup.TO_IMPLEMENT)
 						System.out.print((!setting.tag.equals(tag) ? "\n  " + (tag = setting.tag) + "\n" : "") + setting);
 				System.out.println();
 				while (scanner2.hasNext())
@@ -962,9 +962,9 @@ public class ControlPanel {
 			}
 		}
 
-		public static void saveControlPanelSettings(ControlPanel cp, String outputFilename, int maximumPriority) {
+		public static void saveControlPanelSettings(Control cp, String outputFilename, int maximumPriority) {
 			Document document = DocumentHandler.createNewDocument();
-			Node root = document.appendChild(document.createElement(ControlPanel.CONFIGURATION));
+			Node root = document.appendChild(document.createElement(Control.CONFIGURATION));
 			for (Setting<?> setting : cp.settings.settings)
 				if (setting.priority <= maximumPriority) {
 					NodeList list = document.getElementsByTagName(setting.tag);
@@ -1004,16 +1004,16 @@ public class ControlPanel {
 
 	private static String staticUserSettingsFilename;
 
-	public static synchronized ControlPanel buildControlPanelFor(String userSettingsFilename) {
-		ControlPanel.staticUserSettingsFilename = userSettingsFilename;
-		return new ControlPanel();
+	public static synchronized Control buildControlPanelFor(String userSettingsFilename) {
+		Control.staticUserSettingsFilename = userSettingsFilename;
+		return new Control();
 	}
 
 	public static void main(String[] args) {
 		Integer maximumPriority = args.length != 2 ? null : Kit.parseInteger(args[1]);
 		if (args.length != 2 || maximumPriority == null || maximumPriority < 1 || maximumPriority > 3) {
 			System.out.println("\tTool used to generate a default settings file.");
-			System.out.println("\tUsage : " + ControlPanel.class.getName() + " <outputFileName> <maximumPriority>");
+			System.out.println("\tUsage : " + Control.class.getName() + " <outputFileName> <maximumPriority>");
 			System.out.println("\n\toutputFileName : name of the generated configuration file.");
 			System.out.println(
 					"\n\tmaximumPriority : the generated file contains only parameters with a priority value lower than this number (must be between 1 and 3)");

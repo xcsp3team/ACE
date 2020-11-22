@@ -57,7 +57,7 @@ public final class Arguments {
 
 	private static int nInstancesToSolveFrom(String token) {
 		try {
-			if (token.toLowerCase().equals(ControlPanel.ALL)) {
+			if (token.toLowerCase().equals(Control.ALL)) {
 				nInstancesToSolve = Integer.MAX_VALUE;
 				return 1;
 			} else if (Utilities.isInteger(token)) {
@@ -84,7 +84,7 @@ public final class Arguments {
 		Arguments.args = args;
 		multiThreads = DocumentHandler.isXMLFileWithRoot(args[args.length - 1], ResolutionVariants.VARIANT_PARALLEL);
 		int cursor = 0;
-		userSettingsFilename = DocumentHandler.isXMLFileWithRoot(args[cursor], ControlPanel.CONFIGURATION) ? args[cursor++] : ControlPanel.DEFAULT_CONFIGURATION;
+		userSettingsFilename = DocumentHandler.isXMLFileWithRoot(args[cursor], Control.CONFIGURATION) ? args[cursor++] : Control.DEFAULT_CONFIGURATION;
 		// control of this file performed later
 		cursor += nInstancesToSolveFrom(args[cursor]);
 		Kit.control(!multiThreads || nInstancesToSolve == 1);

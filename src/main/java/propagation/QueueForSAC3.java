@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 
 import heuristics.HeuristicVariables;
 import heuristics.HeuristicVariablesDynamic.WdegOnDom;
-import search.backtrack.SolverBacktrack;
+import solver.backtrack.SolverBacktrack;
 import utility.Reflector;
 import variables.Variable;
 

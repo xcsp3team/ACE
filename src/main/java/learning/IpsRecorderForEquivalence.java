@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.Deflater;
 
-import search.backtrack.SolverBacktrack;
+import solver.backtrack.SolverBacktrack;
 import utility.Bit;
 import utility.Enums.EStopping;
 import utility.Kit;

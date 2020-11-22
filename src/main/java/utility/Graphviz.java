@@ -19,8 +19,8 @@ import org.xcsp.common.Constants;
 
 import constraints.Constraint;
 import problem.Problem;
-import search.backtrack.DecisionRecorder;
-import search.backtrack.SolverBacktrack;
+import solver.backtrack.DecisionRecorder;
+import solver.backtrack.SolverBacktrack;
 import variables.Variable;
 
 public class Graphviz {

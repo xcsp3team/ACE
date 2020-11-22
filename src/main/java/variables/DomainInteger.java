@@ -15,8 +15,8 @@ import org.xcsp.common.Constants;
 import org.xcsp.common.Range;
 import org.xcsp.common.Utilities;
 
-import search.Solver;
 import sets.LinkedSetOrdered.LinkedSetOrderedWithBits;
+import solver.Solver;
 import utility.Kit;
 
 /**

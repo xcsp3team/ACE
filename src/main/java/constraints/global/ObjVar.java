@@ -9,10 +9,10 @@
 package constraints.global;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.Optimizable;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagSymmetric;
+import optimization.Optimizable;
 import problem.Problem;
 import variables.Variable;
 

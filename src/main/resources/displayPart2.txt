@@ -1,11 +1,11 @@
 By the way, there are also two other optional (command line) parameters that can be put just after ace: 
   java ace {settingsFile} {nInstances} <xcsp3Instance> <solverOptions>
 
-  <nInstances> is the number of instances to be solved.
-
   <settingsFile> is the name of a XML file that contains the settings for some solver options.
 	For example, you can generate such a file with a command like : java dashboard.ControlPanel
 
+  <nInstances> is the number of instances to be solved.
+  
 Let us consider some examples:
 
   java ace queens-12.xml -s=10

@@ -17,9 +17,9 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
-import interfaces.Optimizable;
 import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagSymmetric;
+import optimization.Optimizable;
 import problem.Problem;
 import utility.Kit;
 import variables.Domain;
@@ -33,7 +33,7 @@ import variables.Variable;
  * @author lecoutre
  *
  */
-public abstract class SumSimple extends SumAbstract implements TagSymmetric {
+public abstract class SumSimple extends Sum implements TagSymmetric {
 
 	public static SumSimple buildFrom(Problem pb, Variable[] scp, TypeConditionOperatorRel op, long limit) {
 		switch (op) {

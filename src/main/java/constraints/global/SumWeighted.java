@@ -19,15 +19,15 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
-import interfaces.Optimizable;
 import interfaces.Tags.TagGACGuaranteed;
+import optimization.Optimizable;
 import problem.Problem;
 import utility.Kit;
 import variables.Domain;
 import variables.DomainInfinite;
 import variables.Variable;
 
-public abstract class SumWeighted extends SumAbstract {
+public abstract class SumWeighted extends Sum {
 
 	public static SumWeighted buildFrom(Problem pb, Variable[] vs, int[] coeffs, TypeConditionOperatorRel op, long limit) {
 		switch (op) {

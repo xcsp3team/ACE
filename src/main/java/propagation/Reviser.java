@@ -10,7 +10,7 @@ package propagation;
 
 import constraints.Constraint;
 import constraints.extension.structures.Bits;
-import dashboard.ControlPanel.SettingPropagation;
+import dashboard.Control.SettingPropagation;
 import interfaces.FilteringSpecific;
 import problem.Problem;
 import sets.LinkedSet;

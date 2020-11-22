@@ -1,4 +1,4 @@
-package search.backtrack;
+package solver.backtrack;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,11 +11,11 @@ import constraints.Constraint;
 import constraints.global.HammingProximityConstant.HammingProximityConstantGE;
 import constraints.global.HammingProximityConstant.HammingProximityConstantSumLE;
 import interfaces.FilteringSpecific;
-import objectives.Optimizer.OptimizerDecreasing;
+import optimization.Optimizer.OptimizerDecreasing;
 import problem.Problem;
-import search.Restarter;
-import search.Solver;
-import search.backtrack.RestarterLocalBranching.LocalBranchingConstraint.LBAtLeastEqual;
+import solver.Restarter;
+import solver.Solver;
+import solver.backtrack.RestarterLocalBranching.LocalBranchingConstraint.LBAtLeastEqual;
 import utility.Enums.EStopping;
 import utility.Kit;
 import utility.Reflector;

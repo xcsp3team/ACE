@@ -8,7 +8,7 @@
  */
 package propagation;
 
-import search.Solver;
+import solver.Solver;
 import utility.Kit;
 import variables.Variable;
 

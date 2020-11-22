@@ -134,8 +134,8 @@ import constraints.global.NotAllEqual;
 import constraints.global.ObjVar;
 import constraints.global.ObjVar.ObjVarGE;
 import constraints.global.ObjVar.ObjVarLE;
-import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
-import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
+import constraints.global.ScalarSumBoolean.SumScalarBooleanCst;
+import constraints.global.ScalarSumBoolean.SumScalarBooleanVar;
 import constraints.global.SumSimple;
 import constraints.global.SumSimple.SumSimpleGE;
 import constraints.global.SumSimple.SumSimpleLE;
@@ -146,23 +146,23 @@ import constraints.intension.Intension;
 import constraints.intension.PrimitiveBinary.Disjonctive;
 import constraints.intension.PrimitiveBinary.PrimitiveBinarySub;
 import constraints.intension.PrimitiveBinary.PrimitiveBinarySub.SubNE2;
-import dashboard.ControlPanel.SettingGeneral;
-import dashboard.ControlPanel.SettingVars;
+import dashboard.Control.SettingGeneral;
+import dashboard.Control.SettingVars;
 import heuristics.HeuristicValues;
 import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicValuesDirect.Last;
 import heuristics.HeuristicValuesDirect.Values;
 import interfaces.Observers.ObserverConstruction;
 import interfaces.Observers.ObserverDomainReduction;
-import interfaces.Optimizable;
 import main.Head;
-import objectives.Optimizer;
-import objectives.Optimizer.OptimizerBasic;
-import objectives.Optimizer.OptimizerDecreasing;
-import objectives.Optimizer.OptimizerDichotomic;
-import objectives.Optimizer.OptimizerIncreasing;
+import optimization.Optimizable;
+import optimization.Optimizer;
+import optimization.Optimizer.OptimizerBasic;
+import optimization.Optimizer.OptimizerDecreasing;
+import optimization.Optimizer.OptimizerDichotomic;
+import optimization.Optimizer.OptimizerIncreasing;
 import propagation.Forward;
-import search.Solver;
+import solver.Solver;
 import utility.Enums.EExportMode;
 import utility.Kit;
 import utility.Reflector;
@@ -222,29 +222,29 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			Constraint c = ((Constraint) optimizer.ctr);
 			if (c instanceof ObjVar) {
 				Variable x = c.scp[0];
-				x.heuristicVal = optimizer.minimization ? new First(x, false) : new Last(x, false);
+				x.heuristic = optimizer.minimization ? new First(x, false) : new Last(x, false);
 				this.priorityVars = new Variable[] { x };
 			} else if (c instanceof ExtremumCst) {
 				if (strong)
 					for (Variable x : c.scp)
-						x.heuristicVal = optimizer.minimization ? new First(x, false) : new Last(x, false); // the boolean is dummy
+						x.heuristic = optimizer.minimization ? new First(x, false) : new Last(x, false); // the boolean is dummy
 			} else if (c instanceof NValuesCst) {
 				assert c instanceof NValuesCstLE;
 				if (strong)
 					for (Variable x : c.scp)
-						x.heuristicVal = new Values(x, false, c.scp);
+						x.heuristic = new Values(x, false, c.scp);
 			} else if (c instanceof SumWeighted) { // || c instanceof SumSimple) {
 				int[] coeffs = c instanceof SumSimple ? null : ((SumWeighted) c).coeffs;
-				Variable[] scp = prioritySumVars(c.scp, coeffs);
-				if (scp != null) {
-					for (Variable x : scp) {
+				Variable[] vars = prioritySumVars(c.scp, coeffs);
+				if (vars != null) {
+					for (Variable x : vars) {
 						int coeff = c instanceof SumSimple ? 1 : coeffs[c.positionOf(x)];
 						boolean f = optimizer.minimization && coeff >= 0 || !optimizer.minimization && coeff < 0;
-						System.out.println("before " + x + " " + x.heuristicVal);
-						x.heuristicVal = f ? new First(x, false) : new Last(x, false); // the boolean is dummy
-						System.out.println("after " + x.heuristicVal);
+						System.out.println("before " + x + " " + x.heuristic);
+						x.heuristic = f ? new First(x, false) : new Last(x, false); // the boolean is dummy
+						System.out.println("after " + x.heuristic);
 					}
-					this.priorityVars = scp;
+					this.priorityVars = vars;
 				}
 			}
 		}
@@ -457,7 +457,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public void annotateValh(Var[] vars, Class<? extends HeuristicValues> clazz) {
 		if (settings.enableAnnotations) {
 			Stream.of(vars)
-					.forEach(x -> ((Variable) x).heuristicVal = Reflector.buildObject(clazz.getSimpleName(), HeuristicValues.class, new Object[] { x, null }));
+					.forEach(x -> ((Variable) x).heuristic = Reflector.buildObject(clazz.getSimpleName(), HeuristicValues.class, new Object[] { x, null }));
 		}
 	}
 

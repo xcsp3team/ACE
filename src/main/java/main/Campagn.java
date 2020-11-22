@@ -25,7 +25,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import dashboard.ControlPanel;
+import dashboard.Control;
 import dashboard.Output;
 import utility.DocumentHandler;
 import utility.Kit;
@@ -134,7 +134,7 @@ public class Campagn { // using the cluster
 		Kit.control(queueMode >= 0 && queueMode <= 8, () -> "The queue mode must be set to 0 (short), 1 (normal) or 2 (long)");
 
 		// Arguments.handlerOfConfigurationParametersValues.loadConfigurationFile(defaultConfigurationFileName);
-		this.directoryName = (ControlPanel.buildControlPanelFor(defaultSettingsFileName)).settingXml.dirForCampaign;
+		this.directoryName = (Control.buildControlPanelFor(defaultSettingsFileName)).settingXml.dirForCampaign;
 		Kit.control(!directoryName.trim().equals(""));
 		saveContext();
 		File file = new File(getDirectoryNameOfConfigurations());

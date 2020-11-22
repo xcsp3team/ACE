@@ -13,11 +13,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import constraints.Constraint.RegisteringCtrs;
 import constraints.extension.ExtensionCT;
 import constraints.extension.ExtensionCT.ExtensionCT2;
 import constraints.extension.ExtensionSTR2;
-import dashboard.ControlPanel;
-import interfaces.RegisteringCtrs;
+import dashboard.Control;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -35,7 +35,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 	private static boolean canBuildConflictsStructureFor(Constraint c, int limit) {
 		if (c instanceof ExtensionSTR2 || c instanceof ExtensionCT || c instanceof ExtensionCT2 || c.infiniteDomainVars.length > 0)
 			return false;
-		ControlPanel cfg = c.pb.head.control;
+		Control cfg = c.pb.head.control;
 		if (!cfg.mustBuildConflictStructures || c.scp.length == 1 || Kit.memory() > 400000000L)
 			return false;
 		return Variable.nValidTuples(c.scp, false).compareTo(BigInteger.valueOf(limit)) <= 0;

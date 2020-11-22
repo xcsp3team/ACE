@@ -6,13 +6,13 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package search.local;
+package solver.local;
 
 import org.xcsp.common.Types.TypeFramework;
 
 import main.Head;
-import search.Solver;
-import search.statistics.Statistics.StatisticsLocal;
+import solver.Solver;
+import solver.Statistics.StatisticsLocal;
 import utility.Kit;
 import utility.Reflector;
 import variables.Variable;
@@ -54,7 +54,7 @@ public final class SolverLocal extends Solver {
 	/**
 	 * For each dependency constraint, a FunctionalPropagator object is built to infer dependent variables
 	 */
-	protected FunctionalPropagator[] propagators;
+	// protected FunctionalPropagator[] propagators;
 
 	public SolverLocal(Head resolution) {
 		super(resolution);
@@ -111,12 +111,7 @@ public final class SolverLocal extends Solver {
 	private double initialBiasForForcedSolution = 0; // Data.initialBiasForForcedSolution
 
 	protected void buildInitialCompleteInstantiation() {
-		// if (forcedInstantiation == null && pb.api instanceof problems.rand.ExplicitRandomQuestion
-		// && ((problems.rand.ExplicitRandomQuestion) pb.api).forcedSolution != null)
-		// forcedInstantiation = ((problems.rand.ExplicitRandomQuestion) pb.api).forcedSolution;
-		// else if (forcedInstantiation == null && problem instanceof problems.real.agapes.problem.AgapesProblem
-		// && ((problems.real.agapes.problem.AgapesProblem) problem).getForcedSolution() != null)
-		// forcedInstantiation = ((problems.real.agapes.problem.AgapesProblem) problem).getForcedSolution();
+		// managing a forced initial solution ?
 		if (forcedInstantiation != null)
 			forcedInstantiation = initialBiasForForcedSolution > 0 ? buildNewCompleteInstantiationFrom(forcedInstantiation, initialBiasForForcedSolution)
 					: forcedInstantiation;
@@ -132,8 +127,8 @@ public final class SolverLocal extends Solver {
 	}
 
 	public void propagateDependentVariables() {
-		for (FunctionalPropagator propagator : propagators)
-			propagator.propagate();
+		// for (FunctionalPropagator propagator : propagators)
+		// propagator.propagate();
 	}
 
 	@Override
@@ -145,11 +140,6 @@ public final class SolverLocal extends Solver {
 		// }
 		buildInitialCompleteInstantiation();
 		for (int cnt = 1; cnt <= nIterations; cnt++) {
-			// resolution.output.prn("rrr " + conflictManager.getNbConflictingConstraints());
-			// if(conflictManager.getNbConflictingConstraints() == 9) {
-			// problem.prettySolutionDisplay();
-			// conflictManager.displayConflictingConstraints();
-			// }
 			if (conflictManager.nConflictingConstraints() == 0) {
 				if (problem.settings.framework != TypeFramework.COP || problem.optimizer.value() < solManager.bestBound)
 					solManager.handleNewSolution(true);
@@ -159,21 +149,13 @@ public final class SolverLocal extends Solver {
 			if (finished())
 				break;
 			neighborHeuristic.setBestNeighbor();
-			// resolution.output.prn(conflictManager.getCurrentEvaluation());
 			localStatistics.nAssignments++;
 
-			// resolution.output.prn(conflictManager.getNbConflictingConstraints() + " conflicting constraints");
 			if (conflictManager.nConflictingConstraints() == 0)
 				Kit.log.fine("Current cost : " + problem.optimizer.value());
 
 			if (conflictManager.nConflictingConstraints() < nMinViolatedCtrs) {
 				nMinViolatedCtrs = conflictManager.nConflictingConstraints();
-				// resolution.output.prn("o " + bestCostFound);
-				// solutionManager.handleNewSolution();
-				// resolution.output.prn("v " +
-				// solutionManager.getLastSolutionFoundAsStringbuffer() + "\n");
-				// if (upperBound == 0) setFullExploration(true);
-				// if (upperBound == 1) { restarter.setNbRuns(0); break; }
 			}
 			if (cnt % 100 == 0)
 				Kit.log.fine("\tconflicts=" + conflictManager.nConflictingConstraints() + "(" + conflictManager.currEvaluation() + "), upperBound="

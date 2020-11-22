@@ -9,11 +9,11 @@
 package learning;
 
 import constraints.Constraint;
-import dashboard.ControlPanel.SettingLearning;
+import dashboard.Control.SettingLearning;
 import interfaces.Observers.ObserverDomainReduction;
 import interfaces.Observers.ObserverRuns;
-import search.Solver;
-import search.backtrack.SolverBacktrack;
+import solver.Solver;
+import solver.backtrack.SolverBacktrack;
 import utility.Enums.ELearningState;
 import utility.Kit;
 import variables.Domain;

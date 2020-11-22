@@ -32,7 +32,6 @@ import org.xcsp.modeler.definitions.ICtr.ICtrIntension;
 
 import constraints.ConflictsStructure;
 import constraints.Constraint;
-import interfaces.RegisteringCtrs;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;

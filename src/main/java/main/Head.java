@@ -31,8 +31,8 @@ import constraints.extension.structures.Bits;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.intension.Intension.SharedTreeEvaluator;
 import dashboard.Arguments;
-import dashboard.ControlPanel;
-import dashboard.ControlPanel.SettingProblem;
+import dashboard.Control;
+import dashboard.Control.SettingProblem;
 import dashboard.Output;
 import heuristics.HeuristicRevisions;
 import heuristics.HeuristicValues;
@@ -40,9 +40,9 @@ import heuristics.HeuristicVariables;
 import interfaces.Observers.ObserverConstruction;
 import problem.Problem;
 import propagation.Propagation;
-import search.Solver;
-import search.local.SolverLocal;
-import search.statistics.StatisticsMultiResolution;
+import solver.Solver;
+import solver.Statistics.StatisticsMultiResolution;
+import solver.local.SolverLocal;
 import utility.DocumentHandler;
 import utility.Enums.EStopping;
 import utility.Enums.TypeOutput;
@@ -234,7 +234,7 @@ public class Head extends Thread {
 	/**
 	 * The object that stores all parameters to pilot resolution.java AbsCon test.TestTreeOptim -trace -varh=Lexico
 	 */
-	public final ControlPanel control;
+	public final Control control;
 
 	public final Output output;
 
@@ -277,7 +277,7 @@ public class Head extends Thread {
 	}
 
 	public Head(String configurationFileName) {
-		this.control = ControlPanel.buildControlPanelFor(configurationFileName);
+		this.control = Control.buildControlPanelFor(configurationFileName);
 		this.output = new Output(this, configurationFileName);
 		observersConstruction.add(this.output);
 		this.statisticsMultiresolution = StatisticsMultiResolution.buildFor(this);

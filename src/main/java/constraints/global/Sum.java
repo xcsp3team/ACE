@@ -14,7 +14,7 @@ import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 
-public abstract class SumAbstract extends CtrGlobal implements TagFilteringCompleteAtEachCall {
+public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEachCall {
 
 	protected long limit;
 
@@ -29,7 +29,7 @@ public abstract class SumAbstract extends CtrGlobal implements TagFilteringCompl
 		this.limit = newLimit;
 	}
 
-	public SumAbstract(Problem pb, Variable[] scp, long limit) {
+	public Sum(Problem pb, Variable[] scp, long limit) {
 		super(pb, scp);
 		this.limit = limit;
 		control(scp.length > 1);

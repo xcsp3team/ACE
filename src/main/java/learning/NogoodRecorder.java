@@ -21,10 +21,10 @@ import java.util.stream.Stream;
 
 import org.xcsp.common.Utilities;
 
-import dashboard.ControlPanel.SettingLearning;
+import dashboard.Control.SettingLearning;
 import interfaces.Observers.ObserverRuns;
-import search.backtrack.DecisionRecorder;
-import search.backtrack.SolverBacktrack;
+import solver.backtrack.DecisionRecorder;
+import solver.backtrack.SolverBacktrack;
 import utility.Enums.ELearningNogood;
 import utility.Enums.EStopping;
 import utility.Kit;

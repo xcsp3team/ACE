@@ -14,8 +14,8 @@ import heuristics.HeuristicVariables;
 import heuristics.HeuristicVariables.BestScoredVariable;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import propagation.QueueForSAC3.Cell;
-import search.Solver;
-import search.backtrack.SolverBacktrack;
+import solver.Solver;
+import solver.backtrack.SolverBacktrack;
 import utility.Kit;
 import variables.Variable;
 

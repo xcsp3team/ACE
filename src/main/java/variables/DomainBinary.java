@@ -10,8 +10,8 @@ package variables;
 
 import java.util.stream.IntStream;
 
-import search.Solver;
 import sets.LinkedSetBinary;
+import solver.Solver;
 
 public final class DomainBinary extends LinkedSetBinary implements Domain {
 

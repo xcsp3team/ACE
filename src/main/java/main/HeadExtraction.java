@@ -19,7 +19,7 @@ import java.util.stream.IntStream;
 import constraints.Constraint;
 import dashboard.Arguments;
 import problem.Problem;
-import search.backtrack.SolverBacktrack;
+import solver.backtrack.SolverBacktrack;
 import utility.Enums.EExtractionMethod;
 import utility.Enums.ELearningState;
 import utility.Kit;

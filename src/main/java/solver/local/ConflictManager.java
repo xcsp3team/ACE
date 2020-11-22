@@ -6,7 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package search.local;
+package solver.local;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
 import org.xcsp.common.Types.TypeFramework;
 
 import constraints.Constraint;
-import dashboard.ControlPanel;
+import dashboard.Control;
 import sets.SetSparse;
 import utility.Kit;
 import variables.Variable;
@@ -70,7 +70,7 @@ public class ConflictManager {
 		Arrays.fill(currVariableEvaluations, 0);
 		Constraint[] ctrs = solver.problem.constraints;
 
-		ControlPanel cp = solver.head.control;
+		Control cp = solver.head.control;
 		for (int i = set.limit; i >= 0; i--) {
 			Constraint c = ctrs[set.dense[i]];
 			// if (cp.hardCoding.weightingIncrementInConflictManager) // TODO because of refactoring, this must be updated
@@ -98,14 +98,6 @@ public class ConflictManager {
 			currCost = solver.problem.optimizer.value();
 	}
 
-	//
-	// public void addConflictingConstraint(Constraint ctr) {
-	// sparseSetOfConflictingConstraints.add(ctr.num);
-	// }
-	//
-	// public void removeConflictingConstraint(Constraint ctr) {
-	// sparseSetOfConflictingConstraints.remove(ctr.num);
-	// }
 	//
 	// public void updateConflictingConstraintsFromNewAssignmentOf(Variable var) {
 	// // System.out.println();
@@ -160,25 +152,25 @@ public class ConflictManager {
 		return computeEvolutionFor(x, a, acceptableEvaluationLimit, null);
 	}
 
-	public int computeEvolutionFor(Variable x, int a, Variable y, int b, int acceptableEvaluationLimit) {
-		int evaluation = -currEvaluationOf(x, y);
-		solver.propagateDependentVariables();
-		for (Constraint c : x.ctrs) {
-			if (!c.checkCurrentInstantiation())
-				evaluation += c.wdeg();
-			if (evaluation > acceptableEvaluationLimit)
-				break;
-		}
-		for (Constraint c : y.ctrs) {
-			if (c.involves(x))
-				continue;
-			if (!c.checkCurrentInstantiation())
-				evaluation += c.wdeg();
-			if (evaluation > acceptableEvaluationLimit)
-				break;
-		}
-		return evaluation;
-	}
+	// public int computeEvolutionFor(Variable x, int a, Variable y, int b, int acceptableEvaluationLimit) {
+	// int evaluation = -currEvaluationOf(x, y);
+	// solver.propagateDependentVariables();
+	// for (Constraint c : x.ctrs) {
+	// if (!c.checkCurrentInstantiation())
+	// evaluation += c.wdeg();
+	// if (evaluation > acceptableEvaluationLimit)
+	// break;
+	// }
+	// for (Constraint c : y.ctrs) {
+	// if (c.involves(x))
+	// continue;
+	// if (!c.checkCurrentInstantiation())
+	// evaluation += c.wdeg();
+	// if (evaluation > acceptableEvaluationLimit)
+	// break;
+	// }
+	// return evaluation;
+	// }
 
 	public int computeEvolutionFor(Variable x, int a) {
 		return computeEvolutionFor(x, a, Integer.MAX_VALUE);

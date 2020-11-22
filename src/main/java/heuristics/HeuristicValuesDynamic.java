@@ -9,6 +9,8 @@
 package heuristics;
 
 import constraints.Constraint;
+import optimization.Optimizable;
+import solver.backtrack.SolverBacktrack;
 import utility.Kit;
 import variables.Variable;
 
@@ -24,6 +26,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	@Override
 	public int identifyBestValueIndex() {
 		assert dx.size() != 0 : "The domain is empty";
+		// System.out.println("\nchoosing for " + x);
 		int best = dx.first();
 		double bestScore = scoreOf(best) * scoreCoeff;
 		for (int a = dx.next(best); a != -1; a = dx.next(a)) {
@@ -33,12 +36,60 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 				bestScore = score;
 			}
 		}
+		// System.out.println("choosing " + x + " " + best);
 		return best;
 	}
 
 	// ************************************************************************
 	// ***** Subclasses
 	// ************************************************************************
+
+	public static final class Bivs extends HeuristicValuesDynamic {
+		SolverBacktrack solver;
+
+		Optimizable c;
+
+		boolean stoppedAtFirstSolution = true; // hard coding
+
+		int nTests;
+
+		public Bivs(Variable x, boolean antiHeuristic) {
+			super(x, antiHeuristic);
+			Kit.control(x.problem.optimizer != null);
+			Kit.control(x.problem.solver instanceof SolverBacktrack);
+			Kit.control(!antiHeuristic);
+			this.scoreCoeff = x.problem.optimizer.minimization ? -1 : 1;
+			this.solver = (SolverBacktrack) x.problem.solver;
+			this.c = x.problem.optimizer.ctr;
+		}
+
+		public int identifyBestValueIndex() {
+			if (stoppedAtFirstSolution && solver.solManager.found > 0)
+				return dx.first(); // First in that case;
+			else
+				return super.identifyBestValueIndex();
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			// System.out.println("trying " + x + " " + a + " " + scoreCoeff);
+			solver.assign(x, a);
+			boolean consistent = solver.propagation.runAfterAssignment(x);
+			long score = 0;
+			if (!consistent) {
+				// TODO record inconsistent values, but where (via an observer?)
+				// System.out.println("not consistent");
+				score = scoreCoeff == -1 ? Long.MAX_VALUE : Long.MIN_VALUE;
+			} else
+				score = scoreCoeff == -1 ? c.maxCurrentObjectiveValue() : c.maxCurrentObjectiveValue();
+			// if (x.id().equals("k"))
+			// System.out.println("score of " + x + " " + a + " : " + score);
+			solver.backtrack(x);
+			nTests++;
+			return score;
+		}
+
+	}
 
 	public static final class Conflicts extends HeuristicValuesDynamic {
 
@@ -96,7 +147,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		public double scoreOf(int a) {
 			int v = x.dom.toVal(a);
 			int cnt = 0;
-			for (Variable y : x.pb.variables)
+			for (Variable y : x.problem.variables)
 				if (y.dom.onlyContainsValue(v))
 					cnt++;
 			return cnt;

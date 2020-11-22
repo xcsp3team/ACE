@@ -46,11 +46,10 @@ import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart;
 import constraints.intension.Intension;
 import dashboard.Arguments;
-import dashboard.ControlPanel.SettingOptimization;
-import dashboard.ControlPanel.SettingVars;
+import dashboard.Control.SettingOptimization;
+import dashboard.Control.SettingVars;
 import dashboard.Output;
-import objectives.Optimizer.OptimizerBasic;
-import search.local.FunctionalPropagator;
+import optimization.Optimizer.OptimizerBasic;
 import sets.SetDense;
 import utility.Kit;
 import variables.Variable;
@@ -200,7 +199,7 @@ public final class ProblemStuff {
 	}
 
 	public static class StuffOptimization {
-		public List<FunctionalPropagator> collectedCostVarsFunctionalPropagatorsAtInit = new ArrayList<>();
+		// public List<FunctionalPropagator> collectedCostVarsFunctionalPropagatorsAtInit = new ArrayList<>();
 
 		public Collection<Variable[][]> collectedSatPreservingPermutationsAtInit = new ArrayList<>();
 

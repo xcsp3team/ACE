@@ -15,9 +15,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.Optimizable;
 import interfaces.Tags.TagFilteringPartialAtEachCall;
 import interfaces.Tags.TagGACUnguaranteed;
+import optimization.Optimizable;
 import problem.Problem;
 import sets.SetDense;
 import variables.Domain;

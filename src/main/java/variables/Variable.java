@@ -35,7 +35,7 @@ import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingUnsystematic;
 import problem.Problem;
 import problem.Symbolic;
-import search.backtrack.SolverBacktrack;
+import solver.backtrack.SolverBacktrack;
 import utility.Kit;
 import utility.Reflector;
 import variables.DomainInteger.DomainRange;
@@ -381,7 +381,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	public static final boolean isPermutationElligible(Variable... vars) {
-		return vars[0].pb.head.control.settingCtrs.recognizePermutations && vars[0].dom.initSize() == vars.length && haveSameDomainType(vars);
+		return vars[0].problem.head.control.settingCtrs.recognizePermutations && vars[0].dom.initSize() == vars.length && haveSameDomainType(vars);
 	}
 
 	public static final int[] domSizeArrayOf(Variable[] vars, boolean initSize) {
@@ -468,7 +468,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	 *********************************************************************************************/
 
 	/** The problem to which the variable belongs. */
-	public final Problem pb;
+	public final Problem problem;
 
 	/** The domain attached to the variable. */
 	public Domain dom;
@@ -494,7 +494,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	public Variable[] nghs;
 
 	/** The value ordering heuristic attached to the variable. */
-	public HeuristicValues heuristicVal;
+	public HeuristicValues heuristic;
 
 	/** Indicates if the variable can be a decision variable or not during local search. */
 	// public boolean decision = true;
@@ -530,12 +530,12 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	 */
 	public final void whenFinishedProblemConstruction() {
 		this.ctrs = collectedCtrs.stream().sorted((c1, c2) -> c1.scp.length - c2.scp.length).toArray(Constraint[]::new);
-		this.nghs = pb.variables.length > NB_VARIABLES_LIMIT_FOR_STORING_NEIGHBOURS ? null : computeNeighbours(NB_NEIGHBOURS_LIMIT_FOR_STORING_NEIGHBOURS);
+		this.nghs = problem.variables.length > NB_VARIABLES_LIMIT_FOR_STORING_NEIGHBOURS ? null : computeNeighbours(NB_NEIGHBOURS_LIMIT_FOR_STORING_NEIGHBOURS);
 	}
 
 	/** Builds a variable with the specified id (name). */
 	public Variable(Problem pb, String id) {
-		this.pb = pb;
+		this.problem = pb;
 		this.id = id;
 		Kit.control((id == null) == (pb == null)); // Only the variable TAG has no explicit name
 	}
@@ -562,7 +562,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 
 	public final void setId(String id) {
 		this.id = id;
-		VarEntities.VarAlone va = pb.varEntities.varToVarAlone.get(this);
+		VarEntities.VarAlone va = problem.varEntities.varToVarAlone.get(this);
 		if (va != null)
 			va.id = id;
 	}
@@ -583,10 +583,10 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	public final void buildValueOrderingHeuristic() {
-		if (heuristicVal == null) {
-			String className = this.dom instanceof DomainInfinite ? First.class.getName() : pb.head.control.settingValh.classForValHeuristic;
-			Set<Class<?>> classes = pb.head.handlerClasses.map.get(HeuristicValues.class);
-			heuristicVal = Reflector.buildObject(className, classes, this, pb.head.control.settingValh.anti);
+		if (heuristic == null) {
+			String className = this.dom instanceof DomainInfinite ? First.class.getName() : problem.head.control.settingValh.classForValHeuristic;
+			Set<Class<?>> classes = problem.head.handlerClasses.map.get(HeuristicValues.class);
+			heuristic = Reflector.buildObject(className, classes, this, problem.head.control.settingValh.anti);
 		}
 	}
 
@@ -628,7 +628,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	public final void doAssignment(int a) {
 		assert isFuture() && dom.isPresent(a) : isFuture() + " " + dom.isPresent(a);
 		dom.reduceToElementary(a);
-		assignmentLevel = pb.solver.depth(); // keep at this position
+		assignmentLevel = problem.solver.depth(); // keep at this position
 		for (Constraint c : ctrs)
 			c.doPastVariable(this);
 	}
@@ -667,7 +667,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	public final double wdeg() {
-		return ((WdegVariant) ((SolverBacktrack) pb.solver).heuristicVars).vscores[num];
+		return ((WdegVariant) ((SolverBacktrack) problem.solver).heuristicVars).vscores[num];
 	}
 
 	public final double wdegOnDom() {

@@ -8,7 +8,7 @@
  */
 package heuristics;
 
-import search.backtrack.SolverBacktrack;
+import solver.backtrack.SolverBacktrack;
 import variables.Variable;
 
 public abstract class HeuristicVariablesDirect extends HeuristicVariables {

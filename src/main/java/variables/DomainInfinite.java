@@ -8,7 +8,7 @@
  */
 package variables;
 
-import search.Solver;
+import solver.Solver;
 
 // EXPERIMENTAL (TO BE FINISHED) !!!!!!!!!!!!!!!!!!!!!!!!!!!
 public final class DomainInfinite implements Domain {

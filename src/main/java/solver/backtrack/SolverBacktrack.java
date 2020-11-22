@@ -6,7 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package search.backtrack;
+package solver.backtrack;
 
 import static org.xcsp.common.Types.TypeFramework.COP;
 import static utility.Kit.log;
@@ -32,14 +32,14 @@ import interfaces.Observers.ObserverAssignment;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.Observers.ObserverConflicts;
 import interfaces.Observers.ObserverRuns;
-import interfaces.Optimizable;
-import learning.NogoodRecorder;
 import learning.IpsRecorder;
 import learning.NogoodMinimizer;
+import learning.NogoodRecorder;
 import main.Head;
+import optimization.Optimizable;
 import propagation.Forward;
-import search.Solver;
-import search.statistics.Statistics.StatisticsBacktrack;
+import solver.Solver;
+import solver.Statistics.StatisticsBacktrack;
 import utility.Enums.EBranching;
 import utility.Enums.EStopping;
 import utility.Kit;
@@ -69,10 +69,10 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	 * classes for warm starts and run progress saving
 	 *********************************************************************************************/
 
-	public class WarmStarter {
-		public int[] sol;
+	public final class WarmStarter {
+		int[] sol;
 
-		public WarmStarter(String s) {
+		WarmStarter(String s) {
 			File file = new File(s);
 			if (file.exists()) {
 				try (BufferedReader in = new BufferedReader(new FileReader(s))) {
@@ -108,7 +108,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		}
 	}
 
-	public class RunProgressSaver {
+	public final class RunProgressSaver {
 		int[] prevLongestRunBranch;
 		int prevSize;
 		int[] currLongestRunBranch;
@@ -164,10 +164,6 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 		public int top = -1;
 
-		public void reset() {
-			top = -1;
-		}
-
 		public StackedVariables(SolverBacktrack solver, int size) {
 			this.solver = solver;
 			this.stack = new Variable[size];
@@ -211,15 +207,11 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	public final class Proofer {
 		private final boolean active;
 
-		private final boolean[][] proofVariables;
+		public final boolean[][] proofVariables;
 
 		public Proofer(IpsRecorder recorder) {
 			this.active = recorder != null && ipsRecorder.reductionOperator.enablePElimination();
 			this.proofVariables = this.active ? new boolean[problem.variables.length + 1][problem.variables.length] : null;
-		}
-
-		public boolean[] getProofVariablesAt(int depth) {
-			return proofVariables[depth];
 		}
 
 		public void updateProof(Constraint c) {
@@ -228,9 +220,9 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 					proofVariables[depth()][x.num] = true;
 		}
 
-		public void updateProof(int[] varNums) {
+		public void updateProof(int[] nums) {
 			if (active)
-				for (int num : varNums)
+				for (int num : nums)
 					proofVariables[depth()][num] = true;
 		}
 
@@ -258,7 +250,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	 * Intern class Tracer
 	 *********************************************************************************************/
 
-	public class Tracer {
+	public final class Tracer {
 		private boolean active;
 		private int minDepthLimit, maxDepthLimit;
 
@@ -456,8 +448,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		assign(x, a);
 		proofer.reset();
 		boolean consistent = propagation.runAfterAssignment(x) && (ipsRecorder == null || ipsRecorder.dealWhenOpeningNode());
-		if (x.heuristicVal instanceof Failures)
-			((Failures) x.heuristicVal).updateWith(a, depth(), consistent);
+		if (x.heuristic instanceof Failures)
+			((Failures) x.heuristic).updateWith(a, depth(), consistent);
 		if (!consistent) {
 			stats.nWrongDecisions++;
 			stats.nFailedAssignments++;
@@ -469,7 +461,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	}
 
 	public final boolean tryAssignment(Variable x) {
-		return tryAssignment(x, x.heuristicVal.bestIndex());
+		return tryAssignment(x, x.heuristic.bestIndex());
 	}
 
 	/**

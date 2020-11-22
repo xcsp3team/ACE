@@ -12,9 +12,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import dashboard.ControlPanel.SettingValh;
+import dashboard.Control.SettingValh;
 import interfaces.Tags.TagExperimental;
-import search.backtrack.SolverBacktrack;
+import solver.backtrack.SolverBacktrack;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -37,7 +37,7 @@ public abstract class HeuristicValues extends Heuristic {
 		super(antiHeuristic);
 		this.x = x;
 		this.dx = x.dom;
-		this.settings = x.pb.head.control.settingValh;
+		this.settings = x.problem.head.control.settingValh;
 		// this.priorityVar = x.pb.priorityVars != null && Kit.isPresent(x, x.pb.priorityVars);
 	}
 
@@ -52,7 +52,7 @@ public abstract class HeuristicValues extends Heuristic {
 	protected abstract int identifyBestValueIndex();
 
 	public int bestIndex() {
-		SolverBacktrack solver = (SolverBacktrack) x.pb.solver;
+		SolverBacktrack solver = (SolverBacktrack) x.problem.solver;
 		if (solver.solManager.found == 0) {
 			if (settings.warmStart.length() > 0) {
 				int a = solver.warmStarter.valueOf(x);
@@ -131,7 +131,7 @@ public abstract class HeuristicValues extends Heuristic {
 
 			@Override
 			public double scoreOf(int a) {
-				return x.pb.head.random.nextDouble();
+				return x.problem.head.random.nextDouble();
 			}
 		}
 

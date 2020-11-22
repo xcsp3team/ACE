@@ -11,11 +11,11 @@ package heuristics;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import dashboard.ControlPanel.SettingVarh;
-import dashboard.ControlPanel.SettingVars;
+import dashboard.Control.SettingVarh;
+import dashboard.Control.SettingVars;
 import interfaces.Observers.ObserverRuns;
 import propagation.GIC.GIC2;
-import search.backtrack.SolverBacktrack;
+import solver.backtrack.SolverBacktrack;
 import utility.Kit;
 import utility.Reflector;
 import variables.DomainInfinite;

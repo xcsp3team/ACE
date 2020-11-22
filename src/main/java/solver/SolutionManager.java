@@ -6,7 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package search;
+package solver;
 
 import static utility.Kit.log;
 
@@ -22,11 +22,10 @@ import org.xcsp.modeler.entities.VarEntities.VarArray;
 import org.xcsp.modeler.entities.VarEntities.VarEntity;
 
 import constraints.Constraint;
-import constraints.global.SumAbstract;
+import constraints.global.Sum;
 import problem.Problem;
-import search.backtrack.RestarterLocalBranching;
-import search.backtrack.SolverBacktrack;
-import search.local.SolutionOptimizer;
+import solver.backtrack.RestarterLocalBranching;
+import solver.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
 import utility.Kit;
 import variables.Variable;
@@ -65,7 +64,7 @@ public final class SolutionManager {
 	 */
 	public final List<int[]> allSolutions;
 
-	private SolutionOptimizer solutionOptimizer;
+	// private SolutionOptimizer solutionOptimizer;
 
 	private AtomicBoolean lock = new AtomicBoolean(); // important for competition
 
@@ -124,7 +123,7 @@ public final class SolutionManager {
 		this.limit = nSolutionsLimit;
 		this.bestBound = solver.head.control.settingOptimization.upperBound;
 		this.allSolutions = solver.head.control.settingGeneral.recordSolutions ? new ArrayList<int[]>() : null;
-		this.solutionOptimizer = new SolutionOptimizer(this);
+		// this.solutionOptimizer = new SolutionOptimizer(this);
 		if (solver.head.control.settingXml.competitionMode)
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
 		this.listVars = vars_values(true, false);
@@ -193,7 +192,7 @@ public final class SolutionManager {
 	}
 
 	private Variable selectMostImpactingVariable() {
-		Kit.control(solver.problem.optimizer != null && solver.problem.optimizer.ctr instanceof SumAbstract);
+		Kit.control(solver.problem.optimizer != null && solver.problem.optimizer.ctr instanceof Sum);
 		Constraint c = (Constraint) solver.problem.optimizer.ctr;
 
 		return null;
@@ -245,7 +244,7 @@ public final class SolutionManager {
 
 	public void handleNewSolutionAndPossiblyOptimizeIt() {
 		handleNewSolution(true);
-		solutionOptimizer.optimizeCurrentSolution();
+		// solutionOptimizer.optimizeCurrentSolution();
 	}
 
 	private boolean controlFoundSolution() {

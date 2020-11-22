@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeFramework;
 
 import constraints.Constraint;
-import search.Solver;
+import solver.Solver;
 import variables.Variable;
 
 public class GAC extends Forward {

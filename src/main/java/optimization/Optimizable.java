@@ -1,4 +1,4 @@
-package interfaces;
+package optimization;
 
 public interface Optimizable {
 

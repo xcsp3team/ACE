@@ -9,15 +9,20 @@
 package heuristics;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
+import constraints.global.Sum;
+import constraints.global.SumSimple;
+import constraints.global.SumWeighted;
 import interfaces.Observers.ObserverAssignment;
 import interfaces.Observers.ObserverConflicts;
 import interfaces.Observers.ObserverRuns;
 import interfaces.Tags.TagMaximize;
-import search.backtrack.SolverBacktrack;
 import sets.SetDense;
+import solver.backtrack.SolverBacktrack;
 import utility.Enums.EBranching;
 import utility.Enums.ESingletonAssignment;
 import utility.Enums.EWeighting;
@@ -258,6 +263,19 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		public Wdeg(SolverBacktrack solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
+			boolean b = false;
+			if (b && solver.problem.optimizer != null && solver.problem.optimizer.ctr instanceof Sum) {
+				Sum c = (Sum) solver.problem.optimizer.ctr;
+				int[] coeffs = c instanceof SumSimple ? null : ((SumWeighted) c).coeffs;
+				long[] gaps = IntStream.range(0, c.scp.length).mapToLong(i -> Math.abs((coeffs == null ? 1 : coeffs[i]) * c.scp[i].dom.intervalValue()))
+						.toArray();
+				long minGap = LongStream.of(gaps).min().getAsLong();
+				for (int i = 0; i < c.scp.length; i++) {
+					vscores[c.scp[i].num] += 1 + gaps[i] - minGap; // Math.log(1 + gaps[i] - minGap) / Math.log(2);
+					// System.out.println("socre of " + c.scp[i] + " : " + vscores[c.scp[i].num]);
+				}
+
+			}
 		}
 
 		@Override

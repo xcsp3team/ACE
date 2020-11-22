@@ -1,15 +1,15 @@
-package search.backtrack;
+package solver.backtrack;
 
 import static utility.Kit.control;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import dashboard.ControlPanel.SettingLNS;
-import search.Restarter;
-import search.Solver;
-import search.backtrack.RestarterLNS.HeuristicFreezing.Impact;
-import search.backtrack.RestarterLNS.HeuristicFreezing.Rand;
+import dashboard.Control.SettingLNS;
+import solver.Restarter;
+import solver.Solver;
+import solver.backtrack.RestarterLNS.HeuristicFreezing.Impact;
+import solver.backtrack.RestarterLNS.HeuristicFreezing.Rand;
 import utility.Kit;
 import variables.Variable;
 

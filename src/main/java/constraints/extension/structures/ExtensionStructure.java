@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Set;
 
 import constraints.Constraint;
-import interfaces.RegisteringCtrs;
+import constraints.Constraint.RegisteringCtrs;
 import utility.Kit;
 import utility.Kit.IntArrayHashKey;
 import variables.Domain;

@@ -2,8 +2,8 @@ package learning;
 
 import propagation.GAC;
 import propagation.Propagation;
-import search.backtrack.DecisionRecorder;
-import search.backtrack.SolverBacktrack;
+import solver.backtrack.DecisionRecorder;
+import solver.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
 import variables.Variable;
 

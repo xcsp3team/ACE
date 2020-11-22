@@ -13,6 +13,7 @@ import static org.xcsp.common.Constants.ALL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -27,7 +28,7 @@ import constraints.extension.structures.ExtensionStructure;
 import constraints.global.SumSimple.SumSimpleEQ;
 import constraints.global.SumWeighted.SumWeightedEQ;
 import constraints.intension.Intension;
-import dashboard.ControlPanel.SettingCtrs;
+import dashboard.Control.SettingCtrs;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.FilteringGlobal;
 import interfaces.FilteringSpecific;
@@ -43,9 +44,9 @@ import propagation.Forward;
 import propagation.Reviser;
 import propagation.Supporter;
 import propagation.Supporter.SupporterHard;
-import search.backtrack.SolverBacktrack;
 import sets.SetDense;
 import sets.SetSparse;
+import solver.backtrack.SolverBacktrack;
 import utility.Kit;
 import variables.Domain;
 import variables.DomainInfinite;
@@ -57,6 +58,10 @@ import variables.Variable;
  * A constraint involves a subset of variables of the problem.
  */
 public abstract class Constraint implements ICtr, ObserverConstruction, Comparable<Constraint> {
+
+	/*************************************************************************
+	 ***** Interfaces
+	 *************************************************************************/
 
 	@Override
 	public int compareTo(Constraint c) {
@@ -75,6 +80,26 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		} else {
 			this.positions = null;
 			this.futvars = new SetDense(scp.length, true);
+		}
+	}
+
+	public static interface RegisteringCtrs {
+
+		/** The list of constraints registered by this object. */
+		abstract List<Constraint> registeredCtrs();
+
+		default void register(Constraint c) {
+			assert !registeredCtrs().contains(c) && (registeredCtrs().size() == 0 || Domain.similarDomains(c.doms, firstRegisteredCtr().doms));
+			registeredCtrs().add(c);
+		}
+
+		default void unregister(Constraint c) {
+			boolean b = registeredCtrs().remove(c);
+			assert b;
+		}
+
+		default Constraint firstRegisteredCtr() {
+			return registeredCtrs().get(0);
 		}
 	}
 

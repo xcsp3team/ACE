@@ -1,15 +1,13 @@
-package objectives;
+package optimization;
 
 import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Types.TypeOptimization;
 
 import dashboard.Arguments;
 import dashboard.Output;
-import interfaces.LowerBoundCapability;
-import interfaces.Optimizable;
 import problem.Problem;
-import search.backtrack.SolverBacktrack;
-import search.local.SolverLocal;
+import solver.backtrack.SolverBacktrack;
+import solver.local.SolverLocal;
 import utility.Enums.EStopping;
 import utility.Kit;
 import variables.Variable;

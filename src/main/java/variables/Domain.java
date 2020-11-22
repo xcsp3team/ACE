@@ -27,9 +27,9 @@ import org.xcsp.common.Range;
 import org.xcsp.common.Types.TypeOperatorRel;
 
 import interfaces.Observers.ObserverDomainReduction;
-import search.Solver;
 import sets.LinkedSet;
 import sets.SetDense;
+import solver.Solver;
 import utility.Kit;
 
 public interface Domain extends LinkedSet {
@@ -224,10 +224,10 @@ public interface Domain extends LinkedSet {
 	 * Important: this method must only called when building the problem.
 	 */
 	default void removeAtConstructionTime(int a) {
-		control(var().pb.solver == null, () -> "Must be called before the solver being built.");
+		control(var().problem.solver == null, () -> "Must be called before the solver being built.");
 		remove(a, 0);
-		var().pb.nValuesRemoved++;
-		var().pb.stuff.nValuesRemovedAtConstructionTime++;
+		var().problem.nValuesRemoved++;
+		var().problem.stuff.nValuesRemovedAtConstructionTime++;
 	}
 
 	default void removeAtConstructionTime(Predicate<Integer> p) {
@@ -270,9 +270,9 @@ public interface Domain extends LinkedSet {
 		if (depth != lastRemovedLevel())
 			solver().pushVariable(x); // push must always be performed before domain reduction
 		remove(a, depth);
-		for (ObserverDomainReduction observer : x.pb.observersDomainReduction)
+		for (ObserverDomainReduction observer : x.problem.observersDomainReduction)
 			observer.afterRemoval(x, a);
-		x.pb.nValuesRemoved++;
+		x.problem.nValuesRemoved++;
 	}
 
 	/**
@@ -388,9 +388,9 @@ public interface Domain extends LinkedSet {
 		if (lastRemovedLevel() != depth)
 			solver().pushVariable(x); // push above must always be performed before domain reduction
 		int nRemovals = reduceTo(a, depth);
-		for (ObserverDomainReduction observer : x.pb.observersDomainReduction)
+		for (ObserverDomainReduction observer : x.problem.observersDomainReduction)
 			observer.afterRemovals(x, nRemovals);
-		x.pb.nValuesRemoved += nRemovals;
+		x.problem.nValuesRemoved += nRemovals;
 		assert nRemovals >= 0 && size() == 1 : "nRemovals: " + nRemovals + " size:" + size();
 		return nRemovals;
 	}

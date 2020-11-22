@@ -9,7 +9,7 @@
 package learning;
 
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingUnsystematic;
-import search.backtrack.SolverBacktrack;
+import solver.backtrack.SolverBacktrack;
 import utility.Bit;
 import utility.Enums.EStopping;
 import utility.Kit;

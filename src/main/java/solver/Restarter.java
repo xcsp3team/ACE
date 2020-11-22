@@ -6,7 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package search;
+package solver;
 
 import java.util.function.Supplier;
 
@@ -14,12 +14,12 @@ import org.xcsp.common.Types.TypeFramework;
 
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
 import constraints.global.ObjVar;
-import dashboard.ControlPanel.SettingGeneral;
-import dashboard.ControlPanel.SettingRestarts;
+import dashboard.Control.SettingGeneral;
+import dashboard.Control.SettingRestarts;
 import interfaces.Observers.ObserverRuns;
-import search.backtrack.RestarterLNS;
-import search.backtrack.RestarterLocalBranching;
-import search.backtrack.SolverBacktrack;
+import solver.backtrack.RestarterLNS;
+import solver.backtrack.RestarterLocalBranching;
+import solver.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
 import utility.Kit;
 

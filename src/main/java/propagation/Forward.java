@@ -8,8 +8,8 @@
  */
 package propagation;
 
-import search.Solver;
-import search.backtrack.SolverBacktrack;
+import solver.Solver;
+import solver.backtrack.SolverBacktrack;
 import utility.Enums.EBranching;
 import utility.Reflector;
 import variables.Variable;

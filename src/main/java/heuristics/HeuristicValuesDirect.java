@@ -84,7 +84,25 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 		}
 	}
 
+	public static final class RunRobin extends HeuristicValuesDirect {
+
+		public RunRobin(Variable x, boolean dummy) {
+			super(x, dummy);
+		}
+
+		@Override
+		public int identifyBestValueIndex() {
+			int run = x.problem.solver.restarter.numRun;
+			if (run % 3 == 0)
+				return dx.first();
+			if (run % 3 == 1)
+				return dx.last();
+			return dx.random();
+		}
+	}
+
 	public static final class Robin extends HeuristicValuesDirect {
+		int cnt = -1;
 
 		public Robin(Variable x, boolean dummy) {
 			super(x, dummy);
@@ -92,10 +110,10 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 
 		@Override
 		public int identifyBestValueIndex() {
-			int run = x.pb.solver.restarter.numRun;
-			if (run % 3 == 0)
+			cnt++;
+			if (cnt % 3 == 0)
 				return dx.first();
-			if (run % 3 == 1)
+			if (cnt % 3 == 1)
 				return dx.last();
 			return dx.random();
 		}

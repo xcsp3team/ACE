@@ -4,10 +4,10 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.Optimizable;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagSymmetric;
+import optimization.Optimizable;
 import problem.Problem;
 import variables.Domain;
 import variables.Variable;

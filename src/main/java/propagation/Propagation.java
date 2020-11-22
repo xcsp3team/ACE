@@ -13,10 +13,10 @@ import java.util.stream.IntStream;
 
 import constraints.Constraint;
 import constraints.Constraint.CtrGlobal;
-import dashboard.ControlPanel.SettingPropagation;
+import dashboard.Control.SettingPropagation;
 import interfaces.Observers.ObserverConflicts;
-import search.Solver;
 import sets.SetSparse;
+import solver.Solver;
 import utility.Kit;
 import utility.Reflector;
 import variables.Variable;
