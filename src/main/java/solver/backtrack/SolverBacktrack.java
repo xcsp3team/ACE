@@ -26,6 +26,7 @@ import org.xcsp.common.Constants;
 
 import constraints.Constraint;
 import constraints.Constraint.CtrGlobal;
+import heuristics.HeuristicValuesDynamic.Bivs;
 import heuristics.HeuristicValuesDynamic.Failures;
 import heuristics.HeuristicVariables;
 import interfaces.Observers.ObserverAssignment;
@@ -38,6 +39,7 @@ import learning.NogoodRecorder;
 import main.Head;
 import optimization.Optimizable;
 import propagation.Forward;
+import sets.SetDense;
 import solver.Solver;
 import solver.Statistics.StatisticsBacktrack;
 import utility.Enums.EBranching;
@@ -305,7 +307,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		if (head.control.settingSolving.enableSearch) {
 			if (nogoodRecorder != null && nogoodRecorder.symmetryHandler != null)
 				list.add((ObserverRuns) nogoodRecorder.symmetryHandler);
-			Stream.of(this, restarter, ipsRecorder, heuristicVars, lcReasoner, stats).filter(o -> o instanceof ObserverRuns)
+			Stream.of(this, restarter, ipsRecorder, heuristic, lcReasoner, stats).filter(o -> o instanceof ObserverRuns)
 					.forEach(o -> list.add((ObserverRuns) o));
 		}
 		Stream.of(problem.constraints).filter(c -> c instanceof ObserverRuns).forEach(c -> list.add((ObserverRuns) c));
@@ -317,15 +319,15 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	protected List<ObserverAssignment> collectObserversAssignment() {
 		List<ObserverAssignment> list = new ArrayList<>();
-		if (heuristicVars instanceof ObserverAssignment)
-			list.add((ObserverAssignment) heuristicVars);
+		if (heuristic instanceof ObserverAssignment)
+			list.add((ObserverAssignment) heuristic);
 		return list;
 	}
 
 	protected List<ObserverConflicts> collectObserversPropagation() {
 		List<ObserverConflicts> list = new ArrayList<>();
-		if (heuristicVars instanceof ObserverConflicts)
-			list.add((ObserverConflicts) heuristicVars);
+		if (heuristic instanceof ObserverConflicts)
+			list.add((ObserverConflicts) heuristic);
 		return list;
 	}
 
@@ -335,7 +337,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	public final DecisionRecorder dr;
 
-	public HeuristicVariables heuristicVars;
+	public HeuristicVariables heuristic;
 
 	public final LastConflictReasoner lcReasoner;
 
@@ -365,7 +367,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		dr.reset();
 		// if (!(heuristicVars instanceof HeuristicVariablesConflictBased) || !preserveWeightedDegrees)
 		// heuristicVars.reset();
-		heuristicVars.setPriorityVars(problem.priorityVars, 0);
+		heuristic.setPriorityVars(problem.priorityVars, 0);
 		lcReasoner.beforeRun();
 		if (nogoodRecorder != null)
 			nogoodRecorder.reset();
@@ -379,7 +381,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	public SolverBacktrack(Head resolution) {
 		super(resolution);
 		this.dr = new DecisionRecorder(this);
-		this.heuristicVars = HeuristicVariables.buildFor(this);
+		this.heuristic = HeuristicVariables.buildFor(this);
 		for (Variable x : problem.variables)
 			x.buildValueOrderingHeuristic();
 		this.lcReasoner = new LastConflictReasoner(this, resolution.control.settingVarh.lastConflictSize);
@@ -442,6 +444,24 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	}
 
 	public final boolean tryAssignment(Variable x, int a) {
+		boolean b = false; // temporary
+		if (b && x.heuristic instanceof Bivs) {
+			SetDense inconsistent = ((Bivs) x.heuristic).inconsistent;
+			if (inconsistent.size() > 0) {
+				boolean inc = inconsistent.size() == x.dom.size();
+				if (!inc) {
+					boolean r = x.dom.remove(inconsistent);
+					assert r;
+					inc = propagation.propagate() == false;
+				}
+				inconsistent.clear();
+				if (inc) {
+					stats.nWrongDecisions++; // necessary for updating restart data
+					stats.nFailedAssignments++;
+					return false;
+				}
+			}
+		}
 		tracer.onAssignment(x, a);
 		stats.onAssignment(x);
 		lcReasoner.onAssignment(x);
@@ -528,7 +548,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 				if (futVars.size() == 0)
 					break;
 				maxDepth = Math.max(maxDepth, depth());
-				if (tryAssignment(heuristicVars.bestVar()) == false)
+				if (tryAssignment(heuristic.bestVar()) == false)
 					manageContradiction(null);
 			}
 			if (futVars.size() == 0) {

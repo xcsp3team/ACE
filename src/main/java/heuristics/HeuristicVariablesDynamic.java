@@ -169,7 +169,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			if (solver.restarter.runMultipleOf(solver.head.control.settingRestarts.dataResetPeriod)) {
-				// System.out.println("Reset weights");
+				System.out.println("Reset weights");
 				reset();
 			}
 			alpha = ALPHA0;
@@ -252,18 +252,9 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			this.ctime = new int[solver.problem.constraints.length];
 			this.vscores = new double[solver.problem.variables.length];
 			this.cscores = new double[solver.problem.constraints.length];
-			this.cvscores = new double[solver.problem.constraints.length][0];
-			for (int i = 0; i < cvscores.length; i++)
-				this.cvscores[i] = new double[solver.problem.constraints[i].scp.length];
-		}
+			this.cvscores = Stream.of(solver.problem.constraints).map(c -> new double[c.scp.length]).toArray(double[][]::new);
 
-	}
-
-	public static class Wdeg extends WdegVariant {
-
-		public Wdeg(SolverBacktrack solver, boolean antiHeuristic) {
-			super(solver, antiHeuristic);
-			boolean b = false;
+			boolean b = false; // temporary
 			if (b && solver.problem.optimizer != null && solver.problem.optimizer.ctr instanceof Sum) {
 				Sum c = (Sum) solver.problem.optimizer.ctr;
 				int[] coeffs = c instanceof SumSimple ? null : ((SumWeighted) c).coeffs;
@@ -274,8 +265,15 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					vscores[c.scp[i].num] += 1 + gaps[i] - minGap; // Math.log(1 + gaps[i] - minGap) / Math.log(2);
 					// System.out.println("socre of " + c.scp[i] + " : " + vscores[c.scp[i].num]);
 				}
-
 			}
+		}
+
+	}
+
+	public static class Wdeg extends WdegVariant {
+
+		public Wdeg(SolverBacktrack solver, boolean antiHeuristic) {
+			super(solver, antiHeuristic);
 		}
 
 		@Override

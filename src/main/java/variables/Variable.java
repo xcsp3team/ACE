@@ -667,7 +667,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	public final double wdeg() {
-		return ((WdegVariant) ((SolverBacktrack) problem.solver).heuristicVars).vscores[num];
+		return ((WdegVariant) ((SolverBacktrack) problem.solver).heuristic).vscores[num];
 	}
 
 	public final double wdegOnDom() {

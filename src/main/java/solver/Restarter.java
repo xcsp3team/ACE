@@ -8,20 +8,37 @@
  */
 package solver;
 
+import static utility.Kit.control;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.xcsp.common.Types.TypeFramework;
+import org.xcsp.modeler.entities.CtrEntities.CtrAlone;
 
+import constraints.Constraint;
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
+import constraints.global.HammingProximityConstant.HammingProximityConstantGE;
+import constraints.global.HammingProximityConstant.HammingProximityConstantSumLE;
 import constraints.global.ObjVar;
 import dashboard.Control.SettingGeneral;
+import dashboard.Control.SettingLNS;
 import dashboard.Control.SettingRestarts;
+import interfaces.FilteringSpecific;
 import interfaces.Observers.ObserverRuns;
-import solver.backtrack.RestarterLNS;
-import solver.backtrack.RestarterLocalBranching;
+import optimization.Optimizer.OptimizerDecreasing;
+import problem.Problem;
+import sets.SetDense;
+import solver.Restarter.RestarterLB.LocalBranchingConstraint.LBAtLeastEqual;
 import solver.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
 import utility.Kit;
+import utility.Reflector;
+import variables.Variable;
 
 /**
  * A restarter is used by a solver in order to manage restarts (successive runs from the root node).
@@ -29,12 +46,13 @@ import utility.Kit;
 public class Restarter implements ObserverRuns {
 
 	public static Restarter buildFor(Solver solver) {
-		Kit.control(!(solver.head.control.settingLNS.enabled && solver.head.control.settingLB.enabled),
-				() -> "Cannot use LNS and LB (local branching) at the same time.");
-		if (solver.head.control.settingLNS.enabled)
+		boolean lns = solver.head.control.settingLNS.enabled;
+		boolean lb = solver.head.control.settingLB.enabled;
+		Kit.control(!lns || !lb, () -> "Cannot use LNS and LB at the same time.");
+		if (lns)
 			return new RestarterLNS(solver);
-		if (solver.head.control.settingLB.enabled)
-			return new RestarterLocalBranching(solver);
+		if (lb)
+			return new RestarterLB(solver);
 		return new Restarter(solver);
 	}
 
@@ -57,9 +75,6 @@ public class Restarter implements ObserverRuns {
 			long offset = setting.luby ? lubyCutoffFor(numRun + 1) * 100 : (long) (baseCutoff * Math.pow(setting.factor, nRestartsSinceLastReset));
 			currCutoff = measureSupplier.get() + offset;
 		}
-		// boolean b = forceRootPropagation;
-		// if (!b && solver.rs.cp.framework == TypeFramework.COP)
-		// b = numRun - 1 == solver.solManager.lastSolutionRun; // || !(solver.pb.optimizationPilot instanceof OptimizationPilotDecreasing);
 		if (forceRootPropagation || (settingsGeneral.framework == TypeFramework.COP && numRun - 1 == solver.solManager.lastSolutionRun)) {
 			forceRootPropagation = false;
 			nRestartsSinceLastReset = 0;
@@ -165,6 +180,340 @@ public class Restarter implements ObserverRuns {
 
 	public boolean runMultipleOf(int v) {
 		return numRun > 0 && numRun % v == 0;
+	}
+
+	/**********************************************************************************************
+	 * Subclasses (need to be fixed)
+	 *********************************************************************************************/
+
+	// TODO : needs to be fixed : see in 'beforeRun'
+	public static class RestarterLNS extends Restarter {
+
+		@Override
+		public void beforeRun() {
+			super.beforeRun();
+			int[] solution = solver.solManager.lastSolution;
+			if (solution != null) {
+				heuristic.freezeVariables(solution);
+				for (int i = 0; i < heuristic.fragment.size(); i++)
+					solver.assign(solver.problem.variables[heuristic.fragment.dense[i]], solution[heuristic.fragment.dense[i]]);
+				// TODO : while a covered constraint is unsatisfied : remove one assigned frozen variable from its scope
+				// runInitially add all variables, which breaks an assert : how to manage that?
+				solver.propagation.runInitially();
+			}
+		}
+
+		@Override
+		public void afterRun() {
+			((SolverBacktrack) solver).backtrackToTheRoot();
+		}
+
+		private final HeuristicFreezing heuristic;
+
+		public RestarterLNS(Solver solver) {
+			super(solver);
+			this.heuristic = HeuristicFreezing.buildFor(this);
+			control(solver instanceof SolverBacktrack, () -> "For LNS, only a SolverBacktrack object can be used.");
+		}
+
+		// ************************************************************************
+		// ***** Heuristics
+		// ************************************************************************
+
+		public static abstract class HeuristicFreezing {
+
+			public static HeuristicFreezing buildFor(RestarterLNS restarter) {
+				if (restarter.solver.head.control.settingLNS.freezingHeuristic.equals(Impact.class.getName()))
+					return new Impact(restarter);
+				else
+					return new Rand(restarter);
+			}
+
+			protected final RestarterLNS restarter;
+
+			public final SetDense fragment;
+
+			public HeuristicFreezing(RestarterLNS restarter) {
+				this.restarter = restarter;
+				int n = restarter.solver.problem.variables.length;
+				SettingLNS setting = restarter.solver.head.control.settingLNS;
+
+				this.fragment = new SetDense(n);
+				int fragmentSize = -1;
+				if (0 < setting.nVariablesToFreeze && setting.nVariablesToFreeze < n)
+					fragmentSize = setting.nVariablesToFreeze;
+				else if (0 < setting.pVariablesToFreeze && setting.pVariablesToFreeze < 100)
+					fragmentSize = 1 + (setting.pVariablesToFreeze * n) / 100;
+				Kit.control(0 < fragmentSize && fragmentSize < n, () -> "You must specify the number or percentage of variables to freeze for LNS");
+				this.fragment.limit = fragmentSize - 1;
+			}
+
+			// Implementing Fisher–Yates shuffle (see https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle)
+			protected void shuffle() {
+				Random random = restarter.solver.head.random;
+				int[] dense = fragment.dense;
+				for (int i = dense.length - 1; i > 0; i--) {
+					int j = random.nextInt(i + 1);
+					int tmp = dense[i];
+					dense[i] = dense[j];
+					dense[j] = tmp;
+				}
+			}
+
+			public abstract void freezeVariables(int[] solution);
+
+			public static class Impact extends HeuristicFreezing {
+
+				private final Variable[] variables;
+
+				private int[] before, after;
+
+				public Impact(RestarterLNS restarter) {
+					super(restarter);
+					this.variables = restarter.solver.problem.variables;
+					this.before = new int[variables.length];
+					this.after = new int[variables.length];
+
+				}
+
+				private void storeDomainSizes(int[] t) {
+					for (int i = 0; i < variables.length; i++)
+						t[i] = variables[i].dom.size();
+				}
+
+				@Override
+				public void freezeVariables(int[] solution) {
+					shuffle();
+					int[] dense = fragment.dense;
+					Integer bestImpacted = null;
+					for (int i = 0; i < fragment.size(); i++) {
+						if (bestImpacted != null) {
+							int tmp = dense[bestImpacted];
+							dense[bestImpacted] = dense[i];
+							dense[i] = tmp;
+						}
+						// else we automatically add the first element of shuffled (at position size)
+						restarter.solver.assign(variables[dense[i]], solution[dense[i]]);
+
+						storeDomainSizes(before);
+						restarter.solver.propagation.runInitially();
+						storeDomainSizes(after);
+
+						bestImpacted = null;
+						int bestImpact = 0;
+						for (int j = i + 1; j < dense.length; j++) {
+							int impact = before[dense[j]] - after[dense[j]];
+							if (impact > bestImpact) {
+								bestImpacted = j;
+								bestImpact = impact;
+							}
+						}
+					}
+					((SolverBacktrack) restarter.solver).backtrackToTheRoot();
+				}
+			}
+
+			public static class Rand extends HeuristicFreezing {
+
+				public Rand(RestarterLNS restarter) {
+					super(restarter);
+				}
+
+				@Override
+				public void freezeVariables(int[] solution) {
+					shuffle();
+				}
+			}
+		}
+	}
+
+	public static final class RestarterLB extends Restarter { // Local Branching
+
+		private boolean currentlyBranching;
+
+		private int nRestartsSinceActive;
+
+		private LocalBranchingConstraint localBranchingConstraints;
+
+		private int currDistance = solver.head.control.settingLB.baseDistance;
+
+		public RestarterLB(Solver solver) {
+			super(solver);
+			Kit.control(solver instanceof SolverBacktrack, () -> "For local branching, only a SolverBacktrack can be used.");
+			Kit.control(solver.problem.optimizer instanceof OptimizerDecreasing, () -> "For local branching, only OptimizationPilotDecreasing can be used.");
+
+			this.localBranchingConstraints = solver.problem.symbolic != null
+					? Reflector.buildObject(LBAtLeastEqual.class.getSimpleName(), LocalBranchingConstraint.class, solver.problem)
+					: Reflector.buildObject(solver.head.control.settingLB.neighborhood, LocalBranchingConstraint.class, solver.problem);
+			this.currDistance = solver.head.control.settingLB.baseDistance;
+		}
+
+		public void enterLocalBranching() {
+			currentlyBranching = true;
+			nRestartsSinceActive = 0;
+		}
+
+		private void leaveLocalBranching() {
+			currentlyBranching = false;
+			localBranchingConstraints.setIgnored(true);
+			currDistance = solver.head.control.settingLB.baseDistance;
+		}
+
+		@Override
+		public void beforeRun() {
+			if (currentlyBranching)
+				nRestartsSinceActive++;
+			super.beforeRun();
+		}
+
+		@Override
+		public void afterRun() {
+			if (currentlyBranching) {
+				if (solver.stopping == EStopping.FULL_EXPLORATION || forceRootPropagation) {
+					Kit.control(solver.problem.stuff.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
+					if (solver.stopping == EStopping.FULL_EXPLORATION) {
+						solver.stopping = null;
+						currDistance++;
+						if (solver.problem.optimizer.areBoundsConsistent())
+							forceRootPropagation = true;
+					}
+					if (forceRootPropagation) {
+						super.afterRun();
+						currDistance = solver.head.control.settingLB.baseDistance;
+					}
+					localBranchingConstraints.updateWithNewSolution(solver.solManager.lastSolution, currDistance);
+					localBranchingConstraints.setIgnored(false);
+					((SolverBacktrack) solver).restoreProblem();
+					if (((SolverBacktrack) solver).nogoodRecorder != null)
+						((SolverBacktrack) solver).nogoodRecorder.reset();
+					((FilteringSpecific) solver.problem.optimizer.ctr).runPropagator(null);
+				}
+				if (nRestartsSinceActive > solver.head.control.settingLB.maxRestarts)
+					leaveLocalBranching();
+			} else {
+				super.afterRun();
+			}
+		}
+
+		public static abstract class LocalBranchingConstraint {
+
+			/**
+			 * The constraint which is posted when exploring a branch.
+			 */
+			protected Constraint c;
+
+			/**
+			 * The non-objective variables.
+			 */
+			protected final Variable[] decisionVars;
+
+			/**
+			 * The non-objective variables' positions
+			 */
+			private final int[] decisionVaps;
+
+			public LocalBranchingConstraint(Problem pb) {
+				// Variable[] objectiveVars = pb.stuff.stuffOptimization.collectedCostVarsFunctionalPropagatorsAtInit.stream().map(fp ->
+				// fp.ctr.scp[fp.outputPos])
+				// .toArray(Variable[]::new);
+
+				decisionVars = Stream.of(pb.variables).toArray(Variable[]::new);
+				decisionVaps = Kit.range(pb.variables.length);
+				// List<Variable> decisionVarsList = new ArrayList<>();
+				// List<Integer> decisionVapsList = new ArrayList<>();
+				// for (int i = 0; i < pb.variables.length; i++)
+				//
+				// if (!Kit.isPresent(pb.variables[i], objectiveVars)) {
+				// decisionVarsList.add(pb.variables[i]);
+				// decisionVapsList.add(i);
+				// }
+				// decisionVars = decisionVarsList.toArray(new Variable[decisionVarsList.size()]);
+				// decisionVaps = Kit.intArray(decisionVapsList);
+
+				// Sort decisionVaps and decisionVars
+				for (int i = 0; i < decisionVaps.length; i++) {
+					int min = decisionVaps[i];
+					int minPos = i;
+					for (int j = i + 1; j < decisionVaps.length; j++) {
+						if (decisionVaps[j] < min) {
+							min = decisionVaps[j];
+							minPos = j;
+						}
+					}
+					if (minPos != i) {
+						decisionVaps[minPos] = decisionVaps[i];
+						decisionVaps[i] = min;
+						Variable tmp = decisionVars[i];
+						decisionVars[i] = decisionVars[minPos];
+						decisionVars[minPos] = tmp;
+					}
+				}
+			}
+
+			/**
+			 * Extracts an instantiation with vals of the decision variables from a complete instantiation with idxs.
+			 * 
+			 * @param completeInstantiationIdxs
+			 *            : A complete instantiation (with idxs) of all the variables of the problem.
+			 * @return An instantiation (with idxs) of the decision variables.
+			 */
+			public int[] toDecisionVals(int[] completeInstantiationIdxs) {
+				List<Integer> decisionIdxs = new ArrayList<>();
+				for (int i = 0; i < decisionVaps.length; i++)
+					decisionIdxs.add(completeInstantiationIdxs[decisionVaps[i]]);
+				int[] decisionVals = new int[decisionIdxs.size()];
+				for (int i = 0; i < decisionVals.length; i++)
+					decisionVals[i] = decisionVars[i].dom.toVal(decisionIdxs.get(i));
+				return decisionVals;
+			}
+
+			public abstract void modifyConstraint(int[] decisionVals, int newDist);
+
+			public void updateWithNewSolution(int[] instantiationIdxs, int newDist) {
+				modifyConstraint(toDecisionVals(instantiationIdxs), newDist);
+			}
+
+			public boolean isDecisionVap(int vap) {
+				return Arrays.binarySearch(decisionVaps, vap) >= 0;
+			}
+
+			public void setIgnored(boolean b) {
+				c.ignored = b;
+			}
+
+			public static class LBAtLeastEqual extends LocalBranchingConstraint {
+
+				public LBAtLeastEqual(Problem problem) {
+					super(problem);
+					int[] tuple = Stream.of(decisionVars).mapToInt(x -> x.dom.firstValue()).toArray();
+					c = (Constraint) ((CtrAlone) problem.tupleProximityGE(decisionVars, tuple,
+							decisionVars.length - problem.head.control.settingLB.baseDistance, true)).ctr;
+					c.ignored = true;
+				}
+
+				@Override
+				public void modifyConstraint(int[] decisionVals, int newDist) {
+					((HammingProximityConstantGE) c).setTarget(decisionVals);
+					((HammingProximityConstantGE) c).setK(newDist);
+				}
+			}
+
+			public static class LBAtMostDistanceSum extends LocalBranchingConstraint {
+
+				public LBAtMostDistanceSum(Problem problem) {
+					super(problem);
+					c = (Constraint) ((CtrAlone) problem.tupleProximityDistanceSum(decisionVars, new int[decisionVars.length],
+							problem.head.control.settingLB.baseDistance)).ctr;
+					c.ignored = true;
+				}
+
+				@Override
+				public void modifyConstraint(int[] decisionVals, int newDist) {
+					((HammingProximityConstantSumLE) c).setTarget(decisionVals);
+					((HammingProximityConstantSumLE) c).setK(newDist);
+				}
+			}
+		}
 	}
 
 }

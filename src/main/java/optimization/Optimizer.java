@@ -121,7 +121,8 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 			else
 				minBound = pb.solver.solManager.bestBound + 1;
 			possiblyUpdateLocalBounds();
-			Kit.control(minBound - 1 <= maxBound || pb.head.control.settingOptimization.upperBound != Long.MAX_VALUE, () -> " minB=" + minBound + " maxB=" + maxBound);
+			Kit.control(minBound - 1 <= maxBound || pb.head.control.settingOptimization.upperBound != Long.MAX_VALUE,
+					() -> " minB=" + minBound + " maxB=" + maxBound);
 			possiblyUpdateSharedBounds();
 			if (minBound > maxBound)
 				pb.solver.stopping = EStopping.FULL_EXPLORATION;
@@ -239,6 +240,9 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 		}
 	}
 
+	// java ace /home/lecoutre/instances/XCSP18v2/allInstances/Fapp/Fapp-m2s/Fapp-m2s-01-0200_c18.xml.lzma -os=dichotomic -positive=str2 PROBLEM
+	// but STR1 ok
+	// if decremental set to false in STRoptimized, STR2 ok (but not CT that need decremental); why?
 	public static final class OptimizerDichotomic extends Optimizer {
 
 		public OptimizerDichotomic(Problem pb, TypeOptimization opt, Optimizable ctr) {

@@ -24,7 +24,7 @@ import org.xcsp.modeler.entities.VarEntities.VarEntity;
 import constraints.Constraint;
 import constraints.global.Sum;
 import problem.Problem;
-import solver.backtrack.RestarterLocalBranching;
+import solver.Restarter.RestarterLB;
 import solver.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
 import utility.Kit;
@@ -222,7 +222,7 @@ public final class SolutionManager {
 			bestBound = z;
 			// solver.restarter.forceRootPropagation = true; // a garder ?
 
-		} else if (solver.problem.optimizer != null) {
+		} else if (solver.problem.optimizer != null) { // COP
 			bestBound = solver.problem.optimizer.value();
 			Kit.control(solver.problem.optimizer.isBetterBound(bestBound));
 			// solver.restarter.forceRootPropagation = true;
@@ -238,8 +238,12 @@ public final class SolutionManager {
 			log.config(lastSolutionInJsonFormat(false) + "\n");
 		// solver.pb.api.prettyDisplay(vars_values(false, false).split("\\s+"));
 
-		if (solver.restarter instanceof RestarterLocalBranching)
-			((RestarterLocalBranching) solver.restarter).enterLocalBranching();
+		if (solver.restarter instanceof RestarterLB)
+			((RestarterLB) solver.restarter).enterLocalBranching();
+
+		// boolean b = true;
+		// if (solver instanceof SolverBacktrack)
+		// ((SolverBacktrack) solver).heuristic.reset();
 	}
 
 	public void handleNewSolutionAndPossiblyOptimizeIt() {

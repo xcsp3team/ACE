@@ -363,7 +363,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 * Returns the weighted degree of the constraint.
 	 */
 	public final double wdeg() {
-		return ((WdegVariant) ((SolverBacktrack) pb.solver).heuristicVars).cscores[num];
+		return ((WdegVariant) ((SolverBacktrack) pb.solver).heuristic).cscores[num];
 	}
 
 	public boolean isIrreflexive() {

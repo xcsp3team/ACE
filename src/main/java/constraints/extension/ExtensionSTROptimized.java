@@ -83,8 +83,8 @@ public abstract class ExtensionSTROptimized extends ExtensionSTR1 {
 	}
 
 	protected void manageLastPastVar() {
-		if (lastCallLimit != pb.solver.stats.nAssignments || pb.solver.propagation instanceof StrongConsistency) { // second condition due to Inverse4
-			lastCallLimit = pb.solver.stats.nAssignments;
+		if (lastCallLimit != pb.solver.stats.numberSafe() || pb.solver.propagation instanceof StrongConsistency) { // second condition due to Inverse4
+			lastCallLimit = pb.solver.stats.numberSafe();
 			Variable lastPast = pb.solver.futVars.lastPast();
 			int x = lastPast == null ? -1 : positionOf(lastPast);
 			if (x != -1) {

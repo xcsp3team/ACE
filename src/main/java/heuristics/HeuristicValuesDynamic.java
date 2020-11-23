@@ -10,6 +10,7 @@ package heuristics;
 
 import constraints.Constraint;
 import optimization.Optimizable;
+import sets.SetDense;
 import solver.backtrack.SolverBacktrack;
 import utility.Kit;
 import variables.Variable;
@@ -51,21 +52,28 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 		boolean stoppedAtFirstSolution = true; // hard coding
 
+		boolean promise;
+
 		int nTests;
+
+		public SetDense inconsistent;
 
 		public Bivs(Variable x, boolean antiHeuristic) {
 			super(x, antiHeuristic);
 			Kit.control(x.problem.optimizer != null);
 			Kit.control(x.problem.solver instanceof SolverBacktrack);
-			Kit.control(!antiHeuristic);
-			this.scoreCoeff = x.problem.optimizer.minimization ? -1 : 1;
+			this.scoreCoeff = x.problem.optimizer.minimization ? -1 : 1; // scoreCoeff follows minimization/maximization
+			this.promise = !antiHeuristic;
 			this.solver = (SolverBacktrack) x.problem.solver;
 			this.c = x.problem.optimizer.ctr;
+			this.inconsistent = new SetDense(x.dom.initSize());
 		}
 
+		@Override
 		public int identifyBestValueIndex() {
+			inconsistent.clear();
 			if (stoppedAtFirstSolution && solver.solManager.found > 0)
-				return dx.first(); // First in that case;
+				return dx.first(); // First in that case
 			else
 				return super.identifyBestValueIndex();
 		}
@@ -77,11 +85,10 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 			boolean consistent = solver.propagation.runAfterAssignment(x);
 			long score = 0;
 			if (!consistent) {
-				// TODO record inconsistent values, but where (via an observer?)
-				// System.out.println("not consistent");
+				inconsistent.add(a);
 				score = scoreCoeff == -1 ? Long.MAX_VALUE : Long.MIN_VALUE;
 			} else
-				score = scoreCoeff == -1 ? c.maxCurrentObjectiveValue() : c.maxCurrentObjectiveValue();
+				score = promise ? c.maxCurrentObjectiveValue() : c.minCurrentObjectiveValue();
 			// if (x.id().equals("k"))
 			// System.out.println("score of " + x + " " + a + " : " + score);
 			solver.backtrack(x);

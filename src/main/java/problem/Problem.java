@@ -591,8 +591,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private final void reduceDomainsOfIsolatedVariables() {
 		// TODO other frameworks ?
-		boolean reduceIsolatedVars = head.control.settingVars.reduceIsolatedVars && settings.nSearchedSolutions == 1 && !head.control.settingProblem.isSymmetryBreaking()
-				&& settings.framework == TypeFramework.CSP;
+		boolean reduceIsolatedVars = head.control.settingVars.reduceIsolatedVars && settings.nSearchedSolutions == 1
+				&& !head.control.settingProblem.isSymmetryBreaking() && settings.framework == TypeFramework.CSP;
 		List<Variable> isolatedVars = new ArrayList<>(), fixedVars = new ArrayList<>();
 		int nRemovedValues = 0;
 		for (Variable x : stuff.collectedVarsAtInit) {
@@ -797,6 +797,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// int[] values = tree.getType().isPredicateOperator() ? new int[] { 0, 1 } : new
 		// EvaluationManager(tree).generatePossibleValues(Variable.initDomainValues(vars(tree)));
 
+		// System.out.println("hhhh ");
 		Object values = tree.possibleValues();
 		Dom dom = values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
 		Var aux = api.var(idAux(), dom, "auxiliary variable");
@@ -845,7 +846,10 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		}
 		//
 		XNodeParent<IVar> tree2 = (XNodeParent<IVar>) tree.canonization();
-		// System.out.println("tree2 " + tree2);
+		// System.out.println("tree02 " + tree2);
+		// if (ConstraintRecognizer.logic_y_relop_k__eq_x.matches(tree2))
+		// return PrimitiveBinaryLog.buildFrom(this, (Variable) tree2.var(1), (Variable) tree2.var(0), tree2.relop(0), tree2.val(0));
+
 		// if (ConstraintRecognizer.x_ariop_k__relop_y.matches(tree2)) {
 		// if (tree2.ariop(0) == TypeArithmeticOperator.ADD && tree2.relop(0) == EQ)
 		// return CtrPrimitiveBinarySub.buildFrom(this, (Variable) tree2.var(0), (Variable) tree2.var(1), EQ, -tree2.val(0));
