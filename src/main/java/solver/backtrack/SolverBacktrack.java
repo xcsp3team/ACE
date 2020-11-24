@@ -596,7 +596,9 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	}
 
 	private void backtrackTo(Variable x) {
-		assert x == null || x.isAssigned();
+		if (x != null && !x.isAssigned()) // TODO LNS does not necessarily respect the last past recorded variable
+			x = null;
+		// assert x == null || x.isAssigned();
 		while (futVars.lastPast() != x)
 			backtrack(futVars.lastPast());
 	}

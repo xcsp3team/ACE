@@ -25,7 +25,7 @@ public class TestAllSolutions {
 
 	static Collection<Object[]> collection = new LinkedList<>();
 
-	static void add(Object instance, String variant, String data, int nSolutions) {
+	static void add(Object instance, String variant, String data, String options, int nSolutions) {
 		String s = null;
 		if (instance instanceof Class<?>)
 			s = ((Class<?>) instance).getName() + (variant != null ? " -variant=" + variant : "") + (data != null ? " -data=" + data : "");
@@ -34,15 +34,15 @@ public class TestAllSolutions {
 			Utilities.control(url != null, "not found: " + instance + ".xml.lzma");
 			s = url.getPath();
 		}
-		collection.add(new Object[] { s + " -s=all ", nSolutions });
+		collection.add(new Object[] { s + " " + options + " -s=all ", nSolutions });
 	}
 
 	static void add(String instance, int nSolutions) {
-		add(instance, null, null, nSolutions);
+		add(instance, null, null, "", nSolutions);
 	}
 
 	static void add(Class<?> clazz, String variant, int[] t) {
-		add(clazz, variant, t[0] + "", t[1]);
+		add(clazz, variant, t[0] + "", "", t[1]);
 	}
 
 	static void add(Class<?> clazz, int... t) {
@@ -66,8 +66,8 @@ public class TestAllSolutions {
 
 		add("/csp/AllInterval-10", 148);
 		add("/csp/AllInterval-aux-10", 104);
-		add("/csp/Bibd-6-0-0-3-8", 494);
-		add("/csp/Bibd-aux-6-0-0-3-8", 494);
+		add("/csp/Bibd-6-0-0-3-8", null, null, "-valh=Rand", 494);
+		add("/csp/Bibd-aux-6-0-0-3-8", null, null, "-valh=Rand", 494);
 		add("/csp/ColouredQueens-6", 0);
 		add("/csp/CostasArray-10", 2160);
 		add("/csp/CryptoPuzzle-carry-SEND-MORE-MONEY", 1);

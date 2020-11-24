@@ -168,9 +168,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void beforeRun() {
-			if (solver.restarter.runMultipleOf(solver.head.control.settingRestarts.dataResetPeriod)) {
+			if (solver.restarter.runMultipleOf(solver.head.control.settingRestarts.dataResetPeriod)
+					|| (solver.restarter.numRun - solver.solManager.lastSolutionRun) % 30 == 0) { // hard coding
 				System.out.println("Reset weights");
 				reset();
+				// solver.restarter.nRestartsSinceLastReset = 0;
 			}
 			alpha = ALPHA0;
 			if (settings.weighting == EWeighting.CHS) { // smoothing

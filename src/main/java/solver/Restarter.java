@@ -8,8 +8,6 @@
  */
 package solver;
 
-import static utility.Kit.control;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,7 +24,6 @@ import constraints.global.HammingProximityConstant.HammingProximityConstantGE;
 import constraints.global.HammingProximityConstant.HammingProximityConstantSumLE;
 import constraints.global.ObjVar;
 import dashboard.Control.SettingGeneral;
-import dashboard.Control.SettingLNS;
 import dashboard.Control.SettingRestarts;
 import interfaces.FilteringSpecific;
 import interfaces.Observers.ObserverRuns;
@@ -50,7 +47,7 @@ public class Restarter implements ObserverRuns {
 		boolean lb = solver.head.control.settingLB.enabled;
 		Kit.control(!lns || !lb, () -> "Cannot use LNS and LB at the same time.");
 		if (lns)
-			return new RestarterLNS(solver);
+			return new RestarterLNS((SolverBacktrack) solver);
 		if (lb)
 			return new RestarterLB(solver);
 		return new Restarter(solver);
@@ -65,22 +62,22 @@ public class Restarter implements ObserverRuns {
 	@Override
 	public void beforeRun() {
 		numRun++;
-		nRestartsSinceLastReset++;
 		if (nRestartsSinceLastReset == setting.nRestartsResetPeriod) {
 			nRestartsSinceLastReset = 0;
 			baseCutoff = baseCutoff * setting.nRestartsResetCoefficient;
 			Kit.log.info("BaseCutoff reset to " + baseCutoff);
 		}
+		if (forceRootPropagation || (settingsGeneral.framework == TypeFramework.COP && numRun - 1 == solver.solManager.lastSolutionRun)) {
+			if (solver.propagation.runInitially() == false) // we run propagation if a solution has just been found (since the objective constraint has changed)
+				solver.stopping = EStopping.FULL_EXPLORATION;
+			forceRootPropagation = false;
+			nRestartsSinceLastReset = 0;
+		}
 		if (currCutoff != Long.MAX_VALUE) {
 			long offset = setting.luby ? lubyCutoffFor(numRun + 1) * 100 : (long) (baseCutoff * Math.pow(setting.factor, nRestartsSinceLastReset));
 			currCutoff = measureSupplier.get() + offset;
 		}
-		if (forceRootPropagation || (settingsGeneral.framework == TypeFramework.COP && numRun - 1 == solver.solManager.lastSolutionRun)) {
-			forceRootPropagation = false;
-			nRestartsSinceLastReset = 0;
-			if (solver.propagation.runInitially() == false)
-				solver.stopping = EStopping.FULL_EXPLORATION;
-		}
+		nRestartsSinceLastReset++;
 	}
 
 	@Override
@@ -116,7 +113,7 @@ public class Restarter implements ObserverRuns {
 	 */
 	public long baseCutoff, currCutoff;
 
-	private int nRestartsSinceLastReset = -1;
+	public int nRestartsSinceLastReset;
 
 	/**
 	 * Set to true when running propagation from scratch at the root node must be made when a restart occurs.
@@ -186,8 +183,7 @@ public class Restarter implements ObserverRuns {
 	 * Subclasses (need to be fixed)
 	 *********************************************************************************************/
 
-	// TODO : needs to be fixed : see in 'beforeRun'
-	public static class RestarterLNS extends Restarter {
+	public final static class RestarterLNS extends Restarter {
 
 		@Override
 		public void beforeRun() {
@@ -195,25 +191,28 @@ public class Restarter implements ObserverRuns {
 			int[] solution = solver.solManager.lastSolution;
 			if (solution != null) {
 				heuristic.freezeVariables(solution);
-				for (int i = 0; i < heuristic.fragment.size(); i++)
-					solver.assign(solver.problem.variables[heuristic.fragment.dense[i]], solution[heuristic.fragment.dense[i]]);
-				// TODO : while a covered constraint is unsatisfied : remove one assigned frozen variable from its scope
-				// runInitially add all variables, which breaks an assert : how to manage that?
-				solver.propagation.runInitially();
+				for (int i = heuristic.fragment.limit; i >= 0; i--) {
+					Variable x = solver.problem.variables[i];
+					solver.assign(x, solution[x.num]);
+					boolean consistent = solver.propagation.runAfterAssignment(x);
+					if (!consistent) {
+						solver.backtrack(x);
+						break;
+					}
+				}
 			}
 		}
 
 		@Override
 		public void afterRun() {
-			((SolverBacktrack) solver).backtrackToTheRoot();
+			((SolverBacktrack) solver).backtrackToTheRoot(); // because see Method doRun in SolverBacktrack
 		}
 
 		private final HeuristicFreezing heuristic;
 
-		public RestarterLNS(Solver solver) {
+		public RestarterLNS(SolverBacktrack solver) {
 			super(solver);
 			this.heuristic = HeuristicFreezing.buildFor(this);
-			control(solver instanceof SolverBacktrack, () -> "For LNS, only a SolverBacktrack object can be used.");
 		}
 
 		// ************************************************************************
@@ -223,7 +222,7 @@ public class Restarter implements ObserverRuns {
 		public static abstract class HeuristicFreezing {
 
 			public static HeuristicFreezing buildFor(RestarterLNS restarter) {
-				if (restarter.solver.head.control.settingLNS.freezingHeuristic.equals(Impact.class.getName()))
+				if (restarter.solver.head.control.settingLNS.heuristic.equals("Impact"))
 					return new Impact(restarter);
 				else
 					return new Rand(restarter);
@@ -236,14 +235,9 @@ public class Restarter implements ObserverRuns {
 			public HeuristicFreezing(RestarterLNS restarter) {
 				this.restarter = restarter;
 				int n = restarter.solver.problem.variables.length;
-				SettingLNS setting = restarter.solver.head.control.settingLNS;
-
+				int nf = restarter.solver.head.control.settingLNS.nFreeze, pf = restarter.solver.head.control.settingLNS.pFreeze;
 				this.fragment = new SetDense(n);
-				int fragmentSize = -1;
-				if (0 < setting.nVariablesToFreeze && setting.nVariablesToFreeze < n)
-					fragmentSize = setting.nVariablesToFreeze;
-				else if (0 < setting.pVariablesToFreeze && setting.pVariablesToFreeze < 100)
-					fragmentSize = 1 + (setting.pVariablesToFreeze * n) / 100;
+				int fragmentSize = 0 < nf && nf < n ? nf : 0 < pf && pf < 100 ? 1 + (pf * n) / 100 : -1;
 				Kit.control(0 < fragmentSize && fragmentSize < n, () -> "You must specify the number or percentage of variables to freeze for LNS");
 				this.fragment.limit = fragmentSize - 1;
 			}
@@ -296,8 +290,11 @@ public class Restarter implements ObserverRuns {
 						restarter.solver.assign(variables[dense[i]], solution[dense[i]]);
 
 						storeDomainSizes(before);
+						for (int x = 0; x < variables.length; x++)
+							before[x] = variables[x].dom.size();
 						restarter.solver.propagation.runInitially();
-						storeDomainSizes(after);
+						for (int x = 0; x < variables.length; x++)
+							after[x] = variables[x].dom.size();
 
 						bestImpacted = null;
 						int bestImpact = 0;

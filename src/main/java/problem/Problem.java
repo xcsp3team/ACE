@@ -797,7 +797,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// int[] values = tree.getType().isPredicateOperator() ? new int[] { 0, 1 } : new
 		// EvaluationManager(tree).generatePossibleValues(Variable.initDomainValues(vars(tree)));
 
-		// System.out.println("hhhh ");
 		Object values = tree.possibleValues();
 		Dom dom = values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
 		Var aux = api.var(idAux(), dom, "auxiliary variable");

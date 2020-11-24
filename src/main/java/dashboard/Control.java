@@ -56,7 +56,6 @@ import propagation.QueueForSAC3.CellIterator;
 import propagation.Reviser;
 import propagation.Reviser.Reviser3;
 import solver.Restarter.RestarterLB.LocalBranchingConstraint.LBAtMostDistanceSum;
-import solver.Restarter.RestarterLNS.HeuristicFreezing;
 import solver.Restarter.RestarterLNS.HeuristicFreezing.Rand;
 import solver.SolutionManager;
 import solver.backtrack.SolverBacktrack;
@@ -494,15 +493,11 @@ public class Control {
 	public final SettingShaving settingShaving = new SettingShaving();
 
 	public class SettingLNS extends SettingGroup {
-		String s_e = "If true, large neighborhood search is activated.";
-		String s_n = "The number of variables to freeze when restarting.";
-		String s_p = "The percentage of variables to freeze when restarting.";
-		String s_frzh = "The name of the class used to select the frozen variables when restarting.";
+		public final boolean enabled = addB("enabled", "lns_e", false, "LNS activated if true");
+		public final String heuristic = addS("heuristic", "lns_h", Rand.class, "class to be used when freezing");
+		public final int nFreeze = addI("nFreeze", "lns_n", 0, "number of variables to freeze when restarting.");
+		public final int pFreeze = addI("pFreeze", "lns_p", 10, "percentage of variables to freeze when restarting.");
 
-		public final boolean enabled = addB("enabled", "lns_e", false, s_e);
-		public final int nVariablesToFreeze = addI("nVariablesToFreeze", "lns_n", 0, s_n);
-		public final int pVariablesToFreeze = addI("pVariablesToFreeze", "lns_p", 10, s_p);
-		public final String freezingHeuristic = addS("freezingHeuristic", "lns_frzh", Rand.class, HeuristicFreezing.class, s_frzh);
 	}
 
 	public final SettingLNS settingLNS = new SettingLNS();
@@ -691,8 +686,7 @@ public class Control {
 			Kit.control(s.matches("\\((lt|le|ge|gt|ne|eq),\\d+\\)"), () -> "Bad form of the condition for satisfaction : " + s);
 		}
 		// () -> "The value of operatorForSatisfaction must be in {eq,ne,lt,le,gt,ge}.");
-		Kit.control(0 <= settingLNS.pVariablesToFreeze && settingLNS.pVariablesToFreeze < 100,
-				() -> "percentageOfVariablesToFreeze should be between 0 and 100 (excluded)");
+		Kit.control(0 <= settingLNS.pFreeze && settingLNS.pFreeze < 100, () -> "percentageOfVariablesToFreeze should be between 0 and 100 (excluded)");
 
 		Kit.control(settingLearning.nogood != ELearningNogood.RST_SYM);
 		Kit.control(settingOptimization.lowerBound <= settingOptimization.upperBound);

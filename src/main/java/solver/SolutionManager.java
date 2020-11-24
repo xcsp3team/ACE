@@ -228,6 +228,7 @@ public final class SolutionManager {
 			// solver.restarter.forceRootPropagation = true;
 			if (solver.head.control.settingXml.competitionMode)
 				System.out.println("o " + bestBound + " \t" + (solver.head.instanceStopwatch.wckTimeInSeconds()));
+			// solver.restarter.currCutoff += 20;
 			// + " \t#" + found); // + "); (hamming: " + h1 + ", in_objective: " + h2 + ")");
 		}
 		// The following code must stay after storeSolution
