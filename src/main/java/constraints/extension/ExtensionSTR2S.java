@@ -102,7 +102,7 @@ public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
 
 	public ExtensionSTR2S(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		this.decremental = pb.head.control.settingExtension.decremental;
+		this.decremental = pb.head.control.extension.decremental;
 		Kit.control(scp.length > 1, () -> "Arity must be at least 2");
 	}
 

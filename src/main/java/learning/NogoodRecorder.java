@@ -34,7 +34,7 @@ import variables.Variable;
 public final class NogoodRecorder {
 
 	public static NogoodRecorder buildFor(SolverBacktrack solver) {
-		if (solver.head.control.settingSolving.enableSearch && solver.head.control.settingLearning.nogood != ELearningNogood.NO
+		if (solver.head.control.solving.enableSearch && solver.head.control.learning.nogood != ELearningNogood.NO
 				&& solver.propagation.queue != null)
 			return new NogoodRecorder(solver);
 		return null;
@@ -166,7 +166,7 @@ public final class NogoodRecorder {
 	public NogoodRecorder(SolverBacktrack solver) {
 		this.solver = solver;
 		this.dr = solver.dr;
-		this.settings = solver.head.control.settingLearning;
+		this.settings = solver.head.control.learning;
 		this.nogoods = new Nogood[settings.nogoodBaseLimit];
 		this.pws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
 		this.nws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);

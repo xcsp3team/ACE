@@ -302,7 +302,7 @@ public final class IdentificationAutomorphism {
 			Variable x = variables[cycle1[0]];
 			Variable y = variables[cycle1[1]];
 
-			if (pb.head.control.settingProblem.symmetryBreaking == ESymmetryBreaking.LE) { // we only consider the two first variables
+			if (pb.head.control.problem.symmetryBreaking == ESymmetryBreaking.LE) { // we only consider the two first variables
 				constraintList.add(new Intension(pb, pb.api.vars(x, (Object) y), pb.api.le(x, y)));
 			} else {
 				List<Variable> list1 = new ArrayList<>(), list2 = new ArrayList<>();

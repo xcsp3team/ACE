@@ -56,7 +56,7 @@ public abstract class SumWeighted extends Sum {
 		return sum;
 	}
 
-	public long minComputableObjectiveValue() {
+	static long minPossibleSum(Variable[] scp, int[] coeffs) {
 		BigInteger sum = BigInteger.valueOf(0);
 		for (int i = 0; i < scp.length; i++)
 			sum = sum.add(BigInteger.valueOf(coeffs[i])
@@ -64,12 +64,20 @@ public abstract class SumWeighted extends Sum {
 		return sum.longValueExact();
 	}
 
-	public long maxComputableObjectiveValue() {
+	static long maxPossibleSum(Variable[] scp, int[] coeffs) {
 		BigInteger sum = BigInteger.valueOf(0);
 		for (int i = 0; i < scp.length; i++)
 			sum = sum.add(BigInteger.valueOf(coeffs[i])
 					.multiply(BigInteger.valueOf(coeffs[i] >= 0 ? scp[i].dom.toVal(scp[i].dom.initSize() - 1) : scp[i].dom.toVal(0))));
 		return sum.longValueExact();
+	}
+
+	public long minComputableObjectiveValue() {
+		return minPossibleSum(scp, coeffs);
+	}
+
+	public long maxComputableObjectiveValue() {
+		return maxPossibleSum(scp, coeffs);
 	}
 
 	public long minCurrentObjectiveValue() {
@@ -86,11 +94,18 @@ public abstract class SumWeighted extends Sum {
 		return sum;
 	}
 
+	public final void limit(long newLimit) {
+		super.limit(newLimit);
+		if (coeffs != null) // not available at construction time
+			control(minComputableObjectiveValue() <= limit && limit <= maxComputableObjectiveValue()); // TODO using a cache for these two values
+	}
+
 	public final int[] coeffs;
 
 	public SumWeighted(Problem pb, Variable[] scp, int[] coeffs, long limit) {
 		super(pb, scp, limit);
 		this.coeffs = coeffs;
+		control(minComputableObjectiveValue() <= limit && limit <= maxComputableObjectiveValue());
 		defineKey(Kit.join(coeffs), limit);
 		control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])));
 		control(minComputableObjectiveValue() <= maxComputableObjectiveValue()); // Important: we check this way that no overflow is possible
@@ -145,7 +160,7 @@ public abstract class SumWeighted extends Sum {
 		}
 
 		public SumWeightedLE(Problem pb, Variable[] scp, int[] coeffs, long limit) {
-			super(pb, scp, coeffs, limit);
+			super(pb, scp, coeffs, Math.min(limit, maxPossibleSum(scp, coeffs)));
 		}
 
 		@Override
@@ -195,7 +210,7 @@ public abstract class SumWeighted extends Sum {
 		}
 
 		public SumWeightedGE(Problem pb, Variable[] scp, int[] coeffs, long limit) {
-			super(pb, scp, coeffs, limit);
+			super(pb, scp, coeffs, Math.max(limit, minPossibleSum(scp, coeffs)));
 		}
 
 		@Override

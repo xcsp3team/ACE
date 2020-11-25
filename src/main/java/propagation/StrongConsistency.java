@@ -21,7 +21,7 @@ public abstract class StrongConsistency extends GAC {
 
 	public StrongConsistency(Solver solver) {
 		super(solver);
-		this.verbose = solver.head.control.settingGeneral.verbose;
+		this.verbose = solver.head.control.general.verbose;
 		Kit.control(solver.observersSearch == null || solver.observersSearch.size() == 0);
 	}
 

@@ -43,7 +43,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		this.heuristic = new WdegOnDom((SolverBacktrack) solver, false);
 		this.nInverseTests = new int[solver.problem.variables.length + 1];
 		this.baseNbSolutionsLimit = solver.solManager.limit;
-		Kit.control(solver.head.control.settingRestarts.cutoff == Long.MAX_VALUE, () -> "With GIC, there is currently no possibility of restarts.");
+		Kit.control(solver.head.control.restarts.cutoff == Long.MAX_VALUE, () -> "With GIC, there is currently no possibility of restarts.");
 		Kit.control(!Stream.of(solver.problem.constraints).anyMatch(c -> c.getClass().isAssignableFrom(ExtensionSTR3.class)),
 				() -> "GIC currently not compatible with STR3");
 
@@ -246,7 +246,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 			sVal = new int[variables.length];
 			lastSizes = Kit.repeat(-2, variables.length);
 
-			algo = solver.head.control.settingExperimental.testI3;
+			algo = solver.head.control.experimental.testI3;
 		}
 
 		private void handleSolution(int[] solution) {
@@ -322,7 +322,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 
 		@Override
 		public boolean runAfterAssignment(Variable x) {
-			return !performingProperSearch && !x.dom.isModifiedAtCurrentDepth() && solver.depth() != solver.head.control.settingExperimental.testI1 ? true
+			return !performingProperSearch && !x.dom.isModifiedAtCurrentDepth() && solver.depth() != solver.head.control.experimental.testI1 ? true
 					: super.runAfterAssignment(x);
 		}
 
@@ -544,8 +544,8 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		// private long cpu;
 
 		private void restoreAfterDeletingOneDecision() {
-			origin = solver.head.control.settingExperimental.testI1;
-			target = solver.head.control.settingExperimental.testI2;
+			origin = solver.head.control.experimental.testI1;
+			target = solver.head.control.experimental.testI2;
 			if (nTurns == 0 && origin > 0 && solver.depth() == origin) {
 				nTurns++;
 				int nbItestsBefore = this.nITests;

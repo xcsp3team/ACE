@@ -175,7 +175,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 	public final MapAtt preproAttributes() {
 		MapAtt m = new MapAtt("Preprocessing");
 		m.put("filters", nEffectiveFilterings());
-		m.put("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
+		m.putIf("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
 		if (solver.propagation instanceof GAC)
 			m.put("nACremovedValues", ((GAC) (solver.propagation)).nPreproRemovals);
 		m.put("nTotalRemovedValues", nPreproRemovedValues);
@@ -257,7 +257,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		@Override
 		public MapAtt runAttributes() {
 			MapAtt m = new MapAtt("Run");
-			if (solver.head.control.settingXml.competitionMode) {
+			if (solver.head.control.xml.competitionMode) {
 				m.put("run", solver.restarter.numRun);
 				m.put("dpt", solver.minDepth + ".." + solver.maxDepth);
 				m.put("eff", nEffectiveFilterings());
@@ -266,7 +266,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 					m.put(Output.MEM, Kit.memoryInMb());
 				m.put(Output.WCK, stopwatch.wckTimeInSeconds());
 				if (solver.nogoodRecorder != null)
-					m.putPositive("ngd", solver.nogoodRecorder.nNogoods);
+					m.putWhenPositive("ngd", solver.nogoodRecorder.nNogoods);
 				if (solver.solManager.found > 0) {
 					if (solver.problem.settings.framework == TypeFramework.CSP)
 						m.put("nSols", solver.solManager.found);
@@ -279,7 +279,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			m.put("num", solver.restarter.numRun);
 			m.put(Output.DEPTH, solver.minDepth + ".." + solver.maxDepth);
 			m.put("filters", nEffectiveFilterings());
-			m.put("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
+			m.putIf("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
 			if (nSingletonTests() > 0) { // solver.getPreproPropagationTechnique() instanceof SingletonArcConsistency) {
 				m.put(Output.N_SINGLETON_TESTS, nSingletonTests());
 				m.put(Output.N_EFFECTIVE_SINGLETON_TESTS, nEffectiveSingletonTests());
@@ -296,7 +296,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			m.put("failedAssignments", nFailedAssignments);
 			// m.put(Output.N_VISITED_NODES, nVisitedNodes);
 			if (solver.nogoodRecorder != null)
-				m.putPositive("ngd", solver.nogoodRecorder.nNogoods);
+				m.putWhenPositive("ngd", solver.nogoodRecorder.nNogoods);
 			if (solver.solManager.found > 0) {
 				m.put("nSols", solver.solManager.found);
 				if (solver.problem.settings.framework != TypeFramework.CSP)
@@ -334,14 +334,14 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		public MapAtt cumulatedAttributes() {
 			MapAtt m = new MapAtt("Global");
 			m.put("filters", nEffectiveFilterings());
-			m.put("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
+			m.putIf("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
 			if (nSingletonTests() > 0) { // solver.getPreproPropagationTechnique() instanceof SingletonArcConsistency) {
 				m.put(Output.N_SINGLETON_TESTS, nSingletonTests());
 				m.put(Output.N_EFFECTIVE_SINGLETON_TESTS, nEffectiveSingletonTests());
 			}
 
 			if (solver.nogoodRecorder != null)
-				m.putPositive("nogoods", solver.nogoodRecorder.nNogoods);
+				m.putWhenPositive("nogoods", solver.nogoodRecorder.nNogoods);
 			m.separator();
 			return m;
 		}
@@ -555,13 +555,13 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 						map.put(Output.CPU, resolution.stopwatch.cpuTime() / (double) nbTreatedInstances);
 						map.put(Output.MEM, (long) (memory / (double) nbTreatedInstances));
 
-						if (resolution.control.settingExperimental.helene)
+						if (resolution.control.experimental.helene)
 							map.put("NbRemovedValues", Kit.join(nbRemovedValues, ";"));
 
 						if (outputElement == TypeOutput.UNSAT)
 							map.put(Output.N_PREPRO_INCONSISTENCIES, nbPreproInconsistencies);
 
-						if (resolution.control.settingExperimental.helene) {
+						if (resolution.control.experimental.helene) {
 							map.put("nbVals", nbVals / (double) nbTreatedInstances);
 							map.put("nbUnks", nbUnks / (double) nbTreatedInstances);
 							map.put("nbUnksAfterAC", nbUnksAfterAC / (double) nbTreatedInstances);

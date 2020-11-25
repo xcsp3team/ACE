@@ -21,17 +21,17 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 	protected long min;
 	protected long max; // used in most of the subclasses
 
-	public final long getLimit() {
+	public final long limit() {
 		return limit;
 	}
 
-	public final void setLimit(long newLimit) {
+	public void limit(long newLimit) {
 		this.limit = newLimit;
 	}
 
 	public Sum(Problem pb, Variable[] scp, long limit) {
 		super(pb, scp);
-		this.limit = limit;
+		limit(limit);
 		control(scp.length > 1);
 	}
 

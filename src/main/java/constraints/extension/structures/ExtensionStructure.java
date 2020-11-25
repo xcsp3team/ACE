@@ -70,7 +70,7 @@ public abstract class ExtensionStructure implements RegisteringCtrs {
 	}
 
 	public int[] computeVariableSymmetryMatching(int[][] tuples, boolean positive) {
-		Kit.control(firstRegisteredCtr().pb.head.control.settingProblem.isSymmetryBreaking());
+		Kit.control(firstRegisteredCtr().pb.head.control.problem.isSymmetryBreaking());
 		Constraint ctr = firstRegisteredCtr();
 		if (!Variable.haveSameDomainType(ctr.scp)) {
 			return Kit.range(1, ctr.scp.length);

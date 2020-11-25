@@ -62,10 +62,9 @@ public final class Kit {
 	public static DecimalFormat df1 = new DecimalFormat("0.0", symbols);
 	public static DecimalFormat df0 = new DecimalFormat("00");
 
-	public static Logger log = Logger.getLogger("Logger AbsCon");
+	public static Logger log = Logger.getLogger("Logger ACE");
 	static {
 		LogManager.getLogManager().reset();
-		// Calendar c = Calendar.getInstance();
 		Handler handler = new StreamHandler() {
 			@Override
 			public void publish(LogRecord record) {
@@ -78,7 +77,7 @@ public final class Kit {
 						System.err.println("From " + ((Head) Thread.currentThread()).control.settingsFilename + " :");
 					// c.setTimeInMillis(record.getMillis());
 					Thread t = Head.currentThread();
-					if (t instanceof Head && !((Head) t).control.settingXml.competitionMode)
+					if (t instanceof Head && !((Head) t).control.xml.competitionMode)
 						System.err.println("\n" + record.getLevel() + " : " + record.getMessage()); // + " " + c.getTime());
 					if (record.getLevel() == Level.SEVERE) {
 						System.err.println(record.getLevel() + " forces us to stop");
@@ -111,7 +110,7 @@ public final class Kit {
 	}
 
 	public static Object exit(String message, Throwable e) {
-		if (!(Thread.currentThread() instanceof Head) || ((Head) Thread.currentThread()).control.settingGeneral.makeExceptionsVisible)
+		if (!(Thread.currentThread() instanceof Head) || ((Head) Thread.currentThread()).control.general.makeExceptionsVisible)
 			e.printStackTrace();
 		System.out.println(message);
 		System.exit(1);

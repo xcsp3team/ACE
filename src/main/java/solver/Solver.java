@@ -110,9 +110,9 @@ public abstract class Solver {
 		this.problem = head.problem;
 		this.problem.solver = this;
 		this.futVars = new FutureVariables(problem.variables);
-		this.solManager = new SolutionManager(this, head.control.settingGeneral.nSearchedSolutions); // build solutionManager before propagation
+		this.solManager = new SolutionManager(this, head.control.general.nSearchedSolutions); // build solutionManager before propagation
 		this.propagation = Propagation.buildFor(this); // may be null
-		if (!head.control.settingPropagation.useAuxiliaryQueues)
+		if (!head.control.propagation.useAuxiliaryQueues)
 			Stream.of(problem.constraints).forEach(c -> c.filteringComplexity = 0);
 		this.restarter = Restarter.buildFor(this);
 		this.observersSearch = Stream.of(problem.constraints).filter(c -> c instanceof ObserverSearch).map(c -> (ObserverSearch) c)
@@ -194,9 +194,9 @@ public abstract class Solver {
 			observer.beforeSolving();
 		if (Variable.firstWipeoutVariableIn(problem.variables) != null)
 			stopping = FULL_EXPLORATION;
-		if (!finished() && head.control.settingSolving.enablePrepro)
+		if (!finished() && head.control.solving.enablePrepro)
 			doPrepro();
-		if (!finished() && head.control.settingSolving.enableSearch)
+		if (!finished() && head.control.solving.enableSearch)
 			doSearch();
 		for (ObserverSearch observer : observersSearch)
 			observer.afterSolving();

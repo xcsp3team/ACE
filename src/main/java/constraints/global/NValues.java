@@ -66,16 +66,17 @@ public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed, T
 
 	public static abstract class NValuesCst extends NValues implements Optimizable {
 
-		protected int limit;
+		protected long limit;
 
 		@Override
-		public long getLimit() {
+		public long limit() {
 			return limit;
 		}
 
 		@Override
-		public void setLimit(long newLimit) {
-			limit = Math.toIntExact(newLimit);
+		public void limit(long newLimit) {
+			this.limit = newLimit;
+			control(minComputableObjectiveValue() <= limit && limit <= maxComputableObjectiveValue());
 		}
 
 		@Override
@@ -101,10 +102,9 @@ public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed, T
 			return Arrays.stream(scp).mapToInt(x -> x.dom.uniqueValue()).distinct().count();
 		}
 
-		public NValuesCst(Problem pb, Variable[] list, int k) {
+		public NValuesCst(Problem pb, Variable[] list, long k) {
 			super(pb, list, list);
-			control(1 <= k && k <= list.length);
-			this.limit = k;
+			limit(k);
 			defineKey(k);
 		}
 
@@ -115,8 +115,8 @@ public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed, T
 				return Arrays.stream(t).distinct().count() <= limit;
 			}
 
-			public NValuesCstLE(Problem pb, Variable[] list, int k) {
-				super(pb, list, k);
+			public NValuesCstLE(Problem pb, Variable[] list, long k) {
+				super(pb, list, Math.min(k, list.length));
 			}
 
 			@Override
@@ -149,8 +149,8 @@ public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed, T
 				return Arrays.stream(t).distinct().count() >= limit;
 			}
 
-			public NValuesCstGE(Problem pb, Variable[] list, int k) {
-				super(pb, list, k);
+			public NValuesCstGE(Problem pb, Variable[] list, long k) {
+				super(pb, list, Math.max(k, 1));
 			}
 
 			@Override

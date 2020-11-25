@@ -492,13 +492,13 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		if (this instanceof FilteringSpecific || this instanceof Extension)
 			return Integer.MAX_VALUE; // because not concerned
 
-		int arityLimit = pb.head.control.settingPropagation.arityLimitForGACGuaranteed;
+		int arityLimit = pb.head.control.propagation.arityLimitForGACGuaranteed;
 		if (scp.length <= arityLimit)
 			return Integer.MAX_VALUE;
-		int futureLimitation = pb.head.control.settingPropagation.futureLimitation;
+		int futureLimitation = pb.head.control.propagation.futureLimitation;
 		if (futureLimitation != -1)
 			return futureLimitation < scp.length ? Math.max(arityLimit, futureLimitation) : Integer.MAX_VALUE;
-		int spaceLimitation = pb.head.control.settingPropagation.spaceLimitation;
+		int spaceLimitation = pb.head.control.propagation.spaceLimitation;
 		if (spaceLimitation != -1)
 			return Math.max(arityLimit, howManyVarsWithin(scp, spaceLimitation));
 		return Integer.MAX_VALUE;
@@ -514,7 +514,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		this.doms = Variable.buildDomainsArrayFor(scp);
 		this.tupleManager = new TupleManager(scp);
 		this.vals = new int[scp.length];
-		this.settings = pb.head.control.settingCtrs;
+		this.settings = pb.head.control.constraints;
 
 		this.genericFilteringThreshold = computeGenericFilteringThreshold();
 		this.indexesMatchValues = Stream.of(scp).allMatch(x -> x.dom.indexesMatchValues());

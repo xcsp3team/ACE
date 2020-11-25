@@ -58,7 +58,7 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 		}
 		if (modified) {
 			Kit.log.fine("New Bounds updated from other workers : " + stringBounds());
-			pb.solver.restarter.forceRootPropagation = true;
+			problem.solver.restarter.forceRootPropagation = true;
 		}
 		return modified;
 	}
@@ -67,7 +67,7 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	 * Class
 	 *********************************************************************************************/
 
-	public final Problem pb;
+	public final Problem problem;
 
 	public final boolean minimization;
 
@@ -83,26 +83,26 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	 */
 	protected long maxBound;
 
-	public Optimizer(Problem pb, TypeOptimization opt, Optimizable ctr) {
-		this.pb = pb;
+	public Optimizer(Problem pb, TypeOptimization opt, Optimizable c) {
+		this.problem = pb;
 		Kit.control(opt != null);
 		this.minimization = opt == TypeOptimization.MINIMIZE;
-		this.ctr = ctr; // may be null for some basic cases
-		this.minBound = Math.max(pb.head.control.settingOptimization.lowerBound, ctr != null ? ctr.minComputableObjectiveValue() : Long.MIN_VALUE);
-		this.maxBound = Math.min(pb.head.control.settingOptimization.upperBound, ctr != null ? ctr.maxComputableObjectiveValue() : Long.MAX_VALUE);
+		this.ctr = c; // may be null for some basic cases
+		this.minBound = Math.max(pb.head.control.optimization.lowerBound, c != null ? c.minComputableObjectiveValue() : Long.MIN_VALUE);
+		this.maxBound = Math.min(pb.head.control.optimization.upperBound, c != null ? c.maxComputableObjectiveValue() : Long.MAX_VALUE);
 	}
 
 	/**
 	 * Returns the value of the objective, for the current complete instantiation.
 	 */
 	public final long value() {
-		assert Variable.areAllFixed(pb.variables);
+		assert Variable.areAllFixed(problem.variables);
 		if (ctr != null)
 			return ctr.objectiveValue();
-		else if (pb.solver.propagation instanceof LowerBoundCapability)
-			return ((LowerBoundCapability) pb.solver.propagation).getLowerBound();
+		else if (problem.solver.propagation instanceof LowerBoundCapability)
+			return ((LowerBoundCapability) problem.solver.propagation).getLowerBound();
 		else
-			return ((SolverLocal) pb.solver).nMinViolatedCtrs;
+			return ((SolverLocal) problem.solver).nMinViolatedCtrs;
 	}
 
 	public final boolean isBetterBound(long bound) {
@@ -114,44 +114,43 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	protected abstract void shiftLimitWhenFailure();
 
 	public void afterRun() {
-		Kit.control(pb.head.control.settingGeneral.framework == TypeFramework.COP);
-		if (pb.solver.solManager.lastSolutionRun == pb.solver.restarter.numRun) { // a better solution has been found during the last run
+		Kit.control(problem.head.control.general.framework == TypeFramework.COP);
+		if (problem.solver.solManager.lastSolutionRun == problem.solver.restarter.numRun) { // a better solution has been found during the last run
 			if (minimization)
-				maxBound = pb.solver.solManager.bestBound - 1;
+				maxBound = problem.solver.solManager.bestBound - 1;
 			else
-				minBound = pb.solver.solManager.bestBound + 1;
+				minBound = problem.solver.solManager.bestBound + 1;
 			possiblyUpdateLocalBounds();
-			Kit.control(minBound - 1 <= maxBound || pb.head.control.settingOptimization.upperBound != Long.MAX_VALUE,
+			Kit.control(minBound - 1 <= maxBound || problem.head.control.optimization.upperBound != Long.MAX_VALUE,
 					() -> " minB=" + minBound + " maxB=" + maxBound);
 			possiblyUpdateSharedBounds();
 			if (minBound > maxBound)
-				pb.solver.stopping = EStopping.FULL_EXPLORATION;
+				problem.solver.stopping = EStopping.FULL_EXPLORATION;
 			else
 				shiftLimitWhenSuccess();
-		} else if (pb.solver.stopping == EStopping.FULL_EXPLORATION) { // last run leads to no new solution
-			long limit = ctr.getLimit();
+		} else if (problem.solver.stopping == EStopping.FULL_EXPLORATION) { // last run leads to no new solution
 			if (minimization)
-				minBound = limit == Long.MAX_VALUE ? Long.MAX_VALUE : limit + 1;
+				minBound = ctr.limit() + 1;
 			else
-				maxBound = limit == Long.MIN_VALUE ? Long.MIN_VALUE : limit - 1;
+				maxBound = ctr.limit() - 1;
 			Kit.log.fine("\n" + Output.COMMENT_PREFIX + "New Bounds: " + stringBounds());
 			if (minBound <= maxBound) {
-				pb.solver.stopping = null;
-				Kit.control(pb.stuff.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
-				pb.solver.restarter.forceRootPropagation = true;
-				((SolverBacktrack) pb.solver).restoreProblem();
+				problem.solver.stopping = null;
+				Kit.control(problem.stuff.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
+				problem.solver.restarter.forceRootPropagation = true;
+				((SolverBacktrack) problem.solver).restoreProblem();
 				shiftLimitWhenFailure();
 			}
-			if (((SolverBacktrack) pb.solver).nogoodRecorder != null)
-				((SolverBacktrack) pb.solver).nogoodRecorder.reset();
+			if (((SolverBacktrack) problem.solver).nogoodRecorder != null)
+				((SolverBacktrack) problem.solver).nogoodRecorder.reset();
 		}
 	}
 
 	public void shiftLimit(long offset) {
 		Kit.control(0 <= offset && minBound + offset <= maxBound, () -> "offset " + offset + " minBound " + minBound + " maxBound " + maxBound);
 		long newLimit = minimization ? maxBound - offset : minBound + offset;
-		Kit.log.finer(Output.COMMENT_PREFIX + "New Limit: " + newLimit + "\n");
-		ctr.setLimit(newLimit);
+		Kit.log.fine(Output.COMMENT_PREFIX + "New Limit: " + newLimit + "\n");
+		ctr.limit(newLimit);
 	}
 
 	public boolean areBoundsConsistent() {
@@ -226,9 +225,9 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 
 		@Override
 		protected void shiftLimitWhenSuccess() {
-			if (first) {
-				ctr.setLimit(minimization ? minBound : maxBound);
-				Kit.log.info("limit=" + ctr.getLimit());
+			if (first) { // we now attempt to find optimality by increasingly updating the bounds (if minimization)
+				ctr.limit(minimization ? minBound : maxBound);
+				Kit.log.info("limit=" + ctr.limit());
 				first = false;
 			} else
 				throw new AssertionError();
@@ -236,7 +235,7 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 
 		@Override
 		protected void shiftLimitWhenFailure() {
-			ctr.setLimit(minimization ? minBound : maxBound);
+			ctr.limit(minimization ? minBound : maxBound);
 		}
 	}
 

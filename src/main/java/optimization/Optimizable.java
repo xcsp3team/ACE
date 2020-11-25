@@ -2,9 +2,9 @@ package optimization;
 
 public interface Optimizable {
 
-	long getLimit();
+	long limit();
 
-	void setLimit(long newLimit);
+	void limit(long newLimit);
 
 	long minComputableObjectiveValue();
 

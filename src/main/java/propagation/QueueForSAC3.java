@@ -172,7 +172,7 @@ public final class QueueForSAC3 {
 		this.positions = Stream.of(solver.problem.variables).map(x -> new Cell[x.dom.initSize()]).toArray(Cell[][]::new);
 		IntStream.range(0, Variable.nInitValuesFor(solver.problem.variables)).forEach(i -> trash = new Cell(trash));
 		this.sizes = new int[solver.problem.variables.length];
-		String s = solver.head.control.settingPropagation.classForSACSelector.substring(solver.head.control.settingPropagation.classForSACSelector.lastIndexOf('$') + 1);
+		String s = solver.head.control.propagation.classForSACSelector.substring(solver.head.control.propagation.classForSACSelector.lastIndexOf('$') + 1);
 		this.cellSelector = Reflector.buildObject(s, CellSelector.class, this);
 	}
 

@@ -122,7 +122,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		}
 
 		boolean desactivated() {
-			return solManager.found > 0 && head.control.settingValh.solutionSaving;
+			return solManager.found > 0 && head.control.valh.solutionSaving;
 		}
 
 		void manageEmptyDomainBeforeBacktracking() {
@@ -304,7 +304,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	protected List<ObserverRuns> collectObserversRuns() {
 		List<ObserverRuns> list = new ArrayList<>();
-		if (head.control.settingSolving.enableSearch) {
+		if (head.control.solving.enableSearch) {
 			if (nogoodRecorder != null && nogoodRecorder.symmetryHandler != null)
 				list.add((ObserverRuns) nogoodRecorder.symmetryHandler);
 			Stream.of(this, restarter, ipsRecorder, heuristic, lcReasoner, stats).filter(o -> o instanceof ObserverRuns)
@@ -384,7 +384,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		this.heuristic = HeuristicVariables.buildFor(this);
 		for (Variable x : problem.variables)
 			x.buildValueOrderingHeuristic();
-		this.lcReasoner = new LastConflictReasoner(this, resolution.control.settingVarh.lastConflictSize);
+		this.lcReasoner = new LastConflictReasoner(this, resolution.control.varh.lastConflictSize);
 		this.nogoodRecorder = NogoodRecorder.buildFor(this); // may be null
 		this.ipsRecorder = IpsRecorder.buildFor(this); // may be null
 		this.proofer = new Proofer(ipsRecorder);
@@ -397,12 +397,12 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		this.observersAssignment = collectObserversAssignment();
 		this.observersConflicts = collectObserversPropagation();
 
-		this.tracer = new Tracer(resolution.control.settingGeneral.trace);
+		this.tracer = new Tracer(resolution.control.general.trace);
 		this.stats = new StatisticsBacktrack(this);
 		observersSearch.add(0, this.stats); // this list is initialized in the super-class
 
-		this.runProgressSaver = resolution.control.settingValh.runProgressSaving ? new RunProgressSaver() : null;
-		this.warmStarter = resolution.control.settingValh.warmStart.length() > 0 ? new WarmStarter(resolution.control.settingValh.warmStart) : null;
+		this.runProgressSaver = resolution.control.valh.runProgressSaving ? new RunProgressSaver() : null;
+		this.warmStarter = resolution.control.valh.warmStart.length() > 0 ? new WarmStarter(resolution.control.valh.warmStart) : null;
 
 		this.nogoodMinimizer = new NogoodMinimizer(this);
 	}
@@ -510,7 +510,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		x.dom.removeElementary(a);
 		boolean consistent = x.dom.size() > 0;
 		if (consistent) {
-			if (head.control.settingSolving.branching == EBranching.NON)
+			if (head.control.solving.branching == EBranching.NON)
 				return true;
 			consistent = propagation.runAfterRefutation(x);
 			if (!consistent)
@@ -527,7 +527,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	private void manageContradiction(CtrGlobal objectiveToCheck) {
 		for (boolean consistent = false; !consistent && stopping != EStopping.FULL_EXPLORATION;) {
 			Variable x = futVars.lastPast();
-			if (x == lastPastBeforeRun[nRecursiveRuns - 1] && !head.control.settingLNS.enabled)
+			if (x == lastPastBeforeRun[nRecursiveRuns - 1] && !head.control.lns.enabled)
 				stopping = EStopping.FULL_EXPLORATION;
 			else {
 				int a = x.dom.unique();
@@ -553,13 +553,13 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			}
 			if (futVars.size() == 0) {
 				solManager.handleNewSolutionAndPossiblyOptimizeIt();
-				CtrGlobal objectiveToCheck = problem.settings.framework == COP && !head.control.settingRestarts.restartAfterSolution
+				CtrGlobal objectiveToCheck = problem.settings.framework == COP && !head.control.restarts.restartAfterSolution
 						? (CtrGlobal) problem.optimizer.ctr
 						: null;
-				if (problem.settings.framework == COP && !head.control.settingRestarts.restartAfterSolution) {
+				if (problem.settings.framework == COP && !head.control.restarts.restartAfterSolution) {
 					// first, we backtrack to the level where a value for a variable in the scope of the objective was removed for the last time
 					objectiveToCheck = (CtrGlobal) problem.optimizer.ctr;
-					((Optimizable) objectiveToCheck).setLimit(((Optimizable) objectiveToCheck).objectiveValue() + (problem.optimizer.minimization ? -1 : 1));
+					((Optimizable) objectiveToCheck).limit(((Optimizable) objectiveToCheck).objectiveValue() + (problem.optimizer.minimization ? -1 : 1));
 					int backtrackLevel = -1;
 					for (int i = 0; i < objectiveToCheck.scp.length; i++) {
 						int x = objectiveToCheck.futvars.dense[i]; // variables (of the objective) from the last assigned to the first assigned

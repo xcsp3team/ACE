@@ -31,9 +31,9 @@ import variables.Variable;
 public abstract class Propagation {
 
 	public static Propagation buildFor(Solver solver) {
-		if (solver.head.control.settingSolving.enablePrepro || solver.head.control.settingSolving.enableSearch) {
+		if (solver.head.control.solving.enablePrepro || solver.head.control.solving.enableSearch) {
 			Set<Class<?>> classes = solver.head.handlerClasses.map.get(Propagation.class);
-			return Reflector.buildObject(solver.head.control.settingPropagation.clazz, classes, solver);
+			return Reflector.buildObject(solver.head.control.propagation.clazz, classes, solver);
 		}
 		return null;
 	}
@@ -143,7 +143,7 @@ public abstract class Propagation {
 
 	public Propagation(Solver solver) {
 		this.solver = solver;
-		this.settings = solver.head.control.settingPropagation;
+		this.settings = solver.head.control.propagation;
 		this.queue = this instanceof Forward ? new Queue((Forward) this) : null;
 		int nAuxQueues = settings.useAuxiliaryQueues ? Constraint.MAX_FILTERING_COMPLEXITY : 0;
 		this.auxiliaryQueues = this instanceof Forward ? SetSparseMap.buildArray(nAuxQueues, solver.problem.constraints.length) : null;

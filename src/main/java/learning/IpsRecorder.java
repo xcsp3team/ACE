@@ -22,9 +22,9 @@ import variables.Variable;
 public abstract class IpsRecorder implements ObserverRuns {
 
 	public static IpsRecorder buildFor(SolverBacktrack solver) {
-		if (solver.head.control.settingLearning.state == ELearningState.EQUIVALENCE)
+		if (solver.head.control.learning.state == ELearningState.EQUIVALENCE)
 			return new IpsRecorderForEquivalence(solver);
-		if (solver.head.control.settingLearning.state == ELearningState.DOMINANCE)
+		if (solver.head.control.learning.state == ELearningState.DOMINANCE)
 			return new IpsRecorderForDominance(solver);
 		return null;
 	}
@@ -53,7 +53,7 @@ public abstract class IpsRecorder implements ObserverRuns {
 		this.variables = solver.problem.variables;
 		this.reductionOperator = new ReductionOperator(this);
 		this.justifier = new Justifier(this);
-		this.settings = solver.head.control.settingLearning;
+		this.settings = solver.head.control.learning;
 	}
 
 	protected boolean mustStop() {
@@ -83,7 +83,7 @@ public abstract class IpsRecorder implements ObserverRuns {
 
 		public Justifier(IpsRecorder recorder) {
 			this.solver = recorder.solver;
-			if (solver.head.control.settingLearning.state != ELearningState.NO) {
+			if (solver.head.control.learning.state != ELearningState.NO) {
 				Variable[] vars = recorder.solver.problem.variables;
 				this.justifications = new Constraint[vars.length][];
 				for (int i = 0; i < justifications.length; i++) {

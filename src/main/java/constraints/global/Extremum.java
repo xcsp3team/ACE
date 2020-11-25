@@ -213,40 +213,57 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 	public static abstract class ExtremumCst extends Extremum implements Optimizable, TagSymmetric {
 
-		protected int limit;
+		protected long limit;
 
 		protected boolean entailed;
 
 		@Override
-		public long getLimit() {
+		public long limit() {
 			return limit;
 		}
 
 		@Override
-		public final void setLimit(long newLimit) {
-			this.limit = Math.toIntExact(newLimit);
+		public final void limit(long newLimit) {
+			this.limit = newLimit;
 			entailed = false;
+			control(minComputableObjectiveValue() <= limit && limit <= maxComputableObjectiveValue());
 		}
 
-		public ExtremumCst(Problem pb, Variable[] list, int limit) {
+		public ExtremumCst(Problem pb, Variable[] list, long limit) {
 			super(pb, list);
-			this.limit = limit;
+			limit(limit);
 		}
 
 		public static abstract class MaximumCst extends ExtremumCst {
 
+			static long maxFirstInitialValues(Variable[] scp) {
+				long max = Long.MIN_VALUE;
+				for (Variable x : scp)
+					if (x.dom.toVal(0) > max)
+						max = x.dom.toVal(0);
+				return max;
+			}
+
+			static long maxLastInitialValues(Variable[] scp) {
+				long max = Long.MIN_VALUE;
+				for (Variable x : scp)
+					if (x.dom.toVal(x.dom.initSize() - 1) > max)
+						max = x.dom.toVal(x.dom.initSize() - 1);
+				return max;
+			}
+
 			@Override
 			public long minComputableObjectiveValue() { // max of first initial values
-				return Stream.of(scp).mapToLong(x -> x.dom.toVal(0)).max().getAsLong(); // stream not a problem as only called once at construction time
+				return maxFirstInitialValues(scp);
 			}
 
 			@Override
 			public long maxComputableObjectiveValue() { // max of last initial values (global max)
-				return Stream.of(scp).mapToLong(x -> x.dom.toVal(x.dom.initSize() - 1)).max().getAsLong(); // not a problem as only called once
+				return maxLastInitialValues(scp);
 			}
 
 			@Override
-			public long minCurrentObjectiveValue() { // max of first values
+			public long minCurrentObjectiveValue() { // max of first current values
 				long max = Long.MIN_VALUE;
 				for (Variable x : scp)
 					if (x.dom.firstValue() > max)
@@ -255,7 +272,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 			}
 
 			@Override
-			public long maxCurrentObjectiveValue() { // max of last values (global max)
+			public long maxCurrentObjectiveValue() { // max of last current values (global max)
 				long max = Long.MIN_VALUE;
 				for (Variable x : scp)
 					if (x.dom.lastValue() > max)
@@ -268,7 +285,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 				return Stream.of(doms).mapToInt(dom -> dom.uniqueValue()).max().getAsInt();
 			}
 
-			public MaximumCst(Problem pb, Variable[] scp, int limit) {
+			public MaximumCst(Problem pb, Variable[] scp, long limit) {
 				super(pb, scp, limit);
 			}
 
@@ -279,8 +296,8 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 					return IntStream.of(vals).max().getAsInt() <= limit;
 				}
 
-				public MaximumCstLE(Problem pb, Variable[] scp, int limit) {
-					super(pb, scp, limit);
+				public MaximumCstLE(Problem pb, Variable[] scp, long limit) {
+					super(pb, scp, Math.min(limit, maxLastInitialValues(scp)));
 				}
 
 				@Override
@@ -306,8 +323,8 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 				private int sentinel1, sentinel2;
 
-				public MaximumCstGE(Problem pb, Variable[] scp, int limit) {
-					super(pb, scp, limit);
+				public MaximumCstGE(Problem pb, Variable[] scp, long limit) {
+					super(pb, scp, Math.max(limit, maxFirstInitialValues(scp)));
 					sentinel1 = 0;
 					sentinel2 = scp.length - 1;
 					control(scp[sentinel1].dom.lastValue() >= limit && scp[sentinel2].dom.lastValue() >= limit, "unsound sentinels");
@@ -350,18 +367,34 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 		public static abstract class MinimumCst extends ExtremumCst {
 
+			static long minFirstInitialValues(Variable[] scp) {
+				long min = Long.MAX_VALUE;
+				for (Variable x : scp)
+					if (x.dom.toVal(0) < min)
+						min = x.dom.toVal(0);
+				return min;
+			}
+
+			static long minLastInitialValues(Variable[] scp) {
+				long min = Long.MAX_VALUE;
+				for (Variable x : scp)
+					if (x.dom.toVal(x.dom.initSize() - 1) < min)
+						min = x.dom.toVal(x.dom.initSize() - 1);
+				return min;
+			}
+
 			@Override
 			public long minComputableObjectiveValue() { // min of first initial values (global min)
-				return Stream.of(scp).mapToLong(x -> x.dom.toVal(0)).min().getAsLong(); // stream not a problem as only called once at construction time
+				return minFirstInitialValues(scp);
 			}
 
 			@Override
 			public long maxComputableObjectiveValue() { // min of last initial values
-				return Stream.of(scp).mapToLong(x -> x.dom.toVal(x.dom.initSize() - 1)).min().getAsLong(); // not a problem as only called once
+				return minLastInitialValues(scp);
 			}
 
 			@Override
-			public long minCurrentObjectiveValue() { // min of first values (global min)
+			public long minCurrentObjectiveValue() { // min of first current values (global min)
 				long min = Long.MAX_VALUE;
 				for (Variable x : scp)
 					if (x.dom.firstValue() < min)
@@ -370,7 +403,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 			}
 
 			@Override
-			public long maxCurrentObjectiveValue() { // min of last values
+			public long maxCurrentObjectiveValue() { // min of last current values
 				long min = Long.MAX_VALUE;
 				for (Variable x : scp)
 					if (x.dom.lastValue() < min)
@@ -383,7 +416,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 				return Stream.of(doms).mapToInt(dom -> dom.uniqueValue()).min().getAsInt();
 			}
 
-			public MinimumCst(Problem pb, Variable[] scp, int limit) {
+			public MinimumCst(Problem pb, Variable[] scp, long limit) {
 				super(pb, scp, limit);
 			}
 
@@ -396,8 +429,8 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 				private int sentinel1, sentinel2;
 
-				public MinimumCstLE(Problem pb, Variable[] scp, int limit) {
-					super(pb, scp, limit);
+				public MinimumCstLE(Problem pb, Variable[] scp, long limit) {
+					super(pb, scp, Math.min(limit, minLastInitialValues(scp)));
 					sentinel1 = 0;
 					sentinel2 = scp.length - 1;
 					control(scp[sentinel1].dom.firstValue() <= limit && scp[sentinel2].dom.firstValue() <= limit, "unsound sentinels");
@@ -442,8 +475,8 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 					return IntStream.of(vals).min().getAsInt() >= limit;
 				}
 
-				public MinimumCstGE(Problem pb, Variable[] scp, int limit) {
-					super(pb, scp, limit);
+				public MinimumCstGE(Problem pb, Variable[] scp, long limit) {
+					super(pb, scp, Math.max(limit, minFirstInitialValues(scp)));
 				}
 
 				@Override

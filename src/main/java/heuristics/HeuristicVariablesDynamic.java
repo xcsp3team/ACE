@@ -48,7 +48,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	protected final Variable bestUnpriorityVar() {
 		assert solver.futVars.size() > 0;
 
-		if (solver.head.control.settingSolving.branching != EBranching.BIN) {
+		if (solver.head.control.solving.branching != EBranching.BIN) {
 			Variable x = solver.dr.varOfLastDecisionIf(false);
 			if (x != null)
 				return x;
@@ -168,7 +168,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void beforeRun() {
-			if (solver.restarter.runMultipleOf(solver.head.control.settingRestarts.dataResetPeriod)
+			if (solver.restarter.runMultipleOf(solver.head.control.restarts.dataResetPeriod)
 					|| (solver.restarter.numRun - solver.solManager.lastSolutionRun) % 30 == 0) { // hard coding
 				System.out.println("Reset weights");
 				reset();
@@ -332,8 +332,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public ActivityImpactAbstract(SolverBacktrack solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 			this.lastSizes = Stream.of(solver.problem.variables).mapToInt(x -> x.dom.size()).toArray();
-			Kit.control(solver.head.control.settingSolving.branching == EBranching.BIN);
-			Kit.control(solver.head.control.settingRestarts.dataResetPeriod != 0);
+			Kit.control(solver.head.control.solving.branching == EBranching.BIN);
+			Kit.control(solver.head.control.restarts.dataResetPeriod != 0);
 		}
 
 		protected abstract void update();
@@ -366,7 +366,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			super.beforeRun();
-			if (solver.restarter.runMultipleOf(solver.head.control.settingRestarts.dataResetPeriod)) {
+			if (solver.restarter.runMultipleOf(solver.head.control.restarts.dataResetPeriod)) {
 				Kit.log.info("Reset of activities");
 				Arrays.fill(activities, 0);
 			}
@@ -398,7 +398,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			super.beforeRun();
-			if (solver.restarter.runMultipleOf(solver.head.control.settingRestarts.dataResetPeriod)) {
+			if (solver.restarter.runMultipleOf(solver.head.control.restarts.dataResetPeriod)) {
 				Kit.log.info("Reset of impacts");
 				// for (int i = 0; i < solver.problem.variables.length; i++) impacts[i] = solver.problem.variables[i].getStaticDegree(); // TODO
 				// better init ?

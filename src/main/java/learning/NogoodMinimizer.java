@@ -18,7 +18,7 @@ public class NogoodMinimizer {
 		this.solver = solver;
 		this.propagation = solver.propagation;
 		this.dr = solver.dr;
-		this.arityLimit = solver.head.control.settingLearning.nogoodArityLimit;
+		this.arityLimit = solver.head.control.learning.nogoodArityLimit;
 	}
 
 	private boolean addPositiveTransitionDecision(int positiveDecision, int[] tmp, int nTransitions) {

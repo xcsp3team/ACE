@@ -233,7 +233,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 
 	public Output(Head resolution, String configFileName) {
 		this.resolution = resolution;
-		if (resolution.control.settingXml.dirForCampaign.equals(EMPTY_STRING) == false) {
+		if (resolution.control.xml.dirForCampaign.equals(EMPTY_STRING) == false) {
 			document = DocumentHandler.createNewDocument();
 			root = document.createElement(TypeOutput.RESOLUTIONS.toString());
 			root.setAttribute(Output.CONFIGURATION_FILE_NAME, configFileName);
@@ -273,13 +273,19 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		save(resolution.instanceStopwatch.wckTime());
 	}
 
+	// PURPLE, BLUE, GREEN, ORANGE, RED, WHITE, WHITE_BOLD, UNDERLINE = '\033[95m', '\033[94m', '\033[92m', '\033[93m', '\033[91m', '\033[0m', '\033[1m',
+	// '\033[4m'
+	String GREEN = "\033[92m";
+	String WHITE = "\033[0m";
+
 	public void afterData() { // not a method from an observer
 		MapAtt ia = resolution.problem.stuff.instanceAttributes(resolution.instanceNumber);
-		if (outputFileName == null) {
-			String name = ia.entries().stream().filter(e -> e.getKey().equals(Output.NAME)).map(e -> e.getValue().toString()).findFirst().get();
-			outputFileName = outputFileNameFrom(name, resolution.control.settingsFilename);
-		}
-		Kit.log.config(ia.toString() + "\n");
+		Kit.control(outputFileName == null);
+
+		String name = ia.entries().stream().filter(e -> e.getKey().equals(Output.NAME)).map(e -> e.getValue().toString()).findFirst().get();
+		outputFileName = outputFileNameFrom(name, resolution.control.settingsFilename);
+
+		Kit.log.config(Output.COMMENT_PREFIX + GREEN + "Instance " + WHITE + name + "\n\n");
 		record(TypeOutput.INSTANCE, ia.entries(), resolElt);
 	}
 
@@ -333,14 +339,14 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	public final void afterSolving() {
 		MapAtt ga = resolution.solver.stats.globalAttributes();
 		record(TypeOutput.GLOBAL, ga.entries(), solverElt);
-		Kit.log.config(ga.toString());
+		Kit.log.config("\n" + ga.toString());
 	}
 
 	public String save(long totalWck) {
 		if (document == null)
 			return null;
 		root.setAttribute(Output.TOTAL_WCK_TIME, totalWck + "");
-		String dirName = resolution.control.settingXml.dirForCampaign + File.separator + Output.RESULTS_DIRECTORY_NAME;
+		String dirName = resolution.control.xml.dirForCampaign + File.separator + Output.RESULTS_DIRECTORY_NAME;
 		File file = new File(dirName);
 		if (!file.exists())
 			file.mkdirs();

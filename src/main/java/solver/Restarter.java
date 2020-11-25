@@ -43,8 +43,8 @@ import variables.Variable;
 public class Restarter implements ObserverRuns {
 
 	public static Restarter buildFor(Solver solver) {
-		boolean lns = solver.head.control.settingLNS.enabled;
-		boolean lb = solver.head.control.settingLB.enabled;
+		boolean lns = solver.head.control.lns.enabled;
+		boolean lb = solver.head.control.lb.enabled;
 		Kit.control(!lns || !lb, () -> "Cannot use LNS and LB at the same time.");
 		if (lns)
 			return new RestarterLNS((SolverBacktrack) solver);
@@ -144,8 +144,8 @@ public class Restarter implements ObserverRuns {
 
 	public Restarter(Solver solver) {
 		this.solver = solver;
-		this.setting = solver.head.control.settingRestarts;
-		this.settingsGeneral = solver.head.control.settingGeneral;
+		this.setting = solver.head.control.restarts;
+		this.settingsGeneral = solver.head.control.general;
 		this.measureSupplier = measureSupplier();
 		if (settingsGeneral.framework == TypeFramework.COP)
 			setting.cutoff *= 10;
@@ -222,7 +222,7 @@ public class Restarter implements ObserverRuns {
 		public static abstract class HeuristicFreezing {
 
 			public static HeuristicFreezing buildFor(RestarterLNS restarter) {
-				if (restarter.solver.head.control.settingLNS.heuristic.equals("Impact"))
+				if (restarter.solver.head.control.lns.heuristic.equals("Impact"))
 					return new Impact(restarter);
 				else
 					return new Rand(restarter);
@@ -235,7 +235,7 @@ public class Restarter implements ObserverRuns {
 			public HeuristicFreezing(RestarterLNS restarter) {
 				this.restarter = restarter;
 				int n = restarter.solver.problem.variables.length;
-				int nf = restarter.solver.head.control.settingLNS.nFreeze, pf = restarter.solver.head.control.settingLNS.pFreeze;
+				int nf = restarter.solver.head.control.lns.nFreeze, pf = restarter.solver.head.control.lns.pFreeze;
 				this.fragment = new SetDense(n);
 				int fragmentSize = 0 < nf && nf < n ? nf : 0 < pf && pf < 100 ? 1 + (pf * n) / 100 : -1;
 				Kit.control(0 < fragmentSize && fragmentSize < n, () -> "You must specify the number or percentage of variables to freeze for LNS");
@@ -332,7 +332,7 @@ public class Restarter implements ObserverRuns {
 
 		private LocalBranchingConstraint localBranchingConstraints;
 
-		private int currDistance = solver.head.control.settingLB.baseDistance;
+		private int currDistance = solver.head.control.lb.baseDistance;
 
 		public RestarterLB(Solver solver) {
 			super(solver);
@@ -341,8 +341,8 @@ public class Restarter implements ObserverRuns {
 
 			this.localBranchingConstraints = solver.problem.symbolic != null
 					? Reflector.buildObject(LBAtLeastEqual.class.getSimpleName(), LocalBranchingConstraint.class, solver.problem)
-					: Reflector.buildObject(solver.head.control.settingLB.neighborhood, LocalBranchingConstraint.class, solver.problem);
-			this.currDistance = solver.head.control.settingLB.baseDistance;
+					: Reflector.buildObject(solver.head.control.lb.neighborhood, LocalBranchingConstraint.class, solver.problem);
+			this.currDistance = solver.head.control.lb.baseDistance;
 		}
 
 		public void enterLocalBranching() {
@@ -353,7 +353,7 @@ public class Restarter implements ObserverRuns {
 		private void leaveLocalBranching() {
 			currentlyBranching = false;
 			localBranchingConstraints.setIgnored(true);
-			currDistance = solver.head.control.settingLB.baseDistance;
+			currDistance = solver.head.control.lb.baseDistance;
 		}
 
 		@Override
@@ -376,7 +376,7 @@ public class Restarter implements ObserverRuns {
 					}
 					if (forceRootPropagation) {
 						super.afterRun();
-						currDistance = solver.head.control.settingLB.baseDistance;
+						currDistance = solver.head.control.lb.baseDistance;
 					}
 					localBranchingConstraints.updateWithNewSolution(solver.solManager.lastSolution, currDistance);
 					localBranchingConstraints.setIgnored(false);
@@ -385,7 +385,7 @@ public class Restarter implements ObserverRuns {
 						((SolverBacktrack) solver).nogoodRecorder.reset();
 					((FilteringSpecific) solver.problem.optimizer.ctr).runPropagator(null);
 				}
-				if (nRestartsSinceActive > solver.head.control.settingLB.maxRestarts)
+				if (nRestartsSinceActive > solver.head.control.lb.maxRestarts)
 					leaveLocalBranching();
 			} else {
 				super.afterRun();
@@ -484,7 +484,7 @@ public class Restarter implements ObserverRuns {
 					super(problem);
 					int[] tuple = Stream.of(decisionVars).mapToInt(x -> x.dom.firstValue()).toArray();
 					c = (Constraint) ((CtrAlone) problem.tupleProximityGE(decisionVars, tuple,
-							decisionVars.length - problem.head.control.settingLB.baseDistance, true)).ctr;
+							decisionVars.length - problem.head.control.lb.baseDistance, true)).ctr;
 					c.ignored = true;
 				}
 
@@ -500,7 +500,7 @@ public class Restarter implements ObserverRuns {
 				public LBAtMostDistanceSum(Problem problem) {
 					super(problem);
 					c = (Constraint) ((CtrAlone) problem.tupleProximityDistanceSum(decisionVars, new int[decisionVars.length],
-							problem.head.control.settingLB.baseDistance)).ctr;
+							problem.head.control.lb.baseDistance)).ctr;
 					c.ignored = true;
 				}
 

@@ -37,7 +37,7 @@ public abstract class HeuristicValues extends Heuristic {
 		super(antiHeuristic);
 		this.x = x;
 		this.dx = x.dom;
-		this.settings = x.problem.head.control.settingValh;
+		this.settings = x.problem.head.control.valh;
 		// this.priorityVar = x.pb.priorityVars != null && Kit.isPresent(x, x.pb.priorityVars);
 	}
 

@@ -271,14 +271,14 @@ public class HeadExtraction extends Head {
 		solver = buildSolver(problem);
 		Stopwatch stopwatch = new Stopwatch();
 		cores.clear(); // = new ArrayList<List<Constraint>>();
-		for (int i = 0; i < control.settingExtraction.nCores; i++) {
+		for (int i = 0; i < control.extraction.nCores; i++) {
 			stopwatch.start();
 			buildOrInitializeStructures(cores);
 			if (!wcore()) {
 				Kit.log.info("No more cores");
 				break;
 			}
-			if (control.settingExtraction.method == EExtractionMethod.VAR)
+			if (control.extraction.method == EExtractionMethod.VAR)
 				minimalCoreOfVars();
 			List<Constraint> core = minimalCoreOfCtrs();
 			// if (cp.settingExtraction.saveCores) {
@@ -321,11 +321,11 @@ public class HeadExtraction extends Head {
 	public static void main(String[] args) {
 		Arguments.loadArguments(args);
 		HeadExtraction extraction = new HeadExtraction();
-		Kit.control(!extraction.control.settingProblem.isSymmetryBreaking(), () -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
-		Kit.control(extraction.control.settingLearning.state == ELearningState.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
+		Kit.control(!extraction.control.problem.isSymmetryBreaking(), () -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
+		Kit.control(extraction.control.learning.state == ELearningState.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
 		// Kit.control(extraction.configuration.restartsCutoff == Long.MAX_VALUE || extraction.configuration.nogoodType == null,
 		// "Be careful of nogood recording from restarts.");
-		Kit.control(extraction.control.settingSolving.clazz.equals(SolverBacktrack.class.getSimpleName()), () -> extraction.control.settingSolving.clazz);
+		Kit.control(extraction.control.solving.clazz.equals(SolverBacktrack.class.getSimpleName()), () -> extraction.control.solving.clazz);
 		extraction.start();
 	}
 

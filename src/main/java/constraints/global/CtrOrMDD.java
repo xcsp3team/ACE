@@ -127,7 +127,7 @@ public final class CtrOrMDD extends CtrGlobal implements TagGACGuaranteed, Obser
 	}
 
 	private boolean manageSuccessfulExploration(int level, int a) { // , int i) {
-		int cutoffVariant = pb.head.control.settingExtension.variant;
+		int cutoffVariant = pb.head.control.extension.variant;
 		// if (cutoffVariant == 2) {
 		// if (scp[level].isFuture()) {
 		// if (!ac[level][a]) {

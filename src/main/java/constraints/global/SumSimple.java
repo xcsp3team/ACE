@@ -60,12 +60,26 @@ public abstract class SumSimple extends Sum implements TagSymmetric {
 		return l;
 	}
 
+	static long minPossibleSum(Variable[] scp) {
+		long sum = 0;
+		for (Variable x : scp)
+			sum += x.dom.toVal(0);
+		return sum;
+	}
+
+	static long maxPossibleSum(Variable[] scp) {
+		long sum = 0;
+		for (Variable x : scp)
+			sum += x.dom.toVal(x.dom.initSize() - 1);
+		return sum;
+	}
+
 	public long minComputableObjectiveValue() {
-		return Stream.of(scp).mapToLong(x -> x.dom.toVal(0)).sum();
+		return minPossibleSum(scp);
 	}
 
 	public long maxComputableObjectiveValue() {
-		return Stream.of(scp).mapToLong(x -> x.dom.toVal(x.dom.initSize() - 1)).sum();
+		return maxPossibleSum(scp);
 	}
 
 	public long minCurrentObjectiveValue() {
@@ -80,6 +94,12 @@ public abstract class SumSimple extends Sum implements TagSymmetric {
 		for (Variable x : scp)
 			sum += x.dom.lastValue();
 		return sum;
+	}
+
+	public final void limit(long newLimit) {
+		super.limit(newLimit);
+		control(minComputableObjectiveValue() <= limit && limit <= maxComputableObjectiveValue(),
+				"min:" + minComputableObjectiveValue() + " max:" + maxComputableObjectiveValue() + " limit:" + limit);
 	}
 
 	public SumSimple(Problem pb, Variable[] scp, long limit) {
@@ -119,7 +139,7 @@ public abstract class SumSimple extends Sum implements TagSymmetric {
 		}
 
 		public SumSimpleLE(Problem pb, Variable[] scp, long limit) {
-			super(pb, scp, limit);
+			super(pb, scp, Math.min(limit, maxPossibleSum(scp)));
 		}
 
 		@Override
@@ -179,7 +199,7 @@ public abstract class SumSimple extends Sum implements TagSymmetric {
 		}
 
 		public SumSimpleGE(Problem pb, Variable[] scp, long limit) {
-			super(pb, scp, limit);
+			super(pb, scp, Math.max(limit, minPossibleSum(scp)));
 		}
 
 		@Override

@@ -119,7 +119,7 @@ public final class Bits extends ExtensionStructure {
 
 	private void saveSpace() {
 		Head resolution = firstRegisteredCtr().pb.head;
-		if (resolution.control.settingProblem.shareBitVectors) {
+		if (resolution.control.problem.shareBitVectors) {
 			int nSharedRepresentationsBefore = firstRegisteredCtr().pb.stuff.nSharedBinaryRepresentations;
 			saveSpace(bitSups0, 1);
 			saveSpace(bitSups1, 0);

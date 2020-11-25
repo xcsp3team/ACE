@@ -381,7 +381,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	public static final boolean isPermutationElligible(Variable... vars) {
-		return vars[0].problem.head.control.settingCtrs.recognizePermutations && vars[0].dom.initSize() == vars.length && haveSameDomainType(vars);
+		return vars[0].problem.head.control.constraints.recognizePermutations && vars[0].dom.initSize() == vars.length && haveSameDomainType(vars);
 	}
 
 	public static final int[] domSizeArrayOf(Variable[] vars, boolean initSize) {
@@ -584,9 +584,9 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 
 	public final void buildValueOrderingHeuristic() {
 		if (heuristic == null) {
-			String className = this.dom instanceof DomainInfinite ? First.class.getName() : problem.head.control.settingValh.classForValHeuristic;
+			String className = this.dom instanceof DomainInfinite ? First.class.getName() : problem.head.control.valh.classForValHeuristic;
 			Set<Class<?>> classes = problem.head.handlerClasses.map.get(HeuristicValues.class);
-			heuristic = Reflector.buildObject(className, classes, this, problem.head.control.settingValh.anti);
+			heuristic = Reflector.buildObject(className, classes, this, problem.head.control.valh.anti);
 		}
 	}
 

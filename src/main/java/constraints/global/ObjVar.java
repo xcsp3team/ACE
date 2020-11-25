@@ -39,14 +39,15 @@ public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilter
 	}
 
 	@Override
-	public long getLimit() {
+	public long limit() {
 		return limit;
 	}
 
 	@Override
-	public final void setLimit(long newLimit) {
-		this.limit = Math.toIntExact(newLimit);
+	public final void limit(long newLimit) {
+		this.limit = newLimit;
 		entailed = false;
+		control(minComputableObjectiveValue() <= limit && limit <= maxComputableObjectiveValue());
 	}
 
 	@Override
@@ -56,14 +57,14 @@ public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilter
 
 	protected Variable x;
 
-	protected int limit;
+	protected long limit;
 
 	protected boolean entailed;
 
 	public ObjVar(Problem pb, Variable x, long limit) {
 		super(pb, new Variable[] { x });
 		this.x = x;
-		this.limit = Math.toIntExact(limit);
+		limit(limit);
 	}
 
 	public static final class ObjVarLE extends ObjVar {
@@ -74,7 +75,7 @@ public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilter
 		}
 
 		public ObjVarLE(Problem pb, Variable x, long limit) {
-			super(pb, x, limit);
+			super(pb, x, Math.min(limit, x.dom.lastValue()));
 		}
 
 		@Override
@@ -98,7 +99,7 @@ public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilter
 		}
 
 		public ObjVarGE(Problem pb, Variable x, long limit) {
-			super(pb, x, limit);
+			super(pb, x, Math.max(limit, x.dom.firstValue()));
 		}
 
 		@Override

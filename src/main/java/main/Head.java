@@ -70,7 +70,7 @@ public class Head extends Thread {
 		String fileName = resolution.output.save(resolution.stopwatch.wckTime());
 		if (fileName != null) {
 			String variantParallelName = DocumentHandler.attValueFor(Arguments.lastArgument(), ResolutionVariants.VARIANT_PARALLEL, ResolutionVariants.NAME);
-			String resultsFileName = resolution.control.settingXml.dirForCampaign;
+			String resultsFileName = resolution.control.xml.dirForCampaign;
 			if (resultsFileName != "")
 				resultsFileName += File.separator;
 			resultsFileName += Output.RESULTS_DIRECTORY_NAME + File.separator
@@ -268,12 +268,12 @@ public class Head extends Thread {
 	 */
 
 	public boolean mustPreserveUnaryConstraints() {
-		return control.settingCtrs.preserveUnaryCtrs || this instanceof HeadExtraction || control.settingProblem.isSymmetryBreaking()
-				|| control.settingGeneral.framework == TypeFramework.MAXCSP;
+		return control.constraints.preserveUnaryCtrs || this instanceof HeadExtraction || control.problem.isSymmetryBreaking()
+				|| control.general.framework == TypeFramework.MAXCSP;
 	}
 
 	public boolean isTimeExpiredForCurrentInstance() {
-		return control.settingGeneral.timeout <= instanceStopwatch.wckTime();
+		return control.general.timeout <= instanceStopwatch.wckTime();
 	}
 
 	public Head(String configurationFileName) {
@@ -291,7 +291,7 @@ public class Head extends Thread {
 
 	public Problem buildProblem(int instanceNumber) {
 		this.instanceNumber = instanceNumber;
-		random.setSeed(control.settingGeneral.seed + instanceNumber);
+		random.setSeed(control.general.seed + instanceNumber);
 		ProblemAPI api = null;
 		try {
 			if (Arguments.problemPackageName.equals(XCSP3.class.getName()))
@@ -310,19 +310,19 @@ public class Head extends Thread {
 		} catch (Exception e) {
 			return (Problem) Kit.exit("The class " + Arguments.problemPackageName + " cannot be found.", e);
 		}
-		SettingProblem settings = control.settingProblem;
+		SettingProblem settings = control.problem;
 		problem = new Problem(api, settings.variant, settings.data, settings.dataFormat, settings.dataexport, Arguments.argsForPb, this);
 		for (ObserverConstruction obs : observersConstruction)
 			obs.afterProblemConstruction();
 		problem.display();
-		Graphviz.saveGraph(problem, control.settingGeneral.saveNetworkGraph);
+		Graphviz.saveGraph(problem, control.general.saveNetworkGraph);
 		return problem;
 	}
 
 	protected final Solver buildSolver(Problem problem) {
-		boolean cm = problem.head.control.settingXml.competitionMode;
+		boolean cm = problem.head.control.xml.competitionMode;
 		Kit.log.config("\n" + Output.COMMENT_PREFIX + "Building solver... " + (cm ? "\n" : ""));
-		solver = Reflector.buildObject(control.settingSolving.clazz, Solver.class, this);
+		solver = Reflector.buildObject(control.solving.clazz, Solver.class, this);
 		for (ObserverConstruction obs : observersConstruction)
 			obs.afterSolverConstruction();
 		return solver;
@@ -330,24 +330,24 @@ public class Head extends Thread {
 
 	private int[] localSearchAtPreprocessing() {
 		int[] solution = null;
-		if (control.settingHardCoding.localSearchAtPreprocessing) {
-			String solverClassName = control.settingSolving.clazz;
-			control.settingSolving.clazz = SolverLocal.class.getSimpleName();
-			int nRuns = control.settingRestarts.nRunsLimit;
-			control.settingRestarts.nRunsLimit = 10;
-			long cutoff = control.settingRestarts.cutoff;
-			control.settingRestarts.cutoff = 10000;
-			boolean prepro = control.settingSolving.enablePrepro;
-			control.settingSolving.enablePrepro = false;
+		if (control.hardCoding.localSearchAtPreprocessing) {
+			String solverClassName = control.solving.clazz;
+			control.solving.clazz = SolverLocal.class.getSimpleName();
+			int nRuns = control.restarts.nRunsLimit;
+			control.restarts.nRunsLimit = 10;
+			long cutoff = control.restarts.cutoff;
+			control.restarts.cutoff = 10000;
+			boolean prepro = control.solving.enablePrepro;
+			control.solving.enablePrepro = false;
 			solver = buildSolver(problem);
 			solver.solve();
 			solution = solver.solManager.lastSolution;
-			control.settingOptimization.upperBound = ((SolverLocal) solver).nMinViolatedCtrs;
+			control.optimization.upperBound = ((SolverLocal) solver).nMinViolatedCtrs;
 			if (solver.stopping != EStopping.REACHED_GOAL) {
-				control.settingSolving.clazz = solverClassName;
-				control.settingRestarts.nRunsLimit = nRuns;
-				control.settingRestarts.cutoff = cutoff;
-				control.settingSolving.enablePrepro = prepro;
+				control.solving.clazz = solverClassName;
+				control.restarts.nRunsLimit = nRuns;
+				control.restarts.cutoff = cutoff;
+				control.solving.enablePrepro = prepro;
 			}
 		}
 		return solution;
@@ -362,7 +362,7 @@ public class Head extends Thread {
 		observersConstruction.add(output);
 		problem = buildProblem(instanceNumber);
 
-		if (control.settingSolving.enablePrepro || control.settingSolving.enableSearch) {
+		if (control.solving.enablePrepro || control.solving.enableSearch) {
 			int[] solution = localSearchAtPreprocessing();
 			solver = buildSolver(problem);
 			if (solution != null)
@@ -385,7 +385,7 @@ public class Head extends Thread {
 			} catch (Throwable e) {
 				crashed = true;
 				log.warning("Instance with exception");
-				if (control.settingGeneral.makeExceptionsVisible)
+				if (control.general.makeExceptionsVisible)
 					e.printStackTrace();
 			}
 			statisticsMultiresolution.update(crashed);

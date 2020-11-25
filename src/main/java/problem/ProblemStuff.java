@@ -34,7 +34,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.IVar;
-import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Types.TypeOptimization;
 import org.xcsp.common.predicates.TreeEvaluator.ExternFunctionArity1;
 import org.xcsp.common.predicates.TreeEvaluator.ExternFunctionArity2;
@@ -46,10 +45,8 @@ import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart;
 import constraints.intension.Intension;
 import dashboard.Arguments;
-import dashboard.Control.SettingOptimization;
 import dashboard.Control.SettingVars;
 import dashboard.Output;
-import optimization.Optimizer.OptimizerBasic;
 import sets.SetDense;
 import utility.Kit;
 import variables.Variable;
@@ -138,7 +135,7 @@ public final class ProblemStuff {
 	 * Fields
 	 *********************************************************************************************/
 
-	private final Problem pb;
+	private final Problem problem;
 
 	/** The variables that have been collected so far. */
 	public final List<Variable> collectedVarsAtInit = new ArrayList<>();
@@ -179,7 +176,7 @@ public final class ProblemStuff {
 	Set<String> discardedScps = new HashSet<>();
 
 	public final boolean mustDiscard(IVar x) {
-		Object[] selectedVars = pb.head.control.settingVars.selectedVars;
+		Object[] selectedVars = problem.head.control.variables.selectedVars;
 		if (selectedVars.length == 0)
 			return false;
 		int num = collectedVarsAtInit.size() + discardedVars.size();
@@ -190,7 +187,7 @@ public final class ProblemStuff {
 	}
 
 	public final boolean mustDiscard(IVar[] scp) {
-		if (pb.head.control.settingVars.selectedVars.length == 0)
+		if (problem.head.control.variables.selectedVars.length == 0)
 			return false;
 		boolean mustDiscard = Stream.of(scp).map(x -> x.id()).anyMatch(id -> discardedVars.contains(id));
 		if (mustDiscard)
@@ -218,13 +215,13 @@ public final class ProblemStuff {
 	 *********************************************************************************************/
 
 	private boolean controlConstraintsOfConflictStructures() {
-		Stream.of(pb.constraints).forEach(c -> Kit.control(c.conflictsStructure == null || c.conflictsStructure.registeredCtrs().contains(c),
+		Stream.of(problem.constraints).forEach(c -> Kit.control(c.conflictsStructure == null || c.conflictsStructure.registeredCtrs().contains(c),
 				() -> "pb cloneConstraitnStructure " + c + " " + c.conflictsStructure.firstRegisteredCtr()));
 		return true;
 	}
 
 	private boolean controlUnitListsOfConflictStructures() {
-		Stream.of(pb.constraints).filter(c -> c.conflictsStructure != null)
+		Stream.of(problem.constraints).filter(c -> c.conflictsStructure != null)
 				.forEach(c -> Kit.control(c.conflictsStructure.registeredCtrs().contains(c) && c.conflictsStructure.registeredCtrs().size() == 1,
 						() -> "pb cloneConstraitnStructure " + c + " " + c.conflictsStructure.firstRegisteredCtr()));
 		return true;
@@ -233,7 +230,7 @@ public final class ProblemStuff {
 	public void cloneStructuresOfConstraintsWithArity(int arity, boolean onlyConflictsStructure) {
 		assert controlConstraintsOfConflictStructures();
 		Kit.log.info("   Before cloning, mem=" + Kit.memoryInMb());
-		Stream.of(pb.constraints).filter(c -> arity == -1 || c.scp.length == arity).forEach(c -> c.cloneStructures(onlyConflictsStructure));
+		Stream.of(problem.constraints).filter(c -> arity == -1 || c.scp.length == arity).forEach(c -> c.cloneStructures(onlyConflictsStructure));
 		Kit.log.info("   After cloning, mem=" + Kit.memoryInMb());
 		assert controlUnitListsOfConflictStructures();
 	}
@@ -247,11 +244,11 @@ public final class ProblemStuff {
 	 *********************************************************************************************/
 
 	public int nDomTypes() {
-		return (int) Stream.of(pb.variables).mapToInt(x -> x.dom.typeIdentifier()).distinct().count();
+		return (int) Stream.of(problem.variables).mapToInt(x -> x.dom.typeIdentifier()).distinct().count();
 	}
 
 	private void printNumber(int n) {
-		if (pb.head.control.settingGeneral.verbose > 1 && !pb.head.control.settingXml.competitionMode) {
+		if (problem.head.control.general.verbose > 1 && !problem.head.control.xml.competitionMode) {
 			int nDigits = (int) Math.log10(n) + 1;
 			IntStream.range(0, nDigits).forEach(i -> System.out.print("\b")); // we need to discard previous characters
 			System.out.print((n + 1) + "");
@@ -308,14 +305,14 @@ public final class ProblemStuff {
 	}
 
 	protected ProblemStuff(Problem problem) {
-		this.pb = problem;
-		boolean verbose = problem.head.control.settingGeneral.verbose > 1;
-		varDegrees = new Repartitioner<>(verbose);
-		domSizes = new Repartitioner<>(verbose);
-		ctrArities = new Repartitioner<>(verbose);
-		ctrTypes = new Repartitioner<>(true);
-		tableSizes = new Repartitioner<>(verbose);
-		defaultCosts = new Repartitioner<>(verbose);
+		this.problem = problem;
+		boolean verbose = problem.head.control.general.verbose > 1;
+		this.varDegrees = new Repartitioner<>(verbose);
+		this.domSizes = new Repartitioner<>(verbose);
+		this.ctrArities = new Repartitioner<>(verbose);
+		this.ctrTypes = new Repartitioner<>(true);
+		this.tableSizes = new Repartitioner<>(verbose);
+		this.defaultCosts = new Repartitioner<>(verbose);
 	}
 
 	public void updateStatsForSTR(SetDense set) {
@@ -327,11 +324,11 @@ public final class ProblemStuff {
 	}
 
 	public boolean hasSharedExtensionStructures() {
-		return Stream.of(pb.constraints).anyMatch(c -> c.extStructure() != null && c.extStructure().firstRegisteredCtr() != c);
+		return Stream.of(problem.constraints).anyMatch(c -> c.extStructure() != null && c.extStructure().firstRegisteredCtr() != c);
 	}
 
 	public boolean hasSharedConflictsStructures() {
-		return Stream.of(pb.constraints).anyMatch(c -> c.conflictsStructure != null && c.conflictsStructure.firstRegisteredCtr() != c);
+		return Stream.of(problem.constraints).anyMatch(c -> c.conflictsStructure != null && c.conflictsStructure.firstRegisteredCtr() != c);
 	}
 
 	protected void addToMapForAutomorphismIdentification(IdentificationAutomorphism automorphismIdentification) {
@@ -350,7 +347,7 @@ public final class ProblemStuff {
 
 		public static final String SEPARATOR = "separator";
 
-		String name;
+		private String name;
 
 		private List<Entry<String, Object>> entries = new ArrayList<>();
 
@@ -358,7 +355,7 @@ public final class ProblemStuff {
 			this.name = name;
 		}
 
-		public MapAtt put(String key, Object value, boolean condition, boolean separation) {
+		public MapAtt putIf(String key, Object value, boolean condition, boolean separation) {
 			if (condition) {
 				if (separation)
 					separator();
@@ -367,20 +364,20 @@ public final class ProblemStuff {
 			return this;
 		}
 
-		public MapAtt put(String key, Object value, boolean condition) {
-			return put(key, value, condition, false);
+		public MapAtt putIf(String key, Object value, boolean condition) {
+			return putIf(key, value, condition, false);
 		}
 
-		public MapAtt putPositive(String key, Number value) {
-			return put(key, value, value.doubleValue() > 0);
+		public MapAtt putWhenPositive(String key, Number value) {
+			return putIf(key, value, value.doubleValue() > 0);
 		}
 
 		public MapAtt put(String key, Object value) {
-			return put(key, value, true);
+			return putIf(key, value, true);
 		}
 
 		public MapAtt separator() {
-			return put(SEPARATOR, null, true);
+			return putIf(SEPARATOR, null, true);
 		}
 
 		public List<Entry<String, Object>> entries() {
@@ -398,7 +395,7 @@ public final class ProblemStuff {
 					sep = true;
 				} else {
 					if (!sep)
-						s += ", ";
+						s += "  ";
 					s += (e.getKey() + "=" + e.getValue());
 					sep = false;
 				}
@@ -409,22 +406,17 @@ public final class ProblemStuff {
 
 	public MapAtt instanceAttributes(int instanceNumber) {
 		MapAtt m = new MapAtt("Instance");
-		m.put(NAME, pb.name());
-		// m.put(FRAMEWORK, pb.framework);
-		SettingOptimization opt = pb.head.control.settingOptimization;
-		m.put("bounds", (opt.lowerBound == Long.MIN_VALUE ? "-infty" : opt.lowerBound) + ".." + (opt.upperBound == Long.MAX_VALUE ? "+infty" : opt.upperBound),
-				pb.settings.framework == TypeFramework.COP);
-		m.put(NUMBER, instanceNumber, Arguments.nInstancesToSolve > 1);
-		// m.put(PARAMETERS, pb.formattedPbParameters(), instanceNumber == 0 && !Arguments.problemPackageName.equals(XCSP2.class.getName()));
-		SettingVars settings = pb.head.control.settingVars;
+		m.put(NAME, problem.name());
+		m.putIf(NUMBER, instanceNumber, Arguments.nInstancesToSolve > 1);
+		SettingVars settings = problem.head.control.variables;
 		if (settings.selectedVars.length > 0 || settings.instantiatedVars.length > 0 || settings.priorityVars.length > 0) {
 			m.separator();
-			m.put("selection", Stream.of(settings.selectedVars).map(o -> o.toString()).collect(Collectors.joining(",")), settings.selectedVars.length > 0);
-			m.put("instantiation", IntStream.range(0, settings.instantiatedVars.length)
+			m.putIf("selection", Stream.of(settings.selectedVars).map(o -> o.toString()).collect(Collectors.joining(",")), settings.selectedVars.length > 0);
+			m.putIf("instantiation", IntStream.range(0, settings.instantiatedVars.length)
 					.mapToObj(i -> settings.instantiatedVars[i] + "=" + settings.instantiatedVals[i]).collect(Collectors.joining(",")),
 					settings.instantiatedVars.length > 0);
-			m.put("priority", Stream.of(settings.priorityVars).map(o -> o.toString()).collect(Collectors.joining(",")), settings.priorityVars.length > 0);
-			m.putPositive("nStrictPriorityVars", settings.nStrictPriorityVars);
+			m.putIf("priority", Stream.of(settings.priorityVars).map(o -> o.toString()).collect(Collectors.joining(",")), settings.priorityVars.length > 0);
+			m.putWhenPositive("nStrictPriorityVars", settings.nStrictPriorityVars);
 		}
 		return m;
 	}
@@ -432,48 +424,48 @@ public final class ProblemStuff {
 	public MapAtt domainsAttributes() {
 		MapAtt m = new MapAtt("Domains");
 		m.put("nTypes", nDomTypes());
-		m.put("nValues", Variable.nValidValuesFor(pb.variables));
-		m.putPositive("nRemovedValuesAtConstruction", nValuesRemovedAtConstructionTime);
-		m.putPositive("nPurged", pb.nValuesRemoved);
+		m.put("nValues", Variable.nValidValuesFor(problem.variables));
+		m.putWhenPositive("nRemovedValuesAtConstruction", nValuesRemovedAtConstructionTime);
+		m.putWhenPositive("nPurged", problem.nValuesRemoved);
 		m.put("sizes", domSizes);
 		return m;
 	}
 
 	public MapAtt variablesAttributes() {
 		MapAtt m = new MapAtt("Variables");
-		m.put("count", pb.variables.length);
-		m.putPositive("nDiscarded", discardedVars.size());
-		m.putPositive("nIsolated", nIsolatedVars);
-		m.putPositive("nFixed", nFixedVars);
+		m.put("count", problem.variables.length);
+		m.putWhenPositive("nDiscarded", discardedVars.size());
+		m.putWhenPositive("nIsolated", nIsolatedVars);
+		m.putWhenPositive("nFixed", nFixedVars);
 		m.put("degrees", varDegrees);
 		return m;
 	}
 
 	public MapAtt ctrsAttributes() {
 		MapAtt m = new MapAtt("Constraints");
-		m.put("count", pb.constraints.length);
-		m.putPositive("nRemovedUnary", nRemovedUnaryCtrs);
-		m.putPositive("nConverted", nConvertedConstraints);
-		m.putPositive("nSpecific", nSpecificCtrs);
-		m.putPositive("nMerged", nMergedCtrs);
-		m.putPositive("nDiscarded", nDiscardedCtrs);
-		m.putPositive("nAdded", nAddedCtrs);
-		m.putPositive("nUniversal", nUniversalCtrs);
+		m.put("count", problem.constraints.length);
+		m.putWhenPositive("nRemovedUnary", nRemovedUnaryCtrs);
+		m.putWhenPositive("nConverted", nConvertedConstraints);
+		m.putWhenPositive("nSpecific", nSpecificCtrs);
+		m.putWhenPositive("nMerged", nMergedCtrs);
+		m.putWhenPositive("nDiscarded", nDiscardedCtrs);
+		m.putWhenPositive("nAdded", nAddedCtrs);
+		m.putWhenPositive("nUniversal", nUniversalCtrs);
 		m.put(ARITIES, ctrArities);
-		m.put("distribution", ctrTypes, true, true);
+		m.putIf("distribution", ctrTypes, true, true);
 		if (tableSizes.repartition.size() > 0) {
 			m.separator();
 			m.put(TABLES, tableSizes);
-			m.put(DEFAULT_COSTS, defaultCosts.toString(), defaultCosts.repartition.size() > 0);
+			m.putIf(DEFAULT_COSTS, defaultCosts.toString(), defaultCosts.repartition.size() > 0);
 			m.put("nTotalTuples", tableSizes.cumulatedSum());
 		}
-		m.put("automorphism", mapForAutomorphismIdentification.entrySet().stream().map(e -> e.getKey() + ":" + e.getValue()).collect(Collectors.joining(" ")),
+		m.putIf("automorphism", mapForAutomorphismIdentification.entrySet().stream().map(e -> e.getKey() + ":" + e.getValue()).collect(Collectors.joining(" ")),
 				mapForAutomorphismIdentification.size() > 0, true);
-		m.put("alldiffIdent", mapForAllDifferentIdentification.entrySet().stream().map(e -> e.getKey() + ":" + e.getValue()).collect(Collectors.joining(" ")),
+		m.putIf("alldiffIdent", mapForAllDifferentIdentification.entrySet().stream().map(e -> e.getKey() + ":" + e.getValue()).collect(Collectors.joining(" ")),
 				mapForAllDifferentIdentification.size() > 0, true);
 		int nConflictsStructures = 0, nSharedConflictsStructures = 0, nUnbuiltConflictsStructures = 0;
 		int nExtensionStructures = 0, nSharedExtensionStructures = 0, nEvaluationManagers = 0, nSharedEvaluationManagers = 0;
-		for (Constraint c : pb.constraints) {
+		for (Constraint c : problem.constraints) {
 			if (c instanceof Extension)
 				if (c.extStructure().firstRegisteredCtr() == c)
 					nExtensionStructures++;
@@ -493,15 +485,15 @@ public final class ProblemStuff {
 		}
 		if (nExtensionStructures > 0 || nEvaluationManagers > 0 || nConflictsStructures > 0 || nSharedBinaryRepresentations > 0) {
 			m.separator();
-			m.put("nExtStructures", "(" + nExtensionStructures + ",shared:" + nSharedExtensionStructures + ")", nExtensionStructures > 0);
-			m.put("nIntStructures", "(" + nEvaluationManagers + ",shared:" + nSharedEvaluationManagers + ")", nEvaluationManagers > 0);
-			m.put("nCftStructures", "(" + nConflictsStructures + ",shared:" + nSharedConflictsStructures
+			m.putIf("nExtStructures", "(" + nExtensionStructures + ",shared:" + nSharedExtensionStructures + ")", nExtensionStructures > 0);
+			m.putIf("nIntStructures", "(" + nEvaluationManagers + ",shared:" + nSharedEvaluationManagers + ")", nEvaluationManagers > 0);
+			m.putIf("nCftStructures", "(" + nConflictsStructures + ",shared:" + nSharedConflictsStructures
 					+ (nUnbuiltConflictsStructures > 0 ? ",unbuilt:" + nUnbuiltConflictsStructures : "") + ")", nConflictsStructures > 0);
-			m.putPositive(N_SHARED_BINARY_REPRESENTATIONS, nSharedBinaryRepresentations);
+			m.putWhenPositive(N_SHARED_BINARY_REPRESENTATIONS, nSharedBinaryRepresentations);
 		}
 		m.separator();
-		m.put("wck", pb.head.instanceStopwatch.wckTimeInSeconds());
-		m.put("cpu", pb.head.stopwatch.cpuTimeInSeconds());
+		m.put("wck", problem.head.instanceStopwatch.wckTimeInSeconds());
+		m.put("cpu", problem.head.stopwatch.cpuTimeInSeconds());
 		m.put(MEM, Kit.memoryInMb());
 		// m.putPositive( COMPRESSION, TableCompressed3.compression);
 		return m;
@@ -509,11 +501,10 @@ public final class ProblemStuff {
 
 	public MapAtt objsAttributes() {
 		MapAtt m = new MapAtt("Objective");
-		m.put("way", (pb.optimizer.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName());
-		if (pb.optimizer.ctr != null)
-			m.put("type", pb.optimizer.ctr.getClass().getSimpleName());
-		else
-			m.put(" exp=", ((OptimizerBasic) pb.optimizer).optimizationExpression);
+		m.put("way", (problem.optimizer.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName());
+		Kit.control(problem.optimizer.ctr != null);
+		m.put("type", problem.optimizer.ctr.getClass().getSimpleName());
+		m.put("bounds", (problem.optimizer.ctr.minComputableObjectiveValue() + ".." + problem.optimizer.ctr.maxComputableObjectiveValue()));
 		return m;
 	}
 

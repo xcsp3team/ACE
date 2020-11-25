@@ -30,8 +30,8 @@ public abstract class HeuristicVariables extends Heuristic {
 
 	public static HeuristicVariables buildFor(SolverBacktrack solver) {
 		Set<Class<?>> classes = solver.head.handlerClasses.map.get(HeuristicVariables.class);
-		if (solver.head.control.settingSolving.enableSearch || solver.propagation instanceof GIC2)
-			return Reflector.buildObject(solver.head.control.settingVarh.classForVarHeuristic, classes, solver, solver.head.control.settingVarh.anti);
+		if (solver.head.control.solving.enableSearch || solver.propagation instanceof GIC2)
+			return Reflector.buildObject(solver.head.control.varh.classForVarHeuristic, classes, solver, solver.head.control.varh.anti);
 		return null;
 	}
 
@@ -95,7 +95,7 @@ public abstract class HeuristicVariables extends Heuristic {
 		super(antiHeuristic); // anti ? (this instanceof TagMinimize ? TypeOptimization.MAX : TypeOptimization.MIN ) : (this instanceof TagMinimize ?
 								// TypeOptimization.MAX : TypeOptimization.MIN );
 		this.solver = solver;
-		SettingVars settingVars = solver.head.control.settingVars;
+		SettingVars settingVars = solver.head.control.variables;
 		if (settingVars.priorityVars.length > 0) {
 			this.priorityVars = Stream.of(settingVars.priorityVars).map(o -> solver.problem.findVarWithNumOrId(o)).toArray(Variable[]::new);
 			this.nStrictlyPriorityVars = settingVars.nStrictPriorityVars;
@@ -103,7 +103,7 @@ public abstract class HeuristicVariables extends Heuristic {
 			this.priorityVars = solver.problem.priorityVars;
 			this.nStrictlyPriorityVars = solver.problem.nStrictPriorityVars;
 		}
-		this.settings = solver.head.control.settingVarh;
+		this.settings = solver.head.control.varh;
 	}
 
 	/** Returns the score of the specified variable. This is the method to override when defining a new heuristic. */

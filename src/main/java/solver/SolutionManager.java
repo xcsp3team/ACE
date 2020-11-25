@@ -121,10 +121,10 @@ public final class SolutionManager {
 	public SolutionManager(Solver solver, long nSolutionsLimit) {
 		this.solver = solver;
 		this.limit = nSolutionsLimit;
-		this.bestBound = solver.head.control.settingOptimization.upperBound;
-		this.allSolutions = solver.head.control.settingGeneral.recordSolutions ? new ArrayList<int[]>() : null;
+		this.bestBound = solver.head.control.optimization.upperBound;
+		this.allSolutions = solver.head.control.general.recordSolutions ? new ArrayList<int[]>() : null;
 		// this.solutionOptimizer = new SolutionOptimizer(this);
-		if (solver.head.control.settingXml.competitionMode)
+		if (solver.head.control.xml.competitionMode)
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
 		this.listVars = vars_values(true, false);
 		this.listVarsWithoutAuxiliary = vars_values(true, true);
@@ -226,16 +226,16 @@ public final class SolutionManager {
 			bestBound = solver.problem.optimizer.value();
 			Kit.control(solver.problem.optimizer.isBetterBound(bestBound));
 			// solver.restarter.forceRootPropagation = true;
-			if (solver.head.control.settingXml.competitionMode)
+			if (solver.head.control.xml.competitionMode)
 				System.out.println("o " + bestBound + " \t" + (solver.head.instanceStopwatch.wckTimeInSeconds()));
 			// solver.restarter.currCutoff += 20;
 			// + " \t#" + found); // + "); (hamming: " + h1 + ", in_objective: " + h2 + ")");
 		}
 		// The following code must stay after storeSolution
 		String s = lastSolutionInXmlFormat(); // keep the call separated in order to possibly secure its quick output (see code)
-		if (!solver.head.control.settingXml.competitionMode)
+		if (!solver.head.control.xml.competitionMode)
 			log.config(" " + s + "\n");
-		if (solver.head.control.settingGeneral.verbose > 1)
+		if (solver.head.control.general.verbose > 1)
 			log.config(lastSolutionInJsonFormat(false) + "\n");
 		// solver.pb.api.prettyDisplay(vars_values(false, false).split("\\s+"));
 

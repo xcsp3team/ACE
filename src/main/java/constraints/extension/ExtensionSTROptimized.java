@@ -68,7 +68,7 @@ public abstract class ExtensionSTROptimized extends ExtensionSTR1 {
 
 	public ExtensionSTROptimized(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		this.decremental = pb.head.control.settingExtension.decremental;
+		this.decremental = pb.head.control.extension.decremental;
 	}
 
 	protected void initRestorationStructuresBeforeFiltering() {

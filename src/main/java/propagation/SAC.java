@@ -387,7 +387,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			// DomThenDDeg((BacktrackSearchSolver) solver, OptimizationType.MIN),
 			// new WDegOnDom((BacktrackSearchSolver) solver, OptimizationType.MAX)
 			// };
-			double ratio = solver.head.control.settingShaving.ratio, alpha = solver.head.control.settingShaving.alpha;
+			double ratio = solver.head.control.shaving.ratio, alpha = solver.head.control.shaving.alpha;
 			this.shavingEvaluator = ratio != 0 ? new ShavingEvaluator(solver.problem.variables.length, alpha, ratio) : null;
 		}
 
