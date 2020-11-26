@@ -179,8 +179,8 @@ public final class SmartTuple {
 		for (XNodeParent<? extends IVar> tr : collectedTreeRestrictions) {
 			if (tr.sons.length == 2) {
 				XNode<? extends IVar> son0 = tr.sons[0], son1 = tr.sons[1];
-				Utilities.control(son0.type == TypeExpr.VAR, "Left side operand must be a variable");
-				Utilities.control(son1.type != TypeExpr.SYMBOL, "Symbolic values not possible for the moment");
+				Kit.control(son0.type == TypeExpr.VAR, () -> "Left side operand must be a variable");
+				Kit.control(son1.type != TypeExpr.SYMBOL, () -> "Symbolic values not possible for the moment");
 				Variable x = (Variable) ((XNodeLeaf<?>) son0).value;
 				if (son0.type == TypeExpr.VAR && son1.type == TypeExpr.LONG) {
 					int val = Utilities.safeInt(((long) ((XNodeLeaf<?>) son1).value));
@@ -349,8 +349,8 @@ public final class SmartTuple {
 		}
 
 		/**
-		 * Returns true iff the specified (value) index for the variable x is valid, i.e. the restriction is valid for the smart tuple when x is set
-		 * to (the value corresponding to) a.
+		 * Returns true iff the specified (value) index for the variable x is valid, i.e. the restriction is valid for the smart tuple when x is set to (the
+		 * value corresponding to) a.
 		 */
 		public abstract boolean isValidFor(int a);
 	}
@@ -360,8 +360,8 @@ public final class SmartTuple {
 	 *********************************************************************************************/
 
 	/**
-	 * Restriction of the form x <op> v with <op> in {lt,le,ge,gt,ne,eq}. We store such a restriction by recording x (actually, its position) and
-	 * pivot (for the index of the value in dom(x) that is related to v ; see subclass constructors for details). <br />
+	 * Restriction of the form x <op> v with <op> in {lt,le,ge,gt,ne,eq}. We store such a restriction by recording x (actually, its position) and pivot (for the
+	 * index of the value in dom(x) that is related to v ; see subclass constructors for details). <br />
 	 * The operation <op> corresponds to the chosen subclass.
 	 */
 	abstract class Rstr1 extends RestrictionSimple {
@@ -568,9 +568,8 @@ public final class SmartTuple {
 		}
 
 		/**
-		 * Method called when the backward phase of a RestrictionStarMultiStar has been performed. More precisely, in tmp, we have exactly nb indexes
-		 * for scope[vap] that are compatible with all subrestrictions of the RestrictionStarMultiStar. We call this method to perform the forward
-		 * phase.
+		 * Method called when the backward phase of a RestrictionStarMultiStar has been performed. More precisely, in tmp, we have exactly nb indexes for
+		 * scope[vap] that are compatible with all subrestrictions of the RestrictionStarMultiStar. We call this method to perform the forward phase.
 		 */
 		public abstract void collectForVap2(int nb);
 

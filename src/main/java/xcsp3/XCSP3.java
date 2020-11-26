@@ -400,7 +400,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrIntension(String id, XVarInteger[] scope, XNodeParent<XVarInteger> tree) {
-		Utilities.control(tree.exactlyVars(scope), "Pb with scope");
+		Kit.control(tree.exactlyVars(scope), "Pb with scope");
 		intension((XNodeParent<IVar>) (Object) tree);
 	}
 
@@ -1090,7 +1090,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrIntension(String id, XVarSymbolic[] scope, XNodeParent<XVarSymbolic> tree) {
-		Utilities.control(tree.exactlyVars(scope), "Pb with scope");
+		Kit.control(tree.exactlyVars(scope), "Pb with scope");
 		intension((XNodeParent<IVar>) (Object) tree);
 		// imp().intension(trVars(scope), (XNodeParent<IVar>) (Object) tree);
 	}

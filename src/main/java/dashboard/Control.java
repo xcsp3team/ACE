@@ -143,17 +143,10 @@ public class Control {
 		String s_cm = "Output made compatible with XCSP3 competitions";
 		String s_dir = "Indicates the name of a directory where results (XML files) for a campaign will be stored."
 				+ "\n\tIf the value is the empty string, results are not saved.";
-		String s_kin = "When saving in XCSP3, indicates if the initial name of the instance must be preserved.";
-		String s_iag = "When compiling to XCSP3, avoids to build groups automatically";
-		String s_sis = "When compiling to XCSP3, avoids to group constraints that are separated";
 		String s_dpri = "Displays recognized primitives, at parsing time";
 
 		public final String discardedClasses = addS("discardedClasses", "dc", EMPTY_STRING, s_dc);
-		public final boolean competitionMode = addB("competitionMode", "cm", true, s_cm);
 		public final String dirForCampaign = addS("dirForCampaign", "dir", EMPTY_STRING, s_dir);
-		public final boolean keepInstanceName = addB("keepInstanceName", "kin", false, s_kin, HIDDEN);
-		public final boolean ignoreAutomaticGroups = addB("ignoreAutomaticGroups", "iag", false, s_iag, HIDDEN);
-		public final boolean saveImmediatelyStored = addB("saveImmediatelyStored", "sis", true, s_sis, HIDDEN);
 		public final boolean displayPrimitives = addB("displayPrimitives", "dpri", false, s_dpri, HIDDEN);
 	}
 
@@ -184,7 +177,7 @@ public class Control {
 		public TypeFramework framework = addE("framework", "f", TypeFramework.CSP, s_framework);
 		public long nSearchedSolutions = addL("nSearchedSolutions", "s", framework == TypeFramework.CSP ? 1 : PLUS_INFINITY, s_s);
 		public final long timeout = addL("timeout", "t", PLUS_INFINITY, s_timeout);
-		public final int verbose = addI("verbose", "v", 1, s_verbose);
+		public final int verbose = addI("verbose", "v", 0, s_verbose);
 		public final String trace = addS("trace", "trace", EMPTY_STRING, s_trace);
 		public final long seed = addL("seed", "seed", 0, s_seed);
 		public final boolean makeExceptionsVisible = addB("makeExceptionsVisible", "ev", false, s_ev);
@@ -194,6 +187,7 @@ public class Control {
 		public final boolean recordSolutions = addB("recordSolutions", "rs", false, s_rs, HIDDEN);
 		public final String saveNetworkGraph = addS("saveNetworkGraph", "sng", EMPTY_STRING,
 				"Three bits indicating if we need respectively a macro, positive and primal graph");
+		public final boolean noPrintColors = addB("noPrintColors", "npc", false, "", HIDDEN);
 	}
 
 	public final SettingGeneral general = new SettingGeneral();
@@ -678,7 +672,7 @@ public class Control {
 
 	private Control() {
 		int verbose = general.verbose;
-		Kit.control(verbose >= 0 && verbose <= 3, () -> "Verbose must be in 0..3");
+		Kit.control(0 <= verbose && verbose <= 3, () -> "Verbose must be in 0..3");
 		Kit.log.setLevel(verbose == 0 ? Level.CONFIG : verbose == 1 ? Level.FINE : verbose == 2 ? Level.FINER : Level.FINEST);
 		if (general.conditionForSatisfaction.trim().length() != 0) {
 			String s = general.conditionForSatisfaction;
@@ -695,6 +689,8 @@ public class Control {
 		settings.controlKeys();
 		if (general.makeExceptionsVisible)
 			org.xcsp.modeler.Compiler.ev = true;
+		if (general.noPrintColors)
+			Kit.useColors = false;
 	}
 
 	/**********************************************************************************************
@@ -787,14 +783,14 @@ public class Control {
 			/** Returns the value (a double) of the specified attribute for the specified tag. */
 			private double doubleFor(String shortcut, String tag, String att, Double defaultValue) {
 				Double d = Utilities.toDouble(stringFor(shortcut, tag, att, defaultValue));
-				Utilities.control(d != null, "A double value was expected for " + tag + "/" + att);
+				Kit.control(d != null, () -> "A double value was expected for " + tag + "/" + att);
 				return d;
 			}
 
 			/** Returns the value (a boolean) of the specified attribute for the specified tag. */
 			private boolean booleanFor(String shortcut, String tag, String att, Boolean defaultValue) {
 				Boolean b = Utilities.toBoolean(stringFor(shortcut, tag, att, defaultValue));
-				Utilities.control(b != null, "A boolean value was expected for " + tag + "/" + att);
+				Kit.control(b != null, () -> "A boolean value was expected for " + tag + "/" + att);
 				return b;
 			}
 		}

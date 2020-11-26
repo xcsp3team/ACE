@@ -320,8 +320,7 @@ public class Head extends Thread {
 	}
 
 	protected final Solver buildSolver(Problem problem) {
-		boolean cm = problem.head.control.xml.competitionMode;
-		Kit.log.config("\n" + Output.COMMENT_PREFIX + "Building solver... " + (cm ? "\n" : ""));
+		Kit.log.config("\n" + Output.COMMENT_PREFIX + "Building solver... ");
 		solver = Reflector.buildObject(control.solving.clazz, Solver.class, this);
 		for (ObserverConstruction obs : observersConstruction)
 			obs.afterSolverConstruction();
@@ -376,7 +375,7 @@ public class Head extends Thread {
 	@Override
 	public void run() {
 		stopwatch.start();
-		log.config("\n ACE (AbsCon Essence) v0.9 " + Kit.dateOf(Head.class) + "\n");
+		log.config("\n" + Kit.preprint("ACE (AbsCon Essence)", Kit.ORANGE) + " v0.9 " + Kit.dateOf(Head.class));
 		boolean crashed = false;
 		for (int i = 0; i < Arguments.nInstancesToSolve; i++) {
 			try {

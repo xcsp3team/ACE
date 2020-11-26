@@ -7,7 +7,7 @@ import main.HeadExtraction;
 public class UtilityForTests {
 
 	public static Head runResolution(String args, boolean extraction) {
-		System.out.println("Command : " + args);
+		System.out.println("\nCommand : " + args);
 		Arguments.loadArguments(args.split("\\s+"));
 		Head resolution = extraction ? new HeadExtraction() : new Head();
 		try {

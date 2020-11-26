@@ -273,11 +273,6 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		save(resolution.instanceStopwatch.wckTime());
 	}
 
-	// PURPLE, BLUE, GREEN, ORANGE, RED, WHITE, WHITE_BOLD, UNDERLINE = '\033[95m', '\033[94m', '\033[92m', '\033[93m', '\033[91m', '\033[0m', '\033[1m',
-	// '\033[4m'
-	String GREEN = "\033[92m";
-	String WHITE = "\033[0m";
-
 	public void afterData() { // not a method from an observer
 		MapAtt ia = resolution.problem.stuff.instanceAttributes(resolution.instanceNumber);
 		Kit.control(outputFileName == null);
@@ -285,7 +280,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		String name = ia.entries().stream().filter(e -> e.getKey().equals(Output.NAME)).map(e -> e.getValue().toString()).findFirst().get();
 		outputFileName = outputFileNameFrom(name, resolution.control.settingsFilename);
 
-		Kit.log.config(Output.COMMENT_PREFIX + GREEN + "Instance " + WHITE + name + "\n\n");
+		Kit.log.config(Output.COMMENT_PREFIX + Kit.preprint("Instance ", Kit.BLUE) + name + "\n");
 		record(TypeOutput.INSTANCE, ia.entries(), resolElt);
 	}
 
@@ -301,7 +296,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		record(TypeOutput.CONSTRAINTS, ca.entries(), resolElt);
 		if (oa != null)
 			record(TypeOutput.OBJECTIVE, oa.entries(), resolElt);
-		Kit.log.config("\n\n" + da.toString());
+		Kit.log.config("\n" + da.toString());
 		Kit.log.config(va.toString());
 		Kit.log.config(ca.toString());
 		if (oa != null)

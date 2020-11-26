@@ -77,7 +77,7 @@ public final class Kit {
 						System.err.println("From " + ((Head) Thread.currentThread()).control.settingsFilename + " :");
 					// c.setTimeInMillis(record.getMillis());
 					Thread t = Head.currentThread();
-					if (t instanceof Head && !((Head) t).control.xml.competitionMode)
+					if (t instanceof Head && ((Head) t).control.general.verbose > 1)
 						System.err.println("\n" + record.getLevel() + " : " + record.getMessage()); // + " " + c.getTime());
 					if (record.getLevel() == Level.SEVERE) {
 						System.err.println(record.getLevel() + " forces us to stop");
@@ -105,14 +105,18 @@ public final class Kit {
 		return conditionToBeRespected ? null : exit(message.get(), new Exception());
 	}
 
+	public static Object control(boolean conditionToBeRespected, String message) {
+		return conditionToBeRespected ? null : exit(message, new Exception());
+	}
+
 	public static Object control(boolean conditionToBeRespected) {
 		return control(conditionToBeRespected, () -> "");
 	}
 
 	public static Object exit(String message, Throwable e) {
+		System.out.println(preprint("\n! ERROR " + message + "(use -ev for more details)", RED));
 		if (!(Thread.currentThread() instanceof Head) || ((Head) Thread.currentThread()).control.general.makeExceptionsVisible)
 			e.printStackTrace();
-		System.out.println(message);
 		System.exit(1);
 		// log.severe(message);
 		return null;
@@ -802,6 +806,23 @@ public final class Kit {
 		public CombinatorOfTwoInts() {
 			this(Integer.MAX_VALUE - 1, Integer.MAX_VALUE - 1);
 		}
+	}
+
+	public static boolean useColors = true;
+
+	public static final String BLACK = "\033[0;30m"; // BLACK
+	public static final String YELLOW = "\u001b[33m"; // YELLOW
+	public static final String CYAN = "\033[0;36m"; // CYAN
+	public static final String PURPLE = "\033[95m";
+	public static final String BLUE = "\033[94m";
+	public static final String ORANGE = "\033[93m";
+	public static final String RED = "\033[91m";
+	public static final String GREEN = "\033[92m";
+	public static final String WHITE_BOLD = "\033[1m";
+	public static final String WHITE = "\033[0m";
+
+	public static String preprint(String s, String color) {
+		return useColors ? color + s + WHITE : s;
 	}
 
 }

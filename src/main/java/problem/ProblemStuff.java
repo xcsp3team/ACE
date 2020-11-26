@@ -248,7 +248,7 @@ public final class ProblemStuff {
 	}
 
 	private void printNumber(int n) {
-		if (problem.head.control.general.verbose > 1 && !problem.head.control.xml.competitionMode) {
+		if (problem.head.control.general.verbose > 1) {
 			int nDigits = (int) Math.log10(n) + 1;
 			IntStream.range(0, nDigits).forEach(i -> System.out.print("\b")); // we need to discard previous characters
 			System.out.print((n + 1) + "");
@@ -257,7 +257,7 @@ public final class ProblemStuff {
 
 	public final int addCollectedVariable(Variable x) {
 		if (collectedVarsAtInit.isEmpty()) // first call
-			System.out.print(Output.COMMENT_PREFIX + "Loading variables...\n");
+			System.out.print(Output.COMMENT_PREFIX + "Loading variables...");
 		printNumber(collectedVarsAtInit.size());
 
 		int num = collectedVarsAtInit.size();
@@ -386,7 +386,7 @@ public final class ProblemStuff {
 
 		@Override
 		public String toString() {
-			String s = (name.equals("Run") ? "" : Output.COMMENT_PREFIX + name + "\n") + Output.COMMENT_PREFIX + Output.COMMENT_PREFIX;
+			String s = (name.equals("Run") ? "" : Output.COMMENT_PREFIX + Kit.preprint(name, Kit.BLUE) + "\n") + Output.COMMENT_PREFIX + Output.COMMENT_PREFIX;
 			boolean sep = true;
 			for (int i = 0; i < entries.size(); i++) {
 				Entry<String, Object> e = entries.get(i);

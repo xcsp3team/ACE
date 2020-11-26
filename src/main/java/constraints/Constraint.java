@@ -19,7 +19,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Types.TypeFramework;
-import org.xcsp.common.Utilities;
 import org.xcsp.modeler.definitions.ICtr;
 
 import constraints.extension.Extension;
@@ -873,11 +872,11 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 *********************************************************************************************/
 
 	public void control(boolean conditionToBeRespected, String message) {
-		Utilities.control(conditionToBeRespected, message);
+		Kit.control(conditionToBeRespected, () -> message);
 	}
 
 	public void control(boolean conditionToBeRespected) {
-		Utilities.control(conditionToBeRespected, "");
+		Kit.control(conditionToBeRespected, () -> "");
 	}
 
 	public StringBuilder signature() {

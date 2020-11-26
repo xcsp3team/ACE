@@ -257,51 +257,39 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		@Override
 		public MapAtt runAttributes() {
 			MapAtt m = new MapAtt("Run");
-			if (solver.head.control.xml.competitionMode) {
-				m.put("run", solver.restarter.numRun);
-				m.put("dpt", solver.minDepth + ".." + solver.maxDepth);
-				m.put("eff", nEffectiveFilterings());
-				m.put("wrg", nWrongDecisions);
-				if (Kit.memory() > 10000000000L)
-					m.put(Output.MEM, Kit.memoryInMb());
-				m.put(Output.WCK, stopwatch.wckTimeInSeconds());
-				if (solver.nogoodRecorder != null)
-					m.putWhenPositive("ngd", solver.nogoodRecorder.nNogoods);
-				if (solver.solManager.found > 0) {
-					if (solver.problem.settings.framework == TypeFramework.CSP)
-						m.put("nSols", solver.solManager.found);
-					else
+			m.put("run", solver.restarter.numRun);
+			m.put("dpt", solver.minDepth + ".." + solver.maxDepth);
+			m.put("eff", nEffectiveFilterings());
+			m.put("wrg", nWrongDecisions);
+			if (Kit.memory() > 10000000000L)
+				m.put(Output.MEM, Kit.memoryInMb());
+			m.put(Output.WCK, stopwatch.wckTimeInSeconds());
+			if (solver.nogoodRecorder != null)
+				m.putWhenPositive("ngd", solver.nogoodRecorder.nNogoods);
+			if (solver.solManager.found > 0) {
+				if (solver.problem.settings.framework == TypeFramework.CSP)
+					m.put("nSols", solver.solManager.found);
+				else {
+					if (solver.problem.optimizer.minBound == 0 || solver.problem.optimizer.minBound == Long.MIN_VALUE)
 						m.put("bnd", nformat.format(solver.solManager.bestBound));
+					else
+						m.put("bnds", solver.problem.optimizer.stringBounds());
+					// m.put("bnd", nformat.format(solver.solManager.bestBound));
 				}
-				return m;
 			}
-
-			m.put("num", solver.restarter.numRun);
-			m.put(Output.DEPTH, solver.minDepth + ".." + solver.maxDepth);
-			m.put("filters", nEffectiveFilterings());
+			if (solver.head.control.general.verbose <= 1)
+				return m;
+			m.separator();
+			m.put("decs", nDecisions);
+			m.put("backs", nBacktracks);
+			m.put("failed", nFailedAssignments);
 			m.putIf("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
 			if (nSingletonTests() > 0) { // solver.getPreproPropagationTechnique() instanceof SingletonArcConsistency) {
 				m.put(Output.N_SINGLETON_TESTS, nSingletonTests());
 				m.put(Output.N_EFFECTIVE_SINGLETON_TESTS, nEffectiveSingletonTests());
 			}
-			m.put(Output.WCK, stopwatch.wckTimeInSeconds());
 			if (Kit.memory() > 10000000000L)
 				m.put(Output.MEM, Kit.memoryInMb());
-			m.separator();
-
-			m.put("decisions", nDecisions);
-			m.put("wrg", nWrongDecisions);
-			m.put("backtracks", nBacktracks);
-			// m.put(Output.N_ASSIGNMENTS, nAssignments);
-			m.put("failedAssignments", nFailedAssignments);
-			// m.put(Output.N_VISITED_NODES, nVisitedNodes);
-			if (solver.nogoodRecorder != null)
-				m.putWhenPositive("ngd", solver.nogoodRecorder.nNogoods);
-			if (solver.solManager.found > 0) {
-				m.put("nSols", solver.solManager.found);
-				if (solver.problem.settings.framework != TypeFramework.CSP)
-					m.put("bnd", solver.solManager.bestBound);
-			}
 			m.separator();
 			if (solver.problem.stuff.nFilterCallsSTR > 0) {
 				m.put(Output.N_FILTER_CALLS, solver.problem.stuff.nFilterCallsSTR);
@@ -315,7 +303,6 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 				m.put(Output.N_INFERENCES, learner.nInferences);
 				// map.put("nbInferredSolutions", solutionCounter.nbInferredSolutions );
 				m.put(Output.N_TOO_LARGE_KEYS, learner.nTooLargeKeys);
-				m.separator();
 			}
 			if (solver.ipsRecorder != null) {
 				ReductionOperator ro = solver.ipsRecorder.reductionOperator;

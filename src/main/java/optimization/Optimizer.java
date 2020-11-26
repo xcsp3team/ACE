@@ -76,12 +76,12 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	/**
 	 * Solutions searched for must have a cost greater than or equal to this bound (valid for minimization and maximization).
 	 */
-	protected long minBound;
+	public long minBound;
 
 	/**
 	 * Solutions searched for must have a cost less than or equal to this bound (valid for minimization and maximization).
 	 */
-	protected long maxBound;
+	public long maxBound;
 
 	public Optimizer(Problem pb, TypeOptimization opt, Optimizable c) {
 		this.problem = pb;
@@ -133,7 +133,7 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 				minBound = ctr.limit() + 1;
 			else
 				maxBound = ctr.limit() - 1;
-			Kit.log.fine("\n" + Output.COMMENT_PREFIX + "New Bounds: " + stringBounds());
+			Kit.log.finer("\n" + Output.COMMENT_PREFIX + "New Bounds: " + stringBounds());
 			if (minBound <= maxBound) {
 				problem.solver.stopping = null;
 				Kit.control(problem.stuff.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
@@ -149,7 +149,7 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	public void shiftLimit(long offset) {
 		Kit.control(0 <= offset && minBound + offset <= maxBound, () -> "offset " + offset + " minBound " + minBound + " maxBound " + maxBound);
 		long newLimit = minimization ? maxBound - offset : minBound + offset;
-		Kit.log.fine(Output.COMMENT_PREFIX + "New Limit: " + newLimit + "\n");
+		Kit.log.finer(Output.COMMENT_PREFIX + "New Limit: " + newLimit + "\n");
 		ctr.limit(newLimit);
 	}
 

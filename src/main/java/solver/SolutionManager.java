@@ -8,7 +8,13 @@
  */
 package solver;
 
+import static org.xcsp.common.Types.TypeFramework.COP;
+import static org.xcsp.common.Types.TypeFramework.CSP;
+import static org.xcsp.common.Types.TypeFramework.MAXCSP;
+import static utility.Kit.GREEN;
+import static utility.Kit.RED;
 import static utility.Kit.log;
+import static utility.Kit.preprint;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -92,7 +98,7 @@ public final class SolutionManager {
 	public String lastSolutionInXmlFormat() { // auxiliary variables are not considered
 		assert found > 0;
 		StringBuilder sb = new StringBuilder("<instantiation id='sol").append(found).append("' type='solution'");
-		sb.append(solver.problem.settings.framework != TypeFramework.CSP ? " cost='" + bestBound + "'" : "").append(">");
+		sb.append(solver.problem.settings.framework != CSP ? " cost='" + bestBound + "'" : "").append(">");
 		sb.append(" <list> ").append(listVarsWithoutAuxiliary).append(" </list> <values> ").append(vars_values(false, true));
 		String s = sb.append(" </values> </instantiation>").toString();
 		if (lastSolutionXml != null)
@@ -102,7 +108,7 @@ public final class SolutionManager {
 
 	public String lastSolutionInJsonFormat(boolean discardAuxiliary) {
 		assert found > 0;
-		String PREFIX = " ";
+		String PREFIX = "   ";
 		StringBuilder sb = new StringBuilder(PREFIX).append("{\n");
 		for (VarEntity va : solver.problem.varEntities.allEntities) {
 			if (solver.problem.undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
@@ -124,8 +130,8 @@ public final class SolutionManager {
 		this.bestBound = solver.head.control.optimization.upperBound;
 		this.allSolutions = solver.head.control.general.recordSolutions ? new ArrayList<int[]>() : null;
 		// this.solutionOptimizer = new SolutionOptimizer(this);
-		if (solver.head.control.xml.competitionMode)
-			Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
+		// if (solver.head.control.xml.competitionMode)
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
 		this.listVars = vars_values(true, false);
 		this.listVarsWithoutAuxiliary = vars_values(true, true);
 		// this.lastSolutionXml = ""; // uncomment for security when really running a competition (hard coding)
@@ -139,25 +145,25 @@ public final class SolutionManager {
 				lock.set(true);
 				System.out.println();
 				if (found > 0)
-					System.out.println("\nSolution " + found + " in JSON format:\n" + lastSolutionInJsonFormat(false) + "\n");
+					System.out.println("\n  Solution " + found + " in JSON format:\n" + lastSolutionInJsonFormat(false) + "\n");
 				if (fullExploration) {
 					if (found == 0)
-						System.out.println("s UNSATISFIABLE");
+						System.out.println(preprint("s UNSATISFIABLE", GREEN));
 					else
-						System.out.println(framework == TypeFramework.COP ? "s OPTIMUM \t" + bestBound : "s SATISFIABLE");
+						System.out.println(framework == COP ? preprint("s OPTIMUM", GREEN) + " " + bestBound : preprint("s SATISFIABLE", GREEN));
 				} else {
 					if (found == 0)
-						System.out.println("s UNKNOWN");
+						System.out.println(preprint("s UNKNOWN", RED));
 					else
-						System.out.println(framework == TypeFramework.COP ? "s SATISFIABLE - BOUND " + bestBound : "s SATISFIABLE");
+						System.out.println(framework == COP ? preprint("s SATISFIABLE", GREEN) + " - BOUND " + bestBound : preprint("s SATISFIABLE", GREEN));
 				}
 				if (found > 0)
-					System.out.println("\nv " + (lastSolutionXml != null ? lastSolutionXml : lastSolutionInXmlFormat()));
-				System.out.println("\nd WRONG DECISIONS " + solver.stats.nWrongDecisions);
-				if (fullExploration && framework == TypeFramework.CSP)
-					System.out.println("d NUMBER OF SOLUTIONS " + found);
-				System.out.println(fullExploration ? "d COMPLETE EXPLORATION" : "d INCOMPLETE EXPLORATION");
-				System.out.println("c real time : " + solver.head.stopwatch.cpuTimeInSeconds());
+					System.out.println("\n" + preprint("v", GREEN) + " " + (lastSolutionXml != null ? lastSolutionXml : lastSolutionInXmlFormat()));
+				System.out.println("\n" + preprint("d WRONG DECISIONS", GREEN) + " " + solver.stats.nWrongDecisions);
+				if (fullExploration && framework == CSP)
+					System.out.println(preprint("d NUMBER OF SOLUTIONS", GREEN) + " " + found);
+				System.out.println(fullExploration ? preprint("d COMPLETE EXPLORATION", GREEN) : preprint("d INCOMPLETE EXPLORATION", RED));
+				System.out.println("\nc real time : " + solver.head.stopwatch.cpuTimeInSeconds());
 				System.out.flush();
 			}
 		}
@@ -216,7 +222,7 @@ public final class SolutionManager {
 
 		if (solver.propagation.performingProperSearch)
 			return;
-		if (solver.problem.settings.framework == TypeFramework.MAXCSP) {
+		if (solver.problem.settings.framework == MAXCSP) {
 			int z = (int) Stream.of(solver.problem.constraints).filter(c -> !c.checkCurrentInstantiation()).count();
 			Kit.control(z < bestBound, () -> "z=" + z + " bb=" + bestBound);
 			bestBound = z;
@@ -226,14 +232,13 @@ public final class SolutionManager {
 			bestBound = solver.problem.optimizer.value();
 			Kit.control(solver.problem.optimizer.isBetterBound(bestBound));
 			// solver.restarter.forceRootPropagation = true;
-			if (solver.head.control.xml.competitionMode)
-				System.out.println("o " + bestBound + " \t" + (solver.head.instanceStopwatch.wckTimeInSeconds()));
+			System.out.println(preprint("o " + bestBound, GREEN) + "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
 			// solver.restarter.currCutoff += 20;
 			// + " \t#" + found); // + "); (hamming: " + h1 + ", in_objective: " + h2 + ")");
 		}
 		// The following code must stay after storeSolution
 		String s = lastSolutionInXmlFormat(); // keep the call separated in order to possibly secure its quick output (see code)
-		if (!solver.head.control.xml.competitionMode)
+		if (solver.head.control.general.verbose > 2)
 			log.config(" " + s + "\n");
 		if (solver.head.control.general.verbose > 1)
 			log.config(lastSolutionInJsonFormat(false) + "\n");
@@ -256,7 +261,7 @@ public final class SolutionManager {
 		if (solver instanceof SolverBacktrack) {
 			Variable x = Variable.firstNonSingletonVariableIn(solver.problem.variables);
 			Kit.control(x == null, () -> "Problem with last solution: variable " + x + " has not a unique value");
-			if (solver.problem.settings.framework == TypeFramework.MAXCSP)
+			if (solver.problem.settings.framework == MAXCSP)
 				return true;
 		}
 		Constraint c = Constraint.firstUnsatisfiedHardConstraint(solver.problem.constraints);

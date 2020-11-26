@@ -97,7 +97,7 @@ public abstract class SumWeighted extends Sum {
 	public final void limit(long newLimit) {
 		super.limit(newLimit);
 		if (coeffs != null) // not available at construction time
-			control(minComputableObjectiveValue() <= limit && limit <= maxComputableObjectiveValue()); // TODO using a cache for these two values
+			control(minComputableObjectiveValue() - 1 <= limit && limit <= maxComputableObjectiveValue() + 1); // TODO using a cache for these two values
 	}
 
 	public final int[] coeffs;

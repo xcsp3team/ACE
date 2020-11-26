@@ -201,7 +201,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 						break;
 				}
 				int pos = tupleManager.nextValidTuple();
-				Kit.control(pos != -1, () -> "Should not be reached ");
+				Kit.control(pos != -1, "Should not be reached ");
 			}
 		}
 		computeNbMaxConflicts();
@@ -249,7 +249,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 				Kit.control(nConflicts[i][a] == c.nConflictsFor(i, a), () -> "pb with " + c + " " + c.scp[i]);
 				max = Math.max(max, nConflicts[i][a]);
 			}
-			Kit.control(max == nbMaxConflicts[i], () -> "pb with " + c + " " + c.scp[i]);
+			Kit.control(max == nbMaxConflicts[i], "pb with " + c + " " + c.scp[i]);
 		});
 		return true;
 	}

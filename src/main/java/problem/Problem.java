@@ -464,7 +464,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 * Method that resets the problem instance. Each variable and each constraint is reset. The specified Boolean parameter indicates whether the weighted
 	 * degrees values must not be reset or not.
 	 */
-	public void reset() {
+	public void reset() { // currently, used by HeadExtraction
 		Stream.of(variables).forEach(x -> x.reset());
 		Stream.of(constraints).forEach(c -> c.reset());
 		Stream.of(constraints).forEach(c -> c.ignored = false);
@@ -474,7 +474,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			log.info("Reset of problem instance");
 	}
 
-	public void reduceTo(boolean[] presentVariables, boolean[] presentConstraints) {
+	public void reduceTo(boolean[] presentVariables, boolean[] presentConstraints) { // currently, used by HeadExtraction
 		control(symmetryGroupGenerators.size() == 0 && presentVariables.length == variables.length && presentConstraints.length == constraints.length);
 		assert Variable.firstWipeoutVariableIn(variables) == null && Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints);
 		priorityVars = IntStream.range(0, variables.length).filter(i -> presentVariables[i]).mapToObj(i -> variables[i]).toArray(Variable[]::new);
@@ -485,7 +485,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				constraints[i].reset();
 		// stuff = new ProblemStuff(this); // TODO reset or building a new object ?
 		nValuesRemoved = 0;
-		if (settings.verbose >= 0)
+		if (settings.verbose > 0)
 			log.info("Reduction to (#V=" + priorityVars.length + ",#C=" + Kit.countIn(true, presentConstraints) + ")");
 	}
 
@@ -590,8 +590,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private final void reduceDomainsOfIsolatedVariables() {
 		// TODO other frameworks ?
-		boolean reduceIsolatedVars = head.control.variables.reduceIsolatedVars && settings.nSearchedSolutions == 1
-				&& !head.control.problem.isSymmetryBreaking() && settings.framework == TypeFramework.CSP;
+		boolean reduceIsolatedVars = head.control.variables.reduceIsolatedVars && settings.nSearchedSolutions == 1 && !head.control.problem.isSymmetryBreaking()
+				&& settings.framework == TypeFramework.CSP;
 		List<Variable> isolatedVars = new ArrayList<>(), fixedVars = new ArrayList<>();
 		int nRemovedValues = 0;
 		for (Variable x : stuff.collectedVarsAtInit) {
@@ -1838,7 +1838,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	// }
 
 	public int[][] jokerTableForElement(Var[] list, Var index, Var value, int startValue) {
-		Utilities.control(Utilities.indexOf(index, list) == -1 && index != value, "index cannot be in vector or be the same variable as result");
+		Kit.control(Utilities.indexOf(index, list) == -1 && index != value, "index cannot be in vector or be the same variable as result");
 		int pos = Utilities.indexOf(value, list);
 		if (pos != -1) {
 			int[] tuple = api.repeat(Constants.STAR, 1 + list.length);
@@ -2081,9 +2081,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity clause(Var[] list, Boolean[] phases) {
-		Utilities.control(Stream.of(list).noneMatch(x -> x == null), "A variable in array list is null");
-		Utilities.control(list.length == phases.length, "Bad form of clause");
-		Utilities.control(Variable.areAllInitiallyBoolean((VariableInteger[]) list), "A variable is not Boolean in the array list.");
+		Kit.control(Stream.of(list).noneMatch(x -> x == null), "A variable in array list is null");
+		Kit.control(list.length == phases.length, "Bad form of clause");
+		Kit.control(Variable.areAllInitiallyBoolean((VariableInteger[]) list), "A variable is not Boolean in the array list.");
 		if (head.control.global.typeClause == 1)
 			return api.sum(list, Stream.of(phases).mapToInt(p -> p ? 1 : -1).toArray(), NE, -Stream.of(phases).filter(p -> !p).count());
 		return unimplemented("clause");
@@ -2146,7 +2146,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity ifThen(CtrEntity c1, CtrEntity c2) {
-		Utilities.control(c1 instanceof CtrAlone && c2 instanceof CtrAlone, "unimplemented for the moment");
+		Kit.control(c1 instanceof CtrAlone && c2 instanceof CtrAlone, "unimplemented for the moment");
 		return (CtrEntity) Kit.exit("unimplemented case for ifThen");
 	}
 
@@ -2156,7 +2156,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity ifThenElse(CtrEntity c1, CtrEntity c2, CtrEntity c3) {
-		Utilities.control(c1 instanceof CtrAlone && c2 instanceof CtrAlone && c3 instanceof CtrAlone, "unimplemented for the moment");
+		Kit.control(c1 instanceof CtrAlone && c2 instanceof CtrAlone && c3 instanceof CtrAlone, "unimplemented for the moment");
 		return (CtrEntity) Kit.exit("unimplemented case for ifThenElse");
 	}
 

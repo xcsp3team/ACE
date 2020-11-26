@@ -98,7 +98,7 @@ public abstract class SumSimple extends Sum implements TagSymmetric {
 
 	public final void limit(long newLimit) {
 		super.limit(newLimit);
-		control(minComputableObjectiveValue() <= limit && limit <= maxComputableObjectiveValue(),
+		control(minComputableObjectiveValue() - 1 <= limit && limit <= maxComputableObjectiveValue() + 1,
 				"min:" + minComputableObjectiveValue() + " max:" + maxComputableObjectiveValue() + " limit:" + limit);
 	}
 
