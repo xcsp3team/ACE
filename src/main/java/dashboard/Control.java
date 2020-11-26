@@ -259,7 +259,6 @@ public class Control {
 		protected final String priority2 = addS("priority2", "pr2", EMPTY_STRING, s_pr2);
 		public final boolean reduceIsolatedVars = addB("reduceIsolatedVars", "riv", true, s_riv);
 
-		//
 		private Object[] readSelectionList(String s) {
 			if (s == null || s.trim().length() == 0)
 				return new Object[0];
@@ -419,18 +418,9 @@ public class Control {
 	public final SettingExtension extension = new SettingExtension();
 
 	public class SettingOptimization extends SettingGroup {
-		String s_lb = "The specified value indicates the initial lower bound. When the solver gets a solution less than or equal to this value, it stops.";
-		String s_ub = "The specified value indicates the initial upper bound."
-				+ "\n\tFor a WCSP instance, this is the initial forbidden cost (allowed maximal cost plus one).";
-		String s_os = "For COP, the way bound intervals are managed.";
-		String s_ct = "For WCSP, the way cost transferts are managed.";
-		String s_astr = "The specified value indicates the arity that determines the use of Soft STR constraints (if required by other configuration parameters; for a WCSP instance.";
-		String s_estr = "The specified value indicates if GAC or GACw is enforced for Soft STR constraints, for a WCSP instance.";
-
-		public long lowerBound = addL("lowerBound", "lb", general.framework == TypeFramework.MAXCSP ? 0L : MINUS_INFINITY, s_lb);
-		public long upperBound = addL("upperBound", "ub", PLUS_INFINITY, s_ub);
-		public final EOptimizationStrategy optimizationStrategy = addE("optimizationStrategy", "os", EOptimizationStrategy.DECREASING, s_os);
-		// public final ECostTranfer costTranfer = addE("costTranfer", "ct", ECostTranfer.INVARIABLE, s_ct);
+		public long lb = addL("lb", "lb", MINUS_INFINITY, "initial lower bound");
+		public long ub = addL("ub", "ub", PLUS_INFINITY, "initial upper bound");
+		public final EOptimizationStrategy strategy = addE("strategy", "os", EOptimizationStrategy.DECREASING, "optimization strategy");
 	}
 
 	public final SettingOptimization optimization = new SettingOptimization();
@@ -508,18 +498,16 @@ public class Control {
 		public final int maxRestarts = addI("maxRestarts", "lb_mr", 10, s_mr);
 	}
 
-	public final SettingLB lb = new SettingLB();
+	public final SettingLB localBranching = new SettingLB();
 
 	public class SettingSolving extends SettingGroup {
 		String s_class = "The name of the class used to explore the search space.\n\tTypically, this is " + SolverBacktrack.class.getSimpleName();
-		String s_prepro = "If true, a preprocessing stage must be performed.";
-		String s_search = "If true, search must be performed.";
 		String s_branching = "The branching scheme used for search."
 				+ "\n\tPossible values are bin for binary branching, non for non-binary (or d-way) branching, and res for restricted binarybranching.";
 
 		public String clazz = addS("clazz", "s_class", SolverBacktrack.class, s_class);
-		public boolean enablePrepro = addB("enablePrepro", "prepro", true, s_prepro);
-		public boolean enableSearch = addB("enableSearch", "search", true, s_search);
+		public boolean enablePrepro = addB("enablePrepro", "prepro", true, "must we perform preprocessing?");
+		public boolean enableSearch = addB("enableSearch", "search", true, "must we perform search?");
 		public final EBranching branching = addE("branching", "branching", EBranching.BIN, s_branching);
 	}
 
@@ -572,33 +560,21 @@ public class Control {
 	public class SettingExtraction extends SettingGroup {
 		String s_m = "The way the unsatisfiable cores will be identified." + "\n\tValid only with the command: java " + HeadExtraction.class.getName();
 		String s_nc = "The number of cores (MUCs) that must be found." + "\n\tValid only with the command: java " + HeadExtraction.class.getName();
-		String s_sc = "Indicates if cores must be saved in XCSP";
 
 		public final EExtractionMethod method = addE("method", "e_m", EExtractionMethod.VAR, s_m);
 		public final int nCores = addI("nCores", "e_nc", 1, s_nc);
-		public final boolean saveCores = addB("saveCores", "e_sc", false, s_sc);
 	}
 
 	public final SettingExtraction extraction = new SettingExtraction();
 
 	public class SettingVarh extends SettingGroup {
-		String s1 = "The name of the class that selects the variables to be assigned."
-				+ "\n\tFor example, Dom indicates that at each step the next variable to be instantiated is the one with the smallest domain."
-				+ "\n\tAnother example is varh=WDegOnDom that indicates that at each step the next variable to be instantiated is the one with the greatest ratio wdeg/dom,"
-				+ "\n\t(which is equivalent to min dom/wdeg).";
-
-		String s2 = "Indicates if we must follow the anti-heuristic.";
-		String s3 = "With a value greater than or equal to 1, indicates that a reasoning from last conflicts must be used.";
-		String s4 = "";
-		String s5 = "";
-		String s6 = "";
+		String s1 = "The name of the class that selects the variables to be assigned.";
 
 		public String classForVarHeuristic = addS("classForVarHeuristic", "varh", WdegVariant.Wdeg.class, HeuristicVariables.class, s1);
-		public final boolean anti = addB("anti", "anti_varh", false, s2);
-		public int lastConflictSize = addI("lastConflictSize", "lc", 2, s3);
-		public final int initialWdeg = addI("initialWdeg", "iwd", 1, s4);
-		public final EWeighting weighting = addE("weighting", "wt", EWeighting.CACD, s5);
-		public final ESingletonAssignment singletonAssignment = addE("singletonAssignment", "sing", ESingletonAssignment.LAST, s6);
+		public final boolean anti = addB("anti", "anti_varh", false, "must we follow the anti heuristic?");
+		public int lastConflict = addI("lastConflict", "lc", 2, "value for lc (last conflict); 0 for desactivating it");
+		public final EWeighting weighting = addE("weighting", "wt", EWeighting.CACD, "");
+		public final ESingletonAssignment singletonAssignment = addE("singletonAssignment", "sing", ESingletonAssignment.LAST, "");
 	}
 
 	public final SettingVarh varh = new SettingVarh();
@@ -606,13 +582,12 @@ public class Control {
 	public class SettingValh extends SettingGroup {
 		String s1 = "The name of the class that selects the next value to be assigned to the last selected variable."
 				+ "\n\tAn example is valh=First that indicates that at each step the next value to be assigned is the first value in the current domain (a kind of lexicographic order).";
-		String s2 = "Indicates if we must follow the anti-heuristic.";
 
 		public String classForValHeuristic = addS("classForValHeuristic", "valh", heuristics.HeuristicValuesDirect.First.class, HeuristicValues.class, s1);
-		public final boolean anti = addB("anti", "anti_valh", false, s2);
+		public final boolean anti = addB("anti", "anti_valh", false, "must we follow the anti heuristic?");
 
 		public boolean runProgressSaving = addB("runProgressSaving", "rps", false, "");
-		// bestSolution breaks determinism of search trees because it depends in which order domains are pruned (and becomes singleton or not)
+		// solution saving breaks determinism of search trees because it depends in which order domains are pruned (and becomes singleton or not)
 		public boolean solutionSaving = addB("solutionSaving", "ss", true, "");
 		public final int solutionSavingGap = addI("solutionSavingGap", "ssg", Integer.MAX_VALUE, "");
 		public String warmStart = addS("warmStart", "warm", "", "").trim();
@@ -626,7 +601,8 @@ public class Control {
 		String s1 = "The name of the class that represents the revision ordering heuristic.";
 		String s2 = "Indicates if we must follow the anti-heuristic.";
 
-		public final String classForRevHeuristic = addS("classForRevHeuristic", "revh", Dom.class, HeuristicRevisions.class, s1);
+		public final String classForRevHeuristic = addS("classForRevHeuristic", "revh", Dom.class, HeuristicRevisions.class,
+				"class for the revision ordering heuristic");
 		public final boolean anti = addB("anti", "anti_revh", false, s2);
 	}
 
@@ -682,7 +658,7 @@ public class Control {
 		Kit.control(0 <= lns.pFreeze && lns.pFreeze < 100, () -> "percentageOfVariablesToFreeze should be between 0 and 100 (excluded)");
 
 		Kit.control(learning.nogood != ELearningNogood.RST_SYM);
-		Kit.control(optimization.lowerBound <= optimization.upperBound);
+		Kit.control(optimization.lb <= optimization.ub);
 		// as
 		// C0
 		Kit.control(!constraints.normalizeCtrs || (!problem.isSymmetryBreaking() && general.framework != TypeFramework.MAXCSP));
@@ -691,6 +667,8 @@ public class Control {
 			org.xcsp.modeler.Compiler.ev = true;
 		if (general.noPrintColors)
 			Kit.useColors = false;
+		if (general.framework == TypeFramework.MAXCSP)
+			optimization.lb = 0L;
 	}
 
 	/**********************************************************************************************

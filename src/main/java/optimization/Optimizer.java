@@ -88,8 +88,8 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 		Kit.control(opt != null);
 		this.minimization = opt == TypeOptimization.MINIMIZE;
 		this.ctr = c; // may be null for some basic cases
-		this.minBound = Math.max(pb.head.control.optimization.lowerBound, c != null ? c.minComputableObjectiveValue() : Long.MIN_VALUE);
-		this.maxBound = Math.min(pb.head.control.optimization.upperBound, c != null ? c.maxComputableObjectiveValue() : Long.MAX_VALUE);
+		this.minBound = Math.max(pb.head.control.optimization.lb, c != null ? c.minComputableObjectiveValue() : Long.MIN_VALUE);
+		this.maxBound = Math.min(pb.head.control.optimization.ub, c != null ? c.maxComputableObjectiveValue() : Long.MAX_VALUE);
 	}
 
 	/**
@@ -121,7 +121,7 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 			else
 				minBound = problem.solver.solManager.bestBound + 1;
 			possiblyUpdateLocalBounds();
-			Kit.control(minBound - 1 <= maxBound || problem.head.control.optimization.upperBound != Long.MAX_VALUE,
+			Kit.control(minBound - 1 <= maxBound || problem.head.control.optimization.ub != Long.MAX_VALUE,
 					() -> " minB=" + minBound + " maxB=" + maxBound);
 			possiblyUpdateSharedBounds();
 			if (minBound > maxBound)

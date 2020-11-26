@@ -2209,7 +2209,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		control(optimizer == null, "Only mono-objective currently supported");
 		Optimizable c = (Optimizable) ca.ctr;
 		head.control.toCOP();
-		String suffix = Kit.camelCaseOf(head.control.optimization.optimizationStrategy.name());
+		String suffix = Kit.camelCaseOf(head.control.optimization.strategy.name());
 		if (suffix.equals("Decreasing"))
 			return new OptimizerDecreasing(this, opt, c);
 		if (suffix.equals("Increasing"))
@@ -2260,14 +2260,14 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final ObjEntity minimize(IVar x) {
 		if (!switchToSatisfaction(MINIMIZE, EXPRESSION, null, x))
-			optimizer = buildOptimizer(MINIMIZE, addCtr(new ObjVarLE(this, (Variable) x, head.control.optimization.upperBound)));
+			optimizer = buildOptimizer(MINIMIZE, addCtr(new ObjVarLE(this, (Variable) x, head.control.optimization.ub)));
 		return null;
 	}
 
 	@Override
 	public final ObjEntity maximize(IVar x) {
 		if (!switchToSatisfaction(MAXIMIZE, EXPRESSION, null, x))
-			optimizer = buildOptimizer(MAXIMIZE, addCtr(new ObjVarGE(this, (Variable) x, head.control.optimization.lowerBound)));
+			optimizer = buildOptimizer(MAXIMIZE, addCtr(new ObjVarGE(this, (Variable) x, head.control.optimization.lb)));
 		return null;
 	}
 
@@ -2286,7 +2286,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		control(type.generalizable());
 		if (!switchToSatisfaction(MINIMIZE, type, null, list)) {
 			Variable[] vars = translate(list);
-			long k = head.control.optimization.upperBound;
+			long k = head.control.optimization.ub;
 			Constraint c = type == SUM ? new SumSimpleLE(this, vars, k)
 					: type == MINIMUM ? new MinimumCstLE(this, vars, k) : type == MAXIMUM ? new MaximumCstLE(this, vars, k) : new NValuesCstLE(this, vars, k);
 			optimizer = buildOptimizer(MINIMIZE, addCtr(c));
@@ -2299,7 +2299,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		control(type.generalizable());
 		if (!switchToSatisfaction(MAXIMIZE, type, null, list)) {
 			Variable[] vars = translate(list);
-			long k = head.control.optimization.lowerBound;
+			long k = head.control.optimization.lb;
 			Constraint c = type == SUM ? new SumSimpleGE(this, vars, k)
 					: type == MINIMUM ? new MinimumCstGE(this, vars, k) : type == MAXIMUM ? new MaximumCstGE(this, vars, k) : new NValuesCstGE(this, vars, k);
 			optimizer = buildOptimizer(MAXIMIZE, addCtr(c));
@@ -2311,7 +2311,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final ObjEntity minimize(TypeObjective type, IVar[] list, int[] coeffs) {
 		control(type == SUM && coeffs != null);
 		if (!switchToSatisfaction(MINIMIZE, type, coeffs, list))
-			optimizer = buildOptimizer(MINIMIZE, sum(list, coeffs, LE, head.control.optimization.upperBound, false));
+			optimizer = buildOptimizer(MINIMIZE, sum(list, coeffs, LE, head.control.optimization.ub, false));
 		return null;
 	}
 
@@ -2319,7 +2319,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final ObjEntity maximize(TypeObjective type, IVar[] list, int[] coeffs) {
 		control(type == SUM && coeffs != null);
 		if (!switchToSatisfaction(MAXIMIZE, type, coeffs, list))
-			optimizer = buildOptimizer(MAXIMIZE, sum(list, coeffs, GE, head.control.optimization.lowerBound, false));
+			optimizer = buildOptimizer(MAXIMIZE, sum(list, coeffs, GE, head.control.optimization.lb, false));
 		return null;
 	}
 

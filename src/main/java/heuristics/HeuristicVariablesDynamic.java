@@ -53,7 +53,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			if (x != null)
 				return x;
 		}
-		if (settings.lastConflictSize > 0) {
+		if (settings.lastConflict > 0) {
 			Variable x = solver.lcReasoner.lastConflictPriorityVar();
 			if (x != null) {
 				return x;

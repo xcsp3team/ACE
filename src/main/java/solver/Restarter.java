@@ -44,7 +44,7 @@ public class Restarter implements ObserverRuns {
 
 	public static Restarter buildFor(Solver solver) {
 		boolean lns = solver.head.control.lns.enabled;
-		boolean lb = solver.head.control.lb.enabled;
+		boolean lb = solver.head.control.localBranching.enabled;
 		Kit.control(!lns || !lb, () -> "Cannot use LNS and LB at the same time.");
 		if (lns)
 			return new RestarterLNS((SolverBacktrack) solver);
@@ -332,7 +332,7 @@ public class Restarter implements ObserverRuns {
 
 		private LocalBranchingConstraint localBranchingConstraints;
 
-		private int currDistance = solver.head.control.lb.baseDistance;
+		private int currDistance = solver.head.control.localBranching.baseDistance;
 
 		public RestarterLB(Solver solver) {
 			super(solver);
@@ -341,8 +341,8 @@ public class Restarter implements ObserverRuns {
 
 			this.localBranchingConstraints = solver.problem.symbolic != null
 					? Reflector.buildObject(LBAtLeastEqual.class.getSimpleName(), LocalBranchingConstraint.class, solver.problem)
-					: Reflector.buildObject(solver.head.control.lb.neighborhood, LocalBranchingConstraint.class, solver.problem);
-			this.currDistance = solver.head.control.lb.baseDistance;
+					: Reflector.buildObject(solver.head.control.localBranching.neighborhood, LocalBranchingConstraint.class, solver.problem);
+			this.currDistance = solver.head.control.localBranching.baseDistance;
 		}
 
 		public void enterLocalBranching() {
@@ -353,7 +353,7 @@ public class Restarter implements ObserverRuns {
 		private void leaveLocalBranching() {
 			currentlyBranching = false;
 			localBranchingConstraints.setIgnored(true);
-			currDistance = solver.head.control.lb.baseDistance;
+			currDistance = solver.head.control.localBranching.baseDistance;
 		}
 
 		@Override
@@ -376,7 +376,7 @@ public class Restarter implements ObserverRuns {
 					}
 					if (forceRootPropagation) {
 						super.afterRun();
-						currDistance = solver.head.control.lb.baseDistance;
+						currDistance = solver.head.control.localBranching.baseDistance;
 					}
 					localBranchingConstraints.updateWithNewSolution(solver.solManager.lastSolution, currDistance);
 					localBranchingConstraints.setIgnored(false);
@@ -385,7 +385,7 @@ public class Restarter implements ObserverRuns {
 						((SolverBacktrack) solver).nogoodRecorder.reset();
 					((FilteringSpecific) solver.problem.optimizer.ctr).runPropagator(null);
 				}
-				if (nRestartsSinceActive > solver.head.control.lb.maxRestarts)
+				if (nRestartsSinceActive > solver.head.control.localBranching.maxRestarts)
 					leaveLocalBranching();
 			} else {
 				super.afterRun();
@@ -484,7 +484,7 @@ public class Restarter implements ObserverRuns {
 					super(problem);
 					int[] tuple = Stream.of(decisionVars).mapToInt(x -> x.dom.firstValue()).toArray();
 					c = (Constraint) ((CtrAlone) problem.tupleProximityGE(decisionVars, tuple,
-							decisionVars.length - problem.head.control.lb.baseDistance, true)).ctr;
+							decisionVars.length - problem.head.control.localBranching.baseDistance, true)).ctr;
 					c.ignored = true;
 				}
 
@@ -500,7 +500,7 @@ public class Restarter implements ObserverRuns {
 				public LBAtMostDistanceSum(Problem problem) {
 					super(problem);
 					c = (Constraint) ((CtrAlone) problem.tupleProximityDistanceSum(decisionVars, new int[decisionVars.length],
-							problem.head.control.lb.baseDistance)).ctr;
+							problem.head.control.localBranching.baseDistance)).ctr;
 					c.ignored = true;
 				}
 

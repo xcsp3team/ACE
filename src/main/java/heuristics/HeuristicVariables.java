@@ -123,7 +123,7 @@ public abstract class HeuristicVariables extends Heuristic {
 		if (nPast < priorityVars.length) {
 			if (nPast < nStrictlyPriorityVars)
 				return priorityVars[nPast];
-			if (settings.lastConflictSize > 0) {
+			if (settings.lastConflict > 0) {
 				Variable x = solver.lcReasoner.lastConflictPriorityVar();
 				if (x != null && Kit.isPresent(x, priorityVars))
 					return x;

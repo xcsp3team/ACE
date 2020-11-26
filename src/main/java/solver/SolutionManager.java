@@ -127,7 +127,7 @@ public final class SolutionManager {
 	public SolutionManager(Solver solver, long nSolutionsLimit) {
 		this.solver = solver;
 		this.limit = nSolutionsLimit;
-		this.bestBound = solver.head.control.optimization.upperBound;
+		this.bestBound = solver.head.control.optimization.ub;
 		this.allSolutions = solver.head.control.general.recordSolutions ? new ArrayList<int[]>() : null;
 		// this.solutionOptimizer = new SolutionOptimizer(this);
 		// if (solver.head.control.xml.competitionMode)

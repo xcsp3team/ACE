@@ -384,7 +384,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		this.heuristic = HeuristicVariables.buildFor(this);
 		for (Variable x : problem.variables)
 			x.buildValueOrderingHeuristic();
-		this.lcReasoner = new LastConflictReasoner(this, resolution.control.varh.lastConflictSize);
+		this.lcReasoner = new LastConflictReasoner(this, resolution.control.varh.lastConflict);
 		this.nogoodRecorder = NogoodRecorder.buildFor(this); // may be null
 		this.ipsRecorder = IpsRecorder.buildFor(this); // may be null
 		this.proofer = new Proofer(ipsRecorder);

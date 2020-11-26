@@ -341,7 +341,7 @@ public class Head extends Thread {
 			solver = buildSolver(problem);
 			solver.solve();
 			solution = solver.solManager.lastSolution;
-			control.optimization.upperBound = ((SolverLocal) solver).nMinViolatedCtrs;
+			control.optimization.ub = ((SolverLocal) solver).nMinViolatedCtrs;
 			if (solver.stopping != EStopping.REACHED_GOAL) {
 				control.solving.clazz = solverClassName;
 				control.restarts.nRunsLimit = nRuns;
