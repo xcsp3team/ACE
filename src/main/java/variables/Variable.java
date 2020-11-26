@@ -584,7 +584,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 
 	public final void buildValueOrderingHeuristic() {
 		if (heuristic == null) {
-			String className = this.dom instanceof DomainInfinite ? First.class.getName() : problem.head.control.valh.classForValHeuristic;
+			String className = this.dom instanceof DomainInfinite ? First.class.getName() : problem.head.control.valh.heuristic;
 			Set<Class<?>> classes = problem.head.handlerClasses.map.get(HeuristicValues.class);
 			heuristic = Reflector.buildObject(className, classes, this, problem.head.control.valh.anti);
 		}

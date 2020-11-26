@@ -307,7 +307,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		if (head.control.solving.enableSearch) {
 			if (nogoodRecorder != null && nogoodRecorder.symmetryHandler != null)
 				list.add((ObserverRuns) nogoodRecorder.symmetryHandler);
-			Stream.of(this, restarter, ipsRecorder, heuristic, lcReasoner, stats).filter(o -> o instanceof ObserverRuns)
+			Stream.of(this, restarter, ipsRecorder, heuristic, lastConflict, stats).filter(o -> o instanceof ObserverRuns)
 					.forEach(o -> list.add((ObserverRuns) o));
 		}
 		Stream.of(problem.constraints).filter(c -> c instanceof ObserverRuns).forEach(c -> list.add((ObserverRuns) c));
@@ -339,7 +339,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	public HeuristicVariables heuristic;
 
-	public final LastConflictReasoner lcReasoner;
+	public final LastConflict lastConflict; // reasoner about last conflicts (lc)
 
 	public final NogoodRecorder nogoodRecorder;
 
@@ -368,7 +368,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		// if (!(heuristicVars instanceof HeuristicVariablesConflictBased) || !preserveWeightedDegrees)
 		// heuristicVars.reset();
 		heuristic.setPriorityVars(problem.priorityVars, 0);
-		lcReasoner.beforeRun();
+		lastConflict.beforeRun();
 		if (nogoodRecorder != null)
 			nogoodRecorder.reset();
 		Kit.control(ipsRecorder == null);
@@ -384,7 +384,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		this.heuristic = HeuristicVariables.buildFor(this);
 		for (Variable x : problem.variables)
 			x.buildValueOrderingHeuristic();
-		this.lcReasoner = new LastConflictReasoner(this, resolution.control.varh.lastConflict);
+		this.lastConflict = new LastConflict(this, resolution.control.varh.lc);
 		this.nogoodRecorder = NogoodRecorder.buildFor(this); // may be null
 		this.ipsRecorder = IpsRecorder.buildFor(this); // may be null
 		this.proofer = new Proofer(ipsRecorder);
@@ -464,7 +464,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		}
 		tracer.onAssignment(x, a);
 		stats.onAssignment(x);
-		lcReasoner.onAssignment(x);
+		lastConflict.onAssignment(x);
 		assign(x, a);
 		proofer.reset();
 		boolean consistent = propagation.runAfterAssignment(x) && (ipsRecorder == null || ipsRecorder.dealWhenOpeningNode());
@@ -504,7 +504,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			return false;
 		tracer.onRefutation(x, a);
 		stats.onRefutation(x);
-		lcReasoner.onRefutation(x, a);
+		lastConflict.onRefutation(x, a);
 		dr.addNegativeDecision(x, a);
 		proofer.recopy();
 		x.dom.removeElementary(a);

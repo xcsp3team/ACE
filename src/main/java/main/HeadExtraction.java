@@ -20,8 +20,8 @@ import constraints.Constraint;
 import dashboard.Arguments;
 import problem.Problem;
 import solver.backtrack.SolverBacktrack;
-import utility.Enums.EExtractionMethod;
-import utility.Enums.ELearningState;
+import utility.Enums.EExtraction;
+import utility.Enums.ELearningIps;
 import utility.Kit;
 import utility.Kit.Stopwatch;
 import variables.Variable;
@@ -278,7 +278,7 @@ public class HeadExtraction extends Head {
 				Kit.log.info("No more cores");
 				break;
 			}
-			if (control.extraction.method == EExtractionMethod.VAR)
+			if (control.extraction.method == EExtraction.VAR)
 				minimalCoreOfVars();
 			List<Constraint> core = minimalCoreOfCtrs();
 			// if (cp.settingExtraction.saveCores) {
@@ -322,7 +322,7 @@ public class HeadExtraction extends Head {
 		Arguments.loadArguments(args);
 		HeadExtraction extraction = new HeadExtraction();
 		Kit.control(!extraction.control.problem.isSymmetryBreaking(), () -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
-		Kit.control(extraction.control.learning.state == ELearningState.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
+		Kit.control(extraction.control.learning.state == ELearningIps.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
 		// Kit.control(extraction.configuration.restartsCutoff == Long.MAX_VALUE || extraction.configuration.nogoodType == null,
 		// "Be careful of nogood recording from restarts.");
 		Kit.control(extraction.control.solving.clazz.equals(SolverBacktrack.class.getSimpleName()), () -> extraction.control.solving.clazz);

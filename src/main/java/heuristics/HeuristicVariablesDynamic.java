@@ -24,7 +24,7 @@ import interfaces.Tags.TagMaximize;
 import sets.SetDense;
 import solver.backtrack.SolverBacktrack;
 import utility.Enums.EBranching;
-import utility.Enums.ESingletonAssignment;
+import utility.Enums.ESingleton;
 import utility.Enums.EWeighting;
 import utility.Kit;
 import utility.Kit.CombinatorOfTwoInts;
@@ -53,14 +53,14 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			if (x != null)
 				return x;
 		}
-		if (settings.lastConflict > 0) {
-			Variable x = solver.lcReasoner.lastConflictPriorityVar();
+		if (settings.lc > 0) {
+			Variable x = solver.lastConflict.lastConflictPriorityVar();
 			if (x != null) {
 				return x;
 			}
 		}
 		bestScoredVariable.reset(false);
-		if (settings.singletonAssignment == ESingletonAssignment.LAST) {
+		if (settings.singleton == ESingleton.LAST) {
 			if (solver.depth() <= lastDepthWithOnlySingletons) {
 				lastDepthWithOnlySingletons = Integer.MAX_VALUE;
 				solver.futVars.execute(x -> {
@@ -73,7 +73,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				return solver.futVars.first();
 			}
 		} else {
-			boolean first = settings.singletonAssignment == ESingletonAssignment.FIRST;
+			boolean first = settings.singleton == ESingleton.FIRST;
 			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 				if (first && x.dom.size() == 1)
 					return x;
@@ -345,13 +345,13 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				update();
 			bestScoredVariable.reset(true);
 			solver.futVars.execute(x -> {
-				if (x.dom.size() > 1 || settings.singletonAssignment != ESingletonAssignment.LAST) {
+				if (x.dom.size() > 1 || settings.singleton != ESingleton.LAST) {
 					lastSizes[x.num] = x.dom.size();
 					bestScoredVariable.update(x, scoreOptimizedOf(x));
 				}
 			});
 			if (bestScoredVariable.variable == null) {
-				assert settings.singletonAssignment == ESingletonAssignment.LAST;
+				assert settings.singleton == ESingleton.LAST;
 				return solver.futVars.first();
 			}
 			lastVar = bestScoredVariable.variable.dom.size() == 1 ? null : bestScoredVariable.variable;

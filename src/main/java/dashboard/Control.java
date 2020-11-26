@@ -41,12 +41,12 @@ import org.xcsp.common.Utilities;
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.Matrix3D;
 import heuristics.HeuristicRevisions;
-import heuristics.HeuristicRevisions.HeuristicRevisionsDirect.First;
 import heuristics.HeuristicRevisions.HeuristicRevisionsDirect.Last;
 import heuristics.HeuristicRevisions.HeuristicRevisionsDynamic.Dom;
 import heuristics.HeuristicValues;
+import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicVariables;
-import heuristics.HeuristicVariablesDynamic.WdegVariant;
+import heuristics.HeuristicVariablesDynamic.Wdeg;
 import interfaces.Tags.TagExperimental;
 import interfaces.Tags.TagInvisible;
 import main.Head;
@@ -65,12 +65,12 @@ import utility.DocumentHandler;
 import utility.Enums.EBinaryEncoding;
 import utility.Enums.EBranching;
 import utility.Enums.EExtension;
-import utility.Enums.EExtractionMethod;
+import utility.Enums.EExtraction;
+import utility.Enums.ELearningIps;
 import utility.Enums.ELearningNogood;
-import utility.Enums.ELearningState;
 import utility.Enums.EOptimizationStrategy;
 import utility.Enums.ERestartsMeasure;
-import utility.Enums.ESingletonAssignment;
+import utility.Enums.ESingleton;
 import utility.Enums.ESymmetryBreaking;
 import utility.Enums.EWeighting;
 import utility.Kit;
@@ -548,7 +548,7 @@ public class Control {
 		public final int unarySymmetryLimit = addI("unarySymmetryLimit", "l_usl", Integer.MAX_VALUE, "", HIDDEN);
 		public final int nonunarySymmetryLimit = addI("nonunarySymmetryLimit", "l_nsl", 2000, "", HIDDEN);
 		// public final boolean incrementNogoodWeight = addB("incrementNogoodWeight", "l_inw", false, "", HIDDEN);
-		public final ELearningState state = addE("state", "l_ps", ELearningState.NO, s_ps);
+		public final ELearningIps state = addE("state", "l_ps", ELearningIps.NO, s_ps);
 		public final String stateOperators = addS("stateOperators", "l_pso", "11011", s_pso).trim();
 		public final int compressionLevelForStateEquivalence = addI("compressionLevelForStateEquivalence", "l_clevel", Deflater.NO_COMPRESSION, "", HIDDEN);
 		// BEST_SPEED or BEST_COMPRESSION as alternatives
@@ -558,23 +558,20 @@ public class Control {
 	public final SettingLearning learning = new SettingLearning();
 
 	public class SettingExtraction extends SettingGroup {
-		String s_m = "The way the unsatisfiable cores will be identified." + "\n\tValid only with the command: java " + HeadExtraction.class.getName();
-		String s_nc = "The number of cores (MUCs) that must be found." + "\n\tValid only with the command: java " + HeadExtraction.class.getName();
+		String s = "\n\tValid only with the command: java " + HeadExtraction.class.getName();
 
-		public final EExtractionMethod method = addE("method", "e_m", EExtractionMethod.VAR, s_m);
-		public final int nCores = addI("nCores", "e_nc", 1, s_nc);
+		public final EExtraction method = addE("method", "e_m", EExtraction.VAR, "method for extracting unsatisfiable cores." + s);
+		public final int nCores = addI("nCores", "e_nc", 1, "number of unsatifiable cores to be extracted." + s);
 	}
 
 	public final SettingExtraction extraction = new SettingExtraction();
 
 	public class SettingVarh extends SettingGroup {
-		String s1 = "The name of the class that selects the variables to be assigned.";
-
-		public String classForVarHeuristic = addS("classForVarHeuristic", "varh", WdegVariant.Wdeg.class, HeuristicVariables.class, s1);
+		public String heuristic = addS("heuristic", "varh", Wdeg.class, HeuristicVariables.class, "name of the class used for selecting variables");
 		public final boolean anti = addB("anti", "anti_varh", false, "must we follow the anti heuristic?");
-		public int lastConflict = addI("lastConflict", "lc", 2, "value for lc (last conflict); 0 for desactivating it");
-		public final EWeighting weighting = addE("weighting", "wt", EWeighting.CACD, "");
-		public final ESingletonAssignment singletonAssignment = addE("singletonAssignment", "sing", ESingletonAssignment.LAST, "");
+		public int lc = addI("lc", "lc", 2, "value for lc (last conflict); 0 if not activated");
+		public final EWeighting weighting = addE("weighting", "wt", EWeighting.CACD, "how to manage weights for wdeg variants");
+		public final ESingleton singleton = addE("singleton", "sing", ESingleton.LAST, "how to manage singleton variables during search");
 	}
 
 	public final SettingVarh varh = new SettingVarh();
@@ -583,7 +580,7 @@ public class Control {
 		String s1 = "The name of the class that selects the next value to be assigned to the last selected variable."
 				+ "\n\tAn example is valh=First that indicates that at each step the next value to be assigned is the first value in the current domain (a kind of lexicographic order).";
 
-		public String classForValHeuristic = addS("classForValHeuristic", "valh", heuristics.HeuristicValuesDirect.First.class, HeuristicValues.class, s1);
+		public String heuristic = addS("heuristic", "valh", First.class, HeuristicValues.class, "name of the class used for selecting values");
 		public final boolean anti = addB("anti", "anti_valh", false, "must we follow the anti heuristic?");
 
 		public boolean runProgressSaving = addB("runProgressSaving", "rps", false, "");
@@ -643,7 +640,7 @@ public class Control {
 
 	public final boolean mustBuildConflictStructures = settings.addB(3, "constraints", "mustBuildConflictStructures", "mbcs",
 			!propagation.classForRevisions.equals(Reviser.class.getSimpleName())
-					|| (!valh.classForValHeuristic.equals(First.class.getSimpleName()) && !valh.classForValHeuristic.equals(Last.class.getSimpleName())),
+					|| (!valh.heuristic.equals(First.class.getSimpleName()) && !valh.heuristic.equals(Last.class.getSimpleName())),
 			"");
 
 	private Control() {
@@ -893,8 +890,8 @@ public class Control {
 				return tag + "/" + attribute; // (attributeAmbiguity ? tag + "/" : "") + attribute;
 			}
 
-			private final String[] experimentalNames = Kit.sort(new String[] { EExtension.STRCPRS.name(), EExtractionMethod.MAX_CSP.name(),
-					EExtractionMethod.INC.name(), EExtractionMethod.INC_FIRST.name() });
+			private final String[] experimentalNames = Kit
+					.sort(new String[] { EExtension.STRCPRS.name(), EExtraction.MAX_CSP.name(), EExtraction.INC.name(), EExtraction.INC_FIRST.name() });
 
 			@Override
 			public String toString() {

@@ -31,7 +31,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	public static HeuristicVariables buildFor(SolverBacktrack solver) {
 		Set<Class<?>> classes = solver.head.handlerClasses.map.get(HeuristicVariables.class);
 		if (solver.head.control.solving.enableSearch || solver.propagation instanceof GIC2)
-			return Reflector.buildObject(solver.head.control.varh.classForVarHeuristic, classes, solver, solver.head.control.varh.anti);
+			return Reflector.buildObject(solver.head.control.varh.heuristic, classes, solver, solver.head.control.varh.anti);
 		return null;
 	}
 
@@ -123,8 +123,8 @@ public abstract class HeuristicVariables extends Heuristic {
 		if (nPast < priorityVars.length) {
 			if (nPast < nStrictlyPriorityVars)
 				return priorityVars[nPast];
-			if (settings.lastConflict > 0) {
-				Variable x = solver.lcReasoner.lastConflictPriorityVar();
+			if (settings.lc > 0) {
+				Variable x = solver.lastConflict.lastConflictPriorityVar();
 				if (x != null && Kit.isPresent(x, priorityVars))
 					return x;
 			}

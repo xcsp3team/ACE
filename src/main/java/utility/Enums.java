@@ -26,7 +26,7 @@ public class Enums {
 		V, A, VA, STR1, STR2, STR3, STR2S, STR1NEG, STR2NEG, STRCPRS, CT, CT2, MDD, MDDSHORT, GAC4, RPWC, RPWC2;
 	}
 
-	public enum EExtractionMethod {
+	public enum EExtraction {
 		DEC_VAR, DEC_CON, VAR, CON, INC, INC_FIRST, MAX_CSP;
 	}
 
@@ -38,7 +38,7 @@ public class Enums {
 		}
 	}
 
-	public enum ELearningState {
+	public enum ELearningIps {
 		NO, EQUIVALENCE, DOMINANCE;
 	}
 
@@ -94,7 +94,7 @@ public class Enums {
 		SUPPORTS, CONFLICTS, SOFT;
 	}
 
-	public enum ESingletonAssignment {
+	public enum ESingleton {
 		ANY, FIRST, LAST;
 	}
 

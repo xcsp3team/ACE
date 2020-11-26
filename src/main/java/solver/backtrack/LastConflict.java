@@ -15,7 +15,7 @@ import interfaces.Observers.ObserverRuns;
 import utility.Kit;
 import variables.Variable;
 
-public final class LastConflictReasoner implements ObserverRuns {
+public final class LastConflict implements ObserverRuns {
 
 	@Override
 	public void beforeRun() {
@@ -68,7 +68,7 @@ public final class LastConflictReasoner implements ObserverRuns {
 		}
 	}
 
-	public LastConflictReasoner(SolverBacktrack solver, int k) {
+	public LastConflict(SolverBacktrack solver, int k) {
 		this.solver = solver;
 		this.k = k;
 		this.vars = new Variable[k];
