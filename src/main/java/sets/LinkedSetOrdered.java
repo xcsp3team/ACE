@@ -59,7 +59,7 @@ public class LinkedSetOrdered implements LinkedSet {
 	/**
 	 * The level at which absent elements have been removed from the list. An array index corresponds to an element. An array value gives the level at which the
 	 * corresponding element has been removed from the list. Hence, <code> absentLevels[i] == j </code> means that j is the removal level of the element i and
-	 * <code> absentLevels[i] == -1 </code> means that the element i is present.
+	 * <code> removedLevels[i] == -1 </code> means that the element i is present.
 	 */
 	protected int[] removedLevels;
 
@@ -172,13 +172,8 @@ public class LinkedSetOrdered implements LinkedSet {
 	}
 
 	@Override
-	public int getRemovedLevelOf(int a) {
+	public int removedLevelOf(int a) {
 		return removedLevels[a];
-	}
-
-	@Override
-	public boolean isRemovedAtLevel(int a, int level) {
-		return removedLevels[a] == level;
 	}
 
 	@Override
@@ -286,14 +281,6 @@ public class LinkedSetOrdered implements LinkedSet {
 	@Override
 	public long[] binary() {
 		return null;
-	}
-
-	@Override
-	public int[] indexes() {
-		int[] tmp = new int[size];
-		for (int i = 0, a = first; a != -1; a = nexts[a])
-			tmp[i++] = a;
-		return tmp;
 	}
 
 	@Override

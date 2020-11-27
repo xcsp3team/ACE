@@ -405,7 +405,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 			boolean firstDecision = depth - 1 == target; // depth - 1 == target means that it is the decision to be removed ;
 			Interval[] intervals = allIntervals[x.num];
 			Domain dom = x.dom;
-			for (int a = dom.lastRemoved(); a != -1 && dom.getRemovedLevelOf(a) == depth; a = dom.prevRemoved(a))
+			for (int a = dom.lastRemoved(); a != -1 && dom.removedLevelOf(a) == depth; a = dom.prevRemoved(a))
 				intervals[a] = firstDecision ? new Interval(x, a, depth, origin) : new Interval(x, a, depth - 1, direct ? depth - 1 : origin);
 			// origin is the largest possible value ; -1 because a decision will be removed
 		}
@@ -414,7 +414,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 			int depth = solver.depth();
 			Interval[] intervals = allIntervals[x.num];
 			Domain dom = x.dom;
-			for (int a = dom.lastRemoved(); a != -1 && dom.getRemovedLevelOf(a) == depth; a = dom.prevRemoved(a))
+			for (int a = dom.lastRemoved(); a != -1 && dom.removedLevelOf(a) == depth; a = dom.prevRemoved(a))
 				intervals[a].decreaseMax(depth);
 		}
 
@@ -644,7 +644,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 							if (interval.var.dom.isPresent(interval.idx))
 								interval.var.dom.removeElementary(interval.idx);
 							else
-								assert interval.var.dom.getRemovedLevelOf(interval.idx) == solver.depth();
+								assert interval.var.dom.removedLevelOf(interval.idx) == solver.depth();
 						for (Constraint c : solver.problem.constraints)
 							if (c instanceof ExtensionSTR1) {
 								int nbValuesBefore = solver.problem.nValuesRemoved;

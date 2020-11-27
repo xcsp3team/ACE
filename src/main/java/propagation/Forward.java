@@ -23,7 +23,7 @@ public abstract class Forward extends Propagation {
 
 	public Forward(Solver solver) {
 		super(solver);
-		this.reviser = Reflector.buildObject(settings.classForRevisions, Reviser.class, this);
+		this.reviser = Reflector.buildObject(settings.reviser, Reviser.class, this);
 	}
 
 	protected final boolean hasSolverPropagatedAfterLastButOneDecision() {

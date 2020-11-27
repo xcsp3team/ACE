@@ -104,7 +104,7 @@ public final class Queue extends SetSparse {
 			int depth = propagation.solver.depth();
 			Domain dom = x.dom;
 			int last = dom.lastRemoved();
-			for (int a = dom.lastRemoved(); a != absentValuesSentinel[x.num] && dom.isRemovedAtLevel(a, depth); a = dom.prevRemoved(a)) {
+			for (int a = dom.lastRemoved(); a != absentValuesSentinel[x.num] && dom.removedLevelOf(a) == depth; a = dom.prevRemoved(a)) {
 				// if (elements.getAbsentLevelOf(index) < depth) // TODO ex version, the new one (with isAtLevel) must be controlled
 				// break;
 				if (!ipsRecorder.checkWatchesOf(x.num, a))

@@ -27,9 +27,9 @@ public class LinkedSetBinary implements LinkedSet {
 	protected byte lastRemoved;
 
 	/**
-	 * The level at which absent elements have been removed from the list. An array index corresponds to an element. An array value gives
-	 * the level at which the corresponding element has been removed from the list. Hence, <code> absentLevels[i] == j </code> means that j
-	 * is the removal level of the element i and <code> absentLevels[i] == -1 </code> means that the element i is present.
+	 * The level at which absent elements have been removed from the list. An array index corresponds to an element. An array value gives the level at which the
+	 * corresponding element has been removed from the list. Hence, <code> absentLevels[i] == j </code> means that j is the removal level of the element i and
+	 * <code> absentLevels[i] == -1 </code> means that the element i is present.
 	 */
 	protected int[] removedlevels;
 
@@ -118,13 +118,8 @@ public class LinkedSetBinary implements LinkedSet {
 	}
 
 	@Override
-	public int getRemovedLevelOf(int a) {
+	public int removedLevelOf(int a) {
 		return removedlevels[a];
-	}
-
-	@Override
-	public boolean isRemovedAtLevel(int a, int level) {
-		return removedlevels[a] == level;
 	}
 
 	@Override
@@ -206,13 +201,6 @@ public class LinkedSetBinary implements LinkedSet {
 	@Override
 	public long[] binary() {
 		return size == 2 ? binaryFor01 : size == 0 ? binaryEmpty : removedlevels[1] == -1 ? binaryFor1 : binaryFor0;
-	}
-
-	@Override
-	public int[] indexes() {
-		if (removedlevels[0] == -1)
-			return size == 2 ? domainFor01 : domainFor0;
-		return size == 1 ? domainFor1 : domainEmpty;
 	}
 
 	@Override

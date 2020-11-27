@@ -970,6 +970,8 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
+				// TODO iterate over y and record every support for x with amgic number (and count them)
+				// for x, if count == number of value done else iterate and remove not magic x values
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 					int va = dx.toVal(a);
 					if (rx[a] != UNITIALIZED && dy.isPresent(rx[a]))
@@ -1023,7 +1025,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				// we should record entailment to avoid making systematically O(d) when the constraitn is entailed
+				// we should record entailment to avoid making systematically O(d) when the constraint is entailed
 
 				if (dx.size() == 1)
 					return dy.removeValuesModIn(dx, k);

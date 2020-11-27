@@ -119,24 +119,13 @@ public interface LinkedSet {
 	abstract int lastRemovedLevel();
 
 	/**
-	 * Returns {@code true} iff the specified element (index of value) has been removed at the specified level.
-	 * 
-	 * @param a
-	 *            the index of a value
-	 * @param level
-	 *            a level in search
-	 * @return {@code true} iff the specified element has been removed at the specified level
-	 */
-	boolean isRemovedAtLevel(int a, int level);
-
-	/**
 	 * Returns the level of the specified removed element (index of value)
 	 * 
 	 * @param a
 	 *            the index of a value
 	 * @return the level of the specified removed element
 	 */
-	int getRemovedLevelOf(int a);
+	int removedLevelOf(int a);
 
 	/**
 	 * Removes the specified element (index of value) at the specified level. The value is assumed to be currently present. BE CAREFUL: this method should
@@ -214,11 +203,6 @@ public interface LinkedSet {
 		execute(consumer, false);
 	}
 
-	default void executeOnRemoved(Consumer<Integer> consumer) {
-		for (int a = lastRemoved(); a != -1; a = prevRemoved(a))
-			consumer.accept(a);
-	}
-
 	/**
 	 * Returns the state of the object under the form of a sequence of bits. In other words, returns a binary representation corresponding to the
 	 * present/deleted elements. If the ith bit of the jth long of the returned array is 1, it means that the (j*64)+ith value is currently present in the set.
@@ -227,14 +211,6 @@ public interface LinkedSet {
 	 * @return the binary representation of the set
 	 */
 	long[] binary();
-
-	/**
-	 * Returns an array with all elements (indexes) from the current set. This method should not be called at the heart of the solving process, for efficiency
-	 * reasons.
-	 * 
-	 * @return an array with all elements (indexes) of the current set
-	 */
-	int[] indexes();
 
 	/**
 	 * Returns {@code true} if the data structures seem to be valid.
@@ -261,7 +237,8 @@ public interface LinkedSet {
 		sb.append("\nBackward :");
 		execute(a -> sb.append(' ').append(a), true);
 		sb.append("\nDeleted :");
-		executeOnRemoved(a -> sb.append(' ').append(a));
+		for (int a = lastRemoved(); a != -1; a = prevRemoved(a))
+			sb.append(' ').append(a);
 		return sb.toString();
 	}
 

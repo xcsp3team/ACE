@@ -22,7 +22,7 @@ public abstract class Supporter {
 
 	public static Supporter buildFor(Constraint c) {
 		if (c.pb.head.control.propagation.residues && c.scp.length > 1 && !(c instanceof FilteringSpecific)
-				&& !(c.pb.head.control.propagation.classForRevisions.equals(Reviser3.class.getSimpleName()) && c.extStructure() instanceof Bits)) {
+				&& !(c.pb.head.control.propagation.reviser.equals(Reviser3.class.getSimpleName()) && c.extStructure() instanceof Bits)) {
 			return c.scp.length == 2 ? new SupporterHardBary(c) : new SupporterHardNary(c);
 		} else
 			return null;

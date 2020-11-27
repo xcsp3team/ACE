@@ -107,6 +107,8 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 	 * Performing revisions using bitwise operations (when possible), as in AC3^bit+rm
 	 */
 	public static final class Reviser3 extends Reviser2 {
+		final int residueLimitForBitRm = 499; // hard coding
+		final int memoryLimitForBitRm = 550000000; // hard coding
 
 		private final short[][][] bitRmResidues; // bitRmResidues[c][x][a]
 
@@ -119,7 +121,7 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 			if (settings.bitResidues) {
 				long nResidues = 0;
 				this.bitRmResidues = new short[pb.constraints.length][][];
-				int limit = settings.residueLimitForBitRm;
+				int limit = residueLimitForBitRm;
 				boolean stopped = false;
 				for (Constraint c : pb.constraints) {
 					if (c instanceof FilteringSpecific || !(c.extStructure() instanceof Bits))
@@ -133,7 +135,7 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 					if (size1 > limit)
 						bitRmResidues[c.num][0] = new short[size0];
 					nResidues += (size0 > limit ? size1 : 0) + (size1 > limit ? size0 : 0);
-					if (nResidues * 2 + Kit.memory() > settings.memoryLimitForBitRm) {
+					if (nResidues * 2 + Kit.memory() > memoryLimitForBitRm) {
 						Kit.log.info("Stop creating residues for RevisionManagerBitRm");
 						stopped = true;
 					}

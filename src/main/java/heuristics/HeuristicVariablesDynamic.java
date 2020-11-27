@@ -233,7 +233,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 								int depth = solver.depth();
 								int nRemoved = 0;
 								for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a)) {
-									if (dom.getRemovedLevelOf(a) != depth)
+									if (dom.removedLevelOf(a) != depth)
 										break;
 									nRemoved++;
 								}

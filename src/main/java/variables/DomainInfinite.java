@@ -125,12 +125,7 @@ public final class DomainInfinite implements Domain {
 	}
 
 	@Override
-	public boolean isRemovedAtLevel(int a, int level) {
-		throw new AssertionError();
-	}
-
-	@Override
-	public int getRemovedLevelOf(int a) {
+	public int removedLevelOf(int a) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -194,11 +189,6 @@ public final class DomainInfinite implements Domain {
 
 	@Override
 	public long[] binary() {
-		throw new AssertionError();
-	}
-
-	@Override
-	public int[] indexes() {
 		throw new AssertionError();
 	}
 

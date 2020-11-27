@@ -119,7 +119,7 @@ public class Graphviz {
 					if (x.dom.isPresent(a))
 						out.println(node + (x.isAssigned() ? GREEN : "white") + "] ;");
 					else if (displayAll)
-						out.println(node + (x.dom.isRemovedAtLevel(a, 0) ? RED : "orange") + "] ;");
+						out.println(node + (x.dom.removedLevelOf(a) == 0 ? RED : "orange") + "] ;");
 				}
 			out.println("}");
 		}
@@ -201,7 +201,7 @@ public class Graphviz {
 					// out.println(node + (elements.getAbsentLevelOf(index) == 0 ? "red" : "red") + "] ;");
 					node = "  " + varName(pb, x) + "_" + a + " [label=" + a + ",style=dotted,fillcolor=";
 					// above A VIRER SI PAS DOTTED
-					out.println(node + (x.dom.isRemovedAtLevel(a, 0) ? RED : "orange") + "] ;");
+					out.println(node + (x.dom.removedLevelOf(a) == 0 ? RED : "orange") + "] ;");
 				}
 			}
 			out.println("}");

@@ -397,8 +397,8 @@ public class Control {
 		public final EExtension positive = addE("positive", "positive", EExtension.CT, s_positive);
 		public final EExtension negative = addE("negative", "negative", EExtension.V, s_negative);
 		public final boolean validForBinary = addB("validForBinary", "vfor2", true, "");
-		public final String classForBinaryExtensionStructure = addS("classForBinaryExtensionStructure", "cfor2", Bits.class, "");
-		public final String classForTernaryExtensionStructure = addS("classForTernaryExtensionStructure", "cfor3", Matrix3D.class, "");
+		public final String classBinary = addS("classBinary", "cfor2", Bits.class, "");
+		public final String classTernary = addS("classTernary", "cfor3", Matrix3D.class, "");
 		public final int arityLimitForSwitchingToPositive = addI("arityLimitForSwitchingToPositive", "ntop", -1, "");
 		public final int arityLimitForSwitchingToNegative = addI("arityLimitForSwitchingToNegative", "pton", -1, "");
 		public final boolean decremental = addB("decremental", "exd", true, ""); // true required for CT for the moment
@@ -406,9 +406,6 @@ public class Control {
 
 		public final int arityLimitForIntensionToExtension = addI("arityLimitForIntensionToExtension", "aie", 0, "");
 		public final long validLimitForIntensionToExtension = addL("validLimitForIntensionToExtension", "vie", 2000000L, "");
-
-		public final boolean miningApriori = addB("miningApriori", "ma", false, s_ma, HIDDEN);
-		public double miningThreshold = addD("miningThreshold", "mt", 0.1, s_mt, HIDDEN);
 
 		public boolean mustReverse(int arity, boolean positive) {
 			return (positive && arity <= arityLimitForSwitchingToNegative) || (!positive && arity <= arityLimitForSwitchingToPositive);
@@ -426,14 +423,8 @@ public class Control {
 	public final SettingOptimization optimization = new SettingOptimization();
 
 	public class SettingPropagation extends SettingGroup {
-		String s_p = "The name of the class used to propagate constraints."
-				+ "\n\tFor (G)AC, use AC. Among other possible values, we find SAC1, SAC3, ESAC3, CDC1, CPC1, DC1, DC2.";
 		String s_pv = "Variant for a second order consistency";
 		String s_uaq = "If enabled, queues of constraints are used in addition to the queue of variables. The purpose is to propagate less often the most costly constraints.";
-		String s_rm = "The name of the class used to perform revisions.";
-
-		String r1 = "Determines if residues must be exploited." + "\n\tFor CSP, that corresponds to use either (G)AC3 or (G)AC3rm";
-		String r2 = "Determines if bit residues must be exploited.";
 
 		String q1 = "For intension constraints, control the effort for (G)AC."
 				+ "\n\tGAC is not enforced if the current number of future variables is more than the specified value.";
@@ -442,16 +433,13 @@ public class Control {
 				+ "\n\tGAC is not enforced if the size of the current Cartesian product is more than than 2 up the specified value.";
 		String q3 = "For intension constraints, GAC is guaranteed to be enforced if the arity is not more than the specified value.";
 
-		public String clazz = addS("clazz", "p", GAC.class, s_p);
+		public String clazz = addS("clazz", "p", GAC.class, "name of the class to be used for propagation (for example, FC or SAC3)");
 		public final int variant = addI("variant", "pv", 0, s_pv, HIDDEN);
 		public final boolean useAuxiliaryQueues = addB("useAuxiliaryQueues", "uaq", false, s_uaq);
-		public String classForRevisions = addS("classForRevisions", "cr", Reviser3.class, Reviser.class, s_rm);
-
-		public boolean residues = addB("residues", "res", true, r1);
-		public boolean bitResidues = addB("bitResidues", "bres", true, r2);
+		public String reviser = addS("reviser", "reviser", Reviser3.class, Reviser.class, "class to be used for performing revisions");
+		public boolean residues = addB("residues", "res", true, "Must we use redidues (GAC3rm)?");
+		public boolean bitResidues = addB("bitResidues", "bres", true, "Must we use bit resides (GAC3bit+rm)?");
 		public final boolean multidirectionality = addB("multidirectionality", "mul", true, "");
-		public final int residueLimitForBitRm = addI("residueLimitForBitRm", "rbit", 499, "");
-		public final int memoryLimitForBitRm = addI("memoryLimitForBitRm", "mbit", 550000000, "");
 
 		public final int futureLimitation = addI("futureLimitation", "fl", -1, q1);
 		public final int spaceLimitation = addI("spaceLimitation", "sl", 20, q2);
@@ -481,7 +469,6 @@ public class Control {
 		public final String heuristic = addS("heuristic", "lns_h", Rand.class, "class to be used when freezing");
 		public final int nFreeze = addI("nFreeze", "lns_n", 0, "number of variables to freeze when restarting.");
 		public final int pFreeze = addI("pFreeze", "lns_p", 10, "percentage of variables to freeze when restarting.");
-
 	}
 
 	public final SettingLNS lns = new SettingLNS();
@@ -639,7 +626,7 @@ public class Control {
 	public final SettingHardCoding hardCoding = new SettingHardCoding();
 
 	public final boolean mustBuildConflictStructures = settings.addB(3, "constraints", "mustBuildConflictStructures", "mbcs",
-			!propagation.classForRevisions.equals(Reviser.class.getSimpleName())
+			!propagation.reviser.equals(Reviser.class.getSimpleName())
 					|| (!valh.heuristic.equals(First.class.getSimpleName()) && !valh.heuristic.equals(Last.class.getSimpleName())),
 			"");
 

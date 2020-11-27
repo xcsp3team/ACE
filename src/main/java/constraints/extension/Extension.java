@@ -59,9 +59,9 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 		@Override
 		protected ExtensionStructure buildExtensionStructure() {
 			if (scp.length == 2)
-				return Reflector.buildObject(pb.head.control.extension.classForBinaryExtensionStructure, ExtensionStructure.class, this);
+				return Reflector.buildObject(pb.head.control.extension.classBinary, ExtensionStructure.class, this);
 			if (scp.length == 3)
-				return Reflector.buildObject(pb.head.control.extension.classForTernaryExtensionStructure, ExtensionStructure.class, this);
+				return Reflector.buildObject(pb.head.control.extension.classTernary, ExtensionStructure.class, this);
 			return new Table(this); // MDD(this);
 		}
 
