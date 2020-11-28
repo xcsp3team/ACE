@@ -8,7 +8,7 @@
  */
 package variables;
 
-import solver.Solver;
+import propagation.Propagation;
 
 // EXPERIMENTAL (TO BE FINISHED) !!!!!!!!!!!!!!!!!!!!!!!!!!!
 public final class DomainInfinite implements Domain {
@@ -26,16 +26,16 @@ public final class DomainInfinite implements Domain {
 		// should we be careful about avoiding confusion with other types of domains?
 	}
 
-	protected Solver solver;
+	protected Propagation propagation;
 
 	@Override
-	public final Solver solver() {
-		return solver;
+	public final Propagation propagation() {
+		return propagation;
 	}
 
 	@Override
-	public final void setSolver(Solver solver) {
-		this.solver = solver;
+	public final void setPropagation(Propagation propagation) {
+		this.propagation = propagation;
 	}
 
 	private Integer assignedValue;
@@ -100,11 +100,6 @@ public final class DomainInfinite implements Domain {
 
 	@Override
 	public int prev(int a) {
-		throw new AssertionError();
-	}
-
-	@Override
-	public int get(int i) {
 		throw new AssertionError();
 	}
 

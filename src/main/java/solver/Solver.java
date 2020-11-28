@@ -125,7 +125,9 @@ public abstract class Solver {
 	 */
 	public abstract int depth();
 
-	public abstract void pushVariable(Variable x);
+	public abstract int stackVariable(Variable x);
+
+	// public abstract void pushVariable(Variable x, int xLastRemovalLevel);
 
 	public abstract void assign(Variable x, int a);
 

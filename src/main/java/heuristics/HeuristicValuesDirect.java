@@ -54,7 +54,10 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 
 		@Override
 		public int identifyBestValueIndex() {
-			return dx.get(dx.size() / 2);
+			int a = dx.first();
+			for (int cnt = dx.size() / 2; cnt > 0; cnt--)
+				a = dx.next(a);
+			return a;
 		}
 	}
 

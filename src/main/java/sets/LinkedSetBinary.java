@@ -97,14 +97,6 @@ public class LinkedSetBinary implements LinkedSet {
 	}
 
 	@Override
-	public int get(int i) {
-		int a = first();
-		for (int cnt = 0; cnt < i; cnt++)
-			a = next(a);
-		return a;
-	}
-
-	@Override
 	public int lastRemoved() {
 		return lastRemoved;
 	}

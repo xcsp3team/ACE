@@ -53,7 +53,7 @@ public abstract class Backward extends Propagation {
 
 		@Override
 		public boolean runAfterAssignment(Variable x) {
-			assert x.isAssigned();
+			assert x.assigned();
 			return Stream.of(solver.problem.constraints).allMatch(c -> c.ignored || c.futvars.size() > 0 || c.seekFirstSupport());
 		}
 	}
@@ -68,7 +68,7 @@ public abstract class Backward extends Propagation {
 
 		@Override
 		public boolean runAfterAssignment(Variable x) {
-			assert x.isAssigned();
+			assert x.assigned();
 			return solver.futVars.size() > 0 || Stream.of(solver.problem.constraints).allMatch(c -> c.ignored || c.seekFirstSupport());
 		}
 	}
@@ -106,7 +106,7 @@ public abstract class Backward extends Propagation {
 
 		@Override
 		public boolean runAfterAssignment(Variable x) {
-			assert x.isAssigned();
+			assert x.assigned();
 			if (solver.futVars.size() == 0)
 				return Constraint.costOfCoveredConstraintsIn(solver.problem.constraints) < solver.solManager.bestBound;
 			return true;

@@ -246,7 +246,8 @@ public final class SolverLocal extends Solver {
 	// }
 
 	@Override
-	public void pushVariable(Variable variable) {
+	public int stackVariable(Variable variable) {
+		return 0;
 	}
 
 	@Override

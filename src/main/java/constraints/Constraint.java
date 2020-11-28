@@ -557,7 +557,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	public final void undoPastVariable(Variable x) {
-		assert x.isAssigned() && scp[futvars.dense[futvars.size()]] == x;
+		assert x.assigned() && scp[futvars.dense[futvars.size()]] == x;
 		futvars.limit++;
 	}
 
@@ -749,7 +749,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	private boolean genericFiltering(Variable x) {
 		Reviser reviser = ((Forward) pb.solver.propagation).reviser;
-		if (x.isAssigned()) {
+		if (x.assigned()) {
 			for (int i = futvars.limit; i >= 0; i--)
 				if (reviser.revise(this, scp[futvars.dense[i]]) == false)
 					return false;

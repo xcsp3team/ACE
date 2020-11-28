@@ -8,7 +8,6 @@
  */
 package learning;
 
-import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingUnsystematic;
 import solver.backtrack.SolverBacktrack;
 import utility.Bit;
 import utility.Enums.EStopping;
@@ -149,7 +148,7 @@ public final class IpsRecorderForDominance extends IpsRecorder {
 		Variable x = variables[ips.nums[pos]];
 		long[] domainRepresentation = ips.binDoms[pos];
 		Domain dom = x.dom;
-		if (x.isAssigned() && Bit.isPresent(domainRepresentation, dom.first())) {
+		if (x.assigned() && Bit.isPresent(domainRepresentation, dom.first())) {
 			solver.proofer.updateProof(ips.nums);
 			nWipeouts++;
 			return false;
@@ -203,7 +202,7 @@ public final class IpsRecorderForDominance extends IpsRecorder {
 
 	private void preparePartialBacktrack(int level) {
 		int top = solver.stackedVariables.top;
-		ObserverBacktrackingUnsystematic[] stack = solver.stackedVariables.stack;
+		Variable[] stack = solver.stackedVariables.stack;
 		topBeforeRefutations[level] = top;
 		if (top == -1 || ((Variable) stack[top]).dom.lastRemovedLevel() < level)
 			return;
@@ -227,7 +226,7 @@ public final class IpsRecorderForDominance extends IpsRecorder {
 
 	private void performPartialBacktrack(int topBefore, int depth) {
 		int top = solver.stackedVariables.top;
-		ObserverBacktrackingUnsystematic[] stack = solver.stackedVariables.stack;
+		Variable[] stack = solver.stackedVariables.stack;
 		// Possible d'eliminer ci-dessous : semble pas possible ces cas ? //TODO
 		if (top == -1 || ((Variable) stack[top]).dom.lastRemovedLevel() < depth)
 			return;

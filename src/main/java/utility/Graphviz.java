@@ -72,13 +72,13 @@ public class Graphviz {
 		out.println("rankdir=TB ;");
 		out.println("ranksep=1 ;");
 		for (Variable x : pb.variables) {
-			if (x.isAssigned() && !displayAll)
+			if (x.assigned() && !displayAll)
 				continue;
 			if (weightVisualisation)
 				out.println("  " + x.defaultId() + " [style=filled,fillcolor=" + computeColorFrom(computeWeightColorOf(x)) + "] ;");
 			else
 				out.println("  " + x.defaultId() + " [style=filled,fillcolor="
-						+ (x.isAssigned() ? GREEN + ",label=\"" + x + "=" + x.dom.uniqueValue() + "\"" : "white") + "] ;");
+						+ (x.assigned() ? GREEN + ",label=\"" + x + "=" + x.dom.uniqueValue() + "\"" : "white") + "] ;");
 		}
 		for (Constraint c : pb.constraints) {
 			Variable x = c.scp[0].num < c.scp[1].num ? c.scp[0] : c.scp[1], y = c.scp[0] == x ? c.scp[1] : c.scp[0];
@@ -117,7 +117,7 @@ public class Graphviz {
 				for (int a = 0; a < x.dom.initSize(); a++) {
 					String node = "  " + x + "_" + a + " [label=" + a + ",style=filled,fillcolor=";
 					if (x.dom.isPresent(a))
-						out.println(node + (x.isAssigned() ? GREEN : "white") + "] ;");
+						out.println(node + (x.assigned() ? GREEN : "white") + "] ;");
 					else if (displayAll)
 						out.println(node + (x.dom.removedLevelOf(a) == 0 ? RED : "orange") + "] ;");
 				}
@@ -152,13 +152,13 @@ public class Graphviz {
 		out.println("ranksep=1 ;");
 		for (Variable x : pb.variables) {
 			System.out.println(x);
-			if (x.isAssigned() && !displayAll)
+			if (x.assigned() && !displayAll)
 				continue;
 			if (weightVisualisation) {
 				out.println("  " + x.defaultId() + " [style=filled,fillcolor=" + computeColorFrom((int) x.wdeg() - x.deg()) + "] ;");
 			} else
 				out.println("  " + x.defaultId() + " [style=filled,fillcolor="
-						+ (x.isAssigned() ? GREEN + ",label=\"" + x.defaultId() + "=" + x.dom.uniqueValue() + "\"" : "white") + "] ;");
+						+ (x.assigned() ? GREEN + ",label=\"" + x.defaultId() + "=" + x.dom.uniqueValue() + "\"" : "white") + "] ;");
 		}
 		for (Constraint c : pb.constraints) {
 			for (int i = 0; i < c.scp.length - 1; i++) {
@@ -196,7 +196,7 @@ public class Graphviz {
 			for (int a = 0; a < x.dom.initSize(); a++) {
 				String node = "  " + varName(pb, x) + "_" + a + " [label=" + a + ",style=filled,fillcolor=";
 				if (x.dom.isPresent(a))
-					out.println(node + (x.isAssigned() ? GREEN : "white") + "] ;");
+					out.println(node + (x.assigned() ? GREEN : "white") + "] ;");
 				else if (displayAll) {
 					// out.println(node + (elements.getAbsentLevelOf(index) == 0 ? "red" : "red") + "] ;");
 					node = "  " + varName(pb, x) + "_" + a + " [label=" + a + ",style=dotted,fillcolor=";

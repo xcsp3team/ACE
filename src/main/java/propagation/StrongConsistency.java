@@ -53,7 +53,7 @@ public abstract class StrongConsistency extends GAC {
 		if (enforceArcConsistencyAfterAssignment(x) == false)
 			return false;
 		if (performingProperSearch || settings.strongOnlyAtPreprocessing || (settings.strongOnlyWhenACEffective && solver.problem.nValuesRemoved == nBefore)
-				|| (settings.strongOnlyWhenNotSingleton && !x.dom.isModifiedAtCurrentDepth() && hasSolverPropagatedAfterLastButOneDecision()))
+				|| (settings.strongOnlyWhenNotSingleton && x.dom.lastRemovedLevel() != solver.depth() && hasSolverPropagatedAfterLastButOneDecision()))
 			return true;
 		return enforceMore();
 	}

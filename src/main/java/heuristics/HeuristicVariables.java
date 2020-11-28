@@ -131,7 +131,7 @@ public abstract class HeuristicVariables extends Heuristic {
 			Variable bestVar = null;
 			double bestScore = Double.NEGATIVE_INFINITY;
 			for (int i = nStrictlyPriorityVars; i < priorityVars.length; i++) {
-				if (priorityVars[i].isAssigned())
+				if (priorityVars[i].assigned())
 					continue;
 				double score = scoreOptimizedOf(priorityVars[i]);
 				if (score > bestScore) {
@@ -177,7 +177,7 @@ public abstract class HeuristicVariables extends Heuristic {
 		protected final Variable bestUnpriorityVar() {
 			int pos = -1;
 			for (int i = 0; i < nbOrdered; i++)
-				if (!solver.problem.variables[order[i]].isAssigned()) {
+				if (!solver.problem.variables[order[i]].assigned()) {
 					pos = i;
 					break;
 				}

@@ -114,11 +114,6 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	@Override
-	public int lastModificationDepth() {
-		return dom.lastRemovedLevel();
-	}
-
-	@Override
 	public int compareTo(Variable x) {
 		return num == UNSET_NUM && x.num == UNSET_NUM ? Integer.parseInt(id.substring(1)) - Integer.parseInt(x.id.substring(1)) : num - x.num;
 	}
@@ -571,7 +566,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 		return assignmentLevel;
 	}
 
-	public final boolean isAssigned() {
+	public final boolean assigned() {
 		return assignmentLevel >= 0;
 	}
 
@@ -681,7 +676,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 
 	public final void display(boolean exhaustively) {
 		Kit.log.finer("Variable " + this + " with num=" + num + ", degree=" + ctrs.length + ", " + dom.size() + " values {" + dom.stringListOfValues()
-				+ "} and domain type " + dom.typeName() + " " + (this.isAssigned() ? " is assigned" : ""));
+				+ "} and domain type " + dom.typeName() + " " + (this.assigned() ? " is assigned" : ""));
 		if (exhaustively) {
 			dom.display(exhaustively);
 			Kit.log.finer("  ctrs = {" + Kit.join(ctrs) + "}\n  nghs = {" + Kit.join(nghs != null ? nghs : computeNeighbours(Integer.MAX_VALUE)) + "}\n");

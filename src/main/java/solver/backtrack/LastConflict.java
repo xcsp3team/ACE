@@ -80,7 +80,7 @@ public final class LastConflict implements ObserverRuns {
 			return null;
 		// entering last reasoning mode?
 		if (nVars == 0) {
-			if (lastAssigned == null || lastAssigned.isAssigned())
+			if (lastAssigned == null || lastAssigned.assigned())
 				return null;
 			statistics.startLevel = solver.depth() + 1;
 			vars[nVars++] = lastAssigned;
@@ -88,10 +88,10 @@ public final class LastConflict implements ObserverRuns {
 		}
 		// using one of the recorded variables?
 		for (int i = 0; i < nVars; i++)
-			if (!vars[i].isAssigned())
+			if (!vars[i].assigned())
 				return vars[i];
 		// leaving last reasoning mode?
-		if (nVars == k || candidate == null || candidate.isAssigned()) {
+		if (nVars == k || candidate == null || candidate.assigned()) {
 			statistics.update(nVars);
 			nVars = 0;
 			candidate = null;

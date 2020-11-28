@@ -32,14 +32,14 @@ public abstract class Forward extends Propagation {
 
 	@Override
 	public boolean runAfterAssignment(Variable x) {
-		assert x.isAssigned() && queue.size() == 0 : queue.size() + " " + x.isAssigned(); // (queue.size() == 0 || this instanceof PropagationIsomorphism)
+		assert x.assigned() && queue.size() == 0 : queue.size() + " " + x.assigned(); // (queue.size() == 0 || this instanceof PropagationIsomorphism)
 		queue.add(x);
 		return propagate();
 	}
 
 	@Override
 	public boolean runAfterRefutation(Variable x) {
-		assert !x.isAssigned() && queue.size() == 0 && x.dom.size() > 0;
+		assert !x.assigned() && queue.size() == 0 && x.dom.size() > 0;
 		queue.add(x);
 		return propagate();
 	}

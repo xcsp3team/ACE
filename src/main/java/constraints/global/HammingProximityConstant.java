@@ -132,7 +132,7 @@ public abstract class HammingProximityConstant extends CtrGlobal implements TagG
 			// no new sentinel found ; we have to assign all k remaining variables
 			for (int i = sentinels.limit; i >= 0; i--) {
 				int p = sentinels.dense[i];
-				if (p != px && !scp[p].isAssigned() && scp[p].dom.reduceToValue(target[p]) == false)
+				if (p != px && !scp[p].assigned() && scp[p].dom.reduceToValue(target[p]) == false)
 					return false;
 			}
 			return true;

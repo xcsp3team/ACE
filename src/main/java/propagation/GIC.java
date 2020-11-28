@@ -322,7 +322,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 
 		@Override
 		public boolean runAfterAssignment(Variable x) {
-			return !performingProperSearch && !x.dom.isModifiedAtCurrentDepth() && solver.depth() != solver.head.control.experimental.testI1 ? true
+			return !performingProperSearch && x.dom.lastRemovedLevel() != solver.depth() && solver.depth() != solver.head.control.experimental.testI1 ? true
 					: super.runAfterAssignment(x);
 		}
 

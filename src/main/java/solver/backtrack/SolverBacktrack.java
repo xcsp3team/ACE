@@ -160,26 +160,28 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	public final class StackedVariables {
 
-		private SolverBacktrack solver;
-
 		public final Variable[] stack;
 
 		public int top = -1;
 
-		public StackedVariables(SolverBacktrack solver, int size) {
-			this.solver = solver;
+		public StackedVariables(int size) {
 			this.stack = new Variable[size];
 		}
 
-		// must be called before making modifications (e.g. for a variable, before reducing the domain of the variable)
-		public void push(Variable observer) {
-			if (top == -1 || stack[top].lastModificationDepth() != solver.depth())
-				stack[++top] = null; // null is used as a separator
-			stack[++top] = observer;
+		// must be called before making modifications (i.e. before reducing the domain of the variable)
+		public int push(Variable x) {
+			int depth = depth();
+			assert x.dom.lastRemovedLevel() <= depth;
+			if (x.dom.lastRemovedLevel() != depth) { // because, otherwise, already present
+				if (top == -1 || stack[top].dom.lastRemovedLevel() != depth)
+					stack[++top] = null; // null is used as a separator
+				stack[++top] = x;
+			}
+			return depth;
 		}
 
 		public void restoreBefore(int depth) {
-			if (top == -1 || stack[top].lastModificationDepth() < depth)
+			if (top == -1 || stack[top].dom.lastRemovedLevel() < depth)
 				return;
 			for (; stack[top] != null; top--)
 				stack[top].restoreBefore(depth);
@@ -188,20 +190,20 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		}
 
 		private boolean controlStack(int depth) {
-			if (top >= 0 && stack[top] == null)
+			if (top < -1)
 				return false;
-			if (top >= 0)
-				if (stack[top] instanceof Variable) {
-					Variable x = Stream.of(solver.problem.variables).filter(y -> !(y.dom instanceof DomainInfinite) && y.lastModificationDepth() >= depth)
-							.findFirst().orElse(null);
-					if (x != null) {
-						System.out.println("Pb with " + x);
-						x.dom.display(true);
-						return false;
-					}
-				} else if (Stream.of(solver.problem.constraints).anyMatch(c -> c.extStructure() instanceof ObserverBacktrackingUnsystematic
-						&& ((ObserverBacktrackingUnsystematic) c.extStructure()).lastModificationDepth() >= depth))
-					return false;
+			if (top == -1)
+				return true;
+			if (stack[top] == null)
+				return false;
+			assert stack[top] instanceof Variable;
+			Variable x = Stream.of(problem.variables).filter(y -> !(y.dom instanceof DomainInfinite) && y.dom.lastRemovedLevel() >= depth).findFirst()
+					.orElse(null);
+			if (x != null) {
+				System.out.println("Pb with " + x);
+				x.dom.display(true);
+				return false;
+			}
 			return true;
 		}
 	}
@@ -289,8 +291,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	 *********************************************************************************************/
 
 	@Override
-	public void pushVariable(Variable x) {
-		stackedVariables.push(x);
+	public int stackVariable(Variable x) {
+		return stackedVariables.push(x);
 	}
 
 	private List<ObserverBacktrackingSystematic> collectObserversBacktrackingSystematic() {
@@ -391,7 +393,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 		int nLevels = problem.variables.length + 1;
 		int size = Stream.of(problem.variables).mapToInt(x -> x.dom.initSize()).reduce(0, (sum, domSize) -> sum + Math.min(nLevels, domSize));
-		this.stackedVariables = new StackedVariables(this, size + nLevels);
+		this.stackedVariables = new StackedVariables(size + nLevels);
 		this.observersBacktrackingSystematic = collectObserversBacktrackingSystematic();
 		this.observersRuns = collectObserversRuns();
 		this.observersAssignment = collectObserversAssignment();
@@ -414,7 +416,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	@Override
 	public void assign(Variable x, int a) {
-		assert !x.isAssigned();
+		assert !x.assigned();
 
 		stats.nAssignments++;
 		futVars.assign(x);
@@ -596,7 +598,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	}
 
 	private void backtrackTo(Variable x) {
-		if (x != null && !x.isAssigned()) // TODO LNS does not necessarily respect the last past recorded variable
+		if (x != null && !x.assigned()) // TODO LNS does not necessarily respect the last past recorded variable
 			x = null;
 		// assert x == null || x.isAssigned();
 		while (futVars.lastPast() != x)

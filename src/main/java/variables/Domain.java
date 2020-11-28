@@ -27,9 +27,9 @@ import org.xcsp.common.Range;
 import org.xcsp.common.Types.TypeOperatorRel;
 
 import interfaces.Observers.ObserverDomainReduction;
+import propagation.Propagation;
 import sets.LinkedSet;
 import sets.SetDense;
-import solver.Solver;
 import utility.Kit;
 
 public interface Domain extends LinkedSet {
@@ -94,13 +94,13 @@ public interface Domain extends LinkedSet {
 	int typeIdentifier();
 
 	/**
-	 * Returns the solver behind the scene.
+	 * Returns the propagation behind the scene.
 	 * 
 	 * @return
 	 */
-	Solver solver();
+	Propagation propagation();
 
-	void setSolver(Solver solver);
+	void setPropagation(Propagation propagation);
 
 	/**
 	 * Indicates if indexes (of values) and values match, i.e. if for every index a, we have toVal(a) = a, and for every value v, we have toIdx(v)=v.
@@ -114,8 +114,8 @@ public interface Domain extends LinkedSet {
 	}
 
 	/**
-	 * Returns the index of the specified value, or a negative integer if the specified value does not belong to the initial domain. No assumption is
-	 * made about the fact that the specified value belongs or not to the current domain.
+	 * Returns the index of the specified value, or a negative integer if the specified value does not belong to the initial domain. No assumption is made about
+	 * the fact that the specified value belongs or not to the current domain.
 	 */
 	int toIdx(int v);
 
@@ -162,7 +162,19 @@ public interface Domain extends LinkedSet {
 	 * Returns randomly the index of a current value in the domain.
 	 */
 	default int random() {
-		return get(solver().head.random.nextInt(size()));
+		assert size() > 0;
+		int k = propagation().solver.head.random.nextInt(size());
+		if (k < size() / 2) {
+			int a = first();
+			for (int cnt = k - 1; cnt >= 0; cnt--)
+				a = next(a);
+			return a;
+		} else {
+			int a = last();
+			for (int cnt = size() - k - 2; cnt >= 0; cnt--)
+				a = prev(a);
+			return a;
+		}
 	}
 
 	/**
@@ -188,13 +200,6 @@ public interface Domain extends LinkedSet {
 
 	default int intervalValue() {
 		return toVal(last()) - toVal(first());
-	}
-
-	/**
-	 * Determines if a value has been removed at the current depth of the (tree) solver.
-	 */
-	default boolean isModifiedAtCurrentDepth() {
-		return lastRemovedLevel() == solver().depth();
 	}
 
 	default boolean is01() {
@@ -251,7 +256,7 @@ public interface Domain extends LinkedSet {
 	}
 
 	default boolean afterElementaryCalls(int sizeBefore) {
-		return size() == sizeBefore ? true : size() == 0 ? fail() : solver().propagation.handleReductionSafely(var());
+		return size() == sizeBefore ? true : size() == 0 ? fail() : propagation().handleReductionSafely(var());
 	}
 
 	/**
@@ -261,14 +266,10 @@ public interface Domain extends LinkedSet {
 	 */
 	default void removeElementary(int a) {
 		Variable x = var();
-		int depth = solver().depth();
-		assert !x.isAssigned() && isPresent(a) && lastRemovedLevel() <= depth : x + " " + x.isAssigned() + " " + isPresent(a) + " " + lastRemovedLevel() + " "
-				+ depth;
-		// log.info("removing " + x + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " by constraint " +
-		// solver().propagation.currFilteringCtr);
+		assert !x.assigned() && isPresent(a) : x + " " + x.assigned() + " " + isPresent(a);
+		// log.info("removing " + x + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " by constraint " + propagation().currFilteringCtr);
 
-		if (depth != lastRemovedLevel())
-			solver().pushVariable(x); // push must always be performed before domain reduction
+		int depth = propagation().solver.stackVariable(x); // stacking variables must always be performed before domain reduction
 		remove(a, depth);
 		for (ObserverDomainReduction observer : x.problem.observersDomainReduction)
 			observer.afterRemoval(x, a);
@@ -286,7 +287,7 @@ public interface Domain extends LinkedSet {
 		if (size() == 1)
 			return fail();
 		removeElementary(a);
-		return solver().propagation.handleReductionSafely(var());
+		return propagation().handleReductionSafely(var());
 	}
 
 	/**
@@ -302,14 +303,14 @@ public interface Domain extends LinkedSet {
 	/**
 	 * Removes the value at the specified index. <br />
 	 * The value is assumed to be present. <br />
-	 * When called, we have the guarantee that no inconsistency can be detected (because the value is present and the domain contains at least another
-	 * value). <br />
+	 * When called, we have the guarantee that no inconsistency can be detected (because the value is present and the domain contains at least another value).
+	 * <br />
 	 * The management of this removal with respect to propagation is handled.
 	 */
 	default void removeSafely(int a) {
 		assert isPresent(a) && size() > 1;
 		removeElementary(a);
-		solver().propagation.handleReductionSafely(var());
+		propagation().handleReductionSafely(var());
 	}
 
 	/**
@@ -328,7 +329,7 @@ public interface Domain extends LinkedSet {
 				removeElementary(a);
 				cnt++;
 			}
-		return solver().propagation.handleReductionSafely(var());
+		return propagation().handleReductionSafely(var());
 	}
 
 	/**
@@ -358,7 +359,7 @@ public interface Domain extends LinkedSet {
 				return fail();
 			for (int i = idxs.limit; i >= 0; i--)
 				removeElementary(idxs.dense[i]);
-			return solver().propagation.handleReductionSafely(var());
+			return propagation().handleReductionSafely(var());
 		}
 	}
 
@@ -383,10 +384,7 @@ public interface Domain extends LinkedSet {
 		if (size() == 1)
 			return 0; // 0 removal
 		Variable x = var();
-		int depth = solver().depth();
-
-		if (lastRemovedLevel() != depth)
-			solver().pushVariable(x); // push above must always be performed before domain reduction
+		int depth = propagation().solver.stackVariable(x); // stacking variables must always be performed before domain reduction
 		int nRemovals = reduceTo(a, depth);
 		for (ObserverDomainReduction observer : x.problem.observersDomainReduction)
 			observer.afterRemovals(x, nRemovals);
@@ -403,7 +401,7 @@ public interface Domain extends LinkedSet {
 	 * The management of this removal with respect to propagation is handled.
 	 */
 	default boolean reduceTo(int a) {
-		return !isPresent(a) ? fail() : reduceToElementary(a) == 0 || solver().propagation.handleReductionSafely(var());
+		return !isPresent(a) ? fail() : reduceToElementary(a) == 0 || propagation().handleReductionSafely(var());
 	}
 
 	/**
@@ -414,14 +412,14 @@ public interface Domain extends LinkedSet {
 	 */
 	default boolean reduceToValue(int v) {
 		int a = toPresentIdx(v);
-		return a == -1 ? fail() : reduceToElementary(a) == 0 || solver().propagation.handleReductionSafely(var());
+		return a == -1 ? fail() : reduceToElementary(a) == 0 || propagation().handleReductionSafely(var());
 	}
 
 	/**
 	 * Forces failure through this domain.
 	 */
 	default boolean fail() {
-		return solver().propagation.handleReduction(var(), 0);
+		return propagation().handleReduction(var(), 0);
 	}
 
 	/**

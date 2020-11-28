@@ -29,7 +29,7 @@ public final class FC extends Forward {
 
 	@Override
 	public boolean runAfterAssignment(Variable x) {
-		assert x.isAssigned() && queue.isEmpty();
+		assert x.assigned() && queue.isEmpty();
 		queue.add(x);
 		boolean consistent = pickAndFilter();
 		queue.clear(); // we do not consider the rest of propagation (because this is FC)

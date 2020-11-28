@@ -53,7 +53,7 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 	}
 
 	public final boolean revise(Constraint c, Variable x) {
-		assert !x.isAssigned() && c.involves(x);
+		assert !x.assigned() && c.involves(x);
 		if (mustBeAppliedTo(c, x)) {
 			nRevisions++;
 			int sizeBefore = x.dom.size();

@@ -36,13 +36,13 @@ public class LinkedSetOrdered implements LinkedSet {
 	 * previous present element of the list or -1 if it does not exist. Hence, <code> prevs[i] == j </code> means that j is the previous present element in the
 	 * list before i.
 	 */
-	protected int[] prevs;
+	private final int[] prevs;
 
 	/**
 	 * The forward linking of all present elements of the list (from first to last). An array index corresponds to an element. An array value gives the next
 	 * present element of the list or -1 if it does not exist. Hence, <code> nexts[i] == j </code> means that j is the next present element in the list after i.
 	 */
-	protected int[] nexts;
+	private final int[] nexts;
 
 	/**
 	 * The last dropped element of the list.
@@ -54,14 +54,14 @@ public class LinkedSetOrdered implements LinkedSet {
 	 * absent element of the list or -1 if it does not exist. Hence, <code> prevsDel[i] == j </code> means that j is the previously deleted element of the list
 	 * before i.
 	 */
-	protected int[] prevRemoved;
+	private final int[] prevRemoved;
 
 	/**
 	 * The level at which absent elements have been removed from the list. An array index corresponds to an element. An array value gives the level at which the
 	 * corresponding element has been removed from the list. Hence, <code> absentLevels[i] == j </code> means that j is the removal level of the element i and
 	 * <code> removedLevels[i] == -1 </code> means that the element i is present.
 	 */
-	protected int[] removedLevels;
+	private final int[] removedLevels;
 
 	protected int mark;
 
@@ -147,15 +147,6 @@ public class LinkedSetOrdered implements LinkedSet {
 		while (removedLevels[prev] != -1)
 			prev = prevs[prev];
 		return prev;
-	}
-
-	@Override
-	public int get(int i) {
-		assert 0 <= i && i < size();
-		int e = first();
-		for (int cnt = 0; cnt < i; cnt++)
-			e = next(e);
-		return e;
 	}
 
 	@Override

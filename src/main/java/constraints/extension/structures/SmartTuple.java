@@ -601,14 +601,14 @@ public final class SmartTuple {
 
 		private void collectThroughInvalidValues() {
 			int first1 = domx.first(), last2 = domy.last();
-			if (!scp[x].isAssigned()) {
+			if (!scp[x].assigned()) {
 				int cnt = 0;
 				for (int a = domx.last(); a != -1 && (strict ? a >= last2 : a > last2); a = domx.prev(a))
 					if (supportlessx.isPresent(a))
 						tmp[cnt++] = a;
 				supportlessx.resetTo(tmp, cnt);
 			}
-			if (!scp[y].isAssigned()) {
+			if (!scp[y].assigned()) {
 				int cnt = 0;
 				for (int a = domy.first(); a != -1 && (strict ? first1 >= a : first1 > a); a = domy.next(a))
 					if (supportlessy.isPresent(a))
@@ -619,13 +619,13 @@ public final class SmartTuple {
 
 		private void collectThroughSupportlessSets() {
 			int first1 = domx.first(), last2 = domy.last();
-			if (!scp[x].isAssigned())
+			if (!scp[x].assigned())
 				for (int i = supportlessx.limit; i >= 0; i--) {
 					int a = supportlessx.dense[i];
 					if (strict ? a < last2 : a <= last2)
 						supportlessx.remove(a);
 				}
-			if (!scp[y].isAssigned())
+			if (!scp[y].assigned())
 				for (int i = supportlessy.limit; i >= 0; i--) {
 					int a = supportlessy.dense[i];
 					if (strict ? first1 < a : first1 <= a)
@@ -635,10 +635,10 @@ public final class SmartTuple {
 
 		private void collectThroughValidValues() {
 			int first1 = domx.first(), last2 = domy.last();
-			if (!scp[x].isAssigned())
+			if (!scp[x].assigned())
 				for (int a = domx.first(); a != -1 && (strict ? a < last2 : a <= last2); a = domx.next(a))
 					supportlessx.remove(a);
-			if (!scp[y].isAssigned())
+			if (!scp[y].assigned())
 				for (int a = domy.last(); a != -1 && (strict ? first1 < a : first1 <= a); a = domy.prev(a))
 					supportlessy.remove(a);
 		}
@@ -660,7 +660,7 @@ public final class SmartTuple {
 
 		@Override
 		public void collectForVap2(int nb) {
-			if (!scp[y].isAssigned()) {
+			if (!scp[y].assigned()) {
 				int first1 = tmp[0];
 				for (int a = domy.last(); a != -1 && (strict ? first1 < a : first1 <= a); a = domy.prev(a))
 					supportlessy.remove(a);
@@ -700,14 +700,14 @@ public final class SmartTuple {
 
 		private void collectThroughInvalidValues() {
 			int last1 = domx.last(), first2 = domy.first();
-			if (!scp[x].isAssigned()) {
+			if (!scp[x].assigned()) {
 				int cnt = 0;
 				for (int a = domx.first(); a != -1 && (strict ? a <= first2 : a < first2); a = domx.next(a))
 					if (supportlessx.isPresent(a))
 						tmp[cnt++] = a;
 				supportlessx.resetTo(tmp, cnt);
 			}
-			if (!scp[y].isAssigned()) {
+			if (!scp[y].assigned()) {
 				int cnt = 0;
 				for (int a = domy.last(); a != -1 && (strict ? a >= last1 : a > last1); a = domy.prev(a))
 					if (supportlessy.isPresent(a))
@@ -718,13 +718,13 @@ public final class SmartTuple {
 
 		private void collectThroughSupportlessSets() {
 			int last1 = domx.last(), first2 = domy.first();
-			if (!scp[x].isAssigned())
+			if (!scp[x].assigned())
 				for (int i = supportlessx.limit; i >= 0; i--) {
 					int a = supportlessx.dense[i];
 					if (strict ? a > first2 : a >= first2)
 						supportlessx.remove(a);
 				}
-			if (!scp[y].isAssigned())
+			if (!scp[y].assigned())
 				for (int i = supportlessy.limit; i >= 0; i--) {
 					int a = supportlessy.dense[i];
 					if (strict ? last1 > a : last1 >= a)
@@ -734,10 +734,10 @@ public final class SmartTuple {
 
 		private void collectThroughValidValues() {
 			int last1 = domx.last(), first2 = domy.first();
-			if (!scp[x].isAssigned())
+			if (!scp[x].assigned())
 				for (int a = domx.last(); a != -1 && (strict ? a > first2 : a >= first2); a = domx.prev(a))
 					supportlessx.remove(a);
-			if (!scp[y].isAssigned())
+			if (!scp[y].assigned())
 				for (int a = domy.first(); a != -1 && (strict ? last1 > a : last1 >= a); a = domy.next(a))
 					supportlessy.remove(a);
 		}
@@ -759,7 +759,7 @@ public final class SmartTuple {
 
 		@Override
 		public void collectForVap2(int nb) {
-			if (!scp[y].isAssigned()) {
+			if (!scp[y].assigned()) {
 				int last1 = tmp[nb - 1];
 				for (int a = domy.first(); a != -1 && (strict ? last1 > a : last1 >= a); a = domy.next(a))
 					supportlessy.remove(a);
@@ -797,12 +797,12 @@ public final class SmartTuple {
 		@Override
 		public void collect() {
 			supTimeLocal = supTime;
-			if (!scp[x].isAssigned())
+			if (!scp[x].assigned())
 				if (domy.size() == 1 && supportlessx.isPresent(domy.unique()))
 					supportlessx.resetTo(domy.unique());
 				else
 					supportlessx.clear();
-			if (!scp[y].isAssigned())
+			if (!scp[y].assigned())
 				if (domx.size() == 1 && supportlessy.isPresent(domx.unique()))
 					supportlessy.resetTo(domx.unique());
 				else
@@ -811,7 +811,7 @@ public final class SmartTuple {
 
 		@Override
 		public void collectForVap2(int nb) {
-			if (!scp[y].isAssigned())
+			if (!scp[y].assigned())
 				if (nb == 1 && supportlessy.isPresent(tmp[0]))
 					supportlessy.resetTo(tmp[0]);
 				else
@@ -855,14 +855,14 @@ public final class SmartTuple {
 		}
 
 		private void collectThroughRemovedValues() {
-			if (!scp[x].isAssigned()) {
+			if (!scp[x].assigned()) {
 				int cnt = 0;
 				for (int a = domy.lastRemoved(); a != -1; a = domy.prevRemoved(a))
 					if (supportlessx.isPresent(a))
 						tmp[cnt++] = a;
 				supportlessx.resetTo(tmp, cnt);
 			}
-			if (!scp[y].isAssigned()) {
+			if (!scp[y].assigned()) {
 				int cnt = 0;
 				for (int a = domx.lastRemoved(); a != -1; a = domx.prevRemoved(a))
 					if (supportlessy.isPresent(a))
@@ -876,17 +876,17 @@ public final class SmartTuple {
 			// Kit.prn("collectSmall " + newResidue + " " + idxResidue);
 			Domain domSmall = domx.size() < domy.size() ? domx : domy;
 			Domain domBig = domSmall == domx ? domy : domx;
-			if (!scp[x].isAssigned() && !scp[y].isAssigned()) {
+			if (!scp[x].assigned() && !scp[y].assigned()) {
 				for (int a = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); a != -1; a = domSmall.next(a))
 					if (domBig.isPresent(a)) {
 						supportlessx.remove(a);
 						supportlessy.remove(a);
 					}
-			} else if (!scp[x].isAssigned()) {
+			} else if (!scp[x].assigned()) {
 				for (int a = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); a != -1; a = domSmall.next(a))
 					if (domBig.isPresent(a))
 						supportlessx.remove(a);
-			} else if (!scp[y].isAssigned()) {
+			} else if (!scp[y].assigned()) {
 				for (int a = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); a != -1; a = domSmall.next(a))
 					if (domBig.isPresent(a))
 						supportlessy.remove(a);
@@ -894,13 +894,13 @@ public final class SmartTuple {
 		}
 
 		private void collectThroughSupportlessSets() {
-			if (!scp[x].isAssigned())
+			if (!scp[x].assigned())
 				for (int i = supportlessx.limit; i >= 0; i--) {
 					int a = supportlessx.dense[i];
 					if (domy.isPresent(a))
 						supportlessx.remove(a);
 				}
-			if (!scp[y].isAssigned())
+			if (!scp[y].assigned())
 				for (int i = supportlessy.limit; i >= 0; i--) {
 					int a = supportlessy.dense[i];
 					if (domx.isPresent(a))
@@ -925,7 +925,7 @@ public final class SmartTuple {
 
 		@Override
 		public void collectForVap2(int nb) {
-			if (!scp[y].isAssigned())
+			if (!scp[y].assigned())
 				for (int i = 0; i < nb; i++)
 					supportlessy.remove(tmp[i]);
 		}
@@ -969,7 +969,7 @@ public final class SmartTuple {
 		}
 
 		private void collectThroughRemovedValues() {
-			if (!scp[x].isAssigned()) {
+			if (!scp[x].assigned()) {
 				int cnt = 0;
 				for (int a = domy.lastRemoved(); a != -1; a = domy.prevRemoved(a)) {
 					int v = domy.toVal(a);
@@ -979,7 +979,7 @@ public final class SmartTuple {
 				}
 				supportlessx.resetTo(tmp, cnt);
 			}
-			if (!scp[y].isAssigned()) {
+			if (!scp[y].assigned()) {
 				int cnt = 0;
 				for (int a = domx.lastRemoved(); a != -1; a = domx.prevRemoved(a)) {
 					// System.out.println("Idx=" + idx + " " + dom.prevDelIdx(idx));
@@ -998,7 +998,7 @@ public final class SmartTuple {
 		private void collectThroughSmallestDomain() {
 			Domain domSmall = domx.size() < domy.size() ? domx : domy;
 			Domain domBig = domSmall == domx ? domy : domx;
-			if (!scp[x].isAssigned() && !scp[y].isAssigned()) {
+			if (!scp[x].assigned() && !scp[y].assigned()) {
 				for (int a = domSmall.first(); a != -1; a = domSmall.next(a)) {
 					int v = domSmall.toVal(a);
 					int b = domBig.toPresentIdx(v);
@@ -1007,14 +1007,14 @@ public final class SmartTuple {
 						supportlessy.remove(domSmall == domx ? b : a);
 					}
 				}
-			} else if (!scp[x].isAssigned()) {
+			} else if (!scp[x].assigned()) {
 				for (int a = domSmall.first(); a != -1; a = domSmall.next(a)) {
 					int v = domSmall.toVal(a);
 					int b = domBig.toPresentIdx(v);
 					if (b != -1)
 						supportlessx.remove(domSmall == domx ? a : b);
 				}
-			} else if (!scp[y].isAssigned()) {
+			} else if (!scp[y].assigned()) {
 				for (int a = domSmall.first(); a != -1; a = domSmall.next(a)) {
 					int v = domSmall.toVal(a);
 					int b = domBig.toPresentIdx(v);
@@ -1025,7 +1025,7 @@ public final class SmartTuple {
 		}
 
 		private void collectThroughSupportlessSets() {
-			if (!scp[x].isAssigned())
+			if (!scp[x].assigned())
 				for (int i = supportlessx.limit; i >= 0; i--) {
 					int a = supportlessx.dense[i];
 					int v = domx.toVal(a);
@@ -1033,7 +1033,7 @@ public final class SmartTuple {
 					if (b != -1)
 						supportlessx.remove(a);
 				}
-			if (!scp[y].isAssigned())
+			if (!scp[y].assigned())
 				for (int i = supportlessy.limit; i >= 0; i--) {
 					int a = supportlessy.dense[i];
 					int v = domy.toVal(a);
@@ -1060,7 +1060,7 @@ public final class SmartTuple {
 
 		@Override
 		public void collectForVap2(int nb) {
-			if (!scp[y].isAssigned())
+			if (!scp[y].assigned())
 				for (int i = 0; i < nb; i++) {
 					int a = tmp[i];
 					int v = domx.toVal(a);
@@ -1104,14 +1104,14 @@ public final class SmartTuple {
 		private void collectThroughInvalidValues() {
 			// Kit.prn("here1");
 			int last1 = domx.last(), first2 = domy.first();
-			if (!scp[x].isAssigned()) {
+			if (!scp[x].assigned()) {
 				int cnt = 0;
 				for (int a = domx.first(); a != -1 && (strict ? a <= first2 + cst : a < first2 + cst); a = domx.next(a))
 					if (supportlessx.isPresent(a))
 						tmp[cnt++] = a;
 				supportlessx.resetTo(tmp, cnt);
 			}
-			if (!scp[y].isAssigned()) {
+			if (!scp[y].assigned()) {
 				int cnt = 0;
 				for (int a = domy.last(); a != -1 && (strict ? a + cst >= last1 : a + cst > last1); a = domy.prev(a))
 					if (supportlessy.isPresent(a))
@@ -1122,13 +1122,13 @@ public final class SmartTuple {
 
 		private void collectThroughSupportlessSets() {
 			int last1 = domx.last(), first2 = domy.first();
-			if (!scp[x].isAssigned())
+			if (!scp[x].assigned())
 				for (int i = supportlessx.limit; i >= 0; i--) {
 					int a = supportlessx.dense[i];
 					if (strict ? a > first2 + cst : a >= first2 + cst)
 						supportlessx.remove(a);
 				}
-			if (!scp[y].isAssigned())
+			if (!scp[y].assigned())
 				for (int i = supportlessy.limit; i >= 0; i--) {
 					int a = supportlessy.dense[i];
 					if (strict ? last1 > a + cst : last1 >= a + cst)
@@ -1139,10 +1139,10 @@ public final class SmartTuple {
 		private void collectThroughValidValues() {
 			// Kit.prn("here3");
 			int last1 = domx.last(), first2 = domy.first();
-			if (!scp[x].isAssigned())
+			if (!scp[x].assigned())
 				for (int a = domx.last(); a != -1 && (strict ? a > first2 + cst : a >= first2 + cst); a = domx.prev(a))
 					supportlessx.remove(a);
-			if (!scp[y].isAssigned())
+			if (!scp[y].assigned())
 				for (int a = domy.first(); a != -1 && (strict ? last1 > a + cst : last1 >= a + cst); a = domy.next(a))
 					supportlessy.remove(a);
 		}
@@ -1164,7 +1164,7 @@ public final class SmartTuple {
 
 		@Override
 		public void collectForVap2(int nb) {
-			if (!scp[y].isAssigned()) {
+			if (!scp[y].assigned()) {
 				int last1 = tmp[nb - 1];
 				for (int a = domy.first(); a != -1 && (strict ? last1 > a + cst : last1 >= a + cst); a = domy.next(a))
 					supportlessy.remove(a);
@@ -1231,7 +1231,7 @@ public final class SmartTuple {
 				assert valid;
 			}
 			// we update the set of supportless idxs for vap
-			if (!scp[x].isAssigned())
+			if (!scp[x].assigned())
 				for (int i = 0; i < cnt; i++)
 					supportlessx.remove(tmp[i]);
 			// we update the set of supportless idxs for the other involved stars

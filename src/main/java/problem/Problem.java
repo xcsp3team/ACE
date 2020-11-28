@@ -302,7 +302,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public void afterSolverConstruction() {
-		Stream.of(variables).forEach(x -> x.dom.setSolver(solver));
+		Stream.of(variables).forEach(x -> x.dom.setPropagation(solver.propagation));
 	}
 
 	// ************************************************************************
@@ -506,9 +506,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		x.whenFinishedProblemConstruction();
 		y.whenFinishedProblemConstruction();
 		// constraint.buildBitRmResidues();
-		if (x.isAssigned())
+		if (x.assigned())
 			c.doPastVariable(x);
-		if (y.isAssigned())
+		if (y.assigned())
 			c.doPastVariable(y);
 		return c;
 	}

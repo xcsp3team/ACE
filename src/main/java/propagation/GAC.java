@@ -63,8 +63,8 @@ public class GAC extends Forward {
 	 * Can be called by subclasses to enforce AC.
 	 */
 	public final boolean enforceArcConsistencyAfterAssignment(Variable x) {
-		assert x.isAssigned() && queue.size() == 0 : queue.size() + " " + x.isAssigned(); // (queue.size() == 0 || this instanceof PropagationIsomorphism)
-		if (getClass() != GAC.class || x.dom.isModifiedAtCurrentDepth() || !guaranteed || !hasSolverPropagatedAfterLastButOneDecision()) {
+		assert x.assigned() && queue.size() == 0 : queue.size() + " " + x.assigned(); // (queue.size() == 0 || this instanceof PropagationIsomorphism)
+		if (getClass() != GAC.class || x.dom.lastRemovedLevel() == solver.depth() || !guaranteed || !hasSolverPropagatedAfterLastButOneDecision()) {
 			queue.add(x);
 			if (propagate() == false)
 				return false;

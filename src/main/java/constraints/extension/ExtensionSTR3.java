@@ -342,7 +342,7 @@ public final class ExtensionSTR3 extends ExtensionGlobal implements TagPositive,
 				LocalSetSparseByte dependencies = deps[set.dense[i]];
 				for (int j = dependencies.limit; j >= 0; j--) {
 					byte x = dependencies.dense[j];
-					if (!scp[x].isAssigned()) {
+					if (!scp[x].assigned()) {
 						int a = tuple[x];
 						if (scp[x].dom.isPresent(a)) {
 							int[] subtable = subtables[x][a];
@@ -371,7 +371,7 @@ public final class ExtensionSTR3 extends ExtensionGlobal implements TagPositive,
 				LocalSetSparseByte dependencies = deps[set.dense[i]];
 				for (int j = dependencies.limit; j >= 0; j--) {
 					byte x = dependencies.dense[j];
-					if (!scp[x].isAssigned()) {
+					if (!scp[x].assigned()) {
 						int a = supressedTuple[x];
 						if (scp[x].dom.isPresent(a)) {
 							short[] subtable = subtablesShort[x][a];

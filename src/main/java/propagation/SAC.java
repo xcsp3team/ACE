@@ -260,7 +260,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				nSingletonTests++;
 				if (x.dom.size() == 1)
 					nFoundSingletons++;
-				assert !x.isAssigned() && x.dom.isPresent(a) && queue.isEmpty();
+				assert !x.assigned() && x.dom.isPresent(a) && queue.isEmpty();
 				solver.assign(x, a);
 				if (enforceArcConsistencyAfterAssignment(x)) {
 					if (solver.depth() == solver.problem.variables.length && stopSACWhenFoundSolution)
@@ -373,7 +373,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			}
 
 			private boolean controlUncheckedVariables() {
-				IntStream.range(0, nUncheckedVars).forEach(i -> Kit.control(!uncheckedVars[i].isAssigned(), () -> uncheckedVars[i] + " is assigned"));
+				IntStream.range(0, nUncheckedVars).forEach(i -> Kit.control(!uncheckedVars[i].assigned(), () -> uncheckedVars[i] + " is assigned"));
 				return true;
 			}
 		}
@@ -400,7 +400,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				currSelectedIdx = lastFailedVar.dom.isPresent(lastFailedIdx) ? lastFailedIdx : lastFailedVar.dom.first();
 			}
 			lastFailedVar = null;
-			assert !currSelectedVar.isAssigned() && currSelectedVar.dom.isPresent(currSelectedIdx) && queue.isEmpty();
+			assert !currSelectedVar.assigned() && currSelectedVar.dom.isPresent(currSelectedIdx) && queue.isEmpty();
 		}
 
 		protected boolean buildBranch() {

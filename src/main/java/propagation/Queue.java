@@ -60,7 +60,7 @@ public final class Queue extends SetSparse {
 	public void add(Variable x) {
 		x.timestamp = propagation.incrementTime();
 		add(x.num);
-		assert !x.isAssigned() || x == propagation.solver.futVars.lastPast() : "variable " + x;
+		assert !x.assigned() || x == propagation.solver.futVars.lastPast() : "variable " + x;
 	}
 
 	/**
@@ -69,7 +69,7 @@ public final class Queue extends SetSparse {
 	@Override
 	public Queue fill() {
 		for (Variable x : variables)
-			if (!x.isAssigned() || x == propagation.solver.futVars.lastPast())
+			if (!x.assigned() || x == propagation.solver.futVars.lastPast())
 				add(x);
 		return this;
 	}

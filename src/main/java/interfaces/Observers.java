@@ -80,7 +80,6 @@ public interface Observers {
 		}
 
 		interface ObserverBacktrackingUnsystematic extends ObserverBacktracking {
-			int lastModificationDepth();
 		}
 	}
 

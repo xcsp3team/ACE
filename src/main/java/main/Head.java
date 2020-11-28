@@ -383,7 +383,7 @@ public class Head extends Thread {
 				solveInstance(i);
 			} catch (Throwable e) {
 				crashed = true;
-				log.warning("Instance with exception");
+				System.out.println(Kit.preprint("\n! ERROR (use -ev for more details)", Kit.RED)); // log.warning("Instance with exception");
 				if (control.general.makeExceptionsVisible)
 					e.printStackTrace();
 			}

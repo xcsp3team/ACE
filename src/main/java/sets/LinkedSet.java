@@ -87,15 +87,6 @@ public interface LinkedSet {
 	int prev(int a);
 
 	/**
-	 * Returns the ith element (index of value) of the current set. Be careful: with most of the implementations, this operation is not O(1).
-	 * 
-	 * @param i
-	 *            the position of an element
-	 * @return the ith element of the current set
-	 */
-	int get(int i);
-
-	/**
 	 * Returns the last removed element (index of value) of the set, or -1 if there is none.
 	 * 
 	 * @return the last removed element of the set

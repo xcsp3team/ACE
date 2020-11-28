@@ -10,8 +10,8 @@ package variables;
 
 import java.util.stream.IntStream;
 
+import propagation.Propagation;
 import sets.LinkedSetBinary;
-import solver.Solver;
 
 public final class DomainBinary extends LinkedSetBinary implements Domain {
 
@@ -19,7 +19,7 @@ public final class DomainBinary extends LinkedSetBinary implements Domain {
 
 	private Integer typeIdentifier;
 
-	private Solver solver;
+	private Propagation propagation;
 
 	private Boolean indexesMatchValues;
 
@@ -36,13 +36,13 @@ public final class DomainBinary extends LinkedSetBinary implements Domain {
 	}
 
 	@Override
-	public final Solver solver() {
-		return solver;
+	public final Propagation propagation() {
+		return propagation;
 	}
 
 	@Override
-	public final void setSolver(Solver solver) {
-		this.solver = solver;
+	public final void setPropagation(Propagation propagation) {
+		this.propagation = propagation;
 	}
 
 	@Override

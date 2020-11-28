@@ -153,7 +153,7 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 		if (slots[0].height + heights[sortedScpIndexes[0]] > limit) {
 			Variable lastPast = pb.solver.futVars.lastPast();
 			for (int i = 0; i < scp.length; i++) {
-				if (scp[i].isAssigned() && scp[i] != lastPast)
+				if (scp[i].assigned() && scp[i] != lastPast)
 					continue;
 				int ms = mandatoryStart(i), me = mandatoryEnd(i);
 				for (int k = 0; k < nSlots; k++) {

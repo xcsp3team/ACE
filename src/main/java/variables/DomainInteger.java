@@ -15,17 +15,16 @@ import org.xcsp.common.Constants;
 import org.xcsp.common.Range;
 import org.xcsp.common.Utilities;
 
+import propagation.Propagation;
 import sets.LinkedSetOrdered.LinkedSetOrderedWithBits;
-import solver.Solver;
 import utility.Kit;
 
 /**
  * This class gives the description of the finite domain of a variable. <br>
- * A domain is attached to a variable and consists of a finite set of integer values. In order to simplify programming, most of the time indexes of
- * values are used instead of values. Indexes range from <code> 0 </code> to <code> initialSize -1 </code> where <code> initialSize </code> denote the
- * number of elements in the domain. For instance, if the domain contains the values <code> {1,4,5} </code>, their indexes are respectively
- * <code> {0,1,2} </code>. The correspondence between indexes of values and values is given by the methods <code> toIndex </code> and
- * <code> toValue </code>.
+ * A domain is attached to a variable and consists of a finite set of integer values. In order to simplify programming, most of the time indexes of values are
+ * used instead of values. Indexes range from <code> 0 </code> to <code> initialSize -1 </code> where <code> initialSize </code> denote the number of elements
+ * in the domain. For instance, if the domain contains the values <code> {1,4,5} </code>, their indexes are respectively <code> {0,1,2} </code>. The
+ * correspondence between indexes of values and values is given by the methods <code> toIndex </code> and <code> toValue </code>.
  */
 public abstract class DomainInteger extends LinkedSetOrderedWithBits implements Domain {
 
@@ -51,7 +50,7 @@ public abstract class DomainInteger extends LinkedSetOrderedWithBits implements 
 
 	private Integer typeIdentifier;
 
-	private Solver solver;
+	private Propagation propagation;
 
 	private Boolean indexesMatchValues;
 
@@ -68,13 +67,13 @@ public abstract class DomainInteger extends LinkedSetOrderedWithBits implements 
 	}
 
 	@Override
-	public final Solver solver() {
-		return solver;
+	public final Propagation propagation() {
+		return propagation;
 	}
 
 	@Override
-	public final void setSolver(Solver solver) {
-		this.solver = solver;
+	public final void setPropagation(Propagation propagation) {
+		this.propagation = propagation;
 	}
 
 	@Override
@@ -168,8 +167,8 @@ public abstract class DomainInteger extends LinkedSetOrderedWithBits implements 
 	}
 
 	/**
-	 * This class describes domains composed of a list of symbols, where each such symbol is associated with a value (just introduced to handle
-	 * symbols in the solver).
+	 * This class describes domains composed of a list of symbols, where each such symbol is associated with a value (just introduced to handle symbols in the
+	 * solver).
 	 */
 	public final static class DomainSymbols extends DomainValues {
 
