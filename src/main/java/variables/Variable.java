@@ -183,6 +183,13 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 		return null;
 	}
 
+	public static final Variable firstSingletonVariableIn(Variable... vars) {
+		for (Variable x : vars)
+			if (x.dom.size() == 1)
+				return x;
+		return null;
+	}
+
 	public static final Variable firstNonSingletonVariableIn(Variable... vars) {
 		for (Variable x : vars)
 			if (x.dom.size() != 1)

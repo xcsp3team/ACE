@@ -53,8 +53,8 @@ public class AllDifferentBound extends AllDifferentAbstract implements ObserverB
 	@Override
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
-		fixedIdxs = new SetSparseReversible(scp[0].dom.initSize(), false, pb.variables.length + 1);
-		storer = new HallIntervalStored(scp[0].dom.initSize(), pb.variables.length + 1);
+		fixedIdxs = new SetSparseReversible(scp[0].dom.initSize(), false, problem.variables.length + 1);
+		storer = new HallIntervalStored(scp[0].dom.initSize(), problem.variables.length + 1);
 
 	}
 
@@ -236,15 +236,15 @@ public class AllDifferentBound extends AllDifferentAbstract implements ObserverB
 								return x.dom.fail();
 							}
 							if (nVals < scp.length && collectedVars.size() == nVals && !storer.matrix[a][b]) {
-								storer.add(a, b, pb.solver.depth());
-								int nValuesBefore = pb.nValuesRemoved;
+								storer.add(a, b, problem.solver.depth());
+								int nValuesBefore = problem.nValuesRemoved;
 								for (int i = futvars.limit; i >= 0; i--) {
 									int y = futvars.dense[i];
 									if (!collectedVars.isPresent(y)) // if outside the hall set
 										if (scp[y].dom.size() > 1 && remove(scp[y].dom, a, b) == false)
 											return false;
 								}
-								int nRemoved = pb.nValuesRemoved - nValuesBefore;
+								int nRemoved = problem.nValuesRemoved - nValuesBefore;
 								nb += nRemoved;
 								// if (nRemoved == 0)
 								// System.out.println("BBBB=" + nRemoved);
@@ -269,15 +269,15 @@ public class AllDifferentBound extends AllDifferentAbstract implements ObserverB
 									return x.dom.fail();
 								}
 								if (nVals < scp.length && collectedVars.size() == nVals && !storer.matrix[a][b]) {
-									storer.add(a, b, pb.solver.depth());
-									int nValuesBefore = pb.nValuesRemoved;
+									storer.add(a, b, problem.solver.depth());
+									int nValuesBefore = problem.nValuesRemoved;
 									for (int i = futvars.limit; i >= 0; i--) {
 										int y = futvars.dense[i];
 										if (!collectedVars.isPresent(y)) // if outside the hall set
 											if (scp[y].dom.size() > 1 && remove(scp[y].dom, a, b) == false)
 												return false;
 									}
-									int nRemoved = pb.nValuesRemoved - nValuesBefore;
+									int nRemoved = problem.nValuesRemoved - nValuesBefore;
 									nb += nRemoved;
 									// if (nRemoved == 0)
 									// System.out.println("BBBB=" + nRemoved);
@@ -316,15 +316,15 @@ public class AllDifferentBound extends AllDifferentAbstract implements ObserverB
 								return x.dom.fail();
 							}
 							if (nVals < scp.length && collectedVars.size() == nVals && !storer.matrix[a][b]) {
-								storer.add(a, b, pb.solver.depth());
-								int nValuesBefore = pb.nValuesRemoved;
+								storer.add(a, b, problem.solver.depth());
+								int nValuesBefore = problem.nValuesRemoved;
 								for (int i = futvars.limit; i >= 0; i--) {
 									int y = futvars.dense[i];
 									if (!collectedVars.isPresent(y)) // if outside the hall set
 										if (scp[y].dom.size() > 1 && remove(scp[y].dom, a, b) == false)
 											return false;
 								}
-								int nRemoved = pb.nValuesRemoved - nValuesBefore;
+								int nRemoved = problem.nValuesRemoved - nValuesBefore;
 								nb += nRemoved;
 								// if (nRemoved > 0)
 								// System.out.println("BBBB1=" + nRemoved);
@@ -351,15 +351,15 @@ public class AllDifferentBound extends AllDifferentAbstract implements ObserverB
 									return x.dom.fail();
 								}
 								if (nVals < scp.length && collectedVars.size() == nVals && !storer.matrix[a][b]) {
-									storer.add(a, b, pb.solver.depth());
-									int nValuesBefore = pb.nValuesRemoved;
+									storer.add(a, b, problem.solver.depth());
+									int nValuesBefore = problem.nValuesRemoved;
 									for (int i = futvars.limit; i >= 0; i--) {
 										int y = futvars.dense[i];
 										if (!collectedVars.isPresent(y)) // if outside the hall set
 											if (scp[y].dom.size() > 1 && remove(scp[y].dom, a, b) == false)
 												return false;
 									}
-									int nRemoved = pb.nValuesRemoved - nValuesBefore;
+									int nRemoved = problem.nValuesRemoved - nValuesBefore;
 									nb += nRemoved;
 									// if (nRemoved > 0)
 									// System.out.println("BBBB2=" + nRemoved);
@@ -405,7 +405,7 @@ public class AllDifferentBound extends AllDifferentAbstract implements ObserverB
 
 		@Override
 		public String toString() {
-			String s = IntStream.rangeClosed(0, pb.solver.depth()).mapToObj(i -> t[i]).filter(l -> l.size() > 0).map(l -> l.toString())
+			String s = IntStream.rangeClosed(0, problem.solver.depth()).mapToObj(i -> t[i]).filter(l -> l.size() > 0).map(l -> l.toString())
 					.collect(Collectors.joining(" "));
 			return s;
 		}
@@ -427,7 +427,7 @@ public class AllDifferentBound extends AllDifferentAbstract implements ObserverB
 		if (x.dom.size() == 1) {
 			int a = x.dom.unique();
 			if (!fixedIdxs.isPresent(a))
-				fixedIdxs.add(a, pb.solver.depth());
+				fixedIdxs.add(a, problem.solver.depth());
 			int v = x.dom.uniqueValue();
 			for (int i = futvars.limit; i >= 0; i--) {
 				Variable y = scp[futvars.dense[i]];
@@ -447,7 +447,7 @@ public class AllDifferentBound extends AllDifferentAbstract implements ObserverB
 		// if (b)
 		// return true;
 		// System.out.println(this + ": Called at " + pb.solver.stats.nDecisions);
-		nDecisionsAtLastCall = pb.solver.stats.nDecisions;
+		nDecisionsAtLastCall = problem.solver.stats.nDecisions;
 		time++;
 		minReasoner.initialize();
 		maxReasoner.initialize();

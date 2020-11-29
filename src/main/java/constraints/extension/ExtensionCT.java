@@ -120,7 +120,7 @@ public class ExtensionCT extends ExtensionSTROptimized implements TagShort {
 		this.modifiedWords = new boolean[nWords];
 
 		this.deltaSizes = new int[scp.length];
-		this.nonZeros = new SetDenseReversible(current.length, pb.variables.length + 1);
+		this.nonZeros = new SetDenseReversible(current.length, problem.variables.length + 1);
 		this.residues = Variable.litterals(scp).intArray();
 	}
 
@@ -189,11 +189,11 @@ public class ExtensionCT extends ExtensionSTROptimized implements TagShort {
 
 	private void wordModified(int index, long oldValue) {
 		if (modifiedWords[index]) {
-			assert stackStructure[topStack - 1] == pb.solver.depth()
+			assert stackStructure[topStack - 1] == problem.solver.depth()
 					&& IntStream.range(0, stackStructure[topStack]).anyMatch(i -> stackedIndexes[topStacked - i] == index);
 			return;
 		}
-		int depth = pb.solver.depth();
+		int depth = problem.solver.depth();
 		if (topStack == -1 || stackStructure[topStack - 1] != depth) {
 			if (topStack + 3 >= stackStructure.length)
 				stackStructure = Arrays.copyOf(stackStructure, current.length * (factorStack *= 2));
@@ -212,7 +212,7 @@ public class ExtensionCT extends ExtensionSTROptimized implements TagShort {
 
 	@Override
 	protected void manageLastPastVar() {
-		Variable lastPast = pb.solver.futVars.lastPast();
+		Variable lastPast = problem.solver.futVars.lastPast();
 		int x = lastPast == null ? -1 : positionOf(lastPast);
 		if (x != -1 && lastSizes[x] != 1) {
 			deltaSizes[x] = lastSizes[x] - 1;
@@ -223,14 +223,14 @@ public class ExtensionCT extends ExtensionSTROptimized implements TagShort {
 
 	@Override
 	protected void beforeFiltering() {
-		if (lastCallNode != pb.solver.stats.numberSafe()) {
+		if (lastCallNode != problem.solver.stats.numberSafe()) {
 			// Arrays.fill(modifiedWords, false);
 			for (int i = nonZeros.limit; i >= 0; i--)
 				modifiedWords[nonZeros.dense[i]] = false;
-			if (topStack != -1 && stackStructure[topStack - 1] == pb.solver.depth())
+			if (topStack != -1 && stackStructure[topStack - 1] == problem.solver.depth())
 				for (int i = stackStructure[topStack] - 1; i >= 0; i--)
 					modifiedWords[stackedIndexes[topStacked - i]] = true;
-			lastCallNode = pb.solver.stats.numberSafe();
+			lastCallNode = problem.solver.stats.numberSafe();
 		}
 		initRestorationStructuresBeforeFiltering();
 		sValSize = sSupSize = 0;
@@ -317,7 +317,7 @@ public class ExtensionCT extends ExtensionSTROptimized implements TagShort {
 			}
 		}
 		// we update the current table (array 'current') while possibly deleting words at 0 in nonZeros
-		int depth = pb.solver.depth();
+		int depth = problem.solver.depth();
 		for (int i = nonZeros.limit; i >= 0; i--) {
 			int j = nonZeros.dense[i];
 			long l = current[j] & ~tmp[j]; // we inverse tmp here

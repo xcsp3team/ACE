@@ -219,7 +219,7 @@ public class MatcherCardinality extends Matcher {
 			if (varToVal[x] == -1)
 				unmatchedVars.add(x);
 			else if (scp[x].dom.size() == 1 && unfixedVars.isPresent(x))
-				unfixedVars.remove(x, ctr.pb.solver.depth()); // currDepth);
+				unfixedVars.remove(x, ctr.problem.solver.depth()); // currDepth);
 		}
 		while (!unmatchedVars.isEmpty())
 			if (!findMatchingForVariable(unmatchedVars.pop())) // , currDepth))

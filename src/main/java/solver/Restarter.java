@@ -371,7 +371,7 @@ public class Restarter implements ObserverRuns {
 					if (solver.stopping == EStopping.FULL_EXPLORATION) {
 						solver.stopping = null;
 						currDistance++;
-						if (solver.problem.optimizer.areBoundsConsistent())
+						if (solver.problem.optimizer.minBound <= solver.problem.optimizer.maxBound)
 							forceRootPropagation = true;
 					}
 					if (forceRootPropagation) {

@@ -96,7 +96,7 @@ public final class Bits extends ExtensionStructure {
 	}
 
 	private void saveSpace(long[][] supports, int id) {
-		Problem problem = firstRegisteredCtr().pb;
+		Problem problem = firstRegisteredCtr().problem;
 		for (int i = 0; i < supports.length; i++) {
 			if (hashKey == null)
 				hashKey = new LongArrayHashKey();
@@ -118,12 +118,12 @@ public final class Bits extends ExtensionStructure {
 	}
 
 	private void saveSpace() {
-		Head resolution = firstRegisteredCtr().pb.head;
+		Head resolution = firstRegisteredCtr().problem.head;
 		if (resolution.control.problem.shareBitVectors) {
-			int nSharedRepresentationsBefore = firstRegisteredCtr().pb.stuff.nSharedBinaryRepresentations;
+			int nSharedRepresentationsBefore = firstRegisteredCtr().problem.stuff.nSharedBinaryRepresentations;
 			saveSpace(bitSups0, 1);
 			saveSpace(bitSups1, 0);
-			sharedArrays = (firstRegisteredCtr().pb.stuff.nSharedBinaryRepresentations - nSharedRepresentationsBefore) > 0;
+			sharedArrays = (firstRegisteredCtr().problem.stuff.nSharedBinaryRepresentations - nSharedRepresentationsBefore) > 0;
 		}
 	}
 

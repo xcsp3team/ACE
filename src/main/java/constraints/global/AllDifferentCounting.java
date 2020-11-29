@@ -36,7 +36,7 @@ public final class AllDifferentCounting extends AllDifferentAbstract
 	@Override
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
-		unfixedVars = new SetSparseReversible(scp.length, pb.variables.length + 1);
+		unfixedVars = new SetSparseReversible(scp.length, problem.variables.length + 1);
 	}
 
 	private SetSparse[] sets;
@@ -74,7 +74,7 @@ public final class AllDifferentCounting extends AllDifferentAbstract
 				if (y != x && y.dom.removeValueIfPresent(v) == false)
 					return false;
 			}
-			unfixedVars.remove(p, pb.solver.depth());
+			unfixedVars.remove(p, problem.solver.depth());
 		}
 
 		// sort variables
@@ -96,7 +96,7 @@ public final class AllDifferentCounting extends AllDifferentAbstract
 				if (!y.dom.removeValueIfPresent(v))
 					return false;
 			}
-			unfixedVars.remove(vapFixed, pb.solver.depth());
+			unfixedVars.remove(vapFixed, problem.solver.depth());
 		}
 		workingDomSet.clear();
 		workingVarSet.clear();

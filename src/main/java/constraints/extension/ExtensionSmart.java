@@ -157,7 +157,7 @@ public final class ExtensionSmart extends ExtensionGlobal implements ICtrSmart {
 	// }
 
 	protected void initRestorationStructuresBeforeFiltering() {
-		int depth = pb.solver.depth();
+		int depth = problem.solver.depth();
 		assert depth >= lastDepth && lastDepth >= 0 : depth + " " + lastDepth;
 		for (int i = lastDepth + 1; i <= depth; i++)
 			System.arraycopy(lastSizesStack[lastDepth], 0, lastSizesStack[i], 0, lastSizesStack[lastDepth].length);
@@ -168,8 +168,8 @@ public final class ExtensionSmart extends ExtensionGlobal implements ICtrSmart {
 	@Override
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
-		set = new SetDenseReversible(smartTuples.length, pb.variables.length + 1);
-		Arrays.fill((lastSizesStack = new int[pb.variables.length + 1][scp.length])[0], UNINITIALIZED_VALUE);
+		set = new SetDenseReversible(smartTuples.length, problem.variables.length + 1);
+		Arrays.fill((lastSizesStack = new int[problem.variables.length + 1][scp.length])[0], UNINITIALIZED_VALUE);
 	}
 
 	@Override
@@ -220,9 +220,9 @@ public final class ExtensionSmart extends ExtensionGlobal implements ICtrSmart {
 	}
 
 	protected void manageLastPastVariable() {
-		if (lastCallNode != pb.solver.stats.nAssignments || pb.solver.propagation instanceof StrongConsistency) { // second condition due to Inverse4
-			lastCallNode = pb.solver.stats.nAssignments;
-			Variable lastPast = pb.solver.futVars.lastPast();
+		if (lastCallNode != problem.solver.stats.nAssignments || problem.solver.propagation instanceof StrongConsistency) { // second condition due to Inverse4
+			lastCallNode = problem.solver.stats.nAssignments;
+			Variable lastPast = problem.solver.futVars.lastPast();
 			int x = lastPast == null ? -1 : positionOf(lastPast);
 			if (x != -1)
 				sVal[sValSize++] = x;
@@ -270,8 +270,8 @@ public final class ExtensionSmart extends ExtensionGlobal implements ICtrSmart {
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
-		pb.stuff.updateStatsForSTR(set);
-		int depth = pb.solver.depth();
+		problem.stuff.updateStatsForSTR(set);
+		int depth = problem.solver.depth();
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {
 			SmartTuple st = smartTuples[set.dense[i]];

@@ -79,7 +79,7 @@ public class MatcherAllDifferent extends Matcher {
 					unmatchedVars.add(x);
 				}
 				if (scp[x].dom.size() == 1 && unfixedVars.isPresent(x))
-					unfixedVars.remove(x, ctr.pb.solver.depth());
+					unfixedVars.remove(x, ctr.problem.solver.depth());
 			}
 		}
 		while (!unmatchedVars.isEmpty())

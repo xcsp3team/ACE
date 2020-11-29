@@ -68,13 +68,13 @@ public final class AllDifferentPermutation extends AllDifferentAbstract
 	@Override
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
-		unfixedVars = new SetSparseReversible(scp.length, pb.variables.length + 1);
-		unfixedIdxs = new SetSparseReversible(scp[0].dom.initSize(), pb.variables.length + 1);
+		unfixedVars = new SetSparseReversible(scp.length, problem.variables.length + 1);
+		unfixedIdxs = new SetSparseReversible(scp[0].dom.initSize(), problem.variables.length + 1);
 	}
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
-		int level = pb.solver.depth();
+		int level = problem.solver.depth();
 		int[] dense = unfixedVars.dense;
 		for (int i = unfixedVars.limit; i >= 0; i--) {
 			Variable x = scp[dense[i]];

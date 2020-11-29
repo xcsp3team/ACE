@@ -156,7 +156,6 @@ import interfaces.Observers.ObserverDomainReduction;
 import main.Head;
 import optimization.Optimizable;
 import optimization.Optimizer;
-import optimization.Optimizer.OptimizerBasic;
 import optimization.Optimizer.OptimizerDecreasing;
 import optimization.Optimizer.OptimizerDichotomic;
 import optimization.Optimizer.OptimizerIncreasing;
@@ -453,6 +452,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return ctrEntities.new CtrAlone(c, classes);
 	}
 
+	public final Optimizable addOptimizable(Constraint c) {
+		c.num = stuff.addCollectedConstraint(c);
+		return (Optimizable) c;
+	}
+
 	public void annotateValh(Var[] vars, Class<? extends HeuristicValues> clazz) {
 		if (settings.enableAnnotations) {
 			Stream.of(vars)
@@ -669,8 +673,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		addUnaryConstraintsOfUserInstantiation();
 		storeConstraintsToArray();
 		// currently, only mono-objective optimization supported
-		if (Solver.class.getSimpleName().equals(head.control.solving.clazz))
-			optimizer = new OptimizerBasic(this, "#violatedConstraints");
+		// if (Solver.class.getSimpleName().equals(head.control.solving.clazz))
+		// optimizer = new OptimizerBasic(this, "#violatedConstraints");
 
 		reduceDomainsOfIsolatedVariables();
 		updateConflictsStructuresIfReducedDomains();
@@ -2205,17 +2209,17 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	public final static String vfsComment = "Either you set -f=cop or you set -f=csp together with -vfs=v where v is an integer value forcing the value of the objective.";
 
-	private Optimizer buildOptimizer(TypeOptimization opt, CtrAlone ca) {
+	private Optimizer buildOptimizer(TypeOptimization opt, Optimizable clb, Optimizable cub) {
 		control(optimizer == null, "Only mono-objective currently supported");
-		Optimizable c = (Optimizable) ca.ctr;
+		// Optimizable c = opt == MINIMIZE ? cub : clb;
 		head.control.toCOP();
 		String suffix = Kit.camelCaseOf(head.control.optimization.strategy.name());
 		if (suffix.equals("Decreasing"))
-			return new OptimizerDecreasing(this, opt, c);
+			return new OptimizerDecreasing(this, opt, clb, cub);
 		if (suffix.equals("Increasing"))
-			return new OptimizerIncreasing(this, opt, c);
+			return new OptimizerIncreasing(this, opt, clb, cub);
 		control(suffix.equals("Dichotomic"));
-		return new OptimizerDichotomic(this, opt, c);
+		return new OptimizerDichotomic(this, opt, clb, cub);
 
 		// the code below must be changed, as for heuristics, if we want to use it, see in Head, HandlerClasses
 		// return Reflector.buildObject(suffix, OptimizationPilot.class, this, opt, c);
@@ -2257,18 +2261,22 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return true;
 	}
 
-	@Override
-	public final ObjEntity minimize(IVar x) {
-		if (!switchToSatisfaction(MINIMIZE, EXPRESSION, null, x))
-			optimizer = buildOptimizer(MINIMIZE, addCtr(new ObjVarLE(this, (Variable) x, head.control.optimization.ub)));
+	private ObjEntity optimize(TypeOptimization opt, IVar x) {
+		if (!switchToSatisfaction(opt, EXPRESSION, null, x)) {
+			long lb = head.control.optimization.lb, ub = head.control.optimization.ub;
+			optimizer = buildOptimizer(opt, addOptimizable(new ObjVarGE(this, (Variable) x, lb)), addOptimizable(new ObjVarLE(this, (Variable) x, ub)));
+		}
 		return null;
 	}
 
 	@Override
+	public final ObjEntity minimize(IVar x) {
+		return optimize(MINIMIZE, x);
+	}
+
+	@Override
 	public final ObjEntity maximize(IVar x) {
-		if (!switchToSatisfaction(MAXIMIZE, EXPRESSION, null, x))
-			optimizer = buildOptimizer(MAXIMIZE, addCtr(new ObjVarGE(this, (Variable) x, head.control.optimization.lb)));
-		return null;
+		return optimize(MAXIMIZE, x);
 	}
 
 	@Override
@@ -2281,46 +2289,49 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return maximize(replaceByVariable(tree));
 	}
 
-	@Override
-	public final ObjEntity minimize(TypeObjective type, IVar[] list) {
+	private ObjEntity optimize(TypeOptimization opt, TypeObjective type, IVar[] list) {
 		control(type.generalizable());
-		if (!switchToSatisfaction(MINIMIZE, type, null, list)) {
+		if (!switchToSatisfaction(opt, type, null, list)) {
 			Variable[] vars = translate(list);
-			long k = head.control.optimization.ub;
-			Constraint c = type == SUM ? new SumSimpleLE(this, vars, k)
-					: type == MINIMUM ? new MinimumCstLE(this, vars, k) : type == MAXIMUM ? new MaximumCstLE(this, vars, k) : new NValuesCstLE(this, vars, k);
-			optimizer = buildOptimizer(MINIMIZE, addCtr(c));
+			long lb = head.control.optimization.lb, ub = head.control.optimization.ub;
+			Constraint clb = type == SUM ? new SumSimpleGE(this, vars, lb)
+					: type == MINIMUM ? new MinimumCstGE(this, vars, lb)
+							: type == MAXIMUM ? new MaximumCstGE(this, vars, lb) : new NValuesCstGE(this, vars, lb);
+			Constraint cub = type == SUM ? new SumSimpleLE(this, vars, ub)
+					: type == MINIMUM ? new MinimumCstLE(this, vars, ub)
+							: type == MAXIMUM ? new MaximumCstLE(this, vars, ub) : new NValuesCstLE(this, vars, ub);
+			optimizer = buildOptimizer(opt, addOptimizable(clb), addOptimizable(cub));
 		}
 		return null;
 	}
 
 	@Override
+	public final ObjEntity minimize(TypeObjective type, IVar[] list) {
+		return optimize(MINIMIZE, type, list);
+	}
+
+	@Override
 	public final ObjEntity maximize(TypeObjective type, IVar[] list) {
-		control(type.generalizable());
-		if (!switchToSatisfaction(MAXIMIZE, type, null, list)) {
-			Variable[] vars = translate(list);
-			long k = head.control.optimization.lb;
-			Constraint c = type == SUM ? new SumSimpleGE(this, vars, k)
-					: type == MINIMUM ? new MinimumCstGE(this, vars, k) : type == MAXIMUM ? new MaximumCstGE(this, vars, k) : new NValuesCstGE(this, vars, k);
-			optimizer = buildOptimizer(MAXIMIZE, addCtr(c));
+		return optimize(MAXIMIZE, type, list);
+	}
+
+	private ObjEntity optimize(TypeOptimization opt, TypeObjective type, IVar[] list, int[] coeffs) {
+		control(type == SUM && coeffs != null);
+		if (!switchToSatisfaction(opt, type, coeffs, list)) {
+			long lb = head.control.optimization.lb, ub = head.control.optimization.ub;
+			optimizer = buildOptimizer(opt, (Optimizable) sum(list, coeffs, GE, lb, false).ctr, (Optimizable) sum(list, coeffs, LE, ub, false).ctr);
 		}
 		return null;
 	}
 
 	@Override
 	public final ObjEntity minimize(TypeObjective type, IVar[] list, int[] coeffs) {
-		control(type == SUM && coeffs != null);
-		if (!switchToSatisfaction(MINIMIZE, type, coeffs, list))
-			optimizer = buildOptimizer(MINIMIZE, sum(list, coeffs, LE, head.control.optimization.ub, false));
-		return null;
+		return optimize(MINIMIZE, type, list, coeffs);
 	}
 
 	@Override
 	public final ObjEntity maximize(TypeObjective type, IVar[] list, int[] coeffs) {
-		control(type == SUM && coeffs != null);
-		if (!switchToSatisfaction(MAXIMIZE, type, coeffs, list))
-			optimizer = buildOptimizer(MAXIMIZE, sum(list, coeffs, GE, head.control.optimization.lb, false));
-		return null;
+		return optimize(MAXIMIZE, type, list, coeffs);
 	}
 
 	@Override

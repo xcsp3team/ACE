@@ -46,11 +46,9 @@ public final class AllEqual extends CtrGlobal implements ObserverBacktrackingSys
 
 	private final SetSparse set;
 
-	private int entailedLevel = -1;
-
 	public AllEqual(Problem pb, Variable[] list) {
 		super(pb, list);
-		Kit.control(list.length >= 2 && Variable.haveSameDomainType(list));
+		control(list.length >= 2 && Variable.haveSameDomainType(list));
 		this.frontier = Kit.repeat(-1, list.length);
 		this.set = new SetSparse(list[0].dom.initSize());
 		// this.vals = new TreeSet<>(); // Hashset is very slow
@@ -63,17 +61,15 @@ public final class AllEqual extends CtrGlobal implements ObserverBacktrackingSys
 	public boolean runPropagator(Variable x) {
 		if (entailedLevel != -1)
 			return true;
-		Variable y = x.dom.size() == 1 ? x : null;
-		for (int i = scp.length - 1; y == null && i >= 0; i--)
-			if (scp[i].dom.size() == 1)
-				y = scp[i];
-		if (y != null) {
-			// we remove the unique value from the domains of the future variables
-			int a = x.dom.unique();
-			for (int i = scp.length - 1; i >= 0; i--)
-				if (scp[i].dom.reduceTo(a) == false)
+		// System.out.println("here");
+		Variable y = x.dom.size() == 1 ? x : Variable.firstSingletonVariableIn(scp); // we look for a variable y with a singleton domain
+
+		if (y != null) { // we remove the unique value from the domains of the future variables
+			int a = y.dom.unique();
+			for (Variable z : scp)
+				if (z.dom.reduceTo(a) == false)
 					return false;
-			entailedLevel = pb.solver.depth();
+			entailedLevel = problem.solver.depth();
 			return true;
 		}
 
@@ -82,11 +78,13 @@ public final class AllEqual extends CtrGlobal implements ObserverBacktrackingSys
 		for (int i = scp.length - 1; i >= 0; i--)
 			for (int a = scp[i].dom.lastRemoved(); a != frontier[i]; a = scp[i].dom.prevRemoved(a))
 				set.add(a);
-		// System.out.println("ssiii2 " + set.size() + " " + (cnt++));
 		// we remove these dropped (indexes of) values from the domain of all future variables
 		for (int i = scp.length - 1; i >= 0; i--)
 			if (!scp[i].dom.remove(set, true))
 				return false;
+		// for (Variable z : scp) // very long on Domino-5000. why?
+		// if (z.dom.remove(set, true) == false)
+		// return false;
 		// we record the frontier of dropped (indexes of) values for the next call
 		for (int i = scp.length - 1; i >= 0; i--)
 			frontier[i] = scp[i].dom.lastRemoved();

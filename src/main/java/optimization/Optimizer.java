@@ -7,7 +7,6 @@ import dashboard.Arguments;
 import dashboard.Output;
 import problem.Problem;
 import solver.backtrack.SolverBacktrack;
-import solver.local.SolverLocal;
 import utility.Enums.EStopping;
 import utility.Kit;
 import variables.Variable;
@@ -71,7 +70,7 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 
 	public final boolean minimization;
 
-	public final Optimizable ctr;
+	public final Optimizable clb, cub, ctr;
 
 	/**
 	 * Solutions searched for must have a cost greater than or equal to this bound (valid for minimization and maximization).
@@ -83,30 +82,27 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	 */
 	public long maxBound;
 
-	public Optimizer(Problem pb, TypeOptimization opt, Optimizable c) {
+	public Optimizer(Problem pb, TypeOptimization opt, Optimizable clb, Optimizable cub) {
 		this.problem = pb;
-		Kit.control(opt != null);
+		Kit.control(opt != null && clb != null && cub != null);
 		this.minimization = opt == TypeOptimization.MINIMIZE;
-		this.ctr = c; // may be null for some basic cases
-		this.minBound = Math.max(pb.head.control.optimization.lb, c != null ? c.minComputableObjectiveValue() : Long.MIN_VALUE);
-		this.maxBound = Math.min(pb.head.control.optimization.ub, c != null ? c.maxComputableObjectiveValue() : Long.MAX_VALUE);
+		this.clb = clb;
+		this.cub = cub;
+		this.ctr = opt == TypeOptimization.MINIMIZE ? cub : clb; // may be null for some basic cases
+		this.minBound = clb.limit();
+		this.maxBound = cub.limit();
 	}
 
 	/**
 	 * Returns the value of the objective, for the current complete instantiation.
 	 */
 	public final long value() {
-		assert Variable.areAllFixed(problem.variables);
-		if (ctr != null)
-			return ctr.objectiveValue();
-		else if (problem.solver.propagation instanceof LowerBoundCapability)
-			return ((LowerBoundCapability) problem.solver.propagation).getLowerBound();
-		else
-			return ((SolverLocal) problem.solver).nMinViolatedCtrs;
-	}
-
-	public final boolean isBetterBound(long bound) {
-		return minimization ? bound <= maxBound : bound >= minBound;
+		assert Variable.areAllFixed(problem.variables) && clb.objectiveValue() == cub.objectiveValue();
+		// if (ctr != null)
+		return cub.objectiveValue();
+		// if (problem.solver.propagation instanceof LowerBoundCapability)
+		// return ((LowerBoundCapability) problem.solver.propagation).getLowerBound();
+		// return ((SolverLocal) problem.solver).nMinViolatedCtrs;
 	}
 
 	protected abstract void shiftLimitWhenSuccess();
@@ -121,8 +117,7 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 			else
 				minBound = problem.solver.solManager.bestBound + 1;
 			possiblyUpdateLocalBounds();
-			Kit.control(minBound - 1 <= maxBound || problem.head.control.optimization.ub != Long.MAX_VALUE,
-					() -> " minB=" + minBound + " maxB=" + maxBound);
+			Kit.control(minBound - 1 <= maxBound || problem.head.control.optimization.ub != Long.MAX_VALUE, () -> " minB=" + minBound + " maxB=" + maxBound);
 			possiblyUpdateSharedBounds();
 			if (minBound > maxBound)
 				problem.solver.stopping = EStopping.FULL_EXPLORATION;
@@ -130,9 +125,9 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 				shiftLimitWhenSuccess();
 		} else if (problem.solver.stopping == EStopping.FULL_EXPLORATION) { // last run leads to no new solution
 			if (minimization)
-				minBound = ctr.limit() + 1;
+				minBound = cub.limit() + 1;
 			else
-				maxBound = ctr.limit() - 1;
+				maxBound = clb.limit() - 1;
 			Kit.log.finer("\n" + Output.COMMENT_PREFIX + "New Bounds: " + stringBounds());
 			if (minBound <= maxBound) {
 				problem.solver.stopping = null;
@@ -146,15 +141,11 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 		}
 	}
 
-	public void shiftLimit(long offset) {
+	protected void shiftLimit(long offset) {
 		Kit.control(0 <= offset && minBound + offset <= maxBound, () -> "offset " + offset + " minBound " + minBound + " maxBound " + maxBound);
 		long newLimit = minimization ? maxBound - offset : minBound + offset;
 		Kit.log.finer(Output.COMMENT_PREFIX + "New Limit: " + newLimit + "\n");
 		ctr.limit(newLimit);
-	}
-
-	public boolean areBoundsConsistent() {
-		return minBound <= maxBound;
 	}
 
 	public final String stringBounds() {
@@ -171,46 +162,29 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	 *********************************************************************************************/
 
 	// TODO problem when incremental with STR2 and CT for Increasing and Dichotomic
-	// SVal not correctly updated in STR2
-	// Increasing and Dichotomic to be totally revised
-
-	public static final class OptimizerBasic extends Optimizer {
-
-		public final String optimizationExpression;
-
-		public OptimizerBasic(Problem pb, String optimizationExpression) {
-			super(pb, TypeOptimization.MINIMIZE, null);
-			this.optimizationExpression = optimizationExpression;
-		}
-
-		@Override
-		protected void shiftLimitWhenSuccess() {
-		}
-
-		@Override
-		protected void shiftLimitWhenFailure() {
-		}
-
-		@Override
-		public String toString() {
-			return (minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName() + " " + optimizationExpression;
-		}
-	}
+	// It seems that SVal is not correctly updated
 
 	public static final class OptimizerDecreasing extends Optimizer {
+		// Assuming minimization (similar observation for maximization):
+		// with this strategy, the limit of clb never changes
+		// so, the constraint makes sense (i.e. filters) only if -lb is set by the user
+		// otherwise, it does not matter because the constraint is entailed
 
-		public OptimizerDecreasing(Problem pb, TypeOptimization opt, Optimizable ctr) {
-			super(pb, opt, ctr);
+		public OptimizerDecreasing(Problem pb, TypeOptimization opt, Optimizable clb, Optimizable cub) {
+			super(pb, opt, clb, cub);
 		}
 
 		@Override
 		protected void shiftLimitWhenSuccess() {
-			shiftLimit(0);
+			if (minimization)
+				cub.limit(maxBound);
+			else
+				clb.limit(minBound);
 		}
 
 		@Override
 		protected void shiftLimitWhenFailure() {
-			// throw new UnreachableCodeException();
+			throw new AssertionError("should not be called");
 		}
 	}
 
@@ -218,24 +192,31 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 
 		boolean first = true;
 
-		public OptimizerIncreasing(Problem pb, TypeOptimization opt, Optimizable ctr) {
-			super(pb, opt, ctr);
-
+		public OptimizerIncreasing(Problem pb, TypeOptimization opt, Optimizable clb, Optimizable cub) {
+			super(pb, opt, clb, cub);
 		}
 
 		@Override
 		protected void shiftLimitWhenSuccess() {
 			if (first) { // we now attempt to find optimality by increasingly updating the bounds (if minimization)
-				ctr.limit(minimization ? minBound : maxBound);
-				Kit.log.info("limit=" + ctr.limit());
+				if (minimization)
+					cub.limit(minBound); // so limits are the same for clb and cub
+				else
+					clb.limit(maxBound);
 				first = false;
 			} else
-				throw new AssertionError();
+				throw new AssertionError("should never be called again");
 		}
 
 		@Override
 		protected void shiftLimitWhenFailure() {
-			ctr.limit(minimization ? minBound : maxBound);
+			if (minimization) {
+				clb.limit(minBound);
+				cub.limit(minBound);
+			} else {
+				clb.limit(maxBound);
+				cub.limit(maxBound);
+			}
 		}
 	}
 
@@ -244,8 +225,8 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	// if decremental set to false in STRoptimized, STR2 ok (but not CT that need decremental); why?
 	public static final class OptimizerDichotomic extends Optimizer {
 
-		public OptimizerDichotomic(Problem pb, TypeOptimization opt, Optimizable ctr) {
-			super(pb, opt, ctr);
+		public OptimizerDichotomic(Problem pb, TypeOptimization opt, Optimizable clb, Optimizable cub) {
+			super(pb, opt, clb, cub);
 		}
 
 		@Override
@@ -258,5 +239,28 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 			shiftLimit((maxBound - minBound) / 2);
 		}
 	}
+
+	// public static final class OptimizerBasic extends Optimizer {
+	//
+	// public final String optimizationExpression;
+	//
+	// public OptimizerBasic(Problem pb, String optimizationExpression) {
+	// super(pb, TypeOptimization.MINIMIZE, null);
+	// this.optimizationExpression = optimizationExpression;
+	// }
+	//
+	// @Override
+	// protected void shiftLimitWhenSuccess() {
+	// }
+	//
+	// @Override
+	// protected void shiftLimitWhenFailure() {
+	// }
+	//
+	// @Override
+	// public String toString() {
+	// return (minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName() + " " + optimizationExpression;
+	// }
+	// }
 
 }

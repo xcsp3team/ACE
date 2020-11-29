@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagSymmetric;
 import optimization.Optimizable;
@@ -126,11 +127,17 @@ public abstract class SumSimple extends Sum implements TagSymmetric {
 	// ***** Constraint SumSimpleLE
 	// ************************************************************************
 
-	public static class SumSimpleLE extends SumSimple implements TagGACGuaranteed, Optimizable {
+	public static class SumSimpleLE extends SumSimple implements TagGACGuaranteed, Optimizable, ObserverBacktrackingSystematic {
 
 		@Override
 		public final boolean checkValues(int[] t) {
 			return sum(t) <= limit;
+		}
+
+		@Override
+		public void restoreBefore(int depth) {
+			if (entailedLevel == depth)
+				entailedLevel = -1;
 		}
 
 		@Override
@@ -142,11 +149,17 @@ public abstract class SumSimple extends Sum implements TagSymmetric {
 			super(pb, scp, Math.min(limit, maxPossibleSum(scp)));
 		}
 
+		int cnt = 0;
+
 		@Override
 		public boolean runPropagator(Variable x) {
+			// if (problem.optimizer.ctr == this)
+			// System.out.println(cnt++);
 			recomputeBounds();
-			if (max <= limit)
+			if (max <= limit) {
+				entailedLevel = problem.solver.depth();
 				return true;
+			}
 			if (min > limit)
 				return x == null ? false : x.dom.fail();
 			for (int i = futvars.limit; i >= 0; i--) {
@@ -164,7 +177,7 @@ public abstract class SumSimple extends Sum implements TagSymmetric {
 		}
 
 		public Variable mostImpacting() {
-			int[] solution = pb.solver.solManager.lastSolution;
+			int[] solution = problem.solver.solManager.lastSolution;
 			List<Variable> list = new ArrayList<>();
 			int bestGap = Integer.MIN_VALUE;
 			for (Variable x : scp) {
@@ -177,7 +190,7 @@ public abstract class SumSimple extends Sum implements TagSymmetric {
 					list.add(x);
 			}
 			System.out.println("bestgap " + bestGap);
-			Random r = pb.head.random;
+			Random r = problem.head.random;
 			return list.get(r.nextInt(list.size()));
 		}
 	}
@@ -186,11 +199,17 @@ public abstract class SumSimple extends Sum implements TagSymmetric {
 	// ***** Constraint SumSimpleGE
 	// ************************************************************************
 
-	public static class SumSimpleGE extends SumSimple implements TagGACGuaranteed, Optimizable {
+	public static class SumSimpleGE extends SumSimple implements TagGACGuaranteed, Optimizable, ObserverBacktrackingSystematic {
 
 		@Override
 		public final boolean checkValues(int[] t) {
 			return sum(t) >= limit;
+		}
+
+		@Override
+		public void restoreBefore(int depth) {
+			if (entailedLevel == depth)
+				entailedLevel = -1;
 		}
 
 		@Override
@@ -205,8 +224,10 @@ public abstract class SumSimple extends Sum implements TagSymmetric {
 		@Override
 		public boolean runPropagator(Variable x) {
 			recomputeBounds();
-			if (min >= limit)
+			if (min >= limit) {
+				entailedLevel = problem.solver.depth();
 				return true;
+			}
 			if (max < limit)
 				return x == null ? false : x.dom.fail();
 			for (int i = futvars.limit; i >= 0; i--) {

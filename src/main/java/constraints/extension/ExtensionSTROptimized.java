@@ -29,7 +29,7 @@ public abstract class ExtensionSTROptimized extends ExtensionSTR1 {
 		this.sVal = new int[scp.length];
 		this.sSup = new int[scp.length];
 		if (decremental) {
-			this.lastSizesStack = new int[pb.variables.length + 1][scp.length];
+			this.lastSizesStack = new int[problem.variables.length + 1][scp.length];
 			Arrays.fill(lastSizesStack[0], UNITIALIZED);
 		} else
 			this.lastSizes = Kit.repeat(UNITIALIZED, scp.length);
@@ -73,7 +73,7 @@ public abstract class ExtensionSTROptimized extends ExtensionSTR1 {
 
 	protected void initRestorationStructuresBeforeFiltering() {
 		if (decremental) {
-			int depth = pb.solver.depth();
+			int depth = problem.solver.depth();
 			assert 0 <= lastDepth && lastDepth <= depth : depth + " " + lastDepth + " " + this;
 			for (int i = lastDepth + 1; i <= depth; i++)
 				System.arraycopy(lastSizesStack[lastDepth], 0, lastSizesStack[i], 0, scp.length);
@@ -83,9 +83,9 @@ public abstract class ExtensionSTROptimized extends ExtensionSTR1 {
 	}
 
 	protected void manageLastPastVar() {
-		if (lastCallLimit != pb.solver.stats.numberSafe() || pb.solver.propagation instanceof StrongConsistency) { // second condition due to Inverse4
-			lastCallLimit = pb.solver.stats.numberSafe();
-			Variable lastPast = pb.solver.futVars.lastPast();
+		if (lastCallLimit != problem.solver.stats.numberSafe() || problem.solver.propagation instanceof StrongConsistency) { // second condition due to Inverse4
+			lastCallLimit = problem.solver.stats.numberSafe();
+			Variable lastPast = problem.solver.futVars.lastPast();
 			int x = lastPast == null ? -1 : positionOf(lastPast);
 			if (x != -1) {
 				sVal[sValSize++] = x;

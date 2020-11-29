@@ -96,10 +96,10 @@ public final class CtrOrMDD extends CtrGlobal implements TagGACGuaranteed, Obser
 		// if (pb.rs.cp.extension.decremental)
 		trueNodes = IntStream.range(0, mdds.length).mapToObj(i -> new int[mdds[i].nNodes()]).toArray(int[][]::new);
 
-		validMdds = new SetDenseReversible(mdds.length, pb.variables.length + 1); // new SetSparseReversible(mdds.length, true, pb.variables.length +
+		validMdds = new SetDenseReversible(mdds.length, problem.variables.length + 1); // new SetSparseReversible(mdds.length, true, pb.variables.length +
 																					// 1);
 
-		sets = IntStream.range(0, mdds.length).mapToObj(i -> new SetSparseReversible(mdds[i].nNodes(), false, pb.variables.length + 1))
+		sets = IntStream.range(0, mdds.length).mapToObj(i -> new SetSparseReversible(mdds[i].nNodes(), false, problem.variables.length + 1))
 				.toArray(SetSparseReversible[]::new);
 
 		earlyCutoff = new int[mdds.length];
@@ -127,7 +127,7 @@ public final class CtrOrMDD extends CtrGlobal implements TagGACGuaranteed, Obser
 	}
 
 	private boolean manageSuccessfulExploration(int level, int a) { // , int i) {
-		int cutoffVariant = pb.head.control.extension.variant;
+		int cutoffVariant = problem.head.control.extension.variant;
 		// if (cutoffVariant == 2) {
 		// if (scp[level].isFuture()) {
 		// if (!ac[level][a]) {
@@ -209,7 +209,7 @@ public final class CtrOrMDD extends CtrGlobal implements TagGACGuaranteed, Obser
 		if (supported)
 			trueNodes[node.id] = trueTimestamp;
 		else
-			set.add(node.id, pb.solver.depth());
+			set.add(node.id, problem.solver.depth());
 		return supported;
 	}
 
@@ -229,7 +229,7 @@ public final class CtrOrMDD extends CtrGlobal implements TagGACGuaranteed, Obser
 	@Override
 	public boolean runPropagator(Variable dummy) {
 		beforeFiltering();
-		int depth = pb.solver.depth();
+		int depth = problem.solver.depth();
 
 		for (int k = validMdds.limit; k >= 0; k--) {
 			int i = validMdds.dense[k];

@@ -28,7 +28,7 @@ public class ExtensionSTR2NEG extends ExtensionGlobal implements TagNegative {
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
 		this.tuples = ((Table) extStructure).tuples;
-		this.set = new SetDenseReversible(tuples.length, pb.variables.length + 1);
+		this.set = new SetDenseReversible(tuples.length, problem.variables.length + 1);
 		this.nConflicts = Variable.litterals(scp).intArray();
 		this.nMaxConflicts = new int[scp.length];
 		this.nValidTuples = new long[scp.length];
@@ -84,8 +84,8 @@ public class ExtensionSTR2NEG extends ExtensionGlobal implements TagNegative {
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
-		pb.stuff.updateStatsForSTR(set);
-		int depth = pb.solver.depth();
+		problem.stuff.updateStatsForSTR(set);
+		int depth = problem.solver.depth();
 		initializeStructuresBeforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {
 			int[] tuple = tuples[set.dense[i]];

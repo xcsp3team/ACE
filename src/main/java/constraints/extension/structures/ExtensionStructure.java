@@ -41,7 +41,7 @@ public abstract class ExtensionStructure implements RegisteringCtrs {
 	}
 
 	protected final void incrementNbTuplesRemoved() {
-		firstRegisteredCtr().pb.solver.propagation.nTuplesRemoved++;
+		firstRegisteredCtr().problem.solver.propagation.nTuplesRemoved++;
 	}
 
 	public String[][] symbolicTuples; // in case of a symbolic table constraint
@@ -70,7 +70,7 @@ public abstract class ExtensionStructure implements RegisteringCtrs {
 	}
 
 	public int[] computeVariableSymmetryMatching(int[][] tuples, boolean positive) {
-		Kit.control(firstRegisteredCtr().pb.head.control.problem.isSymmetryBreaking());
+		Kit.control(firstRegisteredCtr().problem.head.control.problem.isSymmetryBreaking());
 		Constraint ctr = firstRegisteredCtr();
 		if (!Variable.haveSameDomainType(ctr.scp)) {
 			return Kit.range(1, ctr.scp.length);

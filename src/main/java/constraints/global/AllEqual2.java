@@ -32,7 +32,10 @@ public final class AllEqual2 extends CtrGlobal implements ObserverBacktrackingSy
 
 	@Override
 	public final boolean checkValues(int[] t) {
-		return IntStream.range(0, t.length - 1).allMatch(i -> t[i] == t[i + 1]);
+		for (int v : t)
+			if (v != t[0])
+				return false;
+		return true;
 	}
 
 	@Override
@@ -43,7 +46,7 @@ public final class AllEqual2 extends CtrGlobal implements ObserverBacktrackingSy
 	@Override
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
-		this.remainingValues = new SetSparseReversible(map.size(), pb.variables.length + 1);
+		this.remainingValues = new SetSparseReversible(map.size(), problem.variables.length + 1);
 		this.lastRemovedValues = new SetDense(map.size());
 	}
 
@@ -65,23 +68,20 @@ public final class AllEqual2 extends CtrGlobal implements ObserverBacktrackingSy
 	public boolean runPropagator(Variable x) {
 		if (remainingValues.size() == 1) // only one remaining value, so entailed
 			return true;
-		Variable y = x.dom.size() == 1 ? x : null;
-		if (y == null)
-			for (Variable z : scp)
-				if (z.dom.size() == 1) {
-					y = z;
-					break;
-				}
+		Variable y = x.dom.size() == 1 ? x : Variable.firstSingletonVariableIn(scp); // we look for a variable y with a singleton domain
+
 		if (y != null) { // we remove the unique value from the domains of the future variables
 			int v = y.dom.uniqueValue();
 			for (Variable z : scp)
 				if (z != y && z.dom.reduceToValue(v) == false)
 					return false;
-			remainingValues.reduceTo(map.get(v), pb.solver.depth());
+			remainingValues.reduceTo(map.get(v), problem.solver.depth());
 			return true;
 		}
 		lastRemovedValues.clear();
-		for (Domain dom : doms) {
+		for (int i = scp.length - 1; i >= 0; i--) {
+			Domain dom = doms[i];
+
 			for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a)) {
 				int v = dom.toVal(a);
 				if (!remainingValues.isPresent(map.get(v)))
@@ -92,10 +92,12 @@ public final class AllEqual2 extends CtrGlobal implements ObserverBacktrackingSy
 		if (lastRemovedValues.size() == remainingValues.size())
 			return x.dom.fail();
 
-		for (int j = scp.length - 1; j >= 0; j--) // for domino, the reverse (0 to scp.length) is very slow. why? (question of cache ?)
+		// for (int j = 0; j < scp.length; j++) {
+		for (int j = scp.length - 1; j >= 0; j--) {// for domino-5000, the reverse (0 to scp.length) is very slow. why? (question of cache ?)
 			scp[j].dom.removeValuesIn(lastRemovedValues); // no possible inconsistency at this level
+		}
 
-		int depth = pb.solver.depth();
+		int depth = problem.solver.depth();
 		for (int i = lastRemovedValues.limit; i >= 0; i--)
 			remainingValues.remove(map.get(lastRemovedValues.dense[i]), depth);
 		return true;

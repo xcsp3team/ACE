@@ -226,30 +226,22 @@ public final class SolutionManager {
 			int z = (int) Stream.of(solver.problem.constraints).filter(c -> !c.checkCurrentInstantiation()).count();
 			Kit.control(z < bestBound, () -> "z=" + z + " bb=" + bestBound);
 			bestBound = z;
-			// solver.restarter.forceRootPropagation = true; // a garder ?
-
 		} else if (solver.problem.optimizer != null) { // COP
 			bestBound = solver.problem.optimizer.value();
-			Kit.control(solver.problem.optimizer.isBetterBound(bestBound));
-			// solver.restarter.forceRootPropagation = true;
 			System.out.println(preprint("o " + bestBound, GREEN) + "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
 			// solver.restarter.currCutoff += 20;
 			// + " \t#" + found); // + "); (hamming: " + h1 + ", in_objective: " + h2 + ")");
 		}
 		// The following code must stay after storeSolution
+		if (solver.head.control.general.verbose > 1)
+			log.config(lastSolutionInJsonFormat(false) + "\n");
 		String s = lastSolutionInXmlFormat(); // keep the call separated in order to possibly secure its quick output (see code)
 		if (solver.head.control.general.verbose > 2)
 			log.config(" " + s + "\n");
-		if (solver.head.control.general.verbose > 1)
-			log.config(lastSolutionInJsonFormat(false) + "\n");
-		// solver.pb.api.prettyDisplay(vars_values(false, false).split("\\s+"));
+		// solver.problem.api.prettyDisplay(vars_values(false, false).split("\\s+"));
 
 		if (solver.restarter instanceof RestarterLB)
 			((RestarterLB) solver.restarter).enterLocalBranching();
-
-		// boolean b = true;
-		// if (solver instanceof SolverBacktrack)
-		// ((SolverBacktrack) solver).heuristic.reset();
 	}
 
 	public void handleNewSolutionAndPossiblyOptimizeIt() {

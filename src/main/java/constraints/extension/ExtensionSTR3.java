@@ -31,13 +31,13 @@ public final class ExtensionSTR3 extends ExtensionGlobal implements TagPositive,
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
 		this.tuples = ((Table) extStructure).tuples;
-		this.set = new SetSparseReversible(tuples.length, pb.variables.length + 1);
+		this.set = new SetSparseReversible(tuples.length, problem.variables.length + 1);
 
 		this.offsetsForMaps = new int[scp.length];
 		for (int i = 1; i < offsetsForMaps.length; i++)
 			offsetsForMaps[i] = offsetsForMaps[i - 1] + scp[i - 1].dom.initSize();
 		int nValues = Variable.nInitValuesFor(scp);
-		this.separatorsMaps = IntStream.rangeClosed(0, pb.variables.length).mapToObj(i -> new SetSparseMapSTR3(nValues, false))
+		this.separatorsMaps = IntStream.rangeClosed(0, problem.variables.length).mapToObj(i -> new SetSparseMapSTR3(nValues, false))
 				.toArray(SetSparseMapSTR3[]::new);
 		// above do we need rangeClosed ?
 		this.deps = IntStream.range(0, set.dense.length).mapToObj(i -> new LocalSetSparseByte(scp.length, false)).toArray(LocalSetSparseByte[]::new);
@@ -318,22 +318,22 @@ public final class ExtensionSTR3 extends ExtensionGlobal implements TagPositive,
 
 	protected void supressInvalidTuples() {
 		int limitBefore = set.limit;
-		Variable lastPast = pb.solver.futVars.lastPast();
+		Variable lastPast = problem.solver.futVars.lastPast();
 		if (lastPast != null && positionOf(lastPast) != -1)
 			suppressInvalidTuplesFromRemovedValuesInDomainAtPosition(positionOf(lastPast));
 		for (int i = futvars.limit; i >= 0; i--)
 			suppressInvalidTuplesFromRemovedValuesInDomainAtPosition(futvars.dense[i]);
 		if (set.limit < limitBefore) // tuples have been removed if this condition holds
-			if (set.limits[pb.solver.depth()] == SetDense.UNINITIALIZED)
-				set.limits[pb.solver.depth()] = limitBefore;
+			if (set.limits[problem.solver.depth()] == SetDense.UNINITIALIZED)
+				set.limits[problem.solver.depth()] = limitBefore;
 	}
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
-		pb.stuff.updateStatsForSTR(set);
+		problem.stuff.updateStatsForSTR(set);
 		if (ac != null)
 			return filterAtPreprocessing();
-		SetSparseMapSTR3 map = separatorsMaps[pb.solver.depth()];
+		SetSparseMapSTR3 map = separatorsMaps[problem.solver.depth()];
 		int limitBefore = set.limit;
 		supressInvalidTuples();
 		if (subtables != null) {

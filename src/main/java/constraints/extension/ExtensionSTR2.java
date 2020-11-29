@@ -36,7 +36,7 @@ public class ExtensionSTR2 extends ExtensionSTROptimized implements TagShort {
 	@Override
 	public boolean runPropagator(Variable dummy) {
 		// pb.stuff.updateStatsForSTR(set);
-		int depth = pb.solver.depth();
+		int depth = problem.solver.depth();
 		// if (entailedDepth >= depth) return true;
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {
@@ -68,7 +68,7 @@ public class ExtensionSTR2 extends ExtensionSTROptimized implements TagShort {
 			int[] tuple = tuples[dense[i]];
 			for (int j = tuple.length - 1; j >= 0; j--) {
 				if (tuple[j] != STAR && !doms[j].isPresent(tuple[j])) {
-					System.out.println(this + " at " + pb.solver.depth() + "\n" + Kit.join(tuple));
+					System.out.println(this + " at " + problem.solver.depth() + "\n" + Kit.join(tuple));
 					Stream.of(scp).forEach(x -> x.display(true));
 					return false;
 				}

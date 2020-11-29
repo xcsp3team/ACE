@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.Tags.TagGACGuaranteed;
 import optimization.Optimizable;
 import problem.Problem;
@@ -147,11 +148,17 @@ public abstract class SumWeighted extends Sum {
 	// ***** Constraint SumWeightedLE
 	// ************************************************************************
 
-	public static final class SumWeightedLE extends SumWeighted implements TagGACGuaranteed, Optimizable {
+	public static final class SumWeightedLE extends SumWeighted implements TagGACGuaranteed, Optimizable, ObserverBacktrackingSystematic {
 
 		@Override
 		public boolean checkValues(int[] t) {
 			return weightedSum(t, coeffs) <= limit;
+		}
+
+		@Override
+		public void restoreBefore(int depth) {
+			if (entailedLevel == depth)
+				entailedLevel = -1;
 		}
 
 		@Override
@@ -166,8 +173,10 @@ public abstract class SumWeighted extends Sum {
 		@Override
 		public boolean runPropagator(Variable x) {
 			recomputeBounds();
-			if (max <= limit)
+			if (max <= limit) {
+				entailedLevel = problem.solver.depth();
 				return true;
+			}
 			if (min > limit)
 				return x == null ? false : x.dom.fail();
 			for (int i = futvars.limit; i >= 0; i--) {
@@ -197,11 +206,17 @@ public abstract class SumWeighted extends Sum {
 	// ***** Constraint SumWeightedGE
 	// ************************************************************************
 
-	public static class SumWeightedGE extends SumWeighted implements TagGACGuaranteed, Optimizable {
+	public static class SumWeightedGE extends SumWeighted implements TagGACGuaranteed, Optimizable, ObserverBacktrackingSystematic {
 
 		@Override
 		public boolean checkValues(int[] t) {
 			return weightedSum(t, coeffs) >= limit;
+		}
+
+		@Override
+		public void restoreBefore(int depth) {
+			if (entailedLevel == depth)
+				entailedLevel = -1;
 		}
 
 		@Override
@@ -216,8 +231,10 @@ public abstract class SumWeighted extends Sum {
 		@Override
 		public boolean runPropagator(Variable x) {
 			recomputeBounds();
-			if (min >= limit)
+			if (min >= limit) {
+				entailedLevel = problem.solver.depth();
 				return true;
+			}
 			if (max < limit)
 				return x == null ? false : x.dom.fail();
 			for (int i = futvars.limit; i >= 0; i--) {
@@ -305,9 +322,9 @@ public abstract class SumWeighted extends Sum {
 			for (int i = 0; i < scp.length; i++)
 				if (i != pos)
 					sum += scp[i].dom.uniqueValue() * coeffs[i];
-			Kit.control((limit - sum) % coeffs[pos] == 0);
+			control((limit - sum) % coeffs[pos] == 0);
 			long res = (limit - sum) / coeffs[pos];
-			Kit.control(Utilities.isSafeInt(res));
+			control(Utilities.isSafeInt(res));
 			// pb.solver.pushVariable(scp[pos]);
 			scp[pos].dom.reduceTo((int) res); // , pb.solver.depth());
 			return (int) res;
@@ -351,7 +368,7 @@ public abstract class SumWeighted extends Sum {
 				else
 					p = i;
 			long v = (limit - sum) / coeffs[p];
-			Kit.control(v * coeffs[p] + sum == limit);
+			control(v * coeffs[p] + sum == limit);
 			if ((limit - sum) % coeffs[p] == 0 && Integer.MIN_VALUE <= v && v <= Integer.MAX_VALUE)
 				sentinel.dom.removeValueIfPresent((int) v); // no inconsistency possible since at least two values
 			return true;

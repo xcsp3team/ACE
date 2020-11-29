@@ -36,7 +36,7 @@ public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
 		this.tuples = ((Table) extStructure).tuples;
-		this.set = new SetDenseReversible(tuples.length, pb.variables.length + 1);
+		this.set = new SetDenseReversible(tuples.length, problem.variables.length + 1);
 		this.ac = Variable.litterals(scp).booleanArray();
 		this.cnts = new int[scp.length];
 		this.sVal = new int[scp.length];
@@ -44,7 +44,7 @@ public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
 
 		control(tuples.length > 0);
 		if (decremental) {
-			this.lastSizesStack = new int[pb.variables.length + 1][scp.length];
+			this.lastSizesStack = new int[problem.variables.length + 1][scp.length];
 			Arrays.fill(lastSizesStack[0], UNITIALIZED);
 		} else
 			this.lastSizes = Kit.repeat(UNITIALIZED, scp.length);
@@ -113,7 +113,7 @@ public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
 
 	protected void initRestorationStructuresBeforeFiltering() {
 		if (decremental) {
-			int depth = pb.solver.depth();
+			int depth = problem.solver.depth();
 			assert 0 <= lastDepth && lastDepth <= depth : depth + " " + lastDepth + " " + this;
 			for (int i = lastDepth + 1; i <= depth; i++)
 				System.arraycopy(lastSizesStack[lastDepth], 0, lastSizesStack[i], 0, scp.length);
@@ -123,9 +123,9 @@ public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
 	}
 
 	protected void manageLastPastVar() {
-		if (lastCallLimit != pb.solver.stats.nAssignments || pb.solver.propagation instanceof StrongConsistency) { // second condition due to Inverse4
-			lastCallLimit = pb.solver.stats.nAssignments;
-			Variable lastPast = pb.solver.futVars.lastPast();
+		if (lastCallLimit != problem.solver.stats.nAssignments || problem.solver.propagation instanceof StrongConsistency) { // second condition due to Inverse4
+			lastCallLimit = problem.solver.stats.nAssignments;
+			Variable lastPast = problem.solver.futVars.lastPast();
 			int x = lastPast == null ? -1 : positionOf(lastPast);
 			if (x != -1) {
 				sVal[sValSize++] = x;
@@ -178,8 +178,8 @@ public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
-		pb.stuff.updateStatsForSTR(set);
-		int depth = pb.solver.depth();
+		problem.stuff.updateStatsForSTR(set);
+		int depth = problem.solver.depth();
 		// if (entailedDepth >= depth) return true;
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {
@@ -215,7 +215,7 @@ public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
 			int[] tuple = tuples[dense[i]];
 			for (int j = tuple.length - 1; j >= 0; j--) {
 				if (tuple[j] != STAR && !doms[j].isPresent(tuple[j])) {
-					System.out.println(this + " at " + pb.solver.depth() + "\n" + Kit.join(tuple));
+					System.out.println(this + " at " + problem.solver.depth() + "\n" + Kit.join(tuple));
 					Stream.of(scp).forEach(x -> x.display(true));
 					return false;
 				}

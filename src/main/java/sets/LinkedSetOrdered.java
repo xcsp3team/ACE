@@ -9,6 +9,7 @@
 package sets;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 import org.xcsp.common.Constants;
 
@@ -80,11 +81,10 @@ public class LinkedSetOrdered implements LinkedSet {
 		this.size = initSize;
 		this.first = 0;
 		this.last = initSize - 1;
-		this.prevs = Kit.range(-1, initSize - 2); // Kit.range((short) -1, (short) (initialSize - 2));
-		this.nexts = Kit.range(1, initSize); // Kit.range((short) 1, (short) initialSize);
-		nexts[initSize - 1] = -1;
+		this.prevs = IntStream.range(0, initSize).map(i -> i - 1).toArray();
+		this.nexts = IntStream.range(0, initSize).map(i -> i < initSize - 1 ? i + 1 : -1).toArray();
 		this.lastRemoved = -1;
-		this.prevRemoved = Kit.repeat(-1, initSize); // Kit.repeat((short) -1, initialSize); // new int[initialSize];
+		this.prevRemoved = Kit.repeat(-1, initSize); // Kit.repeat((short) -1, initialSize);
 		this.removedLevels = Kit.repeat(-1, initSize);
 		this.mark = -1;
 	}

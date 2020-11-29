@@ -45,7 +45,7 @@ public class ExtensionGAC4 extends ExtensionGlobal implements TagPositive {
 		for (int x = 0; x < sups.length; x++) {
 			sups[x] = new SetDenseReversible[scp[x].dom.initSize()];
 			for (int a = 0; a < sups[x].length; a++)
-				sups[x][a] = new SetDenseReversible(Kit.intArray(tmp[x][a]), true, pb.variables.length + 1);
+				sups[x][a] = new SetDenseReversible(Kit.intArray(tmp[x][a]), true, problem.variables.length + 1);
 		}
 		this.lastRemoved = Kit.repeat(-1, scp.length);
 
@@ -90,7 +90,7 @@ public class ExtensionGAC4 extends ExtensionGlobal implements TagPositive {
 
 	private boolean handleVariableAt(int x) {
 		Domain dom = scp[x].dom;
-		int depth = pb.solver.depth();
+		int depth = problem.solver.depth();
 		int[][] tuples = ((Table) extStructure).tuples;
 		for (int a = dom.lastRemoved(); a != lastRemoved[x]; a = dom.prevRemoved(a)) {
 			SetDenseReversible droppedSet = sups[x][a];
@@ -128,7 +128,7 @@ public class ExtensionGAC4 extends ExtensionGlobal implements TagPositive {
 
 	@Override
 	public boolean runPropagator(Variable x) {
-		Variable lastPast = pb.solver.futVars.lastPast();
+		Variable lastPast = problem.solver.futVars.lastPast();
 		if (x == lastPast && !handleVariableAt(positionOf(x)))
 			return false;
 		for (int i = futvars.limit; i >= 0; i--)

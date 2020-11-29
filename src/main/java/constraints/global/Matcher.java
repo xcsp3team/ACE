@@ -116,7 +116,7 @@ public abstract class Matcher implements ObserverConstruction {
 		this.maxValue = Stream.of(scp).mapToInt(x -> x.dom.lastValue()).max().getAsInt();
 		this.intervalSize = maxValue - minValue + 1;
 
-		ctr.pb.head.observersConstruction.add(this);
+		ctr.problem.head.observersConstruction.add(this);
 
 		// TODO use classical sets (not sparse sets or arrays) if big gap between
 		// minValue and maxValue AND number of values is a lot smaller than maxValue-minValue
@@ -124,7 +124,7 @@ public abstract class Matcher implements ObserverConstruction {
 
 	@Override
 	public void afterProblemConstruction() {
-		unfixedVars = new SetSparseReversible(arity, ctr.pb.variables.length + 1);
+		unfixedVars = new SetSparseReversible(arity, ctr.problem.variables.length + 1);
 
 		neighborsOfValues = SetSparse.factoryArray(arity + 1, intervalSize);
 		neighborsOfT = new SetSparse(intervalSize);

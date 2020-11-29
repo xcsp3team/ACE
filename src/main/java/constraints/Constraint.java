@@ -71,8 +71,9 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	@Override
 	public void afterProblemConstruction() {
 		// If a variable does not belong to the constraint, then its position is set to -1
-		if (settings.arityLimitForVapArrayLb < scp.length && (pb.variables.length < settings.arityLimitForVapArrayUb || scp.length > pb.variables.length / 3)) {
-			this.positions = Kit.repeat(-1, pb.variables.length);
+		if (settings.arityLimitForVapArrayLb < scp.length
+				&& (problem.variables.length < settings.arityLimitForVapArrayUb || scp.length > problem.variables.length / 3)) {
+			this.positions = Kit.repeat(-1, problem.variables.length);
 			for (int i = 0; i < scp.length; i++)
 				this.positions[scp[i].num] = i;
 			this.futvars = new SetSparse(scp.length, true);
@@ -251,7 +252,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 *************************************************************************/
 
 	/** The problem to which the constraint belongs. */
-	public final Problem pb;
+	public final Problem problem;
 
 	/** The number of the constraint; it is <code>-1</code> when not fully initialized or not a direct constraint of the problem. */
 	public int num = -1;
@@ -272,6 +273,8 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	/** Indicates if the constraint must be ignored. */
 	public boolean ignored;
+
+	public int entailedLevel = -1;
 
 	/** The key of the constraint. Used for symmetry detection. */
 	public String key;
@@ -362,7 +365,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 * Returns the weighted degree of the constraint.
 	 */
 	public final double wdeg() {
-		return ((WdegVariant) ((SolverBacktrack) pb.solver).heuristic).cscores[num];
+		return ((WdegVariant) ((SolverBacktrack) problem.solver).heuristic).cscores[num];
 	}
 
 	public boolean isIrreflexive() {
@@ -476,7 +479,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 * Private constructor just used to build the TAG constraint.
 	 */
 	private Constraint() {
-		this.pb = null;
+		this.problem = null;
 		this.scp = new Variable[0];
 		this.tupleManager = null;
 		this.vals = null;
@@ -491,20 +494,20 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		if (this instanceof FilteringSpecific || this instanceof Extension)
 			return Integer.MAX_VALUE; // because not concerned
 
-		int arityLimit = pb.head.control.propagation.arityLimitForGACGuaranteed;
+		int arityLimit = problem.head.control.propagation.arityLimitForGACGuaranteed;
 		if (scp.length <= arityLimit)
 			return Integer.MAX_VALUE;
-		int futureLimitation = pb.head.control.propagation.futureLimitation;
+		int futureLimitation = problem.head.control.propagation.futureLimitation;
 		if (futureLimitation != -1)
 			return futureLimitation < scp.length ? Math.max(arityLimit, futureLimitation) : Integer.MAX_VALUE;
-		int spaceLimitation = pb.head.control.propagation.spaceLimitation;
+		int spaceLimitation = problem.head.control.propagation.spaceLimitation;
 		if (spaceLimitation != -1)
 			return Math.max(arityLimit, howManyVarsWithin(scp, spaceLimitation));
 		return Integer.MAX_VALUE;
 	}
 
 	public Constraint(Problem pb, Variable[] scp) {
-		this.pb = pb;
+		this.problem = pb;
 		this.scp = scp = Stream.of(scp).distinct().toArray(Variable[]::new);
 		control(scp.length >= 1 && Stream.of(scp).allMatch(x -> x != null), this + " with a scope badly formed ");
 		Stream.of(scp).forEach(x -> x.collectedCtrs.add(this));
@@ -748,7 +751,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 *********************************************************************************************/
 
 	private boolean genericFiltering(Variable x) {
-		Reviser reviser = ((Forward) pb.solver.propagation).reviser;
+		Reviser reviser = ((Forward) problem.solver.propagation).reviser;
 		if (x.assigned()) {
 			for (int i = futvars.limit; i >= 0; i--)
 				if (reviser.revise(this, scp[futvars.dense[i]]) == false)
@@ -771,10 +774,10 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	private void handleEffectiveFilterings() {
-		if (pb.solver instanceof SolverBacktrack)
-			((SolverBacktrack) pb.solver).proofer.updateProof(this);// TODO // ((SystematicSolver)solver).updateProofAll();
+		if (problem.solver instanceof SolverBacktrack)
+			((SolverBacktrack) problem.solver).proofer.updateProof(this);// TODO // ((SystematicSolver)solver).updateProofAll();
 		nEffectiveFilterings++;
-		pb.stuff.nEffectiveFilterings++;
+		problem.stuff.nEffectiveFilterings++;
 	}
 
 	private boolean completeFilteringAtEachCall() {
@@ -814,7 +817,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 */
 	public final boolean filterFrom(Variable x) {
 		// System.out.println("filtering " + this + " " + x);
-
 		if (this.infiniteDomainVars.length > 0) {
 			Boolean b = handleHugeDomains();
 			if (b != null)
@@ -823,8 +825,8 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 		// For CSP, there are first some conditions that allow us to directly return true (because we know then that there is no filtering
 		// possibility)
-		if (pb.settings.framework == TypeFramework.CSP) { // if != MACSP, pb with java -ea ac PlaneparkingTask.xml -ea -cm=false -ev -trace
-															// possibly too with GraphColoring-sum-GraphColoring_1-fullins-3.xml.lzma
+		if (problem.settings.framework == TypeFramework.CSP) { // if != MACSP, pb with java -ea ac PlaneparkingTask.xml -ea -cm=false -ev -trace
+																// possibly too with GraphColoring-sum-GraphColoring_1-fullins-3.xml.lzma
 			if (futvars.size() == 0) {
 				if (isGuaranteedAC()) {
 					assert checkCurrentInstantiation() : "Unsatisfied constraint " + this;
@@ -835,7 +837,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 			if (futvars.size() == 1 && x.isFuture() && scp.length > 1)
 				return true;
 		}
-		int nBefore = pb.nValuesRemoved;
+		int nBefore = problem.nValuesRemoved;
 		boolean consistent = true;
 		if (this instanceof FilteringSpecific) {
 			if (timestamp > x.timestamp && completeFilteringAtEachCall())
@@ -846,9 +848,9 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 				return true;
 			consistent = genericFiltering(x);
 		}
-		if (!consistent || pb.nValuesRemoved != nBefore)
+		if (!consistent || problem.nValuesRemoved != nBefore)
 			this.handleEffectiveFilterings();
-		timestamp = pb.solver.propagation.incrementTime();
+		timestamp = problem.solver.propagation.incrementTime();
 		return consistent;
 	}
 
@@ -902,11 +904,11 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	protected String compact(Variable[] vars) {
-		return pb.varEntities.compact(vars);
+		return problem.varEntities.compact(vars);
 	}
 
 	protected String compactOrdered(Variable[] vars) {
-		return pb.varEntities.compactOrdered(vars);
+		return problem.varEntities.compactOrdered(vars);
 	}
 
 }

@@ -215,8 +215,6 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 		protected long limit;
 
-		protected boolean entailed;
-
 		@Override
 		public long limit() {
 			return limit;
@@ -225,7 +223,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 		@Override
 		public final void limit(long newLimit) {
 			this.limit = newLimit;
-			entailed = false;
+			entailedLevel = -1;
 			control(minComputableObjectiveValue() <= limit && limit <= maxComputableObjectiveValue());
 		}
 
@@ -302,15 +300,12 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					if (entailed)
-						return true;
-					control(pb.solver.depth() == 0);
+					control(problem.solver.depth() == 0);
 					for (Variable y : scp)
-						if (y.dom.removeValuesGT(limit) == false) {
+						if (y.dom.removeValuesGT(limit) == false)
 							return false;
-						}
-					entailed = true;
-					return Variable.firstWipeoutVariableIn(scp) == null;
+					entailedLevel = 0;
+					return true; // Variable.firstWipeoutVariableIn(scp) == null;
 				}
 			}
 
@@ -481,14 +476,12 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					if (entailed)
-						return true;
-					control(pb.solver.depth() == 0);
+					control(problem.solver.depth() == 0);
 					for (Variable y : scp)
 						if (y.dom.removeValuesLT(limit) == false)
 							return false;
-					entailed = true;
-					return Variable.firstWipeoutVariableIn(scp) == null;
+					entailedLevel = 0;
+					return true; // Variable.firstWipeoutVariableIn(scp) == null;
 				}
 			}
 

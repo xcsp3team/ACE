@@ -572,8 +572,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 					assert backtrackLevel != -1;
 					while (depth() > backtrackLevel)
 						backtrack(futVars.lastPast());
-					// check with java -ea ac /home/lecoutre/workspace/AbsCon/build/resources/main/cop/Photo.xml.lzma -cm -ev
-					// java -ea ac /home/lecoutre/workspace/AbsCon/build/resources/main/cop/Recipe.xml.lzma -cm -
+					// check with java -ea ac /home/lecoutre/workspace/AbsCon/build/resources/main/cop/Photo.xml.lzma -ev
+					// java -ea ac /home/lecoutre/workspace/AbsCon/build/resources/main/cop/Recipe.xml.lzma
 				}
 				if (!finished() && !restarter.currRunFinished())
 					manageContradiction(objectiveToCheck);

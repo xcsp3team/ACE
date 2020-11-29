@@ -21,8 +21,8 @@ import variables.Variable;
 public abstract class Supporter {
 
 	public static Supporter buildFor(Constraint c) {
-		if (c.pb.head.control.propagation.residues && c.scp.length > 1 && !(c instanceof FilteringSpecific)
-				&& !(c.pb.head.control.propagation.reviser.equals(Reviser3.class.getSimpleName()) && c.extStructure() instanceof Bits)) {
+		if (c.problem.head.control.propagation.residues && c.scp.length > 1 && !(c instanceof FilteringSpecific)
+				&& !(c.problem.head.control.propagation.reviser.equals(Reviser3.class.getSimpleName()) && c.extStructure() instanceof Bits)) {
 			return c.scp.length == 2 ? new SupporterHardBary(c) : new SupporterHardNary(c);
 		} else
 			return null;
@@ -36,7 +36,7 @@ public abstract class Supporter {
 
 	public Supporter(Constraint c) {
 		this.c = c;
-		this.multidirectionality = c.pb.head.control.propagation.multidirectionality;
+		this.multidirectionality = c.problem.head.control.propagation.multidirectionality;
 		this.buffer = c.tupleManager.localTuple;
 	}
 
@@ -82,7 +82,7 @@ public abstract class Supporter {
 			int q = x == 0 ? 1 : 0;
 			int b = residues[x][a];
 			if (b != -1 && c.doms[q].isPresent(b)) {
-				if (c.pb.solver.propagation instanceof TagBinaryRelationFiltering) {
+				if (c.problem.solver.propagation instanceof TagBinaryRelationFiltering) {
 					buffer[x] = a;
 					buffer[q] = b;
 					if (c.checkIndexes(buffer))

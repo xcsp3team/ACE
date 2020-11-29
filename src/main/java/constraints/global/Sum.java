@@ -27,6 +27,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 
 	public void limit(long newLimit) {
 		this.limit = newLimit;
+		entailedLevel = -1;
 	}
 
 	public Sum(Problem pb, Variable[] scp, long limit) {

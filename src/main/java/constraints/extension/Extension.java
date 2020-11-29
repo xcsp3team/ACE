@@ -59,9 +59,9 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 		@Override
 		protected ExtensionStructure buildExtensionStructure() {
 			if (scp.length == 2)
-				return Reflector.buildObject(pb.head.control.extension.classBinary, ExtensionStructure.class, this);
+				return Reflector.buildObject(problem.head.control.extension.classBinary, ExtensionStructure.class, this);
 			if (scp.length == 3)
-				return Reflector.buildObject(pb.head.control.extension.classTernary, ExtensionStructure.class, this);
+				return Reflector.buildObject(problem.head.control.extension.classTernary, ExtensionStructure.class, this);
 			return new Table(this); // MDD(this);
 		}
 
@@ -74,10 +74,10 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 
 		@Override
 		protected ExtensionStructure buildExtensionStructure() {
-			if (pb.head.control.extension.variant == 0)
+			if (problem.head.control.extension.variant == 0)
 				return new TableWithSubtables(this);
-			assert pb.head.control.extension.variant == 1 || pb.head.control.extension.variant == 11;
-			return new Tries(this, pb.head.control.extension.variant == 11);
+			assert problem.head.control.extension.variant == 1 || problem.head.control.extension.variant == 11;
+			return new Tries(this, problem.head.control.extension.variant == 11);
 		}
 
 		public ExtensionVA(Problem pb, Variable[] scp) {
@@ -241,17 +241,17 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 
 		if (supporter != null)
 			((SupporterHard) supporter).reset();
-		Map<String, ExtensionStructure> map = pb.head.mapOfExtensionStructures;
+		Map<String, ExtensionStructure> map = problem.head.mapOfExtensionStructures;
 
 		if (key == null || !map.containsKey(key)) {
 			extStructure = buildExtensionStructure();
-			extStructure.originalTuples = pb.head.control.problem.isSymmetryBreaking() ? tuples : null;
+			extStructure.originalTuples = problem.head.control.problem.isSymmetryBreaking() ? tuples : null;
 			extStructure.originalPositive = positive;
 			extStructure.storeTuples(tuples, positive);
 			if (key != null) {
 				map.put(key, extStructure);
 				// below, "necessary" to let this code here because tuples and positive are easily accessible
-				if (pb.head.control.problem.isSymmetryBreaking()) {
+				if (problem.head.control.problem.isSymmetryBreaking()) {
 					Constraint.putSymmetryMatching(key, extStructure.computeVariableSymmetryMatching(tuples, positive));
 				}
 			}
@@ -283,7 +283,7 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 
 	@Override
 	public Map<String, Object> mapXCSP() {
-		Object tuples = scp[0] instanceof VariableInteger ? extStructure.originalTuples : pb.symbolic.mapOfTuples.get(this);
+		Object tuples = scp[0] instanceof VariableInteger ? extStructure.originalTuples : problem.symbolic.mapOfTuples.get(this);
 		return map(SCOPE, scp, LIST, compactOrdered(scp), ARITY, scp.length, TUPLES, tuples, POSITIVE, extStructure.originalPositive);
 	}
 

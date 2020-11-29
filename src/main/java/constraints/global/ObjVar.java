@@ -46,7 +46,7 @@ public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilter
 	@Override
 	public final void limit(long newLimit) {
 		this.limit = newLimit;
-		entailed = false;
+		entailedLevel = -1;
 		control(minComputableObjectiveValue() <= limit && limit <= maxComputableObjectiveValue());
 	}
 
@@ -58,8 +58,6 @@ public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilter
 	protected Variable x;
 
 	protected long limit;
-
-	protected boolean entailed;
 
 	public ObjVar(Problem pb, Variable x, long limit) {
 		super(pb, new Variable[] { x });
@@ -80,12 +78,10 @@ public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilter
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			if (entailed)
-				return true;
-			control(pb.solver.depth() == 0);
+			control(problem.solver.depth() == 0);
 			if (x.dom.removeValuesGT(limit) == false)
 				return false;
-			entailed = true;
+			entailedLevel = 0;
 			assert x.dom.size() > 0;
 			return true;
 		}
@@ -104,12 +100,10 @@ public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilter
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			if (entailed)
-				return true;
-			control(pb.solver.depth() == 0);
+			control(problem.solver.depth() == 0);
 			if (x.dom.removeValuesLT(limit) == false)
 				return false;
-			entailed = true;
+			entailedLevel = 0;
 			assert x.dom.size() > 0;
 			return true;
 		}

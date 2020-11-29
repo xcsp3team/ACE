@@ -35,7 +35,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 	private static boolean canBuildConflictsStructureFor(Constraint c, int limit) {
 		if (c instanceof ExtensionSTR2 || c instanceof ExtensionCT || c instanceof ExtensionCT2 || c.infiniteDomainVars.length > 0)
 			return false;
-		Control cfg = c.pb.head.control;
+		Control cfg = c.problem.head.control;
 		if (!cfg.mustBuildConflictStructures || c.scp.length == 1 || Kit.memory() > 400000000L)
 			return false;
 		return Variable.nValidTuples(c.scp, false).compareTo(BigInteger.valueOf(limit)) <= 0;
@@ -219,7 +219,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 	}
 
 	public boolean possiblyRemoveValuesFor(Constraint ctr) {
-		assert ctr.pb.solver.depth() == 0 && registeredCtrs.contains(ctr);
+		assert ctr.problem.solver.depth() == 0 && registeredCtrs.contains(ctr);
 		long nbValidTuples = Variable.nValidTuplesBoundedAtMaxValueFor(ctr.scp);
 		for (int i = 0; i < ctr.scp.length; i++) {
 			int[] nbConflicts = nConflicts()[i];

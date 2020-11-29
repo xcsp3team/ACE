@@ -27,7 +27,7 @@ public class ExtensionSTR1 extends ExtensionGlobal {
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
 		this.tuples = ((Table) extStructure).tuples;
-		this.set = new SetDenseReversible(tuples.length, pb.variables.length + 1);
+		this.set = new SetDenseReversible(tuples.length, problem.variables.length + 1);
 		this.ac = Variable.litterals(scp).booleanArray();
 		this.cnts = new int[scp.length];
 		control(tuples.length > 0);
@@ -100,7 +100,7 @@ public class ExtensionSTR1 extends ExtensionGlobal {
 	@Override
 	public boolean runPropagator(Variable dummy) {
 		// pb.stuff.updateStatsForSTR(set);
-		int depth = pb.solver.depth();
+		int depth = problem.solver.depth();
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {
 			int[] tuple = tuples[set.dense[i]];

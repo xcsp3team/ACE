@@ -40,8 +40,8 @@ public final class ExtensionMDD extends ExtensionGlobal implements TagPositive, 
 		super.afterProblemConstruction();
 		int nNodes = ((MDD) extStructure).nNodes();
 		this.trueNodes = new int[nNodes];
-		if (pb.head.control.extension.decremental)
-			this.set = new SetSparseReversible(nNodes, false, pb.variables.length + 1);
+		if (problem.head.control.extension.decremental)
+			this.set = new SetSparseReversible(nNodes, false, problem.variables.length + 1);
 		else
 			this.falseNodes = new int[nNodes];
 		this.ac = Variable.litterals(scp).booleanArray();
@@ -131,7 +131,7 @@ public final class ExtensionMDD extends ExtensionGlobal implements TagPositive, 
 	}
 
 	private boolean manageSuccessfulExploration(int level, int a) {
-		int cutoffVariant = pb.head.control.extension.variant;
+		int cutoffVariant = problem.head.control.extension.variant;
 		if (cutoffVariant == 2) {
 			if (scp[level].isFuture()) {
 				if (!ac[level][a]) {
@@ -203,7 +203,7 @@ public final class ExtensionMDD extends ExtensionGlobal implements TagPositive, 
 		if (supported)
 			trueNodes[node.id] = trueTimestamp;
 		else if (set != null)
-			set.add(node.id, pb.solver.depth());
+			set.add(node.id, problem.solver.depth());
 		else
 			falseNodes[node.id] = falseTimestamp;
 		return supported;

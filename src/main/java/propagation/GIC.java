@@ -645,15 +645,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 								interval.var.dom.removeElementary(interval.idx);
 							else
 								assert interval.var.dom.removedLevelOf(interval.idx) == solver.depth();
-						for (Constraint c : solver.problem.constraints)
-							if (c instanceof ExtensionSTR1) {
-								int nbValuesBefore = solver.problem.nValuesRemoved;
-								// int nbTuplesBefore = ((ConstraintHardExtensionSTR) constraint).getSetOfTuples().getCurrentLimit();
-								((ExtensionSTR1) c).runPropagator(null);
-								assert solver.problem.nValuesRemoved == nbValuesBefore;
-								// if (((ConstraintHardExtensionSTR) constraint).getSetOfTuples().getCurrentLimit() != nbTuplesBefore)
-								// Kit.prn("tuples from " + constraint);
-							}
+						this.updateSTRStructures();
 					}
 
 					Kit.log.info("nbVals=" + nVals + " nbUnks=" + nUnks + " nbUnksAfterAc=" + nUnksAfterAC + " nbTests=" + nTests);

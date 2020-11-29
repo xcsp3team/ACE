@@ -39,7 +39,7 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 	@Override
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
-		this.omega = new SetSparseReversible(scp.length, pb.variables.length + 1);
+		this.omega = new SetSparseReversible(scp.length, problem.variables.length + 1);
 	}
 
 	private int[] lengths;
@@ -151,7 +151,7 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 		// break;
 
 		if (slots[0].height + heights[sortedScpIndexes[0]] > limit) {
-			Variable lastPast = pb.solver.futVars.lastPast();
+			Variable lastPast = problem.solver.futVars.lastPast();
 			for (int i = 0; i < scp.length; i++) {
 				if (scp[i].assigned() && scp[i] != lastPast)
 					continue;
@@ -178,7 +178,7 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 			if (emax < scp[i].dom.lastValue() + lengths[i])
 				emax = scp[i].dom.lastValue() + lengths[i];
 		}
-		int depth = pb.solver.depth();
+		int depth = problem.solver.depth();
 		for (int j = omega.limit; j >= 0; j--) {
 			int i = omega.dense[j];
 			if (scp[i].dom.size() == 1 && (scp[i].dom.lastValue() + lengths[i] <= smin || emax <= scp[i].dom.firstValue()))

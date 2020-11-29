@@ -39,8 +39,8 @@ public final class ExtensionMDDShort extends ExtensionGlobal implements TagPosit
 		super.afterProblemConstruction();
 		int nNodes = ((MDDShort) extStructure).nNodes();
 		this.trueNodes = new int[nNodes];
-		if (pb.head.control.extension.decremental)
-			this.set = new SetSparseReversible(nNodes, false, pb.variables.length + 1);
+		if (problem.head.control.extension.decremental)
+			this.set = new SetSparseReversible(nNodes, false, problem.variables.length + 1);
 		else
 			this.falseNodes = new int[nNodes];
 		this.ac = Variable.litterals(scp).booleanArray();
@@ -128,7 +128,7 @@ public final class ExtensionMDDShort extends ExtensionGlobal implements TagPosit
 			return false;
 		}
 
-		int cutoffVariant = pb.head.control.extension.variant;
+		int cutoffVariant = problem.head.control.extension.variant;
 		if (cutoffVariant == 2) {
 			if (scp[level].isFuture()) {
 				if (!ac[level][a]) {
@@ -205,7 +205,7 @@ public final class ExtensionMDDShort extends ExtensionGlobal implements TagPosit
 		if (supported)
 			trueNodes[node.id] = trueTimestamp;
 		else if (set != null)
-			set.add(node.id, pb.solver.depth());
+			set.add(node.id, problem.solver.depth());
 		else
 			falseNodes[node.id] = falseTimestamp;
 		return supported;

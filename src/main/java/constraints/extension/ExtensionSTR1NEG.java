@@ -38,7 +38,7 @@ public final class ExtensionSTR1NEG extends ExtensionSTR1 implements TagNegative
 
 	@Override
 	public boolean runPropagator(Variable evt) {
-		int depth = pb.solver.depth();
+		int depth = problem.solver.depth();
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {
 			int[] tuple = tuples[set.dense[i]];
