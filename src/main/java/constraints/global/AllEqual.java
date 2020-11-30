@@ -55,13 +55,11 @@ public final class AllEqual extends CtrGlobal implements ObserverBacktrackingSys
 		defineKey();
 	}
 
-	int cnt = 0;
-
 	@Override
 	public boolean runPropagator(Variable x) {
 		if (entailedLevel != -1)
 			return true;
-		// System.out.println("here");
+
 		Variable y = x.dom.size() == 1 ? x : Variable.firstSingletonVariableIn(scp); // we look for a variable y with a singleton domain
 
 		if (y != null) { // we remove the unique value from the domains of the future variables
@@ -78,13 +76,17 @@ public final class AllEqual extends CtrGlobal implements ObserverBacktrackingSys
 		for (int i = scp.length - 1; i >= 0; i--)
 			for (int a = scp[i].dom.lastRemoved(); a != frontier[i]; a = scp[i].dom.prevRemoved(a))
 				set.add(a);
+
+		// Kit.control(set.size() == 1); // four lines of code for identifying the efficiency problem on Domino-5000
+		// for (int i = scp.length - 1; i >= 0; i--)
+		// // for (int i = 0; i < scp.length; i++)
+		// scp[i].dom.remove(set.dense[0]);
+
 		// we remove these dropped (indexes of) values from the domain of all future variables
-		for (int i = scp.length - 1; i >= 0; i--)
-			if (!scp[i].dom.remove(set, true))
+		for (int i = scp.length - 1; i >= 0; i--) // the other side (0 to scp.length) is very long
+			if (scp[i].dom.remove(set, true) == false)
 				return false;
-		// for (Variable z : scp) // very long on Domino-5000. why?
-		// if (z.dom.remove(set, true) == false)
-		// return false;
+
 		// we record the frontier of dropped (indexes of) values for the next call
 		for (int i = scp.length - 1; i >= 0; i--)
 			frontier[i] = scp[i].dom.lastRemoved();

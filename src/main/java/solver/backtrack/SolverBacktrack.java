@@ -158,6 +158,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	 * Classes for StackedVariables and Proofer
 	 *********************************************************************************************/
 
+	public static int cnt = 0;
+
 	public final class StackedVariables {
 
 		public final Variable[] stack;

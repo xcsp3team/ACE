@@ -1,13 +1,15 @@
 package optimization;
 
-import org.xcsp.common.Types.TypeFramework;
+import static org.xcsp.common.Types.TypeFramework.COP;
+import static org.xcsp.common.Types.TypeOptimization.MAXIMIZE;
+import static org.xcsp.common.Types.TypeOptimization.MINIMIZE;
+import static utility.Enums.EStopping.FULL_EXPLORATION;
+
 import org.xcsp.common.Types.TypeOptimization;
 
 import dashboard.Arguments;
-import dashboard.Output;
 import problem.Problem;
 import solver.backtrack.SolverBacktrack;
-import utility.Enums.EStopping;
 import utility.Kit;
 import variables.Variable;
 
@@ -85,10 +87,10 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	public Optimizer(Problem pb, TypeOptimization opt, Optimizable clb, Optimizable cub) {
 		this.problem = pb;
 		Kit.control(opt != null && clb != null && cub != null);
-		this.minimization = opt == TypeOptimization.MINIMIZE;
+		this.minimization = opt == MINIMIZE;
 		this.clb = clb;
 		this.cub = cub;
-		this.ctr = opt == TypeOptimization.MINIMIZE ? cub : clb; // may be null for some basic cases
+		this.ctr = opt == MINIMIZE ? cub : clb; // the leading constraint (used at some places in other classes)
 		this.minBound = clb.limit();
 		this.maxBound = cub.limit();
 	}
@@ -98,11 +100,7 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	 */
 	public final long value() {
 		assert Variable.areAllFixed(problem.variables) && clb.objectiveValue() == cub.objectiveValue();
-		// if (ctr != null)
 		return cub.objectiveValue();
-		// if (problem.solver.propagation instanceof LowerBoundCapability)
-		// return ((LowerBoundCapability) problem.solver.propagation).getLowerBound();
-		// return ((SolverLocal) problem.solver).nMinViolatedCtrs;
 	}
 
 	protected abstract void shiftLimitWhenSuccess();
@@ -110,42 +108,52 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	protected abstract void shiftLimitWhenFailure();
 
 	public void afterRun() {
-		Kit.control(problem.head.control.general.framework == TypeFramework.COP);
+		Kit.control(problem.head.control.general.framework == COP);
 		if (problem.solver.solManager.lastSolutionRun == problem.solver.restarter.numRun) { // a better solution has been found during the last run
-			if (minimization)
+			if (minimization) {
 				maxBound = problem.solver.solManager.bestBound - 1;
-			else
+				cub.limit(maxBound);
+			} else {
 				minBound = problem.solver.solManager.bestBound + 1;
+				clb.limit(minBound);
+			}
 			possiblyUpdateLocalBounds();
 			Kit.control(minBound - 1 <= maxBound || problem.head.control.optimization.ub != Long.MAX_VALUE, () -> " minB=" + minBound + " maxB=" + maxBound);
 			possiblyUpdateSharedBounds();
 			if (minBound > maxBound)
-				problem.solver.stopping = EStopping.FULL_EXPLORATION;
+				problem.solver.stopping = FULL_EXPLORATION;
 			else
 				shiftLimitWhenSuccess();
-		} else if (problem.solver.stopping == EStopping.FULL_EXPLORATION) { // last run leads to no new solution
-			if (minimization)
+		} else if (problem.solver.stopping == FULL_EXPLORATION) { // last run leads to no new solution
+			boolean clb_changed = clb.limit() != minBound, cub_changed = cub.limit() != maxBound;
+			Kit.control(!clb_changed || !cub_changed);
+			if (!clb_changed && !cub_changed) { // classical mode
+				if (minimization) {
+					minBound = cub.limit() + 1;
+					clb.limit(minBound);
+				} else {
+					maxBound = clb.limit() - 1;
+					cub.limit(maxBound);
+				}
+			} else if (cub_changed) { // aggressive mode (the upper bound was reduced)
 				minBound = cub.limit() + 1;
-			else
+				clb.limit(minBound);
+				cub.limit(maxBound);
+			} else { // aggressive mode (the lower bound was reduced)
 				maxBound = clb.limit() - 1;
-			Kit.log.finer("\n" + Output.COMMENT_PREFIX + "New Bounds: " + stringBounds());
-			if (minBound <= maxBound) {
+				cub.limit(maxBound);
+				clb.limit(minBound);
+			}
+			if (minBound <= maxBound) { // we continue after resetting
 				problem.solver.stopping = null;
 				Kit.control(problem.stuff.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
 				problem.solver.restarter.forceRootPropagation = true;
 				((SolverBacktrack) problem.solver).restoreProblem();
+				if (((SolverBacktrack) problem.solver).nogoodRecorder != null)
+					((SolverBacktrack) problem.solver).nogoodRecorder.reset();
 				shiftLimitWhenFailure();
 			}
-			if (((SolverBacktrack) problem.solver).nogoodRecorder != null)
-				((SolverBacktrack) problem.solver).nogoodRecorder.reset();
 		}
-	}
-
-	protected void shiftLimit(long offset) {
-		Kit.control(0 <= offset && minBound + offset <= maxBound, () -> "offset " + offset + " minBound " + minBound + " maxBound " + maxBound);
-		long newLimit = minimization ? maxBound - offset : minBound + offset;
-		Kit.log.finer(Output.COMMENT_PREFIX + "New Limit: " + newLimit + "\n");
-		ctr.limit(newLimit);
 	}
 
 	public final String stringBounds() {
@@ -154,14 +162,14 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 
 	@Override
 	public String toString() {
-		return (minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName() + " " + ctr.toString();
+		return minimization ? MINIMIZE.shortName() + " " + cub : MAXIMIZE.shortName() + " " + clb.toString();
 	}
 
 	/**********************************************************************************************
 	 * Subclasses
 	 *********************************************************************************************/
 
-	// TODO problem when incremental with STR2 and CT for Increasing and Dichotomic
+	// TODO problem when incremental is used with STR2 and CT for Increasing and Dichotomic
 	// It seems that SVal is not correctly updated
 
 	public static final class OptimizerDecreasing extends Optimizer {
@@ -176,10 +184,7 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 
 		@Override
 		protected void shiftLimitWhenSuccess() {
-			if (minimization)
-				cub.limit(maxBound);
-			else
-				clb.limit(minBound);
+			// nothing to do
 		}
 
 		@Override
@@ -200,9 +205,9 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 		protected void shiftLimitWhenSuccess() {
 			if (first) { // we now attempt to find optimality by increasingly updating the bounds (if minimization)
 				if (minimization)
-					cub.limit(minBound); // so limits are the same for clb and cub
+					cub.limit(minBound); // so limits are now the same for clb and cub
 				else
-					clb.limit(maxBound);
+					clb.limit(maxBound); // so limits are now the same for clb and cub
 				first = false;
 			} else
 				throw new AssertionError("should never be called again");
@@ -210,19 +215,16 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 
 		@Override
 		protected void shiftLimitWhenFailure() {
-			if (minimization) {
-				clb.limit(minBound);
-				cub.limit(minBound);
-			} else {
-				clb.limit(maxBound);
-				cub.limit(maxBound);
-			}
+			if (minimization)
+				cub.limit(minBound); // we keep same limits for clb and cub
+			else
+				clb.limit(maxBound); // we keep same limits for clb and cub
 		}
 	}
 
 	// java ace /home/lecoutre/instances/XCSP18v2/allInstances/Fapp/Fapp-m2s/Fapp-m2s-01-0200_c18.xml.lzma -os=dichotomic -positive=str2 PROBLEM
 	// but STR1 ok
-	// if decremental set to false in STRoptimized, STR2 ok (but not CT that need decremental); why?
+	// If decremental set to false in STRoptimized, STR2 ok (but not CT that need decremental); why? // TODO
 	public static final class OptimizerDichotomic extends Optimizer {
 
 		public OptimizerDichotomic(Problem pb, TypeOptimization opt, Optimizable clb, Optimizable cub) {
@@ -231,12 +233,20 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 
 		@Override
 		protected void shiftLimitWhenSuccess() {
-			shiftLimit((maxBound - minBound) / 2);
+			long offset = (maxBound - minBound) / 2;
+			if (minimization)
+				cub.limit(maxBound - offset);
+			else
+				clb.limit(minBound + offset);
 		}
 
 		@Override
 		protected void shiftLimitWhenFailure() {
-			shiftLimit((maxBound - minBound) / 2);
+			long offset = (maxBound - minBound) / 2;
+			if (minimization)
+				cub.limit(maxBound - offset);
+			else
+				clb.limit(minBound + offset);
 		}
 	}
 

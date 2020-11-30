@@ -100,7 +100,7 @@ public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilter
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			control(problem.solver.depth() == 0);
+			control(problem.solver.depth() == 0, () -> "depth: " + problem.solver.depth());
 			if (x.dom.removeValuesLT(limit) == false)
 				return false;
 			entailedLevel = 0;

@@ -39,6 +39,15 @@ public final class DistinctVectors2 extends CtrGlobal implements TagUnsymmetric,
 		return false;
 	}
 
+	private class ManagerMultiOccurrences {
+		int[] post1, post2;
+
+		ManagerMultiOccurrences() {
+			post1 = IntStream.range(0, list1.length).map(i -> Utilities.indexOf(list1[i], scp)).toArray();
+			post2 = IntStream.range(0, list2.length).map(i -> Utilities.indexOf(list2[i], scp)).toArray();
+		}
+	}
+
 	private Variable[] list1, list2;
 
 	/**
@@ -58,15 +67,6 @@ public final class DistinctVectors2 extends CtrGlobal implements TagUnsymmetric,
 		Kit.control(sentinel1 != -1 && sentinel2 != -1, () -> "these particular cases not implemented yet");
 		this.mm = scp.length != list1.length + list2.length ? new ManagerMultiOccurrences() : null;
 
-	}
-
-	private class ManagerMultiOccurrences {
-		int[] post1, post2;
-
-		ManagerMultiOccurrences() {
-			post1 = IntStream.range(0, list1.length).map(i -> Utilities.indexOf(list1[i], scp)).toArray();
-			post2 = IntStream.range(0, list2.length).map(i -> Utilities.indexOf(list2[i], scp)).toArray();
-		}
 	}
 
 	@Override

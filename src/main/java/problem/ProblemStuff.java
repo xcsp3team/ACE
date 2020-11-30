@@ -504,7 +504,7 @@ public final class ProblemStuff {
 		m.put("way", (problem.optimizer.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName());
 		Kit.control(problem.optimizer.ctr != null);
 		m.put("type", problem.optimizer.ctr.getClass().getSimpleName());
-		m.put("bounds", (problem.optimizer.ctr.minComputableObjectiveValue() + ".." + problem.optimizer.ctr.maxComputableObjectiveValue()));
+		m.put("bounds", (problem.optimizer.clb.limit() + ".." + problem.optimizer.cub.limit()));
 		return m;
 	}
 

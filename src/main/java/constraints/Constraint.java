@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -872,6 +873,10 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	/**********************************************************************************************
 	 * Control and display
 	 *********************************************************************************************/
+
+	public void control(boolean conditionToBeRespected, Supplier<String> message) {
+		Kit.control(conditionToBeRespected, message);
+	}
 
 	public void control(boolean conditionToBeRespected, String message) {
 		Kit.control(conditionToBeRespected, () -> message);
