@@ -34,7 +34,6 @@ import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingUnsystematic;
 import problem.Problem;
-import problem.Symbolic;
 import solver.backtrack.SolverBacktrack;
 import utility.Kit;
 import utility.Reflector;
@@ -97,8 +96,6 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 		 */
 		public VariableSymbolic(Problem problem, String name, String[] symbols) {
 			super(problem, name);
-			if (problem.symbolic == null)
-				problem.symbolic = new Symbolic();
 			int[] values = problem.symbolic.manageSymbols(symbols); // values associated with symbols
 			this.dom = new DomainSymbols(this, values, symbols);
 		}

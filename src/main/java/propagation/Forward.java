@@ -11,6 +11,7 @@ package propagation;
 import solver.Solver;
 import solver.backtrack.SolverBacktrack;
 import utility.Enums.EBranching;
+import utility.Kit;
 import utility.Reflector;
 import variables.Variable;
 
@@ -42,5 +43,35 @@ public abstract class Forward extends Propagation {
 		assert !x.assigned() && queue.size() == 0 && x.dom.size() > 0;
 		queue.add(x);
 		return propagate();
+	}
+
+	/**
+	 * This class implements the <i>forward checking (mode 0) </i> technique. This mode corresponds to the <i>nFC2 </i> algorithm of: <br>
+	 * [Bessiere Meseguer Freuder Larossa 99, On forward checking for non-binary constraint satisfaction].
+	 */
+	public static final class FC extends Forward {
+		public FC(Solver solver) {
+			super(solver);
+			Kit.control(auxiliaryQueues.length == 0, () -> "For FC, we have to just use one queue");
+		}
+
+		@Override
+		public boolean runInitially() {
+			return true; // nothing to do at preprocessing
+		}
+
+		@Override
+		public boolean runAfterAssignment(Variable x) {
+			assert x.assigned() && queue.isEmpty();
+			queue.add(x);
+			boolean consistent = pickAndFilter();
+			queue.clear(); // we do not consider the rest of propagation (because this is FC)
+			return consistent;
+		}
+
+		@Override
+		public boolean runAfterRefutation(Variable x) {
+			return true; // nothing to do at refutations
+		}
 	}
 }

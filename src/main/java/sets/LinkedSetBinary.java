@@ -14,8 +14,6 @@ public class LinkedSetBinary implements LinkedSet {
 
 	private static final long[] binaryEmpty = { 0 }, binaryFor0 = { 1 }, binaryFor1 = { 2 }, binaryFor01 = { 3 };
 
-	private static final int[] domainEmpty = {}, domainFor0 = { 0 }, domainFor1 = { 1 }, domainFor01 = { 0, 1 };
-
 	/**
 	 * The size of the set number of present elements in the list.
 	 */
@@ -147,11 +145,9 @@ public class LinkedSetBinary implements LinkedSet {
 	public void restoreBefore(int level) {
 		if (size == 2 || removedlevels[lastRemoved] < level)
 			return;
-		// if (pseudoProblem != null) pseudoProblem.updateMinBoundAfterAdding(variable, lastAbsent);
 		restoreLastDropped();
 		if (size == 2 || removedlevels[lastRemoved] < level)
 			return;
-		// if (pseudoProblem != null) pseudoProblem.updateMinBoundAfterAdding(variable, lastAbsent);
 		restoreLastDropped();
 	}
 
@@ -162,7 +158,7 @@ public class LinkedSetBinary implements LinkedSet {
 	}
 
 	@Override
-	public int indexAtMark() {
+	public int getMark() {
 		return mark;
 	}
 

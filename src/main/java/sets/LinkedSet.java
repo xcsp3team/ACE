@@ -179,7 +179,7 @@ public interface LinkedSet {
 	 * 
 	 * @return the element (index) identified by the current mark
 	 */
-	int indexAtMark();
+	int getMark();
 
 	default void execute(Consumer<Integer> consumer, boolean reverse) {
 		if (reverse)

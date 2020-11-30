@@ -339,7 +339,7 @@ public class Restarter implements ObserverRuns {
 			Kit.control(solver instanceof SolverBacktrack, () -> "For local branching, only a SolverBacktrack can be used.");
 			Kit.control(solver.problem.optimizer instanceof OptimizerDecreasing, () -> "For local branching, only OptimizationPilotDecreasing can be used.");
 
-			this.localBranchingConstraints = solver.problem.symbolic != null
+			this.localBranchingConstraints = solver.problem.symbolic.mapOfSymbols.size() > 0
 					? Reflector.buildObject(LBAtLeastEqual.class.getSimpleName(), LocalBranchingConstraint.class, solver.problem)
 					: Reflector.buildObject(solver.head.control.localBranching.neighborhood, LocalBranchingConstraint.class, solver.problem);
 			this.currDistance = solver.head.control.localBranching.baseDistance;

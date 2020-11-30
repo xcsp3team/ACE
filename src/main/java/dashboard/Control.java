@@ -52,9 +52,9 @@ import interfaces.Tags.TagInvisible;
 import main.Head;
 import main.HeadExtraction;
 import propagation.GAC;
-import propagation.QueueForSAC3.CellIterator;
 import propagation.Reviser;
 import propagation.Reviser.Reviser3;
+import propagation.SAC.QueueForSAC3.CellIterator;
 import solver.Restarter.RestarterLB.LocalBranchingConstraint.LBAtMostDistanceSum;
 import solver.Restarter.RestarterLNS.HeuristicFreezing.Rand;
 import solver.SolutionManager;
@@ -177,7 +177,7 @@ public class Control {
 		public TypeFramework framework = addE("framework", "f", TypeFramework.CSP, s_framework);
 		public long nSearchedSolutions = addL("nSearchedSolutions", "s", framework == TypeFramework.CSP ? 1 : PLUS_INFINITY, s_s);
 		public final long timeout = addL("timeout", "t", PLUS_INFINITY, s_timeout);
-		public final int verbose = addI("verbose", "v", 0, s_verbose);
+		public int verbose = addI("verbose", "v", 0, s_verbose);
 		public final String trace = addS("trace", "trace", EMPTY_STRING, s_trace);
 		public final long seed = addL("seed", "seed", 0, s_seed);
 		public final boolean makeExceptionsVisible = addB("makeExceptionsVisible", "ev", false, s_ev);
@@ -631,6 +631,8 @@ public class Control {
 			"");
 
 	private Control() {
+		if (general.trace.length() > 0 && general.verbose < 1)
+			general.verbose = 1;
 		int verbose = general.verbose;
 		Kit.control(0 <= verbose && verbose <= 3, () -> "Verbose must be in 0..3");
 		Kit.log.setLevel(verbose == 0 ? Level.CONFIG : verbose == 1 ? Level.FINE : verbose == 2 ? Level.FINER : Level.FINEST);
@@ -653,6 +655,7 @@ public class Control {
 			Kit.useColors = false;
 		if (general.framework == TypeFramework.MAXCSP)
 			optimization.lb = 0L;
+
 	}
 
 	/**********************************************************************************************

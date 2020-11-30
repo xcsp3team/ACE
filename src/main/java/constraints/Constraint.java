@@ -539,7 +539,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	public final void reset() {
-		control(futvars.free() == 0);
+		control(futvars.isFull());
 		nEffectiveFilterings = 0;
 		timestamp = 0;
 	}

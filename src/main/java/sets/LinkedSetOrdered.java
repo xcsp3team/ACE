@@ -243,7 +243,7 @@ public class LinkedSetOrdered implements LinkedSet {
 	}
 
 	@Override
-	public int indexAtMark() {
+	public int getMark() {
 		return mark;
 	}
 

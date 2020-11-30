@@ -305,6 +305,61 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	// ************************************************************************
+	// ***** Class Symbolic
+	// ************************************************************************
+
+	public static final class Symbolic {
+
+		public static String[] replaceSymbols(Symbolic symbolic, String[] t) {
+			return symbolic == null ? t : symbolic.replaceSymbols(t);
+		}
+
+		public final Map<String, Integer> mapOfSymbols = new HashMap<>();
+
+		public final Map<Constraint, String[][]> mapOfTuples = new HashMap<>();
+
+		public int[] manageSymbols(String[] symbols) {
+			int[] t = new int[symbols.length];
+			for (int i = 0; i < t.length; i++) {
+				assert !symbols[i].equals(Constants.STAR_SYMBOL);
+				t[i] = mapOfSymbols.computeIfAbsent(symbols[i], k -> mapOfSymbols.size());
+			}
+			return t;
+		}
+
+		public String[] replaceSymbols(String[] tokens) {
+			String[] t = new String[tokens.length];
+			for (int i = 0; i < t.length; i++) {
+				Integer v = mapOfSymbols.get(tokens[i]);
+				t[i] = v != null ? v.toString() : tokens[i];
+			}
+			return t;
+		}
+
+		public int[][] replaceSymbols(String[][] tuples) {
+			int[][] m = new int[tuples.length][];
+			for (int i = 0; i < m.length; i++) {
+				m[i] = new int[tuples[i].length];
+				for (int j = 0; j < m[i].length; j++) {
+					Integer v = mapOfSymbols.get(tuples[i][j]);
+					m[i][j] = v != null ? v : tuples[i][j].equals(Constants.STAR_SYMBOL) ? Constants.STAR : Integer.parseInt(tuples[i][j]);
+				}
+			}
+			return m;
+		}
+
+		public void store(Constraint c, String[][] m) {
+			mapOfTuples.put(c, m);
+		}
+
+		// public String replaceSymbols(String s) {
+		// for (Entry<String, Integer> entry : mapOfSymbols.entrySet())
+		// s = s.replaceAll(entry.getKey(), entry.getValue() + "");
+		// return s;
+		// }
+	}
+
+	// ************************************************************************
 	// ***** Fields
 	// ************************************************************************
 
@@ -346,7 +401,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	/**
 	 * The object used to manage symbolic values. Basically, it transforms symbols into integers, but this is not visible for the user (modeler).
 	 */
-	public Symbolic symbolic;
+	public Symbolic symbolic = new Symbolic();
 
 	public int nValuesRemoved; // sum over all variable domains
 
@@ -372,45 +427,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return s.matches("XCSP[23]-.*") ? s.substring(6) : s;
 		// : s.startsWith(ProblemFile.class.getSimpleName()) ? s.substring(ProblemFile.class.getSimpleName().length() + 1) : s;
 	}
-
-	/**
-	 * This method can be used for modifying the value of a parameter. This is an advanced tool for handling series of instances.
-	 */
-	// public final void modifyAskedParameter(int index, Object value) {
-	// parameters.set(index, new SimpleEntry<>(value, parameters.get(index).getValue()));
-	// }
-
-	// public int askInt(String message, Predicate<Integer> control, IntFunction<String> format, boolean incrementWhenSeries) {
-	// Integer v = Utilities.toInteger(ask(message));
-	// Utilities.control(v != null, "Value " + v + " for " + message + " is not valid (not an integer)");
-	// v += (incrementWhenSeries ? rs.instanceNumber : 0);
-	// control(control == null || control.test(v), "Value " + v + " for " + message + " does not respect the control " + control);
-	// return (Integer) addParameter(v, format == null ? null : format.apply(v));
-	// }
-
-	// public int askInt(String message, Predicate<Integer> control, String format, boolean incrementWhenSeries) {
-	// return askInt(message, control, v -> format, incrementWhenSeries);
-	// }
-	//
-	// public int askInt(String message, Predicate<Integer> control, boolean incrementWhenSeries) {
-	// return askInt(message, control, (IntFunction<String>) null, incrementWhenSeries);
-	// }
-	//
-	// public int askInt(String message, String format, boolean incrementWhenSeries) {
-	// return askInt(message, null, format, incrementWhenSeries);
-	// }
-	//
-	// public int askInt(String message, boolean incrementWhenSeries) {
-	// return askInt(message, null, (IntFunction<String>) null, incrementWhenSeries);
-	// }
-
-	// public final Var[][] project3(Var[][][] m) {
-	// return IntStream.range(0, m[0][0].length).mapToObj(i -> api.select(m, (w, g, p) -> p == i)).toArray(Var[][]::new);
-	// }
-
-	// public final void removeVariable(Variable var) {
-	// collectedVariables.remove(var); collectedConstraints.remove(var.ctrs);
-	// storeVariablesToArray(); storeConstraintsToArray(); }
 
 	/**
 	 * 

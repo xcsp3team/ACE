@@ -178,7 +178,7 @@ public final class DomainInfinite implements Domain {
 	}
 
 	@Override
-	public int indexAtMark() {
+	public int getMark() {
 		throw new AssertionError();
 	}
 

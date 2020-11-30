@@ -8,7 +8,6 @@
  */
 package sets;
 
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -44,6 +43,7 @@ public class SetDense { // implements Iterable<Integer> {
 	// }
 
 	public static final int INCREASE_RATIO = 2;
+
 	public static final int UNINITIALIZED = -2;
 
 	public int[] dense;
@@ -60,22 +60,16 @@ public class SetDense { // implements Iterable<Integer> {
 
 	public SetDense(int capacity, boolean initiallyFull) {
 		this(IntStream.range(0, capacity).toArray(), initiallyFull);
-		// we build initially a canonical dense set, i.e. a set with values 0, 1, 2 ... (even if this is useful only if initialyFull is true
-		// or a sparse set is built)
+		// we build initially a canonical dense set, i.e. a set with values 0, 1, 2 ...
+		// (even if this is useful only if initialyFull is true or a sparse set is built)
 	}
 
 	public SetDense(int capacity) {
 		this(capacity, false);
 	}
 
-	public final int first() {
-		assert limit >= 0;
-		return dense[0];
-	}
-
-	public final int last() {
-		assert limit >= 0;
-		return dense[limit];
+	public void increaseCapacity() {
+		dense = IntStream.range(0, capacity() * INCREASE_RATIO).map(i -> i < dense.length ? dense[i] : i).toArray();
 	}
 
 	public final int capacity() {
@@ -86,20 +80,25 @@ public class SetDense { // implements Iterable<Integer> {
 		return limit + 1;
 	}
 
-	public final int free() {
-		return dense.length - limit - 1;
-	}
-
-	public final int sizeSuchThat(Predicate<Integer> p) {
-		return (int) IntStream.rangeClosed(0, limit).filter(i -> p.test(dense[i])).count();
-	}
-
 	public final boolean isEmpty() {
 		return limit == -1;
 	}
 
 	public final boolean isFull() {
 		return limit == dense.length - 1;
+	}
+
+	public void clear() {
+		limit = -1;
+	}
+
+	public final int first() {
+		assert limit >= 0;
+		return dense[0];
+	}
+
+	public final int last() {
+		return dense[limit];
 	}
 
 	public final void setMark() {
@@ -113,14 +112,6 @@ public class SetDense { // implements Iterable<Integer> {
 		mark = UNINITIALIZED;
 	}
 
-	public void increaseCapacity() {
-		dense = IntStream.range(0, capacity() * INCREASE_RATIO).map(i -> i < dense.length ? dense[i] : i).toArray();
-	}
-
-	public void clear() {
-		limit = -1;
-	}
-
 	/**
 	 * Be careful: for a dense set, this is not O(1)
 	 * 
@@ -128,7 +119,7 @@ public class SetDense { // implements Iterable<Integer> {
 	 * @return
 	 */
 	public boolean isPresent(int e) {
-		for (int i = 0; i <= limit; i++)
+		for (int i = limit; i >= 0; i--)
 			if (dense[i] == e)
 				return true;
 		return false;
@@ -160,13 +151,6 @@ public class SetDense { // implements Iterable<Integer> {
 		clear();
 		for (int i = 0; i < nb; i++)
 			add(elements[i]);
-	}
-
-	public final void resetTo(LinkedSet set) {
-		assert set.size() <= capacity();
-		clear();
-		for (int e = set.first(); e != -1; e = set.next(e))
-			add(e);
 	}
 
 	public void removeAtPosition(int i) {
@@ -203,41 +187,4 @@ public class SetDense { // implements Iterable<Integer> {
 		return "dense={" + IntStream.range(0, size()).mapToObj(i -> dense[i] + "").collect(Collectors.joining(",")) + "}";
 	}
 
-	@SuppressWarnings("unused")
-	public static void main(String[] args) {
-		int mode = Integer.parseInt(args[0]), nValues = Integer.parseInt(args[1]), nIterations = Integer.parseInt(args[2]);
-		SetDense set = new SetDense(nValues, true);
-		if (mode == 1) {
-			for (int cnt = 0; cnt < nIterations; cnt++) {
-				for (int i = set.limit; i >= 0; i--) {
-					int x = set.dense[i];
-					x++;
-					// set.dense[0] = x;
-				}
-			}
-		}
-		if (mode == 2) {
-			int[] dense = set.dense;
-			for (int cnt = 0; cnt < nIterations; cnt++) {
-				for (int i = set.limit; i >= 0; i--) {
-					int x = dense[i];
-					x++;
-					// dense[0] = x;
-				}
-			}
-		}
-		// if (mode == 3) {
-		// for (int cnt = 0; cnt < nIterations; cnt++) {
-		// for (int v : set) {
-		// int x = v;
-		// x++;
-		// // set.dense[0] = x;
-		// }
-		// }
-		// // for (int v1 : set)
-		// // for (int v2 : set)
-		// // ;
-		// }
-		System.out.println(set.dense[0] + " " + set.dense[1]);
-	}
 }
