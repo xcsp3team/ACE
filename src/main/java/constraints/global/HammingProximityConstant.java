@@ -25,36 +25,21 @@ import variables.Variable;
 
 public abstract class HammingProximityConstant extends CtrGlobal implements TagGACGuaranteed {
 
-	protected int[] target;
+	public int[] target;
 
-	protected int k;
+	public int k;
 
 	public HammingProximityConstant(Problem pb, Variable[] list, int[] target, int k) {
 		super(pb, list);
 		this.target = target;
 		this.k = k;
 		defineKey(Kit.join(target), k);
-		Kit.control(0 < k && k < list.length && list.length == target.length);
+		control(0 < k && k < list.length && list.length == target.length);
 	}
 
 	@Override
 	public int[] defineSymmetryMatching() {
 		return IntStream.range(0, target.length).map(i -> Utilities.indexOf(target[i], target) + 1).toArray();
-	}
-
-	/**
-	 * Use only in a dynamic constraint context (e.g. local branching) when the global consistency of the solver's data is handled.
-	 */
-	public void setTarget(int[] target) {
-		this.target = target;
-		Kit.control(this.target.length == target.length);
-	}
-
-	/**
-	 * Use only in a dynamic constraint context (e.g. local branching) when the global consistency of the solver's data is handled.
-	 */
-	public void setK(int k) {
-		this.k = k;
 	}
 
 	// ************************************************************************

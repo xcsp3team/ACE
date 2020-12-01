@@ -177,7 +177,7 @@ public class TestAllSolutions {
 		public void model() {
 			Var[] x = array("x", size(n), dom(rangeClosed(1, n)));
 			allDifferent(x);
-			((Problem) imp()).tupleProximityGE(x, vals(rangeClosed(1, n)), 6, true);
+			((Problem) imp()).tupleProximityGE(x, vals(rangeClosed(1, n)), 6);
 		}
 	}
 

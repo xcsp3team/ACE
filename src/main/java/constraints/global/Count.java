@@ -104,7 +104,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 			@Override
 			public boolean runPropagator(Variable x) {
 				if (!x.dom.onlyContainsValue(value))
-					return true;
+					return true; // because we only filter when the recently filtered variable x has been assigned to the value
 				int cnt = 0;
 				for (Variable y : scp)
 					if (y.dom.onlyContainsValue(value) && ++cnt > k)
@@ -113,11 +113,8 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 					for (int i = futvars.limit; i >= 0; i--) {
 						Domain dom = scp[futvars.dense[i]].dom;
 						if (dom.size() > 1)
-							dom.removeValueIfPresent(value);
+							dom.removeValueIfPresent(value); // note that inconsistency is no more possible
 					}
-					// for (Variable y : scp)
-					// if (y.dom.size() > 1)
-					// y.dom.removeValueSafelyIfPresent(value);
 				}
 				return true;
 			}
@@ -266,7 +263,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 					// remove value from all non singleton domains
 					for (int i = futvars.limit; i >= 0; i--) {
 						Domain dom = scp[futvars.dense[i]].dom;
-						if (dom.size() > 1) // && dom.isPresentValue(value))
+						if (dom.size() > 1)
 							dom.removeValueIfPresent(value);
 					}
 					return true;

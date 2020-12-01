@@ -484,14 +484,14 @@ public class Restarter implements ObserverRuns {
 					super(problem);
 					int[] tuple = Stream.of(decisionVars).mapToInt(x -> x.dom.firstValue()).toArray();
 					c = (Constraint) ((CtrAlone) problem.tupleProximityGE(decisionVars, tuple,
-							decisionVars.length - problem.head.control.localBranching.baseDistance, true)).ctr;
+							decisionVars.length - problem.head.control.localBranching.baseDistance)).ctr;
 					c.ignored = true;
 				}
 
 				@Override
 				public void modifyConstraint(int[] decisionVals, int newDist) {
-					((HammingProximityConstantGE) c).setTarget(decisionVals);
-					((HammingProximityConstantGE) c).setK(newDist);
+					((HammingProximityConstantGE) c).target = decisionVals;
+					((HammingProximityConstantGE) c).k = newDist;
 				}
 			}
 
@@ -506,8 +506,8 @@ public class Restarter implements ObserverRuns {
 
 				@Override
 				public void modifyConstraint(int[] decisionVals, int newDist) {
-					((HammingProximityConstantSumLE) c).setTarget(decisionVals);
-					((HammingProximityConstantSumLE) c).setK(newDist);
+					((HammingProximityConstantSumLE) c).target = decisionVals;
+					((HammingProximityConstantSumLE) c).k = newDist;
 				}
 			}
 		}

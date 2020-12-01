@@ -2190,31 +2190,31 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	/**
 	 * Builds a constraint that holds when at least k variables of the scope take the corresponding value in the specified tuple.
 	 */
-	public CtrEntity tupleProximityGE(IVar[] scope, int[] tuple, int k, boolean noModidictaion) {
+	public CtrEntity tupleProximityGE(IVar[] scope, int[] tuple, int k) {
 		control(scope.length != 0);
-		if (noModidictaion)
-			return addCtr(new HammingProximityConstantGE(this, (Variable[]) scope, tuple, k));
-		List<IVar> newScope = new ArrayList<>();
-		List<Integer> newTuple = new ArrayList<>();
-		int newK = k;
-		for (int i = 0; i < scope.length; i++)
-			if (((Variable) scope[i]).dom.isPresentValue(tuple[i]))
-				if (((Variable) scope[i]).dom.size() > 1) {
-					newScope.add(scope[i]);
-					newTuple.add(tuple[i]);
-				} else
-					newK--;
-		if (newK <= 0)
-			return ctrEntities.new CtrAloneDummy("Removed constraint due to newk <= 0");
-		if (newK == newScope.size())
-			return forall(range(scope.length), i -> equal(scope[i], tuple[i]));
-		control(newK < newScope.size(), "Instance is UNSAT, constraint with scope " + Kit.join(scope) + " cannot have more than " + k
-				+ " variables equal to their corresponding value in " + Kit.join(tuple));
-		return addCtr(new HammingProximityConstantGE(this, newScope.toArray(new Variable[newScope.size()]), Kit.intArray(newTuple), newK));
+		// if (noModidictaion)
+		return addCtr(new HammingProximityConstantGE(this, translate(scope), tuple, k));
+		// List<IVar> newScope = new ArrayList<>();
+		// List<Integer> newTuple = new ArrayList<>();
+		// int newK = k;
+		// for (int i = 0; i < scope.length; i++)
+		// if (((Variable) scope[i]).dom.isPresentValue(tuple[i]))
+		// if (((Variable) scope[i]).dom.size() > 1) {
+		// newScope.add(scope[i]);
+		// newTuple.add(tuple[i]);
+		// } else
+		// newK--;
+		// if (newK <= 0)
+		// return ctrEntities.new CtrAloneDummy("Removed constraint due to newk <= 0");
+		// if (newK == newScope.size())
+		// return forall(range(scope.length), i -> equal(scope[i], tuple[i]));
+		// control(newK < newScope.size(), "Instance is UNSAT, constraint with scope " + Kit.join(scope) + " cannot have more than " + k
+		// + " variables equal to their corresponding value in " + Kit.join(tuple));
+		// return addCtr(new HammingProximityConstantGE(this, newScope.toArray(new Variable[newScope.size()]), Kit.intArray(newTuple), newK));
 	}
 
-	public CtrEntity tupleProximityDistanceSum(IVar[] scope, int[] tuple, int maxDist) {
-		return addCtr(new HammingProximityConstantSumLE(this, translate(scope), tuple, maxDist));
+	public CtrEntity tupleProximityDistanceSum(IVar[] scope, int[] tuple, int k) {
+		return addCtr(new HammingProximityConstantSumLE(this, translate(scope), tuple, k));
 	}
 
 	// ************************************************************************
