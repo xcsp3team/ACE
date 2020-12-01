@@ -70,7 +70,7 @@ public class LinkedSetBinary implements LinkedSet {
 	}
 
 	@Override
-	public final boolean isPresent(int a) {
+	public final boolean present(int a) {
 		return removedlevels[a] == -1;
 	}
 
@@ -127,7 +127,7 @@ public class LinkedSetBinary implements LinkedSet {
 
 	@Override
 	public int reduceTo(int a, int level) {
-		assert isPresent(a) && level >= 0;
+		assert present(a) && level >= 0;
 		if (size == 1)
 			return 0;
 		remove((a == 0 ? 1 : 0), level);

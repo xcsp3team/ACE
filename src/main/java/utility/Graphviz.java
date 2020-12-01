@@ -116,7 +116,7 @@ public class Graphviz {
 			} else
 				for (int a = 0; a < x.dom.initSize(); a++) {
 					String node = "  " + x + "_" + a + " [label=" + a + ",style=filled,fillcolor=";
-					if (x.dom.isPresent(a))
+					if (x.dom.present(a))
 						out.println(node + (x.assigned() ? GREEN : "white") + "] ;");
 					else if (displayAll)
 						out.println(node + (x.dom.removedLevelOf(a) == 0 ? RED : "orange") + "] ;");
@@ -195,7 +195,7 @@ public class Graphviz {
 			out.println("color=" + GREY);
 			for (int a = 0; a < x.dom.initSize(); a++) {
 				String node = "  " + varName(pb, x) + "_" + a + " [label=" + a + ",style=filled,fillcolor=";
-				if (x.dom.isPresent(a))
+				if (x.dom.present(a))
 					out.println(node + (x.assigned() ? GREEN : "white") + "] ;");
 				else if (displayAll) {
 					// out.println(node + (elements.getAbsentLevelOf(index) == 0 ? "red" : "red") + "] ;");
@@ -216,7 +216,7 @@ public class Graphviz {
 				for (int b = 0; b < y.dom.initSize(); b++) {
 					if (c.seekFirstSupportWith(0, a, 1, b)) {
 						String edge = "  " + varName(pb, x) + "_" + a + " -- " + varName(pb, y) + "_" + b;
-						if (x.dom.isPresent(a) && y.dom.isPresent(b))
+						if (x.dom.present(a) && y.dom.present(b))
 							out.println(edge + (pb.constraints.length < BLUES.length ? " [color=" + BLUES[cnt] + "]  " : "") + ";");
 						else if (displayAll)
 							out.println(edge + " [style=dotted]" + " ;");

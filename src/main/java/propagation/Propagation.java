@@ -124,7 +124,6 @@ public abstract class Propagation {
 			values[e] = value; // even if e is already present, the new value is recorded
 			return b;
 		}
-
 	}
 
 	public final void reset() {

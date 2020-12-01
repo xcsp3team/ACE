@@ -36,15 +36,15 @@ public abstract class DomainInteger extends LinkedSetOrderedWithBits implements 
 		if (this.size != d.size)
 			return false;
 		for (int a = first; a != -1; a = next(a))
-			if (!d.isPresent(a))
+			if (!d.present(a))
 				return false;
 		return true;
 	}
 
-	@Override
-	public int hashCode() {
-		return 0; // i.hashCode();
-	}
+	// @Override
+	// public int hashCode() {
+	// return 0; // i.hashCode();
+	// }
 
 	private Variable var;
 

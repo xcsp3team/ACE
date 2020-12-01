@@ -48,7 +48,7 @@ public final class AllDifferentPermutation extends AllDifferentAbstract
 		int[] dense = unfixedVars.dense;
 		for (int i = unfixedVars.limit; i >= 0; i--) {
 			Variable var = scp[dense[i]];
-			if (var != otherWatchedVariable && var.dom.isPresent(idx))
+			if (var != otherWatchedVariable && var.dom.present(idx))
 				return var;
 		}
 		return null;
@@ -85,7 +85,7 @@ public final class AllDifferentPermutation extends AllDifferentAbstract
 				for (int j = unfixedVars.limit; j >= 0; j--) {
 					Variable y = scp[dense[j]];
 					Domain dy = y.dom;
-					if (dy.isPresent(a)) {
+					if (dy.present(a)) {
 						if (!dy.remove(a))
 							return false;
 						if (dy.size() == 1) {
@@ -105,7 +105,7 @@ public final class AllDifferentPermutation extends AllDifferentAbstract
 		dense = unfixedIdxs.dense;
 		for (int i = unfixedIdxs.limit; i >= 0; i--) {
 			int a = dense[i];
-			if (!residues1[a].dom.isPresent(a)) {
+			if (!residues1[a].dom.present(a)) {
 				Variable x = findAnotherWatchedUnifxedVariable(a, residues2[a]);
 				if (x != null)
 					residues1[a] = x;
@@ -119,7 +119,7 @@ public final class AllDifferentPermutation extends AllDifferentAbstract
 			}
 			assert residues1[a].dom.size() > 1 : residues1[a] + " " + a + " " + residues1[a].dom.size();
 
-			if (!residues2[a].dom.isPresent(a)) {
+			if (!residues2[a].dom.present(a)) {
 				Variable x = findAnotherWatchedUnifxedVariable(a, residues1[a]);
 				if (x != null)
 					residues2[a] = x;

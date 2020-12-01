@@ -255,7 +255,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 						return cell;
 				}
 				for (Cell cell = head; cell != null; cell = cell.next) // first valid cell
-					if (cell.x.dom.isPresent(cell.a))
+					if (cell.x.dom.present(cell.a))
 						return cell;
 				return null;
 			}
@@ -270,7 +270,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 						return cell;
 				}
 				for (Cell cell = tail; cell != null; cell = cell.prev) // last valid cell
-					if (cell.x.dom.isPresent(cell.a))
+					if (cell.x.dom.present(cell.a))
 						return cell;
 				return null;
 			}
@@ -504,7 +504,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				nSingletonTests++;
 				if (x.dom.size() == 1)
 					nFoundSingletons++;
-				assert !x.assigned() && x.dom.isPresent(a) && queue.isEmpty();
+				assert !x.assigned() && x.dom.present(a) && queue.isEmpty();
 				solver.assign(x, a);
 				if (enforceArcConsistencyAfterAssignment(x)) {
 					if (solver.depth() == solver.problem.variables.length && stopSACWhenFoundSolution)
@@ -641,10 +641,10 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				currSelectedIdx = currSelectedVar.dom.first();
 			} else {
 				currSelectedVar = queueESAC.pick(lastFailedVar);
-				currSelectedIdx = lastFailedVar.dom.isPresent(lastFailedIdx) ? lastFailedIdx : lastFailedVar.dom.first();
+				currSelectedIdx = lastFailedVar.dom.present(lastFailedIdx) ? lastFailedIdx : lastFailedVar.dom.first();
 			}
 			lastFailedVar = null;
-			assert !currSelectedVar.assigned() && currSelectedVar.dom.isPresent(currSelectedIdx) && queue.isEmpty();
+			assert !currSelectedVar.assigned() && currSelectedVar.dom.present(currSelectedIdx) && queue.isEmpty();
 		}
 
 		protected boolean buildBranch() {

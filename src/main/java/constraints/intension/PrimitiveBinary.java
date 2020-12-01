@@ -715,7 +715,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 					return dx.fail();
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 					int va = dx.toVal(a);
-					if (rx[a] != UNITIALIZED && dy.isPresent(rx[a]))
+					if (rx[a] != UNITIALIZED && dy.present(rx[a]))
 						continue;
 					for (int b = dy.first(); b != -1; b = dy.next(b)) {
 						int res = va / dy.toVal(b);
@@ -731,7 +731,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 				}
 				extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
 					int vb = dy.toVal(b);
-					if (ry[b] != UNITIALIZED && dx.isPresent(ry[b]))
+					if (ry[b] != UNITIALIZED && dx.present(ry[b]))
 						continue;
 					for (int a = dx.first(); a != -1; a = dx.next(b)) {
 						int res = dx.toVal(a) / vb;
@@ -795,7 +795,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 			public boolean runPropagator(Variable dummy) {
 				int sizeBefore = dx.size();
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
-					if (rx[a] != UNITIALIZED && dy.isPresent(rx[a]))
+					if (rx[a] != UNITIALIZED && dy.present(rx[a]))
 						continue;
 					int va = dx.toVal(a);
 					if (dy.size() < k) {
@@ -877,7 +877,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
-					if (rx[a] != UNITIALIZED && dy.isPresent(rx[a]))
+					if (rx[a] != UNITIALIZED && dy.present(rx[a]))
 						continue;
 					int va = dx.toVal(a);
 					if (va == k)
@@ -904,7 +904,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 						return false;
 				}
 				extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
-					if (ry[b] != UNITIALIZED && dx.isPresent(ry[b]))
+					if (ry[b] != UNITIALIZED && dx.present(ry[b]))
 						continue;
 					int vb = dy.toVal(b);
 					int nMultiples = dx.lastValue() / vb;
@@ -974,7 +974,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 				// for x, if count == number of value done else iterate and remove not magic x values
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 					int va = dx.toVal(a);
-					if (rx[a] != UNITIALIZED && dy.isPresent(rx[a]))
+					if (rx[a] != UNITIALIZED && dy.present(rx[a]))
 						continue;
 					int nMultiples = dy.lastValue() / k;
 					if (dy.size() <= nMultiples) {
@@ -1029,15 +1029,15 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 				if (dx.size() == 1)
 					return dy.removeValuesModIn(dx, k);
-				if (watch1 == -1 || !dy.isPresent(watch1))
+				if (watch1 == -1 || !dy.present(watch1))
 					watch1 = findWatch(watch2);
 				if (watch1 == -1) {
 					// watch2 is the only remaining valid watch (we know that it is still valid)
-					assert watch2 != -1 && dy.isPresent(watch2);
+					assert watch2 != -1 && dy.present(watch2);
 					if (dx.removeValueIfPresent(dy.toVal(watch2) % k) == false)
 						return false;
 				} else {
-					if (watch2 == -1 || !dy.isPresent(watch2))
+					if (watch2 == -1 || !dy.present(watch2))
 						watch2 = findWatch(watch1);
 					if (watch2 == -1)
 						if (dx.removeValueIfPresent(dy.toVal(watch1) % k) == false)

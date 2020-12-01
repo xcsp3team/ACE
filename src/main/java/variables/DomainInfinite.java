@@ -77,7 +77,7 @@ public final class DomainInfinite implements Domain {
 	}
 
 	@Override
-	public boolean isPresent(int a) {
+	public boolean present(int a) {
 		return true; // assignedValue == null ? true : assignedValue == a;
 	}
 

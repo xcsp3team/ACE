@@ -293,7 +293,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 				boolean valid = true;
 				for (int j = sValSize - 1; j >= 0; j--) {
 					int num = sVal[j];
-					if (!variables[num].dom.isPresent(solution[num])) {
+					if (!variables[num].dom.present(solution[num])) {
 						valid = false;
 						break;
 					}
@@ -641,7 +641,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 						// Kit.log.info("at " + solver.getDepth() + " replay " + decisionVars[i] + "=" + decisonsIdxs[i]);
 						solver.assign(decisionVars[i], decisonsIdxs[i]);
 						for (Interval interval : known[solver.depth()])
-							if (interval.var.dom.isPresent(interval.idx))
+							if (interval.var.dom.present(interval.idx))
 								interval.var.dom.removeElementary(interval.idx);
 							else
 								assert interval.var.dom.removedLevelOf(interval.idx) == solver.depth();

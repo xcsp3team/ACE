@@ -258,7 +258,7 @@ public final class SmartTuple {
 			RestrictionSimple restriction = whichRestrictions[x];
 			if (restriction == null) {
 				int a = prefix[x];
-				if (a != STAR && !scp[x].dom.isPresent(a))
+				if (a != STAR && !scp[x].dom.present(a))
 					return false;
 			} else if (restriction.valTimeLocal != valTime && !restriction.isValid())
 				return false;
@@ -529,7 +529,7 @@ public final class SmartTuple {
 
 		@Override
 		public boolean isValid() {
-			return domx.isPresent(pivot);
+			return domx.present(pivot);
 		}
 
 		@Override
@@ -834,20 +834,20 @@ public final class SmartTuple {
 
 		@Override
 		public boolean isValidFor(int a) {
-			return domy.isPresent(a);
+			return domy.present(a);
 		}
 
 		@Override
 		public boolean isValid() {
 			valTimeLocal = valTime;
 			newResidue = false;
-			if (domx.isPresent(residue) && domy.isPresent(residue))
+			if (domx.present(residue) && domy.present(residue))
 				return true;
 			newResidue = true;
 			Domain domSmall = domx.size() < domy.size() ? domx : domy;
 			Domain domBig = domSmall == domx ? domy : domx;
 			for (int a = domSmall.first(); a != -1; a = domSmall.next(a))
-				if (domBig.isPresent(a)) {
+				if (domBig.present(a)) {
 					residue = a;
 					return true;
 				}
@@ -878,17 +878,17 @@ public final class SmartTuple {
 			Domain domBig = domSmall == domx ? domy : domx;
 			if (!scp[x].assigned() && !scp[y].assigned()) {
 				for (int a = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); a != -1; a = domSmall.next(a))
-					if (domBig.isPresent(a)) {
+					if (domBig.present(a)) {
 						supportlessx.remove(a);
 						supportlessy.remove(a);
 					}
 			} else if (!scp[x].assigned()) {
 				for (int a = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); a != -1; a = domSmall.next(a))
-					if (domBig.isPresent(a))
+					if (domBig.present(a))
 						supportlessx.remove(a);
 			} else if (!scp[y].assigned()) {
 				for (int a = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); a != -1; a = domSmall.next(a))
-					if (domBig.isPresent(a))
+					if (domBig.present(a))
 						supportlessy.remove(a);
 			}
 		}
@@ -897,13 +897,13 @@ public final class SmartTuple {
 			if (!scp[x].assigned())
 				for (int i = supportlessx.limit; i >= 0; i--) {
 					int a = supportlessx.dense[i];
-					if (domy.isPresent(a))
+					if (domy.present(a))
 						supportlessx.remove(a);
 				}
 			if (!scp[y].assigned())
 				for (int i = supportlessy.limit; i >= 0; i--) {
 					int a = supportlessy.dense[i];
-					if (domx.isPresent(a))
+					if (domx.present(a))
 						supportlessy.remove(a);
 				}
 		}

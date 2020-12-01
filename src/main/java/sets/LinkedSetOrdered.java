@@ -62,7 +62,7 @@ public class LinkedSetOrdered implements LinkedSet {
 	 * corresponding element has been removed from the list. Hence, <code> absentLevels[i] == j </code> means that j is the removal level of the element i and
 	 * <code> removedLevels[i] == -1 </code> means that the element i is present.
 	 */
-	private final int[] removedLevels;
+	public final int[] removedLevels;
 
 	protected int mark;
 
@@ -105,7 +105,7 @@ public class LinkedSetOrdered implements LinkedSet {
 	}
 
 	@Override
-	public final boolean isPresent(int a) {
+	public final boolean present(int a) {
 		return removedLevels[a] == -1;
 	}
 
@@ -189,8 +189,8 @@ public class LinkedSetOrdered implements LinkedSet {
 	}
 
 	@Override
-	public void remove(int a, int level) {
-		assert isPresent(a) && level >= 0 : "level = " + level + " absentLevel = " + removedLevels[a];
+	public final void remove(int a, int level) {
+		assert present(a) && level >= 0 : "level = " + level + " absentLevel = " + removedLevels[a];
 		removedLevels[a] = level;
 		size--;
 		removeElement(a);
@@ -198,7 +198,7 @@ public class LinkedSetOrdered implements LinkedSet {
 
 	@Override
 	public int reduceTo(int a, int level) {
-		assert isPresent(a) && level >= 0;
+		assert present(a) && level >= 0;
 		int sizeBefore = size;
 		for (int b = first; b != -1; b = next(b))
 			if (b != a)
@@ -223,7 +223,7 @@ public class LinkedSetOrdered implements LinkedSet {
 	}
 
 	private void restoreLastDropped() {
-		assert lastRemoved != -1 && !isPresent(lastRemoved);
+		assert lastRemoved != -1 && !present(lastRemoved);
 		removedLevels[lastRemoved] = -1;
 		size++;
 		addElement(lastRemoved);
@@ -333,16 +333,16 @@ public class LinkedSetOrdered implements LinkedSet {
 		}
 
 		@Override
-		protected void addElement(int e) {
-			super.addElement(e);
-			binaryRepresentation[e / Long.SIZE] |= Bit.ONE_LONG_BIT_TO_1[e % Long.SIZE];
+		protected void addElement(int a) {
+			super.addElement(a);
+			binaryRepresentation[a / Long.SIZE] |= Bit.ONE_LONG_BIT_TO_1[a % Long.SIZE];
 			// binaryRepresentation[element >> 6] |= Bit.ONE_LONG_BIT_TO_1[element & ((1 << 6) - 1)];
 		}
 
 		@Override
-		protected void removeElement(int e) {
-			super.removeElement(e);
-			binaryRepresentation[e / Long.SIZE] &= Bit.ONE_LONG_BIT_TO_0[e % Long.SIZE];
+		protected void removeElement(int a) {
+			super.removeElement(a);
+			binaryRepresentation[a / Long.SIZE] &= Bit.ONE_LONG_BIT_TO_0[a % Long.SIZE];
 			// binaryRepresentation[element >> 6] &= Bit.ONE_LONG_BIT_TO_0[element & ((1 << 6) - 1)];
 		}
 	}

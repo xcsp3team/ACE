@@ -60,7 +60,7 @@ public final class Circuit extends AllDifferent {
 			return false;
 		int minimalCircuitLength = 0;
 		for (int i = 0; i < scp.length; i++)
-			if (scp[i].dom.isPresent(i) == false)
+			if (scp[i].dom.present(i) == false)
 				minimalCircuitLength++;
 		for (int i = 0; i < scp.length; i++) {
 			if (scp[i].dom.size() == 1) {

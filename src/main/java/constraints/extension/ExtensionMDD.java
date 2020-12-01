@@ -191,7 +191,7 @@ public final class ExtensionMDD extends ExtensionGlobal implements TagPositive, 
 		} else {
 			search: for (int[] childsClass : node.sonsClasses) {
 				for (int a : childsClass) {
-					if (dom.isPresent(a) && exploreMDD(node.sons[a])) {
+					if (dom.present(a) && exploreMDD(node.sons[a])) {
 						supported = true;
 						finished = manageSuccessfulExploration(node.level, a);
 						if (finished)

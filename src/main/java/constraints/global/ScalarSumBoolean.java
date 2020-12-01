@@ -52,9 +52,9 @@ public abstract class ScalarSumBoolean extends CtrGlobal {
 		set01vs1.clear();
 		for (int i = 0; i < half; i++) {
 			Domain dom1 = scp[i].dom, dom2 = scp[i + half].dom;
-			if (dom1.isPresent(1) && dom2.isPresent(1)) { // if one 1 is missing nothing to do because the product is necessarily 0
+			if (dom1.present(1) && dom2.present(1)) { // if one 1 is missing nothing to do because the product is necessarily 0
 				max++;
-				if (!dom1.isPresent(0) && !dom2.isPresent(0))
+				if (!dom1.present(0) && !dom2.present(0))
 					min++;
 				else if (dom1.size() == 1 || dom2.size() == 1)
 					set01vs1.add(i); // we add i iff we have (0,1) versus 1 (or equivalently 1 versus (0,1)) ; the only way to filter here
@@ -173,9 +173,9 @@ public abstract class ScalarSumBoolean extends CtrGlobal {
 				set01vs01.clear();
 				for (int i = 0; i < half; i++) {
 					Domain dom1 = scp[i].dom, dom2 = scp[i + half].dom;
-					if (dom1.isPresent(1) && dom2.isPresent(1)) { // if one 1 is missing nothing to do because the product is necessarily 0
+					if (dom1.present(1) && dom2.present(1)) { // if one 1 is missing nothing to do because the product is necessarily 0
 						max++;
-						if (!dom1.isPresent(0) && !dom2.isPresent(0))
+						if (!dom1.present(0) && !dom2.present(0))
 							min++;
 						else if (dom1.size() == 1 || dom2.size() == 1)
 							set01vs1.add(i); // we add i iff we have (0,1) versus 1 (or equivalently 1 versus (0,1))

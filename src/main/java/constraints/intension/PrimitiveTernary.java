@@ -96,7 +96,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 			public boolean runPropagator(Variable dummy) {
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 					int va = dx.toVal(a);
-					if (dy.isPresent(rx[a]) && dz.isPresentValue(va + dy.toVal(rx[a])))
+					if (dy.present(rx[a]) && dz.isPresentValue(va + dy.toVal(rx[a])))
 						continue;
 					if (dy.size() <= dz.size())
 						for (int b = dy.first(); b != -1; b = dy.next(b)) {
@@ -131,7 +131,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 				}
 				extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
 					int vb = dy.toVal(b);
-					if (dx.isPresent(ry[b]) && dz.isPresentValue(vb + dx.toVal(ry[b])))
+					if (dx.present(ry[b]) && dz.isPresentValue(vb + dx.toVal(ry[b])))
 						continue;
 					if (dx.size() <= dz.size())
 						for (int a = dx.first(); a != -1; a = dx.next(a)) {
@@ -162,7 +162,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 				}
 				extern: for (int c = dz.first(); c != -1; c = dz.next(c)) {
 					int vc = dz.toVal(c);
-					if (dx.isPresent(rzx[c]) && dy.isPresentValue(vc - dx.toVal(rzx[c])))
+					if (dx.present(rzx[c]) && dy.isPresentValue(vc - dx.toVal(rzx[c])))
 						continue;
 					if (dx.size() <= dy.size())
 						for (int a = dx.last(); a != -1; a = dx.prev(a)) {
@@ -296,7 +296,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 								return false;
 							continue;
 						}
-						if (dy.isPresent(rx[a]) && dz.isPresentValue(va * dy.toVal(rx[a])))
+						if (dy.present(rx[a]) && dz.isPresentValue(va * dy.toVal(rx[a])))
 							continue;
 						for (int b = dy.first(); b != -1; b = dy.next(b)) {
 							int vc = va * dy.toVal(b);
@@ -318,7 +318,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 								return false;
 							continue;
 						}
-						if (dx.isPresent(ry[b]) && dz.isPresentValue(vb * dx.toVal(ry[b])))
+						if (dx.present(ry[b]) && dz.isPresentValue(vb * dx.toVal(ry[b])))
 							continue;
 						for (int a = dx.first(); a != -1; a = dx.next(a)) {
 							int vc = vb * dx.toVal(a);
@@ -339,7 +339,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 							return false;
 						continue;
 					}
-					if (rzx[c] != -1 && dx.isPresent(rzx[c]) && dy.isPresent(rzy[c]))
+					if (rzx[c] != -1 && dx.present(rzx[c]) && dy.present(rzy[c]))
 						continue;
 					for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int va = dx.toVal(a);
@@ -405,7 +405,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 						}
 						if (zero && va < dy.lastValue())
 							continue;
-						if (dy.isPresent(rx[a]) && dz.isPresentValue(va / dy.toVal(rx[a])))
+						if (dy.present(rx[a]) && dz.isPresentValue(va / dy.toVal(rx[a])))
 							continue;
 						for (int b = dy.first(); b != -1; b = dy.next(b)) {
 							int vc = va / dy.toVal(b);
@@ -424,7 +424,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 						int vb = dy.toVal(b);
 						if (zero && dx.firstValue() < vb)
 							break; // all remaining values are supported
-						if (dx.isPresent(ry[b]) && dz.isPresentValue(dx.toVal(ry[b]) / vb))
+						if (dx.present(ry[b]) && dz.isPresentValue(dx.toVal(ry[b]) / vb))
 							continue;
 						for (int a = dx.last(); a != -1; a = dx.prev(a)) {
 							int va = dx.toVal(a);
@@ -446,7 +446,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 						assert dx.firstValue() < dy.lastValue();
 						continue; // already treated at the beginning of the method
 					}
-					if (rzx[c] != -1 && dx.isPresent(rzx[c]) && dy.isPresent(rzy[c]))
+					if (rzx[c] != -1 && dx.present(rzx[c]) && dy.present(rzy[c]))
 						continue;
 					for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int va = dx.toVal(a);
@@ -508,7 +508,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 					int va = dx.toVal(a);
 					if (va < dy.lastValue() && dz.isPresentValue(va)) // remainder is necessarily va because va < vb
 						continue;
-					if (dy.isPresent(rx[a]) && dz.isPresentValue(va % dy.toVal(rx[a])))
+					if (dy.present(rx[a]) && dz.isPresentValue(va % dy.toVal(rx[a])))
 						continue;
 					for (int b = dy.first(); b != -1; b = dy.next(b)) {
 						int vb = dy.toVal(b);
@@ -529,7 +529,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 							return false;
 						continue;
 					}
-					if (dx.isPresent(ry[b]) && dz.isPresentValue(dx.toVal(ry[b]) % vb))
+					if (dx.present(ry[b]) && dz.isPresentValue(dx.toVal(ry[b]) % vb))
 						continue;
 					for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int vc = dx.toVal(a) % vb;
@@ -545,7 +545,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 					return false;
 				extern: for (int c = dz.first(); c != -1; c = dz.next(c)) {
 					int vc = dz.toVal(c);
-					if (rzx[c] != -1 && dx.isPresent(rzx[c]) && dy.isPresent(rzy[c]))
+					if (rzx[c] != -1 && dx.present(rzx[c]) && dy.present(rzy[c]))
 						continue;
 					for (int b = dy.last(); b != -1; b = dy.prev(b)) {
 						int vb = dy.toVal(b);
@@ -651,7 +651,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 			public boolean runPropagator(Variable dummy) {
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 					int va = dx.toVal(a);
-					if (dy.isPresent(rx[a]) && dz.isPresentValue(Math.abs(va - dy.toVal(rx[a]))))
+					if (dy.present(rx[a]) && dz.isPresentValue(Math.abs(va - dy.toVal(rx[a]))))
 						continue;
 					if (dy.size() <= dz.size())
 						for (int b = dy.first(); b != -1; b = dy.next(b)) {
@@ -673,7 +673,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 				}
 				extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
 					int vb = dy.toVal(b);
-					if (dx.isPresent(ry[b]) && dz.isPresentValue(Math.abs(vb - dx.toVal(ry[b]))))
+					if (dx.present(ry[b]) && dz.isPresentValue(Math.abs(vb - dx.toVal(ry[b]))))
 						continue;
 					if (dx.size() <= dz.size())
 						for (int a = dx.first(); a != -1; a = dx.next(a)) {
@@ -695,7 +695,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 				}
 				extern: for (int c = dz.first(); c != -1; c = dz.next(c)) {
 					int vc = dz.toVal(c);
-					if (rzx[c] != -1 && dx.isPresent(rzx[c]) && dy.isPresentValue(rzy[c]))
+					if (rzx[c] != -1 && dx.present(rzx[c]) && dy.isPresentValue(rzy[c]))
 						continue;
 					if (dx.size() <= dy.size())
 						for (int a = dx.first(); a != -1; a = dx.next(a)) {

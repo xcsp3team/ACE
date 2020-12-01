@@ -99,7 +99,7 @@ public class ExtensionGAC4 extends ExtensionGlobal implements TagPositive {
 				int[] tuple = tuples[droppedTuplePosition];
 				assert !isValid(tuple);
 				for (int y = 0; y < scp.length; y++) {
-					if (scp[y].dom.isPresent(tuple[y])) {
+					if (scp[y].dom.present(tuple[y])) {
 						SetDenseReversible set = sups[y][tuple[y]];
 						int ptr = ptrs[droppedTuplePosition][y];
 						if (ptr > set.limit)

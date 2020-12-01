@@ -72,7 +72,7 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 		@Override
 		public int identifyBestValueIndex() {
 			int a = progressSaving[x.num];
-			return a != -1 && dx.isPresent(a) ? a : dx.first();
+			return a != -1 && dx.present(a) ? a : dx.first();
 		}
 	}
 

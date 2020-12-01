@@ -344,7 +344,7 @@ public final class ExtensionSTR3 extends ExtensionGlobal implements TagPositive,
 					byte x = dependencies.dense[j];
 					if (!scp[x].assigned()) {
 						int a = tuple[x];
-						if (scp[x].dom.isPresent(a)) {
+						if (scp[x].dom.present(a)) {
 							int[] subtable = subtables[x][a];
 							int separator = separators[x][a], p = separator;
 							while (p >= 0 && !set.isPresent(subtable[p]))
@@ -373,7 +373,7 @@ public final class ExtensionSTR3 extends ExtensionGlobal implements TagPositive,
 					byte x = dependencies.dense[j];
 					if (!scp[x].assigned()) {
 						int a = supressedTuple[x];
-						if (scp[x].dom.isPresent(a)) {
+						if (scp[x].dom.present(a)) {
 							short[] subtable = subtablesShort[x][a];
 							short separator = separatorsShort[x][a], p = separator;
 							while (p >= 0 && !set.isPresent(subtable[p]))

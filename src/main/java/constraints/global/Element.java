@@ -152,7 +152,7 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 		private boolean reduceDomainOfValue() {
 			return vdom.removeIndexesChecking(a -> {
 				int sentinel = valueSentinels[a];
-				return (sentinel == -1 || !idom.isPresent(sentinel) || !domAt(sentinel).isPresentValue(vdom.toVal(a))) && !findSentinelForValue(a);
+				return (sentinel == -1 || !idom.present(sentinel) || !domAt(sentinel).isPresentValue(vdom.toVal(a))) && !findSentinelForValue(a);
 			});
 		}
 

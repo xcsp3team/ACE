@@ -56,11 +56,11 @@ public abstract class HeuristicValues extends Heuristic {
 		if (solver.solManager.found == 0) {
 			if (settings.warmStart.length() > 0) {
 				int a = solver.warmStarter.valueOf(x);
-				if (a != -1 && dx.isPresent(a))
+				if (a != -1 && dx.present(a))
 					return a;
 			} else if (settings.runProgressSaving) {
 				int a = solver.runProgressSaver.valueOf(x);
-				if (a != -1 && dx.isPresent(a))
+				if (a != -1 && dx.present(a))
 					return a;
 			}
 		} else if (settings.solutionSaving) {
@@ -70,7 +70,7 @@ public abstract class HeuristicValues extends Heuristic {
 				// a = dx.first();
 				// else
 				int a = solver.solManager.lastSolution[x.num];
-				if (dx.isPresent(a)) // && (!priorityVar || solver.rs.random.nextDouble() < 0.5))
+				if (dx.present(a)) // && (!priorityVar || solver.rs.random.nextDouble() < 0.5))
 					return a;
 			}
 		}
@@ -92,7 +92,7 @@ public abstract class HeuristicValues extends Heuristic {
 		public HeuristicValuesFixed(Variable x, boolean antiHeuristic) {
 			super(x, antiHeuristic);
 			// we build an ordered map with entries of the form (a, heuristic score of a multiplied by the optimization coefficient) for every a
-			Map<Integer, Double> map = IntStream.range(0, dx.initSize()).filter(a -> dx.isPresent(a)).boxed()
+			Map<Integer, Double> map = IntStream.range(0, dx.initSize()).filter(a -> dx.present(a)).boxed()
 					.collect(Collectors.toMap(a -> a, a -> scoreOf(a) * scoreCoeff));
 			map = Kit.sort(map, (e1, e2) -> e1.getValue() > e2.getValue() ? -1 : e1.getValue() < e2.getValue() ? 1 : e1.getKey() - e2.getKey());
 			this.fixed = map.entrySet().stream().mapToInt(e -> e.getKey()).toArray();
@@ -102,7 +102,7 @@ public abstract class HeuristicValues extends Heuristic {
 		protected final int identifyBestValueIndex() {
 			assert dx.size() > 0 : "The domain is empty";
 			for (int a : fixed)
-				if (dx.isPresent(a))
+				if (dx.present(a))
 					return a;
 			throw new AssertionError();
 		}

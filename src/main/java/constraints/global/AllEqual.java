@@ -77,13 +77,8 @@ public final class AllEqual extends CtrGlobal implements ObserverBacktrackingSys
 			for (int a = scp[i].dom.lastRemoved(); a != frontier[i]; a = scp[i].dom.prevRemoved(a))
 				set.add(a);
 
-		// Kit.control(set.size() == 1); // four lines of code for identifying the efficiency problem on Domino-5000
-		// for (int i = scp.length - 1; i >= 0; i--)
-		// // for (int i = 0; i < scp.length; i++)
-		// scp[i].dom.remove(set.dense[0]);
-
 		// we remove these dropped (indexes of) values from the domain of all future variables
-		for (int i = scp.length - 1; i >= 0; i--) // the other side (0 to scp.length) is very long
+		for (int i = scp.length - 1; i >= 0; i--) // the other side (0 to scp.length) is very long for Domino (because of the revision ordering heuristic)
 			if (scp[i].dom.remove(set, true) == false)
 				return false;
 

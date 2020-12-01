@@ -182,7 +182,7 @@ public class AllDifferentBound extends AllDifferentAbstract implements ObserverB
 
 		boolean isAlwaysAbsent(int k) {
 			for (int i = collectedVars.limit; i >= 0; i--)
-				if (scp[collectedVars.dense[i]].dom.isPresent(k))
+				if (scp[collectedVars.dense[i]].dom.present(k))
 					return false;
 			return true;
 

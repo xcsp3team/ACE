@@ -631,7 +631,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 */
 	public final boolean isValid(int[] tuple) {
 		for (int i = tuple.length - 1; i >= 0; i--)
-			if (!doms[i].isPresent(tuple[i]))
+			if (!doms[i].present(tuple[i]))
 				return false;
 		return true;
 	}

@@ -123,7 +123,7 @@ public final class IdentificationAutomorphism {
 			} else if (dom.size() == d.size()) {
 				boolean equal = true;
 				for (int idx = dom.first(); equal && idx != -1; idx = dom.next(idx))
-					if (!d.isPresent(idx))
+					if (!d.present(idx))
 						equal = false;
 				if (equal)
 					return key;

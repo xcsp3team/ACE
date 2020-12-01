@@ -189,7 +189,7 @@ public final class CtrOrMDD extends CtrGlobal implements TagGACGuaranteed, Obser
 		} else {
 			search: for (int[] childsClass : node.sonsClasses) {
 				for (int a : childsClass) {
-					if (dom.isPresent(a) && exploreMDD(level + 1, node.sons[a], set, trueNodes)) { // , i)) {
+					if (dom.present(a) && exploreMDD(level + 1, node.sons[a], set, trueNodes)) { // , i)) {
 						supported = true;
 						finished = manageSuccessfulExploration(level, a); // , i);
 						if (finished)

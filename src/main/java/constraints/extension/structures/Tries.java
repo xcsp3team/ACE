@@ -234,7 +234,7 @@ public class Tries extends ExtensionStructure {
 	private boolean controlNode(Node node, int position) {
 		if (node == null)
 			return true;
-		if (!firstRegisteredCtr().scp[position].dom.isPresent(node.idx))
+		if (!firstRegisteredCtr().scp[position].dom.present(node.idx))
 			return false;
 		if (!controlNode(node.firstSibling, position))
 			return false;

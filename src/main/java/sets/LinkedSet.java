@@ -52,7 +52,7 @@ public interface LinkedSet {
 	 *            the index of a value
 	 * @return {@code true} iff the specified element is present
 	 */
-	boolean isPresent(int a);
+	boolean present(int a);
 
 	/**
 	 * Returns the first present element (index of value) of the set, or -1 if the set is empty.

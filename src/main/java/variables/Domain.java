@@ -125,7 +125,7 @@ public interface Domain extends LinkedSet {
 	/** Returns the index of the specified value, but only if the value belongs to the current domain. Returns -1, otherwise. */
 	default int toPresentIdx(int v) {
 		int a = toIdx(v);
-		return a < 0 || !isPresent(a) ? -1 : a;
+		return a < 0 || !present(a) ? -1 : a;
 	}
 
 	/**
@@ -133,14 +133,14 @@ public interface Domain extends LinkedSet {
 	 */
 	default boolean isPresentValue(int v) {
 		int a = toIdx(v);
-		return a >= 0 && isPresent(a);
+		return a >= 0 && present(a);
 	}
 
 	/**
 	 * Returns true iff the domain has only one remaining value, whose index is specified.
 	 */
 	default boolean onlyContains(int a) {
-		return size() == 1 && isPresent(a);
+		return size() == 1 && present(a);
 	}
 
 	/**
@@ -266,7 +266,7 @@ public interface Domain extends LinkedSet {
 	 */
 	default void removeElementary(int a) {
 		Variable x = var();
-		assert !x.assigned() && isPresent(a) : x + " " + x.assigned() + " " + isPresent(a);
+		assert !x.assigned() && present(a) : x + " " + x.assigned() + " " + present(a);
 		// log.info("removing " + x + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " by constraint " + propagation().currFilteringCtr);
 
 		int depth = propagation().solver.stackVariable(x); // stacking variables must always be performed before domain reduction
@@ -283,7 +283,7 @@ public interface Domain extends LinkedSet {
 	 * The management of this removal with respect to propagation is handled.
 	 */
 	default boolean remove(int a) {
-		assert isPresent(a);
+		assert present(a);
 		if (size() == 1)
 			return fail();
 		removeElementary(a);
@@ -297,7 +297,7 @@ public interface Domain extends LinkedSet {
 	 * The management of this removal with respect to propagation is handled.
 	 */
 	default boolean removeIfPresent(int a) {
-		return !isPresent(a) || remove(a);
+		return !present(a) || remove(a);
 	}
 
 	/**
@@ -308,7 +308,7 @@ public interface Domain extends LinkedSet {
 	 * The management of this removal with respect to propagation is handled.
 	 */
 	default void removeSafely(int a) {
-		assert isPresent(a) && size() > 1;
+		assert present(a) && size() > 1;
 		removeElementary(a);
 		propagation().handleReductionSafely(var());
 	}
@@ -321,7 +321,7 @@ public interface Domain extends LinkedSet {
 	 */
 	default boolean remove(boolean[] flags, int nRemovals) {
 		assert 0 < nRemovals && nRemovals <= size() && flags.length == initSize()
-				&& IntStream.range(0, initSize()).filter(a -> isPresent(a) && !flags[a]).count() == nRemovals;
+				&& IntStream.range(0, initSize()).filter(a -> present(a) && !flags[a]).count() == nRemovals;
 		if (size() == nRemovals)
 			return fail();
 		for (int cnt = 0, a = first(); cnt < nRemovals; a = next(a))
@@ -342,17 +342,17 @@ public interface Domain extends LinkedSet {
 		if (testPresence) {
 			if (size() == 1) {
 				for (int i = idxs.limit; i >= 0; i--)
-					if (isPresent(idxs.dense[i]))
+					if (present(idxs.dense[i]))
 						return fail();
 				return true;
 			}
 			int sizeBefore = size();
 			for (int i = idxs.limit; i >= 0; i--)
-				if (isPresent(idxs.dense[i]))
+				if (present(idxs.dense[i]))
 					removeElementary(idxs.dense[i]);
 			return afterElementaryCalls(sizeBefore);
 		} else {
-			assert IntStream.range(0, idxs.size()).allMatch(i -> isPresent(idxs.dense[i]));
+			assert IntStream.range(0, idxs.size()).allMatch(i -> present(idxs.dense[i]));
 			if (idxs.size() == 0)
 				return true;
 			if (size() == idxs.size())
@@ -380,7 +380,7 @@ public interface Domain extends LinkedSet {
 	 * Important: the management of this removal with respect to propagation is not handled.
 	 */
 	default int reduceToElementary(int a) {
-		assert isPresent(a) : a + " is not present";
+		assert present(a) : a + " is not present";
 		if (size() == 1)
 			return 0; // 0 removal
 		Variable x = var();
@@ -401,7 +401,7 @@ public interface Domain extends LinkedSet {
 	 * The management of this removal with respect to propagation is handled.
 	 */
 	default boolean reduceTo(int a) {
-		return !isPresent(a) ? fail() : reduceToElementary(a) == 0 || propagation().handleReductionSafely(var());
+		return !present(a) ? fail() : reduceToElementary(a) == 0 || propagation().handleReductionSafely(var());
 	}
 
 	/**

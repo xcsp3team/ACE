@@ -81,7 +81,7 @@ public abstract class Supporter {
 		public boolean findArcSupportFor(int x, int a) {
 			int q = x == 0 ? 1 : 0;
 			int b = residues[x][a];
-			if (b != -1 && c.doms[q].isPresent(b)) {
+			if (b != -1 && c.doms[q].present(b)) {
 				if (c.problem.solver.propagation instanceof TagBinaryRelationFiltering) {
 					buffer[x] = a;
 					buffer[q] = b;

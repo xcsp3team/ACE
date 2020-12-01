@@ -81,7 +81,7 @@ public final class SegmentedTuple {
 		for (int i = sValSize - 1; i >= 0; i--) {
 			int x = sVal[i];
 			int a = prefix[x];
-			if (a != STAR && !scp[x].dom.isPresent(a))
+			if (a != STAR && !scp[x].dom.present(a))
 				return false;
 		}
 		for (RestrictionTable restriction : restrictions)
@@ -188,7 +188,7 @@ public final class SegmentedTuple {
 			for (int i = sLocalSize - 1; i >= 0; i--) {
 				int x = sLocal[i];
 				int a = subtuple[x];
-				if (a != STAR && !subdoms[x].isPresent(a))
+				if (a != STAR && !subdoms[x].present(a))
 					return false;
 			}
 			return true;
