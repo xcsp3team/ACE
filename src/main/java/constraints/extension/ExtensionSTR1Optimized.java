@@ -15,7 +15,7 @@ import propagation.StrongConsistency;
 import utility.Kit;
 import variables.Variable;
 
-public abstract class ExtensionSTROptimized extends ExtensionSTR1 {
+public abstract class ExtensionSTR1Optimized extends ExtensionSTR1 {
 
 	/**********************************************************************************************
 	 * Interfaces
@@ -66,7 +66,7 @@ public abstract class ExtensionSTROptimized extends ExtensionSTR1 {
 	 * Method
 	 *********************************************************************************************/
 
-	public ExtensionSTROptimized(Problem pb, Variable[] scp) {
+	public ExtensionSTR1Optimized(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		this.decremental = pb.head.control.extension.decremental;
 	}

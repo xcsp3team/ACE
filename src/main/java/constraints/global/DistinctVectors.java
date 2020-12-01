@@ -20,7 +20,6 @@ import constraints.Constraint.CtrGlobal;
 import interfaces.Tags.TagFilteringPartialAtEachCall;
 import interfaces.Tags.TagUnsymmetric;
 import problem.Problem;
-import utility.Kit;
 import variables.Variable;
 
 public final class DistinctVectors extends CtrGlobal implements TagUnsymmetric, TagFilteringPartialAtEachCall, ICtrAllDifferent {
@@ -58,13 +57,13 @@ public final class DistinctVectors extends CtrGlobal implements TagUnsymmetric, 
 	private ManagerMultiOccurrences mm;
 
 	public DistinctVectors(Problem pb, Variable[] list1, Variable[] list2) {
-		super(pb, pb.distinct(pb.vars(list1, list2)));
-		Kit.control(list1.length == list2.length);
+		super(pb, pb.vars(list1, list2));
+		control(list1.length == list2.length);
 		this.list1 = list1;
 		this.list2 = list2;
 		this.sentinel1 = findAnotherSentinel();
 		this.sentinel2 = findAnotherSentinel();
-		Kit.control(sentinel1 != -1 && sentinel2 != -1, () -> "these particular cases not implemented yet");
+		control(sentinel1 != -1 && sentinel2 != -1, () -> "these particular cases not implemented yet");
 		this.mm = scp.length != list1.length + list2.length ? new ManagerMultiOccurrences() : null;
 
 	}

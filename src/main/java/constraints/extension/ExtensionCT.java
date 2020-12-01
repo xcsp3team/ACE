@@ -22,7 +22,7 @@ import utility.Bit;
 import variables.Domain;
 import variables.Variable;
 
-public class ExtensionCT extends ExtensionSTROptimized implements TagShort {
+public class ExtensionCT extends ExtensionSTR1Optimized implements TagShort {
 
 	public final static class ExtensionCT2 extends ExtensionCT implements TagShort {
 

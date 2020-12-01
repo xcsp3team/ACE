@@ -90,7 +90,6 @@ import constraints.Constraint.CtrHardTrue;
 import constraints.extension.Extension;
 import constraints.extension.ExtensionMDD;
 import constraints.extension.ExtensionSmart;
-import constraints.extension.structures.MDDCD;
 import constraints.extension.structures.SmartTuple;
 import constraints.extension.structures.Table;
 import constraints.global.AllDifferent;
@@ -103,18 +102,17 @@ import constraints.global.AllEqual;
 import constraints.global.Among;
 import constraints.global.Cardinality.CardinalityConstant;
 import constraints.global.Circuit;
-import constraints.global.Count.AtLeast1;
-import constraints.global.Count.AtLeastK;
-import constraints.global.Count.AtMost1;
-import constraints.global.Count.AtMostK;
-import constraints.global.Count.Exactly1;
-import constraints.global.Count.ExactlyK;
-import constraints.global.CtrOrMDD;
+import constraints.global.Count.CountCst.AtLeast1;
+import constraints.global.Count.CountCst.AtLeastK;
+import constraints.global.Count.CountCst.AtMost1;
+import constraints.global.Count.CountCst.AtMostK;
+import constraints.global.Count.CountCst.Exactly1;
+import constraints.global.Count.CountCst.ExactlyK;
+import constraints.global.Count.CountVar.ExactlyVarK;
 import constraints.global.Cumulative;
 import constraints.global.Element.ElementConstant;
 import constraints.global.Element.ElementVariable;
 import constraints.global.ElementMatrix;
-import constraints.global.ExactlyKVariable;
 import constraints.global.Extremum.ExtremumCst;
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstGE;
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
@@ -782,7 +780,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return b ? unimplemented(msg) : null;
 	}
 
-	private Variable[] translate(IVar[] t) {
+	public Variable[] translate(IVar[] t) {
 		return t instanceof Variable[] ? (Variable[]) t : Stream.of(t).map(x -> (Variable) x).toArray(Variable[]::new);
 	}
 
@@ -965,9 +963,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return addCtr(new ExtensionMDD(this, translate(scp), tuples));
 	}
 
-	public final CtrAlone mddOr(Var[] scp, MDDCD[] t) {
-		return addCtr(new CtrOrMDD(this, translate(scp), t));
-	}
+	// public final CtrAlone mddOr(Var[] scp, MDDCD[] t) {
+	// return addCtr(new CtrOrMDD(this, translate(scp), t));
+	// }
 
 	// ************************************************************************
 	// ***** Constraint allDifferent
@@ -1502,7 +1500,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private CtrEntity count2(VariableInteger[] list, int[] values, TypeConditionOperatorRel op, VariableInteger limit) {
 		if (values.length == 1) {
 			if (op == EQ)
-				return addCtr(new ExactlyKVariable(this, list, values[0], limit));
+				return addCtr(new ExactlyVarK(this, list, values[0], limit));
 			else
 				return unimplemented("count");
 		} else

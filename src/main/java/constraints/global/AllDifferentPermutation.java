@@ -32,6 +32,13 @@ public final class AllDifferentPermutation extends AllDifferentAbstract
 		unfixedIdxs.restoreLimitAtLevel(depth);
 	}
 
+	@Override
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
+		unfixedVars = new SetSparseReversible(scp.length, problem.variables.length + 1);
+		unfixedIdxs = new SetSparseReversible(scp[0].dom.initSize(), problem.variables.length + 1);
+	}
+
 	// @Override
 	// public void setMark() {
 	// unfixedVars.setMark();
@@ -63,13 +70,6 @@ public final class AllDifferentPermutation extends AllDifferentAbstract
 		residues2 = new Variable[scp[0].dom.initSize()];
 		Arrays.fill(residues1, scp[0]);
 		Arrays.fill(residues2, scp[scp.length - 1]);
-	}
-
-	@Override
-	public void afterProblemConstruction() {
-		super.afterProblemConstruction();
-		unfixedVars = new SetSparseReversible(scp.length, problem.variables.length + 1);
-		unfixedIdxs = new SetSparseReversible(scp[0].dom.initSize(), problem.variables.length + 1);
 	}
 
 	@Override

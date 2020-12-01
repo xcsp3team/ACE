@@ -187,7 +187,7 @@ public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed, T
 		protected Variable k;
 
 		public NValuesVar(Problem pb, Variable[] list, VariableInteger k) {
-			super(pb, pb.distinct(pb.vars(list, k)), list);
+			super(pb, pb.vars(list, k), list);
 			control(Stream.of(list).noneMatch(x -> x == k), "currently, k must not be present in the list");
 			this.k = k;
 		}

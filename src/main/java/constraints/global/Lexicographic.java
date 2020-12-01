@@ -46,8 +46,10 @@ public abstract class Lexicographic extends CtrGlobal implements TagUnsymmetric,
 	}
 
 	private final Variable[] list1, list2;
-	private final int half;
+
 	private final boolean strictOrdering; // If true then <= (le) else < (lt)
+
+	private final int half;
 
 	private final int[] times; // times[x] gives the time at which the variable (at position) x has been set (pseudo-assigned)
 	private final int[] vals; // vals[x] gives the value of the variable (at position) x set at time times[x]
@@ -56,12 +58,12 @@ public abstract class Lexicographic extends CtrGlobal implements TagUnsymmetric,
 	private int time;
 
 	public Lexicographic(Problem pb, Variable[] list1, Variable[] list2, boolean strictOrdering) {
-		super(pb, pb.distinct(pb.vars(list1, list2)));
+		super(pb, pb.vars(list1, list2));
 		assert list1.length == list2.length;
 		this.list1 = list1;
 		this.list2 = list2;
-		this.half = list1.length;
 		this.strictOrdering = strictOrdering;
+		this.half = list1.length;
 		this.times = new int[scp.length];
 		this.vals = new int[scp.length];
 		defineKey(strictOrdering);

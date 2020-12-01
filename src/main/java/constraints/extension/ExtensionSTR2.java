@@ -18,7 +18,7 @@ import utility.Kit;
 import variables.Variable;
 
 // why not using a counter 'time' and replace boolean[][] ac by int[][] ac (we just do time++ instead of Arrays.fill(ac[x],false)
-public class ExtensionSTR2 extends ExtensionSTROptimized implements TagShort {
+public class ExtensionSTR2 extends ExtensionSTR1Optimized implements TagShort {
 
 	public ExtensionSTR2(Problem pb, Variable... scp) {
 		super(pb, scp);
