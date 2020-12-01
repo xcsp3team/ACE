@@ -27,7 +27,6 @@ import interfaces.Observers.ObserverSearch;
 import main.Head;
 import problem.ProblemStuff.MapAtt;
 import propagation.GAC;
-import utility.DocumentHandler;
 import utility.Enums.TypeOutput;
 import utility.Kit;
 
@@ -234,7 +233,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	public Output(Head resolution, String configFileName) {
 		this.resolution = resolution;
 		if (resolution.control.xml.dirForCampaign.equals(EMPTY_STRING) == false) {
-			document = DocumentHandler.createNewDocument();
+			document = Kit.createNewDocument();
 			root = document.createElement(TypeOutput.RESOLUTIONS.toString());
 			root.setAttribute(Output.CONFIGURATION_FILE_NAME, configFileName);
 			document.appendChild(root);

@@ -8,6 +8,9 @@
  */
 package constraints.global;
 
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import constraints.Constraint.CtrGlobal;
@@ -16,8 +19,10 @@ import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
-import sets.SetSparse;
+import sets.SetDense;
+import sets.SetSparseReversible;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
 
 /**
@@ -27,77 +32,83 @@ public final class AllEqual extends CtrGlobal implements ObserverBacktrackingSys
 
 	@Override
 	public final boolean checkValues(int[] t) {
-		return IntStream.range(0, t.length - 1).allMatch(i -> t[i] == t[i + 1]);
+		for (int v : t)
+			if (v != t[0])
+				return false;
+		return true;
 	}
 
 	@Override
 	public void restoreBefore(int depth) {
-		if (depth == entailedLevel)
-			entailedLevel = -1;
-		if (entailedLevel == -1)
-			for (int i = scp.length - 1; i >= 0; i--)
-				frontier[i] = scp[i].dom.lastRemoved();
+		remainingValues.restoreLimitAtLevel(depth);
 	}
 
-	/**
-	 * frontier[x.num] stores for any variable x the last removed (index of) value during the last call to runPropagator.
-	 */
-	private final int[] frontier;
+	@Override
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
+		this.remainingValues = new SetSparseReversible(map.size(), problem.variables.length + 1);
+		this.lastRemovedValues = new SetDense(map.size());
+	}
 
-	private final SetSparse set;
+	private final Map<Integer, Integer> map; // keys are all possible variable values, and values are their indexes in the sparse set
+
+	private SetSparseReversible remainingValues;
+
+	private SetDense lastRemovedValues;
 
 	public AllEqual(Problem pb, Variable[] list) {
 		super(pb, list);
-		control(list.length >= 2 && Variable.haveSameDomainType(list));
-		this.frontier = Kit.repeat(-1, list.length);
-		this.set = new SetSparse(list[0].dom.initSize());
-		// this.vals = new TreeSet<>(); // Hashset is very slow
+		int[] allValues = Variable.setOfvaluesIn(list).stream().mapToInt(v -> v).sorted().toArray();
+		this.map = IntStream.range(0, allValues.length).boxed().collect(Collectors.toMap(i -> allValues[i], i -> i, (v1, v2) -> v1 + v2, TreeMap::new));
+		Kit.control(allValues.length > 1 && list.length >= 2);
 		defineKey();
 	}
 
 	@Override
 	public boolean runPropagator(Variable x) {
-		if (entailedLevel != -1)
+		if (remainingValues.size() == 1) // only one remaining value, so entailed
 			return true;
 
 		Variable y = x.dom.size() == 1 ? x : Variable.firstSingletonVariableIn(scp); // we look for a variable y with a singleton domain
 
 		if (y != null) { // we remove the unique value from the domains of the future variables
-			int a = y.dom.unique();
+			int v = y.dom.uniqueValue();
 			for (Variable z : scp)
-				if (z.dom.reduceTo(a) == false)
+				if (z != y && z.dom.reduceToValue(v) == false)
 					return false;
-			entailedLevel = problem.solver.depth();
+			remainingValues.reduceTo(map.get(v), problem.solver.depth());
 			return true;
 		}
 
-		// // we collect the set of dropped (indexes of) values (since the last call) over all future variables
-		set.clear();
-		for (int i = scp.length - 1; i >= 0; i--)
-			for (int a = scp[i].dom.lastRemoved(); a != frontier[i]; a = scp[i].dom.prevRemoved(a))
-				set.add(a);
+		// // we collect the set of dropped values (since the last call) over all future variables
+		lastRemovedValues.clear();
+		for (Domain dom : doms)
+			for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a)) {
+				int v = dom.toVal(a);
+				if (!remainingValues.isPresent(map.get(v)))
+					break;
+				lastRemovedValues.add(v);
+			}
+		if (lastRemovedValues.size() == remainingValues.size())
+			return x.dom.fail();
 
-		// we remove these dropped (indexes of) values from the domain of all future variables
-		for (int i = scp.length - 1; i >= 0; i--) // the other side (0 to scp.length) is very long for Domino (because of the revision ordering heuristic)
-			if (scp[i].dom.remove(set, true) == false)
-				return false;
+		// for (int j = 0; j < scp.length; j++) {
+		for (int i = scp.length - 1; i >= 0; i--) // for domino-5000, the reverse (0 to scp.length) is very slow. (due to revision ordering heuristic)
+			scp[i].dom.removeValuesIn(lastRemovedValues); // no possible inconsistency at this level
 
-		// we record the frontier of dropped (indexes of) values for the next call
-		for (int i = scp.length - 1; i >= 0; i--)
-			frontier[i] = scp[i].dom.lastRemoved();
+		int depth = problem.solver.depth();
+		for (int i = lastRemovedValues.limit; i >= 0; i--)
+			remainingValues.remove(map.get(lastRemovedValues.dense[i]), depth);
 		return true;
 	}
 }
 
-// we collect the set of dropped values (since the last call) over all future variables
-// vals.clear();
-// for (int i = scp.length - 1; i >= 0; i--) {
-// Domain dom = scp[i].dom;
-// for (int a = dom.lastRemoved(); a != frontier[i]; a = dom.prevRemoved(a))
-// vals.add(dom.toVal(a));
+// for (Domain dom : doms)
+// dom.removeValuesIn(lastRemovedValues);
+
+// for (int i = lastRemovedValues.limit; i >= 0; i--) {
+// int v = lastRemovedValues.dense[i];
+// for (int j = scp.length - 1; j >= 0; j--) // for domino, the reverse (0 to scp.length) is very slow. why? (question of cache ?)
+// scp[j].dom.removeValue(v, false); // no possible inconsistency at this level
+// remainingValues.remove(map.get(v), depth);
 // }
-// // System.out.println("ssiii " + vals.size() + " " + (cnt++));
-// // // we remove these dropped (indexes of) values from the domain of all future variables
-// for (int i = scp.length - 1; i >= 0; i--)
-// if (scp[i].dom.removeValuesIn(vals) == false)
-// return false;

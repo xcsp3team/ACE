@@ -23,7 +23,7 @@ import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 
-public final class DistinctVectors2 extends CtrGlobal implements TagUnsymmetric, TagFilteringPartialAtEachCall, ICtrAllDifferent {
+public final class DistinctVectors extends CtrGlobal implements TagUnsymmetric, TagFilteringPartialAtEachCall, ICtrAllDifferent {
 
 	@Override
 	public boolean checkValues(int[] t) {
@@ -57,7 +57,7 @@ public final class DistinctVectors2 extends CtrGlobal implements TagUnsymmetric,
 
 	private ManagerMultiOccurrences mm;
 
-	public DistinctVectors2(Problem pb, Variable[] list1, Variable[] list2) {
+	public DistinctVectors(Problem pb, Variable[] list1, Variable[] list2) {
 		super(pb, pb.distinct(pb.vars(list1, list2)));
 		Kit.control(list1.length == list2.length);
 		this.list1 = list1;

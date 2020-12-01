@@ -42,8 +42,6 @@ public class SetDense { // implements Iterable<Integer> {
 	// return iteration;
 	// }
 
-	public static final int INCREASE_RATIO = 2;
-
 	public static final int UNINITIALIZED = -2;
 
 	public int[] dense;
@@ -69,7 +67,7 @@ public class SetDense { // implements Iterable<Integer> {
 	}
 
 	public void increaseCapacity() {
-		dense = IntStream.range(0, capacity() * INCREASE_RATIO).map(i -> i < dense.length ? dense[i] : i).toArray();
+		dense = IntStream.range(0, capacity() * 2).map(i -> i < dense.length ? dense[i] : i).toArray(); // increase ratio set to 2; hard coding
 	}
 
 	public final int capacity() {
@@ -177,9 +175,9 @@ public class SetDense { // implements Iterable<Integer> {
 	}
 
 	public void swapAtPositions(int i, int j) {
-		int e = dense[i];
+		int tmp = dense[i];
 		dense[i] = dense[j];
-		dense[j] = e;
+		dense[j] = tmp;
 	}
 
 	@Override

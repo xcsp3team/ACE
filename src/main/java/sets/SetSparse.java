@@ -49,31 +49,31 @@ public class SetSparse extends SetDense {
 		return this;
 	}
 
-	public void resetTo(SetSparse set) {
-		Kit.control(this.getClass() == SetSparse.class, () -> "Should only be used with the base class");
-		Kit.control(set.capacity() == capacity());
-		clear();
-		for (int i = 0; i <= set.limit; i++)
-			add(set.dense[i]);
+	// public void resetTo(SetSparse set) {
+	// Kit.control(this.getClass() == SetSparse.class, () -> "Should only be used with the base class");
+	// Kit.control(set.capacity() == capacity());
+	// clear();
+	// for (int i = 0; i <= set.limit; i++)
+	// add(set.dense[i]);
+	// }
+
+	@Override
+	public boolean isPresent(int a) {
+		return sparse[a] <= limit;
 	}
 
 	@Override
-	public boolean isPresent(int e) {
-		return sparse[e] <= limit;
-	}
-
-	@Override
-	public boolean add(int e) {
-		int i = sparse[e];
+	public boolean add(int a) {
+		int i = sparse[a];
 		if (i <= limit)
 			return false; // not added because already present
 		limit++;
 		if (i > limit) {
-			int f = dense[limit];
-			dense[i] = f;
-			dense[limit] = e;
-			sparse[e] = limit;
-			sparse[f] = i;
+			int b = dense[limit];
+			dense[i] = b;
+			dense[limit] = a;
+			sparse[a] = limit;
+			sparse[b] = i;
 		}
 		return true; // added
 	}
@@ -82,12 +82,12 @@ public class SetSparse extends SetDense {
 	public void removeAtPosition(int i) {
 		assert 0 <= i && i <= limit;
 		if (i != limit) {
-			int e = dense[i];
-			int f = dense[limit];
-			dense[i] = f;
-			dense[limit] = e;
-			sparse[e] = limit;
-			sparse[f] = i;
+			int a = dense[i];
+			int b = dense[limit];
+			dense[i] = b;
+			dense[limit] = a;
+			sparse[a] = limit;
+			sparse[b] = i;
 		}
 		limit--;
 	}
@@ -95,62 +95,62 @@ public class SetSparse extends SetDense {
 	@Override
 	public int shift() {
 		assert limit >= 0;
-		int e = dense[0];
+		int a = dense[0];
 		if (limit != 0) {
-			int f = dense[limit];
+			int b = dense[limit];
 			dense[0] = dense[limit];
-			dense[limit] = e;
-			sparse[e] = limit;
-			sparse[f] = 0;
+			dense[limit] = a;
+			sparse[a] = limit;
+			sparse[b] = 0;
 		}
 		limit--;
-		return e;
+		return a;
 	}
 
 	@Override
 	public void swapAtPositions(int i, int j) {
-		int e = dense[i];
-		int f = dense[j];
-		dense[i] = f;
-		dense[j] = e;
-		sparse[e] = j;
-		sparse[f] = i;
+		int a = dense[i];
+		int b = dense[j];
+		dense[i] = b;
+		dense[j] = a;
+		sparse[a] = j;
+		sparse[b] = i;
 	}
 
-	public boolean remove(int e) {
-		int i = sparse[e];
+	public boolean remove(int a) {
+		int i = sparse[a];
 		if (i > limit)
 			return false; // not removed because not present
 		if (i != limit) {
-			int f = dense[limit];
-			dense[i] = f;
-			dense[limit] = e;
-			sparse[e] = limit;
-			sparse[f] = i;
+			int b = dense[limit];
+			dense[i] = b;
+			dense[limit] = a;
+			sparse[a] = limit;
+			sparse[b] = i;
 		}
 		limit--;
 		return true; // removed
 	}
 
-	public final void swap(int e, int f) {
-		int i = sparse[e];
-		int j = sparse[f];
-		dense[i] = f;
-		dense[j] = e;
-		sparse[e] = j;
-		sparse[f] = i;
+	public final void swap(int a, int b) {
+		int i = sparse[a];
+		int j = sparse[b];
+		dense[i] = b;
+		dense[j] = a;
+		sparse[a] = j;
+		sparse[b] = i;
 	}
 
 	public final void moveElementsAt(int oldTailLimit) {
 		int nSwaps = Math.min(limit + 1, oldTailLimit - limit);
 		for (int i = 0; i < nSwaps; i++) {
 			int j = oldTailLimit - i;
-			int e = dense[i];
-			int f = dense[j];
-			dense[i] = f;
-			dense[j] = e;
-			sparse[e] = j;
-			sparse[f] = i;
+			int a = dense[i];
+			int b = dense[j];
+			dense[i] = b;
+			dense[j] = a;
+			sparse[a] = j;
+			sparse[b] = i;
 		}
 
 	}

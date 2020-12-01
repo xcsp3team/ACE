@@ -61,7 +61,6 @@ import solver.SolutionManager;
 import solver.backtrack.SolverBacktrack;
 import solver.local.HeuristicNeighbors.BestGlobal;
 import solver.local.TabuManager.TabuManagerVariableValue;
-import utility.DocumentHandler;
 import utility.Enums.EBinaryEncoding;
 import utility.Enums.EBranching;
 import utility.Enums.EExtension;
@@ -687,7 +686,7 @@ public class Control {
 					userSettingsFilename = Arguments.userSettingsFilename;
 				if (userSettingsFilename != null && !userSettingsFilename.equals(Control.DEFAULT_CONFIGURATION)) {
 					// Loads the XML file containing all settings from the user.
-					document = DocumentHandler.load(new File(userSettingsFilename));
+					document = Kit.load(new File(userSettingsFilename));
 					xPath = XPathFactory.newInstance().newXPath();
 				}
 			}
@@ -917,7 +916,7 @@ public class Control {
 		}
 
 		public static void saveControlPanelSettings(Control cp, String outputFilename, int maximumPriority) {
-			Document document = DocumentHandler.createNewDocument();
+			Document document = Kit.createNewDocument();
 			Node root = document.appendChild(document.createElement(Control.CONFIGURATION));
 			for (Setting<?> setting : cp.settings.settings)
 				if (setting.priority <= maximumPriority) {

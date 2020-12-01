@@ -92,24 +92,18 @@ public final class Queue extends SetSparse {
 	}
 
 	public boolean isNogoodConsistent(Variable x) {
-		if (nogoodRecorder != null) {
-			// if (propagation.getSolver().getResolution().getAuxiliarySolver() == propagation.getSolver()) return true;
-			// for the moment the auxiliary solver does not exploit nogoods
+		if (nogoodRecorder != null)
 			if (x.dom.size() == 1 && nogoodRecorder.checkWatchesOf(x, x.dom.first(), false) == false)
 				return false;
-		}
-		if (sentinelLevel != null) {
+		if (ipsRecorder != null) {
 			if (sentinelLevel[x.num] != propagation.solver.stats.numberSafe())
 				absentValuesSentinel[x.num] = -1;
 			int depth = propagation.solver.depth();
 			Domain dom = x.dom;
 			int last = dom.lastRemoved();
-			for (int a = dom.lastRemoved(); a != absentValuesSentinel[x.num] && dom.removedLevelOf(a) == depth; a = dom.prevRemoved(a)) {
-				// if (elements.getAbsentLevelOf(index) < depth) // TODO ex version, the new one (with isAtLevel) must be controlled
-				// break;
+			for (int a = dom.lastRemoved(); a != absentValuesSentinel[x.num] && dom.removedLevelOf(a) == depth; a = dom.prevRemoved(a))
 				if (!ipsRecorder.checkWatchesOf(x.num, a))
 					return false;
-			}
 			sentinelLevel[x.num] = propagation.solver.stats.numberSafe();
 			absentValuesSentinel[x.num] = last;
 		}

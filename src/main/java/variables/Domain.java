@@ -35,6 +35,7 @@ import utility.Kit;
 public interface Domain extends LinkedSet {
 
 	static final int TAG_RANGE = Integer.MAX_VALUE;
+
 	static final int TAG_SYMBOLS = Integer.MAX_VALUE - 1;
 
 	static boolean similarDomains(Domain[] doms1, Domain[] doms2) {

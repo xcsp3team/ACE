@@ -15,6 +15,7 @@ import variables.Variable;
 public abstract class StrongConsistency extends GAC {
 
 	protected int nPassesLimit = Integer.MAX_VALUE; // TODO hard coding
+
 	protected boolean onlyBounds, onlyNeighbours; // TODO hard coding
 
 	protected final int verbose;

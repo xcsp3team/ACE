@@ -27,7 +27,6 @@ import org.w3c.dom.NodeList;
 
 import dashboard.Control;
 import dashboard.Output;
-import utility.DocumentHandler;
 import utility.Kit;
 
 public class Campagn { // using the cluster
@@ -228,7 +227,7 @@ public class Campagn { // using the cluster
 	public void runVariant(String variant, boolean b) {
 		currVariantFileName = variant;
 		currVariantParallel = b;
-		Document document = DocumentHandler.load(selectedInstancesFileName);
+		Document document = Kit.load(selectedInstancesFileName);
 		NodeList directoryList = document.getElementsByTagName(DIRECTORY);
 		for (int i = 0; i < directoryList.getLength(); i++) {
 			Element element = (Element) directoryList.item(i);

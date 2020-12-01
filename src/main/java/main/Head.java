@@ -43,10 +43,8 @@ import propagation.Propagation;
 import solver.Solver;
 import solver.Statistics.StatisticsMultiResolution;
 import solver.local.SolverLocal;
-import utility.DocumentHandler;
 import utility.Enums.EStopping;
 import utility.Enums.TypeOutput;
-import utility.Graphviz;
 import utility.Kit;
 import utility.Kit.Stopwatch;
 import utility.Reflector;
@@ -69,15 +67,15 @@ public class Head extends Thread {
 	public synchronized static void saveMultithreadResultsFiles(Head resolution) {
 		String fileName = resolution.output.save(resolution.stopwatch.wckTime());
 		if (fileName != null) {
-			String variantParallelName = DocumentHandler.attValueFor(Arguments.lastArgument(), ResolutionVariants.VARIANT_PARALLEL, ResolutionVariants.NAME);
+			String variantParallelName = Kit.attValueFor(Arguments.lastArgument(), ResolutionVariants.VARIANT_PARALLEL, ResolutionVariants.NAME);
 			String resultsFileName = resolution.control.xml.dirForCampaign;
 			if (resultsFileName != "")
 				resultsFileName += File.separator;
 			resultsFileName += Output.RESULTS_DIRECTORY_NAME + File.separator
 					+ resolution.output.outputFileNameFrom(resolution.problem.name(), variantParallelName);
 			Kit.copy(fileName, resultsFileName);
-			Document document = DocumentHandler.load(resultsFileName);
-			DocumentHandler.modify(document, TypeOutput.RESOLUTIONS.toString(), Output.CONFIGURATION_FILE_NAME, variantParallelName);
+			Document document = Kit.load(resultsFileName);
+			Kit.modify(document, TypeOutput.RESOLUTIONS.toString(), Output.CONFIGURATION_FILE_NAME, variantParallelName);
 			long totalWCKTime = 0;
 			long totalVisitedNodes = 0;
 			for (Head h : heads) {
@@ -103,7 +101,7 @@ public class Head extends Thread {
 
 	public final static String[] loadVariantNames() {
 		if (Arguments.multiThreads) {
-			String prefix = DocumentHandler.attValueFor(Arguments.userSettingsFilename, "xml", "exportMode");
+			String prefix = Kit.attValueFor(Arguments.userSettingsFilename, "xml", "exportMode");
 			if (prefix.equals("NO"))
 				prefix = ".";
 			if (prefix != "")
@@ -315,7 +313,7 @@ public class Head extends Thread {
 		for (ObserverConstruction obs : observersConstruction)
 			obs.afterProblemConstruction();
 		problem.display();
-		Graphviz.saveGraph(problem, control.general.saveNetworkGraph);
+		// Graphviz.saveGraph(problem, control.general.saveNetworkGraph);
 		return problem;
 	}
 

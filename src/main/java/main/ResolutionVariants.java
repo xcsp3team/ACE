@@ -8,7 +8,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xcsp.common.Utilities;
 
-import utility.DocumentHandler;
 import utility.Kit;
 
 public final class ResolutionVariants {
@@ -27,14 +26,14 @@ public final class ResolutionVariants {
 
 	public final static String[] loadSequentialVariants(String configurationFileName, String configurationVariantsFileName, String prefix) {
 		List<String> list = new ArrayList<>();
-		Document document = DocumentHandler.load(configurationVariantsFileName);
+		Document document = Kit.load(configurationVariantsFileName);
 		NodeList variants = document.getElementsByTagName(VARIANT);
 		for (int i = 0; i < variants.getLength(); i++) {
 			Element variant = (Element) variants.item(i);
 			Element parent = (Element) variant.getParentNode();
 			if (!document.getDocumentElement().getTagName().equals(VARIANT_PARALLEL) && parent.getTagName().equals(VARIANT_PARALLEL))
 				continue;
-			Document docVariant = DocumentHandler.load(configurationFileName);
+			Document docVariant = Kit.load(configurationFileName);
 			String docFilename = prefix + (parent.getTagName().equals(VARIANT_PARALLEL) ? parent.getAttribute(NAME) + "_" : "") + variant.getAttribute(NAME)
 					+ ".xml";
 			NodeList modifications = variant.getElementsByTagName(MODIFICATION);
@@ -46,7 +45,7 @@ public final class ResolutionVariants {
 				String path = modificationElement.getAttribute(PATH);
 				String attributeName = modificationElement.getAttribute(ATTRIBUTE);
 				String attributeValue = modificationElement.getAttribute(VALUE);
-				DocumentHandler.modify(docVariant, path, attributeName, attributeValue);
+				Kit.modify(docVariant, path, attributeName, attributeValue);
 			}
 			if (iteration) {
 				Element modification = (Element) modifications.item(nModifications - 1);
@@ -57,7 +56,7 @@ public final class ResolutionVariants {
 						step = Integer.parseInt(modification.getAttribute(STEP));
 				String basis = docFilename.substring(0, docFilename.lastIndexOf(".xml"));
 				for (int cnt = min; cnt <= max; cnt += step) {
-					DocumentHandler.modify(docVariant, path, attributeName, cnt + "");
+					Kit.modify(docVariant, path, attributeName, cnt + "");
 					list.add(Utilities.save(docVariant, basis + cnt + ".xml"));
 				}
 			} else
@@ -68,11 +67,11 @@ public final class ResolutionVariants {
 
 	public final static String[] loadParallelVariants(String configurationVariantsFileName, String prefix) {
 		List<String> list = new ArrayList<>();
-		Document document = DocumentHandler.load(configurationVariantsFileName);
+		Document document = Kit.load(configurationVariantsFileName);
 		if (!document.getDocumentElement().getTagName().equals(VARIANT_PARALLEL)) {
 			NodeList nodeList = document.getElementsByTagName(VARIANT_PARALLEL);
 			for (int i = 0; i < nodeList.getLength(); i++) {
-				Document docVariant = DocumentHandler.createNewDocument();
+				Document docVariant = Kit.createNewDocument();
 				Element element = (Element) docVariant.importNode(nodeList.item(i), true);
 				docVariant.appendChild(element);
 				list.add(Utilities.save(docVariant, prefix + element.getAttribute(NAME) + ".xml"));

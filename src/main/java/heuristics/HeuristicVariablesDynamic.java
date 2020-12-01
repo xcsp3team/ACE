@@ -170,7 +170,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public void beforeRun() {
 			if (solver.restarter.runMultipleOf(solver.head.control.restarts.dataResetPeriod)
 					|| (solver.restarter.numRun > 0 && (solver.restarter.numRun - solver.solManager.lastSolutionRun) % 30 == 0)) { // hard coding
-				System.out.println("Reset weights " + solver.restarter.numRun);
+				System.out.println("    ...resetting weights");
 				reset();
 				// solver.restarter.nRestartsSinceLastReset = 0;
 			}

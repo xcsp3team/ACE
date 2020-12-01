@@ -21,7 +21,7 @@ public class SetSparseReversible extends SetDenseReversible {
 
 	public SetSparseReversible(int capacity, boolean initiallyFull, int nLevels) {
 		super(capacity, initiallyFull, nLevels);
-		sparse = IntStream.range(0, capacity).toArray();
+		this.sparse = IntStream.range(0, capacity).toArray();
 		Kit.control(Arrays.equals(dense, sparse));
 	}
 
@@ -30,86 +30,86 @@ public class SetSparseReversible extends SetDenseReversible {
 	}
 
 	@Override
-	public boolean isPresent(int e) {
-		return sparse[e] <= limit;
+	public boolean isPresent(int a) {
+		return sparse[a] <= limit;
 	}
 
 	@Override
-	public boolean add(int e) {
-		assert !isPresent(e) : sparse[e] + " " + limit;
-		int i = sparse[e];
+	public boolean add(int a) {
+		assert !isPresent(a) : sparse[a] + " " + limit;
+		int i = sparse[a];
 		limit++;
 		if (i > limit) {
-			int f = dense[limit];
-			dense[i] = f;
-			dense[limit] = e;
-			sparse[f] = i;
-			sparse[e] = limit;
+			int b = dense[limit];
+			dense[i] = b;
+			dense[limit] = a;
+			sparse[b] = i;
+			sparse[a] = limit;
 		}
 		return true;
 	}
 
-	public void add(int e, int level) {
-		assert !isPresent(e) : sparse[e] + " " + limit;
+	public void add(int a, int level) {
+		assert !isPresent(a) : sparse[a] + " " + limit;
 		if (limits[level] == UNINITIALIZED)
 			limits[level] = limit;
-		int i = sparse[e];
+		int i = sparse[a];
 		limit++;
 		if (i > limit) {
-			int f = dense[limit];
-			dense[i] = f;
-			dense[limit] = e;
-			sparse[f] = i;
-			sparse[e] = limit;
+			int b = dense[limit];
+			dense[i] = b;
+			dense[limit] = a;
+			sparse[b] = i;
+			sparse[a] = limit;
 		}
 		// add(e); is an alternative to the previous 9 lines
 	}
 
-	public void remove(int e) {
-		assert isPresent(e) : sparse[e] + " " + limit;
-		int i = sparse[e];
+	public void remove(int a) {
+		assert isPresent(a) : sparse[a] + " " + limit;
+		int i = sparse[a];
 		if (i != limit) {
-			int f = dense[limit];
-			dense[i] = f;
-			dense[limit] = e;
-			sparse[f] = i;
-			sparse[e] = limit;
+			int b = dense[limit];
+			dense[i] = b;
+			dense[limit] = a;
+			sparse[b] = i;
+			sparse[a] = limit;
 		}
 		limit--;
 	}
 
-	public void removeIfPresent(int e) {
-		if (sparse[e] <= limit)
-			remove(e);
+	public void removeIfPresent(int a) {
+		if (sparse[a] <= limit)
+			remove(a);
 	}
 
-	public void remove(int e, int level) {
-		assert isPresent(e) : sparse[e] + " " + limit;
+	public void remove(int a, int level) {
+		assert isPresent(a) : sparse[a] + " " + limit;
 		if (limits[level] == UNINITIALIZED)
 			limits[level] = limit;
-		int i = sparse[e];
+		int i = sparse[a];
 		if (i != limit) {
-			int f = dense[limit];
-			dense[i] = f;
-			dense[limit] = e;
-			sparse[f] = i;
-			sparse[e] = limit;
+			int b = dense[limit];
+			dense[i] = b;
+			dense[limit] = a;
+			sparse[b] = i;
+			sparse[a] = limit;
 		}
 		limit--;
 		// remove(e); is an alternative to the previous 9 lines
 	}
 
-	public void reduceTo(int e, int level) {
-		assert isPresent(e) : sparse[e] + " " + limit;
+	public void reduceTo(int a, int level) {
+		assert isPresent(a) : sparse[a] + " " + limit;
 		if (limits[level] == UNINITIALIZED)
 			limits[level] = limit;
-		int i = sparse[e];
+		int i = sparse[a];
 		if (i != 0) {
-			int f = dense[0];
-			dense[i] = f;
-			dense[0] = e;
-			sparse[f] = i;
-			sparse[e] = 0;
+			int b = dense[0];
+			dense[i] = b;
+			dense[0] = a;
+			sparse[b] = i;
+			sparse[a] = 0;
 		}
 		limit = 0;
 	}
@@ -120,12 +120,12 @@ public class SetSparseReversible extends SetDenseReversible {
 		if (limits[level] == UNINITIALIZED)
 			limits[level] = limit;
 		if (i != limit) {
-			int e = dense[i];
-			int f = dense[limit];
-			dense[i] = f;
-			dense[limit] = e;
-			sparse[f] = i;
-			sparse[e] = limit;
+			int a = dense[i];
+			int b = dense[limit];
+			dense[i] = b;
+			dense[limit] = a;
+			sparse[b] = i;
+			sparse[a] = limit;
 		}
 		limit--;
 		// remove(dense[i]); is an alternative to the previous 9 lines
@@ -133,12 +133,12 @@ public class SetSparseReversible extends SetDenseReversible {
 
 	@Override
 	public void swapAtPositions(int i, int j) {
-		int e = dense[i];
-		int f = dense[j];
-		dense[i] = f;
-		dense[j] = e;
-		sparse[f] = i;
-		sparse[e] = j;
+		int a = dense[i];
+		int b = dense[j];
+		dense[i] = b;
+		dense[j] = a;
+		sparse[b] = i;
+		sparse[a] = j;
 	}
 
 }

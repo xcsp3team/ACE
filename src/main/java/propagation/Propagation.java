@@ -255,7 +255,6 @@ public abstract class Propagation {
 			lastWipeoutVar = x;
 			for (ObserverConflicts obs : solver.observersConflicts)
 				obs.whenWipeout(currFilteringCtr, x);
-
 			// queue.clear();
 			return false;
 		}

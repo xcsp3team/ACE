@@ -20,7 +20,6 @@ import java.util.stream.Stream;
 import org.xcsp.common.Utilities;
 
 import main.ResolutionVariants;
-import utility.DocumentHandler;
 import utility.Kit;
 import xcsp3.XCSP3;
 
@@ -82,9 +81,9 @@ public final class Arguments {
 		args = Stream.of(args).filter(s -> s.length() > 0).toArray(String[]::new);
 		Kit.control(args.length > 0);
 		Arguments.args = args;
-		multiThreads = DocumentHandler.isXMLFileWithRoot(args[args.length - 1], ResolutionVariants.VARIANT_PARALLEL);
+		multiThreads = Kit.isXMLFileWithRoot(args[args.length - 1], ResolutionVariants.VARIANT_PARALLEL);
 		int cursor = 0;
-		userSettingsFilename = DocumentHandler.isXMLFileWithRoot(args[cursor], Control.CONFIGURATION) ? args[cursor++] : Control.DEFAULT_CONFIGURATION;
+		userSettingsFilename = Kit.isXMLFileWithRoot(args[cursor], Control.CONFIGURATION) ? args[cursor++] : Control.DEFAULT_CONFIGURATION;
 		// control of this file performed later
 		cursor += nInstancesToSolveFrom(args[cursor]);
 		Kit.control(!multiThreads || nInstancesToSolve == 1);
