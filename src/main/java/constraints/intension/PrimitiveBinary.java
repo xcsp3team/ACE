@@ -13,8 +13,8 @@ import java.math.BigInteger;
 import org.xcsp.common.Types.TypeArithmeticOperator;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
-import org.xcsp.modeler.entities.CtrEntities.CtrAlone;
 
+import constraints.Constraint;
 import constraints.global.SumWeighted;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagGACGuaranteed;
@@ -185,7 +185,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 	public static abstract class PrimitiveBinaryWithCst extends PrimitiveBinary {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, int k) {
+		public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (aop) {
 			case ADD:
 				return PrimitiveBinaryAdd.buildFrom(pb, x, y, op, k);
@@ -204,7 +204,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 			}
 		}
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, TypeArithmeticOperator aop, int k) {
+		public static Constraint buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, TypeArithmeticOperator aop, int k) {
 			switch (aop) {
 			case ADD:
 				return PrimitiveBinarySub.buildFrom(pb, x, y, op, k);
@@ -238,20 +238,20 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 	public static abstract class PrimitiveBinaryAdd extends PrimitiveBinaryWithCst implements TagSymmetric {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
+		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case LT:
-				return pb.addCtr(new AddLE2(pb, x, y, k - 1));
+				return new AddLE2(pb, x, y, k - 1);
 			case LE:
-				return pb.addCtr(new AddLE2(pb, x, y, k));
+				return new AddLE2(pb, x, y, k);
 			case GE:
-				return pb.addCtr(new AddGE2(pb, x, y, k));
+				return new AddGE2(pb, x, y, k);
 			case GT:
-				return pb.addCtr(new AddGE2(pb, x, y, k + 1));
+				return new AddGE2(pb, x, y, k + 1);
 			case EQ:
-				return pb.addCtr(new AddEQ2(pb, x, y, k)); // return pb.extension(eq(add(x, y), k));
+				return new AddEQ2(pb, x, y, k); // return pb.extension(eq(add(x, y), k));
 			case NE:
-				return pb.addCtr(new AddNE2(pb, x, y, k));
+				return new AddNE2(pb, x, y, k);
 			}
 			throw new AssertionError();
 		}
@@ -339,21 +339,21 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 	public static abstract class PrimitiveBinarySub extends PrimitiveBinaryWithCst {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
+		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case LT:
-				return pb.addCtr(new SubLE2(pb, x, y, k - 1));
+				return new SubLE2(pb, x, y, k - 1);
 			case LE:
-				return pb.addCtr(new SubLE2(pb, x, y, k));
+				return new SubLE2(pb, x, y, k);
 			case GE:
-				return pb.addCtr(new SubGE2(pb, x, y, k));
+				return new SubGE2(pb, x, y, k);
 			case GT:
-				return pb.addCtr(new SubGE2(pb, x, y, k + 1));
+				return new SubGE2(pb, x, y, k + 1);
 			case EQ:
-				return pb.addCtr(new SubEQ2(pb, x, y, k)); //
+				return new SubEQ2(pb, x, y, k); //
 			// return pb.extension(pb.api.eq(pb.api.sub(x, y), k));
 			case NE:
-				return pb.addCtr(new SubNE2(pb, x, y, k));
+				return new SubNE2(pb, x, y, k);
 			}
 			throw new AssertionError();
 		}
@@ -452,20 +452,20 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 	public static abstract class PrimitiveBinaryMul extends PrimitiveBinaryWithCst implements TagSymmetric {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
+		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case LT:
-				return pb.addCtr(new MulLE2(pb, x, y, k - 1));
+				return new MulLE2(pb, x, y, k - 1);
 			case LE:
-				return pb.addCtr(new MulLE2(pb, x, y, k));
+				return new MulLE2(pb, x, y, k);
 			case GE:
-				return pb.addCtr(new MulGE2(pb, x, y, k));
+				return new MulGE2(pb, x, y, k);
 			case GT:
-				return pb.addCtr(new MulGE2(pb, x, y, k + 1));
+				return new MulGE2(pb, x, y, k + 1);
 			case EQ:
-				return pb.addCtr(new MulEQ2(pb, x, y, k));
+				return new MulEQ2(pb, x, y, k);
 			case NE:
-				return pb.addCtr(new MulNE2(pb, x, y, k));
+				return new MulNE2(pb, x, y, k);
 			}
 			throw new AssertionError();
 		}
@@ -613,21 +613,21 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 	public static abstract class PrimitiveBinaryDiv extends PrimitiveBinaryWithCst implements TagUnsymmetric {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
+		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case LT:
-				return pb.addCtr(new DivLE2(pb, x, y, k - 1));
+				return new DivLE2(pb, x, y, k - 1);
 			case LE:
-				return pb.addCtr(new DivLE2(pb, x, y, k));
+				return new DivLE2(pb, x, y, k);
 			case GE:
-				return pb.addCtr(new DivGE2(pb, x, y, k));
+				return new DivGE2(pb, x, y, k);
 			case GT:
-				return pb.addCtr(new DivGE2(pb, x, y, k + 1));
+				return new DivGE2(pb, x, y, k + 1);
 			case EQ:
-				return pb.addCtr(new DivEQ2(pb, x, y, k));
+				return new DivEQ2(pb, x, y, k);
 			case NE:
 				return null;
-			// return pb.addCtr(new DivNE2(pb, x, y, k)); // TODO
+			// return new DivNE2(pb, x, y, k)); // TODO
 			}
 			throw new AssertionError();
 		}
@@ -731,10 +731,10 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 	public static abstract class PrimitiveBinaryMod extends PrimitiveBinaryWithCst implements TagUnsymmetric {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
+		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case EQ:
-				return pb.addCtr(new ModEQ2(pb, x, y, k));
+				return new ModEQ2(pb, x, y, k);
 			default:
 				return null;
 			}
@@ -828,22 +828,22 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 	public static abstract class PrimitiveBinaryDist extends PrimitiveBinaryWithCst implements TagSymmetric {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
+		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case LT:
-				return pb.addCtr(new DistLE2(pb, x, y, k - 1)); // return pb.extension(lt(dist(x, y), k));
+				return new DistLE2(pb, x, y, k - 1); // return pb.extension(lt(dist(x, y), k));
 			case LE:
-				return pb.addCtr(new DistLE2(pb, x, y, k)); // return pb.extension(le(dist(x, y), k));
+				return new DistLE2(pb, x, y, k); // return pb.extension(le(dist(x, y), k));
 			case GE:
-				return pb.addCtr(new DistGE2(pb, x, y, k));
+				return new DistGE2(pb, x, y, k);
 			case GT:
-				return pb.addCtr(new DistGE2(pb, x, y, k + 1));
+				return new DistGE2(pb, x, y, k + 1);
 			case EQ:
-				return pb.addCtr(new DistEQ2(pb, x, y, k)); // return pb.extension(eq(dist(x, y), k));
+				return new DistEQ2(pb, x, y, k); // return pb.extension(eq(dist(x, y), k));
 			// ok for java ac csp/Rlfap-scen-11-f06.xml.lzma -cm -ev -varh=Dom but not for domOnwdeg. Must be because of failing may occur on assigned
 			// variables in DISTEQ2
 			case NE:
-				return pb.addCtr(new DistNE2(pb, x, y, k));
+				return new DistNE2(pb, x, y, k);
 			}
 			throw new AssertionError();
 		}
@@ -937,17 +937,17 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 	public static abstract class PrimitiveBinaryMulb extends PrimitiveBinaryWithCst implements TagUnsymmetric {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
+		public static Constraint buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
 			switch (op) {
 			case LT:
 			case LE:
 			case GE:
 			case GT:
-				return pb.addCtr(SumWeighted.buildFrom(pb, pb.api.vars(x, y), pb.api.vals(1, -k), op, 0));
+				return SumWeighted.buildFrom(pb, pb.api.vars(x, y), pb.api.vals(1, -k), op, 0);
 			case EQ:
-				return pb.addCtr(new MulbEQ2(pb, x, y, k));
+				return new MulbEQ2(pb, x, y, k);
 			case NE:
-				return pb.addCtr(new MulbNE2(pb, x, y, k));
+				return new MulbNE2(pb, x, y, k);
 			}
 			throw new AssertionError();
 		}
@@ -1002,20 +1002,20 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 	public static abstract class PrimitiveBinaryDivb extends PrimitiveBinaryWithCst implements TagUnsymmetric {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
+		public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
 			switch (op) {
 			// case LT:
-			// return pb.addCtr(new DivbLE2(pb, x, y, k - 1)); // TODO
+			// return new DivbLE2(pb, x, y, k - 1); // TODO
 			// case LE:
-			// return pb.addCtr(new DivbLE2(pb, x, y, k));
+			// return new DivbLE2(pb, x, y, k);
 			// case GE:
-			// return pb.addCtr(new DivbGE2(pb, x, y, k));
+			// return new DivbGE2(pb, x, y, k);
 			// case GT:
-			// return pb.addCtr(new DivbGE2(pb, x, y, k + 1));
+			// return new DivbGE2(pb, x, y, k + 1);
 			case EQ:
-				return pb.addCtr(new DivbEQ2(pb, x, y, k));
+				return new DivbEQ2(pb, x, y, k);
 			case NE:
-				return pb.addCtr(new DivbNE2(pb, x, y, k));
+				return new DivbNE2(pb, x, y, k);
 			default:
 				return null;
 			}
@@ -1095,12 +1095,12 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 	public static abstract class PrimitiveBinaryModb extends PrimitiveBinaryWithCst implements TagUnsymmetric {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
+		public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
 			switch (op) {
 			case EQ:
-				return pb.addCtr(new ModbEQ2(pb, x, y, k));
+				return new ModbEQ2(pb, x, y, k);
 			case NE:
-				return pb.addCtr(new ModbNE2(pb, x, y, k));
+				return new ModbNE2(pb, x, y, k);
 			default:
 				return null;
 			}
@@ -1213,12 +1213,12 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 	public static abstract class PrimitiveBinaryDistb extends PrimitiveBinaryWithCst implements TagUnsymmetric {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
+		public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
 			switch (op) {
 			case EQ:
-				return pb.addCtr(new DistbEQ2(pb, x, y, k));
+				return new DistbEQ2(pb, x, y, k);
 			case NE:
-				return pb.addCtr(new DistbNE2(pb, x, y, k));
+				return new DistbNE2(pb, x, y, k);
 			default:
 				return null;
 			}
@@ -1282,20 +1282,20 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 	public static abstract class PrimitiveBinaryLog extends PrimitiveBinaryWithCst implements TagUnsymmetric {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
+		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case LT:
-				return pb.addCtr(new LogLE2(pb, x, y, k - 1));
+				return new LogLE2(pb, x, y, k - 1);
 			case LE:
-				return pb.addCtr(new LogLE2(pb, x, y, k));
+				return new LogLE2(pb, x, y, k);
 			case GE:
-				return pb.addCtr(new LogGE2(pb, x, y, k));
+				return new LogGE2(pb, x, y, k);
 			case GT:
-				return pb.addCtr(new LogGE2(pb, x, y, k + 1));
+				return new LogGE2(pb, x, y, k + 1);
 			case EQ:
-				return pb.addCtr(new LogEQ2(pb, x, y, k));
+				return new LogEQ2(pb, x, y, k);
 			case NE:
-				return pb.addCtr(new LogNE2(pb, x, y, k));
+				return new LogNE2(pb, x, y, k);
 			}
 			throw new AssertionError();
 		}

@@ -19,6 +19,12 @@ import static org.xcsp.common.Types.TypeObjective.SUM;
 import static org.xcsp.common.Types.TypeOptimization.MAXIMIZE;
 import static org.xcsp.common.Types.TypeOptimization.MINIMIZE;
 import static org.xcsp.common.Utilities.safeInt;
+import static org.xcsp.common.predicates.MatcherInterface.val;
+import static org.xcsp.common.predicates.MatcherInterface.var;
+import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.ariop;
+import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.relop;
+import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.unaop;
+import static org.xcsp.common.predicates.XNode.node;
 import static org.xcsp.common.predicates.XNodeParent.add;
 import static org.xcsp.common.predicates.XNodeParent.eq;
 import static org.xcsp.common.predicates.XNodeParent.iff;
@@ -70,6 +76,7 @@ import org.xcsp.common.domains.Domains.DomSymbolic;
 import org.xcsp.common.domains.Values.IntegerEntity;
 import org.xcsp.common.domains.Values.IntegerInterval;
 import org.xcsp.common.enumerations.EnumerationCartesian;
+import org.xcsp.common.predicates.MatcherInterface.Matcher;
 import org.xcsp.common.predicates.TreeEvaluator;
 import org.xcsp.common.predicates.XNode;
 import org.xcsp.common.predicates.XNodeLeaf;
@@ -143,6 +150,8 @@ import constraints.intension.Intension;
 import constraints.intension.PrimitiveBinary.Disjonctive;
 import constraints.intension.PrimitiveBinary.PrimitiveBinarySub;
 import constraints.intension.PrimitiveBinary.PrimitiveBinarySub.SubNE2;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryWithCst;
+import constraints.intension.PrimitiveTernary;
 import dashboard.Control.SettingGeneral;
 import dashboard.Control.SettingVars;
 import heuristics.HeuristicValues;
@@ -840,12 +849,21 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return new XNodeLeaf<>(TypeExpr.VAR, aux);
 	}
 
+	private Matcher x_relop_y = new Matcher(node(relop, var, var));
+	private Matcher x_ariop_y__relop_k = new Matcher(node(relop, node(ariop, var, var), val));
+	private Matcher k_relop__x_ariop_y = new Matcher(node(relop, val, node(ariop, var, var)));
+	private Matcher x_relop__y_ariop_k = new Matcher(node(relop, var, node(ariop, var, val)));
+	private Matcher y_ariop_k__relop_x = new Matcher(node(relop, node(ariop, var, val), var));
+	private Matcher unaop_x__eq_y = new Matcher(node(TypeExpr.EQ, node(unaop, var), var));
+
+	private Matcher x_ariop_y__relop_z = new Matcher(node(relop, node(ariop, var, var), var));
+	private Matcher z_relop__x_ariop_y = new Matcher(node(relop, var, node(ariop, var, var)));
+
 	@Override
 	public final CtrAlone intension(XNodeParent<IVar> tree) {
 		Variable[] scp = (Variable[]) tree.vars();
 		assert Stream.of(scp).allMatch(x -> x instanceof Var) || Stream.of(scp).allMatch(x -> x instanceof VarSymbolic);
-		// if (scp.length > 1)
-		// System.out.println("tree " + tree);
+
 		if (scp.length == 1 && !head.mustPreserveUnaryConstraints()) {
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 			scp[0].dom.removeValuesAtConstructionTime(v -> evaluator.evaluate(v) != 1);
@@ -860,8 +878,39 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			stuff.nConvertedConstraints++;
 			return extension(tree);
 		}
+		tree = (XNodeParent<IVar>) tree.canonization();
+		// XNodeParent<IVar> tree = (XNodeParent<IVar>) trVar(otree);
+
+		Variable[] vars = (Variable[]) tree.vars();
+		// System.out.println("treeee " + tree + " " + vars.length + " " + head.control.xml.primitiveTernaryInSolver);
+		if (vars.length == 2 && head.control.xml.primitiveBinaryInSolver) {
+			Constraint c = null;
+			if (x_relop_y.matches(tree))
+				c = PrimitiveBinarySub.buildFrom(this, vars[0], vars[1], tree.relop(0), 0);
+			else if (x_ariop_y__relop_k.matches(tree))
+				c = PrimitiveBinaryWithCst.buildFrom(this, vars[0], tree.ariop(0), vars[1], tree.relop(0), tree.val(0));
+			else if (k_relop__x_ariop_y.matches(tree))
+				c = PrimitiveBinaryWithCst.buildFrom(this, vars[0], tree.ariop(0), vars[1], tree.relop(0).arithmeticInversion(), tree.val(0));
+			else if (x_relop__y_ariop_k.matches(tree))
+				c = PrimitiveBinaryWithCst.buildFrom(this, vars[0], tree.relop(0), vars[1], tree.ariop(0), tree.val(0));
+			else if (y_ariop_k__relop_x.matches(tree))
+				c = PrimitiveBinaryWithCst.buildFrom(this, vars[1], tree.relop(0).arithmeticInversion(), vars[0], tree.ariop(0), tree.val(0));
+			if (c != null)
+				return addCtr(c);
+		}
+		if (vars.length == 3 && head.control.xml.primitiveTernaryInSolver) {
+			Constraint c = null;
+			if (z_relop__x_ariop_y.matches(tree))
+				c = PrimitiveTernary.buildFrom(this, vars[1], tree.ariop(0), vars[2], tree.relop(0).arithmeticInversion(), vars[0]);
+			else if (x_ariop_y__relop_z.matches(tree))
+				c = PrimitiveTernary.buildFrom(this, vars[0], tree.ariop(0), vars[1], tree.relop(0), vars[2]);
+			if (c != null)
+				return addCtr(c);
+		}
+		// return imp().intension(tree);
+
 		//
-		XNodeParent<IVar> tree2 = (XNodeParent<IVar>) tree.canonization();
+		// XNodeParent<IVar> tree2 = (XNodeParent<IVar>) tree.canonization();
 		// System.out.println("tree02 " + tree2);
 		// if (ConstraintRecognizer.logic_y_relop_k__eq_x.matches(tree2))
 		// return PrimitiveBinaryLog.buildFrom(this, (Variable) tree2.var(1), (Variable) tree2.var(0), tree2.relop(0), tree2.val(0));
@@ -885,7 +934,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// }
 		// }
 		// System.out.println("tree3 " + tree2);
-		return addCtr(new Intension(this, (Variable[]) tree2.vars(), tree2));
+		return addCtr(new Intension(this, vars, tree));
 	}
 
 	// ************************************************************************
@@ -1155,7 +1204,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity ordered(Var[] list, int[] lengths, TypeOperatorRel op) {
 		control(list != null && lengths != null && list.length == lengths.length + 1 && op != null);
 		TypeConditionOperatorRel cop = op.toConditionOperator();
-		return forall(range(list.length - 1), i -> PrimitiveBinarySub.buildFrom(this, (Variable) list[i], (Variable) list[i + 1], cop, -lengths[i]));
+		return forall(range(list.length - 1), i -> addCtr(PrimitiveBinarySub.buildFrom(this, (Variable) list[i], (Variable) list[i + 1], cop, -lengths[i])));
 	}
 
 	/**

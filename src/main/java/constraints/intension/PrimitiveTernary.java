@@ -14,14 +14,14 @@ import static constraints.intension.PrimitiveBinary.enforceGT;
 import static constraints.intension.PrimitiveBinary.enforceLE;
 import static constraints.intension.PrimitiveBinary.enforceLT;
 import static constraints.intension.PrimitiveBinary.enforceNE;
-import static org.xcsp.common.Types.TypeConditionOperatorRel.EQ;
 
 import java.math.BigInteger;
 
+import org.xcsp.common.Types.TypeArithmeticOperator;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
-import org.xcsp.modeler.entities.CtrEntities.CtrAlone;
 
+import constraints.Constraint;
 import constraints.global.SumWeighted;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagGACGuaranteed;
@@ -32,6 +32,25 @@ import variables.Domain;
 import variables.Variable;
 
 public abstract class PrimitiveTernary extends Primitive implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, TagUnsymmetric {
+
+	public static Constraint buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, Variable z) {
+		switch (aop) {
+		case ADD:
+			return PrimitiveTernaryAdd.buildFrom(pb, x, y, op, z);
+		case SUB:
+			return PrimitiveTernarySub.buildFrom(pb, x, y, op, z);
+		case MUL:
+			return PrimitiveTernaryMul.buildFrom(pb, x, y, op, z);
+		case DIV:
+			return PrimitiveTernaryDiv.buildFrom(pb, x, y, op, z);
+		case MOD:
+			return PrimitiveTernaryMod.buildFrom(pb, x, y, op, z);
+		case DIST:
+			return PrimitiveTernaryDist.buildFrom(pb, x, y, op, z);
+		default:
+			return null; // noting implemented for POW
+		}
+	}
 
 	protected final Variable x, y, z;
 
@@ -68,10 +87,13 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 
 	public static abstract class PrimitiveTernaryAdd extends PrimitiveTernary {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
-			if (op == EQ)
-				return pb.addCtr(new AddEQ3(pb, x, y, z));
-			return pb.addCtr(SumWeighted.buildFrom(pb, pb.api.vars(z, x, y), pb.api.vals(-1, 1, 1), op, 0)); // we order variables according to coeffs
+		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
+			switch (op) {
+			case EQ:
+				return new AddEQ3(pb, x, y, z);
+			default:
+				return SumWeighted.buildFrom(pb, pb.api.vars(z, x, y), pb.api.vals(-1, 1, 1), op, 0); // we order variables according to coeffs
+			}
 		}
 
 		public PrimitiveTernaryAdd(Problem pb, Variable x, Variable y, Variable z) {
@@ -199,7 +221,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 
 	public static abstract class PrimitiveTernarySub extends PrimitiveTernary {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
+		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			return PrimitiveTernaryAdd.buildFrom(pb, y, z, op, x); // x - y <op> z is equivalent to y + z <op> x
 		}
 
@@ -214,10 +236,13 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 
 	public static abstract class PrimitiveTernaryMul extends PrimitiveTernary {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
-			if (op == TypeConditionOperatorRel.EQ)
-				return pb.addCtr(x.dom.is01() ? new MulEQ3b(pb, x, y, z) : y.dom.is01() ? new MulEQ3b(pb, y, x, z) : new MulEQ3(pb, y, x, z));
-			throw new UnsupportedOperationException();
+		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
+			switch (op) {
+			case EQ:
+				return x.dom.is01() ? new MulEQ3b(pb, x, y, z) : y.dom.is01() ? new MulEQ3b(pb, y, x, z) : new MulEQ3(pb, y, x, z);
+			default:
+				return null;
+			}
 		}
 
 		public PrimitiveTernaryMul(Problem pb, Variable x, Variable y, Variable z) {
@@ -288,6 +313,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
+				// System.out.println("herree " + this);
 				if (!dy.isPresentValue(0) || !dz.isPresentValue(0)) // if 0 is present in dy and dz, all values of x are supported
 					extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int va = dx.toVal(a);
@@ -302,6 +328,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 							int vc = va * dy.toVal(b);
 							if ((va > 0 && vc > dz.lastValue()) || (va < 0 && vc < dz.firstValue()))
 								break;
+							dz.display(true);
 							if (dz.isPresentValue(vc)) {
 								rx[a] = b;
 								continue extern;
@@ -344,7 +371,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 					for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int va = dx.toVal(a);
 						int vb = vc / va;
-						if (va > 0 && vc > 0 && (va > vc / 2 || va * dy.firstValue() > vc)) // TODO correct. right? other ways of breaking?
+						if (va > 0 && vc > 0 && va * dy.firstValue() > vc) // TODO other ways of breaking?
 							break;
 						if (vc % va == 0 && dy.isPresentValue(vb)) {
 							rzx[c] = a;
@@ -355,7 +382,6 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 					if (dz.remove(c) == false)
 						return false;
 				}
-
 				return true;
 			}
 		}
@@ -367,10 +393,13 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 
 	public static abstract class PrimitiveTernaryDiv extends PrimitiveTernary {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
-			if (op == TypeConditionOperatorRel.EQ)
-				return pb.addCtr(new DivEQ3(pb, x, y, z));
-			throw new UnsupportedOperationException();
+		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
+			switch (op) {
+			case EQ:
+				return new DivEQ3(pb, x, y, z);
+			default:
+				return null;
+			}
 		}
 
 		public PrimitiveTernaryDiv(Problem pb, Variable x, Variable y, Variable z) {
@@ -479,10 +508,13 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 
 	public static abstract class PrimitiveTernaryMod extends PrimitiveTernary {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
-			if (op == TypeConditionOperatorRel.EQ)
-				return pb.addCtr(new ModEQ3(pb, x, y, z));
-			throw new UnsupportedOperationException();
+		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
+			switch (op) {
+			case EQ:
+				return new ModEQ3(pb, x, y, z);
+			default:
+				return null;
+			}
 		}
 
 		public PrimitiveTernaryMod(Problem pb, Variable x, Variable y, Variable z) {
@@ -588,10 +620,13 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 
 	public static abstract class PrimitiveTernaryDist extends PrimitiveTernary {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
-			if (op == EQ)
-				return pb.addCtr(new DistEQ3(pb, x, y, z));
-			throw new UnsupportedOperationException();
+		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
+			switch (op) {
+			case EQ:
+				return new DistEQ3(pb, x, y, z);
+			default:
+				return null;
+			}
 		}
 
 		public PrimitiveTernaryDist(Problem pb, Variable x, Variable y, Variable z) {
@@ -729,20 +764,20 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 
 	public static abstract class PrimitiveTernaryLog extends PrimitiveTernary {
 
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
+		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			switch (op) {
 			case LT:
-				return pb.addCtr(new LogLT3(pb, x, y, z));
+				return new LogLT3(pb, x, y, z);
 			case LE:
-				return pb.addCtr(new LogLE3(pb, x, y, z));
+				return new LogLE3(pb, x, y, z);
 			case GE:
-				return pb.addCtr(new LogGE3(pb, x, y, z));
+				return new LogGE3(pb, x, y, z);
 			case GT:
-				return pb.addCtr(new LogGT3(pb, x, y, z));
+				return new LogGT3(pb, x, y, z);
 			case EQ:
-				return pb.addCtr(new LogEQ3(pb, x, y, z));
+				return new LogEQ3(pb, x, y, z);
 			case NE:
-				return pb.addCtr(new LogNE3(pb, x, y, z));
+				return new LogNE3(pb, x, y, z);
 			}
 			throw new AssertionError();
 		}
