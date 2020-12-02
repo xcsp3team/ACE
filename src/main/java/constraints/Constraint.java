@@ -863,7 +863,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		for (int i = 0; i < scp.length; i++)
 			for (int a = doms[i].first(); a != -1; a = doms[i].next(a))
 				if (seekFirstSupportWith(i, a) == false) {
-					Kit.log.warning(" " + scp[i] + "=" + a + " not supported by " + this);
+					System.out.println(" " + scp[i] + "=" + a + " not supported by " + this);
 					display(true);
 					return false;
 				}

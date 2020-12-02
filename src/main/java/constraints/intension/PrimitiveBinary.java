@@ -10,6 +10,7 @@ package constraints.intension;
 
 import java.math.BigInteger;
 
+import org.xcsp.common.Types.TypeArithmeticOperator;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 import org.xcsp.modeler.entities.CtrEntities.CtrAlone;
@@ -183,6 +184,44 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 	// ************************************************************************
 
 	public static abstract class PrimitiveBinaryWithCst extends PrimitiveBinary {
+
+		public static CtrAlone buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, int k) {
+			switch (aop) {
+			case ADD:
+				return PrimitiveBinaryAdd.buildFrom(pb, x, y, op, k);
+			case SUB:
+				return PrimitiveBinarySub.buildFrom(pb, x, y, op, k);
+			case MUL:
+				return PrimitiveBinaryMul.buildFrom(pb, x, y, op, k);
+			case DIV:
+				return PrimitiveBinaryDiv.buildFrom(pb, x, y, op, k);
+			case MOD:
+				return PrimitiveBinaryMod.buildFrom(pb, x, y, op, k);
+			case DIST:
+				return PrimitiveBinaryDist.buildFrom(pb, x, y, op, k);
+			default:
+				return null;
+			}
+		}
+
+		public static CtrAlone buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, TypeArithmeticOperator aop, int k) {
+			switch (aop) {
+			case ADD:
+				return PrimitiveBinarySub.buildFrom(pb, x, y, op, k);
+			case SUB:
+				return PrimitiveBinarySub.buildFrom(pb, x, y, op, -k);
+			case MUL:
+				return PrimitiveBinaryMulb.buildFrom(pb, x, op, y, k);
+			case DIV:
+				return PrimitiveBinaryDivb.buildFrom(pb, x, op, y, k);
+			case MOD:
+				return PrimitiveBinaryModb.buildFrom(pb, x, op, y, k);
+			case DIST:
+				return PrimitiveBinaryDistb.buildFrom(pb, x, op, y, k);
+			default:
+				return null;
+			}
+		}
 
 		protected final int k;
 
@@ -569,71 +608,6 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 	}
 
 	// ************************************************************************
-	// ***** Classes for x <op> k * y (CtrPrimitiveBinaryMulb)
-	// ************************************************************************
-
-	public static abstract class PrimitiveBinaryMulb extends PrimitiveBinaryWithCst implements TagUnsymmetric {
-
-		public static CtrAlone buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, int k, Variable y) {
-			switch (op) {
-			case LT:
-			case LE:
-			case GE:
-			case GT:
-				return pb.addCtr(SumWeighted.buildFrom(pb, pb.api.vars(x, y), pb.api.vals(1, -k), op, 0));
-			case EQ:
-				return pb.addCtr(new MulbEQ2(pb, x, y, k));
-			case NE:
-				return pb.addCtr(new MulbNE2(pb, x, y, k));
-			}
-			throw new AssertionError();
-		}
-
-		public PrimitiveBinaryMulb(Problem pb, Variable x, Variable y, int k) {
-			super(pb, x, y, k);
-			control(k != 0);
-			control(Utilities.isSafeInt(BigInteger.valueOf(dy.firstValue()).multiply(BigInteger.valueOf(k)).longValueExact()));
-			control(Utilities.isSafeInt(BigInteger.valueOf(dy.lastValue()).multiply(BigInteger.valueOf(k)).longValueExact()));
-		}
-
-		public static final class MulbEQ2 extends PrimitiveBinaryMulb {
-
-			@Override
-			public boolean checkValues(int[] t) {
-				return t[0] == k * t[1];
-			}
-
-			public MulbEQ2(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-				dx.removeValuesAtConstructionTime(v -> v != 0 && v % k != 0); // non multiple deleted (important for avoiding systematic checks)
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				return enforceMulEQ(dx, dy, k);
-			}
-		}
-
-		public static final class MulbNE2 extends PrimitiveBinaryMulb {
-
-			@Override
-			public boolean checkValues(int[] t) {
-				return t[0] != k * t[1];
-			}
-
-			public MulbNE2(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-				// note that values in x that are not multiple of k are always supported
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				return enforceMulNE(dx, dy, k);
-			}
-		}
-	}
-
-	// ************************************************************************
 	// ***** Classes for x / y <op> k (CtrPrimitiveBinaryDiv)
 	// ************************************************************************
 
@@ -651,7 +625,8 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 				return pb.addCtr(new DivGE2(pb, x, y, k + 1));
 			case EQ:
 				return pb.addCtr(new DivEQ2(pb, x, y, k));
-			// case NE:
+			case NE:
+				return null;
 			// return pb.addCtr(new DivNE2(pb, x, y, k)); // TODO
 			}
 			throw new AssertionError();
@@ -751,107 +726,18 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 	}
 
 	// ************************************************************************
-	// ***** Classes for x <op> y / k (CtrPrimitiveBinaryDivb)
-	// ************************************************************************
-
-	public static abstract class PrimitiveBinaryDivb extends PrimitiveBinaryWithCst implements TagUnsymmetric {
-
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
-			switch (op) {
-			// case LT:
-			// return pb.addCtr(new DivbLE2(pb, x, y, k - 1)); // TODO
-			// case LE:
-			// return pb.addCtr(new DivbLE2(pb, x, y, k));
-			// case GE:
-			// return pb.addCtr(new DivbGE2(pb, x, y, k));
-			// case GT:
-			// return pb.addCtr(new DivbGE2(pb, x, y, k + 1));
-			case EQ:
-				return pb.addCtr(new DivbEQ2(pb, x, y, k));
-			case NE:
-				return pb.addCtr(new DivbNE2(pb, x, y, k));
-			}
-			throw new AssertionError();
-		}
-
-		public PrimitiveBinaryDivb(Problem pb, Variable x, Variable y, int k) {
-			super(pb, x, y, k);
-			control(dx.firstValue() >= 0 && dy.firstValue() >= 0 && k > 1);
-		}
-
-		public static final class DivbEQ2 extends PrimitiveBinaryDivb {
-
-			@Override
-			public boolean checkValues(int[] t) {
-				return t[0] == t[1] / k;
-			}
-
-			public DivbEQ2(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-				buildResiduesForFirstVariable();
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				int sizeBefore = dx.size();
-				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
-					if (rx[a] != UNITIALIZED && dy.present(rx[a]))
-						continue;
-					int va = dx.toVal(a);
-					if (dy.size() < k) {
-						for (int b = dy.first(); b != -1; b = dy.next(b))
-							if (va == dy.toVal(b) / k) {
-								rx[a] = b;
-								continue extern;
-							}
-					} else {
-						int base = va * k;
-						for (int i = 0; i < k; i++)
-							if (dy.isPresentValue(base + i)) {
-								rx[a] = dy.toIdx(base + i);
-								continue extern;
-							}
-					}
-					dx.removeElementary(a);
-				}
-				if (dx.afterElementaryCalls(sizeBefore) == false)
-					return false;
-				return dy.removeValuesDivNotIn(dx, k);
-			}
-		}
-
-		public static final class DivbNE2 extends PrimitiveBinaryDivb {
-
-			@Override
-			public boolean checkValues(int[] t) {
-				return t[0] != t[1] / k;
-			}
-
-			public DivbNE2(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				if (dx.size() == 1 && dy.removeValuesInRange(dx.uniqueValue() * k, dx.uniqueValue() * k + k) == false)
-					return false;
-				if (dy.firstValue() / k == dy.lastValue() / k && dx.removeValueIfPresent(dy.firstValue() / k) == false)
-					return false;
-				return true;
-			}
-		}
-	}
-
-	// ************************************************************************
 	// ***** Classes for x % y <op> k (CtrPrimitiveBinaryMod)
 	// ************************************************************************
 
 	public static abstract class PrimitiveBinaryMod extends PrimitiveBinaryWithCst implements TagUnsymmetric {
 
 		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
-			if (op == TypeConditionOperatorRel.EQ)
+			switch (op) {
+			case EQ:
 				return pb.addCtr(new ModEQ2(pb, x, y, k));
-			throw new AssertionError();
+			default:
+				return null;
+			}
 		}
 
 		public PrimitiveBinaryMod(Problem pb, Variable x, Variable y, int k) {
@@ -934,119 +820,6 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 				return true;
 			}
 		}
-	}
-
-	// ************************************************************************
-	// ***** Classes for x <op> y % k (CtrPrimitiveBinaryModb)
-	// ************************************************************************
-
-	public static abstract class PrimitiveBinaryModb extends PrimitiveBinaryWithCst implements TagUnsymmetric {
-
-		public static CtrAlone buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
-			if (op == TypeConditionOperatorRel.EQ)
-				return pb.addCtr(new ModbEQ2(pb, x, y, k));
-			if (op == TypeConditionOperatorRel.NE)
-				return pb.addCtr(new ModbNE2(pb, x, y, k));
-			throw new AssertionError();
-		}
-
-		public PrimitiveBinaryModb(Problem pb, Variable x, Variable y, int k) {
-			super(pb, x, y, k);
-			control(dx.firstValue() >= 0 && dy.firstValue() >= 0 && k > 1);
-		}
-
-		public static final class ModbEQ2 extends PrimitiveBinaryModb {
-
-			@Override
-			public boolean checkValues(int[] t) {
-				return t[0] == t[1] % k;
-			}
-
-			public ModbEQ2(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-				buildResiduesForFirstVariable();
-				dx.removeValuesAtConstructionTime(v -> v >= k); // because the remainder is at most k-1, whatever the value of y
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				// TODO iterate over y and record every support for x with amgic number (and count them)
-				// for x, if count == number of value done else iterate and remove not magic x values
-				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
-					int va = dx.toVal(a);
-					if (rx[a] != UNITIALIZED && dy.present(rx[a]))
-						continue;
-					int nMultiples = dy.lastValue() / k;
-					if (dy.size() <= nMultiples) {
-						for (int b = dy.first(); b != -1; b = dy.next(b)) {
-							int vb = dy.toVal(b);
-							if (vb % k == va) {
-								rx[a] = b;
-								continue extern;
-							}
-						}
-					} else {
-						int vb = va;
-						while (vb <= dy.lastValue()) {
-							assert vb % k == va;
-							if (dy.isPresentValue(vb)) {
-								rx[a] = dy.toIdx(vb);
-								continue extern;
-							}
-							vb += k;
-						}
-					}
-					if (dx.remove(a) == false)
-						return false;
-				}
-				return dy.removeValuesModNotIn(dx, k);
-			}
-		}
-
-		public static final class ModbNE2 extends PrimitiveBinaryModb {
-
-			@Override
-			public boolean checkValues(int[] t) {
-				return t[0] != t[1] % k;
-			}
-
-			int watch1 = -1, watch2 = -1;
-
-			private int findWatch(int other) {
-				for (int b = dy.first(); b != -1; b = dy.next(b))
-					if (dy.toVal(b) % k != other)
-						return b;
-				return -1;
-			}
-
-			public ModbNE2(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				// we should record entailment to avoid making systematically O(d) when the constraint is entailed
-
-				if (dx.size() == 1)
-					return dy.removeValuesModIn(dx, k);
-				if (watch1 == -1 || !dy.present(watch1))
-					watch1 = findWatch(watch2);
-				if (watch1 == -1) {
-					// watch2 is the only remaining valid watch (we know that it is still valid)
-					assert watch2 != -1 && dy.present(watch2);
-					if (dx.removeValueIfPresent(dy.toVal(watch2) % k) == false)
-						return false;
-				} else {
-					if (watch2 == -1 || !dy.present(watch2))
-						watch2 = findWatch(watch1);
-					if (watch2 == -1)
-						if (dx.removeValueIfPresent(dy.toVal(watch1) % k) == false)
-							return false;
-				}
-				return true;
-			}
-		}
-
 	}
 
 	// ************************************************************************
@@ -1159,6 +932,282 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 	}
 
 	// ************************************************************************
+	// ***** Classes for x <op> y * k (CtrPrimitiveBinaryMulb)
+	// ************************************************************************
+
+	public static abstract class PrimitiveBinaryMulb extends PrimitiveBinaryWithCst implements TagUnsymmetric {
+
+		public static CtrAlone buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
+			switch (op) {
+			case LT:
+			case LE:
+			case GE:
+			case GT:
+				return pb.addCtr(SumWeighted.buildFrom(pb, pb.api.vars(x, y), pb.api.vals(1, -k), op, 0));
+			case EQ:
+				return pb.addCtr(new MulbEQ2(pb, x, y, k));
+			case NE:
+				return pb.addCtr(new MulbNE2(pb, x, y, k));
+			}
+			throw new AssertionError();
+		}
+
+		public PrimitiveBinaryMulb(Problem pb, Variable x, Variable y, int k) {
+			super(pb, x, y, k);
+			control(k != 0);
+			control(Utilities.isSafeInt(BigInteger.valueOf(dy.firstValue()).multiply(BigInteger.valueOf(k)).longValueExact()));
+			control(Utilities.isSafeInt(BigInteger.valueOf(dy.lastValue()).multiply(BigInteger.valueOf(k)).longValueExact()));
+		}
+
+		public static final class MulbEQ2 extends PrimitiveBinaryMulb {
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return t[0] == k * t[1];
+			}
+
+			public MulbEQ2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+				dx.removeValuesAtConstructionTime(v -> v != 0 && v % k != 0); // non multiple deleted (important for avoiding systematic checks)
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				return enforceMulEQ(dx, dy, k);
+			}
+		}
+
+		public static final class MulbNE2 extends PrimitiveBinaryMulb {
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return t[0] != k * t[1];
+			}
+
+			public MulbNE2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+				// note that values in x that are not multiple of k are always supported
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				return enforceMulNE(dx, dy, k);
+			}
+		}
+	}
+
+	// ************************************************************************
+	// ***** Classes for x <op> y / k (CtrPrimitiveBinaryDivb)
+	// ************************************************************************
+
+	public static abstract class PrimitiveBinaryDivb extends PrimitiveBinaryWithCst implements TagUnsymmetric {
+
+		public static CtrAlone buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
+			switch (op) {
+			// case LT:
+			// return pb.addCtr(new DivbLE2(pb, x, y, k - 1)); // TODO
+			// case LE:
+			// return pb.addCtr(new DivbLE2(pb, x, y, k));
+			// case GE:
+			// return pb.addCtr(new DivbGE2(pb, x, y, k));
+			// case GT:
+			// return pb.addCtr(new DivbGE2(pb, x, y, k + 1));
+			case EQ:
+				return pb.addCtr(new DivbEQ2(pb, x, y, k));
+			case NE:
+				return pb.addCtr(new DivbNE2(pb, x, y, k));
+			default:
+				return null;
+			}
+		}
+
+		public PrimitiveBinaryDivb(Problem pb, Variable x, Variable y, int k) {
+			super(pb, x, y, k);
+			control(dx.firstValue() >= 0 && dy.firstValue() >= 0 && k > 1);
+		}
+
+		public static final class DivbEQ2 extends PrimitiveBinaryDivb {
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return t[0] == t[1] / k;
+			}
+
+			public DivbEQ2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+				buildResiduesForFirstVariable();
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				int sizeBefore = dx.size();
+				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
+					if (rx[a] != UNITIALIZED && dy.present(rx[a]))
+						continue;
+					int va = dx.toVal(a);
+					if (dy.size() < k) {
+						for (int b = dy.first(); b != -1; b = dy.next(b))
+							if (va == dy.toVal(b) / k) {
+								rx[a] = b;
+								continue extern;
+							}
+					} else {
+						int base = va * k;
+						for (int i = 0; i < k; i++)
+							if (dy.isPresentValue(base + i)) {
+								rx[a] = dy.toIdx(base + i);
+								continue extern;
+							}
+					}
+					dx.removeElementary(a);
+				}
+				if (dx.afterElementaryCalls(sizeBefore) == false)
+					return false;
+				return dy.removeValuesDivNotIn(dx, k);
+			}
+		}
+
+		public static final class DivbNE2 extends PrimitiveBinaryDivb {
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return t[0] != t[1] / k;
+			}
+
+			public DivbNE2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				if (dx.size() == 1 && dy.removeValuesInRange(dx.uniqueValue() * k, dx.uniqueValue() * k + k) == false)
+					return false;
+				if (dy.firstValue() / k == dy.lastValue() / k && dx.removeValueIfPresent(dy.firstValue() / k) == false)
+					return false;
+				return true;
+			}
+		}
+	}
+
+	// ************************************************************************
+	// ***** Classes for x <op> y % k (CtrPrimitiveBinaryModb)
+	// ************************************************************************
+
+	public static abstract class PrimitiveBinaryModb extends PrimitiveBinaryWithCst implements TagUnsymmetric {
+
+		public static CtrAlone buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
+			switch (op) {
+			case EQ:
+				return pb.addCtr(new ModbEQ2(pb, x, y, k));
+			case NE:
+				return pb.addCtr(new ModbNE2(pb, x, y, k));
+			default:
+				return null;
+			}
+		}
+
+		public PrimitiveBinaryModb(Problem pb, Variable x, Variable y, int k) {
+			super(pb, x, y, k);
+			control(dx.firstValue() >= 0 && dy.firstValue() >= 0 && k > 1);
+		}
+
+		public static final class ModbEQ2 extends PrimitiveBinaryModb {
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return t[0] == t[1] % k;
+			}
+
+			public ModbEQ2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+				buildResiduesForFirstVariable();
+				dx.removeValuesAtConstructionTime(v -> v >= k); // because the remainder is at most k-1, whatever the value of y
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				// TODO iterate over y and record every support for x with amgic number (and count them)
+				// for x, if count == number of value done else iterate and remove not magic x values
+				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
+					int va = dx.toVal(a);
+					if (rx[a] != UNITIALIZED && dy.present(rx[a]))
+						continue;
+					int nMultiples = dy.lastValue() / k;
+					if (dy.size() <= nMultiples) {
+						for (int b = dy.first(); b != -1; b = dy.next(b)) {
+							int vb = dy.toVal(b);
+							if (vb % k == va) {
+								rx[a] = b;
+								continue extern;
+							}
+						}
+					} else {
+						int vb = va;
+						while (vb <= dy.lastValue()) {
+							assert vb % k == va;
+							if (dy.isPresentValue(vb)) {
+								rx[a] = dy.toIdx(vb);
+								continue extern;
+							}
+							vb += k;
+						}
+					}
+					if (dx.remove(a) == false)
+						return false;
+				}
+				return dy.removeValuesModNotIn(dx, k);
+			}
+		}
+
+		public static final class ModbNE2 extends PrimitiveBinaryModb {
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return t[0] != t[1] % k;
+			}
+
+			int watch1 = -1, watch2 = -1; // watching two different (indexes of) values of y leading to two different remainders
+
+			private int findWatch(int other) {
+				if (other == -1)
+					return dy.first();
+				int r = dy.toVal(other) % k;
+				for (int b = dy.first(); b != -1; b = dy.next(b))
+					if (dy.toVal(b) % k != r)
+						return b;
+				return -1;
+			}
+
+			public ModbNE2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				// we should record entailment to avoid making systematically O(d) when the constraint is entailed
+
+				if (dx.size() == 1)
+					return dy.removeValuesModIn(dx, k);
+				if (watch1 == -1 || !dy.present(watch1))
+					watch1 = findWatch(watch2);
+				if (watch1 == -1) {
+					// watch2 is the only remaining valid watch (we know that it is still valid since the domain is not empty)
+					assert watch2 != -1 && dy.present(watch2);
+					if (dx.removeValueIfPresent(dy.toVal(watch2) % k) == false)
+						return false;
+				} else {
+					if (watch2 == -1 || !dy.present(watch2))
+						watch2 = findWatch(watch1);
+					if (watch2 == -1)
+						if (dx.removeValueIfPresent(dy.toVal(watch1) % k) == false)
+							return false;
+				}
+				return true;
+			}
+		}
+	}
+
+	// ************************************************************************
 	// ***** Classes for x <op> |y - k| (CtrPrimitiveBinaryDistb)
 	// ************************************************************************
 
@@ -1170,8 +1219,9 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 				return pb.addCtr(new DistbEQ2(pb, x, y, k));
 			case NE:
 				return pb.addCtr(new DistbNE2(pb, x, y, k));
+			default:
+				return null;
 			}
-			throw new AssertionError();
 		}
 
 		public PrimitiveBinaryDistb(Problem pb, Variable x, Variable y, int k) {
@@ -1224,7 +1274,6 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 				return true;
 			}
 		}
-
 	}
 
 	// ************************************************************************

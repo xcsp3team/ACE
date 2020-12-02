@@ -7,6 +7,12 @@ import static org.xcsp.common.Types.TypeArithmeticOperator.MUL;
 import static org.xcsp.common.Types.TypeArithmeticOperator.SUB;
 import static org.xcsp.common.Utilities.join;
 import static org.xcsp.common.Utilities.safeInt;
+import static org.xcsp.common.predicates.MatcherInterface.val;
+import static org.xcsp.common.predicates.MatcherInterface.var;
+import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.ariop;
+import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.relop;
+import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.unaop;
+import static org.xcsp.common.predicates.XNode.node;
 
 import java.io.File;
 import java.lang.reflect.Array;
@@ -43,12 +49,14 @@ import org.xcsp.common.Utilities;
 import org.xcsp.common.domains.Domains.Dom;
 import org.xcsp.common.domains.Domains.DomSymbolic;
 import org.xcsp.common.predicates.MatcherInterface;
+import org.xcsp.common.predicates.MatcherInterface.Matcher;
 import org.xcsp.common.predicates.XNode;
 import org.xcsp.common.predicates.XNodeParent;
 import org.xcsp.common.structures.AbstractTuple;
 import org.xcsp.common.structures.Automaton;
 import org.xcsp.common.structures.Transition;
 import org.xcsp.modeler.api.ProblemAPI;
+import org.xcsp.modeler.entities.CtrEntities.CtrAlone;
 import org.xcsp.modeler.entities.CtrEntities.CtrArray;
 import org.xcsp.modeler.entities.CtrEntities.CtrEntity;
 import org.xcsp.modeler.entities.ModelingEntity;
@@ -74,6 +82,7 @@ import constraints.intension.PrimitiveBinary.PrimitiveBinaryDist;
 import constraints.intension.PrimitiveBinary.PrimitiveBinaryLog;
 import constraints.intension.PrimitiveBinary.PrimitiveBinarySub;
 import constraints.intension.PrimitiveBinary.PrimitiveBinarySub.SubEQ2;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryWithCst;
 import constraints.intension.PrimitiveTernary.PrimitiveTernaryAdd;
 import constraints.intension.PrimitiveTernary.PrimitiveTernaryLog;
 import constraints.intension.PrimitiveTernary.PrimitiveTernaryMod;
@@ -124,8 +133,10 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void model() {
+		// boolean b = true;
+		if (imp().head.control.xml.primitiveBinaryInSolver)
+			implem().currParameters.remove(XCallbacksParameters.RECOGNIZE_BINARY_PRIMITIVES);
 		try {
-			// Kit.log.info("Discarded classes " + imp().rs.cp.settingXml.discardedClasses);
 			if (imp().head.control.general.verbose > 1)
 				XParser.VERBOSE = true;
 			if (imp().head.control.xml.discardedClasses.indexOf(',') < 0)
@@ -200,7 +211,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	private XNode<IVar> trVar(XNode<IVar> tree) {
-		return tree.replaceLeafValues(v -> v instanceof XVarInteger ? trVar((XVarInteger) v) : v);
+		return tree.replaceLeafValues(v -> v instanceof XVarInteger ? trVar((XVarInteger) v) : v instanceof XVarSymbolic ? trVar((XVarSymbolic) v) : v);
 	}
 
 	private XNode<IVar>[] trVar(XNode<IVar>[] trees) {
@@ -390,12 +401,41 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 			System.out.println((nPrimitiveCalls++ == 0 ? "\n" : "") + "Primitive in class XCSP3 : " + s);
 	}
 
+	private Matcher x_relop_y = new Matcher(node(relop, var, var));
+	private Matcher x_ariop_y__relop_k = new Matcher(node(relop, node(ariop, var, var), val));
+	private Matcher k_relop__x_ariop_y = new Matcher(node(relop, val, node(ariop, var, var)));
+	private Matcher x_relop__y_ariop_k = new Matcher(node(relop, var, node(ariop, var, val)));
+	private Matcher y_ariop_k__relop_x = new Matcher(node(relop, node(ariop, var, val), var));
+	private Matcher unaop_x__eq_y = new Matcher(node(TypeExpr.EQ, node(unaop, var), var));
+
 	@Override
-	public CtrEntity intension(XNodeParent<IVar> tree) {
-		// using a cache below ?
-		XNodeParent<IVar> validTree = (XNodeParent<IVar>) tree
-				.replaceLeafValues(v -> v instanceof XVarInteger ? trVar((XVarInteger) v) : v instanceof XVarSymbolic ? trVar((XVarSymbolic) v) : v);
-		return imp().intension(validTree);
+	public CtrEntity intension(XNodeParent<IVar> otree) {
+		XNodeParent<IVar> tree = (XNodeParent<IVar>) trVar(otree);
+		if (imp().head.control.xml.primitiveBinaryInSolver) {
+			Variable[] vars = (Variable[]) tree.vars();
+			if (vars.length == 2) {
+				if (x_relop_y.matches(tree))
+					return PrimitiveBinarySub.buildFrom(imp(), vars[0], vars[1], tree.relop(0), 0);
+				if (x_ariop_y__relop_k.matches(tree)) {
+					CtrAlone ca = PrimitiveBinaryWithCst.buildFrom(imp(), vars[0], tree.ariop(0), vars[1], tree.relop(0), tree.val(0));
+					if (ca != null)
+						return ca;
+				} else if (k_relop__x_ariop_y.matches(tree)) {
+					CtrAlone ca = PrimitiveBinaryWithCst.buildFrom(imp(), vars[0], tree.ariop(0), vars[1], tree.relop(0).arithmeticInversion(), tree.val(0));
+					if (ca != null)
+						return ca;
+				} else if (x_relop__y_ariop_k.matches(tree)) {
+					CtrAlone ca = PrimitiveBinaryWithCst.buildFrom(imp(), vars[0], tree.relop(0), vars[1], tree.ariop(0), tree.val(0));
+					if (ca != null)
+						return ca;
+				} else if (y_ariop_k__relop_x.matches(tree)) {
+					CtrAlone ca = PrimitiveBinaryWithCst.buildFrom(imp(), vars[1], tree.relop(0).arithmeticInversion(), vars[0], tree.ariop(0), tree.val(0));
+					if (ca != null)
+						return ca;
+				}
+			}
+		}
+		return imp().intension(tree);
 	}
 
 	@Override
@@ -439,11 +479,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeUnaryArithmeticOperator aop, XVarInteger y) {
 		displayPrimitives(x + " " + aop + " " + y);
-		if (imp().head.control.constraints.ignorePrimitives)
-			repost(id);
-		else {
-			repost(id);
-		}
+		repost(id);
 	}
 
 	@Override

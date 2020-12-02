@@ -4,7 +4,7 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8 
 
 archivesBaseName = "ACE"
-version = '20-11'
+version = '20-12'
  
 repositories {
  mavenCentral()
@@ -18,7 +18,7 @@ dependencies {
 jar {
     manifest {
         attributes(
-                'Main-Class': 'executables.Resolution'
+                'Main-Class': 'main.Head'
         )
     }
     from {
