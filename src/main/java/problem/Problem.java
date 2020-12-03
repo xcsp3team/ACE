@@ -148,10 +148,12 @@ import constraints.global.SumWeighted.SumWeightedGE;
 import constraints.global.SumWeighted.SumWeightedLE;
 import constraints.intension.Intension;
 import constraints.intension.PrimitiveBinary.Disjonctive;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryLog;
 import constraints.intension.PrimitiveBinary.PrimitiveBinarySub;
 import constraints.intension.PrimitiveBinary.PrimitiveBinarySub.SubNE2;
 import constraints.intension.PrimitiveBinary.PrimitiveBinaryWithCst;
 import constraints.intension.PrimitiveTernary;
+import constraints.intension.PrimitiveTernary.PrimitiveTernaryLog;
 import dashboard.Control.SettingGeneral;
 import dashboard.Control.SettingVars;
 import heuristics.HeuristicValues;
@@ -854,10 +856,14 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private Matcher k_relop__x_ariop_y = new Matcher(node(relop, val, node(ariop, var, var)));
 	private Matcher x_relop__y_ariop_k = new Matcher(node(relop, var, node(ariop, var, val)));
 	private Matcher y_ariop_k__relop_x = new Matcher(node(relop, node(ariop, var, val), var));
+	private Matcher logic_y_relop_k__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, var, val), var));
+	private Matcher logic_k_relop_y__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, val, var), var));
+
 	private Matcher unaop_x__eq_y = new Matcher(node(TypeExpr.EQ, node(unaop, var), var));
 
 	private Matcher x_ariop_y__relop_z = new Matcher(node(relop, node(ariop, var, var), var));
 	private Matcher z_relop__x_ariop_y = new Matcher(node(relop, var, node(ariop, var, var)));
+	private Matcher logic_y_relop_z__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, var, var), var));
 
 	@Override
 	public final CtrAlone intension(XNodeParent<IVar> tree) {
@@ -895,6 +901,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				c = PrimitiveBinaryWithCst.buildFrom(this, vars[0], tree.relop(0), vars[1], tree.ariop(0), tree.val(0));
 			else if (y_ariop_k__relop_x.matches(tree))
 				c = PrimitiveBinaryWithCst.buildFrom(this, vars[1], tree.relop(0).arithmeticInversion(), vars[0], tree.ariop(0), tree.val(0));
+			else if (logic_y_relop_k__eq_x.matches(tree))
+				c = PrimitiveBinaryLog.buildFrom(this, vars[1], vars[0], tree.relop(1), tree.val(0));
+			else if (logic_k_relop_y__eq_x.matches(tree))
+				c = PrimitiveBinaryLog.buildFrom(this, vars[1], vars[0], tree.relop(1).arithmeticInversion(), tree.val(0));
+
 			if (c != null)
 				return addCtr(c);
 		}
@@ -904,6 +915,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				c = PrimitiveTernary.buildFrom(this, vars[1], tree.ariop(0), vars[2], tree.relop(0).arithmeticInversion(), vars[0]);
 			else if (x_ariop_y__relop_z.matches(tree))
 				c = PrimitiveTernary.buildFrom(this, vars[0], tree.ariop(0), vars[1], tree.relop(0), vars[2]);
+			else if (logic_y_relop_z__eq_x.matches(tree))
+				c = PrimitiveTernaryLog.buildFrom(this, vars[2], vars[0], tree.relop(1), vars[1]);
 			if (c != null)
 				return addCtr(c);
 		}

@@ -800,14 +800,14 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.first() == 0 && dy.lastValue() < dz.firstValue() && dx.remove(0) == false)
-					return false;
-				if (dx.last() == 1 && dy.firstValue() >= dz.lastValue() && dx.remove(1) == false)
-					return false;
-				if (dx.first() == 1 && enforceLT(dy, dz) == false) // because only 1 remaining implies y < z
-					return false;
-				if (dx.last() == 0 && enforceGE(dy, dz) == false) // because only 0 remaining implies y >= z
-					return false;
+				if (dy.lastValue() < dz.firstValue())
+					return dx.removeIfPresent(0); // y < z => x != 0
+				if (dy.firstValue() >= dz.lastValue())
+					return dx.removeIfPresent(1); // y >= z => x != 1
+				if (dx.last() == 0)
+					return enforceGE(dy, dz); // x = 0 => y >= z
+				if (dx.first() == 1)
+					return enforceLT(dy, dz); // x = 1 => y < z
 				return true;
 			}
 		}
@@ -825,14 +825,14 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.first() == 0 && dy.lastValue() <= dz.firstValue() && dx.remove(0) == false)
-					return false;
-				if (dx.last() == 1 && dy.firstValue() > dz.lastValue() && dx.remove(1) == false)
-					return false;
-				if (dx.first() == 1 && enforceLE(dy, dz) == false) // because only 1 remaining implies y <= z
-					return false;
-				if (dx.last() == 0 && enforceGT(dy, dz) == false) // because only 0 remaining implies y > z
-					return false;
+				if (dy.lastValue() <= dz.firstValue())
+					return dx.removeIfPresent(0); // y <= z => x != 0
+				if (dy.firstValue() > dz.lastValue())
+					return dx.removeIfPresent(1); // y > z => x != 1
+				if (dx.last() == 0)
+					return enforceGT(dy, dz); // x = 0 => y > z
+				if (dx.first() == 1)
+					return enforceLE(dy, dz); // x = 1 => y <= z
 				return true;
 			}
 		}
@@ -850,14 +850,14 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.first() == 0 && dy.firstValue() >= dz.lastValue() && dx.remove(0) == false)
-					return false;
-				if (dx.last() == 1 && dy.lastValue() < dz.firstValue() && dx.remove(1) == false)
-					return false;
-				if (dx.first() == 1 && enforceGE(dy, dz) == false) // because only 1 remaining implies y >= z
-					return false;
-				if (dx.last() == 0 && enforceLT(dy, dz) == false) // because only 0 remaining implies y < z
-					return false;
+				if (dy.firstValue() >= dz.lastValue())
+					return dx.removeIfPresent(0); // y >= z => x != 0
+				if (dy.lastValue() < dz.firstValue())
+					return dx.removeIfPresent(1); // y < z => x != 1
+				if (dx.last() == 0)
+					return enforceLT(dy, dz); // x = 0 => y < z
+				if (dx.first() == 1)
+					return enforceGE(dy, dz); // x = 1 => y >= z
 				return true;
 			}
 		}
@@ -875,14 +875,14 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.first() == 0 && dy.firstValue() > dz.lastValue() && dx.remove(0) == false)
-					return false;
-				if (dx.last() == 1 && dy.lastValue() <= dz.firstValue() && dx.remove(1) == false)
-					return false;
-				if (dx.first() == 1 && enforceGT(dy, dz) == false) // because only 1 remaining implies y > z
-					return false;
-				if (dx.last() == 0 && enforceLE(dy, dz) == false) // because only 0 remaining implies y <= z
-					return false;
+				if (dx.first() == 0 && dy.firstValue() > dz.lastValue())
+					return dx.removeIfPresent(0); // y > z => x != 0
+				if (dx.last() == 1 && dy.lastValue() <= dz.firstValue())
+					return dx.removeIfPresent(1); // y <= z => x != 1
+				if (dx.last() == 0)
+					return enforceLE(dy, dz); // x = 0 => y <= z
+				if (dx.first() == 1)
+					return enforceGT(dy, dz); // x = 1 => y > z
 				return true;
 			}
 		}
@@ -904,10 +904,10 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 			public boolean runPropagator(Variable dummy) {
 				if (dy.size() == 1 && dz.size() == 1)
 					return dx.removeIfPresent(dy.firstValue() == dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
-				if (dx.first() == 1 && enforceEQ(dy, dz) == false) // because only 1 remaining implies y = z
-					return false;
-				if (dx.last() == 0 && enforceNE(dy, dz) == false) // because only 0 remaining implies y != z
-					return false;
+				if (dx.first() == 1)
+					return enforceEQ(dy, dz); // because only 1 remaining implies y = z
+				if (dx.last() == 0)
+					return enforceNE(dy, dz); // because only 0 remaining implies y != z
 				assert dx.size() == 2;
 				// we know that 0 for x is supported because the domain of y or z is not singleton
 				if (dy.isPresentValue(residue) && dz.isPresentValue(residue))
@@ -939,10 +939,10 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 			public boolean runPropagator(Variable dummy) {
 				if (dy.size() == 1 && dz.size() == 1)
 					return dx.removeIfPresent(dy.firstValue() != dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
-				if (dx.first() == 1 && enforceNE(dy, dz) == false) // because only 1 remaining implies y != z
-					return false;
-				if (dx.last() == 0 && enforceEQ(dy, dz) == false) // because only 0 remaining implies y = z
-					return false;
+				if (dx.first() == 1)
+					return enforceNE(dy, dz); // because only 1 remaining implies y != z
+				if (dx.last() == 0)
+					return enforceEQ(dy, dz); // because only 0 remaining implies y = z
 				assert dx.size() == 2;
 				// we know that (x,1) is supported because the domain of y and/or the domain of z is not singleton
 				if (dy.isPresentValue(residue) && dz.isPresentValue(residue))
