@@ -875,9 +875,9 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.first() == 0 && dy.firstValue() > dz.lastValue())
+				if (dy.firstValue() > dz.lastValue())
 					return dx.removeIfPresent(0); // y > z => x != 0
-				if (dx.last() == 1 && dy.lastValue() <= dz.firstValue())
+				if (dy.lastValue() <= dz.firstValue())
 					return dx.removeIfPresent(1); // y <= z => x != 1
 				if (dx.last() == 0)
 					return enforceLE(dy, dz); // x = 0 => y <= z
@@ -904,16 +904,16 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 			public boolean runPropagator(Variable dummy) {
 				if (dy.size() == 1 && dz.size() == 1)
 					return dx.removeIfPresent(dy.firstValue() == dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
-				if (dx.first() == 1)
-					return enforceEQ(dy, dz); // because only 1 remaining implies y = z
 				if (dx.last() == 0)
-					return enforceNE(dy, dz); // because only 0 remaining implies y != z
+					return enforceNE(dy, dz); // x = 0 => y != z
+				if (dx.first() == 1)
+					return enforceEQ(dy, dz); // x = 1 => y = z
 				assert dx.size() == 2;
-				// we know that 0 for x is supported because the domain of y or z is not singleton
+				// we know that (x,0) is supported because the domain of y and/or the domain of z is not singleton
 				if (dy.isPresentValue(residue) && dz.isPresentValue(residue))
 					return true;
 				// we look for a support for (x,1), and record it as a residue
-				int v = dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) : dz.firstCommonValueWith(dy); // commonValueIn(dy, dz);
+				int v = dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) : dz.firstCommonValueWith(dy);
 				if (v != Integer.MAX_VALUE)
 					residue = v;
 				else
@@ -939,16 +939,16 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 			public boolean runPropagator(Variable dummy) {
 				if (dy.size() == 1 && dz.size() == 1)
 					return dx.removeIfPresent(dy.firstValue() != dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
-				if (dx.first() == 1)
-					return enforceNE(dy, dz); // because only 1 remaining implies y != z
 				if (dx.last() == 0)
-					return enforceEQ(dy, dz); // because only 0 remaining implies y = z
+					return enforceEQ(dy, dz); // x = 0 => y = z
+				if (dx.first() == 1)
+					return enforceNE(dy, dz); // x = 1 => y != z
 				assert dx.size() == 2;
 				// we know that (x,1) is supported because the domain of y and/or the domain of z is not singleton
 				if (dy.isPresentValue(residue) && dz.isPresentValue(residue))
 					return true;
 				// we look for a support for (x,0), and record it as a residue
-				int v = dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) : dz.firstCommonValueWith(dy); // commonValueIn(dy, dz);
+				int v = dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) : dz.firstCommonValueWith(dy);
 				if (v != Integer.MAX_VALUE)
 					residue = v;
 				else

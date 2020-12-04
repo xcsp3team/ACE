@@ -40,6 +40,7 @@ import main.Head;
 import optimization.Optimizable;
 import propagation.Forward;
 import sets.SetDense;
+import sets.SetSparseReversible;
 import solver.Solver;
 import solver.Statistics.StatisticsBacktrack;
 import utility.Enums.EBranching;
@@ -65,6 +66,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	@Override
 	public void restoreBefore(int depth) {
 		stackedVariables.restoreBefore(depth);
+		entailed.restoreLimitAtLevel(depth);
 	}
 
 	/**********************************************************************************************
@@ -353,6 +355,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 
 	public final StackedVariables stackedVariables;
 
+	public final SetSparseReversible entailed;
+
 	public final List<ObserverBacktrackingSystematic> observersBacktrackingSystematic;
 
 	public final RunProgressSaver runProgressSaver;
@@ -377,7 +381,6 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 			nogoodRecorder.reset();
 		Kit.control(ipsRecorder == null);
 		Kit.control(stackedVariables.top == -1, () -> "Top= " + stackedVariables.top);
-		// Kit.control(observerCtrsSoft.top == -1);
 		stats = new StatisticsBacktrack(this);
 		Kit.control(!proofer.active);
 	}
@@ -396,6 +399,7 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 		int nLevels = problem.variables.length + 1;
 		int size = Stream.of(problem.variables).mapToInt(x -> x.dom.initSize()).reduce(0, (sum, domSize) -> sum + Math.min(nLevels, domSize));
 		this.stackedVariables = new StackedVariables(size + nLevels);
+		this.entailed = new SetSparseReversible(problem.constraints.length, false, nLevels);
 		this.observersBacktrackingSystematic = collectObserversBacktrackingSystematic();
 		this.observersRuns = collectObserversRuns();
 		this.observersAssignment = collectObserversAssignment();
@@ -414,6 +418,16 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 	@Override
 	public int depth() {
 		return futVars.nDiscarded();
+	}
+
+	public void entail(Constraint c) {
+		// if (!entailed.isPresent(c.num))
+		entailed.add(c.num, depth());
+		// System.out.println("entailed at " + depth() + " " + c);
+	}
+
+	public boolean isEntailed(Constraint c) {
+		return entailed.isPresent(c.num);
 	}
 
 	@Override
@@ -577,6 +591,8 @@ public class SolverBacktrack extends Solver implements ObserverRuns, ObserverBac
 					// check with java -ea ac /home/lecoutre/workspace/AbsCon/build/resources/main/cop/Photo.xml.lzma -ev
 					// java -ea ac /home/lecoutre/workspace/AbsCon/build/resources/main/cop/Recipe.xml.lzma
 				}
+				if (problem.settings.framework == COP)
+					entailed.clear();
 				if (!finished() && !restarter.currRunFinished())
 					manageContradiction(objectiveToCheck);
 			}

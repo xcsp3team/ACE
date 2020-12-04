@@ -17,7 +17,6 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
-import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagSymmetric;
 import optimization.Optimizable;
@@ -127,18 +126,18 @@ public abstract class SumSimple extends Sum implements TagSymmetric {
 	// ***** Constraint SumSimpleLE
 	// ************************************************************************
 
-	public static class SumSimpleLE extends SumSimple implements TagGACGuaranteed, Optimizable, ObserverBacktrackingSystematic {
+	public static class SumSimpleLE extends SumSimple implements TagGACGuaranteed, Optimizable {
 
 		@Override
 		public final boolean checkValues(int[] t) {
 			return sum(t) <= limit;
 		}
 
-		@Override
-		public void restoreBefore(int depth) {
-			if (entailedLevel == depth)
-				entailedLevel = -1;
-		}
+		// @Override
+		// public void restoreBefore(int depth) {
+		// if (entailedLevel == depth)
+		// entailedLevel = -1;
+		// }
 
 		@Override
 		public long objectiveValue() {
@@ -157,7 +156,7 @@ public abstract class SumSimple extends Sum implements TagSymmetric {
 			// System.out.println(cnt++);
 			recomputeBounds();
 			if (max <= limit) {
-				entailedLevel = problem.solver.depth();
+				entailed(); // Level = problem.solver.depth();
 				return true;
 			}
 			if (min > limit)
@@ -199,18 +198,18 @@ public abstract class SumSimple extends Sum implements TagSymmetric {
 	// ***** Constraint SumSimpleGE
 	// ************************************************************************
 
-	public static class SumSimpleGE extends SumSimple implements TagGACGuaranteed, Optimizable, ObserverBacktrackingSystematic {
+	public static class SumSimpleGE extends SumSimple implements TagGACGuaranteed, Optimizable {
 
 		@Override
 		public final boolean checkValues(int[] t) {
 			return sum(t) >= limit;
 		}
 
-		@Override
-		public void restoreBefore(int depth) {
-			if (entailedLevel == depth)
-				entailedLevel = -1;
-		}
+		// @Override
+		// public void restoreBefore(int depth) {
+		// if (entailedLevel == depth)
+		// entailedLevel = -1;
+		// }
 
 		@Override
 		public long objectiveValue() {
@@ -225,7 +224,7 @@ public abstract class SumSimple extends Sum implements TagSymmetric {
 		public boolean runPropagator(Variable x) {
 			recomputeBounds();
 			if (min >= limit) {
-				entailedLevel = problem.solver.depth();
+				entailed(); // Level = problem.solver.depth();
 				return true;
 			}
 			if (max < limit)

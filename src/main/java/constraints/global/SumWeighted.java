@@ -19,7 +19,6 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
-import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.Tags.TagGACGuaranteed;
 import optimization.Optimizable;
 import problem.Problem;
@@ -148,18 +147,18 @@ public abstract class SumWeighted extends Sum {
 	// ***** Constraint SumWeightedLE
 	// ************************************************************************
 
-	public static final class SumWeightedLE extends SumWeighted implements TagGACGuaranteed, Optimizable, ObserverBacktrackingSystematic {
+	public static final class SumWeightedLE extends SumWeighted implements TagGACGuaranteed, Optimizable {
 
 		@Override
 		public boolean checkValues(int[] t) {
 			return weightedSum(t, coeffs) <= limit;
 		}
 
-		@Override
-		public void restoreBefore(int depth) {
-			if (entailedLevel == depth)
-				entailedLevel = -1;
-		}
+		// @Override
+		// public void restoreBefore(int depth) {
+		// if (entailedLevel == depth)
+		// entailedLevel = -1;
+		// }
 
 		@Override
 		public long objectiveValue() {
@@ -174,7 +173,7 @@ public abstract class SumWeighted extends Sum {
 		public boolean runPropagator(Variable x) {
 			recomputeBounds();
 			if (max <= limit) {
-				entailedLevel = problem.solver.depth();
+				entailed(); // Level = problem.solver.depth();
 				return true;
 			}
 			if (min > limit)
@@ -206,18 +205,18 @@ public abstract class SumWeighted extends Sum {
 	// ***** Constraint SumWeightedGE
 	// ************************************************************************
 
-	public static class SumWeightedGE extends SumWeighted implements TagGACGuaranteed, Optimizable, ObserverBacktrackingSystematic {
+	public static class SumWeightedGE extends SumWeighted implements TagGACGuaranteed, Optimizable {
 
 		@Override
 		public boolean checkValues(int[] t) {
 			return weightedSum(t, coeffs) >= limit;
 		}
 
-		@Override
-		public void restoreBefore(int depth) {
-			if (entailedLevel == depth)
-				entailedLevel = -1;
-		}
+		// @Override
+		// public void restoreBefore(int depth) {
+		// if (entailedLevel == depth)
+		// entailedLevel = -1;
+		// }
 
 		@Override
 		public long objectiveValue() {
@@ -232,7 +231,7 @@ public abstract class SumWeighted extends Sum {
 		public boolean runPropagator(Variable x) {
 			recomputeBounds();
 			if (min >= limit) {
-				entailedLevel = problem.solver.depth();
+				entailed(); // Level = problem.solver.depth();
 				return true;
 			}
 			if (max < limit)

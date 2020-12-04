@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import constraints.Constraint;
 import interfaces.Observers.ObserverAssignment;
 import interfaces.Observers.ObserverConflicts;
 import interfaces.Observers.ObserverRuns;
@@ -126,6 +127,10 @@ public abstract class Solver {
 	public abstract int depth();
 
 	public abstract int stackVariable(Variable x);
+
+	public abstract void entail(Constraint c);
+
+	public abstract boolean isEntailed(Constraint c);
 
 	// public abstract void pushVariable(Variable x, int xLastRemovalLevel);
 

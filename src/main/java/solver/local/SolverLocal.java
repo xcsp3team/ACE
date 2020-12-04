@@ -10,6 +10,7 @@ package solver.local;
 
 import org.xcsp.common.Types.TypeFramework;
 
+import constraints.Constraint;
 import main.Head;
 import solver.Solver;
 import solver.Statistics.StatisticsLocal;
@@ -253,6 +254,13 @@ public final class SolverLocal extends Solver {
 	@Override
 	public int depth() {
 		return 0;
+	}
+
+	public void entail(Constraint c) {
+	}
+
+	public boolean isEntailed(Constraint c) {
+		return false;
 	}
 
 	@Override

@@ -8,12 +8,18 @@
  */
 package sets;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import utility.Kit;
 
 public class SetDenseReversible extends SetDense {
 	public final int[] limits;
+
+	public void clear() {
+		super.clear();
+		Arrays.fill(limits, UNINITIALIZED);
+	}
 
 	public SetDenseReversible(int[] dense, boolean initiallyFull, int nLevels) {
 		super(dense, initiallyFull);

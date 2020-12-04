@@ -223,7 +223,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 		@Override
 		public final void limit(long newLimit) {
 			this.limit = newLimit;
-			entailedLevel = -1;
+			// entailedLevel = -1;
 			control(minComputableObjectiveValue() <= limit && limit <= maxComputableObjectiveValue());
 		}
 
@@ -304,7 +304,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 					for (Variable y : scp)
 						if (y.dom.removeValuesGT(limit) == false)
 							return false;
-					entailedLevel = 0;
+					entailed(); // Level = 0;
 					return true; // Variable.firstWipeoutVariableIn(scp) == null;
 				}
 			}
@@ -480,7 +480,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 					for (Variable y : scp)
 						if (y.dom.removeValuesLT(limit) == false)
 							return false;
-					entailedLevel = 0;
+					entailed(); // Level = 0;
 					return true; // Variable.firstWipeoutVariableIn(scp) == null;
 				}
 			}

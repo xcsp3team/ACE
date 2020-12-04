@@ -275,7 +275,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	/** Indicates if the constraint must be ignored. */
 	public boolean ignored;
 
-	public int entailedLevel = -1;
+	// public int entailedLevel = -1;
 
 	/** The key of the constraint. Used for symmetry detection. */
 	public String key;
@@ -426,6 +426,10 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	public final int[] getSymmetryMatching() {
 		return getSymmetryMatching(key);
+	}
+
+	public void entailed() {
+		problem.solver.entail(this);
 	}
 
 	public ExtensionStructure extStructure() {

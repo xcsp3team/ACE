@@ -160,7 +160,7 @@ public abstract class Propagation {
 		if (!queue.isNogoodConsistent(x))
 			return false;
 		for (Constraint c : x.ctrs)
-			if (!c.ignored && c.entailedLevel == -1) // means that the constraint is ignored or entailed
+			if (!c.ignored && !solver.isEntailed(c))
 				if (c.filteringComplexity == 0) {
 					currFilteringCtr = c;
 					boolean consistent = c.filterFrom(x);
@@ -190,7 +190,7 @@ public abstract class Propagation {
 					Variable x = solver.problem.variables[xnum];
 					// TODO : next instruction forces filtering, code may be improved to filter only when necessary
 					c.timestamp = x.timestamp;
-					if (!c.ignored && c.entailedLevel == -1) { // means that the constraint is ignored or entailed
+					if (!c.ignored && !solver.isEntailed(c)) { // means that the constraint is ignored or entailed
 						currFilteringCtr = c;
 						boolean consistent = c.filterFrom(x);
 						currFilteringCtr = null;

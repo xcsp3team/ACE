@@ -1026,35 +1026,41 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 			public DivbEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
-				buildResiduesForFirstVariable();
+				this.magics = new int[dx.initSize()];
+				// buildResiduesForFirstVariable();
 			}
+
+			int magic;
+
+			int[] magics;
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				int sizeBefore = dx.size();
-				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
-					if (rx[a] != UNITIALIZED && dy.present(rx[a]))
-						continue;
-					int va = dx.toVal(a);
-					if (dy.size() < k) {
-						for (int b = dy.first(); b != -1; b = dy.next(b))
-							if (va == dy.toVal(b) / k) {
-								rx[a] = b;
-								continue extern;
-							}
-					} else {
-						int base = va * k;
-						for (int i = 0; i < k; i++)
-							if (dy.isPresentValue(base + i)) {
-								rx[a] = dy.toIdx(base + i);
-								continue extern;
-							}
+				magic++;
+				int cnt = 0;
+				int sizeBefore = dy.size();
+				for (int b = dy.first(); b != -1; b = dy.next(b)) {
+					int a = dx.toPresentIdx(dy.toVal(b) / k);
+					if (a == -1)
+						dy.removeElementary(b);
+					else if (magics[a] != magic) {
+						magics[a] = magic;
+						cnt++;
 					}
-					dx.removeElementary(a);
 				}
-				if (dx.afterElementaryCalls(sizeBefore) == false)
+				if (dy.afterElementaryCalls(sizeBefore) == false)
 					return false;
-				return dy.removeValuesDivNotIn(dx, k);
+				int toremove = dx.size() - cnt;
+				if (toremove == 0)
+					return true;
+				sizeBefore = dx.size();
+				for (int a = dx.first(); a != -1 && toremove > 0; a = dx.next(a))
+					if (magics[a] != magic) {
+						dx.removeElementary(a);
+						toremove--;
+					}
+				dx.afterElementaryCalls(sizeBefore);
+				return true;
 			}
 		}
 
@@ -1111,42 +1117,41 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 			public ModbEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
-				buildResiduesForFirstVariable();
+				this.magics = new int[dx.initSize()];
 				dx.removeValuesAtConstructionTime(v -> v >= k); // because the remainder is at most k-1, whatever the value of y
 			}
 
+			int magic;
+
+			int[] magics;
+
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				// TODO iterate over y and record every support for x with amgic number (and count them)
-				// for x, if count == number of value done else iterate and remove not magic x values
-				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
-					int va = dx.toVal(a);
-					if (rx[a] != UNITIALIZED && dy.present(rx[a]))
-						continue;
-					int nMultiples = dy.lastValue() / k;
-					if (dy.size() <= nMultiples) {
-						for (int b = dy.first(); b != -1; b = dy.next(b)) {
-							int vb = dy.toVal(b);
-							if (vb % k == va) {
-								rx[a] = b;
-								continue extern;
-							}
-						}
-					} else {
-						int vb = va;
-						while (vb <= dy.lastValue()) {
-							assert vb % k == va;
-							if (dy.isPresentValue(vb)) {
-								rx[a] = dy.toIdx(vb);
-								continue extern;
-							}
-							vb += k;
-						}
+				magic++;
+				int cnt = 0;
+				int sizeBefore = dy.size();
+				for (int b = dy.first(); b != -1; b = dy.next(b)) {
+					int a = dx.toPresentIdx(dy.toVal(b) % k);
+					if (a == -1)
+						dy.removeElementary(b);
+					else if (magics[a] != magic) {
+						magics[a] = magic;
+						cnt++;
 					}
-					if (dx.remove(a) == false)
-						return false;
 				}
-				return dy.removeValuesModNotIn(dx, k);
+				if (dy.afterElementaryCalls(sizeBefore) == false)
+					return false;
+				int toremove = dx.size() - cnt;
+				if (toremove == 0)
+					return true;
+				sizeBefore = dx.size();
+				for (int a = dx.first(); a != -1 && toremove > 0; a = dx.next(a))
+					if (magics[a] != magic) {
+						dx.removeElementary(a);
+						toremove--;
+					}
+				dx.afterElementaryCalls(sizeBefore);
+				return true;
 			}
 		}
 
@@ -1155,6 +1160,10 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 			@Override
 			public boolean checkValues(int[] t) {
 				return t[0] != t[1] % k;
+			}
+
+			public ModbNE2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
 			}
 
 			int watch1 = -1, watch2 = -1; // watching two different (indexes of) values of y leading to two different remainders
@@ -1169,27 +1178,26 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 				return -1;
 			}
 
-			public ModbNE2(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-			}
-
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				// we should record entailment to avoid making systematically O(d) when the constraint is entailed
-
-				if (dx.size() == 1)
+				if (dx.size() == 1) {
+					entailed();
 					return dy.removeValuesModIn(dx, k);
+				}
 				if (watch1 == -1 || !dy.present(watch1))
 					watch1 = findWatch(watch2);
 				if (watch1 == -1) {
 					// watch2 is the only remaining valid watch (we know that it is still valid since the domain is not empty)
 					assert watch2 != -1 && dy.present(watch2);
+					entailed();
 					return dx.removeValueIfPresent(dy.toVal(watch2) % k);
 				}
 				if (watch2 == -1 || !dy.present(watch2))
 					watch2 = findWatch(watch1);
-				if (watch2 == -1)
+				if (watch2 == -1) {
+					entailed();
 					return dx.removeValueIfPresent(dy.toVal(watch1) % k);
+				}
 				return true;
 			}
 		}
@@ -1254,10 +1262,11 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 			public boolean runPropagator(Variable dummy) {
 				if (dx.size() == 1)
 					return dy.removeValuesIfPresent(k + dx.uniqueValue(), k - dx.uniqueValue());
+				int v = Math.abs(dy.firstValue() - k);
 				if (dy.size() == 1)
-					return dx.removeValueIfPresent(Math.abs(dy.uniqueValue() - k));
-				if (dy.size() == 2 && Math.abs(dy.lastValue() - k) == Math.abs(dy.firstValue() - k))
-					return dx.removeValueIfPresent(Math.abs(dy.lastValue() - k));
+					return dx.removeValueIfPresent(v);
+				if (dy.size() == 2 && Math.abs(dy.lastValue() - k) == v)
+					return dx.removeValueIfPresent(v);
 				return true;
 			}
 		}
@@ -1305,14 +1314,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.first() == 0 && dy.lastValue() <= k)
-					return dx.remove(0);
-				if (dx.last() == 1 && dy.firstValue() > k)
-					return dx.remove(1);
-				if (dx.last() == 0 && dy.firstValue() <= k) // only 0 in dx
-					return dy.removeValuesLE(k);
-				if (dx.first() == 1 && dy.lastValue() > k) // only 1 in dx
-					return dy.removeValuesGT(k);
+				if (dy.lastValue() <= k)
+					return dx.removeIfPresent(0); // y <= k => x != 0
+				if (dy.firstValue() > k)
+					return dx.removeIfPresent(1); // y > k => x != 1
+				if (dx.last() == 0)
+					return dy.firstValue() > k || dy.removeValuesLE(k); // x = 0 => y > k
+				if (dx.first() == 1)
+					return dy.lastValue() <= k || dy.removeValuesGT(k); // x = 1 => y <= k
 				return true;
 			}
 		}
@@ -1330,14 +1339,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.first() == 0 && dy.firstValue() >= k)
-					return dx.remove(0);
-				if (dx.last() == 1 && dy.lastValue() < k)
-					return dx.remove(1);
-				if (dx.last() == 0 && dy.lastValue() >= k) // only 0 in dx
-					return dy.removeValuesGE(k);
-				if (dx.first() == 1 && dy.firstValue() < k) // only 1 in dx
-					return dy.removeValuesLT(k);
+				if (dy.firstValue() >= k)
+					return dx.removeIfPresent(0); // y >= k => x != 0
+				if (dy.lastValue() < k)
+					return dx.removeIfPresent(1); // y < k => x != 1
+				if (dx.last() == 0)
+					return dy.lastValue() < k || dy.removeValuesGE(k); // x = 0 => y < k
+				if (dx.first() == 1)
+					return dy.firstValue() >= k || dy.removeValuesLT(k); // x = 1 => y >= k
 				return true;
 			}
 		}
@@ -1356,13 +1365,13 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (!dy.isPresentValue(k))
-					return dx.removeIfPresent(1); // k not in dy => x != 1
+					return dx.removeIfPresent(1); // y != k => x != 1
 				if (dy.size() == 1)
-					return dx.removeIfPresent(0); // dy = {k} => x != 0
-				if (dx.last() == 0) // only 0 in dx
-					return dy.removeValueIfPresent(k);
-				if (dx.first() == 1) // only 1 in dx
-					return dy.reduceToValue(k);
+					return dx.removeIfPresent(0); // y = k => x != 0
+				if (dx.last() == 0)
+					return dy.removeValueIfPresent(k); // x = 0 => y != k
+				if (dx.first() == 1)
+					return dy.reduceToValue(k); // x = 1 => y = k
 				return true;
 			}
 		}
@@ -1381,16 +1390,15 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (!dy.isPresentValue(k))
-					return dx.removeIfPresent(0); // k not in dy => x != 0
+					return dx.removeIfPresent(0); // y != k => x != 0
 				if (dy.size() == 1)
-					return dx.removeIfPresent(1); // dy = {k} => x != 1
-				if (dx.last() == 0) // only 0 in dx
-					return dy.reduceToValue(k);
-				if (dx.first() == 1) // only 1 in dx
-					return dy.removeValueIfPresent(k);
+					return dx.removeIfPresent(1); // y = k => x != 1
+				if (dx.last() == 0)
+					return dy.reduceToValue(k); // x = 0 => y = k
+				if (dx.first() == 1)
+					return dy.removeValueIfPresent(k); // x = 1 => x != k
 				return true;
 			}
 		}
-
 	}
 }
