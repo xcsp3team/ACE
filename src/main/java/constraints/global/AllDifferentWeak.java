@@ -11,7 +11,6 @@ package constraints.global;
 import java.util.HashSet;
 import java.util.Set;
 
-import interfaces.Tags.TagFilteringPartialAtEachCall;
 import interfaces.Tags.TagGACUnguaranteed;
 import problem.Problem;
 import variables.Domain;
@@ -20,7 +19,7 @@ import variables.Variable;
 /**
  * This class establishes that the values assigned to the involved variables of the constraint must be all different.
  */
-public final class AllDifferentWeak extends AllDifferentAbstract implements TagFilteringPartialAtEachCall, TagGACUnguaranteed {
+public final class AllDifferentWeak extends AllDifferentAbstract implements TagGACUnguaranteed { // not call filtering-complete
 	private Set<Integer> set;
 
 	private int mode = 0; // hard coding

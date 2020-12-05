@@ -8,7 +8,6 @@ import org.xcsp.common.Utilities;
 
 import constraints.Constraint.CtrGlobal;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagFilteringPartialAtEachCall;
 import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
@@ -90,7 +89,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 		// ***** Constraint AtMostK
 		// ************************************************************************
 
-		public static class AtMostK extends CountCst implements TagSymmetric, TagFilteringPartialAtEachCall {
+		public static class AtMostK extends CountCst implements TagSymmetric { // not call filtering-complete
 
 			@Override
 			public boolean checkValues(int[] t) {
@@ -144,7 +143,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 		// ***** Constraint AtLeastK
 		// ************************************************************************
 
-		public static class AtLeastK extends CountCst implements TagSymmetric, TagFilteringPartialAtEachCall {
+		public static class AtLeastK extends CountCst implements TagSymmetric { // not call filtering-complete
 
 			@Override
 			public boolean checkValues(int[] t) {

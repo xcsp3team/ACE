@@ -17,7 +17,6 @@ import java.util.stream.Stream;
 import org.xcsp.common.Utilities;
 
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.Tags.TagFilteringPartialAtEachCall;
 import interfaces.Tags.TagGACUnguaranteed;
 import problem.Problem;
 import sets.SetSparse;
@@ -26,7 +25,7 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public class AllDifferentBound extends AllDifferentAbstract implements ObserverBacktrackingSystematic, TagGACUnguaranteed, TagFilteringPartialAtEachCall {
+public final class AllDifferentBound extends AllDifferentAbstract implements ObserverBacktrackingSystematic, TagGACUnguaranteed { // not call filtering-complete
 
 	static int nb = 0;
 

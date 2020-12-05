@@ -30,7 +30,6 @@ import org.xcsp.modeler.entities.VarEntities.VarEntity;
 import constraints.Constraint;
 import constraints.global.Sum;
 import problem.Problem;
-import solver.Restarter.RestarterLB;
 import solver.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
 import utility.Kit;
@@ -239,9 +238,6 @@ public final class SolutionManager {
 		if (solver.head.control.general.verbose > 2)
 			log.config(" " + s + "\n");
 		// solver.problem.api.prettyDisplay(vars_values(false, false).split("\\s+"));
-
-		if (solver.restarter instanceof RestarterLB)
-			((RestarterLB) solver.restarter).enterLocalBranching();
 	}
 
 	public void handleNewSolutionAndPossiblyOptimizeIt() {

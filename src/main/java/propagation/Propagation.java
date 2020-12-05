@@ -167,7 +167,7 @@ public abstract class Propagation {
 					currFilteringCtr = null;
 					if (!consistent)
 						return false;
-				} else if (c.timestamp <= x.timestamp)
+				} else if (c.time <= x.time)
 					auxiliaryQueues[c.filteringComplexity - 1].add(c.num, x.num);
 		return true;
 	}
@@ -189,7 +189,7 @@ public abstract class Propagation {
 					Constraint c = solver.problem.constraints[cnum];
 					Variable x = solver.problem.variables[xnum];
 					// TODO : next instruction forces filtering, code may be improved to filter only when necessary
-					c.timestamp = x.timestamp;
+					c.time = x.time;
 					if (!c.ignored && !solver.isEntailed(c)) { // means that the constraint is ignored or entailed
 						currFilteringCtr = c;
 						boolean consistent = c.filterFrom(x);

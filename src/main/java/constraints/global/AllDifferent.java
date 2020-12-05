@@ -8,6 +8,7 @@
  */
 package constraints.global;
 
+import constraints.global.Matcher.MatcherAllDifferent;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagGACGuaranteed;

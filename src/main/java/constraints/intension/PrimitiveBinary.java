@@ -16,8 +16,6 @@ import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
 import constraints.global.SumWeighted;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagSymmetric;
 import interfaces.Tags.TagUnsymmetric;
 import problem.Problem;
@@ -29,7 +27,7 @@ import variables.Variable;
 // this implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 = 3
 // https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.17.2
 
-public abstract class PrimitiveBinary extends Primitive implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
+public abstract class PrimitiveBinary extends Primitive {
 
 	public static boolean enforceLT(Domain dx, Domain dy) { // x < y
 		return dx.removeValuesGE(dy.lastValue()) && dy.removeValuesLE(dx.firstValue());
@@ -85,18 +83,18 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 		return true;
 	}
 
-	public static boolean enforceMulEQ(Domain dx, Domain dy, int k) { // x = y * k
-		assert dx.iterateOnValuesStoppingWhen(v -> v != 0 && v % k != 0) == false; // we assume that trivial inconsistent values have been deleted
-		// initially (for code efficiency, avoiding systematic check)
-		if (dx.removeValuesDivNotIn(dy, k) == false)
-			return false;
-		if (dx.size() == dy.size())
-			return true;
-		assert dx.size() < dy.size();
-		boolean consistent = dy.removeValuesMulNotIn(dx, k);
-		assert consistent;
-		return true;
-	}
+	// public static boolean enforceMulEQ(Domain dx, Domain dy, int k) { // x = y * k
+	// assert dx.iterateOnValuesStoppingWhen(v -> v != 0 && v % k != 0) == false; // we assume that trivial inconsistent values have been deleted
+	// // initially (for code efficiency, avoiding systematic check)
+	// if (dx.removeValuesDivNotIn(dy, k) == false)
+	// return false;
+	// if (dx.size() == dy.size())
+	// return true;
+	// assert dx.size() < dy.size();
+	// boolean consistent = dy.removeValuesMulNotIn(dx, k);
+	// assert consistent;
+	// return true;
+	// }
 
 	public static boolean enforceNE(Domain dx, Domain dy) { // x != y
 		if (dx.size() == 1)
@@ -123,6 +121,51 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 	}
 
 	public final static int UNITIALIZED = -1;
+
+	public abstract static class SimplePropagatorEQ {
+
+		Domain dx, dy;
+
+		int magic;
+
+		int[] magics;
+
+		protected SimplePropagatorEQ(Domain dx, Domain dy) {
+			this.dx = dx;
+			this.dy = dy;
+			this.magics = new int[dx.initSize()];
+		}
+
+		abstract int valy(int b);
+
+		public boolean runPropagator(Variable dummy) {
+			magic++;
+			int cnt = 0;
+			int sizeBefore = dy.size();
+			for (int b = dy.first(); b != -1; b = dy.next(b)) {
+				int a = dx.toPresentIdx(valy(b));
+				if (a == -1)
+					dy.removeElementary(b);
+				else if (magics[a] != magic) {
+					magics[a] = magic;
+					cnt++;
+				}
+			}
+			if (dy.afterElementaryCalls(sizeBefore) == false)
+				return false;
+			int toremove = dx.size() - cnt;
+			if (toremove == 0)
+				return true;
+			sizeBefore = dx.size();
+			for (int a = dx.first(); a != -1 && toremove > 0; a = dx.next(a))
+				if (magics[a] != magic) {
+					dx.removeElementary(a);
+					toremove--;
+				}
+			dx.afterElementaryCalls(sizeBefore);
+			return true;
+		}
+	}
 
 	// ************************************************************************
 	// ***** Root class and Disjonctive
@@ -962,17 +1005,24 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 			@Override
 			public boolean checkValues(int[] t) {
-				return t[0] == k * t[1];
+				return t[0] == t[1] * k;
 			}
+
+			private final SimplePropagatorEQ sp;
 
 			public MulbEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 				dx.removeValuesAtConstructionTime(v -> v != 0 && v % k != 0); // non multiple deleted (important for avoiding systematic checks)
+				this.sp = new SimplePropagatorEQ(x.dom, y.dom) {
+					final int valy(int b) {
+						return dy.toVal(b) * k;
+					}
+				};
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				return enforceMulEQ(dx, dy, k);
+				return sp.runPropagator(dummy); // return enforceMulEQ(dx, dy, k);
 			}
 		}
 
@@ -980,7 +1030,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 			@Override
 			public boolean checkValues(int[] t) {
-				return t[0] != k * t[1];
+				return t[0] != t[1] * k;
 			}
 
 			public MulbNE2(Problem pb, Variable x, Variable y, int k) {
@@ -1024,43 +1074,20 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 				return t[0] == t[1] / k;
 			}
 
+			private final SimplePropagatorEQ sp;
+
 			public DivbEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
-				this.magics = new int[dx.initSize()];
-				// buildResiduesForFirstVariable();
+				this.sp = new SimplePropagatorEQ(x.dom, y.dom) {
+					final int valy(int b) {
+						return dy.toVal(b) / k;
+					}
+				};
 			}
-
-			int magic;
-
-			int[] magics;
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				magic++;
-				int cnt = 0;
-				int sizeBefore = dy.size();
-				for (int b = dy.first(); b != -1; b = dy.next(b)) {
-					int a = dx.toPresentIdx(dy.toVal(b) / k);
-					if (a == -1)
-						dy.removeElementary(b);
-					else if (magics[a] != magic) {
-						magics[a] = magic;
-						cnt++;
-					}
-				}
-				if (dy.afterElementaryCalls(sizeBefore) == false)
-					return false;
-				int toremove = dx.size() - cnt;
-				if (toremove == 0)
-					return true;
-				sizeBefore = dx.size();
-				for (int a = dx.first(); a != -1 && toremove > 0; a = dx.next(a))
-					if (magics[a] != magic) {
-						dx.removeElementary(a);
-						toremove--;
-					}
-				dx.afterElementaryCalls(sizeBefore);
-				return true;
+				return sp.runPropagator(dummy);
 			}
 		}
 
@@ -1115,43 +1142,21 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 				return t[0] == t[1] % k;
 			}
 
+			private final SimplePropagatorEQ sp;
+
 			public ModbEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
-				this.magics = new int[dx.initSize()];
 				dx.removeValuesAtConstructionTime(v -> v >= k); // because the remainder is at most k-1, whatever the value of y
+				this.sp = new SimplePropagatorEQ(x.dom, y.dom) {
+					final int valy(int b) {
+						return dy.toVal(b) % k;
+					}
+				};
 			}
-
-			int magic;
-
-			int[] magics;
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				magic++;
-				int cnt = 0;
-				int sizeBefore = dy.size();
-				for (int b = dy.first(); b != -1; b = dy.next(b)) {
-					int a = dx.toPresentIdx(dy.toVal(b) % k);
-					if (a == -1)
-						dy.removeElementary(b);
-					else if (magics[a] != magic) {
-						magics[a] = magic;
-						cnt++;
-					}
-				}
-				if (dy.afterElementaryCalls(sizeBefore) == false)
-					return false;
-				int toremove = dx.size() - cnt;
-				if (toremove == 0)
-					return true;
-				sizeBefore = dx.size();
-				for (int a = dx.first(); a != -1 && toremove > 0; a = dx.next(a))
-					if (magics[a] != magic) {
-						dx.removeElementary(a);
-						toremove--;
-					}
-				dx.afterElementaryCalls(sizeBefore);
-				return true;
+				return sp.runPropagator(dummy);
 			}
 		}
 
@@ -1234,17 +1239,33 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 				return t[0] == Math.abs(t[1] - k);
 			}
 
+			private final SimplePropagatorEQ sp;
+
 			public DistbEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
+				this.sp = new SimplePropagatorEQ(x.dom, y.dom) {
+					final int valy(int b) {
+						return Math.abs(dy.toVal(b) - k);
+					}
+				};
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (k == 0)
-					return dx.removeValuesAbsNotIn_reverse(dy) && dy.removeValuesAbsNotIn(dx);
-				else
-					return dx.removeValuesDistNotIn_reverse(dy, k) && dy.removeValuesDistNotIn(dx, k);
+				return sp.runPropagator(dummy);
 			}
+
+			// public DistbEQ2(Problem pb, Variable x, Variable y, int k) {
+			// super(pb, x, y, k);
+			// }
+			//
+			// @Override
+			// public boolean runPropagator(Variable dummy) {
+			// if (k == 0)
+			// return dx.removeValuesAbsNotIn_reverse(dy) && dy.removeValuesAbsNotIn(dx);
+			// else
+			// return dx.removeValuesDistNotIn_reverse(dy, k) && dy.removeValuesDistNotIn(dx, k);
+			// }
 		}
 
 		public static final class DistbNE2 extends PrimitiveBinaryDistb {

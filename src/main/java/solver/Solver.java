@@ -21,7 +21,6 @@ import interfaces.Observers.ObserverAssignment;
 import interfaces.Observers.ObserverConflicts;
 import interfaces.Observers.ObserverRuns;
 import interfaces.Observers.ObserverSearch;
-import interfaces.Tags.TagBinaryRelationFiltering;
 import main.Head;
 import problem.Problem;
 import propagation.Propagation;
@@ -96,7 +95,7 @@ public abstract class Solver {
 
 	public void reset() { // called by very special objects (for example, when extracting a MUC)
 		Kit.control(futVars.nDiscarded() == 0);
-		Kit.control(!(propagation instanceof TagBinaryRelationFiltering), () -> "for the moment");
+		// Kit.control(!(propagation instanceof TagBinaryRelationFiltering), () -> "for the moment");
 		propagation.reset();
 		restarter.reset();
 		resetNoSolutions();

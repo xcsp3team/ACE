@@ -13,7 +13,6 @@ import java.util.stream.Stream;
 import constraints.Constraint;
 import constraints.extension.structures.Bits;
 import interfaces.FilteringSpecific;
-import interfaces.Tags.TagBinaryRelationFiltering;
 import propagation.Reviser.Reviser3;
 import utility.Kit;
 import variables.Variable;
@@ -82,13 +81,13 @@ public abstract class Supporter {
 			int q = x == 0 ? 1 : 0;
 			int b = residues[x][a];
 			if (b != -1 && c.doms[q].present(b)) {
-				if (c.problem.solver.propagation instanceof TagBinaryRelationFiltering) {
-					buffer[x] = a;
-					buffer[q] = b;
-					if (c.checkIndexes(buffer))
-						return true;
-				} else
-					return true;
+				// if (c.problem.solver.propagation instanceof TagBinaryRelationFiltering) {
+				// buffer[x] = a;
+				// buffer[q] = b;
+				// if (c.checkIndexes(buffer))
+				// return true;
+				// } else
+				return true;
 			}
 			if (c.seekFirstSupportWith(x, a, buffer)) {
 				b = buffer[q];

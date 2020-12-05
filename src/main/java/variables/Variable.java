@@ -499,7 +499,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	// public boolean decision = true;
 
 	/** The timestamp associated with variable. It is used for propagation. */
-	public long timestamp;
+	public long time;
 
 	/** An object associated with the variable. Of course, may be null. The object can be used for example by an heuristic. */
 	public Object data;
@@ -543,7 +543,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 		assert isFuture() && dom.controlStructures(); // && Kit.control(dom.nRemoved() == 0 ??
 		// if (!preserveWeightedDegrees)
 		// this.resetWdeg();
-		timestamp = 0;
+		time = 0;
 	}
 
 	public final String defaultId() {

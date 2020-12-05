@@ -155,7 +155,7 @@ public final class ProblemStuff {
 	 */
 	public int nIsolatedVars, nFixedVars;
 	public int nRemovedUnaryCtrs, nConvertedConstraints; // conversion intension to extension
-	public int nSpecificCtrs, nGlobalCtrs, nMergedCtrs, nDiscardedCtrs, nAddedCtrs, nUniversalCtrs;
+	public int nSpecificCtrs, nMergedCtrs, nDiscardedCtrs, nAddedCtrs, nUniversalCtrs;
 
 	public long nEffectiveFilterings;
 

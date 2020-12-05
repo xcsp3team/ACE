@@ -4,13 +4,12 @@ import java.util.Map;
 
 import org.xcsp.common.Utilities;
 
-import interfaces.Tags.TagFilteringPartialAtEachCall;
 import interfaces.Tags.TagGACUnguaranteed;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 
-public class AllDifferentExceptWeak extends AllDifferentAbstract implements TagGACUnguaranteed, TagFilteringPartialAtEachCall {
+public class AllDifferentExceptWeak extends AllDifferentAbstract implements TagGACUnguaranteed { // not call filtering-complete
 
 	@Override
 	public boolean checkValues(int[] t) {

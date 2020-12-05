@@ -8,21 +8,16 @@
  */
 package constraints.global;
 
-import static org.xcsp.modeler.definitions.IRootForCtrAndObj.map;
-
-import java.util.Map;
 import java.util.stream.IntStream;
 
 import org.xcsp.common.Utilities;
-import org.xcsp.modeler.definitions.ICtr.ICtrAllDifferent;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.Tags.TagFilteringPartialAtEachCall;
 import interfaces.Tags.TagUnsymmetric;
 import problem.Problem;
 import variables.Variable;
 
-public final class DistinctVectors extends CtrGlobal implements TagUnsymmetric, TagFilteringPartialAtEachCall, ICtrAllDifferent {
+public final class DistinctVectors extends CtrGlobal implements TagUnsymmetric { // not call filtering-complete
 
 	@Override
 	public boolean checkValues(int[] t) {
@@ -133,11 +128,6 @@ public final class DistinctVectors extends CtrGlobal implements TagUnsymmetric, 
 			return true;
 		} else
 			return true;
-	}
-
-	@Override
-	public Map<String, Object> mapXCSP() {
-		return map(SCOPE, scp, LISTS, new String[] { compactOrdered(list1), compactOrdered(list2) });
 	}
 
 }

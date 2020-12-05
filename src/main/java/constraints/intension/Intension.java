@@ -8,8 +8,6 @@
  */
 package constraints.intension;
 
-import static org.xcsp.modeler.definitions.IRootForCtrAndObj.map;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,17 +26,17 @@ import org.xcsp.common.predicates.TreeEvaluator.Evaluator;
 import org.xcsp.common.predicates.TreeEvaluator.F1Evaluator;
 import org.xcsp.common.predicates.TreeEvaluator.F2Evaluator;
 import org.xcsp.common.predicates.XNodeParent;
-import org.xcsp.modeler.definitions.ICtr.ICtrIntension;
 
 import constraints.ConflictsStructure;
 import constraints.Constraint;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
 
-public final class Intension extends Constraint implements ICtrIntension {
+public final class Intension extends Constraint implements TagFilteringCompleteAtEachCall {
 
 	/**********************************************************************************************
 	 * Interfaces
@@ -409,11 +407,6 @@ public final class Intension extends Constraint implements ICtrIntension {
 			else
 				conflictsStructure = ConflictsStructure.build(this);
 		}
-	}
-
-	@Override
-	public Map<String, Object> mapXCSP() {
-		return map(SCOPE, scp, FUNCTION, tree);
 	}
 
 	// public boolean isEligibleForSettingHugeDomainVariable() {

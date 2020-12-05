@@ -6,17 +6,16 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package constraints.global;
+package optimization;
 
 import constraints.Constraint.CtrGlobal;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagSymmetric;
-import optimization.Optimizable;
 import problem.Problem;
 import variables.Variable;
 
-public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilteringCompleteAtEachCall, TagSymmetric, TagGACGuaranteed {
+public abstract class ObjVar extends CtrGlobal implements Optimizable, TagGACGuaranteed, TagFilteringCompleteAtEachCall, TagSymmetric {
 
 	@Override
 	public long minComputableObjectiveValue() {
@@ -81,7 +80,7 @@ public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilter
 			control(problem.solver.depth() == 0, () -> "depth: " + problem.solver.depth());
 			if (x.dom.removeValuesGT(limit) == false)
 				return false;
-			entailed(); // Level = 0;
+			entailed();
 			assert x.dom.size() > 0;
 			return true;
 		}
@@ -103,7 +102,7 @@ public abstract class ObjVar extends CtrGlobal implements Optimizable, TagFilter
 			control(problem.solver.depth() == 0, () -> "depth: " + problem.solver.depth());
 			if (x.dom.removeValuesLT(limit) == false)
 				return false;
-			entailed(); // Level = 0;
+			entailed();
 			assert x.dom.size() > 0;
 			return true;
 		}

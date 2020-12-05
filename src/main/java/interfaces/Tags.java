@@ -12,13 +12,6 @@ public interface Tags {
 	}
 
 	/**
-	 * Useful to tag constraints that only produce partial filtering around the specified event variable (but the constraint may be able to enforce GAC
-	 * nevertheless)
-	 */
-	interface TagFilteringPartialAtEachCall {
-	}
-
-	/**
 	 * Useful to tag constraints that guarantee enforcing GAC.
 	 */
 	interface TagGACGuaranteed {
@@ -28,9 +21,6 @@ public interface Tags {
 	 * Useful to tag constraints that does not guarantee enforcing GAC.
 	 */
 	interface TagGACUnguaranteed {
-	}
-
-	interface TagInvisible {
 	}
 
 	interface TagMaximize {
@@ -55,9 +45,6 @@ public interface Tags {
 	 * Useful to tag constraints that have no symmetry at all.
 	 */
 	interface TagUnsymmetric {
-	}
-
-	interface TagBinaryRelationFiltering {
 	}
 
 }

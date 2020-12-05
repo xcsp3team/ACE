@@ -23,15 +23,13 @@ import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
 import constraints.global.SumWeighted;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagUnsymmetric;
 import problem.Problem;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class PrimitiveTernary extends Primitive implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, TagUnsymmetric {
+public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetric {
 
 	public static Constraint buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, Variable z) {
 		switch (aop) {

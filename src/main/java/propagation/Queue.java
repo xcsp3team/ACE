@@ -58,7 +58,7 @@ public final class Queue extends SetSparse {
 	 * Add the specified variable to the queue. It must be called when the domain of the specified variable has been modified.
 	 */
 	public void add(Variable x) {
-		x.timestamp = propagation.incrementTime();
+		x.time = propagation.incrementTime();
 		add(x.num);
 		assert !x.assigned() || x == propagation.solver.futVars.lastPast() : "variable " + x;
 	}
@@ -112,7 +112,7 @@ public final class Queue extends SetSparse {
 
 	public void incrementTimestampsOfEnqueuedVariables() {
 		for (int i = limit; i >= 0; i--)
-			variables[dense[i]].timestamp = propagation.incrementTime();
+			variables[dense[i]].time = propagation.incrementTime();
 	}
 
 	@Override

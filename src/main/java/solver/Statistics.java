@@ -174,7 +174,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 
 	public final MapAtt preproAttributes() {
 		MapAtt m = new MapAtt("Preprocessing");
-		m.put("filters", nEffectiveFilterings());
+		m.put("eff", nEffectiveFilterings());
 		m.putIf("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
 		if (solver.propagation instanceof GAC)
 			m.put("nACremovedValues", ((GAC) (solver.propagation)).nPreproRemovals);
@@ -320,7 +320,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		@Override
 		public MapAtt cumulatedAttributes() {
 			MapAtt m = new MapAtt("Global");
-			m.put("filters", nEffectiveFilterings());
+			m.put("eff", nEffectiveFilterings());
 			m.putIf("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
 			if (nSingletonTests() > 0) { // solver.getPreproPropagationTechnique() instanceof SingletonArcConsistency) {
 				m.put(Output.N_SINGLETON_TESTS, nSingletonTests());

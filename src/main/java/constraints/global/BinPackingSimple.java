@@ -12,7 +12,6 @@ import java.util.Arrays;
 import java.util.stream.LongStream;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.Tags.TagFilteringPartialAtEachCall;
 import interfaces.Tags.TagGACUnguaranteed;
 import problem.Problem;
 import sets.SetDense;
@@ -20,7 +19,7 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public final class BinPackingSimple extends CtrGlobal implements TagGACUnguaranteed, TagFilteringPartialAtEachCall {
+public final class BinPackingSimple extends CtrGlobal implements TagGACUnguaranteed { // not call filtering-complete
 	@Override
 	public final boolean checkValues(int[] t) {
 		Arrays.fill(sums, 0);
@@ -66,8 +65,8 @@ public final class BinPackingSimple extends CtrGlobal implements TagGACUnguarant
 			int sizeBefore = dom.size();
 			for (int a = dom.first(); a != -1; a = dom.next(a))
 				if (sums[a] + sizes[p] > limit)
-					scp[p].dom.removeElementary(a);
-			if (scp[p].dom.afterElementaryCalls(sizeBefore) == false)
+					dom.removeElementary(a);
+			if (dom.afterElementaryCalls(sizeBefore) == false)
 				return false;
 		}
 		return true;

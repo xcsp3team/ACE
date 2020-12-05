@@ -11,7 +11,6 @@ package constraints.global;
 import java.util.Arrays;
 
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.Tags.TagFilteringPartialAtEachCall;
 import interfaces.Tags.TagGACUnguaranteed;
 import problem.Problem;
 import sets.SetSparseReversible;
@@ -19,8 +18,7 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public final class AllDifferentPermutation extends AllDifferentAbstract
-		implements TagGACUnguaranteed, TagFilteringPartialAtEachCall, ObserverBacktrackingSystematic {
+public final class AllDifferentPermutation extends AllDifferentAbstract implements TagGACUnguaranteed, ObserverBacktrackingSystematic {
 
 	private SetSparseReversible unfixedVars, unfixedIdxs;
 
@@ -39,18 +37,6 @@ public final class AllDifferentPermutation extends AllDifferentAbstract
 		unfixedIdxs = new SetSparseReversible(scp[0].dom.initSize(), problem.variables.length + 1);
 	}
 
-	// @Override
-	// public void setMark() {
-	// unfixedVars.setMark();
-	// unfixedIdxs.setMark();
-	// }
-	//
-	// @Override
-	// public void restoreAtMark() {
-	// unfixedVars.restoreAtMark();
-	// unfixedIdxs.restoreAtMark();
-	// }
-
 	private Variable findAnotherWatchedUnifxedVariable(int idx, Variable otherWatchedVariable) {
 		int[] dense = unfixedVars.dense;
 		for (int i = unfixedVars.limit; i >= 0; i--) {
@@ -64,8 +50,6 @@ public final class AllDifferentPermutation extends AllDifferentAbstract
 	public AllDifferentPermutation(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		Kit.control(Variable.isPermutationElligible(scp));
-		// unfixedVariables = new SparseSetMultiLevel(scope.length, true, problem.variables.length + 1);
-		// unfixedIndexes = new SparseSetMultiLevel(scope[0].dom.getInitialSize(), true, problem.variables.length + 1);
 		residues1 = new Variable[scp[0].dom.initSize()];
 		residues2 = new Variable[scp[0].dom.initSize()];
 		Arrays.fill(residues1, scp[0]);
@@ -127,12 +111,10 @@ public final class AllDifferentPermutation extends AllDifferentAbstract
 					x = residues1[a];
 					x.dom.reduceTo(a);
 					unfixedVars.remove(positionOf(x), level);
-					// unfixedVariables.remove(getPositionOf(variable), level);
 					unfixedIdxs.remove(a, level);
 				}
 			}
 		}
-		// Kit.prn("Return Filter " + evt + " " + problem.getNbValuesRemoved(), this);
 		return true;
 	}
 }

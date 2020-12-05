@@ -15,7 +15,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.Tags.TagFilteringPartialAtEachCall;
 import interfaces.Tags.TagGACUnguaranteed;
 import optimization.Optimizable;
 import problem.Problem;
@@ -24,7 +23,7 @@ import variables.Domain;
 import variables.Variable;
 import variables.Variable.VariableInteger;
 
-public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed, TagFilteringPartialAtEachCall {
+public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed { // not call filtering-complete
 
 	protected Variable[] list;
 

@@ -8,19 +8,14 @@
  */
 package constraints.global;
 
-import static org.xcsp.modeler.definitions.IRootForCtrAndObj.map;
-
-import java.util.Map;
 import java.util.stream.IntStream;
-
-import org.xcsp.modeler.definitions.ICtr.ICtrAllDifferent;
 
 import constraints.Constraint.CtrGlobal;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import variables.Variable;
 
-public abstract class AllDifferentAbstract extends CtrGlobal implements TagSymmetric, ICtrAllDifferent {
+public abstract class AllDifferentAbstract extends CtrGlobal implements TagSymmetric {
 
 	@Override
 	public boolean checkValues(int[] t) {
@@ -30,10 +25,5 @@ public abstract class AllDifferentAbstract extends CtrGlobal implements TagSymme
 	public AllDifferentAbstract(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		defineKey();
-	}
-
-	@Override
-	public Map<String, Object> mapXCSP() {
-		return map(SCOPE, scp, LIST, compact(scp));
 	}
 }

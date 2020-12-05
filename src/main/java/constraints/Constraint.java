@@ -30,11 +30,9 @@ import constraints.global.SumWeighted.SumWeightedEQ;
 import constraints.intension.Intension;
 import dashboard.Control.SettingCtrs;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
-import interfaces.FilteringGlobal;
 import interfaces.FilteringSpecific;
 import interfaces.Observers.ObserverConstruction;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagFilteringPartialAtEachCall;
 import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagGACUnguaranteed;
 import interfaces.Tags.TagSymmetric;
@@ -145,7 +143,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		}
 	}
 
-	public static abstract class CtrGlobal extends Constraint implements FilteringGlobal {
+	public static abstract class CtrGlobal extends Constraint implements FilteringSpecific {
 
 		protected final void defineKey(Object... specificData) {
 			StringBuilder sb = signature().append(' ').append(getClass().getSimpleName());
@@ -295,7 +293,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	public int cost = 1;
 
-	public long timestamp;
+	public long time;
 
 	public int filteringComplexity;
 
@@ -528,8 +526,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 		if (this instanceof FilteringSpecific)
 			pb.stuff.nSpecificCtrs++;
-		if (this instanceof FilteringGlobal)
-			pb.stuff.nGlobalCtrs++;
 		if (this instanceof ObserverConstruction)
 			pb.head.observersConstruction.add(this);
 
@@ -545,7 +541,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public final void reset() {
 		control(futvars.isFull());
 		nEffectiveFilterings = 0;
-		timestamp = 0;
+		time = 0;
 	}
 
 	/**********************************************************************************************
@@ -755,44 +751,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 * Methods related to filtering
 	 *********************************************************************************************/
 
-	private boolean genericFiltering(Variable x) {
-		Reviser reviser = ((Forward) problem.solver.propagation).reviser;
-		if (x.assigned()) {
-			for (int i = futvars.limit; i >= 0; i--)
-				if (reviser.revise(this, scp[futvars.dense[i]]) == false)
-					return false;
-		} else {
-			boolean revisingEventVarToo = (scp.length == 1); // TODO can we just initialize it to false ?
-			for (int i = futvars.limit; i >= 0; i--) {
-				Variable y = scp[futvars.dense[i]];
-				if (y == x)
-					continue;
-				if (timestamp < y.timestamp)
-					revisingEventVarToo = true;
-				if (reviser.revise(this, y) == false)
-					return false;
-			}
-			if (revisingEventVarToo && reviser.revise(this, x) == false)
-				return false;
-		}
-		return true;
-	}
-
-	private void handleEffectiveFilterings() {
-		if (problem.solver instanceof SolverBacktrack)
-			((SolverBacktrack) problem.solver).proofer.updateProof(this);// TODO // ((SystematicSolver)solver).updateProofAll();
-		nEffectiveFilterings++;
-		problem.stuff.nEffectiveFilterings++;
-	}
-
-	private boolean completeFilteringAtEachCall() {
-		if (this instanceof TagFilteringCompleteAtEachCall)
-			return true;
-		if (this instanceof TagFilteringPartialAtEachCall)
-			return false;
-		throw new UnsupportedOperationException(getClass().getName()); // to force the user to tag constraints or override the function
-	}
-
 	private Boolean handleHugeDomains() {
 		assert infiniteDomainVars.length > 0;
 		// TODO huge domains are not finalized
@@ -809,11 +767,35 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 			}
 		}
 		// for (Variable y : hugeDomainVars)
-		// if (!y.isAssigned())
-		// return true; // we have to wait
+		// if (!y.isAssigned()) return true; // we have to wait
 		if (futvars.size() > 0)
 			return true;
 		return null;
+	}
+
+	private boolean genericFiltering(Variable x) {
+		if (futvars.size() > genericFilteringThreshold)
+			return true;
+		Reviser reviser = ((Forward) problem.solver.propagation).reviser;
+		if (x.assigned()) {
+			for (int i = futvars.limit; i >= 0; i--)
+				if (reviser.revise(this, scp[futvars.dense[i]]) == false)
+					return false;
+		} else {
+			boolean revisingEventVarToo = (scp.length == 1); // TODO can we just initialize it to false ?
+			for (int i = futvars.limit; i >= 0; i--) {
+				Variable y = scp[futvars.dense[i]];
+				if (y == x)
+					continue;
+				if (time < y.time)
+					revisingEventVarToo = true;
+				if (reviser.revise(this, y) == false)
+					return false;
+			}
+			if (revisingEventVarToo && reviser.revise(this, x) == false)
+				return false;
+		}
+		return true;
 	}
 
 	/**
@@ -828,34 +810,28 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 				return b;
 		}
 
-		// For CSP, there are first some conditions that allow us to directly return true (because we know then that there is no filtering
-		// possibility)
+		// For CSP, some conditions allow us to directly return true (because we know then that there is no filtering possibility)
 		if (problem.settings.framework == TypeFramework.CSP) { // if != MACSP, pb with java -ea ac PlaneparkingTask.xml -ea -cm=false -ev -trace
 																// possibly too with GraphColoring-sum-GraphColoring_1-fullins-3.xml.lzma
 			if (futvars.size() == 0) {
-				if (isGuaranteedAC()) {
-					assert checkCurrentInstantiation() : "Unsatisfied constraint " + this;
-					return true;
-				} else
-					return checkCurrentInstantiation();
+				assert !isGuaranteedAC() || checkCurrentInstantiation() : "Unsatisfied constraint " + this + "while AC should be guaranteed";
+				return isGuaranteedAC() || checkCurrentInstantiation();
 			}
 			if (futvars.size() == 1 && x.isFuture() && scp.length > 1)
 				return true;
 		}
+		if (time > x.time && this instanceof TagFilteringCompleteAtEachCall)
+			return true;
+
 		int nBefore = problem.nValuesRemoved;
-		boolean consistent = true;
-		if (this instanceof FilteringSpecific) {
-			if (timestamp > x.timestamp && completeFilteringAtEachCall())
-				return true;
-			consistent = ((FilteringSpecific) this).runPropagator(x);
-		} else {
-			if (timestamp > x.timestamp || futvars.size() > genericFilteringThreshold)
-				return true;
-			consistent = genericFiltering(x);
+		boolean consistent = this instanceof FilteringSpecific ? ((FilteringSpecific) this).runPropagator(x) : genericFiltering(x);
+		if (!consistent || problem.nValuesRemoved != nBefore) {
+			if (problem.solver instanceof SolverBacktrack)
+				((SolverBacktrack) problem.solver).proofer.updateProof(this);// TODO // ((SystematicSolver)solver).updateProofAll();
+			nEffectiveFilterings++;
+			problem.stuff.nEffectiveFilterings++;
 		}
-		if (!consistent || problem.nValuesRemoved != nBefore)
-			this.handleEffectiveFilterings();
-		timestamp = problem.solver.propagation.incrementTime();
+		time = problem.solver.propagation.incrementTime();
 		return consistent;
 	}
 

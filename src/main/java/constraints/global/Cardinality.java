@@ -1,14 +1,9 @@
 package constraints.global;
 
-import static org.xcsp.modeler.definitions.IRootForCtrAndObj.map;
-
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint.CtrGlobal;
+import constraints.global.Matcher.MatcherCardinality;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagGACGuaranteed;
@@ -18,7 +13,31 @@ import variables.Variable;
 
 public abstract class Cardinality extends CtrGlobal implements ObserverBacktrackingSystematic {
 
-	public static class CardinalityConstant extends Cardinality implements TagFilteringCompleteAtEachCall, TagGACGuaranteed, ICtrCardinality {
+	protected Matcher matcher;
+
+	@Override
+	public void restoreBefore(int depth) {
+		matcher.restoreAtDepthBefore(depth);
+	}
+
+	@Override
+	public int[] defineSymmetryMatching() {
+		return Kit.range(1, scp.length); // TODO to be defined more precisely
+	}
+
+	public Cardinality(Problem problem, Variable[] scope) {
+		super(problem, scope);
+	}
+
+	@Override
+	public boolean runPropagator(Variable x) {
+		if (!matcher.findMaximumMatching())
+			return x.dom.fail();
+		matcher.removeInconsistentValues();
+		return true;
+	}
+
+	public static class CardinalityConstant extends Cardinality implements TagFilteringCompleteAtEachCall, TagGACGuaranteed {
 		@Override
 		public boolean checkValues(int[] t) {
 			for (int i = 0; i < values.length; i++) {
@@ -63,36 +82,5 @@ public abstract class Cardinality extends CtrGlobal implements ObserverBacktrack
 			matcher = new MatcherCardinality(this, scope, values, minOccs, maxOccs);
 		}
 
-		@Override
-		public Map<String, Object> mapXCSP() {
-			String o = IntStream.range(0, minOccs.length).mapToObj(i -> minOccs[i] == maxOccs[i] ? minOccs[i] + "" : minOccs[i] + ".." + maxOccs[i])
-					.collect(Collectors.joining(" "));
-			return map(SCOPE, scp, LIST, compact(scp), VALUES, Kit.join(values), CLOSED, null, OCCURS, o);
-		}
-
-	}
-
-	protected Matcher matcher;
-
-	@Override
-	public void restoreBefore(int depth) {
-		matcher.restoreAtDepthBefore(depth);
-	}
-
-	@Override
-	public int[] defineSymmetryMatching() {
-		return Kit.range(1, scp.length); // TODO to be defined more precisely
-	}
-
-	public Cardinality(Problem problem, Variable[] scope) {
-		super(problem, scope);
-	}
-
-	@Override
-	public boolean runPropagator(Variable x) {
-		if (!matcher.findMaximumMatching())
-			return x.dom.fail();
-		matcher.removeInconsistentValues();
-		return true;
 	}
 }

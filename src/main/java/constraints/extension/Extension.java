@@ -10,7 +10,6 @@ package constraints.extension;
 
 import static org.xcsp.common.Constants.STAR;
 import static org.xcsp.common.Constants.STAR_SYMBOL;
-import static org.xcsp.modeler.definitions.IRootForCtrAndObj.map;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -21,8 +20,6 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.xcsp.modeler.definitions.ICtr.ICtrExtension;
-
 import constraints.ConflictsStructure;
 import constraints.Constraint;
 import constraints.TupleManager;
@@ -30,7 +27,7 @@ import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableWithSubtables;
 import constraints.extension.structures.Tries;
-import interfaces.FilteringGlobal;
+import interfaces.FilteringSpecific;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagGACGuaranteed;
@@ -42,10 +39,9 @@ import propagation.Supporter.SupporterHard;
 import utility.Kit;
 import utility.Reflector;
 import variables.Variable;
-import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
 
-public abstract class Extension extends Constraint implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, ICtrExtension {
+public abstract class Extension extends Constraint implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
 
 	/**********************************************************************************************
 	 ***** Generic and Global Subclasses
@@ -111,7 +107,7 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 		}
 	}
 
-	public abstract static class ExtensionGlobal extends Extension implements FilteringGlobal, ObserverBacktrackingSystematic {
+	public abstract static class ExtensionGlobal extends Extension implements FilteringSpecific, ObserverBacktrackingSystematic {
 
 		public ExtensionGlobal(Problem pb, Variable[] scp) {
 			super(pb, scp);
@@ -280,11 +276,4 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 	boolean controlTuples(int[][] tuples) {
 		return Stream.of(tuples).allMatch(t -> IntStream.range(0, t.length).allMatch(i -> t[i] == STAR || scp[i].dom.isPresentValue(t[i])));
 	}
-
-	@Override
-	public Map<String, Object> mapXCSP() {
-		Object tuples = scp[0] instanceof VariableInteger ? extStructure.originalTuples : problem.symbolic.mapOfTuples.get(this);
-		return map(SCOPE, scp, LIST, compactOrdered(scp), ARITY, scp.length, TUPLES, tuples, POSITIVE, extStructure.originalPositive);
-	}
-
 }

@@ -48,14 +48,12 @@ import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicVariables;
 import heuristics.HeuristicVariablesDynamic.Wdeg;
 import interfaces.Tags.TagExperimental;
-import interfaces.Tags.TagInvisible;
 import main.Head;
 import main.HeadExtraction;
 import propagation.GAC;
 import propagation.Reviser;
 import propagation.Reviser.Reviser3;
 import propagation.SAC.QueueForSAC3.CellIterator;
-import solver.Restarter.RestarterLB.LocalBranchingConstraint.LBAtMostDistanceSum;
 import solver.Restarter.RestarterLNS.HeuristicFreezing.Rand;
 import solver.SolutionManager;
 import solver.backtrack.SolverBacktrack;
@@ -474,20 +472,6 @@ public class Control {
 
 	public final SettingLNS lns = new SettingLNS();
 
-	public class SettingLB extends SettingGroup {
-		private String s_e = "If true, local branching search is activated.";
-		private String s_n = "The name of the class used for local branching constraints.";
-		private String s_bd = "The maximum distance when exploring the neighborhood.";
-		private String s_mr = "The max number of restarts for local branching before switching to classical search.";
-
-		public final boolean enabled = addB("enabled", "lb_e", false, s_e);
-		public final String neighborhood = addS("neighborhood", "lb_n", LBAtMostDistanceSum.class, SettingLB.class, s_n);
-		public final int baseDistance = addI("baseDistance", "lb_bd", 1, s_bd);
-		public final int maxRestarts = addI("maxRestarts", "lb_mr", 10, s_mr);
-	}
-
-	public final SettingLB localBranching = new SettingLB();
-
 	public class SettingSolving extends SettingGroup {
 		String s_class = "The name of the class used to explore the search space.\n\tTypically, this is " + SolverBacktrack.class.getSimpleName();
 		String s_branching = "The branching scheme used for search."
@@ -894,7 +878,7 @@ public class Control {
 				if (root != null) {
 					s += "\tPossible String values are : ";
 					for (Class<?> cla : Reflector.searchClassesInheritingFrom(root))
-						if (!(TagExperimental.class.isAssignableFrom(cla)) && !(TagInvisible.class.isAssignableFrom(cla)))
+						if (!(TagExperimental.class.isAssignableFrom(cla)))
 							s += cla.getSimpleName() + " ";
 					s += "\n";
 				}

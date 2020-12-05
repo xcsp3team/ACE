@@ -13,8 +13,6 @@ import java.util.TreeSet;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.xcsp.modeler.definitions.DefXCSP;
-
 import problem.Problem;
 import sets.SetDense;
 import utility.Kit;
@@ -87,8 +85,4 @@ public final class Circuit extends AllDifferent {
 		return true;
 	}
 
-	@Override
-	public DefXCSP defXCSP() {
-		return new DefXCSP(CIRCUIT).addSon(LIST, compact(scp));
-	}
 }

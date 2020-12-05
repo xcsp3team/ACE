@@ -13,10 +13,11 @@ import java.util.stream.Stream;
 import constraints.Constraint;
 import interfaces.FilteringSpecific;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagGACGuaranteed;
 import problem.Problem;
 import variables.Variable;
 
-public abstract class Primitive extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall {
+public abstract class Primitive extends Constraint implements FilteringSpecific, TagGACGuaranteed, TagFilteringCompleteAtEachCall {
 
 	protected final void defineKey(Object... datas) {
 		StringBuilder sb = signature().append(' ').append(getClass().getSimpleName());

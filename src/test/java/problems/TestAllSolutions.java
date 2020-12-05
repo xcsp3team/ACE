@@ -18,7 +18,6 @@ import org.xcsp.modeler.api.ProblemAPI;
 import org.xcsp.modeler.problems.AllInterval;
 
 import main.Head;
-import problem.Problem;
 
 @RunWith(Parameterized.class)
 public class TestAllSolutions {
@@ -151,9 +150,6 @@ public class TestAllSolutions {
 		for (int[] t : new int[][] { { 1, 3 }, { 2, 7 }, { 3, 13 }, { 4, 21 }, { 5, 31 }, { 6, 43 } })
 			add(AllDifferentExcept0Problem.class, t);
 
-		add(AtLeastEqualProblem.class, 8, 29);
-		add(AtMostDistanceSumProblem.class, 8, 41);
-
 		for (int[] t : new int[][] { { 2, 18 }, { 3, 81 }, { 4, 324 }, { 5, 1215 }, { 6, 4374 } })
 			add(ElementVariableProblem.class, t);
 
@@ -167,28 +163,6 @@ public class TestAllSolutions {
 		public void model() {
 			Var[] x = array("x", size(n), dom(range(3)));
 			allDifferent(x, exceptValue(0));
-		}
-	}
-
-	static class AtLeastEqualProblem implements ProblemAPI {
-		int n;
-
-		@Override
-		public void model() {
-			Var[] x = array("x", size(n), dom(rangeClosed(1, n)));
-			allDifferent(x);
-			((Problem) imp()).tupleProximityGE(x, vals(rangeClosed(1, n)), 6);
-		}
-	}
-
-	static class AtMostDistanceSumProblem implements ProblemAPI {
-		int n;
-
-		@Override
-		public void model() {
-			Var[] x = array("x", size(n), dom(rangeClosed(1, n)));
-			allDifferent(x);
-			((Problem) imp()).tupleProximityDistanceSum(x, vals(rangeClosed(1, n)), 4);
 		}
 	}
 
