@@ -84,7 +84,6 @@ public class ExtensionSTR2NEG extends ExtensionGlobal implements TagNegative {
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
-		problem.stuff.updateStatsForSTR(set);
 		int depth = problem.solver.depth();
 		initializeStructuresBeforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {

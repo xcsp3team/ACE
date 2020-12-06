@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
@@ -233,7 +232,7 @@ public interface Domain extends LinkedSet {
 		control(var().problem.solver == null, () -> "Must be called before the solver being built.");
 		remove(a, 0);
 		var().problem.nValuesRemoved++;
-		var().problem.stuff.nValuesRemovedAtConstructionTime++;
+		var().problem.features.nValuesRemovedAtConstructionTime++;
 	}
 
 	default void removeAtConstructionTime(Predicate<Integer> p) {
@@ -549,13 +548,13 @@ public interface Domain extends LinkedSet {
 		return type == LE ? removeValuesLE(newLimit) : removeValuesGE(newLimit);
 	}
 
-	default boolean removeValuesWhenMappedNotPresentIn(Domain dom, Function<Integer, Integer> map) {
-		int sizeBefore = size();
-		for (int a = first(); a != -1; a = next(a))
-			if (dom.isPresentValue(map.apply(toVal(a))) == false)
-				removeElementary(a);
-		return afterElementaryCalls(sizeBefore);
-	}
+	// default boolean removeValuesWhenMappedNotPresentIn(Domain dom, Function<Integer, Integer> map) {
+	// int sizeBefore = size();
+	// for (int a = first(); a != -1; a = next(a))
+	// if (dom.isPresentValue(map.apply(toVal(a))) == false)
+	// removeElementary(a);
+	// return afterElementaryCalls(sizeBefore);
+	// }
 
 	// default boolean removeValuesTest(Domain dom, int v) {
 	// int sizeBefore = size();
@@ -605,39 +604,39 @@ public interface Domain extends LinkedSet {
 		return afterElementaryCalls(sizeBefore);
 	}
 
-	default boolean removeValuesMulNotIn(Domain dom, int coeff) {
-		if (lastValue() * coeff < dom.firstValue() || dom.lastValue() < firstValue() * coeff)
-			return fail();
-		int sizeBefore = size();
-		if (sizeBefore == 1)
-			return dom.isPresentValue(firstValue() * coeff) || fail();
-		for (int a = first(); a != -1; a = next(a))
-			if (!dom.isPresentValue(toVal(a) * coeff))
-				removeElementary(a);
-		return afterElementaryCalls(sizeBefore);
-	}
+	// default boolean removeValuesMulNotIn(Domain dom, int coeff) {
+	// if (lastValue() * coeff < dom.firstValue() || dom.lastValue() < firstValue() * coeff)
+	// return fail();
+	// int sizeBefore = size();
+	// if (sizeBefore == 1)
+	// return dom.isPresentValue(firstValue() * coeff) || fail();
+	// for (int a = first(); a != -1; a = next(a))
+	// if (!dom.isPresentValue(toVal(a) * coeff))
+	// removeElementary(a);
+	// return afterElementaryCalls(sizeBefore);
+	// }
 
-	default boolean removeValuesDivNotIn(Domain dom, int coeff) {
-		if (lastValue() / coeff < dom.firstValue() || dom.lastValue() < firstValue() / coeff)
-			return fail();
-		int sizeBefore = size();
-		if (sizeBefore == 1)
-			return dom.isPresentValue(firstValue() / coeff) || fail();
-		for (int a = first(); a != -1; a = next(a))
-			if (!dom.isPresentValue(toVal(a) / coeff))
-				removeElementary(a);
-		return afterElementaryCalls(sizeBefore);
-	}
+	// default boolean removeValuesDivNotIn(Domain dom, int coeff) {
+	// if (lastValue() / coeff < dom.firstValue() || dom.lastValue() < firstValue() / coeff)
+	// return fail();
+	// int sizeBefore = size();
+	// if (sizeBefore == 1)
+	// return dom.isPresentValue(firstValue() / coeff) || fail();
+	// for (int a = first(); a != -1; a = next(a))
+	// if (!dom.isPresentValue(toVal(a) / coeff))
+	// removeElementary(a);
+	// return afterElementaryCalls(sizeBefore);
+	// }
 
-	default boolean removeValuesInvNotIn(Domain dom, int coeff) {
-		int sizeBefore = size();
-		if (sizeBefore == 1)
-			return dom.isPresentValue(coeff / firstValue()) || fail();
-		for (int a = first(); a != -1; a = next(a))
-			if (!dom.isPresentValue(coeff / toVal(a)))
-				removeElementary(a);
-		return afterElementaryCalls(sizeBefore);
-	}
+	// default boolean removeValuesInvNotIn(Domain dom, int coeff) {
+	// int sizeBefore = size();
+	// if (sizeBefore == 1)
+	// return dom.isPresentValue(coeff / firstValue()) || fail();
+	// for (int a = first(); a != -1; a = next(a))
+	// if (!dom.isPresentValue(coeff / toVal(a)))
+	// removeElementary(a);
+	// return afterElementaryCalls(sizeBefore);
+	// }
 
 	default boolean removeValuesModIn(Domain dom, int coeff) {
 		int sizeBefore = size();
@@ -649,75 +648,75 @@ public interface Domain extends LinkedSet {
 		return afterElementaryCalls(sizeBefore);
 	}
 
-	default boolean removeValuesModNotIn(Domain dom, int coeff) {
-		int sizeBefore = size();
-		if (sizeBefore == 1)
-			return dom.isPresentValue(firstValue() % coeff) || fail();
-		for (int a = first(); a != -1; a = next(a))
-			if (!dom.isPresentValue(toVal(a) % coeff))
-				removeElementary(a);
-		return afterElementaryCalls(sizeBefore);
-	}
+	// default boolean removeValuesModNotIn(Domain dom, int coeff) {
+	// int sizeBefore = size();
+	// if (sizeBefore == 1)
+	// return dom.isPresentValue(firstValue() % coeff) || fail();
+	// for (int a = first(); a != -1; a = next(a))
+	// if (!dom.isPresentValue(toVal(a) % coeff))
+	// removeElementary(a);
+	// return afterElementaryCalls(sizeBefore);
+	// }
 
-	default boolean removeValuesDistNotIn(Domain dom, int k) {
-		int sizeBefore = size();
-		if (sizeBefore == 1)
-			return dom.isPresentValue(Math.abs(firstValue() - k)) || fail();
-		for (int a = first(); a != -1; a = next(a))
-			if (!dom.isPresentValue(Math.abs(toVal(a) - k)))
-				removeElementary(a);
-		return afterElementaryCalls(sizeBefore);
-	}
+	// default boolean removeValuesDistNotIn(Domain dom, int k) {
+	// int sizeBefore = size();
+	// if (sizeBefore == 1)
+	// return dom.isPresentValue(Math.abs(firstValue() - k)) || fail();
+	// for (int a = first(); a != -1; a = next(a))
+	// if (!dom.isPresentValue(Math.abs(toVal(a) - k)))
+	// removeElementary(a);
+	// return afterElementaryCalls(sizeBefore);
+	// }
 
-	default boolean removeValuesDistNotIn_reverse(Domain dom, int k) {
-		int sizeBefore = size();
-		for (int a = first(); a != -1; a = next(a)) {
-			int va = toVal(a);
-			if (!dom.isPresentValue(k + va) && !dom.isPresentValue(k - va))
-				removeElementary(a);
-		}
-		return afterElementaryCalls(sizeBefore);
-	}
+	// default boolean removeValuesDistNotIn_reverse(Domain dom, int k) {
+	// int sizeBefore = size();
+	// for (int a = first(); a != -1; a = next(a)) {
+	// int va = toVal(a);
+	// if (!dom.isPresentValue(k + va) && !dom.isPresentValue(k - va))
+	// removeElementary(a);
+	// }
+	// return afterElementaryCalls(sizeBefore);
+	// }
 
-	default boolean removeValuesAbsNotIn(Domain dom) {
-		int sizeBefore = size();
-		if (sizeBefore == 1)
-			return dom.isPresentValue(Math.abs(firstValue())) || fail();
-		for (int a = first(); a != -1; a = next(a))
-			if (!dom.isPresentValue(Math.abs(toVal(a))))
-				removeElementary(a);
-		return afterElementaryCalls(sizeBefore);
-	}
+	// default boolean removeValuesAbsNotIn(Domain dom) {
+	// int sizeBefore = size();
+	// if (sizeBefore == 1)
+	// return dom.isPresentValue(Math.abs(firstValue())) || fail();
+	// for (int a = first(); a != -1; a = next(a))
+	// if (!dom.isPresentValue(Math.abs(toVal(a))))
+	// removeElementary(a);
+	// return afterElementaryCalls(sizeBefore);
+	// }
 
-	default boolean removeValuesAbsNotIn_reverse(Domain dom) {
-		int sizeBefore = size();
-		for (int a = first(); a != -1; a = next(a)) {
-			int va = toVal(a);
-			if (!dom.isPresentValue(va) && !dom.isPresentValue(-va))
-				removeElementary(a);
-		}
-		return afterElementaryCalls(sizeBefore);
-	}
+	// default boolean removeValuesAbsNotIn_reverse(Domain dom) {
+	// int sizeBefore = size();
+	// for (int a = first(); a != -1; a = next(a)) {
+	// int va = toVal(a);
+	// if (!dom.isPresentValue(va) && !dom.isPresentValue(-va))
+	// removeElementary(a);
+	// }
+	// return afterElementaryCalls(sizeBefore);
+	// }
+	//
+	// default boolean removeValuesSubNotIn_reverse(Domain dom, int limit) {
+	// int sizeBefore = size();
+	// if (sizeBefore == 1)
+	// return dom.isPresentValue(limit - firstValue()) || fail();
+	// for (int a = first(); a != -1; a = next(a))
+	// if (!dom.isPresentValue(limit - toVal(a)))
+	// removeElementary(a);
+	// return afterElementaryCalls(sizeBefore);
+	// }
 
-	default boolean removeValuesSubNotIn_reverse(Domain dom, int limit) {
-		int sizeBefore = size();
-		if (sizeBefore == 1)
-			return dom.isPresentValue(limit - firstValue()) || fail();
-		for (int a = first(); a != -1; a = next(a))
-			if (!dom.isPresentValue(limit - toVal(a)))
-				removeElementary(a);
-		return afterElementaryCalls(sizeBefore);
-	}
-
-	default boolean removeValuesAtDistanceNE(int k, Domain dom) {
-		int sizeBefore = size();
-		for (int a = first(); a != -1; a = next(a)) {
-			int va = toVal(a);
-			if (!dom.isPresentValue(va + k) && !dom.isPresentValue(va - k))
-				removeElementary(a);
-		}
-		return afterElementaryCalls(sizeBefore);
-	}
+	// default boolean removeValuesAtDistanceNE(int k, Domain dom) {
+	// int sizeBefore = size();
+	// for (int a = first(); a != -1; a = next(a)) {
+	// int va = toVal(a);
+	// if (!dom.isPresentValue(va + k) && !dom.isPresentValue(va - k))
+	// removeElementary(a);
+	// }
+	// return afterElementaryCalls(sizeBefore);
+	// }
 
 	default boolean removeValuesAtDistanceGT(int k, Domain dom) {
 		int sizeBefore = size();

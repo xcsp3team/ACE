@@ -34,7 +34,7 @@ import interfaces.Observers.ObserverSearch;
 import learning.IpsRecorderForEquivalence;
 import learning.ReductionOperator;
 import main.Head;
-import problem.ProblemStuff.MapAtt;
+import problem.Features.MapAtt;
 import propagation.Forward;
 import propagation.GAC;
 import propagation.GIC.GIC4;
@@ -143,7 +143,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 	}
 
 	public final long nEffectiveFilterings() {
-		return solver.problem.stuff.nEffectiveFilterings;
+		return solver.problem.features.nEffectiveFilterings;
 	}
 
 	public final long nRevisions() {
@@ -291,12 +291,6 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			if (Kit.memory() > 10000000000L)
 				m.put(Output.MEM, Kit.memoryInMb());
 			m.separator();
-			if (solver.problem.stuff.nFilterCallsSTR > 0) {
-				m.put(Output.N_FILTER_CALLS, solver.problem.stuff.nFilterCallsSTR);
-				m.put(Output.AVG_TABLE_PROPORTION, (int) ((solver.problem.stuff.sumTableProportionsSTR / solver.problem.stuff.nFilterCallsSTR) * 100));
-				m.put(Output.AVG_TABLE_SIZE, (int) (solver.problem.stuff.sumTableSizesSTR / solver.problem.stuff.nFilterCallsSTR));
-				m.separator();
-			}
 			if (solver.ipsRecorder != null && solver.ipsRecorder instanceof IpsRecorderForEquivalence && !solver.ipsRecorder.stopped) {
 				IpsRecorderForEquivalence learner = (IpsRecorderForEquivalence) solver.ipsRecorder;
 				m.put(Output.MAP_SIZE, learner.getMapSize());
@@ -453,12 +447,6 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 				}
 
 				void updateStatisticsWith(Statistics statistics) {
-					if (resolution.problem.stuff.nFilterCallsSTR > 0) {
-						nbFilterCallsSTR += resolution.problem.stuff.nFilterCallsSTR;
-						sumTableProportionsSTR += resolution.problem.stuff.sumTableProportionsSTR / resolution.problem.stuff.nFilterCallsSTR;
-						sumTableSizesSTR += resolution.problem.stuff.sumTableSizesSTR / resolution.problem.stuff.nFilterCallsSTR;
-					}
-
 					nbTreatedInstances++;
 					preproWckTime += statistics.preproWck;
 					searchWckTime += statistics.searchWck;

@@ -5,6 +5,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
+import constraints.global.AllDifferent.AllDifferentComplete;
 import constraints.global.Cardinality.CardinalityConstant;
 import interfaces.Observers.ObserverConstruction;
 import sets.SetSparse;
@@ -292,7 +293,7 @@ public abstract class Matcher implements ObserverConstruction {
 		 */
 		private final int[] valToVar;
 
-		public MatcherAllDifferent(AllDifferent ctr) {
+		public MatcherAllDifferent(AllDifferentComplete ctr) {
 			super(ctr, ctr.scp);
 			queueBFS = new SetSparse(arity);
 			predBFS = Kit.repeat(-1, arity);

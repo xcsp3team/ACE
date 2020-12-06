@@ -112,7 +112,7 @@ public final class Bits extends ExtensionStructure {
 				hashKey = null;
 			} else {
 				supports[i] = tt;
-				problem.stuff.nSharedBinaryRepresentations++;
+				problem.features.nSharedBinaryRepresentations++;
 			}
 		}
 	}
@@ -120,10 +120,10 @@ public final class Bits extends ExtensionStructure {
 	private void saveSpace() {
 		Head resolution = firstRegisteredCtr().problem.head;
 		if (resolution.control.problem.shareBitVectors) {
-			int nSharedRepresentationsBefore = firstRegisteredCtr().problem.stuff.nSharedBinaryRepresentations;
+			int nSharedRepresentationsBefore = firstRegisteredCtr().problem.features.nSharedBinaryRepresentations;
 			saveSpace(bitSups0, 1);
 			saveSpace(bitSups1, 0);
-			sharedArrays = (firstRegisteredCtr().problem.stuff.nSharedBinaryRepresentations - nSharedRepresentationsBefore) > 0;
+			sharedArrays = (firstRegisteredCtr().problem.features.nSharedBinaryRepresentations - nSharedRepresentationsBefore) > 0;
 		}
 	}
 

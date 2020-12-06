@@ -8,8 +8,6 @@
  */
 package constraints.global;
 
-import java.util.stream.IntStream;
-
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 
 import constraints.Constraint.CtrGlobal;
@@ -20,7 +18,7 @@ import sets.SetDense;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class ScalarSumBoolean extends CtrGlobal {
+public abstract class SumScalarBoolean extends CtrGlobal {
 
 	protected final Variable[] list;
 	protected final Variable[] coeffs;
@@ -30,7 +28,7 @@ public abstract class ScalarSumBoolean extends CtrGlobal {
 	protected int min, max; // used to store computed bounds when filtering
 	protected final SetDense set01vs1; // used to store the indexes of terms such that one variable has domain {0,1} and the other domain {1}
 
-	public ScalarSumBoolean(Problem pb, Variable[] list, Variable[] coeffs, Variable limit) {
+	public SumScalarBoolean(Problem pb, Variable[] list, Variable[] coeffs, Variable limit) {
 		super(pb, pb.api.vars(list, coeffs, limit)); // limit is null if the object is from a subclass of SumScalarBooleanCst
 		this.list = list;
 		this.coeffs = coeffs;
@@ -39,12 +37,15 @@ public abstract class ScalarSumBoolean extends CtrGlobal {
 		assert list.length == coeffs.length && Variable.areAllInitiallyBoolean(pb.api.vars(list, coeffs));
 	}
 
-	public ScalarSumBoolean(Problem pb, Variable[] list, Variable[] coeffs) {
+	public SumScalarBoolean(Problem pb, Variable[] list, Variable[] coeffs) {
 		this(pb, list, coeffs, null);
 	}
 
-	protected int sum(int[] t) {
-		return IntStream.range(0, half).map(i -> t[i] * t[half + i]).sum();
+	protected final int sumScalar(int[] t) { // no possible overflow with scalar sums
+		int sum = 0;
+		for (int i = 0; i < half; i++)
+			sum += t[i] * t[half + i];
+		return sum;
 	}
 
 	protected void recomputeBounds() {
@@ -62,7 +63,7 @@ public abstract class ScalarSumBoolean extends CtrGlobal {
 		}
 	}
 
-	protected void removeFrom01vs1(int value) {
+	protected final void removeFrom01vs1(int value) {
 		assert value == 0 || value == 1;
 		for (int i = set01vs1.limit; i >= 0; i--) {
 			int j = set01vs1.dense[i];
@@ -78,7 +79,7 @@ public abstract class ScalarSumBoolean extends CtrGlobal {
 	// ***** Constraint SumScalarBooleanCst
 	// ************************************************************************
 
-	public static abstract class SumScalarBooleanCst extends ScalarSumBoolean implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
+	public static abstract class SumScalarBooleanCst extends SumScalarBoolean implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
 
 		public static SumScalarBooleanCst buildFrom(Problem pb, Variable[] list, Variable[] coeffs, TypeConditionOperatorRel op, int limit) {
 			switch (op) {
@@ -102,13 +103,14 @@ public abstract class ScalarSumBoolean extends CtrGlobal {
 		public SumScalarBooleanCst(Problem pb, Variable[] list, Variable[] coeffs, int limit) {
 			super(pb, list, coeffs);
 			this.limit = limit;
+			control(0 < limit && limit < list.length);
 		}
 
 		public static final class SumScalarBooleanLE extends SumScalarBooleanCst {
 
 			@Override
 			public boolean checkValues(int[] t) {
-				return sum(t) <= limit;
+				return sumScalar(t) <= limit;
 			}
 
 			public SumScalarBooleanLE(Problem pb, Variable[] list, Variable[] coeffs, int limit) {
@@ -118,8 +120,10 @@ public abstract class ScalarSumBoolean extends CtrGlobal {
 			@Override
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
-				if (max <= limit)
+				if (max <= limit) {
+					entailed();
 					return true;
+				}
 				if (min > limit)
 					return x.dom.fail();
 				if (min == limit) // this is the only case where we can filter
@@ -132,7 +136,7 @@ public abstract class ScalarSumBoolean extends CtrGlobal {
 
 			@Override
 			public boolean checkValues(int[] t) {
-				return sum(t) >= limit;
+				return sumScalar(t) >= limit;
 			}
 
 			public SumScalarBooleanGE(Problem pb, Variable[] list, Variable[] coeffs, int limit) {
@@ -142,8 +146,10 @@ public abstract class ScalarSumBoolean extends CtrGlobal {
 			@Override
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
-				if (min >= limit)
+				if (min >= limit) {
+					entailed();
 					return true;
+				}
 				if (max < limit)
 					return x.dom.fail();
 				if (max == limit) // this is the only case where we can filter
@@ -156,7 +162,7 @@ public abstract class ScalarSumBoolean extends CtrGlobal {
 
 			@Override
 			public boolean checkValues(int[] t) {
-				return sum(t) == limit;
+				return sumScalar(t) == limit;
 			}
 
 			private SetDense set01vs01;
@@ -190,8 +196,9 @@ public abstract class ScalarSumBoolean extends CtrGlobal {
 				recomputeBounds();
 				if (min > limit || max < limit)
 					return x.dom.fail();
-				if (min == max || (min < limit && limit < max))
-					return true; // because entailed in that case
+				if (min == max || (min < limit && limit < max)) {
+					return true;
+				}
 				if (min == limit) {
 					removeFrom01vs1(1);
 				} else if (max == limit) {
@@ -211,7 +218,7 @@ public abstract class ScalarSumBoolean extends CtrGlobal {
 	// ***** Constraint SumScalarBooleanVar
 	// ************************************************************************
 
-	public static abstract class SumScalarBooleanVar extends ScalarSumBoolean implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
+	public static abstract class SumScalarBooleanVar extends SumScalarBoolean implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
 
 		public static SumScalarBooleanVar buildFrom(Problem pb, Variable[] list, Variable[] coeffs, TypeConditionOperatorRel op, Variable limit) {
 			switch (op) {
@@ -239,7 +246,7 @@ public abstract class ScalarSumBoolean extends CtrGlobal {
 
 			@Override
 			public boolean checkValues(int[] t) {
-				return sum(t) <= t[t.length - 1];
+				return sumScalar(t) <= t[t.length - 1];
 			}
 
 			public SumScalarBooleanVarLE(Problem pb, Variable[] list, Variable[] coeffs, Variable limit) {
@@ -266,7 +273,7 @@ public abstract class ScalarSumBoolean extends CtrGlobal {
 
 			@Override
 			public boolean checkValues(int[] t) {
-				return sum(t) >= t[t.length - 1];
+				return sumScalar(t) >= t[t.length - 1];
 			}
 
 			public SumScalarBooleanVarGE(Problem pb, Variable[] list, Variable[] coeffs, Variable limit) {

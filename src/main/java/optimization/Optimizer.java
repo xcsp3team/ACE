@@ -146,7 +146,7 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 			}
 			if (minBound <= maxBound) { // we continue after resetting
 				problem.solver.stopping = null;
-				Kit.control(problem.stuff.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
+				Kit.control(problem.features.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
 				problem.solver.restarter.forceRootPropagation = true;
 				((SolverBacktrack) problem.solver).restoreProblem();
 				if (((SolverBacktrack) problem.solver).nogoodRecorder != null)

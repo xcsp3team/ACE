@@ -47,9 +47,9 @@ public final class Intension extends Constraint implements TagFilteringCompleteA
 		super.afterProblemConstruction();
 		for (Evaluator evaluator : treeEvaluator.evaluators)
 			if (evaluator instanceof F1Evaluator)
-				((F1Evaluator) evaluator).function = problem.stuff.externFunctionArity1;
+				((F1Evaluator) evaluator).function = problem.features.externFunctionArity1;
 			else if (evaluator instanceof F2Evaluator)
-				((F2Evaluator) evaluator).function = problem.stuff.externFunctionArity2;
+				((F2Evaluator) evaluator).function = problem.features.externFunctionArity2;
 	}
 
 	@Override

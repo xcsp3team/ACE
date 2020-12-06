@@ -8,13 +8,9 @@
  */
 package constraints.global;
 
-import static org.xcsp.modeler.definitions.IRootForCtrAndObj.map;
-
-import java.util.Map;
 import java.util.stream.IntStream;
 
 import org.xcsp.common.Types.TypeOperatorRel;
-import org.xcsp.modeler.definitions.ICtr.ICtrOrdered;
 
 import constraints.Constraint.CtrGlobal;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
@@ -24,7 +20,7 @@ import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 
-public abstract class Ordered extends CtrGlobal implements TagUnsymmetric, TagGACGuaranteed, TagFilteringCompleteAtEachCall, ICtrOrdered {
+public abstract class Ordered extends CtrGlobal implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, TagUnsymmetric {
 
 	public static Ordered build(Problem pb, Variable[] x, int[] lengths, TypeOperatorRel op) {
 		switch (op) {
@@ -158,14 +154,5 @@ public abstract class Ordered extends CtrGlobal implements TagUnsymmetric, TagGA
 					return false;
 			return true;
 		}
-	}
-
-	@Override
-	public Map<String, Object> mapXCSP() {
-		Map<String, Object> map = map(SCOPE, scp, LIST, compactOrdered(scp));
-		if (IntStream.of(lengths).anyMatch(v -> v != 0))
-			map.put(LENGTHS, Kit.join(lengths));
-		map.put(OPERATOR, getClass().getSimpleName().substring(Ordered.class.getSimpleName().length()).toLowerCase());
-		return map;
 	}
 }

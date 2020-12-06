@@ -10,12 +10,7 @@ package propagation;
 
 import java.util.stream.Stream;
 
-import org.xcsp.common.Types.TypeFramework;
-
-import constraints.Constraint;
-import optimization.LowerBoundCapability;
 import solver.Solver;
-import utility.Kit;
 import variables.Variable;
 
 /**
@@ -72,45 +67,4 @@ public abstract class Backward extends Propagation {
 			return solver.futVars.size() > 0 || Stream.of(solver.problem.constraints).allMatch(c -> c.ignored || c.seekFirstSupport());
 		}
 	}
-
-	public static final class BTSoft extends Backward implements LowerBoundCapability {
-
-		@Override
-		public final long getLowerBound() {
-			return Constraint.costOfCoveredConstraintsIn(solver.problem.constraints);
-		}
-
-		public BTSoft(Solver solver) {
-			super(solver);
-			Kit.control(solver.problem.settings.framework == TypeFramework.MAXCSP, () -> "MaxCSP is not indicated in your settings");
-		}
-
-		@Override
-		public boolean runAfterAssignment(Variable x) {
-			return Constraint.costOfCoveredConstraintsIn(solver.problem.constraints) < solver.solManager.bestBound;
-		}
-
-	}
-
-	public static final class GTSoft extends Backward implements LowerBoundCapability {
-
-		@Override
-		public final long getLowerBound() {
-			return Constraint.costOfCoveredConstraintsIn(solver.problem.constraints);
-		}
-
-		public GTSoft(Solver solver) {
-			super(solver);
-			Kit.control(solver.problem.settings.framework == TypeFramework.MAXCSP, () -> "MaxCSP is not indicated in your settings");
-		}
-
-		@Override
-		public boolean runAfterAssignment(Variable x) {
-			assert x.assigned();
-			if (solver.futVars.size() == 0)
-				return Constraint.costOfCoveredConstraintsIn(solver.problem.constraints) < solver.solManager.bestBound;
-			return true;
-		}
-	}
-
 }

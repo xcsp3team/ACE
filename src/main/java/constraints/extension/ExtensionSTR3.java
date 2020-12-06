@@ -330,7 +330,6 @@ public final class ExtensionSTR3 extends ExtensionGlobal implements TagPositive,
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
-		problem.stuff.updateStatsForSTR(set);
 		if (ac != null)
 			return filterAtPreprocessing();
 		SetSparseMapSTR3 map = separatorsMaps[problem.solver.depth()];

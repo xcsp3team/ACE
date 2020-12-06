@@ -25,8 +25,8 @@ import org.xcsp.modeler.definitions.ICtr;
 import constraints.extension.Extension;
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.ExtensionStructure;
-import constraints.global.SumSimple.SumSimpleEQ;
-import constraints.global.SumWeighted.SumWeightedEQ;
+import constraints.global.Sum.SumSimple.SumSimpleEQ;
+import constraints.global.Sum.SumWeighted.SumWeightedEQ;
 import constraints.intension.Intension;
 import dashboard.Control.SettingCtrs;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
@@ -511,7 +511,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	public Constraint(Problem pb, Variable[] scp) {
 		this.problem = pb;
-		this.scp = scp = Stream.of(scp).distinct().toArray(Variable[]::new);
+		this.scp = scp = Stream.of(scp).distinct().toArray(Variable[]::new); // this.scp and scp updated
 		control(scp.length >= 1 && Stream.of(scp).allMatch(x -> x != null), this + " with a scope badly formed ");
 		Stream.of(scp).forEach(x -> x.collectedCtrs.add(this));
 		this.infiniteDomainVars = Stream.of(scp).filter(x -> x.dom instanceof DomainInfinite).toArray(Variable[]::new);
@@ -525,7 +525,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		this.indexesMatchValues = Stream.of(scp).allMatch(x -> x.dom.indexesMatchValues());
 
 		if (this instanceof FilteringSpecific)
-			pb.stuff.nSpecificCtrs++;
+			pb.features.nSpecificCtrs++;
 		if (this instanceof ObserverConstruction)
 			pb.head.observersConstruction.add(this);
 
@@ -829,7 +829,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 			if (problem.solver instanceof SolverBacktrack)
 				((SolverBacktrack) problem.solver).proofer.updateProof(this);// TODO // ((SystematicSolver)solver).updateProofAll();
 			nEffectiveFilterings++;
-			problem.stuff.nEffectiveFilterings++;
+			problem.features.nEffectiveFilterings++;
 		}
 		time = problem.solver.propagation.incrementTime();
 		return consistent;

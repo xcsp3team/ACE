@@ -129,6 +129,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 			implem().currParameters.remove(XCallbacksParameters.RECOGNIZE_BINARY_PRIMITIVES);
 		if (imp().head.control.xml.primitiveTernaryInSolver)
 			implem().currParameters.remove(XCallbacksParameters.RECOGNIZE_TERNARY_PRIMITIVES);
+		// implem().currParameters.remove(XCallbacksParameters.RECOGNIZE_SUM_CASES);
 
 		try {
 			if (imp().head.control.general.verbose > 1)
@@ -356,14 +357,14 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void loadCtr(XCtr c) {
-		if (imp().stuff.mustDiscard(c.vars()))
+		if (imp().features.mustDiscard(c.vars()))
 			return;
 		if (imp().head.control.constraints.ignoredCtrType == c.type) {
-			imp().stuff.nDiscardedCtrs++;
+			imp().features.nDiscardedCtrs++;
 			return;
 		}
 		if (imp().head.control.constraints.ignoreCtrArity == c.vars().length) {
-			imp().stuff.nDiscardedCtrs++;
+			imp().features.nDiscardedCtrs++;
 			return;
 		}
 		int sizeBefore = imp().ctrEntities.allEntities.size();
@@ -1018,7 +1019,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void loadObj(XObj o) {
-		if (imp().stuff.mustDiscard(o.vars()))
+		if (imp().features.mustDiscard(o.vars()))
 			return;
 		XCallbacks2.super.loadObj(o);
 		CtrEntity entity = imp().ctrEntities.allEntities.get(imp().ctrEntities.allEntities.size() - 1);

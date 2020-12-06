@@ -22,7 +22,7 @@ import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
-import constraints.global.SumWeighted;
+import constraints.global.Sum.SumWeighted;
 import interfaces.Tags.TagUnsymmetric;
 import problem.Problem;
 import utility.Kit;
@@ -46,13 +46,13 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 		case DIST:
 			return PrimitiveTernaryDist.buildFrom(pb, x, y, op, z);
 		default:
-			return null; // noting implemented for POW
+			return null; // nothing implemented for POW
 		}
 	}
 
-	protected final Variable x, y, z;
+	Variable x, y, z;
 
-	protected Domain dx, dy, dz;
+	Domain dx, dy, dz;
 
 	int[] rx, ry, rzx, rzy; // residues for values in the domains of x, y and z
 
@@ -220,7 +220,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 	public static abstract class PrimitiveTernarySub extends PrimitiveTernary {
 
 		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
-			return PrimitiveTernaryAdd.buildFrom(pb, y, z, op, x); // x - y <op> z is equivalent to y + z <op> x
+			return PrimitiveTernaryAdd.buildFrom(pb, y, z, op, x); // x - y op z is equivalent to y + z op x
 		}
 
 		public PrimitiveTernarySub(Problem pb, Variable x, Variable y, Variable z) {
@@ -261,20 +261,20 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.last() == 0 || dy.onlyContainsValue(0)) // only 0 remaining in dx or dy => z must be 0
+				if (dx.last() == 0 || dy.onlyContainsValue(0)) // x = 0 or y = 0 => z = 0
 					return dz.reduceToValue(0);
-				if (dz.onlyContainsValue(0)) { // only 0 remaining in dz
-					if (dx.first() == 0 && dy.isPresentValue(0)) // if 0 in the domains of x and y, every value is supported
+				if (dz.onlyContainsValue(0)) { // if z = 0
+					if (dx.first() == 0 && dy.isPresentValue(0)) // 0 in dx and 0 in dy => every value is supported
 						return true;
 					return dx.first() == 0 ? dx.reduceTo(0) : dy.reduceToValue(0); // if 0 not in dy => x must be 0, else => y must be 0
 				}
-				if (dz.isPresentValue(0)) {
+				if (dz.isPresentValue(0)) { // if 0 in dz
 					if (dx.first() == 1 && !dy.isPresentValue(0) && dz.removeValue(0) == false)
 						return false;
 				} else if (dx.removeIfPresent(0) == false || dy.removeValueIfPresent(0) == false)
 					return false;
 
-				if (dx.first() == 1) // only 1 remaining in dx => y = z
+				if (dx.first() == 1) // x = 1 => y = z
 					return PrimitiveBinary.enforceEQ(dy, dz);
 
 				assert dx.size() == 2 && dz.isPresentValue(0) && dz.size() > 1; // because if 0 not in z, dx.size() cannot be 2
@@ -311,7 +311,6 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				// System.out.println("herree " + this);
 				if (!dy.isPresentValue(0) || !dz.isPresentValue(0)) // if 0 is present in dy and dz, all values of x are supported
 					extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int va = dx.toVal(a);

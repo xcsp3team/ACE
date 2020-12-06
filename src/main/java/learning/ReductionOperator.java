@@ -90,7 +90,7 @@ public final class ReductionOperator {
 		this.recorder = recorder;
 		Solver solver = recorder.solver;
 		isGACGuaranteed = solver.propagation.getClass() == GAC.class && Constraint.isGuaranteedGAC(solver.problem.constraints);
-		binaryNetwork = solver.problem.stuff.maxCtrArity() == 2;
+		binaryNetwork = solver.problem.features.maxCtrArity() == 2;
 		tmpVariable = new int[solver.problem.variables.length];
 		parseReductionMode(recorder.solver.head.control.learning.stateOperators);
 		// Kit.control(!eliminateNotInProofVariables || !(stateRecordingManager instanceof StateEquivalenceManager));
@@ -202,7 +202,7 @@ public final class ReductionOperator {
 					}
 				} else
 					nbPEliminableVariables++;
-		} else if (solver.problem.stuff.maxCtrArity() == 2) {
+		} else if (solver.problem.features.maxCtrArity() == 2) {
 			nbSEliminableVariables += solver.futVars.nDiscarded();
 			for (Variable x : solver.futVars) {
 				if (!canEliminate(x)) {
@@ -239,7 +239,7 @@ public final class ReductionOperator {
 	public int[] extractForAllSolutions() {
 		Solver solver = recorder.solver;
 		int selectionLimit = 0;
-		if (solver.problem.stuff.maxCtrArity() == 2) {
+		if (solver.problem.features.maxCtrArity() == 2) {
 			nbSEliminableVariables += solver.futVars.nDiscarded();
 			for (Variable x : solver.futVars) {
 				if (x.dom.size() == 1 && canEliminateSingleton(x))

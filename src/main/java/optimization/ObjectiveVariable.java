@@ -15,7 +15,7 @@ import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import variables.Variable;
 
-public abstract class ObjVar extends CtrGlobal implements Optimizable, TagGACGuaranteed, TagFilteringCompleteAtEachCall, TagSymmetric {
+public abstract class ObjectiveVariable extends CtrGlobal implements Optimizable, TagGACGuaranteed, TagFilteringCompleteAtEachCall, TagSymmetric {
 
 	@Override
 	public long minComputableObjectiveValue() {
@@ -58,13 +58,13 @@ public abstract class ObjVar extends CtrGlobal implements Optimizable, TagGACGua
 
 	protected long limit;
 
-	public ObjVar(Problem pb, Variable x, long limit) {
+	public ObjectiveVariable(Problem pb, Variable x, long limit) {
 		super(pb, new Variable[] { x });
 		this.x = x;
 		limit(limit);
 	}
 
-	public static final class ObjVarLE extends ObjVar {
+	public static final class ObjVarLE extends ObjectiveVariable {
 
 		@Override
 		public boolean checkValues(int[] vals) {
@@ -86,7 +86,7 @@ public abstract class ObjVar extends CtrGlobal implements Optimizable, TagGACGua
 		}
 	}
 
-	public static final class ObjVarGE extends ObjVar {
+	public static final class ObjVarGE extends ObjectiveVariable {
 
 		@Override
 		public boolean checkValues(int[] vals) {

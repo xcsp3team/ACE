@@ -270,7 +270,6 @@ public final class ExtensionSmart extends ExtensionGlobal implements ICtrSmart {
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
-		problem.stuff.updateStatsForSTR(set);
 		int depth = problem.solver.depth();
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {

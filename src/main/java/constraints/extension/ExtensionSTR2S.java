@@ -178,7 +178,6 @@ public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
-		problem.stuff.updateStatsForSTR(set);
 		int depth = problem.solver.depth();
 		// if (entailedDepth >= depth) return true;
 		beforeFiltering();

@@ -17,7 +17,7 @@ import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
 import dashboard.Control.SettingGeneral;
 import dashboard.Control.SettingRestarts;
 import interfaces.Observers.ObserverRuns;
-import optimization.ObjVar;
+import optimization.ObjectiveVariable;
 import sets.SetDense;
 import solver.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
@@ -146,7 +146,7 @@ public class Restarter implements ObserverRuns {
 			return false;
 		if (setting.restartAfterSolution)
 			return true;
-		if (solver.problem.optimizer.ctr instanceof MaximumCstLE || solver.problem.optimizer.ctr instanceof ObjVar)
+		if (solver.problem.optimizer.ctr instanceof MaximumCstLE || solver.problem.optimizer.ctr instanceof ObjectiveVariable)
 			return true;
 		return false;
 	}

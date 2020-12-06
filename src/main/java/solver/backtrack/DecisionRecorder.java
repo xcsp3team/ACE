@@ -74,7 +74,7 @@ public final class DecisionRecorder {
 	public DecisionRecorder(SolverBacktrack solver) {
 		this.solver = solver;
 		int n1 = (int) Math.ceil(Math.log(solver.problem.variables.length) / Math.log(2));
-		int n2 = (int) Math.ceil(Math.log(solver.problem.stuff.maxDomSize()) / Math.log(2));
+		int n2 = (int) Math.ceil(Math.log(solver.problem.features.maxDomSize()) / Math.log(2));
 		Kit.control(n1 + n2 <= 32, () -> "Cannot represent decisions " + n1 + " " + n2);
 		this.OFFSET = (int) Math.pow(2, n2 + 1); // +1 because 0 excluded ???
 		int nValues = Variable.nInitValuesFor(solver.problem.variables);

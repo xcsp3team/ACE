@@ -25,7 +25,7 @@ import interfaces.Observers.ObserverConstruction;
 import interfaces.Observers.ObserverRuns;
 import interfaces.Observers.ObserverSearch;
 import main.Head;
-import problem.ProblemStuff.MapAtt;
+import problem.Features.MapAtt;
 import propagation.GAC;
 import utility.Enums.TypeOutput;
 import utility.Kit;
@@ -273,7 +273,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	}
 
 	public void afterData() { // not a method from an observer
-		MapAtt ia = resolution.problem.stuff.instanceAttributes(resolution.instanceNumber);
+		MapAtt ia = resolution.problem.features.instanceAttributes(resolution.instanceNumber);
 		Kit.control(outputFileName == null);
 
 		String name = ia.entries().stream().filter(e -> e.getKey().equals(Output.NAME)).map(e -> e.getValue().toString()).findFirst().get();
@@ -286,10 +286,10 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	@Override
 	public void afterProblemConstruction() {
 		Kit.control(resolution.problem.variables.length > 0, () -> "No variable in your model");
-		MapAtt da = resolution.problem.stuff.domainsAttributes();
-		MapAtt va = resolution.problem.stuff.variablesAttributes();
-		MapAtt ca = resolution.problem.stuff.ctrsAttributes();
-		MapAtt oa = resolution.problem.optimizer != null ? resolution.problem.stuff.objsAttributes() : null;
+		MapAtt da = resolution.problem.features.domainsAttributes();
+		MapAtt va = resolution.problem.features.variablesAttributes();
+		MapAtt ca = resolution.problem.features.ctrsAttributes();
+		MapAtt oa = resolution.problem.optimizer != null ? resolution.problem.features.objsAttributes() : null;
 		record(TypeOutput.DOMAINS, da.entries(), resolElt);
 		record(TypeOutput.VARIABLES, va.entries(), resolElt);
 		record(TypeOutput.CONSTRAINTS, ca.entries(), resolElt);

@@ -177,7 +177,7 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 		}
 
 		String stuffKey = c.signature() + " " + m + " " + positive; // TODO be careful, we assume that the address of tuples can be used
-		c.key = pb.stuff.collectedTuples.computeIfAbsent(stuffKey, k -> c.signature() + "r" + pb.stuff.collectedTuples.size());
+		c.key = pb.features.collectedTuples.computeIfAbsent(stuffKey, k -> c.signature() + "r" + pb.features.collectedTuples.size());
 		// TODO something to modify above ; don't seem to be compatible (keys)
 		c.storeTuples(m, positive);
 		return c;

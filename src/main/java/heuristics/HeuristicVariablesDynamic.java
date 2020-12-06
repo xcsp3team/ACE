@@ -15,8 +15,8 @@ import java.util.stream.Stream;
 
 import constraints.Constraint;
 import constraints.global.Sum;
-import constraints.global.SumSimple;
-import constraints.global.SumWeighted;
+import constraints.global.Sum.SumSimple;
+import constraints.global.Sum.SumWeighted;
 import interfaces.Observers.ObserverAssignment;
 import interfaces.Observers.ObserverConflicts;
 import interfaces.Observers.ObserverRuns;
@@ -129,7 +129,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		public DomThenDeg(SolverBacktrack solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
-			this.combinator = new CombinatorOfTwoInts(solver.problem.stuff.maxVarDegree());
+			this.combinator = new CombinatorOfTwoInts(solver.problem.features.maxVarDegree());
 		}
 
 		@Override

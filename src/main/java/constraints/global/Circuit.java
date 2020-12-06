@@ -13,12 +13,13 @@ import java.util.TreeSet;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import constraints.global.AllDifferent.AllDifferentComplete;
 import problem.Problem;
 import sets.SetDense;
 import utility.Kit;
 import variables.Variable;
 
-public final class Circuit extends AllDifferent {
+public final class Circuit extends AllDifferentComplete {
 
 	@Override
 	public boolean checkValues(int[] t) {

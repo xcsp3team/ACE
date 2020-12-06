@@ -9,7 +9,6 @@
 package problem;
 
 import static dashboard.Output.ARITIES;
-import static dashboard.Output.DEFAULT_COSTS;
 import static dashboard.Output.MEM;
 import static dashboard.Output.NAME;
 import static dashboard.Output.NUMBER;
@@ -20,7 +19,6 @@ import static dashboard.Output.TABLES;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,11 +45,10 @@ import constraints.intension.Intension;
 import dashboard.Arguments;
 import dashboard.Control.SettingVars;
 import dashboard.Output;
-import sets.SetDense;
 import utility.Kit;
 import variables.Variable;
 
-public final class ProblemStuff {
+public final class Features {
 
 	/**********************************************************************************************
 	 * Repartitioner
@@ -146,7 +143,6 @@ public final class ProblemStuff {
 	public final Map<String, String> collectedTuples = new HashMap<>();
 
 	protected final Repartitioner<Integer> varDegrees, domSizes, ctrArities, tableSizes;
-	protected final Repartitioner<Long> defaultCosts;
 	protected final Repartitioner<String> ctrTypes;
 
 	/**
@@ -155,14 +151,11 @@ public final class ProblemStuff {
 	 */
 	public int nIsolatedVars, nFixedVars;
 	public int nRemovedUnaryCtrs, nConvertedConstraints; // conversion intension to extension
-	public int nSpecificCtrs, nMergedCtrs, nDiscardedCtrs, nAddedCtrs, nUniversalCtrs;
+	public int nSpecificCtrs, nMergedCtrs, nDiscardedCtrs, nAddedCtrs;
 
 	public long nEffectiveFilterings;
 
 	public int nSharedBinaryRepresentations;
-
-	public int nFilterCallsSTR;
-	public double sumTableProportionsSTR, sumTableSizesSTR;
 
 	private Map<String, String> mapForAutomorphismIdentification = new LinkedHashMap<>();
 	private Map<String, String> mapForAllDifferentIdentification = new LinkedHashMap<>();
@@ -173,7 +166,6 @@ public final class ProblemStuff {
 	public int nValuesRemovedAtConstructionTime; // sum over all variable domains
 
 	private Set<String> discardedVars = new HashSet<>(); // ids of discarded variables
-	Set<String> discardedScps = new HashSet<>();
 
 	public final boolean mustDiscard(IVar x) {
 		Object[] selectedVars = problem.head.control.variables.selectedVars;
@@ -194,21 +186,6 @@ public final class ProblemStuff {
 			nDiscardedCtrs++;
 		return mustDiscard;
 	}
-
-	public static class StuffOptimization {
-		// public List<FunctionalPropagator> collectedCostVarsFunctionalPropagatorsAtInit = new ArrayList<>();
-
-		public Collection<Variable[][]> collectedSatPreservingPermutationsAtInit = new ArrayList<>();
-
-		public boolean areIndependantPermutationSets;
-
-		// public void addCostVarDefinition(Variable var, CtrHard ctr) {
-		// FunctionalPropagator propagator = FunctionalPropagator.buildFunctionalPropagator(ctr, ctr.positionOf(var));
-		// collectedCostVarsFunctionalPropagatorsAtInit.add(propagator);
-		// }
-	}
-
-	public StuffOptimization stuffOptimization = new StuffOptimization();
 
 	/**********************************************************************************************
 	 * Methods for conflicts structures
@@ -304,7 +281,7 @@ public final class ProblemStuff {
 		return ctrArities.last();
 	}
 
-	protected ProblemStuff(Problem problem) {
+	protected Features(Problem problem) {
 		this.problem = problem;
 		boolean verbose = problem.head.control.general.verbose > 1;
 		this.varDegrees = new Repartitioner<>(verbose);
@@ -312,15 +289,6 @@ public final class ProblemStuff {
 		this.ctrArities = new Repartitioner<>(verbose);
 		this.ctrTypes = new Repartitioner<>(true);
 		this.tableSizes = new Repartitioner<>(verbose);
-		this.defaultCosts = new Repartitioner<>(verbose);
-	}
-
-	public void updateStatsForSTR(SetDense set) {
-		nFilterCallsSTR++;
-		if (set != null) {
-			sumTableProportionsSTR += set.limit / (double) set.capacity();
-			sumTableSizesSTR += set.limit;
-		}
 	}
 
 	public boolean hasSharedExtensionStructures() {
@@ -450,13 +418,11 @@ public final class ProblemStuff {
 		m.putWhenPositive("nMerged", nMergedCtrs);
 		m.putWhenPositive("nDiscarded", nDiscardedCtrs);
 		m.putWhenPositive("nAdded", nAddedCtrs);
-		m.putWhenPositive("nUniversal", nUniversalCtrs);
 		m.put(ARITIES, ctrArities);
 		m.putIf("distribution", ctrTypes, true, true);
 		if (tableSizes.repartition.size() > 0) {
 			m.separator();
 			m.put(TABLES, tableSizes);
-			m.putIf(DEFAULT_COSTS, defaultCosts.toString(), defaultCosts.repartition.size() > 0);
 			m.put("nTotalTuples", tableSizes.cumulatedSum());
 		}
 		m.putIf("automorphism", mapForAutomorphismIdentification.entrySet().stream().map(e -> e.getKey() + ":" + e.getValue()).collect(Collectors.joining(" ")),

@@ -53,9 +53,9 @@ public final class ElementMatrix extends CtrGlobal implements TagUnsymmetric, Ta
 		defineKey(value);
 		this.rindexPosition = IntStream.range(0, scp.length).filter(i -> scp[i] == rindex).findFirst().getAsInt();
 		this.cindexPosition = IntStream.range(0, scp.length).filter(i -> scp[i] == cindex).findFirst().getAsInt();
-		Kit.control(rindex.dom.areInitValuesExactly(pb.api.range(0, matrix.length)), () -> "case not implemented");
-		Kit.control(cindex.dom.areInitValuesExactly(pb.api.range(0, matrix[0].length)), () -> "case not implemented");
-		Kit.control(Variable.areAllDistinct(pb.vars(matrix)) && rindex != cindex, () -> Kit.join(matrix) + " " + rindex + " " + cindex);
+		control(rindex.dom.areInitValuesExactly(pb.api.range(0, matrix.length)), () -> "case not implemented");
+		control(cindex.dom.areInitValuesExactly(pb.api.range(0, matrix[0].length)), () -> "case not implemented");
+		control(Variable.areAllDistinct(pb.vars(matrix)) && rindex != cindex, () -> Kit.join(matrix) + " " + rindex + " " + cindex);
 		rsentinels = new int[matrix.length];
 		csentinels = new int[matrix[0].length];
 	}

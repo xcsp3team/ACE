@@ -99,12 +99,12 @@ import constraints.extension.ExtensionMDD;
 import constraints.extension.ExtensionSmart;
 import constraints.extension.structures.SmartTuple;
 import constraints.extension.structures.Table;
-import constraints.global.AllDifferent;
-import constraints.global.AllDifferentBound;
-import constraints.global.AllDifferentCounting;
-import constraints.global.AllDifferentExceptWeak;
-import constraints.global.AllDifferentPermutation;
-import constraints.global.AllDifferentWeak;
+import constraints.global.AllDifferent.AllDifferentBound;
+import constraints.global.AllDifferent.AllDifferentComplete;
+import constraints.global.AllDifferent.AllDifferentCounting;
+import constraints.global.AllDifferent.AllDifferentExceptWeak;
+import constraints.global.AllDifferent.AllDifferentPermutation;
+import constraints.global.AllDifferent.AllDifferentWeak;
 import constraints.global.AllEqual;
 import constraints.global.Among;
 import constraints.global.Cardinality.CardinalityConstant;
@@ -133,14 +133,14 @@ import constraints.global.NValues.NValuesCst.NValuesCstGE;
 import constraints.global.NValues.NValuesCst.NValuesCstLE;
 import constraints.global.NValues.NValuesVar.NValuesVarEQ;
 import constraints.global.NotAllEqual;
-import constraints.global.ScalarSumBoolean.SumScalarBooleanCst;
-import constraints.global.ScalarSumBoolean.SumScalarBooleanVar;
-import constraints.global.SumSimple;
-import constraints.global.SumSimple.SumSimpleGE;
-import constraints.global.SumSimple.SumSimpleLE;
-import constraints.global.SumWeighted;
-import constraints.global.SumWeighted.SumWeightedGE;
-import constraints.global.SumWeighted.SumWeightedLE;
+import constraints.global.Sum.SumSimple;
+import constraints.global.Sum.SumSimple.SumSimpleGE;
+import constraints.global.Sum.SumSimple.SumSimpleLE;
+import constraints.global.Sum.SumWeighted;
+import constraints.global.Sum.SumWeighted.SumWeightedGE;
+import constraints.global.Sum.SumWeighted.SumWeightedLE;
+import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
+import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
 import constraints.intension.Intension;
 import constraints.intension.PrimitiveBinary.Disjonctive;
 import constraints.intension.PrimitiveBinary.PrimitiveBinaryLog;
@@ -158,11 +158,11 @@ import heuristics.HeuristicValuesDirect.Values;
 import interfaces.Observers.ObserverConstruction;
 import interfaces.Observers.ObserverDomainReduction;
 import main.Head;
-import optimization.ObjVar;
+import optimization.ObjectiveVariable;
+import optimization.ObjectiveVariable.ObjVarGE;
+import optimization.ObjectiveVariable.ObjVarLE;
 import optimization.Optimizable;
 import optimization.Optimizer;
-import optimization.ObjVar.ObjVarGE;
-import optimization.ObjVar.ObjVarLE;
 import optimization.Optimizer.OptimizerDecreasing;
 import optimization.Optimizer.OptimizerDichotomic;
 import optimization.Optimizer.OptimizerIncreasing;
@@ -219,13 +219,14 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 		Stream.of(variables).peek(x -> control(Stream.of(x.ctrs).noneMatch(c -> c.num == -1))).forEach(x -> x.dom.finalizeConstruction(variables.length + 1));
 		priorityVars = priorityVars.length == 0 && annotations.decision != null ? (Variable[]) annotations.decision : priorityVars;
-		if (settings.framework == COP && (optimizer.ctr instanceof ObjVar || optimizer.ctr instanceof MaximumCstLE || optimizer.ctr instanceof MinimumCstGE))
+		if (settings.framework == COP
+				&& (optimizer.ctr instanceof ObjectiveVariable || optimizer.ctr instanceof MaximumCstLE || optimizer.ctr instanceof MinimumCstGE))
 			head.control.restarts.restartAfterSolution = true;
 
 		boolean strong = false;
 		if (settings.framework == COP && head.control.valh.optValHeuristic) {
 			Constraint c = ((Constraint) optimizer.ctr);
-			if (c instanceof ObjVar) {
+			if (c instanceof ObjectiveVariable) {
 				Variable x = c.scp[0];
 				x.heuristic = optimizer.minimization ? new First(x, false) : new Last(x, false);
 				this.priorityVars = new Variable[] { x };
@@ -403,7 +404,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	/**
 	 * An object used to record many data corresponding to metrics and various features of the problem.
 	 */
-	public ProblemStuff stuff; // = new ProblemStuff(this);
+	public Features features; // = new ProblemStuff(this);
 
 	/**
 	 * The object used to manage symbolic values. Basically, it transforms symbols into integers, but this is not visible for the user (modeler).
@@ -442,7 +443,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public void removeCtr(Constraint c) {
 		// System.out.println("removed " + c + "size=" + stuff.collectedCtrsAtInit.size());
 		control(constraints == null, "too late");
-		stuff.collectedCtrsAtInit.remove(c);
+		features.collectedCtrsAtInit.remove(c);
 		// maybe was not present
 		Stream.of(c.scp).forEach(x -> x.collectedCtrs.remove(c));
 		// TODO other things to do ??
@@ -471,12 +472,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// }
 		// }
 
-		c.num = stuff.addCollectedConstraint(c);
+		c.num = features.addCollectedConstraint(c);
 		return ctrEntities.new CtrAlone(c, classes);
 	}
 
 	public final Optimizable addOptimizable(Constraint c) {
-		c.num = stuff.addCollectedConstraint(c);
+		c.num = features.addCollectedConstraint(c);
 		return (Optimizable) c;
 	}
 
@@ -529,7 +530,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		CtrAlone ca = extension(vars(x, y), new int[0][], false, DONT_KNOW);
 		Constraint c = (Constraint) ca.ctr; // (Constraint) buildCtrTrue(x, y).ctr;
 		c.cloneStructures(false);
-		constraints = stuff.collectedCtrsAtInit.toArray(new Constraint[stuff.collectedCtrsAtInit.size()]); // storeConstraintsToArray();
+		constraints = features.collectedCtrsAtInit.toArray(new Constraint[features.collectedCtrsAtInit.size()]); // storeConstraintsToArray();
 		x.whenFinishedProblemConstruction();
 		y.whenFinishedProblemConstruction();
 		// constraint.buildBitRmResidues();
@@ -542,34 +543,34 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private void makeGraphComplete() {
 		if (head.control.problem.completeGraph) {
-			int sizeBefore = stuff.collectedCtrsAtInit.size();
+			int sizeBefore = features.collectedCtrsAtInit.size();
 			// TODO : improve the complexity of finding missing binary constraints below
 			IntStream.range(0, variables.length).forEach(i -> IntStream.range(i + 1, variables.length).forEach(j -> {
-				if (!stuff.collectedCtrsAtInit.stream().anyMatch(c -> c.scp.length == 2 && c.involves(variables[i], variables[j])))
+				if (!features.collectedCtrsAtInit.stream().anyMatch(c -> c.scp.length == 2 && c.involves(variables[i], variables[j])))
 					buildCtrTrue(variables[i], variables[j]);
 			}));
-			stuff.nAddedCtrs += stuff.collectedCtrsAtInit.size() - sizeBefore;
+			features.nAddedCtrs += features.collectedCtrsAtInit.size() - sizeBefore;
 		}
 	}
 
 	private void buildSymmetries() {
 		if (head.control.problem.isSymmetryBreaking()) {
-			int nBefore = stuff.collectedCtrsAtInit.size();
-			for (Constraint c : stuff.collectedCtrsAtInit)
+			int nBefore = features.collectedCtrsAtInit.size();
+			for (Constraint c : features.collectedCtrsAtInit)
 				if (Constraint.getSymmetryMatching(c.key) == null)
 					Constraint.putSymmetryMatching(c.key, c.defineSymmetryMatching());
 			IdentificationAutomorphism automorphismIdentification = new IdentificationAutomorphism(this);
-			for (Constraint c : automorphismIdentification.buildVariableSymmetriesFor(variables, stuff.collectedCtrsAtInit))
+			for (Constraint c : automorphismIdentification.buildVariableSymmetriesFor(variables, features.collectedCtrsAtInit))
 				addCtr(c);
-			stuff.addToMapForAutomorphismIdentification(automorphismIdentification);
+			features.addToMapForAutomorphismIdentification(automorphismIdentification);
 			symmetryGroupGenerators.addAll(automorphismIdentification.getGenerators());
-			stuff.nAddedCtrs += stuff.collectedCtrsAtInit.size() - nBefore;
+			features.nAddedCtrs += features.collectedCtrsAtInit.size() - nBefore;
 		}
 	}
 
 	private void inferAllDifferents() {
 		if (head.control.constraints.inferAllDifferentNb > 0)
-			stuff.addToMapForAllDifferentIdentification(new IdentificationAllDifferent(this));
+			features.addToMapForAllDifferentIdentification(new IdentificationAllDifferent(this));
 	}
 
 	/**
@@ -579,10 +580,10 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		makeGraphComplete();
 		buildSymmetries();
 		inferAllDifferents();
-		constraints = stuff.collectedCtrsAtInit.toArray(new Constraint[0]);
+		constraints = features.collectedCtrsAtInit.toArray(new Constraint[0]);
 		for (Variable x : variables) {
 			x.whenFinishedProblemConstruction();
-			stuff.varDegrees.add(x.deg());
+			features.varDegrees.add(x.deg());
 		}
 		assert Variable.areNumsNormalized(variables);// && Constraint.areIdsNormalized(constraints); TODO
 		head.clearMapsUsedByConstraints();
@@ -621,7 +622,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				&& settings.framework == TypeFramework.CSP;
 		List<Variable> isolatedVars = new ArrayList<>(), fixedVars = new ArrayList<>();
 		int nRemovedValues = 0;
-		for (Variable x : stuff.collectedVarsAtInit) {
+		for (Variable x : features.collectedVarsAtInit) {
 			if (x.ctrs.length == 0) {
 				isolatedVars.add(x);
 				if (reduceIsolatedVars) {
@@ -633,12 +634,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				fixedVars.add(x);
 		}
 		if (isolatedVars.size() > 0) {
-			stuff.nIsolatedVars += isolatedVars.size();
+			features.nIsolatedVars += isolatedVars.size();
 			log.info("Isolated variables : " + Kit.join(isolatedVars));
 			log.info("Nb values removed due to isolated variables : " + nRemovedValues + "\n");
 		}
 		if (fixedVars.size() > 0) {
-			stuff.nFixedVars += fixedVars.size();
+			features.nFixedVars += fixedVars.size();
 			log.info("Fixed variables : " + (fixedVars.size() <= 100 ? Kit.join(fixedVars) : "more than 100") + "\n");
 		}
 	}
@@ -686,13 +687,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		head.problem = this; // required because it is needed during the initialization of some objects
 		head.observersConstruction.add(0, this); // "Must be the first in the list when calling onConstructionSolverFinished
 		this.settings = head.control.general;
-		this.stuff = new ProblemStuff(this);
+		this.features = new Features(this);
 		head.output.beforeData();
 		loadData(data, dataFormat, dataSaving);
 		head.output.afterData();
 		api.model();
 
-		this.variables = stuff.collectedVarsAtInit.toArray(new Variable[stuff.collectedVarsAtInit.size()]);
+		this.variables = features.collectedVarsAtInit.toArray(new Variable[features.collectedVarsAtInit.size()]);
 		addUnaryConstraintsOfUserInstantiation();
 		storeConstraintsToArray();
 		// currently, only mono-objective optimization supported
@@ -745,9 +746,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 */
 	public final Variable addVar(Variable x) {
 		control(!mapForVars.containsKey(x.id()), x.id() + " duplicated");
-		if (stuff.mustDiscard(x))
+		if (features.mustDiscard(x))
 			return null;
-		x.num = stuff.addCollectedVariable(x);
+		x.num = features.addCollectedVariable(x);
 		mapForVars.put(x.id(), x);
 		return x;
 	}
@@ -871,7 +872,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (scp.length == 1 && !head.mustPreserveUnaryConstraints()) {
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 			scp[0].dom.removeValuesAtConstructionTime(v -> evaluator.evaluate(v) != 1);
-			stuff.nRemovedUnaryCtrs++;
+			features.nRemovedUnaryCtrs++;
 			return ctrEntities.new CtrAloneDummy("Removed unary constraint by domain reduction");
 		}
 
@@ -879,7 +880,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (scp.length <= head.control.extension.arityLimitForIntensionToExtension
 				&& Variable.nValidTuplesBoundedAtMaxValueFor(scp) <= head.control.extension.validLimitForIntensionToExtension
 				&& Stream.of(scp).allMatch(x -> x instanceof Var)) {
-			stuff.nConvertedConstraints++;
+			features.nConvertedConstraints++;
 			return extension(tree);
 		}
 		tree = (XNodeParent<IVar>) tree.canonization();
@@ -1035,7 +1036,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (scp.length <= 1)
 			return ctrEntities.new CtrAloneDummy("Removed alldiff constraint with scope length = " + scp.length);
 		if (isBasicType(head.control.global.typeAllDifferent))
-			return addCtr(Variable.isPermutationElligible(scp) ? new AllDifferentPermutation(this, scp) : new AllDifferent(this, scp));
+			return addCtr(Variable.isPermutationElligible(scp) ? new AllDifferentPermutation(this, scp) : new AllDifferentComplete(this, scp));
 		if (head.control.global.typeAllDifferent == 1)
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
 				if (i < j)

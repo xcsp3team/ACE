@@ -154,7 +154,6 @@ public final class ExtensionSegmented extends ExtensionGlobal {
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
-		problem.stuff.updateStatsForSTR(set);
 		int depth = problem.solver.depth();
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {

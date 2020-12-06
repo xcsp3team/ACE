@@ -81,7 +81,7 @@ public final class IdentificationAllDifferent {
 
 	public IdentificationAllDifferent(Problem pb) {
 		this.pb = pb;
-		this.allNeighbours = computeIrreflexivesNeigbours(pb.variables.length, pb.stuff.collectedCtrsAtInit);
+		this.allNeighbours = computeIrreflexivesNeigbours(pb.variables.length, pb.features.collectedCtrsAtInit);
 		this.degrees = IntStream.range(0, pb.variables.length).map(i -> allNeighbours[i].length).toArray();
 		this.levels = new int[pb.variables.length];
 		this.tmp = new int[pb.variables.length];
@@ -94,7 +94,7 @@ public final class IdentificationAllDifferent {
 			pb.allDifferent(scp);
 			nBuiltCliques++;
 			display(k, cliqueSize);
-			assert controlClique(scp, pb.stuff.collectedCtrsAtInit);
+			assert controlClique(scp, pb.features.collectedCtrsAtInit);
 			for (int i = 0; i <= set.limit; i++)
 				degrees[set.dense[i]] = countNeighboursAtLevel(allNeighbours[set.dense[i]], 0); // reinitialization of degrees
 		}
