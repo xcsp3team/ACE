@@ -9,7 +9,7 @@ import org.xcsp.common.Types.TypeOptimization;
 
 import dashboard.Arguments;
 import problem.Problem;
-import solver.backtrack.SolverBacktrack;
+import solver.Solver;
 import utility.Kit;
 import variables.Variable;
 
@@ -148,9 +148,9 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 				problem.solver.stopping = null;
 				Kit.control(problem.features.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
 				problem.solver.restarter.forceRootPropagation = true;
-				((SolverBacktrack) problem.solver).restoreProblem();
-				if (((SolverBacktrack) problem.solver).nogoodRecorder != null)
-					((SolverBacktrack) problem.solver).nogoodRecorder.reset();
+				((Solver) problem.solver).restoreProblem();
+				if (((Solver) problem.solver).nogoodRecorder != null)
+					((Solver) problem.solver).nogoodRecorder.reset();
 				shiftLimitWhenFailure();
 			}
 		}

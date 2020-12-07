@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 
 import interfaces.Observers.ObserverRuns;
 import interfaces.Tags.TagMaximize;
-import solver.backtrack.SolverBacktrack;
+import solver.Solver;
 import utility.Kit;
 import variables.Variable;
 
@@ -46,7 +46,7 @@ public abstract class HeuristicVariablesFixed extends HeuristicVariables impleme
 		Kit.log.info("Static order of variables : " + Kit.join(ordering));
 	}
 
-	public HeuristicVariablesFixed(SolverBacktrack solver, boolean antiHeuristic) {
+	public HeuristicVariablesFixed(Solver solver, boolean antiHeuristic) {
 		super(solver, antiHeuristic);
 		buildOrdering();
 	}
@@ -71,7 +71,7 @@ public abstract class HeuristicVariablesFixed extends HeuristicVariables impleme
 	 */
 	public static final class Deg extends HeuristicVariablesFixed implements TagMaximize {
 
-		public Deg(SolverBacktrack solver, boolean antiHeuristic) {
+		public Deg(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 		}
 
@@ -86,7 +86,7 @@ public abstract class HeuristicVariablesFixed extends HeuristicVariables impleme
 	 */
 	public static final class Lexico extends HeuristicVariablesFixed {
 
-		public Lexico(SolverBacktrack solver, boolean antiHeuristic) {
+		public Lexico(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 		}
 
@@ -98,7 +98,7 @@ public abstract class HeuristicVariablesFixed extends HeuristicVariables impleme
 
 	public static final class Srand extends HeuristicVariablesFixed {
 
-		public Srand(SolverBacktrack solver, boolean antiHeuristic) {
+		public Srand(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 		}
 

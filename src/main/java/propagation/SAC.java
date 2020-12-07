@@ -18,7 +18,6 @@ import heuristics.HeuristicVariablesDynamic.WdegOnDom;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import propagation.SAC.QueueForSAC3.Cell;
 import solver.Solver;
-import solver.backtrack.SolverBacktrack;
 import utility.Kit;
 import utility.Reflector;
 import variables.Variable;
@@ -64,7 +63,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		for (int cnt = 0; cnt < nPassesLimit; cnt++) {
 			long nBefore = nEffectiveSingletonTests;
 			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
-				if (onlyNeighbours && !x.isNeighbourOf(((SolverBacktrack) solver).dr.varOfLastDecisionIf(true)))
+				if (onlyNeighbours && !x.isNeighbourOf(((Solver) solver).dr.varOfLastDecisionIf(true)))
 					continue;
 				if (x.dom.size() == 1) {
 					nFoundSingletons++;
@@ -312,7 +311,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			}
 		}
 
-		private SolverBacktrack solver;
+		private Solver solver;
 
 		private boolean priorityToSingletons;
 
@@ -370,7 +369,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			return cell; // even if removed, fields x and a are still operational (if cell is not null)
 		}
 
-		public QueueForSAC3(SolverBacktrack solver, boolean priorityToSingletons) {
+		public QueueForSAC3(Solver solver, boolean priorityToSingletons) {
 			this.solver = solver;
 			this.priorityToSingletons = priorityToSingletons;
 			this.positions = Stream.of(solver.problem.variables).map(x -> new Cell[x.dom.initSize()]).toArray(Cell[][]::new);
@@ -475,7 +474,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 
 		public SAC3(Solver solver) {
 			super(solver);
-			this.queueOfCells = new QueueForSAC3((SolverBacktrack) solver, true);
+			this.queueOfCells = new QueueForSAC3((Solver) solver, true);
 			this.lastConflictMode = 1; // hard coding
 		}
 
@@ -625,7 +624,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		public ESAC3(Solver solver) {
 			super(solver);
 			this.queueESAC = new QueueESAC();
-			this.varHeuristics = new HeuristicVariables[] { new WdegVariant.WdegOnDom((SolverBacktrack) solver, false) };
+			this.varHeuristics = new HeuristicVariables[] { new WdegVariant.WdegOnDom((Solver) solver, false) };
 			// this.variableOrderingHeuristics = new VariableOrderingHeuristic[] {
 			// new Dom((BacktrackSearchSolver) solver, OptimizationType.MIN), new
 			// DomThenDDeg((BacktrackSearchSolver) solver, OptimizationType.MIN),

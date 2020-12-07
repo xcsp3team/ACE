@@ -13,7 +13,6 @@ import dashboard.Control.SettingLearning;
 import interfaces.Observers.ObserverDomainReduction;
 import interfaces.Observers.ObserverRuns;
 import solver.Solver;
-import solver.backtrack.SolverBacktrack;
 import utility.Enums.ELearningIps;
 import utility.Kit;
 import variables.Domain;
@@ -21,7 +20,7 @@ import variables.Variable;
 
 public abstract class IpsRecorder implements ObserverRuns {
 
-	public static IpsRecorder buildFor(SolverBacktrack solver) {
+	public static IpsRecorder buildFor(Solver solver) {
 		if (solver.head.control.learning.state == ELearningIps.EQUIVALENCE)
 			return new IpsRecorderForEquivalence(solver);
 		if (solver.head.control.learning.state == ELearningIps.DOMINANCE)
@@ -34,7 +33,7 @@ public abstract class IpsRecorder implements ObserverRuns {
 		displayStats();
 	}
 
-	protected final SolverBacktrack solver;
+	protected final Solver solver;
 
 	protected final Variable[] variables;
 
@@ -48,7 +47,7 @@ public abstract class IpsRecorder implements ObserverRuns {
 
 	public int nInferences;
 
-	public IpsRecorder(SolverBacktrack solver) {
+	public IpsRecorder(Solver solver) {
 		this.solver = solver;
 		this.variables = solver.problem.variables;
 		this.reductionOperator = new ReductionOperator(this);

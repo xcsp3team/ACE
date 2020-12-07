@@ -44,7 +44,6 @@ import propagation.Supporter;
 import propagation.Supporter.SupporterHard;
 import sets.SetDense;
 import sets.SetSparse;
-import solver.backtrack.SolverBacktrack;
 import utility.Kit;
 import variables.Domain;
 import variables.DomainInfinite;
@@ -364,7 +363,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 * Returns the weighted degree of the constraint.
 	 */
 	public final double wdeg() {
-		return ((WdegVariant) ((SolverBacktrack) problem.solver).heuristic).cscores[num];
+		return ((WdegVariant) problem.solver.heuristic).cscores[num];
 	}
 
 	public boolean isIrreflexive() {
@@ -826,8 +825,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		int nBefore = problem.nValuesRemoved;
 		boolean consistent = this instanceof FilteringSpecific ? ((FilteringSpecific) this).runPropagator(x) : genericFiltering(x);
 		if (!consistent || problem.nValuesRemoved != nBefore) {
-			if (problem.solver instanceof SolverBacktrack)
-				((SolverBacktrack) problem.solver).proofer.updateProof(this);// TODO // ((SystematicSolver)solver).updateProofAll();
+			problem.solver.proofer.updateProof(this);// TODO // ((SystematicSolver)solver).updateProofAll();
 			nEffectiveFilterings++;
 			problem.features.nEffectiveFilterings++;
 		}

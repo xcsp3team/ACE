@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.Deflater;
 
-import solver.backtrack.SolverBacktrack;
+import solver.Solver;
 import utility.Bit;
 import utility.Enums.EStopping;
 import utility.Kit;
@@ -53,7 +53,7 @@ public final class IpsRecorderForEquivalence extends IpsRecorder {
 	// mapOfHashKeys.clear();
 	// }
 
-	public IpsRecorderForEquivalence(SolverBacktrack solver) {
+	public IpsRecorderForEquivalence(Solver solver) {
 		super(solver);
 		if (variables.length > 1500) // hard coding
 			stopped = true;

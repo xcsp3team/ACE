@@ -2,19 +2,19 @@ package learning;
 
 import propagation.GAC;
 import propagation.Propagation;
-import solver.backtrack.DecisionRecorder;
-import solver.backtrack.SolverBacktrack;
+import solver.DecisionRecorder;
+import solver.Solver;
 import utility.Enums.EStopping;
 import variables.Variable;
 
 public class NogoodMinimizer {
 
-	private SolverBacktrack solver;
+	private Solver solver;
 	private Propagation propagation;
 	private DecisionRecorder dr;
 	private int arityLimit;
 
-	public NogoodMinimizer(SolverBacktrack solver) {
+	public NogoodMinimizer(Solver solver) {
 		this.solver = solver;
 		this.propagation = solver.propagation;
 		this.dr = solver.dr;

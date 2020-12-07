@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 
 import dashboard.Control.SettingValh;
 import interfaces.Tags.TagExperimental;
-import solver.backtrack.SolverBacktrack;
+import solver.Solver;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -52,7 +52,7 @@ public abstract class HeuristicValues extends Heuristic {
 	protected abstract int identifyBestValueIndex();
 
 	public int bestIndex() {
-		SolverBacktrack solver = (SolverBacktrack) x.problem.solver;
+		Solver solver = x.problem.solver;
 		if (solver.solManager.found == 0) {
 			if (settings.warmStart.length() > 0) {
 				int a = solver.warmStarter.valueOf(x);

@@ -42,8 +42,6 @@ import problem.Problem;
 import propagation.Propagation;
 import solver.Solver;
 import solver.Statistics.StatisticsMultiResolution;
-import solver.local.SolverLocal;
-import utility.Enums.EStopping;
 import utility.Enums.TypeOutput;
 import utility.Kit;
 import utility.Kit.Stopwatch;
@@ -325,30 +323,30 @@ public class Head extends Thread {
 		return solver;
 	}
 
-	private int[] localSearchAtPreprocessing() {
-		int[] solution = null;
-		if (control.hardCoding.localSearchAtPreprocessing) {
-			String solverClassName = control.solving.clazz;
-			control.solving.clazz = SolverLocal.class.getSimpleName();
-			int nRuns = control.restarts.nRunsLimit;
-			control.restarts.nRunsLimit = 10;
-			long cutoff = control.restarts.cutoff;
-			control.restarts.cutoff = 10000;
-			boolean prepro = control.solving.enablePrepro;
-			control.solving.enablePrepro = false;
-			solver = buildSolver(problem);
-			solver.solve();
-			solution = solver.solManager.lastSolution;
-			control.optimization.ub = ((SolverLocal) solver).nMinViolatedCtrs;
-			if (solver.stopping != EStopping.REACHED_GOAL) {
-				control.solving.clazz = solverClassName;
-				control.restarts.nRunsLimit = nRuns;
-				control.restarts.cutoff = cutoff;
-				control.solving.enablePrepro = prepro;
-			}
-		}
-		return solution;
-	}
+	// private int[] localSearchAtPreprocessing() {
+	// int[] solution = null;
+	// if (control.hardCoding.localSearchAtPreprocessing) {
+	// String solverClassName = control.solving.clazz;
+	// control.solving.clazz = SolverLocal.class.getSimpleName();
+	// int nRuns = control.restarts.nRunsLimit;
+	// control.restarts.nRunsLimit = 10;
+	// long cutoff = control.restarts.cutoff;
+	// control.restarts.cutoff = 10000;
+	// boolean prepro = control.solving.enablePrepro;
+	// control.solving.enablePrepro = false;
+	// solver = buildSolver(problem);
+	// solver.solve();
+	// solution = solver.solManager.lastSolution;
+	// control.optimization.ub = ((SolverLocal) solver).nMinViolatedCtrs;
+	// if (solver.stopping != EStopping.REACHED_GOAL) {
+	// control.solving.clazz = solverClassName;
+	// control.restarts.nRunsLimit = nRuns;
+	// control.restarts.cutoff = cutoff;
+	// control.solving.enablePrepro = prepro;
+	// }
+	// }
+	// return solution;
+	// }
 
 	/**
 	 * Allows to build all objects which are necessary to solve the current instance
@@ -360,7 +358,7 @@ public class Head extends Thread {
 		problem = buildProblem(instanceNumber);
 
 		if (control.solving.enablePrepro || control.solving.enableSearch) {
-			int[] solution = localSearchAtPreprocessing();
+			int[] solution = null; // localSearchAtPreprocessing();
 			solver = buildSolver(problem);
 			if (solution != null)
 				solver.solManager.storeSolution(solution);

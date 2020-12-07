@@ -11,7 +11,7 @@ package heuristics;
 import constraints.Constraint;
 import optimization.Optimizable;
 import sets.SetDense;
-import solver.backtrack.SolverBacktrack;
+import solver.Solver;
 import utility.Kit;
 import variables.Variable;
 
@@ -46,7 +46,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	// ************************************************************************
 
 	public static final class Bivs extends HeuristicValuesDynamic {
-		SolverBacktrack solver;
+		Solver solver;
 
 		Optimizable c;
 
@@ -61,10 +61,9 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		public Bivs(Variable x, boolean antiHeuristic) {
 			super(x, antiHeuristic);
 			Kit.control(x.problem.optimizer != null);
-			Kit.control(x.problem.solver instanceof SolverBacktrack);
 			this.scoreCoeff = x.problem.optimizer.minimization ? -1 : 1; // scoreCoeff follows minimization/maximization
 			this.promise = !antiHeuristic;
-			this.solver = (SolverBacktrack) x.problem.solver;
+			this.solver = x.problem.solver;
 			this.c = x.problem.optimizer.ctr;
 			this.inconsistent = new SetDense(x.dom.initSize());
 		}

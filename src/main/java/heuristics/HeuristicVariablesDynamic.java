@@ -22,7 +22,7 @@ import interfaces.Observers.ObserverConflicts;
 import interfaces.Observers.ObserverRuns;
 import interfaces.Tags.TagMaximize;
 import sets.SetDense;
-import solver.backtrack.SolverBacktrack;
+import solver.Solver;
 import utility.Enums.EBranching;
 import utility.Enums.ESingleton;
 import utility.Enums.EWeighting;
@@ -38,7 +38,7 @@ import variables.Variable;
  */
 public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
-	public HeuristicVariablesDynamic(SolverBacktrack solver, boolean antiHeuristic) {
+	public HeuristicVariablesDynamic(Solver solver, boolean antiHeuristic) {
 		super(solver, antiHeuristic);
 	}
 
@@ -90,7 +90,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	public static final class Ddeg extends HeuristicVariablesDynamic implements TagMaximize {
 
-		public Ddeg(SolverBacktrack solver, boolean antiHeuristic) {
+		public Ddeg(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 		}
 
@@ -102,7 +102,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	public static final class DdegOnDom extends HeuristicVariablesDynamic implements TagMaximize {
 
-		public DdegOnDom(SolverBacktrack solver, boolean antiHeuristic) {
+		public DdegOnDom(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 		}
 
@@ -114,7 +114,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	public static final class Dom extends HeuristicVariablesDynamic {
 
-		public Dom(SolverBacktrack solver, boolean antiHeuristic) {
+		public Dom(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 		}
 
@@ -127,7 +127,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	public static final class DomThenDeg extends HeuristicVariablesDynamic {
 		private CombinatorOfTwoInts combinator;
 
-		public DomThenDeg(SolverBacktrack solver, boolean antiHeuristic) {
+		public DomThenDeg(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 			this.combinator = new CombinatorOfTwoInts(solver.problem.features.maxVarDegree());
 		}
@@ -249,7 +249,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			}
 		}
 
-		public WdegVariant(SolverBacktrack solver, boolean antiHeuristic) {
+		public WdegVariant(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 			this.ctime = new int[solver.problem.constraints.length];
 			this.vscores = new double[solver.problem.variables.length];
@@ -274,7 +274,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	public static class Wdeg extends WdegVariant {
 
-		public Wdeg(SolverBacktrack solver, boolean antiHeuristic) {
+		public Wdeg(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 		}
 
@@ -293,7 +293,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	public static class WdegOnDom extends WdegVariant {
 
-		public WdegOnDom(SolverBacktrack solver, boolean antiHeuristic) {
+		public WdegOnDom(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 		}
 
@@ -329,7 +329,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				lastSizes[i] = solver.problem.variables[i].dom.size();
 		}
 
-		public ActivityImpactAbstract(SolverBacktrack solver, boolean antiHeuristic) {
+		public ActivityImpactAbstract(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 			this.lastSizes = Stream.of(solver.problem.variables).mapToInt(x -> x.dom.size()).toArray();
 			Kit.control(solver.head.control.solving.branching == EBranching.BIN);
@@ -372,7 +372,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			}
 		}
 
-		public Activity(SolverBacktrack solver, boolean antiHeuristic) {
+		public Activity(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 			alpha = 0.99; // alpha as an aging decay
 			activities = new double[solver.problem.variables.length];
@@ -406,7 +406,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			}
 		}
 
-		public Impact(SolverBacktrack solver, boolean antiHeuristic) {
+		public Impact(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 			alpha = 0.1;
 			impacts = new double[solver.problem.variables.length];

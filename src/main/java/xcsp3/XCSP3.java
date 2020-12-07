@@ -1,10 +1,5 @@
 package xcsp3;
 
-import static org.xcsp.common.Types.TypeArithmeticOperator.ADD;
-import static org.xcsp.common.Types.TypeArithmeticOperator.DIST;
-import static org.xcsp.common.Types.TypeArithmeticOperator.MOD;
-import static org.xcsp.common.Types.TypeArithmeticOperator.MUL;
-import static org.xcsp.common.Types.TypeArithmeticOperator.SUB;
 import static org.xcsp.common.Utilities.join;
 import static org.xcsp.common.Utilities.safeInt;
 
@@ -69,15 +64,6 @@ import org.xcsp.parser.entries.XVariables.XVarSymbolic;
 
 import constraints.Constraint.CtrHardFalse;
 import constraints.global.BinPackingSimple;
-import constraints.intension.PrimitiveBinary.PrimitiveBinaryAdd;
-import constraints.intension.PrimitiveBinary.PrimitiveBinaryDist;
-import constraints.intension.PrimitiveBinary.PrimitiveBinaryLog;
-import constraints.intension.PrimitiveBinary.PrimitiveBinarySub;
-import constraints.intension.PrimitiveBinary.PrimitiveBinarySub.SubEQ2;
-import constraints.intension.PrimitiveTernary.PrimitiveTernaryAdd;
-import constraints.intension.PrimitiveTernary.PrimitiveTernaryLog;
-import constraints.intension.PrimitiveTernary.PrimitiveTernaryMod;
-import constraints.intension.PrimitiveTernary.PrimitiveTernaryMul;
 import dashboard.Arguments;
 import problem.Problem;
 import utility.Kit;
@@ -125,11 +111,13 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void model() {
 		// boolean b = true;
+		if (imp().head.control.xml.primitiveUnaryInSolver)
+			implem().currParameters.remove(XCallbacksParameters.RECOGNIZE_UNARY_PRIMITIVES);
 		if (imp().head.control.xml.primitiveBinaryInSolver)
 			implem().currParameters.remove(XCallbacksParameters.RECOGNIZE_BINARY_PRIMITIVES);
 		if (imp().head.control.xml.primitiveTernaryInSolver)
 			implem().currParameters.remove(XCallbacksParameters.RECOGNIZE_TERNARY_PRIMITIVES);
-		// implem().currParameters.remove(XCallbacksParameters.RECOGNIZE_SUM_CASES);
+		implem().currParameters.remove(XCallbacksParameters.RECOGNIZE_EXTREMUM_CASES);
 
 		try {
 			if (imp().head.control.general.verbose > 1)
@@ -449,19 +437,19 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeConditionOperatorRel op, int k) {
 		displayPrimitives(x + " " + op + " " + k);
-		imp().intension(XNodeParent.build(op.toExpr(), trVar(x), k));
+		repost(id); // imp().intension(XNodeParent.build(op.toExpr(), trVar(x), k));
 	}
 
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeConditionOperatorSet op, int[] t) {
 		displayPrimitives(x + " " + op + " " + Kit.join(t));
-		intension(op == IN ? in(trVar(x), set(t)) : notin(trVar(x), set(t)));
+		repost(id); // intension(op == IN ? in(trVar(x), set(t)) : notin(trVar(x), set(t)));
 	}
 
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeConditionOperatorSet op, int min, int max) {
 		displayPrimitives(x + " " + op + " " + min + ".." + max);
-		intension(op == IN ? and(ge(trVar(x), min), le(trVar(x), max)) : or(lt(trVar(x), min), gt(trVar(x), max)));
+		repost(id); // intension(op == IN ? and(ge(trVar(x), min), le(trVar(x), max)) : or(lt(trVar(x), min), gt(trVar(x), max)));
 	}
 
 	@Override
@@ -477,40 +465,27 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	// binary primitives
 
 	@Override
-	public void buildCtrPrimitive(String id, XVarInteger x, TypeUnaryArithmeticOperator aop, XVarInteger y) {
-		displayPrimitives(x + " " + aop + " " + y);
-		repost(id);
-	}
-
-	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeArithmeticOperator aop, XVarInteger y, TypeConditionOperatorRel op, int k) {
 		displayPrimitives("(" + x + " " + aop + " " + y + ") " + op + " " + k);
-		if (imp().head.control.constraints.ignorePrimitives)
-			repost(id);
-		else {
-			if (aop == ADD)
-				imp().addCtr(PrimitiveBinaryAdd.buildFrom(imp(), trVar(x), trVar(y), op, k));
-			else if (aop == SUB)
-				imp().addCtr(PrimitiveBinarySub.buildFrom(imp(), trVar(x), trVar(y), op, k));
-			else if (aop == DIST)
-				imp().addCtr(PrimitiveBinaryDist.buildFrom(imp(), trVar(x), trVar(y), op, k));
-			else
-				repost(id);
-		}
+		repost(id);
 	}
 
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeArithmeticOperator aop, int k, TypeConditionOperatorRel op, XVarInteger y) {
 		displayPrimitives("(" + x + " " + aop + " " + k + ") " + op + " " + y);
-		if (imp().head.control.constraints.ignorePrimitives)
-			repost(id);
-		else {
+		repost(id);
+	}
 
-			if (op == EQ && (aop == ADD || aop == SUB))
-				imp().addCtr(new SubEQ2(imp(), trVar(x), trVar(y), aop == ADD ? -k : k));
-			else
-				repost(id);
-		}
+	@Override
+	public void buildCtrLogic(String id, XVarInteger x, XVarInteger y, TypeConditionOperatorRel op, int k) {
+		displayPrimitives(x + " = (" + y + " " + op + " " + k + ")");
+		repost(id);
+	}
+
+	@Override
+	public void buildCtrPrimitive(String id, XVarInteger x, TypeUnaryArithmeticOperator aop, XVarInteger y) {
+		displayPrimitives(x + " " + aop + " " + y);
+		repost(id);
 	}
 
 	// ternary primitives
@@ -518,56 +493,29 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void buildCtrPrimitive(String id, XVarInteger x, TypeArithmeticOperator aop, XVarInteger y, TypeConditionOperatorRel op, XVarInteger z) {
 		displayPrimitives("(" + x + " " + aop + " " + y + ") " + op + " " + z);
-		if (imp().head.control.constraints.ignorePrimitives)
-			repost(id);
-		else {
-			if (aop == ADD)
-				imp().addCtr(PrimitiveTernaryAdd.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z)));
-			else if (aop == MOD && op == EQ)
-				imp().addCtr(PrimitiveTernaryMod.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z)));
-			else if (aop == MUL && op == EQ && (trVar(x).dom.is01() || trVar(y).dom.is01()))
-				imp().addCtr(PrimitiveTernaryMul.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z)));
-			else
-				repost(id);
-		}
+		repost(id);
 	}
+
+	@Override
+	public void buildCtrLogic(String id, XVarInteger x, XVarInteger y, TypeConditionOperatorRel op, XVarInteger z) {
+		displayPrimitives(x + " = (" + y + " " + op + " " + z + ")");
+		repost(id);
+	}
+
+	// others
 
 	@Override
 	public void buildCtrLogic(String id, TypeLogicalOperator lop, XVarInteger[] vars) {
 		assert Stream.of(vars).allMatch(x -> x.isZeroOne());
 		displayPrimitives(lop + " " + Kit.join(vars));
-		if (imp().head.control.constraints.ignorePrimitives)
-			repost(id);
-		else
-			repost(id);
+		repost(id);
 	}
 
 	@Override
 	public void buildCtrLogic(String id, XVarInteger x, TypeEqNeOperator op, TypeLogicalOperator lop, XVarInteger[] vars) {
 		assert Stream.of(vars).allMatch(y -> y.isZeroOne());
 		displayPrimitives(x + " " + op + " " + lop + " " + Kit.join(vars));
-		if (imp().head.control.constraints.ignorePrimitives)
-			repost(id);
-		else
-			repost(id);
-	}
-
-	@Override
-	public void buildCtrLogic(String id, XVarInteger x, XVarInteger y, TypeConditionOperatorRel op, int k) {
-		displayPrimitives(x + " = (" + y + " " + op + " " + k + ")");
-		if (imp().head.control.constraints.ignorePrimitives)
-			repost(id);
-		else
-			imp().addCtr(PrimitiveBinaryLog.buildFrom(imp(), trVar(x), trVar(y), op, k));
-	}
-
-	@Override
-	public void buildCtrLogic(String id, XVarInteger x, XVarInteger y, TypeConditionOperatorRel op, XVarInteger z) {
-		displayPrimitives(x + " = (" + y + " " + op + " " + z + ")");
-		if (imp().head.control.constraints.ignorePrimitives)
-			repost(id);
-		else
-			imp().addCtr(PrimitiveTernaryLog.buildFrom(imp(), trVar(x), trVar(y), op, trVar(z)));
+		repost(id);
 	}
 
 	// ************************************************************************

@@ -15,7 +15,7 @@ import dashboard.Control.SettingVarh;
 import dashboard.Control.SettingVars;
 import interfaces.Observers.ObserverRuns;
 import propagation.GIC.GIC2;
-import solver.backtrack.SolverBacktrack;
+import solver.Solver;
 import utility.Kit;
 import utility.Reflector;
 import variables.DomainInfinite;
@@ -28,7 +28,7 @@ import variables.Variable;
  */
 public abstract class HeuristicVariables extends Heuristic {
 
-	public static HeuristicVariables buildFor(SolverBacktrack solver) {
+	public static HeuristicVariables buildFor(Solver solver) {
 		Set<Class<?>> classes = solver.head.handlerClasses.map.get(HeuristicVariables.class);
 		if (solver.head.control.solving.enableSearch || solver.propagation instanceof GIC2)
 			return Reflector.buildObject(solver.head.control.varh.heuristic, classes, solver, solver.head.control.varh.anti);
@@ -67,7 +67,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	protected BestScoredVariable bestScoredVariable = new BestScoredVariable();
 
 	/** The backtrack search solver that uses this variable ordering heuristic. */
-	protected final SolverBacktrack solver;
+	protected final Solver solver;
 
 	/** The variables that must be assigned in priority. */
 	protected Variable[] priorityVars;
@@ -91,7 +91,7 @@ public abstract class HeuristicVariables extends Heuristic {
 		this.nStrictlyPriorityVars = 0;
 	}
 
-	public HeuristicVariables(SolverBacktrack solver, boolean antiHeuristic) {
+	public HeuristicVariables(Solver solver, boolean antiHeuristic) {
 		super(antiHeuristic); // anti ? (this instanceof TagMinimize ? TypeOptimization.MAX : TypeOptimization.MIN ) : (this instanceof TagMinimize ?
 								// TypeOptimization.MAX : TypeOptimization.MIN );
 		this.solver = solver;
@@ -168,7 +168,7 @@ public abstract class HeuristicVariables extends Heuristic {
 		private int nbOrdered;
 		private int posLastConflict = -1;
 
-		public Memory(SolverBacktrack solver, boolean antiHeuristic) {
+		public Memory(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 			order = new int[solver.problem.variables.length];
 		}

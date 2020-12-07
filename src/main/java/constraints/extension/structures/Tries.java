@@ -145,11 +145,11 @@ public class Tries extends ExtensionStructure {
 			return current;
 
 		int realPosition = position <= currentTrieIndex ? position - 1 : position;
-		int idx = current[realPosition];
+		int a = current[realPosition];
 
 		Node child = null;
 		if (directAccess) {
-			child = node.childs[idx];
+			child = node.childs[a];
 			if (child != null) {
 				int[] t = seekNextTuple(child, position + 1);
 				if (t != null)
@@ -161,16 +161,16 @@ public class Tries extends ExtensionStructure {
 				}
 			} else {
 				child = node.firstChild;
-				while (child != null && child.idx < idx)
+				while (child != null && child.idx < a)
 					child = child.firstSibling;
 				if (child == null)
 					return null;
 			}
 		} else {
 			child = node.firstChild;
-			while (child != null && child.idx < idx)
+			while (child != null && child.idx < a)
 				child = child.firstSibling;
-			if (child != null && child.idx == idx) {
+			if (child != null && child.idx == a) {
 				int[] t = seekNextTuple(child, position + 1);
 				if (t != null)
 					return t;
@@ -192,22 +192,20 @@ public class Tries extends ExtensionStructure {
 	}
 
 	@Override
-	public int[] nextSupport(int vap, int idx, int[] current) {
-		currentTrieIndex = vap;
+	public int[] nextSupport(int x, int a, int[] current) {
+		currentTrieIndex = x;
 		this.current = current;
-		tmp[vap] = idx;
-
+		tmp[x] = a;
 		if (directAccess) {
-			Node child = trieRoots[currentTrieIndex].childs[idx];
+			Node child = trieRoots[currentTrieIndex].childs[a];
 			if (child == null)
 				return null;
 			return seekNextTuple(child, 1);
 		}
-
 		Node child = trieRoots[currentTrieIndex].firstChild;
-		while (child != null && child.idx < idx)
+		while (child != null && child.idx < a)
 			child = child.firstSibling;
-		if (child == null || child.idx > idx)
+		if (child == null || child.idx > a)
 			return null;
 		return seekNextTuple(child, 1);
 	}
@@ -224,11 +222,8 @@ public class Tries extends ExtensionStructure {
 	}
 
 	public void display() {
-		for (int i = 0; i < trieRoots.length; i++) {
-			System.out.println(" Position " + i);
-			int cpt = display(trieRoots[i], -1);
-			System.out.println("Nb tuples = " + cpt);
-		}
+		for (int i = 0; i < trieRoots.length; i++)
+			System.out.println(" Position " + i + "\nNb tuples = " + display(trieRoots[i], -1));
 	}
 
 	private boolean controlNode(Node node, int position) {

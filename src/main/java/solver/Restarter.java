@@ -19,7 +19,6 @@ import dashboard.Control.SettingRestarts;
 import interfaces.Observers.ObserverRuns;
 import optimization.ObjectiveVariable;
 import sets.SetDense;
-import solver.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
 import utility.Kit;
 import variables.Variable;
@@ -32,7 +31,7 @@ public class Restarter implements ObserverRuns {
 	public static Restarter buildFor(Solver solver) {
 		boolean lns = solver.head.control.lns.enabled;
 		if (lns)
-			return new RestarterLNS((SolverBacktrack) solver);
+			return new RestarterLNS((Solver) solver);
 		return new Restarter(solver);
 	}
 
@@ -110,7 +109,7 @@ public class Restarter implements ObserverRuns {
 	}
 
 	private Supplier<Long> measureSupplier() {
-		SolverBacktrack sb = solver instanceof SolverBacktrack ? ((SolverBacktrack) solver) : null;
+		Solver sb = solver instanceof Solver ? ((Solver) solver) : null;
 		switch (setting.measure) {
 		case FAILED:
 			return () -> sb.stats.nFailedAssignments;
@@ -188,12 +187,12 @@ public class Restarter implements ObserverRuns {
 
 		@Override
 		public void afterRun() {
-			((SolverBacktrack) solver).backtrackToTheRoot(); // because see Method doRun in SolverBacktrack
+			((Solver) solver).backtrackToTheRoot(); // because see Method doRun in SolverBacktrack
 		}
 
 		private final HeuristicFreezing heuristic;
 
-		public RestarterLNS(SolverBacktrack solver) {
+		public RestarterLNS(Solver solver) {
 			super(solver);
 			this.heuristic = HeuristicFreezing.buildFor(this);
 		}
@@ -289,7 +288,7 @@ public class Restarter implements ObserverRuns {
 							}
 						}
 					}
-					((SolverBacktrack) restarter.solver).backtrackToTheRoot();
+					((Solver) restarter.solver).backtrackToTheRoot();
 				}
 			}
 

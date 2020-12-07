@@ -6,7 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package solver.backtrack;
+package solver;
 
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -29,7 +29,7 @@ public final class LastConflict implements ObserverRuns {
 			statistics.display();
 	}
 
-	private SolverBacktrack solver;
+	private Solver solver;
 
 	private int k; // k is the parameter of lc (0 if inactive)
 
@@ -68,7 +68,7 @@ public final class LastConflict implements ObserverRuns {
 		}
 	}
 
-	public LastConflict(SolverBacktrack solver, int k) {
+	public LastConflict(Solver solver, int k) {
 		this.solver = solver;
 		this.k = k;
 		this.vars = new Variable[k];

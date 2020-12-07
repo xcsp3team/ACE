@@ -57,7 +57,7 @@ public abstract class Cardinality extends CtrGlobal implements ObserverBacktrack
 
 		public CardinalityConstant(Problem pb, Variable[] scp, int[] values, int[] minOccs, int[] maxOccs) {
 			super(pb, scp);
-			Kit.control(values.length == minOccs.length && values.length == maxOccs.length);
+			control(values.length == minOccs.length && values.length == maxOccs.length);
 			this.values = values;
 			this.minOccs = minOccs;
 			this.maxOccs = maxOccs;
@@ -76,7 +76,7 @@ public abstract class Cardinality extends CtrGlobal implements ObserverBacktrack
 			this.minOccs = Kit.repeat(0, values.length);
 			this.maxOccs = Kit.repeat(1, values.length);
 			int position = Utilities.indexOf(zeroValue, values);
-			Kit.control(position >= 0);
+			control(position >= 0);
 			maxOccs[position] = Integer.MAX_VALUE;
 			defineKey();
 			matcher = new MatcherCardinality(this, scope, values, minOccs, maxOccs);

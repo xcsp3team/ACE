@@ -8,7 +8,7 @@
  */
 package learning;
 
-import solver.backtrack.SolverBacktrack;
+import solver.Solver;
 import utility.Bit;
 import utility.Enums.EStopping;
 import utility.Kit;
@@ -48,7 +48,7 @@ public final class IpsRecorderForDominance extends IpsRecorder {
 		}
 	}
 
-	public IpsRecorderForDominance(SolverBacktrack solver) {
+	public IpsRecorderForDominance(Solver solver) {
 		super(solver);
 		Kit.control(solver.propagation != null);
 

@@ -40,7 +40,6 @@ import propagation.GAC;
 import propagation.GIC.GIC4;
 import propagation.SAC;
 import propagation.SAC.SACGreedy;
-import solver.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
 import utility.Enums.TypeOutput;
 import utility.Kit;
@@ -61,16 +60,16 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 	@Override
 	public final void beforePreprocessing() {
 		stopwatch.start();
-		if (solver instanceof SolverBacktrack && (((SolverBacktrack) solver).nogoodRecorder != null))
-			nPreproAddedNogoods = (((SolverBacktrack) solver).nogoodRecorder).nNogoods;
+		if (solver instanceof Solver && (((Solver) solver).nogoodRecorder != null))
+			nPreproAddedNogoods = (((Solver) solver).nogoodRecorder).nNogoods;
 		nPreproAddedCtrs = solver.problem.constraints.length;
 	}
 
 	@Override
 	public final void afterPreprocessing() {
 		preproWck += stopwatch.wckTime();
-		if (solver instanceof SolverBacktrack && (((SolverBacktrack) solver).nogoodRecorder != null))
-			nPreproAddedNogoods = (((SolverBacktrack) solver).nogoodRecorder).nNogoods - nPreproAddedNogoods;
+		if (solver instanceof Solver && (((Solver) solver).nogoodRecorder != null))
+			nPreproAddedNogoods = (((Solver) solver).nogoodRecorder).nNogoods - nPreproAddedNogoods;
 		nPreproAddedCtrs = solver.problem.constraints.length - nPreproAddedCtrs;
 		nPreproRemovedValues = Variable.nRemovedValuesFor(solver.problem.variables);
 		nPreproRemovedTuples = solver.propagation.nTuplesRemoved;
@@ -247,9 +246,9 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 
 	public static final class StatisticsBacktrack extends Statistics {
 
-		protected SolverBacktrack solver;
+		protected Solver solver;
 
-		public StatisticsBacktrack(SolverBacktrack solver) {
+		public StatisticsBacktrack(Solver solver) {
 			super(solver);
 			this.solver = solver;
 		}
@@ -324,38 +323,6 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			if (solver.nogoodRecorder != null)
 				m.putWhenPositive("nogoods", solver.nogoodRecorder.nNogoods);
 			m.separator();
-			return m;
-		}
-	}
-
-	/*************************************************************************
-	 ***** StatisticsLocal
-	 *************************************************************************/
-
-	/**
-	 * This class allows gathering all statistics of a given solver.
-	 */
-	public static final class StatisticsLocal extends Statistics {
-
-		public StatisticsLocal(Solver solver) {
-			super(solver);
-		}
-
-		@Override
-		public MapAtt runAttributes() {
-			MapAtt m = new MapAtt("Run");
-			m.put("run", (solver.restarter.numRun == -1 ? "all" : solver.restarter.numRun));
-			m.put(Output.N_ASSIGNMENTS, nAssignments);
-			m.put(Output.WCK, searchWck / 1000.0);
-			m.put(Output.CPU, solver.head.stopwatch.cpuTimeInSeconds());
-			m.put(Output.MEM, Kit.memoryInMb());
-			return m;
-		}
-
-		@Override
-		public MapAtt cumulatedAttributes() {
-			MapAtt m = new MapAtt("Global");
-			m.put(Output.N_ASSIGNMENTS, nAssignments);
 			return m;
 		}
 	}

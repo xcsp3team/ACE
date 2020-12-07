@@ -19,7 +19,7 @@ import java.util.stream.IntStream;
 import constraints.Constraint;
 import dashboard.Arguments;
 import problem.Problem;
-import solver.backtrack.SolverBacktrack;
+import solver.Solver;
 import utility.Enums.EExtraction;
 import utility.Enums.ELearningIps;
 import utility.Kit;
@@ -325,7 +325,7 @@ public class HeadExtraction extends Head {
 		Kit.control(extraction.control.learning.state == ELearningIps.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
 		// Kit.control(extraction.configuration.restartsCutoff == Long.MAX_VALUE || extraction.configuration.nogoodType == null,
 		// "Be careful of nogood recording from restarts.");
-		Kit.control(extraction.control.solving.clazz.equals(SolverBacktrack.class.getSimpleName()), () -> extraction.control.solving.clazz);
+		Kit.control(extraction.control.solving.clazz.equals(Solver.class.getSimpleName()), () -> extraction.control.solving.clazz);
 		extraction.start();
 	}
 

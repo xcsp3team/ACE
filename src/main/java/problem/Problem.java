@@ -11,6 +11,8 @@ import static org.xcsp.common.Types.TypeConditionOperatorRel.GT;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.LE;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.LT;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.NE;
+import static org.xcsp.common.Types.TypeExpr.LONG;
+import static org.xcsp.common.Types.TypeExpr.VAR;
 import static org.xcsp.common.Types.TypeFramework.COP;
 import static org.xcsp.common.Types.TypeObjective.EXPRESSION;
 import static org.xcsp.common.Types.TypeObjective.MAXIMUM;
@@ -19,11 +21,14 @@ import static org.xcsp.common.Types.TypeObjective.SUM;
 import static org.xcsp.common.Types.TypeOptimization.MAXIMIZE;
 import static org.xcsp.common.Types.TypeOptimization.MINIMIZE;
 import static org.xcsp.common.Utilities.safeInt;
+import static org.xcsp.common.predicates.MatcherInterface.max_vars;
+import static org.xcsp.common.predicates.MatcherInterface.min_vars;
 import static org.xcsp.common.predicates.MatcherInterface.val;
 import static org.xcsp.common.predicates.MatcherInterface.var;
+import static org.xcsp.common.predicates.MatcherInterface.varOrVal;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.ariop;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.relop;
-import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.unaop;
+import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.unalop;
 import static org.xcsp.common.predicates.XNode.node;
 import static org.xcsp.common.predicates.XNodeParent.add;
 import static org.xcsp.common.predicates.XNodeParent.eq;
@@ -143,6 +148,7 @@ import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
 import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
 import constraints.intension.Intension;
 import constraints.intension.PrimitiveBinary.Disjonctive;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryEQWithUnaryOperator;
 import constraints.intension.PrimitiveBinary.PrimitiveBinaryLog;
 import constraints.intension.PrimitiveBinary.PrimitiveBinarySub;
 import constraints.intension.PrimitiveBinary.PrimitiveBinarySub.SubNE2;
@@ -850,6 +856,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return new XNodeLeaf<>(TypeExpr.VAR, aux);
 	}
 
+	// binary
 	private Matcher x_relop_y = new Matcher(node(relop, var, var));
 	private Matcher x_ariop_y__relop_k = new Matcher(node(relop, node(ariop, var, var), val));
 	private Matcher k_relop__x_ariop_y = new Matcher(node(relop, val, node(ariop, var, var)));
@@ -857,85 +864,90 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private Matcher y_ariop_k__relop_x = new Matcher(node(relop, node(ariop, var, val), var));
 	private Matcher logic_y_relop_k__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, var, val), var));
 	private Matcher logic_k_relop_y__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, val, var), var));
+	private Matcher unalop_x__eq_y = new Matcher(node(TypeExpr.EQ, node(unalop, var), var));
 
-	private Matcher unaop_x__eq_y = new Matcher(node(TypeExpr.EQ, node(unaop, var), var));
-
+	// ternary
 	private Matcher x_ariop_y__relop_z = new Matcher(node(relop, node(ariop, var, var), var));
 	private Matcher z_relop__x_ariop_y = new Matcher(node(relop, var, node(ariop, var, var)));
 	private Matcher logic_y_relop_z__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, var, var), var));
 
+	// others
+
+	// extremum
+	private Matcher min_relop = new Matcher(node(relop, min_vars, varOrVal));
+	private Matcher max_relop = new Matcher(node(relop, max_vars, varOrVal));
+
+	private Condition basicCondition(XNodeParent<IVar> tree) {
+		if (tree.type.isRelationalOperator() && tree.sons.length == 2 && tree.sons[1].type.oneOf(VAR, LONG))
+			return tree.sons[1].type == VAR ? new ConditionVar(tree.relop(0), tree.sons[1].var(0)) : new ConditionVal(tree.relop(0), tree.sons[1].val(0));
+		return null;
+	}
+
 	@Override
-	public final CtrAlone intension(XNodeParent<IVar> tree) {
+	public final CtrEntity intension(XNodeParent<IVar> tree) {
+		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
 		Variable[] scp = (Variable[]) tree.vars();
 		assert Stream.of(scp).allMatch(x -> x instanceof Var) || Stream.of(scp).allMatch(x -> x instanceof VarSymbolic);
+		int arity = scp.length;
 
-		if (scp.length == 1 && !head.mustPreserveUnaryConstraints()) {
+		if (arity == 1 && !head.mustPreserveUnaryConstraints()) {
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 			scp[0].dom.removeValuesAtConstructionTime(v -> evaluator.evaluate(v) != 1);
 			features.nRemovedUnaryCtrs++;
 			return ctrEntities.new CtrAloneDummy("Removed unary constraint by domain reduction");
 		}
 
-		// System.out.println("kkkk" + Variable.nValidTuplesBoundedAtMaxValueFor(scp));
-		if (scp.length <= head.control.extension.arityLimitForIntensionToExtension
-				&& Variable.nValidTuplesBoundedAtMaxValueFor(scp) <= head.control.extension.validLimitForIntensionToExtension
-				&& Stream.of(scp).allMatch(x -> x instanceof Var)) {
+		long al = head.control.extension.arityLimitForIntensionToExtension, vl = head.control.extension.validLimitForIntensionToExtension;
+		if (arity <= al && Variable.nValidTuplesBoundedAtMaxValueFor(scp) <= vl && Stream.of(scp).allMatch(x -> x instanceof Var)) {
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
-		tree = (XNodeParent<IVar>) tree.canonization();
-		// XNodeParent<IVar> tree = (XNodeParent<IVar>) trVar(otree);
 
-		Variable[] vars = (Variable[]) tree.vars();
 		// System.out.println("treeee " + tree + " " + vars.length + " " + head.control.xml.primitiveTernaryInSolver);
-		if (vars.length == 2 && head.control.xml.primitiveBinaryInSolver) {
+		if (arity == 2 && head.control.xml.primitiveBinaryInSolver) {
 			Constraint c = null;
 			if (x_relop_y.matches(tree))
-				c = PrimitiveBinarySub.buildFrom(this, vars[0], vars[1], tree.relop(0), 0);
+				c = PrimitiveBinarySub.buildFrom(this, scp[0], scp[1], tree.relop(0), 0);
 			else if (x_ariop_y__relop_k.matches(tree))
-				c = PrimitiveBinaryWithCst.buildFrom(this, vars[0], tree.ariop(0), vars[1], tree.relop(0), tree.val(0));
+				c = PrimitiveBinaryWithCst.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0), tree.val(0));
 			else if (k_relop__x_ariop_y.matches(tree))
-				c = PrimitiveBinaryWithCst.buildFrom(this, vars[0], tree.ariop(0), vars[1], tree.relop(0).arithmeticInversion(), tree.val(0));
+				c = PrimitiveBinaryWithCst.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0).arithmeticInversion(), tree.val(0));
 			else if (x_relop__y_ariop_k.matches(tree))
-				c = PrimitiveBinaryWithCst.buildFrom(this, vars[0], tree.relop(0), vars[1], tree.ariop(0), tree.val(0));
+				c = PrimitiveBinaryWithCst.buildFrom(this, scp[0], tree.relop(0), scp[1], tree.ariop(0), tree.val(0));
 			else if (y_ariop_k__relop_x.matches(tree))
-				c = PrimitiveBinaryWithCst.buildFrom(this, vars[1], tree.relop(0).arithmeticInversion(), vars[0], tree.ariop(0), tree.val(0));
+				c = PrimitiveBinaryWithCst.buildFrom(this, scp[1], tree.relop(0).arithmeticInversion(), scp[0], tree.ariop(0), tree.val(0));
 			else if (logic_y_relop_k__eq_x.matches(tree))
-				c = PrimitiveBinaryLog.buildFrom(this, vars[1], vars[0], tree.relop(1), tree.val(0));
+				c = PrimitiveBinaryLog.buildFrom(this, scp[1], scp[0], tree.relop(1), tree.val(0));
 			else if (logic_k_relop_y__eq_x.matches(tree))
-				c = PrimitiveBinaryLog.buildFrom(this, vars[1], vars[0], tree.relop(1).arithmeticInversion(), tree.val(0));
-
+				c = PrimitiveBinaryLog.buildFrom(this, scp[1], scp[0], tree.relop(1).arithmeticInversion(), tree.val(0));
+			else if (unalop_x__eq_y.matches(tree))
+				c = PrimitiveBinaryEQWithUnaryOperator.buildFrom(this, scp[1], tree.unalop(0), scp[0]);
 			if (c != null)
 				return addCtr(c);
 		}
-		if (vars.length == 3 && head.control.xml.primitiveTernaryInSolver) {
+		if (arity == 3 && head.control.xml.primitiveTernaryInSolver) {
 			Constraint c = null;
-			if (z_relop__x_ariop_y.matches(tree))
-				c = PrimitiveTernary.buildFrom(this, vars[1], tree.ariop(0), vars[2], tree.relop(0).arithmeticInversion(), vars[0]);
-			else if (x_ariop_y__relop_z.matches(tree))
-				c = PrimitiveTernary.buildFrom(this, vars[0], tree.ariop(0), vars[1], tree.relop(0), vars[2]);
+			if (x_ariop_y__relop_z.matches(tree))
+				c = PrimitiveTernary.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0), scp[2]);
+			else if (z_relop__x_ariop_y.matches(tree))
+				c = PrimitiveTernary.buildFrom(this, scp[1], tree.ariop(0), scp[2], tree.relop(0).arithmeticInversion(), scp[0]);
 			else if (logic_y_relop_z__eq_x.matches(tree))
-				c = PrimitiveTernaryLog.buildFrom(this, vars[2], vars[0], tree.relop(1), vars[1]);
+				c = PrimitiveTernaryLog.buildFrom(this, scp[2], scp[0], tree.relop(1), scp[1]);
 			if (c != null)
 				return addCtr(c);
 		}
-		// return imp().intension(tree);
 
-		//
-		// XNodeParent<IVar> tree2 = (XNodeParent<IVar>) tree.canonization();
-		// System.out.println("tree02 " + tree2);
-		// if (ConstraintRecognizer.logic_y_relop_k__eq_x.matches(tree2))
-		// return PrimitiveBinaryLog.buildFrom(this, (Variable) tree2.var(1), (Variable) tree2.var(0), tree2.relop(0), tree2.val(0));
+		if (min_relop.matches(tree)) {
+			// System.exit(1);
+			return minimum((Var[]) tree.sons[0].vars(), basicCondition(tree));
+		}
+		if (max_relop.matches(tree)) {
+			// System.exit(1);
+			return maximum((Var[]) tree.sons[0].vars(), basicCondition(tree));
+		}
 
-		// if (ConstraintRecognizer.x_ariop_k__relop_y.matches(tree2)) {
-		// if (tree2.ariop(0) == TypeArithmeticOperator.ADD && tree2.relop(0) == EQ)
-		// return CtrPrimitiveBinarySub.buildFrom(this, (Variable) tree2.var(0), (Variable) tree2.var(1), EQ, -tree2.val(0));
-		// }
-
-		// if (ConstraintRecognizer.x_ariop_y__relop_z.matches(tree2)) {
-		// if (tree2.ariop(0) == TypeArithmeticOperator.DIST && tree2.relop(0) == EQ)
-		// return CtrPrimitiveTernaryDist.buildFrom(this, (Variable) tree2.var(0), (Variable) tree2.var(1), EQ, (Variable) tree2.var(2));
-		// }
+		// extremumRules.put(min_relop, (id, r) -> xc.buildCtrMinimum(id, r.sons[0].vars(), basicCondition(r)));
+		// extremumRules.put(max_relop, (id, r) -> xc.buildCtrMaximum(id, r.sons[0].vars(), basicCondition(r)));
 
 		// boolean replace = true;
 		// boolean b = tree2.type == TypeExpr.EQ && tree2.sons.length == 2 && tree2.sons[1].type == TypeExpr.VAR;
@@ -946,7 +958,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// }
 		// }
 		// System.out.println("tree3 " + tree2);
-		return addCtr(new Intension(this, vars, tree));
+		return addCtr(new Intension(this, scp, tree));
 	}
 
 	// ************************************************************************
@@ -2025,7 +2037,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (isBasicType(head.control.global.typeNoOverlap))
 			return addCtr(new Disjonctive(this, (Variable) x1, w1, (Variable) x2, w2));
 		if (head.control.global.typeNoOverlap == 2)
-			return intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1)));
+			return (CtrAlone) intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1)));
 		if (head.control.global.typeNoOverlap == 10) // rs.cp.global.smartTable)
 			return addCtr(ExtensionSmart.buildNoOverlap(this, (Variable) x1, (Variable) x2, w1, w2));
 		// if (rs.cp.constraints.useGlobalCtrs)
@@ -2073,7 +2085,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			return addCtr(ExtensionSmart.buildNoOverlap(this, x1, y1, x2, y2, w1, h1, w2, h2));
 		if (head.control.global.jokerTable)
 			return extension(vars(x1, x2, y1, y2), computeTable(x1, x2, y1, y2, w1, w2, h1, h2), true, true);
-		return intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1), le(add(y1, h1), y2), le(add(y2, h2), y1)));
+		return (CtrAlone) intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1), le(add(y1, h1), y2), le(add(y2, h2), y1)));
 	}
 
 	@Override
@@ -2091,7 +2103,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			VariableInteger h1, VariableInteger h2) {
 		if (head.control.global.smartTable && Stream.of(w1, w2, h1, h2).allMatch(x -> x.dom.initSize() == 2))
 			return addCtr(ExtensionSmart.buildNoOverlap(this, x1, y1, x2, y2, w1, h1, w2, h2));
-		return intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1), le(add(y1, h1), y2), le(add(y2, h2), y1)));
+		return (CtrAlone) intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1), le(add(y1, h1), y2), le(add(y2, h2), y1)));
 	}
 
 	@Override

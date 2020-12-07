@@ -22,7 +22,6 @@ import constraints.extension.ExtensionSTR3;
 import heuristics.HeuristicVariables;
 import heuristics.HeuristicVariablesDynamic.WdegOnDom;
 import solver.Solver;
-import solver.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
 import utility.Kit;
 import utility.Kit.Stopwatch;
@@ -40,7 +39,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 
 	public GIC(Solver solver) {
 		super(solver);
-		this.heuristic = new WdegOnDom((SolverBacktrack) solver, false);
+		this.heuristic = new WdegOnDom((Solver) solver, false);
 		this.nInverseTests = new int[solver.problem.variables.length + 1];
 		this.baseNbSolutionsLimit = solver.solManager.limit;
 		Kit.control(solver.head.control.restarts.cutoff == Long.MAX_VALUE, () -> "With GIC, there is currently no possibility of restarts.");
@@ -57,12 +56,12 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		nITests++;
 		solver.resetNoSolutions();
 		solver.assign(x, a);
-		HeuristicVariables h = ((SolverBacktrack) solver).heuristic;
-		((SolverBacktrack) solver).heuristic = heuristic;
+		HeuristicVariables h = ((Solver) solver).heuristic;
+		solver.heuristic = heuristic;
 		solver.solManager.limit = 1;
 		boolean inverse = enforceArcConsistencyAfterAssignment(x) && solver.doRun().stopping == EStopping.REACHED_GOAL;
 		solver.solManager.limit = baseNbSolutionsLimit;
-		((SolverBacktrack) solver).heuristic = h;
+		((Solver) solver).heuristic = h;
 		if (inverse)
 			handleNewSolution(x, a);
 		else

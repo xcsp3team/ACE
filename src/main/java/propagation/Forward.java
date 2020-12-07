@@ -9,7 +9,6 @@
 package propagation;
 
 import solver.Solver;
-import solver.backtrack.SolverBacktrack;
 import utility.Enums.EBranching;
 import utility.Kit;
 import utility.Reflector;
@@ -28,7 +27,7 @@ public abstract class Forward extends Propagation {
 	}
 
 	protected final boolean hasSolverPropagatedAfterLastButOneDecision() {
-		return solver.head.control.solving.branching != EBranching.NON || !((SolverBacktrack) solver).dr.isLastButOneDecisionNegative();
+		return solver.head.control.solving.branching != EBranching.NON || !((Solver) solver).dr.isLastButOneDecisionNegative();
 	}
 
 	@Override

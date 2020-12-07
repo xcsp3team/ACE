@@ -12,10 +12,12 @@ import java.math.BigInteger;
 
 import org.xcsp.common.Types.TypeArithmeticOperator;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
+import org.xcsp.common.Types.TypeUnaryArithmeticOperator;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
 import constraints.global.Sum.SumWeighted;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryDistb.DistbEQ2;
 import constraints.intension.PrimitiveBinary.PropagatorEQ.MultiPropagatorEQ;
 import constraints.intension.PrimitiveBinary.PropagatorEQ.SimplePropagatorEQ;
 import interfaces.Tags.TagSymmetric;
@@ -124,50 +126,66 @@ public abstract class PrimitiveBinary extends Primitive {
 
 		protected int[] times;
 
-		protected PropagatorEQ(Domain dx, Domain dy) {
+		protected boolean twoway;
+
+		protected PropagatorEQ(Domain dx, Domain dy, boolean twoway) {
 			this.dx = dx;
 			this.dy = dy;
-			this.times = new int[dx.initSize()];
+			this.times = new int[twoway ? Math.max(dx.initSize(), dy.initSize()) : dx.initSize()];
 		}
 
-		protected abstract int nSupportsForXWhenIteratingOverY();
+		protected PropagatorEQ(Domain dx, Domain dy) {
+			this(dx, dy, false);
+		}
+
+		protected abstract int nSupportsForWhenIteratingOver(Domain d1, Domain d2);
+
+		public boolean runPropagator(Variable evt, Domain d1, Domain d2) {
+			int sizeBefore = d2.size();
+			int nSupports = nSupportsForWhenIteratingOver(d1, d2);
+			if (nSupports == 0)
+				return evt.dom.fail();
+			d2.afterElementaryCalls(sizeBefore); // consistency is, from now on, ensured
+			int toremove = d1.size() - nSupports;
+			if (toremove == 0)
+				return true;
+			sizeBefore = d1.size();
+			for (int a = d1.first(); a != -1 && toremove > 0; a = d1.next(a))
+				if (times[a] != time) {
+					d1.removeElementary(a);
+					toremove--;
+				}
+			d1.afterElementaryCalls(sizeBefore);
+			return true;
+		}
 
 		public boolean runPropagator(Variable evt) {
 			time++;
-			int sizeBefore = dy.size();
-			int nSupports = nSupportsForXWhenIteratingOverY();
-			if (nSupports == 0)
-				return evt.dom.fail();
-			dy.afterElementaryCalls(sizeBefore); // consistency is, from now on, ensured
-			int toremove = dx.size() - nSupports;
-			if (toremove == 0)
-				return true;
-			sizeBefore = dx.size();
-			for (int a = dx.first(); a != -1 && toremove > 0; a = dx.next(a))
-				if (times[a] != time) {
-					dx.removeElementary(a);
-					toremove--;
-				}
-			dx.afterElementaryCalls(sizeBefore);
-			return true;
+			if (twoway && dx.size() < dy.size())
+				return runPropagator(evt, dy, dx);
+			return runPropagator(evt, dx, dy);
 		}
 
 		public abstract static class SimplePropagatorEQ extends PropagatorEQ {
 
-			protected SimplePropagatorEQ(Domain dx, Domain dy) {
-				super(dx, dy);
+			protected SimplePropagatorEQ(Domain dx, Domain dy, boolean twoway) {
+				super(dx, dy, twoway);
 			}
 
 			abstract int valxFor(int b);
 
-			protected int nSupportsForXWhenIteratingOverY() {
-				if (dy.var().assigned() && dx.toPresentIdx(valxFor(dy.unique())) == -1)
+			int valyFor(int a) {
+				throw new AssertionError("Missing implementation");
+			}
+
+			protected int nSupportsForWhenIteratingOver(Domain d1, Domain d2) {
+				if (d2.size() == 1 && !d1.isPresentValue(d1 == dx ? valxFor(d2.unique()) : valyFor(d2.unique())))
 					return 0;
 				int cnt = 0;
-				for (int b = dy.first(); b != -1; b = dy.next(b)) {
-					int a = dx.toPresentIdx(valxFor(b));
+				for (int b = d2.first(); b != -1; b = d2.next(b)) {
+					int a = d1.toPresentIdx(d1 == dx ? valxFor(b) : valyFor(b));
 					if (a == -1)
-						dy.removeElementary(b);
+						d2.removeElementary(b);
 					else if (times[a] != time) {
 						times[a] = time;
 						cnt++;
@@ -179,18 +197,22 @@ public abstract class PrimitiveBinary extends Primitive {
 
 		public abstract static class MultiPropagatorEQ extends PropagatorEQ {
 
-			protected MultiPropagatorEQ(Domain dx, Domain dy) {
-				super(dx, dy);
+			protected MultiPropagatorEQ(Domain dx, Domain dy, boolean twoway) {
+				super(dx, dy, twoway);
 			}
 
 			abstract int[] valsxFor(int b);
 
-			protected int nSupportsForXWhenIteratingOverY() {
+			int[] valsyFor(int a) {
+				throw new AssertionError("Missing implementation");
+			}
+
+			protected int nSupportsForWhenIteratingOver(Domain d1, Domain d2) {
 				int cnt = 0;
-				for (int b = dy.first(); b != -1; b = dy.next(b)) {
+				for (int b = d2.first(); b != -1; b = d2.next(b)) {
 					boolean found = false;
-					for (int va : valsxFor(b)) {
-						int a = dx.toPresentIdx(va);
+					for (int va : d1 == dx ? valsxFor(b) : valsyFor(b)) {
+						int a = d1.toPresentIdx(va);
 						if (a != -1) {
 							found = true;
 							if (times[a] != time) {
@@ -200,9 +222,9 @@ public abstract class PrimitiveBinary extends Primitive {
 						}
 					}
 					if (!found) {
-						if (dy.var().assigned())
+						if (d2.var().assigned())
 							return 0;
-						dy.removeElementary(b);
+						d2.removeElementary(b);
 					}
 				}
 				return cnt;
@@ -237,6 +259,10 @@ public abstract class PrimitiveBinary extends Primitive {
 		this.dy = y.dom;
 	}
 
+	// ************************************************************************
+	// *****Classes when no constant is involved
+	// ************************************************************************
+
 	public static final class Disjonctive extends PrimitiveBinary {
 
 		final int kx, ky;
@@ -262,6 +288,54 @@ public abstract class PrimitiveBinary extends Primitive {
 		public boolean runPropagator(Variable dummy) {
 			return dx.removeValuesInRange(dy.lastValue() - kx + 1, dy.firstValue() + ky)
 					&& dy.removeValuesInRange(dx.lastValue() - ky + 1, dx.firstValue() + kx);
+		}
+	}
+
+	public static abstract class PrimitiveBinaryEQWithUnaryOperator extends PrimitiveBinary implements TagUnsymmetric {
+
+		public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeUnaryArithmeticOperator aop, Variable y) {
+			switch (aop) {
+			case ABS:
+				return new DistbEQ2(pb, x, y, 0);
+			case NEG:
+				return new NegEQ2(pb, x, y);
+			case SQR:
+				return null;
+			default: // NOT
+				return null;
+			}
+		}
+
+		public PrimitiveBinaryEQWithUnaryOperator(Problem pb, Variable x, Variable y) {
+			super(pb, x, y);
+		}
+
+		public static final class NegEQ2 extends PrimitiveBinaryEQWithUnaryOperator {
+
+			@Override
+			public final boolean checkValues(int[] t) {
+				return t[0] == -t[1];
+			}
+
+			private final SimplePropagatorEQ sp;
+
+			public NegEQ2(Problem pb, Variable x, Variable y) {
+				super(pb, x, y);
+				this.sp = new SimplePropagatorEQ(dx, dy, true) {
+					final int valxFor(int b) {
+						return -dy.toVal(b);
+					}
+
+					final int valyFor(int a) {
+						return -dx.toVal(a);
+					}
+				};
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				return sp.runPropagator(dummy);
+			}
 		}
 	}
 
@@ -391,9 +465,13 @@ public abstract class PrimitiveBinary extends Primitive {
 
 			public AddEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
-				this.sp = new SimplePropagatorEQ(dx, dy) {
+				this.sp = new SimplePropagatorEQ(dx, dy, true) {
 					final int valxFor(int b) {
 						return k - dy.toVal(b);
+					}
+
+					final int valyFor(int a) {
+						return k - dx.toVal(a);
 					}
 				};
 			}
@@ -509,9 +587,13 @@ public abstract class PrimitiveBinary extends Primitive {
 
 			public SubEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
-				this.sp = new SimplePropagatorEQ(dx, dy) {
+				this.sp = new SimplePropagatorEQ(dx, dy, true) {
 					final int valxFor(int b) {
 						return k + dy.toVal(b);
+					}
+
+					final int valyFor(int a) {
+						return dx.toVal(a) - k;
 					}
 				};
 			}
@@ -682,9 +764,13 @@ public abstract class PrimitiveBinary extends Primitive {
 				control(k > 1, "if k is 0 or 1, other constraints should be posted"); // TODO could we just impose k != 0?
 				dx.removeValuesAtConstructionTime(v -> v == 0 || k % v != 0);
 				dy.removeValuesAtConstructionTime(v -> v == 0 || k % v != 0);
-				this.sp = new SimplePropagatorEQ(dx, dy) {
+				this.sp = new SimplePropagatorEQ(dx, dy, true) {
 					final int valxFor(int b) {
 						return k / dy.toVal(b);
+					}
+
+					final int valyFor(int a) {
+						return k / dx.toVal(a);
 					}
 				};
 			}
@@ -1016,10 +1102,16 @@ public abstract class PrimitiveBinary extends Primitive {
 			public DistEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 				int[] tmp = new int[2];
-				this.sp = new MultiPropagatorEQ(dx, dy) {
+				this.sp = new MultiPropagatorEQ(dx, dy, true) {
 					final int[] valsxFor(int b) {
 						tmp[0] = dy.toVal(b) + k;
 						tmp[1] = dy.toVal(b) - k;
+						return tmp;
+					}
+
+					final int[] valsyFor(int a) {
+						tmp[0] = dx.toVal(a) + k;
+						tmp[1] = dx.toVal(a) - k;
 						return tmp;
 					}
 				};
@@ -1097,9 +1189,13 @@ public abstract class PrimitiveBinary extends Primitive {
 			public MulbEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 				dx.removeValuesAtConstructionTime(v -> v != 0 && v % k != 0); // non multiple deleted (important for avoiding systematic checks)
-				this.sp = new SimplePropagatorEQ(dx, dy) {
+				this.sp = new SimplePropagatorEQ(dx, dy, true) {
 					final int valxFor(int b) {
 						return dy.toVal(b) * k;
+					}
+
+					final int valyFor(int a) {
+						return dx.toVal(a) / k;
 					}
 				};
 			}
@@ -1166,7 +1262,7 @@ public abstract class PrimitiveBinary extends Primitive {
 
 			public DivbEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
-				this.sp = new SimplePropagatorEQ(dx, dy) {
+				this.sp = new SimplePropagatorEQ(dx, dy, false) {
 					final int valxFor(int b) {
 						return dy.toVal(b) / k;
 					}
@@ -1235,7 +1331,7 @@ public abstract class PrimitiveBinary extends Primitive {
 			public ModbEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 				dx.removeValuesAtConstructionTime(v -> v >= k); // because the remainder is at most k-1, whatever the value of y
-				this.sp = new SimplePropagatorEQ(dx, dy) {
+				this.sp = new SimplePropagatorEQ(dx, dy, false) {
 					final int valxFor(int b) {
 						return dy.toVal(b) % k;
 					}
@@ -1331,7 +1427,7 @@ public abstract class PrimitiveBinary extends Primitive {
 
 			public DistbEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
-				this.sp = new SimplePropagatorEQ(dx, dy) {
+				this.sp = new SimplePropagatorEQ(dx, dy, false) {
 					final int valxFor(int b) {
 						return Math.abs(dy.toVal(b) - k);
 					}
@@ -1339,19 +1435,11 @@ public abstract class PrimitiveBinary extends Primitive {
 			}
 
 			@Override
-			public boolean runPropagator(Variable dummy) {
-				return sp.runPropagator(dummy);
+			public boolean runPropagator(Variable evt) {
+				if (dx.size() == 1 && !dy.isPresentValue(k + dx.uniqueValue()) && !dy.isPresentValue(k - dx.uniqueValue()))
+					return evt.dom.fail();
+				return sp.runPropagator(evt);
 			}
-
-			// public DistbEQ2(Problem pb, Variable x, Variable y, int k) {
-			// super(pb, x, y, k);
-			// }
-			//
-			// @Override
-			// public boolean runPropagator(Variable dummy) {
-			// if (k == 0) return dx.removeValuesAbsNotIn_reverse(dy) && dy.removeValuesAbsNotIn(dx);
-			// else return dx.removeValuesDistNotIn_reverse(dy, k) && dy.removeValuesDistNotIn(dx, k);
-			// }
 		}
 
 		public static final class DistbNE2 extends PrimitiveBinaryDistb {

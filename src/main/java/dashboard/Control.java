@@ -56,9 +56,7 @@ import propagation.Reviser.Reviser3;
 import propagation.SAC.QueueForSAC3.CellIterator;
 import solver.Restarter.RestarterLNS.HeuristicFreezing.Rand;
 import solver.SolutionManager;
-import solver.backtrack.SolverBacktrack;
-import solver.local.HeuristicNeighbors.BestGlobal;
-import solver.local.TabuManager.TabuManagerVariableValue;
+import solver.Solver;
 import utility.Enums.EBinaryEncoding;
 import utility.Enums.EBranching;
 import utility.Enums.EExtension;
@@ -144,6 +142,7 @@ public class Control {
 
 		public final String discardedClasses = addS("discardedClasses", "dc", EMPTY_STRING, s_dc);
 		public final String dirForCampaign = addS("dirForCampaign", "dir", EMPTY_STRING, s_dir);
+		public final boolean primitiveUnaryInSolver = addB("primitiveUnaryInSolver", "p1sol", true, "", HIDDEN);
 		public final boolean primitiveBinaryInSolver = addB("primitiveBinaryInSolver", "p2sol", true, "", HIDDEN);
 		public final boolean primitiveTernaryInSolver = addB("primitiveTernarnyInSolver", "p3sol", true, "", HIDDEN);
 		public final boolean displayPrimitives = addB("displayPrimitives", "dpri", false, s_dpri, HIDDEN);
@@ -473,11 +472,11 @@ public class Control {
 	public final SettingLNS lns = new SettingLNS();
 
 	public class SettingSolving extends SettingGroup {
-		String s_class = "The name of the class used to explore the search space.\n\tTypically, this is " + SolverBacktrack.class.getSimpleName();
+		String s_class = "The name of the class used to explore the search space.\n\tTypically, this is " + Solver.class.getSimpleName();
 		String s_branching = "The branching scheme used for search."
 				+ "\n\tPossible values are bin for binary branching, non for non-binary (or d-way) branching, and res for restricted binarybranching.";
 
-		public String clazz = addS("clazz", "s_class", SolverBacktrack.class, s_class);
+		public String clazz = addS("clazz", "s_class", Solver.class, s_class);
 		public boolean enablePrepro = addB("enablePrepro", "prepro", true, "must we perform preprocessing?");
 		public boolean enableSearch = addB("enableSearch", "search", true, "must we perform search?");
 		public final EBranching branching = addE("branching", "branching", EBranching.BIN, s_branching);
@@ -578,8 +577,8 @@ public class Control {
 	public final SettingRevh revh = new SettingRevh();
 
 	public class SettingLocalSearch extends SettingGroup {
-		public final String classForNeighborHeuristic = addS("classForNeighborHeuristic", "cnh", BestGlobal.class, "");
-		public final String classForTabu = addS("classForTabu", "cft", TabuManagerVariableValue.class, "");
+		// public final String classForNeighborHeuristic = addS("classForNeighborHeuristic", "cnh", BestGlobal.class, "");
+		// public final String classForTabu = addS("classForTabu", "cft", TabuManagerVariableValue.class, "");
 		public final int tabuListSize = addI("tabuListSize", "tabs", 5, "");
 		public final double thresholdForRandomVariableSelection = addD("thresholdForRandomVariableSelection", "trvars", 0.0, "");
 		public final double thresholdForRandomValueSelection = addD("thresholdForRandomValueSelection", "trvals", 0.0, "");

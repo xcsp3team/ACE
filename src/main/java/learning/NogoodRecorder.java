@@ -23,8 +23,8 @@ import org.xcsp.common.Utilities;
 
 import dashboard.Control.SettingLearning;
 import interfaces.Observers.ObserverRuns;
-import solver.backtrack.DecisionRecorder;
-import solver.backtrack.SolverBacktrack;
+import solver.DecisionRecorder;
+import solver.Solver;
 import utility.Enums.ELearningNogood;
 import utility.Enums.EStopping;
 import utility.Kit;
@@ -33,7 +33,7 @@ import variables.Variable;
 
 public final class NogoodRecorder {
 
-	public static NogoodRecorder buildFor(SolverBacktrack solver) {
+	public static NogoodRecorder buildFor(Solver solver) {
 		if (solver.head.control.solving.enableSearch && solver.head.control.learning.nogood != ELearningNogood.NO
 				&& solver.propagation.queue != null)
 			return new NogoodRecorder(solver);
@@ -136,7 +136,7 @@ public final class NogoodRecorder {
 		}
 	}
 
-	private final SolverBacktrack solver;
+	private final Solver solver;
 
 	private final DecisionRecorder dr; // redundant field
 
@@ -163,7 +163,7 @@ public final class NogoodRecorder {
 		Kit.control(symmetryHandler == null);
 	}
 
-	public NogoodRecorder(SolverBacktrack solver) {
+	public NogoodRecorder(Solver solver) {
 		this.solver = solver;
 		this.dr = solver.dr;
 		this.settings = solver.head.control.learning;

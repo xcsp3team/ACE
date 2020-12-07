@@ -8,12 +8,12 @@
  */
 package heuristics;
 
-import solver.backtrack.SolverBacktrack;
+import solver.Solver;
 import variables.Variable;
 
 public abstract class HeuristicVariablesDirect extends HeuristicVariables {
 
-	public HeuristicVariablesDirect(SolverBacktrack solver, boolean antiHeuristic) {
+	public HeuristicVariablesDirect(Solver solver, boolean antiHeuristic) {
 		super(solver, antiHeuristic);
 	}
 
@@ -28,7 +28,7 @@ public abstract class HeuristicVariablesDirect extends HeuristicVariables {
 
 	public static final class Rand extends HeuristicVariablesDirect {
 
-		public Rand(SolverBacktrack solver, boolean antiHeuristic) {
+		public Rand(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 		}
 

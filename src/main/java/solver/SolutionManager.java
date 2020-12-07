@@ -30,7 +30,6 @@ import org.xcsp.modeler.entities.VarEntities.VarEntity;
 import constraints.Constraint;
 import constraints.global.Sum;
 import problem.Problem;
-import solver.backtrack.SolverBacktrack;
 import utility.Enums.EStopping;
 import utility.Kit;
 import variables.Variable;
@@ -246,7 +245,7 @@ public final class SolutionManager {
 	}
 
 	private boolean controlFoundSolution() {
-		if (solver instanceof SolverBacktrack) {
+		if (solver instanceof Solver) {
 			Variable x = Variable.firstNonSingletonVariableIn(solver.problem.variables);
 			Kit.control(x == null, () -> "Problem with last solution: variable " + x + " has not a unique value");
 			if (solver.problem.settings.framework == MAXCSP)

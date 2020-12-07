@@ -6,7 +6,7 @@
  * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
  * distribution, and is available at http://www.cecill.info
  */
-package solver.backtrack;
+package solver;
 
 import java.util.stream.IntStream;
 
@@ -51,7 +51,7 @@ public final class DecisionRecorder {
 	 * Decisions recorded during search
 	 *********************************************************************************************/
 
-	SolverBacktrack solver;
+	Solver solver;
 
 	/**
 	 * The set of current decisions.
@@ -71,7 +71,7 @@ public final class DecisionRecorder {
 		return Bit.isAt1(failedAssignments, i);
 	}
 
-	public DecisionRecorder(SolverBacktrack solver) {
+	public DecisionRecorder(Solver solver) {
 		this.solver = solver;
 		int n1 = (int) Math.ceil(Math.log(solver.problem.variables.length) / Math.log(2));
 		int n2 = (int) Math.ceil(Math.log(solver.problem.features.maxDomSize()) / Math.log(2));

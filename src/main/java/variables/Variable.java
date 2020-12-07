@@ -34,7 +34,7 @@ import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingUnsystematic;
 import problem.Problem;
-import solver.backtrack.SolverBacktrack;
+import solver.Solver;
 import utility.Kit;
 import utility.Reflector;
 import variables.DomainInteger.DomainRange;
@@ -666,7 +666,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	public final double wdeg() {
-		return ((WdegVariant) ((SolverBacktrack) problem.solver).heuristic).vscores[num];
+		return ((WdegVariant) ((Solver) problem.solver).heuristic).vscores[num];
 	}
 
 	public final double wdegOnDom() {
