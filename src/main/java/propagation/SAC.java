@@ -507,7 +507,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				solver.assign(x, a);
 				if (enforceArcConsistencyAfterAssignment(x)) {
 					if (solver.depth() == solver.problem.variables.length && stopSACWhenFoundSolution)
-						solver.solManager.handleNewSolution(true);
+						solver.solRecorder.handleNewSolution(true);
 				} else {
 					solver.backtrack(x);
 					int lastBuiltBranchSize = solver.depth() - nodeDepth;
@@ -655,7 +655,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				solver.assign(currSelectedVar, currSelectedIdx);
 				if (enforceArcConsistencyAfterAssignment(currSelectedVar)) {
 					if (solver.depth() == solver.problem.variables.length) {
-						solver.solManager.handleNewSolution(true);
+						solver.solRecorder.handleNewSolution(true);
 						finished = true;
 					}
 				} else {

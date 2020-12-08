@@ -22,7 +22,7 @@ import org.xcsp.modeler.definitions.ICtr.ICtrMdd;
 import constraints.extension.Extension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.MDD;
-import constraints.extension.structures.MDDNode;
+import constraints.extension.structures.MDD.MDDNode;
 import interfaces.Tags.TagPositive;
 import problem.Problem;
 import sets.SetSparseReversible;

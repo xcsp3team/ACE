@@ -109,12 +109,12 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 
 	public void afterRun() {
 		Kit.control(problem.head.control.general.framework == COP);
-		if (problem.solver.solManager.lastSolutionRun == problem.solver.restarter.numRun) { // a better solution has been found during the last run
+		if (problem.solver.solRecorder.lastSolutionRun == problem.solver.restarter.numRun) { // a better solution has been found during the last run
 			if (minimization) {
-				maxBound = problem.solver.solManager.bestBound - 1;
+				maxBound = problem.solver.solRecorder.bestBound - 1;
 				cub.limit(maxBound);
 			} else {
-				minBound = problem.solver.solManager.bestBound + 1;
+				minBound = problem.solver.solRecorder.bestBound + 1;
 				clb.limit(minBound);
 			}
 			possiblyUpdateLocalBounds();

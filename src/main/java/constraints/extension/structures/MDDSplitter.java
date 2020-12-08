@@ -16,6 +16,8 @@ import java.util.stream.IntStream;
 
 import org.xcsp.common.Utilities;
 
+import constraints.extension.structures.MDD.MDDNode;
+
 public class MDDSplitter {
 
 	// private MDD mdd;

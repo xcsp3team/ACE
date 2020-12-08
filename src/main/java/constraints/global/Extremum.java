@@ -304,8 +304,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 					for (Variable y : scp)
 						if (y.dom.removeValuesGT(limit) == false)
 							return false;
-					entailed(); // Level = 0;
-					return true; // Variable.firstWipeoutVariableIn(scp) == null;
+					return entailed();
 				}
 			}
 
@@ -480,8 +479,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 					for (Variable y : scp)
 						if (y.dom.removeValuesLT(limit) == false)
 							return false;
-					entailed(); // Level = 0;
-					return true; // Variable.firstWipeoutVariableIn(scp) == null;
+					return entailed();
 				}
 			}
 

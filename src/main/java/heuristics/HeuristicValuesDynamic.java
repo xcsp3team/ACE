@@ -71,7 +71,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		@Override
 		public int identifyBestValueIndex() {
 			inconsistent.clear();
-			if (stoppedAtFirstSolution && solver.solManager.found > 0)
+			if (stoppedAtFirstSolution && solver.solRecorder.found > 0)
 				return dx.first(); // First in that case
 			else
 				return super.identifyBestValueIndex();

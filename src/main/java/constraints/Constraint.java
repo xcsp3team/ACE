@@ -425,8 +425,9 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		return getSymmetryMatching(key);
 	}
 
-	public void entailed() {
+	public boolean entailed() {
 		problem.solver.entail(this);
+		return true;
 	}
 
 	public ExtensionStructure extStructure() {

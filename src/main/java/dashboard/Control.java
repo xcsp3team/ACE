@@ -55,7 +55,7 @@ import propagation.Reviser;
 import propagation.Reviser.Reviser3;
 import propagation.SAC.QueueForSAC3.CellIterator;
 import solver.Restarter.RestarterLNS.HeuristicFreezing.Rand;
-import solver.SolutionManager;
+import solver.SolutionRecorder;
 import solver.Solver;
 import utility.Enums.EBinaryEncoding;
 import utility.Enums.EBranching;
@@ -170,7 +170,7 @@ public class Control {
 		String s_cfs = "Only valid if a COP is loaded and if the framework is set to CSP by the user."
 				+ "\n\tIn that case, the objective is turned into a constraint specified by this condition."
 				+ "\t The condition has the form (operator,value) as e.g., (lt,10). Currently, not operative, so must be implemented for XCSP3";
-		String s_rs = "Records all found solutions in a list of " + SolutionManager.class.getName();
+		String s_rs = "Records all found solutions in a list of " + SolutionRecorder.class.getName();
 
 		public TypeFramework framework = addE("framework", "f", TypeFramework.CSP, s_framework);
 		public long nSearchedSolutions = addL("nSearchedSolutions", "s", framework == TypeFramework.CSP ? 1 : PLUS_INFINITY, s_s);

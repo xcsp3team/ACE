@@ -120,10 +120,8 @@ public abstract class SumScalarBoolean extends CtrGlobal {
 			@Override
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
-				if (max <= limit) {
-					entailed();
-					return true;
-				}
+				if (max <= limit)
+					return entailed();
 				if (min > limit)
 					return x.dom.fail();
 				if (min == limit) // this is the only case where we can filter
@@ -146,10 +144,8 @@ public abstract class SumScalarBoolean extends CtrGlobal {
 			@Override
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
-				if (min >= limit) {
-					entailed();
-					return true;
-				}
+				if (min >= limit)
+					return entailed();
 				if (max < limit)
 					return x.dom.fail();
 				if (max == limit) // this is the only case where we can filter

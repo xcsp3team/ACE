@@ -129,7 +129,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		}
 
 		boolean desactivated() {
-			return solManager.found > 0 && head.control.valh.solutionSaving;
+			return solRecorder.found > 0 && head.control.valh.solutionSaving;
 		}
 
 		void manageEmptyDomainBeforeBacktracking() {
@@ -299,6 +299,14 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 	 * Observers
 	 *********************************************************************************************/
 
+	public final List<ObserverSearch> observersSearch;
+
+	public List<ObserverRuns> observersRuns;
+
+	public List<ObserverAssignment> observersAssignment;
+
+	public List<ObserverConflicts> observersConflicts;
+
 	public int stackVariable(Variable x) {
 		return stackedVariables.push(x);
 	}
@@ -342,19 +350,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 	}
 
 	/**********************************************************************************************
-	 * Observers
-	 *********************************************************************************************/
-
-	public final List<ObserverSearch> observersSearch;
-
-	public List<ObserverRuns> observersRuns;
-
-	public List<ObserverAssignment> observersAssignment;
-
-	public List<ObserverConflicts> observersConflicts;
-
-	/**********************************************************************************************
-	 * Fields
+	 * Fields and Constructor
 	 *********************************************************************************************/
 
 	/**
@@ -369,7 +365,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 
 	public final FutureVariables futVars;
 
-	public final SolutionManager solManager;
+	public final SolutionRecorder solRecorder;
 
 	/**
 	 * The object that implements the restarts policy of the solver.
@@ -377,43 +373,6 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 	public final Restarter restarter;
 
 	public Propagation propagation;
-
-	/**
-	 * when null, the solver is still running
-	 */
-	public EStopping stopping;
-
-	public Statistics stats;
-
-	public final boolean isFullExploration() {
-		return stopping == FULL_EXPLORATION;
-	}
-
-	public final boolean finished() {
-		if (stopping != null)
-			return true;
-		if (head.isTimeExpiredForCurrentInstance()) {
-			stopping = EXCEEDED_TIME;
-			return true;
-		}
-		return false;
-	}
-
-	public final void resetNoSolutions() {
-		stopping = null;
-		solManager.found = 0;
-	}
-
-	// public void reset() { // called by very special objects (for example, when extracting a MUC)
-	// }
-
-	/**********************************************************************************************
-	 * Constructor + methods
-	 *********************************************************************************************/
-
-	/**********************************************************************************************
-	 * Fields
-	 *********************************************************************************************/
 
 	public final DecisionRecorder dr;
 
@@ -443,6 +402,32 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 
 	public NogoodMinimizer nogoodMinimizer;
 
+	/**
+	 * when null, the solver is still running
+	 */
+	public EStopping stopping;
+
+	public Statistics stats;
+
+	public final boolean isFullExploration() {
+		return stopping == FULL_EXPLORATION;
+	}
+
+	public final boolean finished() {
+		if (stopping != null)
+			return true;
+		if (head.isTimeExpiredForCurrentInstance()) {
+			stopping = EXCEEDED_TIME;
+			return true;
+		}
+		return false;
+	}
+
+	public final void resetNoSolutions() {
+		stopping = null;
+		solRecorder.found = 0;
+	}
+
 	public void reset() { // called by very special objects (for example, when extracting a MUC)
 		Kit.control(futVars.nDiscarded() == 0);
 		// Kit.control(!(propagation instanceof TagBinaryRelationFiltering), () -> "for the moment");
@@ -463,13 +448,12 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		Kit.control(!proofer.active);
 	}
 
-	public Solver(Head resolution) {
-		// super(resolution);
-		this.head = resolution;
+	public Solver(Head head) {
+		this.head = head;
 		this.problem = head.problem;
 		this.problem.solver = (Solver) this;
 		this.futVars = new FutureVariables(problem.variables);
-		this.solManager = new SolutionManager(this, head.control.general.nSearchedSolutions); // build solutionManager before propagation
+		this.solRecorder = new SolutionRecorder(this, head.control.general.nSearchedSolutions); // build solutionManager before propagation
 		this.propagation = Propagation.buildFor(this); // may be null
 		if (!head.control.propagation.useAuxiliaryQueues)
 			Stream.of(problem.constraints).forEach(c -> c.filteringComplexity = 0);
@@ -482,7 +466,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		this.heuristic = HeuristicVariables.buildFor(this);
 		for (Variable x : problem.variables)
 			x.buildValueOrderingHeuristic();
-		this.lastConflict = new LastConflict(this, resolution.control.varh.lc);
+		this.lastConflict = new LastConflict(this, head.control.varh.lc);
 		this.nogoodRecorder = NogoodRecorder.buildFor(this); // may be null
 		this.ipsRecorder = IpsRecorder.buildFor(this); // may be null
 		this.proofer = new Proofer(ipsRecorder);
@@ -496,12 +480,12 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		this.observersAssignment = collectObserversAssignment();
 		this.observersConflicts = collectObserversPropagation();
 
-		this.tracer = new Tracer(resolution.control.general.trace);
+		this.tracer = new Tracer(head.control.general.trace);
 		this.stats = new StatisticsBacktrack(this);
 		observersSearch.add(0, this.stats); // this list is initialized in the super-class
 
-		this.runProgressSaver = resolution.control.valh.runProgressSaving ? new RunProgressSaver() : null;
-		this.warmStarter = resolution.control.valh.warmStart.length() > 0 ? new WarmStarter(resolution.control.valh.warmStart) : null;
+		this.runProgressSaver = head.control.valh.runProgressSaving ? new RunProgressSaver() : null;
+		this.warmStarter = head.control.valh.warmStart.length() > 0 ? new WarmStarter(head.control.valh.warmStart) : null;
 
 		this.nogoodMinimizer = new NogoodMinimizer(this);
 	}
@@ -511,9 +495,8 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 	}
 
 	public void entail(Constraint c) {
-		// if (!entailed.isPresent(c.num))
-		entailed.add(c.num, depth());
 		// System.out.println("entailed at " + depth() + " " + c);
+		entailed.add(c.num, depth());
 	}
 
 	public boolean isEntailed(Constraint c) {
@@ -657,7 +640,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 					manageContradiction(null);
 			}
 			if (futVars.size() == 0) {
-				solManager.handleNewSolutionAndPossiblyOptimizeIt();
+				solRecorder.handleNewSolutionAndPossiblyOptimizeIt();
 				CtrGlobal objectiveToCheck = problem.settings.framework == COP && !head.control.restarts.restartAfterSolution
 						? (CtrGlobal) problem.optimizer.ctr
 						: null;
@@ -687,7 +670,25 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		minDepth = dr.minDepth(); // need to be recorded before backtracking to the root
 		if (nogoodRecorder != null && !finished() && !restarter.allRunsFinished())
 			nogoodRecorder.addNogoodsOfCurrentBranch();
+	}
 
+	private void backtrackTo(Variable x) {
+		if (x != null && !x.assigned()) // TODO LNS does not necessarily respect the last past recorded variable
+			x = null;
+		// assert x == null || x.isAssigned();
+		while (futVars.lastPast() != x)
+			backtrack(futVars.lastPast());
+	}
+
+	public void backtrackToTheRoot() {
+		backtrackTo(null);
+	}
+
+	public Solver doRun() {
+		lastPastBeforeRun[nRecursiveRuns++] = futVars.lastPast();
+		explore();
+		backtrackTo(lastPastBeforeRun[--nRecursiveRuns]);
+		return this;
 	}
 
 	private final Variable[] lastPastBeforeRun = new Variable[2];
@@ -702,15 +703,6 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		for (ObserverSearch observer : observersSearch)
 			observer.afterPreprocessing();
 	}
-
-	// /**
-	// * Starts a run of the search.
-	// */
-	// public abstract Solver doRun();
-
-	// public Variable impacting;
-
-	int diviser = 1;
 
 	protected final void doSearch() {
 		for (ObserverSearch observer : observersSearch)
@@ -764,25 +756,6 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		restoreProblem();
 	}
 
-	public Solver doRun() {
-		lastPastBeforeRun[nRecursiveRuns++] = futVars.lastPast();
-		explore();
-		backtrackTo(lastPastBeforeRun[--nRecursiveRuns]);
-		return this;
-	}
-
-	private void backtrackTo(Variable x) {
-		if (x != null && !x.assigned()) // TODO LNS does not necessarily respect the last past recorded variable
-			x = null;
-		// assert x == null || x.isAssigned();
-		while (futVars.lastPast() != x)
-			backtrack(futVars.lastPast());
-	}
-
-	public void backtrackToTheRoot() {
-		backtrackTo(null);
-	}
-
 	/**
 	 * Called in order to get the problem back in its initial state.
 	 */
@@ -799,10 +772,4 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		// nPurged not updated; see java -ea abscon.Resolution problems.patt.QuasiGroup -data=6 -model=v5 -ev -cm=false
 		assert Stream.of(problem.variables).allMatch(x -> x.dom.controlStructures());
 	}
-
-	// @Override
-	// public final void solve() {
-	// super.solve();
-	// restoreProblem();
-	// }
 }

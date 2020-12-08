@@ -19,8 +19,8 @@ import org.xcsp.modeler.definitions.ICtr.ICtrMdd;
 
 import constraints.extension.Extension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
-import constraints.extension.structures.MDDNodeShort;
 import constraints.extension.structures.MDDShort;
+import constraints.extension.structures.MDDShort.MDDNodeShort;
 import interfaces.Tags.TagPositive;
 import interfaces.Tags.TagShort;
 import problem.Problem;

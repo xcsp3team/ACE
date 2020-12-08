@@ -41,7 +41,6 @@ import interfaces.Observers.ObserverConstruction;
 import problem.Problem;
 import propagation.Propagation;
 import solver.Solver;
-import solver.Statistics.StatisticsMultiResolution;
 import utility.Enums.TypeOutput;
 import utility.Kit;
 import utility.Kit.Stopwatch;
@@ -242,8 +241,6 @@ public class Head extends Thread {
 	 */
 	public final Random random = new Random();
 
-	private final StatisticsMultiResolution statisticsMultiresolution;
-
 	/*
 	 * UNSTATIFIED FIELDS + METHODS
 	 */
@@ -276,7 +273,6 @@ public class Head extends Thread {
 		this.control = Control.buildControlPanelFor(configurationFileName);
 		this.output = new Output(this, configurationFileName);
 		observersConstruction.add(this.output);
-		this.statisticsMultiresolution = StatisticsMultiResolution.buildFor(this);
 	}
 
 	public Head() {
@@ -358,13 +354,10 @@ public class Head extends Thread {
 		problem = buildProblem(instanceNumber);
 
 		if (control.solving.enablePrepro || control.solving.enableSearch) {
-			int[] solution = null; // localSearchAtPreprocessing();
 			solver = buildSolver(problem);
-			if (solution != null)
-				solver.solManager.storeSolution(solution);
 			solver.stopping = null;
 			solver.solve();
-			solver.solManager.displayFinalResults();
+			solver.solRecorder.displayFinalResults();
 		}
 	}
 
@@ -383,9 +376,9 @@ public class Head extends Thread {
 				if (control.general.makeExceptionsVisible)
 					e.printStackTrace();
 			}
-			statisticsMultiresolution.update(crashed);
+			// statisticsMultiresolution.update(crashed);
 		}
-		statisticsMultiresolution.outputGlobalStatistics();
+		// statisticsMultiresolution.outputGlobalStatistics();
 		if (Arguments.multiThreads) {
 			if (!crashed) {
 				Head.saveMultithreadResultsFiles(this);

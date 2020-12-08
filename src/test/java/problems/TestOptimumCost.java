@@ -161,6 +161,6 @@ public class TestOptimumCost {
 
 	@Test
 	public void test() {
-		assertEquals(optimum, runResolution(args).solver.solManager.bestBound);
+		assertEquals(optimum, runResolution(args).solver.solRecorder.bestBound);
 	}
 }

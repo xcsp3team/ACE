@@ -34,7 +34,7 @@ import utility.Enums.EStopping;
 import utility.Kit;
 import variables.Variable;
 
-public final class SolutionManager {
+public final class SolutionRecorder {
 
 	public final Solver solver;
 
@@ -122,7 +122,7 @@ public final class SolutionManager {
 		return sb.append("\n").append(PREFIX).append("}").toString();
 	}
 
-	public SolutionManager(Solver solver, long nSolutionsLimit) {
+	public SolutionRecorder(Solver solver, long nSolutionsLimit) {
 		this.solver = solver;
 		this.limit = nSolutionsLimit;
 		this.bestBound = solver.head.control.optimization.ub;

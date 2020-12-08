@@ -196,10 +196,8 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 			@Override
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
-				if (max <= limit) {
-					entailed();
-					return true;
-				}
+				if (max <= limit)
+					return entailed();
 				if (min > limit)
 					return x == null ? false : x.dom.fail();
 				for (int i = futvars.limit; i >= 0; i--) {
@@ -217,7 +215,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 			}
 
 			public Variable mostImpacting() { // experimental
-				int[] solution = problem.solver.solManager.lastSolution;
+				int[] solution = problem.solver.solRecorder.lastSolution;
 				List<Variable> list = new ArrayList<>();
 				int bestGap = Integer.MIN_VALUE;
 				for (Variable x : scp) {
@@ -258,10 +256,8 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 			@Override
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
-				if (min >= limit) {
-					entailed();
-					return true;
-				}
+				if (min >= limit)
+					return entailed();
 				if (max < limit)
 					return x == null ? false : x.dom.fail();
 				for (int i = futvars.limit; i >= 0; i--) {

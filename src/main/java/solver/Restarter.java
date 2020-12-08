@@ -49,7 +49,7 @@ public class Restarter implements ObserverRuns {
 			baseCutoff = baseCutoff * setting.nRestartsResetCoefficient;
 			Kit.log.info("BaseCutoff reset to " + baseCutoff);
 		}
-		if (forceRootPropagation || (settingsGeneral.framework == TypeFramework.COP && numRun - 1 == solver.solManager.lastSolutionRun)) {
+		if (forceRootPropagation || (settingsGeneral.framework == TypeFramework.COP && numRun - 1 == solver.solRecorder.lastSolutionRun)) {
 			if (solver.propagation.runInitially() == false) // we run propagation if a solution has just been found (since the objective constraint has changed)
 				solver.stopping = EStopping.FULL_EXPLORATION;
 			forceRootPropagation = false;
@@ -118,7 +118,7 @@ public class Restarter implements ObserverRuns {
 		case BACKTRACK:
 			return () -> sb.stats.nBacktracks;
 		case SOLUTION:
-			return () -> solver.solManager.found;
+			return () -> solver.solRecorder.found;
 		default:
 			throw new AssertionError();
 		}
@@ -141,7 +141,7 @@ public class Restarter implements ObserverRuns {
 			solver.problem.optimizer.possiblyUpdateLocalBounds();
 		if (measureSupplier.get() >= currCutoff)
 			return true;
-		if (settingsGeneral.framework != TypeFramework.COP || numRun != solver.solManager.lastSolutionRun)
+		if (settingsGeneral.framework != TypeFramework.COP || numRun != solver.solRecorder.lastSolutionRun)
 			return false;
 		if (setting.restartAfterSolution)
 			return true;
@@ -170,7 +170,7 @@ public class Restarter implements ObserverRuns {
 		@Override
 		public void beforeRun() {
 			super.beforeRun();
-			int[] solution = solver.solManager.lastSolution;
+			int[] solution = solver.solRecorder.lastSolution;
 			if (solution != null) {
 				heuristic.freezeVariables(solution);
 				for (int i = heuristic.fragment.limit; i >= 0; i--) {

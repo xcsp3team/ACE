@@ -59,7 +59,7 @@ public final class IpsRecorderForEquivalence extends IpsRecorder {
 			stopped = true;
 		currentOpenNodesKeys = new ByteArrayHashKey[variables.length];
 		currentOpenNodesNbFoundSolutions = new int[variables.length];
-		moreThanOneSolution = solver.solManager.limit > 1;
+		moreThanOneSolution = solver.solRecorder.limit > 1;
 		nBytesPerVariableId = (variables.length <= Math.pow(2, 8) ? 1 : variables.length <= Math.pow(2, 16) ? 2 : variables.length <= Math.pow(2, 24) ? 3 : 4);
 		if (settings.compressionLevelForStateEquivalence != Deflater.NO_COMPRESSION)
 			compressor = new Deflater(settings.compressionLevelForStateEquivalence);
@@ -144,7 +144,7 @@ public final class IpsRecorderForEquivalence extends IpsRecorder {
 			nInferences++;
 			if (value > 0) {
 				nInferredSolutions += value;
-				solver.solManager.found += value;
+				solver.solRecorder.found += value;
 			}
 			// else mapOfHashKeys.put(currentHashKey, value - 1);
 			return false;
@@ -152,7 +152,7 @@ public final class IpsRecorderForEquivalence extends IpsRecorder {
 
 		currentOpenNodesKeys[level] = currentHashKey;
 		currentHashKey = null;
-		currentOpenNodesNbFoundSolutions[level] = (int) solver.solManager.found;
+		currentOpenNodesNbFoundSolutions[level] = (int) solver.solRecorder.found;
 		return true;
 	}
 
@@ -174,7 +174,7 @@ public final class IpsRecorderForEquivalence extends IpsRecorder {
 			return; // since the key was too large and so not recorded
 		if (hashKey.t.length == 0)
 			solver.stopping = EStopping.FULL_EXPLORATION;
-		int nSolutions = (int) solver.solManager.found - currentOpenNodesNbFoundSolutions[solver.depth()];
+		int nSolutions = (int) solver.solRecorder.found - currentOpenNodesNbFoundSolutions[solver.depth()];
 		mapOfHashKeys.put(hashKey, nSolutions == 0 ? zero : nSolutions);
 	}
 

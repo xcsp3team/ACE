@@ -80,9 +80,8 @@ public abstract class ObjectiveVariable extends CtrGlobal implements Optimizable
 			control(problem.solver.depth() == 0, () -> "depth: " + problem.solver.depth());
 			if (x.dom.removeValuesGT(limit) == false)
 				return false;
-			entailed();
 			assert x.dom.size() > 0;
-			return true;
+			return entailed();
 		}
 	}
 
@@ -102,9 +101,8 @@ public abstract class ObjectiveVariable extends CtrGlobal implements Optimizable
 			control(problem.solver.depth() == 0, () -> "depth: " + problem.solver.depth());
 			if (x.dom.removeValuesLT(limit) == false)
 				return false;
-			entailed();
 			assert x.dom.size() > 0;
-			return true;
+			return entailed();
 		}
 	}
 }
