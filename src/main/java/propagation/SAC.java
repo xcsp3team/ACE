@@ -63,7 +63,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		for (int cnt = 0; cnt < nPassesLimit; cnt++) {
 			long nBefore = nEffectiveSingletonTests;
 			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
-				if (onlyNeighbours && !x.isNeighbourOf(((Solver) solver).dr.varOfLastDecisionIf(true)))
+				if (onlyNeighbours && !x.isNeighbourOf(((Solver) solver).decRecorder.varOfLastDecisionIf(true)))
 					continue;
 				if (x.dom.size() == 1) {
 					nFoundSingletons++;

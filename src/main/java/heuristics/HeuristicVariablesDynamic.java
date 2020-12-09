@@ -49,7 +49,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		assert solver.futVars.size() > 0;
 
 		if (solver.head.control.solving.branching != EBranching.BIN) {
-			Variable x = solver.dr.varOfLastDecisionIf(false);
+			Variable x = solver.decRecorder.varOfLastDecisionIf(false);
 			if (x != null)
 				return x;
 		}

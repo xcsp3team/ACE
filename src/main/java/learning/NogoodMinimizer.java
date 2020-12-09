@@ -17,7 +17,7 @@ public class NogoodMinimizer {
 	public NogoodMinimizer(Solver solver) {
 		this.solver = solver;
 		this.propagation = solver.propagation;
-		this.dr = solver.dr;
+		this.dr = solver.decRecorder;
 		this.arityLimit = solver.head.control.learning.nogoodArityLimit;
 	}
 

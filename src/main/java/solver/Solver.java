@@ -373,7 +373,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 
 	public Propagation propagation;
 
-	public final DecisionRecorder dr;
+	public final DecisionRecorder decRecorder;
 
 	public HeuristicVariables heuristic;
 
@@ -434,7 +434,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		restarter.reset();
 		resetNoSolutions();
 
-		dr.reset();
+		decRecorder.reset();
 		// if (!(heuristicVars instanceof HeuristicVariablesConflictBased) || !preserveWeightedDegrees)
 		// heuristicVars.reset();
 		heuristic.setPriorityVars(problem.priorityVars, 0);
@@ -461,7 +461,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 				.collect(Collectors.toCollection(ArrayList::new));
 		observersSearch.add(head.output);
 
-		this.dr = new DecisionRecorder(this);
+		this.decRecorder = new DecisionRecorder(this);
 		this.heuristic = HeuristicVariables.buildFor(this);
 		for (Variable x : problem.variables)
 			x.buildValueOrderingHeuristic();
@@ -508,7 +508,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		stats.nAssignments++;
 		futVars.assign(x);
 		x.doAssignment(a);
-		dr.addPositiveDecision(x, a);
+		decRecorder.addPositiveDecision(x, a);
 		for (ObserverAssignment obs : observersAssignment)
 			obs.afterAssignment(x, a);
 	}
@@ -517,7 +517,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		int depthBeforeBacktrack = depth();
 		futVars.unassign(x);
 		x.undoAssignment();
-		dr.delPositiveDecision(x);
+		decRecorder.delPositiveDecision(x);
 		for (ObserverAssignment obs : observersAssignment)
 			obs.afterUnassignment(x);
 		for (ObserverBacktrackingSystematic obs : observersBacktrackingSystematic)
@@ -592,7 +592,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		tracer.onRefutation(x, a);
 		stats.onRefutation(x);
 		lastConflict.onRefutation(x, a);
-		dr.addNegativeDecision(x, a);
+		decRecorder.addNegativeDecision(x, a);
 		proofer.recopy();
 		x.dom.removeElementary(a);
 		boolean consistent = x.dom.size() > 0;
@@ -641,17 +641,17 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 			if (futVars.size() == 0) {
 				solRecorder.handleNewSolution();
 				boolean copContinue = problem.settings.framework == COP && !head.control.restarts.restartAfterSolution;
-				CtrGlobal objectiveCtrToCheck = copContinue ? (CtrGlobal) problem.optimizer.ctr : null;
+				CtrGlobal objectiveCtr = copContinue ? (CtrGlobal) problem.optimizer.ctr : null;
 				if (copContinue) {
 					// first, we directly change the limit value of the leading objective constraint
 					problem.optimizer.ctr.limit(problem.optimizer.ctr.objectiveValue() + (problem.optimizer.minimization ? -1 : 1));
 					// next, we backtrack to the level where a value for a variable in the scope of the objective was removed for the last time
 					int backtrackLevel = -1;
-					for (int i = 0; i < objectiveCtrToCheck.scp.length; i++) {
-						int x = objectiveCtrToCheck.futvars.dense[i]; // variables (of the objective) from the last assigned to the first assigned
-						if (objectiveCtrToCheck.scp[x].assignmentLevel() <= backtrackLevel)
+					for (int i = 0; i < objectiveCtr.scp.length; i++) {
+						Variable x = objectiveCtr.scp[objectiveCtr.futvars.dense[i]]; // variables (of the objective) from the last to the first assigned
+						if (x.assignmentLevel() <= backtrackLevel)
 							break;
-						backtrackLevel = Math.max(backtrackLevel, objectiveCtrToCheck.scp[x].dom.lastRemovedLevel());
+						backtrackLevel = Math.max(backtrackLevel, x.dom.lastRemovedLevel());
 					}
 					assert backtrackLevel != -1;
 					while (depth() > backtrackLevel)
@@ -659,13 +659,13 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 					// check with java -ea ac /home/lecoutre/workspace/AbsCon/build/resources/main/cop/Photo.xml.lzma -ev
 					// java -ea ac /home/lecoutre/workspace/AbsCon/build/resources/main/cop/Recipe.xml.lzma
 				}
-				if (problem.settings.framework == COP) // && isEntailed(objectiveCtrToCheck))
+				if (problem.settings.framework == COP) // && isEntailed(objectiveCtr)) TODO why is-it incorrect to use the second part of the test?
 					entailed.clear();
 				if (!finished() && !restarter.currRunFinished())
-					manageContradiction(objectiveCtrToCheck);
+					manageContradiction(objectiveCtr);
 			}
 		}
-		minDepth = dr.minDepth(); // need to be recorded before backtracking to the root
+		minDepth = decRecorder.minDepth(); // need to be recorded before backtracking to the root
 		if (nogoodRecorder != null && !finished() && !restarter.allRunsFinished())
 			nogoodRecorder.addNogoodsOfCurrentBranch();
 	}
@@ -765,7 +765,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		// if (stoppingType != StoppingType.FULL_EXPLORATION) // pb with methods that need to restart
 		observersBacktrackingSystematic.stream().forEach(obs -> obs.restoreBefore(0));
 
-		dr.reset();
+		decRecorder.reset();
 		// assert pb.stuff.nPurgedValues > 0 || Variable.areDomainsFull(pb.variables) : pb.stuff.nPurgedValues + " " + pb.nbValuesRemoved;
 		// nPurged not updated; see java -ea abscon.Resolution problems.patt.QuasiGroup -data=6 -model=v5 -ev -cm=false
 		assert Stream.of(problem.variables).allMatch(x -> x.dom.controlStructures());

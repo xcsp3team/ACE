@@ -165,7 +165,7 @@ public final class NogoodRecorder {
 
 	public NogoodRecorder(Solver solver) {
 		this.solver = solver;
-		this.dr = solver.dr;
+		this.dr = solver.decRecorder;
 		this.settings = solver.head.control.learning;
 		this.nogoods = new Nogood[settings.nogoodBaseLimit];
 		this.pws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);

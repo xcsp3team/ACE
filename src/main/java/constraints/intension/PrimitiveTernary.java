@@ -311,11 +311,15 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				// if ((dx.size() * dy.size() > 10000)) { // hard coding // TODO what about GAC Guaranteed?
-				//
-				// }
-
-				// System.out.println("bef " + this);
+				if (dx.size() * dy.size() > 500) { // hard coding // TODO what about GAC Guaranteed?
+					int v1 = dx.firstValue() * dy.firstValue(), v2 = dx.firstValue() * dy.lastValue();
+					int v3 = dx.lastValue() * dy.firstValue(), v4 = dx.lastValue() * dy.lastValue();
+					int min1 = Math.min(v1, v2), max1 = Math.max(v1, v2);
+					int min2 = Math.min(v3, v4), max2 = Math.max(v3, v4);
+					if (dz.removeValuesLT(Math.min(min1, min2)) == false || dz.removeValuesGT(Math.max(max1, max2)) == false)
+						return false;
+					return PrimitiveBinary.enforceMulGE(dx, dy, dz.firstValue()) && PrimitiveBinary.enforceMulLE(dx, dy, dz.lastValue());
+				}
 				if (!dy.isPresentValue(0) || !dz.isPresentValue(0)) // if 0 is present in dy and dz, all values of x are supported
 					extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int va = dx.toVal(a);
@@ -330,7 +334,6 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 							int vc = va * dy.toVal(b);
 							if ((va > 0 && vc > dz.lastValue()) || (va < 0 && vc < dz.firstValue()))
 								break;
-							dz.display(true);
 							if (dz.isPresentValue(vc)) {
 								rx[a] = b;
 								continue extern;
@@ -384,7 +387,6 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 					if (dz.remove(c) == false)
 						return false;
 				}
-				// System.out.println("aft");
 				return true;
 			}
 		}

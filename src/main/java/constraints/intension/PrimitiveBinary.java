@@ -18,6 +18,8 @@ import org.xcsp.common.Utilities;
 import constraints.Constraint;
 import constraints.global.Sum.SumWeighted;
 import constraints.intension.PrimitiveBinary.PrimitiveBinaryDistb.DistbEQ2;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryMul.MulGE2;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryMul.MulLE2;
 import constraints.intension.PrimitiveBinary.PropagatorEQ.MultiPropagatorEQ;
 import constraints.intension.PrimitiveBinary.PropagatorEQ.SimplePropagatorEQ;
 import interfaces.Tags.TagSymmetric;
@@ -76,16 +78,16 @@ public abstract class PrimitiveBinary extends Primitive {
 		return true;
 	}
 
-	public static boolean enforceEQ(Domain dx, Domain dy, int k) { // x = y + k
-		if (dx.removeValuesAddNotIn(dy, -k) == false)
-			return false;
-		if (dx.size() == dy.size())
-			return true;
-		assert dx.size() < dy.size();
-		boolean consistent = dy.removeValuesAddNotIn(dx, k);
-		assert consistent;
-		return true;
-	}
+	// public static boolean enforceEQ(Domain dx, Domain dy, int k) { // x = y + k
+	// if (dx.removeValuesAddNotIn(dy, -k) == false)
+	// return false;
+	// if (dx.size() == dy.size())
+	// return true;
+	// assert dx.size() < dy.size();
+	// boolean consistent = dy.removeValuesAddNotIn(dx, k);
+	// assert consistent;
+	// return true;
+	// }
 
 	// public static boolean enforceMulEQ(Domain dx, Domain dy, int k) { // x = y * k
 	// assert dx.iterateOnValuesStoppingWhen(v -> v != 0 && v % k != 0) == false; // we assume that trivial inconsistent values have been deleted
@@ -114,6 +116,14 @@ public abstract class PrimitiveBinary extends Primitive {
 		if (dy.size() == 1)
 			return dx.removeValueIfPresent(dy.uniqueValue() + k);
 		return true;
+	}
+
+	public static boolean enforceMulLE(Domain dx, Domain dy, int k) {
+		return MulLE2.revise(dx, dy, k) && MulLE2.revise(dy, dx, k);
+	}
+
+	public static boolean enforceMulGE(Domain dx, Domain dy, int k) {
+		return MulGE2.revise(dx, dy, k) && MulGE2.revise(dy, dx, k);
 	}
 
 	public final static int UNITIALIZED = -1;
@@ -753,7 +763,7 @@ public abstract class PrimitiveBinary extends Primitive {
 				super(pb, x, y, k);
 			}
 
-			private boolean revise(Domain d1, Domain d2) {
+			public static boolean revise(Domain d1, Domain d2, int k) {
 				if (d2.isPresentValue(0)) {
 					if (0 <= k)
 						return true;
@@ -770,7 +780,7 @@ public abstract class PrimitiveBinary extends Primitive {
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				return revise(dx, dy) && revise(dy, dx);
+				return revise(dx, dy, k) && revise(dy, dx, k);
 			}
 		}
 
@@ -785,7 +795,7 @@ public abstract class PrimitiveBinary extends Primitive {
 				super(pb, x, y, k);
 			}
 
-			private boolean revise(Domain d1, Domain d2) {
+			public static boolean revise(Domain d1, Domain d2, int k) {
 				if (d2.isPresentValue(0)) {
 					if (0 >= k)
 						return true;
@@ -802,7 +812,7 @@ public abstract class PrimitiveBinary extends Primitive {
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				return revise(dx, dy) && revise(dy, dx);
+				return revise(dx, dy, k) && revise(dy, dx, k);
 			}
 		}
 

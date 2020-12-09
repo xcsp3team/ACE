@@ -924,7 +924,7 @@ public interface Domain extends LinkedSet {
 	 *            a boolean for getting more information
 	 */
 	default void display(boolean exhaustively) {
-		log.fine("  Domain " + this + " (ivs=" + indexesMatchValues() + ", domainType=" + typeIdentifier() + ")");
+		System.out.println("  Domain " + this + " (ivs=" + indexesMatchValues() + ", domainType=" + typeIdentifier() + ")");
 		log.fine("\t initSize = " + initSize() + " and size = " + size());
 		log.fine("\t first=" + first() + " and last=" + last());
 		if (size() != 0)
