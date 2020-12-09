@@ -803,7 +803,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 * the only one in that situation.
 	 */
 	public final boolean filterFrom(Variable x) {
-		// System.out.println("filtering " + this + " " + x);
+		// System.out.println("filtering " + this + " " + x + " " + this.getClass().getSimpleName());
 		if (this.infiniteDomainVars.length > 0) {
 			Boolean b = handleHugeDomains();
 			if (b != null)
@@ -842,7 +842,9 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		for (int i = 0; i < scp.length; i++)
 			for (int a = doms[i].first(); a != -1; a = doms[i].next(a))
 				if (seekFirstSupportWith(i, a) == false) {
-					System.out.println(" " + scp[i] + "=" + a + " not supported by " + this);
+					System.out.println(" " + scp[i] + "=" + doms[i].toVal(a) + " not supported by " + this);
+					for (Domain dom : doms)
+						dom.display(false);
 					display(true);
 					return false;
 				}

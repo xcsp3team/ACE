@@ -39,17 +39,19 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 
 	protected long min, max; // used in most of the subclasses
 
+	protected long minComputableObjectiveValue, maxComputableObjectiveValue; // cached values
+
 	public final long limit() {
 		return limit;
 	}
 
-	public void limit(long newLimit) {
+	public final void limit(long newLimit) {
 		this.limit = newLimit;
+		control(minComputableObjectiveValue - 1 <= limit && limit <= maxComputableObjectiveValue + 1);
 	}
 
-	public Sum(Problem pb, Variable[] scp, long limit) {
+	public Sum(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		limit(limit);
 		control(scp.length > 1);
 	}
 
@@ -154,14 +156,12 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 			return sum;
 		}
 
-		public final void limit(long newLimit) {
-			super.limit(newLimit);
-			control(minComputableObjectiveValue() - 1 <= limit && limit <= maxComputableObjectiveValue() + 1,
-					"min:" + minComputableObjectiveValue() + " max:" + maxComputableObjectiveValue() + " limit:" + limit);
-		}
-
 		public SumSimple(Problem pb, Variable[] scp, long limit) {
-			super(pb, scp, limit);
+			super(pb, scp);
+			this.minComputableObjectiveValue = minComputableObjectiveValue();
+			this.maxComputableObjectiveValue = maxComputableObjectiveValue();
+			control(minComputableObjectiveValue <= maxComputableObjectiveValue);
+			limit(limit);
 			defineKey(limit);
 		}
 
@@ -209,7 +209,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 					assert dom.size() > 0;
 					max += dom.lastValue();
 					if (max <= limit)
-						return true;
+						return entailed();
 				}
 				return true;
 			}
@@ -269,7 +269,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 					assert dom.size() > 0;
 					min += dom.firstValue();
 					if (min >= limit)
-						return true;
+						return entailed();
 				}
 				return true;
 			}
@@ -301,7 +301,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 			@Override
 			public boolean runPropagator(Variable evt) {
 				recomputeBounds();
-				if (limit < min || max < limit)
+				if (limit < min || limit > max)
 					return evt.dom.fail();
 				if (futvars.size() > 0) {
 					int lastModified = futvars.limit, i = futvars.limit;
@@ -375,7 +375,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 				long v = limit - sum;
 				if (sum + v == limit && Integer.MIN_VALUE <= v && v <= Integer.MAX_VALUE) // if no overflow and within Integer bounds
 					sentinel.dom.removeValueIfPresent((int) v); // no inconsistency possible since at least two values in the domain
-				return true;
+				return true; // TODO it seems that we can write return entailed()
 			}
 
 			@Override
@@ -525,21 +525,18 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 			return sum;
 		}
 
-		public final void limit(long newLimit) {
-			super.limit(newLimit);
-			if (coeffs != null) // not available at construction time
-				control(minComputableObjectiveValue() - 1 <= limit && limit <= maxComputableObjectiveValue() + 1); // TODO using a cache for these two values
-		}
-
 		public final int[] coeffs;
 
 		public SumWeighted(Problem pb, Variable[] scp, int[] coeffs, long limit) {
-			super(pb, scp, limit);
+			super(pb, scp);
 			this.coeffs = coeffs;
-			control(minComputableObjectiveValue() <= limit && limit <= maxComputableObjectiveValue());
+			this.minComputableObjectiveValue = minComputableObjectiveValue();
+			this.maxComputableObjectiveValue = maxComputableObjectiveValue();
+			control(minComputableObjectiveValue <= maxComputableObjectiveValue); // Important: we check this way that no overflow is possible
+			limit(limit);
 			defineKey(Kit.join(coeffs), limit);
 			control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])));
-			control(minComputableObjectiveValue() <= maxComputableObjectiveValue()); // Important: we check this way that no overflow is possible
+
 		}
 
 		@Override
@@ -590,10 +587,8 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 			@Override
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
-				if (max <= limit) {
-					entailed();
-					return true;
-				}
+				if (max <= limit)
+					return entailed();
 				if (min > limit)
 					return x == null ? false : x.dom.fail();
 				for (int i = futvars.limit; i >= 0; i--) {
@@ -613,7 +608,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 						max += dom.firstValue() * coeff;
 					}
 					if (max <= limit)
-						return true;
+						return entailed();
 				}
 				return true;
 			}
@@ -642,10 +637,8 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 			@Override
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
-				if (min >= limit) {
-					entailed();
-					return true;
-				}
+				if (min >= limit)
+					return entailed();
 				if (max < limit)
 					return x == null ? false : x.dom.fail();
 				for (int i = futvars.limit; i >= 0; i--) {
@@ -665,7 +658,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 						min += dom.lastValue() * coeff;
 					}
 					if (min >= limit)
-						return true;
+						return entailed();
 				}
 				return true;
 			}
@@ -698,7 +691,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 			@Override
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
-				if (min > limit || max < limit)
+				if (limit < min || limit > max)
 					return x.dom.fail();
 				if (futvars.size() > 0) {
 					int lastModified = futvars.limit, i = futvars.limit;

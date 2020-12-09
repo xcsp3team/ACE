@@ -239,7 +239,7 @@ public final class SolutionRecorder {
 		// solver.problem.api.prettyDisplay(vars_values(false, false).split("\\s+"));
 	}
 
-	public void handleNewSolutionAndPossiblyOptimizeIt() {
+	public void handleNewSolution() {
 		handleNewSolution(true);
 		// solutionOptimizer.optimizeCurrentSolution();
 	}

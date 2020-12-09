@@ -668,25 +668,21 @@ public abstract class PrimitiveBinary extends Primitive {
 			control(Utilities.isSafeInt(BigInteger.valueOf(dx.lastValue()).multiply(BigInteger.valueOf(dy.lastValue())).longValueExact()));
 		}
 
-		public static final class MulLE2 extends PrimitiveBinaryMul {
+		public static final class MulLE2Old extends PrimitiveBinaryMul {
 
 			@Override
 			public boolean checkValues(int[] t) {
 				return t[0] * t[1] <= k;
 			}
 
-			public MulLE2(Problem pb, Variable x, Variable y, int k) {
+			public MulLE2Old(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
-			// (3,-5) => -2; (3,10) => 3; (-3,-5) => 2; (-3,10) => -3; (3,0) => 0; (-3,0) => 0
-			// 3y <= -5 => y <= -2; 3y <= 10 => y <= 3; -3y <= -5 => y >= 2; -3y <= 10 => y >= -3; 3y <= 0 => y <= 0; -3y <= 0 => y >= 0
 			private boolean checkLimit(int c, int k, Domain dom) { // c*y <= k
 				if (c == 0)
 					return k >= 0;
-				int limit = k / c;
-				if (k < 0 && k % c != 0)
-					limit += (limit < 0 ? -1 : 1);
+				int limit = Kit.greatestIntegerLE(c, k);
 				return c > 0 ? dom.firstValue() <= limit : dom.lastValue() >= limit;
 			}
 
@@ -709,25 +705,21 @@ public abstract class PrimitiveBinary extends Primitive {
 			}
 		}
 
-		public static final class MulGE2 extends PrimitiveBinaryMul {
+		public static final class MulGE2Old extends PrimitiveBinaryMul {
 
 			@Override
 			public boolean checkValues(int[] t) {
 				return t[0] * t[1] >= k;
 			}
 
-			public MulGE2(Problem pb, Variable x, Variable y, int k) {
+			public MulGE2Old(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
-			// (3,-5) => -1; (3,10) => 4; (-3,-5) => 1; (-3,10) => -4; (3,0) => 0; (-3,0) => 0
-			// 3y >= -5 => y >= -1; 3y >= 10 => y >= 4; -3y >= -5 => y <= 1; -3y >= 10 => y <= -4; 3y >= 0 => y>= 0; -3y >= 0 => y <= 0
-			public static boolean checkLimit(int c, int k, Domain dom) { // c*y >= k
+			private boolean checkLimit(int c, int k, Domain dom) { // c*y >= k
 				if (c == 0)
 					return k <= 0;
-				int limit = k / c;
-				if (k > 0 && k % c != 0)
-					limit += (limit < 0 ? -1 : 1);
+				int limit = Kit.smallestIntegerGE(c, k);
 				return c > 0 ? dom.lastValue() >= limit : dom.firstValue() <= limit;
 			}
 
@@ -742,6 +734,70 @@ public abstract class PrimitiveBinary extends Primitive {
 					d1.removeElementary(a);
 				}
 				return d1.afterElementaryCalls(sizeBefore);
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				return revise(dx, dy) && revise(dy, dx);
+			}
+		}
+
+		public static final class MulLE2 extends PrimitiveBinaryMul {
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return t[0] * t[1] <= k;
+			}
+
+			public MulLE2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+			}
+
+			private boolean revise(Domain d1, Domain d2) {
+				if (d2.isPresentValue(0)) {
+					if (0 <= k)
+						return true;
+					if (d2.removeValue(0) == false)
+						return false;
+				}
+				assert !d2.isPresentValue(0);
+				if (d2.firstValue() > 0) // all values in d2 are positive
+					return d1.removeValuesGT(k > 0 ? Kit.greatestIntegerLE(d2.firstValue(), k) : Kit.greatestIntegerLE(d2.lastValue(), k));
+				if (d2.lastValue() < 0) // all values in d2 are negative
+					return d1.removeValuesLT(k < 0 ? Kit.smallestIntegerGE(-d2.firstValue(), -k) : Kit.smallestIntegerGE(-d2.lastValue(), -k));
+				return d1.removeValuesInRange(Kit.greatestIntegerLE(d2.lastValue(), k) + 1, Kit.smallestIntegerGE(-d2.firstValue(), -k));
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				return revise(dx, dy) && revise(dy, dx);
+			}
+		}
+
+		public static final class MulGE2 extends PrimitiveBinaryMul {
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return t[0] * t[1] >= k;
+			}
+
+			public MulGE2(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+			}
+
+			private boolean revise(Domain d1, Domain d2) {
+				if (d2.isPresentValue(0)) {
+					if (0 >= k)
+						return true;
+					if (d2.removeValue(0) == false)
+						return false;
+				}
+				assert !d2.isPresentValue(0);
+				if (d2.firstValue() > 0) // all values in d2 are positive
+					return d1.removeValuesLT(k < 0 ? Kit.smallestIntegerGE(d2.firstValue(), k) : Kit.smallestIntegerGE(d2.lastValue(), k));
+				if (d2.lastValue() < 0) // all values in d2 are negative
+					return d1.removeValuesGT(k > 0 ? Kit.greatestIntegerLE(-d2.firstValue(), -k) : Kit.greatestIntegerLE(-d2.lastValue(), -k));
+				return d1.removeValuesInRange(Kit.greatestIntegerLE(-d2.firstValue(), -k) + 1, Kit.smallestIntegerGE(d2.lastValue(), k));
 			}
 
 			@Override

@@ -941,4 +941,38 @@ public final class Kit {
 		}
 	}
 
+	// (3,-5) => -2; (3,10) => 3; (-3,-5) => 2; (-3,10) => -3; (3,0) => 0; (-3,0) => 0
+	// 3y <= -5 => y <= -2; 3y <= 10 => y <= 3; -3y <= -5 => y >= 2; -3y <= 10 => y >= -3; 3y <= 0 => y <= 0; -3y <= 0 => y >= 0
+	public static int greatestIntegerLE(int c, int k) { // c*y <= k
+		if (c == 0)
+			return k >= 0 ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+		int limit = k / c;
+		double ll = k / (double) c;
+		if (k < 0 && k % c != 0)
+			limit += (ll < 0 ? -1 : 1);
+		return limit;
+	}
+
+	// (3,-5) => -1; (3,10) => 4; (-3,-5) => 1; (-3,10) => -4; (3,0) => 0; (-3,0) => 0
+	// 3y >= -5 => y >= -1; 3y >= 10 => y >= 4; -3y >= -5 => y <= 1; -3y >= 10 => y <= -4; 3y >= 0 => y>= 0; -3y >= 0 => y <= 0
+	public static int smallestIntegerGE(int c, int k) { // c*y >= k
+		if (c == 0)
+			return k <= 0 ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+		int limit = k / c;
+		double ll = k / (double) c;
+		if (k > 0 && k % c != 0)
+			limit += (ll < 0 ? -1 : 1);
+		return limit;
+	}
+
+	public static void main(String[] args) {
+		System.out.println(-1 / 9.0 + "");
+		for (int[] t : new int[][] { { 3, -5 }, { 3, 10 }, { -3, -5 }, { -3, 10 }, { 3, 0 }, { -3, 0 }, { 10, -20 }, { 9, -1 }, { -10, -1 } })
+			System.out.println(t[0] + " " + t[1] + " => " + greatestIntegerLE(t[0], t[1]));
+		System.out.println();
+		for (int[] t : new int[][] { { 3, -5 }, { 3, 10 }, { -3, -5 }, { -3, 10 }, { 3, 0 }, { -3, 0 }, { -10, 20 }, { -3, 5 }, { -9, 1 }, { 10, 1 } })
+			System.out.println(t[0] + " " + t[1] + " => " + smallestIntegerGE(t[0], t[1]));
+
+	}
+
 }

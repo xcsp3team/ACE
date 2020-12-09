@@ -305,12 +305,17 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 			public MulEQ3(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
 				buildFourResidueStructure();
-				Kit.control(Utilities.isSafeInt(BigInteger.valueOf(dx.firstValue()).multiply(BigInteger.valueOf(dy.firstValue())).longValueExact()));
-				Kit.control(Utilities.isSafeInt(BigInteger.valueOf(dx.lastValue()).multiply(BigInteger.valueOf(dy.lastValue())).longValueExact()));
+				control(Utilities.isSafeInt(BigInteger.valueOf(dx.firstValue()).multiply(BigInteger.valueOf(dy.firstValue())).longValueExact()));
+				control(Utilities.isSafeInt(BigInteger.valueOf(dx.lastValue()).multiply(BigInteger.valueOf(dy.lastValue())).longValueExact()));
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
+				// if ((dx.size() * dy.size() > 10000)) { // hard coding // TODO what about GAC Guaranteed?
+				//
+				// }
+
+				// System.out.println("bef " + this);
 				if (!dy.isPresentValue(0) || !dz.isPresentValue(0)) // if 0 is present in dy and dz, all values of x are supported
 					extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int va = dx.toVal(a);
@@ -379,6 +384,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 					if (dz.remove(c) == false)
 						return false;
 				}
+				// System.out.println("aft");
 				return true;
 			}
 		}

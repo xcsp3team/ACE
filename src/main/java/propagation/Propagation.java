@@ -157,10 +157,11 @@ public abstract class Propagation {
 	 */
 	protected final boolean pickAndFilter() {
 		Variable x = queue.pickAndDelete();
+		// System.out.println("picking " + x);
 		if (!queue.isNogoodConsistent(x))
 			return false;
 		for (Constraint c : x.ctrs)
-			if (!c.ignored && !solver.isEntailed(c))
+			if (!c.ignored && !solver.isEntailed(c)) {
 				if (c.filteringComplexity == 0) {
 					currFilteringCtr = c;
 					boolean consistent = c.filterFrom(x);
@@ -169,6 +170,7 @@ public abstract class Propagation {
 						return false;
 				} else if (c.time <= x.time)
 					auxiliaryQueues[c.filteringComplexity - 1].add(c.num, x.num);
+			}
 		return true;
 	}
 
@@ -206,7 +208,7 @@ public abstract class Propagation {
 	}
 
 	public boolean propagate(CtrGlobal c) {
-		if (c == null)
+		if (c == null || c.ignored || solver.isEntailed(c))
 			return true;
 		if (c.runPropagator(null) == false)
 			return false;
