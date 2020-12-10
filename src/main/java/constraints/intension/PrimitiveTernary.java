@@ -98,7 +98,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 			super(pb, x, y, z);
 		}
 
-		public static final class AddEQ3 extends PrimitiveTernaryAdd {
+		public static final class AddEQ3 extends PrimitiveTernaryAdd { // O(d^2)
 
 			boolean multidirectional = false; // hard coding
 
@@ -114,6 +114,12 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
+				if (dx.size() * dy.size() > 500) { // hard coding // TODO what about GAC Guaranteed?
+					if (dz.removeValuesLT(dx.firstValue() + dy.firstValue()) == false || dz.removeValuesGT(dx.lastValue() + dy.lastValue()) == false)
+						return false;
+					return PrimitiveBinary.enforceAddGE(dx, dy, dz.firstValue()) && PrimitiveBinary.enforceAddLE(dx, dy, dz.lastValue());
+				}
+
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 					int va = dx.toVal(a);
 					if (dy.present(rx[a]) && dz.isPresentValue(va + dy.toVal(rx[a])))
@@ -426,6 +432,12 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
+				if (dx.size() * dy.size() > 500) { // hard coding // TODO what about GAC Guaranteed?
+					if (dz.removeValuesLT(dx.firstValue() / dy.lastValue()) == false || dz.removeValuesGT(dx.lastValue() / dy.firstValue()) == false)
+						return false;
+					return PrimitiveBinary.enforceDivGE(dx, dy, dz.firstValue()) && PrimitiveBinary.enforceDivLE(dx, dy, dz.lastValue());
+				}
+
 				if (dx.firstValue() >= dy.lastValue() && dz.removeValueIfPresent(0) == false)
 					return false;
 				boolean zero = dz.isPresentValue(0);

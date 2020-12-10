@@ -420,6 +420,7 @@ public final class Features {
 		m.putWhenPositive("nAdded", nAddedCtrs);
 		m.put(ARITIES, ctrArities);
 		m.putIf("distribution", ctrTypes, true, true);
+
 		if (tableSizes.repartition.size() > 0) {
 			m.separator();
 			m.put(TABLES, tableSizes);

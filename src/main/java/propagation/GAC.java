@@ -22,7 +22,7 @@ public class GAC extends Forward {
 	/**
 	 * Indicates if GAC is guaranteed, either by a generic scheme that does not requires to wait for a certain number of assigned, or by a global constraint.
 	 */
-	public final boolean guaranteed;
+	private final boolean guaranteed;
 
 	/**
 	 * The number of deleted values at preprocessing, by AC.

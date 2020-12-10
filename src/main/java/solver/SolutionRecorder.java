@@ -142,7 +142,7 @@ public final class SolutionRecorder {
 			if (!lock.get()) {
 				lock.set(true);
 				System.out.println();
-				if (found > 0)
+				if (found > 0 && solver.problem.variables.length <= solver.head.control.general.jsonLimit)
 					System.out.println("\n  Solution " + found + " in JSON format:\n" + lastSolutionInJsonFormat(false) + "\n");
 				if (fullExploration) {
 					if (found == 0)

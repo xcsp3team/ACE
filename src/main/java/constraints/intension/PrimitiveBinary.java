@@ -22,6 +22,7 @@ import constraints.intension.PrimitiveBinary.PrimitiveBinaryMul.MulGE2;
 import constraints.intension.PrimitiveBinary.PrimitiveBinaryMul.MulLE2;
 import constraints.intension.PrimitiveBinary.PropagatorEQ.MultiPropagatorEQ;
 import constraints.intension.PrimitiveBinary.PropagatorEQ.SimplePropagatorEQ;
+import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagSymmetric;
 import interfaces.Tags.TagUnsymmetric;
 import problem.Problem;
@@ -33,7 +34,7 @@ import variables.Variable;
 // this implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 = 3
 // https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.17.2
 
-public abstract class PrimitiveBinary extends Primitive {
+public abstract class PrimitiveBinary extends Primitive implements TagGACGuaranteed {
 
 	public static boolean enforceLT(Domain dx, Domain dy) { // x < y
 		return dx.removeValuesGE(dy.lastValue()) && dy.removeValuesLE(dx.firstValue());
@@ -110,20 +111,36 @@ public abstract class PrimitiveBinary extends Primitive {
 		return true;
 	}
 
-	public static boolean enforceNE(Domain dx, Domain dy, int k) { // x != y + k
-		if (dx.size() == 1)
-			return dy.removeValueIfPresent(dx.uniqueValue() - k);
-		if (dy.size() == 1)
-			return dx.removeValueIfPresent(dy.uniqueValue() + k);
-		return true;
+	// public static boolean enforceNE(Domain dx, Domain dy, int k) { // x != y + k
+	// if (dx.size() == 1)
+	// return dy.removeValueIfPresent(dx.uniqueValue() - k);
+	// if (dy.size() == 1)
+	// return dx.removeValueIfPresent(dy.uniqueValue() + k);
+	// return true;
+	// }
+
+	public static boolean enforceAddLE(Domain dx, Domain dy, int k) { // x + y <= k
+		return dx.removeValuesGT(k - dy.firstValue()) && dy.removeValuesGT(k - dx.firstValue());
 	}
 
-	public static boolean enforceMulLE(Domain dx, Domain dy, int k) {
+	public static boolean enforceAddGE(Domain dx, Domain dy, int k) { // x + y >= k
+		return dx.removeValuesLT(k - dy.lastValue()) && dy.removeValuesLT(k - dx.lastValue());
+	}
+
+	public static boolean enforceMulLE(Domain dx, Domain dy, int k) { // x * y <= k
 		return MulLE2.revise(dx, dy, k) && MulLE2.revise(dy, dx, k);
 	}
 
-	public static boolean enforceMulGE(Domain dx, Domain dy, int k) {
+	public static boolean enforceMulGE(Domain dx, Domain dy, int k) { // x * y >= k
 		return MulGE2.revise(dx, dy, k) && MulGE2.revise(dy, dx, k);
+	}
+
+	public static boolean enforceDivLE(Domain dx, Domain dy, int k) { // x / y <= k
+		return dx.removeValuesNumeratorsGT(k, dy.lastValue()) && dy.removeValuesDenominatorsGT(k, dx.firstValue());
+	}
+
+	public static boolean enforceDivGE(Domain dx, Domain dy, int k) { // x / y >= k
+		return dx.removeValuesNumeratorsLT(k, dy.firstValue()) && dy.removeValuesDenominatorsLT(k, dx.lastValue());
 	}
 
 	public final static int UNITIALIZED = -1;
@@ -443,7 +460,7 @@ public abstract class PrimitiveBinary extends Primitive {
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				return dx.removeValuesGT(k - dy.firstValue()) && dy.removeValuesGT(k - dx.firstValue());
+				return enforceAddLE(dx, dy, k); // dx.removeValuesGT(k - dy.firstValue()) && dy.removeValuesGT(k - dx.firstValue());
 			}
 		}
 
@@ -460,7 +477,7 @@ public abstract class PrimitiveBinary extends Primitive {
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				return dx.removeValuesLT(k - dy.lastValue()) && dy.removeValuesLT(k - dx.lastValue());
+				return enforceAddGE(dx, dy, k); // dx.removeValuesLT(k - dy.lastValue()) && dy.removeValuesLT(k - dx.lastValue());
 			}
 		}
 
@@ -918,7 +935,7 @@ public abstract class PrimitiveBinary extends Primitive {
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				return dx.removeValuesNumeratorsGT(k, dy.lastValue()) && dy.removeValuesDenominatorsGT(k, dx.firstValue());
+				return enforceDivLE(dx, dy, k); // dx.removeValuesNumeratorsGT(k, dy.lastValue()) && dy.removeValuesDenominatorsGT(k, dx.firstValue());
 			}
 		}
 
@@ -935,7 +952,7 @@ public abstract class PrimitiveBinary extends Primitive {
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				return dx.removeValuesNumeratorsLT(k, dy.firstValue()) && dy.removeValuesDenominatorsLT(k, dx.lastValue());
+				return enforceDivGE(dx, dy, k); // dx.removeValuesNumeratorsLT(k, dy.firstValue()) && dy.removeValuesDenominatorsLT(k, dx.lastValue());
 			}
 		}
 

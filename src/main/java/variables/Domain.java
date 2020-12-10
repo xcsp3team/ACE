@@ -13,7 +13,6 @@ import static org.xcsp.common.Types.TypeOperatorRel.GT;
 import static org.xcsp.common.Types.TypeOperatorRel.LE;
 import static org.xcsp.common.Types.TypeOperatorRel.LT;
 import static utility.Kit.control;
-import static utility.Kit.log;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -925,12 +924,12 @@ public interface Domain extends LinkedSet {
 	 */
 	default void display(boolean exhaustively) {
 		System.out.println("  Domain " + this + " (ivs=" + indexesMatchValues() + ", domainType=" + typeIdentifier() + ")");
-		log.fine("\t initSize = " + initSize() + " and size = " + size());
-		log.fine("\t first=" + first() + " and last=" + last());
+		System.out.println("\t initSize = " + initSize() + " and size = " + size());
+		System.out.println("\t first=" + first() + " and last=" + last());
 		if (size() != 0)
-			log.fine("\t first value = " + firstValue() + " and last value = " + lastValue());
+			System.out.println("\t first value = " + firstValue() + " and last value = " + lastValue());
 		if (exhaustively)
-			log.fine("\t values = {" + stringListOfValues() + "}" + "\nStructures\n" + stringOfStructures());
+			System.out.println("\t values = {" + stringListOfValues() + "}" + "\nStructures\n" + stringOfStructures());
 	}
 
 	/**

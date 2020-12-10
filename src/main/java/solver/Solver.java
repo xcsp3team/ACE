@@ -353,7 +353,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 	 *********************************************************************************************/
 
 	/**
-	 * The main object
+	 * The main object, head of resolution
 	 */
 	public final Head head;
 
@@ -560,10 +560,10 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		if (!consistent) {
 			stats.nWrongDecisions++;
 			stats.nFailedAssignments++;
-			// if (learnerNogoods != null) learnerNogoods.addCurrentNogood();
+			// if (ngdRecorder != null) ngdRecorder.addCurrentNogood();
 			return false;
 		}
-		// if (stateRecordingManager != null && !stateRecordingManager.dealWhenOpeningNode()) return false;
+		// if (ipsRecorder != null && !ipsRecorder.dealWhenOpeningNode()) return false;
 		return true;
 	}
 
@@ -761,12 +761,8 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		backtrackToTheRoot();
 		// we also undo preprocessing propagation
 		stackedVariables.restoreBefore(0);
-		// we have to deal with definitively removed values
-		// if (stoppingType != StoppingType.FULL_EXPLORATION) // pb with methods that need to restart
 		observersBacktrackingSystematic.stream().forEach(obs -> obs.restoreBefore(0));
-
 		decRecorder.reset();
-		// assert pb.stuff.nPurgedValues > 0 || Variable.areDomainsFull(pb.variables) : pb.stuff.nPurgedValues + " " + pb.nbValuesRemoved;
 		// nPurged not updated; see java -ea abscon.Resolution problems.patt.QuasiGroup -data=6 -model=v5 -ev -cm=false
 		assert Stream.of(problem.variables).allMatch(x -> x.dom.controlStructures());
 	}

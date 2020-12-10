@@ -176,6 +176,8 @@ public class Control {
 		public long nSearchedSolutions = addL("nSearchedSolutions", "s", framework == TypeFramework.CSP ? 1 : PLUS_INFINITY, s_s);
 		public final long timeout = addL("timeout", "t", PLUS_INFINITY, s_timeout);
 		public int verbose = addI("verbose", "v", 0, s_verbose);
+		public int jsonLimit = addI("jsonLimit", "jsonLimit", 1000, "");
+
 		public final String trace = addS("trace", "trace", EMPTY_STRING, s_trace);
 		public final long seed = addL("seed", "seed", 0, s_seed);
 		public final boolean makeExceptionsVisible = addB("makeExceptionsVisible", "ev", false, s_ev);
