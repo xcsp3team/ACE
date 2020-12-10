@@ -21,13 +21,14 @@ import org.xcsp.common.Range;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
+import problem.Problem;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
 /**
- * This class is useful for table constraints, i.e., constraints defined in extension. All supports (allowed tuples) or all conflicts (disallowed
- * tuples) are recorded in a list. Note that tuples are recorded as indexes (of values).
+ * This class is useful for table constraints, i.e., constraints defined in extension. All supports (allowed tuples) or all conflicts (disallowed tuples) are
+ * recorded in a list. Note that tuples are recorded as indexes (of values).
  */
 public class Table extends ExtensionStructure {
 
@@ -53,12 +54,12 @@ public class Table extends ExtensionStructure {
 		for (int i = 0; i < list.length; i++) {
 			Domain dom = list[i].dom;
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
-				int v = dom.toVal(a);
-				if (domResult.isPresentValue(v)) {
+				int va = dom.toVal(a);
+				if (domResult.isPresentValue(va)) {
 					int[] tuple = Kit.repeat(STAR, arity);
 					tuple[0] = i;
-					tuple[i + 1] = v;
-					tuple[resultPositionInTuple] = v;
+					tuple[i + 1] = va;
+					tuple[resultPositionInTuple] = va;
 					tuples.add(tuple);
 				}
 			}
@@ -78,13 +79,13 @@ public class Table extends ExtensionStructure {
 			for (int i = 0; i < k; i++) {
 				Domain dom1 = t1[i].dom, dom2 = t2[i].dom;
 				for (int a = dom1.first(); a != -1; a = dom1.next(a)) {
-					int v = dom1.toVal(a);
+					int va = dom1.toVal(a);
 					for (int b = dom2.first(); b != -1; b = dom2.next(b)) {
-						int w = dom2.toVal(b);
-						if (v != w) {
+						int vb = dom2.toVal(b);
+						if (va != vb) {
 							int[] tuple = Kit.repeat(STAR, 2 * k);
-							tuple[i] = v;
-							tuple[i + k] = w;
+							tuple[i] = va;
+							tuple[i + k] = vb;
 							list.add(tuple);
 						}
 					}
@@ -96,54 +97,59 @@ public class Table extends ExtensionStructure {
 		return tuples;
 	}
 
-	// public static Constraint buildlexicographicLt(Problem problem, Variable[] t1, Variable[] t2) {
-	// Kit.control(t1.length == t2.length);
-	// String key = "LexicographicLt " + Variable.getSignatureFor(t1) + " " + Variable.getSignatureFor(t2);
-	// int[][] tuples = map.get(key);
-	// if (tuples == null) {
-	// int k = t1.length;
-	// List<int[]> list = new ArrayList<int[]>();
-	// for (int i = 0; i < k; i++) {
-	// Domain dom0 = t1[0].dom
-	//
-	//
-	// Domain dom1 = t1[i].dom, dom2 = t2[i].dom;
-	// for (int idx1 = dom1.getFirstIdx(); idx1 != -1; idx1 = dom1.getNextIdx(idx1)) {
-	// int val1 = dom1.toVal(idx1);
-	// for (int idx2 = dom2.getFirstIdx(); idx2 != -1; idx2 = dom2.getNextIdx(idx2)) {
-	// int val2 = dom2.toVal(idx2);
-	// if (val1 != val2) {
-	// int[] tuple = Kit.buildIntArrayWithUniqueValue(2 * k, Table.STAR_VALUE);
-	// tuple[i] = val1;
-	// tuple[i + k] = val2;
-	// list.add(tuple);
-	// }
-	// }
-	// }
-	// }
-	// tuples = Kit.toIntArray2D(list);
-	// map.put(key, tuples);
-	// }
-	// ConstraintHardExtension ctr = new ConstraintHardExtensionJoker(problem, Variable.append(t1, t2));
-	// // Kit.prn(Kit.implode2DStar(tuples));
-	// ctr.key = key;
-	// ctr.storeTuples(tuples, true);
-	// return ctr;
-	// }
-
-	public static int[][] addStarInAtPosition(int[][] m, int position) {
-		return IntStream.range(0, m.length)
-				.mapToObj(i -> IntStream.range(0, m[0].length + 1).map(j -> j < position ? m[i][j] : j == position ? STAR : m[i][j - 1]).toArray())
-				.toArray(int[][]::new);
+	public static int[][] shortTuplesForLexicographicLt(Problem problem, Variable[] t1, Variable[] t2) {
+		Kit.control(t1.length == t2.length);
+		String key = "LexicographicLt " + Variable.signatureFor(t1) + " " + Variable.signatureFor(t2);
+		int[][] tuples = map.get(key);
+		if (tuples == null) {
+			int k = t1.length;
+			List<int[]> list = new ArrayList<int[]>();
+			for (int i = 0; i < k; i++) {
+				Domain dom1 = t1[i].dom, dom2 = t2[i].dom;
+				for (int a = dom1.first(); a != -1; a = dom1.next(a)) {
+					int va = dom1.toVal(a);
+					for (int b = dom2.first(); b != -1; b = dom2.next(b)) {
+						int vb = dom2.toVal(b);
+						if (va != vb) {
+							int[] tuple = Kit.repeat(STAR, 2 * k);
+							tuple[i] = va;
+							tuple[i + k] = vb;
+							list.add(tuple);
+						}
+					}
+				}
+			}
+			tuples = Kit.intArray2D(list);
+			map.put(key, tuples);
+		}
+		return tuples;
 	}
 
 	/**********************************************************************************************
 	 * Class
 	 *********************************************************************************************/
 
+	private boolean isMatching(int[] tuple, int[] idxs) {
+		for (int i = 0; i < tuple.length; i++)
+			if (tuple[i] != STAR && tuple[i] != idxs[i])
+				return false;
+		return true;
+	}
+
+	@Override
+	public boolean checkIdxs(int[] t) {
+		if (isShort) {
+			for (int[] tuple : tuples)
+				if (isMatching(tuple, t))
+					return true;
+			return false;
+		}
+		return (Arrays.binarySearch(tuples, t, Utilities.lexComparatorInt) >= 0) == positive;
+	}
+
 	/**
-	 * The set of supports or conflicts. The first array index corresponds to the order of the tuples. The second array index corresponds to the
-	 * position of a value in a tuple.
+	 * The set of supports or conflicts. The first array index corresponds to the order of the tuples. The second array index corresponds to the position of a
+	 * value in a tuple.
 	 */
 	public int[][] tuples;
 
@@ -182,32 +188,14 @@ public class Table extends ExtensionStructure {
 		super(c);
 	}
 
-	private boolean isMatching(int[] tuple, int[] idxs) {
-		for (int i = 0; i < tuple.length; i++)
-			if (tuple[i] != STAR && tuple[i] != idxs[i])
-				return false;
-		return true;
-	}
-
 	@Override
-	public boolean checkIdxs(int[] t) {
-		if (isShort) {
-			for (int[] tuple : tuples)
-				if (isMatching(tuple, t))
-					return true;
-			return false;
-		}
-		return (Arrays.binarySearch(tuples, t, Utilities.lexComparatorInt) >= 0) == positive;
+	public int[] computeVariableSymmetryMatching() {
+		return computeVariableSymmetryMatching(tuples, positive);
 	}
 
 	@Override
 	public String toString() {
 		return "Tuples :\n" + Kit.join(tuples) + " (" + positive + ")";
-	}
-
-	@Override
-	public int[] computeVariableSymmetryMatching() {
-		return computeVariableSymmetryMatching(tuples, positive);
 	}
 
 }

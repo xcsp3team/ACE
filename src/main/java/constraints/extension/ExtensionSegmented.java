@@ -14,9 +14,9 @@ import java.util.stream.Stream;
 
 import constraints.extension.Extension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
-import constraints.extension.structures.SegmentedTuple;
-import constraints.extension.structures.SegmentedTuple.RestrictionTable;
 import constraints.extension.structures.TableSegmented;
+import constraints.extension.structures.TableSegmented.SegmentedTuple;
+import constraints.extension.structures.TableSegmented.SegmentedTuple.RestrictionTable;
 import problem.Problem;
 import propagation.StrongConsistency;
 import sets.SetDenseReversible;

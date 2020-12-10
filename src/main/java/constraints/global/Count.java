@@ -26,11 +26,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 	}
 
 	public static int countIn(int value, int[] t) {
-		int cnt = 0;
-		for (int v : t)
-			if (v == value)
-				cnt++;
-		return cnt;
+		return countIn(value, t, 0, t.length);
 	}
 
 	/**
@@ -47,7 +43,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 		super(pb, scp);
 		this.list = list;
 		this.value = value;
-		control(Stream.of(list).allMatch(x -> x.dom.isPresentValue(value) && x.dom.size() > 1), () -> "Badly formed scope.");
+		control(Stream.of(list).allMatch(x -> x.dom.isPresentValue(value) && x.dom.size() > 1), "Badly formed scope.");
 	}
 
 	/**********************************************************************************************
@@ -59,15 +55,15 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 		public static CountCst buildFrom(Problem pb, Variable[] scp, int value, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case LT:
-				return new AtMostK(pb, scp, value, k - 1);
+				return k == 2 ? new AtMost1(pb, scp, value) : new AtMostK(pb, scp, value, k - 1);
 			case LE:
-				return new AtMostK(pb, scp, value, k);
+				return k == 1 ? new AtMost1(pb, scp, value) : new AtMostK(pb, scp, value, k);
 			case GE:
-				return new AtLeastK(pb, scp, value, k);
+				return k == 1 ? new AtLeast1(pb, scp, value) : new AtLeastK(pb, scp, value, k);
 			case GT:
-				return new AtLeastK(pb, scp, value, k + 1);
+				return k == 0 ? new AtLeast1(pb, scp, value) : new AtLeastK(pb, scp, value, k + 1);
 			case EQ:
-				return new ExactlyK(pb, scp, value, k);
+				return k == 1 ? new Exactly1(pb, scp, value) : new ExactlyK(pb, scp, value, k);
 			default:
 				throw new AssertionError("NE is not implemented"); // TODO useful to have a propagator?
 			}
@@ -82,11 +78,11 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 			super(pb, list, list, value);
 			this.k = k;
 			defineKey(value, k);
-			control(0 < k && k < list.length, () -> "Bad value of k=" + k);
+			control(0 < k && k < list.length, "Bad value of k=" + k);
 		}
 
 		// ************************************************************************
-		// ***** Constraint AtMostK
+		// ***** Constraints AtMostK and AtMost1
 		// ************************************************************************
 
 		public static class AtMostK extends CountCst implements TagSymmetric { // not call filtering-complete
@@ -119,10 +115,6 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 			}
 		}
 
-		// ************************************************************************
-		// ***** Constraint AtMost1
-		// ************************************************************************
-
 		public static final class AtMost1 extends AtMostK {
 
 			public AtMost1(Problem pb, Variable[] list, int value) {
@@ -132,15 +124,15 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 			@Override
 			public boolean runPropagator(Variable x) {
 				if (!x.dom.onlyContainsValue(value))
-					return true;
+					return true; // because we only filter when the recently filtered variable x has been assigned to the value
 				for (Variable y : scp)
-					if (y != x && !y.dom.removeValueIfPresent(value))
+					if (y != x && y.dom.removeValueIfPresent(value) == false)
 						return false;
-				return true;
+				return entailed();
 			}
 		}
 		// ************************************************************************
-		// ***** Constraint AtLeastK
+		// ***** Constraints AtLeastK and AtLeast1
 		// ************************************************************************
 
 		public static class AtLeastK extends CountCst implements TagSymmetric { // not call filtering-complete
@@ -171,7 +163,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 				// we search for another sentinel
 				int[] dense = sentinels.dense;
 				for (int i = sentinels.limit + 1; i < dense.length; i++)
-					if (scp[dense[i]].dom.isPresentValue(value)) {
+					if (scp[dense[i]].dom.isPresentValue(value)) { // another sentinel is found
 						sentinels.swap(p, dense[i]);
 						return true;
 					}
@@ -179,13 +171,9 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 				for (int i = sentinels.limit; i >= 0; i--)
 					if (dense[i] != p && scp[dense[i]].dom.reduceToValue(value) == false)
 						return false;
-				return true;
+				return entailed();
 			}
 		}
-
-		// ************************************************************************
-		// ***** Constraint AtLeast1
-		// ************************************************************************
 
 		public static final class AtLeast1 extends AtLeastK {
 
@@ -212,16 +200,18 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 						Variable sentinel = findAnotherSentinel();
 						if (sentinel != null)
 							sentinel1 = sentinel;
-						else if (sentinel2.dom.reduceToValue(value) == false)
-							return false;
+						else
+							return sentinel2.dom.reduceToValue(value) && entailed();
+						// before, was: if (sentinel2.dom.reduceToValue(value) == false) return false;
 					}
 				} else if (x == sentinel2) {
 					if (!sentinel2.dom.isPresentValue(value)) {
 						Variable sentinel = findAnotherSentinel();
 						if (sentinel != null)
 							sentinel2 = sentinel;
-						else if (sentinel1.dom.reduceToValue(value) == false)
-							return false;
+						else
+							return sentinel1.dom.reduceToValue(value) && entailed();
+						// before was: if (sentinel1.dom.reduceToValue(value) == false) return false;
 					}
 				}
 				return true;
@@ -229,14 +219,14 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 		}
 
 		// ************************************************************************
-		// ***** Constraint ExactlyK
+		// ***** Constraints ExactlyK and Exactly1
 		// ************************************************************************
 
 		/**
 		 * Exactly k variables of the scope, where k is a constant, must be assigned to the specified value.
 		 * 
 		 */
-		public static class ExactlyK extends CountCst implements TagSymmetric, TagFilteringCompleteAtEachCall {
+		public static class ExactlyK extends CountCst implements TagSymmetric {
 
 			@Override
 			public boolean checkValues(int[] t) {
@@ -249,6 +239,9 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 
 			@Override
 			public boolean runPropagator(Variable x) {
+				if (x.dom.size() > 1 && x.dom.isPresentValue(value)) // removing these two lines, and add TagCompletFilteringAtEachCall is an alternative
+					return true;
+
 				// nGuaranteedOccurrences denotes the number of singleton domains with the specified value
 				// nPossibleOccurrences denotes the number of domains containing the specified value
 				int nGuaranteedOccurrences = 0, nPossibleOccurrences = 0;
@@ -259,31 +252,34 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 							return y.dom.fail();
 					}
 				if (nGuaranteedOccurrences == k) {
+					int toremove = nPossibleOccurrences - k;
 					// remove value from all non singleton domains
-					for (int i = futvars.limit; i >= 0; i--) {
+					for (int i = futvars.limit; i >= 0 && toremove > 0; i--) {
 						Domain dom = scp[futvars.dense[i]].dom;
-						if (dom.size() > 1)
-							dom.removeValueIfPresent(value);
+						if (dom.size() > 1 && dom.isPresentValue(value)) {
+							dom.removeValue(value); // no inconsistency possible
+							toremove--;
+						}
 					}
-					return true;
+					return entailed();
 				}
 				if (nPossibleOccurrences < k)
 					return x.dom.fail(); // inconsistency detected
 				if (nPossibleOccurrences == k) {
+					int toassign = k - nGuaranteedOccurrences;
 					// assign all non singleton domains containing the value
-					for (int i = futvars.limit; i >= 0; i--) {
+					for (int i = futvars.limit; i >= 0 && toassign > 0; i--) {
 						Domain dom = scp[futvars.dense[i]].dom;
-						if (dom.size() > 1 && dom.isPresentValue(value))
+						if (dom.size() > 1 && dom.isPresentValue(value)) {
 							dom.reduceToValue(value);
+							toassign--;
+						}
 					}
+					return entailed();
 				}
 				return true;
 			}
 		}
-
-		// ************************************************************************
-		// ***** Constraint Exactly1
-		// ************************************************************************
 
 		public static final class Exactly1 extends ExactlyK {
 
@@ -362,7 +358,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 				Domain domK = k.dom;
 				if (domK.size() == 1) {
 					int valK = domK.uniqueValue();
-					if (valK < nGuaranteedOccurrences || nPossibleOccurrences < valK)
+					if (valK < nGuaranteedOccurrences || valK > nPossibleOccurrences)
 						return domK.fail();
 				} else {
 					// possible update of the domain of k when present in the vector, first by removing value (if present)

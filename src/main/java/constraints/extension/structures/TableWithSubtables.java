@@ -22,8 +22,7 @@ import variables.Variable;
 
 public class TableWithSubtables extends Table {
 
-	// 1D = vap ; 2D = idx ; 3D = position of the tuple (in tuples); 4D = position of the elements of the tuple
-	public int[][][][] subtables;
+	public int[][][][] subtables; // subtables[x][a][k] is the kth tuple of the table where x = a
 
 	public int[] nextSupport(int x, int a, int[] current) {
 		int[][] subtable = subtables[x][a];
@@ -52,7 +51,7 @@ public class TableWithSubtables extends Table {
 	public void storeTuples(int[][] tuples, boolean positive) {
 		super.storeTuples(tuples, positive);
 		buildStructures();
-		assert controlOrder();
+		assert IntStream.range(0, subtables.length).allMatch(i -> IntStream.range(0, subtables[i].length).allMatch(j -> Kit.isLexIncreasing(subtables[i][j])));
 		// displayExhaustively();
 	}
 
@@ -74,9 +73,5 @@ public class TableWithSubtables extends Table {
 			}
 		}
 		return sb.toString();
-	}
-
-	protected boolean controlOrder() {
-		return IntStream.range(0, subtables.length).allMatch(i -> IntStream.range(0, subtables[i].length).allMatch(j -> Kit.isLexIncreasing(subtables[i][j])));
 	}
 }

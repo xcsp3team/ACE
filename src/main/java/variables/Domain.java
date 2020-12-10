@@ -591,17 +591,17 @@ public interface Domain extends LinkedSet {
 		return afterElementaryCalls(sizeBefore);
 	}
 
-	default boolean removeValuesAddNotIn(Domain dom, int offset) {
-		if (lastValue() + offset < dom.firstValue() || dom.lastValue() < firstValue() + offset)
-			return fail();
-		int sizeBefore = size();
-		if (sizeBefore == 1)
-			return dom.isPresentValue(firstValue() + offset) || fail();
-		for (int a = first(); a != -1; a = next(a))
-			if (!dom.isPresentValue(toVal(a) + offset))
-				removeElementary(a);
-		return afterElementaryCalls(sizeBefore);
-	}
+	// default boolean removeValuesAddNotIn(Domain dom, int offset) {
+	// if (lastValue() + offset < dom.firstValue() || dom.lastValue() < firstValue() + offset)
+	// return fail();
+	// int sizeBefore = size();
+	// if (sizeBefore == 1)
+	// return dom.isPresentValue(firstValue() + offset) || fail();
+	// for (int a = first(); a != -1; a = next(a))
+	// if (!dom.isPresentValue(toVal(a) + offset))
+	// removeElementary(a);
+	// return afterElementaryCalls(sizeBefore);
+	// }
 
 	// default boolean removeValuesMulNotIn(Domain dom, int coeff) {
 	// if (lastValue() * coeff < dom.firstValue() || dom.lastValue() < firstValue() * coeff)
