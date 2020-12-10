@@ -298,18 +298,10 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 
 		public static CountVar buildFrom(Problem pb, Variable[] scp, int value, TypeConditionOperatorRel op, Variable k) {
 			switch (op) {
-			case LT:
-				throw new AssertionError();
-			case LE:
-				throw new AssertionError();
-			case GE:
-				throw new AssertionError();
-			case GT:
-				throw new AssertionError();
 			case EQ:
 				return new ExactlyVarK(pb, scp, value, k);
 			default:
-				throw new AssertionError("NE is not implemented");
+				throw new AssertionError("not implemented");
 			}
 		}
 
@@ -390,18 +382,41 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 					} else if (domK.removeValuesLT(nGuaranteedOccurrences) == false || domK.removeValuesGT(nPossibleOccurrences) == false)
 						return false;
 				}
-				// if k is singleton, updating the domain of the other variables
+				// if k is singleton, possibly updating the domain of the other variables
 				if (domK.size() == 1) {
 					int v = domK.uniqueValue();
-					if (v == nGuaranteedOccurrences)
-						for (Variable x : list)
-							if (x.dom.size() > 1 && x.dom.isPresentValue(value))
-								if (!x.dom.removeValue(value))
-									return false;
-					if (v == nPossibleOccurrences)
-						for (Variable x : list)
-							if (x.dom.size() > 1 && x.dom.isPresentValue(value))
-								x.dom.reduceToValue(value);
+					if (v == nGuaranteedOccurrences) {
+						int toremove = nPossibleOccurrences - v;
+						// remove value from all non singleton domains
+						// for (int i = futvars.limit; i >= 0; i--) {
+						// Domain dom = scp[futvars.dense[i]].dom;
+						// if (dom.size() > 1 && dom.isPresentValue(value)) {
+						// dom.removeValue(value); // no inconsistency possible
+						// toremove--;
+						// }
+						// }
+						if (toremove > 0)
+							for (Variable x : list)
+								if (x.dom.size() > 1 && x.dom.isPresentValue(value))
+									x.dom.removeValue(value);
+						return entailed();
+					}
+					if (v == nPossibleOccurrences) {
+						int toassign = v - nGuaranteedOccurrences;
+						// // assign all non singleton domains containing the value
+						// for (int i = futvars.limit; i >= 0 && toassign > 0; i--) {
+						// Domain dom = scp[futvars.dense[i]].dom;
+						// if (dom.size() > 1 && dom.isPresentValue(value)) {
+						// dom.reduceToValue(value);
+						// toassign--;
+						// }
+						// }
+						if (toassign > 0)
+							for (Variable x : list)
+								if (x.dom.size() > 1 && x.dom.isPresentValue(value))
+									x.dom.reduceToValue(value);
+						return entailed();
+					}
 				}
 				return true;
 			}

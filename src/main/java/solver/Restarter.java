@@ -56,7 +56,8 @@ public class Restarter implements ObserverRuns {
 			nRestartsSinceLastReset = 0;
 		}
 		if (currCutoff != Long.MAX_VALUE) {
-			long offset = setting.luby ? lubyCutoffFor(numRun + 1) * 100 : (long) (baseCutoff * Math.pow(setting.factor, nRestartsSinceLastReset));
+			long offset = setting.luby ? lubyCutoffFor(nRestartsSinceLastReset + 1) * 150
+					: (long) (baseCutoff * Math.pow(setting.factor, nRestartsSinceLastReset));
 			currCutoff = measureSupplier.get() + offset;
 		}
 		nRestartsSinceLastReset++;
@@ -105,7 +106,7 @@ public class Restarter implements ObserverRuns {
 	public void reset() {
 		numRun = -1;
 		currCutoff = baseCutoff = setting.cutoff;
-		nRestartsSinceLastReset = -1;
+		nRestartsSinceLastReset = 0;
 	}
 
 	private Supplier<Long> measureSupplier() {
@@ -132,6 +133,9 @@ public class Restarter implements ObserverRuns {
 		if (settingsGeneral.framework == TypeFramework.COP)
 			setting.cutoff *= 10;
 		reset();
+
+		// for (int i = 0; i < 50; i++)
+		// System.out.println(lubyCutoffFor(i));
 	}
 
 	private long cnt;
