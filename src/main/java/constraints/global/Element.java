@@ -199,16 +199,16 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 		}
 
 		private boolean controlGAC() {
-			Kit.control(idom.size() != 1 || domAt(idom.unique()).subsetOf(vdom), () -> "index is singleton and dom(index) is not included in dom(result).");
+			control(idom.size() != 1 || domAt(idom.unique()).subsetOf(vdom), () -> "index is singleton and dom(index) is not included in dom(result).");
 			for (int a = idom.first(); a != -1; a = idom.next(a))
-				Kit.control(domAt(a).overlapWith(vdom), () -> "One var has no value in dom(result).");
+				control(domAt(a).overlapWith(vdom), () -> "One var has no value in dom(result).");
 			for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
 				int v = vdom.toVal(a);
 				int b;
 				for (b = idom.first(); b != -1; b = idom.next(b))
 					if (domAt(b).isPresentValue(v))
 						break;
-				Kit.control(b != -1, () -> "value " + v + " is in dom(value) but in no list variable whose index is still in dom(index).");
+				control(b != -1, () -> "value " + v + " is in dom(value) but in no list variable whose index is still in dom(index).");
 			}
 			return true;
 		}

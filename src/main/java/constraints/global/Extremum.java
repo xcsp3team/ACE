@@ -223,7 +223,6 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 		@Override
 		public final void limit(long newLimit) {
 			this.limit = newLimit;
-			// entailedLevel = -1;
 			control(minComputableObjectiveValue() <= limit && limit <= maxComputableObjectiveValue());
 		}
 
@@ -311,16 +310,16 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 			public static final class MaximumCstGE extends MaximumCst {
 
 				@Override
-				public boolean checkValues(int[] vals) {
-					return IntStream.of(vals).max().getAsInt() >= limit;
+				public boolean checkValues(int[] t) {
+					return IntStream.of(t).max().getAsInt() >= limit;
 				}
 
 				private int sentinel1, sentinel2;
 
 				public MaximumCstGE(Problem pb, Variable[] scp, long limit) {
 					super(pb, scp, Math.max(limit, maxFirstInitialValues(scp)));
-					sentinel1 = 0;
-					sentinel2 = scp.length - 1;
+					this.sentinel1 = 0;
+					this.sentinel2 = scp.length - 1;
 					control(scp[sentinel1].dom.lastValue() >= limit && scp[sentinel2].dom.lastValue() >= limit, "unsound sentinels");
 				}
 
@@ -336,8 +335,8 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 						else {
 							if (scp[sentinel2].dom.lastValue() < limit)
 								return x == null ? false : x.dom.fail();
-							else
-								return scp[sentinel2].dom.removeValuesLT(limit); // necessarily true returned
+							scp[sentinel2].dom.removeValuesLT(limit);
+							return entailed();
 						}
 					}
 					if (scp[sentinel2].dom.lastValue() < limit) {
@@ -349,11 +348,12 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 							sentinel2 = i;
 						else {
 							assert scp[sentinel1].dom.lastValue() >= limit;
-							return scp[sentinel2].dom.removeValuesLT(limit); // necessarily true returned
+							scp[sentinel1].dom.removeValuesLT(limit);
+							return entailed();
+
 						}
 					}
 					return true;
-					// TODO manage entailed below ?
 				}
 			}
 
@@ -442,8 +442,8 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 						else {
 							if (scp[sentinel2].dom.firstValue() > limit)
 								return x == null ? false : x.dom.fail();
-							else
-								return scp[sentinel2].dom.removeValuesGT(limit); // necessarily true returned
+							scp[sentinel2].dom.removeValuesGT(limit);
+							return entailed();
 						}
 					}
 					if (scp[sentinel2].dom.firstValue() > limit) {
@@ -455,7 +455,8 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 							sentinel2 = i;
 						else {
 							assert scp[sentinel1].dom.firstValue() <= limit;
-							return scp[sentinel2].dom.removeValuesGT(limit); // necessarily true returned
+							scp[sentinel1].dom.removeValuesGT(limit);
+							return entailed();
 						}
 					}
 					return true;

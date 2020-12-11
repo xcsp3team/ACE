@@ -339,7 +339,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				// counting the nb of occurrences of value in list
+				// counting the number of occurrences of value in list
 				int nGuaranteedOccurrences = 0, nPossibleOccurrences = 0;
 				for (Variable x : list)
 					if (x.dom.isPresentValue(value)) {
@@ -347,46 +347,46 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 						if (x.dom.size() == 1)
 							nGuaranteedOccurrences++;
 					}
-				Domain domK = k.dom;
-				if (domK.size() == 1) {
-					int valK = domK.uniqueValue();
-					if (valK < nGuaranteedOccurrences || valK > nPossibleOccurrences)
-						return domK.fail();
+				Domain dk = k.dom;
+				if (dk.size() == 1) {
+					int vk = dk.uniqueValue();
+					if (vk < nGuaranteedOccurrences || vk > nPossibleOccurrences)
+						return dk.fail();
 				} else {
 					// possible update of the domain of k when present in the vector, first by removing value (if present)
 					// so as to update immediately nPossibleOccurrences
 					if (indexOfKInList != -1) {
-						int a = domK.toPresentIdx(value);
+						int a = dk.toPresentIdx(value);
 						if (a != -1) {
 							boolean deleted = false;
-							for (int b = domK.first(); b != -1; b = domK.next(b))
+							for (int b = dk.first(); b != -1; b = dk.next(b))
 								if (b == a) {
 									if (value < nGuaranteedOccurrences + 1 || nPossibleOccurrences < value) { // +1 by assuming we assign the value
-										if (domK.remove(a) == false)
+										if (dk.remove(a) == false)
 											return false;
 										deleted = true;
 									}
 								} else {
-									int v = domK.toVal(b);
-									if (v < nGuaranteedOccurrences || nPossibleOccurrences - 1 < v) { // -1 by assuming we assign v (and not val)
-										if (domK.remove(b) == false)
+									int vb = dk.toVal(b);
+									if (vb < nGuaranteedOccurrences || nPossibleOccurrences - 1 < vb) { // -1 by assuming we assign vb (and not value)
+										if (dk.remove(b) == false)
 											return false;
 									}
 								}
 							if (deleted)
 								nPossibleOccurrences--;
 						} else {
-							if (domK.removeValuesLT(nGuaranteedOccurrences) == false || domK.removeValuesGT(nPossibleOccurrences) == false)
+							if (dk.removeValuesLT(nGuaranteedOccurrences) == false || dk.removeValuesGT(nPossibleOccurrences) == false)
 								return false;
 						}
-					} else if (domK.removeValuesLT(nGuaranteedOccurrences) == false || domK.removeValuesGT(nPossibleOccurrences) == false)
+					} else if (dk.removeValuesLT(nGuaranteedOccurrences) == false || dk.removeValuesGT(nPossibleOccurrences) == false)
 						return false;
 				}
 				// if k is singleton, possibly updating the domain of the other variables
-				if (domK.size() == 1) {
-					int v = domK.uniqueValue();
-					if (v == nGuaranteedOccurrences) {
-						int toremove = nPossibleOccurrences - v;
+				if (dk.size() == 1) {
+					int vk = dk.uniqueValue();
+					if (vk == nGuaranteedOccurrences) {
+						int toremove = nPossibleOccurrences - vk;
 						// remove value from all non singleton domains
 						// for (int i = futvars.limit; i >= 0; i--) {
 						// Domain dom = scp[futvars.dense[i]].dom;
@@ -401,8 +401,8 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 									x.dom.removeValue(value);
 						return entailed();
 					}
-					if (v == nPossibleOccurrences) {
-						int toassign = v - nGuaranteedOccurrences;
+					if (vk == nPossibleOccurrences) {
+						int toassign = vk - nGuaranteedOccurrences;
 						// // assign all non singleton domains containing the value
 						// for (int i = futvars.limit; i >= 0 && toassign > 0; i--) {
 						// Domain dom = scp[futvars.dense[i]].dom;
