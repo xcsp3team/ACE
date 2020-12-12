@@ -44,32 +44,33 @@ public class NotAllEqual extends CtrGlobal implements TagSymmetric, TagGACGuaran
 	public boolean runPropagator(Variable evt) {
 		Variable unfixed = null;
 		int uniqueFixedVal = Integer.MAX_VALUE; // this value cannot be present in integer domains
-		// iteration on future variables first
+		// iteration over future variables first
 		for (int i = futvars.limit; i >= 0; i--) {
-			Variable y = scp[futvars.dense[i]];
-			if (y.dom.size() > 1) {
+			Domain dom = scp[futvars.dense[i]].dom;
+			// Variable y = scp[futvars.dense[i]];
+			if (dom.size() > 1) {
 				if (unfixed == null)
-					unfixed = y;
+					unfixed = dom.var();
 				else
 					return true; // AC because at least two unfixed variables
 			} else {
 				if (uniqueFixedVal == Integer.MAX_VALUE)
-					uniqueFixedVal = y.dom.uniqueValue();
-				else if (uniqueFixedVal != y.dom.uniqueValue())
-					return true; // AC because two fixed variables with different values
+					uniqueFixedVal = dom.uniqueValue();
+				else if (uniqueFixedVal != dom.uniqueValue())
+					return entailed(); // entailed because two fixed variables with different values
 			}
 		}
-		// iteration on past variable
+		// iteration over past variable then
 		for (int i = futvars.size(); i < scp.length; i++) {
-			Domain domp = scp[futvars.dense[i]].dom;
+			Domain dom = scp[futvars.dense[i]].dom;
 			if (uniqueFixedVal == Integer.MAX_VALUE)
-				uniqueFixedVal = domp.uniqueValue();
-			else if (uniqueFixedVal != domp.uniqueValue())
-				return true;
+				uniqueFixedVal = dom.uniqueValue();
+			else if (uniqueFixedVal != dom.uniqueValue())
+				return entailed();
 		}
 		if (unfixed == null)
 			return evt.dom.fail(); // because all variables are assigned to the same value
 		assert uniqueFixedVal != Integer.MAX_VALUE;
-		return unfixed.dom.removeValueIfPresent(uniqueFixedVal);
+		return unfixed.dom.removeValueIfPresent(uniqueFixedVal) && entailed();
 	}
 }

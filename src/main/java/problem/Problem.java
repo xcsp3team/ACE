@@ -1305,17 +1305,18 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			Object values = trees[i].possibleValues();
 			return values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
 		};
+		int aie = head.control.extension.arityLimitForIntensionToExtension, sl = head.control.propagation.spaceLimitation;
 		if (trees.length > 1 && IntStream.range(1, trees.length).allMatch(i -> areSimilar(trees[0], trees[i]))) {
 			Var[] aux = api.array(idAux(), api.size(trees.length), doms.apply(0), "auxiliary variables");
 			int arity = trees[0].vars().length;
-			int[][] tuples = arity <= head.control.extension.arityLimitForIntensionToExtension
-					&& Constraint.howManyVarsWithin(vars(trees[0]), head.control.propagation.spaceLimitation) == ALL
-							? new TreeEvaluator(trees[0]).computeTuples(Variable.initDomainValues(vars(trees[0])))
-							: null;
+			int[][] tuples = arity <= aie && Constraint.howManyVarsWithin(vars(trees[0]), sl) == ALL
+					? new TreeEvaluator(trees[0]).computeTuples(Variable.initDomainValues(vars(trees[0])))
+					: null;
 			for (int i = 0; i < trees.length; i++) {
-				if (tuples != null)
+				if (tuples != null) {
 					extension(vars(trees[i], aux[i]), tuples, true); // extension(eq(aux[i], trees[i]));
-				else
+					features.nConvertedConstraints++;
+				} else
 					equal(aux[i], trees[i]);
 			}
 			return aux;
@@ -1324,10 +1325,10 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Var[] aux = api.array(idAux(), api.size(trees.length), doms, "auxiliary variables");
 		for (int i = 0; i < trees.length; i++) {
 			int arity = trees[i].vars().length;
-			if (arity <= head.control.extension.arityLimitForIntensionToExtension
-					&& Constraint.howManyVarsWithin(vars(trees[i]), head.control.propagation.spaceLimitation) == ALL) {
+			if (arity <= aie && Constraint.howManyVarsWithin(vars(trees[i]), sl) == ALL) {
 				int[][] tuples = new TreeEvaluator(trees[i]).computeTuples(Variable.currDomainValues(vars(trees[i])));
 				extension(vars(trees[i], aux[i]), tuples, true); // extension(eq(aux[i], trees[i]));
+				features.nConvertedConstraints++;
 			} else
 				equal(aux[i], trees[i]);
 		}

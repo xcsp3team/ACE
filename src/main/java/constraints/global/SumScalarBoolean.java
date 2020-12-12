@@ -18,7 +18,7 @@ import sets.SetDense;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class SumScalarBoolean extends CtrGlobal {
+public abstract class SumScalarBoolean extends CtrGlobal implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
 
 	protected final Variable[] list;
 	protected final Variable[] coeffs;
@@ -79,7 +79,7 @@ public abstract class SumScalarBoolean extends CtrGlobal {
 	// ***** Constraint SumScalarBooleanCst
 	// ************************************************************************
 
-	public static abstract class SumScalarBooleanCst extends SumScalarBoolean implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
+	public static abstract class SumScalarBooleanCst extends SumScalarBoolean {
 
 		public static SumScalarBooleanCst buildFrom(Problem pb, Variable[] list, Variable[] coeffs, TypeConditionOperatorRel op, int limit) {
 			switch (op) {
@@ -214,7 +214,7 @@ public abstract class SumScalarBoolean extends CtrGlobal {
 	// ***** Constraint SumScalarBooleanVar
 	// ************************************************************************
 
-	public static abstract class SumScalarBooleanVar extends SumScalarBoolean implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
+	public static abstract class SumScalarBooleanVar extends SumScalarBoolean {
 
 		public static SumScalarBooleanVar buildFrom(Problem pb, Variable[] list, Variable[] coeffs, TypeConditionOperatorRel op, Variable limit) {
 			switch (op) {

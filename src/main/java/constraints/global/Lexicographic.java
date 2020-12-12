@@ -11,6 +11,7 @@ package constraints.global;
 import org.xcsp.common.Types.TypeOperatorRel;
 
 import constraints.Constraint.CtrGlobal;
+import constraints.intension.PrimitiveBinary;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagUnsymmetric;
@@ -51,11 +52,9 @@ public abstract class Lexicographic extends CtrGlobal implements TagUnsymmetric,
 
 	private final int half;
 
-	private final int[] times; // times[x] gives the time at which the variable (at position) x has been set (pseudo-assigned)
+	private int lex_time;
+	private final int[] lex_times; // times[x] gives the time at which the variable (at position) x has been set (pseudo-assigned)
 	private final int[] vals; // vals[x] gives the value of the variable (at position) x set at time times[x]
-
-	private int alpha;
-	private int time;
 
 	public Lexicographic(Problem pb, Variable[] list1, Variable[] list2, boolean strictOrdering) {
 		super(pb, pb.vars(list1, list2));
@@ -64,24 +63,24 @@ public abstract class Lexicographic extends CtrGlobal implements TagUnsymmetric,
 		this.list2 = list2;
 		this.strictOrdering = strictOrdering;
 		this.half = list1.length;
-		this.times = new int[scp.length];
+		this.lex_times = new int[scp.length];
 		this.vals = new int[scp.length];
 		defineKey(strictOrdering);
 	}
 
 	private void set(int p, int v) {
-		times[p] = time;
+		lex_times[p] = lex_time;
 		vals[p] = v;
 	}
 
-	private boolean isConsistentPair(Variable x, int v, Variable y, int w) {
-		time++;
-		set(positionOf(x), v);
-		set(positionOf(y), w);
+	private boolean isConsistentPair(int alpha, int v) {
+		lex_time++;
+		set(positionOf(list1[alpha]), v);
+		set(positionOf(list2[alpha]), v);
 		for (int i = alpha + 1; i < half; i++) {
 			int p1 = positionOf(list1[i]), p2 = positionOf(list2[i]);
-			int min1 = times[p1] == time ? vals[p1] : list1[i].dom.firstValue();
-			int max2 = times[p2] == time ? vals[p2] : list2[i].dom.lastValue();
+			int min1 = lex_times[p1] == lex_time ? vals[p1] : list1[i].dom.firstValue();
+			int max2 = lex_times[p2] == lex_time ? vals[p2] : list2[i].dom.lastValue();
 			if (min1 < max2)
 				return true;
 			if (min1 > max2)
@@ -94,31 +93,33 @@ public abstract class Lexicographic extends CtrGlobal implements TagUnsymmetric,
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
-		alpha = 0;
+		int alpha = 0;
 		while (alpha < half) {
 			Domain dom1 = list1[alpha].dom, dom2 = list2[alpha].dom;
-			if (dom1.removeValuesGT(dom2.lastValue()) == false || dom2.removeValuesLT(dom1.firstValue()) == false) // establishAC
+			if (PrimitiveBinary.enforceLE(dom1, dom2) == false) // enforce (AC on) x <= y (list1[alpha] <= list2[alpha])
 				return false;
-			if (dom1.size() == 1 && dom2.size() == 1 && dom1.firstValue() == dom2.firstValue())
+			if (dom1.size() == 1 && dom2.size() == 1) {
+				if (dom1.uniqueValue() < dom2.uniqueValue())
+					return entailed();
+				assert dom1.uniqueValue() == dom2.uniqueValue();
 				alpha++;
-			else
-				break;
+			} else {
+				int min1 = dom1.firstValue(), min2 = dom2.firstValue();
+				assert min1 <= min2;
+				if (min1 == min2 && !isConsistentPair(alpha, min1))
+					if (dom2.removeValue(min2) == false)
+						return false;
+				int max1 = dom1.lastValue(), max2 = dom2.lastValue();
+				assert max1 <= max2;
+				if (max1 == max2 && !isConsistentPair(alpha, max1))
+					if (dom1.removeValue(max1) == false)
+						return false;
+				assert dom1.firstValue() < dom2.lastValue();
+				return true;
+			}
 		}
-		if (alpha >= half)
-			return !strictOrdering;
-		Domain dom1 = list1[alpha].dom, dom2 = list2[alpha].dom;
-		int min1 = dom1.firstValue(), min2 = dom2.firstValue();
-		assert min1 <= min2;
-		if (min1 == min2 && !isConsistentPair(list1[alpha], min1, list2[alpha], min2))
-			if (dom2.removeValueIfPresent(min2) == false)
-				return false;
-		int max1 = dom1.lastValue(), max2 = dom2.lastValue();
-		assert max1 <= max2;
-		if (max1 == max2 && !isConsistentPair(list1[alpha], max1, list2[alpha], max2))
-			if (dom1.removeValueIfPresent(max1) == false)
-				return false;
-		assert dom1.firstValue() < dom2.lastValue();
-		return true;
+		assert alpha == half;
+		return !strictOrdering;
 	}
 
 	// ************************************************************************

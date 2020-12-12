@@ -25,17 +25,20 @@ import variables.Variable.VariableInteger;
 
 public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed { // not call filtering-complete
 
-	protected Variable[] list;
+	protected final Variable[] list;
 
-	protected Set<Integer> fixedVals;
+	protected final Set<Integer> fixedVals;
 
-	protected SetDense unfixedVars;
+	protected final SetDense unfixedVars; // unfixed variables with domains not in fixed vals (this is an approximation)
+
+	protected final int[] sentinels;
 
 	public NValues(Problem pb, Variable[] scp, Variable[] list) {
 		super(pb, scp);
 		this.list = list;
 		this.fixedVals = new HashSet<>(Variable.setOfvaluesIn(list).size());
 		this.unfixedVars = new SetDense(list.length);
+		this.sentinels = new int[list.length];
 	}
 
 	protected void initializeSets() {
@@ -47,15 +50,23 @@ public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed { 
 			else
 				unfixedVars.add(i);
 		extern: for (int i = unfixedVars.limit; i >= 0; i--) {
-			Domain dom = list[unfixedVars.dense[i]].dom;
+			int x = unfixedVars.dense[i];
+			Domain dom = list[x].dom;
 			if (dom.size() > fixedVals.size())
 				continue;
-			if (dom.size() > 4) // hard coding for avoiding iterating systematically over all values
+			int sentinel = sentinels[x];
+			if (dom.isPresentValue(sentinel) && !fixedVals.contains(sentinel))
 				continue;
-			for (int a = dom.first(); a != -1; a = dom.next(a))
-				if (!fixedVals.contains(dom.toVal(a)))
+			if (dom.size() > 5) // hard coding for avoiding iterating systematically over all values
+				continue;
+			for (int a = dom.first(); a != -1; a = dom.next(a)) {
+				int va = dom.toVal(a);
+				if (!fixedVals.contains(va)) {
+					sentinels[x] = va;
 					continue extern;
-			unfixedVars.removeAtPosition(i);
+				}
+			}
+			unfixedVars.removeAtPosition(i); // because all values in its domain correspond to fixed values
 		}
 	}
 
@@ -121,21 +132,15 @@ public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed { 
 			@Override
 			public boolean runPropagator(Variable x) {
 				if (x == null || x.dom.size() == 1) {
-					fixedVals.clear();
-					unfixedVars.clear();
-					for (int i = 0; i < list.length; i++)
-						if (list[i].dom.size() == 1)
-							fixedVals.add(list[i].dom.firstValue());
-						else
-							unfixedVars.add(i);
+					initializeSets();
 					if (fixedVals.size() > limit)
 						return x == null ? false : x.dom.fail();
-					if (fixedVals.size() == limit)
-						for (int i = unfixedVars.limit; i >= 0; i--) {
-							Domain dom = list[unfixedVars.dense[i]].dom;
-							if (dom.removeValuesNotIn(fixedVals) == false)
+					if (fixedVals.size() == limit) {
+						for (int i = unfixedVars.limit; i >= 0; i--)
+							if (list[unfixedVars.dense[i]].dom.removeValuesNotIn(fixedVals) == false)
 								return false;
-						}
+						return entailed();
+					}
 				}
 				return true;
 			}
@@ -156,21 +161,15 @@ public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed { 
 			public boolean runPropagator(Variable x) {
 				if (x == null || x.dom.size() == 1) {
 					initializeSets();
-					// fixedVals.clear();
-					// unfixedVars.clear();
-					// for (int i = 0; i < scp.length; i++)
-					// if (scp[i].dom.size() == 1)
-					// fixedVals.add(scp[i].dom.firstValue());
-					// else
-					// unfixedVars.add(i);
 					if (fixedVals.size() + unfixedVars.size() < limit)
 						return x == null ? false : x.dom.fail();
-					if (fixedVals.size() + unfixedVars.size() == limit)
-						for (int i = unfixedVars.limit; i >= 0; i--) {
-							Domain dom = list[unfixedVars.dense[i]].dom;
-							if (dom.removeValuesIn(fixedVals) == false)
+					if (fixedVals.size() + unfixedVars.size() == limit) {
+						for (int i = unfixedVars.limit; i >= 0; i--)
+							if (list[unfixedVars.dense[i]].dom.removeValuesIn(fixedVals) == false)
 								return false;
-						}
+						if (unfixedVars.size() == 0)
+							return entailed();
+					}
 				}
 				return true;
 			}
@@ -211,17 +210,14 @@ public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed { 
 					if (k.dom.size() == 1) {
 						int limit = k.dom.uniqueValue();
 						if (fixedVals.size() == limit) {
-							for (int i = unfixedVars.limit; i >= 0; i--) {
-								Domain dom = list[unfixedVars.dense[i]].dom;
-								if (dom.removeValuesNotIn(fixedVals) == false)
+							for (int i = unfixedVars.limit; i >= 0; i--)
+								if (list[unfixedVars.dense[i]].dom.removeValuesNotIn(fixedVals) == false)
 									return false;
-							}
+							return entailed();
 						} else if (fixedVals.size() + unfixedVars.size() == limit) {
-							for (int i = unfixedVars.limit; i >= 0; i--) {
-								Domain dom = list[unfixedVars.dense[i]].dom;
-								if (dom.removeValuesIn(fixedVals) == false)
+							for (int i = unfixedVars.limit; i >= 0; i--)
+								if (list[unfixedVars.dense[i]].dom.removeValuesIn(fixedVals) == false)
 									return false;
-							}
 						}
 					}
 				}

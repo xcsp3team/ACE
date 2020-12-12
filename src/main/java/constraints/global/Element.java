@@ -75,11 +75,18 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			if (idom.size() > 1) // checking that the values of index are still valid
-				if (idom.removeIndexesChecking(a -> !domAt(a).isPresentValue(k)) == false)
+			if (idom.size() > 1) { // checking that the values of index are still valid
+				int sizeBefore = idom.size();
+				for (int a = idom.first(); a != -1; a = idom.next(a))
+					if (!domAt(a).isPresentValue(k))
+						idom.removeElementary(a);
+				if (idom.afterElementaryCalls(sizeBefore) == false)
 					return false;
+			}
 			// be careful : not a else because of statements above that may modify the domain of index
-			return idom.size() > 1 || domAt(idom.unique()).reduceToValue(k);
+			if (idom.size() > 1)
+				return true;
+			return domAt(idom.unique()).reduceToValue(k) && entailed();
 		}
 	}
 
@@ -126,22 +133,28 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 			this(pb, list, 0, index, value);
 		}
 
-		private boolean findSentinelForListAt(int i) {
+		private boolean validSentinelForListAt(int i) {
+			int sentinel = listSentinels[i];
+			if (sentinel != -1 && domAt(i).isPresentValue(sentinel) && vdom.isPresentValue(sentinel))
+				return true;
 			Domain dom = domAt(i);
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
-				int v = dom.toVal(a);
-				if (vdom.isPresentValue(v)) {
-					listSentinels[i] = v;
+				int va = dom.toVal(a);
+				if (vdom.isPresentValue(va)) {
+					listSentinels[i] = va;
 					return true;
 				}
 			}
 			return false;
 		}
 
-		private boolean findSentinelForValue(int a) {
-			int v = vdom.toVal(a);
+		private boolean validSentinelForValue(int a) {
+			int va = vdom.toVal(a);
+			int sentinel = valueSentinels[a];
+			if (sentinel != -1 && idom.present(sentinel) && domAt(sentinel).isPresentValue(va))
+				return true;
 			for (int i = idom.first(); i != -1; i = idom.next(i)) {
-				if (domAt(i).isPresentValue(v)) {
+				if (domAt(i).isPresentValue(va)) {
 					valueSentinels[a] = i;
 					return true;
 				}
@@ -150,17 +163,11 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 		}
 
 		private boolean reduceDomainOfValue() {
-			return vdom.removeIndexesChecking(a -> {
-				int sentinel = valueSentinels[a];
-				return (sentinel == -1 || !idom.present(sentinel) || !domAt(sentinel).isPresentValue(vdom.toVal(a))) && !findSentinelForValue(a);
-			});
+			return vdom.removeIndexesChecking(a -> !validSentinelForValue(a));
 		}
 
 		private boolean reduceDomainOfIndex() {
-			return idom.removeIndexesChecking(i -> {
-				int sentinel = listSentinels[i];
-				return (sentinel == -1 || !domAt(i).isPresentValue(sentinel) || !vdom.isPresentValue(sentinel)) && !findSentinelForListAt(i);
-			});
+			return idom.removeIndexesChecking(i -> !validSentinelForListAt(i));
 		}
 
 		@Override
@@ -193,8 +200,11 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 				Domain dom = domAt(idom.unique());
 				if (dom.removeValuesNotIn(vdom) == false || vdom.removeValuesNotIn(dom) == false)
 					return false;
+				if (dom.size() == 1) {
+					assert vdom.size() == 1;
+					return entailed();
+				}
 			}
-			assert controlGAC();
 			return true;
 		}
 
@@ -202,13 +212,12 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 			control(idom.size() != 1 || domAt(idom.unique()).subsetOf(vdom), () -> "index is singleton and dom(index) is not included in dom(result).");
 			for (int a = idom.first(); a != -1; a = idom.next(a))
 				control(domAt(a).overlapWith(vdom), () -> "One var has no value in dom(result).");
-			for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
+			extern: for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
 				int v = vdom.toVal(a);
-				int b;
-				for (b = idom.first(); b != -1; b = idom.next(b))
+				for (int b = idom.first(); b != -1; b = idom.next(b))
 					if (domAt(b).isPresentValue(v))
-						break;
-				control(b != -1, () -> "value " + v + " is in dom(value) but in no list variable whose index is still in dom(index).");
+						continue extern;
+				control(false, () -> "value " + v + " is in dom(value) but in no list variable whose index is still in dom(index).");
 			}
 			return true;
 		}

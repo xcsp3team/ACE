@@ -17,7 +17,6 @@ import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagUnsymmetric;
 import problem.Problem;
-import utility.Kit;
 import variables.Variable;
 
 public abstract class Ordered extends CtrGlobal implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, TagUnsymmetric {
@@ -40,7 +39,7 @@ public abstract class Ordered extends CtrGlobal implements TagGACGuaranteed, Tag
 	public Ordered(Problem pb, Variable[] scp, int[] lengths) {
 		super(pb, scp);
 		this.lengths = lengths;
-		Kit.control(scp.length == lengths.length + 1);
+		control(scp.length == lengths.length + 1);
 	}
 
 	public Ordered(Problem pb, Variable[] scp) {

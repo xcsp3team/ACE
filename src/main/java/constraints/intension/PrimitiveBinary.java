@@ -1592,14 +1592,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dy.lastValue() <= k)
-					return dx.removeIfPresent(0); // y <= k => x != 0
-				if (dy.firstValue() > k)
-					return dx.removeIfPresent(1); // y > k => x != 1
 				if (dx.last() == 0)
 					return dy.firstValue() > k || dy.removeValuesLE(k); // x = 0 => y > k
 				if (dx.first() == 1)
 					return dy.lastValue() <= k || dy.removeValuesGT(k); // x = 1 => y <= k
+				if (dy.lastValue() <= k)
+					return dx.removeIfPresent(0); // y <= k => x != 0
+				if (dy.firstValue() > k)
+					return dx.removeIfPresent(1); // y > k => x != 1
 				return true;
 			}
 		}
@@ -1617,14 +1617,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dy.firstValue() >= k)
-					return dx.removeIfPresent(0); // y >= k => x != 0
-				if (dy.lastValue() < k)
-					return dx.removeIfPresent(1); // y < k => x != 1
 				if (dx.last() == 0)
 					return dy.lastValue() < k || dy.removeValuesGE(k); // x = 0 => y < k
 				if (dx.first() == 1)
 					return dy.firstValue() >= k || dy.removeValuesLT(k); // x = 1 => y >= k
+				if (dy.firstValue() >= k)
+					return dx.removeIfPresent(0); // y >= k => x != 0
+				if (dy.lastValue() < k)
+					return dx.removeIfPresent(1); // y < k => x != 1
 				return true;
 			}
 		}
@@ -1642,14 +1642,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (!dy.isPresentValue(k))
-					return dx.removeIfPresent(1); // y != k => x != 1
-				if (dy.size() == 1)
-					return dx.removeIfPresent(0); // y = k => x != 0
 				if (dx.last() == 0)
 					return dy.removeValueIfPresent(k); // x = 0 => y != k
 				if (dx.first() == 1)
 					return dy.reduceToValue(k); // x = 1 => y = k
+				if (!dy.isPresentValue(k))
+					return dx.removeIfPresent(1); // y != k => x != 1
+				if (dy.size() == 1)
+					return dx.removeIfPresent(0); // y = k => x != 0
 				return true;
 			}
 		}
@@ -1667,14 +1667,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (!dy.isPresentValue(k))
-					return dx.removeIfPresent(0); // y != k => x != 0
-				if (dy.size() == 1)
-					return dx.removeIfPresent(1); // y = k => x != 1
 				if (dx.last() == 0)
 					return dy.reduceToValue(k); // x = 0 => y = k
 				if (dx.first() == 1)
 					return dy.removeValueIfPresent(k); // x = 1 => x != k
+				if (!dy.isPresentValue(k))
+					return dx.removeIfPresent(0); // y != k => x != 0
+				if (dy.size() == 1)
+					return dx.removeIfPresent(1); // y = k => x != 1
 				return true;
 			}
 		}
