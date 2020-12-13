@@ -64,29 +64,29 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	public static final String N_DOMAIN_TYPES = "nDomainTypes";
 	public static final String N_CONSTRAINTS = "nConstraints";
 	public static final String N_DISCARDED_CONSTRAINTS = "nDiscardedConstraints";
-	public static final String N_RELATION_TYPES = "nRelationTypes";
-	public static final String N_PRESENT_UNARY_CONSTRAINTS = "nPresentUnaryConstraints";
-	public static final String N_REMOVED_UNARY_CONSTRAINTS = "nRemovedUnaryConstraints";
-	public static final String N_IGNORED_UNARY_CONSTRAINTS = "nIgnoredUnaryConstraints";
-	public static final String N_GLOBAL_CONSTRAINTS = "nGlobalConstraints";
-	public static final String N_SPECIFIC_CONSTRAINTS = "nSpecificConstraints";
-	public static final String N_MERGED_CONSTRAINTS = "nMergedConstraints";
-	public static final String N_UNIVERSAL_CONSTRAINTS = "nUniversalConstraints";
+	// public static final String N_RELATION_TYPES = "nRelationTypes";
+	// public static final String N_PRESENT_UNARY_CONSTRAINTS = "nPresentUnaryConstraints";
+	// public static final String N_REMOVED_UNARY_CONSTRAINTS = "nRemovedUnaryConstraints";
+	// public static final String N_IGNORED_UNARY_CONSTRAINTS = "nIgnoredUnaryConstraints";
+	// public static final String N_GLOBAL_CONSTRAINTS = "nGlobalConstraints";
+	// public static final String N_SPECIFIC_CONSTRAINTS = "nSpecificConstraints";
+	// public static final String N_MERGED_CONSTRAINTS = "nMergedConstraints";
+	// public static final String N_UNIVERSAL_CONSTRAINTS = "nUniversalConstraints";
 	public static final String N_ADDED_CONSTRAINTS = "nAddedConstraints";
-	public static final String N_ISOLATED_VARIABLES = "nIsolatedVariables";
-	public static final String N_FIXED_VARIABLES = "nFixedVariables";
-	public static final String N_VALUES_REMOVED_AT_CONSTRUCTION = "nValuesRemovedAtConstruction";
-	public static final String N_PURGED_VALUES = "nPurgedValues";
-	public static final String N_CONFLICTS_STRUCTURES = "nConflictsStructures";
-	public static final String N_SHARED_CONFLICTS_STRUCTURES = "nSharedConflictsStructures";
-	public static final String N_UNBUILT_CONFLICTS_STRUCTURES = "nUnbuiltConflictsStructures";
-	public static final String N_EXTENSION_STRUCTURES = "nExtensionStructures";
+	// public static final String N_ISOLATED_VARIABLES = "nIsolatedVariables";
+	// public static final String N_FIXED_VARIABLES = "nFixedVariables";
+	// public static final String N_VALUES_REMOVED_AT_CONSTRUCTION = "nValuesRemovedAtConstruction";
+	// public static final String N_PURGED_VALUES = "nPurgedValues";
+	// public static final String N_CONFLICTS_STRUCTURES = "nConflictsStructures";
+	// public static final String N_SHARED_CONFLICTS_STRUCTURES = "nSharedConflictsStructures";
+	// public static final String N_UNBUILT_CONFLICTS_STRUCTURES = "nUnbuiltConflictsStructures";
+	// public static final String N_EXTENSION_STRUCTURES = "nExtensionStructures";
 	public static final String N_SHARED_EXTENSION_STRUCTURES = "nSharedExtensionStructures";
-	public static final String N_SHARED_BINARY_REPRESENTATIONS = "nSharedBinaryRepresentations";
-	public static final String N_CONVERTED_CONSTRAINTS = "nConvertedConstraints";
-	public static final String N_CONVERT_CONSTRAINTS_CHECKS = "nConvertConstraintsChecks";
-	public static final String N_EVALUATION_MANAGERS = "nEvaluationManagers";
-	public static final String N_SHARED_EVALUATION_MANAGERS = "nSharedEvaluationManagers";
+	// public static final String N_SHARED_BINARY_REPRESENTATIONS = "nSharedBinaryRepresentations";
+	// public static final String N_CONVERTED_CONSTRAINTS = "nConvertedConstraints";
+	// public static final String N_CONVERT_CONSTRAINTS_CHECKS = "nConvertConstraintsChecks";
+	// public static final String N_EVALUATION_MANAGERS = "nEvaluationManagers";
+	// public static final String N_SHARED_EVALUATION_MANAGERS = "nSharedEvaluationManagers";
 	public static final String MIN_DEGREE = "minDegree";
 	public static final String DEGREES = "degrees";
 	public static final String MAX_DEGREE = "maxDegree";
@@ -220,7 +220,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	 * Fields and methods
 	 *********************************************************************************************/
 
-	private final Head resolution;
+	private final Head head;
 
 	private Document document;
 
@@ -230,9 +230,9 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 
 	public static final String COMMENT_PREFIX = "  ";
 
-	public Output(Head resolution, String configFileName) {
-		this.resolution = resolution;
-		if (resolution.control.xml.dirForCampaign.equals(EMPTY_STRING) == false) {
+	public Output(Head head, String configFileName) {
+		this.head = head;
+		if (!head.control.xml.dirForCampaign.equals(EMPTY_STRING)) {
 			document = Kit.createNewDocument();
 			root = document.createElement(TypeOutput.RESOLUTIONS.toString());
 			root.setAttribute(Output.CONFIGURATION_FILE_NAME, configFileName);
@@ -269,15 +269,15 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 
 	public void beforeData() { // not a method from an observer
 		resolElt = record(TypeOutput.RESOLUTION, null, root);
-		save(resolution.instanceStopwatch.wckTime());
+		save(head.instanceStopwatch.wckTime());
 	}
 
 	public void afterData() { // not a method from an observer
-		MapAtt ia = resolution.problem.features.instanceAttributes(resolution.instanceNumber);
+		MapAtt ia = head.problem.features.instanceAttributes(head.instanceNumber);
 		Kit.control(outputFileName == null);
 
 		String name = ia.entries().stream().filter(e -> e.getKey().equals(Output.NAME)).map(e -> e.getValue().toString()).findFirst().get();
-		outputFileName = outputFileNameFrom(name, resolution.control.settingsFilename);
+		outputFileName = outputFileNameFrom(name, head.control.settingsFilename);
 
 		Kit.log.config(Output.COMMENT_PREFIX + Kit.preprint("Instance ", Kit.BLUE) + name + "\n");
 		record(TypeOutput.INSTANCE, ia.entries(), resolElt);
@@ -285,11 +285,11 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 
 	@Override
 	public void afterProblemConstruction() {
-		Kit.control(resolution.problem.variables.length > 0, () -> "No variable in your model");
-		MapAtt da = resolution.problem.features.domainsAttributes();
-		MapAtt va = resolution.problem.features.variablesAttributes();
-		MapAtt ca = resolution.problem.features.ctrsAttributes();
-		MapAtt oa = resolution.problem.optimizer != null ? resolution.problem.features.objsAttributes() : null;
+		Kit.control(head.problem.variables.length > 0, () -> "No variable in your model");
+		MapAtt da = head.problem.features.domainsAttributes();
+		MapAtt va = head.problem.features.variablesAttributes();
+		MapAtt ca = head.problem.features.ctrsAttributes();
+		MapAtt oa = head.problem.optimizer != null ? head.problem.features.objsAttributes() : null;
 		record(TypeOutput.DOMAINS, da.entries(), resolElt);
 		record(TypeOutput.VARIABLES, va.entries(), resolElt);
 		record(TypeOutput.CONSTRAINTS, ca.entries(), resolElt);
@@ -305,11 +305,11 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	@Override
 	public void afterSolverConstruction() {
 		MapAtt sa = new MapAtt("Solver");
-		if (resolution.solver.propagation.getClass() == GAC.class)
-			sa.put(Output.GUARANTEED_GAC, Constraint.isGuaranteedGAC(resolution.problem.constraints));
+		if (head.solver.propagation.getClass() == GAC.class)
+			sa.put(Output.GUARANTEED_GAC, Constraint.isGuaranteedGAC(head.problem.constraints));
 		sa.separator();
-		sa.put(Output.WCK, resolution.instanceStopwatch.wckTimeInSeconds());
-		sa.put(Output.CPU, resolution.stopwatch.cpuTimeInSeconds());
+		sa.put(Output.WCK, head.instanceStopwatch.wckTimeInSeconds());
+		sa.put(Output.CPU, head.stopwatch.cpuTimeInSeconds());
 		sa.put(Output.MEM, Kit.memoryInMb());
 		solverElt = record(TypeOutput.SOLVER, sa.entries(), resolElt);
 		Kit.log.config("\n" + sa.toString());
@@ -317,21 +317,21 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 
 	@Override
 	public final void afterPreprocessing() {
-		MapAtt pa = resolution.solver.stats.preproAttributes();
+		MapAtt pa = head.solver.stats.preproAttributes();
 		record(TypeOutput.PREPROCESSING, pa.entries(), solverElt);
 		Kit.log.config("\n" + pa.toString() + "\n");
 	}
 
 	@Override
 	public final void afterRun() {
-		MapAtt ra = resolution.solver.stats.runAttributes();
+		MapAtt ra = head.solver.stats.runAttributes();
 		record(TypeOutput.RUN, ra.entries(), solverElt);
 		Kit.log.config(ra.toString());
 	}
 
 	@Override
 	public final void afterSolving() {
-		MapAtt ga = resolution.solver.stats.globalAttributes();
+		MapAtt ga = head.solver.stats.globalAttributes();
 		record(TypeOutput.GLOBAL, ga.entries(), solverElt);
 		Kit.log.config("\n" + ga.toString());
 	}
@@ -340,7 +340,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		if (document == null)
 			return null;
 		root.setAttribute(Output.TOTAL_WCK_TIME, totalWck + "");
-		String dirName = resolution.control.xml.dirForCampaign + File.separator + Output.RESULTS_DIRECTORY_NAME;
+		String dirName = head.control.xml.dirForCampaign + File.separator + Output.RESULTS_DIRECTORY_NAME;
 		File file = new File(dirName);
 		if (!file.exists())
 			file.mkdirs();

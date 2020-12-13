@@ -98,6 +98,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 			super(problem, name);
 			int[] values = problem.symbolic.manageSymbols(symbols); // values associated with symbols
 			this.dom = new DomainSymbols(this, values, symbols);
+			problem.features.nSymbolicVars++;
 		}
 	}
 
@@ -440,8 +441,10 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	public static String instantiationOf(Object obj, String prefix) {
 		if (obj == null)
 			return "*";
-		if (obj instanceof Variable)
-			return ((Variable) obj).lastSolutionPrettyAssignedValue; // dom.prettyAssignedValue();
+		if (obj instanceof Variable) {
+			Variable x = (Variable) obj;
+			return x.dom.prettyValueOf(x.valueIndexInLastSolution); // ((Variable) obj).valueIndexInLastSolution = -1; // dom.prettyAssignedValue();
+		}
 		assert obj.getClass().isArray();
 		if (obj instanceof Variable[]) {
 			// assert Stream.of((Variable[]) obj).noneMatch(x -> x != null && x.dom.size() != 1);
@@ -454,13 +457,13 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	/** Only whitespace as separator. The array only contains variables, and can be of any dimension. */
 	public static String rawInstantiationOf(Object array) {
 		if (array instanceof Variable[]) {
-			// assert Stream.of((Variable[]) array).noneMatch(x -> x != null && x.dom.size() != 1);
-			return Stream.of((Variable[]) array).map(x -> instantiationOf(x, null)).collect(Collectors.joining(" ")); // we need instantiation
-																														// because of possible *; the
-																														// prefix is useless
+			// we need instantiation because of possible *; the prefix is useless
+			return Stream.of((Variable[]) array).map(x -> instantiationOf(x, null)).collect(Collectors.joining(" "));
 		} else // recursive call
 			return Stream.of((Object[]) array).map(o -> rawInstantiationOf(o)).collect(Collectors.joining(" "));
 	}
+
+	// public static int[] flatInstantiation()
 
 	/**********************************************************************************************
 	 * Fields
@@ -504,7 +507,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	/** An object associated with the variable. Of course, may be null. The object can be used for example by an heuristic. */
 	public Object data;
 
-	public String lastSolutionPrettyAssignedValue;
+	public int valueIndexInLastSolution = -1;
 
 	/** The weighted degree of the variable. Basically, it is equal to the sum of the weighted degree of the constraints involving it. */
 	// public double wdeg;

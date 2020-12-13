@@ -21,6 +21,7 @@ import static org.xcsp.common.Types.TypeObjective.SUM;
 import static org.xcsp.common.Types.TypeOptimization.MAXIMIZE;
 import static org.xcsp.common.Types.TypeOptimization.MINIMIZE;
 import static org.xcsp.common.Utilities.safeInt;
+import static org.xcsp.common.predicates.MatcherInterface.logic_vars;
 import static org.xcsp.common.predicates.MatcherInterface.max_vars;
 import static org.xcsp.common.predicates.MatcherInterface.min_vars;
 import static org.xcsp.common.predicates.MatcherInterface.val;
@@ -153,6 +154,7 @@ import constraints.intension.PrimitiveBinary.PrimitiveBinaryLog;
 import constraints.intension.PrimitiveBinary.PrimitiveBinarySub;
 import constraints.intension.PrimitiveBinary.PrimitiveBinarySub.SubNE2;
 import constraints.intension.PrimitiveBinary.PrimitiveBinaryWithCst;
+import constraints.intension.PrimitiveLogic.PrimitiveLogicEq;
 import constraints.intension.PrimitiveTernary;
 import constraints.intension.PrimitiveTernary.PrimitiveTernaryLog;
 import dashboard.Control.SettingGeneral;
@@ -547,17 +549,17 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return c;
 	}
 
-	private void makeGraphComplete() {
-		if (head.control.problem.completeGraph) {
-			int sizeBefore = features.collectedCtrsAtInit.size();
-			// TODO : improve the complexity of finding missing binary constraints below
-			IntStream.range(0, variables.length).forEach(i -> IntStream.range(i + 1, variables.length).forEach(j -> {
-				if (!features.collectedCtrsAtInit.stream().anyMatch(c -> c.scp.length == 2 && c.involves(variables[i], variables[j])))
-					buildCtrTrue(variables[i], variables[j]);
-			}));
-			features.nAddedCtrs += features.collectedCtrsAtInit.size() - sizeBefore;
-		}
-	}
+	// private void makeGraphComplete() {
+	// if (head.control.problem.completeGraph) {
+	// int sizeBefore = features.collectedCtrsAtInit.size();
+	// // TODO : improve the complexity of finding missing binary constraints below
+	// IntStream.range(0, variables.length).forEach(i -> IntStream.range(i + 1, variables.length).forEach(j -> {
+	// if (!features.collectedCtrsAtInit.stream().anyMatch(c -> c.scp.length == 2 && c.involves(variables[i], variables[j])))
+	// buildCtrTrue(variables[i], variables[j]);
+	// }));
+	// features.nAddedCtrs += features.collectedCtrsAtInit.size() - sizeBefore;
+	// }
+	// }
 
 	private void buildSymmetries() {
 		if (head.control.problem.isSymmetryBreaking()) {
@@ -583,7 +585,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 * This method is called when the initialization is finished in order to, among other things, put constraints into an array.
 	 */
 	public final void storeConstraintsToArray() {
-		makeGraphComplete();
+		// makeGraphComplete();
 		buildSymmetries();
 		inferAllDifferents();
 		constraints = features.collectedCtrsAtInit.toArray(new Constraint[0]);
@@ -877,6 +879,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private Matcher min_relop = new Matcher(node(relop, min_vars, varOrVal));
 	private Matcher max_relop = new Matcher(node(relop, max_vars, varOrVal));
 
+	private Matcher logic_X__eq_x = new Matcher(node(TypeExpr.EQ, logic_vars, var));
+
 	private Condition basicCondition(XNodeParent<IVar> tree) {
 		if (tree.type.isRelationalOperator() && tree.sons.length == 2 && tree.sons[1].type.oneOf(VAR, LONG))
 			return tree.sons[1].type == VAR ? new ConditionVar(tree.relop(0), tree.sons[1].var(0)) : new ConditionVal(tree.relop(0), tree.sons[1].val(0));
@@ -944,6 +948,14 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (max_relop.matches(tree)) {
 			// System.exit(1);
 			return maximum((Var[]) tree.sons[0].vars(), basicCondition(tree));
+		}
+
+		if (head.control.xml.primitiveLogicInSolver && logic_X__eq_x.matches(tree)) {
+			// System.out.println(" yep " + tree);
+			Constraint c = PrimitiveLogicEq.buildFrom(this, scp[scp.length - 1], tree.logop(0),
+					IntStream.range(0, scp.length - 1).mapToObj(i -> scp[i]).toArray(Variable[]::new));
+			if (c != null)
+				return addCtr(c);
 		}
 
 		// extremumRules.put(min_relop, (id, r) -> xc.buildCtrMinimum(id, r.sons[0].vars(), basicCondition(r)));

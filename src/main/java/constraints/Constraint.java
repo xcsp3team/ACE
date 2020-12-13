@@ -751,7 +751,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 * Methods related to filtering
 	 *********************************************************************************************/
 
-	private Boolean handleHugeDomains() {
+	private boolean handleHugeDomains() {
 		assert infiniteDomainVars.length > 0;
 		// TODO huge domains are not finalized
 		if (futvars.size() == 0)
@@ -770,7 +770,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		// if (!y.isAssigned()) return true; // we have to wait
 		if (futvars.size() > 0)
 			return true;
-		return null;
+		return false;
 	}
 
 	private boolean genericFiltering(Variable x) {
@@ -804,11 +804,8 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 */
 	public final boolean filterFrom(Variable x) {
 		// System.out.println("filtering " + this + " " + x + " " + this.getClass().getSimpleName());
-		if (this.infiniteDomainVars.length > 0) {
-			Boolean b = handleHugeDomains();
-			if (b != null)
-				return b;
-		}
+		if (infiniteDomainVars.length > 0 && handleHugeDomains()) // Experimental (to be finished)
+			return true;
 
 		// For CSP, some conditions allow us to directly return true (because we know then that there is no filtering possibility)
 		if (problem.settings.framework == TypeFramework.CSP) { // if != MACSP, pb with java -ea ac PlaneparkingTask.xml -ea -cm=false -ev -trace

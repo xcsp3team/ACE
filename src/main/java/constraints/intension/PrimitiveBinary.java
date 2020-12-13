@@ -22,6 +22,7 @@ import constraints.intension.PrimitiveBinary.PrimitiveBinaryMul.MulGE2;
 import constraints.intension.PrimitiveBinary.PrimitiveBinaryMul.MulLE2;
 import constraints.intension.PrimitiveBinary.PropagatorEQ.MultiPropagatorEQ;
 import constraints.intension.PrimitiveBinary.PropagatorEQ.SimplePropagatorEQ;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagSymmetric;
 import interfaces.Tags.TagUnsymmetric;
@@ -34,7 +35,7 @@ import variables.Variable;
 // this implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 = 3
 // https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.17.2
 
-public abstract class PrimitiveBinary extends Primitive implements TagGACGuaranteed {
+public abstract class PrimitiveBinary extends Primitive implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
 
 	public static boolean enforceLT(Domain dx, Domain dy) { // x < y
 		return dx.removeValuesGE(dy.lastValue()) && dy.removeValuesLE(dx.firstValue());

@@ -40,7 +40,7 @@ public final class Queue extends SetSparse {
 		super(propagation.solver.head.problem.variables.length);
 		this.propagation = propagation;
 		Head head = propagation.solver.head;
-		String className = head.problem.features.maxDomSize() <= 4 ? First.class.getSimpleName() : head.control.revh.classForRevHeuristic;
+		String className = head.problem.features.maxDomSize() <= 4 ? First.class.getSimpleName() : head.control.revh.clazz;
 		Set<Class<?>> classes = head.handlerClasses.map.get(HeuristicRevisions.class);
 		this.heuristic = Reflector.buildObject(className, classes, this, head.control.revh.anti);
 		this.variables = head.problem.variables;

@@ -145,6 +145,8 @@ public class Control {
 		public final boolean primitiveUnaryInSolver = addB("primitiveUnaryInSolver", "p1sol", true, "", HIDDEN);
 		public final boolean primitiveBinaryInSolver = addB("primitiveBinaryInSolver", "p2sol", true, "", HIDDEN);
 		public final boolean primitiveTernaryInSolver = addB("primitiveTernarnyInSolver", "p3sol", true, "", HIDDEN);
+		public final boolean primitiveLogicInSolver = addB("primitiveLogicInSolver", "plsol", true, "", HIDDEN);
+
 		public final boolean displayPrimitives = addB("displayPrimitives", "dpri", false, s_dpri, HIDDEN);
 	}
 
@@ -177,6 +179,7 @@ public class Control {
 		public final long timeout = addL("timeout", "t", PLUS_INFINITY, s_timeout);
 		public int verbose = addI("verbose", "v", 0, s_verbose);
 		public int jsonLimit = addI("jsonLimit", "jsonLimit", 1000, "");
+		public boolean xmlCompact = addB("xmlCompact", "xmlCompact", true, "");
 
 		public final String trace = addS("trace", "trace", EMPTY_STRING, s_trace);
 		public final long seed = addL("seed", "seed", 0, s_seed);
@@ -222,7 +225,7 @@ public class Control {
 		public final String variant = addS("variant", "variant", EMPTY_STRING, s_variant);
 
 		public final boolean shareBitVectors = addB("shareBitVectors", "sbv", false, s_sbv, HIDDEN);
-		public final boolean completeGraph = addB("completeGraph", "cg", false, s_cg, HIDDEN); // used for PC8
+		// public final boolean completeGraph = addB("completeGraph", "cg", false, s_cg, HIDDEN); // used for PC8
 		public final EBinaryEncoding binaryEncoding = addE("binaryEncoding", "be", EBinaryEncoding.NO, s_be, TO_IMPLEMENT);
 
 		public final ESymmetryBreaking symmetryBreaking = addE("symmetryBreaking", "sb", ESymmetryBreaking.NO, s_sb);
@@ -344,12 +347,10 @@ public class Control {
 		public final int inferAllDifferentNb = addI("inferAllDifferentNb", "iad", 0, r2);
 		public final int inferAllDifferentSize = addI("inferAllDifferentSize", "iadsz", 5, "");
 		public final boolean recognizePermutations = addB("recognizePermutations", "perm", false, r5);
-		public final boolean recognizeBoundOrientedCtrs = addB("recognizeBoundOrientedCtrs", "boc", false, ""); // TODO control this
-		public final int recognizeBoundOrientedCtrsLimit = addI("recognizeBoundOrientedCtrLimit", "bocl", 300, "");
 		public final int arityLimitForVapArrayLb = addI("arityLimitForVapArrayLb", "alvalb", 2, "");
 		public final int arityLimitForVapArrayUb = addI("arityLimitForVapArrayUb", "alvaub", 100000, "");
 
-		public boolean normalizeCtrs = addB("normalizeCtrs", "nc", false, "Merging constraints of similar scope (when possible)", TO_IMPLEMENT);
+		// public boolean normalizeCtrs = addB("normalizeCtrs", "nc", false, "Merging constraints of similar scope (when possible)", TO_IMPLEMENT);
 	}
 
 	public final SettingCtrs constraints = new SettingCtrs();
@@ -568,12 +569,8 @@ public class Control {
 	public final SettingValh valh = new SettingValh();
 
 	public class SettingRevh extends SettingGroup {
-		String s1 = "The name of the class that represents the revision ordering heuristic.";
-		String s2 = "Indicates if we must follow the anti-heuristic.";
-
-		public final String classForRevHeuristic = addS("classForRevHeuristic", "revh", Dom.class, HeuristicRevisions.class,
-				"class for the revision ordering heuristic");
-		public final boolean anti = addB("anti", "anti_revh", false, s2);
+		public final String clazz = addS("clazz", "revh", Dom.class, HeuristicRevisions.class, "class for the revision ordering heuristic");
+		public final boolean anti = addB("anti", "anti_revh", false, "must we follow the anti heuristic?");
 	}
 
 	public final SettingRevh revh = new SettingRevh();
@@ -593,20 +590,12 @@ public class Control {
 		public int testI1 = addI("testI1", "testI1", 0, "", HIDDEN);
 		public int testI2 = addI("testI2", "testI2", 0, "", HIDDEN);
 		public int testI3 = addI("testI3", "testI3", 0, "", HIDDEN);
-		public final boolean helene = addB("helene", "helene", false, "", HIDDEN);
-		public final boolean save4Baudouin = addB("save4Baudouin", "s4b", false, "for synthetizing smart tables", HIDDEN);
 	}
 
 	public final SettingExperimental experimental = new SettingExperimental();
 
 	public class SettingHardCoding extends SettingGroup {
-		public final boolean localSearchAtPreprocessing = false;
-		public final int limitOfNbValuesForStrongConsistency = 50000;
-		public boolean splitMDDConstraints = false;
-		public final boolean weightingIncrementInConflictManager = true;
 		public final String classForDecompositionSolver = "Decomposer2";
-		public final long relationContractionLimit = 100000000;
-		public boolean convertBooleanSumAsCountingCtr = false;
 	}
 
 	public final SettingHardCoding hardCoding = new SettingHardCoding();
@@ -633,7 +622,7 @@ public class Control {
 		Kit.control(optimization.lb <= optimization.ub);
 		// as
 		// C0
-		Kit.control(!constraints.normalizeCtrs || (!problem.isSymmetryBreaking() && general.framework != TypeFramework.MAXCSP));
+		// Kit.control(!constraints.normalizeCtrs || (!problem.isSymmetryBreaking() && general.framework != TypeFramework.MAXCSP));
 		settings.controlKeys();
 		if (general.makeExceptionsVisible)
 			org.xcsp.modeler.Compiler.ev = true;

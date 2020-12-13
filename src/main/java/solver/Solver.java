@@ -80,6 +80,28 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 	public final class WarmStarter {
 		int[] sol;
 
+		private String[] possiblyDecompact(String[] t) {
+			List<String> list = null;
+			for (int i = 0; i < t.length; i++) {
+				boolean compact = t[i].length() != 1 && t[i].contains(Constants.STAR_SYMBOL);
+				if (compact && list == null) {
+					list = new ArrayList<>();
+					for (int j = 0; j < i; j++)
+						list.add(t[j]);
+				}
+				if (list != null) {
+					if (compact) {
+						String[] tmp = t[i].split("\\*");
+						assert tmp.length == 2;
+						for (int j = Integer.parseInt(tmp[1]) - 1; j >= 0; j--)
+							list.add(tmp[0]);
+					} else
+						list.add(t[i]);
+				}
+			}
+			return list != null ? list.stream().toArray(String[]::new) : t;
+		}
+
 		WarmStarter(String s) {
 			File file = new File(s);
 			if (file.exists()) {
@@ -92,7 +114,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 					Kit.exit(e);
 				}
 			}
-			String[] t = s.split(Constants.REG_WS);
+			String[] t = possiblyDecompact(s.split(Constants.REG_WS));
 			int p = t.length, n = problem.variables.length;
 			Kit.control(1 < p && p <= n, () -> p + " vs " + n + (p == 1 ? " did you control the path for the file?" : ""));
 			if (p < n) {

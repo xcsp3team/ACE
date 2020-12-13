@@ -23,13 +23,16 @@ import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
 import constraints.global.Sum.SumWeighted;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagUnsymmetric;
 import problem.Problem;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetric {
+public abstract class PrimitiveTernary extends Primitive implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, TagUnsymmetric { // TODO GAC not true some
+																																		// times
 
 	public static Constraint buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, Variable z) {
 		switch (aop) {
@@ -114,7 +117,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.size() * dy.size() > 500) { // hard coding // TODO what about GAC Guaranteed?
+				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about GAC Guaranteed?
 					if (dz.removeValuesLT(dx.firstValue() + dy.firstValue()) == false || dz.removeValuesGT(dx.lastValue() + dy.lastValue()) == false)
 						return false;
 					return PrimitiveBinary.enforceAddGE(dx, dy, dz.firstValue()) && PrimitiveBinary.enforceAddLE(dx, dy, dz.lastValue());
@@ -317,7 +320,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.size() * dy.size() > 500) { // hard coding // TODO what about GAC Guaranteed?
+				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about GAC Guaranteed?
 					int v1 = dx.firstValue() * dy.firstValue(), v2 = dx.firstValue() * dy.lastValue();
 					int v3 = dx.lastValue() * dy.firstValue(), v4 = dx.lastValue() * dy.lastValue();
 					int min1 = Math.min(v1, v2), max1 = Math.max(v1, v2);
@@ -432,7 +435,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.size() * dy.size() > 500) { // hard coding // TODO what about GAC Guaranteed?
+				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about GAC Guaranteed?
 					if (dz.removeValuesLT(dx.firstValue() / dy.lastValue()) == false || dz.removeValuesGT(dx.lastValue() / dy.firstValue()) == false)
 						return false;
 					return PrimitiveBinary.enforceDivGE(dx, dy, dz.firstValue()) && PrimitiveBinary.enforceDivLE(dx, dy, dz.lastValue());
@@ -817,14 +820,14 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dy.lastValue() < dz.firstValue())
-					return dx.removeIfPresent(0); // y < z => x != 0
-				if (dy.firstValue() >= dz.lastValue())
-					return dx.removeIfPresent(1); // y >= z => x != 1
 				if (dx.last() == 0)
 					return enforceGE(dy, dz); // x = 0 => y >= z
 				if (dx.first() == 1)
 					return enforceLT(dy, dz); // x = 1 => y < z
+				if (dy.lastValue() < dz.firstValue())
+					return dx.removeIfPresent(0); // y < z => x != 0
+				if (dy.firstValue() >= dz.lastValue())
+					return dx.removeIfPresent(1); // y >= z => x != 1
 				return true;
 			}
 		}
@@ -842,14 +845,14 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dy.lastValue() <= dz.firstValue())
-					return dx.removeIfPresent(0); // y <= z => x != 0
-				if (dy.firstValue() > dz.lastValue())
-					return dx.removeIfPresent(1); // y > z => x != 1
 				if (dx.last() == 0)
 					return enforceGT(dy, dz); // x = 0 => y > z
 				if (dx.first() == 1)
 					return enforceLE(dy, dz); // x = 1 => y <= z
+				if (dy.lastValue() <= dz.firstValue())
+					return dx.removeIfPresent(0); // y <= z => x != 0
+				if (dy.firstValue() > dz.lastValue())
+					return dx.removeIfPresent(1); // y > z => x != 1
 				return true;
 			}
 		}
@@ -867,14 +870,14 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dy.firstValue() >= dz.lastValue())
-					return dx.removeIfPresent(0); // y >= z => x != 0
-				if (dy.lastValue() < dz.firstValue())
-					return dx.removeIfPresent(1); // y < z => x != 1
 				if (dx.last() == 0)
 					return enforceLT(dy, dz); // x = 0 => y < z
 				if (dx.first() == 1)
 					return enforceGE(dy, dz); // x = 1 => y >= z
+				if (dy.firstValue() >= dz.lastValue())
+					return dx.removeIfPresent(0); // y >= z => x != 0
+				if (dy.lastValue() < dz.firstValue())
+					return dx.removeIfPresent(1); // y < z => x != 1
 				return true;
 			}
 		}
@@ -892,14 +895,14 @@ public abstract class PrimitiveTernary extends Primitive implements TagUnsymmetr
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dy.firstValue() > dz.lastValue())
-					return dx.removeIfPresent(0); // y > z => x != 0
-				if (dy.lastValue() <= dz.firstValue())
-					return dx.removeIfPresent(1); // y <= z => x != 1
 				if (dx.last() == 0)
 					return enforceLE(dy, dz); // x = 0 => y <= z
 				if (dx.first() == 1)
 					return enforceGT(dy, dz); // x = 1 => y > z
+				if (dy.firstValue() > dz.lastValue())
+					return dx.removeIfPresent(0); // y > z => x != 0
+				if (dy.lastValue() <= dz.firstValue())
+					return dx.removeIfPresent(1); // y <= z => x != 1
 				return true;
 			}
 		}

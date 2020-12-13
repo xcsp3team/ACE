@@ -19,9 +19,11 @@ import static utility.Kit.preprint;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.xcsp.common.Constants;
 import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.modeler.entities.VarEntities.VarAlone;
 import org.xcsp.modeler.entities.VarEntities.VarArray;
@@ -74,21 +76,82 @@ public final class SolutionRecorder {
 
 	public final String listVars, listVarsWithoutAuxiliary;
 
-	private String vars_values(boolean considerVars, boolean discardAuxiliary) {
+	private static Boolean COMPACT = Boolean.FALSE, NORMAL = Boolean.TRUE;
+
+	private void update(Object object, List<Integer> list) {
+		if (object == null)
+			list.add(Constants.STAR);
+		else if (object instanceof Variable)
+			list.add(((Variable) object).dom.toVal(((Variable) object).valueIndexInLastSolution));
+		else // recursive call
+			Stream.of((Object[]) object).forEach(o -> update(o, list));
+	}
+
+	private void addls(int value, int cnt, List<String> ls) {
+		String v = value == Constants.STAR ? Constants.STAR_SYMBOL : value + "";
+		if (cnt > 1) // hard coding
+			ls.add(v + "*" + cnt);
+		else
+			for (int k = 0; k < cnt; k++)
+				ls.add(v);
+	}
+
+	private String compactValues(boolean discardAuxiliary) {
+		Kit.control(solver.problem.features.nSymbolicVars == 0);
+		List<String> ls = new ArrayList<>();
+		List<Integer> list = new ArrayList<>();
+		for (VarEntity va : solver.problem.varEntities.allEntities) {
+			if (solver.problem.undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
+				continue;
+			update(va instanceof VarAlone ? ((VarAlone) va).var : VarArray.class.cast(va).vars, list);
+			int last = list.get(list.size() - 1);
+			for (int i = list.size() - 2; i >= 0; i--)
+				if (list.get(i) != last) {
+					int prev = list.get(0);
+					int cnt = 1;
+					for (int j = 1; j <= i; j++) {
+						if (list.get(j) == prev)
+							cnt++;
+						else {
+							addls(prev, cnt, ls);
+							prev = list.get(j);
+							cnt = 1;
+						}
+					}
+					addls(prev, cnt, ls);
+					for (int j = 0; j <= i; j++)
+						list.remove(0);
+					break;
+				}
+		}
+		addls(list.get(0), list.size(), ls);
+		return ls.stream().collect(Collectors.joining(" "));
+	}
+
+	private String valsForXml(boolean compact, boolean discardAuxiliary) {
+		if (compact && solver.problem.features.nSymbolicVars == 0)
+			return compactValues(discardAuxiliary);
 		StringBuilder sb = new StringBuilder();
 		for (VarEntity va : solver.problem.varEntities.allEntities) {
 			if (solver.problem.undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
 				continue;
 			if (sb.length() > 0)
 				sb.append(" ");
-			if (considerVars)
-				sb.append(va.id).append(va instanceof VarArray ? ((VarArray) va).getEmptyStringSize() : "");
-			else {
-				if (va instanceof VarAlone)
-					sb.append(((Variable) ((VarAlone) va).var).lastSolutionPrettyAssignedValue); // .dom.prettyAssignedValue());
-				else
-					sb.append(Variable.rawInstantiationOf(VarArray.class.cast(va).vars));
-			}
+			if (va instanceof VarAlone) {
+				Variable x = (Variable) ((VarAlone) va).var;
+				sb.append(x.dom.prettyValueOf(x.valueIndexInLastSolution));
+			} else
+				sb.append(Variable.rawInstantiationOf(VarArray.class.cast(va).vars));
+		}
+		return sb.toString();
+	}
+
+	private String varsForXml(boolean discardAuxiliary) {
+		StringBuilder sb = new StringBuilder();
+		for (VarEntity va : solver.problem.varEntities.allEntities) {
+			if (solver.problem.undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
+				continue;
+			sb.append(sb.length() > 0 ? " " : "").append(va.id).append(va instanceof VarArray ? ((VarArray) va).getEmptyStringSize() : "");
 		}
 		return sb.toString();
 	}
@@ -97,7 +160,7 @@ public final class SolutionRecorder {
 		assert found > 0;
 		StringBuilder sb = new StringBuilder("<instantiation id='sol").append(found).append("' type='solution'");
 		sb.append(solver.problem.settings.framework != CSP ? " cost='" + bestBound + "'" : "").append(">");
-		sb.append(" <list> ").append(listVarsWithoutAuxiliary).append(" </list> <values> ").append(vars_values(false, true));
+		sb.append(" <list> ").append(listVarsWithoutAuxiliary).append(" </list> <values> ").append(valsForXml(solver.problem.settings.xmlCompact, true));
 		String s = sb.append(" </values> </instantiation>").toString();
 		if (lastSolutionXml != null)
 			lastSolutionXml = s;
@@ -112,9 +175,10 @@ public final class SolutionRecorder {
 			if (solver.problem.undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
 				continue;
 			sb.append(PREFIX).append(" ").append(va.id).append(": ");
-			if (va instanceof VarAlone)
-				sb.append(((Variable) ((VarAlone) va).var).lastSolutionPrettyAssignedValue); // dom.prettyAssignedValue());
-			else
+			if (va instanceof VarAlone) {
+				Variable x = (Variable) ((VarAlone) va).var;
+				sb.append(x.dom.prettyValueOf(x.valueIndexInLastSolution));
+			} else
 				sb.append(Variable.instantiationOf(VarArray.class.cast(va).vars, PREFIX));
 			sb.append(",\n");
 		}
@@ -130,8 +194,8 @@ public final class SolutionRecorder {
 		// this.solutionOptimizer = new SolutionOptimizer(this);
 		// if (solver.head.control.xml.competitionMode)
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
-		this.listVars = vars_values(true, false);
-		this.listVarsWithoutAuxiliary = vars_values(true, true);
+		this.listVars = varsForXml(false);
+		this.listVarsWithoutAuxiliary = varsForXml(true);
 		// this.lastSolutionXml = ""; // uncomment for security when really running a competition (hard coding)
 	}
 
@@ -173,13 +237,12 @@ public final class SolutionRecorder {
 		lastSolution = lastSolution == null ? new int[variables.length] : lastSolution;
 		for (int i = 0; i < lastSolution.length; i++) {
 			lastSolution[i] = t != null ? t[i] : variables[i].dom.unique();
-			variables[i].lastSolutionPrettyAssignedValue = variables[i].dom.prettyAssignedValue();
+			variables[i].valueIndexInLastSolution = lastSolution[i]; // lastSolution[i]lastSolutionPrettyAssignedValue = variables[i].dom.prettyAssignedValue();
 		}
 
 		// SumSimpleLE c = (SumSimpleLE) solver.pb.optimizer.ctr;
 		// Variable x = c.mostImpacting();
 		// System.out.println("ccccc most " + x + " " + x.dom.toVal(lastSolution[x.num]));
-
 	}
 
 	private int h1 = -1, h2 = -1;

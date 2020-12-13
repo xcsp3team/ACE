@@ -13,7 +13,6 @@ import static dashboard.Output.MEM;
 import static dashboard.Output.NAME;
 import static dashboard.Output.NUMBER;
 import static dashboard.Output.N_CLIQUES;
-import static dashboard.Output.N_SHARED_BINARY_REPRESENTATIONS;
 import static dashboard.Output.TABLES;
 
 import java.util.AbstractMap.SimpleEntry;
@@ -149,7 +148,7 @@ public final class Features {
 	 * The number of distinct relations (ie. types of relation) used by the constraints of the problem. <br>
 	 * It is equal to <code> -1 </code> when it is unknown.
 	 */
-	public int nIsolatedVars, nFixedVars;
+	public int nIsolatedVars, nFixedVars, nSymbolicVars;
 	public int nRemovedUnaryCtrs, nConvertedConstraints; // conversion intension to extension
 	public int nSpecificCtrs, nMergedCtrs, nDiscardedCtrs, nAddedCtrs;
 
@@ -405,6 +404,7 @@ public final class Features {
 		m.putWhenPositive("nDiscarded", discardedVars.size());
 		m.putWhenPositive("nIsolated", nIsolatedVars);
 		m.putWhenPositive("nFixed", nFixedVars);
+		m.putWhenPositive("nSymb", nSymbolicVars);
 		m.put("degrees", varDegrees);
 		return m;
 	}
@@ -456,7 +456,7 @@ public final class Features {
 			m.putIf("nIntStructures", "(" + nEvaluationManagers + ",shared:" + nSharedEvaluationManagers + ")", nEvaluationManagers > 0);
 			m.putIf("nCftStructures", "(" + nConflictsStructures + ",shared:" + nSharedConflictsStructures
 					+ (nUnbuiltConflictsStructures > 0 ? ",unbuilt:" + nUnbuiltConflictsStructures : "") + ")", nConflictsStructures > 0);
-			m.putWhenPositive(N_SHARED_BINARY_REPRESENTATIONS, nSharedBinaryRepresentations);
+			m.putWhenPositive("sharedBins", nSharedBinaryRepresentations);
 		}
 		m.separator();
 		m.put("wck", problem.head.instanceStopwatch.wckTimeInSeconds());

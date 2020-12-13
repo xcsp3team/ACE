@@ -60,14 +60,6 @@ public final class TupleManager {
 		return true;
 	}
 
-	public int nFixed() {
-		int cnt = 0;
-		for (int i = fixed.length - 1; i >= 0; i--)
-			if (fixed[i])
-				cnt++;
-		return cnt;
-	}
-
 	/**
 	 * Sets the given index (of a value) fixed.
 	 */
