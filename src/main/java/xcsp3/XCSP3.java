@@ -560,7 +560,6 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrAllDifferentExcept(String id, XVarInteger[] list, int[] except) {
-		trVars(list);
 		allDifferent(trVars(list), exceptValues(except));
 	}
 

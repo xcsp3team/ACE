@@ -367,7 +367,6 @@ public class Control {
 		public final int typeAllDifferent = addI("typeAllDifferent", "g_ad", 0, s + "allDifferent");
 		public final int typeDistinctVectors2 = addI("typeDistinctVectors2", "g_dv2", 0, s + "distinctvectors2");
 		public final int typeDistinctVectorsK = addI("typeDistinctVectorsK", "g_dvk", 1, s + "distinctVectorsK");
-		public final int typeAllDifferentMatrix = addI("typeAllDifferentMatrix", "g_adm", 1, s + "allDifferentMatrix");
 		public final int typeAllEqual = addI("typeAllEqual", "g_ae", 0, s + "allEqual");
 		public final int typeNotAllEqual = addI("typeNotAllEqual", "g_nae", 0, s + "notAllEqual");
 		public final int typeInstantiation = addI("typeInstantiation", "g_ins", 1, s + "instantiation");

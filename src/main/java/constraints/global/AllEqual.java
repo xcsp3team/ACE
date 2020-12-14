@@ -21,7 +21,6 @@ import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import sets.SetDense;
 import sets.SetSparseReversible;
-import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
@@ -60,7 +59,7 @@ public final class AllEqual extends CtrGlobal implements ObserverBacktrackingSys
 		super(pb, list);
 		int[] allValues = Variable.setOfvaluesIn(list).stream().mapToInt(v -> v).sorted().toArray();
 		this.map = IntStream.range(0, allValues.length).boxed().collect(Collectors.toMap(i -> allValues[i], i -> i, (v1, v2) -> v1 + v2, TreeMap::new));
-		Kit.control(allValues.length > 1 && list.length >= 2);
+		control(list.length > 1 && allValues.length > 1);
 		defineKey();
 	}
 

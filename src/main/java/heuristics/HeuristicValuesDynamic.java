@@ -117,26 +117,21 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 		private int[] nDecisions;
 		private int[] nFailedDecisions;
-		private long[] sumFailedDecisionsHeights; // for the moment, unused
 
 		public void updateWith(int a, int depth, boolean consistent) {
 			nDecisions[a]++;
-			if (!consistent) {
+			if (!consistent)
 				nFailedDecisions[a]++;
-				sumFailedDecisionsHeights[a] += depth;
-			}
 		}
 
 		public Failures(Variable x, boolean antiHeuristic) {
 			super(x, antiHeuristic);
 			this.nDecisions = Kit.repeat(1, dx.initSize()); // we use 1 for avoiding divisions by 0
 			this.nFailedDecisions = new int[dx.initSize()];
-			this.sumFailedDecisionsHeights = new long[dx.initSize()];
 		}
 
 		@Override
 		public double scoreOf(int a) {
-			// combining with sumFailedDecisionsHeights ?
 			return nFailedDecisions[a] / (double) nDecisions[a];
 		}
 	}
