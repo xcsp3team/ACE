@@ -23,7 +23,7 @@ public class Enums {
 	}
 
 	public static enum EExtension {
-		V, A, VA, STR1, STR2, STR3, STR2S, STR1NEG, STR2NEG, STRCPRS, CT, CT2, MDD, MDDSHORT, GAC4, RPWC, RPWC2;
+		V, A, VA, STR1, STR2, STR3, STR2S, STR1NEG, STR2NEG, CT, MDD, MDDSHORT, GAC4, RPWC, RPWC2;
 	}
 
 	public enum EExtraction {
@@ -114,21 +114,4 @@ public class Enums {
 		VAR, UNIT, CACD, CHS; // UNIT is for classical wdeg, cacd its variant (ICTAI'19) and CHS (from Marseille guys)
 	}
 
-	public static enum EZip {
-		NO, BZ2, GZIP, LZMA;
-
-		public String compressCommand() {
-			assert this != NO;
-			return this == BZ2 ? "bz2 " : this == GZIP ? "gzip " : "lzma ";
-		}
-
-		public String decompressCommand() {
-			assert this != NO;
-			return this == BZ2 ? "bunzip2 " : this == GZIP ? "gunzip " : "lzma -d ";
-		}
-
-	}
-
-	// public static NodeType getConstantFor(String name) {
-	// return (NodeType) (Reflector.getControledFieldValueOfWithName(NodeType.class, name.toUpperCase())); }
 }

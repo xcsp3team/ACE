@@ -51,7 +51,7 @@ public final class DecisionRecorder {
 	 * Decisions recorded during search
 	 *********************************************************************************************/
 
-	Solver solver;
+	final Solver solver;
 
 	/**
 	 * The set of current decisions.

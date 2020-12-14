@@ -210,13 +210,6 @@ public interface LinkedSet {
 	 */
 	boolean controlStructures();
 
-	default String stringOfDels(int size) {
-		StringBuilder sb = new StringBuilder().append(size + "Dels :");
-		for (int a = lastRemoved(), cnt = size - 1; cnt >= 0; a = prevRemoved(a))
-			sb.append(' ').append(a);
-		return sb.toString();
-	}
-
 	/**
 	 * Returns a string showing the state of the main data structures.
 	 * 

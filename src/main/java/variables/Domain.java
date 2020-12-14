@@ -796,8 +796,11 @@ public interface Domain extends LinkedSet {
 					removeElementary(a);
 		} else {
 			for (int v : set)
-				if (isPresentValue(v))
+				if (isPresentValue(v)) {
 					removeElementary(toIdx(v));
+					if (size() == 0)
+						break;
+				}
 		}
 		return afterElementaryCalls(sizeBefore);
 	}
@@ -816,8 +819,24 @@ public interface Domain extends LinkedSet {
 		int sizeBefore = size();
 		for (int i = set.limit; i >= 0; i--) {
 			int v = set.dense[i];
-			if (isPresentValue(v))
+			if (isPresentValue(v)) {
 				removeElementary(toIdx(v));
+				if (size() == 0)
+					break;
+			}
+		}
+		return afterElementaryCalls(sizeBefore);
+	}
+
+	default boolean removeValuesIn(int[] set) {
+		int sizeBefore = size();
+		for (int i = set.length; i >= 0; i--) {
+			int v = set[i];
+			if (isPresentValue(v)) {
+				removeElementary(toIdx(v));
+				if (size() == 0)
+					break;
+			}
 		}
 		return afterElementaryCalls(sizeBefore);
 	}

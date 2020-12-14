@@ -8,7 +8,9 @@
  */
 package constraints.global;
 
-import java.util.Arrays;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -23,31 +25,23 @@ import variables.Domain;
 import variables.Variable;
 
 public final class Among extends CtrGlobal implements TagSymmetric, TagGACGuaranteed, TagFilteringCompleteAtEachCall {
-	private static final int SEARCH_THRESHOLD = 10;
 
 	@Override
 	public boolean checkValues(int[] t) {
-		return IntStream.of(t).filter(v -> isPresentInValues(v)).count() == k;
+		return IntStream.of(t).filter(v -> values.contains(v)).count() == k;
 	}
 
-	private final int[] values;
+	private final Set<Integer> values;
 
 	private final int k;
 
 	private final SetSparse mixedVariables;
 
-	private final boolean linearSearch;
-
-	private boolean isPresentInValues(int value) {
-		return linearSearch ? Kit.isPresent(value, values) : Arrays.binarySearch(values, value) >= 0;
-	}
-
 	public Among(Problem pb, Variable[] list, int[] values, int k) {
 		super(pb, list);
-		this.values = values;
+		this.values = new TreeSet<>(IntStream.of(values).boxed().collect(Collectors.toList())); // TODO TreeSet or HashSet ?
 		this.k = k;
 		this.mixedVariables = new SetSparse(list.length);
-		this.linearSearch = values.length < SEARCH_THRESHOLD;
 		defineKey(Kit.join(values), k);
 		control(Kit.isStrictlyIncreasing(values), "Values must be given in increasing order");
 		control(0 < k && k < list.length, "Bad value of k=" + k);
@@ -62,7 +56,7 @@ public final class Among extends CtrGlobal implements TagSymmetric, TagGACGuaran
 			Domain dom = scp[i].dom;
 			boolean atLeastOnePresentValue = false, atLeastOneAbsentValue = false;
 			for (int a = dom.first(); a != -1 && (!atLeastOnePresentValue || !atLeastOneAbsentValue); a = dom.next(a)) {
-				boolean b = isPresentInValues(dom.toVal(a));
+				boolean b = values.contains(dom.toVal(a));
 				atLeastOnePresentValue = atLeastOnePresentValue || b;
 				atLeastOneAbsentValue = atLeastOneAbsentValue || !b;
 			}
@@ -75,19 +69,16 @@ public final class Among extends CtrGlobal implements TagSymmetric, TagGACGuaran
 			}
 		}
 		if (nGuaranteedVars == k) {
-			for (int i = mixedVariables.limit; i >= 0; i--) {
-				Domain dom = scp[mixedVariables.dense[i]].dom;
-				dom.removeIndexesChecking(a -> isPresentInValues(dom.toVal(a))); // no inconsistency possible
-			}
-			return true;
+			for (int i = mixedVariables.limit; i >= 0; i--)
+				scp[mixedVariables.dense[i]].dom.removeValuesIn(values); // no inconsistency possible
+			return entailed();
 		}
 		if (nPossibleVars < k)
 			return x.dom.fail();
 		if (nPossibleVars == k) {
-			for (int i = mixedVariables.limit; i >= 0; i--) {
-				Domain dom = scp[mixedVariables.dense[i]].dom;
-				dom.removeIndexesChecking(a -> !isPresentInValues(dom.toVal(a))); // no inconsistency possible
-			}
+			for (int i = mixedVariables.limit; i >= 0; i--)
+				scp[mixedVariables.dense[i]].dom.removeValuesNotIn(values); // no inconsistency possible
+			return entailed();
 		}
 		return true;
 	}

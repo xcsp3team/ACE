@@ -24,17 +24,14 @@ import variables.Variable;
 public final class ElementMatrix extends CtrGlobal implements TagUnsymmetric, TagGACGuaranteed, TagFilteringCompleteAtEachCall {
 
 	private Variable[][] matrix;
-	private Variable rindex;
-	private Variable cindex;
+	private Variable rindex, cindex;
 	private int value;
 
 	private Domain rdom, cdom;
 
-	private int rindexPosition; // in scope
-	private int cindexPosition; // in scope
+	private int rindexPosition, cindexPosition; // in scope
 
-	private int[] rsentinels;
-	private int[] csentinels;
+	private int[] rsentinels, csentinels;
 
 	@Override
 	public boolean checkValues(int[] t) {
@@ -56,8 +53,8 @@ public final class ElementMatrix extends CtrGlobal implements TagUnsymmetric, Ta
 		control(rindex.dom.areInitValuesExactly(pb.api.range(0, matrix.length)), () -> "case not implemented");
 		control(cindex.dom.areInitValuesExactly(pb.api.range(0, matrix[0].length)), () -> "case not implemented");
 		control(Variable.areAllDistinct(pb.vars(matrix)) && rindex != cindex, () -> Kit.join(matrix) + " " + rindex + " " + cindex);
-		rsentinels = new int[matrix.length];
-		csentinels = new int[matrix[0].length];
+		this.rsentinels = new int[matrix.length];
+		this.csentinels = new int[matrix[0].length];
 	}
 
 	@Override
@@ -65,20 +62,16 @@ public final class ElementMatrix extends CtrGlobal implements TagUnsymmetric, Ta
 		// filtering the domain of rindex
 		int sizeBefore = rdom.size();
 		if (sizeBefore > 1) {
-			for (int a = rdom.last(); a != -1; a = rdom.prev(a)) {
+			extern: for (int a = rdom.last(); a != -1; a = rdom.prev(a)) {
 				int b = rsentinels[a];
 				if (cdom.present(b) && matrix[a][b].dom.isPresentValue(value))
 					continue;
-				boolean found = false;
-				for (b = cdom.last(); b != -1; b = cdom.prev(b)) {
+				for (b = cdom.last(); b != -1; b = cdom.prev(b))
 					if (matrix[a][b].dom.isPresentValue(value)) {
-						found = true;
 						rsentinels[a] = b;
-						break;
+						continue extern;
 					}
-				}
-				if (!found)
-					rdom.removeElementary(a);
+				rdom.removeElementary(a);
 			}
 			if (rdom.afterElementaryCalls(sizeBefore) == false)
 				return false;
@@ -87,29 +80,23 @@ public final class ElementMatrix extends CtrGlobal implements TagUnsymmetric, Ta
 		// filtering the domain of cindex
 		sizeBefore = cdom.size();
 		if (sizeBefore > 1) {
-			for (int b = cdom.last(); b != -1; b = cdom.prev(b)) {
+			extern: for (int b = cdom.last(); b != -1; b = cdom.prev(b)) {
 				int a = csentinels[b];
 				if (rdom.present(a) && matrix[a][b].dom.isPresentValue(value))
 					continue;
-				boolean found = false;
 				for (a = rdom.last(); a != -1; a = rdom.prev(a)) {
 					if (matrix[a][b].dom.isPresentValue(value)) {
-						found = true;
 						csentinels[b] = a;
-						break;
+						continue extern;
 					}
 				}
-				if (!found)
-					cdom.removeElementary(b);
+				cdom.removeElementary(b);
 			}
 			if (cdom.afterElementaryCalls(sizeBefore) == false)
 				return false;
 		}
-		// be careful : not a else because of statements above that may modify the domain of indexes
-		if (rdom.size() == 1 && cdom.size() == 1)
-			if (matrix[rdom.unique()][cdom.unique()].dom.reduceToValue(value) == false)
-				return false;
-		return true;
+		// be careful : below, not a else because of statements above that may modify the domain of indexes
+		// TODO are we sure it is GAC?
+		return rdom.size() > 1 || cdom.size() > 1 || (matrix[rdom.unique()][cdom.unique()].dom.reduceToValue(value) && entailed());
 	}
-
 }

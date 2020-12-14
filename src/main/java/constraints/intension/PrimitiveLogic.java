@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeLogicalOperator;
 
 import constraints.Constraint;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagUnsymmetric;
 import problem.Problem;
@@ -44,7 +45,9 @@ public abstract class PrimitiveLogic extends Primitive implements TagGACGuarante
 		public static Constraint buildFrom(Problem pb, Variable x, TypeLogicalOperator op, Variable[] list) {
 			switch (op) {
 			case OR:
-				return new LogEqOr(pb, x, list);
+				return list.length == 2 ? new LogEqOr2(pb, x, list) : new LogEqOr(pb, x, list);
+			case AND:
+				return list.length == 2 ? new LogEqAnd2(pb, x, list) : null;
 			default:
 				return null; // throw new AssertionError();
 			}
@@ -52,6 +55,88 @@ public abstract class PrimitiveLogic extends Primitive implements TagGACGuarante
 
 		public PrimitiveLogicEq(Problem pb, Variable x, Variable[] list) {
 			super(pb, x, list);
+		}
+
+		public static final class LogEqAnd2 extends PrimitiveLogicEq implements TagFilteringCompleteAtEachCall {
+
+			Variable y, z;
+			Domain dy, dz;
+
+			@Override
+			public final boolean checkValues(int[] t) {
+				return t[0] == 0 ? t[1] == 0 || t[2] == 0 : t[1] == 1 && t[2] == 1;
+			}
+
+			public LogEqAnd2(Problem pb, Variable x, Variable[] list) {
+				super(pb, x, list);
+				control(list.length == 2);
+				this.y = list[0];
+				this.z = list[1];
+				this.dy = y.dom;
+				this.dz = z.dom;
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				if (dx.first() == 1) // x = 1 => y = 1 and z = 1
+					return dy.removeIfPresent(0) && dz.removeIfPresent(0) && entailed();
+				if (!dy.present(1) || !dz.present(1)) // y != 1 or z != 1 => x != 1
+					return dx.removeIfPresent(1) && entailed();
+				// 0 is present in dx, and 1 in dy and 1 in dz; if present, (x,1) is supported
+				if (dy.size() == 1 && dz.size() == 1) // y = 1 and z = 1 => x = 1
+					return dx.remove(0) && entailed();
+				// (x,0) is supported
+				if (dx.size() == 2)
+					return true;
+				// only 0 for x
+				if (dy.size() == 2 && dz.size() == 2)
+					return true;
+				if (dy.size() == 2)
+					return dy.remove(1) && entailed();
+				else // dz.size() == 2
+					return dz.remove(1) && entailed();
+			}
+		}
+
+		public static final class LogEqOr2 extends PrimitiveLogicEq implements TagFilteringCompleteAtEachCall {
+
+			Variable y, z;
+			Domain dy, dz;
+
+			@Override
+			public final boolean checkValues(int[] t) {
+				return t[0] == 0 ? t[1] == 0 && t[2] == 0 : t[1] == 1 || t[2] == 1;
+			}
+
+			public LogEqOr2(Problem pb, Variable x, Variable[] list) {
+				super(pb, x, list);
+				control(list.length == 2);
+				this.y = list[0];
+				this.z = list[1];
+				this.dy = y.dom;
+				this.dz = z.dom;
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				if (dx.last() == 0) // x = 0 => y = 0 and z = 0
+					return dy.removeIfPresent(1) && dz.removeIfPresent(1) && entailed();
+				if (!dy.present(0) || !dz.present(0)) // y != 0 or z != 0 => x != 0
+					return dx.removeIfPresent(0) && entailed();
+				// 1 is present in dx, and 0 in dy and 0 in dz; if present, (x,0) is supported
+				if (dy.size() == 1 && dz.size() == 1) // y = 0 and z = 0 => x = 0
+					return dx.remove(1) && entailed();
+				// (x,1) is supported
+				if (dx.size() == 2)
+					return true;
+				// only 1 for x
+				if (dy.size() == 2 && dz.size() == 2)
+					return true;
+				if (dy.size() == 2)
+					return dy.remove(0) && entailed();
+				else // dz.size() == 2
+					return dz.remove(0) && entailed();
+			}
 		}
 
 		public static final class LogEqOr extends PrimitiveLogicEq {

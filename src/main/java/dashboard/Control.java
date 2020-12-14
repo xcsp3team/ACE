@@ -856,7 +856,7 @@ public class Control {
 			}
 
 			private final String[] experimentalNames = Kit
-					.sort(new String[] { EExtension.STRCPRS.name(), EExtraction.MAX_CSP.name(), EExtraction.INC.name(), EExtraction.INC_FIRST.name() });
+					.sort(new String[] { EExtraction.MAX_CSP.name(), EExtraction.INC.name(), EExtraction.INC_FIRST.name() });
 
 			@Override
 			public String toString() {

@@ -70,7 +70,8 @@ public class ExtensionCT extends ExtensionSTR1Optimized implements TagShort {
 	 * Interfaces
 	 *********************************************************************************************/
 
-	protected void maskCompression(long[][] masks) {}
+	protected void maskCompression(long[][] masks) {
+	}
 
 	@Override
 	public void afterProblemConstruction() {
@@ -349,9 +350,4 @@ public class ExtensionCT extends ExtensionSTR1Optimized implements TagShort {
 		return true;
 	}
 
-	void displayDeltas() {
-		System.out.println("Deltas for " + this);
-		IntStream.range(0, sValSize).map(i -> sVal[i]).forEach(vap -> System.out.println(" - var=" + scp[vap] + " " + doms[vap].stringOfDels(deltaSizes[vap])));
-		System.out.println();
-	}
 }

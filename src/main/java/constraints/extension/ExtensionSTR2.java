@@ -12,6 +12,8 @@ import static org.xcsp.common.Constants.STAR;
 
 import java.util.stream.Stream;
 
+import constraints.extension.structures.ExtensionStructure;
+import constraints.extension.structures.Table;
 import interfaces.Tags.TagShort;
 import problem.Problem;
 import utility.Kit;
@@ -20,8 +22,17 @@ import variables.Variable;
 // why not using a counter 'time' and replace boolean[][] ac by int[][] ac (we just do time++ instead of Arrays.fill(ac[x],false)
 public class ExtensionSTR2 extends ExtensionSTR1Optimized implements TagShort {
 
+	boolean isShort;
+
 	public ExtensionSTR2(Problem pb, Variable... scp) {
 		super(pb, scp);
+	}
+
+	@Override
+	protected ExtensionStructure buildExtensionStructure() {
+		Table table = new Table(this);
+		this.isShort = table.isShort;
+		return table;
 	}
 
 	protected boolean isValidTuple(int[] tuple) {
@@ -35,9 +46,7 @@ public class ExtensionSTR2 extends ExtensionSTR1Optimized implements TagShort {
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
-		// pb.stuff.updateStatsForSTR(set);
 		int depth = problem.solver.depth();
-		// if (entailedDepth >= depth) return true;
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {
 			int[] tuple = tuples[set.dense[i]];
@@ -58,7 +67,11 @@ public class ExtensionSTR2 extends ExtensionSTR1Optimized implements TagShort {
 				set.removeAtPosition(i, depth);
 		}
 		assert controlValidTuples();
-		// if (Variable.computeNbValidTuplesFor(scope) == set.size()) { entailedDepth = depth; } // and for short tables ? ??
+		// if (!isShort && Variable.nValidTuplesBoundedAtMaxValueFor(scp) == set.size()) {
+		// // assert
+		// // System.out.println("entailed " + set.size() + " " + futvars.size());
+		// return entailed();
+		// }
 		return updateDomains();
 	}
 

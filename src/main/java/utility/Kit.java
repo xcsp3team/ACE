@@ -62,7 +62,9 @@ import javax.xml.xpath.XPathFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xcsp.common.IVar;
 import org.xcsp.common.Utilities;
+import org.xcsp.common.predicates.XNode;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -939,6 +941,14 @@ public final class Kit {
 		} catch (Exception e) {
 			return (Boolean) Kit.exit("Problem with " + fileName, e);
 		}
+	}
+
+	public static <T extends IVar> T[] vars(Object... objects) {
+		return (T[]) Utilities.collect(IVar.class, Stream.of(objects).map(o -> o instanceof XNode ? ((XNode) o).vars() : o));
+	}
+
+	public static int[] vals(Object... objects) {
+		return Utilities.collectInt(objects);
 	}
 
 	// (3,-5) => -2; (3,10) => 3; (-3,-5) => 2; (-3,10) => -3; (3,0) => 0; (-3,0) => 0
