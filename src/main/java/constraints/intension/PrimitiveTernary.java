@@ -384,6 +384,8 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 						continue;
 					for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int va = dx.toVal(a);
+						if (va == 0) // because vc = 0 already handled (and we need to be careful about division by zero
+							continue;
 						int vb = vc / va;
 						if (va > 0 && vc > 0 && va * dy.firstValue() > vc) // TODO other ways of breaking?
 							break;

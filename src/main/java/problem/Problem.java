@@ -1687,8 +1687,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity minimum(XNode<IVar>[] trees, Condition condition) {
-		Var[] tmp = replaceByVariables(trees);
-		return minimum(tmp, condition);
+		return minimum(replaceByVariables(trees), condition);
 	}
 
 	@Override
@@ -1708,8 +1707,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity maximum(XNode<IVar>[] trees, Condition condition) {
-		Var[] tmp = replaceByVariables(trees);
-		return maximum(tmp, condition);
+		return maximum(replaceByVariables(trees), condition);
 	}
 
 	// ************************************************************************
