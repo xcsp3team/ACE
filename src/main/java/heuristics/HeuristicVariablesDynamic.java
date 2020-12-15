@@ -177,8 +177,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void beforeRun() {
-			if (solver.restarter.runMultipleOf(solver.head.control.restarts.dataResetPeriod)
-					|| (solver.restarter.numRun > 0 && (solver.restarter.numRun - solver.solRecorder.lastSolutionRun) % 30 == 0)) { // hard coding
+			if (solver.restarter.runMultipleOf(solver.head.control.restarts.varhResetPeriod)
+					|| (solver.restarter.numRun - solver.solRecorder.lastSolutionRun) % solver.head.control.restarts.varhSolResetPeriod == 0) {
 				System.out.println("    ...resetting weights");
 				reset();
 				// solver.restarter.nRestartsSinceLastReset = 0;
@@ -342,7 +342,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			super(solver, antiHeuristic);
 			this.lastSizes = Stream.of(solver.problem.variables).mapToInt(x -> x.dom.size()).toArray();
 			Kit.control(solver.head.control.solving.branching == EBranching.BIN);
-			Kit.control(solver.head.control.restarts.dataResetPeriod != 0);
+			Kit.control(solver.head.control.restarts.varhResetPeriod != 0);
 		}
 
 		protected abstract void update();
@@ -375,7 +375,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			super.beforeRun();
-			if (solver.restarter.runMultipleOf(solver.head.control.restarts.dataResetPeriod)) {
+			if (solver.restarter.runMultipleOf(solver.head.control.restarts.varhResetPeriod)) {
 				Kit.log.info("Reset of activities");
 				Arrays.fill(activities, 0);
 			}
@@ -407,7 +407,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			super.beforeRun();
-			if (solver.restarter.runMultipleOf(solver.head.control.restarts.dataResetPeriod)) {
+			if (solver.restarter.runMultipleOf(solver.head.control.restarts.varhResetPeriod)) {
 				Kit.log.info("Reset of impacts");
 				// for (int i = 0; i < solver.problem.variables.length; i++) impacts[i] = solver.problem.variables[i].getStaticDegree(); // TODO
 				// better init ?

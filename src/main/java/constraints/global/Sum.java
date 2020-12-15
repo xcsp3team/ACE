@@ -73,7 +73,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		Domain dom = scp[singletonPosition].dom;
 		for (int a = dom.first(); a != -1; a = dom.next(a)) {
 			vals[singletonPosition] = dom.toVal(a);
-			Kit.control(checkValues(vals), () -> "pb with " + Kit.join(vals));
+			control(checkValues(vals), () -> "pb with " + Kit.join(vals));
 		}
 		return true;
 	}
@@ -167,9 +167,9 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 
 		protected final void recomputeBounds() {
 			min = max = 0;
-			for (Variable x : scp) {
-				min += x.dom.firstValue();
-				max += x.dom.lastValue();
+			for (Domain dom : doms) {
+				min += dom.firstValue();
+				max += dom.lastValue();
 			}
 		}
 
@@ -326,7 +326,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 			}
 
 			public int deduce() { // experimental for infinite domains (to be finalized)
-				Kit.control(futvars.size() == 1);
+				control(futvars.size() == 1);
 				int pos = futvars.dense[0];
 				control(scp[pos].dom instanceof DomainInfinite);
 				long sum = 0;
@@ -334,7 +334,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 					if (i != pos)
 						sum += scp[i].dom.uniqueValue();
 				long res = limit - sum;
-				Kit.control(Utilities.isSafeInt(res));
+				control(Utilities.isSafeInt(res));
 				return (int) res;
 			}
 		}
@@ -354,7 +354,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 
 			public SumSimpleNE(Problem pb, Variable[] scp, long limit) {
 				super(pb, scp, limit);
-				Kit.control(scp.length >= 2 && !Arrays.stream(scp).anyMatch(x -> x.dom.size() == 1));
+				control(scp.length >= 2 && !Arrays.stream(scp).anyMatch(x -> x.dom.size() == 1));
 				this.sentinel1 = scp[0];
 				this.sentinel2 = scp[scp.length - 1];
 			}
@@ -410,7 +410,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 
 			public SumSimpleEQBoolean(Problem pb, Variable[] scp, long limit) {
 				super(pb, scp, limit);
-				Kit.control(Variable.areAllInitiallyBoolean(scp));
+				control(Variable.areAllInitiallyBoolean(scp));
 			}
 
 			@Override

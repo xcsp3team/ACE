@@ -180,6 +180,7 @@ public class Control {
 		public int verbose = addI("verbose", "v", 0, s_verbose);
 		public int jsonLimit = addI("jsonLimit", "jsonLimit", 1000, "");
 		public boolean xmlCompact = addB("xmlCompact", "xmlCompact", true, "");
+		public boolean xmlAllSolutions = addB("xmlAllSolutions", "xas", false, "");
 
 		public final String trace = addS("trace", "trace", EMPTY_STRING, s_trace);
 		public final long seed = addL("seed", "seed", 0, s_seed);
@@ -494,7 +495,6 @@ public class Control {
 		String s_m = "The kind of events to be counted so as to force restarts when the cutoff is reached.";
 		String s_rrp = "Period, in term of number of restarts, for resetting restart data.";
 		String s_rrc = "Coefficient used for increasing the cutoff, when restart data are reset";
-		String s_rp = "";
 
 		public int nRunsLimit = addI("nRunsLimit", "r_n", Integer.MAX_VALUE, s_n);
 		public long cutoff = addL("cutoff", "r_c", 10, s_c); // for COP, this value is initially multiplied by 10 in Restarter
@@ -502,7 +502,8 @@ public class Control {
 		public final ERestartsMeasure measure = addE("measure", "r_m", ERestartsMeasure.FAILED, s_m);
 		public int nRestartsResetPeriod = addI("nRestartsResetPeriod", "r_rrp", Integer.MAX_VALUE, s_rrp);
 		public final int nRestartsResetCoefficient = addI("nRestartsResetCoefficient", "r_rrc", 2, s_rrc);
-		public final int dataResetPeriod = addI("dataResetPeriod", "rp", Integer.MAX_VALUE, s_rp);
+		public final int varhResetPeriod = addI("varhResetPeriod", "r_rp", Integer.MAX_VALUE, "");
+		public final int varhSolResetPeriod = addI("varhSolResetPeriod", "r_srp", 30, "");
 		public boolean restartAfterSolution = addB("restartAfterSolution", "ras", false, "");
 		public boolean luby = addB("luby", "r_luby", false, "");
 	}

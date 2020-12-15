@@ -327,10 +327,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	public static final class Symbolic {
 
-		public static String[] replaceSymbols(Symbolic symbolic, String[] t) {
-			return symbolic == null ? t : symbolic.replaceSymbols(t);
-		}
-
 		public final Map<String, Integer> mapOfSymbols = new HashMap<>();
 
 		public final Map<Constraint, String[][]> mapOfTuples = new HashMap<>();
@@ -973,14 +969,14 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	// ***** Constraint extension
 	// ************************************************************************
 
-	public final CtrAlone extension(IVar[] scp, Object tuples, boolean positive, Boolean starred) {
+	public final CtrAlone extension(IVar[] scp, Object[] tuples, boolean positive, Boolean starred) {
+		if (tuples.length == 0)
+			return addCtr(positive ? new CtrHardFalse(this, translate(scp), "Table constraint with 0 support") : new CtrHardTrue(this, translate(scp)));
 		return addCtr(Extension.build(this, translate(scp), tuples, positive, starred));
 	}
 
 	@Override
 	public final CtrAlone extension(Var[] scp, int[][] tuples, boolean positive) {
-		if (tuples.length == 0)
-			return addCtr(positive ? new CtrHardFalse(this, translate(scp), "Table constraint with 0 support") : new CtrHardTrue(this, translate(scp)));
 		return extension(scp, tuples, positive, DONT_KNOW);
 	}
 
@@ -995,17 +991,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	// ************************************************************************
-	// ***** Constraint regular
+	// ***** Constraints regular and mdd
 	// ************************************************************************
 
 	@Override
 	public final CtrAlone regular(Var[] list, Automaton automaton) {
 		return addCtr(new ExtensionMDD(this, translate(list), automaton));
 	}
-
-	// ************************************************************************
-	// ***** Constraint mdd
-	// ************************************************************************
 
 	@Override
 	public final CtrAlone mdd(Var[] list, Transition[] transitions) {
