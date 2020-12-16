@@ -111,7 +111,6 @@ import constraints.global.AllDifferent.AllDifferentCounting;
 import constraints.global.AllDifferent.AllDifferentExceptWeak;
 import constraints.global.AllDifferent.AllDifferentPermutation;
 import constraints.global.AllDifferent.AllDifferentWeak;
-import constraints.global.AllEqual;
 import constraints.global.Among;
 import constraints.global.Cardinality.CardinalityConstant;
 import constraints.global.Circuit;
@@ -1121,9 +1120,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity allEqual(Var... scp) {
 		// using a table on large instances of Domino is very expensive; using a smart table is also very expensive
-		return addCtr(new AllEqual(this, translate(scp)));
+		// return addCtr(new AllEqual(this, translate(scp)));
 		// return extension(scp, allEqualTable(translate(scp)), true, false);
-		// return addCtr(ExtensionSmart.buildAllEqual(this, translate(scp)));
+		return addCtr(ExtensionSmart.buildAllEqual(this, translate(scp)));
 	}
 
 	@Override

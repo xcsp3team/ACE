@@ -65,39 +65,31 @@ public final class ConflictsStructure implements RegisteringCtrs {
 	 * The second index of the array denotes the different indexes of the values in the domain of the variable given by the first index. Each value of the array
 	 * gives the number of conflicts for the corresponding pair composed of a variable and an index (of a value).
 	 */
-	private int[][] nConflicts; // [vap][idx]
+	public int[][] nConflicts; // [x][a]
 
-	private int[] nbMaxConflicts; // [vap]
+	public int[] nMaxConflicts; // [x]
 
-	public int[][] nConflicts() {
-		return nConflicts;
+	public ConflictsStructure(Constraint c) {
+		registeredCtrs.add(c);
+		nMaxConflicts = new int[c.scp.length];
+		nConflicts = Variable.litterals(c.scp).intArray();
 	}
 
-	public int[] nMaxConflicts() {
-		return nbMaxConflicts;
-	}
-
-	public ConflictsStructure(Constraint ctr) {
-		registeredCtrs.add(ctr);
-		nbMaxConflicts = new int[ctr.scp.length];
-		nConflicts = Variable.litterals(ctr.scp).intArray();
-	}
-
-	public ConflictsStructure(ConflictsStructure conflictsStructure, Constraint ctr) {
-		registeredCtrs.add(ctr);
-		nbMaxConflicts = conflictsStructure.nbMaxConflicts.clone();
+	public ConflictsStructure(ConflictsStructure conflictsStructure, Constraint c) {
+		registeredCtrs.add(c);
+		nMaxConflicts = conflictsStructure.nMaxConflicts.clone();
 		nConflicts = Kit.cloneDeeply(conflictsStructure.nConflicts);
 	}
 
 	public final void computeNbMaxConflicts() {
 		assert registeredCtrs.size() == 1;
-		Constraint ctr = firstRegisteredCtr();
-		for (int i = 0; i < nbMaxConflicts.length; i++) {
+		Constraint c = firstRegisteredCtr();
+		for (int i = 0; i < nMaxConflicts.length; i++) {
 			int max = Integer.MIN_VALUE;
-			Domain dom = ctr.scp[i].dom;
-			for (int idx = dom.first(); idx != -1; idx = dom.next(idx))
-				max = Math.max(max, nConflicts[i][idx]);
-			nbMaxConflicts[i] = max;
+			Domain dom = c.scp[i].dom;
+			for (int a = dom.first(); a != -1; a = dom.next(a))
+				max = Math.max(max, nConflicts[i][a]);
+			nMaxConflicts[i] = max;
 		}
 	}
 
@@ -150,10 +142,10 @@ public final class ConflictsStructure implements RegisteringCtrs {
 
 	private Variable getReducedDomainVariable(Variable[] scope, int[] domainsFrontier) {
 		Variable reducedDomainVariable = null;
-		for (Variable var : scope)
-			if (var.dom.lastRemoved() != domainsFrontier[var.num])
+		for (Variable x : scope)
+			if (x.dom.lastRemoved() != domainsFrontier[x.num])
 				if (reducedDomainVariable == null)
-					reducedDomainVariable = var;
+					reducedDomainVariable = x;
 				else
 					return Variable.TAG;
 		return reducedDomainVariable;
@@ -214,20 +206,20 @@ public final class ConflictsStructure implements RegisteringCtrs {
 	public final void manageRemovedTuple(int... idxs) {
 		assert registeredCtrs.size() == 1 && !firstRegisteredCtr().usePredefinedMaxNumberOfConflicts();
 		for (int i = 0; i < idxs.length; i++)
-			if (++nConflicts[i][idxs[i]] > nbMaxConflicts[i])
-				nbMaxConflicts[i]++;
+			if (++nConflicts[i][idxs[i]] > nMaxConflicts[i])
+				nMaxConflicts[i]++;
 	}
 
-	public boolean possiblyRemoveValuesFor(Constraint ctr) {
-		assert ctr.problem.solver.depth() == 0 && registeredCtrs.contains(ctr);
-		long nbValidTuples = Variable.nValidTuplesBoundedAtMaxValueFor(ctr.scp);
-		for (int i = 0; i < ctr.scp.length; i++) {
-			int[] nbConflicts = nConflicts()[i];
-			Domain dom = ctr.scp[i].dom;
-			long nbValidTuplesOfValues = nbValidTuples / dom.size();
-			for (int idx = dom.first(); idx != -1; idx = dom.next(idx))
-				if (nbConflicts[idx] == nbValidTuplesOfValues)
-					dom.removeElementary(idx);
+	public boolean possiblyRemoveValuesFor(Constraint c) {
+		assert c.problem.solver.depth() == 0 && registeredCtrs.contains(c);
+		long nValidTuples = Variable.nValidTuplesBoundedAtMaxValueFor(c.scp);
+		for (int i = 0; i < c.scp.length; i++) {
+			int[] nc = nConflicts[i];
+			Domain dom = c.scp[i].dom;
+			long nbValidTuplesOfValues = nValidTuples / dom.size();
+			for (int a = dom.first(); a != -1; a = dom.next(a))
+				if (nc[a] == nbValidTuplesOfValues)
+					dom.removeElementary(a);
 			if (dom.size() == 0)
 				return false;
 		}
@@ -249,7 +241,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 				Kit.control(nConflicts[i][a] == c.nConflictsFor(i, a), () -> "pb with " + c + " " + c.scp[i]);
 				max = Math.max(max, nConflicts[i][a]);
 			}
-			Kit.control(max == nbMaxConflicts[i], "pb with " + c + " " + c.scp[i]);
+			Kit.control(max == nMaxConflicts[i], "pb with " + c + " " + c.scp[i]);
 		});
 		return true;
 	}
@@ -259,7 +251,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 		StringBuilder sb = new StringBuilder().append("In ").append(firstRegisteredCtr()).append(" (nbExploitingConstraints=").append(registeredCtrs.size())
 				.append(")\n");
 		for (int i = 0; i < nConflicts.length; i++)
-			sb.append("  ").append(i).append(" : nbmaxConflicts=").append(nbMaxConflicts[i]).append("  nbConflicts=(").append(Kit.join(nConflicts[i]))
+			sb.append("  ").append(i).append(" : nbmaxConflicts=").append(nMaxConflicts[i]).append("  nbConflicts=(").append(Kit.join(nConflicts[i]))
 					.append(")\n");
 		return sb.toString();
 	}

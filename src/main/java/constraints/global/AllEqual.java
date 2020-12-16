@@ -86,12 +86,12 @@ public final class AllEqual extends CtrGlobal implements ObserverBacktrackingSys
 				int v = dom.toVal(a);
 				if (!remainingValues.isPresent(map.get(v)))
 					break;
-				lastRemovedValues.add(v);
+				if (!lastRemovedValues.isPresent(v))
+					lastRemovedValues.add(v);
 			}
 		if (lastRemovedValues.size() == remainingValues.size())
 			return x.dom.fail();
 
-		// for (int j = 0; j < scp.length; j++) {
 		for (int i = scp.length - 1; i >= 0; i--) // for domino-5000, the reverse (0 to scp.length) is very slow. (due to revision ordering heuristic)
 			scp[i].dom.removeValuesIn(lastRemovedValues); // no possible inconsistency at this level
 

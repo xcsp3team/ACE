@@ -84,7 +84,7 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 			if (c.conflictsStructure == null)
 				return true;
 			int px = c.positionOf(x);
-			return c.conflictsStructure.nMaxConflicts()[px] >= Variable.nValidTuplesBoundedAtMaxValueFor(c.scp, px);
+			return c.conflictsStructure.nMaxConflicts[px] >= Variable.nValidTuplesBoundedAtMaxValueFor(c.scp, px);
 		}
 
 		@Override
@@ -94,10 +94,10 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 			else {
 				int px = c.positionOf(x);
 				long nb = Variable.nValidTuplesBoundedAtMaxValueFor(c.scp, px);
-				int[] nConflicts = c.conflictsStructure.nConflicts()[px];
+				int[] nc = c.conflictsStructure.nConflicts[px];
 				Domain dom = x.dom;
 				for (int a = dom.first(); a != -1; a = dom.next(a))
-					if (nConflicts[a] >= nb && !c.findArcSupportFor(px, a))
+					if (nc[a] >= nb && !c.findArcSupportFor(px, a))
 						x.dom.removeElementary(a);
 			}
 		}
