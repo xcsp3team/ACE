@@ -76,8 +76,6 @@ public final class SolutionRecorder {
 
 	public final String listVars, listVarsWithoutAuxiliary;
 
-	private static Boolean COMPACT = Boolean.FALSE, NORMAL = Boolean.TRUE;
-
 	private void update(Object object, List<Integer> list) {
 		if (object == null)
 			list.add(Constants.STAR);
@@ -90,7 +88,7 @@ public final class SolutionRecorder {
 	private void addls(int value, int cnt, List<String> ls) {
 		String v = value == Constants.STAR ? Constants.STAR_SYMBOL : value + "";
 		if (cnt > 1) // hard coding
-			ls.add(v + "*" + cnt);
+			ls.add(v + Constants.TIMES + cnt);
 		else
 			for (int k = 0; k < cnt; k++)
 				ls.add(v);
