@@ -45,7 +45,6 @@ public abstract class ObjectiveVariable extends CtrGlobal implements Optimizable
 	@Override
 	public final void limit(long newLimit) {
 		this.limit = newLimit;
-		// entailedLevel = -1;
 		control(minComputableObjectiveValue() <= limit && limit <= maxComputableObjectiveValue());
 	}
 

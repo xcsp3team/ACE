@@ -145,7 +145,10 @@ public class Control {
 		public final boolean primitiveUnaryInSolver = addB("primitiveUnaryInSolver", "p1sol", true, "", HIDDEN);
 		public final boolean primitiveBinaryInSolver = addB("primitiveBinaryInSolver", "p2sol", true, "", HIDDEN);
 		public final boolean primitiveTernaryInSolver = addB("primitiveTernarnyInSolver", "p3sol", true, "", HIDDEN);
-		public final boolean primitiveLogicInSolver = addB("primitiveLogicInSolver", "plsol", true, "", HIDDEN);
+
+		public final boolean recognizeLogicInSolver = addB("primitiveLogicInSolver", "rlsol", true, "", HIDDEN);
+		public final boolean recognizeExtremumInSolver = addB("recognizeExtremumInSolver", "resol", true, "", HIDDEN);
+		public final boolean recognizeSumInSolver = addB("recognizeSumInSolver", "rssol", true, "", HIDDEN);
 
 		public final boolean displayPrimitives = addB("displayPrimitives", "dpri", false, s_dpri, HIDDEN);
 	}

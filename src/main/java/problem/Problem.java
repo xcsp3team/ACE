@@ -21,6 +21,9 @@ import static org.xcsp.common.Types.TypeObjective.SUM;
 import static org.xcsp.common.Types.TypeOptimization.MAXIMIZE;
 import static org.xcsp.common.Types.TypeOptimization.MINIMIZE;
 import static org.xcsp.common.Utilities.safeInt;
+import static org.xcsp.common.predicates.MatcherInterface.add_mul_vals;
+import static org.xcsp.common.predicates.MatcherInterface.add_mul_vars;
+import static org.xcsp.common.predicates.MatcherInterface.add_vars;
 import static org.xcsp.common.predicates.MatcherInterface.logic_vars;
 import static org.xcsp.common.predicates.MatcherInterface.max_vars;
 import static org.xcsp.common.predicates.MatcherInterface.min_vars;
@@ -844,6 +847,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private Matcher logic_X__eq_x = new Matcher(node(TypeExpr.EQ, logic_vars, var));
 
+	// sum
+	private Matcher add_vars__relop = new Matcher(node(relop, add_vars, varOrVal));
+	private Matcher add_mul_vals__relop = new Matcher(node(relop, add_mul_vals, varOrVal));
+	private Matcher add_mul_vars__relop = new Matcher(node(relop, add_mul_vars, varOrVal));
+
 	private Condition basicCondition(XNodeParent<IVar> tree) {
 		if (tree.type.isRelationalOperator() && tree.sons.length == 2 && tree.sons[1].type.oneOf(VAR, LONG))
 			return tree.sons[1].type == VAR ? new ConditionVar(tree.relop(0), tree.sons[1].var(0)) : new ConditionVal(tree.relop(0), tree.sons[1].val(0));
@@ -903,26 +911,42 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			if (c != null)
 				return addCtr(c);
 		}
-
-		if (min_relop.matches(tree)) {
-			// System.exit(1);
-			return minimum((Var[]) tree.sons[0].vars(), basicCondition(tree));
+		if (head.control.xml.recognizeLogicInSolver) {
+			if (logic_X__eq_x.matches(tree)) {
+				// System.out.println(" yep " + tree);
+				Constraint c = PrimitiveLogicEq.buildFrom(this, scp[scp.length - 1], tree.logop(0),
+						IntStream.range(0, scp.length - 1).mapToObj(i -> scp[i]).toArray(Variable[]::new));
+				if (c != null)
+					return addCtr(c);
+			}
 		}
-		if (max_relop.matches(tree)) {
-			// System.exit(1);
-			return maximum((Var[]) tree.sons[0].vars(), basicCondition(tree));
+		if (head.control.xml.recognizeExtremumInSolver) {
+			if (min_relop.matches(tree)) {
+				// System.exit(1);
+				return minimum((Var[]) tree.sons[0].vars(), basicCondition(tree));
+			}
+			if (max_relop.matches(tree)) {
+				// System.exit(1);
+				return maximum((Var[]) tree.sons[0].vars(), basicCondition(tree));
+			}
 		}
-
-		if (head.control.xml.primitiveLogicInSolver && logic_X__eq_x.matches(tree)) {
-			// System.out.println(" yep " + tree);
-			Constraint c = PrimitiveLogicEq.buildFrom(this, scp[scp.length - 1], tree.logop(0),
-					IntStream.range(0, scp.length - 1).mapToObj(i -> scp[i]).toArray(Variable[]::new));
-			if (c != null)
-				return addCtr(c);
+		if (head.control.xml.recognizeSumInSolver) {
+			// System.out.println("tree " + tree);
+			if (add_vars__relop.matches(tree)) {
+				Var[] list = (Var[]) tree.sons[0].arrayOfVars();
+				return sum(list, Kit.repeat(1, list.length), basicCondition(tree)); // TODO direct call ? without coeffs set to 1
+			}
+			if (add_mul_vals__relop.matches(tree)) {
+				Var[] list = (Var[]) tree.sons[0].arrayOfVars();
+				int[] coeffs = Stream.of(tree.sons[0].sons).mapToInt(s -> s.type == VAR ? 1 : s.val(0)).toArray();
+				return sum(list, coeffs, basicCondition(tree));
+			}
+			if (add_mul_vars__relop.matches(tree)) {
+				Var[] list = Stream.of(tree.sons[0].sons).map(s -> s.var(0)).toArray(Var[]::new);
+				Var[] coeffs = Stream.of(tree.sons[0].sons).map(s -> s.var(1)).toArray(Var[]::new);
+				return sum(list, coeffs, basicCondition(tree));
+			}
 		}
-
-		// extremumRules.put(min_relop, (id, r) -> xc.buildCtrMinimum(id, r.sons[0].vars(), basicCondition(r)));
-		// extremumRules.put(max_relop, (id, r) -> xc.buildCtrMaximum(id, r.sons[0].vars(), basicCondition(r)));
 
 		// boolean replace = true;
 		// boolean b = tree2.type == TypeExpr.EQ && tree2.sons.length == 2 && tree2.sons[1].type == TypeExpr.VAR;

@@ -2,6 +2,12 @@ package xcsp3;
 
 import static org.xcsp.common.Utilities.join;
 import static org.xcsp.common.Utilities.safeInt;
+import static org.xcsp.parser.callbacks.XCallbacks.XCallbacksParameters.RECOGNIZE_BINARY_PRIMITIVES;
+import static org.xcsp.parser.callbacks.XCallbacks.XCallbacksParameters.RECOGNIZE_EXTREMUM_CASES;
+import static org.xcsp.parser.callbacks.XCallbacks.XCallbacksParameters.RECOGNIZE_LOGIC_CASES;
+import static org.xcsp.parser.callbacks.XCallbacks.XCallbacksParameters.RECOGNIZE_SUM_CASES;
+import static org.xcsp.parser.callbacks.XCallbacks.XCallbacksParameters.RECOGNIZE_TERNARY_PRIMITIVES;
+import static org.xcsp.parser.callbacks.XCallbacks.XCallbacksParameters.RECOGNIZE_UNARY_PRIMITIVES;
 
 import java.io.File;
 import java.lang.reflect.Array;
@@ -65,11 +71,12 @@ import org.xcsp.parser.entries.XVariables.XVarSymbolic;
 import constraints.Constraint.CtrHardFalse;
 import constraints.global.BinPackingSimple;
 import dashboard.Arguments;
+import dashboard.Control.SettingXml;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 import variables.Variable.VariableInteger;
-import variables.Variable.VariableSymbolic;
+import variables.Variable.VariableSymbolic;;
 
 /**
  * This class corresponds to a problem loading instances in XCSP3 format.
@@ -83,11 +90,11 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		return implem;
 	}
 
-	private List<String> listOfFileNames;
+	private List<String> filenames;
 
 	@Override
 	public String name() {
-		return listOfFileNames.get(((Problem) imp()).head.instanceNumber);
+		return filenames.get(imp().head.instanceNumber);
 	}
 
 	private List<String> collect(List<String> list, File f) {
@@ -98,34 +105,38 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		return list;
 	}
 
-	public void data() {
-		String fileName = imp().askString("File or directory:");
-		if (listOfFileNames == null) {
-			listOfFileNames = collect(new ArrayList<>(), new File(fileName)).stream().sorted().collect(Collectors.toList());
-			Arguments.nInstancesToSolve = listOfFileNames.size();
+	public void data() { // called automatically by reflection
+		String s = imp().askString("File or directory:");
+		if (filenames == null) {
+			filenames = collect(new ArrayList<>(), new File(s)).stream().sorted().collect(Collectors.toList());
+			Arguments.nInstancesToSolve = filenames.size();
 		}
-		((Problem) imp()).parameters.get(0).setValue(name());
+		imp().parameters.get(0).setValue(name());
 		System.out.println();
 	}
 
 	@Override
 	public void model() {
-		// boolean b = true;
-		if (imp().head.control.xml.primitiveUnaryInSolver)
-			implem().currParameters.remove(XCallbacksParameters.RECOGNIZE_UNARY_PRIMITIVES);
-		if (imp().head.control.xml.primitiveBinaryInSolver)
-			implem().currParameters.remove(XCallbacksParameters.RECOGNIZE_BINARY_PRIMITIVES);
-		if (imp().head.control.xml.primitiveTernaryInSolver)
-			implem().currParameters.remove(XCallbacksParameters.RECOGNIZE_TERNARY_PRIMITIVES);
-		implem().currParameters.remove(XCallbacksParameters.RECOGNIZE_EXTREMUM_CASES);
-
+		SettingXml settings = imp().head.control.xml;
+		if (settings.primitiveUnaryInSolver)
+			implem().currParameters.remove(RECOGNIZE_UNARY_PRIMITIVES);
+		if (settings.primitiveBinaryInSolver)
+			implem().currParameters.remove(RECOGNIZE_BINARY_PRIMITIVES);
+		if (settings.primitiveTernaryInSolver)
+			implem().currParameters.remove(RECOGNIZE_TERNARY_PRIMITIVES);
+		if (settings.recognizeLogicInSolver)
+			implem().currParameters.remove(RECOGNIZE_LOGIC_CASES);
+		if (settings.recognizeExtremumInSolver)
+			implem().currParameters.remove(RECOGNIZE_EXTREMUM_CASES);
+		if (settings.recognizeSumInSolver)
+			implem().currParameters.remove(RECOGNIZE_SUM_CASES);
 		try {
 			if (imp().head.control.general.verbose > 1)
 				XParser.VERBOSE = true;
-			if (imp().head.control.xml.discardedClasses.indexOf(',') < 0)
-				loadInstance(name(), imp().head.control.xml.discardedClasses);
+			if (settings.discardedClasses.indexOf(',') < 0)
+				loadInstance(name(), settings.discardedClasses);
 			else
-				loadInstance(name(), imp().head.control.xml.discardedClasses.split(",")); // imp().rs.cp.xml.discardedClasses.split(","));
+				loadInstance(name(), settings.discardedClasses.split(","));
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("Problem when parsing the instance. Fix the problem.");
@@ -159,22 +170,6 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	private Map<XVar, Variable> mapVar = new LinkedHashMap<>();
 
-	// private Object trDom(XDom xd, Map<XDom, Object> cache4DomObject) {
-	// Object dom = cache4DomObject.get(xd);
-	// if (dom == null) {
-	// Object o = XCallbacks.trDom(xd);
-	// if (o instanceof int[])
-	// dom = (int[]) o;
-	// else if (o instanceof String[])
-	// dom = (String[]) o;
-	// else {
-	// dom = (IntegerInterval) o;
-	// }
-	// cache4DomObject.put(xd, dom);
-	// }
-	// return dom;
-	// }
-
 	private VariableInteger trVar(IVar x) {
 		return (VariableInteger) mapVar.get(x);
 	}
@@ -188,22 +183,20 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	private Condition trVar(Condition condition) {
-		if (condition instanceof ConditionVar)
-			return new ConditionVar(((ConditionVar) condition).operator, trVar(((ConditionVar) condition).x));
-		return condition;
+		return condition instanceof ConditionVar ? new ConditionVar(((ConditionVar) condition).operator, trVar(((ConditionVar) condition).x)) : condition;
 	}
 
-	private XNode<IVar> trVar(XNode<IVar> tree) {
-		return tree.replaceLeafValues(v -> v instanceof XVarInteger ? trVar((XVarInteger) v) : v instanceof XVarSymbolic ? trVar((XVarSymbolic) v) : v);
+	private XNode<IVar> trVar(XNode<XVarInteger> tree) {
+		return ((XNode) tree).replaceLeafValues(v -> v instanceof XVarInteger ? trVar((XVarInteger) v) : v);
 	}
 
-	private XNode<IVar>[] trVar(XNode<IVar>[] trees) {
+	private XNode<IVar> trVarSymbolic(XNode<XVarSymbolic> tree) {
+		return ((XNode) tree).replaceLeafValues(v -> v instanceof XVarSymbolic ? trVar((XVarSymbolic) v) : v);
+	}
+
+	private XNode<IVar>[] trVar(XNode<XVarInteger>[] trees) {
 		return Stream.of(trees).map(t -> t.replaceLeafValues(v -> v instanceof XVarInteger ? trVar((XVarInteger) v) : v)).toArray(XNode[]::new);
 	}
-
-	// private Variable trVar(Object var) {
-	// return mapVar.get((XVar) var);
-	// }
 
 	private VariableInteger[] trVars(XVarInteger[] t) {
 		return Arrays.stream(t).map(v -> mapVar.get(v)).toArray(VariableInteger[]::new);
@@ -377,61 +370,18 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	// ***** Constraint intension
 	// ************************************************************************
 
+	@Override
+	public void buildCtrIntension(String id, XVarInteger[] scope, XNodeParent<XVarInteger> tree) {
+		Kit.control(tree.exactlyVars(scope), "Pb with scope");
+		intension((XNodeParent<IVar>) trVar(tree));
+	}
+
 	private int nPrimitiveCalls = 0;
 
 	private void displayPrimitives(String s) {
 		if (imp().head.control.xml.displayPrimitives)
 			System.out.println((nPrimitiveCalls++ == 0 ? "\n" : "") + "Primitive in class XCSP3 : " + s);
 	}
-
-	// private Matcher x_relop_y = new Matcher(node(relop, var, var));
-	// private Matcher x_ariop_y__relop_k = new Matcher(node(relop, node(ariop, var, var), val));
-	// private Matcher k_relop__x_ariop_y = new Matcher(node(relop, val, node(ariop, var, var)));
-	// private Matcher x_relop__y_ariop_k = new Matcher(node(relop, var, node(ariop, var, val)));
-	// private Matcher y_ariop_k__relop_x = new Matcher(node(relop, node(ariop, var, val), var));
-	// private Matcher unaop_x__eq_y = new Matcher(node(TypeExpr.EQ, node(unaop, var), var));
-	//
-	// private Matcher x_ariop_y__relop_z = new Matcher(node(relop, node(ariop, var, var), var));
-	// private Matcher z_relop__x_ariop_y = new Matcher(node(relop, var, node(ariop, var, var)));
-
-	@Override
-	public CtrEntity intension(XNodeParent<IVar> otree) {
-		XNodeParent<IVar> tree = (XNodeParent<IVar>) trVar(otree);
-		// System.out.println("treeee " + tree);
-		// Variable[] vars = (Variable[]) tree.vars();
-		// if (vars.length == 2 && imp().head.control.xml.primitiveBinaryInSolver) {
-		// Constraint c = null;
-		// if (x_relop_y.matches(tree))
-		// c = PrimitiveBinarySub.buildFrom(imp(), vars[0], vars[1], tree.relop(0), 0);
-		// else if (x_ariop_y__relop_k.matches(tree))
-		// c = PrimitiveBinaryWithCst.buildFrom(imp(), vars[0], tree.ariop(0), vars[1], tree.relop(0), tree.val(0));
-		// else if (k_relop__x_ariop_y.matches(tree))
-		// c = PrimitiveBinaryWithCst.buildFrom(imp(), vars[0], tree.ariop(0), vars[1], tree.relop(0).arithmeticInversion(), tree.val(0));
-		// else if (x_relop__y_ariop_k.matches(tree))
-		// c = PrimitiveBinaryWithCst.buildFrom(imp(), vars[0], tree.relop(0), vars[1], tree.ariop(0), tree.val(0));
-		// else if (y_ariop_k__relop_x.matches(tree))
-		// c = PrimitiveBinaryWithCst.buildFrom(imp(), vars[1], tree.relop(0).arithmeticInversion(), vars[0], tree.ariop(0), tree.val(0));
-		// if (c != null)
-		// return imp().addCtr(c);
-		// }
-		// if (vars.length == 3 && imp().head.control.xml.primitiveTernaryInSolver) {
-		// Constraint c = null;
-		// if (z_relop__x_ariop_y.matches(tree))
-		// c = PrimitiveTernary.buildFrom(imp(), vars[1], tree.ariop(0), vars[2], tree.relop(0).arithmeticInversion(), vars[0]);
-		// else if (x_ariop_y__relop_z.matches(tree))
-		// c = PrimitiveTernary.buildFrom(imp(), vars[0], tree.ariop(0), vars[1], tree.relop(0), vars[2]);
-		// if (c != null)
-		// return imp().addCtr(c);
-		// }
-		return imp().intension(tree);
-	}
-
-	@Override
-	public void buildCtrIntension(String id, XVarInteger[] scope, XNodeParent<XVarInteger> tree) {
-		Kit.control(tree.exactlyVars(scope), "Pb with scope");
-		intension((XNodeParent<IVar>) (Object) tree);
-	}
-
 	// unary primitives
 
 	@Override
@@ -542,6 +492,10 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		imp().extension(trVars(list), tuples, positive);
 	}
 
+	// ************************************************************************
+	// ***** Constraints Regular and Mdd
+	// ************************************************************************
+
 	@Override
 	public void buildCtrRegular(String id, XVarInteger[] list, Object[][] transitions, String startState, String[] finalStates) {
 		imp().regular(trVars(list), new Automaton(startState,
@@ -552,6 +506,10 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	public void buildCtrMDD(String id, XVarInteger[] list, Object[][] transitions) {
 		mdd(trVars(list), Stream.of(transitions).map(t -> new Transition((String) t[0], t[1], (String) t[2])).toArray(Transition[]::new));
 	}
+
+	// ************************************************************************
+	// ***** Constraints AllDifferent and AllEqual
+	// ************************************************************************
 
 	@Override
 	public void buildCtrAllDifferent(String id, XVarInteger[] list) {
@@ -575,7 +533,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrAllDifferent(String id, XNode<XVarInteger>[] trees) {
-		allDifferent(trVar((XNode[]) trees));
+		allDifferent(trVar(trees));
 	}
 
 	@Override
@@ -634,13 +592,13 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrSum(String id, XNode<XVarInteger>[] trees, Condition condition) {
-		sum(trVar((XNode[]) trees), trVar(condition));
+		sum(trVar(trees), trVar(condition));
 	}
 
 	@Override
 	public void buildCtrSum(String id, XNode<XVarInteger>[] trees, int[] coeffs, Condition condition) {
 		assert coeffs != null;
-		sum(trVar((XNode[]) trees), coeffs, trVar(condition));
+		sum(trVar(trees), coeffs, trVar(condition));
 	}
 
 	@Override
@@ -764,10 +722,8 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrMaximum(String id, XNode<XVarInteger>[] trees, Condition condition) {
-		XNode<IVar>[] validTrees = Stream.of(trees).map(t -> t.replaceLeafValues(v -> v instanceof XVarInteger ? trVar((XVarInteger) v) : v))
-				.toArray(XNode[]::new);
 		if (condition instanceof ConditionVar && ((ConditionVar) condition).operator == EQ)
-			imp().maximum(validTrees, trVar(condition));
+			imp().maximum(trVar(trees), trVar(condition));
 		else
 			unimplementedCase(id, Utilities.join(trees), condition);
 	}
@@ -787,10 +743,8 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrMinimum(String id, XNode<XVarInteger>[] trees, Condition condition) {
-		XNode<IVar>[] validTrees = Stream.of(trees).map(t -> t.replaceLeafValues(v -> v instanceof XVarInteger ? trVar((XVarInteger) v) : v))
-				.toArray(XNode[]::new);
 		if (condition instanceof ConditionVar && ((ConditionVar) condition).operator == EQ)
-			imp().minimum(validTrees, trVar(condition));
+			imp().minimum(trVar(trees), trVar(condition));
 		else
 			unimplementedCase(id, Utilities.join(trees), condition);
 	}
@@ -1015,7 +969,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		if (list.size() > 0)
 			imp().minimize(SUM, list.stream().map(vv -> vv.x).toArray(VariableInteger[]::new), list.stream().mapToInt(vv -> vv.a).toArray());
 		else
-			imp().minimize(trVar((XNode) tree));
+			imp().minimize(trVar(tree));
 	}
 
 	@Override
@@ -1024,7 +978,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		if (list.size() > 0)
 			imp().maximize(SUM, list.stream().map(vv -> vv.x).toArray(VariableInteger[]::new), list.stream().mapToInt(vv -> vv.a).toArray());
 		else
-			imp().maximize(trVar((XNode) tree));
+			imp().maximize(trVar(tree));
 	}
 
 	@Override
@@ -1049,22 +1003,22 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildObjToMinimize(String id, TypeObjective type, XNode<XVarInteger>[] trees) {
-		imp().minimize(type, trVar((XNode[]) trees));
+		imp().minimize(type, trVar(trees));
 	}
 
 	@Override
 	public void buildObjToMaximize(String id, TypeObjective type, XNode<XVarInteger>[] trees) {
-		imp().maximize(type, trVar((XNode[]) trees));
+		imp().maximize(type, trVar(trees));
 	}
 
 	@Override
 	public void buildObjToMinimize(String id, TypeObjective type, XNode<XVarInteger>[] trees, int[] coeffs) {
-		imp().minimize(type, trVar((XNode[]) trees), coeffs);
+		imp().minimize(type, trVar(trees), coeffs);
 	}
 
 	@Override
 	public void buildObjToMaximize(String id, TypeObjective type, XNode<XVarInteger>[] trees, int[] coeffs) {
-		imp().maximize(type, trVar((XNode[]) trees), coeffs);
+		imp().maximize(type, trVar(trees), coeffs);
 	}
 
 	/**********************************************************************************************
@@ -1074,7 +1028,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void buildCtrIntension(String id, XVarSymbolic[] scope, XNodeParent<XVarSymbolic> tree) {
 		Kit.control(tree.exactlyVars(scope), "Pb with scope");
-		intension((XNodeParent<IVar>) (Object) tree);
+		intension((XNodeParent<IVar>) trVarSymbolic(tree));
 		// imp().intension(trVars(scope), (XNodeParent<IVar>) (Object) tree);
 	}
 
