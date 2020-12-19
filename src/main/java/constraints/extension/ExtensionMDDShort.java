@@ -86,7 +86,6 @@ public final class ExtensionMDDShort extends ExtensionGlobal implements TagPosit
 
 	public ExtensionMDDShort(Problem pb, Variable[] scp, int[][] tuples) {
 		this(pb, scp);
-		key = signature() + " " + tuples + " " + true; // TDODO be careful, we assume that the address of tuples can be used
 		storeTuples(tuples, true);
 	}
 

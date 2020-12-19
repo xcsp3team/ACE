@@ -37,6 +37,7 @@ import org.xcsp.common.predicates.TreeEvaluator.ExternFunctionArity2;
 
 import constraints.Constraint;
 import constraints.extension.Extension;
+import constraints.extension.Extension.Extension1;
 import constraints.extension.ExtensionSmart;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart;
@@ -250,17 +251,17 @@ public final class Features {
 		int num = collectedCtrsAtInit.size();
 		collectedCtrsAtInit.add(c);
 		ctrArities.add(c.scp.length);
-		if (c.scp.length == 1) {
+		if (c.scp.length == 1 && !(c instanceof Extension1)) {
 			if (c instanceof Extension || c instanceof Intension)
 				ctrTypes.add(c.getClass().getSimpleName() + "1");
 			// else
 			// throw new UnreachableCodeException();
 		} else
-			ctrTypes.add(c.getClass().getSimpleName() + (c instanceof Extension ? "-" + ((Extension) c).extStructure().getClass().getSimpleName() : ""));
+			ctrTypes.add(c.getClass().getSimpleName() + (c instanceof Extension ? "-" + c.extStructure().getClass().getSimpleName() : ""));
 		if (c instanceof ExtensionSmart)
-			tableSizes.add(((TableSmart) ((Extension) c).extStructure()).smartTuples.length);
-		if (c instanceof Extension && ((Extension) c).extStructure() instanceof Table)
-			tableSizes.add(((Table) ((Extension) c).extStructure()).tuples.length);
+			tableSizes.add(((TableSmart) c.extStructure()).smartTuples.length);
+		if (c instanceof Extension && c.extStructure() instanceof Table)
+			tableSizes.add(((Table) c.extStructure()).tuples.length);
 		return num;
 	}
 

@@ -737,16 +737,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		return seekFirstSupportWith(x, a);
 	}
 
-	/**
-	 * We assume that the given array corresponds to a tuple of indexes (and not to a tuple of values).
-	 * 
-	 * @param idxs
-	 *            the tuple to be removed
-	 */
-	public boolean removeTuple(int... idxs) {
-		throw new AssertionError();
-	}
-
 	/**********************************************************************************************
 	 * Methods related to filtering
 	 *********************************************************************************************/

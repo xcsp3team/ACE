@@ -104,6 +104,7 @@ import constraints.Constraint;
 import constraints.Constraint.CtrHardFalse;
 import constraints.Constraint.CtrHardTrue;
 import constraints.extension.Extension;
+import constraints.extension.Extension.Extension1;
 import constraints.extension.ExtensionMDD;
 import constraints.extension.ExtensionSmart;
 import constraints.extension.structures.Table;
@@ -162,6 +163,7 @@ import constraints.intension.PrimitiveTernary.PrimitiveTernaryAdd;
 import constraints.intension.PrimitiveTernary.PrimitiveTernaryLog;
 import dashboard.Control.SettingGeneral;
 import dashboard.Control.SettingVars;
+import dashboard.Control.SettingXml;
 import heuristics.HeuristicValues;
 import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicValuesDirect.Last;
@@ -331,8 +333,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 		public final Map<String, Integer> mapOfSymbols = new HashMap<>();
 
-		public final Map<Constraint, String[][]> mapOfTuples = new HashMap<>();
-
 		public int[] manageSymbols(String[] symbols) {
 			int[] t = new int[symbols.length];
 			for (int i = 0; i < t.length; i++) {
@@ -361,10 +361,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				}
 			}
 			return m;
-		}
-
-		public void store(Constraint c, String[][] m) {
-			mapOfTuples.put(c, m);
 		}
 
 		// public String replaceSymbols(String s) {
@@ -839,8 +835,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private Matcher z_relop__x_ariop_y = new Matcher(node(relop, var, node(ariop, var, var)));
 	private Matcher logic_y_relop_z__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, var, var), var));
 
-	// others
-
 	// extremum
 	private Matcher min_relop = new Matcher(node(relop, min_vars, varOrVal));
 	private Matcher max_relop = new Matcher(node(relop, max_vars, varOrVal));
@@ -862,10 +856,19 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity intension(XNodeParent<IVar> tree) {
 		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
 		Variable[] scp = (Variable[]) tree.vars();
-		assert Stream.of(scp).allMatch(x -> x instanceof Var) || Stream.of(scp).allMatch(x -> x instanceof VarSymbolic);
+		assert Variable.haveSameType(scp);
 		int arity = scp.length;
 
-		if (arity == 1 && !head.mustPreserveUnaryConstraints()) {
+		if (arity == 1) {
+			if (head.mustPreserveUnaryConstraints()) {
+				if (!head.control.constraints.intensionToExtensionUnaryCtrs)
+					return addCtr(new Intension(this, scp, tree));
+				TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
+				int[] conflicts = scp[0].dom.valuesChecking(va -> evaluator.evaluate(va) != 1);
+				if (conflicts.length < scp[0].dom.size() / 2)
+					return addCtr(new Extension1(this, scp, conflicts, false));
+				return addCtr(new Extension1(this, scp, scp[0].dom.valuesChecking(va -> evaluator.evaluate(va) == 1), true));
+			}
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 			scp[0].dom.removeValuesAtConstructionTime(v -> evaluator.evaluate(v) != 1);
 			features.nRemovedUnaryCtrs++;
@@ -879,7 +882,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		}
 
 		// System.out.println("treeee " + tree + " " + vars.length + " " + head.control.xml.primitiveTernaryInSolver);
-		if (arity == 2 && head.control.xml.primitiveBinaryInSolver) {
+		SettingXml settings = head.control.xml;
+		if (arity == 2 && settings.primitiveBinaryInSolver) {
 			Constraint c = null;
 			if (x_relop_y.matches(tree))
 				c = PrimitiveBinarySub.buildFrom(this, scp[0], scp[1], tree.relop(0), 0);
@@ -900,7 +904,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			if (c != null)
 				return addCtr(c);
 		}
-		if (arity == 3 && head.control.xml.primitiveTernaryInSolver) {
+		if (arity == 3 && settings.primitiveTernaryInSolver) {
 			Constraint c = null;
 			if (x_ariop_y__relop_z.matches(tree))
 				c = PrimitiveTernary.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0), scp[2]);
@@ -911,7 +915,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			if (c != null)
 				return addCtr(c);
 		}
-		if (head.control.xml.recognizeLogicInSolver) {
+		if (settings.recognizeLogicInSolver) {
 			if (logic_X__eq_x.matches(tree)) {
 				// System.out.println(" yep " + tree);
 				Constraint c = PrimitiveLogicEq.buildFrom(this, scp[scp.length - 1], tree.logop(0),
@@ -920,7 +924,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 					return addCtr(c);
 			}
 		}
-		if (head.control.xml.recognizeExtremumInSolver) {
+		if (settings.recognizeExtremumInSolver) {
 			if (min_relop.matches(tree)) {
 				// System.exit(1);
 				return minimum((Var[]) tree.sons[0].vars(), basicCondition(tree));
@@ -930,7 +934,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				return maximum((Var[]) tree.sons[0].vars(), basicCondition(tree));
 			}
 		}
-		if (head.control.xml.recognizeSumInSolver) {
+		if (settings.recognizeSumInSolver) {
 			// System.out.println("tree " + tree);
 			if (add_vars__relop.matches(tree)) {
 				Var[] list = (Var[]) tree.sons[0].arrayOfVars();
@@ -995,6 +999,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrAlone extension(IVar[] scp, Object[] tuples, boolean positive, Boolean starred) {
 		if (tuples.length == 0)
 			return addCtr(positive ? new CtrHardFalse(this, translate(scp), "Table constraint with 0 support") : new CtrHardTrue(this, translate(scp)));
+
 		return addCtr(Extension.build(this, translate(scp), tuples, positive, starred));
 	}
 

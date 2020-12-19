@@ -47,6 +47,39 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 	 ***** Generic and Global Subclasses
 	 *********************************************************************************************/
 
+	// !! not a subclass of Extension
+	public static final class Extension1 extends Constraint implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, FilteringSpecific {
+
+		@Override
+		public boolean checkValues(int[] t) {
+			return (Arrays.binarySearch(values, t[0]) >= 0) == positive;
+		}
+
+		final int[] values;
+		final boolean positive;
+
+		public Extension1(Problem pb, Variable[] scp, int[] values, boolean positive) {
+			super(pb, scp);
+			control(scp.length == 1);
+			assert Kit.isStrictlyIncreasing(values);
+			this.values = values;
+			this.positive = positive;
+			this.key = signature() + " " + values + " " + positive; // TODO can we use the adress of values?
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			// control(problem.solver.depth() == 0, () -> "depth: " + problem.solver.depth()); // cannot be used because after solutions, the entailed set may
+			// be reset
+			if (positive && scp[0].dom.removeValuesNotIn(values) == false)
+				return false;
+			if (!positive && scp[0].dom.removeValuesIn(values) == false)
+				return false;
+			assert scp[0].dom.size() > 0;
+			return entailed();
+		}
+	}
+
 	/**
 	 * Involves iterating lists of valid tuples in order to find a support.
 	 */
@@ -119,6 +152,7 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 	 *********************************************************************************************/
 
 	private static Extension build(Problem pb, Variable[] scp, boolean positive, boolean presentStar) {
+		Kit.control(scp.length > 1);
 		Set<Class<?>> classes = pb.head.handlerClasses.map.get(Extension.class);
 		if (presentStar) {
 			Kit.control(positive);
@@ -126,7 +160,7 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 			Kit.control(c instanceof TagShort); // currently, STR2, STR2S, CT, CT2 and MDDSHORT
 			return c;
 		}
-		if (scp.length == 1 || scp.length == 2 && pb.head.control.extension.validForBinary)
+		if (scp.length == 2 && pb.head.control.extension.validForBinary)
 			return new ExtensionV(pb, scp); // return new CtrExtensionSTR2(pb, scp);
 		String suffix = (positive ? pb.head.control.extension.positive : pb.head.control.extension.negative).toString();
 		return (Extension) Reflector.buildObject(Extension.class.getSimpleName() + suffix, classes, pb, scp);
@@ -154,7 +188,7 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 		return tuples instanceof int[][] ? Kit.isPresent(STAR, (int[][]) tuples) : Kit.isPresent(STAR_SYMBOL, (String[][]) tuples);
 	}
 
-	public static Extension build(Problem pb, Variable[] scp, Object tuples, boolean positive, Boolean starred) {
+	public static Constraint build(Problem pb, Variable[] scp, Object tuples, boolean positive, Boolean starred) {
 		Kit.control(Variable.haveSameType(scp));
 		Kit.control(Array.getLength(tuples) == 0 || Array.getLength(Array.get(tuples, 0)) == scp.length,
 				() -> "Badly formed extensional constraint " + scp.length + " " + Array.getLength(tuples));
@@ -162,23 +196,28 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 			starred = isStarPresent(tuples);
 		else
 			assert starred == isStarPresent(tuples) : starred + " \n" + Kit.join(tuples);
-		Extension c = build(pb, scp, positive, starred);
-
 		int[][] m = null;
-		if (scp[0] instanceof VariableSymbolic) {
+		if (scp[0] instanceof VariableSymbolic)
 			m = pb.symbolic.replaceSymbols((String[][]) tuples);
-			pb.symbolic.store(c, (String[][]) tuples);
-		} else {
+		else {
 			m = (int[][]) tuples;
 			if (!starred && pb.head.control.extension.mustReverse(scp.length, positive)) {
 				m = reverseTuples(scp, m);
 				positive = !positive;
 			}
 		}
-
-		String stuffKey = c.signature() + " " + m + " " + positive; // TODO be careful, we assume that the address of tuples can be used
-		c.key = pb.features.collectedTuples.computeIfAbsent(stuffKey, k -> c.signature() + "r" + pb.features.collectedTuples.size());
-		// TODO something to modify above ; don't seem to be compatible (keys)
+		if (scp.length == 1) {
+			Kit.control(!starred);
+			int[] values = Stream.of(m).mapToInt(t -> t[0]).toArray();
+			assert Kit.isStrictlyIncreasing(values);
+			if (pb.head.mustPreserveUnaryConstraints())
+				return new Extension1(pb, scp, values, positive);
+			boolean b = positive;
+			scp[0].dom.removeValuesAtConstructionTime(v -> (Arrays.binarySearch(values, v) < 0) == b);
+			pb.features.nRemovedUnaryCtrs++;
+			return null;
+		}
+		Extension c = build(pb, scp, positive, starred);
 		c.storeTuples(m, positive);
 		return c;
 	}
@@ -187,7 +226,7 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 	 * End of static section
 	 *********************************************************************************************/
 
-	protected ExtensionStructure extStructure;
+	public ExtensionStructure extStructure;
 
 	protected abstract ExtensionStructure buildExtensionStructure();
 
@@ -198,7 +237,7 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 
 	/**
 	 * In this overriding, we know that we can check directly indexes with the extension structure (by construction). As a result, we cannot check values
-	 * anymore (see previous method).
+	 * anymore (see the other method).
 	 */
 	@Override
 	public final boolean checkIndexes(int[] t) {
@@ -231,6 +270,9 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 	}
 
 	public final void storeTuples(int[][] tuples, boolean positive) {
+		String stuffKey = signature() + " " + tuples + " " + positive; // TODO be careful, we assume that the address of tuples can be used. Is that correct?
+		this.key = problem.features.collectedTuples.computeIfAbsent(stuffKey, k -> signature() + "r" + problem.features.collectedTuples.size());
+
 		control((positive && this instanceof TagPositive) || (!positive && this instanceof TagNegative)
 				|| (!(this instanceof TagPositive) && !(this instanceof TagNegative)), positive + " " + this.getClass().getName());
 		// System.out.println("Storing tuples for " + this + " " + Kit.join(tuples) + " " + positive);
@@ -261,16 +303,6 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 				conflictsStructure.register(this);
 			assert indexesMatchValues == extStructure.firstRegisteredCtr().indexesMatchValues;
 		}
-	}
-
-	@Override
-	public boolean removeTuple(int... idxs) {
-		if (extStructure.removeTuple(idxs)) {
-			if (conflictsStructure != null)
-				conflictsStructure.manageRemovedTuple(idxs);
-			return true;
-		}
-		return false;
 	}
 
 	boolean controlTuples(int[][] tuples) {

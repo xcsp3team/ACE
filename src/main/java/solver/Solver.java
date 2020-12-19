@@ -83,7 +83,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		private String[] possiblyDecompact(String[] t) {
 			List<String> list = null;
 			for (int i = 0; i < t.length; i++) {
-				boolean compact = t[i].length() != 1 && t[i].contains(Constants.STAR_SYMBOL);
+				boolean compact = t[i].contains(Constants.TIMES);
 				if (compact && list == null) {
 					list = new ArrayList<>();
 					for (int j = 0; j < i; j++)
@@ -91,7 +91,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 				}
 				if (list != null) {
 					if (compact) {
-						String[] tmp = t[i].split("\\*");
+						String[] tmp = t[i].split(Constants.TIMES);
 						assert tmp.length == 2;
 						for (int j = Integer.parseInt(tmp[1]) - 1; j >= 0; j--)
 							list.add(tmp[0]);

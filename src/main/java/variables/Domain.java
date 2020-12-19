@@ -218,11 +218,6 @@ public interface Domain extends LinkedSet {
 	 * Section about removals
 	 *********************************************************************************************/
 
-	// default void executeOnValues(Consumer<Integer> consumer) {
-	// for (int a = first(); a != -1; a = next(a))
-	// consumer.accept(toVal(a));
-	// }
-
 	/**
 	 * Removes definitively the value at the specified index. <br />
 	 * Important: this method must only called when building the problem.
@@ -829,14 +824,33 @@ public interface Domain extends LinkedSet {
 	}
 
 	default boolean removeValuesIn(int[] set) {
+		assert Kit.isStrictlyIncreasing(set);
 		int sizeBefore = size();
-		for (int i = set.length; i >= 0; i--) {
+		if (sizeBefore == 1)
+			return Arrays.binarySearch(set, firstValue()) < 0 || fail();
+		for (int i = set.length - 1; i >= 0; i--) {
 			int v = set[i];
 			if (isPresentValue(v)) {
 				removeElementary(toIdx(v));
 				if (size() == 0)
 					break;
 			}
+		}
+		return afterElementaryCalls(sizeBefore);
+	}
+
+	default boolean removeValuesNotIn(int[] set) {
+		assert Kit.isStrictlyIncreasing(set);
+		int sizeBefore = size();
+		if (sizeBefore == 1)
+			return Arrays.binarySearch(set, firstValue()) >= 0 || fail();
+		int i = 0;
+		for (int a = first(); a != -1; a = next(a)) {
+			int va = toVal(a);
+			while (i < set.length && va > set[i])
+				i++;
+			if (i == set.length || va != set[i])
+				removeElementary(a);
 		}
 		return afterElementaryCalls(sizeBefore);
 	}
@@ -888,18 +902,28 @@ public interface Domain extends LinkedSet {
 		return afterElementaryCalls(sizeBefore);
 	}
 
-	default boolean iterateStoppingWhen(Predicate<Integer> p) {
-		for (int a = first(); a != -1; a = next(a))
-			if (p.test(a))
-				return true;
-		return false;
-	}
+	// default boolean iterateStoppingWhen(Predicate<Integer> p) {
+	// for (int a = first(); a != -1; a = next(a))
+	// if (p.test(a))
+	// return true;
+	// return false;
+	// }
 
-	default boolean iterateOnValuesStoppingWhen(Predicate<Integer> p) {
-		for (int a = first(); a != -1; a = next(a))
-			if (p.test(toVal(a)))
-				return true;
-		return false;
+	// default boolean iterateOnValuesStoppingWhen(Predicate<Integer> p) {
+	// for (int a = first(); a != -1; a = next(a))
+	// if (p.test(toVal(a)))
+	// return true;
+	// return false;
+	// }
+
+	default int[] valuesChecking(Predicate<Integer> p) {
+		List<Integer> values = new ArrayList<>();
+		for (int a = first(); a != -1; a = next(a)) {
+			int va = toVal(a);
+			if (p.test(va))
+				values.add(va);
+		}
+		return Kit.intArray(values);
 	}
 
 	default boolean subsetOf(Domain dom) {

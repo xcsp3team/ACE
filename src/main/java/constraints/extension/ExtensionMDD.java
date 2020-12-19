@@ -8,15 +8,11 @@
  */
 package constraints.extension;
 
-import static org.xcsp.modeler.definitions.IRootForCtrAndObj.map;
-
 import java.util.Arrays;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import org.xcsp.common.structures.Automaton;
 import org.xcsp.common.structures.Transition;
-import org.xcsp.modeler.definitions.DefXCSP;
 import org.xcsp.modeler.definitions.ICtr.ICtrMdd;
 
 import constraints.extension.Extension.ExtensionGlobal;
@@ -87,7 +83,6 @@ public final class ExtensionMDD extends ExtensionGlobal implements TagPositive, 
 
 	public ExtensionMDD(Problem pb, Variable[] scp, int[][] tuples) {
 		this(pb, scp);
-		key = signature() + " " + tuples + " " + true; // TDODO be careful, we assume that the address of tuples can be used
 		storeTuples(tuples, true);
 	}
 
@@ -229,13 +224,4 @@ public final class ExtensionMDD extends ExtensionGlobal implements TagPositive, 
 		return updateDomains();
 	}
 
-	@Override
-	public Map<String, Object> mapXCSP() {
-		return map(SCOPE, scp, LIST, compactOrdered(scp), TRANSITIONS, ((MDD) extStructure).root.getTransitions(Variable.buildDomainsArrayFor(scp)));
-	}
-
-	@Override
-	public DefXCSP defXCSP() {
-		return ICtrMdd.super.defXCSP();
-	}
 }

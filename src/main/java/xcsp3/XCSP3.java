@@ -382,6 +382,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		if (imp().head.control.xml.displayPrimitives)
 			System.out.println((nPrimitiveCalls++ == 0 ? "\n" : "") + "Primitive in class XCSP3 : " + s);
 	}
+
 	// unary primitives
 
 	@Override
@@ -407,10 +408,6 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		displayPrimitives("(" + x + " " + aop + " " + k1 + ") " + op + " " + k2);
 		repost(id);
 	}
-
-	// public void buildCtrPrimitive(String id, XVarInteger x, TypeArithmeticOperator aop, int k, TypeConditionOperatorSet op, int[] t) {
-	// intension(XNodeParent.build(op.toExpr(), XNodeParent.build(aop.toExpr(), trVar(x), k), set(t)));
-	// }
 
 	// binary primitives
 
@@ -451,8 +448,6 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		displayPrimitives(x + " = (" + y + " " + op + " " + z + ")");
 		repost(id);
 	}
-
-	// others
 
 	@Override
 	public void buildCtrLogic(String id, TypeLogicalOperator lop, XVarInteger[] vars) {

@@ -344,6 +344,7 @@ public class Control {
 		String r5 = "Create Permutation constraints instead of classic AllDifferent when possible. Less filtering but may be faster.";
 
 		public boolean preserveUnaryCtrs = addB("preserveUnaryCtrs", "puc", true, "");
+		public boolean intensionToExtensionUnaryCtrs = addB("intensionToExtensionUnaryCtrs", "ieuc", true, "");
 		public final TypeCtr ignoredCtrType = org.xcsp.common.Types.valueOf(TypeCtr.class, addS("ignoreCtrType", "ignoreType", "", s_ignoreType));
 		public final int ignoreCtrArity = addI("ignoreCtrArity", "ignoreArity", -1, s_ignoreArity);
 		public boolean ignorePrimitives = addB("ignorePrimitives", "ip", false, "");

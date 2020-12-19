@@ -37,7 +37,7 @@ public abstract class ExtensionStructure implements RegisteringCtrs {
 	 * We assume that the given array corresponds to a tuple of indexes (and not to a tuple of values).
 	 */
 	public boolean removeTuple(int[] tupleToBeRemoved) {
-		throw new AssertionError();
+		throw new AssertionError("relevant only for some subclasses when 2nd order consistencies are used");
 	}
 
 	protected final void incrementNbTuplesRemoved() {
