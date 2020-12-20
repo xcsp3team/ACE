@@ -247,11 +247,11 @@ public class Head extends Thread {
 
 	public Map<String, ExtensionStructure> mapOfExtensionStructures = new HashMap<>();
 
-	public Map<String, SharedTreeEvaluator> mapOfEvaluationManagers = new HashMap<>();
+	public Map<String, SharedTreeEvaluator> mapOfTreeEvaluators = new HashMap<>();
 
 	public void clearMapsUsedByConstraints() {
 		mapOfExtensionStructures.clear();
-		mapOfEvaluationManagers.clear();
+		mapOfTreeEvaluators.clear();
 		if (Bits.globalMap != null)
 			Bits.globalMap.clear();
 	}
@@ -348,10 +348,11 @@ public class Head extends Thread {
 	 * Allows to build all objects which are necessary to solve the current instance
 	 */
 	protected void solveInstance(int instanceNumber) {
-		clearMapsUsedByConstraints();
 		observersConstruction.clear();
 		observersConstruction.add(output);
+		clearMapsUsedByConstraints();
 		problem = buildProblem(instanceNumber);
+		clearMapsUsedByConstraints();
 
 		if (control.solving.enablePrepro || control.solving.enableSearch) {
 			solver = buildSolver(problem);

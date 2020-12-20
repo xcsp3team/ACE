@@ -35,10 +35,10 @@ public class NotAllEqual extends CtrGlobal implements TagSymmetric, TagGACGuaran
 		defineKey();
 	}
 
-	@Override
-	public int giveUpperBoundOfMaxNumberOfConflictsFor(Variable var, int idx) {
-		return 1;
-	}
+	// @Override
+	// public int giveUpperBoundOfMaxNumberOfConflictsFor(Variable var, int idx) {
+	// return 1;
+	// }
 
 	@Override
 	public boolean runPropagator(Variable evt) {

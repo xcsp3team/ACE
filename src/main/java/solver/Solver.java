@@ -553,7 +553,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 	}
 
 	public final boolean tryAssignment(Variable x, int a) {
-		boolean b = false; // temporary
+		boolean b = false; // TODO temporary
 		if (b && x.heuristic instanceof Bivs) {
 			SetDense inconsistent = ((Bivs) x.heuristic).inconsistent;
 			if (inconsistent.size() > 0) {

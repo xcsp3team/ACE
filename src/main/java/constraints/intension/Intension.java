@@ -27,7 +27,6 @@ import org.xcsp.common.predicates.TreeEvaluator.F1Evaluator;
 import org.xcsp.common.predicates.TreeEvaluator.F2Evaluator;
 import org.xcsp.common.predicates.XNodeParent;
 
-import constraints.ConflictsStructure;
 import constraints.Constraint;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import problem.Problem;
@@ -63,7 +62,7 @@ public final class Intension extends Constraint implements TagFilteringCompleteA
 
 	public static class SharedTreeEvaluator extends TreeEvaluator implements RegisteringCtrs {
 
-		private final List<Constraint> registeredCtrs = new ArrayList<>();
+		public final List<Constraint> registeredCtrs = new ArrayList<>();
 
 		public List<Constraint> registeredCtrs() {
 			return registeredCtrs;
@@ -89,18 +88,10 @@ public final class Intension extends Constraint implements TagFilteringCompleteA
 			return root.toString();
 		}
 
-		class Node implements Comparable<Node> {
+		final class Node implements Comparable<Node> {
 			private String label;
 
 			private Node[] childs;
-
-			public String getLabel() {
-				return label;
-			}
-
-			public Node getChild(int i) {
-				return childs[i];
-			}
 
 			private Node(String label) {
 				this.label = label;
@@ -372,19 +363,11 @@ public final class Intension extends Constraint implements TagFilteringCompleteA
 
 	private KeyCanonizer keyCanonizer;
 
-	private boolean canonize = false; // hard coding
+	private boolean canonize = false; // TODO hard coding
 
 	@Override
 	public int[] defineSymmetryMatching() {
 		return keyCanonizer != null ? keyCanonizer.computeSymmetryMatching() : Kit.range(1, scp.length);
-	}
-
-	private void defineKey() {
-		keyCanonizer = null;
-		if (scp.length > 30 || tree.size() > 200) { // TODO hard coding {
-			this.key = signature().append(' ').append(tree.toPostfixExpression(tree.vars())).toString();
-		} else
-			this.key = signature().append(' ').append((keyCanonizer = new KeyCanonizer(tree)).key()).toString();
 	}
 
 	public Intension(Problem pb, Variable[] scp, XNodeParent<IVar> tree) {
@@ -392,21 +375,17 @@ public final class Intension extends Constraint implements TagFilteringCompleteA
 		this.tree = canonize ? (XNodeParent<IVar>) tree.canonization() : tree;
 		// Kit.control(tree.exactlyVars(scp));
 		Kit.control(Stream.of(scp).allMatch(x -> x instanceof VariableInteger) || Stream.of(scp).allMatch(x -> x instanceof VariableSymbolic));
-		defineKey();
-		if (!pb.head.mapOfEvaluationManagers.containsKey(key)) {
+		this.keyCanonizer = scp.length > 30 || tree.size() > 200 ? null : new KeyCanonizer(tree); // TODO hard coding (unbuilt if too costly)
+		this.key = signature().append(' ').append(keyCanonizer == null ? tree.toPostfixExpression(tree.vars()) : keyCanonizer.key()).toString();
+
+		Map<String, SharedTreeEvaluator> map = pb.head.mapOfTreeEvaluators;
+		treeEvaluator = map.get(key);
+		if (treeEvaluator == null) {
 			treeEvaluator = scp[0] instanceof VariableInteger ? new SharedTreeEvaluator(tree) : new SharedTreeEvaluator(tree, pb.symbolic.mapOfSymbols);
 			treeEvaluator.register(this);
-			conflictsStructure = ConflictsStructure.build(this); // potentially null
-			pb.head.mapOfEvaluationManagers.put(key, treeEvaluator);
-		} else {
-			treeEvaluator = pb.head.mapOfEvaluationManagers.get(key);
+			map.put(key, treeEvaluator);
+		} else
 			treeEvaluator.register(this);
-			conflictsStructure = treeEvaluator.firstRegisteredCtr().conflictsStructure;
-			if (conflictsStructure != null)
-				conflictsStructure.register(this);
-			else
-				conflictsStructure = ConflictsStructure.build(this);
-		}
 	}
 
 	// public boolean isEligibleForSettingHugeDomainVariable() {

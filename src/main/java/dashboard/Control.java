@@ -41,10 +41,10 @@ import org.xcsp.common.Utilities;
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.Matrix3D;
 import heuristics.HeuristicRevisions;
-import heuristics.HeuristicRevisions.HeuristicRevisionsDirect.Last;
 import heuristics.HeuristicRevisions.HeuristicRevisionsDynamic.Dom;
 import heuristics.HeuristicValues;
 import heuristics.HeuristicValuesDirect.First;
+import heuristics.HeuristicValuesDynamic.Conflicts;
 import heuristics.HeuristicVariables;
 import heuristics.HeuristicVariablesDynamic.Wdeg;
 import interfaces.Tags.TagExperimental;
@@ -605,9 +605,7 @@ public class Control {
 	public final SettingHardCoding hardCoding = new SettingHardCoding();
 
 	public final boolean mustBuildConflictStructures = settings.addB(3, "constraints", "mustBuildConflictStructures", "mbcs",
-			!propagation.reviser.equals(Reviser.class.getSimpleName())
-					|| (!valh.heuristic.equals(First.class.getSimpleName()) && !valh.heuristic.equals(Last.class.getSimpleName())),
-			"");
+			!propagation.reviser.equals(Reviser.class.getSimpleName()) || valh.heuristic.equals(Conflicts.class.getSimpleName()), "");
 
 	private Control() {
 		if (general.trace.length() > 0 && general.verbose < 1)

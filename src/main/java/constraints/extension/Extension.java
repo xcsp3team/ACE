@@ -20,9 +20,9 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import constraints.ConflictsStructure;
 import constraints.Constraint;
 import constraints.TupleManager;
+import constraints.extension.Extension.ExtensionGeneric.ExtensionV;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableWithSubtables;
@@ -44,11 +44,11 @@ import variables.Variable.VariableSymbolic;
 public abstract class Extension extends Constraint implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
 
 	/**********************************************************************************************
-	 ***** Generic and Global Subclasses
+	 ***** Extension1 (not a subclass of Extension)
 	 *********************************************************************************************/
 
 	// !! not a subclass of Extension
-	public static final class Extension1 extends Constraint implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, FilteringSpecific {
+	public static final class Extension1 extends Constraint implements FilteringSpecific, TagGACGuaranteed, TagFilteringCompleteAtEachCall {
 
 		@Override
 		public boolean checkValues(int[] t) {
@@ -80,63 +80,73 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 		}
 	}
 
-	/**
-	 * Involves iterating lists of valid tuples in order to find a support.
-	 */
-	public static final class ExtensionV extends Extension {
+	/**********************************************************************************************
+	 ***** Generic and Global Subclasses
+	 *********************************************************************************************/
 
-		@Override
-		protected ExtensionStructure buildExtensionStructure() {
-			if (scp.length == 2)
-				return Reflector.buildObject(problem.head.control.extension.classBinary, ExtensionStructure.class, this);
-			if (scp.length == 3)
-				return Reflector.buildObject(problem.head.control.extension.classTernary, ExtensionStructure.class, this);
-			return new Table(this); // MDD(this);
-		}
+	public abstract static class ExtensionGeneric extends Extension {
 
-		public ExtensionV(Problem pb, Variable[] scp) {
-			super(pb, scp);
-		}
-	}
-
-	public static final class ExtensionVA extends Extension implements TagPositive {
-
-		@Override
-		protected ExtensionStructure buildExtensionStructure() {
-			if (problem.head.control.extension.variant == 0)
-				return new TableWithSubtables(this);
-			assert problem.head.control.extension.variant == 1 || problem.head.control.extension.variant == 11;
-			return new Tries(this, problem.head.control.extension.variant == 11);
-		}
-
-		public ExtensionVA(Problem pb, Variable[] scp) {
+		public ExtensionGeneric(Problem pb, Variable[] scp) {
 			super(pb, scp);
 		}
 
-		private final boolean seekSupportVA(int x, int a, int[] tuple, boolean another) {
-			if (!another)
-				tupleManager.firstValidTupleWith(x, a, tuple);
-			else if (tupleManager.nextValidTupleCautiously() == -1)
-				return false;
-			while (true) {
-				int[] t = extStructure.nextSupport(x, a, tuple);
-				if (t == tuple)
-					break;
-				if (t == null)
-					return false;
-				Kit.copy(t, tuple);
-				if (isValid(tuple))
-					break;
-				if (tupleManager.nextValidTupleCautiously() == -1)
-					return false;
+		/**
+		 * Involves iterating lists of valid tuples in order to find a support.
+		 */
+		public static final class ExtensionV extends ExtensionGeneric {
+
+			@Override
+			protected ExtensionStructure buildExtensionStructure() {
+				if (scp.length == 2)
+					return Reflector.buildObject(problem.head.control.extension.classBinary, ExtensionStructure.class, this);
+				if (scp.length == 3)
+					return Reflector.buildObject(problem.head.control.extension.classTernary, ExtensionStructure.class, this);
+				return new Table(this); // MDD(this);
 			}
-			return true;
+
+			public ExtensionV(Problem pb, Variable[] scp) {
+				super(pb, scp);
+			}
 		}
 
-		@Override
-		public final boolean seekFirstSupportWith(int x, int a, int[] buffer) {
-			buffer[x] = a;
-			return seekSupportVA(x, a, buffer, false);
+		public static final class ExtensionVA extends ExtensionGeneric implements TagPositive {
+
+			@Override
+			protected ExtensionStructure buildExtensionStructure() {
+				int variant = problem.head.control.extension.variant;
+				assert variant == 0 || variant == 1 || variant == 11;
+				return variant == 0 ? new TableWithSubtables(this) : new Tries(this, variant == 11);
+			}
+
+			public ExtensionVA(Problem pb, Variable[] scp) {
+				super(pb, scp);
+			}
+
+			private final boolean seekSupportVA(int x, int a, int[] tuple, boolean another) {
+				if (!another)
+					tupleManager.firstValidTupleWith(x, a, tuple);
+				else if (tupleManager.nextValidTupleCautiously() == -1)
+					return false;
+				while (true) {
+					int[] t = extStructure.nextSupport(x, a, tuple);
+					if (t == tuple)
+						break;
+					if (t == null)
+						return false;
+					Kit.copy(t, tuple);
+					if (isValid(tuple))
+						break;
+					if (tupleManager.nextValidTupleCautiously() == -1)
+						return false;
+				}
+				return true;
+			}
+
+			@Override
+			public final boolean seekFirstSupportWith(int x, int a, int[] buffer) {
+				buffer[x] = a;
+				return seekSupportVA(x, a, buffer, false);
+			}
 		}
 	}
 
@@ -264,8 +274,7 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 		if (!onlyConflictsStructure && extStructure.registeredCtrs().size() > 1) {
 			extStructure.unregister(this);
 			extStructure = Reflector.buildObject(extStructure.getClass().getSimpleName(), ExtensionStructure.class, this, extStructure);
-			// IF NECESSARY, add another constructor in the class instance of
-			// ExtensionStructure
+			// IF NECESSARY, add another constructor in the class instance of ExtensionStructure
 		}
 	}
 
@@ -279,28 +288,21 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 
 		if (supporter != null)
 			((SupporterHard) supporter).reset();
-		Map<String, ExtensionStructure> map = problem.head.mapOfExtensionStructures;
 
-		if (key == null || !map.containsKey(key)) {
-			extStructure = buildExtensionStructure();
-			extStructure.originalTuples = problem.head.control.problem.isSymmetryBreaking() ? tuples : null;
+		Map<String, ExtensionStructure> map = problem.head.mapOfExtensionStructures;
+		extStructure = map.get(key);
+		if (extStructure == null) {
+			extStructure = buildExtensionStructure(); // note that the constraint is automatically registered
+			extStructure.originalTuples = this instanceof ExtensionGeneric || problem.head.control.problem.isSymmetryBreaking() ? tuples : null;
 			extStructure.originalPositive = positive;
 			extStructure.storeTuples(tuples, positive);
-			if (key != null) {
-				map.put(key, extStructure);
-				// below, "necessary" to let this code here because tuples and positive are easily accessible
-				if (problem.head.control.problem.isSymmetryBreaking()) {
-					Constraint.putSymmetryMatching(key, extStructure.computeVariableSymmetryMatching(tuples, positive));
-				}
+			map.put(key, extStructure);
+			// below, "necessary" to let this code here because tuples and positive are easily accessible
+			if (problem.head.control.problem.isSymmetryBreaking()) {
+				Constraint.putSymmetryMatching(key, extStructure.computeVariableSymmetryMatching(tuples, positive));
 			}
-			if (!(this instanceof ExtensionMDDShort))
-				conflictsStructure = ConflictsStructure.build(this, tuples, positive);
 		} else {
-			extStructure = map.get(key);
 			extStructure.register(this);
-			conflictsStructure = extStructure.firstRegisteredCtr().conflictsStructure;
-			if (conflictsStructure != null)
-				conflictsStructure.register(this);
 			assert indexesMatchValues == extStructure.firstRegisteredCtr().indexesMatchValues;
 		}
 	}

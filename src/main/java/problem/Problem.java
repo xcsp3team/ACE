@@ -100,6 +100,7 @@ import org.xcsp.modeler.entities.CtrEntities.CtrEntity;
 import org.xcsp.modeler.entities.ObjEntities.ObjEntity;
 import org.xcsp.modeler.implementation.ProblemIMP;
 
+import constraints.ConflictsStructure;
 import constraints.Constraint;
 import constraints.Constraint.CtrHardFalse;
 import constraints.Constraint.CtrHardTrue;
@@ -231,6 +232,10 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		control((settings.framework == COP) == (optimizer != null), "Not a COP " + settings.framework + " " + (optimizer == null));
 
 		Stream.of(variables).peek(x -> control(Stream.of(x.ctrs).noneMatch(c -> c.num == -1))).forEach(x -> x.dom.finalizeConstruction(variables.length + 1));
+
+		System.out.println("here");
+		ConflictsStructure.buildFor(this);
+
 		priorityVars = priorityVars.length == 0 && annotations.decision != null ? (Variable[]) annotations.decision : priorityVars;
 		if (settings.framework == COP
 				&& (optimizer.ctr instanceof ObjectiveVariable || optimizer.ctr instanceof MaximumCstLE || optimizer.ctr instanceof MinimumCstGE))
@@ -565,7 +570,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			features.varDegrees.add(x.deg());
 		}
 		assert Variable.areNumsNormalized(variables);// && Constraint.areIdsNormalized(constraints); TODO
-		head.clearMapsUsedByConstraints();
+		// head.clearMapsUsedByConstraints();
 	}
 
 	public Variable findVarWithNumOrId(Object o) {
@@ -623,16 +628,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		}
 	}
 
-	private final void updateConflictsStructuresIfReducedDomains() {
-		if (nValuesRemoved > 0) {
-			// Kit.warning(true, Domain.getNbValuesRemoved() +" values removed
-			// by unary constraints and reduceDomainsOfIsolatedVariables ");
-			int[] domainFrontiers = Kit.repeat(-1, variables.length);
-			for (Constraint ctr : constraints)
-				ctr.updateConflictsStructures(domainFrontiers);
-		}
-	}
-
 	public int[][] buildTable(Constraint... ctrs) {
 		Variable[] scp = distinctSorted(vars(Stream.of(ctrs).map(c -> c.scp).toArray()));
 		int[][] vaps = Stream.of(ctrs).map(c -> IntStream.range(0, c.scp.length).map(i -> Utilities.indexOf(c.scp[i], scp)).toArray()).toArray(int[][]::new);
@@ -675,7 +670,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// optimizer = new OptimizerBasic(this, "#violatedConstraints");
 
 		reduceDomainsOfIsolatedVariables();
-		updateConflictsStructuresIfReducedDomains();
 	}
 
 	public final void display() {

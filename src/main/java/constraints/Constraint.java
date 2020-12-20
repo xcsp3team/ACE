@@ -102,7 +102,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	/*************************************************************************
-	 ***** Two very special kinds of constraints and CtrGlobal
+	 ***** Two very special kinds of constraints False and True
 	 *************************************************************************/
 
 	public static class CtrHardFalse extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagGACGuaranteed {
@@ -141,6 +141,10 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 			super(pb, scp);
 		}
 	}
+
+	/*************************************************************************
+	 ***** CtrGlobal
+	 *************************************************************************/
 
 	public static abstract class CtrGlobal extends Constraint implements FilteringSpecific {
 
@@ -439,39 +443,11 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 */
 	public ConflictsStructure conflictsStructure;
 
-	// public final ConflictsStructure conflictsStructure() {
-	// return conflictsStructure;
-	// }
-
 	public void cloneStructures(boolean onlyConflictsStructure) {
 		if (conflictsStructure != null && conflictsStructure.registeredCtrs().size() > 1) {
 			conflictsStructure.unregister(this);
 			conflictsStructure = new ConflictsStructure(conflictsStructure, this);
 		}
-	}
-
-	public void updateConflictsStructures(int[] frontier) {
-		if (conflictsStructure != null && Stream.of(scp).anyMatch(x -> x.dom.lastRemoved() != frontier[x.num]) && !usePredefinedMaxNumberOfConflicts()) {
-			if (conflictsStructure.registeredCtrs().size() > 1)
-				cloneStructures(true);
-			conflictsStructure.updateCounters(frontier);
-		}
-	}
-
-	static final int UNDEFINED = -10;
-
-	/**
-	 * This function must be such that if (an upper bound of) the number of max conflicts is known for one pair (variable, index) then it is known for any pair
-	 */
-	public int giveUpperBoundOfMaxNumberOfConflictsFor(Variable x, int a) {
-		return UNDEFINED; // by default
-	}
-
-	/**
-	 * we assume that if the number of max conflicts is known for one pair (variable, index) then it is known for any pair
-	 */
-	public boolean usePredefinedMaxNumberOfConflicts() {
-		return giveUpperBoundOfMaxNumberOfConflictsFor(scp[0], scp[0].dom.first()) != UNDEFINED;
 	}
 
 	/**********************************************************************************************

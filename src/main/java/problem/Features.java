@@ -188,35 +188,6 @@ public final class Features {
 	}
 
 	/**********************************************************************************************
-	 * Methods for conflicts structures
-	 *********************************************************************************************/
-
-	private boolean controlConstraintsOfConflictStructures() {
-		Stream.of(problem.constraints).forEach(c -> Kit.control(c.conflictsStructure == null || c.conflictsStructure.registeredCtrs().contains(c),
-				() -> "pb cloneConstraitnStructure " + c + " " + c.conflictsStructure.firstRegisteredCtr()));
-		return true;
-	}
-
-	private boolean controlUnitListsOfConflictStructures() {
-		Stream.of(problem.constraints).filter(c -> c.conflictsStructure != null)
-				.forEach(c -> Kit.control(c.conflictsStructure.registeredCtrs().contains(c) && c.conflictsStructure.registeredCtrs().size() == 1,
-						() -> "pb cloneConstraitnStructure " + c + " " + c.conflictsStructure.firstRegisteredCtr()));
-		return true;
-	}
-
-	public void cloneStructuresOfConstraintsWithArity(int arity, boolean onlyConflictsStructure) {
-		assert controlConstraintsOfConflictStructures();
-		Kit.log.info("   Before cloning, mem=" + Kit.memoryInMb());
-		Stream.of(problem.constraints).filter(c -> arity == -1 || c.scp.length == arity).forEach(c -> c.cloneStructures(onlyConflictsStructure));
-		Kit.log.info("   After cloning, mem=" + Kit.memoryInMb());
-		assert controlUnitListsOfConflictStructures();
-	}
-
-	public void cloneStructuresOfConstraints(boolean onlyConflictsStructure) {
-		cloneStructuresOfConstraintsWithArity(-1, onlyConflictsStructure);
-	}
-
-	/**********************************************************************************************
 	 * Methods for metrics
 	 *********************************************************************************************/
 

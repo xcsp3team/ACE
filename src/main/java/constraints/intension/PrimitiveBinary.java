@@ -521,10 +521,10 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 				super(pb, x, y, k);
 			}
 
-			@Override
-			public int giveUpperBoundOfMaxNumberOfConflictsFor(Variable x, int a) {
-				return 1;
-			}
+			// @Override
+			// public int giveUpperBoundOfMaxNumberOfConflictsFor(Variable x, int a) {
+			// return 1;
+			// }
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
@@ -649,10 +649,10 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 				return k == 0;
 			}
 
-			@Override
-			public int giveUpperBoundOfMaxNumberOfConflictsFor(Variable x, int a) {
-				return 1;
-			}
+			// @Override
+			// public int giveUpperBoundOfMaxNumberOfConflictsFor(Variable x, int a) {
+			// return 1;
+			// }
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
