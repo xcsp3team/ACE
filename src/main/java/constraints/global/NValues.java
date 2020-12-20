@@ -55,7 +55,7 @@ public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed { 
 			if (dom.size() > fixedVals.size())
 				continue;
 			int sentinel = sentinels[x];
-			if (dom.isPresentValue(sentinel) && !fixedVals.contains(sentinel))
+			if (dom.presentValue(sentinel) && !fixedVals.contains(sentinel))
 				continue;
 			if (dom.size() > 5) // hard coding for avoiding iterating systematically over all values
 				continue;

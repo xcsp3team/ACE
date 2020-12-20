@@ -308,6 +308,6 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 	}
 
 	boolean controlTuples(int[][] tuples) {
-		return Stream.of(tuples).allMatch(t -> IntStream.range(0, t.length).allMatch(i -> t[i] == STAR || scp[i].dom.isPresentValue(t[i])));
+		return Stream.of(tuples).allMatch(t -> IntStream.range(0, t.length).allMatch(i -> t[i] == STAR || scp[i].dom.presentValue(t[i])));
 	}
 }

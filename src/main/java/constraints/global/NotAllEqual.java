@@ -35,11 +35,6 @@ public class NotAllEqual extends CtrGlobal implements TagSymmetric, TagGACGuaran
 		defineKey();
 	}
 
-	// @Override
-	// public int giveUpperBoundOfMaxNumberOfConflictsFor(Variable var, int idx) {
-	// return 1;
-	// }
-
 	@Override
 	public boolean runPropagator(Variable evt) {
 		Variable unfixed = null;
@@ -47,7 +42,6 @@ public class NotAllEqual extends CtrGlobal implements TagSymmetric, TagGACGuaran
 		// iteration over future variables first
 		for (int i = futvars.limit; i >= 0; i--) {
 			Domain dom = scp[futvars.dense[i]].dom;
-			// Variable y = scp[futvars.dense[i]];
 			if (dom.size() > 1) {
 				if (unfixed == null)
 					unfixed = dom.var();

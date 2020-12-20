@@ -64,10 +64,10 @@ public final class ElementMatrix extends CtrGlobal implements TagUnsymmetric, Ta
 		if (sizeBefore > 1) {
 			extern: for (int a = rdom.last(); a != -1; a = rdom.prev(a)) {
 				int b = rsentinels[a];
-				if (cdom.present(b) && matrix[a][b].dom.isPresentValue(value))
+				if (cdom.present(b) && matrix[a][b].dom.presentValue(value))
 					continue;
 				for (b = cdom.last(); b != -1; b = cdom.prev(b))
-					if (matrix[a][b].dom.isPresentValue(value)) {
+					if (matrix[a][b].dom.presentValue(value)) {
 						rsentinels[a] = b;
 						continue extern;
 					}
@@ -82,10 +82,10 @@ public final class ElementMatrix extends CtrGlobal implements TagUnsymmetric, Ta
 		if (sizeBefore > 1) {
 			extern: for (int b = cdom.last(); b != -1; b = cdom.prev(b)) {
 				int a = csentinels[b];
-				if (rdom.present(a) && matrix[a][b].dom.isPresentValue(value))
+				if (rdom.present(a) && matrix[a][b].dom.presentValue(value))
 					continue;
 				for (a = rdom.last(); a != -1; a = rdom.prev(a)) {
-					if (matrix[a][b].dom.isPresentValue(value)) {
+					if (matrix[a][b].dom.presentValue(value)) {
 						csentinels[b] = a;
 						continue extern;
 					}

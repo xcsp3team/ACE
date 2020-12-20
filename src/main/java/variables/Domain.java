@@ -14,12 +14,14 @@ import static org.xcsp.common.Types.TypeOperatorRel.LE;
 import static org.xcsp.common.Types.TypeOperatorRel.LT;
 import static utility.Kit.control;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.xcsp.common.Range;
 import org.xcsp.common.Types.TypeOperatorRel;
@@ -31,6 +33,10 @@ import sets.SetDense;
 import utility.Kit;
 
 public interface Domain extends LinkedSet {
+
+	/**********************************************************************************************
+	 * static
+	 *********************************************************************************************/
 
 	static final int TAG_RANGE = Integer.MAX_VALUE;
 
@@ -50,25 +56,70 @@ public interface Domain extends LinkedSet {
 		return domainTypes.size() - 1;
 	}
 
-	public static void setMarks(Variable[] variables) {
+	static void setMarks(Variable[] variables) {
 		for (Variable x : variables)
 			x.dom.setMark();
 	}
 
-	public static void restoreAtMarks(Variable[] variables) {
+	static void restoreAtMarks(Variable[] variables) {
 		for (Variable x : variables)
 			x.dom.restoreAtMark();
 	}
 
-	public static void setMarks(Variable[] variables, int level) {
+	static void setMarks(Variable[] variables, int level) {
 		for (Variable x : variables)
 			x.dom.setMark(level);
 	}
 
-	public static void restoreAtMarks(Variable[] variables, int level) {
+	static void restoreAtMarks(Variable[] variables, int level) {
 		for (Variable x : variables)
 			x.dom.restoreAtMark(level);
 	}
+
+	static BigInteger nValidTuples(Domain[] doms, boolean initSize) {
+		BigInteger prod = BigInteger.ONE;
+		for (Domain dom : doms)
+			prod = prod.multiply(BigInteger.valueOf(initSize ? dom.initSize() : dom.size()));
+		return prod;
+	}
+
+	static long nTuplesFor(Domain[] doms, int ignoredPosition, boolean initiSize) {
+		assert Stream.of(doms).noneMatch(dom -> dom.size() == 0);
+		long l = 1;
+		for (int i = 0; i < doms.length; i++) {
+			if (i == ignoredPosition)
+				continue;
+			int size = initiSize ? doms[i].initSize() : doms[i].size();
+			if (l > Long.MAX_VALUE / size)
+				return -1;
+			l *= size;
+		}
+		return l;
+	}
+
+	/**
+	 * @return the number of valid tuples, or Long.MAX_VALUE when this is greater than Long.MAX_VALUE, so always a positive value (or 0) is returned
+	 */
+	static long nValidTuplesBoundedAtMaxValueFor(Domain... doms) {
+		long l = nTuplesFor(doms, -1, false);
+		return l == -1 ? Long.MAX_VALUE : l;
+	}
+
+	static long nValidTuplesBoundedAtMaxValueFor(Variable... vars) {
+		return nValidTuplesBoundedAtMaxValueFor(Stream.of(vars).map(x -> x.dom).toArray(Domain[]::new));
+	}
+
+	/**
+	 * @return the number of valid tuples, or Long.MAX_VALUE when this is greater than Long.MAX_VALUE, so always a positive value (or 0) is returned
+	 */
+	static long nValidTuplesBoundedAtMaxValueFor(Domain[] doms, int ignoredPosition) {
+		long l = nTuplesFor(doms, ignoredPosition, false);
+		return l == -1 ? Long.MAX_VALUE : l;
+	}
+
+	/**********************************************************************************************
+	 * Class
+	 *********************************************************************************************/
 
 	default boolean areInitValuesExactly(Range range) {
 		return initSize() == range.length() && IntStream.range(0, initSize()).allMatch(a -> toVal(a) == range.start + a);
@@ -130,7 +181,7 @@ public interface Domain extends LinkedSet {
 	/**
 	 * Determines whether the specified value belongs to the current domain.
 	 */
-	default boolean isPresentValue(int v) {
+	default boolean presentValue(int v) {
 		int a = toIdx(v);
 		return a >= 0 && present(a);
 	}
@@ -208,7 +259,7 @@ public interface Domain extends LinkedSet {
 	default int firstCommonValueWith(Domain dom) {
 		for (int a = first(); a != -1; a = next(a)) {
 			int va = toVal(a);
-			if (dom.isPresentValue(va))
+			if (dom.presentValue(va))
 				return va;
 		}
 		return Integer.MAX_VALUE;
@@ -561,14 +612,14 @@ public interface Domain extends LinkedSet {
 	default boolean removeValuesIn(Domain dom) {
 		int sizeBefore = size();
 		if (sizeBefore == 1)
-			return !dom.isPresentValue(firstValue()) || fail();
+			return !dom.presentValue(firstValue()) || fail();
 		if (size() < dom.size()) {
 			for (int a = first(); a != -1; a = next(a))
-				if (dom.isPresentValue(toVal(a)))
+				if (dom.presentValue(toVal(a)))
 					removeElementary(a);
 		} else {
 			for (int b = dom.first(); b != -1; b = dom.next(b))
-				if (isPresentValue(dom.toVal(b)))
+				if (presentValue(dom.toVal(b)))
 					removeElementary(toIdx(dom.toVal(b)));
 		}
 		return afterElementaryCalls(sizeBefore);
@@ -579,9 +630,9 @@ public interface Domain extends LinkedSet {
 			return fail();
 		int sizeBefore = size();
 		if (sizeBefore == 1) // keep it for assigned variables
-			return dom.isPresentValue(firstValue()) || fail();
+			return dom.presentValue(firstValue()) || fail();
 		for (int a = first(); a != -1; a = next(a))
-			if (!dom.isPresentValue(toVal(a)))
+			if (!dom.presentValue(toVal(a)))
 				removeElementary(a);
 		return afterElementaryCalls(sizeBefore);
 	}
@@ -635,9 +686,9 @@ public interface Domain extends LinkedSet {
 	default boolean removeValuesModIn(Domain dom, int coeff) {
 		int sizeBefore = size();
 		if (sizeBefore == 1)
-			return !dom.isPresentValue(firstValue() % coeff) || fail();
+			return !dom.presentValue(firstValue() % coeff) || fail();
 		for (int a = first(); a != -1; a = next(a))
-			if (dom.isPresentValue(toVal(a) % coeff))
+			if (dom.presentValue(toVal(a) % coeff))
 				removeElementary(a);
 		return afterElementaryCalls(sizeBefore);
 	}
@@ -717,11 +768,11 @@ public interface Domain extends LinkedSet {
 		boolean overk = k * 2 < dom.size();
 		extern: for (int a = first(); a != -1; a = next(a)) {
 			int va = toVal(a);
-			if (dom.isPresentValue(va)) // distance 0
+			if (dom.presentValue(va)) // distance 0
 				continue;
 			if (overk) {
 				for (int i = 1; i <= k; i++)
-					if (dom.isPresentValue(va + k) || dom.isPresentValue(va - k))
+					if (dom.presentValue(va + k) || dom.presentValue(va - k))
 						continue extern;
 			} else
 				for (int b = dom.first(); b != -1; b = dom.next(b))
@@ -745,7 +796,7 @@ public interface Domain extends LinkedSet {
 	}
 
 	default boolean removeValuesDenominatorsGT(int k, int numerator) {
-		assert !isPresentValue(0);
+		assert !presentValue(0);
 		int sizeBefore = size();
 		for (int a = first(); a != -1; a = next(a)) {
 			int va = toVal(a);
@@ -791,7 +842,7 @@ public interface Domain extends LinkedSet {
 					removeElementary(a);
 		} else {
 			for (int v : set)
-				if (isPresentValue(v)) {
+				if (presentValue(v)) {
 					removeElementary(toIdx(v));
 					if (size() == 0)
 						break;
@@ -814,7 +865,7 @@ public interface Domain extends LinkedSet {
 		int sizeBefore = size();
 		for (int i = set.limit; i >= 0; i--) {
 			int v = set.dense[i];
-			if (isPresentValue(v)) {
+			if (presentValue(v)) {
 				removeElementary(toIdx(v));
 				if (size() == 0)
 					break;
@@ -830,7 +881,7 @@ public interface Domain extends LinkedSet {
 			return Arrays.binarySearch(set, firstValue()) < 0 || fail();
 		for (int i = set.length - 1; i >= 0; i--) {
 			int v = set[i];
-			if (isPresentValue(v)) {
+			if (presentValue(v)) {
 				removeElementary(toIdx(v));
 				if (size() == 0)
 					break;
@@ -866,7 +917,7 @@ public interface Domain extends LinkedSet {
 		if (left == first) {
 			if (right == last)
 				return fail(); // because the domain is contained in the range
-		} else if (!isPresentValue(left)) { // we know that first < start <= last, and start < stop, so start <= right
+		} else if (!presentValue(left)) { // we know that first < start <= last, and start < stop, so start <= right
 			// finding the first value in the domain contained in the range
 			if (size() < (right - left))
 				for (int a = first(); a != -1; a = next(a)) {
@@ -876,7 +927,7 @@ public interface Domain extends LinkedSet {
 				}
 			else {
 				left++;
-				while (!isPresentValue(left) && left <= right)
+				while (!presentValue(left) && left <= right)
 					left++;
 			}
 		}
@@ -928,14 +979,14 @@ public interface Domain extends LinkedSet {
 
 	default boolean subsetOf(Domain dom) {
 		for (int a = first(); a != -1; a = next(a))
-			if (!dom.isPresentValue(toVal(a)))
+			if (!dom.presentValue(toVal(a)))
 				return false;
 		return true;
 	}
 
 	default boolean overlapWith(Domain dom) {
 		for (int a = first(); a != -1; a = next(a))
-			if (dom.isPresentValue(toVal(a)))
+			if (dom.presentValue(toVal(a)))
 				return true;
 		return false;
 	}

@@ -8,13 +8,9 @@
  */
 package constraints.extension;
 
-import static org.xcsp.modeler.definitions.IRootForCtrAndObj.map;
-
 import java.util.Arrays;
-import java.util.Map;
 
 import org.xcsp.common.Constants;
-import org.xcsp.modeler.definitions.DefXCSP;
 import org.xcsp.modeler.definitions.ICtr.ICtrMdd;
 
 import constraints.extension.Extension.ExtensionGlobal;
@@ -231,13 +227,4 @@ public final class ExtensionMDDShort extends ExtensionGlobal implements TagPosit
 		return updateDomains();
 	}
 
-	@Override
-	public Map<String, Object> mapXCSP() {
-		return map(SCOPE, scp, LIST, compactOrdered(scp), TRANSITIONS, ((MDDShort) extStructure).root.getTransitions(Variable.buildDomainsArrayFor(scp)));
-	}
-
-	@Override
-	public DefXCSP defXCSP() {
-		return ICtrMdd.super.defXCSP();
-	}
 }

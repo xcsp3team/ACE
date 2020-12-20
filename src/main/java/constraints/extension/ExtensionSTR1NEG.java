@@ -51,7 +51,7 @@ public final class ExtensionSTR1NEG extends ExtensionSTR1 implements TagNegative
 			} else
 				set.removeAtPosition(i, depth);
 		}
-		long nValidTuples = Variable.nValidTuplesBoundedAtMaxValueFor(scp);
+		long nValidTuples = Domain.nValidTuplesBoundedAtMaxValueFor(doms);
 		for (int i = futvars.limit; i >= 0; i--) {
 			int x = futvars.dense[i];
 			Domain dom = scp[x].dom;

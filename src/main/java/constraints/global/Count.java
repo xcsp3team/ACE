@@ -43,7 +43,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 		super(pb, scp);
 		this.list = list;
 		this.value = value;
-		control(Stream.of(list).allMatch(x -> x.dom.isPresentValue(value) && x.dom.size() > 1), "Badly formed scope.");
+		control(Stream.of(list).allMatch(x -> x.dom.presentValue(value) && x.dom.size() > 1), "Badly formed scope.");
 	}
 
 	/**********************************************************************************************
@@ -158,12 +158,12 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 			@Override
 			public boolean runPropagator(Variable x) {
 				int p = positionOf(x);
-				if (!sentinels.isPresent(p) || x.dom.isPresentValue(value))
+				if (!sentinels.isPresent(p) || x.dom.presentValue(value))
 					return true;
 				// we search for another sentinel
 				int[] dense = sentinels.dense;
 				for (int i = sentinels.limit + 1; i < dense.length; i++)
-					if (scp[dense[i]].dom.isPresentValue(value)) { // another sentinel is found
+					if (scp[dense[i]].dom.presentValue(value)) { // another sentinel is found
 						sentinels.swap(p, dense[i]);
 						return true;
 					}
@@ -188,7 +188,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 
 			private Variable findAnotherSentinel() {
 				for (Variable x : scp)
-					if (x != sentinel1 && x != sentinel2 && x.dom.isPresentValue(value))
+					if (x != sentinel1 && x != sentinel2 && x.dom.presentValue(value))
 						return x;
 				return null;
 			}
@@ -196,7 +196,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 			@Override
 			public boolean runPropagator(Variable x) {
 				if (x == sentinel1) {
-					if (!sentinel1.dom.isPresentValue(value)) {
+					if (!sentinel1.dom.presentValue(value)) {
 						Variable sentinel = findAnotherSentinel();
 						if (sentinel != null)
 							sentinel1 = sentinel;
@@ -205,7 +205,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 						// before, was: if (sentinel2.dom.reduceToValue(value) == false) return false;
 					}
 				} else if (x == sentinel2) {
-					if (!sentinel2.dom.isPresentValue(value)) {
+					if (!sentinel2.dom.presentValue(value)) {
 						Variable sentinel = findAnotherSentinel();
 						if (sentinel != null)
 							sentinel2 = sentinel;
@@ -239,14 +239,14 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 
 			@Override
 			public boolean runPropagator(Variable x) {
-				if (x.dom.size() > 1 && x.dom.isPresentValue(value)) // removing these two lines, and add TagCompletFilteringAtEachCall is an alternative
+				if (x.dom.size() > 1 && x.dom.presentValue(value)) // removing these two lines, and add TagCompletFilteringAtEachCall is an alternative
 					return true;
 
 				// nGuaranteedOccurrences denotes the number of singleton domains with the specified value
 				// nPossibleOccurrences denotes the number of domains containing the specified value
 				int nGuaranteedOccurrences = 0, nPossibleOccurrences = 0;
 				for (Variable y : scp)
-					if (y.dom.isPresentValue(value)) {
+					if (y.dom.presentValue(value)) {
 						nPossibleOccurrences++;
 						if (y.dom.size() == 1 && ++nGuaranteedOccurrences > k)
 							return y.dom.fail();
@@ -256,7 +256,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 					// remove value from all non singleton domains
 					for (int i = futvars.limit; i >= 0 && toremove > 0; i--) {
 						Domain dom = scp[futvars.dense[i]].dom;
-						if (dom.size() > 1 && dom.isPresentValue(value)) {
+						if (dom.size() > 1 && dom.presentValue(value)) {
 							dom.removeValue(value); // no inconsistency possible
 							toremove--;
 						}
@@ -270,7 +270,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 					// assign all non singleton domains containing the value
 					for (int i = futvars.limit; i >= 0 && toassign > 0; i--) {
 						Domain dom = scp[futvars.dense[i]].dom;
-						if (dom.size() > 1 && dom.isPresentValue(value)) {
+						if (dom.size() > 1 && dom.presentValue(value)) {
 							dom.reduceToValue(value);
 							toassign--;
 						}
@@ -342,7 +342,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 				// counting the number of occurrences of value in list
 				int nGuaranteedOccurrences = 0, nPossibleOccurrences = 0;
 				for (Variable x : list)
-					if (x.dom.isPresentValue(value)) {
+					if (x.dom.presentValue(value)) {
 						nPossibleOccurrences++;
 						if (x.dom.size() == 1)
 							nGuaranteedOccurrences++;
@@ -397,7 +397,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 						// }
 						if (toremove > 0)
 							for (Variable x : list)
-								if (x.dom.size() > 1 && x.dom.isPresentValue(value))
+								if (x.dom.size() > 1 && x.dom.presentValue(value))
 									x.dom.removeValue(value);
 						return entailed();
 					}
@@ -413,7 +413,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 						// }
 						if (toassign > 0)
 							for (Variable x : list)
-								if (x.dom.size() > 1 && x.dom.isPresentValue(value))
+								if (x.dom.size() > 1 && x.dom.presentValue(value))
 									x.dom.reduceToValue(value);
 						return entailed();
 					}

@@ -8,7 +8,6 @@
  */
 package variables;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,7 +33,6 @@ import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingUnsystematic;
 import problem.Problem;
-import solver.Solver;
 import utility.Kit;
 import utility.Reflector;
 import variables.DomainInteger.DomainRange;
@@ -139,6 +137,10 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 
 	public static final Comparator<Variable> decreasingStaticDegComparator = (x, y) -> Integer.compare(y.deg(), x.deg());
 
+	public static final boolean areNumsNormalized(Variable... vars) {
+		return IntStream.range(0, vars.length).allMatch(i -> i == vars[i].num);
+	}
+
 	public static final boolean areNumsStrictlyIncreasing(Variable... vars) {
 		return IntStream.range(0, vars.length - 1).allMatch(i -> vars[i].num < vars[i + 1].num); // stronger than using compareTo
 	}
@@ -162,6 +164,21 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 
 	public static final boolean haveSameType(Variable... vars) {
 		return IntStream.range(1, vars.length).allMatch(i -> vars[i].getClass() == vars[0].getClass());
+	}
+
+	public static final boolean areDomainsFull(Variable... vars) {
+		return Stream.of(vars).allMatch(x -> x.dom.nRemoved() == 0);
+	}
+
+	public static final boolean areSortedDomainsIn(Variable... vars) {
+		return Stream.of(vars).allMatch(x -> IntStream.range(0, x.dom.initSize() - 1).allMatch(i -> x.dom.toVal(i) < x.dom.toVal(i + 1)));
+	}
+
+	public static final boolean areAllDomainsContainingValue(Variable[] vars, int v) {
+		for (Variable y : vars)
+			if (!y.dom.presentValue(v))
+				return false;
+		return true;
 	}
 
 	/**
@@ -211,7 +228,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 		assert vars.length == tuple.length;
 		// System.out.println("Tuple = " + Kit.join(tuple));
 		return IntStream.range(0, vars.length)
-				.allMatch(i -> tuple[i] == Constants.STAR || (indexes ? vars[i].dom.present(tuple[i]) : vars[i].dom.isPresentValue(tuple[i])));
+				.allMatch(i -> tuple[i] == Constants.STAR || (indexes ? vars[i].dom.present(tuple[i]) : vars[i].dom.presentValue(tuple[i])));
 	}
 
 	public static boolean isValidTuple(Variable[] vars, String[] tuple) {
@@ -228,7 +245,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	public static int[] filterValues(Variable x, int[] values, boolean indexes) {
-		return IntStream.of(values).filter(v -> indexes ? x.dom.present(v) : x.dom.isPresentValue(v)).toArray();
+		return IntStream.of(values).filter(v -> indexes ? x.dom.present(v) : x.dom.presentValue(v)).toArray();
 	}
 
 	public static String[] filterValues(Variable x, String[] values) {
@@ -255,43 +272,6 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	// no overflow possible because at construction time, we check that the nb of values is less than Integer.MAX_VALUE
 	public static final int nRemovedValuesFor(Variable... vars) {
 		return Stream.of(vars).mapToInt(x -> x.dom.nRemoved()).sum();
-	}
-
-	private static final long nTuplesFor(Variable[] vars, int ignoredVap, boolean initiSize) {
-		long l = 1;
-		assert firstWipeoutVariableIn(vars) == null : firstWipeoutVariableIn(vars);
-		for (int i = 0; i < vars.length; i++) {
-			if (i == ignoredVap)
-				continue;
-			int size = initiSize ? vars[i].dom.initSize() : vars[i].dom.size();
-			if (l > Long.MAX_VALUE / size)
-				return -1;
-			l *= size;
-		}
-		return l;
-	}
-
-	public static final BigInteger nValidTuples(Variable[] vars, boolean initSize) {
-		BigInteger prod = BigInteger.ONE;
-		for (Variable x : vars)
-			prod = prod.multiply(BigInteger.valueOf(initSize ? x.dom.initSize() : x.dom.size()));
-		return prod;
-	}
-
-	/**
-	 * @return the number of valid tuples, or Long.MAX_VALUE when this is greater than Long.MAX_VALUE, so always a positive value (or 0) is returned
-	 */
-	public static final long nValidTuplesBoundedAtMaxValueFor(Variable... vars) {
-		long l = nTuplesFor(vars, -1, false);
-		return l == -1 ? Long.MAX_VALUE : l;
-	}
-
-	/**
-	 * @return the number of valid tuples, or Long.MAX_VALUE when this is greater than Long.MAX_VALUE, so always a positive value (or 0) is returned
-	 */
-	public static final long nValidTuplesBoundedAtMaxValueFor(Variable[] vars, int ignoredVariablePosition) {
-		long l = nTuplesFor(vars, ignoredVariablePosition, false);
-		return l == -1 ? Long.MAX_VALUE : l;
 	}
 
 	public static final int[] buildCumulatedSizesArray(Variable[] vars, boolean initSize) {
@@ -403,34 +383,6 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 		return sb;
 	}
 
-	/**
-	 * Returns a string denoting the list of the (names of the) variables involved in the constraint. <br>
-	 * The specified string is used as a separator between variable names. If the specified boolean is true then the default name is used.
-	 */
-	public static final String joinNames(Variable[] vars, String glue) {
-		return Stream.of(vars).map(x -> x.id()).collect(Collectors.joining(glue));
-	}
-
-	public static final boolean areNumsNormalized(Variable... vars) {
-		return IntStream.range(0, vars.length).allMatch(i -> i == vars[i].num);
-	}
-
-	public static final boolean areAllDomainsContainingValue(Variable[] vars, int v) {
-		for (Variable y : vars)
-			if (!y.dom.isPresentValue(v))
-				return false;
-		return true;
-		// return Stream.of(vars).allMatch(x -> x.dom.isPresentValue(val));
-	}
-
-	public static final boolean areDomainsFull(Variable... vars) {
-		return Stream.of(vars).allMatch(x -> x.dom.nRemoved() == 0);
-	}
-
-	public static final boolean areSortedDomainsIn(Variable... vars) {
-		return Stream.of(vars).allMatch(x -> IntStream.range(0, x.dom.initSize() - 1).allMatch(i -> x.dom.toVal(i) < x.dom.toVal(i + 1)));
-	}
-
 	public static final boolean isInducedBy(Variable x, boolean[] presentConstraints) {
 		for (Constraint c : x.ctrs)
 			if (presentConstraints[c.num])
@@ -462,8 +414,6 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 		} else // recursive call
 			return Stream.of((Object[]) array).map(o -> rawInstantiationOf(o)).collect(Collectors.joining(" "));
 	}
-
-	// public static int[] flatInstantiation()
 
 	/**********************************************************************************************
 	 * Fields
@@ -669,7 +619,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	public final double wdeg() {
-		return ((WdegVariant) ((Solver) problem.solver).heuristic).vscores[num];
+		return ((WdegVariant) problem.solver.heuristic).vscores[num];
 	}
 
 	public final double wdegOnDom() {

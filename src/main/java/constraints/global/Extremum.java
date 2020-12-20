@@ -36,14 +36,14 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 		protected Variable findSentinelFor(int v, Variable except) {
 			for (Variable x : list)
-				if (x != except && x.dom.isPresentValue(v))
+				if (x != except && x.dom.presentValue(v))
 					return x;
 			return null;
 		}
 
 		protected Variable findSentinelFor(int v) {
 			for (Variable x : list)
-				if (x.dom.isPresentValue(v))
+				if (x.dom.presentValue(v))
 					return x;
 			return null;
 		}
@@ -101,7 +101,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 				if (domExt.removeIndexesChecking(a -> {
 					int v = domExt.toVal(a);
-					if (!sentinels[a].dom.isPresentValue(v)) {
+					if (!sentinels[a].dom.presentValue(v)) {
 						Variable s = findSentinelFor(v);
 						if (s == null)
 							return true;
@@ -128,7 +128,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 					int v = domSentinel.toVal(a);
 					if (v <= valLimit)
 						break;
-					if (!domExt.isPresentValue(v))
+					if (!domExt.presentValue(v))
 						domSentinel.removeElementary(a);
 				}
 				return domSentinel.afterElementaryCalls(sizeBefore); // necessarily true
@@ -175,7 +175,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 				int sizeBefore = domExt.size();
 				for (int a = domExt.first(); a != -1; a = domExt.next(a)) {
 					int v = domExt.toVal(a);
-					if (!sentinels[a].dom.isPresentValue(v)) {
+					if (!sentinels[a].dom.presentValue(v)) {
 						Variable s = findSentinelFor(v);
 						if (s != null)
 							sentinels[a] = s;
@@ -203,7 +203,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 					int v = domSentinel.toVal(a);
 					if (v >= valLimit)
 						break;
-					if (!domExt.isPresentValue(v))
+					if (!domExt.presentValue(v))
 						domSentinel.removeElementary(a);
 				}
 				return domSentinel.afterElementaryCalls(sizeBefore); // necessarily true

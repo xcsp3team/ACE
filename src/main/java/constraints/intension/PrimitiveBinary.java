@@ -207,7 +207,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 			}
 
 			protected int nSupportsForWhenIteratingOver(Domain d1, Domain d2) {
-				if (d2.size() == 1 && !d1.isPresentValue(d1 == dx ? valxFor(d2.unique()) : valyFor(d2.unique())))
+				if (d2.size() == 1 && !d1.presentValue(d1 == dx ? valxFor(d2.unique()) : valyFor(d2.unique())))
 					return 0;
 				int cnt = 0;
 				for (int b = d2.first(); b != -1; b = d2.next(b)) {
@@ -521,11 +521,6 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 				super(pb, x, y, k);
 			}
 
-			// @Override
-			// public int giveUpperBoundOfMaxNumberOfConflictsFor(Variable x, int a) {
-			// return 1;
-			// }
-
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dx.size() == 1)
@@ -648,11 +643,6 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 			public Boolean isSymmetric() {
 				return k == 0;
 			}
-
-			// @Override
-			// public int giveUpperBoundOfMaxNumberOfConflictsFor(Variable x, int a) {
-			// return 1;
-			// }
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
@@ -782,13 +772,13 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 			}
 
 			public static boolean revise(Domain d1, Domain d2, int k) {
-				if (d2.isPresentValue(0)) {
+				if (d2.presentValue(0)) {
 					if (0 <= k)
 						return true;
 					if (d2.removeValue(0) == false)
 						return false;
 				}
-				assert !d2.isPresentValue(0);
+				assert !d2.presentValue(0);
 				if (d2.firstValue() > 0) // all values in d2 are positive
 					return d1.removeValuesGT(k > 0 ? Kit.greatestIntegerLE(d2.firstValue(), k) : Kit.greatestIntegerLE(d2.lastValue(), k));
 				if (d2.lastValue() < 0) // all values in d2 are negative
@@ -814,13 +804,13 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 			}
 
 			public static boolean revise(Domain d1, Domain d2, int k) {
-				if (d2.isPresentValue(0)) {
+				if (d2.presentValue(0)) {
 					if (0 >= k)
 						return true;
 					if (d2.removeValue(0) == false)
 						return false;
 				}
-				assert !d2.isPresentValue(0);
+				assert !d2.presentValue(0);
 				if (d2.firstValue() > 0) // all values in d2 are positive
 					return d1.removeValuesLT(k < 0 ? Kit.smallestIntegerGE(d2.firstValue(), k) : Kit.smallestIntegerGE(d2.lastValue(), k));
 				if (d2.lastValue() < 0) // all values in d2 are negative
@@ -1065,7 +1055,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 							// here, we know that va >= vb and va != k (see code earlier)
 							if (va < 2 * vb) { // it means that the quotient was 1, and will remain 1 (and 0 later)
 								assert va / vb == 1;
-								if (va - k <= vb || dy.isPresentValue(va - k) == false)
+								if (va - k <= vb || dy.presentValue(va - k) == false)
 									break;
 								rx[a] = dy.toVal(va - k);
 								continue extern;
@@ -1093,7 +1083,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 						int va = vb + k; // no neex to start at va = k because k % vb is 0 (and 0 is not possible for k)
 						while (va <= dx.lastValue()) {
 							assert va % vb == k;
-							if (dx.isPresentValue(va)) {
+							if (dx.presentValue(va)) {
 								ry[b] = dx.toIdx(va);
 								continue extern;
 							}
@@ -1520,7 +1510,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 			@Override
 			public boolean runPropagator(Variable evt) {
-				if (dx.size() == 1 && !dy.isPresentValue(k + dx.uniqueValue()) && !dy.isPresentValue(k - dx.uniqueValue()))
+				if (dx.size() == 1 && !dy.presentValue(k + dx.uniqueValue()) && !dy.presentValue(k - dx.uniqueValue()))
 					return evt.dom.fail();
 				return sp.runPropagator(evt);
 			}
@@ -1647,7 +1637,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 					return dy.removeValueIfPresent(k); // x = 0 => y != k
 				if (dx.first() == 1)
 					return dy.reduceToValue(k); // x = 1 => y = k
-				if (!dy.isPresentValue(k))
+				if (!dy.presentValue(k))
 					return dx.removeIfPresent(1); // y != k => x != 1
 				if (dy.size() == 1)
 					return dx.removeIfPresent(0); // y = k => x != 0
@@ -1672,7 +1662,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 					return dy.reduceToValue(k); // x = 0 => y = k
 				if (dx.first() == 1)
 					return dy.removeValueIfPresent(k); // x = 1 => x != k
-				if (!dy.isPresentValue(k))
+				if (!dy.presentValue(k))
 					return dx.removeIfPresent(0); // y != k => x != 0
 				if (dy.size() == 1)
 					return dx.removeIfPresent(1); // y = k => x != 1

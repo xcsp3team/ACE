@@ -16,6 +16,7 @@ import constraints.extension.structures.Table;
 import interfaces.Tags.TagNegative;
 import problem.Problem;
 import sets.SetDenseReversible;
+import variables.Domain;
 import variables.Variable;
 
 public class ExtensionSTR2NEG extends ExtensionGlobal implements TagNegative {
@@ -69,7 +70,7 @@ public class ExtensionSTR2NEG extends ExtensionGlobal implements TagNegative {
 
 	protected void initializeStructuresBeforeFiltering() {
 		sSupSize = 0;
-		long nValid = Variable.nValidTuplesBoundedAtMaxValueFor(scp);
+		long nValid = Domain.nValidTuplesBoundedAtMaxValueFor(doms);
 		for (int i = futvars.limit; i >= 0; i--) {
 			int x = futvars.dense[i];
 			long limit = nValid / doms[x].size();

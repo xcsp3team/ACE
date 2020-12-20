@@ -353,7 +353,7 @@ public abstract class Matcher implements ObserverConstruction {
 					unmatchedVars.add(x);
 				else {
 					assert valToVar[u] == x;
-					if (!scp[x].dom.isPresentValue(domainValueOf(u))) {
+					if (!scp[x].dom.presentValue(domainValueOf(u))) {
 						varToVal[x] = valToVar[u] = -1;
 						unmatchedVars.add(x);
 					}
@@ -490,7 +490,7 @@ public abstract class Matcher implements ObserverConstruction {
 			for (int u = 0; u < intervalSize; u++) {
 				possibleVars[u] = new SetSparse(arity);
 				for (int x = 0; x < arity; x++)
-					if (scp[x].dom.isPresentValue(domainValueOf(u)))
+					if (scp[x].dom.presentValue(domainValueOf(u)))
 						possibleVars[u].add(x);
 			}
 		}
@@ -518,7 +518,7 @@ public abstract class Matcher implements ObserverConstruction {
 				for (int i = 0; i <= possibleVars[v].limit; i++) {
 					int x = possibleVars[v].dense[i];
 					Domain dom = scp[x].dom;
-					if (dom.isPresentValue(domainValueOf(v))) {
+					if (dom.presentValue(domainValueOf(v))) {
 						int w = varToVal[x];
 						if (w == -1) {
 							handleAugmentingPath(x, v); // , currDepth);
@@ -585,7 +585,7 @@ public abstract class Matcher implements ObserverConstruction {
 			for (int x = 0; x < arity; x++) {
 				Domain dom = scp[x].dom;
 				int u = varToVal[x];
-				if (u == -1 || !dom.isPresentValue(domainValueOf(u))) {
+				if (u == -1 || !dom.presentValue(domainValueOf(u))) {
 					if (dom.size() == 1) {
 						int v = normalizedValueOf(dom.firstValue());
 						if (u != -1)
@@ -637,7 +637,7 @@ public abstract class Matcher implements ObserverConstruction {
 					neighborsOfValues[u].remove(arity);
 				for (int i = 0; i <= possibleVars[u].limit; i++) {
 					int x = possibleVars[u].dense[i];
-					if (scp[x].dom.isPresentValue(domainValueOf(u)) && varToVal[x] != u)
+					if (scp[x].dom.presentValue(domainValueOf(u)) && varToVal[x] != u)
 						neighborsOfValues[u].add(x);
 					else
 						neighborsOfValues[u].remove(x);
@@ -653,7 +653,7 @@ public abstract class Matcher implements ObserverConstruction {
 
 		@SuppressWarnings("unused")
 		private void checkMatchingValidity() {
-			Kit.control(IntStream.range(0, arity).allMatch(x -> varToVal[x] != -1 && scp[x].dom.isPresentValue(domainValueOf(varToVal[x]))));
+			Kit.control(IntStream.range(0, arity).allMatch(x -> varToVal[x] != -1 && scp[x].dom.presentValue(domainValueOf(varToVal[x]))));
 			Kit.control(IntStream.range(0, intervalSize).allMatch(u -> minOccs[u] <= valToVars[u].size() && valToVars[u].size() <= maxOccs[u]));
 			checkMatchingConsistency();
 		}

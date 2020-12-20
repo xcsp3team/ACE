@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -800,7 +801,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public boolean controlArcConsistency() {
 		if (ignored)
 			return true;
-		if (Variable.nValidTuplesBoundedAtMaxValueFor(scp) > 1000)
+		if (Domain.nValidTuplesBoundedAtMaxValueFor(doms) > 1000)
 			return true;
 		for (int i = 0; i < scp.length; i++)
 			for (int a = doms[i].first(); a != -1; a = doms[i].next(a))
@@ -836,7 +837,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	@Override
 	public String toString() {
-		return getId() + "(" + Variable.joinNames(scp, ",") + ")";
+		return getId() + "(" + Stream.of(scp).map(x -> x.id()).collect(Collectors.joining(",")) + ")";
 	}
 
 	public void display(boolean exhaustively) {

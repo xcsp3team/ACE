@@ -11,6 +11,9 @@ package constraints;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
+
+import org.xcsp.common.Constants;
 
 import constraints.Constraint.RegisteringCtrs;
 import constraints.extension.Extension.ExtensionGeneric;
@@ -57,7 +60,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 			Kit.control(c instanceof Intension);
 			if (Kit.memory() > 400000000L) // TODO hard coding
 				return;
-			if (Variable.nValidTuples(c.scp, false).compareTo(c.scp.length == 2 ? LIMIT_FOR_BARY : LIMIT_FOR_NARY) > 0)
+			if (Domain.nValidTuples(c.doms, false).compareTo(c.scp.length == 2 ? LIMIT_FOR_BARY : LIMIT_FOR_NARY) > 0)
 				continue;
 			ConflictsStructure conflictsStructure = new ConflictsStructure(c).initialize();
 			for (Constraint cc : treeEvaluator.registeredCtrs) {
@@ -100,12 +103,11 @@ public final class ConflictsStructure implements RegisteringCtrs {
 		nConflicts = Kit.cloneDeeply(conflictsStructure.nConflicts);
 	}
 
-	public final void computeNbMaxConflicts() {
-		assert registeredCtrs.size() == 1;
-		Constraint c = firstRegisteredCtr();
+	private void computeNbMaxConflicts() {
+		Domain[] doms = firstRegisteredCtr().doms;
 		for (int i = 0; i < nMaxConflicts.length; i++) {
 			int max = Integer.MIN_VALUE;
-			Domain dom = c.scp[i].dom;
+			Domain dom = doms[i];
 			for (int a = dom.first(); a != -1; a = dom.next(a))
 				max = Math.max(max, nConflicts[i][a]);
 			nMaxConflicts[i] = max;
@@ -114,19 +116,23 @@ public final class ConflictsStructure implements RegisteringCtrs {
 
 	private ConflictsStructure initializeFrom(int[][] tuples, boolean positive) {
 		assert registeredCtrs.size() == 1;
-		Constraint c = firstRegisteredCtr();
-		Variable[] scp = firstRegisteredCtr().scp;
-		int nValidTuples = Variable.nValidTuples(scp, false).intValueExact();
-		int[] t = new int[scp.length];
-		for (int[] tuple : tuples) {
-			if (Variable.isValidTuple(scp, c.toIdxs(tuple, t), true))
-				for (int i = 0; i < tuple.length; i++)
-					nConflicts[i][scp[i].dom.toIdx(tuple[i])]++;
+		Domain[] doms = firstRegisteredCtr().doms;
+		extern: for (int[] tuple : tuples) {
+			assert IntStream.of(tuple).noneMatch(v -> v == Constants.STAR);
+			for (int i = 0; i < tuple.length; i++)
+				if (!doms[i].presentValue(tuple[i]))
+					continue extern;
+			for (int i = 0; i < tuple.length; i++)
+				nConflicts[i][doms[i].toIdx(tuple[i])]++;
 		}
-		if (positive)
-			for (int i = 0; i < nConflicts.length; i++)
+		if (positive) {
+			int nValidTuples = Domain.nValidTuples(doms, false).intValueExact();
+			for (int i = 0; i < nConflicts.length; i++) {
+				int nTuples = nValidTuples / doms[i].size();
 				for (int j = 0; j < nConflicts[i].length; j++)
-					nConflicts[i][j] = (nValidTuples / scp[i].dom.size()) - nConflicts[i][j];
+					nConflicts[i][j] = nTuples - nConflicts[i][j];
+			}
+		}
 		// because the nb of supports was computed and stored in nbConflicts
 		computeNbMaxConflicts();
 		assert controlStructures();
@@ -149,7 +155,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 
 	public boolean controlStructures() {
 		Constraint c = firstRegisteredCtr();
-		if (Variable.nValidTuples(c.scp, false).compareTo(LIMIT_FOR_NARY) > 0) {
+		if (Domain.nValidTuples(c.doms, false).compareTo(LIMIT_FOR_NARY) > 0) {
 			Kit.log.warning("Too large Cartesian Space for checking ");
 			return true;
 		}

@@ -53,7 +53,7 @@ public abstract class ExtensionStructure implements RegisteringCtrs {
 
 	public abstract boolean checkIdxs(int[] t);
 
-	public int[] nextSupport(int vap, int a, int[] current) {
+	public int[] nextSupport(int x, int a, int[] current) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -107,19 +107,4 @@ public abstract class ExtensionStructure implements RegisteringCtrs {
 	public int[] computeVariableSymmetryMatching() {
 		return Kit.range(1, firstRegisteredCtr().scp.length);
 	}
-
-	public boolean isSimilarTo(ExtensionStructure ext) {
-		if (originalPositive != ext.originalPositive || originalTuples.length != ext.originalTuples.length)
-			return false;
-		if (originalTuples == ext.originalTuples || originalTuples.length == 0) // control about arity must be made elsewhere
-			return true;
-		if (originalTuples.length > 10000) // hard coding ; limit for search
-			return false;
-		for (int a = originalTuples[0].length - 1, i = originalTuples.length - 1; i >= 0; i--)
-			for (int j = a; j >= 0; j--)
-				if (originalTuples[i][j] != ext.originalTuples[i][j])
-					return false;
-		return true;
-	}
-
 }

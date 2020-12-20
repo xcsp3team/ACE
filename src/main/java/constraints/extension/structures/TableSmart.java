@@ -175,7 +175,7 @@ public class TableSmart extends ExtensionStructure {
 		private SmartTuple addRestrictionUnary(Collection<RestrictionSimple> list, int x, TypeConditionOperatorRel op, int v) {
 			boolean storeEqualities = true;
 			if (storeEqualities && op == EQ) {
-				Kit.control(prefix[x] == STAR && scp[x].dom.isPresentValue(v), () -> " " + scp[x] + " " + prefix[x] + " " + STAR + " " + v + " " + scp[x].dom);
+				Kit.control(prefix[x] == STAR && scp[x].dom.presentValue(v), () -> " " + scp[x] + " " + prefix[x] + " " + STAR + " " + v + " " + scp[x].dom);
 				prefix[x] = scp[x].dom.toIdx(v); // for a constant, we directly put it in tupIdxs (no need to build a Restriction object)
 				return this;
 			}

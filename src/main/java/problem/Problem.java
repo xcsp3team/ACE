@@ -233,7 +233,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 		Stream.of(variables).peek(x -> control(Stream.of(x.ctrs).noneMatch(c -> c.num == -1))).forEach(x -> x.dom.finalizeConstruction(variables.length + 1));
 
-		System.out.println("here");
 		ConflictsStructure.buildFor(this);
 
 		priorityVars = priorityVars.length == 0 && annotations.decision != null ? (Variable[]) annotations.decision : priorityVars;
@@ -242,7 +241,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			head.control.restarts.restartAfterSolution = true;
 
 		boolean strong = false;
-		if (settings.framework == COP && head.control.valh.optValHeuristic) {
+		if (settings.framework == COP && head.control.valh.optValHeuristic) { // TODO experimental
 			Constraint c = ((Constraint) optimizer.ctr);
 			if (c instanceof ObjectiveVariable) {
 				Variable x = c.scp[0];
@@ -595,7 +594,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		for (int i = 0; i < settings.instantiatedVars.length; i++) {
 			Variable x = findVarWithNumOrId(settings.instantiatedVars[i]);
 			int v = settings.instantiatedVals[i];
-			control(x.dom.isPresentValue(v), "Value " + v + " not present in domain of " + x + ". Check  -ins.");
+			control(x.dom.presentValue(v), "Value " + v + " not present in domain of " + x + ". Check  -ins.");
 			x.dom.removeValuesAtConstructionTime(w -> w != v);
 		}
 	}
@@ -870,7 +869,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		}
 
 		long al = head.control.extension.arityLimitForIntensionToExtension, vl = head.control.extension.validLimitForIntensionToExtension;
-		if (arity <= al && Variable.nValidTuplesBoundedAtMaxValueFor(scp) <= vl && Stream.of(scp).allMatch(x -> x instanceof Var)) {
+		if (arity <= al && Domain.nValidTuplesBoundedAtMaxValueFor(scp) <= vl && Stream.of(scp).allMatch(x -> x instanceof Var)) {
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
@@ -1026,8 +1025,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return addCtr(new ExtensionMDD(this, translate(list), transitions));
 	}
 
-	public final CtrAlone mdd(Var[] scp, int[][] tuples) {
-		return addCtr(new ExtensionMDD(this, translate(scp), tuples));
+	public final CtrAlone mdd(Var[] list, int[][] tuples) {
+		return addCtr(new ExtensionMDD(this, translate(list), tuples));
 	}
 
 	// public final CtrAlone mddOr(Var[] scp, MDDCD[] t) {
@@ -1429,7 +1428,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private CtrEntity atLeast(Var[] list, int value, int k) {
 		control(list.length != 0 && k >= 0);
-		Variable[] scp = Stream.of(list).filter(x -> ((VariableInteger) x).dom.isPresentValue(value) && ((VariableInteger) x).dom.size() > 1)
+		Variable[] scp = Stream.of(list).filter(x -> ((VariableInteger) x).dom.presentValue(value) && ((VariableInteger) x).dom.size() > 1)
 				.toArray(Variable[]::new);
 		int newK = k - (int) Stream.of(list).filter(x -> ((VariableInteger) x).dom.onlyContainsValue(value)).count();
 		if (newK <= 0)
@@ -1445,7 +1444,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (list.length == 0)
 			return ctrEntities.new CtrAloneDummy("atMost with empty set");
 		control(k >= 0);
-		Variable[] scp = Stream.of(list).filter(x -> ((VariableInteger) x).dom.isPresentValue(value) && ((VariableInteger) x).dom.size() > 1)
+		Variable[] scp = Stream.of(list).filter(x -> ((VariableInteger) x).dom.presentValue(value) && ((VariableInteger) x).dom.size() > 1)
 				.toArray(Variable[]::new);
 		int newK = k - (int) Stream.of(list).filter(x -> ((VariableInteger) x).dom.onlyContainsValue(value)).count();
 		if (newK < 0)
@@ -1459,7 +1458,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private CtrEntity exactly(Var[] list, int value, int k) {
 		control(list.length != 0 && k >= 0);
-		Variable[] scp = Stream.of(list).filter(x -> ((VariableInteger) x).dom.isPresentValue(value) && ((VariableInteger) x).dom.size() > 1)
+		Variable[] scp = Stream.of(list).filter(x -> ((VariableInteger) x).dom.presentValue(value) && ((VariableInteger) x).dom.size() > 1)
 				.toArray(Variable[]::new);
 		int newK = k - (int) Stream.of(list).filter(x -> ((VariableInteger) x).dom.onlyContainsValue(value)).count();
 		control(newK >= 0, "UNSAT, constraint Exactly with scope " + Kit.join(list) + " has already more than " + k + " variables equal to " + value);
@@ -1583,7 +1582,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		control(Stream.of(list).anyMatch(x -> !x.dom.areInitValuesSubsetOf(values)));
 		return forall(range(list.length), i -> {
 			if (!list[i].dom.areInitValuesSubsetOf(values))
-				api.extension(list[i], api.select(values, v -> list[i].dom.isPresentValue(v)));
+				api.extension(list[i], api.select(values, v -> list[i].dom.presentValue(v)));
 		});
 	}
 
@@ -1766,7 +1765,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Domain dx = ((Variable) index).dom, dz = ((Variable) value).dom;
 		for (int a = dx.first(); a != -1; a = dx.next(a)) {
 			int va = dx.toVal(a) - startIndex;
-			if (0 <= va && va < list.length && dz.isPresentValue(list[va] - startValue))
+			if (0 <= va && va < list.length && dz.presentValue(list[va] - startValue))
 				l.add(new int[] { va + startIndex, list[va] - startValue });
 		}
 		return api.extension(vars(index, value), org.xcsp.common.structures.Table.clean(l));
@@ -1883,7 +1882,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 					} else {
 						for (int b = ((Variable) list[v]).dom.first(); b != -1; b = ((Variable) list[v]).dom.next(b)) {
 							int w = ((Variable) list[v]).dom.toVal(b);
-							if (((Variable) value).dom.isPresentValue(w - startValue)) {
+							if (((Variable) value).dom.presentValue(w - startValue)) {
 								int[] t = tuple.clone();
 								t[0] = v;
 								t[1 + v] = w; // + offset;
@@ -1908,7 +1907,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		for (int a = dx.first(); a != -1; a = dx.next(a))
 			for (int b = dy.first(); b != -1; b = dy.next(b)) {
 				int i = dx.toVal(a), j = dy.toVal(b);
-				if (0 <= i && i < matrix.length && 0 <= j && j < matrix[i].length && dz.isPresentValue(matrix[i][j]))
+				if (0 <= i && i < matrix.length && 0 <= j && j < matrix[i].length && dz.presentValue(matrix[i][j]))
 					l.add(new int[] { i, j, matrix[i][j] });
 			}
 		return api.extension(vars(rowIndex, colIndex, value), org.xcsp.common.structures.Table.clean(l));
@@ -1950,6 +1949,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity channel(Var[] list, int startIndex, Var value) {
 		control(Stream.of(list).noneMatch(x -> x == null));
+		control(startIndex == 0);
 		control(Variable.areAllInitiallyBoolean((VariableInteger[]) list) && ((VariableInteger) value).dom.areInitValuesExactly(range(list.length)));
 		return forall(range(list.length), i -> intension(iff(list[i], eq(value, i))));
 	}
@@ -2116,6 +2116,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return unimplemented("clause");
 	}
 
+	public final CtrEntity clause(Var[] pos, Var[] neg) {
+		control(Stream.of(pos).noneMatch(x -> x == null) && Stream.of(neg).noneMatch(x -> x == null), "No null values is allowed in the specified arrays.");
+		Boolean[] phases = IntStream.range(0, pos.length + neg.length).mapToObj(i -> (Boolean) (i < pos.length)).toArray(Boolean[]::new);
+		return clause(vars(pos, (Object) neg), phases);
+	}
+
 	// ************************************************************************
 	// ***** Constraint instantiation
 	// ************************************************************************
@@ -2123,7 +2129,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity instantiation(Var[] list, int[] values) {
 		control(list.length == values.length && list.length > 0);
-		control(IntStream.range(0, list.length).noneMatch(i -> !((Variable) list[i]).dom.isPresentValue(values[i])), "Pb");
+		control(IntStream.range(0, list.length).noneMatch(i -> !((Variable) list[i]).dom.presentValue(values[i])), "Pb");
 		if (head.control.global.typeInstantiation == 1)
 			return forall(range(list.length), i -> equal(list[i], values[i]));
 		return unimplemented("instantiation");
