@@ -39,13 +39,13 @@ import heuristics.HeuristicValues;
 import heuristics.HeuristicVariables;
 import interfaces.Observers.ObserverConstruction;
 import problem.Problem;
+import problem.XCSP3;
 import propagation.Propagation;
 import solver.Solver;
 import utility.Enums.TypeOutput;
 import utility.Kit;
 import utility.Kit.Stopwatch;
 import utility.Reflector;
-import xcsp3.XCSP3;
 
 /**
  * This is the class of the head in charge of solving a problem instance

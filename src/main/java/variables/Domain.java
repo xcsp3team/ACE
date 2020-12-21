@@ -76,6 +76,13 @@ public interface Domain extends LinkedSet {
 			x.dom.restoreAtMark(level);
 	}
 
+	static int nRemovedValues(Variable[] variables) {
+		int cnt = 0;
+		for (Variable x : variables)
+			cnt += x.dom.nRemoved();
+		return cnt;
+	}
+
 	static BigInteger nValidTuples(Domain[] doms, boolean initSize) {
 		BigInteger prod = BigInteger.ONE;
 		for (Domain dom : doms)

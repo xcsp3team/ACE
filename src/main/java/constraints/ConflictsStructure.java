@@ -153,7 +153,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 		return this;
 	}
 
-	public boolean controlStructures() {
+	private boolean controlStructures() {
 		Constraint c = firstRegisteredCtr();
 		if (Domain.nValidTuples(c.doms, false).compareTo(LIMIT_FOR_NARY) > 0) {
 			Kit.log.warning("Too large Cartesian Space for checking ");

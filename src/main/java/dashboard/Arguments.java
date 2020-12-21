@@ -20,8 +20,8 @@ import java.util.stream.Stream;
 import org.xcsp.common.Utilities;
 
 import main.ResolutionVariants;
+import problem.XCSP3;
 import utility.Kit;
-import xcsp3.XCSP3;
 
 /**
  * This class allows us to handle arguments given by the user on the command line.

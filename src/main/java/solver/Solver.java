@@ -611,6 +611,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 	protected final boolean tryRefutation(Variable x, int a) {
 		if (x.dom instanceof DomainInfinite)
 			return false;
+
 		tracer.onRefutation(x, a);
 		stats.onRefutation(x);
 		lastConflict.onRefutation(x, a);
@@ -754,6 +755,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 
 			for (ObserverRuns observer : observersRuns)
 				observer.afterRun();
+			decRecorder.reset(); // TODO put in an observer ?
 		}
 		for (ObserverSearch observer : observersSearch)
 			observer.afterSearch();

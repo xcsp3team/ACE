@@ -49,6 +49,7 @@ public abstract class PrimitiveLogic extends Primitive implements TagGACGuarante
 			case AND:
 				return list.length == 2 ? new LogEqAnd2(pb, x, list) : null;
 			default:
+				System.out.println("nnnnn");
 				return null; // throw new AssertionError();
 			}
 		}

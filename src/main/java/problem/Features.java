@@ -45,6 +45,8 @@ import constraints.intension.Intension;
 import dashboard.Arguments;
 import dashboard.Control.SettingVars;
 import dashboard.Output;
+import problem.Remodeler.DeducingAllDifferent;
+import problem.Remodeler.DeducingAutomorphism;
 import utility.Kit;
 import variables.Variable;
 
@@ -270,12 +272,12 @@ public final class Features {
 		return Stream.of(problem.constraints).anyMatch(c -> c.conflictsStructure != null && c.conflictsStructure.firstRegisteredCtr() != c);
 	}
 
-	protected void addToMapForAutomorphismIdentification(IdentificationAutomorphism automorphismIdentification) {
+	protected void addToMapForAutomorphismIdentification(DeducingAutomorphism automorphismIdentification) {
 		automorphismIdentification.putInMap(mapForAutomorphismIdentification);
 	}
 
-	protected void addToMapForAllDifferentIdentification(IdentificationAllDifferent allDifferentIdentification) {
-		mapForAllDifferentIdentification.put(N_CLIQUES, allDifferentIdentification.nBuiltCliques + "");
+	protected void addToMapForAllDifferentIdentification(DeducingAllDifferent dad) {
+		mapForAllDifferentIdentification.put(N_CLIQUES, dad.nBuiltCliques + "");
 	}
 
 	/**********************************************************************************************

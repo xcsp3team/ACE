@@ -17,6 +17,7 @@ import interfaces.Tags.TagUnsymmetric;
 import problem.Problem;
 import variables.Variable;
 
+// !!!!!!! Bug to be fixe (when a variable is shared bewteen the two lists ?) See comment in Class problem
 public final class DistinctVectors extends CtrGlobal implements TagUnsymmetric { // not call filtering-complete
 
 	@Override

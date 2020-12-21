@@ -45,6 +45,8 @@ public abstract class StrongConsistency extends GAC {
 			return false;
 		if (settings.strongOnlyWhenACEffective && solver.problem.nValuesRemoved == nBefore)
 			return true;
+		if (settings.strongOnlyAtPreprocessing && solver.restarter.numRun > 0)
+			return true;
 		return enforceMore();
 	}
 

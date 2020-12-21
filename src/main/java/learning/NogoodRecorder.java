@@ -34,8 +34,7 @@ import variables.Variable;
 public final class NogoodRecorder {
 
 	public static NogoodRecorder buildFor(Solver solver) {
-		if (solver.head.control.solving.enableSearch && solver.head.control.learning.nogood != ELearningNogood.NO
-				&& solver.propagation.queue != null)
+		if (solver.head.control.solving.enableSearch && solver.head.control.learning.nogood != ELearningNogood.NO && solver.propagation.queue != null)
 			return new NogoodRecorder(solver);
 		return null;
 	}
@@ -215,6 +214,8 @@ public final class NogoodRecorder {
 	}
 
 	private void addNogood(int[] decs, boolean toBeSorted) {
+		// if (decs.length == 1)
+		// System.out.println("ggggggg111");
 		if (nNogoods < nogoods.length) {
 			decs = toBeSorted ? Kit.sort(decs) : decs;
 			Nogood nogood = nogoods[nNogoods++] = new Nogood(decs);

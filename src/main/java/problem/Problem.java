@@ -37,9 +37,7 @@ import static org.xcsp.common.predicates.XNode.node;
 import static org.xcsp.common.predicates.XNodeParent.add;
 import static org.xcsp.common.predicates.XNodeParent.eq;
 import static org.xcsp.common.predicates.XNodeParent.iff;
-import static org.xcsp.common.predicates.XNodeParent.in;
 import static org.xcsp.common.predicates.XNodeParent.le;
-import static org.xcsp.common.predicates.XNodeParent.ne;
 import static org.xcsp.common.predicates.XNodeParent.or;
 import static utility.Kit.log;
 
@@ -116,6 +114,7 @@ import constraints.global.AllDifferent.AllDifferentCounting;
 import constraints.global.AllDifferent.AllDifferentExceptWeak;
 import constraints.global.AllDifferent.AllDifferentPermutation;
 import constraints.global.AllDifferent.AllDifferentWeak;
+import constraints.global.AllEqual;
 import constraints.global.Among;
 import constraints.global.Cardinality.CardinalityConstant;
 import constraints.global.Circuit;
@@ -180,6 +179,8 @@ import optimization.Optimizer;
 import optimization.Optimizer.OptimizerDecreasing;
 import optimization.Optimizer.OptimizerDichotomic;
 import optimization.Optimizer.OptimizerIncreasing;
+import problem.Remodeler.DeducingAllDifferent;
+import problem.Remodeler.DeducingAutomorphism;
 import propagation.Forward;
 import solver.Solver;
 import utility.Enums.EExportMode;
@@ -547,15 +548,15 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			for (Constraint c : features.collectedCtrsAtInit)
 				if (Constraint.getSymmetryMatching(c.key) == null)
 					Constraint.putSymmetryMatching(c.key, c.defineSymmetryMatching());
-			IdentificationAutomorphism automorphismIdentification = new IdentificationAutomorphism(this);
+			DeducingAutomorphism automorphismIdentification = new DeducingAutomorphism(this);
 			for (Constraint c : automorphismIdentification.buildVariableSymmetriesFor(variables, features.collectedCtrsAtInit))
 				addCtr(c);
 			features.addToMapForAutomorphismIdentification(automorphismIdentification);
-			symmetryGroupGenerators.addAll(automorphismIdentification.getGenerators());
+			symmetryGroupGenerators.addAll(automorphismIdentification.generators);
 			features.nAddedCtrs += features.collectedCtrsAtInit.size() - nBefore;
 		}
 		if (head.control.constraints.inferAllDifferentNb > 0)
-			features.addToMapForAllDifferentIdentification(new IdentificationAllDifferent(this));
+			features.addToMapForAllDifferentIdentification(new DeducingAllDifferent(this));
 	}
 
 	/**
@@ -820,7 +821,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private Matcher x_relop__y_ariop_k = new Matcher(node(relop, var, node(ariop, var, val)));
 	private Matcher y_ariop_k__relop_x = new Matcher(node(relop, node(ariop, var, val), var));
 	private Matcher logic_y_relop_k__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, var, val), var));
+	private Matcher logic_y_relop_k__iff_x = new Matcher(node(TypeExpr.IFF, node(relop, var, val), var));
 	private Matcher logic_k_relop_y__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, val, var), var));
+	private Matcher logic_k_relop_y__iff_x = new Matcher(node(TypeExpr.IFF, node(relop, val, var), var));
 	private Matcher unalop_x__eq_y = new Matcher(node(TypeExpr.EQ, node(unalop, var), var));
 
 	// ternary
@@ -828,11 +831,14 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private Matcher z_relop__x_ariop_y = new Matcher(node(relop, var, node(ariop, var, var)));
 	private Matcher logic_y_relop_z__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, var, var), var));
 
+	// logic
+	private Matcher logic_X = new Matcher(logic_vars);
+	private Matcher logic_X__eq_x = new Matcher(node(TypeExpr.EQ, logic_vars, var));
+	private Matcher logic_X__ne_x = new Matcher(node(TypeExpr.NE, logic_vars, var));
+
 	// extremum
 	private Matcher min_relop = new Matcher(node(relop, min_vars, varOrVal));
 	private Matcher max_relop = new Matcher(node(relop, max_vars, varOrVal));
-
-	private Matcher logic_X__eq_x = new Matcher(node(TypeExpr.EQ, logic_vars, var));
 
 	// sum
 	private Matcher add_vars__relop = new Matcher(node(relop, add_vars, varOrVal));
@@ -890,6 +896,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				c = PrimitiveBinaryWithCst.buildFrom(this, scp[1], tree.relop(0).arithmeticInversion(), scp[0], tree.ariop(0), tree.val(0));
 			else if (logic_y_relop_k__eq_x.matches(tree))
 				c = PrimitiveBinaryLog.buildFrom(this, scp[1], scp[0], tree.relop(1), tree.val(0));
+			else if (logic_y_relop_k__iff_x.matches(tree))
+				c = PrimitiveBinaryLog.buildFrom(this, scp[1], scp[0], tree.relop(0), tree.val(0));
 			else if (logic_k_relop_y__eq_x.matches(tree))
 				c = PrimitiveBinaryLog.buildFrom(this, scp[1], scp[0], tree.relop(1).arithmeticInversion(), tree.val(0));
 			else if (unalop_x__eq_y.matches(tree))
@@ -909,21 +917,21 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				return addCtr(c);
 		}
 		if (settings.recognizeLogicInSolver) {
+			Constraint c = null;
 			if (logic_X__eq_x.matches(tree)) {
-				// System.out.println(" yep " + tree);
-				Constraint c = PrimitiveLogicEq.buildFrom(this, scp[scp.length - 1], tree.logop(0),
-						IntStream.range(0, scp.length - 1).mapToObj(i -> scp[i]).toArray(Variable[]::new));
-				if (c != null)
-					return addCtr(c);
+				Variable[] list = IntStream.range(0, scp.length - 1).mapToObj(i -> scp[i]).toArray(Variable[]::new);
+				c = PrimitiveLogicEq.buildFrom(this, scp[scp.length - 1], tree.logop(0), list);
 			}
+			// TODO other cases to be implemented
+			if (c != null)
+				return addCtr(c);
+
 		}
 		if (settings.recognizeExtremumInSolver) {
 			if (min_relop.matches(tree)) {
-				// System.exit(1);
 				return minimum((Var[]) tree.sons[0].vars(), basicCondition(tree));
 			}
 			if (max_relop.matches(tree)) {
-				// System.exit(1);
 				return maximum((Var[]) tree.sons[0].vars(), basicCondition(tree));
 			}
 		}
@@ -953,7 +961,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// tree2.sons[i] = change((XNodeParent) tree2.sons[i]);
 		// }
 		// }
-		// System.out.println("tree3 " + tree2);
+		// System.out.println("tree3 " + tree);
 		return addCtr(new Intension(this, scp, tree));
 	}
 
@@ -1045,7 +1053,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (head.control.global.typeAllDifferent == 1)
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
 				if (i < j)
-					addCtr(new SubNE2(this, scp[i], scp[j], 0)); // different(scp[i], scp[j]);
+					addCtr(new SubNE2(this, scp[i], scp[j], 0));
 			});
 		if (head.control.global.typeAllDifferent == 2)
 			return addCtr(new AllDifferentWeak(this, scp));
@@ -1067,16 +1075,26 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	@Override
-	public final CtrEntity allDifferent(Var[] scp, int[] exceptValues) {
-		control(exceptValues.length >= 1);
-		if (head.control.global.typeAllDifferent <= 1)
-			return forall(range(scp.length).range(scp.length), (i, j) -> {
-				if (i < j)
-					intension(or(ne(scp[i], scp[j]), exceptValues.length == 1 ? eq(scp[i], exceptValues[0]) : in(scp[i], exceptValues)));
-			});
-		if (head.control.global.typeAllDifferent == 2)
-			return addCtr(new AllDifferentExceptWeak(this, translate(scp), exceptValues));
-		throw new UnsupportedOperationException();
+	public final CtrEntity allDifferent(Var[] list, int[] exceptValues) {
+		control(exceptValues.length >= 1 && Kit.isStrictlyIncreasing(exceptValues));
+		Variable[] scp = translate(list);
+		if (head.control.global.typeAllDifferent == 0)
+			return addCtr(new AllDifferentExceptWeak(this, scp, exceptValues));
+
+		return forall(range(list.length).range(list.length), (i, j) -> {
+			if (i < j) {
+				List<int[]> conflicts = new ArrayList<>();
+				Domain domi = scp[i].dom, domj = scp[j].dom;
+				for (int a = domi.first(); a != -1; a = domi.next(a)) {
+					int va = domi.toVal(a);
+					if (!Kit.isPresent(va, exceptValues) && domj.presentValue(va))
+						conflicts.add(new int[] { va, va });
+				}
+				extension(vars(scp[i], scp[j]), Kit.intArray2D(conflicts), false, false);
+
+				// intension(or(ne(list[i], list[j]), exceptValues.length == 1 ? eq(list[i], exceptValues[0]) : in(list[i], exceptValues)));
+			}
+		});
 	}
 
 	private CtrAlone distinctVectors(Variable[] t1, Variable[] t2) {
@@ -1131,8 +1149,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public CtrEntity allDifferent(XNode<IVar>[] trees) {
-		Var[] aux = replaceByVariables(trees);
-		return allDifferent(aux);
+		return allDifferent(replaceByVariables(trees));
 	}
 
 	// ************************************************************************
@@ -1142,9 +1159,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity allEqual(Var... scp) {
 		// using a table on large instances of Domino is very expensive; using a smart table is also very expensive
-		// return addCtr(new AllEqual(this, translate(scp)));
-		// return extension(scp, allEqualTable(translate(scp)), true, false);
-		return addCtr(ExtensionSmart.buildAllEqual(this, translate(scp)));
+		return addCtr(new AllEqual(this, translate(scp)));
+		// return addCtr(ExtensionSmart.buildAllEqual(this, translate(scp)));
 	}
 
 	@Override
@@ -1154,7 +1170,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity allEqualList(Var[]... lists) {
-		throw new UnsupportedOperationException("not implemnted");
+		throw new UnsupportedOperationException("Not implemnted");
 	}
 
 	// ************************************************************************
