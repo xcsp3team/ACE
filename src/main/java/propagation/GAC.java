@@ -85,7 +85,7 @@ public class GAC extends Forward {
 	public boolean enforceArcConsistencyAfterRefutation(Variable x) {
 		if (!super.runAfterRefutation(x))
 			return false;
-		// Todo also checking the objective when not in the phase following a new solution
+		// TODO also checking the objective when not in the phase following a new solution
 		assert !guaranteed || Stream.of(solver.problem.constraints)
 				.allMatch(c -> solver.problem.settings.framework == TypeFramework.COP && c == solver.problem.optimizer.ctr || c.controlArcConsistency());
 		// assert controlArcConsistency();

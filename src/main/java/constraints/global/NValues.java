@@ -14,14 +14,18 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.xcsp.common.Types.TypeConditionOperatorRel;
+
+import constraints.Constraint;
 import constraints.Constraint.CtrGlobal;
+import constraints.global.AllDifferent.AllDifferentComplete;
 import interfaces.Tags.TagGACUnguaranteed;
 import optimization.Optimizable;
 import problem.Problem;
 import sets.SetDense;
+import utility.Kit;
 import variables.Domain;
 import variables.Variable;
-import variables.Variable.VariableInteger;
 
 public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed { // not call filtering-complete
 
@@ -75,6 +79,30 @@ public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed { 
 	 *********************************************************************************************/
 
 	public static abstract class NValuesCst extends NValues implements Optimizable {
+
+		public static Constraint buildFrom(Problem pb, Variable[] scp, TypeConditionOperatorRel op, long limit) {
+			Kit.control(Variable.areAllDistinct(scp));
+			switch (op) {
+			case LT:
+				return limit == 2 ? new AllEqual(pb, scp) : new NValuesCstLE(pb, scp, limit - 1);
+			case LE:
+				return limit == 1 ? new AllEqual(pb, scp) : new NValuesCstLE(pb, scp, limit);
+			case GE:
+				return limit == 2 ? new NotAllEqual(pb, scp) : new NValuesCstGE(pb, scp, limit);
+			case GT:
+				return limit == 1 ? new NotAllEqual(pb, scp) : new NValuesCstGE(pb, scp, limit + 1);
+			case EQ:
+				if (limit == 1)
+					return new AllEqual(pb, scp);
+				if (limit == scp.length)
+					return new AllDifferentComplete(pb, scp);
+				return null; // TODO other cases not implemented
+			default: // case NE:
+				if (limit == 1)
+					return new NotAllEqual(pb, scp);
+				return null; // TODO other cases not implemented
+			}
+		}
 
 		protected long limit;
 
@@ -182,9 +210,19 @@ public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed { 
 
 	public static abstract class NValuesVar extends NValues {
 
+		public static Constraint buildFrom(Problem pb, Variable[] scp, TypeConditionOperatorRel op, Variable k) {
+			Kit.control(Variable.areAllDistinct(scp));
+			switch (op) {
+			case EQ:
+				return new NValuesVarEQ(pb, scp, k);
+			default:
+				return null; // TODO other cases not implemented
+			}
+		}
+
 		protected Variable k;
 
-		public NValuesVar(Problem pb, Variable[] list, VariableInteger k) {
+		public NValuesVar(Problem pb, Variable[] list, Variable k) {
 			super(pb, pb.vars(list, k), list);
 			control(Stream.of(list).noneMatch(x -> x == k), "currently, k must not be present in the list");
 			this.k = k;
@@ -197,7 +235,7 @@ public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed { 
 				return IntStream.range(0, t.length - 1).map(i -> t[i]).distinct().count() == t[t.length - 1];
 			}
 
-			public NValuesVarEQ(Problem pb, Variable[] list, VariableInteger k) {
+			public NValuesVarEQ(Problem pb, Variable[] list, Variable k) {
 				super(pb, list, k);
 			}
 

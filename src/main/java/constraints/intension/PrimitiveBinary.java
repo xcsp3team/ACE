@@ -12,6 +12,7 @@ import java.math.BigInteger;
 
 import org.xcsp.common.Types.TypeArithmeticOperator;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
+import org.xcsp.common.Types.TypeOperatorRel;
 import org.xcsp.common.Types.TypeUnaryArithmeticOperator;
 import org.xcsp.common.Utilities;
 
@@ -537,6 +538,10 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 	public static abstract class PrimitiveBinarySub extends PrimitiveBinaryWithCst {
 
+		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeOperatorRel op, int k) {
+			return buildFrom(pb, x, y, op.toConditionOperator(), k);
+		}
+
 		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case LT:
@@ -548,8 +553,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 			case GT:
 				return new SubGE2(pb, x, y, k + 1);
 			case EQ:
-				return new SubEQ2(pb, x, y, k); //
-			// return pb.extension(pb.api.eq(pb.api.sub(x, y), k));
+				return new SubEQ2(pb, x, y, k); // return pb.extension(pb.api.eq(pb.api.sub(x, y), k));
 			case NE:
 				return new SubNE2(pb, x, y, k);
 			}

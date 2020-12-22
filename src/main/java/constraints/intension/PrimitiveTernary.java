@@ -19,6 +19,7 @@ import java.math.BigInteger;
 
 import org.xcsp.common.Types.TypeArithmeticOperator;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
+import org.xcsp.common.Types.TypeOperatorRel;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
@@ -87,6 +88,10 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 	// ************************************************************************
 
 	public static abstract class PrimitiveTernaryAdd extends PrimitiveTernary {
+
+		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeOperatorRel op, Variable z) {
+			return buildFrom(pb, x, y, op.toConditionOperator(), z);
+		}
 
 		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			switch (op) {

@@ -140,8 +140,7 @@ import constraints.global.Lexicographic;
 import constraints.global.NValues.NValuesCst;
 import constraints.global.NValues.NValuesCst.NValuesCstGE;
 import constraints.global.NValues.NValuesCst.NValuesCstLE;
-import constraints.global.NValues.NValuesVar.NValuesVarEQ;
-import constraints.global.NotAllEqual;
+import constraints.global.NValues.NValuesVar;
 import constraints.global.Sum.SumSimple;
 import constraints.global.Sum.SumSimple.SumSimpleGE;
 import constraints.global.Sum.SumSimple.SumSimpleLE;
@@ -1080,8 +1079,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Variable[] scp = translate(list);
 		if (head.control.global.typeAllDifferent == 0)
 			return addCtr(new AllDifferentExceptWeak(this, scp, exceptValues));
-
-		return forall(range(list.length).range(list.length), (i, j) -> {
+		return forall(range(scp.length).range(scp.length), (i, j) -> {
 			if (i < j) {
 				List<int[]> conflicts = new ArrayList<>();
 				Domain domi = scp[i].dom, domj = scp[j].dom;
@@ -1091,8 +1089,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 						conflicts.add(new int[] { va, va });
 				}
 				extension(vars(scp[i], scp[j]), Kit.intArray2D(conflicts), false, false);
-
-				// intension(or(ne(list[i], list[j]), exceptValues.length == 1 ? eq(list[i], exceptValues[0]) : in(list[i], exceptValues)));
 			}
 		});
 	}
@@ -1183,9 +1179,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 */
 	@Override
 	public final CtrEntity ordered(Var[] list, int[] lengths, TypeOperatorRel op) {
-		control(list != null && lengths != null && list.length == lengths.length + 1 && op != null);
-		return forall(range(list.length - 1),
-				i -> addCtr(PrimitiveBinarySub.buildFrom(this, (Variable) list[i], (Variable) list[i + 1], op.toConditionOperator(), -lengths[i])));
+		control(list.length == lengths.length + 1);
+		return forall(range(list.length - 1), i -> addCtr(PrimitiveBinarySub.buildFrom(this, (Variable) list[i], (Variable) list[i + 1], op, -lengths[i])));
 	}
 
 	/**
@@ -1194,9 +1189,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 */
 	@Override
 	public final CtrEntity ordered(Var[] list, Var[] lengths, TypeOperatorRel op) {
-		control(list != null && lengths != null && list.length == lengths.length + 1 && op != null);
+		control(list.length == lengths.length + 1);
 		return forall(range(list.length - 1),
-				i -> addCtr(PrimitiveTernaryAdd.buildFrom(this, (Variable) list[i], (Variable) lengths[i], op.toConditionOperator(), (Variable) list[i + 1])));
+				i -> addCtr(PrimitiveTernaryAdd.buildFrom(this, (Variable) list[i], (Variable) lengths[i], op, (Variable) list[i + 1])));
 		// intension(XNodeParent.build(op.toExpr(), add(list[i], lengths[i]), list[i + 1])));
 	}
 
@@ -1211,13 +1206,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity lex(Var[][] lists, TypeOperatorRel op) {
-		control(op != null);
 		return forall(range(lists.length - 1), i -> lexSimple(lists[i], lists[i + 1], op));
 	}
 
 	@Override
 	public final CtrEntity lexMatrix(Var[][] matrix, TypeOperatorRel op) {
-		control(op != null);
 		forall(range(matrix.length - 1), i -> lexSimple(matrix[i], matrix[i + 1], op));
 		return forall(range(matrix[0].length - 1), j -> lexSimple(api.columnOf(matrix, j), api.columnOf(matrix, j + 1), op));
 	}
@@ -1227,17 +1220,17 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	// ************************************************************************
 
 	private static class Term implements Comparable<Term> {
+		@Override
+		public int compareTo(Term term) {
+			return Long.compare(coeff, term.coeff);
+		}
+
 		long coeff;
 		Variable var;
 
 		private Term(long coeff, Variable var) {
 			this.coeff = coeff;
 			this.var = var;
-		}
-
-		@Override
-		public int compareTo(Term term) {
-			return Long.compare(coeff, term.coeff);
 		}
 
 		@Override
@@ -1300,6 +1293,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Term[] terms = new Term[list.length];
 		for (int i = 0; i < terms.length; i++)
 			terms[i] = new Term(coeffs == null ? 1 : coeffs[i], list[i]);
+		// Term[] terms = IntStream.range(0, list.length).mapToObj(i -> new Term(coeffs == null ? 1 : coeffs[i], list[i])).toArray(Term[]::new);
+
 		if (!Variable.areAllDistinct(list)) {
 			Set<Entry<Variable, Long>> entries = Stream.of(terms).collect(groupingBy(t -> t.var, summingLong((Term t) -> (int) t.coeff))).entrySet();
 			terms = entries.stream().map(e -> new Term(e.getValue(), e.getKey())).toArray(Term[]::new);
@@ -1318,8 +1313,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		}
 		boolean only1 = coeffs[0] == 1 && coeffs[coeffs.length - 1] == 1; // if only 1 since sorted
 		if (op == EQ) {
-			boolean deceq = false; // hard coding for the moment
-			if (deceq) {
+			boolean postTwoConstraints = false; // TODO hard coding for the moment
+			if (postTwoConstraints) {
 				if (only1) {
 					addCtr(new SumSimpleLE(this, list, limit));
 					addCtr(new SumSimpleGE(this, list, limit));
@@ -1406,26 +1401,22 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 		// finally, we handle the cases where the condition involves a relational operator
 		TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
-		if (condition instanceof ConditionVal)
-			return sum(list, coeffs, op, (long) rightTerm);
-		return sum(vars(list, (Variable) rightTerm), api.vals(coeffs, -1), op, 0);
+		return condition instanceof ConditionVal ? sum(list, coeffs, op, (long) rightTerm) : sum(vars(list, (Variable) rightTerm), api.vals(coeffs, -1), op, 0);
 	}
 
 	@Override
 	public final CtrEntity sum(Var[] list, Var[] coeffs, Condition condition) {
-		control(Stream.concat(Stream.of(list), Stream.of(coeffs)).noneMatch(x -> x == null), "A variable is null in these arrays");
+		assert Stream.of(list).noneMatch(x -> x == null) && Stream.of(coeffs).noneMatch(x -> x == null) : "A variable is null in these arrays";
 		control(list.length == coeffs.length, "The number of variables is different from the number of coefficients");
 
 		// we check first if we can handle a Boolean scalar constraint
-		if (condition instanceof ConditionRel) {
-			if (Variable.areAllInitiallyBoolean(translate(list)) && Variable.areAllInitiallyBoolean(translate(coeffs))) {
-				TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
-				Object rightTerm = condition.rightTerm();
-				if (condition instanceof ConditionVal && op != NE)
-					return addCtr(SumScalarBooleanCst.buildFrom(this, translate(list), translate(coeffs), op, safeInt((long) rightTerm)));
-				if (condition instanceof ConditionVar && op != NE && op != EQ)
-					return addCtr(SumScalarBooleanVar.buildFrom(this, translate(list), translate(coeffs), op, (Variable) rightTerm));
-			}
+		if (condition instanceof ConditionRel && Variable.areAllInitiallyBoolean(translate(list)) && Variable.areAllInitiallyBoolean(translate(coeffs))) {
+			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
+			Object rightTerm = condition.rightTerm();
+			if (condition instanceof ConditionVal && op != NE)
+				return addCtr(SumScalarBooleanCst.buildFrom(this, translate(list), translate(coeffs), op, safeInt((long) rightTerm)));
+			if (condition instanceof ConditionVar && op != NE && op != EQ)
+				return addCtr(SumScalarBooleanVar.buildFrom(this, translate(list), translate(coeffs), op, (Variable) rightTerm));
 		}
 
 		Var[] aux = replaceByVariables(IntStream.range(0, list.length).mapToObj(i -> api.mul(list[i], coeffs[i])));
@@ -1434,88 +1425,62 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public CtrEntity sum(XNode<IVar>[] trees, int[] coeffs, Condition condition) {
-		Var[] aux = replaceByVariables(trees);
-		return sum(aux, coeffs, condition);
+		return sum(replaceByVariables(trees), coeffs, condition);
 	}
 
 	// ************************************************************************
 	// ***** Constraint count
 	// ************************************************************************
 
-	private CtrEntity atLeast(Var[] list, int value, int k) {
-		control(list.length != 0 && k >= 0);
-		Variable[] scp = Stream.of(list).filter(x -> ((VariableInteger) x).dom.presentValue(value) && ((VariableInteger) x).dom.size() > 1)
-				.toArray(Variable[]::new);
-		int newK = k - (int) Stream.of(list).filter(x -> ((VariableInteger) x).dom.onlyContainsValue(value)).count();
-		if (newK <= 0)
-			return ctrEntities.new CtrAloneDummy("Removed constraint due to newk < 0");
-		if (newK == scp.length)
+	private CtrEntity atLeast(Variable[] scp, int value, int k) {
+		if (k == 0)
+			return ctrEntities.new CtrAloneDummy("Removed constraint due to k <= 0");
+		if (k == scp.length)
 			return forall(range(scp.length), i -> equal(scp[i], value));
-		if (newK > scp.length)
-			return addCtr(new CtrHardFalse(this, translate(list), "Constraint atLeast intially unsatisfiable"));
-		return newK == 1 ? addCtr(new AtLeast1(this, scp, value)) : addCtr(new AtLeastK(this, scp, value, newK));
+		return k == 1 ? addCtr(new AtLeast1(this, scp, value)) : addCtr(new AtLeastK(this, scp, value, k));
 	}
 
-	private CtrEntity atMost(Var[] list, int value, int k) {
-		if (list.length == 0)
-			return ctrEntities.new CtrAloneDummy("atMost with empty set");
-		control(k >= 0);
-		Variable[] scp = Stream.of(list).filter(x -> ((VariableInteger) x).dom.presentValue(value) && ((VariableInteger) x).dom.size() > 1)
-				.toArray(Variable[]::new);
-		int newK = k - (int) Stream.of(list).filter(x -> ((VariableInteger) x).dom.onlyContainsValue(value)).count();
-		if (newK < 0)
-			return addCtr(new CtrHardFalse(this, translate(list), "Constraint atMost intially unsatisfiable"));
-		if (newK == 0)
+	private CtrEntity atMost(Variable[] scp, int value, int k) {
+		if (k == 0)
 			return forall(range(scp.length), i -> different(scp[i], value));
-		if (newK >= scp.length)
-			return ctrEntities.new CtrAloneDummy("atMost with newK greater than scp.length");
-		return newK == 1 ? addCtr(new AtMost1(this, scp, value)) : addCtr(new AtMostK(this, scp, value, newK));
+		if (k == scp.length)
+			return ctrEntities.new CtrAloneDummy("atMost with k equal to scp.length");
+		return k == 1 ? addCtr(new AtMost1(this, scp, value)) : addCtr(new AtMostK(this, scp, value, k));
 	}
 
-	private CtrEntity exactly(Var[] list, int value, int k) {
-		control(list.length != 0 && k >= 0);
-		Variable[] scp = Stream.of(list).filter(x -> ((VariableInteger) x).dom.presentValue(value) && ((VariableInteger) x).dom.size() > 1)
-				.toArray(Variable[]::new);
-		int newK = k - (int) Stream.of(list).filter(x -> ((VariableInteger) x).dom.onlyContainsValue(value)).count();
-		control(newK >= 0, "UNSAT, constraint Exactly with scope " + Kit.join(list) + " has already more than " + k + " variables equal to " + value);
-		if (newK == 0)
+	private CtrEntity exactly(Variable[] scp, int value, int k) {
+		if (k == 0)
 			return forall(range(scp.length), i -> different(scp[i], value));
-		if (newK == scp.length)
+		if (k == scp.length)
 			return forall(range(scp.length), i -> equal(scp[i], value));
-		control(newK < scp.length, "Instance is UNSAT, constraint Exactly with scope " + Kit.join(list) + " cannot have " + k + " variables equal to " + value);
-		return newK == 1 ? addCtr(new Exactly1(this, scp, value)) : addCtr(new ExactlyK(this, scp, value, newK));
+		return k == 1 ? addCtr(new Exactly1(this, scp, value)) : addCtr(new ExactlyK(this, scp, value, k));
 	}
 
-	private CtrEntity among(Var[] list, int[] values, int k) {
-		control(list.length >= k);
-		if (list.length == k) {
-			for (Var x : list) {
-				Domain dom = ((VariableInteger) x).dom;
-				for (int a = dom.first(); a != -1; a = dom.next(a)) {
-					int v = dom.toVal(a);
-					if (!Kit.isPresent(v, values))
-						different(x, v);
-				}
-			}
-			// TODO HERE !!!!!!!!!!!!!!!!!! replace this above with a return forall
-			return null; // to be changed !!!
-		} else
-			return addCtr(new Among(this, (VariableInteger[]) list, values, k));
+	private CtrEntity among(Variable[] scp, int[] values, int k) {
+		if (k == scp.length)
+			return forall(range(scp.length), i -> intension(XNodeParent.in(scp[i], api.set(values))));
+		else
+			return addCtr(new Among(this, scp, values, k));
 	}
 
-	private CtrEntity count1(VariableInteger[] list, int[] values, TypeConditionOperatorRel op, long limit) {
+	private CtrEntity count1(Variable[] list, int[] values, TypeConditionOperatorRel op, long limit) {
 		int l = Utilities.safeInt(limit);
+		control(0 <= l && l <= list.length);
 		if (values.length == 1) {
-			if (op == GE)
-				return atLeast(list, values[0], l);
-			else if (op == GT)
-				return atLeast(list, values[0], l + 1);
-			else if (op == LT)
-				return atMost(list, values[0], l - 1);
+			int value = values[0];
+			Variable[] scp = Stream.of(list).filter(x -> x.dom.presentValue(value) && x.dom.size() > 1).toArray(Variable[]::new);
+			int k = l - (int) Stream.of(list).filter(x -> x.dom.onlyContainsValue(value)).count();
+			control(scp.length > 0 && 0 <= k && k <= scp.length);
+			if (op == LT)
+				return atMost(scp, value, k - 1);
 			else if (op == LE)
-				return atMost(list, values[0], l);
+				return atMost(scp, value, k);
+			else if (op == GE)
+				return atLeast(scp, value, k);
+			else if (op == GT)
+				return atLeast(scp, value, k + 1);
 			else if (op == EQ)
-				return exactly(list, values[0], l);
+				return exactly(scp, value, k);
 			else
 				return unimplemented("count");
 		} else {
@@ -1526,31 +1491,23 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		}
 	}
 
-	private CtrEntity count2(VariableInteger[] list, int[] values, TypeConditionOperatorRel op, VariableInteger limit) {
-		if (values.length == 1) {
-			if (op == EQ)
-				return addCtr(new ExactlyVarK(this, list, values[0], limit));
-			else
-				return unimplemented("count");
-		} else
-			return unimplemented("count");
-	}
-
 	@Override
 	public final CtrEntity count(Var[] list, int[] values, Condition condition) {
-		list = clean(list);
-		if (condition instanceof ConditionVal)
-			return count1((VariableInteger[]) list, values, ((ConditionVal) condition).operator, ((ConditionVal) condition).k);
-		if (condition instanceof ConditionVar)
-			return count2((VariableInteger[]) list, values, ((ConditionVar) condition).operator, (VariableInteger) ((ConditionVar) condition).x);
-		unimplementedIf(condition instanceof ConditionIntvl, "count");
+		if (condition instanceof ConditionRel) {
+			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
+			Object rightTerm = condition.rightTerm();
+			Variable[] scp = translate(clean(list));
+			if (condition instanceof ConditionVal)
+				return count1(scp, values, op, (long) rightTerm);
+			assert condition instanceof ConditionVar;
+			if (values.length == 1 && op == EQ)
+				return addCtr(new ExactlyVarK(this, scp, values[0], (Variable) rightTerm));
+		}
 		return unimplemented("count");
 	}
 
 	@Override
 	public final CtrEntity count(Var[] list, Var[] values, Condition condition) {
-		list = clean(list);
-		values = clean(values);
 		return unimplemented("count");
 	}
 
@@ -1560,33 +1517,23 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public CtrEntity nValues(Var[] list, Condition condition) {
-		list = clean(list);
-		if (condition instanceof ConditionVal) {
-			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
-			int k = Utilities.safeInt(((ConditionVal) condition).k);
-			if (op == GT && k == 1 || op == GE && k == 2) {
-				if (isBasicType(head.control.global.typeNotAllEqual))
-					return addCtr(new NotAllEqual(this, (VariableInteger[]) list));
-				if (head.control.global.typeNotAllEqual == 1) {
-					VariableInteger[] clone = (VariableInteger[]) list.clone();
-					return intension(or(IntStream.range(0, list.length - 1).mapToObj(i -> XNodeParent.ne(clone[i], clone[i + 1])).toArray(Object[]::new)));
-				}
-			}
-			if (op == LE || op == LT)
-				return addCtr(new NValuesCstLE(this, (VariableInteger[]) list, op == LE ? k : k - 1));
-			if (op == GE || op == GT)
-				return addCtr(new NValuesCstGE(this, (VariableInteger[]) list, op == GE ? k : k + 1));
-		} else if (condition instanceof ConditionVar) {
-			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
-			if (op == EQ)
-				return addCtr(new NValuesVarEQ(this, (VariableInteger[]) list, (VariableInteger) ((ConditionVar) condition).x));
+		if (condition instanceof ConditionRel) {
+			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
+			Object rightTerm = condition.rightTerm();
+			Variable[] scp = translate(clean(list));
+			Constraint c = null;
+			if (condition instanceof ConditionVal)
+				c = NValuesCst.buildFrom(this, scp, op, Utilities.safeInt((long) rightTerm));
+			else // condition instanceof ConditionVar
+				c = NValuesVar.buildFrom(this, scp, op, (Variable) rightTerm);
+			if (c != null)
+				return addCtr(c);
 		}
 		return unimplemented("nValues");
 	}
 
 	@Override
 	public CtrEntity nValues(Var[] list, Condition condition, int[] exceptValues) {
-		list = clean(list);
 		return unimplemented("nValues");
 	}
 
@@ -1745,7 +1692,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrAlone element(Var[] list, int value) {
-		return (CtrAlone) atLeast(list, value, 1);
+		return (CtrAlone) atLeast(translate(list), value, 1);
 	}
 
 	@Override
