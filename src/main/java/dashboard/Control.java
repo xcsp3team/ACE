@@ -374,8 +374,6 @@ public class Control {
 		public final int typeDistinctVectorsK = addI("typeDistinctVectorsK", "g_dvk", 1, s + "distinctVectorsK");
 		public final int typeAllEqual = addI("typeAllEqual", "g_ae", 0, s + "allEqual");
 		public final int typeNotAllEqual = addI("typeNotAllEqual", "g_nae", 0, s + "notAllEqual");
-		public final int typeInstantiation = addI("typeInstantiation", "g_ins", 1, s + "instantiation");
-		public final int typeClause = addI("typeClause", "g_cla", 1, s + "clause");
 		public final int typeOrdered = addI("typeOrdered", "g_ord", 1, s + "odered");
 		public final int typeNoOverlap = addI("typeNoOverlap", "g_no", 0, s + "noOverlap");
 

@@ -39,6 +39,7 @@ import propagation.Supporter.SupporterHard;
 import utility.Kit;
 import utility.Reflector;
 import variables.Variable;
+import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
 
 public abstract class Extension extends Constraint implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
@@ -58,10 +59,9 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 		final int[] values;
 		final boolean positive;
 
-		public Extension1(Problem pb, Variable[] scp, int[] values, boolean positive) {
-			super(pb, scp);
-			control(scp.length == 1);
-			assert Kit.isStrictlyIncreasing(values);
+		public Extension1(Problem pb, Variable x, int[] values, boolean positive) {
+			super(pb, new Variable[] { x });
+			assert values.length > 0 && Kit.isStrictlyIncreasing(values);
 			this.values = values;
 			this.positive = positive;
 			this.key = signature() + " " + values + " " + positive; // TODO can we use the adress of values?
@@ -199,33 +199,17 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 	}
 
 	public static Constraint build(Problem pb, Variable[] scp, Object tuples, boolean positive, Boolean starred) {
-		Kit.control(Variable.haveSameType(scp));
+		Kit.control(scp.length > 1 && Variable.haveSameType(scp));
 		Kit.control(Array.getLength(tuples) == 0 || Array.getLength(Array.get(tuples, 0)) == scp.length,
 				() -> "Badly formed extensional constraint " + scp.length + " " + Array.getLength(tuples));
 		if (starred == null)
 			starred = isStarPresent(tuples);
 		else
 			assert starred == isStarPresent(tuples) : starred + " \n" + Kit.join(tuples);
-		int[][] m = null;
-		if (scp[0] instanceof VariableSymbolic)
-			m = pb.symbolic.replaceSymbols((String[][]) tuples);
-		else {
-			m = (int[][]) tuples;
-			if (!starred && pb.head.control.extension.mustReverse(scp.length, positive)) {
-				m = reverseTuples(scp, m);
-				positive = !positive;
-			}
-		}
-		if (scp.length == 1) {
-			Kit.control(!starred);
-			int[] values = Stream.of(m).mapToInt(t -> t[0]).toArray();
-			assert Kit.isStrictlyIncreasing(values);
-			if (pb.head.mustPreserveUnaryConstraints())
-				return new Extension1(pb, scp, values, positive);
-			boolean b = positive;
-			scp[0].dom.removeValuesAtConstructionTime(v -> (Arrays.binarySearch(values, v) < 0) == b);
-			pb.features.nRemovedUnaryCtrs++;
-			return null;
+		int[][] m = scp[0] instanceof VariableSymbolic ? pb.symbolic.replaceSymbols((String[][]) tuples) : (int[][]) tuples;
+		if (scp[0] instanceof VariableInteger && !starred && pb.head.control.extension.mustReverse(scp.length, positive)) {
+			m = reverseTuples(scp, m);
+			positive = !positive;
 		}
 		Extension c = build(pb, scp, positive, starred);
 		c.storeTuples(m, positive);

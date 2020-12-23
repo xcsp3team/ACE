@@ -3,7 +3,13 @@ package constraints.global;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.xcsp.common.Types.TypeConditionOperatorRel;
+
 import constraints.Constraint.CtrGlobal;
+import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstGE;
+import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
+import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstGE;
+import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstLE;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagSymmetric;
@@ -212,6 +218,21 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 	}
 
 	public static abstract class ExtremumCst extends Extremum implements Optimizable, TagSymmetric {
+
+		public static ExtremumCst buildFrom(Problem pb, Variable[] list, TypeConditionOperatorRel op, long limit, boolean minimum) {
+			switch (op) {
+			case LT:
+				return minimum ? new MinimumCstLE(pb, list, limit - 1) : new MaximumCstLE(pb, list, limit - 1);
+			case LE:
+				return minimum ? new MinimumCstLE(pb, list, limit) : new MaximumCstLE(pb, list, limit);
+			case GE:
+				return minimum ? new MinimumCstGE(pb, list, limit) : new MaximumCstGE(pb, list, limit);
+			case GT:
+				return minimum ? new MinimumCstGE(pb, list, limit + 1) : new MaximumCstGE(pb, list, limit + 1);
+			default:
+				throw new AssertionError("EQ and NE are not implemented"); // TODO useful to have a propagator?
+			}
+		}
 
 		protected long limit;
 

@@ -262,7 +262,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 	}
 
 	// ************************************************************************
-	// ***** Root class and Disjonctive
+	// ***** Root class
 	// ************************************************************************
 
 	protected final Variable x, y;
@@ -329,7 +329,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 			case NEG:
 				return new NegEQ2(pb, x, y);
 			case SQR:
-				return null;
+				return null; // TODO
 			default: // NOT
 				return null;
 			}
