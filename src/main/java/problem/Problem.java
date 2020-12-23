@@ -2,7 +2,6 @@ package problem;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingLong;
-import static org.xcsp.common.Constants.ALL;
 import static org.xcsp.common.Constants.PLUS_INFINITY_INT;
 import static org.xcsp.common.Constants.STAR;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.EQ;
@@ -48,7 +47,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.IntFunction;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -80,7 +78,6 @@ import org.xcsp.common.domains.Domains.Dom;
 import org.xcsp.common.domains.Domains.DomSymbolic;
 import org.xcsp.common.domains.Values.IntegerEntity;
 import org.xcsp.common.domains.Values.IntegerInterval;
-import org.xcsp.common.enumerations.EnumerationCartesian;
 import org.xcsp.common.predicates.MatcherInterface.Matcher;
 import org.xcsp.common.predicates.TreeEvaluator;
 import org.xcsp.common.predicates.XNode;
@@ -441,21 +438,21 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return name.matches("XCSP[23]-.*") ? name.substring(6) : name;
 	}
 
-	/**
-	 * 
-	 * /** Removes a constraint that has already been built. Should not be called when modeling. Advanced use.
-	 */
-	public void removeCtr(Constraint c) {
-		// System.out.println("removed " + c + "size=" + stuff.collectedCtrsAtInit.size());
-		control(constraints == null, "too late");
-		features.collectedCtrsAtInit.remove(c);
-		// maybe was not present
-		Stream.of(c.scp).forEach(x -> x.collectedCtrs.remove(c));
-		// TODO other things to do ??
-		CtrAlone ca = ctrEntities.ctrToCtrAlone.get(c); // remove(c);
-		ctrEntities.allEntities.remove(ca);
-		ctrEntities.ctrToCtrAlone.remove(c);
-	}
+	// /**
+	// *
+	// * /** Removes a constraint that has already been built. Should not be called when modeling. Advanced use.
+	// */
+	// public void removeCtr(Constraint c) {
+	// // System.out.println("removed " + c + "size=" + stuff.collectedCtrsAtInit.size());
+	// control(constraints == null, "too late");
+	// features.collectedCtrsAtInit.remove(c);
+	// // maybe was not present
+	// Stream.of(c.scp).forEach(x -> x.collectedCtrs.remove(c));
+	// // TODO other things to do ??
+	// CtrAlone ca = ctrEntities.ctrToCtrAlone.get(c); // remove(c);
+	// ctrEntities.allEntities.remove(ca);
+	// ctrEntities.ctrToCtrAlone.remove(c);
+	// }
 
 	/**
 	 * Adds a constraint that has already been built. Should not be called when modeling. Advanced use.
@@ -626,28 +623,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		}
 	}
 
-	public int[][] buildTable(Constraint... ctrs) {
-		Variable[] scp = distinctSorted(vars(Stream.of(ctrs).map(c -> c.scp).toArray()));
-		int[][] vaps = Stream.of(ctrs).map(c -> IntStream.range(0, c.scp.length).map(i -> Utilities.indexOf(c.scp[i], scp)).toArray()).toArray(int[][]::new);
-		int[][] tmps = Stream.of(ctrs).map(c -> c.tupleManager.localTuple).toArray(int[][]::new);
-		List<int[]> list = new ArrayList<>();
-		EnumerationCartesian ec = new EnumerationCartesian(Variable.domSizeArrayOf(scp, true));
-		while (ec.hasNext()) {
-			int[] tuple = ec.next();
-			boolean inconsistent = false;
-			for (int i = 0; !inconsistent && i < ctrs.length; i++) {
-				int[] vap = vaps[i];
-				int[] t = tmps[i];
-				IntStream.range(0, t.length).forEach(j -> t[j] = tuple[vap[j]]);
-				if (!ctrs[i].checkIndexes(t))
-					inconsistent = true;
-			}
-			if (!inconsistent)
-				list.add(IntStream.range(0, scp.length).map(i -> scp[i].dom.toVal(tuple[i])).toArray());
-		}
-		return Kit.intArray2D(list);
-	}
-
 	public Problem(ProblemAPI api, String modelVariant, String data, String dataFormat, boolean dataSaving, String[] argsForPb, Head head) {
 		super(api, modelVariant, argsForPb);
 		this.head = head;
@@ -760,41 +735,77 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return m instanceof Variable[][] ? (Variable[][]) m : Stream.of(m).map(t -> translate(t)).toArray(Variable[][]::new);
 	}
 
-	private Object unimplementedCase(Object... objects) {
-		System.out.println("\n\n**********************");
-		System.out.println("Missing Implementation");
-		StackTraceElement[] t = Thread.currentThread().getStackTrace();
-		System.out.println("  Method " + t[2].getMethodName());
-		System.out.println("  Class " + t[2].getClassName());
-		System.out.println("  Line " + t[2].getLineNumber());
-		System.out.println("**********************");
-		System.out.println(Stream.of(objects).filter(o -> o != null).map(o -> o.toString()).collect(Collectors.joining("\n")));
-		// throw new RuntimeException();
-		System.exit(1);
-		return null;
-	}
-
 	private Range range(int length) {
 		return new Range(length);
 	}
+
+	// ************************************************************************
+	// ***** Replacing trees by variables
+	// ************************************************************************
 
 	private String idAux() {
 		return AUXILIARY_VARIABLE_PREFIX + varEntities.allEntities.size();
 	}
 
-	public Variable replaceByVariable(XNode<IVar> tree) {
-		// int[] values = tree.getType().isPredicateOperator() ? new int[] { 0, 1 } : new
-		// EvaluationManager(tree).generatePossibleValues(Variable.initDomainValues(vars(tree)));
+	private void replacement(Var aux, XNode<IVar> tree) {
+		Variable[] treeVars = (Variable[]) tree.vars();
+		if (head.control.extension.convertingIntension(treeVars)) {
+			int[][] tuples = new TreeEvaluator(tree).computeTuples(Variable.currDomainValues(treeVars));
+			extension(vars(treeVars, aux), tuples, true); // extension(eq(aux, tree));
+			features.nConvertedConstraints++;
+		} else
+			equal(aux, tree);
+	}
 
+	public Variable replaceByVariable(XNode<IVar> tree) {
 		Object values = tree.possibleValues();
 		Dom dom = values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
 		Var aux = api.var(idAux(), dom, "auxiliary variable");
-		if (Constraint.howManyVarsWithin(vars(tree), head.control.propagation.spaceLimitation) == ALL) {
-			int[][] tuples = new TreeEvaluator(tree).computeTuples(Variable.initDomainValues(vars(tree)));
-			extension(vars(tree, aux), tuples, true); // extension(eq(aux, tree));
-		} else
-			equal(aux, tree);
+		replacement(aux, tree);
 		return (Variable) aux;
+	}
+
+	private boolean areSimilar(XNode<IVar> tree1, XNode<IVar> tree2) {
+		if (tree1.type != tree2.type || tree1.arity() != tree2.arity())
+			return false;
+		if (tree1.arity() == 0) {
+			Object value1 = ((XNodeLeaf<?>) tree1).value, value2 = ((XNodeLeaf<?>) tree2).value;
+			return tree1.type == TypeExpr.VAR ? ((Variable) value1).dom.typeIdentifier() == ((Variable) value2).dom.typeIdentifier() : value1.equals(value2);
+		}
+		return IntStream.range(0, tree1.arity()).allMatch(i -> areSimilar(tree1.sons[i], tree2.sons[i]));
+	}
+
+	private Var[] replaceByVariables(XNode<IVar>[] trees) {
+		IntToDom doms = i -> {
+			Object values = trees[i].possibleValues();
+			return values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
+		};
+
+		boolean similarTrees = trees.length > 1 && IntStream.range(1, trees.length).allMatch(i -> areSimilar(trees[0], trees[i]));
+		if (similarTrees) {
+			Var[] aux = api.array(idAux(), api.size(trees.length), doms.apply(0), "auxiliary variables");
+			Variable[] treeVars = (Variable[]) trees[0].vars();
+			int[][] tuples = head.control.extension.convertingIntension(treeVars)
+					? new TreeEvaluator(trees[0]).computeTuples(Variable.initDomainValues(treeVars))
+					: null;
+			for (int i = 0; i < trees.length; i++) {
+				if (tuples != null) {
+					extension(vars(trees[i], aux[i]), tuples, true); // extension(eq(aux[i], trees[i]));
+					features.nConvertedConstraints++;
+				} else
+					equal(aux[i], trees[i]);
+			}
+			return aux;
+		} else {
+			Var[] aux = api.array(idAux(), api.size(trees.length), doms, "auxiliary variables");
+			for (int i = 0; i < trees.length; i++)
+				replacement(aux[i], trees[i]);
+			return aux;
+		}
+	}
+
+	private Var[] replaceByVariables(Stream<XNode<IVar>> trees) {
+		return replaceByVariables(trees.toArray(XNode[]::new));
 	}
 
 	// ************************************************************************
@@ -876,16 +887,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
 		Variable[] scp = (Variable[]) tree.vars();
 		assert Variable.haveSameType(scp);
-		int arity = scp.length;
-		assert arity > 1;
 
-		long al = head.control.extension.arityLimitForIntensionToExtension, vl = head.control.extension.validLimitForIntensionToExtension;
-		if (arity <= al && Domain.nValidTuplesBoundedAtMaxValueFor(scp) <= vl && Stream.of(scp).allMatch(x -> x instanceof Var)) {
+		if (head.control.extension.convertingIntension(scp) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
 
-		// System.out.println("treeee " + tree + " " + vars.length + " " + head.control.xml.primitiveTernaryInSolver);
+		int arity = scp.length;
 		SettingXml settings = head.control.xml;
 		if (arity == 2 && settings.primitiveBinaryInSolver) {
 			Constraint c = null;
@@ -1258,55 +1266,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		public String toString() {
 			return coeff + "*" + var;
 		}
-	}
-
-	private boolean areSimilar(XNode<IVar> tree1, XNode<IVar> tree2) {
-		if (tree1.type != tree2.type || tree1.arity() != tree2.arity())
-			return false;
-		if (tree1.arity() == 0) {
-			Object value1 = ((XNodeLeaf<?>) tree1).value, value2 = ((XNodeLeaf<?>) tree2).value;
-			return tree1.type == TypeExpr.VAR ? ((Variable) value1).dom.typeIdentifier() == ((Variable) value2).dom.typeIdentifier() : value1.equals(value2);
-		}
-		return IntStream.range(0, tree1.arity()).allMatch(i -> areSimilar(tree1.sons[i], tree2.sons[i]));
-	}
-
-	private Var[] replaceByVariables(XNode<IVar>[] trees) {
-		IntToDom doms = i -> {
-			Object values = trees[i].possibleValues();
-			return values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
-		};
-		int aie = head.control.extension.arityLimitForIntensionToExtension, sl = head.control.propagation.spaceLimitation;
-		if (trees.length > 1 && IntStream.range(1, trees.length).allMatch(i -> areSimilar(trees[0], trees[i]))) {
-			Var[] aux = api.array(idAux(), api.size(trees.length), doms.apply(0), "auxiliary variables");
-			int arity = trees[0].vars().length;
-			int[][] tuples = arity <= aie && Constraint.howManyVarsWithin(vars(trees[0]), sl) == ALL
-					? new TreeEvaluator(trees[0]).computeTuples(Variable.initDomainValues(vars(trees[0])))
-					: null;
-			for (int i = 0; i < trees.length; i++) {
-				if (tuples != null) {
-					extension(vars(trees[i], aux[i]), tuples, true); // extension(eq(aux[i], trees[i]));
-					features.nConvertedConstraints++;
-				} else
-					equal(aux[i], trees[i]);
-			}
-			return aux;
-		}
-
-		Var[] aux = api.array(idAux(), api.size(trees.length), doms, "auxiliary variables");
-		for (int i = 0; i < trees.length; i++) {
-			int arity = trees[i].vars().length;
-			if (arity <= aie && Constraint.howManyVarsWithin(vars(trees[i]), sl) == ALL) {
-				int[][] tuples = new TreeEvaluator(trees[i]).computeTuples(Variable.currDomainValues(vars(trees[i])));
-				extension(vars(trees[i], aux[i]), tuples, true); // extension(eq(aux[i], trees[i]));
-				features.nConvertedConstraints++;
-			} else
-				equal(aux[i], trees[i]);
-		}
-		return aux;
-	}
-
-	private Var[] replaceByVariables(Stream<XNode<IVar>> trees) {
-		return replaceByVariables(trees.toArray(XNode[]::new));
 	}
 
 	private CtrAlone sum(Variable[] list, int[] coeffs, TypeConditionOperatorRel op, long limit, boolean inversable) {
@@ -1818,8 +1777,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			return (CtrAlone) intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1)));
 		if (head.control.global.typeNoOverlap == 10) // rs.cp.global.smartTable)
 			return addCtr(ExtensionSmart.buildNoOverlap(this, (Variable) x1, (Variable) x2, w1, w2));
-		// if (rs.cp.constraints.useGlobalCtrs)
-		// return addCtr(new Disjonctive(this, (Variable) x1, w1, (Variable) x2, w2));
 		return (CtrAlone) Kit.exit("Bad value for the choice of the propagator");
 	}
 

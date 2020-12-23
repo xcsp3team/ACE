@@ -34,10 +34,12 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xcsp.common.Constants;
 import org.xcsp.common.Types.TypeCtr;
 import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Utilities;
 
+import constraints.Constraint;
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.Matrix3D;
 import heuristics.HeuristicRevisions;
@@ -70,6 +72,7 @@ import utility.Enums.ESymmetryBreaking;
 import utility.Enums.EWeighting;
 import utility.Kit;
 import utility.Reflector;
+import variables.Variable;
 
 public class Control {
 
@@ -407,11 +410,15 @@ public class Control {
 		public final boolean decremental = addB("decremental", "exd", true, ""); // true required for CT for the moment
 		public final int variant = addI("variant", "exv", 0, "");
 
-		public final int arityLimitForIntensionToExtension = addI("arityLimitForIntensionToExtension", "aie", 0, "");
-		public final long validLimitForIntensionToExtension = addL("validLimitForIntensionToExtension", "vie", 2000000L, "");
+		public final int arityLimitForConvertingIntension = addI("arityLimitForConvertingIntension", "alc", 0, "");
+		public final int spaceLimitForConvertingIntension = addI("spaceLimitForConvertingIntension", "plc", 20, "");
 
 		public boolean mustReverse(int arity, boolean positive) {
 			return (positive && arity <= arityLimitForSwitchingToNegative) || (!positive && arity <= arityLimitForSwitchingToPositive);
+		}
+
+		public boolean convertingIntension(Variable[] vars) {
+			return vars.length <= arityLimitForConvertingIntension && Constraint.howManyVarsWithin(vars, spaceLimitForConvertingIntension) == Constants.ALL;
 		}
 	}
 

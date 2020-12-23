@@ -10,9 +10,11 @@ package constraints;
 
 import static org.xcsp.common.Constants.ALL;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -21,6 +23,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Types.TypeFramework;
+import org.xcsp.common.Utilities;
+import org.xcsp.common.enumerations.EnumerationCartesian;
 import org.xcsp.modeler.definitions.ICtr;
 
 import constraints.extension.Extension;
@@ -197,7 +201,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		return Stream.of(ctrs).allMatch(c -> c.isGuaranteedAC());
 	}
 
-	public static final int howManyVarsWithin(int[] sizes, int spaceLimitation) {
+	public static final int howManyVarsWithin(int[] sizes, long spaceLimitation) {
 		double limit = Math.pow(2, spaceLimitation);
 		Arrays.sort(sizes);
 		double prod = 1;
@@ -207,7 +211,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		return prod > limit ? (sizes.length - i - 1) : ALL;
 	}
 
-	public static final int howManyVarsWithin(Variable[] vars, int spaceLimitation) {
+	public static final int howManyVarsWithin(Variable[] vars, long spaceLimitation) {
 		return howManyVarsWithin(Stream.of(vars).mapToInt(x -> x.dom.size()).toArray(), spaceLimitation);
 	}
 
@@ -248,6 +252,32 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 			if (c.futvars.size() == 0)
 				cost = Kit.addSafe(cost, c.costOfCurrInstantiation());
 		return cost;
+	}
+
+	public static int[][] buildTable(Constraint... ctrs) {
+		LinkedHashSet<Variable> set = new LinkedHashSet<>();
+		for (Constraint c : ctrs)
+			for (Variable x : c.scp)
+				set.add(x);
+		Variable[] scp = set.parallelStream().toArray(Variable[]::new);
+		int[][] vaps = Stream.of(ctrs).map(c -> IntStream.range(0, c.scp.length).map(i -> Utilities.indexOf(c.scp[i], scp)).toArray()).toArray(int[][]::new);
+		int[][] tmps = Stream.of(ctrs).map(c -> c.tupleManager.localTuple).toArray(int[][]::new);
+		List<int[]> list = new ArrayList<>();
+		EnumerationCartesian ec = new EnumerationCartesian(Variable.domSizeArrayOf(scp, true));
+		while (ec.hasNext()) {
+			int[] tuple = ec.next();
+			boolean inconsistent = false;
+			for (int i = 0; !inconsistent && i < ctrs.length; i++) {
+				int[] vap = vaps[i];
+				int[] t = tmps[i];
+				IntStream.range(0, t.length).forEach(j -> t[j] = tuple[vap[j]]);
+				if (!ctrs[i].checkIndexes(t))
+					inconsistent = true;
+			}
+			if (!inconsistent)
+				list.add(IntStream.range(0, scp.length).map(i -> scp[i].dom.toVal(tuple[i])).toArray());
+		}
+		return Kit.intArray2D(list);
 	}
 
 	/*************************************************************************
