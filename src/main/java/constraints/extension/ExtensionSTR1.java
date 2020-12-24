@@ -99,7 +99,6 @@ public class ExtensionSTR1 extends ExtensionGlobal {
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
-		// pb.stuff.updateStatsForSTR(set);
 		int depth = problem.solver.depth();
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {

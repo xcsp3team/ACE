@@ -201,7 +201,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		return Stream.of(ctrs).allMatch(c -> c.isGuaranteedAC());
 	}
 
-	public static final int howManyVarsWithin(int[] sizes, long spaceLimitation) {
+	public static final int howManyVarsWithin(int[] sizes, int spaceLimitation) {
 		double limit = Math.pow(2, spaceLimitation);
 		Arrays.sort(sizes);
 		double prod = 1;
@@ -211,7 +211,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		return prod > limit ? (sizes.length - i - 1) : ALL;
 	}
 
-	public static final int howManyVarsWithin(Variable[] vars, long spaceLimitation) {
+	public static final int howManyVarsWithin(Variable[] vars, int spaceLimitation) {
 		return howManyVarsWithin(Stream.of(vars).mapToInt(x -> x.dom.size()).toArray(), spaceLimitation);
 	}
 

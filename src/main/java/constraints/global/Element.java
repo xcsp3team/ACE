@@ -25,6 +25,7 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 
 	protected final Variable[] list;
 	protected final int startAt;
+
 	protected final Variable ivar; // index variable
 	protected final Domain idom;
 	protected final int ipos; // index position in scope
@@ -98,9 +99,9 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 	 * Such a constraint is satisfied iff list[index] = value
 	 */
 	public static class ElementVariable extends Element implements TagFilteringCompleteAtEachCall {
+
 		private final Variable vvar; // value variable
 		private final Domain vdom;
-
 		private final int vpos; // value variable position in scope
 
 		@Override

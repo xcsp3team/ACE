@@ -186,7 +186,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 	public static final class AllDifferentWeak extends AllDifferent implements TagGACUnguaranteed { // not call filtering-complete
 		private Set<Integer> set;
 
-		private int mode = 0; // hard coding
+		private int mode = 0; // TODO hard coding
 
 		public AllDifferentWeak(Problem problem, Variable[] scope) {
 			super(problem, scope);

@@ -932,7 +932,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 				if (dy.size() == 1 && dz.size() == 1)
 					return dx.removeIfPresent(dy.firstValue() == dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
 				if (dx.last() == 0)
-					return enforceNE(dy, dz); // x = 0 => y != z
+					return (dy.size() > 1 && dz.size() > 1) || (enforceNE(dy, dz) && entailed()); // x = 0 => y != z
 				if (dx.first() == 1)
 					return enforceEQ(dy, dz); // x = 1 => y = z
 				assert dx.size() == 2;
@@ -943,8 +943,10 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 				int v = dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) : dz.firstCommonValueWith(dy);
 				if (v != Integer.MAX_VALUE)
 					residue = v;
-				else
+				else {
 					dx.removeSafely(1);
+					return entailed(); // since dy and dz are disjoint
+				}
 				return true;
 			}
 		}
@@ -969,7 +971,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 				if (dx.last() == 0)
 					return enforceEQ(dy, dz); // x = 0 => y = z
 				if (dx.first() == 1)
-					return enforceNE(dy, dz); // x = 1 => y != z
+					return (dy.size() > 1 && dz.size() > 1) || (enforceNE(dy, dz) && entailed()); // x = 1 => y != z
 				assert dx.size() == 2;
 				// we know that (x,1) is supported because the domain of y and/or the domain of z is not singleton
 				if (dy.presentValue(residue) && dz.presentValue(residue))
@@ -978,8 +980,10 @@ public abstract class PrimitiveTernary extends Primitive implements TagGACGuaran
 				int v = dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) : dz.firstCommonValueWith(dy);
 				if (v != Integer.MAX_VALUE)
 					residue = v;
-				else
+				else {
 					dx.removeSafely(0);
+					return entailed(); // since dy and dz are disjoint
+				}
 				return true;
 			}
 		}

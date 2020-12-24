@@ -1751,6 +1751,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity channel(Var[] list, int startIndex, Var value) {
 		control(Stream.of(list).noneMatch(x -> x == null) && startIndex == 0);
 		control(Variable.areAllInitiallyBoolean((Variable[]) list) && ((Variable) value).dom.areInitValuesExactly(range(list.length)));
+		// exactly((VariableInteger[]) list, 1, 1); // TODO what would be the benefit of posting it?
 		return forall(range(list.length), i -> addCtr(new LogEQ2(this, (Variable) list[i], (Variable) value, i))); // intension(iff(list[i], eq(value, i))));
 	}
 
