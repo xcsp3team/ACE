@@ -10,28 +10,29 @@
  */
 package constraints.extension.structures;
 
+import java.util.stream.IntStream;
+
 import constraints.Constraint;
-import variables.Variable;
 
 public class Tries extends ExtensionStructure {
 
 	/**
 	 * The roots of tries. There is a trie per variable as in [Gent et al. Data structures for GAC for extensional constraints. CP'07]
 	 */
-	private Node[] trieRoots;
-
-	/**
-	 * Used to memorize in which trie we are currently working.
-	 */
-	private int currentTrieIndex;
-
-	private int[] tmp;
+	private final Node[] trieRoots;
 
 	/**
 	 * When set to true, the array childs of each node is initialized, what allows to iterate all childs of a node without traversing the parent. <br>
 	 * It remains to prove that it represents an optimization. One drawback is space consumption.
 	 */
 	private boolean directAccess;
+
+	private final int[] tmp;
+
+	/**
+	 * Used to memorize in which trie we are currently working.
+	 */
+	private int currentTrieIndex;
 
 	class Node {
 		int idx;
@@ -61,23 +62,22 @@ public class Tries extends ExtensionStructure {
 
 		// in the ith trie, the ith variable has been put as first variable ; see [Gent et al. CP'07]
 		int adjustedPosition = position == 0 ? currentTrieIndex : position <= currentTrieIndex ? position - 1 : position;
-		int idx = firstRegisteredCtr().indexesMatchValues ? tuple[adjustedPosition]
+		int a = firstRegisteredCtr().indexesMatchValues ? tuple[adjustedPosition]
 				: firstRegisteredCtr().scp[adjustedPosition].dom.toIdx(tuple[adjustedPosition]);
 
-		Node previousChild = null;
-		Node currentChild = node.firstChild;
-		while (currentChild != null && currentChild.idx <= idx) {
+		Node previousChild = null, currentChild = node.firstChild;
+		while (currentChild != null && currentChild.idx <= a) {
 			previousChild = currentChild;
 			currentChild = currentChild.firstSibling;
 		}
 		Node child = null;
 		if (previousChild == null) {
-			child = new Node(idx, node, node.firstChild);
+			child = new Node(a, node, node.firstChild);
 			node.firstChild = child;
-		} else if (previousChild.idx == idx) {
+		} else if (previousChild.idx == a) {
 			child = previousChild;
 		} else {
-			child = new Node(idx, node, previousChild.firstSibling);
+			child = new Node(a, node, previousChild.firstSibling);
 			previousChild.firstSibling = child;
 		}
 		addTuple(child, tuple, position + 1);
@@ -86,16 +86,11 @@ public class Tries extends ExtensionStructure {
 	private void buildChildsArrays(Node node, int position) {
 		if (position == trieRoots.length)
 			return;
-
 		int adjustedPosition = position == 0 ? currentTrieIndex : position <= currentTrieIndex ? position - 1 : position;
-		Variable var = firstRegisteredCtr().scp[adjustedPosition];
-		node.childs = new Node[var.dom.initSize()];
-
-		Node child = node.firstChild;
-		while (child != null) {
+		node.childs = new Node[firstRegisteredCtr().scp[adjustedPosition].dom.initSize()];
+		for (Node child = node.firstChild; child != null; child = child.firstSibling) {
 			node.childs[child.idx] = child;
 			buildChildsArrays(child, position + 1);
-			child = child.firstSibling;
 		}
 	}
 
@@ -106,28 +101,20 @@ public class Tries extends ExtensionStructure {
 			for (int[] tuple : tuples)
 				addTuple(trieRoots[i], tuple, 0);
 		}
-		// getFirstAssociatedConstraint().setIndexValueSimilarity(true);
 		assert controlNode(trieRoots[0].firstChild, 0);
-
-		if (directAccess) {
+		if (directAccess)
 			for (int i = 0; i < trieRoots.length; i++) {
 				currentTrieIndex = i;
 				buildChildsArrays(trieRoots[i], 0);
 			}
-		}
-		// System.out.println("TRIES setsupports");
 	}
 
 	public Tries(Constraint ctr, boolean directAccess) {
 		super(ctr);
 		this.directAccess = directAccess;
-
 		// roots of tries are built ; -1 as special index and null as parent
-		trieRoots = new Node[ctr.scp.length];
-		for (int i = 0; i < trieRoots.length; i++)
-			trieRoots[i] = new Node(-1, null);
-
-		tmp = new int[trieRoots.length];
+		this.trieRoots = IntStream.range(0, ctr.scp.length).mapToObj(i -> new Node(-1, null)).toArray(Node[]::new);
+		this.tmp = new int[trieRoots.length];
 	}
 
 	@Override
@@ -154,17 +141,11 @@ public class Tries extends ExtensionStructure {
 				int[] t = seekNextTuple(child, position + 1);
 				if (t != null)
 					return t;
-				else {
-					child = child.firstSibling;
-					if (child == null)
-						return null;
-				}
+				child = child.firstSibling;
 			} else {
 				child = node.firstChild;
 				while (child != null && child.idx < a)
 					child = child.firstSibling;
-				if (child == null)
-					return null;
 			}
 		} else {
 			child = node.firstChild;
@@ -174,12 +155,11 @@ public class Tries extends ExtensionStructure {
 				int[] t = seekNextTuple(child, position + 1);
 				if (t != null)
 					return t;
-				else
-					child = child.firstSibling;
+				child = child.firstSibling;
 			}
-			if (child == null)
-				return null;
 		}
+		if (child == null)
+			return null;
 		for (int i = 1; i < position; i++) {
 			realPosition = i <= currentTrieIndex ? i - 1 : i;
 			tmp[realPosition] = current[realPosition];
@@ -198,27 +178,20 @@ public class Tries extends ExtensionStructure {
 		tmp[x] = a;
 		if (directAccess) {
 			Node child = trieRoots[currentTrieIndex].childs[a];
-			if (child == null)
-				return null;
-			return seekNextTuple(child, 1);
+			return child == null ? null : seekNextTuple(child, 1);
 		}
 		Node child = trieRoots[currentTrieIndex].firstChild;
 		while (child != null && child.idx < a)
 			child = child.firstSibling;
-		if (child == null || child.idx > a)
-			return null;
-		return seekNextTuple(child, 1);
+		return child == null || child.idx > a ? null : seekNextTuple(child, 1);
 	}
 
 	public int display(Node node, int position) {
 		System.out.println(position + " " + node.idx);
-		int sum = (position == trieRoots.length - 1 ? 1 : 0);
-		Node child = node.firstChild;
-		while (child != null) {
-			sum += display(child, position + 1);
-			child = child.firstSibling;
-		}
-		return sum;
+		int cnt = position == trieRoots.length - 1 ? 1 : 0;
+		for (Node child = node.firstChild; child != null; child = child.firstSibling)
+			cnt += display(child, position + 1);
+		return cnt;
 	}
 
 	public void display() {
@@ -237,11 +210,4 @@ public class Tries extends ExtensionStructure {
 			return false;
 		return true;
 	}
-
-	// private boolean controlTries() {
-	// for (int i = 0; i < trieRoots.length; i++)
-	//
-	//
-	//
-	// }
 }

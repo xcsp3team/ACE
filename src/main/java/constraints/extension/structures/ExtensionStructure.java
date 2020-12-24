@@ -71,16 +71,14 @@ public abstract class ExtensionStructure implements RegisteringCtrs {
 
 	public int[] computeVariableSymmetryMatching(int[][] tuples, boolean positive) {
 		Kit.control(firstRegisteredCtr().problem.head.control.problem.isSymmetryBreaking());
-		Constraint ctr = firstRegisteredCtr();
-		if (!Variable.haveSameDomainType(ctr.scp)) {
-			return Kit.range(1, ctr.scp.length);
-		}
-		// TODO just above, there exists a possibility of finding symmetry of variables (but not a single group)
-		if (ctr.scp.length == 1)
+		Constraint c = firstRegisteredCtr();
+		if (!Variable.haveSameDomainType(c.scp))
+			return Kit.range(1, c.scp.length); // TODO there exists a possibility of finding symmetry of variables (but not a single group)
+		if (c.scp.length == 1)
 			return new int[] { 1 };
-		if (ctr.scp.length == 2) {
-			Domain dom0 = ctr.scp[0].dom, dom1 = ctr.scp[1].dom;
-			int[] tmp = ctr.tupleManager.localTuple;
+		if (c.scp.length == 2) {
+			Domain dom0 = c.scp[0].dom, dom1 = c.scp[1].dom;
+			int[] tmp = c.tupleManager.localTuple;
 			for (int[] tuple : tuples) {
 				tmp[0] = dom0.toIdx(tuple[1]);
 				tmp[1] = dom1.toIdx(tuple[0]);
@@ -92,7 +90,7 @@ public abstract class ExtensionStructure implements RegisteringCtrs {
 		Set<IntArrayHashKey> set = new HashSet<>();
 		for (int[] t : tuples)
 			set.add(new IntArrayHashKey(t));
-		int[] permutation = new int[ctr.scp.length];
+		int[] permutation = new int[c.scp.length];
 		int color = 1;
 		for (int i = 0; i < permutation.length; i++)
 			if (permutation[i] == 0) {
