@@ -214,8 +214,6 @@ public final class NogoodRecorder {
 	}
 
 	private void addNogood(int[] decs, boolean toBeSorted) {
-		// if (decs.length == 1)
-		// System.out.println("ggggggg111");
 		if (nNogoods < nogoods.length) {
 			decs = toBeSorted ? Kit.sort(decs) : decs;
 			Nogood nogood = nogoods[nNogoods++] = new Nogood(decs);
