@@ -1,6 +1,6 @@
 
 <div id="logo" style="margin-left:2cm">
-<img width="35%" src="src/main/resources/logoAbsConLarge.png" alt="logo"/>
+<img width="35%" src="src/main/resources/logoAce.png" alt="logo"/>
 </div>
 
 ACE (AbsCon Essence) is an open-source Java-written Constraint Solver, developed by Christophe Lecoutre (CRIL).
