@@ -33,7 +33,7 @@ public abstract class PrimitiveLogic extends Primitive implements TagGACGuarante
 		this.x = x;
 		this.dx = x.dom;
 		this.list = list;
-		control(list.length > 1 && !Kit.isPresent(x, list) && Variable.areAllInitiallyBoolean(scp), "Variables must be o1");
+		control(list.length > 1 && !Kit.isPresent(x, list) && Variable.areAllInitiallyBoolean(scp), "Variables must be 01");
 	}
 
 	// ************************************************************************
@@ -47,9 +47,9 @@ public abstract class PrimitiveLogic extends Primitive implements TagGACGuarante
 			case OR:
 				return list.length == 2 ? new LogEqOr2(pb, x, list) : new LogEqOr(pb, x, list);
 			case AND:
-				return list.length == 2 ? new LogEqAnd2(pb, x, list) : null;
+				return list.length == 2 ? new LogEqAnd2(pb, x, list) : new LogEqAnd(pb, x, list);
 			default:
-				System.out.println("nnnnn");
+				// System.out.println("nnnnn");
 				return null; // throw new AssertionError();
 			}
 		}
@@ -99,6 +99,77 @@ public abstract class PrimitiveLogic extends Primitive implements TagGACGuarante
 			}
 		}
 
+		public static final class LogEqAnd extends PrimitiveLogicEq implements TagFilteringCompleteAtEachCall {
+
+			@Override
+			public final boolean checkValues(int[] t) {
+				if (t[0] == 0) { // if x = 0
+					for (int i = 1; i < t.length; i++)
+						if (t[i] == 0)
+							return true;
+					return false;
+				}
+				// x == 1
+				for (int v : t)
+					if (v == 0)
+						return false;
+				return true;
+			}
+
+			private Variable sentinel1, sentinel2; // for variables in the list supporting (x,0)
+
+			private Variable findSentinel(Variable other) {
+				for (Variable y : list)
+					if (y != other && y.dom.first() == 0)
+						return y;
+				return null;
+			}
+
+			public LogEqAnd(Problem pb, Variable x, Variable[] list) {
+				super(pb, x, list);
+				this.sentinel1 = list[0];
+				this.sentinel2 = list[1];
+			}
+
+			@Override
+			public boolean runPropagator(Variable evt) {
+				for (Variable y : list)
+					if (y.dom.last() == 0)
+						return dx.removeIfPresent(1) && entailed(); // for some j, y_j = 0 => x = 0
+				assert Stream.of(list).allMatch(y -> y.dom.last() == 1) : "1 should be present in the domain of every variable of the list";
+				if (dx.first() == 1) { // x = 1 => y_j = 1 for every j
+					for (Variable y : list)
+						y.dom.removeIfPresent(0); // no possible inconsistency since 1 is also present
+					return entailed();
+				}
+				// it remains to check that (x,0) is supported (as well as any (y_j,0) equivalently)
+				if (dx.last() == 0) { // if x=0, we need two valid sentinels
+					if (sentinel1.dom.first() == 1) {
+						Variable y = findSentinel(sentinel2);
+						if (y == null)
+							return sentinel2.dom.remove(1) && entailed();
+						sentinel1 = y;
+					}
+					if (sentinel2.dom.first() == 1) {
+						Variable y = findSentinel(sentinel1);
+						if (y == null)
+							return sentinel1.dom.remove(1) && entailed();
+						sentinel2 = y;
+					}
+					return true;
+				}
+				// we just need one sentinel
+				if (sentinel1.dom.first() == 0 || sentinel2.dom.first() == 0)
+					return true;
+				for (Variable y : list)
+					if (y.dom.first() == 0) {
+						sentinel1 = y;
+						return true;
+					}
+				return dx.remove(0) && entailed();
+			}
+		}
+
 		public static final class LogEqOr2 extends PrimitiveLogicEq implements TagFilteringCompleteAtEachCall {
 
 			Variable y, z;
@@ -140,7 +211,7 @@ public abstract class PrimitiveLogic extends Primitive implements TagGACGuarante
 			}
 		}
 
-		public static final class LogEqOr extends PrimitiveLogicEq {
+		public static final class LogEqOr extends PrimitiveLogicEq implements TagFilteringCompleteAtEachCall {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -174,33 +245,32 @@ public abstract class PrimitiveLogic extends Primitive implements TagGACGuarante
 
 			@Override
 			public boolean runPropagator(Variable evt) {
-				if (evt != null && evt != x && evt.dom.first() == 1)
-					return dx.removeIfPresent(0) && entailed(); // for some j, y_j = 1 => x = 1
+				for (Variable y : list)
+					if (y.dom.first() == 1)
+						return dx.removeIfPresent(0) && entailed(); // for some j, y_j = 1 => x = 1
 				assert Stream.of(list).allMatch(y -> y.dom.first() == 0) : "0 should be present in the domain of every variable of the list";
-				if (dx.last() == 0) { // x = 0 => y_j = 0 for any j
+				if (dx.last() == 0) { // x = 0 => y_j = 0 for every j
 					for (Variable y : list)
 						y.dom.removeIfPresent(1); // no possible inconsistency since 0 is also present
 					return entailed();
 				}
 				// it remains to check that (x,1) is supported (as well as any (y_j,1) equivalently)
-				if (dx.first() == 1) { // we need two valid sentinels
+				if (dx.first() == 1) { // if x=1, we need two valid sentinels
 					if (sentinel1.dom.last() == 0) {
 						Variable y = findSentinel(sentinel2);
 						if (y == null)
 							return sentinel2.dom.remove(0) && entailed();
-						else
-							sentinel1 = y;
+						sentinel1 = y;
 					}
 					if (sentinel2.dom.last() == 0) {
 						Variable y = findSentinel(sentinel1);
 						if (y == null)
 							return sentinel1.dom.remove(0) && entailed();
-						else
-							sentinel2 = y;
+						sentinel2 = y;
 					}
 					return true;
 				}
-				// we just need one sentinel
+				// if dom(x) = 01, we just need one sentinel
 				if (sentinel1.dom.last() == 1 || sentinel2.dom.last() == 1)
 					return true;
 				for (Variable y : list)

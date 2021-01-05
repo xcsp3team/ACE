@@ -166,9 +166,10 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		MapAtt m = new MapAtt("Preprocessing");
 		m.put("eff", nEffectiveFilterings());
 		m.putIf("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
+		m.put("nValues", Variable.nValidValuesFor(solver.problem.variables));
 		if (solver.propagation instanceof GAC)
 			m.put("nACremovedValues", ((GAC) (solver.propagation)).nPreproRemovals);
-		m.put("nTotalRemovedValues", nPreproRemovedValues);
+		// m.put("nTotalRemovedValues", nPreproRemovedValues);
 		m.put("inconsistency", nPreproInconsistencies > 0);
 		m.separator();
 		if (nPreproRemovedTuples > 0 || nPreproAddedNogoods > 0 || nPreproAddedCtrs > 0) {

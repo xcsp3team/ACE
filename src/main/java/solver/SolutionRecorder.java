@@ -313,7 +313,7 @@ public final class SolutionRecorder {
 				return true;
 		}
 		Constraint c = Constraint.firstUnsatisfiedHardConstraint(solver.problem.constraints);
-		Kit.control(c == null, () -> "Problem with last solution: constraint " + c + " not satisfied : ");
+		Kit.control(c == null, () -> "Problem with last solution: constraint " + c + " " + c.getClass().getName() + " not satisfied : ");
 		return true;
 	}
 }

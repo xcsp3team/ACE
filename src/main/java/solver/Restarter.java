@@ -44,12 +44,15 @@ public class Restarter implements ObserverRuns {
 	@Override
 	public void beforeRun() {
 		numRun++;
-		if (nRestartsSinceLastReset == setting.nRestartsResetPeriod) {
+		if ((solver.restarter.numRun - solver.solRecorder.lastSolutionRun) % setting.nRestartsResetPeriod == 0) {
+			// if (nRestartsSinceLastReset == setting.nRestartsResetPeriod) {
 			nRestartsSinceLastReset = 0;
 			baseCutoff = baseCutoff * setting.nRestartsResetCoefficient;
-			Kit.log.info("BaseCutoff reset to " + baseCutoff);
+			System.out.println("    ...resetting restart cutoff to " + baseCutoff);
 		}
-		if (forceRootPropagation || (settingsGeneral.framework == TypeFramework.COP && numRun - 1 == solver.solRecorder.lastSolutionRun)) {
+		if (forceRootPropagation || (settingsGeneral.framework == TypeFramework.COP && numRun - 1 == solver.solRecorder.lastSolutionRun))
+
+		{
 			if (solver.propagation.runInitially() == false) // we run propagation if a solution has just been found (since the objective constraint has changed)
 				solver.stopping = EStopping.FULL_EXPLORATION;
 			forceRootPropagation = false;

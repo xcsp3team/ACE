@@ -509,7 +509,7 @@ public class Control {
 		public long cutoff = addL("cutoff", "r_c", 10, s_c); // for COP, this value is initially multiplied by 10 in Restarter
 		public double factor = addD("factor", "r_f", 1.1, s_f);
 		public final ERestartsMeasure measure = addE("measure", "r_m", ERestartsMeasure.FAILED, s_m);
-		public int nRestartsResetPeriod = addI("nRestartsResetPeriod", "r_rrp", Integer.MAX_VALUE, s_rrp);
+		public int nRestartsResetPeriod = addI("nRestartsResetPeriod", "r_rrp", 90, s_rrp);
 		public final int nRestartsResetCoefficient = addI("nRestartsResetCoefficient", "r_rrc", 2, s_rrc);
 		public final int varhResetPeriod = addI("varhResetPeriod", "r_rp", Integer.MAX_VALUE, "");
 		public final int varhSolResetPeriod = addI("varhSolResetPeriod", "r_srp", 30, "");

@@ -265,7 +265,9 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	public static int nValidValuesFor(Variable... vars) {
-		long l = Stream.of(vars).mapToLong(x -> x.dom.size()).sum();
+		long l = 0;
+		for (Variable x : vars)
+			l += x.dom.size();
 		return Math.toIntExact(l);
 	}
 

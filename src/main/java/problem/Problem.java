@@ -974,7 +974,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// tree2.sons[i] = change((XNodeParent) tree2.sons[i]);
 		// }
 		// }
-		// System.out.println("tree3 " + tree);
+		// System.out.println("tree " + tree);
 		return addCtr(new Intension(this, scp, tree));
 	}
 

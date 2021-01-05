@@ -244,7 +244,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 		@Override
 		public final void limit(long newLimit) {
 			this.limit = newLimit;
-			control(minComputableObjectiveValue() <= limit && limit <= maxComputableObjectiveValue());
+			control(minComputableObjectiveValue() - 1 <= limit && limit <= maxComputableObjectiveValue() + 1);
 		}
 
 		public ExtremumCst(Problem pb, Variable[] list, long limit) {
