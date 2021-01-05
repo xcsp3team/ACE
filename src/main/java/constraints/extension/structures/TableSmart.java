@@ -1148,7 +1148,6 @@ public class TableSmart extends ExtensionStructure {
 			}
 
 			private void collectThroughInvalidValues() {
-				// Kit.prn("here1");
 				int last1 = domx.last(), first2 = domy.first();
 				if (!scp[x].assigned()) {
 					int cnt = 0;
@@ -1183,7 +1182,6 @@ public class TableSmart extends ExtensionStructure {
 			}
 
 			private void collectThroughValidValues() {
-				// Kit.prn("here3");
 				int last1 = domx.last(), first2 = domy.first();
 				if (!scp[x].assigned())
 					for (int a = domx.last(); a != -1 && (strict ? a > first2 + cst : a >= first2 + cst); a = domx.prev(a))

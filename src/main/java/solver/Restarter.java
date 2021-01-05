@@ -82,7 +82,7 @@ public class Restarter implements ObserverRuns {
 	 */
 	private SettingRestarts setting;
 
-	private SettingGeneral settingsGeneral;
+	protected SettingGeneral settingsGeneral;
 
 	/**
 	 * The measure used for handling cutoff values.
@@ -136,9 +136,7 @@ public class Restarter implements ObserverRuns {
 		if (settingsGeneral.framework == TypeFramework.COP)
 			setting.cutoff *= 10;
 		reset();
-
-		// for (int i = 0; i < 50; i++)
-		// System.out.println(lubyCutoffFor(i));
+		// for (int i = 0; i < 50; i++) System.out.println(lubyCutoffFor(i));
 	}
 
 	private long cnt;
@@ -182,11 +180,14 @@ public class Restarter implements ObserverRuns {
 				heuristic.freezeVariables(solution);
 				for (int i = heuristic.fragment.limit; i >= 0; i--) {
 					Variable x = solver.problem.variables[i];
-					solver.assign(x, solution[x.num]);
-					boolean consistent = solver.propagation.runAfterAssignment(x);
-					if (!consistent) {
-						solver.backtrack(x);
-						break;
+					int a = solution[x.num];
+					if (x.dom.present(a)) { // because the objective constraint may change, this is possible
+						solver.assign(x, solution[x.num]);
+						boolean consistent = solver.propagation.runAfterAssignment(x);
+						if (!consistent) {
+							solver.backtrack(x);
+							break;
+						}
 					}
 				}
 			}
@@ -194,7 +195,9 @@ public class Restarter implements ObserverRuns {
 
 		@Override
 		public void afterRun() {
-			((Solver) solver).backtrackToTheRoot(); // because see Method doRun in SolverBacktrack
+			if (this.settingsGeneral.framework == TypeFramework.COP)
+				solver.problem.optimizer.afterRun();
+			((Solver) solver).backtrackToTheRoot(); // because see Method doRun in Solver
 		}
 
 		private final HeuristicFreezing heuristic;
