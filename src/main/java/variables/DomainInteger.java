@@ -106,7 +106,7 @@ public abstract class DomainInteger extends LinkedSetOrderedWithBits implements 
 		@Override
 		protected int computeTypeIdentifier() {
 			// TAG_RANGE used specially to avoid confusion with a domain only containing the two values min and max
-			return Domain.typeIdentifierFor(new int[] { min, max, TAG_RANGE });
+			return Domain.typeIdentifierFor(min, max, TAG_RANGE);
 		}
 
 		public DomainRange(Variable var, int min, int max) {

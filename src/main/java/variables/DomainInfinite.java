@@ -22,7 +22,7 @@ public final class DomainInfinite implements Domain {
 	protected Integer typeIdentifier;
 
 	public final int typeIdentifier() {
-		return typeIdentifier != null ? typeIdentifier : (typeIdentifier = Domain.typeIdentifierFor(new int[] { Integer.MIN_VALUE, Integer.MAX_VALUE }));
+		return typeIdentifier != null ? typeIdentifier : (typeIdentifier = Domain.typeIdentifierFor(Integer.MIN_VALUE, Integer.MAX_VALUE));
 		// should we be careful about avoiding confusion with other types of domains?
 	}
 

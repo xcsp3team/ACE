@@ -28,19 +28,17 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 
 	protected final Variable ivar; // index variable
 	protected final Domain idom;
-	protected final int ipos; // index position in scope
+	protected final int ipos; // index variable position in scope
 
 	public Element(Problem pb, Variable[] list, int startAt, Variable index, Object value) {
-		super(pb, Utilities.collect(Variable.class, list, index, value)); // before, was collectDistinct (but put in the constructor of Constraint)
+		super(pb, Utilities.collect(Variable.class, list, index, value)); // value may be a variable
 		this.list = list;
 		this.startAt = startAt;
 		this.ivar = index;
 		this.idom = index.dom;
 		this.ipos = IntStream.range(0, scp.length).filter(i -> scp[i] == index).findFirst().getAsInt();
-		control(startAt == 0, "Starting at a value different from 0 not implemented yet");
+		control(startAt == 0, "Starting at a value different from 0 not completely implemented yet");
 		control(Variable.areAllDistinct(list) && index != value, "i=" + index + " x=" + Kit.join(list) + " v=" + value);
-		// control(this instanceof ElementConstant || Stream.of(list).allMatch(x -> x != index), "i=" + index + " X=" + Kit.join(list) + "
-		// v=" + value);
 		control(idom.areInitValuesExactly(pb.api.range(startAt, startAt + list.length)), " pb with " + this + " " + startAt);
 	}
 

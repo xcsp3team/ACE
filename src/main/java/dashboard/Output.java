@@ -274,7 +274,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 
 	public void afterData() { // not a method from an observer
 		MapAtt ia = head.problem.features.instanceAttributes(head.instanceNumber);
-		Kit.control(outputFileName == null);
+		// Kit.control(outputFileName == null);
 
 		String name = ia.entries().stream().filter(e -> e.getKey().equals(Output.NAME)).map(e -> e.getValue().toString()).findFirst().get();
 		outputFileName = outputFileNameFrom(name, head.control.settingsFilename);
