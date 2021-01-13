@@ -1316,9 +1316,9 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 		public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
 			switch (op) {
 			case EQ:
-				return new DivbEQ2(pb, x, y, k);
+				return x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0 && k > 1 ? new DivbEQ2(pb, x, y, k) : null;
 			case NE:
-				return new DivbNE2(pb, x, y, k);
+				return x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0 && k > 1 ? new DivbNE2(pb, x, y, k) : null;
 			default:
 				return null;
 			}
@@ -1326,7 +1326,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 
 		public PrimitiveBinaryDivb(Problem pb, Variable x, Variable y, int k) {
 			super(pb, x, y, k);
-			control(dx.firstValue() >= 0 && dy.firstValue() >= 0 && k > 1);
+			control(dx.firstValue() >= 0 && dy.firstValue() >= 0 && k > 1, dx.firstValue() + " " + dy.firstValue() + " " + k);
 		}
 
 		public static final class DivbEQ2 extends PrimitiveBinaryDivb {

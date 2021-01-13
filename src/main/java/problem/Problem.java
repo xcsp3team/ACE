@@ -781,7 +781,10 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			return values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
 		};
 
-		boolean similarTrees = trees.length > 1 && IntStream.range(1, trees.length).allMatch(i -> areSimilar(trees[0], trees[i]));
+		// if multiple occurrences of the same variable in a tree, there is a possible problem of reasoning with similar trees
+		boolean similarTrees = trees.length > 1 && Stream.of(trees).allMatch(tree -> tree.listOfVars().size() == tree.vars().length);
+		similarTrees = similarTrees && IntStream.range(1, trees.length).allMatch(i -> areSimilar(trees[0], trees[i]));
+
 		if (similarTrees) {
 			Var[] aux = api.array(idAux(), api.size(trees.length), doms.apply(0), "auxiliary variables");
 			Variable[] treeVars = (Variable[]) trees[0].vars();
@@ -885,7 +888,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (tree.vars().length == 1)
 			return intension1(tree);
 		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
-		Variable[] scp = (Variable[]) tree.vars();
+		Variable[] scp = (Variable[]) tree.vars(); // keep it here, after canonization
 		assert Variable.haveSameType(scp);
 
 		if (head.control.extension.convertingIntension(scp) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
@@ -965,16 +968,39 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				return sum(list, coeffs, basicCondition(tree));
 			}
 		}
+		// System.out.println("tree1 " + tree);
+		boolean b = scp[0] instanceof VariableInteger && scp.length == tree.listOfVars().size();
+		if (b) {
+			XNode<IVar>[] sons = tree.sons;
+			int cnt = 0;
+			if (tree.type == TypeExpr.EQ) {
+				for (int i = 0; i < sons.length; i++) {
+					if (sons[i] instanceof XNodeParent) {
+						cnt++;
+						XNode<IVar>[] grandsons = sons[i].sons;
+						boolean replaced = false;
+						for (int j = 0; j < grandsons.length; j++) {
+							if (grandsons[j] instanceof XNodeParent && grandsons[j].type != TypeExpr.SET) {
+								grandsons[j] = new XNodeLeaf<>(TypeExpr.VAR, replaceByVariable(grandsons[j]));
+								replaced = true;
+							}
+						}
+						if (replaced)
+							return intension(tree);
+					}
+				}
+			}
+			if (cnt > 1 || tree.type != TypeExpr.EQ) {
+				for (int i = 0; i < sons.length; i++) {
+					if (sons[i] instanceof XNodeParent && sons[i].type != TypeExpr.SET) {
+						sons[i] = new XNodeLeaf<>(TypeExpr.VAR, replaceByVariable(sons[i]));
+						return intension(tree);
+					}
+				}
+			}
+		}
 
-		// boolean replace = true;
-		// boolean b = tree2.type == TypeExpr.EQ && tree2.sons.length == 2 && tree2.sons[1].type == TypeExpr.VAR;
-		// if (!b) {
-		// for (int i = 0; i < tree2.sons.length; i++) {
-		// if (tree2.sons[i] instanceof XNodeParent)
-		// tree2.sons[i] = change((XNodeParent) tree2.sons[i]);
-		// }
-		// }
-		// System.out.println("tree " + tree);
+		// System.out.println("tree2 " + tree);
 		return addCtr(new Intension(this, scp, tree));
 	}
 

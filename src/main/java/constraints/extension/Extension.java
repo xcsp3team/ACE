@@ -201,7 +201,7 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 	public static Constraint build(Problem pb, Variable[] scp, Object tuples, boolean positive, Boolean starred) {
 		Kit.control(scp.length > 1 && Variable.haveSameType(scp));
 		Kit.control(Array.getLength(tuples) == 0 || Array.getLength(Array.get(tuples, 0)) == scp.length,
-				() -> "Badly formed extensional constraint " + scp.length + " " + Array.getLength(tuples));
+				() -> "Badly formed extensional constraint " + scp.length + " " + Array.getLength(Array.get(tuples, 0)));
 		if (starred == null)
 			starred = isStarPresent(tuples);
 		else
