@@ -165,8 +165,9 @@ public final class SolutionRecorder {
 		return s;
 	}
 
-	public String lastSolutionInJsonFormat(boolean discardAuxiliary) {
+	public String lastSolutionInJsonFormat() {
 		assert found > 0;
+		boolean discardAuxiliary = !solver.head.control.general.jsonAux;
 		String PREFIX = "   ";
 		StringBuilder sb = new StringBuilder(PREFIX).append("{\n");
 		for (VarEntity va : solver.problem.varEntities.allEntities) {
@@ -205,7 +206,7 @@ public final class SolutionRecorder {
 				lock.set(true);
 				System.out.println();
 				if (found > 0 && solver.problem.variables.length <= solver.head.control.general.jsonLimit)
-					System.out.println("\n  Solution " + found + " in JSON format:\n" + lastSolutionInJsonFormat(false) + "\n");
+					System.out.println("\n  Solution " + found + " in JSON format:\n" + lastSolutionInJsonFormat() + "\n");
 				if (fullExploration) {
 					if (found == 0)
 						System.out.println(preprint("s UNSATISFIABLE", GREEN));
@@ -293,7 +294,7 @@ public final class SolutionRecorder {
 		}
 		// The following code must stay after storeSolution
 		if (solver.head.control.general.verbose > 1)
-			log.config(lastSolutionInJsonFormat(false) + "\n");
+			log.config(lastSolutionInJsonFormat() + "\n");
 		String s = lastSolutionInXmlFormat(); // keep the call separated in order to possibly secure its quick output (see code)
 		if (solver.head.control.general.verbose > 2 || solver.head.control.general.xmlAllSolutions)
 			log.config(" " + s + "\n");

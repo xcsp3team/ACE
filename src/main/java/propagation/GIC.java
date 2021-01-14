@@ -56,12 +56,12 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		nITests++;
 		solver.resetNoSolutions();
 		solver.assign(x, a);
-		HeuristicVariables h = ((Solver) solver).heuristic;
+		HeuristicVariables h = solver.heuristic;
 		solver.heuristic = heuristic;
 		solver.solRecorder.limit = 1;
 		boolean inverse = enforceArcConsistencyAfterAssignment(x) && solver.doRun().stopping == EStopping.REACHED_GOAL;
 		solver.solRecorder.limit = baseNbSolutionsLimit;
-		((Solver) solver).heuristic = h;
+		solver.heuristic = h;
 		if (inverse)
 			handleNewSolution(x, a);
 		else

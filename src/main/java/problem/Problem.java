@@ -815,17 +815,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	// ***** Constraint intension
 	// ************************************************************************
 
-	private XNode change(XNodeParent<IVar> tree) {
-		System.out.println("change " + tree);
-		for (int i = 0; i < tree.sons.length; i++) {
-			if (tree.sons[i] instanceof XNodeParent)
-				tree.sons[i] = change((XNodeParent) tree.sons[i]);
-		}
-		assert Stream.of(tree.sons).allMatch(son -> son instanceof XNodeLeaf);
-		Variable aux = replaceByVariable(tree);
-		return new XNodeLeaf<>(TypeExpr.VAR, aux);
-	}
-
 	// binary
 	private Matcher x_relop_y = new Matcher(node(relop, var, var));
 	private Matcher x_ariop_y__relop_k = new Matcher(node(relop, node(ariop, var, var), val));
@@ -969,28 +958,30 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			}
 		}
 		// System.out.println("tree1 " + tree);
-		boolean b = scp[0] instanceof VariableInteger && scp.length == tree.listOfVars().size();
+		boolean b = scp[0] instanceof VariableInteger && scp.length + 1 >= tree.listOfVars().size(); // at most a variable occurring twice
 		if (b) {
 			XNode<IVar>[] sons = tree.sons;
-			int cnt = 0;
+			int nParentSons = 0;
 			if (tree.type == TypeExpr.EQ) {
-				for (int i = 0; i < sons.length; i++) {
-					if (sons[i] instanceof XNodeParent) {
-						cnt++;
-						XNode<IVar>[] grandsons = sons[i].sons;
-						boolean replaced = false;
+				// we reason with grandsons for avoiding recursive similar changes when making replacements
+				for (XNode<IVar> son : sons) {
+					if (son instanceof XNodeParent) {
+						nParentSons++;
+						XNode<IVar>[] grandsons = son.sons;
+						boolean modified = false;
 						for (int j = 0; j < grandsons.length; j++) {
 							if (grandsons[j] instanceof XNodeParent && grandsons[j].type != TypeExpr.SET) {
 								grandsons[j] = new XNodeLeaf<>(TypeExpr.VAR, replaceByVariable(grandsons[j]));
-								replaced = true;
+								modified = true;
 							}
 						}
-						if (replaced)
+						if (modified)
 							return intension(tree);
 					}
 				}
 			}
-			if (cnt > 1 || tree.type != TypeExpr.EQ) {
+			if (tree.type != TypeExpr.EQ || nParentSons > 1) {
+				// if not EQ or if more than one parent son then we flatten the first parent son
 				for (int i = 0; i < sons.length; i++) {
 					if (sons[i] instanceof XNodeParent && sons[i].type != TypeExpr.SET) {
 						sons[i] = new XNodeLeaf<>(TypeExpr.VAR, replaceByVariable(sons[i]));
@@ -1000,7 +991,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			}
 		}
 
-		// System.out.println("tree2 " + tree);
+		System.out.println("tree2 " + tree);
 		return addCtr(new Intension(this, scp, tree));
 	}
 

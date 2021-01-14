@@ -191,7 +191,7 @@ public final class ReductionOperator {
 		Variable[] variables = solver.problem.variables;
 		if (eliminateNotInProofVariables) {
 			// System.out.println(" proof at level = " + (solver.getCurrentDepth() + 1));
-			boolean[] proofVariables = ((Solver) solver).proofer.proofVariables[solver.depth()];
+			boolean[] proofVariables = solver.proofer.proofVariables[solver.depth()];
 			// TODO paS PLUS 1 A PRIORI
 			for (int i = 0; i < proofVariables.length; i++)
 				if (proofVariables[i]) {

@@ -63,7 +63,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		for (int cnt = 0; cnt < nPassesLimit; cnt++) {
 			long nBefore = nEffectiveSingletonTests;
 			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
-				if (onlyNeighbours && !x.isNeighbourOf(((Solver) solver).decRecorder.varOfLastDecisionIf(true)))
+				if (onlyNeighbours && !x.isNeighbourOf(solver.decRecorder.varOfLastDecisionIf(true)))
 					continue;
 				if (x.dom.size() == 1) {
 					nFoundSingletons++;
@@ -474,7 +474,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 
 		public SAC3(Solver solver) {
 			super(solver);
-			this.queueOfCells = new QueueForSAC3((Solver) solver, true);
+			this.queueOfCells = new QueueForSAC3(solver, true);
 			this.lastConflictMode = 1; // hard coding
 		}
 
@@ -506,8 +506,11 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				assert !x.assigned() && x.dom.present(a) && queue.isEmpty();
 				solver.assign(x, a);
 				if (enforceArcConsistencyAfterAssignment(x)) {
-					if (solver.depth() == solver.problem.variables.length && stopSACWhenFoundSolution)
-						solver.solRecorder.handleNewSolution(true);
+					if (solver.depth() == solver.problem.variables.length) {
+						System.out.println("found solution");
+						if (stopSACWhenFoundSolution)
+							solver.solRecorder.handleNewSolution(true);
+					}
 				} else {
 					solver.backtrack(x);
 					int lastBuiltBranchSize = solver.depth() - nodeDepth;
@@ -624,7 +627,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		public ESAC3(Solver solver) {
 			super(solver);
 			this.queueESAC = new QueueESAC();
-			this.varHeuristics = new HeuristicVariables[] { new WdegVariant.WdegOnDom((Solver) solver, false) };
+			this.varHeuristics = new HeuristicVariables[] { new WdegVariant.WdegOnDom(solver, false) };
 			// this.variableOrderingHeuristics = new VariableOrderingHeuristic[] {
 			// new Dom((BacktrackSearchSolver) solver, OptimizationType.MIN), new
 			// DomThenDDeg((BacktrackSearchSolver) solver, OptimizationType.MIN),

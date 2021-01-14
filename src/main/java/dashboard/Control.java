@@ -185,6 +185,7 @@ public class Control {
 		public final long timeout = addL("timeout", "t", PLUS_INFINITY, s_timeout);
 		public int verbose = addI("verbose", "v", 0, s_verbose);
 		public int jsonLimit = addI("jsonLimit", "jsonLimit", 1000, "");
+		public final boolean jsonAux = addB("jsonAux", "jsonAux", false, "");
 		public boolean xmlCompact = addB("xmlCompact", "xmlCompact", true, "");
 		public boolean xmlAllSolutions = addB("xmlAllSolutions", "xas", false, "");
 

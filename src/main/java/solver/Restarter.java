@@ -31,7 +31,7 @@ public class Restarter implements ObserverRuns {
 	public static Restarter buildFor(Solver solver) {
 		boolean lns = solver.head.control.lns.enabled;
 		if (lns)
-			return new RestarterLNS((Solver) solver);
+			return new RestarterLNS(solver);
 		return new Restarter(solver);
 	}
 
@@ -50,9 +50,8 @@ public class Restarter implements ObserverRuns {
 			baseCutoff = baseCutoff * setting.nRestartsResetCoefficient;
 			System.out.println("    ...resetting restart cutoff to " + baseCutoff);
 		}
-		if (forceRootPropagation || (settingsGeneral.framework == TypeFramework.COP && numRun - 1 == solver.solRecorder.lastSolutionRun))
-
-		{
+		if (forceRootPropagation || (settingsGeneral.framework == TypeFramework.COP && numRun - 1 == solver.solRecorder.lastSolutionRun)
+				|| (solver.head.control.propagation.strongOnlyAtPreprocessing && numRun > 0 && numRun % 60 == 0)) {
 			if (solver.propagation.runInitially() == false) // we run propagation if a solution has just been found (since the objective constraint has changed)
 				solver.stopping = EStopping.FULL_EXPLORATION;
 			forceRootPropagation = false;
@@ -113,7 +112,7 @@ public class Restarter implements ObserverRuns {
 	}
 
 	private Supplier<Long> measureSupplier() {
-		Solver sb = solver instanceof Solver ? ((Solver) solver) : null;
+		Solver sb = solver != null ? solver : null;
 		switch (setting.measure) {
 		case FAILED:
 			return () -> sb.stats.nFailedAssignments;
@@ -197,7 +196,7 @@ public class Restarter implements ObserverRuns {
 		public void afterRun() {
 			if (this.settingsGeneral.framework == TypeFramework.COP)
 				solver.problem.optimizer.afterRun();
-			((Solver) solver).backtrackToTheRoot(); // because see Method doRun in Solver
+			solver.backtrackToTheRoot(); // because see Method doRun in Solver
 		}
 
 		private final HeuristicFreezing heuristic;

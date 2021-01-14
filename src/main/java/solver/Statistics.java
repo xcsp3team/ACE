@@ -51,16 +51,16 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 	@Override
 	public final void beforePreprocessing() {
 		stopwatch.start();
-		if (solver instanceof Solver && (((Solver) solver).nogoodRecorder != null))
-			nPreproAddedNogoods = (((Solver) solver).nogoodRecorder).nNogoods;
+		if (solver instanceof Solver && solver.nogoodRecorder != null)
+			nPreproAddedNogoods = solver.nogoodRecorder.nNogoods;
 		nPreproAddedCtrs = solver.problem.constraints.length;
 	}
 
 	@Override
 	public final void afterPreprocessing() {
 		preproWck += stopwatch.wckTime();
-		if (solver instanceof Solver && (((Solver) solver).nogoodRecorder != null))
-			nPreproAddedNogoods = (((Solver) solver).nogoodRecorder).nNogoods - nPreproAddedNogoods;
+		if (solver instanceof Solver && solver.nogoodRecorder != null)
+			nPreproAddedNogoods = solver.nogoodRecorder.nNogoods - nPreproAddedNogoods;
 		nPreproAddedCtrs = solver.problem.constraints.length - nPreproAddedCtrs;
 		nPreproRemovedValues = Variable.nRemovedValuesFor(solver.problem.variables);
 		nPreproRemovedTuples = solver.propagation.nTuplesRemoved;
