@@ -360,7 +360,7 @@ public interface Domain extends LinkedSet {
 	 * The management of this removal with respect to propagation is handled.
 	 */
 	default void removeSafely(int a) {
-		assert present(a) && size() > 1;
+		assert present(a) && size() > 1 : present(a) + " " + size();
 		removeElementary(a);
 		propagation().handleReductionSafely(var());
 	}

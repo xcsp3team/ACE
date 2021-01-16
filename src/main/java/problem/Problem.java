@@ -747,6 +747,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return AUXILIARY_VARIABLE_PREFIX + varEntities.allEntities.size();
 	}
 
+	private Var newAuxVar(Object values) {
+		Dom dom = values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
+		return api.var(idAux(), dom, "auxiliary variable");
+	}
+
 	private void replacement(Var aux, XNode<IVar> tree) {
 		Variable[] treeVars = (Variable[]) tree.vars();
 		if (head.control.extension.convertingIntension(treeVars)) {
@@ -758,9 +763,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	public Variable replaceByVariable(XNode<IVar> tree) {
-		Object values = tree.possibleValues();
-		Dom dom = values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
-		Var aux = api.var(idAux(), dom, "auxiliary variable");
+		Var aux = newAuxVar(tree.possibleValues());
 		replacement(aux, tree);
 		return (Variable) aux;
 	}
@@ -991,7 +994,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			}
 		}
 
-		System.out.println("tree2 " + tree);
+		// System.out.println("tree2 " + tree);
 		return addCtr(new Intension(this, scp, tree));
 	}
 
@@ -1677,6 +1680,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return (CtrAlone) unimplemented("element");
 	}
 
+	public final CtrAlone element(Var[] list, Condition condition) {
+		if (condition instanceof ConditionVal && ((ConditionRel) condition).operator == EQ)
+			return element(list, safeInt(((ConditionVal) condition).k));
+		return (CtrAlone) unimplemented("element");
+	}
+
 	@Override
 	public final CtrAlone element(Var[] list, int startIndex, Var index, TypeRank rank, int value) {
 		unimplementedIf(startIndex != 0 || (rank != null && rank != TypeRank.ANY), "element");
@@ -1694,6 +1703,26 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			return extension(Utilities.indexOf(value, list) == -1 ? vars(index, list, value) : vars(index, list),
 					Table.shortTuplesForElement(translate(list), (Variable) index, (Variable) value), true);
 		return addCtr(new ElementVariable(this, translate(list), (Variable) index, (Variable) value));
+	}
+
+	public final CtrAlone element(Var[] list, int startIndex, Var index, TypeRank rank, Condition condition) {
+		unimplementedIf(startIndex != 0 || (rank != null && rank != TypeRank.ANY), "element");
+		if (condition instanceof ConditionRel && ((ConditionRel) condition).operator == EQ) {
+			if (condition instanceof ConditionVal)
+				return element(list, startIndex, index, rank, safeInt(((ConditionVal) condition).k));
+			else
+				return element(list, startIndex, index, rank, (Var) ((ConditionVar) condition).x);
+		}
+		int min = Stream.of(list).mapToInt(x -> ((Variable) x).dom.firstValue()).min().getAsInt();
+		int max = Stream.of(list).mapToInt(x -> ((Variable) x).dom.lastValue()).max().getAsInt();
+		Var aux = newAuxVar(new Range(min, max + 1));
+		if (condition instanceof ConditionRel) {
+			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
+			Object rightTerm = condition.rightTerm();
+			intension(XNodeParent.build(op.toExpr(), aux, rightTerm));
+		} else
+			return (CtrAlone) unimplemented("element");
+		return element(list, startIndex, index, rank, aux);
 	}
 
 	/**
@@ -1719,6 +1748,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return element(list, startIndex, index, value, 0);
 	}
 
+	public final CtrEntity element(int[] list, int startIndex, Var index, TypeRank rank, Condition condition) {
+		unimplementedIf(rank != null && rank != TypeRank.ANY, "element");
+		if (condition instanceof ConditionVar && ((ConditionRel) condition).operator == EQ)
+			return element(list, startIndex, index, rank, (Var) condition.rightTerm());
+		return (CtrAlone) unimplemented("element");
+	}
+
 	@Override
 	public CtrEntity element(int[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, Var value) {
 		unimplementedIf(startRowIndex != 0 && startColIndex != 0, "element");
@@ -1733,6 +1769,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return extension(vars(rowIndex, colIndex, value), org.xcsp.common.structures.Table.clean(tuples), true);
 	}
 
+	public CtrEntity element(int[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, Condition condition) {
+		unimplementedIf(startRowIndex != 0 && startColIndex != 0, "element");
+		if (condition instanceof ConditionVar && ((ConditionRel) condition).operator == EQ)
+			return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, (Var) condition.rightTerm());
+		return (CtrAlone) unimplemented("element");
+	}
+
 	@Override
 	public CtrEntity element(Var[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, int value) {
 		unimplementedIf(startRowIndex != 0 && startColIndex != 0, "element");
@@ -1742,6 +1785,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			return element(t, startRowIndex, rowIndex, null, value);
 		}
 		return addCtr(new ElementMatrix(this, (Variable[][]) matrix, (Variable) rowIndex, (Variable) colIndex, value));
+	}
+
+	public CtrEntity element(Var[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, Condition condition) {
+		unimplementedIf(startRowIndex != 0 && startColIndex != 0, "element");
+		if (condition instanceof ConditionVal && ((ConditionRel) condition).operator == EQ)
+			return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, safeInt(((ConditionVal) condition).k));
+		return (CtrAlone) unimplemented("element");
 	}
 
 	// ************************************************************************

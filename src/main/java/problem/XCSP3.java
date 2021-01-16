@@ -603,45 +603,34 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	@Override
-	public void buildCtrElement(String id, XVarInteger[] list, int value) {
-		problem.element(trVars(list), value);
+	public void buildCtrElement(String id, XVarInteger[] list, Condition condition) {
+		problem.element(trVars(list), trVar(condition));
 	}
 
 	@Override
-	public void buildCtrElement(String id, XVarInteger[] list, XVarInteger value) {
-		problem.element(trVars(list), trVar(value));
-	}
-
-	@Override
-	public void buildCtrElement(String id, XVarInteger[] list, int startIndex, XVarInteger index, TypeRank rank, XVarInteger value) {
+	public void buildCtrElement(String id, XVarInteger[] list, int startIndex, XVarInteger index, TypeRank rank, Condition condition) {
 		control(startIndex == 0 && rank == TypeRank.ANY);
-		problem.element(trVars(list), startIndex, trVar(index), rank, trVar(value));
+		problem.element(trVars(list), startIndex, trVar(index), rank, trVar(condition));
 	}
 
 	@Override
-	public void buildCtrElement(String id, XVarInteger[] list, int startIndex, XVarInteger index, TypeRank rank, int value) {
-		control(startIndex == 0 && rank == TypeRank.ANY);
-		problem.element(trVars(list), startIndex, trVar(index), rank, value);
-	}
-
-	@Override
-	public void buildCtrElement(String id, int[] list, int startIndex, XVarInteger index, TypeRank rank, XVarInteger value) {
+	public void buildCtrElement(String id, int[] list, int startIndex, XVarInteger index, TypeRank rank, Condition condition) {
 		control(rank == TypeRank.ANY);
-		problem.element(list, startIndex, trVar(index), rank, trVar(value));
+		problem.element(list, startIndex, trVar(index), rank, trVar(condition));
 	}
 
 	@Override
 	public void buildCtrElement(String id, int[][] matrix, int startRowIndex, XVarInteger rowIndex, int startColIndex, XVarInteger colIndex,
-			XVarInteger value) {
+			Condition condition) {
 		control(startRowIndex == 0 && startColIndex == 0);
-		problem.element(matrix, startRowIndex, trVar(rowIndex), startColIndex, trVar(colIndex), trVar(value));
+		problem.element(matrix, startRowIndex, trVar(rowIndex), startColIndex, trVar(colIndex), trVar(condition));
 	}
 
 	@Override
 	public void buildCtrElement(String id, XVarInteger[][] matrix, int startRowIndex, XVarInteger rowIndex, int startColIndex, XVarInteger colIndex,
-			int value) {
+			Condition condition) {
 		control(startRowIndex == 0 && startColIndex == 0);
-		problem.element(trVars2D(matrix), startRowIndex, trVar(rowIndex), startColIndex, trVar(colIndex), value);
+		problem.element(trVars2D(matrix), startRowIndex, trVar(rowIndex), startColIndex, trVar(colIndex), trVar(condition));
 	}
 
 	@Override

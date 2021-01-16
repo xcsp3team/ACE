@@ -35,7 +35,11 @@ public class ExtensionSTR1 extends ExtensionGlobal {
 
 	@Override
 	public void restoreBefore(int depth) {
+		// if (depth <= 0)
+		// System.out.println("ggggg " + set.size() + " " + set.limit + " " + set.limits[0] + " " + set);
 		set.restoreLimitAtLevel(depth);
+		// if (depth <= 0)
+		// System.out.println("ggggg " + set.capacity() + " " + set.size() + " " + set.limit + " " + set.limits[0] + " " + set);
 	}
 
 	/**********************************************************************************************

@@ -38,7 +38,7 @@ public abstract class ExtensionSTR1Optimized extends ExtensionSTR1 {
 	@Override
 	public void restoreBefore(int depth) {
 		super.restoreBefore(depth);
-		if (decremental)
+		if (decremental && depth > 0) // second part (depth > 0) for ensuring that aggressive runs can be used
 			lastDepth = Math.max(0, Math.min(lastDepth, depth - 1));
 		else
 			Arrays.fill(lastSizes, UNITIALIZED);

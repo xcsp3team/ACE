@@ -123,6 +123,7 @@ public class ExtensionCT extends ExtensionSTR1Optimized implements TagShort {
 		this.deltaSizes = new int[scp.length];
 		this.nonZeros = new SetDenseReversible(current.length, problem.variables.length + 1);
 		this.residues = Variable.litterals(scp).intArray();
+		this.firstCall = true;
 	}
 
 	@Override
@@ -136,6 +137,8 @@ public class ExtensionCT extends ExtensionSTR1Optimized implements TagShort {
 		}
 		nonZeros.restoreLimitAtLevel(depth);
 		lastCallNode = -1;
+		if (depth == 0)
+			afterProblemConstruction();
 	}
 
 	/**********************************************************************************************
