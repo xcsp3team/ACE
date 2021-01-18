@@ -24,7 +24,6 @@ import variables.Variable;
 public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGACGuaranteed {
 
 	protected final Variable[] list;
-	protected final int startAt;
 
 	protected final Variable ivar; // index variable
 	protected final Domain idom;
@@ -33,18 +32,17 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 	public Element(Problem pb, Variable[] list, int startAt, Variable index, Object value) {
 		super(pb, Utilities.collect(Variable.class, list, index, value)); // value may be a variable
 		this.list = list;
-		this.startAt = startAt;
 		this.ivar = index;
 		this.idom = index.dom;
 		this.ipos = IntStream.range(0, scp.length).filter(i -> scp[i] == index).findFirst().getAsInt();
-		control(startAt == 0, "Starting at a value different from 0 not completely implemented yet");
+		control(startAt == 0, "Starting at a value different from 0 not implemented");
 		control(Variable.areAllDistinct(list) && index != value, "i=" + index + " x=" + Kit.join(list) + " v=" + value);
-		control(idom.areInitValuesExactly(pb.api.range(startAt, startAt + list.length)), " pb with " + this + " " + startAt);
+		control(list.length == idom.initSize(), " pb with " + this + " " + index);
 	}
 
 	// returns the domain of the variable in list whose position is given by the specified integer (note that startAt is paid attention to)
 	protected Domain domAt(int i) {
-		return list[i - startAt].dom;
+		return list[i].dom;
 	}
 
 	// ************************************************************************
@@ -56,7 +54,12 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 
 		@Override
 		public boolean checkValues(int[] t) {
-			return t[t[ipos] - startAt] == k;
+			throw new AssertionError();
+		}
+
+		public boolean checkIndexes(int[] t) {
+			int i = t[ipos];
+			return list[i].dom.toVal(t[i]) == k;
 		}
 
 		public ElementConstant(Problem pb, Variable[] list, int startAt, Variable index, int value) {
@@ -64,7 +67,7 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 			this.k = value;
 			defineKey(value, startAt);
 			control(Variable.areAllDomainsContainingValue(list, k));
-			if (ipos < list.length && ipos + startAt != k) // special case (index in list)
+			if (ipos < list.length && list[ipos].dom.toVal(ipos) != k) // special case (index in list)
 				idom.removeValueAtConstructionTime(k);
 		}
 
@@ -77,7 +80,7 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 			if (idom.size() > 1) { // checking that the values of index are still valid
 				int sizeBefore = idom.size();
 				for (int a = idom.first(); a != -1; a = idom.next(a))
-					if (!domAt(a).presentValue(k))
+					if (!list[a].dom.presentValue(k))
 						idom.removeElementary(a);
 				if (idom.afterElementaryCalls(sizeBefore) == false)
 					return false;
@@ -85,7 +88,7 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 			// be careful : not a else because of statements above that may modify the domain of index
 			if (idom.size() > 1)
 				return true;
-			return domAt(idom.unique()).reduceToValue(k) && entailed();
+			return list[idom.unique()].dom.reduceToValue(k) && entailed();
 		}
 	}
 
@@ -104,7 +107,12 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 
 		@Override
 		public boolean checkValues(int[] t) {
-			return t[t[ipos] - startAt] == t[vpos];
+			throw new AssertionError();
+		}
+
+		public boolean checkIndexes(int[] t) {
+			int i = t[ipos];
+			return list[i].dom.toVal(t[i]) == vdom.toVal(t[vpos]);
 		}
 
 		/**
@@ -125,7 +133,7 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 			this.valueSentinels = Kit.repeat(-1, value.dom.initSize());
 			this.listSentinels = Kit.repeat(-1, list.length);
 			defineKey();
-			// TODO control qu'un des éléments du domaine de result est dans chaque domaine des variables de vector ?
+			// TODO control that each value in vdom is in at least one domain of the list?
 		}
 
 		public ElementVariable(Problem pb, Variable[] list, Variable index, Variable value) {
@@ -134,9 +142,9 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 
 		private boolean validSentinelForListAt(int i) {
 			int sentinel = listSentinels[i];
-			if (sentinel != -1 && domAt(i).presentValue(sentinel) && vdom.presentValue(sentinel))
+			if (sentinel != -1 && list[i].dom.presentValue(sentinel) && vdom.presentValue(sentinel))
 				return true;
-			Domain dom = domAt(i);
+			Domain dom = list[i].dom;
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
 				int va = dom.toVal(a);
 				if (vdom.presentValue(va)) {
@@ -150,10 +158,10 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 		private boolean validSentinelForValue(int a) {
 			int va = vdom.toVal(a);
 			int sentinel = valueSentinels[a];
-			if (sentinel != -1 && idom.present(sentinel) && domAt(sentinel).presentValue(va))
+			if (sentinel != -1 && idom.present(sentinel) && list[sentinel].dom.presentValue(va))
 				return true;
 			for (int i = idom.first(); i != -1; i = idom.next(i)) {
-				if (domAt(i).presentValue(va)) {
+				if (list[i].dom.presentValue(va)) {
 					valueSentinels[a] = i;
 					return true;
 				}
@@ -196,7 +204,7 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 			}
 			// If index is singleton, we update dom(list[index]) and dom(value) so that they are both equal to the intersection of the two domains
 			if (idom.size() == 1) {
-				Domain dom = domAt(idom.unique());
+				Domain dom = list[idom.unique()].dom;
 				if (dom.removeValuesNotIn(vdom) == false || vdom.removeValuesNotIn(dom) == false)
 					return false;
 				if (dom.size() == 1) {
@@ -208,13 +216,13 @@ public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGA
 		}
 
 		private boolean controlGAC() {
-			control(idom.size() != 1 || domAt(idom.unique()).subsetOf(vdom), () -> "index is singleton and dom(index) is not included in dom(result).");
+			control(idom.size() != 1 || list[idom.unique()].dom.subsetOf(vdom), () -> "index is singleton and dom(index) is not included in dom(result).");
 			for (int a = idom.first(); a != -1; a = idom.next(a))
-				control(domAt(a).overlapWith(vdom), () -> "One var has no value in dom(result).");
+				control(list[a].dom.overlapWith(vdom), () -> "One var has no value in dom(result).");
 			extern: for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
 				int v = vdom.toVal(a);
 				for (int b = idom.first(); b != -1; b = idom.next(b))
-					if (domAt(b).presentValue(v))
+					if (list[b].dom.presentValue(v))
 						continue extern;
 				control(false, () -> "value " + v + " is in dom(value) but in no list variable whose index is still in dom(index).");
 			}

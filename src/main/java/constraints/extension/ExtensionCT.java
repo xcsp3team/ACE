@@ -137,8 +137,7 @@ public class ExtensionCT extends ExtensionSTR1Optimized implements TagShort {
 		}
 		nonZeros.restoreLimitAtLevel(depth);
 		lastCallNode = -1;
-		if (depth == 0)
-			afterProblemConstruction();
+		// if (depth == 0) afterProblemConstruction(); // necessary when using aggressive runs
 	}
 
 	/**********************************************************************************************

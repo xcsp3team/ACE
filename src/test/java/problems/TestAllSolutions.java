@@ -174,7 +174,7 @@ public class TestAllSolutions {
 			Var[] list = array("x", size(n), dom(0, 1, 2));
 			Var index = var("i", dom(range(n)));
 			Var result = var("r", dom(0, 1, 2));
-			element(list, index, result);
+			element(list, index, condition(EQ, result));
 		}
 	}
 

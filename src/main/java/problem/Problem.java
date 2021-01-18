@@ -961,7 +961,10 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			}
 		}
 		// System.out.println("tree1 " + tree);
-		boolean b = scp[0] instanceof VariableInteger && scp.length + 1 >= tree.listOfVars().size(); // at most a variable occurring twice
+		boolean b = head.control.constraints.decomposeIntention && scp[0] instanceof VariableInteger && scp.length + 1 >= tree.listOfVars().size(); // at most a
+																																					// variable
+																																					// occurring
+																																					// twice
 		if (b) {
 			XNode<IVar>[] sons = tree.sons;
 			int nParentSons = 0;
@@ -1670,33 +1673,21 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	// ************************************************************************
 
 	@Override
-	public final CtrAlone element(Var[] list, int value) {
-		return (CtrAlone) atLeast((VariableInteger[]) translate(list), value, 1);
-	}
-
-	@Override
-	public final CtrAlone element(Var[] list, Var value) {
-		// TODO using sentinelVal1, sentinelVal2 (for two values in dom(value)), and sentinelVar1, sentinelVar2 for two variables in list
-		return (CtrAlone) unimplemented("element");
-	}
-
 	public final CtrAlone element(Var[] list, Condition condition) {
 		if (condition instanceof ConditionVal && ((ConditionRel) condition).operator == EQ)
-			return element(list, safeInt(((ConditionVal) condition).k));
+			return (CtrAlone) atLeast((VariableInteger[]) translate(list), safeInt(((ConditionVal) condition).k), 1); // element(list, safeInt(((ConditionVal)
+		// TODO for EQ - VAR using sentinelVal1, sentinelVal2 (for two values in dom(value)), and sentinelVar1, sentinelVar2 for two variables in list //
+		// condition).k));
 		return (CtrAlone) unimplemented("element");
 	}
 
-	@Override
-	public final CtrAlone element(Var[] list, int startIndex, Var index, TypeRank rank, int value) {
-		unimplementedIf(startIndex != 0 || (rank != null && rank != TypeRank.ANY), "element");
+	private CtrAlone element(Var[] list, Var index, int value) {
 		if (head.control.global.jokerTable)
 			return extension(vars(index, list), Table.shortTuplesForElement(translate(list), (Variable) index, value), true);
 		return addCtr(new ElementConstant(this, translate(list), (Variable) index, value));
 	}
 
-	@Override
-	public final CtrAlone element(Var[] list, int startIndex, Var index, TypeRank rank, Var value) {
-		unimplementedIf(startIndex != 0 || (rank != null && rank != TypeRank.ANY), "element");
+	private CtrAlone element(Var[] list, Var index, Var value) {
 		if (head.control.global.smartTable)
 			return addCtr(ExtensionSmart.buildElement(this, translate(list), (Variable) index, (Variable) value));
 		if (head.control.global.jokerTable)
@@ -1705,13 +1696,27 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return addCtr(new ElementVariable(this, translate(list), (Variable) index, (Variable) value));
 	}
 
+	@Override
 	public final CtrAlone element(Var[] list, int startIndex, Var index, TypeRank rank, Condition condition) {
 		unimplementedIf(startIndex != 0 || (rank != null && rank != TypeRank.ANY), "element");
+		Domain idom = ((Variable) index).dom;
+		if (!idom.areInitValuesExactly(api.range(0, list.length))) {
+			List<Variable> tmp = new ArrayList<>();
+			for (int a = idom.first(); a != -1; a = idom.next(a)) {
+				int va = idom.toVal(a);
+				if (0 <= va && va < list.length)
+					tmp.add((Variable) list[va]);
+				else
+					return (CtrAlone) unimplemented("element with an index (variable) with a bad value");
+			}
+			list = tmp.stream().toArray(Var[]::new);
+		}
+
 		if (condition instanceof ConditionRel && ((ConditionRel) condition).operator == EQ) {
 			if (condition instanceof ConditionVal)
-				return element(list, startIndex, index, rank, safeInt(((ConditionVal) condition).k));
+				return element(list, index, safeInt(((ConditionVal) condition).k));
 			else
-				return element(list, startIndex, index, rank, (Var) ((ConditionVar) condition).x);
+				return element(list, index, (Var) ((ConditionVar) condition).x);
 		}
 		int min = Stream.of(list).mapToInt(x -> ((Variable) x).dom.firstValue()).min().getAsInt();
 		int max = Stream.of(list).mapToInt(x -> ((Variable) x).dom.lastValue()).max().getAsInt();
@@ -1722,13 +1727,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			intension(XNodeParent.build(op.toExpr(), aux, rightTerm));
 		} else
 			return (CtrAlone) unimplemented("element");
-		return element(list, startIndex, index, rank, aux);
+		return element(list, index, aux);
 	}
 
 	/**
 	 * Builds a binary extension constraint because the vector is an array of integer values (and not variables).
 	 */
-	private final CtrEntity element(int[] list, int startIndex, Var index, Var value, int startValue) {
+	private CtrEntity element(int[] list, int startIndex, Var index, Var value, int startValue) {
 		List<int[]> l = new ArrayList<>();
 		Domain dx = ((Variable) index).dom, dz = ((Variable) value).dom;
 		for (int a = dx.first(); a != -1; a = dx.next(a)) {
@@ -1742,12 +1747,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	/**
 	 * Builds a binary extension constraint because the vector is an array of integer values (and not variables).
 	 */
-	@Override
-	public final CtrEntity element(int[] list, int startIndex, Var index, TypeRank rank, Var value) {
+	private CtrEntity element(int[] list, int startIndex, Var index, TypeRank rank, Var value) {
 		unimplementedIf(rank != null && rank != TypeRank.ANY, "element");
 		return element(list, startIndex, index, value, 0);
 	}
 
+	@Override
 	public final CtrEntity element(int[] list, int startIndex, Var index, TypeRank rank, Condition condition) {
 		unimplementedIf(rank != null && rank != TypeRank.ANY, "element");
 		if (condition instanceof ConditionVar && ((ConditionRel) condition).operator == EQ)
@@ -1755,8 +1760,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return (CtrAlone) unimplemented("element");
 	}
 
-	@Override
-	public CtrEntity element(int[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, Var value) {
+	private CtrEntity element(int[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, Var value) {
 		unimplementedIf(startRowIndex != 0 && startColIndex != 0, "element");
 		List<int[]> tuples = new ArrayList<>();
 		Domain dx = ((Variable) rowIndex).dom, dy = ((Variable) colIndex).dom, dz = ((Variable) value).dom;
@@ -1769,6 +1773,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return extension(vars(rowIndex, colIndex, value), org.xcsp.common.structures.Table.clean(tuples), true);
 	}
 
+	@Override
 	public CtrEntity element(int[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, Condition condition) {
 		unimplementedIf(startRowIndex != 0 && startColIndex != 0, "element");
 		if (condition instanceof ConditionVar && ((ConditionRel) condition).operator == EQ)
@@ -1776,13 +1781,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return (CtrAlone) unimplemented("element");
 	}
 
-	@Override
-	public CtrEntity element(Var[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, int value) {
+	private CtrEntity element(Var[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, int value) {
 		unimplementedIf(startRowIndex != 0 && startColIndex != 0, "element");
 		if (rowIndex == colIndex) {
 			control(matrix.length == matrix[0].length);
 			Var[] t = IntStream.range(0, matrix.length).mapToObj(i -> matrix[i][i]).toArray(Var[]::new);
-			return element(t, startRowIndex, rowIndex, null, value);
+			return element(t, rowIndex, value);
 		}
 		return addCtr(new ElementMatrix(this, (Variable[][]) matrix, (Variable) rowIndex, (Variable) colIndex, value));
 	}
@@ -1811,7 +1815,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			allDifferent(list1);
 			allDifferent(list2);
 		}
-		return forall(range(list1.length), i -> api.element(list2, list1[i], i));
+		return forall(range(list1.length), i -> element(list2, list1[i], i));
 	}
 
 	@Override
