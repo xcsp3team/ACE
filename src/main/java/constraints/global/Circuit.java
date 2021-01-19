@@ -15,8 +15,7 @@ import java.util.stream.Stream;
 
 import constraints.global.AllDifferent.AllDifferentComplete;
 import problem.Problem;
-import sets.SetDense;
-import utility.Kit;
+import sets.SetSparse;
 import variables.Variable;
 
 public final class Circuit extends AllDifferentComplete {
@@ -26,9 +25,8 @@ public final class Circuit extends AllDifferentComplete {
 		if (super.checkValues(t) == false)
 			return false;
 		int nLoops = (int) IntStream.range(0, t.length).filter(i -> t[i] == i).count();
-		if (nLoops == t.length) {
+		if (nLoops == t.length)
 			return false; // no circuit at all
-		}
 		int i = 0;
 		while (i < scp.length && t[i] == i)
 			i++;
@@ -40,12 +38,12 @@ public final class Circuit extends AllDifferentComplete {
 		return s.size() == (t.length - nLoops);
 	}
 
-	SetDense set;
+	private SetSparse set;
 
 	public Circuit(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		this.set = new SetDense(scp.length);
-		Kit.control(Stream.of(scp).allMatch(x -> x.dom.areInitValuesExactly(pb.api.range(scp.length))));
+		this.set = new SetSparse(scp.length);
+		control(Stream.of(scp).allMatch(x -> x.dom.areInitValuesSubsetOf(pb.api.range(scp.length))));
 	}
 
 	@Override
@@ -59,24 +57,26 @@ public final class Circuit extends AllDifferentComplete {
 			return false;
 		int minimalCircuitLength = 0;
 		for (int i = 0; i < scp.length; i++)
-			if (scp[i].dom.present(i) == false)
+			if (scp[i].dom.presentValue(i) == false)
 				minimalCircuitLength++;
 		for (int i = 0; i < scp.length; i++) {
 			if (scp[i].dom.size() == 1) {
-				int j = scp[i].dom.unique();
+				int j = scp[i].dom.uniqueValue();
 				if (i == j)
 					continue; // because self-loop
 				set.clear();
-				set.add(i);
-				if (scp[j].dom.removeIfPresent(j) == false)
+				set.add(i); // i belongs to the circuit
+				if (scp[j].dom.removeValueIfPresent(j) == false) // because self-loop not possible for j
 					return false;
 				while (set.size() + 1 < minimalCircuitLength) {
-					if (scp[j].dom.remove(set, true) == false)
+					if (scp[j].dom.removeValuesIn(set) == false)
 						return false; // because we cannot close the circuit now (it would be too short)
 					if (scp[j].dom.size() == 1) {
-						set.add(j);
-						j = scp[j].dom.unique(); // we know for sure here that the new value of j is different from the previous one
-						if (scp[j].dom.removeIfPresent(j) == false)
+						if (set.isPresent(j))
+							return false; // because two times the same value
+						set.add(j); // j belongs to the circuit
+						j = scp[j].dom.uniqueValue(); // we know for sure here that the *new value of j* is different from the previous one
+						if (scp[j].dom.removeValueIfPresent(j) == false) // because self-loop not possible for j
 							return false;
 					} else
 						break;

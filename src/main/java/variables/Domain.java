@@ -136,6 +136,11 @@ public interface Domain extends LinkedSet {
 		return initSize() <= values.length && IntStream.range(0, initSize()).allMatch(a -> Kit.isPresent(toVal(a), values));
 	}
 
+	default boolean areInitValuesSubsetOf(Range range) {
+		control(range.step == 1);
+		return initSize() <= range.length() && IntStream.range(0, initSize()).allMatch(a -> range.start <= toVal(a) && toVal(a) < range.stop);
+	}
+
 	/**
 	 * Returns the variable to which the domain is attached.
 	 * 
@@ -766,6 +771,8 @@ public interface Domain extends LinkedSet {
 
 	default boolean removeValuesIn(SetDense set) {
 		int sizeBefore = size();
+		if (sizeBefore == 1)
+			return Arrays.binarySearch(set.dense, 0, set.size(), firstValue()) < 0 || fail();
 		for (int i = set.limit; i >= 0; i--) {
 			int v = set.dense[i];
 			if (presentValue(v)) {
