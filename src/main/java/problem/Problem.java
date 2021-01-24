@@ -961,10 +961,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			}
 		}
 		// System.out.println("tree1 " + tree);
-		boolean b = head.control.constraints.decomposeIntention && scp[0] instanceof VariableInteger && scp.length + 1 >= tree.listOfVars().size(); // at most a
-																																					// variable
-																																					// occurring
-																																					// twice
+		boolean b = head.control.constraints.decomposeIntention > 0 && scp[0] instanceof VariableInteger && scp.length + 1 >= tree.listOfVars().size(); //
+		// at most a
+		// variable
+		// occurring
+		// twice
+		b = b || head.control.constraints.decomposeIntention == 2;
 		if (b) {
 			XNode<IVar>[] sons = tree.sons;
 			int nParentSons = 0;
@@ -1715,16 +1717,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (condition instanceof ConditionRel && ((ConditionRel) condition).operator == EQ) {
 			if (condition instanceof ConditionVal)
 				return element(list, index, safeInt(((ConditionVal) condition).k));
-			else
-				return element(list, index, (Var) ((ConditionVar) condition).x);
+			return element(list, index, (Var) ((ConditionVar) condition).x);
 		}
 		int min = Stream.of(list).mapToInt(x -> ((Variable) x).dom.firstValue()).min().getAsInt();
 		int max = Stream.of(list).mapToInt(x -> ((Variable) x).dom.lastValue()).max().getAsInt();
 		Var aux = newAuxVar(new Range(min, max + 1));
 		if (condition instanceof ConditionRel) {
-			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
-			Object rightTerm = condition.rightTerm();
-			intension(XNodeParent.build(op.toExpr(), aux, rightTerm));
+			intension(XNodeParent.build(((ConditionRel) condition).operator.toExpr(), aux, condition.rightTerm()));
 		} else
 			return (CtrAlone) unimplemented("element");
 		return element(list, index, aux);
