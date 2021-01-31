@@ -830,6 +830,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private Matcher logic_k_relop_y__iff_x = new Matcher(node(TypeExpr.IFF, node(relop, val, var), var));
 	private Matcher unalop_x__eq_y = new Matcher(node(TypeExpr.EQ, node(unalop, var), var));
 
+	private Matcher disjonctive = new Matcher(
+			node(TypeExpr.OR, node(TypeExpr.LE, node(TypeExpr.ADD, var, val), var), node(TypeExpr.LE, node(TypeExpr.ADD, var, val), var)));
+
 	// ternary
 	private Matcher x_ariop_y__relop_z = new Matcher(node(relop, node(ariop, var, var), var));
 	private Matcher z_relop__x_ariop_y = new Matcher(node(relop, var, node(ariop, var, var)));
@@ -910,6 +913,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				c = PrimitiveBinaryLog.buildFrom(this, scp[1], scp[0], tree.relop(1).arithmeticInversion(), tree.val(0));
 			else if (unalop_x__eq_y.matches(tree))
 				c = PrimitiveBinaryEQWithUnaryOperator.buildFrom(this, scp[1], tree.unalop(0), scp[0]);
+			else if (disjonctive.matches(tree)) {
+				Variable[] scp0 = (Variable[]) tree.sons[0].vars(), scp1 = (Variable[]) tree.sons[1].vars();
+				if (scp0.length == 2 && scp1.length == 2 && scp0[0] == scp1[1] && scp0[1] == scp1[0]) {
+					int k0 = tree.sons[0].val(0), k1 = tree.sons[1].val(0);
+					c = new Disjonctive(this, scp0[0], k0, scp[1], k1); // primitiveSystem.out.println("hhhh" + Kit.join(scp0) + " " + Kit.join(scp1));
+				}
+			}
 			if (c != null)
 				return addCtr(c);
 		}
@@ -962,10 +972,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		}
 		// System.out.println("tree1 " + tree);
 		boolean b = head.control.constraints.decomposeIntention > 0 && scp[0] instanceof VariableInteger && scp.length + 1 >= tree.listOfVars().size(); //
-		// at most a
-		// variable
-		// occurring
-		// twice
+		// at most a variable occurring twice
 		b = b || head.control.constraints.decomposeIntention == 2;
 		if (b) {
 			XNode<IVar>[] sons = tree.sons;

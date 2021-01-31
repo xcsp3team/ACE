@@ -287,6 +287,8 @@ public interface Domain extends LinkedSet {
 	 */
 	default void removeAtConstructionTime(int a) {
 		control(var().problem.solver == null, () -> "Must be called before the solver being built.");
+		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " at construction time");
+
 		remove(a, 0);
 		var().problem.nValuesRemoved++;
 		var().problem.features.nValuesRemovedAtConstructionTime++;
@@ -324,7 +326,8 @@ public interface Domain extends LinkedSet {
 	default void removeElementary(int a) {
 		Variable x = var();
 		assert !x.assigned() && present(a) : x + " " + x.assigned() + " " + present(a);
-		// log.info("removing " + x + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " by constraint " + propagation().currFilteringCtr);
+		// System.out.println("removing " + x + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " by constraint " +
+		// propagation().currFilteringCtr);
 
 		int depth = propagation().solver.stackVariable(x); // stacking variables must always be performed before domain reduction
 		remove(a, depth);

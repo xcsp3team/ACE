@@ -51,7 +51,7 @@ public class Restarter implements ObserverRuns {
 			System.out.println("    ...resetting restart cutoff to " + baseCutoff);
 		}
 		if (forceRootPropagation || (settingsGeneral.framework == TypeFramework.COP && numRun - 1 == solver.solRecorder.lastSolutionRun)
-				|| (solver.head.control.propagation.strongOnlyAtPreprocessing && numRun > 0 && numRun % 60 == 0)) {
+				|| (solver.head.control.propagation.strongOnlyAtPreprocessing && numRun > 0 && numRun % 60 == 0)) { // TODO hard coding
 			if (solver.propagation.runInitially() == false) // we run propagation if a solution has just been found (since the objective constraint has changed)
 				solver.stopping = EStopping.FULL_EXPLORATION;
 			forceRootPropagation = false;
@@ -132,7 +132,7 @@ public class Restarter implements ObserverRuns {
 		this.setting = solver.head.control.restarts;
 		this.settingsGeneral = solver.head.control.general;
 		this.measureSupplier = measureSupplier();
-		if (settingsGeneral.framework == TypeFramework.COP)
+		if (settingsGeneral.framework == TypeFramework.COP && setting.cutoff < Integer.MAX_VALUE)
 			setting.cutoff *= 10;
 		reset();
 		// for (int i = 0; i < 50; i++) System.out.println(lubyCutoffFor(i));

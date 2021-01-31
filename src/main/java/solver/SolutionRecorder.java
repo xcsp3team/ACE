@@ -297,7 +297,7 @@ public final class SolutionRecorder {
 			log.config(lastSolutionInJsonFormat() + "\n");
 		String s = lastSolutionInXmlFormat(); // keep the call separated in order to possibly secure its quick output (see code)
 		if (solver.head.control.general.verbose > 2 || solver.head.control.general.xmlAllSolutions)
-			log.config(" " + s + "\n");
+			log.config("     " + s);
 		// solver.problem.api.prettyDisplay(vars_values(false, false).split("\\s+"));
 	}
 

@@ -1,5 +1,7 @@
 package constraints.global;
 
+import java.util.stream.IntStream;
+
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint.CtrGlobal;
@@ -74,12 +76,11 @@ public abstract class Cardinality extends CtrGlobal implements ObserverBacktrack
 			super(problem, scope);
 			this.values = Kit.sort(Kit.intArray(Variable.setOfvaluesIn(scope)));
 			this.minOccs = Kit.repeat(0, values.length);
-			this.maxOccs = Kit.repeat(1, values.length);
 			int position = Utilities.indexOf(zeroValue, values);
 			control(position >= 0);
-			maxOccs[position] = Integer.MAX_VALUE;
+			this.maxOccs = IntStream.range(0, values.length).map(i -> i == position ? Integer.MAX_VALUE : 1).toArray();
+			this.matcher = new MatcherCardinality(this, scope, values, minOccs, maxOccs);
 			defineKey();
-			matcher = new MatcherCardinality(this, scope, values, minOccs, maxOccs);
 		}
 
 	}
