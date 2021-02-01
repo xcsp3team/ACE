@@ -31,7 +31,7 @@ public abstract class HeuristicValues extends Heuristic {
 	/** The domain of the variable that uses this value ordering heuristic. Redundant field. */
 	protected final Domain dx;
 
-	private SettingValh settings;
+	protected SettingValh settings;
 
 	public HeuristicValues(Variable x, boolean antiHeuristic) {
 		super(antiHeuristic);

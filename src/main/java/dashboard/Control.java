@@ -574,6 +574,7 @@ public class Control {
 		public final int solutionSavingGap = addI("solutionSavingGap", "ssg", Integer.MAX_VALUE, "");
 		public String warmStart = addS("warmStart", "warm", "", "").trim();
 
+		public boolean stopBivsAtFirstSolution = addB("stopBivsAtFirstSolution", "sbivs", true, "");
 		public final boolean optValHeuristic = addB("optValHeuristic", "ovh", false, "");
 	}
 

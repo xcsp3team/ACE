@@ -50,8 +50,6 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 		Optimizable c;
 
-		boolean stoppedAtFirstSolution = true; // hard coding
-
 		boolean promise;
 
 		int nTests;
@@ -71,7 +69,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		@Override
 		public int identifyBestValueIndex() {
 			inconsistent.clear();
-			if (stoppedAtFirstSolution && solver.solRecorder.found > 0)
+			if (settings.stopBivsAtFirstSolution && solver.solRecorder.found > 0)
 				return dx.first(); // First in that case
 			else
 				return super.identifyBestValueIndex();
