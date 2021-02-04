@@ -22,6 +22,7 @@ import java.text.NumberFormat;
 
 import org.xcsp.common.Types.TypeFramework;
 
+import constraints.Constraint;
 import dashboard.Output;
 import interfaces.Observers.ObserverRuns;
 import interfaces.Observers.ObserverSearch;
@@ -160,6 +161,17 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		}
 		lastSolCpu = cpu;
 		lastSolWck = wck;
+	}
+
+	public final MapAtt solverConstructionAttributes() {
+		MapAtt m = new MapAtt("Solver");
+		if (solver.propagation.getClass() == GAC.class)
+			m.put(Output.GUARANTEED_GAC, Constraint.isGuaranteedGAC(solver.problem.constraints));
+		m.separator();
+		m.put(Output.WCK, solver.head.instanceStopwatch.wckTimeInSeconds());
+		m.put(Output.CPU, solver.head.stopwatch.cpuTimeInSeconds());
+		m.put(Output.MEM, Kit.memoryInMb());
+		return m;
 	}
 
 	public final MapAtt preproAttributes() {

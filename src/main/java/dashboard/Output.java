@@ -20,13 +20,11 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xcsp.common.Utilities;
 
-import constraints.Constraint;
 import interfaces.Observers.ObserverConstruction;
 import interfaces.Observers.ObserverRuns;
 import interfaces.Observers.ObserverSearch;
 import main.Head;
 import problem.Features.MapAtt;
-import propagation.GAC;
 import utility.Enums.TypeOutput;
 import utility.Kit;
 
@@ -304,13 +302,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 
 	@Override
 	public void afterSolverConstruction() {
-		MapAtt sa = new MapAtt("Solver");
-		if (head.solver.propagation.getClass() == GAC.class)
-			sa.put(Output.GUARANTEED_GAC, Constraint.isGuaranteedGAC(head.problem.constraints));
-		sa.separator();
-		sa.put(Output.WCK, head.instanceStopwatch.wckTimeInSeconds());
-		sa.put(Output.CPU, head.stopwatch.cpuTimeInSeconds());
-		sa.put(Output.MEM, Kit.memoryInMb());
+		MapAtt sa = head.solver.stats.solverConstructionAttributes();
 		solverElt = record(TypeOutput.SOLVER, sa.entries(), resolElt);
 		Kit.log.config("\n" + sa.toString());
 	}

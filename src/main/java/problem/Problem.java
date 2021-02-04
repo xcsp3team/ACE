@@ -10,6 +10,8 @@ import static org.xcsp.common.Types.TypeConditionOperatorRel.GT;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.LE;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.LT;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.NE;
+import static org.xcsp.common.Types.TypeExpr.ADD;
+import static org.xcsp.common.Types.TypeExpr.IFF;
 import static org.xcsp.common.Types.TypeExpr.LONG;
 import static org.xcsp.common.Types.TypeExpr.VAR;
 import static org.xcsp.common.Types.TypeFramework.COP;
@@ -752,10 +754,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return api.var(idAux(), dom, "auxiliary variable");
 	}
 
-	private void replacement(Var aux, XNode<IVar> tree) {
+	private void replacement(Var aux, XNode<IVar> tree, boolean tuplesComputed, int[][] tuples) {
 		Variable[] treeVars = (Variable[]) tree.vars();
-		if (head.control.extension.convertingIntension(treeVars)) {
-			int[][] tuples = new TreeEvaluator(tree).computeTuples(Variable.currDomainValues(treeVars));
+		if (!tuplesComputed && head.control.extension.convertingIntension(treeVars))
+			tuples = new TreeEvaluator(tree).computeTuples(Variable.currDomainValues(treeVars));
+		if (tuples != null) {
 			extension(vars(treeVars, aux), tuples, true); // extension(eq(aux, tree));
 			features.nConvertedConstraints++;
 		} else
@@ -764,7 +767,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	public Variable replaceByVariable(XNode<IVar> tree) {
 		Var aux = newAuxVar(tree.possibleValues());
-		replacement(aux, tree);
+		replacement(aux, tree, false, null);
 		return (Variable) aux;
 	}
 
@@ -794,18 +797,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			int[][] tuples = head.control.extension.convertingIntension(treeVars)
 					? new TreeEvaluator(trees[0]).computeTuples(Variable.initDomainValues(treeVars))
 					: null;
-			for (int i = 0; i < trees.length; i++) {
-				if (tuples != null) {
-					extension(vars(trees[i], aux[i]), tuples, true); // extension(eq(aux[i], trees[i]));
-					features.nConvertedConstraints++;
-				} else
-					equal(aux[i], trees[i]);
-			}
+			for (int i = 0; i < trees.length; i++)
+				replacement(aux[i], trees[i], true, tuples);
 			return aux;
 		} else {
 			Var[] aux = api.array(idAux(), api.size(trees.length), doms, "auxiliary variables");
 			for (int i = 0; i < trees.length; i++)
-				replacement(aux[i], trees[i]);
+				replacement(aux[i], trees[i], false, null);
 			return aux;
 		}
 	}
@@ -818,6 +816,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	// ***** Constraint intension
 	// ************************************************************************
 
+	// unary
+	private Matcher x_relop_k = new Matcher(node(relop, var, val));
+
 	// binary
 	private Matcher x_relop_y = new Matcher(node(relop, var, var));
 	private Matcher x_ariop_y__relop_k = new Matcher(node(relop, node(ariop, var, var), val));
@@ -825,13 +826,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private Matcher x_relop__y_ariop_k = new Matcher(node(relop, var, node(ariop, var, val)));
 	private Matcher y_ariop_k__relop_x = new Matcher(node(relop, node(ariop, var, val), var));
 	private Matcher logic_y_relop_k__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, var, val), var));
-	private Matcher logic_y_relop_k__iff_x = new Matcher(node(TypeExpr.IFF, node(relop, var, val), var));
+	private Matcher logic_y_relop_k__iff_x = new Matcher(node(IFF, node(relop, var, val), var));
 	private Matcher logic_k_relop_y__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, val, var), var));
-	private Matcher logic_k_relop_y__iff_x = new Matcher(node(TypeExpr.IFF, node(relop, val, var), var));
+	private Matcher logic_k_relop_y__iff_x = new Matcher(node(IFF, node(relop, val, var), var));
 	private Matcher unalop_x__eq_y = new Matcher(node(TypeExpr.EQ, node(unalop, var), var));
-
-	private Matcher disjonctive = new Matcher(
-			node(TypeExpr.OR, node(TypeExpr.LE, node(TypeExpr.ADD, var, val), var), node(TypeExpr.LE, node(TypeExpr.ADD, var, val), var)));
+	private Matcher disjonctive = new Matcher(node(TypeExpr.OR, node(TypeExpr.LE, node(ADD, var, val), var), node(TypeExpr.LE, node(ADD, var, val), var)));
 
 	// ternary
 	private Matcher x_ariop_y__relop_z = new Matcher(node(relop, node(ariop, var, var), var));
@@ -885,7 +884,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
 		Variable[] scp = (Variable[]) tree.vars(); // keep it here, after canonization
 		assert Variable.haveSameType(scp);
-
+		// System.out.println(tree);
 		if (head.control.extension.convertingIntension(scp) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
 			features.nConvertedConstraints++;
 			return extension(tree);
@@ -945,6 +944,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				return addCtr(c);
 
 		}
+		// if (arity >= 2 && tree.type == OR && Stream.of(tree.sons).allMatch(son -> x_relop_k.matches(son))) {
+		// }
+
 		if (settings.recognizeExtremumInSolver) {
 			if (min_relop.matches(tree)) {
 				return minimum((Var[]) tree.sons[0].vars(), basicCondition(tree));

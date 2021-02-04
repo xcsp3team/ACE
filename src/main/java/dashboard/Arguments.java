@@ -28,9 +28,7 @@ import utility.Kit;
  */
 public final class Arguments {
 
-	private static final String SETTING_VALUE_PREFIX = "-";
-
-	public static final String DEFAULT_PROBLEMS_PREFIX = "problems";
+	private static final String OPTION_PREFIX = "-";
 
 	/** User arguments given on the command line */
 	public static String[] args;
@@ -38,7 +36,7 @@ public final class Arguments {
 	/** User arguments given on the command for the problem (instance) */
 	public static String[] argsForPb;
 
-	/** User arguments given on the command for the control panel */
+	/** User arguments given on the command for the control panel (mainly, for the solver) */
 	public final static Map<String, String> argsForCp = new HashMap<>(256);
 
 	public static boolean multiThreads;
@@ -47,14 +45,14 @@ public final class Arguments {
 
 	public static String problemPackageName;
 
-	// TODO to put elsewhere ? because can be specific to each resolution object ?
+	// TODO to put elsewhere ? because can be specific to each Head object ?
 	public static int nInstancesToSolve = 1;
 
 	public static String lastArgument() {
 		return args[args.length - 1];
 	}
 
-	private static int nInstancesToSolveFrom(String token) {
+	private static int setNInstancesToSolveFrom(String token) {
 		try {
 			if (token.toLowerCase().equals(Control.ALL)) {
 				nInstancesToSolve = Integer.MAX_VALUE;
@@ -78,27 +76,26 @@ public final class Arguments {
 	 */
 	public static void loadArguments(String... args) {
 		argsForCp.clear();
-		args = Stream.of(args).filter(s -> s.length() > 0).toArray(String[]::new);
+		args = Stream.of(args).filter(s -> s.length() > 0).toArray(String[]::new); // clean args
 		Kit.control(args.length > 0);
 		Arguments.args = args;
-		multiThreads = Kit.isXMLFileWithRoot(args[args.length - 1], ResolutionVariants.VARIANT_PARALLEL);
+		multiThreads = Kit.isXMLFileWithRoot(lastArgument(), ResolutionVariants.VARIANT_PARALLEL);
 		int cursor = 0;
 		userSettingsFilename = Kit.isXMLFileWithRoot(args[cursor], Control.CONFIGURATION) ? args[cursor++] : Control.DEFAULT_CONFIGURATION;
 		// control of this file performed later
-		cursor += nInstancesToSolveFrom(args[cursor]);
+		cursor += setNInstancesToSolveFrom(args[cursor]);
 		Kit.control(!multiThreads || nInstancesToSolve == 1);
-		Kit.control(cursor < args.length && !args[cursor].startsWith(SETTING_VALUE_PREFIX),
-				() -> "The package name or (for XCSP) the instance file name is missing.");
+		Kit.control(cursor < args.length && !args[cursor].startsWith(OPTION_PREFIX), () -> "The package name or (for XCSP) the instance file name is missing.");
 		problemPackageName = args[cursor].endsWith(".xml") || args[cursor].endsWith(".lzma") ? XCSP3.class.getName() : args[cursor++];
 		List<String> list = new ArrayList<>();
-		while (cursor < args.length && (!args[cursor].startsWith(SETTING_VALUE_PREFIX) || Utilities.isInteger(args[cursor])))
+		while (cursor < args.length && (!args[cursor].startsWith(OPTION_PREFIX) || Utilities.isInteger(args[cursor])))
 			list.add(args[cursor++]);
 		argsForPb = list.toArray(new String[list.size()]);
-		// now, look For Configuration Parameters
+		// now, look For solver options
 		Set<String> setOfUserKeys = new HashSet<>();
 		for (; cursor < args.length; cursor++) {
 			String arg = args[cursor];
-			Kit.control(arg.startsWith(SETTING_VALUE_PREFIX), () -> arg + " is not put at the right position");
+			Kit.control(arg.startsWith(OPTION_PREFIX), () -> arg + " is not put at the right position");
 			int equalPosition = arg.indexOf('=');
 			String key = equalPosition > 1 ? arg.substring(1, equalPosition) : arg.substring(1);
 			String value = equalPosition > 1 ? (equalPosition == arg.length() - 1 ? "" : arg.substring(equalPosition + 1)) : "true";

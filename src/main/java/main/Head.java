@@ -289,11 +289,12 @@ public class Head extends Thread {
 			if (Arguments.problemPackageName.equals(XCSP3.class.getName()))
 				api = (ProblemAPI) Reflector.buildObject(Arguments.problemPackageName);
 			else {
-				if (Arguments.problemPackageName.startsWith(Arguments.DEFAULT_PROBLEMS_PREFIX))
+				String private_ace_problems_dir = "problems";
+				if (Arguments.problemPackageName.startsWith(private_ace_problems_dir))
 					api = (ProblemAPI) Reflector.buildObject(Arguments.problemPackageName);
 				else {
 					try {
-						api = (ProblemAPI) Reflector.buildObject(Arguments.DEFAULT_PROBLEMS_PREFIX + "." + Arguments.problemPackageName);
+						api = (ProblemAPI) Reflector.buildObject(private_ace_problems_dir + "." + Arguments.problemPackageName);
 					} catch (Exception e) {
 						api = (ProblemAPI) Reflector.buildObject(Arguments.problemPackageName);
 					}
