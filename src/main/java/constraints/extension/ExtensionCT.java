@@ -85,9 +85,9 @@ public class ExtensionCT extends ExtensionSTR1Optimized implements TagShort {
 		this.lastWord0Then1 = tuples.length % 64 != 0 ? Bit.bitsAt1From(tuples.length % 64) : 0L;
 		fillTo1(current);
 
-		this.isShort = ((Table) extStructure).isShort;
+		this.starred = ((Table) extStructure).starred;
 		this.masks = Variable.litterals(scp).longArray(nWords);
-		if (!this.isShort) {
+		if (!this.starred) {
 			for (int x = 0; x < scp.length; x++) {
 				long[][] mask = masks[x];
 				for (int j = 0; j < tuples.length; j++)
@@ -168,7 +168,7 @@ public class ExtensionCT extends ExtensionSTR1Optimized implements TagShort {
 	private boolean firstCall = true;
 	private long lastCallNode = -1;
 
-	private boolean isShort;
+	private boolean starred;
 
 	/**********************************************************************************************
 	 * Methods
@@ -267,7 +267,7 @@ public class ExtensionCT extends ExtensionSTR1Optimized implements TagShort {
 		for (int x = 0; x < scp.length; x++) {
 			Domain dom = doms[x];
 			for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a))
-				Bit.or2(tmp, !isShort ? masks[x][a] : masksS[x][a], nonZeros);
+				Bit.or2(tmp, !starred ? masks[x][a] : masksS[x][a], nonZeros);
 		}
 		Bit.inverse(tmp, nonZeros);
 		for (int i = nonZeros.limit; i >= 0; i--) {
@@ -307,7 +307,7 @@ public class ExtensionCT extends ExtensionSTR1Optimized implements TagShort {
 			Domain dom = doms[x];
 			if (deltaSizes[x] <= dom.size()) {
 				for (int cnt = deltaSizes[x] - 1, a = dom.lastRemoved(); cnt >= 0; cnt--) {
-					Bit.or2(tmp, !isShort ? masks[x][a] : masksS[x][a], nonZeros);
+					Bit.or2(tmp, !starred ? masks[x][a] : masksS[x][a], nonZeros);
 					a = dom.prevRemoved(a);
 				}
 			} else if (dom.size() == 1) {

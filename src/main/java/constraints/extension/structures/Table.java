@@ -138,10 +138,10 @@ public class Table extends ExtensionStructure {
 
 	@Override
 	public boolean checkIdxs(int[] t) {
-		if (isShort) {
+		if (starred) {
 			for (int[] tuple : tuples)
 				if (isMatching(tuple, t))
-					return true;
+					return true; // if starred, then necessarily positive table (for the moment)
 			return false;
 		}
 		return (Arrays.binarySearch(tuples, t, Utilities.lexComparatorInt) >= 0) == positive;
@@ -156,32 +156,34 @@ public class Table extends ExtensionStructure {
 	public boolean positive;
 
 	/**
-	 * Indicates if the table is a short table (i.e., contains tuples with *)
+	 * Indicates if the table is a starred/short table (i.e., contains tuples with *)
 	 */
-	public boolean isShort;
+	public boolean starred;
 
 	@Override
 	public void storeTuples(int[][] m, boolean positive) {
-		Constraint c = firstRegisteredCtr();
-		this.isShort = false;
+		this.starred = false;
 		if (m.length == 0)
-			this.tuples = new int[0][]; // m;
+			this.tuples = new int[0][];
 		else {
-			this.tuples = new int[m.length][c.scp.length];
-			for (int j = 0; j < c.scp.length; j++) {
-				Domain dom = c.scp[j].dom;
+			Domain[] doms = firstRegisteredCtr().doms;
+			this.tuples = new int[m.length][doms.length];
+			for (int j = 0; j < doms.length; j++) {
 				for (int i = 0; i < m.length; i++) {
 					int v = m[i][j];
-					assert m[i].length == c.scp.length;
-					assert v == STAR || dom.toIdx(v) != -1 : Kit.join(m[i]) + " j=" + j + " " + c + " " + dom;
+					assert m[i].length == doms.length;
+					assert v == STAR || doms[j].toIdx(v) != -1 : Kit.join(m[i]) + " j=" + j + " " + firstRegisteredCtr() + " " + doms[j];
 					if (v == STAR)
-						this.isShort = true;
-					this.tuples[i][j] = v == STAR ? STAR : dom.toIdx(v);
+						this.starred = true;
+					this.tuples[i][j] = v == STAR ? STAR : doms[j].toIdx(v);
 				}
 			}
 		}
 		this.positive = positive;
 		Arrays.sort(this.tuples, Utilities.lexComparatorInt);
+		Kit.control(!starred || positive);
+		if (subtables != null)
+			buildSubtables();
 	}
 
 	public Table(Constraint c) {
@@ -196,6 +198,57 @@ public class Table extends ExtensionStructure {
 	@Override
 	public String toString() {
 		return "Tuples :\n" + Kit.join(tuples) + " (" + positive + ")";
+	}
+
+	/**********************************************************************************************
+	 * Handling subclasses (only for some algorithms like va (valid-allowed))
+	 *********************************************************************************************/
+
+	private int[][][][] subtables; // subtables[x][a][k] is the kth tuple of the table where x = a
+
+	public Table withSubtables() {
+		this.subtables = new int[0][][][]; // to know that subtables must be created
+		return this;
+	}
+
+	@Override
+	public int[] nextSupport(int x, int a, int[] current) { // can only called by some algorithms (if subtables have been created)
+		int[][] subtable = subtables[x][a];
+		int res = Arrays.binarySearch(subtable, current, Utilities.lexComparatorInt);
+		if (res >= 0)
+			return current;
+		int point = -res - 1;
+		return point == subtable.length ? null : subtable[point];
+	}
+
+	private void buildSubtables() {
+		Constraint c = firstRegisteredCtr();
+		List<int[]>[][] tmp = Variable.litterals(c.scp).listArray();
+		for (int i = 0; i < tuples.length; i++)
+			for (int j = 0; j < tuples[i].length; j++)
+				tmp[j][tuples[i][j]].add(tuples[i]);
+		subtables = new int[c.scp.length][][][];
+		for (int i = 0; i < subtables.length; i++) {
+			subtables[i] = new int[c.scp[i].dom.initSize()][][];
+			for (int j = 0; j < subtables[i].length; j++)
+				subtables[i][j] = tmp[i][j].toArray(new int[tmp[i][j].size()][]);
+		}
+		assert IntStream.range(0, subtables.length).allMatch(i -> IntStream.range(0, subtables[i].length).allMatch(j -> Kit.isLexIncreasing(subtables[i][j])));
+	}
+
+	String printSubtables() {
+		StringBuilder sb = new StringBuilder(super.toString());
+		sb.append("Subtables\n");
+		for (int i = 0; i < subtables.length; i++) {
+			sb.append("Variable " + firstRegisteredCtr().scp[i] + "\n");
+			for (int j = 0; j < subtables[i].length; j++) {
+				sb.append("  " + j + " :");
+				for (int k = 0; k < subtables[i][j].length; k++)
+					sb.append(" (" + Kit.join(subtables[i][j][k]) + ")");
+				sb.append("\n");
+			}
+		}
+		return sb.toString();
 	}
 
 }

@@ -204,10 +204,6 @@ public class Tries extends ExtensionStructure {
 			return true;
 		if (!firstRegisteredCtr().scp[position].dom.present(node.idx))
 			return false;
-		if (!controlNode(node.firstSibling, position))
-			return false;
-		if (!controlNode(node.firstChild, position + 1))
-			return false;
-		return true;
+		return controlNode(node.firstSibling, position) && controlNode(node.firstChild, position + 1);
 	}
 }

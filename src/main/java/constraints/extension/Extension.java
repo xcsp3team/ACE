@@ -25,7 +25,6 @@ import constraints.TupleManager;
 import constraints.extension.Extension.ExtensionGeneric.ExtensionV;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
-import constraints.extension.structures.TableWithSubtables;
 import constraints.extension.structures.Tries;
 import interfaces.FilteringSpecific;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
@@ -115,7 +114,7 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 			protected ExtensionStructure buildExtensionStructure() {
 				int variant = problem.head.control.extension.variant;
 				assert variant == 0 || variant == 1 || variant == 11;
-				return variant == 0 ? new TableWithSubtables(this) : new Tries(this, variant == 11);
+				return variant == 0 ? new Table(this).withSubtables() : new Tries(this, variant == 11);
 			}
 
 			public ExtensionVA(Problem pb, Variable[] scp) {

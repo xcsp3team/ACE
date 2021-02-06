@@ -9,7 +9,6 @@
 package dashboard;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -104,9 +103,5 @@ public final class Arguments {
 			setOfUserKeys.add(key);
 			// TODO control validity of key-value
 		}
-	}
-
-	public static void loadArguments(String[] args, String... otherArgs) {
-		loadArguments(Stream.concat(Arrays.stream(args), Arrays.stream(otherArgs)).toArray(String[]::new));
 	}
 }

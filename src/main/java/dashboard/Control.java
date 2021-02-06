@@ -41,7 +41,7 @@ import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
 import constraints.extension.structures.Bits;
-import constraints.extension.structures.Matrix3D;
+import constraints.extension.structures.Matrix.Matrix3D;
 import heuristics.HeuristicRevisions;
 import heuristics.HeuristicRevisions.HeuristicRevisionsDynamic.Dom;
 import heuristics.HeuristicValues;
@@ -393,14 +393,6 @@ public class Control {
 		String s_positive = "For (non-binary) constraints defined in extension, there are many ways of representing and propagating them."
 				+ "\n\tWe have v for GAC-valid, a for GAC-allowed, va for GAC-valid+allowed, str1 for simple tabular reduction, str2 and mdd...";
 		String s_negative = "For non-binary constraints defined in extension, representation of negative table constraints...";
-		String s_ma = "Indicates whether we must use the algorithm apriori for mining items in tables.";
-		String s_mt = "The threshold used for the selected mining technique.";
-		String s_wcnc = "When an instance is aimed at being saved in XCSP format, it is possible to convert a CN (in extensional form) into a WCN one."
-				+ "\n\tIf the value of this parameter is RANDOM, then random costs are generated:"
-				+ "\n\t a) positive table : for supports (in table; random cost between [0,...,k-1] and defaultCost=k."
-				+ "\n\tb) negative table : for conflicts (in table; random cost between [1,...,k] and defaultCost=0."
-				+ "\n\tIf the value of this parameter is NATURAL, supports have cost 0 and conflicts have cost 1."
-				+ "\n\tNote that is is only currently implemented for instances with extensional constraints.";
 
 		public final EExtension positive = addE("positive", "positive", EExtension.CT, s_positive);
 		public final EExtension negative = addE("negative", "negative", EExtension.V, s_negative);
