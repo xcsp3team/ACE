@@ -9,31 +9,32 @@
 package constraints.extension;
 
 import java.util.Arrays;
+import java.util.stream.Stream;
 
-import org.xcsp.common.Constants;
+import org.xcsp.common.structures.Automaton;
+import org.xcsp.common.structures.Transition;
 import org.xcsp.modeler.definitions.ICtr.ICtrMdd;
 
 import constraints.extension.Extension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
-import constraints.extension.structures.MDDShort;
-import constraints.extension.structures.MDDShort.MDDNodeShort;
+import constraints.extension.structures.MDD;
+import constraints.extension.structures.MDD.MDDNode;
 import interfaces.Tags.TagPositive;
-import interfaces.Tags.TagShort;
 import problem.Problem;
 import sets.SetSparseReversible;
 import variables.Domain;
 import variables.Variable;
 
-public final class ExtensionMDDShort extends ExtensionGlobal implements TagPositive, TagShort, ICtrMdd {
+public final class CMDD extends ExtensionGlobal implements TagPositive, ICtrMdd {
 
 	/**********************************************************************************************
-	 * Interfaces
+	 * Implementing Interfaces
 	 *********************************************************************************************/
 
 	@Override
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
-		int nNodes = ((MDDShort) extStructure).nNodes();
+		int nNodes = ((MDD) extStructure).nNodes();
 		this.trueNodes = new int[nNodes];
 		if (problem.head.control.extension.decremental)
 			this.set = new SetSparseReversible(nNodes, false, problem.variables.length + 1);
@@ -75,24 +76,40 @@ public final class ExtensionMDDShort extends ExtensionGlobal implements TagPosit
 	 * Methods
 	 *********************************************************************************************/
 
-	public ExtensionMDDShort(Problem pb, Variable[] scp) {
+	public CMDD(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		control(scp.length >= 1);
 	}
 
-	public ExtensionMDDShort(Problem pb, Variable[] scp, int[][] tuples) {
+	public CMDD(Problem pb, Variable[] scp, int[][] tuples) {
 		this(pb, scp);
 		storeTuples(tuples, true);
 	}
 
-	public ExtensionMDDShort(Problem pb, Variable[] scp, MDDNodeShort root) {
+	public CMDD(Problem pb, Variable[] scp, MDDNode root) {
 		this(pb, scp);
-		extStructure = new MDDShort(this, root);
+		extStructure = new MDD(this, root);
+	}
+
+	public CMDD(Problem pb, Variable[] scp, Transition[] transitions) {
+		this(pb, scp);
+		// key = signature() + " " + transitions; // TDODO be careful, we assume that the address of tuples can be used
+		extStructure = new MDD(this, Stream.of(transitions).map(t -> new Object[] { t.firstState, t.symbol, t.secondState }).toArray(Object[][]::new));
+	}
+
+	public CMDD(Problem problem, Variable[] scope, Automaton automaton) {
+		this(problem, scope);
+		extStructure = new MDD(this, automaton);
+	}
+
+	public CMDD(Problem problem, Variable[] scope, int[] coeffs, Object limits) {
+		this(problem, scope);
+		extStructure = new MDD(this, coeffs, limits);
 	}
 
 	@Override
 	protected ExtensionStructure buildExtensionStructure() {
-		return new MDDShort(this);
+		return new MDD(this);
 	}
 
 	protected void beforeFiltering() {
@@ -109,20 +126,6 @@ public final class ExtensionMDDShort extends ExtensionGlobal implements TagPosit
 	}
 
 	private boolean manageSuccessfulExploration(int level, int a) {
-		if (a == Constants.STAR) {
-			Variable x = scp[level];
-			if (x.isFuture()) {
-				for (int b = x.dom.first(); b != -1; b = x.dom.next(b)) {
-					if (!ac[level][b]) {
-						cnt--;
-						cnts[level]--;
-						ac[level][b] = true;
-					}
-				}
-			}
-			return false;
-		}
-
 		int cutoffVariant = problem.head.control.extension.variant;
 		if (cutoffVariant == 2) {
 			if (scp[level].isFuture()) {
@@ -166,37 +169,32 @@ public final class ExtensionMDDShort extends ExtensionGlobal implements TagPosit
 		return false;
 	}
 
-	private boolean exploreMDD(MDDNodeShort node) {
-		if (node == MDDNodeShort.nodeT || trueNodes[node.id] == trueTimestamp)
+	private boolean exploreMDD(MDDNode node) {
+		if (node == MDDNode.nodeT || trueNodes[node.id] == trueTimestamp)
 			return true;
-		if (node == MDDNodeShort.nodeF || (set != null && set.isPresent(node.id)) || (set == null && falseNodes[node.id] == falseTimestamp))
+		if (node == MDDNode.nodeF || (set != null && set.isPresent(node.id)) || (set == null && falseNodes[node.id] == falseTimestamp))
 			return false;
 		Domain dom = scp[node.level].dom;
 		boolean supported = false, finished = false;
-		// if (dom.size() < node.nSonsDifferentFromNodeF()) {
-		if (exploreMDD(node.sons[node.sons.length - 1])) {
-			supported = true;
-			manageSuccessfulExploration(node.level, Constants.STAR);
-		}
-		for (int a = dom.first(); a != -1 && !finished; a = dom.next(a)) {
-			if (exploreMDD(node.sons[a])) {
-				supported = true;
-				finished = manageSuccessfulExploration(node.level, a);
+		if (dom.size() < node.nSonsDifferentFromNodeF()) {
+			for (int a = dom.first(); a != -1 && !finished; a = dom.next(a)) {
+				if (exploreMDD(node.sons[a])) {
+					supported = true;
+					finished = manageSuccessfulExploration(node.level, a);
+				}
+			}
+		} else {
+			search: for (int[] childsClass : node.sonsClasses) {
+				for (int a : childsClass) {
+					if (dom.present(a) && exploreMDD(node.sons[a])) {
+						supported = true;
+						finished = manageSuccessfulExploration(node.level, a);
+						if (finished)
+							break search;
+					}
+				}
 			}
 		}
-		// }
-		// else {
-		// search: for (int[] childsClass : node.sonsClasses) {
-		// for (int a : childsClass) {
-		// if (dom.isPresent(a) && exploreMDD(node.sons[a])) {
-		// supported = true;
-		// finished = manageSuccessfulExploration(node.level, a);
-		// if (finished)
-		// break search;
-		// }
-		// }
-		// }
-		// }
 		if (supported)
 			trueNodes[node.id] = trueTimestamp;
 		else if (set != null)
@@ -204,7 +202,6 @@ public final class ExtensionMDDShort extends ExtensionGlobal implements TagPosit
 		else
 			falseNodes[node.id] = falseTimestamp;
 		return supported;
-
 	}
 
 	protected boolean updateDomains() {
@@ -223,7 +220,7 @@ public final class ExtensionMDDShort extends ExtensionGlobal implements TagPosit
 	@Override
 	public boolean runPropagator(Variable dummy) {
 		beforeFiltering();
-		exploreMDD(((MDDShort) extStructure).root);
+		exploreMDD(((MDD) extStructure).root);
 		return updateDomains();
 	}
 

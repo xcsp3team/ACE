@@ -114,23 +114,22 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	public static final class Failures extends HeuristicValuesDynamic {
 
 		private int[] nDecisions;
-		private int[] nFailedDecisions;
-
-		public void updateWith(int a, int depth, boolean consistent) {
-			nDecisions[a]++;
-			if (!consistent)
-				nFailedDecisions[a]++;
-		}
 
 		public Failures(Variable x, boolean antiHeuristic) {
 			super(x, antiHeuristic);
 			this.nDecisions = Kit.repeat(1, dx.initSize()); // we use 1 for avoiding divisions by 0
-			this.nFailedDecisions = new int[dx.initSize()];
 		}
 
 		@Override
 		public double scoreOf(int a) {
-			return nFailedDecisions[a] / (double) nDecisions[a];
+			return x.failed[a] / (double) nDecisions[a];
+		}
+
+		@Override
+		public int identifyBestValueIndex() {
+			int a = super.identifyBestValueIndex();
+			nDecisions[a]++;
+			return a;
 		}
 	}
 

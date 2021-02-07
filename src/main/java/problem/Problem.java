@@ -101,8 +101,8 @@ import constraints.Constraint.CtrHardFalse;
 import constraints.Constraint.CtrHardTrue;
 import constraints.extension.Extension;
 import constraints.extension.Extension.Extension1;
-import constraints.extension.ExtensionMDD;
-import constraints.extension.ExtensionSmart;
+import constraints.extension.CMDD;
+import constraints.extension.CSmart;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart.SmartTuple;
 import constraints.global.AllDifferent.AllDifferentBound;
@@ -113,6 +113,7 @@ import constraints.global.AllDifferent.AllDifferentPermutation;
 import constraints.global.AllDifferent.AllDifferentWeak;
 import constraints.global.AllEqual;
 import constraints.global.Among;
+import constraints.global.BinPackingSimple;
 import constraints.global.Cardinality.CardinalityConstant;
 import constraints.global.Circuit;
 import constraints.global.Count.CountCst.AtLeast1;
@@ -749,8 +750,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return AUXILIARY_VARIABLE_PREFIX + varEntities.allEntities.size();
 	}
 
+	public int nAuxVariables, nAuxConstraints;
+
 	private Var newAuxVar(Object values) {
 		Dom dom = values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
+		nAuxVariables++;
 		return api.var(idAux(), dom, "auxiliary variable");
 	}
 
@@ -790,22 +794,19 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// if multiple occurrences of the same variable in a tree, there is a possible problem of reasoning with similar trees
 		boolean similarTrees = trees.length > 1 && Stream.of(trees).allMatch(tree -> tree.listOfVars().size() == tree.vars().length);
 		similarTrees = similarTrees && IntStream.range(1, trees.length).allMatch(i -> areSimilar(trees[0], trees[i]));
-
+		Var[] aux = null;
+		int[][] tuples = null;
 		if (similarTrees) {
-			Var[] aux = api.array(idAux(), api.size(trees.length), doms.apply(0), "auxiliary variables");
+			aux = api.array(idAux(), api.size(trees.length), doms.apply(0), "auxiliary variables");
 			Variable[] treeVars = (Variable[]) trees[0].vars();
-			int[][] tuples = head.control.extension.convertingIntension(treeVars)
-					? new TreeEvaluator(trees[0]).computeTuples(Variable.initDomainValues(treeVars))
-					: null;
-			for (int i = 0; i < trees.length; i++)
-				replacement(aux[i], trees[i], true, tuples);
-			return aux;
-		} else {
-			Var[] aux = api.array(idAux(), api.size(trees.length), doms, "auxiliary variables");
-			for (int i = 0; i < trees.length; i++)
-				replacement(aux[i], trees[i], false, null);
-			return aux;
-		}
+			if (head.control.extension.convertingIntension(treeVars))
+				tuples = new TreeEvaluator(trees[0]).computeTuples(Variable.initDomainValues(treeVars));
+		} else
+			aux = api.array(idAux(), api.size(trees.length), doms, "auxiliary variables");
+		for (int i = 0; i < trees.length; i++)
+			replacement(aux[i], trees[i], similarTrees, tuples);
+		nAuxVariables += trees.length;
+		return aux;
 	}
 
 	private Var[] replaceByVariables(Stream<XNode<IVar>> trees) {
@@ -1087,16 +1088,16 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrAlone regular(Var[] list, Automaton automaton) {
-		return addCtr(new ExtensionMDD(this, translate(list), automaton));
+		return addCtr(new CMDD(this, translate(list), automaton));
 	}
 
 	@Override
 	public final CtrAlone mdd(Var[] list, Transition[] transitions) {
-		return addCtr(new ExtensionMDD(this, translate(list), transitions));
+		return addCtr(new CMDD(this, translate(list), transitions));
 	}
 
 	public final CtrAlone mdd(Var[] list, int[][] tuples) {
-		return addCtr(new ExtensionMDD(this, translate(list), tuples));
+		return addCtr(new CMDD(this, translate(list), tuples));
 	}
 
 	// public final CtrAlone mddOr(Var[] scp, MDDCD[] t) {
@@ -1159,11 +1160,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private CtrAlone distinctVectors(Variable[] t1, Variable[] t2) {
 		control(Variable.areAllDistinct(vars(t1, t2)), "For the moment not handled");
 		if (isBasicType(head.control.global.typeDistinctVectors2))
-			return addCtr(ExtensionSmart.buildDistinctVectors(this, t1, t2)); // return addCtr(new DistinctVectors2(this, t1, t2)); // BUG TO BE
+			return addCtr(CSmart.buildDistinctVectors(this, t1, t2)); // return addCtr(new DistinctVectors2(this, t1, t2)); // BUG TO BE
 																				// FIXED
 		if (head.control.global.typeDistinctVectors2 == 1) {
 			if (head.control.global.smartTable)
-				return addCtr(ExtensionSmart.buildDistinctVectors(this, t1, t2));
+				return addCtr(CSmart.buildDistinctVectors(this, t1, t2));
 			if (head.control.global.jokerTable)
 				return extension(vars(t1, t2), Table.shortTuplesFordNotEqualVectors(t1, t2), true);
 		}
@@ -1179,12 +1180,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			return forall(range(lists.length).range(lists.length), (i, j) -> {
 				if (i < j) {
 					if (head.control.global.smartTable)
-						addCtr(ExtensionSmart.buildDistinctVectors(this, lists[i], lists[j]));
+						addCtr(CSmart.buildDistinctVectors(this, lists[i], lists[j]));
 					else if (head.control.global.jokerTable)
 						extension(vars(lists[i], lists[j]), Table.shortTuplesFordNotEqualVectors(lists[i], lists[j]), true);
 					else
 						// addCtr(new DistinctVectors(this, lists[i], lists[j]));
-						addCtr(ExtensionSmart.buildDistinctVectors(this, lists[i], lists[j]));
+						addCtr(CSmart.buildDistinctVectors(this, lists[i], lists[j]));
 					// TODO java ace seriesJanvier2018/Crossword/Crossword-m1-ogd-puzzle/Crossword-ogd-p02.xml.lzma -varh=WdegOnDom -positive=str2 -s=all
 					// not the same number of solution with Smart and DistinctVectors
 				}
@@ -1391,7 +1392,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			if (op == TypeConditionOperatorSet.IN) {
 				boolean mdd = false; // hard coding for the moment
 				if (mdd)
-					return addCtr(new ExtensionMDD(this, translate(list), coeffs, rightTerm));
+					return addCtr(new CMDD(this, translate(list), coeffs, rightTerm));
 				sum(list, coeffs, GE, min);
 				sum(list, coeffs, LE, max);
 				if (condition instanceof ConditionIntset) {
@@ -1625,7 +1626,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 								greaterEqual(y, vars[i]);
 					});
 				if (head.control.global.smartTable)
-					c = minimum ? ExtensionSmart.buildMinimum(this, vars, y) : ExtensionSmart.buildMaximum(this, vars, y);
+					c = minimum ? CSmart.buildMinimum(this, vars, y) : CSmart.buildMaximum(this, vars, y);
 				else
 					c = minimum ? new Minimum(this, vars, y) : new Maximum(this, vars, y);
 			}
@@ -1700,7 +1701,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private CtrAlone element(Var[] list, Var index, Var value) {
 		if (head.control.global.smartTable)
-			return addCtr(ExtensionSmart.buildElement(this, translate(list), (Variable) index, (Variable) value));
+			return addCtr(CSmart.buildElement(this, translate(list), (Variable) index, (Variable) value));
 		if (head.control.global.jokerTable)
 			return extension(Utilities.indexOf(value, list) == -1 ? vars(index, list, value) : vars(index, list),
 					Table.shortTuplesForElement(translate(list), (Variable) index, (Variable) value), true);
@@ -1711,6 +1712,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrAlone element(Var[] list, int startIndex, Var index, TypeRank rank, Condition condition) {
 		unimplementedIf(startIndex != 0 || (rank != null && rank != TypeRank.ANY), "element");
 		Domain idom = ((Variable) index).dom;
+		// first, we discard some possibly useless variables from list
 		if (!idom.areInitValuesExactly(api.range(0, list.length))) {
 			List<Variable> tmp = new ArrayList<>();
 			for (int a = idom.first(); a != -1; a = idom.next(a)) {
@@ -1722,12 +1724,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			}
 			list = tmp.stream().toArray(Var[]::new);
 		}
-
+		// second, we deal with the classical uses of Element (operator EQ, and right term a value or a variable
 		if (condition instanceof ConditionRel && ((ConditionRel) condition).operator == EQ) {
 			if (condition instanceof ConditionVal)
 				return element(list, index, safeInt(((ConditionVal) condition).k));
 			return element(list, index, (Var) ((ConditionVar) condition).x);
 		}
+		// third, we introduce an auxiliary variable for dealing with the other cases
 		int min = Stream.of(list).mapToInt(x -> ((Variable) x).dom.firstValue()).min().getAsInt();
 		int max = Stream.of(list).mapToInt(x -> ((Variable) x).dom.lastValue()).max().getAsInt();
 		Var aux = newAuxVar(new Range(min, max + 1));
@@ -1856,7 +1859,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (head.control.global.typeNoOverlap == 2)
 			return (CtrAlone) intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1)));
 		if (head.control.global.typeNoOverlap == 10) // rs.cp.global.smartTable)
-			return addCtr(ExtensionSmart.buildNoOverlap(this, (Variable) x1, (Variable) x2, w1, w2));
+			return addCtr(CSmart.buildNoOverlap(this, (Variable) x1, (Variable) x2, w1, w2));
 		return (CtrAlone) Kit.exit("Bad value for the choice of the propagator");
 	}
 
@@ -1897,7 +1900,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private CtrAlone noOverlap(Variable x1, Variable x2, Variable y1, Variable y2, int w1, int w2, int h1, int h2) {
 		if (head.control.global.smartTable)
-			return addCtr(ExtensionSmart.buildNoOverlap(this, x1, y1, x2, y2, w1, h1, w2, h2));
+			return addCtr(CSmart.buildNoOverlap(this, x1, y1, x2, y2, w1, h1, w2, h2));
 		if (head.control.global.jokerTable)
 			return extension(vars(x1, x2, y1, y2), computeTable(x1, x2, y1, y2, w1, w2, h1, h2), true, true);
 		return (CtrAlone) intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1), le(add(y1, h1), y2), le(add(y2, h2), y1)));
@@ -1916,7 +1919,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private CtrAlone noOverlap(Variable x1, Variable x2, Variable y1, Variable y2, Variable w1, Variable w2, Variable h1, Variable h2) {
 		if (head.control.global.smartTable && Stream.of(w1, w2, h1, h2).allMatch(x -> x.dom.initSize() == 2))
-			return addCtr(ExtensionSmart.buildNoOverlap(this, x1, y1, x2, y2, w1, h1, w2, h2));
+			return addCtr(CSmart.buildNoOverlap(this, x1, y1, x2, y2, w1, h1, w2, h2));
 		return (CtrAlone) intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1), le(add(y1, h1), y2), le(add(y2, h2), y1)));
 	}
 
@@ -1931,7 +1934,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	// ************************************************************************
-	// ***** Constraint cumulative
+	// ***** Constraint cumulative and BinPacking
 	// ************************************************************************
 
 	@Override
@@ -1958,6 +1961,16 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity cumulative(Var[] origins, Var[] lengths, Var[] ends, Var[] heights, Condition condition) {
 		return unimplemented("cumulative");
+	}
+
+	public final CtrEntity binpacking(Var[] list, int[] sizes, Condition condition) {
+		if (condition instanceof ConditionVal) {
+			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
+			control(op == LT || op == LE);
+			int limit = Utilities.safeInt(((ConditionVal) condition).k);
+			return addCtr(new BinPackingSimple(this, translate(list), sizes, limit - (op == LT ? 1 : 0)));
+		}
+		return unimplemented("binPacking");
 	}
 
 	// ************************************************************************
@@ -2054,7 +2067,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	/** Builds and returns a smart constraint. */
 	public final CtrAlone smart(IVar[] scp, SmartTuple... smartTuples) {
-		return addCtr(new ExtensionSmart(this, translate(scp), smartTuples));
+		return addCtr(new CSmart(this, translate(scp), smartTuples));
 	}
 
 	// ************************************************************************

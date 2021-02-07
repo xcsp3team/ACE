@@ -38,7 +38,7 @@ import org.xcsp.common.predicates.TreeEvaluator.ExternFunctionArity2;
 import constraints.Constraint;
 import constraints.extension.Extension;
 import constraints.extension.Extension.Extension1;
-import constraints.extension.ExtensionSmart;
+import constraints.extension.CSmart;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart;
 import constraints.intension.Intension;
@@ -231,7 +231,7 @@ public final class Features {
 			// throw new UnreachableCodeException();
 		} else
 			ctrTypes.add(c.getClass().getSimpleName() + (c instanceof Extension ? "-" + c.extStructure().getClass().getSimpleName() : ""));
-		if (c instanceof ExtensionSmart)
+		if (c instanceof CSmart)
 			tableSizes.add(((TableSmart) c.extStructure()).smartTuples.length);
 		if (c instanceof Extension && c.extStructure() instanceof Table)
 			tableSizes.add(((Table) c.extStructure()).tuples.length);
@@ -379,6 +379,7 @@ public final class Features {
 		m.putWhenPositive("nIsolated", nIsolatedVars);
 		m.putWhenPositive("nFixed", nFixedVars);
 		m.putWhenPositive("nSymb", nSymbolicVars);
+		m.putWhenPositive("nAux", problem.nAuxVariables);
 		m.put("degrees", varDegrees);
 		return m;
 	}

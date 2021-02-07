@@ -17,8 +17,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import constraints.extension.ExtensionSTR1;
-import constraints.extension.ExtensionSTR3;
+import constraints.extension.STR1;
+import constraints.extension.STR3;
 import heuristics.HeuristicVariables;
 import heuristics.HeuristicVariablesDynamic.WdegOnDom;
 import solver.Solver;
@@ -43,7 +43,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		this.nInverseTests = new int[solver.problem.variables.length + 1];
 		this.baseNbSolutionsLimit = solver.solRecorder.limit;
 		Kit.control(solver.head.control.restarts.cutoff == Long.MAX_VALUE, () -> "With GIC, there is currently no possibility of restarts.");
-		Kit.control(!Stream.of(solver.problem.constraints).anyMatch(c -> c.getClass().isAssignableFrom(ExtensionSTR3.class)),
+		Kit.control(!Stream.of(solver.problem.constraints).anyMatch(c -> c.getClass().isAssignableFrom(STR3.class)),
 				() -> "GIC currently not compatible with STR3");
 
 	}
@@ -72,9 +72,9 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 
 	protected void updateSTRStructures() {
 		for (Constraint c : solver.problem.constraints)
-			if (c instanceof ExtensionSTR1) { // || constraint instanceof AllDifferent) {
+			if (c instanceof STR1) { // || constraint instanceof AllDifferent) {
 				int bef = solver.problem.nValuesRemoved;
-				((ExtensionSTR1) c).runPropagator(null); // to update tables
+				((STR1) c).runPropagator(null); // to update tables
 				Kit.control(solver.problem.nValuesRemoved == bef);
 			}
 	}

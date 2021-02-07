@@ -22,9 +22,9 @@ import utility.Bit;
 import variables.Domain;
 import variables.Variable;
 
-public class ExtensionCT extends ExtensionSTR1Optimized implements TagShort {
+public class CT extends STR1Optimized implements TagShort {
 
-	public final static class ExtensionCT2 extends ExtensionCT implements TagShort {
+	public final static class CT2 extends CT implements TagShort {
 
 		static final int MASK_COMPRESION_LIMIT = 12;
 		static final int MASK_COMPRESION_TRIGGER_SIZE = 300;
@@ -60,7 +60,7 @@ public class ExtensionCT extends ExtensionSTR1Optimized implements TagShort {
 			}
 		}
 
-		public ExtensionCT2(Problem pb, Variable[] scp) {
+		public CT2(Problem pb, Variable[] scp) {
 			super(pb, scp);
 		}
 
@@ -174,7 +174,7 @@ public class ExtensionCT extends ExtensionSTR1Optimized implements TagShort {
 	 * Methods
 	 *********************************************************************************************/
 
-	public ExtensionCT(Problem pb, Variable[] scp) {
+	public CT(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		control(decremental);
 	}

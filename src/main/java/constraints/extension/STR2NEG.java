@@ -19,7 +19,7 @@ import sets.SetDenseReversible;
 import variables.Domain;
 import variables.Variable;
 
-public class ExtensionSTR2NEG extends ExtensionGlobal implements TagNegative {
+public class STR2NEG extends ExtensionGlobal implements TagNegative {
 
 	/**********************************************************************************************
 	 * Interfaces
@@ -59,7 +59,7 @@ public class ExtensionSTR2NEG extends ExtensionGlobal implements TagNegative {
 	protected int sSupSize;
 	protected int[] sSup;
 
-	public ExtensionSTR2NEG(Problem pb, Variable[] scp) {
+	public STR2NEG(Problem pb, Variable[] scp) {
 		super(pb, scp);
 	}
 

@@ -30,7 +30,6 @@ import org.xcsp.common.Constants;
 import constraints.Constraint;
 import constraints.Constraint.CtrGlobal;
 import heuristics.HeuristicValuesDynamic.Bivs;
-import heuristics.HeuristicValuesDynamic.Failures;
 import heuristics.HeuristicVariables;
 import interfaces.Observers.ObserverAssignment;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
@@ -577,9 +576,8 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		assign(x, a);
 		proofer.reset();
 		boolean consistent = propagation.runAfterAssignment(x) && (ipsRecorder == null || ipsRecorder.dealWhenOpeningNode());
-		if (x.heuristic instanceof Failures)
-			((Failures) x.heuristic).updateWith(a, depth(), consistent);
 		if (!consistent) {
+			x.failed[a]++;
 			stats.nWrongDecisions++;
 			stats.nFailedAssignments++;
 			// if (ngdRecorder != null) ngdRecorder.addCurrentNogood();

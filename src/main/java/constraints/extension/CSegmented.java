@@ -23,7 +23,7 @@ import sets.SetDenseReversible;
 import sets.SetSparse;
 import variables.Variable;
 
-public final class ExtensionSegmented extends ExtensionGlobal {
+public final class CSegmented extends ExtensionGlobal {
 
 	/**********************************************************************************************
 	 * Restoration
@@ -89,7 +89,7 @@ public final class ExtensionSegmented extends ExtensionGlobal {
 
 	protected long lastCallNode;
 
-	public ExtensionSegmented(Problem pb, Variable[] scp, SegmentedTuple... splitTuples) {
+	public CSegmented(Problem pb, Variable[] scp, SegmentedTuple... splitTuples) {
 		super(pb, scp);
 		this.segmentedTuples = splitTuples;
 		extStructure = buildExtensionStructure();

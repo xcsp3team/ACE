@@ -23,7 +23,7 @@ public class Enums {
 	}
 
 	public static enum EExtension {
-		V, A, VA, STR1, STR2, STR3, STR2S, STR1NEG, STR2NEG, CT, MDD, MDDSHORT, GAC4, RPWC, RPWC2;
+		V, VA, STR1, STR2, STR3, STR2S, STR1NEG, STR2NEG, CT, CMDD, CMDDSHORT, GAC4, RPWC, RPWC2;
 	}
 
 	public enum EExtraction {

@@ -165,14 +165,15 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 		Set<Class<?>> classes = pb.head.handlerClasses.map.get(Extension.class);
 		if (presentStar) {
 			Kit.control(positive);
-			Extension c = (Extension) Reflector.buildObject(Extension.class.getSimpleName() + pb.head.control.extension.positive, classes, pb, scp);
+			String name = pb.head.control.extension.positive.toString();
+			Extension c = (Extension) Reflector.buildObject(name.equals("V") || name.equals("VA") ? "Extension" + name : name, classes, pb, scp);
 			Kit.control(c instanceof TagShort); // currently, STR2, STR2S, CT, CT2 and MDDSHORT
 			return c;
 		}
 		if (scp.length == 2 && pb.head.control.extension.validForBinary)
 			return new ExtensionV(pb, scp); // return new CtrExtensionSTR2(pb, scp);
-		String suffix = (positive ? pb.head.control.extension.positive : pb.head.control.extension.negative).toString();
-		return (Extension) Reflector.buildObject(Extension.class.getSimpleName() + suffix, classes, pb, scp);
+		String name = (positive ? pb.head.control.extension.positive : pb.head.control.extension.negative).toString();
+		return (Extension) Reflector.buildObject(name.equals("V") || name.equals("VA") ? "Extension" + name : name, classes, pb, scp);
 	}
 
 	private static int[][] reverseTuples(Variable[] variables, int[][] tuples) {

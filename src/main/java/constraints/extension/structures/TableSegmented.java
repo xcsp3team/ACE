@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
-import constraints.extension.ExtensionSegmented;
+import constraints.extension.CSegmented;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
 import problem.Problem;
 import sets.SetDenseReversible;
@@ -61,7 +61,7 @@ public class TableSegmented extends ExtensionStructure {
 			this.restrictions = restrictions == null ? new RestrictionTable[0] : restrictions;
 		}
 
-		public void attach(ExtensionSegmented ctr) {
+		public void attach(CSegmented ctr) {
 			this.scp = ctr.scp;
 			this.prefixWithValues = prefixWithValues != null ? prefixWithValues : Kit.repeat(STAR, scp.length);
 			this.prefix = IntStream.range(0, scp.length).map(i -> prefixWithValues[i] == STAR ? STAR : scp[i].dom.toIdx(prefixWithValues[i])).toArray();

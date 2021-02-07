@@ -40,7 +40,7 @@ public class TestWrongDecisions {
 		add("/csp/Crossword-lex-vg-5-6", 9199, "-varh=DdegOnDom -positive=str1");
 		add("/csp/Crossword-lex-vg-5-6", 9199, "-varh=DdegOnDom -positive=str2");
 		add("/csp/Crossword-lex-vg-5-6", 9199, "-varh=DdegOnDom -positive=str3");
-		add("/csp/Crossword-lex-vg-5-6", 9199, "-varh=DdegOnDom -positive=mdd");
+		add("/csp/Crossword-lex-vg-5-6", 9199, "-varh=DdegOnDom -positive=cmdd");
 		return collection;
 	}
 

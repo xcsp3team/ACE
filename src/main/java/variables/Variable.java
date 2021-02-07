@@ -456,13 +456,9 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	/** The timestamp associated with variable. It is used for propagation. */
 	public long time;
 
-	/** An object associated with the variable. Of course, may be null. The object can be used for example by an heuristic. */
-	public Object data;
-
 	public int valueIndexInLastSolution = -1;
 
-	/** The weighted degree of the variable. Basically, it is equal to the sum of the weighted degree of the constraints involving it. */
-	// public double wdeg;
+	public int[] failed; // failed[a] gives the number of failed assignments for a
 
 	private Variable[] computeNeighbours(int neighborArityLimit) {
 		if (ctrs.length == 0 || ctrs[ctrs.length - 1].scp.length > neighborArityLimit) // the last ctr is the one with the largest scope
@@ -485,6 +481,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	public final void whenFinishedProblemConstruction() {
 		this.ctrs = collectedCtrs.stream().sorted((c1, c2) -> c1.scp.length - c2.scp.length).toArray(Constraint[]::new);
 		this.nghs = problem.variables.length > NB_VARIABLES_LIMIT_FOR_STORING_NEIGHBOURS ? null : computeNeighbours(NB_NEIGHBOURS_LIMIT_FOR_STORING_NEIGHBOURS);
+		this.failed = new int[dom.initSize()];
 	}
 
 	/** Builds a variable with the specified id (name). */

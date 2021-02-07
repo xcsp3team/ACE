@@ -17,7 +17,7 @@ import problem.Problem;
 import sets.SetDenseReversible;
 import variables.Variable;
 
-public class ExtensionSTR1 extends ExtensionGlobal {
+public class STR1 extends ExtensionGlobal {
 
 	/**********************************************************************************************
 	 * Interfaces
@@ -65,7 +65,7 @@ public class ExtensionSTR1 extends ExtensionGlobal {
 	 * Methods
 	 *********************************************************************************************/
 
-	public ExtensionSTR1(Problem pb, Variable[] scp) {
+	public STR1(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		control(scp.length > 1, "Arity must be at least 2");
 	}

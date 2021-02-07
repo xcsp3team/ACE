@@ -8,23 +8,14 @@
  */
 package constraints.extension;
 
-import static org.xcsp.common.Constants.STAR;
-
 import java.util.Arrays;
-import java.util.stream.Stream;
 
-import constraints.extension.Extension.ExtensionGlobal;
-import constraints.extension.structures.ExtensionStructure;
-import constraints.extension.structures.Table;
-import interfaces.Tags.TagShort;
 import problem.Problem;
 import propagation.StrongConsistency;
-import sets.SetDenseReversible;
 import utility.Kit;
 import variables.Variable;
 
-// why not using a counter 'time' and replace boolean[][] ac by int[][] ac (we just do time++ instead of Arrays.fill(ac[x],false)
-public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
+public abstract class STR1Optimized extends STR1 {
 
 	/**********************************************************************************************
 	 * Interfaces
@@ -35,14 +26,8 @@ public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
 	@Override
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
-		this.tuples = ((Table) extStructure).tuples;
-		this.set = new SetDenseReversible(tuples.length, problem.variables.length + 1);
-		this.ac = Variable.litterals(scp).booleanArray();
-		this.cnts = new int[scp.length];
 		this.sVal = new int[scp.length];
 		this.sSup = new int[scp.length];
-
-		control(tuples.length > 0);
 		if (decremental) {
 			this.lastSizesStack = new int[problem.variables.length + 1][scp.length];
 			Arrays.fill(lastSizesStack[0], UNITIALIZED);
@@ -52,8 +37,8 @@ public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
 
 	@Override
 	public void restoreBefore(int depth) {
-		set.restoreLimitAtLevel(depth);
-		if (decremental)
+		super.restoreBefore(depth);
+		if (decremental && depth > 0) // second part (depth > 0) for ensuring that aggressive runs can be used
 			lastDepth = Math.max(0, Math.min(lastDepth, depth - 1));
 		else
 			Arrays.fill(lastSizes, UNITIALIZED);
@@ -62,25 +47,6 @@ public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
 	/**********************************************************************************************
 	 * Fields
 	 *********************************************************************************************/
-
-	protected int[][] tuples; // redundant field (reference to tuples in Table)
-
-	public SetDenseReversible set;
-
-	/**
-	 * ac[x][a] indicates if a support has been found for (x,a)
-	 */
-	protected boolean[][] ac;
-
-	/**
-	 * cnts[x] is the number of values in the current domain of x with no found support (yet)
-	 */
-	protected int[] cnts;
-
-	/**
-	 * The total number of values over all variables in the scope of this constraint with no found support (yet)
-	 */
-	protected int cnt;
 
 	protected boolean decremental; // true if we exploit decrementality
 
@@ -97,18 +63,12 @@ public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
 	protected int lastDepth; // the depth at the last call
 
 	/**********************************************************************************************
-	 * Methods
+	 * Method
 	 *********************************************************************************************/
 
-	public ExtensionSTR2S(Problem pb, Variable[] scp) {
+	public STR1Optimized(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		this.decremental = pb.head.control.extension.decremental;
-		Kit.control(scp.length > 1, () -> "Arity must be at least 2");
-	}
-
-	@Override
-	protected ExtensionStructure buildExtensionStructure() {
-		return new Table(this);
 	}
 
 	protected void initRestorationStructuresBeforeFiltering() {
@@ -123,8 +83,8 @@ public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
 	}
 
 	protected void manageLastPastVar() {
-		if (lastCallLimit != problem.solver.stats.nAssignments || problem.solver.propagation instanceof StrongConsistency) { // second condition due to Inverse4
-			lastCallLimit = problem.solver.stats.nAssignments;
+		if (lastCallLimit != problem.solver.stats.numberSafe() || problem.solver.propagation instanceof StrongConsistency) { // second condition due to Inverse4
+			lastCallLimit = problem.solver.stats.numberSafe();
 			Variable lastPast = problem.solver.futVars.lastPast();
 			int x = lastPast == null ? -1 : positionOf(lastPast);
 			if (x != -1) {
@@ -134,6 +94,7 @@ public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
 		}
 	}
 
+	@Override
 	protected void beforeFiltering() {
 		initRestorationStructuresBeforeFiltering();
 		sValSize = sSupSize = 0;
@@ -149,78 +110,34 @@ public final class ExtensionSTR2S extends ExtensionGlobal implements TagShort {
 			sSup[sSupSize++] = x;
 			Arrays.fill(ac[x], false);
 		}
+
 		// TODO to experiment the code below
 		// if (sValSize == 1) { int x = sVal[0]; for (int i = 0; i < sSupSize; i++) if (sSup[i] == x) { sSup[i] = sSup[--sSupSize]; break; } }
 	}
 
+	@Override
 	protected boolean updateDomains() {
 		for (int i = sSupSize - 1; i >= 0; i--) {
 			int x = sSup[i];
 			int nRemovals = cnts[x];
 			assert nRemovals > 0;
-			if (scp[x].dom.remove(ac[x], nRemovals) == false)
+			if (doms[x].remove(ac[x], nRemovals) == false)
 				return false;
-			lastSizes[x] = scp[x].dom.size();
-		}
-		return true;
-	}
-
-	protected boolean isValidTuple(int[] tuple) {
-		for (int i = sValSize - 1; i >= 0; i--) {
-			int x = sVal[i];
-			if (tuple[x] != STAR && !doms[x].present(tuple[x]))
-				return false;
-		}
-		return true;
-	}
-
-	// private boolean earlyBreak = false;
-
-	@Override
-	public boolean runPropagator(Variable dummy) {
-		int depth = problem.solver.depth();
-		// if (entailedDepth >= depth) return true;
-		beforeFiltering();
-		for (int i = set.limit; i >= 0; i--) {
-			int[] tuple = tuples[set.dense[i]];
-			if (isValidTuple(tuple)) {
-				for (int j = sSupSize - 1; j >= 0; j--) {
-					int x = sSup[j];
-					int a = tuple[x];
-					if (a == STAR) {
-						cnts[x] = 0;
-						sSup[j] = sSup[--sSupSize];
-					} else if (!ac[x][a]) {
-						ac[x][a] = true;
-						if (--cnts[x] == 0)
-							sSup[j] = sSup[--sSupSize];
-					}
-					// if (earlyBreak && sSupSize == 0) {
-					// // System.out.println("gain " + i);
-					// i = 0;
-					// }
-				}
-			} else
-				set.removeAtPosition(i, depth);
-		}
-		assert controlValidTuples();
-		// if (Variable.computeNbValidTuplesFor(scope) == set.size()) { entailedDepth = depth; } // and for short tables ? ??
-		return updateDomains();
-	}
-
-	private boolean controlValidTuples() {
-		int[] dense = set.dense;
-		for (int i = set.limit; i >= 0; i--) {
-			int[] tuple = tuples[dense[i]];
-			for (int j = tuple.length - 1; j >= 0; j--) {
-				if (tuple[j] != STAR && !doms[j].present(tuple[j])) {
-					System.out.println(this + " at " + problem.solver.depth() + "\n" + Kit.join(tuple));
-					Stream.of(scp).forEach(x -> x.display(true));
-					return false;
-				}
-			}
+			lastSizes[x] = doms[x].size();
 		}
 		return true;
 	}
 
 }
+
+// @Override
+// public void beforeRun() {
+// // has been inserted to fix a bug with joker tables
+// // java -ea abscon.Resolution problems.real.tal.Tal ~/instances/tal/compiler2solver/fr.observed.tuples 9 27-35-38-22-15-13-26-28 -1
+// // -s=all -t=120s -f=cop -ev -varh=DDegOnDom -rs
+// // if (decremental)
+// // Arrays.fill(lastSizesStack[0], -2);
+// // else
+// // Arrays.fill(lastSizes, -2);
+// // lastDepth = 0;
+// }

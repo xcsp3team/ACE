@@ -21,7 +21,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Condition;
-import org.xcsp.common.Condition.ConditionVal;
 import org.xcsp.common.Condition.ConditionVar;
 import org.xcsp.common.IVar;
 import org.xcsp.common.Types.TypeCtr;
@@ -32,7 +31,6 @@ import org.xcsp.common.Types.TypeObjective;
 import org.xcsp.common.Types.TypeOperatorRel;
 import org.xcsp.common.Types.TypeRank;
 import org.xcsp.common.Types.TypeVar;
-import org.xcsp.common.Utilities;
 import org.xcsp.common.domains.Domains.Dom;
 import org.xcsp.common.domains.Domains.DomSymbolic;
 import org.xcsp.common.predicates.MatcherInterface;
@@ -61,7 +59,6 @@ import org.xcsp.parser.entries.XVariables.XVarInteger;
 import org.xcsp.parser.entries.XVariables.XVarSymbolic;
 
 import constraints.Constraint.CtrHardFalse;
-import constraints.global.BinPackingSimple;
 import dashboard.Arguments;
 import dashboard.Control.SettingXml;
 import variables.Variable;
@@ -735,11 +732,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildBinPacking(String id, XVarInteger[] list, int[] sizes, Condition condition) {
-		if (condition instanceof ConditionVal && (((ConditionVal) condition).operator == LT || ((ConditionVal) condition).operator == LE))
-			problem.addCtr(new BinPackingSimple(problem, trVars(list), sizes,
-					Utilities.safeInt(((ConditionVal) condition).k) - (((ConditionVal) condition).operator == LT ? 1 : 0)));
-		else
-			unimplementedCase(id, Utilities.join(list), Utilities.join(sizes), condition);
+		problem.binpacking(trVars(list), sizes, trVar(condition));
 	}
 
 	/**********************************************************************************************

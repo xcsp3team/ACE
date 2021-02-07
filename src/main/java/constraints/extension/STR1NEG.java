@@ -15,7 +15,7 @@ import problem.Problem;
 import variables.Domain;
 import variables.Variable;
 
-public final class ExtensionSTR1NEG extends ExtensionSTR1 implements TagNegative {
+public final class STR1NEG extends STR1 implements TagNegative {
 
 	@Override
 	public void afterProblemConstruction() {
@@ -25,7 +25,7 @@ public final class ExtensionSTR1NEG extends ExtensionSTR1 implements TagNegative
 
 	protected int[][] nConflicts;
 
-	public ExtensionSTR1NEG(Problem pb, Variable[] scp) {
+	public STR1NEG(Problem pb, Variable[] scp) {
 		super(pb, scp);
 	}
 

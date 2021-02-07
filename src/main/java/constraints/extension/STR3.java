@@ -26,7 +26,7 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public final class ExtensionSTR3 extends ExtensionGlobal implements TagPositive, ObserverSearch {
+public final class STR3 extends ExtensionGlobal implements TagPositive, ObserverSearch {
 
 	@Override
 	public void afterProblemConstruction() {
@@ -199,7 +199,7 @@ public final class ExtensionSTR3 extends ExtensionGlobal implements TagPositive,
 	protected LocalSetSparseByte[] deps; // 1D = tuple position in sparseSetOfTuples ; value = variable position (so we can obtain the value in
 	// the tuple)
 
-	public ExtensionSTR3(Problem pb, Variable[] scp) {
+	public STR3(Problem pb, Variable[] scp) {
 		super(pb, scp);
 	}
 

@@ -35,7 +35,7 @@ import org.xcsp.common.predicates.XNodeLeaf;
 import org.xcsp.common.predicates.XNodeParent;
 
 import constraints.Constraint;
-import constraints.extension.ExtensionSmart;
+import constraints.extension.CSmart;
 import sets.SetSparse;
 import utility.Kit;
 import variables.Domain;
@@ -211,7 +211,7 @@ public class TableSmart extends ExtensionStructure {
 			return this;
 		}
 
-		public void attach(ExtensionSmart ctr) {
+		public void attach(CSmart ctr) {
 			this.scp = ctr.scp;
 			this.prefixWithValues = prefixWithValues != null ? prefixWithValues : Kit.repeat(STAR, scp.length);
 			this.prefix = IntStream.range(0, scp.length).map(i -> prefixWithValues[i] == STAR ? STAR : scp[i].dom.toIdx(prefixWithValues[i])).toArray();

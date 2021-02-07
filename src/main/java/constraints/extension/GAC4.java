@@ -23,7 +23,7 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public class ExtensionGAC4 extends ExtensionGlobal implements TagPositive {
+public class GAC4 extends ExtensionGlobal implements TagPositive {
 
 	@Override
 	public void afterProblemConstruction() {
@@ -83,7 +83,7 @@ public class ExtensionGAC4 extends ExtensionGlobal implements TagPositive {
 		return new Table(this);
 	}
 
-	public ExtensionGAC4(Problem pb, Variable[] scp) {
+	public GAC4(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		control(pb.head.control.solving.enablePrepro);
 	}
