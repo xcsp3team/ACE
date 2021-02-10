@@ -55,7 +55,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 		}
 
 		@Override
-		public int[] defineSymmetryMatching() {
+		public int[] symmetryMatching() {
 			return IntStream.range(0, scp.length).map(i -> i == 0 ? 1 : 2).toArray();
 		}
 

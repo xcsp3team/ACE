@@ -167,14 +167,14 @@ public final class Bits extends ExtensionStructure {
 	// }
 
 	@Override
-	public int[] computeVariableSymmetryMatching() {
-		if (!Variable.haveSameDomainType(firstRegisteredCtr().scp))
+	public int[] computeVariableSymmetryMatching(Constraint c) {
+		if (!Variable.haveSameDomainType(c.scp))
 			return new int[] { 1, 2 };
 		for (int i = 0; i < bitSups0.length; i++)
 			for (int j = i + 1; j < bitSups0.length; j++) {
-				boolean b = (bitSups0[i][j / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[j % Long.SIZE]) != 0;
-				boolean c = (bitSups0[j][i / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[i % Long.SIZE]) != 0;
-				if (b != c)
+				boolean b1 = (bitSups0[i][j / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[j % Long.SIZE]) != 0;
+				boolean b2 = (bitSups0[j][i / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[i % Long.SIZE]) != 0;
+				if (b1 != b2)
 					return new int[] { 1, 2 };
 			}
 		return new int[] { 1, 1 };

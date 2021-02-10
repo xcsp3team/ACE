@@ -329,7 +329,7 @@ public abstract class Count extends CtrGlobal implements TagGACGuaranteed { // F
 			}
 
 			@Override
-			public int[] defineSymmetryMatching() {
+			public int[] symmetryMatching() {
 				return IntStream.range(0, scp.length).map(i -> i == indexOfKInList || (indexOfKInList == -1 && i == scp.length - 1) ? 2 : 1).toArray();
 			}
 

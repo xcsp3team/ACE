@@ -23,7 +23,7 @@ public abstract class Cardinality extends CtrGlobal implements ObserverBacktrack
 	}
 
 	@Override
-	public int[] defineSymmetryMatching() {
+	public int[] symmetryMatching() {
 		return Kit.range(1, scp.length); // TODO to be defined more precisely
 	}
 

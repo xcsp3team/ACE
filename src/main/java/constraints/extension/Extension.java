@@ -244,8 +244,8 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 	}
 
 	@Override
-	public int[] defineSymmetryMatching() {
-		return extStructure.computeVariableSymmetryMatching();
+	public int[] symmetryMatching() {
+		return extStructure.computeVariableSymmetryMatching(this);
 	}
 
 	public Extension(Problem pb, Variable[] scp) {
@@ -281,10 +281,6 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 			extStructure.originalPositive = positive;
 			extStructure.storeTuples(tuples, positive);
 			map.put(key, extStructure);
-			// below, "necessary" to let this code here because tuples and positive are easily accessible
-			if (problem.head.control.problem.isSymmetryBreaking()) {
-				Constraint.putSymmetryMatching(key, extStructure.computeVariableSymmetryMatching(tuples, positive));
-			}
 		} else {
 			extStructure.register(this);
 			assert indexesMatchValues == extStructure.firstRegisteredCtr().indexesMatchValues;

@@ -333,7 +333,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 		return new Litterals(vars);
 	}
 
-	public static int[][] initDomainValues(Variable[] vars) {
+	public static int[][] initDomainValues(Variable... vars) {
 		return Stream.of(vars).map(x -> IntStream.range(0, x.dom.initSize()).map(a -> x.dom.toVal(a)).toArray()).toArray(int[][]::new);
 	}
 

@@ -255,7 +255,7 @@ public class Remodeler {
 				String key = c.key; // TODO : pb with key null for pb HSp
 				int[] t = mapOfRelationColors.get(key);
 				if (t == null) {
-					int[] symmetryMatching = c.getSymmetryMatching();
+					int[] symmetryMatching = c.symmetryMatching();
 					t = new int[scope.length + 1];
 					if (symmetryMatching != null) {
 						t[t.length - 1] = nCurrentColors++;

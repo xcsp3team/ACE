@@ -12,11 +12,8 @@ import static org.xcsp.common.Constants.ALL;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -74,9 +71,9 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	@Override
 	public void afterProblemConstruction() {
 		// If a variable does not belong to the constraint, then its position is set to -1
-		if (settings.arityLimitForVapArrayLb < scp.length
-				&& (problem.variables.length < settings.arityLimitForVapArrayUb || scp.length > problem.variables.length / 3)) {
-			this.positions = Kit.repeat(-1, problem.variables.length);
+		int nVariables = problem.variables.length;
+		if (settings.arityLimitForVapArrayLb < scp.length && (nVariables < settings.arityLimitForVapArrayUb || scp.length > nVariables / 3)) {
+			this.positions = Kit.repeat(-1, nVariables);
 			for (int i = 0; i < scp.length; i++)
 				this.positions[scp[i].num] = i;
 			this.futvars = new SetSparse(scp.length, true);
@@ -110,7 +107,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 ***** Two very special kinds of constraints False and True
 	 *************************************************************************/
 
-	public static class CtrHardFalse extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagGACGuaranteed {
+	public static class CtrFalse extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagGACGuaranteed {
 
 		@Override
 		public boolean checkValues(int[] t) {
@@ -124,13 +121,13 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 		public String message;
 
-		public CtrHardFalse(Problem pb, Variable[] scp, String message) {
+		public CtrFalse(Problem pb, Variable[] scp, String message) {
 			super(pb, scp);
 			this.message = message;
 		}
 	}
 
-	public static class CtrHardTrue extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagGACGuaranteed {
+	public static class CtrTrue extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagGACGuaranteed {
 
 		@Override
 		public boolean checkValues(int[] t) {
@@ -142,7 +139,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 			return true;
 		}
 
-		public CtrHardTrue(Problem pb, Variable[] scp) {
+		public CtrTrue(Problem pb, Variable[] scp) {
 			super(pb, scp);
 		}
 	}
@@ -182,20 +179,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 			throw new AssertionError();
 		}
 	};
-
-	private static Map<String, int[]> symmetryMatchings = Collections.synchronizedMap(new HashMap<String, int[]>());
-
-	public static int[] getSymmetryMatching(String key) {
-		synchronized (symmetryMatchings) {
-			return symmetryMatchings.get(key);
-		}
-	}
-
-	public static void putSymmetryMatching(String key, int[] value) {
-		synchronized (symmetryMatchings) {
-			symmetryMatchings.put(key, value);
-		}
-	}
 
 	public static final boolean isGuaranteedGAC(Constraint[] ctrs) {
 		return Stream.of(ctrs).allMatch(c -> c.isGuaranteedAC());
@@ -450,14 +433,10 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		return null;
 	}
 
-	public int[] defineSymmetryMatching() {
+	public int[] symmetryMatching() { // default method that can be redefined
 		Boolean b = isSymmetric();
-		Kit.control(b != null);
+		control(b != null);
 		return b ? Kit.repeat(1, scp.length) : Kit.range(1, scp.length);
-	}
-
-	public final int[] getSymmetryMatching() {
-		return getSymmetryMatching(key);
 	}
 
 	public boolean entailed() {
@@ -877,10 +856,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		if (this instanceof Intension)
 			Kit.log.finer("\tPredicate: " + ((Intension) this).tree.toFunctionalExpression(null));
 		Kit.log.finer("\tKey = " + key);
-		int[] t = getSymmetryMatching(key);
-		Kit.log.finest("\tSymmetryMatching = " + (t == null ? " undefined " : Kit.join(t)));
 		Kit.log.finest("\tCost = " + cost);
-		// Kit.log.finer("\tXCSP = " + defXCSP());
 	}
 
 	protected String compact(Variable[] vars) {

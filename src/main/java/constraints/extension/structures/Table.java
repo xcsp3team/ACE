@@ -191,11 +191,6 @@ public class Table extends ExtensionStructure {
 	}
 
 	@Override
-	public int[] computeVariableSymmetryMatching() {
-		return computeVariableSymmetryMatching(tuples, positive);
-	}
-
-	@Override
 	public String toString() {
 		return "Tuples :\n" + Kit.join(tuples) + " (" + positive + ")";
 	}

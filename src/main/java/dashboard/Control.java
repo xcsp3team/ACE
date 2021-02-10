@@ -349,6 +349,7 @@ public class Control {
 
 		public boolean preserveUnaryCtrs = addB("preserveUnaryCtrs", "puc", true, "");
 		public int decomposeIntention = addI("decomposeIntention", "di", 1, "0: no decomposition, 1: conditional decomposition, 2: forced decompostion");
+		public boolean viewForSum = addB("viewForSum", "vs", false, "");
 		public boolean intensionToExtensionUnaryCtrs = addB("intensionToExtensionUnaryCtrs", "ieuc", true, "");
 		public final TypeCtr ignoredCtrType = org.xcsp.common.Types.valueOf(TypeCtr.class, addS("ignoreCtrType", "ignoreType", "", s_ignoreType));
 		public final int ignoreCtrArity = addI("ignoreCtrArity", "ignoreArity", -1, s_ignoreArity);

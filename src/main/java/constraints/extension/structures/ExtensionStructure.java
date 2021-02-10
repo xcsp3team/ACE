@@ -47,6 +47,7 @@ public abstract class ExtensionStructure implements RegisteringCtrs {
 	public String[][] symbolicTuples; // in case of a symbolic table constraint
 
 	public int[][] originalTuples;
+
 	public boolean originalPositive;
 
 	public abstract void storeTuples(int[][] tuples, boolean positive);
@@ -69,40 +70,37 @@ public abstract class ExtensionStructure implements RegisteringCtrs {
 		return true;
 	}
 
-	public int[] computeVariableSymmetryMatching(int[][] tuples, boolean positive) {
-		Kit.control(firstRegisteredCtr().problem.head.control.problem.isSymmetryBreaking());
-		Constraint c = firstRegisteredCtr();
-		if (!Variable.haveSameDomainType(c.scp))
-			return Kit.range(1, c.scp.length); // TODO there exists a possibility of finding symmetry of variables (but not a single group)
-		if (c.scp.length == 1)
+	public int[] computeVariableSymmetryMatching(Constraint c) { // TODO not sure we could use a cache (or we must be careful about the type of the variable
+																	// domains)
+		assert registeredCtrs.stream().anyMatch(cc -> cc == c);
+		Variable[] scp = c.scp;
+		if (scp.length == 1)
 			return new int[] { 1 };
-		if (c.scp.length == 2) {
-			Domain dom0 = c.scp[0].dom, dom1 = c.scp[1].dom;
+		if (!Variable.haveSameDomainType(scp))
+			return Kit.range(1, scp.length); // TODO there exists a possibility of finding symmetry of variables (but not a single group)
+		if (scp.length == 2) {
+			Domain dom0 = scp[0].dom, dom1 = scp[1].dom;
 			int[] tmp = c.tupleManager.localTuple;
-			for (int[] tuple : tuples) {
+			for (int[] tuple : originalTuples) {
 				tmp[0] = dom0.toIdx(tuple[1]);
 				tmp[1] = dom1.toIdx(tuple[0]);
-				if (checkIdxs(tmp) != positive)
+				if (checkIdxs(tmp) != originalPositive)
 					return new int[] { 1, 2 };
 			}
 			return new int[] { 1, 1 };
 		}
 		Set<IntArrayHashKey> set = new HashSet<>();
-		for (int[] t : tuples)
+		for (int[] t : originalTuples)
 			set.add(new IntArrayHashKey(t));
-		int[] permutation = new int[c.scp.length];
+		int[] permutation = new int[scp.length];
 		int color = 1;
 		for (int i = 0; i < permutation.length; i++)
 			if (permutation[i] == 0) {
 				for (int j = i + 1; j < permutation.length; j++)
-					if (permutation[j] == 0 && areSymmetricPositions(set, tuples, i, j))
+					if (permutation[j] == 0 && areSymmetricPositions(set, originalTuples, i, j))
 						permutation[j] = color;
 				permutation[i] = color++;
 			}
 		return permutation;
-	}
-
-	public int[] computeVariableSymmetryMatching() {
-		return Kit.range(1, firstRegisteredCtr().scp.length);
 	}
 }

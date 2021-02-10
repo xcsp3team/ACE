@@ -366,7 +366,7 @@ public final class Intension extends Constraint implements TagFilteringCompleteA
 	private boolean canonize = false; // TODO hard coding
 
 	@Override
-	public int[] defineSymmetryMatching() {
+	public int[] symmetryMatching() {
 		return keyCanonizer != null ? keyCanonizer.computeSymmetryMatching() : Kit.range(1, scp.length);
 	}
 

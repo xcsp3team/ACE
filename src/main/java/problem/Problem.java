@@ -97,12 +97,12 @@ import org.xcsp.modeler.implementation.ProblemIMP;
 
 import constraints.ConflictsStructure;
 import constraints.Constraint;
-import constraints.Constraint.CtrHardFalse;
-import constraints.Constraint.CtrHardTrue;
-import constraints.extension.Extension;
-import constraints.extension.Extension.Extension1;
+import constraints.Constraint.CtrFalse;
+import constraints.Constraint.CtrTrue;
 import constraints.extension.CMDD;
 import constraints.extension.CSmart;
+import constraints.extension.Extension;
+import constraints.extension.Extension.Extension1;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart.SmartTuple;
 import constraints.global.AllDifferent.AllDifferentBound;
@@ -142,6 +142,7 @@ import constraints.global.NValues.NValuesVar;
 import constraints.global.Sum.SumSimple;
 import constraints.global.Sum.SumSimple.SumSimpleGE;
 import constraints.global.Sum.SumSimple.SumSimpleLE;
+import constraints.global.Sum.SumViewWeighted;
 import constraints.global.Sum.SumWeighted;
 import constraints.global.Sum.SumWeighted.SumWeightedGE;
 import constraints.global.Sum.SumWeighted.SumWeightedLE;
@@ -543,9 +544,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private void inferAdditionalConstraints() {
 		if (head.control.problem.isSymmetryBreaking()) {
 			int nBefore = features.collectedCtrsAtInit.size();
-			for (Constraint c : features.collectedCtrsAtInit)
-				if (Constraint.getSymmetryMatching(c.key) == null)
-					Constraint.putSymmetryMatching(c.key, c.defineSymmetryMatching());
+			// for (Constraint c : features.collectedCtrsAtInit)
+			// if (Constraint.getSymmetryMatching(c.key) == null)
+			// Constraint.putSymmetryMatching(c.key, c.defineSymmetryMatching());
 			DeducingAutomorphism automorphismIdentification = new DeducingAutomorphism(this);
 			for (Constraint c : automorphismIdentification.buildVariableSymmetriesFor(variables, features.collectedCtrsAtInit))
 				addCtr(c);
@@ -1057,7 +1058,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	public final CtrAlone extension(IVar[] scp, Object[] tuples, boolean positive, Boolean starred) {
 		if (tuples.length == 0)
-			return addCtr(positive ? new CtrHardFalse(this, translate(scp), "Extension with 0 support") : new CtrHardTrue(this, translate(scp)));
+			return addCtr(positive ? new CtrFalse(this, translate(scp), "Extension with 0 support") : new CtrTrue(this, translate(scp)));
 		if (scp.length == 1) {
 			Kit.control(starred == null);
 			int[][] m = scp[0] instanceof VariableSymbolic ? symbolic.replaceSymbols((String[][]) tuples) : (int[][]) tuples;
@@ -1161,7 +1162,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		control(Variable.areAllDistinct(vars(t1, t2)), "For the moment not handled");
 		if (isBasicType(head.control.global.typeDistinctVectors2))
 			return addCtr(CSmart.buildDistinctVectors(this, t1, t2)); // return addCtr(new DistinctVectors2(this, t1, t2)); // BUG TO BE
-																				// FIXED
+																		// FIXED
 		if (head.control.global.typeDistinctVectors2 == 1) {
 			if (head.control.global.smartTable)
 				return addCtr(CSmart.buildDistinctVectors(this, t1, t2));
@@ -1440,6 +1441,22 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public CtrEntity sum(XNode<IVar>[] trees, int[] coeffs, Condition condition) {
+		if (head.control.constraints.viewForSum && condition instanceof ConditionRel) {
+			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
+			Object rightTerm = condition.rightTerm();
+			if (op != NE && Stream.of(trees).allMatch(tree -> tree.type.isPredicateOperator() && tree.vars().length == 1)) {
+				// System.out.println(trees[0].vars()[0].getClass());
+				// IVar[] vars = Utilities.collect(Variable.class, Stream.of(trees).map(tree -> tree.vars()));
+				// System.out.println("jjjj " + vars.length);
+				if (condition instanceof ConditionVar) {
+					XNode<IVar>[] tt = IntStream.range(0, trees.length + 1)
+							.mapToObj(i -> i < trees.length ? trees[i] : new XNodeLeaf(VAR, (Variable) rightTerm)).toArray(XNode[]::new);
+					new SumViewWeighted(this, tt, api.vals(coeffs, -1), 0);
+					System.out.println("here");
+				}
+			}
+		}
+
 		return sum(replaceByVariables(trees), coeffs, condition);
 	}
 

@@ -58,7 +58,7 @@ import org.xcsp.parser.entries.XVariables.XVar;
 import org.xcsp.parser.entries.XVariables.XVarInteger;
 import org.xcsp.parser.entries.XVariables.XVarSymbolic;
 
-import constraints.Constraint.CtrHardFalse;
+import constraints.Constraint.CtrFalse;
 import dashboard.Arguments;
 import dashboard.Control.SettingXml;
 import variables.Variable;
@@ -328,7 +328,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	public void buildCtrFalse(String id, XVar[] list) {
 		if (problem.settings.framework == TypeFramework.MAXCSP)
 			problem.addCtr(
-					new CtrHardFalse(problem, trVars(Stream.of(list).map(x -> (XVarInteger) x).toArray(XVarInteger[]::new)), "CtrHard False for MaxCSP"));
+					new CtrFalse(problem, trVars(Stream.of(list).map(x -> (XVarInteger) x).toArray(XVarInteger[]::new)), "CtrHard False for MaxCSP"));
 		// extension((VarInteger[]) trVars(Stream.of(list).map(x -> (XVarInteger) x).toArray(XVarInteger[]::new)), new int[][] { {} });
 		else
 			throw new RuntimeException("Constraint with only conflicts");

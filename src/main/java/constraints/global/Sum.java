@@ -19,8 +19,11 @@ import java.util.Random;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.xcsp.common.IVar;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
+import org.xcsp.common.predicates.TreeEvaluator;
+import org.xcsp.common.predicates.XNode;
 
 import constraints.Constraint.CtrGlobal;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
@@ -540,7 +543,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		}
 
 		@Override
-		public int[] defineSymmetryMatching() {
+		public int[] symmetryMatching() {
 			int[] symmetryMatching = new int[scp.length];
 			int color = 1;
 			for (int i = 0; i < symmetryMatching.length; i++) {
@@ -797,6 +800,119 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 			}
 		}
 
+	}
+
+	/**********************************************************************************************
+	 * SumViewWeighted
+	 *********************************************************************************************/
+
+	public static class SumViewWeighted extends Sum { // TODO remettre abstract
+
+		static class View {
+			Variable var;
+
+			int[] pos;
+			int[] neg;
+			boolean[] supports;
+
+			View(XNode<IVar> tree) {
+				assert tree.vars().length == 1;
+				var = (Variable) tree.vars()[0];
+				int[][] tuples = new TreeEvaluator(tree).computeTuples(Variable.initDomainValues(var));
+				System.out.println(tree + " " + var + "  : " + Kit.join(tuples));
+			}
+
+		}
+
+		public static SumWeighted buildFrom(Problem pb, XNode<IVar>[] trees, int[] coeffs, TypeConditionOperatorRel op, long limit) {
+			// switch (op) {
+			// case LT:
+			// return new SumWeightedLE(pb, vs, coeffs, limit - 1);
+			// case LE:
+			// return new SumWeightedLE(pb, vs, coeffs, limit);
+			// case GE:
+			// return new SumWeightedGE(pb, vs, coeffs, limit);
+			// case GT:
+			// return new SumWeightedGE(pb, vs, coeffs, limit + 1);
+			// case EQ:
+			// return new SumWeightedEQ(pb, vs, coeffs, limit);
+			// case NE:
+			// return new SumWeightedNE(pb, vs, coeffs, limit);
+			// }
+			throw new AssertionError();
+		}
+
+		public static long weightedSum(int[] t, int[] coeffs) {
+			assert t.length == coeffs.length;
+			// note that no overflow control is performed here
+			long sum = 0;
+			for (int i = 0; i < t.length; i++)
+				sum += coeffs[i] * t[i];
+			return sum;
+		}
+
+		public long minComputableObjectiveValue() {
+			return IntStream.of(coeffs).filter(c -> c < 0).sum();
+		}
+
+		public long maxComputableObjectiveValue() {
+			return IntStream.of(coeffs).filter(c -> c > 0).sum();
+		}
+
+		public long minCurrentObjectiveValue() {
+			long sum = 0;
+			for (int i = 0; i < scp.length; i++)
+				sum += coeffs[i] * (coeffs[i] >= 0 ? scp[i].dom.firstValue() : scp[i].dom.lastValue());
+			return sum;
+		}
+
+		public long maxCurrentObjectiveValue() {
+			long sum = 0;
+			for (int i = 0; i < scp.length; i++)
+				sum += coeffs[i] * (coeffs[i] >= 0 ? scp[i].dom.lastValue() : scp[i].dom.firstValue());
+			return sum;
+		}
+
+		protected long currWeightedSum() {
+			long sum = 0;
+			for (int i = 0; i < scp.length; i++)
+				sum += scp[i].dom.uniqueValue() * coeffs[i];
+			return sum;
+		}
+
+		public final XNode<IVar>[] trees;
+
+		public final int[] coeffs;
+
+		private final View[] views;
+
+		public SumViewWeighted(Problem pb, XNode<IVar>[] trees, int[] coeffs, long limit) {
+			super(pb, Utilities.collect(Variable.class, Stream.of(trees).map(tree -> tree.vars()))); // pb.translate(Utilities.collect(IVar.class, trees)));
+			assert Stream.of(trees).allMatch(tree -> tree.type.isPredicateOperator() && tree.vars().length == 1);
+			this.trees = trees;
+			this.coeffs = coeffs;
+			System.out.println("trees " + Kit.join(trees));
+			this.views = Stream.of(trees).map(tree -> new View(tree)).toArray(View[]::new);
+			this.minComputableObjectiveValue = minComputableObjectiveValue();
+			this.maxComputableObjectiveValue = maxComputableObjectiveValue();
+			control(minComputableObjectiveValue <= maxComputableObjectiveValue); // Important: we check this way that no overflow is possible
+			limit(limit);
+			defineKey(Kit.join(coeffs), limit);
+			control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])));
+
+		}
+
+		@Override
+		public boolean runPropagator(Variable evt) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public boolean checkValues(int[] t) {
+			// TODO Auto-generated method stub
+			return false;
+		}
 	}
 
 }
