@@ -70,20 +70,19 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	@Override
 	public void afterProblemConstruction() {
-		// If a variable does not belong to the constraint, then its position is set to -1
-		int nVariables = problem.variables.length;
-		if (settings.arityLimitForVapArrayLb < scp.length && (nVariables < settings.arityLimitForVapArrayUb || scp.length > nVariables / 3)) {
-			this.positions = Kit.repeat(-1, nVariables);
-			for (int i = 0; i < scp.length; i++)
+		int nVariables = problem.variables.length, arity = scp.length;
+		if (settings.arityLimitForVapArrayLb < arity && (nVariables < settings.arityLimitForVapArrayUb || arity > nVariables / 3)) {
+			this.positions = Kit.repeat(-1, nVariables); // if a variable does not belong to the constraint, then its position is set to -1
+			for (int i = 0; i < arity; i++)
 				this.positions[scp[i].num] = i;
-			this.futvars = new SetSparse(scp.length, true);
+			this.futvars = new SetSparse(arity, true);
 		} else {
 			this.positions = null;
-			this.futvars = new SetDense(scp.length, true);
+			this.futvars = new SetDense(arity, true);
 		}
 	}
 
-	public static interface RegisteringCtrs {
+	public static interface RegisteringCtrs { // note that constraints have necessarily the same types of domains
 
 		/** The list of constraints registered by this object. */
 		abstract List<Constraint> registeredCtrs();
