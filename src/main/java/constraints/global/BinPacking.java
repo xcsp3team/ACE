@@ -53,7 +53,7 @@ public final class BinPacking extends CtrGlobal implements TagGACUnguaranteed { 
 
 	private final long[] sums; // used for checking values
 
-	public BinPacking(Problem pb, Variable[] scp, int[] sizes, int limit) {
+	public BinPacking(Problem pb, Variable[] scp, int[] sizes, int limit) { // TODO to be changed in int[] limits
 		super(pb, scp);
 		defineKey(Kit.join(sizes) + " " + limit);
 		control(scp.length >= 2 && Variable.haveSameDomainType(scp)); // TODO checking that all domains are from 0 to nBins-1
@@ -87,6 +87,7 @@ public final class BinPacking extends CtrGlobal implements TagGACUnguaranteed { 
 				if (dom.size() == 1)
 					continue;
 				for (int j = 0; j < bins.length; j++) {
+					// TODO what if bins[j].index is not in the domain of scp[i]. we have to continue? right?
 					if (sizes[i] > bins[j].capacity) {
 						if (dom.removeValueIfPresent(bins[j].index) == false)
 							return false;
@@ -95,6 +96,7 @@ public final class BinPacking extends CtrGlobal implements TagGACUnguaranteed { 
 						break;
 					}
 				}
+				// TODO possibly i has not been added. what to do?
 				if (dom.size() == 1) {
 					bins[dom.uniqueValue()].capacity -= sizes[i];
 					continue start;
