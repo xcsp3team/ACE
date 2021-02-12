@@ -12,7 +12,6 @@ import static org.xcsp.common.Constants.ALL;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -87,6 +86,10 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		/** The list of constraints registered by this object. */
 		abstract List<Constraint> registeredCtrs();
 
+		default Constraint firstRegisteredCtr() {
+			return registeredCtrs().get(0);
+		}
+
 		default void register(Constraint c) {
 			assert !registeredCtrs().contains(c) && (registeredCtrs().size() == 0 || Domain.similarDomains(c.doms, firstRegisteredCtr().doms));
 			registeredCtrs().add(c);
@@ -95,10 +98,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		default void unregister(Constraint c) {
 			boolean b = registeredCtrs().remove(c);
 			assert b;
-		}
-
-		default Constraint firstRegisteredCtr() {
-			return registeredCtrs().get(0);
 		}
 	}
 
@@ -237,27 +236,24 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	public static int[][] buildTable(Constraint... ctrs) {
-		LinkedHashSet<Variable> set = new LinkedHashSet<>();
-		for (Constraint c : ctrs)
-			for (Variable x : c.scp)
-				set.add(x);
-		Variable[] scp = set.parallelStream().toArray(Variable[]::new);
-		int[][] vaps = Stream.of(ctrs).map(c -> IntStream.range(0, c.scp.length).map(i -> Utilities.indexOf(c.scp[i], scp)).toArray()).toArray(int[][]::new);
-		int[][] tmps = Stream.of(ctrs).map(c -> c.tupleManager.localTuple).toArray(int[][]::new);
+		Variable[] scp = Variable.scopeOf(ctrs);
+		int[][] positions = Stream.of(ctrs).map(c -> IntStream.range(0, c.scp.length).map(i -> Utilities.indexOf(c.scp[i], scp)).toArray())
+				.toArray(int[][]::new);
 		List<int[]> list = new ArrayList<>();
+		int[] values = new int[scp.length];
 		EnumerationCartesian ec = new EnumerationCartesian(Variable.domSizeArrayOf(scp, true));
-		while (ec.hasNext()) {
-			int[] tuple = ec.next();
-			boolean inconsistent = false;
-			for (int i = 0; !inconsistent && i < ctrs.length; i++) {
-				int[] vap = vaps[i];
-				int[] t = tmps[i];
-				IntStream.range(0, t.length).forEach(j -> t[j] = tuple[vap[j]]);
+		start: while (ec.hasNext()) {
+			int[] indexes = ec.next();
+			for (int i = 0; i < ctrs.length; i++) {
+				int[] t = ctrs[i].tupleManager.localTuple;
+				for (int j = 0; j < t.length; j++)
+					t[j] = indexes[positions[i][j]];
 				if (!ctrs[i].checkIndexes(t))
-					inconsistent = true;
+					continue start;
 			}
-			if (!inconsistent)
-				list.add(IntStream.range(0, scp.length).map(i -> scp[i].dom.toVal(tuple[i])).toArray());
+			for (int i = 0; i < indexes.length; i++)
+				values[i] = scp[i].dom.toVal(indexes[i]);
+			list.add(values.clone()); // cloning is necessary
 		}
 		return Kit.intArray2D(list);
 	}
@@ -340,10 +336,10 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		return id != null ? id : defaultId();
 	}
 
-	public final Constraint setId(String id) {
-		this.id = id;
-		return this;
-	}
+	// public final Constraint setId(String id) {
+	// this.id = id;
+	// return this;
+	// }
 
 	/**
 	 * @return the position of the variable or <code>-1</code> if the variable is not involved in the constraint
@@ -515,12 +511,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 			pb.head.observersConstruction.add(this);
 
 		this.supporter = Supporter.buildFor(this);
-
-		// if (pb.rs.cp.settingPropagation.residues && scp.length > 1 && !(this instanceof FilteringSpecific)
-		// && !(pb.rs.cp.settingPropagation.classForRevisions.equals(Reviser3.class.getSimpleName()) && extStructure() instanceof Bits)) {
-		// this.supporter = scp.length == 2 ? new SupporterHardBary(this) : new SupporterHardNary(this);
-		// } else
-		// this.supporter = null;
 	}
 
 	public final void reset() {
@@ -582,12 +572,8 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		return checkIndexes(buildCurrentInstantiationTuple());
 	}
 
-	public long costOfIdxs(int[] idxs) {
-		return checkIndexes(idxs) ? 0 : cost;
-	}
-
 	public long costOfCurrInstantiation() {
-		return costOfIdxs(buildCurrentInstantiationTuple());
+		return checkIndexes(buildCurrentInstantiationTuple()) ? 0 : cost;
 	}
 
 	/**
@@ -634,11 +620,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		return seekSupport();
 	}
 
-	public final boolean seekFirstSupport(int[] buffer) {
-		tupleManager.firstValidTuple(buffer);
-		return seekSupport();
-	}
-
 	public final boolean seekFirstSupportWith(int x, int a) {
 		tupleManager.firstValidTupleWith(x, a);
 		return seekSupport();
@@ -654,11 +635,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		return seekSupport();
 	}
 
-	public final boolean seekFirstSupportWith(int x, int a, int y, int b, int[] buffer) {
-		tupleManager.firstValidTupleWith(x, a, y, b, buffer);
-		return seekSupport();
-	}
-
 	// The next support is searched for from tupleManager.currTuple(), excluded, which is not necessarily valid (as it may have been
 	// deleted). If some values have been fixed, they remain fixed
 	public final boolean seekNextSupport() {
@@ -667,13 +643,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	private final boolean seekConflict() {
 		return tupleManager.findValidTupleSuchThat(t -> !checkIndexes(t));
-		// assert tupleManager.currTuple() == inoutTuple;
-		// // assert checkValidityOf(inoutTuple); // A REMETREet A ENLEVR POUR ?????
-		// while (true)
-		// if (!checkIndexes(inoutTuple))
-		// return true;
-		// else if (tupleManager.nextValidTuple() == -1)
-		// return false;
 	}
 
 	public final boolean seekFirstConflict() {
@@ -684,21 +653,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public final boolean seekFirstConflictWith(int x, int a) {
 		tupleManager.firstValidTupleWith(x, a);
 		return seekConflict();
-	}
-
-	public long nSupports() {
-		tupleManager.firstValidTuple();
-		return tupleManager.countValidTuplesSuchThat(t -> checkIndexes(t));
-	}
-
-	public long nConflicts() {
-		tupleManager.firstValidTuple();
-		return tupleManager.countValidTuplesSuchThat(t -> !checkIndexes(t));
-	}
-
-	public long nSupportsFor(int x, int a) {
-		tupleManager.firstValidTupleWith(x, a);
-		return tupleManager.countValidTuplesSuchThat(t -> checkIndexes(t));
 	}
 
 	public long nConflictsFor(int x, int a) {
@@ -811,10 +765,10 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 			return true;
 		if (Domain.nValidTuplesBoundedAtMaxValueFor(doms) > 1000)
 			return true;
-		for (int i = 0; i < scp.length; i++)
-			for (int a = doms[i].first(); a != -1; a = doms[i].next(a))
-				if (seekFirstSupportWith(i, a) == false) {
-					System.out.println(" " + scp[i] + "=" + doms[i].toVal(a) + " not supported by " + this);
+		for (int x = 0; x < scp.length; x++)
+			for (int a = doms[x].first(); a != -1; a = doms[x].next(a))
+				if (seekFirstSupportWith(x, a) == false) {
+					System.out.println(" " + scp[x] + "=" + doms[x].toVal(a) + " not supported by " + this);
 					for (Domain dom : doms)
 						dom.display(false);
 					display(true);
@@ -856,14 +810,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 			Kit.log.finer("\tPredicate: " + ((Intension) this).tree.toFunctionalExpression(null));
 		Kit.log.finer("\tKey = " + key);
 		Kit.log.finest("\tCost = " + cost);
-	}
-
-	protected String compact(Variable[] vars) {
-		return problem.varEntities.compact(vars);
-	}
-
-	protected String compactOrdered(Variable[] vars) {
-		return problem.varEntities.compactOrdered(vars);
 	}
 
 }

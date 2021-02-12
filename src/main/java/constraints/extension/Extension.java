@@ -63,7 +63,7 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 			assert values.length > 0 && Kit.isStrictlyIncreasing(values);
 			this.values = values;
 			this.positive = positive;
-			this.key = signature() + " " + values + " " + positive; // TODO can we use the adress of values?
+			this.key = signature() + " " + values + " " + positive; // TODO can we use the address of values?
 		}
 
 		@Override

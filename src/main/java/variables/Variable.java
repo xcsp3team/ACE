@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -56,7 +57,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 
 		/**
 		 * Builds a variable with a domain composed of all specified integer values. A range can be specified by giving an array of values composed of three
-		 * int, the last one being the special value Domain.TAG_RANGE
+		 * integers, the last one being the special value Domain.TAG_RANGE
 		 */
 		public VariableInteger(Problem problem, String name, int[] values) {
 			super(problem, name);
@@ -84,7 +85,6 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 		public Object allValues() {
 			return dom.allValues();
 		}
-
 	}
 
 	public static class VariableSymbolic extends Variable implements IVar.VarSymbolic {
@@ -372,6 +372,14 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 
 	public static final Domain[] buildDomainsArrayFor(Variable... vars) {
 		return Stream.of(vars).map(x -> x.dom).toArray(Domain[]::new);
+	}
+
+	public static final Variable[] scopeOf(Constraint[] ctrs) {
+		Set<Variable> set = new LinkedHashSet<>();
+		for (Constraint c : ctrs)
+			for (Variable x : c.scp)
+				set.add(x);
+		return set.stream().toArray(Variable[]::new);
 	}
 
 	// public static final LinkedSet[] buildElementsArrayFor(Variable... vars) {

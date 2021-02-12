@@ -14,16 +14,12 @@ import static org.xcsp.common.predicates.XNodeParent.ge;
 import static org.xcsp.common.predicates.XNodeParent.le;
 import static org.xcsp.common.predicates.XNodeParent.lt;
 import static org.xcsp.common.predicates.XNodeParent.ne;
-import static org.xcsp.modeler.definitions.IRootForCtrAndObj.map;
 
 import java.util.Arrays;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.xcsp.common.Constants;
-import org.xcsp.modeler.definitions.DefXCSP;
 import org.xcsp.modeler.definitions.ICtr.ICtrSmart;
 
 import constraints.Constraint;
@@ -283,17 +279,4 @@ public final class CSmart extends ExtensionGlobal implements ICtrSmart {
 		return updateDomains();
 	}
 
-	@Override
-	public Map<String, Object> mapXCSP() {
-		String[] rows = Stream.of(smartTuples)
-				.map(st -> " (" + IntStream.of(st.prefixWithValues).mapToObj(v -> v == Constants.STAR ? "*" : v + "").collect(Collectors.joining(",")) + ") : "
-						+ st.collectedTreeRestrictions.stream().map(t -> t.toString()).collect(Collectors.joining(" ")))
-				.toArray(String[]::new);
-		return map(SCOPE, scp, LIST, compactOrdered(scp), ROWS, rows);
-	}
-
-	@Override
-	public DefXCSP defXCSP() {
-		return ICtrSmart.super.defXCSP();
-	}
 }
