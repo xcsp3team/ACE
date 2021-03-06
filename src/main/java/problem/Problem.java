@@ -113,7 +113,7 @@ import constraints.global.AllDifferent.AllDifferentPermutation;
 import constraints.global.AllDifferent.AllDifferentWeak;
 import constraints.global.AllEqual;
 import constraints.global.Among;
-import constraints.global.BinPackingSimple;
+import constraints.global.BinPacking;
 import constraints.global.Cardinality.CardinalityConstant;
 import constraints.global.Circuit;
 import constraints.global.Count.CountCst.AtLeast1;
@@ -1985,7 +1985,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			return addCtr(new BinPackingSimple(this, translate(list), sizes, limit - (op == LT ? 1 : 0)));
+			// return addCtr(new BinPackingSimple(this, translate(list), sizes, limit - (op == LT ? 1 : 0)));
+			return addCtr(new BinPacking(this, translate(list), sizes, limit - (op == LT ? 1 : 0)));
 		}
 		return unimplemented("binPacking");
 	}

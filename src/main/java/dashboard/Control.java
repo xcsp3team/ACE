@@ -138,22 +138,17 @@ public class Control {
 
 	public class SettingXml extends SettingGroup {
 		String s_dc = "Names of classes (tags) to discard (use comma as separator if several classes). Effective iff an XCSP3 file is loaded.";
-		String s_cm = "Output made compatible with XCSP3 competitions";
 		String s_dir = "Indicates the name of a directory where results (XML files) for a campaign will be stored."
 				+ "\n\tIf the value is the empty string, results are not saved.";
-		String s_dpri = "Displays recognized primitives, at parsing time";
 
 		public final String discardedClasses = addS("discardedClasses", "dc", EMPTY_STRING, s_dc);
 		public final String dirForCampaign = addS("dirForCampaign", "dir", EMPTY_STRING, s_dir);
 		public final boolean primitiveUnaryInSolver = addB("primitiveUnaryInSolver", "p1sol", true, "", HIDDEN);
 		public final boolean primitiveBinaryInSolver = addB("primitiveBinaryInSolver", "p2sol", true, "", HIDDEN);
 		public final boolean primitiveTernaryInSolver = addB("primitiveTernarnyInSolver", "p3sol", true, "", HIDDEN);
-
 		public final boolean recognizeLogicInSolver = addB("primitiveLogicInSolver", "rlsol", true, "", HIDDEN);
 		public final boolean recognizeExtremumInSolver = addB("recognizeExtremumInSolver", "resol", true, "", HIDDEN);
 		public final boolean recognizeSumInSolver = addB("recognizeSumInSolver", "rssol", true, "", HIDDEN);
-
-		public final boolean displayPrimitives = addB("displayPrimitives", "dpri", false, s_dpri, HIDDEN);
 	}
 
 	public final SettingXml xml = new SettingXml();
@@ -196,8 +191,6 @@ public class Control {
 		public final int limitForSatisfaction = addI("limitForSatisfaction", "lfs", PLUS_INFINITY_INT, l_cfs);
 		public final String conditionForSatisfaction = addS("conditionForSatisfaction", "cfs", EMPTY_STRING, s_cfs, TO_IMPLEMENT);
 		public final boolean recordSolutions = addB("recordSolutions", "rs", false, s_rs, HIDDEN);
-		public final String saveNetworkGraph = addS("saveNetworkGraph", "sng", EMPTY_STRING,
-				"Three bits indicating if we need respectively a macro, positive and primal graph");
 		public final boolean noPrintColors = addB("noPrintColors", "npc", false, "", HIDDEN);
 	}
 
@@ -525,7 +518,6 @@ public class Control {
 		public final int nogoodArityLimit = addI("nogoodArityLimit", "l_ngal", Integer.MAX_VALUE, "", HIDDEN);
 		public final int unarySymmetryLimit = addI("unarySymmetryLimit", "l_usl", Integer.MAX_VALUE, "", HIDDEN);
 		public final int nonunarySymmetryLimit = addI("nonunarySymmetryLimit", "l_nsl", 2000, "", HIDDEN);
-		// public final boolean incrementNogoodWeight = addB("incrementNogoodWeight", "l_inw", false, "", HIDDEN);
 		public final ELearningIps state = addE("state", "l_ps", ELearningIps.NO, s_ps);
 		public final String stateOperators = addS("stateOperators", "l_pso", "11011", s_pso).trim();
 		public final int compressionLevelForStateEquivalence = addI("compressionLevelForStateEquivalence", "l_clevel", Deflater.NO_COMPRESSION, "", HIDDEN);

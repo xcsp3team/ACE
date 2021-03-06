@@ -336,11 +336,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		return id != null ? id : defaultId();
 	}
 
-	// public final Constraint setId(String id) {
-	// this.id = id;
-	// return this;
-	// }
-
 	/**
 	 * @return the position of the variable or <code>-1</code> if the variable is not involved in the constraint
 	 */
@@ -477,7 +472,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	private final int computeGenericFilteringThreshold() {
 		if (this instanceof FilteringSpecific || this instanceof Extension)
 			return Integer.MAX_VALUE; // because not concerned
-
 		int arityLimit = problem.head.control.propagation.arityLimitForGACGuaranteed;
 		if (scp.length <= arityLimit)
 			return Integer.MAX_VALUE;
