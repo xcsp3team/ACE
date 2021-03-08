@@ -142,7 +142,6 @@ import constraints.global.NValues.NValuesVar;
 import constraints.global.Sum.SumSimple;
 import constraints.global.Sum.SumSimple.SumSimpleGE;
 import constraints.global.Sum.SumSimple.SumSimpleLE;
-import constraints.global.Sum.SumViewWeighted;
 import constraints.global.Sum.SumWeighted;
 import constraints.global.Sum.SumWeighted.SumWeightedGE;
 import constraints.global.Sum.SumWeighted.SumWeightedLE;
@@ -1451,7 +1450,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				if (condition instanceof ConditionVar) {
 					XNode<IVar>[] tt = IntStream.range(0, trees.length + 1)
 							.mapToObj(i -> i < trees.length ? trees[i] : new XNodeLeaf(VAR, (Variable) rightTerm)).toArray(XNode[]::new);
-					new SumViewWeighted(this, tt, api.vals(coeffs, -1), 0);
+					// new SumViewWeighted(this, tt, api.vals(coeffs, -1), 0);
 					System.out.println("here");
 				}
 			}

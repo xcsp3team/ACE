@@ -8,7 +8,9 @@
  */
 package constraints.global;
 
+import static org.xcsp.common.Types.TypeOperatorRel.GE;
 import static org.xcsp.common.Types.TypeOperatorRel.GT;
+import static org.xcsp.common.Types.TypeOperatorRel.LE;
 import static org.xcsp.common.Types.TypeOperatorRel.LT;
 
 import java.math.BigInteger;
@@ -21,6 +23,8 @@ import java.util.stream.Stream;
 
 import org.xcsp.common.IVar;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
+import org.xcsp.common.Types.TypeExpr;
+import org.xcsp.common.Types.TypeOperatorRel;
 import org.xcsp.common.Utilities;
 import org.xcsp.common.predicates.TreeEvaluator;
 import org.xcsp.common.predicates.XNode;
@@ -806,30 +810,203 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 	 * SumViewWeighted
 	 *********************************************************************************************/
 
-	public static class SumViewWeighted extends Sum { // TODO remettre abstract
+	public static abstract class SumViewWeighted extends Sum {
 
-		static class View {
-			Variable var;
-
-			int[] pos;
-			int[] neg;
-			boolean[] supports;
+		static abstract class View {
+			protected Variable var;
+			protected Domain dom;
 
 			View(XNode<IVar> tree) {
-				assert tree.vars().length == 1;
-				var = (Variable) tree.vars()[0];
-				int[][] tuples = new TreeEvaluator(tree).computeTuples(Variable.initDomainValues(var));
-				System.out.println(tree + " " + var + "  : " + Kit.join(tuples));
+				this.var = (Variable) tree.vars()[0];
+				this.dom = var.dom;
+			}
+
+			abstract int evaluate(int v);
+
+			abstract int minValue();
+
+			abstract int maxValue();
+
+			abstract int uniqueValue();
+
+			abstract boolean removeValuesLE(int limit);
+
+			abstract boolean removeValuesGE(int limit);
+
+			// boolean removeValuesLE(long limit) {
+			// return removeValuesLE(limit <= Integer.MIN_VALUE ? Integer.MIN_VALUE : limit >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) limit);
+			// }
+			//
+			// boolean removeValuesGE(long limit) {
+			// return removeValuesGE(limit <= Integer.MIN_VALUE ? Integer.MIN_VALUE : limit >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) limit);
+			// }
+
+			boolean removeValues(TypeOperatorRel type, long limit, int coeff) {
+				assert coeff != 0 && limit != Long.MIN_VALUE && limit != Long.MAX_VALUE;
+				if (type == LT) {
+					type = LE;
+					limit--;
+				} else if (type == GT) {
+					type = GE;
+					limit++;
+				}
+				if (coeff < 0) {
+					coeff = -coeff;
+					type = type.arithmeticInversion();
+					limit = -limit;
+				}
+				long newLimit = (Math.abs(limit) / coeff) * (limit < 0 ? -1 : 1);
+				if (limit > 0 && type == GE && limit % coeff != 0)
+					newLimit++;
+				if (limit < 0 && type == LE && -limit % coeff != 0)
+					newLimit--;
+				if (type == LE)
+					return removeValuesLE(
+							newLimit <= Integer.MIN_VALUE ? Integer.MIN_VALUE : newLimit >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) newLimit);
+				return removeValuesGE(newLimit <= Integer.MIN_VALUE ? Integer.MIN_VALUE : newLimit >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) newLimit);
+				// return type == LE ? removeValuesLE(newLimit) : removeValuesGE(newLimit);
 			}
 
 		}
 
-		public static SumWeighted buildFrom(Problem pb, XNode<IVar>[] trees, int[] coeffs, TypeConditionOperatorRel op, long limit) {
-			// switch (op) {
-			// case LT:
-			// return new SumWeightedLE(pb, vs, coeffs, limit - 1);
-			// case LE:
-			// return new SumWeightedLE(pb, vs, coeffs, limit);
+		static class ViewVariable extends View {
+
+			ViewVariable(XNode<IVar> tree) {
+				super(tree);
+				assert tree.type == TypeExpr.VAR;
+			}
+
+			int evaluate(int v) {
+				return v;
+			}
+
+			int minValue() {
+				return dom.firstValue();
+			}
+
+			int maxValue() {
+				return dom.lastValue();
+			}
+
+			int uniqueValue() {
+				return dom.uniqueValue();
+			}
+
+			boolean removeValuesLE(int limit) {
+				return dom.removeValuesLE(limit);
+			}
+
+			boolean removeValuesGE(int limit) {
+				return dom.removeValuesGE(limit);
+			}
+		}
+
+		static class ViewTree01 extends View {
+			XNode<IVar> tree;
+			boolean[] supports;
+
+			int[] neg; // indexes (of values) leading to 0
+			int[] pos; // indexes (of values) leading to 1
+
+			int residue0 = -1, residue1 = -1;
+
+			ViewTree01(XNode<IVar> tree) {
+				super(tree);
+				assert tree.type.isPredicateOperator() && tree.vars().length == 1;
+				this.tree = tree;
+				this.supports = new boolean[var.dom.initSize()];
+				int[] tmp = new int[1];
+				TreeEvaluator te = new TreeEvaluator(tree);
+				for (int a = 0; a < supports.length; a++) {
+					tmp[0] = var.dom.toVal(a);
+					supports[a] = te.evaluate(tmp) == 1;
+				}
+				this.neg = IntStream.range(0, supports.length).filter(a -> !supports[a]).toArray();
+				this.pos = IntStream.range(0, supports.length).filter(a -> supports[a]).toArray();
+			}
+
+			int evaluate(int v) {
+				return supports[var.dom.toIdx(v)] ? 1 : 0;
+			}
+
+			int minValue() {
+				assert dom.size() > 0;
+				if (residue0 != -1 && dom.present(residue0))
+					return 0;
+				if (dom.size() < neg.length) {
+					for (int a = dom.first(); a != -1; a = dom.next(a))
+						if (!supports[a]) {
+							residue0 = a;
+							return 0;
+						}
+				} else {
+					for (int a : neg)
+						if (dom.present(a)) {
+							residue0 = a;
+							return 0;
+						}
+				}
+				return 1;
+			}
+
+			int maxValue() {
+				assert dom.size() > 0;
+				if (residue1 != -1 && dom.present(residue1))
+					return 1;
+				if (dom.size() < pos.length) {
+					for (int a = dom.first(); a != -1; a = dom.next(a))
+						if (supports[a]) {
+							residue1 = a;
+							return 1;
+						}
+				} else {
+					for (int a : pos)
+						if (dom.present(a)) {
+							residue1 = a;
+							return 1;
+						}
+				}
+				return 0;
+			}
+
+			int uniqueValue() {
+				return supports[dom.unique()] ? 1 : 0;
+			}
+
+			boolean removeValuesLE(int limit) {
+				if (limit < 0)
+					return true;
+				if (limit >= 1)
+					return dom.fail();
+				assert limit == 0;
+				int sizeBefore = dom.size();
+				for (int a : neg)
+					if (dom.present(a))
+						dom.removeElementary(a);
+				return dom.afterElementaryCalls(sizeBefore);
+			}
+
+			boolean removeValuesGE(int limit) {
+				if (limit > 1)
+					return true;
+				if (limit <= 0)
+					return dom.fail();
+				assert limit == 1;
+				int sizeBefore = dom.size();
+				for (int a : pos)
+					if (dom.present(a))
+						dom.removeElementary(a);
+				return dom.afterElementaryCalls(sizeBefore);
+			}
+
+		}
+
+		public static SumViewWeighted buildFrom(Problem pb, XNode<IVar>[] trees, int[] coeffs, TypeConditionOperatorRel op, long limit) {
+			switch (op) {
+			case LT:
+				return new SumViewWeightedLE(pb, trees, coeffs, limit - 1);
+			case LE:
+				return new SumViewWeightedLE(pb, trees, coeffs, limit);
 			// case GE:
 			// return new SumWeightedGE(pb, vs, coeffs, limit);
 			// case GT:
@@ -838,45 +1015,69 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 			// return new SumWeightedEQ(pb, vs, coeffs, limit);
 			// case NE:
 			// return new SumWeightedNE(pb, vs, coeffs, limit);
-			// }
+			}
 			throw new AssertionError();
 		}
 
-		public static long weightedSum(int[] t, int[] coeffs) {
+		public long weightedSum(int[] t, View[] views, int[] coeffs) {
 			assert t.length == coeffs.length;
 			// note that no overflow control is performed here
 			long sum = 0;
 			for (int i = 0; i < t.length; i++)
-				sum += coeffs[i] * t[i];
+				sum += coeffs[i] * views[i].evaluate(t[i]);
 			return sum;
 		}
 
+		public static long minPossibleSum(View[] views, int[] coeffs) {
+			BigInteger sum = BigInteger.valueOf(0);
+			for (int i = 0; i < views.length; i++) {
+				if (views[i] instanceof ViewVariable)
+					sum = sum.add(BigInteger.valueOf(coeffs[i])
+							.multiply(BigInteger.valueOf(coeffs[i] >= 0 ? views[i].dom.toVal(0) : views[i].dom.toVal(views[i].dom.initSize() - 1))));
+				else
+					sum = sum.add(BigInteger.valueOf(coeffs[i]).multiply(BigInteger.valueOf(coeffs[i] >= 0 ? 0 : 1)));
+			}
+			return sum.longValueExact();
+		}
+
+		public static long maxPossibleSum(View[] views, int[] coeffs) {
+			BigInteger sum = BigInteger.valueOf(0);
+			for (int i = 0; i < views.length; i++) {
+				if (views[i] instanceof ViewVariable)
+					sum = sum.add(BigInteger.valueOf(coeffs[i])
+							.multiply(BigInteger.valueOf(coeffs[i] >= 0 ? views[i].dom.toVal(views[i].dom.initSize() - 1) : views[i].dom.toVal(0))));
+				else
+					sum = sum.add(BigInteger.valueOf(coeffs[i]).multiply(BigInteger.valueOf(coeffs[i] >= 0 ? 1 : 0)));
+			}
+			return sum.longValueExact();
+		}
+
 		public long minComputableObjectiveValue() {
-			return IntStream.of(coeffs).filter(c -> c < 0).sum();
+			return minPossibleSum(views, coeffs);
 		}
 
 		public long maxComputableObjectiveValue() {
-			return IntStream.of(coeffs).filter(c -> c > 0).sum();
+			return maxPossibleSum(views, coeffs);
 		}
 
 		public long minCurrentObjectiveValue() {
 			long sum = 0;
-			for (int i = 0; i < scp.length; i++)
-				sum += coeffs[i] * (coeffs[i] >= 0 ? scp[i].dom.firstValue() : scp[i].dom.lastValue());
+			for (int i = 0; i < views.length; i++)
+				sum += coeffs[i] * (coeffs[i] >= 0 ? views[i].minValue() : views[i].maxValue());
 			return sum;
 		}
 
 		public long maxCurrentObjectiveValue() {
 			long sum = 0;
-			for (int i = 0; i < scp.length; i++)
-				sum += coeffs[i] * (coeffs[i] >= 0 ? scp[i].dom.lastValue() : scp[i].dom.firstValue());
+			for (int i = 0; i < views.length; i++)
+				sum += coeffs[i] * (coeffs[i] >= 0 ? views[i].maxValue() : views[i].minValue());
 			return sum;
 		}
 
 		protected long currWeightedSum() {
 			long sum = 0;
-			for (int i = 0; i < scp.length; i++)
-				sum += scp[i].dom.uniqueValue() * coeffs[i];
+			for (int i = 0; i < views.length; i++)
+				sum += views[i].uniqueValue() * coeffs[i];
 			return sum;
 		}
 
@@ -884,15 +1085,15 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 
 		public final int[] coeffs;
 
-		private final View[] views;
+		final View[] views;
 
 		public SumViewWeighted(Problem pb, XNode<IVar>[] trees, int[] coeffs, long limit) {
 			super(pb, Utilities.collect(Variable.class, Stream.of(trees).map(tree -> tree.vars()))); // pb.translate(Utilities.collect(IVar.class, trees)));
-			assert Stream.of(trees).allMatch(tree -> tree.type.isPredicateOperator() && tree.vars().length == 1);
+			// assert Stream.of(trees).allMatch(tree -> tree.type.isPredicateOperator() && tree.vars().length == 1);
 			this.trees = trees;
 			this.coeffs = coeffs;
 			System.out.println("trees " + Kit.join(trees));
-			this.views = Stream.of(trees).map(tree -> new View(tree)).toArray(View[]::new);
+			this.views = Stream.of(trees).map(tree -> tree.type == TypeExpr.VAR ? new ViewVariable(tree) : new ViewTree01(tree)).toArray(View[]::new);
 			this.minComputableObjectiveValue = minComputableObjectiveValue();
 			this.maxComputableObjectiveValue = maxComputableObjectiveValue();
 			control(minComputableObjectiveValue <= maxComputableObjectiveValue); // Important: we check this way that no overflow is possible
@@ -902,17 +1103,65 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 
 		}
 
-		@Override
-		public boolean runPropagator(Variable evt) {
-			// TODO Auto-generated method stub
-			return false;
+		protected void recomputeBounds() {
+			min = max = 0;
+			for (int i = 0; i < views.length; i++) {
+				int coeff = coeffs[i];
+				min += coeff * (coeff >= 0 ? views[i].minValue() : views[i].maxValue());
+				max += coeff * (coeff >= 0 ? views[i].maxValue() : views[i].minValue());
+			}
 		}
 
-		@Override
-		public boolean checkValues(int[] t) {
-			// TODO Auto-generated method stub
-			return false;
+		// ************************************************************************
+		// ***** Constraint SumViewWeightedLE
+		// ************************************************************************
+
+		public static final class SumViewWeightedLE extends SumViewWeighted implements TagGACGuaranteed, Optimizable {
+
+			@Override
+			public boolean checkValues(int[] t) {
+				return weightedSum(t, views, coeffs) <= limit;
+			}
+
+			@Override
+			public long objectiveValue() {
+				return currWeightedSum();
+			}
+
+			public SumViewWeightedLE(Problem pb, XNode<IVar>[] trees, int[] coeffs, long limit) {
+				super(pb, trees, coeffs, limit); // Math.min(limit, maxPossibleSum(views, coeffs))); TODO
+			}
+
+			@Override
+			public boolean runPropagator(Variable x) {
+				recomputeBounds();
+				if (max <= limit)
+					return entailed();
+				if (min > limit)
+					return x == null ? false : x.dom.fail();
+				for (int i = futvars.limit; i >= 0; i--) {
+					Domain dom = scp[futvars.dense[i]].dom;
+					if (dom.size() == 1)
+						continue;
+					int coeff = coeffs[futvars.dense[i]];
+					if (coeff >= 0) {
+						max -= dom.lastValue() * coeff;
+						dom.removeValues(GT, limit - (min - dom.firstValue() * coeff), coeff);
+						assert dom.size() > 0;
+						max += dom.lastValue() * coeff;
+					} else {
+						max -= dom.firstValue() * coeff;
+						dom.removeValues(GT, limit - (min - dom.lastValue() * coeff), coeff);
+						assert dom.size() > 0;
+						max += dom.firstValue() * coeff;
+					}
+					if (max <= limit)
+						return entailed();
+				}
+				return true;
+			}
 		}
+
 	}
 
 }
