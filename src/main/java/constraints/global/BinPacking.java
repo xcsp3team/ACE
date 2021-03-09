@@ -93,6 +93,8 @@ public final class BinPacking extends CtrGlobal implements TagGACUnguaranteed { 
 		// putting each object in front of the right bin (the first one where it can enter)
 		start: while (true) {
 			Arrays.sort(sortedBins, (b1, b2) -> Integer.compare(b1.capacity, b2.capacity));
+			if (sortedBins[0].capacity < 0)
+				return x.dom.fail();
 			for (SetDense set : positions)
 				set.clear();
 			for (int i = 0; i < scp.length; i++) {
@@ -128,9 +130,9 @@ public final class BinPacking extends CtrGlobal implements TagGACUnguaranteed { 
 		// for (SetDense set : positions)
 		// System.out.println(set);
 
-		for (Bin bin : bins)
-			if (bin.capacity < 0)
-				return x.dom.fail();
+		// for (Bin bin : bins)
+		// if (bin.capacity < 0)
+		// return x.dom.fail();
 
 		assert Stream.of(sortedBins).allMatch(bin -> bin.capacity >= 0);
 

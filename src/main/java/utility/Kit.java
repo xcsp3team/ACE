@@ -518,6 +518,10 @@ public final class Kit {
 		}
 	}
 
+	public static int trunc(long l) {
+		return l <= Integer.MIN_VALUE ? Integer.MIN_VALUE : l >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) l;
+	}
+
 	public static void copy(int[] src, int[] dst) {
 		for (int i = dst.length - 1; i >= 0; i--)
 			dst[i] = src[i];

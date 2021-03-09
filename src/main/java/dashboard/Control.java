@@ -938,9 +938,8 @@ public class Control {
 		if (args.length != 2 || maximumPriority == null || maximumPriority < 1 || maximumPriority > 3) {
 			System.out.println("\tTool used to generate a default settings file.");
 			System.out.println("\tUsage : " + Control.class.getName() + " <outputFileName> <maximumPriority>");
-			System.out.println("\n\toutputFileName : name of the generated configuration file.");
-			System.out.println(
-					"\n\tmaximumPriority : the generated file contains only parameters with a priority value lower than this number (must be between 1 and 3)");
+			System.out.println("\n\toutputFileName : name of the generated settings file.");
+			System.out.println("\n\tmaximumPriority : only parameters with a priority value lower than this number (between 1 and 3) are generated");
 		} else {
 			new File(Kit.getPathOf(args[0])).mkdirs();
 			ControlPanelSettings.saveControlPanelSettings(buildControlPanelFor(null), args[0] + (args[0].endsWith(".xml") ? "" : ".xml"), maximumPriority);

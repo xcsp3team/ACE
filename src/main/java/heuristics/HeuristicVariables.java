@@ -200,7 +200,7 @@ public abstract class HeuristicVariables extends Heuristic {
 
 		@Override
 		public double scoreOf(Variable x) {
-			return x.wdeg() / x.dom.size();
+			return x.ddeg() / x.dom.size(); // TODO x.wdeg() is currently no more possible car weighetd degrees are in another heuristic class
 		}
 	}
 

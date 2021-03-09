@@ -568,14 +568,6 @@ public interface Domain extends LinkedSet {
 		return removeValuesLE(limit <= Integer.MIN_VALUE ? Integer.MIN_VALUE : limit >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) limit);
 	}
 
-	default boolean removeValuesLE(long limit) {
-		return removeValuesLE(limit <= Integer.MIN_VALUE ? Integer.MIN_VALUE : limit >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) limit);
-	}
-
-	default boolean removeValuesGE(long limit) {
-		return removeValuesGE(limit <= Integer.MIN_VALUE ? Integer.MIN_VALUE : limit >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) limit);
-	}
-
 	default boolean removeValuesGT(long limit) {
 		assert limit != Long.MAX_VALUE;
 		limit++;
@@ -601,7 +593,7 @@ public interface Domain extends LinkedSet {
 			newLimit++;
 		if (limit < 0 && type == LE && -limit % coeff != 0)
 			newLimit--;
-		return type == LE ? removeValuesLE(newLimit) : removeValuesGE(newLimit);
+		return type == LE ? removeValuesLE(Kit.trunc(newLimit)) : removeValuesGE(Kit.trunc(newLimit));
 	}
 
 	default boolean removeValuesModIn(Domain dom, int coeff) {

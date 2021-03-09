@@ -142,6 +142,7 @@ import constraints.global.NValues.NValuesVar;
 import constraints.global.Sum.SumSimple;
 import constraints.global.Sum.SumSimple.SumSimpleGE;
 import constraints.global.Sum.SumSimple.SumSimpleLE;
+import constraints.global.Sum.SumViewWeighted;
 import constraints.global.Sum.SumWeighted;
 import constraints.global.Sum.SumWeighted.SumWeightedGE;
 import constraints.global.Sum.SumWeighted.SumWeightedLE;
@@ -212,7 +213,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		}
 		terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new); // we discard terms of small coeffs
 		if (terms.length > 0) {
-			Variable[] t = Stream.of(terms).map(term -> term.var).toArray(Variable[]::new);
+			Variable[] t = Stream.of(terms).map(term -> term.obj).toArray(Variable[]::new);
 
 			if (t.length > LIM)
 				t = Arrays.copyOfRange(t, t.length - LIM, t.length);
@@ -1290,16 +1291,16 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		}
 
 		long coeff;
-		Variable var;
+		Object obj; // typically, a variable or a tree
 
-		private Term(long coeff, Variable var) {
+		private Term(long coeff, Object obj) {
 			this.coeff = coeff;
-			this.var = var;
+			this.obj = obj;
 		}
 
 		@Override
 		public String toString() {
-			return coeff + "*" + var;
+			return coeff + "*" + obj;
 		}
 	}
 
@@ -1311,12 +1312,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// Term[] terms = IntStream.range(0, list.length).mapToObj(i -> new Term(coeffs == null ? 1 : coeffs[i], list[i])).toArray(Term[]::new);
 
 		if (!Variable.areAllDistinct(list)) {
-			Set<Entry<Variable, Long>> entries = Stream.of(terms).collect(groupingBy(t -> t.var, summingLong((Term t) -> (int) t.coeff))).entrySet();
+			Set<Entry<Object, Long>> entries = Stream.of(terms).collect(groupingBy(t -> t.obj, summingLong((Term t) -> (int) t.coeff))).entrySet();
 			terms = entries.stream().map(e -> new Term(e.getValue(), e.getKey())).toArray(Term[]::new);
 			log.info("Sum constraint with several ocurrences of the same variable");
 		}
 		terms = Stream.of(terms).filter(t -> t.coeff != 0).sorted().toArray(Term[]::new); // we discard terms of coeff 0 and sort them
-		list = Stream.of(terms).map(t -> t.var).toArray(Variable[]::new);
+		list = Stream.of(terms).map(t -> t.obj).toArray(Variable[]::new);
 		control(Stream.of(terms).allMatch(t -> Utilities.isSafeInt(t.coeff)));
 		coeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
 
@@ -1444,14 +1445,17 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Object rightTerm = condition.rightTerm();
 			if (op != NE && Stream.of(trees).allMatch(tree -> tree.type.isPredicateOperator() && tree.vars().length == 1)) {
-				// System.out.println(trees[0].vars()[0].getClass());
-				// IVar[] vars = Utilities.collect(Variable.class, Stream.of(trees).map(tree -> tree.vars()));
-				// System.out.println("jjjj " + vars.length);
 				if (condition instanceof ConditionVar) {
-					XNode<IVar>[] tt = IntStream.range(0, trees.length + 1)
-							.mapToObj(i -> i < trees.length ? trees[i] : new XNodeLeaf(VAR, (Variable) rightTerm)).toArray(XNode[]::new);
-					// new SumViewWeighted(this, tt, api.vals(coeffs, -1), 0);
+					Term[] terms = new Term[trees.length + 1];
+					for (int i = 0; i < trees.length; i++)
+						terms[i] = new Term(coeffs == null ? 1 : coeffs[i], trees[i]);
+					terms[terms.length - 1] = new Term(-1, new XNodeLeaf(VAR, (Variable) rightTerm));
+					terms = Stream.of(terms).filter(t -> t.coeff != 0).sorted().toArray(Term[]::new); // we discard terms of coeff 0 and sort them
+					XNode<IVar>[] tt = Stream.of(terms).map(t -> t.obj).toArray(XNode[]::new);
+					control(Stream.of(terms).allMatch(t -> Utilities.isSafeInt(t.coeff)));
+					coeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
 					System.out.println("here");
+					return addCtr(SumViewWeighted.buildFrom(this, tt, coeffs, op, 0));
 				}
 			}
 		}
