@@ -1,6 +1,6 @@
 package problems;
 
-import dashboard.Arguments;
+import dashboard.Input;
 import main.Head;
 import main.HeadExtraction;
 
@@ -8,7 +8,7 @@ public class UtilityForTests {
 
 	public static Head runResolution(String args, boolean extraction) {
 		System.out.println("\nCommand : " + args);
-		Arguments.loadArguments(args.split("\\s+"));
+		Input.loadArguments(args.split("\\s+"));
 		Head resolution = extraction ? new HeadExtraction() : new Head();
 		try {
 			resolution.start();

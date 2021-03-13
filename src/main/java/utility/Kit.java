@@ -68,7 +68,7 @@ import org.xcsp.common.predicates.XNode;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import dashboard.Arguments;
+import dashboard.Input;
 import main.Head;
 
 public final class Kit {
@@ -88,11 +88,11 @@ public final class Kit {
 			@Override
 			public void publish(LogRecord record) {
 				if (record.getLevel().intValue() < Level.INFO.intValue()) {
-					if (Arguments.multiThreads)
+					if (Input.multiThreads)
 						System.out.println("From " + ((Head) Thread.currentThread()).control.settingsFilename + " :");
 					System.out.println(record.getMessage());
 				} else {
-					if (Arguments.multiThreads)
+					if (Input.multiThreads)
 						System.err.println("From " + ((Head) Thread.currentThread()).control.settingsFilename + " :");
 					// c.setTimeInMillis(record.getMillis());
 					Thread t = Head.currentThread();

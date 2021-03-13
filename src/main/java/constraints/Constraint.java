@@ -393,7 +393,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	public boolean isSubstitutableBy(int x, int a, int b) {
 		tupleManager.firstValidTupleWith(x, a);
-		return !tupleManager.findValidTupleSuchThat(t -> {
+		return !tupleManager.findValidTupleChecking(t -> {
 			t[x] = a;
 			boolean b1 = checkIndexes(t);
 			t[x] = b;
@@ -606,7 +606,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 * of the current tuple included in search). A lexicographic order is used.
 	 */
 	private final boolean seekSupport() {
-		return tupleManager.findValidTupleSuchThat(t -> checkIndexes(t));
+		return tupleManager.findValidTupleChecking(t -> checkIndexes(t));
 	}
 
 	public final boolean seekFirstSupport() {
@@ -636,7 +636,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	private final boolean seekConflict() {
-		return tupleManager.findValidTupleSuchThat(t -> !checkIndexes(t));
+		return tupleManager.findValidTupleChecking(t -> !checkIndexes(t));
 	}
 
 	public final boolean seekFirstConflict() {
@@ -651,7 +651,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 	public long nConflictsFor(int x, int a) {
 		tupleManager.firstValidTupleWith(x, a);
-		return tupleManager.countValidTuplesSuchThat(t -> !checkIndexes(t));
+		return tupleManager.countValidTuplesChecking(t -> !checkIndexes(t));
 	}
 
 	public boolean findArcSupportFor(int x, int a) {

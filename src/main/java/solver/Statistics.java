@@ -10,12 +10,6 @@ package solver;
 
 import static dashboard.Output.CPU;
 import static dashboard.Output.MEM;
-import static dashboard.Output.N_BUILT_BRANCHES;
-import static dashboard.Output.N_EFFECTIVE_SINGLETON_TESTS;
-import static dashboard.Output.N_FOUND_SINGLETONS;
-import static dashboard.Output.N_SINGLETON_TESTS;
-import static dashboard.Output.STOP;
-import static dashboard.Output.SUM_BRANCH_SIZES;
 import static dashboard.Output.WCK;
 
 import java.text.NumberFormat;
@@ -23,7 +17,6 @@ import java.text.NumberFormat;
 import org.xcsp.common.Types.TypeFramework;
 
 import constraints.Constraint;
-import dashboard.Output;
 import interfaces.Observers.ObserverRuns;
 import interfaces.Observers.ObserverSearch;
 import learning.IpsRecorderForEquivalence;
@@ -42,6 +35,22 @@ import variables.Variable;
  * This class allows gathering all statistics of a given solver.
  */
 public abstract class Statistics implements ObserverRuns, ObserverSearch {
+
+	public static final String N_BUILT_BRANCHES = "nBuiltBranches";
+	public static final String SUM_BRANCH_SIZES = "sumBranchSizes";
+	public static final String MAP_SIZE = "mapSize";
+	public static final String N_INFERENCES = "nInferences";
+	public static final String N_TOO_LARGE_KEYS = "nTooLargeKeys";
+	public static final String N_SELIMINABLES = "nSEliminables";
+	public static final String N_RELIMINABLES = "nREliminables";
+	public static final String N_DELIMINABLES = "nDEliminables";
+	public static final String N_IELIMINABLES = "nIEliminables";
+	public static final String N_PELIMINABLES = "nPEliminables";
+	public static final String N_SINGLETON_TESTS = "nSingletonTests";
+	public static final String N_EFFECTIVE_SINGLETON_TESTS = "nEffectiveSingletonTests";
+	public static final String N_FOUND_SINGLETONS = "nFoundSingletons";
+	public static final String GUARANTEED_GAC = "guaranteedGAC";
+	public static final String STOP = "Stop";
 
 	private static NumberFormat nformat = NumberFormat.getInstance();
 
@@ -166,11 +175,11 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 	public final MapAtt solverConstructionAttributes() {
 		MapAtt m = new MapAtt("Solver");
 		if (solver.propagation.getClass() == GAC.class)
-			m.put(Output.GUARANTEED_GAC, Constraint.isGuaranteedGAC(solver.problem.constraints));
+			m.put(GUARANTEED_GAC, Constraint.isGuaranteedGAC(solver.problem.constraints));
 		m.separator();
-		m.put(Output.WCK, solver.head.instanceStopwatch.wckTimeInSeconds());
-		m.put(Output.CPU, solver.head.stopwatch.cpuTimeInSeconds());
-		m.put(Output.MEM, Kit.memoryInMb());
+		m.put(WCK, solver.head.instanceStopwatch.wckTimeInSeconds());
+		m.put(CPU, solver.head.stopwatch.cpuTimeInSeconds());
+		m.put(MEM, Kit.memoryInMb());
 		return m;
 	}
 
@@ -265,8 +274,8 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			m.put("eff", nEffectiveFilterings());
 			m.put("wrg", nWrongDecisions);
 			if (Kit.memory() > 10000000000L)
-				m.put(Output.MEM, Kit.memoryInMb());
-			m.put(Output.WCK, stopwatch.wckTimeInSeconds());
+				m.put(MEM, Kit.memoryInMb());
+			m.put(WCK, stopwatch.wckTimeInSeconds());
 			if (solver.nogoodRecorder != null)
 				m.putWhenPositive("ngd", solver.nogoodRecorder.nNogoods);
 			if (solver.solRecorder.found > 0) {
@@ -288,27 +297,27 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			m.put("failed", nFailedAssignments);
 			m.putIf("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
 			if (nSingletonTests() > 0) { // solver.getPreproPropagationTechnique() instanceof SingletonArcConsistency) {
-				m.put(Output.N_SINGLETON_TESTS, nSingletonTests());
-				m.put(Output.N_EFFECTIVE_SINGLETON_TESTS, nEffectiveSingletonTests());
+				m.put(N_SINGLETON_TESTS, nSingletonTests());
+				m.put(N_EFFECTIVE_SINGLETON_TESTS, nEffectiveSingletonTests());
 			}
 			if (Kit.memory() > 10000000000L)
-				m.put(Output.MEM, Kit.memoryInMb());
+				m.put(MEM, Kit.memoryInMb());
 			m.separator();
 			if (solver.ipsRecorder != null && solver.ipsRecorder instanceof IpsRecorderForEquivalence && !solver.ipsRecorder.stopped) {
 				IpsRecorderForEquivalence learner = (IpsRecorderForEquivalence) solver.ipsRecorder;
-				m.put(Output.MAP_SIZE, learner.getMapSize());
-				m.put(Output.N_INFERENCES, learner.nInferences);
+				m.put(MAP_SIZE, learner.getMapSize());
+				m.put(N_INFERENCES, learner.nInferences);
 				// map.put("nbInferredSolutions", solutionCounter.nbInferredSolutions );
-				m.put(Output.N_TOO_LARGE_KEYS, learner.nTooLargeKeys);
+				m.put(N_TOO_LARGE_KEYS, learner.nTooLargeKeys);
 			}
 			if (solver.ipsRecorder != null) {
 				ReductionOperator ro = solver.ipsRecorder.reductionOperator;
 				// DecimalFormat df = new DecimalFormat("###.##",new DecimalFormatSymbols(Locale.ENGLISH));
-				m.put(Output.N_SELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbSEliminableVariables()));
-				m.put(Output.N_RELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbREliminableVariables()));
-				m.put(Output.N_IELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbIEliminableVariables()));
-				m.put(Output.N_DELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbDEliminableVariables()));
-				m.put(Output.N_PELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbPEliminableVariables()));
+				m.put(N_SELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbSEliminableVariables()));
+				m.put(N_RELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbREliminableVariables()));
+				m.put(N_IELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbIEliminableVariables()));
+				m.put(N_DELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbDEliminableVariables()));
+				m.put(N_PELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbPEliminableVariables()));
 				m.separator();
 			}
 			return m;
@@ -320,8 +329,8 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			m.put("eff", nEffectiveFilterings());
 			m.putIf("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
 			if (nSingletonTests() > 0) { // solver.getPreproPropagationTechnique() instanceof SingletonArcConsistency) {
-				m.put(Output.N_SINGLETON_TESTS, nSingletonTests());
-				m.put(Output.N_EFFECTIVE_SINGLETON_TESTS, nEffectiveSingletonTests());
+				m.put(N_SINGLETON_TESTS, nSingletonTests());
+				m.put(N_EFFECTIVE_SINGLETON_TESTS, nEffectiveSingletonTests());
 			}
 
 			if (solver.nogoodRecorder != null)

@@ -38,173 +38,38 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	 * Constants
 	 *********************************************************************************************/
 
-	public static final String RESULTS_DIRECTORY_NAME = "results";
-	public static final String CONFIGURATION_DIRECTORY_NAME = "configurations";
-	public static final String CONTEXT_DIRECTORY_NAME = "context";
-
-	// Resolutions
-
+	public static final String RESULTS_DIRECTORY = "results";
+	public static final String SETTINGS_DIRECTORY = "configurations";
+	public static final String CONTEXT_DIRECTORY = "context";
 	public static final String MULTITHREAD_RESULTS = "multithreadResults";
 	public static final String CONFIGURATION_FILE_NAME = "configurationFileName";
 	public static final String TOTAL_WCK_TIME = "totalWckTime";
-	public static final String TOTAL_CPU_TIME = "totalCpuTime";
-	public static final String LEVEL = "level";
 
-	// Instance
-
-	public static final String OBJECTIVE = "objective";
+	public static final String INSTANCE = "Instance";
+	public static final String DOMAINS = "Domains";
+	public static final String VARIABLES = "Variables";
+	public static final String CONSTRAINTS = "Constraints";
+	public static final String OBJECTIVE = "Objective";
+	public static final String RUN = "Run";
 	public static final String NUMBER = "number";
-	public static final String FRAMEWORK = "framework";
 	public static final String NAME = "name";
-	public static final String PARAMETERS = "parameters";
-	public static final String N_VARIABLES = "nVariables";
-	public static final String N_DISCARDED_VARIABLES = "nDiscardedVariables";
-	public static final String N_DOMAIN_TYPES = "nDomainTypes";
-	public static final String N_CONSTRAINTS = "nConstraints";
-	public static final String N_DISCARDED_CONSTRAINTS = "nDiscardedConstraints";
-	// public static final String N_RELATION_TYPES = "nRelationTypes";
-	// public static final String N_PRESENT_UNARY_CONSTRAINTS = "nPresentUnaryConstraints";
-	// public static final String N_REMOVED_UNARY_CONSTRAINTS = "nRemovedUnaryConstraints";
-	// public static final String N_IGNORED_UNARY_CONSTRAINTS = "nIgnoredUnaryConstraints";
-	// public static final String N_GLOBAL_CONSTRAINTS = "nGlobalConstraints";
-	// public static final String N_SPECIFIC_CONSTRAINTS = "nSpecificConstraints";
-	// public static final String N_MERGED_CONSTRAINTS = "nMergedConstraints";
-	// public static final String N_UNIVERSAL_CONSTRAINTS = "nUniversalConstraints";
-	public static final String N_ADDED_CONSTRAINTS = "nAddedConstraints";
-	// public static final String N_ISOLATED_VARIABLES = "nIsolatedVariables";
-	// public static final String N_FIXED_VARIABLES = "nFixedVariables";
-	// public static final String N_VALUES_REMOVED_AT_CONSTRUCTION = "nValuesRemovedAtConstruction";
-	// public static final String N_PURGED_VALUES = "nPurgedValues";
-	// public static final String N_CONFLICTS_STRUCTURES = "nConflictsStructures";
-	// public static final String N_SHARED_CONFLICTS_STRUCTURES = "nSharedConflictsStructures";
-	// public static final String N_UNBUILT_CONFLICTS_STRUCTURES = "nUnbuiltConflictsStructures";
-	// public static final String N_EXTENSION_STRUCTURES = "nExtensionStructures";
-	public static final String N_SHARED_EXTENSION_STRUCTURES = "nSharedExtensionStructures";
-	// public static final String N_SHARED_BINARY_REPRESENTATIONS = "nSharedBinaryRepresentations";
-	// public static final String N_CONVERTED_CONSTRAINTS = "nConvertedConstraints";
-	// public static final String N_CONVERT_CONSTRAINTS_CHECKS = "nConvertConstraintsChecks";
-	// public static final String N_EVALUATION_MANAGERS = "nEvaluationManagers";
-	// public static final String N_SHARED_EVALUATION_MANAGERS = "nSharedEvaluationManagers";
-	public static final String MIN_DEGREE = "minDegree";
+	public static final String NTYPES = "nTypes";
+	public static final String NVALUES = "nValues";
+	public static final String COUNT = "count";
 	public static final String DEGREES = "degrees";
-	public static final String MAX_DEGREE = "maxDegree";
-	public static final String DOMAIN_SIZES = "domainSizes";
-	public static final String N_TOTAL_VALUES = "nTotalValues";
 	public static final String ARITIES = "arities";
-	public static final String MAX_CONSTRAINT_TUPLES = "maxConstraintTuples";
+	public static final String SIZES = "sizes";
 	public static final String TYPES = "types";
 	public static final String TABLES = "tables";
-	public static final String DEFAULT_COSTS = "defaultCosts";
-	public static final String N_TOTAL_TUPLES = "nTotalTuples";
-	public static final String TOTAL_INITIAL_SPACE = "totalInitialSpace";
-	public static final String TOTAL_REDUCED_SPACE = "totalReducedSpace";
-	public static final String WCK_MINING = "wckMining";
-	public static final String COMPRESSION = "compression";
-
-	// solver
+	public static final String BOUNDS = "bounds";
 
 	public static final String WCK = "wck";
 	public static final String CPU = "cpu";
 	public static final String MEM = "mem";
-	public static final String FREE_MEMORY = "freeMemory";
-	public static final String MAX_MEMORY = "maxMemory";
-	public static final String ALLOCATED_MEMORY = "allocatedMemory";
-	public static final String GUARANTEED_GAC = "guaranteedGAC";
 
-	// preprocessing
-
-	public static final String N_CONSTRAINT_CHECKS = "nConstraintChecks";
-	public static final String N_INITIAL_CHECKS = "nInitialChecks";
-	public static final String N_RESTORATIONS = "nRestorations";
-	public static final String DEPTH = "depth";
-	public static final String MIN = "min";
-	public static final String MAX = "max";
-	public static final String AVG = "avg";
-	public static final String N_EFFECTIVE_FILTERINGS = "nEffectivePFilterings";
-	public static final String N_REVISIONS = "nRevisions";
-	public static final String N_USELESS_REVISIONS = "nUselessRevisions";
-	public static final String N_SINGLETON_TESTS = "nSingletonTests";
-	public static final String N_EFFECTIVE_SINGLETON_TESTS = "nEffectiveSingletonTests";
-	public static final String N_NC_REMOVALS = "nNCRemovals";
-	public static final String N_AC_REMOVALS = "nACRemovals";
-	public static final String N_SUB_REMOVALS = "nSUBRemovals";
-	public static final String AVG_SUB_REMOVALS = "avgSUBRemovals";
-	public static final String N_FOUND_SINGLETONS = "nFoundSingletons";
-	public static final String N_BUILT_BRANCHES = "nBuiltBranches";
-	public static final String SUM_BRANCH_SIZES = "sumBranchSizes";
-	public static final String N_REMOVED_VALUES = "nRemovedValues";
-	public static final String N_REMOVED_TUPLES = "nRemovedTuples";
-	public static final String N_VALID_SUPPORTS = "nValidSupports";
-	public static final String DETECTED_INCONSISTENCY = "detectedInconsistency";
-	public static final String GLOBAL_CPU_TIME = "globalCpuTime";
-
-	// search
-
-	public static final String RUN = "run";
-	public static final String N_ASSIGNMENTS = "nAssignments";
-	public static final String N_FAILED_ASSIGNMENTS = "nFailedAssignments";
-	public static final String AVG_FAILED_DEPTH = "avgFailedDepth";
-	public static final String N_WRONG = "wrong";
-	public static final String N_BACKTRACKS = "nBacktracks";
 	public static final String N_NODES = "nNodes";
-	public static final String N_ADDED_NOGOODS = "nAddedNogoods";
-	public static final String N_INFERRED_BACKTRACKS = "nInferredBacktracks";
-	public static final String N_INFERRED_REMOVALS = "nInferredRemovals";
-	public static final String MAP_SIZE = "mapSize";
-	public static final String N_INFERENCES = "nInferences";
-	public static final String N_TOO_LARGE_KEYS = "nTooLargeKeys";
-	public static final String N_SELIMINABLES = "nSEliminables";
-	public static final String N_RELIMINABLES = "nREliminables";
-	public static final String N_DELIMINABLES = "nDEliminables";
-	public static final String N_IELIMINABLES = "nIEliminables";
-	public static final String N_PELIMINABLES = "nPEliminables";
-	public static final String N_FILTER_CALLS = "nFilterCalls";
-	public static final String AVG_TABLE_PROPORTION = "avgTableProportion";
-	public static final String AVG_TABLE_SIZE = "avgTableSize";
 
-	// global
-
-	public static final String WALL_CLOCK_TIME_TO_BUILD_PROBLEM = "wckTimeToBuildProblem";
-	public static final String WALL_CLOCK_TIME_TO_BUILD_SOLVER = "wckTimeToBuildSolver";
-	public static final String BUILDING_CPU_TIME = "buildingCpuTime";
-	public static final String BUILDING_WALL_CLOCK_TIME = "buildingWckTime";
-	public static final String N_GENERATORS = "nGenerators";
-	public static final String SYMMETRY_CPU_TIME = "symmetryCpuTime";
-	public static final String SYMMETRY_WALL_CLOCK_TIME = "symmetryWckTime";
-	public static final String N_CLIQUES = "nCliques";
-	public static final String SOLVING_CPU_TIME = "solvingCpuTime";
-	public static final String SOLVING_WALL_CLOCK_TIME = "solvingWckTime";
-	public static final String FIRST_SOLUTION_CPU_TIME = "firstSolutionCpuTime";
-	public static final String FIRST_SOLUTION_WALL_CLOCK_TIME = "firstSolutionWckTime";
-	public static final String EXPIRED_TIME = "expiredTime";
-	public static final String TOTAL_EXPLORATION = "totalExploration";
-	public static final String N_FOUND_SOLUTIONS = "foundSolutions";
-	public static final String BEST_BOUND = "bestBound";
-	public static final String BEST_BOUND_CPU_TIME = "bestBoundCpuTime";
-	public static final String BEST_BOUND_WALL_CLOCK_TIME = "bestBoundWckTime";
-	public static final String STOP = "Stop";
-
-	// statistics
-
-	public static final String N_INSTANCES = "nInstances";
-	public static final String PREPRO_CPU_TIME = "preproCpuTime";
-	public static final String PREPRO_WCK_TIME = "preproWckTime";
-	public static final String SEARCH_CPU_TIME = "searchCpuTime";
-	public static final String SEARCH_WCK_TIME = "searchWckTime";
-	public static final String MEDIAN_CPU_TIME = "medianCpuTime";
-	public static final String N_PREPRO_INCONSISTENCIES = "nPreproInconsistencies";
-
-	// cores
-
-	public static final String GLOBAL_TIME = "globalTime";
-	public static final String MODE = "mode";
-	public static final String N_RUNS = "nRuns";
-	public static final String N_CORES = "nCores";
-	public static final String N_VAVG = "nVAvg";
-	public static final String N_CAVG = "nCAvg";
-	public static final String LAST_CORES = "lastCores";
-
-	public static final String DATA_SEPARATOR = "  ";
+	public static final String COMMENT_PREFIX = "  ";
 
 	/**********************************************************************************************
 	 * Static
@@ -226,14 +91,12 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 
 	private String outputFileName;
 
-	public static final String COMMENT_PREFIX = "  ";
-
 	public Output(Head head, String configFileName) {
 		this.head = head;
 		if (!head.control.xml.dirForCampaign.equals(EMPTY_STRING)) {
 			document = Kit.createNewDocument();
 			root = document.createElement(TypeOutput.RESOLUTIONS.toString());
-			root.setAttribute(Output.CONFIGURATION_FILE_NAME, configFileName);
+			root.setAttribute(CONFIGURATION_FILE_NAME, configFileName);
 			document.appendChild(root);
 			document.normalize();
 		}
@@ -272,12 +135,11 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 
 	public void afterData() { // not a method from an observer
 		MapAtt ia = head.problem.features.instanceAttributes(head.instanceNumber);
-		// Kit.control(outputFileName == null);
 
-		String name = ia.entries().stream().filter(e -> e.getKey().equals(Output.NAME)).map(e -> e.getValue().toString()).findFirst().get();
+		String name = ia.entries().stream().filter(e -> e.getKey().equals(NAME)).map(e -> e.getValue().toString()).findFirst().get();
 		outputFileName = outputFileNameFrom(name, head.control.settingsFilename);
 
-		Kit.log.config(Output.COMMENT_PREFIX + Kit.preprint("Instance ", Kit.BLUE) + name + "\n");
+		Kit.log.config(COMMENT_PREFIX + Kit.preprint("Instance ", Kit.BLUE) + name + "\n");
 		record(TypeOutput.INSTANCE, ia.entries(), resolElt);
 	}
 
@@ -331,8 +193,8 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	public String save(long totalWck) {
 		if (document == null)
 			return null;
-		root.setAttribute(Output.TOTAL_WCK_TIME, totalWck + "");
-		String dirName = head.control.xml.dirForCampaign + File.separator + Output.RESULTS_DIRECTORY_NAME;
+		root.setAttribute(TOTAL_WCK_TIME, totalWck + "");
+		String dirName = head.control.xml.dirForCampaign + File.separator + RESULTS_DIRECTORY;
 		File file = new File(dirName);
 		if (!file.exists())
 			file.mkdirs();

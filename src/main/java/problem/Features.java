@@ -9,11 +9,23 @@
 package problem;
 
 import static dashboard.Output.ARITIES;
+import static dashboard.Output.BOUNDS;
+import static dashboard.Output.CONSTRAINTS;
+import static dashboard.Output.COUNT;
+import static dashboard.Output.CPU;
+import static dashboard.Output.DEGREES;
+import static dashboard.Output.DOMAINS;
+import static dashboard.Output.INSTANCE;
 import static dashboard.Output.MEM;
 import static dashboard.Output.NAME;
+import static dashboard.Output.NTYPES;
 import static dashboard.Output.NUMBER;
-import static dashboard.Output.N_CLIQUES;
+import static dashboard.Output.NVALUES;
+import static dashboard.Output.OBJECTIVE;
+import static dashboard.Output.SIZES;
 import static dashboard.Output.TABLES;
+import static dashboard.Output.VARIABLES;
+import static dashboard.Output.WCK;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -36,13 +48,13 @@ import org.xcsp.common.predicates.TreeEvaluator.ExternFunctionArity1;
 import org.xcsp.common.predicates.TreeEvaluator.ExternFunctionArity2;
 
 import constraints.Constraint;
+import constraints.extension.CSmart;
 import constraints.extension.Extension;
 import constraints.extension.Extension.Extension1;
-import constraints.extension.CSmart;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart;
 import constraints.intension.Intension;
-import dashboard.Arguments;
+import dashboard.Input;
 import dashboard.Control.SettingVars;
 import dashboard.Output;
 import problem.Remodeler.DeducingAllDifferent;
@@ -277,7 +289,7 @@ public final class Features {
 	}
 
 	protected void addToMapForAllDifferentIdentification(DeducingAllDifferent dad) {
-		mapForAllDifferentIdentification.put(N_CLIQUES, dad.nBuiltCliques + "");
+		mapForAllDifferentIdentification.put(DeducingAllDifferent.N_CLIQUES, dad.nBuiltCliques + "");
 	}
 
 	/**********************************************************************************************
@@ -346,9 +358,9 @@ public final class Features {
 	}
 
 	public MapAtt instanceAttributes(int instanceNumber) {
-		MapAtt m = new MapAtt("Instance");
+		MapAtt m = new MapAtt(INSTANCE);
 		m.put(NAME, problem.name());
-		m.putIf(NUMBER, instanceNumber, Arguments.nInstancesToSolve > 1);
+		m.putIf(NUMBER, instanceNumber, Input.nInstancesToSolve > 1);
 		SettingVars settings = problem.head.control.variables;
 		if (settings.selectedVars.length > 0 || settings.instantiatedVars.length > 0 || settings.priorityVars.length > 0) {
 			m.separator();
@@ -363,30 +375,30 @@ public final class Features {
 	}
 
 	public MapAtt domainsAttributes() {
-		MapAtt m = new MapAtt("Domains");
-		m.put("nTypes", nDomTypes());
-		m.put("nValues", Variable.nValidValuesFor(problem.variables));
+		MapAtt m = new MapAtt(DOMAINS);
+		m.put(NTYPES, nDomTypes());
+		m.put(NVALUES, Variable.nValidValuesFor(problem.variables));
 		m.putWhenPositive("nRemovedValuesAtConstruction", nValuesRemovedAtConstructionTime);
 		m.putWhenPositive("nPurged", problem.nValuesRemoved);
-		m.put("sizes", domSizes);
+		m.put(SIZES, domSizes);
 		return m;
 	}
 
 	public MapAtt variablesAttributes() {
-		MapAtt m = new MapAtt("Variables");
-		m.put("count", problem.variables.length);
+		MapAtt m = new MapAtt(VARIABLES);
+		m.put(COUNT, problem.variables.length);
 		m.putWhenPositive("nDiscarded", discardedVars.size());
 		m.putWhenPositive("nIsolated", nIsolatedVars);
 		m.putWhenPositive("nFixed", nFixedVars);
 		m.putWhenPositive("nSymb", nSymbolicVars);
 		m.putWhenPositive("nAux", problem.nAuxVariables);
-		m.put("degrees", varDegrees);
+		m.put(DEGREES, varDegrees);
 		return m;
 	}
 
 	public MapAtt ctrsAttributes() {
-		MapAtt m = new MapAtt("Constraints");
-		m.put("count", problem.constraints.length);
+		MapAtt m = new MapAtt(CONSTRAINTS);
+		m.put(COUNT, problem.constraints.length);
 		m.putWhenPositive("nRemovedUnary", nRemovedUnaryCtrs);
 		m.putWhenPositive("nConverted", nConvertedConstraints);
 		m.putWhenPositive("nSpecific", nSpecificCtrs);
@@ -434,19 +446,19 @@ public final class Features {
 			m.putWhenPositive("sharedBins", nSharedBinaryRepresentations);
 		}
 		m.separator();
-		m.put("wck", problem.head.instanceStopwatch.wckTimeInSeconds());
-		m.put("cpu", problem.head.stopwatch.cpuTimeInSeconds());
+		m.put(WCK, problem.head.instanceStopwatch.wckTimeInSeconds());
+		m.put(CPU, problem.head.stopwatch.cpuTimeInSeconds());
 		m.put(MEM, Kit.memoryInMb());
 		// m.putPositive( COMPRESSION, TableCompressed3.compression);
 		return m;
 	}
 
 	public MapAtt objsAttributes() {
-		MapAtt m = new MapAtt("Objective");
+		MapAtt m = new MapAtt(OBJECTIVE);
 		m.put("way", (problem.optimizer.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName());
 		Kit.control(problem.optimizer.ctr != null);
 		m.put("type", problem.optimizer.ctr.getClass().getSimpleName());
-		m.put("bounds", (problem.optimizer.clb.limit() + ".." + problem.optimizer.cub.limit()));
+		m.put(BOUNDS, (problem.optimizer.clb.limit() + ".." + problem.optimizer.cub.limit()));
 		return m;
 	}
 

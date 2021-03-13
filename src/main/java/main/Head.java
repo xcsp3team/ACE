@@ -30,7 +30,7 @@ import constraints.extension.Extension;
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.intension.Intension.SharedTreeEvaluator;
-import dashboard.Arguments;
+import dashboard.Input;
 import dashboard.Control;
 import dashboard.Control.SettingProblem;
 import dashboard.Output;
@@ -64,11 +64,11 @@ public class Head extends Thread {
 	public synchronized static void saveMultithreadResultsFiles(Head resolution) {
 		String fileName = resolution.output.save(resolution.stopwatch.wckTime());
 		if (fileName != null) {
-			String variantParallelName = Kit.attValueFor(Arguments.lastArgument(), ResolutionVariants.VARIANT_PARALLEL, ResolutionVariants.NAME);
+			String variantParallelName = Kit.attValueFor(Input.lastArgument(), ResolutionVariants.VARIANT_PARALLEL, ResolutionVariants.NAME);
 			String resultsFileName = resolution.control.xml.dirForCampaign;
 			if (resultsFileName != "")
 				resultsFileName += File.separator;
-			resultsFileName += Output.RESULTS_DIRECTORY_NAME + File.separator
+			resultsFileName += Output.RESULTS_DIRECTORY + File.separator
 					+ resolution.output.outputFileNameFrom(resolution.problem.name(), variantParallelName);
 			Kit.copy(fileName, resultsFileName);
 			Document document = Kit.load(resultsFileName);
@@ -97,28 +97,28 @@ public class Head extends Thread {
 	}
 
 	public final static String[] loadVariantNames() {
-		if (Arguments.multiThreads) {
-			String prefix = Kit.attValueFor(Arguments.userSettingsFilename, "xml", "exportMode");
+		if (Input.multiThreads) {
+			String prefix = Kit.attValueFor(Input.userSettingsFilename, "xml", "exportMode");
 			if (prefix.equals("NO"))
 				prefix = ".";
 			if (prefix != "")
 				prefix += File.separator;
-			prefix += Output.CONFIGURATION_DIRECTORY_NAME + File.separator;
+			prefix += Output.SETTINGS_DIRECTORY + File.separator;
 			File file = new File(prefix);
 			if (!file.exists())
 				file.mkdirs();
 			else
 				Kit.control(file.isDirectory());
-			return ResolutionVariants.loadSequentialVariants(Arguments.userSettingsFilename, Arguments.lastArgument(), prefix);
+			return ResolutionVariants.loadSequentialVariants(Input.userSettingsFilename, Input.lastArgument(), prefix);
 		} else
-			return new String[] { Arguments.userSettingsFilename };
+			return new String[] { Input.userSettingsFilename };
 	}
 
 	public static void main(String[] args) {
 		if (args.length == 0 && !isAvailableIn())
 			new Head().control.settings.display(); // the usage is displayed
 		else {
-			Arguments.loadArguments(args); // Always start with that
+			Input.loadArguments(args); // Always start with that
 			heads = Stream.of(loadVariantNames()).map(v -> new Head(v)).peek(h -> h.start()).toArray(Head[]::new); // threads built and started
 		}
 	}
@@ -286,25 +286,25 @@ public class Head extends Thread {
 		random.setSeed(control.general.seed + instanceNumber);
 		ProblemAPI api = null;
 		try {
-			if (Arguments.problemPackageName.equals(XCSP3.class.getName()))
-				api = (ProblemAPI) Reflector.buildObject(Arguments.problemPackageName);
+			if (Input.problemPackageName.equals(XCSP3.class.getName()))
+				api = (ProblemAPI) Reflector.buildObject(Input.problemPackageName);
 			else {
 				String private_ace_problems_dir = "problems";
-				if (Arguments.problemPackageName.startsWith(private_ace_problems_dir))
-					api = (ProblemAPI) Reflector.buildObject(Arguments.problemPackageName);
+				if (Input.problemPackageName.startsWith(private_ace_problems_dir))
+					api = (ProblemAPI) Reflector.buildObject(Input.problemPackageName);
 				else {
 					try {
-						api = (ProblemAPI) Reflector.buildObject(private_ace_problems_dir + "." + Arguments.problemPackageName);
+						api = (ProblemAPI) Reflector.buildObject(private_ace_problems_dir + "." + Input.problemPackageName);
 					} catch (Exception e) {
-						api = (ProblemAPI) Reflector.buildObject(Arguments.problemPackageName);
+						api = (ProblemAPI) Reflector.buildObject(Input.problemPackageName);
 					}
 				}
 			}
 		} catch (Exception e) {
-			return (Problem) Kit.exit("The class " + Arguments.problemPackageName + " cannot be found.", e);
+			return (Problem) Kit.exit("The class " + Input.problemPackageName + " cannot be found.", e);
 		}
 		SettingProblem settings = control.problem;
-		problem = new Problem(api, settings.variant, settings.data, settings.dataFormat, settings.dataexport, Arguments.argsForPb, this);
+		problem = new Problem(api, settings.variant, settings.data, settings.dataFormat, settings.dataexport, Input.argsForPb, this);
 		for (ObserverConstruction obs : observersConstruction)
 			obs.afterProblemConstruction();
 		problem.display();
@@ -368,7 +368,7 @@ public class Head extends Thread {
 		stopwatch.start();
 		log.config("\n" + Kit.preprint("ACE (AbsCon Essence)", Kit.ORANGE) + " v21.01 " + Kit.dateOf(Head.class));
 		boolean crashed = false;
-		for (int i = 0; i < Arguments.nInstancesToSolve; i++) {
+		for (int i = 0; i < Input.nInstancesToSolve; i++) {
 			try {
 				crashed = false;
 				solveInstance(i);
@@ -381,7 +381,7 @@ public class Head extends Thread {
 			// statisticsMultiresolution.update(crashed);
 		}
 		// statisticsMultiresolution.outputGlobalStatistics();
-		if (Arguments.multiThreads) {
+		if (Input.multiThreads) {
 			if (!crashed) {
 				Head.saveMultithreadResultsFiles(this);
 				System.exit(0);

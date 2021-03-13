@@ -654,7 +654,7 @@ public class Control {
 
 			private UserSettings(String userSettingsFilename) {
 				if (userSettingsFilename == null)
-					userSettingsFilename = Arguments.userSettingsFilename;
+					userSettingsFilename = Input.userSettingsFilename;
 				if (userSettingsFilename != null && !userSettingsFilename.equals(Control.DEFAULT_CONFIGURATION)) {
 					// Loads the XML file containing all settings from the user.
 					document = Kit.load(new File(userSettingsFilename));
@@ -665,11 +665,11 @@ public class Control {
 			/** Returns the value (a String) of the specified attribute for the specified tag. */
 			private String stringFor(String shortcut, String tag, String att, Object defaultValue) {
 				// try with shortcut
-				String value = shortcut == null ? null : Arguments.argsForCp.get(shortcut);
+				String value = shortcut == null ? null : Input.argsForCp.get(shortcut);
 				if (value != null)
 					return value.length() == 0 && !(defaultValue instanceof String) ? defaultValue.toString() : value;
 				// try with tag+attribute
-				value = Arguments.argsForCp.get((tag != null ? tag + "/" : "") + att);
+				value = Input.argsForCp.get((tag != null ? tag + "/" : "") + att);
 				if (value != null)
 					return value;
 				if (document == null)
@@ -772,7 +772,7 @@ public class Control {
 		}
 
 		public void controlKeys() {
-			String k = Arguments.argsForCp.keySet().stream().filter(key -> settings.stream().noneMatch(s -> s.key().equals(key) || s.shortcut.equals(key)))
+			String k = Input.argsForCp.keySet().stream().filter(key -> settings.stream().noneMatch(s -> s.key().equals(key) || s.shortcut.equals(key)))
 					.findFirst().orElse(null);
 			Kit.control(k == null, () -> "The parameter " + k + " is unknown");
 		}

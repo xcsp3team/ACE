@@ -10,17 +10,20 @@ package constraints.global;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import constraints.Constraint.CtrGlobal;
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Observers.ObserverConstruction;
 import interfaces.Tags.TagGACUnguaranteed;
 import problem.Problem;
 import sets.SetDense;
+import sets.SetSparseReversible;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public final class BinPacking extends CtrGlobal implements TagGACUnguaranteed { // not call filtering-complete
+public final class BinPacking extends CtrGlobal implements ObserverConstruction, ObserverBacktrackingSystematic, TagGACUnguaranteed { // not call
+																																		// filtering-complete
 	@Override
 	public final boolean checkValues(int[] t) {
 		Arrays.fill(sums, 0);
@@ -30,6 +33,17 @@ public final class BinPacking extends CtrGlobal implements TagGACUnguaranteed { 
 			if (sums[i] > limits[i])
 				return false;
 		return true;
+	}
+
+	@Override
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
+		this.setb = new SetSparseReversible(bins.length, true, problem.variables.length + 1);
+	}
+
+	@Override
+	public void restoreBefore(int depth) {
+		setb.restoreLimitAtLevel(depth);
 	}
 
 	private static class Bin {
@@ -57,8 +71,11 @@ public final class BinPacking extends CtrGlobal implements TagGACUnguaranteed { 
 
 	private final long[] sums; // used for checking values
 
+	private SetSparseReversible setb;
+
 	public BinPacking(Problem pb, Variable[] scp, int[] sizes, int[] limits) {
 		super(pb, scp);
+		control(Kit.isIncreasing(sizes));
 		// defineKey(Kit.join(sizes) + " " + limit);
 		control(scp.length >= 2 && Variable.haveSameDomainType(scp)); // TODO checking that all domains are from 0 to nBins-1
 
@@ -81,35 +98,36 @@ public final class BinPacking extends CtrGlobal implements TagGACUnguaranteed { 
 	public boolean runPropagator(Variable x) {
 		// System.out.println(this);
 		// initialization
-		for (int i = 0; i < bins.length; i++) {
+		for (int j = 0; j <= setb.limit; j++) {
+			int i = setb.dense[j];
 			bins[i].set(i, limits[i]);
-			sortedBins[i] = bins[i];
+			sortedBins[j] = bins[i];
 		}
 		// updating the capacity of bins
 		for (int i = 0; i < scp.length; i++)
 			if (scp[i].dom.size() == 1)
-				sortedBins[scp[i].dom.uniqueValue()].capacity -= sizes[i];
+				bins[scp[i].dom.uniqueValue()].capacity -= sizes[i];
 
 		// putting each object in front of the right bin (the first one where it can enter)
 		start: while (true) {
-			Arrays.sort(sortedBins, (b1, b2) -> Integer.compare(b1.capacity, b2.capacity));
+			Arrays.sort(sortedBins, 0, setb.limit + 1, (b1, b2) -> Integer.compare(b1.capacity, b2.capacity));
 			if (sortedBins[0].capacity < 0)
 				return x.dom.fail();
 			for (SetDense set : positions)
 				set.clear();
-			for (int i = 0; i < scp.length; i++) {
-				Domain dom = scp[i].dom;
+			for (int p = 0; p < scp.length; p++) {
+				Domain dom = scp[p].dom;
 				if (dom.size() == 1)
 					continue; // because already considered (when reducing the appropriate bin capacity)
 				boolean foundPosition = false;
-				for (int j = 0; !foundPosition && j < sortedBins.length; j++) {
-					int bi = sortedBins[j].index;
-					if (sizes[i] > sortedBins[j].capacity) {
-						if (dom.removeValueIfPresent(bi) == false)
+				for (int j = 0; !foundPosition && j <= setb.limit; j++) {
+					int i = sortedBins[j].index;
+					if (sizes[p] > sortedBins[j].capacity) {
+						if (dom.removeValueIfPresent(i) == false)
 							return false;
-					} else if (dom.present(bi)) {
+					} else if (dom.present(i)) {
 						foundPosition = true;
-						positions[j].add(i);
+						positions[j].add(p);
 					}
 				}
 				if (!foundPosition) {
@@ -117,7 +135,7 @@ public final class BinPacking extends CtrGlobal implements TagGACUnguaranteed { 
 					return x.dom.fail();
 				}
 				if (dom.size() == 1) {
-					bins[dom.uniqueValue()].capacity -= sizes[i];
+					bins[dom.uniqueValue()].capacity -= sizes[p];
 					continue start;
 				}
 			}
@@ -134,11 +152,11 @@ public final class BinPacking extends CtrGlobal implements TagGACUnguaranteed { 
 		// if (bin.capacity < 0)
 		// return x.dom.fail();
 
-		assert Stream.of(sortedBins).allMatch(bin -> bin.capacity >= 0);
+		// assert Stream.of(sortedBins).allMatch(bin -> bin.capacity >= 0);
 
 		// energetic reasoning
 		int cumulatedAvailableCapacities = 0, cumulatedSizes = 0;
-		for (int j = sortedBins.length - 1; j >= 0; j--) {
+		for (int j = setb.limit; j >= 0; j--) {
 			int capacity = sortedBins[j].capacity;
 			cumulatedAvailableCapacities += capacity;
 			if (positions[j].size() == 0)
@@ -154,7 +172,6 @@ public final class BinPacking extends CtrGlobal implements TagGACUnguaranteed { 
 			int lost = onyOnePossibleInTheBin ? capacity - max : 0; // lost place
 			int margin = cumulatedAvailableCapacities - lost - cumulatedSizes; // the margin is computed from the object of max size (when only one possible)
 			if (margin < 0) {
-				// System.out.println("jjjj2 " + margin);
 				return x.dom.fail();
 			}
 			if (onyOnePossibleInTheBin && margin - (max - min) < 0) { // we can remove some values if the smallest item cannot be put in the bin j
@@ -165,6 +182,26 @@ public final class BinPacking extends CtrGlobal implements TagGACUnguaranteed { 
 				}
 			}
 		}
+
+		boolean b = true;
+		if (b)
+			return true;
+		int smallest = -1;
+		for (int i = 0; smallest == -1 && i < scp.length; i++)
+			if (scp[i].dom.size() > 1)
+				smallest = i;
+		if (smallest == -1)
+			return true;
+		// System.out.println("at " + problem.solver.depth() + " samllest " + bins.length + " " + sizes[smallest] + " " + setb.size());
+		int pos = -1;
+		for (int j = setb.limit; j >= 0; j--) {
+			if (!setb.isPresent(sortedBins[j].index))
+				System.exit(1);
+
+			if (sortedBins[j].capacity < smallest)
+				setb.remove(sortedBins[j].index, problem.solver.depth());
+		}
+
 		return true;
 	}
 

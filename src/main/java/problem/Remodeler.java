@@ -22,7 +22,6 @@ import java.util.stream.Stream;
 import constraints.Constraint;
 import constraints.global.Lexicographic.LexicographicLE;
 import constraints.intension.Intension;
-import dashboard.Output;
 import sets.SetSparse;
 import utility.Enums.ESymmetryBreaking;
 import utility.Kit;
@@ -38,6 +37,8 @@ public class Remodeler {
 	 *************************************************************************/
 
 	public static final class DeducingAllDifferent {
+		public static final String N_CLIQUES = "nCliques";
+
 		private Problem problem;
 
 		public int nBuiltCliques;
@@ -136,6 +137,8 @@ public class Remodeler {
 	 *************************************************************************/
 
 	public static final class DeducingAutomorphism {
+		public static final String N_GENERATORS = "nGenerators";
+		public static final String SYMMETRY_WALL_CLOCK_TIME = "symmetryWckTime";
 
 		private Problem problem;
 
@@ -429,9 +432,9 @@ public class Remodeler {
 		}
 
 		public void putInMap(Map<String, String> map) {
-			map.put(Output.N_GENERATORS, generators.size() + "");
+			map.put(N_GENERATORS, generators.size() + "");
 			map.put("nbFusions", nFusions + "");
-			map.put(Output.SYMMETRY_WALL_CLOCK_TIME, stopwatch.wckTimeInSeconds() + "");
+			map.put(SYMMETRY_WALL_CLOCK_TIME, stopwatch.wckTimeInSeconds() + "");
 		}
 
 		void displayGenerators() {

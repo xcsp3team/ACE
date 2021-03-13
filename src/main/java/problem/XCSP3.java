@@ -59,7 +59,7 @@ import org.xcsp.parser.entries.XVariables.XVarInteger;
 import org.xcsp.parser.entries.XVariables.XVarSymbolic;
 
 import constraints.Constraint.CtrFalse;
-import dashboard.Arguments;
+import dashboard.Input;
 import dashboard.Control.SettingXml;
 import variables.Variable;
 import variables.Variable.VariableInteger;
@@ -99,7 +99,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		String s = problem.askString("File or directory:");
 		if (filenames == null) {
 			filenames = collect(new ArrayList<>(), new File(s)).stream().sorted().collect(Collectors.toList());
-			Arguments.nInstancesToSolve = filenames.size();
+			Input.nInstancesToSolve = filenames.size();
 		}
 		problem.parameters.get(0).setValue(name());
 		System.out.println();

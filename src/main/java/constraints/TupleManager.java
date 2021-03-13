@@ -22,12 +22,6 @@ public final class TupleManager {
 	private final Domain[] doms;
 
 	/**
-	 * The arity. <br>
-	 * Redundant field used for efficiency.
-	 */
-	private final int arity;
-
-	/**
 	 * Local tuple built and used by the object.
 	 */
 	public final int[] localTuple;
@@ -38,15 +32,14 @@ public final class TupleManager {
 	private final boolean[] fixed;
 
 	/**
-	 * The tuple used by the assistant. It can be the local tuple or an external tuple (avoids bidirectional copy during search of support).
+	 * The tuple currently used. It can be the local tuple or an external tuple (avoids bidirectional copy during search of support).
 	 */
 	public int[] currTuple;
 
 	public TupleManager(Domain[] doms) {
 		this.doms = doms;
-		this.arity = doms.length;
-		this.localTuple = new int[arity];
-		this.fixed = new boolean[arity];
+		this.localTuple = new int[doms.length];
+		this.fixed = new boolean[doms.length];
 	}
 
 	public TupleManager(Variable[] vars) {
@@ -134,7 +127,7 @@ public final class TupleManager {
 	 */
 	public final int nextValidTuple() {
 		assert isValidCurrTuple();
-		return setNextValidTupleBefore(arity - 1);
+		return setNextValidTupleBefore(doms.length - 1);
 	}
 
 	/**
@@ -143,6 +136,7 @@ public final class TupleManager {
 	 * @return the position (the closest to 0) of the last modified index, or <code> -1 </code> if there is no more available tuple
 	 */
 	public final int nextValidTupleCautiously() {
+		int arity = doms.length;
 		for (int i = 0; i < arity; i++)
 			if (!doms[i].present(currTuple[i])) { // i is the position (the closest to 0) of the first invalid index
 				int modifiedPosition = setNextValidTupleBefore(i);
@@ -163,7 +157,7 @@ public final class TupleManager {
 		} while (nextValidTuple() != -1);
 	}
 
-	public final boolean findValidTupleSuchThat(Predicate<int[]> p) {
+	public final boolean findValidTupleChecking(Predicate<int[]> p) {
 		assert isValidCurrTuple();
 		do {
 			if (p.test(currTuple))
@@ -172,7 +166,7 @@ public final class TupleManager {
 		return false;
 	}
 
-	public final long countValidTuplesSuchThat(Predicate<int[]> p) {
+	public final long countValidTuplesChecking(Predicate<int[]> p) {
 		assert isValidCurrTuple();
 		long cnt = 0;
 		do {

@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import constraints.Constraint;
-import dashboard.Arguments;
+import dashboard.Input;
 import problem.Problem;
 import solver.Solver;
 import utility.Enums.EExtraction;
@@ -319,7 +319,7 @@ public class HeadExtraction extends Head {
 	}
 
 	public static void main(String[] args) {
-		Arguments.loadArguments(args);
+		Input.loadArguments(args);
 		HeadExtraction extraction = new HeadExtraction();
 		Kit.control(!extraction.control.problem.isSymmetryBreaking(), () -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
 		Kit.control(extraction.control.learning.state == ELearningIps.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");

@@ -25,7 +25,7 @@ import utility.Kit;
 /**
  * This class allows us to handle arguments given by the user on the command line.
  */
-public final class Arguments {
+public final class Input {
 
 	private static final String OPTION_PREFIX = "-";
 
@@ -77,7 +77,7 @@ public final class Arguments {
 		argsForCp.clear();
 		args = Stream.of(args).filter(s -> s.length() > 0).toArray(String[]::new); // clean args
 		Kit.control(args.length > 0);
-		Arguments.args = args;
+		Input.args = args;
 		multiThreads = Kit.isXMLFileWithRoot(lastArgument(), ResolutionVariants.VARIANT_PARALLEL);
 		int cursor = 0;
 		userSettingsFilename = Kit.isXMLFileWithRoot(args[cursor], Control.CONFIGURATION) ? args[cursor++] : Control.DEFAULT_CONFIGURATION;

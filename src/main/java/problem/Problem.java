@@ -195,7 +195,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public static final Boolean STARRED = Boolean.TRUE;
 	public static final Boolean UNSTARRED = Boolean.FALSE;
 
-	public static final String AUXILIARY_VARIABLE_PREFIX = "aux_";
+	public static final String AUXILIARY_VARIABLE_PREFIX = "ax_";
 
 	private Variable[] prioritySumVars(Variable[] scp, int[] coeffs) {
 		assert coeffs == null || IntStream.range(0, coeffs.length - 1).allMatch(i -> coeffs[i] <= coeffs[i + 1]);

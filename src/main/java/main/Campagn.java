@@ -90,15 +90,15 @@ public class Campagn { // using the cluster
 	}
 
 	private String getDirectoryNameOfContext() {
-		return getDirectoryNameOf(Output.CONTEXT_DIRECTORY_NAME);
+		return getDirectoryNameOf(Output.CONTEXT_DIRECTORY);
 	}
 
 	private String getDirectoryNameOfConfigurations() {
-		return getDirectoryNameOf(Output.CONFIGURATION_DIRECTORY_NAME);
+		return getDirectoryNameOf(Output.SETTINGS_DIRECTORY);
 	}
 
 	private String getDirectoryNameOfResults() {
-		return getDirectoryNameOf(Output.RESULTS_DIRECTORY_NAME);
+		return getDirectoryNameOf(Output.RESULTS_DIRECTORY);
 	}
 
 	private void saveContext() {
@@ -150,7 +150,7 @@ public class Campagn { // using the cluster
 	private String getInstanceFileNameIn(String command) {
 		StringTokenizer st = new StringTokenizer(command);
 		while (st.hasMoreTokens())
-			if (st.nextToken().contains(Output.CONFIGURATION_DIRECTORY_NAME))
+			if (st.nextToken().contains(Output.SETTINGS_DIRECTORY))
 				return st.nextToken();
 		return null;
 	}
