@@ -157,7 +157,6 @@ public abstract class Propagation {
 	 */
 	protected final boolean pickAndFilter() {
 		Variable x = queue.pickAndDelete();
-		// System.out.println("picking " + x);
 		if (!queue.isNogoodConsistent(x))
 			return false;
 		for (Constraint c : x.ctrs)

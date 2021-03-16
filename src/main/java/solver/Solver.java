@@ -575,6 +575,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		lastConflict.onAssignment(x);
 		assign(x, a);
 		proofer.reset();
+
 		boolean consistent = propagation.runAfterAssignment(x) && (ipsRecorder == null || ipsRecorder.dealWhenOpeningNode());
 		if (!consistent) {
 			x.failed[a]++;

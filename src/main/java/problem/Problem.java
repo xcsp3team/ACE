@@ -28,6 +28,7 @@ import static org.xcsp.common.predicates.MatcherInterface.add_vars;
 import static org.xcsp.common.predicates.MatcherInterface.logic_vars;
 import static org.xcsp.common.predicates.MatcherInterface.max_vars;
 import static org.xcsp.common.predicates.MatcherInterface.min_vars;
+import static org.xcsp.common.predicates.MatcherInterface.mul_vars;
 import static org.xcsp.common.predicates.MatcherInterface.val;
 import static org.xcsp.common.predicates.MatcherInterface.var;
 import static org.xcsp.common.predicates.MatcherInterface.varOrVal;
@@ -139,6 +140,7 @@ import constraints.global.NValues.NValuesCst;
 import constraints.global.NValues.NValuesCst.NValuesCstGE;
 import constraints.global.NValues.NValuesCst.NValuesCstLE;
 import constraints.global.NValues.NValuesVar;
+import constraints.global.Product.ProductSimple;
 import constraints.global.Sum.SumSimple;
 import constraints.global.Sum.SumSimple.SumSimpleGE;
 import constraints.global.Sum.SumSimple.SumSimpleLE;
@@ -853,6 +855,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private Matcher add_mul_vals__relop = new Matcher(node(relop, add_mul_vals, varOrVal));
 	private Matcher add_mul_vars__relop = new Matcher(node(relop, add_mul_vars, varOrVal));
 
+	// product
+	private Matcher mul_vars__relop = new Matcher(node(relop, mul_vars, val));
+
 	private Condition basicCondition(XNodeParent<IVar> tree) {
 		if (tree.type.isRelationalOperator() && tree.sons.length == 2 && tree.sons[1].type.oneOf(VAR, LONG))
 			return tree.sons[1].type == VAR ? new ConditionVar(tree.relop(0), tree.sons[1].var(0)) : new ConditionVal(tree.relop(0), tree.sons[1].val(0));
@@ -974,6 +979,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				return sum(list, coeffs, basicCondition(tree));
 			}
 		}
+		if (mul_vars__relop.matches(tree)) {
+			System.out.println("hhhh");
+			Var[] list = (Var[]) tree.sons[0].arrayOfVars();
+			return product(list, basicCondition(tree));
+		}
+
 		// System.out.println("tree1 " + tree);
 		boolean b = head.control.constraints.decomposeIntention > 0 && scp[0] instanceof VariableInteger && scp.length + 1 >= tree.listOfVars().size(); //
 		// at most a variable occurring twice
@@ -1461,6 +1472,17 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		}
 
 		return sum(replaceByVariables(trees), coeffs, condition);
+	}
+
+	public final CtrEntity product(Var[] list, Condition condition) {
+		if (condition instanceof ConditionRel) {
+			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
+			Object rightTerm = condition.rightTerm();
+			VariableInteger[] scp = (VariableInteger[]) translate(clean(list));
+			if (condition instanceof ConditionVal)
+				return addCtr(ProductSimple.buildFrom(this, scp, op, (long) rightTerm));
+		}
+		return unimplemented("product");
 	}
 
 	// ************************************************************************

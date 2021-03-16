@@ -729,7 +729,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		// System.out.println("filtering " + this + " " + x + " " + this.getClass().getSimpleName());
 		if (infiniteDomainVars.length > 0 && handleHugeDomains()) // Experimental (to be finished)
 			return true;
-
 		// For CSP, some conditions allow us to directly return true (because we know then that there is no filtering possibility)
 		if (problem.settings.framework == TypeFramework.CSP) { // if != MACSP, pb with java -ea ac PlaneparkingTask.xml -ea -cm=false -ev -trace
 																// possibly too with GraphColoring-sum-GraphColoring_1-fullins-3.xml.lzma
@@ -742,7 +741,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		}
 		if (time > x.time && this instanceof TagFilteringCompleteAtEachCall)
 			return true;
-
 		int nBefore = problem.nValuesRemoved;
 		boolean consistent = this instanceof FilteringSpecific ? ((FilteringSpecific) this).runPropagator(x) : genericFiltering(x);
 		if (!consistent || problem.nValuesRemoved != nBefore) {
