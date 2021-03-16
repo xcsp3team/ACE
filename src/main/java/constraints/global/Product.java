@@ -57,7 +57,7 @@ public abstract class Product extends CtrGlobal implements TagFilteringCompleteA
 			case EQ:
 				return new ProductSimpleEQ(pb, scp, limit);
 			case NE:
-				throw new AssertionError(); // not implemented
+				throw new AssertionError(); // not implemented for the moment
 			}
 			throw new AssertionError();
 		}
