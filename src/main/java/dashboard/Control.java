@@ -542,6 +542,7 @@ public class Control {
 		public int lc = addI("lc", "lc", 2, "value for lc (last conflict); 0 if not activated");
 		public final EWeighting weighting = addE("weighting", "wt", EWeighting.CACD, "how to manage weights for wdeg variants");
 		public final ESingleton singleton = addE("singleton", "sing", ESingleton.LAST, "how to manage singleton variables during search");
+		public final boolean discardAux = addB("discardAux", "da", false, "must we disacrd auxiliary variables introduced by the solver?");
 	}
 
 	public final SettingVarh varh = new SettingVarh();

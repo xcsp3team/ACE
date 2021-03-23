@@ -88,6 +88,9 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					return x;
 				bestScoredVariable.update(x, scoreOptimizedOf(x));
 			}
+			if (bestScoredVariable.variable == null) {
+				return solver.futVars.first(); // if discardAux was set to true
+			}
 		}
 		return bestScoredVariable.variable;
 
@@ -360,7 +363,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				}
 			});
 			if (bestScoredVariable.variable == null) {
-				assert settings.singleton == ESingleton.LAST;
+				assert settings.singleton == ESingleton.LAST || solver.head.control.varh.discardAux;
 				return solver.futVars.first();
 			}
 			lastVar = bestScoredVariable.variable.dom.size() == 1 ? null : bestScoredVariable.variable;

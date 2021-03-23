@@ -185,6 +185,8 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 						Variable s = findSentinelFor(v);
 						if (s != null)
 							sentinels[a] = s;
+						else if (domExt.size() == 1)
+							return domExt.fail();
 						else
 							domExt.removeElementary(a);
 					}

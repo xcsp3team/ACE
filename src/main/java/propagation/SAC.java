@@ -580,6 +580,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 
 			private QueueESAC() {
 				this.uncheckedVars = new Variable[solver.problem.variables.length];
+				Kit.control(!solver.head.control.varh.discardAux);
 			}
 
 			public void initialize() {

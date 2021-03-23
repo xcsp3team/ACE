@@ -535,6 +535,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 	}
 
 	public final void backtrack(Variable x) { // should we call it unassign or retract instead?
+		// System.out.println("back " + x + x.dom.uniqueValue());
 		int depthBeforeBacktrack = depth();
 		futVars.unassign(x);
 		x.undoAssignment();

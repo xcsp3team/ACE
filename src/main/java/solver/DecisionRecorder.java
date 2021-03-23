@@ -75,7 +75,8 @@ public final class DecisionRecorder {
 		this.solver = solver;
 		int n1 = (int) Math.ceil(Math.log(solver.problem.variables.length) / Math.log(2));
 		int n2 = (int) Math.ceil(Math.log(solver.problem.features.maxDomSize()) / Math.log(2));
-		Kit.control(n1 + n2 <= 32, () -> "Cannot represent decisions " + n1 + " " + n2);
+		// System.out.println(n1 + " vvs " + n2);
+		Kit.control(n1 + n2 < 31, () -> "Cannot represent decisions " + n1 + " " + n2);
 		this.OFFSET = (int) Math.pow(2, n2 + 1); // +1 because 0 excluded ???
 		int nValues = Variable.nInitValuesFor(solver.problem.variables);
 		this.decisions = new SetDense(nValues);
@@ -106,6 +107,7 @@ public final class DecisionRecorder {
 	}
 
 	public void delPositiveDecision(Variable x) {
+		// System.out.println("hhhhhh" + toString());
 		int[] dense = decisions.dense;
 		int limit = decisions.limit;
 		if (dense[limit] > 0)

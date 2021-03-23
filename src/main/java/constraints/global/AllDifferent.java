@@ -66,8 +66,12 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 			this.matcher = new MatcherAllDifferent(this);
 		}
 
+		// int cnt;
+
 		@Override
 		public boolean runPropagator(Variable x) {
+			// if (cnt++ % 1000 == 0)
+			// System.out.println(this + " " + cnt);
 			if (matcher.findMaximumMatching() == false)
 				return x.dom.fail();
 			matcher.removeInconsistentValues(); // no more possible failure at this step

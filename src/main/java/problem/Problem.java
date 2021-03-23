@@ -197,7 +197,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public static final Boolean STARRED = Boolean.TRUE;
 	public static final Boolean UNSTARRED = Boolean.FALSE;
 
-	public static final String AUXILIARY_VARIABLE_PREFIX = "ax_";
+	public static final String AUXILIARY_VARIABLE_PREFIX = "_ax_";
 
 	private Variable[] prioritySumVars(Variable[] scp, int[] coeffs) {
 		assert coeffs == null || IntStream.range(0, coeffs.length - 1).allMatch(i -> coeffs[i] <= coeffs[i + 1]);
@@ -485,6 +485,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	public final Optimizable addOptimizable(Constraint c) {
+		// System.out.println("\n" + Output.COMMENT_PREFIX + "Loading objective...");
+
 		c.num = features.addCollectedConstraint(c);
 		return (Optimizable) c;
 	}

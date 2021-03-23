@@ -526,6 +526,10 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 			va.id = id;
 	}
 
+	public boolean isSolverAux() {
+		return num >= problem.variables.length - problem.nAuxVariables;
+	}
+
 	public final int assignmentLevel() {
 		return assignmentLevel;
 	}

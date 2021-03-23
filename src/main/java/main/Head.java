@@ -30,9 +30,9 @@ import constraints.extension.Extension;
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.intension.Intension.SharedTreeEvaluator;
-import dashboard.Input;
 import dashboard.Control;
 import dashboard.Control.SettingProblem;
+import dashboard.Input;
 import dashboard.Output;
 import heuristics.HeuristicRevisions;
 import heuristics.HeuristicValues;
@@ -68,8 +68,7 @@ public class Head extends Thread {
 			String resultsFileName = resolution.control.xml.dirForCampaign;
 			if (resultsFileName != "")
 				resultsFileName += File.separator;
-			resultsFileName += Output.RESULTS_DIRECTORY + File.separator
-					+ resolution.output.outputFileNameFrom(resolution.problem.name(), variantParallelName);
+			resultsFileName += Output.RESULTS_DIRECTORY + File.separator + resolution.output.outputFileNameFrom(resolution.problem.name(), variantParallelName);
 			Kit.copy(fileName, resultsFileName);
 			Document document = Kit.load(resultsFileName);
 			Kit.modify(document, TypeOutput.RESOLUTIONS.toString(), Output.CONFIGURATION_FILE_NAME, variantParallelName);
@@ -366,7 +365,7 @@ public class Head extends Thread {
 	@Override
 	public void run() {
 		stopwatch.start();
-		log.config("\n" + Kit.preprint("ACE (AbsCon Essence)", Kit.ORANGE) + " v21.01 " + Kit.dateOf(Head.class));
+		log.config("\n" + Kit.preprint("ACE (AbsCon Essence)", Kit.ORANGE) + " v21.03 " + Kit.dateOf(Head.class));
 		boolean crashed = false;
 		for (int i = 0; i < Input.nInstancesToSolve; i++) {
 			try {

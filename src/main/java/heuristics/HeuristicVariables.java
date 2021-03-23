@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 import dashboard.Control.SettingVarh;
 import dashboard.Control.SettingVars;
 import interfaces.Observers.ObserverRuns;
+import problem.Problem;
 import propagation.GIC.GIC2;
 import solver.Solver;
 import utility.Kit;
@@ -38,17 +39,29 @@ public abstract class HeuristicVariables extends Heuristic {
 	public static class BestScoredVariable {
 		public Variable variable;
 		public double score;
+		public boolean minimization;
+		private boolean discardAux;
 
-		private boolean minimization;
+		public BestScoredVariable(boolean discardAux) {
+			this.discardAux = discardAux;
+		}
+
+		public BestScoredVariable() {
+			this(false);
+		}
 
 		public BestScoredVariable reset(boolean minimization) {
-			variable = null;
-			score = minimization ? Double.MAX_VALUE : Double.NEGATIVE_INFINITY;
+			this.variable = null;
+			this.score = minimization ? Double.MAX_VALUE : Double.NEGATIVE_INFINITY;
 			this.minimization = minimization;
 			return this;
 		}
 
 		public boolean update(Variable x, double s) {
+			if (discardAux && x.isSolverAux()) {
+				assert x.id().startsWith(Problem.AUXILIARY_VARIABLE_PREFIX); // System.out.println("gggg " + x.num + " " + x + " " + x.isSolverAux());
+				return false;
+			}
 			if (minimization) {
 				if (s < score) {
 					variable = x;
@@ -64,8 +77,6 @@ public abstract class HeuristicVariables extends Heuristic {
 		}
 	}
 
-	protected BestScoredVariable bestScoredVariable = new BestScoredVariable();
-
 	/** The backtrack search solver that uses this variable ordering heuristic. */
 	protected final Solver solver;
 
@@ -80,6 +91,8 @@ public abstract class HeuristicVariables extends Heuristic {
 	private int nStrictlyPriorityVars;
 
 	protected SettingVarh settings;
+
+	protected BestScoredVariable bestScoredVariable;
 
 	public final void setPriorityVars(Variable[] priorityVars, int nbStrictPriorityVars) {
 		this.priorityVars = priorityVars;
@@ -104,6 +117,7 @@ public abstract class HeuristicVariables extends Heuristic {
 			this.nStrictlyPriorityVars = solver.problem.nStrictPriorityVars;
 		}
 		this.settings = solver.head.control.varh;
+		this.bestScoredVariable = new BestScoredVariable(solver.head.control.varh.discardAux);
 	}
 
 	/** Returns the score of the specified variable. This is the method to override when defining a new heuristic. */
@@ -161,29 +175,30 @@ public abstract class HeuristicVariables extends Heuristic {
 
 		@Override
 		public void beforeRun() {
-			nbOrdered = 0;
+			nOrdered = 0;
 		}
 
 		private int[] order;
-		private int nbOrdered;
+		private int nOrdered;
 		private int posLastConflict = -1;
 
 		public Memory(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
-			order = new int[solver.problem.variables.length];
+			this.order = new int[solver.problem.variables.length];
+			Kit.control(!solver.head.control.varh.discardAux);
 		}
 
 		@Override
 		protected final Variable bestUnpriorityVar() {
 			int pos = -1;
-			for (int i = 0; i < nbOrdered; i++)
+			for (int i = 0; i < nOrdered; i++)
 				if (!solver.problem.variables[order[i]].assigned()) {
 					pos = i;
 					break;
 				}
 			if (pos != -1) {
 				if (posLastConflict > pos) {
-					Kit.control(posLastConflict < nbOrdered);
+					Kit.control(posLastConflict < nOrdered);
 					int vid = order[pos];
 					order[pos] = order[posLastConflict];
 					order[posLastConflict] = vid;
@@ -192,8 +207,8 @@ public abstract class HeuristicVariables extends Heuristic {
 			} else {
 				bestScoredVariable.reset(false);
 				solver.futVars.execute(x -> bestScoredVariable.update(x, scoreOptimizedOf(x)));
-				pos = posLastConflict = nbOrdered;
-				order[nbOrdered++] = bestScoredVariable.variable.num;
+				pos = posLastConflict = nOrdered;
+				order[nOrdered++] = bestScoredVariable.variable.num;
 			}
 			return solver.problem.variables[order[pos]];
 		}
