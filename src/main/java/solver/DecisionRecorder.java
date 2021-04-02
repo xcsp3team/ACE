@@ -107,7 +107,6 @@ public final class DecisionRecorder {
 	}
 
 	public void delPositiveDecision(Variable x) {
-		// System.out.println("hhhhhh" + toString());
 		int[] dense = decisions.dense;
 		int limit = decisions.limit;
 		if (dense[limit] > 0)

@@ -63,6 +63,7 @@ public class Restarter implements ObserverRuns {
 			currCutoff = measureSupplier.get() + offset;
 		}
 		nRestartsSinceLastReset++;
+		// System.out.println(solver.nogoodRecorder);
 	}
 
 	@Override

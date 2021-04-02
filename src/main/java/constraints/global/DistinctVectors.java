@@ -13,122 +13,115 @@ import java.util.stream.IntStream;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint.CtrGlobal;
+import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagUnsymmetric;
 import problem.Problem;
+import utility.Kit;
+import variables.Domain;
 import variables.Variable;
 
-// !!!!!!! Bug to be fixe (when a variable is shared bewteen the two lists ?) See comment in Class problem
-public final class DistinctVectors extends CtrGlobal implements TagUnsymmetric { // not call filtering-complete
+public final class DistinctVectors extends CtrGlobal implements ObserverBacktrackingSystematic, TagFilteringCompleteAtEachCall, TagUnsymmetric {
+
+	@Override
+	public void restoreBefore(int depth) {
+		if (uniqueSentinelLevel == depth)
+			uniqueSentinelLevel = -1;
+	}
 
 	@Override
 	public boolean checkValues(int[] t) {
-		if (mm != null) {
-			for (int i = 0; i < list1.length; i++)
-				if (t[mm.post1[i]] != t[mm.post2[i]])
-					return true;
-			return false;
-		}
-		for (int i = 0; i < list1.length; i++)
-			if (t[i] != t[i + list1.length])
+		for (int i = 0; i < half; i++)
+			if (t[pos1[i]] != t[pos2[i]])
 				return true;
 		return false;
 	}
 
-	private class ManagerMultiOccurrences {
-		int[] post1, post2;
-
-		ManagerMultiOccurrences() {
-			post1 = IntStream.range(0, list1.length).map(i -> Utilities.indexOf(list1[i], scp)).toArray();
-			post2 = IntStream.range(0, list2.length).map(i -> Utilities.indexOf(list2[i], scp)).toArray();
-		}
+	@Override
+	public boolean isGuaranteedAC() {
+		return scp.length == 2 * half; // if not several occurrences of the same variable
 	}
 
 	private Variable[] list1, list2;
 
+	private int[] pos1, pos2;
+
+	private int half;
+
 	/**
-	 * Two sentinels for tracking the presence of different values.
+	 * Initial mode: two sentinels for tracking the presence of different values.
 	 */
 	private int sentinel1 = -1, sentinel2 = -1;
 
-	private ManagerMultiOccurrences mm;
+	/**
+	 * Possible mode: only one remaining sentinel, identified at a certain level
+	 */
+	private int uniqueSentinel, uniqueSentinelLevel = -1;
 
 	public DistinctVectors(Problem pb, Variable[] list1, Variable[] list2) {
 		super(pb, pb.vars(list1, list2));
-		control(list1.length == list2.length);
+		this.half = list1.length;
 		this.list1 = list1;
 		this.list2 = list2;
-		this.sentinel1 = findAnotherSentinel();
-		this.sentinel2 = findAnotherSentinel();
-		control(sentinel1 != -1 && sentinel2 != -1, () -> "these particular cases not implemented yet");
-		this.mm = scp.length != list1.length + list2.length ? new ManagerMultiOccurrences() : null;
-
+		control(half > 1 && half == list2.length && IntStream.range(0, half).allMatch(i -> list1[i] != list2[i]),
+				" " + half + " " + Kit.join(list1) + " " + Kit.join(list2));
+		this.pos1 = IntStream.range(0, half).map(i -> Utilities.indexOf(list1[i], scp)).toArray();
+		this.pos2 = IntStream.range(0, half).map(i -> Utilities.indexOf(list2[i], scp)).toArray();
+		this.sentinel1 = 0;
+		this.sentinel2 = half - 1;
 	}
 
-	@Override
-	public boolean isGuaranteedAC() {
-		return mm == null;
+	private boolean handleUniqueSentinel(Domain dom1, Domain dom2) {
+		if (dom1.size() > 1 && dom2.size() > 1)
+			return true;
+		if (dom1.size() == 1)
+			return dom2.removeValueIfPresent(dom1.uniqueValue()) && entailed();
+		return dom1.removeValueIfPresent(dom2.uniqueValue()) && entailed();
 	}
 
-	private boolean isSentinel(int i) {
-		return list1[i].dom.size() > 1 || list2[i].dom.size() > 1 || list1[i].dom.uniqueValue() != list2[i].dom.uniqueValue();
-	}
-
-	private boolean isPossibleInferenceFor(int sentinel) {
-		return (list1[sentinel].dom.size() == 1 && list2[sentinel].dom.size() > 1) || (list1[sentinel].dom.size() > 1 && list2[sentinel].dom.size() == 1);
-	}
-
-	private void handlePossibleInferenceFor(int sentinel) {
-		assert isPossibleInferenceFor(sentinel);
-		// no wipe-out possible
-		if (list1[sentinel].dom.size() == 1)
-			list2[sentinel].dom.removeValueIfPresent(list1[sentinel].dom.uniqueValue());
-		else
-			list1[sentinel].dom.removeValueIfPresent(list2[sentinel].dom.uniqueValue());
+	private boolean isGoodSentinel(Domain dom1, Domain dom2) {
+		return dom1.size() > 1 || dom2.size() > 1 || dom1.uniqueValue() != dom2.uniqueValue();
 	}
 
 	private int findAnotherSentinel() {
-		for (int i = 0; i < list1.length; i++)
-			if (i != sentinel1 && i != sentinel2 && isSentinel(i))
+		for (int i = 0; i < half; i++)
+			if (i != sentinel1 && i != sentinel2 && isGoodSentinel(list1[i].dom, list2[i].dom))
 				return i;
 		return -1;
 	}
 
 	@Override
-	public boolean runPropagator(Variable x) {
-		if (x == list1[sentinel1] || x == list2[sentinel1]) {
-			if (!isSentinel(sentinel1)) {
-				int sentinel = findAnotherSentinel();
-				if (sentinel != -1)
-					sentinel1 = sentinel;
-				else {
-					if (list1[sentinel2].dom.size() > 1 && list2[sentinel2].dom.size() > 1)
-						return true;
-					else if (list1[sentinel2].dom.size() == 1 && list2[sentinel2].dom.size() == 1)
-						return list1[sentinel2].dom.uniqueValue() != list2[sentinel2].dom.uniqueValue();
-					else
-						handlePossibleInferenceFor(sentinel2);
-				}
-			} else if (!isSentinel(sentinel2) && isPossibleInferenceFor(sentinel1))
-				handlePossibleInferenceFor(sentinel1);
-			return true;
-		} else if (x == list1[sentinel2] || x == list2[sentinel2]) {
-			if (!isSentinel(sentinel2)) {
-				int sentinel = findAnotherSentinel();
-				if (sentinel != -1)
-					sentinel2 = sentinel;
-				else {
-					if (list1[sentinel1].dom.size() > 1 && list2[sentinel1].dom.size() > 1)
-						return true;
-					else if (list1[sentinel1].dom.size() == 1 && list2[sentinel1].dom.size() == 1)
-						return list1[sentinel1].dom.uniqueValue() != list2[sentinel1].dom.uniqueValue();
-					else
-						handlePossibleInferenceFor(sentinel1);
-				}
-			} else if (!isSentinel(sentinel1) && isPossibleInferenceFor(sentinel2))
-				handlePossibleInferenceFor(sentinel2);
-			return true;
-		} else
-			return true;
-	}
+	public boolean runPropagator(Variable event) {
+		if (uniqueSentinelLevel != -1)
+			return handleUniqueSentinel(list1[uniqueSentinel].dom, list2[uniqueSentinel].dom);
 
+		Domain dx1 = list1[sentinel1].dom, dx2 = list2[sentinel1].dom, dy1 = list1[sentinel2].dom, dy2 = list2[sentinel2].dom;
+		if (dx1.size() == 1 && dx2.size() == 1) { // possibly, sentinel1 is no more valid
+			if (dx1.uniqueValue() != dx2.uniqueValue())
+				return entailed();
+			int sentinel = findAnotherSentinel();
+			if (sentinel != -1) {
+				sentinel1 = sentinel;
+				dx1 = list1[sentinel1].dom;
+				dx2 = list2[sentinel1].dom;
+			} else {
+				uniqueSentinel = sentinel2;
+				uniqueSentinelLevel = problem.solver.depth();
+				return handleUniqueSentinel(dy1, dy2);
+			}
+		}
+		if (dy1.size() == 1 && dy2.size() == 1) { // possibly, sentinel2 is no more valid
+			if (dy1.uniqueValue() != dy2.uniqueValue())
+				return entailed();
+			int sentinel = findAnotherSentinel();
+			if (sentinel != -1) {
+				sentinel2 = sentinel;
+			} else {
+				uniqueSentinel = sentinel1;
+				uniqueSentinelLevel = problem.solver.depth();
+				return handleUniqueSentinel(dx1, dx2);
+			}
+		}
+		return true;
+	}
 }

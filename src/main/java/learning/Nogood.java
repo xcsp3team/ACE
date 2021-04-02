@@ -9,12 +9,14 @@
 package learning;
 
 import java.util.Arrays;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import solver.DecisionRecorder;
 import utility.Kit;
 
 /**
- * Strictly speaking, an object of this class denotes a nogood constraint, i.e. a disjunction of negative decisions that must be enforced
- * (to be true).
+ * Strictly speaking, an object of this class denotes a nogood constraint, i.e. a disjunction of negative decisions that must be enforced (to be true).
  */
 public final class Nogood {
 	public final int[] decisions; // only negative decisions since a classical nogood
@@ -59,5 +61,9 @@ public final class Nogood {
 		this.decisions = decisions;
 		this.watch1 = 0;
 		this.watch2 = decisions.length - 1;
+	}
+
+	public String toString(DecisionRecorder dr) {
+		return IntStream.of(decisions).mapToObj(d -> dr.varIn(d) + (d < 0 ? "!=" : "=") + dr.valIn(d)).collect(Collectors.joining(" "));
 	}
 }

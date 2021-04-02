@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Utilities;
@@ -56,6 +57,41 @@ public final class NogoodRecorder {
 		return checkValues(t); // because nogoods are stored with indexes of values
 	}
 
+	private class WatchCell {
+
+		private Nogood nogood;
+
+		private WatchCell nextCell;
+
+		private WatchCell(Nogood nogood, WatchCell nextCell) {
+			this.nogood = nogood;
+			this.nextCell = nextCell;
+		}
+	}
+
+	private boolean canBeWatched(int decision) {
+		assert decision != 0;
+		Variable x = dr.varIn(decision);
+		int a = dr.idxIn(decision);
+		return decision > 0 ? x.dom.present(a) : x.dom.size() > 1 || !x.dom.present(a);
+	}
+
+	private boolean canFindAnotherWatchFor(Nogood nogood, boolean firstWatch) {
+		int[] decs = nogood.decisions;
+		int start = nogood.getWatchedPosition(firstWatch);
+		for (int i = start + 1; i < decs.length; i++)
+			if (!nogood.isPositionWatched(i) && canBeWatched(decs[i])) {
+				addWatchFor(nogood, i, firstWatch);
+				return true;
+			}
+		for (int i = 0; i < start; i++)
+			if (!nogood.isPositionWatched(i) && canBeWatched(decs[i])) {
+				addWatchFor(nogood, i, firstWatch);
+				return true;
+			}
+		return false;
+	}
+
 	private boolean dealWithInference(int inferenceDecision) {
 		Variable x = dr.varIn(inferenceDecision);
 		int a = dr.idxIn(inferenceDecision);
@@ -65,24 +101,6 @@ public final class NogoodRecorder {
 			return dom.reduceTo(a);
 		else
 			return dom.removeIfPresent(a);
-
-		// if (inferenceDecision > 0) {
-		// if (!dom.isPresent(a))
-		// return false;
-		// if (dom.size() == 1)
-		// return true;
-		// for (int b = dom.first(); b != -1; b = dom.next(b))
-		// if (b != a)
-		// dom.removeElementary(b);
-		// } else {
-		// if (!dom.isPresent(a))
-		// return true;
-		// if (dom.size() == 1)
-		// return false;
-		// dom.removeElementary(a);
-		// }
-		// solver.propagation.queue.add(x);
-		// return true;
 	}
 
 	private boolean checkWatchesOf(WatchCell[] watchCells, int a, int watchedDecision) {
@@ -121,18 +139,6 @@ public final class NogoodRecorder {
 		if (x.dom.size() == 1 && checkWatchesOf(x, x.dom.first(), false) == false)
 			return false;
 		return true;
-	}
-
-	private class WatchCell {
-
-		private Nogood nogood;
-
-		private WatchCell nextCell;
-
-		private WatchCell(Nogood nogood, WatchCell nextCell) {
-			this.nogood = nogood;
-			this.nextCell = nextCell;
-		}
 	}
 
 	private final Solver solver;
@@ -188,29 +194,6 @@ public final class NogoodRecorder {
 			cells[a] = cell;
 		}
 		nogood.setWatchedPosition(position, firstWatch);
-	}
-
-	private boolean canBeWatched(int decision) {
-		assert decision != 0;
-		Variable x = dr.varIn(decision);
-		int a = dr.idxIn(decision);
-		return decision > 0 ? x.dom.present(a) : x.dom.size() > 1 || !x.dom.present(a);
-	}
-
-	private boolean canFindAnotherWatchFor(Nogood nogood, boolean firstWatch) {
-		int[] decs = nogood.decisions;
-		int start = nogood.getWatchedPosition(firstWatch);
-		for (int i = start + 1; i < decs.length; i++)
-			if (!nogood.isPositionWatched(i) && canBeWatched(decs[i])) {
-				addWatchFor(nogood, i, firstWatch);
-				return true;
-			}
-		for (int i = 0; i < start; i++)
-			if (!nogood.isPositionWatched(i) && canBeWatched(decs[i])) {
-				addWatchFor(nogood, i, firstWatch);
-				return true;
-			}
-		return false;
 	}
 
 	private void addNogood(int[] decs, boolean toBeSorted) {
@@ -294,6 +277,12 @@ public final class NogoodRecorder {
 					&& (!controlNogood(nogoods[i].getWatchedDecision(true), nogoods[i]) || !controlNogood(nogoods[i].getWatchedDecision(false), nogoods[i])))
 				return false;
 		return true;
+	}
+
+	public String toString() {
+		StringBuilder sb = new StringBuilder("Nogoods = {\n");
+		IntStream.range(0, nNogoods).forEach(i -> sb.append(nogoods[i].toString(dr)).append("\n"));
+		return sb.append("}").toString();
 	}
 
 	private class SymmetryHandler implements ObserverRuns {

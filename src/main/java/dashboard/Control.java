@@ -369,8 +369,7 @@ public class Control {
 
 		public final boolean priorityType0 = addB("priorityType0", "g_pt0", true, s1);
 		public final int typeAllDifferent = addI("typeAllDifferent", "g_ad", 0, s + "allDifferent");
-		public final int typeDistinctVectors2 = addI("typeDistinctVectors2", "g_dv2", 0, s + "distinctvectors2");
-		public final int typeDistinctVectorsK = addI("typeDistinctVectorsK", "g_dvk", 1, s + "distinctVectorsK");
+		public final int typeDistinctVectors = addI("typeDistinctVectors", "g_dv", 0, s + "distinctvectors");
 		public final int typeAllEqual = addI("typeAllEqual", "g_ae", 0, s + "allEqual");
 		public final int typeNotAllEqual = addI("typeNotAllEqual", "g_nae", 0, s + "notAllEqual");
 		public final int typeOrdered = addI("typeOrdered", "g_ord", 1, s + "odered");

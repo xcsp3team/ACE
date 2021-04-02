@@ -125,6 +125,7 @@ import constraints.global.Count.CountCst.Exactly1;
 import constraints.global.Count.CountCst.ExactlyK;
 import constraints.global.Count.CountVar.ExactlyVarK;
 import constraints.global.Cumulative;
+import constraints.global.DistinctVectors;
 import constraints.global.Element.ElementConstant;
 import constraints.global.Element.ElementVariable;
 import constraints.global.ElementMatrix;
@@ -1171,18 +1172,19 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		});
 	}
 
-	private CtrAlone distinctVectors(Variable[] t1, Variable[] t2) {
-		control(Variable.areAllDistinct(vars(t1, t2)), "For the moment not handled");
-		if (isBasicType(head.control.global.typeDistinctVectors2))
-			return addCtr(CSmart.buildDistinctVectors(this, t1, t2)); // return addCtr(new DistinctVectors2(this, t1, t2)); // BUG TO BE
-																		// FIXED
-		if (head.control.global.typeDistinctVectors2 == 1) {
-			if (head.control.global.smartTable)
-				return addCtr(CSmart.buildDistinctVectors(this, t1, t2));
-			if (head.control.global.jokerTable)
-				return extension(vars(t1, t2), Table.shortTuplesFordNotEqualVectors(t1, t2), true);
-		}
-		throw new UnsupportedOperationException();
+	private CtrEntity distinctVectors(Variable[] t1, Variable[] t2) {
+		control(t1.length == t2.length);
+		boolean normalized = IntStream.range(0, t1.length).allMatch(i -> t1[i] != t2[i]);
+		Variable[] list1 = normalized ? t1 : IntStream.range(0, t1.length).filter(i -> t1[i] != t2[i]).mapToObj(i -> t1[i]).toArray(Variable[]::new);
+		Variable[] list2 = normalized ? t2 : IntStream.range(0, t2.length).filter(i -> t1[i] != t2[i]).mapToObj(i -> t2[i]).toArray(Variable[]::new);
+
+		if (isBasicType(head.control.global.typeDistinctVectors))
+			return addCtr(new DistinctVectors(this, list1, list2));
+		if (head.control.global.smartTable)
+			return addCtr(CSmart.buildDistinctVectors(this, list1, list2));
+		return api.disjunction(IntStream.range(0, list1.length).mapToObj(i -> api.ne(list1[i], list2[i])));
+
+		// return extension(vars(list1, list2), Table.shortTuplesFordNotEqualVectors(list1, list2), true); // pb if several occurrences of the same variable
 	}
 
 	/**
@@ -1190,21 +1192,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 * be different from the tuple of values corresponding to the assignment of the variables in the array specified as second parameter.
 	 */
 	private CtrEntity distinctVectors(Variable[][] lists) {
-		if (head.control.global.typeDistinctVectorsK == 1)
-			return forall(range(lists.length).range(lists.length), (i, j) -> {
-				if (i < j) {
-					if (head.control.global.smartTable)
-						addCtr(CSmart.buildDistinctVectors(this, lists[i], lists[j]));
-					else if (head.control.global.jokerTable)
-						extension(vars(lists[i], lists[j]), Table.shortTuplesFordNotEqualVectors(lists[i], lists[j]), true);
-					else
-						// addCtr(new DistinctVectors(this, lists[i], lists[j]));
-						addCtr(CSmart.buildDistinctVectors(this, lists[i], lists[j]));
-					// TODO java ace seriesJanvier2018/Crossword/Crossword-m1-ogd-puzzle/Crossword-ogd-p02.xml.lzma -varh=WdegOnDom -positive=str2 -s=all
-					// not the same number of solution with Smart and DistinctVectors
-				}
-			});
-		throw new UnsupportedOperationException();
+		return forall(range(lists.length).range(lists.length), (i, j) -> {
+			if (i < j) {
+				distinctVectors(lists[i], lists[j]);
+			}
+		});
 	}
 
 	@Override
