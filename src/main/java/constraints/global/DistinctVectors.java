@@ -21,6 +21,12 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
+// 279360 solutions for:
+// java ace Crossword-ogd-p02.xml.lzma -s=all -ev -varh=Dom -g_dv=1 -st  // smart tables
+// java ace Crossword-ogd-p02.xml.lzma -s=all -ev -varh=Dom  // distinct vectors
+// java ace Crossword-ogd-p02.xml.lzma -s=all -ev -di=0 -sl=42 -varh=Dom -g_dv=1  // intention
+// When the same variable occurs several times, DistinctVectors does not guarantee full GAC
+
 public final class DistinctVectors extends CtrGlobal implements ObserverBacktrackingSystematic, TagFilteringCompleteAtEachCall, TagUnsymmetric {
 
 	@Override

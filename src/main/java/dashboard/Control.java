@@ -352,7 +352,7 @@ public class Control {
 		public final int inferAllDifferentSize = addI("inferAllDifferentSize", "iadsz", 5, "");
 		public final boolean recognizePermutations = addB("recognizePermutations", "perm", false, r5);
 		public final int arityLimitForVapArrayLb = addI("arityLimitForVapArrayLb", "alvalb", 2, "");
-		public final int arityLimitForVapArrayUb = addI("arityLimitForVapArrayUb", "alvaub", 100000, "");
+		public final int arityLimitForVapArrayUb = addI("arityLimitForVapArrayUb", "alvaub", 10000, "");
 
 		// public boolean normalizeCtrs = addB("normalizeCtrs", "nc", false, "Merging constraints of similar scope (when possible)", TO_IMPLEMENT);
 	}
@@ -541,7 +541,7 @@ public class Control {
 		public int lc = addI("lc", "lc", 2, "value for lc (last conflict); 0 if not activated");
 		public final EWeighting weighting = addE("weighting", "wt", EWeighting.CACD, "how to manage weights for wdeg variants");
 		public final ESingleton singleton = addE("singleton", "sing", ESingleton.LAST, "how to manage singleton variables during search");
-		public final boolean discardAux = addB("discardAux", "da", false, "must we disacrd auxiliary variables introduced by the solver?");
+		public final boolean discardAux = addB("discardAux", "da", false, "must we discard auxiliary variables introduced by the solver?");
 	}
 
 	public final SettingVarh varh = new SettingVarh();

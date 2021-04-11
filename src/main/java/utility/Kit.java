@@ -169,6 +169,15 @@ public final class Kit {
 		return list.toArray(new Object[list.size()]);
 	}
 
+	public static final Comparator<int[]> lexComparatorInt = (t1, t2) -> {
+		for (int i = 0; i < t1.length; i++)
+			if (t1[i] < t2[i])
+				return -1;
+			else if (t1[i] > t2[i])
+				return +1;
+		return 0;
+	};
+
 	public static final Comparator<long[]> lexComparatorLong = (t1, t2) -> {
 		for (int i = 0; i < t1.length; i++)
 			if (t1[i] < t2[i])

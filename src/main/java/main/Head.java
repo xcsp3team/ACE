@@ -29,6 +29,7 @@ import org.xcsp.modeler.api.ProblemAPI;
 import constraints.extension.Extension;
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.ExtensionStructure;
+import constraints.extension.structures.MDD;
 import constraints.intension.Intension.SharedTreeEvaluator;
 import dashboard.Control;
 import dashboard.Control.SettingProblem;
@@ -246,10 +247,13 @@ public class Head extends Thread {
 
 	public Map<String, ExtensionStructure> mapOfExtensionStructures = new HashMap<>();
 
+	public Map<String, MDD> mapOfMDDStructures = new HashMap<>();
+
 	public Map<String, SharedTreeEvaluator> mapOfTreeEvaluators = new HashMap<>();
 
 	public void clearMapsUsedByConstraints() {
 		mapOfExtensionStructures.clear();
+		mapOfMDDStructures.clear();
 		mapOfTreeEvaluators.clear();
 		if (Bits.globalMap != null)
 			Bits.globalMap.clear();

@@ -9,7 +9,7 @@
 package constraints.extension;
 
 import java.util.Arrays;
-import java.util.stream.Stream;
+import java.util.Map;
 
 import org.xcsp.common.structures.Automaton;
 import org.xcsp.common.structures.Transition;
@@ -93,8 +93,15 @@ public final class CMDD extends ExtensionGlobal implements TagPositive, ICtrMdd 
 
 	public CMDD(Problem pb, Variable[] scp, Transition[] transitions) {
 		this(pb, scp);
+		String s = signature() + " " + transitions; // TODO be careful, we assume that the address of transitions can be used. Is that correct?
+		Map<String, MDD> map = problem.head.mapOfMDDStructures;
+		extStructure = map.get(s);
+		if (extStructure == null) {
+			extStructure = new MDD(this, transitions); // Stream.of(transitions).map(t -> new Object[] { t.start, t.symbol, t.end }).toArray(Object[][]::new));
+			map.put(s, (MDD) extStructure);
+		}
 		// key = signature() + " " + transitions; // TDODO be careful, we assume that the address of tuples can be used
-		extStructure = new MDD(this, Stream.of(transitions).map(t -> new Object[] { t.firstState, t.symbol, t.secondState }).toArray(Object[][]::new));
+		// extStructure = new MDD(this, Stream.of(transitions).map(t -> new Object[] { t.firstState, t.symbol, t.secondState }).toArray(Object[][]::new));
 	}
 
 	public CMDD(Problem problem, Variable[] scope, Automaton automaton) {

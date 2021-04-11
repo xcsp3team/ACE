@@ -210,6 +210,16 @@ public final class MDD extends ExtensionStructure {
 			display(null, false);
 		}
 
+		public void displayTransitionsXCSP() {
+			if (this.isLeaf())
+				return;
+			if (sons == null)
+				return;
+			System.out.print(IntStream.range(0, sons.length).filter(i -> sons[i] != nodeF).mapToObj(i -> "[\"q" + id + "\"," + i + ",\"q" + sons[i].id + "\"]")
+					.collect(Collectors.joining(",")) + ",\n");
+			Stream.of(sons).filter(s -> s.id > id).forEach(s -> s.displayTransitionsXCSP());
+		}
+
 		public int displayTuples(Domain[] doms, int[] currTuple, int currLevel, int cnt) {
 			if (this == nodeT) { // && Kit.isArrayContainingValuesAllDifferent(currentTuple)) {
 				Kit.log.info(Kit.join(currTuple));
@@ -308,7 +318,7 @@ public final class MDD extends ExtensionStructure {
 		storeTuplesFromAutomata(automata, c.scp.length, Stream.of(c.scp).map(x -> x.dom).toArray(Domain[]::new));
 	}
 
-	public MDD(CMDD c, Object[][] transitions) {
+	public MDD(CMDD c, Transition[] transitions) {
 		this(c);
 		storeTuplesFromTransitions(transitions, Stream.of(c.scp).map(x -> x.dom).toArray(Domain[]::new));
 	}
@@ -341,9 +351,11 @@ public final class MDD extends ExtensionStructure {
 	private void finalizeStoreTuples() {
 		root.buildSonsClasses();
 		nNodes = root.renameNodes(1, new HashMap<Integer, MDDNode>()) + 1;
-		Kit.log.info("MDD : nNodes=" + nNodes + " nBuiltNodes=" + nCreatedNodes);
+		System.out.println("MDD : nNodes=" + nNodes + " nBuiltNodes=" + nCreatedNodes);
 		assert root.controlUniqueNodes(new HashMap<Integer, MDDNode>());
 		// buildSplitter();
+
+		// root.displayTransitionsXCSP();
 		// root.display();
 	}
 
@@ -384,12 +396,12 @@ public final class MDD extends ExtensionStructure {
 		finalizeStoreTuples();
 	}
 
-	public MDD storeTuplesFromTransitions(Object[][] transitions, Domain[] domains) {
+	public MDD storeTuplesFromTransitions(Transition[] transitions, Domain[] domains) {
 		Map<String, MDDNode> nodes = new HashMap<>();
 		Set<String> possibleRoots = new HashSet<>(), notRoots = new HashSet<>();
 		Set<String> possibleWells = new HashSet<>(), notWells = new HashSet<>();
-		for (Object[] tr : transitions) {
-			String src = (String) tr[0], tgt = (String) tr[2];
+		for (Transition tr : transitions) {
+			String src = tr.start, tgt = tr.end;
 			notWells.add(src);
 			notRoots.add(tgt);
 			if (!notRoots.contains(src))
@@ -408,13 +420,13 @@ public final class MDD extends ExtensionStructure {
 		nodes.put(sroot, root = new MDDNode(this, 0, domains[0].initSize(), true));
 		nodes.put(swell, MDDNode.nodeT);
 		// TODO reordering transitions to guarantee that the src node has already been generated
-		for (Object[] tr : transitions) {
-			MDDNode node1 = nodes.get(tr[0]);
-			long v = tr[1] instanceof Integer ? (Integer) tr[1] : (Long) tr[1];
+		for (Transition tr : transitions) {
+			MDDNode node1 = nodes.get(tr.start);
+			long v = tr.value instanceof Integer ? (Integer) tr.value : (Long) tr.value;
 			int val = Utilities.safeInt(v);
 			int idx = domains[node1.level].toIdx(val);
 			Kit.control(idx != -1);
-			MDDNode node2 = nodes.computeIfAbsent((String) tr[2], k -> new MDDNode(this, node1.level + 1, domains[node1.level + 1].initSize(), true));
+			MDDNode node2 = nodes.computeIfAbsent((String) tr.end, k -> new MDDNode(this, node1.level + 1, domains[node1.level + 1].initSize(), true));
 			// MDDNode node2 = nodes.get(tr[2]);
 			// if (node2 == null)
 			// nodes.put((String) tr[2], node2 = new MDDNode(this, node1.level + 1, domains[node1.level + 1].initSize(), true));
@@ -430,10 +442,10 @@ public final class MDD extends ExtensionStructure {
 		map.put(automata.startState, new ArrayList<>());
 		Stream.of(automata.finalStates).forEach(s -> map.put(s, new ArrayList<>()));
 		Stream.of(automata.transitions).forEach(t -> {
-			map.put(t.firstState, new ArrayList<>());
-			map.put(t.secondState, new ArrayList<>());
+			map.put(t.start, new ArrayList<>());
+			map.put(t.end, new ArrayList<>());
 		});
-		Stream.of(automata.transitions).forEach(t -> map.get(t.firstState).add(t));
+		Stream.of(automata.transitions).forEach(t -> map.get(t.start).add(t));
 		return map;
 	}
 
@@ -446,10 +458,10 @@ public final class MDD extends ExtensionStructure {
 		for (int i = 0; i < arity; i++) {
 			for (MDDNode node : prevs.values()) {
 				for (Transition tr : nextTrs.get(node.state)) {
-					int v = Utilities.safeInt((Long) tr.symbol);
+					int v = Utilities.safeInt((Long) tr.value);
 					int a = domains[i].toIdx(v);
 					if (a != -1) {
-						String nextState = tr.secondState;
+						String nextState = tr.end;
 						if (i == arity - 1) {
 							node.sons[a] = Utilities.indexOf(nextState, automata.finalStates) != -1 ? MDDNode.nodeT : MDDNode.nodeF;
 						} else {
