@@ -369,7 +369,7 @@ public class Head extends Thread {
 	@Override
 	public void run() {
 		stopwatch.start();
-		log.config("\n" + Kit.preprint("ACE (AbsCon Essence)", Kit.ORANGE) + " v21.03 " + Kit.dateOf(Head.class));
+		log.config("\n" + Kit.preprint("ACE (AbsCon Essence)", Kit.ORANGE) + " v21.04 " + Kit.dateOf(Head.class));
 		boolean crashed = false;
 		for (int i = 0; i < Input.nInstancesToSolve; i++) {
 			try {

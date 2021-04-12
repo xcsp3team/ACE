@@ -13,6 +13,7 @@ import static org.xcsp.common.Types.TypeConditionOperatorRel.NE;
 import static org.xcsp.common.Types.TypeExpr.ADD;
 import static org.xcsp.common.Types.TypeExpr.IFF;
 import static org.xcsp.common.Types.TypeExpr.LONG;
+import static org.xcsp.common.Types.TypeExpr.MUL;
 import static org.xcsp.common.Types.TypeExpr.VAR;
 import static org.xcsp.common.Types.TypeFramework.COP;
 import static org.xcsp.common.Types.TypeObjective.EXPRESSION;
@@ -838,6 +839,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private Matcher logic_k_relop_y__iff_x = new Matcher(node(IFF, node(relop, val, var), var));
 	private Matcher unalop_x__eq_y = new Matcher(node(TypeExpr.EQ, node(unalop, var), var));
 	private Matcher disjonctive = new Matcher(node(TypeExpr.OR, node(TypeExpr.LE, node(ADD, var, val), var), node(TypeExpr.LE, node(ADD, var, val), var)));
+	private Matcher x_mul_y__eq_k = new Matcher(node(TypeExpr.EQ, node(MUL, var, var), val));
 
 	// ternary
 	private Matcher x_ariop_y__relop_z = new Matcher(node(relop, node(ariop, var, var), var));
@@ -894,7 +896,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
 		Variable[] scp = (Variable[]) tree.vars(); // keep it here, after canonization
 		assert Variable.haveSameType(scp);
-		// System.out.println(tree);
+		// System.out.println("Tree " + tree);
 		if (head.control.extension.convertingIntension(scp) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
 			features.nConvertedConstraints++;
 			return extension(tree);
@@ -902,6 +904,15 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 		int arity = scp.length;
 		SettingXml settings = head.control.xml;
+		if (arity == 2 && x_mul_y__eq_k.matches(tree)) {
+			Var[] t = (Var[]) tree.arrayOfVars();
+			int k = tree.val(0);
+			if (k == 0)
+				return intension(api.or(api.eq(t[0], 0), api.eq(t[1], 0)));
+			if (k == 1)
+				return forall(range(2), i -> api.equal(t[i], 1));
+		}
+
 		if (arity == 2 && settings.primitiveBinaryInSolver) {
 			Constraint c = null;
 			if (x_relop_y.matches(tree))
@@ -983,8 +994,14 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			}
 		}
 		if (mul_vars__relop.matches(tree)) {
-			System.out.println("hhhh");
-			Var[] list = (Var[]) tree.sons[0].arrayOfVars();
+			Var[] list = (Var[]) tree.arrayOfVars();
+			if (tree.relop(0) == EQ && tree.sons[1].type == LONG) {
+				Integer k = tree.sons[1].val(0);
+				if (k == 0)
+					return intension(api.or(Stream.of(list).map(x -> api.eq(x, 0))));
+				if (k == 1)
+					return forall(range(list.length), i -> api.equal(list[i], 1));
+			}
 			return product(list, basicCondition(tree));
 		}
 
