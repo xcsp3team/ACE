@@ -378,7 +378,7 @@ public final class Intension extends Constraint implements TagFilteringCompleteA
 		this.keyCanonizer = scp.length > 30 || tree.size() > 200 ? null : new KeyCanonizer(tree); // TODO hard coding (unbuilt if too costly)
 		this.key = signature().append(' ').append(keyCanonizer == null ? tree.toPostfixExpression(tree.vars()) : keyCanonizer.key()).toString();
 
-		Map<String, SharedTreeEvaluator> map = pb.head.mapOfTreeEvaluators;
+		Map<String, SharedTreeEvaluator> map = pb.head.structureSharing.mapOfTreeEvaluators;
 		treeEvaluator = map.get(key);
 		if (treeEvaluator == null) {
 			treeEvaluator = scp[0] instanceof VariableInteger ? new SharedTreeEvaluator(tree) : new SharedTreeEvaluator(tree, pb.symbolic.mapOfSymbols);

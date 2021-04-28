@@ -10,7 +10,7 @@ package constraints.global;
 
 import constraints.Constraint.CtrGlobal;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagAC;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import variables.Domain;
@@ -19,7 +19,7 @@ import variables.Variable;
 /**
  * This class establishes that the values assigned to the involved variables of the constraint must not be all equal.
  */
-public class NotAllEqual extends CtrGlobal implements TagSymmetric, TagGACGuaranteed, TagFilteringCompleteAtEachCall {
+public class NotAllEqual extends CtrGlobal implements TagSymmetric, TagAC, TagFilteringCompleteAtEachCall {
 
 	@Override
 	public final boolean checkValues(int[] t) {

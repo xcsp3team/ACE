@@ -14,14 +14,14 @@ import org.xcsp.common.Utilities;
 
 import constraints.Constraint.CtrGlobal;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
-import interfaces.Tags.TagUnsymmetric;
+import interfaces.Tags.TagAC;
+import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Element extends CtrGlobal implements TagUnsymmetric, TagGACGuaranteed {
+public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagAC {
 
 	protected final Variable[] list;
 

@@ -211,18 +211,20 @@ public final class SolutionRecorder {
 					if (found == 0)
 						System.out.println(preprint("s UNSATISFIABLE", GREEN));
 					else
-						System.out.println(framework == COP ? preprint("s OPTIMUM", GREEN) + " " + bestBound : preprint("s SATISFIABLE", GREEN));
+						System.out.println(framework == COP ? preprint("s OPTIMUM FOUND", GREEN) : preprint("s SATISFIABLE", GREEN));
 				} else {
 					if (found == 0)
 						System.out.println(preprint("s UNKNOWN", RED));
 					else
-						System.out.println(framework == COP ? preprint("s SATISFIABLE", GREEN) + " - BOUND " + bestBound : preprint("s SATISFIABLE", GREEN));
+						System.out.println(framework == COP ? preprint("s SATISFIABLE", GREEN) : preprint("s SATISFIABLE", GREEN));
 				}
 				if (found > 0)
 					System.out.println("\n" + preprint("v", GREEN) + " " + (lastSolutionXml != null ? lastSolutionXml : lastSolutionInXmlFormat()));
 				System.out.println("\n" + preprint("d WRONG DECISIONS", GREEN) + " " + solver.stats.nWrongDecisions);
-				if (fullExploration && framework == CSP)
-					System.out.println(preprint("d NUMBER OF SOLUTIONS", GREEN) + " " + found);
+				// if (framework == CSP)
+				System.out.println(preprint("d NUMBER OF" + (fullExploration ? "" : " FOUND") + " SOLUTIONS", GREEN) + " " + found);
+				if (framework == COP && found > 0)
+					System.out.println(preprint("d BOUND " + bestBound, GREEN));
 				System.out.println(fullExploration ? preprint("d COMPLETE EXPLORATION", GREEN) : preprint("d INCOMPLETE EXPLORATION", RED));
 				System.out.println("\nc real time : " + solver.head.stopwatch.cpuTimeInSeconds());
 				System.out.flush();

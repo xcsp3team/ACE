@@ -12,13 +12,13 @@ import org.xcsp.common.Types.TypeConditionOperatorRel;
 
 import constraints.Constraint.CtrGlobal;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagAC;
 import problem.Problem;
 import sets.SetDense;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class SumScalarBoolean extends CtrGlobal implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
+public abstract class SumScalarBoolean extends CtrGlobal implements TagAC, TagFilteringCompleteAtEachCall {
 
 	protected final Variable[] list;
 	protected final Variable[] coeffs;

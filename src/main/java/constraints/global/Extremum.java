@@ -11,14 +11,14 @@ import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
 import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstGE;
 import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstLE;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagAC;
 import interfaces.Tags.TagSymmetric;
 import optimization.Optimizable;
 import problem.Problem;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Extremum extends CtrGlobal implements TagFilteringCompleteAtEachCall, TagGACGuaranteed {
+public abstract class Extremum extends CtrGlobal implements TagFilteringCompleteAtEachCall, TagAC {
 
 	protected final Variable[] list;
 

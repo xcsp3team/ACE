@@ -32,9 +32,9 @@ import org.xcsp.common.predicates.XNode;
 import constraints.Constraint.CtrGlobal;
 import constraints.global.Sum.SumViewWeighted.View.ViewTree01;
 import constraints.global.Sum.SumViewWeighted.View.ViewVariable;
+import interfaces.Tags.TagAC;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
-import interfaces.Tags.TagGACUnguaranteed;
+import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagSymmetric;
 import optimization.Optimizable;
 import problem.Problem;
@@ -187,7 +187,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		// ***** Constraint SumSimpleLE
 		// ************************************************************************
 
-		public static class SumSimpleLE extends SumSimple implements TagGACGuaranteed, Optimizable {
+		public static class SumSimpleLE extends SumSimple implements TagAC, Optimizable {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -247,7 +247,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		// ***** Constraint SumSimpleGE
 		// ************************************************************************
 
-		public static class SumSimpleGE extends SumSimple implements TagGACGuaranteed, Optimizable {
+		public static class SumSimpleGE extends SumSimple implements TagAC, Optimizable {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -296,16 +296,16 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 				return sum(t) == limit;
 			}
 
-			private boolean guaranteedGAC;
+			private boolean ac;
 
 			public SumSimpleEQ(Problem pb, Variable[] scp, long limit) {
 				super(pb, scp, limit);
-				this.guaranteedGAC = Stream.of(scp).allMatch(x -> x.dom.initSize() <= 2); // in this case, bounds consistency is GAC
+				this.ac = Stream.of(scp).allMatch(x -> x.dom.initSize() <= 2); // in this case, bounds consistency is equivalent to AC
 			}
 
 			@Override
 			public boolean isGuaranteedAC() {
-				return guaranteedGAC;
+				return ac;
 			}
 
 			@Override
@@ -353,7 +353,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		// ***** Constraint SumSimpleNE
 		// ************************************************************************
 
-		public static final class SumSimpleNE extends SumSimple implements TagGACGuaranteed {
+		public static final class SumSimpleNE extends SumSimple implements TagAC {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -411,7 +411,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		// ***** Constraint SumSimpleEQBoolean (Is this class relevant (more efficient) ?
 		// ************************************************************************
 
-		public static final class SumSimpleEQBoolean extends SumSimple implements TagGACGuaranteed {
+		public static final class SumSimpleEQBoolean extends SumSimple implements TagAC {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -578,7 +578,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		// ***** Constraint SumWeightedLE
 		// ************************************************************************
 
-		public static final class SumWeightedLE extends SumWeighted implements TagGACGuaranteed, Optimizable {
+		public static final class SumWeightedLE extends SumWeighted implements TagAC, Optimizable {
 
 			@Override
 			public boolean checkValues(int[] t) {
@@ -628,7 +628,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		// ***** Constraint SumWeightedGE
 		// ************************************************************************
 
-		public static class SumWeightedGE extends SumWeighted implements TagGACGuaranteed, Optimizable {
+		public static class SumWeightedGE extends SumWeighted implements TagAC, Optimizable {
 
 			@Override
 			public boolean checkValues(int[] t) {
@@ -749,7 +749,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		// ***** Constraint SumWeightedNE
 		// ************************************************************************
 
-		public static final class SumWeightedNE extends SumWeighted implements TagGACGuaranteed {
+		public static final class SumWeightedNE extends SumWeighted implements TagAC {
 
 			@Override
 			public boolean checkValues(int[] t) {
@@ -1102,7 +1102,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		// ***** Constraint SumViewWeightedLE
 		// ************************************************************************
 
-		public static final class SumViewWeightedLE extends SumViewWeighted implements TagGACGuaranteed, Optimizable {
+		public static final class SumViewWeightedLE extends SumViewWeighted implements TagAC, Optimizable {
 
 			@Override
 			public boolean checkValues(int[] t) {
@@ -1153,7 +1153,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		// ***** Constraint SumWeightedGE
 		// ************************************************************************
 
-		public static class SumViewWeightedGE extends SumViewWeighted implements TagGACGuaranteed, Optimizable {
+		public static class SumViewWeightedGE extends SumViewWeighted implements TagAC, Optimizable {
 
 			@Override
 			public boolean checkValues(int[] t) {
@@ -1205,7 +1205,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		// ***** Constraint SumWeightedEQ
 		// ************************************************************************
 
-		public static final class SumViewWeightedEQ extends SumViewWeighted implements TagGACUnguaranteed {
+		public static final class SumViewWeightedEQ extends SumViewWeighted implements TagNotAC {
 
 			@Override
 			public boolean checkValues(int[] t) {

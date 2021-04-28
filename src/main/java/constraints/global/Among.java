@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 
 import constraints.Constraint.CtrGlobal;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagAC;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import sets.SetSparse;
@@ -24,7 +24,7 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public final class Among extends CtrGlobal implements TagSymmetric, TagGACGuaranteed, TagFilteringCompleteAtEachCall {
+public final class Among extends CtrGlobal implements TagSymmetric, TagAC, TagFilteringCompleteAtEachCall {
 
 	@Override
 	public boolean checkValues(int[] t) {

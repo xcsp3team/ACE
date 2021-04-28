@@ -15,16 +15,16 @@ import java.util.stream.LongStream;
 import org.xcsp.common.Constants;
 
 import constraints.extension.structures.Table;
-import interfaces.Tags.TagShort;
+import interfaces.Tags.TagStarred;
 import problem.Problem;
 import sets.SetDenseReversible;
 import utility.Bit;
 import variables.Domain;
 import variables.Variable;
 
-public class CT extends STR1Optimized implements TagShort {
+public class CT extends STR1Optimized implements TagStarred {
 
-	public final static class CT2 extends CT implements TagShort {
+	public final static class CT2 extends CT implements TagStarred {
 
 		static final int MASK_COMPRESION_LIMIT = 12;
 		static final int MASK_COMPRESION_TRIGGER_SIZE = 300;

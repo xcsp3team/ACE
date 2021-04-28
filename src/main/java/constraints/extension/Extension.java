@@ -28,11 +28,11 @@ import constraints.extension.structures.Table;
 import constraints.extension.structures.Tries;
 import interfaces.FilteringSpecific;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Tags.TagAC;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagNegative;
 import interfaces.Tags.TagPositive;
-import interfaces.Tags.TagShort;
+import interfaces.Tags.TagStarred;
 import problem.Problem;
 import propagation.Supporter.SupporterHard;
 import utility.Kit;
@@ -41,14 +41,14 @@ import variables.Variable;
 import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
 
-public abstract class Extension extends Constraint implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
+public abstract class Extension extends Constraint implements TagAC, TagFilteringCompleteAtEachCall {
 
 	/**********************************************************************************************
 	 ***** Extension1 (not a subclass of Extension)
 	 *********************************************************************************************/
 
 	// !! not a subclass of Extension
-	public static final class Extension1 extends Constraint implements FilteringSpecific, TagGACGuaranteed, TagFilteringCompleteAtEachCall {
+	public static final class Extension1 extends Constraint implements FilteringSpecific, TagAC, TagFilteringCompleteAtEachCall {
 
 		@Override
 		public boolean checkValues(int[] t) {
@@ -167,7 +167,7 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 			Kit.control(positive);
 			String name = pb.head.control.extension.positive.toString();
 			Extension c = (Extension) Reflector.buildObject(name.equals("V") || name.equals("VA") ? "Extension" + name : name, classes, pb, scp);
-			Kit.control(c instanceof TagShort); // currently, STR2, STR2S, CT, CT2 and MDDSHORT
+			Kit.control(c instanceof TagStarred); // currently, STR2, STR2S, CT, CT2 and MDDSHORT
 			return c;
 		}
 		if (scp.length == 2 && pb.head.control.extension.validForBinary)
@@ -273,7 +273,7 @@ public abstract class Extension extends Constraint implements TagGACGuaranteed, 
 		if (supporter != null)
 			((SupporterHard) supporter).reset();
 
-		Map<String, ExtensionStructure> map = problem.head.mapOfExtensionStructures;
+		Map<String, ExtensionStructure> map = problem.head.structureSharing.mapOfExtensionStructures;
 		extStructure = map.get(key);
 		if (extStructure == null) {
 			extStructure = buildExtensionStructure(); // note that the constraint is automatically registered

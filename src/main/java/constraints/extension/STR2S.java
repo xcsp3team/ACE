@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 import constraints.extension.Extension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
-import interfaces.Tags.TagShort;
+import interfaces.Tags.TagStarred;
 import problem.Problem;
 import propagation.StrongConsistency;
 import sets.SetDenseReversible;
@@ -24,7 +24,7 @@ import utility.Kit;
 import variables.Variable;
 
 // why not using a counter 'time' and replace boolean[][] ac by int[][] ac (we just do time++ instead of Arrays.fill(ac[x],false)
-public final class STR2S extends ExtensionGlobal implements TagShort {
+public final class STR2S extends ExtensionGlobal implements TagStarred {
 
 	/**********************************************************************************************
 	 * Interfaces

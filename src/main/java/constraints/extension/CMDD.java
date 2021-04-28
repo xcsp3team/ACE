@@ -94,7 +94,7 @@ public final class CMDD extends ExtensionGlobal implements TagPositive, ICtrMdd 
 	public CMDD(Problem pb, Variable[] scp, Transition[] transitions) {
 		this(pb, scp);
 		String s = signature() + " " + transitions; // TODO be careful, we assume that the address of transitions can be used. Is that correct?
-		Map<String, MDD> map = problem.head.mapOfMDDStructures;
+		Map<String, MDD> map = problem.head.structureSharing.mapOfMDDStructures;
 		extStructure = map.get(s);
 		if (extStructure == null) {
 			extStructure = new MDD(this, transitions); // Stream.of(transitions).map(t -> new Object[] { t.start, t.symbol, t.end }).toArray(Object[][]::new));

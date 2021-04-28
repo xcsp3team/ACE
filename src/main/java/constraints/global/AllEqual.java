@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
 import constraints.Constraint.CtrGlobal;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagAC;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import sets.SetDense;
@@ -27,7 +27,7 @@ import variables.Variable;
 /**
  * This constraint ensures that all values assigned to the variables of its cope are all equal.
  */
-public final class AllEqual extends CtrGlobal implements ObserverBacktrackingSystematic, TagGACGuaranteed, TagFilteringCompleteAtEachCall, TagSymmetric {
+public final class AllEqual extends CtrGlobal implements ObserverBacktrackingSystematic, TagAC, TagFilteringCompleteAtEachCall, TagSymmetric {
 
 	@Override
 	public final boolean checkValues(int[] t) {

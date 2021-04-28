@@ -11,20 +11,19 @@ package constraints.extension;
 import java.util.Arrays;
 
 import org.xcsp.common.Constants;
-import org.xcsp.modeler.definitions.ICtr.ICtrMdd;
 
 import constraints.extension.Extension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.MDDShort;
 import constraints.extension.structures.MDDShort.MDDNodeShort;
 import interfaces.Tags.TagPositive;
-import interfaces.Tags.TagShort;
+import interfaces.Tags.TagStarred;
 import problem.Problem;
 import sets.SetSparseReversible;
 import variables.Domain;
 import variables.Variable;
 
-public final class CMDDShort extends ExtensionGlobal implements TagPositive, TagShort, ICtrMdd {
+public final class CMDDShort extends ExtensionGlobal implements TagPositive, TagStarred {
 
 	/**********************************************************************************************
 	 * Interfaces

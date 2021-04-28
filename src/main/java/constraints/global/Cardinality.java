@@ -8,7 +8,7 @@ import constraints.Constraint.CtrGlobal;
 import constraints.global.Matcher.MatcherCardinality;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagAC;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
@@ -39,7 +39,7 @@ public abstract class Cardinality extends CtrGlobal implements ObserverBacktrack
 		return true;
 	}
 
-	public static class CardinalityConstant extends Cardinality implements TagFilteringCompleteAtEachCall, TagGACGuaranteed {
+	public static class CardinalityConstant extends Cardinality implements TagFilteringCompleteAtEachCall, TagAC {
 		@Override
 		public boolean checkValues(int[] t) {
 			for (int i = 0; i < values.length; i++) {

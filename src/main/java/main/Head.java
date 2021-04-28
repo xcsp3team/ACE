@@ -40,7 +40,6 @@ import heuristics.HeuristicValues;
 import heuristics.HeuristicVariables;
 import interfaces.Observers.ObserverConstruction;
 import problem.Problem;
-import problem.XCSP3;
 import propagation.Propagation;
 import solver.Solver;
 import utility.Enums.TypeOutput;
@@ -124,7 +123,7 @@ public class Head extends Thread {
 	}
 
 	/**********************************************************************************************
-	 * Handling classes
+	 * Handling classes and shared structures
 	 *********************************************************************************************/
 
 	public HandlerClasses handlerClasses = new HandlerClasses();
@@ -214,6 +213,26 @@ public class Head extends Thread {
 		}
 	}
 
+	public StructureSharing structureSharing = new StructureSharing();
+
+	public static class StructureSharing {
+
+		// maps used by constraints to share some data structures
+
+		public Map<String, ExtensionStructure> mapOfExtensionStructures = new HashMap<>();
+
+		public Map<String, MDD> mapOfMDDStructures = new HashMap<>();
+
+		public Map<String, SharedTreeEvaluator> mapOfTreeEvaluators = new HashMap<>();
+
+		public void clear() {
+			mapOfExtensionStructures.clear();
+			mapOfMDDStructures.clear();
+			mapOfTreeEvaluators.clear();
+			Bits.globalMap.clear();
+		}
+	}
+
 	/**********************************************************************************************
 	 * Fields
 	 *********************************************************************************************/
@@ -227,7 +246,7 @@ public class Head extends Thread {
 	public Solver solver;
 
 	/**
-	 * The object that stores all parameters to pilot resolution.java AbsCon test.TestTreeOptim -trace -varh=Lexico
+	 * The object that stores all parameters to pilot the solving process
 	 */
 	public final Control control;
 
@@ -240,28 +259,6 @@ public class Head extends Thread {
 	 * However, note that it is not used when generating random lists (see package <code> randomLists </code>).
 	 */
 	public final Random random = new Random();
-
-	/*
-	 * UNSTATIFIED FIELDS + METHODS
-	 */
-
-	public Map<String, ExtensionStructure> mapOfExtensionStructures = new HashMap<>();
-
-	public Map<String, MDD> mapOfMDDStructures = new HashMap<>();
-
-	public Map<String, SharedTreeEvaluator> mapOfTreeEvaluators = new HashMap<>();
-
-	public void clearMapsUsedByConstraints() {
-		mapOfExtensionStructures.clear();
-		mapOfMDDStructures.clear();
-		mapOfTreeEvaluators.clear();
-		if (Bits.globalMap != null)
-			Bits.globalMap.clear();
-	}
-
-	/*
-	 * END OF UNSTATIFIED METHODS
-	 */
 
 	public boolean mustPreserveUnaryConstraints() {
 		return control.constraints.preserveUnaryCtrs || this instanceof HeadExtraction || control.problem.isSymmetryBreaking()
@@ -289,19 +286,10 @@ public class Head extends Thread {
 		random.setSeed(control.general.seed + instanceNumber);
 		ProblemAPI api = null;
 		try {
-			if (Input.problemPackageName.equals(XCSP3.class.getName()))
+			try {
 				api = (ProblemAPI) Reflector.buildObject(Input.problemPackageName);
-			else {
-				String private_ace_problems_dir = "problems";
-				if (Input.problemPackageName.startsWith(private_ace_problems_dir))
-					api = (ProblemAPI) Reflector.buildObject(Input.problemPackageName);
-				else {
-					try {
-						api = (ProblemAPI) Reflector.buildObject(private_ace_problems_dir + "." + Input.problemPackageName);
-					} catch (Exception e) {
-						api = (ProblemAPI) Reflector.buildObject(Input.problemPackageName);
-					}
-				}
+			} catch (Exception e) {
+				api = (ProblemAPI) Reflector.buildObject("problems." + Input.problemPackageName); // is it still relevant to try that?
 			}
 		} catch (Exception e) {
 			return (Problem) Kit.exit("The class " + Input.problemPackageName + " cannot be found.", e);
@@ -323,44 +311,16 @@ public class Head extends Thread {
 		return solver;
 	}
 
-	// private int[] localSearchAtPreprocessing() {
-	// int[] solution = null;
-	// if (control.hardCoding.localSearchAtPreprocessing) {
-	// String solverClassName = control.solving.clazz;
-	// control.solving.clazz = SolverLocal.class.getSimpleName();
-	// int nRuns = control.restarts.nRunsLimit;
-	// control.restarts.nRunsLimit = 10;
-	// long cutoff = control.restarts.cutoff;
-	// control.restarts.cutoff = 10000;
-	// boolean prepro = control.solving.enablePrepro;
-	// control.solving.enablePrepro = false;
-	// solver = buildSolver(problem);
-	// solver.solve();
-	// solution = solver.solManager.lastSolution;
-	// control.optimization.ub = ((SolverLocal) solver).nMinViolatedCtrs;
-	// if (solver.stopping != EStopping.REACHED_GOAL) {
-	// control.solving.clazz = solverClassName;
-	// control.restarts.nRunsLimit = nRuns;
-	// control.restarts.cutoff = cutoff;
-	// control.solving.enablePrepro = prepro;
-	// }
-	// }
-	// return solution;
-	// }
-
-	/**
-	 * Allows to build all objects which are necessary to solve the current instance
-	 */
 	protected void solveInstance(int instanceNumber) {
 		observersConstruction.clear();
 		observersConstruction.add(output);
-		clearMapsUsedByConstraints();
+
+		structureSharing.clear();
 		problem = buildProblem(instanceNumber);
-		clearMapsUsedByConstraints();
+		structureSharing.clear();
 
 		if (control.solving.enablePrepro || control.solving.enableSearch) {
 			solver = buildSolver(problem);
-			solver.stopping = null;
 			solver.solve();
 			solver.solRecorder.displayFinalResults();
 		}
@@ -381,9 +341,7 @@ public class Head extends Thread {
 				if (control.general.makeExceptionsVisible)
 					e.printStackTrace();
 			}
-			// statisticsMultiresolution.update(crashed);
 		}
-		// statisticsMultiresolution.outputGlobalStatistics();
 		if (Input.multiThreads) {
 			if (!crashed) {
 				Head.saveMultithreadResultsFiles(this);
@@ -394,3 +352,28 @@ public class Head extends Thread {
 	}
 
 }
+
+// private int[] localSearchAtPreprocessing() {
+// int[] solution = null;
+// if (control.hardCoding.localSearchAtPreprocessing) {
+// String solverClassName = control.solving.clazz;
+// control.solving.clazz = SolverLocal.class.getSimpleName();
+// int nRuns = control.restarts.nRunsLimit;
+// control.restarts.nRunsLimit = 10;
+// long cutoff = control.restarts.cutoff;
+// control.restarts.cutoff = 10000;
+// boolean prepro = control.solving.enablePrepro;
+// control.solving.enablePrepro = false;
+// solver = buildSolver(problem);
+// solver.solve();
+// solution = solver.solManager.lastSolution;
+// control.optimization.ub = ((SolverLocal) solver).nMinViolatedCtrs;
+// if (solver.stopping != EStopping.REACHED_GOAL) {
+// control.solving.clazz = solverClassName;
+// control.restarts.nRunsLimit = nRuns;
+// control.restarts.cutoff = cutoff;
+// control.solving.enablePrepro = prepro;
+// }
+// }
+// return solution;
+// }

@@ -2,7 +2,7 @@
 import main.Head;
 
 /**
- * This is the main class of the solver <code>AbsCon</code>
+ * This is the main class of the solver <code>AbsCon Essence (ACE)</code>
  */
 public class ace {
 

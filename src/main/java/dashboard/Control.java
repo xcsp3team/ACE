@@ -175,8 +175,8 @@ public class Control {
 				+ "\t The condition has the form (operator,value) as e.g., (lt,10). Currently, not operative, so must be implemented for XCSP3";
 		String s_rs = "Records all found solutions in a list of " + SolutionRecorder.class.getName();
 
-		public TypeFramework framework = addE("framework", "f", TypeFramework.CSP, s_framework);
-		public long nSearchedSolutions = addL("nSearchedSolutions", "s", framework == TypeFramework.CSP ? 1 : PLUS_INFINITY, s_s);
+		public TypeFramework framework = null;
+		public long nSearchedSolutions = addL("nSearchedSolutions", "s", -1, s_s); // -1 for indicating that it is not initialized
 		public final long timeout = addL("timeout", "t", PLUS_INFINITY, s_timeout);
 		public int verbose = addI("verbose", "v", 0, s_verbose);
 		public int jsonLimit = addI("jsonLimit", "jsonLimit", 1000, "");
@@ -197,13 +197,15 @@ public class Control {
 	public final SettingGeneral general = new SettingGeneral();
 
 	public void toCSP() {
+		if (general.nSearchedSolutions == -1)
+			general.nSearchedSolutions = 1; // default value for CSP
 		general.framework = TypeFramework.CSP;
-		general.nSearchedSolutions = 1;
 	}
 
 	public void toCOP() {
+		if (general.nSearchedSolutions == -1)
+			general.nSearchedSolutions = PLUS_INFINITY; // default value for COP (in order to find optimum)
 		general.framework = TypeFramework.COP;
-		general.nSearchedSolutions = PLUS_INFINITY;
 	}
 
 	public class SettingProblem extends SettingGroup {
@@ -555,11 +557,14 @@ public class Control {
 
 		public boolean runProgressSaving = addB("runProgressSaving", "rps", false, "");
 		// solution saving breaks determinism of search trees because it depends in which order domains are pruned (and becomes singleton or not)
-		public boolean solutionSaving = addB("solutionSaving", "ss", true, "");
-		public final int solutionSavingGap = addI("solutionSavingGap", "ssg", Integer.MAX_VALUE, "");
+		public boolean solutionSaving = addB("solutionSaving", "sos", true, "");
+		public final int solutionSavingGap = addI("solutionSavingGap", "sosg", Integer.MAX_VALUE, "");
 		public String warmStart = addS("warmStart", "warm", "", "").trim();
 
-		public boolean stopBivsAtFirstSolution = addB("stopBivsAtFirstSolution", "sbivs", true, "");
+		public boolean bivsStoppedAtFirstSolution = addB("bivsStoppedAtFirstSolution", "bivs_s", true, "");
+		public final int bivsLimit = addI("bivsLimit", "bivs_l", Integer.MAX_VALUE, ""); // MAX_VALUE means no control/limit ; otherwise bivs applied only if
+																							// the
+																							// domain size is <= bivsl
 		public final boolean optValHeuristic = addB("optValHeuristic", "ovh", false, "");
 	}
 

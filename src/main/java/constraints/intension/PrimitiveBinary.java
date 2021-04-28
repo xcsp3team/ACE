@@ -24,9 +24,9 @@ import constraints.intension.PrimitiveBinary.PrimitiveBinaryMul.MulLE2;
 import constraints.intension.PrimitiveBinary.PropagatorEQ.MultiPropagatorEQ;
 import constraints.intension.PrimitiveBinary.PropagatorEQ.SimplePropagatorEQ;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagAC;
 import interfaces.Tags.TagSymmetric;
-import interfaces.Tags.TagUnsymmetric;
+import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import utility.Kit;
 import variables.Domain;
@@ -36,7 +36,7 @@ import variables.Variable;
 // this implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 = 3
 // https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.17.2
 
-public abstract class PrimitiveBinary extends Primitive implements TagGACGuaranteed, TagFilteringCompleteAtEachCall {
+public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFilteringCompleteAtEachCall {
 
 	public static boolean enforceLT(Domain dx, Domain dy) { // x < y
 		return dx.removeValuesGE(dy.lastValue()) && dy.removeValuesLE(dx.firstValue());
@@ -320,7 +320,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 		}
 	}
 
-	public static abstract class PrimitiveBinaryEQWithUnaryOperator extends PrimitiveBinary implements TagUnsymmetric {
+	public static abstract class PrimitiveBinaryEQWithUnaryOperator extends PrimitiveBinary implements TagNotSymmetric {
 
 		public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeUnaryArithmeticOperator aop, Variable y) {
 			switch (aop) {
@@ -564,7 +564,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 			super(pb, x, y, k);
 		}
 
-		public static final class SubLE2 extends PrimitiveBinarySub implements TagUnsymmetric {
+		public static final class SubLE2 extends PrimitiveBinarySub implements TagNotSymmetric {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -581,7 +581,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 			}
 		}
 
-		public static final class SubGE2 extends PrimitiveBinarySub implements TagUnsymmetric {
+		public static final class SubGE2 extends PrimitiveBinarySub implements TagNotSymmetric {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -891,7 +891,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 	// ***** Classes for x / y <op> k (CtrPrimitiveBinaryDiv)
 	// ************************************************************************
 
-	public static abstract class PrimitiveBinaryDiv extends PrimitiveBinaryWithCst implements TagUnsymmetric {
+	public static abstract class PrimitiveBinaryDiv extends PrimitiveBinaryWithCst implements TagNotSymmetric {
 
 		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
@@ -1009,7 +1009,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 	// ***** Classes for x % y <op> k (CtrPrimitiveBinaryMod)
 	// ************************************************************************
 
-	public static abstract class PrimitiveBinaryMod extends PrimitiveBinaryWithCst implements TagUnsymmetric {
+	public static abstract class PrimitiveBinaryMod extends PrimitiveBinaryWithCst implements TagNotSymmetric {
 
 		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
@@ -1231,7 +1231,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 	// ***** Classes for x <op> y * k (CtrPrimitiveBinaryMulb)
 	// ************************************************************************
 
-	public static abstract class PrimitiveBinaryMulb extends PrimitiveBinaryWithCst implements TagUnsymmetric {
+	public static abstract class PrimitiveBinaryMulb extends PrimitiveBinaryWithCst implements TagNotSymmetric {
 
 		public static Constraint buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
 			switch (op) {
@@ -1311,7 +1311,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 	// ***** Classes for x <op> y / k (CtrPrimitiveBinaryDivb)
 	// ************************************************************************
 
-	public static abstract class PrimitiveBinaryDivb extends PrimitiveBinaryWithCst implements TagUnsymmetric {
+	public static abstract class PrimitiveBinaryDivb extends PrimitiveBinaryWithCst implements TagNotSymmetric {
 
 		public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
 			switch (op) {
@@ -1379,7 +1379,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 	// ***** Classes for x <op> y % k (CtrPrimitiveBinaryModb)
 	// ************************************************************************
 
-	public static abstract class PrimitiveBinaryModb extends PrimitiveBinaryWithCst implements TagUnsymmetric {
+	public static abstract class PrimitiveBinaryModb extends PrimitiveBinaryWithCst implements TagNotSymmetric {
 
 		public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
 			switch (op) {
@@ -1474,7 +1474,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 	// ***** Classes for x <op> |y - k| (CtrPrimitiveBinaryDistb)
 	// ************************************************************************
 
-	public static abstract class PrimitiveBinaryDistb extends PrimitiveBinaryWithCst implements TagUnsymmetric {
+	public static abstract class PrimitiveBinaryDistb extends PrimitiveBinaryWithCst implements TagNotSymmetric {
 
 		public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
 			switch (op) {
@@ -1549,7 +1549,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagGACGuarant
 	// ***** Classes for x = (y <op> k) (CtrPrimitiveBinaryLog)
 	// ************************************************************************
 
-	public static abstract class PrimitiveBinaryLog extends PrimitiveBinaryWithCst implements TagUnsymmetric {
+	public static abstract class PrimitiveBinaryLog extends PrimitiveBinaryWithCst implements TagNotSymmetric {
 
 		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {

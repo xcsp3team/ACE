@@ -12,14 +12,14 @@ import java.util.Arrays;
 import java.util.stream.LongStream;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.Tags.TagGACUnguaranteed;
+import interfaces.Tags.TagNotAC;
 import problem.Problem;
 import sets.SetDense;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public final class BinPackingSimple extends CtrGlobal implements TagGACUnguaranteed { // not call filtering-complete
+public final class BinPackingSimple extends CtrGlobal implements TagNotAC { // not call filtering-complete
 	@Override
 	public final boolean checkValues(int[] t) {
 		Arrays.fill(sums, 0);

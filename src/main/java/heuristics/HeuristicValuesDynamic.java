@@ -45,7 +45,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	// ***** Subclasses
 	// ************************************************************************
 
-	public static final class Bivs extends HeuristicValuesDynamic {
+	public static class Bivs extends HeuristicValuesDynamic {
 		Solver solver;
 
 		Optimizable c;
@@ -69,7 +69,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		@Override
 		public int identifyBestValueIndex() {
 			inconsistent.clear();
-			if (settings.stopBivsAtFirstSolution && solver.solRecorder.found > 0)
+			if ((settings.bivsStoppedAtFirstSolution && solver.solRecorder.found > 0) || dx.size() > settings.bivsLimit)
 				return dx.first(); // First in that case
 			else
 				return super.identifyBestValueIndex();
@@ -92,7 +92,35 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 			nTests++;
 			return score;
 		}
+	}
 
+	public static final class Bivs2 extends Bivs { // experimental (solutionsaving as tiebreaking)
+
+		public Bivs2(Variable x, boolean antiHeuristic) {
+			super(x, antiHeuristic);
+		}
+
+		@Override
+		public int identifyBestValueIndex() {
+			inconsistent.clear();
+			int aLast = solver.solRecorder.found == 0 ? -1 : solver.solRecorder.lastSolution[x.num];
+			if ((settings.bivsStoppedAtFirstSolution && solver.solRecorder.found > 0) || dx.size() > settings.bivsLimit) {
+				if (aLast != -1 && dx.present(aLast))
+					return aLast;
+				return dx.first(); // First in that case
+			} else {
+				int best = dx.first();
+				double bestScore = scoreOf(best) * scoreCoeff;
+				for (int a = dx.next(best); a != -1; a = dx.next(a)) {
+					double score = scoreOf(a) * scoreCoeff;
+					if (score > bestScore || (score == bestScore && a == aLast)) {
+						best = a;
+						bestScore = score;
+					}
+				}
+				return best;
+			}
+		}
 	}
 
 	public static final class Conflicts extends HeuristicValuesDynamic {

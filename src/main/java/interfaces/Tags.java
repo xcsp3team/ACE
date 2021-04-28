@@ -2,49 +2,65 @@ package interfaces;
 
 public interface Tags {
 
+	/**
+	 * Tag for indicating that the code of an object (e.g., a constraint) is experimental
+	 */
 	interface TagExperimental {
 	}
 
 	/**
-	 * Useful to tag constraints that can produce full filtering at each call (not only around the specified event variable)
-	 */
-	interface TagFilteringCompleteAtEachCall {
-	}
-
-	/**
-	 * Useful to tag constraints that guarantee enforcing GAC.
-	 */
-	interface TagGACGuaranteed {
-	}
-
-	/**
-	 * Useful to tag constraints that does not guarantee enforcing GAC.
-	 */
-	interface TagGACUnguaranteed {
-	}
-
-	interface TagMaximize {
-	}
-
-	interface TagNegative {
-	}
-
-	interface TagPositive {
-	}
-
-	interface TagShort {
-	}
-
-	/**
-	 * Useful to tag constraints that are completely symmetric
+	 * Tag for indicating that a constraint is completely symmetric
 	 */
 	interface TagSymmetric {
 	}
 
 	/**
-	 * Useful to tag constraints that have no symmetry at all.
+	 * Tag for indicating that a constraint is not symmetric at all
 	 */
-	interface TagUnsymmetric {
+	interface TagNotSymmetric {
+	}
+
+	/**
+	 * Tag for indicating that a constraint can produce full filtering at each call (not only around the specified event variable)
+	 */
+	interface TagFilteringCompleteAtEachCall {
+	}
+
+	/**
+	 * Tag for indicating that a constraint does not guarantee enforcing (G)AC
+	 */
+	interface TagAC {
+	}
+
+	/**
+	 * Tag for indicating that a constraint guarantees enforcing (G)AC
+	 */
+	interface TagNotAC {
+	}
+
+	/**
+	 * Tag for indicating that a table constraint is negative (i.e., involves conflicts)
+	 */
+	interface TagNegative {
+	}
+
+	/**
+	 * Tag for indicating that a table constraint is positive (i.., involves supports)
+	 */
+	interface TagPositive {
+	}
+
+	/**
+	 * Tag for indicating that a table constraint is starred (i.e., involves *)
+	 *
+	 */
+	interface TagStarred {
+	}
+
+	/**
+	 * Tag for indicating that an object (e.g., an heuristic) aims at maximizing something
+	 */
+	interface TagMaximize {
 	}
 
 }

@@ -15,13 +15,13 @@ import java.util.stream.Stream;
 import constraints.Constraint.CtrGlobal;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACUnguaranteed;
+import interfaces.Tags.TagNotAC;
 import problem.Problem;
 import sets.SetSparse;
 import sets.SetSparseReversible;
 import variables.Variable;
 
-public final class Cumulative extends CtrGlobal implements TagFilteringCompleteAtEachCall, TagGACUnguaranteed, ObserverBacktrackingSystematic {
+public final class Cumulative extends CtrGlobal implements TagFilteringCompleteAtEachCall, TagNotAC, ObserverBacktrackingSystematic {
 
 	@Override
 	public boolean checkValues(int[] tuple) {

@@ -14,14 +14,14 @@ import org.xcsp.common.Types.TypeLogicalOperator;
 
 import constraints.Constraint;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
-import interfaces.Tags.TagUnsymmetric;
+import interfaces.Tags.TagAC;
+import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class PrimitiveLogic extends Primitive implements TagGACGuaranteed, TagUnsymmetric {
+public abstract class PrimitiveLogic extends Primitive implements TagAC, TagNotSymmetric {
 
 	Variable x;
 	Variable[] list;

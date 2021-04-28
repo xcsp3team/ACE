@@ -21,9 +21,9 @@ import org.xcsp.common.Utilities;
 import constraints.Constraint.CtrGlobal;
 import constraints.global.Matcher.MatcherAllDifferent;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Tags.TagAC;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
-import interfaces.Tags.TagGACUnguaranteed;
+import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import sets.SetSparse;
@@ -52,7 +52,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 	 * AllDifferentComplete
 	 *********************************************************************************************/
 
-	public static class AllDifferentComplete extends AllDifferent implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, ObserverBacktrackingSystematic {
+	public static class AllDifferentComplete extends AllDifferent implements TagAC, TagFilteringCompleteAtEachCall, ObserverBacktrackingSystematic {
 
 		@Override
 		public void restoreBefore(int depth) {
@@ -83,7 +83,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 	 * AllDifferentPermutation
 	 *********************************************************************************************/
 
-	public static final class AllDifferentPermutation extends AllDifferent implements TagGACUnguaranteed, ObserverBacktrackingSystematic {
+	public static final class AllDifferentPermutation extends AllDifferent implements TagNotAC, ObserverBacktrackingSystematic {
 
 		private SetSparseReversible unfixedVars, unfixedIdxs;
 
@@ -187,7 +187,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 	 * AllDifferentWeak
 	 *********************************************************************************************/
 
-	public static final class AllDifferentWeak extends AllDifferent implements TagGACUnguaranteed { // not call filtering-complete
+	public static final class AllDifferentWeak extends AllDifferent implements TagNotAC { // not call filtering-complete
 		private Set<Integer> set;
 
 		private int mode = 0; // TODO hard coding
@@ -223,7 +223,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 
 	}
 
-	public static class AllDifferentExceptWeak extends AllDifferent implements TagGACUnguaranteed { // not call filtering-complete
+	public static class AllDifferentExceptWeak extends AllDifferent implements TagNotAC { // not call filtering-complete
 
 		@Override
 		public boolean checkValues(int[] t) {
@@ -255,11 +255,10 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 	}
 
 	/**********************************************************************************************
-	 * AllDifferentCounting
+	 * AllDifferentCounting (Experimental)
 	 *********************************************************************************************/
 
-	public static final class AllDifferentCounting extends AllDifferent
-			implements TagGACUnguaranteed, TagFilteringCompleteAtEachCall, ObserverBacktrackingSystematic {
+	public static final class AllDifferentCounting extends AllDifferent implements TagNotAC, TagFilteringCompleteAtEachCall, ObserverBacktrackingSystematic {
 
 		@Override
 		public void restoreBefore(int depth) {
@@ -388,11 +387,11 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 	}
 
 	/**********************************************************************************************
-	 * AllDifferentBound
+	 * AllDifferentBound (Experimental)
 	 *********************************************************************************************/
 
-	public static final class AllDifferentBound extends AllDifferent implements ObserverBacktrackingSystematic, TagGACUnguaranteed { // not call
-																																		// filtering-complete
+	public static final class AllDifferentBound extends AllDifferent implements ObserverBacktrackingSystematic, TagNotAC { // not call
+																															// filtering-complete
 
 		@Override
 		public void restoreBefore(int depth) {

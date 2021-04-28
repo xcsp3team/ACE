@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import dashboard.Control.SettingValh;
+import heuristics.HeuristicValuesDynamic.Bivs2;
 import interfaces.Tags.TagExperimental;
 import solver.Solver;
 import utility.Kit;
@@ -63,7 +64,7 @@ public abstract class HeuristicValues extends Heuristic {
 				if (a != -1 && dx.present(a))
 					return a;
 			}
-		} else if (settings.solutionSaving) {
+		} else if (settings.solutionSaving && !(this instanceof Bivs2)) {
 			if (solver.restarter.numRun % settings.solutionSavingGap != 0) { // every k runs, we do not use solution saving
 				// int a = -1;
 				// if (x == solver.impacting)

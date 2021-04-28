@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 import constraints.Constraint.CtrGlobal;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.Observers.ObserverConstruction;
-import interfaces.Tags.TagGACUnguaranteed;
+import interfaces.Tags.TagNotAC;
 import problem.Problem;
 import sets.SetDense;
 import sets.SetSparseReversible;
@@ -22,7 +22,9 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public final class BinPacking extends CtrGlobal implements ObserverConstruction, ObserverBacktrackingSystematic, TagGACUnguaranteed { // not call
+// BinPacking2.py and NursingWorkload and TestBinpacking (dans special)
+
+public final class BinPacking extends CtrGlobal implements ObserverConstruction, ObserverBacktrackingSystematic, TagNotAC { // not call
 																																		// filtering-complete
 	@Override
 	public final boolean checkValues(int[] t) {

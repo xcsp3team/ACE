@@ -13,13 +13,13 @@ import org.xcsp.common.Types.TypeOperatorRel;
 import constraints.Constraint.CtrGlobal;
 import constraints.intension.PrimitiveBinary;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
-import interfaces.Tags.TagUnsymmetric;
+import interfaces.Tags.TagAC;
+import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Lexicographic extends CtrGlobal implements TagUnsymmetric, TagFilteringCompleteAtEachCall, TagGACGuaranteed {
+public abstract class Lexicographic extends CtrGlobal implements TagNotSymmetric, TagFilteringCompleteAtEachCall, TagAC {
 
 	public static Lexicographic buildFrom(Problem pb, Variable[] list1, Variable[] list2, TypeOperatorRel op) {
 		switch (op) {

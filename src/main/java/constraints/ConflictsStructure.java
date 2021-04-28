@@ -39,7 +39,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 	public static void buildFor(Problem problem) {
 		if (!problem.head.control.mustBuildConflictStructures)
 			return;
-		for (ExtensionStructure extStructure : problem.head.mapOfExtensionStructures.values()) {
+		for (ExtensionStructure extStructure : problem.head.structureSharing.mapOfExtensionStructures.values()) {
 			Constraint c = extStructure.firstRegisteredCtr();
 			if (c instanceof FilteringSpecific || c.scp.length == 1 || c.infiniteDomainVars.length > 0)
 				continue;
@@ -53,7 +53,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 					conflictsStructure.register(cc);
 			}
 		}
-		for (SharedTreeEvaluator treeEvaluator : problem.head.mapOfTreeEvaluators.values()) {
+		for (SharedTreeEvaluator treeEvaluator : problem.head.structureSharing.mapOfTreeEvaluators.values()) {
 			Constraint c = treeEvaluator.firstRegisteredCtr();
 			if (c instanceof FilteringSpecific || c.scp.length == 1 || c.infiniteDomainVars.length > 0)
 				continue;

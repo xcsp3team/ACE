@@ -19,7 +19,7 @@ import org.xcsp.common.Types.TypeConditionOperatorRel;
 import constraints.Constraint;
 import constraints.Constraint.CtrGlobal;
 import constraints.global.AllDifferent.AllDifferentComplete;
-import interfaces.Tags.TagGACUnguaranteed;
+import interfaces.Tags.TagNotAC;
 import optimization.Optimizable;
 import problem.Problem;
 import sets.SetDense;
@@ -27,7 +27,7 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class NValues extends CtrGlobal implements TagGACUnguaranteed { // not call filtering-complete
+public abstract class NValues extends CtrGlobal implements TagNotAC { // not call filtering-complete
 
 	protected final Variable[] list;
 

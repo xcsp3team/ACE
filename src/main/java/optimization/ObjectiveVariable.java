@@ -9,13 +9,13 @@
 package optimization;
 
 import constraints.Constraint.CtrGlobal;
+import interfaces.Tags.TagAC;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import variables.Variable;
 
-public abstract class ObjectiveVariable extends CtrGlobal implements Optimizable, TagGACGuaranteed, TagFilteringCompleteAtEachCall, TagSymmetric {
+public abstract class ObjectiveVariable extends CtrGlobal implements Optimizable, TagAC, TagFilteringCompleteAtEachCall, TagSymmetric {
 
 	@Override
 	public long minComputableObjectiveValue() {
@@ -53,6 +53,9 @@ public abstract class ObjectiveVariable extends CtrGlobal implements Optimizable
 		return x.dom.uniqueValue();
 	}
 
+	/**
+	 * The variable to be optimized (minimized or maximized)
+	 */
 	protected Variable x;
 
 	protected long limit;

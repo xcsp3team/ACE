@@ -14,12 +14,12 @@ import org.xcsp.common.Types.TypeOperatorRel;
 
 import constraints.Constraint.CtrGlobal;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
-import interfaces.Tags.TagUnsymmetric;
+import interfaces.Tags.TagAC;
+import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import variables.Variable;
 
-public abstract class Ordered extends CtrGlobal implements TagGACGuaranteed, TagFilteringCompleteAtEachCall, TagUnsymmetric {
+public abstract class Ordered extends CtrGlobal implements TagAC, TagFilteringCompleteAtEachCall, TagNotSymmetric {
 
 	public static Ordered build(Problem pb, Variable[] x, int[] lengths, TypeOperatorRel op) {
 		switch (op) {

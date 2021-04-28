@@ -34,10 +34,10 @@ import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.FilteringSpecific;
 import interfaces.Observers.ObserverConstruction;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
-import interfaces.Tags.TagGACUnguaranteed;
+import interfaces.Tags.TagAC;
+import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagSymmetric;
-import interfaces.Tags.TagUnsymmetric;
+import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import propagation.Forward;
 import propagation.Reviser;
@@ -105,7 +105,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 ***** Two very special kinds of constraints False and True
 	 *************************************************************************/
 
-	public static class CtrFalse extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagGACGuaranteed {
+	public static class CtrFalse extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagAC {
 
 		@Override
 		public boolean checkValues(int[] t) {
@@ -125,7 +125,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		}
 	}
 
-	public static class CtrTrue extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagGACGuaranteed {
+	public static class CtrTrue extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagAC {
 
 		@Override
 		public boolean checkValues(int[] t) {
@@ -405,9 +405,9 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public boolean isGuaranteedAC() {
 		if (this.infiniteDomainVars.length > 0)
 			return false;
-		if (this instanceof TagGACGuaranteed)
+		if (this instanceof TagAC)
 			return true;
-		if (this instanceof TagGACUnguaranteed)
+		if (this instanceof TagNotAC)
 			return false;
 		if (this instanceof FilteringSpecific)
 			throw new UnsupportedOperationException(getClass().getName()); // to force the user to tag constraints or override the function
@@ -418,7 +418,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public Boolean isSymmetric() {
 		if (this instanceof TagSymmetric)
 			return Boolean.TRUE;
-		if (this instanceof TagUnsymmetric)
+		if (this instanceof TagNotSymmetric)
 			return Boolean.FALSE;
 		return null;
 	}

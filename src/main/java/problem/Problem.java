@@ -233,7 +233,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public void afterProblemConstruction() {
 		control(Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints), "Non normalized nums in the problem");
 		control(Stream.of(variables).map(x -> x.id()).distinct().count() == variables.length, "Two variables have the same id");
-		control((settings.framework == COP) == (optimizer != null), "Not a COP " + settings.framework + " " + (optimizer == null));
+		control(settings.framework == null);
+		if (optimizer != null)
+			head.control.toCOP();
+		else
+			head.control.toCSP();
+		// control((settings.framework == COP) == (optimizer != null), "Not a COP " + settings.framework + " " + (optimizer == null));
 
 		Stream.of(variables).peek(x -> control(Stream.of(x.ctrs).noneMatch(c -> c.num == -1))).forEach(x -> x.dom.finalizeConstruction(variables.length + 1));
 
@@ -1919,6 +1924,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity noOverlap(Var[] origins, int[] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
+		// allDifferent(origins); // posting this redundant constraint does not seem to be a good idea (too weak)
 		return forall(range(origins.length).range(origins.length), (i, j) -> {
 			if (i < j)
 				noOverlap(origins[i], origins[j], lengths[i], lengths[j]);
@@ -2132,7 +2138,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private Optimizer buildOptimizer(TypeOptimization opt, Optimizable clb, Optimizable cub) {
 		control(optimizer == null, "Only mono-objective currently supported");
-		head.control.toCOP();
+		// head.control.toCOP();
 		String suffix = Kit.camelCaseOf(head.control.optimization.strategy.name());
 		if (suffix.equals("Decreasing"))
 			return new OptimizerDecreasing(this, opt, clb, cub);
@@ -2149,7 +2155,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		int limit = settings.limitForSatisfaction;
 		if (limit == PLUS_INFINITY_INT)
 			return false;
-		head.control.toCSP();
+		// head.control.toCSP();
 		if (obj == EXPRESSION) {
 			control(list.length == 1 && coeffs == null);
 			intension(opt == MINIMIZE ? XNodeParent.le(list[0], limit) : XNodeParent.ge(list[0], limit));

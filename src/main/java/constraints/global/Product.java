@@ -15,7 +15,7 @@ import org.xcsp.common.Types.TypeConditionOperatorRel;
 
 import constraints.Constraint.CtrGlobal;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
-import interfaces.Tags.TagGACGuaranteed;
+import interfaces.Tags.TagAC;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import variables.Domain;
@@ -109,7 +109,7 @@ public abstract class Product extends CtrGlobal implements TagFilteringCompleteA
 		// ***** Constraint ProductSimpleLE
 		// ************************************************************************
 
-		public static class ProductSimpleLE extends ProductSimple implements TagGACGuaranteed {
+		public static class ProductSimpleLE extends ProductSimple implements TagAC {
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -152,7 +152,7 @@ public abstract class Product extends CtrGlobal implements TagFilteringCompleteA
 		// ***** Constraint ProductSimpleGE
 		// ************************************************************************
 
-		public static class ProductSimpleGE extends ProductSimple implements TagGACGuaranteed {
+		public static class ProductSimpleGE extends ProductSimple implements TagAC {
 
 			@Override
 			public final boolean checkValues(int[] t) {

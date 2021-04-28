@@ -14,13 +14,13 @@ import java.util.stream.Stream;
 
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
-import interfaces.Tags.TagShort;
+import interfaces.Tags.TagStarred;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 
 // why not using a counter 'time' and replace boolean[][] ac by int[][] ac (we just do time++ instead of Arrays.fill(ac[x],false)
-public class STR2 extends STR1Optimized implements TagShort {
+public class STR2 extends STR1Optimized implements TagStarred {
 
 	boolean starred;
 
