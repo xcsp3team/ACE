@@ -238,7 +238,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			head.control.toCOP();
 		else
 			head.control.toCSP();
-		// control((settings.framework == COP) == (optimizer != null), "Not a COP " + settings.framework + " " + (optimizer == null));
 
 		Stream.of(variables).peek(x -> control(Stream.of(x.ctrs).noneMatch(c -> c.num == -1))).forEach(x -> x.dom.finalizeConstruction(variables.length + 1));
 

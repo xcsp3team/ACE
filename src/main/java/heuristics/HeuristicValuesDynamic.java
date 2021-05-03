@@ -50,7 +50,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 		Optimizable c;
 
-		boolean promise;
+		boolean lbBased;
 
 		int nTests;
 
@@ -60,7 +60,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 			super(x, antiHeuristic);
 			Kit.control(x.problem.optimizer != null);
 			this.scoreCoeff = x.problem.optimizer.minimization ? -1 : 1; // scoreCoeff follows minimization/maximization
-			this.promise = !antiHeuristic;
+			this.lbBased = x.problem.head.control.valh.bivsOptimistic == x.problem.optimizer.minimization;
 			this.solver = x.problem.solver;
 			this.c = x.problem.optimizer.ctr;
 			this.inconsistent = new SetDense(x.dom.initSize());
@@ -85,7 +85,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 				inconsistent.add(a);
 				score = scoreCoeff == -1 ? Long.MAX_VALUE : Long.MIN_VALUE;
 			} else
-				score = promise ? c.maxCurrentObjectiveValue() : c.minCurrentObjectiveValue();
+				score = lbBased ? c.minCurrentObjectiveValue() : c.maxCurrentObjectiveValue();
 			// if (x.id().equals("k"))
 			// System.out.println("score of " + x + " " + a + " : " + score);
 			solver.backtrack(x);

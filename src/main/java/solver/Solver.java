@@ -486,6 +486,9 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		this.heuristic = HeuristicVariables.buildFor(this);
 		for (Variable x : problem.variables)
 			x.buildValueOrderingHeuristic();
+
+		// System.out.println(Stream.of(problem.variables).filter(x -> x.heuristic instanceof Bivs).count());
+
 		this.lastConflict = new LastConflict(this, head.control.varh.lc);
 		this.nogoodRecorder = NogoodRecorder.buildFor(this); // may be null
 		this.ipsRecorder = IpsRecorder.buildFor(this); // may be null

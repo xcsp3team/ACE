@@ -545,7 +545,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 			control(minComputableObjectiveValue <= maxComputableObjectiveValue); // Important: we check this way that no overflow is possible
 			limit(limit);
 			defineKey(Kit.join(coeffs), limit);
-			control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])));
+			control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])), "" + Kit.join(coeffs));
 
 		}
 

@@ -23,10 +23,10 @@ import constraints.intension.PrimitiveBinary.PrimitiveBinaryMul.MulGE2;
 import constraints.intension.PrimitiveBinary.PrimitiveBinaryMul.MulLE2;
 import constraints.intension.PrimitiveBinary.PropagatorEQ.MultiPropagatorEQ;
 import constraints.intension.PrimitiveBinary.PropagatorEQ.SimplePropagatorEQ;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
-import interfaces.Tags.TagSymmetric;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagNotSymmetric;
+import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import utility.Kit;
 import variables.Domain;
@@ -1239,7 +1239,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			case LE:
 			case GE:
 			case GT:
-				return SumWeighted.buildFrom(pb, pb.api.vars(x, y), pb.api.vals(1, -k), op, 0);
+				return SumWeighted.buildFrom(pb, pb.api.vars(y, x), pb.api.vals(-k, 1), op, 0);
 			case EQ:
 				return new MulbEQ2(pb, x, y, k);
 			case NE:

@@ -31,6 +31,7 @@ import org.xcsp.modeler.entities.VarEntities;
 import constraints.Constraint;
 import heuristics.HeuristicValues;
 import heuristics.HeuristicValuesDirect.First;
+import heuristics.HeuristicValuesDynamic.Bivs;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingUnsystematic;
 import problem.Problem;
@@ -550,6 +551,14 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 			String className = this.dom instanceof DomainInfinite ? First.class.getName() : problem.head.control.valh.heuristic;
 			Set<Class<?>> classes = problem.head.handlerClasses.map.get(HeuristicValues.class);
 			heuristic = Reflector.buildObject(className, classes, this, problem.head.control.valh.anti);
+			if (heuristic instanceof Bivs) {
+				int bivs_d = problem.head.control.valh.bivsDistance;
+				if (bivs_d < 2) {
+					int distance = objectiveDistance();
+					if (distance == 2 || (distance == 1 && bivs_d == 0))
+						heuristic = new First(this, problem.head.control.valh.anti);
+				}
+			}
 		}
 	}
 
@@ -580,6 +589,17 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 			if (c.involves(x))
 				return true;
 		return false;
+	}
+
+	public final int objectiveDistance() {
+		assert problem.optimizer != null;
+		Constraint c = (Constraint) problem.optimizer.ctr;
+		if (c.involves(this))
+			return 0;
+		for (Variable y : c.scp)
+			if (this.isNeighbourOf(y))
+				return 1;
+		return 2;
 	}
 
 	/**
