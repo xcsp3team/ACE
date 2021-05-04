@@ -4,14 +4,17 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Types.TypeConditionOperatorRel;
+import org.xcsp.common.Utilities;
 
 import constraints.Constraint.CtrGlobal;
+import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstEQ;
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstGE;
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
+import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstEQ;
 import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstGE;
 import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstLE;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagSymmetric;
 import optimization.Optimizable;
 import problem.Problem;
@@ -231,8 +234,10 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 				return minimum ? new MinimumCstGE(pb, list, limit) : new MaximumCstGE(pb, list, limit);
 			case GT:
 				return minimum ? new MinimumCstGE(pb, list, limit + 1) : new MaximumCstGE(pb, list, limit + 1);
+			case EQ:
+				return minimum ? new MinimumCstEQ(pb, list, limit) : new MaximumCstEQ(pb, list, limit);
 			default:
-				throw new AssertionError("EQ and NE are not implemented"); // TODO useful to have a propagator?
+				throw new AssertionError("NE is not implemented"); // TODO useful to have a propagator?
 			}
 		}
 
@@ -333,8 +338,8 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 			public static final class MaximumCstGE extends MaximumCst {
 
 				@Override
-				public boolean checkValues(int[] t) {
-					return IntStream.of(t).max().getAsInt() >= limit;
+				public boolean checkValues(int[] vals) {
+					return IntStream.of(vals).max().getAsInt() >= limit;
 				}
 
 				private int sentinel1, sentinel2;
@@ -380,6 +385,55 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 				}
 			}
 
+			public static final class MaximumCstEQ extends MaximumCst {
+				// the code is similar to Atleast1 (modulo initial filtering, and call-filtering complete)
+				// TODO: only one class for MaximumCstEQ, MinimumCstEQ and Atleast1 ?
+
+				@Override
+				public boolean checkValues(int[] vals) {
+					return IntStream.of(vals).max().getAsInt() == limit;
+				}
+
+				private int value;
+
+				/** Two sentinels for tracking the presence of the value. */
+				private Variable sentinel1, sentinel2;
+
+				public MaximumCstEQ(Problem pb, Variable[] scp, long limit) {
+					super(pb, scp, limit);
+					this.value = Utilities.safeInt(limit, true);
+					for (Variable x : scp)
+						x.dom.removeValuesAtConstructionTime(v -> v > this.value); // making it more efficient?
+					this.sentinel1 = scp[0];
+					this.sentinel2 = scp[1];
+				}
+
+				private Variable findAnotherSentinel() {
+					for (Variable x : scp)
+						if (x != sentinel1 && x != sentinel2 && x.dom.presentValue(value))
+							return x;
+					return null;
+				}
+
+				@Override
+				public boolean runPropagator(Variable x) {
+					if (!sentinel1.dom.presentValue(value)) {
+						Variable sentinel = findAnotherSentinel();
+						if (sentinel != null)
+							sentinel1 = sentinel;
+						else
+							return sentinel2.dom.reduceToValue(value) && entailed();
+					}
+					if (!sentinel2.dom.presentValue(value)) {
+						Variable sentinel = findAnotherSentinel();
+						if (sentinel != null)
+							sentinel2 = sentinel;
+						else
+							return sentinel1.dom.reduceToValue(value) && entailed();
+					}
+					return true;
+				}
+			}
 		}
 
 		public static abstract class MinimumCst extends ExtremumCst {
@@ -504,6 +558,55 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 						if (y.dom.removeValuesLT(limit) == false)
 							return false;
 					return entailed();
+				}
+			}
+
+			public static final class MinimumCstEQ extends MinimumCst {
+				// the code is similar to Atleast1 (modulo initial filtering, and call-filtering complete)
+
+				@Override
+				public boolean checkValues(int[] vals) {
+					return IntStream.of(vals).min().getAsInt() == limit;
+				}
+
+				private int value;
+
+				/** Two sentinels for tracking the presence of the value. */
+				private Variable sentinel1, sentinel2;
+
+				public MinimumCstEQ(Problem pb, Variable[] scp, long limit) {
+					super(pb, scp, limit);
+					this.value = Utilities.safeInt(limit, true);
+					for (Variable x : scp)
+						x.dom.removeValuesAtConstructionTime(v -> v < this.value); // making it more efficient?
+					this.sentinel1 = scp[0];
+					this.sentinel2 = scp[1];
+				}
+
+				private Variable findAnotherSentinel() {
+					for (Variable x : scp)
+						if (x != sentinel1 && x != sentinel2 && x.dom.presentValue(value))
+							return x;
+					return null;
+				}
+
+				@Override
+				public boolean runPropagator(Variable x) {
+					if (!sentinel1.dom.presentValue(value)) {
+						Variable sentinel = findAnotherSentinel();
+						if (sentinel != null)
+							sentinel1 = sentinel;
+						else
+							return sentinel2.dom.reduceToValue(value) && entailed();
+					}
+					if (!sentinel2.dom.presentValue(value)) {
+						Variable sentinel = findAnotherSentinel();
+						if (sentinel != null)
+							sentinel2 = sentinel;
+						else
+							return sentinel1.dom.reduceToValue(value) && entailed();
+					}
+					return true;
 				}
 			}
 

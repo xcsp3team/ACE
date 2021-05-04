@@ -1239,7 +1239,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			case LE:
 			case GE:
 			case GT:
-				return SumWeighted.buildFrom(pb, pb.api.vars(y, x), pb.api.vals(-k, 1), op, 0);
+				return SumWeighted.buildFrom(pb, pb.api.vars(y, x), pb.api.vals(-k, 1), op, 0); // keep this order (coeffs must be increasingly ordered)
 			case EQ:
 				return new MulbEQ2(pb, x, y, k);
 			case NE:
