@@ -25,7 +25,7 @@ import variables.Variable;
 // BinPacking2.py and NursingWorkload and TestBinpacking (dans special)
 
 public final class BinPacking extends CtrGlobal implements ObserverConstruction, ObserverBacktrackingSystematic, TagNotAC { // not call
-																																		// filtering-complete
+																															// filtering-complete
 	@Override
 	public final boolean checkValues(int[] t) {
 		Arrays.fill(sums, 0);
@@ -40,12 +40,12 @@ public final class BinPacking extends CtrGlobal implements ObserverConstruction,
 	@Override
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
-		this.setb = new SetSparseReversible(bins.length, true, problem.variables.length + 1);
+		this.usableBins = new SetSparseReversible(bins.length, true, problem.variables.length + 1);
 	}
 
 	@Override
 	public void restoreBefore(int depth) {
-		setb.restoreLimitAtLevel(depth);
+		usableBins.restoreLimitAtLevel(depth);
 	}
 
 	private static class Bin {
@@ -69,17 +69,18 @@ public final class BinPacking extends CtrGlobal implements ObserverConstruction,
 	private Bin[] bins;
 	private Bin[] sortedBins;
 
-	private SetDense[] positions; // positions[i] is the set of items such that i is the first position (in the ordered sequence of bins) where they can be put
+	private SetDense[] fronts; // fronts[i] is the set of items which are in front of the ith bin (in the ordered sequence of bins) such that i is the first
+								// position where they can be put
 
 	private final long[] sums; // used for checking values
 
-	private SetSparseReversible setb;
+	private SetSparseReversible usableBins; // set of currently usable bins
 
 	public BinPacking(Problem pb, Variable[] scp, int[] sizes, int[] limits) {
 		super(pb, scp);
 		control(Kit.isIncreasing(sizes));
 		// defineKey(Kit.join(sizes) + " " + limit);
-		control(scp.length >= 2 && Variable.haveSameDomainType(scp)); // TODO checking that all domains are from 0 to nBins-1
+		control(scp.length >= 2 && Variable.haveSameDomainType(scp)); // TODO to be relaxed when possible
 
 		this.sizes = sizes;
 		this.limits = limits;
@@ -87,7 +88,7 @@ public final class BinPacking extends CtrGlobal implements ObserverConstruction,
 		int nBins = scp[0].dom.initSize();
 		this.bins = IntStream.range(0, nBins).mapToObj(i -> new Bin()).toArray(Bin[]::new);
 		this.sortedBins = bins.clone();
-		this.positions = IntStream.range(0, nBins).mapToObj(i -> new SetDense(scp.length)).toArray(SetDense[]::new);
+		this.fronts = IntStream.range(0, nBins).mapToObj(i -> new SetDense(scp.length)).toArray(SetDense[]::new);
 
 		this.sums = new long[nBins];
 	}
@@ -100,110 +101,120 @@ public final class BinPacking extends CtrGlobal implements ObserverConstruction,
 	public boolean runPropagator(Variable x) {
 		// System.out.println(this);
 		// initialization
-		for (int j = 0; j <= setb.limit; j++) {
-			int i = setb.dense[j];
-			bins[i].set(i, limits[i]);
+		for (int j = 0; j <= usableBins.limit; j++) {
+			int i = usableBins.dense[j];
+			bins[i].set(i, limits[i]); // the bin is reinitialized with its initial capacity
 			sortedBins[j] = bins[i];
 		}
 		// updating the capacity of bins
 		for (int i = 0; i < scp.length; i++)
 			if (scp[i].dom.size() == 1)
-				bins[scp[i].dom.uniqueValue()].capacity -= sizes[i];
+				bins[scp[i].dom.unique()].capacity -= sizes[i]; // the capacity is updated
 
 		// putting each object in front of the right bin (the first one where it can enter)
 		start: while (true) {
-			Arrays.sort(sortedBins, 0, setb.limit + 1, (b1, b2) -> Integer.compare(b1.capacity, b2.capacity));
+			Arrays.sort(sortedBins, 0, usableBins.limit + 1, (b1, b2) -> Integer.compare(b1.capacity, b2.capacity)); // increasing sort
 			if (sortedBins[0].capacity < 0)
-				return x.dom.fail();
-			for (SetDense set : positions)
+				return x.dom.fail(); // TODO 1: moving it at line 112 (avoid the first sort) ?
+			for (SetDense set : fronts) // TODO 2: only clearing from 0 to usableBins.limit ?
 				set.clear();
-			for (int p = 0; p < scp.length; p++) {
+			for (int p = 0; p < scp.length; p++) { // TODO 3: only iterating over future variables? (but the condition remains)
 				Domain dom = scp[p].dom;
 				if (dom.size() == 1)
 					continue; // because already considered (when reducing the appropriate bin capacity)
 				boolean foundPosition = false;
-				for (int j = 0; !foundPosition && j <= setb.limit; j++) {
+				for (int j = 0; !foundPosition && j <= usableBins.limit; j++) {
 					int i = sortedBins[j].index;
 					if (sizes[p] > sortedBins[j].capacity) {
 						if (dom.removeValueIfPresent(i) == false)
 							return false;
 					} else if (dom.present(i)) {
 						foundPosition = true;
-						positions[j].add(p);
+						fronts[j].add(p);
 					}
 				}
 				if (!foundPosition) {
-					System.out.println("jjjj");
 					return x.dom.fail();
 				}
 				if (dom.size() == 1) {
-					bins[dom.uniqueValue()].capacity -= sizes[p];
+					bins[dom.unique()].capacity -= sizes[p]; // note that sortedBins has references to bins
+					// TODO : when we continue, only sort between 0 and the position j when foundPosition
 					continue start;
 				}
 			}
 			break;
 		}
 
-		// System.out.println("jjjj1");
-		// for (Bin bin : sortedBins)
-		// System.out.println(bin);
-		// for (SetDense set : positions)
-		// System.out.println(set);
-
-		// for (Bin bin : bins)
-		// if (bin.capacity < 0)
-		// return x.dom.fail();
-
 		// assert Stream.of(sortedBins).allMatch(bin -> bin.capacity >= 0);
 
 		// energetic reasoning
-		int cumulatedAvailableCapacities = 0, cumulatedSizes = 0;
-		for (int j = setb.limit; j >= 0; j--) {
+		int cumulatedCapacities = 0, cumulatedSizes = 0;
+		for (int j = usableBins.limit; j >= 0; j--) {
 			int capacity = sortedBins[j].capacity;
-			cumulatedAvailableCapacities += capacity;
-			if (positions[j].size() == 0)
+			cumulatedCapacities += capacity;
+			if (fronts[j].size() == 0)
 				continue;
 			int min = Integer.MAX_VALUE, max = -1;
-			for (int k = 0; k <= positions[j].limit; k++) {
-				int size = sizes[positions[j].dense[k]];
+			for (int k = 0; k <= fronts[j].limit; k++) {
+				int size = sizes[fronts[j].dense[k]];
 				min = Math.min(min, size);
 				max = Math.max(max, size);
 				cumulatedSizes += size;
 			}
 			boolean onyOnePossibleInTheBin = min > capacity / 2;
 			int lost = onyOnePossibleInTheBin ? capacity - max : 0; // lost place
-			int margin = cumulatedAvailableCapacities - lost - cumulatedSizes; // the margin is computed from the object of max size (when only one possible)
+			// int l = lost;
+			// if (lost > 0)
+			// for (int k = j - 1; k >= 0; k--)
+			// if (capacity == sortedBins[k].capacity) {
+			// if (fronts[k].size() > 0) {
+			// System.out.println("gggg");
+			// for (int pp = 0; pp <= usableBins.limit; pp++) {
+			// System.out.println(sortedBins[pp]);
+			// System.out.println(fronts[pp]);
+			// }
+			//
+			// }
+			//
+			// control(fronts[k].size() == 0);
+			// lost += l;
+			// } else
+			// break;
+			// if (lost != l)
+			// System.out.println("jjjjj " + lost + " " + l);
+
+			int margin = cumulatedCapacities - lost - cumulatedSizes; // the margin is computed from the object of max size (when only one possible)
 			if (margin < 0) {
 				return x.dom.fail();
 			}
 			if (onyOnePossibleInTheBin && margin - (max - min) < 0) { // we can remove some values if the smallest item cannot be put in the bin j
-				for (int k = 0; k <= positions[j].limit; k++) {
-					int i = positions[j].dense[k];
+				for (int k = 0; k <= fronts[j].limit; k++) {
+					int i = fronts[j].dense[k];
 					if (margin - (max - sizes[i]) < 0 && scp[i].dom.removeValueIfPresent(sortedBins[j].index) == false)
 						return false;
 				}
 			}
 		}
 
-		boolean b = true;
+		boolean b = false;
 		if (b)
 			return true;
-		int smallest = -1;
-		for (int i = 0; smallest == -1 && i < scp.length; i++)
+		// we look for the index of the smallest free item
+		int smallestFreeItem = -1;
+		for (int i = 0; smallestFreeItem == -1 && i < scp.length; i++)
 			if (scp[i].dom.size() > 1)
-				smallest = i;
-		if (smallest == -1)
+				smallestFreeItem = i;
+		if (smallestFreeItem == -1)
 			return true;
-		// System.out.println("at " + problem.solver.depth() + " samllest " + bins.length + " " + sizes[smallest] + " " + setb.size());
-		int pos = -1;
-		for (int j = setb.limit; j >= 0; j--) {
-			if (!setb.isPresent(sortedBins[j].index))
-				System.exit(1);
 
-			if (sortedBins[j].capacity < smallest)
-				setb.remove(sortedBins[j].index, problem.solver.depth());
+		// we discard bins that are now identified as useless because we cannot even put the smallest item in it
+		for (int j = usableBins.limit; j >= 0; j--) { // for being able to break, we should go from 0 to ..., but removing an element in usableBins could be a
+														// pb
+			assert usableBins.isPresent(sortedBins[j].index);
+			if (sortedBins[j].capacity < sizes[smallestFreeItem])
+				usableBins.remove(sortedBins[j].index, problem.solver.depth());
+
 		}
-
 		return true;
 	}
 
