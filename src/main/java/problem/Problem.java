@@ -1480,13 +1480,17 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 					XNode<IVar>[] tt = Stream.of(terms).map(t -> t.obj).toArray(XNode[]::new);
 					control(Stream.of(terms).allMatch(t -> Utilities.isSafeInt(t.coeff)));
 					coeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
-					System.out.println("here");
 					return addCtr(SumViewWeighted.buildFrom(this, tt, coeffs, op, 0));
+				} else if (condition instanceof ConditionVal) {
+					return addCtr(SumViewWeighted.buildFrom(this, trees, coeffs, op, (long) rightTerm));
 				}
 			}
 		}
-
 		return sum(replaceByVariables(trees), coeffs, condition);
+	}
+
+	public CtrEntity sum(Stream<XNode<IVar>> trees, int[] coeffs, Condition condition) {
+		return sum(trees.toArray(XNode[]::new), coeffs, condition);
 	}
 
 	public final CtrEntity product(Var[] list, Condition condition) {
@@ -1924,10 +1928,18 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity noOverlap(Var[] origins, int[] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
 		// allDifferent(origins); // posting this redundant constraint does not seem to be a good idea (too weak)
+
+		// if (head.control.global.typeNoOverlap == 2)
+		// return forall(range(origins.length).range(origins.length), (i, j) -> {
+		// if (i < j)
+		// noOverlap(origins[i], origins[j], lengths[i], lengths[j]);
+		// });
 		return forall(range(origins.length).range(origins.length), (i, j) -> {
 			if (i < j)
 				noOverlap(origins[i], origins[j], lengths[i], lengths[j]);
 		});
+		// return cumulative(origins, lengths, null, Kit.repeat(1, origins.length), api.condition(TypeConditionOperatorRel.LE, 1));
+
 	}
 
 	@Override
@@ -2022,12 +2034,19 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	public final CtrEntity binpacking(Var[] list, int[] sizes, Condition condition) {
+		control(list.length > 2 && list.length == sizes.length);
+		Variable[] vars = translate(list);
+		boolean sameType = Variable.haveSameDomainType(vars);
+		if (!sameType || head.control.global.typeBinpacking == 1) { // decomposing in sum constraints
+			int[] values = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).toArray();
+			return forall(range(values.length), v -> sum(Stream.of(list).map(x -> api.eq(x, v)), sizes, condition)); // TODO add nValues ? other ?
+		}
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
 			// return addCtr(new BinPackingSimple(this, translate(list), sizes, limit - (op == LT ? 1 : 0)));
-			return addCtr(new BinPacking(this, translate(list), sizes, limit - (op == LT ? 1 : 0)));
+			return addCtr(new BinPacking(this, vars, sizes, limit - (op == LT ? 1 : 0))); // TODO add nValues ? other ?
 		}
 		return unimplemented("binPacking");
 	}

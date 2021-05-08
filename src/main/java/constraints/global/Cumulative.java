@@ -170,7 +170,7 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 				}
 			}
 		}
-		int smin = Integer.MAX_VALUE, emax = -1;
+		int smin = Integer.MAX_VALUE, emax = -1; // start min and end max
 		for (int j = futvars.limit; j >= 0; j--) {
 			int i = futvars.dense[j];
 			if (scp[i].dom.firstValue() < smin)

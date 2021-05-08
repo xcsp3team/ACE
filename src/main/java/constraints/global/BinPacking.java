@@ -72,13 +72,13 @@ public final class BinPacking extends CtrGlobal implements ObserverConstruction,
 	private SetDense[] fronts; // fronts[i] is the set of items which are in front of the ith bin (in the ordered sequence of bins) such that i is the first
 								// position where they can be put
 
-	private final long[] sums; // used for checking values
-
 	private SetSparseReversible usableBins; // set of currently usable bins
+
+	private final long[] sums; // only used when checking values
 
 	public BinPacking(Problem pb, Variable[] scp, int[] sizes, int[] limits) {
 		super(pb, scp);
-		control(Kit.isIncreasing(sizes));
+		control(sizes[0] > 0 && Kit.isIncreasing(sizes));
 		// defineKey(Kit.join(sizes) + " " + limit);
 		control(scp.length >= 2 && Variable.haveSameDomainType(scp)); // TODO to be relaxed when possible
 
@@ -108,37 +108,45 @@ public final class BinPacking extends CtrGlobal implements ObserverConstruction,
 		}
 		// updating the capacity of bins
 		for (int i = 0; i < scp.length; i++)
-			if (scp[i].dom.size() == 1)
+			if (scp[i].dom.size() == 1) {
 				bins[scp[i].dom.unique()].capacity -= sizes[i]; // the capacity is updated
+				// if (bins[scp[i].dom.unique()].capacity < 0) // TODO why it does not work ?
+				// return x.dom.fail();
+			}
 
 		// putting each object in front of the right bin (the first one where it can enter)
+		int sortLimit = usableBins.limit + 1;
 		start: while (true) {
-			Arrays.sort(sortedBins, 0, usableBins.limit + 1, (b1, b2) -> Integer.compare(b1.capacity, b2.capacity)); // increasing sort
+			Arrays.sort(sortedBins, 0, sortLimit, (b1, b2) -> Integer.compare(b1.capacity, b2.capacity)); // increasing sort
 			if (sortedBins[0].capacity < 0)
 				return x.dom.fail(); // TODO 1: moving it at line 112 (avoid the first sort) ?
 			for (SetDense set : fronts) // TODO 2: only clearing from 0 to usableBins.limit ?
 				set.clear();
+			// for (int ii = futvars.limit; ii >= 0; ii--) {
+			// int p = futvars.dense[ii];
 			for (int p = 0; p < scp.length; p++) { // TODO 3: only iterating over future variables? (but the condition remains)
 				Domain dom = scp[p].dom;
 				if (dom.size() == 1)
 					continue; // because already considered (when reducing the appropriate bin capacity)
-				boolean foundPosition = false;
-				for (int j = 0; !foundPosition && j <= usableBins.limit; j++) {
+				int position = -1;
+				for (int j = 0; position == -1 && j <= usableBins.limit; j++) {
 					int i = sortedBins[j].index;
 					if (sizes[p] > sortedBins[j].capacity) {
 						if (dom.removeValueIfPresent(i) == false)
 							return false;
 					} else if (dom.present(i)) {
-						foundPosition = true;
+						position = j;
 						fronts[j].add(p);
 					}
 				}
-				if (!foundPosition) {
+				if (position == -1) {
 					return x.dom.fail();
 				}
 				if (dom.size() == 1) {
 					bins[dom.unique()].capacity -= sizes[p]; // note that sortedBins has references to bins
-					// TODO : when we continue, only sort between 0 and the position j when foundPosition
+					if (bins[dom.unique()].capacity < 0)
+						return x.dom.fail();
+					sortLimit = position + 1; // TODO only inserting rather than sorting ?
 					continue start;
 				}
 			}
@@ -200,19 +208,28 @@ public final class BinPacking extends CtrGlobal implements ObserverConstruction,
 		if (b)
 			return true;
 		// we look for the index of the smallest free item
-		int smallestFreeItem = -1;
-		for (int i = 0; smallestFreeItem == -1 && i < scp.length; i++)
-			if (scp[i].dom.size() > 1)
-				smallestFreeItem = i;
+		int smallestFreeItem = -1, minUsableBin = Integer.MAX_VALUE, maxUsableBin = -1;
+		for (int i = 0; i < scp.length; i++) {
+			if (scp[i].dom.size() > 1) {
+				if (smallestFreeItem == -1)
+					smallestFreeItem = i;
+				minUsableBin = Math.min(minUsableBin, scp[i].dom.first());
+				maxUsableBin = Math.max(maxUsableBin, scp[i].dom.last());
+			}
+		}
+
 		if (smallestFreeItem == -1)
 			return true;
-
+		// System.out.println(maxUsableBin);
 		// we discard bins that are now identified as useless because we cannot even put the smallest item in it
 		for (int j = usableBins.limit; j >= 0; j--) { // for being able to break, we should go from 0 to ..., but removing an element in usableBins could be a
 														// pb
-			assert usableBins.isPresent(sortedBins[j].index);
-			if (sortedBins[j].capacity < sizes[smallestFreeItem])
-				usableBins.remove(sortedBins[j].index, problem.solver.depth());
+			int i = sortedBins[j].index;
+			// if (i > maxUsableBin)
+			// System.out.println("i= " + i + " max= " + maxUsableBin);
+			assert usableBins.isPresent(i);
+			if (sortedBins[j].capacity < sizes[smallestFreeItem] || i > maxUsableBin || i < minUsableBin)
+				usableBins.remove(i, problem.solver.depth());
 
 		}
 		return true;
