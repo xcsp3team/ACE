@@ -38,6 +38,7 @@ import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.relo
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.unalop;
 import static org.xcsp.common.predicates.XNode.node;
 import static org.xcsp.common.predicates.XNodeParent.add;
+import static org.xcsp.common.predicates.XNodeParent.iff;
 import static org.xcsp.common.predicates.XNodeParent.le;
 import static org.xcsp.common.predicates.XNodeParent.or;
 import static utility.Kit.log;
@@ -769,6 +770,15 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return api.var(idAux(), dom, "auxiliary variable");
 	}
 
+	private Var[] newAuxVarArray(int length, Object values) {
+		control(length > 1);
+		nAuxVariables += length;
+		values = values instanceof Range ? api.dom((Range) values) : values instanceof int[] ? api.dom((int[]) values) : values;
+		if (values instanceof Dom)
+			return api.array(idAux(), api.size(length), (Dom) values, "auxiliary variables");
+		return api.array(idAux(), api.size(length), (IntToDom) values, "auxiliary variables");
+	}
+
 	private void replacement(Var aux, XNode<IVar> tree, boolean tuplesComputed, int[][] tuples) {
 		Variable[] treeVars = (Variable[]) tree.vars();
 		if (!tuplesComputed && head.control.extension.convertingIntension(treeVars))
@@ -805,18 +815,15 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// if multiple occurrences of the same variable in a tree, there is a possible problem of reasoning with similar trees
 		boolean similarTrees = trees.length > 1 && Stream.of(trees).allMatch(tree -> tree.listOfVars().size() == tree.vars().length);
 		similarTrees = similarTrees && IntStream.range(1, trees.length).allMatch(i -> areSimilar(trees[0], trees[i]));
-		Var[] aux = null;
+		Var[] aux = newAuxVarArray(trees.length, similarTrees ? doms.apply(0) : doms);
 		int[][] tuples = null;
 		if (similarTrees) {
-			aux = api.array(idAux(), api.size(trees.length), doms.apply(0), "auxiliary variables");
 			Variable[] treeVars = (Variable[]) trees[0].vars();
 			if (head.control.extension.convertingIntension(treeVars))
 				tuples = new TreeEvaluator(trees[0]).computeTuples(Variable.initDomainValues(treeVars));
-		} else
-			aux = api.array(idAux(), api.size(trees.length), doms, "auxiliary variables");
+		}
 		for (int i = 0; i < trees.length; i++)
 			replacement(aux[i], trees[i], similarTrees, tuples);
-		nAuxVariables += trees.length;
 		return aux;
 	}
 
@@ -1388,6 +1395,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity sum(Var[] list, int[] coeffs, Condition condition) {
+		control(list.length > 0, "A constraint sum is posted with a scope of 0 variable");
 		control(Stream.of(list).noneMatch(x -> x == null), "A variable is null");
 		control(list.length == coeffs.length, "the number of variables is different from the number of coefficients");
 
@@ -1448,6 +1456,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity sum(Var[] list, Var[] coeffs, Condition condition) {
+		control(list.length > 0, "A constraint sum is posted with a scope of 0 variable");
 		assert Stream.of(list).noneMatch(x -> x == null) && Stream.of(coeffs).noneMatch(x -> x == null) : "A variable is null in these arrays";
 		control(list.length == coeffs.length, "The number of variables is different from the number of coefficients");
 
@@ -1467,6 +1476,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public CtrEntity sum(XNode<IVar>[] trees, int[] coeffs, Condition condition) {
+		control(trees.length > 0, "A constraint sum is posted with a scope of 0 variable");
 		if (head.control.constraints.viewForSum && condition instanceof ConditionRel) {
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Object rightTerm = condition.rightTerm();
@@ -1562,6 +1572,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrEntity count(Var[] list, int[] values, Condition condition) {
+		control(list.length > 0, "A constraint Count is posted with a scope of 0 variable");
 		if (condition instanceof ConditionRel) {
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Object rightTerm = condition.rightTerm();
@@ -1927,19 +1938,22 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity noOverlap(Var[] origins, int[] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
-		// allDifferent(origins); // posting this redundant constraint does not seem to be a good idea (too weak)
+		// a) allDifferent(origins); // posting this redundant constraint really seems to be uninteresting (too weak)
+		// b) is it interesting to post a cumulative? not quite sure
+		// cumulative(origins, lengths, null, Kit.repeat(1, origins.length), api.condition(TypeConditionOperatorRel.LE, 1));
 
-		// if (head.control.global.typeNoOverlap == 2)
-		// return forall(range(origins.length).range(origins.length), (i, j) -> {
-		// if (i < j)
-		// noOverlap(origins[i], origins[j], lengths[i], lengths[j]);
-		// });
+		if (head.control.global.redundNoOverlap == 1) { // we post redundant constraints (after introducing auxiliary variables)
+			Var[] aux = newAuxVarArray(origins.length, range(origins.length));
+			allDifferent(aux);
+			forall(range(origins.length).range(origins.length), (i, j) -> {
+				if (i < j)
+					intension(iff(le(aux[i], aux[j]), le(origins[i], origins[j])));
+			});
+		}
 		return forall(range(origins.length).range(origins.length), (i, j) -> {
 			if (i < j)
 				noOverlap(origins[i], origins[j], lengths[i], lengths[j]);
 		});
-		// return cumulative(origins, lengths, null, Kit.repeat(1, origins.length), api.condition(TypeConditionOperatorRel.LE, 1));
-
 	}
 
 	@Override

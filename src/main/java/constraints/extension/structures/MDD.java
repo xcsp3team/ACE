@@ -351,7 +351,7 @@ public final class MDD extends ExtensionStructure {
 	private void finalizeStoreTuples() {
 		root.buildSonsClasses();
 		nNodes = root.renameNodes(1, new HashMap<Integer, MDDNode>()) + 1;
-		System.out.println("MDD : nNodes=" + nNodes + " nBuiltNodes=" + nCreatedNodes);
+		// System.out.println("MDD : nNodes=" + nNodes + " nBuiltNodes=" + nCreatedNodes);
 		assert root.controlUniqueNodes(new HashMap<Integer, MDDNode>());
 		// buildSplitter();
 

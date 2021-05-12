@@ -51,6 +51,7 @@ public final class BinPacking extends CtrGlobal implements ObserverConstruction,
 	private static class Bin {
 		int index;
 		int capacity; // the capacity is updated when possible (when an object is guaranteed to be in it)
+		int lost; // used when reasoning energetically
 
 		void set(int i, int c) {
 			this.index = i;
@@ -100,6 +101,7 @@ public final class BinPacking extends CtrGlobal implements ObserverConstruction,
 	@Override
 	public boolean runPropagator(Variable x) {
 		// System.out.println(this);
+
 		// initialization
 		for (int j = 0; j <= usableBins.limit; j++) {
 			int i = usableBins.dense[j];
@@ -110,13 +112,15 @@ public final class BinPacking extends CtrGlobal implements ObserverConstruction,
 		for (int i = 0; i < scp.length; i++)
 			if (scp[i].dom.size() == 1) {
 				bins[scp[i].dom.unique()].capacity -= sizes[i]; // the capacity is updated
-				// if (bins[scp[i].dom.unique()].capacity < 0) // TODO why it does not work ?
+				// if (bins[scp[i].dom.unique()].capacity < 0) // TODO why it does not work ? because we update useless abandoned bins
 				// return x.dom.fail();
 			}
 
 		// putting each object in front of the right bin (the first one where it can enter)
+		int maxSize = -1;
 		int sortLimit = usableBins.limit + 1;
 		start: while (true) {
+			maxSize = -1;
 			Arrays.sort(sortedBins, 0, sortLimit, (b1, b2) -> Integer.compare(b1.capacity, b2.capacity)); // increasing sort
 			if (sortedBins[0].capacity < 0)
 				return x.dom.fail(); // TODO 1: moving it at line 112 (avoid the first sort) ?
@@ -149,11 +153,11 @@ public final class BinPacking extends CtrGlobal implements ObserverConstruction,
 					sortLimit = position + 1; // TODO only inserting rather than sorting ?
 					continue start;
 				}
+				if (sizes[p] > maxSize)
+					maxSize = sizes[p];
 			}
 			break;
 		}
-
-		// assert Stream.of(sortedBins).allMatch(bin -> bin.capacity >= 0);
 
 		// energetic reasoning
 		int cumulatedCapacities = 0, cumulatedSizes = 0;
@@ -170,31 +174,22 @@ public final class BinPacking extends CtrGlobal implements ObserverConstruction,
 				cumulatedSizes += size;
 			}
 			boolean onyOnePossibleInTheBin = min > capacity / 2;
-			int lost = onyOnePossibleInTheBin ? capacity - max : 0; // lost place
-			// int l = lost;
-			// if (lost > 0)
-			// for (int k = j - 1; k >= 0; k--)
-			// if (capacity == sortedBins[k].capacity) {
-			// if (fronts[k].size() > 0) {
-			// System.out.println("gggg");
-			// for (int pp = 0; pp <= usableBins.limit; pp++) {
-			// System.out.println(sortedBins[pp]);
-			// System.out.println(fronts[pp]);
-			// }
-			//
-			// }
-			//
-			// control(fronts[k].size() == 0);
-			// lost += l;
-			// } else
-			// break;
-			// if (lost != l)
-			// System.out.println("jjjjj " + lost + " " + l);
-
-			int margin = cumulatedCapacities - lost - cumulatedSizes; // the margin is computed from the object of max size (when only one possible)
-			if (margin < 0) {
-				return x.dom.fail();
+			sortedBins[j].lost = onyOnePossibleInTheBin ? capacity - max : 0; // local j-lost place
+			int lost = sortedBins[j].lost;
+			// under certain conditions, we can combine several local lost places
+			for (int jj = usableBins.limit; jj > j; jj--) {
+				if (min <= sortedBins[jj].lost)
+					sortedBins[jj].lost = 0;
+				else
+					lost += sortedBins[jj].lost;
 			}
+			// note that even if several bins have the same current capacity, it does not mean that all items
+			// are in front of the leftmost one (due to other constraints)
+
+			// margin is a global value computed when reasoning from the jth sorted bin to the rightmost one
+			int margin = cumulatedCapacities - lost - cumulatedSizes; // the margin is computed from the object of max size (when only one possible)
+			if (margin < 0)
+				return x.dom.fail();
 			if (onyOnePossibleInTheBin && margin - (max - min) < 0) { // we can remove some values if the smallest item cannot be put in the bin j
 				for (int k = 0; k <= fronts[j].limit; k++) {
 					int i = fronts[j].dense[k];
@@ -202,12 +197,26 @@ public final class BinPacking extends CtrGlobal implements ObserverConstruction,
 						return false;
 				}
 			}
+			// maybe, some items in front of a bin on the left have a size greater than the margin (we can then remove them from bins on the right)
+			if (maxSize > margin) {
+				for (int left = 0; left < j; left++) {
+					if (fronts[left].size() == 0)
+						continue;
+					for (int k = 0; k <= fronts[left].limit; k++) {
+						int p = fronts[left].dense[k];
+						int size = sizes[p];
+						if (size <= margin)
+							continue;
+						for (int right = usableBins.limit; right >= j; right--) {
+							if (scp[p].dom.removeValueIfPresent(sortedBins[right].index) == false)
+								return false;
+						}
+					}
+				}
+			}
 		}
 
-		boolean b = false;
-		if (b)
-			return true;
-		// we look for the index of the smallest free item
+		// we look for the index of the smallest free item, and also compute the min and max usable bin numbers
 		int smallestFreeItem = -1, minUsableBin = Integer.MAX_VALUE, maxUsableBin = -1;
 		for (int i = 0; i < scp.length; i++) {
 			if (scp[i].dom.size() > 1) {
@@ -220,17 +229,14 @@ public final class BinPacking extends CtrGlobal implements ObserverConstruction,
 
 		if (smallestFreeItem == -1)
 			return true;
-		// System.out.println(maxUsableBin);
+
 		// we discard bins that are now identified as useless because we cannot even put the smallest item in it
 		for (int j = usableBins.limit; j >= 0; j--) { // for being able to break, we should go from 0 to ..., but removing an element in usableBins could be a
 														// pb
 			int i = sortedBins[j].index;
-			// if (i > maxUsableBin)
-			// System.out.println("i= " + i + " max= " + maxUsableBin);
 			assert usableBins.isPresent(i);
 			if (sortedBins[j].capacity < sizes[smallestFreeItem] || i > maxUsableBin || i < minUsableBin)
 				usableBins.remove(i, problem.solver.depth());
-
 		}
 		return true;
 	}
