@@ -33,11 +33,11 @@ import dashboard.Control.SettingCtrs;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.FilteringSpecific;
 import interfaces.Observers.ObserverConstruction;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagNotAC;
-import interfaces.Tags.TagSymmetric;
 import interfaces.Tags.TagNotSymmetric;
+import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import propagation.Forward;
 import propagation.Reviser;
@@ -487,7 +487,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public Constraint(Problem pb, Variable[] scp) {
 		this.problem = pb;
 		this.scp = scp = Stream.of(scp).distinct().toArray(Variable[]::new); // this.scp and scp updated
-		control(scp.length >= 1 && Stream.of(scp).allMatch(x -> x != null), this + " with a scope badly formed ");
+		control(scp.length >= 1 && Stream.of(scp).allMatch(x -> x != null), () -> this + " with a scope badly formed ");
 		Stream.of(scp).forEach(x -> x.collectedCtrs.add(this));
 		this.infiniteDomainVars = Stream.of(scp).filter(x -> x.dom instanceof DomainInfinite).toArray(Variable[]::new);
 

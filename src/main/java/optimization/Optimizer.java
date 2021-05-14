@@ -248,28 +248,4 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 				clb.limit(minBound + offset);
 		}
 	}
-
-	// public static final class OptimizerBasic extends Optimizer {
-	//
-	// public final String optimizationExpression;
-	//
-	// public OptimizerBasic(Problem pb, String optimizationExpression) {
-	// super(pb, TypeOptimization.MINIMIZE, null);
-	// this.optimizationExpression = optimizationExpression;
-	// }
-	//
-	// @Override
-	// protected void shiftLimitWhenSuccess() {
-	// }
-	//
-	// @Override
-	// protected void shiftLimitWhenFailure() {
-	// }
-	//
-	// @Override
-	// public String toString() {
-	// return (minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName() + " " + optimizationExpression;
-	// }
-	// }
-
 }

@@ -19,6 +19,7 @@ import interfaces.Tags.TagNotAC;
 import problem.Problem;
 import sets.SetSparse;
 import sets.SetSparseReversible;
+import utility.Kit;
 import variables.Variable;
 
 public final class Cumulative extends CtrGlobal implements TagFilteringCompleteAtEachCall, TagNotAC, ObserverBacktrackingSystematic {
@@ -82,6 +83,9 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 		Integer[] t = IntStream.range(0, scp.length).mapToObj(i -> new Integer(i)).toArray(Integer[]::new);
 		Arrays.sort(t, (i1, i2) -> heights[i1] > heights[i2] ? -1 : heights[i1] < heights[i2] ? 1 : 0);
 		this.sortedScpIndexes = Stream.of(t).mapToInt(i -> i).toArray();
+
+		// System.out.println("lengths= " + Kit.join(lengths));
+		System.out.println(this);
 	}
 
 	private int mandatoryStart(int i) {
@@ -185,6 +189,10 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 				omega.removeAtPosition(j, depth);
 		}
 		return true;
+	}
+
+	public String toString() {
+		return "constraint cumulative: " + Kit.join(scp) + " lengths=" + Kit.join(this.lengths) + " heights=" + Kit.join(heights) + " limit=" + limit;
 	}
 
 }

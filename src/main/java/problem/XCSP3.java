@@ -327,7 +327,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void buildCtrFalse(String id, XVar[] list) {
 		if (problem.settings.framework == TypeFramework.MAXCSP)
-			problem.addCtr(new CtrFalse(problem, trVars(Stream.of(list).map(x -> (XVarInteger) x).toArray(XVarInteger[]::new)), "CtrHard False for MaxCSP"));
+			problem.post(new CtrFalse(problem, trVars(Stream.of(list).map(x -> (XVarInteger) x).toArray(XVarInteger[]::new)), "CtrHard False for MaxCSP"));
 		// extension((VarInteger[]) trVars(Stream.of(list).map(x -> (XVarInteger) x).toArray(XVarInteger[]::new)), new int[][] { {} });
 		else
 			throw new RuntimeException("Constraint with only conflicts");

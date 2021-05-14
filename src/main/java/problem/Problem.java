@@ -470,7 +470,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	/**
 	 * Adds a constraint that has already been built. Should not be called when modeling. Advanced use.
 	 */
-	public final CtrAlone addCtr(Constraint c, TypeClass... classes) {
+	public final CtrAlone post(Constraint c, TypeClass... classes) {
 		// if (rs.cp.cpv.selectedVars != null) {
 		// // boolean mustDiscard = false;
 		// // if (resolution.cfg.extendSelectedVars) {
@@ -560,7 +560,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			// Constraint.putSymmetryMatching(c.key, c.defineSymmetryMatching());
 			DeducingAutomorphism automorphismIdentification = new DeducingAutomorphism(this);
 			for (Constraint c : automorphismIdentification.buildVariableSymmetriesFor(variables, features.collectedCtrsAtInit))
-				addCtr(c);
+				post(c);
 			features.addToMapForAutomorphismIdentification(automorphismIdentification);
 			symmetryGroupGenerators.addAll(automorphismIdentification.generators);
 			features.nAddedCtrs += features.collectedCtrsAtInit.size() - nBefore;
@@ -730,7 +730,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	/**** Posting Constraints */
 	/*********************************************************************************************/
 
-	public boolean isBasicType(int type) {
+	public final boolean isBasicType(int type) {
 		return type == 0;
 	}
 
@@ -887,12 +887,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 		if (head.mustPreserveUnaryConstraints()) {
 			if (!head.control.constraints.intensionToExtensionUnaryCtrs)
-				return addCtr(new Intension(this, new Variable[] { x }, tree));
+				return post(new Intension(this, new Variable[] { x }, tree));
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 			int[] conflicts = x.dom.valuesChecking(va -> evaluator.evaluate(va) != 1);
 			if (conflicts.length < x.dom.size() / 2)
-				return addCtr(new Extension1(this, x, conflicts, false));
-			return addCtr(new Extension1(this, x, x.dom.valuesChecking(va -> evaluator.evaluate(va) == 1), true));
+				return post(new Extension1(this, x, conflicts, false));
+			return post(new Extension1(this, x, x.dom.valuesChecking(va -> evaluator.evaluate(va) == 1), true));
 		}
 		TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 		x.dom.removeValuesAtConstructionTime(v -> evaluator.evaluate(v) != 1);
@@ -952,7 +952,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				}
 			}
 			if (c != null)
-				return addCtr(c);
+				return post(c);
 		}
 		if (arity == 3 && settings.primitiveTernaryInSolver) {
 			Constraint c = null;
@@ -963,7 +963,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			else if (logic_y_relop_z__eq_x.matches(tree))
 				c = PrimitiveTernaryLog.buildFrom(this, scp[2], scp[0], tree.relop(1), scp[1]);
 			if (c != null)
-				return addCtr(c);
+				return post(c);
 		}
 		if (settings.recognizeLogicInSolver) {
 			Constraint c = null;
@@ -973,7 +973,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			}
 			// TODO other cases to be implemented
 			if (c != null)
-				return addCtr(c);
+				return post(c);
 
 		}
 		// if (arity >= 2 && tree.type == OR && Stream.of(tree.sons).allMatch(son -> x_relop_k.matches(son))) {
@@ -1053,7 +1053,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		}
 
 		// System.out.println("tree2 " + tree);
-		return addCtr(new Intension(this, scp, tree));
+		return post(new Intension(this, scp, tree));
 	}
 
 	// ************************************************************************
@@ -1091,7 +1091,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrAlone extension(Variable x, int[] values, boolean positive) {
 		assert Kit.isStrictlyIncreasing(values) && IntStream.of(values).noneMatch(v -> v == STAR);
 		if (head.mustPreserveUnaryConstraints())
-			return addCtr(new Extension1(this, x, values, positive));
+			return post(new Extension1(this, x, values, positive));
 		boolean b = positive;
 		x.dom.removeValuesAtConstructionTime(v -> (Arrays.binarySearch(values, v) < 0) == b);
 		features.nRemovedUnaryCtrs++;
@@ -1100,14 +1100,14 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	public final CtrAlone extension(IVar[] scp, Object[] tuples, boolean positive, Boolean starred) {
 		if (tuples.length == 0)
-			return addCtr(positive ? new CtrFalse(this, translate(scp), "Extension with 0 support") : new CtrTrue(this, translate(scp)));
+			return post(positive ? new CtrFalse(this, translate(scp), "Extension with 0 support") : new CtrTrue(this, translate(scp)));
 		if (scp.length == 1) {
 			Kit.control(starred == null);
 			int[][] m = scp[0] instanceof VariableSymbolic ? symbolic.replaceSymbols((String[][]) tuples) : (int[][]) tuples;
 			int[] values = Stream.of(m).mapToInt(t -> t[0]).toArray();
 			return extension((Variable) scp[0], values, positive);
 		}
-		return addCtr(Extension.build(this, translate(scp), tuples, positive, starred));
+		return post(Extension.build(this, translate(scp), tuples, positive, starred));
 	}
 
 	@Override
@@ -1131,16 +1131,16 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final CtrAlone regular(Var[] list, Automaton automaton) {
-		return addCtr(new CMDD(this, translate(list), automaton));
+		return post(new CMDD(this, translate(list), automaton));
 	}
 
 	@Override
 	public final CtrAlone mdd(Var[] list, Transition[] transitions) {
-		return addCtr(new CMDD(this, translate(list), transitions));
+		return post(new CMDD(this, translate(list), transitions));
 	}
 
 	public final CtrAlone mdd(Var[] list, int[][] tuples) {
-		return addCtr(new CMDD(this, translate(list), tuples));
+		return post(new CMDD(this, translate(list), tuples));
 	}
 
 	// public final CtrAlone mddOr(Var[] scp, MDDCD[] t) {
@@ -1155,18 +1155,18 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (scp.length <= 1)
 			return ctrEntities.new CtrAloneDummy("Removed alldiff constraint with scope length = " + scp.length);
 		if (isBasicType(head.control.global.typeAllDifferent))
-			return addCtr(Variable.isPermutationElligible(scp) ? new AllDifferentPermutation(this, scp) : new AllDifferentComplete(this, scp));
+			return post(Variable.isPermutationElligible(scp) ? new AllDifferentPermutation(this, scp) : new AllDifferentComplete(this, scp));
 		if (head.control.global.typeAllDifferent == 1)
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
 				if (i < j)
-					addCtr(new SubNE2(this, scp[i], scp[j], 0));
+					post(new SubNE2(this, scp[i], scp[j], 0));
 			});
 		if (head.control.global.typeAllDifferent == 2)
-			return addCtr(new AllDifferentWeak(this, scp));
+			return post(new AllDifferentWeak(this, scp));
 		if (head.control.global.typeAllDifferent == 3)
-			return addCtr(new AllDifferentCounting(this, scp));
+			return post(new AllDifferentCounting(this, scp));
 		if (head.control.global.typeAllDifferent == 4)
-			return addCtr(new AllDifferentBound(this, scp));
+			return post(new AllDifferentBound(this, scp));
 		throw new UnsupportedOperationException();
 	}
 
@@ -1185,7 +1185,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		control(exceptValues.length >= 1 && Kit.isStrictlyIncreasing(exceptValues));
 		Variable[] scp = translate(list);
 		if (head.control.global.typeAllDifferent == 0)
-			return addCtr(new AllDifferentExceptWeak(this, scp, exceptValues));
+			return post(new AllDifferentExceptWeak(this, scp, exceptValues));
 		return forall(range(scp.length).range(scp.length), (i, j) -> {
 			if (i < j) {
 				List<int[]> conflicts = new ArrayList<>();
@@ -1207,9 +1207,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Variable[] list2 = normalized ? t2 : IntStream.range(0, t2.length).filter(i -> t1[i] != t2[i]).mapToObj(i -> t2[i]).toArray(Variable[]::new);
 
 		if (isBasicType(head.control.global.typeDistinctVectors))
-			return addCtr(new DistinctVectors(this, list1, list2));
+			return post(new DistinctVectors(this, list1, list2));
 		if (head.control.global.smartTable)
-			return addCtr(CSmart.buildDistinctVectors(this, list1, list2));
+			return post(CSmart.buildDistinctVectors(this, list1, list2));
 		return api.disjunction(IntStream.range(0, list1.length).mapToObj(i -> api.ne(list1[i], list2[i])));
 
 		// return extension(vars(list1, list2), Table.shortTuplesFordNotEqualVectors(list1, list2), true); // pb if several occurrences of the same variable
@@ -1253,7 +1253,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity allEqual(Var... scp) {
 		// using a table on large instances of Domino is very expensive; using a smart table is also very expensive
-		return addCtr(new AllEqual(this, translate(scp)));
+		return post(new AllEqual(this, translate(scp)));
 		// return addCtr(ExtensionSmart.buildAllEqual(this, translate(scp)));
 	}
 
@@ -1278,7 +1278,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity ordered(Var[] list, int[] lengths, TypeOperatorRel op) {
 		control(list.length == lengths.length + 1);
-		return forall(range(list.length - 1), i -> addCtr(PrimitiveBinarySub.buildFrom(this, (Variable) list[i], (Variable) list[i + 1], op, -lengths[i])));
+		return forall(range(list.length - 1), i -> post(PrimitiveBinarySub.buildFrom(this, (Variable) list[i], (Variable) list[i + 1], op, -lengths[i])));
 	}
 
 	/**
@@ -1289,7 +1289,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity ordered(Var[] list, Var[] lengths, TypeOperatorRel op) {
 		control(list.length == lengths.length + 1);
 		return forall(range(list.length - 1),
-				i -> addCtr(PrimitiveTernaryAdd.buildFrom(this, (Variable) list[i], (Variable) lengths[i], op, (Variable) list[i + 1])));
+				i -> post(PrimitiveTernaryAdd.buildFrom(this, (Variable) list[i], (Variable) lengths[i], op, (Variable) list[i + 1])));
 		// intension(XNodeParent.build(op.toExpr(), add(list[i], lengths[i]), list[i + 1])));
 	}
 
@@ -1299,7 +1299,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 * the relation "before" is given by the value of the specified operator that must be one value among LT, LE, GT, and GE.
 	 */
 	private final CtrAlone lexSimple(Var[] t1, Var[] t2, TypeOperatorRel op) {
-		return addCtr(Lexicographic.buildFrom(this, translate(t1), translate(t2), op));
+		return post(Lexicographic.buildFrom(this, translate(t1), translate(t2), op));
 	}
 
 	@Override
@@ -1365,11 +1365,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			boolean postTwoConstraints = false; // TODO hard coding for the moment
 			if (postTwoConstraints) {
 				if (only1) {
-					addCtr(new SumSimpleLE(this, list, limit));
-					addCtr(new SumSimpleGE(this, list, limit));
+					post(new SumSimpleLE(this, list, limit));
+					post(new SumSimpleGE(this, list, limit));
 				} else {
-					addCtr(new SumWeightedLE(this, list, coeffs, limit));
-					addCtr(new SumWeightedGE(this, list, coeffs, limit));
+					post(new SumWeightedLE(this, list, coeffs, limit));
+					post(new SumWeightedGE(this, list, coeffs, limit));
 				}
 				return null; // null because several constraints // TODO returning a special value?
 				// return addCtr(new CtrExtensionMDD(this, list, coeffs, new Range(limit, limit+1))));
@@ -1384,9 +1384,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			// : op == LE ? api.atMost(vs, 1, l) : op == GE ? api.atLeast(vs, 1, l) : op == GT ? api.atLeast(vs, 1, l + 1) : api.exactly(vs, 1, l);
 			// }
 
-			return addCtr(SumSimple.buildFrom(this, list, op, limit));
+			return post(SumSimple.buildFrom(this, list, op, limit));
 		}
-		return addCtr(SumWeighted.buildFrom(this, list, coeffs, op, limit));
+		return post(SumWeighted.buildFrom(this, list, coeffs, op, limit));
 	}
 
 	private CtrEntity sum(IVar[] list, int[] coeffs, TypeConditionOperatorRel op, long limit) {
@@ -1427,7 +1427,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			if (op == TypeConditionOperatorSet.IN) {
 				boolean mdd = false; // hard coding for the moment
 				if (mdd)
-					return addCtr(new CMDD(this, translate(list), coeffs, rightTerm));
+					return post(new CMDD(this, translate(list), coeffs, rightTerm));
 				sum(list, coeffs, GE, min);
 				sum(list, coeffs, LE, max);
 				if (condition instanceof ConditionIntset) {
@@ -1465,9 +1465,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Object rightTerm = condition.rightTerm();
 			if (condition instanceof ConditionVal && op != NE)
-				return addCtr(SumScalarBooleanCst.buildFrom(this, translate(list), translate(coeffs), op, safeInt((long) rightTerm)));
+				return post(SumScalarBooleanCst.buildFrom(this, translate(list), translate(coeffs), op, safeInt((long) rightTerm)));
 			if (condition instanceof ConditionVar && op != NE && op != EQ)
-				return addCtr(SumScalarBooleanVar.buildFrom(this, translate(list), translate(coeffs), op, (Variable) rightTerm));
+				return post(SumScalarBooleanVar.buildFrom(this, translate(list), translate(coeffs), op, (Variable) rightTerm));
 		}
 
 		Var[] aux = replaceByVariables(IntStream.range(0, list.length).mapToObj(i -> api.mul(list[i], coeffs[i])));
@@ -1490,9 +1490,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 					XNode<IVar>[] tt = Stream.of(terms).map(t -> t.obj).toArray(XNode[]::new);
 					control(Stream.of(terms).allMatch(t -> Utilities.isSafeInt(t.coeff)));
 					coeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
-					return addCtr(SumViewWeighted.buildFrom(this, tt, coeffs, op, 0));
+					return post(SumViewWeighted.buildFrom(this, tt, coeffs, op, 0));
 				} else if (condition instanceof ConditionVal) {
-					return addCtr(SumViewWeighted.buildFrom(this, trees, coeffs, op, (long) rightTerm));
+					return post(SumViewWeighted.buildFrom(this, trees, coeffs, op, (long) rightTerm));
 				}
 			}
 		}
@@ -1509,7 +1509,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			Object rightTerm = condition.rightTerm();
 			VariableInteger[] scp = (VariableInteger[]) translate(clean(list));
 			if (condition instanceof ConditionVal)
-				return addCtr(ProductSimple.buildFrom(this, scp, op, (long) rightTerm));
+				return post(ProductSimple.buildFrom(this, scp, op, (long) rightTerm));
 		}
 		return unimplemented("product");
 	}
@@ -1523,7 +1523,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			return ctrEntities.new CtrAloneDummy("atleast witk k = 0");
 		if (k == scp.length)
 			return instantiation(scp, value);
-		return k == 1 ? addCtr(new AtLeast1(this, scp, value)) : addCtr(new AtLeastK(this, scp, value, k));
+		return k == 1 ? post(new AtLeast1(this, scp, value)) : post(new AtLeastK(this, scp, value, k));
 	}
 
 	private CtrEntity atMost(VariableInteger[] scp, int value, int k) {
@@ -1531,7 +1531,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			return refutation(scp, value);
 		if (k == scp.length)
 			return ctrEntities.new CtrAloneDummy("atMost with k = scp.length");
-		return k == 1 ? addCtr(new AtMost1(this, scp, value)) : addCtr(new AtMostK(this, scp, value, k));
+		return k == 1 ? post(new AtMost1(this, scp, value)) : post(new AtMostK(this, scp, value, k));
 	}
 
 	private CtrEntity exactly(VariableInteger[] scp, int value, int k) {
@@ -1539,7 +1539,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			return refutation(scp, value);
 		if (k == scp.length)
 			return instantiation(scp, value);
-		return k == 1 ? addCtr(new Exactly1(this, scp, value)) : addCtr(new ExactlyK(this, scp, value, k));
+		return k == 1 ? post(new Exactly1(this, scp, value)) : post(new ExactlyK(this, scp, value, k));
 	}
 
 	private CtrEntity count(VariableInteger[] list, int[] values, TypeConditionOperatorRel op, long limit) {
@@ -1564,7 +1564,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			if (op == EQ) {
 				if (l == list.length)
 					return forall(range(list.length), i -> intension(XNodeParent.in(list[i], api.set(values))));
-				return addCtr(new Among(this, list, values, l));
+				return post(new Among(this, list, values, l));
 			}
 		}
 		return unimplemented("count");
@@ -1581,7 +1581,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				return count(scp, values, op, (long) rightTerm);
 			assert condition instanceof ConditionVar;
 			if (values.length == 1 && op == EQ)
-				return addCtr(new ExactlyVarK(this, scp, values[0], (Variable) rightTerm));
+				return post(new ExactlyVarK(this, scp, values[0], (Variable) rightTerm));
 		}
 		return unimplemented("count");
 	}
@@ -1607,7 +1607,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			else // condition instanceof ConditionVar
 				c = NValuesVar.buildFrom(this, scp, op, (Variable) rightTerm);
 			if (c != null)
-				return addCtr(c);
+				return post(c);
 		}
 		return unimplemented("nValues");
 	}
@@ -1634,7 +1634,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Variable[] scp = translate(clean(list));
 		if (mustBeClosed)
 			postClosed(scp, values);
-		return addCtr(new CardinalityConstant(this, scp, values, occurs));
+		return post(new CardinalityConstant(this, scp, values, occurs));
 	}
 
 	@Override
@@ -1644,13 +1644,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (mustBeClosed)
 			postClosed(scp, values);
 		// TODO should we filer variables of scp not involving values[i]?
-		return forall(range(values.length), i -> addCtr(new ExactlyVarK(this, scp, values[i], (Variable) occurs[i])));
+		return forall(range(values.length), i -> post(new ExactlyVarK(this, scp, values[i], (Variable) occurs[i])));
 	}
 
 	@Override
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, int[] occursMin, int[] occursMax) {
 		control(values.length == occursMin.length && values.length == occursMax.length);
-		return addCtr(new CardinalityConstant(this, translate(clean(list)), values, occursMin, occursMax));
+		return post(new CardinalityConstant(this, translate(clean(list)), values, occursMin, occursMax));
 	}
 
 	@Override
@@ -1703,7 +1703,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 					c = minimum ? new Minimum(this, vars, y) : new Maximum(this, vars, y);
 			}
 			if (c != null)
-				return addCtr(c);
+				return post(c);
 		}
 		return unimplemented(minimum ? "minimum" : "maximum");
 	}
@@ -1768,16 +1768,16 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private CtrAlone element(Var[] list, Var index, int value) {
 		if (head.control.global.jokerTable)
 			return extension(vars(index, list), Table.shortTuplesForElement(translate(list), (Variable) index, value), true);
-		return addCtr(new ElementConstant(this, translate(list), (Variable) index, value));
+		return post(new ElementConstant(this, translate(list), (Variable) index, value));
 	}
 
 	private CtrAlone element(Var[] list, Var index, Var value) {
 		if (head.control.global.smartTable)
-			return addCtr(CSmart.buildElement(this, translate(list), (Variable) index, (Variable) value));
+			return post(CSmart.buildElement(this, translate(list), (Variable) index, (Variable) value));
 		if (head.control.global.jokerTable)
 			return extension(Utilities.indexOf(value, list) == -1 ? vars(index, list, value) : vars(index, list),
 					Table.shortTuplesForElement(translate(list), (Variable) index, (Variable) value), true);
-		return addCtr(new ElementVariable(this, translate(list), (Variable) index, (Variable) value));
+		return post(new ElementVariable(this, translate(list), (Variable) index, (Variable) value));
 	}
 
 	@Override
@@ -1871,7 +1871,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			Var[] t = IntStream.range(0, matrix.length).mapToObj(i -> matrix[i][i]).toArray(Var[]::new);
 			return element(t, rowIndex, value);
 		}
-		return addCtr(new ElementMatrix(this, (Variable[][]) matrix, (Variable) rowIndex, (Variable) colIndex, value));
+		return post(new ElementMatrix(this, (Variable[][]) matrix, (Variable) rowIndex, (Variable) colIndex, value));
 	}
 
 	public CtrEntity element(Var[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, Condition condition) {
@@ -1906,7 +1906,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		control(Stream.of(list).noneMatch(x -> x == null) && startIndex == 0);
 		control(Variable.areAllInitiallyBoolean((Variable[]) list) && ((Variable) value).dom.areInitValuesExactly(range(list.length)));
 		// exactly((VariableInteger[]) list, 1, 1); // TODO what would be the benefit of posting it?
-		return forall(range(list.length), i -> addCtr(new LogEQ2(this, (Variable) list[i], (Variable) value, i))); // intension(iff(list[i], eq(value, i))));
+		return forall(range(list.length), i -> post(new LogEQ2(this, (Variable) list[i], (Variable) value, i))); // intension(iff(list[i], eq(value, i))));
 	}
 
 	// ************************************************************************
@@ -1925,40 +1925,51 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	// ***** Constraint noOverlap
 	// ************************************************************************
 
-	private CtrAlone noOverlap(Var x1, Var x2, int w1, int w2) {
-		if (isBasicType(head.control.global.typeNoOverlap))
-			return addCtr(new Disjonctive(this, (Variable) x1, w1, (Variable) x2, w2));
-		if (head.control.global.typeNoOverlap == 2)
-			return (CtrAlone) intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1)));
-		if (head.control.global.typeNoOverlap == 10) // rs.cp.global.smartTable)
-			return addCtr(CSmart.buildNoOverlap(this, (Variable) x1, (Variable) x2, w1, w2));
-		return (CtrAlone) Kit.exit("Bad value for the choice of the propagator");
-	}
-
-	@Override
+	/**
+	 * 1-dimensional no-overlap
+	 * 
+	 * About redundant constraints:
+	 * 
+	 * a) posting allDifferent(origins) really seems uninteresting (too weak)
+	 * 
+	 * b) posting cumulative(origins, lengths, null, Kit.repeat(1, origins.length), api.condition(LE, 1)) does not seem to be very interesting. To be checked!
+	 */
 	public final CtrEntity noOverlap(Var[] origins, int[] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
-		// a) allDifferent(origins); // posting this redundant constraint really seems to be uninteresting (too weak)
-		// b) is it interesting to post a cumulative? not quite sure
-		// cumulative(origins, lengths, null, Kit.repeat(1, origins.length), api.condition(TypeConditionOperatorRel.LE, 1));
-
 		if (head.control.global.redundNoOverlap == 1) { // we post redundant constraints (after introducing auxiliary variables)
 			Var[] aux = newAuxVarArray(origins.length, range(origins.length));
 			allDifferent(aux);
-			forall(range(origins.length).range(origins.length), (i, j) -> {
-				if (i < j)
+			for (int i = 0; i < origins.length; i++)
+				for (int j = i + 1; j < origins.length; j++)
 					intension(iff(le(aux[i], aux[j]), le(origins[i], origins[j])));
-			});
 		}
-		return forall(range(origins.length).range(origins.length), (i, j) -> {
-			if (i < j)
-				noOverlap(origins[i], origins[j], lengths[i], lengths[j]);
-		});
+		for (int i = 0; i < origins.length; i++)
+			for (int j = i + 1; j < origins.length; j++) {
+				Variable xi = (Variable) origins[i], xj = (Variable) origins[j];
+				int li = lengths[i], lj = lengths[j];
+				if (head.control.global.typeNoOverlap == 0)
+					post(new Disjonctive(this, xi, li, xj, lj));
+				else if (head.control.global.typeNoOverlap == 2)
+					intension(or(le(add(xi, li), xj), le(add(xj, lj), xi)));
+				else if (head.control.global.typeNoOverlap == 10) // rs.cp.global.smartTable)
+					post(CSmart.buildNoOverlap(this, xi, xj, li, lj));
+				else
+					Kit.exit("Bad value for the choice of the propagator");
+				// noOverlap(origins[i], origins[j], lengths[i], lengths[j]);
+			}
+		return null;
 	}
 
 	@Override
 	public final CtrEntity noOverlap(Var[] origins, Var[] lengths, boolean zeroIgnored) {
-		return unimplemented("noOverlap");
+		unimplementedIf(!zeroIgnored, "noOverlap");
+		for (int i = 0; i < origins.length; i++)
+			for (int j = i + 1; j < origins.length; j++) {
+				Variable xi = (Variable) origins[i], xj = (Variable) origins[j];
+				Variable li = (Variable) lengths[i], lj = (Variable) lengths[j];
+				intension(or(le(add(xi, li), xj), le(add(xj, lj), xi))); // TODO a smart table version as alternative?
+			}
+		return null;
 	}
 
 	private void addNonOverlapTuplesFor(List<int[]> list, Domain dom1, Domain dom2, int offset, boolean first, boolean xAxis) {
@@ -1982,39 +1993,48 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return Kit.intArray2D(list);
 	}
 
-	private CtrAlone noOverlap(Variable x1, Variable x2, Variable y1, Variable y2, int w1, int w2, int h1, int h2) {
-		if (head.control.global.smartTable)
-			return addCtr(CSmart.buildNoOverlap(this, x1, y1, x2, y2, w1, h1, w2, h2));
-		if (head.control.global.jokerTable)
-			return extension(vars(x1, x2, y1, y2), computeTable(x1, x2, y1, y2, w1, w2, h1, h2), true, true);
-		return (CtrAlone) intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1), le(add(y1, h1), y2), le(add(y2, h2), y1)));
-	}
-
 	@Override
 	public final CtrEntity noOverlap(Var[][] origins, int[][] lengths, boolean zeroIgnored) {
-		// Kit.control(Kit.isRectangular(origins) && Kit.isRectangular(lengths) )
 		unimplementedIf(!zeroIgnored, "noOverlap");
-		return forall(range(origins.length).range(origins.length), (i, j) -> {
-			if (i < j)
-				noOverlap((Variable) origins[i][0], (Variable) origins[j][0], (Variable) origins[i][1], (Variable) origins[j][1], lengths[i][0], lengths[j][0],
-						lengths[i][1], lengths[j][1]);
-		});
-	}
+		if (head.control.global.redundNoOverlap == 1) { // we post two redundant cumulative constraints
+			Var[] ox = Stream.of(origins).map(t -> t[0]).toArray(Var[]::new), oy = Stream.of(origins).map(t -> t[1]).toArray(Var[]::new);
+			int[] tx = Stream.of(lengths).mapToInt(t -> t[0]).toArray(), ty = Stream.of(lengths).mapToInt(t -> t[1]).toArray();
+			int minX = Stream.of(ox).mapToInt(x -> ((Variable) x).dom.firstValue()).min().orElseThrow();
+			int maxX = IntStream.range(0, ox.length).map(i -> ((Variable) ox[i]).dom.lastValue() + tx[i]).max().orElseThrow();
+			int minY = Stream.of(oy).mapToInt(x -> ((Variable) x).dom.firstValue()).min().orElseThrow();
+			int maxY = IntStream.range(0, oy.length).map(i -> ((Variable) oy[i]).dom.lastValue() + ty[i]).max().orElseThrow();
+			// System.out.println("hhhhh " + minX + " " + maxX + " " + minY + " " + maxY);
+			cumulative(ox, tx, null, ty, api.condition(LE, maxY - minY));
+			cumulative(oy, ty, null, tx, api.condition(LE, maxX - minX));
+		}
 
-	private CtrAlone noOverlap(Variable x1, Variable x2, Variable y1, Variable y2, Variable w1, Variable w2, Variable h1, Variable h2) {
-		if (head.control.global.smartTable && Stream.of(w1, w2, h1, h2).allMatch(x -> x.dom.initSize() == 2))
-			return addCtr(CSmart.buildNoOverlap(this, x1, y1, x2, y2, w1, h1, w2, h2));
-		return (CtrAlone) intension(or(le(add(x1, w1), x2), le(add(x2, w2), x1), le(add(y1, h1), y2), le(add(y2, h2), y1)));
+		for (int i = 0; i < origins.length; i++)
+			for (int j = i + 1; j < origins.length; j++) {
+				Variable xi = (Variable) origins[i][0], xj = (Variable) origins[j][0], yi = (Variable) origins[i][1], yj = (Variable) origins[j][1];
+				int wi = lengths[i][0], wj = lengths[j][0], hi = lengths[i][1], hj = lengths[j][1];
+				if (head.control.global.smartTable)
+					post(CSmart.buildNoOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
+				else if (head.control.global.jokerTable)
+					extension(vars(xi, xj, yi, yj), computeTable(xi, xj, yi, yj, wi, wj, hi, hj), true, true);
+				else
+					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
+			}
+		return null;
 	}
 
 	@Override
 	public final CtrEntity noOverlap(Var[][] origins, Var[][] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
-		return forall(range(origins.length).range(origins.length), (i, j) -> {
-			if (i < j)
-				noOverlap((Variable) origins[i][0], (Variable) origins[j][0], (Variable) origins[i][1], (Variable) origins[j][1], (Variable) lengths[i][0],
-						(Variable) lengths[j][0], (Variable) lengths[i][1], (Variable) lengths[j][1]);
-		});
+		for (int i = 0; i < origins.length; i++)
+			for (int j = i + 1; j < origins.length; j++) {
+				Variable xi = (Variable) origins[i][0], xj = (Variable) origins[j][0], yi = (Variable) origins[i][1], yj = (Variable) origins[j][1];
+				Variable wi = (Variable) lengths[i][0], wj = (Variable) lengths[j][0], hi = (Variable) lengths[i][1], hj = (Variable) lengths[j][1];
+				if (head.control.global.smartTable && Stream.of(wi, wj, hi, hj).allMatch(x -> x.dom.initSize() == 2))
+					post(CSmart.buildNoOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
+				else
+					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
+			}
+		return null;
 	}
 
 	// ************************************************************************
@@ -2027,7 +2047,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			return addCtr(new Cumulative(this, translate(origins), lengths, heights, op == LT ? limit + 1 : limit));
+			return post(new Cumulative(this, translate(origins), lengths, heights, op == LT ? limit + 1 : limit));
 		}
 		return unimplemented("cumulative");
 	}
@@ -2060,7 +2080,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
 			// return addCtr(new BinPackingSimple(this, translate(list), sizes, limit - (op == LT ? 1 : 0)));
-			return addCtr(new BinPacking2(this, vars, sizes, limit - (op == LT ? 1 : 0))); // TODO add nValues ? other ?
+			return post(new BinPacking2(this, vars, sizes, limit - (op == LT ? 1 : 0))); // TODO add nValues ? other ?
 		}
 		return unimplemented("binPacking");
 	}
@@ -2072,7 +2092,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public CtrEntity circuit(Var[] list, int startIndex) {
 		unimplementedIf(startIndex != 0, "circuit");
-		return addCtr(new Circuit(this, translate(list)));
+		return post(new Circuit(this, translate(list)));
 	}
 
 	@Override
@@ -2159,7 +2179,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	/** Builds and returns a smart constraint. */
 	public final CtrAlone smart(IVar[] scp, SmartTuple... smartTuples) {
-		return addCtr(new CSmart(this, translate(scp), smartTuples));
+		return post(new CSmart(this, translate(scp), smartTuples));
 	}
 
 	// ************************************************************************
@@ -2198,22 +2218,22 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			control(obj.generalizable());
 			if (opt == MINIMIZE) {
 				if (obj == SUM)
-					addCtr(new SumSimpleLE(this, list, limit));
+					post(new SumSimpleLE(this, list, limit));
 				else if (obj == MINIMUM)
-					addCtr(new MinimumCstLE(this, list, limit));
+					post(new MinimumCstLE(this, list, limit));
 				else if (obj == MAXIMUM)
 					forall(range(list.length), i -> lessEqual(list[i], limit));
 				else
-					addCtr(new NValuesCstLE(this, list, limit));
+					post(new NValuesCstLE(this, list, limit));
 			} else {
 				if (obj == SUM)
-					addCtr(new SumSimpleGE(this, list, limit));
+					post(new SumSimpleGE(this, list, limit));
 				else if (obj == MINIMUM)
 					forall(range(list.length), i -> greaterEqual(list[i], limit));
 				else if (obj == MAXIMUM)
-					addCtr(new MaximumCstGE(this, list, limit));
+					post(new MaximumCstGE(this, list, limit));
 				else
-					addCtr(new NValuesCstGE(this, list, limit));
+					post(new NValuesCstGE(this, list, limit));
 			}
 		}
 		return true;

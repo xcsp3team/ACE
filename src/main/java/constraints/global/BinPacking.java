@@ -22,7 +22,7 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-// Problems in PyCSP3: BinPacking2.py and NursingWorkload and TestBinpacking (dans special)
+// Problems in PyCSP3 to be tested: BinPacking2.py and NursingWorkload and TestBinpacking (dans special)
 
 public abstract class BinPacking extends CtrGlobal implements TagNotAC { // not call filtering-complete
 
@@ -114,7 +114,7 @@ public abstract class BinPacking extends CtrGlobal implements TagNotAC { // not 
 		private static class Bin {
 			int index;
 			int capacity; // the capacity is updated when possible (when an object is guaranteed to be in it)
-			int lost; // used when reasoning energetically
+			int lost; // only used when reasoning energetically
 
 			void set(int i, int c) {
 				this.index = i;
@@ -280,9 +280,7 @@ public abstract class BinPacking extends CtrGlobal implements TagNotAC { // not 
 				return true;
 
 			// we discard bins that are now identified as useless because we cannot even put the smallest item in it
-			for (int j = usableBins.limit; j >= 0; j--) { // for being able to break, we should go from 0 to ..., but removing an element in usableBins could be
-															// a
-															// pb
+			for (int j = usableBins.limit; j >= 0; j--) { // for breaking, we should go from 0 to ..., but removing an element in usableBins could be a pb
 				int i = sortedBins[j].index;
 				assert usableBins.isPresent(i);
 				if (sortedBins[j].capacity < sizes[smallestFreeItem] || i > maxUsableBin || i < minUsableBin)
