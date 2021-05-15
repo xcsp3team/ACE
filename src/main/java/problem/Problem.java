@@ -143,6 +143,7 @@ import constraints.global.NValues.NValuesCst;
 import constraints.global.NValues.NValuesCst.NValuesCstGE;
 import constraints.global.NValues.NValuesCst.NValuesCstLE;
 import constraints.global.NValues.NValuesVar;
+import constraints.global.NoOverlap;
 import constraints.global.Product.ProductSimple;
 import constraints.global.Sum.SumSimple;
 import constraints.global.Sum.SumSimple.SumSimpleGE;
@@ -2006,6 +2007,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			// System.out.println("hhhhh " + minX + " " + maxX + " " + minY + " " + maxY);
 			cumulative(ox, tx, null, ty, api.condition(LE, maxY - minY));
 			cumulative(oy, ty, null, tx, api.condition(LE, maxX - minX));
+
+			post(new NoOverlap(this, translate(ox), tx, translate(oy), ty));
 		}
 
 		for (int i = 0; i < origins.length; i++)

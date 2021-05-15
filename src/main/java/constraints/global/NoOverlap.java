@@ -13,14 +13,16 @@ import org.xcsp.common.Utilities;
 import constraints.Constraint.CtrGlobal;
 import interfaces.Tags.TagNotAC;
 import problem.Problem;
+import sets.SetDense;
+import variables.Domain;
 import variables.Variable;
 
 public final class NoOverlap extends CtrGlobal implements TagNotAC {
 
 	@Override
 	public boolean checkValues(int[] tuple) {
-		for (int i = 0; i < x.length; i++)
-			for (int j = i + 1; j < x.length; j++) {
+		for (int i = 0; i < half; i++)
+			for (int j = i + 1; j < half; j++) {
 				int xi = tuple[i], xj = tuple[j], yi = tuple[i + half], yj = tuple[j + half];
 				if (!(xi + widths[i] <= xj || xj + widths[j] <= xi || yi + heights[i] <= yj || yj + heights[j] <= yi))
 					return false;
@@ -28,31 +30,104 @@ public final class NoOverlap extends CtrGlobal implements TagNotAC {
 		return true;
 	}
 
-	private Variable[] x;
-	int[] widths;
-	Variable[] y;
-	int[] heights;
+	private Variable[] xs;
+	private int[] widths;
+	private Variable[] ys;
+	private int[] heights;
 
-	int half;
+	private int half;
 
-	public NoOverlap(Problem pb, Variable[] x, int[] widths, Variable[] y, int[] heights) {
-		super(pb, Utilities.collect(Variable.class, x, y));
-		control(x.length > 1 && x.length == widths.length && y.length == heights.length && x.length == y.length);
-		control(scp.length == x.length + y.length);
-		this.x = x;
+	private SetDense overlappings;
+
+	public NoOverlap(Problem pb, Variable[] xs, int[] widths, Variable[] ys, int[] heights) {
+		super(pb, Utilities.collect(Variable.class, xs, ys));
+		control(xs.length > 1 && xs.length == widths.length && ys.length == heights.length && xs.length == ys.length);
+		control(scp.length == xs.length + ys.length);
+		this.xs = xs;
 		this.widths = widths;
-		this.y = y;
+		this.ys = ys;
 		this.heights = heights;
-		this.half = x.length;
+		this.half = xs.length;
+		this.overlappings = new SetDense(half);
+	}
+
+	private boolean overlap(int a, Domain dom, int b) {
+
+		return a > dom.lastValue() && dom.firstValue() > b;
+	}
+
+	// optimizations are possible ; to be done
+	public boolean filter(Variable[] x1, int[] t1, Variable[] x2, int[] t2) {
+		for (int i = 0; i < half; i++) {
+			Domain dom1 = x1[i].dom;
+			extern: for (int a = dom1.first(); a != -1; a = dom1.next(a)) {
+				int v = dom1.toVal(a);
+				overlappings.clear();
+				for (int j = 0; j < half; j++)
+					if (j != i && overlap(v + t1[i], x1[j].dom, v - t1[j]))
+						overlappings.add(j);
+				if (overlappings.size() == 0)
+					continue;
+				if (overlappings.size() == 1) {
+					int j = overlappings.dense[0];
+					if (!overlap(x2[i].dom.firstValue() + t2[i], x2[j].dom, x2[i].dom.lastValue() - t2[j]))
+						continue;
+				} else {
+					// we now look for a common supporting value in the domain of x2[i]
+					// a kind of k-wise consistency is used (see paper about sweep for information about the principle)
+					// also, a local form of energetic reasoning is used
+					Domain dom2 = x2[i].dom;
+					intern: for (int b = dom2.first(); b != -1; b = dom2.next(b)) {
+						long volume = 0;
+						int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+						int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+						// int smallestX = Integer.MAX_VALUE, smallestY = Integer.MAX_VALUE;
+						int w = dom2.toVal(b);
+						for (int k = overlappings.limit; k >= 0; k--) {
+							int j = overlappings.dense[k];
+							if (overlap(w + t2[i], x2[j].dom, w - t2[j]))
+								continue intern;
+							minX = Math.min(minX, x1[j].dom.firstValue());
+							minY = Math.min(minY, x2[j].dom.firstValue());
+							maxX = Math.max(maxX, x1[j].dom.lastValue() + t1[j]);
+							maxY = Math.max(maxY, x2[j].dom.lastValue() + t2[j]);
+							// smallestX = Math.min(smallestX, t1[j]);
+							// smallestY = Math.min(smallestY, t2[j]);
+							volume += t1[j] * t2[j];
+						}
+						int diffX = maxX - minX + 1, diffY = maxY - minY + 1;
+						// we can remove up to t2[i] at diffY because there may be no possible overlapping on x along this height
+						if (w < minY && minY < w + t2[i])
+							diffY -= Math.min(maxY, w + t2[i]) - minY;
+						else if (minY <= w && w < maxY)
+							diffY -= Math.min(maxY, w + t2[i]) - w;
+						// System.out.println("diffX=" + diffX + " diffY=" + diffY + " sX=" + smallestX + "sY=" + smallestY);
+						// long surface = (diffY - (diffY % smallestY)) * (diffX - (diffX % smallestX));
+						if (volume > diffX * diffY) {
+							// System.out.println("volume " + volume + " size=" + set.size() + " surface=" + surface + " xi=" + v + " yi=" + w);
+							// for (int k = set.limit; k >= 0; k--) {
+							// int j = set.dense[k];
+							// System.out.println("xi=" + j + " " + x1[j].dom.firstValue() + ".." + x1[j].dom.lastValue() + " (" + t1[j] + ")");
+							// System.out.println("yj=" + j + " " + x2[j].dom.firstValue() + ".." + x2[j].dom.lastValue() + " (" + t2[j] + ")");
+							// }
+							// System.out.println("minX=" + minX + " maxX=" + maxX + " minY=" + minY + " maxY=" + maxY + " t2i=" + t2[i]);
+
+							continue intern;
+						}
+						continue extern; // because found support
+					}
+				}
+				if (dom1.remove(a) == false) {
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 
 	@Override
 	public boolean runPropagator(Variable x) {
-		return true;
+		return filter(xs, widths, ys, heights) && filter(ys, heights, xs, widths);
 	}
-
-	// public String toString() {
-	// return "constraint cumulative: " + Kit.join(scp) + " lengths=" + Kit.join(this.lengths) + " heights=" + Kit.join(heights) + " limit=" + limit;
-	// }
 
 }
