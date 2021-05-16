@@ -294,29 +294,29 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 
 	public static final class Disjonctive extends PrimitiveBinary {
 
-		final int kx, ky;
+		final int wx, wy;
 
 		@Override
 		public boolean checkValues(int[] t) {
-			return t[0] + kx <= t[1] || t[1] + ky <= t[0];
+			return t[0] + wx <= t[1] || t[1] + wy <= t[0];
 		}
 
 		@Override
 		public Boolean isSymmetric() {
-			return kx == ky;
+			return wx == wy;
 		}
 
-		public Disjonctive(Problem pb, Variable x, int kx, Variable y, int ky) {
+		public Disjonctive(Problem pb, Variable x, int wx, Variable y, int wy) {
 			super(pb, x, y);
-			this.kx = kx;
-			this.ky = ky;
-			defineKey(kx, ky);
+			this.wx = wx;
+			this.wy = wy;
+			defineKey(wx, wy);
 		}
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			return dx.removeValuesInRange(dy.lastValue() - kx + 1, dy.firstValue() + ky)
-					&& dy.removeValuesInRange(dx.lastValue() - ky + 1, dx.firstValue() + kx);
+			return dx.removeValuesInRange(dy.lastValue() - wx + 1, dy.firstValue() + wy)
+					&& dy.removeValuesInRange(dx.lastValue() - wy + 1, dx.firstValue() + wx);
 		}
 	}
 

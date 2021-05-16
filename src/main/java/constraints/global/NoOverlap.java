@@ -52,7 +52,6 @@ public final class NoOverlap extends CtrGlobal implements TagNotAC {
 	}
 
 	private boolean overlap(int a, Domain dom, int b) {
-
 		return a > dom.lastValue() && dom.firstValue() > b;
 	}
 
@@ -62,6 +61,7 @@ public final class NoOverlap extends CtrGlobal implements TagNotAC {
 			Domain dom1 = x1[i].dom;
 			extern: for (int a = dom1.first(); a != -1; a = dom1.next(a)) {
 				int v = dom1.toVal(a);
+				// we only keep overlapping tasks wrt the first axis
 				overlappings.clear();
 				for (int j = 0; j < half; j++)
 					if (j != i && overlap(v + t1[i], x1[j].dom, v - t1[j]))
@@ -73,7 +73,7 @@ public final class NoOverlap extends CtrGlobal implements TagNotAC {
 					if (!overlap(x2[i].dom.firstValue() + t2[i], x2[j].dom, x2[i].dom.lastValue() - t2[j]))
 						continue;
 				} else {
-					// we now look for a common supporting value in the domain of x2[i]
+					// we now look for a common supporting value in the domain of x2[i] that is compatible with first axis overlapping boxes
 					// a kind of k-wise consistency is used (see paper about sweep for information about the principle)
 					// also, a local form of energetic reasoning is used
 					Domain dom2 = x2[i].dom;

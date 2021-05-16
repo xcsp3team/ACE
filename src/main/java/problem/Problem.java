@@ -155,6 +155,7 @@ import constraints.global.Sum.SumWeighted.SumWeightedLE;
 import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
 import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
 import constraints.intension.Intension;
+import constraints.intension.Primitive.Disjonctive2D;
 import constraints.intension.PrimitiveBinary.Disjonctive;
 import constraints.intension.PrimitiveBinary.PrimitiveBinaryEQWithUnaryOperator;
 import constraints.intension.PrimitiveBinary.PrimitiveBinaryLog;
@@ -2007,7 +2008,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			// System.out.println("hhhhh " + minX + " " + maxX + " " + minY + " " + maxY);
 			cumulative(ox, tx, null, ty, api.condition(LE, maxY - minY));
 			cumulative(oy, ty, null, tx, api.condition(LE, maxX - minX));
-
 			post(new NoOverlap(this, translate(ox), tx, translate(oy), ty));
 		}
 
@@ -2018,9 +2018,10 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				if (head.control.global.smartTable)
 					post(CSmart.buildNoOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				else if (head.control.global.jokerTable)
-					extension(vars(xi, xj, yi, yj), computeTable(xi, xj, yi, yj, wi, wj, hi, hj), true, true);
+					extension(vars(xi, xj, yi, yj), computeTable(xi, xj, yi, yj, wi, wj, hi, hj), true, true); // seems to be rather efficient
 				else
-					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
+					post(new Disjonctive2D(this, xi, xj, yi, yj, wi, wj, hi, hj));
+				// intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi))); // VERY expensive
 			}
 		return null;
 	}
