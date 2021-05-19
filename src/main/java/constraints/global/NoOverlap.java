@@ -60,8 +60,8 @@ public final class NoOverlap extends CtrGlobal implements TagNotAC {
 		for (int i = 0; i < half; i++) {
 			Domain dom1 = x1[i].dom;
 			extern: for (int a = dom1.first(); a != -1; a = dom1.next(a)) {
-				int v = dom1.toVal(a);
-				// we only keep overlapping tasks wrt the first axis
+				int v = dom1.toVal(a); // we are going to look for a support of (x1[i],v)
+				// we compute the set of tasks overlapping on the first axis wrt (x1[i],v)
 				overlappings.clear();
 				for (int j = 0; j < half; j++)
 					if (j != i && overlap(v + t1[i], x1[j].dom, v - t1[j]))
@@ -72,8 +72,9 @@ public final class NoOverlap extends CtrGlobal implements TagNotAC {
 					int j = overlappings.dense[0];
 					if (!overlap(x2[i].dom.firstValue() + t2[i], x2[j].dom, x2[i].dom.lastValue() - t2[j]))
 						continue;
+					// otherwise it means that overlapping is present on both dimensions (so, there is no support for (x1[i],v))
 				} else {
-					// we now look for a common supporting value in the domain of x2[i] that is compatible with first axis overlapping boxes
+					// we now look for a value w in the domain of x2[i] that is compatible with first axis overlapping boxes
 					// a kind of k-wise consistency is used (see paper about sweep for information about the principle)
 					// also, a local form of energetic reasoning is used
 					Domain dom2 = x2[i].dom;
@@ -81,18 +82,15 @@ public final class NoOverlap extends CtrGlobal implements TagNotAC {
 						long volume = 0;
 						int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
 						int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
-						// int smallestX = Integer.MAX_VALUE, smallestY = Integer.MAX_VALUE;
 						int w = dom2.toVal(b);
 						for (int k = overlappings.limit; k >= 0; k--) {
 							int j = overlappings.dense[k];
 							if (overlap(w + t2[i], x2[j].dom, w - t2[j]))
-								continue intern;
+								continue intern; // to try another value w
 							minX = Math.min(minX, x1[j].dom.firstValue());
 							minY = Math.min(minY, x2[j].dom.firstValue());
 							maxX = Math.max(maxX, x1[j].dom.lastValue() + t1[j]);
 							maxY = Math.max(maxY, x2[j].dom.lastValue() + t2[j]);
-							// smallestX = Math.min(smallestX, t1[j]);
-							// smallestY = Math.min(smallestY, t2[j]);
 							volume += t1[j] * t2[j];
 						}
 						int diffX = maxX - minX + 1, diffY = maxY - minY + 1;
@@ -101,9 +99,7 @@ public final class NoOverlap extends CtrGlobal implements TagNotAC {
 							diffY -= Math.min(maxY, w + t2[i]) - minY;
 						else if (minY <= w && w < maxY)
 							diffY -= Math.min(maxY, w + t2[i]) - w;
-						// System.out.println("diffX=" + diffX + " diffY=" + diffY + " sX=" + smallestX + "sY=" + smallestY);
-						// long surface = (diffY - (diffY % smallestY)) * (diffX - (diffX % smallestX));
-						if (volume > diffX * diffY) {
+						if (volume > diffX * diffY) { // not enough room for the items
 							// System.out.println("volume " + volume + " size=" + set.size() + " surface=" + surface + " xi=" + v + " yi=" + w);
 							// for (int k = set.limit; k >= 0; k--) {
 							// int j = set.dense[k];
@@ -111,15 +107,14 @@ public final class NoOverlap extends CtrGlobal implements TagNotAC {
 							// System.out.println("yj=" + j + " " + x2[j].dom.firstValue() + ".." + x2[j].dom.lastValue() + " (" + t2[j] + ")");
 							// }
 							// System.out.println("minX=" + minX + " maxX=" + maxX + " minY=" + minY + " maxY=" + maxY + " t2i=" + t2[i]);
-
-							continue intern;
+							continue intern; // to try another value w
 						}
 						continue extern; // because found support
 					}
 				}
-				if (dom1.remove(a) == false) {
+				// at this step, no support has been found
+				if (dom1.remove(a) == false)
 					return false;
-				}
 			}
 		}
 		return true;

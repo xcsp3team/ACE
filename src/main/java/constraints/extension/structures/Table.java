@@ -33,8 +33,12 @@ import variables.Variable;
 public class Table extends ExtensionStructure {
 
 	/**********************************************************************************************
-	 * Static
+	 * Static Methods for Starred Tables
 	 *********************************************************************************************/
+
+	private static int[] tuple(int value, int... otherValues) {
+		return IntStream.range(0, otherValues.length + 1).map(i -> i == 0 ? value : otherValues[i - 1]).toArray();
+	}
 
 	public static int[][] shortTuplesForElement(Variable[] list, Variable index, int value) {
 		Kit.control(Variable.areAllDistinct(list) && !Kit.isPresent(index, list));
@@ -67,12 +71,12 @@ public class Table extends ExtensionStructure {
 		return Kit.intArray2D(tuples);
 	}
 
-	private static Map<String, int[][]> map = new HashMap<String, int[][]>();
+	private static Map<String, int[][]> cache = new HashMap<String, int[][]>();
 
-	public static int[][] shortTuplesFordNotEqualVectors(Variable[] t1, Variable[] t2) {
+	public static int[][] shortTuplesForDistinctVectors(Variable[] t1, Variable[] t2) {
 		Kit.control(t1.length == t2.length);
-		String key = "NotAllEqualVector " + Variable.signatureFor(t1) + " " + Variable.signatureFor(t2);
-		int[][] tuples = map.get(key);
+		String key = "DistinctVectors " + Variable.signatureFor(t1) + " " + Variable.signatureFor(t2);
+		int[][] tuples = cache.get(key);
 		if (tuples == null) {
 			int k = t1.length;
 			List<int[]> list = new ArrayList<int[]>();
@@ -92,7 +96,7 @@ public class Table extends ExtensionStructure {
 				}
 			}
 			tuples = Kit.intArray2D(list);
-			map.put(key, tuples);
+			cache.put(key, tuples);
 		}
 		return tuples;
 	}
@@ -100,7 +104,7 @@ public class Table extends ExtensionStructure {
 	public static int[][] shortTuplesForLexicographicLt(Problem problem, Variable[] t1, Variable[] t2) {
 		Kit.control(t1.length == t2.length);
 		String key = "LexicographicLt " + Variable.signatureFor(t1) + " " + Variable.signatureFor(t2);
-		int[][] tuples = map.get(key);
+		int[][] tuples = cache.get(key);
 		if (tuples == null) {
 			int k = t1.length;
 			List<int[]> list = new ArrayList<int[]>();
@@ -120,9 +124,30 @@ public class Table extends ExtensionStructure {
 				}
 			}
 			tuples = Kit.intArray2D(list);
-			map.put(key, tuples);
+			cache.put(key, tuples);
 		}
 		return tuples;
+	}
+
+	private static void addNonOverlappingTuplesFor(List<int[]> list, Domain dom1, Domain dom2, int offset, boolean first, boolean xAxis) {
+		for (int a = dom1.first(); a != -1; a = dom1.next(a)) {
+			int va = dom1.toVal(a);
+			for (int b = dom2.last(); b != -1; b = dom2.prev(b)) {
+				int vb = dom2.toVal(b);
+				if (va + offset > vb)
+					break;
+				list.add(xAxis ? tuple(first ? va : vb, first ? vb : va, STAR, STAR) : tuple(STAR, STAR, first ? va : vb, first ? vb : va));
+			}
+		}
+	}
+
+	public static int[][] shortTuplesForNoOverlap(Variable x1, Variable x2, Variable y1, Variable y2, int w1, int w2, int h1, int h2) {
+		List<int[]> list = new ArrayList<int[]>();
+		addNonOverlappingTuplesFor(list, x1.dom, x2.dom, w1, true, true);
+		addNonOverlappingTuplesFor(list, x2.dom, x1.dom, w2, false, true);
+		addNonOverlappingTuplesFor(list, y1.dom, y2.dom, h1, true, false);
+		addNonOverlappingTuplesFor(list, y2.dom, y1.dom, h2, false, false);
+		return Kit.intArray2D(list);
 	}
 
 	/**********************************************************************************************

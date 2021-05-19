@@ -40,10 +40,6 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 				return false;
 		}
 		return true;
-		// int min = IntStream.of(tuple).min().getAsInt();
-		// int max = IntStream.range(0, tuple.length).map(i -> tuple[i] + widths[i]).max().getAsInt();
-		// return IntStream.rangeClosed(min, max)
-		// .allMatch(t -> IntStream.range(0, tuple.length).filter(i -> tuple[i] <= t && t < tuple[i] + widths[i]).map(i -> heights[i]).sum() <= limit);
 	}
 
 	@Override
@@ -62,19 +58,17 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 	private int limit;
 
 	private SetSparse ticks;
-
 	private int[] offsets;
 
 	private Slot[] slots;
-
 	private int nSlots;
 
 	private SetSparseReversible relevantTasks; // currently relevant tasks (called omega in the CP paper)
 
-	private int[] sortedScpIndexes;
-
 	private long volume;
 	private long margin;
+
+	private HeightReasoner heightReasoner;
 
 	private static class Slot {
 		int start, end, height;
@@ -85,6 +79,91 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 		}
 	}
 
+	private class HeightReasoner {
+		private int[] sortedPositions; // according to heights
+
+		private int largestHeight;
+		private int[] smallestHeights; // up to 3 values
+
+		HeightReasoner() {
+			Integer[] t = IntStream.range(0, scp.length).boxed().toArray(Integer[]::new);
+			Arrays.sort(t, (i1, i2) -> heights[i1] > heights[i2] ? -1 : heights[i1] < heights[i2] ? 1 : 0);
+			this.sortedPositions = Stream.of(t).mapToInt(i -> i).toArray();
+
+			int highest = heights[sortedPositions[0]], lowest = heights[sortedPositions[scp.length - 1]];
+			int smallestHeightsLimit = highest - lowest >= 3 ? 3 : highest > lowest ? 2 : 1;
+			this.smallestHeights = new int[smallestHeightsLimit];
+		}
+
+		private int largestHeightIndex() {
+			for (int i = 0; i < sortedPositions.length; i++)
+				if (scp[sortedPositions[i]].dom.size() > 1)
+					return i;
+			return -1;
+		}
+
+		private void findSmallestHeights() {
+			int cnt = 0;
+			for (int i = sortedPositions.length - 1; i >= 0; i--)
+				if (scp[sortedPositions[i]].dom.size() > 1) {
+					smallestHeights[cnt++] = heights[sortedPositions[i]];
+					if (cnt == smallestHeights.length)
+						break;
+				}
+			// if not enough heights, we copy the last one to fill up the array
+			for (int k = cnt; k < smallestHeights.length; k++)
+				smallestHeights[k] = smallestHeights[cnt - 1];
+		}
+
+		private Boolean reason() {
+			int largest = largestHeightIndex();
+			if (largest == -1)
+				return Boolean.TRUE; // because everything is fixed
+			findSmallestHeights();
+			// reasoning with slots and the largest available height
+			int li = sortedPositions[largest];
+			largestHeight = heights[li];
+			for (int k = nSlots - 1; k >= 0; k--) {
+				int gap = limit - slots[k].height;
+				if (gap <= largestHeight)
+					break;
+				int diff = gap - largestHeight;
+				if (smallestHeights[0] > diff && margin - diff * (slots[k].end - slots[k].start + 1) < 0)
+					if (scp[li].dom.removeValuesInRange(slots[k].start - widths[li] + 1, slots[k].end) == false)
+						return Boolean.FALSE;
+			}
+			// reasoning with slots and the smallest available heights
+			int s1 = smallestHeights[0], s2 = smallestHeights.length <= 1 ? s1 : smallestHeights[1], s3 = smallestHeights.length <= 2 ? s2 : smallestHeights[2];
+			long currMargin = margin;
+			boolean s1Used = false;
+			for (int k = 0; k < nSlots; k++) {
+				int gap = limit - slots[k].height;
+				if (gap == 0)
+					continue;
+				if (gap >= s3)
+					break;
+				int lost = gap < s1 ? gap : gap < s2 ? (s1Used ? gap : gap - s1) : (gap < s1 + s2 ? gap - s2 : gap - s1 - s2);
+				s1Used = s1 <= gap && gap < s2;
+				assert lost >= 0;
+				// System.out.println("lost " + lost + " " + (gap < s1) + " " + (gap < s2) + " " + (gap < s3));
+				// System.out.println("k== " + k + " " + lost + "sss " + s1 + " " + s2 + " " + s3);
+				currMargin -= (slots[k].end - slots[k].start + 1) * lost;
+				if (currMargin < 0)
+					return Boolean.FALSE;
+			}
+			return null;
+		}
+	}
+
+	private int horizon() {
+		int min = Integer.MAX_VALUE, max = Integer.MIN_VALUE;
+		for (int i = 0; i < scp.length; i++) {
+			min = Math.min(min, scp[i].dom.firstValue());
+			max = Math.max(max, scp[i].dom.lastValue() + widths[i]);
+		}
+		return max - min;
+	}
+
 	public Cumulative(Problem pb, Variable[] list, int[] widths, int[] heights, int limit) {
 		super(pb, list);
 		control(list.length > 1 && list.length == widths.length && list.length == heights.length);
@@ -92,17 +171,15 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 		this.widths = widths;
 		this.heights = heights;
 		this.limit = limit;
-		int horizon = IntStream.range(0, scp.length).map(i -> scp[i].dom.lastValue() + widths[i]).max().getAsInt();
-		this.ticks = new SetSparse(horizon + 1);
-		this.offsets = new int[horizon + 1];
-		this.slots = IntStream.range(0, horizon + 1).mapToObj(i -> new Slot()).toArray(Slot[]::new);
+		int timeline = IntStream.range(0, scp.length).map(i -> scp[i].dom.lastValue() + widths[i]).max().getAsInt() + 1;
+		this.ticks = new SetSparse(timeline);
+		this.offsets = new int[timeline];
+		this.slots = IntStream.range(0, timeline).mapToObj(i -> new Slot()).toArray(Slot[]::new);
 
-		Integer[] t = IntStream.range(0, scp.length).boxed().toArray(Integer[]::new);
-		Arrays.sort(t, (i1, i2) -> heights[i1] > heights[i2] ? -1 : heights[i1] < heights[i2] ? 1 : 0);
-		this.sortedScpIndexes = Stream.of(t).mapToInt(i -> i).toArray();
+		this.heightReasoner = new HeightReasoner();
 
 		this.volume = IntStream.range(0, widths.length).mapToLong(i -> widths[i] * heights[i]).sum();
-		this.margin = horizon * limit - volume;
+		this.margin = horizon() * limit - volume;
 
 		System.out.println(this);
 	}
@@ -139,7 +216,7 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 
 		int nRelevantTicks = 0;
 		for (int i = 0; i <= ticks.limit; i++)
-			if (offsets[ticks.dense[i]] != 0) // ticks with, at the end, offset at 0 are not relevant (and so, are discarded)
+			if (offsets[ticks.dense[i]] != 0) // ticks with offset at 0 are not relevant (and so, are discarded)
 				slots[nRelevantTicks++].start = ticks.dense[i];
 		Arrays.sort(slots, 0, nRelevantTicks, (t1, t2) -> t1.start < t2.start ? -1 : t1.start > t2.start ? 1 : 0);
 
@@ -158,20 +235,6 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 		return null;
 	}
 
-	private int largestHeightIndex() {
-		for (int i = 0; i < sortedScpIndexes.length; i++)
-			if (scp[sortedScpIndexes[i]].dom.size() > 1)
-				return i;
-		return -1;
-	}
-
-	private int smallestHeightIndex() {
-		for (int i = sortedScpIndexes.length - 1; i >= 0; i--)
-			if (scp[sortedScpIndexes[i]].dom.size() > 1)
-				return i;
-		return -1;
-	}
-
 	@Override
 	/**
 	 * The filtering algorithm is mainly based upon "Simple and Scalable Time-Table Filtering for the Cumulative Constraint" by S. Gay, R. Hartert and P.
@@ -180,27 +243,23 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 	public boolean runPropagator(Variable x) {
 		int depth = problem.solver.depth();
 		if (depth == 0) { // we update the margin
-			int horizon = IntStream.range(0, scp.length).map(i -> scp[i].dom.lastValue() + widths[i]).max().getAsInt();
-			margin = horizon * limit - volume;
-			System.out.println("margin " + margin + " " + horizon + " " + limit);
+			margin = horizon() * limit - volume;
+			System.out.println("margin " + margin + " " + horizon() + " " + limit);
 			if (margin < 0)
 				return false;
 		}
 
 		Boolean b = buildTimeTable();
 		if (b == Boolean.FALSE)
-			return x.dom.fail();
+			return false; // seems better than x.dom.fail()
 		if (b == Boolean.TRUE)
 			return true;
 
-		int largest = largestHeightIndex();
-		if (largest == -1)
-			return true; // because everything is fixed
-
-		int smallest = smallestHeightIndex();
-		int gap = limit - slots[0].height;
-		if (heights[sortedScpIndexes[smallest]] > gap && (slots[0].end - slots[0].start + 1) * gap > margin) // is that interesting? we can even do deeper
-			return false;
+		b = heightReasoner.reason();
+		if (b == Boolean.FALSE)
+			return false; // seems better than x.dom.fail()
+		if (b == Boolean.TRUE)
+			return true;
 
 		// The five next lines can replace the three uncommented first lines following them
 		// Variable lastPast = pb.solver.futVars.lastPast();
@@ -209,7 +268,7 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 		// if (slots[0].height + heights[i] <= limit)
 		// break;
 
-		if (slots[0].height + heights[sortedScpIndexes[largest]] > limit) { // if there is some hope of filtering
+		if (slots[0].height + heightReasoner.largestHeight > limit) { // if there is some hope of filtering
 			Variable lastPast = problem.solver.futVars.lastPast();
 			for (int i = 0; i < scp.length; i++) {
 				if (scp[i].assigned() && scp[i] != lastPast)
@@ -223,9 +282,8 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 					if (me <= ms || me <= rs || re <= ms) { // if no mandatory part or if the rectangle and the mandatory parts are disjoint
 						if (scp[i].dom.removeValuesInRange(rs - widths[i] + 1, re) == false)
 							return false;
-					} else {
-						// something else ?
 					}
+					// else something else ?
 				}
 			}
 		}
@@ -248,7 +306,6 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 	public String toString() {
 		return "constraint cumulative: " + Kit.join(scp) + " lengths=" + Kit.join(this.widths) + " heights=" + Kit.join(heights) + " limit=" + limit;
 	}
-
 }
 
 // int sizeBefdeValue(v);

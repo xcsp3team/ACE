@@ -17,8 +17,10 @@ import static org.xcsp.common.Types.TypeExpr.MUL;
 import static org.xcsp.common.Types.TypeExpr.VAR;
 import static org.xcsp.common.Types.TypeFramework.COP;
 import static org.xcsp.common.Types.TypeObjective.EXPRESSION;
+import static org.xcsp.common.Types.TypeObjective.LEX;
 import static org.xcsp.common.Types.TypeObjective.MAXIMUM;
 import static org.xcsp.common.Types.TypeObjective.MINIMUM;
+import static org.xcsp.common.Types.TypeObjective.NVALUES;
 import static org.xcsp.common.Types.TypeObjective.SUM;
 import static org.xcsp.common.Types.TypeOptimization.MAXIMIZE;
 import static org.xcsp.common.Types.TypeOptimization.MINIMIZE;
@@ -40,6 +42,7 @@ import static org.xcsp.common.predicates.XNode.node;
 import static org.xcsp.common.predicates.XNodeParent.add;
 import static org.xcsp.common.predicates.XNodeParent.iff;
 import static org.xcsp.common.predicates.XNodeParent.le;
+import static org.xcsp.common.predicates.XNodeParent.mul;
 import static org.xcsp.common.predicates.XNodeParent.or;
 import static utility.Kit.log;
 
@@ -156,6 +159,7 @@ import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
 import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
 import constraints.intension.Intension;
 import constraints.intension.Primitive.Disjonctive2D;
+import constraints.intension.Primitive.DisjonctiveVar;
 import constraints.intension.PrimitiveBinary.Disjonctive;
 import constraints.intension.PrimitiveBinary.PrimitiveBinaryEQWithUnaryOperator;
 import constraints.intension.PrimitiveBinary.PrimitiveBinaryLog;
@@ -1957,7 +1961,6 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 					post(CSmart.buildNoOverlap(this, xi, xj, li, lj));
 				else
 					Kit.exit("Bad value for the choice of the propagator");
-				// noOverlap(origins[i], origins[j], lengths[i], lengths[j]);
 			}
 		return null;
 	}
@@ -1968,31 +1971,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		for (int i = 0; i < origins.length; i++)
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i], xj = (Variable) origins[j];
-				Variable li = (Variable) lengths[i], lj = (Variable) lengths[j];
-				intension(or(le(add(xi, li), xj), le(add(xj, lj), xi))); // TODO a smart table version as alternative?
+				Variable wi = (Variable) lengths[i], wj = (Variable) lengths[j];
+				if (head.control.global.typeNoOverlap == 0)
+					post(new DisjonctiveVar(this, xi, xj, wi, wj));
+				else
+					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi))); // TODO a smart table version as alternative?
 			}
 		return null;
-	}
-
-	private void addNonOverlapTuplesFor(List<int[]> list, Domain dom1, Domain dom2, int offset, boolean first, boolean xAxis) {
-		for (int a = dom1.first(); a != -1; a = dom1.next(a)) {
-			int va = dom1.toVal(a);
-			for (int b = dom2.last(); b != -1; b = dom2.prev(b)) {
-				int vb = dom2.toVal(b);
-				if (va + offset > vb)
-					break;
-				list.add(xAxis ? api.tuple(first ? va : vb, first ? vb : va, STAR, STAR) : api.tuple(STAR, STAR, first ? va : vb, first ? vb : va));
-			}
-		}
-	}
-
-	private int[][] computeTable(Variable x1, Variable x2, Variable y1, Variable y2, int w1, int w2, int h1, int h2) {
-		List<int[]> list = new ArrayList<int[]>();
-		addNonOverlapTuplesFor(list, x1.dom, x2.dom, w1, true, true);
-		addNonOverlapTuplesFor(list, x2.dom, x1.dom, w2, false, true);
-		addNonOverlapTuplesFor(list, y1.dom, y2.dom, h1, true, false);
-		addNonOverlapTuplesFor(list, y2.dom, y1.dom, h2, false, false);
-		return Kit.intArray2D(list);
 	}
 
 	@Override
@@ -2018,7 +2003,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				if (head.control.global.smartTable)
 					post(CSmart.buildNoOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				else if (head.control.global.jokerTable)
-					extension(vars(xi, xj, yi, yj), computeTable(xi, xj, yi, yj, wi, wj, hi, hj), true, true); // seems to be rather efficient
+					extension(vars(xi, xj, yi, yj), Table.shortTuplesForNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true); // seems to be rather efficient
 				else
 					post(new Disjonctive2D(this, xi, xj, yi, yj, wi, wj, hi, hj));
 				// intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi))); // VERY expensive
@@ -2307,31 +2292,57 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	@Override
 	public final ObjEntity minimize(TypeObjective type, IVar[] list, int[] coeffs) {
+		control(type == SUM && coeffs != null && list.length == coeffs.length);
+		if (list.length == 1)
+			return minimize(mul(list[0], coeffs[0]));
 		return optimize(MINIMIZE, type, translate(list), coeffs);
 	}
 
 	@Override
 	public final ObjEntity maximize(TypeObjective type, IVar[] list, int[] coeffs) {
+		control(type == SUM && coeffs != null && list.length == coeffs.length);
+		if (list.length == 1)
+			return maximize(mul(list[0], coeffs[0]));
 		return optimize(MAXIMIZE, type, translate(list), coeffs);
 	}
 
 	@Override
 	public ObjEntity minimize(TypeObjective type, XNode<IVar>[] trees) {
+		control(type != EXPRESSION && type != LEX);
+		if (trees.length == 1) {
+			control(type != NVALUES);
+			return minimize(trees[0]);
+		}
 		return minimize(type, replaceByVariables(trees));
 	}
 
 	@Override
 	public ObjEntity minimize(TypeObjective type, XNode<IVar>[] trees, int[] coeffs) {
+		control(type != EXPRESSION && type != LEX && trees.length == coeffs.length);
+		if (trees.length == 1) {
+			control(type != NVALUES);
+			return minimize(mul(trees[0], coeffs[0]));
+		}
 		return minimize(type, replaceByVariables(trees), coeffs);
 	}
 
 	@Override
 	public ObjEntity maximize(TypeObjective type, XNode<IVar>[] trees) {
+		control(type != EXPRESSION && type != LEX);
+		if (trees.length == 1) {
+			control(type != NVALUES);
+			return maximize(trees[0]);
+		}
 		return maximize(type, replaceByVariables(trees));
 	}
 
 	@Override
 	public ObjEntity maximize(TypeObjective type, XNode<IVar>[] trees, int[] coeffs) {
+		control(type != EXPRESSION && type != LEX && trees.length == coeffs.length);
+		if (trees.length == 1) {
+			control(type != NVALUES);
+			return maximize(mul(trees[0], coeffs[0]));
+		}
 		return maximize(type, replaceByVariables(trees), coeffs);
 	}
 
