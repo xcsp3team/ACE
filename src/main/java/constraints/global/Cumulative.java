@@ -91,8 +91,7 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 			this.sortedPositions = Stream.of(t).mapToInt(i -> i).toArray();
 
 			int highest = heights[sortedPositions[0]], lowest = heights[sortedPositions[scp.length - 1]];
-			int smallestHeightsLimit = highest - lowest >= 3 ? 3 : highest > lowest ? 2 : 1;
-			this.smallestHeights = new int[smallestHeightsLimit];
+			this.smallestHeights = new int[1]; // highest - lowest >= 3 ? 3 : highest > lowest ? 2 : 1];
 		}
 
 		private int largestHeightIndex() {
@@ -168,6 +167,7 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 		super(pb, list);
 		control(list.length > 1 && list.length == widths.length && list.length == heights.length);
 		control(Stream.of(list).allMatch(x -> x.dom.firstValue() >= 0));
+		control(IntStream.of(widths).allMatch(w -> w >= 0) && IntStream.of(heights).allMatch(h -> h >= 0));
 		this.widths = widths;
 		this.heights = heights;
 		this.limit = limit;
@@ -240,7 +240,7 @@ public final class Cumulative extends CtrGlobal implements TagFilteringCompleteA
 	 * The filtering algorithm is mainly based upon "Simple and Scalable Time-Table Filtering for the Cumulative Constraint" by S. Gay, R. Hartert and P.
 	 * Schaus. CP 2015: 149-157
 	 */
-	public boolean runPropagator(Variable x) {
+	public boolean runPropagator(Variable dummy) {
 		int depth = problem.solver.depth();
 		if (depth == 0) { // we update the margin
 			margin = horizon() * limit - volume;

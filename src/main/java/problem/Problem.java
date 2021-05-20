@@ -208,6 +208,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	public static final String AUXILIARY_VARIABLE_PREFIX = "_ax_";
 
+	public static final int BASE = 0;
+	public static final int INTENSION_DECOMPOSITION = 1;
+	public static final int EXTENSION = 2;
+	public static final int EXTENSION_STARRED = 22;
+	public static final int EXTENSION_SMART = 222;
+
 	private Variable[] prioritySumVars(Variable[] scp, int[] coeffs) {
 		assert coeffs == null || IntStream.range(0, coeffs.length - 1).allMatch(i -> coeffs[i] <= coeffs[i + 1]);
 		int LIM = 3; // HARD CODING
@@ -1942,7 +1948,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 */
 	public final CtrEntity noOverlap(Var[] origins, int[] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
-		if (head.control.global.redundNoOverlap == 1) { // we post redundant constraints (after introducing auxiliary variables)
+		if (head.control.global.redundNoOverlap) { // we post redundant constraints (after introducing auxiliary variables)
 			Var[] aux = newAuxVarArray(origins.length, range(origins.length));
 			allDifferent(aux);
 			for (int i = 0; i < origins.length; i++)
@@ -1953,14 +1959,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i], xj = (Variable) origins[j];
 				int li = lengths[i], lj = lengths[j];
-				if (head.control.global.typeNoOverlap == 0)
-					post(new Disjonctive(this, xi, li, xj, lj));
-				else if (head.control.global.typeNoOverlap == 2)
+				if (head.control.global.typeNoOverlap == INTENSION_DECOMPOSITION)
 					intension(or(le(add(xi, li), xj), le(add(xj, lj), xi)));
-				else if (head.control.global.typeNoOverlap == 10) // rs.cp.global.smartTable)
+				else if (head.control.global.typeNoOverlap == EXTENSION_SMART)
 					post(CSmart.buildNoOverlap(this, xi, xj, li, lj));
 				else
-					Kit.exit("Bad value for the choice of the propagator");
+					post(new Disjonctive(this, xi, li, xj, lj)); // BASE
 			}
 		return null;
 	}
@@ -1972,10 +1976,10 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i], xj = (Variable) origins[j];
 				Variable wi = (Variable) lengths[i], wj = (Variable) lengths[j];
-				if (head.control.global.typeNoOverlap == 0)
-					post(new DisjonctiveVar(this, xi, xj, wi, wj));
+				if (head.control.global.typeNoOverlap == INTENSION_DECOMPOSITION)
+					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi)));
 				else
-					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi))); // TODO a smart table version as alternative?
+					post(new DisjonctiveVar(this, xi, xj, wi, wj));
 			}
 		return null;
 	}
@@ -1983,7 +1987,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity noOverlap(Var[][] origins, int[][] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
-		if (head.control.global.redundNoOverlap == 1) { // we post two redundant cumulative constraints
+		if (head.control.global.redundNoOverlap) { // we post two redundant cumulative constraints
 			Var[] ox = Stream.of(origins).map(t -> t[0]).toArray(Var[]::new), oy = Stream.of(origins).map(t -> t[1]).toArray(Var[]::new);
 			int[] tx = Stream.of(lengths).mapToInt(t -> t[0]).toArray(), ty = Stream.of(lengths).mapToInt(t -> t[1]).toArray();
 			int minX = Stream.of(ox).mapToInt(x -> ((Variable) x).dom.firstValue()).min().orElseThrow();
@@ -2000,13 +2004,14 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i][0], xj = (Variable) origins[j][0], yi = (Variable) origins[i][1], yj = (Variable) origins[j][1];
 				int wi = lengths[i][0], wj = lengths[j][0], hi = lengths[i][1], hj = lengths[j][1];
-				if (head.control.global.smartTable)
-					post(CSmart.buildNoOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
-				else if (head.control.global.jokerTable)
+				if (head.control.global.typeNoOverlap == INTENSION_DECOMPOSITION)
+					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi))); // VERY expensive
+				else if (head.control.global.typeNoOverlap == EXTENSION_STARRED)
 					extension(vars(xi, xj, yi, yj), Table.shortTuplesForNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true); // seems to be rather efficient
+				else if (head.control.global.typeNoOverlap == EXTENSION_SMART)
+					post(CSmart.buildNoOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				else
 					post(new Disjonctive2D(this, xi, xj, yi, yj, wi, wj, hi, hj));
-				// intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi))); // VERY expensive
 			}
 		return null;
 	}
@@ -2018,7 +2023,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i][0], xj = (Variable) origins[j][0], yi = (Variable) origins[i][1], yj = (Variable) origins[j][1];
 				Variable wi = (Variable) lengths[i][0], wj = (Variable) lengths[j][0], hi = (Variable) lengths[i][1], hj = (Variable) lengths[j][1];
-				if (head.control.global.smartTable && Stream.of(wi, wj, hi, hj).allMatch(x -> x.dom.initSize() == 2))
+				if (head.control.global.typeNoOverlap == EXTENSION_SMART && Stream.of(wi, wj, hi, hj).allMatch(x -> x.dom.initSize() == 2))
 					post(CSmart.buildNoOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				else
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));

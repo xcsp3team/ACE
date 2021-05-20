@@ -376,7 +376,7 @@ public class Control {
 		public final int typeNotAllEqual = addI("typeNotAllEqual", "g_nae", 0, s + "notAllEqual");
 		public final int typeOrdered = addI("typeOrdered", "g_ord", 1, s + "odered");
 		public final int typeNoOverlap = addI("typeNoOverlap", "g_no", 0, s + "noOverlap");
-		public final int redundNoOverlap = addI("redundNoOverlap", "r_no", 0, "");
+		public final boolean redundNoOverlap = addB("redundNoOverlap", "r_no", true, "");
 		public final int typeBinpacking = addI("typeBinpacking", "g_bp", 0, s + "binPacking");
 
 		public final boolean basicTable = addB("basicTable", "bt", false, r1);
