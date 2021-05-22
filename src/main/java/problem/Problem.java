@@ -129,7 +129,7 @@ import constraints.global.Count.CountCst.AtMostK;
 import constraints.global.Count.CountCst.Exactly1;
 import constraints.global.Count.CountCst.ExactlyK;
 import constraints.global.Count.CountVar.ExactlyVarK;
-import constraints.global.Cumulative;
+import constraints.global.Cumulative.CumulativeCst;
 import constraints.global.DistinctVectors;
 import constraints.global.Element.ElementConstant;
 import constraints.global.Element.ElementVariable;
@@ -1987,14 +1987,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final CtrEntity noOverlap(Var[][] origins, int[][] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
-		if (head.control.global.redundNoOverlap) { // we post two redundant cumulative constraints
+		if (head.control.global.redundNoOverlap) { // we post two redundant cumulative constraints, and a global noOverlap
 			Var[] ox = Stream.of(origins).map(t -> t[0]).toArray(Var[]::new), oy = Stream.of(origins).map(t -> t[1]).toArray(Var[]::new);
 			int[] tx = Stream.of(lengths).mapToInt(t -> t[0]).toArray(), ty = Stream.of(lengths).mapToInt(t -> t[1]).toArray();
 			int minX = Stream.of(ox).mapToInt(x -> ((Variable) x).dom.firstValue()).min().orElseThrow();
 			int maxX = IntStream.range(0, ox.length).map(i -> ((Variable) ox[i]).dom.lastValue() + tx[i]).max().orElseThrow();
 			int minY = Stream.of(oy).mapToInt(x -> ((Variable) x).dom.firstValue()).min().orElseThrow();
 			int maxY = IntStream.range(0, oy.length).map(i -> ((Variable) oy[i]).dom.lastValue() + ty[i]).max().orElseThrow();
-			// System.out.println("hhhhh " + minX + " " + maxX + " " + minY + " " + maxY);
 			cumulative(ox, tx, null, ty, api.condition(LE, maxY - minY));
 			cumulative(oy, ty, null, tx, api.condition(LE, maxX - minX));
 			post(new NoOverlap(this, translate(ox), tx, translate(oy), ty));
@@ -2032,16 +2031,17 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	// ************************************************************************
-	// ***** Constraint cumulative and BinPacking
+	// ***** Constraints Cumulative and BinPacking
 	// ************************************************************************
 
 	@Override
 	public final CtrEntity cumulative(Var[] origins, int[] lengths, Var[] ends, int[] heights, Condition condition) {
-		if (ends == null && condition instanceof ConditionVal) {
+		unimplementedIf(ends != null, "cumulative");
+		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			return post(new Cumulative(this, translate(origins), lengths, heights, op == LT ? limit + 1 : limit));
+			return post(new CumulativeCst(this, translate(origins), lengths, heights, op == LT ? limit + 1 : limit));
 		}
 		return unimplemented("cumulative");
 	}
