@@ -1821,7 +1821,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (condition instanceof ConditionRel) {
 			intension(XNodeParent.build(((ConditionRel) condition).operator.toExpr(), aux, condition.rightTerm()));
 		} else
-			return (CtrAlone) unimplemented("element");
+			return (CtrAlone) unimplemented("element " + condition);
 		return element(list, index, aux);
 	}
 

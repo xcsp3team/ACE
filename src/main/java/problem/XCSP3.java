@@ -731,7 +731,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	@Override
-	public void buildBinPacking(String id, XVarInteger[] list, int[] sizes, Condition condition) {
+	public void buildCtrBinPacking(String id, XVarInteger[] list, int[] sizes, Condition condition) {
 		problem.binpacking(trVars(list), sizes, trVar(condition));
 	}
 
