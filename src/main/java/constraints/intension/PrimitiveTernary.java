@@ -24,8 +24,8 @@ import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
 import constraints.global.Sum.SumWeighted;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import utility.Kit;
@@ -33,7 +33,7 @@ import variables.Domain;
 import variables.Variable;
 
 public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFilteringCompleteAtEachCall, TagNotSymmetric { // TODO GAC not true some
-																																		// times
+																																// times
 
 	public static Constraint buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, Variable z) {
 		switch (aop) {
@@ -663,7 +663,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 		// time java ac GolombRuler-10.xml -varh=Dom => same search tree with CT, Intension and DistEQ3
 		public static final class DistEQ3 extends PrimitiveTernaryDist {
 
-			boolean multidirectional = true; // hard coding
+			boolean multidirectional = false; // hard coding
 
 			@Override
 			public final boolean checkValues(int[] t) {
@@ -757,7 +757,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 				}
 				extern: for (int c = dz.first(); c != -1; c = dz.next(c)) {
 					int vc = dz.toVal(c);
-					if (rzx[c] != -1 && dx.present(rzx[c]) && dy.presentValue(rzy[c]))
+					if (rzx[c] != -1 && dx.present(rzx[c]) && dy.present(rzy[c]))
 						continue;
 					if (dx.size() <= dy.size())
 						for (int a = dx.first(); a != -1; a = dx.next(a)) {
