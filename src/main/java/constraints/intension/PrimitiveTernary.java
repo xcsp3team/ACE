@@ -663,7 +663,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 		// time java ac GolombRuler-10.xml -varh=Dom => same search tree with CT, Intension and DistEQ3
 		public static final class DistEQ3 extends PrimitiveTernaryDist {
 
-			boolean multidirectional = false; // hard coding
+			boolean multidirectional = true; // hard coding
 
 			@Override
 			public final boolean checkValues(int[] t) {
