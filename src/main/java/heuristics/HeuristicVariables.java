@@ -59,7 +59,7 @@ public abstract class HeuristicVariables extends Heuristic {
 
 		public boolean update(Variable x, double s) {
 			if (discardAux && x.isSolverAux()) {
-				assert x.id().startsWith(Problem.AUXILIARY_VARIABLE_PREFIX); // System.out.println("gggg " + x.num + " " + x + " " + x.isSolverAux());
+				assert x.id().startsWith(Problem.AUXILIARY_VARIABLE_PREFIX);
 				return false;
 			}
 			if (minimization) {

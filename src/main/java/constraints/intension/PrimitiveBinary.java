@@ -77,7 +77,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			return true;
 		assert dx.size() < dy.size();
 		boolean consistent = dy.removeValuesNotIn(dx);
-		assert consistent;
+		assert consistent && dx.size() == dy.size();
 		return true;
 	}
 

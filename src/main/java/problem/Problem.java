@@ -131,9 +131,10 @@ import constraints.global.Count.CountCst.ExactlyK;
 import constraints.global.Count.CountVar.ExactlyVarK;
 import constraints.global.Cumulative.CumulativeCst;
 import constraints.global.DistinctVectors;
-import constraints.global.Element.ElementConstant;
-import constraints.global.Element.ElementVariable;
-import constraints.global.ElementMatrix;
+import constraints.global.Element.ElementCst;
+import constraints.global.Element.ElementVar;
+import constraints.global.ElementMatrix.ElementMatrixCst;
+import constraints.global.ElementMatrix.ElementMatrixVar;
 import constraints.global.Extremum.ExtremumCst;
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstGE;
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
@@ -1780,7 +1781,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private CtrAlone element(Var[] list, Var index, int value) {
 		if (head.control.global.jokerTable)
 			return extension(vars(index, list), Table.shortTuplesForElement(translate(list), (Variable) index, value), true);
-		return post(new ElementConstant(this, translate(list), (Variable) index, value));
+		return post(new ElementCst(this, translate(list), (Variable) index, value));
 	}
 
 	private CtrAlone element(Var[] list, Var index, Var value) {
@@ -1789,7 +1790,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		if (head.control.global.jokerTable)
 			return extension(Utilities.indexOf(value, list) == -1 ? vars(index, list, value) : vars(index, list),
 					Table.shortTuplesForElement(translate(list), (Variable) index, (Variable) value), true);
-		return post(new ElementVariable(this, translate(list), (Variable) index, (Variable) value));
+		return post(new ElementVar(this, translate(list), (Variable) index, (Variable) value));
 	}
 
 	@Override
@@ -1883,13 +1884,25 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			Var[] t = IntStream.range(0, matrix.length).mapToObj(i -> matrix[i][i]).toArray(Var[]::new);
 			return element(t, rowIndex, value);
 		}
-		return post(new ElementMatrix(this, (Variable[][]) matrix, (Variable) rowIndex, (Variable) colIndex, value));
+		return post(new ElementMatrixCst(this, (Variable[][]) matrix, (Variable) rowIndex, (Variable) colIndex, value));
+	}
+
+	private CtrEntity element(Var[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, Var value) {
+		unimplementedIf(startRowIndex != 0 && startColIndex != 0, "element");
+		if (rowIndex == colIndex) {
+			control(matrix.length == matrix[0].length);
+			Var[] t = IntStream.range(0, matrix.length).mapToObj(i -> matrix[i][i]).toArray(Var[]::new);
+			return element(t, rowIndex, value);
+		}
+		return post(new ElementMatrixVar(this, (Variable[][]) matrix, (Variable) rowIndex, (Variable) colIndex, (Variable) value));
 	}
 
 	public CtrEntity element(Var[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, Condition condition) {
 		unimplementedIf(startRowIndex != 0 && startColIndex != 0, "element");
 		if (condition instanceof ConditionVal && ((ConditionRel) condition).operator == EQ)
 			return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, safeInt(((ConditionVal) condition).k));
+		if (condition instanceof ConditionVar && ((ConditionRel) condition).operator == EQ)
+			return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, (Var) ((ConditionVar) condition).x);
 		return (CtrAlone) unimplemented("element");
 	}
 

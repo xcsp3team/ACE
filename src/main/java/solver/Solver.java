@@ -103,7 +103,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 
 		WarmStarter(String s) {
 			File file = new File(s);
-			if (file.exists()) {
+			if (file.exists()) { // TODO if the string starts with ~/, that does not work (the path must be explicit)
 				try (BufferedReader in = new BufferedReader(new FileReader(s))) {
 					StringBuilder sb = new StringBuilder();
 					for (String line = in.readLine(); line != null; line = in.readLine())
@@ -126,7 +126,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 					sol[i] = -1;
 				else {
 					int a = problem.variables[i].dom.toPresentIdx(Integer.parseInt(t[i]));
-					Kit.control(a != -1);
+					Kit.control(a != -1, "pb with " + problem.variables[i] + " and " + t[i]);
 					sol[i] = a;
 				}
 			}
