@@ -36,7 +36,7 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 		this.ipos = IntStream.range(0, scp.length).filter(i -> scp[i] == index).findFirst().getAsInt();
 		control(startAt == 0, "Starting at a value different from 0 not implemented");
 		control(Variable.areAllDistinct(list) && index != value, "i=" + index + " x=" + Kit.join(list) + " v=" + value);
-		idom.removeValuesAtConstructionTime(v -> v < 0 || v >= list.length);
+		control(list.length == idom.initSize(), " pb with " + this + " " + index);
 	}
 
 	@Override
@@ -52,8 +52,8 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 		private final int k;
 
 		public boolean checkIndexes(int[] t) {
-			int idx = idom.toVal(t[ipos]);
-			return list[idx].dom.toVal(t[idx]) == k;
+			int i = t[ipos];
+			return list[i].dom.toVal(t[i]) == k;
 		}
 
 		public ElementCst(Problem pb, Variable[] list, int startAt, Variable index, int value) {
@@ -74,7 +74,7 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 			if (idom.size() > 1) { // checking that the values of index are still valid
 				int sizeBefore = idom.size();
 				for (int a = idom.first(); a != -1; a = idom.next(a))
-					if (!list[idom.toVal(a)].dom.presentValue(k))
+					if (!list[a].dom.presentValue(k))
 						idom.removeElementary(a);
 				if (idom.afterElementaryCalls(sizeBefore) == false)
 					return false;
@@ -82,7 +82,7 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 			// be careful : not a else because of statements above that may modify the domain of index
 			if (idom.size() > 1)
 				return true;
-			return list[idom.uniqueValue()].dom.reduceToValue(k) && entailed();
+			return list[idom.unique()].dom.reduceToValue(k) && entailed();
 		}
 	}
 
@@ -99,10 +99,8 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 		private final int vpos; // position of the value variable in scope
 
 		public boolean checkIndexes(int[] t) {
-			int idx = idom.toVal(t[ipos]);
-			return list[idx].dom.toVal(t[idx]) == vdom.toVal(t[vpos]);
-			// int i = t[ipos];
-			// return list[i].dom.toVal(t[i]) == vdom.toVal(t[vpos]);
+			int i = t[ipos];
+			return list[i].dom.toVal(t[i]) == vdom.toVal(t[vpos]);
 		}
 
 		/**
@@ -130,10 +128,10 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 		}
 
 		private boolean validIndex(int i) {
-			Domain dom = list[idom.toVal(i)].dom;
 			int v = indexSentinels[i];
-			if (v != -1 && dom.presentValue(v) && vdom.presentValue(v))
+			if (v != -1 && list[i].dom.presentValue(v) && vdom.presentValue(v))
 				return true;
+			Domain dom = list[i].dom;
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
 				int va = dom.toVal(a);
 				if (vdom.presentValue(va)) {
@@ -150,11 +148,11 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 
 		private boolean validValue(int a) {
 			int va = vdom.toVal(a);
-			int i = valueSentinels[a];
-			if (i != -1 && idom.present(i) && list[idom.toVal(i)].dom.presentValue(va))
+			int sentinel = valueSentinels[a];
+			if (sentinel != -1 && idom.present(sentinel) && list[sentinel].dom.presentValue(va))
 				return true;
-			for (i = idom.first(); i != -1; i = idom.next(i)) {
-				if (list[idom.toVal(i)].dom.presentValue(va)) {
+			for (int i = idom.first(); i != -1; i = idom.next(i)) {
+				if (list[i].dom.presentValue(va)) {
 					valueSentinels[a] = i;
 					return true;
 				}
@@ -193,7 +191,7 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 			}
 			// If index is singleton, we update dom(list[index]) and dom(value) so that they are both equal to the intersection of the two domains
 			if (idom.size() == 1) {
-				if (PrimitiveBinary.enforceEQ(list[idom.uniqueValue()].dom, vdom) == false)
+				if (PrimitiveBinary.enforceEQ(list[idom.unique()].dom, vdom) == false)
 					return false;
 				if (vdom.size() == 1)
 					return entailed();
@@ -202,13 +200,13 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 		}
 
 		private boolean controlAC() {
-			control(idom.size() != 1 || list[idom.uniqueValue()].dom.subsetOf(vdom), () -> "index is singleton and dom(index) is not included in dom(result).");
+			control(idom.size() != 1 || list[idom.unique()].dom.subsetOf(vdom), () -> "index is singleton and dom(index) is not included in dom(result).");
 			for (int a = idom.first(); a != -1; a = idom.next(a))
-				control(list[idom.toVal(a)].dom.overlapWith(vdom), () -> "One var has no value in dom(result).");
+				control(list[a].dom.overlapWith(vdom), () -> "One var has no value in dom(result).");
 			extern: for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
 				int v = vdom.toVal(a);
 				for (int b = idom.first(); b != -1; b = idom.next(b))
-					if (list[idom.toVal(b)].dom.presentValue(v))
+					if (list[b].dom.presentValue(v))
 						continue extern;
 				control(false, () -> "value " + v + " is in dom(value) but in no list variable whose index is still in dom(index).");
 			}
