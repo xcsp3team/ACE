@@ -287,7 +287,7 @@ public interface Domain extends LinkedSet {
 	 */
 	default void removeAtConstructionTime(int a) {
 		control(var().problem.solver == null, () -> "Must be called before the solver being built.");
-		System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " at construction time");
+		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " at construction time");
 
 		remove(a, 0);
 		var().problem.nValuesRemoved++;

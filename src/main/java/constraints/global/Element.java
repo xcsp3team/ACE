@@ -36,7 +36,7 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 		this.ipos = IntStream.range(0, scp.length).filter(i -> scp[i] == index).findFirst().getAsInt();
 		control(startAt == 0, "Starting at a value different from 0 not implemented");
 		control(Variable.areAllDistinct(list) && index != value, "i=" + index + " x=" + Kit.join(list) + " v=" + value);
-		control(list.length == idom.initSize(), " pb with " + this + " " + index);
+		control(list.length == idom.initSize(), " pb with " + this + " " + index); // this allows us to reason with indexes
 	}
 
 	@Override
