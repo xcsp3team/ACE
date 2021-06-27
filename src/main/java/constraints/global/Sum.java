@@ -168,6 +168,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 
 		public SumSimple(Problem pb, Variable[] scp, long limit) {
 			super(pb, scp);
+			Kit.control(Variable.areAllDistinct(scp));
 			this.minComputableObjectiveValue = minComputableObjectiveValue();
 			this.maxComputableObjectiveValue = maxComputableObjectiveValue();
 			control(minComputableObjectiveValue <= maxComputableObjectiveValue);

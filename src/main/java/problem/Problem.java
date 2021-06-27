@@ -2278,6 +2278,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		control(type.generalizable());
 		if (!switchToSatisfaction(opt, type, null, list)) {
 			long lb = head.control.optimization.lb, ub = head.control.optimization.ub;
+			// TODO what about several occurrences of the same variable in list? if SUM transform into weighted sum, or just fail?
 			Constraint clb = type == SUM ? new SumSimpleGE(this, list, lb)
 					: type == MINIMUM ? new MinimumCstGE(this, list, lb)
 							: type == MAXIMUM ? new MaximumCstGE(this, list, lb) : new NValuesCstGE(this, list, lb);
