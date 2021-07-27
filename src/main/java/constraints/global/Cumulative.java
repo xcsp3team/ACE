@@ -319,7 +319,7 @@ public abstract class Cumulative extends CtrGlobal implements TagFilteringComple
 		this.timetableReasoner = new TimetableReasoner();
 		this.energeticReasoner = new EnergeticReasoner();
 
-		System.out.println(this);
+		// System.out.println(this);
 	}
 
 	@Override

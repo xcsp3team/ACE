@@ -13,8 +13,8 @@ import interfaces.Tags.TagMaximize;
 public abstract class Heuristic {
 
 	/**
-	 * The coefficient used when computing scores of objects, the one with the best score being selected by this heuristic. The best one is the
-	 * smallest one if the coefficient is -1 (minimization) and it is the greatest one if the coefficient is +1 (maximization).
+	 * The coefficient used when computing scores of objects, the one with the best score being selected by this heuristic. The best one is the smallest one if
+	 * the coefficient is -1 (minimization) and it is the greatest one if the coefficient is +1 (maximization).
 	 */
 	public int scoreCoeff;
 
@@ -23,5 +23,6 @@ public abstract class Heuristic {
 		this.scoreCoeff = (!antiHeuristic && !(this instanceof TagMaximize)) || (antiHeuristic && this instanceof TagMaximize) ? -1 : 1;
 	}
 
-	public void reset() {}
+	public void reset() {
+	}
 }

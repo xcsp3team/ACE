@@ -33,7 +33,8 @@ public abstract class HeuristicVariablesFixed extends HeuristicVariables impleme
 	}
 
 	@Override
-	public final void afterRun() {}
+	public final void afterRun() {
+	}
 
 	/** The set of variables increasingly ordered by the static heuristic (the first one is the best one). */
 	private Variable[] ordering;
@@ -65,8 +66,7 @@ public abstract class HeuristicVariablesFixed extends HeuristicVariables impleme
 	// ************************************************************************
 
 	/**
-	 * This heuristic, usually called <i>deg</i>, selects a (best evaluated) variable by considering an evaluation of the form deg(X) for any variable
-	 * X.<br>
+	 * This heuristic, usually called <i>deg</i>, selects a (best evaluated) variable by considering an evaluation of the form deg(X) for any variable X.<br>
 	 * Here, deg(X) denotes the (static) degree of the variable X.
 	 */
 	public static final class Deg extends HeuristicVariablesFixed implements TagMaximize {

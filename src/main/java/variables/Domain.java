@@ -1,11 +1,13 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package variables;
 
 import static org.xcsp.common.Types.TypeOperatorRel.GE;
@@ -35,7 +37,7 @@ import utility.Kit;
 public interface Domain extends LinkedSet {
 
 	/**********************************************************************************************
-	 * static
+	 * Static Members
 	 *********************************************************************************************/
 
 	static final int TAG_RANGE = Integer.MAX_VALUE;
