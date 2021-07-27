@@ -105,7 +105,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 			inconsistent.clear();
 			int aLast = solver.solRecorder.found == 0 ? -1 : solver.solRecorder.lastSolution[x.num];
 			if ((settings.bivsStoppedAtFirstSolution && solver.solRecorder.found > 0) || dx.size() > settings.bivsLimit) {
-				if (aLast != -1 && dx.present(aLast))
+				if (aLast != -1 && dx.contains(aLast))
 					return aLast;
 				return dx.first(); // First in that case
 			} else {
@@ -131,7 +131,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 		@Override
 		public double scoreOf(int a) {
-			assert x.isFuture() && dx.present(a);
+			assert x.isFuture() && dx.contains(a);
 			long nConflicts = 0;
 			for (Constraint c : x.ctrs)
 				nConflicts += c.nConflictsFor(c.positionOf(x), a);
@@ -174,7 +174,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 			int v = x.dom.toVal(a);
 			int cnt = 0;
 			for (Variable y : x.problem.variables)
-				if (y.dom.onlyContainsValue(v))
+				if (y.dom.containsOnlyValue(v))
 					cnt++;
 			return cnt;
 		}

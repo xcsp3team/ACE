@@ -181,7 +181,7 @@ public class Restarter implements ObserverRuns {
 				for (int i = heuristic.fragment.limit; i >= 0; i--) {
 					Variable x = solver.problem.variables[i];
 					int a = solution[x.num];
-					if (x.dom.present(a)) { // because the objective constraint may change, this is possible
+					if (x.dom.contains(a)) { // because the objective constraint may change, this is possible
 						solver.assign(x, solution[x.num]);
 						boolean consistent = solver.propagation.runAfterAssignment(x);
 						if (!consistent) {

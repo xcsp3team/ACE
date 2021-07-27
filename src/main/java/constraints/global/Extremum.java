@@ -45,14 +45,14 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 		protected Variable findSentinelFor(int v, Variable except) {
 			for (Variable x : list)
-				if (x != except && x.dom.presentValue(v))
+				if (x != except && x.dom.containsValue(v))
 					return x;
 			return null;
 		}
 
 		protected Variable findSentinelFor(int v) {
 			for (Variable x : list)
-				if (x.dom.presentValue(v))
+				if (x.dom.containsValue(v))
 					return x;
 			return null;
 		}
@@ -110,7 +110,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 				if (domExt.removeIndexesChecking(a -> {
 					int v = domExt.toVal(a);
-					if (!sentinels[a].dom.presentValue(v)) {
+					if (!sentinels[a].dom.containsValue(v)) {
 						Variable s = findSentinelFor(v);
 						if (s == null)
 							return true;
@@ -137,7 +137,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 					int v = domSentinel.toVal(a);
 					if (v <= valLimit)
 						break;
-					if (!domExt.presentValue(v))
+					if (!domExt.containsValue(v))
 						domSentinel.removeElementary(a);
 				}
 				return domSentinel.afterElementaryCalls(sizeBefore); // necessarily true
@@ -184,7 +184,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 				int sizeBefore = domExt.size();
 				for (int a = domExt.first(); a != -1; a = domExt.next(a)) {
 					int v = domExt.toVal(a);
-					if (!sentinels[a].dom.presentValue(v)) {
+					if (!sentinels[a].dom.containsValue(v)) {
 						Variable s = findSentinelFor(v);
 						if (s != null)
 							sentinels[a] = s;
@@ -214,7 +214,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 					int v = domSentinel.toVal(a);
 					if (v >= valLimit)
 						break;
-					if (!domExt.presentValue(v))
+					if (!domExt.containsValue(v))
 						domSentinel.removeElementary(a);
 				}
 				return domSentinel.afterElementaryCalls(sizeBefore); // necessarily true
@@ -307,7 +307,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 			@Override
 			public long objectiveValue() {
-				return Stream.of(doms).mapToInt(dom -> dom.uniqueValue()).max().getAsInt();
+				return Stream.of(doms).mapToInt(dom -> dom.singleValue()).max().getAsInt();
 			}
 
 			public MaximumCst(Problem pb, Variable[] scp, long limit) {
@@ -410,21 +410,21 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 				private Variable findAnotherSentinel() {
 					for (Variable x : scp)
-						if (x != sentinel1 && x != sentinel2 && x.dom.presentValue(value))
+						if (x != sentinel1 && x != sentinel2 && x.dom.containsValue(value))
 							return x;
 					return null;
 				}
 
 				@Override
 				public boolean runPropagator(Variable x) {
-					if (!sentinel1.dom.presentValue(value)) {
+					if (!sentinel1.dom.containsValue(value)) {
 						Variable sentinel = findAnotherSentinel();
 						if (sentinel != null)
 							sentinel1 = sentinel;
 						else
 							return sentinel2.dom.reduceToValue(value) && entailed();
 					}
-					if (!sentinel2.dom.presentValue(value)) {
+					if (!sentinel2.dom.containsValue(value)) {
 						Variable sentinel = findAnotherSentinel();
 						if (sentinel != null)
 							sentinel2 = sentinel;
@@ -484,7 +484,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 			@Override
 			public long objectiveValue() {
-				return Stream.of(doms).mapToInt(dom -> dom.uniqueValue()).min().getAsInt();
+				return Stream.of(doms).mapToInt(dom -> dom.singleValue()).min().getAsInt();
 			}
 
 			public MinimumCst(Problem pb, Variable[] scp, long limit) {
@@ -585,21 +585,21 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 
 				private Variable findAnotherSentinel() {
 					for (Variable x : scp)
-						if (x != sentinel1 && x != sentinel2 && x.dom.presentValue(value))
+						if (x != sentinel1 && x != sentinel2 && x.dom.containsValue(value))
 							return x;
 					return null;
 				}
 
 				@Override
 				public boolean runPropagator(Variable x) {
-					if (!sentinel1.dom.presentValue(value)) {
+					if (!sentinel1.dom.containsValue(value)) {
 						Variable sentinel = findAnotherSentinel();
 						if (sentinel != null)
 							sentinel1 = sentinel;
 						else
 							return sentinel2.dom.reduceToValue(value) && entailed();
 					}
-					if (!sentinel2.dom.presentValue(value)) {
+					if (!sentinel2.dom.containsValue(value)) {
 						Variable sentinel = findAnotherSentinel();
 						if (sentinel != null)
 							sentinel2 = sentinel;

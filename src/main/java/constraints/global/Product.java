@@ -72,7 +72,7 @@ public abstract class Product extends CtrGlobal implements TagFilteringCompleteA
 		protected final long currProduct() {
 			long sum = 0;
 			for (Variable x : scp)
-				sum *= x.dom.uniqueValue();
+				sum *= x.dom.singleValue();
 			return sum;
 		}
 
@@ -162,7 +162,7 @@ public abstract class Product extends CtrGlobal implements TagFilteringCompleteA
 			public ProductSimpleGE(Problem pb, Variable[] scp, long limit) {
 				super(pb, scp, limit);
 				for (Domain dom : doms)
-					if (dom.presentValue(0))
+					if (dom.containsValue(0))
 						dom.removeValueAtConstructionTime(0); // because limit is assumed to be > 0
 			}
 
@@ -202,7 +202,7 @@ public abstract class Product extends CtrGlobal implements TagFilteringCompleteA
 			public ProductSimpleEQ(Problem pb, Variable[] scp, long limit) {
 				super(pb, scp, limit);
 				for (Domain dom : doms)
-					if (dom.presentValue(0))
+					if (dom.containsValue(0))
 						dom.removeValueAtConstructionTime(0); // because limit is assumed to be > 0
 			}
 

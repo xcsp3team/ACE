@@ -106,7 +106,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 			int[] dense = unfixedVars.dense;
 			for (int i = unfixedVars.limit; i >= 0; i--) {
 				Variable var = scp[dense[i]];
-				if (var != otherWatchedVariable && var.dom.present(idx))
+				if (var != otherWatchedVariable && var.dom.contains(idx))
 					return var;
 			}
 			return null;
@@ -128,13 +128,13 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 			for (int i = unfixedVars.limit; i >= 0; i--) {
 				Variable x = scp[dense[i]];
 				if (x.dom.size() == 1) {
-					int a = x.dom.unique();
+					int a = x.dom.single();
 					unfixedVars.remove(dense[i], level);
 					unfixedIdxs.remove(a, level);
 					for (int j = unfixedVars.limit; j >= 0; j--) {
 						Variable y = scp[dense[j]];
 						Domain dy = y.dom;
-						if (dy.present(a)) {
+						if (dy.contains(a)) {
 							if (!dy.remove(a))
 								return false;
 							if (dy.size() == 1) {
@@ -153,7 +153,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 			dense = unfixedIdxs.dense;
 			for (int i = unfixedIdxs.limit; i >= 0; i--) {
 				int a = dense[i];
-				if (!residues1[a].dom.present(a)) {
+				if (!residues1[a].dom.contains(a)) {
 					Variable x = findAnotherWatchedUnifxedVariable(a, residues2[a]);
 					if (x != null)
 						residues1[a] = x;
@@ -167,7 +167,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 				}
 				assert residues1[a].dom.size() > 1 : residues1[a] + " " + a + " " + residues1[a].dom.size();
 
-				if (!residues2[a].dom.present(a)) {
+				if (!residues2[a].dom.contains(a)) {
 					Variable x = findAnotherWatchedUnifxedVariable(a, residues1[a]);
 					if (x != null)
 						residues2[a] = x;
@@ -200,7 +200,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 		@Override
 		public boolean runPropagator(Variable x) {
 			if (x.dom.size() == 1) {
-				int v = x.dom.uniqueValue();
+				int v = x.dom.singleValue();
 				for (int i = futvars.limit; i >= 0; i--) {
 					Variable y = scp[futvars.dense[i]];
 					if (y != x && y.dom.removeValueIfPresent(v) == false)
@@ -241,7 +241,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 		@Override
 		public boolean runPropagator(Variable x) {
 			if (x.dom.size() == 1) {
-				int v = x.dom.uniqueValue();
+				int v = x.dom.singleValue();
 				if (Utilities.indexOf(v, exceptValues) != -1)
 					return true;
 				for (int i = futvars.limit; i >= 0; i--) {
@@ -300,7 +300,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 				if (scp[p].dom.size() > 1)
 					continue;
 				Variable x = scp[p];
-				int v = x.dom.uniqueValue();
+				int v = x.dom.singleValue();
 				for (int j = futvars.limit; j >= 0; j--) {
 					Variable y = scp[futvars.dense[j]];
 					if (y != x && y.dom.removeValueIfPresent(v) == false)
@@ -320,7 +320,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 			for (int i = sets[1].limit; i >= 0; i--) { // TODO try to manage all new fixed variables
 				int vapFixed = sets[1].dense[i];
 				Variable x = scp[vapFixed];
-				int v = x.dom.uniqueValue();
+				int v = x.dom.singleValue();
 				for (int j = futvars.limit; j >= 0; j--) {
 					Variable y = scp[futvars.dense[j]];
 					if (y == x)
@@ -545,7 +545,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 
 			boolean isAlwaysAbsent(int k) {
 				for (int i = collectedVars.limit; i >= 0; i--)
-					if (scp[collectedVars.dense[i]].dom.present(k))
+					if (scp[collectedVars.dense[i]].dom.contains(k))
 						return false;
 				return true;
 
@@ -776,10 +776,10 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 		@Override
 		public boolean runPropagator(Variable x) {
 			if (x.dom.size() == 1) {
-				int a = x.dom.unique();
+				int a = x.dom.single();
 				if (!fixedIdxs.isPresent(a))
 					fixedIdxs.add(a, problem.solver.depth());
-				int v = x.dom.uniqueValue();
+				int v = x.dom.singleValue();
 				for (int i = futvars.limit; i >= 0; i--) {
 					Variable y = scp[futvars.dense[i]];
 					if (y == x)

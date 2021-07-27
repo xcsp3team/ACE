@@ -221,12 +221,12 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Term[] terms = new Term[Math.min(scp.length, 2 * LIM)];
 		if (terms.length == scp.length)
 			for (int i = 0; i < terms.length; i++)
-				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * scp[i].dom.intervalValue(), scp[i]);
+				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * scp[i].dom.distance(), scp[i]);
 		else {
 			for (int i = 0; i < LIM; i++)
-				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * scp[i].dom.intervalValue(), scp[i]);
+				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * scp[i].dom.distance(), scp[i]);
 			for (int i = 0; i < LIM; i++)
-				terms[LIM + i] = new Term((coeffs == null ? 1 : coeffs[scp.length - 1 - i]) * scp[scp.length - 1 - i].dom.intervalValue(),
+				terms[LIM + i] = new Term((coeffs == null ? 1 : coeffs[scp.length - 1 - i]) * scp[scp.length - 1 - i].dom.distance(),
 						scp[scp.length - 1 - i]);
 		}
 		terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new); // we discard terms of small coeffs
@@ -618,7 +618,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		for (int i = 0; i < settings.instantiatedVars.length; i++) {
 			Variable x = findVarWithNumOrId(settings.instantiatedVars[i]);
 			int v = settings.instantiatedVals[i];
-			control(x.dom.presentValue(v), "Value " + v + " not present in domain of " + x + ". Check  -ins.");
+			control(x.dom.containsValue(v), "Value " + v + " not present in domain of " + x + ". Check  -ins.");
 			x.dom.removeValuesAtConstructionTime(w -> w != v);
 		}
 	}
@@ -1205,7 +1205,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				Domain domi = scp[i].dom, domj = scp[j].dom;
 				for (int a = domi.first(); a != -1; a = domi.next(a)) {
 					int va = domi.toVal(a);
-					if (!Kit.isPresent(va, exceptValues) && domj.presentValue(va))
+					if (!Kit.isPresent(va, exceptValues) && domj.containsValue(va))
 						conflicts.add(new int[] { va, va });
 				}
 				extension(vars(scp[i], scp[j]), Kit.intArray2D(conflicts), false, false);
@@ -1560,8 +1560,8 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		control(0 <= l && l <= list.length);
 		if (values.length == 1) {
 			int value = values[0];
-			VariableInteger[] scp = Stream.of(list).filter(x -> x.dom.presentValue(value) && x.dom.size() > 1).toArray(VariableInteger[]::new);
-			int k = l - (int) Stream.of(list).filter(x -> x.dom.onlyContainsValue(value)).count();
+			VariableInteger[] scp = Stream.of(list).filter(x -> x.dom.containsValue(value) && x.dom.size() > 1).toArray(VariableInteger[]::new);
+			int k = l - (int) Stream.of(list).filter(x -> x.dom.containsOnlyValue(value)).count();
 			control(scp.length > 0 && 0 <= k && k <= scp.length);
 			if (op == LT)
 				return atMost(scp, value, k - 1);
@@ -1637,7 +1637,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	private CtrArray postClosed(Variable[] list, int[] values) {
 		return forall(range(list.length), i -> {
 			if (!list[i].dom.areInitValuesSubsetOf(values))
-				extension(list[i], api.select(values, v -> list[i].dom.presentValue(v)), true);
+				extension(list[i], api.select(values, v -> list[i].dom.containsValue(v)), true);
 		});
 	}
 
@@ -1834,7 +1834,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Domain dx = ((Variable) index).dom, dz = ((Variable) value).dom;
 		for (int a = dx.first(); a != -1; a = dx.next(a)) {
 			int va = dx.toVal(a) - startIndex;
-			if (0 <= va && va < list.length && dz.presentValue(list[va] - startValue))
+			if (0 <= va && va < list.length && dz.containsValue(list[va] - startValue))
 				l.add(new int[] { va + startIndex, list[va] - startValue });
 		}
 		return extension(vars(index, value), org.xcsp.common.structures.Table.clean(l), true);
@@ -1863,7 +1863,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		for (int a = dx.first(); a != -1; a = dx.next(a))
 			for (int b = dy.first(); b != -1; b = dy.next(b)) {
 				int i = dx.toVal(a), j = dy.toVal(b);
-				if (0 <= i && i < matrix.length && 0 <= j && j < matrix[i].length && dz.presentValue(matrix[i][j]))
+				if (0 <= i && i < matrix.length && 0 <= j && j < matrix[i].length && dz.containsValue(matrix[i][j]))
 					tuples.add(new int[] { i, j, matrix[i][j] });
 			}
 		return extension(vars(rowIndex, colIndex, value), org.xcsp.common.structures.Table.clean(tuples), true);

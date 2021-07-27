@@ -53,9 +53,9 @@ public abstract class SumScalarBoolean extends CtrGlobal implements TagAC, TagFi
 		set01vs1.clear();
 		for (int i = 0; i < half; i++) {
 			Domain dom1 = scp[i].dom, dom2 = scp[i + half].dom;
-			if (dom1.present(1) && dom2.present(1)) { // if one 1 is missing nothing to do because the product is necessarily 0
+			if (dom1.contains(1) && dom2.contains(1)) { // if one 1 is missing nothing to do because the product is necessarily 0
 				max++;
-				if (!dom1.present(0) && !dom2.present(0))
+				if (!dom1.contains(0) && !dom2.contains(0))
 					min++;
 				else if (dom1.size() == 1 || dom2.size() == 1)
 					set01vs1.add(i); // we add i iff we have (0,1) versus 1 (or equivalently 1 versus (0,1)) ; the only way to filter here
@@ -67,7 +67,7 @@ public abstract class SumScalarBoolean extends CtrGlobal implements TagAC, TagFi
 		assert value == 0 || value == 1;
 		for (int i = set01vs1.limit; i >= 0; i--) {
 			int j = set01vs1.dense[i];
-			assert (scp[j].dom.size() == 2 && scp[half + j].dom.onlyContains(1)) || (scp[half + j].dom.size() == 2 && scp[j].dom.onlyContains(1));
+			assert (scp[j].dom.size() == 2 && scp[half + j].dom.containsOnly(1)) || (scp[half + j].dom.size() == 2 && scp[j].dom.containsOnly(1));
 			if (scp[j].dom.size() == 2)
 				scp[j].dom.remove(value);
 			else
@@ -175,9 +175,9 @@ public abstract class SumScalarBoolean extends CtrGlobal implements TagAC, TagFi
 				set01vs01.clear();
 				for (int i = 0; i < half; i++) {
 					Domain dom1 = scp[i].dom, dom2 = scp[i + half].dom;
-					if (dom1.present(1) && dom2.present(1)) { // if one 1 is missing nothing to do because the product is necessarily 0
+					if (dom1.contains(1) && dom2.contains(1)) { // if one 1 is missing nothing to do because the product is necessarily 0
 						max++;
-						if (!dom1.present(0) && !dom2.present(0))
+						if (!dom1.contains(0) && !dom2.contains(0))
 							min++;
 						else if (dom1.size() == 1 || dom2.size() == 1)
 							set01vs1.add(i); // we add i iff we have (0,1) versus 1 (or equivalently 1 versus (0,1))

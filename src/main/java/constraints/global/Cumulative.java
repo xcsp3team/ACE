@@ -409,7 +409,7 @@ public abstract class Cumulative extends CtrGlobal implements TagFilteringComple
 				return false;
 			for (int i = 0; i < nTasks; i++) {
 				if (starts[i].dom.size() == 1 && heights[i].dom.size() > 1) {
-					int start = starts[i].dom.uniqueValue();
+					int start = starts[i].dom.singleValue();
 					int increase = heights[i].dom.lastValue() - heights[i].dom.firstValue();
 					for (int k = 0; k < timetableReasoner.nSlots; k++) {
 						Slot slot = timetableReasoner.slots[k];

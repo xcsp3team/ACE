@@ -74,7 +74,7 @@ public abstract class BinPacking extends CtrGlobal implements TagNotAC { // not 
 			Arrays.fill(sums, 0);
 			set.clear();
 			for (int i = 0; i < scp.length; i++) {
-				int a = scp[i].dom.size() > 1 ? -1 : scp[i].dom.unique();
+				int a = scp[i].dom.size() > 1 ? -1 : scp[i].dom.single();
 				if (a != -1)
 					sums[a] += sizes[i];
 				else
@@ -160,7 +160,7 @@ public abstract class BinPacking extends CtrGlobal implements TagNotAC { // not 
 			// updating the capacity of bins
 			for (int i = 0; i < scp.length; i++)
 				if (scp[i].dom.size() == 1) {
-					bins[scp[i].dom.unique()].capacity -= sizes[i]; // the capacity is updated
+					bins[scp[i].dom.single()].capacity -= sizes[i]; // the capacity is updated
 					// if (bins[scp[i].dom.unique()].capacity < 0) // TODO why it does not work ? because we update useless abandoned bins
 					// return x.dom.fail();
 				}
@@ -187,7 +187,7 @@ public abstract class BinPacking extends CtrGlobal implements TagNotAC { // not 
 						if (sizes[p] > sortedBins[j].capacity) {
 							if (dom.removeValueIfPresent(i) == false)
 								return false;
-						} else if (dom.present(i)) {
+						} else if (dom.contains(i)) {
 							position = j;
 							fronts[j].add(p);
 						}
@@ -196,8 +196,8 @@ public abstract class BinPacking extends CtrGlobal implements TagNotAC { // not 
 						return x.dom.fail();
 					}
 					if (dom.size() == 1) {
-						bins[dom.unique()].capacity -= sizes[p]; // note that sortedBins has references to bins
-						if (bins[dom.unique()].capacity < 0)
+						bins[dom.single()].capacity -= sizes[p]; // note that sortedBins has references to bins
+						if (bins[dom.single()].capacity < 0)
 							return x.dom.fail();
 						sortLimit = position + 1; // TODO only inserting rather than sorting ?
 						continue start;

@@ -99,9 +99,9 @@ public abstract class Lexicographic extends CtrGlobal implements TagNotSymmetric
 			if (PrimitiveBinary.enforceLE(dom1, dom2) == false) // enforce (AC on) x <= y (list1[alpha] <= list2[alpha])
 				return false;
 			if (dom1.size() == 1 && dom2.size() == 1) {
-				if (dom1.uniqueValue() < dom2.uniqueValue())
+				if (dom1.singleValue() < dom2.singleValue())
 					return entailed();
-				assert dom1.uniqueValue() == dom2.uniqueValue();
+				assert dom1.singleValue() == dom2.singleValue();
 				alpha++;
 			} else {
 				int min1 = dom1.firstValue(), min2 = dom2.firstValue();

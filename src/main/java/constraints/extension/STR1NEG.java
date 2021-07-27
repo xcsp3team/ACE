@@ -51,7 +51,7 @@ public final class STR1NEG extends STR1 implements TagNegative {
 			} else
 				set.removeAtPosition(i, depth);
 		}
-		long nValidTuples = Domain.nValidTuplesBoundedAtMaxValueFor(doms);
+		long nValidTuples = Domain.nValidTuplesBounded(doms);
 		for (int i = futvars.limit; i >= 0; i--) {
 			int x = futvars.dense[i];
 			Domain dom = scp[x].dom;

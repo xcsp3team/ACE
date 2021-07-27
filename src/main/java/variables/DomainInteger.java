@@ -36,7 +36,7 @@ public abstract class DomainInteger extends LinkedSetOrderedWithBits implements 
 		if (this.size != d.size)
 			return false;
 		for (int a = first; a != -1; a = next(a))
-			if (!d.present(a))
+			if (!d.contains(a))
 				return false;
 		return true;
 	}
@@ -194,7 +194,7 @@ public abstract class DomainInteger extends LinkedSetOrderedWithBits implements 
 		}
 
 		@Override
-		public String stringListOfValues() {
+		public String stringOfCurrentValues() {
 			StringBuilder sb = new StringBuilder();
 			for (int a = first(); a != -1; a = next(a))
 				sb.append(a != first() ? ' ' : "").append(symbols[a]);

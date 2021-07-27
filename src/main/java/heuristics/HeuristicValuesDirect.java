@@ -72,7 +72,7 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 		@Override
 		public int identifyBestValueIndex() {
 			int a = progressSaving[x.num];
-			return a != -1 && dx.present(a) ? a : dx.first();
+			return a != -1 && dx.contains(a) ? a : dx.first();
 		}
 	}
 
@@ -83,7 +83,7 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 
 		@Override
 		public int identifyBestValueIndex() {
-			return dx.random();
+			return dx.any();
 		}
 	}
 
@@ -100,7 +100,7 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 				return dx.first();
 			if (run % 3 == 1)
 				return dx.last();
-			return dx.random();
+			return dx.any();
 		}
 	}
 
@@ -118,7 +118,7 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 				return dx.first();
 			if (cnt % 3 == 1)
 				return dx.last();
-			return dx.random();
+			return dx.any();
 		}
 	}
 
@@ -140,7 +140,7 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 			if (min) { // to minimize the number of distinct values
 				for (Variable y : others)
 					if (y != x && y.dom.size() == 1) {
-						int a = dx.toPresentIdx(y.dom.firstValue());
+						int a = dx.toIdxIfPresent(y.dom.firstValue());
 						if (a >= 0)
 							return a;
 					}

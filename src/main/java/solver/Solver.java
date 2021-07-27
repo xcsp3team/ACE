@@ -125,7 +125,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 				if (t[i].equals("*"))
 					sol[i] = -1;
 				else {
-					int a = problem.variables[i].dom.toPresentIdx(Integer.parseInt(t[i]));
+					int a = problem.variables[i].dom.toIdxIfPresent(Integer.parseInt(t[i]));
 					Kit.control(a != -1, "pb with " + problem.variables[i] + " and " + t[i]);
 					sol[i] = a;
 				}
@@ -159,7 +159,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 			if (d >= currSize) {
 				currSize = d;
 				for (int i = 0; i < prevLongestRunBranch.length; i++)
-					prevLongestRunBranch[i] = problem.variables[i].dom.size() == 1 ? problem.variables[i].dom.unique() : -1;
+					prevLongestRunBranch[i] = problem.variables[i].dom.size() == 1 ? problem.variables[i].dom.single() : -1;
 				// System.out.println("new " + Kit.join(prevLongestRunBranch));
 			}
 		}
@@ -643,7 +643,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 			if (x == lastPastBeforeRun[nRecursiveRuns - 1] && !head.control.lns.enabled)
 				stopping = EStopping.FULL_EXPLORATION;
 			else {
-				int a = x.dom.unique();
+				int a = x.dom.single();
 				backtrack(x);
 				consistent = tryRefutation(x, a) && propagation.propagate(objectiveToCheck);
 			}

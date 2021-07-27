@@ -71,7 +71,7 @@ public final class AllEqual extends CtrGlobal implements ObserverBacktrackingSys
 		Variable y = x.dom.size() == 1 ? x : Variable.firstSingletonVariableIn(scp); // we look for a variable y with a singleton domain
 
 		if (y != null) { // we remove the unique value from the domains of the future variables
-			int v = y.dom.uniqueValue();
+			int v = y.dom.singleValue();
 			for (Variable z : scp)
 				if (z != y && z.dom.reduceToValue(v) == false)
 					return false;

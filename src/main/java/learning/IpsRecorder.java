@@ -89,7 +89,7 @@ public abstract class IpsRecorder implements ObserverRuns {
 					Domain dom = vars[i].dom;
 					this.justifications[i] = new Constraint[dom.initSize()];
 					for (int a = 0; a < justifications[i].length; a++)
-						if (!dom.present(a))
+						if (!dom.contains(a))
 							justifications[i][a] = Constraint.TAG; // because values removed at construction time
 				}
 				solver.problem.observersDomainReduction.add(this);

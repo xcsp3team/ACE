@@ -237,7 +237,7 @@ public final class SolutionRecorder {
 		assert t == null || t.length == variables.length;
 		lastSolution = lastSolution == null ? new int[variables.length] : lastSolution;
 		for (int i = 0; i < lastSolution.length; i++) {
-			lastSolution[i] = t != null ? t[i] : variables[i].dom.unique();
+			lastSolution[i] = t != null ? t[i] : variables[i].dom.single();
 			variables[i].valueIndexInLastSolution = lastSolution[i]; // lastSolution[i]lastSolutionPrettyAssignedValue = variables[i].dom.prettyAssignedValue();
 		}
 
@@ -251,11 +251,11 @@ public final class SolutionRecorder {
 	private void solutionHamming() {
 		if (found <= 1)
 			return;
-		h1 = (int) IntStream.range(0, lastSolution.length).filter(i -> lastSolution[i] != solver.problem.variables[i].dom.unique()).count();
+		h1 = (int) IntStream.range(0, lastSolution.length).filter(i -> lastSolution[i] != solver.problem.variables[i].dom.single()).count();
 		if (solver.problem.optimizer != null) {
 			Constraint c = (Constraint) solver.problem.optimizer.ctr;
 			h2 = (int) IntStream.range(0, lastSolution.length)
-					.filter(i -> lastSolution[i] != solver.problem.variables[i].dom.unique() && c.involves(solver.problem.variables[i])).count();
+					.filter(i -> lastSolution[i] != solver.problem.variables[i].dom.single() && c.involves(solver.problem.variables[i])).count();
 		}
 	}
 

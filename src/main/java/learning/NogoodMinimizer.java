@@ -25,7 +25,7 @@ public class NogoodMinimizer {
 		tmp[nTransitions] = positiveDecision;
 		Variable x = dr.varIn(positiveDecision);
 		int a = dr.idxIn(positiveDecision);
-		if (!x.dom.present(a))
+		if (!x.dom.contains(a))
 			return false;
 		solver.assign(x, a);
 		return propagation.runAfterAssignment(x);
@@ -37,7 +37,7 @@ public class NogoodMinimizer {
 		for (; consistent && left < right; left++) {
 			Variable x = dr.varIn(decs[left]);
 			int a = dr.idxIn(decs[left]);
-			if (!x.dom.present(a)) {
+			if (!x.dom.contains(a)) {
 				consistent = false;
 			} else {
 				solver.assign(x, a);
@@ -59,7 +59,7 @@ public class NogoodMinimizer {
 		boolean consistent = addPositiveTransitionDecision(decs[positionOfLastFoundTransitionDecision], tmp, nTransitions++);
 		if (!consistent) {
 			Variable x = solver.futVars.lastPast();
-			int a = x.dom.unique();
+			int a = x.dom.single();
 			solver.backtrack(x);
 			x.dom.removeElementary(a);
 			consistent = x.dom.size() > 0 && propagation.runAfterRefutation(x);

@@ -72,7 +72,7 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 			super(pb, list, index, value);
 			this.k = value;
 			defineKey(value);
-			idom.removeAtConstructionTime(a -> !list[a].dom.presentValue(k));
+			idom.removeAtConstructionTime(a -> !list[a].dom.containsValue(k));
 			if (ipos < list.length && idom.toVal(ipos) != k) // special case (index in list)
 				idom.removeValueAtConstructionTime(k); // equivalent to idom.removeAtConstructionTime(ipos). right?
 		}
@@ -82,7 +82,7 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 			if (idom.size() > 1) { // checking that the values of index are still valid
 				int sizeBefore = idom.size();
 				for (int a = idom.first(); a != -1; a = idom.next(a))
-					if (!list[a].dom.presentValue(k))
+					if (!list[a].dom.containsValue(k))
 						idom.removeElementary(a);
 				if (idom.afterElementaryCalls(sizeBefore) == false)
 					return false;
@@ -90,7 +90,7 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 			// be careful : not a else because of statements above that may modify the domain of index
 			if (idom.size() > 1)
 				return true;
-			return list[idom.unique()].dom.reduceToValue(k) && entailed();
+			return list[idom.single()].dom.reduceToValue(k) && entailed();
 		}
 	}
 
@@ -132,12 +132,12 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 
 		private boolean validIndex(int i) {
 			int v = indexSentinels[i];
-			if (v != -1 && list[i].dom.presentValue(v) && vdom.presentValue(v))
+			if (v != -1 && list[i].dom.containsValue(v) && vdom.containsValue(v))
 				return true;
 			Domain dom = list[i].dom;
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
 				int va = dom.toVal(a);
-				if (vdom.presentValue(va)) {
+				if (vdom.containsValue(va)) {
 					indexSentinels[i] = va;
 					return true;
 				}
@@ -152,10 +152,10 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 		private boolean validValue(int a) {
 			int va = vdom.toVal(a);
 			int sentinel = valueSentinels[a];
-			if (sentinel != -1 && idom.present(sentinel) && list[sentinel].dom.presentValue(va))
+			if (sentinel != -1 && idom.contains(sentinel) && list[sentinel].dom.containsValue(va))
 				return true;
 			for (int i = idom.first(); i != -1; i = idom.next(i)) {
-				if (list[i].dom.presentValue(va)) {
+				if (list[i].dom.containsValue(va)) {
 					valueSentinels[a] = i;
 					return true;
 				}
@@ -194,7 +194,7 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 			}
 			// If index is singleton, we update dom(list[index]) and dom(value) so that they are both equal to the intersection of the two domains
 			if (idom.size() == 1) {
-				if (PrimitiveBinary.enforceEQ(list[idom.unique()].dom, vdom) == false)
+				if (PrimitiveBinary.enforceEQ(list[idom.single()].dom, vdom) == false)
 					return false;
 				if (vdom.size() == 1)
 					return entailed();
@@ -203,13 +203,13 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 		}
 
 		private boolean controlAC() {
-			control(idom.size() != 1 || list[idom.unique()].dom.subsetOf(vdom), () -> "index is singleton and dom(index) is not included in dom(result).");
+			control(idom.size() != 1 || list[idom.single()].dom.subsetOf(vdom), () -> "index is singleton and dom(index) is not included in dom(result).");
 			for (int a = idom.first(); a != -1; a = idom.next(a))
 				control(list[a].dom.overlapWith(vdom), () -> "One var has no value in dom(result).");
 			extern: for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
 				int v = vdom.toVal(a);
 				for (int b = idom.first(); b != -1; b = idom.next(b))
-					if (list[b].dom.presentValue(v))
+					if (list[b].dom.containsValue(v))
 						continue extern;
 				control(false, () -> "value " + v + " is in dom(value) but in no list variable whose index is still in dom(index).");
 			}
@@ -272,10 +272,10 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 				if (sizeBefore > 1) {
 					extern: for (int a = rdom.last(); a != -1; a = rdom.prev(a)) {
 						int b = rsentinels[a];
-						if (cdom.present(b) && matrix[rdom.toVal(a)][cdom.toVal(b)].dom.presentValue(value))
+						if (cdom.contains(b) && matrix[rdom.toVal(a)][cdom.toVal(b)].dom.containsValue(value))
 							continue;
 						for (b = cdom.last(); b != -1; b = cdom.prev(b))
-							if (matrix[rdom.toVal(a)][cdom.toVal(b)].dom.presentValue(value)) {
+							if (matrix[rdom.toVal(a)][cdom.toVal(b)].dom.containsValue(value)) {
 								rsentinels[a] = b;
 								continue extern;
 							}
@@ -290,10 +290,10 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 				if (sizeBefore > 1) {
 					extern: for (int b = cdom.last(); b != -1; b = cdom.prev(b)) {
 						int a = csentinels[b];
-						if (rdom.present(a) && matrix[rdom.toVal(a)][cdom.toVal(b)].dom.presentValue(value))
+						if (rdom.contains(a) && matrix[rdom.toVal(a)][cdom.toVal(b)].dom.containsValue(value))
 							continue;
 						for (a = rdom.last(); a != -1; a = rdom.prev(a)) {
-							if (matrix[rdom.toVal(a)][cdom.toVal(b)].dom.presentValue(value)) {
+							if (matrix[rdom.toVal(a)][cdom.toVal(b)].dom.containsValue(value)) {
 								csentinels[b] = a;
 								continue extern;
 							}
@@ -305,7 +305,7 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 				}
 				// be careful : below, not a else because of statements above that may modify the domain of indexes
 				// TODO are we sure it is GAC?
-				return rdom.size() > 1 || cdom.size() > 1 || (matrix[rdom.uniqueValue()][cdom.uniqueValue()].dom.reduceToValue(value) && entailed());
+				return rdom.size() > 1 || cdom.size() > 1 || (matrix[rdom.singleValue()][cdom.singleValue()].dom.reduceToValue(value) && entailed());
 			}
 		}
 
@@ -344,13 +344,13 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 
 			private boolean validRowIndex(int i) {
 				int j = rindexColSentinels[i], v = rindexValSentinels[i];
-				if (j != -1 && cdom.present(j) && matrix[rdom.toVal(i)][cdom.toVal(j)].dom.presentValue(v) && vdom.presentValue(v))
+				if (j != -1 && cdom.contains(j) && matrix[rdom.toVal(i)][cdom.toVal(j)].dom.containsValue(v) && vdom.containsValue(v))
 					return true;
 				for (j = cdom.first(); j != -1; j = cdom.next(j)) {
 					Domain dom = matrix[rdom.toVal(i)][cdom.toVal(j)].dom;
 					for (int a = dom.first(); a != -1; a = dom.next(a)) {
 						int va = dom.toVal(a);
-						if (vdom.presentValue(va)) {
+						if (vdom.containsValue(va)) {
 							rindexColSentinels[i] = j;
 							rindexValSentinels[i] = va;
 							return true;
@@ -362,13 +362,13 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 
 			private boolean validColIndex(int j) {
 				int i = cindexRowSentinels[j], v = cindexValSentinels[j];
-				if (i != -1 && rdom.present(i) && matrix[rdom.toVal(i)][cdom.toVal(j)].dom.presentValue(v) && vdom.presentValue(v))
+				if (i != -1 && rdom.contains(i) && matrix[rdom.toVal(i)][cdom.toVal(j)].dom.containsValue(v) && vdom.containsValue(v))
 					return true;
 				for (i = rdom.first(); i != -1; i = rdom.next(i)) {
 					Domain dom = matrix[rdom.toVal(i)][cdom.toVal(j)].dom;
 					for (int a = dom.first(); a != -1; a = dom.next(a)) {
 						int va = dom.toVal(a);
-						if (vdom.presentValue(va)) {
+						if (vdom.containsValue(va)) {
 							cindexRowSentinels[j] = i;
 							cindexValSentinels[j] = va;
 							return true;
@@ -385,11 +385,11 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 			private boolean validValue(int a) {
 				int va = vdom.toVal(a);
 				int i = valueRowSentinels[a], j = valueColSentinels[a];
-				if (i != -1 && rdom.present(i) && cdom.present(j) && matrix[rdom.toVal(i)][cdom.toVal(j)].dom.presentValue(va))
+				if (i != -1 && rdom.contains(i) && cdom.contains(j) && matrix[rdom.toVal(i)][cdom.toVal(j)].dom.containsValue(va))
 					return true;
 				for (i = rdom.first(); i != -1; i = rdom.next(i))
 					for (j = cdom.first(); j != -1; j = cdom.next(j)) {
-						if (matrix[rdom.toVal(i)][cdom.toVal(j)].dom.presentValue(va)) {
+						if (matrix[rdom.toVal(i)][cdom.toVal(j)].dom.containsValue(va)) {
 							valueRowSentinels[a] = i;
 							valueColSentinels[a] = j;
 							return true;
@@ -429,7 +429,7 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 				}
 				// If indexes are both singleton, we enforce matrix[rindex][cindex] == value
 				if (rdom.size() == 1 && cdom.size() == 1) {
-					if (PrimitiveBinary.enforceEQ(matrix[rdom.uniqueValue()][cdom.uniqueValue()].dom, vdom) == false)
+					if (PrimitiveBinary.enforceEQ(matrix[rdom.singleValue()][cdom.singleValue()].dom, vdom) == false)
 						return false;
 					if (vdom.size() == 1)
 						return entailed();

@@ -59,7 +59,7 @@ public abstract class NValues extends CtrGlobal implements TagNotAC { // not cal
 			if (dom.size() > fixedVals.size())
 				continue;
 			int sentinel = sentinels[x];
-			if (dom.presentValue(sentinel) && !fixedVals.contains(sentinel))
+			if (dom.containsValue(sentinel) && !fixedVals.contains(sentinel))
 				continue;
 			if (dom.size() > 5) // hard coding for avoiding iterating systematically over all values
 				continue;
@@ -137,7 +137,7 @@ public abstract class NValues extends CtrGlobal implements TagNotAC { // not cal
 
 		@Override
 		public long objectiveValue() {
-			return Arrays.stream(scp).mapToInt(x -> x.dom.uniqueValue()).distinct().count();
+			return Arrays.stream(scp).mapToInt(x -> x.dom.singleValue()).distinct().count();
 		}
 
 		public NValuesCst(Problem pb, Variable[] list, long k) {
@@ -246,7 +246,7 @@ public abstract class NValues extends CtrGlobal implements TagNotAC { // not cal
 					if (k.dom.removeValuesLT(fixedVals.size()) == false || k.dom.removeValuesGT(fixedVals.size() + unfixedVars.size()) == false)
 						return false;
 					if (k.dom.size() == 1) {
-						int limit = k.dom.uniqueValue();
+						int limit = k.dom.singleValue();
 						if (fixedVals.size() == limit) {
 							for (int i = unfixedVars.limit; i >= 0; i--)
 								if (list[unfixedVars.dense[i]].dom.removeValuesNotIn(fixedVals) == false)

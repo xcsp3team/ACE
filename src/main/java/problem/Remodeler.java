@@ -224,7 +224,7 @@ public class Remodeler {
 				} else if (dom.size() == d.size()) {
 					boolean equal = true;
 					for (int idx = dom.first(); equal && idx != -1; idx = dom.next(idx))
-						if (!d.present(idx))
+						if (!d.contains(idx))
 							equal = false;
 					if (equal)
 						return key;

@@ -115,7 +115,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	/**********************************************************************************************
-	 * Static
+	 * Static Members
 	 *********************************************************************************************/
 
 	public static final int UNSET_NUM = -2;
@@ -176,7 +176,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 
 	public static final boolean areAllDomainsContainingValue(Variable[] vars, int v) {
 		for (Variable y : vars)
-			if (!y.dom.presentValue(v))
+			if (!y.dom.containsValue(v))
 				return false;
 		return true;
 	}
@@ -228,7 +228,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 		assert vars.length == tuple.length;
 		// System.out.println("Tuple = " + Kit.join(tuple));
 		return IntStream.range(0, vars.length)
-				.allMatch(i -> tuple[i] == Constants.STAR || (indexes ? vars[i].dom.present(tuple[i]) : vars[i].dom.presentValue(tuple[i])));
+				.allMatch(i -> tuple[i] == Constants.STAR || (indexes ? vars[i].dom.contains(tuple[i]) : vars[i].dom.containsValue(tuple[i])));
 	}
 
 	public static boolean isValidTuple(Variable[] vars, String[] tuple) {
@@ -245,7 +245,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	public static int[] filterValues(Variable x, int[] values, boolean indexes) {
-		return IntStream.of(values).filter(v -> indexes ? x.dom.present(v) : x.dom.presentValue(v)).toArray();
+		return IntStream.of(values).filter(v -> indexes ? x.dom.contains(v) : x.dom.containsValue(v)).toArray();
 	}
 
 	public static String[] filterValues(Variable x, String[] values) {
@@ -338,7 +338,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	public static int[][] currDomainValues(Variable[] vars) {
-		return Stream.of(vars).map(x -> IntStream.range(0, x.dom.initSize()).filter(a -> x.dom.present(a)).map(a -> x.dom.toVal(a)).toArray())
+		return Stream.of(vars).map(x -> IntStream.range(0, x.dom.initSize()).filter(a -> x.dom.contains(a)).map(a -> x.dom.toVal(a)).toArray())
 				.toArray(int[][]::new);
 	}
 
@@ -608,7 +608,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	 *            the index of a value to assign to the variable
 	 */
 	public final void doAssignment(int a) {
-		assert isFuture() && dom.present(a) : isFuture() + " " + dom.present(a);
+		assert isFuture() && dom.contains(a) : isFuture() + " " + dom.contains(a);
 		dom.reduceToElementary(a);
 		assignmentLevel = problem.solver.depth(); // keep at this position
 		for (Constraint c : ctrs)
@@ -662,7 +662,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	public final void display(boolean exhaustively) {
-		Kit.log.finer("Variable " + this + " with num=" + num + ", degree=" + ctrs.length + ", " + dom.size() + " values {" + dom.stringListOfValues()
+		Kit.log.finer("Variable " + this + " with num=" + num + ", degree=" + ctrs.length + ", " + dom.size() + " values {" + dom.stringOfCurrentValues()
 				+ "} and domain type " + dom.typeName() + " " + (this.assigned() ? " is assigned" : ""));
 		if (exhaustively) {
 			dom.display(exhaustively);

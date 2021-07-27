@@ -288,6 +288,6 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 	}
 
 	boolean controlTuples(int[][] tuples) {
-		return Stream.of(tuples).allMatch(t -> IntStream.range(0, t.length).allMatch(i -> t[i] == STAR || scp[i].dom.presentValue(t[i])));
+		return Stream.of(tuples).allMatch(t -> IntStream.range(0, t.length).allMatch(i -> t[i] == STAR || scp[i].dom.containsValue(t[i])));
 	}
 }

@@ -70,7 +70,7 @@ public class STR2NEG extends ExtensionGlobal implements TagNegative {
 
 	protected void initializeStructuresBeforeFiltering() {
 		sSupSize = 0;
-		long nValid = Domain.nValidTuplesBoundedAtMaxValueFor(doms);
+		long nValid = Domain.nValidTuplesBounded(doms);
 		for (int i = futvars.limit; i >= 0; i--) {
 			int x = futvars.dense[i];
 			long limit = nValid / doms[x].size();

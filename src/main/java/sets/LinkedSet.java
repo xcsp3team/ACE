@@ -52,7 +52,7 @@ public interface LinkedSet {
 	 *            the index of a value
 	 * @return {@code true} iff the specified element is present
 	 */
-	boolean present(int a);
+	boolean contains(int a);
 
 	/**
 	 * Returns the first present element (index of value) of the set, or -1 if the set is empty.
@@ -85,6 +85,27 @@ public interface LinkedSet {
 	 * @return the element that comes before the specified one, or -1
 	 */
 	int prev(int a);
+
+	/**
+	 * Returns the i+1th element of the set. BE CAREFUL: this operation is not in O(1), and so it only should be performed in very specific cases.
+	 * 
+	 * @param i
+	 *            the position of the element in the set
+	 */
+	default int get(int i) {
+		assert 0 <= i && i < size();
+		if (i < size() / 2) {
+			int a = first();
+			for (int cnt = i - 1; cnt >= 0; cnt--)
+				a = next(a);
+			return a;
+		} else {
+			int a = last();
+			for (int cnt = size() - i - 2; cnt >= 0; cnt--)
+				a = prev(a);
+			return a;
+		}
+	}
 
 	/**
 	 * Returns the last removed element (index of value) of the set, or -1 if there is none.

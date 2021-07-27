@@ -59,7 +59,7 @@ public class Table extends ExtensionStructure {
 			Domain dom = list[i].dom;
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
 				int va = dom.toVal(a);
-				if (domResult.presentValue(va)) {
+				if (domResult.containsValue(va)) {
 					int[] tuple = Kit.repeat(STAR, arity);
 					tuple[0] = i;
 					tuple[i + 1] = va;

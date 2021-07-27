@@ -81,7 +81,7 @@ public abstract class PrimitiveLogic extends Primitive implements TagAC, TagNotS
 			public boolean runPropagator(Variable dummy) {
 				if (dx.first() == 1) // x = 1 => y = 1 and z = 1
 					return dy.removeIfPresent(0) && dz.removeIfPresent(0) && entailed();
-				if (!dy.present(1) || !dz.present(1)) // y != 1 or z != 1 => x != 1
+				if (!dy.contains(1) || !dz.contains(1)) // y != 1 or z != 1 => x != 1
 					return dx.removeIfPresent(1) && entailed();
 				// 0 is present in dx, and 1 in dy and 1 in dz; if present, (x,1) is supported
 				if (dy.size() == 1 && dz.size() == 1) // y = 1 and z = 1 => x = 1
@@ -193,7 +193,7 @@ public abstract class PrimitiveLogic extends Primitive implements TagAC, TagNotS
 			public boolean runPropagator(Variable dummy) {
 				if (dx.last() == 0) // x = 0 => y = 0 and z = 0
 					return dy.removeIfPresent(1) && dz.removeIfPresent(1) && entailed();
-				if (!dy.present(0) || !dz.present(0)) // y != 0 or z != 0 => x != 0
+				if (!dy.contains(0) || !dz.contains(0)) // y != 0 or z != 0 => x != 0
 					return dx.removeIfPresent(0) && entailed();
 				// 1 is present in dx, and 0 in dy and 0 in dz; if present, (x,0) is supported
 				if (dy.size() == 1 && dz.size() == 1) // y = 0 and z = 0 => x = 0

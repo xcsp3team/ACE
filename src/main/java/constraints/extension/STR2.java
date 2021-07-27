@@ -38,7 +38,7 @@ public class STR2 extends STR1Optimized implements TagStarred {
 	protected boolean isValidTuple(int[] tuple) {
 		for (int i = sValSize - 1; i >= 0; i--) {
 			int x = sVal[i];
-			if (tuple[x] != STAR && !doms[x].present(tuple[x]))
+			if (tuple[x] != STAR && !doms[x].contains(tuple[x]))
 				return false;
 		}
 		return true;
@@ -80,7 +80,7 @@ public class STR2 extends STR1Optimized implements TagStarred {
 		for (int i = set.limit; i >= 0; i--) {
 			int[] tuple = tuples[dense[i]];
 			for (int j = tuple.length - 1; j >= 0; j--) {
-				if (tuple[j] != STAR && !doms[j].present(tuple[j])) {
+				if (tuple[j] != STAR && !doms[j].contains(tuple[j])) {
 					System.out.println(this + " at " + problem.solver.depth() + "\n" + Kit.join(tuple));
 					Stream.of(scp).forEach(x -> x.display(true));
 					return false;

@@ -175,7 +175,7 @@ public class TableSmart extends ExtensionStructure {
 		private SmartTuple addRestrictionUnary(Collection<RestrictionSimple> list, int x, TypeConditionOperatorRel op, int v) {
 			boolean storeEqualities = true;
 			if (storeEqualities && op == EQ) {
-				Kit.control(prefix[x] == STAR && scp[x].dom.presentValue(v), () -> " " + scp[x] + " " + prefix[x] + " " + STAR + " " + v + " " + scp[x].dom);
+				Kit.control(prefix[x] == STAR && scp[x].dom.containsValue(v), () -> " " + scp[x] + " " + prefix[x] + " " + STAR + " " + v + " " + scp[x].dom);
 				prefix[x] = scp[x].dom.toIdx(v); // for a constant, we directly put it in tupIdxs (no need to build a Restriction object)
 				return this;
 			}
@@ -304,7 +304,7 @@ public class TableSmart extends ExtensionStructure {
 				RestrictionSimple restriction = whichRestrictions[x];
 				if (restriction == null) {
 					int a = prefix[x];
-					if (a != STAR && !scp[x].dom.present(a))
+					if (a != STAR && !scp[x].dom.contains(a))
 						return false;
 				} else if (restriction.valTimeLocal != valTime && !restriction.isValid())
 					return false;
@@ -537,7 +537,7 @@ public class TableSmart extends ExtensionStructure {
 
 			@Override
 			public boolean isValid() {
-				return domx.size() > 1 || domx.unique() != pivot;
+				return domx.size() > 1 || domx.single() != pivot;
 			}
 
 			@Override
@@ -575,7 +575,7 @@ public class TableSmart extends ExtensionStructure {
 
 			@Override
 			public boolean isValid() {
-				return domx.present(pivot);
+				return domx.contains(pivot);
 			}
 
 			@Override
@@ -831,26 +831,26 @@ public class TableSmart extends ExtensionStructure {
 
 			@Override
 			public boolean isValidFor(int a) {
-				return domy.size() > 1 || a != domy.unique();
+				return domy.size() > 1 || a != domy.single();
 			}
 
 			@Override
 			public boolean isValid() {
 				valTimeLocal = valTime;
-				return domx.size() > 1 || domy.size() > 1 || domx.unique() != domy.unique();
+				return domx.size() > 1 || domy.size() > 1 || domx.single() != domy.single();
 			}
 
 			@Override
 			public void collect() {
 				supTimeLocal = supTime;
 				if (!scp[x].assigned())
-					if (domy.size() == 1 && supportlessx.isPresent(domy.unique()))
-						supportlessx.resetTo(domy.unique());
+					if (domy.size() == 1 && supportlessx.isPresent(domy.single()))
+						supportlessx.resetTo(domy.single());
 					else
 						supportlessx.clear();
 				if (!scp[y].assigned())
-					if (domx.size() == 1 && supportlessy.isPresent(domx.unique()))
-						supportlessy.resetTo(domx.unique());
+					if (domx.size() == 1 && supportlessy.isPresent(domx.single()))
+						supportlessy.resetTo(domx.single());
 					else
 						supportlessy.clear();
 			}
@@ -880,20 +880,20 @@ public class TableSmart extends ExtensionStructure {
 
 			@Override
 			public boolean isValidFor(int a) {
-				return domy.present(a);
+				return domy.contains(a);
 			}
 
 			@Override
 			public boolean isValid() {
 				valTimeLocal = valTime;
 				newResidue = false;
-				if (domx.present(residue) && domy.present(residue))
+				if (domx.contains(residue) && domy.contains(residue))
 					return true;
 				newResidue = true;
 				Domain domSmall = domx.size() < domy.size() ? domx : domy;
 				Domain domBig = domSmall == domx ? domy : domx;
 				for (int a = domSmall.first(); a != -1; a = domSmall.next(a))
-					if (domBig.present(a)) {
+					if (domBig.contains(a)) {
 						residue = a;
 						return true;
 					}
@@ -924,17 +924,17 @@ public class TableSmart extends ExtensionStructure {
 				Domain domBig = domSmall == domx ? domy : domx;
 				if (!scp[x].assigned() && !scp[y].assigned()) {
 					for (int a = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); a != -1; a = domSmall.next(a))
-						if (domBig.present(a)) {
+						if (domBig.contains(a)) {
 							supportlessx.remove(a);
 							supportlessy.remove(a);
 						}
 				} else if (!scp[x].assigned()) {
 					for (int a = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); a != -1; a = domSmall.next(a))
-						if (domBig.present(a))
+						if (domBig.contains(a))
 							supportlessx.remove(a);
 				} else if (!scp[y].assigned()) {
 					for (int a = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); a != -1; a = domSmall.next(a))
-						if (domBig.present(a))
+						if (domBig.contains(a))
 							supportlessy.remove(a);
 				}
 			}
@@ -943,13 +943,13 @@ public class TableSmart extends ExtensionStructure {
 				if (!scp[x].assigned())
 					for (int i = supportlessx.limit; i >= 0; i--) {
 						int a = supportlessx.dense[i];
-						if (domy.present(a))
+						if (domy.contains(a))
 							supportlessx.remove(a);
 					}
 				if (!scp[y].assigned())
 					for (int i = supportlessy.limit; i >= 0; i--) {
 						int a = supportlessy.dense[i];
-						if (domx.present(a))
+						if (domx.contains(a))
 							supportlessy.remove(a);
 					}
 			}
@@ -992,21 +992,21 @@ public class TableSmart extends ExtensionStructure {
 
 			@Override
 			public boolean isValidFor(int a) {
-				return domy.toPresentIdx(domx.toVal(a)) != -1;
+				return domy.toIdxIfPresent(domx.toVal(a)) != -1;
 			}
 
 			@Override
 			public boolean isValid() {
 				valTimeLocal = valTime;
 				newResidue = false;
-				if (domx.toPresentIdx(valResidue) != -1 && domy.toPresentIdx(valResidue) != -1)
+				if (domx.toIdxIfPresent(valResidue) != -1 && domy.toIdxIfPresent(valResidue) != -1)
 					return true;
 				newResidue = true;
 				Domain domSmall = domx.size() < domy.size() ? domx : domy;
 				Domain domBig = domSmall == domx ? domy : domx;
 				for (int a = domSmall.first(); a != -1; a = domSmall.next(a)) {
 					int v = domSmall.toVal(a);
-					if (domBig.toPresentIdx(v) != -1) {
+					if (domBig.toIdxIfPresent(v) != -1) {
 						valResidue = v;
 						return true;
 					}
@@ -1019,7 +1019,7 @@ public class TableSmart extends ExtensionStructure {
 					int cnt = 0;
 					for (int a = domy.lastRemoved(); a != -1; a = domy.prevRemoved(a)) {
 						int v = domy.toVal(a);
-						int b = domx.toPresentIdx(v);
+						int b = domx.toIdxIfPresent(v);
 						if (b != -1 && supportlessx.isPresent(b))
 							tmp[cnt++] = b;
 					}
@@ -1030,7 +1030,7 @@ public class TableSmart extends ExtensionStructure {
 					for (int a = domx.lastRemoved(); a != -1; a = domx.prevRemoved(a)) {
 						// System.out.println("Idx=" + idx + " " + dom.prevDelIdx(idx));
 						int v = domx.toVal(a);
-						int b = domy.toPresentIdx(v);
+						int b = domy.toIdxIfPresent(v);
 						if (b != -1 && supportlessy.isPresent(b)) {
 							// System.out.println(idx + " " + tmp.length + " " + dom.size() + " " + dom.initSize() + " cnt=" + cnt);
 							tmp[cnt++] = b;
@@ -1047,7 +1047,7 @@ public class TableSmart extends ExtensionStructure {
 				if (!scp[x].assigned() && !scp[y].assigned()) {
 					for (int a = domSmall.first(); a != -1; a = domSmall.next(a)) {
 						int v = domSmall.toVal(a);
-						int b = domBig.toPresentIdx(v);
+						int b = domBig.toIdxIfPresent(v);
 						if (b != -1) {
 							supportlessx.remove(domSmall == domx ? a : b);
 							supportlessy.remove(domSmall == domx ? b : a);
@@ -1056,14 +1056,14 @@ public class TableSmart extends ExtensionStructure {
 				} else if (!scp[x].assigned()) {
 					for (int a = domSmall.first(); a != -1; a = domSmall.next(a)) {
 						int v = domSmall.toVal(a);
-						int b = domBig.toPresentIdx(v);
+						int b = domBig.toIdxIfPresent(v);
 						if (b != -1)
 							supportlessx.remove(domSmall == domx ? a : b);
 					}
 				} else if (!scp[y].assigned()) {
 					for (int a = domSmall.first(); a != -1; a = domSmall.next(a)) {
 						int v = domSmall.toVal(a);
-						int b = domBig.toPresentIdx(v);
+						int b = domBig.toIdxIfPresent(v);
 						if (b != -1)
 							supportlessy.remove(domSmall == domx ? b : a);
 					}
@@ -1075,7 +1075,7 @@ public class TableSmart extends ExtensionStructure {
 					for (int i = supportlessx.limit; i >= 0; i--) {
 						int a = supportlessx.dense[i];
 						int v = domx.toVal(a);
-						int b = domy.toPresentIdx(v);
+						int b = domy.toIdxIfPresent(v);
 						if (b != -1)
 							supportlessx.remove(a);
 					}
@@ -1083,7 +1083,7 @@ public class TableSmart extends ExtensionStructure {
 					for (int i = supportlessy.limit; i >= 0; i--) {
 						int a = supportlessy.dense[i];
 						int v = domy.toVal(a);
-						int b = domx.toPresentIdx(v);
+						int b = domx.toIdxIfPresent(v);
 						if (b != -1)
 							supportlessy.remove(a);
 					}
@@ -1110,7 +1110,7 @@ public class TableSmart extends ExtensionStructure {
 					for (int i = 0; i < nb; i++) {
 						int a = tmp[i];
 						int v = domx.toVal(a);
-						int b = domy.toPresentIdx(v);
+						int b = domy.toIdxIfPresent(v);
 						if (b != -1) // && supportless2.isPresent(idxx))
 							supportlessy.remove(b);
 					}

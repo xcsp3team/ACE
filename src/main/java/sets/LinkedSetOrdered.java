@@ -105,7 +105,7 @@ public class LinkedSetOrdered implements LinkedSet {
 	}
 
 	@Override
-	public final boolean present(int a) {
+	public final boolean contains(int a) {
 		return removedLevels[a] == -1;
 	}
 
@@ -190,7 +190,7 @@ public class LinkedSetOrdered implements LinkedSet {
 
 	@Override
 	public final void remove(int a, int level) {
-		assert present(a) && level >= 0 : "level = " + level + " absentLevel = " + removedLevels[a];
+		assert contains(a) && level >= 0 : "level = " + level + " absentLevel = " + removedLevels[a];
 		removedLevels[a] = level;
 		size--;
 		removeElement(a);
@@ -198,7 +198,7 @@ public class LinkedSetOrdered implements LinkedSet {
 
 	@Override
 	public int reduceTo(int a, int level) {
-		assert present(a) && level >= 0;
+		assert contains(a) && level >= 0;
 		int sizeBefore = size;
 		for (int b = first; b != -1; b = next(b))
 			if (b != a)
@@ -223,7 +223,7 @@ public class LinkedSetOrdered implements LinkedSet {
 	}
 
 	private void restoreLastDropped() {
-		assert lastRemoved != -1 && !present(lastRemoved);
+		assert lastRemoved != -1 && !contains(lastRemoved);
 		removedLevels[lastRemoved] = -1;
 		size++;
 		addElement(lastRemoved);

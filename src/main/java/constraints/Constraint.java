@@ -91,7 +91,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		}
 
 		default void register(Constraint c) {
-			assert !registeredCtrs().contains(c) && (registeredCtrs().size() == 0 || Domain.similarDomains(c.doms, firstRegisteredCtr().doms));
+			assert !registeredCtrs().contains(c) && (registeredCtrs().size() == 0 || Domain.similarTypes(c.doms, firstRegisteredCtr().doms));
 			registeredCtrs().add(c);
 		}
 
@@ -202,7 +202,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 				continue;
 			int[] tmp = c.tupleManager.localTuple;
 			for (int i = 0; i < tmp.length; i++)
-				tmp[i] = solution != null ? solution[c.scp[i].num] : c.scp[i].dom.unique();
+				tmp[i] = solution != null ? solution[c.scp[i].num] : c.scp[i].dom.single();
 			if (c.checkIndexes(tmp) == false)
 				return c;
 		}
@@ -557,7 +557,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public int[] buildCurrentInstantiationTuple() {
 		int[] tuple = tupleManager.localTuple;
 		for (int i = tuple.length - 1; i >= 0; i--)
-			tuple[i] = doms[i].unique();
+			tuple[i] = doms[i].single();
 		return tuple;
 	}
 
@@ -596,7 +596,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	 */
 	public final boolean isValid(int[] tuple) {
 		for (int i = tuple.length - 1; i >= 0; i--)
-			if (!doms[i].present(tuple[i]))
+			if (!doms[i].contains(tuple[i]))
 				return false;
 		return true;
 	}
@@ -755,7 +755,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	public boolean controlArcConsistency() {
 		if (ignored)
 			return true;
-		if (Domain.nValidTuplesBoundedAtMaxValueFor(doms) > 1000)
+		if (Domain.nValidTuplesBounded(doms) > 1000)
 			return true;
 		for (int x = 0; x < scp.length; x++)
 			for (int a = doms[x].first(); a != -1; a = doms[x].next(a))

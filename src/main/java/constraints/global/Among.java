@@ -45,7 +45,7 @@ public final class Among extends CtrGlobal implements TagSymmetric, TagAC, TagFi
 		defineKey(Kit.join(values), k);
 		control(Kit.isStrictlyIncreasing(values), "Values must be given in increasing order");
 		control(0 < k && k < list.length, "Bad value of k=" + k);
-		control(Stream.of(list).allMatch(x -> x.dom.size() > 1 && IntStream.of(values).anyMatch(v -> x.dom.presentValue(v))), "Badly formed scope.");
+		control(Stream.of(list).allMatch(x -> x.dom.size() > 1 && IntStream.of(values).anyMatch(v -> x.dom.containsValue(v))), "Badly formed scope.");
 	}
 
 	@Override

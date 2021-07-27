@@ -40,7 +40,7 @@ public final class TupleManager {
 
 	private boolean isValidCurrTuple() {
 		for (int i = currTuple.length - 1; i >= 0; i--)
-			if (!doms[i].present(currTuple[i]))
+			if (!doms[i].contains(currTuple[i]))
 				return false;
 		return true;
 	}
@@ -49,7 +49,7 @@ public final class TupleManager {
 	 * Sets the given index (of a value) fixed.
 	 */
 	private void fix(int x, int a) {
-		assert doms[x].present(a) : a + " no more in " + doms[x];
+		assert doms[x].contains(a) : a + " no more in " + doms[x];
 		currTuple[x] = a;
 		fixed[x] = true;
 	}
@@ -130,7 +130,7 @@ public final class TupleManager {
 	public final int nextValidTupleCautiously() {
 		int arity = doms.length;
 		for (int i = 0; i < arity; i++)
-			if (!doms[i].present(currTuple[i])) { // i is the position (the closest to 0) of the first invalid index
+			if (!doms[i].contains(currTuple[i])) { // i is the position (the closest to 0) of the first invalid index
 				int modifiedPosition = setNextValidTupleBefore(i);
 				if (modifiedPosition == -1)
 					return -1;

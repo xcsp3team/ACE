@@ -57,11 +57,11 @@ public final class Circuit extends AllDifferentComplete {
 			return false;
 		int minimalCircuitLength = 0;
 		for (int i = 0; i < scp.length; i++)
-			if (scp[i].dom.presentValue(i) == false)
+			if (scp[i].dom.containsValue(i) == false)
 				minimalCircuitLength++;
 		for (int i = 0; i < scp.length; i++) {
 			if (scp[i].dom.size() == 1) {
-				int j = scp[i].dom.uniqueValue();
+				int j = scp[i].dom.singleValue();
 				if (i == j)
 					continue; // because self-loop
 				set.clear();
@@ -75,7 +75,7 @@ public final class Circuit extends AllDifferentComplete {
 						if (set.isPresent(j))
 							return false; // because two times the same value
 						set.add(j); // j belongs to the circuit
-						j = scp[j].dom.uniqueValue(); // we know for sure here that the *new value of j* is different from the previous one
+						j = scp[j].dom.singleValue(); // we know for sure here that the *new value of j* is different from the previous one
 						if (scp[j].dom.removeValueIfPresent(j) == false) // because self-loop not possible for j
 							return false;
 					} else

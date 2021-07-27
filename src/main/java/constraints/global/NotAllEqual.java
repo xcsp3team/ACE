@@ -49,8 +49,8 @@ public class NotAllEqual extends CtrGlobal implements TagSymmetric, TagAC, TagFi
 					return true; // AC because at least two unfixed variables
 			} else {
 				if (uniqueFixedVal == Integer.MAX_VALUE)
-					uniqueFixedVal = dom.uniqueValue();
-				else if (uniqueFixedVal != dom.uniqueValue())
+					uniqueFixedVal = dom.singleValue();
+				else if (uniqueFixedVal != dom.singleValue())
 					return entailed(); // entailed because two fixed variables with different values
 			}
 		}
@@ -58,8 +58,8 @@ public class NotAllEqual extends CtrGlobal implements TagSymmetric, TagAC, TagFi
 		for (int i = futvars.size(); i < scp.length; i++) {
 			Domain dom = scp[futvars.dense[i]].dom;
 			if (uniqueFixedVal == Integer.MAX_VALUE)
-				uniqueFixedVal = dom.uniqueValue();
-			else if (uniqueFixedVal != dom.uniqueValue())
+				uniqueFixedVal = dom.singleValue();
+			else if (uniqueFixedVal != dom.singleValue())
 				return entailed();
 		}
 		if (unfixed == null)

@@ -107,9 +107,9 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 
 	public static boolean enforceNE(Domain dx, Domain dy) { // x != y
 		if (dx.size() == 1)
-			return dy.removeValueIfPresent(dx.uniqueValue());
+			return dy.removeValueIfPresent(dx.singleValue());
 		if (dy.size() == 1)
-			return dx.removeValueIfPresent(dy.uniqueValue());
+			return dx.removeValueIfPresent(dy.singleValue());
 		return true;
 	}
 
@@ -208,11 +208,11 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			}
 
 			protected int nSupportsForWhenIteratingOver(Domain d1, Domain d2) {
-				if (d2.size() == 1 && !d1.presentValue(d1 == dx ? valxFor(d2.unique()) : valyFor(d2.unique())))
+				if (d2.size() == 1 && !d1.containsValue(d1 == dx ? valxFor(d2.single()) : valyFor(d2.single())))
 					return 0;
 				int cnt = 0;
 				for (int b = d2.first(); b != -1; b = d2.next(b)) {
-					int a = d1.toPresentIdx(d1 == dx ? valxFor(b) : valyFor(b));
+					int a = d1.toIdxIfPresent(d1 == dx ? valxFor(b) : valyFor(b));
 					if (a == -1)
 						d2.removeElementary(b);
 					else if (times[a] != time) {
@@ -241,7 +241,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 				for (int b = d2.first(); b != -1; b = d2.next(b)) {
 					boolean found = false;
 					for (int va : d1 == dx ? valsxFor(b) : valsyFor(b)) {
-						int a = d1.toPresentIdx(va);
+						int a = d1.toIdxIfPresent(va);
 						if (a != -1) {
 							found = true;
 							if (times[a] != time) {
@@ -525,9 +525,9 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dx.size() == 1)
-					return dy.removeValueIfPresent(k - dx.uniqueValue());
+					return dy.removeValueIfPresent(k - dx.singleValue());
 				if (dy.size() == 1)
-					return dx.removeValueIfPresent(k - dy.uniqueValue());
+					return dx.removeValueIfPresent(k - dy.singleValue());
 				return true;
 			}
 		}
@@ -651,9 +651,9 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dx.size() == 1)
-					return dy.removeValueIfPresent(dx.uniqueValue() - k);
+					return dy.removeValueIfPresent(dx.singleValue() - k);
 				if (dy.size() == 1)
-					return dx.removeValueIfPresent(dy.uniqueValue() + k);
+					return dx.removeValueIfPresent(dy.singleValue() + k);
 				return true;
 				// return enforceNE(dx, dy, k);
 			}
@@ -776,13 +776,13 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			}
 
 			public static boolean revise(Domain d1, Domain d2, int k) {
-				if (d2.presentValue(0)) {
+				if (d2.containsValue(0)) {
 					if (0 <= k)
 						return true;
 					if (d2.removeValue(0) == false)
 						return false;
 				}
-				assert !d2.presentValue(0);
+				assert !d2.containsValue(0);
 				if (d2.firstValue() > 0) // all values in d2 are positive
 					return d1.removeValuesGT(k > 0 ? Kit.greatestIntegerLE(d2.firstValue(), k) : Kit.greatestIntegerLE(d2.lastValue(), k));
 				if (d2.lastValue() < 0) // all values in d2 are negative
@@ -808,13 +808,13 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			}
 
 			public static boolean revise(Domain d1, Domain d2, int k) {
-				if (d2.presentValue(0)) {
+				if (d2.containsValue(0)) {
 					if (0 >= k)
 						return true;
 					if (d2.removeValue(0) == false)
 						return false;
 				}
-				assert !d2.presentValue(0);
+				assert !d2.containsValue(0);
 				if (d2.firstValue() > 0) // all values in d2 are positive
 					return d1.removeValuesLT(k < 0 ? Kit.smallestIntegerGE(d2.firstValue(), k) : Kit.smallestIntegerGE(d2.lastValue(), k));
 				if (d2.lastValue() < 0) // all values in d2 are negative
@@ -874,11 +874,11 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dx.size() == 1) {
-					int va = dx.uniqueValue();
+					int va = dx.singleValue();
 					if (va != 0 && k % va == 0)
 						return dy.removeValueIfPresent(k / va);
 				} else if (dy.size() == 1) {
-					int vb = dy.uniqueValue();
+					int vb = dy.singleValue();
 					if (vb != 0 && k % vb == 0)
 						return dx.removeValueIfPresent(k / vb);
 				}
@@ -970,7 +970,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 					return dx.fail();
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 					int va = dx.toVal(a);
-					if (rx[a] != UNITIALIZED && dy.present(rx[a]))
+					if (rx[a] != UNITIALIZED && dy.contains(rx[a]))
 						continue;
 					for (int b = dy.first(); b != -1; b = dy.next(b)) {
 						int res = va / dy.toVal(b);
@@ -986,7 +986,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 				}
 				extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
 					int vb = dy.toVal(b);
-					if (ry[b] != UNITIALIZED && dx.present(ry[b]))
+					if (ry[b] != UNITIALIZED && dx.contains(ry[b]))
 						continue;
 					for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int res = dx.toVal(a) / vb;
@@ -1043,7 +1043,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
-					if (rx[a] != UNITIALIZED && dy.present(rx[a]))
+					if (rx[a] != UNITIALIZED && dy.contains(rx[a]))
 						continue;
 					int va = dx.toVal(a);
 					if (va == k)
@@ -1059,7 +1059,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 							// here, we know that va >= vb and va != k (see code earlier)
 							if (va < 2 * vb) { // it means that the quotient was 1, and will remain 1 (and 0 later)
 								assert va / vb == 1;
-								if (va - k <= vb || dy.presentValue(va - k) == false)
+								if (va - k <= vb || dy.containsValue(va - k) == false)
 									break;
 								rx[a] = dy.toVal(va - k);
 								continue extern;
@@ -1070,7 +1070,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 						return false;
 				}
 				extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
-					if (ry[b] != UNITIALIZED && dx.present(ry[b]))
+					if (ry[b] != UNITIALIZED && dx.contains(ry[b]))
 						continue;
 					int vb = dy.toVal(b);
 					int nMultiples = dx.lastValue() / vb;
@@ -1087,7 +1087,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 						int va = vb + k; // no neex to start at va = k because k % vb is 0 (and 0 is not possible for k)
 						while (va <= dx.lastValue()) {
 							assert va % vb == k;
-							if (dx.presentValue(va)) {
+							if (dx.containsValue(va)) {
 								ry[b] = dx.toIdx(va);
 								continue extern;
 							}
@@ -1214,7 +1214,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 
 			private boolean revise(Domain d1, Domain d2) {
 				if (d1.size() == 1)
-					return d2.removeValuesIfPresent(d1.uniqueValue() - k, d1.uniqueValue() + k);
+					return d2.removeValuesIfPresent(d1.singleValue() - k, d1.singleValue() + k);
 				if (d1.size() == 2 && d1.lastValue() - k == d1.firstValue() + k)
 					return d2.removeValueIfPresent(d1.lastValue() - k);
 				return true;
@@ -1299,9 +1299,9 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dx.size() == 1)
-					return dx.uniqueValue() % k != 0 || dy.removeValueIfPresent(dx.uniqueValue() / k);
+					return dx.singleValue() % k != 0 || dy.removeValueIfPresent(dx.singleValue() / k);
 				if (dy.size() == 1)
-					return dx.removeValueIfPresent(dy.uniqueValue() * k);
+					return dx.removeValueIfPresent(dy.singleValue() * k);
 				return true;
 			}
 		}
@@ -1367,7 +1367,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dx.size() == 1)
-					return dy.removeValuesInRange(dx.uniqueValue() * k, dx.uniqueValue() * k + k);
+					return dy.removeValuesInRange(dx.singleValue() * k, dx.singleValue() * k + k);
 				if (dy.firstValue() / k == dy.lastValue() / k)
 					return dx.removeValueIfPresent(dy.firstValue() / k);
 				return true;
@@ -1451,15 +1451,15 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 					entailed();
 					return dy.removeValuesModIn(dx, k);
 				}
-				if (watch1 == -1 || !dy.present(watch1))
+				if (watch1 == -1 || !dy.contains(watch1))
 					watch1 = findWatch(watch2);
 				if (watch1 == -1) {
 					// watch2 is the only remaining valid watch (we know that it is still valid since the domain is not empty)
-					assert watch2 != -1 && dy.present(watch2);
+					assert watch2 != -1 && dy.contains(watch2);
 					entailed();
 					return dx.removeValueIfPresent(dy.toVal(watch2) % k);
 				}
-				if (watch2 == -1 || !dy.present(watch2))
+				if (watch2 == -1 || !dy.contains(watch2))
 					watch2 = findWatch(watch1);
 				if (watch2 == -1) {
 					entailed();
@@ -1514,7 +1514,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 
 			@Override
 			public boolean runPropagator(Variable evt) {
-				if (dx.size() == 1 && !dy.presentValue(k + dx.uniqueValue()) && !dy.presentValue(k - dx.uniqueValue()))
+				if (dx.size() == 1 && !dy.containsValue(k + dx.singleValue()) && !dy.containsValue(k - dx.singleValue()))
 					return evt.dom.fail();
 				return sp.runPropagator(evt);
 			}
@@ -1534,7 +1534,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dx.size() == 1)
-					return dy.removeValuesIfPresent(k + dx.uniqueValue(), k - dx.uniqueValue());
+					return dy.removeValuesIfPresent(k + dx.singleValue(), k - dx.singleValue());
 				int v = Math.abs(dy.firstValue() - k);
 				if (dy.size() == 1)
 					return dx.removeValueIfPresent(v);
@@ -1641,7 +1641,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 					return dy.removeValueIfPresent(k) && entailed(); // x = 0 => y != k
 				if (dx.first() == 1)
 					return dy.reduceToValue(k); // x = 1 => y = k
-				if (!dy.presentValue(k))
+				if (!dy.containsValue(k))
 					return dx.removeIfPresent(1) && entailed(); // y != k => x != 1
 				if (dy.size() == 1)
 					return dx.removeIfPresent(0); // y = k => x != 0
@@ -1666,7 +1666,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 					return dy.reduceToValue(k); // x = 0 => y = k
 				if (dx.first() == 1)
 					return dy.removeValueIfPresent(k) && entailed(); // x = 1 => x != k
-				if (!dy.presentValue(k))
+				if (!dy.containsValue(k))
 					return dx.removeIfPresent(0); // y != k => x != 0
 				if (dy.size() == 1)
 					return dx.removeIfPresent(1) && entailed(); // y = k => x != 1

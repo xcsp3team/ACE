@@ -120,7 +120,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 		extern: for (int[] tuple : tuples) {
 			assert IntStream.of(tuple).noneMatch(v -> v == Constants.STAR);
 			for (int i = 0; i < tuple.length; i++)
-				if (!doms[i].presentValue(tuple[i]))
+				if (!doms[i].containsValue(tuple[i]))
 					continue extern;
 			for (int i = 0; i < tuple.length; i++)
 				nConflicts[i][doms[i].toIdx(tuple[i])]++;

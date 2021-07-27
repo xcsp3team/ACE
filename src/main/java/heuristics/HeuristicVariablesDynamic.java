@@ -272,7 +272,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			if (b && solver.problem.optimizer != null && solver.problem.optimizer.ctr instanceof Sum) {
 				Sum c = (Sum) solver.problem.optimizer.ctr;
 				int[] coeffs = c instanceof SumSimple ? null : ((SumWeighted) c).coeffs;
-				long[] gaps = IntStream.range(0, c.scp.length).mapToLong(i -> Math.abs((coeffs == null ? 1 : coeffs[i]) * c.scp[i].dom.intervalValue()))
+				long[] gaps = IntStream.range(0, c.scp.length).mapToLong(i -> Math.abs((coeffs == null ? 1 : coeffs[i]) * c.scp[i].dom.distance()))
 						.toArray();
 				long minGap = LongStream.of(gaps).min().getAsLong();
 				for (int i = 0; i < c.scp.length; i++) {

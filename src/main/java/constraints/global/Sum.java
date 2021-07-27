@@ -72,7 +72,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		int singletonPosition = -1;
 		for (int i = 0; i < scp.length; i++) {
 			if (scp[i].dom.size() == 1)
-				vals[i] = scp[i].dom.uniqueValue();
+				vals[i] = scp[i].dom.singleValue();
 			else if (singletonPosition == -1)
 				singletonPosition = i;
 			else
@@ -162,7 +162,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		protected final long currSum() {
 			long sum = 0;
 			for (Variable x : scp)
-				sum += x.dom.uniqueValue();
+				sum += x.dom.singleValue();
 			return sum;
 		}
 
@@ -343,7 +343,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 				long sum = 0;
 				for (int i = 0; i < scp.length; i++)
 					if (i != pos)
-						sum += scp[i].dom.uniqueValue();
+						sum += scp[i].dom.singleValue();
 				long res = limit - sum;
 				control(Utilities.isSafeInt(res));
 				return (int) res;
@@ -382,7 +382,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 				long sum = 0;
 				for (Variable x : scp)
 					if (x != sentinel)
-						sum += x.dom.uniqueValue(); // no overflow possible because int values are added to a long
+						sum += x.dom.singleValue(); // no overflow possible because int values are added to a long
 				long v = limit - sum;
 				if (sum + v == limit && Integer.MIN_VALUE <= v && v <= Integer.MAX_VALUE) // if no overflow and within Integer bounds
 					sentinel.dom.removeValueIfPresent((int) v); // no inconsistency possible since at least two values in the domain
@@ -429,7 +429,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 				int cnt0 = 0, cnt1 = 0;
 				for (Variable y : scp)
 					if (y.dom.size() == 1)
-						if (y.dom.unique() == 0)
+						if (y.dom.single() == 0)
 							cnt0++;
 						else
 							cnt1++;
@@ -532,7 +532,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		protected long currWeightedSum() {
 			long sum = 0;
 			for (int i = 0; i < scp.length; i++)
-				sum += scp[i].dom.uniqueValue() * coeffs[i];
+				sum += scp[i].dom.singleValue() * coeffs[i];
 			return sum;
 		}
 
@@ -736,7 +736,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 				long sum = 0;
 				for (int i = 0; i < scp.length; i++)
 					if (i != pos)
-						sum += scp[i].dom.uniqueValue() * coeffs[i];
+						sum += scp[i].dom.singleValue() * coeffs[i];
 				control((limit - sum) % coeffs[pos] == 0);
 				long res = (limit - sum) / coeffs[pos];
 				control(Utilities.isSafeInt(res));
@@ -779,7 +779,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 				long sum = 0;
 				for (int i = 0; i < scp.length; i++)
 					if (scp[i] != sentinel)
-						sum += scp[i].dom.uniqueValue() * coeffs[i]; // no overflow possible because it was controlled at construction
+						sum += scp[i].dom.singleValue() * coeffs[i]; // no overflow possible because it was controlled at construction
 					else
 						p = i;
 				long v = (limit - sum) / coeffs[p];
@@ -879,7 +879,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 				}
 
 				int uniqueValue() {
-					return dom.uniqueValue();
+					return dom.singleValue();
 				}
 
 				boolean removeValuesLE(int limit) {
@@ -918,7 +918,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 
 				int minValue() {
 					assert dom.size() > 0;
-					if (residue0 != -1 && dom.present(residue0))
+					if (residue0 != -1 && dom.contains(residue0))
 						return 0;
 					if (dom.size() < neg.length) {
 						for (int a = dom.first(); a != -1; a = dom.next(a))
@@ -928,7 +928,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 							}
 					} else {
 						for (int a : neg)
-							if (dom.present(a)) {
+							if (dom.contains(a)) {
 								residue0 = a;
 								return 0;
 							}
@@ -938,7 +938,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 
 				int maxValue() {
 					assert dom.size() > 0;
-					if (residue1 != -1 && dom.present(residue1))
+					if (residue1 != -1 && dom.contains(residue1))
 						return 1;
 					if (dom.size() < pos.length) {
 						for (int a = dom.first(); a != -1; a = dom.next(a))
@@ -948,7 +948,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 							}
 					} else {
 						for (int a : pos)
-							if (dom.present(a)) {
+							if (dom.contains(a)) {
 								residue1 = a;
 								return 1;
 							}
@@ -957,7 +957,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 				}
 
 				int uniqueValue() {
-					return supports[dom.unique()] ? 1 : 0;
+					return supports[dom.single()] ? 1 : 0;
 				}
 
 				boolean removeValuesLE(int limit) {
@@ -968,7 +968,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 					assert limit == 0;
 					int sizeBefore = dom.size();
 					for (int a : neg)
-						if (dom.present(a))
+						if (dom.contains(a))
 							dom.removeElementary(a);
 					return dom.afterElementaryCalls(sizeBefore);
 				}
@@ -981,7 +981,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 					assert limit == 1;
 					int sizeBefore = dom.size();
 					for (int a : pos)
-						if (dom.present(a))
+						if (dom.contains(a))
 							dom.removeElementary(a);
 					return dom.afterElementaryCalls(sizeBefore);
 				}

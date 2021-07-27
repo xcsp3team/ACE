@@ -73,7 +73,7 @@ public final class NogoodRecorder {
 		assert decision != 0;
 		Variable x = dr.varIn(decision);
 		int a = dr.idxIn(decision);
-		return decision > 0 ? x.dom.present(a) : x.dom.size() > 1 || !x.dom.present(a);
+		return decision > 0 ? x.dom.contains(a) : x.dom.size() > 1 || !x.dom.contains(a);
 	}
 
 	private boolean canFindAnotherWatchFor(Nogood nogood, boolean firstWatch) {
@@ -108,7 +108,7 @@ public final class NogoodRecorder {
 		while (current != null) {
 			Nogood nogood = current.nogood;
 			int watchedDecision2 = nogood.getSecondWatchedDecision(watchedDecision);
-			if (!dr.varIn(watchedDecision2).dom.present(dr.idxIn(watchedDecision2))) {
+			if (!dr.varIn(watchedDecision2).dom.contains(dr.idxIn(watchedDecision2))) {
 				previous = current;
 				current = current.nextCell;
 			} else if (canFindAnotherWatchFor(nogood, nogood.isDecisionWatchedByFirstWatch(watchedDecision))) {
@@ -293,7 +293,7 @@ public final class NogoodRecorder {
 			for (int decision : decisionsToBePerformedAtNextRun) {
 				Variable x = dr.varIn(decision);
 				int a = dr.idxIn(decision);
-				if (x.dom.present(a)) {
+				if (x.dom.contains(a)) {
 					x.dom.removeElementary(a);
 					Kit.log.info("Remove Unary sym nogood : " + dr.stringOf(decision));
 					if (x.dom.size() == 0) {

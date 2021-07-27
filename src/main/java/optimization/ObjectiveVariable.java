@@ -50,7 +50,7 @@ public abstract class ObjectiveVariable extends CtrGlobal implements Optimizable
 
 	@Override
 	public long objectiveValue() {
-		return x.dom.uniqueValue();
+		return x.dom.singleValue();
 	}
 
 	/**

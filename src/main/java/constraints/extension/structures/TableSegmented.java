@@ -96,7 +96,7 @@ public class TableSegmented extends ExtensionStructure {
 			for (int i = sValSize - 1; i >= 0; i--) {
 				int x = sVal[i];
 				int a = prefix[x];
-				if (a != STAR && !scp[x].dom.present(a))
+				if (a != STAR && !scp[x].dom.contains(a))
 					return false;
 			}
 			for (RestrictionTable restriction : restrictions)
@@ -203,7 +203,7 @@ public class TableSegmented extends ExtensionStructure {
 				for (int i = sLocalSize - 1; i >= 0; i--) {
 					int x = sLocal[i];
 					int a = subtuple[x];
-					if (a != STAR && !subdoms[x].present(a))
+					if (a != STAR && !subdoms[x].contains(a))
 						return false;
 				}
 				return true;

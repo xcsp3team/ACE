@@ -43,7 +43,7 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 		super(pb, scp);
 		this.list = list;
 		this.value = value;
-		control(Stream.of(list).allMatch(x -> x.dom.presentValue(value) && x.dom.size() > 1), "Badly formed scope.");
+		control(Stream.of(list).allMatch(x -> x.dom.containsValue(value) && x.dom.size() > 1), "Badly formed scope.");
 	}
 
 	/**********************************************************************************************
@@ -98,11 +98,11 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 
 			@Override
 			public boolean runPropagator(Variable x) {
-				if (!x.dom.onlyContainsValue(value))
+				if (!x.dom.containsOnlyValue(value))
 					return true; // because we only filter when the recently filtered variable x has been assigned to the value
 				int cnt = 0;
 				for (Variable y : scp)
-					if (y.dom.onlyContainsValue(value) && ++cnt > k)
+					if (y.dom.containsOnlyValue(value) && ++cnt > k)
 						return x.dom.fail(); // inconsistency detected
 				if (cnt == k) {
 					for (int i = futvars.limit; i >= 0; i--) {
@@ -123,7 +123,7 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 
 			@Override
 			public boolean runPropagator(Variable x) {
-				if (!x.dom.onlyContainsValue(value))
+				if (!x.dom.containsOnlyValue(value))
 					return true; // because we only filter when the recently filtered variable x has been assigned to the value
 				for (Variable y : scp)
 					if (y != x && y.dom.removeValueIfPresent(value) == false)
@@ -158,12 +158,12 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 			@Override
 			public boolean runPropagator(Variable x) {
 				int p = positionOf(x);
-				if (!sentinels.isPresent(p) || x.dom.presentValue(value))
+				if (!sentinels.isPresent(p) || x.dom.containsValue(value))
 					return true;
 				// we search for another sentinel
 				int[] dense = sentinels.dense;
 				for (int i = sentinels.limit + 1; i < dense.length; i++)
-					if (scp[dense[i]].dom.presentValue(value)) { // another sentinel is found
+					if (scp[dense[i]].dom.containsValue(value)) { // another sentinel is found
 						sentinels.swap(p, dense[i]);
 						return true;
 					}
@@ -188,7 +188,7 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 
 			private Variable findAnotherSentinel() {
 				for (Variable x : scp)
-					if (x != sentinel1 && x != sentinel2 && x.dom.presentValue(value))
+					if (x != sentinel1 && x != sentinel2 && x.dom.containsValue(value))
 						return x;
 				return null;
 			}
@@ -196,7 +196,7 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 			@Override
 			public boolean runPropagator(Variable x) {
 				if (x == sentinel1) {
-					if (!sentinel1.dom.presentValue(value)) {
+					if (!sentinel1.dom.containsValue(value)) {
 						Variable sentinel = findAnotherSentinel();
 						if (sentinel != null)
 							sentinel1 = sentinel;
@@ -205,7 +205,7 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 						// before, was: if (sentinel2.dom.reduceToValue(value) == false) return false;
 					}
 				} else if (x == sentinel2) {
-					if (!sentinel2.dom.presentValue(value)) {
+					if (!sentinel2.dom.containsValue(value)) {
 						Variable sentinel = findAnotherSentinel();
 						if (sentinel != null)
 							sentinel2 = sentinel;
@@ -239,14 +239,14 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 
 			@Override
 			public boolean runPropagator(Variable x) {
-				if (x.dom.size() > 1 && x.dom.presentValue(value)) // removing these two lines, and add TagCompletFilteringAtEachCall is an alternative
+				if (x.dom.size() > 1 && x.dom.containsValue(value)) // removing these two lines, and add TagCompletFilteringAtEachCall is an alternative
 					return true;
 
 				// nGuaranteedOccurrences denotes the number of singleton domains with the specified value
 				// nPossibleOccurrences denotes the number of domains containing the specified value
 				int nGuaranteedOccurrences = 0, nPossibleOccurrences = 0;
 				for (Variable y : scp)
-					if (y.dom.presentValue(value)) {
+					if (y.dom.containsValue(value)) {
 						nPossibleOccurrences++;
 						if (y.dom.size() == 1 && ++nGuaranteedOccurrences > k)
 							return y.dom.fail();
@@ -256,7 +256,7 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 					// remove value from all non singleton domains
 					for (int i = futvars.limit; i >= 0 && toremove > 0; i--) {
 						Domain dom = scp[futvars.dense[i]].dom;
-						if (dom.size() > 1 && dom.presentValue(value)) {
+						if (dom.size() > 1 && dom.containsValue(value)) {
 							dom.removeValue(value); // no inconsistency possible
 							toremove--;
 						}
@@ -270,7 +270,7 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 					// assign all non singleton domains containing the value
 					for (int i = futvars.limit; i >= 0 && toassign > 0; i--) {
 						Domain dom = scp[futvars.dense[i]].dom;
-						if (dom.size() > 1 && dom.presentValue(value)) {
+						if (dom.size() > 1 && dom.containsValue(value)) {
 							dom.reduceToValue(value);
 							toassign--;
 						}
@@ -342,21 +342,21 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 				// counting the number of occurrences of value in list
 				int nGuaranteedOccurrences = 0, nPossibleOccurrences = 0;
 				for (Variable x : list)
-					if (x.dom.presentValue(value)) {
+					if (x.dom.containsValue(value)) {
 						nPossibleOccurrences++;
 						if (x.dom.size() == 1)
 							nGuaranteedOccurrences++;
 					}
 				Domain dk = k.dom;
 				if (dk.size() == 1) {
-					int vk = dk.uniqueValue();
+					int vk = dk.singleValue();
 					if (vk < nGuaranteedOccurrences || vk > nPossibleOccurrences)
 						return dk.fail();
 				} else {
 					// possible update of the domain of k when present in the vector, first by removing value (if present)
 					// so as to update immediately nPossibleOccurrences
 					if (indexOfKInList != -1) {
-						int a = dk.toPresentIdx(value);
+						int a = dk.toIdxIfPresent(value);
 						if (a != -1) {
 							boolean deleted = false;
 							for (int b = dk.first(); b != -1; b = dk.next(b))
@@ -384,7 +384,7 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 				}
 				// if k is singleton, possibly updating the domain of the other variables
 				if (dk.size() == 1) {
-					int vk = dk.uniqueValue();
+					int vk = dk.singleValue();
 					if (vk == nGuaranteedOccurrences) {
 						int toremove = nPossibleOccurrences - vk;
 						// remove value from all non singleton domains
@@ -397,7 +397,7 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 						// }
 						if (toremove > 0)
 							for (Variable x : list)
-								if (x.dom.size() > 1 && x.dom.presentValue(value))
+								if (x.dom.size() > 1 && x.dom.containsValue(value))
 									x.dom.removeValue(value);
 						return entailed();
 					}
@@ -413,7 +413,7 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 						// }
 						if (toassign > 0)
 							for (Variable x : list)
-								if (x.dom.size() > 1 && x.dom.presentValue(value))
+								if (x.dom.size() > 1 && x.dom.containsValue(value))
 									x.dom.reduceToValue(value);
 						return entailed();
 					}

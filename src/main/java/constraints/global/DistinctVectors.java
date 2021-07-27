@@ -81,12 +81,12 @@ public final class DistinctVectors extends CtrGlobal implements ObserverBacktrac
 		if (dom1.size() > 1 && dom2.size() > 1)
 			return true;
 		if (dom1.size() == 1)
-			return dom2.removeValueIfPresent(dom1.uniqueValue()) && entailed();
-		return dom1.removeValueIfPresent(dom2.uniqueValue()) && entailed();
+			return dom2.removeValueIfPresent(dom1.singleValue()) && entailed();
+		return dom1.removeValueIfPresent(dom2.singleValue()) && entailed();
 	}
 
 	private boolean isGoodSentinel(Domain dom1, Domain dom2) {
-		return dom1.size() > 1 || dom2.size() > 1 || dom1.uniqueValue() != dom2.uniqueValue();
+		return dom1.size() > 1 || dom2.size() > 1 || dom1.singleValue() != dom2.singleValue();
 	}
 
 	private int findAnotherSentinel() {
@@ -103,7 +103,7 @@ public final class DistinctVectors extends CtrGlobal implements ObserverBacktrac
 
 		Domain dx1 = list1[sentinel1].dom, dx2 = list2[sentinel1].dom, dy1 = list1[sentinel2].dom, dy2 = list2[sentinel2].dom;
 		if (dx1.size() == 1 && dx2.size() == 1) { // possibly, sentinel1 is no more valid
-			if (dx1.uniqueValue() != dx2.uniqueValue())
+			if (dx1.singleValue() != dx2.singleValue())
 				return entailed();
 			int sentinel = findAnotherSentinel();
 			if (sentinel != -1) {
@@ -117,7 +117,7 @@ public final class DistinctVectors extends CtrGlobal implements ObserverBacktrac
 			}
 		}
 		if (dy1.size() == 1 && dy2.size() == 1) { // possibly, sentinel2 is no more valid
-			if (dy1.uniqueValue() != dy2.uniqueValue())
+			if (dy1.singleValue() != dy2.singleValue())
 				return entailed();
 			int sentinel = findAnotherSentinel();
 			if (sentinel != -1) {
