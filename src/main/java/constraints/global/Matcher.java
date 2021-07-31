@@ -130,7 +130,7 @@ public abstract class Matcher implements ObserverConstruction {
 	public void afterProblemConstruction() {
 		unfixedVars = new SetSparseReversible(arity, ctr.problem.variables.length + 1);
 
-		neighborsOfValues = SetSparse.factoryArray(arity + 1, intervalSize);
+		neighborsOfValues = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparse(arity + 1)).toArray(SetSparse[]::new);
 		neighborsOfT = new SetSparse(intervalSize);
 		currValsSCC = new SetSparse(intervalSize);
 
@@ -148,7 +148,7 @@ public abstract class Matcher implements ObserverConstruction {
 
 	private void update(int adjacentNode, int node) {
 		if (visitTime[adjacentNode] == time) {
-			if (stackTarjan.isPresent(adjacentNode) && numDFS[adjacentNode] < lowLink[node])
+			if (stackTarjan.contains(adjacentNode) && numDFS[adjacentNode] < lowLink[node])
 				lowLink[node] = numDFS[adjacentNode];
 		} else {
 			tarjanRemoveValues(adjacentNode);
@@ -357,7 +357,7 @@ public abstract class Matcher implements ObserverConstruction {
 						varToVal[x] = valToVar[u] = -1;
 						unmatchedVars.add(x);
 					}
-					if (scp[x].dom.size() == 1 && unfixedVars.isPresent(x))
+					if (scp[x].dom.size() == 1 && unfixedVars.contains(x))
 						unfixedVars.remove(x, ctr.problem.solver.depth());
 				}
 			}
@@ -613,7 +613,7 @@ public abstract class Matcher implements ObserverConstruction {
 			for (int x = 0; x < arity; x++) {
 				if (varToVal[x] == -1)
 					unmatchedVars.add(x);
-				else if (scp[x].dom.size() == 1 && unfixedVars.isPresent(x))
+				else if (scp[x].dom.size() == 1 && unfixedVars.contains(x))
 					unfixedVars.remove(x, ctr.problem.solver.depth()); // currDepth);
 			}
 			while (!unmatchedVars.isEmpty())
@@ -648,7 +648,7 @@ public abstract class Matcher implements ObserverConstruction {
 		private void checkMatchingConsistency() {
 			Kit.control(IntStream.range(0, intervalSize)
 					.allMatch(u -> IntStream.range(0, valToVars[u].size()).allMatch(i -> varToVal[valToVars[u].dense[i]] == u)));
-			Kit.control(IntStream.range(0, arity).allMatch(x -> varToVal[x] == -1 || valToVars[varToVal[x]].isPresent(x)));
+			Kit.control(IntStream.range(0, arity).allMatch(x -> varToVal[x] == -1 || valToVars[varToVal[x]].contains(x)));
 		}
 
 		@SuppressWarnings("unused")

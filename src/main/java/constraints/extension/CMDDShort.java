@@ -35,7 +35,7 @@ public final class CMDDShort extends ExtensionGlobal implements TagPositive, Tag
 		int nNodes = ((MDDShort) extStructure).nNodes();
 		this.trueNodes = new int[nNodes];
 		if (problem.head.control.extension.decremental)
-			this.set = new SetSparseReversible(nNodes, false, problem.variables.length + 1);
+			this.set = new SetSparseReversible(nNodes, problem.variables.length + 1, false);
 		else
 			this.falseNodes = new int[nNodes];
 		this.ac = Variable.litterals(scp).booleanArray();
@@ -168,7 +168,7 @@ public final class CMDDShort extends ExtensionGlobal implements TagPositive, Tag
 	private boolean exploreMDD(MDDNodeShort node) {
 		if (node == MDDNodeShort.nodeT || trueNodes[node.id] == trueTimestamp)
 			return true;
-		if (node == MDDNodeShort.nodeF || (set != null && set.isPresent(node.id)) || (set == null && falseNodes[node.id] == falseTimestamp))
+		if (node == MDDNodeShort.nodeF || (set != null && set.contains(node.id)) || (set == null && falseNodes[node.id] == falseTimestamp))
 			return false;
 		Domain dom = scp[node.level].dom;
 		boolean supported = false, finished = false;

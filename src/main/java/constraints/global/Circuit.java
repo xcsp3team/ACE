@@ -72,7 +72,7 @@ public final class Circuit extends AllDifferentComplete {
 					if (scp[j].dom.removeValuesIn(set) == false)
 						return false; // because we cannot close the circuit now (it would be too short)
 					if (scp[j].dom.size() == 1) {
-						if (set.isPresent(j))
+						if (set.contains(j))
 							return false; // because two times the same value
 						set.add(j); // j belongs to the circuit
 						j = scp[j].dom.singleValue(); // we know for sure here that the *new value of j* is different from the previous one

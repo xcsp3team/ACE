@@ -103,7 +103,7 @@ public abstract class BinPacking extends CtrGlobal implements TagNotAC { // not 
 		@Override
 		public void afterProblemConstruction() {
 			super.afterProblemConstruction();
-			this.usableBins = new SetSparseReversible(bins.length, true, problem.variables.length + 1);
+			this.usableBins = new SetSparseReversible(bins.length, problem.variables.length + 1);
 		}
 
 		@Override
@@ -282,7 +282,7 @@ public abstract class BinPacking extends CtrGlobal implements TagNotAC { // not 
 			// we discard bins that are now identified as useless because we cannot even put the smallest item in it
 			for (int j = usableBins.limit; j >= 0; j--) { // for breaking, we should go from 0 to ..., but removing an element in usableBins could be a pb
 				int i = sortedBins[j].index;
-				assert usableBins.isPresent(i);
+				assert usableBins.contains(i);
 				if (sortedBins[j].capacity < sizes[smallestFreeItem] || i > maxUsableBin || i < minUsableBin)
 					usableBins.remove(i, problem.solver.depth());
 			}

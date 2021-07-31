@@ -84,9 +84,9 @@ public final class AllEqual extends CtrGlobal implements ObserverBacktrackingSys
 		for (Domain dom : doms)
 			for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a)) {
 				int v = dom.toVal(a);
-				if (!remainingValues.isPresent(map.get(v)))
+				if (!remainingValues.contains(map.get(v)))
 					break;
-				if (!lastRemovedValues.isPresent(v))
+				if (!lastRemovedValues.contains(v))
 					lastRemovedValues.add(v);
 			}
 		if (lastRemovedValues.size() == remainingValues.size())

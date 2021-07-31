@@ -281,7 +281,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 		public AllDifferentCounting(Problem pb, Variable[] scp) {
 			super(pb, scp);
 			Kit.control(Variable.haveSameDomainType(scp) && scp[0].dom.initSize() < 1000); // current use restrictions
-			sets = SetSparse.factoryArray(scp.length, scp[0].dom.initSize() + 1);
+			sets = IntStream.range(0, scp[0].dom.initSize() + 1).mapToObj(i -> new SetSparse(scp.length)).toArray(SetSparse[]::new);
 			workingDomSet = new SetSparse(scp[0].dom.initSize());
 			workingVarSet = new SetSparse(scp.length);
 			encounteredSizes = new SetSparse(scp[0].dom.initSize() + 1);
@@ -402,7 +402,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 		@Override
 		public void afterProblemConstruction() {
 			super.afterProblemConstruction();
-			fixedIdxs = new SetSparseReversible(scp[0].dom.initSize(), false, problem.variables.length + 1);
+			fixedIdxs = new SetSparseReversible(scp[0].dom.initSize(), problem.variables.length + 1, false);
 			storer = new HallIntervalStored(scp[0].dom.initSize(), problem.variables.length + 1);
 
 		}
@@ -537,7 +537,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 			int nFixedBetween(int a, int b) {
 				int nb = 0;
 				for (int k = a; k <= b; k++)
-					if (fixedIdxs.isPresent(k))
+					if (fixedIdxs.contains(k))
 						// if (isAlwaysAbsent(k))
 						nb++;
 				return nb;
@@ -554,7 +554,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 			void collectAbsentBetween(int a, int b) {
 				// absentIdxs.clear();
 				for (int k = a; k <= b; k++)
-					if (!fixedIdxs.isPresent(k) && isAlwaysAbsent(k))
+					if (!fixedIdxs.contains(k) && isAlwaysAbsent(k))
 						absentIdxs.add(k);
 			}
 
@@ -568,7 +568,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 
 			boolean remove(Domain dom, int from, int to) {
 				for (int a = from; a <= to; a++)
-					if (!absentIdxs.isPresent(a) && dom.removeIfPresent(a) == false)
+					if (!absentIdxs.contains(a) && dom.removeIfPresent(a) == false)
 						return false;
 				return true;
 			}
@@ -603,7 +603,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 									int nValuesBefore = problem.nValuesRemoved;
 									for (int i = futvars.limit; i >= 0; i--) {
 										int y = futvars.dense[i];
-										if (!collectedVars.isPresent(y)) // if outside the hall set
+										if (!collectedVars.contains(y)) // if outside the hall set
 											if (scp[y].dom.size() > 1 && remove(scp[y].dom, a, b) == false)
 												return false;
 									}
@@ -633,7 +633,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 										int nValuesBefore = problem.nValuesRemoved;
 										for (int i = futvars.limit; i >= 0; i--) {
 											int y = futvars.dense[i];
-											if (!collectedVars.isPresent(y)) // if outside the hall set
+											if (!collectedVars.contains(y)) // if outside the hall set
 												if (scp[y].dom.size() > 1 && remove(scp[y].dom, a, b) == false)
 													return false;
 										}
@@ -677,7 +677,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 									int nValuesBefore = problem.nValuesRemoved;
 									for (int i = futvars.limit; i >= 0; i--) {
 										int y = futvars.dense[i];
-										if (!collectedVars.isPresent(y)) // if outside the hall set
+										if (!collectedVars.contains(y)) // if outside the hall set
 											if (scp[y].dom.size() > 1 && remove(scp[y].dom, a, b) == false)
 												return false;
 									}
@@ -709,7 +709,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 										int nValuesBefore = problem.nValuesRemoved;
 										for (int i = futvars.limit; i >= 0; i--) {
 											int y = futvars.dense[i];
-											if (!collectedVars.isPresent(y)) // if outside the hall set
+											if (!collectedVars.contains(y)) // if outside the hall set
 												if (scp[y].dom.size() > 1 && remove(scp[y].dom, a, b) == false)
 													return false;
 										}
@@ -777,7 +777,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 		public boolean runPropagator(Variable x) {
 			if (x.dom.size() == 1) {
 				int a = x.dom.single();
-				if (!fixedIdxs.isPresent(a))
+				if (!fixedIdxs.contains(a))
 					fixedIdxs.add(a, problem.solver.depth());
 				int v = x.dom.singleValue();
 				for (int i = futvars.limit; i >= 0; i--) {

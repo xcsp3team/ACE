@@ -10,52 +10,51 @@ package sets;
 
 import java.util.Arrays;
 
-public class LinkedSetBinary implements LinkedSet {
+/**
+ * This class implements the interface SetLinked for sets containing only two elements (indexes 0 and 1).
+ * 
+ * @author Christophe Lecoutre
+ */
+public class SetLinkedBinary implements SetLinked {
 
 	private static final long[] binaryEmpty = { 0 }, binaryFor0 = { 1 }, binaryFor1 = { 2 }, binaryFor01 = { 3 };
 
 	/**
-	 * The size of the set number of present elements in the list.
+	 * The size of the set (i.e., the current number of elements)
 	 */
-	protected byte size;
+	private byte size;
 
 	/**
-	 * The last deleted element of the list.
+	 * The last deleted element (index) of the set.
 	 */
-	protected byte lastRemoved;
+	private byte lastRemoved;
 
 	/**
-	 * The level at which absent elements have been removed from the list. An array index corresponds to an element. An array value gives the level at which the
-	 * corresponding element has been removed from the list. Hence, <code> absentLevels[i] == j </code> means that j is the removal level of the element i and
-	 * <code> absentLevels[i] == -1 </code> means that the element i is present.
+	 * The level at which absent elements (indexes) have been removed from the set. Hence, <code> removedLevels[a] == i </code> means that i is the removal
+	 * level of the index a and <code> removedLevels[a] == -1 </code> means that the index a is still present.
 	 */
-	protected int[] removedlevels;
+	private int[] removedlevels;
 
-	protected byte mark;
+	private byte mark;
 
-	protected byte[] marks;
+	private byte[] marks;
 
-	protected int nLevels;
+	private int nLevels;
 
 	@Override
-	public void finalizeConstruction(int nLevels) {
+	public final void setNumberOfLevels(int nLevels) {
 		this.nLevels = nLevels;
 	}
 
-	public LinkedSetBinary() {
+	public SetLinkedBinary() {
 		this.size = 2;
 		this.lastRemoved = -1;
 		this.removedlevels = new int[] { -1, -1 };
 		this.mark = -1;
 	}
 
-	public LinkedSetBinary(int nLevels) {
-		this();
-		finalizeConstruction(nLevels);
-	}
-
 	@Override
-	public int initSize() {
+	public final int initSize() {
 		return 2;
 	}
 
@@ -65,7 +64,7 @@ public class LinkedSetBinary implements LinkedSet {
 	}
 
 	@Override
-	public int nRemoved() {
+	public final int nRemoved() {
 		return 2 - size;
 	}
 
@@ -75,50 +74,47 @@ public class LinkedSetBinary implements LinkedSet {
 	}
 
 	@Override
-	public int first() {
+	public final int first() {
 		return removedlevels[0] == -1 ? 0 : removedlevels[1] == -1 ? 1 : -1;
 	}
 
 	@Override
-	public int next(int a) {
+	public final int next(int a) {
 		return a == 1 ? -1 : removedlevels[1] == -1 ? 1 : -1;
 	}
 
 	@Override
-	public int last() {
+	public final int last() {
 		return removedlevels[1] == -1 ? 1 : removedlevels[0] == -1 ? 0 : -1;
 	}
 
 	@Override
-	public int prev(int a) {
+	public final int prev(int a) {
 		return a == 0 ? -1 : removedlevels[0] == -1 ? 0 : -1;
 	}
 
 	@Override
-	public int lastRemoved() {
+	public final int lastRemoved() {
 		return lastRemoved;
 	}
 
-	/**
-	 * Returns the level of the last removed element.
-	 */
 	@Override
-	public int lastRemovedLevel() {
+	public final int lastRemovedLevel() {
 		return lastRemoved == -1 ? -1 : removedlevels[lastRemoved];
 	}
 
 	@Override
-	public int removedLevelOf(int a) {
+	public final int removedLevelOf(int a) {
 		return removedlevels[a];
 	}
 
 	@Override
-	public int prevRemoved(int a) {
+	public final int prevRemoved(int a) {
 		return size > 0 || a != lastRemoved ? -1 : lastRemoved == 0 ? 1 : 0;
 	}
 
 	@Override
-	public void remove(int a, int level) {
+	public final void remove(int a, int level) {
 		assert (level >= 0 && removedlevels[a] == -1) : "level = " + level + " level = " + removedlevels[a];
 		removedlevels[a] = level;
 		size--;
@@ -126,7 +122,7 @@ public class LinkedSetBinary implements LinkedSet {
 	}
 
 	@Override
-	public int reduceTo(int a, int level) {
+	public final int reduceTo(int a, int level) {
 		assert contains(a) && level >= 0;
 		if (size == 1)
 			return 0;
@@ -142,7 +138,7 @@ public class LinkedSetBinary implements LinkedSet {
 	}
 
 	@Override
-	public void restoreBefore(int level) {
+	public final void restoreBefore(int level) {
 		if (size == 2 || removedlevels[lastRemoved] < level)
 			return;
 		restoreLastDropped();
@@ -152,25 +148,25 @@ public class LinkedSetBinary implements LinkedSet {
 	}
 
 	@Override
-	public void setMark() {
+	public final void setMark() {
 		assert mark == -1;
 		mark = lastRemoved;
 	}
 
 	@Override
-	public int getMark() {
+	public final int getMark() {
 		return mark;
 	}
 
 	@Override
-	public void restoreAtMark() {
+	public final void restoreAtMark() {
 		for (int e = lastRemoved; e != mark; e = lastRemoved)
 			restoreLastDropped();
 		mark = -1;
 	}
 
 	@Override
-	public void setMark(int level) {
+	public final void setMark(int level) {
 		assert marks == null || marks[level] == -1;
 		if (marks == null) {
 			marks = new byte[nLevels];
@@ -180,20 +176,20 @@ public class LinkedSetBinary implements LinkedSet {
 	}
 
 	@Override
-	public void restoreAtMark(int level) {
+	public final void restoreAtMark(int level) {
 		for (int e = lastRemoved; e != marks[level]; e = lastRemoved)
 			restoreLastDropped();
 		marks[level] = -1;
 	}
 
 	@Override
-	public long[] binary() {
+	public final long[] binary() {
 		return size == 2 ? binaryFor01 : size == 0 ? binaryEmpty : removedlevels[1] == -1 ? binaryFor1 : binaryFor0;
 	}
 
 	@Override
-	public String stringOfStructures() {
-		String s = LinkedSet.super.stringOfStructures();
+	public final String stringOfStructures() {
+		String s = SetLinked.super.stringOfStructures();
 		StringBuilder sb = new StringBuilder().append("Levels: ");
 		for (int lastLevel = -1, i = lastRemoved(); i != -1; i = prevRemoved(i))
 			if (removedlevels[i] != lastLevel) {
@@ -201,10 +197,5 @@ public class LinkedSetBinary implements LinkedSet {
 				lastLevel = removedlevels[i];
 			}
 		return s + "\n" + sb.toString();
-	}
-
-	@Override
-	public boolean controlStructures() {
-		return true; // which controls to be done ?
 	}
 }

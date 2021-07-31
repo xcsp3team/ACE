@@ -120,12 +120,12 @@ public abstract class Cumulative extends CtrGlobal implements TagFilteringComple
 				int ms = mandatoryStart(i), me = mandatoryEnd(i);
 				if (me <= ms)
 					continue; // no mandatory part here
-				if (ticks.isPresent(ms) == false) {
+				if (ticks.contains(ms) == false) {
 					ticks.add(ms);
 					offsets[ms] = 0;
 				}
 				offsets[ms] += wheights[i];
-				if (ticks.isPresent(me) == false) {
+				if (ticks.contains(me) == false) {
 					ticks.add(me);
 					offsets[me] = 0;
 				}

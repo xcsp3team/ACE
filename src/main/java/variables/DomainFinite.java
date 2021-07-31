@@ -16,7 +16,7 @@ import org.xcsp.common.Range;
 import org.xcsp.common.Utilities;
 
 import propagation.Propagation;
-import sets.LinkedSetOrdered.LinkedSetOrderedWithBits;
+import sets.SetLinkedFinite.LinkedSetOrderedWithBits;
 import utility.Kit;
 
 /**
@@ -26,13 +26,13 @@ import utility.Kit;
  * in the domain. For instance, if the domain contains the values <code> {1,4,5} </code>, their indexes are respectively <code> {0,1,2} </code>. The
  * correspondence between indexes of values and values is given by the methods <code> toIndex </code> and <code> toValue </code>.
  */
-public abstract class DomainInteger extends LinkedSetOrderedWithBits implements Domain {
+public abstract class DomainFinite extends LinkedSetOrderedWithBits implements Domain {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof DomainInteger))
+		if (!(obj instanceof DomainFinite))
 			return false;
-		DomainInteger d = (DomainInteger) obj;
+		DomainFinite d = (DomainFinite) obj;
 		if (this.size != d.size)
 			return false;
 		for (int a = first; a != -1; a = next(a))
@@ -81,7 +81,7 @@ public abstract class DomainInteger extends LinkedSetOrderedWithBits implements 
 		return indexesMatchValues != null ? indexesMatchValues : (indexesMatchValues = IntStream.range(0, initSize()).noneMatch(a -> a != toVal(a)));
 	}
 
-	public DomainInteger(Variable var, int initSize) {
+	public DomainFinite(Variable var, int initSize) {
 		super(initSize);
 		this.var = var;
 		Kit.control(0 < initSize && initSize <= Constants.MAX_SAFE_INT);
@@ -95,7 +95,7 @@ public abstract class DomainInteger extends LinkedSetOrderedWithBits implements 
 	/**
 	 * This class gives the description of a domain composed of a list of integers included between two (integer) bounds.
 	 */
-	public final static class DomainRange extends DomainInteger {
+	public final static class DomainRange extends DomainFinite {
 
 		/** The minimal value of the domain. */
 		public final int min;
@@ -135,7 +135,7 @@ public abstract class DomainInteger extends LinkedSetOrderedWithBits implements 
 	/**
 	 * This class describes domains composed of a list of integers that are not necessarily contiguous. Be careful: the values are sorted.
 	 */
-	public static class DomainValues extends DomainInteger {
+	public static class DomainValues extends DomainFinite {
 
 		public final int[] values;
 

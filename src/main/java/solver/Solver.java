@@ -497,7 +497,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		int nLevels = problem.variables.length + 1;
 		int size = Stream.of(problem.variables).mapToInt(x -> x.dom.initSize()).reduce(0, (sum, domSize) -> sum + Math.min(nLevels, domSize));
 		this.stackedVariables = new StackedVariables(size + nLevels);
-		this.entailed = new SetSparseReversible(problem.constraints.length, false, nLevels);
+		this.entailed = new SetSparseReversible(problem.constraints.length, nLevels, false);
 		this.observersBacktrackingSystematic = collectObserversBacktrackingSystematic();
 		this.observersRuns = collectObserversRuns();
 		this.observersAssignment = collectObserversAssignment();
@@ -523,7 +523,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 	}
 
 	public boolean isEntailed(Constraint c) {
-		return entailed.isPresent(c.num);
+		return entailed.contains(c.num);
 	}
 
 	public void assign(Variable x, int a) {

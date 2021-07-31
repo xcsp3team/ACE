@@ -324,11 +324,11 @@ public final class STR3 extends ExtensionGlobal implements TagPositive, Observer
 				for (int a = dom.first(); a != -1; a = dom.next(a)) {
 					int[] subtable = subtables[x][a];
 					int p = subtable.length - 1;
-					while (!set.isPresent(subtable[p]))
+					while (!set.contains(subtable[p]))
 						p--;
 					separators[x][a] = p;
 					p = 0;
-					while (!set.isPresent(subtable[p]))
+					while (!set.contains(subtable[p]))
 						p++;
 					deps[subtable[p]].add((byte) x);
 				}
@@ -340,11 +340,11 @@ public final class STR3 extends ExtensionGlobal implements TagPositive, Observer
 					Kit.control(subtablesShort[x][a].length < Short.MAX_VALUE);
 					short[] subtableShort = subtablesShort[x][a];
 					int p = subtableShort.length - 1;
-					while (!set.isPresent(subtableShort[p]))
+					while (!set.contains(subtableShort[p]))
 						p--;
 					separatorsShort[x][a] = (short) (p); // (subtablesShort[i][index].length - 1);
 					p = 0;
-					while (!set.isPresent(subtableShort[p]))
+					while (!set.contains(subtableShort[p]))
 						p++;
 					deps[subtableShort[p]].add((byte) x);
 				}
@@ -363,13 +363,13 @@ public final class STR3 extends ExtensionGlobal implements TagPositive, Observer
 			for (int a = dom.lastRemoved(); a != frontiers[x]; a = dom.prevRemoved(a)) {
 				int[] t = subtables[x][a];
 				for (int p = separators[x][a]; p >= 0; p--)
-					set.removeIfPresent(t[p]);
+					set.remove(t[p]);
 			}
 		} else {
 			for (int a = dom.lastRemoved(); a != frontiers[x]; a = dom.prevRemoved(a)) {
 				short[] t = subtablesShort[x][a];
 				for (int p = separatorsShort[x][a]; p >= 0; p--)
-					set.removeIfPresent(t[p]);
+					set.remove(t[p]);
 			}
 		}
 	}
@@ -404,7 +404,7 @@ public final class STR3 extends ExtensionGlobal implements TagPositive, Observer
 						if (scp[x].dom.contains(a)) {
 							int[] subtable = subtables[x][a];
 							int separator = separators[x][a], p = separator;
-							while (p >= 0 && !set.isPresent(subtable[p]))
+							while (p >= 0 && !set.contains(subtable[p]))
 								p--;
 							if (p < 0) {
 								if (scp[x].dom.remove(a) == false)
@@ -433,7 +433,7 @@ public final class STR3 extends ExtensionGlobal implements TagPositive, Observer
 						if (scp[x].dom.contains(a)) {
 							short[] subtable = subtablesShort[x][a];
 							short separator = separatorsShort[x][a], p = separator;
-							while (p >= 0 && !set.isPresent(subtable[p]))
+							while (p >= 0 && !set.contains(subtable[p]))
 								p--;
 							if (p < 0) {
 								if (!scp[x].dom.remove(a))

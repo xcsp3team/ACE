@@ -16,51 +16,53 @@ import org.xcsp.common.Constants;
 import utility.Bit;
 import utility.Kit;
 
-public class LinkedSetOrdered implements LinkedSet {
+/**
+ * This class implements the interface LinkedSet for ordered sets containing a finite number of elements (indexes).
+ * 
+ * @author Christophe Lecoutre
+ */
+public class SetLinkedFinite implements SetLinked {
 	/**
-	 * The number of present elements in the list.
+	 * The number of present elements (indexes).
 	 */
 	protected int size;
 
 	/**
-	 * The first (present) element of the list.
+	 * The first (present) index.
 	 */
 	protected int first;
 
 	/**
-	 * The last (present) element of the list.
+	 * The last (present) index.
 	 */
 	protected int last;
 
 	/**
-	 * The backward linking of all present elements of the list (from last to first). An array index corresponds to an element. An array value gives the
-	 * previous present element of the list or -1 if it does not exist. Hence, <code> prevs[i] == j </code> means that j is the previous present element in the
-	 * list before i.
+	 * The backward linking of all present indexes of the list (from last to first). Hence, <code> prevs[a] == b </code> means that b is the previous present
+	 * index in the list before a, or -1 if there is none..
 	 */
 	private final int[] prevs;
 
 	/**
-	 * The forward linking of all present elements of the list (from first to last). An array index corresponds to an element. An array value gives the next
-	 * present element of the list or -1 if it does not exist. Hence, <code> nexts[i] == j </code> means that j is the next present element in the list after i.
+	 * The forward linking of all present indexes of the list (from first to last). Hence, <code> nexts[a] == b </code> means that b is the next present index
+	 * in the list after a, or -1 if there is none.
 	 */
 	private final int[] nexts;
 
 	/**
-	 * The last dropped element of the list.
+	 * The last dropped index of the list.
 	 */
 	protected int lastRemoved;
 
 	/**
-	 * The backward linking of all absent elements of the list (from last to first). An array index corresponds to an element. An array value gives the previous
-	 * absent element of the list or -1 if it does not exist. Hence, <code> prevsDel[i] == j </code> means that j is the previously deleted element of the list
-	 * before i.
+	 * The backward linking of all absent indexes of the list (from last to first). Hence, <code> prevRemoved[a] == b </code> means that b is the previously
+	 * deleted index of the list before a, or -1 if there is none.
 	 */
 	private final int[] prevRemoved;
 
 	/**
-	 * The level at which absent elements have been removed from the list. An array index corresponds to an element. An array value gives the level at which the
-	 * corresponding element has been removed from the list. Hence, <code> absentLevels[i] == j </code> means that j is the removal level of the element i and
-	 * <code> removedLevels[i] == -1 </code> means that the element i is present.
+	 * The level at which absent indexes have been removed from the list. Hence, <code> removedLevels[a] == i </code> means that i is the removal level of the
+	 * index a and <code> removedLevels[a] == -1 </code> means that the index a is still present.
 	 */
 	public final int[] removedLevels;
 
@@ -71,12 +73,12 @@ public class LinkedSetOrdered implements LinkedSet {
 	protected int nLevels;
 
 	@Override
-	public void finalizeConstruction(int nLevels) {
+	public void setNumberOfLevels(int nLevels) {
 		this.nLevels = nLevels;
 		this.lastRemoved = -1; // useful if some values have been deleted at construction time
 	}
 
-	public LinkedSetOrdered(int initSize) {
+	public SetLinkedFinite(int initSize) {
 		Kit.control(0 < initSize && initSize <= Constants.MAX_SAFE_INT, () -> "capacity=" + initSize);
 		this.size = initSize;
 		this.first = 0;
@@ -87,11 +89,6 @@ public class LinkedSetOrdered implements LinkedSet {
 		this.prevRemoved = Kit.repeat(-1, initSize); // Kit.repeat((short) -1, initialSize);
 		this.removedLevels = Kit.repeat(-1, initSize);
 		this.mark = -1;
-	}
-
-	public LinkedSetOrdered(int initSize, int nLevels) {
-		this(initSize);
-		finalizeConstruction(nLevels);
 	}
 
 	@Override
@@ -270,13 +267,8 @@ public class LinkedSetOrdered implements LinkedSet {
 	}
 
 	@Override
-	public long[] binary() {
-		return null;
-	}
-
-	@Override
 	public String stringOfStructures() {
-		String s = LinkedSet.super.stringOfStructures();
+		String s = SetLinked.super.stringOfStructures();
 		StringBuilder sb = new StringBuilder().append("Levels: ");
 		for (int lastLevel = -1, a = lastRemoved(); a != -1; a = prevRemoved(a))
 			if (removedLevels[a] != lastLevel) {
@@ -312,7 +304,7 @@ public class LinkedSetOrdered implements LinkedSet {
 		return true;
 	}
 
-	public static class LinkedSetOrderedWithBits extends LinkedSetOrdered {
+	public static class LinkedSetOrderedWithBits extends SetLinkedFinite {
 
 		protected long[] binaryRepresentation;
 
@@ -326,10 +318,6 @@ public class LinkedSetOrdered implements LinkedSet {
 			binaryRepresentation = new long[initSize / Long.SIZE + (initSize % Long.SIZE != 0 ? 1 : 0)];
 			Arrays.fill(binaryRepresentation, Bit.ALL_LONG_BITS_TO_1);
 			binaryRepresentation[binaryRepresentation.length - 1] = Bit.bitsA1To(initSize - ((binaryRepresentation.length - 1) * Long.SIZE));
-		}
-
-		public LinkedSetOrderedWithBits(int initSize, int nLevels) {
-			this(initSize);
 		}
 
 		@Override
@@ -353,14 +341,13 @@ public class LinkedSetOrdered implements LinkedSet {
 
 		public LinkedSetOrderedWithBits2(int initSize) {
 			super(initSize);
-			set = new SetSparse(binaryRepresentation.length, true);
+			this.set = new SetSparse(binaryRepresentation.length, true);
 		}
 
 		@Override
 		protected void addElement(int a) {
 			super.addElement(a);
 			set.add(a / Long.SIZE);
-
 		}
 
 		@Override

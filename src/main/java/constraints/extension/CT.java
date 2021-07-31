@@ -345,7 +345,7 @@ public class CT extends STR1Optimized implements TagStarred {
 				if (r != -1) {
 					residues[x][a] = r;
 				} else
-					dom.removeSafely(a);
+					dom.remove(a); // no possible inconsistency
 			}
 			lastSizes[x] = dom.size();
 		}

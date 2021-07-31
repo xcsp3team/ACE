@@ -11,9 +11,9 @@ package variables;
 import java.util.stream.IntStream;
 
 import propagation.Propagation;
-import sets.LinkedSetBinary;
+import sets.SetLinkedBinary;
 
-public final class DomainBinary extends LinkedSetBinary implements Domain {
+public final class DomainBinary extends SetLinkedBinary implements Domain {
 
 	private Variable var;
 
@@ -51,7 +51,7 @@ public final class DomainBinary extends LinkedSetBinary implements Domain {
 	}
 
 	public DomainBinary(Variable var, int firstValue, int secondValue) {
-		super(2);
+		// super(2);
 		this.var = var;
 		this.firstValue = firstValue;
 		this.secondValue = secondValue;

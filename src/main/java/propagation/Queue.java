@@ -67,11 +67,10 @@ public final class Queue extends SetSparse {
 	 * Add all variables to the queue.
 	 */
 	@Override
-	public Queue fill() {
+	public void fill() {
 		for (Variable x : variables)
 			if (!x.assigned() || x == propagation.solver.futVars.lastPast())
 				add(x);
-		return this;
 	}
 
 	/**

@@ -226,8 +226,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			for (int i = 0; i < LIM; i++)
 				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * scp[i].dom.distance(), scp[i]);
 			for (int i = 0; i < LIM; i++)
-				terms[LIM + i] = new Term((coeffs == null ? 1 : coeffs[scp.length - 1 - i]) * scp[scp.length - 1 - i].dom.distance(),
-						scp[scp.length - 1 - i]);
+				terms[LIM + i] = new Term((coeffs == null ? 1 : coeffs[scp.length - 1 - i]) * scp[scp.length - 1 - i].dom.distance(), scp[scp.length - 1 - i]);
 		}
 		terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new); // we discard terms of small coeffs
 		if (terms.length > 0) {
@@ -253,7 +252,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		else
 			head.control.toCSP();
 
-		Stream.of(variables).peek(x -> control(Stream.of(x.ctrs).noneMatch(c -> c.num == -1))).forEach(x -> x.dom.finalizeConstruction(variables.length + 1));
+		Stream.of(variables).peek(x -> control(Stream.of(x.ctrs).noneMatch(c -> c.num == -1))).forEach(x -> x.dom.setNumberOfLevels(variables.length + 1));
 
 		ConflictsStructure.buildFor(this);
 
@@ -1267,7 +1266,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	public final CtrEntity allEqual(Var... scp) {
 		// using a table on large instances of Domino is very expensive; using a smart table is also very expensive
 		return post(new AllEqual(this, translate(scp)));
-		// return addCtr(ExtensionSmart.buildAllEqual(this, translate(scp)));
+		// return post(ExtensionSmart.buildAllEqual(this, translate(scp)));
 	}
 
 	@Override

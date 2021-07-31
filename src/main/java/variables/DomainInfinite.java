@@ -43,7 +43,7 @@ public final class DomainInfinite implements Domain {
 	private int assignedLevel;
 
 	@Override
-	public void finalizeConstruction(int nLevels) {
+	public void setNumberOfLevels(int nLevels) {
 	}
 
 	public DomainInfinite(Variable var) {
@@ -180,16 +180,6 @@ public final class DomainInfinite implements Domain {
 	@Override
 	public int getMark() {
 		throw new AssertionError();
-	}
-
-	@Override
-	public long[] binary() {
-		throw new AssertionError();
-	}
-
-	@Override
-	public boolean controlStructures() {
-		return true;
 	}
 
 	@Override

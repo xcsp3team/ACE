@@ -9,56 +9,59 @@
 package sets;
 
 import java.util.Arrays;
-import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import utility.Kit;
 
+/**
+ * A sparse set is basically composed of two arrays (of integers) and a limit: at any time, it contains the elements (typically, indexes of values) in the array
+ * 'dense' at indexes ranging from 0 to the limit (included). The presence of elements can be checked with the array 'sparse'. Sparse sets are always simple,
+ * meaning that values in 'dense' are necessarily indexes 0, 1, 2, ... Besides, we have dense[sparse[value]] = value.
+ * 
+ * @author Christophe Lecoutre
+ */
 public class SetSparse extends SetDense {
 
-	public static final SetSparse[] factoryArray(IntFunction<Integer> capacityFunction, int arraySize) {
-		return IntStream.range(0, arraySize).mapToObj(i -> new SetSparse(capacityFunction.apply(i))).toArray(SetSparse[]::new);
-	}
-
-	public static final SetSparse[] factoryArray(int capacity, int arraySize) {
-		return factoryArray(i -> capacity, arraySize);
-	}
-
+	/**
+	 * The array for checking the presence of an index.
+	 */
 	public int[] sparse;
 
+	/**
+	 * Builds a sparse set with the specified capacity. The sparse set is simple, meaning that it is aimed at containing indexes 0, 1, 2, ... Initially, the set
+	 * is full or empty depending on the value of the specified boolean.
+	 * 
+	 * @param capacity
+	 *            the capacity of the sparse set
+	 * @param initiallyFull
+	 *            if true, the set is initially full, empty otherwise
+	 */
 	public SetSparse(int capacity, boolean initiallyFull) {
 		super(capacity, initiallyFull);
 		this.sparse = Kit.range(capacity);
 		Kit.control(Arrays.equals(dense, sparse));
 	}
 
+	/**
+	 * Builds a sparse set with the specified capacity. The sparse set is simple, meaning that it is aimed at containing indexes 0, 1, 2, ... Initially, the set
+	 * is empty.
+	 * 
+	 * @param capacity
+	 *            the capacity of the sparse set
+	 */
 	public SetSparse(int capacity) {
 		this(capacity, false);
 	}
 
 	@Override
 	public void increaseCapacity() {
-		super.increaseCapacity();
+		super.increaseCapacity(); // note that dense.length is the new capacity
 		sparse = IntStream.range(0, dense.length).map(i -> i < sparse.length ? sparse[i] : i).toArray();
-		// note that dense.length is the new capacity
 	}
-
-	public SetSparse fill() {
-		limit = dense.length - 1;
-		return this;
-	}
-
-	// public void resetTo(SetSparse set) {
-	// Kit.control(this.getClass() == SetSparse.class, () -> "Should only be used with the base class");
-	// Kit.control(set.capacity() == capacity());
-	// clear();
-	// for (int i = 0; i <= set.limit; i++)
-	// add(set.dense[i]);
-	// }
 
 	@Override
-	public boolean isPresent(int a) {
+	public boolean contains(int a) {
 		return sparse[a] <= limit;
 	}
 
@@ -79,7 +82,17 @@ public class SetSparse extends SetDense {
 	}
 
 	@Override
-	public void removeAtPosition(int i) {
+	public void swapAtPositions(int i, int j) {
+		int a = dense[i];
+		int b = dense[j];
+		dense[i] = b;
+		dense[j] = a;
+		sparse[a] = j;
+		sparse[b] = i;
+	}
+
+	@Override
+	public int removeAtPosition(int i) {
 		assert 0 <= i && i <= limit;
 		if (i != limit) {
 			int a = dense[i];
@@ -90,31 +103,7 @@ public class SetSparse extends SetDense {
 			sparse[b] = i;
 		}
 		limit--;
-	}
-
-	@Override
-	public int shift() {
-		assert limit >= 0;
-		int a = dense[0];
-		if (limit != 0) {
-			int b = dense[limit];
-			dense[0] = dense[limit];
-			dense[limit] = a;
-			sparse[a] = limit;
-			sparse[b] = 0;
-		}
-		limit--;
-		return a;
-	}
-
-	@Override
-	public void swapAtPositions(int i, int j) {
-		int a = dense[i];
-		int b = dense[j];
-		dense[i] = b;
-		dense[j] = a;
-		sparse[a] = j;
-		sparse[b] = i;
+		return dense[limit + 1];
 	}
 
 	public boolean remove(int a) {

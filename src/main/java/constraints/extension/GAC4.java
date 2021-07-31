@@ -45,7 +45,7 @@ public class GAC4 extends ExtensionGlobal implements TagPositive {
 		for (int x = 0; x < sups.length; x++) {
 			sups[x] = new SetDenseReversible[scp[x].dom.initSize()];
 			for (int a = 0; a < sups[x].length; a++)
-				sups[x][a] = new SetDenseReversible(Kit.intArray(tmp[x][a]), true, problem.variables.length + 1);
+				sups[x][a] = new SetDenseReversible(Kit.intArray(tmp[x][a]), problem.variables.length + 1, true);
 		}
 		this.lastRemoved = Kit.repeat(-1, scp.length);
 

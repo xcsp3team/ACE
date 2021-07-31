@@ -13,8 +13,8 @@ import constraints.extension.structures.Bits;
 import dashboard.Control.SettingPropagation;
 import interfaces.FilteringSpecific;
 import problem.Problem;
-import sets.LinkedSet;
-import sets.LinkedSetOrdered.LinkedSetOrderedWithBits2;
+import sets.SetLinked;
+import sets.SetLinkedFinite.LinkedSetOrderedWithBits2;
 import sets.SetSparse;
 import utility.Kit;
 import variables.Domain;
@@ -199,7 +199,7 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 						if (seekSupportPosition(bitSups[a], bitDom) == -1)
 							dom.removeElementary(a);
 			} else {
-				LinkedSetOrderedWithBits2 sety = (LinkedSetOrderedWithBits2) ((LinkedSet) y.dom);
+				LinkedSetOrderedWithBits2 sety = (LinkedSetOrderedWithBits2) ((SetLinked) y.dom);
 				int[][] bitSupsDense = ((Bits) c.extStructure()).bitSupsDenseFor(px);
 				if (residues != null) {
 					for (int a = dom.first(); a != -1; a = dom.next(a)) {

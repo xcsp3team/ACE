@@ -39,8 +39,8 @@ import constraints.extension.CSmart;
 import sets.SetSparse;
 import utility.Kit;
 import variables.Domain;
-import variables.DomainInteger.DomainRange;
-import variables.DomainInteger.DomainSymbols;
+import variables.DomainFinite.DomainRange;
+import variables.DomainFinite.DomainSymbols;
 import variables.Variable;
 
 /**
@@ -451,7 +451,7 @@ public class TableSmart extends ExtensionStructure {
 				if (roughNbInvalidValues < roughNbValidValues && roughNbInvalidValues < supportlessx.size()) {
 					int cnt = 0;
 					for (int a = domx.last(); a != -1 && a > pivot; a = domx.prev(a))
-						if (supportlessx.isPresent(a))
+						if (supportlessx.contains(a))
 							tmp[cnt++] = a;
 					supportlessx.resetTo(tmp, cnt);
 				} else if (roughNbValidValues < supportlessx.size()) {
@@ -496,7 +496,7 @@ public class TableSmart extends ExtensionStructure {
 				if (roughNbInvalidValues < roughNbValidValues && roughNbInvalidValues < supportlessx.size()) {
 					int cnt = 0;
 					for (int a = domx.first(); a != -1 && a < pivot; a = domx.next(a))
-						if (supportlessx.isPresent(a))
+						if (supportlessx.contains(a))
 							tmp[cnt++] = a;
 					supportlessx.resetTo(tmp, cnt);
 				} else if (roughNbValidValues < supportlessx.size()) {
@@ -542,7 +542,7 @@ public class TableSmart extends ExtensionStructure {
 
 			@Override
 			public void collect() {
-				boolean present = supportlessx.isPresent(pivot);
+				boolean present = supportlessx.contains(pivot);
 				supportlessx.clear();
 				if (present)
 					supportlessx.add(pivot);
@@ -650,14 +650,14 @@ public class TableSmart extends ExtensionStructure {
 				if (!scp[x].assigned()) {
 					int cnt = 0;
 					for (int a = domx.last(); a != -1 && (strict ? a >= last2 : a > last2); a = domx.prev(a))
-						if (supportlessx.isPresent(a))
+						if (supportlessx.contains(a))
 							tmp[cnt++] = a;
 					supportlessx.resetTo(tmp, cnt);
 				}
 				if (!scp[y].assigned()) {
 					int cnt = 0;
 					for (int a = domy.first(); a != -1 && (strict ? first1 >= a : first1 > a); a = domy.next(a))
-						if (supportlessy.isPresent(a))
+						if (supportlessy.contains(a))
 							tmp[cnt++] = a;
 					supportlessy.resetTo(tmp, cnt);
 				}
@@ -749,14 +749,14 @@ public class TableSmart extends ExtensionStructure {
 				if (!scp[x].assigned()) {
 					int cnt = 0;
 					for (int a = domx.first(); a != -1 && (strict ? a <= first2 : a < first2); a = domx.next(a))
-						if (supportlessx.isPresent(a))
+						if (supportlessx.contains(a))
 							tmp[cnt++] = a;
 					supportlessx.resetTo(tmp, cnt);
 				}
 				if (!scp[y].assigned()) {
 					int cnt = 0;
 					for (int a = domy.last(); a != -1 && (strict ? a >= last1 : a > last1); a = domy.prev(a))
-						if (supportlessy.isPresent(a))
+						if (supportlessy.contains(a))
 							tmp[cnt++] = a;
 					supportlessy.resetTo(tmp, cnt);
 				}
@@ -844,12 +844,12 @@ public class TableSmart extends ExtensionStructure {
 			public void collect() {
 				supTimeLocal = supTime;
 				if (!scp[x].assigned())
-					if (domy.size() == 1 && supportlessx.isPresent(domy.single()))
+					if (domy.size() == 1 && supportlessx.contains(domy.single()))
 						supportlessx.resetTo(domy.single());
 					else
 						supportlessx.clear();
 				if (!scp[y].assigned())
-					if (domx.size() == 1 && supportlessy.isPresent(domx.single()))
+					if (domx.size() == 1 && supportlessy.contains(domx.single()))
 						supportlessy.resetTo(domx.single());
 					else
 						supportlessy.clear();
@@ -858,7 +858,7 @@ public class TableSmart extends ExtensionStructure {
 			@Override
 			public void collectForVap2(int nb) {
 				if (!scp[y].assigned())
-					if (nb == 1 && supportlessy.isPresent(tmp[0]))
+					if (nb == 1 && supportlessy.contains(tmp[0]))
 						supportlessy.resetTo(tmp[0]);
 					else
 						supportlessy.clear();
@@ -904,14 +904,14 @@ public class TableSmart extends ExtensionStructure {
 				if (!scp[x].assigned()) {
 					int cnt = 0;
 					for (int a = domy.lastRemoved(); a != -1; a = domy.prevRemoved(a))
-						if (supportlessx.isPresent(a))
+						if (supportlessx.contains(a))
 							tmp[cnt++] = a;
 					supportlessx.resetTo(tmp, cnt);
 				}
 				if (!scp[y].assigned()) {
 					int cnt = 0;
 					for (int a = domx.lastRemoved(); a != -1; a = domx.prevRemoved(a))
-						if (supportlessy.isPresent(a))
+						if (supportlessy.contains(a))
 							tmp[cnt++] = a;
 					supportlessy.resetTo(tmp, cnt);
 				}
@@ -1020,7 +1020,7 @@ public class TableSmart extends ExtensionStructure {
 					for (int a = domy.lastRemoved(); a != -1; a = domy.prevRemoved(a)) {
 						int v = domy.toVal(a);
 						int b = domx.toIdxIfPresent(v);
-						if (b != -1 && supportlessx.isPresent(b))
+						if (b != -1 && supportlessx.contains(b))
 							tmp[cnt++] = b;
 					}
 					supportlessx.resetTo(tmp, cnt);
@@ -1031,7 +1031,7 @@ public class TableSmart extends ExtensionStructure {
 						// System.out.println("Idx=" + idx + " " + dom.prevDelIdx(idx));
 						int v = domx.toVal(a);
 						int b = domy.toIdxIfPresent(v);
-						if (b != -1 && supportlessy.isPresent(b)) {
+						if (b != -1 && supportlessy.contains(b)) {
 							// System.out.println(idx + " " + tmp.length + " " + dom.size() + " " + dom.initSize() + " cnt=" + cnt);
 							tmp[cnt++] = b;
 
@@ -1152,14 +1152,14 @@ public class TableSmart extends ExtensionStructure {
 				if (!scp[x].assigned()) {
 					int cnt = 0;
 					for (int a = domx.first(); a != -1 && (strict ? a <= first2 + cst : a < first2 + cst); a = domx.next(a))
-						if (supportlessx.isPresent(a))
+						if (supportlessx.contains(a))
 							tmp[cnt++] = a;
 					supportlessx.resetTo(tmp, cnt);
 				}
 				if (!scp[y].assigned()) {
 					int cnt = 0;
 					for (int a = domy.last(); a != -1 && (strict ? a + cst >= last1 : a + cst > last1); a = domy.prev(a))
-						if (supportlessy.isPresent(a))
+						if (supportlessy.contains(a))
 							tmp[cnt++] = a;
 					supportlessy.resetTo(tmp, cnt);
 				}

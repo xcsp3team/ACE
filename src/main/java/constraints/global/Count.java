@@ -158,7 +158,7 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 			@Override
 			public boolean runPropagator(Variable x) {
 				int p = positionOf(x);
-				if (!sentinels.isPresent(p) || x.dom.containsValue(value))
+				if (!sentinels.contains(p) || x.dom.containsValue(value))
 					return true;
 				// we search for another sentinel
 				int[] dense = sentinels.dense;

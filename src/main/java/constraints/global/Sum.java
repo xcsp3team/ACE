@@ -442,14 +442,14 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 					for (int i = futvars.limit; i >= 0; i--) {
 						Domain dom = scp[futvars.dense[i]].dom;
 						if (dom.size() != 1)
-							dom.removeSafely(1);
+							dom.remove(1);
 					}
 				} else { // remove all 0
 					assert cnt1 + diff == limit;
 					for (int i = futvars.limit; i >= 0; i--) {
 						Domain dom = scp[futvars.dense[i]].dom;
 						if (dom.size() != 1)
-							dom.removeSafely(0);
+							dom.remove(0);
 					}
 				}
 				return true;

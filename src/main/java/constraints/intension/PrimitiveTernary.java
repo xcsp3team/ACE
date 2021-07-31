@@ -303,7 +303,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 				dz.afterElementaryCalls(sizeBefore);
 				if (dz.size() == 1) {
 					assert dz.containsOnlyValue(0);
-					dx.removeSafely(1);
+					dx.remove(1); // no possible inconsistency
 				}
 				return true;
 			}
@@ -943,10 +943,8 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 				int v = dy.commonValueWith(dz); // dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) : dz.firstCommonValueWith(dy);
 				if (v != Integer.MAX_VALUE)
 					residue = v;
-				else {
-					dx.removeSafely(1);
-					return entailed(); // since dy and dz are disjoint
-				}
+				else
+					return dx.remove(1) && entailed(); // since inconsistency not possible and dy and dz are disjoint
 				return true;
 			}
 		}
@@ -981,8 +979,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 				if (v != Integer.MAX_VALUE)
 					residue = v;
 				else {
-					dx.removeSafely(0);
-					return entailed(); // since dy and dz are disjoint
+					return dx.remove(0) && entailed(); // since inconsistency not possible and dy and dz are disjoint
 				}
 				return true;
 			}

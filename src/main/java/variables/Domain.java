@@ -29,12 +29,20 @@ import org.xcsp.common.Range;
 import org.xcsp.common.Types.TypeOperatorRel;
 
 import interfaces.Observers.ObserverDomainReduction;
+import problem.Problem;
 import propagation.Propagation;
-import sets.LinkedSet;
+import sets.SetLinked;
 import sets.SetDense;
 import utility.Kit;
 
-public interface Domain extends LinkedSet {
+/**
+ * A domain of a variable (in a constraint network) is composed of a set of integer values. The domain if initially full, but typically reduced when logically
+ * reasoning. When handling a domain, one usually iterate over the indexes of the values; if the domains contains d values, the indexes range from 0 to d-1.
+ * 
+ * @author Christophe Lecoutre
+ *
+ */
+public interface Domain extends SetLinked {
 
 	/**********************************************************************************************
 	 * Static Members
@@ -92,7 +100,7 @@ public interface Domain extends LinkedSet {
 	 * @param doms
 	 *            an array of domains
 	 * @param usingInitSize
-	 *            indicates if the initial size of the domains must be considered
+	 *            indicates if the initial size of the domains must be considered (or the current size)
 	 * @return the number of valid tuples
 	 */
 	static BigInteger nValidTuples(Domain[] doms, boolean usingInitSize) {
@@ -103,7 +111,7 @@ public interface Domain extends LinkedSet {
 	}
 
 	/**
-	 * Returns either the number of valid tuples or Long.MAX_VALUE if the precise number is greater than Long.MAX_VALUE
+	 * Returns either the number of valid tuples or Long.MAX_VALUE if the exact number is greater than Long.MAX_VALUE
 	 * 
 	 * @param doms
 	 *            an array of domains
@@ -127,7 +135,7 @@ public interface Domain extends LinkedSet {
 	}
 
 	/**
-	 * Returns either the number of valid tuples or Long.MAX_VALUE if the precise number is greater than Long.MAX_VALUE
+	 * Returns either the number of valid tuples or Long.MAX_VALUE if the exact number is greater than Long.MAX_VALUE
 	 * 
 	 * @param doms
 	 *            an array of domains
@@ -203,8 +211,6 @@ public interface Domain extends LinkedSet {
 	 * @return the value at the specified index
 	 */
 	int toVal(int a);
-
-	/** Returns the index of the specified value, but only if the value belongs to the current domain. Returns -1, otherwise. */
 
 	/**
 	 * Returns the index of the specified value if the value belongs to the current domain, -1 otherwise.
@@ -299,12 +305,12 @@ public interface Domain extends LinkedSet {
 	}
 
 	/**
-	 * Returns a value present in this domain and also in the specified one. There is no guarantee about the returned value (for example, it may not be the
-	 * first possible one of the domain).
+	 * Returns a value present in both this domain and the specified one. There is no guarantee about the returned value (for example, it may not be the first
+	 * possible one of the domain). If no common value is present, Integer.MAX_VALUE is returned.
 	 * 
 	 * @param dom
 	 *            an other domain
-	 * @return a value present in both the domain and the specified one
+	 * @return a value present in both the domain and the specified one, or Integer.MAX_VALUE
 	 */
 	default int commonValueWith(Domain dom) {
 		if (size() <= dom.size())
@@ -322,23 +328,58 @@ public interface Domain extends LinkedSet {
 		return Integer.MAX_VALUE;
 	}
 
+	/**
+	 * Returns true if the domain and the specified one contain a common value
+	 * 
+	 * @param dom
+	 *            an other domain
+	 * @return true if the domain and the specified one contain a common value
+	 */
+	default boolean overlapWith(Domain dom) {
+		return this.commonValueWith(dom) != Integer.MAX_VALUE;
+	}
+
+	/**
+	 * Returns true if the (current) domain is a subset of the (current) specified one
+	 * 
+	 * @param dom
+	 *            an other domain
+	 * @return true if the (current) domain is a subset of the (current) specified one
+	 */
+	default boolean subsetOf(Domain dom) {
+		for (int a = first(); a != -1; a = next(a))
+			if (!dom.containsValue(toVal(a)))
+				return false;
+		return true;
+	}
+
 	/**********************************************************************************************
-	 * Section about removals
+	 * Methods for updating the domain (i.e., removing values)
 	 *********************************************************************************************/
 
 	/**
-	 * Removes definitively the value at the specified index. <br />
+	 * Removes at construction time (hence, definitively) the value at the specified index. <br />
 	 * Important: this method must only called when building the problem.
+	 * 
+	 * @param a
+	 *            a value index
 	 */
 	default void removeAtConstructionTime(int a) {
-		control(var().problem.solver == null, () -> "Must be called before the solver being built.");
 		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " at construction time");
-
+		Problem problem = var().problem;
+		control(problem.solver == null, () -> "Must be called before the solver being built.");
 		remove(a, 0);
-		var().problem.nValuesRemoved++;
-		var().problem.features.nValuesRemovedAtConstructionTime++;
+		problem.nValuesRemoved++;
+		problem.features.nValuesRemovedAtConstructionTime++;
 	}
 
+	/**
+	 * Removes at construction time (hence, definitively) every value whose index is tested as true by the specified predicate. <br />
+	 * Important: this method must only called when building the problem.
+	 * 
+	 * @param p
+	 *            a predicate for testing value indexes
+	 */
 	default void removeAtConstructionTime(Predicate<Integer> p) {
 		for (int a = first(); a != -1; a = next(a))
 			if (p.test(a))
@@ -346,13 +387,23 @@ public interface Domain extends LinkedSet {
 	}
 
 	/**
-	 * Removes definitively the value at the specified index. <br />
+	 * Removes at construction time (hence, definitively) the specified value. <br />
 	 * Important: this method must only called when building the problem.
+	 * 
+	 * @param v
+	 *            a value
 	 */
 	default void removeValueAtConstructionTime(int v) {
 		removeAtConstructionTime(toIdx(v));
 	}
 
+	/**
+	 * Removes at construction time (hence, definitively) every value tested as true by the specified predicate. <br />
+	 * Important: this method must only called when building the problem.
+	 * 
+	 * @param p
+	 *            a predicate for testing values
+	 */
 	default void removeValuesAtConstructionTime(Predicate<Integer> p) {
 		for (int a = first(); a != -1; a = next(a))
 			if (p.test(toVal(a)))
@@ -365,16 +416,17 @@ public interface Domain extends LinkedSet {
 
 	/**
 	 * Removes the value at the specified index. <br />
-	 * The value is assumed to be present, and the variable to which the domain is attached is assumed to be future. <br />
-	 * Important: the management of this removal with respect to propagation is not handled.
+	 * The value is assumed to be present, and the variable to which the domain is attached is assumed to be future (i.e. non explicitly assigned). <br />
+	 * Important: the management of this removal with respect to propagation is not handled: removal is said elementary.
+	 * 
+	 * @param a
+	 *            a value index
 	 */
 	default void removeElementary(int a) {
+		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " from " + propagation().currFilteringCtr);
 		Variable x = var();
 		assert !x.assigned() && contains(a) : x + " " + x.assigned() + " " + contains(a);
-		// System.out.println("removing " + x + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " by constraint " +
-		// propagation().currFilteringCtr);
-
-		int depth = propagation().solver.stackVariable(x); // stacking variables must always be performed before domain reduction
+		int depth = propagation().solver.stackVariable(x); // stacking variables (to keep track of propagation) must always be performed before domain reduction
 		remove(a, depth);
 		for (ObserverDomainReduction observer : x.problem.observersDomainReduction)
 			observer.afterRemoval(x, a);
@@ -405,18 +457,18 @@ public interface Domain extends LinkedSet {
 		return !contains(a) || remove(a);
 	}
 
-	/**
-	 * Removes the value at the specified index. <br />
-	 * The value is assumed to be present. <br />
-	 * When called, we have the guarantee that no inconsistency can be detected (because the value is present and the domain contains at least another value).
-	 * <br />
-	 * The management of this removal with respect to propagation is handled.
-	 */
-	default void removeSafely(int a) {
-		assert contains(a) && size() > 1 : contains(a) + " " + size();
-		removeElementary(a);
-		propagation().handleReductionSafely(var());
-	}
+	// /**
+	// * Removes the value at the specified index. <br />
+	// * The value is assumed to be present. <br />
+	// * When called, we have the guarantee that no inconsistency can be detected (because the value is present and the domain contains at least another value).
+	// * <br />
+	// * The management of this removal with respect to propagation is handled.
+	// */
+	// default void removeSafely(int a) {
+	// assert contains(a) && size() > 1 : contains(a) + " " + size();
+	// removeElementary(a);
+	// propagation().handleReductionSafely(var());
+	// }
 
 	/**
 	 * Removes the values (at the indexes) given by the specified array of flags. <br>
@@ -553,33 +605,6 @@ public interface Domain extends LinkedSet {
 	default boolean removeValuesIfPresent(int v, int w) {
 		return removeValueIfPresent(v) && removeValueIfPresent(w);
 	}
-
-	/**
-	 * Removes the values that satisfies the relational operation. <br />
-	 * Returns false if an inconsistency is detected (domain wipe-out). <br />
-	 * The management of these possible removals with respect to propagation is handled.
-	 */
-	// default boolean removeValues(TypeOperatorRel type, int limit) {
-	// int sizeBefore = size();
-	// switch (type) {
-	// case LT:
-	// limit = limit != Integer.MIN_VALUE ? limit - 1 : limit;
-	// case LE:
-	// if (lastValue() <= limit)
-	// return fail();
-	// for (int a = first(); a != -1 && toVal(a) <= limit; a = next(a))
-	// removeElementary(a);
-	// break;
-	// case GT:
-	// limit = limit != Integer.MAX_VALUE ? limit + 1 : limit;
-	// case GE:
-	// if (firstValue() >= limit)
-	// return fail();
-	// for (int a = last(); a != -1 && toVal(a) >= limit; a = prev(a))
-	// removeElementary(a);
-	// }
-	// return afterElementaryCalls(sizeBefore);
-	// }
 
 	default boolean removeValuesLT(int limit) {
 		return removeValuesLE(limit != Integer.MIN_VALUE ? limit - 1 : limit);
@@ -880,20 +905,6 @@ public interface Domain extends LinkedSet {
 		return Kit.intArray(values);
 	}
 
-	default boolean subsetOf(Domain dom) {
-		for (int a = first(); a != -1; a = next(a))
-			if (!dom.containsValue(toVal(a)))
-				return false;
-		return true;
-	}
-
-	default boolean overlapWith(Domain dom) {
-		for (int a = first(); a != -1; a = next(a))
-			if (dom.containsValue(toVal(a)))
-				return true;
-		return false;
-	}
-
 	/**********************************************************************************************
 	 * Control and Display
 	 *********************************************************************************************/
@@ -906,7 +917,7 @@ public interface Domain extends LinkedSet {
 	Object allValues();
 
 	/**
-	 * Returns a pretty form of the value whose index is specified
+	 * Returns a pretty string form of the value whose index is specified
 	 * 
 	 * @param a
 	 *            index of value
@@ -941,13 +952,13 @@ public interface Domain extends LinkedSet {
 	 * Prints a description of the domain. Detailed information is given if the specified boolean is true
 	 * 
 	 * @param exhaustively
-	 *            a boolean for getting more information
+	 *            a boolean used for getting more information
 	 */
 	default void display(boolean exhaustively) {
 		System.out.println("  Domain " + this + " (imv=" + indexesMatchValues() + ", typeIdentifier=" + typeIdentifier() + ")");
-		System.out.println("\t initSize= " + initSize() + " and size= " + size());
+		System.out.println("\t initSize=" + initSize() + " and size=" + size());
 		if (size() != 0)
-			System.out.println("\t first= " + firstValue() + (indexesMatchValues() ? "" : "(" + first() + ")") + " and last= " + lastValue()
+			System.out.println("\t first=" + firstValue() + (indexesMatchValues() ? "" : "(" + first() + ")") + " and last=" + lastValue()
 					+ (indexesMatchValues() ? "" : "(" + last() + ")"));
 		if (exhaustively)
 			System.out.println("\t values = {" + stringOfCurrentValues() + "}" + "\nStructures\n" + stringOfStructures());

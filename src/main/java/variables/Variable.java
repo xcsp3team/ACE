@@ -36,9 +36,9 @@ import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingUnsystemati
 import problem.Problem;
 import utility.Kit;
 import utility.Reflector;
-import variables.DomainInteger.DomainRange;
-import variables.DomainInteger.DomainSymbols;
-import variables.DomainInteger.DomainValues;
+import variables.DomainFinite.DomainRange;
+import variables.DomainFinite.DomainSymbols;
+import variables.DomainFinite.DomainValues;
 
 /**
  * This class gives the description of a variable. <br>
