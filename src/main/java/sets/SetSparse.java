@@ -106,6 +106,13 @@ public class SetSparse extends SetDense {
 		return dense[limit + 1];
 	}
 
+	/**
+	 * Removes the specified index
+	 * 
+	 * @param a
+	 *            an index
+	 * @return true if the element has been removed (because present)
+	 */
 	public boolean remove(int a) {
 		int i = sparse[a];
 		if (i > limit)
@@ -121,6 +128,14 @@ public class SetSparse extends SetDense {
 		return true; // removed
 	}
 
+	/**
+	 * Swaps the two specified indexes
+	 * 
+	 * @param a
+	 *            a first index
+	 * @param b
+	 *            a second index
+	 */
 	public final void swap(int a, int b) {
 		int i = sparse[a];
 		int j = sparse[b];

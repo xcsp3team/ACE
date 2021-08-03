@@ -280,11 +280,11 @@ public class Campagn { // using the cluster
 	public void runVariants() {
 		// if (configurationVariantsFileName == null) Kit.copy(defaultConfigurationFileName,
 		// getDirectoryNameOfConfigurations() + File.separator + defaultConfigurationFileName);
-		String[] sequentialVariants = ResolutionVariants.loadSequentialVariants(defaultSettingsFileName, settingsVariantsFileName,
+		String[] sequentialVariants = Head.loadSequentialVariants(defaultSettingsFileName, settingsVariantsFileName,
 				getDirectoryNameOfConfigurations() + File.separator);
 		for (String sequentialVariant : sequentialVariants)
 			runVariant(sequentialVariant, false);
-		String[] parallelVariants = ResolutionVariants.loadParallelVariants(settingsVariantsFileName, getDirectoryNameOfConfigurations() + File.separator);
+		String[] parallelVariants = Head.loadParallelVariants(settingsVariantsFileName, getDirectoryNameOfConfigurations() + File.separator);
 		for (String parallelVariant : parallelVariants)
 			runVariant(parallelVariant, true);
 

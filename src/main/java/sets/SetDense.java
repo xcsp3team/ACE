@@ -175,6 +175,13 @@ public class SetDense { // implements Iterable<Integer> {
 		return false;
 	}
 
+	public boolean isStrictlyIncreasing() {
+		for (int i = limit; i > 0; i--)
+			if (dense[i] < dense[i - 1])
+				return false;
+		return true;
+	}
+
 	/**
 	 * Adds the specified element. For a pure dense set (i.e., not a sparse set), the absence of the element is not tested, and so the element is always
 	 * systematically added.

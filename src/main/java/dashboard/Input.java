@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 
 import org.xcsp.common.Utilities;
 
-import main.ResolutionVariants;
+import main.Head;
 import problem.XCSP3;
 import utility.Kit;
 
@@ -78,7 +78,7 @@ public final class Input {
 		args = Stream.of(args).filter(s -> s.length() > 0).toArray(String[]::new); // clean args
 		Kit.control(args.length > 0);
 		Input.args = args;
-		multiThreads = Kit.isXMLFileWithRoot(lastArgument(), ResolutionVariants.VARIANT_PARALLEL);
+		multiThreads = Kit.isXMLFileWithRoot(lastArgument(), Head.VARIANT_PARALLEL);
 		int cursor = 0;
 		userSettingsFilename = Kit.isXMLFileWithRoot(args[cursor], Control.CONFIGURATION) ? args[cursor++] : Control.DEFAULT_CONFIGURATION;
 		// control of this file performed later

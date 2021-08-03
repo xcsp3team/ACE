@@ -20,11 +20,11 @@ import sets.SetLinkedFinite.LinkedSetOrderedWithBits;
 import utility.Kit;
 
 /**
- * This class gives the description of the finite domain of a variable. <br>
- * A domain is attached to a variable and consists of a finite set of integer values. In order to simplify programming, most of the time indexes of values are
- * used instead of values. Indexes range from <code> 0 </code> to <code> initialSize -1 </code> where <code> initialSize </code> denote the number of elements
- * in the domain. For instance, if the domain contains the values <code> {1,4,5} </code>, their indexes are respectively <code> {0,1,2} </code>. The
- * correspondence between indexes of values and values is given by the methods <code> toIndex </code> and <code> toValue </code>.
+ * A finite domain for a variable (from a constraint network), composed of a finite set of integers. Such a domain is defined from a range or an array; see the
+ * two intern subclasses.
+ * 
+ * @author Christophe Lecoutre
+ *
  */
 public abstract class DomainFinite extends LinkedSetOrderedWithBits implements Domain {
 
@@ -40,11 +40,6 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 				return false;
 		return true;
 	}
-
-	// @Override
-	// public int hashCode() {
-	// return 0; // i.hashCode();
-	// }
 
 	private Variable var;
 
@@ -81,6 +76,14 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 		return indexesMatchValues != null ? indexesMatchValues : (indexesMatchValues = IntStream.range(0, initSize()).noneMatch(a -> a != toVal(a)));
 	}
 
+	/**
+	 * Builds a finite domain of the specified initial size for the specified variable
+	 * 
+	 * @param var
+	 *            the variable to which the domain is associated
+	 * @param initSize
+	 *            the initial size of the domain
+	 */
 	public DomainFinite(Variable var, int initSize) {
 		super(initSize);
 		this.var = var;

@@ -13,6 +13,12 @@ import java.util.stream.IntStream;
 import propagation.Propagation;
 import sets.SetLinkedBinary;
 
+/**
+ * A binary domain for a variable (from a constraint network).
+ * 
+ * @author Christophe Lecoutre
+ *
+ */
 public final class DomainBinary extends SetLinkedBinary implements Domain {
 
 	private Variable var;
@@ -50,8 +56,17 @@ public final class DomainBinary extends SetLinkedBinary implements Domain {
 		return indexesMatchValues != null ? indexesMatchValues : (indexesMatchValues = IntStream.range(0, initSize()).noneMatch(a -> a != toVal(a)));
 	}
 
+	/**
+	 * Builds a binary domain for the specified variable from the specified values
+	 * 
+	 * @param var
+	 *            the variable to which the domain is associated
+	 * @param firstValue
+	 *            the first value of the domain
+	 * @param secondValue
+	 *            the second value of the domain
+	 */
 	public DomainBinary(Variable var, int firstValue, int secondValue) {
-		// super(2);
 		this.var = var;
 		this.firstValue = firstValue;
 		this.secondValue = secondValue;
@@ -77,5 +92,4 @@ public final class DomainBinary extends SetLinkedBinary implements Domain {
 	public String toString() {
 		return "dom(" + var().id() + ")";
 	}
-
 }

@@ -31,14 +31,16 @@ import org.xcsp.common.Types.TypeOperatorRel;
 import interfaces.Observers.ObserverDomainReduction;
 import problem.Problem;
 import propagation.Propagation;
-import sets.SetLinked;
 import sets.SetDense;
+import sets.SetLinked;
 import utility.Kit;
 
 /**
- * A domain of a variable (in a constraint network) is composed of a set of integer values. The domain if initially full, but typically reduced when logically
- * reasoning. When handling a domain, one usually iterate over the indexes of the values; if the domains contains d values, the indexes range from 0 to d-1.
- * 
+ * A domain of a variable (from a constraint network) is composed of a set of integer values. The domain is initially full, but typically reduced when logically
+ * reasoning. When handling a domain, to simplify programming, one usually iterates over the indexes of the values; if the domains contains d values, the
+ * indexes range from 0 to d-1. For instance, if the domain is the set of values <code> {1,4,5} </code>, their indexes are respectively <code> {0,1,2} </code>.
+ * The correspondence between indexes of values and values is given by the methods <code> toIdx </code> and <code> toVal </code>.
+ *
  * @author Christophe Lecoutre
  *
  */
@@ -291,6 +293,13 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
+	 * Returns randomly a value of the domain.
+	 */
+	default int anyValue() {
+		return toVal(any());
+	}
+
+	/**
 	 * Returns the distance of the domain, that is the difference between the highest and smallest values
 	 */
 	default int distance() {
@@ -351,6 +360,23 @@ public interface Domain extends SetLinked {
 			if (!dom.containsValue(toVal(a)))
 				return false;
 		return true;
+	}
+
+	/**
+	 * Returns an array containing all values evaluated as true by the specified predicate.
+	 * 
+	 * @param p
+	 *            a predicate for testing values
+	 * @return an array containing all values verifying the specified predicate
+	 */
+	default int[] valuesChecking(Predicate<Integer> p) {
+		List<Integer> values = new ArrayList<>();
+		for (int a = first(); a != -1; a = next(a)) {
+			int va = toVal(a);
+			if (p.test(va))
+				values.add(va);
+		}
+		return Kit.intArray(values);
 	}
 
 	/**********************************************************************************************
@@ -457,24 +483,21 @@ public interface Domain extends SetLinked {
 		return !contains(a) || remove(a);
 	}
 
-	// /**
-	// * Removes the value at the specified index. <br />
-	// * The value is assumed to be present. <br />
-	// * When called, we have the guarantee that no inconsistency can be detected (because the value is present and the domain contains at least another value).
-	// * <br />
-	// * The management of this removal with respect to propagation is handled.
-	// */
-	// default void removeSafely(int a) {
-	// assert contains(a) && size() > 1 : contains(a) + " " + size();
-	// removeElementary(a);
-	// propagation().handleReductionSafely(var());
-	// }
-
 	/**
 	 * Removes the values (at the indexes) given by the specified array of flags. <br>
 	 * When a flag is set to false, this means that the corresponding value must be removed. <br />
 	 * Returns false if an inconsistency is detected. <br />
 	 * The management of these removals with respect to propagation is handled.
+	 */
+
+	/**
+	 * Removes each index whose corresponding flag is true in the specified array. The number of removed indexes is given by the second argument.
+	 * 
+	 * @param flags
+	 *            an array of flags indicating which indexes must be removed
+	 * @param nRemovals
+	 *            the number of indexes to be removed
+	 * @return false if an inconsistency (empty domain) is detected
 	 */
 	default boolean remove(boolean[] flags, int nRemovals) {
 		assert 0 < nRemovals && nRemovals <= size() && flags.length == initSize()
@@ -554,8 +577,11 @@ public interface Domain extends SetLinked {
 	 * Removes any value whose index is different from the specified index. <br />
 	 * Returns false if an inconsistency is detected (domain wipe-out). <br />
 	 * Important: the value at the specified index is not necessarily present in the domain. <br />
-	 * In that case, it automatically returns false. <br />
-	 * The management of this removal with respect to propagation is handled.
+	 * In that case, false is returned.
+	 * 
+	 * @param a
+	 *            a value index
+	 * @return false if an inconsistency (empty domain) is detected
 	 */
 	default boolean reduceTo(int a) {
 		return !contains(a) ? fail() : reduceToElementary(a) == 0 || propagation().handleReductionSafely(var());
@@ -564,8 +590,11 @@ public interface Domain extends SetLinked {
 	/**
 	 * Removes the values that are different from the specified value. <br />
 	 * Returns false if an inconsistency is detected (domain wipe-out). <br />
-	 * Important: the specified value is not necessarily present in the domain. <br />
-	 * The propagation queue is updated (if necessary).
+	 * Important: the specified value is not necessarily present in the domain.
+	 *
+	 * @param v
+	 *            a value
+	 * @return false if an inconsistency (empty domain) is detected
 	 */
 	default boolean reduceToValue(int v) {
 		int a = toIdxIfPresent(v);
@@ -573,7 +602,9 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Forces failure through this domain.
+	 * Forces failure (inconsistency)
+	 * 
+	 * @return false
 	 */
 	default boolean fail() {
 		return propagation().handleReduction(var(), 0);
@@ -583,7 +614,10 @@ public interface Domain extends SetLinked {
 	 * Removes the specified value. <br />
 	 * Important: the value is assumed to be present. <br />
 	 * Returns false if an inconsistency is detected (domain wipe-out). <br />
-	 * The management of this removal with respect to propagation is handled.
+	 * 
+	 * @param v
+	 *            a value
+	 * @return false if an inconsistency (empty domain) is detected
 	 */
 	default boolean removeValue(int v) {
 		int a = toIdxIfPresent(v);
@@ -594,22 +628,24 @@ public interface Domain extends SetLinked {
 	/**
 	 * Removes the specified value, if present. <br />
 	 * If the value is not present, the method returns true (non aggressive mode). <br />
-	 * Otherwise, returns false if an inconsistency is detected (domain wipe-out). <br />
-	 * The management of this (possible) removal with respect to propagation is handled.
+	 * Otherwise, false is returned if an inconsistency is detected (domain wipe-out). <br />
+	 * 
+	 * @param v
+	 *            a value
+	 * @return false if an inconsistency (empty domain) is detected
 	 */
 	default boolean removeValueIfPresent(int v) {
 		int a = toIdxIfPresent(v);
 		return a == -1 || remove(a);
 	}
 
-	default boolean removeValuesIfPresent(int v, int w) {
-		return removeValueIfPresent(v) && removeValueIfPresent(w);
-	}
-
-	default boolean removeValuesLT(int limit) {
-		return removeValuesLE(limit != Integer.MIN_VALUE ? limit - 1 : limit);
-	}
-
+	/**
+	 * Removes all values that are less than or equal to the specified limit
+	 * 
+	 * @param limit
+	 *            an int used as limit
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
 	default boolean removeValuesLE(int limit) {
 		if (lastValue() <= limit)
 			return fail();
@@ -619,6 +655,13 @@ public interface Domain extends SetLinked {
 		return afterElementaryCalls(sizeBefore);
 	}
 
+	/**
+	 * Removes all values that are greater than or equal to the specified limit
+	 * 
+	 * @param limit
+	 *            an int used as limit
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
 	default boolean removeValuesGE(int limit) {
 		if (firstValue() >= limit)
 			return fail();
@@ -628,22 +671,65 @@ public interface Domain extends SetLinked {
 		return afterElementaryCalls(sizeBefore);
 	}
 
+	/**
+	 * Removes all values that are strictly less than the specified limit
+	 * 
+	 * @param limit
+	 *            an int used as limit
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
+	default boolean removeValuesLT(int limit) {
+		return removeValuesLE(limit != Integer.MIN_VALUE ? limit - 1 : limit);
+	}
+
+	/**
+	 * Removes all values that are strictly greater than the specified limit
+	 * 
+	 * @param limit
+	 *            an int used as limit
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
 	default boolean removeValuesGT(int limit) {
 		return removeValuesGE(limit != Integer.MAX_VALUE ? limit + 1 : limit);
 	}
 
+	/**
+	 * Removes all values that are strictly less than the specified limit (long)
+	 * 
+	 * @param limit
+	 *            a long used as limit
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
 	default boolean removeValuesLT(long limit) {
 		assert limit != Long.MIN_VALUE;
 		limit--;
 		return removeValuesLE(limit <= Integer.MIN_VALUE ? Integer.MIN_VALUE : limit >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) limit);
 	}
 
+	/**
+	 * Removes all values that are strictly greater than the specified limit (long)
+	 * 
+	 * @param limit
+	 *            a long used as limit
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
 	default boolean removeValuesGT(long limit) {
 		assert limit != Long.MAX_VALUE;
 		limit++;
 		return removeValuesGE(limit <= Integer.MIN_VALUE ? Integer.MIN_VALUE : limit >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) limit);
 	}
 
+	/**
+	 * Removes all values that, when multiplied by the specified coefficient, verify the condition defined by the specified relational operator and the
+	 * specified limit
+	 * 
+	 * @param type
+	 *            the relational operator used for the condition
+	 * @param limit
+	 *            a long used as limit for the condition
+	 * @param coeff
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
 	default boolean removeValues(TypeOperatorRel type, long limit, int coeff) {
 		assert coeff != 0 && limit != Long.MIN_VALUE && limit != Long.MAX_VALUE;
 		if (type == LT) {
@@ -745,6 +831,13 @@ public interface Domain extends SetLinked {
 		return afterElementaryCalls(sizeBefore);
 	}
 
+	/**
+	 * Removes all values that are present in the specified domain, and returns false if the domain becomes empty.
+	 * 
+	 * @param dom
+	 *            another domain
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
 	default boolean removeValuesIn(Domain dom) {
 		int sizeBefore = size();
 		if (sizeBefore == 1)
@@ -761,6 +854,13 @@ public interface Domain extends SetLinked {
 		return afterElementaryCalls(sizeBefore);
 	}
 
+	/**
+	 * Removes all values that are not present in the specified domain, and returns false if the domain becomes empty.
+	 * 
+	 * @param dom
+	 *            another domain
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
 	default boolean removeValuesNotIn(Domain dom) {
 		if (lastValue() < dom.firstValue() || dom.lastValue() < firstValue())
 			return fail();
@@ -773,6 +873,13 @@ public interface Domain extends SetLinked {
 		return afterElementaryCalls(sizeBefore);
 	}
 
+	/**
+	 * Removes all values that are present in the specified set, and returns false if the domain becomes empty.
+	 * 
+	 * @param set
+	 *            a set of integers
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
 	default boolean removeValuesIn(Set<Integer> set) {
 		int sizeBefore = size();
 		if (sizeBefore == 1)
@@ -792,6 +899,13 @@ public interface Domain extends SetLinked {
 		return afterElementaryCalls(sizeBefore);
 	}
 
+	/**
+	 * Removes all values that are not present in the specified set, and returns false if the domain becomes empty.
+	 * 
+	 * @param set
+	 *            a set of integers
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
 	default boolean removeValuesNotIn(Set<Integer> set) {
 		int sizeBefore = size();
 		if (sizeBefore == 1)
@@ -802,6 +916,14 @@ public interface Domain extends SetLinked {
 		return afterElementaryCalls(sizeBefore);
 	}
 
+	/**
+	 * Removes all values that are present in the specified array, and returns false if the domain becomes empty. <br />
+	 * IMPORTANT: the specified set must be increasingly ordered.
+	 * 
+	 * @param set
+	 *            an array of integers
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
 	default boolean removeValuesIn(int[] set) {
 		assert Kit.isStrictlyIncreasing(set);
 		int sizeBefore = size();
@@ -818,6 +940,14 @@ public interface Domain extends SetLinked {
 		return afterElementaryCalls(sizeBefore);
 	}
 
+	/**
+	 * Removes all values that are not present in the specified array, and returns false if the domain becomes empty. <br />
+	 * IMPORTANT: the specified set must be increasingly ordered.
+	 * 
+	 * @param set
+	 *            an array of integers
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
 	default boolean removeValuesNotIn(int[] set) {
 		assert Kit.isStrictlyIncreasing(set);
 		int sizeBefore = size();
@@ -834,7 +964,16 @@ public interface Domain extends SetLinked {
 		return afterElementaryCalls(sizeBefore);
 	}
 
+	/**
+	 * Removes all values that are present in the specified dense set, and returns false if the domain becomes empty. <br />
+	 * IMPORTANT: the specified set must be increasingly ordered.
+	 * 
+	 * @param set
+	 *            a dense set
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
 	default boolean removeValuesIn(SetDense set) {
+		assert set.isStrictlyIncreasing();
 		int sizeBefore = size();
 		if (sizeBefore == 1)
 			return Arrays.binarySearch(set.dense, 0, set.size(), firstValue()) < 0 || fail();
@@ -849,6 +988,15 @@ public interface Domain extends SetLinked {
 		return afterElementaryCalls(sizeBefore);
 	}
 
+	/**
+	 * Removes all values that are present in the specified range, and returns false if the domain becomes empty.
+	 * 
+	 * @param start
+	 *            the lower bound (inclusive) of the range
+	 * @param stop
+	 *            the upper bound (exclusive) of the range
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
 	default boolean removeValuesInRange(int start, int stop) {
 		if (start >= stop)
 			return true;
@@ -885,6 +1033,13 @@ public interface Domain extends SetLinked {
 		return afterElementaryCalls(sizeBefore);
 	}
 
+	/**
+	 * Removes all indexes evaluated as true by the specified predicate, and returns false if the domain becomes empty.
+	 * 
+	 * @param p
+	 *            a predicate for testing value indexes
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
 	default boolean removeIndexesChecking(Predicate<Integer> p) {
 		int sizeBefore = size();
 		if (sizeBefore == 1)
@@ -895,14 +1050,21 @@ public interface Domain extends SetLinked {
 		return afterElementaryCalls(sizeBefore);
 	}
 
-	default int[] valuesChecking(Predicate<Integer> p) {
-		List<Integer> values = new ArrayList<>();
-		for (int a = first(); a != -1; a = next(a)) {
-			int va = toVal(a);
-			if (p.test(va))
-				values.add(va);
-		}
-		return Kit.intArray(values);
+	/**
+	 * Removes all values evaluated as true by the specified predicate, and returns false if the domain becomes empty.
+	 * 
+	 * @param p
+	 *            a predicate for testing values
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
+	default boolean removeValuesChecking(Predicate<Integer> p) {
+		int sizeBefore = size();
+		if (sizeBefore == 1)
+			return !p.test(firstValue()) || fail();
+		for (int a = first(); a != -1; a = next(a))
+			if (p.test(toVal(a)))
+				removeElementary(a);
+		return afterElementaryCalls(sizeBefore);
 	}
 
 	/**********************************************************************************************

@@ -1214,7 +1214,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 
 			private boolean revise(Domain d1, Domain d2) {
 				if (d1.size() == 1)
-					return d2.removeValuesIfPresent(d1.singleValue() - k, d1.singleValue() + k);
+					return d2.removeValueIfPresent(d1.singleValue() - k) && d2.removeValueIfPresent(d1.singleValue() + k);
 				if (d1.size() == 2 && d1.lastValue() - k == d1.firstValue() + k)
 					return d2.removeValueIfPresent(d1.lastValue() - k);
 				return true;
@@ -1534,7 +1534,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dx.size() == 1)
-					return dy.removeValuesIfPresent(k + dx.singleValue(), k - dx.singleValue());
+					return dy.removeValueIfPresent(k + dx.singleValue()) && dy.removeValueIfPresent(k - dx.singleValue());
 				int v = Math.abs(dy.firstValue() - k);
 				if (dy.size() == 1)
 					return dx.removeValueIfPresent(v);
