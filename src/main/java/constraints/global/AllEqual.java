@@ -15,8 +15,8 @@ import java.util.stream.IntStream;
 
 import constraints.Constraint.CtrGlobal;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import sets.SetDense;
@@ -101,13 +101,3 @@ public final class AllEqual extends CtrGlobal implements ObserverBacktrackingSys
 		return true;
 	}
 }
-
-// for (Domain dom : doms)
-// dom.removeValuesIn(lastRemovedValues);
-
-// for (int i = lastRemovedValues.limit; i >= 0; i--) {
-// int v = lastRemovedValues.dense[i];
-// for (int j = scp.length - 1; j >= 0; j--) // for domino, the reverse (0 to scp.length) is very slow. why? (question of cache ?)
-// scp[j].dom.removeValue(v, false); // no possible inconsistency at this level
-// remainingValues.remove(map.get(v), depth);
-// }

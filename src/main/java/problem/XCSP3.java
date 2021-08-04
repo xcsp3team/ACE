@@ -305,16 +305,8 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void loadCtr(XCtr c) {
-		if (problem.features.mustDiscard(c.vars()))
+		if (problem.features.collecting.mustDiscard(c)) // .vars()))
 			return;
-		if (problem.head.control.constraints.ignoredCtrType == c.type) {
-			problem.features.nDiscardedCtrs++;
-			return;
-		}
-		if (problem.head.control.constraints.ignoreCtrArity == c.vars().length) {
-			problem.features.nDiscardedCtrs++;
-			return;
-		}
 		int sizeBefore = problem.ctrEntities.allEntities.size();
 
 		XCallbacks2.super.loadCtr(c);
@@ -741,7 +733,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void loadObj(XObj o) {
-		if (problem.features.mustDiscard(o.vars()))
+		if (problem.features.collecting.mustDiscard(o))
 			return;
 		XCallbacks2.super.loadObj(o);
 		CtrEntity entity = problem.ctrEntities.allEntities.get(problem.ctrEntities.allEntities.size() - 1);

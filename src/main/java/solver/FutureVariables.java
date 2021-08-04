@@ -186,14 +186,14 @@ public final class FutureVariables implements Iterable<Variable> {
 	/**
 	 * This method is called in order to convert the given variable from future to past.
 	 */
-	public void assign(Variable x) {
+	public void add(Variable x) {
 		push(x.num);
 	}
 
 	/**
 	 * This method is called in order to convert the given variable from past to future.
 	 */
-	public void unassign(Variable x) {
+	public void remove(Variable x) {
 		assert pastTop >= 0 && x.num == pasts[pastTop];
 		pop();
 	}

@@ -499,14 +499,14 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		// }
 		// }
 
-		c.num = features.addCollectedConstraint(c);
+		c.num = features.collecting.add(c);
 		return ctrEntities.new CtrAlone(c, classes);
 	}
 
 	public final Optimizable addOptimizable(Constraint c) {
 		// System.out.println("\n" + Output.COMMENT_PREFIX + "Loading objective...");
 
-		c.num = features.addCollectedConstraint(c);
+		c.num = features.collecting.add(c);
 		return (Optimizable) c;
 	}
 
@@ -553,7 +553,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		CtrAlone ca = extension(vars(x, y), new int[0][], false, DONT_KNOW);
 		Constraint c = (Constraint) ca.ctr; // (Constraint) buildCtrTrue(x, y).ctr;
 		c.cloneStructures(false);
-		constraints = features.collectedCtrsAtInit.toArray(new Constraint[features.collectedCtrsAtInit.size()]); // storeConstraintsToArray();
+		constraints = features.collecting.constraints.toArray(new Constraint[0]); // storeConstraintsToArray();
 		x.whenFinishedProblemConstruction();
 		y.whenFinishedProblemConstruction();
 		// constraint.buildBitRmResidues();
@@ -566,16 +566,16 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 
 	private void inferAdditionalConstraints() {
 		if (head.control.problem.isSymmetryBreaking()) {
-			int nBefore = features.collectedCtrsAtInit.size();
+			int nBefore = features.collecting.constraints.size();
 			// for (Constraint c : features.collectedCtrsAtInit)
 			// if (Constraint.getSymmetryMatching(c.key) == null)
 			// Constraint.putSymmetryMatching(c.key, c.defineSymmetryMatching());
 			DeducingAutomorphism automorphismIdentification = new DeducingAutomorphism(this);
-			for (Constraint c : automorphismIdentification.buildVariableSymmetriesFor(variables, features.collectedCtrsAtInit))
+			for (Constraint c : automorphismIdentification.buildVariableSymmetriesFor(variables, features.collecting.constraints))
 				post(c);
 			features.addToMapForAutomorphismIdentification(automorphismIdentification);
 			symmetryGroupGenerators.addAll(automorphismIdentification.generators);
-			features.nAddedCtrs += features.collectedCtrsAtInit.size() - nBefore;
+			features.nAddedCtrs += features.collecting.constraints.size() - nBefore;
 		}
 		if (head.control.constraints.inferAllDifferentNb > 0)
 			features.addToMapForAllDifferentIdentification(new DeducingAllDifferent(this));
@@ -586,7 +586,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 */
 	public final void storeConstraintsToArray() {
 		inferAdditionalConstraints();
-		constraints = features.collectedCtrsAtInit.toArray(new Constraint[0]);
+		constraints = features.collecting.constraints.toArray(new Constraint[0]);
 		for (Variable x : variables) {
 			x.whenFinishedProblemConstruction();
 			features.varDegrees.add(x.deg());
@@ -628,7 +628,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				&& settings.framework == TypeFramework.CSP;
 		List<Variable> isolatedVars = new ArrayList<>(), fixedVars = new ArrayList<>();
 		int nRemovedValues = 0;
-		for (Variable x : features.collectedVarsAtInit) {
+		for (Variable x : variables) {
 			if (x.ctrs.length == 0) {
 				isolatedVars.add(x);
 				if (reduceIsolatedVars) {
@@ -662,12 +662,11 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		head.output.afterData();
 		api.model();
 
-		this.variables = features.collectedVarsAtInit.toArray(new Variable[features.collectedVarsAtInit.size()]);
+		this.variables = features.collecting.variables.toArray(new Variable[features.collecting.variables.size()]);
 		addUnaryConstraintsOfUserInstantiation();
 		storeConstraintsToArray();
 		// currently, only mono-objective optimization supported
-		// if (Solver.class.getSimpleName().equals(head.control.solving.clazz))
-		// optimizer = new OptimizerBasic(this, "#violatedConstraints");
+		// if (Solver.class.getSimpleName().equals(head.control.solving.clazz)) optimizer = new OptimizerBasic(this, "#violatedConstraints");
 
 		reduceDomainsOfIsolatedVariables();
 	}
@@ -714,9 +713,10 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 */
 	public final Variable addVar(Variable x) {
 		control(!mapForVars.containsKey(x.id()), x.id() + " duplicated");
-		if (features.mustDiscard(x))
-			return null;
-		x.num = features.addCollectedVariable(x);
+		int num = features.collecting.add(x);
+		if (num == -1)
+			return null; // because the variable is discarded
+		x.num = num;
 		mapForVars.put(x.id(), x);
 		return x;
 	}

@@ -426,42 +426,58 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	}
 
 	/**********************************************************************************************
-	 * Fields
+	 * Object Members
 	 *********************************************************************************************/
 
-	/** The problem to which the variable belongs. */
+	/**
+	 * The problem to which the variable belongs
+	 */
 	public final Problem problem;
 
-	/** The domain attached to the variable. */
+	/**
+	 * The domain attached to the variable
+	 */
 	public Domain dom;
 
-	/** The number of the variable. This is an integer between 0 and n-1, where n is the number of variables in the CN. */
+	/**
+	 * The number of the variable. This is an integer between 0 and n-1, where n is the number of variables in the constraint network.
+	 */
 	public int num = UNSET_NUM;
 
-	/** The id (name) of the variable. */
+	/**
+	 * The id (name) of the variable
+	 */
 	private String id;
 
+	/**
+	 * The level where the variable has been explicitly assigned, or -1
+	 */
 	private int assignmentLevel = UNASSIGNED;
 
-	/** This field is used during initialization in order to collect constraints where the variable is involved. */
+	/**
+	 * This field is used during initialization in order to collect constraints where the variable is involved.
+	 */
 	public final Collection<Constraint> collectedCtrs = new LinkedList<>();
 
-	/** The set of constraints in which the variable is involved. */
+	/**
+	 * The set (array) of constraints where the variable is involved
+	 */
 	public Constraint[] ctrs;
 
 	/**
-	 * The set of variables that are neighbors to the variable. A variable x is a neighbor if both x and the variable belongs to a same scope. This array may be
+	 * The set of variables that are neighbors to the variable. Two variables are neighbors if they are involved together in a constraint. This array may be
 	 * null if this is too space-consuming.
 	 */
 	public Variable[] nghs;
 
-	/** The value ordering heuristic attached to the variable. */
+	/**
+	 * The value ordering heuristic attached to the variable
+	 */
 	public HeuristicValues heuristic;
 
-	/** Indicates if the variable can be a decision variable or not during local search. */
-	// public boolean decision = true;
-
-	/** The timestamp associated with variable. It is used for propagation. */
+	/**
+	 * The timestamp associated with the variable. It is used during filtering/propagation.
+	 */
 	public long time;
 
 	public int valueIndexInLastSolution = -1;
@@ -607,7 +623,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	 * @param a
 	 *            the index of a value to assign to the variable
 	 */
-	public final void doAssignment(int a) {
+	public final void assign(int a) {
 		assert isFuture() && dom.contains(a) : isFuture() + " " + dom.contains(a);
 		dom.reduceToElementary(a);
 		assignmentLevel = problem.solver.depth(); // keep at this position
@@ -618,7 +634,7 @@ public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic
 	/**
 	 * This method is called in order to undo the last assignment of the variable. <br>
 	 */
-	public final void undoAssignment() {
+	public final void unassign() {
 		assert !isFuture();
 		for (Constraint c : ctrs)
 			c.undoPastVariable(this);

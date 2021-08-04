@@ -46,6 +46,8 @@ import org.xcsp.common.IVar;
 import org.xcsp.common.Types.TypeOptimization;
 import org.xcsp.common.predicates.TreeEvaluator.ExternFunctionArity1;
 import org.xcsp.common.predicates.TreeEvaluator.ExternFunctionArity2;
+import org.xcsp.parser.entries.XConstraints.XCtr;
+import org.xcsp.parser.entries.XObjectives.XObj;
 
 import constraints.Constraint;
 import constraints.extension.CSmart;
@@ -54,8 +56,8 @@ import constraints.extension.Extension.Extension1;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart;
 import constraints.intension.Intension;
-import dashboard.Input;
 import dashboard.Control.SettingVars;
+import dashboard.Input;
 import dashboard.Output;
 import problem.Remodeler.DeducingAllDifferent;
 import problem.Remodeler.DeducingAutomorphism;
@@ -143,16 +145,119 @@ public final class Features {
 	}
 
 	/**********************************************************************************************
+	 * Object for collecting variables and constraints
+	 *********************************************************************************************/
+
+	public final class Collecting {
+
+		/**
+		 * The variables that have been collected so far
+		 */
+		public final List<Variable> variables = new ArrayList<>();
+
+		/**
+		 * The constraints that have been collected so far
+		 */
+		public final List<Constraint> constraints = new ArrayList<>();
+
+		/**
+		 * Ids of discarded variables
+		 */
+		private Set<String> discardedVars = new HashSet<>();
+
+		private boolean mustDiscard(IVar x) {
+			Object[] selectedVars = problem.head.control.variables.selectedVars;
+			if (selectedVars.length == 0)
+				return false;
+			int num = collecting.variables.size() + discardedVars.size();
+			boolean mustDiscard = Arrays.binarySearch(selectedVars, selectedVars[0] instanceof Integer ? num : x.id()) < 0;
+			if (mustDiscard)
+				discardedVars.add(x.id());
+			return mustDiscard;
+		}
+
+		private boolean mustDiscard(IVar[] scp) {
+			if (problem.head.control.variables.selectedVars.length == 0)
+				return false;
+			boolean mustDiscard = Stream.of(scp).map(x -> x.id()).anyMatch(id -> discardedVars.contains(id));
+			if (mustDiscard)
+				nDiscardedCtrs++;
+			return mustDiscard;
+		}
+
+		public final boolean mustDiscard(XCtr c) {
+			if (mustDiscard(c.vars()))
+				return true;
+			boolean mustDiscard = problem.head.control.constraints.ignoredCtrType == c.type
+					|| problem.head.control.constraints.ignoreCtrArity == c.vars().length;
+			if (mustDiscard)
+				nDiscardedCtrs++;
+			return mustDiscard;
+		}
+
+		public final boolean mustDiscard(XObj c) {
+			return mustDiscard(c.vars());
+		}
+
+		/**
+		 * Add the specified variable to those that have been already collected
+		 * 
+		 * @param x
+		 *            a variable
+		 * @return the num(ber) of the variable
+		 */
+		public int add(Variable x) {
+			if (mustDiscard(x))
+				return -1;
+			if (variables.isEmpty()) // first call
+				System.out.print(Output.COMMENT_PREFIX + "Loading variables...");
+			int num = variables.size();
+			printNumber(num);
+			variables.add(x);
+			domSizes.add(x.dom.initSize());
+			return num;
+		}
+
+		/**
+		 * Add the specified constraint to those that have been already collected
+		 * 
+		 * @param c
+		 *            a constraint
+		 * @return the num(ber) of the constraint
+		 */
+		public int add(Constraint c) {
+			if (constraints.isEmpty()) // first call
+				System.out.println("\n" + Output.COMMENT_PREFIX + "Loading constraints...");
+			int num = constraints.size();
+			printNumber(num);
+			constraints.add(c);
+			ctrArities.add(c.scp.length);
+			if (c.scp.length == 1 && !(c instanceof Extension1)) {
+				if (c instanceof Extension || c instanceof Intension)
+					ctrTypes.add(c.getClass().getSimpleName() + "1");
+				// else
+				// throw new UnreachableCodeException();
+			} else
+				ctrTypes.add(c.getClass().getSimpleName() + (c instanceof Extension ? "-" + c.extStructure().getClass().getSimpleName() : ""));
+			if (c instanceof CSmart)
+				tableSizes.add(((TableSmart) c.extStructure()).smartTuples.length);
+			if (c instanceof Extension && c.extStructure() instanceof Table)
+				tableSizes.add(((Table) c.extStructure()).tuples.length);
+			return num;
+		}
+
+	}
+
+	/**
+	 * The object used for collecting variables and constraints at construction (initialization)
+	 */
+	public Collecting collecting = new Collecting();
+
+	/**********************************************************************************************
 	 * Fields
 	 *********************************************************************************************/
 
 	private final Problem problem;
-
-	/** The variables that have been collected so far. */
-	public final List<Variable> collectedVarsAtInit = new ArrayList<>();
-
-	/** The constraints that have been collected so far. */
-	public final List<Constraint> collectedCtrsAtInit = new ArrayList<>();
 
 	public final Map<String, String> collectedTuples = new HashMap<>();
 
@@ -179,28 +284,6 @@ public final class Features {
 
 	public int nValuesRemovedAtConstructionTime; // sum over all variable domains
 
-	private Set<String> discardedVars = new HashSet<>(); // ids of discarded variables
-
-	public final boolean mustDiscard(IVar x) {
-		Object[] selectedVars = problem.head.control.variables.selectedVars;
-		if (selectedVars.length == 0)
-			return false;
-		int num = collectedVarsAtInit.size() + discardedVars.size();
-		boolean mustDiscard = Arrays.binarySearch(selectedVars, selectedVars[0] instanceof Integer ? num : x.id()) < 0;
-		if (mustDiscard)
-			discardedVars.add(x.id());
-		return mustDiscard;
-	}
-
-	public final boolean mustDiscard(IVar[] scp) {
-		if (problem.head.control.variables.selectedVars.length == 0)
-			return false;
-		boolean mustDiscard = Stream.of(scp).map(x -> x.id()).anyMatch(id -> discardedVars.contains(id));
-		if (mustDiscard)
-			nDiscardedCtrs++;
-		return mustDiscard;
-	}
-
 	/**********************************************************************************************
 	 * Methods for metrics
 	 *********************************************************************************************/
@@ -215,39 +298,6 @@ public final class Features {
 			IntStream.range(0, nDigits).forEach(i -> System.out.print("\b")); // we need to discard previous characters
 			System.out.print((n + 1) + "");
 		}
-	}
-
-	public final int addCollectedVariable(Variable x) {
-		if (collectedVarsAtInit.isEmpty()) // first call
-			System.out.print(Output.COMMENT_PREFIX + "Loading variables...");
-		printNumber(collectedVarsAtInit.size());
-
-		int num = collectedVarsAtInit.size();
-		collectedVarsAtInit.add(x);
-		domSizes.add(x.dom.initSize());
-		return num;
-	}
-
-	public final int addCollectedConstraint(Constraint c) {
-		if (collectedCtrsAtInit.isEmpty()) // first call
-			System.out.println("\n" + Output.COMMENT_PREFIX + "Loading constraints...");
-		printNumber(collectedCtrsAtInit.size());
-
-		int num = collectedCtrsAtInit.size();
-		collectedCtrsAtInit.add(c);
-		ctrArities.add(c.scp.length);
-		if (c.scp.length == 1 && !(c instanceof Extension1)) {
-			if (c instanceof Extension || c instanceof Intension)
-				ctrTypes.add(c.getClass().getSimpleName() + "1");
-			// else
-			// throw new UnreachableCodeException();
-		} else
-			ctrTypes.add(c.getClass().getSimpleName() + (c instanceof Extension ? "-" + c.extStructure().getClass().getSimpleName() : ""));
-		if (c instanceof CSmart)
-			tableSizes.add(((TableSmart) c.extStructure()).smartTuples.length);
-		if (c instanceof Extension && c.extStructure() instanceof Table)
-			tableSizes.add(((Table) c.extStructure()).tuples.length);
-		return num;
 	}
 
 	public int maxDomSize() {
@@ -387,7 +437,7 @@ public final class Features {
 	public MapAtt variablesAttributes() {
 		MapAtt m = new MapAtt(VARIABLES);
 		m.put(COUNT, problem.variables.length);
-		m.putWhenPositive("nDiscarded", discardedVars.size());
+		m.putWhenPositive("nDiscarded", collecting.discardedVars.size());
 		m.putWhenPositive("nIsolated", nIsolatedVars);
 		m.putWhenPositive("nFixed", nFixedVars);
 		m.putWhenPositive("nSymb", nSymbolicVars);

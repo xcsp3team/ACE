@@ -730,8 +730,9 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		if (infiniteDomainVars.length > 0 && handleHugeDomains()) // Experimental (to be finished)
 			return true;
 		// For CSP, some conditions allow us to directly return true (because we know then that there is no filtering possibility)
-		if (problem.settings.framework == TypeFramework.CSP) { // if != MACSP, pb with java -ea ac PlaneparkingTask.xml -ea -cm=false -ev -trace
-																// possibly too with GraphColoring-sum-GraphColoring_1-fullins-3.xml.lzma
+		if (problem.settings.framework == TypeFramework.CSP) {
+			// if the condition is replaced by != TypeFramework.MACSP, there is a pb with java -ea ac PlaneparkingTask.xml -ea -cm=false -ev -trace
+			// possibly too with GraphColoring-sum-GraphColoring_1-fullins-3.xml.lzma
 			if (futvars.size() == 0) {
 				assert !isGuaranteedAC() || checkCurrentInstantiation() : "Unsatisfied constraint " + this + "while AC should be guaranteed";
 				return isGuaranteedAC() || checkCurrentInstantiation();

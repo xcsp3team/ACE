@@ -111,7 +111,7 @@ public class Remodeler {
 		public DeducingAllDifferent(Problem problem) {
 			this.problem = problem;
 			int nLimit = problem.head.control.constraints.inferAllDifferentNb, sLimit = problem.head.control.constraints.inferAllDifferentSize;
-			List<VariableInteger[]> list = buildCliques(problem.variables, problem.features.collectedCtrsAtInit, nLimit, sLimit);
+			List<VariableInteger[]> list = buildCliques(problem.variables, problem.features.collecting.constraints, nLimit, sLimit);
 			for (VariableInteger[] scp : list)
 				problem.allDifferent(scp);
 			nBuiltCliques = list.size();

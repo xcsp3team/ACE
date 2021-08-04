@@ -530,8 +530,8 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		assert !x.assigned();
 
 		stats.nAssignments++;
-		futVars.assign(x);
-		x.doAssignment(a);
+		futVars.add(x);
+		x.assign(a);
 		decRecorder.addPositiveDecision(x, a);
 		for (ObserverAssignment obs : observersAssignment)
 			obs.afterAssignment(x, a);
@@ -540,8 +540,8 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 	public final void backtrack(Variable x) { // should we call it unassign or retract instead?
 		// System.out.println("back " + x + x.dom.uniqueValue());
 		int depthBeforeBacktrack = depth();
-		futVars.unassign(x);
-		x.undoAssignment();
+		futVars.remove(x);
+		x.unassign();
 		decRecorder.delPositiveDecision(x);
 		for (ObserverAssignment obs : observersAssignment)
 			obs.afterUnassignment(x);

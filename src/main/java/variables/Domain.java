@@ -36,10 +36,10 @@ import sets.SetLinked;
 import utility.Kit;
 
 /**
- * A domain of a variable (from a constraint network) is composed of a set of integer values. The domain is initially full, but typically reduced when logically
- * reasoning. When handling a domain, to simplify programming, one usually iterates over the indexes of the values; if the domains contains d values, the
- * indexes range from 0 to d-1. For instance, if the domain is the set of values <code> {1,4,5} </code>, their indexes are respectively <code> {0,1,2} </code>.
- * The correspondence between indexes of values and values is given by the methods <code> toIdx </code> and <code> toVal </code>.
+ * A domain for a variable (from a constraint network) is composed of a set of integer values. The domain is initially full, but typically reduced when
+ * logically reasoning (with constraints). When handling a domain, to simplify programming, one usually iterates over the indexes of the values; if the domains
+ * contains d values, the indexes range from 0 to d-1. For instance, if the domain is the set of values <code> {1,4,5} </code>, their indexes are respectively
+ * <code> {0,1,2} </code>. The correspondence between indexes of values and values is given by the methods <code> toIdx </code> and <code> toVal </code>.
  *
  * @author Christophe Lecoutre
  *
