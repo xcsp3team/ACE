@@ -201,7 +201,11 @@ public class Head extends Thread {
 		private static final String DOT_CLASS = ".class";
 		private static final String DOT_JAR = ".jar";
 
-		public Map<Class<?>, Set<Class<?>>> map = new HashMap<>();
+		private Map<Class<?>, Set<Class<?>>> map = new HashMap<>();
+
+		public Set<Class<?>> get(Class<?> clazz) {
+			return map.get(clazz);
+		}
 
 		private HandlerClasses() {
 			loadClasses();
@@ -234,7 +238,7 @@ public class Head extends Thread {
 
 		private void loadClasses() {
 			try {
-				// we load classes from jar files, first (it is necessary when AbsCon is run from a jar)
+				// we load classes from jar files, first (it is necessary when ACE is run from a jar)
 				for (String classPathToken : System.getProperty("java.class.path", ".").split(File.pathSeparator))
 					if (classPathToken.endsWith(DOT_JAR))
 						try (JarInputStream jarFile = new JarInputStream(new FileInputStream(classPathToken))) {
@@ -391,7 +395,7 @@ public class Head extends Thread {
 		if (control.solving.enablePrepro || control.solving.enableSearch) {
 			solver = buildSolver(problem);
 			solver.solve();
-			solver.solRecorder.displayFinalResults();
+			solver.solutions.displayFinalResults();
 		}
 	}
 

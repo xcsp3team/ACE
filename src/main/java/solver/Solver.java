@@ -149,7 +149,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		}
 
 		boolean desactivated() {
-			return solRecorder.found > 0 && head.control.valh.solutionSaving;
+			return solutions.found > 0 && head.control.valh.solutionSaving;
 		}
 
 		void manageEmptyDomainBeforeBacktracking() {
@@ -385,7 +385,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 
 	public final FutureVariables futVars;
 
-	public final SolutionRecorder solRecorder;
+	public final Solutions solutions;
 
 	/**
 	 * The object that implements the restarts policy of the solver.
@@ -394,7 +394,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 
 	public Propagation propagation;
 
-	public final DecisionRecorder decRecorder;
+	public final Decisions decisions;
 
 	public HeuristicVariables heuristic;
 
@@ -445,7 +445,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 
 	public final void resetNoSolutions() {
 		stopping = null;
-		solRecorder.found = 0;
+		solutions.found = 0;
 	}
 
 	public void reset() { // called by very special objects (for example, when extracting a MUC)
@@ -455,7 +455,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		restarter.reset();
 		resetNoSolutions();
 
-		decRecorder.reset();
+		decisions.reset();
 		// if (!(heuristicVars instanceof HeuristicVariablesConflictBased) || !preserveWeightedDegrees)
 		// heuristicVars.reset();
 		heuristic.setPriorityVars(problem.priorityVars, 0);
@@ -473,7 +473,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		this.problem = head.problem;
 		this.problem.solver = (Solver) this;
 		this.futVars = new FutureVariables(problem.variables);
-		this.solRecorder = new SolutionRecorder(this, head.control.general.nSearchedSolutions); // build solutionManager before propagation
+		this.solutions = new Solutions(this, head.control.general.nSearchedSolutions); // build solutionManager before propagation
 		this.propagation = Propagation.buildFor(this); // may be null
 		if (!head.control.propagation.useAuxiliaryQueues)
 			Stream.of(problem.constraints).forEach(c -> c.filteringComplexity = 0);
@@ -482,7 +482,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 				.collect(Collectors.toCollection(ArrayList::new));
 		observersSearch.add(head.output);
 
-		this.decRecorder = new DecisionRecorder(this);
+		this.decisions = new Decisions(this);
 		this.heuristic = HeuristicVariables.buildFor(this);
 		for (Variable x : problem.variables)
 			x.buildValueOrderingHeuristic();
@@ -532,7 +532,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		stats.nAssignments++;
 		futVars.add(x);
 		x.assign(a);
-		decRecorder.addPositiveDecision(x, a);
+		decisions.addPositiveDecision(x, a);
 		for (ObserverAssignment obs : observersAssignment)
 			obs.afterAssignment(x, a);
 	}
@@ -542,7 +542,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		int depthBeforeBacktrack = depth();
 		futVars.remove(x);
 		x.unassign();
-		decRecorder.delPositiveDecision(x);
+		decisions.delPositiveDecision(x);
 		for (ObserverAssignment obs : observersAssignment)
 			obs.afterUnassignment(x);
 		for (ObserverBacktrackingSystematic obs : observersBacktrackingSystematic)
@@ -618,7 +618,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		tracer.onRefutation(x, a);
 		stats.onRefutation(x);
 		lastConflict.onRefutation(x, a);
-		decRecorder.addNegativeDecision(x, a);
+		decisions.addNegativeDecision(x, a);
 		proofer.recopy();
 		x.dom.removeElementary(a);
 		boolean consistent = x.dom.size() > 0;
@@ -665,7 +665,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 					manageContradiction(null);
 			}
 			if (futVars.size() == 0) {
-				solRecorder.handleNewSolution();
+				solutions.handleNewSolution();
 				boolean copContinue = problem.settings.framework == COP && !head.control.restarts.restartAfterSolution;
 				CtrGlobal objectiveCtr = copContinue ? (CtrGlobal) problem.optimizer.ctr : null;
 				if (copContinue) {
@@ -691,7 +691,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 					manageContradiction(objectiveCtr);
 			}
 		}
-		minDepth = decRecorder.minDepth(); // need to be recorded before backtracking to the root
+		minDepth = decisions.minDepth(); // need to be recorded before backtracking to the root
 		if (nogoodRecorder != null && !finished() && !restarter.allRunsFinished())
 			nogoodRecorder.addNogoodsOfCurrentBranch();
 	}
@@ -758,7 +758,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 
 			for (ObserverRuns observer : observersRuns)
 				observer.afterRun();
-			decRecorder.reset(); // TODO put in an observer ?
+			decisions.reset(); // TODO put in an observer ?
 		}
 		for (ObserverSearch observer : observersSearch)
 			observer.afterSearch();
@@ -789,7 +789,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		// we also undo preprocessing propagation
 		stackedVariables.restoreBefore(0);
 		observersBacktrackingSystematic.stream().forEach(obs -> obs.restoreBefore(0));
-		decRecorder.reset();
+		decisions.reset();
 		// nPurged not updated; see java -ea abscon.Resolution problems.patt.QuasiGroup -data=6 -model=v5 -ev -cm=false
 		assert Stream.of(problem.variables).allMatch(x -> x.dom.controlStructures());
 	}

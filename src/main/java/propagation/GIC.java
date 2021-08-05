@@ -41,7 +41,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		super(solver);
 		this.heuristic = new WdegOnDom((Solver) solver, false);
 		this.nInverseTests = new int[solver.problem.variables.length + 1];
-		this.baseNbSolutionsLimit = solver.solRecorder.limit;
+		this.baseNbSolutionsLimit = solver.solutions.limit;
 		Kit.control(solver.head.control.restarts.cutoff == Long.MAX_VALUE, () -> "With GIC, there is currently no possibility of restarts.");
 		Kit.control(!Stream.of(solver.problem.constraints).anyMatch(c -> c.getClass().isAssignableFrom(STR3.class)),
 				() -> "GIC currently not compatible with STR3");
@@ -58,9 +58,9 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		solver.assign(x, a);
 		HeuristicVariables h = solver.heuristic;
 		solver.heuristic = heuristic;
-		solver.solRecorder.limit = 1;
+		solver.solutions.limit = 1;
 		boolean inverse = enforceArcConsistencyAfterAssignment(x) && solver.doRun().stopping == EStopping.REACHED_GOAL;
-		solver.solRecorder.limit = baseNbSolutionsLimit;
+		solver.solutions.limit = baseNbSolutionsLimit;
 		solver.heuristic = h;
 		if (inverse)
 			handleNewSolution(x, a);
@@ -83,7 +83,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		if (verbose >= 1) // && nbValuesRemoved > 0)
 			Kit.log.info("nbGICInconsistentValues=" + nValuesRemoved + " at depth=" + solver.depth() + " for " + nInverseTests[solver.depth()] + " tests");
 		solver.resetNoSolutions();
-		solver.solRecorder.found = nSolutionsBefore;
+		solver.solutions.found = nSolutionsBefore;
 		updateSTRStructures();
 		performingProperSearch = false;
 	}
@@ -91,7 +91,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 	@Override
 	public boolean enforceStrongConsistency() {
 		performingProperSearch = true;
-		long nSolutionsBefore = solver.solRecorder.found;
+		long nSolutionsBefore = solver.solutions.found;
 		int nValuesRemoved = 0;
 		for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 			Domain dom = x.dom;
@@ -133,7 +133,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		public boolean enforceStrongConsistency() {
 			intializationAdvanced();
 			performingProperSearch = true;
-			long nSolutionsBefore = solver.solRecorder.found;
+			long nSolutionsBefore = solver.solutions.found;
 			int nValuesRemoved = 0;
 			for (cursor = sSupSize - 1; cursor >= 0; cursor--) {
 				Variable x = solver.problem.variables[sSups[cursor]];
@@ -175,7 +175,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 
 		@Override
 		protected void handleNewSolution(Variable x, int a) {
-			handleSolution(x, a, solver.solRecorder.lastSolution);
+			handleSolution(x, a, solver.solutions.last);
 		}
 
 		@Override
@@ -206,7 +206,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		}
 
 		protected void handleNewSolution(Variable x, int a) {
-			int[] solution = solver.solRecorder.lastSolution;
+			int[] solution = solver.solutions.last;
 			handleSolution(x, a, solution);
 			if (residues[x.num][a] == null)
 				residues[x.num][a] = new int[solver.problem.variables.length];
@@ -266,7 +266,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 			solutionsLimit++;
 			if (solutions[solutionsLimit] == null)
 				solutions[solutionsLimit] = new int[solver.problem.variables.length];
-			int[] solution = solver.solRecorder.lastSolution;
+			int[] solution = solver.solutions.last;
 			Kit.copy(solution, solutions[solutionsLimit]);
 			handleSolution(solution);
 		}

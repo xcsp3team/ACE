@@ -1,21 +1,15 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL
- * LIBRE CeCILL which accompanies this distribution, and is available at http://www.cecill.info
- */
 package propagation;
 
-import java.util.stream.Stream;
-
+import constraints.Constraint;
 import solver.Solver;
 import variables.Variable;
 
 /**
  * This class gives the description of a backward propagation technique. <br>
- * Such a propagation technique corresponds to a retrospective approach which works with past variables. The domains of the future variables are not modified.
+ * Such a propagation technique corresponds to a retrospective approach which works with assigned variables. The domains of the unassigned variables are not
+ * modified.
+ * 
+ * @author Christophe Lecoutre
  */
 public abstract class Backward extends Propagation {
 
@@ -25,7 +19,7 @@ public abstract class Backward extends Propagation {
 
 	@Override
 	public final boolean runInitially() {
-		return true; // nothing to do at pre-processing
+		return true; // nothing to do at preprocessing
 	}
 
 	@Override
@@ -38,7 +32,7 @@ public abstract class Backward extends Propagation {
 	 *********************************************************************************************/
 
 	/**
-	 * The basic BT Algorithm.
+	 * The basic BT algorithm.
 	 */
 	public static final class BT extends Backward {
 
@@ -49,14 +43,18 @@ public abstract class Backward extends Propagation {
 		@Override
 		public boolean runAfterAssignment(Variable x) {
 			assert x.assigned();
-			return Stream.of(solver.problem.constraints).allMatch(c -> c.ignored || c.futvars.size() > 0 || c.seekFirstSupport());
+			for (Constraint c : x.ctrs)
+				if (!c.ignored && c.futvars.size() == 0 && c.seekFirstSupport() == false)
+					return false;
+			return true;
 		}
 	}
 
 	/**
-	 * The is a class for <i>generate and test</i>.
+	 * The <i>generate and test</i> algorithm.
 	 */
 	public static final class GT extends Backward {
+
 		public GT(Solver solver) {
 			super(solver);
 		}
@@ -64,7 +62,12 @@ public abstract class Backward extends Propagation {
 		@Override
 		public boolean runAfterAssignment(Variable x) {
 			assert x.assigned();
-			return solver.futVars.size() > 0 || Stream.of(solver.problem.constraints).allMatch(c -> c.ignored || c.seekFirstSupport());
+			if (solver.futVars.size() > 0)
+				return true; // because we have to wait for having all variables being assigned
+			for (Constraint c : solver.problem.constraints)
+				if (!c.ignored && c.seekFirstSupport() == false)
+					return false;
+			return true;
 		}
 	}
 }

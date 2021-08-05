@@ -1,14 +1,5 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package propagation;
 
-import java.util.Set;
 import java.util.stream.IntStream;
 
 import constraints.Constraint;
@@ -22,77 +13,35 @@ import utility.Reflector;
 import variables.Variable;
 
 /**
- * The root class of all classes that can be used to manage constraint propagation. For simplicity, propagation and consistency concepts are not distinguished,
+ * The root class of all objects that can be used to manage constraint propagation. For simplicity, propagation and consistency concepts are not distinguished,
  * So, some subclasses are given the name of consistencies.
  * 
  * @author Christophe Lecoutre
  */
 public abstract class Propagation {
 
+	/*************************************************************************
+	 * Static members
+	 *************************************************************************/
+
+	/**
+	 * Builds and returns the propagation to be attached to the specified solver. If preprocessing and search stages are disabled, null is returned.
+	 * 
+	 * @param solver
+	 *            the solver to which the propagation object is attached
+	 * @return the propagation to be attached to the specified solver (possibly, null)
+	 */
 	public static Propagation buildFor(Solver solver) {
-		if (solver.head.control.solving.enablePrepro || solver.head.control.solving.enableSearch) {
-			Set<Class<?>> classes = solver.head.handlerClasses.map.get(Propagation.class);
-			return Reflector.buildObject(solver.head.control.propagation.clazz, classes, solver);
-		}
-		return null;
+		if (!solver.head.control.solving.enablePrepro && !solver.head.control.solving.enableSearch)
+			return null;
+		return Reflector.buildObject(solver.head.control.propagation.clazz, solver.head.handlerClasses.get(Propagation.class), solver);
 	}
 
 	/*************************************************************************
-	 * Fields
+	 * Inner class for managing auxiliary queues
 	 *************************************************************************/
 
-	/**
-	 * The solver to which the propagation object is attached.
-	 */
-	public final Solver solver;
-
-	/**
-	 * The queue (actually, set) used for propagation. During propagation, it contains variables.
-	 */
-	public final Queue queue;
-
-	/**
-	 * Auxiliary queues for handling constraint with expensive propagators. Currently, its usage is experimental.
-	 */
-	public final SetSparseMap[] auxiliaryQueues;
-
-	/**
-	 * This field is used to count time. It is used to avoid performing some useless calls of constraint propagators by comparing time-stamps attached to
-	 * variables with time-stamps attached to constraints.
-	 * 
-	 */
-	public long time;
-
-	/**
-	 * The constraint that is used currently to filter domains. This is null if no constraint is currently used for filtering. This is relevant for AC.
-	 */
-	public Constraint currFilteringCtr;
-
-	/**
-	 * The variable that has been wiped out the last time constraint propagation led to failure
-	 */
-	public Variable lastWipeoutVar;
-
-	/**
-	 * Metrics for filtering approaches based on singleton tests. Put at the root class for simplicity.
-	 */
-	public long nSingletonTests, nEffectiveSingletonTests;
-
-	/**
-	 * When true, indicates that the object is currently performing a form of search during propagation. This may be the case for some forms of propagation
-	 * based on strong consistencies.
-	 */
-	public boolean performingProperSearch;
-
-	public int nTuplesRemoved;
-
-	protected final SettingPropagation settings;
-
-	/*************************************************************************
-	 * Methods
-	 *************************************************************************/
-
-	public static class SetSparseMap extends SetSparse {
+	protected static class SetSparseMap extends SetSparse {
 
 		public static SetSparseMap[] buildArray(int length, int capacity) {
 			return IntStream.range(0, length).mapToObj(i -> new SetSparseMap(capacity)).toArray(SetSparseMap[]::new);
@@ -125,6 +74,67 @@ public abstract class Propagation {
 		}
 	}
 
+	/*************************************************************************
+	 * Fields
+	 *************************************************************************/
+
+	/**
+	 * The solver to which the propagation object is attached.
+	 */
+	public final Solver solver;
+
+	/**
+	 * The queue (actually, set) used to contain variables during propagation.
+	 */
+	public final Queue queue;
+
+	/**
+	 * Auxiliary queues for handling constraints with different levels of propagator complexities. Currently, its usage is experimental.
+	 */
+	public final SetSparseMap[] auxiliaryQueues;
+
+	/**
+	 * This field is used as a clock to enumerate time. It is used to avoid performing some useless calls of constraint propagators by comparing time-stamps
+	 * attached to variables with time-stamps attached to constraints.
+	 * 
+	 */
+	public long time;
+
+	/**
+	 * The constraint that is currently used in propagation. This is null if no constraint is currently used for filtering. This is relevant for AC.
+	 */
+	public Constraint currFilteringCtr;
+
+	/**
+	 * The variable that has been wiped out the last time constraint propagation led to failure
+	 */
+	public Variable lastWipeoutVar;
+
+	/**
+	 * When true, indicates that the object is currently performing a form of search during propagation. This may be the case for some forms of propagation
+	 * based on strong consistencies.
+	 */
+	public boolean performingProperSearch;
+
+	/**
+	 * Metrics for filtering approaches (e.g., SAC) based on singleton tests. Put in the root class for simplicity.
+	 */
+	public long nSingletonTests, nEffectiveSingletonTests;
+
+	/**
+	 * The accumulated number of tuples removed by propagation (meaningful for some strong consistencies)
+	 */
+	public int nTuplesRemoved;
+
+	/**
+	 * Settings about propagation
+	 */
+	protected final SettingPropagation settings;
+
+	/*************************************************************************
+	 * Methods
+	 *************************************************************************/
+
 	public final void reset() {
 		queue.clear();
 		for (SetSparseMap auxiliaryQueue : auxiliaryQueues)
@@ -133,16 +143,22 @@ public abstract class Propagation {
 	}
 
 	/**
-	 * Increments the value of the time counter, and returns it.
+	 * Increments the value of the clock (time counter), and returns it.
 	 */
 	public final long incrementTime() {
 		return ++time;
 	}
 
+	/**
+	 * Builds a propagation object to be attached to the specified solver
+	 * 
+	 * @param solver
+	 *            a solver
+	 */
 	public Propagation(Solver solver) {
 		this.solver = solver;
-		this.settings = solver.head.control.propagation;
 		this.queue = this instanceof Forward ? new Queue((Forward) this) : null;
+		this.settings = solver.head.control.propagation;
 		int nAuxQueues = settings.useAuxiliaryQueues ? Constraint.MAX_FILTERING_COMPLEXITY : 0;
 		this.auxiliaryQueues = this instanceof Forward ? SetSparseMap.buildArray(nAuxQueues, solver.problem.constraints.length) : null;
 
@@ -173,7 +189,7 @@ public abstract class Propagation {
 	}
 
 	/**
-	 * Run propagation by picking variables from the queue and executing filtering algorithms.
+	 * Runs propagation by picking variables from the queue and executing filtering algorithms.
 	 * 
 	 * @return false iff an inconsistency is detected
 	 */
@@ -205,7 +221,14 @@ public abstract class Propagation {
 		return true;
 	}
 
-	public boolean propagate(CtrGlobal c) {
+	/**
+	 * Runs propagation by starting from the specified constraint (calling first its propagator)
+	 * 
+	 * @param c
+	 *            a constraint from which propagation starts
+	 * @return false iff an inconsistency is detected
+	 */
+	public final boolean propagate(CtrGlobal c) {
 		if (c == null || c.ignored || solver.isEntailed(c))
 			return true;
 		if (c.runPropagator(null) == false)
@@ -221,12 +244,7 @@ public abstract class Propagation {
 	public abstract boolean runInitially();
 
 	/**
-	 * This method is called after the specified variable has been assigned
-	 * 
-	 * @return false iff an inconsistency is detected
-	 */
-	/**
-	 * This method is called after the specified variable has been assigned in order to propagate it.
+	 * This method is called after the specified variable has been assigned in order to propagate this event.
 	 * 
 	 * @param x
 	 *            the variable that has just been assigned
@@ -247,8 +265,14 @@ public abstract class Propagation {
 
 	/**
 	 * To be called when the domain of the specified variable has just been reduced. <br />
-	 * Be careful: the domain of the specified variable is not necessarily already reduced, and so may be different from the specified value newDomSize, which
-	 * is the (virtual) size of the domain of the specified variable.
+	 * Be careful: the domain of the specified variable is not necessarily already reduced, and so may be different from the specified value, which is then
+	 * considered as the virtual size of the domain of the specified variable.
+	 * 
+	 * @param x
+	 *            the variable whose domain has just been reduced
+	 * @param newDomSize
+	 *            the virtual domain size of the specified variable
+	 * @return false iff an inconsistency is detected
 	 */
 	public final boolean handleReduction(Variable x, int newDomSize) {
 		if (newDomSize == 0) {
@@ -264,14 +288,12 @@ public abstract class Propagation {
 
 	/**
 	 * To be called when the domain of the specified variable has just been reduced.
+	 * 
+	 * @param x
+	 *            the variable whose domain has just been reduced
+	 * @return false iff an inconsistency is detected
 	 */
 	public final boolean handleReduction(Variable x) {
 		return handleReduction(x, x.dom.size());
-	}
-
-	public final boolean handleReductionSafely(Variable x) {
-		assert x.dom.size() > 0;
-		queue.add(x);
-		return true;
 	}
 }

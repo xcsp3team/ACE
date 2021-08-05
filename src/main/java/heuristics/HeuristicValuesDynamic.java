@@ -69,7 +69,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		@Override
 		public int identifyBestValueIndex() {
 			inconsistent.clear();
-			if ((settings.bivsStoppedAtFirstSolution && solver.solRecorder.found > 0) || dx.size() > settings.bivsLimit)
+			if ((settings.bivsStoppedAtFirstSolution && solver.solutions.found > 0) || dx.size() > settings.bivsLimit)
 				return dx.first(); // First in that case
 			else
 				return super.identifyBestValueIndex();
@@ -103,8 +103,8 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		@Override
 		public int identifyBestValueIndex() {
 			inconsistent.clear();
-			int aLast = solver.solRecorder.found == 0 ? -1 : solver.solRecorder.lastSolution[x.num];
-			if ((settings.bivsStoppedAtFirstSolution && solver.solRecorder.found > 0) || dx.size() > settings.bivsLimit) {
+			int aLast = solver.solutions.found == 0 ? -1 : solver.solutions.last[x.num];
+			if ((settings.bivsStoppedAtFirstSolution && solver.solutions.found > 0) || dx.size() > settings.bivsLimit) {
 				if (aLast != -1 && dx.contains(aLast))
 					return aLast;
 				return dx.first(); // First in that case

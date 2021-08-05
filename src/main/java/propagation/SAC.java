@@ -63,7 +63,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		for (int cnt = 0; cnt < nPassesLimit; cnt++) {
 			long nBefore = nEffectiveSingletonTests;
 			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
-				if (onlyNeighbours && !x.isNeighbourOf(solver.decRecorder.varOfLastDecisionIf(true)))
+				if (onlyNeighbours && !x.isNeighbourOf(solver.decisions.varOfLastDecisionIf(true)))
 					continue;
 				if (x.dom.size() == 1) {
 					nFoundSingletons++;
@@ -509,7 +509,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 					if (solver.depth() == solver.problem.variables.length) {
 						System.out.println("found solution");
 						if (stopSACWhenFoundSolution)
-							solver.solRecorder.handleNewSolution(true);
+							solver.solutions.handleNewSolution();
 					}
 				} else {
 					solver.backtrack(x);
@@ -659,7 +659,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				solver.assign(currSelectedVar, currSelectedIdx);
 				if (enforceArcConsistencyAfterAssignment(currSelectedVar)) {
 					if (solver.depth() == solver.problem.variables.length) {
-						solver.solRecorder.handleNewSolution(true);
+						solver.solutions.handleNewSolution();
 						finished = true;
 					}
 				} else {

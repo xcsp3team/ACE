@@ -60,27 +60,27 @@ public final class FutureVariables implements Iterable<Variable> {
 	/**
 	 * The number of the first current future variable, or -1 if no such variable exists.
 	 */
-	public int first;
+	private int first;
 
 	/**
 	 * The number of the last current future variable, or -1 if no such variable exists.
 	 */
-	public int last;
+	private int last;
 
 	/**
 	 * Backward linking (i.e., from last to first). With i being the number of a variable x, {@code prevs[i]} gives the number of the variable y that precedes
 	 * x.
 	 */
-	public final int[] prevs;
+	private final int[] prevs;
 
 	/**
 	 * Forward linking (i.e., from first to last). With i being the number of a variable x, {@code nexts[i]} gives the number of the variable y that follows x.
 	 */
-	public final int[] nexts;
+	private final int[] nexts;
 
-	public final int[] pasts;
+	private final int[] pasts;
 
-	public int pastTop;
+	private int pastTop;
 
 	private final Variable[] vars;
 
@@ -106,18 +106,6 @@ public final class FutureVariables implements Iterable<Variable> {
 		return pastTop + 1;
 	}
 
-	/**
-	 * Returns {@code true} if the specified element (number of variable) is currently present (i.e., if the associated variable is currently future). BE
-	 * CAREFUL: this operation is not in O(1).
-	 * 
-	 * @param e
-	 *            the number of a variable
-	 * @return {@code true} if the specified element (number of variable) is currently present
-	 */
-	public boolean isPresent(int e) {
-		return IntStream.rangeClosed(0, pastTop).noneMatch(i -> pasts[i] == e);
-	}
-
 	private void pop() {
 		assert pastTop >= 0;
 		int e = pasts[pastTop--];
@@ -134,7 +122,7 @@ public final class FutureVariables implements Iterable<Variable> {
 	}
 
 	private void push(int e) {
-		assert isPresent(e);
+		assert IntStream.rangeClosed(0, pastTop).noneMatch(i -> pasts[i] == e);
 		// remove from the list of present elements
 		int prev = prevs[e], next = nexts[e];
 		if (prev == -1)

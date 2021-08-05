@@ -164,7 +164,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 
 	public void manageSolution() {
 		long cpu = solver.head.stopwatch.cpuTime(), wck = solver.head.instanceStopwatch.wckTime();
-		if (solver.solRecorder.found == 1) {
+		if (solver.solutions.found == 1) {
 			firstSolCpu = cpu;
 			firstSolWck = wck;
 		}
@@ -210,8 +210,8 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			}
 			m.separator();
 		}
-		if (solver.solRecorder.found > 0) {
-			m.put("foundSolutions", solver.solRecorder.found);
+		if (solver.solutions.found > 0) {
+			m.put("foundSolutions", solver.solutions.found);
 			m.put("firstSolCpu", firstSolCpu / 1000.0);
 			m.separator();
 		}
@@ -237,13 +237,13 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		// if (statMouny && solver.propagation instanceof ACPartial) {
 		// int[] t = ((ACPartial) solver.propagation).statistics;
 		// map.put("nbWOs", t[0] + ""); map.put("nbFPs", t[1] + ""); map.put("avgWOs", t[2] + ""); map.put("avgFPs", t[3] + ""); }
-		if (solver.solRecorder.found > 0) {
+		if (solver.solutions.found > 0) {
 			if (solver.problem.settings.framework != TypeFramework.CSP) {
-				m.put("bestBound", solver.solRecorder.bestBound);
+				m.put("bestBound", solver.solutions.bestBound);
 				m.put("bestBoundWck", lastSolWck / 1000.0);
 				m.put("bestBoundCpu", lastSolCpu / 1000.0);
 			}
-			m.put("foundSolutions", solver.solRecorder.found);
+			m.put("foundSolutions", solver.solutions.found);
 			m.put("firstSolCpu", firstSolCpu / 1000.0);
 			m.separator();
 		}
@@ -278,12 +278,12 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 			m.put(WCK, stopwatch.wckTimeInSeconds());
 			if (solver.nogoodRecorder != null)
 				m.putWhenPositive("ngd", solver.nogoodRecorder.nNogoods);
-			if (solver.solRecorder.found > 0) {
+			if (solver.solutions.found > 0) {
 				if (solver.problem.settings.framework == TypeFramework.CSP)
-					m.put("nSols", solver.solRecorder.found);
+					m.put("nSols", solver.solutions.found);
 				else {
 					if (solver.problem.optimizer.minBound == 0 || solver.problem.optimizer.minBound == Long.MIN_VALUE)
-						m.put("bnd", nformat.format(solver.solRecorder.bestBound));
+						m.put("bnd", nformat.format(solver.solutions.bestBound));
 					else
 						m.put("bnds", solver.problem.optimizer.stringBounds());
 					// m.put("bnd", nformat.format(solver.solManager.bestBound));

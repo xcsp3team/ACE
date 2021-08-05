@@ -30,7 +30,7 @@ import variables.Variable;
 public abstract class HeuristicVariables extends Heuristic {
 
 	public static HeuristicVariables buildFor(Solver solver) {
-		Set<Class<?>> classes = solver.head.handlerClasses.map.get(HeuristicVariables.class);
+		Set<Class<?>> classes = solver.head.handlerClasses.get(HeuristicVariables.class);
 		if (solver.head.control.solving.enableSearch || solver.propagation instanceof GIC2)
 			return Reflector.buildObject(solver.head.control.varh.heuristic, classes, solver, solver.head.control.varh.anti);
 		return null;

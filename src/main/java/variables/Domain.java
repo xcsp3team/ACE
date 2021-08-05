@@ -437,7 +437,7 @@ public interface Domain extends SetLinked {
 	}
 
 	default boolean afterElementaryCalls(int sizeBefore) {
-		return size() == sizeBefore ? true : size() == 0 ? fail() : propagation().handleReductionSafely(var());
+		return size() == sizeBefore ? true : propagation().handleReduction(var());
 	}
 
 	/**
@@ -470,7 +470,7 @@ public interface Domain extends SetLinked {
 		if (size() == 1)
 			return fail();
 		removeElementary(a);
-		return propagation().handleReductionSafely(var());
+		return propagation().handleReduction(var());
 	}
 
 	/**
@@ -509,7 +509,7 @@ public interface Domain extends SetLinked {
 				removeElementary(a);
 				cnt++;
 			}
-		return propagation().handleReductionSafely(var());
+		return propagation().handleReduction(var());
 	}
 
 	/**
@@ -519,27 +519,25 @@ public interface Domain extends SetLinked {
 	 * The management of these removals with respect to propagation is handled.
 	 */
 	default boolean remove(SetDense idxs, boolean testPresence) {
+		int sizeBefore = size();
 		if (testPresence) {
-			if (size() == 1) {
-				for (int i = idxs.limit; i >= 0; i--)
-					if (contains(idxs.dense[i]))
-						return fail();
-				return true;
-			}
-			int sizeBefore = size();
+			int nRemaining = sizeBefore;
 			for (int i = idxs.limit; i >= 0; i--)
-				if (contains(idxs.dense[i]))
+				if (contains(idxs.dense[i])) {
+					if (nRemaining == 1)
+						return fail();
 					removeElementary(idxs.dense[i]);
+				}
 			return afterElementaryCalls(sizeBefore);
 		} else {
 			assert IntStream.range(0, idxs.size()).allMatch(i -> contains(idxs.dense[i]));
 			if (idxs.size() == 0)
 				return true;
-			if (size() == idxs.size())
+			if (idxs.size() == sizeBefore)
 				return fail();
 			for (int i = idxs.limit; i >= 0; i--)
 				removeElementary(idxs.dense[i]);
-			return propagation().handleReductionSafely(var());
+			return propagation().handleReduction(var());
 		}
 	}
 
@@ -584,7 +582,7 @@ public interface Domain extends SetLinked {
 	 * @return false if an inconsistency (empty domain) is detected
 	 */
 	default boolean reduceTo(int a) {
-		return !contains(a) ? fail() : reduceToElementary(a) == 0 || propagation().handleReductionSafely(var());
+		return !contains(a) ? fail() : reduceToElementary(a) == 0 || propagation().handleReduction(var());
 	}
 
 	/**
@@ -598,7 +596,7 @@ public interface Domain extends SetLinked {
 	 */
 	default boolean reduceToValue(int v) {
 		int a = toIdxIfPresent(v);
-		return a == -1 ? fail() : reduceToElementary(a) == 0 || propagation().handleReductionSafely(var());
+		return a == -1 ? fail() : reduceToElementary(a) == 0 || propagation().handleReduction(var());
 	}
 
 	/**

@@ -226,7 +226,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 			}
 
 			public Variable mostImpacting() { // experimental
-				int[] solution = problem.solver.solRecorder.lastSolution;
+				int[] solution = problem.solver.solutions.last;
 				List<Variable> list = new ArrayList<>();
 				int bestGap = Integer.MIN_VALUE;
 				for (Variable x : scp) {

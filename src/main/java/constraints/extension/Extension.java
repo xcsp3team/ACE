@@ -162,7 +162,7 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 
 	private static Extension build(Problem pb, Variable[] scp, boolean positive, boolean presentStar) {
 		Kit.control(scp.length > 1);
-		Set<Class<?>> classes = pb.head.handlerClasses.map.get(Extension.class);
+		Set<Class<?>> classes = pb.head.handlerClasses.get(Extension.class);
 		if (presentStar) {
 			Kit.control(positive);
 			String name = pb.head.control.extension.positive.toString();

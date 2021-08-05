@@ -2,7 +2,7 @@ package learning;
 
 import propagation.GAC;
 import propagation.Propagation;
-import solver.DecisionRecorder;
+import solver.Decisions;
 import solver.Solver;
 import utility.Enums.EStopping;
 import variables.Variable;
@@ -11,20 +11,20 @@ public class NogoodMinimizer {
 
 	private Solver solver;
 	private Propagation propagation;
-	private DecisionRecorder dr;
+	private Decisions decisions;
 	private int arityLimit;
 
 	public NogoodMinimizer(Solver solver) {
 		this.solver = solver;
 		this.propagation = solver.propagation;
-		this.dr = solver.decRecorder;
+		this.decisions = solver.decisions;
 		this.arityLimit = solver.head.control.learning.nogoodArityLimit;
 	}
 
 	private boolean addPositiveTransitionDecision(int positiveDecision, int[] tmp, int nTransitions) {
 		tmp[nTransitions] = positiveDecision;
-		Variable x = dr.varIn(positiveDecision);
-		int a = dr.idxIn(positiveDecision);
+		Variable x = decisions.varIn(positiveDecision);
+		int a = decisions.idxIn(positiveDecision);
 		if (!x.dom.contains(a))
 			return false;
 		solver.assign(x, a);
@@ -35,8 +35,8 @@ public class NogoodMinimizer {
 		boolean consistent = true;
 		int left = 0;
 		for (; consistent && left < right; left++) {
-			Variable x = dr.varIn(decs[left]);
-			int a = dr.idxIn(decs[left]);
+			Variable x = decisions.varIn(decs[left]);
+			int a = decisions.idxIn(decs[left]);
 			if (!x.dom.contains(a)) {
 				consistent = false;
 			} else {

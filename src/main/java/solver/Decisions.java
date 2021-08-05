@@ -15,7 +15,7 @@ import utility.Bit;
 import utility.Kit;
 import variables.Variable;
 
-public final class DecisionRecorder {
+public final class Decisions {
 
 	/**********************************************************************************************
 	 * Coding/decoding decisions
@@ -56,22 +56,22 @@ public final class DecisionRecorder {
 	/**
 	 * The set of current decisions.
 	 */
-	public final SetDense decisions;
+	public final SetDense set;
 
 	private final byte[] failedAssignments;
 
 	private final Variable[] variables; // redundant field
 
 	public void reset() {
-		decisions.clear();
+		set.clear();
 	}
 
 	public boolean isFailedAssignment(int i) {
-		assert i < decisions.size();
+		assert i < set.size();
 		return Bit.isAt1(failedAssignments, i);
 	}
 
-	public DecisionRecorder(Solver solver) {
+	public Decisions(Solver solver) {
 		this.solver = solver;
 		int n1 = (int) Math.ceil(Math.log(solver.problem.variables.length) / Math.log(2));
 		int n2 = (int) Math.ceil(Math.log(solver.problem.features.maxDomSize()) / Math.log(2));
@@ -79,7 +79,7 @@ public final class DecisionRecorder {
 		Kit.control(n1 + n2 < 31, () -> "Cannot represent decisions " + n1 + " " + n2);
 		this.OFFSET = (int) Math.pow(2, n2 + 1); // +1 because 0 excluded ???
 		int nValues = Variable.nInitValuesFor(solver.problem.variables);
-		this.decisions = new SetDense(nValues);
+		this.set = new SetDense(nValues);
 		this.failedAssignments = new byte[nValues / 8 + 1];
 		this.variables = solver.problem.variables;
 	}
@@ -88,39 +88,39 @@ public final class DecisionRecorder {
 	 * Returns the variable involved in the last taken decision if the type of this decision is the value of the specified Boolean, null otherwise.
 	 */
 	public Variable varOfLastDecisionIf(boolean positive) {
-		return decisions.limit >= 0 && (decisions.last() >= 0) == positive ? varIn(decisions.last()) : null;
+		return set.limit >= 0 && (set.last() >= 0) == positive ? varIn(set.last()) : null;
 	}
 
-	public boolean isLastButOneDecisionNegative() {
-		return decisions.limit >= 1 && decisions.dense[decisions.limit - 1] < 0;
+	public boolean isLastButOneNegative() {
+		return set.limit >= 1 && set.dense[set.limit - 1] < 0;
 	}
 
 	public void addPositiveDecision(Variable x, int a) {
-		decisions.add(positiveDecisionFor(x.num, a));
-		Bit.setTo0(failedAssignments, decisions.limit);
+		set.add(positiveDecisionFor(x.num, a));
+		Bit.setTo0(failedAssignments, set.limit);
 		assert controlDecisions();
 	}
 
 	public void addNegativeDecision(Variable x, int a) {
-		decisions.add(negativeDecisionFor(x.num, a));
+		set.add(negativeDecisionFor(x.num, a));
 		assert controlDecisions();
 	}
 
 	public void delPositiveDecision(Variable x) {
-		int[] dense = decisions.dense;
-		int limit = decisions.limit;
+		int[] dense = set.dense;
+		int limit = set.limit;
 		if (dense[limit] > 0)
 			Bit.setTo1(failedAssignments, limit);
 		else
 			while (dense[limit] < 0)
 				limit--; // for discarding the negative decisions that follow the positive decision
 		assert dense[limit] > 0 && numIn(dense[limit]) == x.num : toString();
-		decisions.limit = limit - 1; // -1 for discarding the positive decision
+		set.limit = limit - 1; // -1 for discarding the positive decision
 	}
 
 	public int minDepth() {
-		int[] dense = decisions.dense;
-		int limit = decisions.limit;
+		int[] dense = set.dense;
+		int limit = set.limit;
 		for (int i = 0; i <= limit; i++)
 			if (dense[i] < 0)
 				return i;
@@ -134,14 +134,14 @@ public final class DecisionRecorder {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder().append(decisions.size()).append(" decisions : ");
-		for (int i = 0; i < decisions.size(); i++)
-			sb.append(stringOf(decisions.dense[i])).append(isFailedAssignment(i) ? " x" : "").append("  ");
+		StringBuilder sb = new StringBuilder().append(set.size()).append(" decisions : ");
+		for (int i = 0; i < set.size(); i++)
+			sb.append(stringOf(set.dense[i])).append(isFailedAssignment(i) ? " x" : "").append("  ");
 		return sb.toString();
 	}
 
 	private boolean controlDecisions() {
-		return IntStream.range(0, decisions.size()).allMatch(i -> decisions.dense[i] != 0 && IntStream.range(i + 1, decisions.size())
-				.allMatch(j -> decisions.dense[i] != decisions.dense[j] && decisions.dense[i] != -decisions.dense[j]));
+		return IntStream.range(0, set.size()).allMatch(i -> set.dense[i] != 0 && IntStream.range(i + 1, set.size())
+				.allMatch(j -> set.dense[i] != set.dense[j] && set.dense[i] != -set.dense[j]));
 	}
 }

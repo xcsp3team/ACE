@@ -135,7 +135,7 @@ public class HeadExtraction extends Head {
 		problem.reduceTo(presentVars, presentCtrs);
 		solver.reset();
 		solver.solve();
-		return solver.solRecorder.found > 0;
+		return solver.solutions.found > 0;
 	}
 
 	private boolean solveFor(boolean[] presentVars, Variable[] currVars, int min, int max, int center) {

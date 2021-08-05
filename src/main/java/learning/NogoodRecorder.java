@@ -24,7 +24,7 @@ import org.xcsp.common.Utilities;
 
 import dashboard.Control.SettingLearning;
 import interfaces.Observers.ObserverRuns;
-import solver.DecisionRecorder;
+import solver.Decisions;
 import solver.Solver;
 import utility.Enums.ELearningNogood;
 import utility.Enums.EStopping;
@@ -42,9 +42,9 @@ public final class NogoodRecorder {
 
 	public boolean checkValues(int[] t) {
 		extern: for (int i = 0; i < nNogoods; i++) {
-			for (int d : nogoods[i].decisions) {
-				int x = dr.numIn(d);
-				int a = dr.idxIn(d);
+			for (int d : nogoods[i].literals) {
+				int x = decisions.numIn(d);
+				int a = decisions.idxIn(d);
 				if (t[x] != a)
 					continue extern;
 			}
@@ -71,13 +71,13 @@ public final class NogoodRecorder {
 
 	private boolean canBeWatched(int decision) {
 		assert decision != 0;
-		Variable x = dr.varIn(decision);
-		int a = dr.idxIn(decision);
+		Variable x = decisions.varIn(decision);
+		int a = decisions.idxIn(decision);
 		return decision > 0 ? x.dom.contains(a) : x.dom.size() > 1 || !x.dom.contains(a);
 	}
 
 	private boolean canFindAnotherWatchFor(Nogood nogood, boolean firstWatch) {
-		int[] decs = nogood.decisions;
+		int[] decs = nogood.literals;
 		int start = nogood.getWatchedPosition(firstWatch);
 		for (int i = start + 1; i < decs.length; i++)
 			if (!nogood.isPositionWatched(i) && canBeWatched(decs[i])) {
@@ -93,8 +93,8 @@ public final class NogoodRecorder {
 	}
 
 	private boolean dealWithInference(int inferenceDecision) {
-		Variable x = dr.varIn(inferenceDecision);
-		int a = dr.idxIn(inferenceDecision);
+		Variable x = decisions.varIn(inferenceDecision);
+		int a = decisions.idxIn(inferenceDecision);
 		solver.propagation.currFilteringCtr = null;
 		Domain dom = x.dom;
 		if (inferenceDecision > 0)
@@ -108,7 +108,7 @@ public final class NogoodRecorder {
 		while (current != null) {
 			Nogood nogood = current.nogood;
 			int watchedDecision2 = nogood.getSecondWatchedDecision(watchedDecision);
-			if (!dr.varIn(watchedDecision2).dom.contains(dr.idxIn(watchedDecision2))) {
+			if (!decisions.varIn(watchedDecision2).dom.contains(decisions.idxIn(watchedDecision2))) {
 				previous = current;
 				current = current.nextCell;
 			} else if (canFindAnotherWatchFor(nogood, nogood.isDecisionWatchedByFirstWatch(watchedDecision))) {
@@ -132,7 +132,7 @@ public final class NogoodRecorder {
 	}
 
 	public boolean checkWatchesOf(Variable x, int a, boolean positive) {
-		return positive ? checkWatchesOf(pws[x.num], a, dr.positiveDecisionFor(x.num, a)) : checkWatchesOf(nws[x.num], a, dr.negativeDecisionFor(x.num, a));
+		return positive ? checkWatchesOf(pws[x.num], a, decisions.positiveDecisionFor(x.num, a)) : checkWatchesOf(nws[x.num], a, decisions.negativeDecisionFor(x.num, a));
 	}
 
 	public boolean runPropagator(Variable x) {
@@ -143,7 +143,7 @@ public final class NogoodRecorder {
 
 	private final Solver solver;
 
-	private final DecisionRecorder dr; // redundant field
+	private final Decisions decisions; // redundant field
 
 	private final SettingLearning settings;
 
@@ -170,7 +170,7 @@ public final class NogoodRecorder {
 
 	public NogoodRecorder(Solver solver) {
 		this.solver = solver;
-		this.dr = solver.decRecorder;
+		this.decisions = solver.decisions;
 		this.settings = solver.head.control.learning;
 		this.nogoods = new Nogood[settings.nogoodBaseLimit];
 		this.pws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
@@ -181,9 +181,9 @@ public final class NogoodRecorder {
 	}
 
 	private void addWatchFor(Nogood nogood, int position, boolean firstWatch) {
-		int decision = nogood.decisions[position];
-		WatchCell[] cells = decision > 0 ? pws[dr.numIn(decision)] : nws[dr.numIn(decision)];
-		int a = dr.idxIn(decision);
+		int decision = nogood.literals[position];
+		WatchCell[] cells = decision > 0 ? pws[decisions.numIn(decision)] : nws[decisions.numIn(decision)];
+		int a = decisions.idxIn(decision);
 		if (free == null)
 			cells[a] = new WatchCell(nogood, cells[a]);
 		else {
@@ -208,16 +208,16 @@ public final class NogoodRecorder {
 	}
 
 	public void addNogoodsOfCurrentBranch() {
-		if (!settings.nogood.isRstType() || dr.decisions.size() < 2)
+		if (!settings.nogood.isRstType() || decisions.set.size() < 2)
 			return;
 		int nMetPositiveDecisions = 0;
-		for (int i = 0; i <= dr.decisions.limit; i++) {
-			int d = dr.decisions.dense[i];
+		for (int i = 0; i <= decisions.set.limit; i++) {
+			int d = decisions.set.dense[i];
 			if (d > 0)
 				tmp[nMetPositiveDecisions++] = d;
 			else if (nMetPositiveDecisions > 0) {
 				int[] currentNogood = new int[nMetPositiveDecisions + 1];
-				if (settings.nogood == ELearningNogood.RST_MIN && dr.isFailedAssignment(i)) {
+				if (settings.nogood == ELearningNogood.RST_MIN && decisions.isFailedAssignment(i)) {
 					boolean bottomUp = true; // hard coding TODO
 					if (bottomUp)
 						for (int j = 0; j < nMetPositiveDecisions; j++)
@@ -254,7 +254,7 @@ public final class NogoodRecorder {
 		for (int i = 0; i < watches.length; i++)
 			for (int j = 0; j < watches[i].length; j++)
 				for (WatchCell cell = watches[i][j]; cell != null; cell = cell.nextCell)
-					if (!cell.nogood.isDecisionWatched(positive ? dr.positiveDecisionFor(i, j) : dr.negativeDecisionFor(i, j))) {
+					if (!cell.nogood.isDecisionWatched(positive ? decisions.positiveDecisionFor(i, j) : decisions.negativeDecisionFor(i, j))) {
 						Kit.log.warning("nogood = " + cell.nogood + " does not watch");
 						return false;
 					}
@@ -262,7 +262,7 @@ public final class NogoodRecorder {
 	}
 
 	private boolean controlNogood(int wdec, Nogood nogood) {
-		WatchCell firstCell = wdec > 0 ? pws[dr.numIn(wdec)][dr.idxIn(wdec)] : nws[dr.numIn(wdec)][dr.idxIn(wdec)];
+		WatchCell firstCell = wdec > 0 ? pws[decisions.numIn(wdec)][decisions.idxIn(wdec)] : nws[decisions.numIn(wdec)][decisions.idxIn(wdec)];
 		for (WatchCell cell = firstCell; cell != null; cell = cell.nextCell)
 			if (cell.nogood == nogood)
 				return true;
@@ -281,7 +281,7 @@ public final class NogoodRecorder {
 
 	public String toString() {
 		StringBuilder sb = new StringBuilder("Nogoods = {\n");
-		IntStream.range(0, nNogoods).forEach(i -> sb.append(nogoods[i].toString(dr)).append("\n"));
+		IntStream.range(0, nNogoods).forEach(i -> sb.append(nogoods[i].toString(decisions)).append("\n"));
 		return sb.append("}").toString();
 	}
 
@@ -291,11 +291,11 @@ public final class NogoodRecorder {
 		public void beforeRun() {
 			boolean effective = false;
 			for (int decision : decisionsToBePerformedAtNextRun) {
-				Variable x = dr.varIn(decision);
-				int a = dr.idxIn(decision);
+				Variable x = decisions.varIn(decision);
+				int a = decisions.idxIn(decision);
 				if (x.dom.contains(a)) {
 					x.dom.removeElementary(a);
-					Kit.log.info("Remove Unary sym nogood : " + dr.stringOf(decision));
+					Kit.log.info("Remove Unary sym nogood : " + decisions.stringOf(decision));
 					if (x.dom.size() == 0) {
 						solver.stopping = EStopping.FULL_EXPLORATION;
 						break;
@@ -349,12 +349,12 @@ public final class NogoodRecorder {
 			unaryNogoodsToHandle.add(decision);
 			for (int i = 0; i < unaryLimit && unaryNogoodsToHandle.size() != 0; i++) {
 				int pickedDecision = unaryNogoodsToHandle.remove(unaryNogoodsToHandle.size() - 1);
-				int a = dr.idxIn(pickedDecision);
-				int x = dr.numIn(pickedDecision);
+				int a = decisions.idxIn(pickedDecision);
+				int x = decisions.numIn(pickedDecision);
 				for (Map<Integer, Integer> map : mapOfSymmetryGroupGenerators) {
 					Integer y = map.get(x);
 					if (y != null) {
-						int symmetricDecision = dr.negativeDecisionFor(y, a);
+						int symmetricDecision = decisions.negativeDecisionFor(y, a);
 						if (!decisionsToBePerformedAtNextRun.contains(symmetricDecision)) {
 							decisionsToBePerformedAtNextRun.add(symmetricDecision);
 							unaryNogoodsToHandle.add(symmetricDecision);
@@ -376,16 +376,16 @@ public final class NogoodRecorder {
 				for (Map<Integer, Integer> map : mapOfSymmetryGroupGenerators) {
 					boolean changed = false;
 					for (int j = 0; j < pickedNogood.length; j++) {
-						int a = dr.idxIn(pickedNogood[j]);
-						int x = dr.numIn(pickedNogood[j]);
+						int a = decisions.idxIn(pickedNogood[j]);
+						int x = decisions.numIn(pickedNogood[j]);
 						Integer y = map.get(x);
 						if (y != null) {
 							// if (solver.problem.getVariable(symmetricId).domain.getElements().getDroppedLevelFor(index) == 0) {
 							// changed = false; break; }
-							currentSymmetricNogood[j] = dr.negativeDecisionFor(y, a);
+							currentSymmetricNogood[j] = decisions.negativeDecisionFor(y, a);
 							changed = true;
 						} else
-							currentSymmetricNogood[j] = dr.negativeDecisionFor(x, a);
+							currentSymmetricNogood[j] = decisions.negativeDecisionFor(x, a);
 					}
 					if (changed) {
 						Arrays.sort(currentSymmetricNogood);

@@ -49,7 +49,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		assert solver.futVars.size() > 0;
 
 		if (solver.head.control.solving.branching != EBranching.BIN) {
-			Variable x = solver.decRecorder.varOfLastDecisionIf(false);
+			Variable x = solver.decisions.varOfLastDecisionIf(false);
 			if (x != null)
 				return x;
 		}
@@ -181,7 +181,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			if (solver.restarter.runMultipleOf(solver.head.control.restarts.varhResetPeriod)
-					|| (solver.restarter.numRun - solver.solRecorder.lastSolutionRun) % solver.head.control.restarts.varhSolResetPeriod == 0) {
+					|| (solver.restarter.numRun - solver.solutions.lastRun) % solver.head.control.restarts.varhSolResetPeriod == 0) {
 				System.out.println("    ...resetting weights (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
 				reset();
 				// solver.restarter.nRestartsSinceLastReset = 0;

@@ -54,7 +54,7 @@ public abstract class HeuristicValues extends Heuristic {
 
 	public int bestIndex() {
 		Solver solver = x.problem.solver;
-		if (solver.solRecorder.found == 0) {
+		if (solver.solutions.found == 0) {
 			if (settings.warmStart.length() > 0) {
 				int a = solver.warmStarter.valueOf(x);
 				if (a != -1 && dx.contains(a))
@@ -70,7 +70,7 @@ public abstract class HeuristicValues extends Heuristic {
 				// if (x == solver.impacting)
 				// a = dx.first();
 				// else
-				int a = solver.solRecorder.lastSolution[x.num];
+				int a = solver.solutions.last[x.num];
 				if (dx.contains(a)) // && (!priorityVar || solver.rs.random.nextDouble() < 0.5))
 					return a;
 			}

@@ -30,23 +30,25 @@ import org.xcsp.modeler.entities.VarEntities.VarArray;
 import org.xcsp.modeler.entities.VarEntities.VarEntity;
 
 import constraints.Constraint;
-import constraints.global.Sum;
 import problem.Problem;
 import utility.Enums.EStopping;
 import utility.Kit;
 import variables.Variable;
 
-public final class SolutionRecorder {
+public final class Solutions {
 
+	/**
+	 * The solver to which this object is attached
+	 */
 	public final Solver solver;
 
 	/**
-	 * Number of solutions to be found, before stopping. When equal to PLUS_INFINITY, all solutions are searched for (no limit is fixed).
+	 * The number of solutions to be found, before stopping. When equal to PLUS_INFINITY, all solutions are searched for (no limit is fixed).
 	 */
 	public long limit;
 
 	/**
-	 * Number of solutions found by the solver so far. Initially, 0.
+	 * The number of solutions found by the solver so far. Initially, 0.
 	 */
 	public long found;
 
@@ -56,23 +58,31 @@ public final class SolutionRecorder {
 	public long bestBound;
 
 	/**
-	 * Array containing the last found solution (indexes of values, and not values), or null.
+	 * The last found solution (array containing indexes of values, and not values), or null
 	 */
-	public int[] lastSolution;
-
-	public int lastSolutionRun = -1; // number of the run where the last solution has been found
-
-	public String lastSolutionXml;
+	public int[] last;
 
 	/**
-	 * Stores all solutions found by the solver. Only used (different from null) if the tag <code> recordSolutions </code> in the configuration file is set to
-	 * <code> true </code>.
+	 * The number of the run where the last solution has been found, or -1
 	 */
-	public final List<int[]> allSolutions;
+	public int lastRun = -1;
+
+	/**
+	 * The last found solution in XML form, or null
+	 */
+	private String lastXml;
+
+	/**
+	 * Stores all solutions found by the solver.
+	 */
+	private final List<int[]> store;
 
 	// private SolutionOptimizer solutionOptimizer;
 
-	private AtomicBoolean lock = new AtomicBoolean(); // important for competition
+	/**
+	 * An object used for competitions
+	 */
+	private AtomicBoolean lock = new AtomicBoolean();
 
 	public final String listVars, listVarsWithoutAuxiliary;
 
@@ -154,18 +164,18 @@ public final class SolutionRecorder {
 		return sb.toString();
 	}
 
-	public String lastSolutionInXmlFormat() { // auxiliary variables are not considered
+	private String lastSolutionInXmlFormat() { // auxiliary variables are not considered
 		assert found > 0;
 		StringBuilder sb = new StringBuilder("<instantiation id='sol").append(found).append("' type='solution'");
 		sb.append(solver.problem.settings.framework != CSP ? " cost='" + bestBound + "'" : "").append(">");
 		sb.append(" <list> ").append(listVarsWithoutAuxiliary).append(" </list> <values> ").append(valsForXml(solver.problem.settings.xmlCompact, true));
 		String s = sb.append(" </values> </instantiation>").toString();
-		if (lastSolutionXml != null)
-			lastSolutionXml = s;
+		if (lastXml != null)
+			lastXml = s;
 		return s;
 	}
 
-	public String lastSolutionInJsonFormat() {
+	private String lastSolutionInJsonFormat() {
 		assert found > 0;
 		boolean discardAuxiliary = !solver.head.control.general.jsonAux;
 		String PREFIX = "   ";
@@ -185,11 +195,11 @@ public final class SolutionRecorder {
 		return sb.append("\n").append(PREFIX).append("}").toString();
 	}
 
-	public SolutionRecorder(Solver solver, long nSolutionsLimit) {
+	public Solutions(Solver solver, long limit) {
 		this.solver = solver;
-		this.limit = nSolutionsLimit;
+		this.limit = limit;
 		this.bestBound = solver.head.control.optimization.ub;
-		this.allSolutions = solver.head.control.general.recordSolutions ? new ArrayList<int[]>() : null;
+		this.store = solver.head.control.general.recordSolutions ? new ArrayList<int[]>() : null;
 		// this.solutionOptimizer = new SolutionOptimizer(this);
 		// if (solver.head.control.xml.competitionMode)
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
@@ -219,7 +229,7 @@ public final class SolutionRecorder {
 						System.out.println(framework == COP ? preprint("s SATISFIABLE", GREEN) : preprint("s SATISFIABLE", GREEN));
 				}
 				if (found > 0)
-					System.out.println("\n" + preprint("v", GREEN) + " " + (lastSolutionXml != null ? lastSolutionXml : lastSolutionInXmlFormat()));
+					System.out.println("\n" + preprint("v", GREEN) + " " + (lastXml != null ? lastXml : lastSolutionInXmlFormat()));
 				System.out.println("\n" + preprint("d WRONG DECISIONS", GREEN) + " " + solver.stats.nWrongDecisions);
 				// if (framework == CSP)
 				System.out.println(preprint("d NUMBER OF" + (fullExploration ? "" : " FOUND") + " SOLUTIONS", GREEN) + " " + found);
@@ -232,13 +242,13 @@ public final class SolutionRecorder {
 		}
 	}
 
-	public void storeSolution(int[] t) {
+	private void record(int[] t) {
 		Variable[] variables = solver.problem.variables;
 		assert t == null || t.length == variables.length;
-		lastSolution = lastSolution == null ? new int[variables.length] : lastSolution;
-		for (int i = 0; i < lastSolution.length; i++) {
-			lastSolution[i] = t != null ? t[i] : variables[i].dom.single();
-			variables[i].valueIndexInLastSolution = lastSolution[i]; // lastSolution[i]lastSolutionPrettyAssignedValue = variables[i].dom.prettyAssignedValue();
+		last = last == null ? new int[variables.length] : last;
+		for (int i = 0; i < last.length; i++) {
+			last[i] = t != null ? t[i] : variables[i].dom.single();
+			variables[i].valueIndexInLastSolution = last[i]; // lastSolution[i]lastSolutionPrettyAssignedValue = variables[i].dom.prettyAssignedValue();
 		}
 
 		// SumSimpleLE c = (SumSimpleLE) solver.pb.optimizer.ctr;
@@ -251,20 +261,12 @@ public final class SolutionRecorder {
 	private void solutionHamming() {
 		if (found <= 1)
 			return;
-		h1 = (int) IntStream.range(0, lastSolution.length).filter(i -> lastSolution[i] != solver.problem.variables[i].dom.single()).count();
+		h1 = (int) IntStream.range(0, last.length).filter(i -> last[i] != solver.problem.variables[i].dom.single()).count();
 		if (solver.problem.optimizer != null) {
 			Constraint c = (Constraint) solver.problem.optimizer.ctr;
-			h2 = (int) IntStream.range(0, lastSolution.length)
-					.filter(i -> lastSolution[i] != solver.problem.variables[i].dom.single() && c.involves(solver.problem.variables[i])).count();
+			h2 = (int) IntStream.range(0, last.length)
+					.filter(i -> last[i] != solver.problem.variables[i].dom.single() && c.involves(solver.problem.variables[i])).count();
 		}
-	}
-
-	private Variable selectMostImpactingVariable() {
-		Kit.control(solver.problem.optimizer != null && solver.problem.optimizer.ctr instanceof Sum);
-		Constraint c = (Constraint) solver.problem.optimizer.ctr;
-
-		return null;
-
 	}
 
 	/**
@@ -273,13 +275,13 @@ public final class SolutionRecorder {
 	public void handleNewSolution(boolean controlSolution) {
 		Kit.control(!controlSolution || controlFoundSolution());
 		found++;
-		lastSolutionRun = solver.restarter.numRun;
+		lastRun = solver.restarter.numRun;
 		solutionHamming();
 		if (found >= limit)
 			solver.stopping = EStopping.REACHED_GOAL;
-		storeSolution(null);
-		if (allSolutions != null)
-			allSolutions.add(lastSolution.clone());
+		record(null);
+		if (store != null)
+			store.add(last.clone());
 		solver.stats.manageSolution();
 
 		if (solver.propagation.performingProperSearch)
