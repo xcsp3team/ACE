@@ -395,7 +395,7 @@ public interface Domain extends SetLinked {
 		Problem problem = var().problem;
 		control(problem.solver == null, () -> "Must be called before the solver being built.");
 		remove(a, 0);
-		problem.nValuesRemoved++;
+		problem.nValueRemovals++;
 		problem.features.nValuesRemovedAtConstructionTime++;
 	}
 
@@ -456,7 +456,7 @@ public interface Domain extends SetLinked {
 		remove(a, depth);
 		for (ObserverDomainReduction observer : x.problem.observersDomainReduction)
 			observer.afterRemoval(x, a);
-		x.problem.nValuesRemoved++;
+		x.problem.nValueRemovals++;
 	}
 
 	/**
@@ -566,7 +566,7 @@ public interface Domain extends SetLinked {
 		int nRemovals = reduceTo(a, depth);
 		for (ObserverDomainReduction observer : x.problem.observersDomainReduction)
 			observer.afterRemovals(x, nRemovals);
-		x.problem.nValuesRemoved += nRemovals;
+		x.problem.nValueRemovals += nRemovals;
 		assert nRemovals >= 0 && size() == 1 : "nRemovals: " + nRemovals + " size:" + size();
 		return nRemovals;
 	}

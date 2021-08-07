@@ -429,7 +429,7 @@ public final class Features {
 		m.put(NTYPES, nDomTypes());
 		m.put(NVALUES, Variable.nValidValuesFor(problem.variables));
 		m.putWhenPositive("nRemovedValuesAtConstruction", nValuesRemovedAtConstructionTime);
-		m.putWhenPositive("nPurged", problem.nValuesRemoved);
+		m.putWhenPositive("nPurged", problem.nValueRemovals);
 		m.put(SIZES, domSizes);
 		return m;
 	}

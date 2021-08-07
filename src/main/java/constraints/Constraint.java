@@ -178,10 +178,6 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		}
 	};
 
-	public static final boolean isGuaranteedGAC(Constraint[] ctrs) {
-		return Stream.of(ctrs).allMatch(c -> c.isGuaranteedAC());
-	}
-
 	public static final int howManyVarsWithin(int[] sizes, int spaceLimitation) {
 		double limit = Math.pow(2, spaceLimitation);
 		Arrays.sort(sizes);
@@ -742,10 +738,11 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		}
 		if (time > x.time && this instanceof TagFilteringCompleteAtEachCall)
 			return true;
-		int nBefore = problem.nValuesRemoved;
+		int nBefore = problem.nValueRemovals;
 		boolean consistent = this instanceof FilteringSpecific ? ((FilteringSpecific) this).runPropagator(x) : genericFiltering(x);
-		if (!consistent || problem.nValuesRemoved != nBefore) {
-			problem.solver.proofer.updateProof(this);// TODO // ((SystematicSolver)solver).updateProofAll();
+		if (!consistent || problem.nValueRemovals != nBefore) {
+			if (problem.solver.proofer != null)
+				problem.solver.proofer.updateProof(this);// TODO // ((SystematicSolver)solver).updateProofAll();
 			nEffectiveFilterings++;
 			problem.features.nEffectiveFilterings++;
 		}

@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL
- * LIBRE CeCILL which accompanies this distribution, and is available at http://www.cecill.info
- */
 package propagation;
 
 import constraints.Constraint;
@@ -21,7 +13,10 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * A reviser is attached to a propagation technique and allows us to manage revisions (within a generic filtering scheme).
+ * A reviser is attached to a propagation technique and allows us to manage revisions (within a generic filtering scheme). If all constraints have specific
+ * propagators, this object is not used.
+ * 
+ * @author Christophe Lecoutre
  */
 public class Reviser { // Basic object to perform revisions, as in AC3
 
@@ -33,25 +28,57 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 	/**
 	 * The number of revisions, i.e., the number of calls to <code> revise(c,x) </code>
 	 */
-	public long nRevisions, nUselessRevisions;
+	public long nRevisions;
+
+	/**
+	 * The number of useless revisions, i.e., the number of calls to <code> revise(c,x) </code> that leads to no inference (value removal)
+	 */
+	public long nUselessRevisions;
 
 	public Reviser(Forward propagation) {
 		this.propagation = propagation;
 	}
 
+	/**
+	 * Returns true if the revision of the domain of the specified variable should be executed for the specified constraint
+	 * 
+	 * @param c
+	 *            a constraint
+	 * @param x
+	 *            a variable involved in the constraint
+	 * @return true if the revision should be executed
+	 */
 	public boolean mustBeAppliedTo(Constraint c, Variable x) {
 		return true;
 	}
 
+	/**
+	 * Applies the revision of the domain of the specified variable in the specified constraint
+	 * 
+	 * @param c
+	 *            a constraint
+	 * @param x
+	 *            a variable involved in the constraint
+	 */
 	public void applyTo(Constraint c, Variable x) {
-		int px = c.positionOf(x);
+		int i = c.positionOf(x);
 		Domain dom = x.dom;
 		for (int a = dom.first(); a != -1; a = dom.next(a)) {
-			if (!c.findArcSupportFor(px, a))
-				x.dom.removeElementary(a);
+			if (!c.findArcSupportFor(i, a))
+				dom.removeElementary(a);
 		}
 	}
 
+	/**
+	 * Revises the domain of the specified variable for the specified constraint, and returns false if an inconsistency is detected. In some cases, the revision
+	 * can be avoided (because proved as useless).
+	 * 
+	 * @param c
+	 *            a constraint
+	 * @param x
+	 *            a variable involved in the constraint
+	 * @return false iff an inconsistency is detected
+	 */
 	public final boolean revise(Constraint c, Variable x) {
 		assert !x.assigned() && c.involves(x);
 		if (mustBeAppliedTo(c, x)) {
@@ -71,7 +98,7 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 	 *********************************************************************************************/
 
 	/**
-	 * Object used to perform revisions, exploiting pre-computed number of conflicts.
+	 * A revision object that exploits pre-computed number of conflicts.
 	 */
 	public static class Reviser2 extends Reviser {
 
@@ -83,8 +110,8 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 		public boolean mustBeAppliedTo(Constraint c, Variable x) {
 			if (c.conflictsStructure == null)
 				return true;
-			int px = c.positionOf(x);
-			return c.conflictsStructure.nMaxConflicts[px] >= Domain.nValidTuplesBounded(c.doms, px);
+			int i = c.positionOf(x);
+			return c.conflictsStructure.nMaxConflicts[i] >= Domain.nValidTuplesBounded(c.doms, i);
 		}
 
 		@Override
@@ -92,25 +119,30 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 			if (c.conflictsStructure == null)
 				super.applyTo(c, x);
 			else {
-				int px = c.positionOf(x);
-				long nb = Domain.nValidTuplesBounded(c.doms, px);
-				int[] nc = c.conflictsStructure.nConflicts[px];
+				int i = c.positionOf(x);
+				long nb = Domain.nValidTuplesBounded(c.doms, i);
+				int[] nc = c.conflictsStructure.nConflicts[i];
 				Domain dom = x.dom;
 				for (int a = dom.first(); a != -1; a = dom.next(a))
-					if (nc[a] >= nb && !c.findArcSupportFor(px, a))
-						x.dom.removeElementary(a);
+					if (nc[a] >= nb && !c.findArcSupportFor(i, a))
+						dom.removeElementary(a);
 			}
 		}
 	}
 
 	/**
-	 * Performing revisions using bitwise operations (when possible), as in AC3^bit+rm
+	 * A revision object that performs revisions using bitwise operations (when possible), as in AC3^bit+rm
 	 */
 	public static final class Reviser3 extends Reviser2 {
-		final int residueLimitForBitRm = 499; // hard coding
-		final int memoryLimitForBitRm = 550000000; // hard coding
 
-		private final short[][][] bitRmResidues; // bitRmResidues[c][x][a]
+		/**
+		 * bitRmResidues[c][x][a] is the residue for the (value) index a of variable x in constraint c
+		 */
+		private final short[][][] bitRmResidues;
+
+		private final int residueLimit = 499; // hard coding
+
+		private final int memoryLimit = 550000000; // hard coding
 
 		private boolean variant = false; // hard coding
 
@@ -121,7 +153,7 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 			if (settings.bitResidues) {
 				long nResidues = 0;
 				this.bitRmResidues = new short[pb.constraints.length][][];
-				int limit = residueLimitForBitRm;
+				int limit = residueLimit;
 				boolean stopped = false;
 				for (Constraint c : pb.constraints) {
 					if (c instanceof FilteringSpecific || !(c.extStructure() instanceof Bits))
@@ -135,7 +167,7 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 					if (size1 > limit)
 						bitRmResidues[c.num][0] = new short[size0];
 					nResidues += (size0 > limit ? size1 : 0) + (size1 > limit ? size0 : 0);
-					if (nResidues * 2 + Kit.memory() > memoryLimitForBitRm) {
+					if (nResidues * 2 + Kit.memory() > memoryLimit) {
 						Kit.log.info("Stop creating residues for RevisionManagerBitRm");
 						stopped = true;
 					}

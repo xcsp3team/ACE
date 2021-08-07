@@ -1,21 +1,20 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package solver;
 
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import interfaces.Observers.ObserverDecisions;
 import interfaces.Observers.ObserverRuns;
 import utility.Kit;
 import variables.Variable;
 
-public final class LastConflict implements ObserverRuns {
+/**
+ * This object implements last-conflict reasoning (lc). <br />
+ * See Reasoning from last conflict(s) in constraint programming. Artif. Intell. 173(18): 1592-1614 (2009) by C. Lecoutre, L. Sais, S. Tabary, and V. Vidal:
+ * 
+ * @author Christophe Lecoutre
+ */
+public final class LastConflict implements ObserverRuns, ObserverDecisions {
 
 	@Override
 	public void beforeRun() {
@@ -31,7 +30,7 @@ public final class LastConflict implements ObserverRuns {
 
 	private Solver solver;
 
-	private int k; // k is the parameter of lc (0 if inactive)
+	private int k; // k is the parameter of lc (necessarily > 0)
 
 	private Variable[] vars; // recorded variables when reasoning with lc
 
@@ -73,11 +72,10 @@ public final class LastConflict implements ObserverRuns {
 		this.k = k;
 		this.vars = new Variable[k];
 		this.statistics = new Statistics(k);
+		Kit.control(k > 0);
 	}
 
 	public Variable lastConflictPriorityVar() {
-		if (k == 0)
-			return null;
 		// entering last reasoning mode?
 		if (nVars == 0) {
 			if (lastAssigned == null || lastAssigned.assigned())
@@ -103,14 +101,14 @@ public final class LastConflict implements ObserverRuns {
 		return vars[nVars - 1];
 	}
 
-	public final void onAssignment(Variable x) {
-		if (k > 0 && nVars == 0)
+	@Override
+	public final void beforePositiveDecision(Variable x, int a) {
+		if (nVars == 0)
 			lastAssigned = x;
 	}
 
-	public void onRefutation(Variable x, int a) {
-		if (k == 0)
-			return;
+	@Override
+	public void beforeNegativeDecision(Variable x, int a) {
 		// is variable the candidate for next insertion (after potentially lastAssigned)
 		if (nVars == 0) {
 			if (x != lastAssigned)

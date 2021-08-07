@@ -16,7 +16,7 @@ import java.text.NumberFormat;
 
 import org.xcsp.common.Types.TypeFramework;
 
-import constraints.Constraint;
+import interfaces.Observers.ObserverDecisions;
 import interfaces.Observers.ObserverRuns;
 import interfaces.Observers.ObserverSearch;
 import learning.IpsRecorderForEquivalence;
@@ -34,7 +34,7 @@ import variables.Variable;
 /**
  * This class allows gathering all statistics of a given solver.
  */
-public abstract class Statistics implements ObserverRuns, ObserverSearch {
+public abstract class Statistics implements ObserverSearch, ObserverRuns, ObserverDecisions {
 
 	public static final String N_BUILT_BRANCHES = "nBuiltBranches";
 	public static final String SUM_BRANCH_SIZES = "sumBranchSizes";
@@ -55,7 +55,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 	private static NumberFormat nformat = NumberFormat.getInstance();
 
 	/*************************************************************************
-	 ***** Interfaces
+	 ***** Implemented Interfaces
 	 *************************************************************************/
 
 	@Override
@@ -92,14 +92,16 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		searchWck = stopwatch.wckTime();
 	}
 
-	public void onAssignment(Variable x) {
+	@Override
+	public void beforePositiveDecision(Variable x, int a) {
 		nNodes++;
 		if (x.dom.size() > 1)
 			nDecisions++;
 		// nAssignments++; done elsewhere
 	}
 
-	public void onRefutation(Variable x) {
+	@Override
+	public void beforeNegativeDecision(Variable x, int a) {
 		if (x.dom.size() > 1) {
 			nNodes++;
 			nDecisions++;
@@ -172,10 +174,10 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		lastSolWck = wck;
 	}
 
-	public final MapAtt solverConstructionAttributes() {
+	public final MapAtt solverAttributes() {
 		MapAtt m = new MapAtt("Solver");
 		if (solver.propagation.getClass() == GAC.class)
-			m.put(GUARANTEED_GAC, Constraint.isGuaranteedGAC(solver.problem.constraints));
+			m.put(GUARANTEED_GAC, ((GAC) solver.propagation).guaranteed);
 		m.separator();
 		m.put(WCK, solver.head.instanceStopwatch.wckTimeInSeconds());
 		m.put(CPU, solver.head.stopwatch.cpuTimeInSeconds());
@@ -189,7 +191,7 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		m.putIf("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
 		m.put("nValues", Variable.nValidValuesFor(solver.problem.variables));
 		if (solver.propagation instanceof GAC)
-			m.put("nACremovedValues", ((GAC) (solver.propagation)).nPreproRemovals);
+			m.put("nACremovedValues", ((GAC) (solver.propagation)).nPreproValueRemovals);
 		// m.put("nTotalRemovedValues", nPreproRemovedValues);
 		m.put("inconsistency", nPreproInconsistencies > 0);
 		m.separator();
@@ -217,7 +219,6 @@ public abstract class Statistics implements ObserverRuns, ObserverSearch {
 		}
 		m.put(WCK, preproWck / 1000.0);
 		m.put(CPU, solver.head.stopwatch.cpuTimeInSeconds());
-
 		m.put(MEM, Kit.memoryInMb());
 		return m;
 	}

@@ -133,7 +133,7 @@ public abstract class HeuristicVariables extends Heuristic {
 
 	/** Returns the preferred variable among those that are priority. */
 	private Variable bestPriorityVar() {
-		int nPast = solver.futVars.nDiscarded();
+		int nPast = solver.futVars.nPast();
 		if (nPast < priorityVars.length) {
 			if (nPast < nStrictlyPriorityVars)
 				return priorityVars[nPast];

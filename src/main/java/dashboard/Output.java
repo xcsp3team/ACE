@@ -164,7 +164,7 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 
 	@Override
 	public void afterSolverConstruction() {
-		MapAtt sa = head.solver.stats.solverConstructionAttributes();
+		MapAtt sa = head.solver.stats.solverAttributes();
 		solverElt = record(TypeOutput.SOLVER, sa.entries(), resolElt);
 		Kit.log.config("\n" + sa.toString());
 	}

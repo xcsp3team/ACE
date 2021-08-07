@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package propagation;
 
 import solver.Solver;
@@ -40,10 +32,10 @@ public abstract class StrongConsistency extends GAC {
 
 	@Override
 	public boolean runInitially() {
-		int nBefore = solver.problem.nValuesRemoved;
+		int nBefore = solver.problem.nValueRemovals;
 		if (enforceArcConsistency() == false)
 			return false;
-		if (settings.strongOnlyWhenACEffective && solver.problem.nValuesRemoved == nBefore)
+		if (settings.strongOnlyWhenACEffective && solver.problem.nValueRemovals == nBefore)
 			return true;
 		if (settings.strongOnlyAtPreprocessing && solver.restarter.numRun % 60 != 0)
 			return true;
@@ -53,10 +45,10 @@ public abstract class StrongConsistency extends GAC {
 
 	@Override
 	public boolean runAfterAssignment(Variable x) {
-		int nBefore = solver.problem.nValuesRemoved;
+		int nBefore = solver.problem.nValueRemovals;
 		if (enforceArcConsistencyAfterAssignment(x) == false)
 			return false;
-		if (performingProperSearch || settings.strongOnlyAtPreprocessing || (settings.strongOnlyWhenACEffective && solver.problem.nValuesRemoved == nBefore)
+		if (performingProperSearch || settings.strongOnlyAtPreprocessing || (settings.strongOnlyWhenACEffective && solver.problem.nValueRemovals == nBefore)
 				|| (settings.strongOnlyWhenNotSingleton && x.dom.lastRemovedLevel() != solver.depth() && hasSolverPropagatedAfterLastButOneDecision()))
 			return true;
 		return enforceMore();
@@ -64,10 +56,10 @@ public abstract class StrongConsistency extends GAC {
 
 	@Override
 	public boolean runAfterRefutation(Variable x) {
-		int nBefore = solver.problem.nValuesRemoved;
+		int nBefore = solver.problem.nValueRemovals;
 		if (enforceArcConsistencyAfterRefutation(x) == false)
 			return false;
-		if (performingProperSearch || settings.strongOnlyAtPreprocessing || (settings.strongOnlyWhenACEffective && solver.problem.nValuesRemoved == nBefore))
+		if (performingProperSearch || settings.strongOnlyAtPreprocessing || (settings.strongOnlyWhenACEffective && solver.problem.nValueRemovals == nBefore))
 			return true;
 		return enforceMore();
 	}

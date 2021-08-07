@@ -6,14 +6,16 @@ import constraints.Constraint;
 import constraints.Constraint.CtrGlobal;
 import dashboard.Control.SettingPropagation;
 import interfaces.Observers.ObserverConflicts;
+import learning.IpsRecorderForDominance;
 import sets.SetSparse;
 import solver.Solver;
 import utility.Kit;
 import utility.Reflector;
+import variables.Domain;
 import variables.Variable;
 
 /**
- * The root class of all objects that can be used to manage constraint propagation. For simplicity, propagation and consistency concepts are not distinguished,
+ * The root class of any object that can be used to manage constraint propagation. For simplicity, propagation and consistency concepts are not distinguished,
  * So, some subclasses are given the name of consistencies.
  * 
  * @author Christophe Lecoutre
@@ -38,7 +40,7 @@ public abstract class Propagation {
 	}
 
 	/*************************************************************************
-	 * Inner class for managing auxiliary queues
+	 * Inner classes for managing auxiliary queues and reasoning with nogoods
 	 *************************************************************************/
 
 	protected static class SetSparseMap extends SetSparse {
@@ -71,6 +73,42 @@ public abstract class Propagation {
 			boolean b = super.add(e);
 			values[e] = value; // even if e is already present, the new value is recorded
 			return b;
+		}
+	}
+
+	private class NogoodReasoning {
+
+		private Boolean ipsDominanceReasoning;
+
+		private int[] absentValuesSentinel;
+
+		private long[] sentinelLevel;
+
+		public boolean isNogoodConsistent(Variable x) {
+			Domain dom = x.dom;
+			if (solver.nogoodRecorder != null)
+				if (dom.size() == 1 && solver.nogoodRecorder.checkWatchesOf(x, dom.first(), false) == false)
+					return false;
+			if (ipsDominanceReasoning == null) { // first call
+				ipsDominanceReasoning = solver.ipsRecorder instanceof IpsRecorderForDominance ? Boolean.TRUE : Boolean.FALSE;
+				if (ipsDominanceReasoning) {
+					this.absentValuesSentinel = new int[solver.problem.variables.length];
+					this.sentinelLevel = new long[solver.problem.variables.length];
+				}
+			}
+			if (ipsDominanceReasoning) {
+				IpsRecorderForDominance ipsRecorder = (IpsRecorderForDominance) solver.ipsRecorder;
+				if (sentinelLevel[x.num] != solver.stats.numberSafe())
+					absentValuesSentinel[x.num] = -1;
+				int depth = solver.depth();
+				int lastRemoved = dom.lastRemoved();
+				for (int a = lastRemoved; a != absentValuesSentinel[x.num] && dom.removedLevelOf(a) == depth; a = dom.prevRemoved(a))
+					if (!ipsRecorder.checkWatchesOf(x.num, a))
+						return false;
+				sentinelLevel[x.num] = solver.stats.numberSafe();
+				absentValuesSentinel[x.num] = lastRemoved;
+			}
+			return true;
 		}
 	}
 
@@ -109,6 +147,11 @@ public abstract class Propagation {
 	 * The variable that has been wiped out the last time constraint propagation led to failure
 	 */
 	public Variable lastWipeoutVar;
+
+	/**
+	 * The object to be used when picking a variable from the queue in order to reason first with recorded nogoods (if any)
+	 */
+	private NogoodReasoning nogoodReasoning = new NogoodReasoning();
 
 	/**
 	 * When true, indicates that the object is currently performing a form of search during propagation. This may be the case for some forms of propagation
@@ -172,7 +215,7 @@ public abstract class Propagation {
 	 */
 	protected final boolean pickAndFilter() {
 		Variable x = queue.pickAndDelete();
-		if (!queue.isNogoodConsistent(x))
+		if (!nogoodReasoning.isNogoodConsistent(x))
 			return false;
 		for (Constraint c : x.ctrs)
 			if (!c.ignored && !solver.isEntailed(c)) {
@@ -258,7 +301,7 @@ public abstract class Propagation {
 	 * This method is always called with a variable whose domain is not empty.
 	 * 
 	 * @param x
-	 *            the variable that has just been subject to a refutation (negative decision).
+	 *            the variable that has just been subject to a refutation (negative decision)
 	 * @return false iff an inconsistency is detected
 	 */
 	public abstract boolean runAfterRefutation(Variable x);

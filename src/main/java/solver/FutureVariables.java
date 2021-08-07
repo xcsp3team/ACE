@@ -17,45 +17,15 @@ import variables.Variable;
 
 /**
  * This abstract class allows us to manage past and future variables. It is used by solvers.
+ * 
+ * @author Christophe Lecoutre
  */
 public final class FutureVariables implements Iterable<Variable> {
 
-	private class SimpleIterator implements Iterator<Variable> {
-
-		private int cursor = -1;
-
-		@Override
-		public boolean hasNext() {
-			return cursor != -1;
-		}
-
-		@Override
-		public Variable next() {
-			Variable x = vars[cursor];
-			cursor = nexts[cursor];
-			return x;
-		}
-	}
-
-	private SimpleIterator iterator1 = new SimpleIterator(), iterator2 = new SimpleIterator();
-
-	@Override
 	/**
-	 * Such an iterator can only be used for complete iteration (no break and no return accepted)
+	 * The set (array) of variables form the problem (constraint network)
 	 */
-	public Iterator<Variable> iterator() {
-		if (iterator1.cursor == -1) {
-			iterator1.cursor = first;
-			return iterator1;
-		}
-		if (iterator2.cursor == -1) {
-			iterator2.cursor = first;
-			return iterator2;
-		}
-		System.out.println("CURSORS=" + iterator1.cursor + " " + iterator2.cursor);
-		Kit.control(false, () -> "Only two nested iterations can only be used for the moment");
-		return null;
-	}
+	private final Variable[] vars;
 
 	/**
 	 * The number of the first current future variable, or -1 if no such variable exists.
@@ -78,71 +48,60 @@ public final class FutureVariables implements Iterable<Variable> {
 	 */
 	private final int[] nexts;
 
+	/**
+	 * pasts[i] is the ith past variable (valid indexes from 0 to pastTop as in dense set)
+	 */
 	private final int[] pasts;
 
-	private int pastTop;
+	/**
+	 * The limit to be used for pasts (as for a dense set)
+	 */
+	private int pastLimit;
 
-	private final Variable[] vars;
-
-	public FutureVariables(Variable[] vars) {
+	public FutureVariables(Solver solver) {
+		this.vars = solver.problem.variables;
 		this.first = 0;
 		this.last = vars.length - 1;
 		this.prevs = IntStream.range(-1, vars.length - 1).toArray();
 		this.nexts = IntStream.range(1, vars.length + 1).map(i -> i < vars.length ? i : -1).toArray();
 		this.pasts = new int[vars.length];
-		this.pastTop = -1;
-		this.vars = vars;
+		this.pastLimit = -1;
 		Kit.control(Variable.areNumsNormalized(vars));
 	}
 
+	/**
+	 * Returns the number of future variables, i.e., the number of variables that have not been explicitly assigned by the solver
+	 * 
+	 * @return the number of future variables
+	 */
 	public int size() {
-		return vars.length - pastTop - 1;
+		return vars.length - pastLimit - 1;
 	}
 
 	/**
-	 * Returns the number of past variables, i.e., the number of variables which have been explicitly assigned by the solver.
+	 * Returns the number of past variables, i.e., the number of variables that have been explicitly assigned by the solver
+	 * 
+	 * @return the number of past variables
 	 */
-	public int nDiscarded() {
-		return pastTop + 1;
+	public int nPast() {
+		return pastLimit + 1;
 	}
 
-	private void pop() {
-		assert pastTop >= 0;
-		int e = pasts[pastTop--];
-		// add to the list of present elements (works only if elements are managed as in a stack)
-		int prev = prevs[e], next = nexts[e];
-		if (prev == -1)
-			first = e;
-		else
-			nexts[prev] = e;
-		if (next == -1)
-			last = e;
-		else
-			prevs[next] = e;
-	}
-
-	private void push(int e) {
-		assert IntStream.rangeClosed(0, pastTop).noneMatch(i -> pasts[i] == e);
-		// remove from the list of present elements
-		int prev = prevs[e], next = nexts[e];
-		if (prev == -1)
-			first = next;
-		else
-			nexts[prev] = next;
-		if (next == -1)
-			last = prev;
-		else
-			prevs[next] = prev;
-		// add to the end of the list of absent elements
-		pasts[++pastTop] = e;
-	}
-
+	/**
+	 * Returns the first future (i.e., not explicitly assigned) variable
+	 * 
+	 * @return the first future variable
+	 */
 	public Variable first() {
 		return first == -1 ? null : vars[first];
 	}
 
 	/**
-	 * Returns the next future variable after the variable given in parameter.
+	 * Returns the future variable that comes after the specified one
+	 * 
+	 * @param x
+	 *            a variable
+	 * @return the future variable that comes after the specified one
 	 */
 	public Variable next(Variable x) {
 		assert x.isFuture();
@@ -151,10 +110,20 @@ public final class FutureVariables implements Iterable<Variable> {
 	}
 
 	/**
-	 * BE CAREFUL: this operation is not in O(1).
+	 * Returns the last variable that has been assigned, or null
+	 * 
+	 * @return the last past (i.e., explicitly assigned) variable
+	 */
+	public Variable lastPast() {
+		return pastLimit == -1 ? null : vars[pasts[pastLimit]];
+	}
+
+	/**
+	 * Returns the ith future variable. BE CAREFUL: this operation is not in O(1).
 	 * 
 	 * @param i
-	 * @return
+	 *            the position of the future variable
+	 * @return the ith future variable
 	 */
 	public Variable get(int i) {
 		assert 0 <= i && i < size();
@@ -165,25 +134,49 @@ public final class FutureVariables implements Iterable<Variable> {
 	}
 
 	/**
-	 * Returns the last variable that has been assigned.
-	 */
-	public Variable lastPast() {
-		return pastTop == -1 ? null : vars[pasts[pastTop]];
-	}
-
-	/**
-	 * This method is called in order to convert the given variable from future to past.
-	 */
-	public void add(Variable x) {
-		push(x.num);
-	}
-
-	/**
-	 * This method is called in order to convert the given variable from past to future.
+	 * Converts the specified variable from future to past
+	 * 
+	 * @param x
+	 *            the variable to be added
 	 */
 	public void remove(Variable x) {
-		assert pastTop >= 0 && x.num == pasts[pastTop];
-		pop();
+		int i = x.num;
+		assert IntStream.rangeClosed(0, pastLimit).noneMatch(j -> pasts[j] == i);
+		// removing from the list of present elements
+		int prev = prevs[i], next = nexts[i];
+		if (prev == -1)
+			first = next;
+		else
+			nexts[prev] = next;
+		if (next == -1)
+			last = prev;
+		else
+			prevs[next] = prev;
+		// adding to the end of the list of absent elements
+		pasts[++pastLimit] = i;
+	}
+
+	/**
+	 * Converts the specified variable from past to future
+	 * 
+	 * @param x
+	 *            the variable to be removed
+	 */
+	public void add(Variable x) {
+		int i = x.num;
+		assert pastLimit >= 0 && pasts[pastLimit] == i;
+		// removing from the end of the list of absent elements
+		pastLimit--;
+		// adding to the list of present elements (works only if elements are managed as in a stack)
+		int prev = prevs[i], next = nexts[i];
+		if (prev == -1)
+			first = i;
+		else
+			nexts[prev] = i;
+		if (next == -1)
+			last = i;
+		else
+			prevs[next] = i;
 	}
 
 	public void execute(Consumer<Variable> consumer) {
@@ -196,6 +189,47 @@ public final class FutureVariables implements Iterable<Variable> {
 		for (int cnt = 0, e = first; e != -1; e = nexts[e])
 			t[cnt++] = vars[e];
 		return t;
+	}
+
+	/**********************************************************************************************
+	 * Iterators for future variables; currently not really exploited (because of strong limitations)
+	 *********************************************************************************************/
+
+	private class SimpleIterator implements Iterator<Variable> {
+
+		private int cursor = -1;
+
+		@Override
+		public boolean hasNext() {
+			return cursor != -1;
+		}
+
+		@Override
+		public Variable next() {
+			Variable x = vars[cursor];
+			cursor = nexts[cursor];
+			return x;
+		}
+	}
+
+	private SimpleIterator iterator1 = new SimpleIterator(), iterator2 = new SimpleIterator();
+
+	/**
+	 * Such an iterator can only be used for complete iteration (no break and no return accepted)
+	 */
+	@Override
+	public Iterator<Variable> iterator() {
+		if (iterator1.cursor == -1) {
+			iterator1.cursor = first;
+			return iterator1;
+		}
+		if (iterator2.cursor == -1) {
+			iterator2.cursor = first;
+			return iterator2;
+		}
+		System.out.println("CURSORS=" + iterator1.cursor + " " + iterator2.cursor);
+		Kit.control(false, () -> "Only two nested iterations can only be used for the moment");
+		return null;
 	}
 
 }

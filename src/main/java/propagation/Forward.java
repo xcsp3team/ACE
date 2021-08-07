@@ -7,9 +7,8 @@ import utility.Reflector;
 import variables.Variable;
 
 /**
- * This class gives the description of a forward propagation technique. <br>
- * Such a propagation technique corresponds to a prospective approach which works with unassigned variables. The domains of the unassigned variables can be
- * filtered.
+ * This class gives the description of a forward propagation technique. Such a propagation technique corresponds to a prospective approach which works with
+ * unassigned variables. The domains of the unassigned variables can be filtered.
  * 
  * @author Christophe Lecoutre
  */
@@ -18,7 +17,7 @@ public abstract class Forward extends Propagation {
 	/**
 	 * The reviser object attached to the forward propagation object.
 	 */
-	public Reviser reviser;
+	public final Reviser reviser;
 
 	public Forward(Solver solver) {
 		super(solver);
@@ -31,14 +30,14 @@ public abstract class Forward extends Propagation {
 
 	@Override
 	public boolean runAfterAssignment(Variable x) {
-		assert x.assigned() && queue.size() == 0 : queue.size() + " " + x.assigned(); // (queue.size() == 0 || this instanceof PropagationIsomorphism)
+		assert x.assigned() && queue.isEmpty() : queue.size() + " " + x.assigned(); // (queue.size() == 0 || this instanceof PropagationIsomorphism)
 		queue.add(x);
 		return propagate();
 	}
 
 	@Override
 	public boolean runAfterRefutation(Variable x) {
-		assert !x.assigned() && queue.size() == 0 && x.dom.size() > 0;
+		assert !x.assigned() && queue.isEmpty() && x.dom.size() > 0;
 		queue.add(x);
 		return propagate();
 	}

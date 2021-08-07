@@ -5,9 +5,8 @@ import solver.Solver;
 import variables.Variable;
 
 /**
- * This class gives the description of a backward propagation technique. <br>
- * Such a propagation technique corresponds to a retrospective approach which works with assigned variables. The domains of the unassigned variables are not
- * modified.
+ * This class gives the description of a backward propagation technique. Such a propagation technique corresponds to a retrospective approach which works with
+ * assigned variables. The domains of the unassigned variables are not modified.
  * 
  * @author Christophe Lecoutre
  */
@@ -32,7 +31,7 @@ public abstract class Backward extends Propagation {
 	 *********************************************************************************************/
 
 	/**
-	 * The basic BT algorithm.
+	 * The basic BT (Backtracking) algorithm.
 	 */
 	public static final class BT extends Backward {
 
@@ -51,7 +50,7 @@ public abstract class Backward extends Propagation {
 	}
 
 	/**
-	 * The <i>generate and test</i> algorithm.
+	 * The GT (generate and test) algorithm.
 	 */
 	public static final class GT extends Backward {
 

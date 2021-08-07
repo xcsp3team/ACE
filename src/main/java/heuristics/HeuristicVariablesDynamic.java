@@ -17,7 +17,7 @@ import constraints.Constraint;
 import constraints.global.Sum;
 import constraints.global.Sum.SumSimple;
 import constraints.global.Sum.SumWeighted;
-import interfaces.Observers.ObserverAssignment;
+import interfaces.Observers.ObserverAssignments;
 import interfaces.Observers.ObserverConflicts;
 import interfaces.Observers.ObserverRuns;
 import interfaces.Tags.TagMaximize;
@@ -154,7 +154,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	// ***** Subclasses for Wdeg variants
 	// ************************************************************************
 
-	public static abstract class WdegVariant extends HeuristicVariablesDynamic implements ObserverRuns, ObserverAssignment, ObserverConflicts, TagMaximize {
+	public static abstract class WdegVariant extends HeuristicVariablesDynamic implements ObserverRuns, ObserverAssignments, ObserverConflicts, TagMaximize {
 
 		private int time; // corresponds to the number of times a wipe-out occurred
 		private int[] ctime; // ctime[i] corresponds to the last time a wipe-out occurred for constraint i

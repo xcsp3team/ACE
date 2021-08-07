@@ -600,14 +600,14 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 								}
 								if (nVals < scp.length && collectedVars.size() == nVals && !storer.matrix[a][b]) {
 									storer.add(a, b, problem.solver.depth());
-									int nValuesBefore = problem.nValuesRemoved;
+									int nValuesBefore = problem.nValueRemovals;
 									for (int i = futvars.limit; i >= 0; i--) {
 										int y = futvars.dense[i];
 										if (!collectedVars.contains(y)) // if outside the hall set
 											if (scp[y].dom.size() > 1 && remove(scp[y].dom, a, b) == false)
 												return false;
 									}
-									int nRemoved = problem.nValuesRemoved - nValuesBefore;
+									int nRemoved = problem.nValueRemovals - nValuesBefore;
 								}
 							}
 						}
@@ -630,14 +630,14 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 									}
 									if (nVals < scp.length && collectedVars.size() == nVals && !storer.matrix[a][b]) {
 										storer.add(a, b, problem.solver.depth());
-										int nValuesBefore = problem.nValuesRemoved;
+										int nValuesBefore = problem.nValueRemovals;
 										for (int i = futvars.limit; i >= 0; i--) {
 											int y = futvars.dense[i];
 											if (!collectedVars.contains(y)) // if outside the hall set
 												if (scp[y].dom.size() > 1 && remove(scp[y].dom, a, b) == false)
 													return false;
 										}
-										int nRemoved = problem.nValuesRemoved - nValuesBefore;
+										int nRemoved = problem.nValueRemovals - nValuesBefore;
 									}
 								}
 							}
@@ -674,14 +674,14 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 								}
 								if (nVals < scp.length && collectedVars.size() == nVals && !storer.matrix[a][b]) {
 									storer.add(a, b, problem.solver.depth());
-									int nValuesBefore = problem.nValuesRemoved;
+									int nValuesBefore = problem.nValueRemovals;
 									for (int i = futvars.limit; i >= 0; i--) {
 										int y = futvars.dense[i];
 										if (!collectedVars.contains(y)) // if outside the hall set
 											if (scp[y].dom.size() > 1 && remove(scp[y].dom, a, b) == false)
 												return false;
 									}
-									int nRemoved = problem.nValuesRemoved - nValuesBefore;
+									int nRemoved = problem.nValueRemovals - nValuesBefore;
 								}
 
 							}
@@ -706,14 +706,14 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 									}
 									if (nVals < scp.length && collectedVars.size() == nVals && !storer.matrix[a][b]) {
 										storer.add(a, b, problem.solver.depth());
-										int nValuesBefore = problem.nValuesRemoved;
+										int nValuesBefore = problem.nValueRemovals;
 										for (int i = futvars.limit; i >= 0; i--) {
 											int y = futvars.dense[i];
 											if (!collectedVars.contains(y)) // if outside the hall set
 												if (scp[y].dom.size() > 1 && remove(scp[y].dom, a, b) == false)
 													return false;
 										}
-										int nRemoved = problem.nValuesRemoved - nValuesBefore;
+										int nRemoved = problem.nValueRemovals - nValuesBefore;
 									}
 								}
 							}

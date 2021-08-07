@@ -52,7 +52,16 @@ public interface Observers {
 		}
 	}
 
-	interface ObserverAssignment {
+	interface ObserverDecisions {
+
+		default void beforePositiveDecision(Variable x, int a) { // just before assignment
+		}
+
+		default void beforeNegativeDecision(Variable x, int a) { // just before refutation
+		}
+	}
+
+	interface ObserverAssignments {
 
 		void afterAssignment(Variable x, int a);
 

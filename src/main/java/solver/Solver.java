@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -31,9 +30,10 @@ import constraints.Constraint;
 import constraints.Constraint.CtrGlobal;
 import heuristics.HeuristicValuesDynamic.Bivs;
 import heuristics.HeuristicVariables;
-import interfaces.Observers.ObserverAssignment;
+import interfaces.Observers.ObserverAssignments;
 import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
 import interfaces.Observers.ObserverConflicts;
+import interfaces.Observers.ObserverDecisions;
 import interfaces.Observers.ObserverRuns;
 import interfaces.Observers.ObserverSearch;
 import learning.IpsRecorder;
@@ -237,65 +237,58 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		}
 	}
 
-	public final class Proofer {
-		private final boolean active;
+	public final class Proofer implements ObserverDecisions {
 
 		public final boolean[][] proofVariables;
 
-		public Proofer(IpsRecorder recorder) {
-			this.active = recorder != null && ipsRecorder.reductionOperator.enablePElimination();
-			this.proofVariables = this.active ? new boolean[problem.variables.length + 1][problem.variables.length] : null;
+		public Proofer() {
+			this.proofVariables = new boolean[problem.variables.length + 1][problem.variables.length];
 		}
 
 		public void updateProof(Constraint c) {
-			if (active)
-				for (Variable x : c.scp)
-					proofVariables[depth()][x.num] = true;
+			for (Variable x : c.scp)
+				proofVariables[depth()][x.num] = true;
 		}
 
 		public void updateProof(int[] nums) {
-			if (active)
-				for (int num : nums)
-					proofVariables[depth()][num] = true;
+			for (int num : nums)
+				proofVariables[depth()][num] = true;
 		}
 
 		public void updateProofAll() {
-			if (active)
-				Arrays.fill(proofVariables[depth()], true);
+			Arrays.fill(proofVariables[depth()], true);
 		}
 
-		public void reset() {
-			if (active)
-				Arrays.fill(proofVariables[depth()], false);
+		@Override
+		public void beforePositiveDecision(Variable x, int a) { // reset
+			Arrays.fill(proofVariables[depth() + 1], false); // +1 because the assignment has not yet been made
 		}
 
-		public void recopy() {
-			if (active) {
-				int d = depth();
-				for (int i = problem.variables.length - 1; i >= 0; i--)
-					if (proofVariables[d + 1][i])
-						proofVariables[d][i] = true;
-			}
+		@Override
+		public void beforeNegativeDecision(Variable x, int a) { // recopy
+			int d = depth();
+			for (int i = problem.variables.length - 1; i >= 0; i--)
+				if (proofVariables[d + 1][i])
+					proofVariables[d][i] = true;
 		}
+
 	}
 
 	/**********************************************************************************************
 	 * Intern class Tracer
 	 *********************************************************************************************/
 
-	public final class Tracer {
-		private boolean active;
+	public final class Tracer implements ObserverDecisions {
 		private int minDepthLimit, maxDepthLimit;
 
 		private Tracer(String s) {
-			active = s.length() != 0;
-			StringTokenizer st = active && s.contains("-") ? new StringTokenizer(s, "-") : null;
+			StringTokenizer st = s.contains("-") ? new StringTokenizer(s, "-") : null;
 			minDepthLimit = st != null && st.hasMoreTokens() ? Integer.parseInt(st.nextToken()) : Integer.MIN_VALUE;
 			maxDepthLimit = st != null && st.hasMoreTokens() ? Integer.parseInt(st.nextToken()) : Integer.MAX_VALUE;
 		}
 
 		private boolean canCurrentlyPrint() {
-			return active && !propagation.performingProperSearch && minDepthLimit <= depth() && depth() <= maxDepthLimit;
+			return !propagation.performingProperSearch && minDepthLimit <= depth() && depth() <= maxDepthLimit;
 		}
 
 		public void onBacktrack() {
@@ -303,13 +296,15 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 				log.fine("        Backtrack ");
 		}
 
-		public void onAssignment(Variable x, int a) {
+		@Override
+		public void beforePositiveDecision(Variable x, int a) {
 			if (canCurrentlyPrint())
 				log.fine("At " + depth() + ", " + x + " = " + x.dom.toVal(a) + (x.dom.indexesMatchValues() ? "" : " (index " + a + ") ")
 						+ (x.dom.size() == 1 ? " singleton" : ""));
 		}
 
-		public void onRefutation(Variable x, int a) {
+		@Override
+		public void beforeNegativeDecision(Variable x, int a) {
 			if (canCurrentlyPrint())
 				log.fine("At " + depth() + ", " + x + " != " + x.dom.toVal(a));
 		}
@@ -321,11 +316,13 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 
 	public final List<ObserverSearch> observersSearch;
 
-	public List<ObserverRuns> observersRuns;
+	public final List<ObserverRuns> observersRuns;
 
-	public List<ObserverAssignment> observersAssignment;
+	public final List<ObserverAssignments> observersAssignment;
 
-	public List<ObserverConflicts> observersConflicts;
+	public List<ObserverDecisions> observersDecisions;
+
+	public final List<ObserverConflicts> observersConflicts;
 
 	public int stackVariable(Variable x) {
 		return stackedVariables.push(x);
@@ -337,6 +334,14 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		Stream.of(problem.constraints).filter(c -> c instanceof ObserverBacktrackingSystematic).forEach(c -> list.add((ObserverBacktrackingSystematic) c));
 		if (propagation instanceof ObserverBacktrackingSystematic)
 			list.add((ObserverBacktrackingSystematic) propagation);
+		return list;
+	}
+
+	private List<ObserverSearch> collectObserversSearch() {
+		List<ObserverSearch> list = new ArrayList<>();
+		Stream.of(problem.constraints).filter(c -> c instanceof ObserverSearch).forEach(c -> list.add((ObserverSearch) c));
+		list.add(head.output);
+		list.add(stats);
 		return list;
 	}
 
@@ -355,14 +360,26 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		return list;
 	}
 
-	protected List<ObserverAssignment> collectObserversAssignment() {
-		List<ObserverAssignment> list = new ArrayList<>();
-		if (heuristic instanceof ObserverAssignment)
-			list.add((ObserverAssignment) heuristic);
+	protected List<ObserverAssignments> collectObserversAssignments() {
+		List<ObserverAssignments> list = new ArrayList<>();
+		if (heuristic instanceof ObserverAssignments)
+			list.add((ObserverAssignments) heuristic);
 		return list;
 	}
 
-	protected List<ObserverConflicts> collectObserversPropagation() {
+	protected List<ObserverDecisions> collectObserversDecisions() {
+		List<ObserverDecisions> list = new ArrayList<>();
+		Stream.of(this, tracer, stats, lastConflict, proofer).filter(o -> o instanceof ObserverDecisions).forEach(o -> list.add((ObserverDecisions) o));
+		// if (tracer != null)
+		// list.add(tracer);
+		// list.add(stats);
+		// list.add(lastConflict);
+		// if (proofer != null)
+		// list.add(proofer);
+		return list;
+	}
+
+	protected List<ObserverConflicts> collectObserversConflicts() {
 		List<ObserverConflicts> list = new ArrayList<>();
 		if (heuristic instanceof ObserverConflicts)
 			list.add((ObserverConflicts) heuristic);
@@ -449,7 +466,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 	}
 
 	public void reset() { // called by very special objects (for example, when extracting a MUC)
-		Kit.control(futVars.nDiscarded() == 0);
+		Kit.control(futVars.nPast() == 0);
 		// Kit.control(!(propagation instanceof TagBinaryRelationFiltering), () -> "for the moment");
 		propagation.reset();
 		restarter.reset();
@@ -459,28 +476,25 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		// if (!(heuristicVars instanceof HeuristicVariablesConflictBased) || !preserveWeightedDegrees)
 		// heuristicVars.reset();
 		heuristic.setPriorityVars(problem.priorityVars, 0);
-		lastConflict.beforeRun();
+		// lastConflict.beforeRun();
 		if (nogoodRecorder != null)
 			nogoodRecorder.reset();
 		Kit.control(ipsRecorder == null);
 		Kit.control(stackedVariables.top == -1, () -> "Top= " + stackedVariables.top);
 		stats = new StatisticsBacktrack(this);
-		Kit.control(!proofer.active);
+		Kit.control(proofer == null);
 	}
 
 	public Solver(Head head) {
 		this.head = head;
 		this.problem = head.problem;
 		this.problem.solver = (Solver) this;
-		this.futVars = new FutureVariables(problem.variables);
+		this.futVars = new FutureVariables(this);
 		this.solutions = new Solutions(this, head.control.general.nSearchedSolutions); // build solutionManager before propagation
 		this.propagation = Propagation.buildFor(this); // may be null
 		if (!head.control.propagation.useAuxiliaryQueues)
 			Stream.of(problem.constraints).forEach(c -> c.filteringComplexity = 0);
 		this.restarter = Restarter.buildFor(this);
-		this.observersSearch = Stream.of(problem.constraints).filter(c -> c instanceof ObserverSearch).map(c -> (ObserverSearch) c)
-				.collect(Collectors.toCollection(ArrayList::new));
-		observersSearch.add(head.output);
 
 		this.decisions = new Decisions(this);
 		this.heuristic = HeuristicVariables.buildFor(this);
@@ -489,23 +503,24 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 
 		// System.out.println(Stream.of(problem.variables).filter(x -> x.heuristic instanceof Bivs).count());
 
-		this.lastConflict = new LastConflict(this, head.control.varh.lc);
+		this.lastConflict = head.control.varh.lc > 0 ? new LastConflict(this, head.control.varh.lc) : null;
 		this.nogoodRecorder = NogoodRecorder.buildFor(this); // may be null
 		this.ipsRecorder = IpsRecorder.buildFor(this); // may be null
-		this.proofer = new Proofer(ipsRecorder);
+		this.proofer = ipsRecorder != null && ipsRecorder.reductionOperator.enablePElimination() ? new Proofer() : null;
+		this.tracer = head.control.general.trace.length() != 0 ? new Tracer(head.control.general.trace) : null;
+		this.stats = new StatisticsBacktrack(this);
 
 		int nLevels = problem.variables.length + 1;
 		int size = Stream.of(problem.variables).mapToInt(x -> x.dom.initSize()).reduce(0, (sum, domSize) -> sum + Math.min(nLevels, domSize));
 		this.stackedVariables = new StackedVariables(size + nLevels);
 		this.entailed = new SetSparseReversible(problem.constraints.length, nLevels, false);
+
 		this.observersBacktrackingSystematic = collectObserversBacktrackingSystematic();
 		this.observersRuns = collectObserversRuns();
-		this.observersAssignment = collectObserversAssignment();
-		this.observersConflicts = collectObserversPropagation();
-
-		this.tracer = new Tracer(head.control.general.trace);
-		this.stats = new StatisticsBacktrack(this);
-		observersSearch.add(0, this.stats); // this list is initialized in the super-class
+		this.observersAssignment = collectObserversAssignments();
+		this.observersDecisions = collectObserversDecisions();
+		this.observersConflicts = collectObserversConflicts();
+		this.observersSearch = collectObserversSearch();
 
 		this.runProgressSaver = head.control.valh.runProgressSaving ? new RunProgressSaver() : null;
 		this.warmStarter = head.control.valh.warmStart.length() > 0 ? new WarmStarter(head.control.valh.warmStart) : null;
@@ -514,7 +529,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 	}
 
 	public int depth() {
-		return futVars.nDiscarded();
+		return futVars.nPast();
 	}
 
 	public void entail(Constraint c) {
@@ -530,20 +545,20 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		assert !x.assigned();
 
 		stats.nAssignments++;
-		futVars.add(x);
+		futVars.remove(x);
 		x.assign(a);
 		decisions.addPositiveDecision(x, a);
-		for (ObserverAssignment obs : observersAssignment)
+		for (ObserverAssignments obs : observersAssignment)
 			obs.afterAssignment(x, a);
 	}
 
 	public final void backtrack(Variable x) { // should we call it unassign or retract instead?
 		// System.out.println("back " + x + x.dom.uniqueValue());
 		int depthBeforeBacktrack = depth();
-		futVars.remove(x);
+		futVars.add(x);
 		x.unassign();
 		decisions.delPositiveDecision(x);
-		for (ObserverAssignment obs : observersAssignment)
+		for (ObserverAssignments obs : observersAssignment)
 			obs.afterUnassignment(x);
 		for (ObserverBacktrackingSystematic obs : observersBacktrackingSystematic)
 			obs.restoreBefore(depthBeforeBacktrack);
@@ -574,12 +589,9 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 				}
 			}
 		}
-		tracer.onAssignment(x, a);
-		stats.onAssignment(x);
-		lastConflict.onAssignment(x);
+		for (ObserverDecisions observer : observersDecisions)
+			observer.beforePositiveDecision(x, a);
 		assign(x, a);
-		proofer.reset();
-
 		boolean consistent = propagation.runAfterAssignment(x) && (ipsRecorder == null || ipsRecorder.dealWhenOpeningNode());
 		if (!consistent) {
 			x.failed[a]++;
@@ -603,11 +615,12 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		if (runProgressSaver != null)
 			runProgressSaver.manageEmptyDomainBeforeBacktracking();
 
-		tracer.onBacktrack();
+		if (tracer != null)
+			tracer.onBacktrack();
 		stats.nBacktracks++;
 		if (ipsRecorder != null)
 			ipsRecorder.dealWhenClosingNode();
-		if (futVars.nDiscarded() == 0)
+		if (futVars.nPast() == 0)
 			stopping = EStopping.FULL_EXPLORATION;
 	}
 
@@ -615,11 +628,9 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		if (x.dom instanceof DomainInfinite)
 			return false;
 
-		tracer.onRefutation(x, a);
-		stats.onRefutation(x);
-		lastConflict.onRefutation(x, a);
+		for (ObserverDecisions observer : observersDecisions)
+			observer.beforeNegativeDecision(x, a);
 		decisions.addNegativeDecision(x, a);
-		proofer.recopy();
 		x.dom.removeElementary(a);
 		boolean consistent = x.dom.size() > 0;
 		if (consistent) {

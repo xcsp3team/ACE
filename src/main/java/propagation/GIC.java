@@ -73,9 +73,9 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 	protected void updateSTRStructures() {
 		for (Constraint c : solver.problem.constraints)
 			if (c instanceof STR1) { // || constraint instanceof AllDifferent) {
-				int bef = solver.problem.nValuesRemoved;
+				int bef = solver.problem.nValueRemovals;
 				((STR1) c).runPropagator(null); // to update tables
-				Kit.control(solver.problem.nValuesRemoved == bef);
+				Kit.control(solver.problem.nValueRemovals == bef);
 			}
 	}
 
@@ -556,7 +556,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 					decisonsIdxs = new int[nbDecisionsToReplay];
 
 					int cnt = 0;
-					while (solver.futVars.nDiscarded() > 0) {
+					while (solver.futVars.nPast() > 0) {
 						Variable x = solver.futVars.lastPast();
 						int a = x.dom.single();
 						solver.backtrack(x);
@@ -589,7 +589,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 
 					// initializing structures
 					int cnt = 0;
-					while (solver.futVars.nDiscarded() > 0) { // lastPast(); x != null; x = solver.futVars.prevPast(x)) {
+					while (solver.futVars.nPast() > 0) { // lastPast(); x != null; x = solver.futVars.prevPast(x)) {
 						Variable x = solver.futVars.lastPast();
 						int a = x.dom.single();
 						buildIntervalsFor(x, true);

@@ -132,7 +132,8 @@ public final class NogoodRecorder {
 	}
 
 	public boolean checkWatchesOf(Variable x, int a, boolean positive) {
-		return positive ? checkWatchesOf(pws[x.num], a, decisions.positiveDecisionFor(x.num, a)) : checkWatchesOf(nws[x.num], a, decisions.negativeDecisionFor(x.num, a));
+		return positive ? checkWatchesOf(pws[x.num], a, decisions.positiveDecisionFor(x.num, a))
+				: checkWatchesOf(nws[x.num], a, decisions.negativeDecisionFor(x.num, a));
 	}
 
 	public boolean runPropagator(Variable x) {
@@ -177,7 +178,6 @@ public final class NogoodRecorder {
 		this.nws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
 		this.tmp = new int[solver.problem.variables.length];
 		this.symmetryHandler = settings.nogood == ELearningNogood.RST_SYM ? new SymmetryHandler(solver.problem.variables.length) : null;
-		solver.propagation.queue.nogoodRecorder = this;
 	}
 
 	private void addWatchFor(Nogood nogood, int position, boolean firstWatch) {

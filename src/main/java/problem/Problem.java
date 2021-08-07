@@ -439,7 +439,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	 */
 	public Symbolic symbolic = new Symbolic();
 
-	public int nValuesRemoved; // sum over all variable domains
+	public int nValueRemovals; // sum over all variable domains
 
 	/**
 	 * The list of generators of an identified symmetry group of variables. Maybe, empty.
@@ -525,7 +525,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		Stream.of(constraints).forEach(c -> c.reset());
 		Stream.of(constraints).forEach(c -> c.ignored = false);
 		// stuff = new ProblemStuff(this); // TODO reset or building a new object ?
-		nValuesRemoved = 0;
+		nValueRemovals = 0;
 		if (settings.verbose > 0)
 			log.info("Reset of problem instance");
 	}
@@ -540,7 +540,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			if (!(constraints[i].ignored = !presentConstraints[i]))
 				constraints[i].reset();
 		// stuff = new ProblemStuff(this); // TODO reset or building a new object ?
-		nValuesRemoved = 0;
+		nValueRemovals = 0;
 		if (settings.verbose > 0)
 			log.info("Reduction to (#V=" + priorityVars.length + ",#C=" + Kit.countIn(true, presentConstraints) + ")");
 	}

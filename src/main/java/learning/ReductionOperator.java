@@ -88,7 +88,7 @@ public final class ReductionOperator {
 	public ReductionOperator(IpsRecorder recorder) {
 		this.recorder = recorder;
 		Solver solver = recorder.solver;
-		isGACGuaranteed = solver.propagation.getClass() == GAC.class && Constraint.isGuaranteedGAC(solver.problem.constraints);
+		isGACGuaranteed = solver.propagation.getClass() == GAC.class && ((GAC) solver.propagation).guaranteed;
 		binaryNetwork = solver.problem.features.maxCtrArity() == 2;
 		tmpVariable = new int[solver.problem.variables.length];
 		parseReductionMode(recorder.solver.head.control.learning.stateOperators);
@@ -202,7 +202,7 @@ public final class ReductionOperator {
 				} else
 					nbPEliminableVariables++;
 		} else if (solver.problem.features.maxCtrArity() == 2) {
-			nbSEliminableVariables += solver.futVars.nDiscarded();
+			nbSEliminableVariables += solver.futVars.nPast();
 			for (Variable x : solver.futVars) {
 				if (!canEliminate(x)) {
 					tmpVariable[selectionLimit++] = x.num;
@@ -239,7 +239,7 @@ public final class ReductionOperator {
 		Solver solver = recorder.solver;
 		int selectionLimit = 0;
 		if (solver.problem.features.maxCtrArity() == 2) {
-			nbSEliminableVariables += solver.futVars.nDiscarded();
+			nbSEliminableVariables += solver.futVars.nPast();
 			for (Variable x : solver.futVars) {
 				if (x.dom.size() == 1 && canEliminateSingleton(x))
 					tmpVariable[selectionLimit++] = x.num;

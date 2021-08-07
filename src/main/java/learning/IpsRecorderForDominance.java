@@ -63,8 +63,6 @@ public final class IpsRecorderForDominance extends IpsRecorder {
 			topBeforeRefutations = new int[offsets.length + 1]; // offsets.length is equal to the nb of variables
 		else
 			waitingNogoods = new Ips[offsets.length + 1];
-
-		solver.propagation.queue.setStateDominanceManager(this);
 	}
 
 	private void insertIps(Ips ips, int accessKey) {
@@ -149,7 +147,8 @@ public final class IpsRecorderForDominance extends IpsRecorder {
 		long[] domainRepresentation = ips.binDoms[pos];
 		Domain dom = x.dom;
 		if (x.assigned() && Bit.isPresent(domainRepresentation, dom.first())) {
-			solver.proofer.updateProof(ips.nums);
+			if (solver.proofer != null)
+				solver.proofer.updateProof(ips.nums);
 			nWipeouts++;
 			return false;
 		}
@@ -160,7 +159,8 @@ public final class IpsRecorderForDominance extends IpsRecorder {
 				dom.removeElementary(a);
 		int nRemovals = sizeBefore - dom.size();
 		if (nRemovals > 0) {
-			solver.proofer.updateProof(ips.nums);
+			if (solver.proofer != null)
+				solver.proofer.updateProof(ips.nums);
 			if (dom.size() == 0)
 				nWipeouts++;
 			else
@@ -180,7 +180,8 @@ public final class IpsRecorderForDominance extends IpsRecorder {
 					return false;
 			} else {
 				if (!canFindAWatch(ips, -1)) {
-					solver.proofer.updateProof(ips.nums);
+					if (solver.proofer != null)
+						solver.proofer.updateProof(ips.nums);
 					nWipeouts++;
 					return false;
 				}
