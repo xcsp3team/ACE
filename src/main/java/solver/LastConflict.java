@@ -10,38 +10,89 @@ import variables.Variable;
 
 /**
  * This object implements last-conflict reasoning (lc). <br />
- * See Reasoning from last conflict(s) in constraint programming. Artif. Intell. 173(18): 1592-1614 (2009) by C. Lecoutre, L. Sais, S. Tabary, and V. Vidal:
+ * See "Reasoning from last conflict(s) in constraint programming". Artif. Intell. 173(18): 1592-1614 (2009) by C. Lecoutre, L. Sais, S. Tabary, and V. Vidal.
  * 
  * @author Christophe Lecoutre
  */
 public final class LastConflict implements ObserverRuns, ObserverDecisions {
 
+	/**********************************************************************************************
+	 * Implementing interfaces
+	 *********************************************************************************************/
+
 	@Override
 	public void beforeRun() {
-		nVars = 0;
+		storeSize = 0;
 		candidate = null;
 	}
 
 	@Override
 	public void afterRun() {
-		if (k > 0)
-			statistics.display();
+		statistics.display();
 	}
 
+	@Override
+	public final void beforePositiveDecision(Variable x, int a) {
+		if (storeSize == 0)
+			lastAssigned = x;
+	}
+
+	@Override
+	public void beforeNegativeDecision(Variable x, int a) {
+		// is x the candidate for next insertion (after potentially lastAssigned)?
+		if (storeSize == 0) {
+			if (x != lastAssigned)
+				candidate = x;
+		} else if (storeSize < k) {
+			for (int i = 0; i < storeSize; i++)
+				if (store[i] == x)
+					return;
+			candidate = x;
+		}
+	}
+
+	/**********************************************************************************************
+	 * Class members
+	 *********************************************************************************************/
+
+	/**
+	 * The solver to which lc is attached
+	 */
 	private Solver solver;
 
-	private int k; // k is the parameter of lc (necessarily > 0)
+	/**
+	 * The main parameter of lc: the maximum number of variables that can be recorded when reasoning with lc.
+	 */
+	private int k;
 
-	private Variable[] vars; // recorded variables when reasoning with lc
+	/**
+	 * The recorded variables, at indexes from 0 to storeSize (excluded)
+	 */
+	private Variable[] store;
 
-	private int nVars; // number of recorded variables
+	/**
+	 * The number of recorded variables, to be used when reasoning with lc
+	 */
+	private int storeSize;
 
+	/**
+	 * The last variable explicitly assigned by the solver
+	 */
 	private Variable lastAssigned;
 
-	private Variable candidate; // candidate for last reasoning
+	/**
+	 * Candidate for last reasoning
+	 */
+	private Variable candidate;
 
+	/**
+	 * The object used to record some statistics about the behavior of lc
+	 */
 	private Statistics statistics;
 
+	/**
+	 * The intern class used to record some statistics about lc
+	 */
 	private class Statistics {
 		private int startLevel;
 		private int[] cnts; // cnts[i] is the number of times we stop reasoning at level i
@@ -53,71 +104,65 @@ public final class LastConflict implements ObserverRuns, ObserverDecisions {
 		}
 
 		private void update(int offset) {
-			cnts[nVars]++;
-			jmps[nVars] += (startLevel - solver.depth() + offset);
+			cnts[storeSize]++;
+			jmps[storeSize] += (startLevel - solver.depth() + offset);
 		}
 
-		public void display() {
-			if (nVars > 0)
+		private void display() {
+			if (storeSize > 0)
 				update(0); // last update to be done since not taken into account when backtracking to level 0
-			String s = IntStream.range(1, cnts.length)
+			String s = IntStream.range(1, k + 1)
 					.mapToObj(i -> i + ":(#=" + cnts[i] + (cnts[i] == 0 ? "" : ",avg=" + Kit.decimalFormat.format(jmps[i] / (double) cnts[i])))
 					.collect(Collectors.joining(")  "));
 			Kit.log.info("last-conflicts  " + s + ")\n");
 		}
 	}
 
+	/**
+	 * Builds an object implementing last-conflict reasoning (lc)
+	 * 
+	 * @param solver
+	 *            the solver to which lc is attached
+	 * @param k
+	 *            the level (maximum number of variables that can enter the store of lc) of lc
+	 */
 	public LastConflict(Solver solver, int k) {
 		this.solver = solver;
 		this.k = k;
-		this.vars = new Variable[k];
+		this.store = new Variable[k];
 		this.statistics = new Statistics(k);
 		Kit.control(k > 0);
 	}
 
-	public Variable lastConflictPriorityVar() {
+	/**
+	 * Returns the variable identified as priority by lc, or null
+	 * 
+	 * @return the variable identified as priority by lc, or null
+	 */
+	public Variable priorityVariable() {
 		// entering last reasoning mode?
-		if (nVars == 0) {
+		if (storeSize == 0) {
 			if (lastAssigned == null || lastAssigned.assigned())
 				return null;
 			statistics.startLevel = solver.depth() + 1;
-			vars[nVars++] = lastAssigned;
+			store[storeSize++] = lastAssigned;
 			return lastAssigned;
 		}
 		// using one of the recorded variables?
-		for (int i = 0; i < nVars; i++)
-			if (!vars[i].assigned())
-				return vars[i];
+		for (int i = 0; i < storeSize; i++)
+			if (!store[i].assigned())
+				return store[i];
 		// leaving last reasoning mode?
-		if (nVars == k || candidate == null || candidate.assigned()) {
-			statistics.update(nVars);
-			nVars = 0;
+		if (storeSize == k || candidate == null || candidate.assigned()) {
+			statistics.update(storeSize);
+			storeSize = 0;
 			candidate = null;
 			return null;
 		}
 		// recording the candidate
-		vars[nVars++] = candidate;
+		store[storeSize++] = candidate;
 		candidate = null;
-		return vars[nVars - 1];
+		return store[storeSize - 1];
 	}
 
-	@Override
-	public final void beforePositiveDecision(Variable x, int a) {
-		if (nVars == 0)
-			lastAssigned = x;
-	}
-
-	@Override
-	public void beforeNegativeDecision(Variable x, int a) {
-		// is variable the candidate for next insertion (after potentially lastAssigned)
-		if (nVars == 0) {
-			if (x != lastAssigned)
-				candidate = x;
-		} else if (nVars < k) {
-			for (int i = 0; i < nVars; i++)
-				if (vars[i] == x)
-					return;
-			candidate = x;
-		}
-	}
 }

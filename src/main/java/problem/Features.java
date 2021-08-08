@@ -59,8 +59,6 @@ import constraints.intension.Intension;
 import dashboard.Control.SettingVars;
 import dashboard.Input;
 import dashboard.Output;
-import problem.Remodeler.DeducingAllDifferent;
-import problem.Remodeler.DeducingAutomorphism;
 import utility.Kit;
 import variables.Variable;
 
@@ -276,8 +274,8 @@ public final class Features {
 
 	public int nSharedBinaryRepresentations;
 
-	private Map<String, String> mapForAutomorphismIdentification = new LinkedHashMap<>();
-	private Map<String, String> mapForAllDifferentIdentification = new LinkedHashMap<>();
+	Map<String, String> mapForAutomorphismIdentification = new LinkedHashMap<>();
+	Map<String, String> mapForAllDifferentIdentification = new LinkedHashMap<>();
 
 	public ExternFunctionArity1 externFunctionArity1;
 	public ExternFunctionArity2 externFunctionArity2;
@@ -332,14 +330,6 @@ public final class Features {
 
 	public boolean hasSharedConflictsStructures() {
 		return Stream.of(problem.constraints).anyMatch(c -> c.conflictsStructure != null && c.conflictsStructure.firstRegisteredCtr() != c);
-	}
-
-	protected void addToMapForAutomorphismIdentification(DeducingAutomorphism automorphismIdentification) {
-		automorphismIdentification.putInMap(mapForAutomorphismIdentification);
-	}
-
-	protected void addToMapForAllDifferentIdentification(DeducingAllDifferent dad) {
-		mapForAllDifferentIdentification.put(DeducingAllDifferent.N_CLIQUES, dad.nBuiltCliques + "");
 	}
 
 	/**********************************************************************************************

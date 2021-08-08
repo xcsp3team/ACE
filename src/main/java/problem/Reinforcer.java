@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -30,18 +31,18 @@ import variables.Domain;
 import variables.Variable;
 import variables.Variable.VariableInteger;
 
-public class Remodeler {
+public class Reinforcer {
 
 	/*************************************************************************
-	 ***** Interfaces
+	 ***** Class for inferring AllDifferent constraints
 	 *************************************************************************/
 
-	public static final class DeducingAllDifferent {
+	public static final class ReinforcerAllDifferent {
 		public static final String N_CLIQUES = "nCliques";
 
 		private Problem problem;
 
-		public int nBuiltCliques;
+		public final List<VariableInteger[]> cliques;
 
 		private int[][] computeIrreflexivesNeigbours(Variable[] variables, List<Constraint> constraints) {
 			Set<Integer>[] neighbours = Stream.of(variables).map(x -> new TreeSet<>()).toArray(TreeSet[]::new);
@@ -95,7 +96,7 @@ public class Remodeler {
 				}
 				for (int i = 0; i <= set.limit; i++)
 					levels[set.dense[i]] = 0;
-
+				// System.out.println("size = " + cliqueSize);
 				if (cliqueSize <= sLimit)
 					break;
 				VariableInteger[] scp = IntStream.range(0, cliqueSize).mapToObj(i -> problem.variables[tmp[i]]).sorted().toArray(VariableInteger[]::new);
@@ -108,21 +109,18 @@ public class Remodeler {
 			return list;
 		}
 
-		public DeducingAllDifferent(Problem problem) {
+		public ReinforcerAllDifferent(Problem problem) {
 			this.problem = problem;
 			int nLimit = problem.head.control.constraints.inferAllDifferentNb, sLimit = problem.head.control.constraints.inferAllDifferentSize;
-			List<VariableInteger[]> list = buildCliques(problem.variables, problem.features.collecting.constraints, nLimit, sLimit);
-			for (VariableInteger[] scp : list)
-				problem.allDifferent(scp);
-			nBuiltCliques = list.size();
+			this.cliques = buildCliques(problem.variables, problem.features.collecting.constraints, nLimit, sLimit);
+			problem.features.mapForAllDifferentIdentification.put(ReinforcerAllDifferent.N_CLIQUES, cliques.size() + "");
 		}
 
 		private boolean controlClique(Variable[] scp, List<Constraint> constraints) {
 			for (int i = 0; i < scp.length; i++)
 				for (int j = i + 1; j < scp.length; j++) {
 					Variable x = scp[i], y = scp[j];
-					Kit.control(constraints.stream().anyMatch(c -> c.scp.length == 2 && c.isIrreflexive() && c.involves(x, y)),
-							() -> "not a clique with " + x + " " + y);
+					Kit.control(constraints.stream().anyMatch(c -> c.isIrreflexive() && c.involves(x, y)), "pb clique with " + x + " " + y);
 				}
 			return true;
 		}
@@ -133,10 +131,11 @@ public class Remodeler {
 	}
 
 	/*************************************************************************
-	 ***** Interfaces
+	 ***** Class for inferring symmetry-breaking constraints
 	 *************************************************************************/
 
-	public static final class DeducingAutomorphism {
+	public static final class ReinforcerAutomorphism {
+
 		public static final String N_GENERATORS = "nGenerators";
 		public static final String SYMMETRY_WALL_CLOCK_TIME = "symmetryWckTime";
 
@@ -164,7 +163,7 @@ public class Remodeler {
 
 		private String graphFileName;
 
-		public DeducingAutomorphism(Problem pb) {
+		public ReinforcerAutomorphism(Problem pb) {
 			this.problem = pb;
 		}
 
@@ -431,10 +430,12 @@ public class Remodeler {
 			return buildConstraintsFor(vars, cons);
 		}
 
-		public void putInMap(Map<String, String> map) {
+		public Map<String, String> map() {
+			Map<String, String> map = new LinkedHashMap<>();
 			map.put(N_GENERATORS, generators.size() + "");
 			map.put("nbFusions", nFusions + "");
 			map.put(SYMMETRY_WALL_CLOCK_TIME, stopwatch.wckTimeInSeconds() + "");
+			return map;
 		}
 
 		void displayGenerators() {

@@ -54,7 +54,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				return x;
 		}
 		if (settings.lc > 0) {
-			Variable x = solver.lastConflict.lastConflictPriorityVar();
+			Variable x = solver.lastConflict.priorityVariable();
 			if (x != null) {
 				return x;
 			}
@@ -180,11 +180,9 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void beforeRun() {
-			if (solver.restarter.runMultipleOf(solver.head.control.restarts.varhResetPeriod)
-					|| (solver.restarter.numRun - solver.solutions.lastRun) % solver.head.control.restarts.varhSolResetPeriod == 0) {
+			if (runReset() || (solver.restarter.numRun - solver.solutions.lastRun) % solver.head.control.restarts.varhSolResetPeriod == 0) {
 				System.out.println("    ...resetting weights (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
 				reset();
-				// solver.restarter.nRestartsSinceLastReset = 0;
 			}
 			alpha = ALPHA0;
 			if (settings.weighting == EWeighting.CHS) { // smoothing
@@ -272,8 +270,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			if (b && solver.problem.optimizer != null && solver.problem.optimizer.ctr instanceof Sum) {
 				Sum c = (Sum) solver.problem.optimizer.ctr;
 				int[] coeffs = c instanceof SumSimple ? null : ((SumWeighted) c).coeffs;
-				long[] gaps = IntStream.range(0, c.scp.length).mapToLong(i -> Math.abs((coeffs == null ? 1 : coeffs[i]) * c.scp[i].dom.distance()))
-						.toArray();
+				long[] gaps = IntStream.range(0, c.scp.length).mapToLong(i -> Math.abs((coeffs == null ? 1 : coeffs[i]) * c.scp[i].dom.distance())).toArray();
 				long minGap = LongStream.of(gaps).min().getAsLong();
 				for (int i = 0; i < c.scp.length; i++) {
 					vscores[c.scp[i].num] += 1 + gaps[i] - minGap; // Math.log(1 + gaps[i] - minGap) / Math.log(2);
@@ -378,7 +375,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			super.beforeRun();
-			if (solver.restarter.runMultipleOf(solver.head.control.restarts.varhResetPeriod)) {
+			if (runReset()) {
 				Kit.log.info("Reset of activities");
 				Arrays.fill(activities, 0);
 			}
@@ -410,10 +407,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			super.beforeRun();
-			if (solver.restarter.runMultipleOf(solver.head.control.restarts.varhResetPeriod)) {
+			if (runReset()) {
 				Kit.log.info("Reset of impacts");
-				// for (int i = 0; i < solver.problem.variables.length; i++) impacts[i] = solver.problem.variables[i].getStaticDegree(); // TODO
-				// better init ?
 				Arrays.fill(impacts, 0);
 			}
 		}

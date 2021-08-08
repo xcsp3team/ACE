@@ -190,8 +190,8 @@ import optimization.Optimizer;
 import optimization.Optimizer.OptimizerDecreasing;
 import optimization.Optimizer.OptimizerDichotomic;
 import optimization.Optimizer.OptimizerIncreasing;
-import problem.Remodeler.DeducingAllDifferent;
-import problem.Remodeler.DeducingAutomorphism;
+import problem.Reinforcer.ReinforcerAllDifferent;
+import problem.Reinforcer.ReinforcerAutomorphism;
 import propagation.Forward;
 import solver.Solver;
 import utility.Enums.EExportMode;
@@ -570,15 +570,18 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 			// for (Constraint c : features.collectedCtrsAtInit)
 			// if (Constraint.getSymmetryMatching(c.key) == null)
 			// Constraint.putSymmetryMatching(c.key, c.defineSymmetryMatching());
-			DeducingAutomorphism automorphismIdentification = new DeducingAutomorphism(this);
-			for (Constraint c : automorphismIdentification.buildVariableSymmetriesFor(variables, features.collecting.constraints))
+			ReinforcerAutomorphism reinforcer = new ReinforcerAutomorphism(this);
+			for (Constraint c : reinforcer.buildVariableSymmetriesFor(variables, features.collecting.constraints))
 				post(c);
-			features.addToMapForAutomorphismIdentification(automorphismIdentification);
-			symmetryGroupGenerators.addAll(automorphismIdentification.generators);
+			symmetryGroupGenerators.addAll(reinforcer.generators);
+			features.mapForAutomorphismIdentification = reinforcer.map();
 			features.nAddedCtrs += features.collecting.constraints.size() - nBefore;
 		}
-		if (head.control.constraints.inferAllDifferentNb > 0)
-			features.addToMapForAllDifferentIdentification(new DeducingAllDifferent(this));
+		if (head.control.constraints.inferAllDifferentNb > 0) {
+			ReinforcerAllDifferent reinforcer = new ReinforcerAllDifferent(this);
+			for (Variable[] scp : reinforcer.cliques)
+				allDifferent(scp);
+		}
 	}
 
 	/**

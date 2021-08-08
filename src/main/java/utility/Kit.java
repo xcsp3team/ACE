@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -266,6 +267,16 @@ public final class Kit {
 		for (int[] t : m)
 			Arrays.fill(t, value);
 		return m;
+	}
+
+	// Implementing Fisher–Yates shuffle (see https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle)
+	public static void shuffle(int[] dense, Random random) {
+		for (int i = dense.length - 1; i > 0; i--) {
+			int j = random.nextInt(i + 1);
+			int tmp = dense[i];
+			dense[i] = dense[j];
+			dense[j] = tmp;
+		}
 	}
 
 	public static byte[] range(byte length) {

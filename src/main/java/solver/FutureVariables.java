@@ -58,6 +58,12 @@ public final class FutureVariables implements Iterable<Variable> {
 	 */
 	private int pastLimit;
 
+	/**
+	 * Builds an object to manage past and future variables, i.e, variables that are, or are not, explicitly assigned by the solver
+	 * 
+	 * @param solver
+	 *            the solver to which this object is attached
+	 */
 	public FutureVariables(Solver solver) {
 		this.vars = solver.problem.variables;
 		this.first = 0;
@@ -179,11 +185,22 @@ public final class FutureVariables implements Iterable<Variable> {
 			prevs[next] = i;
 	}
 
+	/**
+	 * Calls the specified function (consumer) on each future variable
+	 * 
+	 * @param consumer
+	 *            a function to be called on each future variable
+	 */
 	public void execute(Consumer<Variable> consumer) {
 		for (int e = first; e != -1; e = nexts[e])
 			consumer.accept(vars[e]);
 	}
 
+	/**
+	 * Returns an array with the current future variables
+	 * 
+	 * @return an array with the current future variables
+	 */
 	public Variable[] toArray() {
 		Variable[] t = new Variable[size()];
 		for (int cnt = 0, e = first; e != -1; e = nexts[e])
@@ -192,7 +209,7 @@ public final class FutureVariables implements Iterable<Variable> {
 	}
 
 	/**********************************************************************************************
-	 * Iterators for future variables; currently not really exploited (because of strong limitations)
+	 * EXPERIMENTAl: iterators for future variables; currently not really exploited (because of strong limitations)
 	 *********************************************************************************************/
 
 	private class SimpleIterator implements Iterator<Variable> {

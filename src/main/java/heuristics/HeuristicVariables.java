@@ -138,7 +138,7 @@ public abstract class HeuristicVariables extends Heuristic {
 			if (nPast < nStrictlyPriorityVars)
 				return priorityVars[nPast];
 			if (settings.lc > 0) {
-				Variable x = solver.lastConflict.lastConflictPriorityVar();
+				Variable x = solver.lastConflict.priorityVariable();
 				if (x != null && Kit.isPresent(x, priorityVars))
 					return x;
 			}
@@ -165,6 +165,16 @@ public abstract class HeuristicVariables extends Heuristic {
 	public final Variable bestVar() {
 		Variable x = bestPriorityVar();
 		return x != null ? x : bestUnpriorityVar();
+	}
+
+	/**
+	 * Returns true if the data structures of the heuristic must be reset (according to the current run)
+	 * 
+	 * @return true if the data structures of the heuristic must be reset
+	 */
+	protected boolean runReset() {
+		int numRun = solver.restarter.numRun;
+		return 0 < numRun && numRun % solver.head.control.restarts.varhResetPeriod == 0;
 	}
 
 	/*************************************************************************

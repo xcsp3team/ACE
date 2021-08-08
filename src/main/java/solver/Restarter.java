@@ -1,20 +1,10 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package solver;
 
-import java.util.Random;
 import java.util.function.Supplier;
 
 import org.xcsp.common.Types.TypeFramework;
 
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
-import dashboard.Control.SettingGeneral;
 import dashboard.Control.SettingRestarts;
 import interfaces.Observers.ObserverRuns;
 import optimization.ObjectiveVariable;
@@ -25,15 +15,25 @@ import variables.Variable;
 
 /**
  * A restarter is used by a solver in order to manage restarts (successive runs from the root node).
+ * 
+ * @author Christophe Lecoutre
  */
 public class Restarter implements ObserverRuns {
 
+	/**
+	 * Builds and returns a restarter object to be attached to the specified solver
+	 * 
+	 * @param solver
+	 *            The solver to which the restarter object must be attached
+	 * @return a restarter object to be attached to the specified solver
+	 */
 	public static Restarter buildFor(Solver solver) {
-		boolean lns = solver.head.control.lns.enabled;
-		if (lns)
-			return new RestarterLNS(solver);
-		return new Restarter(solver);
+		return solver.head.control.lns.enabled ? new RestarterLNS(solver) : new Restarter(solver);
 	}
+
+	/**********************************************************************************************
+	 * Implementing interfaces
+	 *********************************************************************************************/
 
 	private long lubyCutoffFor(long i) {
 		int k = (int) Math.floor(Math.log(i) / Math.log(2)) + 1;
@@ -44,33 +44,35 @@ public class Restarter implements ObserverRuns {
 	@Override
 	public void beforeRun() {
 		numRun++;
-		if ((solver.restarter.numRun - solver.solutions.lastRun) % setting.nRestartsResetPeriod == 0) {
-			// if (nRestartsSinceLastReset == setting.nRestartsResetPeriod) {
-			nRestartsSinceLastReset = 0;
-			baseCutoff = baseCutoff * setting.nRestartsResetCoefficient;
+		if ((numRun - solver.solutions.lastRun) % settings.nRestartsResetPeriod == 0) {
+			nRestartsSinceReset = 0;
+			baseCutoff = baseCutoff * settings.nRestartsResetCoefficient;
 			System.out.println("    ...resetting restart cutoff to " + baseCutoff);
 		}
-		if (forceRootPropagation || (settingsGeneral.framework == TypeFramework.COP && numRun - 1 == solver.solutions.lastRun)
-				|| (solver.head.control.propagation.strongOnlyAtPreprocessing && numRun > 0 && numRun % 60 == 0)) { // TODO hard coding
-			if (solver.propagation.runInitially() == false) // we run propagation if a solution has just been found (since the objective constraint has changed)
+		// we rerun propagation if a solution has just been found (since the objective constraint has changed), or if it must be forced anyway
+		boolean rerunPropagation = forceRootPropagation || (cop && numRun - 1 == solver.solutions.lastRun);
+		if (rerunPropagation || (solver.head.control.propagation.strongOnlyAtPreprocessing && 0 < numRun && numRun % 60 == 0)) { // TODO hard coding
+			if (solver.propagation.runInitially() == false)
 				solver.stopping = EStopping.FULL_EXPLORATION;
 			forceRootPropagation = false;
-			nRestartsSinceLastReset = 0;
+			nRestartsSinceReset = 0;
 		}
 		if (currCutoff != Long.MAX_VALUE) {
-			long offset = setting.luby ? lubyCutoffFor(nRestartsSinceLastReset + 1) * 150
-					: (long) (baseCutoff * Math.pow(setting.factor, nRestartsSinceLastReset));
+			long offset = settings.luby ? lubyCutoffFor(nRestartsSinceReset + 1) * 150 : (long) (baseCutoff * Math.pow(settings.factor, nRestartsSinceReset));
 			currCutoff = measureSupplier.get() + offset;
 		}
-		nRestartsSinceLastReset++;
-		// System.out.println(solver.nogoodRecorder);
+		nRestartsSinceReset++;
 	}
 
 	@Override
 	public void afterRun() {
-		if (settingsGeneral.framework == TypeFramework.COP)
+		if (cop)
 			solver.problem.optimizer.afterRun();
 	}
+
+	/**********************************************************************************************
+	 * Class members
+	 *********************************************************************************************/
 
 	/**
 	 * The solver to which the restarter is attached.
@@ -78,14 +80,17 @@ public class Restarter implements ObserverRuns {
 	public Solver solver;
 
 	/**
-	 * The settings used for piloting the restarter (redundant field).
+	 * This indicates if the problem is a COP; redundant field introduced for simplicity.
 	 */
-	private SettingRestarts setting;
-
-	protected SettingGeneral settingsGeneral;
+	protected boolean cop;
 
 	/**
-	 * The measure used for handling cutoff values.
+	 * The settings used for piloting the restarter (redundant field).
+	 */
+	private SettingRestarts settings;
+
+	/**
+	 * The measure function used for handling cutoff values
 	 */
 	public final Supplier<Long> measureSupplier;
 
@@ -95,26 +100,42 @@ public class Restarter implements ObserverRuns {
 	public int numRun = -1;
 
 	/**
-	 * The base cutoff, and the current cutoff value as this value can evolve between successive runs.
+	 * The base cutoff, as initially specified.
 	 */
-	public long baseCutoff, currCutoff;
+	private long baseCutoff;
 
-	public int nRestartsSinceLastReset;
+	/**
+	 * The current value of the cutoff (note that this value can evolve between successive runs).
+	 */
+	public long currCutoff;
+
+	/**
+	 * Records the number of restarts made since the last call to the method reset
+	 */
+	private int nRestartsSinceReset;
 
 	/**
 	 * Set to true when running propagation from scratch at the root node must be made when a restart occurs.
 	 */
 	public boolean forceRootPropagation;
 
+	/**
+	 * Resets the object. This is usually not used.
+	 */
 	public void reset() {
 		numRun = -1;
-		currCutoff = baseCutoff = setting.cutoff;
-		nRestartsSinceLastReset = 0;
+		currCutoff = baseCutoff = settings.cutoff;
+		nRestartsSinceReset = 0;
 	}
 
+	/**
+	 * Returns the method (supplier) to be used for computing the current measure
+	 * 
+	 * @return the method (supplier) to be used for computing the current measure
+	 */
 	private Supplier<Long> measureSupplier() {
 		Solver sb = solver != null ? solver : null;
-		switch (setting.measure) {
+		switch (settings.measure) {
 		case FAILED:
 			return () -> sb.stats.nFailedAssignments;
 		case WRONG:
@@ -128,27 +149,37 @@ public class Restarter implements ObserverRuns {
 		}
 	}
 
+	/**
+	 * Builds a restarter object to be used with the specified solver
+	 * 
+	 * @param solver
+	 *            the solver to which the restarter is attached
+	 */
 	public Restarter(Solver solver) {
 		this.solver = solver;
-		this.setting = solver.head.control.restarts;
-		this.settingsGeneral = solver.head.control.general;
+		this.cop = solver.head.control.general.framework == TypeFramework.COP;
+		this.settings = solver.head.control.restarts;
+		if (cop && settings.cutoff < Integer.MAX_VALUE)
+			settings.cutoff *= 10; // For COPs, the cutoff value is multiplied by 10; hard coding
 		this.measureSupplier = measureSupplier();
-		if (settingsGeneral.framework == TypeFramework.COP && setting.cutoff < Integer.MAX_VALUE)
-			setting.cutoff *= 10;
 		reset();
-		// for (int i = 0; i < 50; i++) System.out.println(lubyCutoffFor(i));
 	}
 
 	private long cnt;
 
+	/**
+	 * Returns true if the current run is considered as being finished
+	 * 
+	 * @return true if the current run is considered as being finished
+	 */
 	public boolean currRunFinished() {
-		if (solver.problem.optimizer != null && ((cnt++) % 5) == 0)
+		if (solver.problem.optimizer != null && ((cnt++) % 5) == 0) // code for portfolio mode; hard coding
 			solver.problem.optimizer.possiblyUpdateLocalBounds();
 		if (measureSupplier.get() >= currCutoff)
 			return true;
-		if (settingsGeneral.framework != TypeFramework.COP || numRun != solver.solutions.lastRun)
+		if (!cop || numRun != solver.solutions.lastRun)
 			return false;
-		if (setting.restartAfterSolution)
+		if (settings.restartAfterSolution)
 			return true;
 		if (solver.problem.optimizer.ctr instanceof MaximumCstLE || solver.problem.optimizer.ctr instanceof ObjectiveVariable)
 			return true;
@@ -156,18 +187,16 @@ public class Restarter implements ObserverRuns {
 	}
 
 	/**
-	 * Determines if there are no more (re)starts to perform.
+	 * Returns true if no more run must be started
+	 * 
+	 * @return true if no more run must be started
 	 */
 	public boolean allRunsFinished() {
-		return numRun + 1 >= setting.nRunsLimit;
-	}
-
-	public boolean runMultipleOf(int v) {
-		return numRun > 0 && numRun % v == 0;
+		return numRun + 1 >= settings.nRunsLimit;
 	}
 
 	/**********************************************************************************************
-	 * Subclasses (need to be fixed)
+	 * TO BE FINALIZED: Subclasses for LNS
 	 *********************************************************************************************/
 
 	public final static class RestarterLNS extends Restarter {
@@ -176,18 +205,17 @@ public class Restarter implements ObserverRuns {
 		public void beforeRun() {
 			super.beforeRun();
 			int[] solution = solver.solutions.last;
-			if (solution != null) {
-				heuristic.freezeVariables(solution);
-				for (int i = heuristic.fragment.limit; i >= 0; i--) {
-					Variable x = solver.problem.variables[i];
-					int a = solution[x.num];
-					if (x.dom.contains(a)) { // because the objective constraint may change, this is possible
-						solver.assign(x, solution[x.num]);
-						boolean consistent = solver.propagation.runAfterAssignment(x);
-						if (!consistent) {
-							solver.backtrack(x);
-							break;
-						}
+			if (solution == null)
+				return;
+			heuristic.freezeVariables(solution);
+			for (int i = heuristic.fragment.limit; i >= 0; i--) {
+				Variable x = solver.problem.variables[i];
+				int a = solution[x.num];
+				if (x.dom.contains(a)) { // because the objective constraint may change, this test must be done
+					solver.assign(x, a);
+					if (solver.propagation.runAfterAssignment(x) == false) {
+						solver.backtrack(x);
+						break;
 					}
 				}
 			}
@@ -195,11 +223,14 @@ public class Restarter implements ObserverRuns {
 
 		@Override
 		public void afterRun() {
-			if (this.settingsGeneral.framework == TypeFramework.COP)
+			if (cop)
 				solver.problem.optimizer.afterRun();
 			solver.backtrackToTheRoot(); // because see Method doRun in Solver
 		}
 
+		/**
+		 * The heuristic to be used for freezing variables in LNS
+		 */
 		private final HeuristicFreezing heuristic;
 
 		public RestarterLNS(Solver solver) {
@@ -208,7 +239,7 @@ public class Restarter implements ObserverRuns {
 		}
 
 		// ************************************************************************
-		// ***** Heuristics
+		// ***** Freezing heuristics
 		// ************************************************************************
 
 		public static abstract class HeuristicFreezing {
@@ -234,21 +265,9 @@ public class Restarter implements ObserverRuns {
 				this.fragment.limit = fragmentSize - 1;
 			}
 
-			// Implementing Fisher–Yates shuffle (see https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle)
-			protected void shuffle() {
-				Random random = restarter.solver.head.random;
-				int[] dense = fragment.dense;
-				for (int i = dense.length - 1; i > 0; i--) {
-					int j = random.nextInt(i + 1);
-					int tmp = dense[i];
-					dense[i] = dense[j];
-					dense[j] = tmp;
-				}
-			}
-
 			public abstract void freezeVariables(int[] solution);
 
-			public static class Impact extends HeuristicFreezing {
+			public static class Impact extends HeuristicFreezing { // TO BE FINALIZED (note sure that it is correct/coherent)
 
 				private final Variable[] variables;
 
@@ -269,8 +288,8 @@ public class Restarter implements ObserverRuns {
 
 				@Override
 				public void freezeVariables(int[] solution) {
-					shuffle();
 					int[] dense = fragment.dense;
+					Kit.shuffle(dense, restarter.solver.head.random);
 					Integer bestImpacted = null;
 					for (int i = 0; i < fragment.size(); i++) {
 						if (bestImpacted != null) {
@@ -282,11 +301,8 @@ public class Restarter implements ObserverRuns {
 						restarter.solver.assign(variables[dense[i]], solution[dense[i]]);
 
 						storeDomainSizes(before);
-						for (int x = 0; x < variables.length; x++)
-							before[x] = variables[x].dom.size();
 						restarter.solver.propagation.runInitially();
-						for (int x = 0; x < variables.length; x++)
-							after[x] = variables[x].dom.size();
+						storeDomainSizes(after);
 
 						bestImpacted = null;
 						int bestImpact = 0;
@@ -298,7 +314,7 @@ public class Restarter implements ObserverRuns {
 							}
 						}
 					}
-					((Solver) restarter.solver).backtrackToTheRoot();
+					restarter.solver.backtrackToTheRoot();
 				}
 			}
 
@@ -310,7 +326,7 @@ public class Restarter implements ObserverRuns {
 
 				@Override
 				public void freezeVariables(int[] solution) {
-					shuffle();
+					Kit.shuffle(fragment.dense, restarter.solver.head.random);
 				}
 			}
 		}

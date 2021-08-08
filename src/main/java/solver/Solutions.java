@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package solver;
 
 import static org.xcsp.common.Types.TypeFramework.COP;
@@ -35,6 +27,11 @@ import utility.Enums.EStopping;
 import utility.Kit;
 import variables.Variable;
 
+/**
+ * The object used to record stuff about solutions (last one, best bound for COP, etc.)
+ * 
+ * @author Christophe Lecoutre
+ */
 public final class Solutions {
 
 	/**
@@ -43,7 +40,7 @@ public final class Solutions {
 	public final Solver solver;
 
 	/**
-	 * The number of solutions to be found, before stopping. When equal to PLUS_INFINITY, all solutions are searched for (no limit is fixed).
+	 * The maximum number of solutions to be found, before stopping. When equal to PLUS_INFINITY, all solutions are searched for (no limit is fixed).
 	 */
 	public long limit;
 
@@ -63,7 +60,7 @@ public final class Solutions {
 	public int[] last;
 
 	/**
-	 * The number of the run where the last solution has been found, or -1
+	 * The number of the run where the last solution has been found, or -1 if no solution has been found
 	 */
 	public int lastRun = -1;
 
