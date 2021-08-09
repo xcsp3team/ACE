@@ -363,14 +363,11 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrRegular(String id, XVarInteger[] list, Transition[] transitions, String startState, String[] finalStates) {
-		// Transition[] ts = Stream.of(transitions).map(t -> new Transition((String) t[0], t[1], (String) t[2])).toArray(Transition[]::new);
 		problem.regular(trVars(list), new Automaton(startState, transitions, finalStates));
 	}
 
 	@Override
 	public void buildCtrMDD(String id, XVarInteger[] list, Transition[] transitions) {
-		// System.out.println(transitions.getClass().getName());
-		// Transition[] ts = Stream.of(transitions).map(t -> new Transition((String) t[0], t[1], (String) t[2])).toArray(Transition[]::new);
 		problem.mdd(trVars(list), transitions);
 	}
 
@@ -604,7 +601,6 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrElement(String id, int[] list, int startIndex, XVarInteger index, TypeRank rank, Condition condition) {
-		control(rank == TypeRank.ANY);
 		problem.element(list, startIndex, trVar(index), rank, trVar(condition));
 	}
 

@@ -370,6 +370,11 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 		return ((WdegVariant) problem.solver.heuristic).cscores[num];
 	}
 
+	/**
+	 * Returns true if the constraint is irreflexive. Currently, this can be only called on binary constraints, but certainly could be generalized.
+	 * 
+	 * @return true if the constraint is irreflexive
+	 */
 	public boolean isIrreflexive() {
 		control(scp.length == 2);
 		int[] tuple = tupleManager.localTuple;

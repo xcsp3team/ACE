@@ -172,6 +172,7 @@ import constraints.intension.PrimitiveLogic.PrimitiveLogicEq;
 import constraints.intension.PrimitiveTernary;
 import constraints.intension.PrimitiveTernary.PrimitiveTernaryAdd;
 import constraints.intension.PrimitiveTernary.PrimitiveTernaryLog;
+import dashboard.Control.SettingCtrs;
 import dashboard.Control.SettingGeneral;
 import dashboard.Control.SettingVars;
 import dashboard.Control.SettingXml;
@@ -195,6 +196,7 @@ import problem.Reinforcer.ReinforcerAutomorphism;
 import propagation.Forward;
 import solver.Solver;
 import utility.Enums.EExportMode;
+import utility.Enums.ESymmetryBreaking;
 import utility.Kit;
 import utility.Reflector;
 import variables.Domain;
@@ -565,22 +567,46 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	private void inferAdditionalConstraints() {
+		List<Constraint> constraints = features.collecting.constraints;
 		if (head.control.problem.isSymmetryBreaking()) {
-			int nBefore = features.collecting.constraints.size();
-			// for (Constraint c : features.collectedCtrsAtInit)
-			// if (Constraint.getSymmetryMatching(c.key) == null)
-			// Constraint.putSymmetryMatching(c.key, c.defineSymmetryMatching());
-			ReinforcerAutomorphism reinforcer = new ReinforcerAutomorphism(this);
-			for (Constraint c : reinforcer.buildVariableSymmetriesFor(variables, features.collecting.constraints))
-				post(c);
-			symmetryGroupGenerators.addAll(reinforcer.generators);
-			features.mapForAutomorphismIdentification = reinforcer.map();
-			features.nAddedCtrs += features.collecting.constraints.size() - nBefore;
+			int nBefore = constraints.size();
+			// for (Constraint c : features.collecting.constraints) if (Constraint.getSymmetryMatching(c.key) == null) Constraint.putSymmetryMatching(c.key,
+			// c.defineSymmetryMatching());
+			List<List<int[]>> generators = ReinforcerAutomorphism.buildGenerators(variables, constraints);
+			for (List<int[]> generator : generators) {
+				int[] cycle1 = generator.get(0);
+				Variable x = variables[cycle1[0]];
+				Variable y = variables[cycle1[1]];
+				if (head.control.problem.symmetryBreaking == ESymmetryBreaking.LE) { // we only consider the two first variables
+					lessEqual(x, y);
+				} else {
+					List<Variable> list1 = new ArrayList<>(), list2 = new ArrayList<>();
+					for (int[] cycle : generator)
+						if (cycle.length == 2) {
+							list1.add(variables[cycle[0]]);
+							list2.add(variables[cycle[1]]);
+						} else
+							for (int i = 0; i < cycle.length; i++) {
+								list1.add(variables[cycle[i]]);
+								list2.add(variables[cycle[(i + 1) % cycle.length]]);
+							}
+					VariableInteger[] t1 = list1.toArray(new VariableInteger[list1.size()]), t2 = list2.toArray(new VariableInteger[list2.size()]);
+					Kit.control(Kit.isStrictlyIncreasing(t1));
+					lexSimple(t1, t2, TypeOperatorRel.LE);
+				}
+			}
+			symmetryGroupGenerators.addAll(generators);
+			features.mapForAutomorphismIdentification.put(ReinforcerAutomorphism.N_GENERATORS, generators.size() + "");
+			features.mapForAutomorphismIdentification.put(ReinforcerAutomorphism.SYMMETRY_WALL_CLOCK_TIME, ReinforcerAutomorphism.stopwatch.wckTimeInSeconds());
+			features.nAddedCtrs += constraints.size() - nBefore;
 		}
-		if (head.control.constraints.inferAllDifferentNb > 0) {
-			ReinforcerAllDifferent reinforcer = new ReinforcerAllDifferent(this);
-			for (Variable[] scp : reinforcer.cliques)
-				allDifferent(scp);
+		SettingCtrs settings = head.control.constraints;
+		if (settings.inferAllDifferentNb > 0) {
+			List<VariableInteger[]> cliques = ReinforcerAllDifferent.buildCliques(variables, constraints, settings.inferAllDifferentNb,
+					settings.inferAllDifferentSize);
+			for (Variable[] clique : cliques)
+				allDifferent(clique);
+			features.mapForAllDifferentIdentification.put(ReinforcerAllDifferent.N_CLIQUES, cliques.size() + "");
 		}
 	}
 
@@ -2314,9 +2340,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final ObjEntity minimize(TypeObjective type, IVar[] list, int[] coeffs) {
 		control(type == SUM && coeffs != null && list.length == coeffs.length);
-		if (list.length == 1)
-			return minimize(mul(list[0], coeffs[0]));
-		return optimize(MINIMIZE, type, translate(list), coeffs);
+		return list.length == 1 ? minimize(mul(list[0], coeffs[0])) : optimize(MINIMIZE, type, translate(list), coeffs);
 	}
 
 	@Override
