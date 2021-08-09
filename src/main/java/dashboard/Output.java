@@ -53,15 +53,39 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 	public static final String RUN = "Run";
 	public static final String NUMBER = "number";
 	public static final String NAME = "name";
-	public static final String NTYPES = "nTypes";
-	public static final String NVALUES = "nValues";
+	public static final String N_TYPES = "nTypes";
+	public static final String N_VALUES = "nValues";
+	public static final String N_DELETED = "nDeleted";
 	public static final String COUNT = "count";
+	public static final String N_DISCARDED = "nDiscarded";
+	public static final String N_ISOLATED = "nIsolated";
+	public static final String N_FIXED = "nFixed";
+	public static final String N_SYMBOLIC = "nSymbolic";
+	public static final String N_AUXILIARY = "nAuxiliary";
 	public static final String DEGREES = "degrees";
+
+	public static final String N_REMOVED1 = "nRemoved1";
+	public static final String N_CONVERTED = "nConverted";
+	public static final String N_SPECIFIC = "nSpecific";
+	public static final String N_MERGED = "nMerged";
+	public static final String N_ADDED = "nAdded";
+	public static final String N_GENERATORS = "nGenerators";
+	public static final String N_CLIQUES = "nCliques";
 	public static final String ARITIES = "arities";
+	public static final String DISTRIBUTION = "distribution";
 	public static final String SIZES = "sizes";
 	public static final String TYPES = "types";
 	public static final String TABLES = "tables";
+	public static final String N_TUPLES = "nTuples";
+
+	public static final String WAY = "way";
+	public static final String TYPE = "type";
 	public static final String BOUNDS = "bounds";
+
+	public static final String INSTANTIATION = "instantiation";
+	public static final String SELECTION = "selection";
+	public static final String PRIORITY = "priority";
+	public static final String N_STRICT_PRIORITY = "nStrictPriority";
 
 	public static final String WCK = "wck";
 	public static final String CPU = "cpu";
@@ -148,8 +172,8 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		Kit.control(head.problem.variables.length > 0, () -> "No variable in your model");
 		MapAtt da = head.problem.features.domainsAttributes();
 		MapAtt va = head.problem.features.variablesAttributes();
-		MapAtt ca = head.problem.features.ctrsAttributes();
-		MapAtt oa = head.problem.optimizer != null ? head.problem.features.objsAttributes() : null;
+		MapAtt ca = head.problem.features.constraintsAttributes();
+		MapAtt oa = head.problem.optimizer != null ? head.problem.features.objectiveAttributes() : null;
 		record(TypeOutput.DOMAINS, da.entries(), resolElt);
 		record(TypeOutput.VARIABLES, va.entries(), resolElt);
 		record(TypeOutput.CONSTRAINTS, ca.entries(), resolElt);

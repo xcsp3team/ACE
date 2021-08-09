@@ -198,6 +198,7 @@ import solver.Solver;
 import utility.Enums.EExportMode;
 import utility.Enums.ESymmetryBreaking;
 import utility.Kit;
+import utility.Kit.Stopwatch;
 import utility.Reflector;
 import variables.Domain;
 import variables.Variable;
@@ -567,6 +568,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	}
 
 	private void inferAdditionalConstraints() {
+		Stopwatch stopwatch = new Stopwatch();
 		List<Constraint> constraints = features.collecting.constraints;
 		if (head.control.problem.isSymmetryBreaking()) {
 			int nBefore = constraints.size();
@@ -596,17 +598,21 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 				}
 			}
 			symmetryGroupGenerators.addAll(generators);
-			features.mapForAutomorphismIdentification.put(ReinforcerAutomorphism.N_GENERATORS, generators.size() + "");
-			features.mapForAutomorphismIdentification.put(ReinforcerAutomorphism.SYMMETRY_WALL_CLOCK_TIME, ReinforcerAutomorphism.stopwatch.wckTimeInSeconds());
+			features.nGenerators = generators.size();
 			features.nAddedCtrs += constraints.size() - nBefore;
+			if (head.control.general.verbose > 0)
+				System.out.println("Time for generating symmetry-breaking constraints: " + stopwatch.wckTimeInSeconds());
 		}
 		SettingCtrs settings = head.control.constraints;
 		if (settings.inferAllDifferentNb > 0) {
+			stopwatch.start();
 			List<VariableInteger[]> cliques = ReinforcerAllDifferent.buildCliques(variables, constraints, settings.inferAllDifferentNb,
 					settings.inferAllDifferentSize);
 			for (Variable[] clique : cliques)
 				allDifferent(clique);
-			features.mapForAllDifferentIdentification.put(ReinforcerAllDifferent.N_CLIQUES, cliques.size() + "");
+			features.nCliques = cliques.size();
+			if (head.control.general.verbose > 0)
+				System.out.println("Time for generating redundant AllDifferent constraints: " + stopwatch.wckTimeInSeconds());
 		}
 	}
 
@@ -2340,7 +2346,9 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	@Override
 	public final ObjEntity minimize(TypeObjective type, IVar[] list, int[] coeffs) {
 		control(type == SUM && coeffs != null && list.length == coeffs.length);
-		return list.length == 1 ? minimize(mul(list[0], coeffs[0])) : optimize(MINIMIZE, type, translate(list), coeffs);
+		if (list.length == 1)
+			return minimize(mul(list[0], coeffs[0]));
+		return optimize(MINIMIZE, type, translate(list), coeffs);
 	}
 
 	@Override

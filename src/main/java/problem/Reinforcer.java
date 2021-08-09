@@ -379,7 +379,6 @@ public class Reinforcer {
 			// displayGraph(variableNodes,constraintNodes);
 			return generators;
 		}
-
 	}
 
 }

@@ -188,7 +188,7 @@ public abstract class Statistics implements ObserverSearch, ObserverRuns, Observ
 	public final MapAtt preproAttributes() {
 		MapAtt m = new MapAtt("Preprocessing");
 		m.put("eff", nEffectiveFilterings());
-		m.putIf("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
+		m.put("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
 		m.put("nValues", Variable.nValidValuesFor(solver.problem.variables));
 		if (solver.propagation instanceof GAC)
 			m.put("nACremovedValues", ((GAC) (solver.propagation)).nPreproValueRemovals);
@@ -278,7 +278,7 @@ public abstract class Statistics implements ObserverSearch, ObserverRuns, Observ
 				m.put(MEM, Kit.memoryInMb());
 			m.put(WCK, stopwatch.wckTimeInSeconds());
 			if (solver.nogoodRecorder != null)
-				m.putWhenPositive("ngd", solver.nogoodRecorder.nNogoods);
+				m.put("ngd", solver.nogoodRecorder.nNogoods);
 			if (solver.solutions.found > 0) {
 				if (solver.problem.settings.framework == TypeFramework.CSP)
 					m.put("nSols", solver.solutions.found);
@@ -296,7 +296,7 @@ public abstract class Statistics implements ObserverSearch, ObserverRuns, Observ
 			m.put("decs", nDecisions);
 			m.put("backs", nBacktracks);
 			m.put("failed", nFailedAssignments);
-			m.putIf("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
+			m.put("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
 			if (nSingletonTests() > 0) { // solver.getPreproPropagationTechnique() instanceof SingletonArcConsistency) {
 				m.put(N_SINGLETON_TESTS, nSingletonTests());
 				m.put(N_EFFECTIVE_SINGLETON_TESTS, nEffectiveSingletonTests());
@@ -328,14 +328,14 @@ public abstract class Statistics implements ObserverSearch, ObserverRuns, Observ
 		public MapAtt cumulatedAttributes() {
 			MapAtt m = new MapAtt("Global");
 			m.put("eff", nEffectiveFilterings());
-			m.putIf("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
+			m.put("revisions", "(" + nRevisions() + ",useless=" + nUselessRevisions() + ")", nRevisions() > 0);
 			if (nSingletonTests() > 0) { // solver.getPreproPropagationTechnique() instanceof SingletonArcConsistency) {
 				m.put(N_SINGLETON_TESTS, nSingletonTests());
 				m.put(N_EFFECTIVE_SINGLETON_TESTS, nEffectiveSingletonTests());
 			}
 
 			if (solver.nogoodRecorder != null)
-				m.putWhenPositive("nogoods", solver.nogoodRecorder.nNogoods);
+				m.put("nogoods", solver.nogoodRecorder.nNogoods);
 			m.separator();
 			return m;
 		}

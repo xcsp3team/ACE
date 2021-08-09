@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package problem;
 
 import static dashboard.Output.ARITIES;
@@ -14,18 +6,41 @@ import static dashboard.Output.CONSTRAINTS;
 import static dashboard.Output.COUNT;
 import static dashboard.Output.CPU;
 import static dashboard.Output.DEGREES;
+import static dashboard.Output.DISTRIBUTION;
 import static dashboard.Output.DOMAINS;
 import static dashboard.Output.INSTANCE;
+import static dashboard.Output.INSTANTIATION;
 import static dashboard.Output.MEM;
 import static dashboard.Output.NAME;
-import static dashboard.Output.NTYPES;
 import static dashboard.Output.NUMBER;
-import static dashboard.Output.NVALUES;
+import static dashboard.Output.N_ADDED;
+import static dashboard.Output.N_AUXILIARY;
+import static dashboard.Output.N_CLIQUES;
+import static dashboard.Output.N_CONVERTED;
+import static dashboard.Output.N_DELETED;
+import static dashboard.Output.N_DISCARDED;
+import static dashboard.Output.N_FIXED;
+import static dashboard.Output.N_GENERATORS;
+import static dashboard.Output.N_ISOLATED;
+import static dashboard.Output.N_MERGED;
+import static dashboard.Output.N_REMOVED1;
+import static dashboard.Output.N_SPECIFIC;
+import static dashboard.Output.N_STRICT_PRIORITY;
+import static dashboard.Output.N_SYMBOLIC;
+import static dashboard.Output.N_TUPLES;
+import static dashboard.Output.N_TYPES;
+import static dashboard.Output.N_VALUES;
 import static dashboard.Output.OBJECTIVE;
+import static dashboard.Output.PRIORITY;
+import static dashboard.Output.RUN;
+import static dashboard.Output.SELECTION;
 import static dashboard.Output.SIZES;
 import static dashboard.Output.TABLES;
+import static dashboard.Output.TYPE;
 import static dashboard.Output.VARIABLES;
+import static dashboard.Output.WAY;
 import static dashboard.Output.WCK;
+import static java.util.stream.Collectors.joining;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -33,7 +48,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -62,6 +76,11 @@ import dashboard.Output;
 import utility.Kit;
 import variables.Variable;
 
+/**
+ * This class stores some information (features) about the problem (constraint network).
+ * 
+ * @author Christophe Lecoutre
+ */
 public final class Features {
 
 	/**********************************************************************************************
@@ -274,8 +293,10 @@ public final class Features {
 
 	public int nSharedBinaryRepresentations;
 
-	Map<String, String> mapForAutomorphismIdentification = new LinkedHashMap<>();
-	Map<String, String> mapForAllDifferentIdentification = new LinkedHashMap<>();
+	/**
+	 * Fields used when using reinforcing techniques (inferring AllDifferent constraints and symmetry-breaking constraints)
+	 */
+	public int nGenerators, nCliques;
 
 	public ExternFunctionArity1 externFunctionArity1;
 	public ExternFunctionArity2 externFunctionArity2;
@@ -348,7 +369,7 @@ public final class Features {
 			this.name = name;
 		}
 
-		public MapAtt putIf(String key, Object value, boolean condition, boolean separation) {
+		public MapAtt put(String key, Object value, boolean condition, boolean separation) {
 			if (condition) {
 				if (separation)
 					separator();
@@ -357,20 +378,20 @@ public final class Features {
 			return this;
 		}
 
-		public MapAtt putIf(String key, Object value, boolean condition) {
-			return putIf(key, value, condition, false);
-		}
-
-		public MapAtt putWhenPositive(String key, Number value) {
-			return putIf(key, value, value.doubleValue() > 0);
+		public MapAtt put(String key, Object value, boolean condition) {
+			if (value instanceof String && ((String) value).length() == 0)
+				return this;
+			if (value instanceof Integer && ((Integer) value) == 0)
+				return this;
+			return put(key, value, condition, false);
 		}
 
 		public MapAtt put(String key, Object value) {
-			return putIf(key, value, true);
+			return put(key, value, true);
 		}
 
 		public MapAtt separator() {
-			return putIf(SEPARATOR, null, true);
+			return put(SEPARATOR, null, true);
 		}
 
 		public List<Entry<String, Object>> entries() {
@@ -379,7 +400,7 @@ public final class Features {
 
 		@Override
 		public String toString() {
-			String s = (name.equals("Run") ? "" : Output.COMMENT_PREFIX + Kit.preprint(name, Kit.BLUE) + "\n") + Output.COMMENT_PREFIX + Output.COMMENT_PREFIX;
+			String s = (name.equals(RUN) ? "" : Output.COMMENT_PREFIX + Kit.preprint(name, Kit.BLUE) + "\n") + Output.COMMENT_PREFIX + Output.COMMENT_PREFIX;
 			boolean sep = true;
 			for (int i = 0; i < entries.size(); i++) {
 				Entry<String, Object> e = entries.get(i);
@@ -400,26 +421,25 @@ public final class Features {
 	public MapAtt instanceAttributes(int instanceNumber) {
 		MapAtt m = new MapAtt(INSTANCE);
 		m.put(NAME, problem.name());
-		m.putIf(NUMBER, instanceNumber, Input.nInstancesToSolve > 1);
+		m.put(NUMBER, instanceNumber, Input.nInstancesToSolve > 1);
 		SettingVars settings = problem.head.control.variables;
 		if (settings.selectedVars.length > 0 || settings.instantiatedVars.length > 0 || settings.priorityVars.length > 0) {
 			m.separator();
-			m.putIf("selection", Stream.of(settings.selectedVars).map(o -> o.toString()).collect(Collectors.joining(",")), settings.selectedVars.length > 0);
-			m.putIf("instantiation", IntStream.range(0, settings.instantiatedVars.length)
-					.mapToObj(i -> settings.instantiatedVars[i] + "=" + settings.instantiatedVals[i]).collect(Collectors.joining(",")),
-					settings.instantiatedVars.length > 0);
-			m.putIf("priority", Stream.of(settings.priorityVars).map(o -> o.toString()).collect(Collectors.joining(",")), settings.priorityVars.length > 0);
-			m.putWhenPositive("nStrictPriorityVars", settings.nStrictPriorityVars);
+			m.put(SELECTION, Stream.of(settings.selectedVars).map(o -> o.toString()).collect(joining(",")));
+			m.put(INSTANTIATION, IntStream.range(0, settings.instantiatedVars.length)
+					.mapToObj(i -> settings.instantiatedVars[i] + "=" + settings.instantiatedVals[i]).collect(joining(",")));
+			m.put(PRIORITY, Stream.of(settings.priorityVars).map(o -> o.toString()).collect(joining(",")));
+			m.put(N_STRICT_PRIORITY, settings.nStrictPriorityVars);
 		}
 		return m;
 	}
 
 	public MapAtt domainsAttributes() {
 		MapAtt m = new MapAtt(DOMAINS);
-		m.put(NTYPES, nDomTypes());
-		m.put(NVALUES, Variable.nValidValuesFor(problem.variables));
-		m.putWhenPositive("nRemovedValuesAtConstruction", nValuesRemovedAtConstructionTime);
-		m.putWhenPositive("nPurged", problem.nValueRemovals);
+		m.put(N_TYPES, nDomTypes());
+		m.put(N_VALUES, Variable.nValidValuesFor(problem.variables));
+		Kit.control(nValuesRemovedAtConstructionTime == problem.nValueRemovals);
+		m.put(N_DELETED, problem.nValueRemovals);
 		m.put(SIZES, domSizes);
 		return m;
 	}
@@ -427,36 +447,35 @@ public final class Features {
 	public MapAtt variablesAttributes() {
 		MapAtt m = new MapAtt(VARIABLES);
 		m.put(COUNT, problem.variables.length);
-		m.putWhenPositive("nDiscarded", collecting.discardedVars.size());
-		m.putWhenPositive("nIsolated", nIsolatedVars);
-		m.putWhenPositive("nFixed", nFixedVars);
-		m.putWhenPositive("nSymb", nSymbolicVars);
-		m.putWhenPositive("nAux", problem.nAuxVariables);
+		m.put(N_DISCARDED, collecting.discardedVars.size());
+		m.put(N_ISOLATED, nIsolatedVars);
+		m.put(N_FIXED, nFixedVars);
+		m.put(N_SYMBOLIC, nSymbolicVars);
+		m.put(N_AUXILIARY, problem.nAuxVariables);
 		m.put(DEGREES, varDegrees);
 		return m;
 	}
 
-	public MapAtt ctrsAttributes() {
+	public MapAtt constraintsAttributes() {
 		MapAtt m = new MapAtt(CONSTRAINTS);
 		m.put(COUNT, problem.constraints.length);
-		m.putWhenPositive("nRemovedUnary", nRemovedUnaryCtrs);
-		m.putWhenPositive("nConverted", nConvertedConstraints);
-		m.putWhenPositive("nSpecific", nSpecificCtrs);
-		m.putWhenPositive("nMerged", nMergedCtrs);
-		m.putWhenPositive("nDiscarded", nDiscardedCtrs);
-		m.putWhenPositive("nAdded", nAddedCtrs);
+		m.put(N_REMOVED1, nRemovedUnaryCtrs);
+		m.put(N_CONVERTED, nConvertedConstraints);
+		m.put(N_SPECIFIC, nSpecificCtrs);
+		m.put(N_MERGED, nMergedCtrs);
+		m.put(N_DISCARDED, nDiscardedCtrs);
+		m.put(N_ADDED, nAddedCtrs);
+		m.put(N_GENERATORS, nGenerators); // for symmetry-breaking constraints
+		m.put(N_CLIQUES, nCliques); // for redundant AllDifferent constraints
 		m.put(ARITIES, ctrArities);
-		m.putIf("distribution", ctrTypes, true, true);
+		m.put(DISTRIBUTION, ctrTypes, true, true);
 
 		if (tableSizes.repartition.size() > 0) {
 			m.separator();
 			m.put(TABLES, tableSizes);
-			m.put("nTotalTuples", tableSizes.cumulatedSum());
+			m.put(N_TUPLES, tableSizes.cumulatedSum());
 		}
-		m.putIf("automorphism", mapForAutomorphismIdentification.entrySet().stream().map(e -> e.getKey() + ":" + e.getValue()).collect(Collectors.joining(" ")),
-				mapForAutomorphismIdentification.size() > 0, true);
-		m.putIf("alldiffIdent", mapForAllDifferentIdentification.entrySet().stream().map(e -> e.getKey() + ":" + e.getValue()).collect(Collectors.joining(" ")),
-				mapForAllDifferentIdentification.size() > 0, true);
+
 		int nConflictsStructures = 0, nSharedConflictsStructures = 0, nUnbuiltConflictsStructures = 0;
 		int nExtensionStructures = 0, nSharedExtensionStructures = 0, nEvaluationManagers = 0, nSharedEvaluationManagers = 0;
 		for (Constraint c : problem.constraints) {
@@ -479,25 +498,24 @@ public final class Features {
 		}
 		if (nExtensionStructures > 0 || nEvaluationManagers > 0 || nConflictsStructures > 0 || nSharedBinaryRepresentations > 0) {
 			m.separator();
-			m.putIf("nExtStructures", "(" + nExtensionStructures + ",shared:" + nSharedExtensionStructures + ")", nExtensionStructures > 0);
-			m.putIf("nIntStructures", "(" + nEvaluationManagers + ",shared:" + nSharedEvaluationManagers + ")", nEvaluationManagers > 0);
-			m.putIf("nCftStructures", "(" + nConflictsStructures + ",shared:" + nSharedConflictsStructures
+			m.put("nExtStructures", "(" + nExtensionStructures + ",shared:" + nSharedExtensionStructures + ")", nExtensionStructures > 0);
+			m.put("nIntStructures", "(" + nEvaluationManagers + ",shared:" + nSharedEvaluationManagers + ")", nEvaluationManagers > 0);
+			m.put("nCftStructures", "(" + nConflictsStructures + ",shared:" + nSharedConflictsStructures
 					+ (nUnbuiltConflictsStructures > 0 ? ",unbuilt:" + nUnbuiltConflictsStructures : "") + ")", nConflictsStructures > 0);
-			m.putWhenPositive("sharedBins", nSharedBinaryRepresentations);
+			m.put("sharedBins", nSharedBinaryRepresentations);
 		}
 		m.separator();
 		m.put(WCK, problem.head.instanceStopwatch.wckTimeInSeconds());
 		m.put(CPU, problem.head.stopwatch.cpuTimeInSeconds());
 		m.put(MEM, Kit.memoryInMb());
-		// m.putPositive( COMPRESSION, TableCompressed3.compression);
 		return m;
 	}
 
-	public MapAtt objsAttributes() {
-		MapAtt m = new MapAtt(OBJECTIVE);
-		m.put("way", (problem.optimizer.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName());
+	public MapAtt objectiveAttributes() {
 		Kit.control(problem.optimizer.ctr != null);
-		m.put("type", problem.optimizer.ctr.getClass().getSimpleName());
+		MapAtt m = new MapAtt(OBJECTIVE);
+		m.put(WAY, (problem.optimizer.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName());
+		m.put(TYPE, problem.optimizer.ctr.getClass().getSimpleName());
 		m.put(BOUNDS, (problem.optimizer.clb.limit() + ".." + problem.optimizer.cub.limit()));
 		return m;
 	}
