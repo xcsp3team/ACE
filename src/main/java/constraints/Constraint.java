@@ -29,6 +29,7 @@ import constraints.extension.structures.ExtensionStructure;
 import constraints.global.Sum.SumSimple.SumSimpleEQ;
 import constraints.global.Sum.SumWeighted.SumWeightedEQ;
 import constraints.intension.Intension;
+import constraints.intension.Intension.IntensionStructure;
 import dashboard.Control.SettingCtrs;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.FilteringSpecific;
@@ -436,6 +437,10 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 	}
 
 	public ExtensionStructure extStructure() {
+		return null;
+	}
+
+	public IntensionStructure intStructure() {
 		return null;
 	}
 

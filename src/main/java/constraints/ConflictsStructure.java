@@ -19,7 +19,7 @@ import constraints.Constraint.RegisteringCtrs;
 import constraints.extension.Extension.ExtensionGeneric;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.intension.Intension;
-import constraints.intension.Intension.SharedTreeEvaluator;
+import constraints.intension.Intension.IntensionStructure;
 import interfaces.FilteringSpecific;
 import problem.Problem;
 import utility.Kit;
@@ -53,7 +53,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 					conflictsStructure.register(cc);
 			}
 		}
-		for (SharedTreeEvaluator treeEvaluator : problem.head.structureSharing.mapOfTreeEvaluators.values()) {
+		for (IntensionStructure treeEvaluator : problem.head.structureSharing.mapOfTreeEvaluators.values()) {
 			Constraint c = treeEvaluator.firstRegisteredCtr();
 			if (c instanceof FilteringSpecific || c.scp.length == 1 || c.infiniteDomainVars.length > 0)
 				continue;

@@ -735,13 +735,13 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 		return VariableSymbolic.class;
 	}
 
-	/** A map that gives access to each variable through its id. */
-	public final Map<String, Variable> mapForVars = new HashMap<>();
-
 	@Override
 	public TypeFramework typeFramework() {
 		return settings.framework;
 	}
+
+	/** A map that gives access to each variable through its id. */
+	public final Map<String, Variable> mapForVars = new HashMap<>();
 
 	/**
 	 * Adds a variable that has already be built. Should not be called directly when modeling.

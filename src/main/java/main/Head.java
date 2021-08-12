@@ -31,7 +31,7 @@ import constraints.extension.Extension;
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.MDD;
-import constraints.intension.Intension.SharedTreeEvaluator;
+import constraints.intension.Intension.IntensionStructure;
 import dashboard.Control;
 import dashboard.Control.SettingProblem;
 import dashboard.Input;
@@ -296,7 +296,7 @@ public class Head extends Thread {
 
 		public Map<String, MDD> mapOfMDDStructures = new HashMap<>();
 
-		public Map<String, SharedTreeEvaluator> mapOfTreeEvaluators = new HashMap<>();
+		public Map<String, IntensionStructure> mapOfTreeEvaluators = new HashMap<>();
 
 		public void clear() {
 			mapOfExtensionStructures.clear();

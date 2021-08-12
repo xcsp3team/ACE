@@ -60,7 +60,7 @@ public final class Intension extends Constraint implements TagFilteringCompleteA
 	 * Intern classes
 	 *********************************************************************************************/
 
-	public static class SharedTreeEvaluator extends TreeEvaluator implements RegisteringCtrs {
+	public static class IntensionStructure extends TreeEvaluator implements RegisteringCtrs {
 
 		public final List<Constraint> registeredCtrs = new ArrayList<>();
 
@@ -68,11 +68,11 @@ public final class Intension extends Constraint implements TagFilteringCompleteA
 			return registeredCtrs;
 		}
 
-		public SharedTreeEvaluator(XNodeParent<? extends IVar> tree) {
+		public IntensionStructure(XNodeParent<? extends IVar> tree) {
 			super(tree);
 		}
 
-		public SharedTreeEvaluator(XNodeParent<? extends IVar> tree, Map<String, Integer> mapOfSymbols) {
+		public IntensionStructure(XNodeParent<? extends IVar> tree, Map<String, Integer> mapOfSymbols) {
 			super(tree, mapOfSymbols);
 		}
 	}
@@ -359,7 +359,7 @@ public final class Intension extends Constraint implements TagFilteringCompleteA
 
 	public XNodeParent<IVar> tree;
 
-	public SharedTreeEvaluator treeEvaluator;
+	public IntensionStructure treeEvaluator;
 
 	private KeyCanonizer keyCanonizer;
 
@@ -370,6 +370,11 @@ public final class Intension extends Constraint implements TagFilteringCompleteA
 		return keyCanonizer != null ? keyCanonizer.computeSymmetryMatching() : Kit.range(1, scp.length);
 	}
 
+	@Override
+	public IntensionStructure intStructure() {
+		return treeEvaluator;
+	}
+
 	public Intension(Problem pb, Variable[] scp, XNodeParent<IVar> tree) {
 		super(pb, scp);
 		this.tree = canonize ? (XNodeParent<IVar>) tree.canonization() : tree;
@@ -378,10 +383,10 @@ public final class Intension extends Constraint implements TagFilteringCompleteA
 		this.keyCanonizer = scp.length > 30 || tree.size() > 200 ? null : new KeyCanonizer(tree); // TODO hard coding (unbuilt if too costly)
 		this.key = signature().append(' ').append(keyCanonizer == null ? tree.toPostfixExpression(tree.vars()) : keyCanonizer.key()).toString();
 
-		Map<String, SharedTreeEvaluator> map = pb.head.structureSharing.mapOfTreeEvaluators;
+		Map<String, IntensionStructure> map = pb.head.structureSharing.mapOfTreeEvaluators;
 		treeEvaluator = map.get(key);
 		if (treeEvaluator == null) {
-			treeEvaluator = scp[0] instanceof VariableInteger ? new SharedTreeEvaluator(tree) : new SharedTreeEvaluator(tree, pb.symbolic.mapOfSymbols);
+			treeEvaluator = scp[0] instanceof VariableInteger ? new IntensionStructure(tree) : new IntensionStructure(tree, pb.symbolic.mapOfSymbols);
 			treeEvaluator.register(this);
 			map.put(key, treeEvaluator);
 		} else

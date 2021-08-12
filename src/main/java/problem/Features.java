@@ -15,12 +15,15 @@ import static dashboard.Output.NAME;
 import static dashboard.Output.NUMBER;
 import static dashboard.Output.N_ADDED;
 import static dashboard.Output.N_AUXILIARY;
+import static dashboard.Output.N_CFT_STRUCTURES;
 import static dashboard.Output.N_CLIQUES;
 import static dashboard.Output.N_CONVERTED;
 import static dashboard.Output.N_DELETED;
 import static dashboard.Output.N_DISCARDED;
+import static dashboard.Output.N_EXT_STRUCTURES;
 import static dashboard.Output.N_FIXED;
 import static dashboard.Output.N_GENERATORS;
+import static dashboard.Output.N_INT_STRUCTURES;
 import static dashboard.Output.N_ISOLATED;
 import static dashboard.Output.N_MERGED;
 import static dashboard.Output.N_REMOVED1;
@@ -34,6 +37,7 @@ import static dashboard.Output.OBJECTIVE;
 import static dashboard.Output.PRIORITY;
 import static dashboard.Output.RUN;
 import static dashboard.Output.SELECTION;
+import static dashboard.Output.SHARED_BITS;
 import static dashboard.Output.SIZES;
 import static dashboard.Output.TABLES;
 import static dashboard.Output.TYPE;
@@ -84,47 +88,70 @@ import variables.Variable;
 public final class Features {
 
 	/**********************************************************************************************
-	 * Repartitioner
+	 * Auxiliary Class Repartitioner
 	 *********************************************************************************************/
 
+	/**
+	 * An object of this class allows us to record the number of occurrences of some objects (of type T).
+	 */
 	public static class Repartitioner<T extends Comparable<? super T>> {
 
 		private final static int DEFAULT_MAX_VALUE = 8;
 
 		private final int maxElementsToDisplay;
 
-		/** For each key, the number of occurrences is recorded (as value). */
+		/**
+		 * For each key, the number of occurrences is recorded (as value).
+		 */
 		private final Map<T, Integer> repartition = new HashMap<>();
 
-		/** Sorted keys, when the repartition has been frozen. */
+		/**
+		 * Sorted keys, when the repartition has been frozen.
+		 */
 		private List<T> sortedKeys;
 
-		public void add(T value) {
+		/**
+		 * Adds an element (key) to the repartitioner. If this is the first occurrence, it is recorded with associated counter 1. Otherwise, its associated
+		 * counter is incremented by 1.
+		 * 
+		 * @param key
+		 *            the specified key to consider
+		 */
+		public void add(T key) {
 			if (sortedKeys != null)
 				sortedKeys = null; // to start a new repartition
-			Integer nb = repartition.get(value);
-			repartition.put(value, nb == null ? 1 : nb + 1);
+			Integer nb = repartition.get(key);
+			repartition.put(key, nb == null ? 1 : nb + 1);
 		}
 
+		/**
+		 * Freeze the repartition. This corresponds to sort the keys. Then, we can make some requests (e.g., getting the value of the first sorted key).
+		 */
 		private void freeze() {
 			Kit.control(sortedKeys == null);
 			Collections.sort(sortedKeys = new ArrayList<T>(repartition.keySet()));
 		}
 
+		/**
+		 * Returns the first key after keys have been sorted
+		 * 
+		 * @return the first key after keys have been sorted
+		 */
 		public T first() {
 			if (sortedKeys == null)
 				freeze();
 			return sortedKeys.size() == 0 ? null : sortedKeys.get(0);
 		}
 
+		/**
+		 * Returns the last key after keys have been sorted
+		 * 
+		 * @return the last key after keys have been sorted
+		 */
 		public T last() {
 			if (sortedKeys == null)
 				freeze();
 			return sortedKeys.size() == 0 ? null : sortedKeys.get(sortedKeys.size() - 1);
-		}
-
-		public int size() {
-			return repartition.size();
 		}
 
 		private Repartitioner(int maxElementsToDisplay) {
@@ -139,13 +166,10 @@ public final class Features {
 			this(DEFAULT_MAX_VALUE);
 		}
 
-		/** Only valid for repartition of values (when keys are integers too). */
-		public long cumulatedSum() {
-			return repartition.entrySet().stream().mapToLong(e -> e.getValue() * (Integer) e.getKey()).sum();
-		}
-
 		@Override
 		public String toString() {
+			if (repartition.size() == 0)
+				return "";
 			if (sortedKeys == null)
 				freeze();
 			String SEP = "#", JOIN = ",";
@@ -162,9 +186,12 @@ public final class Features {
 	}
 
 	/**********************************************************************************************
-	 * Object for collecting variables and constraints
+	 * Auxiliary Class Collecting : to store (at construction time) variables and constraints (and also table keys)
 	 *********************************************************************************************/
 
+	/**
+	 * This class allows us to collect variables and constraints when loading the constraitn network.
+	 */
 	public final class Collecting {
 
 		/**
@@ -178,10 +205,22 @@ public final class Features {
 		public final List<Constraint> constraints = new ArrayList<>();
 
 		/**
+		 * The keys used for tables, that have been collected so far, and used when storing tuples of a table constraint. Relevant only for symmetry-breaking.
+		 */
+		public final Map<String, String> tableKeys = new HashMap<>();
+
+		/**
 		 * Ids of discarded variables
 		 */
 		private Set<String> discardedVars = new HashSet<>();
 
+		/**
+		 * Returns true if the specified variable must be discarded
+		 * 
+		 * @param x
+		 *            a variable
+		 * @return true if the specified variable must be discarded
+		 */
 		private boolean mustDiscard(IVar x) {
 			Object[] selectedVars = problem.head.control.variables.selectedVars;
 			if (selectedVars.length == 0)
@@ -202,6 +241,13 @@ public final class Features {
 			return mustDiscard;
 		}
 
+		/**
+		 * Returns true if the specified constraint must be discarded
+		 * 
+		 * @param c
+		 *            a constraint
+		 * @return true if the specified constraint must be discarded
+		 */
 		public final boolean mustDiscard(XCtr c) {
 			if (mustDiscard(c.vars()))
 				return true;
@@ -212,8 +258,23 @@ public final class Features {
 			return mustDiscard;
 		}
 
-		public final boolean mustDiscard(XObj c) {
-			return mustDiscard(c.vars());
+		/**
+		 * Returns true if the specified objective must be discarded
+		 * 
+		 * @param o
+		 *            an objective
+		 * @return true if the specified objective must be discarded
+		 */
+		public final boolean mustDiscard(XObj o) {
+			return mustDiscard(o.vars());
+		}
+
+		private void printNumber(int n) {
+			if (problem.head.control.general.verbose > 1) {
+				int nDigits = (int) Math.log10(n) + 1;
+				IntStream.range(0, nDigits).forEach(i -> System.out.print("\b")); // we need to discard previous characters
+				System.out.print((n + 1) + "");
+			}
 		}
 
 		/**
@@ -248,27 +309,18 @@ public final class Features {
 			int num = constraints.size();
 			printNumber(num);
 			constraints.add(c);
-			ctrArities.add(c.scp.length);
-			if (c.scp.length == 1 && !(c instanceof Extension1)) {
-				if (c instanceof Extension || c instanceof Intension)
-					ctrTypes.add(c.getClass().getSimpleName() + "1");
-				// else
-				// throw new UnreachableCodeException();
-			} else
-				ctrTypes.add(c.getClass().getSimpleName() + (c instanceof Extension ? "-" + c.extStructure().getClass().getSimpleName() : ""));
+			int arity = c.scp.length;
+			ctrArities.add(arity);
+			ctrTypes.add(c.getClass().getSimpleName()
+					+ (arity == 1 && !(c instanceof Extension1) ? "u" : (c instanceof Extension ? "-" + c.extStructure().getClass().getSimpleName() : "")));
+			if (c.extStructure() instanceof Table)
+				tableSizes.add(((Table) c.extStructure()).tuples.length);
 			if (c instanceof CSmart)
 				tableSizes.add(((TableSmart) c.extStructure()).smartTuples.length);
-			if (c instanceof Extension && c.extStructure() instanceof Table)
-				tableSizes.add(((Table) c.extStructure()).tuples.length);
 			return num;
 		}
 
 	}
-
-	/**
-	 * The object used for collecting variables and constraints at construction (initialization)
-	 */
-	public Collecting collecting = new Collecting();
 
 	/**********************************************************************************************
 	 * Fields
@@ -276,22 +328,21 @@ public final class Features {
 
 	private final Problem problem;
 
-	public final Map<String, String> collectedTuples = new HashMap<>();
+	/**
+	 * The object used for collecting variables and constraints at construction (initialization)
+	 */
+	public Collecting collecting = new Collecting();
 
 	protected final Repartitioner<Integer> varDegrees, domSizes, ctrArities, tableSizes;
 	protected final Repartitioner<String> ctrTypes;
 
-	/**
-	 * The number of distinct relations (ie. types of relation) used by the constraints of the problem. <br>
-	 * It is equal to <code> -1 </code> when it is unknown.
-	 */
 	public int nIsolatedVars, nFixedVars, nSymbolicVars;
 	public int nRemovedUnaryCtrs, nConvertedConstraints; // conversion intension to extension
 	public int nSpecificCtrs, nMergedCtrs, nDiscardedCtrs, nAddedCtrs;
 
 	public long nEffectiveFilterings;
 
-	public int nSharedBinaryRepresentations;
+	public int nSharedBitVectors;
 
 	/**
 	 * Fields used when using reinforcing techniques (inferring AllDifferent constraints and symmetry-breaking constraints)
@@ -309,14 +360,6 @@ public final class Features {
 
 	public int nDomTypes() {
 		return (int) Stream.of(problem.variables).mapToInt(x -> x.dom.typeIdentifier()).distinct().count();
-	}
-
-	private void printNumber(int n) {
-		if (problem.head.control.general.verbose > 1) {
-			int nDigits = (int) Math.log10(n) + 1;
-			IntStream.range(0, nDigits).forEach(i -> System.out.print("\b")); // we need to discard previous characters
-			System.out.print((n + 1) + "");
-		}
 	}
 
 	public int maxDomSize() {
@@ -357,53 +400,54 @@ public final class Features {
 	 * Methods for maps
 	 *********************************************************************************************/
 
-	public static class MapAtt {
+	public static class Attributes {
 
 		public static final String SEPARATOR = "separator";
 
 		private String name;
 
-		private List<Entry<String, Object>> entries = new ArrayList<>();
+		private List<Entry<String, Object>> list = new ArrayList<>();
 
-		public MapAtt(String name) {
+		public Attributes(String name) {
 			this.name = name;
 		}
 
-		public MapAtt put(String key, Object value, boolean condition, boolean separation) {
-			if (condition) {
-				if (separation)
-					separator();
-				entries.add(new SimpleEntry<>(key, value));
-			}
+		public Attributes put(String key, Object value, boolean condition) {
+			if (value instanceof String && ((String) value).length() == 0)
+				return this;
+			if (value instanceof Integer && ((Integer) value) == 0 && !key.contentEquals("run"))
+				return this;
+			if (value instanceof Long && ((Long) value) == 0)
+				return this;
+			// if (value instanceof Number && ((Number) value).doubleValue() == 0)
+			// return this;
+			if (condition)
+				list.add(new SimpleEntry<>(key, value));
 			return this;
 		}
 
-		public MapAtt put(String key, Object value, boolean condition) {
-			if (value instanceof String && ((String) value).length() == 0)
-				return this;
-			if (value instanceof Integer && ((Integer) value) == 0)
-				return this;
-			return put(key, value, condition, false);
-		}
-
-		public MapAtt put(String key, Object value) {
+		public Attributes put(String key, Object value) {
 			return put(key, value, true);
 		}
 
-		public MapAtt separator() {
+		public Attributes separator(boolean condition) {
+			return put(SEPARATOR, null, condition);
+		}
+
+		public Attributes separator() {
 			return put(SEPARATOR, null, true);
 		}
 
 		public List<Entry<String, Object>> entries() {
-			return entries.stream().filter(e -> e.getKey() != SEPARATOR).collect(Collectors.toCollection(ArrayList::new));
+			return list.stream().filter(e -> e.getKey() != SEPARATOR).collect(Collectors.toCollection(ArrayList::new));
 		}
 
 		@Override
 		public String toString() {
 			String s = (name.equals(RUN) ? "" : Output.COMMENT_PREFIX + Kit.preprint(name, Kit.BLUE) + "\n") + Output.COMMENT_PREFIX + Output.COMMENT_PREFIX;
 			boolean sep = true;
-			for (int i = 0; i < entries.size(); i++) {
-				Entry<String, Object> e = entries.get(i);
+			for (int i = 0; i < list.size(); i++) {
+				Entry<String, Object> e = list.get(i);
 				if (e.getKey() == SEPARATOR) {
 					s += "\n" + Output.COMMENT_PREFIX + Output.COMMENT_PREFIX;
 					sep = true;
@@ -418,24 +462,22 @@ public final class Features {
 		}
 	}
 
-	public MapAtt instanceAttributes(int instanceNumber) {
-		MapAtt m = new MapAtt(INSTANCE);
+	public Attributes instanceAttributes(int instanceNumber) {
+		SettingVars settings = problem.head.control.variables;
+		Attributes m = new Attributes(INSTANCE);
 		m.put(NAME, problem.name());
 		m.put(NUMBER, instanceNumber, Input.nInstancesToSolve > 1);
-		SettingVars settings = problem.head.control.variables;
-		if (settings.selectedVars.length > 0 || settings.instantiatedVars.length > 0 || settings.priorityVars.length > 0) {
-			m.separator();
-			m.put(SELECTION, Stream.of(settings.selectedVars).map(o -> o.toString()).collect(joining(",")));
-			m.put(INSTANTIATION, IntStream.range(0, settings.instantiatedVars.length)
-					.mapToObj(i -> settings.instantiatedVars[i] + "=" + settings.instantiatedVals[i]).collect(joining(",")));
-			m.put(PRIORITY, Stream.of(settings.priorityVars).map(o -> o.toString()).collect(joining(",")));
-			m.put(N_STRICT_PRIORITY, settings.nStrictPriorityVars);
-		}
+		m.separator(settings.selectedVars.length > 0 || settings.instantiatedVars.length > 0 || settings.priorityVars.length > 0);
+		m.put(SELECTION, Stream.of(settings.selectedVars).map(o -> o.toString()).collect(joining(",")));
+		m.put(INSTANTIATION, IntStream.range(0, settings.instantiatedVars.length)
+				.mapToObj(i -> settings.instantiatedVars[i] + "=" + settings.instantiatedVals[i]).collect(joining(",")));
+		m.put(PRIORITY, Stream.of(settings.priorityVars).map(o -> o.toString()).collect(joining(",")));
+		m.put(N_STRICT_PRIORITY, settings.nStrictPriorityVars);
 		return m;
 	}
 
-	public MapAtt domainsAttributes() {
-		MapAtt m = new MapAtt(DOMAINS);
+	public Attributes domainsAttributes() {
+		Attributes m = new Attributes(DOMAINS);
 		m.put(N_TYPES, nDomTypes());
 		m.put(N_VALUES, Variable.nValidValuesFor(problem.variables));
 		Kit.control(nValuesRemovedAtConstructionTime == problem.nValueRemovals);
@@ -444,8 +486,8 @@ public final class Features {
 		return m;
 	}
 
-	public MapAtt variablesAttributes() {
-		MapAtt m = new MapAtt(VARIABLES);
+	public Attributes variablesAttributes() {
+		Attributes m = new Attributes(VARIABLES);
 		m.put(COUNT, problem.variables.length);
 		m.put(N_DISCARDED, collecting.discardedVars.size());
 		m.put(N_ISOLATED, nIsolatedVars);
@@ -456,8 +498,8 @@ public final class Features {
 		return m;
 	}
 
-	public MapAtt constraintsAttributes() {
-		MapAtt m = new MapAtt(CONSTRAINTS);
+	public Attributes constraintsAttributes() {
+		Attributes m = new Attributes(CONSTRAINTS);
 		m.put(COUNT, problem.constraints.length);
 		m.put(N_REMOVED1, nRemovedUnaryCtrs);
 		m.put(N_CONVERTED, nConvertedConstraints);
@@ -468,42 +510,35 @@ public final class Features {
 		m.put(N_GENERATORS, nGenerators); // for symmetry-breaking constraints
 		m.put(N_CLIQUES, nCliques); // for redundant AllDifferent constraints
 		m.put(ARITIES, ctrArities);
-		m.put(DISTRIBUTION, ctrTypes, true, true);
-
-		if (tableSizes.repartition.size() > 0) {
-			m.separator();
-			m.put(TABLES, tableSizes);
-			m.put(N_TUPLES, tableSizes.cumulatedSum());
-		}
-
-		int nConflictsStructures = 0, nSharedConflictsStructures = 0, nUnbuiltConflictsStructures = 0;
-		int nExtensionStructures = 0, nSharedExtensionStructures = 0, nEvaluationManagers = 0, nSharedEvaluationManagers = 0;
+		m.separator();
+		m.put(DISTRIBUTION, ctrTypes);
+		m.separator(tableSizes.repartition.size() > 0);
+		m.put(TABLES, tableSizes.toString());
+		m.put(N_TUPLES, tableSizes.repartition.entrySet().stream().mapToLong(e -> e.getValue() * (Integer) e.getKey()).sum());
+		int nExtStructures = 0, nSharedExtStructures = 0, nIntStructures = 0, nSharedintStructures = 0, nCftStructures = 0, nSharedCftStructures = 0;
 		for (Constraint c : problem.constraints) {
 			if (c instanceof Extension)
 				if (c.extStructure().firstRegisteredCtr() == c)
-					nExtensionStructures++;
+					nExtStructures++;
 				else
-					nSharedExtensionStructures++;
+					nSharedExtStructures++;
 			if (c instanceof Intension)
-				if (((Intension) c).treeEvaluator.firstRegisteredCtr() == c)
-					nEvaluationManagers++;
+				if (c.intStructure().firstRegisteredCtr() == c)
+					nIntStructures++;
 				else
-					nSharedEvaluationManagers++;
-			if (c.conflictsStructure == null)
-				nUnbuiltConflictsStructures++;
-			else if (c.conflictsStructure.firstRegisteredCtr() == c)
-				nConflictsStructures++;
-			else
-				nSharedConflictsStructures++;
+					nSharedintStructures++;
+			if (c.conflictsStructure != null)
+				if (c.conflictsStructure.firstRegisteredCtr() == c)
+					nCftStructures++;
+				else
+					nSharedCftStructures++;
 		}
-		if (nExtensionStructures > 0 || nEvaluationManagers > 0 || nConflictsStructures > 0 || nSharedBinaryRepresentations > 0) {
-			m.separator();
-			m.put("nExtStructures", "(" + nExtensionStructures + ",shared:" + nSharedExtensionStructures + ")", nExtensionStructures > 0);
-			m.put("nIntStructures", "(" + nEvaluationManagers + ",shared:" + nSharedEvaluationManagers + ")", nEvaluationManagers > 0);
-			m.put("nCftStructures", "(" + nConflictsStructures + ",shared:" + nSharedConflictsStructures
-					+ (nUnbuiltConflictsStructures > 0 ? ",unbuilt:" + nUnbuiltConflictsStructures : "") + ")", nConflictsStructures > 0);
-			m.put("sharedBins", nSharedBinaryRepresentations);
-		}
+		m.separator(nExtStructures > 0 || nIntStructures > 0 || nCftStructures > 0 || nSharedBitVectors > 0);
+		m.put(N_EXT_STRUCTURES, "(" + nExtStructures + ",shared:" + nSharedExtStructures + ")", nExtStructures > 0);
+		m.put(N_INT_STRUCTURES, "(" + nIntStructures + ",shared:" + nSharedintStructures + ")", nIntStructures > 0);
+		int unbuilt = problem.constraints.length - nCftStructures - nSharedCftStructures;
+		m.put(N_CFT_STRUCTURES, "(" + nCftStructures + ",shared:" + nSharedCftStructures + ",unbuilt:" + unbuilt + ")", nCftStructures > 0);
+		m.put(SHARED_BITS, nSharedBitVectors);
 		m.separator();
 		m.put(WCK, problem.head.instanceStopwatch.wckTimeInSeconds());
 		m.put(CPU, problem.head.stopwatch.cpuTimeInSeconds());
@@ -511,9 +546,9 @@ public final class Features {
 		return m;
 	}
 
-	public MapAtt objectiveAttributes() {
+	public Attributes objectiveAttributes() {
 		Kit.control(problem.optimizer.ctr != null);
-		MapAtt m = new MapAtt(OBJECTIVE);
+		Attributes m = new Attributes(OBJECTIVE);
 		m.put(WAY, (problem.optimizer.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName());
 		m.put(TYPE, problem.optimizer.ctr.getClass().getSimpleName());
 		m.put(BOUNDS, (problem.optimizer.clb.limit() + ".." + problem.optimizer.cub.limit()));

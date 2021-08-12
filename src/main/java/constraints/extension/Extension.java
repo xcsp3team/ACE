@@ -263,8 +263,9 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 	}
 
 	public final void storeTuples(int[][] tuples, boolean positive) {
-		String stuffKey = signature() + " " + tuples + " " + positive; // TODO be careful, we assume that the address of tuples can be used. Is that correct?
-		this.key = problem.features.collectedTuples.computeIfAbsent(stuffKey, k -> signature() + "r" + problem.features.collectedTuples.size());
+		String tableKey = signature() + " " + tuples + " " + positive; // TODO be careful, we assume that the address of tuples can be used. Is that correct?
+		this.key = problem.features.collecting.tableKeys.computeIfAbsent(tableKey,
+				k -> signature() + "r" + problem.features.collecting.tableKeys.size());
 
 		control((positive && this instanceof TagPositive) || (!positive && this instanceof TagNegative)
 				|| (!(this instanceof TagPositive) && !(this instanceof TagNegative)), positive + " " + this.getClass().getName());

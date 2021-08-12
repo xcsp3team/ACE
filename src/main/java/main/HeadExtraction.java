@@ -22,6 +22,7 @@ import problem.Problem;
 import solver.Solver;
 import utility.Enums.EExtraction;
 import utility.Enums.ELearningIps;
+import utility.Enums.EStopping;
 import utility.Kit;
 import utility.Kit.Stopwatch;
 import variables.Variable;
@@ -191,7 +192,7 @@ public class HeadExtraction extends Head {
 		Kit.log.info("Start Finding Minimal Core of constraints (dichotomic) ...");
 		List<Constraint> core = new ArrayList<>();
 		for (boolean finished = false; !finished;) {
-			Constraint[] currCtrs = Kit.sort(arrayOfPossiblyPresentCtrs(), ctrComparator.coreAndMode(core, solver.stats.nPreproInconsistencies == 0));
+			Constraint[] currCtrs = Kit.sort(arrayOfPossiblyPresentCtrs(), ctrComparator.coreAndMode(core, solver.stopping != EStopping.FULL_EXPLORATION));
 			Arrays.fill(localCtrs, false);
 			int min = core.size(), max = currCtrs.length - 1;
 			for (int i = 0; i < min; i++)

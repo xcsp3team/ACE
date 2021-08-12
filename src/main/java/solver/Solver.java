@@ -45,7 +45,6 @@ import propagation.Forward;
 import propagation.Propagation;
 import sets.SetDense;
 import sets.SetSparseReversible;
-import solver.Statistics.StatisticsBacktrack;
 import utility.Enums.EBranching;
 import utility.Enums.EStopping;
 import utility.Kit;
@@ -311,14 +310,14 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 	}
 
 	/**********************************************************************************************
-	 * Observers
+	 * Section about attached observers
 	 *********************************************************************************************/
 
 	public final List<ObserverSearch> observersSearch;
 
 	public final List<ObserverRuns> observersRuns;
 
-	public final List<ObserverAssignments> observersAssignment;
+	public final List<ObserverAssignments> observersAssignments;
 
 	public List<ObserverDecisions> observersDecisions;
 
@@ -400,10 +399,6 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 	 */
 	public final Problem problem;
 
-	public final FutureVariables futVars;
-
-	public final Solutions solutions;
-
 	/**
 	 * The object that implements the restarts policy of the solver.
 	 */
@@ -411,11 +406,15 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 
 	public Propagation propagation;
 
-	public final Decisions decisions;
-
 	public HeuristicVariables heuristic;
 
 	public final LastConflict lastConflict; // reasoner about last conflicts (lc)
+
+	public final FutureVariables futVars;
+
+	public final Decisions decisions;
+
+	public final Solutions solutions;
 
 	public final NogoodRecorder nogoodRecorder;
 
@@ -481,7 +480,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 			nogoodRecorder.reset();
 		Kit.control(ipsRecorder == null);
 		Kit.control(stackedVariables.top == -1, () -> "Top= " + stackedVariables.top);
-		stats = new StatisticsBacktrack(this);
+		stats = new Statistics(this);
 		Kit.control(proofer == null);
 	}
 
@@ -508,7 +507,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		this.ipsRecorder = IpsRecorder.buildFor(this); // may be null
 		this.proofer = ipsRecorder != null && ipsRecorder.reductionOperator.enablePElimination() ? new Proofer() : null;
 		this.tracer = head.control.general.trace.length() != 0 ? new Tracer(head.control.general.trace) : null;
-		this.stats = new StatisticsBacktrack(this);
+		this.stats = new Statistics(this);
 
 		int nLevels = problem.variables.length + 1;
 		int size = Stream.of(problem.variables).mapToInt(x -> x.dom.initSize()).reduce(0, (sum, domSize) -> sum + Math.min(nLevels, domSize));
@@ -517,7 +516,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 
 		this.observersBacktrackingSystematic = collectObserversBacktrackingSystematic();
 		this.observersRuns = collectObserversRuns();
-		this.observersAssignment = collectObserversAssignments();
+		this.observersAssignments = collectObserversAssignments();
 		this.observersDecisions = collectObserversDecisions();
 		this.observersConflicts = collectObserversConflicts();
 		this.observersSearch = collectObserversSearch();
@@ -548,7 +547,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		futVars.remove(x);
 		x.assign(a);
 		decisions.addPositiveDecision(x, a);
-		for (ObserverAssignments obs : observersAssignment)
+		for (ObserverAssignments obs : observersAssignments)
 			obs.afterAssignment(x, a);
 	}
 
@@ -558,7 +557,7 @@ public class Solver implements ObserverRuns, ObserverBacktrackingSystematic {
 		futVars.add(x);
 		x.unassign();
 		decisions.delPositiveDecision(x);
-		for (ObserverAssignments obs : observersAssignment)
+		for (ObserverAssignments obs : observersAssignments)
 			obs.afterUnassignment(x);
 		for (ObserverBacktrackingSystematic obs : observersBacktrackingSystematic)
 			obs.restoreBefore(depthBeforeBacktrack);
