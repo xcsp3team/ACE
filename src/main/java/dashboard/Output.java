@@ -41,6 +41,7 @@ import solver.Statistics;
 import utility.Enums.EStopping;
 import utility.Enums.TypeOutput;
 import utility.Kit;
+import utility.Kit.Stopwatch;
 import variables.Variable;
 
 /**
@@ -477,10 +478,10 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		m.put(REMOVED_BY_AC, propagation instanceof GAC ? ((GAC) (propagation)).nPreproValueRemovals : 0);
 		// m.put("nTotalRemovedValues", nPreproRemovedValues);
 		m.put(UNSAT, head.solver.stopping == EStopping.FULL_EXPLORATION);
-		m.separator(stats.nPreproRemovedTuples > 0 || stats.nPreproAddedNogoods > 0 || stats.nPreproAddedCtrs > 0);
-		m.put(N_REMOVED_TUPLES, stats.nPreproRemovedTuples);
-		m.put(N_NOGOODS, stats.nPreproAddedNogoods);
-		m.put(N_ADDED_CTRS, stats.nPreproAddedCtrs);
+		m.separator(stats.prepro.nRemovedTuples > 0 || stats.prepro.nAddedNogoods > 0 || stats.prepro.nAddedCtrs > 0);
+		m.put(N_REMOVED_TUPLES, stats.prepro.nRemovedTuples);
+		m.put(N_NOGOODS, stats.prepro.nAddedNogoods);
+		m.put(N_ADDED_CTRS, stats.prepro.nAddedCtrs);
 		m.separator(propagation.nSingletonTests > 0);
 		m.put(N_SINGLETON_TESTS, propagation.nSingletonTests);
 		m.put(N_EFFECTIVE_SINGLETON_TESTS, propagation.nEffectiveSingletonTests);
@@ -489,8 +490,8 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		m.put(SUM_BRANCH_SIZES, propagation instanceof SACGreedy ? ((SACGreedy) (propagation)).sumBranchSizes : 0);
 		m.separator();
 		m.put(SOLS, head.solver.solutions.found);
-		m.put(SOL1_CPU, stats.firstSolCpu / 1000.0, head.solver.solutions.found > 0);
-		m.put(WCK, stats.preproWck / 1000.0);
+		m.put(SOL1_CPU, stats.times.firstSolCpu / 1000.0, head.solver.solutions.found > 0);
+		m.put(WCK, stats.times.preproWck / 1000.0);
 		m.put(CPU, head.stopwatch.cpuTimeInSeconds());
 		m.put(MEM, Kit.memoryInMb());
 		return m;
@@ -504,14 +505,14 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		m.put(N_WRONG, stats.nWrongDecisions);
 		if (Kit.memory() > 10000000000L)
 			m.put(MEM, Kit.memoryInMb());
-		m.put(WCK, stats.stopwatch.wckTimeInSeconds());
+		m.put(WCK, Stopwatch.formattedTimeInSeconds(stats.times.searchWck));
 		m.put(N_NOGOODS, head.solver.nogoodRecorder != null ? head.solver.nogoodRecorder.nNogoods : 0);
 		if (head.solver.solutions.found > 0) {
 			if (head.problem.settings.framework == TypeFramework.CSP)
 				m.put(SOLS, head.solver.solutions.found);
 			else {
 				if (head.problem.optimizer.minBound == 0 || head.problem.optimizer.minBound == Long.MIN_VALUE)
-					m.put(BOUND, stats.nformat.format(head.solver.solutions.bestBound));
+					m.put(BOUND, Kit.numberFormat.format(head.solver.solutions.bestBound));
 				else
 					m.put(BOUNDS, head.problem.optimizer.stringBounds());
 			}
@@ -560,11 +561,11 @@ public class Output implements ObserverConstruction, ObserverSearch, ObserverRun
 		if (head.solver.solutions.found > 0) {
 			if (head.problem.settings.framework != TypeFramework.CSP) {
 				m.put(BOUND, head.solver.solutions.bestBound);
-				m.put(BOUND_WCK, stats.lastSolWck / 1000.0);
-				m.put(BOUND_CPU, stats.lastSolCpu / 1000.0);
+				m.put(BOUND_WCK, stats.times.lastSolWck / 1000.0);
+				m.put(BOUND_CPU, stats.times.lastSolCpu / 1000.0);
 			}
 			m.put(SOLS, head.solver.solutions.found);
-			m.put(SOL1_CPU, stats.firstSolCpu / 1000.0);
+			m.put(SOL1_CPU, stats.times.firstSolCpu / 1000.0);
 		}
 		m.separator();
 		m.put(WCK, head.instanceStopwatch.wckTimeInSeconds());

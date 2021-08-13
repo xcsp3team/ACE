@@ -24,6 +24,7 @@ import java.math.BigInteger;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,11 +77,8 @@ public final class Kit {
 	private Kit() {
 	}
 
+	public static NumberFormat numberFormat = NumberFormat.getInstance();
 	public static DecimalFormat decimalFormat = new DecimalFormat("###.##", new DecimalFormatSymbols(Locale.ENGLISH));
-	public static DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
-	public static DecimalFormat df2 = new DecimalFormat("0.00", symbols);
-	public static DecimalFormat df1 = new DecimalFormat("0.0", symbols);
-	public static DecimalFormat df0 = new DecimalFormat("00");
 
 	public static Logger log = Logger.getLogger("Logger ACE");
 	static {
@@ -726,10 +724,27 @@ public final class Kit {
 
 	public static class Stopwatch {
 
-		private boolean cpuTimeSupported;
-		private long startWallClockTime;
+		private static DecimalFormat df1 = new DecimalFormat("0.0", new DecimalFormatSymbols(Locale.US));
+		private static DecimalFormat df2 = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.US));
 
-		/** Builds a stopwatch and starts it. */
+		public static String formattedTimeInSeconds(long time) {
+			double l = time / 1000.0;
+			return l < 10 ? df2.format(l) : df1.format(l);
+		}
+
+		/**
+		 * This field indicates whether CPU time can be computed
+		 */
+		private boolean cpuTimeSupported;
+
+		/**
+		 * The start wall clock time
+		 */
+		private long starWckTime;
+
+		/**
+		 * Builds a stopwatch and starts it
+		 */
 		public Stopwatch() {
 			cpuTimeSupported = ManagementFactory.getThreadMXBean().isCurrentThreadCpuTimeSupported();
 			start();
@@ -742,26 +757,45 @@ public final class Kit {
 			// return time; // ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
 		}
 
+		/**
+		 * Starts the stopwatch
+		 */
 		public void start() {
-			startWallClockTime = System.currentTimeMillis();
+			starWckTime = System.currentTimeMillis();
 		}
 
-		/** Returns the current duration given by the stopwatch while it is being currently running. */
+		/**
+		 * Returns the wall clock time in milliseconds, since the stopwatch has been started
+		 * 
+		 * @return the wall clock time in milliseconds
+		 */
 		public long wckTime() {
-			return System.currentTimeMillis() - startWallClockTime;
+			return System.currentTimeMillis() - starWckTime;
 		}
 
+		/**
+		 * Returns the wall clock time in seconds, since the stopwatch has been started
+		 * 
+		 * @return the wall clock time in seconds
+		 */
 		public String wckTimeInSeconds() {
-			double l = (System.currentTimeMillis() - startWallClockTime) / 1000.0;
-			return l < 10 ? df2.format(l) : df1.format(l);
+			return formattedTimeInSeconds(System.currentTimeMillis() - starWckTime);
 		}
 
-		/** Returns the cpu time in milliseconds */
+		/**
+		 * Returns the CPU time in milliseconds, or -1 if not supported
+		 * 
+		 * @return the CPU time in milliseconds
+		 */
 		public long cpuTime() {
 			return cpuTimeSupported ? computeCpuTime() / 1000000 : -1;
 		}
 
-		/** Returns the cpu time in seconds */
+		/**
+		 * Returns the CPU time in seconds, or -1 if not supported
+		 * 
+		 * @return the CPU time in seconds
+		 */
 		public String cpuTimeInSeconds() {
 			return cpuTimeSupported ? cpuTime() / 1000.0 + "" : "-1";
 		}

@@ -24,9 +24,15 @@ public abstract class StrongConsistency extends GAC {
 	protected abstract boolean enforceStrongConsistency();
 
 	protected boolean enforceMore() {
-		solver.stats.store();
+		// we store some statistics of the solver (because the strong consistency may change them)
+		long tmpa = solver.stats.nAssignments;
+		long tmpf = solver.stats.nFailedAssignments;
+		long tmpb = solver.stats.nBacktracks;
 		boolean consistent = enforceStrongConsistency();
-		solver.stats.restore();
+		// we restore some statistics of the solver
+		solver.stats.nAssignments = tmpa;
+		solver.stats.nFailedAssignments = tmpf;
+		solver.stats.nBacktracks = tmpb;
 		return consistent;
 	}
 

@@ -1,7 +1,5 @@
 package solver;
 
-import java.text.NumberFormat;
-
 import interfaces.Observers.ObserverDecisions;
 import interfaces.Observers.ObserverRuns;
 import interfaces.Observers.ObserverSearch;
@@ -10,32 +8,35 @@ import utility.Kit.Stopwatch;
 import variables.Variable;
 
 /**
- * This class allows us to gath all statistics of a solver.
+ * This class allows us to gather all statistics (as e.g., the number of backtracks) of a solver.
  * 
  * @author Christophe Lecoutre
  */
 public final class Statistics implements ObserverSearch, ObserverRuns, ObserverDecisions {
 
-	public static NumberFormat nformat = NumberFormat.getInstance();
-
 	/*************************************************************************
 	 ***** Implemented Interfaces
 	 *************************************************************************/
 
+	/**
+	 * A stopwatch used to compute the time taken by some operations (e.g., construction of the problem or solver)
+	 */
+	private final Stopwatch stopwatch = new Stopwatch();
+
 	@Override
 	public final void beforePreprocessing() {
 		stopwatch.start();
-		nPreproAddedNogoods = solver.nogoodRecorder != null ? solver.nogoodRecorder.nNogoods : 0;
-		nPreproAddedCtrs = solver.problem.constraints.length;
+		prepro.nAddedNogoods = solver.nogoodRecorder != null ? solver.nogoodRecorder.nNogoods : 0;
+		prepro.nAddedCtrs = solver.problem.constraints.length;
 	}
 
 	@Override
 	public final void afterPreprocessing() {
-		preproWck += stopwatch.wckTime();
-		nPreproAddedNogoods = solver.nogoodRecorder != null ? solver.nogoodRecorder.nNogoods - nPreproAddedNogoods : 0;
-		nPreproAddedCtrs = solver.problem.constraints.length - nPreproAddedCtrs;
-		nPreproRemovedValues = Variable.nRemovedValuesFor(solver.problem.variables);
-		nPreproRemovedTuples = solver.propagation.nTuplesRemoved;
+		times.preproWck += stopwatch.wckTime();
+		prepro.nAddedNogoods = solver.nogoodRecorder != null ? solver.nogoodRecorder.nNogoods - prepro.nAddedNogoods : 0;
+		prepro.nAddedCtrs = solver.problem.constraints.length - prepro.nAddedCtrs;
+		prepro.nRemovedValues = Variable.nRemovedValuesFor(solver.problem.variables);
+		prepro.nRemovedTuples = solver.propagation.nTuplesRemoved;
 	}
 
 	@Override
@@ -45,12 +46,12 @@ public final class Statistics implements ObserverSearch, ObserverRuns, ObserverD
 
 	@Override
 	public final void afterSolving() {
-		solvingWck += stopwatch.wckTime();
+		times.solvingWck += stopwatch.wckTime();
 	}
 
 	@Override
 	public void afterRun() {
-		searchWck = stopwatch.wckTime();
+		times.searchWck = stopwatch.wckTime();
 	}
 
 	@Override
@@ -70,27 +71,105 @@ public final class Statistics implements ObserverSearch, ObserverRuns, ObserverD
 	}
 
 	/*************************************************************************
+	 ***** Intern classes
+	 *************************************************************************/
+
+	public final static class Prepro {
+
+		public long nRemovedValues;
+
+		public long nRemovedTuples;
+
+		public long nAddedCtrs;
+
+		public long nAddedNogoods;
+	}
+
+	public final class Times {
+
+		public long solvingWck;
+
+		public long preproWck;
+
+		public long searchWck;
+
+		public long firstSolWck;
+
+		public long firstSolCpu;
+
+		public long lastSolWck;
+
+		public long lastSolCpu;
+
+		/**
+		 * Updates some data (times) when a new solution is found
+		 */
+		public void onNewSolution() {
+			lastSolCpu = solver.head.stopwatch.cpuTime();
+			lastSolWck = solver.head.instanceStopwatch.wckTime();
+			if (solver.solutions.found == 1) {
+				firstSolCpu = lastSolCpu;
+				firstSolWck = lastSolWck;
+			}
+		}
+
+	}
+
+	/*************************************************************************
 	 ***** Fields and Methods
 	 *************************************************************************/
 
 	/**
-	 * The solver to which the object is attached
+	 * The solver to which this object is attached
 	 */
 	public final Solver solver;
 
 	/**
-	 * A stopwatch used to compute the time taken by some operations (e.g., construction of the problem or solver)
+	 * The number of nodes of the search tree built by the solver
 	 */
-	public final Stopwatch stopwatch = new Stopwatch();
+	public long nNodes = 1;
 
-	public long nNodes = 1, nDecisions, nWrongDecisions, nBacktracks, nAssignments, nFailedAssignments;
+	/**
+	 * The number of decisions taken by the solver when building the search tree
+	 */
+	public long nDecisions;
 
-	public long nPreproRemovedValues, nPreproRemovedTuples, nPreproAddedCtrs, nPreproAddedNogoods;
+	/**
+	 * The number of wrong decisions taken by the solver when building the search tree
+	 */
+	public long nWrongDecisions;
 
-	public long solvingWck, preproWck, searchWck, firstSolWck, firstSolCpu, lastSolWck, lastSolCpu;
+	/**
+	 * The number of backtracks in the search tree built by the solver
+	 */
+	public long nBacktracks;
 
-	private long tmpNbAssignments, tmpNbBacktracks, tmpNbFailedAssignments;
+	/**
+	 * The number of assignments (positive decisions) made by the solver when building the search tree
+	 */
+	public long nAssignments;
 
+	/**
+	 * The number of failed assignments (positive decisions directly leading to a failure) made by the solver when building the search tree
+	 */
+	public long nFailedAssignments;
+
+	/**
+	 * The object used to collect data about the preprocessing stage
+	 */
+	public Prepro prepro = new Prepro();
+
+	/**
+	 * The object used to collect times taken by different operations
+	 */
+	public Times times = new Times();
+
+	/**
+	 * Builds an object to collect statistics about the specified solver
+	 * 
+	 * @param solver
+	 *            the solver to which this object is attached
+	 */
 	public Statistics(Solver solver) {
 		this.solver = solver;
 	}
@@ -99,34 +178,12 @@ public final class Statistics implements ObserverSearch, ObserverRuns, ObserverD
 		return nNodes + nAssignments + nBacktracks;
 	}
 
-	public void store() {
-		tmpNbAssignments = nAssignments;
-		tmpNbFailedAssignments = nFailedAssignments;
-		tmpNbBacktracks = nBacktracks;
-	}
-
-	public void restore() {
-		nAssignments = tmpNbAssignments;
-		nFailedAssignments = tmpNbFailedAssignments;
-		nBacktracks = tmpNbBacktracks;
-	}
-
 	public final long nRevisions() {
 		return solver.propagation instanceof Forward ? ((Forward) solver.propagation).reviser.nRevisions : 0;
 	}
 
 	public final long nUselessRevisions() {
 		return solver.propagation instanceof Forward ? ((Forward) solver.propagation).reviser.nUselessRevisions : 0;
-	}
-
-	public void manageSolution() {
-		long cpu = solver.head.stopwatch.cpuTime(), wck = solver.head.instanceStopwatch.wckTime();
-		if (solver.solutions.found == 1) {
-			firstSolCpu = cpu;
-			firstSolWck = wck;
-		}
-		lastSolCpu = cpu;
-		lastSolWck = wck;
 	}
 
 }

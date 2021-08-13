@@ -279,7 +279,7 @@ public final class Solutions {
 		record(null);
 		if (store != null)
 			store.add(last.clone());
-		solver.stats.manageSolution();
+		solver.stats.times.onNewSolution();
 
 		if (solver.propagation.performingProperSearch)
 			return;
