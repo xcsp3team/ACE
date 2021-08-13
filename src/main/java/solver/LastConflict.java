@@ -3,8 +3,8 @@ package solver;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import interfaces.Observers.ObserverDecisions;
-import interfaces.Observers.ObserverRuns;
+import interfaces.Observers.ObserverOnDecisions;
+import interfaces.Observers.ObserverOnRuns;
 import utility.Kit;
 import variables.Variable;
 
@@ -14,7 +14,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public final class LastConflict implements ObserverRuns, ObserverDecisions {
+public final class LastConflict implements ObserverOnRuns, ObserverOnDecisions {
 
 	/**********************************************************************************************
 	 * Implementing interfaces

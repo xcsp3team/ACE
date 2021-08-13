@@ -17,9 +17,9 @@ import constraints.Constraint;
 import constraints.global.Sum;
 import constraints.global.Sum.SumSimple;
 import constraints.global.Sum.SumWeighted;
-import interfaces.Observers.ObserverAssignments;
-import interfaces.Observers.ObserverConflicts;
-import interfaces.Observers.ObserverRuns;
+import interfaces.Observers.ObserverOnAssignments;
+import interfaces.Observers.ObserverOnConflicts;
+import interfaces.Observers.ObserverOnRuns;
 import interfaces.Tags.TagMaximize;
 import sets.SetDense;
 import solver.Solver;
@@ -154,7 +154,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	// ***** Subclasses for Wdeg variants
 	// ************************************************************************
 
-	public static abstract class WdegVariant extends HeuristicVariablesDynamic implements ObserverRuns, ObserverAssignments, ObserverConflicts, TagMaximize {
+	public static abstract class WdegVariant extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnAssignments, ObserverOnConflicts, TagMaximize {
 
 		private int time; // corresponds to the number of times a wipe-out occurred
 		private int[] ctime; // ctime[i] corresponds to the last time a wipe-out occurred for constraint i
@@ -323,7 +323,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	// ***** Subclasses for Activity/Impact
 	// ************************************************************************
 
-	public static abstract class ActivityImpactAbstract extends HeuristicVariables implements ObserverRuns {
+	public static abstract class ActivityImpactAbstract extends HeuristicVariables implements ObserverOnRuns {
 		protected Variable lastVar; // if null, either just after pre-processing, or singleton variable
 		protected int lastDepth = -1;
 		protected int[] lastSizes;

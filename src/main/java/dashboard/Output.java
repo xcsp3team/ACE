@@ -24,9 +24,9 @@ import constraints.Constraint;
 import constraints.extension.Extension;
 import constraints.intension.Intension;
 import dashboard.Control.SettingVars;
-import interfaces.Observers.ObserverConstruction;
-import interfaces.Observers.ObserverRuns;
-import interfaces.Observers.ObserverSearch;
+import interfaces.Observers.ObserverOnConstruction;
+import interfaces.Observers.ObserverOnRuns;
+import interfaces.Observers.ObserverOnSearch;
 import learning.IpsRecorder;
 import learning.IpsRecorderForEquivalence;
 import learning.ReductionOperator;
@@ -50,7 +50,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public class Output implements ObserverConstruction, ObserverSearch, ObserverRuns {
+public class Output implements ObserverOnConstruction, ObserverOnSearch, ObserverOnRuns {
 
 	/**********************************************************************************************
 	 * Constants

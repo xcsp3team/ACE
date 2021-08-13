@@ -180,8 +180,8 @@ import heuristics.HeuristicValues;
 import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicValuesDirect.Last;
 import heuristics.HeuristicValuesDirect.Values;
-import interfaces.Observers.ObserverConstruction;
-import interfaces.Observers.ObserverDomainReduction;
+import interfaces.Observers.ObserverOnConstruction;
+import interfaces.Observers.ObserverOnDomainReductions;
 import main.Head;
 import optimization.ObjectiveVariable;
 import optimization.ObjectiveVariable.ObjVarGE;
@@ -205,7 +205,7 @@ import variables.Variable;
 import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
 
-public class Problem extends ProblemIMP implements ObserverConstruction {
+public class Problem extends ProblemIMP implements ObserverOnConstruction {
 	public static final Boolean DONT_KNOW = null;
 	public static final Boolean STARRED = Boolean.TRUE;
 	public static final Boolean UNSTARRED = Boolean.FALSE;
@@ -452,7 +452,7 @@ public class Problem extends ProblemIMP implements ObserverConstruction {
 	/**
 	 * The list of observers on domains. Whenever a domain is reduced, a callback function is called.
 	 */
-	public final Collection<ObserverDomainReduction> observersDomainReduction = new ArrayList<>();
+	public final Collection<ObserverOnDomainReductions> observersDomainReduction = new ArrayList<>();
 
 	public final SettingGeneral settings;
 

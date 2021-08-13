@@ -7,14 +7,14 @@ import java.util.stream.Stream;
 import constraints.Constraint;
 import constraints.global.AllDifferent.AllDifferentComplete;
 import constraints.global.Cardinality.CardinalityConstant;
-import interfaces.Observers.ObserverConstruction;
+import interfaces.Observers.ObserverOnConstruction;
 import sets.SetSparse;
 import sets.SetSparseReversible;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Matcher implements ObserverConstruction {
+public abstract class Matcher implements ObserverOnConstruction {
 
 	public void restoreAtDepthBefore(int depth) {
 		unfixedVars.restoreLimitAtLevel(depth);

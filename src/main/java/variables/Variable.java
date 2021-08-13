@@ -32,7 +32,7 @@ import heuristics.HeuristicValues;
 import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicValuesDynamic.Bivs;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
-import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingUnsystematic;
+import interfaces.Observers.ObserverOnBacktracks.ObserveronBacktracksUnsystematic;
 import problem.Problem;
 import utility.Kit;
 import utility.Reflector;
@@ -47,7 +47,7 @@ import variables.DomainFinite.DomainValues;
  * solver tries to assign a value to a variable, it uses a <code>ValueOrderingHeuristic</code> object in order to know which value must be tried first. A
  * variable can occur in different constraints of the problem to which it is attached.
  */
-public abstract class Variable implements IVar, ObserverBacktrackingUnsystematic, Comparable<Variable> {
+public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic, Comparable<Variable> {
 
 	/**********************************************************************************************
 	 * Subclasses

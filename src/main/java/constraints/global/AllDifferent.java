@@ -20,7 +20,7 @@ import org.xcsp.common.Utilities;
 
 import constraints.Constraint.CtrGlobal;
 import constraints.global.Matcher.MatcherAllDifferent;
-import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagNotAC;
@@ -52,7 +52,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 	 * AllDifferentComplete
 	 *********************************************************************************************/
 
-	public static class AllDifferentComplete extends AllDifferent implements TagAC, TagFilteringCompleteAtEachCall, ObserverBacktrackingSystematic {
+	public static class AllDifferentComplete extends AllDifferent implements TagAC, TagFilteringCompleteAtEachCall, ObserverOnBacktracksSystematic {
 
 		@Override
 		public void restoreBefore(int depth) {
@@ -83,7 +83,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 	 * AllDifferentPermutation
 	 *********************************************************************************************/
 
-	public static final class AllDifferentPermutation extends AllDifferent implements TagNotAC, ObserverBacktrackingSystematic {
+	public static final class AllDifferentPermutation extends AllDifferent implements TagNotAC, ObserverOnBacktracksSystematic {
 
 		private SetSparseReversible unfixedVars, unfixedIdxs;
 
@@ -258,7 +258,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 	 * AllDifferentCounting (Experimental)
 	 *********************************************************************************************/
 
-	public static final class AllDifferentCounting extends AllDifferent implements TagNotAC, TagFilteringCompleteAtEachCall, ObserverBacktrackingSystematic {
+	public static final class AllDifferentCounting extends AllDifferent implements TagNotAC, TagFilteringCompleteAtEachCall, ObserverOnBacktracksSystematic {
 
 		@Override
 		public void restoreBefore(int depth) {
@@ -390,7 +390,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 	 * AllDifferentBound (Experimental)
 	 *********************************************************************************************/
 
-	public static final class AllDifferentBound extends AllDifferent implements ObserverBacktrackingSystematic, TagNotAC { // not call
+	public static final class AllDifferentBound extends AllDifferent implements ObserverOnBacktracksSystematic, TagNotAC { // not call
 																															// filtering-complete
 
 		@Override

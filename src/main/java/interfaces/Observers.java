@@ -5,7 +5,7 @@ import variables.Variable;
 
 public interface Observers {
 
-	interface ObserverConstruction {
+	interface ObserverOnConstruction {
 
 		default void beforeAnyConstruction() {
 		}
@@ -23,7 +23,7 @@ public interface Observers {
 		}
 	}
 
-	interface ObserverSearch {
+	interface ObserverOnSearch {
 
 		default void beforeSolving() { // solving = prepro + search
 		}
@@ -44,7 +44,7 @@ public interface Observers {
 		}
 	}
 
-	interface ObserverRuns {
+	interface ObserverOnRuns {
 		default void beforeRun() {
 		}
 
@@ -52,7 +52,18 @@ public interface Observers {
 		}
 	}
 
-	interface ObserverDecisions {
+	interface ObserverOnBacktracks {
+
+		void restoreBefore(int depthBeforeBacktrack);
+
+		interface ObserverOnBacktracksSystematic extends ObserverOnBacktracks {
+		}
+
+		interface ObserveronBacktracksUnsystematic extends ObserverOnBacktracks {
+		}
+	}
+
+	interface ObserverOnDecisions {
 
 		default void beforePositiveDecision(Variable x, int a) { // just before assignment
 		}
@@ -61,35 +72,24 @@ public interface Observers {
 		}
 	}
 
-	interface ObserverAssignments {
+	interface ObserverOnAssignments {
 
 		void afterAssignment(Variable x, int a);
 
 		void afterUnassignment(Variable x);
 	}
 
-	interface ObserverDomainReduction {
+	interface ObserverOnDomainReductions {
 		void afterRemoval(Variable x, int a);
 
 		void afterRemovals(Variable x, int nRemovals);
 	}
 
-	interface ObserverConflicts {
+	interface ObserverOnConflicts {
 
 		public void whenWipeout(Constraint c, Variable x);
 
 		// public void whenReduction(Constraint c, Variable x);
-	}
-
-	interface ObserverBacktracking {
-
-		void restoreBefore(int depthBeforeBacktrack);
-
-		interface ObserverBacktrackingSystematic extends ObserverBacktracking {
-		}
-
-		interface ObserverBacktrackingUnsystematic extends ObserverBacktracking {
-		}
 	}
 
 }

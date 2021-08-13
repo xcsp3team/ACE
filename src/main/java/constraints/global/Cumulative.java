@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 
 import constraints.Constraint.CtrGlobal;
 import constraints.global.Cumulative.TimetableReasoner.Slot;
-import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagNotAC;
 import problem.Problem;
@@ -23,7 +23,7 @@ import sets.SetSparseReversible;
 import utility.Kit;
 import variables.Variable;
 
-public abstract class Cumulative extends CtrGlobal implements TagFilteringCompleteAtEachCall, TagNotAC, ObserverBacktrackingSystematic {
+public abstract class Cumulative extends CtrGlobal implements TagFilteringCompleteAtEachCall, TagNotAC, ObserverOnBacktracksSystematic {
 
 	@Override
 	public void restoreBefore(int depth) {

@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Range;
 import org.xcsp.common.Types.TypeOperatorRel;
 
-import interfaces.Observers.ObserverDomainReduction;
+import interfaces.Observers.ObserverOnDomainReductions;
 import problem.Problem;
 import propagation.Propagation;
 import sets.SetDense;
@@ -454,7 +454,7 @@ public interface Domain extends SetLinked {
 		assert !x.assigned() && contains(a) : x + " " + x.assigned() + " " + contains(a);
 		int depth = propagation().solver.stackVariable(x); // stacking variables (to keep track of propagation) must always be performed before domain reduction
 		remove(a, depth);
-		for (ObserverDomainReduction observer : x.problem.observersDomainReduction)
+		for (ObserverOnDomainReductions observer : x.problem.observersDomainReduction)
 			observer.afterRemoval(x, a);
 		x.problem.nValueRemovals++;
 	}
@@ -564,7 +564,7 @@ public interface Domain extends SetLinked {
 		Variable x = var();
 		int depth = propagation().solver.stackVariable(x); // stacking variables must always be performed before domain reduction
 		int nRemovals = reduceTo(a, depth);
-		for (ObserverDomainReduction observer : x.problem.observersDomainReduction)
+		for (ObserverOnDomainReductions observer : x.problem.observersDomainReduction)
 			observer.afterRemovals(x, nRemovals);
 		x.problem.nValueRemovals += nRemovals;
 		assert nRemovals >= 0 && size() == 1 : "nRemovals: " + nRemovals + " size:" + size();

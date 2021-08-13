@@ -10,15 +10,15 @@ package learning;
 
 import constraints.Constraint;
 import dashboard.Control.SettingLearning;
-import interfaces.Observers.ObserverDomainReduction;
-import interfaces.Observers.ObserverRuns;
+import interfaces.Observers.ObserverOnDomainReductions;
+import interfaces.Observers.ObserverOnRuns;
 import solver.Solver;
 import utility.Enums.ELearningIps;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class IpsRecorder implements ObserverRuns {
+public abstract class IpsRecorder implements ObserverOnRuns {
 
 	public static IpsRecorder buildFor(Solver solver) {
 		if (solver.head.control.learning.state == ELearningIps.EQUIVALENCE)
@@ -70,7 +70,7 @@ public abstract class IpsRecorder implements ObserverRuns {
 	 * Justifier
 	 *********************************************************************************************/
 
-	public static final class Justifier implements ObserverDomainReduction {
+	public static final class Justifier implements ObserverOnDomainReductions {
 
 		/**
 		 * Stores which constraint is responsible of each value deletion. More precisely justifications[x][a] is either null or the constraint responsible for

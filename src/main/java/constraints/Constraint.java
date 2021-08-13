@@ -33,7 +33,7 @@ import constraints.intension.Intension.IntensionStructure;
 import dashboard.Control.SettingCtrs;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.FilteringSpecific;
-import interfaces.Observers.ObserverConstruction;
+import interfaces.Observers.ObserverOnConstruction;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagNotAC;
@@ -56,7 +56,7 @@ import variables.Variable;
  * A constraint is attached to a problem and is uniquely identified by a number <code>num</code> and an identifier <code>id</code>.<br>
  * A constraint involves a subset of variables of the problem.
  */
-public abstract class Constraint implements ICtr, ObserverConstruction, Comparable<Constraint> {
+public abstract class Constraint implements ICtr, ObserverOnConstruction, Comparable<Constraint> {
 
 	/*************************************************************************
 	 ***** Interfaces
@@ -507,7 +507,7 @@ public abstract class Constraint implements ICtr, ObserverConstruction, Comparab
 
 		if (this instanceof FilteringSpecific)
 			pb.features.nSpecificCtrs++;
-		if (this instanceof ObserverConstruction)
+		if (this instanceof ObserverOnConstruction)
 			pb.head.observersConstruction.add(this);
 
 		this.supporter = Supporter.buildFor(this);

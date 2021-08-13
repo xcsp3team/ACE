@@ -6,7 +6,7 @@ import org.xcsp.common.Types.TypeFramework;
 
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
 import dashboard.Control.SettingRestarts;
-import interfaces.Observers.ObserverRuns;
+import interfaces.Observers.ObserverOnRuns;
 import optimization.ObjectiveVariable;
 import sets.SetDense;
 import utility.Enums.EStopping;
@@ -18,7 +18,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public class Restarter implements ObserverRuns {
+public class Restarter implements ObserverOnRuns {
 
 	/**
 	 * Builds and returns a restarter object to be attached to the specified solver

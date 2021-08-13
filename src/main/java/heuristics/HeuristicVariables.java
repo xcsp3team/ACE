@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 import dashboard.Control.SettingVarh;
 import dashboard.Control.SettingVars;
-import interfaces.Observers.ObserverRuns;
+import interfaces.Observers.ObserverOnRuns;
 import problem.Problem;
 import propagation.GIC.GIC2;
 import solver.Solver;
@@ -181,7 +181,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	 * Special heuristic
 	 *************************************************************************/
 
-	public static final class Memory extends HeuristicVariables implements ObserverRuns {
+	public static final class Memory extends HeuristicVariables implements ObserverOnRuns {
 
 		@Override
 		public void beforeRun() {

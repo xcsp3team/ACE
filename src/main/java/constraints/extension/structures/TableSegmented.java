@@ -19,7 +19,7 @@ import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
 import constraints.extension.CSegmented;
-import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import problem.Problem;
 import sets.SetDenseReversible;
 import sets.SetSparse;
@@ -140,7 +140,7 @@ public class TableSegmented extends ExtensionStructure {
 			return s + " : " + Stream.of(restrictions).map(r -> r.toString()).collect(Collectors.joining(", "));
 		}
 
-		public static class RestrictionTable implements ObserverBacktrackingSystematic {
+		public static class RestrictionTable implements ObserverOnBacktracksSystematic {
 
 			@Override
 			public void restoreBefore(int depth) {

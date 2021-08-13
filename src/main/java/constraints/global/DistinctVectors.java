@@ -13,7 +13,7 @@ import java.util.stream.IntStream;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
@@ -27,7 +27,7 @@ import variables.Variable;
 // java ace Crossword-ogd-p02.xml.lzma -s=all -ev -di=0 -sl=42 -varh=Dom -g_dv=1  // intention
 // When the same variable occurs several times, DistinctVectors does not guarantee full GAC
 
-public final class DistinctVectors extends CtrGlobal implements ObserverBacktrackingSystematic, TagFilteringCompleteAtEachCall, TagNotSymmetric {
+public final class DistinctVectors extends CtrGlobal implements ObserverOnBacktracksSystematic, TagFilteringCompleteAtEachCall, TagNotSymmetric {
 
 	@Override
 	public void restoreBefore(int depth) {

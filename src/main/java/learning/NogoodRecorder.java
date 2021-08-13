@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Utilities;
 
 import dashboard.Control.SettingLearning;
-import interfaces.Observers.ObserverRuns;
+import interfaces.Observers.ObserverOnRuns;
 import solver.Decisions;
 import solver.Solver;
 import utility.Enums.ELearningNogood;
@@ -285,7 +285,7 @@ public final class NogoodRecorder {
 		return sb.append("}").toString();
 	}
 
-	private class SymmetryHandler implements ObserverRuns {
+	private class SymmetryHandler implements ObserverOnRuns {
 
 		@Override
 		public void beforeRun() {

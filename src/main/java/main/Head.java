@@ -39,7 +39,7 @@ import dashboard.Output;
 import heuristics.HeuristicRevisions;
 import heuristics.HeuristicValues;
 import heuristics.HeuristicVariables;
-import interfaces.Observers.ObserverConstruction;
+import interfaces.Observers.ObserverOnConstruction;
 import problem.Problem;
 import propagation.Propagation;
 import solver.Solver;
@@ -130,14 +130,14 @@ public class Head extends Thread {
 	 */
 	private static Head[] heads;
 
-	public synchronized static void saveMultithreadResultsFiles(Head resolution) {
-		String fileName = resolution.output.save(resolution.stopwatch.wckTime());
+	public synchronized static void saveMultithreadResultsFiles(Head head) {
+		String fileName = head.output.save(head.stopwatch.wckTime());
 		if (fileName != null) {
 			String variantParallelName = Kit.attValueFor(Input.lastArgument(), VARIANT_PARALLEL, NAME);
-			String resultsFileName = resolution.control.xml.dirForCampaign;
+			String resultsFileName = head.control.xml.dirForCampaign;
 			if (resultsFileName != "")
 				resultsFileName += File.separator;
-			resultsFileName += Output.RESULTS_DIRECTORY + File.separator + resolution.output.outputFileNameFrom(resolution.problem.name(), variantParallelName);
+			resultsFileName += Output.RESULTS_DIRECTORY + File.separator + head.output.outputFileNameFrom(head.problem.name(), variantParallelName);
 			Kit.copy(fileName, resultsFileName);
 			Document document = Kit.load(resultsFileName);
 			Kit.modify(document, TypeOutput.RESOLUTIONS.toString(), Output.CONFIGURATION_FILE_NAME, variantParallelName);
@@ -325,7 +325,7 @@ public class Head extends Thread {
 
 	public final Output output;
 
-	public final List<ObserverConstruction> observersConstruction = new ArrayList<>();
+	public final List<ObserverOnConstruction> observersConstruction = new ArrayList<>();
 
 	/**
 	 * The <code> Random </code> object used in resolution (randomization of heuristics, generation of random solutions,...). <br>
@@ -369,7 +369,7 @@ public class Head extends Thread {
 		}
 		SettingProblem settings = control.problem;
 		problem = new Problem(api, settings.variant, settings.data, settings.dataFormat, settings.dataexport, Input.argsForPb, this);
-		for (ObserverConstruction obs : observersConstruction)
+		for (ObserverOnConstruction obs : observersConstruction)
 			obs.afterProblemConstruction();
 		problem.display();
 		// Graphviz.saveGraph(problem, control.general.saveNetworkGraph);
@@ -379,7 +379,7 @@ public class Head extends Thread {
 	protected final Solver buildSolver(Problem problem) {
 		Kit.log.config("\n" + Output.COMMENT_PREFIX + "Building solver... ");
 		solver = Reflector.buildObject(control.solving.clazz, Solver.class, this);
-		for (ObserverConstruction obs : observersConstruction)
+		for (ObserverOnConstruction obs : observersConstruction)
 			obs.afterSolverConstruction();
 		return solver;
 	}

@@ -248,7 +248,7 @@ public final class Features {
 	/**
 	 * The object used for collecting variables and constraints at construction (initialization)
 	 */
-	public Collecting collecting = new Collecting();
+	public final Collecting collecting = new Collecting();
 
 	/**
 	 * Statistical repartition of variable degrees

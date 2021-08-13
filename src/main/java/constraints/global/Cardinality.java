@@ -6,14 +6,14 @@ import org.xcsp.common.Utilities;
 
 import constraints.Constraint.CtrGlobal;
 import constraints.global.Matcher.MatcherCardinality;
-import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 
-public abstract class Cardinality extends CtrGlobal implements ObserverBacktrackingSystematic {
+public abstract class Cardinality extends CtrGlobal implements ObserverOnBacktracksSystematic {
 
 	protected Matcher matcher;
 

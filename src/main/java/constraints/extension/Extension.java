@@ -27,7 +27,7 @@ import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.Tries;
 import interfaces.FilteringSpecific;
-import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagNegative;
@@ -149,7 +149,7 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 		}
 	}
 
-	public abstract static class ExtensionGlobal extends Extension implements FilteringSpecific, ObserverBacktrackingSystematic {
+	public abstract static class ExtensionGlobal extends Extension implements FilteringSpecific, ObserverOnBacktracksSystematic {
 
 		public ExtensionGlobal(Problem pb, Variable[] scp) {
 			super(pb, scp);

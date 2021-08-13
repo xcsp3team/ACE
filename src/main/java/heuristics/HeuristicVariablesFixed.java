@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import interfaces.Observers.ObserverRuns;
+import interfaces.Observers.ObserverOnRuns;
 import interfaces.Tags.TagMaximize;
 import solver.Solver;
 import utility.Kit;
@@ -22,7 +22,7 @@ import variables.Variable;
  * This class gives the description of a static variable ordering heuristic. <br>
  * It means that the order of all variable assignments is computed at initialization (before each run).
  */
-public abstract class HeuristicVariablesFixed extends HeuristicVariables implements ObserverRuns {
+public abstract class HeuristicVariablesFixed extends HeuristicVariables implements ObserverOnRuns {
 
 	private int nbRunsBeforeReinitializing = Integer.MAX_VALUE; // hard coding
 

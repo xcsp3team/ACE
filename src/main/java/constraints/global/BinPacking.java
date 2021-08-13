@@ -12,8 +12,8 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import constraints.Constraint.CtrGlobal;
-import interfaces.Observers.ObserverBacktracking.ObserverBacktrackingSystematic;
-import interfaces.Observers.ObserverConstruction;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
+import interfaces.Observers.ObserverOnConstruction;
 import interfaces.Tags.TagNotAC;
 import problem.Problem;
 import sets.SetDense;
@@ -98,7 +98,7 @@ public abstract class BinPacking extends CtrGlobal implements TagNotAC { // not 
 
 	}
 
-	public static final class BinPacking2 extends BinPacking implements ObserverConstruction, ObserverBacktrackingSystematic {
+	public static final class BinPacking2 extends BinPacking implements ObserverOnConstruction, ObserverOnBacktracksSystematic {
 
 		@Override
 		public void afterProblemConstruction() {

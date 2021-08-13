@@ -5,7 +5,7 @@ import java.util.stream.IntStream;
 import constraints.Constraint;
 import constraints.Constraint.CtrGlobal;
 import dashboard.Control.SettingPropagation;
-import interfaces.Observers.ObserverConflicts;
+import interfaces.Observers.ObserverOnConflicts;
 import learning.IpsRecorderForDominance;
 import sets.SetSparse;
 import solver.Solver;
@@ -320,7 +320,7 @@ public abstract class Propagation {
 	public final boolean handleReduction(Variable x, int newDomSize) {
 		if (newDomSize == 0) {
 			lastWipeoutVar = x;
-			for (ObserverConflicts obs : solver.observersConflicts)
+			for (ObserverOnConflicts obs : solver.observersOnConflicts)
 				obs.whenWipeout(currFilteringCtr, x);
 			// queue.clear();
 			return false;
