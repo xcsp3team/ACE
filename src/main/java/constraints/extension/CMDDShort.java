@@ -12,7 +12,7 @@ import java.util.Arrays;
 
 import org.xcsp.common.Constants;
 
-import constraints.extension.Extension.ExtensionGlobal;
+import constraints.ConstraintExtension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.MDDShort;
 import constraints.extension.structures.MDDShort.MDDNodeShort;
@@ -34,7 +34,7 @@ public final class CMDDShort extends ExtensionGlobal implements TagPositive, Tag
 		super.afterProblemConstruction();
 		int nNodes = ((MDDShort) extStructure).nNodes();
 		this.trueNodes = new int[nNodes];
-		if (problem.head.control.extension.decremental)
+		if (settings.decremental)
 			this.set = new SetSparseReversible(nNodes, problem.variables.length + 1, false);
 		else
 			this.falseNodes = new int[nNodes];
@@ -122,7 +122,7 @@ public final class CMDDShort extends ExtensionGlobal implements TagPositive, Tag
 			return false;
 		}
 
-		int cutoffVariant = problem.head.control.extension.variant;
+		int cutoffVariant = settings.variant;
 		if (cutoffVariant == 2) {
 			if (scp[level].isFuture()) {
 				if (!ac[level][a]) {

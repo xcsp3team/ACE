@@ -21,7 +21,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Constants;
 
 import constraints.Constraint;
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import heuristics.HeuristicValuesDynamic.Bivs;
 import heuristics.HeuristicVariables;
 import interfaces.Observers.ObserverOnAssignments;
@@ -672,7 +672,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	/**
 	 * Called when a contradiction has been encountered.
 	 */
-	private void manageContradiction(CtrGlobal objectiveToCheck) {
+	private void manageContradiction(ConstraintGlobal objectiveToCheck) {
 		for (boolean consistent = false; !consistent && stopping != EStopping.FULL_EXPLORATION;) {
 			Variable x = futVars.lastPast();
 			if (x == lastPastBeforeRun[nRecursiveRuns - 1] && !head.control.lns.enabled)
@@ -702,7 +702,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 			if (futVars.size() == 0) {
 				solutions.handleNewSolution();
 				boolean copContinue = problem.settings.framework == COP && !head.control.restarts.restartAfterSolution;
-				CtrGlobal objectiveCtr = copContinue ? (CtrGlobal) problem.optimizer.ctr : null;
+				ConstraintGlobal objectiveCtr = copContinue ? (ConstraintGlobal) problem.optimizer.ctr : null;
 				if (copContinue) {
 					// first, we directly change the limit value of the leading objective constraint
 					problem.optimizer.ctr.limit(problem.optimizer.ctr.objectiveValue() + (problem.optimizer.minimization ? -1 : 1));

@@ -10,7 +10,7 @@ package constraints.global;
 
 import org.xcsp.common.Types.TypeOperatorRel;
 
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import constraints.intension.PrimitiveBinary;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
@@ -19,7 +19,7 @@ import problem.Problem;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Lexicographic extends CtrGlobal implements TagNotSymmetric, TagFilteringCompleteAtEachCall, TagAC {
+public abstract class Lexicographic extends ConstraintGlobal implements TagNotSymmetric, TagFilteringCompleteAtEachCall, TagAC {
 
 	public static Lexicographic buildFrom(Problem pb, Variable[] list1, Variable[] list2, TypeOperatorRel op) {
 		switch (op) {
@@ -35,7 +35,7 @@ public abstract class Lexicographic extends CtrGlobal implements TagNotSymmetric
 	}
 
 	@Override
-	public boolean checkValues(int[] t) {
+	public boolean isSatisfiedBy(int[] t) {
 		for (int i = 0; i < half; i++) {
 			int v = t[positionOf(list1[i])], w = t[positionOf(list2[i])];
 			if (v < w)

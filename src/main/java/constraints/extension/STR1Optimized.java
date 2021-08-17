@@ -28,7 +28,7 @@ public abstract class STR1Optimized extends STR1 {
 		super.afterProblemConstruction();
 		this.sVal = new int[scp.length];
 		this.sSup = new int[scp.length];
-		if (decremental) {
+		if (settings.decremental) {
 			this.lastSizesStack = new int[problem.variables.length + 1][scp.length];
 			Arrays.fill(lastSizesStack[0], UNITIALIZED);
 		} else
@@ -38,7 +38,7 @@ public abstract class STR1Optimized extends STR1 {
 	@Override
 	public void restoreBefore(int depth) {
 		super.restoreBefore(depth);
-		if (decremental && depth > 0) // second part (depth > 0) for ensuring that aggressive runs can be used
+		if (settings.decremental && depth > 0) // second part (depth > 0) for ensuring that aggressive runs can be used
 			lastDepth = Math.max(0, Math.min(lastDepth, depth - 1));
 		else
 			Arrays.fill(lastSizes, UNITIALIZED);
@@ -47,8 +47,6 @@ public abstract class STR1Optimized extends STR1 {
 	/**********************************************************************************************
 	 * Fields
 	 *********************************************************************************************/
-
-	protected boolean decremental; // true if we exploit decrementality
 
 	protected int sValSize;
 	protected int[] sVal; // positions of the variables for which validity must be checked
@@ -68,11 +66,10 @@ public abstract class STR1Optimized extends STR1 {
 
 	public STR1Optimized(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		this.decremental = pb.head.control.extension.decremental;
 	}
 
 	protected void initRestorationStructuresBeforeFiltering() {
-		if (decremental) {
+		if (settings.decremental) {
 			int depth = problem.solver.depth();
 			assert 0 <= lastDepth && lastDepth <= depth : depth + " " + lastDepth + " " + this;
 			for (int i = lastDepth + 1; i <= depth; i++)

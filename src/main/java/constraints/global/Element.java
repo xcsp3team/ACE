@@ -12,7 +12,7 @@ import java.util.stream.IntStream;
 
 import org.xcsp.common.Utilities;
 
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import constraints.intension.PrimitiveBinary;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
@@ -22,7 +22,7 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagAC, TagFilteringCompleteAtEachCall {
+public abstract class Element extends ConstraintGlobal implements TagNotSymmetric, TagAC, TagFilteringCompleteAtEachCall {
 
 	public Element(Problem pb, Variable[] scp) {
 		super(pb, scp);
@@ -52,7 +52,7 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 		}
 
 		@Override
-		public boolean checkValues(int[] t) { // reasoning from checkIndexes is less expensive (no need to convert all values)
+		public boolean isSatisfiedBy(int[] t) { // reasoning from checkIndexes is less expensive (no need to convert all values)
 			throw new AssertionError();
 		}
 	}
@@ -251,7 +251,7 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 			private int[] rsentinels, csentinels;
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				int i = t[rindexPosition], j = t[cindexPosition];
 				return t[i * matrix.length + j] == value;
 			}
@@ -323,7 +323,7 @@ public abstract class Element extends CtrGlobal implements TagNotSymmetric, TagA
 			private final int[] valueRowSentinels, valueColSentinels;
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				int i = t[rindexPosition], j = t[cindexPosition];
 				return t[i * matrix.length + j] == t[vpos];
 			}

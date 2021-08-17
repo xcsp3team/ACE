@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagSymmetric;
@@ -24,10 +24,10 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public final class Among extends CtrGlobal implements TagSymmetric, TagAC, TagFilteringCompleteAtEachCall {
+public final class Among extends ConstraintGlobal implements TagSymmetric, TagAC, TagFilteringCompleteAtEachCall {
 
 	@Override
-	public boolean checkValues(int[] t) {
+	public boolean isSatisfiedBy(int[] t) {
 		return IntStream.of(t).filter(v -> values.contains(v)).count() == k;
 	}
 

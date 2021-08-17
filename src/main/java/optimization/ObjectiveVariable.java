@@ -8,14 +8,14 @@
  */
 package optimization;
 
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import variables.Variable;
 
-public abstract class ObjectiveVariable extends CtrGlobal implements Optimizable, TagAC, TagFilteringCompleteAtEachCall, TagSymmetric {
+public abstract class ObjectiveVariable extends ConstraintGlobal implements Optimizable, TagAC, TagFilteringCompleteAtEachCall, TagSymmetric {
 
 	@Override
 	public long minComputableObjectiveValue() {
@@ -69,7 +69,7 @@ public abstract class ObjectiveVariable extends CtrGlobal implements Optimizable
 	public static final class ObjVarLE extends ObjectiveVariable {
 
 		@Override
-		public boolean checkValues(int[] vals) {
+		public boolean isSatisfiedBy(int[] vals) {
 			return vals[0] <= limit;
 		}
 
@@ -90,7 +90,7 @@ public abstract class ObjectiveVariable extends CtrGlobal implements Optimizable
 	public static final class ObjVarGE extends ObjectiveVariable {
 
 		@Override
-		public boolean checkValues(int[] vals) {
+		public boolean isSatisfiedBy(int[] vals) {
 			return vals[0] >= limit;
 		}
 

@@ -12,14 +12,14 @@ import java.util.stream.IntStream;
 
 import org.xcsp.common.Types.TypeOperatorRel;
 
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import variables.Variable;
 
-public abstract class Ordered extends CtrGlobal implements TagAC, TagFilteringCompleteAtEachCall, TagNotSymmetric {
+public abstract class Ordered extends ConstraintGlobal implements TagAC, TagFilteringCompleteAtEachCall, TagNotSymmetric {
 
 	public static Ordered build(Problem pb, Variable[] x, int[] lengths, TypeOperatorRel op) {
 		switch (op) {
@@ -49,7 +49,7 @@ public abstract class Ordered extends CtrGlobal implements TagAC, TagFilteringCo
 	public static final class OrderedLT extends Ordered {
 
 		@Override
-		public final boolean checkValues(int[] t) {
+		public final boolean isSatisfiedBy(int[] t) {
 			return IntStream.range(0, t.length - 1).allMatch(i -> t[i] + lengths[i] < t[i + 1]);
 		}
 
@@ -77,7 +77,7 @@ public abstract class Ordered extends CtrGlobal implements TagAC, TagFilteringCo
 	public static final class OrderedLE extends Ordered {
 
 		@Override
-		public final boolean checkValues(int[] t) {
+		public final boolean isSatisfiedBy(int[] t) {
 			return IntStream.range(0, t.length - 1).allMatch(i -> t[i] + lengths[i] <= t[i + 1]);
 		}
 
@@ -104,7 +104,7 @@ public abstract class Ordered extends CtrGlobal implements TagAC, TagFilteringCo
 	public static final class OrderedGE extends Ordered {
 
 		@Override
-		public final boolean checkValues(int[] t) {
+		public final boolean isSatisfiedBy(int[] t) {
 			return IntStream.range(0, t.length - 1).allMatch(i -> t[i] + lengths[i] >= t[i + 1]);
 		}
 
@@ -131,7 +131,7 @@ public abstract class Ordered extends CtrGlobal implements TagAC, TagFilteringCo
 	public static final class OrderedGT extends Ordered {
 
 		@Override
-		public final boolean checkValues(int[] t) {
+		public final boolean isSatisfiedBy(int[] t) {
 			return IntStream.range(0, t.length - 1).allMatch(i -> t[i] + lengths[i] > t[i + 1]);
 		}
 

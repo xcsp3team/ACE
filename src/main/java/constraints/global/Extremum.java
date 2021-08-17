@@ -6,7 +6,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstEQ;
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstGE;
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
@@ -21,7 +21,7 @@ import problem.Problem;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Extremum extends CtrGlobal implements TagFilteringCompleteAtEachCall, TagAC {
+public abstract class Extremum extends ConstraintGlobal implements TagFilteringCompleteAtEachCall, TagAC {
 
 	protected final Variable[] list;
 
@@ -77,7 +77,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 		public static final class Maximum extends ExtremumVar {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] == IntStream.range(1, t.length).map(i -> t[i]).max().getAsInt();
 			}
 
@@ -151,7 +151,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 		public static final class Minimum extends ExtremumVar {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] == IntStream.range(1, t.length).map(i -> t[i]).min().getAsInt();
 			}
 
@@ -317,7 +317,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 			public static final class MaximumCstLE extends MaximumCst {
 
 				@Override
-				public boolean checkValues(int[] vals) {
+				public boolean isSatisfiedBy(int[] vals) {
 					return IntStream.of(vals).max().getAsInt() <= limit;
 				}
 
@@ -338,7 +338,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 			public static final class MaximumCstGE extends MaximumCst {
 
 				@Override
-				public boolean checkValues(int[] vals) {
+				public boolean isSatisfiedBy(int[] vals) {
 					return IntStream.of(vals).max().getAsInt() >= limit;
 				}
 
@@ -390,7 +390,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 				// TODO: only one class for MaximumCstEQ, MinimumCstEQ and Atleast1 ?
 
 				@Override
-				public boolean checkValues(int[] vals) {
+				public boolean isSatisfiedBy(int[] vals) {
 					return IntStream.of(vals).max().getAsInt() == limit;
 				}
 
@@ -494,7 +494,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 			public static final class MinimumCstLE extends MinimumCst {
 
 				@Override
-				public boolean checkValues(int[] vals) {
+				public boolean isSatisfiedBy(int[] vals) {
 					return IntStream.of(vals).min().getAsInt() <= limit;
 				}
 
@@ -543,7 +543,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 			public static final class MinimumCstGE extends MinimumCst {
 
 				@Override
-				public boolean checkValues(int[] vals) {
+				public boolean isSatisfiedBy(int[] vals) {
 					return IntStream.of(vals).min().getAsInt() >= limit;
 				}
 
@@ -565,7 +565,7 @@ public abstract class Extremum extends CtrGlobal implements TagFilteringComplete
 				// the code is similar to Atleast1 (modulo initial filtering, and call-filtering complete)
 
 				@Override
-				public boolean checkValues(int[] vals) {
+				public boolean isSatisfiedBy(int[] vals) {
 					return IntStream.of(vals).min().getAsInt() == limit;
 				}
 

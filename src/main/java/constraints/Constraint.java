@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints;
 
 import static org.xcsp.common.Constants.ALL;
@@ -23,13 +15,11 @@ import org.xcsp.common.Utilities;
 import org.xcsp.common.enumerations.EnumerationCartesian;
 import org.xcsp.modeler.definitions.ICtr;
 
-import constraints.extension.Extension;
+import constraints.ConstraintIntension.IntensionStructure;
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.global.Sum.SumSimple.SumSimpleEQ;
 import constraints.global.Sum.SumWeighted.SumWeightedEQ;
-import constraints.intension.Intension;
-import constraints.intension.Intension.IntensionStructure;
 import dashboard.Control.SettingCtrs;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.FilteringSpecific;
@@ -49,12 +39,15 @@ import sets.SetSparse;
 import utility.Kit;
 import variables.Domain;
 import variables.DomainInfinite;
+import variables.TupleIterator;
 import variables.Variable;
 
 /**
  * This class gives the description of a constraint. <br>
- * A constraint is attached to a problem and is uniquely identified by a number <code>num</code> and an identifier <code>id</code>.<br>
+ * A constraint is attached to a problem and is uniquely identified by a number <code>num</code> (and an identifier <code>id</code>).<br>
  * A constraint involves a subset of variables of the problem.
+ * 
+ * @author Christophe Lecoutre
  */
 public abstract class Constraint implements ICtr, ObserverOnConstruction, Comparable<Constraint> {
 
@@ -70,32 +63,56 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 
 	@Override
 	public void afterProblemConstruction() {
-		int nVariables = problem.variables.length, arity = scp.length;
-		if (settings.arityLimitForVapArrayLb < arity && (nVariables < settings.arityLimitForVapArrayUb || arity > nVariables / 3)) {
-			this.positions = Kit.repeat(-1, nVariables); // if a variable does not belong to the constraint, then its position is set to -1
-			for (int i = 0; i < arity; i++)
+		int n = problem.variables.length, r = scp.length;
+		if (settings.arityLimitForVapArrayLb < r && (n < settings.arityLimitForVapArrayUb || r > n / 3)) { // TODO hard coding
+			this.positions = Kit.repeat(-1, n); // if a variable does not belong to the constraint, then its position is set to -1
+			for (int i = 0; i < r; i++)
 				this.positions[scp[i].num] = i;
-			this.futvars = new SetSparse(arity, true);
+			this.futvars = new SetSparse(r, true);
 		} else {
 			this.positions = null;
-			this.futvars = new SetDense(arity, true);
+			this.futvars = new SetDense(r, true);
 		}
 	}
 
-	public static interface RegisteringCtrs { // note that constraints have necessarily the same types of domains
+	/**
+	 * An interface for objects that register constraints that are associated to them. Note that constraints have necessarily the same types of domains.
+	 */
+	public static interface RegisteringCtrs {
 
-		/** The list of constraints registered by this object. */
+		/**
+		 * Returns the list of constraints registered by this object
+		 * 
+		 * @return the list of constraints registered by this object
+		 */
 		abstract List<Constraint> registeredCtrs();
 
+		/**
+		 * Returns the first constraint that is registered with the object
+		 * 
+		 * @return the first constraint that is registered with the object
+		 */
 		default Constraint firstRegisteredCtr() {
 			return registeredCtrs().get(0);
 		}
 
+		/**
+		 * Adds a constraint to the list of constraints registered by this object
+		 * 
+		 * @param c
+		 *            a constraint
+		 */
 		default void register(Constraint c) {
 			assert !registeredCtrs().contains(c) && (registeredCtrs().size() == 0 || Domain.similarTypes(c.doms, firstRegisteredCtr().doms));
 			registeredCtrs().add(c);
 		}
 
+		/**
+		 * Removes a constraint to the list of constraints registered by this object
+		 * 
+		 * @param c
+		 *            a constraint
+		 */
 		default void unregister(Constraint c) {
 			boolean b = registeredCtrs().remove(c);
 			assert b;
@@ -103,13 +120,16 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/*************************************************************************
-	 ***** Two very special kinds of constraints False and True
+	 ***** Two very special kinds of constraints called False and True
 	 *************************************************************************/
 
+	/**
+	 * A class for constraints never satisfied (to be used in very special situations)
+	 */
 	public static class CtrFalse extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagAC {
 
 		@Override
-		public boolean checkValues(int[] t) {
+		public boolean isSatisfiedBy(int[] t) {
 			return false;
 		}
 
@@ -118,6 +138,9 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 			return false;
 		}
 
+		/**
+		 * A message indicating the reason why such a constraint is built
+		 */
 		public String message;
 
 		public CtrFalse(Problem pb, Variable[] scp, String message) {
@@ -126,10 +149,13 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		}
 	}
 
+	/**
+	 * A class for constraints always satisfied (to be used in very special situations)
+	 */
 	public static class CtrTrue extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagAC {
 
 		@Override
-		public boolean checkValues(int[] t) {
+		public boolean isSatisfiedBy(int[] t) {
 			return true;
 		}
 
@@ -140,25 +166,6 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 
 		public CtrTrue(Problem pb, Variable[] scp) {
 			super(pb, scp);
-		}
-	}
-
-	/*************************************************************************
-	 ***** CtrGlobal
-	 *************************************************************************/
-
-	public static abstract class CtrGlobal extends Constraint implements FilteringSpecific {
-
-		protected final void defineKey(Object... specificData) {
-			StringBuilder sb = signature().append(' ').append(getClass().getSimpleName());
-			for (Object data : specificData)
-				sb.append(' ').append(data.toString());
-			this.key = sb.toString(); // getSignature().append(' ').append(this.getClass().getSimpleName()).append(' ') + o.toString();
-		}
-
-		public CtrGlobal(Problem pb, Variable[] scp) {
-			super(pb, scp);
-			filteringComplexity = 1;
 		}
 	}
 
@@ -174,7 +181,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 */
 	public static final Constraint TAG = new Constraint() {
 		@Override
-		public boolean checkValues(int[] t) {
+		public boolean isSatisfiedBy(int[] t) {
 			throw new AssertionError();
 		}
 	};
@@ -197,10 +204,10 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		for (Constraint c : constraints) {
 			if (c.ignored)
 				continue;
-			int[] tmp = c.tupleManager.localTuple;
-			for (int i = 0; i < tmp.length; i++)
-				tmp[i] = solution != null ? solution[c.scp[i].num] : c.scp[i].dom.single();
-			if (c.checkIndexes(tmp) == false)
+			int[] t = c.tupleIterator.buffer;
+			for (int i = 0; i < t.length; i++)
+				t[i] = solution != null ? solution[c.scp[i].num] : c.scp[i].dom.single();
+			if (c.checkIndexes(t) == false)
 				return c;
 		}
 		return null;
@@ -228,7 +235,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		long cost = 0;
 		for (Constraint c : ctrs)
 			if (c.futvars.size() == 0)
-				cost = Kit.addSafe(cost, c.costOfCurrInstantiation());
+				cost = Kit.addSafe(cost, c.costOfCurrentInstantiation());
 		return cost;
 	}
 
@@ -242,7 +249,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		start: while (ec.hasNext()) {
 			int[] indexes = ec.next();
 			for (int i = 0; i < ctrs.length; i++) {
-				int[] t = ctrs[i].tupleManager.localTuple;
+				int[] t = ctrs[i].tupleIterator.buffer;
 				for (int j = 0; j < t.length; j++)
 					t[j] = indexes[positions[i][j]];
 				if (!ctrs[i].checkIndexes(t))
@@ -259,21 +266,29 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 * Fields
 	 *************************************************************************/
 
-	/** The problem to which the constraint belongs. */
+	/**
+	 * The problem to which the constraint belongs.
+	 */
 	public final Problem problem;
 
-	/** The number of the constraint; it is <code>-1</code> when not fully initialized or not a direct constraint of the problem. */
+	/**
+	 * The number of the constraint; it is <code>-1</code> when not fully initialized or not a direct constraint of the problem.
+	 */
 	public int num = -1;
 
-	/** The id (identifier or name) of the constraint. */
+	/**
+	 * The id (identifier or name) of the constraint.
+	 */
 	private String id;
 
-	/** The scope of the constraint, i.e. the set of variables involved in the constraint. */
+	/**
+	 * The scope of the constraint, i.e. the set of variables involved in the constraint.
+	 */
 	public final Variable[] scp;
 
 	/**
-	 * The position of all variables of the problem in the constraint. It is -1 when not involved.For constraint of small arity, not necessarily built. So, you
-	 * need to call <code> positionOf </code> instead of accessing directly this field.
+	 * The position of all variables of the problem in the constraint. It is -1 when not involved. For constraint of small arity, this array is not necessarily
+	 * built. So, you need to call <code> positionOf </code> instead of accessing directly this field.
 	 */
 	private int[] positions;
 
@@ -287,8 +302,10 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	/** The key of the constraint. Used for symmetry detection. */
 	public String key;
 
-	/** The assistant which manages the tuples of the constraint. */
-	public final TupleManager tupleManager;
+	/**
+	 * The object that can be used to iterate over the (valid) tuples of the Cartesian product of the domains of the constraint scope.
+	 */
+	public final TupleIterator tupleIterator;
 
 	protected final Supporter supporter;
 
@@ -378,7 +395,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 */
 	public boolean isIrreflexive() {
 		control(scp.length == 2);
-		int[] tuple = tupleManager.localTuple;
+		int[] tuple = tupleIterator.buffer;
 		int p = scp[0].dom.size() > scp[1].dom.size() ? 1 : 0, q = p == 0 ? 1 : 0;
 		Domain dx = scp[p].dom, dy = scp[q].dom;
 		for (int a = dx.first(); a != -1; a = dx.next(a)) {
@@ -394,8 +411,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	public boolean isSubstitutableBy(int x, int a, int b) {
-		tupleManager.firstValidTupleWith(x, a);
-		return !tupleManager.findValidTupleChecking(t -> {
+		tupleIterator.firstValidTupleWith(x, a);
+		return !tupleIterator.findValidTupleChecking(t -> {
 			t[x] = a;
 			boolean b1 = checkIndexes(t);
 			t[x] = b;
@@ -466,7 +483,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	private Constraint() {
 		this.problem = null;
 		this.scp = new Variable[0];
-		this.tupleManager = null;
+		this.tupleIterator = null;
 		this.vals = null;
 		this.doms = null;
 		this.genericFilteringThreshold = Integer.MAX_VALUE;
@@ -476,7 +493,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	private final int computeGenericFilteringThreshold() {
-		if (this instanceof FilteringSpecific || this instanceof Extension)
+		if (this instanceof FilteringSpecific || this instanceof ConstraintExtension)
 			return Integer.MAX_VALUE; // because not concerned
 		int arityLimit = problem.head.control.propagation.arityLimitForGACGuaranteed;
 		if (scp.length <= arityLimit)
@@ -498,7 +515,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		this.infiniteDomainVars = Stream.of(scp).filter(x -> x.dom instanceof DomainInfinite).toArray(Variable[]::new);
 
 		this.doms = Variable.buildDomainsArrayFor(scp);
-		this.tupleManager = new TupleManager(scp);
+		this.tupleIterator = new TupleIterator(this.doms);
 		this.vals = new int[scp.length];
 		this.settings = pb.head.control.constraints;
 
@@ -523,6 +540,12 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 * Methods
 	 *********************************************************************************************/
 
+	/**
+	 * Records the fact that the specified variable is now a past variable (i.e., explicitly assigned by the solver)
+	 * 
+	 * @param x
+	 *            the variable that has been explicitly assigned
+	 */
 	public final void doPastVariable(Variable x) {
 		if (positions != null)
 			((SetSparse) futvars).remove(positions[x.num]);
@@ -535,129 +558,215 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 			}
 	}
 
+	/**
+	 * Records the fact that the specified variable is not more a past variable (i.e., no more explicitly assigned by the solver)
+	 * 
+	 * @param x
+	 *            the variable that is no more explicitly assigned
+	 */
 	public final void undoPastVariable(Variable x) {
 		assert x.assigned() && scp[futvars.dense[futvars.size()]] == x;
 		futvars.limit++;
 	}
 
 	/**
-	 * Determines if the given tuple is a support of the constraint, i.e., if the given tuple belongs to the relation associated with the constraint. Be
-	 * careful: although indexes of values are managed in the core of the solver, at this stage, the given tuple contains values (and not indexes of values).
+	 * Determines if the specified tuple satisfies the constraint, i.e., if the specified tuple belongs to the relation defining the constraint. Be careful:
+	 * although indexes of values are managed in the core of the solver, at this stage, the given tuple contains values (and not indexes of values).
 	 * 
-	 * @return true iff the tuple is a support of the constraint
+	 * @param t
+	 *            a tuple of values
+	 * @return true if the specified tuple of values satisfies the constraint
 	 */
-	public abstract boolean checkValues(int[] t);
+	public abstract boolean isSatisfiedBy(int[] t);
 
 	/**
-	 * Determines if the given tuple is a support of the constraint, i.e., if the given tuple belongs to the relation associated with the constraint. Be
-	 * careful: the given tuple must contains indexes of values.
+	 * Determines if the specified tuple corresponds to a support of the constraint, i.e., if the tuple of values corresponding to the indexes in the specified
+	 * tuple satisfies the constraint. Be careful: the given tuple must contains indexes of values.
 	 * 
-	 * @param target
-	 *            a given tuple of indexes (of values)
-	 * @return true iff the tuple of values corresponding to the given tuple of indexes is a support of the constraint
+	 * @param t
+	 *            a tuple of indexes (of values)
+	 * @return true if the tuple of values corresponding to the specified tuple of indexes satisfies the constraint
 	 */
 	public boolean checkIndexes(int[] t) {
-		return indexesMatchValues ? checkValues(t) : checkValues(toVals(t));
-	}
-
-	public int[] buildCurrentInstantiationTuple() {
-		int[] tuple = tupleManager.localTuple;
-		for (int i = tuple.length - 1; i >= 0; i--)
-			tuple[i] = doms[i].single();
-		return tuple;
-	}
-
-	/** All variables of the scope must be fixed. */
-	public boolean checkCurrentInstantiation() {
-		return checkIndexes(buildCurrentInstantiationTuple());
-	}
-
-	public long costOfCurrInstantiation() {
-		return checkIndexes(buildCurrentInstantiationTuple()) ? 0 : cost;
+		if (indexesMatchValues)
+			return isSatisfiedBy(t);
+		for (int i = vals.length - 1; i >= 0; i--) // we use the local array vals
+			vals[i] = doms[i].toVal(t[i]);
+		return isSatisfiedBy(vals);
 	}
 
 	/**
-	 * Transforms all indexes of the given tuple into values. Elements of the tuple must then correspond to index of values occurring in the domains of the
-	 * variables involved in the constraint.
-	 */
-	public int[] toVals(int[] idxs) {
-		for (int i = vals.length - 1; i >= 0; i--)
-			vals[i] = doms[i].toVal(idxs[i]);
-		return vals;
-	}
-
-	public int[] toIdxs(int[] vals, int[] idxs) {
-		for (int i = vals.length - 1; i >= 0; i--)
-			idxs[i] = doms[i].toIdx(vals[i]);
-		return idxs;
-	}
-
-	/**
-	 * Determines if the given tuple (usually a support) is still valid. We have just to test that all indexes are still in the domains of the variables
-	 * involved in the constraint. Do not call the <code> check </code> method instead since it can not take into account removed values.
+	 * Returns a tuple with the indexes of the values of the current instantiation of the variables in the constraint scope
 	 * 
-	 * @param tuple
-	 *            a given tuple of indexes (of values)
-	 * @return <code> true </code> iff the tuple is valid
+	 * @return a tuple with the indexes of the values of the current instantiation of the variables in the constraint scope
 	 */
-	public final boolean isValid(int[] tuple) {
-		for (int i = tuple.length - 1; i >= 0; i--)
-			if (!doms[i].contains(tuple[i]))
+	private int[] instantiationIndexes() {
+		int[] t = tupleIterator.buffer;
+		for (int i = t.length - 1; i >= 0; i--)
+			t[i] = doms[i].single();
+		return t;
+	}
+
+	/**
+	 * Returns true if the current instantiation of the variables of the constraint scope satisfies the constraint. IMPORTANT: all variables of the constraint
+	 * scope must be fixed (i.e., with singleton domains).
+	 * 
+	 * @return true if the current instantiation of the variables of the constraint scope satisfies the constraint
+	 */
+	public boolean isSatisfiedByCurrentInstantiation() {
+		return checkIndexes(instantiationIndexes());
+	}
+
+	/**
+	 * Returns 0 if the constraint is satisfied by the current instantiation, or the cost that is associated with the constraint, otherwise. IMPORTANT: all
+	 * variables of the constraint scope must be fixed (i.e., with singleton domains).
+	 * 
+	 * @return 0 if the constraint is satisfied by the current instantiation, or the cost that is associated with the constraint
+	 */
+	public long costOfCurrentInstantiation() {
+		return checkIndexes(instantiationIndexes()) ? 0 : cost;
+	}
+
+	/**
+	 * Determines if the specified tuple of indexes (usually a support) is still valid. We have just to test that all indexes are still in the domains of the
+	 * variables involved in the constraint. Do not call the <code> isSatisfiedBy </code> method instead since it does not take removed values into account.
+	 * 
+	 * @param t
+	 *            a tuple of indexes (of values)
+	 * @return <code> true </code> if the specified tuple of indexes is valid
+	 */
+	public final boolean isValid(int[] t) {
+		for (int i = t.length - 1; i >= 0; i--)
+			if (!doms[i].contains(t[i]))
 				return false;
 		return true;
 	}
 
 	/**
-	 * Seeks a support for the constraint when considering the current state of the domains and the tuple currently managed by the tuple manager (initial value
-	 * of the current tuple included in search). A lexicographic order is used.
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint) for the constraint when considering the current state of the domains and the tuple
+	 * currently managed by the tuple iterator (this current tuple included in the search). A lexicographic order is used.
+	 * 
+	 * @return true if a support can be found from the current tuple managed by the object 'tupleIterator'
 	 */
 	private final boolean seekSupport() {
-		return tupleManager.findValidTupleChecking(t -> checkIndexes(t));
+		return tupleIterator.findValidTupleSatisfying(this);
 	}
 
+	/**
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order, and returns true is such a support can be found
+	 * 
+	 * @return true if a support can be found
+	 */
 	public final boolean seekFirstSupport() {
-		tupleManager.firstValidTuple();
+		tupleIterator.firstValidTuple();
 		return seekSupport();
 	}
 
+	/**
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the requirement that the support involves
+	 * the specified pair (x,a), and returns true is such a support can be found
+	 * 
+	 * @param x
+	 *            a variable
+	 * @param a
+	 *            an index (of value) for the variable
+	 * @return true if a support can be found involving the specified pair (x,a)
+	 */
 	public final boolean seekFirstSupportWith(int x, int a) {
-		tupleManager.firstValidTupleWith(x, a);
+		tupleIterator.firstValidTupleWith(x, a);
 		return seekSupport();
 	}
 
+	/**
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the requirement that the support involves
+	 * the specified pair (x,a), and returns true is such a support can be found. The support (containing indexes of values instead of values) is recorded in
+	 * the specified buffer.
+	 * 
+	 * @param x
+	 *            a variable
+	 * @param a
+	 *            an index (of value) for the variable
+	 * @param buffer
+	 *            an array where to store the support (containing indexes of values instead of values)
+	 * @return true if a support can be found involving the specified pair (x,a)
+	 */
 	public boolean seekFirstSupportWith(int x, int a, int[] buffer) {
-		tupleManager.firstValidTupleWith(x, a, buffer);
+		tupleIterator.firstValidTupleWith(x, a, buffer);
 		return seekSupport();
 	}
 
+	/**
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the requirement that the support involves
+	 * the specified pairs (x,a) and (y,b), and returns true is such a support can be found. T
+	 * 
+	 * @param x
+	 *            a first variable
+	 * @param a
+	 *            an index (of value) for the first variable
+	 * @param y
+	 *            a second variable
+	 * @param b
+	 *            an index (of value) for the second variable
+	 * @return true if a support can be found involving the specified pairs (x,a) and (y,b)
+	 */
 	public final boolean seekFirstSupportWith(int x, int a, int y, int b) {
-		tupleManager.firstValidTupleWith(x, a, y, b);
+		tupleIterator.firstValidTupleWith(x, a, y, b);
 		return seekSupport();
 	}
 
-	// The next support is searched for from tupleManager.currTuple(), excluded, which is not necessarily valid (as it may have been
-	// deleted). If some values have been fixed, they remain fixed
+	/**
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the requirement that the support must come
+	 * after the current tuple (excluded) managed by the tuple iterator, and returns true is such a support can be found. Note that the current tuple (of the
+	 * tuple iterator) is not necessarily valid (as it may have been deleted). Besides, if some values have been fixed in the tuple iterator, they remain fixed.
+	 * 
+	 * @return true if another support can be found from the current tuple (excluded) managed by the tuple iterator
+	 */
 	public final boolean seekNextSupport() {
-		return tupleManager.nextValidTupleCautiously() != -1 && seekSupport();
+		return tupleIterator.nextValidTupleCautiously() != -1 && seekSupport();
 	}
 
 	private final boolean seekConflict() {
-		return tupleManager.findValidTupleChecking(t -> !checkIndexes(t));
+		return tupleIterator.findValidTupleNotSatisfying(this);
 	}
 
+	/**
+	 * Seeks a conflict (i.e., a valid tuple not satisfying the constraint), while considering a lexicographic order, and returns true is such a conflict can be
+	 * found
+	 * 
+	 * @return true if a conflict can be found
+	 */
 	public final boolean seekFirstConflict() {
-		tupleManager.firstValidTuple();
+		tupleIterator.firstValidTuple();
 		return seekConflict();
 	}
 
+	/**
+	 * Seeks a conflict (i.e., a valid tuple not satisfying the constraint), while considering a lexicographic order and the requirement that the conflict
+	 * involves the specified pair (x,a), and returns true is such a conflict can be found
+	 * 
+	 * @param x
+	 *            a variable
+	 * @param a
+	 *            an index (of value) for the variable
+	 * @return true if a conflict can be found involving the specified pair (x,a)
+	 */
 	public final boolean seekFirstConflictWith(int x, int a) {
-		tupleManager.firstValidTupleWith(x, a);
+		tupleIterator.firstValidTupleWith(x, a);
 		return seekConflict();
 	}
 
+	/**
+	 * Returns the number of conflicts (i.e., valid tuples not satisfying the constraint) involving the specified pair (x,a)
+	 * 
+	 * @param x
+	 *            a variable
+	 * @param a
+	 *            an index (of value) for the variable
+	 * @return the number of conflicts involving the specified pair (x,a)
+	 */
 	public long nConflictsFor(int x, int a) {
-		tupleManager.firstValidTupleWith(x, a);
-		return tupleManager.countValidTuplesChecking(t -> !checkIndexes(t));
+		tupleIterator.firstValidTupleWith(x, a);
+		return tupleIterator.countValidTuplesChecking(t -> !checkIndexes(t));
 	}
 
 	public boolean findArcSupportFor(int x, int a) {
@@ -684,7 +793,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		assert infiniteDomainVars.length > 0;
 		// TODO huge domains are not finalized
 		if (futvars.size() == 0)
-			return this.checkCurrentInstantiation();
+			return isSatisfiedByCurrentInstantiation();
 		if (futvars.size() == 1) {
 			if (this instanceof SumSimpleEQ) {
 				((SumSimpleEQ) this).deduce();
@@ -740,8 +849,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 			// if the condition is replaced by != TypeFramework.MACSP, there is a pb with java -ea ac PlaneparkingTask.xml -ea -cm=false -ev -trace
 			// possibly too with GraphColoring-sum-GraphColoring_1-fullins-3.xml.lzma
 			if (futvars.size() == 0) {
-				assert !isGuaranteedAC() || checkCurrentInstantiation() : "Unsatisfied constraint " + this + "while AC should be guaranteed";
-				return isGuaranteedAC() || checkCurrentInstantiation();
+				assert !isGuaranteedAC() || isSatisfiedByCurrentInstantiation() : "Unsatisfied constraint " + this + "while AC should be guaranteed";
+				return isGuaranteedAC() || isSatisfiedByCurrentInstantiation();
 			}
 			if (futvars.size() == 1 && x.isFuture() && scp.length > 1)
 				return true;
@@ -805,9 +914,9 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	public void display(boolean exhaustively) {
 		Kit.log.finer("Constraint " + toString());
 		Kit.log.finer(
-				"\tClass = " + getClass().getName() + (this instanceof Extension ? ":" + ((Extension) this).extStructure().getClass().getSimpleName() : ""));
-		if (this instanceof Intension)
-			Kit.log.finer("\tPredicate: " + ((Intension) this).tree.toFunctionalExpression(null));
+				"\tClass = " + getClass().getName() + (this instanceof ConstraintExtension ? ":" + ((ConstraintExtension) this).extStructure().getClass().getSimpleName() : ""));
+		if (this instanceof ConstraintIntension)
+			Kit.log.finer("\tPredicate: " + ((ConstraintIntension) this).tree.toFunctionalExpression(null));
 		Kit.log.finer("\tKey = " + key);
 		Kit.log.finest("\tCost = " + cost);
 	}

@@ -10,7 +10,7 @@ package constraints.extension;
 
 import java.util.Arrays;
 
-import constraints.extension.Extension.ExtensionGlobal;
+import constraints.ConstraintExtension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import interfaces.Tags.TagNegative;

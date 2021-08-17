@@ -20,9 +20,9 @@ import org.xcsp.parser.entries.XConstraints.XCtr;
 import org.xcsp.parser.entries.XObjectives.XObj;
 
 import constraints.Constraint;
+import constraints.ConstraintExtension;
+import constraints.ConstraintExtension.Extension1;
 import constraints.extension.CSmart;
-import constraints.extension.Extension;
-import constraints.extension.Extension.Extension1;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart;
 import dashboard.Output;
@@ -226,7 +226,7 @@ public final class Features {
 			int arity = c.scp.length;
 			ctrArities.add(arity);
 			ctrTypes.add(c.getClass().getSimpleName()
-					+ (arity == 1 && !(c instanceof Extension1) ? "u" : (c instanceof Extension ? "-" + c.extStructure().getClass().getSimpleName() : "")));
+					+ (arity == 1 && !(c instanceof Extension1) ? "u" : (c instanceof ConstraintExtension ? "-" + c.extStructure().getClass().getSimpleName() : "")));
 			if (c.extStructure() instanceof Table)
 				tableSizes.add(((Table) c.extStructure()).tuples.length);
 			if (c instanceof CSmart)

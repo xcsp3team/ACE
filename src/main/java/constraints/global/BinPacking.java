@@ -11,7 +11,7 @@ package constraints.global;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Observers.ObserverOnConstruction;
 import interfaces.Tags.TagNotAC;
@@ -24,10 +24,10 @@ import variables.Variable;
 
 // Problems in PyCSP3 to be tested: BinPacking2.py and NursingWorkload and TestBinpacking (dans special)
 
-public abstract class BinPacking extends CtrGlobal implements TagNotAC { // not call filtering-complete
+public abstract class BinPacking extends ConstraintGlobal implements TagNotAC { // not call filtering-complete
 
 	@Override
-	public final boolean checkValues(int[] t) {
+	public final boolean isSatisfiedBy(int[] t) {
 		Arrays.fill(sums, 0);
 		for (int i = 0; i < t.length; i++)
 			sums[scp[i].dom.toIdx(t[i])] += sizes[i];

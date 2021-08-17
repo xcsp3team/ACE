@@ -27,11 +27,11 @@ import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Utilities;
 import org.xcsp.modeler.api.ProblemAPI;
 
-import constraints.extension.Extension;
+import constraints.ConstraintExtension;
+import constraints.ConstraintIntension.IntensionStructure;
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.MDD;
-import constraints.intension.Intension.IntensionStructure;
 import dashboard.Control;
 import dashboard.Control.SettingProblem;
 import dashboard.Input;
@@ -223,7 +223,7 @@ public class Head extends Thread {
 			if (Modifier.isAbstract(clazz.getModifiers()))
 				return false;
 			return dealWith(clazz, HeuristicVariables.class) || dealWith(clazz, HeuristicValues.class) || dealWith(clazz, HeuristicRevisions.class)
-					|| dealWith(clazz, Extension.class) || dealWith(clazz, Propagation.class);
+					|| dealWith(clazz, ConstraintExtension.class) || dealWith(clazz, Propagation.class);
 		}
 
 		private void loadRecursively(File directory, String packageName) throws ClassNotFoundException {
@@ -288,20 +288,28 @@ public class Head extends Thread {
 
 	public StructureSharing structureSharing = new StructureSharing();
 
+	/**
+	 * This class stores information (through maps) about shared data structures, concerning intension, extension and MDD constraints
+	 *
+	 */
 	public static class StructureSharing {
 
-		// maps used by constraints to share some data structures
+		/**
+		 * The map that associates an intension structure (tree evaluator) with an intension constraint key
+		 */
+		public Map<String, IntensionStructure> mapForIntension = new HashMap<>();
 
-		public Map<String, ExtensionStructure> mapOfExtensionStructures = new HashMap<>();
+		/**
+		 * The map that associates an extension structure with an extension constraint key
+		 */
+		public Map<String, ExtensionStructure> mapForExtension = new HashMap<>();
 
-		public Map<String, MDD> mapOfMDDStructures = new HashMap<>();
-
-		public Map<String, IntensionStructure> mapOfTreeEvaluators = new HashMap<>();
+		public Map<String, MDD> mapForMDDs = new HashMap<>();
 
 		public void clear() {
-			mapOfExtensionStructures.clear();
-			mapOfMDDStructures.clear();
-			mapOfTreeEvaluators.clear();
+			mapForIntension.clear();
+			mapForExtension.clear();
+			mapForMDDs.clear();
 			Bits.globalMap.clear();
 		}
 	}

@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import constraints.extension.Extension.ExtensionGlobal;
+import constraints.ConstraintExtension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.TableSegmented;
 import constraints.extension.structures.TableSegmented.SegmentedTuple;

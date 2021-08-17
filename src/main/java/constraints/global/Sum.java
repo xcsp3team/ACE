@@ -29,7 +29,7 @@ import org.xcsp.common.Utilities;
 import org.xcsp.common.predicates.TreeEvaluator;
 import org.xcsp.common.predicates.XNode;
 
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import constraints.global.Sum.SumViewWeighted.View.ViewTree01;
 import constraints.global.Sum.SumViewWeighted.View.ViewVariable;
 import interfaces.Tags.TagAC;
@@ -43,7 +43,7 @@ import variables.Domain;
 import variables.DomainInfinite;
 import variables.Variable;
 
-public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEachCall {
+public abstract class Sum extends ConstraintGlobal implements TagFilteringCompleteAtEachCall {
 
 	protected long limit;
 
@@ -79,11 +79,11 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 				return true;
 		}
 		if (singletonPosition == -1)
-			return checkValues(vals);
+			return isSatisfiedBy(vals);
 		Domain dom = scp[singletonPosition].dom;
 		for (int a = dom.first(); a != -1; a = dom.next(a)) {
 			vals[singletonPosition] = dom.toVal(a);
-			control(checkValues(vals), () -> "pb with " + Kit.join(vals));
+			control(isSatisfiedBy(vals), () -> "pb with " + Kit.join(vals));
 		}
 		return true;
 	}
@@ -191,7 +191,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		public static class SumSimpleLE extends SumSimple implements TagAC, Optimizable {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return sum(t) <= limit;
 			}
 
@@ -251,7 +251,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		public static class SumSimpleGE extends SumSimple implements TagAC, Optimizable {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return sum(t) >= limit;
 			}
 
@@ -293,7 +293,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		public static final class SumSimpleEQ extends SumSimple {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return sum(t) == limit;
 			}
 
@@ -357,7 +357,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		public static final class SumSimpleNE extends SumSimple implements TagAC {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return sum(t) != limit;
 			}
 
@@ -415,7 +415,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		public static final class SumSimpleEQBoolean extends SumSimple implements TagAC {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return sum(t) == limit;
 			}
 
@@ -582,7 +582,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		public static final class SumWeightedLE extends SumWeighted implements TagAC, Optimizable {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return weightedSum(t, coeffs) <= limit;
 			}
 
@@ -632,7 +632,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		public static class SumWeightedGE extends SumWeighted implements TagAC, Optimizable {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return weightedSum(t, coeffs) >= limit;
 			}
 
@@ -683,7 +683,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		public static final class SumWeightedEQ extends SumWeighted {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return weightedSum(t, coeffs) == limit;
 			}
 
@@ -753,7 +753,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		public static final class SumWeightedNE extends SumWeighted implements TagAC {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return weightedSum(t, coeffs) != limit;
 			}
 
@@ -1106,7 +1106,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		public static final class SumViewWeightedLE extends SumViewWeighted implements TagAC, Optimizable {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return weightedSum(t, views, coeffs) <= limit;
 			}
 
@@ -1157,7 +1157,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		public static class SumViewWeightedGE extends SumViewWeighted implements TagAC, Optimizable {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return weightedSum(t, views, coeffs) >= limit;
 			}
 
@@ -1209,7 +1209,7 @@ public abstract class Sum extends CtrGlobal implements TagFilteringCompleteAtEac
 		public static final class SumViewWeightedEQ extends SumViewWeighted implements TagNotAC {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return weightedSum(t, views, coeffs) == limit;
 			}
 

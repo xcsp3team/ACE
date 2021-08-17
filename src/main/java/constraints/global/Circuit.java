@@ -21,8 +21,8 @@ import variables.Variable;
 public final class Circuit extends AllDifferentComplete {
 
 	@Override
-	public boolean checkValues(int[] t) {
-		if (super.checkValues(t) == false)
+	public boolean isSatisfiedBy(int[] t) {
+		if (super.isSatisfiedBy(t) == false)
 			return false;
 		int nLoops = (int) IntStream.range(0, t.length).filter(i -> t[i] == i).count();
 		if (nLoops == t.length)

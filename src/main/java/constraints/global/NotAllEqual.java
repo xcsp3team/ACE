@@ -8,8 +8,8 @@
  */
 package constraints.global;
 
-import constraints.Constraint.CtrGlobal;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import constraints.ConstraintGlobal;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
@@ -19,10 +19,10 @@ import variables.Variable;
 /**
  * This class establishes that the values assigned to the involved variables of the constraint must not be all equal.
  */
-public class NotAllEqual extends CtrGlobal implements TagSymmetric, TagAC, TagFilteringCompleteAtEachCall {
+public class NotAllEqual extends ConstraintGlobal implements TagSymmetric, TagAC, TagFilteringCompleteAtEachCall {
 
 	@Override
-	public final boolean checkValues(int[] t) {
+	public final boolean isSatisfiedBy(int[] t) {
 		for (int i = 0; i < t.length - 1; i++)
 			if (t[i] != t[i + 1])
 				return true;

@@ -10,7 +10,7 @@ package constraints.global;
 
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
 import problem.Problem;
@@ -18,7 +18,7 @@ import sets.SetDense;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class SumScalarBoolean extends CtrGlobal implements TagAC, TagFilteringCompleteAtEachCall {
+public abstract class SumScalarBoolean extends ConstraintGlobal implements TagAC, TagFilteringCompleteAtEachCall {
 
 	protected final Variable[] list;
 	protected final Variable[] coeffs;
@@ -109,7 +109,7 @@ public abstract class SumScalarBoolean extends CtrGlobal implements TagAC, TagFi
 		public static final class SumScalarBooleanLE extends SumScalarBooleanCst {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return sumScalar(t) <= limit;
 			}
 
@@ -133,7 +133,7 @@ public abstract class SumScalarBoolean extends CtrGlobal implements TagAC, TagFi
 		public static final class SumScalarBooleanGE extends SumScalarBooleanCst {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return sumScalar(t) >= limit;
 			}
 
@@ -157,7 +157,7 @@ public abstract class SumScalarBoolean extends CtrGlobal implements TagAC, TagFi
 		public static final class SumScalarBooleanEQ extends SumScalarBooleanCst {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return sumScalar(t) == limit;
 			}
 
@@ -241,7 +241,7 @@ public abstract class SumScalarBoolean extends CtrGlobal implements TagAC, TagFi
 		public static final class SumScalarBooleanVarLE extends SumScalarBooleanVar {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return sumScalar(t) <= t[t.length - 1];
 			}
 
@@ -268,7 +268,7 @@ public abstract class SumScalarBoolean extends CtrGlobal implements TagAC, TagFi
 		public static final class SumScalarBooleanVarGE extends SumScalarBooleanVar {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return sumScalar(t) >= t[t.length - 1];
 			}
 

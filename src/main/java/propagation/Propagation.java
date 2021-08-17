@@ -3,7 +3,7 @@ package propagation;
 import java.util.stream.IntStream;
 
 import constraints.Constraint;
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import dashboard.Control.SettingPropagation;
 import interfaces.Observers.ObserverOnConflicts;
 import learning.IpsRecorderForDominance;
@@ -271,7 +271,7 @@ public abstract class Propagation {
 	 *            a constraint from which propagation starts
 	 * @return false iff an inconsistency is detected
 	 */
-	public final boolean propagate(CtrGlobal c) {
+	public final boolean propagate(ConstraintGlobal c) {
 		if (c == null || c.ignored || solver.isEntailed(c))
 			return true;
 		if (c.runPropagator(null) == false)

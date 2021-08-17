@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import constraints.Constraint;
-import constraints.extension.Extension.ExtensionGlobal;
+import constraints.ConstraintExtension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import interfaces.Observers.ObserverOnSearch;

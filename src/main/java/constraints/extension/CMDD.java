@@ -15,7 +15,7 @@ import org.xcsp.common.structures.Automaton;
 import org.xcsp.common.structures.Transition;
 import org.xcsp.modeler.definitions.ICtr.ICtrMdd;
 
-import constraints.extension.Extension.ExtensionGlobal;
+import constraints.ConstraintExtension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.MDD;
 import constraints.extension.structures.MDD.MDDNode;
@@ -36,7 +36,7 @@ public final class CMDD extends ExtensionGlobal implements TagPositive, ICtrMdd 
 		super.afterProblemConstruction();
 		int nNodes = ((MDD) extStructure).nNodes();
 		this.trueNodes = new int[nNodes];
-		if (problem.head.control.extension.decremental)
+		if (settings.decremental)
 			this.set = new SetSparseReversible(nNodes, problem.variables.length + 1, false);
 		else
 			this.falseNodes = new int[nNodes];
@@ -94,7 +94,7 @@ public final class CMDD extends ExtensionGlobal implements TagPositive, ICtrMdd 
 	public CMDD(Problem pb, Variable[] scp, Transition[] transitions) {
 		this(pb, scp);
 		String s = signature() + " " + transitions; // TODO be careful, we assume that the address of transitions can be used. Is that correct?
-		Map<String, MDD> map = problem.head.structureSharing.mapOfMDDStructures;
+		Map<String, MDD> map = problem.head.structureSharing.mapForMDDs;
 		extStructure = map.get(s);
 		if (extStructure == null) {
 			extStructure = new MDD(this, transitions); // Stream.of(transitions).map(t -> new Object[] { t.start, t.symbol, t.end }).toArray(Object[][]::new));
@@ -133,7 +133,7 @@ public final class CMDD extends ExtensionGlobal implements TagPositive, ICtrMdd 
 	}
 
 	private boolean manageSuccessfulExploration(int level, int a) {
-		int cutoffVariant = problem.head.control.extension.variant;
+		int cutoffVariant = settings.variant;
 		if (cutoffVariant == 2) {
 			if (scp[level].isFuture()) {
 				if (!ac[level][a]) {

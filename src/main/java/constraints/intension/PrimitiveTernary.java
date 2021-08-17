@@ -111,7 +111,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 			boolean multidirectional = false; // hard coding
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] + t[1] == t[2];
 			}
 
@@ -264,7 +264,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 		public static final class MulEQ3b extends PrimitiveTernaryMul {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] * t[1] == t[2];
 			}
 
@@ -312,7 +312,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 		public static final class MulEQ3 extends PrimitiveTernaryMul {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] * t[1] == t[2];
 			}
 
@@ -430,7 +430,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 		public static final class DivEQ3 extends PrimitiveTernaryDiv {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] / t[1] == t[2];
 			}
 
@@ -551,7 +551,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 		public static final class ModEQ3 extends PrimitiveTernaryMod {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] % t[1] == t[2];
 			}
 
@@ -666,7 +666,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 			boolean multidirectional = true; // hard coding
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return Math.abs(t[0] - t[1]) == t[2];
 			}
 
@@ -817,7 +817,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 		public static final class LogLT3 extends PrimitiveTernaryLog {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return (t[0] == 1) == (t[1] < t[2]);
 			}
 
@@ -842,7 +842,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 		public static final class LogLE3 extends PrimitiveTernaryLog {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return (t[0] == 1) == (t[1] <= t[2]);
 			}
 
@@ -867,7 +867,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 		public static final class LogGE3 extends PrimitiveTernaryLog {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return (t[0] == 1) == (t[1] >= t[2]);
 			}
 
@@ -892,7 +892,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 		public static final class LogGT3 extends PrimitiveTernaryLog {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return (t[0] == 1) == (t[1] > t[2]);
 			}
 
@@ -917,7 +917,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 		public static final class LogEQ3 extends PrimitiveTernaryLog {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return (t[0] == 1) == (t[1] == t[2]);
 			}
 
@@ -952,7 +952,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFi
 		public static final class LogNE3 extends PrimitiveTernaryLog {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return (t[0] == 1) == (t[1] != t[2]);
 			}
 

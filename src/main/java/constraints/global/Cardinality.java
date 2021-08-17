@@ -4,7 +4,7 @@ import java.util.stream.IntStream;
 
 import org.xcsp.common.Utilities;
 
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import constraints.global.Matcher.MatcherCardinality;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
@@ -13,7 +13,7 @@ import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 
-public abstract class Cardinality extends CtrGlobal implements ObserverOnBacktracksSystematic {
+public abstract class Cardinality extends ConstraintGlobal implements ObserverOnBacktracksSystematic {
 
 	protected Matcher matcher;
 
@@ -41,7 +41,7 @@ public abstract class Cardinality extends CtrGlobal implements ObserverOnBacktra
 
 	public static class CardinalityConstant extends Cardinality implements TagFilteringCompleteAtEachCall, TagAC {
 		@Override
-		public boolean checkValues(int[] t) {
+		public boolean isSatisfiedBy(int[] t) {
 			for (int i = 0; i < values.length; i++) {
 				int nOccurrences = 0;
 				for (int j = 0; j < t.length; j++)

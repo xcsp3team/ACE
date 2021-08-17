@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import constraints.global.Cumulative.TimetableReasoner.Slot;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
@@ -23,7 +23,7 @@ import sets.SetSparseReversible;
 import utility.Kit;
 import variables.Variable;
 
-public abstract class Cumulative extends CtrGlobal implements TagFilteringCompleteAtEachCall, TagNotAC, ObserverOnBacktracksSystematic {
+public abstract class Cumulative extends ConstraintGlobal implements TagFilteringCompleteAtEachCall, TagNotAC, ObserverOnBacktracksSystematic {
 
 	@Override
 	public void restoreBefore(int depth) {
@@ -37,7 +37,7 @@ public abstract class Cumulative extends CtrGlobal implements TagFilteringComple
 	}
 
 	@Override
-	public boolean checkValues(int[] tuple) {
+	public boolean isSatisfiedBy(int[] tuple) {
 		int wgap = !movableWidths ? -1 : nTasks;
 		int hgap = !movableHeights ? -1 : this instanceof CumulativeVarH ? nTasks : nTasks * 2;
 		int min = Integer.MAX_VALUE, max = Integer.MIN_VALUE;

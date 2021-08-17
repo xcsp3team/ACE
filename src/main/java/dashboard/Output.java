@@ -21,8 +21,8 @@ import org.xcsp.common.Types.TypeOptimization;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
-import constraints.extension.Extension;
-import constraints.intension.Intension;
+import constraints.ConstraintIntension;
+import constraints.ConstraintExtension;
 import dashboard.Control.SettingVars;
 import interfaces.Observers.ObserverOnConstruction;
 import interfaces.Observers.ObserverOnRuns;
@@ -418,12 +418,12 @@ public class Output implements ObserverOnConstruction, ObserverOnSearch, Observe
 		m.put(N_TUPLES, features.tableSizes.repartition.entrySet().stream().mapToLong(e -> e.getValue() * (Integer) e.getKey()).sum());
 		int nExtStructures = 0, nSharedExtStructures = 0, nIntStructures = 0, nSharedintStructures = 0, nCftStructures = 0, nSharedCftStructures = 0;
 		for (Constraint c : head.problem.constraints) {
-			if (c instanceof Extension)
+			if (c instanceof ConstraintExtension)
 				if (c.extStructure().firstRegisteredCtr() == c)
 					nExtStructures++;
 				else
 					nSharedExtStructures++;
-			if (c instanceof Intension)
+			if (c instanceof ConstraintIntension)
 				if (c.intStructure().firstRegisteredCtr() == c)
 					nIntStructures++;
 				else

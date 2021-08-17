@@ -284,7 +284,7 @@ public final class Solutions {
 		if (solver.propagation.performingProperSearch)
 			return;
 		if (solver.problem.settings.framework == MAXCSP) {
-			int z = (int) Stream.of(solver.problem.constraints).filter(c -> !c.checkCurrentInstantiation()).count();
+			int z = (int) Stream.of(solver.problem.constraints).filter(c -> !c.isSatisfiedByCurrentInstantiation()).count();
 			Kit.control(z < bestBound, () -> "z=" + z + " bb=" + bestBound);
 			bestBound = z;
 		} else if (solver.problem.optimizer != null) { // COP

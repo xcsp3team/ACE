@@ -80,11 +80,11 @@ public abstract class ExtensionStructure implements RegisteringCtrs {
 			return Kit.range(1, scp.length); // TODO there exists a possibility of finding symmetry of variables (but not a single group)
 		if (scp.length == 2) {
 			Domain dom0 = scp[0].dom, dom1 = scp[1].dom;
-			int[] tmp = c.tupleManager.localTuple;
+			int[] t = c.tupleIterator.buffer;
 			for (int[] tuple : originalTuples) {
-				tmp[0] = dom0.toIdx(tuple[1]);
-				tmp[1] = dom1.toIdx(tuple[0]);
-				if (checkIdxs(tmp) != originalPositive)
+				t[0] = dom0.toIdx(tuple[1]);
+				t[1] = dom1.toIdx(tuple[0]);
+				if (checkIdxs(t) != originalPositive)
 					return new int[] { 1, 2 };
 			}
 			return new int[] { 1, 1 };

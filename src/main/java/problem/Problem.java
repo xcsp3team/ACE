@@ -103,12 +103,13 @@ import org.xcsp.modeler.implementation.ProblemIMP;
 
 import constraints.ConflictsStructure;
 import constraints.Constraint;
+import constraints.ConstraintIntension;
+import constraints.ConstraintExtension;
 import constraints.Constraint.CtrFalse;
 import constraints.Constraint.CtrTrue;
+import constraints.ConstraintExtension.Extension1;
 import constraints.extension.CMDD;
 import constraints.extension.CSmart;
-import constraints.extension.Extension;
-import constraints.extension.Extension.Extension1;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart.SmartTuple;
 import constraints.global.AllDifferent.AllDifferentBound;
@@ -158,7 +159,6 @@ import constraints.global.Sum.SumWeighted.SumWeightedGE;
 import constraints.global.Sum.SumWeighted.SumWeightedLE;
 import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
 import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
-import constraints.intension.Intension;
 import constraints.intension.Primitive.Disjonctive2D;
 import constraints.intension.Primitive.DisjonctiveVar;
 import constraints.intension.PrimitiveBinary.Disjonctive;
@@ -176,7 +176,6 @@ import dashboard.Control.SettingCtrs;
 import dashboard.Control.SettingGeneral;
 import dashboard.Control.SettingVars;
 import dashboard.Control.SettingXml;
-import heuristics.HeuristicValues;
 import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicValuesDirect.Last;
 import heuristics.HeuristicValuesDirect.Values;
@@ -199,13 +198,19 @@ import utility.Enums.EExportMode;
 import utility.Enums.ESymmetryBreaking;
 import utility.Kit;
 import utility.Kit.Stopwatch;
-import utility.Reflector;
 import variables.Domain;
 import variables.Variable;
 import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
 
+/**
+ * This is the class for representing problems (constraint networks).
+ * 
+ * @author Christophe Lecoutre
+ *
+ */
 public class Problem extends ProblemIMP implements ObserverOnConstruction {
+
 	public static final Boolean DONT_KNOW = null;
 	public static final Boolean STARRED = Boolean.TRUE;
 	public static final Boolean UNSTARRED = Boolean.FALSE;
@@ -390,12 +395,6 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 			}
 			return m;
 		}
-
-		// public String replaceSymbols(String s) {
-		// for (Entry<String, Integer> entry : mapOfSymbols.entrySet())
-		// s = s.replaceAll(entry.getKey(), entry.getValue() + "");
-		// return s;
-		// }
 	}
 
 	// ************************************************************************
@@ -435,7 +434,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 	/**
 	 * An object used to record many data corresponding to metrics and various features of the problem.
 	 */
-	public Features features; // = new ProblemStuff(this);
+	public Features features;
 
 	/**
 	 * The object used to manage symbolic values. Basically, it transforms symbols into integers, but this is not visible for the user (modeler).
@@ -466,68 +465,30 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 		return name.matches("XCSP[23]-.*") ? name.substring(6) : name;
 	}
 
-	// /**
-	// *
-	// * /** Removes a constraint that has already been built. Should not be called when modeling. Advanced use.
-	// */
-	// public void removeCtr(Constraint c) {
-	// // System.out.println("removed " + c + "size=" + stuff.collectedCtrsAtInit.size());
-	// control(constraints == null, "too late");
-	// features.collectedCtrsAtInit.remove(c);
-	// // maybe was not present
-	// Stream.of(c.scp).forEach(x -> x.collectedCtrs.remove(c));
-	// // TODO other things to do ??
-	// CtrAlone ca = ctrEntities.ctrToCtrAlone.get(c); // remove(c);
-	// ctrEntities.allEntities.remove(ca);
-	// ctrEntities.ctrToCtrAlone.remove(c);
-	// }
-
 	/**
 	 * Adds a constraint that has already been built. Should not be called when modeling. Advanced use.
 	 */
 	public final CtrAlone post(Constraint c, TypeClass... classes) {
-		// if (rs.cp.cpv.selectedVars != null) {
-		// // boolean mustDiscard = false;
-		// // if (resolution.cfg.extendSelectedVars) {
-		// // if (resolution.cfg.selectedVars[0] instanceof Integer)
-		// // mustDiscard = !Stream.of(ctr.scp).map(x -> x.id).anyMatch(id -> Arrays.binarySearch(resolution.cfg.selectedVars, id) >= 0);
-		// // else mustDiscard = !Stream.of(ctr.scp).map(x -> x.getName()).anyMatch(name ->Arrays.binarySearch(resolution.cfg.selectedVars,
-		// // name) >= 0);
-		// // } else
-		// boolean mustDiscard = c.scp.length == 0 || Stream.of(c.scp).anyMatch(x -> x.num == Variable.UNSET_NUM);
-		// System.out.println(mustDiscard + " " + c);
-		// if (mustDiscard) {
-		// stuff.nDiscardedCtrs++;
-		// return ctrEntities.new CtrAloneDummy("Discarded constraint due to the set of selected variables");
-		// }
-		// }
-
+		// control about if the constraint must be discarded is done in loadCtr of class XCSP3
 		c.num = features.collecting.add(c);
 		return ctrEntities.new CtrAlone(c, classes);
 	}
 
-	public final Optimizable addOptimizable(Constraint c) {
+	public final Optimizable postObj(Constraint c) {
 		// System.out.println("\n" + Output.COMMENT_PREFIX + "Loading objective...");
-
 		c.num = features.collecting.add(c);
 		return (Optimizable) c;
 	}
 
-	public void annotateValh(Variable[] vars, Class<? extends HeuristicValues> clazz) {
-		if (settings.enableAnnotations)
-			for (Variable x : vars)
-				x.heuristic = Reflector.buildObject(clazz.getSimpleName(), HeuristicValues.class, new Object[] { x, null });
-	}
-
 	/**
 	 * Method that resets the problem instance. Each variable and each constraint is reset. The specified Boolean parameter indicates whether the weighted
-	 * degrees values must not be reset or not.
+	 * degrees values must not be reset or not. Currently, this is only used by HeadExtraction.
 	 */
-	public void reset() { // currently, used by HeadExtraction
+	public void reset() {
 		Stream.of(variables).forEach(x -> x.reset());
 		Stream.of(constraints).forEach(c -> c.reset());
 		Stream.of(constraints).forEach(c -> c.ignored = false);
-		// stuff = new ProblemStuff(this); // TODO reset or building a new object ?
+		// should we rebuild a Features object?
 		nValueRemovals = 0;
 		if (settings.verbose > 0)
 			log.info("Reset of problem instance");
@@ -934,7 +895,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 
 		if (head.mustPreserveUnaryConstraints()) {
 			if (!head.control.constraints.intensionToExtensionUnaryCtrs)
-				return post(new Intension(this, new Variable[] { x }, tree));
+				return post(new ConstraintIntension(this, new Variable[] { x }, tree));
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 			int[] conflicts = x.dom.valuesChecking(va -> evaluator.evaluate(va) != 1);
 			if (conflicts.length < x.dom.size() / 2)
@@ -1100,7 +1061,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 		}
 
 		// System.out.println("tree2 " + tree);
-		return post(new Intension(this, scp, tree));
+		return post(new ConstraintIntension(this, scp, tree));
 	}
 
 	// ************************************************************************
@@ -1135,7 +1096,18 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 	// ***** Constraint extension
 	// ************************************************************************
 
-	public final CtrAlone extension(Variable x, int[] values, boolean positive) {
+	/**
+	 * Posts a unary constraint
+	 * 
+	 * @param x
+	 *            a variable
+	 * @param values
+	 *            the values considered as supports (i.e., authorized) or conflicts for the variable
+	 * @param positive
+	 *            if true, specified values are supports; otherwise as conflicts
+	 * @return
+	 */
+	private final CtrAlone extension(Variable x, int[] values, boolean positive) {
 		assert Kit.isStrictlyIncreasing(values) && IntStream.of(values).noneMatch(v -> v == STAR);
 		if (head.mustPreserveUnaryConstraints())
 			return post(new Extension1(this, x, values, positive));
@@ -1154,7 +1126,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 			int[] values = Stream.of(m).mapToInt(t -> t[0]).toArray();
 			return extension((Variable) scp[0], values, positive);
 		}
-		return post(Extension.build(this, translate(scp), tuples, positive, starred));
+		return post(ConstraintExtension.build(this, translate(scp), tuples, positive, starred));
 	}
 
 	@Override
@@ -1299,7 +1271,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 
 	@Override
 	public final CtrEntity allEqual(Var... scp) {
-		// using a table on large instances of Domino is very expensive; using a smart table is also very expensive
+		// note that using a table on large instances of Domino is very expensive; using a smart table is also very expensive
 		return post(new AllEqual(this, translate(scp)));
 		// return post(ExtensionSmart.buildAllEqual(this, translate(scp)));
 	}
@@ -1570,7 +1542,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 			return ctrEntities.new CtrAloneDummy("atleast witk k = 0");
 		if (k == scp.length)
 			return instantiation(scp, value);
-		return k == 1 ? post(new AtLeast1(this, scp, value)) : post(new AtLeastK(this, scp, value, k));
+		return post(k == 1 ? new AtLeast1(this, scp, value) : new AtLeastK(this, scp, value, k));
 	}
 
 	private CtrEntity atMost(VariableInteger[] scp, int value, int k) {
@@ -1578,7 +1550,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 			return refutation(scp, value);
 		if (k == scp.length)
 			return ctrEntities.new CtrAloneDummy("atMost with k = scp.length");
-		return k == 1 ? post(new AtMost1(this, scp, value)) : post(new AtMostK(this, scp, value, k));
+		return post(k == 1 ? new AtMost1(this, scp, value) : new AtMostK(this, scp, value, k));
 	}
 
 	private CtrEntity exactly(VariableInteger[] scp, int value, int k) {
@@ -1586,7 +1558,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 			return refutation(scp, value);
 		if (k == scp.length)
 			return instantiation(scp, value);
-		return k == 1 ? post(new Exactly1(this, scp, value)) : post(new ExactlyK(this, scp, value, k));
+		return post(k == 1 ? new Exactly1(this, scp, value) : new ExactlyK(this, scp, value, k));
 	}
 
 	private CtrEntity count(VariableInteger[] list, int[] values, TypeConditionOperatorRel op, long limit) {
@@ -1599,13 +1571,13 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 			control(scp.length > 0 && 0 <= k && k <= scp.length);
 			if (op == LT)
 				return atMost(scp, value, k - 1);
-			else if (op == LE)
+			if (op == LE)
 				return atMost(scp, value, k);
-			else if (op == GE)
+			if (op == GE)
 				return atLeast(scp, value, k);
-			else if (op == GT)
+			if (op == GT)
 				return atLeast(scp, value, k + 1);
-			else if (op == EQ)
+			if (op == EQ)
 				return exactly(scp, value, k);
 		} else {
 			if (op == EQ) {
@@ -2283,7 +2255,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 	private ObjEntity optimize(TypeOptimization opt, IVar x) {
 		if (!switchToSatisfaction(opt, EXPRESSION, null, (Variable) x)) {
 			long lb = head.control.optimization.lb, ub = head.control.optimization.ub;
-			optimizer = buildOptimizer(opt, addOptimizable(new ObjVarGE(this, (Variable) x, lb)), addOptimizable(new ObjVarLE(this, (Variable) x, ub)));
+			optimizer = buildOptimizer(opt, postObj(new ObjVarGE(this, (Variable) x, lb)), postObj(new ObjVarLE(this, (Variable) x, ub)));
 		}
 		return null;
 	}
@@ -2319,7 +2291,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 			Constraint cub = type == SUM ? new SumSimpleLE(this, list, ub)
 					: type == MINIMUM ? new MinimumCstLE(this, list, ub)
 							: type == MAXIMUM ? new MaximumCstLE(this, list, ub) : new NValuesCstLE(this, list, ub);
-			optimizer = buildOptimizer(opt, addOptimizable(clb), addOptimizable(cub));
+			optimizer = buildOptimizer(opt, postObj(clb), postObj(cub));
 		}
 		return null;
 	}
@@ -2410,3 +2382,19 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 	}
 
 }
+
+/// **
+// *
+// * /** Removes a constraint that has already been built. Should not be called when modeling. Advanced use.
+// */
+// public void removeCtr(Constraint c) {
+// // System.out.println("removed " + c + "size=" + stuff.collectedCtrsAtInit.size());
+// control(constraints == null, "too late");
+// features.collectedCtrsAtInit.remove(c);
+// // maybe was not present
+// Stream.of(c.scp).forEach(x -> x.collectedCtrs.remove(c));
+// // TODO other things to do ??
+// CtrAlone ca = ctrEntities.ctrToCtrAlone.get(c); // remove(c);
+// ctrEntities.allEntities.remove(ca);
+// ctrEntities.ctrToCtrAlone.remove(c);
+// }

@@ -297,7 +297,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		final int wx, wy;
 
 		@Override
-		public boolean checkValues(int[] t) {
+		public boolean isSatisfiedBy(int[] t) {
 			return t[0] + wx <= t[1] || t[1] + wy <= t[0];
 		}
 
@@ -342,7 +342,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class NegEQ2 extends PrimitiveBinaryEQWithUnaryOperator {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] == -t[1];
 			}
 
@@ -452,7 +452,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class AddLE2 extends PrimitiveBinaryAdd {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] + t[1] <= k;
 			}
 
@@ -469,7 +469,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class AddGE2 extends PrimitiveBinaryAdd {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] + t[1] >= k;
 			}
 
@@ -486,7 +486,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class AddEQ2 extends PrimitiveBinaryAdd {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] + t[1] == k;
 			}
 
@@ -514,7 +514,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class AddNE2 extends PrimitiveBinaryAdd {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] + t[1] != k;
 			}
 
@@ -567,7 +567,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class SubLE2 extends PrimitiveBinarySub implements TagNotSymmetric {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] - t[1] <= k;
 			}
 
@@ -584,7 +584,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class SubGE2 extends PrimitiveBinarySub implements TagNotSymmetric {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] - t[1] >= k;
 			}
 
@@ -601,7 +601,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class SubEQ2 extends PrimitiveBinarySub {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] - t[1] == k;
 			}
 
@@ -635,7 +635,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class SubNE2 extends PrimitiveBinarySub {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] - t[1] != k;
 			}
 
@@ -693,7 +693,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class MulLE2Old extends PrimitiveBinaryMul {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] * t[1] <= k;
 			}
 
@@ -730,7 +730,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class MulGE2Old extends PrimitiveBinaryMul {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] * t[1] >= k;
 			}
 
@@ -767,7 +767,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class MulLE2 extends PrimitiveBinaryMul {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] * t[1] <= k;
 			}
 
@@ -799,7 +799,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class MulGE2 extends PrimitiveBinaryMul {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] * t[1] >= k;
 			}
 
@@ -831,7 +831,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class MulEQ2 extends PrimitiveBinaryMul {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] * t[1] == k;
 			}
 
@@ -862,7 +862,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class MulNE2 extends PrimitiveBinaryMul {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] * t[1] != k;
 			}
 
@@ -920,7 +920,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class DivLE2 extends PrimitiveBinaryDiv {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] / t[1] <= k;
 			}
 
@@ -937,7 +937,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class DivGE2 extends PrimitiveBinaryDiv {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] / t[1] >= k;
 			}
 
@@ -955,7 +955,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class DivEQ2 extends PrimitiveBinaryDiv {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] / t[1] == k;
 			}
 
@@ -1028,7 +1028,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class ModEQ2 extends PrimitiveBinaryMod {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] % t[1] == k;
 			}
 
@@ -1136,7 +1136,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class DistLE2 extends PrimitiveBinaryDist {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return Math.abs(t[0] - t[1]) <= k;
 			}
 
@@ -1153,7 +1153,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class DistGE2 extends PrimitiveBinaryDist { // code similar to Disjunctive
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return Math.abs(t[0] - t[1]) >= k; // equivalent to disjunctive: t[0] + k <= t[1] || t[1] + k <= t[0];
 			}
 
@@ -1171,7 +1171,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class DistEQ2 extends PrimitiveBinaryDist {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return Math.abs(t[0] - t[1]) == k;
 			}
 
@@ -1204,7 +1204,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class DistNE2 extends PrimitiveBinaryDist {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return Math.abs(t[0] - t[1]) != k;
 			}
 
@@ -1258,7 +1258,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class MulbEQ2 extends PrimitiveBinaryMulb {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] == t[1] * k;
 			}
 
@@ -1287,7 +1287,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class MulbNE2 extends PrimitiveBinaryMulb {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] != t[1] * k;
 			}
 
@@ -1332,7 +1332,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class DivbEQ2 extends PrimitiveBinaryDivb {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] == t[1] / k;
 			}
 
@@ -1356,7 +1356,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class DivbNE2 extends PrimitiveBinaryDivb {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] != t[1] / k;
 			}
 
@@ -1400,7 +1400,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class ModbEQ2 extends PrimitiveBinaryModb {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] == t[1] % k;
 			}
 
@@ -1425,7 +1425,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class ModbNE2 extends PrimitiveBinaryModb {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] != t[1] % k;
 			}
 
@@ -1497,7 +1497,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class DistbEQ2 extends PrimitiveBinaryDistb {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] == Math.abs(t[1] - k);
 			}
 
@@ -1523,7 +1523,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class DistbNE2 extends PrimitiveBinaryDistb {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] != Math.abs(t[1] - k);
 			}
 
@@ -1577,7 +1577,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class LogLE2 extends PrimitiveBinaryLog {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return (t[0] == 1) == (t[1] <= k);
 			}
 
@@ -1602,7 +1602,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class LogGE2 extends PrimitiveBinaryLog {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return (t[0] == 1) == (t[1] >= k);
 			}
 
@@ -1627,7 +1627,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class LogEQ2 extends PrimitiveBinaryLog {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return (t[0] == 1) == (t[1] == k);
 			}
 
@@ -1652,7 +1652,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 		public static final class LogNE2 extends PrimitiveBinaryLog {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return (t[0] == 1) == (t[1] != k);
 			}
 

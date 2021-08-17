@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 
 import org.xcsp.common.Utilities;
 
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import constraints.global.Matcher.MatcherAllDifferent;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagAC;
@@ -32,10 +32,10 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
+public abstract class AllDifferent extends ConstraintGlobal implements TagSymmetric {
 
 	@Override
-	public boolean checkValues(int[] t) {
+	public boolean isSatisfiedBy(int[] t) {
 		for (int i = 0; i < t.length; i++)
 			for (int j = i + 1; j < t.length; j++)
 				if (t[i] == t[j])
@@ -226,7 +226,7 @@ public abstract class AllDifferent extends CtrGlobal implements TagSymmetric {
 	public static class AllDifferentExceptWeak extends AllDifferent implements TagNotAC { // not call filtering-complete
 
 		@Override
-		public boolean checkValues(int[] t) {
+		public boolean isSatisfiedBy(int[] t) {
 			return Kit.allDifferentValues(t, exceptValues);
 		}
 

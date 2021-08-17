@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagSymmetric;
@@ -21,7 +21,7 @@ import problem.Problem;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Product extends CtrGlobal implements TagFilteringCompleteAtEachCall {
+public abstract class Product extends ConstraintGlobal implements TagFilteringCompleteAtEachCall {
 
 	protected long limit;
 
@@ -112,7 +112,7 @@ public abstract class Product extends CtrGlobal implements TagFilteringCompleteA
 		public static class ProductSimpleLE extends ProductSimple implements TagAC {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return product(t) <= limit;
 			}
 
@@ -155,7 +155,7 @@ public abstract class Product extends CtrGlobal implements TagFilteringCompleteA
 		public static class ProductSimpleGE extends ProductSimple implements TagAC {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return product(t) >= limit;
 			}
 
@@ -195,7 +195,7 @@ public abstract class Product extends CtrGlobal implements TagFilteringCompleteA
 		public static final class ProductSimpleEQ extends ProductSimple {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return product(t) == limit;
 			}
 

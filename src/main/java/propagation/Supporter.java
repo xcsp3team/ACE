@@ -28,7 +28,7 @@ public abstract class Supporter {
 	public Supporter(Constraint c) {
 		this.c = c;
 		this.multidirectionality = c.problem.head.control.propagation.multidirectionality;
-		this.buffer = c.tupleManager.localTuple;
+		this.buffer = c.tupleIterator.buffer;
 	}
 
 	/**********************************************************************************************

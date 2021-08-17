@@ -36,7 +36,7 @@ public abstract class Primitive extends Constraint implements FilteringSpecific 
 		final Domain dx1, dx2, dw1, dw2;
 
 		@Override
-		public boolean checkValues(int[] t) {
+		public boolean isSatisfiedBy(int[] t) {
 			return t[0] + t[2] <= t[1] || t[1] + t[3] <= t[0]; // x1+w1 <= x2 or x2+w2 <= x1
 		}
 
@@ -74,7 +74,7 @@ public abstract class Primitive extends Constraint implements FilteringSpecific 
 		final Domain dx1, dx2, dy1, dy2;
 
 		@Override
-		public boolean checkValues(int[] t) {
+		public boolean isSatisfiedBy(int[] t) {
 			return t[0] + w1 <= t[1] || t[1] + w2 <= t[0] || t[2] + h1 <= t[3] || t[3] + h2 <= t[2]; // x1+w1 <= x2 or x2+w2 <= x1 or y1+h1 <= y2 or y2+h2 <= y1
 		}
 

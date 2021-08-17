@@ -10,17 +10,17 @@ package constraints.global;
 
 import org.xcsp.common.Utilities;
 
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import interfaces.Tags.TagNotAC;
 import problem.Problem;
 import sets.SetDense;
 import variables.Domain;
 import variables.Variable;
 
-public final class NoOverlap extends CtrGlobal implements TagNotAC {
+public final class NoOverlap extends ConstraintGlobal implements TagNotAC {
 
 	@Override
-	public boolean checkValues(int[] tuple) {
+	public boolean isSatisfiedBy(int[] tuple) {
 		for (int i = 0; i < half; i++)
 			for (int j = i + 1; j < half; j++) {
 				int xi = tuple[i], xj = tuple[j], yi = tuple[i + half], yj = tuple[j + half];

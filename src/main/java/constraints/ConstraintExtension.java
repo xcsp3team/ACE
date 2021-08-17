@@ -1,12 +1,4 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
-package constraints.extension;
+package constraints;
 
 import static org.xcsp.common.Constants.STAR;
 import static org.xcsp.common.Constants.STAR_SYMBOL;
@@ -20,12 +12,11 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import constraints.Constraint;
-import constraints.TupleManager;
-import constraints.extension.Extension.ExtensionGeneric.ExtensionV;
+import constraints.ConstraintExtension.ExtensionGeneric.ExtensionV;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.Tries;
+import dashboard.Control.SettingExtension;
 import interfaces.FilteringSpecific;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagAC;
@@ -37,27 +28,51 @@ import problem.Problem;
 import propagation.Supporter.SupporterHard;
 import utility.Kit;
 import utility.Reflector;
+import variables.TupleIterator;
 import variables.Variable;
 import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
 
-public abstract class Extension extends Constraint implements TagAC, TagFilteringCompleteAtEachCall {
+public abstract class ConstraintExtension extends Constraint implements TagAC, TagFilteringCompleteAtEachCall {
 
 	/**********************************************************************************************
-	 ***** Extension1 (not a subclass of Extension)
+	 ***** Inner classes (Extension1, ExtensionGeneric and ExtensionGlobal)
 	 *********************************************************************************************/
 
-	// !! not a subclass of Extension
+	/**
+	 * This class is is used for unary extension constraints. Typically, filtering is performed at the root node of the search tree, and the constraint becomes
+	 * entailed. BE CAREFUL: this is not a subclass of ConstraintExtension.
+	 */
 	public static final class Extension1 extends Constraint implements FilteringSpecific, TagAC, TagFilteringCompleteAtEachCall {
 
 		@Override
-		public boolean checkValues(int[] t) {
+		public boolean isSatisfiedBy(int[] t) {
 			return (Arrays.binarySearch(values, t[0]) >= 0) == positive;
 		}
 
-		final int[] values;
-		final boolean positive;
+		/**
+		 * The set of values authorized (if positive is true) or forbidden (if positive is false) by this unary constraint
+		 */
+		private final int[] values;
 
+		/**
+		 * This field indicates if values are supports (when true) or conflicts (when false)
+		 */
+		private final boolean positive;
+
+		/**
+		 * Builds a unary extension constraint for the specified problem, involving the specified variable, and with semantics defined from the specified values
+		 * and Boolean parameter
+		 * 
+		 * @param pb
+		 *            the problem to which the constraint is attached
+		 * @param x
+		 *            the variable involved in the unary constraint
+		 * @param values
+		 *            the values defining the semantics of the constraint
+		 * @param positive
+		 *            if true, values are supports; otherwise values are conflicts
+		 */
 		public Extension1(Problem pb, Variable x, int[] values, boolean positive) {
 			super(pb, new Variable[] { x });
 			assert values.length > 0 && Kit.isStrictlyIncreasing(values);
@@ -79,11 +94,7 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 		}
 	}
 
-	/**********************************************************************************************
-	 ***** Generic and Global Subclasses
-	 *********************************************************************************************/
-
-	public abstract static class ExtensionGeneric extends Extension {
+	public abstract static class ExtensionGeneric extends ConstraintExtension {
 
 		public ExtensionGeneric(Problem pb, Variable[] scp) {
 			super(pb, scp);
@@ -97,9 +108,9 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 			@Override
 			protected ExtensionStructure buildExtensionStructure() {
 				if (scp.length == 2)
-					return Reflector.buildObject(problem.head.control.extension.classBinary, ExtensionStructure.class, this);
+					return Reflector.buildObject(settings.classBinary, ExtensionStructure.class, this);
 				if (scp.length == 3)
-					return Reflector.buildObject(problem.head.control.extension.classTernary, ExtensionStructure.class, this);
+					return Reflector.buildObject(settings.classTernary, ExtensionStructure.class, this);
 				return new Table(this); // MDD(this);
 			}
 
@@ -112,9 +123,8 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 
 			@Override
 			protected ExtensionStructure buildExtensionStructure() {
-				int variant = problem.head.control.extension.variant;
-				assert variant == 0 || variant == 1 || variant == 11;
-				return variant == 0 ? new Table(this).withSubtables() : new Tries(this, variant == 11);
+				assert settings.variant == 0 || settings.variant == 1 || settings.variant == 11;
+				return settings.variant == 0 ? new Table(this).withSubtables() : new Tries(this, settings.variant == 11);
 			}
 
 			public ExtensionVA(Problem pb, Variable[] scp) {
@@ -123,8 +133,8 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 
 			private final boolean seekSupportVA(int x, int a, int[] tuple, boolean another) {
 				if (!another)
-					tupleManager.firstValidTupleWith(x, a, tuple);
-				else if (tupleManager.nextValidTupleCautiously() == -1)
+					tupleIterator.firstValidTupleWith(x, a, tuple);
+				else if (tupleIterator.nextValidTupleCautiously() == -1)
 					return false;
 				while (true) {
 					int[] t = extStructure.nextSupport(x, a, tuple);
@@ -135,7 +145,7 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 					Kit.copy(t, tuple);
 					if (isValid(tuple))
 						break;
-					if (tupleManager.nextValidTupleCautiously() == -1)
+					if (tupleIterator.nextValidTupleCautiously() == -1)
 						return false;
 				}
 				return true;
@@ -149,7 +159,7 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 		}
 	}
 
-	public abstract static class ExtensionGlobal extends Extension implements FilteringSpecific, ObserverOnBacktracksSystematic {
+	public abstract static class ExtensionGlobal extends ConstraintExtension implements FilteringSpecific, ObserverOnBacktracksSystematic {
 
 		public ExtensionGlobal(Problem pb, Variable[] scp) {
 			super(pb, scp);
@@ -160,37 +170,39 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 	 ***** Static Methods
 	 *********************************************************************************************/
 
-	private static Extension build(Problem pb, Variable[] scp, boolean positive, boolean presentStar) {
+	private static ConstraintExtension build(Problem pb, Variable[] scp, boolean positive, boolean presentStar) {
+		SettingExtension settings = pb.head.control.extension;
 		Kit.control(scp.length > 1);
-		Set<Class<?>> classes = pb.head.handlerClasses.get(Extension.class);
+		Set<Class<?>> classes = pb.head.handlerClasses.get(ConstraintExtension.class);
 		if (presentStar) {
 			Kit.control(positive);
-			String name = pb.head.control.extension.positive.toString();
-			Extension c = (Extension) Reflector.buildObject(name.equals("V") || name.equals("VA") ? "Extension" + name : name, classes, pb, scp);
+			String name = settings.positive.toString();
+			ConstraintExtension c = (ConstraintExtension) Reflector.buildObject(name.equals("V") || name.equals("VA") ? "Extension" + name : name, classes, pb,
+					scp);
 			Kit.control(c instanceof TagStarred); // currently, STR2, STR2S, CT, CT2 and MDDSHORT
 			return c;
 		}
-		if (scp.length == 2 && pb.head.control.extension.validForBinary)
+		if (scp.length == 2 && settings.validForBinary)
 			return new ExtensionV(pb, scp); // return new CtrExtensionSTR2(pb, scp);
-		String name = (positive ? pb.head.control.extension.positive : pb.head.control.extension.negative).toString();
-		return (Extension) Reflector.buildObject(name.equals("V") || name.equals("VA") ? "Extension" + name : name, classes, pb, scp);
+		String name = (positive ? settings.positive : settings.negative).toString();
+		return (ConstraintExtension) Reflector.buildObject(name.equals("V") || name.equals("VA") ? "Extension" + name : name, classes, pb, scp);
 	}
 
-	private static int[][] reverseTuples(Variable[] variables, int[][] tuples) {
-		Kit.control(Variable.areDomainsFull(variables));
+	private static int[][] reverseTuples(Variable[] scp, int[][] tuples) {
+		Kit.control(Variable.areDomainsFull(scp));
 		assert Kit.isLexIncreasing(tuples);
 		int cnt = 0;
-		TupleManager tupleManager = new TupleManager(variables);
-		int[] idxs = tupleManager.firstValidTuple(), vals = new int[idxs.length];
+		TupleIterator tupleIterator = new TupleIterator(Variable.buildDomainsArrayFor(scp));
+		int[] idxs = tupleIterator.firstValidTuple(), vals = new int[idxs.length];
 		List<int[]> list = new ArrayList<>();
 		do {
 			for (int i = vals.length - 1; i >= 0; i--)
-				vals[i] = variables[i].dom.toVal(idxs[i]);
+				vals[i] = scp[i].dom.toVal(idxs[i]);
 			if (cnt < tuples.length && Arrays.equals(vals, tuples[cnt]))
 				cnt++;
 			else
 				list.add(vals.clone());
-		} while (tupleManager.nextValidTuple() != -1);
+		} while (tupleIterator.nextValidTuple() != -1);
 		return Kit.intArray2D(list);
 	}
 
@@ -211,7 +223,7 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 			m = reverseTuples(scp, m);
 			positive = !positive;
 		}
-		Extension c = build(pb, scp, positive, starred);
+		ConstraintExtension c = build(pb, scp, positive, starred);
 		c.storeTuples(m, positive);
 		return c;
 	}
@@ -219,6 +231,11 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 	/**********************************************************************************************
 	 * End of static section
 	 *********************************************************************************************/
+
+	/**
+	 * The settings related to extension constraints
+	 */
+	protected final SettingExtension settings;
 
 	public ExtensionStructure extStructure;
 
@@ -239,8 +256,11 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 	}
 
 	@Override
-	public final boolean checkValues(int[] t) {
-		return checkIndexes(toIdxs(t, tupleManager.localTuple));
+	public final boolean isSatisfiedBy(int[] vals) {
+		int[] t = tupleIterator.buffer;
+		for (int i = vals.length - 1; i >= 0; i--)
+			t[i] = doms[i].toIdx(vals[i]);
+		return checkIndexes(t);
 	}
 
 	@Override
@@ -248,8 +268,9 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 		return extStructure.computeVariableSymmetryMatching(this);
 	}
 
-	public Extension(Problem pb, Variable[] scp) {
+	public ConstraintExtension(Problem pb, Variable[] scp) {
 		super(pb, scp);
+		this.settings = pb.head.control.extension;
 	}
 
 	@Override
@@ -264,8 +285,7 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 
 	public final void storeTuples(int[][] tuples, boolean positive) {
 		String tableKey = signature() + " " + tuples + " " + positive; // TODO be careful, we assume that the address of tuples can be used. Is that correct?
-		this.key = problem.features.collecting.tableKeys.computeIfAbsent(tableKey,
-				k -> signature() + "r" + problem.features.collecting.tableKeys.size());
+		this.key = problem.features.collecting.tableKeys.computeIfAbsent(tableKey, k -> signature() + "r" + problem.features.collecting.tableKeys.size());
 
 		control((positive && this instanceof TagPositive) || (!positive && this instanceof TagNegative)
 				|| (!(this instanceof TagPositive) && !(this instanceof TagNegative)), positive + " " + this.getClass().getName());
@@ -274,7 +294,7 @@ public abstract class Extension extends Constraint implements TagAC, TagFilterin
 		if (supporter != null)
 			((SupporterHard) supporter).reset();
 
-		Map<String, ExtensionStructure> map = problem.head.structureSharing.mapOfExtensionStructures;
+		Map<String, ExtensionStructure> map = problem.head.structureSharing.mapForExtension;
 		extStructure = map.get(key);
 		if (extStructure == null) {
 			extStructure = buildExtensionStructure(); // note that the constraint is automatically registered

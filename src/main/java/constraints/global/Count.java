@@ -6,7 +6,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagSymmetric;
@@ -15,7 +15,7 @@ import sets.SetSparse;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Count extends CtrGlobal implements TagAC { // For the moment all inherited classes guarantee GAC
+public abstract class Count extends ConstraintGlobal implements TagAC { // For the moment all inherited classes guarantee GAC
 
 	public static int countIn(int value, int[] t, int from, int to) {
 		int cnt = 0;
@@ -88,7 +88,7 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 		public static class AtMostK extends CountCst implements TagSymmetric { // not call filtering-complete
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return countIn(value, t) <= k;
 			}
 
@@ -138,7 +138,7 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 		public static class AtLeastK extends CountCst implements TagSymmetric { // not call filtering-complete
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return countIn(value, t) >= k;
 			}
 
@@ -229,7 +229,7 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 		public static class ExactlyK extends CountCst implements TagSymmetric {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return countIn(value, t) == k;
 			}
 
@@ -324,7 +324,7 @@ public abstract class Count extends CtrGlobal implements TagAC { // For the mome
 		public final static class ExactlyVarK extends CountVar implements TagFilteringCompleteAtEachCall {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return indexOfKInList != -1 ? CountCst.countIn(value, t) == t[indexOfKInList] : CountCst.countIn(value, t, 0, t.length - 1) == t[t.length - 1];
 			}
 

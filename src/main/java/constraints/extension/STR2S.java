@@ -13,7 +13,7 @@ import static org.xcsp.common.Constants.STAR;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-import constraints.extension.Extension.ExtensionGlobal;
+import constraints.ConstraintExtension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import interfaces.Tags.TagStarred;
@@ -43,7 +43,7 @@ public final class STR2S extends ExtensionGlobal implements TagStarred {
 		this.sSup = new int[scp.length];
 
 		control(tuples.length > 0);
-		if (decremental) {
+		if (settings.decremental) {
 			this.lastSizesStack = new int[problem.variables.length + 1][scp.length];
 			Arrays.fill(lastSizesStack[0], UNITIALIZED);
 		} else
@@ -53,7 +53,7 @@ public final class STR2S extends ExtensionGlobal implements TagStarred {
 	@Override
 	public void restoreBefore(int depth) {
 		set.restoreLimitAtLevel(depth);
-		if (decremental)
+		if (settings.decremental)
 			lastDepth = Math.max(0, Math.min(lastDepth, depth - 1));
 		else
 			Arrays.fill(lastSizes, UNITIALIZED);
@@ -82,8 +82,6 @@ public final class STR2S extends ExtensionGlobal implements TagStarred {
 	 */
 	protected int cnt;
 
-	protected boolean decremental; // true if we exploit decrementality
-
 	protected int sValSize;
 	protected int[] sVal; // positions of the variables for which validity must be checked
 
@@ -102,8 +100,7 @@ public final class STR2S extends ExtensionGlobal implements TagStarred {
 
 	public STR2S(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		this.decremental = pb.head.control.extension.decremental;
-		Kit.control(scp.length > 1, () -> "Arity must be at least 2");
+		control(scp.length > 1, () -> "Arity must be at least 2");
 	}
 
 	@Override
@@ -112,7 +109,7 @@ public final class STR2S extends ExtensionGlobal implements TagStarred {
 	}
 
 	protected void initRestorationStructuresBeforeFiltering() {
-		if (decremental) {
+		if (settings.decremental) {
 			int depth = problem.solver.depth();
 			assert 0 <= lastDepth && lastDepth <= depth : depth + " " + lastDepth + " " + this;
 			for (int i = lastDepth + 1; i <= depth; i++)

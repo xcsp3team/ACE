@@ -64,7 +64,7 @@ public abstract class PrimitiveLogic extends Primitive implements TagAC, TagNotS
 			Domain dy, dz;
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] == 0 ? t[1] == 0 || t[2] == 0 : t[1] == 1 && t[2] == 1;
 			}
 
@@ -102,7 +102,7 @@ public abstract class PrimitiveLogic extends Primitive implements TagAC, TagNotS
 		public static final class LogEqAnd extends PrimitiveLogicEq implements TagFilteringCompleteAtEachCall {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				if (t[0] == 0) { // if x = 0
 					for (int i = 1; i < t.length; i++)
 						if (t[i] == 0)
@@ -176,7 +176,7 @@ public abstract class PrimitiveLogic extends Primitive implements TagAC, TagNotS
 			Domain dy, dz;
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] == 0 ? t[1] == 0 && t[2] == 0 : t[1] == 1 || t[2] == 1;
 			}
 
@@ -214,7 +214,7 @@ public abstract class PrimitiveLogic extends Primitive implements TagAC, TagNotS
 		public static final class LogEqOr extends PrimitiveLogicEq implements TagFilteringCompleteAtEachCall {
 
 			@Override
-			public final boolean checkValues(int[] t) {
+			public final boolean isSatisfiedBy(int[] t) {
 				if (t[0] == 0) { // if x = 0
 					for (int v : t)
 						if (v == 1)

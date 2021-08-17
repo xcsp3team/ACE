@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 import org.xcsp.modeler.definitions.ICtr.ICtrSmart;
 
 import constraints.Constraint;
-import constraints.extension.Extension.ExtensionGlobal;
+import constraints.ConstraintExtension.ExtensionGlobal;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.TableSmart;
 import constraints.extension.structures.TableSmart.SmartTuple;

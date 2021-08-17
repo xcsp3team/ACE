@@ -13,7 +13,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
@@ -27,10 +27,10 @@ import variables.Variable;
 /**
  * This constraint ensures that all values assigned to the variables of its cope are all equal.
  */
-public final class AllEqual extends CtrGlobal implements ObserverOnBacktracksSystematic, TagAC, TagFilteringCompleteAtEachCall, TagSymmetric {
+public final class AllEqual extends ConstraintGlobal implements ObserverOnBacktracksSystematic, TagAC, TagFilteringCompleteAtEachCall, TagSymmetric {
 
 	@Override
-	public final boolean checkValues(int[] t) {
+	public final boolean isSatisfiedBy(int[] t) {
 		for (int v : t)
 			if (v != t[0])
 				return false;

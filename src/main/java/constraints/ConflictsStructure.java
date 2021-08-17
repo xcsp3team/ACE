@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints;
 
 import java.math.BigInteger;
@@ -16,10 +8,9 @@ import java.util.stream.IntStream;
 import org.xcsp.common.Constants;
 
 import constraints.Constraint.RegisteringCtrs;
-import constraints.extension.Extension.ExtensionGeneric;
+import constraints.ConstraintIntension.IntensionStructure;
+import constraints.ConstraintExtension.ExtensionGeneric;
 import constraints.extension.structures.ExtensionStructure;
-import constraints.intension.Intension;
-import constraints.intension.Intension.IntensionStructure;
 import interfaces.FilteringSpecific;
 import problem.Problem;
 import utility.Kit;
@@ -39,31 +30,31 @@ public final class ConflictsStructure implements RegisteringCtrs {
 	public static void buildFor(Problem problem) {
 		if (!problem.head.control.mustBuildConflictStructures)
 			return;
-		for (ExtensionStructure extStructure : problem.head.structureSharing.mapOfExtensionStructures.values()) {
-			Constraint c = extStructure.firstRegisteredCtr();
+		for (ExtensionStructure structure : problem.head.structureSharing.mapForExtension.values()) {
+			Constraint c = structure.firstRegisteredCtr();
 			if (c instanceof FilteringSpecific || c.scp.length == 1 || c.infiniteDomainVars.length > 0)
 				continue;
 			Kit.control(c instanceof ExtensionGeneric);
 			if (Kit.memory() > 400000000L) // TODO hard coding
 				return;
-			ConflictsStructure conflictsStructure = new ConflictsStructure(c).initializeFrom(extStructure.originalTuples, extStructure.originalPositive);
-			for (Constraint cc : extStructure.registeredCtrs) {
+			ConflictsStructure conflictsStructure = new ConflictsStructure(c).initializeFrom(structure.originalTuples, structure.originalPositive);
+			for (Constraint cc : structure.registeredCtrs) {
 				cc.conflictsStructure = conflictsStructure;
 				if (cc != c)
 					conflictsStructure.register(cc);
 			}
 		}
-		for (IntensionStructure treeEvaluator : problem.head.structureSharing.mapOfTreeEvaluators.values()) {
-			Constraint c = treeEvaluator.firstRegisteredCtr();
+		for (IntensionStructure structure : problem.head.structureSharing.mapForIntension.values()) {
+			Constraint c = structure.firstRegisteredCtr();
 			if (c instanceof FilteringSpecific || c.scp.length == 1 || c.infiniteDomainVars.length > 0)
 				continue;
-			Kit.control(c instanceof Intension);
+			Kit.control(c instanceof ConstraintIntension);
 			if (Kit.memory() > 400000000L) // TODO hard coding
 				return;
 			if (Domain.nValidTuples(c.doms, false).compareTo(c.scp.length == 2 ? LIMIT_FOR_BARY : LIMIT_FOR_NARY) > 0)
 				continue;
 			ConflictsStructure conflictsStructure = new ConflictsStructure(c).initialize();
-			for (Constraint cc : treeEvaluator.registeredCtrs) {
+			for (Constraint cc : structure.registeredCtrs()) {
 				cc.conflictsStructure = conflictsStructure;
 				if (cc != c)
 					conflictsStructure.register(cc);
@@ -142,8 +133,8 @@ public final class ConflictsStructure implements RegisteringCtrs {
 	private ConflictsStructure initialize() {
 		assert registeredCtrs.size() == 1;
 		Constraint c = firstRegisteredCtr();
-		c.tupleManager.firstValidTuple();
-		c.tupleManager.overValidTuples(t -> {
+		c.tupleIterator.firstValidTuple();
+		c.tupleIterator.consumeValidTuples(t -> {
 			if (!c.checkIndexes(t))
 				for (int i = 0; i < t.length; i++)
 					nConflicts[i][t[i]]++;

@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 
 import constraints.Constraint;
-import constraints.Constraint.CtrGlobal;
+import constraints.ConstraintGlobal;
 import constraints.global.AllDifferent.AllDifferentComplete;
 import interfaces.Tags.TagNotAC;
 import optimization.Optimizable;
@@ -27,7 +27,7 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class NValues extends CtrGlobal implements TagNotAC { // not call filtering-complete
+public abstract class NValues extends ConstraintGlobal implements TagNotAC { // not call filtering-complete
 
 	protected final Variable[] list;
 
@@ -149,7 +149,7 @@ public abstract class NValues extends CtrGlobal implements TagNotAC { // not cal
 		public final static class NValuesCstLE extends NValuesCst {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return Arrays.stream(t).distinct().count() <= limit;
 			}
 
@@ -177,7 +177,7 @@ public abstract class NValues extends CtrGlobal implements TagNotAC { // not cal
 		public final static class NValuesCstGE extends NValuesCst {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return Arrays.stream(t).distinct().count() >= limit;
 			}
 
@@ -231,7 +231,7 @@ public abstract class NValues extends CtrGlobal implements TagNotAC { // not cal
 		public static class NValuesVarEQ extends NValuesVar {
 
 			@Override
-			public boolean checkValues(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return IntStream.range(0, t.length - 1).map(i -> t[i]).distinct().count() == t[t.length - 1];
 			}
 
