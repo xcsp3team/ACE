@@ -10,7 +10,7 @@ package constraints.extension;
 
 import java.util.Arrays;
 
-import constraints.ConstraintExtension.ExtensionGlobal;
+import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import interfaces.Tags.TagNegative;
@@ -19,7 +19,7 @@ import sets.SetDenseReversible;
 import variables.Domain;
 import variables.Variable;
 
-public class STR2NEG extends ExtensionGlobal implements TagNegative {
+public class STR2NEG extends ExtensionSpecific implements TagNegative {
 
 	/**********************************************************************************************
 	 * Interfaces

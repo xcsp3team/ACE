@@ -34,7 +34,7 @@ import org.xcsp.common.predicates.XNode;
 import org.xcsp.common.predicates.XNodeLeaf;
 import org.xcsp.common.predicates.XNodeParent;
 
-import constraints.Constraint;
+import constraints.ConstraintExtension;
 import constraints.extension.CSmart;
 import sets.SetSparse;
 import utility.Kit;
@@ -57,13 +57,13 @@ public class TableSmart extends ExtensionStructure {
 		throw new AssertionError();
 	}
 
-	public TableSmart(Constraint c, SmartTuple[] smartTuples) {
+	public TableSmart(ConstraintExtension c, SmartTuple[] smartTuples) {
 		super(c);
 		this.smartTuples = smartTuples;
 	}
 
 	@Override
-	public boolean checkIdxs(int[] t) {
+	public boolean checkIndexes(int[] t) {
 		for (SmartTuple smartTuple : smartTuples)
 			if (smartTuple.contains(t))
 				return true;

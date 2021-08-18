@@ -1,23 +1,15 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints.extension;
 
 import java.util.Arrays;
 
-import constraints.ConstraintExtension.ExtensionGlobal;
+import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import problem.Problem;
 import sets.SetDenseReversible;
 import variables.Variable;
 
-public class STR1 extends ExtensionGlobal {
+public class STR1 extends ExtensionSpecific {
 
 	/**********************************************************************************************
 	 * Interfaces
@@ -26,7 +18,7 @@ public class STR1 extends ExtensionGlobal {
 	@Override
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
-		this.tuples = ((Table) extStructure).tuples;
+		this.tuples = ((Table) extStructure()).tuples;
 		this.set = new SetDenseReversible(tuples.length, problem.variables.length + 1);
 		this.ac = Variable.litterals(scp).booleanArray();
 		this.cnts = new int[scp.length];

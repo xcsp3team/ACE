@@ -1,18 +1,18 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints.extension.structures;
 
 import constraints.Constraint;
+import constraints.ConstraintExtension;
 import utility.Kit;
 
+/**
+ * This is the root class for the matrix forms of extension structures. Currently, 2-dimensional and 3-dimensional matrices are implemented.
+ * 
+ * @author Christophe Lecoutre
+ *
+ */
 public abstract class Matrix extends ExtensionStructure {
-	public Matrix(Constraint c) {
+
+	public Matrix(ConstraintExtension c) {
 		super(c);
 	}
 
@@ -25,29 +25,25 @@ public abstract class Matrix extends ExtensionStructure {
 			this.supports = new boolean[c.doms[0].initSize()][c.doms[1].initSize()];
 			if (!positive)
 				Kit.fill(supports, true);
-			if (c.indexesMatchValues) {
-				for (int[] tuple : tuples)
+			for (int[] tuple : tuples)
+				if (c.indexesMatchValues)
 					supports[tuple[0]][tuple[1]] = positive;
-			} else
-				for (int[] tuple : tuples)
+				else
 					supports[c.doms[0].toIdx(tuple[0])][c.doms[1].toIdx(tuple[1])] = positive;
 		}
 
-		public Matrix2D(Constraint c) {
+		public Matrix2D(ConstraintExtension c) {
 			super(c);
 			Kit.control(c.scp.length == 2);
 		}
 
-		public Matrix2D(Constraint c, Matrix2D matrix2D) {
+		public Matrix2D(ConstraintExtension c, Matrix2D matrix2D) {
 			this(c);
 			this.supports = Kit.cloneDeeply(matrix2D.supports);
 		}
 
-		/**
-		 * This method returns true iff all pairs of variable assignments corresponding to the tuple are compatible.
-		 */
 		@Override
-		public final boolean checkIdxs(int[] t) {
+		public final boolean checkIndexes(int[] t) {
 			return supports[t[0]][t[1]];
 		}
 
@@ -82,31 +78,26 @@ public abstract class Matrix extends ExtensionStructure {
 			Constraint c = firstRegisteredCtr();
 			this.supports = new boolean[c.doms[0].initSize()][c.doms[1].initSize()][c.doms[2].initSize()];
 			if (!positive)
-				for (int i = 0; i < supports.length; i++)
-					for (int j = 0; j < supports[i].length; j++)
-						for (int k = 0; k < supports[i][j].length; k++)
-							supports[i][j][k] = true;
-
-			if (c.indexesMatchValues) {
-				for (int[] tuple : tuples)
+				Kit.fill(supports, true);
+			for (int[] tuple : tuples)
+				if (c.indexesMatchValues)
 					supports[tuple[0]][tuple[1]][tuple[2]] = positive;
-			} else
-				for (int[] tuple : tuples)
+				else
 					supports[c.doms[0].toIdx(tuple[0])][c.doms[1].toIdx(tuple[1])][c.doms[2].toIdx(tuple[2])] = positive;
 		}
 
-		public Matrix3D(Constraint c) {
+		public Matrix3D(ConstraintExtension c) {
 			super(c);
-			assert c.scp.length == 3;
+			Kit.control(c.scp.length == 3);
 		}
 
-		public Matrix3D(Constraint c, Matrix3D matrix3D) {
+		public Matrix3D(ConstraintExtension c, Matrix3D matrix3D) {
 			this(c);
-			supports = Kit.cloneDeeply(matrix3D.supports);
+			this.supports = Kit.cloneDeeply(matrix3D.supports);
 		}
 
 		@Override
-		public final boolean checkIdxs(int[] t) {
+		public final boolean checkIndexes(int[] t) {
 			return supports[t[0]][t[1]][t[2]];
 		}
 

@@ -12,7 +12,7 @@ import java.util.Arrays;
 
 import org.xcsp.common.Constants;
 
-import constraints.ConstraintExtension.ExtensionGlobal;
+import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.MDDShort;
 import constraints.extension.structures.MDDShort.MDDNodeShort;
@@ -23,7 +23,7 @@ import sets.SetSparseReversible;
 import variables.Domain;
 import variables.Variable;
 
-public final class CMDDShort extends ExtensionGlobal implements TagPositive, TagStarred {
+public final class CMDDShort extends ExtensionSpecific implements TagPositive, TagStarred {
 
 	/**********************************************************************************************
 	 * Interfaces
@@ -32,7 +32,7 @@ public final class CMDDShort extends ExtensionGlobal implements TagPositive, Tag
 	@Override
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
-		int nNodes = ((MDDShort) extStructure).nNodes();
+		int nNodes = ((MDDShort) extStructure()).nNodes();
 		this.trueNodes = new int[nNodes];
 		if (settings.decremental)
 			this.set = new SetSparseReversible(nNodes, problem.variables.length + 1, false);

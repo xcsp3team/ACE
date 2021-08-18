@@ -15,7 +15,7 @@ import org.xcsp.common.structures.Automaton;
 import org.xcsp.common.structures.Transition;
 import org.xcsp.modeler.definitions.ICtr.ICtrMdd;
 
-import constraints.ConstraintExtension.ExtensionGlobal;
+import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.MDD;
 import constraints.extension.structures.MDD.MDDNode;
@@ -25,7 +25,7 @@ import sets.SetSparseReversible;
 import variables.Domain;
 import variables.Variable;
 
-public final class CMDD extends ExtensionGlobal implements TagPositive, ICtrMdd {
+public final class CMDD extends ExtensionSpecific implements TagPositive, ICtrMdd {
 
 	/**********************************************************************************************
 	 * Implementing Interfaces
@@ -34,7 +34,9 @@ public final class CMDD extends ExtensionGlobal implements TagPositive, ICtrMdd 
 	@Override
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
-		int nNodes = ((MDD) extStructure).nNodes();
+		this.mdd = (MDD) extStructure();
+		int nNodes = mdd.nNodes();
+		// System.out.println("nNodes" + nNodes);
 		this.trueNodes = new int[nNodes];
 		if (settings.decremental)
 			this.set = new SetSparseReversible(nNodes, problem.variables.length + 1, false);
@@ -55,6 +57,8 @@ public final class CMDD extends ExtensionGlobal implements TagPositive, ICtrMdd 
 	/**********************************************************************************************
 	 * Fields
 	 *********************************************************************************************/
+
+	protected MDD mdd;
 
 	protected SetSparseReversible set;
 
@@ -177,13 +181,13 @@ public final class CMDD extends ExtensionGlobal implements TagPositive, ICtrMdd 
 	}
 
 	private boolean exploreMDD(MDDNode node) {
-		if (node == MDDNode.nodeT || trueNodes[node.id] == trueTimestamp)
+		if (node == mdd.nodeT || trueNodes[node.id] == trueTimestamp)
 			return true;
-		if (node == MDDNode.nodeF || (set != null && set.contains(node.id)) || (set == null && falseNodes[node.id] == falseTimestamp))
+		if (node == mdd.nodeF || (set != null && set.contains(node.id)) || (set == null && falseNodes[node.id] == falseTimestamp))
 			return false;
 		Domain dom = scp[node.level].dom;
 		boolean supported = false, finished = false;
-		if (dom.size() < node.nSonsDifferentFromNodeF()) {
+		if (dom.size() < node.nSonsNotNodeF()) {
 			for (int a = dom.first(); a != -1 && !finished; a = dom.next(a)) {
 				if (exploreMDD(node.sons[a])) {
 					supported = true;

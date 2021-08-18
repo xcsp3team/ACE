@@ -13,7 +13,8 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import constraints.Constraint;
-import constraints.ConstraintExtension.ExtensionGlobal;
+import constraints.ConstraintExtension;
+import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import interfaces.Observers.ObserverOnSearch;
@@ -26,12 +27,13 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public final class STR3 extends ExtensionGlobal implements TagPositive, ObserverOnSearch {
+public final class STR3 extends ExtensionSpecific implements TagPositive, ObserverOnSearch {
 
 	@Override
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
-		this.tuples = ((Table) extStructure).tuples;
+		TableWithSubtables table = (TableWithSubtables) extStructure();
+		this.tuples = table.tuples;
 		this.set = new SetSparseReversible(tuples.length, problem.variables.length + 1);
 
 		this.offsetsForMaps = new int[scp.length];
@@ -50,8 +52,8 @@ public final class STR3 extends ExtensionGlobal implements TagPositive, Observer
 		this.ac = Variable.litterals(scp).booleanArray();
 		this.cnts = new int[scp.length];
 		this.frontiers = new int[scp.length];
-		this.subtables = ((SubTable) extStructure).subtables;
-		this.subtablesShort = ((SubTable) extStructure).subtablesShort;
+		this.subtables = table.subtables;
+		this.subtablesShort = table.subtablesShort;
 	}
 
 	@Override
@@ -113,7 +115,7 @@ public final class STR3 extends ExtensionGlobal implements TagPositive, Observer
 	// ***** SubTable for STR3
 	// ************************************************************************
 
-	static class SubTable extends Table {
+	private static final class TableWithSubtables extends Table {
 
 		public int[][][] subtables; // subtables[x][a][k] is the tid (position in tuples) of the kth tuple where x = a
 
@@ -142,7 +144,7 @@ public final class STR3 extends ExtensionGlobal implements TagPositive, Observer
 			buildSubtables();
 		}
 
-		public SubTable(Constraint c) {
+		public TableWithSubtables(ConstraintExtension c) {
 			super(c);
 		}
 
@@ -255,7 +257,7 @@ public final class STR3 extends ExtensionGlobal implements TagPositive, Observer
 
 	@Override
 	protected ExtensionStructure buildExtensionStructure() {
-		return new SubTable(this);
+		return new TableWithSubtables(this);
 	}
 
 	// @Override

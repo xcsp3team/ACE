@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 import org.xcsp.modeler.definitions.ICtr.ICtrSmart;
 
 import constraints.Constraint;
-import constraints.ConstraintExtension.ExtensionGlobal;
+import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.TableSmart;
 import constraints.extension.structures.TableSmart.SmartTuple;
@@ -35,7 +35,7 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public final class CSmart extends ExtensionGlobal implements ICtrSmart {
+public final class CSmart extends ExtensionSpecific implements ICtrSmart {
 
 	/**********************************************************************************************
 	 * Static

@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints.global;
 
 import java.util.stream.IntStream;
@@ -34,6 +26,11 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 
 	public abstract static class ElementArray extends Element {
 
+		@Override
+		public boolean isSatisfiedBy(int[] t) {
+			throw new AssertionError("actually, we reason with checkIndexes. This is less expensive (no need to convert all values)");
+		}
+
 		protected final Variable[] list;
 
 		protected final Domain idom; // domain of the index variable
@@ -51,10 +48,6 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 			// this is enforced at construction (in problem)
 		}
 
-		@Override
-		public boolean isSatisfiedBy(int[] t) { // reasoning from checkIndexes is less expensive (no need to convert all values)
-			throw new AssertionError();
-		}
 	}
 
 	// ************************************************************************
@@ -246,15 +239,16 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 		// ************************************************************************
 
 		public final static class ElementMatrixCst extends ElementMatrix {
-			private int value;
-
-			private int[] rsentinels, csentinels;
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
 				int i = t[rindexPosition], j = t[cindexPosition];
 				return t[i * matrix.length + j] == value;
 			}
+
+			private int value;
+
+			private int[] rsentinels, csentinels;
 
 			public ElementMatrixCst(Problem pb, Variable[][] matrix, Variable rindex, Variable cindex, int value) {
 				super(pb, matrix, rindex, cindex, value);
@@ -315,18 +309,18 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 
 		public final static class ElementMatrixVar extends ElementMatrix {
 
+			@Override
+			public boolean isSatisfiedBy(int[] t) {
+				int i = t[rindexPosition], j = t[cindexPosition];
+				return t[i * matrix.length + j] == t[vpos];
+			}
+
 			private final Domain vdom; // domain of the value variable
 			private final int vpos; // position in scope of the value variable
 
 			private final int[] rindexColSentinels, rindexValSentinels;
 			private final int[] cindexRowSentinels, cindexValSentinels;
 			private final int[] valueRowSentinels, valueColSentinels;
-
-			@Override
-			public boolean isSatisfiedBy(int[] t) {
-				int i = t[rindexPosition], j = t[cindexPosition];
-				return t[i * matrix.length + j] == t[vpos];
-			}
 
 			public ElementMatrixVar(Problem pb, Variable[][] matrix, Variable rindex, Variable cindex, Variable value) {
 				super(pb, matrix, rindex, cindex, value);

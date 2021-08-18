@@ -8,8 +8,8 @@ import java.util.stream.IntStream;
 import org.xcsp.common.Constants;
 
 import constraints.Constraint.RegisteringCtrs;
-import constraints.ConstraintIntension.IntensionStructure;
 import constraints.ConstraintExtension.ExtensionGeneric;
+import constraints.ConstraintIntension.IntensionStructure;
 import constraints.extension.structures.ExtensionStructure;
 import interfaces.FilteringSpecific;
 import problem.Problem;
@@ -31,33 +31,33 @@ public final class ConflictsStructure implements RegisteringCtrs {
 		if (!problem.head.control.mustBuildConflictStructures)
 			return;
 		for (ExtensionStructure structure : problem.head.structureSharing.mapForExtension.values()) {
-			Constraint c = structure.firstRegisteredCtr();
-			if (c instanceof FilteringSpecific || c.scp.length == 1 || c.infiniteDomainVars.length > 0)
+			Constraint c1 = structure.firstRegisteredCtr();
+			if (c1 instanceof FilteringSpecific || c1.scp.length == 1 || c1.infiniteDomainVars.length > 0)
 				continue;
-			Kit.control(c instanceof ExtensionGeneric);
+			Kit.control(c1 instanceof ExtensionGeneric);
 			if (Kit.memory() > 400000000L) // TODO hard coding
 				return;
-			ConflictsStructure conflictsStructure = new ConflictsStructure(c).initializeFrom(structure.originalTuples, structure.originalPositive);
-			for (Constraint cc : structure.registeredCtrs) {
-				cc.conflictsStructure = conflictsStructure;
-				if (cc != c)
-					conflictsStructure.register(cc);
+			ConflictsStructure conflictsStructure = new ConflictsStructure(c1).initializeFrom(structure.originalTuples, structure.originalPositive);
+			for (Constraint c : structure.registeredCtrs()) {
+				c.conflictsStructure = conflictsStructure;
+				if (c != c1)
+					conflictsStructure.register(c);
 			}
 		}
 		for (IntensionStructure structure : problem.head.structureSharing.mapForIntension.values()) {
-			Constraint c = structure.firstRegisteredCtr();
-			if (c instanceof FilteringSpecific || c.scp.length == 1 || c.infiniteDomainVars.length > 0)
+			Constraint c1 = structure.firstRegisteredCtr();
+			if (c1 instanceof FilteringSpecific || c1.scp.length == 1 || c1.infiniteDomainVars.length > 0)
 				continue;
-			Kit.control(c instanceof ConstraintIntension);
+			Kit.control(c1 instanceof ConstraintIntension);
 			if (Kit.memory() > 400000000L) // TODO hard coding
 				return;
-			if (Domain.nValidTuples(c.doms, false).compareTo(c.scp.length == 2 ? LIMIT_FOR_BARY : LIMIT_FOR_NARY) > 0)
+			if (Domain.nValidTuples(c1.doms, false).compareTo(c1.scp.length == 2 ? LIMIT_FOR_BARY : LIMIT_FOR_NARY) > 0)
 				continue;
-			ConflictsStructure conflictsStructure = new ConflictsStructure(c).initialize();
-			for (Constraint cc : structure.registeredCtrs()) {
-				cc.conflictsStructure = conflictsStructure;
-				if (cc != c)
-					conflictsStructure.register(cc);
+			ConflictsStructure conflictsStructure = new ConflictsStructure(c1).initialize();
+			for (Constraint c : structure.registeredCtrs()) {
+				c.conflictsStructure = conflictsStructure;
+				if (c != c1)
+					conflictsStructure.register(c);
 			}
 		}
 	}

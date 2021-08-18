@@ -85,7 +85,7 @@ public class CT extends STR1Optimized implements TagStarred {
 		this.lastWord0Then1 = tuples.length % 64 != 0 ? Bit.bitsAt1From(tuples.length % 64) : 0L;
 		fillTo1(current);
 
-		this.starred = ((Table) extStructure).starred;
+		this.starred = ((Table) extStructure()).starred;
 		this.masks = Variable.litterals(scp).longArray(nWords);
 		if (!this.starred) {
 			for (int x = 0; x < scp.length; x++) {

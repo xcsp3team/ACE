@@ -353,7 +353,7 @@ public final class MDDShort extends ExtensionStructure {
 	}
 
 	@Override
-	public boolean checkIdxs(int[] t) {
+	public boolean checkIndexes(int[] t) {
 		return checkIdxs(t, 0, root);
 	}
 

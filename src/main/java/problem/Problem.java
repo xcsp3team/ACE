@@ -1786,7 +1786,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 
 	private CtrAlone element(Var[] list, Var index, int value) {
 		if (head.control.global.jokerTable)
-			return extension(vars(index, list), Table.shortTuplesForElement(translate(list), (Variable) index, value), true);
+			return extension(vars(index, list), Table.starredElement(translate(list), (Variable) index, value), true);
 		return post(new ElementCst(this, translate(list), (Variable) index, value));
 	}
 
@@ -1795,7 +1795,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 			return post(CSmart.buildElement(this, translate(list), (Variable) index, (Variable) value));
 		if (head.control.global.jokerTable)
 			return extension(Utilities.indexOf(value, list) == -1 ? vars(index, list, value) : vars(index, list),
-					Table.shortTuplesForElement(translate(list), (Variable) index, (Variable) value), true);
+					Table.starredElement(translate(list), (Variable) index, (Variable) value), true);
 		return post(new ElementVar(this, translate(list), (Variable) index, (Variable) value));
 	}
 
@@ -2025,7 +2025,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 				if (head.control.global.typeNoOverlap == INTENSION_DECOMPOSITION)
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi))); // VERY expensive
 				else if (head.control.global.typeNoOverlap == EXTENSION_STARRED)
-					extension(vars(xi, xj, yi, yj), Table.shortTuplesForNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true); // seems to be rather efficient
+					extension(vars(xi, xj, yi, yj), Table.starredNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true); // seems to be rather efficient
 				else if (head.control.global.typeNoOverlap == EXTENSION_SMART)
 					post(CSmart.buildNoOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				else

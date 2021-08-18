@@ -448,16 +448,31 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		return b ? Kit.repeat(1, scp.length) : Kit.range(1, scp.length);
 	}
 
+	/**
+	 * Returns true is this constraint is currently entailed
+	 * 
+	 * @return true is this constraint is currently entailed
+	 */
 	public boolean entailed() {
 		problem.solver.entail(this);
 		return true;
 	}
 
-	public ExtensionStructure extStructure() {
+	/**
+	 * Returns the intension structure (i.e., object to evaluate a Boolean expression tree) if this object is an intension constraint, or null
+	 * 
+	 * @return the extension structure if this object is an intension constraint, or null
+	 */
+	public IntensionStructure intStructure() {
 		return null;
 	}
 
-	public IntensionStructure intStructure() {
+	/**
+	 * Returns the extension structure (i.e., object like a table) if this object is an extension constraint, or null
+	 * 
+	 * @return the extension structure if this object is an extension constraint, or null
+	 */
+	public ExtensionStructure extStructure() {
 		return null;
 	}
 
@@ -913,8 +928,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 
 	public void display(boolean exhaustively) {
 		Kit.log.finer("Constraint " + toString());
-		Kit.log.finer(
-				"\tClass = " + getClass().getName() + (this instanceof ConstraintExtension ? ":" + ((ConstraintExtension) this).extStructure().getClass().getSimpleName() : ""));
+		Kit.log.finer("\tClass = " + getClass().getName()
+				+ (this instanceof ConstraintExtension ? ":" + ((ConstraintExtension) this).extStructure().getClass().getSimpleName() : ""));
 		if (this instanceof ConstraintIntension)
 			Kit.log.finer("\tPredicate: " + ((ConstraintIntension) this).tree.toFunctionalExpression(null));
 		Kit.log.finer("\tKey = " + key);

@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints.extension.structures;
 
 import java.util.Arrays;
@@ -17,6 +9,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
+import constraints.ConstraintExtension;
 import main.Head;
 import problem.Problem;
 import utility.Bit;
@@ -54,10 +47,10 @@ public final class Bits extends ExtensionStructure {
 	}
 
 	private void fillSupports0(int[][] tuples, boolean positive) {
-		Constraint ctr = firstRegisteredCtr();
-		Domain dom0 = ctr.scp[0].dom, dom1 = ctr.scp[1].dom;
+		Constraint c = firstRegisteredCtr();
+		Domain dom0 = c.scp[0].dom, dom1 = c.scp[1].dom;
 		if (positive) {
-			if (ctr.indexesMatchValues)
+			if (c.indexesMatchValues)
 				for (int[] tuple : tuples)
 					bitSups0[tuple[0]][tuple[1] / Long.SIZE] |= Bit.ONE_LONG_BIT_TO_1[tuple[1] % Long.SIZE];
 			else
@@ -72,7 +65,7 @@ public final class Bits extends ExtensionStructure {
 				if (remainder != 0)
 					t[t.length - 1] = Bit.bitsA1To(remainder);
 			}
-			if (ctr.indexesMatchValues)
+			if (c.indexesMatchValues)
 				for (int[] tuple : tuples)
 					bitSups0[tuple[0]][tuple[1] / Long.SIZE] &= Bit.ONE_LONG_BIT_TO_0[tuple[1] % Long.SIZE];
 			else
@@ -167,7 +160,7 @@ public final class Bits extends ExtensionStructure {
 	// }
 
 	@Override
-	public int[] computeVariableSymmetryMatching(Constraint c) {
+	public int[] computeVariableSymmetryMatching(ConstraintExtension c) {
 		if (!Variable.haveSameDomainType(c.scp))
 			return new int[] { 1, 2 };
 		for (int i = 0; i < bitSups0.length; i++)
@@ -196,13 +189,13 @@ public final class Bits extends ExtensionStructure {
 		return m;
 	}
 
-	public Bits(Constraint ctr) {
-		super(ctr);
-		Kit.control(ctr.scp.length == 2);
+	public Bits(ConstraintExtension c) {
+		super(c);
+		Kit.control(c.scp.length == 2);
 	}
 
-	public Bits(Constraint ctr, Bits bits) {
-		this(ctr);
+	public Bits(ConstraintExtension c, Bits bits) {
+		this(c);
 		bitSups0 = Kit.cloneDeeply(bits.bitSups0);
 		bitSups1 = Kit.cloneDeeply(bits.bitSups1);
 		sharedArrays = bits.sharedArrays;
@@ -222,7 +215,7 @@ public final class Bits extends ExtensionStructure {
 	 * This method returns true iff all pairs of variable assignments corresponding to the tuple are compatible.
 	 */
 	@Override
-	public final boolean checkIdxs(int[] idxs) {
+	public final boolean checkIndexes(int[] idxs) {
 		return (bitSups0[idxs[0]][idxs[1] / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[idxs[1] % Long.SIZE]) != 0; // Bit.ALL_LONG_BITS_TO_0;
 		// return (supports1[tuple[1]][tuple[0] / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[tuple[0] % Long.SIZE]) != 0;
 	}

@@ -344,6 +344,11 @@ public final class Kit {
 			Arrays.fill(t, value);
 	}
 
+	public static void fill(boolean[][][] c, boolean value) {
+		for (boolean[][] m : c)
+			fill(m, value);
+	}
+
 	public static void fill(int[][] m, int value) {
 		for (int[] t : m)
 			Arrays.fill(t, value);

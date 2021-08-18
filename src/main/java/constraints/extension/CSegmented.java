@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import constraints.ConstraintExtension.ExtensionGlobal;
+import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.TableSegmented;
 import constraints.extension.structures.TableSegmented.SegmentedTuple;
@@ -23,7 +23,7 @@ import sets.SetDenseReversible;
 import sets.SetSparse;
 import variables.Variable;
 
-public final class CSegmented extends ExtensionGlobal {
+public final class CSegmented extends ExtensionSpecific {
 
 	/**********************************************************************************************
 	 * Restoration

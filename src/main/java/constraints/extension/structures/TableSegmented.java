@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 
 import org.xcsp.common.Utilities;
 
-import constraints.Constraint;
+import constraints.ConstraintExtension;
 import constraints.extension.CSegmented;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import problem.Problem;
@@ -277,13 +277,13 @@ public class TableSegmented extends ExtensionStructure {
 		throw new AssertionError();
 	}
 
-	public TableSegmented(Constraint c, SegmentedTuple[] splitTuples) {
+	public TableSegmented(ConstraintExtension c, SegmentedTuple[] splitTuples) {
 		super(c);
 		this.splitTuples = splitTuples;
 	}
 
 	@Override
-	public boolean checkIdxs(int[] t) {
+	public boolean checkIndexes(int[] t) {
 		for (SegmentedTuple splitTuple : splitTuples)
 			if (splitTuple.contains(t))
 				return true;

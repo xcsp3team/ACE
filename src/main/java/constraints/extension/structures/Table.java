@@ -1,14 +1,7 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints.extension.structures;
 
 import static org.xcsp.common.Constants.STAR;
+import static utility.Kit.control;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,14 +14,17 @@ import org.xcsp.common.Range;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
+import constraints.ConstraintExtension;
 import problem.Problem;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
 /**
- * This class is useful for table constraints, i.e., constraints defined in extension. All supports (allowed tuples) or all conflicts (disallowed tuples) are
- * recorded in a list. Note that tuples are recorded as indexes (of values).
+ * This is the class for the tabular forms of extension structures. All supports (allowed tuples) or all conflicts (disallowed tuples) are simply recorded in a
+ * array. Note that tuples are recorded with indexes (of values).
+ * 
+ * @author Christophe Lecoutre
  */
 public class Table extends ExtensionStructure {
 
@@ -36,20 +32,21 @@ public class Table extends ExtensionStructure {
 	 * Static Methods for Starred Tables
 	 *********************************************************************************************/
 
-	private static int[] tuple(int value, int... otherValues) {
-		return IntStream.range(0, otherValues.length + 1).map(i -> i == 0 ? value : otherValues[i - 1]).toArray();
-	}
+	/**
+	 * Cache used for some starred constructions of global constraints
+	 */
+	private static Map<String, int[][]> cache = new HashMap<String, int[][]>();
 
-	public static int[][] shortTuplesForElement(Variable[] list, Variable index, int value) {
-		Kit.control(Variable.areAllDistinct(list) && !Kit.isPresent(index, list));
-		Kit.control(index.dom.areInitValuesExactly(new Range(list.length)) && Variable.areAllDomainsContainingValue(list, value));
+	public static int[][] starredElement(Variable[] list, Variable index, int value) {
+		control(Variable.areAllDistinct(list) && !Kit.isPresent(index, list));
+		control(index.dom.areInitValuesExactly(new Range(list.length)) && Variable.areAllDomainsContainingValue(list, value));
 		return IntStream.range(0, list.length).mapToObj(i -> IntStream.range(0, list.length + 1).map(j -> j == 0 ? i : j == i + 1 ? value : STAR).toArray())
 				.toArray(int[][]::new);
 	}
 
-	public static int[][] shortTuplesForElement(Variable[] list, Variable index, Variable value) {
-		Kit.control(Variable.areAllDistinct(list) && !Kit.isPresent(index, list) && index != value);
-		Kit.control(index.dom.areInitValuesExactly(new Range(list.length)));
+	public static int[][] starredElement(Variable[] list, Variable index, Variable value) {
+		control(Variable.areAllDistinct(list) && !Kit.isPresent(index, list) && index != value);
+		control(index.dom.areInitValuesExactly(new Range(list.length)));
 		Domain domResult = value.dom;
 		int resultPositionInVector = Utilities.indexOf(value, list);
 		int arity = resultPositionInVector == -1 ? list.length + 2 : list.length + 1;
@@ -58,12 +55,12 @@ public class Table extends ExtensionStructure {
 		for (int i = 0; i < list.length; i++) {
 			Domain dom = list[i].dom;
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
-				int va = dom.toVal(a);
-				if (domResult.containsValue(va)) {
+				int v = dom.toVal(a);
+				if (domResult.containsValue(v)) {
 					int[] tuple = Kit.repeat(STAR, arity);
 					tuple[0] = i;
-					tuple[i + 1] = va;
-					tuple[resultPositionInTuple] = va;
+					tuple[i + 1] = v;
+					tuple[resultPositionInTuple] = v;
 					tuples.add(tuple);
 				}
 			}
@@ -71,10 +68,8 @@ public class Table extends ExtensionStructure {
 		return Kit.intArray2D(tuples);
 	}
 
-	private static Map<String, int[][]> cache = new HashMap<String, int[][]>();
-
-	public static int[][] shortTuplesForDistinctVectors(Variable[] t1, Variable[] t2) {
-		Kit.control(t1.length == t2.length);
+	public static int[][] starredDistinctVectors(Variable[] t1, Variable[] t2) {
+		control(t1.length == t2.length);
 		String key = "DistinctVectors " + Variable.signatureFor(t1) + " " + Variable.signatureFor(t2);
 		int[][] tuples = cache.get(key);
 		if (tuples == null) {
@@ -101,8 +96,8 @@ public class Table extends ExtensionStructure {
 		return tuples;
 	}
 
-	public static int[][] shortTuplesForLexicographicLt(Problem problem, Variable[] t1, Variable[] t2) {
-		Kit.control(t1.length == t2.length);
+	public static int[][] starredLexicographicLt(Problem problem, Variable[] t1, Variable[] t2) {
+		control(t1.length == t2.length);
 		String key = "LexicographicLt " + Variable.signatureFor(t1) + " " + Variable.signatureFor(t2);
 		int[][] tuples = cache.get(key);
 		if (tuples == null) {
@@ -136,12 +131,12 @@ public class Table extends ExtensionStructure {
 				int vb = dom2.toVal(b);
 				if (va + offset > vb)
 					break;
-				list.add(xAxis ? tuple(first ? va : vb, first ? vb : va, STAR, STAR) : tuple(STAR, STAR, first ? va : vb, first ? vb : va));
+				list.add(xAxis ? new int[] { first ? va : vb, first ? vb : va, STAR, STAR } : new int[] { STAR, STAR, first ? va : vb, first ? vb : va });
 			}
 		}
 	}
 
-	public static int[][] shortTuplesForNoOverlap(Variable x1, Variable x2, Variable y1, Variable y2, int w1, int w2, int h1, int h2) {
+	public static int[][] starredNoOverlap(Variable x1, Variable x2, Variable y1, Variable y2, int w1, int w2, int h1, int h2) {
 		List<int[]> list = new ArrayList<int[]>();
 		addNonOverlappingTuplesFor(list, x1.dom, x2.dom, w1, true, true);
 		addNonOverlappingTuplesFor(list, x2.dom, x1.dom, w2, false, true);
@@ -154,30 +149,28 @@ public class Table extends ExtensionStructure {
 	 * Class
 	 *********************************************************************************************/
 
-	private boolean isMatching(int[] tuple, int[] idxs) {
-		for (int i = 0; i < tuple.length; i++)
-			if (tuple[i] != STAR && tuple[i] != idxs[i])
-				return false;
-		return true;
-	}
-
 	@Override
-	public boolean checkIdxs(int[] t) {
-		if (starred) {
-			for (int[] tuple : tuples)
-				if (isMatching(tuple, t))
-					return true; // if starred, then necessarily positive table (for the moment)
+	public boolean checkIndexes(int[] t) {
+		if (starred) { // if starred, then necessarily positive table (for the moment)
+			extern: for (int[] tuple : tuples) {
+				for (int i = 0; i < tuple.length; i++)
+					if (tuple[i] != STAR && tuple[i] != t[i])
+						continue extern;
+				return true;
+			}
 			return false;
 		}
-		return (Arrays.binarySearch(tuples, t, Utilities.lexComparatorInt) >= 0) == positive;
+		return (Arrays.binarySearch(tuples, t, Utilities.lexComparatorInt) >= 0) == positive; // costly but not used during filtering
 	}
 
 	/**
-	 * The set of supports or conflicts. The first array index corresponds to the order of the tuples. The second array index corresponds to the position of a
-	 * value in a tuple.
+	 * The set of supports or conflicts; tuples[k] is the kth tuple of the table
 	 */
 	public int[][] tuples;
 
+	/**
+	 * Indicates if tuples are supports or conflicts
+	 */
 	public boolean positive;
 
 	/**
@@ -211,7 +204,13 @@ public class Table extends ExtensionStructure {
 			buildSubtables();
 	}
 
-	public Table(Constraint c) {
+	/**
+	 * Builds a table as extension structure for the specified extension constraint
+	 * 
+	 * @param c
+	 *            a constraint
+	 */
+	public Table(ConstraintExtension c) {
 		super(c);
 	}
 
@@ -224,7 +223,10 @@ public class Table extends ExtensionStructure {
 	 * Handling subclasses (only for some algorithms like va (valid-allowed))
 	 *********************************************************************************************/
 
-	private int[][][][] subtables; // subtables[x][a][k] is the kth tuple of the table where x = a
+	/**
+	 * subtables[x][a][k] is the kth tuple of the table where x = a
+	 */
+	private int[][][][] subtables;
 
 	public Table withSubtables() {
 		this.subtables = new int[0][][][]; // to know that subtables must be created

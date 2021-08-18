@@ -13,7 +13,7 @@ import static org.xcsp.common.Constants.STAR;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-import constraints.ConstraintExtension.ExtensionGlobal;
+import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import interfaces.Tags.TagStarred;
@@ -24,7 +24,7 @@ import utility.Kit;
 import variables.Variable;
 
 // why not using a counter 'time' and replace boolean[][] ac by int[][] ac (we just do time++ instead of Arrays.fill(ac[x],false)
-public final class STR2S extends ExtensionGlobal implements TagStarred {
+public final class STR2S extends ExtensionSpecific implements TagStarred {
 
 	/**********************************************************************************************
 	 * Interfaces
@@ -35,7 +35,7 @@ public final class STR2S extends ExtensionGlobal implements TagStarred {
 	@Override
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
-		this.tuples = ((Table) extStructure).tuples;
+		this.tuples = ((Table) extStructure()).tuples;
 		this.set = new SetDenseReversible(tuples.length, problem.variables.length + 1);
 		this.ac = Variable.litterals(scp).booleanArray();
 		this.cnts = new int[scp.length];
