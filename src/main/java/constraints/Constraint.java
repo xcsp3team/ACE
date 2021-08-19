@@ -477,14 +477,14 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * The assistant which manages information about the number of conflicts of the constraint.
+	 * The object that manages information about the number of conflicts of pairs (x,a) for the constraint.
 	 */
 	public ConflictsStructure conflictsStructure;
 
 	public void cloneStructures(boolean onlyConflictsStructure) {
 		if (conflictsStructure != null && conflictsStructure.registeredCtrs().size() > 1) {
 			conflictsStructure.unregister(this);
-			conflictsStructure = new ConflictsStructure(conflictsStructure, this);
+			conflictsStructure = new ConflictsStructure(this, conflictsStructure);
 		}
 	}
 
@@ -788,7 +788,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		if (supporter != null)
 			return ((SupporterHard) supporter).findArcSupportFor(x, a);
 		if (extStructure() instanceof Bits) {
-			long[] t1 = ((Bits) extStructure()).bitSupsFor(x)[a];
+			long[] t1 = ((Bits) extStructure()).sups(x)[a];
 			long[] t2 = scp[x == 0 ? 1 : 0].dom.binary();
 			for (int i = 0; i < t1.length; i++) {
 				if ((t1[i] & t2[i]) != 0)

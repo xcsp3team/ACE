@@ -146,7 +146,7 @@ public class Table extends ExtensionStructure {
 	}
 
 	/**********************************************************************************************
-	 * Class
+	 * Class members
 	 *********************************************************************************************/
 
 	@Override
@@ -178,6 +178,16 @@ public class Table extends ExtensionStructure {
 	 */
 	public boolean starred;
 
+	/**
+	 * Builds a table as extension structure for the specified extension constraint
+	 * 
+	 * @param c
+	 *            a constraint
+	 */
+	public Table(ConstraintExtension c) {
+		super(c);
+	}
+
 	@Override
 	public void storeTuples(int[][] m, boolean positive) {
 		this.starred = false;
@@ -202,16 +212,6 @@ public class Table extends ExtensionStructure {
 		Kit.control(!starred || positive);
 		if (subtables != null)
 			buildSubtables();
-	}
-
-	/**
-	 * Builds a table as extension structure for the specified extension constraint
-	 * 
-	 * @param c
-	 *            a constraint
-	 */
-	public Table(ConstraintExtension c) {
-		super(c);
 	}
 
 	@Override

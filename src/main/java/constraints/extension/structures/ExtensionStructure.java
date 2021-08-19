@@ -14,8 +14,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the root class for representing the structures to be used with extension constraints, also called table constraints. For example, this can be a table
- * (with subtables) or an MDD.
+ * This is the root class for representing the structures to be used with extension constraints, also called table constraints. For example, this can be a
+ * matrix (if the constraint is binary) or an MDD.
  * 
  * @author Christophe Lecoutre
  *

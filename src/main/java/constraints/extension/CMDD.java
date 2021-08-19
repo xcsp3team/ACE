@@ -18,7 +18,7 @@ import org.xcsp.modeler.definitions.ICtr.ICtrMdd;
 import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.MDD;
-import constraints.extension.structures.MDD.MDDNode;
+import constraints.extension.structures.MDD.Node;
 import interfaces.Tags.TagPositive;
 import problem.Problem;
 import sets.SetSparseReversible;
@@ -90,7 +90,7 @@ public final class CMDD extends ExtensionSpecific implements TagPositive, ICtrMd
 		storeTuples(tuples, true);
 	}
 
-	public CMDD(Problem pb, Variable[] scp, MDDNode root) {
+	public CMDD(Problem pb, Variable[] scp, Node root) {
 		this(pb, scp);
 		extStructure = new MDD(this, root);
 	}
@@ -180,7 +180,7 @@ public final class CMDD extends ExtensionSpecific implements TagPositive, ICtrMd
 		return false;
 	}
 
-	private boolean exploreMDD(MDDNode node) {
+	private boolean exploreMDD(Node node) {
 		if (node == mdd.nodeT || trueNodes[node.id] == trueTimestamp)
 			return true;
 		if (node == mdd.nodeF || (set != null && set.contains(node.id)) || (set == null && falseNodes[node.id] == falseTimestamp))

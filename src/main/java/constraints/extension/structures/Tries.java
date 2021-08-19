@@ -6,6 +6,36 @@ import constraints.ConstraintExtension;
 
 public class Tries extends ExtensionStructure {
 
+	/**********************************************************************************************
+	 * Intern class Node
+	 *********************************************************************************************/
+
+	private final class Node {
+		int idx;
+
+		Node parent;
+
+		Node firstChild;
+
+		Node firstSibling;
+
+		Node[] sons;
+
+		Node(int idx, Node parent) {
+			this.idx = idx;
+			this.parent = parent;
+		}
+
+		Node(int idx, Node parent, Node firstSibling) {
+			this(idx, parent);
+			this.firstSibling = firstSibling;
+		}
+	}
+
+	/**********************************************************************************************
+	 * Class members
+	 *********************************************************************************************/
+
 	@Override
 	public boolean checkIndexes(int[] idxs) {
 		return nextSupport(0, idxs[0], idxs) == idxs;
@@ -17,7 +47,7 @@ public class Tries extends ExtensionStructure {
 	private final Node[] roots;
 
 	/**
-	 * When set to true, the array childs of each node is initialized, what allows to iterate all childs of a node without traversing the parent. <br>
+	 * When set to true, the array sons of each node is initialized, what allows us to iterate all sons of a node without traversing the parent. <br>
 	 * It remains to prove that it represents an optimization. One drawback is space consumption.
 	 */
 	private boolean directAccess;
@@ -29,26 +59,12 @@ public class Tries extends ExtensionStructure {
 	 */
 	private int currentTrieIndex;
 
-	private final class Node {
-		int idx;
-
-		Node parent;
-
-		Node firstChild;
-
-		Node firstSibling;
-
-		Node[] childs;
-
-		Node(int idx, Node parent) {
-			this.idx = idx;
-			this.parent = parent;
-		}
-
-		Node(int idx, Node parent, Node firstSibling) {
-			this(idx, parent);
-			this.firstSibling = firstSibling;
-		}
+	public Tries(ConstraintExtension c, boolean directAccess) {
+		super(c);
+		this.directAccess = directAccess;
+		// roots of tries are built ; -1 as special index and null as parent
+		this.roots = IntStream.range(0, c.scp.length).mapToObj(i -> new Node(-1, null)).toArray(Node[]::new);
+		this.tmp = new int[roots.length];
 	}
 
 	private void addTuple(Node node, int[] tuple, int position) {
@@ -82,9 +98,9 @@ public class Tries extends ExtensionStructure {
 		if (position == roots.length)
 			return;
 		int adjustedPosition = position == 0 ? currentTrieIndex : position <= currentTrieIndex ? position - 1 : position;
-		node.childs = new Node[firstRegisteredCtr().scp[adjustedPosition].dom.initSize()];
+		node.sons = new Node[firstRegisteredCtr().scp[adjustedPosition].dom.initSize()];
 		for (Node child = node.firstChild; child != null; child = child.firstSibling) {
-			node.childs[child.idx] = child;
+			node.sons[child.idx] = child;
 			buildChildsArrays(child, position + 1);
 		}
 	}
@@ -104,14 +120,6 @@ public class Tries extends ExtensionStructure {
 			}
 	}
 
-	public Tries(ConstraintExtension c, boolean directAccess) {
-		super(c);
-		this.directAccess = directAccess;
-		// roots of tries are built ; -1 as special index and null as parent
-		this.roots = IntStream.range(0, c.scp.length).mapToObj(i -> new Node(-1, null)).toArray(Node[]::new);
-		this.tmp = new int[roots.length];
-	}
-
 	/**
 	 * Put as attribute to avoid passing it at each recursive call of seeknextTuple
 	 */
@@ -124,7 +132,7 @@ public class Tries extends ExtensionStructure {
 		int a = current[realPosition];
 		Node child = null;
 		if (directAccess) {
-			child = node.childs[a];
+			child = node.sons[a];
 			if (child != null) {
 				int[] t = seekNextTuple(child, position + 1);
 				if (t != null)
@@ -165,7 +173,7 @@ public class Tries extends ExtensionStructure {
 		this.current = current;
 		tmp[x] = a;
 		if (directAccess) {
-			Node child = roots[currentTrieIndex].childs[a];
+			Node child = roots[currentTrieIndex].sons[a];
 			return child == null ? null : seekNextTuple(child, 1);
 		}
 		Node child = roots[currentTrieIndex].firstChild;

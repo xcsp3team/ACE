@@ -212,7 +212,7 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 			Domain dom = x.dom;
 			Variable y = c.scp[px == 0 ? 1 : 0];
 			long[] bitDom = y.dom.binary();
-			long[][] bitSups = ((Bits) c.extStructure()).bitSupsFor(px);
+			long[][] bitSups = ((Bits) c.extStructure()).sups(px);
 			short[] residues = bitRmResidues != null ? bitRmResidues[c.num][px] : null;
 			if (!variant) {
 				if (residues != null) {
@@ -232,7 +232,7 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 							dom.removeElementary(a);
 			} else {
 				LinkedSetOrderedWithBits2 sety = (LinkedSetOrderedWithBits2) ((SetLinked) y.dom);
-				int[][] bitSupsDense = ((Bits) c.extStructure()).bitSupsDenseFor(px);
+				int[][] bitSupsDense = ((Bits) c.extStructure()).supsFiletered(px);
 				if (residues != null) {
 					for (int a = dom.first(); a != -1; a = dom.next(a)) {
 						short i = residues[a];

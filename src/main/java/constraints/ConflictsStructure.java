@@ -17,53 +17,17 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
+/**
+ * This class allows us to record some information about the number of conflicts (disallowed tuples) for pairs (x,a) in the context of a constraint. This can be
+ * useful for some forms of reasoning (like, for example, avoiding a useless filtering operation). Such structures are only relevant for some intension and
+ * extension constraints.
+ * 
+ * @author Christophe Lecoutre
+ */
 public final class ConflictsStructure implements RegisteringCtrs {
 
 	/*************************************************************************
-	 * Static
-	 *************************************************************************/
-
-	static final BigInteger LIMIT_FOR_BARY = BigInteger.valueOf(1000000);
-
-	static final BigInteger LIMIT_FOR_NARY = BigInteger.valueOf(10000);
-
-	public static void buildFor(Problem problem) {
-		if (!problem.head.control.mustBuildConflictStructures)
-			return;
-		for (ExtensionStructure structure : problem.head.structureSharing.mapForExtension.values()) {
-			Constraint c1 = structure.firstRegisteredCtr();
-			if (c1 instanceof FilteringSpecific || c1.scp.length == 1 || c1.infiniteDomainVars.length > 0)
-				continue;
-			Kit.control(c1 instanceof ExtensionGeneric);
-			if (Kit.memory() > 400000000L) // TODO hard coding
-				return;
-			ConflictsStructure conflictsStructure = new ConflictsStructure(c1).initializeFrom(structure.originalTuples, structure.originalPositive);
-			for (Constraint c : structure.registeredCtrs()) {
-				c.conflictsStructure = conflictsStructure;
-				if (c != c1)
-					conflictsStructure.register(c);
-			}
-		}
-		for (IntensionStructure structure : problem.head.structureSharing.mapForIntension.values()) {
-			Constraint c1 = structure.firstRegisteredCtr();
-			if (c1 instanceof FilteringSpecific || c1.scp.length == 1 || c1.infiniteDomainVars.length > 0)
-				continue;
-			Kit.control(c1 instanceof ConstraintIntension);
-			if (Kit.memory() > 400000000L) // TODO hard coding
-				return;
-			if (Domain.nValidTuples(c1.doms, false).compareTo(c1.scp.length == 2 ? LIMIT_FOR_BARY : LIMIT_FOR_NARY) > 0)
-				continue;
-			ConflictsStructure conflictsStructure = new ConflictsStructure(c1).initialize();
-			for (Constraint c : structure.registeredCtrs()) {
-				c.conflictsStructure = conflictsStructure;
-				if (c != c1)
-					conflictsStructure.register(c);
-			}
-		}
-	}
-
-	/*************************************************************************
-	 * Methods
+	 * Implementing interfaces
 	 *************************************************************************/
 
 	private List<Constraint> registeredCtrs = new ArrayList<>();
@@ -73,80 +37,164 @@ public final class ConflictsStructure implements RegisteringCtrs {
 		return registeredCtrs;
 	}
 
+	/*************************************************************************
+	 * Static members
+	 *************************************************************************/
+
 	/**
-	 * The first index of the array denotes the position (order) of each variable involved in the constraint. <br>
-	 * The second index of the array denotes the different indexes of the values in the domain of the variable given by the first index. Each value of the array
-	 * gives the number of conflicts for the corresponding pair composed of a variable and an index (of a value).
+	 * The limit in term of number of tuples, for binary constraints, to decide if the conflicts structure must be built
 	 */
-	public int[][] nConflicts; // [x][a]
+	private static final BigInteger BARY_VALID_LIMIT = BigInteger.valueOf(1000000);
 
-	public int[] nMaxConflicts; // [x]
+	/**
+	 * The limit in term of number of tuples, for non binary constraints, to decide if the conflicts structure must be built
+	 */
+	private static final BigInteger NARY_VALID_LIMIT = BigInteger.valueOf(10000);
 
-	public ConflictsStructure(Constraint c) {
-		registeredCtrs.add(c);
-		nMaxConflicts = new int[c.scp.length];
-		nConflicts = Variable.litterals(c.scp).intArray();
+	/**
+	 * The memory limit to deciding if the conflicts structure must be built
+	 */
+	private static final long MEMORY_LIMIT = 400000000L;
+
+	/**
+	 * Attempts to build some structures recording the number of conflicts (disallowed tuples) for each pair (x,a). This can be useful for some forms of
+	 * reasoning (like, for example, avoiding a useless filtering operation). Such structures are only relevant for some intension and extension constraints.
+	 * 
+	 * @param problem
+	 *            a problem
+	 */
+	public static void buildFor(Problem problem) {
+		if (!problem.head.control.mustBuildConflictStructures)
+			return;
+		for (IntensionStructure structure : problem.head.structureSharing.mapForIntension.values()) {
+			ConstraintIntension c1 = (ConstraintIntension) structure.firstRegisteredCtr();
+			if (c1.scp.length == 1 || c1.infiniteDomainVars.length > 0)
+				continue;
+			if (Kit.memory() > MEMORY_LIMIT)
+				return;
+			if (Domain.nValidTuples(c1.doms, false).compareTo(c1.scp.length == 2 ? BARY_VALID_LIMIT : NARY_VALID_LIMIT) > 0)
+				continue;
+			ConflictsStructure conflictsStructure = new ConflictsStructure(c1);
+			for (Constraint c : structure.registeredCtrs()) {
+				c.conflictsStructure = conflictsStructure;
+				if (c != c1)
+					conflictsStructure.register(c);
+			}
+		}
+		for (ExtensionStructure structure : problem.head.structureSharing.mapForExtension.values()) {
+			ConstraintExtension c1 = (ConstraintExtension) structure.firstRegisteredCtr();
+			if (c1 instanceof FilteringSpecific || c1.scp.length == 1 || c1.infiniteDomainVars.length > 0)
+				continue;
+			Kit.control(c1 instanceof ExtensionGeneric);
+			if (Kit.memory() > MEMORY_LIMIT)
+				return;
+			ConflictsStructure conflictsStructure = new ConflictsStructure(c1); // .initializeFrom(structure.originalTuples, structure.originalPositive);
+			for (Constraint c : structure.registeredCtrs()) {
+				c.conflictsStructure = conflictsStructure;
+				if (c != c1)
+					conflictsStructure.register(c);
+			}
+		}
 	}
 
-	public ConflictsStructure(ConflictsStructure conflictsStructure, Constraint c) {
+	/*************************************************************************
+	 * Class members
+	 *************************************************************************/
+
+	/**
+	 * nConflicts[x][a] is the number of conflicts for (x,a) where x is the position of a variable in the constraint scope and a an index of value.
+	 */
+	public int[][] nConflicts;
+
+	/**
+	 * nMaxConflicts[x] is the maximal number of conflicts when considering all pairs (x,a) where x is the position of a variable in the constraint scope and a
+	 * an index of value
+	 */
+	public int[] nMaxConflicts;
+
+	/**
+	 * Builds a conflicts structure for the specified constraint.
+	 * 
+	 * @param c
+	 *            a constraint
+	 */
+	private ConflictsStructure(Constraint c) {
+		this.nConflicts = Variable.litterals(c.scp).intArray();
+		this.nMaxConflicts = new int[c.scp.length];
 		registeredCtrs.add(c);
-		nMaxConflicts = conflictsStructure.nMaxConflicts.clone();
-		nConflicts = Kit.cloneDeeply(conflictsStructure.nConflicts);
 	}
 
-	private void computeNbMaxConflicts() {
-		Domain[] doms = firstRegisteredCtr().doms;
+	private void computeMaxConflicts(Domain[] doms) {
 		for (int i = 0; i < nMaxConflicts.length; i++) {
 			int max = Integer.MIN_VALUE;
-			Domain dom = doms[i];
-			for (int a = dom.first(); a != -1; a = dom.next(a))
+			for (int a = doms[i].first(); a != -1; a = doms[i].next(a))
 				max = Math.max(max, nConflicts[i][a]);
 			nMaxConflicts[i] = max;
 		}
-	}
-
-	private ConflictsStructure initializeFrom(int[][] tuples, boolean positive) {
-		assert registeredCtrs.size() == 1;
-		Domain[] doms = firstRegisteredCtr().doms;
-		extern: for (int[] tuple : tuples) {
-			assert IntStream.of(tuple).noneMatch(v -> v == Constants.STAR);
-			for (int i = 0; i < tuple.length; i++)
-				if (!doms[i].containsValue(tuple[i]))
-					continue extern;
-			for (int i = 0; i < tuple.length; i++)
-				nConflicts[i][doms[i].toIdx(tuple[i])]++;
-		}
-		if (positive) {
-			int nValidTuples = Domain.nValidTuples(doms, false).intValueExact();
-			for (int i = 0; i < nConflicts.length; i++) {
-				int nTuples = nValidTuples / doms[i].size();
-				for (int j = 0; j < nConflicts[i].length; j++)
-					nConflicts[i][j] = nTuples - nConflicts[i][j];
-			}
-		}
-		// because the nb of supports was computed and stored in nbConflicts
-		computeNbMaxConflicts();
 		assert controlStructures();
-		return this;
 	}
 
-	private ConflictsStructure initialize() {
-		assert registeredCtrs.size() == 1;
-		Constraint c = firstRegisteredCtr();
+	/**
+	 * Builds a conflicts structure for the specified intension constraint.
+	 * 
+	 * @param c
+	 *            an intension constraint
+	 */
+	public ConflictsStructure(ConstraintIntension c) {
+		this((Constraint) c);
 		c.tupleIterator.firstValidTuple();
 		c.tupleIterator.consumeValidTuples(t -> {
 			if (!c.checkIndexes(t))
 				for (int i = 0; i < t.length; i++)
 					nConflicts[i][t[i]]++;
 		});
-		computeNbMaxConflicts();
-		assert controlStructures();
-		return this;
+		computeMaxConflicts(c.doms);
+	}
+
+	/**
+	 * Builds a conflicts structure for the specified extension constraint.
+	 * 
+	 * @param c
+	 *            an extension constraint
+	 */
+	public ConflictsStructure(ConstraintExtension c) {
+		this((Constraint) c);
+		extern: for (int[] tuple : c.extStructure.originalTuples) {
+			assert IntStream.of(tuple).noneMatch(v -> v == Constants.STAR);
+			for (int i = 0; i < tuple.length; i++)
+				if (!c.doms[i].containsValue(tuple[i]))
+					continue extern;
+			for (int i = 0; i < tuple.length; i++)
+				nConflicts[i][c.doms[i].toIdx(tuple[i])]++;
+		}
+		if (c.extStructure.originalPositive) {
+			int nValidTuples = Domain.nValidTuples(c.doms, false).intValueExact();
+			for (int i = 0; i < nConflicts.length; i++) {
+				int nTuples = nValidTuples / c.doms[i].size();
+				for (int j = 0; j < nConflicts[i].length; j++)
+					nConflicts[i][j] = nTuples - nConflicts[i][j];
+			}
+		}
+		computeMaxConflicts(c.doms);
+	}
+
+	/**
+	 * Builds a conflicts structure for the specified constraint by cloning the specified conflicts structure.
+	 * 
+	 * @param c
+	 *            a constraint
+	 * @param conflictsStructure
+	 *            a conflicts structure to be cloned
+	 */
+	public ConflictsStructure(Constraint c, ConflictsStructure conflictsStructure) {
+		this.nConflicts = Kit.cloneDeeply(conflictsStructure.nConflicts);
+		this.nMaxConflicts = conflictsStructure.nMaxConflicts.clone();
+		registeredCtrs.add(c);
 	}
 
 	private boolean controlStructures() {
 		Constraint c = firstRegisteredCtr();
-		if (Domain.nValidTuples(c.doms, false).compareTo(LIMIT_FOR_NARY) > 0) {
+		if (Domain.nValidTuples(c.doms, false).compareTo(NARY_VALID_LIMIT) > 0) {
 			Kit.log.warning("Too large Cartesian Space for checking ");
 			return true;
 		}

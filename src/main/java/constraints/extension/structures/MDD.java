@@ -42,19 +42,19 @@ public final class MDD extends ExtensionStructure {
 	/**
 	 * The False terminal node of the MDD (with id 0)
 	 */
-	public final MDDNode nodeF = new MDDNode(-1);
+	public final Node nodeF = new Node(-1);
 
 	/**
 	 * The True terminal node of the MDD (with id 1)
 	 */
-	public final MDDNode nodeT = new MDDNode(-1);
+	public final Node nodeT = new Node(-1);
 
 	private boolean discardClassForNodeF = true; // hard coding
 
 	/**
 	 * The class for representing a node in an MDD
 	 */
-	public final class MDDNode {
+	public final class Node {
 
 		/**
 		 * The id of this node (must be unique)
@@ -69,7 +69,7 @@ public final class MDD extends ExtensionStructure {
 		/**
 		 * The children (sons) of this node
 		 */
-		public MDDNode[] sons;
+		public Node[] sons;
 
 		/**
 		 * Equivalence classes among sons of the node; sonsClasses[i][j] is the index of the jth son in the ith equivalence class. Two indexes belong to the
@@ -120,29 +120,29 @@ public final class MDD extends ExtensionStructure {
 			return 1 + Stream.of(sons).mapToInt(c -> c.nInternalNodes(set)).sum();
 		}
 
-		private MDDNode(int level) {
+		private Node(int level) {
 			this.id = nCreatedNodes++;
-			this.level = level < 0 ? -1 : level; // -1 for the two special terminal nodes
+			this.level = level; // this is -1 for the two special terminal nodes
 		}
 
-		private MDDNode(int level, int nSons, boolean defaultNodeF) {
+		private Node(int level, int nSons, boolean defaultNodeF) {
 			this(level);
-			this.sons = IntStream.range(0, nSons).mapToObj(i -> defaultNodeF ? nodeF : nodeT).toArray(MDDNode[]::new);
+			this.sons = IntStream.range(0, nSons).mapToObj(i -> defaultNodeF ? nodeF : nodeT).toArray(Node[]::new);
 		}
 
-		private MDDNode(int level, int nSons, boolean defaultNodeF, Object state) {
+		private Node(int level, int nSons, boolean defaultNodeF, Object state) {
 			this(level, nSons, defaultNodeF);
 			this.state = state;
 		}
 
 		private void addTuple(int level, int index, int[] tuple, boolean positive, int[] domSizes) {
-			MDDNode son = sons[index];
+			Node son = sons[index];
 			if (!son.isLeaf())
 				son.addTuple(level + 1, tuple, positive, domSizes);
 			else if (level == tuple.length - 1)
 				sons[index] = positive ? nodeT : nodeF;
 			else
-				(sons[index] = new MDDNode(level + 1, domSizes[level + 1], positive)).addTuple(level + 1, tuple, positive, domSizes);
+				(sons[index] = new Node(level + 1, domSizes[level + 1], positive)).addTuple(level + 1, tuple, positive, domSizes);
 		}
 
 		private void addTuple(int level, int[] tuple, boolean positive, int[] domSizes) {
@@ -173,7 +173,7 @@ public final class MDD extends ExtensionStructure {
 		private void buildSonsClasses() {
 			if (isLeaf() || sonsClasses != null)
 				return; // already built
-			Map<MDDNode, List<Integer>> map = IntStream.range(0, sons.length).filter(i -> !discardClassForNodeF || sons[i] != nodeF).boxed()
+			Map<Node, List<Integer>> map = IntStream.range(0, sons.length).filter(i -> !discardClassForNodeF || sons[i] != nodeF).boxed()
 					.collect(Collectors.groupingBy(i -> sons[i]));
 			sonsClasses = map.values().stream().map(list -> Kit.intArray(list)).toArray(int[][]::new);
 			Stream.of(sons).forEach(s -> s.buildSonsClasses());
@@ -201,19 +201,19 @@ public final class MDD extends ExtensionStructure {
 			return canReachNodeT(new HashSet<Integer>(), new HashSet<Integer>());
 		}
 
-		public int renameNodes(int lastId, Map<Integer, MDDNode> map) {
+		public int renameNodes(int lastId, Map<Integer, Node> map) {
 			if (isLeaf() || map.get(id) == this)
 				return lastId;
 			lastId++;
 			map.put(id = lastId, this);
-			for (MDDNode son : sons)
+			for (Node son : sons)
 				lastId = son.renameNodes(lastId, map);
 			// for (int i = 0; i < childClasses.length; i++) lastId = childs[childClasses[i][0]].renameNodes(lastId, map); // alternative
 			return lastId;
 		}
 
-		private boolean controlUniqueNodes(Map<Integer, MDDNode> map) {
-			MDDNode node = map.get(id);
+		private boolean controlUniqueNodes(Map<Integer, Node> map) {
+			Node node = map.get(id);
 			if (node == null)
 				map.put(id, this);
 			else
@@ -266,12 +266,12 @@ public final class MDD extends ExtensionStructure {
 				return;
 			for (int i = 0; i < sonsClasses.length; i++) {
 				t[level] = sonsClasses[i];
-				MDDNode representativeChild = sons[sonsClasses[i][0]];
+				Node representativeChild = sons[sonsClasses[i][0]];
 				representativeChild.collectCompressedTuples(list, t, level + 1);
 			}
 		}
 
-		public MDDNode filter(int[][] values, int prevVal) {
+		public Node filter(int[][] values, int prevVal) {
 			if (isLeaf())
 				return this;
 			// int left = -1;
@@ -281,7 +281,7 @@ public final class MDD extends ExtensionStructure {
 			// MDDNode node = null;
 			// if (left == -1) node = this;
 			// else {
-			MDDNode node = new MDDNode(level, sons.length, true);
+			Node node = new Node(level, sons.length, true);
 			for (int i = 0; i < sons.length; i++)
 				if (values[level][i] <= prevVal)
 					node.sons[i] = sons[i];
@@ -298,7 +298,7 @@ public final class MDD extends ExtensionStructure {
 
 	@Override
 	public boolean checkIndexes(int[] t) {
-		MDDNode node = root;
+		Node node = root;
 		for (int i = 0; !node.isLeaf(); i++)
 			node = node.sons[t[i]];
 		return node == nodeT;
@@ -307,7 +307,7 @@ public final class MDD extends ExtensionStructure {
 	/**
 	 * The root node of the MDD
 	 */
-	public MDDNode root;
+	public Node root;
 
 	/**
 	 * The number of nodes in the MDD (used as a cache)
@@ -334,7 +334,7 @@ public final class MDD extends ExtensionStructure {
 		super(c);
 	}
 
-	public MDD(CMDD c, MDDNode root) {
+	public MDD(CMDD c, Node root) {
 		this(c);
 		this.root = root;
 	}
@@ -354,7 +354,7 @@ public final class MDD extends ExtensionStructure {
 		storeTuplesFromKnapsack(coeffs, limits, Variable.initDomainValues(c.scp));
 	}
 
-	private MDDNode recursiveReduction(MDDNode node, Map<IntArrayHashKey, MDDNode> reductionMap) {
+	private Node recursiveReduction(Node node, Map<IntArrayHashKey, Node> reductionMap) {
 		if (node.isLeaf())
 			return node;
 		for (int i = 0; i < node.sons.length; i++)
@@ -363,9 +363,9 @@ public final class MDD extends ExtensionStructure {
 		return reductionMap.computeIfAbsent(hk, k -> node);
 	}
 
-	private void reduce(int[] prevTuple, int[] currTuple, Map<IntArrayHashKey, MDDNode> reductionMap) {
+	private void reduce(int[] prevTuple, int[] currTuple, Map<IntArrayHashKey, Node> reductionMap) {
 		int i = 0;
-		MDDNode node = root;
+		Node node = root;
 		while (prevTuple[i] == currTuple[i])
 			node = node.sons[prevTuple[i++]];
 		// assuming that tuples come in lex ordering, we can definitively reduce the left branch
@@ -374,9 +374,9 @@ public final class MDD extends ExtensionStructure {
 
 	private void finalizeStoreTuples() {
 		root.buildSonsClasses();
-		nNodes = root.renameNodes(1, new HashMap<Integer, MDDNode>()) + 1;
+		nNodes = root.renameNodes(1, new HashMap<Integer, Node>()) + 1;
 		// System.out.println("MDD : nNodes=" + nNodes + " nBuiltNodes=" + nCreatedNodes);
-		assert root.controlUniqueNodes(new HashMap<Integer, MDDNode>());
+		assert root.controlUniqueNodes(new HashMap<Integer, Node>());
 		// buildSplitter();
 		// root.display();
 	}
@@ -386,8 +386,8 @@ public final class MDD extends ExtensionStructure {
 		Kit.control(positive && tuples.length > 0);
 		Constraint c = firstRegisteredCtr();
 		int[] domainSizes = Variable.domSizeArrayOf(c.scp, true);
-		Map<IntArrayHashKey, MDDNode> reductionMap = new HashMap<>(2000);
-		this.root = new MDDNode(0, domainSizes[0], positive);
+		Map<IntArrayHashKey, Node> reductionMap = new HashMap<>(2000);
+		this.root = new Node(0, domainSizes[0], positive);
 		if (c.indexesMatchValues) {
 			for (int i = 0; i < tuples.length; i++) {
 				root.addTuple(tuples[i], positive, domainSizes);
@@ -420,7 +420,7 @@ public final class MDD extends ExtensionStructure {
 	}
 
 	public MDD storeTuplesFromTransitions(Transition[] transitions, Domain[] domains) {
-		Map<String, MDDNode> nodes = new HashMap<>();
+		Map<String, Node> nodes = new HashMap<>();
 		Set<String> possibleRoots = new HashSet<>(), notRoots = new HashSet<>();
 		Set<String> possibleWells = new HashSet<>(), notWells = new HashSet<>();
 		for (Transition tr : transitions) {
@@ -440,16 +440,16 @@ public final class MDD extends ExtensionStructure {
 				() -> "sizes= " + possibleRoots.size() + " " + possibleWells.stream().collect(Collectors.joining(" ")));
 		String sroot = possibleRoots.toArray(new String[1])[0];
 		String swell = possibleWells.toArray(new String[1])[0];
-		nodes.put(sroot, root = new MDDNode(0, domains[0].initSize(), true));
+		nodes.put(sroot, root = new Node(0, domains[0].initSize(), true));
 		nodes.put(swell, nodeT);
 		// TODO reordering transitions to guarantee that the src node has already been generated
 		for (Transition tr : transitions) {
-			MDDNode node1 = nodes.get(tr.start);
+			Node node1 = nodes.get(tr.start);
 			long v = tr.value instanceof Integer ? (Integer) tr.value : (Long) tr.value;
 			int val = Utilities.safeInt(v);
 			int idx = domains[node1.level].toIdx(val);
 			Kit.control(idx != -1);
-			MDDNode node2 = nodes.computeIfAbsent((String) tr.end, k -> new MDDNode(node1.level + 1, domains[node1.level + 1].initSize(), true));
+			Node node2 = nodes.computeIfAbsent((String) tr.end, k -> new Node(node1.level + 1, domains[node1.level + 1].initSize(), true));
 			// MDDNode node2 = nodes.get(tr[2]);
 			// if (node2 == null)
 			// nodes.put((String) tr[2], node2 = new MDDNode(this, node1.level + 1, domains[node1.level + 1].initSize(), true));
@@ -475,11 +475,11 @@ public final class MDD extends ExtensionStructure {
 	public MDD storeTuplesFromAutomata(Automaton automata, int arity, Domain[] domains) {
 		Kit.control(arity > 1 && IntStream.range(1, domains.length).allMatch(i -> domains[i].typeIdentifier() == domains[0].typeIdentifier()));
 		Map<String, List<Transition>> nextTrs = buildNextTransitions(automata);
-		this.root = new MDDNode(0, domains[0].initSize(), true, automata.startState);
-		Map<String, MDDNode> prevs = new HashMap<>(), nexts = new HashMap<>();
+		this.root = new Node(0, domains[0].initSize(), true, automata.startState);
+		Map<String, Node> prevs = new HashMap<>(), nexts = new HashMap<>();
 		prevs.put((String) root.state, root);
 		for (int i = 0; i < arity; i++) {
-			for (MDDNode node : prevs.values()) {
+			for (Node node : prevs.values()) {
 				for (Transition tr : nextTrs.get(node.state)) {
 					int v = Utilities.safeInt((Long) tr.value);
 					int a = domains[i].toIdx(v);
@@ -490,15 +490,15 @@ public final class MDD extends ExtensionStructure {
 						} else {
 							// MDDNode nextNode = nexts.computeIfAbsent(nextState, k -> new MDDNode(this, i + 1, domains[i].initSize(), true,
 							// nextState)); // pb with i not final
-							MDDNode nextNode = nexts.get(nextState);
+							Node nextNode = nexts.get(nextState);
 							if (nextNode == null)
-								nexts.put(nextState, nextNode = new MDDNode(i + 1, domains[i].initSize(), true, nextState));
+								nexts.put(nextState, nextNode = new Node(i + 1, domains[i].initSize(), true, nextState));
 							node.sons[a] = nextNode;
 						}
 					}
 				}
 			}
-			Map<String, MDDNode> tmp = prevs;
+			Map<String, Node> tmp = prevs;
 			prevs = nexts;
 			nexts = tmp;
 			nexts.clear();
@@ -510,11 +510,11 @@ public final class MDD extends ExtensionStructure {
 
 	// coeffs, and limits (either a Range or an int array) from the knapsack constraint, and values are the possible values at each level
 	public MDD storeTuplesFromKnapsack(int[] coeffs, Object limits, int[][] values) {
-		this.root = new MDDNode(0, values[0].length, true, 0);
-		Map<Integer, MDDNode> prevs = new HashMap<>(), nexts = new HashMap<>();
+		this.root = new Node(0, values[0].length, true, 0);
+		Map<Integer, Node> prevs = new HashMap<>(), nexts = new HashMap<>();
 		prevs.put((Integer) root.state, root);
 		for (int level = 0; level < coeffs.length; level++) {
-			for (MDDNode node : prevs.values()) {
+			for (Node node : prevs.values()) {
 				for (int j = 0; j < values[level].length; j++) {
 					int nextState = (Integer) node.state + coeffs[level] * values[level][j];
 					if (level == coeffs.length - 1) {
@@ -523,14 +523,14 @@ public final class MDD extends ExtensionStructure {
 						else
 							node.sons[j] = Utilities.indexOf(nextState, (int[]) limits) != -1 ? nodeT : nodeF;
 					} else {
-						MDDNode nextNode = nexts.get(nextState);
+						Node nextNode = nexts.get(nextState);
 						if (nextNode == null)
-							nexts.put(nextState, nextNode = new MDDNode(level + 1, values[level + 1].length, true, nextState));
+							nexts.put(nextState, nextNode = new Node(level + 1, values[level + 1].length, true, nextState));
 						node.sons[j] = nextNode;
 					}
 				}
 			}
-			Map<Integer, MDDNode> tmp = prevs;
+			Map<Integer, Node> tmp = prevs;
 			prevs = nexts;
 			nexts = tmp;
 			nexts.clear();
@@ -599,7 +599,7 @@ public final class MDD extends ExtensionStructure {
 			return auxiliaryLevelMaps[splitLevel].computeIfAbsent(nodeId, k -> auxiliaryLevelMaps[splitLevel].size());
 		}
 
-		private void getTuples(MDDNode node, int splitLevel, int[] currentTuple, int currentLevel, int stoppingLevel) {
+		private void getTuples(Node node, int splitLevel, int[] currentTuple, int currentLevel, int stoppingLevel) {
 			if (node == nodeF)
 				return;
 			if (stoppingLevel == -1) {
@@ -626,7 +626,7 @@ public final class MDD extends ExtensionStructure {
 			}
 		}
 
-		public void split2(MDDNode startingNode, int splitLevel) {
+		public void split2(Node startingNode, int splitLevel) {
 			int[] currentTuple = new int[splitMode[splitLevel]];
 			int currentLevel = 0;
 			if (splitLevel > 0)

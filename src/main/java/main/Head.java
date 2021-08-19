@@ -310,7 +310,7 @@ public class Head extends Thread {
 			mapForIntension.clear();
 			mapForExtension.clear();
 			mapForMDDs.clear();
-			Bits.globalMap.clear();
+			Bits.map.clear();
 		}
 	}
 

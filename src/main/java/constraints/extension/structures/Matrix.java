@@ -17,20 +17,13 @@ public abstract class Matrix extends ExtensionStructure {
 	}
 
 	public static class Matrix2D extends Matrix {
-		protected boolean[][] supports;
 
 		@Override
-		public void storeTuples(int[][] tuples, boolean positive) {
-			Constraint c = firstRegisteredCtr();
-			this.supports = new boolean[c.doms[0].initSize()][c.doms[1].initSize()];
-			if (!positive)
-				Kit.fill(supports, true);
-			for (int[] tuple : tuples)
-				if (c.indexesMatchValues)
-					supports[tuple[0]][tuple[1]] = positive;
-				else
-					supports[c.doms[0].toIdx(tuple[0])][c.doms[1].toIdx(tuple[1])] = positive;
+		public final boolean checkIndexes(int[] t) {
+			return supports[t[0]][t[1]];
 		}
+
+		protected boolean[][] supports;
 
 		public Matrix2D(ConstraintExtension c) {
 			super(c);
@@ -43,8 +36,16 @@ public abstract class Matrix extends ExtensionStructure {
 		}
 
 		@Override
-		public final boolean checkIndexes(int[] t) {
-			return supports[t[0]][t[1]];
+		public void storeTuples(int[][] tuples, boolean positive) {
+			Constraint c = firstRegisteredCtr();
+			this.supports = new boolean[c.doms[0].initSize()][c.doms[1].initSize()];
+			if (!positive)
+				Kit.fill(supports, true);
+			for (int[] tuple : tuples)
+				if (c.indexesMatchValues)
+					supports[tuple[0]][tuple[1]] = positive;
+				else
+					supports[c.doms[0].toIdx(tuple[0])][c.doms[1].toIdx(tuple[1])] = positive;
 		}
 
 		@Override
@@ -71,20 +72,13 @@ public abstract class Matrix extends ExtensionStructure {
 	}
 
 	public static class Matrix3D extends Matrix {
-		protected boolean[][][] supports;
 
 		@Override
-		public void storeTuples(int[][] tuples, boolean positive) {
-			Constraint c = firstRegisteredCtr();
-			this.supports = new boolean[c.doms[0].initSize()][c.doms[1].initSize()][c.doms[2].initSize()];
-			if (!positive)
-				Kit.fill(supports, true);
-			for (int[] tuple : tuples)
-				if (c.indexesMatchValues)
-					supports[tuple[0]][tuple[1]][tuple[2]] = positive;
-				else
-					supports[c.doms[0].toIdx(tuple[0])][c.doms[1].toIdx(tuple[1])][c.doms[2].toIdx(tuple[2])] = positive;
+		public final boolean checkIndexes(int[] t) {
+			return supports[t[0]][t[1]][t[2]];
 		}
+
+		protected boolean[][][] supports;
 
 		public Matrix3D(ConstraintExtension c) {
 			super(c);
@@ -97,8 +91,16 @@ public abstract class Matrix extends ExtensionStructure {
 		}
 
 		@Override
-		public final boolean checkIndexes(int[] t) {
-			return supports[t[0]][t[1]][t[2]];
+		public void storeTuples(int[][] tuples, boolean positive) {
+			Constraint c = firstRegisteredCtr();
+			this.supports = new boolean[c.doms[0].initSize()][c.doms[1].initSize()][c.doms[2].initSize()];
+			if (!positive)
+				Kit.fill(supports, true);
+			for (int[] tuple : tuples)
+				if (c.indexesMatchValues)
+					supports[tuple[0]][tuple[1]][tuple[2]] = positive;
+				else
+					supports[c.doms[0].toIdx(tuple[0])][c.doms[1].toIdx(tuple[1])][c.doms[2].toIdx(tuple[2])] = positive;
 		}
 
 		@Override

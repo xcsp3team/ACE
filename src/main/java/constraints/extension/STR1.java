@@ -9,10 +9,16 @@ import problem.Problem;
 import sets.SetDenseReversible;
 import variables.Variable;
 
+/**
+ * This is STR (Simple Tabular Reduction), as introduced by Julian Ullmann
+ * 
+ * @author Christophe Lecoutre
+ *
+ */
 public class STR1 extends ExtensionSpecific {
 
 	/**********************************************************************************************
-	 * Interfaces
+	 * Impkementing Interfaces
 	 *********************************************************************************************/
 
 	@Override
@@ -34,17 +40,23 @@ public class STR1 extends ExtensionSpecific {
 	 * Fields
 	 *********************************************************************************************/
 
-	protected int[][] tuples; // redundant field (reference to tuples in Table)
-
-	public SetDenseReversible set; // storing the indexes of the current table
+	/**
+	 * The tuples of the table (redundant field)
+	 */
+	protected int[][] tuples;
 
 	/**
-	 * ac[x][a] indicates if a support has been found for (x,a)
+	 * The reversible dense set storing the indexes (of tuples) of the current table
+	 */
+	public SetDenseReversible set;
+
+	/**
+	 * When used during filtering, ac[x][a] indicates if a support has been found for (x,a)
 	 */
 	protected boolean[][] ac;
 
 	/**
-	 * cnts[x] is the number of values in the current domain of x with no found support (yet)
+	 * When used during filtering, cnts[x] is the number of values in the current domain of x with no found support (yet)
 	 */
 	protected int[] cnts;
 

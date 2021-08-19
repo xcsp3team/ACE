@@ -10,7 +10,6 @@ import java.util.stream.Stream;
 
 import constraints.Constraint;
 import constraints.ConstraintExtension;
-import main.Head;
 import problem.Problem;
 import utility.Bit;
 import utility.Kit;
@@ -18,48 +17,145 @@ import utility.Kit.LongArrayHashKey;
 import variables.Domain;
 import variables.Variable;
 
+/**
+ * This is the class for the Bits form of extension structures, i.e., when bit vectors are used to represent supports and conflicts. Currently, this is only
+ * relevant for binary extension constraints.
+ * 
+ * @author Christophe Lecoutre
+ *
+ */
 public final class Bits extends ExtensionStructure {
 
-	// used to share arrays so as to save space TODO tune the constant
-	public static final Map<LongArrayHashKey, long[]> globalMap = Collections.synchronizedMap(new HashMap<LongArrayHashKey, long[]>(2000));
+	/**********************************************************************************************
+	 * Static members
+	 *********************************************************************************************/
 
-	// long integers are used to store the indication that there is a support (bit set to 1) or not (bit set to 0)
-	private long[][] bitSups0, bitSups1;
+	/**
+	 * Map used to share longs (seen as bit vectors) in order to save memory space
+	 */
+	public static final Map<LongArrayHashKey, long[]> map = Collections.synchronizedMap(new HashMap<LongArrayHashKey, long[]>(2000)); // hard coding
 
-	private int[][] bitSups0Dense, bitSups1Dense;
+	private static LongArrayHashKey hashKey = new LongArrayHashKey();
 
-	private boolean sharedArrays;
-
-	private LongArrayHashKey hashKey;
-
-	public long[][] bitSupsFor(int vap) {
-		return vap == 0 ? bitSups0 : bitSups1;
+	private static int saveSpace(long[][] sups, int id) {
+		int cnt = 0;
+		for (int i = 0; i < sups.length; i++) {
+			hashKey.t = sups[i];
+			long[] tt = null;
+			synchronized (map) {
+				tt = map.get(hashKey);
+			}
+			if (tt == null) {
+				synchronized (map) {
+					map.put(hashKey, sups[i]);
+				}
+				hashKey = null;
+			} else {
+				sups[i] = tt;
+				cnt++;
+			}
+		}
+		return cnt;
 	}
 
-	public int[][] bitSupsDenseFor(int vap) {
-		return vap == 0 ? bitSups0Dense : bitSups1Dense;
+	private static boolean saveSpace(Problem problem, long[][] sups0, long[][] sups1) {
+		if (problem.head.control.problem.shareBitVectors) {
+			int nBefore = problem.features.nSharedBitVectors;
+			problem.features.nSharedBitVectors += saveSpace(sups0, 1);
+			problem.features.nSharedBitVectors += saveSpace(sups1, 0);
+			return problem.features.nSharedBitVectors > nBefore;
+		}
+		return false;
 	}
 
-	private void buildArrays() {
-		Domain dom0 = firstRegisteredCtr().scp[0].dom, dom1 = firstRegisteredCtr().scp[1].dom;
-		bitSups0 = new long[dom0.initSize()][dom1.initSize() / Long.SIZE + (dom1.initSize() % Long.SIZE != 0 ? 1 : 0)];
-		bitSups1 = new long[dom1.initSize()][dom0.initSize() / Long.SIZE + (dom0.initSize() % Long.SIZE != 0 ? 1 : 0)];
+	/**********************************************************************************************
+	 * Class members
+	 *********************************************************************************************/
+
+	@Override
+	public final boolean checkIndexes(int[] t) {
+		return (sups0[t[0]][t[1] / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[t[1] % Long.SIZE]) != 0;
 	}
 
-	private void fillSupports0(int[][] tuples, boolean positive) {
+	/**
+	 * sups0[a] is the vector of bits used to indicate which indexes (of values) support the index a for the fist variable; the vector of bits is composed of
+	 * long (bit set to 1 when a support)
+	 */
+	private long[][] sups0;
+
+	/**
+	 * sups1[b] is the vector of bits used to indicate which indexes (of values) support the index b for the second variable; the vector of bits is composed of
+	 * long (bit set to 1 when a support)
+	 */
+	private long[][] sups1;
+
+	/**
+	 * sups0Filtered[a] is the sequence of longs of the vector of bits, used for the index a of the first variable, that are relevant (i.e., different from 0)
+	 */
+	private int[][] sups0Filtered;
+
+	/**
+	 * sups1Filtered[b] is the sequence of longs of the vector of bits , used for the index b of the second variable, that are relevant (i.e., different from 0)
+	 */
+	private int[][] sups1Filtered;
+
+	/**
+	 * indicates if some longs are shared or not (for saving memory)
+	 */
+	private boolean sharing;
+
+	/**
+	 * Returns the vectors of bits for the variable whose position is specified
+	 * 
+	 * @param p
+	 *            the position of the variable in the constraint scope
+	 * @return the vectors of bits for the variable whose position is specified
+	 */
+	public long[][] sups(int p) {
+		return p == 0 ? sups0 : sups1;
+	}
+
+	/**
+	 * Returns the vectors of bits (filtered) for the variable whose position is specified
+	 * 
+	 * @param p
+	 *            the position of the variable in the constraint scope
+	 * @return the vectors of bits (filtered) for the variable whose position is specified
+	 */
+	public int[][] supsFiletered(int p) {
+		return p == 0 ? sups0Filtered : sups1Filtered;
+	}
+
+	public Bits(ConstraintExtension c) {
+		super(c);
+		Kit.control(c.scp.length == 2);
+	}
+
+	public Bits(ConstraintExtension c, Bits bits) {
+		this(c);
+		this.sups0 = Kit.cloneDeeply(bits.sups0);
+		this.sups1 = Kit.cloneDeeply(bits.sups1);
+		this.sharing = bits.sharing;
+	}
+
+	@Override
+	public void storeTuples(int[][] tuples, boolean positive) {
 		Constraint c = firstRegisteredCtr();
 		Domain dom0 = c.scp[0].dom, dom1 = c.scp[1].dom;
+		this.sups0 = new long[dom0.initSize()][dom1.initSize() / Long.SIZE + (dom1.initSize() % Long.SIZE != 0 ? 1 : 0)];
+		this.sups1 = new long[dom1.initSize()][dom0.initSize() / Long.SIZE + (dom0.initSize() % Long.SIZE != 0 ? 1 : 0)];
+		// Now, we fill up bitSups0
 		if (positive) {
 			if (c.indexesMatchValues)
 				for (int[] tuple : tuples)
-					bitSups0[tuple[0]][tuple[1] / Long.SIZE] |= Bit.ONE_LONG_BIT_TO_1[tuple[1] % Long.SIZE];
+					sups0[tuple[0]][tuple[1] / Long.SIZE] |= Bit.ONE_LONG_BIT_TO_1[tuple[1] % Long.SIZE];
 			else
 				for (int[] tuple : tuples) {
 					int val0 = dom0.toIdx(tuple[0]), val1 = dom1.toIdx(tuple[1]);
-					bitSups0[val0][val1 / Long.SIZE] |= Bit.ONE_LONG_BIT_TO_1[val1 % Long.SIZE];
+					sups0[val0][val1 / Long.SIZE] |= Bit.ONE_LONG_BIT_TO_1[val1 % Long.SIZE];
 				}
 		} else {
-			for (long[] t : bitSups0) {
+			for (long[] t : sups0) {
 				Arrays.fill(t, Bit.ALL_LONG_BITS_TO_1);
 				int remainder = dom1.initSize() % Long.SIZE;
 				if (remainder != 0)
@@ -67,106 +163,36 @@ public final class Bits extends ExtensionStructure {
 			}
 			if (c.indexesMatchValues)
 				for (int[] tuple : tuples)
-					bitSups0[tuple[0]][tuple[1] / Long.SIZE] &= Bit.ONE_LONG_BIT_TO_0[tuple[1] % Long.SIZE];
+					sups0[tuple[0]][tuple[1] / Long.SIZE] &= Bit.ONE_LONG_BIT_TO_0[tuple[1] % Long.SIZE];
 			else
 				for (int[] tuple : tuples) {
 					int val0 = dom0.toIdx(tuple[0]), val1 = dom1.toIdx(tuple[1]);
-					bitSups0[val0][val1 / Long.SIZE] &= Bit.ONE_LONG_BIT_TO_0[val1 % Long.SIZE];
+					sups0[val0][val1 / Long.SIZE] &= Bit.ONE_LONG_BIT_TO_0[val1 % Long.SIZE];
 				}
 		}
-	}
-
-	private void fillSupports1() {
-		for (int i = 0; i < bitSups0.length; i++) {
+		// Now, we fill up bitSups1
+		for (int i = 0; i < sups0.length; i++) {
 			int iByte = i / Long.SIZE, iPos = i % Long.SIZE;
-			for (int j = 0; j < bitSups0[i].length; j++) {
-				long support = bitSups0[i][j];
-				for (int k = 0; k < Math.min(Long.SIZE, bitSups1.length - j * Long.SIZE); k++)
+			for (int j = 0; j < sups0[i].length; j++) {
+				long support = sups0[i][j];
+				for (int k = 0; k < Math.min(Long.SIZE, sups1.length - j * Long.SIZE); k++)
 					if ((support & Bit.ONE_LONG_BIT_TO_1[k]) != 0)
-						bitSups1[j * Long.SIZE + k][iByte] |= Bit.ONE_LONG_BIT_TO_1[iPos];
+						sups1[j * Long.SIZE + k][iByte] |= Bit.ONE_LONG_BIT_TO_1[iPos];
 			}
 		}
+		this.sharing = saveSpace(c.problem, sups0, sups1);
+		this.sups0Filtered = Stream.of(sups0).map(t -> IntStream.range(0, t.length).filter(i -> t[i] != 0L).toArray()).toArray(int[][]::new);
+		this.sups1Filtered = Stream.of(sups1).map(t -> IntStream.range(0, t.length).filter(i -> t[i] != 0L).toArray()).toArray(int[][]::new);
 	}
-
-	private void saveSpace(long[][] supports, int id) {
-		Problem problem = firstRegisteredCtr().problem;
-		for (int i = 0; i < supports.length; i++) {
-			if (hashKey == null)
-				hashKey = new LongArrayHashKey();
-			hashKey.t = supports[i];
-			long[] tt = null;
-			synchronized (globalMap) {
-				tt = globalMap.get(hashKey);
-			}
-			if (tt == null) {
-				synchronized (globalMap) {
-					globalMap.put(hashKey, supports[i]);
-				}
-				hashKey = null;
-			} else {
-				supports[i] = tt;
-				problem.features.nSharedBitVectors++;
-			}
-		}
-	}
-
-	private void saveSpace() {
-		Head resolution = firstRegisteredCtr().problem.head;
-		if (resolution.control.problem.shareBitVectors) {
-			int nSharedRepresentationsBefore = firstRegisteredCtr().problem.features.nSharedBitVectors;
-			saveSpace(bitSups0, 1);
-			saveSpace(bitSups1, 0);
-			sharedArrays = (firstRegisteredCtr().problem.features.nSharedBitVectors - nSharedRepresentationsBefore) > 0;
-		}
-	}
-
-	@Override
-	public void storeTuples(int[][] tuples, boolean positive) {
-		buildArrays();
-		fillSupports0(tuples, positive);
-		fillSupports1();
-		saveSpace();
-		bitSups0Dense = Stream.of(bitSups0).map(t -> IntStream.range(0, t.length).filter(i -> t[i] != 0L).toArray()).toArray(int[][]::new);
-		bitSups1Dense = Stream.of(bitSups1).map(t -> IntStream.range(0, t.length).filter(i -> t[i] != 0L).toArray()).toArray(int[][]::new);
-	}
-
-	// public void storeTuplesAndUpdateConflictsStructure(String[] canonicalPredicate) {
-	// assert getNbDependentCtrs() == 1;
-	// buildArrays();
-	// Constraint ctr = getFirstDependentCtr();
-	// Domain domain0 = ctr.scp[0].dom, domain1 = ctr.scp[1].dom;
-	// int[][] nbConflicts = ctr.getConflictsStructure().getNbConflicts();
-	// EvaluationManager evaluationManager = new EvaluationManager(Symbolic.replaceSymbols(ctr.pb.symbolic, canonicalPredicate));
-	// int cnt = 0;
-	// int[] tmp = ctr.tupleManager.localTuple;
-	// for (int i = 0; i < domain0.initSize(); i++) {
-	// tmp[0] = domain0.toVal(i);
-	// for (int j = 0; j < domain1.initSize(); j++) {
-	// tmp[1] = domain1.toVal(j);
-	// cnt++;
-	// if (evaluationManager.evaluate(tmp) == 1) {
-	// supports0[i][j / Long.SIZE] |= Bit.ONE_LONG_BIT_TO_1[j % Long.SIZE];
-	// supports1[j][i / Long.SIZE] |= Bit.ONE_LONG_BIT_TO_1[i % Long.SIZE];
-	// } else {
-	// nbConflicts[0][i]++;
-	// nbConflicts[1][j]++;
-	// }
-	// }
-	// }
-	// ctr.pb.stuff.nConvertionCcks += cnt;
-	// saveSpace();
-	// ctr.getConflictsStructure().computeNbMaxConflicts();
-	// assert ctr.getConflictsStructure().controlStructures();
-	// }
 
 	@Override
 	public int[] computeVariableSymmetryMatching(ConstraintExtension c) {
 		if (!Variable.haveSameDomainType(c.scp))
 			return new int[] { 1, 2 };
-		for (int i = 0; i < bitSups0.length; i++)
-			for (int j = i + 1; j < bitSups0.length; j++) {
-				boolean b1 = (bitSups0[i][j / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[j % Long.SIZE]) != 0;
-				boolean b2 = (bitSups0[j][i / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[i % Long.SIZE]) != 0;
+		for (int i = 0; i < sups0.length; i++)
+			for (int j = i + 1; j < sups0.length; j++) {
+				boolean b1 = (sups0[i][j / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[j % Long.SIZE]) != 0;
+				boolean b2 = (sups0[j][i / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[i % Long.SIZE]) != 0;
 				if (b1 != b2)
 					return new int[] { 1, 2 };
 			}
@@ -179,56 +205,25 @@ public final class Bits extends ExtensionStructure {
 		for (int i = 0; i < m.length; i++)
 			for (int j = 0; j < m[i].length; j++)
 				if (m[i][j] == 0) {
-					long[] s1 = i == 0 ? bitSups0[j] : bitSups1[j];
+					long[] s1 = i == 0 ? sups0[j] : sups1[j];
 					for (int k = i; k < m.length; k++)
 						for (int l = k == i ? j + 1 : 0; l < m[k].length; l++)
-							if (m[k][l] == 0 && (s1 == (k == 0 ? bitSups0[l] : bitSups1[l])))
+							if (m[k][l] == 0 && (s1 == (k == 0 ? sups0[l] : sups1[l])))
 								m[k][l] = color;
 					m[i][j] = color++;
 				}
 		return m;
 	}
 
-	public Bits(ConstraintExtension c) {
-		super(c);
-		Kit.control(c.scp.length == 2);
-	}
-
-	public Bits(ConstraintExtension c, Bits bits) {
-		this(c);
-		bitSups0 = Kit.cloneDeeply(bits.bitSups0);
-		bitSups1 = Kit.cloneDeeply(bits.bitSups1);
-		sharedArrays = bits.sharedArrays;
-	}
-
-	public boolean hasSameSupportsThan(Bits bits) {
-		if (bitSups0.length != bits.bitSups0.length || bitSups1.length != bits.bitSups1.length)
-			return false;
-		for (int i = 0; i < bitSups0.length; i++)
-			for (int j = 0; j < bitSups0[i].length; j++)
-				if (bitSups0[i][j] != bits.bitSups0[i][j])
-					return false;
-		return true;
-	}
-
-	/**
-	 * This method returns true iff all pairs of variable assignments corresponding to the tuple are compatible.
-	 */
-	@Override
-	public final boolean checkIndexes(int[] idxs) {
-		return (bitSups0[idxs[0]][idxs[1] / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[idxs[1] % Long.SIZE]) != 0; // Bit.ALL_LONG_BITS_TO_0;
-		// return (supports1[tuple[1]][tuple[0] / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[tuple[0] % Long.SIZE]) != 0;
-	}
-
 	@Override
 	public boolean removeTuple(int[] tuple) {
-		assert registeredCtrs().size() == 1 && !sharedArrays;
-		if ((bitSups0[tuple[0]][tuple[1] / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[tuple[1] % Long.SIZE]) == 0) // BitManager.ALL_LONG_BITS_TO_0)
+		assert registeredCtrs().size() == 1 && !sharing;
+		if ((sups0[tuple[0]][tuple[1] / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[tuple[1] % Long.SIZE]) == 0)
 			return false;
-		assert bitSups1 == null || (bitSups1[tuple[1]][tuple[0] / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[tuple[0] % Long.SIZE]) != 0; // BitManager.ALL_LONG_BITS_TO_0;
-		bitSups0[tuple[0]][tuple[1] / Long.SIZE] &= Bit.ONE_LONG_BIT_TO_0[tuple[1] % Long.SIZE];
-		if (bitSups1 != null)
-			bitSups1[tuple[1]][tuple[0] / Long.SIZE] &= Bit.ONE_LONG_BIT_TO_0[tuple[0] % Long.SIZE];
+		assert sups1 == null || (sups1[tuple[1]][tuple[0] / Long.SIZE] & Bit.ONE_LONG_BIT_TO_1[tuple[0] % Long.SIZE]) != 0;
+		sups0[tuple[0]][tuple[1] / Long.SIZE] &= Bit.ONE_LONG_BIT_TO_0[tuple[1] % Long.SIZE];
+		if (sups1 != null)
+			sups1[tuple[1]][tuple[0] / Long.SIZE] &= Bit.ONE_LONG_BIT_TO_0[tuple[0] % Long.SIZE];
 		incrementNbTuplesRemoved();
 		return true;
 	}
@@ -236,26 +231,43 @@ public final class Bits extends ExtensionStructure {
 	@Override
 	public String toString() {
 		int size0 = firstRegisteredCtr().scp[0].dom.initSize(), size1 = firstRegisteredCtr().scp[1].dom.initSize();
-
 		String s0 = "Bits of " + firstRegisteredCtr() + "\n"
-				+ IntStream.range(0, bitSups0.length).mapToObj(i -> "\t" + i + " : " + Bit.decrypt(bitSups0[i], size1) + "\n").collect(Collectors.joining());
+				+ IntStream.range(0, sups0.length).mapToObj(i -> "\t" + i + " : " + Bit.decrypt(sups0[i], size1) + "\n").collect(Collectors.joining());
 		String sd0 = "Dense Bits of " + firstRegisteredCtr() + "\n"
-				+ IntStream.range(0, bitSups0Dense.length).mapToObj(i -> "\t" + i + " : " + Kit.join(bitSups0Dense[i]) + "\n").collect(Collectors.joining());
+				+ IntStream.range(0, sups0Filtered.length).mapToObj(i -> "\t" + i + " : " + Kit.join(sups0Filtered[i]) + "\n").collect(Collectors.joining());
 		String s1 = "Bits of " + firstRegisteredCtr() + "\n"
-				+ IntStream.range(0, bitSups1.length).mapToObj(i -> "\t" + i + " : " + Bit.decrypt(bitSups1[i], size0) + "\n").collect(Collectors.joining());
+				+ IntStream.range(0, sups1.length).mapToObj(i -> "\t" + i + " : " + Bit.decrypt(sups1[i], size0) + "\n").collect(Collectors.joining());
 		String sd1 = "Dense Bits of " + firstRegisteredCtr() + "\n"
-				+ IntStream.range(0, bitSups1Dense.length).mapToObj(i -> "\t" + i + " : " + Kit.join(bitSups1Dense[i]) + "\n").collect(Collectors.joining());
-
-		// StringBuilder sb = new StringBuilder("Bits of " + firstRegisteredCtr() + "\n");
-		// sb.append(" support0\n");
-		// for (int i = 0; i < supports0.length; i++)
-		// sb.append(" " + i + " : " + Bit.decrypt(supports0[i], size1) + "\n");
-		// if (supports1 != null) {
-		// sb.append(" support1\n");
-		// for (int i = 0; i < supports1.length; i++)
-		// sb.append(" " + i + " : " + Bit.decrypt(supports1[i], size0) + "\n");
-		// }
-
-		return s0 + sd0 + s1 + sd1; // sb.toString();
+				+ IntStream.range(0, sups1Filtered.length).mapToObj(i -> "\t" + i + " : " + Kit.join(sups1Filtered[i]) + "\n").collect(Collectors.joining());
+		return s0 + sd0 + s1 + sd1;
 	}
 }
+
+// public void storeTuplesAndUpdateConflictsStructure(String[] canonicalPredicate) {
+// assert getNbDependentCtrs() == 1;
+// buildArrays();
+// Constraint ctr = getFirstDependentCtr();
+// Domain domain0 = ctr.scp[0].dom, domain1 = ctr.scp[1].dom;
+// int[][] nbConflicts = ctr.getConflictsStructure().getNbConflicts();
+// EvaluationManager evaluationManager = new EvaluationManager(Symbolic.replaceSymbols(ctr.pb.symbolic, canonicalPredicate));
+// int cnt = 0;
+// int[] tmp = ctr.tupleManager.localTuple;
+// for (int i = 0; i < domain0.initSize(); i++) {
+// tmp[0] = domain0.toVal(i);
+// for (int j = 0; j < domain1.initSize(); j++) {
+// tmp[1] = domain1.toVal(j);
+// cnt++;
+// if (evaluationManager.evaluate(tmp) == 1) {
+// supports0[i][j / Long.SIZE] |= Bit.ONE_LONG_BIT_TO_1[j % Long.SIZE];
+// supports1[j][i / Long.SIZE] |= Bit.ONE_LONG_BIT_TO_1[i % Long.SIZE];
+// } else {
+// nbConflicts[0][i]++;
+// nbConflicts[1][j]++;
+// }
+// }
+// }
+// ctr.pb.stuff.nConvertionCcks += cnt;
+// saveSpace();
+// ctr.getConflictsStructure().computeNbMaxConflicts();
+// assert ctr.getConflictsStructure().controlStructures();
+// }
