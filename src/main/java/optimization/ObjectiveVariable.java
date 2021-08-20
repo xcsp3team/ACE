@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package optimization;
 
 import constraints.ConstraintGlobal;
@@ -58,14 +50,31 @@ public abstract class ObjectiveVariable extends ConstraintGlobal implements Opti
 	 */
 	protected Variable x;
 
+	/**
+	 * The current limit used for optimization
+	 */
 	protected long limit;
 
+	/**
+	 * Builds an objective for the specified problem represented by the specified variable, with initially the specified limit
+	 * 
+	 * @param pb
+	 *            the problem to which the objective is attached
+	 * @param x
+	 *            the variable representing the objective
+	 * @param limit
+	 *            the initial limit for the objective constraint
+	 */
 	public ObjectiveVariable(Problem pb, Variable x, long limit) {
 		super(pb, new Variable[] { x });
 		this.x = x;
 		limit(limit);
 	}
 
+	/**
+	 * The class for an objective variable that must be minimized. To enforce convergence, the limit is updated at each new solution and the constraint enforces
+	 * that the value of the variable is less than or equal to the current limit.
+	 */
 	public static final class ObjVarLE extends ObjectiveVariable {
 
 		@Override

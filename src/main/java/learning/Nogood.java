@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package learning;
 
 import java.util.Arrays;
@@ -16,13 +8,27 @@ import solver.Decisions;
 import utility.Kit;
 
 /**
- * Strictly speaking, an object of this class denotes a nogood constraint, i.e. a disjunction of negative decisions that must be enforced (to be true).
+ * Strictly speaking, an object of this class is used as if it was a nogood constraint, i.e. a disjunction of negative decisions that must be enforced (to be
+ * true). However, nogoods are handled apart during constraint propagation.
+ * 
+ * @author Christophe Lecoutre
  */
 public final class Nogood {
 
-	public final int[] literals; // only negative literals (decisions) since a classical nogood
+	/**
+	 * The negative literals (decisions) of the nogood (since it is a classical nogood)
+	 */
+	public final int[] literals;
 
-	private int watch1, watch2;
+	/**
+	 * The first watch on the nogood, that is to say the position of a literal that can still be satisfied
+	 */
+	private int watch1;
+
+	/**
+	 * The second watch on the nogood, that is to say the position of a literal that can still be satisfied
+	 */
+	private int watch2;
 
 	public int getWatchedPosition(boolean firstWatch) {
 		return firstWatch ? watch1 : watch2;
@@ -57,11 +63,17 @@ public final class Nogood {
 		return literals[watch1] == watchedDecision ? literals[watch2] : literals[watch1];
 	}
 
-	public Nogood(int[] decisions) {
-		Kit.control(decisions.length > 1 && Arrays.stream(decisions).noneMatch(d -> d >= 0));
-		this.literals = decisions;
+	/**
+	 * Builds a nogood from the specified literals (negative decisions)
+	 * 
+	 * @param negativeDecisions
+	 *            the negative decisions (literals) forming the nogood
+	 */
+	public Nogood(int[] negativeDecisions) {
+		Kit.control(negativeDecisions.length > 1 && Arrays.stream(negativeDecisions).noneMatch(d -> d >= 0));
+		this.literals = negativeDecisions;
 		this.watch1 = 0;
-		this.watch2 = decisions.length - 1;
+		this.watch2 = negativeDecisions.length - 1;
 	}
 
 	public String toString(Decisions decisions) {

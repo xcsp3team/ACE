@@ -10,7 +10,8 @@ import sets.SetDenseReversible;
 import variables.Variable;
 
 /**
- * This is STR (Simple Tabular Reduction), as introduced by Julian Ullmann
+ * This is STR (Simple Tabular Reduction), for filtering extension constraints, also called table constraints, as introduced by Julian Ullmann: "Partition
+ * search for non-binary constraint satisfaction". Inf. Sci. 177(18): 3639-3678 (2007).
  * 
  * @author Christophe Lecoutre
  *
@@ -18,7 +19,7 @@ import variables.Variable;
 public class STR1 extends ExtensionSpecific {
 
 	/**********************************************************************************************
-	 * Impkementing Interfaces
+	 * Implementing Interfaces
 	 *********************************************************************************************/
 
 	@Override
@@ -69,6 +70,14 @@ public class STR1 extends ExtensionSpecific {
 	 * Methods
 	 *********************************************************************************************/
 
+	/**
+	 * Builds an extension constraint, with STR1 as specific filtering method
+	 * 
+	 * @param pb
+	 *            the problem to which the constraint is attached
+	 * @param scp
+	 *            the scope of the constraint
+	 */
 	public STR1(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		control(scp.length > 1, "Arity must be at least 2");
@@ -79,6 +88,9 @@ public class STR1 extends ExtensionSpecific {
 		return new Table(this);
 	}
 
+	/**
+	 * Performs some initializations before starting the filtering process.
+	 */
 	protected void beforeFiltering() {
 		cnt = 0;
 		for (int i = futvars.limit; i >= 0; i--) {
@@ -88,6 +100,11 @@ public class STR1 extends ExtensionSpecific {
 		}
 	}
 
+	/**
+	 * Updates the domains of the variables in the scope of the constraint at the end of the filtering process
+	 * 
+	 * @return false if an inconsistency (empty domain) is detected
+	 */
 	protected boolean updateDomains() {
 		for (int i = futvars.limit; i >= 0 && cnt > 0; i--) {
 			int x = futvars.dense[i];

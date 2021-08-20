@@ -103,11 +103,11 @@ import org.xcsp.modeler.implementation.ProblemIMP;
 
 import constraints.ConflictsStructure;
 import constraints.Constraint;
-import constraints.ConstraintIntension;
-import constraints.ConstraintExtension;
 import constraints.Constraint.CtrFalse;
 import constraints.Constraint.CtrTrue;
+import constraints.ConstraintExtension;
 import constraints.ConstraintExtension.Extension1;
+import constraints.ConstraintIntension;
 import constraints.extension.CMDD;
 import constraints.extension.CSmart;
 import constraints.extension.structures.Table;
@@ -1537,28 +1537,28 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 	// ***** Constraint count
 	// ************************************************************************
 
-	private CtrEntity atLeast(VariableInteger[] scp, int value, int k) {
+	private CtrEntity atLeast(VariableInteger[] list, int value, int k) {
 		if (k == 0)
 			return ctrEntities.new CtrAloneDummy("atleast witk k = 0");
-		if (k == scp.length)
-			return instantiation(scp, value);
-		return post(k == 1 ? new AtLeast1(this, scp, value) : new AtLeastK(this, scp, value, k));
+		if (k == list.length)
+			return instantiation(list, value);
+		return post(k == 1 ? new AtLeast1(this, list, value) : new AtLeastK(this, list, value, k));
 	}
 
-	private CtrEntity atMost(VariableInteger[] scp, int value, int k) {
+	private CtrEntity atMost(VariableInteger[] list, int value, int k) {
 		if (k == 0)
-			return refutation(scp, value);
-		if (k == scp.length)
+			return refutation(list, value);
+		if (k == list.length)
 			return ctrEntities.new CtrAloneDummy("atMost with k = scp.length");
-		return post(k == 1 ? new AtMost1(this, scp, value) : new AtMostK(this, scp, value, k));
+		return post(k == 1 ? new AtMost1(this, list, value) : new AtMostK(this, list, value, k));
 	}
 
-	private CtrEntity exactly(VariableInteger[] scp, int value, int k) {
+	private CtrEntity exactly(VariableInteger[] list, int value, int k) {
 		if (k == 0)
-			return refutation(scp, value);
-		if (k == scp.length)
-			return instantiation(scp, value);
-		return post(k == 1 ? new Exactly1(this, scp, value) : new ExactlyK(this, scp, value, k));
+			return refutation(list, value);
+		if (k == list.length)
+			return instantiation(list, value);
+		return post(k == 1 ? new Exactly1(this, list, value) : new ExactlyK(this, list, value, k));
 	}
 
 	private CtrEntity count(VariableInteger[] list, int[] values, TypeConditionOperatorRel op, long limit) {
@@ -1591,7 +1591,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 
 	@Override
 	public final CtrEntity count(Var[] list, int[] values, Condition condition) {
-		control(list.length > 0, "A constraint Count is posted with a scope of 0 variable");
+		control(list.length > 0, "A constraint Count is posted with a scope without any variable");
 		if (condition instanceof ConditionRel) {
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Object rightTerm = condition.rightTerm();

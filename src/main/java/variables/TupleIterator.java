@@ -20,18 +20,18 @@ public final class TupleIterator {
 	private final Domain[] doms;
 
 	/**
-	 * Indicates which values must be kept fixed.
+	 * Indicates which values must be kept fixed during iteration
 	 */
 	private final boolean[] fixed;
 
 	/**
-	 * Local tuple that is usually used by the object when performing an iteration.
+	 * A local buffer, used to store a tuple, that is usually used by the object when performing an iteration.
 	 */
 	public final int[] buffer;
 
 	/**
 	 * The tuple that is used in the current iteration. It can be the local tuple or an external tuple (for example, for avoiding bidirectional copies during
-	 * search of support).
+	 * search of supports).
 	 */
 	private int[] currTuple;
 

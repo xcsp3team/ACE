@@ -174,7 +174,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	}
 
 	/**
-	 * This is the root class of specific AC filtering for extension constraints.
+	 * This is the root class of specific AC filtering for extension (table) constraints.
 	 */
 	public abstract static class ExtensionSpecific extends ConstraintExtension implements FilteringSpecific, ObserverOnBacktracksSystematic {
 

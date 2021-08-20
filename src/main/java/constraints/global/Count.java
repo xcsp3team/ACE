@@ -7,8 +7,8 @@ import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
 import constraints.ConstraintGlobal;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import sets.SetSparse;
@@ -30,7 +30,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 	}
 
 	/**
-	 * The list where we count the value
+	 * The list where the number of occurrences of the value is counted
 	 */
 	protected final Variable[] list;
 
