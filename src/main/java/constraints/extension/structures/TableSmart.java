@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints.extension.structures;
 
 import static org.xcsp.common.Constants.STAR;
@@ -44,12 +36,23 @@ import variables.DomainFinite.DomainSymbols;
 import variables.Variable;
 
 /**
- * This class denote any constraint defined in extension. All supports (allowed tuples) or all conflicts (disallowed tuples) are recorded in a list. Note that
- * tuples are recorded as indexes (of values).
+ * This is the class for representing smart tables. IMPORTANT: a new implementation is planned.
+ * 
+ * @author Christophe Lecoutre
  */
 public class TableSmart extends ExtensionStructure {
 
-	/** The set of smart rows (composed of one tuple and several restrictions). */
+	@Override
+	public boolean checkIndexes(int[] t) {
+		for (SmartTuple smartTuple : smartTuples)
+			if (smartTuple.contains(t))
+				return true;
+		return false;
+	}
+
+	/**
+	 * The set of smart tuples/rows (composed of one tuple and several restrictions).
+	 */
 	public final SmartTuple[] smartTuples;
 
 	@Override
@@ -60,14 +63,6 @@ public class TableSmart extends ExtensionStructure {
 	public TableSmart(ConstraintExtension c, SmartTuple[] smartTuples) {
 		super(c);
 		this.smartTuples = smartTuples;
-	}
-
-	@Override
-	public boolean checkIndexes(int[] t) {
-		for (SmartTuple smartTuple : smartTuples)
-			if (smartTuple.contains(t))
-				return true;
-		return false;
 	}
 
 	@Override
@@ -90,19 +85,29 @@ public class TableSmart extends ExtensionStructure {
 		/** The tuple serving as basis for this smart tuple, with indices instead of values. */
 		public int[] prefix;
 
-		/** The set of restrictions associated with this smart tuple. */
-		private RestrictionSimple[] restrictions;
+		/**
+		 * The set of restrictions for this smart tuple
+		 */
+		private Restriction[] restrictions;
 
-		/** supportlesss[x] gives the sparse set of idxs for which no support has been found yet. */
-		private SetSparse[] supportlesss;
+		/**
+		 * nac[x] is the sparse set of indexes for x, which have not been found a support yet (not arc-consistent)
+		 */
+		private SetSparse[] nac;
 
-		/** Temporary array to store idxs used in some collecting methods. */
+		/**
+		 * Temporary array used to store indexes (of values) in some collecting methods
+		 */
 		private int[] tmp;
 
-		/** whichRestrictions[x] indicates the restriction where x occurs (it may correspond to either vap or vap2), or null. */
-		private RestrictionSimple[] whichRestrictions;
+		/**
+		 * whichRestrictions[x] indicates the restriction where x occurs (it may correspond to either vap or vap2), or null.
+		 */
+		private Restriction[] whichRestrictions;
 
-		/** Time counters used to avoid useless redundant operations. */
+		/**
+		 * Time counters used to avoid useless redundant operations.
+		 */
 		private long valTime, supTime;
 
 		public final List<XNodeParent<? extends IVar>> collectedTreeRestrictions;
@@ -164,7 +169,7 @@ public class TableSmart extends ExtensionStructure {
 			this((int[]) null, Arrays.asList(r1, r2, r3, r4));
 		}
 
-		public RestrictionSimple buildRestrictionUnary(int x, TypeConditionOperatorRel op, int v) {
+		public Restriction buildRestrictionUnary(int x, TypeConditionOperatorRel op, int v) {
 			return op == LT ? new Rstr1LE(x, v, true)
 					: op == LE ? new Rstr1LE(x, v, false)
 							: op == GT ? new Rstr1GE(x, v, true) : op == GE ? new Rstr1GE(x, v, false) : op == NE ? new Rstr1NE(x, v) : new Rstr1EQ(x, v);
@@ -172,7 +177,7 @@ public class TableSmart extends ExtensionStructure {
 		}
 
 		/** Called to pose a restriction of the form scp[vap] <op> val */
-		private SmartTuple addRestrictionUnary(Collection<RestrictionSimple> list, int x, TypeConditionOperatorRel op, int v) {
+		private SmartTuple addRestrictionUnary(Collection<Restriction> list, int x, TypeConditionOperatorRel op, int v) {
 			boolean storeEqualities = true;
 			if (storeEqualities && op == EQ) {
 				Kit.control(prefix[x] == STAR && scp[x].dom.containsValue(v), () -> " " + scp[x] + " " + prefix[x] + " " + STAR + " " + v + " " + scp[x].dom);
@@ -188,7 +193,7 @@ public class TableSmart extends ExtensionStructure {
 		}
 
 		/** Called to pose a restriction of the form scp[vap1] <op> scp[vap2] */
-		private SmartTuple addRestrictionBinary(Collection<RestrictionSimple> list, int x, TypeConditionOperatorRel op, int y) {
+		private SmartTuple addRestrictionBinary(Collection<Restriction> list, int x, TypeConditionOperatorRel op, int y) {
 			list.add(op == LT ? new Rstr2L(x, y, true)
 					: op == LE ? new Rstr2L(x, y, false)
 							: op == GE ? new Rstr2G(x, y, false)
@@ -199,8 +204,8 @@ public class TableSmart extends ExtensionStructure {
 		}
 
 		/** Called to pose a restriction of the form scp[vap1] >= scp[vap2] + cst or scp[vap1] > scp[vap2] + cst */
-		private SmartTuple addRestrictionBinary(Collection<RestrictionSimple> list, int x, TypeConditionOperatorRel op, int y, int cst) {
-			RestrictionSimple restriction = null;
+		private SmartTuple addRestrictionBinary(Collection<Restriction> list, int x, TypeConditionOperatorRel op, int y, int cst) {
+			Restriction restriction = null;
 			if (op == TypeConditionOperatorRel.GE)
 				restriction = new Rstr2pG(x, y, false, cst);
 			else if (op == TypeConditionOperatorRel.GT)
@@ -211,16 +216,16 @@ public class TableSmart extends ExtensionStructure {
 			return this;
 		}
 
-		public void attach(CSmart ctr) {
-			this.scp = ctr.scp;
+		public void attach(CSmart c) {
+			this.scp = c.scp;
 			this.prefixWithValues = prefixWithValues != null ? prefixWithValues : Kit.repeat(STAR, scp.length);
 			this.prefix = IntStream.range(0, scp.length).map(i -> prefixWithValues[i] == STAR ? STAR : scp[i].dom.toIdx(prefixWithValues[i])).toArray();
-			this.supportlesss = ctr.unsupported;
+			this.nac = c.unsupported;
 			this.tmp = new int[Variable.maxInitDomSize(scp)];
 			assert Variable.areSortedDomainsIn(scp);
 
 			// this code is for converting and collecting restrictions
-			Collection<RestrictionSimple> list = new ArrayList<>();
+			Collection<Restriction> list = new ArrayList<>();
 			for (XNodeParent<? extends IVar> tr : collectedTreeRestrictions) {
 				if (tr.sons.length == 2) {
 					XNode<? extends IVar> son0 = tr.sons[0], son1 = tr.sons[1];
@@ -230,18 +235,18 @@ public class TableSmart extends ExtensionStructure {
 					if (son0.type == TypeExpr.VAR && son1.type == TypeExpr.LONG) {
 						int val = Utilities.safeInt(((long) ((XNodeLeaf<?>) son1).value));
 						TypeConditionOperatorRel op = Types.valueOf(TypeConditionOperatorRel.class, tr.type.lcname);
-						addRestrictionUnary(list, ctr.positionOf(x), op, val);
+						addRestrictionUnary(list, c.positionOf(x), op, val);
 					} else if (son0.type == TypeExpr.VAR && son1.type == TypeExpr.VAR) {
 						Variable y = (Variable) ((XNodeLeaf<?>) son1).value;
 						TypeConditionOperatorRel op = Types.valueOf(TypeConditionOperatorRel.class, tr.type.lcname);
-						addRestrictionBinary(list, ctr.positionOf(x), op, ctr.positionOf(y));
+						addRestrictionBinary(list, c.positionOf(x), op, c.positionOf(y));
 					} else if (son0.type == TypeExpr.VAR && son1.type == TypeExpr.ADD) {
 						XNode<?>[] grandSons = ((XNodeParent<?>) son1).sons;
 						if (grandSons.length == 2 && grandSons[0].type == TypeExpr.VAR && grandSons[1].type == TypeExpr.LONG) {
 							Variable y = (Variable) ((XNodeLeaf<?>) grandSons[0]).value;
 							int val = Utilities.safeInt(((long) ((XNodeLeaf<?>) grandSons[1]).value));
 							TypeConditionOperatorRel op = Types.valueOf(TypeConditionOperatorRel.class, tr.type.lcname);
-							addRestrictionBinary(list, ctr.positionOf(x), op, ctr.positionOf(y), val);
+							addRestrictionBinary(list, c.positionOf(x), op, c.positionOf(y), val);
 						} else
 							Kit.exit("Currently, unimplemented case");
 					} else
@@ -264,18 +269,17 @@ public class TableSmart extends ExtensionStructure {
 			// listStar.add(i);
 			// unrestrictedIdxs = Kit.toIntArray(listIdx); unrestrictedStars = Kit.toIntArray(listStar);
 
-			Map<Integer, List<RestrictionSimple>> byVap = list.stream().collect(Collectors.groupingBy(r -> r.x));
+			Map<Integer, List<Restriction>> byVap = list.stream().collect(Collectors.groupingBy(r -> r.x));
 			restrictions = byVap.entrySet().stream()
-					.map(e -> e.getValue().size() == 1 ? e.getValue().get(0) : new RestrictionMultiple(e.getKey(), e.getValue()))
-					.toArray(RestrictionSimple[]::new);
+					.map(e -> e.getValue().size() == 1 ? e.getValue().get(0) : new RestrictionMultiple(e.getKey(), e.getValue())).toArray(Restriction[]::new);
 
-			whichRestrictions = new RestrictionSimple[scp.length];
-			for (RestrictionSimple r : restrictions) {
+			whichRestrictions = new Restriction[scp.length];
+			for (Restriction r : restrictions) {
 				whichRestrictions[r.x] = r;
 				if (r instanceof Rstr2)
 					whichRestrictions[((Rstr2) r).y] = r;
 				else if (r instanceof RestrictionMultiple)
-					for (RestrictionSimple rr : ((RestrictionMultiple) r).involvedRestrictions)
+					for (Restriction rr : ((RestrictionMultiple) r).involvedRestrictions)
 						if (rr instanceof Rstr2)
 							whichRestrictions[((Rstr2) rr).y] = r;
 			}
@@ -288,7 +292,7 @@ public class TableSmart extends ExtensionStructure {
 			for (int i = 0; i < t.length; i++)
 				if (prefix[i] != STAR && prefix[i] != t[i])
 					return false;
-			for (RestrictionSimple restriction : restrictions)
+			for (Restriction restriction : restrictions)
 				if (!restriction.checkIndexes(t))
 					return false;
 			return true;
@@ -301,7 +305,7 @@ public class TableSmart extends ExtensionStructure {
 			valTime++;
 			for (int i = sValSize - 1; i >= 0; i--) {
 				int x = sVal[i];
-				RestrictionSimple restriction = whichRestrictions[x];
+				Restriction restriction = whichRestrictions[x];
 				if (restriction == null) {
 					int a = prefix[x];
 					if (a != STAR && !scp[x].dom.contains(a))
@@ -319,22 +323,21 @@ public class TableSmart extends ExtensionStructure {
 			supTime++;
 			for (int i = sSupSize - 1; i >= 0; i--) {
 				int x = sSup[i];
-				if (supportlesss[x].isEmpty()) {
+				if (nac[x].isEmpty()) {
 					sSup[i] = sSup[--sSupSize];
-					continue; // may have been emptied as vap2 when collecting on binary restrictions
+					continue; // may have been emptied (as second variable/position) when collecting on binary restrictions
 				}
-				RestrictionSimple restriction = whichRestrictions[x];
+				Restriction restriction = whichRestrictions[x];
 				if (restriction == null) {
 					int a = prefix[x];
 					if (a == STAR)
-						supportlesss[x].clear();
+						nac[x].clear();
 					else
-						supportlesss[x].remove(a);
+						nac[x].remove(a);
 				} else if (restriction.supTimeLocal != supTime)
 					restriction.collect();
-				if (supportlesss[x].isEmpty())
+				if (nac[x].isEmpty())
 					sSup[i] = sSup[--sSupSize];
-
 			}
 			return sSupSize;
 		}
@@ -347,7 +350,7 @@ public class TableSmart extends ExtensionStructure {
 			if (b)
 				return s + " : " + Stream.of(restrictions).map(r -> r.toString()).collect(Collectors.joining(", "));
 			s += "\n  " + restrictions.length + " restrictons : ";
-			for (RestrictionSimple r : restrictions)
+			for (Restriction r : restrictions)
 				s += "\n    Restriction " + r.toString() + " ";
 			for (int i = 0; i < whichRestrictions.length; i++)
 				if (whichRestrictions[i] != null)
@@ -359,46 +362,59 @@ public class TableSmart extends ExtensionStructure {
 		 * Root class for restrictions
 		 *********************************************************************************************/
 
-		public abstract class RestrictionAbstract {
+		/**
+		 * A restriction always involves a variable whose value in the initially specified tuple is ANY (*)
+		 */
+		public abstract class Restriction {
+
+			/**
+			 * The main variable (given by its position in the constraint scope) in the restriction (at the right side of the restriction)
+			 */
+			protected int x;
+
+			/**
+			 * The domain of x (redundant field)
+			 */
+			protected Domain domx;
+
+			/**
+			 * The sparse set for unsupported indexes of x (redundant field)
+			 */
+			protected SetSparse nacx;
 
 			protected long valTimeLocal, supTimeLocal;
 
-			/** Returns true iff the restriction is valid. */
-			public abstract boolean isValid();
-
-			/** Updates the involved set(s) of supportless indices. */
-			public abstract void collect();
-
-			/** Returns true iff the restriction validates the specified tuple of indexes. */
+			/**
+			 * Returns true iff the restriction validates the specified tuple of indexes.
+			 */
 			public abstract boolean checkIndexes(int[] t);
-		}
-
-		/**
-		 * A restriction always involves a variable whose value in the initially specified tuple is *.
-		 */
-		public abstract class RestrictionSimple extends RestrictionAbstract {
-
-			/** (Position in the constraint scope of) the variable x at the right side of the restriction. */
-			protected int x;
-
-			/** The domain of x. Redundant field. */
-			protected Domain domx;
-
-			/** This set contains the indices of values in dom that have not been proved to have a support yet in the constraint. */
-			protected SetSparse supportlessx;
-
-			protected RestrictionSimple(int x) {
-				this.x = x;
-				this.domx = scp[x].dom;
-				this.supportlessx = supportlesss[x];
-				Kit.control(prefix[x] == STAR);
-			}
 
 			/**
-			 * Returns true iff the specified (value) index for the variable x is valid, i.e. the restriction is valid for the smart tuple when x is set to (the
-			 * value corresponding to) a.
+			 * Returns true iff the restriction is valid (i.e., can still be satisfied).
+			 */
+			public abstract boolean isValid();
+
+			/**
+			 * Returns true iff the specified index (of value) for the variable x is valid, i.e. the restriction is valid for the smart tuple when x is set to
+			 * (the value for) a
+			 * 
+			 * @param a
+			 *            an index (of value)
+			 * @return true iff the specified index (of value) for the variable x is valid
 			 */
 			public abstract boolean isValidFor(int a);
+
+			/**
+			 * Updates information about supported indexes (i.e., updates the structure nac)
+			 */
+			public abstract void collect();
+
+			protected Restriction(int x) {
+				this.x = x;
+				this.domx = scp[x].dom;
+				this.nacx = nac[x];
+				Kit.control(prefix[x] == STAR);
+			}
 		}
 
 		/**********************************************************************************************
@@ -410,7 +426,7 @@ public class TableSmart extends ExtensionStructure {
 		 * the index of the value in dom(x) that is related to v ; see subclass constructors for details). <br />
 		 * The operation <op> corresponds to the chosen subclass.
 		 */
-		abstract class Rstr1 extends RestrictionSimple {
+		abstract class Rstr1 extends Restriction {
 
 			/** Index of the value in the domain of x that is related to the value specified at construction (in subclasses). */
 			protected int pivot;
@@ -427,16 +443,16 @@ public class TableSmart extends ExtensionStructure {
 
 		final class Rstr1LE extends Rstr1 {
 
-			protected Rstr1LE(int x, int v, boolean strict) {
-				super(x);
-				// we compute the greatest (value) index less than v ; both strict and non-strict cases handled with the computed pivot
-				this.pivot = IntStream.range(0, domx.initSize()).map(a -> domx.initSize() - 1 - a).filter(a -> domx.toVal(a) <= v + (strict ? -1 : 0))
-						.findFirst().orElse(-1);
+			@Override
+			public boolean checkIndexes(int[] t) {
+				return t[x] <= pivot;
 			}
 
-			@Override
-			public boolean isValidFor(int a) {
-				return a <= pivot;
+			protected Rstr1LE(int x, int v, boolean strict) {
+				super(x);
+				// we compute the greatest (value) index less than v ; both strict and non-strict cases are handled with the computed pivot
+				this.pivot = IntStream.range(0, domx.initSize()).map(a -> domx.initSize() - 1 - a).filter(a -> domx.toVal(a) <= v + (strict ? -1 : 0))
+						.findFirst().orElse(-1);
 			}
 
 			@Override
@@ -445,30 +461,31 @@ public class TableSmart extends ExtensionStructure {
 			}
 
 			@Override
-			public void collect() {
-				// three ways of collecting
-				int roughNbValidValues = pivot - domx.first(), roughNbInvalidValues = domx.last() - pivot;
-				if (roughNbInvalidValues < roughNbValidValues && roughNbInvalidValues < supportlessx.size()) {
-					int cnt = 0;
-					for (int a = domx.last(); a != -1 && a > pivot; a = domx.prev(a))
-						if (supportlessx.contains(a))
-							tmp[cnt++] = a;
-					supportlessx.resetTo(tmp, cnt);
-				} else if (roughNbValidValues < supportlessx.size()) {
-					for (int a = domx.first(); a != -1 && a <= pivot; a = domx.next(a))
-						supportlessx.remove(a);
-				} else
-					for (int i = supportlessx.limit; i >= 0; i--) {
-						int a = supportlessx.dense[i];
-						if (a <= pivot)
-							supportlessx.remove(a);
-					}
+			public boolean isValidFor(int a) {
+				return a <= pivot;
 			}
 
 			@Override
-			public boolean checkIndexes(int[] t) {
-				return t[x] <= pivot;
+			public void collect() {
+				// three ways of collecting
+				int roughNbValidValues = pivot - domx.first(), roughNbInvalidValues = domx.last() - pivot;
+				if (roughNbInvalidValues < roughNbValidValues && roughNbInvalidValues < nacx.size()) {
+					int cnt = 0;
+					for (int a = domx.last(); a != -1 && a > pivot; a = domx.prev(a))
+						if (nacx.contains(a))
+							tmp[cnt++] = a;
+					nacx.resetTo(tmp, cnt);
+				} else if (roughNbValidValues < nacx.size()) {
+					for (int a = domx.first(); a != -1 && a <= pivot; a = domx.next(a))
+						nacx.remove(a);
+				} else
+					for (int i = nacx.limit; i >= 0; i--) {
+						int a = nacx.dense[i];
+						if (a <= pivot)
+							nacx.remove(a);
+					}
 			}
+
 		}
 
 		final class Rstr1GE extends Rstr1 {
@@ -493,20 +510,20 @@ public class TableSmart extends ExtensionStructure {
 			public void collect() {
 				// three ways of collecting
 				int roughNbValidValues = domx.last() - pivot, roughNbInvalidValues = pivot - domx.first();
-				if (roughNbInvalidValues < roughNbValidValues && roughNbInvalidValues < supportlessx.size()) {
+				if (roughNbInvalidValues < roughNbValidValues && roughNbInvalidValues < nacx.size()) {
 					int cnt = 0;
 					for (int a = domx.first(); a != -1 && a < pivot; a = domx.next(a))
-						if (supportlessx.contains(a))
+						if (nacx.contains(a))
 							tmp[cnt++] = a;
-					supportlessx.resetTo(tmp, cnt);
-				} else if (roughNbValidValues < supportlessx.size()) {
+					nacx.resetTo(tmp, cnt);
+				} else if (roughNbValidValues < nacx.size()) {
 					for (int a = domx.last(); a != -1 && a >= pivot; a = domx.prev(a))
-						supportlessx.remove(a);
+						nacx.remove(a);
 				} else
-					for (int i = supportlessx.limit; i >= 0; i--) {
-						int a = supportlessx.dense[i];
+					for (int i = nacx.limit; i >= 0; i--) {
+						int a = nacx.dense[i];
 						if (a >= pivot)
-							supportlessx.remove(a);
+							nacx.remove(a);
 					}
 			}
 
@@ -542,10 +559,10 @@ public class TableSmart extends ExtensionStructure {
 
 			@Override
 			public void collect() {
-				boolean present = supportlessx.contains(pivot);
-				supportlessx.clear();
+				boolean present = nacx.contains(pivot);
+				nacx.clear();
 				if (present)
-					supportlessx.add(pivot);
+					nacx.add(pivot);
 			}
 
 			@Override
@@ -580,7 +597,7 @@ public class TableSmart extends ExtensionStructure {
 
 			@Override
 			public void collect() {
-				supportlessx.remove(pivot);
+				nacx.remove(pivot);
 			}
 
 			@Override
@@ -596,7 +613,7 @@ public class TableSmart extends ExtensionStructure {
 		/**
 		 * Restriction of the form x <op> y
 		 */
-		abstract class Rstr2 extends RestrictionSimple {
+		abstract class Rstr2 extends Restriction {
 
 			/** (Position of) the second involved variable */
 			protected int y;
@@ -609,7 +626,7 @@ public class TableSmart extends ExtensionStructure {
 				super(x);
 				this.y = y;
 				this.domy = scp[y].dom;
-				this.supportlessy = supportlesss[y];
+				this.supportlessy = nac[y];
 				Kit.control(domx.typeIdentifier() == domy.typeIdentifier() || this instanceof Rstr2EQVal);
 			}
 
@@ -650,9 +667,9 @@ public class TableSmart extends ExtensionStructure {
 				if (!scp[x].assigned()) {
 					int cnt = 0;
 					for (int a = domx.last(); a != -1 && (strict ? a >= last2 : a > last2); a = domx.prev(a))
-						if (supportlessx.contains(a))
+						if (nacx.contains(a))
 							tmp[cnt++] = a;
-					supportlessx.resetTo(tmp, cnt);
+					nacx.resetTo(tmp, cnt);
 				}
 				if (!scp[y].assigned()) {
 					int cnt = 0;
@@ -666,10 +683,10 @@ public class TableSmart extends ExtensionStructure {
 			private void collectThroughSupportlessSets() {
 				int first1 = domx.first(), last2 = domy.last();
 				if (!scp[x].assigned())
-					for (int i = supportlessx.limit; i >= 0; i--) {
-						int a = supportlessx.dense[i];
+					for (int i = nacx.limit; i >= 0; i--) {
+						int a = nacx.dense[i];
 						if (strict ? a < last2 : a <= last2)
-							supportlessx.remove(a);
+							nacx.remove(a);
 					}
 				if (!scp[y].assigned())
 					for (int i = supportlessy.limit; i >= 0; i--) {
@@ -683,7 +700,7 @@ public class TableSmart extends ExtensionStructure {
 				int first1 = domx.first(), last2 = domy.last();
 				if (!scp[x].assigned())
 					for (int a = domx.first(); a != -1 && (strict ? a < last2 : a <= last2); a = domx.next(a))
-						supportlessx.remove(a);
+						nacx.remove(a);
 				if (!scp[y].assigned())
 					for (int a = domy.last(); a != -1 && (strict ? first1 < a : first1 <= a); a = domy.prev(a))
 						supportlessy.remove(a);
@@ -694,7 +711,7 @@ public class TableSmart extends ExtensionStructure {
 				supTimeLocal = supTime;
 				// three parameters for choosing the cheapest way of collecting
 				int roughNbInvalidValues = Math.max(domx.first() - domy.first(), 0) + Math.max(domx.last() - domy.last(), 0);
-				int nSupportlessValues = supportlessx.size() + supportlessy.size();
+				int nSupportlessValues = nacx.size() + supportlessy.size();
 				int roughNbValidValues = Math.min(domx.last(), domy.last()) - domx.first() + domy.last() - Math.max(domx.first(), domy.first());
 				if (roughNbInvalidValues < nSupportlessValues && roughNbInvalidValues < roughNbValidValues)
 					collectThroughInvalidValues();
@@ -749,9 +766,9 @@ public class TableSmart extends ExtensionStructure {
 				if (!scp[x].assigned()) {
 					int cnt = 0;
 					for (int a = domx.first(); a != -1 && (strict ? a <= first2 : a < first2); a = domx.next(a))
-						if (supportlessx.contains(a))
+						if (nacx.contains(a))
 							tmp[cnt++] = a;
-					supportlessx.resetTo(tmp, cnt);
+					nacx.resetTo(tmp, cnt);
 				}
 				if (!scp[y].assigned()) {
 					int cnt = 0;
@@ -765,10 +782,10 @@ public class TableSmart extends ExtensionStructure {
 			private void collectThroughSupportlessSets() {
 				int last1 = domx.last(), first2 = domy.first();
 				if (!scp[x].assigned())
-					for (int i = supportlessx.limit; i >= 0; i--) {
-						int a = supportlessx.dense[i];
+					for (int i = nacx.limit; i >= 0; i--) {
+						int a = nacx.dense[i];
 						if (strict ? a > first2 : a >= first2)
-							supportlessx.remove(a);
+							nacx.remove(a);
 					}
 				if (!scp[y].assigned())
 					for (int i = supportlessy.limit; i >= 0; i--) {
@@ -782,7 +799,7 @@ public class TableSmart extends ExtensionStructure {
 				int last1 = domx.last(), first2 = domy.first();
 				if (!scp[x].assigned())
 					for (int a = domx.last(); a != -1 && (strict ? a > first2 : a >= first2); a = domx.prev(a))
-						supportlessx.remove(a);
+						nacx.remove(a);
 				if (!scp[y].assigned())
 					for (int a = domy.first(); a != -1 && (strict ? last1 > a : last1 >= a); a = domy.next(a))
 						supportlessy.remove(a);
@@ -793,7 +810,7 @@ public class TableSmart extends ExtensionStructure {
 				supTimeLocal = supTime;
 				// three parameters for choosing the cheapest way of collecting
 				int roughNbInvalidValues = Math.max(domy.first() - domx.first(), 0) + Math.max(domy.last() - domx.last(), 0);
-				int nbSupportlessValues = supportlessx.size() + supportlessy.size();
+				int nbSupportlessValues = nacx.size() + supportlessy.size();
 				int roughNbValidValues = Math.min(domx.last(), domy.last()) - domy.first() + domx.last() - Math.max(domx.first(), domy.first());
 				if (roughNbInvalidValues < nbSupportlessValues && roughNbInvalidValues < roughNbValidValues)
 					collectThroughInvalidValues();
@@ -844,10 +861,10 @@ public class TableSmart extends ExtensionStructure {
 			public void collect() {
 				supTimeLocal = supTime;
 				if (!scp[x].assigned())
-					if (domy.size() == 1 && supportlessx.contains(domy.single()))
-						supportlessx.resetTo(domy.single());
+					if (domy.size() == 1 && nacx.contains(domy.single()))
+						nacx.resetTo(domy.single());
 					else
-						supportlessx.clear();
+						nacx.clear();
 				if (!scp[y].assigned())
 					if (domx.size() == 1 && supportlessy.contains(domx.single()))
 						supportlessy.resetTo(domx.single());
@@ -904,9 +921,9 @@ public class TableSmart extends ExtensionStructure {
 				if (!scp[x].assigned()) {
 					int cnt = 0;
 					for (int a = domy.lastRemoved(); a != -1; a = domy.prevRemoved(a))
-						if (supportlessx.contains(a))
+						if (nacx.contains(a))
 							tmp[cnt++] = a;
-					supportlessx.resetTo(tmp, cnt);
+					nacx.resetTo(tmp, cnt);
 				}
 				if (!scp[y].assigned()) {
 					int cnt = 0;
@@ -925,13 +942,13 @@ public class TableSmart extends ExtensionStructure {
 				if (!scp[x].assigned() && !scp[y].assigned()) {
 					for (int a = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); a != -1; a = domSmall.next(a))
 						if (domBig.contains(a)) {
-							supportlessx.remove(a);
+							nacx.remove(a);
 							supportlessy.remove(a);
 						}
 				} else if (!scp[x].assigned()) {
 					for (int a = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); a != -1; a = domSmall.next(a))
 						if (domBig.contains(a))
-							supportlessx.remove(a);
+							nacx.remove(a);
 				} else if (!scp[y].assigned()) {
 					for (int a = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); a != -1; a = domSmall.next(a))
 						if (domBig.contains(a))
@@ -941,10 +958,10 @@ public class TableSmart extends ExtensionStructure {
 
 			private void collectThroughSupportlessSets() {
 				if (!scp[x].assigned())
-					for (int i = supportlessx.limit; i >= 0; i--) {
-						int a = supportlessx.dense[i];
+					for (int i = nacx.limit; i >= 0; i--) {
+						int a = nacx.dense[i];
 						if (domy.contains(a))
-							supportlessx.remove(a);
+							nacx.remove(a);
 					}
 				if (!scp[y].assigned())
 					for (int i = supportlessy.limit; i >= 0; i--) {
@@ -959,7 +976,7 @@ public class TableSmart extends ExtensionStructure {
 				supTimeLocal = supTime;
 				// three parameters for choosing the cheapest way of collecting
 				int nbRemovedValues = domx.nRemoved() + domy.nRemoved();
-				int nbSupportlessValues = supportlessx.size() + supportlessy.size();
+				int nbSupportlessValues = nacx.size() + supportlessy.size();
 				int minDomainSize = Math.min(domx.size(), domy.size());
 				if (nbRemovedValues < nbSupportlessValues && nbRemovedValues < minDomainSize)
 					collectThroughRemovedValues();
@@ -1020,10 +1037,10 @@ public class TableSmart extends ExtensionStructure {
 					for (int a = domy.lastRemoved(); a != -1; a = domy.prevRemoved(a)) {
 						int v = domy.toVal(a);
 						int b = domx.toIdxIfPresent(v);
-						if (b != -1 && supportlessx.contains(b))
+						if (b != -1 && nacx.contains(b))
 							tmp[cnt++] = b;
 					}
-					supportlessx.resetTo(tmp, cnt);
+					nacx.resetTo(tmp, cnt);
 				}
 				if (!scp[y].assigned()) {
 					int cnt = 0;
@@ -1049,7 +1066,7 @@ public class TableSmart extends ExtensionStructure {
 						int v = domSmall.toVal(a);
 						int b = domBig.toIdxIfPresent(v);
 						if (b != -1) {
-							supportlessx.remove(domSmall == domx ? a : b);
+							nacx.remove(domSmall == domx ? a : b);
 							supportlessy.remove(domSmall == domx ? b : a);
 						}
 					}
@@ -1058,7 +1075,7 @@ public class TableSmart extends ExtensionStructure {
 						int v = domSmall.toVal(a);
 						int b = domBig.toIdxIfPresent(v);
 						if (b != -1)
-							supportlessx.remove(domSmall == domx ? a : b);
+							nacx.remove(domSmall == domx ? a : b);
 					}
 				} else if (!scp[y].assigned()) {
 					for (int a = domSmall.first(); a != -1; a = domSmall.next(a)) {
@@ -1072,12 +1089,12 @@ public class TableSmart extends ExtensionStructure {
 
 			private void collectThroughSupportlessSets() {
 				if (!scp[x].assigned())
-					for (int i = supportlessx.limit; i >= 0; i--) {
-						int a = supportlessx.dense[i];
+					for (int i = nacx.limit; i >= 0; i--) {
+						int a = nacx.dense[i];
 						int v = domx.toVal(a);
 						int b = domy.toIdxIfPresent(v);
 						if (b != -1)
-							supportlessx.remove(a);
+							nacx.remove(a);
 					}
 				if (!scp[y].assigned())
 					for (int i = supportlessy.limit; i >= 0; i--) {
@@ -1094,7 +1111,7 @@ public class TableSmart extends ExtensionStructure {
 				supTimeLocal = supTime;
 				// three parameters for choosing the cheapest way of collecting
 				int nbRemovedValues = domx.nRemoved() + domy.nRemoved();
-				int nbSupportlessValues = supportlessx.size() + supportlessy.size();
+				int nbSupportlessValues = nacx.size() + supportlessy.size();
 				int minDomainSize = Math.min(domx.size(), domy.size());
 				if (nbRemovedValues < nbSupportlessValues && nbRemovedValues < minDomainSize)
 					collectThroughRemovedValues();
@@ -1152,9 +1169,9 @@ public class TableSmart extends ExtensionStructure {
 				if (!scp[x].assigned()) {
 					int cnt = 0;
 					for (int a = domx.first(); a != -1 && (strict ? a <= first2 + cst : a < first2 + cst); a = domx.next(a))
-						if (supportlessx.contains(a))
+						if (nacx.contains(a))
 							tmp[cnt++] = a;
-					supportlessx.resetTo(tmp, cnt);
+					nacx.resetTo(tmp, cnt);
 				}
 				if (!scp[y].assigned()) {
 					int cnt = 0;
@@ -1168,10 +1185,10 @@ public class TableSmart extends ExtensionStructure {
 			private void collectThroughSupportlessSets() {
 				int last1 = domx.last(), first2 = domy.first();
 				if (!scp[x].assigned())
-					for (int i = supportlessx.limit; i >= 0; i--) {
-						int a = supportlessx.dense[i];
+					for (int i = nacx.limit; i >= 0; i--) {
+						int a = nacx.dense[i];
 						if (strict ? a > first2 + cst : a >= first2 + cst)
-							supportlessx.remove(a);
+							nacx.remove(a);
 					}
 				if (!scp[y].assigned())
 					for (int i = supportlessy.limit; i >= 0; i--) {
@@ -1185,7 +1202,7 @@ public class TableSmart extends ExtensionStructure {
 				int last1 = domx.last(), first2 = domy.first();
 				if (!scp[x].assigned())
 					for (int a = domx.last(); a != -1 && (strict ? a > first2 + cst : a >= first2 + cst); a = domx.prev(a))
-						supportlessx.remove(a);
+						nacx.remove(a);
 				if (!scp[y].assigned())
 					for (int a = domy.first(); a != -1 && (strict ? last1 > a + cst : last1 >= a + cst); a = domy.next(a))
 						supportlessy.remove(a);
@@ -1196,7 +1213,7 @@ public class TableSmart extends ExtensionStructure {
 				supTimeLocal = supTime;
 				// three parameters for choosing the cheapest way of collecting
 				int roughNbInvalidValues = Math.max(domy.first() + cst - domx.first(), 0) + Math.max(domy.last() + cst - domx.last(), 0);
-				int nbSupportlessValues = supportlessx.size() + supportlessy.size();
+				int nbSupportlessValues = nacx.size() + supportlessy.size();
 				int roughNbValidValues = Math.min(domx.last(), domy.last()) + cst - domy.first() + domx.last() - Math.max(domx.first(), domy.first() + cst);
 				if (roughNbInvalidValues < nbSupportlessValues && roughNbInvalidValues < roughNbValidValues)
 					collectThroughInvalidValues();
@@ -1234,23 +1251,23 @@ public class TableSmart extends ExtensionStructure {
 		/**
 		 * Restriction of the form x <op1> y and x <op2> z ...
 		 */
-		final class RestrictionMultiple extends RestrictionSimple {
+		final class RestrictionMultiple extends Restriction {
 			/**
 			 * The restrictions involved in this multiple restriction. All involved restrictions are on the same variable
 			 */
-			protected RestrictionSimple[] involvedRestrictions;
+			protected Restriction[] involvedRestrictions;
 
 			protected int cnt;
 
-			protected RestrictionMultiple(int x, List<RestrictionSimple> restrictions) {
+			protected RestrictionMultiple(int x, List<Restriction> restrictions) {
 				super(x);
-				this.involvedRestrictions = restrictions.toArray(new RestrictionSimple[restrictions.size()]);
+				this.involvedRestrictions = restrictions.toArray(new Restriction[restrictions.size()]);
 				assert Stream.of(involvedRestrictions).allMatch(r -> r.x == x);
 			}
 
 			@Override
 			public boolean isValidFor(int a) {
-				for (RestrictionSimple restriction : involvedRestrictions)
+				for (Restriction restriction : involvedRestrictions)
 					if (!restriction.isValidFor(a))
 						return false;
 				return true;
@@ -1277,16 +1294,16 @@ public class TableSmart extends ExtensionStructure {
 				// we update the set of supportless idxs for vap
 				if (!scp[x].assigned())
 					for (int i = 0; i < cnt; i++)
-						supportlessx.remove(tmp[i]);
+						nacx.remove(tmp[i]);
 				// we update the set of supportless idxs for the other involved stars
-				for (RestrictionSimple restriction : involvedRestrictions)
+				for (Restriction restriction : involvedRestrictions)
 					if (restriction instanceof Rstr2)
 						((Rstr2) restriction).collectForVap2(cnt);
 			}
 
 			@Override
 			public boolean checkIndexes(int[] t) {
-				for (RestrictionSimple restriction : involvedRestrictions)
+				for (Restriction restriction : involvedRestrictions)
 					if (!restriction.checkIndexes(t))
 						return false;
 				return true;

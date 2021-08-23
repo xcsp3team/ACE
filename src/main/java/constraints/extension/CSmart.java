@@ -20,8 +20,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.xcsp.modeler.definitions.ICtr.ICtrSmart;
-
 import constraints.Constraint;
 import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
@@ -35,7 +33,7 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public final class CSmart extends ExtensionSpecific implements ICtrSmart {
+public final class CSmart extends ExtensionSpecific {
 
 	/**********************************************************************************************
 	 * Static

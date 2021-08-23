@@ -5,7 +5,7 @@ import constraints.ConstraintExtension;
 import utility.Kit;
 
 /**
- * This is the root class for the matrix forms of extension structures. Currently, 2-dimensional and 3-dimensional matrices are implemented.
+ * This is the root class for extension structures represented by matrix forms. Currently, 2-dimensional and 3-dimensional matrices are implemented.
  * 
  * @author Christophe Lecoutre
  *
@@ -16,13 +16,19 @@ public abstract class Matrix extends ExtensionStructure {
 		super(c);
 	}
 
-	public static class Matrix2D extends Matrix {
+	/**
+	 * A two-dimensional array for representing the semantics of a binary constraint
+	 */
+	public static final class Matrix2D extends Matrix {
 
 		@Override
 		public final boolean checkIndexes(int[] t) {
 			return supports[t[0]][t[1]];
 		}
 
+		/**
+		 * Supports[a][b] is 1 if the pair of value indexes (a,b) is a support of the binary constraint(s) registered with the structure
+		 */
 		protected boolean[][] supports;
 
 		public Matrix2D(ConstraintExtension c) {
@@ -30,7 +36,7 @@ public abstract class Matrix extends ExtensionStructure {
 			Kit.control(c.scp.length == 2);
 		}
 
-		public Matrix2D(ConstraintExtension c, Matrix2D matrix2D) {
+		public Matrix2D(ConstraintExtension c, Matrix2D matrix2D) { // called by reflection when cloning structures
 			this(c);
 			this.supports = Kit.cloneDeeply(matrix2D.supports);
 		}
@@ -71,13 +77,19 @@ public abstract class Matrix extends ExtensionStructure {
 		}
 	}
 
-	public static class Matrix3D extends Matrix {
+	/**
+	 * A three-dimensional array for representing the semantics of a ternary constraint
+	 */
+	public static final class Matrix3D extends Matrix {
 
 		@Override
 		public final boolean checkIndexes(int[] t) {
 			return supports[t[0]][t[1]][t[2]];
 		}
 
+		/**
+		 * Supports[a][b][c] is 1 if the triplet of value indexes (a,b,c) is a support of the ternary constraint(s) registered with the structure
+		 */
 		protected boolean[][][] supports;
 
 		public Matrix3D(ConstraintExtension c) {
@@ -85,7 +97,7 @@ public abstract class Matrix extends ExtensionStructure {
 			Kit.control(c.scp.length == 3);
 		}
 
-		public Matrix3D(ConstraintExtension c, Matrix3D matrix3D) {
+		public Matrix3D(ConstraintExtension c, Matrix3D matrix3D) { // called by reflection when cloning structures
 			this(c);
 			this.supports = Kit.cloneDeeply(matrix3D.supports);
 		}

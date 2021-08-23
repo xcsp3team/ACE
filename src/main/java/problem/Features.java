@@ -29,7 +29,7 @@ import dashboard.Output;
 import variables.Variable;
 
 /**
- * This class stores some information (features such as sizes of domains, types of constraints, etc.) about the problem (constraint network), and ways at
+ * This class stores some information (features such as sizes of domains, types of constraints, etc.) about the problem (constraint network), and ways of
  * displaying it.
  * 
  * @author Christophe Lecoutre
@@ -225,8 +225,8 @@ public final class Features {
 			constraints.add(c);
 			int arity = c.scp.length;
 			ctrArities.add(arity);
-			ctrTypes.add(c.getClass().getSimpleName()
-					+ (arity == 1 && !(c instanceof Extension1) ? "u" : (c instanceof ConstraintExtension ? "-" + c.extStructure().getClass().getSimpleName() : "")));
+			ctrTypes.add(c.getClass().getSimpleName() + (arity == 1 && !(c instanceof Extension1) ? "u"
+					: (c instanceof ConstraintExtension ? "-" + c.extStructure().getClass().getSimpleName() : "")));
 			if (c.extStructure() instanceof Table)
 				tableSizes.add(((Table) c.extStructure()).tuples.length);
 			if (c instanceof CSmart)

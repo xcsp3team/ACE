@@ -14,8 +14,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the root class for representing the structures to be used with extension constraints, also called table constraints. For example, this can be a
- * matrix (if the constraint is binary) or an MDD.
+ * This is the root class for representing the structures to be used with extension (table) constraints. For example, this can be a matrix (if the constraint is
+ * binary), a trie or an MDD.
  * 
  * @author Christophe Lecoutre
  *
@@ -32,6 +32,9 @@ public abstract class ExtensionStructure implements RegisteringCtrs {
 	 */
 	public boolean originalPositive;
 
+	/**
+	 * The list of constraints that have been registered with the structure
+	 */
 	private final List<Constraint> registeredCtrs = new ArrayList<>();
 
 	@Override

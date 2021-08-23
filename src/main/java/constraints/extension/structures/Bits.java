@@ -18,7 +18,7 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the class for the Bits form of extension structures, i.e., when bit vectors are used to represent supports and conflicts. Currently, this is only
+ * This is the class for extension structures represented by bits, i.e., when bit vectors are used to represent supports and conflicts. Currently, this is only
  * relevant for binary extension constraints.
  * 
  * @author Christophe Lecoutre
@@ -31,27 +31,27 @@ public final class Bits extends ExtensionStructure {
 	 *********************************************************************************************/
 
 	/**
-	 * Map used to share longs (seen as bit vectors) in order to save memory space
+	 * Map used to share longs (seen as parts of bit vectors) in order to save memory space
 	 */
 	public static final Map<LongArrayHashKey, long[]> map = Collections.synchronizedMap(new HashMap<LongArrayHashKey, long[]>(2000)); // hard coding
 
 	private static LongArrayHashKey hashKey = new LongArrayHashKey();
 
-	private static int saveSpace(long[][] sups, int id) {
+	private static int saveSpace(long[][] sups) {
 		int cnt = 0;
 		for (int i = 0; i < sups.length; i++) {
 			hashKey.t = sups[i];
-			long[] tt = null;
+			long[] t = null;
 			synchronized (map) {
-				tt = map.get(hashKey);
+				t = map.get(hashKey);
 			}
-			if (tt == null) {
+			if (t == null) {
 				synchronized (map) {
 					map.put(hashKey, sups[i]);
 				}
-				hashKey = null;
+				hashKey = new LongArrayHashKey();
 			} else {
-				sups[i] = tt;
+				sups[i] = t;
 				cnt++;
 			}
 		}
@@ -61,8 +61,8 @@ public final class Bits extends ExtensionStructure {
 	private static boolean saveSpace(Problem problem, long[][] sups0, long[][] sups1) {
 		if (problem.head.control.problem.shareBitVectors) {
 			int nBefore = problem.features.nSharedBitVectors;
-			problem.features.nSharedBitVectors += saveSpace(sups0, 1);
-			problem.features.nSharedBitVectors += saveSpace(sups1, 0);
+			problem.features.nSharedBitVectors += saveSpace(sups0);
+			problem.features.nSharedBitVectors += saveSpace(sups1);
 			return problem.features.nSharedBitVectors > nBefore;
 		}
 		return false;
@@ -126,15 +126,24 @@ public final class Bits extends ExtensionStructure {
 		return p == 0 ? sups0Filtered : sups1Filtered;
 	}
 
+	/**
+	 * Builds the filtered sequences of bit vectors
+	 */
+	private void buildFilters() {
+		this.sups0Filtered = Stream.of(sups0).map(t -> IntStream.range(0, t.length).filter(i -> t[i] != 0L).toArray()).toArray(int[][]::new);
+		this.sups1Filtered = Stream.of(sups1).map(t -> IntStream.range(0, t.length).filter(i -> t[i] != 0L).toArray()).toArray(int[][]::new);
+	}
+
 	public Bits(ConstraintExtension c) {
 		super(c);
 		Kit.control(c.scp.length == 2);
 	}
 
-	public Bits(ConstraintExtension c, Bits bits) {
+	public Bits(ConstraintExtension c, Bits bits) { // called by reflection when cloning structures
 		this(c);
 		this.sups0 = Kit.cloneDeeply(bits.sups0);
 		this.sups1 = Kit.cloneDeeply(bits.sups1);
+		buildFilters();
 		this.sharing = bits.sharing;
 	}
 
@@ -181,8 +190,7 @@ public final class Bits extends ExtensionStructure {
 			}
 		}
 		this.sharing = saveSpace(c.problem, sups0, sups1);
-		this.sups0Filtered = Stream.of(sups0).map(t -> IntStream.range(0, t.length).filter(i -> t[i] != 0L).toArray()).toArray(int[][]::new);
-		this.sups1Filtered = Stream.of(sups1).map(t -> IntStream.range(0, t.length).filter(i -> t[i] != 0L).toArray()).toArray(int[][]::new);
+		buildFilters();
 	}
 
 	@Override

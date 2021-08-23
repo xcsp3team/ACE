@@ -88,7 +88,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 			Kit.control(c1 instanceof ExtensionGeneric);
 			if (Kit.memory() > MEMORY_LIMIT)
 				return;
-			ConflictsStructure conflictsStructure = new ConflictsStructure(c1); // .initializeFrom(structure.originalTuples, structure.originalPositive);
+			ConflictsStructure conflictsStructure = new ConflictsStructure(c1);
 			for (Constraint c : structure.registeredCtrs()) {
 				c.conflictsStructure = conflictsStructure;
 				if (c != c1)

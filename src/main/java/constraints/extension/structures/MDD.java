@@ -1,6 +1,7 @@
 package constraints.extension.structures;
 
 import static org.xcsp.common.Constants.STAR;
+import static utility.Kit.control;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,8 +29,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the class for the MDD form of extension structures. All supports (allowed tuples) are recorded as paths in the Multi-valued Decision Diagram. Note
- * that tuples are recorded with indexes (of values).
+ * This is the class for extension structures represented by Multi-valued Decision Diagrams (MDDs). All supports (allowed tuples) are recorded as paths in the
+ * MDD. Note that tuples are recorded with indexes (of values).
  * 
  * @author Christophe Lecoutre
  */
@@ -234,10 +235,8 @@ public final class MDD extends ExtensionStructure {
 				if (sonsClasses != null)
 					for (int i = 0; i < sonsClasses.length; i++)
 						Kit.log.fine("class " + i + " => {" + Kit.join(sonsClasses[i]) + "}");
-				Kit.log.fine("nNotFFChilds=" + nSonsNotNodeF);
+				Kit.log.fine("nSonsNotNodeF=" + nSonsNotNodeF);
 			}
-			// if (similarChilds != null) for (int i = 0; i < similarChilds.length; i++)childs[similarChilds[i][0]].display(constraint, cnts);
-			// else
 			Stream.of(sons).filter(s -> s.id > id).forEach(s -> s.display(cnts, displayClasses));
 		}
 
@@ -246,7 +245,7 @@ public final class MDD extends ExtensionStructure {
 		}
 
 		public int displayTuples(Domain[] doms, int[] currTuple, int currLevel, int cnt) {
-			if (this == nodeT) { // && Kit.isArrayContainingValuesAllDifferent(currentTuple)) {
+			if (this == nodeT) {
 				Kit.log.info(Kit.join(currTuple));
 				cnt++;
 			}
@@ -309,6 +308,8 @@ public final class MDD extends ExtensionStructure {
 	 */
 	public Node root;
 
+	public final int arity;
+
 	/**
 	 * The number of nodes in the MDD (used as a cache)
 	 */
@@ -332,6 +333,7 @@ public final class MDD extends ExtensionStructure {
 
 	public MDD(CMDD c) {
 		super(c);
+		this.arity = c.scp.length;
 	}
 
 	public MDD(CMDD c, Node root) {
@@ -339,9 +341,56 @@ public final class MDD extends ExtensionStructure {
 		this.root = root;
 	}
 
-	public MDD(CMDD c, Automaton automata) {
+	private Map<String, List<Transition>> buildNextTransitions(Automaton automaton) {
+		Map<String, List<Transition>> map = new HashMap<>();
+		map.put(automaton.startState, new ArrayList<>());
+		for (String s : automaton.finalStates)
+			map.put(s, new ArrayList<>());
+		for (Transition t : automaton.transitions) {
+			if (!map.containsKey(t.start))
+				map.put(t.start, new ArrayList<>());
+			if (!map.containsKey(t.end))
+				map.put(t.end, new ArrayList<>());
+		}
+		for (Transition t : automaton.transitions)
+			map.get(t.start).add(t);
+		return map;
+	}
+
+	public MDD(CMDD c, Automaton automaton) {
 		this(c);
-		storeTuplesFromAutomata(automata, c.scp.length, Stream.of(c.scp).map(x -> x.dom).toArray(Domain[]::new));
+		control(arity > 1 && IntStream.range(1, arity).allMatch(i -> c.doms[i].typeIdentifier() == c.doms[0].typeIdentifier()));
+		this.root = new Node(0, c.doms[0].initSize(), true, automaton.startState);
+		Map<String, List<Transition>> nextTrs = buildNextTransitions(automaton);
+		Map<String, Node> prevs = new HashMap<>(), nexts = new HashMap<>();
+		prevs.put((String) root.state, root);
+		for (int i = 0; i < arity; i++) {
+			for (Node node : prevs.values()) {
+				for (Transition tr : nextTrs.get(node.state)) {
+					int v = Utilities.safeInt((Long) tr.value);
+					int a = c.doms[i].toIdx(v);
+					if (a != -1) {
+						String nextState = tr.end;
+						if (i == arity - 1) {
+							node.sons[a] = Utilities.indexOf(nextState, automaton.finalStates) != -1 ? nodeT : nodeF;
+						} else {
+							// MDDNode nextNode = nexts.computeIfAbsent(nextState, k -> new MDDNode(this, i + 1, domains[i].initSize(), true,
+							// nextState)); // pb with i not final
+							Node nextNode = nexts.get(nextState);
+							if (nextNode == null)
+								nexts.put(nextState, nextNode = new Node(i + 1, c.doms[i].initSize(), true, nextState));
+							node.sons[a] = nextNode;
+						}
+					}
+				}
+			}
+			Map<String, Node> tmp = prevs;
+			prevs = nexts;
+			nexts = tmp;
+			nexts.clear();
+		}
+		root.canReachNodeT();
+		finalizeStoreTuples();
 	}
 
 	public MDD(CMDD c, Transition[] transitions) {
@@ -460,53 +509,41 @@ public final class MDD extends ExtensionStructure {
 		return this;
 	}
 
-	private Map<String, List<Transition>> buildNextTransitions(Automaton automata) {
-		Map<String, List<Transition>> map = new HashMap<>();
-		map.put(automata.startState, new ArrayList<>());
-		Stream.of(automata.finalStates).forEach(s -> map.put(s, new ArrayList<>()));
-		Stream.of(automata.transitions).forEach(t -> {
-			map.put(t.start, new ArrayList<>());
-			map.put(t.end, new ArrayList<>());
-		});
-		Stream.of(automata.transitions).forEach(t -> map.get(t.start).add(t));
-		return map;
-	}
-
-	public MDD storeTuplesFromAutomata(Automaton automata, int arity, Domain[] domains) {
-		Kit.control(arity > 1 && IntStream.range(1, domains.length).allMatch(i -> domains[i].typeIdentifier() == domains[0].typeIdentifier()));
-		Map<String, List<Transition>> nextTrs = buildNextTransitions(automata);
-		this.root = new Node(0, domains[0].initSize(), true, automata.startState);
-		Map<String, Node> prevs = new HashMap<>(), nexts = new HashMap<>();
-		prevs.put((String) root.state, root);
-		for (int i = 0; i < arity; i++) {
-			for (Node node : prevs.values()) {
-				for (Transition tr : nextTrs.get(node.state)) {
-					int v = Utilities.safeInt((Long) tr.value);
-					int a = domains[i].toIdx(v);
-					if (a != -1) {
-						String nextState = tr.end;
-						if (i == arity - 1) {
-							node.sons[a] = Utilities.indexOf(nextState, automata.finalStates) != -1 ? nodeT : nodeF;
-						} else {
-							// MDDNode nextNode = nexts.computeIfAbsent(nextState, k -> new MDDNode(this, i + 1, domains[i].initSize(), true,
-							// nextState)); // pb with i not final
-							Node nextNode = nexts.get(nextState);
-							if (nextNode == null)
-								nexts.put(nextState, nextNode = new Node(i + 1, domains[i].initSize(), true, nextState));
-							node.sons[a] = nextNode;
-						}
-					}
-				}
-			}
-			Map<String, Node> tmp = prevs;
-			prevs = nexts;
-			nexts = tmp;
-			nexts.clear();
-		}
-		root.canReachNodeT();
-		finalizeStoreTuples();
-		return this;
-	}
+	// public MDD storeTuplesFromAutomata(Automaton automaton, int arity, Domain[] domains) {
+	// Kit.control(arity > 1 && IntStream.range(1, domains.length).allMatch(i -> domains[i].typeIdentifier() == domains[0].typeIdentifier()));
+	// Map<String, List<Transition>> nextTrs = buildNextTransitions(automaton);
+	// this.root = new Node(0, domains[0].initSize(), true, automaton.startState);
+	// Map<String, Node> prevs = new HashMap<>(), nexts = new HashMap<>();
+	// prevs.put((String) root.state, root);
+	// for (int i = 0; i < arity; i++) {
+	// for (Node node : prevs.values()) {
+	// for (Transition tr : nextTrs.get(node.state)) {
+	// int v = Utilities.safeInt((Long) tr.value);
+	// int a = domains[i].toIdx(v);
+	// if (a != -1) {
+	// String nextState = tr.end;
+	// if (i == arity - 1) {
+	// node.sons[a] = Utilities.indexOf(nextState, automaton.finalStates) != -1 ? nodeT : nodeF;
+	// } else {
+	// // MDDNode nextNode = nexts.computeIfAbsent(nextState, k -> new MDDNode(this, i + 1, domains[i].initSize(), true,
+	// // nextState)); // pb with i not final
+	// Node nextNode = nexts.get(nextState);
+	// if (nextNode == null)
+	// nexts.put(nextState, nextNode = new Node(i + 1, domains[i].initSize(), true, nextState));
+	// node.sons[a] = nextNode;
+	// }
+	// }
+	// }
+	// }
+	// Map<String, Node> tmp = prevs;
+	// prevs = nexts;
+	// nexts = tmp;
+	// nexts.clear();
+	// }
+	// root.canReachNodeT();
+	// finalizeStoreTuples();
+	// return this;
+	// }
 
 	// coeffs, and limits (either a Range or an int array) from the knapsack constraint, and values are the possible values at each level
 	public MDD storeTuplesFromKnapsack(int[] coeffs, Object limits, int[][] values) {
@@ -588,11 +625,8 @@ public final class MDD extends ExtensionStructure {
 				splitSets[i].clear();
 				splitSets[i] = null;
 			}
-			for (int i = 0; i < splitTuples.length; i++) {
+			for (int i = 0; i < splitTuples.length; i++)
 				System.out.println("i=" + i + " size=" + splitTuples[i].length);
-				// for (int[] t : splitTuples[i])
-				// System.out.println(Toolkit.buildStringFromInts(t));
-			}
 		}
 
 		private int getAuxiliaryLevelNodeId(int nodeId, int splitLevel) {
@@ -647,13 +681,11 @@ public final class MDD extends ExtensionStructure {
 		}
 	}
 
-	public int[][][] buildCompressedTable() {
-		// root.buildChildClasses();
-		Constraint ctr = firstRegisteredCtr();
+	public int[][][] toCompressedTable() {
+		// root.buildSonsClasses();
 		LinkedList<int[][]> list = new LinkedList<>();
-		root.collectCompressedTuples(list, new int[ctr.scp.length][], 0);
-		int[][][] compressedTuples = Kit.intArray3D(list);
-		return compressedTuples;
+		root.collectCompressedTuples(list, new int[firstRegisteredCtr().scp.length][], 0);
+		return Kit.intArray3D(list);
 	}
 
 	@SuppressWarnings("unused")

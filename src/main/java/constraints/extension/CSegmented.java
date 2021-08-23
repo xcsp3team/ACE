@@ -16,7 +16,7 @@ import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.TableSegmented;
 import constraints.extension.structures.TableSegmented.SegmentedTuple;
-import constraints.extension.structures.TableSegmented.SegmentedTuple.RestrictionTable;
+import constraints.extension.structures.TableSegmented.SegmentedTuple.Restriction;
 import problem.Problem;
 import propagation.StrongConsistency;
 import sets.SetDenseReversible;
@@ -51,7 +51,7 @@ public final class CSegmented extends ExtensionSpecific {
 		set = new SetDenseReversible(segmentedTuples.length, problem.variables.length + 1);
 		Arrays.fill((lastSizesStack = new int[problem.variables.length + 1][scp.length])[0], UNINITIALIZED_VALUE);
 		for (SegmentedTuple st : segmentedTuples)
-			for (RestrictionTable rt : st.restrictions)
+			for (Restriction rt : st.restrictions)
 				rt.onConstructionProblemFinished(this.problem);
 	}
 
@@ -62,7 +62,7 @@ public final class CSegmented extends ExtensionSpecific {
 
 		for (int i = set.limit; i >= 0; i--) {
 			SegmentedTuple splitTuple = segmentedTuples[set.dense[i]];
-			for (RestrictionTable restriction : splitTuple.restrictions)
+			for (Restriction restriction : splitTuple.restrictions)
 				restriction.restoreBefore(depth);
 		}
 

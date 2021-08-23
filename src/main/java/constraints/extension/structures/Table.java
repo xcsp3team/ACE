@@ -15,13 +15,12 @@ import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
 import constraints.ConstraintExtension;
-import problem.Problem;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the class for the tabular forms of extension structures. All supports (allowed tuples) or all conflicts (disallowed tuples) are simply recorded in a
+ * This is the class for the tabular forms of extension structures. All supports (allowed tuples) or all conflicts (disallowed tuples) are simply recorded in an
  * array. Note that tuples are recorded with indexes (of values).
  * 
  * @author Christophe Lecoutre
@@ -37,6 +36,17 @@ public class Table extends ExtensionStructure {
 	 */
 	private static Map<String, int[][]> cache = new HashMap<String, int[][]>();
 
+	/**
+	 * Returns a starred table corresponding to the specified Element constraint
+	 * 
+	 * @param list
+	 *            the parameter 'list' (vector) of the Element constraint
+	 * @param index
+	 *            the parameter 'index' of the Element constraint
+	 * @param value
+	 *            the parameter 'value' of the Element constraint
+	 * @return a starred table corresponding to the specified Element constraint
+	 */
 	public static int[][] starredElement(Variable[] list, Variable index, int value) {
 		control(Variable.areAllDistinct(list) && !Kit.isPresent(index, list));
 		control(index.dom.areInitValuesExactly(new Range(list.length)) && Variable.areAllDomainsContainingValue(list, value));
@@ -44,6 +54,17 @@ public class Table extends ExtensionStructure {
 				.toArray(int[][]::new);
 	}
 
+	/**
+	 * Returns a starred table corresponding to the specified Element constraint
+	 * 
+	 * @param list
+	 *            the parameter 'list' (vector) of the Element constraint
+	 * @param index
+	 *            the parameter 'index' of the Element constraint
+	 * @param value
+	 *            the parameter 'value' of the Element constraint
+	 * @return a starred table corresponding to the specified Element constraint
+	 */
 	public static int[][] starredElement(Variable[] list, Variable index, Variable value) {
 		control(Variable.areAllDistinct(list) && !Kit.isPresent(index, list) && index != value);
 		control(index.dom.areInitValuesExactly(new Range(list.length)));
@@ -73,18 +94,18 @@ public class Table extends ExtensionStructure {
 		String key = "DistinctVectors " + Variable.signatureFor(t1) + " " + Variable.signatureFor(t2);
 		int[][] tuples = cache.get(key);
 		if (tuples == null) {
-			int k = t1.length;
+			int half = t1.length;
 			List<int[]> list = new ArrayList<int[]>();
-			for (int i = 0; i < k; i++) {
+			for (int i = 0; i < half; i++) {
 				Domain dom1 = t1[i].dom, dom2 = t2[i].dom;
 				for (int a = dom1.first(); a != -1; a = dom1.next(a)) {
 					int va = dom1.toVal(a);
 					for (int b = dom2.first(); b != -1; b = dom2.next(b)) {
 						int vb = dom2.toVal(b);
 						if (va != vb) {
-							int[] tuple = Kit.repeat(STAR, 2 * k);
+							int[] tuple = Kit.repeat(STAR, 2 * half);
 							tuple[i] = va;
-							tuple[i + k] = vb;
+							tuple[i + half] = vb;
 							list.add(tuple);
 						}
 					}
@@ -96,23 +117,23 @@ public class Table extends ExtensionStructure {
 		return tuples;
 	}
 
-	public static int[][] starredLexicographicLt(Problem problem, Variable[] t1, Variable[] t2) {
+	public static int[][] starredLexicographicLt(Variable[] t1, Variable[] t2) {
 		control(t1.length == t2.length);
 		String key = "LexicographicLt " + Variable.signatureFor(t1) + " " + Variable.signatureFor(t2);
 		int[][] tuples = cache.get(key);
 		if (tuples == null) {
-			int k = t1.length;
+			int half = t1.length;
 			List<int[]> list = new ArrayList<int[]>();
-			for (int i = 0; i < k; i++) {
+			for (int i = 0; i < half; i++) {
 				Domain dom1 = t1[i].dom, dom2 = t2[i].dom;
 				for (int a = dom1.first(); a != -1; a = dom1.next(a)) {
 					int va = dom1.toVal(a);
 					for (int b = dom2.first(); b != -1; b = dom2.next(b)) {
 						int vb = dom2.toVal(b);
-						if (va != vb) {
-							int[] tuple = Kit.repeat(STAR, 2 * k);
+						if (va < vb) {
+							int[] tuple = Kit.repeat(STAR, 2 * half);
 							tuple[i] = va;
-							tuple[i + k] = vb;
+							tuple[i + half] = vb;
 							list.add(tuple);
 						}
 					}
@@ -220,7 +241,7 @@ public class Table extends ExtensionStructure {
 	}
 
 	/**********************************************************************************************
-	 * Handling subclasses (only for some algorithms like va (valid-allowed))
+	 * Handling subclasses (only for some algorithms like ExtensionVA (valid-allowed))
 	 *********************************************************************************************/
 
 	/**

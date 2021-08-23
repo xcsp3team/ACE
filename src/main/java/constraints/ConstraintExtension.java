@@ -310,7 +310,6 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		if (!onlyConflictsStructure && extStructure.registeredCtrs().size() > 1) {
 			extStructure.unregister(this);
 			extStructure = Reflector.buildObject(extStructure.getClass().getSimpleName(), ExtensionStructure.class, this, extStructure);
-			// IF NECESSARY, add another constructor in the class instance of ExtensionStructure
 		}
 	}
 

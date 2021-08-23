@@ -1,5 +1,11 @@
 package interfaces;
 
+/**
+ * These are the interfaces used as tags.
+ * 
+ * * @author Christophe Lecoutre
+ * 
+ */
 public interface Tags {
 
 	/**
@@ -27,38 +33,38 @@ public interface Tags {
 	}
 
 	/**
-	 * Tag for indicating that a constraint does not guarantee enforcing (G)AC
+	 * Tag for indicating that a constraint guarantees enforcing (G)AC
 	 */
 	interface TagAC {
 	}
 
 	/**
-	 * Tag for indicating that a constraint guarantees enforcing (G)AC
+	 * Tag for indicating that a constraint does not guarantee enforcing (G)AC
 	 */
 	interface TagNotAC {
 	}
 
 	/**
-	 * Tag for indicating that a table constraint is negative (i.e., involves conflicts)
+	 * Tag for indicating that a table constraint is negative (i.e., contains conflicts)
 	 */
 	interface TagNegative {
 	}
 
 	/**
-	 * Tag for indicating that a table constraint is positive (i.., involves supports)
+	 * Tag for indicating that a table constraint is positive (i.e., contains supports)
 	 */
 	interface TagPositive {
 	}
 
 	/**
-	 * Tag for indicating that a table constraint is starred (i.e., involves *)
+	 * Tag for indicating that a table constraint is starred (i.e., contains *)
 	 *
 	 */
 	interface TagStarred {
 	}
 
 	/**
-	 * Tag for indicating that an object (e.g., an heuristic) aims at maximizing something
+	 * Tag for indicating that an object (e.g., an heuristic) aims at maximizing an expression (variable, sum, maximum, etc.)
 	 */
 	interface TagMaximize {
 	}

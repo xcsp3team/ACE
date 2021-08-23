@@ -1230,8 +1230,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 		if (head.control.global.smartTable)
 			return post(CSmart.buildDistinctVectors(this, list1, list2));
 		return api.disjunction(IntStream.range(0, list1.length).mapToObj(i -> api.ne(list1[i], list2[i])));
-
-		// return extension(vars(list1, list2), Table.shortTuplesFordNotEqualVectors(list1, list2), true); // pb if several occurrences of the same variable
+		// return extension(vars(list1, list2), Table.starredDistinctVectors(list1, list2), true); // TODO problem if several occurrences of the same variable
 	}
 
 	/**

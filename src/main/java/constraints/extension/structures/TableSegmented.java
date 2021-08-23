@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints.extension.structures;
 
 import static org.xcsp.common.Constants.STAR;
@@ -28,26 +20,45 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This class denote any constraint defined in extension. All supports (allowed tuples) or all conflicts (disallowed tuples) are recorded in a list. Note that
- * tuples are recorded as indexes (of values).
+ * This is the class for representing segmented tables.
+ * 
+ * @author Christophe Lecoutre
  */
 public class TableSegmented extends ExtensionStructure {
 
+	@Override
+	public boolean checkIndexes(int[] t) {
+		for (SegmentedTuple segmentedTuple : segmentedTuples)
+			if (segmentedTuple.contains(t))
+				return true;
+		return false;
+	}
+
 	public static final class SegmentedTuple {
 
-		/** The scope of the constraint on which the split tuple is defined. */
+		/**
+		 * The scope of the constraint on which the segmented tuple is defined.
+		 */
 		private Variable[] scp;
 
-		/** The tuple serving as basis for this split tuple. */
+		/**
+		 * The tuple serving as basis for this segmented tuple.
+		 */
 		private int[] prefixWithValues;
 
-		/** The tuple serving as basis for this split tuple, with indices instead of values. */
+		/**
+		 * The tuple serving as basis for this segmented tuple, with indices instead of values.
+		 */
 		private int[] prefix;
 
-		/** The set of restrictions associated with this split tuple. */
-		public final RestrictionTable[] restrictions;
+		/**
+		 * The set of restrictions associated with this segmented tuple.
+		 */
+		public final Restriction[] restrictions;
 
-		/** unsupported[x] gives the sparse set of (value) indexes for which no support has been found yet. */
+		/**
+		 * unsupported[x] gives the sparse set of (value) indexes for which no support has been found yet.
+		 */
 		private SetSparse[] unsupported;
 
 		/**
@@ -56,19 +67,19 @@ public class TableSegmented extends ExtensionStructure {
 		 */
 		private boolean[][] globalac;
 
-		public SegmentedTuple(int[] prefixWithValues, RestrictionTable[] restrictions) {
+		public SegmentedTuple(int[] prefixWithValues, Restriction[] restrictions) {
 			this.prefixWithValues = prefixWithValues;
-			this.restrictions = restrictions == null ? new RestrictionTable[0] : restrictions;
+			this.restrictions = restrictions == null ? new Restriction[0] : restrictions;
 		}
 
-		public void attach(CSegmented ctr) {
-			this.scp = ctr.scp;
+		public void attach(CSegmented c) {
+			this.scp = c.scp;
 			this.prefixWithValues = prefixWithValues != null ? prefixWithValues : Kit.repeat(STAR, scp.length);
 			this.prefix = IntStream.range(0, scp.length).map(i -> prefixWithValues[i] == STAR ? STAR : scp[i].dom.toIdx(prefixWithValues[i])).toArray();
-			this.unsupported = ctr.unsupported;
+			this.unsupported = c.unsupported;
 			assert Variable.areSortedDomainsIn(scp);
-			this.globalac = new boolean[ctr.scp.length][];
-			for (RestrictionTable restriction : restrictions)
+			this.globalac = new boolean[c.scp.length][];
+			for (Restriction restriction : restrictions)
 				for (int i = 0; i < restriction.subscp.length; i++) {
 					restriction.positionsInScp = Stream.of(restriction.subscp).mapToInt(x -> Utilities.indexOf(x, scp)).toArray();
 					restriction.positionsInSubscp = Stream.of(scp).mapToInt(x -> Utilities.indexOf(x, restriction.subscp)).toArray();
@@ -77,13 +88,13 @@ public class TableSegmented extends ExtensionStructure {
 		}
 
 		/**
-		 * Returns true iff the the split tuple "contains" the specified tuple
+		 * Returns true iff the segmented tuple "contains" the specified tuple
 		 */
 		public boolean contains(int[] tuple) {
 			for (int i = 0; i < tuple.length; i++)
 				if (prefix[i] != STAR && prefix[i] != tuple[i])
 					return false;
-			for (RestrictionTable restriction : restrictions)
+			for (Restriction restriction : restrictions)
 				if (!restriction.contains(tuple))
 					return false;
 			return true;
@@ -99,7 +110,7 @@ public class TableSegmented extends ExtensionStructure {
 				if (a != STAR && !scp[x].dom.contains(a))
 					return false;
 			}
-			for (RestrictionTable restriction : restrictions)
+			for (Restriction restriction : restrictions)
 				if (restriction.isValid(sVal, sValSize) == false)
 					return false;
 			return true;
@@ -109,7 +120,7 @@ public class TableSegmented extends ExtensionStructure {
 		 * Collect supported indexes for the specified set of positions to consider.
 		 */
 		public final int collect(int[] sSup, int sSupSize) {
-			for (RestrictionTable restriction : restrictions)
+			for (Restriction restriction : restrictions)
 				restriction.collect(sSup, sSupSize);
 			for (int i = sSupSize - 1; i >= 0; i--) {
 				int x = sSup[i];
@@ -140,7 +151,7 @@ public class TableSegmented extends ExtensionStructure {
 			return s + " : " + Stream.of(restrictions).map(r -> r.toString()).collect(Collectors.joining(", "));
 		}
 
-		public static class RestrictionTable implements ObserverOnBacktracksSystematic {
+		public static final class Restriction implements ObserverOnBacktracksSystematic {
 
 			@Override
 			public void restoreBefore(int depth) {
@@ -179,7 +190,7 @@ public class TableSegmented extends ExtensionStructure {
 				this.set = new SetDenseReversible(subtable.length, pb.variables.length + 1);
 			}
 
-			public RestrictionTable(Variable[] subscp, int[][] subtable) {
+			public Restriction(Variable[] subscp, int[][] subtable) {
 				this.subscp = subscp;
 				this.subdoms = Stream.of(subscp).map(x -> x.dom).toArray(Domain[]::new);
 				this.subtable = subtable;
@@ -270,29 +281,21 @@ public class TableSegmented extends ExtensionStructure {
 		}
 	}
 
-	public final SegmentedTuple[] splitTuples;
+	public final SegmentedTuple[] segmentedTuples;
+
+	public TableSegmented(ConstraintExtension c, SegmentedTuple[] segmentedTuples) {
+		super(c);
+		this.segmentedTuples = segmentedTuples;
+	}
 
 	@Override
 	public void storeTuples(int[][] tuples, boolean positive) {
 		throw new AssertionError();
 	}
 
-	public TableSegmented(ConstraintExtension c, SegmentedTuple[] splitTuples) {
-		super(c);
-		this.splitTuples = splitTuples;
-	}
-
-	@Override
-	public boolean checkIndexes(int[] t) {
-		for (SegmentedTuple splitTuple : splitTuples)
-			if (splitTuple.contains(t))
-				return true;
-		return false;
-	}
-
 	@Override
 	public String toString() {
-		return "Split Tuples : " + Kit.join(splitTuples);
+		return "Split Tuples : " + Kit.join(segmentedTuples);
 	}
 
 }
