@@ -230,7 +230,7 @@ public final class Features {
 			if (c.extStructure() instanceof Table)
 				tableSizes.add(((Table) c.extStructure()).tuples.length);
 			if (c instanceof CSmart)
-				tableSizes.add(((TableSmart) c.extStructure()).smartTuples.length);
+				tableSizes.add(((TableSmart) c.extStructure()).hybridTuples.length);
 			return num;
 		}
 

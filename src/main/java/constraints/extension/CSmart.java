@@ -24,7 +24,7 @@ import constraints.Constraint;
 import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.TableSmart;
-import constraints.extension.structures.TableSmart.SmartTuple;
+import constraints.extension.structures.TableSmart.HybridTuple;
 import problem.Problem;
 import propagation.StrongConsistency;
 import sets.SetDenseReversible;
@@ -40,83 +40,84 @@ public final class CSmart extends ExtensionSpecific {
 	 *********************************************************************************************/
 
 	public static Constraint buildAllEqual(Problem pb, Variable[] list) {
-		SmartTuple st = new SmartTuple(IntStream.range(1, list.length).mapToObj(i -> eq(list[0], list[i])).collect(Collectors.toList()));
+		HybridTuple st = new HybridTuple(IntStream.range(1, list.length).mapToObj(i -> eq(list[0], list[i])).collect(Collectors.toList()));
 		return new CSmart(pb, list, st);
 	}
 
 	public static Constraint buildNotAllEqual(Problem pb, Variable[] list) {
-		SmartTuple[] sts = IntStream.range(1, list.length).mapToObj(i -> new SmartTuple(ne(list[0], list[i]))).toArray(SmartTuple[]::new);
+		HybridTuple[] sts = IntStream.range(1, list.length).mapToObj(i -> new HybridTuple(ne(list[0], list[i]))).toArray(HybridTuple[]::new);
 		return new CSmart(pb, list, sts);
 	}
 
 	public static Constraint buildAtMost1(Problem pb, Variable[] list, Variable value) {
 		Kit.control(!Kit.isPresent(value, list), () -> "Not handled for the moment");
-		SmartTuple[] smartTuples = IntStream.range(0, list.length)
+		HybridTuple[] smartTuples = IntStream.range(0, list.length)
 				.mapToObj(
-						i -> new SmartTuple(IntStream.range(0, list.length).filter(j -> j != i).mapToObj(j -> ne(value, list[j])).collect(Collectors.toList())))
-				.toArray(SmartTuple[]::new);
+						i -> new HybridTuple(IntStream.range(0, list.length).filter(j -> j != i).mapToObj(j -> ne(value, list[j])).collect(Collectors.toList())))
+				.toArray(HybridTuple[]::new);
 		return new CSmart(pb, pb.distinctSorted(pb.vars(list, value)), smartTuples);
 	}
 
-	public static Constraint buildElement(Problem pb, Variable[] list, Variable index, Variable value) {
-		Kit.control(index.dom.firstValue() == 0 && !Kit.isPresent(value, list), () -> "Not handled for the moment");
-		SmartTuple[] sts = IntStream.range(0, list.length).mapToObj(i -> new SmartTuple(eq(index, i), eq(list[i], value))).toArray(SmartTuple[]::new);
-		return new CSmart(pb, pb.distinctSorted(pb.vars(list, index, value)), sts);
+	public static Constraint element(Problem pb, Variable[] list, Variable index, Variable value) {
+		Variable[] scp = pb.distinct(pb.vars(list, index, value));
+		Kit.control(index.dom.firstValue() == 0 && scp.length == list.length + 2, () -> "Not handled for the moment");
+		Stream<HybridTuple> sts = IntStream.range(0, list.length).mapToObj(i -> new HybridTuple(eq(index, i), eq(list[i], value)));
+		return new CSmart(pb, scp, sts);
 	}
 
 	public static Constraint buildMinimum(Problem pb, Variable[] list, Variable min) {
 		Kit.control(!Kit.isPresent(min, list), () -> "Not handled for the moment");
-		SmartTuple[] smartTuples = IntStream.range(0, list.length)
-				.mapToObj(i -> new SmartTuple(
+		HybridTuple[] smartTuples = IntStream.range(0, list.length)
+				.mapToObj(i -> new HybridTuple(
 						IntStream.range(0, list.length).mapToObj(j -> j != i ? le(list[i], list[j]) : eq(list[i], min)).collect(Collectors.toList())))
-				.toArray(SmartTuple[]::new);
+				.toArray(HybridTuple[]::new);
 		return new CSmart(pb, pb.distinctSorted(pb.vars(list, min)), smartTuples);
 	}
 
 	public static Constraint buildMaximum(Problem pb, Variable[] list, Variable max) {
 		Kit.control(!Kit.isPresent(max, list), () -> "Not handled for the moment");
-		SmartTuple[] smartTuples = IntStream.range(0, list.length)
-				.mapToObj(i -> new SmartTuple(
+		HybridTuple[] smartTuples = IntStream.range(0, list.length)
+				.mapToObj(i -> new HybridTuple(
 						IntStream.range(0, list.length).mapToObj(j -> j != i ? ge(list[i], list[j]) : eq(list[i], max)).collect(Collectors.toList())))
-				.toArray(SmartTuple[]::new);
+				.toArray(HybridTuple[]::new);
 		return new CSmart(pb, pb.distinctSorted(pb.vars(list, max)), smartTuples);
 	}
 
 	public static Constraint buildLexicographicL(Problem pb, Variable[] t1, Variable[] t2, boolean strict) {
 		Kit.control(t1.length == t2.length);
-		SmartTuple[] smartTuples = IntStream.range(0, t1.length)
-				.mapToObj(i -> new SmartTuple(IntStream.range(0, i + 1)
+		HybridTuple[] smartTuples = IntStream.range(0, t1.length)
+				.mapToObj(i -> new HybridTuple(IntStream.range(0, i + 1)
 						.mapToObj(j -> j < i ? eq(t1[j], t2[j]) : i == t1.length - 1 ? le(t1[i], t2[i]) : lt(t1[i], t2[i])).collect(Collectors.toList())))
-				.toArray(SmartTuple[]::new);
+				.toArray(HybridTuple[]::new);
 		return new CSmart(pb, pb.distinctSorted(pb.vars(t1, t2)), smartTuples);
 	}
 
 	public static Constraint buildNoOverlap(Problem pb, Variable x1, Variable x2, int w1, int w2) {
-		SmartTuple st1 = new SmartTuple(ge(x2, add(x1, w1))); // x2 >= x1 + w1
-		SmartTuple st2 = new SmartTuple(ge(x1, add(x2, w2))); // x1 >= x2 + w2
+		HybridTuple st1 = new HybridTuple(ge(x2, add(x1, w1))); // x2 >= x1 + w1
+		HybridTuple st2 = new HybridTuple(ge(x1, add(x2, w2))); // x1 >= x2 + w2
 		return new CSmart(pb, pb.vars(x1, x2), st1, st2);
 	}
 
 	public static Constraint buildNoOverlap(Problem pb, Variable x1, Variable y1, Variable x2, Variable y2, int w1, int h1, int w2, int h2) {
-		SmartTuple st1 = new SmartTuple(ge(x2, add(x1, w1))); // x2 >= x1 + w1
-		SmartTuple st2 = new SmartTuple(ge(x1, add(x2, w2))); // x1 >= x2 + w2
-		SmartTuple st3 = new SmartTuple(ge(y2, add(y1, h1))); // y2 >= y1 + h1
-		SmartTuple st4 = new SmartTuple(ge(y1, add(y2, h2))); // y1 >= y2 + h2
+		HybridTuple st1 = new HybridTuple(ge(x2, add(x1, w1))); // x2 >= x1 + w1
+		HybridTuple st2 = new HybridTuple(ge(x1, add(x2, w2))); // x1 >= x2 + w2
+		HybridTuple st3 = new HybridTuple(ge(y2, add(y1, h1))); // y2 >= y1 + h1
+		HybridTuple st4 = new HybridTuple(ge(y1, add(y2, h2))); // y1 >= y2 + h2
 		return new CSmart(pb, pb.vars(x1, y1, x2, y2), st1, st2, st3, st4);
 	}
 
 	public static Constraint buildNoOverlap(Problem pb, Variable x1, Variable y1, Variable x2, Variable y2, Variable w1, Variable h1, Variable w2,
 			Variable h2) {
 		Kit.control(w1.dom.size() == 2 && h1.dom.size() == 2 && w2.dom.size() == 2 && h2.dom.size() == 2);
-		SmartTuple st1 = new SmartTuple(eq(w1, w1.dom.firstValue()), ge(x2, add(x1, w1.dom.firstValue())));
-		SmartTuple st2 = new SmartTuple(eq(w1, w1.dom.lastValue()), ge(x2, add(x1, w1.dom.lastValue())));
-		SmartTuple st3 = new SmartTuple(eq(w2, w2.dom.firstValue()), ge(x1, add(x2, w2.dom.firstValue())));
-		SmartTuple st4 = new SmartTuple(eq(w2, w2.dom.lastValue()), ge(x1, add(x2, w2.dom.lastValue())));
-		SmartTuple st5 = new SmartTuple(eq(h1, h1.dom.firstValue()), ge(y2, add(y1, h1.dom.firstValue())));
-		SmartTuple st6 = new SmartTuple(eq(h1, h1.dom.lastValue()), ge(y2, add(y1, h1.dom.lastValue())));
-		SmartTuple st7 = new SmartTuple(eq(h2, h2.dom.firstValue()), ge(y1, add(y2, h2.dom.firstValue())));
-		SmartTuple st8 = new SmartTuple(eq(h2, h2.dom.lastValue()), ge(y1, add(y2, h2.dom.lastValue())));
-		return new CSmart(pb, pb.vars(x1, y1, x2, y2, w1, h1, w2, h2), new SmartTuple[] { st1, st2, st3, st4, st5, st6, st7, st8 });
+		HybridTuple st1 = new HybridTuple(eq(w1, w1.dom.firstValue()), ge(x2, add(x1, w1.dom.firstValue())));
+		HybridTuple st2 = new HybridTuple(eq(w1, w1.dom.lastValue()), ge(x2, add(x1, w1.dom.lastValue())));
+		HybridTuple st3 = new HybridTuple(eq(w2, w2.dom.firstValue()), ge(x1, add(x2, w2.dom.firstValue())));
+		HybridTuple st4 = new HybridTuple(eq(w2, w2.dom.lastValue()), ge(x1, add(x2, w2.dom.lastValue())));
+		HybridTuple st5 = new HybridTuple(eq(h1, h1.dom.firstValue()), ge(y2, add(y1, h1.dom.firstValue())));
+		HybridTuple st6 = new HybridTuple(eq(h1, h1.dom.lastValue()), ge(y2, add(y1, h1.dom.lastValue())));
+		HybridTuple st7 = new HybridTuple(eq(h2, h2.dom.firstValue()), ge(y1, add(y2, h2.dom.firstValue())));
+		HybridTuple st8 = new HybridTuple(eq(h2, h2.dom.lastValue()), ge(y1, add(y2, h2.dom.lastValue())));
+		return new CSmart(pb, pb.vars(x1, y1, x2, y2, w1, h1, w2, h2), new HybridTuple[] { st1, st2, st3, st4, st5, st6, st7, st8 });
 	}
 
 	public static Constraint buildDistinctVectors(Problem pb, Variable[] t1, Variable[] t2) {
@@ -128,7 +129,7 @@ public final class CSmart extends ExtensionSpecific {
 				? IntStream.range(0, t1.length).filter(i -> t1[i] != t2[i]).mapToObj(i -> t2[i]).toArray(Variable[]::new)
 				: t2;
 		Kit.control(tt1.length == tt2.length);
-		SmartTuple[] smartTuples = IntStream.range(0, tt1.length).mapToObj(i -> new SmartTuple(ne(tt1[i], tt2[i]))).toArray(SmartTuple[]::new);
+		HybridTuple[] smartTuples = IntStream.range(0, tt1.length).mapToObj(i -> new HybridTuple(ne(tt1[i], tt2[i]))).toArray(HybridTuple[]::new);
 		return new CSmart(pb, pb.distinctSorted(pb.vars(tt1, tt2)), smartTuples);
 	}
 
@@ -183,7 +184,7 @@ public final class CSmart extends ExtensionSpecific {
 	 * Fields
 	 *********************************************************************************************/
 
-	public final SmartTuple[] smartTuples; // redundant field (reference to tuples in Table)
+	public final HybridTuple[] smartTuples; // redundant field (reference to tuples in Table)
 
 	protected SetDenseReversible set;
 
@@ -197,7 +198,7 @@ public final class CSmart extends ExtensionSpecific {
 
 	protected long lastCallNode;
 
-	public CSmart(Problem pb, Variable[] scp, SmartTuple... smartTuples) {
+	public CSmart(Problem pb, Variable[] scp, HybridTuple... smartTuples) {
 		super(pb, scp);
 		this.smartTuples = smartTuples;
 		extStructure = buildExtensionStructure();
@@ -206,6 +207,10 @@ public final class CSmart extends ExtensionSpecific {
 		sVal = new int[scp.length];
 		sSup = new int[scp.length];
 		// Stream.of(smartTuples).forEach(st -> System.out.println(st));
+	}
+
+	public CSmart(Problem pb, Variable[] scp, Stream<HybridTuple> smartTuples) {
+		this(pb, scp, smartTuples.toArray(HybridTuple[]::new));
 	}
 
 	@Override
@@ -267,7 +272,7 @@ public final class CSmart extends ExtensionSpecific {
 		int depth = problem.solver.depth();
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {
-			SmartTuple st = smartTuples[set.dense[i]];
+			HybridTuple st = smartTuples[set.dense[i]];
 			boolean valid = st.isValid(sVal, sValSize);
 			if (valid) {
 				sSupSize = st.collect(sSup, sSupSize);

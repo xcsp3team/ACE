@@ -111,7 +111,7 @@ import constraints.ConstraintIntension;
 import constraints.extension.CMDD;
 import constraints.extension.CSmart;
 import constraints.extension.structures.Table;
-import constraints.extension.structures.TableSmart.SmartTuple;
+import constraints.extension.structures.TableSmart.HybridTuple;
 import constraints.global.AllDifferent.AllDifferentBound;
 import constraints.global.AllDifferent.AllDifferentComplete;
 import constraints.global.AllDifferent.AllDifferentCounting;
@@ -1791,10 +1791,12 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 
 	private CtrAlone element(Var[] list, Var index, Var value) {
 		if (head.control.global.smartTable)
-			return post(CSmart.buildElement(this, translate(list), (Variable) index, (Variable) value));
-		if (head.control.global.jokerTable)
-			return extension(Utilities.indexOf(value, list) == -1 ? vars(index, list, value) : vars(index, list),
-					Table.starredElement(translate(list), (Variable) index, (Variable) value), true);
+			return post(CSmart.element(this, translate(list), (Variable) index, (Variable) value));
+		if (head.control.global.jokerTable) {
+			// TODO controls (for example index != value and index not in list?
+			Var[] scp = Utilities.indexOf(value, list) == -1 ? vars(index, list, value) : vars(index, list);
+			return extension(scp, Table.starredElement(translate(list), (Variable) index, (Variable) value), true);
+		}
 		return post(new ElementVar(this, translate(list), (Variable) index, (Variable) value));
 	}
 
@@ -2190,7 +2192,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 	// ************************************************************************
 
 	/** Builds and returns a smart constraint. */
-	public final CtrAlone smart(IVar[] scp, SmartTuple... smartTuples) {
+	public final CtrAlone smart(IVar[] scp, HybridTuple... smartTuples) {
 		return post(new CSmart(this, translate(scp), smartTuples));
 	}
 
