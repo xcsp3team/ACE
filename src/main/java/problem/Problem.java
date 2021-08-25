@@ -1228,7 +1228,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 		if (isBasicType(head.control.global.typeDistinctVectors))
 			return post(new DistinctVectors(this, list1, list2));
 		if (head.control.global.smartTable)
-			return post(CSmart.buildDistinctVectors(this, list1, list2));
+			return post(CSmart.distinctVectors(this, list1, list2));
 		return api.disjunction(IntStream.range(0, list1.length).mapToObj(i -> api.ne(list1[i], list2[i])));
 		// return extension(vars(list1, list2), Table.starredDistinctVectors(list1, list2), true); // TODO problem if several occurrences of the same variable
 	}
@@ -1716,7 +1716,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 								greaterEqual(y, vars[i]);
 					});
 				if (head.control.global.smartTable)
-					c = minimum ? CSmart.buildMinimum(this, vars, y) : CSmart.buildMaximum(this, vars, y);
+					c = minimum ? CSmart.minimum(this, vars, y) : CSmart.maximum(this, vars, y);
 				else
 					c = minimum ? new Minimum(this, vars, y) : new Maximum(this, vars, y);
 			}
@@ -1982,7 +1982,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 				if (head.control.global.typeNoOverlap == INTENSION_DECOMPOSITION)
 					intension(or(le(add(xi, li), xj), le(add(xj, lj), xi)));
 				else if (head.control.global.typeNoOverlap == EXTENSION_SMART)
-					post(CSmart.buildNoOverlap(this, xi, xj, li, lj));
+					post(CSmart.noOverlap(this, xi, xj, li, lj));
 				else
 					post(new Disjonctive(this, xi, li, xj, lj)); // BASE
 			}
@@ -2028,7 +2028,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 				else if (head.control.global.typeNoOverlap == EXTENSION_STARRED)
 					extension(vars(xi, xj, yi, yj), Table.starredNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true); // seems to be rather efficient
 				else if (head.control.global.typeNoOverlap == EXTENSION_SMART)
-					post(CSmart.buildNoOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
+					post(CSmart.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				else
 					post(new Disjonctive2D(this, xi, xj, yi, yj, wi, wj, hi, hj));
 			}
@@ -2043,7 +2043,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 				Variable xi = (Variable) origins[i][0], xj = (Variable) origins[j][0], yi = (Variable) origins[i][1], yj = (Variable) origins[j][1];
 				Variable wi = (Variable) lengths[i][0], wj = (Variable) lengths[j][0], hi = (Variable) lengths[i][1], hj = (Variable) lengths[j][1];
 				if (head.control.global.typeNoOverlap == EXTENSION_SMART && Stream.of(wi, wj, hi, hj).allMatch(x -> x.dom.initSize() == 2))
-					post(CSmart.buildNoOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
+					post(CSmart.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				else
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
 			}

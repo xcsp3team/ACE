@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints.intension;
 
 import java.util.stream.Stream;
@@ -13,8 +5,8 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeLogicalOperator;
 
 import constraints.Constraint;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import utility.Kit;
@@ -49,8 +41,7 @@ public abstract class PrimitiveLogic extends Primitive implements TagAC, TagNotS
 			case AND:
 				return list.length == 2 ? new LogEqAnd2(pb, x, list) : new LogEqAnd(pb, x, list);
 			default:
-				// System.out.println("nnnnn");
-				return null; // throw new AssertionError();
+				throw new AssertionError("unimplemnted case");
 			}
 		}
 

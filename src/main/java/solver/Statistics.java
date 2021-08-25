@@ -174,7 +174,7 @@ public final class Statistics implements ObserverOnSearch, ObserverOnRuns, Obser
 		this.solver = solver;
 	}
 
-	public long numberSafe() {
+	public long safeNumber() {
 		return nNodes + nAssignments + nBacktracks;
 	}
 

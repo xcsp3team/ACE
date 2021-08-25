@@ -1,41 +1,31 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints.extension;
 
 import static org.xcsp.common.Constants.STAR;
 
 import java.util.stream.Stream;
 
-import constraints.extension.structures.ExtensionStructure;
-import constraints.extension.structures.Table;
-import interfaces.Tags.TagStarred;
+import interfaces.Tags.TagStarredCompatible;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 
-// why not using a counter 'time' and replace boolean[][] ac by int[][] ac (we just do time++ instead of Arrays.fill(ac[x],false)
-public class STR2 extends STR1Optimized implements TagStarred {
+/**
+ * This is STR2 (Simple Tabular Reduction, v2), for filtering extension (table) constraints, as described in: Christophe Lecoutre: STR2: optimized simple
+ * tabular reduction for table constraints. Constraints An Int. J. 16(4): 341-371 (2011) <br />
+ * The implementation can deal with starred tables.
+ * 
+ * @author Christophe Lecoutre
+ *
+ */
+public final class STR2 extends STR1Optimized implements TagStarredCompatible {
 
-	boolean starred;
+	// TODO why not using a counter 'time' and replace boolean[][] ac by int[][] ac (we just do time++ instead of Arrays.fill(ac[x],false)
 
 	public STR2(Problem pb, Variable... scp) {
 		super(pb, scp);
 	}
 
-	@Override
-	protected ExtensionStructure buildExtensionStructure() {
-		Table table = new Table(this);
-		this.starred = table.starred;
-		return table;
-	}
-
-	protected boolean isValidTuple(int[] tuple) {
+	private boolean isValidTuple(int[] tuple) {
 		for (int i = sValSize - 1; i >= 0; i--) {
 			int x = sVal[i];
 			if (tuple[x] != STAR && !doms[x].contains(tuple[x]))
@@ -67,27 +57,20 @@ public class STR2 extends STR1Optimized implements TagStarred {
 				set.removeAtPosition(i, depth);
 		}
 		assert controlValidTuples();
-		// if (!isShort && Variable.nValidTuplesBoundedAtMaxValueFor(scp) == set.size()) {
-		// // assert
-		// // System.out.println("entailed " + set.size() + " " + futvars.size());
-		// return entailed();
-		// }
+		// if (!table.starred && Variable.nValidTuplesBoundedAtMaxValueFor(scp) == set.size()) return entailed();
 		return updateDomains();
 	}
 
 	private boolean controlValidTuples() {
-		int[] dense = set.dense;
 		for (int i = set.limit; i >= 0; i--) {
-			int[] tuple = tuples[dense[i]];
-			for (int j = tuple.length - 1; j >= 0; j--) {
+			int[] tuple = tuples[set.dense[i]];
+			for (int j = tuple.length - 1; j >= 0; j--)
 				if (tuple[j] != STAR && !doms[j].contains(tuple[j])) {
 					System.out.println(this + " at " + problem.solver.depth() + "\n" + Kit.join(tuple));
 					Stream.of(scp).forEach(x -> x.display(true));
 					return false;
 				}
-			}
 		}
 		return true;
 	}
-
 }

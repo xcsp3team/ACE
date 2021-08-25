@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints.extension;
 
 import java.util.Arrays;
@@ -15,6 +7,12 @@ import propagation.StrongConsistency;
 import utility.Kit;
 import variables.Variable;
 
+/**
+ * This is the root class of optimized STR-based (Simple Tabular Reduction) algorithms, notably STR2 and CT, for filtering extension (table) constraints.
+ * 
+ * @author Christophe Lecoutre
+ *
+ */
 public abstract class STR1Optimized extends STR1 {
 
 	/**********************************************************************************************
@@ -48,17 +46,45 @@ public abstract class STR1Optimized extends STR1 {
 	 * Fields
 	 *********************************************************************************************/
 
+	/**
+	 * The number of variables for which validity must be checked during the filtering process
+	 */
 	protected int sValSize;
-	protected int[] sVal; // positions of the variables for which validity must be checked
 
+	/**
+	 * The (dense) set of positions of variables for which validity must be checked. Relevant positions are at indexes from 0 to sValSize (excluded).
+	 */
+	protected int[] sVal;
+
+	/**
+	 * The number of variables for which support searching must be done (i.e., variables with some values that still must be checked to be AC)
+	 */
 	protected int sSupSize;
-	protected int[] sSup; // positions of the (future) variables for which some values still must be checked to be AC
 
-	protected long lastCallLimit;
+	/**
+	 * The (dense) set of positions of variables for which support searching must be done. Relevant positions are at indexes from 0 to sSupSize (excluded).
+	 */
+	protected int[] sSup;
 
-	protected int[] lastSizes; // lastSizes[x] is the domain size of x at the last call
-	protected int[][] lastSizesStack; // lastSizesStack[i][x] is the domain size of x at the last call at level i
-	protected int lastDepth; // the depth at the last call
+	/**
+	 * lastSizes[x] is the domain size of x at the last call
+	 */
+	protected int[] lastSizes;
+
+	/**
+	 * lastSizesStack[i][x] is the domain size of x at the last call at level (depth) i
+	 */
+	protected int[][] lastSizesStack;
+
+	/**
+	 * The depth at the last call
+	 */
+	protected int lastDepth;
+
+	/**
+	 * A number used to determine whether the last past variable should be considered for validity testing (and for possibly other roles in subclasses)
+	 */
+	protected long lastSafeNumber;
 
 	/**********************************************************************************************
 	 * Method
@@ -68,7 +94,10 @@ public abstract class STR1Optimized extends STR1 {
 		super(pb, scp);
 	}
 
-	protected void initRestorationStructuresBeforeFiltering() {
+	/**
+	 * Makes, before filtering, some initialization with respect to the structures used for restoration
+	 */
+	protected final void initRestorationStructuresBeforeFiltering() {
 		if (settings.decremental) {
 			int depth = problem.solver.depth();
 			assert 0 <= lastDepth && lastDepth <= depth : depth + " " + lastDepth + " " + this;
@@ -79,9 +108,12 @@ public abstract class STR1Optimized extends STR1 {
 		}
 	}
 
+	/**
+	 * Makes, before filtering, some initialization with respect to the last variable explicitly assigned by the solver
+	 */
 	protected void manageLastPastVar() {
-		if (lastCallLimit != problem.solver.stats.numberSafe() || problem.solver.propagation instanceof StrongConsistency) { // second condition due to Inverse4
-			lastCallLimit = problem.solver.stats.numberSafe();
+		if (lastSafeNumber != problem.solver.stats.safeNumber() || problem.solver.propagation instanceof StrongConsistency) { // 2nd condition due to Inverse4
+			lastSafeNumber = problem.solver.stats.safeNumber();
 			Variable lastPast = problem.solver.futVars.lastPast();
 			int x = lastPast == null ? -1 : positionOf(lastPast);
 			if (x != -1) {
@@ -107,7 +139,6 @@ public abstract class STR1Optimized extends STR1 {
 			sSup[sSupSize++] = x;
 			Arrays.fill(ac[x], false);
 		}
-
 		// TODO to experiment the code below
 		// if (sValSize == 1) { int x = sVal[0]; for (int i = 0; i < sSupSize; i++) if (sSup[i] == x) { sSup[i] = sSup[--sSupSize]; break; } }
 	}
@@ -129,7 +160,7 @@ public abstract class STR1Optimized extends STR1 {
 
 // @Override
 // public void beforeRun() {
-// // has been inserted to fix a bug with joker tables
+// // has been inserted to fix a bug with starred tables
 // // java -ea abscon.Resolution problems.real.tal.Tal ~/instances/tal/compiler2solver/fr.observed.tuples 9 27-35-38-22-15-13-26-28 -1
 // // -s=all -t=120s -f=cop -ev -varh=DDegOnDom -rs
 // // if (decremental)

@@ -98,14 +98,14 @@ public abstract class Propagation {
 			}
 			if (ipsDominanceReasoning) {
 				IpsRecorderForDominance ipsRecorder = (IpsRecorderForDominance) solver.ipsRecorder;
-				if (sentinelLevel[x.num] != solver.stats.numberSafe())
+				if (sentinelLevel[x.num] != solver.stats.safeNumber())
 					absentValuesSentinel[x.num] = -1;
 				int depth = solver.depth();
 				int lastRemoved = dom.lastRemoved();
 				for (int a = lastRemoved; a != absentValuesSentinel[x.num] && dom.removedLevelOf(a) == depth; a = dom.prevRemoved(a))
 					if (!ipsRecorder.checkWatchesOf(x.num, a))
 						return false;
-				sentinelLevel[x.num] = solver.stats.numberSafe();
+				sentinelLevel[x.num] = solver.stats.safeNumber();
 				absentValuesSentinel[x.num] = lastRemoved;
 			}
 			return true;

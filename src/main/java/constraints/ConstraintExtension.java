@@ -23,7 +23,7 @@ import interfaces.Tags.TagAC;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagNegative;
 import interfaces.Tags.TagPositive;
-import interfaces.Tags.TagStarred;
+import interfaces.Tags.TagStarredCompatible;
 import problem.Problem;
 import utility.Kit;
 import utility.Reflector;
@@ -196,11 +196,11 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		if (starred) {
 			Kit.control(positive);
 			ConstraintExtension c = (ConstraintExtension) Reflector.buildObject(className, classes, pb, scp);
-			Kit.control(c instanceof TagStarred); // currently, STR2, STR2S, CT, CT2 and MDDSHORT
+			Kit.control(c instanceof TagStarredCompatible); // currently, STR2, STR2S, CT, CT2 and MDDSHORT
 			return c;
 		}
 		if (scp.length == 2 && settings.validForBinary)
-			return new ExtensionV(pb, scp); // return new CtrExtensionSTR2(pb, scp);
+			return new ExtensionV(pb, scp); // return new STR2(pb, scp);
 		return (ConstraintExtension) Reflector.buildObject(className, classes, pb, scp);
 	}
 

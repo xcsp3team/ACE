@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints.extension;
 
 import java.util.Arrays;
@@ -22,7 +14,7 @@ import variables.Variable;
 public class STR2NEG extends ExtensionSpecific implements TagNegative {
 
 	/**********************************************************************************************
-	 * Interfaces
+	 * Implementing interfaces
 	 *********************************************************************************************/
 
 	@Override
@@ -43,7 +35,7 @@ public class STR2NEG extends ExtensionSpecific implements TagNegative {
 	}
 
 	/**********************************************************************************************
-	 * Fields
+	 * Class members
 	 *********************************************************************************************/
 
 	protected int[][] tuples; // redundant field (reference to tuples in Table)

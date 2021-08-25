@@ -60,7 +60,7 @@ public interface Tags {
 	 * Tag for indicating that a table constraint is starred (i.e., contains *)
 	 *
 	 */
-	interface TagStarred {
+	interface TagStarredCompatible {
 	}
 
 	/**

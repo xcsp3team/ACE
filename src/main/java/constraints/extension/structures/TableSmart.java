@@ -2,11 +2,6 @@ package constraints.extension.structures;
 
 import static org.xcsp.common.Constants.STAR;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.EQ;
-import static org.xcsp.common.Types.TypeConditionOperatorRel.GE;
-import static org.xcsp.common.Types.TypeConditionOperatorRel.GT;
-import static org.xcsp.common.Types.TypeConditionOperatorRel.LE;
-import static org.xcsp.common.Types.TypeConditionOperatorRel.LT;
-import static org.xcsp.common.Types.TypeConditionOperatorRel.NE;
 import static utility.Kit.control;
 
 import java.util.ArrayList;
@@ -36,11 +31,11 @@ import variables.DomainFinite.DomainSymbols;
 import variables.Variable;
 
 /**
- * This is the class for representing smart tables.
+ * This is the class for representing hybrid/smart tables.
  * 
  * @author Christophe Lecoutre
  */
-public class TableSmart extends ExtensionStructure {
+public final class TableSmart extends ExtensionStructure {
 
 	@Override
 	public boolean checkIndexes(int[] t) {
@@ -51,18 +46,18 @@ public class TableSmart extends ExtensionStructure {
 	}
 
 	/**
-	 * The set of hybrid/smart tuples/rows (each one composed of a tuple and restrictions).
+	 * The set of hybrid/smart tuples/rows, each one being composed of a tuple subject to restrictions (unary or binary local constraints).
 	 */
 	public final HybridTuple[] hybridTuples;
-
-	@Override
-	public void storeTuples(int[][] tuples, boolean positive) {
-		throw new AssertionError();
-	}
 
 	public TableSmart(ConstraintExtension c, HybridTuple[] hybridTuples) {
 		super(c);
 		this.hybridTuples = hybridTuples;
+	}
+
+	@Override
+	public void storeTuples(int[][] tuples, boolean positive) {
+		throw new AssertionError();
 	}
 
 	@Override
@@ -75,7 +70,7 @@ public class TableSmart extends ExtensionStructure {
 	 *********************************************************************************************/
 
 	/**
-	 * An hybrid tuple can be seen as a starred tuple subject to restrictions that are kinds of local unary and binary constraints
+	 * An hybrid tuple can be seen as a starred tuple subject to restrictions that represent local unary or binary constraints
 	 */
 	public static final class HybridTuple {
 
@@ -116,14 +111,14 @@ public class TableSmart extends ExtensionStructure {
 		private long valTime, supTime;
 
 		/**
-		 * The tuple that is given initially. IMPORTANT: It contains values (and not indexes of values), but can also be null. This tuple is no more useful,
-		 * once the hybrid tuple is attached to its constraint.
+		 * The tuple that is given initially. IMPORTANT: It contains values (and not indexes of values), but can also be null. This tuple is no more useful once
+		 * the hybrid tuple is attached to its constraint.
 		 */
 		private int[] initialTuple;
 
 		/**
 		 * The restrictions that are given initially. Note that they correspond to Boolean tree expressions (for stating unary and binary local constraints).
-		 * These expressions are no more useful, once the hybrid tuple is attached to its constraint.
+		 * These expressions are no more useful once the hybrid tuple is attached to its constraint.
 		 */
 		private final List<XNodeParent<? extends IVar>> initialRestrictions;
 
@@ -140,12 +135,12 @@ public class TableSmart extends ExtensionStructure {
 			this(tuple, new ArrayList<>());
 		}
 
-		public HybridTuple(int[] tuple, XNodeParent<? extends IVar> r) {
-			this(tuple, Arrays.asList(r));
+		public HybridTuple(int[] tuple, XNodeParent<? extends IVar> restriction) {
+			this(tuple, Arrays.asList(restriction));
 		}
 
-		public HybridTuple(int[] tuple, XNodeParent<? extends IVar> r1, XNodeParent<? extends IVar> r2) {
-			this(tuple, Arrays.asList(r1, r2));
+		public HybridTuple(int[] tuple, XNodeParent<? extends IVar> restriction1, XNodeParent<? extends IVar> restriction2) {
+			this(tuple, Arrays.asList(restriction1, restriction2));
 		}
 
 		public HybridTuple(List<XNodeParent<? extends IVar>> restrictions) {
@@ -156,19 +151,12 @@ public class TableSmart extends ExtensionStructure {
 			this(restrictions.collect(Collectors.toList()));
 		}
 
-		public HybridTuple(XNodeParent<? extends IVar> r) {
-			this(Arrays.asList(r));
+		public HybridTuple(XNodeParent<? extends IVar> restriction) {
+			this(Arrays.asList(restriction));
 		}
 
-		public HybridTuple(XNodeParent<? extends IVar> r1, XNodeParent<? extends IVar> r2) {
-			this(Arrays.asList(r1, r2));
-		}
-
-		public Restriction buildRestrictionUnary(int x, TypeConditionOperatorRel op, int v) {
-			return op == LT ? new Rstr1LE(x, v, true)
-					: op == LE ? new Rstr1LE(x, v, false)
-							: op == GT ? new Rstr1GE(x, v, true) : op == GE ? new Rstr1GE(x, v, false) : op == NE ? new Rstr1NE(x, v) : new Rstr1EQ(x, v);
-
+		public HybridTuple(XNodeParent<? extends IVar> restriction1, XNodeParent<? extends IVar> restriction2) {
+			this(Arrays.asList(restriction1, restriction2));
 		}
 
 		/**
@@ -216,12 +204,12 @@ public class TableSmart extends ExtensionStructure {
 		/**
 		 * Builds a binary restriction of the form x >= y + k
 		 */
-		private Restriction2 buildRestriction2From(int x, TypeConditionOperatorRel op, int y, int cst) {
+		private Restriction2 buildRestriction2From(int x, TypeConditionOperatorRel op, int y, int k) {
 			switch (op) {
 			case GE:
-				return new Rstr2pG(x, y, false, cst);
+				return new Rstr2pG(x, y, false, k);
 			case GT:
-				return new Rstr2pG(x, y, true, cst);
+				return new Rstr2pG(x, y, true, k);
 			default:
 				throw new AssertionError("Currently, unimplemented operator " + op);
 			}
@@ -231,7 +219,7 @@ public class TableSmart extends ExtensionStructure {
 			this.scp = c.scp;
 			this.initialTuple = initialTuple != null ? initialTuple : Kit.repeat(STAR, scp.length);
 			this.tuple = IntStream.range(0, scp.length).map(i -> initialTuple[i] == STAR ? STAR : scp[i].dom.toIdx(initialTuple[i])).toArray();
-			this.nac = c.unsupported;
+			this.nac = c.nac;
 			this.tmp = new int[Variable.maxInitDomSize(scp)];
 			assert Variable.areSortedDomainsIn(scp);
 
@@ -287,9 +275,9 @@ public class TableSmart extends ExtensionStructure {
 		}
 
 		/**
-		 * Returns true iff the the smart tuple "contains" the specified tuple of indexes.
+		 * Returns true iff the the hybrid tuple "contains" the specified tuple of indexes.
 		 */
-		public boolean contains(int[] t) {
+		public final boolean contains(int[] t) {
 			for (int i = 0; i < t.length; i++)
 				if (tuple[i] != STAR && tuple[i] != t[i])
 					return false;
@@ -345,8 +333,7 @@ public class TableSmart extends ExtensionStructure {
 
 		@Override
 		public String toString() {
-			String s = "Smart tuple : ";
-			s += tuple == null ? "" : Kit.join(tuple, (Integer i) -> i == STAR ? "*" : i.toString());
+			String s = "Hybrid tuple : " + (tuple == null ? "" : Kit.join(tuple, (Integer i) -> i == STAR ? "*" : i.toString()));
 			boolean b = true;
 			if (b)
 				return s + " : " + Stream.of(restrictions).map(r -> r.toString()).collect(Collectors.joining(", "));
@@ -429,25 +416,6 @@ public class TableSmart extends ExtensionStructure {
 		 */
 		abstract class Restriction1 extends Restriction {
 
-			// public static Restriction1 buildFrom(int x, TypeConditionOperatorRel op, int v) {
-			//
-			// switch (op) {
-			// case LT:
-			// return new LogLE2(pb, x, y, k - 1);
-			// case LE:
-			// return new LogLE2(pb, x, y, k);
-			// case GE:
-			// return new LogGE2(pb, x, y, k);
-			// case GT:
-			// return new LogGE2(pb, x, y, k + 1);
-			// case EQ:
-			// return new LogEQ2(pb, x, y, k);
-			// case NE:
-			// return new LogNE2(pb, x, y, k);
-			// }
-			// throw new AssertionError();
-			// }
-
 			/** Index of the value in the domain of x that is related to the value specified at construction (in subclasses). */
 			protected int pivot;
 
@@ -510,6 +478,11 @@ public class TableSmart extends ExtensionStructure {
 
 		final class Rstr1GE extends Restriction1 {
 
+			@Override
+			public boolean checkIndexes(int[] t) {
+				return t[x] >= pivot;
+			}
+
 			protected Rstr1GE(int x, int v, boolean strict) {
 				super(x);
 				// we compute the smallest (value) index greater than v ; both strict and non-strict cases handled with the computed pivot
@@ -547,13 +520,14 @@ public class TableSmart extends ExtensionStructure {
 					}
 			}
 
-			@Override
-			public boolean checkIndexes(int[] t) {
-				return t[x] >= pivot;
-			}
 		}
 
 		final class Rstr1NE extends Restriction1 {
+
+			@Override
+			public boolean checkIndexes(int[] t) {
+				return t[x] != pivot;
+			}
 
 			protected Rstr1NE(int x, int v) {
 				super(x);
@@ -585,17 +559,18 @@ public class TableSmart extends ExtensionStructure {
 					nacx.add(pivot);
 			}
 
-			@Override
-			public boolean checkIndexes(int[] t) {
-				return t[x] != pivot;
-			}
 		}
 
 		final class Rstr1EQ extends Restriction1 {
 
-			protected Rstr1EQ(int x, int a) {
+			@Override
+			public boolean checkIndexes(int[] t) {
+				return t[x] == pivot;
+			}
+
+			protected Rstr1EQ(int x, int v) {
 				super(x);
-				this.pivot = domx.toIdx(a);
+				this.pivot = domx.toIdx(v);
 				Kit.control(pivot != -1, () -> "inconsistent restriction if the value does not belong to the domain");
 			}
 
@@ -620,10 +595,6 @@ public class TableSmart extends ExtensionStructure {
 				nacx.remove(pivot);
 			}
 
-			@Override
-			public boolean checkIndexes(int[] t) {
-				return t[x] == pivot;
-			}
 		}
 
 		/**********************************************************************************************

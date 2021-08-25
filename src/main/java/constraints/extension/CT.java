@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints.extension;
 
 import java.util.Arrays;
@@ -15,66 +7,31 @@ import java.util.stream.LongStream;
 import org.xcsp.common.Constants;
 
 import constraints.extension.structures.Table;
-import interfaces.Tags.TagStarred;
+import interfaces.Tags.TagStarredCompatible;
 import problem.Problem;
 import sets.SetDenseReversible;
 import utility.Bit;
 import variables.Domain;
 import variables.Variable;
 
-public class CT extends STR1Optimized implements TagStarred {
-
-	public final static class CT2 extends CT implements TagStarred {
-
-		static final int MASK_COMPRESION_LIMIT = 12;
-		static final int MASK_COMPRESION_TRIGGER_SIZE = 300;
-
-		long[] maskCollect = new long[MASK_COMPRESION_LIMIT * 2];
-
-		@Override
-		protected void maskCompression(long[][] masks) {
-			if (masks[0].length <= MASK_COMPRESION_TRIGGER_SIZE)
-				return;
-			for (int a = 0; a < masks.length; a++) {
-				long[] mask = masks[a];
-				int cnt = 0;
-				Long defaultWord = null; // uninitialized
-				boolean compressible = true;
-				for (int i = 0; compressible && i < mask.length; i++) {
-					if (mask[i] == 0L && defaultWord == null)
-						defaultWord = 0L;
-					else if (mask[i] == -1L && defaultWord == null)
-						defaultWord = -1L;
-					else if (defaultWord == null || mask[i] != defaultWord)
-						if (cnt + 1 >= maskCollect.length)
-							compressible = false;
-						else {
-							maskCollect[cnt++] = i;
-							maskCollect[cnt++] = mask[i];
-						}
-				}
-				if (compressible) {
-					long def = defaultWord == null ? 0 : (long) defaultWord, way = 0L; // way todo
-					masks[a] = LongStream.range(0, 2 + cnt).map(i -> i == 0 ? def : i == 1 ? way : maskCollect[(int) i - 2]).toArray();
-				}
-			}
-		}
-
-		public CT2(Problem pb, Variable[] scp) {
-			super(pb, scp);
-		}
-
-	}
+/**
+ * This is the code for CT (Compact-Table), as described in: Jordan Demeulenaere, Renaud Hartert, Christophe Lecoutre, Guillaume Perez, Laurent Perron,
+ * Jean-Charles Régin, Pierre Schaus: Compact-Table: Efficiently Filtering Table Constraints with Reversible Sparse Bit-Sets. CP 2016: 207-223
+ * 
+ * @author Christophe Lecoutre
+ *
+ */
+public class CT extends STR1Optimized implements TagStarredCompatible {
 
 	/**********************************************************************************************
-	 * Interfaces
+	 * Implementing Interfaces
 	 *********************************************************************************************/
 
 	protected void maskCompression(long[][] masks) {
 	}
 
 	@Override
-	public void afterProblemConstruction() {
+	public final void afterProblemConstruction() {
 		super.afterProblemConstruction();
 
 		int nWords = (int) Math.ceil(tuples.length / 64.0);
@@ -127,7 +84,7 @@ public class CT extends STR1Optimized implements TagStarred {
 	}
 
 	@Override
-	public void restoreBefore(int depth) {
+	public final void restoreBefore(int depth) {
 		super.restoreBefore(depth);
 		if (topStack != -1 && stackStructure[topStack - 1] == depth) {
 			for (int i = stackStructure[topStack] - 1; i >= 0; i--)
@@ -136,17 +93,25 @@ public class CT extends STR1Optimized implements TagStarred {
 			topStack -= 2;
 		}
 		nonZeros.restoreLimitAtLevel(depth);
-		lastCallNode = -1;
-		// if (depth == 0) afterProblemConstruction(); // necessary when using aggressive runs
+		lastSafeNumber = -1;
+		// if (depth == 0) afterProblemConstruction(); // TODO necessary when using aggressive runs
 	}
 
 	/**********************************************************************************************
-	 * Fields
+	 * Class members
 	 *********************************************************************************************/
 
 	private long[] current; // current table
-	private long[][][] masks; // masks[x][a] gives the mask for (x,a)
-	private long[][][] masksS; // masksS[x][a] gives the mask* for (x,a) ; useful for short tables
+
+	/**
+	 * masks[x][a] gives the mask for (x,a), used when filtering
+	 */
+	private long[][][] masks;
+
+	/**
+	 * masksS[x][a] gives the mask* for (x,a), used when filtering; this is useful for short tables
+	 */
+	private long[][][] masksS;
 
 	private long[] tmp, tmp2;
 	private long lastWord0Then1, lastWord1Then0;
@@ -157,22 +122,29 @@ public class CT extends STR1Optimized implements TagStarred {
 	int[] stackStructure; // stores, in sequence, pairs (d,nb) with d the depth where nb words have been stacked
 	int topStacked = -1, topStack = -1;
 
-	boolean[] modifiedWords; // modifiedWords[i] indicates if the ith word has already been modified (and stored for future use when backtracking)
+	private boolean[] modifiedWords; // modifiedWords[i] indicates if the ith word has already been modified (and stored for future use when backtracking)
 
-	int[] deltaSizes; // deltaSizes[x] indicates how many values are in the delta set of x
+	/**
+	 * deltaSizes[x] indicates how many values are in the delta set of x
+	 */
+	private int[] deltaSizes;
 
-	public SetDenseReversible nonZeros; // reversible dense set indicating the words that are currently not 0
+	/**
+	 * Reversible dense set indicating the words that are currently not 0
+	 */
+	private SetDenseReversible nonZeros;
 
-	private int[][] residues; // residues[x][a] is the index of the word where a support was found the last time for (x,a)
+	/**
+	 * residues[x][a] is the index of the word where a support was found the last time for (x,a)
+	 */
+	private int[][] residues;
 
+	/**
+	 * Field indicating if this is the first time the filtering algorithm (propagator) is called
+	 */
 	private boolean firstCall = true;
-	private long lastCallNode = -1;
 
 	private boolean starred;
-
-	/**********************************************************************************************
-	 * Methods
-	 *********************************************************************************************/
 
 	public CT(Problem pb, Variable[] scp) {
 		super(pb, scp);
@@ -190,31 +162,9 @@ public class CT extends STR1Optimized implements TagStarred {
 		t[t.length - 1] = lastWord0Then1;
 	}
 
-	private void wordModified(int index, long oldValue) {
-		if (modifiedWords[index]) {
-			assert stackStructure[topStack - 1] == problem.solver.depth()
-					&& IntStream.range(0, stackStructure[topStack]).anyMatch(i -> stackedIndexes[topStacked - i] == index);
-			return;
-		}
-		int depth = problem.solver.depth();
-		if (topStack == -1 || stackStructure[topStack - 1] != depth) {
-			if (topStack + 3 >= stackStructure.length)
-				stackStructure = Arrays.copyOf(stackStructure, current.length * (factorStack *= 2));
-			stackStructure[++topStack] = depth;
-			stackStructure[++topStack] = 1; // first modified word at this level
-		} else
-			stackStructure[topStack]++; // another modified word at this level
-		if (topStacked + 3 >= stackedWords.length) {
-			stackedWords = Arrays.copyOf(stackedWords, current.length * (factorStacked *= 2));
-			stackedIndexes = Arrays.copyOf(stackedIndexes, current.length * factorStacked);
-		}
-		stackedWords[++topStacked] = oldValue;
-		stackedIndexes[topStacked] = index;
-		modifiedWords[index] = true;
-	}
-
 	@Override
-	protected void manageLastPastVar() {
+	protected final void manageLastPastVar() {
+		// we no more refer to lastSafeNumber because it may have been modified earlier in beforeFiltering
 		Variable lastPast = problem.solver.futVars.lastPast();
 		int x = lastPast == null ? -1 : positionOf(lastPast);
 		if (x != -1 && lastSizes[x] != 1) {
@@ -225,17 +175,17 @@ public class CT extends STR1Optimized implements TagStarred {
 	}
 
 	@Override
-	protected void beforeFiltering() {
-		if (lastCallNode != problem.solver.stats.numberSafe()) {
+	protected final void beforeFiltering() {
+		initRestorationStructuresBeforeFiltering();
+		if (lastSafeNumber != problem.solver.stats.safeNumber()) {
 			// Arrays.fill(modifiedWords, false);
 			for (int i = nonZeros.limit; i >= 0; i--)
 				modifiedWords[nonZeros.dense[i]] = false;
 			if (topStack != -1 && stackStructure[topStack - 1] == problem.solver.depth())
 				for (int i = stackStructure[topStack] - 1; i >= 0; i--)
 					modifiedWords[stackedIndexes[topStacked - i]] = true;
-			lastCallNode = problem.solver.stats.numberSafe();
+			lastSafeNumber = problem.solver.stats.safeNumber();
 		}
-		initRestorationStructuresBeforeFiltering();
 		sValSize = sSupSize = 0;
 		manageLastPastVar();
 		for (int i = futvars.limit; i >= 0; i--) {
@@ -293,9 +243,31 @@ public class CT extends STR1Optimized implements TagStarred {
 		return true;
 	}
 
+	private void wordModified(int index, long oldValue) {
+		if (modifiedWords[index]) {
+			assert stackStructure[topStack - 1] == problem.solver.depth()
+					&& IntStream.range(0, stackStructure[topStack]).anyMatch(i -> stackedIndexes[topStacked - i] == index);
+			return;
+		}
+		int depth = problem.solver.depth();
+		if (topStack == -1 || stackStructure[topStack - 1] != depth) {
+			if (topStack + 3 >= stackStructure.length)
+				stackStructure = Arrays.copyOf(stackStructure, current.length * (factorStack *= 2));
+			stackStructure[++topStack] = depth;
+			stackStructure[++topStack] = 1; // first modified word at this level
+		} else
+			stackStructure[topStack]++; // another modified word at this level
+		if (topStacked + 3 >= stackedWords.length) {
+			stackedWords = Arrays.copyOf(stackedWords, current.length * (factorStacked *= 2));
+			stackedIndexes = Arrays.copyOf(stackedIndexes, current.length * factorStacked);
+		}
+		stackedWords[++topStacked] = oldValue;
+		stackedIndexes[topStacked] = index;
+		modifiedWords[index] = true;
+	}
+
 	@Override
-	public boolean runPropagator(Variable z) {
-		// pb.stuff.updateStatsForSTR(set);
+	public final boolean runPropagator(Variable z) {
 		if (firstCall)
 			return firstCall();
 		beforeFiltering();
@@ -303,7 +275,6 @@ public class CT extends STR1Optimized implements TagStarred {
 		fillTo0(tmp);
 		for (int i = sValSize - 1; i >= 0; i--) {
 			int x = sVal[i];
-			// long[][] lmasks = masks[x];
 			Domain dom = doms[x];
 			if (deltaSizes[x] <= dom.size()) {
 				for (int cnt = deltaSizes[x] - 1, a = dom.lastRemoved(); cnt >= 0; cnt--) {
@@ -333,6 +304,11 @@ public class CT extends STR1Optimized implements TagStarred {
 		}
 		if (nonZeros.size() == 0)
 			return z.dom.fail(); // inconsistency detected
+		return updateDomains();
+	}
+
+	@Override
+	protected final boolean updateDomains() {
 		// we update domains (inconsistency is no more possible)
 		for (int i = sSupSize - 1; i >= 0; i--) {
 			int x = sSup[i];
@@ -352,4 +328,52 @@ public class CT extends STR1Optimized implements TagStarred {
 		return true;
 	}
 
+	/**********************************************************************************************
+	 * Class CT2
+	 *********************************************************************************************/
+
+	/**
+	 * A version of CT using compression of masks
+	 */
+	public final static class CT2 extends CT {
+
+		private static final int MASK_COMPRESION_LIMIT = 12;
+
+		private static final int MASK_COMPRESION_TRIGGER_SIZE = 300;
+
+		private long[] maskCollect = new long[MASK_COMPRESION_LIMIT * 2];
+
+		@Override
+		protected final void maskCompression(long[][] masks) {
+			if (masks[0].length <= MASK_COMPRESION_TRIGGER_SIZE)
+				return;
+			for (int a = 0; a < masks.length; a++) {
+				long[] mask = masks[a];
+				int cnt = 0;
+				Long defaultWord = null; // uninitialized
+				boolean compressible = true;
+				for (int i = 0; compressible && i < mask.length; i++) {
+					if (mask[i] == 0L && defaultWord == null)
+						defaultWord = 0L;
+					else if (mask[i] == -1L && defaultWord == null)
+						defaultWord = -1L;
+					else if (defaultWord == null || mask[i] != defaultWord)
+						if (cnt + 1 >= maskCollect.length)
+							compressible = false;
+						else {
+							maskCollect[cnt++] = i;
+							maskCollect[cnt++] = mask[i];
+						}
+				}
+				if (compressible) {
+					long def = defaultWord == null ? 0 : (long) defaultWord, way = 0L; // way todo
+					masks[a] = LongStream.range(0, 2 + cnt).map(i -> i == 0 ? def : i == 1 ? way : maskCollect[(int) i - 2]).toArray();
+				}
+			}
+		}
+
+		public CT2(Problem pb, Variable[] scp) {
+			super(pb, scp);
+		}
+	}
 }

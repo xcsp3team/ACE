@@ -17,13 +17,13 @@ import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.MDDShort;
 import constraints.extension.structures.MDDShort.MDDNodeShort;
 import interfaces.Tags.TagPositive;
-import interfaces.Tags.TagStarred;
+import interfaces.Tags.TagStarredCompatible;
 import problem.Problem;
 import sets.SetSparseReversible;
 import variables.Domain;
 import variables.Variable;
 
-public final class CMDDShort extends ExtensionSpecific implements TagPositive, TagStarred {
+public final class CMDDShort extends ExtensionSpecific implements TagPositive, TagStarredCompatible {
 
 	/**********************************************************************************************
 	 * Interfaces
