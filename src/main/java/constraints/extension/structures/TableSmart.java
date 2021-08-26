@@ -6,7 +6,6 @@ import static utility.Kit.control;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -57,7 +56,7 @@ public final class TableSmart extends ExtensionStructure {
 
 	@Override
 	public void storeTuples(int[][] tuples, boolean positive) {
-		throw new AssertionError();
+		throw new AssertionError("This method cannot be called because tuples are too different");
 	}
 
 	@Override
@@ -66,7 +65,7 @@ public final class TableSmart extends ExtensionStructure {
 	}
 
 	/**********************************************************************************************
-	 * SmartTuple
+	 * Inner class for HybridTuple (and Restriction)
 	 *********************************************************************************************/
 
 	/**
@@ -106,9 +105,14 @@ public final class TableSmart extends ExtensionStructure {
 		private Restriction[] whichRestrictions;
 
 		/**
-		 * Time counters used to avoid useless redundant operations.
+		 * The last time a validity check has been performed (may be useful to avoid some useless operations)
 		 */
-		private long valTime, supTime;
+		private long valTime;
+
+		/**
+		 * The last time a support (collect) search has been performed (may be useful to avoid some useless operations)
+		 */
+		private long supTime;
 
 		/**
 		 * The tuple that is given initially. IMPORTANT: It contains values (and not indexes of values), but can also be null. This tuple is no more useful once
@@ -224,7 +228,7 @@ public final class TableSmart extends ExtensionStructure {
 			assert Variable.areSortedDomainsIn(scp);
 
 			// Converting Boolean tree expressions into restriction objects
-			Collection<Restriction> list = new ArrayList<>();
+			List<Restriction> list = new ArrayList<>();
 			for (XNodeParent<? extends IVar> tree : initialRestrictions) {
 				TypeConditionOperatorRel op = tree.type.toRelop(); // TODO dealing with IN and NOTIN too
 				control(op != null && tree.sons.length == 2);
@@ -253,16 +257,18 @@ public final class TableSmart extends ExtensionStructure {
 				} else
 					Kit.exit("Currently, unimplemented case");
 			}
-			int[] cnt1 = new int[scp.length], cnt2 = new int[scp.length]; // for each vap, number of times it is seen at left (1), and at right
-																			// (2)
-			list.stream().forEach(r -> cnt1[r.x]++);
-			list.stream().filter(r -> r instanceof Restriction2).forEach(r -> cnt2[((Restriction2) r).y]++);
-
-			Map<Integer, List<Restriction>> byVap = list.stream().collect(Collectors.groupingBy(r -> r.x));
-			restrictions = byVap.entrySet().stream()
+			// for each variable (position), we count the number of times it is seen at left (1), and at right (2) of the restrictions
+			int[] cnt1 = new int[scp.length], cnt2 = new int[scp.length];
+			for (Restriction r : list) {
+				cnt1[r.x]++;
+				if (r instanceof Restriction2)
+					cnt2[((Restriction2) r).y]++;
+			}
+			Map<Integer, List<Restriction>> byMainVariable = list.stream().collect(Collectors.groupingBy(r -> r.x));
+			this.restrictions = byMainVariable.entrySet().stream()
 					.map(e -> e.getValue().size() == 1 ? e.getValue().get(0) : new RestrictionMultiple(e.getKey(), e.getValue())).toArray(Restriction[]::new);
 
-			whichRestrictions = new Restriction[scp.length];
+			this.whichRestrictions = new Restriction[scp.length];
 			for (Restriction r : restrictions) {
 				whichRestrictions[r.x] = r;
 				if (r instanceof Restriction2)
@@ -275,7 +281,11 @@ public final class TableSmart extends ExtensionStructure {
 		}
 
 		/**
-		 * Returns true iff the the hybrid tuple "contains" the specified tuple of indexes.
+		 * Returns true iff the the hybrid tuple "contains" the specified tuple of indexes
+		 * 
+		 * @param t
+		 *            a tuple of indexes (of values)
+		 * @return true iff the the hybrid tuple "contains" the specified tuple of indexes
 		 */
 		public final boolean contains(int[] t) {
 			for (int i = 0; i < t.length; i++)
@@ -299,8 +309,18 @@ public final class TableSmart extends ExtensionStructure {
 					int a = tuple[x];
 					if (a != STAR && !scp[x].dom.contains(a))
 						return false;
-				} else if (restriction.valTimeLocal != valTime && !restriction.isValid())
+				} else if (restriction instanceof RestrictionComplex) {
+					RestrictionComplex rc = (RestrictionComplex) restriction;
+					if (rc.valTimeLocal != valTime) {
+						rc.valTimeLocal = valTime; // updated because we make below the validity check
+						if (restriction.isValid() == false)
+							return false;
+					}
+				} else if (restriction.isValid() == false)
 					return false;
+
+				// if (restriction.valTimeLocal != valTime && !restriction.isValid())
+				// return false;
 			}
 			return true;
 		}
@@ -323,8 +343,17 @@ public final class TableSmart extends ExtensionStructure {
 						nac[x].clear();
 					else
 						nac[x].remove(a);
-				} else if (restriction.supTimeLocal != supTime)
+				} else if (restriction instanceof RestrictionComplex) {
+					RestrictionComplex rc = (RestrictionComplex) restriction;
+					if (rc.supTimeLocal != supTime) {
+						rc.supTimeLocal = supTime; // updated because we make below the support searching (collect)
+						restriction.collect();
+					}
+				} else
 					restriction.collect();
+
+				// if (restriction.supTimeLocal != supTime)
+				// restriction.collect();
 				if (nac[x].isEmpty())
 					sSup[i] = sSup[--sSupSize];
 			}
@@ -351,12 +380,12 @@ public final class TableSmart extends ExtensionStructure {
 		 *********************************************************************************************/
 
 		/**
-		 * A restriction always involves a variable whose value in the initially specified tuple is ANY (*)
+		 * A restriction always involves a variable whose value in the initially accompanying tuple is ANY (*)
 		 */
 		public abstract class Restriction {
 
 			/**
-			 * The main variable (given by its position in the constraint scope) in the restriction (at the right side of the restriction)
+			 * The main variable (given by its position in the constraint scope) in the restriction (i.e., at the right side of the restriction)
 			 */
 			protected int x;
 
@@ -369,8 +398,6 @@ public final class TableSmart extends ExtensionStructure {
 			 * The sparse set for unsupported indexes of x (redundant field)
 			 */
 			protected SetSparse nacx;
-
-			protected long valTimeLocal, supTimeLocal;
 
 			/**
 			 * Returns true iff the restriction validates the specified tuple of indexes.
@@ -438,7 +465,7 @@ public final class TableSmart extends ExtensionStructure {
 
 			protected Rstr1LE(int x, int v, boolean strict) {
 				super(x);
-				// we compute the greatest (value) index less than v ; both strict and non-strict cases are handled with the computed pivot
+				// we compute the greatest index (of value) less than the value v ; both strict and non-strict cases are handled with the computed pivot
 				this.pivot = IntStream.range(0, domx.initSize()).map(a -> domx.initSize() - 1 - a).filter(a -> domx.toVal(a) <= v + (strict ? -1 : 0))
 						.findFirst().orElse(-1);
 			}
@@ -485,7 +512,7 @@ public final class TableSmart extends ExtensionStructure {
 
 			protected Rstr1GE(int x, int v, boolean strict) {
 				super(x);
-				// we compute the smallest (value) index greater than v ; both strict and non-strict cases handled with the computed pivot
+				// we compute the smallest index (of value) greater than the value v ; both strict and non-strict cases handled with the computed pivot
 				this.pivot = IntStream.range(0, domx.initSize()).filter(a -> domx.toVal(a) >= v + (strict ? 1 : 0)).findFirst().orElse(domx.initSize());
 			}
 
@@ -601,10 +628,18 @@ public final class TableSmart extends ExtensionStructure {
 		 * Classes for binary restrictions of the form x <op> y
 		 *********************************************************************************************/
 
+		abstract class RestrictionComplex extends Restriction {
+			protected long valTimeLocal, supTimeLocal;
+
+			protected RestrictionComplex(int x) {
+				super(x);
+			}
+		}
+
 		/**
 		 * Restriction of the form x <op> y
 		 */
-		abstract class Restriction2 extends Restriction {
+		abstract class Restriction2 extends RestrictionComplex {
 
 			/** (Position of) the second involved variable */
 			protected int y;
@@ -622,10 +657,10 @@ public final class TableSmart extends ExtensionStructure {
 			}
 
 			/**
-			 * Method called when the backward phase of a RestrictionStarMultiStar has been performed. More precisely, in tmp, we have exactly nb indexes for
-			 * scope[vap] that are compatible with all subrestrictions of the RestrictionStarMultiStar. We call this method to perform the forward phase.
+			 * Method called when the backward phase of a RestrictionMultiple object has been performed. More precisely, in tmp, we have exactly nb indexes for
+			 * scope[vap] that are compatible with all subrestrictions of the RestrictionMultiple. We call this method to perform the forward phase.
 			 */
-			public abstract void collectForVap2(int nb);
+			public abstract void collectForY(int nb);
 
 			@Override
 			public String toString() {
@@ -649,7 +684,6 @@ public final class TableSmart extends ExtensionStructure {
 
 			@Override
 			public boolean isValid() {
-				valTimeLocal = valTime;
 				return strict ? domx.first() < domy.last() : domx.first() <= domy.last();
 			}
 
@@ -699,7 +733,6 @@ public final class TableSmart extends ExtensionStructure {
 
 			@Override
 			public void collect() {
-				supTimeLocal = supTime;
 				// three parameters for choosing the cheapest way of collecting
 				int roughNbInvalidValues = Math.max(domx.first() - domy.first(), 0) + Math.max(domx.last() - domy.last(), 0);
 				int nSupportlessValues = nacx.size() + nacy.size();
@@ -713,7 +746,7 @@ public final class TableSmart extends ExtensionStructure {
 			}
 
 			@Override
-			public void collectForVap2(int nb) {
+			public void collectForY(int nb) {
 				if (!scp[y].assigned()) {
 					int first1 = tmp[0];
 					for (int a = domy.last(); a != -1 && (strict ? first1 < a : first1 <= a); a = domy.prev(a))
@@ -734,6 +767,12 @@ public final class TableSmart extends ExtensionStructure {
 
 		/** Restriction of the form x >y or the form x >= y */
 		final class Rstr2G extends Restriction2 {
+
+			@Override
+			public boolean checkIndexes(int[] t) {
+				return strict ? t[x] > t[y] : t[x] >= t[y];
+			}
+
 			private boolean strict;
 
 			protected Rstr2G(int x, int y, boolean strict) {
@@ -748,7 +787,6 @@ public final class TableSmart extends ExtensionStructure {
 
 			@Override
 			public boolean isValid() {
-				valTimeLocal = valTime;
 				return strict ? domx.last() > domy.first() : domx.last() >= domy.first();
 			}
 
@@ -798,7 +836,6 @@ public final class TableSmart extends ExtensionStructure {
 
 			@Override
 			public void collect() {
-				supTimeLocal = supTime;
 				// three parameters for choosing the cheapest way of collecting
 				int roughNbInvalidValues = Math.max(domy.first() - domx.first(), 0) + Math.max(domy.last() - domx.last(), 0);
 				int nbSupportlessValues = nacx.size() + nacy.size();
@@ -812,17 +849,12 @@ public final class TableSmart extends ExtensionStructure {
 			}
 
 			@Override
-			public void collectForVap2(int nb) {
+			public void collectForY(int nb) {
 				if (!scp[y].assigned()) {
 					int last1 = tmp[nb - 1];
 					for (int a = domy.first(); a != -1 && (strict ? last1 > a : last1 >= a); a = domy.next(a))
 						nacy.remove(a);
 				}
-			}
-
-			@Override
-			public boolean checkIndexes(int[] t) {
-				return strict ? t[x] > t[y] : t[x] >= t[y];
 			}
 
 			@Override
@@ -832,6 +864,11 @@ public final class TableSmart extends ExtensionStructure {
 		}
 
 		final class Rstr2NE extends Restriction2 {
+
+			@Override
+			public boolean checkIndexes(int[] t) {
+				return t[x] != t[y];
+			}
 
 			protected Rstr2NE(int x, int y) {
 				super(x, y);
@@ -844,13 +881,11 @@ public final class TableSmart extends ExtensionStructure {
 
 			@Override
 			public boolean isValid() {
-				valTimeLocal = valTime;
 				return domx.size() > 1 || domy.size() > 1 || domx.single() != domy.single();
 			}
 
 			@Override
 			public void collect() {
-				supTimeLocal = supTime;
 				if (!scp[x].assigned())
 					if (domy.size() == 1 && nacx.contains(domy.single()))
 						nacx.resetTo(domy.single());
@@ -864,7 +899,7 @@ public final class TableSmart extends ExtensionStructure {
 			}
 
 			@Override
-			public void collectForVap2(int nb) {
+			public void collectForY(int nb) {
 				if (!scp[y].assigned())
 					if (nb == 1 && nacy.contains(tmp[0]))
 						nacy.resetTo(tmp[0]);
@@ -872,14 +907,17 @@ public final class TableSmart extends ExtensionStructure {
 						nacy.clear();
 			}
 
-			@Override
-			public boolean checkIndexes(int[] t) {
-				return t[x] != t[y];
-			}
 		}
 
 		final class Rstr2EQ extends Restriction2 {
+
+			@Override
+			public boolean checkIndexes(int[] t) {
+				return t[x] == t[y];
+			}
+
 			private int residue;
+
 			private boolean newResidue;
 
 			protected Rstr2EQ(int x, int y) {
@@ -893,13 +931,11 @@ public final class TableSmart extends ExtensionStructure {
 
 			@Override
 			public boolean isValid() {
-				valTimeLocal = valTime;
 				newResidue = false;
 				if (domx.contains(residue) && domy.contains(residue))
 					return true;
 				newResidue = true;
-				Domain domSmall = domx.size() < domy.size() ? domx : domy;
-				Domain domBig = domSmall == domx ? domy : domx;
+				Domain domSmall = domx.size() < domy.size() ? domx : domy, domBig = domSmall == domx ? domy : domx;
 				for (int a = domSmall.first(); a != -1; a = domSmall.next(a))
 					if (domBig.contains(a)) {
 						residue = a;
@@ -926,24 +962,23 @@ public final class TableSmart extends ExtensionStructure {
 			}
 
 			private void collectThroughSmallestDomain() {
-				// if (scp[0].problem.solver.getDepth() == 231)
-				// Kit.prn("collectSmall " + newResidue + " " + idxResidue);
-				Domain domSmall = domx.size() < domy.size() ? domx : domy;
-				Domain domBig = domSmall == domx ? domy : domx;
-				if (!scp[x].assigned() && !scp[y].assigned()) {
-					for (int a = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); a != -1; a = domSmall.next(a))
+				Domain domSmall = domx.size() < domy.size() ? domx : domy, domBig = domSmall == domx ? domy : domx;
+				int start = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); // are we sure that the smallest domain is the same (no
+																								// removal between? it seems so)
+				if (scp[x].assigned() || scp[y].assigned()) {
+					assert domSmall.single() == start;
+					if (domBig.contains(start)) {
+						if (!scp[x].assigned())
+							nacx.remove(start);
+						if (!scp[y].assigned())
+							nacy.remove(start);
+					}
+				} else {
+					for (int a = start; a != -1; a = domSmall.next(a))
 						if (domBig.contains(a)) {
 							nacx.remove(a);
 							nacy.remove(a);
 						}
-				} else if (!scp[x].assigned()) {
-					for (int a = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); a != -1; a = domSmall.next(a))
-						if (domBig.contains(a))
-							nacx.remove(a);
-				} else if (!scp[y].assigned()) {
-					for (int a = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); a != -1; a = domSmall.next(a))
-						if (domBig.contains(a))
-							nacy.remove(a);
 				}
 			}
 
@@ -964,7 +999,6 @@ public final class TableSmart extends ExtensionStructure {
 
 			@Override
 			public void collect() {
-				supTimeLocal = supTime;
 				// three parameters for choosing the cheapest way of collecting
 				int nbRemovedValues = domx.nRemoved() + domy.nRemoved();
 				int nbSupportlessValues = nacx.size() + nacy.size();
@@ -978,19 +1012,21 @@ public final class TableSmart extends ExtensionStructure {
 			}
 
 			@Override
-			public void collectForVap2(int nb) {
+			public void collectForY(int nb) {
 				if (!scp[y].assigned())
 					for (int i = 0; i < nb; i++)
 						nacy.remove(tmp[i]);
 			}
 
-			@Override
-			public boolean checkIndexes(int[] t) {
-				return t[x] == t[y];
-			}
 		}
 
 		final class Rstr2EQVal extends Restriction2 {
+
+			@Override
+			public boolean checkIndexes(int[] t) {
+				return domx.toVal(t[x]) == domy.toVal(t[y]);
+			}
+
 			private int valResidue;
 			boolean newResidue;
 
@@ -1005,16 +1041,14 @@ public final class TableSmart extends ExtensionStructure {
 
 			@Override
 			public boolean isValid() {
-				valTimeLocal = valTime;
 				newResidue = false;
-				if (domx.toIdxIfPresent(valResidue) != -1 && domy.toIdxIfPresent(valResidue) != -1)
+				if (domx.containsValue(valResidue) && domy.containsValue(valResidue))
 					return true;
 				newResidue = true;
-				Domain domSmall = domx.size() < domy.size() ? domx : domy;
-				Domain domBig = domSmall == domx ? domy : domx;
+				Domain domSmall = domx.size() < domy.size() ? domx : domy, domBig = domSmall == domx ? domy : domx;
 				for (int a = domSmall.first(); a != -1; a = domSmall.next(a)) {
 					int v = domSmall.toVal(a);
-					if (domBig.toIdxIfPresent(v) != -1) {
+					if (domBig.containsValue(v)) {
 						valResidue = v;
 						return true;
 					}
@@ -1050,8 +1084,7 @@ public final class TableSmart extends ExtensionStructure {
 			}
 
 			private void collectThroughSmallestDomain() {
-				Domain domSmall = domx.size() < domy.size() ? domx : domy;
-				Domain domBig = domSmall == domx ? domy : domx;
+				Domain domSmall = domx.size() < domy.size() ? domx : domy, domBig = domSmall == domx ? domy : domx;
 				if (!scp[x].assigned() && !scp[y].assigned()) {
 					for (int a = domSmall.first(); a != -1; a = domSmall.next(a)) {
 						int v = domSmall.toVal(a);
@@ -1082,24 +1115,19 @@ public final class TableSmart extends ExtensionStructure {
 				if (!scp[x].assigned())
 					for (int i = nacx.limit; i >= 0; i--) {
 						int a = nacx.dense[i];
-						int v = domx.toVal(a);
-						int b = domy.toIdxIfPresent(v);
-						if (b != -1)
+						if (domy.containsValue(domx.toVal(a)))
 							nacx.remove(a);
 					}
 				if (!scp[y].assigned())
 					for (int i = nacy.limit; i >= 0; i--) {
 						int a = nacy.dense[i];
-						int v = domy.toVal(a);
-						int b = domx.toIdxIfPresent(v);
-						if (b != -1)
+						if (domx.containsValue(domy.toVal(a)))
 							nacy.remove(a);
 					}
 			}
 
 			@Override
 			public void collect() {
-				supTimeLocal = supTime;
 				// three parameters for choosing the cheapest way of collecting
 				int nbRemovedValues = domx.nRemoved() + domy.nRemoved();
 				int nbSupportlessValues = nacx.size() + nacy.size();
@@ -1113,21 +1141,19 @@ public final class TableSmart extends ExtensionStructure {
 			}
 
 			@Override
-			public void collectForVap2(int nb) {
+			public void collectForY(int nb) {
 				if (!scp[y].assigned())
 					for (int i = 0; i < nb; i++) {
 						int a = tmp[i];
 						int v = domx.toVal(a);
-						int b = domy.toIdxIfPresent(v);
-						if (b != -1) // && supportless2.isPresent(idxx))
-							nacy.remove(b);
+						assert domy.containsValue(v);
+						nacy.remove(domy.toIdx(v));
+						// int b = domy.toIdxIfPresent(v);
+						// if (b != -1) // && supportless2.isPresent(idxx))
+						// nacy.remove(b);
 					}
 			}
 
-			@Override
-			public boolean checkIndexes(int[] t) {
-				return domx.toVal(t[x]) == domy.toVal(t[y]);
-			}
 		}
 
 		/**
@@ -1151,7 +1177,6 @@ public final class TableSmart extends ExtensionStructure {
 
 			@Override
 			public boolean isValid() {
-				valTimeLocal = valTime;
 				return strict ? domx.last() > domy.first() + cst : domx.last() >= domy.first() + cst;
 			}
 
@@ -1201,7 +1226,6 @@ public final class TableSmart extends ExtensionStructure {
 
 			@Override
 			public void collect() {
-				supTimeLocal = supTime;
 				// three parameters for choosing the cheapest way of collecting
 				int roughNbInvalidValues = Math.max(domy.first() + cst - domx.first(), 0) + Math.max(domy.last() + cst - domx.last(), 0);
 				int nbSupportlessValues = nacx.size() + nacy.size();
@@ -1215,7 +1239,7 @@ public final class TableSmart extends ExtensionStructure {
 			}
 
 			@Override
-			public void collectForVap2(int nb) {
+			public void collectForY(int nb) {
 				if (!scp[y].assigned()) {
 					int last1 = tmp[nb - 1];
 					for (int a = domy.first(); a != -1 && (strict ? last1 > a + cst : last1 >= a + cst); a = domy.next(a))
@@ -1242,7 +1266,7 @@ public final class TableSmart extends ExtensionStructure {
 		/**
 		 * Restriction of the form x <op1> y and x <op2> z ...
 		 */
-		final class RestrictionMultiple extends Restriction {
+		final class RestrictionMultiple extends RestrictionComplex {
 			/**
 			 * The restrictions involved in this multiple restriction. All involved restrictions are on the same variable
 			 */
@@ -1253,7 +1277,7 @@ public final class TableSmart extends ExtensionStructure {
 			protected RestrictionMultiple(int x, List<Restriction> restrictions) {
 				super(x);
 				this.involvedRestrictions = restrictions.toArray(new Restriction[restrictions.size()]);
-				assert Stream.of(involvedRestrictions).allMatch(r -> r.x == x);
+				assert Stream.of(involvedRestrictions).allMatch(r -> r.x == x && !(r instanceof RestrictionMultiple));
 			}
 
 			@Override
@@ -1266,8 +1290,7 @@ public final class TableSmart extends ExtensionStructure {
 
 			@Override
 			public boolean isValid() {
-				valTimeLocal = valTime;
-				// we collect in tmp the valid (value) indexes for x
+				// we collect in tmp the valid indexes (of values) for x
 				cnt = 0;
 				for (int a = domx.first(); a != -1; a = domx.next(a))
 					if (isValidFor(a))
@@ -1277,19 +1300,18 @@ public final class TableSmart extends ExtensionStructure {
 
 			@Override
 			public void collect() {
-				supTimeLocal = supTime;
-				if (valTimeLocal != valTime) {
+				if (valTimeLocal != valTime) { // TODO is that possible?
 					boolean valid = isValid();
 					assert valid;
 				}
-				// we update the set of supportless idxs for vap
+				// we update nacx from indexes stored in tmp
 				if (!scp[x].assigned())
 					for (int i = 0; i < cnt; i++)
 						nacx.remove(tmp[i]);
 				// we update the set of supportless idxs for the other involved stars
 				for (Restriction restriction : involvedRestrictions)
 					if (restriction instanceof Restriction2)
-						((Restriction2) restriction).collectForVap2(cnt);
+						((Restriction2) restriction).collectForY(cnt);
 			}
 
 			@Override
