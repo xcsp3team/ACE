@@ -167,7 +167,7 @@ public class SetDense { // implements Iterable<Integer> {
 		return false;
 	}
 
-	public boolean isStrictlyIncreasing() {
+	public final boolean isStrictlyIncreasing() {
 		for (int i = limit; i > 0; i--)
 			if (dense[i] < dense[i - 1])
 				return false;
@@ -194,23 +194,22 @@ public class SetDense { // implements Iterable<Integer> {
 	 * @param a
 	 *            an element (typically, index of value)
 	 */
-	public void resetTo(int a) {
+	public final void resetTo(int a) {
 		clear();
 		add(a);
 	}
 
 	/**
-	 * Clears the set and add the first nb elements from the specified array.
+	 * Clears the set and adds the elements from the specified dense set
 	 * 
-	 * @param t
-	 *            array containing the elements to be added
-	 * @param nb
-	 *            the number of elements to be added
+	 * @param set
+	 *            a dense set
 	 */
-	public final void resetTo(int[] t, int nb) {
+	public final void resetTo(SetDense set) {
+		assert capacity() >= set.size();
 		clear();
-		for (int i = 0; i < nb; i++)
-			add(t[i]);
+		for (int i = 0; i < set.size(); i++)
+			add(set.dense[i]);
 	}
 
 	/**
@@ -248,7 +247,7 @@ public class SetDense { // implements Iterable<Integer> {
 	 * 
 	 * @return the element that has been removed
 	 */
-	public int shift() {
+	public final int shift() {
 		return removeAtPosition(0);
 	}
 
@@ -257,7 +256,7 @@ public class SetDense { // implements Iterable<Integer> {
 	 * 
 	 * @return the element that has been removed
 	 */
-	public int pop() {
+	public final int pop() {
 		assert limit >= 0;
 		limit--;
 		return dense[limit + 1];

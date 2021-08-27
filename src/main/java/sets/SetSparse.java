@@ -121,6 +121,28 @@ public class SetSparse extends SetDense {
 	}
 
 	/**
+	 * Removes all indexes from the specified array/set
+	 * 
+	 * @param set
+	 *            an array of indexes
+	 */
+	public final void removeAll(int[] set) {
+		for (int i = 0; i < set.length; i++)
+			remove(set[i]);
+	}
+
+	/**
+	 * Removes all indexes from the specified set
+	 * 
+	 * @param set
+	 *            a dense set
+	 */
+	public final void removeAll(SetDense set) {
+		for (int i = 0; i < set.size(); i++)
+			remove(set.dense[i]);
+	}
+
+	/**
 	 * Swaps the two specified indexes
 	 * 
 	 * @param a
