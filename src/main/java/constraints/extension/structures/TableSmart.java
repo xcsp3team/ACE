@@ -169,13 +169,13 @@ public final class TableSmart extends ExtensionStructure {
 		private Restriction1 buildRestriction1From(int x, TypeConditionOperatorRel op, int v) {
 			switch (op) {
 			case LT:
-				return new Rstr1LE(x, v, true);
+				return new Rstr1L(x, v, true);
 			case LE:
-				return new Rstr1LE(x, v, false);
+				return new Rstr1L(x, v, false);
 			case GE:
-				return new Rstr1GE(x, v, false);
+				return new Rstr1G(x, v, false);
 			case GT:
-				return new Rstr1GE(x, v, true);
+				return new Rstr1G(x, v, true);
 			case EQ:
 				return new Rstr1EQ(x, v);
 			case NE:
@@ -443,6 +443,11 @@ public final class TableSmart extends ExtensionStructure {
 		 */
 		abstract class Restriction1 extends Restriction {
 
+			@Override
+			public boolean checkIndexes(int[] t) {
+				return isValidFor(t[x]);
+			}
+
 			/** Index of the value in the domain of x that is related to the value specified at construction (in subclasses). */
 			protected int pivot;
 
@@ -456,14 +461,12 @@ public final class TableSmart extends ExtensionStructure {
 			}
 		}
 
-		final class Rstr1LE extends Restriction1 {
+		/**
+		 * Restriction of the form x < v (when strict) or x <= v
+		 */
+		final class Rstr1L extends Restriction1 {
 
-			@Override
-			public boolean checkIndexes(int[] t) {
-				return t[x] <= pivot;
-			}
-
-			protected Rstr1LE(int x, int v, boolean strict) {
+			protected Rstr1L(int x, int v, boolean strict) {
 				super(x);
 				// we compute the greatest index (of value) less than the value v ; both strict and non-strict cases are handled with the computed pivot
 				this.pivot = IntStream.range(0, domx.initSize()).map(a -> domx.initSize() - 1 - a).filter(a -> domx.toVal(a) <= v + (strict ? -1 : 0))
@@ -503,14 +506,12 @@ public final class TableSmart extends ExtensionStructure {
 
 		}
 
-		final class Rstr1GE extends Restriction1 {
+		/**
+		 * Restriction of the form x > v (when strict) or x >= v
+		 */
+		final class Rstr1G extends Restriction1 {
 
-			@Override
-			public boolean checkIndexes(int[] t) {
-				return t[x] >= pivot;
-			}
-
-			protected Rstr1GE(int x, int v, boolean strict) {
+			protected Rstr1G(int x, int v, boolean strict) {
 				super(x);
 				// we compute the smallest index (of value) greater than the value v ; both strict and non-strict cases handled with the computed pivot
 				this.pivot = IntStream.range(0, domx.initSize()).filter(a -> domx.toVal(a) >= v + (strict ? 1 : 0)).findFirst().orElse(domx.initSize());
@@ -549,12 +550,10 @@ public final class TableSmart extends ExtensionStructure {
 
 		}
 
+		/**
+		 * Restriction of the form x != v
+		 */
 		final class Rstr1NE extends Restriction1 {
-
-			@Override
-			public boolean checkIndexes(int[] t) {
-				return t[x] != pivot;
-			}
 
 			protected Rstr1NE(int x, int v) {
 				super(x);
@@ -585,15 +584,12 @@ public final class TableSmart extends ExtensionStructure {
 				if (present)
 					nacx.add(pivot);
 			}
-
 		}
 
+		/**
+		 * Restriction of the form x == v
+		 */
 		final class Rstr1EQ extends Restriction1 {
-
-			@Override
-			public boolean checkIndexes(int[] t) {
-				return t[x] == pivot;
-			}
 
 			protected Rstr1EQ(int x, int v) {
 				super(x);
@@ -621,7 +617,50 @@ public final class TableSmart extends ExtensionStructure {
 			public void collect() {
 				nacx.remove(pivot);
 			}
+		}
 
+		/**
+		 * Restriction of the form x in {v1, v2, ...}
+		 */
+		final class Rstr1IN extends Restriction1 {
+
+			private int[] supports;
+
+			private int residue; // gives an index in supports
+
+			protected Rstr1IN(int x, int[] values) {
+				super(x);
+				assert values.length > 0 && Kit.isStrictlyIncreasing(values) && IntStream.of(values).allMatch(v -> domx.toIdx(v) >= 0);
+				this.supports = IntStream.of(values).map(v -> domx.toIdx(v)).toArray();
+			}
+
+			@Override
+			public boolean isValidFor(int a) {
+				for (int b : supports) // TODO if supports large, use another piece of code ( a set/map or a binary search? or a an array of boolean ?)
+					if (a == b)
+						return true;
+				return false;
+			}
+
+			@Override
+			public boolean isValid() {
+				int a = supports[residue];
+				if (domx.contains(a))
+					return true;
+				for (int i = 0; i < supports.length; i++)
+					if (domx.contains(supports[i])) {
+						residue = i;
+						return true;
+					}
+				return false;
+			}
+
+			@Override
+			public void collect() {
+				for (int a : supports)
+					if (nacx.contains(a))
+						nacx.remove(a);
+			}
 		}
 
 		/**********************************************************************************************
@@ -668,7 +707,9 @@ public final class TableSmart extends ExtensionStructure {
 			}
 		}
 
-		/** Restriction of the form scp[vap] < scp[vap2] or the form scp[vap] <= scp[vap2] */
+		/**
+		 * Restriction of the form x < y (when strict) or x <= y
+		 */
 		final class Rstr2L extends Restriction2 {
 			private boolean strict;
 
@@ -765,7 +806,9 @@ public final class TableSmart extends ExtensionStructure {
 			}
 		}
 
-		/** Restriction of the form x >y or the form x >= y */
+		/**
+		 * Restriction of the form x > y (when strict) or x >= y
+		 */
 		final class Rstr2G extends Restriction2 {
 
 			@Override
@@ -863,6 +906,9 @@ public final class TableSmart extends ExtensionStructure {
 			}
 		}
 
+		/**
+		 * Restriction of the form x != y
+		 */
 		final class Rstr2NE extends Restriction2 {
 
 			@Override
@@ -1070,14 +1116,10 @@ public final class TableSmart extends ExtensionStructure {
 				if (!scp[y].assigned()) {
 					int cnt = 0;
 					for (int a = domx.lastRemoved(); a != -1; a = domx.prevRemoved(a)) {
-						// System.out.println("Idx=" + idx + " " + dom.prevDelIdx(idx));
 						int v = domx.toVal(a);
 						int b = domy.toIdxIfPresent(v);
-						if (b != -1 && nacy.contains(b)) {
-							// System.out.println(idx + " " + tmp.length + " " + dom.size() + " " + dom.initSize() + " cnt=" + cnt);
+						if (b != -1 && nacy.contains(b))
 							tmp[cnt++] = b;
-
-						}
 					}
 					nacy.resetTo(tmp, cnt);
 				}
@@ -1160,6 +1202,12 @@ public final class TableSmart extends ExtensionStructure {
 		 * Restriction of the form x > y + cst or the form x >= y + cst
 		 */
 		final class Rstr2pG extends Restriction2 {
+
+			@Override
+			public boolean checkIndexes(int[] t) {
+				return strict ? t[x] > t[y] + cst : t[x] >= t[y] + cst;
+			}
+
 			private boolean strict;
 			private int cst;
 
@@ -1248,11 +1296,6 @@ public final class TableSmart extends ExtensionStructure {
 			}
 
 			@Override
-			public boolean checkIndexes(int[] t) {
-				return strict ? t[x] > t[y] + cst : t[x] >= t[y] + cst;
-			}
-
-			@Override
 			public String toString() {
 				return scp[x] + " " + getClass().getSimpleName().charAt(getClass().getSimpleName().length() - 1) + (strict ? "T" : "E") + " " + scp[y] + " + "
 						+ cst;
@@ -1308,7 +1351,7 @@ public final class TableSmart extends ExtensionStructure {
 				if (!scp[x].assigned())
 					for (int i = 0; i < cnt; i++)
 						nacx.remove(tmp[i]);
-				// we update the set of supportless idxs for the other involved stars
+				// we update the nac sets for the other involved variables
 				for (Restriction restriction : involvedRestrictions)
 					if (restriction instanceof Restriction2)
 						((Restriction2) restriction).collectForY(cnt);
@@ -1325,7 +1368,6 @@ public final class TableSmart extends ExtensionStructure {
 			@Override
 			public String toString() {
 				return Stream.of(involvedRestrictions).map(r -> r.toString()).collect(Collectors.joining(", "));
-				// return "Multiple restrictions: " + Stream.of(involvedRestrictions).map(r -> r.toString()).collect(Collectors.joining("\n"));
 			}
 		}
 
