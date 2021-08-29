@@ -956,7 +956,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 				Variable[] scp0 = (Variable[]) tree.sons[0].vars(), scp1 = (Variable[]) tree.sons[1].vars();
 				if (scp0.length == 2 && scp1.length == 2 && scp0[0] == scp1[1] && scp0[1] == scp1[0]) {
 					int k0 = tree.sons[0].val(0), k1 = tree.sons[1].val(0);
-					c = new Disjonctive(this, scp0[0], k0, scp[1], k1); // primitiveSystem.out.println("hhhh" + Kit.join(scp0) + " " + Kit.join(scp1));
+					c = new Disjonctive(this, scp0[0], k0, scp[1], k1);
 				}
 			}
 			if (c != null)

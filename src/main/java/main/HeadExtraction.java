@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package main;
 
 import java.util.ArrayList;
@@ -267,12 +259,12 @@ public class HeadExtraction extends Head {
 	}
 
 	@Override
-	protected void solveInstance(int instanceNumber) {
-		problem = buildProblem(instanceNumber);
+	protected void solveInstance(int i) {
+		problem = buildProblem(i);
 		solver = buildSolver(problem);
 		Stopwatch stopwatch = new Stopwatch();
 		cores.clear(); // = new ArrayList<List<Constraint>>();
-		for (int i = 0; i < control.extraction.nCores; i++) {
+		for (int cnt = 0; cnt < control.extraction.nCores; cnt++) {
 			stopwatch.start();
 			buildOrInitializeStructures(cores);
 			if (!wcore()) {
@@ -282,12 +274,6 @@ public class HeadExtraction extends Head {
 			if (control.extraction.method == EExtraction.VAR)
 				minimalCoreOfVars();
 			List<Constraint> core = minimalCoreOfCtrs();
-			// if (cp.settingExtraction.saveCores) {
-			// String name = problem.name().substring(problem.name().lastIndexOf("/") + 1);
-			// if (name.indexOf(".") != -1)
-			// name = name.substring(0, name.indexOf("."));
-			// Utilities.save(new Subproblem(problem, presentVars, presentCtrs).documentXCSP(), "core" + nCalls + "_" + i + "-" + name + ".xml");
-			// }
 			cores.add(core);
 			Kit.log.config("New Core " + (nCalls++) + " with #C=" + core.size() + ",#V=" + core.stream().collect(Collectors.toCollection(HashSet::new)).size()
 					+ " => { " + Kit.join(core) + " }");
@@ -296,9 +282,9 @@ public class HeadExtraction extends Head {
 	}
 
 	@Override
-	public Problem buildProblem(int instanceNumber) {
+	public Problem buildProblem(int i) {
 		if (problem == null)
-			problem = super.buildProblem(instanceNumber);
+			problem = super.buildProblem(i);
 		else
 			problem.reset();
 		return problem;
@@ -308,17 +294,20 @@ public class HeadExtraction extends Head {
 		return cores.size() == 0 ? null : cores.get(cores.size() - 1);
 	}
 
+	public HeadExtraction(String controlFileName) {
+		super(controlFileName);
+	}
+
 	public HeadExtraction() {
+		this(null);
 	}
 
-	public HeadExtraction(String configurationFileName) {
-		super(configurationFileName);
-	}
-
-	public HeadExtraction(Problem pb) {
-		this.problem = pb;
-	}
-
+	/**
+	 * Starts the main function of the constraint solver ACE (when extracting unsatisfiable cores of a CSP instance)
+	 * 
+	 * @param args
+	 *            arguments specified by the user
+	 */
 	public static void main(String[] args) {
 		Input.loadArguments(args);
 		HeadExtraction extraction = new HeadExtraction();

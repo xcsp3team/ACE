@@ -190,7 +190,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	private static ConstraintExtension build(Problem pb, Variable[] scp, boolean positive, boolean starred) {
 		SettingExtension settings = pb.head.control.extension;
 		Kit.control(scp.length > 1);
-		Set<Class<?>> classes = pb.head.handlerClasses.get(ConstraintExtension.class);
+		Set<Class<?>> classes = pb.head.availableClasses.get(ConstraintExtension.class);
 		String className = (positive ? settings.positive : settings.negative).toString();
 		className = className.equals("V") || className.equals("VA") ? "Extension" + className : className;
 		if (starred) {

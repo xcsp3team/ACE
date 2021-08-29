@@ -87,11 +87,11 @@ public final class Kit {
 			@Override
 			public void publish(LogRecord record) {
 				if (record.getLevel().intValue() < Level.INFO.intValue()) {
-					if (Input.multiThreads)
+					if (Input.portfolio)
 						System.out.println("From " + ((Head) Thread.currentThread()).control.settingsFilename + " :");
 					System.out.println(record.getMessage());
 				} else {
-					if (Input.multiThreads)
+					if (Input.portfolio)
 						System.err.println("From " + ((Head) Thread.currentThread()).control.settingsFilename + " :");
 					// c.setTimeInMillis(record.getMillis());
 					Thread t = Head.currentThread();

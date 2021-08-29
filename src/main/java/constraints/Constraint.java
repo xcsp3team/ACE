@@ -76,7 +76,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * An interface for objects that register constraints that are associated to them. Note that constraints have necessarily the same types of domains.
+	 * An interface for objects that register constraints that are associated to them. Note that, for the moment, constraints must have necessarily the same
+	 * types of domains.
 	 */
 	public static interface RegisteringCtrs {
 
@@ -170,14 +171,14 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/*************************************************************************
-	 ***** Static
+	 ***** Static members
 	 *************************************************************************/
 
 	public static final int MAX_FILTERING_COMPLEXITY = 2;
 
 	/**
-	 * A special constraint that can be used (for instance) by methods that requires returning three-state values (null,a problem constraint, this special
-	 * marker).
+	 * A special constraint that can be used (for instance) by methods that requires returning three-state values: null, a classical constraint, and this
+	 * special constraint/marker.
 	 */
 	public static final Constraint TAG = new Constraint() {
 		@Override
@@ -186,7 +187,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		}
 	};
 
-	public static final int howManyVarsWithin(int[] sizes, int spaceLimitation) {
+	private static final int howManyVariablesWithin(int[] sizes, int spaceLimitation) {
 		double limit = Math.pow(2, spaceLimitation);
 		Arrays.sort(sizes);
 		double prod = 1;
@@ -196,8 +197,18 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		return prod > limit ? (sizes.length - i - 1) : ALL;
 	}
 
-	public static final int howManyVarsWithin(Variable[] vars, int spaceLimitation) {
-		return howManyVarsWithin(Stream.of(vars).mapToInt(x -> x.dom.size()).toArray(), spaceLimitation);
+	/**
+	 * Computes the greatest number k of variables such that, whatever is the selection of k variables in the specified array, the size of the Cartesian product
+	 * of the domains of these variables does not exceed the specified limit.
+	 * 
+	 * @param vars
+	 *            an array of variables
+	 * @param spaceLimitation
+	 *            a limit in term of number of tuples
+	 * @return the greatest number of variables ensuring that the Cartesian product of the domains of the selected variables does not exceed the specified limit
+	 */
+	public static final int howManyVariablesWithin(Variable[] vars, int spaceLimitation) {
+		return howManyVariablesWithin(Stream.of(vars).mapToInt(x -> x.dom.size()).toArray(), spaceLimitation);
 	}
 
 	public static Constraint firstUnsatisfiedHardConstraint(Constraint[] constraints, int[] solution) {
@@ -222,16 +233,27 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 				.map(i -> (int) IntStream.range(i + 1, ctrs.length).filter(j -> Variable.areSimilarArrays(ctrs[i].scp, ctrs[j].scp)).count()).sum();
 	}
 
+	/**
+	 * Returns true if the num(ber)s of the constraints in the specified array are normalized, meaning that the num(ber) of the constraint at index i of the
+	 * array is i.
+	 * 
+	 * @param ctrs
+	 *            an array of constraints
+	 * @return true if the num(ber)s of the constraints in the specified array are normalized
+	 */
 	public static final boolean areNumsNormalized(Constraint[] ctrs) {
 		return IntStream.range(0, ctrs.length).noneMatch(i -> i != ctrs[i].num);
 	}
 
 	public static final boolean isPresentScope(Constraint c, boolean[] presentVars) {
-		return Stream.of(c.scp).allMatch(x -> presentVars[x.num]);
+		for (Variable x : c.scp)
+			if (!presentVars[x.num])
+				return false;
+		return true;
 	}
 
 	public static final long costOfCoveredConstraintsIn(Constraint[] ctrs) {
-		// using streams is too costly
+		// note that using streams is costly
 		long cost = 0;
 		for (Constraint c : ctrs)
 			if (c.futvars.size() == 0)
@@ -518,7 +540,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 			return futureLimitation < scp.length ? Math.max(arityLimit, futureLimitation) : Integer.MAX_VALUE;
 		int spaceLimitation = problem.head.control.propagation.spaceLimitation;
 		if (spaceLimitation != -1)
-			return Math.max(arityLimit, howManyVarsWithin(scp, spaceLimitation));
+			return Math.max(arityLimit, howManyVariablesWithin(scp, spaceLimitation));
 		return Integer.MAX_VALUE;
 	}
 
@@ -526,7 +548,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		this.problem = pb;
 		this.scp = scp = Stream.of(scp).distinct().toArray(Variable[]::new); // this.scp and scp updated
 		control(scp.length >= 1 && Stream.of(scp).allMatch(x -> x != null), () -> this + " with a scope badly formed ");
-		Stream.of(scp).forEach(x -> x.collectedCtrs.add(this));
+		for (Variable x : scp)
+			x.collectedCtrs.add(this);
 		this.infiniteDomainVars = Stream.of(scp).filter(x -> x.dom instanceof DomainInfinite).toArray(Variable[]::new);
 
 		this.doms = Variable.buildDomainsArrayFor(scp);

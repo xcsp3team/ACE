@@ -83,7 +83,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public String name() {
-		return filenames.get(problem.head.instanceNumber);
+		return filenames.get(problem.head.instanceIndex);
 	}
 
 	private List<String> collect(List<String> list, File f) {

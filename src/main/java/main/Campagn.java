@@ -278,8 +278,6 @@ public class Campagn { // using the cluster
 	}
 
 	public void runVariants() {
-		// if (configurationVariantsFileName == null) Kit.copy(defaultConfigurationFileName,
-		// getDirectoryNameOfConfigurations() + File.separator + defaultConfigurationFileName);
 		String[] sequentialVariants = Head.loadSequentialVariants(defaultSettingsFileName, settingsVariantsFileName,
 				getDirectoryNameOfConfigurations() + File.separator);
 		for (String sequentialVariant : sequentialVariants)

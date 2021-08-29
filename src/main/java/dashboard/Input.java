@@ -1,12 +1,6 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package dashboard;
+
+import static utility.Kit.control;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,83 +17,107 @@ import problem.XCSP3;
 import utility.Kit;
 
 /**
- * This class allows us to handle arguments given by the user on the command line.
+ * This class allows us to handle arguments given by the user on the command line. These arguments may concern the problem to solve or more generally the
+ * solving process (i.e., options to choose like for example which search heuristics to use).
+ * 
+ * @author Christophe Lecoutre
  */
 public final class Input {
 
 	private static final String OPTION_PREFIX = "-";
 
-	/** User arguments given on the command line */
+	/**
+	 * All user arguments given on the command line
+	 */
 	public static String[] args;
 
-	/** User arguments given on the command for the problem (instance) */
-	public static String[] argsForPb;
+	/**
+	 * The user arguments given on the command that concern the problem (instance). For XCSP3 instances, the array only contains the XCSP3 filename.
+	 */
+	public static String[] argsForProblem;
 
-	/** User arguments given on the command for the control panel (mainly, for the solver) */
-	public final static Map<String, String> argsForCp = new HashMap<>(256);
+	/**
+	 * The user arguments given on the command that concern the control panel (i.e., the solving process)
+	 */
+	public final static Map<String, String> argsForSolving = new HashMap<>(256);
 
-	public static boolean multiThreads;
+	/**
+	 * Indicates if a portfolio is used, i.e., various solving processes will be running in parallel
+	 */
+	public static boolean portfolio;
 
-	public static String userSettingsFilename;
+	/**
+	 * The filename for controls, if such a file is given by the user on the command line
+	 */
+	public static String controlFilename;
 
-	public static String problemPackageName;
+	/**
+	 * The name of the package corresponding to the problem to be loaded. If an XCSP3 instance is given by the user on the command line, the package is
+	 * problem.XCSP3.
+	 */
+	public static String problemName;
 
-	// TODO to put elsewhere ? because can be specific to each Head object ?
+	/**
+	 * The number of instances to be solved. Usually, this is 1.
+	 */
 	public static int nInstancesToSolve = 1;
 
+	/**
+	 * Returns the last argument passed by the user on the command line
+	 * 
+	 * @return the last argument passed by the user on the command line
+	 */
 	public static String lastArgument() {
 		return args[args.length - 1];
 	}
 
 	private static int setNInstancesToSolveFrom(String token) {
-		try {
-			if (token.toLowerCase().equals(Control.ALL)) {
-				nInstancesToSolve = Integer.MAX_VALUE;
-				return 1;
-			} else if (Utilities.isInteger(token)) {
-				int number = Integer.parseInt(token);
-				Kit.control(number == -1 || number > 0, () -> "invalid number of instances");
-				nInstancesToSolve = number == -1 ? Integer.MAX_VALUE : number;
-				return 1;
-			} else {
-				nInstancesToSolve = 1;
-				return 0;
-			}
-		} catch (NumberFormatException e) {
-			return (Integer) Kit.exit("The number of instances to be solved must be a positive  integer, -1 or all (" + token + " is not valid )", e);
+		if (token.toLowerCase().equals(Control.ALL)) {
+			nInstancesToSolve = Integer.MAX_VALUE;
+			return 1;
 		}
+		if (Utilities.isInteger(token)) {
+			int number = Utilities.toInteger(token);
+			control(number == -1 || number > 0, () -> "invalid number of instances");
+			nInstancesToSolve = number == -1 ? Integer.MAX_VALUE : number; // -1 stands for all
+			return 1;
+		}
+		nInstancesToSolve = 1;
+		return 0;
 	}
 
 	/**
-	 * Sets the arguments passed by the user in command line.
+	 * Sets the arguments passed by the user on the command line
+	 * 
+	 * @param args
+	 *            arguments given by the sued on the command line
 	 */
 	public static void loadArguments(String... args) {
-		argsForCp.clear();
-		args = Stream.of(args).filter(s -> s.length() > 0).toArray(String[]::new); // clean args
-		Kit.control(args.length > 0);
-		Input.args = args;
-		multiThreads = Kit.isXMLFileWithRoot(lastArgument(), Head.VARIANT_PARALLEL);
+		Input.args = args = Stream.of(args).filter(s -> s.length() > 0).toArray(String[]::new); // cleaning and storing args
+		control(args.length > 0);
+		Input.portfolio = Kit.isXMLFileWithRoot(lastArgument(), Head.VARIANT_PARALLEL);
 		int cursor = 0;
-		userSettingsFilename = Kit.isXMLFileWithRoot(args[cursor], Control.CONFIGURATION) ? args[cursor++] : Control.DEFAULT_CONFIGURATION;
+		Input.controlFilename = Kit.isXMLFileWithRoot(args[cursor], Control.CONFIGURATION) ? args[cursor++] : Control.DEFAULT_CONFIGURATION;
 		// control of this file performed later
 		cursor += setNInstancesToSolveFrom(args[cursor]);
-		Kit.control(!multiThreads || nInstancesToSolve == 1);
-		Kit.control(cursor < args.length && !args[cursor].startsWith(OPTION_PREFIX), () -> "The package name or (for XCSP) the instance file name is missing.");
-		problemPackageName = args[cursor].endsWith(".xml") || args[cursor].endsWith(".lzma") ? XCSP3.class.getName() : args[cursor++];
+		control(!portfolio || nInstancesToSolve == 1);
+		control(cursor < args.length && !args[cursor].startsWith(OPTION_PREFIX), () -> "The package name or (for XCSP) the instance file name is missing.");
+		Input.problemName = args[cursor].endsWith(".xml") || args[cursor].endsWith(".lzma") ? XCSP3.class.getName() : args[cursor++];
 		List<String> list = new ArrayList<>();
 		while (cursor < args.length && (!args[cursor].startsWith(OPTION_PREFIX) || Utilities.isInteger(args[cursor])))
 			list.add(args[cursor++]);
-		argsForPb = list.toArray(new String[list.size()]);
-		// now, look For solver options
+		Input.argsForProblem = list.toArray(new String[list.size()]);
+		// now, we look for solving options
+		Input.argsForSolving.clear();
 		Set<String> setOfUserKeys = new HashSet<>();
 		for (; cursor < args.length; cursor++) {
 			String arg = args[cursor];
-			Kit.control(arg.startsWith(OPTION_PREFIX), () -> arg + " is not put at the right position");
+			control(arg.startsWith(OPTION_PREFIX), () -> arg + " is not put at the right position");
 			int equalPosition = arg.indexOf('=');
 			String key = equalPosition > 1 ? arg.substring(1, equalPosition) : arg.substring(1);
 			String value = equalPosition > 1 ? (equalPosition == arg.length() - 1 ? "" : arg.substring(equalPosition + 1)) : "true";
-			Kit.control(!setOfUserKeys.contains(key), () -> "The configuration key " + key + " appears several times.");
-			argsForCp.put(key, value);
+			control(!setOfUserKeys.contains(key), () -> "The configuration key " + key + " appears several times.");
+			Input.argsForSolving.put(key, value);
 			setOfUserKeys.add(key);
 			// TODO control validity of key-value
 		}

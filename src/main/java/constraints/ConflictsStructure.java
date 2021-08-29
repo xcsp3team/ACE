@@ -112,6 +112,16 @@ public final class ConflictsStructure implements RegisteringCtrs {
 	 */
 	public int[] nMaxConflicts;
 
+	private void computeMaxConflicts(Domain[] doms) {
+		for (int i = 0; i < nMaxConflicts.length; i++) {
+			int max = Integer.MIN_VALUE;
+			for (int a = doms[i].first(); a != -1; a = doms[i].next(a))
+				max = Math.max(max, nConflicts[i][a]);
+			nMaxConflicts[i] = max;
+		}
+		assert controlStructures();
+	}
+
 	/**
 	 * Builds a conflicts structure for the specified constraint.
 	 * 
@@ -122,16 +132,6 @@ public final class ConflictsStructure implements RegisteringCtrs {
 		this.nConflicts = Variable.litterals(c.scp).intArray();
 		this.nMaxConflicts = new int[c.scp.length];
 		registeredCtrs.add(c);
-	}
-
-	private void computeMaxConflicts(Domain[] doms) {
-		for (int i = 0; i < nMaxConflicts.length; i++) {
-			int max = Integer.MIN_VALUE;
-			for (int a = doms[i].first(); a != -1; a = doms[i].next(a))
-				max = Math.max(max, nConflicts[i][a]);
-			nMaxConflicts[i] = max;
-		}
-		assert controlStructures();
 	}
 
 	/**

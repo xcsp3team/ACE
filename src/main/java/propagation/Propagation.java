@@ -36,7 +36,7 @@ public abstract class Propagation {
 	public static Propagation buildFor(Solver solver) {
 		if (!solver.head.control.solving.enablePrepro && !solver.head.control.solving.enableSearch)
 			return null;
-		return Reflector.buildObject(solver.head.control.propagation.clazz, solver.head.handlerClasses.get(Propagation.class), solver);
+		return Reflector.buildObject(solver.head.control.propagation.clazz, solver.head.availableClasses.get(Propagation.class), solver);
 	}
 
 	/*************************************************************************

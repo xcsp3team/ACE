@@ -51,6 +51,7 @@ public interface Domain extends SetLinked {
 	 *********************************************************************************************/
 
 	static final int TAG_RANGE = Integer.MAX_VALUE;
+
 	static final int TAG_SYMBOLS = Integer.MAX_VALUE - 1;
 
 	/**

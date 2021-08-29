@@ -22,7 +22,7 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	private static Long sharedMaxBound = Long.MAX_VALUE;
 
 	public final boolean possiblyUpdateSharedBounds() {
-		if (!Input.multiThreads)
+		if (!Input.portfolio)
 			return false;
 		boolean modified = false;
 		synchronized (sharedMinBound) {
@@ -41,7 +41,7 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	}
 
 	public final boolean possiblyUpdateLocalBounds() {
-		if (!Input.multiThreads)
+		if (!Input.portfolio)
 			return false;
 		boolean modified = false;
 		synchronized (sharedMinBound) {

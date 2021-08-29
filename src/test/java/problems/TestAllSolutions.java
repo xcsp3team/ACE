@@ -186,6 +186,6 @@ public class TestAllSolutions {
 
 	@Test
 	public void test() {
-		assertEquals(nSolutions, runResolution(args, false).solver.solutions.found);
+		assertEquals(nSolutions, runResolution(args).solver.solutions.found);
 	}
 }

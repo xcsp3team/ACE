@@ -564,7 +564,7 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	public final void buildValueOrderingHeuristic() {
 		if (heuristic == null) {
 			String className = this.dom instanceof DomainInfinite ? First.class.getName() : problem.head.control.valh.heuristic;
-			Set<Class<?>> classes = problem.head.handlerClasses.get(HeuristicValues.class);
+			Set<Class<?>> classes = problem.head.availableClasses.get(HeuristicValues.class);
 			heuristic = Reflector.buildObject(className, classes, this, problem.head.control.valh.anti);
 			if (heuristic instanceof Bivs) {
 				int bivs_d = problem.head.control.valh.bivsDistance;

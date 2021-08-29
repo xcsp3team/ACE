@@ -1,5 +1,6 @@
 package main;
 
+import static java.util.stream.Collectors.toCollection;
 import static utility.Kit.log;
 
 import java.io.File;
@@ -49,7 +50,9 @@ import utility.Kit.Stopwatch;
 import utility.Reflector;
 
 /**
- * This is the class of the head in charge of solving a problem instance
+ * This is the class of the head in charge of solving a problem instance.
+ * 
+ * @author Christophe Lecoutre
  */
 public class Head extends Thread {
 
@@ -68,6 +71,11 @@ public class Head extends Thread {
 	public static final String MAX = "max";
 	public static final String STEP = "step";
 	public static final String SEED = "seed";
+
+	/**
+	 * The set of objects in charge of solving a problem. Typically, there is only one object. However, in portfolio mode, it contains more than one object.
+	 */
+	private static Head[] heads;
 
 	public final static String[] loadSequentialVariants(String configurationFileName, String configurationVariantsFileName, String prefix) {
 		List<String> list = new ArrayList<>();
@@ -125,11 +133,6 @@ public class Head extends Thread {
 		return list.toArray(new String[list.size()]);
 	}
 
-	/**
-	 * The set of objects in charge of solving a problem. For portfolio mode, contains more than one object.
-	 */
-	private static Head[] heads;
-
 	public synchronized static void saveMultithreadResultsFiles(Head head) {
 		String fileName = head.output.save(head.stopwatch.wckTime());
 		if (fileName != null) {
@@ -165,8 +168,8 @@ public class Head extends Thread {
 	}
 
 	public final static String[] loadVariantNames() {
-		if (Input.multiThreads) {
-			String prefix = Kit.attValueFor(Input.userSettingsFilename, "xml", "exportMode");
+		if (Input.portfolio) {
+			String prefix = Kit.attValueFor(Input.controlFilename, "xml", "exportMode");
 			if (prefix.equals("NO"))
 				prefix = ".";
 			if (prefix != "")
@@ -177,11 +180,17 @@ public class Head extends Thread {
 				file.mkdirs();
 			else
 				Kit.control(file.isDirectory());
-			return loadSequentialVariants(Input.userSettingsFilename, Input.lastArgument(), prefix);
+			return loadSequentialVariants(Input.controlFilename, Input.lastArgument(), prefix);
 		} else
-			return new String[] { Input.userSettingsFilename };
+			return new String[] { Input.controlFilename };
 	}
 
+	/**
+	 * Starts the main function of the constraint solver ACE (when solving a CSP or COP instance)
+	 * 
+	 * @param args
+	 *            arguments specified by the user
+	 */
 	public static void main(String[] args) {
 		if (args.length == 0 && !isAvailableIn())
 			new Head().control.settings.display(); // the usage is displayed
@@ -192,22 +201,23 @@ public class Head extends Thread {
 	}
 
 	/**********************************************************************************************
-	 * Handling classes and shared structures
+	 * Inner classes for available classes and shared structures
 	 *********************************************************************************************/
 
-	public HandlerClasses handlerClasses = new HandlerClasses();
+	public static class AvailableClasses {
 
-	public static class HandlerClasses {
 		private static final String DOT_CLASS = ".class";
-		private static final String DOT_JAR = ".jar";
 
+		/**
+		 * The map that associates all available classes (value) that inherit from a class (key)
+		 */
 		private Map<Class<?>, Set<Class<?>>> map = new HashMap<>();
 
 		public Set<Class<?>> get(Class<?> clazz) {
 			return map.get(clazz);
 		}
 
-		private HandlerClasses() {
+		private AvailableClasses() {
 			loadClasses();
 		}
 
@@ -240,7 +250,7 @@ public class Head extends Thread {
 			try {
 				// we load classes from jar files, first (it is necessary when ACE is run from a jar)
 				for (String classPathToken : System.getProperty("java.class.path", ".").split(File.pathSeparator))
-					if (classPathToken.endsWith(DOT_JAR))
+					if (classPathToken.endsWith(".jar"))
 						try (JarInputStream jarFile = new JarInputStream(new FileInputStream(classPathToken))) {
 							// if (classPathToken.endsWith("CyclesAlgorithmsPlugin.jar"))
 							// continue;
@@ -286,11 +296,8 @@ public class Head extends Thread {
 		}
 	}
 
-	public StructureSharing structureSharing = new StructureSharing();
-
 	/**
 	 * This class stores information (through maps) about shared data structures, concerning intension, extension and MDD constraints
-	 *
 	 */
 	public static class StructureSharing {
 
@@ -304,8 +311,14 @@ public class Head extends Thread {
 		 */
 		public Map<String, ExtensionStructure> mapForExtension = new HashMap<>();
 
+		/**
+		 * The map that associates an MDD with an MDD constraint key
+		 */
 		public Map<String, MDD> mapForMDDs = new HashMap<>();
 
+		/**
+		 * Clears all maps that stores information about the sharing of data structures
+		 */
 		public void clear() {
 			mapForIntension.clear();
 			mapForExtension.clear();
@@ -315,31 +328,62 @@ public class Head extends Thread {
 	}
 
 	/**********************************************************************************************
-	 * Fields
+	 * Class members
 	 *********************************************************************************************/
 
-	public final Stopwatch stopwatch = new Stopwatch(), instanceStopwatch = new Stopwatch();
-
-	/** The current problem instance to be solved. */
+	/**
+	 * The current problem instance to be solved
+	 */
 	public Problem problem;
 
-	/** The solver used to solve the current problem instance. */
+	/**
+	 * The solver used to solve the current problem instance
+	 */
 	public Solver solver;
 
 	/**
-	 * The object that stores all parameters to pilot the solving process
+	 * The object that stores all parameters for piloting the solving process
 	 */
 	public final Control control;
 
+	/**
+	 * The object that handles the output of the solving process (typically, on the standard output)
+	 */
 	public final Output output;
 
-	public final List<ObserverOnConstruction> observersConstruction = new ArrayList<>();
+	/**
+	 * The construction observers that are systematically recorded, whatever is the problem instance to be solved
+	 */
+	private final List<ObserverOnConstruction> permamentObserversConstruction;
 
 	/**
-	 * The <code> Random </code> object used in resolution (randomization of heuristics, generation of random solutions,...). <br>
-	 * However, note that it is not used when generating random lists (see package <code> randomLists </code>).
+	 * The construction observers that are recorded with respect to the current instance to be solved
+	 */
+	public List<ObserverOnConstruction> observersConstruction = new ArrayList<>();
+
+	/**
+	 * The index of the current problem instance to be solved. of course, when there is only one instance to be solved, this is 0.
+	 */
+	public int instanceIndex;
+
+	/**
+	 * The object that allows us to get (through a map) all available classes that inherit from a class
+	 */
+	public AvailableClasses availableClasses = new AvailableClasses();
+
+	/**
+	 * The object that stores information (through maps) about shared data structures, concerning intension, extension and MDD constraints
+	 */
+	public StructureSharing structureSharing = new StructureSharing();
+
+	/**
+	 * The object that may be used in different steps of resolution: randomization of heuristics, generation of random solutions,...
 	 */
 	public final Random random = new Random();
+
+	public final Stopwatch stopwatch = new Stopwatch();
+
+	public final Stopwatch instanceStopwatch = new Stopwatch();
 
 	public boolean mustPreserveUnaryConstraints() {
 		return control.constraints.preserveUnaryCtrs || this instanceof HeadExtraction || control.problem.isSymmetryBreaking()
@@ -350,56 +394,72 @@ public class Head extends Thread {
 		return control.general.timeout <= instanceStopwatch.wckTime();
 	}
 
-	public Head(String configurationFileName) {
-		this.control = Control.buildControlPanelFor(configurationFileName);
-		this.output = new Output(this, configurationFileName);
-		observersConstruction.add(this.output);
+	public Head(String controlFileName) {
+		this.control = Control.buildControlPanelFor(controlFileName);
+		this.output = new Output(this, controlFileName);
+		this.permamentObserversConstruction = Stream.of(output).map(o -> (ObserverOnConstruction) o).collect(toCollection(ArrayList::new));
+		// adding as permanent construction observer GraphViz (when problem built) ?: Graphviz.saveGraph(problem, control.general.saveNetworkGraph);
+		this.observersConstruction = permamentObserversConstruction.stream().collect(toCollection(ArrayList::new)); // need this if we run HeadExtraction
 	}
 
 	public Head() {
-		this((String) null);
+		this(null);
 	}
 
-	public int instanceNumber;
-
-	public Problem buildProblem(int instanceNumber) {
-		this.instanceNumber = instanceNumber;
-		random.setSeed(control.general.seed + instanceNumber);
+	/**
+	 * Builds and returns the ith problem instance to be solved
+	 * 
+	 * @param i
+	 *            the index/number (in a sequence) of the problem instance to be built
+	 * @return the ith problem instance to be solved
+	 */
+	public Problem buildProblem(int i) {
+		this.instanceIndex = i;
+		random.setSeed(control.general.seed + i);
 		ProblemAPI api = null;
 		try {
 			try {
-				api = (ProblemAPI) Reflector.buildObject(Input.problemPackageName);
+				api = (ProblemAPI) Reflector.buildObject(Input.problemName);
 			} catch (Exception e) {
-				api = (ProblemAPI) Reflector.buildObject("problems." + Input.problemPackageName); // is it still relevant to try that?
+				api = (ProblemAPI) Reflector.buildObject("problems." + Input.problemName); // is it still relevant to try that?
 			}
 		} catch (Exception e) {
-			return (Problem) Kit.exit("The class " + Input.problemPackageName + " cannot be found.", e);
+			return (Problem) Kit.exit("The class " + Input.problemName + " cannot be found.", e);
 		}
 		SettingProblem settings = control.problem;
-		problem = new Problem(api, settings.variant, settings.data, settings.dataFormat, settings.dataexport, Input.argsForPb, this);
+		this.problem = new Problem(api, settings.variant, settings.data, settings.dataFormat, settings.dataexport, Input.argsForProblem, this);
 		for (ObserverOnConstruction obs : observersConstruction)
 			obs.afterProblemConstruction();
 		problem.display();
-		// Graphviz.saveGraph(problem, control.general.saveNetworkGraph);
 		return problem;
 	}
 
+	/**
+	 * Builds and returns the solver that will be used to solve the specified problem (instance)
+	 * 
+	 * @param problem
+	 *            the problem (instance) to be solved
+	 * @return the solver that will be used to solve the specified problem
+	 */
 	protected final Solver buildSolver(Problem problem) {
-		Kit.log.config("\n" + Output.COMMENT_PREFIX + "Building solver... ");
-		solver = Reflector.buildObject(control.solving.clazz, Solver.class, this);
+		log.config("\n" + Output.COMMENT_PREFIX + "Building solver... ");
+		this.solver = Reflector.buildObject(control.solving.clazz, Solver.class, this);
 		for (ObserverOnConstruction obs : observersConstruction)
 			obs.afterSolverConstruction();
 		return solver;
 	}
 
-	protected void solveInstance(int instanceNumber) {
-		observersConstruction.clear();
-		observersConstruction.add(output);
-
+	/**
+	 * Solves the ith problem instance (usually, i=0 as there is only one instance to be solved).
+	 * 
+	 * @param i
+	 *            the index/number (in a sequence) of the problem instance to be solved
+	 */
+	protected void solveInstance(int i) {
+		this.observersConstruction = permamentObserversConstruction.stream().collect(toCollection(ArrayList::new));
 		structureSharing.clear();
-		problem = buildProblem(instanceNumber);
+		problem = buildProblem(i);
 		structureSharing.clear();
-
 		if (control.solving.enablePrepro || control.solving.enableSearch) {
 			solver = buildSolver(problem);
 			solver.solve();
@@ -409,22 +469,21 @@ public class Head extends Thread {
 
 	@Override
 	public void run() {
+		log.config("\n" + Kit.preprint("ACE (AbsCon Essence)", Kit.ORANGE) + " v1.0beta " + Kit.dateOf(Head.class));
 		stopwatch.start();
-		log.config("\n" + Kit.preprint("ACE (AbsCon Essence)", Kit.ORANGE) + " v21.05 " + Kit.dateOf(Head.class));
-		boolean crashed = false;
+		boolean[] crashed = new boolean[Input.nInstancesToSolve];
 		for (int i = 0; i < Input.nInstancesToSolve; i++) {
 			try {
-				crashed = false;
 				solveInstance(i);
 			} catch (Throwable e) {
-				crashed = true;
-				System.out.println(Kit.preprint("\n! ERROR (use -ev for more details)", Kit.RED)); // log.warning("Instance with exception");
+				crashed[i] = true;
+				System.out.println(Kit.preprint("\n! ERROR (use -ev for more details)", Kit.RED));
 				if (control.general.makeExceptionsVisible)
 					e.printStackTrace();
 			}
 		}
-		if (Input.multiThreads) {
-			if (!crashed) {
+		if (Input.portfolio) { // in that case, only one instance to solve (see control in Input)
+			if (!crashed[0]) {
 				Head.saveMultithreadResultsFiles(this);
 				System.exit(0);
 			}

@@ -6,7 +6,7 @@ import main.HeadExtraction;
 
 public class UtilityForTests {
 
-	public static Head runResolution(String args, boolean extraction) {
+	private static Head runHeadMethod(String args, boolean extraction) {
 		System.out.println("\nCommand : " + args);
 		Input.loadArguments(args.split("\\s+"));
 		Head resolution = extraction ? new HeadExtraction() : new Head();
@@ -21,10 +21,10 @@ public class UtilityForTests {
 	}
 
 	public static Head runResolution(String args) {
-		return runResolution(args, false);
+		return runHeadMethod(args, false);
 	}
 
 	public static HeadExtraction runExtraction(String args) {
-		return (HeadExtraction) runResolution(args, true);
+		return (HeadExtraction) runHeadMethod(args, true);
 	}
 }

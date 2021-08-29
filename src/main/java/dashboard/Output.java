@@ -21,8 +21,8 @@ import org.xcsp.common.Types.TypeOptimization;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
-import constraints.ConstraintIntension;
 import constraints.ConstraintExtension;
+import constraints.ConstraintIntension;
 import dashboard.Control.SettingVars;
 import interfaces.Observers.ObserverOnConstruction;
 import interfaces.Observers.ObserverOnRuns;
@@ -233,7 +233,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSearch, Observe
 	}
 
 	public void afterData() { // not a method from an observer
-		InformationBloc info = instanceInfo(head.instanceNumber);
+		InformationBloc info = instanceInfo(head.instanceIndex);
 		save(head.instanceStopwatch.wckTime());
 		Kit.log.config(COMMENT_PREFIX + Kit.preprint("Instance ", Kit.BLUE) + head.problem.name() + "\n");
 		record(TypeOutput.INSTANCE, info.entries(), resolElt);
@@ -472,6 +472,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSearch, Observe
 	private final InformationBloc preproInfo() {
 		InformationBloc m = new InformationBloc(PREPROCESSING);
 		m.put(N_EFFECTIVE, head.problem.features.nEffectiveFilterings);
+		System.out.println("hhhhh " + stats);
 		m.put(REVISIONS, "(" + stats.nRevisions() + ",useless=" + stats.nUselessRevisions() + ")", stats.nRevisions() > 0);
 		m.put(N_VALUES, Variable.nValidValuesFor(head.problem.variables));
 		Propagation propagation = head.solver.propagation;
