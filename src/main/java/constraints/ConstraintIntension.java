@@ -13,6 +13,7 @@ import org.xcsp.common.predicates.TreeEvaluator.F2Evaluator;
 import org.xcsp.common.predicates.XNodeParent;
 
 import constraints.intension.KeyCanonizer;
+import interfaces.ConstraintRegister;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import problem.Problem;
 import utility.Kit;
@@ -51,7 +52,7 @@ public final class ConstraintIntension extends Constraint implements TagFilterin
 	 * The structure for managing Boolean expression trees. This is basically a tree evaluator with additional information concerning which constraints share
 	 * the same structure.
 	 */
-	public final static class IntensionStructure extends TreeEvaluator implements RegisteringCtrs {
+	public final static class IntensionStructure extends TreeEvaluator implements ConstraintRegister {
 
 		private final List<Constraint> registeredCtrs = new ArrayList<>();
 

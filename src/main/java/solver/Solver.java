@@ -29,7 +29,7 @@ import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Observers.ObserverOnConflicts;
 import interfaces.Observers.ObserverOnDecisions;
 import interfaces.Observers.ObserverOnRuns;
-import interfaces.Observers.ObserverOnSearch;
+import interfaces.Observers.ObserverOnSolving;
 import learning.IpsRecorder;
 import learning.NogoodMinimizer;
 import learning.NogoodRecorder;
@@ -311,9 +311,9 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	 *********************************************************************************************/
 
 	/**
-	 * The list of observers on the (global) search of the solver
+	 * The list of observers on the main solving steps of the solver
 	 */
-	public final List<ObserverOnSearch> observersOnSearch;
+	public final List<ObserverOnSolving> observersOnSolving;
 
 	/**
 	 * The list of observers on successive runs executed by the solver
@@ -340,9 +340,9 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	 */
 	public final List<ObserverOnConflicts> observersOnConflicts;
 
-	private List<ObserverOnSearch> collectObserversOnSearch() {
-		Stream<Object> stream = Stream.concat(Stream.of(problem.constraints), Stream.of(head.output, stats)).filter(c -> c instanceof ObserverOnSearch);
-		return stream.map(o -> (ObserverOnSearch) o).collect(toCollection(ArrayList::new));
+	private List<ObserverOnSolving> collectObserversOnSolving() {
+		Stream<Object> stream = Stream.concat(Stream.of(problem.constraints), Stream.of(head.output, stats)).filter(c -> c instanceof ObserverOnSolving);
+		return stream.map(o -> (ObserverOnSolving) o).collect(toCollection(ArrayList::new));
 	}
 
 	private List<ObserverOnRuns> collectObserversOnRuns() {
@@ -360,14 +360,14 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 		return list;
 	}
 
-	private List<ObserverOnBacktracksSystematic> collectObserversonBacktracksSystematic() {
+	private List<ObserverOnBacktracksSystematic> collectObserversOnBacktracksSystematic() {
 		// keep 'this' at first position in the list
 		Stream<Object> stream = Stream.concat(Stream.of(this, propagation), Stream.of(problem.constraints))
 				.filter(c -> c instanceof ObserverOnBacktracksSystematic);
 		return stream.map(o -> (ObserverOnBacktracksSystematic) o).collect(toCollection(ArrayList::new));
 	}
 
-	private List<ObserverOnDecisions> collectObserversonDecisions() {
+	private List<ObserverOnDecisions> collectObserversOnDecisions() {
 		Stream<Object> stream = Stream.of(this, tracer, stats, lastConflict, proofer).filter(o -> o instanceof ObserverOnDecisions);
 		return stream.map(o -> (ObserverOnDecisions) o).collect(toCollection(ArrayList::new));
 	}
@@ -525,10 +525,10 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 
 		this.entailed = new SetSparseReversible(problem.constraints.length, nLevels, false);
 
-		this.observersOnSearch = collectObserversOnSearch();
+		this.observersOnSolving = collectObserversOnSolving();
 		this.observersOnRuns = collectObserversOnRuns();
-		this.observersOnBacktracksSystematic = collectObserversonBacktracksSystematic();
-		this.observersOnDecisions = collectObserversonDecisions();
+		this.observersOnBacktracksSystematic = collectObserversOnBacktracksSystematic();
+		this.observersOnDecisions = collectObserversOnDecisions();
 		this.observersOnAssignments = collectObserversOnAssignments();
 		this.observersOnConflicts = collectObserversOnConflicts();
 
@@ -744,11 +744,11 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	}
 
 	private final void doPrepro() {
-		for (ObserverOnSearch observer : observersOnSearch)
+		for (ObserverOnSolving observer : observersOnSolving)
 			observer.beforePreprocessing();
 		if (propagation.runInitially() == false)
 			stopping = FULL_EXPLORATION;
-		for (ObserverOnSearch observer : observersOnSearch)
+		for (ObserverOnSolving observer : observersOnSolving)
 			observer.afterPreprocessing();
 	}
 
@@ -760,7 +760,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	}
 
 	protected final void doSearch() {
-		for (ObserverOnSearch observer : observersOnSearch)
+		for (ObserverOnSolving observer : observersOnSolving)
 			observer.beforeSearch();
 		while (!finished() && !restarter.allRunsFinished()) {
 			for (ObserverOnRuns observer : observersOnRuns)
@@ -771,7 +771,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 				observer.afterRun();
 			decisions.reset(); // TODO put in an observer ?
 		}
-		for (ObserverOnSearch observer : observersOnSearch)
+		for (ObserverOnSolving observer : observersOnSolving)
 			observer.afterSearch();
 	}
 
@@ -779,7 +779,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	 * This method allows to solve the attached problem instance.
 	 */
 	public void solve() {
-		for (ObserverOnSearch observer : observersOnSearch)
+		for (ObserverOnSolving observer : observersOnSolving)
 			observer.beforeSolving();
 		if (Variable.firstWipeoutVariableIn(problem.variables) != null)
 			stopping = FULL_EXPLORATION; // because some search observers may detect an inconsistency
@@ -787,7 +787,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 			doPrepro();
 		if (!finished() && head.control.solving.enableSearch)
 			doSearch();
-		for (ObserverOnSearch observer : observersOnSearch)
+		for (ObserverOnSolving observer : observersOnSolving)
 			observer.afterSolving();
 		restoreProblem();
 	}

@@ -2,7 +2,7 @@ package solver;
 
 import interfaces.Observers.ObserverOnDecisions;
 import interfaces.Observers.ObserverOnRuns;
-import interfaces.Observers.ObserverOnSearch;
+import interfaces.Observers.ObserverOnSolving;
 import propagation.Forward;
 import utility.Kit.Stopwatch;
 import variables.Variable;
@@ -12,7 +12,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public final class Statistics implements ObserverOnSearch, ObserverOnRuns, ObserverOnDecisions {
+public final class Statistics implements ObserverOnSolving, ObserverOnRuns, ObserverOnDecisions {
 
 	/*************************************************************************
 	 ***** Implemented Interfaces

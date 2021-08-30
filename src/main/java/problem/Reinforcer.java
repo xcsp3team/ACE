@@ -43,8 +43,8 @@ public class Reinforcer {
 
 		public static final String N_CLIQUES = "nCliques";
 
-		private static int[][] computeIrreflexiveNeigbours(Variable[] variables, List<Constraint> constraints) {
-			Set<Integer>[] variableNeighbours = Stream.of(variables).map(x -> new TreeSet<>()).toArray(TreeSet[]::new);
+		private static int[][] computeIrreflexiveNeigbours(List<Variable> variables, List<Constraint> constraints) {
+			Set<Integer>[] variableNeighbours = variables.stream().map(x -> new TreeSet<>()).toArray(TreeSet[]::new);
 			for (Constraint c : constraints)
 				if (c.scp.length == 2 && c.isIrreflexive()) {
 					variableNeighbours[c.scp[0].num].add(c.scp[1].num);
@@ -76,7 +76,7 @@ public class Reinforcer {
 		 * the cliques.
 		 * 
 		 * @param variables
-		 *            an array of variables
+		 *            a list of variables
 		 * @param constraints
 		 *            a list of constraints
 		 * @param nLimit
@@ -85,12 +85,12 @@ public class Reinforcer {
 		 *            the minimum size of cliques to be taken into account
 		 * @return a list of cliques (irreflexive pairwise variables) from the specified array of variables with respect to the specified list of constraints
 		 */
-		public static List<VariableInteger[]> buildCliques(Variable[] variables, List<Constraint> constraints, int nLimit, int sLimit) {
+		public static List<VariableInteger[]> buildCliques(List<Variable> variables, List<Constraint> constraints, int nLimit, int sLimit) {
 			int[][] variableNeighbours = computeIrreflexiveNeigbours(variables, constraints);
 			int[] degrees = Stream.of(variableNeighbours).mapToInt(t -> t.length).toArray();
-			int[] levels = new int[variables.length];
-			int[] clique = new int[variables.length]; // an array to store the current clique
-			SetSparse set = new SetSparse(variables.length, true);
+			int[] levels = new int[variables.size()];
+			int[] clique = new int[variables.size()]; // an array to store the current clique
+			SetSparse set = new SetSparse(variables.size(), true);
 			List<VariableInteger[]> cliques = new ArrayList<>();
 			for (int k = 1; k <= nLimit; k++) {
 				// we build the kth clique
@@ -118,9 +118,10 @@ public class Reinforcer {
 				}
 				for (int i = 0; i <= set.limit; i++)
 					levels[set.dense[i]] = 0;
+				// System.out.println("cliqueSize " + cliqueSize);
 				if (cliqueSize <= sLimit)
 					break;
-				VariableInteger[] scp = IntStream.range(0, cliqueSize).mapToObj(i -> variables[clique[i]]).sorted().toArray(VariableInteger[]::new);
+				VariableInteger[] scp = IntStream.range(0, cliqueSize).mapToObj(i -> variables.get(clique[i])).sorted().toArray(VariableInteger[]::new);
 				cliques.add(scp);
 				System.out.println(" clique " + k + " of size " + scp.length + " {" + Kit.join(scp) + "}");
 				assert controlClique(scp, constraints);
@@ -188,16 +189,16 @@ public class Reinforcer {
 			}
 		}
 
-		private static int[] buildVariableNodes(Map<Integer, List<Integer>> groupsOfColors, Variable[] vars) {
+		private static int[] buildVariableNodes(Map<Integer, List<Integer>> groupsOfColors, List<Variable> vars) {
 			nCurrentColors = 0;
 			Map<String, Variable> mapOfDomainColors = new HashMap<>();
 			Map<String, Domain> mapOfModifiedDomains = new HashMap<>();
-			int[] variableNodes = new int[vars.length]; // 1D = variable id ; value = color id
+			int[] variableNodes = new int[vars.size()]; // 1D = variable id ; value = color id
 			for (int i = 0; i < variableNodes.length; i++) {
-				String key = manageDomainKeyOf(mapOfModifiedDomains, vars[i].dom);
+				String key = manageDomainKeyOf(mapOfModifiedDomains, vars.get(i).dom);
 				Variable x = mapOfDomainColors.get(key);
 				if (x == null) {
-					mapOfDomainColors.put(key, vars[i]);
+					mapOfDomainColors.put(key, vars.get(i));
 					variableNodes[i] = nCurrentColors++;
 				} else
 					variableNodes[i] = variableNodes[x.num];
@@ -367,14 +368,14 @@ public class Reinforcer {
 		 * @return a list of generators (based on a computed automorphism group) from the specified array of variables with respect to the specified list of
 		 *         constraints
 		 */
-		public static List<List<int[]>> buildGenerators(Variable[] variables, List<Constraint> constraints) {
+		public static List<List<int[]>> buildGenerators(List<Variable> variables, List<Constraint> constraints) {
 			stopwatch = new Stopwatch();
 			Map<Integer, List<Integer>> groupsOfColors = new HashMap<>(); // 1D = color number ; value = list of node ids with this color
 			int[] variableNodes = buildVariableNodes(groupsOfColors, variables);
-			List<Node> constraintNodes = buildConstraintNodes(groupsOfColors, constraints, variables.length);
+			List<Node> constraintNodes = buildConstraintNodes(groupsOfColors, constraints, variables.size());
 			String graphFilename = saveInGAPFormat(groupsOfColors, constraintNodes, variableNodes.length + constraintNodes.size());
-			List<List<int[]>> generators = runSaucy(graphFilename, variables.length);
-			if (variables[0].problem.head.control.general.verbose > 0)
+			List<List<int[]>> generators = runSaucy(graphFilename, variables.size());
+			if (variables.get(0).problem.head.control.general.verbose > 0)
 				displayGenerators(generators);
 			// displayGraph(variableNodes,constraintNodes);
 			return generators;

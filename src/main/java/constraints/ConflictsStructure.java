@@ -7,11 +7,11 @@ import java.util.stream.IntStream;
 
 import org.xcsp.common.Constants;
 
-import constraints.Constraint.RegisteringCtrs;
 import constraints.ConstraintExtension.ExtensionGeneric;
 import constraints.ConstraintIntension.IntensionStructure;
 import constraints.extension.structures.ExtensionStructure;
-import interfaces.FilteringSpecific;
+import interfaces.ConstraintRegister;
+import interfaces.SpecificPropagator;
 import problem.Problem;
 import utility.Kit;
 import variables.Domain;
@@ -24,7 +24,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public final class ConflictsStructure implements RegisteringCtrs {
+public final class ConflictsStructure implements ConstraintRegister {
 
 	/*************************************************************************
 	 * Implementing interfaces
@@ -83,7 +83,7 @@ public final class ConflictsStructure implements RegisteringCtrs {
 		}
 		for (ExtensionStructure structure : problem.head.structureSharing.mapForExtension.values()) {
 			ConstraintExtension c1 = (ConstraintExtension) structure.firstRegisteredCtr();
-			if (c1 instanceof FilteringSpecific || c1.scp.length == 1 || c1.infiniteDomainVars.length > 0)
+			if (c1 instanceof SpecificPropagator || c1.scp.length == 1 || c1.infiniteDomainVars.length > 0)
 				continue;
 			Kit.control(c1 instanceof ExtensionGeneric);
 			if (Kit.memory() > MEMORY_LIMIT)

@@ -3,7 +3,7 @@ package propagation;
 import constraints.Constraint;
 import constraints.extension.structures.Bits;
 import dashboard.Control.SettingPropagation;
-import interfaces.FilteringSpecific;
+import interfaces.SpecificPropagator;
 import problem.Problem;
 import sets.SetLinked;
 import sets.SetLinkedFinite.LinkedSetOrderedWithBits2;
@@ -156,7 +156,7 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 				int limit = residueLimit;
 				boolean stopped = false;
 				for (Constraint c : pb.constraints) {
-					if (c instanceof FilteringSpecific || !(c.extStructure() instanceof Bits))
+					if (c instanceof SpecificPropagator || !(c.extStructure() instanceof Bits))
 						continue;
 					int size0 = c.scp[0].dom.initSize(), size1 = c.scp[1].dom.initSize();
 					bitRmResidues[c.num] = new short[2][];

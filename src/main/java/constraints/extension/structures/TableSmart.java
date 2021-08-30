@@ -2,6 +2,13 @@ package constraints.extension.structures;
 
 import static org.xcsp.common.Constants.STAR;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.EQ;
+import static org.xcsp.common.Types.TypeConditionOperatorRel.GE;
+import static org.xcsp.common.Types.TypeConditionOperatorRel.GT;
+import static org.xcsp.common.Types.TypeConditionOperatorRel.LE;
+import static org.xcsp.common.Types.TypeConditionOperatorRel.LT;
+import static org.xcsp.common.Types.TypeConditionOperatorRel.NE;
+import static org.xcsp.common.Types.TypeConditionOperatorSet.IN;
+import static org.xcsp.common.Types.TypeConditionOperatorSet.NOTIN;
 import static utility.Kit.control;
 
 import java.util.ArrayList;
@@ -16,6 +23,7 @@ import java.util.stream.Stream;
 
 import org.xcsp.common.IVar;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
+import org.xcsp.common.Types.TypeConditionOperatorSet;
 import org.xcsp.common.Types.TypeExpr;
 import org.xcsp.common.Utilities;
 import org.xcsp.common.predicates.XNode;
@@ -172,13 +180,13 @@ public final class TableSmart extends ExtensionStructure {
 		private Restriction1 buildRestriction1From(int x, TypeConditionOperatorRel op, int v) {
 			switch (op) {
 			case LT:
-				return new Rstr1L(x, v, true);
+				return new Rstr1LE(x, v, true);
 			case LE:
-				return new Rstr1L(x, v, false);
+				return new Rstr1LE(x, v, false);
 			case GE:
-				return new Rstr1G(x, v, false);
+				return new Rstr1GE(x, v, false);
 			case GT:
-				return new Rstr1G(x, v, true);
+				return new Rstr1GE(x, v, true);
 			case EQ:
 				return new Rstr1EQ(x, v);
 			case NE:
@@ -383,12 +391,12 @@ public final class TableSmart extends ExtensionStructure {
 		 *********************************************************************************************/
 
 		/**
-		 * A restriction always involves a variable whose value in the initially accompanying tuple is ANY (*)
+		 * A restriction always involves a variable whose value is ANY (*) in the initially underlying tuple
 		 */
 		public abstract class Restriction {
 
 			/**
-			 * The main variable (given by its position in the constraint scope) in the restriction (i.e., at the right side of the restriction)
+			 * The main variable (given by its position in the constraint scope) in the restriction (i.e., at the left side of the restriction)
 			 */
 			protected int x;
 
@@ -427,6 +435,12 @@ public final class TableSmart extends ExtensionStructure {
 			 */
 			public abstract void collect();
 
+			/**
+			 * Builds a restriction whose main variable (left-hand side) is the specified variable
+			 * 
+			 * @param x
+			 *            the main variable of the restriction
+			 */
 			protected Restriction(int x) {
 				this.x = x;
 				this.domx = scp[x].dom;
@@ -440,40 +454,57 @@ public final class TableSmart extends ExtensionStructure {
 		 *********************************************************************************************/
 
 		/**
-		 * Restriction of the form x <op> v with <op> in {lt,le,ge,gt,ne,eq}. We store such a restriction by recording x (actually, its position) and pivot (for
-		 * the index of the value in dom(x) that is related to v ; see subclass constructors for details). <br />
-		 * The operation <op> corresponds to the chosen subclass.
+		 * Unary restriction that can be based on a relational operator or a set operator.
 		 */
 		abstract class Restriction1 extends Restriction {
 
 			@Override
 			public boolean checkIndexes(int[] t) {
-				return isValidFor(t[x]);
+				return isValidFor(t[x]); // we can call isValidFor because the restriction is unary
 			}
-
-			/** Index of the value in the domain of x that is related to the value specified at construction (in subclasses). */
-			protected int pivot;
 
 			protected Restriction1(int x) {
 				super(x);
 			}
+		}
+
+		/**
+		 * Unary restriction based on a relational operator, i.e., of the form x <op> v with <op> in {lt,le,ge,gt,ne,eq}. We reason with indexes by computing
+		 * the relevant index called pivot: this is the index of the value in dom(x) that is related to v ; see subclass constructors for details).
+		 */
+		abstract class Restriction1Rel extends Restriction1 {
+
+			/**
+			 * The operator involved in the unary restriction
+			 */
+			private TypeConditionOperatorRel op;
+
+			/**
+			 * The index of the value in the domain of x that is related to the value v (that can be seen as a limit) specified at construction in subclasses
+			 */
+			protected int pivot;
+
+			protected Restriction1Rel(int x, TypeConditionOperatorRel op, int pivot) {
+				super(x);
+				this.op = op;
+				this.pivot = pivot;
+				control(pivot != -1 && pivot != Integer.MAX_VALUE,
+						() -> "useless restriction if the pivot cannot be computed (and correspond to an index of value)");
+			}
 
 			@Override
 			public String toString() {
-				return scp[x] + " " + getClass().getSimpleName().substring(getClass().getSimpleName().length() - 2) + " " + scp[x].dom.toVal(pivot);
+				return scp[x] + " " + op + " " + scp[x].dom.toVal(pivot);
 			}
 		}
 
 		/**
-		 * Restriction of the form x < v (when strict) or x <= v
+		 * Restriction of the form x <= v, or x < v (when strict)
 		 */
-		final class Rstr1L extends Restriction1 {
+		final class Rstr1LE extends Restriction1Rel {
 
-			protected Rstr1L(int x, int v, boolean strict) {
-				super(x);
-				// we compute the greatest index (of value) less than the value v ; both strict and non-strict cases are handled with the computed pivot
-				this.pivot = IntStream.range(0, domx.initSize()).map(a -> domx.initSize() - 1 - a).filter(a -> domx.toVal(a) <= v + (strict ? -1 : 0))
-						.findFirst().orElse(-1);
+			protected Rstr1LE(int x, int v, boolean strict) {
+				super(x, LE, Domain.greatestIndexOfValueLessThan(scp[x].dom, v, strict));
 			}
 
 			@Override
@@ -510,14 +541,12 @@ public final class TableSmart extends ExtensionStructure {
 		}
 
 		/**
-		 * Restriction of the form x > v (when strict) or x >= v
+		 * Restriction of the form x >= v, or x > v when strict
 		 */
-		final class Rstr1G extends Restriction1 {
+		final class Rstr1GE extends Restriction1Rel {
 
-			protected Rstr1G(int x, int v, boolean strict) {
-				super(x);
-				// we compute the smallest index (of value) greater than the value v ; both strict and non-strict cases handled with the computed pivot
-				this.pivot = IntStream.range(0, domx.initSize()).filter(a -> domx.toVal(a) >= v + (strict ? 1 : 0)).findFirst().orElse(domx.initSize());
+			protected Rstr1GE(int x, int v, boolean strict) {
+				super(x, GE, Domain.smallestIndexOfValueGreaterThan(scp[x].dom, v, strict));
 			}
 
 			@Override
@@ -556,18 +585,14 @@ public final class TableSmart extends ExtensionStructure {
 		/**
 		 * Restriction of the form x != v
 		 */
-		final class Rstr1NE extends Restriction1 {
+		final class Rstr1NE extends Restriction1Rel {
 
 			protected Rstr1NE(int x, int v) {
-				super(x);
-				this.pivot = domx.toIdx(v);
-				control(pivot != -1, () -> "useless restriction if the value does not belong to the domain");
+				super(x, NE, scp[x].dom.toIdx(v));
 			}
 
 			protected Rstr1NE(int x, String v) {
-				super(x);
-				this.pivot = ((DomainSymbols) domx).toIdx(v);
-				control(pivot != -1, () -> "useless restriction if the value does not belong to the domain");
+				super(x, NE, ((DomainSymbols) scp[x].dom).toIdx(v));
 			}
 
 			@Override
@@ -592,18 +617,14 @@ public final class TableSmart extends ExtensionStructure {
 		/**
 		 * Restriction of the form x == v
 		 */
-		final class Rstr1EQ extends Restriction1 {
+		final class Rstr1EQ extends Restriction1Rel {
 
 			protected Rstr1EQ(int x, int v) {
-				super(x);
-				this.pivot = domx.toIdx(v);
-				control(pivot != -1, () -> "inconsistent restriction if the value does not belong to the domain");
+				super(x, EQ, scp[x].dom.toIdx(v));
 			}
 
 			protected Rstr1EQ(int x, String v) {
-				super(x);
-				this.pivot = ((DomainSymbols) domx).toIdx(v);
-				control(pivot != -1, () -> "inconsistent restriction if the value does not belong to the domain");
+				super(x, EQ, ((DomainSymbols) scp[x].dom).toIdx(v));
 			}
 
 			@Override
@@ -622,30 +643,53 @@ public final class TableSmart extends ExtensionStructure {
 			}
 		}
 
-		// TODO can we systematically iterate over nacx instead of domx because it is always a smaller set????
+		/**
+		 * Unary restriction based on a set operator, i.e., of the form x <op> {v1, v2, ...} with <op> in {in, notin}. Note that we reason with indexes of
+		 * values (and not directly with values).
+		 */
+		abstract class Restriction1Set extends Restriction1 {
+
+			/**
+			 * The operator in the unary restriction
+			 */
+			private TypeConditionOperatorSet op;
+
+			/**
+			 * The set of indexes corresponding to values initially specified at construction
+			 */
+			protected Set<Integer> set;
+
+			protected Restriction1Set(int x, TypeConditionOperatorSet op, int[] values) {
+				super(x);
+				this.op = op;
+				this.set = IntStream.of(values).mapToObj(v -> domx.toIdx(v)).collect(Collectors.toCollection(TreeSet::new));
+				assert values.length > 1 && Kit.isStrictlyIncreasing(values) && IntStream.of(values).allMatch(v -> domx.toIdx(v) >= 0);
+			}
+
+			@Override
+			public String toString() {
+				return scp[x] + " " + op + " {" + set.stream().map(a -> domx.toVal(a) + "").collect(Collectors.joining(",")) + "}";
+			}
+		}
 
 		/**
 		 * Restriction of the form x in {v1, v2, ...}
 		 */
-		final class Rstr1IN extends Restriction1 {
-
-			private final Set<Integer> supports;
+		final class Rstr1IN extends Restriction1Set {
 
 			private int residue; // last found index that was present in domx and supports
 
-			protected Rstr1IN(int x, int[] values) {
-				super(x);
-				assert values.length > 1 && Kit.isStrictlyIncreasing(values) && IntStream.of(values).allMatch(v -> domx.toIdx(v) >= 0);
-				this.supports = IntStream.of(values).mapToObj(v -> domx.toIdx(v)).collect(Collectors.toCollection(TreeSet::new));
-				this.residue = supports.iterator().next();
+			protected Rstr1IN(int x, int[] supports) {
+				super(x, IN, supports);
+				this.residue = set.iterator().next(); // first index of value used as residue
 			}
 
 			@Override
 			public boolean isValid() {
 				if (domx.contains(residue))
 					return true;
-				if (supports.size() <= domx.size())
-					for (int a : supports) {
+				if (set.size() <= domx.size())
+					for (int a : set) {
 						if (domx.contains(a)) {
 							residue = a;
 							return true;
@@ -653,7 +697,7 @@ public final class TableSmart extends ExtensionStructure {
 					}
 				else
 					for (int a = domx.first(); a != -1; a = domx.next(a))
-						if (supports.contains(a)) {
+						if (set.contains(a)) {
 							residue = a;
 							return true;
 						}
@@ -662,20 +706,20 @@ public final class TableSmart extends ExtensionStructure {
 
 			@Override
 			public boolean isValidFor(int a) {
-				return supports.contains(a);
+				return set.contains(a);
 			}
 
 			@Override
 			public void collect() {
-				if (supports.size() <= nacx.size())
-					for (int a : supports) {
+				if (set.size() <= nacx.size())
+					for (int a : set) {
 						if (nacx.contains(a))
 							nacx.remove(a);
 					}
 				else
 					for (int i = nacx.limit; i >= 0; i--) {
 						int a = nacx.dense[i];
-						if (supports.contains(a))
+						if (set.contains(a))
 							nacx.remove(a);
 					}
 			}
@@ -684,19 +728,15 @@ public final class TableSmart extends ExtensionStructure {
 		/**
 		 * Restriction of the form x not in {v1, v2, ...}
 		 */
-		final class Rstr1NOTIN extends Restriction1 {
-
-			private final Set<Integer> conflicts;
+		final class Rstr1NOTIN extends Restriction1Set {
 
 			private int residue; // last found index that was present in domx and absent from conflicts
 
-			protected Rstr1NOTIN(int x, int[] values) {
-				super(x);
-				assert values.length > 1 && Kit.isStrictlyIncreasing(values) && IntStream.of(values).allMatch(v -> domx.toIdx(v) >= 0);
-				this.conflicts = IntStream.of(values).mapToObj(v -> domx.toIdx(v)).collect(Collectors.toCollection(TreeSet::new));
+			protected Rstr1NOTIN(int x, int[] conflicts) {
+				super(x, NOTIN, conflicts);
 				this.residue = -1;
 				for (int a = domx.first(); residue == -1 && a != -1; a = domx.next(a))
-					if (!conflicts.contains(a))
+					if (!set.contains(a))
 						residue = a;
 				control(residue != -1);
 			}
@@ -706,7 +746,7 @@ public final class TableSmart extends ExtensionStructure {
 				if (domx.contains(residue))
 					return true;
 				for (int a = domx.first(); a != -1; a = domx.next(a))
-					if (!conflicts.contains(a)) {
+					if (!set.contains(a)) {
 						residue = a;
 						return true;
 					}
@@ -715,19 +755,19 @@ public final class TableSmart extends ExtensionStructure {
 
 			@Override
 			public boolean isValidFor(int a) {
-				return !conflicts.contains(a);
+				return !set.contains(a);
 			}
 
 			@Override
 			public void collect() {
-				if (domx.size() <= nacx.size()) {
+				if (domx.size() <= nacx.size()) { // TODO is that useful? don't we always have nacx smaller than domx by initialization?
 					for (int a = domx.first(); a != -1; a = domx.next(a))
-						if (nacx.contains(a) && !conflicts.contains(a))
+						if (nacx.contains(a) && !set.contains(a))
 							nacx.remove(a);
 				} else
 					for (int i = nacx.limit; i >= 0; i--) {
 						int a = nacx.dense[i];
-						if (!conflicts.contains(a))
+						if (!set.contains(a))
 							nacx.remove(a);
 					}
 			}
@@ -736,6 +776,8 @@ public final class TableSmart extends ExtensionStructure {
 		/**********************************************************************************************
 		 * Classes for binary restrictions of the form x <op> y
 		 *********************************************************************************************/
+
+		// TODO can we systematically iterate over nacx instead of domx because it is always a smaller set????
 
 		abstract class RestrictionComplex extends Restriction {
 			protected long valTimeLocal, supTimeLocal;
@@ -746,19 +788,33 @@ public final class TableSmart extends ExtensionStructure {
 		}
 
 		/**
-		 * Restriction of the form x <op> y
+		 * Binary restriction be based on a relational operator, i.e. the form x <op> y
 		 */
 		abstract class Restriction2 extends RestrictionComplex {
 
-			/** (Position of) the second involved variable */
+			/**
+			 * The operator involved in the binary restriction
+			 */
+			protected TypeConditionOperatorRel op;
+
+			/**
+			 * The second variable (given by its position in the constraint scope) in the restriction (i.e., at the right side of the restriction)
+			 */
 			protected int y;
 
+			/**
+			 * The domain of y (redundant field)
+			 */
 			protected Domain domy;
 
+			/**
+			 * The sparse set for unsupported indexes of y (redundant field)
+			 */
 			protected SetSparse nacy;
 
-			protected Restriction2(int x, int y) {
+			protected Restriction2(int x, TypeConditionOperatorRel op, int y) {
 				super(x);
+				this.op = op;
 				this.y = y;
 				this.domy = scp[y].dom;
 				this.nacy = nac[y];
@@ -773,7 +829,7 @@ public final class TableSmart extends ExtensionStructure {
 
 			@Override
 			public String toString() {
-				return scp[x] + " " + getClass().getSimpleName().substring(getClass().getSimpleName().length() - 2) + " " + scp[y];
+				return scp[x] + " " + op + " " + scp[y];
 			}
 		}
 
@@ -790,7 +846,7 @@ public final class TableSmart extends ExtensionStructure {
 			private boolean strict;
 
 			protected Rstr2L(int x, int y, boolean strict) {
-				super(x, y);
+				super(x, strict ? LT : LE, y);
 				this.strict = strict;
 			}
 
@@ -870,11 +926,6 @@ public final class TableSmart extends ExtensionStructure {
 						nacy.remove(a);
 				}
 			}
-
-			@Override
-			public String toString() {
-				return scp[x] + " " + getClass().getSimpleName().charAt(getClass().getSimpleName().length() - 1) + (strict ? "T" : "E") + " " + scp[y];
-			}
 		}
 
 		/**
@@ -890,7 +941,7 @@ public final class TableSmart extends ExtensionStructure {
 			private boolean strict;
 
 			protected Rstr2G(int x, int y, boolean strict) {
-				super(x, y);
+				super(x, strict ? GT : GE, y);
 				this.strict = strict;
 			}
 
@@ -971,10 +1022,6 @@ public final class TableSmart extends ExtensionStructure {
 				}
 			}
 
-			@Override
-			public String toString() {
-				return scp[x] + " " + getClass().getSimpleName().charAt(getClass().getSimpleName().length() - 1) + (strict ? "T" : "E") + " " + scp[y];
-			}
 		}
 
 		/**
@@ -988,7 +1035,7 @@ public final class TableSmart extends ExtensionStructure {
 			}
 
 			protected Rstr2NE(int x, int y) {
-				super(x, y);
+				super(x, NE, y);
 			}
 
 			@Override
@@ -1039,7 +1086,7 @@ public final class TableSmart extends ExtensionStructure {
 			private boolean newResidue;
 
 			protected Rstr2EQ(int x, int y) {
-				super(x, y);
+				super(x, EQ, y);
 			}
 
 			@Override
@@ -1148,7 +1195,7 @@ public final class TableSmart extends ExtensionStructure {
 			boolean newResidue;
 
 			protected Rstr2EQVal(int x, int y) {
-				super(x, y);
+				super(x, EQ, y);
 			}
 
 			@Override
@@ -1283,7 +1330,7 @@ public final class TableSmart extends ExtensionStructure {
 			private int cst;
 
 			protected Rstr2pG(int x, int y, boolean strict, int cst) {
-				super(x, y);
+				super(x, strict ? GT : GE, y);
 				this.strict = strict;
 				this.cst = cst;
 				control(scp[x].dom instanceof DomainRange && scp[y].dom instanceof DomainRange);
@@ -1368,8 +1415,7 @@ public final class TableSmart extends ExtensionStructure {
 
 			@Override
 			public String toString() {
-				return scp[x] + " " + getClass().getSimpleName().charAt(getClass().getSimpleName().length() - 1) + (strict ? "T" : "E") + " " + scp[y] + " + "
-						+ cst;
+				return scp[x] + " " + op + " " + scp[y] + " + " + cst;
 			}
 		}
 

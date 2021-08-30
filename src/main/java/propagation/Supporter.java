@@ -4,7 +4,7 @@ import java.util.stream.Stream;
 
 import constraints.Constraint;
 import constraints.extension.structures.Bits;
-import interfaces.FilteringSpecific;
+import interfaces.SpecificPropagator;
 import propagation.Reviser.Reviser3;
 import utility.Kit;
 import variables.Variable;
@@ -12,7 +12,7 @@ import variables.Variable;
 public abstract class Supporter {
 
 	public static Supporter buildFor(Constraint c) {
-		if (c.problem.head.control.propagation.residues && c.scp.length > 1 && !(c instanceof FilteringSpecific)
+		if (c.problem.head.control.propagation.residues && c.scp.length > 1 && !(c instanceof SpecificPropagator)
 				&& !(c.problem.head.control.propagation.reviser.equals(Reviser3.class.getSimpleName()) && c.extStructure() instanceof Bits)) {
 			return c.scp.length == 2 ? new SupporterHardBary(c) : new SupporterHardNary(c);
 		} else

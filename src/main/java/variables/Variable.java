@@ -10,10 +10,8 @@ package variables;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -53,7 +51,7 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	 * Subclasses
 	 *********************************************************************************************/
 
-	public static class VariableInteger extends Variable implements IVar.Var {
+	public static final class VariableInteger extends Variable implements IVar.Var {
 
 		/**
 		 * Builds a variable with a domain composed of all specified integer values. A range can be specified by giving an array of values composed of three
@@ -87,7 +85,7 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		}
 	}
 
-	public static class VariableSymbolic extends Variable implements IVar.VarSymbolic {
+	public static final class VariableSymbolic extends Variable implements IVar.VarSymbolic {
 
 		/**
 		 * Builds a variable with a domain composed of all specified symbolic values.
@@ -457,10 +455,10 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	/**
 	 * This field is used during initialization in order to collect constraints where the variable is involved.
 	 */
-	public final Collection<Constraint> collectedCtrs = new LinkedList<>();
+	// public final Collection<Constraint> collectedCtrs = new LinkedList<>();
 
 	/**
-	 * The set (array) of constraints where the variable is involved
+	 * The array of constraints involving this variable
 	 */
 	public Constraint[] ctrs;
 
@@ -499,16 +497,24 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**
-	 * This method is called when the initialization is finished in order to update some data structures in relation with the constraints of the problem. This
-	 * method is called by the <code>storeConstraintsToArray</code> method of the <code>Problem</code> class.
+	 * This method is called when the initialization of the problem is finished in order to record the constraints involving this variable.
 	 */
-	public final void whenFinishedProblemConstruction() {
-		this.ctrs = collectedCtrs.stream().sorted((c1, c2) -> c1.scp.length - c2.scp.length).toArray(Constraint[]::new);
+	public final void storeInvolvingConstraints(List<Constraint> constraints) {
+		this.ctrs = constraints.stream().toArray(Constraint[]::new);
+		// collectedCtrs.stream().sorted((c1, c2) -> c1.scp.length - c2.scp.length).toArray(Constraint[]::new);
 		this.nghs = problem.variables.length > NB_VARIABLES_LIMIT_FOR_STORING_NEIGHBOURS ? null : computeNeighbours(NB_NEIGHBOURS_LIMIT_FOR_STORING_NEIGHBOURS);
 		this.failed = new int[dom.initSize()];
+		problem.features.varDegrees.add(deg());
 	}
 
-	/** Builds a variable with the specified id (name). */
+	/**
+	 * Builds a variable for the specified problem with the specified id (name)
+	 * 
+	 * @param pb
+	 *            the problem to which the variable is attached
+	 * @param id
+	 *            the id of the variable
+	 */
 	public Variable(Problem pb, String id) {
 		this.problem = pb;
 		this.id = id;
@@ -618,10 +624,10 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**
-	 * This method is called, by a tree solver, when the given value must be assigned to the variable. <br>
+	 * This method is called when the value at the specified index must be assigned to this variable
 	 * 
 	 * @param a
-	 *            the index of a value to assign to the variable
+	 *            the index of a value to be assigned to the variable
 	 */
 	public final void assign(int a) {
 		assert isFuture() && dom.contains(a) : isFuture() + " " + dom.contains(a);
@@ -632,7 +638,7 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**
-	 * This method is called in order to undo the last assignment of the variable. <br>
+	 * This method is called in order to undo the last assignment of the variable
 	 */
 	public final void unassign() {
 		assert !isFuture();
@@ -643,14 +649,19 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**
-	 * Returns the static degree of this variable, i.e., the number of constraints in which it is involved.
+	 * Returns the static degree of this variable, i.e., the number of constraints involving it
+	 * 
+	 * @return the static degree of this variable
 	 */
 	public final int deg() {
 		return ctrs.length;
 	}
 
 	/**
-	 * Returns the dynamic degree of this variable, i.e., the number of constraints which involves this variable and at least another future variable.
+	 * Returns the dynamic degree of this variable, i.e., the number of constraints involving this variable and at least another future (i.e., not explicitly
+	 * assigned) variable
+	 * 
+	 * @return the dynamic degree of this variable
 	 */
 	public final int ddeg() {
 		int cnt = 0;
@@ -660,14 +671,29 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		return cnt;
 	}
 
+	/**
+	 * Returns the ratio dynamic degree of this variable over the domain size of this variable
+	 * 
+	 * @return the ratio dynamic degree of this variable over the domain size of this variable
+	 */
 	public final double ddegOnDom() {
 		return ddeg() / (double) dom.size();
 	}
 
+	/**
+	 * Returns the weighted degree of this variable
+	 * 
+	 * @return the weighted degree of this variable
+	 */
 	public final double wdeg() {
 		return ((WdegVariant) problem.solver.heuristic).vscores[num];
 	}
 
+	/**
+	 * Returns the ratio weighted degree of this variable over the domain size of this variable
+	 * 
+	 * @return the ratio weighted degree of this variable over the domain size of this variable
+	 */
 	public final double wdegOnDom() {
 		return wdeg() / dom.size();
 	}

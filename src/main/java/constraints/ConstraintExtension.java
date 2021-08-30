@@ -17,7 +17,7 @@ import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.Tries;
 import dashboard.Control.SettingExtension;
-import interfaces.FilteringSpecific;
+import interfaces.SpecificPropagator;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
@@ -49,7 +49,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 * This class is is used for unary extension constraints. Typically, filtering is performed at the root node of the search tree, and the constraint becomes
 	 * entailed. BE CAREFUL: this is not a subclass of ConstraintExtension.
 	 */
-	public static final class Extension1 extends Constraint implements FilteringSpecific, TagAC, TagFilteringCompleteAtEachCall {
+	public static final class Extension1 extends Constraint implements SpecificPropagator, TagAC, TagFilteringCompleteAtEachCall {
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
@@ -176,7 +176,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	/**
 	 * This is the root class of specific AC filtering for extension (table) constraints.
 	 */
-	public abstract static class ExtensionSpecific extends ConstraintExtension implements FilteringSpecific, ObserverOnBacktracksSystematic {
+	public abstract static class ExtensionSpecific extends ConstraintExtension implements SpecificPropagator, ObserverOnBacktracksSystematic {
 
 		public ExtensionSpecific(Problem pb, Variable[] scp) {
 			super(pb, scp);

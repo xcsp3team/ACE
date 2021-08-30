@@ -1,11 +1,3 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package variables;
 
 import java.util.stream.IntStream;
@@ -29,7 +21,7 @@ public final class DomainBinary extends SetLinkedBinary implements Domain {
 
 	private Boolean indexesMatchValues;
 
-	private int firstValue, secondValue;
+	private int firstValue, secondValue; // typically, 0 and 1
 
 	@Override
 	public final Variable var() {
@@ -90,6 +82,6 @@ public final class DomainBinary extends SetLinkedBinary implements Domain {
 
 	@Override
 	public String toString() {
-		return "dom(" + var().id() + ")";
+		return "dom(" + var() + ")";
 	}
 }

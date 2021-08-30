@@ -17,7 +17,7 @@ import constraints.ConstraintExtension;
 import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
-import interfaces.Observers.ObserverOnSearch;
+import interfaces.Observers.ObserverOnSolving;
 import interfaces.Tags.TagPositive;
 import problem.Problem;
 import sets.SetDense;
@@ -27,7 +27,7 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public final class STR3 extends ExtensionSpecific implements TagPositive, ObserverOnSearch {
+public final class STR3 extends ExtensionSpecific implements TagPositive, ObserverOnSolving {
 
 	@Override
 	public void afterProblemConstruction() {

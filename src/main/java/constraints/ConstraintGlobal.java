@@ -1,6 +1,6 @@
 package constraints;
 
-import interfaces.FilteringSpecific;
+import interfaces.SpecificPropagator;
 import problem.Problem;
 import variables.Variable;
 
@@ -9,7 +9,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class ConstraintGlobal extends Constraint implements FilteringSpecific {
+public abstract class ConstraintGlobal extends Constraint implements SpecificPropagator {
 
 	/**
 	 * Defines the key of the constraint from the signature, the type of the domains, and the specified data. Keys are currently used for deciding if two

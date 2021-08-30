@@ -148,6 +148,40 @@ public interface Domain extends SetLinked {
 		return nValidTuplesBounded(doms, -1);
 	}
 
+	/**
+	 * Returns the index of the greatest value of the specified domain which is less than the specified value. When true, the specified Boolean requires
+	 * strictness. If no such value exists, -1 is returned.
+	 * 
+	 * @param dom
+	 *            a domain
+	 * @param v
+	 *            a value
+	 * @param strict
+	 *            indicates if < must be considered instead of <= when looking for the greatest value
+	 * @return the index of the greatest value of the specified domain which is less than the specified value, or -1
+	 */
+	static int greatestIndexOfValueLessThan(Domain dom, int v, boolean strict) {
+		int d = dom.initSize();
+		return IntStream.range(0, d).map(a -> d - 1 - a).filter(a -> dom.toVal(a) <= v + (strict ? -1 : 0)).findFirst().orElse(-1);
+	}
+
+	/**
+	 * Returns the index of the smallest value of the specified domain which is greater than the specified value. When true, the specified Boolean requires
+	 * strictness. If no such value exists, Integer.MAX_VALUE is returned.
+	 * 
+	 * @param dom
+	 *            a domain
+	 * @param v
+	 *            a value
+	 * @param strict
+	 *            indicates if > must be considered instead of >= when looking for the smallest value
+	 * @return the index of the greatest value of the specified domain which is less than the specified value, or -1
+	 */
+	static int smallestIndexOfValueGreaterThan(Domain dom, int v, boolean strict) {
+		int d = dom.initSize();
+		return IntStream.range(0, d).filter(a -> dom.toVal(a) >= v + (strict ? 1 : 0)).findFirst().orElse(Integer.MAX_VALUE);
+	}
+
 	/**********************************************************************************************
 	 * Class Members
 	 *********************************************************************************************/

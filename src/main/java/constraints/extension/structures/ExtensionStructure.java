@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Set;
 
 import constraints.Constraint;
-import constraints.Constraint.RegisteringCtrs;
 import constraints.ConstraintExtension;
+import interfaces.ConstraintRegister;
 import utility.Kit;
 import utility.Kit.IntArrayHashKey;
 import variables.Domain;
@@ -20,7 +20,7 @@ import variables.Variable;
  * @author Christophe Lecoutre
  *
  */
-public abstract class ExtensionStructure implements RegisteringCtrs {
+public abstract class ExtensionStructure implements ConstraintRegister {
 
 	/**
 	 * The tuples as given initially, before being possibly converted into a specific structure like, e.g., an MDD

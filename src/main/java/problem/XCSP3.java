@@ -130,8 +130,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void beginInstance(TypeFramework type) {
-		// if (type == TypeFramework.COP)
-		// problem.head.control.toCOP();
+		// if (type == TypeFramework.COP) problem.head.control.toCOP();
 	}
 
 	private void copyBasicAttributes(ModelingEntity entity, ParsingEntry entry) {

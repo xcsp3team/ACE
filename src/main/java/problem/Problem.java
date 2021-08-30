@@ -192,7 +192,6 @@ import optimization.Optimizer.OptimizerDichotomic;
 import optimization.Optimizer.OptimizerIncreasing;
 import problem.Reinforcer.ReinforcerAllDifferent;
 import problem.Reinforcer.ReinforcerAutomorphism;
-import propagation.Forward;
 import solver.Solver;
 import utility.Enums.EExportMode;
 import utility.Enums.ESymmetryBreaking;
@@ -209,7 +208,7 @@ import variables.Variable.VariableSymbolic;
  * @author Christophe Lecoutre
  *
  */
-public class Problem extends ProblemIMP implements ObserverOnConstruction {
+public final class Problem extends ProblemIMP implements ObserverOnConstruction {
 
 	public static final Boolean DONT_KNOW = null;
 	public static final Boolean STARRED = Boolean.TRUE;
@@ -509,27 +508,9 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 			log.info("Reduction to (#V=" + priorityVars.length + ",#C=" + Kit.countIn(true, presentConstraints) + ")");
 	}
 
-	public final Constraint addUniversalConstraintDynamicallyBetween(Variable x, Variable y) {
-		assert x.getClass() == y.getClass();
-		assert !Stream.of(y.ctrs).anyMatch(c -> c.scp.length == 2 && c.involves(x));
-		assert solver.propagation instanceof Forward;
-
-		CtrAlone ca = extension(vars(x, y), new int[0][], false, DONT_KNOW);
-		Constraint c = (Constraint) ca.ctr; // (Constraint) buildCtrTrue(x, y).ctr;
-		c.cloneStructures(false);
-		constraints = features.collecting.constraints.toArray(new Constraint[0]); // storeConstraintsToArray();
-		x.whenFinishedProblemConstruction();
-		y.whenFinishedProblemConstruction();
-		// constraint.buildBitRmResidues();
-		if (x.assigned())
-			c.doPastVariable(x);
-		if (y.assigned())
-			c.doPastVariable(y);
-		return c;
-	}
-
 	private void inferAdditionalConstraints() {
 		Stopwatch stopwatch = new Stopwatch();
+		List<Variable> variables = features.collecting.variables;
 		List<Constraint> constraints = features.collecting.constraints;
 		if (head.control.problem.isSymmetryBreaking()) {
 			int nBefore = constraints.size();
@@ -538,20 +519,20 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 			List<List<int[]>> generators = ReinforcerAutomorphism.buildGenerators(variables, constraints);
 			for (List<int[]> generator : generators) {
 				int[] cycle1 = generator.get(0);
-				Variable x = variables[cycle1[0]];
-				Variable y = variables[cycle1[1]];
+				Variable x = variables.get(cycle1[0]);
+				Variable y = variables.get(cycle1[1]);
 				if (head.control.problem.symmetryBreaking == ESymmetryBreaking.LE) { // we only consider the two first variables
 					lessEqual(x, y);
 				} else {
 					List<Variable> list1 = new ArrayList<>(), list2 = new ArrayList<>();
 					for (int[] cycle : generator)
 						if (cycle.length == 2) {
-							list1.add(variables[cycle[0]]);
-							list2.add(variables[cycle[1]]);
+							list1.add(variables.get(cycle[0]));
+							list2.add(variables.get(cycle[1]));
 						} else
 							for (int i = 0; i < cycle.length; i++) {
-								list1.add(variables[cycle[i]]);
-								list2.add(variables[cycle[(i + 1) % cycle.length]]);
+								list1.add(variables.get(cycle[i]));
+								list2.add(variables.get(cycle[(i + 1) % cycle.length]));
 							}
 					VariableInteger[] t1 = list1.toArray(new VariableInteger[list1.size()]), t2 = list2.toArray(new VariableInteger[list2.size()]);
 					Kit.control(Kit.isStrictlyIncreasing(t1));
@@ -578,35 +559,32 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 	}
 
 	/**
-	 * This method is called when the initialization is finished in order to, among other things, put constraints into an array.
+	 * This method is called when the initialization is finished in order to put, among other things, variables and constraints into arrays.
 	 */
-	public final void storeConstraintsToArray() {
-		inferAdditionalConstraints();
-		constraints = features.collecting.constraints.toArray(new Constraint[0]);
-		for (Variable x : variables) {
-			x.whenFinishedProblemConstruction();
-			features.varDegrees.add(x.deg());
-		}
+	private final void storeToArrays() {
+		this.variables = features.collecting.variables.toArray(new Variable[0]);
+		this.constraints = features.collecting.constraints.toArray(new Constraint[0]);
+		Constraint[] sortedConstraints = features.collecting.constraints.stream().sorted((c1, c2) -> c1.scp.length - c2.scp.length).toArray(Constraint[]::new);
+		// TODO for the moment we cannot use the sortedConstraints as the main array (pb with nums)
+		List<Constraint>[] lists = IntStream.range(0, variables.length).mapToObj(i -> new ArrayList<>()).toArray(List[]::new);
+		for (Constraint c : sortedConstraints)
+			for (Variable x : c.scp)
+				lists[x.num].add(c);
+		for (Variable x : variables)
+			x.storeInvolvingConstraints(lists[x.num]);
 		assert Variable.areNumsNormalized(variables);// && Constraint.areIdsNormalized(constraints); TODO
 		// head.clearMapsUsedByConstraints();
 	}
 
 	public Variable findVarWithNumOrId(Object o) {
-		String msg = "Check your configuration parameters -ins -pr1 or -pr2";
-		if (o instanceof Integer) {
-			int num = (Integer) o;
-			control(0 <= num && num < variables.length, num + " is not a valid variable num. " + msg);
-			control(variables[num].num != Variable.UNSET_NUM, "You cannot use the discarded variable whose (initial) num is " + num + ". " + msg);
-			return variables[num];
-		} else {
-			Variable x = mapForVars.get(o);
-			control(x != null, "The variable " + o + " cannot be found. " + msg);
-			control(x.num != Variable.UNSET_NUM, "You cannot use the discarded variable " + o + ". " + msg);
-			return x;
-		}
+		String msg = "Check your solving options -ins -pr1 and -pr2";
+		Variable x = o instanceof Integer ? variables[(Integer) o] : mapForVars.get(o);
+		control(x != null, "The variable " + o + " cannot be found. " + msg);
+		control(x.num != Variable.UNSET_NUM, "You cannot use the discarded variable " + o + ". " + msg);
+		return x;
 	}
 
-	private final void addUnaryConstraintsOfUserInstantiation() {
+	private void reduceDomainsFromUserInstantiation() {
 		SettingVars settings = head.control.variables;
 		control(settings.instantiatedVars.length == settings.instantiatedVals.length,
 				"In the given instantiation, the number of variables (ids or names) is different from the number of values.");
@@ -618,7 +596,7 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 		}
 	}
 
-	private final void reduceDomainsOfIsolatedVariables() {
+	private void reduceDomainsOfIsolatedVariables() {
 		// TODO other frameworks ?
 		boolean reduceIsolatedVars = head.control.variables.reduceIsolatedVars && settings.nSearchedSolutions == 1 && !head.control.problem.isSymmetryBreaking()
 				&& settings.framework == TypeFramework.CSP;
@@ -653,18 +631,22 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 		head.observersConstruction.add(0, this); // "Must be the first in the list when calling onConstructionSolverFinished
 		this.settings = head.control.general;
 		this.features = new Features(this);
+
+		// we load data and build the model (we follow the Compiler API from XCSP-Java-Tools)
 		head.output.beforeData();
 		loadData(data, dataFormat, dataSaving);
 		head.output.afterData();
 		api.model();
 
-		this.variables = features.collecting.variables.toArray(new Variable[features.collecting.variables.size()]);
-		addUnaryConstraintsOfUserInstantiation();
-		storeConstraintsToArray();
-		// currently, only mono-objective optimization supported
-		// if (Solver.class.getSimpleName().equals(head.control.solving.clazz)) optimizer = new OptimizerBasic(this, "#violatedConstraints");
+		// after possibly adding some additional (redundant or symmetry-breaking) constraints, we store variables and constraints into arrays
+		inferAdditionalConstraints();
+		storeToArrays();
 
+		// we may reduce the domains of some variables
+		reduceDomainsFromUserInstantiation();
 		reduceDomainsOfIsolatedVariables();
+
+		// if (Solver.class.getSimpleName().equals(head.control.solving.clazz)) optimizer = new OptimizerBasic(this, "#violatedConstraints");
 	}
 
 	public final void display() {
@@ -2383,6 +2365,25 @@ public class Problem extends ProblemIMP implements ObserverOnConstruction {
 	}
 
 }
+
+// public final Constraint addUniversalConstraintDynamicallyBetween(Variable x, Variable y) {
+// assert x.getClass() == y.getClass();
+// assert !Stream.of(y.ctrs).anyMatch(c -> c.scp.length == 2 && c.involves(x));
+// assert solver.propagation instanceof Forward;
+//
+// CtrAlone ca = extension(vars(x, y), new int[0][], false, DONT_KNOW);
+// Constraint c = (Constraint) ca.ctr; // (Constraint) buildCtrTrue(x, y).ctr;
+// c.cloneStructures(false);
+// constraints = features.collecting.constraints.toArray(new Constraint[0]); // storeConstraintsToArray();
+// x.whenFinishedProblemConstruction();
+// y.whenFinishedProblemConstruction();
+// // constraint.buildBitRmResidues();
+// if (x.assigned())
+// c.doPastVariable(x);
+// if (y.assigned())
+// c.doPastVariable(y);
+// return c;
+// }
 
 /// **
 // *

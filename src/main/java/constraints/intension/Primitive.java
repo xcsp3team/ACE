@@ -3,13 +3,13 @@ package constraints.intension;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import interfaces.FilteringSpecific;
+import interfaces.SpecificPropagator;
 import interfaces.Tags.TagAC;
 import problem.Problem;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Primitive extends Constraint implements FilteringSpecific {
+public abstract class Primitive extends Constraint implements SpecificPropagator {
 
 	protected final void defineKey(Object... datas) {
 		StringBuilder sb = signature().append(' ').append(getClass().getSimpleName());

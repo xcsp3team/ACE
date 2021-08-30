@@ -26,7 +26,7 @@ import constraints.ConstraintIntension;
 import dashboard.Control.SettingVars;
 import interfaces.Observers.ObserverOnConstruction;
 import interfaces.Observers.ObserverOnRuns;
-import interfaces.Observers.ObserverOnSearch;
+import interfaces.Observers.ObserverOnSolving;
 import learning.IpsRecorder;
 import learning.IpsRecorderForEquivalence;
 import learning.ReductionOperator;
@@ -50,7 +50,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public class Output implements ObserverOnConstruction, ObserverOnSearch, ObserverOnRuns {
+public class Output implements ObserverOnConstruction, ObserverOnSolving, ObserverOnRuns {
 
 	/**********************************************************************************************
 	 * Constants
@@ -472,7 +472,6 @@ public class Output implements ObserverOnConstruction, ObserverOnSearch, Observe
 	private final InformationBloc preproInfo() {
 		InformationBloc m = new InformationBloc(PREPROCESSING);
 		m.put(N_EFFECTIVE, head.problem.features.nEffectiveFilterings);
-		System.out.println("hhhhh " + stats);
 		m.put(REVISIONS, "(" + stats.nRevisions() + ",useless=" + stats.nUselessRevisions() + ")", stats.nRevisions() > 0);
 		m.put(N_VALUES, Variable.nValidValuesFor(head.problem.variables));
 		Propagation propagation = head.solver.propagation;

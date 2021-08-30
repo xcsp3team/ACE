@@ -1,0 +1,54 @@
+package interfaces;
+
+import java.util.List;
+
+import constraints.Constraint;
+import variables.Domain;
+
+/**
+ * An interface for objects that register constraints that are associated to them. Note that, for the moment, constraints must have necessarily the same types
+ * of domains.
+ * 
+ * @author Christophe Lecoutre
+ * 
+ */
+public interface ConstraintRegister {
+
+	/**
+	 * Returns the list of constraints registered by this object
+	 * 
+	 * @return the list of constraints registered by this object
+	 */
+	abstract List<Constraint> registeredCtrs();
+
+	/**
+	 * Returns the first constraint that is registered with the object
+	 * 
+	 * @return the first constraint that is registered with the object
+	 */
+	default Constraint firstRegisteredCtr() {
+		return registeredCtrs().get(0);
+	}
+
+	/**
+	 * Adds a constraint to the list of constraints registered by this object
+	 * 
+	 * @param c
+	 *            a constraint
+	 */
+	default void register(Constraint c) {
+		assert !registeredCtrs().contains(c) && (registeredCtrs().size() == 0 || Domain.similarTypes(c.doms, firstRegisteredCtr().doms));
+		registeredCtrs().add(c);
+	}
+
+	/**
+	 * Removes a constraint to the list of constraints registered by this object
+	 * 
+	 * @param c
+	 *            a constraint
+	 */
+	default void unregister(Constraint c) {
+		boolean b = registeredCtrs().remove(c);
+		assert b;
+	}
+}

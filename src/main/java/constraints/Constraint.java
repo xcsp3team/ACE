@@ -22,8 +22,8 @@ import constraints.global.Sum.SumSimple.SumSimpleEQ;
 import constraints.global.Sum.SumWeighted.SumWeightedEQ;
 import dashboard.Control.SettingCtrs;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
-import interfaces.FilteringSpecific;
 import interfaces.Observers.ObserverOnConstruction;
+import interfaces.SpecificPropagator;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagNotAC;
@@ -43,7 +43,7 @@ import variables.TupleIterator;
 import variables.Variable;
 
 /**
- * This class gives the description of a constraint. <br>
+ * This class allows us to represent constraints. <br>
  * A constraint is attached to a problem and is uniquely identified by a number <code>num</code> (and an identifier <code>id</code>).<br>
  * A constraint involves a subset of variables of the problem.
  * 
@@ -52,7 +52,7 @@ import variables.Variable;
 public abstract class Constraint implements ICtr, ObserverOnConstruction, Comparable<Constraint> {
 
 	/*************************************************************************
-	 ***** Interfaces
+	 ***** Implementing Interfaces
 	 *************************************************************************/
 
 	@Override
@@ -75,51 +75,6 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		}
 	}
 
-	/**
-	 * An interface for objects that register constraints that are associated to them. Note that, for the moment, constraints must have necessarily the same
-	 * types of domains.
-	 */
-	public static interface RegisteringCtrs {
-
-		/**
-		 * Returns the list of constraints registered by this object
-		 * 
-		 * @return the list of constraints registered by this object
-		 */
-		abstract List<Constraint> registeredCtrs();
-
-		/**
-		 * Returns the first constraint that is registered with the object
-		 * 
-		 * @return the first constraint that is registered with the object
-		 */
-		default Constraint firstRegisteredCtr() {
-			return registeredCtrs().get(0);
-		}
-
-		/**
-		 * Adds a constraint to the list of constraints registered by this object
-		 * 
-		 * @param c
-		 *            a constraint
-		 */
-		default void register(Constraint c) {
-			assert !registeredCtrs().contains(c) && (registeredCtrs().size() == 0 || Domain.similarTypes(c.doms, firstRegisteredCtr().doms));
-			registeredCtrs().add(c);
-		}
-
-		/**
-		 * Removes a constraint to the list of constraints registered by this object
-		 * 
-		 * @param c
-		 *            a constraint
-		 */
-		default void unregister(Constraint c) {
-			boolean b = registeredCtrs().remove(c);
-			assert b;
-		}
-	}
-
 	/*************************************************************************
 	 ***** Two very special kinds of constraints called False and True
 	 *************************************************************************/
@@ -127,7 +82,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	/**
 	 * A class for constraints never satisfied (to be used in very special situations)
 	 */
-	public static class CtrFalse extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagAC {
+	public static class CtrFalse extends Constraint implements SpecificPropagator, TagFilteringCompleteAtEachCall, TagAC {
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
@@ -153,7 +108,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	/**
 	 * A class for constraints always satisfied (to be used in very special situations)
 	 */
-	public static class CtrTrue extends Constraint implements FilteringSpecific, TagFilteringCompleteAtEachCall, TagAC {
+	public static class CtrTrue extends Constraint implements SpecificPropagator, TagFilteringCompleteAtEachCall, TagAC {
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
@@ -308,6 +263,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 */
 	public final Variable[] scp;
 
+	public final Domain[] doms;
+
 	/**
 	 * The position of all variables of the problem in the constraint. It is -1 when not involved. For constraint of small arity, this array is not necessarily
 	 * built. So, you need to call <code> positionOf </code> instead of accessing directly this field.
@@ -337,8 +294,6 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	/** This field is used to store a tuple of (int) values. Is is inserted as a field in order to avoid overhead of memory allocations. */
 	protected final int[] vals;
 
-	public final Domain[] doms;
-
 	public int cost = 1;
 
 	public long time;
@@ -355,6 +310,11 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	public Variable[] infiniteDomainVars;
 
 	public SettingCtrs settings;
+
+	/**
+	 * The object that manages information about the number of conflicts of pairs (x,a) for the constraint.
+	 */
+	public ConflictsStructure conflictsStructure;
 
 	/**********************************************************************************************
 	 * General methods
@@ -450,7 +410,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 			return true;
 		if (this instanceof TagNotAC)
 			return false;
-		if (this instanceof FilteringSpecific)
+		if (this instanceof SpecificPropagator)
 			throw new UnsupportedOperationException(getClass().getName()); // to force the user to tag constraints or override the function
 		else
 			return genericFilteringThreshold == Integer.MAX_VALUE;
@@ -481,7 +441,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Returns the intension structure (i.e., object to evaluate a Boolean expression tree) if this object is an intension constraint, or null
+	 * Returns the intension structure (i.e., object to evaluate a Boolean expression tree) if this object is an intension constraint, null otherwise
 	 * 
 	 * @return the extension structure if this object is an intension constraint, or null
 	 */
@@ -490,18 +450,13 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Returns the extension structure (i.e., object like a table) if this object is an extension constraint, or null
+	 * Returns the extension structure (i.e., object like a table) if this object is an extension constraint, null otherwise
 	 * 
 	 * @return the extension structure if this object is an extension constraint, or null
 	 */
 	public ExtensionStructure extStructure() {
 		return null;
 	}
-
-	/**
-	 * The object that manages information about the number of conflicts of pairs (x,a) for the constraint.
-	 */
-	public ConflictsStructure conflictsStructure;
 
 	public void cloneStructures(boolean onlyConflictsStructure) {
 		if (conflictsStructure != null && conflictsStructure.registeredCtrs().size() > 1) {
@@ -520,9 +475,9 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	private Constraint() {
 		this.problem = null;
 		this.scp = new Variable[0];
+		this.doms = null;
 		this.tupleIterator = null;
 		this.vals = null;
-		this.doms = null;
 		this.genericFilteringThreshold = Integer.MAX_VALUE;
 		this.indexesMatchValues = false;
 		this.infiniteDomainVars = new Variable[0];
@@ -530,7 +485,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	private final int computeGenericFilteringThreshold() {
-		if (this instanceof FilteringSpecific || this instanceof ConstraintExtension)
+		if (this instanceof SpecificPropagator || this instanceof ConstraintExtension)
 			return Integer.MAX_VALUE; // because not concerned
 		int arityLimit = problem.head.control.propagation.arityLimitForGACGuaranteed;
 		if (scp.length <= arityLimit)
@@ -548,8 +503,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		this.problem = pb;
 		this.scp = scp = Stream.of(scp).distinct().toArray(Variable[]::new); // this.scp and scp updated
 		control(scp.length >= 1 && Stream.of(scp).allMatch(x -> x != null), () -> this + " with a scope badly formed ");
-		for (Variable x : scp)
-			x.collectedCtrs.add(this);
+		// for (Variable x : scp) x.collectedCtrs.add(this);
 		this.infiniteDomainVars = Stream.of(scp).filter(x -> x.dom instanceof DomainInfinite).toArray(Variable[]::new);
 
 		this.doms = Variable.buildDomainsArrayFor(scp);
@@ -560,7 +514,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		this.genericFilteringThreshold = computeGenericFilteringThreshold();
 		this.indexesMatchValues = Stream.of(scp).allMatch(x -> x.dom.indexesMatchValues());
 
-		if (this instanceof FilteringSpecific)
+		if (this instanceof SpecificPropagator)
 			pb.features.nSpecificCtrs++;
 		if (this instanceof ObserverOnConstruction)
 			pb.head.observersConstruction.add(this);
@@ -896,7 +850,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		if (time > x.time && this instanceof TagFilteringCompleteAtEachCall)
 			return true;
 		int nBefore = problem.nValueRemovals;
-		boolean consistent = this instanceof FilteringSpecific ? ((FilteringSpecific) this).runPropagator(x) : genericFiltering(x);
+		boolean consistent = this instanceof SpecificPropagator ? ((SpecificPropagator) this).runPropagator(x) : genericFiltering(x);
 		if (!consistent || problem.nValueRemovals != nBefore) {
 			if (problem.solver.proofer != null)
 				problem.solver.proofer.updateProof(this);// TODO // ((SystematicSolver)solver).updateProofAll();
