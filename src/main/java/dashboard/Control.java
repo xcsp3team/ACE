@@ -307,7 +307,7 @@ public class Control {
 
 		private Object[] controlAndFinalizeVariablesLists(Object[] priority1Vars, Object[] priority2Vars) {
 			// Selected variables are only valid for XCSP
-			// control about instantiatedVars and instantiatedVals is made in addUnaryConstraintsOfUserInstantiation of Problem
+			// control about instantiatedVars and instantiatedVals is made in reduceDomainsFromUserInstantiation of Problem
 			Object[] t = Kit.concat(instantiatedVars, priority1Vars, priority2Vars);
 			if (t.length > 0) {
 				Kit.control(Stream.of(t).distinct().count() == t.length, () -> "Two variables are identical in your lists (-sel -pr1 -pr2)");
@@ -409,7 +409,8 @@ public class Control {
 		}
 
 		public boolean convertingIntension(Variable[] vars) {
-			return vars.length <= arityLimitForConvertingIntension && Constraint.howManyVariablesWithin(vars, spaceLimitForConvertingIntension) == Constants.ALL;
+			return vars.length <= arityLimitForConvertingIntension
+					&& Constraint.howManyVariablesWithin(vars, spaceLimitForConvertingIntension) == Constants.ALL;
 		}
 	}
 

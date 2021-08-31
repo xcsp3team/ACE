@@ -587,7 +587,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private void reduceDomainsFromUserInstantiation() {
 		SettingVars settings = head.control.variables;
 		control(settings.instantiatedVars.length == settings.instantiatedVals.length,
-				"In the given instantiation, the number of variables (ids or names) is different from the number of values.");
+				"In the instantiation, the number of variables (ids or names) is different from the number of values.");
 		for (int i = 0; i < settings.instantiatedVars.length; i++) {
 			Variable x = findVarWithNumOrId(settings.instantiatedVars[i]);
 			int v = settings.instantiatedVals[i];
@@ -628,7 +628,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		super(api, modelVariant, argsForPb);
 		this.head = head;
 		head.problem = this; // required because it is needed during the initialization of some objects
-		head.observersConstruction.add(0, this); // "Must be the first in the list when calling onConstructionSolverFinished
+		head.observersConstruction.add(0, this); // Must be the first in the list when calling onConstructionSolverFinished
 		this.settings = head.control.general;
 		this.features = new Features(this);
 
