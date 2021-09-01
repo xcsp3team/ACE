@@ -13,7 +13,7 @@ import dashboard.Control.SettingLearning;
 import interfaces.Observers.ObserverOnDomainReductions;
 import interfaces.Observers.ObserverOnRuns;
 import solver.Solver;
-import utility.Enums.ELearningIps;
+import utility.Enums.LearningIps;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -21,9 +21,9 @@ import variables.Variable;
 public abstract class IpsRecorder implements ObserverOnRuns {
 
 	public static IpsRecorder buildFor(Solver solver) {
-		if (solver.head.control.learning.state == ELearningIps.EQUIVALENCE)
+		if (solver.head.control.learning.state == LearningIps.EQUIVALENCE)
 			return new IpsRecorderForEquivalence(solver);
-		if (solver.head.control.learning.state == ELearningIps.DOMINANCE)
+		if (solver.head.control.learning.state == LearningIps.DOMINANCE)
 			return new IpsRecorderForDominance(solver);
 		return null;
 	}
@@ -82,7 +82,7 @@ public abstract class IpsRecorder implements ObserverOnRuns {
 
 		public Justifier(IpsRecorder recorder) {
 			this.solver = recorder.solver;
-			if (solver.head.control.learning.state != ELearningIps.NO) {
+			if (solver.head.control.learning.state != LearningIps.NO) {
 				Variable[] vars = recorder.solver.problem.variables;
 				this.justifications = new Constraint[vars.length][];
 				for (int i = 0; i < justifications.length; i++) {

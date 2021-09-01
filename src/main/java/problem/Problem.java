@@ -193,8 +193,9 @@ import optimization.Optimizer.OptimizerIncreasing;
 import problem.Reinforcer.ReinforcerAllDifferent;
 import problem.Reinforcer.ReinforcerAutomorphism;
 import solver.Solver;
-import utility.Enums.EExportMode;
-import utility.Enums.ESymmetryBreaking;
+import utility.Enums.ExportMode;
+import utility.Enums.OptimizationStrategy;
+import utility.Enums.SymmetryBreaking;
 import utility.Kit;
 import utility.Kit.Stopwatch;
 import variables.Domain;
@@ -521,7 +522,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				int[] cycle1 = generator.get(0);
 				Variable x = variables.get(cycle1[0]);
 				Variable y = variables.get(cycle1[1]);
-				if (head.control.problem.symmetryBreaking == ESymmetryBreaking.LE) { // we only consider the two first variables
+				if (head.control.problem.symmetryBreaking == SymmetryBreaking.LE) { // we only consider the two first variables
 					lessEqual(x, y);
 				} else {
 					List<Variable> list1 = new ArrayList<>(), list2 = new ArrayList<>();
@@ -1063,9 +1064,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		@Override
 		public ModifiableBoolean mode() {
-			EExportMode exportMode = EExportMode.EXTENSION; // later, maybe a control parameter
-			return new ModifiableBoolean(exportMode != EExportMode.EXTENSION_SUPPORTS && exportMode != EExportMode.EXTENSION_CONFLICTS ? null
-					: exportMode == EExportMode.EXTENSION_SUPPORTS);
+			ExportMode exportMode = ExportMode.EXTENSION; // later, maybe a control parameter
+			return new ModifiableBoolean(exportMode != ExportMode.EXTENSION_SUPPORTS && exportMode != ExportMode.EXTENSION_CONFLICTS ? null
+					: exportMode == ExportMode.EXTENSION_SUPPORTS);
 		}
 	};
 
@@ -2187,12 +2188,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private Optimizer buildOptimizer(TypeOptimization opt, Optimizable clb, Optimizable cub) {
 		control(optimizer == null, "Only mono-objective currently supported");
 		// head.control.toCOP();
-		String suffix = Kit.camelCaseOf(head.control.optimization.strategy.name());
-		if (suffix.equals("Decreasing"))
+		if (head.control.optimization.strategy == OptimizationStrategy.DECREASING)
 			return new OptimizerDecreasing(this, opt, clb, cub);
-		if (suffix.equals("Increasing"))
+		if (head.control.optimization.strategy == OptimizationStrategy.INCREASING)
 			return new OptimizerIncreasing(this, opt, clb, cub);
-		control(suffix.equals("Dichotomic"));
+		control(head.control.optimization.strategy == OptimizationStrategy.DICHOTOMIC);
 		return new OptimizerDichotomic(this, opt, clb, cub);
 
 		// the code below must be changed, as for heuristics, if we want to use it, see in Head, HandlerClasses

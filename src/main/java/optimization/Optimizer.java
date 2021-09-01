@@ -3,7 +3,7 @@ package optimization;
 import static org.xcsp.common.Types.TypeFramework.COP;
 import static org.xcsp.common.Types.TypeOptimization.MAXIMIZE;
 import static org.xcsp.common.Types.TypeOptimization.MINIMIZE;
-import static utility.Enums.EStopping.FULL_EXPLORATION;
+import static utility.Enums.Stopping.FULL_EXPLORATION;
 
 import org.xcsp.common.Types.TypeOptimization;
 

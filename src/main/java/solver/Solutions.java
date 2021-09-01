@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package solver;
 
 import static org.xcsp.common.Types.TypeFramework.COP;
@@ -22,7 +32,7 @@ import org.xcsp.modeler.entities.VarEntities.VarEntity;
 
 import constraints.Constraint;
 import problem.Problem;
-import utility.Enums.EStopping;
+import utility.Enums.Stopping;
 import utility.Kit;
 import variables.Variable;
 
@@ -233,7 +243,7 @@ public final class Solutions {
 	 */
 	public void displayFinalResults() {
 		TypeFramework framework = solver.problem.settings.framework;
-		boolean fullExploration = solver.stopping == EStopping.FULL_EXPLORATION;
+		boolean fullExploration = solver.stopping == Stopping.FULL_EXPLORATION;
 		synchronized (lock) {
 			if (!lock.get()) {
 				lock.set(true);
@@ -268,10 +278,8 @@ public final class Solutions {
 		Variable[] variables = solver.problem.variables;
 		assert t == null || t.length == variables.length;
 		last = last == null ? new int[variables.length] : last;
-		for (int i = 0; i < last.length; i++) {
+		for (int i = 0; i < last.length; i++)
 			last[i] = t != null ? t[i] : variables[i].dom.single();
-			// variables[i].valueIndexInLastSolution = last[i];
-		}
 		if (store != null)
 			store.add(last.clone());
 
@@ -291,7 +299,7 @@ public final class Solutions {
 		lastRun = solver.restarter.numRun;
 		// solutionHamming();
 		if (found >= limit)
-			solver.stopping = EStopping.REACHED_GOAL;
+			solver.stopping = Stopping.REACHED_GOAL;
 		record(null);
 		solver.stats.times.onNewSolution();
 

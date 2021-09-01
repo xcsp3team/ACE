@@ -9,7 +9,7 @@ import dashboard.Control.SettingRestarts;
 import interfaces.Observers.ObserverOnRuns;
 import optimization.ObjectiveVariable;
 import sets.SetDense;
-import utility.Enums.EStopping;
+import utility.Enums.Stopping;
 import utility.Kit;
 import variables.Variable;
 
@@ -53,7 +53,7 @@ public class Restarter implements ObserverOnRuns {
 		boolean rerunPropagation = forceRootPropagation || (cop && numRun - 1 == solver.solutions.lastRun);
 		if (rerunPropagation || (solver.head.control.propagation.strongOnlyAtPreprocessing && 0 < numRun && numRun % 60 == 0)) { // TODO hard coding
 			if (solver.propagation.runInitially() == false)
-				solver.stopping = EStopping.FULL_EXPLORATION;
+				solver.stopping = Stopping.FULL_EXPLORATION;
 			forceRootPropagation = false;
 			nRestartsSinceReset = 0;
 		}

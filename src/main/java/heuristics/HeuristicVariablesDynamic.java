@@ -23,9 +23,9 @@ import interfaces.Observers.ObserverOnRuns;
 import interfaces.Tags.TagMaximize;
 import sets.SetDense;
 import solver.Solver;
-import utility.Enums.EBranching;
-import utility.Enums.ESingleton;
-import utility.Enums.EWeighting;
+import utility.Enums.Branching;
+import utility.Enums.SingletonStrategy;
+import utility.Enums.ConstraintWeighting;
 import utility.Kit;
 import utility.Kit.CombinatorOfTwoInts;
 import variables.Domain;
@@ -48,7 +48,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	protected final Variable bestUnpriorityVar() {
 		assert solver.futVars.size() > 0;
 
-		if (solver.head.control.solving.branching != EBranching.BIN) {
+		if (solver.head.control.solving.branching != Branching.BIN) {
 			Variable x = solver.decisions.varOfLastDecisionIf(false);
 			if (x != null)
 				return x;
@@ -60,7 +60,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			}
 		}
 		bestScoredVariable.reset(false);
-		if (settings.singleton == ESingleton.LAST) {
+		if (settings.singleton == SingletonStrategy.LAST) {
 			if (solver.depth() <= lastDepthWithOnlySingletons) {
 				lastDepthWithOnlySingletons = Integer.MAX_VALUE;
 				for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
@@ -82,7 +82,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				return solver.futVars.first();
 			}
 		} else {
-			boolean first = settings.singleton == ESingleton.FIRST;
+			boolean first = settings.singleton == SingletonStrategy.FIRST;
 			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 				if (first && x.dom.size() == 1)
 					return x;
@@ -185,7 +185,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				reset();
 			}
 			alpha = ALPHA0;
-			if (settings.weighting == EWeighting.CHS) { // smoothing
+			if (settings.weighting == ConstraintWeighting.CHS) { // smoothing
 				for (int i = 0; i < cscores.length; i++)
 					cscores[i] *= (Math.pow(SMOOTHING, time - ctime[i]));
 			}
@@ -193,7 +193,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void afterAssignment(Variable x, int a) {
-			if (settings.weighting != EWeighting.VAR && settings.weighting != EWeighting.CHS)
+			if (settings.weighting != ConstraintWeighting.VAR && settings.weighting != ConstraintWeighting.CHS)
 				for (Constraint c : x.ctrs)
 					if (c.futvars.size() == 1) {
 						int y = c.futvars.dense[0]; // the other variable whose score must be updated
@@ -203,7 +203,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void afterUnassignment(Variable x) {
-			if (settings.weighting != EWeighting.VAR && settings.weighting != EWeighting.CHS)
+			if (settings.weighting != ConstraintWeighting.VAR && settings.weighting != ConstraintWeighting.CHS)
 				for (Constraint c : x.ctrs)
 					if (c.futvars.size() == 2) { // since a variable has just been unassigned, it means that there was only one future variable
 						int y = c.futvars.dense[0]; // the other variable whose score must be updated
@@ -214,10 +214,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void whenWipeout(Constraint c, Variable x) {
 			time++;
-			if (settings.weighting == EWeighting.VAR)
+			if (settings.weighting == ConstraintWeighting.VAR)
 				vscores[x.num]++;
 			else if (c != null) {
-				if (settings.weighting == EWeighting.CHS) {
+				if (settings.weighting == ConstraintWeighting.CHS) {
 					double r = 1.0 / (time - ctime[c.num]);
 					double increment = alpha * (r - cscores[c.num]);
 					cscores[c.num] += increment;
@@ -236,7 +236,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					SetDense futvars = c.futvars;
 					for (int i = futvars.limit; i >= 0; i--) {
 						Variable y = c.scp[futvars.dense[i]];
-						if (settings.weighting == EWeighting.CACD) { // in this case, the increment is not 1 as for UNIT
+						if (settings.weighting == ConstraintWeighting.CACD) { // in this case, the increment is not 1 as for UNIT
 							Domain dom = y.dom;
 							boolean test = false; // hard coding ; this variant does not seem to be interesting
 							if (test) {
@@ -289,7 +289,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public double scoreOf(Variable x) {
-			if (settings.weighting == EWeighting.CHS) {
+			if (settings.weighting == ConstraintWeighting.CHS) {
 				double d = 0;
 				for (Constraint c : x.ctrs)
 					if (c.futvars.size() > 1)
@@ -308,7 +308,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public double scoreOf(Variable x) {
-			if (settings.weighting == EWeighting.CHS) {
+			if (settings.weighting == ConstraintWeighting.CHS) {
 				double d = 0;
 				for (Constraint c : x.ctrs)
 					if (c.futvars.size() > 1)
@@ -341,7 +341,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public ActivityImpactAbstract(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 			this.lastSizes = Stream.of(solver.problem.variables).mapToInt(x -> x.dom.size()).toArray();
-			Kit.control(solver.head.control.solving.branching == EBranching.BIN);
+			Kit.control(solver.head.control.solving.branching == Branching.BIN);
 			Kit.control(solver.head.control.restarts.varhResetPeriod != 0);
 		}
 
@@ -354,13 +354,13 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				update();
 			bestScoredVariable.reset(true);
 			solver.futVars.execute(x -> {
-				if (x.dom.size() > 1 || settings.singleton != ESingleton.LAST) {
+				if (x.dom.size() > 1 || settings.singleton != SingletonStrategy.LAST) {
 					lastSizes[x.num] = x.dom.size();
 					bestScoredVariable.update(x, scoreOptimizedOf(x));
 				}
 			});
 			if (bestScoredVariable.variable == null) {
-				assert settings.singleton == ESingleton.LAST || solver.head.control.varh.discardAux;
+				assert settings.singleton == SingletonStrategy.LAST || solver.head.control.varh.discardAux;
 				return solver.futVars.first();
 			}
 			lastVar = bestScoredVariable.variable.dom.size() == 1 ? null : bestScoredVariable.variable;

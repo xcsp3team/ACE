@@ -1,7 +1,7 @@
 package propagation;
 
 import solver.Solver;
-import utility.Enums.EBranching;
+import utility.Enums.Branching;
 import utility.Kit;
 import utility.Reflector;
 import variables.Variable;
@@ -25,7 +25,7 @@ public abstract class Forward extends Propagation {
 	}
 
 	protected final boolean hasSolverPropagatedAfterLastButOneDecision() {
-		return solver.head.control.solving.branching != EBranching.NON || !solver.decisions.isLastButOneNegative();
+		return solver.head.control.solving.branching != Branching.NON || !solver.decisions.isLastButOneNegative();
 	}
 
 	@Override

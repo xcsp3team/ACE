@@ -1,36 +1,24 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package utility;
 
 public class Enums {
 
-	public static enum EBranching {
+	public static enum Branching {
 		BIN, RES, NON;
 	}
 
-	public static enum EBinaryEncoding {
-		NO, DUAL, HIDDEN, DOUBLE;
-	}
-
-	public static enum EOptimizationStrategy {
+	public static enum OptimizationStrategy {
 		INCREASING, DECREASING, DICHOTOMIC;
 	}
 
-	public static enum EExtension {
+	public static enum Extension {
 		V, VA, STR1, STR2, STR3, STR1NEG, STR2NEG, CT, CMDD, CMDDSHORT, GAC4, RPWC, RPWC2;
 	}
 
-	public enum EExtraction {
+	public enum Extraction {
 		DEC_VAR, DEC_CON, VAR, CON, INC, INC_FIRST, MAX_CSP;
 	}
 
-	public static enum ELearningNogood {
+	public static enum LearningNogood {
 		NO, RST, MIN_STD, RST_MIN, RST_SYM;
 
 		public boolean isRstType() {
@@ -38,7 +26,7 @@ public class Enums {
 		}
 	}
 
-	public enum ELearningIps {
+	public enum LearningIps {
 		NO, EQUIVALENCE, DOMINANCE;
 	}
 
@@ -72,17 +60,11 @@ public class Enums {
 		}
 	}
 
-	public static enum ERestartsMeasure {
+	public static enum RestartMeasure {
 		FAILED, WRONG, BACKTRACK, SOLUTION;
 	}
 
-	public static enum EExport {
-		NO,
-		STD, // standard output stdout
-		FILE
-	}
-
-	public static enum EExportMode {
+	public static enum ExportMode {
 		NO,
 		INTENSION,
 		EXTENSION, // EXTENSION is for automatic mode (either supports or conflicts)
@@ -90,27 +72,19 @@ public class Enums {
 		EXTENSION_CONFLICTS;
 	}
 
-	public enum ESemantics {
-		SUPPORTS, CONFLICTS, SOFT;
-	}
-
-	public enum ESingleton {
+	public enum SingletonStrategy {
 		ANY, FIRST, LAST;
 	}
 
-	public static enum EStopping {
+	public static enum Stopping {
 		FULL_EXPLORATION, REACHED_GOAL, EXCEEDED_TIME;
 	}
 
-	public static enum ETypeOptimization {
-		MINIMIZE, MAXIMIZE;
-	}
-
-	public static enum ESymmetryBreaking {
+	public static enum SymmetryBreaking {
 		NO, LE, LEX;
 	}
 
-	public static enum EWeighting {
+	public static enum ConstraintWeighting {
 		VAR, UNIT, CACD, CHS; // UNIT is for classical wdeg, cacd its variant (ICTAI'19) and CHS (from Marseille guys)
 	}
 

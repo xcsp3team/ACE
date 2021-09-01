@@ -4,7 +4,7 @@ import propagation.GAC;
 import propagation.Propagation;
 import solver.Decisions;
 import solver.Solver;
-import utility.Enums.EStopping;
+import utility.Enums.Stopping;
 import variables.Variable;
 
 public class NogoodMinimizer {
@@ -64,7 +64,7 @@ public class NogoodMinimizer {
 			x.dom.removeElementary(a);
 			consistent = x.dom.size() > 0 && propagation.runAfterRefutation(x);
 			if (!consistent) {
-				solver.stopping = EStopping.FULL_EXPLORATION;
+				solver.stopping = Stopping.FULL_EXPLORATION;
 				return new int[0];
 			}
 			return null;

@@ -59,17 +59,16 @@ import propagation.SAC.QueueForSAC3.CellIterator;
 import solver.Restarter.RestarterLNS.HeuristicFreezing.Rand;
 import solver.Solutions;
 import solver.Solver;
-import utility.Enums.EBinaryEncoding;
-import utility.Enums.EBranching;
-import utility.Enums.EExtension;
-import utility.Enums.EExtraction;
-import utility.Enums.ELearningIps;
-import utility.Enums.ELearningNogood;
-import utility.Enums.EOptimizationStrategy;
-import utility.Enums.ERestartsMeasure;
-import utility.Enums.ESingleton;
-import utility.Enums.ESymmetryBreaking;
-import utility.Enums.EWeighting;
+import utility.Enums.Branching;
+import utility.Enums.RestartMeasure;
+import utility.Enums.SingletonStrategy;
+import utility.Enums.SymmetryBreaking;
+import utility.Enums.ConstraintWeighting;
+import utility.Enums.Extension;
+import utility.Enums.Extraction;
+import utility.Enums.LearningIps;
+import utility.Enums.LearningNogood;
+import utility.Enums.OptimizationStrategy;
 import utility.Kit;
 import utility.Reflector;
 import variables.Variable;
@@ -229,12 +228,11 @@ public class Control {
 
 		public final boolean shareBitVectors = addB("shareBitVectors", "sbv", false, s_sbv, HIDDEN);
 		// public final boolean completeGraph = addB("completeGraph", "cg", false, s_cg, HIDDEN); // used for PC8
-		public final EBinaryEncoding binaryEncoding = addE("binaryEncoding", "be", EBinaryEncoding.NO, s_be, TO_IMPLEMENT);
 
-		public final ESymmetryBreaking symmetryBreaking = addE("symmetryBreaking", "sb", ESymmetryBreaking.NO, s_sb);
+		public final SymmetryBreaking symmetryBreaking = addE("symmetryBreaking", "sb", SymmetryBreaking.NO, s_sb);
 
 		public boolean isSymmetryBreaking() {
-			return symmetryBreaking != ESymmetryBreaking.NO;
+			return symmetryBreaking != SymmetryBreaking.NO;
 		}
 	}
 
@@ -391,8 +389,8 @@ public class Control {
 				+ "\n\tWe have v for GAC-valid, a for GAC-allowed, va for GAC-valid+allowed, str1 for simple tabular reduction, str2 and mdd...";
 		String s_negative = "For non-binary constraints defined in extension, representation of negative table constraints...";
 
-		public final EExtension positive = addE("positive", "positive", EExtension.CT, s_positive);
-		public final EExtension negative = addE("negative", "negative", EExtension.V, s_negative);
+		public final Extension positive = addE("positive", "positive", Extension.CT, s_positive);
+		public final Extension negative = addE("negative", "negative", Extension.V, s_negative);
 		public final boolean validForBinary = addB("validForBinary", "vfor2", true, "");
 		public final String classBinary = addS("classBinary", "cfor2", Bits.class, "");
 		public final String classTernary = addS("classTernary", "cfor3", Matrix3D.class, "");
@@ -419,7 +417,7 @@ public class Control {
 	public class SettingOptimization extends SettingGroup {
 		public long lb = addL("lb", "lb", MINUS_INFINITY, "initial lower bound");
 		public long ub = addL("ub", "ub", PLUS_INFINITY, "initial upper bound");
-		public final EOptimizationStrategy strategy = addE("strategy", "os", EOptimizationStrategy.DECREASING, "optimization strategy");
+		public final OptimizationStrategy strategy = addE("strategy", "os", OptimizationStrategy.DECREASING, "optimization strategy");
 	}
 
 	public final SettingOptimization optimization = new SettingOptimization();
@@ -483,7 +481,7 @@ public class Control {
 		public String clazz = addS("clazz", "s_class", Solver.class, s_class);
 		public boolean enablePrepro = addB("enablePrepro", "prepro", true, "must we perform preprocessing?");
 		public boolean enableSearch = addB("enableSearch", "search", true, "must we perform search?");
-		public final EBranching branching = addE("branching", "branching", EBranching.BIN, s_branching);
+		public final Branching branching = addE("branching", "branching", Branching.BIN, s_branching);
 	}
 
 	public final SettingSolving solving = new SettingSolving();
@@ -500,7 +498,7 @@ public class Control {
 		public int nRunsLimit = addI("nRunsLimit", "r_n", Integer.MAX_VALUE, s_n);
 		public long cutoff = addL("cutoff", "r_c", 10, s_c); // for COP, this value is initially multiplied by 10 in Restarter
 		public double factor = addD("factor", "r_f", 1.1, s_f);
-		public final ERestartsMeasure measure = addE("measure", "r_m", ERestartsMeasure.FAILED, s_m);
+		public final RestartMeasure measure = addE("measure", "r_m", RestartMeasure.FAILED, s_m);
 		public int nRestartsResetPeriod = addI("nRestartsResetPeriod", "r_rrp", 90, s_rrp);
 		public final int nRestartsResetCoefficient = addI("nRestartsResetCoefficient", "r_rrc", 2, s_rrc);
 		public final int varhResetPeriod = addI("varhResetPeriod", "r_rp", Integer.MAX_VALUE, "");
@@ -517,12 +515,12 @@ public class Control {
 		String s_ps = "Indicates the way partial states are collected." + "\nBy default, no such learning.";
 		String s_pso = "Indicates which operators are used to extract partial states: a sequence of 5 bits is used.";
 
-		public ELearningNogood nogood = addE("nogood", "l_ng", ELearningNogood.RST, s_ng);
+		public LearningNogood nogood = addE("nogood", "l_ng", LearningNogood.RST, s_ng);
 		public final int nogoodBaseLimit = addI("nogoodBaseLimit", "l_ngbl", 200000, s_bgbl);
 		public final int nogoodArityLimit = addI("nogoodArityLimit", "l_ngal", Integer.MAX_VALUE, "", HIDDEN);
 		public final int unarySymmetryLimit = addI("unarySymmetryLimit", "l_usl", Integer.MAX_VALUE, "", HIDDEN);
 		public final int nonunarySymmetryLimit = addI("nonunarySymmetryLimit", "l_nsl", 2000, "", HIDDEN);
-		public final ELearningIps state = addE("state", "l_ps", ELearningIps.NO, s_ps);
+		public final LearningIps state = addE("state", "l_ps", LearningIps.NO, s_ps);
 		public final String stateOperators = addS("stateOperators", "l_pso", "11011", s_pso).trim();
 		public final int compressionLevelForStateEquivalence = addI("compressionLevelForStateEquivalence", "l_clevel", Deflater.NO_COMPRESSION, "", HIDDEN);
 		// BEST_SPEED or BEST_COMPRESSION as alternatives
@@ -534,7 +532,7 @@ public class Control {
 	public class SettingExtraction extends SettingGroup {
 		String s = "\n\tValid only with the command: java " + HeadExtraction.class.getName();
 
-		public final EExtraction method = addE("method", "e_m", EExtraction.VAR, "method for extracting unsatisfiable cores." + s);
+		public final Extraction method = addE("method", "e_m", Extraction.VAR, "method for extracting unsatisfiable cores." + s);
 		public final int nCores = addI("nCores", "e_nc", 1, "number of unsatifiable cores to be extracted." + s);
 	}
 
@@ -544,8 +542,8 @@ public class Control {
 		public String heuristic = addS("heuristic", "varh", Wdeg.class, HeuristicVariables.class, "name of the class used for selecting variables");
 		public final boolean anti = addB("anti", "anti_varh", false, "must we follow the anti heuristic?");
 		public int lc = addI("lc", "lc", 2, "value for lc (last conflict); 0 if not activated");
-		public final EWeighting weighting = addE("weighting", "wt", EWeighting.CACD, "how to manage weights for wdeg variants");
-		public final ESingleton singleton = addE("singleton", "sing", ESingleton.LAST, "how to manage singleton variables during search");
+		public final ConstraintWeighting weighting = addE("weighting", "wt", ConstraintWeighting.CACD, "how to manage weights for wdeg variants");
+		public final SingletonStrategy singleton = addE("singleton", "sing", SingletonStrategy.LAST, "how to manage singleton variables during search");
 		public final boolean discardAux = addB("discardAux", "da", false, "must we discard auxiliary variables introduced by the solver?");
 	}
 
@@ -622,7 +620,7 @@ public class Control {
 		// () -> "The value of operatorForSatisfaction must be in {eq,ne,lt,le,gt,ge}.");
 		Kit.control(0 <= lns.pFreeze && lns.pFreeze < 100, () -> "percentageOfVariablesToFreeze should be between 0 and 100 (excluded)");
 
-		Kit.control(learning.nogood != ELearningNogood.RST_SYM);
+		Kit.control(learning.nogood != LearningNogood.RST_SYM);
 		Kit.control(optimization.lb <= optimization.ub);
 		// as
 		// C0
@@ -859,8 +857,7 @@ public class Control {
 				return tag + "/" + attribute; // (attributeAmbiguity ? tag + "/" : "") + attribute;
 			}
 
-			private final String[] experimentalNames = Kit
-					.sort(new String[] { EExtraction.MAX_CSP.name(), EExtraction.INC.name(), EExtraction.INC_FIRST.name() });
+			private final String[] experimentalNames = Kit.sort(new String[] { Extraction.MAX_CSP.name(), Extraction.INC.name(), Extraction.INC_FIRST.name() });
 
 			@Override
 			public String toString() {

@@ -10,7 +10,7 @@ package learning;
 
 import solver.Solver;
 import utility.Bit;
-import utility.Enums.EStopping;
+import utility.Enums.Stopping;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -263,7 +263,7 @@ public final class IpsRecorderForDominance extends IpsRecorder {
 		assert ips != null;
 		if (ips.nums.length == 0) {
 			Kit.log.info("empty nogood");
-			solver.stopping = EStopping.FULL_EXPLORATION;
+			solver.stopping = Stopping.FULL_EXPLORATION;
 		} else {
 			if (quarantineSize + 1 > quarantine.length) {
 				Ips[] t = new Ips[quarantine.length * 2];

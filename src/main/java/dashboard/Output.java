@@ -38,7 +38,7 @@ import propagation.Propagation;
 import propagation.SAC;
 import propagation.SAC.SACGreedy;
 import solver.Statistics;
-import utility.Enums.EStopping;
+import utility.Enums.Stopping;
 import utility.Enums.TypeOutput;
 import utility.Kit;
 import utility.Kit.Stopwatch;
@@ -477,7 +477,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		Propagation propagation = head.solver.propagation;
 		m.put(REMOVED_BY_AC, propagation instanceof GAC ? ((GAC) (propagation)).nPreproValueRemovals : 0);
 		// m.put("nTotalRemovedValues", nPreproRemovedValues);
-		m.put(UNSAT, head.solver.stopping == EStopping.FULL_EXPLORATION);
+		m.put(UNSAT, head.solver.stopping == Stopping.FULL_EXPLORATION);
 		m.separator(stats.prepro.nRemovedTuples > 0 || stats.prepro.nAddedNogoods > 0 || stats.prepro.nAddedCtrs > 0);
 		m.put(N_REMOVED_TUPLES, stats.prepro.nRemovedTuples);
 		m.put(N_NOGOODS, stats.prepro.nAddedNogoods);

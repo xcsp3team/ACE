@@ -22,7 +22,7 @@ import constraints.extension.STR3;
 import heuristics.HeuristicVariables;
 import heuristics.HeuristicVariablesDynamic.WdegOnDom;
 import solver.Solver;
-import utility.Enums.EStopping;
+import utility.Enums.Stopping;
 import utility.Kit;
 import utility.Kit.Stopwatch;
 import variables.Domain;
@@ -59,7 +59,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		HeuristicVariables h = solver.heuristic;
 		solver.heuristic = heuristic;
 		solver.solutions.limit = 1;
-		boolean inverse = enforceArcConsistencyAfterAssignment(x) && solver.doRun().stopping == EStopping.REACHED_GOAL;
+		boolean inverse = enforceArcConsistencyAfterAssignment(x) && solver.doRun().stopping == Stopping.REACHED_GOAL;
 		solver.solutions.limit = baseNbSolutionsLimit;
 		solver.heuristic = h;
 		if (inverse)

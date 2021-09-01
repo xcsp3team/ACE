@@ -12,9 +12,9 @@ import constraints.Constraint;
 import dashboard.Input;
 import problem.Problem;
 import solver.Solver;
-import utility.Enums.EExtraction;
-import utility.Enums.ELearningIps;
-import utility.Enums.EStopping;
+import utility.Enums.Extraction;
+import utility.Enums.LearningIps;
+import utility.Enums.Stopping;
 import utility.Kit;
 import utility.Kit.Stopwatch;
 import variables.Variable;
@@ -184,7 +184,7 @@ public class HeadExtraction extends Head {
 		Kit.log.info("Start Finding Minimal Core of constraints (dichotomic) ...");
 		List<Constraint> core = new ArrayList<>();
 		for (boolean finished = false; !finished;) {
-			Constraint[] currCtrs = Kit.sort(arrayOfPossiblyPresentCtrs(), ctrComparator.coreAndMode(core, solver.stopping != EStopping.FULL_EXPLORATION));
+			Constraint[] currCtrs = Kit.sort(arrayOfPossiblyPresentCtrs(), ctrComparator.coreAndMode(core, solver.stopping != Stopping.FULL_EXPLORATION));
 			Arrays.fill(localCtrs, false);
 			int min = core.size(), max = currCtrs.length - 1;
 			for (int i = 0; i < min; i++)
@@ -271,7 +271,7 @@ public class HeadExtraction extends Head {
 				Kit.log.info("No more cores");
 				break;
 			}
-			if (control.extraction.method == EExtraction.VAR)
+			if (control.extraction.method == Extraction.VAR)
 				minimalCoreOfVars();
 			List<Constraint> core = minimalCoreOfCtrs();
 			cores.add(core);
@@ -312,7 +312,7 @@ public class HeadExtraction extends Head {
 		Input.loadArguments(args);
 		HeadExtraction extraction = new HeadExtraction();
 		Kit.control(!extraction.control.problem.isSymmetryBreaking(), () -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
-		Kit.control(extraction.control.learning.state == ELearningIps.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
+		Kit.control(extraction.control.learning.state == LearningIps.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
 		// Kit.control(extraction.configuration.restartsCutoff == Long.MAX_VALUE || extraction.configuration.nogoodType == null,
 		// "Be careful of nogood recording from restarts.");
 		Kit.control(extraction.control.solving.clazz.equals(Solver.class.getSimpleName()), () -> extraction.control.solving.clazz);

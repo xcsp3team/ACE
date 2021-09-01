@@ -14,7 +14,7 @@ import java.util.zip.Deflater;
 
 import solver.Solver;
 import utility.Bit;
-import utility.Enums.EStopping;
+import utility.Enums.Stopping;
 import utility.Kit;
 import utility.Kit.ByteArrayHashKey;
 import variables.Domain;
@@ -173,7 +173,7 @@ public final class IpsRecorderForEquivalence extends IpsRecorder {
 		if (hashKey == null)
 			return; // since the key was too large and so not recorded
 		if (hashKey.t.length == 0)
-			solver.stopping = EStopping.FULL_EXPLORATION;
+			solver.stopping = Stopping.FULL_EXPLORATION;
 		int nSolutions = (int) solver.solutions.found - currentOpenNodesNbFoundSolutions[solver.depth()];
 		mapOfHashKeys.put(hashKey, nSolutions == 0 ? zero : nSolutions);
 	}

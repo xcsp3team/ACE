@@ -2,8 +2,8 @@ package solver;
 
 import static java.util.stream.Collectors.toCollection;
 import static org.xcsp.common.Types.TypeFramework.COP;
-import static utility.Enums.EStopping.EXCEEDED_TIME;
-import static utility.Enums.EStopping.FULL_EXPLORATION;
+import static utility.Enums.Stopping.EXCEEDED_TIME;
+import static utility.Enums.Stopping.FULL_EXPLORATION;
 import static utility.Kit.control;
 import static utility.Kit.log;
 
@@ -40,8 +40,8 @@ import propagation.Forward;
 import propagation.Propagation;
 import sets.SetDense;
 import sets.SetSparseReversible;
-import utility.Enums.EBranching;
-import utility.Enums.EStopping;
+import utility.Enums.Branching;
+import utility.Enums.Stopping;
 import utility.Kit;
 import variables.DomainInfinite;
 import variables.Variable;
@@ -450,7 +450,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	/**
 	 * when null, the solver is still running
 	 */
-	public EStopping stopping;
+	public Stopping stopping;
 
 	public final Tracer tracer;
 
@@ -646,7 +646,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 		if (ipsRecorder != null)
 			ipsRecorder.dealWhenClosingNode();
 		if (futVars.nPast() == 0)
-			stopping = EStopping.FULL_EXPLORATION;
+			stopping = Stopping.FULL_EXPLORATION;
 	}
 
 	protected final boolean tryRefutation(Variable x, int a) {
@@ -659,7 +659,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 		x.dom.removeElementary(a);
 		boolean consistent = x.dom.size() > 0;
 		if (consistent) {
-			if (head.control.solving.branching == EBranching.NON)
+			if (head.control.solving.branching == Branching.NON)
 				return true;
 			consistent = propagation.runAfterRefutation(x);
 			if (!consistent)
@@ -674,10 +674,10 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	 * Called when a contradiction has been encountered.
 	 */
 	private void manageContradiction(ConstraintGlobal objectiveToCheck) {
-		for (boolean consistent = false; !consistent && stopping != EStopping.FULL_EXPLORATION;) {
+		for (boolean consistent = false; !consistent && stopping != Stopping.FULL_EXPLORATION;) {
 			Variable x = futVars.lastPast();
 			if (x == lastPastBeforeRun[nRecursiveRuns - 1] && !head.control.lns.enabled)
-				stopping = EStopping.FULL_EXPLORATION;
+				stopping = Stopping.FULL_EXPLORATION;
 			else {
 				int a = x.dom.single();
 				backtrack(x);

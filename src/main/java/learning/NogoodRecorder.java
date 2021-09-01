@@ -26,8 +26,8 @@ import dashboard.Control.SettingLearning;
 import interfaces.Observers.ObserverOnRuns;
 import solver.Decisions;
 import solver.Solver;
-import utility.Enums.ELearningNogood;
-import utility.Enums.EStopping;
+import utility.Enums.LearningNogood;
+import utility.Enums.Stopping;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -35,7 +35,7 @@ import variables.Variable;
 public final class NogoodRecorder {
 
 	public static NogoodRecorder buildFor(Solver solver) {
-		if (solver.head.control.solving.enableSearch && solver.head.control.learning.nogood != ELearningNogood.NO && solver.propagation.queue != null)
+		if (solver.head.control.solving.enableSearch && solver.head.control.learning.nogood != LearningNogood.NO && solver.propagation.queue != null)
 			return new NogoodRecorder(solver);
 		return null;
 	}
@@ -177,7 +177,7 @@ public final class NogoodRecorder {
 		this.pws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
 		this.nws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
 		this.tmp = new int[solver.problem.variables.length];
-		this.symmetryHandler = settings.nogood == ELearningNogood.RST_SYM ? new SymmetryHandler(solver.problem.variables.length) : null;
+		this.symmetryHandler = settings.nogood == LearningNogood.RST_SYM ? new SymmetryHandler(solver.problem.variables.length) : null;
 	}
 
 	private void addWatchFor(Nogood nogood, int position, boolean firstWatch) {
@@ -217,7 +217,7 @@ public final class NogoodRecorder {
 				tmp[nMetPositiveDecisions++] = d;
 			else if (nMetPositiveDecisions > 0) {
 				int[] currentNogood = new int[nMetPositiveDecisions + 1];
-				if (settings.nogood == ELearningNogood.RST_MIN && decisions.isFailedAssignment(i)) {
+				if (settings.nogood == LearningNogood.RST_MIN && decisions.isFailedAssignment(i)) {
 					boolean bottomUp = true; // hard coding TODO
 					if (bottomUp)
 						for (int j = 0; j < nMetPositiveDecisions; j++)
@@ -297,15 +297,15 @@ public final class NogoodRecorder {
 					x.dom.removeElementary(a);
 					Kit.log.info("Remove Unary sym nogood : " + decisions.stringOf(decision));
 					if (x.dom.size() == 0) {
-						solver.stopping = EStopping.FULL_EXPLORATION;
+						solver.stopping = Stopping.FULL_EXPLORATION;
 						break;
 					}
 					effective = true;
 				}
 			}
 			decisionsToBePerformedAtNextRun.clear();
-			if (solver.stopping != EStopping.FULL_EXPLORATION && effective && !solver.propagation.runInitially())
-				solver.stopping = EStopping.FULL_EXPLORATION;
+			if (solver.stopping != Stopping.FULL_EXPLORATION && effective && !solver.propagation.runInitially())
+				solver.stopping = Stopping.FULL_EXPLORATION;
 		}
 
 		private Map<Integer, Integer>[] mapOfSymmetryGroupGenerators;
