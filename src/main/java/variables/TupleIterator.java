@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package variables;
 
 import java.util.function.Consumer;
@@ -174,7 +184,7 @@ public final class TupleIterator {
 	 * 
 	 * @return the position (the closest to 0) of the last modified index, or <code> -1 </code> if there is no more available tuple
 	 */
-	public final int nextValidTuple() {
+	public int nextValidTuple() {
 		assert isValidCurrTuple();
 		return setNextValidTupleBefore(doms.length - 1);
 	}
@@ -184,7 +194,7 @@ public final class TupleIterator {
 	 * 
 	 * @return the position (the closest to 0) of the last modified index, or <code> -1 </code> if there is no more available tuple
 	 */
-	public final int nextValidTupleCautiously() {
+	public int nextValidTupleCautiously() {
 		int arity = doms.length;
 		for (int i = 0; i < arity; i++)
 			if (!doms[i].contains(currTuple[i])) { // i is the position (the closest to 0) of the first invalid index
@@ -205,7 +215,7 @@ public final class TupleIterator {
 	 * @param p
 	 *            a consumer
 	 */
-	public final void consumeValidTuples(Consumer<int[]> p) {
+	public void consumeValidTuples(Consumer<int[]> p) {
 		assert isValidCurrTuple();
 		do {
 			p.accept(currTuple);
@@ -219,7 +229,7 @@ public final class TupleIterator {
 	 *            a constraint
 	 * @return true if a valid tuple satisfying the specified constraint can be found from the current tuple (included)
 	 */
-	public final boolean findValidTupleSatisfying(Constraint c) {
+	public boolean findValidTupleSatisfying(Constraint c) {
 		assert isValidCurrTuple();
 		do {
 			if (c.checkIndexes(currTuple))
@@ -235,7 +245,7 @@ public final class TupleIterator {
 	 *            a constraint
 	 * @return true if a valid tuple not satisfying the specified constraint can be found from the current tuple (included)
 	 */
-	public final boolean findValidTupleNotSatisfying(Constraint c) {
+	public boolean findValidTupleNotSatisfying(Constraint c) {
 		assert isValidCurrTuple();
 		do {
 			if (!c.checkIndexes(currTuple))
@@ -251,7 +261,7 @@ public final class TupleIterator {
 	 *            a predicate
 	 * @return true if a valid tuple checking the specified predicate can be found from the current tuple (included)
 	 */
-	public final boolean findValidTupleChecking(Predicate<int[]> p) {
+	public boolean findValidTupleChecking(Predicate<int[]> p) {
 		assert isValidCurrTuple();
 		do {
 			if (p.test(currTuple))
@@ -267,7 +277,7 @@ public final class TupleIterator {
 	 *            a predicate
 	 * @return the number of valid tuples checking the specified predicate
 	 */
-	public final long countValidTuplesChecking(Predicate<int[]> p) {
+	public long countValidTuplesChecking(Predicate<int[]> p) {
 		assert isValidCurrTuple();
 		long cnt = 0;
 		do {

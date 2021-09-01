@@ -9,15 +9,20 @@
 package heuristics;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import dashboard.Control.SettingValh;
+import heuristics.HeuristicValuesDirect.First;
+import heuristics.HeuristicValuesDynamic.Bivs;
 import heuristics.HeuristicValuesDynamic.Bivs2;
 import interfaces.Tags.TagExperimental;
 import solver.Solver;
 import utility.Kit;
+import utility.Reflector;
 import variables.Domain;
+import variables.DomainInfinite;
 import variables.Variable;
 
 /**
@@ -25,6 +30,23 @@ import variables.Variable;
  * A value ordering heuristic is attached to a variable and allows selecting (indexes of) values.
  */
 public abstract class HeuristicValues extends Heuristic {
+
+	public static final HeuristicValues buildFor(Variable x) {
+		if (x.heuristic != null)
+			return x.heuristic; // already built by some objects, we do not change it
+		SettingValh settings = x.problem.head.control.valh;
+		String className = x.dom instanceof DomainInfinite ? First.class.getName() : settings.heuristic;
+		Set<Class<?>> classes = x.problem.head.availableClasses.get(HeuristicValues.class);
+		HeuristicValues heuristic = Reflector.buildObject(className, classes, x, settings.anti);
+		if (heuristic instanceof Bivs) {
+			if (settings.bivsDistance < 2) {
+				int distance = x.distanceWithObjective();
+				if (distance == 2 || (distance == 1 && settings.bivsDistance == 0))
+					heuristic = new First(x, settings.anti);
+			}
+		}
+		return heuristic;
+	}
 
 	/** The variable that uses this value ordering heuristic. */
 	protected final Variable x;

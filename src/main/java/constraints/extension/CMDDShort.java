@@ -107,11 +107,12 @@ public final class CMDDShort extends ExtensionSpecific implements TagPositive, T
 		earlyCutoff = scp.length;
 	}
 
-	private boolean manageSuccessfulExploration(int level, int a) {
+	private boolean manageSuccessfulExploration(final int level, final int a) {
+		boolean future = !scp[level].assigned();
 		if (a == Constants.STAR) {
-			Variable x = scp[level];
-			if (x.isFuture()) {
-				for (int b = x.dom.first(); b != -1; b = x.dom.next(b)) {
+			Domain dom = scp[level].dom;
+			if (future) {
+				for (int b = dom.first(); b != -1; b = dom.next(b)) {
 					if (!ac[level][b]) {
 						cnt--;
 						cnts[level]--;
@@ -124,7 +125,7 @@ public final class CMDDShort extends ExtensionSpecific implements TagPositive, T
 
 		int cutoffVariant = settings.variant;
 		if (cutoffVariant == 2) {
-			if (scp[level].isFuture()) {
+			if (future) {
 				if (!ac[level][a]) {
 					cnt--;
 					cnts[level]--;
@@ -138,7 +139,7 @@ public final class CMDDShort extends ExtensionSpecific implements TagPositive, T
 		}
 		if (cutoffVariant == 1) {
 			boolean b = false;
-			if (scp[level].isFuture()) {
+			if (future) {
 				if (!ac[level][a]) {
 					cnt--;
 					cnts[level]--;
@@ -155,7 +156,7 @@ public final class CMDDShort extends ExtensionSpecific implements TagPositive, T
 			return b;
 		}
 		assert cutoffVariant == 0;
-		if (scp[level].isFuture()) {
+		if (future) {
 			if (!ac[level][a]) {
 				cnt--;
 				cnts[level]--;

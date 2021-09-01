@@ -131,7 +131,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 		@Override
 		public double scoreOf(int a) {
-			assert x.isFuture() && dx.contains(a);
+			assert !x.assigned() && dx.contains(a);
 			long nConflicts = 0;
 			for (Constraint c : x.ctrs)
 				nConflicts += c.nConflictsFor(c.positionOf(x), a);

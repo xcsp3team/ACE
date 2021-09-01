@@ -50,7 +50,7 @@ public abstract class HeuristicVariables extends Heuristic {
 		}
 
 		public boolean update(Variable x, double s) {
-			if (discardAux && x.isSolverAux()) {
+			if (discardAux && x.isAuxiliaryVariableIntroducedBySolver()) {
 				assert x.id().startsWith(Problem.AUXILIARY_VARIABLE_PREFIX);
 				return false;
 			}

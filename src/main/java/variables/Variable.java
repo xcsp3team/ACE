@@ -1,11 +1,13 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package variables;
 
 import java.util.ArrayList;
@@ -23,17 +25,13 @@ import org.xcsp.common.Constants;
 import org.xcsp.common.IVar;
 import org.xcsp.common.Utilities;
 import org.xcsp.common.domains.Values.IntegerInterval;
-import org.xcsp.modeler.entities.VarEntities;
 
 import constraints.Constraint;
 import heuristics.HeuristicValues;
-import heuristics.HeuristicValuesDirect.First;
-import heuristics.HeuristicValuesDynamic.Bivs;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.Observers.ObserverOnBacktracks.ObserveronBacktracksUnsystematic;
 import problem.Problem;
 import utility.Kit;
-import utility.Reflector;
 import variables.DomainFinite.DomainRange;
 import variables.DomainFinite.DomainSymbols;
 import variables.DomainFinite.DomainValues;
@@ -59,14 +57,17 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		 */
 		public VariableInteger(Problem problem, String name, int[] values) {
 			super(problem, name);
+			assert Kit.isStrictlyIncreasing(values);
+			int firstValue = values[0], lastValue = values[values.length - 1];
 			if (values.length == 1)
-				this.dom = new DomainRange(this, values[0], values[0]);
+				this.dom = new DomainRange(this, firstValue, firstValue); // TODO using DomainRange for better reasoning with ranges (when handling/combining
+																			// expressions)?
 			else if (values.length == 2)
-				this.dom = new DomainBinary(this, values[0], values[1]);
-			else if (values.length == 3 && values[2] == Domain.TAG_RANGE)
-				this.dom = new DomainRange(this, values[0], values[1]);
-			else
-				this.dom = new DomainValues(this, values);
+				this.dom = new DomainBinary(this, firstValue, lastValue);
+			else {
+				boolean range = values.length == (lastValue - firstValue + 1);
+				this.dom = range ? new DomainRange(this, firstValue, lastValue) : new DomainValues(this, values);
+			}
 		}
 
 		public VariableInteger(Problem problem, String name, IntegerInterval interval) {
@@ -342,22 +343,7 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 
 	/** Arrays are not necessarily sorted. */
 	public static final boolean areSimilarArrays(Variable[] vars1, Variable... vars2) {
-		return vars1.length == vars2.length && Stream.of(vars1).noneMatch(x -> Stream.of(vars2).noneMatch(y -> x == y));
-	}
-
-	/**
-	 * Both arrays must be increasingly sorted. Returns true iff the first set contains the second set.
-	 */
-	public static final boolean contains(Variable[] vars1, Variable... vars2) {
-		assert areNumsStrictlyIncreasing(vars1) && areNumsStrictlyIncreasing(vars2);
-		int i = 0;
-		for (int j = 0; j < vars2.length; j++) {
-			while (i < vars1.length && vars1[i].num < vars2[j].num)
-				i++;
-			if (i == vars1.length || vars1[i].num != vars2[j].num)
-				return false;
-		}
-		return true;
+		return vars1.length == vars2.length && Stream.of(vars1).allMatch(x -> Stream.of(vars2).anyMatch(y -> x == y));
 	}
 
 	public static final boolean isPermutationElligible(Variable... vars) {
@@ -380,10 +366,6 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		return set.stream().toArray(Variable[]::new);
 	}
 
-	// public static final LinkedSet[] buildElementsArrayFor(Variable... vars) {
-	// return Stream.of(vars).map(x -> x.dom.set).toArray(LinkedSet[]::new);
-	// }
-
 	public static final StringBuilder signatureFor(Variable... vars) {
 		StringBuilder sb = new StringBuilder();
 		for (Variable x : vars)
@@ -403,7 +385,7 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 			return "*";
 		if (obj instanceof Variable) {
 			Variable x = (Variable) obj;
-			return x.dom.prettyValueOf(x.valueIndexInLastSolution); // ((Variable) obj).valueIndexInLastSolution = -1; // dom.prettyAssignedValue();
+			return x.dom.prettyValueOf(x.problem.solver.solutions.last[x.num]); // .valueIndexInLastSolution);
 		}
 		assert obj.getClass().isArray();
 		if (obj instanceof Variable[]) {
@@ -424,7 +406,7 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**********************************************************************************************
-	 * Object Members
+	 * Class Members
 	 *********************************************************************************************/
 
 	/**
@@ -450,12 +432,7 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	/**
 	 * The level where the variable has been explicitly assigned, or -1
 	 */
-	private int assignmentLevel = UNASSIGNED;
-
-	/**
-	 * This field is used during initialization in order to collect constraints where the variable is involved.
-	 */
-	// public final Collection<Constraint> collectedCtrs = new LinkedList<>();
+	public int assignmentLevel = UNASSIGNED;
 
 	/**
 	 * The array of constraints involving this variable
@@ -478,12 +455,13 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	 */
 	public long time;
 
-	public int valueIndexInLastSolution = -1;
-
-	public int[] failed; // failed[a] gives the number of failed assignments for a
+	/**
+	 * failed[a] gives the number of assignments that directly failed with a
+	 */
+	public int[] failed;
 
 	private Variable[] computeNeighbours(int neighborArityLimit) {
-		if (ctrs.length == 0 || ctrs[ctrs.length - 1].scp.length > neighborArityLimit) // the last ctr is the one with the largest scope
+		if (ctrs.length == 0 || ctrs[ctrs.length - 1].scp.length > neighborArityLimit) // the last constraint is the one with the largest scope
 			return null;
 		Set<Variable> set = new TreeSet<>();
 		for (Constraint c : ctrs)
@@ -500,8 +478,8 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	 * This method is called when the initialization of the problem is finished in order to record the constraints involving this variable.
 	 */
 	public final void storeInvolvingConstraints(List<Constraint> constraints) {
+		assert IntStream.range(0, constraints.size() - 1).allMatch(i -> ctrs[i].scp.length <= ctrs[i + 1].scp.length);
 		this.ctrs = constraints.stream().toArray(Constraint[]::new);
-		// collectedCtrs.stream().sorted((c1, c2) -> c1.scp.length - c2.scp.length).toArray(Constraint[]::new);
 		this.nghs = problem.variables.length > NB_VARIABLES_LIMIT_FOR_STORING_NEIGHBOURS ? null : computeNeighbours(NB_NEIGHBOURS_LIMIT_FOR_STORING_NEIGHBOURS);
 		this.failed = new int[dom.initSize()];
 		problem.features.varDegrees.add(deg());
@@ -522,12 +500,17 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	public void reset() {
-		assert isFuture() && dom.controlStructures(); // && Kit.control(dom.nRemoved() == 0 ??
+		assert !assigned() && dom.controlStructures(); // && Kit.control(dom.nRemoved() == 0 ??
 		// if (!preserveWeightedDegrees)
 		// this.resetWdeg();
 		time = 0;
 	}
 
+	/**
+	 * Returns the default id of the variable, i.e., the letter V followed by its num(ber)
+	 * 
+	 * @return the default id of the variable
+	 */
 	public final String defaultId() {
 		return "V" + num;
 	}
@@ -537,58 +520,30 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		return id;
 	}
 
-	public final String getId(boolean defaultId) {
-		return defaultId ? defaultId() : id();
-	}
-
-	public final void setId(String id) {
-		this.id = id;
-		VarEntities.VarAlone va = problem.varEntities.varToVarAlone.get(this);
-		if (va != null)
-			va.id = id;
-	}
-
-	public boolean isSolverAux() {
+	/**
+	 * Returns true if this variable has been introduced by the solver
+	 * 
+	 * @return true if this variable has been introduced by the solver
+	 */
+	public final boolean isAuxiliaryVariableIntroducedBySolver() {
 		return num >= problem.variables.length - problem.nAuxVariables;
 	}
 
-	public final int assignmentLevel() {
-		return assignmentLevel;
-	}
-
+	/**
+	 * Returns true if the variable is assigned (already said past, or not future), i.e., explicitly assigned by the solver
+	 * 
+	 * @return true if the variable is assigned
+	 */
 	public final boolean assigned() {
 		return assignmentLevel >= 0;
 	}
 
 	/**
-	 * Determines if the variable is future, i.e., neither past (assigned) nor disconnected.
-	 */
-	public final boolean isFuture() {
-		return assignmentLevel == UNASSIGNED;
-	}
-
-	public final void buildValueOrderingHeuristic() {
-		if (heuristic == null) {
-			String className = this.dom instanceof DomainInfinite ? First.class.getName() : problem.head.control.valh.heuristic;
-			Set<Class<?>> classes = problem.head.availableClasses.get(HeuristicValues.class);
-			heuristic = Reflector.buildObject(className, classes, this, problem.head.control.valh.anti);
-			if (heuristic instanceof Bivs) {
-				int bivs_d = problem.head.control.valh.bivsDistance;
-				if (bivs_d < 2) {
-					int distance = objectiveDistance();
-					if (distance == 2 || (distance == 1 && bivs_d == 0))
-						heuristic = new First(this, problem.head.control.valh.anti);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Returns the (first) binary constraint involving the variable and the given one.
+	 * Returns the (first) binary constraint involving the variable and the specified one
 	 * 
 	 * @param x
 	 *            a given variable
-	 * @return the (first) binary constraint involving the variable and the given one if it exits and <code> null </code> otherwise.
+	 * @return the (first) binary constraint involving the variable and the specified one if it exits and <code> null </code> otherwise
 	 */
 	public final Constraint firstBinaryConstraintWith(Variable x) {
 		assert this != x;
@@ -601,24 +556,39 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	/**
 	 * Determines if this variable and the specified one are involved together in at least one constraint.
 	 */
-	public final boolean isNeighbourOf(Variable x) {
+
+	/**
+	 * Returns true if the variable and the specified one are involved together in at least a constraint
+	 * 
+	 * @param x
+	 *            another variable
+	 * @return true if the variable and the specified one are neighbors
+	 */
+	public final boolean isNeighborOf(Variable x) {
+		assert this != x;
 		if (nghs != null)
 			return Arrays.binarySearch(nghs, x) >= 0;
 		if (ctrs.length > x.ctrs.length)
-			return x.isNeighbourOf(this);
+			return x.isNeighborOf(this);
 		for (Constraint c : ctrs)
 			if (c.involves(x))
 				return true;
 		return false;
 	}
 
-	public final int objectiveDistance() {
+	/**
+	 * Returns the distance of the variable with respect to the objective, computed as follows: 0 if directly involved in the objective, 1 if a neighbor is
+	 * involved in the objective, 2 otherwise
+	 * 
+	 * @return the distance of the variable with respect to the objective
+	 */
+	public final int distanceWithObjective() {
 		assert problem.optimizer != null;
 		Constraint c = (Constraint) problem.optimizer.ctr;
 		if (c.involves(this))
 			return 0;
 		for (Variable y : c.scp)
-			if (this.isNeighbourOf(y))
+			if (this.isNeighborOf(y))
 				return 1;
 		return 2;
 	}
@@ -630,7 +600,7 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	 *            the index of a value to be assigned to the variable
 	 */
 	public final void assign(int a) {
-		assert isFuture() && dom.contains(a) : isFuture() + " " + dom.contains(a);
+		assert !assigned() && dom.contains(a) : assigned() + " " + dom.contains(a);
 		dom.reduceToElementary(a);
 		assignmentLevel = problem.solver.depth(); // keep at this position
 		for (Constraint c : ctrs)
@@ -641,7 +611,7 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	 * This method is called in order to undo the last assignment of the variable
 	 */
 	public final void unassign() {
-		assert !isFuture();
+		assert assigned();
 		for (Constraint c : ctrs)
 			c.undoPastVariable(this);
 		assignmentLevel = UNASSIGNED;
@@ -713,3 +683,25 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 }
+
+// public final void setId(String id) {
+// this.id = id;
+// VarEntities.VarAlone va = problem.varEntities.varToVarAlone.get(this);
+// if (va != null)
+// va.id = id;
+// }
+
+/// **
+// * Both arrays must be increasingly sorted. Returns true iff the first set contains the second set.
+// */
+// public static final boolean contains(Variable[] vars1, Variable... vars2) {
+// assert areNumsStrictlyIncreasing(vars1) && areNumsStrictlyIncreasing(vars2);
+// int i = 0;
+// for (int j = 0; j < vars2.length; j++) {
+// while (i < vars1.length && vars1[i].num < vars2[j].num)
+// i++;
+// if (i == vars1.length || vars1[i].num != vars2[j].num)
+// return false;
+// }
+// return true;
+// }

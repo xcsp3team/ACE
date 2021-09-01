@@ -844,7 +844,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 				assert !isGuaranteedAC() || isSatisfiedByCurrentInstantiation() : "Unsatisfied constraint " + this + "while AC should be guaranteed";
 				return isGuaranteedAC() || isSatisfiedByCurrentInstantiation();
 			}
-			if (futvars.size() == 1 && x.isFuture() && scp.length > 1)
+			if (futvars.size() == 1 && !x.assigned() && scp.length > 1)
 				return true;
 		}
 		if (time > x.time && this instanceof TagFilteringCompleteAtEachCall)

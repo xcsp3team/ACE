@@ -136,10 +136,11 @@ public final class CMDD extends ExtensionSpecific implements TagPositive, ICtrMd
 		earlyCutoff = scp.length;
 	}
 
-	private boolean manageSuccessfulExploration(int level, int a) {
+	private boolean manageSuccessfulExploration(final int level, final int a) {
 		int cutoffVariant = settings.variant;
+		boolean future = !scp[level].assigned();
 		if (cutoffVariant == 2) {
-			if (scp[level].isFuture()) {
+			if (future) {
 				if (!ac[level][a]) {
 					cnt--;
 					cnts[level]--;
@@ -153,7 +154,7 @@ public final class CMDD extends ExtensionSpecific implements TagPositive, ICtrMd
 		}
 		if (cutoffVariant == 1) {
 			boolean b = false;
-			if (scp[level].isFuture()) {
+			if (future) {
 				if (!ac[level][a]) {
 					cnt--;
 					cnts[level]--;
@@ -170,7 +171,7 @@ public final class CMDD extends ExtensionSpecific implements TagPositive, ICtrMd
 			return b;
 		}
 		assert cutoffVariant == 0;
-		if (scp[level].isFuture()) {
+		if (future) {
 			if (!ac[level][a]) {
 				cnt--;
 				cnts[level]--;

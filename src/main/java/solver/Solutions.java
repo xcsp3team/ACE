@@ -105,9 +105,10 @@ public final class Solutions {
 		private void updateList(Object object, List<Integer> list) {
 			if (object == null)
 				list.add(Constants.STAR);
-			else if (object instanceof Variable)
-				list.add(((Variable) object).dom.toVal(((Variable) object).valueIndexInLastSolution));
-			else // recursive call
+			else if (object instanceof Variable) {
+				Variable x = (Variable) object;
+				list.add(x.dom.toVal(last[x.num])); // ((Variable) object).valueIndexInLastSolution));
+			} else // recursive call
 				Stream.of((Object[]) object).forEach(o -> updateList(o, list));
 		}
 
@@ -154,7 +155,7 @@ public final class Solutions {
 					sb.append(" ");
 				if (va instanceof VarAlone) {
 					Variable x = (Variable) ((VarAlone) va).var;
-					sb.append(x.dom.prettyValueOf(x.valueIndexInLastSolution));
+					sb.append(x.dom.prettyValueOf(last[x.num])); // .valueIndexInLastSolution));
 				} else
 					sb.append(Variable.rawInstantiationOf(VarArray.class.cast(va).vars));
 			}
@@ -201,7 +202,7 @@ public final class Solutions {
 			sb.append(PREFIX).append(" ").append(va.id).append(": ");
 			if (va instanceof VarAlone) {
 				Variable x = (Variable) ((VarAlone) va).var;
-				sb.append(x.dom.prettyValueOf(x.valueIndexInLastSolution));
+				sb.append(x.dom.prettyValueOf(last[x.num])); // valueIndexInLastSolution));
 			} else
 				sb.append(Variable.instantiationOf(VarArray.class.cast(va).vars, PREFIX));
 			sb.append(",\n");
@@ -269,13 +270,12 @@ public final class Solutions {
 		last = last == null ? new int[variables.length] : last;
 		for (int i = 0; i < last.length; i++) {
 			last[i] = t != null ? t[i] : variables[i].dom.single();
-			variables[i].valueIndexInLastSolution = last[i]; // lastSolution[i]lastSolutionPrettyAssignedValue = variables[i].dom.prettyAssignedValue();
+			// variables[i].valueIndexInLastSolution = last[i];
 		}
 		if (store != null)
 			store.add(last.clone());
 
-		// SumSimpleLE c = (SumSimpleLE) solver.pb.optimizer.ctr;
-		// Variable x = c.mostImpacting();
+		// SumSimpleLE c = (SumSimpleLE) solver.pb.optimizer.ctr; Variable x = c.mostImpacting();
 		// System.out.println("ccccc most " + x + " " + x.dom.toVal(lastSolution[x.num]));
 	}
 
@@ -307,7 +307,7 @@ public final class Solutions {
 			// solver.restarter.currCutoff += 20;
 			// + " \t#" + found); // + "); (hamming: " + h1 + ", in_objective: " + h2 + ")");
 		}
-		// The following code must stay after storeSolution
+		// The following code must stay after recording/storing the solution
 		if (solver.head.control.general.verbose > 1)
 			log.config(lastSolutionInJsonFormat() + "\n");
 		if (solver.head.control.general.verbose > 2 || solver.head.control.general.xmlAllSolutions)

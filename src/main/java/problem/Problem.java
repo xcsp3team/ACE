@@ -706,7 +706,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			x = new VariableInteger(this, id, (IntegerInterval) dom.values[0]);
 		else {
 			// TODO use a cache here to avoid building the array of values several times?
-			x = new VariableInteger(this, id, IntegerEntity.toIntArray((IntegerEntity[]) dom.values, Integer.MAX_VALUE)); // MAX_VALUE is a limit
+			x = new VariableInteger(this, id, IntegerEntity.toIntArray((IntegerEntity[]) dom.values));
 		}
 		return (VariableInteger) addVar(x);
 	}

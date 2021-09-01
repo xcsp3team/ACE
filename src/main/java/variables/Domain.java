@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 
 import org.xcsp.common.Range;
 import org.xcsp.common.Types.TypeOperatorRel;
+import org.xcsp.common.Utilities;
 
 import interfaces.Observers.ObserverOnDomainReductions;
 import problem.Problem;
@@ -50,17 +51,13 @@ public interface Domain extends SetLinked {
 	 * Static Members
 	 *********************************************************************************************/
 
-	static final int TAG_RANGE = Integer.MAX_VALUE;
-
-	static final int TAG_SYMBOLS = Integer.MAX_VALUE - 1;
-
 	/**
 	 * The cache used for storing type identifiers.
 	 */
 	static final List<int[]> types = new ArrayList<int[]>();
 
 	/**
-	 * Returns a type identifier for the specified array of values (integers), while using a cache.
+	 * Returns a type identifier for the specified array of values (integers), while using a cache
 	 * 
 	 * @param values
 	 *            an array of values (integers)
@@ -72,6 +69,34 @@ public interface Domain extends SetLinked {
 			return j;
 		types.add(values);
 		return types.size() - 1;
+	}
+
+	/**
+	 * Returns a type identifier for the specified range of values (integers), while using a cache
+	 * 
+	 * @param min
+	 *            the minimal value of the range
+	 * @param max
+	 *            the maximal value of the range (included)
+	 * @return a type identifier
+	 */
+	static int typeIdentifierForRange(int min, int max) {
+		// adding a third value, Integer.MAX_VALUE, which is not an authorized domain value since there is a safety margin, to specify a range (avoiding
+		// confusion with a domain only containing min and max)
+		return typeIdentifierFor(min, max, Integer.MAX_VALUE);
+	}
+
+	/**
+	 * Returns a type identifier for the specified array of values (corresponding to symbols), while using a cache
+	 * 
+	 * @param values
+	 *            values (corresponding to symbols)
+	 * @return a type identifier
+	 */
+	static int typeIdentifierForSymbols(int... values) {
+		// adding a third value, Integer.MAX_VALUE -1, which is not an authorized domain value since there is a safety margin, to specify a
+		// domain of symbols (avoiding confusion with a domain containing the specified integers)
+		return Domain.typeIdentifierFor(Utilities.collectInt(values, Integer.MAX_VALUE - 1));
 	}
 
 	/**
@@ -186,22 +211,45 @@ public interface Domain extends SetLinked {
 	 * Class Members
 	 *********************************************************************************************/
 
+	/**
+	 * Returns true if the initial domain exactly corresponds to the specified range
+	 * 
+	 * @param range
+	 *            a range of values
+	 * @return true if the initial domain exactly corresponds to the specified range
+	 */
 	default boolean areInitValuesExactly(Range range) {
 		control(range.step == 1);
 		return initSize() == range.length() && IntStream.range(0, initSize()).allMatch(a -> toVal(a) == range.start + a);
 	}
 
+	/**
+	 * Returns true if the initial domain is a subset of the specified set of values
+	 * 
+	 * @param values
+	 *            an array of values
+	 * @return true if the initial domain is a subset of the specified set of values
+	 */
 	default boolean areInitValuesSubsetOf(int[] values) {
 		return initSize() <= values.length && IntStream.range(0, initSize()).allMatch(a -> Kit.isPresent(toVal(a), values));
 	}
 
+	/**
+	 * Returns true if the initial domain is a subset of the specified range
+	 * 
+	 * @param range
+	 *            a range of values
+	 * @return true if the initial domain is a subset of the specified range
+	 */
 	default boolean areInitValuesSubsetOf(Range range) {
 		control(range.step == 1);
 		return initSize() <= range.length() && IntStream.range(0, initSize()).allMatch(a -> range.start <= toVal(a) && toVal(a) < range.stop);
 	}
 
 	/**
-	 * Returns the variable to which the domain is attached.
+	 * Returns the variable to which the domain is attached
+	 * 
+	 * @return the variable to which the domain is attached
 	 */
 	Variable var();
 
@@ -212,15 +260,28 @@ public interface Domain extends SetLinked {
 	 */
 	int typeIdentifier();
 
+	/**
+	 * Returns the name of the type of the domain
+	 * 
+	 * @return the name of the type of the domain
+	 */
 	default String typeName() {
 		return "D" + typeIdentifier();
 	}
 
 	/**
-	 * Returns the propagation object behind the scene.
+	 * Returns the propagation object that interacts with domains
+	 * 
+	 * @return the propagation object that interacts with domains
 	 */
 	Propagation propagation();
 
+	/**
+	 * Sets the propagation object that interacts with domains
+	 * 
+	 * @param propagation
+	 *            a propagation object
+	 */
 	void setPropagation(Propagation propagation);
 
 	/**
@@ -244,7 +305,7 @@ public interface Domain extends SetLinked {
 	 * Returns the value at the specified index
 	 * 
 	 * @param a
-	 *            a value index
+	 *            an index (of value)
 	 * @return the value at the specified index
 	 */
 	int toVal(int a);
@@ -275,7 +336,7 @@ public interface Domain extends SetLinked {
 	 * Returns true if the current domain has only one remaining value, whose index is specified.
 	 * 
 	 * @param a
-	 *            a value index
+	 *            an index (of value)
 	 */
 	default boolean containsOnly(int a) {
 		return size() == 1 && contains(a);
@@ -423,7 +484,7 @@ public interface Domain extends SetLinked {
 	 * Important: this method must only called when building the problem.
 	 * 
 	 * @param a
-	 *            a value index
+	 *            an index (of value)
 	 */
 	default void removeAtConstructionTime(int a) {
 		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " at construction time");
@@ -471,6 +532,14 @@ public interface Domain extends SetLinked {
 				removeAtConstructionTime(a);
 	}
 
+	/**
+	 * Method to call when elementary calls for removing some values may have been executed (i.e., calls to removeElementary) in order to take it into account
+	 * for propagation.
+	 * 
+	 * @param sizeBefore
+	 *            the size of the domain before elementary calls
+	 * @return false if an inconsistency is detected
+	 */
 	default boolean afterElementaryCalls(int sizeBefore) {
 		return size() == sizeBefore ? true : propagation().handleReduction(var());
 	}
@@ -481,7 +550,7 @@ public interface Domain extends SetLinked {
 	 * Important: the management of this removal with respect to propagation is not handled: removal is said elementary.
 	 * 
 	 * @param a
-	 *            a value index
+	 *            an index (of value)
 	 */
 	default void removeElementary(int a) {
 		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " from " + propagation().currFilteringCtr);

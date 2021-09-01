@@ -110,7 +110,7 @@ public final class FutureVariables implements Iterable<Variable> {
 	 * @return the future variable that comes after the specified one
 	 */
 	public Variable next(Variable x) {
-		assert x.isFuture();
+		assert !x.assigned();
 		int e = nexts[x.num];
 		return e == -1 ? null : vars[e];
 	}

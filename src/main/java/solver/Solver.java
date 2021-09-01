@@ -22,6 +22,7 @@ import org.xcsp.common.Constants;
 
 import constraints.Constraint;
 import constraints.ConstraintGlobal;
+import heuristics.HeuristicValues;
 import heuristics.HeuristicValuesDynamic.Bivs;
 import heuristics.HeuristicVariables;
 import interfaces.Observers.ObserverOnAssignments;
@@ -510,7 +511,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 
 		this.heuristic = HeuristicVariables.buildFor(this);
 		for (Variable x : problem.variables)
-			x.buildValueOrderingHeuristic();
+			x.heuristic = HeuristicValues.buildFor(x); // buildValueOrderingHeuristic();
 		this.lastConflict = head.control.varh.lc > 0 ? new LastConflict(this, head.control.varh.lc) : null;
 		this.decisions = new Decisions(this);
 
@@ -710,7 +711,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 					int backtrackLevel = -1;
 					for (int i = 0; i < objectiveCtr.scp.length; i++) {
 						Variable x = objectiveCtr.scp[objectiveCtr.futvars.dense[i]]; // variables (of the objective) from the last to the first assigned
-						if (x.assignmentLevel() <= backtrackLevel)
+						if (x.assignmentLevel <= backtrackLevel)
 							break;
 						backtrackLevel = Math.max(backtrackLevel, x.dom.lastRemovedLevel());
 					}

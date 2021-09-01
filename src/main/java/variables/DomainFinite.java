@@ -1,11 +1,13 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package variables;
 
 import java.util.Arrays;
@@ -54,6 +56,11 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 		return var;
 	}
 
+	/**
+	 * Computes and returns the type identifier of the domain
+	 * 
+	 * @return the type identifier of the domain
+	 */
 	protected abstract int computeTypeIdentifier();
 
 	@Override
@@ -92,7 +99,7 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 
 	@Override
 	public String toString() {
-		return "dom(" + var().id() + ")";
+		return "dom(" + var() + ")";
 	}
 
 	/**
@@ -100,16 +107,19 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 	 */
 	public final static class DomainRange extends DomainFinite {
 
-		/** The minimal value of the domain. */
+		/**
+		 * The minimal value of the domain
+		 */
 		public final int min;
 
-		/** The maximal value of the domain. */
+		/**
+		 * The maximal value of the domain (included)
+		 */
 		public final int max;
 
 		@Override
 		protected int computeTypeIdentifier() {
-			// TAG_RANGE used specially to avoid confusion with a domain only containing the two values min and max
-			return Domain.typeIdentifierFor(min, max, TAG_RANGE);
+			return Domain.typeIdentifierForRange(min, max);
 		}
 
 		public DomainRange(Variable var, int min, int max) {
@@ -140,22 +150,46 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 	 */
 	public static class DomainValues extends DomainFinite {
 
+		private static final int DIRECT_INDEXING_LIMIT = 1000; // TODO hard coding
+
+		/**
+		 * The values of the domain
+		 */
 		public final int[] values;
+
+		/**
+		 * The indexes of values (possibly null)
+		 */
+		public final int[] indexes;
+
+		private int firstValue, lastValue;
 
 		@Override
 		protected int computeTypeIdentifier() {
-			return Domain.typeIdentifierFor(this.values);
+			return Domain.typeIdentifierFor(values);
 		}
 
-		public DomainValues(Variable var, int... vals) {
-			super(var, vals.length);
-			this.values = IntStream.of(vals).sorted().distinct().toArray();
+		public DomainValues(Variable var, int... values) {
+			super(var, values.length);
+			assert Kit.isStrictlyIncreasing(values);
+			assert this instanceof DomainSymbols || IntStream.range(0, values.length - 1).anyMatch(i -> values[i + 1] != values[i] + 1);
 			Kit.control(Constants.MIN_SAFE_INT <= values[0] && values[values.length - 1] <= Constants.MAX_SAFE_INT);
+			this.values = values;
+			this.firstValue = values[0];
+			this.lastValue = values[values.length - 1];
+			if (lastValue - firstValue < DIRECT_INDEXING_LIMIT) {
+				this.indexes = Kit.repeat(-1, lastValue - firstValue + 1);
+				for (int i = 0; i < values.length; i++)
+					indexes[values[i] - firstValue] = i;
+			} else
+				this.indexes = null;
 		}
 
 		@Override
 		public int toIdx(int v) {
-			return Arrays.binarySearch(values, v);
+			if (indexes != null)
+				return v < firstValue || v > lastValue ? -1 : indexes[v - firstValue];
+			return Arrays.binarySearch(values, v); // TODO should we prefer using a map ? it seems so, but to be tested.
 		}
 
 		@Override
@@ -179,9 +213,7 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 
 		@Override
 		protected int computeTypeIdentifier() {
-			// TAG_SYMBOLS used to avoid confusion with a "normal" domain containing exactly the same values as those associated with the
-			// symbols
-			return Domain.typeIdentifierFor(Utilities.collectInt(this.values, TAG_SYMBOLS));
+			return Domain.typeIdentifierForSymbols(values);
 		}
 
 		public DomainSymbols(Variable var, int[] vals, String[] symbols) {

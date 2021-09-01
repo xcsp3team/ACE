@@ -1,32 +1,44 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package variables;
 
 import propagation.Propagation;
 
-// EXPERIMENTAL (TO BE FINISHED) !!!!!!!!!!!!!!!!!!!!!!!!!!!
+/**
+ * EXPERIMENTAL (TO BE CONTINUED/FINISHED)
+ * 
+ * @author Christophe Lecoutre
+ * 
+ */
 public final class DomainInfinite implements Domain {
 
-	protected Variable var;
+	private Variable var;
+
+	private Integer typeIdentifier;
+
+	private Propagation propagation;
+
+	private Integer assignedValue;
+
+	private int assignedLevel;
 
 	public final Variable var() {
 		return var;
 	}
 
-	protected Integer typeIdentifier;
-
+	@Override
 	public final int typeIdentifier() {
 		return typeIdentifier != null ? typeIdentifier : (typeIdentifier = Domain.typeIdentifierFor(Integer.MIN_VALUE, Integer.MAX_VALUE));
 		// should we be careful about avoiding confusion with other types of domains?
 	}
-
-	protected Propagation propagation;
 
 	@Override
 	public final Propagation propagation() {
@@ -37,10 +49,6 @@ public final class DomainInfinite implements Domain {
 	public final void setPropagation(Propagation propagation) {
 		this.propagation = propagation;
 	}
-
-	private Integer assignedValue;
-
-	private int assignedLevel;
 
 	@Override
 	public void setNumberOfLevels(int nLevels) {
@@ -184,7 +192,7 @@ public final class DomainInfinite implements Domain {
 
 	@Override
 	public String toString() {
-		return "dom(" + var().id() + ")";
+		return "dom(" + var() + ")";
 	}
 
 }
