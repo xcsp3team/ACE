@@ -709,7 +709,7 @@ public class Control {
 								: lastCharacter == 'm' ? baseValue * 1000000 : (Double) Kit.exit("Bad character for " + tag + " " + att);
 				Kit.control((longValue && Long.MIN_VALUE <= value && value <= Long.MAX_VALUE)
 						|| (!longValue && Integer.MIN_VALUE <= value && value <= Integer.MAX_VALUE));
-				return longValue ? new Long((long) value) : (Number) new Integer((int) value); // problem if cast omitted
+				return longValue ? new Long((long) value) : (Number) new Integer((int) value); // BE CAREFUL: problem if cast omitted
 			}
 
 			/** Returns the value (an integer) of the specified attribute for the specified tag. */
