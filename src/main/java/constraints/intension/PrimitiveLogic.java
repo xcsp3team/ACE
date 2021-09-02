@@ -85,8 +85,8 @@ public abstract class PrimitiveLogic extends Primitive implements TagAC, TagNotS
 					return true;
 				if (dy.size() == 2)
 					return dy.remove(1) && entailed();
-				else // dz.size() == 2
-					return dz.remove(1) && entailed();
+				// dz.size() == 2
+				return dz.remove(1) && entailed();
 			}
 		}
 
@@ -197,8 +197,8 @@ public abstract class PrimitiveLogic extends Primitive implements TagAC, TagNotS
 					return true;
 				if (dy.size() == 2)
 					return dy.remove(0) && entailed();
-				else // dz.size() == 2
-					return dz.remove(0) && entailed();
+				// dz.size() == 2
+				return dz.remove(0) && entailed();
 			}
 		}
 

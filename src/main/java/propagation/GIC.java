@@ -39,7 +39,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 
 	public GIC(Solver solver) {
 		super(solver);
-		this.heuristic = new WdegOnDom((Solver) solver, false);
+		this.heuristic = new WdegOnDom(solver, false);
 		this.nInverseTests = new int[solver.problem.variables.length + 1];
 		this.baseNbSolutionsLimit = solver.solutions.limit;
 		Kit.control(solver.head.control.restarts.cutoff == Long.MAX_VALUE, () -> "With GIC, there is currently no possibility of restarts.");
@@ -205,6 +205,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 			this.residues = Stream.of(solver.problem.variables).map(x -> new int[x.dom.initSize()][]).toArray(int[][][]::new);
 		}
 
+		@Override
 		protected void handleNewSolution(Variable x, int a) {
 			int[] solution = solver.solutions.last;
 			handleSolution(x, a, solution);
@@ -213,6 +214,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 			Kit.copy(solution, residues[x.num][a]);
 		}
 
+		@Override
 		protected boolean isInverseAdvanced(Variable x, int a) {
 			if (stamps[x.num][a] == timestamp)
 				return true;

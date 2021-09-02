@@ -100,12 +100,11 @@ public interface SetLinked {
 			for (int cnt = i - 1; cnt >= 0; cnt--)
 				a = next(a);
 			return a;
-		} else {
-			int a = last();
-			for (int cnt = size() - i - 2; cnt >= 0; cnt--)
-				a = prev(a);
-			return a;
 		}
+		int a = last();
+		for (int cnt = size() - i - 2; cnt >= 0; cnt--)
+			a = prev(a);
+		return a;
 	}
 
 	/**

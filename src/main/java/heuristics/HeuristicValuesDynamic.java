@@ -71,8 +71,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 			inconsistent.clear();
 			if ((settings.bivsStoppedAtFirstSolution && solver.solutions.found > 0) || dx.size() > settings.bivsLimit)
 				return dx.first(); // First in that case
-			else
-				return super.identifyBestValueIndex();
+			return super.identifyBestValueIndex();
 		}
 
 		@Override
@@ -108,18 +107,17 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 				if (aLast != -1 && dx.contains(aLast))
 					return aLast;
 				return dx.first(); // First in that case
-			} else {
-				int best = dx.first();
-				double bestScore = scoreOf(best) * scoreCoeff;
-				for (int a = dx.next(best); a != -1; a = dx.next(a)) {
-					double score = scoreOf(a) * scoreCoeff;
-					if (score > bestScore || (score == bestScore && a == aLast)) {
-						best = a;
-						bestScore = score;
-					}
-				}
-				return best;
 			}
+			int best = dx.first();
+			double bestScore = scoreOf(best) * scoreCoeff;
+			for (int a = dx.next(best); a != -1; a = dx.next(a)) {
+				double score = scoreOf(a) * scoreCoeff;
+				if (score > bestScore || (score == bestScore && a == aLast)) {
+					best = a;
+					bestScore = score;
+				}
+			}
+			return best;
 		}
 	}
 

@@ -16,6 +16,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -85,7 +86,7 @@ public final class Kit {
 		LogManager.getLogManager().reset();
 		Handler handler = new StreamHandler() {
 			@Override
-			public void publish(LogRecord record) {
+			public synchronized void publish(LogRecord record) {
 				if (record.getLevel().intValue() < Level.INFO.intValue()) {
 					if (Input.portfolio)
 						System.out.println("From " + ((Head) Thread.currentThread()).control.settingsFilename + " :");
@@ -94,7 +95,7 @@ public final class Kit {
 					if (Input.portfolio)
 						System.err.println("From " + ((Head) Thread.currentThread()).control.settingsFilename + " :");
 					// c.setTimeInMillis(record.getMillis());
-					Thread t = Head.currentThread();
+					Thread t = Thread.currentThread(); // Head.currentThread();
 					if (t instanceof Head && ((Head) t).control.general.verbose > 1)
 						System.err.println("\n" + record.getLevel() + " : " + record.getMessage()); // + " " + c.getTime());
 					if (record.getLevel() == Level.SEVERE) {
@@ -409,7 +410,7 @@ public final class Kit {
 		return false;
 	}
 
-	public static <T> boolean isPresent(String s, String[][] m) {
+	public static boolean isPresent(String s, String[][] m) {
 		for (String[] t : m)
 			if (isPresent(s, t))
 				return true;
@@ -637,7 +638,7 @@ public final class Kit {
 		private IntArrayHashKey hashKey;
 
 		public Contractor() {
-			map = new HashMap<IntArrayHashKey, int[]>(2000);
+			map = new HashMap<>(2000);
 		}
 
 		public void clear() {
@@ -956,10 +957,13 @@ public final class Kit {
 	}
 
 	public static Document load(File file) {
-		try {
-			return load(new FileInputStream(file), null); // no schema
+		try (FileInputStream f = new FileInputStream(file)) {
+			return load(f, null); // no schema
 		} catch (FileNotFoundException e) {
 			return (Document) Kit.exit("File " + file.getName() + " does not exist", e);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+			return null;
 		}
 	}
 
@@ -1007,7 +1011,7 @@ public final class Kit {
 	}
 
 	public static <T extends IVar> T[] vars(Object... objects) {
-		return (T[]) Utilities.collect(IVar.class, Stream.of(objects).map(o -> o instanceof XNode ? ((XNode) o).vars() : o));
+		return (T[]) Utilities.collect(IVar.class, Stream.of(objects).map(o -> o instanceof XNode ? ((XNode<?>) o).vars() : o));
 	}
 
 	public static int[] vals(Object... objects) {

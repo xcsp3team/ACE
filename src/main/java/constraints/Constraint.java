@@ -412,8 +412,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 			return false;
 		if (this instanceof SpecificPropagator)
 			throw new UnsupportedOperationException(getClass().getName()); // to force the user to tag constraints or override the function
-		else
-			return genericFilteringThreshold == Integer.MAX_VALUE;
+		return genericFilteringThreshold == Integer.MAX_VALUE;
 	}
 
 	public Boolean isSymmetric() {
@@ -516,8 +515,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 
 		if (this instanceof SpecificPropagator)
 			pb.features.nSpecificCtrs++;
-		if (this instanceof ObserverOnConstruction)
-			pb.head.observersConstruction.add(this);
+		pb.head.observersConstruction.add(this);
 
 		this.supporter = Supporter.buildFor(this);
 	}

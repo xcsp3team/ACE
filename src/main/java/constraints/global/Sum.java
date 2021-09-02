@@ -866,26 +866,32 @@ public abstract class Sum extends ConstraintGlobal implements TagFilteringComple
 					assert tree.type == TypeExpr.VAR;
 				}
 
+				@Override
 				int evaluate(int v) {
 					return v;
 				}
 
+				@Override
 				int minValue() {
 					return dom.firstValue();
 				}
 
+				@Override
 				int maxValue() {
 					return dom.lastValue();
 				}
 
+				@Override
 				int uniqueValue() {
 					return dom.singleValue();
 				}
 
+				@Override
 				boolean removeValuesLE(int limit) {
 					return dom.removeValuesLE(limit);
 				}
 
+				@Override
 				boolean removeValuesGE(int limit) {
 					return dom.removeValuesGE(limit);
 				}
@@ -912,10 +918,12 @@ public abstract class Sum extends ConstraintGlobal implements TagFilteringComple
 					this.pos = IntStream.range(0, supports.length).filter(a -> supports[a]).toArray();
 				}
 
+				@Override
 				int evaluate(int v) {
 					return supports[dom.toIdx(v)] ? 1 : 0;
 				}
 
+				@Override
 				int minValue() {
 					assert dom.size() > 0;
 					if (residue0 != -1 && dom.contains(residue0))
@@ -936,6 +944,7 @@ public abstract class Sum extends ConstraintGlobal implements TagFilteringComple
 					return 1;
 				}
 
+				@Override
 				int maxValue() {
 					assert dom.size() > 0;
 					if (residue1 != -1 && dom.contains(residue1))
@@ -956,10 +965,12 @@ public abstract class Sum extends ConstraintGlobal implements TagFilteringComple
 					return 0;
 				}
 
+				@Override
 				int uniqueValue() {
 					return supports[dom.single()] ? 1 : 0;
 				}
 
+				@Override
 				boolean removeValuesLE(int limit) {
 					if (limit < 0)
 						return true;
@@ -973,6 +984,7 @@ public abstract class Sum extends ConstraintGlobal implements TagFilteringComple
 					return dom.afterElementaryCalls(sizeBefore);
 				}
 
+				@Override
 				boolean removeValuesGE(int limit) {
 					if (limit > 1)
 						return true;
@@ -1001,10 +1013,10 @@ public abstract class Sum extends ConstraintGlobal implements TagFilteringComple
 				return new SumViewWeightedGE(pb, trees, coeffs, limit + 1);
 			case EQ:
 				return new SumViewWeightedEQ(pb, trees, coeffs, limit);
-			// case NE:
-			// return new SumWeightedNE(pb, vs, coeffs, limit);
+			default: // case NE:
+				throw new AssertionError("not implemented"); // return new SumWeightedNE(pb, vs, coeffs, limit);
 			}
-			throw new AssertionError();
+			// throw new AssertionError();
 		}
 
 		public static long weightedSum(int[] t, View[] views, int[] coeffs) {

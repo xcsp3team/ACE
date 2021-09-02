@@ -194,7 +194,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 
 		public AllDifferentWeak(Problem problem, Variable[] scope) {
 			super(problem, scope);
-			set = mode == 0 ? null : new HashSet<Integer>();
+			set = mode == 0 ? null : new HashSet<>();
 		}
 
 		@Override
@@ -422,7 +422,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 		int[] storedMins, storedMaxs;
 
 		class Fixed2 {
-			int time;
+			int ftime;
 			int cnt;
 			int[] collectedVarPositions;
 
@@ -431,7 +431,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 			}
 
 			boolean isPresent() {
-				return time == AllDifferentBound.this.timing;
+				return ftime == AllDifferentBound.this.timing;
 			}
 
 			void addCollectedVarsToSet(SetSparse set) {
@@ -448,7 +448,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 
 			void add(int x) {
 				if (!isPresent()) {
-					time = AllDifferentBound.this.timing;
+					ftime = AllDifferentBound.this.timing;
 					cnt = 0;
 				}
 				assert !Utilities.contains(collectedVarPositions, x, 0, cnt - 1);
@@ -457,13 +457,13 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 
 			@Override
 			public String toString() {
-				return !isPresent() ? "" : "time=" + time + " cnt=" + cnt + " vars=" + Kit.join(collectedVarPositions, cnt);
+				return !isPresent() ? "" : "time=" + ftime + " cnt=" + cnt + " vars=" + Kit.join(collectedVarPositions, cnt);
 			}
 
 		}
 
 		class Fixed1 {
-			int time;
+			int ftime;
 			int from;
 			int to;
 
@@ -474,12 +474,12 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 			}
 
 			boolean isPresent() {
-				return time == AllDifferentBound.this.timing;
+				return ftime == AllDifferentBound.this.timing;
 			}
 
 			void add(int bnd, int x) {
 				if (!isPresent()) {
-					time = AllDifferentBound.this.timing;
+					ftime = AllDifferentBound.this.timing;
 					from = scp.length;
 					to = -1;
 				}

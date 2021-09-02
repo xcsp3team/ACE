@@ -186,13 +186,14 @@ public final class KeyCanonizer {
 			return sb.append(label);
 		}
 
+		@Override
 		public String toString() {
 			return toStringBuilder(new StringBuilder()).toString();
 		}
 	}
 
 	private Node buildInitialTree() {
-		Stack<Node> stack = new Stack<Node>();
+		Stack<Node> stack = new Stack<>();
 		for (String token : tree.toPostfixExpression(tree.vars()).split(Constants.REG_WS)) {
 			int arity = TreeEvaluator.arityOf(token);
 			if (arity == 0 || arity == -1)

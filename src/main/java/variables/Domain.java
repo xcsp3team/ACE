@@ -54,7 +54,7 @@ public interface Domain extends SetLinked {
 	/**
 	 * The cache used for storing type identifiers.
 	 */
-	static final List<int[]> types = new ArrayList<int[]>();
+	static final List<int[]> types = new ArrayList<>();
 
 	/**
 	 * Returns a type identifier for the specified array of values (integers), while using a cache
@@ -633,16 +633,15 @@ public interface Domain extends SetLinked {
 					removeElementary(idxs.dense[i]);
 				}
 			return afterElementaryCalls(sizeBefore);
-		} else {
-			assert IntStream.range(0, idxs.size()).allMatch(i -> contains(idxs.dense[i]));
-			if (idxs.size() == 0)
-				return true;
-			if (idxs.size() == sizeBefore)
-				return fail();
-			for (int i = idxs.limit; i >= 0; i--)
-				removeElementary(idxs.dense[i]);
-			return propagation().handleReduction(var());
 		}
+		assert IntStream.range(0, idxs.size()).allMatch(i -> contains(idxs.dense[i]));
+		if (idxs.size() == 0)
+			return true;
+		if (idxs.size() == sizeBefore)
+			return fail();
+		for (int i = idxs.limit; i >= 0; i--)
+			removeElementary(idxs.dense[i]);
+		return propagation().handleReduction(var());
 	}
 
 	/**

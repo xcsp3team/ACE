@@ -99,8 +99,7 @@ public final class NogoodRecorder {
 		Domain dom = x.dom;
 		if (inferenceDecision > 0)
 			return dom.reduceTo(a);
-		else
-			return dom.removeIfPresent(a);
+		return dom.removeIfPresent(a);
 	}
 
 	private boolean checkWatchesOf(WatchCell[] watchCells, int a, int watchedDecision) {
@@ -279,6 +278,7 @@ public final class NogoodRecorder {
 		return true;
 	}
 
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("Nogoods = {\n");
 		IntStream.range(0, nNogoods).forEach(i -> sb.append(nogoods[i].toString(decisions)).append("\n"));

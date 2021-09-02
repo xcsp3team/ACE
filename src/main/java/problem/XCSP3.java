@@ -63,7 +63,7 @@ import dashboard.Control.SettingXml;
 import dashboard.Input;
 import variables.Variable;
 import variables.Variable.VariableInteger;
-import variables.Variable.VariableSymbolic;;
+import variables.Variable.VariableSymbolic;
 
 /**
  * This class corresponds to a problem loading instances in XCSP3 format.

@@ -173,8 +173,8 @@ public final class TupleIterator {
 			if (a != -1) {
 				currTuple[i] = a;
 				return i;
-			} else
-				currTuple[i] = doms[i].first();
+			}
+			currTuple[i] = doms[i].first();
 		}
 		return -1;
 	}

@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -321,25 +322,30 @@ public class Reinforcer {
 			List<List<int[]>> generators = new ArrayList<>();
 			String cmd = System.getenv("HOME") + File.separator + "tools" + File.separator + "saucy-1.1" + File.separator + "saucy -t 20 -g " + filename;
 			Kit.log.info("Command for symmetry breaking is " + cmd);
+			Process p = null;
 			try {
-				Process p = Runtime.getRuntime().exec(cmd);
-				BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-				in.readLine();
-				String line = in.readLine().trim();
-				while (!line.equals("]")) {
-					List<int[]> generator = parseGenerator(line, nVariables);
-					if (generator.size() > 0) // {
-						generators.add(generator); // break; }
-					// else System.out.println(" not exploitable generator : " + line);
-					line = in.readLine();
-				}
-				in.close();
-				p.waitFor();
-				p.destroy();
-				// Runtime.getRuntime().exec("rm " + graphFileName);
-			} catch (Exception e) {
+				p = Runtime.getRuntime().exec(cmd);
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			if (p != null)
+				try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+					in.readLine();
+					String line = in.readLine().trim();
+					while (!line.equals("]")) {
+						List<int[]> generator = parseGenerator(line, nVariables);
+						if (generator.size() > 0) // {
+							generators.add(generator); // break; }
+						// else System.out.println(" not exploitable generator : " + line);
+						line = in.readLine();
+					}
+					in.close();
+					p.waitFor();
+					p.destroy();
+					// Runtime.getRuntime().exec("rm " + graphFileName);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			return generators;
 		}
 

@@ -233,7 +233,7 @@ public final class Solutions {
 		this.solver = solver;
 		this.limit = limit;
 		this.bestBound = solver.head.control.optimization.ub;
-		this.store = solver.head.control.general.recordSolutions ? new ArrayList<int[]>() : null;
+		this.store = solver.head.control.general.recordSolutions ? new ArrayList<>() : null;
 		this.xml = new XML();
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
 	}
@@ -331,12 +331,10 @@ public final class Solutions {
 	}
 
 	private boolean controlFoundSolution() {
-		if (solver instanceof Solver) {
-			Variable x = Variable.firstNonSingletonVariableIn(solver.problem.variables);
-			Kit.control(x == null, () -> "Problem with last solution: variable " + x + " has not a unique value");
-			if (solver.problem.settings.framework == MAXCSP)
-				return true;
-		}
+		Variable x = Variable.firstNonSingletonVariableIn(solver.problem.variables);
+		Kit.control(x == null, () -> "Problem with last solution: variable " + x + " has not a unique value");
+		if (solver.problem.settings.framework == MAXCSP)
+			return true;
 		Constraint c = Constraint.firstUnsatisfiedHardConstraint(solver.problem.constraints);
 		Kit.control(c == null, () -> "Problem with last solution: constraint " + c + " " + c.getClass().getName() + " not satisfied : ");
 		return true;

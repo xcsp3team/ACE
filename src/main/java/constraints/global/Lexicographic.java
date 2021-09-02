@@ -12,8 +12,8 @@ import org.xcsp.common.Types.TypeOperatorRel;
 
 import constraints.ConstraintGlobal;
 import constraints.intension.PrimitiveBinary;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
+import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import variables.Domain;
@@ -54,7 +54,7 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagNotSy
 
 	private int lex_time;
 	private final int[] lex_times; // times[x] gives the time at which the variable (at position) x has been set (pseudo-assigned)
-	private final int[] vals; // vals[x] gives the value of the variable (at position) x set at time times[x]
+	private final int[] tvals; // vals[x] gives the value of the variable (at position) x set at time times[x]
 
 	public Lexicographic(Problem pb, Variable[] list1, Variable[] list2, boolean strictOrdering) {
 		super(pb, pb.vars(list1, list2));
@@ -64,13 +64,13 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagNotSy
 		this.strictOrdering = strictOrdering;
 		this.half = list1.length;
 		this.lex_times = new int[scp.length];
-		this.vals = new int[scp.length];
+		this.tvals = new int[scp.length];
 		defineKey(strictOrdering);
 	}
 
 	private void set(int p, int v) {
 		lex_times[p] = lex_time;
-		vals[p] = v;
+		tvals[p] = v;
 	}
 
 	private boolean isConsistentPair(int alpha, int v) {
@@ -79,8 +79,8 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagNotSy
 		set(positionOf(list2[alpha]), v);
 		for (int i = alpha + 1; i < half; i++) {
 			int p1 = positionOf(list1[i]), p2 = positionOf(list2[i]);
-			int min1 = lex_times[p1] == lex_time ? vals[p1] : list1[i].dom.firstValue();
-			int max2 = lex_times[p2] == lex_time ? vals[p2] : list2[i].dom.lastValue();
+			int min1 = lex_times[p1] == lex_time ? tvals[p1] : list1[i].dom.firstValue();
+			int max2 = lex_times[p2] == lex_time ? tvals[p2] : list2[i].dom.lastValue();
 			if (min1 < max2)
 				return true;
 			if (min1 > max2)

@@ -391,9 +391,9 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		if (obj instanceof Variable[]) {
 			// assert Stream.of((Variable[]) obj).noneMatch(x -> x != null && x.dom.size() != 1);
 			return "[" + Stream.of((Variable[]) obj).map(x -> instantiationOf(x, null)).collect(Collectors.joining(", ")) + "]";
-		} else
-			return "[\n" + prefix + "  " + Stream.of((Object[]) obj).map(o -> instantiationOf(o, prefix)).collect(Collectors.joining(",\n" + prefix + "  "))
-					+ "\n" + prefix + " ]";
+		}
+		return "[\n" + prefix + "  " + Stream.of((Object[]) obj).map(o -> instantiationOf(o, prefix)).collect(Collectors.joining(",\n" + prefix + "  ")) + "\n"
+				+ prefix + " ]";
 	}
 
 	/** Only whitespace as separator. The array only contains variables, and can be of any dimension. */
@@ -401,8 +401,9 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		if (array instanceof Variable[]) {
 			// we need instantiation because of possible *; the prefix is useless
 			return Stream.of((Variable[]) array).map(x -> instantiationOf(x, null)).collect(Collectors.joining(" "));
-		} else // recursive call
-			return Stream.of((Object[]) array).map(o -> rawInstantiationOf(o)).collect(Collectors.joining(" "));
+		}
+		// recursive call
+		return Stream.of((Object[]) array).map(o -> rawInstantiationOf(o)).collect(Collectors.joining(" "));
 	}
 
 	/**********************************************************************************************

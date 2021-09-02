@@ -145,9 +145,9 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 							return a;
 					}
 				return dx.first();
-			} else { // to maximize the number of distinct values
-				throw new UnsupportedOperationException();
 			}
+			// to maximize the number of distinct values
+			throw new UnsupportedOperationException();
 		}
 	}
 

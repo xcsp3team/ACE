@@ -205,10 +205,10 @@ public final class IpsRecorderForDominance extends IpsRecorder {
 		int top = solver.stackedVariables.top;
 		Variable[] stack = solver.stackedVariables.stack;
 		topBeforeRefutations[level] = top;
-		if (top == -1 || ((Variable) stack[top]).dom.lastRemovedLevel() < level)
+		if (top == -1 || stack[top].dom.lastRemovedLevel() < level)
 			return;
 		for (int i = top; stack[i] != null; i--)
-			((Variable) stack[i]).dom.setMark(level); // getLastDropped();
+			stack[i].dom.setMark(level); // getLastDropped();
 	}
 
 	@Override
@@ -229,7 +229,7 @@ public final class IpsRecorderForDominance extends IpsRecorder {
 		int top = solver.stackedVariables.top;
 		Variable[] stack = solver.stackedVariables.stack;
 		// Possible d'eliminer ci-dessous : semble pas possible ces cas ? //TODO
-		if (top == -1 || ((Variable) stack[top]).dom.lastRemovedLevel() < depth)
+		if (top == -1 || stack[top].dom.lastRemovedLevel() < depth)
 			return;
 		solver.stackedVariables.top = topBefore; // keep it at this position
 		for (int i = top; i > topBefore; i--) {
@@ -237,11 +237,11 @@ public final class IpsRecorderForDominance extends IpsRecorder {
 				assert (i == topBefore + 1);
 				return;
 			}
-			((Variable) stack[i]).dom.restoreBefore(depth);
+			stack[i].dom.restoreBefore(depth);
 		}
 		// int[] currentFrontiers = frontiers[level];
 		for (int i = topBefore; stack[i] != null; i--)
-			((Variable) stack[i]).dom.restoreAtMark(depth); // restoreElementsDroppedStrictlyAfter(currentFrontiers[cnt]);
+			stack[i].dom.restoreAtMark(depth); // restoreElementsDroppedStrictlyAfter(currentFrontiers[cnt]);
 	}
 
 	@Override

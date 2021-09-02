@@ -142,8 +142,7 @@ public class Campagn { // using the cluster
 		file = new File(getDirectoryNameOfResults());
 		if (!file.exists())
 			file.mkdirs();
-
-		runVariants();
+		// runVariants();
 	}
 
 	// returns the token that follows the one with Output.CONFIGURATION_DIRECTORY_NAME
@@ -287,8 +286,7 @@ public class Campagn { // using the cluster
 			runVariant(parallelVariant, true);
 
 		File file = new File(directoryName + File.separator + "synthesis.txt");
-		try {
-			PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(file, true)));
+		try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(file, true)))) {
 			out.println("----------------------");
 			out.println("  Current time : " + Kit.date());
 			out.println("  Command : " + "java abscon.ResolutionCluster " + defaultSettingsFileName + " " + selectedInstancesFileName + " "
@@ -297,7 +295,6 @@ public class Campagn { // using the cluster
 			out.println("  Nb Parallel Variants : " + parallelVariants.length);
 			out.println("  Nb Launched Jobs : " + nLaunchedJobs);
 			out.println();
-			out.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -312,9 +309,11 @@ public class Campagn { // using the cluster
 			for (int i = 0; i < queueCommands.length; i++)
 				System.out.println("   - queue = " + i + " => " + queueCommands[i]);
 			System.out.println("\n  NB: set no to <settingsVariantsFileName> to not take into account variants");
-		} else
-			new Campagn(args); // [0], args[1], args[2], configurationVariantsFileName,
-								// queueMode).run(args[1], configurationVariantsFileName);
+		} else {
+			Campagn c = new Campagn(args);
+			c.runVariants();
+		}
+
 	}
 }
 

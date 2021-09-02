@@ -563,15 +563,14 @@ public abstract class Matcher implements ObserverOnConstruction {
 						varToVal[y] = u;
 						valToVars[u].add(y); // , currDepth);
 						return true;
-					} else {
-						for (int i = 0; i < valToVars[u].size(); i++) {
-							int z = valToVars[u].dense[i];
-							assert (varToVal[z] == u);
-							if (visitTime[z] < time) {
-								visitTime[z] = time;
-								predBFS[z] = y;
-								queueBFS.add(z);
-							}
+					}
+					for (int i = 0; i < valToVars[u].size(); i++) {
+						int z = valToVars[u].dense[i];
+						assert (varToVal[z] == u);
+						if (visitTime[z] < time) {
+							visitTime[z] = time;
+							predBFS[z] = y;
+							queueBFS.add(z);
 						}
 					}
 				}

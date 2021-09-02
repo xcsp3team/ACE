@@ -13,7 +13,6 @@ import java.util.stream.IntStream;
 
 import constraints.ConstraintGlobal;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
-import interfaces.Observers.ObserverOnConstruction;
 import interfaces.Tags.TagNotAC;
 import problem.Problem;
 import sets.SetDense;
@@ -98,7 +97,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC { 
 
 	}
 
-	public static final class BinPacking2 extends BinPacking implements ObserverOnConstruction, ObserverOnBacktracksSystematic {
+	public static final class BinPacking2 extends BinPacking implements ObserverOnBacktracksSystematic {
 
 		@Override
 		public void afterProblemConstruction() {

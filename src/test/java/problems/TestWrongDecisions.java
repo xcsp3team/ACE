@@ -51,7 +51,7 @@ public class TestWrongDecisions {
 	public int nWrongDecisions;
 
 	@Test
-	public void test() throws InterruptedException {
+	public void test() {
 		assertEquals(nWrongDecisions, runResolution(args).solver.stats.nWrongDecisions);
 	}
 }

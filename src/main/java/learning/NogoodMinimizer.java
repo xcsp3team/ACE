@@ -90,12 +90,11 @@ public class NogoodMinimizer {
 			for (int i = 0; i < t.length; i++)
 				t[i] = -decs[i];
 			return t;
-		} else {
-			int[] t = new int[nTransitions];
-			for (int i = 0; i < t.length; i++)
-				t[i] = -tmp[i];
-			return t;
 		}
+		int[] t = new int[nTransitions];
+		for (int i = 0; i < t.length; i++)
+			t[i] = -tmp[i];
+		return t;
 	}
 
 	// ****************************************/

@@ -222,7 +222,6 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 				return true;
 			if (stack[top] == null)
 				return false;
-			assert stack[top] instanceof Variable;
 			Variable x = Stream.of(problem.variables).filter(y -> !(y.dom instanceof DomainInfinite) && y.dom.lastRemovedLevel() >= depth).findFirst()
 					.orElse(null);
 			if (x != null) {
@@ -350,7 +349,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 		List<ObserverOnRuns> list = new ArrayList<>();
 		if (head.control.solving.enableSearch) {
 			if (nogoodRecorder != null && nogoodRecorder.symmetryHandler != null)
-				list.add((ObserverOnRuns) nogoodRecorder.symmetryHandler);
+				list.add(nogoodRecorder.symmetryHandler);
 			Stream.of(this, restarter, ipsRecorder, heuristic, lastConflict, stats).filter(o -> o instanceof ObserverOnRuns)
 					.forEach(o -> list.add((ObserverOnRuns) o));
 		}

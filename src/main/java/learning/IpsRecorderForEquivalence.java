@@ -22,7 +22,7 @@ import variables.Variable;
 
 public final class IpsRecorderForEquivalence extends IpsRecorder {
 
-	private static final Integer zero = new Integer(0);
+	private static final Integer zero = 0;
 
 	private Map<ByteArrayHashKey, Integer> mapOfHashKeys = new HashMap<>(2000);
 

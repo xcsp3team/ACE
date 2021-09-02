@@ -57,6 +57,7 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 	public final static class ElementCst extends ElementArray {
 		private final int k;
 
+		@Override
 		public boolean checkIndexes(int[] t) {
 			return list[t[ipos]].dom.toVal(t[t[ipos]]) == k;
 		}
@@ -99,6 +100,7 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 		private final Domain vdom; // domain of the value variable
 		private final int vpos; // position of the value variable in scope
 
+		@Override
 		public boolean checkIndexes(int[] t) {
 			return list[t[ipos]].dom.toVal(t[t[ipos]]) == vdom.toVal(t[vpos]);
 		}

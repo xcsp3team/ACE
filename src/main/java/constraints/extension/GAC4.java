@@ -36,7 +36,7 @@ public final class GAC4 extends ExtensionSpecific implements TagPositive {
 		this.tuples = ((Table) extStructure()).tuples;
 
 		List<Integer>[][] tmp = IntStream.range(0, scp.length)
-				.mapToObj(i -> IntStream.range(0, scp[i].dom.initSize()).mapToObj(j -> new ArrayList<Integer>()).toArray(List[]::new)).toArray(List[][]::new);
+				.mapToObj(i -> IntStream.range(0, scp[i].dom.initSize()).mapToObj(j -> new ArrayList<>()).toArray(List[]::new)).toArray(List[][]::new);
 
 		this.ptrs = new int[tuples.length][scp.length];
 		for (int i = 0; i < tuples.length; i++)

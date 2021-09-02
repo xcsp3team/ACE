@@ -26,7 +26,7 @@ public abstract class STR1Optimized extends STR1 {
 		super.afterProblemConstruction();
 		this.sVal = new int[scp.length];
 		this.sSup = new int[scp.length];
-		if (settings.decremental) {
+		if (esettings.decremental) {
 			this.lastSizesStack = new int[problem.variables.length + 1][scp.length];
 			Arrays.fill(lastSizesStack[0], UNITIALIZED);
 		} else
@@ -36,7 +36,7 @@ public abstract class STR1Optimized extends STR1 {
 	@Override
 	public void restoreBefore(int depth) {
 		super.restoreBefore(depth);
-		if (settings.decremental && depth > 0) // second part (depth > 0) for ensuring that aggressive runs can be used
+		if (esettings.decremental && depth > 0) // second part (depth > 0) for ensuring that aggressive runs can be used
 			lastDepth = Math.max(0, Math.min(lastDepth, depth - 1));
 		else
 			Arrays.fill(lastSizes, UNITIALIZED);
@@ -98,7 +98,7 @@ public abstract class STR1Optimized extends STR1 {
 	 * Makes, before filtering, some initialization with respect to the structures used for restoration
 	 */
 	protected final void initRestorationStructuresBeforeFiltering() {
-		if (settings.decremental) {
+		if (esettings.decremental) {
 			int depth = problem.solver.depth();
 			assert 0 <= lastDepth && lastDepth <= depth : depth + " " + lastDepth + " " + this;
 			for (int i = lastDepth + 1; i <= depth; i++)

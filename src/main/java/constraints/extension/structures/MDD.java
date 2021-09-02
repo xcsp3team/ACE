@@ -498,7 +498,7 @@ public final class MDD extends ExtensionStructure {
 			int val = Utilities.safeInt(v);
 			int idx = domains[node1.level].toIdx(val);
 			Kit.control(idx != -1);
-			Node node2 = nodes.computeIfAbsent((String) tr.end, k -> new Node(node1.level + 1, domains[node1.level + 1].initSize(), true));
+			Node node2 = nodes.computeIfAbsent(tr.end, k -> new Node(node1.level + 1, domains[node1.level + 1].initSize(), true));
 			// MDDNode node2 = nodes.get(tr[2]);
 			// if (node2 == null)
 			// nodes.put((String) tr[2], node2 = new MDDNode(this, node1.level + 1, domains[node1.level + 1].initSize(), true));

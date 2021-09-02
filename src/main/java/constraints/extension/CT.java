@@ -148,7 +148,7 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 
 	public CT(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		control(settings.decremental);
+		control(esettings.decremental);
 	}
 
 	private void fillTo1(long[] t) {

@@ -207,6 +207,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 				throw new AssertionError("Missing implementation");
 			}
 
+			@Override
 			protected int nSupportsForWhenIteratingOver(Domain d1, Domain d2) {
 				if (d2.size() == 1 && !d1.containsValue(d1 == dx ? valxFor(d2.single()) : valyFor(d2.single())))
 					return 0;
@@ -236,6 +237,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 				throw new AssertionError("Missing implementation");
 			}
 
+			@Override
 			protected int nSupportsForWhenIteratingOver(Domain d1, Domain d2) {
 				int cnt = 0;
 				for (int b = d2.first(); b != -1; b = d2.next(b)) {
@@ -351,10 +353,12 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			public NegEQ2(Problem pb, Variable x, Variable y) {
 				super(pb, x, y);
 				this.sp = new SimplePropagatorEQ(dx, dy, true) {
+					@Override
 					final int valxFor(int b) {
 						return -dy.toVal(b);
 					}
 
+					@Override
 					final int valyFor(int a) {
 						return -dx.toVal(a);
 					}
@@ -495,10 +499,12 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			public AddEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 				this.sp = new SimplePropagatorEQ(dx, dy, true) {
+					@Override
 					final int valxFor(int b) {
 						return k - dy.toVal(b);
 					}
 
+					@Override
 					final int valyFor(int a) {
 						return k - dx.toVal(a);
 					}
@@ -615,10 +621,12 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			public SubEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 				this.sp = new SimplePropagatorEQ(dx, dy, true) {
+					@Override
 					final int valxFor(int b) {
 						return k + dy.toVal(b);
 					}
 
+					@Override
 					final int valyFor(int a) {
 						return dx.toVal(a) - k;
 					}
@@ -843,10 +851,12 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 				dx.removeValuesAtConstructionTime(v -> v == 0 || k % v != 0);
 				dy.removeValuesAtConstructionTime(v -> v == 0 || k % v != 0);
 				this.sp = new SimplePropagatorEQ(dx, dy, true) {
+					@Override
 					final int valxFor(int b) {
 						return k / dy.toVal(b);
 					}
 
+					@Override
 					final int valyFor(int a) {
 						return k / dx.toVal(a);
 					}
@@ -1053,17 +1063,16 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 						if (va % vb == k) {
 							rx[a] = b;
 							continue extern;
-						} else {
-							if (va < vb) // means that the remainder with remaining values of y always lead to va (and it is not k)
+						}
+						if (va < vb) // means that the remainder with remaining values of y always lead to va (and it is not k)
+							break;
+						// here, we know that va >= vb and va != k (see code earlier)
+						if (va < 2 * vb) { // it means that the quotient was 1, and will remain 1 (and 0 later)
+							assert va / vb == 1;
+							if (va - k <= vb || dy.containsValue(va - k) == false)
 								break;
-							// here, we know that va >= vb and va != k (see code earlier)
-							if (va < 2 * vb) { // it means that the quotient was 1, and will remain 1 (and 0 later)
-								assert va / vb == 1;
-								if (va - k <= vb || dy.containsValue(va - k) == false)
-									break;
-								rx[a] = dy.toVal(va - k);
-								continue extern;
-							}
+							rx[a] = dy.toVal(va - k);
+							continue extern;
 						}
 					}
 					if (dx.remove(a) == false)
@@ -1181,12 +1190,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 				super(pb, x, y, k);
 				int[] tmp = new int[2];
 				this.sp = new MultiPropagatorEQ(dx, dy, true) {
+					@Override
 					final int[] valsxFor(int b) {
 						tmp[0] = dy.toVal(b) + k;
 						tmp[1] = dy.toVal(b) - k;
 						return tmp;
 					}
 
+					@Override
 					final int[] valsyFor(int a) {
 						tmp[0] = dx.toVal(a) + k;
 						tmp[1] = dx.toVal(a) - k;
@@ -1268,10 +1279,12 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 				super(pb, x, y, k);
 				dx.removeValuesAtConstructionTime(v -> v != 0 && v % k != 0); // non multiple deleted (important for avoiding systematic checks)
 				this.sp = new SimplePropagatorEQ(dx, dy, true) {
+					@Override
 					final int valxFor(int b) {
 						return dy.toVal(b) * k;
 					}
 
+					@Override
 					final int valyFor(int a) {
 						return dx.toVal(a) / k;
 					}
@@ -1341,6 +1354,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			public DivbEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 				this.sp = new SimplePropagatorEQ(dx, dy, false) {
+					@Override
 					final int valxFor(int b) {
 						return dy.toVal(b) / k;
 					}
@@ -1410,6 +1424,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 				super(pb, x, y, k);
 				dx.removeValuesAtConstructionTime(v -> v >= k); // because the remainder is at most k-1, whatever the value of y
 				this.sp = new SimplePropagatorEQ(dx, dy, false) {
+					@Override
 					final int valxFor(int b) {
 						return dy.toVal(b) % k;
 					}
@@ -1506,6 +1521,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFil
 			public DistbEQ2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 				this.sp = new SimplePropagatorEQ(dx, dy, false) {
+					@Override
 					final int valxFor(int b) {
 						return Math.abs(dy.toVal(b) - k);
 					}

@@ -1486,7 +1486,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					Term[] terms = new Term[trees.length + 1];
 					for (int i = 0; i < trees.length; i++)
 						terms[i] = new Term(coeffs == null ? 1 : coeffs[i], trees[i]);
-					terms[terms.length - 1] = new Term(-1, new XNodeLeaf(VAR, (Variable) rightTerm));
+					terms[terms.length - 1] = new Term(-1, new XNodeLeaf<>(VAR, (Variable) rightTerm));
 					terms = Stream.of(terms).filter(t -> t.coeff != 0).sorted().toArray(Term[]::new); // we discard terms of coeff 0 and sort them
 					XNode<IVar>[] tt = Stream.of(terms).map(t -> t.obj).toArray(XNode[]::new);
 					control(Stream.of(terms).allMatch(t -> Utilities.isSafeInt(t.coeff)));
@@ -1843,7 +1843,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		unimplementedIf(rank != null && rank != TypeRank.ANY, "element");
 		if (condition instanceof ConditionVar && ((ConditionRel) condition).operator == EQ)
 			return element(list, startIndex, index, rank, (Var) condition.rightTerm());
-		return (CtrAlone) unimplemented("element");
+		return unimplemented("element");
 	}
 
 	private CtrEntity element(int[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, Var value) {
@@ -1864,7 +1864,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		unimplementedIf(startRowIndex != 0 && startColIndex != 0, "element");
 		if (condition instanceof ConditionVar && ((ConditionRel) condition).operator == EQ)
 			return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, (Var) condition.rightTerm());
-		return (CtrAlone) unimplemented("element");
+		return unimplemented("element");
 	}
 
 	private CtrEntity element(Var[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, int value) {
@@ -1893,7 +1893,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, safeInt(((ConditionVal) condition).k));
 		if (condition instanceof ConditionVar && ((ConditionRel) condition).operator == EQ)
 			return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, (Var) ((ConditionVar) condition).x);
-		return (CtrAlone) unimplemented("element");
+		return unimplemented("element");
 	}
 
 	// ************************************************************************
@@ -1949,6 +1949,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * 
 	 * b) posting cumulative(origins, lengths, null, Kit.repeat(1, origins.length), api.condition(LE, 1)) does not seem to be very interesting. To be checked!
 	 */
+	@Override
 	public final CtrEntity noOverlap(Var[] origins, int[] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
 		if (head.control.global.redundNoOverlap) { // we post redundant constraints (after introducing auxiliary variables)
@@ -1991,6 +1992,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final CtrEntity noOverlap(Var[][] origins, int[][] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
 		if (head.control.global.redundNoOverlap) { // we post two redundant cumulative constraints, and a global noOverlap
+			AssertionError e = new AssertionError("No overlap problem");
 			Var[] ox = Stream.of(origins).map(t -> t[0]).toArray(Var[]::new), oy = Stream.of(origins).map(t -> t[1]).toArray(Var[]::new);
 			int[] tx = Stream.of(lengths).mapToInt(t -> t[0]).toArray(), ty = Stream.of(lengths).mapToInt(t -> t[1]).toArray();
 			int minX = Stream.of(ox).mapToInt(x -> ((Variable) x).dom.firstValue()).min().orElseThrow();

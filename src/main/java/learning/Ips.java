@@ -95,6 +95,7 @@ public final class Ips {
 		recorder.nGeneratedIps++;
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		Ips ips = (Ips) o;
 		if (nums.length != ips.nums.length)
@@ -109,6 +110,7 @@ public final class Ips {
 		return true;
 	}
 
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder().append("IPS of size " + nums.length + " with watch1 = " + watchVar0 + " and watch2 = " + watchVar1 + "\n");
 		for (int i = 0; i < nums.length; i++)

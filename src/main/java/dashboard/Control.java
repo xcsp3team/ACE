@@ -60,15 +60,15 @@ import solver.Restarter.RestarterLNS.HeuristicFreezing.Rand;
 import solver.Solutions;
 import solver.Solver;
 import utility.Enums.Branching;
-import utility.Enums.RestartMeasure;
-import utility.Enums.SingletonStrategy;
-import utility.Enums.SymmetryBreaking;
 import utility.Enums.ConstraintWeighting;
 import utility.Enums.Extension;
 import utility.Enums.Extraction;
 import utility.Enums.LearningIps;
 import utility.Enums.LearningNogood;
 import utility.Enums.OptimizationStrategy;
+import utility.Enums.RestartMeasure;
+import utility.Enums.SingletonStrategy;
+import utility.Enums.SymmetryBreaking;
 import utility.Kit;
 import utility.Reflector;
 import variables.Variable;
@@ -316,7 +316,7 @@ public class Control {
 		}
 
 		// either nums of selected variables or ids of selected variables
-		public final Object[] selectedVars = readSelectionList(selection);;
+		public final Object[] selectedVars = readSelectionList(selection);
 
 		// either nums of instantiated variables or ids of instantiated variables
 		public final Object[] instantiatedVars = (Object[]) splitSelection(true);
@@ -751,23 +751,23 @@ public class Control {
 		}
 
 		public int addI(int priority, String tag, String attribute, String shortcut, int defaultValue, String description) {
-			return add(new Setting<Integer>(priority, tag, attribute, shortcut, defaultValue, description)).value;
+			return add(new Setting<>(priority, tag, attribute, shortcut, defaultValue, description)).value;
 		}
 
 		public long addL(int priority, String tag, String attribute, String shortcut, long defaultValue, String description) {
-			return add(new Setting<Long>(priority, tag, attribute, shortcut, defaultValue, description)).value;
+			return add(new Setting<>(priority, tag, attribute, shortcut, defaultValue, description)).value;
 		}
 
 		public double addD(int priority, String tag, String attribute, String shortcut, double defaultValue, String description) {
-			return add(new Setting<Double>(priority, tag, attribute, shortcut, defaultValue, description)).value;
+			return add(new Setting<>(priority, tag, attribute, shortcut, defaultValue, description)).value;
 		}
 
 		public boolean addB(int priority, String tag, String attribute, String shortcut, boolean defaultValue, String description) {
-			return add(new Setting<Boolean>(priority, tag, attribute, shortcut, defaultValue, description)).value;
+			return add(new Setting<>(priority, tag, attribute, shortcut, defaultValue, description)).value;
 		}
 
 		public String addS(int priority, String tag, String attribute, String shortcut, String defaultValue, String description) {
-			return add(new Setting<String>(priority, tag, attribute, shortcut, defaultValue, description)).value;
+			return add(new Setting<>(priority, tag, attribute, shortcut, defaultValue, description)).value;
 		}
 
 		public String addS(int priority, String tag, String attribute, String shortcut, Class<?> defaultValue, Class<?> root, String description) {
@@ -775,7 +775,7 @@ public class Control {
 		}
 
 		public <T extends Enum<T>> T addE(int priority, String tag, String attribute, String shortcut, T defaultValue, String description) {
-			return add(new SettingEnum<T>(priority, tag, attribute, shortcut, defaultValue, description)).value;
+			return add(new SettingEnum<>(priority, tag, attribute, shortcut, defaultValue, description)).value;
 		}
 
 		public void controlKeys() {

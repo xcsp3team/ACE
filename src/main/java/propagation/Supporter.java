@@ -15,8 +15,8 @@ public abstract class Supporter {
 		if (c.problem.head.control.propagation.residues && c.scp.length > 1 && !(c instanceof SpecificPropagator)
 				&& !(c.problem.head.control.propagation.reviser.equals(Reviser3.class.getSimpleName()) && c.extStructure() instanceof Bits)) {
 			return c.scp.length == 2 ? new SupporterHardBary(c) : new SupporterHardNary(c);
-		} else
-			return null;
+		}
+		return null;
 	}
 
 	protected Constraint c;

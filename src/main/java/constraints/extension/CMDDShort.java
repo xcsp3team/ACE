@@ -34,7 +34,7 @@ public final class CMDDShort extends ExtensionSpecific implements TagPositive, T
 		super.afterProblemConstruction();
 		int nNodes = ((MDDShort) extStructure()).nNodes();
 		this.trueNodes = new int[nNodes];
-		if (settings.decremental)
+		if (esettings.decremental)
 			this.set = new SetSparseReversible(nNodes, problem.variables.length + 1, false);
 		else
 			this.falseNodes = new int[nNodes];
@@ -123,7 +123,7 @@ public final class CMDDShort extends ExtensionSpecific implements TagPositive, T
 			return false;
 		}
 
-		int cutoffVariant = settings.variant;
+		int cutoffVariant = esettings.variant;
 		if (cutoffVariant == 2) {
 			if (future) {
 				if (!ac[level][a]) {

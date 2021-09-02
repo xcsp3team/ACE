@@ -279,14 +279,13 @@ public final class Bit {
 						return j;
 			}
 			return -1;
-		} else {
-			for (int i = dset.limit; i >= 0; i--) {
-				int j = dense[i];
-				if ((t1[j] & t2[j]) != 0L)
-					return j;
-			}
-			return -1;
 		}
+		for (int i = dset.limit; i >= 0; i--) {
+			int j = dense[i];
+			if ((t1[j] & t2[j]) != 0L)
+				return j;
+		}
+		return -1;
 	}
 
 	public static int firstErasingWord(long[] t1, long[] t2, SetDense dset) {

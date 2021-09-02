@@ -352,6 +352,7 @@ public abstract class Cumulative extends ConstraintGlobal implements TagFilterin
 		return timetableReasoner.filter();
 	}
 
+	@Override
 	public String toString() {
 		return "constraint cumulative: " + Kit.join(starts) + " lengths=" + Kit.join(this.wwidths) + " heights=" + Kit.join(wheights) + " limit=" + limit;
 	}
@@ -371,6 +372,7 @@ public abstract class Cumulative extends ConstraintGlobal implements TagFilterin
 
 		Variable[] widths;
 
+		@Override
 		protected int maxWidth(int i) {
 			return widths[i].dom.lastValue();
 		}
@@ -389,6 +391,7 @@ public abstract class Cumulative extends ConstraintGlobal implements TagFilterin
 
 		Variable[] heights;
 
+		@Override
 		protected int maxHeight(int i) {
 			return heights[i].dom.lastValue();
 		}
@@ -430,10 +433,12 @@ public abstract class Cumulative extends ConstraintGlobal implements TagFilterin
 		Variable[] widths;
 		Variable[] heights;
 
+		@Override
 		protected int maxWidth(int i) {
 			return widths[i].dom.lastValue();
 		}
 
+		@Override
 		protected int maxHeight(int i) {
 			return heights[i].dom.lastValue();
 		}

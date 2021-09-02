@@ -66,14 +66,14 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 				int mapIndex = dense[i];
 				int x = map.positions[mapIndex];
 				int a = mapIndex - offsetsForMaps[x];
-				separators[x][a] = map.separators[mapIndex];
+				separators[x][a] = map.sseparators[mapIndex];
 			}
 		} else {
 			for (int i = map.limit; i >= 0; i--) {
 				int mapIndex = dense[i];
 				int x = map.positions[mapIndex];
 				int a = mapIndex - offsetsForMaps[x];
-				separatorsShort[x][a] = (short) map.separators[mapIndex];
+				separatorsShort[x][a] = (short) map.sseparators[mapIndex];
 			}
 		}
 		map.clear();
@@ -86,13 +86,13 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 	public final class SetSparseMapSTR3 extends SetSparse {
 		public short[] positions;
 
-		public int[] separators;
+		public int[] sseparators;
 
 		public SetSparseMapSTR3(int capacity, boolean initiallyFull) {
 			super(capacity, initiallyFull);
 			Kit.control(0 < capacity && capacity <= Short.MAX_VALUE);
 			positions = Kit.range((short) capacity);
-			separators = Kit.range(capacity);
+			sseparators = Kit.range(capacity);
 		}
 
 		@Override
@@ -105,7 +105,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 			boolean added = super.add(e);
 			if (added) {
 				positions[e] = (short) position;
-				separators[e] = separator;
+				sseparators[e] = separator;
 			}
 			return added;
 		}

@@ -123,9 +123,9 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			@Override
 			protected ExtensionStructure buildExtensionStructure() {
 				if (scp.length == 2)
-					return Reflector.buildObject(settings.classBinary, ExtensionStructure.class, this);
+					return Reflector.buildObject(esettings.classBinary, ExtensionStructure.class, this);
 				if (scp.length == 3)
-					return Reflector.buildObject(settings.classTernary, ExtensionStructure.class, this);
+					return Reflector.buildObject(esettings.classTernary, ExtensionStructure.class, this);
 				return new Table(this);
 			}
 
@@ -142,8 +142,8 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 
 			@Override
 			protected ExtensionStructure buildExtensionStructure() {
-				assert settings.variant == 0 || settings.variant == 1 || settings.variant == 11;
-				return settings.variant == 0 ? new Table(this).withSubtables() : new Tries(this, settings.variant == 11);
+				assert esettings.variant == 0 || esettings.variant == 1 || esettings.variant == 11;
+				return esettings.variant == 0 ? new Table(this).withSubtables() : new Tries(this, esettings.variant == 11);
 			}
 
 			public ExtensionVA(Problem pb, Variable[] scp) {
@@ -284,7 +284,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	/**
 	 * The settings related to extension constraints
 	 */
-	protected final SettingExtension settings;
+	protected final SettingExtension esettings;
 
 	/**
 	 * The extension structure defining the semantics of the constraint
@@ -328,7 +328,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 */
 	public ConstraintExtension(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		this.settings = pb.head.control.extension;
+		this.esettings = pb.head.control.extension;
 	}
 
 	/**

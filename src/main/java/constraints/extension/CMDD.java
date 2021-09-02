@@ -38,7 +38,7 @@ public final class CMDD extends ExtensionSpecific implements TagPositive, ICtrMd
 		int nNodes = mdd.nNodes();
 		// System.out.println("nNodes" + nNodes);
 		this.trueNodes = new int[nNodes];
-		if (settings.decremental)
+		if (esettings.decremental)
 			this.set = new SetSparseReversible(nNodes, problem.variables.length + 1, false);
 		else
 			this.falseNodes = new int[nNodes];
@@ -137,7 +137,7 @@ public final class CMDD extends ExtensionSpecific implements TagPositive, ICtrMd
 	}
 
 	private boolean manageSuccessfulExploration(final int level, final int a) {
-		int cutoffVariant = settings.variant;
+		int cutoffVariant = esettings.variant;
 		boolean future = !scp[level].assigned();
 		if (cutoffVariant == 2) {
 			if (future) {

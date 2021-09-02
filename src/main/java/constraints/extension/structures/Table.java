@@ -34,7 +34,7 @@ public class Table extends ExtensionStructure {
 	/**
 	 * Cache used for some starred constructions of global constraints
 	 */
-	private static Map<String, int[][]> cache = new HashMap<String, int[][]>();
+	private static Map<String, int[][]> cache = new HashMap<>();
 
 	/**
 	 * Returns a starred table corresponding to the specified Element constraint
@@ -95,7 +95,7 @@ public class Table extends ExtensionStructure {
 		int[][] tuples = cache.get(key);
 		if (tuples == null) {
 			int half = t1.length;
-			List<int[]> list = new ArrayList<int[]>();
+			List<int[]> list = new ArrayList<>();
 			for (int i = 0; i < half; i++) {
 				Domain dom1 = t1[i].dom, dom2 = t2[i].dom;
 				for (int a = dom1.first(); a != -1; a = dom1.next(a)) {
@@ -123,7 +123,7 @@ public class Table extends ExtensionStructure {
 		int[][] tuples = cache.get(key);
 		if (tuples == null) {
 			int half = t1.length;
-			List<int[]> list = new ArrayList<int[]>();
+			List<int[]> list = new ArrayList<>();
 			for (int i = 0; i < half; i++) {
 				Domain dom1 = t1[i].dom, dom2 = t2[i].dom;
 				for (int a = dom1.first(); a != -1; a = dom1.next(a)) {
@@ -158,7 +158,7 @@ public class Table extends ExtensionStructure {
 	}
 
 	public static int[][] starredNoOverlap(Variable x1, Variable x2, Variable y1, Variable y2, int w1, int w2, int h1, int h2) {
-		List<int[]> list = new ArrayList<int[]>();
+		List<int[]> list = new ArrayList<>();
 		addNonOverlappingTuplesFor(list, x1.dom, x2.dom, w1, true, true);
 		addNonOverlappingTuplesFor(list, x2.dom, x1.dom, w2, false, true);
 		addNonOverlappingTuplesFor(list, y1.dom, y2.dom, h1, true, false);

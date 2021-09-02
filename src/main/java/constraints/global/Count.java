@@ -325,7 +325,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
-				return indexOfKInList != -1 ? CountCst.countIn(value, t) == t[indexOfKInList] : CountCst.countIn(value, t, 0, t.length - 1) == t[t.length - 1];
+				return indexOfKInList != -1 ? countIn(value, t) == t[indexOfKInList] : countIn(value, t, 0, t.length - 1) == t[t.length - 1];
 			}
 
 			@Override

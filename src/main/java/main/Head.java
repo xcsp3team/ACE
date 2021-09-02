@@ -181,8 +181,8 @@ public class Head extends Thread {
 			else
 				Kit.control(file.isDirectory());
 			return loadSequentialVariants(Input.controlFilename, Input.lastArgument(), prefix);
-		} else
-			return new String[] { Input.controlFilename };
+		}
+		return new String[] { Input.controlFilename };
 	}
 
 	/**

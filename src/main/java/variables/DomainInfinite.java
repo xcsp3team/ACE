@@ -30,6 +30,7 @@ public final class DomainInfinite implements Domain {
 
 	private int assignedLevel;
 
+	@Override
 	public final Variable var() {
 		return var;
 	}

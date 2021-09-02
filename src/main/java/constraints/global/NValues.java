@@ -127,10 +127,12 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 			return list.length;
 		}
 
+		@Override
 		public long minCurrentObjectiveValue() {
 			throw new UnsupportedOperationException("not implemented"); // how to compute that?
 		}
 
+		@Override
 		public long maxCurrentObjectiveValue() {
 			throw new UnsupportedOperationException("not implemented"); // how to compute that?
 		}
