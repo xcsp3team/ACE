@@ -89,6 +89,11 @@ public final class Solutions {
 	private AtomicBoolean lock = new AtomicBoolean();
 
 	/**
+	 * The list of ids of variables (entities) that must not be displayed (when outputting solutions)
+	 */
+	public List<String> undisplay = new ArrayList<>();
+
+	/**
 	 * Class for outputting solutions in XML
 	 */
 	private class XML {
@@ -127,7 +132,7 @@ public final class Solutions {
 			List<Integer> list = new ArrayList<>();
 			List<String> compactList = new ArrayList<>();
 			for (VarEntity va : solver.problem.varEntities.allEntities) {
-				if (solver.problem.undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
+				if (undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
 					continue;
 				updateList(va instanceof VarAlone ? ((VarAlone) va).var : VarArray.class.cast(va).vars, list);
 				int last = list.get(list.size() - 1);
@@ -159,7 +164,7 @@ public final class Solutions {
 				return compactValues(discardAuxiliary);
 			StringBuilder sb = new StringBuilder();
 			for (VarEntity va : solver.problem.varEntities.allEntities) {
-				if (solver.problem.undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
+				if (undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
 					continue;
 				if (sb.length() > 0)
 					sb.append(" ");
@@ -175,7 +180,7 @@ public final class Solutions {
 		private String vars(boolean discardAuxiliary) {
 			StringBuilder sb = new StringBuilder();
 			for (VarEntity va : solver.problem.varEntities.allEntities) {
-				if (solver.problem.undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
+				if (undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
 					continue;
 				sb.append(sb.length() > 0 ? " " : "").append(va.id).append(va instanceof VarArray ? ((VarArray) va).getEmptyStringSize() : "");
 			}
@@ -207,7 +212,7 @@ public final class Solutions {
 		String PREFIX = "   ";
 		StringBuilder sb = new StringBuilder(PREFIX).append("{\n");
 		for (VarEntity va : solver.problem.varEntities.allEntities) {
-			if (solver.problem.undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
+			if (undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
 				continue;
 			sb.append(PREFIX).append(" ").append(va.id).append(": ");
 			if (va instanceof VarAlone) {

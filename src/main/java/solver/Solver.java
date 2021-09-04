@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package solver;
 
 import static java.util.stream.Collectors.toCollection;
@@ -13,6 +23,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.stream.IntStream;
@@ -29,6 +40,7 @@ import interfaces.Observers.ObserverOnAssignments;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Observers.ObserverOnConflicts;
 import interfaces.Observers.ObserverOnDecisions;
+import interfaces.Observers.ObserverOnRemovals;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Observers.ObserverOnSolving;
 import learning.IpsRecorder;
@@ -336,6 +348,11 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	public final List<ObserverOnAssignments> observersOnAssignments;
 
 	/**
+	 * The list of observers on removals, i.e., value deletions in domains. Whenever a domain is reduced, a callback function is called.
+	 */
+	public final Collection<ObserverOnRemovals> observersOnRemovals = new ArrayList<>();
+
+	/**
 	 * The list of observers on conflicts encountered during search
 	 */
 	public final List<ObserverOnConflicts> observersOnConflicts;
@@ -385,7 +402,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	 *********************************************************************************************/
 
 	/**
-	 * The main object, head of resolution
+	 * The main object, leading (head of) resolution
 	 */
 	public final Head head;
 

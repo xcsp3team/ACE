@@ -502,8 +502,6 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 
 	public void reset() {
 		assert !assigned() && dom.controlStructures(); // && Kit.control(dom.nRemoved() == 0 ??
-		// if (!preserveWeightedDegrees)
-		// this.resetWdeg();
 		time = 0;
 	}
 

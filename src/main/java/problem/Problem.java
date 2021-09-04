@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package problem;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -48,7 +58,6 @@ import static utility.Kit.log;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -180,7 +189,6 @@ import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicValuesDirect.Last;
 import heuristics.HeuristicValuesDirect.Values;
 import interfaces.Observers.ObserverOnConstruction;
-import interfaces.Observers.ObserverOnDomainReductions;
 import main.Head;
 import optimization.ObjectiveVariable;
 import optimization.ObjectiveVariable.ObjVarGE;
@@ -210,10 +218,6 @@ import variables.Variable.VariableSymbolic;
  *
  */
 public final class Problem extends ProblemIMP implements ObserverOnConstruction {
-
-	public static final Boolean DONT_KNOW = null;
-	public static final Boolean STARRED = Boolean.TRUE;
-	public static final Boolean UNSTARRED = Boolean.FALSE;
 
 	public static final String AUXILIARY_VARIABLE_PREFIX = "_ax_";
 
@@ -401,9 +405,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Fields
 	// ************************************************************************
 
+	/**
+	 * The main object, leading (head of) resolution
+	 */
 	public final Head head;
 
-	/** The solver used to solve the problem. Alias for rs.solver. */
+	/**
+	 * The solver used to solve the problem; equivalent to head.solver.
+	 */
 	public Solver solver;
 
 	/**
@@ -417,7 +426,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public Constraint[] constraints;
 
 	/**
-	 * The pilot for the objective of the problem. Maybe null.
+	 * The pilot for handling the objective of the problem, if any (otherwise, null).
 	 */
 	public Optimizer optimizer;
 
@@ -441,19 +450,20 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 */
 	public Symbolic symbolic = new Symbolic();
 
-	public int nValueRemovals; // sum over all variable domains
-
 	/**
 	 * The list of generators of an identified symmetry group of variables. Maybe, empty.
 	 */
 	public final List<List<int[]>> symmetryGroupGenerators = new ArrayList<>();
 
 	/**
-	 * The list of observers on domains. Whenever a domain is reduced, a callback function is called.
+	 * The settings for general options
 	 */
-	public final Collection<ObserverOnDomainReductions> observersDomainReduction = new ArrayList<>();
-
 	public final SettingGeneral settings;
+
+	/**
+	 * The cumulated number of removals (value deletions) made all along the solving process
+	 */
+	public int nValueRemovals;
 
 	// ************************************************************************
 	// ***** Parameters
@@ -536,7 +546,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 								list2.add(variables.get(cycle[(i + 1) % cycle.length]));
 							}
 					VariableInteger[] t1 = list1.toArray(new VariableInteger[list1.size()]), t2 = list2.toArray(new VariableInteger[list2.size()]);
-					Kit.control(Kit.isStrictlyIncreasing(t1));
+					control(Kit.isStrictlyIncreasing(t1));
 					lexSimple(t1, t2, TypeOperatorRel.LE);
 				}
 			}
@@ -549,7 +559,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		SettingCtrs settings = head.control.constraints;
 		if (settings.inferAllDifferentNb > 0) {
 			stopwatch.start();
-			List<VariableInteger[]> cliques = ReinforcerAllDifferent.buildCliques(variables, constraints, settings.inferAllDifferentNb,
+			List<Variable[]> cliques = ReinforcerAllDifferent.buildCliques(variables, constraints, settings.inferAllDifferentNb,
 					settings.inferAllDifferentSize);
 			for (Variable[] clique : cliques)
 				allDifferent(clique);
@@ -566,7 +576,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		this.variables = features.collecting.variables.toArray(new Variable[0]);
 		this.constraints = features.collecting.constraints.toArray(new Constraint[0]);
 		Constraint[] sortedConstraints = features.collecting.constraints.stream().sorted((c1, c2) -> c1.scp.length - c2.scp.length).toArray(Constraint[]::new);
-		// TODO for the moment we cannot use the sortedConstraints as the main array (pb with nums)
+		// TODO for the moment we cannot use the sortedConstraints as the main array (pb with nums, and anyway would it be useful?)
 		List<Constraint>[] lists = IntStream.range(0, variables.length).mapToObj(i -> new ArrayList<>()).toArray(List[]::new);
 		for (Constraint c : sortedConstraints)
 			for (Variable x : c.scp)
@@ -574,7 +584,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		for (Variable x : variables)
 			x.storeInvolvingConstraints(lists[x.num]);
 		assert Variable.areNumsNormalized(variables);// && Constraint.areIdsNormalized(constraints); TODO
-		// head.clearMapsUsedByConstraints();
 	}
 
 	public Variable findVarWithNumOrId(Object o) {
@@ -633,7 +642,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		this.settings = head.control.general;
 		this.features = new Features(this);
 
-		// we load data and build the model (we follow the Compiler API from XCSP-Java-Tools)
+		// we load data and build the model (we follow the scheme of the Compiler API from XCSP-Java-Tools)
 		head.output.beforeData();
 		loadData(data, dataFormat, dataSaving);
 		head.output.afterData();
@@ -650,6 +659,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// if (Solver.class.getSimpleName().equals(head.control.solving.clazz)) optimizer = new OptimizerBasic(this, "#violatedConstraints");
 	}
 
+	/**
+	 * Displays information about the (variables and constraints of the) problem
+	 */
 	public final void display() {
 		if (settings.verbose >= 2) {
 			log.finer("\nProblem " + name());
@@ -658,16 +670,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 	}
 
-	public List<String> undisplay = new ArrayList<>();
-
-	public void undisplay(String... names) {
-		// Kit.control(Arrays.stream(names).allMatch(s -> varIds.contains(s)));
-		undisplay = Arrays.asList(names);
-	}
-
 	// ************************************************************************
 	// ***** Posting variables
 	// ************************************************************************
+
+	/** A map that gives access to each variable through its id. */
+	public final Map<String, Variable> mapForVars = new HashMap<>();
 
 	@Override
 	public Class<VariableInteger> classVI() {
@@ -683,9 +691,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public TypeFramework typeFramework() {
 		return settings.framework;
 	}
-
-	/** A map that gives access to each variable through its id. */
-	public final Map<String, Variable> mapForVars = new HashMap<>();
 
 	/**
 	 * Adds a variable that has already be built. Should not be called directly when modeling.
@@ -753,7 +758,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return AUXILIARY_VARIABLE_PREFIX + varEntities.allEntities.size();
 	}
 
-	public int nAuxVariables, nAuxConstraints;
+	public int nAuxVariables;
 
 	private Var newAuxVar(Object values) {
 		Dom dom = values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
@@ -1079,6 +1084,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Constraint extension
 	// ************************************************************************
 
+	private static final Boolean DONT_KNOW = null;
+
 	/**
 	 * Posts a unary constraint
 	 * 
@@ -1087,15 +1094,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * @param values
 	 *            the values considered as supports (i.e., authorized) or conflicts for the variable
 	 * @param positive
-	 *            if true, specified values are supports; otherwise as conflicts
+	 *            if true, specified values are supports; otherwise are conflicts
 	 * @return
 	 */
-	private final CtrAlone extension(Variable x, int[] values, boolean positive) {
+	private final CtrAlone extension(Variable x, int[] values, final boolean positive) {
 		assert Kit.isStrictlyIncreasing(values) && IntStream.of(values).noneMatch(v -> v == STAR);
 		if (head.mustPreserveUnaryConstraints())
 			return post(new Extension1(this, x, values, positive));
-		boolean b = positive;
-		x.dom.removeValuesAtConstructionTime(v -> (Arrays.binarySearch(values, v) < 0) == b);
+		// else the unary extension constraint is definitively taken into consideration by modifying the domain of the variable
+		x.dom.removeValuesAtConstructionTime(v -> (Arrays.binarySearch(values, v) < 0) == positive);
 		features.nRemovedUnaryCtrs++;
 		return null;
 	}
@@ -1104,10 +1111,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (tuples.length == 0)
 			return post(positive ? new CtrFalse(this, translate(scp), "Extension with 0 support") : new CtrTrue(this, translate(scp)));
 		if (scp.length == 1) {
-			Kit.control(starred == null);
-			int[][] m = scp[0] instanceof VariableSymbolic ? symbolic.replaceSymbols((String[][]) tuples) : (int[][]) tuples;
+			control(starred == null);
+			Variable x = (Variable) scp[0];
+			int[][] m = x instanceof VariableSymbolic ? symbolic.replaceSymbols((String[][]) tuples) : (int[][]) tuples;
 			int[] values = Stream.of(m).mapToInt(t -> t[0]).toArray();
-			return extension((Variable) scp[0], values, positive);
+			return extension(x, values, positive);
 		}
 		return post(ConstraintExtension.build(this, translate(scp), tuples, positive, starred));
 	}
@@ -1379,7 +1387,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		if (only1) {
 			// if (rs.cp.hardCoding.convertBooleanSumAsCountingCtr && op != NE && Variable.areInitiallyBoolean(list)) {
-			// Kit.control(0 <= limit && limit <= list.length);
+			// control(0 <= limit && limit <= list.length);
 			// int l = (int) limit;
 			// return op == LT ? api.atMost(vs, 1, l - 1)
 			// : op == LE ? api.atMost(vs, 1, l) : op == GE ? api.atLeast(vs, 1, l) : op == GT ? api.atLeast(vs, 1, l + 1) : api.exactly(vs, 1, l);

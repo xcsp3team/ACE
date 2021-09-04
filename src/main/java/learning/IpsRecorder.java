@@ -10,7 +10,7 @@ package learning;
 
 import constraints.Constraint;
 import dashboard.Control.SettingLearning;
-import interfaces.Observers.ObserverOnDomainReductions;
+import interfaces.Observers.ObserverOnRemovals;
 import interfaces.Observers.ObserverOnRuns;
 import solver.Solver;
 import utility.Enums.LearningIps;
@@ -70,7 +70,7 @@ public abstract class IpsRecorder implements ObserverOnRuns {
 	 * Justifier
 	 *********************************************************************************************/
 
-	public static final class Justifier implements ObserverOnDomainReductions {
+	public static final class Justifier implements ObserverOnRemovals {
 
 		/**
 		 * Stores which constraint is responsible of each value deletion. More precisely justifications[x][a] is either null or the constraint responsible for
@@ -92,7 +92,7 @@ public abstract class IpsRecorder implements ObserverOnRuns {
 						if (!dom.contains(a))
 							justifications[i][a] = Constraint.TAG; // because values removed at construction time
 				}
-				solver.problem.observersDomainReduction.add(this);
+				solver.observersOnRemovals.add(this);
 			} else
 				this.justifications = null;
 		}

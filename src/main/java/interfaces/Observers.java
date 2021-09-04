@@ -186,9 +186,9 @@ public interface Observers {
 	/**
 	 * Interface for observing reductions of domains (typically, when filtering) by the solver
 	 */
-	interface ObserverOnDomainReductions {
+	interface ObserverOnRemovals {
 		/**
-		 * Called when the index a for the domain of x has been removed
+		 * Called when the index a (of a value) for the domain of x has been removed
 		 * 
 		 * @param x
 		 *            a variable

@@ -86,13 +86,13 @@ public class Reinforcer {
 		 *            the minimum size of cliques to be taken into account
 		 * @return a list of cliques (irreflexive pairwise variables) from the specified array of variables with respect to the specified list of constraints
 		 */
-		public static List<VariableInteger[]> buildCliques(List<Variable> variables, List<Constraint> constraints, int nLimit, int sLimit) {
+		public static List<Variable[]> buildCliques(List<Variable> variables, List<Constraint> constraints, int nLimit, int sLimit) {
 			int[][] variableNeighbours = computeIrreflexiveNeigbours(variables, constraints);
 			int[] degrees = Stream.of(variableNeighbours).mapToInt(t -> t.length).toArray();
 			int[] levels = new int[variables.size()];
 			int[] clique = new int[variables.size()]; // an array to store the current clique
 			SetSparse set = new SetSparse(variables.size(), true);
-			List<VariableInteger[]> cliques = new ArrayList<>();
+			List<Variable[]> cliques = new ArrayList<>();
 			for (int k = 1; k <= nLimit; k++) {
 				// we build the kth clique
 				int level = 0, cliqueSize = 0;
