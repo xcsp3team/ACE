@@ -116,7 +116,7 @@ public abstract class HeuristicValues extends Heuristic {
 			super(x, antiHeuristic);
 			// we build an ordered map with entries of the form (a, heuristic score of a multiplied by the optimization coefficient) for every a
 			Map<Integer, Double> map = IntStream.range(0, dx.initSize()).filter(a -> dx.contains(a)).boxed()
-					.collect(Collectors.toMap(a -> a, a -> scoreOf(a) * scoreCoeff));
+					.collect(Collectors.toMap(a -> a, a -> scoreOf(a) * multiplier));
 			map = Kit.sort(map, (e1, e2) -> e1.getValue() > e2.getValue() ? -1 : e1.getValue() < e2.getValue() ? 1 : e1.getKey() - e2.getKey());
 			this.fixed = map.entrySet().stream().mapToInt(e -> e.getKey()).toArray();
 		}

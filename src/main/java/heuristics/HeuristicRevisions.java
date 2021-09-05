@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package heuristics;
 
 import interfaces.Tags.TagMaximize;
@@ -5,8 +15,10 @@ import propagation.Queue;
 import variables.Variable;
 
 /**
- * A revision ordering heuristic is attached to a propagation set and involves selecting an element among those contained in it. NB : do not modify the name of
- * this class as it is used by reflection.
+ * A revision ordering heuristic is attached to the propagation queue (set) that contains variables. <br />
+ * It is used by the solver (actually, the propagation object) to select a variable in order to pursue constraint propagation.
+ * 
+ * @author Christophe Lecoutre
  */
 public abstract class HeuristicRevisions extends Heuristic {
 
@@ -15,13 +27,23 @@ public abstract class HeuristicRevisions extends Heuristic {
 	 */
 	protected final Queue queue;
 
+	/**
+	 * Builds a revision ordering heuristic, to be used with the specified queue.
+	 * 
+	 * @param queue
+	 *            a queue containing variables used during propagation
+	 * @param antiHeuristic
+	 *            indicates if one should take the reverse ordering of the natural one
+	 */
 	public HeuristicRevisions(Queue queue, boolean antiHeuristic) {
 		super(antiHeuristic);
 		this.queue = queue;
 	}
 
 	/**
-	 * Returns the position of the preferred element in the queue.
+	 * Returns the position of the preferred variable in the queue
+	 * 
+	 * @return a position in the queue
 	 */
 	public abstract int bestPosition();
 
@@ -88,17 +110,21 @@ public abstract class HeuristicRevisions extends Heuristic {
 		}
 
 		/**
-		 * Returns the (raw) score of the element in the queue at the specified position. It is usually the method to be overridden in order to define a new
-		 * heuristic.
+		 * Returns the (raw) score of the specified variable (which is present in in the propagation queue). It is usually the method to overridde in order to
+		 * define a new heuristic.
+		 * 
+		 * @param x
+		 *            a variable
+		 * @return the score of the specified variable according to the heuristic
 		 */
 		protected abstract double scoreOf(Variable x);
 
 		@Override
 		public int bestPosition() {
 			int pos = 0;
-			double bestScore = scoreOf(queue.var(0)) * scoreCoeff;
+			double bestScore = scoreOf(queue.var(0)) * multiplier;
 			for (int i = 1; i <= queue.limit; i++) {
-				double score = scoreOf(queue.var(i)) * scoreCoeff;
+				double score = scoreOf(queue.var(i)) * multiplier;
 				if (score > bestScore) {
 					pos = i;
 					bestScore = score;

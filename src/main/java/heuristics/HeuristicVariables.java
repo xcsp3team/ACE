@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package heuristics;
 
 import java.util.Set;
@@ -17,7 +27,6 @@ import variables.Variable;
 /**
  * This class gives the description of a variable ordering heuristic. <br>
  * A variable ordering heuristic is used by a backtrack search solver to select a variable (to be assigned) at each step of search. <br>
- * NB : do not modify the name of this class as it is used by reflection.
  */
 public abstract class HeuristicVariables extends Heuristic {
 
@@ -118,9 +127,9 @@ public abstract class HeuristicVariables extends Heuristic {
 	/** Returns the score of the specified variable, while considering the optimization coeff (i.e., minimization or maximization). */
 	public final double scoreOptimizedOf(Variable x) {
 		if (x.dom instanceof DomainInfinite)
-			return scoreCoeff == -1 ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY; // because such variables must be computed (and not
+			return multiplier == -1 ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY; // because such variables must be computed (and not
 																							// assigned)
-		return scoreOf(x) * scoreCoeff;
+		return scoreOf(x) * multiplier;
 	}
 
 	/** Returns the preferred variable among those that are priority. */

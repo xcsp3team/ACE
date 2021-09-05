@@ -1,12 +1,8 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package heuristics;
+
+import static utility.Enums.ConstraintWeighting.CACD;
+import static utility.Enums.ConstraintWeighting.CHS;
+import static utility.Enums.ConstraintWeighting.VAR;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -25,7 +21,6 @@ import sets.SetDense;
 import solver.Solver;
 import utility.Enums.Branching;
 import utility.Enums.SingletonStrategy;
-import utility.Enums.ConstraintWeighting;
 import utility.Kit;
 import utility.Kit.CombinatorOfTwoInts;
 import variables.Domain;
@@ -154,29 +149,47 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	// ***** Subclasses for Wdeg variants
 	// ************************************************************************
 
-	public static abstract class WdegVariant extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnAssignments, ObserverOnConflicts, TagMaximize {
+	/**
+	 * The subclasses of this class allow us to define the heuristics wdeg and wdeg/dom. There exists four variants for each of these two heuristics: VAR, UNIT,
+	 * CACD and CHS.
+	 */
+	public static abstract class WdegVariant extends HeuristicVariablesDynamic
+			implements ObserverOnRuns, ObserverOnAssignments, ObserverOnConflicts, TagMaximize {
 
-		private int time; // corresponds to the number of times a wipe-out occurred
-		private int[] ctime; // ctime[i] corresponds to the last time a wipe-out occurred for constraint i
+		/**
+		 * Constants used by CHS
+		 */
+		private static final double SMOOTHING = 0.995, ALPHA0 = 0.1, ALPHA_LIMIT = 0.06, ALPHA_DECREMENT = 0.000001;
 
-		public double[] vscores; // the score of all variables
-		public double[] cscores; // the score of constraints (mainly used for CHS)
+		/**
+		 * indicates the number of times a wipe-out occurred
+		 */
+		private int time;
 
-		double[][] cvscores;
+		/**
+		 * ctime[c] indicates the last time a wipe-out occurred for constraint c (not used by VAR)
+		 */
+		private int[] ctime;
 
-		final double SMOOTHING = 0.995;
-		final double ALPHA0 = 0.1, ALPHA_LIMIT = 0.06, ALPHA_DECREMENT = 0.000001; // for CHS
-		double alpha; // for CHS
+		/**
+		 * vscores[x] is the score (weight) of variable x (not used by CHS)
+		 */
+		public double[] vscores;
 
-		@Override
-		public void reset() {
-			time = 0;
-			Arrays.fill(ctime, 0);
-			Arrays.fill(vscores, 0);
-			Arrays.fill(cscores, 0);
-			for (double[] t : cvscores)
-				Arrays.fill(t, 0);
-		}
+		/**
+		 * cscores[c] is the score (weight) of constraint c (not used by VAR)
+		 */
+		public double[] cscores;
+
+		/**
+		 * cvscores[c][x] is the score (weight) of variable x in constraint c (used by UNIT and CACD)
+		 */
+		private double[][] cvscores;
+
+		/**
+		 * field used by CHS
+		 */
+		private double alpha;
 
 		@Override
 		public void beforeRun() {
@@ -185,7 +198,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				reset();
 			}
 			alpha = ALPHA0;
-			if (settings.weighting == ConstraintWeighting.CHS) { // smoothing
+			if (settings.weighting == CHS) { // smoothing
 				for (int i = 0; i < cscores.length; i++)
 					cscores[i] *= (Math.pow(SMOOTHING, time - ctime[i]));
 			}
@@ -193,7 +206,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void afterAssignment(Variable x, int a) {
-			if (settings.weighting != ConstraintWeighting.VAR && settings.weighting != ConstraintWeighting.CHS)
+			if (settings.weighting != VAR && settings.weighting != CHS)
 				for (Constraint c : x.ctrs)
 					if (c.futvars.size() == 1) {
 						int y = c.futvars.dense[0]; // the other variable whose score must be updated
@@ -203,7 +216,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void afterUnassignment(Variable x) {
-			if (settings.weighting != ConstraintWeighting.VAR && settings.weighting != ConstraintWeighting.CHS)
+			if (settings.weighting != VAR && settings.weighting != CHS)
 				for (Constraint c : x.ctrs)
 					if (c.futvars.size() == 2) { // since a variable has just been unassigned, it means that there was only one future variable
 						int y = c.futvars.dense[0]; // the other variable whose score must be updated
@@ -214,21 +227,13 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void whenWipeout(Constraint c, Variable x) {
 			time++;
-			if (settings.weighting == ConstraintWeighting.VAR)
+			if (settings.weighting == VAR)
 				vscores[x.num]++;
 			else if (c != null) {
-				if (settings.weighting == ConstraintWeighting.CHS) {
+				if (settings.weighting == CHS) {
 					double r = 1.0 / (time - ctime[c.num]);
 					double increment = alpha * (r - cscores[c.num]);
 					cscores[c.num] += increment;
-					// SetDense futvars = c.futvars;
-					// for (int i = futvars.limit; i >= 0; i--) {
-					// Variable y = c.scp[futvars.dense[i]];
-					// vscores[y.num] += increment;
-					// cvscores[c.num][futvars.dense[i]] += increment;
-					// }
-
-					// cscores[c.num] = (1 - alpha) * cscores[c.num] + alpha * (1.0 / (time - ctime[c.num]));
 					alpha = Double.max(ALPHA_LIMIT, alpha - ALPHA_DECREMENT);
 				} else {
 					double increment = 1;
@@ -236,9 +241,9 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					SetDense futvars = c.futvars;
 					for (int i = futvars.limit; i >= 0; i--) {
 						Variable y = c.scp[futvars.dense[i]];
-						if (settings.weighting == ConstraintWeighting.CACD) { // in this case, the increment is not 1 as for UNIT
+						if (settings.weighting == CACD) { // in this case, the increment is not 1 as for UNIT
 							Domain dom = y.dom;
-							boolean test = false; // hard coding ; this variant does not seem to be interesting
+							boolean test = false; // EXPERIMENTAL ; this variant does not seem to be interesting
 							if (test) {
 								int depth = solver.depth();
 								int nRemoved = 0;
@@ -261,12 +266,14 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		public WdegVariant(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
-			this.ctime = new int[solver.problem.constraints.length];
-			this.vscores = new double[solver.problem.variables.length];
-			this.cscores = new double[solver.problem.constraints.length];
-			this.cvscores = Stream.of(solver.problem.constraints).map(c -> new double[c.scp.length]).toArray(double[][]::new);
+			this.ctime = settings.weighting != VAR ? new int[solver.problem.constraints.length] : null;
+			this.vscores = settings.weighting != CHS ? new double[solver.problem.variables.length] : null;
+			this.cscores = settings.weighting != VAR ? new double[solver.problem.constraints.length] : null;
+			this.cvscores = settings.weighting != VAR && settings.weighting != CHS
+					? Stream.of(solver.problem.constraints).map(c -> new double[c.scp.length]).toArray(double[][]::new)
+					: null;
 
-			boolean b = false; // temporary
+			boolean b = false; // EXPERIMENTAL
 			if (b && solver.problem.optimizer != null && solver.problem.optimizer.ctr instanceof Sum) {
 				Sum c = (Sum) solver.problem.optimizer.ctr;
 				int[] coeffs = c instanceof SumSimple ? null : ((SumWeighted) c).coeffs;
@@ -274,13 +281,29 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				long minGap = LongStream.of(gaps).min().getAsLong();
 				for (int i = 0; i < c.scp.length; i++) {
 					vscores[c.scp[i].num] += 1 + gaps[i] - minGap; // Math.log(1 + gaps[i] - minGap) / Math.log(2);
-					// System.out.println("socre of " + c.scp[i] + " : " + vscores[c.scp[i].num]);
 				}
 			}
 		}
 
+		@Override
+		public void reset() {
+			time = 0;
+			if (ctime != null)
+				Arrays.fill(ctime, 0);
+			if (vscores != null)
+				Arrays.fill(vscores, 0);
+			if (cscores != null)
+				Arrays.fill(cscores, 0);
+			if (cvscores != null)
+				for (double[] t : cvscores)
+					Arrays.fill(t, 0);
+		}
+
 	}
 
+	/**
+	 * The heuristic wdeg (with its four variants: VAR, UNIT, CACD, CHS)
+	 */
 	public static class Wdeg extends WdegVariant {
 
 		public Wdeg(Solver solver, boolean antiHeuristic) {
@@ -289,7 +312,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public double scoreOf(Variable x) {
-			if (settings.weighting == ConstraintWeighting.CHS) {
+			if (settings.weighting == CHS) {
 				double d = 0;
 				for (Constraint c : x.ctrs)
 					if (c.futvars.size() > 1)
@@ -300,6 +323,9 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 	}
 
+	/**
+	 * The heuristic wdeg/dom (with its four variants: VAR, UNIT, CACD, CHS)
+	 */
 	public static class WdegOnDom extends WdegVariant {
 
 		public WdegOnDom(Solver solver, boolean antiHeuristic) {
@@ -308,7 +334,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public double scoreOf(Variable x) {
-			if (settings.weighting == ConstraintWeighting.CHS) {
+			if (settings.weighting == CHS) {
 				double d = 0;
 				for (Constraint c : x.ctrs)
 					if (c.futvars.size() > 1)

@@ -29,9 +29,9 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		assert dx.size() != 0 : "The domain is empty";
 		// System.out.println("\nchoosing for " + x);
 		int best = dx.first();
-		double bestScore = scoreOf(best) * scoreCoeff;
+		double bestScore = scoreOf(best) * multiplier;
 		for (int a = dx.next(best); a != -1; a = dx.next(a)) {
-			double score = scoreOf(a) * scoreCoeff;
+			double score = scoreOf(a) * multiplier;
 			if (score > bestScore) {
 				best = a;
 				bestScore = score;
@@ -59,7 +59,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		public Bivs(Variable x, boolean antiHeuristic) {
 			super(x, antiHeuristic);
 			Kit.control(x.problem.optimizer != null);
-			this.scoreCoeff = x.problem.optimizer.minimization ? -1 : 1; // scoreCoeff follows minimization/maximization
+			this.multiplier = x.problem.optimizer.minimization ? -1 : 1; // scoreCoeff follows minimization/maximization
 			this.lbBased = x.problem.head.control.valh.bivsOptimistic == x.problem.optimizer.minimization;
 			this.solver = x.problem.solver;
 			this.c = x.problem.optimizer.ctr;
@@ -82,7 +82,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 			long score = 0;
 			if (!consistent) {
 				inconsistent.add(a);
-				score = scoreCoeff == -1 ? Long.MAX_VALUE : Long.MIN_VALUE;
+				score = multiplier == -1 ? Long.MAX_VALUE : Long.MIN_VALUE;
 			} else
 				score = lbBased ? c.minCurrentObjectiveValue() : c.maxCurrentObjectiveValue();
 			// if (x.id().equals("k"))
@@ -109,9 +109,9 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 				return dx.first(); // First in that case
 			}
 			int best = dx.first();
-			double bestScore = scoreOf(best) * scoreCoeff;
+			double bestScore = scoreOf(best) * multiplier;
 			for (int a = dx.next(best); a != -1; a = dx.next(a)) {
-				double score = scoreOf(a) * scoreCoeff;
+				double score = scoreOf(a) * multiplier;
 				if (score > bestScore || (score == bestScore && a == aLast)) {
 					best = a;
 					bestScore = score;
