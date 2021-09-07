@@ -29,6 +29,9 @@ import variables.Variable;
 
 public abstract class NValues extends ConstraintGlobal implements TagNotAC { // not call filtering-complete
 
+	/**
+	 * the array of variables in which we count the number of different (assigned) values
+	 */
 	protected final Variable[] list;
 
 	protected final Set<Integer> fixedVals;

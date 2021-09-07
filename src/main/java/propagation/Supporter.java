@@ -19,6 +19,9 @@ public abstract class Supporter {
 		return null;
 	}
 
+	/**
+	 * The constraint to which this object is attached
+	 */
 	protected Constraint c;
 
 	protected boolean multidirectionality;

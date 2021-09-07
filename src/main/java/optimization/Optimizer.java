@@ -67,19 +67,38 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	 * Class
 	 *********************************************************************************************/
 
+	/**
+	 * THe problem to which this object is attached
+	 */
 	public final Problem problem;
 
+	/**
+	 * indicates if one must minimize (otherwise, maximize)
+	 */
 	public final boolean minimization;
 
-	public final Optimizable clb, cub, ctr;
+	/**
+	 * the constraint ensuring that minimal bound (lower bound) of the optimization bounding interval is respected; may be useless.
+	 */
+	public final Optimizable clb;
 
 	/**
-	 * Solutions searched for must have a cost greater than or equal to this bound (valid for minimization and maximization).
+	 * the constraint ensuring that maximal bound (upper bound) of the optimization bounding interval is respected; may be useless.
+	 */
+	public final Optimizable cub;
+
+	/**
+	 * the leading (main) constraint for optimization; it is either clb or cub
+	 */
+	public final Optimizable ctr;
+
+	/**
+	 * solutions searched for must have a cost greater than or equal to this bound (valid for both minimization and maximization).
 	 */
 	public long minBound;
 
 	/**
-	 * Solutions searched for must have a cost less than or equal to this bound (valid for minimization and maximization).
+	 * solutions searched for must have a cost less than or equal to this bound (valid for both minimization and maximization).
 	 */
 	public long maxBound;
 
@@ -95,7 +114,9 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	}
 
 	/**
-	 * Returns the value of the objective, for the current complete instantiation.
+	 * Returns the value of the problem objective, computed with respect to the current complete instantiation
+	 * 
+	 * @return the current value of the problem objective
 	 */
 	public final long value() {
 		assert Variable.areAllFixed(problem.variables) && clb.objectiveValue() == cub.objectiveValue();
@@ -168,13 +189,18 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	 * Subclasses
 	 *********************************************************************************************/
 
-	// TODO problem when incremental is used with STR2 and CT for Increasing and Dichotomic
+	// TODO problem when incremental is used with STR2 and CT for Increasing and Dichotomic strategies
 	// It seems that SVal is not correctly updated
+	// java ace Fapp-m2s-01-0200_c18.xml.lzma -os=dichotomic -positive=str2 PROBLEM but STR1 ok ; if decremental set to false in STRoptimized,
+	// STR2 ok (but not CT that need decremental); why?
 
+	/**
+	 * An optimization strategy based on decreasingly updating the maximal bound (assuming minimization) whenever a solution is found; this is related to branch
+	 * and bound (and related to ramp-down strategy).
+	 */
 	public static final class OptimizerDecreasing extends Optimizer {
 		// Assuming minimization (similar observation for maximization):
-		// with this strategy, the limit of clb never changes
-		// so, the constraint makes sense (i.e. filters) only if -lb is set by the user
+		// with this strategy, the limit of clb never changes, so, the constraint makes sense (i.e. filters) only if -lb is set by the user
 		// otherwise, it does not matter because the constraint is entailed
 
 		public OptimizerDecreasing(Problem pb, TypeOptimization opt, Optimizable clb, Optimizable cub) {
@@ -192,6 +218,10 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 		}
 	}
 
+	/**
+	 * An optimization strategy based on increasingly updating the minimal bound (assuming minimization); this is sometimes called iterative optimization (or
+	 * ramp-up strategy).
+	 */
 	public static final class OptimizerIncreasing extends Optimizer {
 
 		boolean first = true;
@@ -221,9 +251,9 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 		}
 	}
 
-	// java ace /home/lecoutre/instances/XCSP18v2/allInstances/Fapp/Fapp-m2s/Fapp-m2s-01-0200_c18.xml.lzma -os=dichotomic -positive=str2 PROBLEM
-	// but STR1 ok
-	// If decremental set to false in STRoptimized, STR2 ok (but not CT that need decremental); why? // TODO
+	/**
+	 * An optimization strategy based on a dichotomic reduction of the bounding interval. <br />
+	 */
 	public static final class OptimizerDichotomic extends Optimizer {
 
 		public OptimizerDichotomic(Problem pb, TypeOptimization opt, Optimizable clb, Optimizable cub) {
