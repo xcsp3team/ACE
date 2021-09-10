@@ -1,11 +1,13 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package constraints.global;
 
 import org.xcsp.common.Types.TypeOperatorRel;
@@ -13,13 +15,13 @@ import org.xcsp.common.Types.TypeOperatorRel;
 import constraints.ConstraintGlobal;
 import constraints.intension.PrimitiveBinary;
 import interfaces.Tags.TagAC;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Lexicographic extends ConstraintGlobal implements TagNotSymmetric, TagFilteringCompleteAtEachCall, TagAC {
+public abstract class Lexicographic extends ConstraintGlobal implements TagNotSymmetric, TagCallCompleteFiltering, TagAC {
 
 	public static Lexicographic buildFrom(Problem pb, Variable[] list1, Variable[] list2, TypeOperatorRel op) {
 		switch (op) {
@@ -46,7 +48,8 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagNotSy
 		return !strictOrdering;
 	}
 
-	private final Variable[] list1, list2;
+	private final Variable[] list1;
+	private final Variable[] list2;
 
 	private final boolean strictOrdering; // If true then <= (le) else < (lt)
 

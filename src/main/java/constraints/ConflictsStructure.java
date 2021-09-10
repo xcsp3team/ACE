@@ -1,4 +1,16 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package constraints;
+
+import static utility.Kit.control;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -85,7 +97,7 @@ public final class ConflictsStructure implements ConstraintRegister {
 			ConstraintExtension c1 = (ConstraintExtension) structure.firstRegisteredCtr();
 			if (c1 instanceof SpecificPropagator || c1.scp.length == 1 || c1.infiniteDomainVars.length > 0)
 				continue;
-			Kit.control(c1 instanceof ExtensionGeneric);
+			control(c1 instanceof ExtensionGeneric);
 			if (Kit.memory() > MEMORY_LIMIT)
 				return;
 			ConflictsStructure conflictsStructure = new ConflictsStructure(c1);
@@ -202,10 +214,10 @@ public final class ConflictsStructure implements ConstraintRegister {
 			Variable x = c.scp[i];
 			int max = Integer.MIN_VALUE;
 			for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
-				Kit.control(nConflicts[i][a] == c.nConflictsFor(i, a), "pb with " + c + " " + x);
+				control(nConflicts[i][a] == c.nConflictsFor(i, a), "pb with " + c + " " + x);
 				max = Math.max(max, nConflicts[i][a]);
 			}
-			Kit.control(max == nMaxConflicts[i], "pb with " + c + " " + x);
+			control(max == nMaxConflicts[i], "pb with " + c + " " + x);
 		}
 		return true;
 	}

@@ -1,25 +1,29 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package constraints.global;
+
+import static utility.Kit.control;
 
 import java.util.stream.IntStream;
 
 import org.xcsp.common.Types.TypeOperatorRel;
 
 import constraints.ConstraintGlobal;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import variables.Variable;
 
-public abstract class Ordered extends ConstraintGlobal implements TagAC, TagFilteringCompleteAtEachCall, TagNotSymmetric {
+public abstract class Ordered extends ConstraintGlobal implements TagAC, TagCallCompleteFiltering, TagNotSymmetric {
 
 	public static Ordered build(Problem pb, Variable[] x, int[] lengths, TypeOperatorRel op) {
 		switch (op) {

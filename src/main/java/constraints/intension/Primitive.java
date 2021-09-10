@@ -1,5 +1,7 @@
 package constraints.intension;
 
+import static utility.Kit.control;
+
 import java.util.stream.Stream;
 
 import constraints.Constraint;

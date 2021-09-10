@@ -1,12 +1,14 @@
 package constraints.intension;
 
+import static utility.Kit.control;
+
 import java.util.stream.Stream;
 
 import org.xcsp.common.Types.TypeLogicalOperator;
 
 import constraints.Constraint;
 import interfaces.Tags.TagAC;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import utility.Kit;
@@ -49,7 +51,7 @@ public abstract class PrimitiveLogic extends Primitive implements TagAC, TagNotS
 			super(pb, x, list);
 		}
 
-		public static final class LogEqAnd2 extends PrimitiveLogicEq implements TagFilteringCompleteAtEachCall {
+		public static final class LogEqAnd2 extends PrimitiveLogicEq implements TagCallCompleteFiltering {
 
 			Variable y, z;
 			Domain dy, dz;
@@ -90,7 +92,7 @@ public abstract class PrimitiveLogic extends Primitive implements TagAC, TagNotS
 			}
 		}
 
-		public static final class LogEqAnd extends PrimitiveLogicEq implements TagFilteringCompleteAtEachCall {
+		public static final class LogEqAnd extends PrimitiveLogicEq implements TagCallCompleteFiltering {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
@@ -161,7 +163,7 @@ public abstract class PrimitiveLogic extends Primitive implements TagAC, TagNotS
 			}
 		}
 
-		public static final class LogEqOr2 extends PrimitiveLogicEq implements TagFilteringCompleteAtEachCall {
+		public static final class LogEqOr2 extends PrimitiveLogicEq implements TagCallCompleteFiltering {
 
 			Variable y, z;
 			Domain dy, dz;
@@ -202,7 +204,7 @@ public abstract class PrimitiveLogic extends Primitive implements TagAC, TagNotS
 			}
 		}
 
-		public static final class LogEqOr extends PrimitiveLogicEq implements TagFilteringCompleteAtEachCall {
+		public static final class LogEqOr extends PrimitiveLogicEq implements TagCallCompleteFiltering {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {

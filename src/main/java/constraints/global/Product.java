@@ -1,12 +1,16 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package constraints.global;
+
+import static utility.Kit.control;
 
 import java.math.BigInteger;
 import java.util.stream.Stream;
@@ -14,14 +18,14 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 
 import constraints.ConstraintGlobal;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Product extends ConstraintGlobal implements TagFilteringCompleteAtEachCall {
+public abstract class Product extends ConstraintGlobal implements TagCallCompleteFiltering {
 
 	protected long limit;
 
@@ -56,10 +60,9 @@ public abstract class Product extends ConstraintGlobal implements TagFilteringCo
 				return new ProductSimpleGE(pb, scp, limit + 1);
 			case EQ:
 				return new ProductSimpleEQ(pb, scp, limit);
-			case NE:
-				throw new AssertionError(); // not implemented for the moment
+			default: // case NE:
+				throw new AssertionError("NE not implemented");
 			}
-			throw new AssertionError();
 		}
 
 		protected final long product(int[] t) {
@@ -109,7 +112,7 @@ public abstract class Product extends ConstraintGlobal implements TagFilteringCo
 		// ***** Constraint ProductSimpleLE
 		// ************************************************************************
 
-		public static class ProductSimpleLE extends ProductSimple implements TagAC {
+		public static final class ProductSimpleLE extends ProductSimple implements TagAC {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
@@ -152,7 +155,7 @@ public abstract class Product extends ConstraintGlobal implements TagFilteringCo
 		// ***** Constraint ProductSimpleGE
 		// ************************************************************************
 
-		public static class ProductSimpleGE extends ProductSimple implements TagAC {
+		public static final class ProductSimpleGE extends ProductSimple implements TagAC {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {

@@ -1,17 +1,10 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints.global;
 
 import static org.xcsp.common.Types.TypeOperatorRel.GE;
 import static org.xcsp.common.Types.TypeOperatorRel.GT;
 import static org.xcsp.common.Types.TypeOperatorRel.LE;
 import static org.xcsp.common.Types.TypeOperatorRel.LT;
+import static utility.Kit.control;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -33,7 +26,7 @@ import constraints.ConstraintGlobal;
 import constraints.global.Sum.SumViewWeighted.View.ViewTree01;
 import constraints.global.Sum.SumViewWeighted.View.ViewVariable;
 import interfaces.Tags.TagAC;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagSymmetric;
 import optimization.Optimizable;
@@ -43,7 +36,7 @@ import variables.Domain;
 import variables.DomainInfinite;
 import variables.Variable;
 
-public abstract class Sum extends ConstraintGlobal implements TagFilteringCompleteAtEachCall {
+public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFiltering {
 
 	protected long limit;
 
@@ -168,7 +161,7 @@ public abstract class Sum extends ConstraintGlobal implements TagFilteringComple
 
 		public SumSimple(Problem pb, Variable[] scp, long limit) {
 			super(pb, scp);
-			Kit.control(Variable.areAllDistinct(scp));
+			control(Variable.areAllDistinct(scp));
 			this.minComputableObjectiveValue = minComputableObjectiveValue();
 			this.maxComputableObjectiveValue = maxComputableObjectiveValue();
 			control(minComputableObjectiveValue <= maxComputableObjectiveValue);
@@ -188,7 +181,7 @@ public abstract class Sum extends ConstraintGlobal implements TagFilteringComple
 		// ***** Constraint SumSimpleLE
 		// ************************************************************************
 
-		public static class SumSimpleLE extends SumSimple implements TagAC, Optimizable {
+		public static final class SumSimpleLE extends SumSimple implements TagAC, Optimizable {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
@@ -248,7 +241,7 @@ public abstract class Sum extends ConstraintGlobal implements TagFilteringComple
 		// ***** Constraint SumSimpleGE
 		// ************************************************************************
 
-		public static class SumSimpleGE extends SumSimple implements TagAC, Optimizable {
+		public static final class SumSimpleGE extends SumSimple implements TagAC, Optimizable {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
@@ -629,7 +622,7 @@ public abstract class Sum extends ConstraintGlobal implements TagFilteringComple
 		// ***** Constraint SumWeightedGE
 		// ************************************************************************
 
-		public static class SumWeightedGE extends SumWeighted implements TagAC, Optimizable {
+		public static final class SumWeightedGE extends SumWeighted implements TagAC, Optimizable {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
@@ -730,7 +723,7 @@ public abstract class Sum extends ConstraintGlobal implements TagFilteringComple
 			int cnt = 0;
 
 			public int deduce() { // experimental for infinite domains (to be finalized)
-				Kit.control(futvars.size() == 1);
+				control(futvars.size() == 1);
 				int pos = futvars.dense[0];
 				control(scp[pos].dom instanceof DomainInfinite, " " + scp[pos]);
 				long sum = 0;
@@ -1166,7 +1159,7 @@ public abstract class Sum extends ConstraintGlobal implements TagFilteringComple
 		// ***** Constraint SumWeightedGE
 		// ************************************************************************
 
-		public static class SumViewWeightedGE extends SumViewWeighted implements TagAC, Optimizable {
+		public static final class SumViewWeightedGE extends SumViewWeighted implements TagAC, Optimizable {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {

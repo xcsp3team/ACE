@@ -8,6 +8,8 @@
  */
 package constraints.extension;
 
+import static utility.Kit.control;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -90,7 +92,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 
 		public SetSparseMapSTR3(int capacity, boolean initiallyFull) {
 			super(capacity, initiallyFull);
-			Kit.control(0 < capacity && capacity <= Short.MAX_VALUE);
+			control(0 < capacity && capacity <= Short.MAX_VALUE);
 			positions = Kit.range((short) capacity);
 			sseparators = Kit.range(capacity);
 		}
@@ -213,7 +215,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 		public byte limit;
 
 		public LocalSetSparseByte(int capacity, boolean initiallyFull) {
-			Kit.control(0 < capacity && capacity <= Byte.MAX_VALUE);
+			control(0 < capacity && capacity <= Byte.MAX_VALUE);
 			this.dense = Kit.range((byte) capacity);
 			this.sparse = Kit.range((byte) capacity);
 			this.limit = (byte) (initiallyFull ? dense.length - 1 : -1);
@@ -339,7 +341,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 			for (int x = scp.length - 1; x >= 0; x--) {
 				Domain dom = scp[x].dom;
 				for (int a = dom.first(); a != -1; a = dom.next(a)) {
-					Kit.control(subtablesShort[x][a].length < Short.MAX_VALUE);
+					control(subtablesShort[x][a].length < Short.MAX_VALUE);
 					short[] subtableShort = subtablesShort[x][a];
 					int p = subtableShort.length - 1;
 					while (!set.contains(subtableShort[p]))

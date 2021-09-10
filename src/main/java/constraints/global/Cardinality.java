@@ -1,5 +1,7 @@
 package constraints.global;
 
+import static utility.Kit.control;
+
 import java.util.stream.IntStream;
 
 import org.xcsp.common.Utilities;
@@ -7,8 +9,8 @@ import org.xcsp.common.Utilities;
 import constraints.ConstraintGlobal;
 import constraints.global.Matcher.MatcherCardinality;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
+import interfaces.Tags.TagCallCompleteFiltering;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
@@ -39,7 +41,7 @@ public abstract class Cardinality extends ConstraintGlobal implements ObserverOn
 		return true;
 	}
 
-	public static class CardinalityConstant extends Cardinality implements TagFilteringCompleteAtEachCall, TagAC {
+	public static class CardinalityConstant extends Cardinality implements TagCallCompleteFiltering, TagAC {
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
 			for (int i = 0; i < values.length; i++) {

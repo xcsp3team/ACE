@@ -1,11 +1,11 @@
 package constraints;
 
 import static org.xcsp.common.Constants.ALL;
+import static utility.Kit.control;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -25,7 +25,7 @@ import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.Observers.ObserverOnConstruction;
 import interfaces.SpecificPropagator;
 import interfaces.Tags.TagAC;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagNotSymmetric;
 import interfaces.Tags.TagSymmetric;
@@ -82,7 +82,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	/**
 	 * A class for constraints never satisfied (to be used in very special situations)
 	 */
-	public static class CtrFalse extends Constraint implements SpecificPropagator, TagFilteringCompleteAtEachCall, TagAC {
+	public static class CtrFalse extends Constraint implements SpecificPropagator, TagCallCompleteFiltering, TagAC {
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
@@ -108,7 +108,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	/**
 	 * A class for constraints always satisfied (to be used in very special situations)
 	 */
-	public static class CtrTrue extends Constraint implements SpecificPropagator, TagFilteringCompleteAtEachCall, TagAC {
+	public static class CtrTrue extends Constraint implements SpecificPropagator, TagCallCompleteFiltering, TagAC {
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
@@ -845,7 +845,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 			if (futvars.size() == 1 && !x.assigned() && scp.length > 1)
 				return true;
 		}
-		if (time > x.time && this instanceof TagFilteringCompleteAtEachCall)
+		if (time > x.time && this instanceof TagCallCompleteFiltering)
 			return true;
 		int nBefore = problem.nValueRemovals;
 		boolean consistent = this instanceof SpecificPropagator ? ((SpecificPropagator) this).runPropagator(x) : genericFiltering(x);
@@ -880,17 +880,17 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 * Control and display
 	 *********************************************************************************************/
 
-	public void control(boolean conditionToBeRespected, Supplier<String> message) {
-		Kit.control(conditionToBeRespected, message);
-	}
-
-	public void control(boolean conditionToBeRespected, String message) {
-		Kit.control(conditionToBeRespected, () -> message);
-	}
-
-	public void control(boolean conditionToBeRespected) {
-		Kit.control(conditionToBeRespected, () -> "");
-	}
+	// public final void control(boolean conditionToBeRespected, Supplier<String> message) {
+	// Kit.control(conditionToBeRespected, message);
+	// }
+	//
+	// public final void control(boolean conditionToBeRespected, String message) {
+	// Kit.control(conditionToBeRespected, () -> message);
+	// }
+	//
+	// public final void control(boolean conditionToBeRespected) {
+	// Kit.control(conditionToBeRespected, () -> "");
+	// }
 
 	public StringBuilder signature() {
 		return Variable.signatureFor(scp);

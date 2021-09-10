@@ -1,12 +1,6 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints.global;
+
+import static utility.Kit.control;
 
 import org.xcsp.common.Utilities;
 
@@ -30,10 +24,10 @@ public final class NoOverlap extends ConstraintGlobal implements TagNotAC {
 		return true;
 	}
 
-	private Variable[] xs;
-	private int[] widths;
-	private Variable[] ys;
-	private int[] heights;
+	private final Variable[] xs;
+	private final int[] widths;
+	private final Variable[] ys;
+	private final int[] heights;
 
 	private int half;
 
@@ -55,7 +49,7 @@ public final class NoOverlap extends ConstraintGlobal implements TagNotAC {
 		return a > dom.lastValue() && dom.firstValue() > b;
 	}
 
-	// optimizations are possible ; to be done
+	// some optimizations are possible ; to be done
 	public boolean filter(Variable[] x1, int[] t1, Variable[] x2, int[] t2) {
 		for (int i = 0; i < half; i++) {
 			Domain dom1 = x1[i].dom;

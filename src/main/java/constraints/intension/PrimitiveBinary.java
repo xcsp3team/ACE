@@ -8,6 +8,8 @@
  */
 package constraints.intension;
 
+import static utility.Kit.control;
+
 import java.math.BigInteger;
 
 import org.xcsp.common.Types.TypeArithmeticOperator;
@@ -24,7 +26,7 @@ import constraints.intension.PrimitiveBinary.PrimitiveBinaryMul.MulLE2;
 import constraints.intension.PrimitiveBinary.PropagatorEQ.MultiPropagatorEQ;
 import constraints.intension.PrimitiveBinary.PropagatorEQ.SimplePropagatorEQ;
 import interfaces.Tags.TagAC;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
@@ -36,7 +38,7 @@ import variables.Variable;
 // this implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 = 3
 // https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.17.2
 
-public abstract class PrimitiveBinary extends Primitive implements TagAC, TagFilteringCompleteAtEachCall {
+public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCallCompleteFiltering {
 
 	public static boolean enforceLT(Domain dx, Domain dy) { // x < y
 		return dx.removeValuesGE(dy.lastValue()) && dy.removeValuesLE(dx.firstValue());

@@ -1,7 +1,18 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package constraints;
 
 import static org.xcsp.common.Constants.STAR;
 import static org.xcsp.common.Constants.STAR_SYMBOL;
+import static utility.Kit.control;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -17,10 +28,10 @@ import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.Tries;
 import dashboard.Control.SettingExtension;
-import interfaces.SpecificPropagator;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
+import interfaces.SpecificPropagator;
 import interfaces.Tags.TagAC;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNegative;
 import interfaces.Tags.TagPositive;
 import interfaces.Tags.TagStarredCompatible;
@@ -39,7 +50,7 @@ import variables.Variable.VariableSymbolic;
  * @author Christophe Lecoutre
  *
  */
-public abstract class ConstraintExtension extends Constraint implements TagAC, TagFilteringCompleteAtEachCall {
+public abstract class ConstraintExtension extends Constraint implements TagAC, TagCallCompleteFiltering {
 
 	/**********************************************************************************************
 	 ***** Inner classes (Extension1, ExtensionGeneric and ExtensionSpecific)
@@ -49,7 +60,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 * This class is is used for unary extension constraints. Typically, filtering is performed at the root node of the search tree, and the constraint becomes
 	 * entailed. BE CAREFUL: this is not a subclass of ConstraintExtension.
 	 */
-	public static final class Extension1 extends Constraint implements SpecificPropagator, TagAC, TagFilteringCompleteAtEachCall {
+	public static final class Extension1 extends Constraint implements SpecificPropagator, TagAC, TagCallCompleteFiltering {
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
@@ -189,14 +200,14 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 
 	private static ConstraintExtension build(Problem pb, Variable[] scp, boolean positive, boolean starred) {
 		SettingExtension settings = pb.head.control.extension;
-		Kit.control(scp.length > 1);
+		control(scp.length > 1);
 		Set<Class<?>> classes = pb.head.availableClasses.get(ConstraintExtension.class);
 		String className = (positive ? settings.positive : settings.negative).toString();
 		className = className.equals("V") || className.equals("VA") ? "Extension" + className : className;
 		if (starred) {
-			Kit.control(positive);
+			control(positive);
 			ConstraintExtension c = (ConstraintExtension) Reflector.buildObject(className, classes, pb, scp);
-			Kit.control(c instanceof TagStarredCompatible); // currently, STR2, STR2S, CT, CT2 and MDDSHORT
+			control(c instanceof TagStarredCompatible); // currently, STR2, STR2S, CT, CT2 and MDDSHORT
 			return c;
 		}
 		if (scp.length == 2 && settings.validForBinary)
@@ -205,7 +216,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	}
 
 	private static int[][] reverseTuples(Variable[] scp, int[][] tuples) {
-		Kit.control(Variable.areDomainsFull(scp));
+		control(Variable.areDomainsFull(scp));
 		assert Kit.isLexIncreasing(tuples);
 		int cnt = 0;
 		TupleIterator tupleIterator = new TupleIterator(Variable.buildDomainsArrayFor(scp));
@@ -243,8 +254,8 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 * @return an extension constraint
 	 */
 	public static ConstraintExtension build(Problem pb, Variable[] scp, Object tuples, boolean positive, Boolean starred) {
-		Kit.control(scp.length > 1 && Variable.haveSameType(scp));
-		Kit.control(Array.getLength(tuples) == 0 || Array.getLength(Array.get(tuples, 0)) == scp.length,
+		control(scp.length > 1 && Variable.haveSameType(scp));
+		control(Array.getLength(tuples) == 0 || Array.getLength(Array.get(tuples, 0)) == scp.length,
 				() -> "Badly formed extensional constraint " + scp.length + " " + Array.getLength(Array.get(tuples, 0)));
 		if (starred == null)
 			starred = isStarred(tuples);

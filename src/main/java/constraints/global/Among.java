@@ -1,22 +1,16 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
- * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
- */
 package constraints.global;
 
+import static utility.Kit.control;
+
+import java.util.HashSet;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.ConstraintGlobal;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
 import interfaces.Tags.TagAC;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import sets.SetSparse;
@@ -24,22 +18,33 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public final class Among extends ConstraintGlobal implements TagSymmetric, TagAC, TagFilteringCompleteAtEachCall {
+public final class Among extends ConstraintGlobal implements TagSymmetric, TagAC, TagCallCompleteFiltering {
 
 	@Override
 	public boolean isSatisfiedBy(int[] t) {
-		return IntStream.of(t).filter(v -> values.contains(v)).count() == k;
+		int cnt = 0;
+		for (int v : t)
+			if (values.contains(v))
+				cnt++;
+		return cnt == k;
+		// return IntStream.of(t).filter(v -> values.contains(v)).count() == k;
 	}
 
+	/**
+	 * The values that must be counted in the list of the constraint.
+	 */
 	private final Set<Integer> values;
 
 	private final int k;
 
+	/**
+	 * A set used temporarily when filtering
+	 */
 	private final SetSparse mixedVariables;
 
 	public Among(Problem pb, Variable[] list, int[] values, int k) {
 		super(pb, list);
-		this.values = new TreeSet<>(IntStream.of(values).boxed().collect(Collectors.toList())); // TODO TreeSet or HashSet ?
+		this.values = IntStream.of(values).boxed().collect(Collectors.toCollection(HashSet::new)); // TODO HashSet better than TreeSet, right?
 		this.k = k;
 		this.mixedVariables = new SetSparse(list.length);
 		defineKey(Kit.join(values), k);

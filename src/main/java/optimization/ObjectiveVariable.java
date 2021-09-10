@@ -1,13 +1,15 @@
 package optimization;
 
+import static utility.Kit.control;
+
 import constraints.ConstraintGlobal;
 import interfaces.Tags.TagAC;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import variables.Variable;
 
-public abstract class ObjectiveVariable extends ConstraintGlobal implements Optimizable, TagAC, TagFilteringCompleteAtEachCall, TagSymmetric {
+public abstract class ObjectiveVariable extends ConstraintGlobal implements Optimizable, TagAC, TagCallCompleteFiltering, TagSymmetric {
 
 	@Override
 	public long minComputableObjectiveValue() {

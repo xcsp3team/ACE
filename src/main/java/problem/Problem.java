@@ -140,7 +140,7 @@ import constraints.global.Count.CountCst.Exactly1;
 import constraints.global.Count.CountCst.ExactlyK;
 import constraints.global.Count.CountVar.ExactlyVarK;
 import constraints.global.Cumulative.CumulativeCst;
-import constraints.global.DistinctVectors;
+import constraints.global.DistinctLists;
 import constraints.global.Element.ElementCst;
 import constraints.global.Element.ElementMatrix.ElementMatrixCst;
 import constraints.global.Element.ElementMatrix.ElementMatrixVar;
@@ -1217,7 +1217,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Variable[] list2 = normalized ? t2 : IntStream.range(0, t2.length).filter(i -> t1[i] != t2[i]).mapToObj(i -> t2[i]).toArray(Variable[]::new);
 
 		if (isBasicType(head.control.global.typeDistinctVectors))
-			return post(new DistinctVectors(this, list1, list2));
+			return post(new DistinctLists(this, list1, list2));
 		if (head.control.global.smartTable)
 			return post(CSmart.distinctVectors(this, list1, list2));
 		return api.disjunction(IntStream.range(0, list1.length).mapToObj(i -> api.ne(list1[i], list2[i])));

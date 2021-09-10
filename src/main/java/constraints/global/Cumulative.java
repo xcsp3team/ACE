@@ -8,6 +8,8 @@
  */
 package constraints.global;
 
+import static utility.Kit.control;
+
 import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -15,7 +17,7 @@ import java.util.stream.Stream;
 import constraints.ConstraintGlobal;
 import constraints.global.Cumulative.TimetableReasoner.Slot;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
 import problem.Problem;
 import sets.SetSparse;
@@ -23,7 +25,7 @@ import sets.SetSparseReversible;
 import utility.Kit;
 import variables.Variable;
 
-public abstract class Cumulative extends ConstraintGlobal implements TagFilteringCompleteAtEachCall, TagNotAC, ObserverOnBacktracksSystematic {
+public abstract class Cumulative extends ConstraintGlobal implements TagCallCompleteFiltering, TagNotAC, ObserverOnBacktracksSystematic {
 
 	@Override
 	public void restoreBefore(int depth) {

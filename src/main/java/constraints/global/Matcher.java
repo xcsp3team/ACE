@@ -1,5 +1,7 @@
 package constraints.global;
 
+import static utility.Kit.control;
+
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -645,15 +647,15 @@ public abstract class Matcher implements ObserverOnConstruction {
 		}
 
 		private void checkMatchingConsistency() {
-			Kit.control(IntStream.range(0, intervalSize)
+			control(IntStream.range(0, intervalSize)
 					.allMatch(u -> IntStream.range(0, valToVars[u].size()).allMatch(i -> varToVal[valToVars[u].dense[i]] == u)));
-			Kit.control(IntStream.range(0, arity).allMatch(x -> varToVal[x] == -1 || valToVars[varToVal[x]].contains(x)));
+			control(IntStream.range(0, arity).allMatch(x -> varToVal[x] == -1 || valToVars[varToVal[x]].contains(x)));
 		}
 
 		@SuppressWarnings("unused")
 		private void checkMatchingValidity() {
-			Kit.control(IntStream.range(0, arity).allMatch(x -> varToVal[x] != -1 && scp[x].dom.containsValue(domainValueOf(varToVal[x]))));
-			Kit.control(IntStream.range(0, intervalSize).allMatch(u -> minOccs[u] <= valToVars[u].size() && valToVars[u].size() <= maxOccs[u]));
+			control(IntStream.range(0, arity).allMatch(x -> varToVal[x] != -1 && scp[x].dom.containsValue(domainValueOf(varToVal[x]))));
+			control(IntStream.range(0, intervalSize).allMatch(u -> minOccs[u] <= valToVars[u].size() && valToVars[u].size() <= maxOccs[u]));
 			checkMatchingConsistency();
 		}
 

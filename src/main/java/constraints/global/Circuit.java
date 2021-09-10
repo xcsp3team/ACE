@@ -8,6 +8,8 @@
  */
 package constraints.global;
 
+import static utility.Kit.control;
+
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.IntStream;

@@ -1,12 +1,16 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package constraints.global;
+
+import static utility.Kit.control;
 
 import java.util.stream.IntStream;
 
@@ -14,26 +18,28 @@ import org.xcsp.common.Utilities;
 
 import constraints.ConstraintGlobal;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
-import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
 // 279360 solutions for:
-// java ace Crossword-ogd-p02.xml.lzma -s=all -ev -varh=Dom -g_dv=1 -st  // smart tables
-// java ace Crossword-ogd-p02.xml.lzma -s=all -ev -varh=Dom  // distinct vectors
-// java ace Crossword-ogd-p02.xml.lzma -s=all -ev -di=0 -sl=42 -varh=Dom -g_dv=1  // intention
-// When the same variable occurs several times, DistinctVectors does not guarantee full GAC
+// java ace Crossword-ogd-p02.xml -s=all -varh=Dom -g_dv=1   // intension
+// java ace Crossword-ogd-p02.xml -s=all -varh=Dom -g_dv=1 -st  // smart tables
+// java ace Crossword-ogd-p02.xml -s=all -varh=Dom  // distinct vectors
 
-public final class DistinctVectors extends ConstraintGlobal implements ObserverOnBacktracksSystematic, TagFilteringCompleteAtEachCall, TagNotSymmetric {
-
-	@Override
-	public void restoreBefore(int depth) {
-		if (uniqueSentinelLevel == depth)
-			uniqueSentinelLevel = -1;
-	}
+/**
+ * A constraint that ensures that two lists/vectors of variables (of same size) are not equal, i.e., do not form the same tuple of values. IMPORTANT: for the
+ * moment, when the same variable occurs several times, AC is not guaranteed. We find 279360 solutions for: <br />
+ * java ace Crossword-ogd-p02.xml -s=all -varh=Dom -g_dv=1 // intension <br />
+ * java ace Crossword-ogd-p02.xml -s=all -varh=Dom -g_dv=1 -st // smart tables <br />
+ * java ace Crossword-ogd-p02.xml -s=all -varh=Dom // distinct vectors
+ * 
+ * @author Christophe Lecoutre
+ * 
+ */
+public final class DistinctLists extends ConstraintGlobal implements ObserverOnBacktracksSystematic, TagCallCompleteFiltering, TagNotSymmetric {
 
 	@Override
 	public boolean isSatisfiedBy(int[] t) {
@@ -44,33 +50,67 @@ public final class DistinctVectors extends ConstraintGlobal implements ObserverO
 	}
 
 	@Override
-	public boolean isGuaranteedAC() {
-		return scp.length == 2 * half; // if not several occurrences of the same variable
+	public void restoreBefore(int depth) {
+		if (uniqueSentinelLevel == depth)
+			uniqueSentinelLevel = -1;
 	}
 
-	private Variable[] list1, list2;
+	@Override
+	public boolean isGuaranteedAC() {
+		return scp.length == 2 * half; // AC is guaranteed if not several occurrences of the same variable
+	}
 
-	private int[] pos1, pos2;
+	/**
+	 * A first list (actually array) of variables
+	 */
+	private final Variable[] list1;
 
-	private int half;
+	/**
+	 * A second list (actually array) of variables
+	 */
+	private final Variable[] list2;
+
+	/**
+	 * pos1[i] is the position of the variable list1[i] in the constraint scope
+	 */
+	private final int[] pos1;
+
+	/**
+	 * pos2[i] is the position of the variable list2[i] in the constraint scope
+	 */
+	private final int[] pos2;
+
+	/**
+	 * The size of the lists (half of the scope size)
+	 */
+	private final int half;
 
 	/**
 	 * Initial mode: two sentinels for tracking the presence of different values.
 	 */
-	private int sentinel1 = -1, sentinel2 = -1;
+	private int sentinel1, sentinel2;
 
 	/**
 	 * Possible mode: only one remaining sentinel, identified at a certain level
 	 */
 	private int uniqueSentinel, uniqueSentinelLevel = -1;
 
-	public DistinctVectors(Problem pb, Variable[] list1, Variable[] list2) {
+	/**
+	 * Build a constraint DistinctLists for the specified problem over the two specified lists of variables
+	 * 
+	 * @param pb
+	 *            the problem to which the constraint is attached
+	 * @param list1
+	 *            a first list of variables
+	 * @param list2
+	 *            a second list of variables
+	 */
+	public DistinctLists(Problem pb, Variable[] list1, Variable[] list2) {
 		super(pb, pb.vars(list1, list2));
 		this.half = list1.length;
 		this.list1 = list1;
 		this.list2 = list2;
-		control(half > 1 && half == list2.length && IntStream.range(0, half).allMatch(i -> list1[i] != list2[i]),
-				" " + half + " " + Kit.join(list1) + " " + Kit.join(list2));
+		control(1 < half && half == list2.length && IntStream.range(0, half).allMatch(i -> list1[i] != list2[i]));
 		this.pos1 = IntStream.range(0, half).map(i -> Utilities.indexOf(list1[i], scp)).toArray();
 		this.pos2 = IntStream.range(0, half).map(i -> Utilities.indexOf(list2[i], scp)).toArray();
 		this.sentinel1 = 0;
@@ -97,7 +137,7 @@ public final class DistinctVectors extends ConstraintGlobal implements ObserverO
 	}
 
 	@Override
-	public boolean runPropagator(Variable event) {
+	public boolean runPropagator(Variable dummy) {
 		if (uniqueSentinelLevel != -1)
 			return handleUniqueSentinel(list1[uniqueSentinel].dom, list2[uniqueSentinel].dom);
 

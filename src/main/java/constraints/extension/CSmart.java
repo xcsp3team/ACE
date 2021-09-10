@@ -14,6 +14,7 @@ import static org.xcsp.common.predicates.XNodeParent.ge;
 import static org.xcsp.common.predicates.XNodeParent.le;
 import static org.xcsp.common.predicates.XNodeParent.lt;
 import static org.xcsp.common.predicates.XNodeParent.ne;
+import static utility.Kit.control;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -49,7 +50,7 @@ public final class CSmart extends ExtensionSpecific {
 	}
 
 	public static Constraint atMost1(Problem pb, Variable[] list, Variable value) {
-		Kit.control(!Kit.isPresent(value, list), () -> "Not handled for the moment");
+		control(!Kit.isPresent(value, list), () -> "Not handled for the moment");
 		Stream<HybridTuple> hts = IntStream.range(0, list.length)
 				.mapToObj(i -> new HybridTuple(IntStream.range(0, list.length).filter(j -> j != i).mapToObj(j -> ne(value, list[j]))));
 		return new CSmart(pb, pb.distinctSorted(pb.vars(list, value)), hts);
@@ -57,27 +58,27 @@ public final class CSmart extends ExtensionSpecific {
 
 	public static Constraint element(Problem pb, Variable[] list, Variable index, Variable value) {
 		Variable[] scp = pb.distinct(pb.vars(list, index, value));
-		Kit.control(index.dom.firstValue() == 0 && scp.length == list.length + 2, () -> "Not handled for the moment");
+		control(index.dom.firstValue() == 0 && scp.length == list.length + 2, () -> "Not handled for the moment");
 		Stream<HybridTuple> hts = IntStream.range(0, list.length).mapToObj(i -> new HybridTuple(eq(index, i), eq(list[i], value)));
 		return new CSmart(pb, scp, hts);
 	}
 
 	public static Constraint minimum(Problem pb, Variable[] list, Variable min) {
-		Kit.control(!Kit.isPresent(min, list), () -> "Not handled for the moment");
+		control(!Kit.isPresent(min, list), () -> "Not handled for the moment");
 		Stream<HybridTuple> hts = IntStream.range(0, list.length)
 				.mapToObj(i -> new HybridTuple(IntStream.range(0, list.length).mapToObj(j -> j != i ? le(list[i], list[j]) : eq(list[i], min))));
 		return new CSmart(pb, pb.distinctSorted(pb.vars(list, min)), hts);
 	}
 
 	public static Constraint maximum(Problem pb, Variable[] list, Variable max) {
-		Kit.control(!Kit.isPresent(max, list), () -> "Not handled for the moment");
+		control(!Kit.isPresent(max, list), () -> "Not handled for the moment");
 		Stream<HybridTuple> hts = IntStream.range(0, list.length)
 				.mapToObj(i -> new HybridTuple(IntStream.range(0, list.length).mapToObj(j -> j != i ? ge(list[i], list[j]) : eq(list[i], max))));
 		return new CSmart(pb, pb.distinctSorted(pb.vars(list, max)), hts);
 	}
 
 	public static Constraint lexicographicL(Problem pb, Variable[] t1, Variable[] t2, boolean strict) {
-		Kit.control(t1.length == t2.length);
+		control(t1.length == t2.length);
 		Stream<HybridTuple> hts = IntStream.range(0, t1.length).mapToObj(i -> new HybridTuple(
 				IntStream.range(0, i + 1).mapToObj(j -> j < i ? eq(t1[j], t2[j]) : i == t1.length - 1 ? le(t1[i], t2[i]) : lt(t1[i], t2[i]))));
 		return new CSmart(pb, pb.distinctSorted(pb.vars(t1, t2)), hts);
@@ -98,7 +99,7 @@ public final class CSmart extends ExtensionSpecific {
 	}
 
 	public static Constraint noOverlap(Problem pb, Variable x1, Variable y1, Variable x2, Variable y2, Variable w1, Variable h1, Variable w2, Variable h2) {
-		Kit.control(w1.dom.size() == 2 && h1.dom.size() == 2 && w2.dom.size() == 2 && h2.dom.size() == 2);
+		control(w1.dom.size() == 2 && h1.dom.size() == 2 && w2.dom.size() == 2 && h2.dom.size() == 2);
 		HybridTuple ht1 = new HybridTuple(eq(w1, w1.dom.firstValue()), ge(x2, add(x1, w1.dom.firstValue())));
 		HybridTuple ht2 = new HybridTuple(eq(w1, w1.dom.lastValue()), ge(x2, add(x1, w1.dom.lastValue())));
 		HybridTuple ht3 = new HybridTuple(eq(w2, w2.dom.firstValue()), ge(x1, add(x2, w2.dom.firstValue())));
@@ -111,11 +112,11 @@ public final class CSmart extends ExtensionSpecific {
 	}
 
 	public static Constraint distinctVectors(Problem pb, Variable[] t1, Variable[] t2) {
-		Kit.control(t1.length == t2.length);
+		control(t1.length == t2.length);
 		boolean match = IntStream.range(0, t1.length).anyMatch(i -> t1[i] == t2[i]);
 		Variable[] tt1 = match ? IntStream.range(0, t1.length).filter(i -> t1[i] != t2[i]).mapToObj(i -> t1[i]).toArray(Variable[]::new) : t1;
 		Variable[] tt2 = match ? IntStream.range(0, t1.length).filter(i -> t1[i] != t2[i]).mapToObj(i -> t2[i]).toArray(Variable[]::new) : t2;
-		Kit.control(tt1.length == tt2.length);
+		control(tt1.length == tt2.length);
 		Stream<HybridTuple> hts = IntStream.range(0, tt1.length).mapToObj(i -> new HybridTuple(ne(tt1[i], tt2[i])));
 		return new CSmart(pb, pb.distinctSorted(pb.vars(tt1, tt2)), hts);
 	}

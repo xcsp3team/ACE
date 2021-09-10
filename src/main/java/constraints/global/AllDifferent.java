@@ -8,6 +8,8 @@
  */
 package constraints.global;
 
+import static utility.Kit.control;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -22,7 +24,7 @@ import constraints.ConstraintGlobal;
 import constraints.global.Matcher.MatcherAllDifferent;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagAC;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
@@ -52,7 +54,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 	 * AllDifferentComplete
 	 *********************************************************************************************/
 
-	public static class AllDifferentComplete extends AllDifferent implements TagAC, TagFilteringCompleteAtEachCall, ObserverOnBacktracksSystematic {
+	public static class AllDifferentComplete extends AllDifferent implements TagAC, TagCallCompleteFiltering, ObserverOnBacktracksSystematic {
 
 		@Override
 		public void restoreBefore(int depth) {
@@ -114,7 +116,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 
 		public AllDifferentPermutation(Problem pb, Variable[] scp) {
 			super(pb, scp);
-			Kit.control(Variable.isPermutationElligible(scp));
+			control(Variable.isPermutationElligible(scp));
 			residues1 = new Variable[scp[0].dom.initSize()];
 			residues2 = new Variable[scp[0].dom.initSize()];
 			Arrays.fill(residues1, scp[0]);
@@ -258,7 +260,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 	 * AllDifferentCounting (Experimental)
 	 *********************************************************************************************/
 
-	public static final class AllDifferentCounting extends AllDifferent implements TagNotAC, TagFilteringCompleteAtEachCall, ObserverOnBacktracksSystematic {
+	public static final class AllDifferentCounting extends AllDifferent implements TagNotAC, TagCallCompleteFiltering, ObserverOnBacktracksSystematic {
 
 		@Override
 		public void restoreBefore(int depth) {
@@ -280,7 +282,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 
 		public AllDifferentCounting(Problem pb, Variable[] scp) {
 			super(pb, scp);
-			Kit.control(Variable.haveSameDomainType(scp) && scp[0].dom.initSize() < 1000); // current use restrictions
+			control(Variable.haveSameDomainType(scp) && scp[0].dom.initSize() < 1000); // current use restrictions
 			sets = IntStream.range(0, scp[0].dom.initSize() + 1).mapToObj(i -> new SetSparse(scp.length)).toArray(SetSparse[]::new);
 			workingDomSet = new SetSparse(scp[0].dom.initSize());
 			workingVarSet = new SetSparse(scp.length);
@@ -291,7 +293,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 		public boolean runPropagator(Variable dummy) {
 			for (int i = 0; i < encounteredSizes.size(); i++)
 				sets[encounteredSizes.dense[i]].clear();
-			Kit.control(Stream.of(sets).allMatch(s -> s.isEmpty())); // TODO to be changed in assert
+			control(Stream.of(sets).allMatch(s -> s.isEmpty())); // TODO to be changed in assert
 			encounteredSizes.clear();
 
 			// we first filter future (i.e., non explicitly assigned) variables wrt new fixed (i.e., domain-singleton) variables
@@ -315,7 +317,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 				sets[scp[p].dom.size()].add(p);
 				encounteredSizes.add(scp[p].dom.size());
 			}
-			Kit.control(sets[0].isEmpty());
+			control(sets[0].isEmpty());
 
 			for (int i = sets[1].limit; i >= 0; i--) { // TODO try to manage all new fixed variables
 				int vapFixed = sets[1].dense[i];

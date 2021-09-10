@@ -14,6 +14,7 @@ import static constraints.intension.PrimitiveBinary.enforceGT;
 import static constraints.intension.PrimitiveBinary.enforceLE;
 import static constraints.intension.PrimitiveBinary.enforceLT;
 import static constraints.intension.PrimitiveBinary.enforceNE;
+import static utility.Kit.control;
 
 import java.math.BigInteger;
 
@@ -25,15 +26,15 @@ import org.xcsp.common.Utilities;
 import constraints.Constraint;
 import constraints.global.Sum.SumWeighted;
 import interfaces.Tags.TagAC;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class PrimitiveTernary extends Primitive implements TagAC, TagFilteringCompleteAtEachCall, TagNotSymmetric { // TODO GAC not true some
-																																// times
+public abstract class PrimitiveTernary extends Primitive implements TagAC, TagCallCompleteFiltering, TagNotSymmetric { // TODO GAC not true some
+																														// times
 
 	public static Constraint buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, Variable z) {
 		switch (aop) {

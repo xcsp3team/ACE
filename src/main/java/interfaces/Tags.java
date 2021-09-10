@@ -39,7 +39,7 @@ public interface Tags {
 	/**
 	 * Tag for indicating that a constraint can produce full filtering at each call (not only around the specified event variable)
 	 */
-	interface TagFilteringCompleteAtEachCall {
+	interface TagCallCompleteFiltering {
 	}
 
 	/**

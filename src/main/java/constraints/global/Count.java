@@ -1,4 +1,16 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package constraints.global;
+
+import static utility.Kit.control;
 
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -8,7 +20,7 @@ import org.xcsp.common.Utilities;
 
 import constraints.ConstraintGlobal;
 import interfaces.Tags.TagAC;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import sets.SetSparse;
@@ -65,7 +77,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 			case EQ:
 				return k == 1 ? new Exactly1(pb, scp, value) : new ExactlyK(pb, scp, value, k);
 			default:
-				throw new AssertionError("NE is not implemented"); // TODO useful to have a propagator?
+				throw new AssertionError("NE is not implemented"); // TODO is it useful to implement a propagator?
 			}
 		}
 
@@ -78,7 +90,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 			super(pb, list, list, value);
 			this.k = k;
 			defineKey(value, k);
-			control(0 < k && k < list.length, "Bad value of k=" + k);
+			control(0 < k && k < list.length, "Bad value for k: " + k);
 		}
 
 		// ************************************************************************
@@ -321,7 +333,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 		 * Exactly k variables of the specified vector of variables, where k is a variable, must be assigned to the specified value
 		 * 
 		 */
-		public final static class ExactlyVarK extends CountVar implements TagFilteringCompleteAtEachCall {
+		public final static class ExactlyVarK extends CountVar implements TagCallCompleteFiltering {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {

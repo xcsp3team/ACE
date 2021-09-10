@@ -1,5 +1,7 @@
 package constraints.intension;
 
+import static utility.Kit.control;
+
 import java.util.Arrays;
 import java.util.Stack;
 
@@ -116,7 +118,7 @@ public final class KeyCanonizer {
 				return true; // trival term 1*Xi
 			}
 			if (label.equals(TypeExpr.NEG.lcname)) {
-				Kit.control(sons.length == 1 && sons[0].label.startsWith("%"));
+				control(sons.length == 1 && sons[0].label.startsWith("%"));
 				t[Integer.parseInt(sons[0].label.substring(1))] = -1;
 				return true;
 			}

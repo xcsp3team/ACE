@@ -1,12 +1,16 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package constraints.global;
+
+import static utility.Kit.control;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -23,7 +27,6 @@ import interfaces.Tags.TagNotAC;
 import optimization.Optimizable;
 import problem.Problem;
 import sets.SetDense;
-import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
@@ -84,7 +87,7 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 	public static abstract class NValuesCst extends NValues implements Optimizable {
 
 		public static Constraint buildFrom(Problem pb, Variable[] scp, TypeConditionOperatorRel op, long limit) {
-			Kit.control(Variable.areAllDistinct(scp));
+			control(Variable.areAllDistinct(scp));
 			switch (op) {
 			case LT:
 				return limit == 2 ? new AllEqual(pb, scp) : new NValuesCstLE(pb, scp, limit - 1);
@@ -216,7 +219,7 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 	public static abstract class NValuesVar extends NValues {
 
 		public static Constraint buildFrom(Problem pb, Variable[] scp, TypeConditionOperatorRel op, Variable k) {
-			Kit.control(Variable.areAllDistinct(scp));
+			control(Variable.areAllDistinct(scp));
 			switch (op) {
 			case EQ:
 				return new NValuesVarEQ(pb, scp, k);

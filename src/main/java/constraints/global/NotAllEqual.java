@@ -1,25 +1,31 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package constraints.global;
 
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import static utility.Kit.control;
+
 import constraints.ConstraintGlobal;
 import interfaces.Tags.TagAC;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import variables.Domain;
 import variables.Variable;
 
 /**
- * This class establishes that the values assigned to the involved variables of the constraint must not be all equal.
+ * This constraint ensures that all values assigned to the variables of its scope are not all equal. It is a special case of a counting constraint.
+ * 
+ * @author Christophe Lecoutre
  */
-public class NotAllEqual extends ConstraintGlobal implements TagSymmetric, TagAC, TagFilteringCompleteAtEachCall {
+public class NotAllEqual extends ConstraintGlobal implements TagSymmetric, TagAC, TagCallCompleteFiltering {
 
 	@Override
 	public final boolean isSatisfiedBy(int[] t) {
@@ -29,9 +35,17 @@ public class NotAllEqual extends ConstraintGlobal implements TagSymmetric, TagAC
 		return false;
 	}
 
-	public NotAllEqual(Problem pb, Variable[] scp) {
-		super(pb, scp);
-		control(scp.length > 2);
+	/**
+	 * Build a constraint NotAllEqual for the specified problem over the specified array/list of variables
+	 * 
+	 * @param pb
+	 *            the problem to which the constraint is attached
+	 * @param list
+	 *            the involved variables
+	 */
+	public NotAllEqual(Problem pb, Variable[] list) {
+		super(pb, list);
+		control(list.length > 2);
 		defineKey();
 	}
 

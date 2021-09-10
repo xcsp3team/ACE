@@ -1,5 +1,7 @@
 package constraints.global;
 
+import static utility.Kit.control;
+
 import java.util.stream.IntStream;
 
 import org.xcsp.common.Utilities;
@@ -7,14 +9,14 @@ import org.xcsp.common.Utilities;
 import constraints.ConstraintGlobal;
 import constraints.intension.PrimitiveBinary;
 import interfaces.Tags.TagAC;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Element extends ConstraintGlobal implements TagNotSymmetric, TagAC, TagFilteringCompleteAtEachCall {
+public abstract class Element extends ConstraintGlobal implements TagNotSymmetric, TagAC, TagCallCompleteFiltering {
 
 	public Element(Problem pb, Variable[] scp) {
 		super(pb, scp);

@@ -1,5 +1,7 @@
 package constraints.global;
 
+import static utility.Kit.control;
+
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -14,14 +16,14 @@ import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstEQ;
 import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstGE;
 import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstLE;
 import interfaces.Tags.TagAC;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagSymmetric;
 import optimization.Optimizable;
 import problem.Problem;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Extremum extends ConstraintGlobal implements TagFilteringCompleteAtEachCall, TagAC {
+public abstract class Extremum extends ConstraintGlobal implements TagCallCompleteFiltering, TagAC {
 
 	protected final Variable[] list;
 

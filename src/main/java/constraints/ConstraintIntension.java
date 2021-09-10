@@ -1,4 +1,16 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package constraints;
+
+import static utility.Kit.control;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +26,7 @@ import org.xcsp.common.predicates.XNodeParent;
 
 import constraints.intension.KeyCanonizer;
 import interfaces.ConstraintRegister;
-import interfaces.Tags.TagFilteringCompleteAtEachCall;
+import interfaces.Tags.TagCallCompleteFiltering;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
@@ -27,7 +39,7 @@ import variables.Variable.VariableSymbolic;
  * 
  * @author Christophe Lecoutre
  */
-public final class ConstraintIntension extends Constraint implements TagFilteringCompleteAtEachCall {
+public final class ConstraintIntension extends Constraint implements TagCallCompleteFiltering {
 
 	@Override
 	public final boolean isSatisfiedBy(int[] vals) {
