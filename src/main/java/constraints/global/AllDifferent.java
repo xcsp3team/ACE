@@ -47,7 +47,6 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 
 	public AllDifferent(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		defineKey();
 	}
 
 	/**********************************************************************************************
@@ -237,7 +236,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 		public AllDifferentExceptWeak(Problem pb, Variable[] scp, int[] exceptValues) {
 			super(pb, scp);
 			this.exceptValues = exceptValues;
-			defineKey(Kit.join(exceptValues));
+			defineKey(exceptValues);
 		}
 
 		@Override

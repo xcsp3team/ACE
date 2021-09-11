@@ -95,7 +95,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			assert values.length > 0 && Kit.isStrictlyIncreasing(values);
 			this.values = values;
 			this.positive = positive;
-			this.key = signature() + " " + values + " " + positive; // TODO can we use the address of values?
+			defineKey(values, positive);
 		}
 
 		@Override
@@ -353,7 +353,8 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 */
 	public final void storeTuples(int[][] tuples, boolean positive) {
 		String tableKey = signature() + " " + tuples + " " + positive; // TODO be careful, we assume that the address of tuples can be used. Is that correct?
-		this.key = problem.features.collecting.tableKeys.computeIfAbsent(tableKey, k -> signature() + "r" + problem.features.collecting.tableKeys.size());
+		String key = setKey(
+				problem.features.collecting.tableKeys.computeIfAbsent(tableKey, k -> signature() + "r" + problem.features.collecting.tableKeys.size()));
 		control((positive && this instanceof TagPositive) || (!positive && this instanceof TagNegative)
 				|| (!(this instanceof TagPositive) && !(this instanceof TagNegative)), positive + " " + this.getClass().getName());
 

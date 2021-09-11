@@ -1,11 +1,13 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package constraints.global;
 
 import static utility.Kit.control;
@@ -46,11 +48,11 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC { 
 	public BinPacking(Problem pb, Variable[] scp, int[] sizes, int[] limits) {
 		super(pb, scp);
 		control(scp.length >= 2 && Variable.haveSameDomainType(scp)); // TODO to be relaxed when possible
-		defineKey(Kit.join(sizes) + " " + Kit.join(limits));
 		this.sizes = sizes;
 		this.limits = limits;
 		int nBins = scp[0].dom.initSize();
 		this.sums = new long[nBins];
+		defineKey(sizes, limits);
 	}
 
 	public BinPacking(Problem pb, Variable[] scp, int[] sizes, int limit) {

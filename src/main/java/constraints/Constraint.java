@@ -5,6 +5,7 @@ import static utility.Kit.control;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -278,8 +279,10 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 
 	// public int entailedLevel = -1;
 
-	/** The key of the constraint. Used for symmetry detection. */
-	public String key;
+	/**
+	 * The key of the constraint. This field is only used for symmetry detection, when activated.
+	 */
+	private String key;
 
 	/**
 	 * The object that can be used to iterate over the (valid) tuples of the Cartesian product of the domains of the constraint scope.
@@ -330,6 +333,33 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 
 	public final String getId() {
 		return id != null ? id : defaultId();
+	}
+
+	public String getKey() {
+		if (key == null)
+			defineKey(); // without any parameter
+		return key;
+	}
+
+	public String setKey(String key) {
+		control(this.key == null, "should not be called twice");
+		this.key = key;
+		// System.out.println("jjjjj " + key);
+		return key;
+	}
+
+	/**
+	 * Defines the key of the constraint from the signature, the type of the domains, and the specified data. Keys are currently used for deciding if two
+	 * constraints can share some structures (this is the case when they have the same keys), and also for symmetry-breaking.
+	 * 
+	 * @param data
+	 *            a sequence of objects that must be considered when building the key of the constraint
+	 */
+	protected final String defineKey(Object... data) {
+		StringBuilder sb = signature().append(' ').append(getClass().getSimpleName());
+		for (Object obj : data)
+			sb.append('|').append(obj instanceof Collection ? Kit.join((Collection<?>) obj) : obj.getClass().isArray() ? Kit.join(obj) : obj.toString());
+		return setKey(sb.toString());
 	}
 
 	/**

@@ -1,11 +1,13 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package constraints.global;
 
 import static utility.Kit.control;
@@ -28,17 +30,6 @@ import variables.Variable;
 public abstract class Cumulative extends ConstraintGlobal implements TagCallCompleteFiltering, TagNotAC, ObserverOnBacktracksSystematic {
 
 	@Override
-	public void restoreBefore(int depth) {
-		timetableReasoner.relevantTasks.restoreLimitAtLevel(depth);
-	}
-
-	@Override
-	public void afterProblemConstruction() {
-		super.afterProblemConstruction();
-		timetableReasoner.relevantTasks = new SetSparseReversible(nTasks, problem.variables.length + 1);
-	}
-
-	@Override
 	public boolean isSatisfiedBy(int[] tuple) {
 		int wgap = !movableWidths ? -1 : nTasks;
 		int hgap = !movableHeights ? -1 : this instanceof CumulativeVarH ? nTasks : nTasks * 2;
@@ -58,6 +49,17 @@ public abstract class Cumulative extends ConstraintGlobal implements TagCallComp
 		return true;
 	}
 
+	@Override
+	public void afterProblemConstruction() {
+		super.afterProblemConstruction();
+		timetableReasoner.relevantTasks = new SetSparseReversible(nTasks, problem.variables.length + 1);
+	}
+
+	@Override
+	public void restoreBefore(int depth) {
+		timetableReasoner.relevantTasks.restoreLimitAtLevel(depth);
+	}
+
 	protected final int nTasks;
 
 	protected final Variable[] starts; // starting times of tasks
@@ -70,8 +72,15 @@ public abstract class Cumulative extends ConstraintGlobal implements TagCallComp
 
 	protected long margin;
 
-	protected boolean movableWidths; // if widths are given by variables
-	protected boolean movableHeights; // if heights are given by variables
+	/**
+	 * indicates if widths are given by variables (and not constants)
+	 */
+	protected boolean movableWidths;
+
+	/**
+	 * indicates if heights are given by variables (and not constants)
+	 */
+	protected boolean movableHeights;
 
 	/**
 	 * The filtering algorithm is mainly based upon "Simple and Scalable Time-Table Filtering for the Cumulative Constraint" <br />

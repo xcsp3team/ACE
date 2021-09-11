@@ -224,7 +224,7 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 			case EQ:
 				return new NValuesVarEQ(pb, scp, k);
 			default:
-				return null; // TODO other cases not implemented
+				throw new AssertionError("not implemented");
 			}
 		}
 
@@ -236,7 +236,7 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 			this.k = k;
 		}
 
-		public static class NValuesVarEQ extends NValuesVar {
+		public static final class NValuesVarEQ extends NValuesVar {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {

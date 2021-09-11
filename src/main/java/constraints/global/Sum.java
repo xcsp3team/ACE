@@ -538,7 +538,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			this.maxComputableObjectiveValue = maxComputableObjectiveValue();
 			control(minComputableObjectiveValue <= maxComputableObjectiveValue); // Important: we check this way that no overflow is possible
 			limit(limit);
-			defineKey(Kit.join(coeffs), limit);
+			defineKey(coeffs, limit);
 			control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])), "" + Kit.join(coeffs));
 
 		}
@@ -1090,7 +1090,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			this.maxComputableObjectiveValue = maxComputableObjectiveValue();
 			control(minComputableObjectiveValue <= maxComputableObjectiveValue); // Important: we check this way that no overflow is possible
 			limit(limit);
-			defineKey(Kit.join(coeffs), limit);
+			defineKey(coeffs, limit);
 			control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])));
 
 		}

@@ -145,7 +145,7 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 				"Currently, it is not possible to mix integer and symbolic variables");
 		this.tree = canonize ? (XNodeParent<IVar>) tree.canonization() : tree;
 		this.keyCanonizer = scp.length > 30 || tree.size() > 200 ? null : new KeyCanonizer(tree); // TODO hard coding (not built if too costly)
-		this.key = signature().append(' ').append(keyCanonizer == null ? tree.toPostfixExpression(tree.vars()) : keyCanonizer.key()).toString();
+		String key = defineKey(keyCanonizer == null ? tree.toPostfixExpression(tree.vars()) : keyCanonizer.key());
 		Map<String, IntensionStructure> map = pb.head.structureSharing.mapForIntension;
 		this.treeEvaluator = map.get(key);
 		if (treeEvaluator == null) {

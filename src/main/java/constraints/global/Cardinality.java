@@ -1,10 +1,16 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package constraints.global;
 
 import static utility.Kit.control;
-
-import java.util.stream.IntStream;
-
-import org.xcsp.common.Utilities;
 
 import constraints.ConstraintGlobal;
 import constraints.global.Matcher.MatcherCardinality;
@@ -41,7 +47,8 @@ public abstract class Cardinality extends ConstraintGlobal implements ObserverOn
 		return true;
 	}
 
-	public static class CardinalityConstant extends Cardinality implements TagCallCompleteFiltering, TagAC {
+	public static final class CardinalityConstant extends Cardinality implements TagAC, TagCallCompleteFiltering {
+
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
 			for (int i = 0; i < values.length; i++) {
@@ -55,9 +62,20 @@ public abstract class Cardinality extends ConstraintGlobal implements ObserverOn
 			return true;
 		}
 
-		private int[] values;
-		private int[] minOccs;
-		private int[] maxOccs;
+		/**
+		 * The values that must be counted
+		 */
+		private final int[] values;
+
+		/**
+		 * minOccs[i] is the required minimal number of occurrences of the value values[i]
+		 */
+		private final int[] minOccs;
+
+		/**
+		 * maxOccs[i] is the required maximal number of occurrences of the value values[i]
+		 */
+		private final int[] maxOccs;
 
 		public CardinalityConstant(Problem pb, Variable[] scp, int[] values, int[] minOccs, int[] maxOccs) {
 			super(pb, scp);
@@ -65,25 +83,17 @@ public abstract class Cardinality extends ConstraintGlobal implements ObserverOn
 			this.values = values;
 			this.minOccs = minOccs;
 			this.maxOccs = maxOccs;
-			defineKey();
-			matcher = new MatcherCardinality(this, scp, values, minOccs, maxOccs);
+			this.matcher = new MatcherCardinality(this, scp, values, minOccs, maxOccs);
+			defineKey(values, minOccs, maxOccs);
 		}
 
-		public CardinalityConstant(Problem problem, Variable[] scope, int[] values, int[] nOccs) {
-			this(problem, scope, values, nOccs, nOccs);
+		public CardinalityConstant(Problem pb, Variable[] scp, int[] values, int[] nOccs) {
+			this(pb, scp, values, nOccs, nOccs);
 		}
 
-		// constructor for allDiff except 0
-		public CardinalityConstant(Problem problem, Variable[] scope, int zeroValue) {
-			super(problem, scope);
-			this.values = Kit.sort(Kit.intArray(Variable.setOfvaluesIn(scope)));
-			this.minOccs = Kit.repeat(0, values.length);
-			int position = Utilities.indexOf(zeroValue, values);
-			control(position >= 0);
-			this.maxOccs = IntStream.range(0, values.length).map(i -> i == position ? Integer.MAX_VALUE : 1).toArray();
-			this.matcher = new MatcherCardinality(this, scope, values, minOccs, maxOccs);
-			defineKey();
+		public CardinalityConstant(Problem pb, Variable[] scp, int[] values, int minOccs, int maxOccs) {
+			this(pb, scp, values, Kit.repeat(minOccs, values.length), Kit.repeat(maxOccs, values.length));
 		}
-
 	}
+
 }

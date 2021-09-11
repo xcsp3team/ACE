@@ -214,7 +214,7 @@ public class Reinforcer {
 			int nNodes = nVariables; // because nodes for variables already built (one node per variable)
 			for (Constraint c : ctrs) {
 				Variable[] scope = c.scp;
-				String key = c.key; // TODO : pb with key null for pb HSP
+				String key = c.getKey(); // TODO : pb with key null for pb HSP
 				int[] t = mapOfRelationColors.get(key);
 				if (t == null) {
 					int[] symmetryMatching = c.symmetryMatching();

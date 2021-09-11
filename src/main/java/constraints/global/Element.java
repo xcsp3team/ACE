@@ -328,7 +328,6 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 
 			public ElementMatrixVar(Problem pb, Variable[][] matrix, Variable rindex, Variable cindex, Variable value) {
 				super(pb, matrix, rindex, cindex, value);
-				defineKey();
 				this.vdom = value.dom;
 				this.vpos = IntStream.range(0, scp.length).filter(i -> scp[i] == value).findFirst().getAsInt();
 				int n = matrix.length, m = matrix[0].length, d = value.dom.initSize();

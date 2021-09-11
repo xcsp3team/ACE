@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package constraints.global;
 
 import static utility.Kit.control;
@@ -49,7 +59,7 @@ public final class NoOverlap extends ConstraintGlobal implements TagNotAC {
 		return a > dom.lastValue() && dom.firstValue() > b;
 	}
 
-	// some optimizations are possible ; to be done
+	// TODO: some optimizations of the code are apparently possible a
 	public boolean filter(Variable[] x1, int[] t1, Variable[] x2, int[] t2) {
 		for (int i = 0; i < half; i++) {
 			Domain dom1 = x1[i].dom;

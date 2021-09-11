@@ -2,8 +2,6 @@ package constraints.intension;
 
 import static utility.Kit.control;
 
-import java.util.stream.Stream;
-
 import constraints.Constraint;
 import interfaces.SpecificPropagator;
 import interfaces.Tags.TagAC;
@@ -13,15 +11,8 @@ import variables.Variable;
 
 public abstract class Primitive extends Constraint implements SpecificPropagator {
 
-	protected final void defineKey(Object... datas) {
-		StringBuilder sb = signature().append(' ').append(getClass().getSimpleName());
-		Stream.of(datas).forEach(data -> sb.append(' ').append(data.toString()));
-		this.key = sb.toString();
-	}
-
 	public Primitive(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		defineKey(); // most of the time, no specific data (otherwise, call it again in subclasses with the right args)
 	}
 
 	public static final class DisjonctiveVar extends Primitive implements TagAC {

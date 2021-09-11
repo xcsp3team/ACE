@@ -726,9 +726,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	/**** Posting Constraints */
 	/*********************************************************************************************/
 
-	public final boolean isBasicType(int type) {
-		return type == 0;
-	}
+	// public final boolean isBasicType(int type) {
+	// return type == 0;
+	// }
 
 	private CtrEntity unimplemented(String msg) {
 		return (CtrEntity) Kit.exit("\nunimplemented case for " + msg);
@@ -1164,7 +1164,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private CtrEntity allDifferent(Variable[] scp) {
 		if (scp.length <= 1)
 			return ctrEntities.new CtrAloneDummy("Removed alldiff constraint with scope length = " + scp.length);
-		if (isBasicType(head.control.global.typeAllDifferent))
+		if (head.control.global.typeAllDifferent == 0)
 			return post(Variable.isPermutationElligible(scp) ? new AllDifferentPermutation(this, scp) : new AllDifferentComplete(this, scp));
 		if (head.control.global.typeAllDifferent == 1)
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
@@ -1194,20 +1194,29 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final CtrEntity allDifferent(Var[] list, int[] exceptValues) {
 		control(exceptValues.length >= 1 && Kit.isStrictlyIncreasing(exceptValues));
 		Variable[] scp = translate(list);
-		if (head.control.global.typeAllDifferent == 0)
-			return post(new AllDifferentExceptWeak(this, scp, exceptValues));
-		return forall(range(scp.length).range(scp.length), (i, j) -> {
-			if (i < j) {
-				List<int[]> conflicts = new ArrayList<>();
-				Domain domi = scp[i].dom, domj = scp[j].dom;
-				for (int a = domi.first(); a != -1; a = domi.next(a)) {
-					int va = domi.toVal(a);
-					if (!Kit.isPresent(va, exceptValues) && domj.containsValue(va))
-						conflicts.add(new int[] { va, va });
+		boolean toTest = true; // TODO is it efficient? the three approaches should be experimentally tested
+		if (toTest && head.control.global.typeAllDifferent == 0) {
+			Set<Integer> values = Variable.setOfvaluesIn(scp);
+			for (int v : exceptValues)
+				values.remove(v);
+			return post(new CardinalityConstant(this, scp, values.stream().mapToInt(i -> i).sorted().toArray(), 0, 1));
+		}
+		if (head.control.global.typeAllDifferent == 1) // decomposition
+			return forall(range(scp.length).range(scp.length), (i, j) -> {
+				if (i < j) {
+					List<int[]> conflicts = new ArrayList<>();
+					Domain domi = scp[i].dom, domj = scp[j].dom;
+					for (int a = domi.first(); a != -1; a = domi.next(a)) {
+						int va = domi.toVal(a);
+						if (!Kit.isPresent(va, exceptValues) && domj.containsValue(va))
+							conflicts.add(new int[] { va, va });
+					}
+					extension(vars(scp[i], scp[j]), Kit.intArray2D(conflicts), false, false);
 				}
-				extension(vars(scp[i], scp[j]), Kit.intArray2D(conflicts), false, false);
-			}
-		});
+			});
+		// if (head.control.global.typeAllDifferent == 2)
+		return post(new AllDifferentExceptWeak(this, scp, exceptValues));
+
 	}
 
 	private CtrEntity distinctVectors(Variable[] t1, Variable[] t2) {
@@ -1216,7 +1225,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Variable[] list1 = normalized ? t1 : IntStream.range(0, t1.length).filter(i -> t1[i] != t2[i]).mapToObj(i -> t1[i]).toArray(Variable[]::new);
 		Variable[] list2 = normalized ? t2 : IntStream.range(0, t2.length).filter(i -> t1[i] != t2[i]).mapToObj(i -> t2[i]).toArray(Variable[]::new);
 
-		if (isBasicType(head.control.global.typeDistinctVectors))
+		if (head.control.global.typeDistinctVectors == 0)
 			return post(new DistinctLists(this, list1, list2));
 		if (head.control.global.smartTable)
 			return post(CSmart.distinctVectors(this, list1, list2));

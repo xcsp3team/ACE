@@ -46,7 +46,6 @@ public class NotAllEqual extends ConstraintGlobal implements TagSymmetric, TagAC
 	public NotAllEqual(Problem pb, Variable[] list) {
 		super(pb, list);
 		control(list.length > 2);
-		defineKey();
 	}
 
 	@Override

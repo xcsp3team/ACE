@@ -24,11 +24,6 @@ import problem.Problem;
 import variables.Domain;
 import variables.Variable;
 
-// 279360 solutions for:
-// java ace Crossword-ogd-p02.xml -s=all -varh=Dom -g_dv=1   // intension
-// java ace Crossword-ogd-p02.xml -s=all -varh=Dom -g_dv=1 -st  // smart tables
-// java ace Crossword-ogd-p02.xml -s=all -varh=Dom  // distinct vectors
-
 /**
  * A constraint that ensures that two lists/vectors of variables (of same size) are not equal, i.e., do not form the same tuple of values. IMPORTANT: for the
  * moment, when the same variable occurs several times, AC is not guaranteed. We find 279360 solutions for: <br />

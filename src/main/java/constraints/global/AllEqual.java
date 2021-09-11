@@ -49,7 +49,6 @@ public final class AllEqual extends ConstraintGlobal implements ObserverOnBacktr
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
 		this.remainingValues = new SetSparseReversible(map.size(), problem.variables.length + 1);
-		this.lastRemovedValues = new SetDense(map.size());
 	}
 
 	@Override
@@ -84,8 +83,8 @@ public final class AllEqual extends ConstraintGlobal implements ObserverOnBacktr
 		super(pb, list);
 		int[] values = Variable.setOfvaluesIn(list).stream().mapToInt(v -> v).sorted().toArray();
 		this.map = IntStream.range(0, values.length).boxed().collect(toMap(i -> values[i], i -> i, (v1, v2) -> v1 + v2, TreeMap::new)); // useless merger
+		this.lastRemovedValues = new SetDense(map.size());
 		control(list.length > 1 && values.length > 1);
-		defineKey();
 	}
 
 	@Override
