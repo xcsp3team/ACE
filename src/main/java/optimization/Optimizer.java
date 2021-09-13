@@ -1,18 +1,84 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package optimization;
 
 import static org.xcsp.common.Types.TypeFramework.COP;
 import static org.xcsp.common.Types.TypeOptimization.MAXIMIZE;
 import static org.xcsp.common.Types.TypeOptimization.MINIMIZE;
 import static utility.Enums.Stopping.FULL_EXPLORATION;
+import static utility.Kit.control;
 
 import org.xcsp.common.Types.TypeOptimization;
 
 import dashboard.Input;
+import interfaces.Observers.ObserverOnRuns;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 
-public abstract class Optimizer { // Pilot for (mono-objective) optimization
+public abstract class Optimizer implements ObserverOnRuns { // Pilot for (mono-objective) optimization
+
+	/**********************************************************************************************
+	 * Implementing interface
+	 *********************************************************************************************/
+
+	@Override
+	public final void afterRun() {
+		control(problem.head.control.general.framework == COP);
+		if (problem.solver.solutions.lastRun == problem.solver.restarter.numRun) { // a better solution has been found during the last run
+			if (minimization) {
+				maxBound = problem.solver.solutions.bestBound - 1;
+				cub.limit(maxBound);
+			} else {
+				minBound = problem.solver.solutions.bestBound + 1;
+				clb.limit(minBound);
+			}
+			possiblyUpdateLocalBounds();
+			control(minBound - 1 <= maxBound || problem.head.control.optimization.ub != Long.MAX_VALUE, () -> " minB=" + minBound + " maxB=" + maxBound);
+			possiblyUpdateSharedBounds();
+			if (minBound > maxBound)
+				problem.solver.stopping = FULL_EXPLORATION;
+			else
+				shiftLimitWhenSuccess();
+		} else if (problem.solver.stopping == FULL_EXPLORATION) { // last run leads to no new solution
+			boolean clb_changed = clb.limit() != minBound, cub_changed = cub.limit() != maxBound;
+			control(!clb_changed || !cub_changed);
+			if (!clb_changed && !cub_changed) { // classical mode
+				if (minimization) {
+					minBound = cub.limit() + 1;
+					clb.limit(minBound);
+				} else {
+					maxBound = clb.limit() - 1;
+					cub.limit(maxBound);
+				}
+			} else if (cub_changed) { // aggressive mode (the upper bound was reduced)
+				minBound = cub.limit() + 1;
+				clb.limit(minBound);
+				cub.limit(maxBound);
+			} else { // aggressive mode (the lower bound was reduced)
+				maxBound = clb.limit() - 1;
+				cub.limit(maxBound);
+				clb.limit(minBound);
+			}
+			if (minBound <= maxBound) { // we continue after resetting
+				problem.solver.stopping = null;
+				control(problem.features.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
+				problem.solver.restarter.forceRootPropagation = true;
+				problem.solver.restoreProblem();
+				if (problem.solver.nogoodRecorder != null)
+					problem.solver.nogoodRecorder.reset();
+				shiftLimitWhenFailure();
+			}
+		}
+	}
 
 	/**********************************************************************************************
 	 * Sharing bounds between workers
@@ -26,13 +92,13 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 			return false;
 		boolean modified = false;
 		synchronized (sharedMinBound) {
-			if (minBound > sharedMinBound.longValue()) {
+			if (minBound > sharedMinBound) {
 				sharedMinBound = minBound;
 				modified = true;
 			}
 		}
 		synchronized (sharedMaxBound) {
-			if (maxBound < sharedMaxBound.longValue()) {
+			if (maxBound < sharedMaxBound) {
 				sharedMaxBound = maxBound;
 				modified = true;
 			}
@@ -45,13 +111,13 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 			return false;
 		boolean modified = false;
 		synchronized (sharedMinBound) {
-			if (sharedMinBound.longValue() > minBound) {
+			if (sharedMinBound > minBound) {
 				minBound = sharedMinBound.longValue();
 				modified = true;
 			}
 		}
 		synchronized (sharedMaxBound) {
-			if (sharedMaxBound.longValue() < maxBound) {
+			if (sharedMaxBound < maxBound) {
 				maxBound = sharedMaxBound.longValue();
 				modified = true;
 			}
@@ -126,55 +192,6 @@ public abstract class Optimizer { // Pilot for (mono-objective) optimization
 	protected abstract void shiftLimitWhenSuccess();
 
 	protected abstract void shiftLimitWhenFailure();
-
-	public void afterRun() {
-		Kit.control(problem.head.control.general.framework == COP);
-		if (problem.solver.solutions.lastRun == problem.solver.restarter.numRun) { // a better solution has been found during the last run
-			if (minimization) {
-				maxBound = problem.solver.solutions.bestBound - 1;
-				cub.limit(maxBound);
-			} else {
-				minBound = problem.solver.solutions.bestBound + 1;
-				clb.limit(minBound);
-			}
-			possiblyUpdateLocalBounds();
-			Kit.control(minBound - 1 <= maxBound || problem.head.control.optimization.ub != Long.MAX_VALUE, () -> " minB=" + minBound + " maxB=" + maxBound);
-			possiblyUpdateSharedBounds();
-			if (minBound > maxBound)
-				problem.solver.stopping = FULL_EXPLORATION;
-			else
-				shiftLimitWhenSuccess();
-		} else if (problem.solver.stopping == FULL_EXPLORATION) { // last run leads to no new solution
-			boolean clb_changed = clb.limit() != minBound, cub_changed = cub.limit() != maxBound;
-			Kit.control(!clb_changed || !cub_changed);
-			if (!clb_changed && !cub_changed) { // classical mode
-				if (minimization) {
-					minBound = cub.limit() + 1;
-					clb.limit(minBound);
-				} else {
-					maxBound = clb.limit() - 1;
-					cub.limit(maxBound);
-				}
-			} else if (cub_changed) { // aggressive mode (the upper bound was reduced)
-				minBound = cub.limit() + 1;
-				clb.limit(minBound);
-				cub.limit(maxBound);
-			} else { // aggressive mode (the lower bound was reduced)
-				maxBound = clb.limit() - 1;
-				cub.limit(maxBound);
-				clb.limit(minBound);
-			}
-			if (minBound <= maxBound) { // we continue after resetting
-				problem.solver.stopping = null;
-				Kit.control(problem.features.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
-				problem.solver.restarter.forceRootPropagation = true;
-				problem.solver.restoreProblem();
-				if (problem.solver.nogoodRecorder != null)
-					problem.solver.nogoodRecorder.reset();
-				shiftLimitWhenFailure();
-			}
-		}
-	}
 
 	public final String stringBounds() {
 		return (minBound == Long.MIN_VALUE ? "-infty" : minBound) + ".." + (maxBound == Long.MAX_VALUE ? "+infty" : maxBound);

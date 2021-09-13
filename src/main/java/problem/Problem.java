@@ -2215,7 +2215,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return new OptimizerDichotomic(this, opt, clb, cub);
 
 		// the code below must be changed, as for heuristics, if we want to use it, see in Head, HandlerClasses
-		// return Reflector.buildObject(suffix, OptimizationPilot.class, this, opt, c);
+		// return Reflector.buildObject(suffix, Optimizer.class, this, opt, c);
 	}
 
 	private boolean switchToSatisfaction(TypeOptimization opt, TypeObjective obj, int[] coeffs, Variable... list) {

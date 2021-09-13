@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package constraints.global;
 
 import static org.xcsp.common.Types.TypeOperatorRel.GE;
@@ -119,14 +129,14 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		public static long minPossibleSum(Variable[] scp) {
 			long sum = 0;
 			for (Variable x : scp)
-				sum += x.dom.toVal(0);
+				sum += x.dom.smallestInitialValue();
 			return sum;
 		}
 
 		public static long maxPossibleSum(Variable[] scp) {
 			long sum = 0;
 			for (Variable x : scp)
-				sum += x.dom.toVal(x.dom.initSize() - 1);
+				sum += x.dom.greatestInitialValue();
 			return sum;
 		}
 
@@ -486,17 +496,19 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 		public static long minPossibleSum(Variable[] scp, int[] coeffs) {
 			BigInteger sum = BigInteger.valueOf(0);
-			for (int i = 0; i < scp.length; i++)
-				sum = sum.add(BigInteger.valueOf(coeffs[i])
-						.multiply(BigInteger.valueOf(coeffs[i] >= 0 ? scp[i].dom.toVal(0) : scp[i].dom.toVal(scp[i].dom.initSize() - 1))));
+			for (int i = 0; i < scp.length; i++) {
+				BigInteger value = BigInteger.valueOf(coeffs[i] >= 0 ? scp[i].dom.smallestInitialValue() : scp[i].dom.greatestInitialValue());
+				sum = sum.add(BigInteger.valueOf(coeffs[i]).multiply(value));
+			}
 			return sum.longValueExact();
 		}
 
 		public static long maxPossibleSum(Variable[] scp, int[] coeffs) {
 			BigInteger sum = BigInteger.valueOf(0);
-			for (int i = 0; i < scp.length; i++)
-				sum = sum.add(BigInteger.valueOf(coeffs[i])
-						.multiply(BigInteger.valueOf(coeffs[i] >= 0 ? scp[i].dom.toVal(scp[i].dom.initSize() - 1) : scp[i].dom.toVal(0))));
+			for (int i = 0; i < scp.length; i++) {
+				BigInteger value = BigInteger.valueOf(coeffs[i] >= 0 ? scp[i].dom.greatestInitialValue() : scp[i].dom.smallestInitialValue());
+				sum = sum.add(BigInteger.valueOf(coeffs[i]).multiply(value));
+			}
 			return sum.longValueExact();
 		}
 
@@ -1024,10 +1036,10 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		public static long minPossibleSum(View[] views, int[] coeffs) {
 			BigInteger sum = BigInteger.valueOf(0);
 			for (int i = 0; i < views.length; i++) {
-				if (views[i] instanceof ViewVariable)
-					sum = sum.add(BigInteger.valueOf(coeffs[i])
-							.multiply(BigInteger.valueOf(coeffs[i] >= 0 ? views[i].dom.toVal(0) : views[i].dom.toVal(views[i].dom.initSize() - 1))));
-				else
+				if (views[i] instanceof ViewVariable) {
+					BigInteger value = BigInteger.valueOf(coeffs[i] >= 0 ? views[i].dom.smallestInitialValue() : views[i].dom.greatestInitialValue());
+					sum = sum.add(BigInteger.valueOf(coeffs[i]).multiply(value));
+				} else
 					sum = sum.add(BigInteger.valueOf(coeffs[i]).multiply(BigInteger.valueOf(coeffs[i] >= 0 ? 0 : 1)));
 			}
 			return sum.longValueExact();
@@ -1036,10 +1048,10 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		public static long maxPossibleSum(View[] views, int[] coeffs) {
 			BigInteger sum = BigInteger.valueOf(0);
 			for (int i = 0; i < views.length; i++) {
-				if (views[i] instanceof ViewVariable)
-					sum = sum.add(BigInteger.valueOf(coeffs[i])
-							.multiply(BigInteger.valueOf(coeffs[i] >= 0 ? views[i].dom.toVal(views[i].dom.initSize() - 1) : views[i].dom.toVal(0))));
-				else
+				if (views[i] instanceof ViewVariable) {
+					BigInteger value = BigInteger.valueOf(coeffs[i] >= 0 ? views[i].dom.greatestInitialValue() : views[i].dom.smallestInitialValue());
+					sum = sum.add(BigInteger.valueOf(coeffs[i]).multiply(value));
+				} else
 					sum = sum.add(BigInteger.valueOf(coeffs[i]).multiply(BigInteger.valueOf(coeffs[i] >= 0 ? 1 : 0)));
 			}
 			return sum.longValueExact();

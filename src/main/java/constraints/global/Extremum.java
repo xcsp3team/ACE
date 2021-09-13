@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package constraints.global;
 
 import static utility.Kit.control;
@@ -266,16 +276,14 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 			static long maxFirstInitialValues(Variable[] scp) {
 				long max = Long.MIN_VALUE;
 				for (Variable x : scp)
-					if (x.dom.toVal(0) > max)
-						max = x.dom.toVal(0);
+					max = Math.max(max, x.dom.smallestInitialValue());
 				return max;
 			}
 
 			static long maxLastInitialValues(Variable[] scp) {
 				long max = Long.MIN_VALUE;
 				for (Variable x : scp)
-					if (x.dom.toVal(x.dom.initSize() - 1) > max)
-						max = x.dom.toVal(x.dom.initSize() - 1);
+					max = Math.max(max, x.dom.greatestInitialValue());
 				return max;
 			}
 
@@ -293,8 +301,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 			public long minCurrentObjectiveValue() { // max of first current values
 				long max = Long.MIN_VALUE;
 				for (Variable x : scp)
-					if (x.dom.firstValue() > max)
-						max = x.dom.firstValue();
+					max = Math.max(max, x.dom.firstValue());
 				return max;
 			}
 
@@ -302,8 +309,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 			public long maxCurrentObjectiveValue() { // max of last current values (global max)
 				long max = Long.MIN_VALUE;
 				for (Variable x : scp)
-					if (x.dom.lastValue() > max)
-						max = x.dom.lastValue();
+					max = Math.max(max, x.dom.lastValue());
 				return max;
 			}
 
@@ -443,16 +449,14 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 			static long minFirstInitialValues(Variable[] scp) {
 				long min = Long.MAX_VALUE;
 				for (Variable x : scp)
-					if (x.dom.toVal(0) < min)
-						min = x.dom.toVal(0);
+					min = Math.min(min, x.dom.smallestInitialValue());
 				return min;
 			}
 
 			static long minLastInitialValues(Variable[] scp) {
 				long min = Long.MAX_VALUE;
 				for (Variable x : scp)
-					if (x.dom.toVal(x.dom.initSize() - 1) < min)
-						min = x.dom.toVal(x.dom.initSize() - 1);
+					min = Math.min(min, x.dom.greatestInitialValue());
 				return min;
 			}
 
@@ -470,8 +474,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 			public long minCurrentObjectiveValue() { // min of first current values (global min)
 				long min = Long.MAX_VALUE;
 				for (Variable x : scp)
-					if (x.dom.firstValue() < min)
-						min = x.dom.firstValue();
+					min = Math.min(min, x.dom.firstValue());
 				return min;
 			}
 
@@ -479,8 +482,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 			public long maxCurrentObjectiveValue() { // min of last current values
 				long min = Long.MAX_VALUE;
 				for (Variable x : scp)
-					if (x.dom.lastValue() < min)
-						min = x.dom.lastValue();
+					min = Math.min(min, x.dom.lastValue());
 				return min;
 			}
 

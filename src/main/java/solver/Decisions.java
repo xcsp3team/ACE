@@ -1,11 +1,13 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package solver;
 
 import java.util.stream.IntStream;
@@ -141,7 +143,7 @@ public final class Decisions {
 	}
 
 	private boolean controlDecisions() {
-		return IntStream.range(0, set.size()).allMatch(i -> set.dense[i] != 0 && IntStream.range(i + 1, set.size())
-				.allMatch(j -> set.dense[i] != set.dense[j] && set.dense[i] != -set.dense[j]));
+		return IntStream.range(0, set.size()).allMatch(
+				i -> set.dense[i] != 0 && IntStream.range(i + 1, set.size()).allMatch(j -> set.dense[i] != set.dense[j] && set.dense[i] != -set.dense[j]));
 	}
 }

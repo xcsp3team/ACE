@@ -1,13 +1,22 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package solver;
 
 import java.util.function.Supplier;
-
-import org.xcsp.common.Types.TypeFramework;
 
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
 import dashboard.Control.SettingRestarts;
 import interfaces.Observers.ObserverOnRuns;
 import optimization.ObjectiveVariable;
+import optimization.Optimizer;
 import sets.SetDense;
 import utility.Enums.Stopping;
 import utility.Kit;
@@ -50,7 +59,7 @@ public class Restarter implements ObserverOnRuns {
 			System.out.println("    ...resetting restart cutoff to " + baseCutoff);
 		}
 		// we rerun propagation if a solution has just been found (since the objective constraint has changed), or if it must be forced anyway
-		boolean rerunPropagation = forceRootPropagation || (cop && numRun - 1 == solver.solutions.lastRun);
+		boolean rerunPropagation = forceRootPropagation || (solver.problem.optimizer != null && numRun - 1 == solver.solutions.lastRun);
 		if (rerunPropagation || (solver.head.control.propagation.strongOnlyAtPreprocessing && 0 < numRun && numRun % 60 == 0)) { // TODO hard coding
 			if (solver.propagation.runInitially() == false)
 				solver.stopping = Stopping.FULL_EXPLORATION;
@@ -64,12 +73,6 @@ public class Restarter implements ObserverOnRuns {
 		nRestartsSinceReset++;
 	}
 
-	@Override
-	public void afterRun() {
-		if (cop)
-			solver.problem.optimizer.afterRun();
-	}
-
 	/**********************************************************************************************
 	 * Class members
 	 *********************************************************************************************/
@@ -78,11 +81,6 @@ public class Restarter implements ObserverOnRuns {
 	 * The solver to which the restarter is attached.
 	 */
 	public Solver solver;
-
-	/**
-	 * This indicates if the problem is a COP; redundant field introduced for simplicity.
-	 */
-	protected boolean cop;
 
 	/**
 	 * The settings used for piloting the restarter (redundant field).
@@ -157,9 +155,9 @@ public class Restarter implements ObserverOnRuns {
 	 */
 	public Restarter(Solver solver) {
 		this.solver = solver;
-		this.cop = solver.head.control.general.framework == TypeFramework.COP;
+		// this.cop = solver.head.control.general.framework == TypeFramework.COP;
 		this.settings = solver.head.control.restarts;
-		if (cop && settings.cutoff < Integer.MAX_VALUE)
+		if (solver.problem.optimizer != null && settings.cutoff < Integer.MAX_VALUE)
 			settings.cutoff *= 10; // For COPs, the cutoff value is multiplied by 10; hard coding
 		this.measureSupplier = measureSupplier();
 		reset();
@@ -173,17 +171,14 @@ public class Restarter implements ObserverOnRuns {
 	 * @return true if the current run is considered as being finished
 	 */
 	public boolean currRunFinished() {
-		if (solver.problem.optimizer != null && ((cnt++) % 5) == 0) // code for portfolio mode; hard coding
-			solver.problem.optimizer.possiblyUpdateLocalBounds();
+		Optimizer optimizer = solver.problem.optimizer;
+		if (optimizer != null && ((cnt++) % 5) == 0) // code for portfolio mode; hard coding
+			optimizer.possiblyUpdateLocalBounds();
 		if (measureSupplier.get() >= currCutoff)
 			return true;
-		if (!cop || numRun != solver.solutions.lastRun)
+		if (optimizer == null || numRun != solver.solutions.lastRun)
 			return false;
-		if (settings.restartAfterSolution)
-			return true;
-		if (solver.problem.optimizer.ctr instanceof MaximumCstLE || solver.problem.optimizer.ctr instanceof ObjectiveVariable)
-			return true;
-		return false;
+		return settings.restartAfterSolution || optimizer.ctr instanceof MaximumCstLE || optimizer.ctr instanceof ObjectiveVariable;
 	}
 
 	/**
@@ -223,8 +218,6 @@ public class Restarter implements ObserverOnRuns {
 
 		@Override
 		public void afterRun() {
-			if (cop)
-				solver.problem.optimizer.afterRun();
 			solver.backtrackToTheRoot(); // because see Method doRun in Solver
 		}
 

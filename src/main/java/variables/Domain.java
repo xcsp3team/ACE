@@ -396,6 +396,20 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
+	 * Returns the smallest value of the initial domain
+	 */
+	default int smallestInitialValue() {
+		return toVal(0);
+	}
+
+	/**
+	 * Returns the greatest value of the initial domain
+	 */
+	default int greatestInitialValue() {
+		return toVal(initSize() - 1);
+	}
+
+	/**
 	 * Returns the distance of the domain, that is the difference between the highest and smallest values
 	 */
 	default int distance() {

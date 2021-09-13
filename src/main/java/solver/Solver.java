@@ -358,35 +358,28 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	public final List<ObserverOnConflicts> observersOnConflicts;
 
 	private List<ObserverOnSolving> collectObserversOnSolving() {
-		Stream<Object> stream = Stream.concat(Stream.of(problem.constraints), Stream.of(head.output, stats)).filter(c -> c instanceof ObserverOnSolving);
-		return stream.map(o -> (ObserverOnSolving) o).collect(toCollection(ArrayList::new));
+		Stream<Object> stream = Stream.concat(Stream.of(problem.constraints), Stream.of(head.output, stats));
+		return stream.filter(c -> c instanceof ObserverOnSolving).map(o -> (ObserverOnSolving) o).collect(toCollection(ArrayList::new));
 	}
 
 	private List<ObserverOnRuns> collectObserversOnRuns() {
-		List<ObserverOnRuns> list = new ArrayList<>();
-		if (head.control.solving.enableSearch) {
-			if (nogoodRecorder != null && nogoodRecorder.symmetryHandler != null)
-				list.add(nogoodRecorder.symmetryHandler);
-			Stream.of(this, restarter, ipsRecorder, heuristic, lastConflict, stats).filter(o -> o instanceof ObserverOnRuns)
-					.forEach(o -> list.add((ObserverOnRuns) o));
-		}
-		Stream.of(problem.constraints).filter(c -> c instanceof ObserverOnRuns).forEach(c -> list.add((ObserverOnRuns) c));
-		if (propagation instanceof ObserverOnRuns)
-			list.add((ObserverOnRuns) propagation);
-		list.add(head.output);
-		return list;
+		if (!head.control.solving.enableSearch)
+			return new ArrayList<>();
+		Stream<Object> stream = Stream.concat(Stream.of(this, problem.optimizer, restarter, heuristic, lastConflict, ipsRecorder,
+				(nogoodRecorder != null ? nogoodRecorder.symmetryHandler : null), head.output, stats), Stream.of(problem.constraints));
+		return stream.filter(c -> c instanceof ObserverOnRuns).map(o -> (ObserverOnRuns) o).collect(toCollection(ArrayList::new));
 	}
 
 	private List<ObserverOnBacktracksSystematic> collectObserversOnBacktracksSystematic() {
 		// keep 'this' at first position in the list
-		Stream<Object> stream = Stream.concat(Stream.of(this, propagation), Stream.of(problem.constraints))
-				.filter(c -> c instanceof ObserverOnBacktracksSystematic);
-		return stream.map(o -> (ObserverOnBacktracksSystematic) o).collect(toCollection(ArrayList::new));
+		Stream<Object> stream = Stream.concat(Stream.of(this, propagation), Stream.of(problem.constraints));
+		return stream.filter(c -> c instanceof ObserverOnBacktracksSystematic).map(o -> (ObserverOnBacktracksSystematic) o)
+				.collect(toCollection(ArrayList::new));
 	}
 
 	private List<ObserverOnDecisions> collectObserversOnDecisions() {
-		Stream<Object> stream = Stream.of(this, tracer, stats, lastConflict, proofer).filter(o -> o instanceof ObserverOnDecisions);
-		return stream.map(o -> (ObserverOnDecisions) o).collect(toCollection(ArrayList::new));
+		Stream<Object> stream = Stream.of(this, lastConflict, proofer, tracer, stats);
+		return stream.filter(o -> o instanceof ObserverOnDecisions).map(o -> (ObserverOnDecisions) o).collect(toCollection(ArrayList::new));
 	}
 
 	private List<ObserverOnAssignments> collectObserversOnAssignments() {

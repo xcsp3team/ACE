@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package optimization;
 
 import static utility.Kit.control;
@@ -9,27 +19,13 @@ import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import variables.Variable;
 
+/**
+ * This root class is used when the objective of the problem (constraint network) is given by a variable whose value must be minimized or maximized.
+ *
+ * @author Christophe Lecoutre
+ *
+ */
 public abstract class ObjectiveVariable extends ConstraintGlobal implements Optimizable, TagAC, TagCallCompleteFiltering, TagSymmetric {
-
-	@Override
-	public long minComputableObjectiveValue() {
-		return x.dom.toVal(0);
-	}
-
-	@Override
-	public long maxComputableObjectiveValue() {
-		return x.dom.toVal(x.dom.initSize() - 1);
-	}
-
-	@Override
-	public long minCurrentObjectiveValue() {
-		return x.dom.firstValue();
-	}
-
-	@Override
-	public long maxCurrentObjectiveValue() {
-		return x.dom.lastValue();
-	}
 
 	@Override
 	public long limit() {
@@ -40,6 +36,26 @@ public abstract class ObjectiveVariable extends ConstraintGlobal implements Opti
 	public final void limit(long newLimit) {
 		this.limit = newLimit;
 		control(minComputableObjectiveValue() - 1 <= limit && limit <= maxComputableObjectiveValue() + 1);
+	}
+
+	@Override
+	public long minComputableObjectiveValue() {
+		return x.dom.smallestInitialValue();
+	}
+
+	@Override
+	public long maxComputableObjectiveValue() {
+		return x.dom.greatestInitialValue();
+	}
+
+	@Override
+	public long minCurrentObjectiveValue() {
+		return x.dom.firstValue();
+	}
+
+	@Override
+	public long maxCurrentObjectiveValue() {
+		return x.dom.lastValue();
 	}
 
 	@Override
@@ -80,8 +96,8 @@ public abstract class ObjectiveVariable extends ConstraintGlobal implements Opti
 	public static final class ObjVarLE extends ObjectiveVariable {
 
 		@Override
-		public boolean isSatisfiedBy(int[] vals) {
-			return vals[0] <= limit;
+		public boolean isSatisfiedBy(int[] t) {
+			return t[0] <= limit;
 		}
 
 		public ObjVarLE(Problem pb, Variable x, long limit) {
@@ -98,11 +114,15 @@ public abstract class ObjectiveVariable extends ConstraintGlobal implements Opti
 		}
 	}
 
+	/**
+	 * The class for an objective variable that must be maximized. To enforce convergence, the limit is updated at each new solution and the constraint enforces
+	 * that the value of the variable is greater than or equal to the current limit.
+	 */
 	public static final class ObjVarGE extends ObjectiveVariable {
 
 		@Override
-		public boolean isSatisfiedBy(int[] vals) {
-			return vals[0] >= limit;
+		public boolean isSatisfiedBy(int[] t) {
+			return t[0] >= limit;
 		}
 
 		public ObjVarGE(Problem pb, Variable x, long limit) {
