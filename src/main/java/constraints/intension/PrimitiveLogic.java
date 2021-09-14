@@ -41,7 +41,7 @@ public abstract class PrimitiveLogic extends Primitive implements TagAC, TagNotS
 	}
 
 	// ************************************************************************
-	// ***** Classes for x = (y <op> z) (CtrPrimitiveTernaryLog)
+	// ***** Classes for x = (y <lop> z)
 	// ************************************************************************
 
 	public static abstract class PrimitiveLogicEq extends PrimitiveLogic {

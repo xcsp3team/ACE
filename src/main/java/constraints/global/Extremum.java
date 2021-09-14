@@ -248,11 +248,14 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 				return minimum ? new MinimumCstGE(pb, list, limit + 1) : new MaximumCstGE(pb, list, limit + 1);
 			case EQ:
 				return minimum ? new MinimumCstEQ(pb, list, limit) : new MaximumCstEQ(pb, list, limit);
-			default:
+			default: // NE
 				throw new AssertionError("NE is not implemented"); // TODO useful to have a propagator?
 			}
 		}
 
+		/**
+		 * The limit (may be dynamic, if this object is a constraint objective)
+		 */
 		protected long limit;
 
 		@Override
@@ -261,9 +264,8 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 		}
 
 		@Override
-		public final void limit(long newLimit) {
+		public final void setLimit(long newLimit) {
 			this.limit = newLimit;
-			control(minComputableObjectiveValue() - 1 <= limit && limit <= maxComputableObjectiveValue() + 1);
 		}
 
 		public ExtremumCst(Problem pb, Variable[] list, long limit) {

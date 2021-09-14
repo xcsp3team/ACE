@@ -239,7 +239,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 
 	/**
 	 * Builds and returns an extension constraint for the specified problem, with the specified scope and the semantics defined from the specified tuples.
-	 * Tuples contains symbols or integers. The specified Boolean indicates if tupls are supports or conflicts. The last parameter indicates if the tuples are
+	 * Tuples contains symbols or integers. The specified Boolean indicates if tuples are supports or conflicts. The last parameter indicates if the tuples are
 	 * starred (null when the information is not known).
 	 * 
 	 * @param pb
@@ -253,7 +253,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 *            indicates if the star is present, absent, or if it is not known (null)
 	 * @return an extension constraint
 	 */
-	public static ConstraintExtension build(Problem pb, Variable[] scp, Object tuples, boolean positive, Boolean starred) {
+	public static ConstraintExtension buildFrom(Problem pb, Variable[] scp, Object tuples, boolean positive, Boolean starred) {
 		control(scp.length > 1 && Variable.haveSameType(scp));
 		control(Array.getLength(tuples) == 0 || Array.getLength(Array.get(tuples, 0)) == scp.length,
 				() -> "Badly formed extensional constraint " + scp.length + " " + Array.getLength(Array.get(tuples, 0)));

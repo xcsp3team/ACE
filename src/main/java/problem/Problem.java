@@ -170,13 +170,12 @@ import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
 import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
 import constraints.intension.Primitive.Disjonctive2D;
 import constraints.intension.Primitive.DisjonctiveVar;
-import constraints.intension.PrimitiveBinary.Disjonctive;
-import constraints.intension.PrimitiveBinary.PrimitiveBinaryEQWithUnaryOperator;
-import constraints.intension.PrimitiveBinary.PrimitiveBinaryLog;
-import constraints.intension.PrimitiveBinary.PrimitiveBinaryLog.LogEQ2;
-import constraints.intension.PrimitiveBinary.PrimitiveBinarySub;
-import constraints.intension.PrimitiveBinary.PrimitiveBinarySub.SubNE2;
-import constraints.intension.PrimitiveBinary.PrimitiveBinaryWithCst;
+import constraints.intension.PrimitiveBinary;
+import constraints.intension.PrimitiveBinary.Log2;
+import constraints.intension.PrimitiveBinary.Log2.Log2EQ;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryNoCst.Disjonctive;
+import constraints.intension.PrimitiveBinary.Sub2;
+import constraints.intension.PrimitiveBinary.Sub2.Sub2NE;
 import constraints.intension.PrimitiveLogic.PrimitiveLogicEq;
 import constraints.intension.PrimitiveTernary;
 import constraints.intension.PrimitiveTernary.PrimitiveTernaryAdd;
@@ -923,23 +922,23 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (arity == 2 && settings.primitiveBinaryInSolver) {
 			Constraint c = null;
 			if (x_relop_y.matches(tree))
-				c = PrimitiveBinarySub.buildFrom(this, scp[0], scp[1], tree.relop(0), 0);
+				c = Sub2.buildFrom(this, scp[0], scp[1], tree.relop(0), 0);
 			else if (x_ariop_y__relop_k.matches(tree))
-				c = PrimitiveBinaryWithCst.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0), tree.val(0));
+				c = PrimitiveBinary.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0), tree.val(0));
 			else if (k_relop__x_ariop_y.matches(tree))
-				c = PrimitiveBinaryWithCst.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0).arithmeticInversion(), tree.val(0));
+				c = PrimitiveBinary.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0).arithmeticInversion(), tree.val(0));
 			else if (x_relop__y_ariop_k.matches(tree))
-				c = PrimitiveBinaryWithCst.buildFrom(this, scp[0], tree.relop(0), scp[1], tree.ariop(0), tree.val(0));
+				c = PrimitiveBinary.buildFrom(this, scp[0], tree.relop(0), scp[1], tree.ariop(0), tree.val(0));
 			else if (y_ariop_k__relop_x.matches(tree))
-				c = PrimitiveBinaryWithCst.buildFrom(this, scp[1], tree.relop(0).arithmeticInversion(), scp[0], tree.ariop(0), tree.val(0));
+				c = PrimitiveBinary.buildFrom(this, scp[1], tree.relop(0).arithmeticInversion(), scp[0], tree.ariop(0), tree.val(0));
 			else if (logic_y_relop_k__eq_x.matches(tree))
-				c = PrimitiveBinaryLog.buildFrom(this, scp[1], scp[0], tree.relop(1), tree.val(0));
+				c = Log2.buildFrom(this, scp[1], scp[0], tree.relop(1), tree.val(0));
 			else if (logic_y_relop_k__iff_x.matches(tree))
-				c = PrimitiveBinaryLog.buildFrom(this, scp[1], scp[0], tree.relop(0), tree.val(0));
+				c = Log2.buildFrom(this, scp[1], scp[0], tree.relop(0), tree.val(0));
 			else if (logic_k_relop_y__eq_x.matches(tree))
-				c = PrimitiveBinaryLog.buildFrom(this, scp[1], scp[0], tree.relop(1).arithmeticInversion(), tree.val(0));
+				c = Log2.buildFrom(this, scp[1], scp[0], tree.relop(1).arithmeticInversion(), tree.val(0));
 			else if (unalop_x__eq_y.matches(tree))
-				c = PrimitiveBinaryEQWithUnaryOperator.buildFrom(this, scp[1], tree.unalop(0), scp[0]);
+				c = PrimitiveBinary.buildFrom(this, scp[1], tree.unalop(0), scp[0]);
 			else if (disjonctive.matches(tree)) {
 				Variable[] scp0 = (Variable[]) tree.sons[0].vars(), scp1 = (Variable[]) tree.sons[1].vars();
 				if (scp0.length == 2 && scp1.length == 2 && scp0[0] == scp1[1] && scp0[1] == scp1[0]) {
@@ -1117,7 +1116,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			int[] values = Stream.of(m).mapToInt(t -> t[0]).toArray();
 			return extension(x, values, positive);
 		}
-		return post(ConstraintExtension.build(this, translate(scp), tuples, positive, starred));
+		return post(ConstraintExtension.buildFrom(this, translate(scp), tuples, positive, starred));
 	}
 
 	@Override
@@ -1169,7 +1168,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (head.control.global.typeAllDifferent == 1)
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
 				if (i < j)
-					post(new SubNE2(this, scp[i], scp[j], 0));
+					post(new Sub2NE(this, scp[i], scp[j], 0));
 			});
 		if (head.control.global.typeAllDifferent == 2)
 			return post(new AllDifferentWeak(this, scp));
@@ -1296,7 +1295,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity ordered(Var[] list, int[] lengths, TypeOperatorRel op) {
 		control(list.length == lengths.length + 1);
-		return forall(range(list.length - 1), i -> post(PrimitiveBinarySub.buildFrom(this, (Variable) list[i], (Variable) list[i + 1], op, -lengths[i])));
+		return forall(range(list.length - 1), i -> post(Sub2.buildFrom(this, (Variable) list[i], (Variable) list[i + 1], op, -lengths[i])));
 	}
 
 	/**
@@ -1938,7 +1937,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(Stream.of(list).noneMatch(x -> x == null) && startIndex == 0);
 		control(Variable.areAllInitiallyBoolean((Variable[]) list) && ((Variable) value).dom.areInitValuesExactly(range(list.length)));
 		// exactly((VariableInteger[]) list, 1, 1); // TODO what would be the benefit of posting it?
-		return forall(range(list.length), i -> post(new LogEQ2(this, (Variable) list[i], (Variable) value, i))); // intension(iff(list[i], eq(value, i))));
+		return forall(range(list.length), i -> post(new Log2EQ(this, (Variable) list[i], (Variable) value, i))); // intension(iff(list[i], eq(value, i))));
 	}
 
 	// ************************************************************************

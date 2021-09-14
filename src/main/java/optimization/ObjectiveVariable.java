@@ -33,9 +33,8 @@ public abstract class ObjectiveVariable extends ConstraintGlobal implements Opti
 	}
 
 	@Override
-	public final void limit(long newLimit) {
+	public final void setLimit(long newLimit) {
 		this.limit = newLimit;
-		control(minComputableObjectiveValue() - 1 <= limit && limit <= maxComputableObjectiveValue() + 1);
 	}
 
 	@Override

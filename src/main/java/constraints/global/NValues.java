@@ -118,9 +118,8 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 		}
 
 		@Override
-		public void limit(long newLimit) {
+		public void setLimit(long newLimit) {
 			this.limit = newLimit;
-			control(minComputableObjectiveValue() <= limit && limit <= maxComputableObjectiveValue());
 		}
 
 		@Override

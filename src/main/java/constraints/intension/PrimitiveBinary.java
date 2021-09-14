@@ -13,6 +13,8 @@ package constraints.intension;
 import static utility.Kit.control;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.xcsp.common.Types.TypeArithmeticOperator;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
@@ -21,10 +23,16 @@ import org.xcsp.common.Types.TypeUnaryArithmeticOperator;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
+import constraints.ConstraintExtension;
 import constraints.global.Sum.SumWeighted;
-import constraints.intension.PrimitiveBinary.PrimitiveBinaryDistb.DistbEQ2;
-import constraints.intension.PrimitiveBinary.PrimitiveBinaryMul.MulGE2;
-import constraints.intension.PrimitiveBinary.PrimitiveBinaryMul.MulLE2;
+import constraints.intension.PrimitiveBinary.Mul2.Mul2GE;
+import constraints.intension.PrimitiveBinary.Mul2.Mul2LE;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryNoCst.Neg2EQ;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryVariant2.Dist2b;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryVariant2.Dist2b.Dist2bEQ;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryVariant2.Div2b;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryVariant2.Mod2b;
+import constraints.intension.PrimitiveBinary.PrimitiveBinaryVariant2.Mul2b;
 import constraints.intension.PrimitiveBinary.PropagatorEQ.MultiPropagatorEQ;
 import constraints.intension.PrimitiveBinary.PropagatorEQ.SimplePropagatorEQ;
 import interfaces.Tags.TagAC;
@@ -37,10 +45,16 @@ import variables.Domain;
 import variables.Variable;
 
 // Important: in Java, integer division rounds toward 0
-// this implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 = 3
-// https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.17.2
+// This implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 = 3
+// See https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.17.2
 
 public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCallCompleteFiltering {
+
+	/**********************************************************************************************
+	 * Static members
+	 *********************************************************************************************/
+
+	public static final int UNITIALIZED = -1;
 
 	public static boolean enforceLT(Domain dx, Domain dy) { // x < y
 		return dx.removeValuesGE(dy.lastValue()) && dy.removeValuesLE(dx.firstValue());
@@ -85,30 +99,6 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 		return true;
 	}
 
-	// public static boolean enforceEQ(Domain dx, Domain dy, int k) { // x = y + k
-	// if (dx.removeValuesAddNotIn(dy, -k) == false)
-	// return false;
-	// if (dx.size() == dy.size())
-	// return true;
-	// assert dx.size() < dy.size();
-	// boolean consistent = dy.removeValuesAddNotIn(dx, k);
-	// assert consistent;
-	// return true;
-	// }
-
-	// public static boolean enforceMulEQ(Domain dx, Domain dy, int k) { // x = y * k
-	// assert dx.iterateOnValuesStoppingWhen(v -> v != 0 && v % k != 0) == false; // we assume that trivial inconsistent values have been deleted
-	// // initially (for code efficiency, avoiding systematic check)
-	// if (dx.removeValuesDivNotIn(dy, k) == false)
-	// return false;
-	// if (dx.size() == dy.size())
-	// return true;
-	// assert dx.size() < dy.size();
-	// boolean consistent = dy.removeValuesMulNotIn(dx, k);
-	// assert consistent;
-	// return true;
-	// }
-
 	public static boolean enforceNE(Domain dx, Domain dy) { // x != y
 		if (dx.size() == 1)
 			return dy.removeValueIfPresent(dx.singleValue());
@@ -116,14 +106,6 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 			return dx.removeValueIfPresent(dy.singleValue());
 		return true;
 	}
-
-	// public static boolean enforceNE(Domain dx, Domain dy, int k) { // x != y + k
-	// if (dx.size() == 1)
-	// return dy.removeValueIfPresent(dx.uniqueValue() - k);
-	// if (dy.size() == 1)
-	// return dx.removeValueIfPresent(dy.uniqueValue() + k);
-	// return true;
-	// }
 
 	public static boolean enforceAddLE(Domain dx, Domain dy, int k) { // x + y <= k
 		return dx.removeValuesGT(k - dy.firstValue()) && dy.removeValuesGT(k - dx.firstValue());
@@ -134,11 +116,11 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 	}
 
 	public static boolean enforceMulLE(Domain dx, Domain dy, int k) { // x * y <= k
-		return MulLE2.revise(dx, dy, k) && MulLE2.revise(dy, dx, k);
+		return Mul2LE.revise(dx, dy, k) && Mul2LE.revise(dy, dx, k);
 	}
 
 	public static boolean enforceMulGE(Domain dx, Domain dy, int k) { // x * y >= k
-		return MulGE2.revise(dx, dy, k) && MulGE2.revise(dy, dx, k);
+		return Mul2GE.revise(dx, dy, k) && Mul2GE.revise(dy, dx, k);
 	}
 
 	public static boolean enforceDivLE(Domain dx, Domain dy, int k) { // x / y <= k
@@ -148,8 +130,6 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 	public static boolean enforceDivGE(Domain dx, Domain dy, int k) { // x / y >= k
 		return dx.removeValuesNumeratorsLT(k, dy.firstValue()) && dy.removeValuesDenominatorsLT(k, dx.lastValue());
 	}
-
-	public final static int UNITIALIZED = -1;
 
 	public abstract static class PropagatorEQ {
 
@@ -273,6 +253,8 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 
 	protected final Variable x, y;
 
+	protected final int k;
+
 	protected final Domain dx, dy; // domains of x and y
 
 	protected int[] rx, ry; // residues for x and y
@@ -286,66 +268,116 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 		this.ry = Kit.repeat(UNITIALIZED, dy.initSize());
 	}
 
-	public PrimitiveBinary(Problem pb, Variable x, Variable y) {
+	public PrimitiveBinary(Problem pb, Variable x, Variable y, int k) {
 		super(pb, pb.api.vars(x, y));
 		this.x = x;
 		this.y = y;
+		this.k = k;
 		this.dx = x.dom;
 		this.dy = y.dom;
+		if (!(this instanceof PrimitiveBinaryNoCst))
+			defineKey(k); // otherwise irrelevant
 	}
 
-	// ************************************************************************
-	// *****Classes when no constant is involved
-	// ************************************************************************
-
-	public static final class Disjonctive extends PrimitiveBinary {
-
-		final int wx, wy;
-
-		@Override
-		public boolean isSatisfiedBy(int[] t) {
-			return t[0] + wx <= t[1] || t[1] + wy <= t[0];
-		}
-
-		@Override
-		public Boolean isSymmetric() {
-			return wx == wy;
-		}
-
-		public Disjonctive(Problem pb, Variable x, int wx, Variable y, int wy) {
-			super(pb, x, y);
-			this.wx = wx;
-			this.wy = wy;
-			defineKey(wx, wy);
-		}
-
-		@Override
-		public boolean runPropagator(Variable dummy) {
-			return dx.removeValuesInRange(dy.lastValue() - wx + 1, dy.firstValue() + wy)
-					&& dy.removeValuesInRange(dx.lastValue() - wy + 1, dx.firstValue() + wx);
+	public static Constraint buildFrom(Problem pb, Variable x, TypeUnaryArithmeticOperator aop, Variable y) {
+		switch (aop) {
+		case ABS: // |x| = y
+			return new Dist2bEQ(pb, x, y, 0);
+		case NEG: // -x = y
+			return new Neg2EQ(pb, x, y);
+		case SQR: // x*x = y
+			List<int[]> list = new ArrayList<>();
+			for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
+				int v = x.dom.toVal(a);
+				if ((long) v * v <= y.dom.greatestInitialValue() && y.dom.containsValue(v * v))
+					list.add(new int[] { v, v * v });
+			}
+			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), list.parallelStream().toArray(int[][]::new), true, Boolean.FALSE);
+		default: // not(x) = y
+			control(x.dom.is01() && y.dom.is01());
+			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), new int[][] { { 0, 1 }, { 1, 0 } }, true, Boolean.FALSE);
 		}
 	}
 
-	public static abstract class PrimitiveBinaryEQWithUnaryOperator extends PrimitiveBinary implements TagNotSymmetric {
+	public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, int k) {
+		switch (aop) {
+		case ADD:
+			return Add2.buildFrom(pb, x, y, op, k);
+		case SUB:
+			return Sub2.buildFrom(pb, x, y, op, k);
+		case MUL:
+			return Mul2.buildFrom(pb, x, y, op, k);
+		case DIV:
+			return Div2.buildFrom(pb, x, y, op, k);
+		case MOD:
+			return Mod2.buildFrom(pb, x, y, op, k);
+		case DIST:
+			return Dist2.buildFrom(pb, x, y, op, k);
+		default: // POW
+			throw new AssertionError("not implemented"); // TODO interesting?
+		}
+	}
 
-		public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeUnaryArithmeticOperator aop, Variable y) {
-			switch (aop) {
-			case ABS:
-				return new DistbEQ2(pb, x, y, 0);
-			case NEG:
-				return new NegEQ2(pb, x, y);
-			case SQR:
-				return null; // TODO
-			default: // NOT
-				return null;
+	public static Constraint buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, TypeArithmeticOperator aop, int k) {
+		switch (aop) {
+		case ADD:
+			return Sub2.buildFrom(pb, x, y, op, k);
+		case SUB:
+			return Sub2.buildFrom(pb, x, y, op, -k);
+		case MUL:
+			return Mul2b.buildFrom(pb, x, op, y, k);
+		case DIV:
+			return Div2b.buildFrom(pb, x, op, y, k);
+		case MOD:
+			return Mod2b.buildFrom(pb, x, op, y, k);
+		case DIST:
+			return Dist2b.buildFrom(pb, x, op, y, k);
+		default: // POW
+			throw new AssertionError("not implemented"); // TODO interesting?
+		}
+	}
+
+	/**********************************************************************************************
+	 * Classes where no constant is involved
+	 *********************************************************************************************/
+
+	public static abstract class PrimitiveBinaryNoCst extends PrimitiveBinary {
+
+		private static final int DUMMY = 0;
+
+		public PrimitiveBinaryNoCst(Problem pb, Variable x, Variable y) {
+			super(pb, x, y, DUMMY);
+		}
+
+		public static final class Disjonctive extends PrimitiveBinaryNoCst {
+
+			@Override
+			public boolean isSatisfiedBy(int[] t) {
+				return t[0] + wx <= t[1] || t[1] + wy <= t[0];
+			}
+
+			private final int wx, wy;
+
+			@Override
+			public Boolean isSymmetric() {
+				return wx == wy;
+			}
+
+			public Disjonctive(Problem pb, Variable x, int wx, Variable y, int wy) {
+				super(pb, x, y);
+				this.wx = wx;
+				this.wy = wy;
+				defineKey(wx, wy);
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				return dx.removeValuesInRange(dy.lastValue() - wx + 1, dy.firstValue() + wy)
+						&& dy.removeValuesInRange(dx.lastValue() - wy + 1, dx.firstValue() + wx);
 			}
 		}
 
-		public PrimitiveBinaryEQWithUnaryOperator(Problem pb, Variable x, Variable y) {
-			super(pb, x, y);
-		}
-
-		public static final class NegEQ2 extends PrimitiveBinaryEQWithUnaryOperator {
+		public static final class Neg2EQ extends PrimitiveBinaryNoCst implements TagNotSymmetric {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
@@ -354,7 +386,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 
 			private final SimplePropagatorEQ sp;
 
-			public NegEQ2(Problem pb, Variable x, Variable y) {
+			public Neg2EQ(Problem pb, Variable x, Variable y) {
 				super(pb, x, y);
 				this.sp = new SimplePropagatorEQ(dx, dy, true) {
 					@Override
@@ -373,125 +405,72 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 			public boolean runPropagator(Variable dummy) {
 				return sp.runPropagator(dummy);
 			}
+
 		}
 	}
 
 	// ************************************************************************
-	// ***** Root class when a constant k is involved
+	// ***** Classes for x + y <op> k
 	// ************************************************************************
 
-	public static abstract class PrimitiveBinaryWithCst extends PrimitiveBinary {
+	public static abstract class Add2 extends PrimitiveBinary implements TagSymmetric {
 
-		public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, int k) {
-			switch (aop) {
-			case ADD:
-				return PrimitiveBinaryAdd.buildFrom(pb, x, y, op, k);
-			case SUB:
-				return PrimitiveBinarySub.buildFrom(pb, x, y, op, k);
-			case MUL:
-				return PrimitiveBinaryMul.buildFrom(pb, x, y, op, k);
-			case DIV:
-				return PrimitiveBinaryDiv.buildFrom(pb, x, y, op, k);
-			case MOD:
-				return PrimitiveBinaryMod.buildFrom(pb, x, y, op, k);
-			case DIST:
-				return PrimitiveBinaryDist.buildFrom(pb, x, y, op, k);
-			default:
-				return null;
-			}
-		}
-
-		public static Constraint buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, TypeArithmeticOperator aop, int k) {
-			switch (aop) {
-			case ADD:
-				return PrimitiveBinarySub.buildFrom(pb, x, y, op, k);
-			case SUB:
-				return PrimitiveBinarySub.buildFrom(pb, x, y, op, -k);
-			case MUL:
-				return PrimitiveBinaryMulb.buildFrom(pb, x, op, y, k);
-			case DIV:
-				return PrimitiveBinaryDivb.buildFrom(pb, x, op, y, k);
-			case MOD:
-				return PrimitiveBinaryModb.buildFrom(pb, x, op, y, k);
-			case DIST:
-				return PrimitiveBinaryDistb.buildFrom(pb, x, op, y, k);
-			default:
-				return null;
-			}
-		}
-
-		protected final int k;
-
-		public PrimitiveBinaryWithCst(Problem pb, Variable x, Variable y, int k) {
-			super(pb, x, y);
-			this.k = k;
-			defineKey(k);
-		}
-	}
-
-	// ************************************************************************
-	// ***** Classes for x + y <op> k (CtrPrimitiveBinaryAdd)
-	// ************************************************************************
-
-	public static abstract class PrimitiveBinaryAdd extends PrimitiveBinaryWithCst implements TagSymmetric {
-
-		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
+		public static Add2 buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case LT:
-				return new AddLE2(pb, x, y, k - 1);
+				return new Add2LE(pb, x, y, k - 1);
 			case LE:
-				return new AddLE2(pb, x, y, k);
+				return new Add2LE(pb, x, y, k);
 			case GE:
-				return new AddGE2(pb, x, y, k);
+				return new Add2GE(pb, x, y, k);
 			case GT:
-				return new AddGE2(pb, x, y, k + 1);
+				return new Add2GE(pb, x, y, k + 1);
 			case EQ:
-				return new AddEQ2(pb, x, y, k); // return pb.extension(eq(add(x, y), k));
-			case NE:
-				return new AddNE2(pb, x, y, k);
+				return new Add2EQ(pb, x, y, k); // return pb.extension(eq(add(x, y), k));
+			default: // NE
+				return new Add2NE(pb, x, y, k);
 			}
-			throw new AssertionError();
 		}
 
-		public PrimitiveBinaryAdd(Problem pb, Variable x, Variable y, int k) {
+		public Add2(Problem pb, Variable x, Variable y, int k) {
 			super(pb, x, y, k);
 		}
 
-		public static final class AddLE2 extends PrimitiveBinaryAdd {
+		public static final class Add2LE extends Add2 {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] + t[1] <= k;
 			}
 
-			public AddLE2(Problem pb, Variable x, Variable y, int k) {
+			public Add2LE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				return enforceAddLE(dx, dy, k); // dx.removeValuesGT(k - dy.firstValue()) && dy.removeValuesGT(k - dx.firstValue());
+				return enforceAddLE(dx, dy, k);
 			}
 		}
 
-		public static final class AddGE2 extends PrimitiveBinaryAdd {
+		public static final class Add2GE extends Add2 {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] + t[1] >= k;
 			}
 
-			public AddGE2(Problem pb, Variable x, Variable y, int k) {
+			public Add2GE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				return enforceAddGE(dx, dy, k); // dx.removeValuesLT(k - dy.lastValue()) && dy.removeValuesLT(k - dx.lastValue());
+				return enforceAddGE(dx, dy, k);
 			}
 		}
 
-		public static final class AddEQ2 extends PrimitiveBinaryAdd {
+		public static final class Add2EQ extends Add2 {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
@@ -500,7 +479,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 
 			private final SimplePropagatorEQ sp;
 
-			public AddEQ2(Problem pb, Variable x, Variable y, int k) {
+			public Add2EQ(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 				this.sp = new SimplePropagatorEQ(dx, dy, true) {
 					@Override
@@ -521,14 +500,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 			}
 		}
 
-		public static final class AddNE2 extends PrimitiveBinaryAdd {
+		public static final class Add2NE extends Add2 {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] + t[1] != k;
 			}
 
-			public AddNE2(Problem pb, Variable x, Variable y, int k) {
+			public Add2NE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
@@ -543,10 +522,10 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 		}
 	}
 	// ************************************************************************
-	// ***** Classes for x - y <op> k (CtrPrimitiveBinarySub)
+	// ***** Classes for x - y <op> k
 	// ************************************************************************
 
-	public static abstract class PrimitiveBinarySub extends PrimitiveBinaryWithCst {
+	public static abstract class Sub2 extends PrimitiveBinary {
 
 		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeOperatorRel op, int k) {
 			return buildFrom(pb, x, y, op.toConditionOperator(), k);
@@ -555,33 +534,32 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case LT:
-				return new SubLE2(pb, x, y, k - 1);
+				return new Sub2LE(pb, x, y, k - 1);
 			case LE:
-				return new SubLE2(pb, x, y, k);
+				return new Sub2LE(pb, x, y, k);
 			case GE:
-				return new SubGE2(pb, x, y, k);
+				return new Sub2GE(pb, x, y, k);
 			case GT:
-				return new SubGE2(pb, x, y, k + 1);
+				return new Sub2GE(pb, x, y, k + 1);
 			case EQ:
-				return new SubEQ2(pb, x, y, k); // return pb.extension(pb.api.eq(pb.api.sub(x, y), k));
-			case NE:
-				return new SubNE2(pb, x, y, k);
+				return new Sub2EQ(pb, x, y, k); // return pb.extension(pb.api.eq(pb.api.sub(x, y), k));
+			default: // NE
+				return new Sub2NE(pb, x, y, k);
 			}
-			throw new AssertionError();
 		}
 
-		public PrimitiveBinarySub(Problem pb, Variable x, Variable y, int k) {
+		public Sub2(Problem pb, Variable x, Variable y, int k) {
 			super(pb, x, y, k);
 		}
 
-		public static final class SubLE2 extends PrimitiveBinarySub implements TagNotSymmetric {
+		public static final class Sub2LE extends Sub2 implements TagNotSymmetric {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] - t[1] <= k;
 			}
 
-			public SubLE2(Problem pb, Variable x, Variable y, int k) {
+			public Sub2LE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
@@ -591,14 +569,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 			}
 		}
 
-		public static final class SubGE2 extends PrimitiveBinarySub implements TagNotSymmetric {
+		public static final class Sub2GE extends Sub2 implements TagNotSymmetric {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] - t[1] >= k;
 			}
 
-			public SubGE2(Problem pb, Variable x, Variable y, int k) {
+			public Sub2GE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
@@ -608,7 +586,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 			}
 		}
 
-		public static final class SubEQ2 extends PrimitiveBinarySub {
+		public static final class Sub2EQ extends Sub2 {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
@@ -622,7 +600,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 
 			private final SimplePropagatorEQ sp;
 
-			public SubEQ2(Problem pb, Variable x, Variable y, int k) {
+			public Sub2EQ(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 				this.sp = new SimplePropagatorEQ(dx, dy, true) {
 					@Override
@@ -644,14 +622,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 			}
 		}
 
-		public static final class SubNE2 extends PrimitiveBinarySub {
+		public static final class Sub2NE extends Sub2 {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
 				return t[0] - t[1] != k;
 			}
 
-			public SubNE2(Problem pb, Variable x, Variable y, int k) {
+			public Sub2NE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
@@ -673,117 +651,42 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 	}
 
 	// ************************************************************************
-	// ***** Classes for x * y <op> k (CtrPrimitiveBinaryMul)
+	// ***** Classes for x * y <op> k
 	// ************************************************************************
 
-	public static abstract class PrimitiveBinaryMul extends PrimitiveBinaryWithCst implements TagSymmetric {
+	public static abstract class Mul2 extends PrimitiveBinary implements TagSymmetric {
 
 		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case LT:
-				return new MulLE2(pb, x, y, k - 1);
+				return new Mul2LE(pb, x, y, k - 1);
 			case LE:
-				return new MulLE2(pb, x, y, k);
+				return new Mul2LE(pb, x, y, k);
 			case GE:
-				return new MulGE2(pb, x, y, k);
+				return new Mul2GE(pb, x, y, k);
 			case GT:
-				return new MulGE2(pb, x, y, k + 1);
+				return new Mul2GE(pb, x, y, k + 1);
 			case EQ:
-				return new MulEQ2(pb, x, y, k);
-			case NE:
-				return new MulNE2(pb, x, y, k);
+				return new Mul2EQ(pb, x, y, k);
+			default: // NE
+				return new Mul2NE(pb, x, y, k);
 			}
-			throw new AssertionError();
 		}
 
-		public PrimitiveBinaryMul(Problem pb, Variable x, Variable y, int k) {
+		public Mul2(Problem pb, Variable x, Variable y, int k) {
 			super(pb, x, y, k);
 			control(Utilities.isSafeInt(BigInteger.valueOf(dx.firstValue()).multiply(BigInteger.valueOf(dy.firstValue())).longValueExact()));
 			control(Utilities.isSafeInt(BigInteger.valueOf(dx.lastValue()).multiply(BigInteger.valueOf(dy.lastValue())).longValueExact()));
 		}
 
-		public static final class MulLE2Old extends PrimitiveBinaryMul {
+		public static final class Mul2LE extends Mul2 {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
 				return t[0] * t[1] <= k;
 			}
 
-			public MulLE2Old(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-			}
-
-			private boolean checkLimit(int c, int k, Domain dom) { // c*y <= k
-				if (c == 0)
-					return k >= 0;
-				int limit = Kit.greatestIntegerLE(c, k);
-				return c > 0 ? dom.firstValue() <= limit : dom.lastValue() >= limit;
-			}
-
-			private boolean revise(Domain d1, Domain d2) {
-				int sizeBefore = d1.size();
-				for (int a = d1.last(); a != -1; a = d1.prev(a)) {
-					int va = d1.toVal(a);
-					if ((va > 0 && d2.firstValue() >= 0 && va * d2.firstValue() <= k) || (va < 0 && d2.lastValue() >= 0 && va * d2.lastValue() <= k))
-						break; // because all values of d1 are necessarily supported
-					if (checkLimit(va, k, d2))
-						continue;
-					d1.removeElementary(a);
-				}
-				return d1.afterElementaryCalls(sizeBefore);
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				return revise(dx, dy) && revise(dy, dx);
-			}
-		}
-
-		public static final class MulGE2Old extends PrimitiveBinaryMul {
-
-			@Override
-			public boolean isSatisfiedBy(int[] t) {
-				return t[0] * t[1] >= k;
-			}
-
-			public MulGE2Old(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-			}
-
-			private boolean checkLimit(int c, int k, Domain dom) { // c*y >= k
-				if (c == 0)
-					return k <= 0;
-				int limit = Kit.smallestIntegerGE(c, k);
-				return c > 0 ? dom.lastValue() >= limit : dom.firstValue() <= limit;
-			}
-
-			private boolean revise(Domain d1, Domain d2) {
-				int sizeBefore = d1.size();
-				for (int a = d1.first(); a != -1; a = d1.next(a)) {
-					int va = d1.toVal(a);
-					if ((va > 0 && d2.lastValue() >= 0 && va * d2.lastValue() >= k) || (va < 0 && d2.firstValue() >= 0 && va * d2.firstValue() >= k))
-						break; // because all values of d1 are necessarily supported
-					if (checkLimit(va, k, d2))
-						continue;
-					d1.removeElementary(a);
-				}
-				return d1.afterElementaryCalls(sizeBefore);
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				return revise(dx, dy) && revise(dy, dx);
-			}
-		}
-
-		public static final class MulLE2 extends PrimitiveBinaryMul {
-
-			@Override
-			public boolean isSatisfiedBy(int[] t) {
-				return t[0] * t[1] <= k;
-			}
-
-			public MulLE2(Problem pb, Variable x, Variable y, int k) {
+			public Mul2LE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
@@ -808,14 +711,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 			}
 		}
 
-		public static final class MulGE2 extends PrimitiveBinaryMul {
+		public static final class Mul2GE extends Mul2 {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
 				return t[0] * t[1] >= k;
 			}
 
-			public MulGE2(Problem pb, Variable x, Variable y, int k) {
+			public Mul2GE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
@@ -840,7 +743,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 			}
 		}
 
-		public static final class MulEQ2 extends PrimitiveBinaryMul {
+		public static final class Mul2EQ extends Mul2 {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
@@ -849,7 +752,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 
 			private final SimplePropagatorEQ sp;
 
-			public MulEQ2(Problem pb, Variable x, Variable y, int k) {
+			public Mul2EQ(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 				control(k > 1, "if k is 0 or 1, other constraints should be posted"); // TODO could we just impose k != 0?
 				dx.removeValuesAtConstructionTime(v -> v == 0 || k % v != 0);
@@ -873,14 +776,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 			}
 		}
 
-		public static final class MulNE2 extends PrimitiveBinaryMul {
+		public static final class Mul2NE extends Mul2 {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
 				return t[0] * t[1] != k;
 			}
 
-			public MulNE2(Problem pb, Variable x, Variable y, int k) {
+			public Mul2NE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 				control(k > 1, "if k is 0 or 1, other constraints should be posted");
 			}
@@ -902,43 +805,41 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 	}
 
 	// ************************************************************************
-	// ***** Classes for x / y <op> k (CtrPrimitiveBinaryDiv)
+	// ***** Classes for x / y <op> k
 	// ************************************************************************
 
-	public static abstract class PrimitiveBinaryDiv extends PrimitiveBinaryWithCst implements TagNotSymmetric {
+	public static abstract class Div2 extends PrimitiveBinary implements TagNotSymmetric {
 
-		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
+		public static Div2 buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case LT:
-				return new DivLE2(pb, x, y, k - 1);
+				return new Div2LE(pb, x, y, k - 1);
 			case LE:
-				return new DivLE2(pb, x, y, k);
+				return new Div2LE(pb, x, y, k);
 			case GE:
-				return new DivGE2(pb, x, y, k);
+				return new Div2GE(pb, x, y, k);
 			case GT:
-				return new DivGE2(pb, x, y, k + 1);
+				return new Div2GE(pb, x, y, k + 1);
 			case EQ:
-				return new DivEQ2(pb, x, y, k);
-			case NE:
-				return null;
-			// return new DivNE2(pb, x, y, k)); // TODO
+				return new Div2EQ(pb, x, y, k);
+			default: // NE
+				throw new AssertionError("not implemented"); // TODO interesting?
 			}
-			throw new AssertionError();
 		}
 
-		public PrimitiveBinaryDiv(Problem pb, Variable x, Variable y, int k) {
+		public Div2(Problem pb, Variable x, Variable y, int k) {
 			super(pb, x, y, k);
 			control(dx.firstValue() >= 0 && dy.firstValue() > 0 && k >= 0);
 		}
 
-		public static final class DivLE2 extends PrimitiveBinaryDiv {
+		public static final class Div2LE extends Div2 {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
 				return t[0] / t[1] <= k;
 			}
 
-			public DivLE2(Problem pb, Variable x, Variable y, int k) {
+			public Div2LE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
@@ -948,14 +849,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 			}
 		}
 
-		public static final class DivGE2 extends PrimitiveBinaryDiv {
+		public static final class Div2GE extends Div2 {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
 				return t[0] / t[1] >= k;
 			}
 
-			public DivGE2(Problem pb, Variable x, Variable y, int k) {
+			public Div2GE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
@@ -966,14 +867,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 		}
 
 		// Be careful: x/y = k is not equivalent to x/k = y (for example, 13/5 = 2 while 13/2 = 6)
-		public static final class DivEQ2 extends PrimitiveBinaryDiv {
+		public static final class Div2EQ extends Div2 {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
 				return t[0] / t[1] == k;
 			}
 
-			public DivEQ2(Problem pb, Variable x, Variable y, int k) {
+			public Div2EQ(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 				buildResiduesForBothVariables();
 			}
@@ -1020,33 +921,33 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 	}
 
 	// ************************************************************************
-	// ***** Classes for x % y <op> k (CtrPrimitiveBinaryMod)
+	// ***** Classes for x % y <op> k
 	// ************************************************************************
 
-	public static abstract class PrimitiveBinaryMod extends PrimitiveBinaryWithCst implements TagNotSymmetric {
+	public static abstract class Mod2 extends PrimitiveBinary implements TagNotSymmetric {
 
-		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
+		public static Mod2 buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case EQ:
-				return new ModEQ2(pb, x, y, k);
+				return new Mod2EQ(pb, x, y, k);
 			default:
-				return null;
+				throw new AssertionError("not implemented"); // TODO relevant to implement the others?
 			}
 		}
 
-		public PrimitiveBinaryMod(Problem pb, Variable x, Variable y, int k) {
+		public Mod2(Problem pb, Variable x, Variable y, int k) {
 			super(pb, x, y, k);
 			control(dx.firstValue() >= 0 && dy.firstValue() > 0 && k >= 0);
 		}
 
-		public static final class ModEQ2 extends PrimitiveBinaryMod {
+		public static final class Mod2EQ extends Mod2 {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
 				return t[0] % t[1] == k;
 			}
 
-			public ModEQ2(Problem pb, Variable x, Variable y, int k) {
+			public Mod2EQ(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 				buildResiduesForBothVariables();
 				dx.removeValuesAtConstructionTime(v -> v < k); // because the remainder is at most k-1, whatever the value of y
@@ -1116,44 +1017,43 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 	}
 
 	// ************************************************************************
-	// ***** Classes for |x - y| <op> k (CtrPrimitiveBinaryDist)
+	// ***** Classes for |x - y| <op> k
 	// ************************************************************************
 
-	public static abstract class PrimitiveBinaryDist extends PrimitiveBinaryWithCst implements TagSymmetric {
+	public static abstract class Dist2 extends PrimitiveBinary implements TagSymmetric {
 
-		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
+		public static Dist2 buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case LT:
-				return new DistLE2(pb, x, y, k - 1); // return pb.extension(lt(dist(x, y), k));
+				return new Dist2LE(pb, x, y, k - 1); // return pb.extension(lt(dist(x, y), k));
 			case LE:
-				return new DistLE2(pb, x, y, k); // return pb.extension(le(dist(x, y), k));
+				return new Dist2LE(pb, x, y, k); // return pb.extension(le(dist(x, y), k));
 			case GE:
-				return new DistGE2(pb, x, y, k);
+				return new Dist2GE(pb, x, y, k);
 			case GT:
-				return new DistGE2(pb, x, y, k + 1);
+				return new Dist2GE(pb, x, y, k + 1);
 			case EQ:
-				return new DistEQ2(pb, x, y, k); // return pb.extension(eq(dist(x, y), k));
-			// ok for java ac csp/Rlfap-scen-11-f06.xml.lzma -cm -ev -varh=Dom but not for domOnwdeg. Must be because of failing may occur on assigned
-			// variables in DISTEQ2
-			case NE:
-				return new DistNE2(pb, x, y, k);
+				return new Dist2EQ(pb, x, y, k); // return pb.extension(eq(dist(x, y), k));
+			// TODO ok for java ace csp/Rlfap-scen-11-f06.xml.lzma -varh=Dom -ev but not for -varh=DomOnWdeg.
+			// Must be because of conflict occurring on assigned variables in DISTEQ2
+			default: // NE
+				return new Dist2NE(pb, x, y, k);
 			}
-			throw new AssertionError();
 		}
 
-		public PrimitiveBinaryDist(Problem pb, Variable x, Variable y, int k) {
+		public Dist2(Problem pb, Variable x, Variable y, int k) {
 			super(pb, x, y, k);
 			control(k > 0, "k should be strictly positive");
 		}
 
-		public static final class DistLE2 extends PrimitiveBinaryDist {
+		public static final class Dist2LE extends Dist2 {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
 				return Math.abs(t[0] - t[1]) <= k;
 			}
 
-			public DistLE2(Problem pb, Variable x, Variable y, int k) {
+			public Dist2LE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
@@ -1163,14 +1063,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 			}
 		}
 
-		public static final class DistGE2 extends PrimitiveBinaryDist { // code similar to Disjunctive
+		public static final class Dist2GE extends Dist2 { // code similar to Disjunctive
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
 				return Math.abs(t[0] - t[1]) >= k; // equivalent to disjunctive: t[0] + k <= t[1] || t[1] + k <= t[0];
 			}
 
-			public DistGE2(Problem pb, Variable x, Variable y, int k) {
+			public Dist2GE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
@@ -1181,7 +1081,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 			}
 		}
 
-		public static final class DistEQ2 extends PrimitiveBinaryDist {
+		public static final class Dist2EQ extends Dist2 {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
@@ -1190,7 +1090,7 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 
 			private final MultiPropagatorEQ sp;
 
-			public DistEQ2(Problem pb, Variable x, Variable y, int k) {
+			public Dist2EQ(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 				int[] tmp = new int[2];
 				this.sp = new MultiPropagatorEQ(dx, dy, true) {
@@ -1216,14 +1116,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 			}
 		}
 
-		public static final class DistNE2 extends PrimitiveBinaryDist {
+		public static final class Dist2NE extends Dist2 {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
 				return Math.abs(t[0] - t[1]) != k;
 			}
 
-			public DistNE2(Problem pb, Variable x, Variable y, int k) {
+			public Dist2NE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
@@ -1242,366 +1142,372 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 		}
 	}
 
-	// ************************************************************************
-	// ***** Classes for x <op> y * k (CtrPrimitiveBinaryMulb)
-	// ************************************************************************
+	/**********************************************************************************************
+	 * Variants number 2 of the binary primitives: here, the two variables are not on the same side
+	 *********************************************************************************************/
 
-	public static abstract class PrimitiveBinaryMulb extends PrimitiveBinaryWithCst implements TagNotSymmetric {
+	public static abstract class PrimitiveBinaryVariant2 extends PrimitiveBinary implements TagNotSymmetric {
 
-		public static Constraint buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
+		public PrimitiveBinaryVariant2(Problem pb, Variable x, Variable y, int k) {
+			super(pb, x, y, k);
+		}
+
+		// ************************************************************************
+		// ***** Classes for x <op> y * k
+		// ************************************************************************
+
+		public static abstract class Mul2b extends PrimitiveBinaryVariant2 {
+
+			public static Constraint buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
+				switch (op) {
+				case LT:
+				case LE:
+				case GE:
+				case GT:
+					// IMPORTANT: keep this order for the variables and the coefficient (that must be increasingly ordered)
+					return SumWeighted.buildFrom(pb, pb.vars(y, x), new int[] { -k, 1 }, op, 0);
+				case EQ:
+					return new Mul2bEQ(pb, x, y, k);
+				default: // NE
+					return new Mul2bNE(pb, x, y, k);
+				}
+			}
+
+			public Mul2b(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+				control(k != 0);
+				control(Utilities.isSafeInt(BigInteger.valueOf(dy.firstValue()).multiply(BigInteger.valueOf(k)).longValueExact()));
+				control(Utilities.isSafeInt(BigInteger.valueOf(dy.lastValue()).multiply(BigInteger.valueOf(k)).longValueExact()));
+			}
+
+			public static final class Mul2bEQ extends Mul2b {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					return t[0] == t[1] * k;
+				}
+
+				private final SimplePropagatorEQ sp;
+
+				public Mul2bEQ(Problem pb, Variable x, Variable y, int k) {
+					super(pb, x, y, k);
+					dx.removeValuesAtConstructionTime(v -> v != 0 && v % k != 0); // non multiple deleted (important for avoiding systematic checks)
+					this.sp = new SimplePropagatorEQ(dx, dy, true) {
+						@Override
+						final int valxFor(int b) {
+							return dy.toVal(b) * k;
+						}
+
+						@Override
+						final int valyFor(int a) {
+							return dx.toVal(a) / k;
+						}
+					};
+				}
+
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					return sp.runPropagator(dummy); // return enforceMulEQ(dx, dy, k);
+				}
+			}
+
+			public static final class Mul2bNE extends Mul2b {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					return t[0] != t[1] * k;
+				}
+
+				public Mul2bNE(Problem pb, Variable x, Variable y, int k) {
+					super(pb, x, y, k); // note that values in x that are not multiple of k are always supported
+				}
+
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					if (dx.size() == 1)
+						return dx.singleValue() % k != 0 || dy.removeValueIfPresent(dx.singleValue() / k);
+					if (dy.size() == 1)
+						return dx.removeValueIfPresent(dy.singleValue() * k);
+					return true;
+				}
+			}
+		}
+
+		// ************************************************************************
+		// ***** Classes for x <op> y / k
+		// ************************************************************************
+
+		public static abstract class Div2b extends PrimitiveBinaryVariant2 {
+
+			public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
+				switch (op) {
+				case EQ:
+					return x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0 && k > 1 ? new Div2bEQ(pb, x, y, k) : null;
+				case NE:
+					return x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0 && k > 1 ? new Div2bNE(pb, x, y, k) : null;
+				default:
+					throw new AssertionError("not implemented"); // not relevant to implement them? (since an auxiliary variable can be introduced)
+				}
+			}
+
+			public Div2b(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+				control(dx.firstValue() >= 0 && dy.firstValue() >= 0 && k > 1, dx.firstValue() + " " + dy.firstValue() + " " + k);
+			}
+
+			public static final class Div2bEQ extends Div2b {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					return t[0] == t[1] / k;
+				}
+
+				private final SimplePropagatorEQ sp;
+
+				public Div2bEQ(Problem pb, Variable x, Variable y, int k) {
+					super(pb, x, y, k);
+					this.sp = new SimplePropagatorEQ(dx, dy, false) {
+						@Override
+						final int valxFor(int b) {
+							return dy.toVal(b) / k;
+						}
+					};
+				}
+
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					return sp.runPropagator(dummy);
+				}
+			}
+
+			public static final class Div2bNE extends Div2b {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					return t[0] != t[1] / k;
+				}
+
+				public Div2bNE(Problem pb, Variable x, Variable y, int k) {
+					super(pb, x, y, k);
+				}
+
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					if (dx.size() == 1)
+						return dy.removeValuesInRange(dx.singleValue() * k, dx.singleValue() * k + k);
+					if (dy.firstValue() / k == dy.lastValue() / k)
+						return dx.removeValueIfPresent(dy.firstValue() / k);
+					return true;
+				}
+			}
+		}
+
+		// ************************************************************************
+		// ***** Classes for x <op> y % k
+		// ************************************************************************
+
+		public static abstract class Mod2b extends PrimitiveBinaryVariant2 {
+
+			public static Mod2b buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
+				switch (op) {
+				case EQ:
+					return new Mod2bEQ(pb, x, y, k);
+				case NE:
+					return new Mod2bNE(pb, x, y, k);
+				default:
+					throw new AssertionError("not implemented"); // not relevant to implement them? (since an auxiliary variable can be introduced)
+				}
+			}
+
+			public Mod2b(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+				control(dx.firstValue() >= 0 && dy.firstValue() >= 0 && k > 1);
+			}
+
+			public static final class Mod2bEQ extends Mod2b {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					return t[0] == t[1] % k;
+				}
+
+				private final SimplePropagatorEQ sp;
+
+				public Mod2bEQ(Problem pb, Variable x, Variable y, int k) {
+					super(pb, x, y, k);
+					dx.removeValuesAtConstructionTime(v -> v >= k); // because the remainder is at most k-1, whatever the value of y
+					this.sp = new SimplePropagatorEQ(dx, dy, false) {
+						@Override
+						final int valxFor(int b) {
+							return dy.toVal(b) % k;
+						}
+					};
+				}
+
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					return sp.runPropagator(dummy);
+				}
+			}
+
+			public static final class Mod2bNE extends Mod2b {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					return t[0] != t[1] % k;
+				}
+
+				public Mod2bNE(Problem pb, Variable x, Variable y, int k) {
+					super(pb, x, y, k);
+				}
+
+				int watch1 = -1, watch2 = -1; // watching two different (indexes of) values of y leading to two different remainders
+
+				private int findWatch(int other) {
+					if (other == -1)
+						return dy.first();
+					int r = dy.toVal(other) % k;
+					for (int b = dy.first(); b != -1; b = dy.next(b))
+						if (dy.toVal(b) % k != r)
+							return b;
+					return -1;
+				}
+
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					if (dx.size() == 1)
+						return dy.removeValuesModIn(dx, k) && entailed();
+					if (watch1 == -1 || !dy.contains(watch1))
+						watch1 = findWatch(watch2);
+					if (watch1 == -1) { // watch2 is the only remaining valid watch (we know that it is still valid since the domain is not empty)
+						assert watch2 != -1 && dy.contains(watch2);
+						return dx.removeValueIfPresent(dy.toVal(watch2) % k) && entailed();
+					}
+					if (watch2 == -1 || !dy.contains(watch2))
+						watch2 = findWatch(watch1);
+					if (watch2 == -1)
+						return dx.removeValueIfPresent(dy.toVal(watch1) % k) && entailed();
+					return true;
+				}
+			}
+		}
+
+		// ************************************************************************
+		// ***** Classes for x <op> |y - k|
+		// ************************************************************************
+
+		public static abstract class Dist2b extends PrimitiveBinaryVariant2 {
+
+			public static Dist2b buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
+				switch (op) {
+				case EQ:
+					return new Dist2bEQ(pb, x, y, k);
+				case NE:
+					return new Dist2bNE(pb, x, y, k);
+				default:
+					throw new AssertionError("not implemented"); // not relevant to implement them? (since an auxiliary variable can be introduced)
+				}
+			}
+
+			public Dist2b(Problem pb, Variable x, Variable y, int k) {
+				super(pb, x, y, k);
+				control(dx.firstValue() >= 0);
+				control(k >= 0, "k should be positive or 0");
+
+			}
+
+			public static final class Dist2bEQ extends Dist2b {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					return t[0] == Math.abs(t[1] - k);
+				}
+
+				private final SimplePropagatorEQ sp;
+
+				public Dist2bEQ(Problem pb, Variable x, Variable y, int k) {
+					super(pb, x, y, k);
+					this.sp = new SimplePropagatorEQ(dx, dy, false) {
+						@Override
+						final int valxFor(int b) {
+							return Math.abs(dy.toVal(b) - k);
+						}
+					};
+				}
+
+				@Override
+				public boolean runPropagator(Variable evt) {
+					if (dx.size() == 1 && !dy.containsValue(k + dx.singleValue()) && !dy.containsValue(k - dx.singleValue()))
+						return evt.dom.fail();
+					return sp.runPropagator(evt);
+				}
+			}
+
+			public static final class Dist2bNE extends Dist2b {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					return t[0] != Math.abs(t[1] - k);
+				}
+
+				public Dist2bNE(Problem pb, Variable x, Variable y, int k) {
+					super(pb, x, y, k);
+				}
+
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					if (dx.size() == 1)
+						return dy.removeValueIfPresent(k + dx.singleValue()) && dy.removeValueIfPresent(k - dx.singleValue());
+					int v = Math.abs(dy.firstValue() - k);
+					if (dy.size() == 1)
+						return dx.removeValueIfPresent(v);
+					if (dy.size() == 2 && Math.abs(dy.lastValue() - k) == v)
+						return dx.removeValueIfPresent(v);
+					return true;
+				}
+			}
+		}
+	}
+
+	/**********************************************************************************************
+	 * Simple Reification : Classes for x = (y <op> k)
+	 *********************************************************************************************/
+
+	/**
+	 * The root class for simple reification forms: a variable is defined as the result of a logical comparison involving another variable
+	 */
+	public static abstract class Log2 extends PrimitiveBinary implements TagNotSymmetric {
+
+		public static Log2 buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 			switch (op) {
 			case LT:
+				return new Log2LE(pb, x, y, k - 1);
 			case LE:
+				return new Log2LE(pb, x, y, k);
 			case GE:
+				return new Log2GE(pb, x, y, k);
 			case GT:
-				return SumWeighted.buildFrom(pb, pb.api.vars(y, x), pb.api.vals(-k, 1), op, 0); // keep this order (coeffs must be increasingly ordered)
+				return new Log2GE(pb, x, y, k + 1);
 			case EQ:
-				return new MulbEQ2(pb, x, y, k);
-			case NE:
-				return new MulbNE2(pb, x, y, k);
-			}
-			throw new AssertionError();
-		}
-
-		public PrimitiveBinaryMulb(Problem pb, Variable x, Variable y, int k) {
-			super(pb, x, y, k);
-			control(k != 0);
-			control(Utilities.isSafeInt(BigInteger.valueOf(dy.firstValue()).multiply(BigInteger.valueOf(k)).longValueExact()));
-			control(Utilities.isSafeInt(BigInteger.valueOf(dy.lastValue()).multiply(BigInteger.valueOf(k)).longValueExact()));
-		}
-
-		public static final class MulbEQ2 extends PrimitiveBinaryMulb {
-
-			@Override
-			public boolean isSatisfiedBy(int[] t) {
-				return t[0] == t[1] * k;
-			}
-
-			private final SimplePropagatorEQ sp;
-
-			public MulbEQ2(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-				dx.removeValuesAtConstructionTime(v -> v != 0 && v % k != 0); // non multiple deleted (important for avoiding systematic checks)
-				this.sp = new SimplePropagatorEQ(dx, dy, true) {
-					@Override
-					final int valxFor(int b) {
-						return dy.toVal(b) * k;
-					}
-
-					@Override
-					final int valyFor(int a) {
-						return dx.toVal(a) / k;
-					}
-				};
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				return sp.runPropagator(dummy); // return enforceMulEQ(dx, dy, k);
+				return new Log2EQ(pb, x, y, k);
+			default: // NE
+				return new Log2NE(pb, x, y, k);
 			}
 		}
 
-		public static final class MulbNE2 extends PrimitiveBinaryMulb {
-
-			@Override
-			public boolean isSatisfiedBy(int[] t) {
-				return t[0] != t[1] * k;
-			}
-
-			public MulbNE2(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-				// note that values in x that are not multiple of k are always supported
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				if (dx.size() == 1)
-					return dx.singleValue() % k != 0 || dy.removeValueIfPresent(dx.singleValue() / k);
-				if (dy.size() == 1)
-					return dx.removeValueIfPresent(dy.singleValue() * k);
-				return true;
-			}
-		}
-	}
-
-	// ************************************************************************
-	// ***** Classes for x <op> y / k (CtrPrimitiveBinaryDivb)
-	// ************************************************************************
-
-	public static abstract class PrimitiveBinaryDivb extends PrimitiveBinaryWithCst implements TagNotSymmetric {
-
-		public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
-			switch (op) {
-			case EQ:
-				return x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0 && k > 1 ? new DivbEQ2(pb, x, y, k) : null;
-			case NE:
-				return x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0 && k > 1 ? new DivbNE2(pb, x, y, k) : null;
-			default:
-				return null;
-			}
-		}
-
-		public PrimitiveBinaryDivb(Problem pb, Variable x, Variable y, int k) {
-			super(pb, x, y, k);
-			control(dx.firstValue() >= 0 && dy.firstValue() >= 0 && k > 1, dx.firstValue() + " " + dy.firstValue() + " " + k);
-		}
-
-		public static final class DivbEQ2 extends PrimitiveBinaryDivb {
-
-			@Override
-			public boolean isSatisfiedBy(int[] t) {
-				return t[0] == t[1] / k;
-			}
-
-			private final SimplePropagatorEQ sp;
-
-			public DivbEQ2(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-				this.sp = new SimplePropagatorEQ(dx, dy, false) {
-					@Override
-					final int valxFor(int b) {
-						return dy.toVal(b) / k;
-					}
-				};
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				return sp.runPropagator(dummy);
-			}
-		}
-
-		public static final class DivbNE2 extends PrimitiveBinaryDivb {
-
-			@Override
-			public boolean isSatisfiedBy(int[] t) {
-				return t[0] != t[1] / k;
-			}
-
-			public DivbNE2(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				if (dx.size() == 1)
-					return dy.removeValuesInRange(dx.singleValue() * k, dx.singleValue() * k + k);
-				if (dy.firstValue() / k == dy.lastValue() / k)
-					return dx.removeValueIfPresent(dy.firstValue() / k);
-				return true;
-			}
-		}
-	}
-
-	// ************************************************************************
-	// ***** Classes for x <op> y % k (CtrPrimitiveBinaryModb)
-	// ************************************************************************
-
-	public static abstract class PrimitiveBinaryModb extends PrimitiveBinaryWithCst implements TagNotSymmetric {
-
-		public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
-			switch (op) {
-			case EQ:
-				return new ModbEQ2(pb, x, y, k);
-			case NE:
-				return new ModbNE2(pb, x, y, k);
-			default:
-				return null;
-			}
-		}
-
-		public PrimitiveBinaryModb(Problem pb, Variable x, Variable y, int k) {
-			super(pb, x, y, k);
-			control(dx.firstValue() >= 0 && dy.firstValue() >= 0 && k > 1);
-		}
-
-		public static final class ModbEQ2 extends PrimitiveBinaryModb {
-
-			@Override
-			public boolean isSatisfiedBy(int[] t) {
-				return t[0] == t[1] % k;
-			}
-
-			private final SimplePropagatorEQ sp;
-
-			public ModbEQ2(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-				dx.removeValuesAtConstructionTime(v -> v >= k); // because the remainder is at most k-1, whatever the value of y
-				this.sp = new SimplePropagatorEQ(dx, dy, false) {
-					@Override
-					final int valxFor(int b) {
-						return dy.toVal(b) % k;
-					}
-				};
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				return sp.runPropagator(dummy);
-			}
-		}
-
-		public static final class ModbNE2 extends PrimitiveBinaryModb {
-
-			@Override
-			public boolean isSatisfiedBy(int[] t) {
-				return t[0] != t[1] % k;
-			}
-
-			public ModbNE2(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-			}
-
-			int watch1 = -1, watch2 = -1; // watching two different (indexes of) values of y leading to two different remainders
-
-			private int findWatch(int other) {
-				if (other == -1)
-					return dy.first();
-				int r = dy.toVal(other) % k;
-				for (int b = dy.first(); b != -1; b = dy.next(b))
-					if (dy.toVal(b) % k != r)
-						return b;
-				return -1;
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				if (dx.size() == 1) {
-					entailed();
-					return dy.removeValuesModIn(dx, k);
-				}
-				if (watch1 == -1 || !dy.contains(watch1))
-					watch1 = findWatch(watch2);
-				if (watch1 == -1) {
-					// watch2 is the only remaining valid watch (we know that it is still valid since the domain is not empty)
-					assert watch2 != -1 && dy.contains(watch2);
-					entailed();
-					return dx.removeValueIfPresent(dy.toVal(watch2) % k);
-				}
-				if (watch2 == -1 || !dy.contains(watch2))
-					watch2 = findWatch(watch1);
-				if (watch2 == -1) {
-					entailed();
-					return dx.removeValueIfPresent(dy.toVal(watch1) % k);
-				}
-				return true;
-			}
-		}
-	}
-
-	// ************************************************************************
-	// ***** Classes for x <op> |y - k| (CtrPrimitiveBinaryDistb)
-	// ************************************************************************
-
-	public static abstract class PrimitiveBinaryDistb extends PrimitiveBinaryWithCst implements TagNotSymmetric {
-
-		public static PrimitiveBinary buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
-			switch (op) {
-			case EQ:
-				return new DistbEQ2(pb, x, y, k);
-			case NE:
-				return new DistbNE2(pb, x, y, k);
-			default:
-				return null;
-			}
-		}
-
-		public PrimitiveBinaryDistb(Problem pb, Variable x, Variable y, int k) {
-			super(pb, x, y, k);
-			control(dx.firstValue() >= 0);
-			control(k >= 0, "k should be positive or 0");
-
-		}
-
-		public static final class DistbEQ2 extends PrimitiveBinaryDistb {
-
-			@Override
-			public boolean isSatisfiedBy(int[] t) {
-				return t[0] == Math.abs(t[1] - k);
-			}
-
-			private final SimplePropagatorEQ sp;
-
-			public DistbEQ2(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-				this.sp = new SimplePropagatorEQ(dx, dy, false) {
-					@Override
-					final int valxFor(int b) {
-						return Math.abs(dy.toVal(b) - k);
-					}
-				};
-			}
-
-			@Override
-			public boolean runPropagator(Variable evt) {
-				if (dx.size() == 1 && !dy.containsValue(k + dx.singleValue()) && !dy.containsValue(k - dx.singleValue()))
-					return evt.dom.fail();
-				return sp.runPropagator(evt);
-			}
-		}
-
-		public static final class DistbNE2 extends PrimitiveBinaryDistb {
-
-			@Override
-			public boolean isSatisfiedBy(int[] t) {
-				return t[0] != Math.abs(t[1] - k);
-			}
-
-			public DistbNE2(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				if (dx.size() == 1)
-					return dy.removeValueIfPresent(k + dx.singleValue()) && dy.removeValueIfPresent(k - dx.singleValue());
-				int v = Math.abs(dy.firstValue() - k);
-				if (dy.size() == 1)
-					return dx.removeValueIfPresent(v);
-				if (dy.size() == 2 && Math.abs(dy.lastValue() - k) == v)
-					return dx.removeValueIfPresent(v);
-				return true;
-			}
-		}
-	}
-
-	// ************************************************************************
-	// ***** Classes for x = (y <op> k) (CtrPrimitiveBinaryLog)
-	// ************************************************************************
-
-	public static abstract class PrimitiveBinaryLog extends PrimitiveBinaryWithCst implements TagNotSymmetric {
-
-		public static PrimitiveBinary buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
-			switch (op) {
-			case LT:
-				return new LogLE2(pb, x, y, k - 1);
-			case LE:
-				return new LogLE2(pb, x, y, k);
-			case GE:
-				return new LogGE2(pb, x, y, k);
-			case GT:
-				return new LogGE2(pb, x, y, k + 1);
-			case EQ:
-				return new LogEQ2(pb, x, y, k);
-			case NE:
-				return new LogNE2(pb, x, y, k);
-			}
-			throw new AssertionError();
-		}
-
-		public PrimitiveBinaryLog(Problem pb, Variable x, Variable y, int k) {
+		public Log2(Problem pb, Variable x, Variable y, int k) {
 			super(pb, x, y, k);
 			control(dx.is01(), "The first variable should be of type 01");
 		}
 
-		public static final class LogLE2 extends PrimitiveBinaryLog {
+		public static final class Log2LE extends Log2 {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
 				return (t[0] == 1) == (t[1] <= k);
 			}
 
-			public LogLE2(Problem pb, Variable x, Variable y, int k) {
+			public Log2LE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
@@ -1619,14 +1525,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 			}
 		}
 
-		public static final class LogGE2 extends PrimitiveBinaryLog {
+		public static final class Log2GE extends Log2 {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
 				return (t[0] == 1) == (t[1] >= k);
 			}
 
-			public LogGE2(Problem pb, Variable x, Variable y, int k) {
+			public Log2GE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
@@ -1644,14 +1550,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 			}
 		}
 
-		public static final class LogEQ2 extends PrimitiveBinaryLog {
+		public static final class Log2EQ extends Log2 {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
 				return (t[0] == 1) == (t[1] == k);
 			}
 
-			public LogEQ2(Problem pb, Variable x, Variable y, int k) {
+			public Log2EQ(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
@@ -1669,14 +1575,14 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 			}
 		}
 
-		public static final class LogNE2 extends PrimitiveBinaryLog {
+		public static final class Log2NE extends Log2 {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
 				return (t[0] == 1) == (t[1] != k);
 			}
 
-			public LogNE2(Problem pb, Variable x, Variable y, int k) {
+			public Log2NE(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 			}
 
@@ -1695,3 +1601,109 @@ public abstract class PrimitiveBinary extends Primitive implements TagAC, TagCal
 		}
 	}
 }
+
+// public static final class MulLE2Old extends PrimitiveBinaryMul {
+//
+// @Override
+// public boolean isSatisfiedBy(int[] t) {
+// return t[0] * t[1] <= k;
+// }
+//
+// public MulLE2Old(Problem pb, Variable x, Variable y, int k) {
+// super(pb, x, y, k);
+// }
+//
+// private boolean checkLimit(int c, int k, Domain dom) { // c*y <= k
+// if (c == 0)
+// return k >= 0;
+// int limit = Kit.greatestIntegerLE(c, k);
+// return c > 0 ? dom.firstValue() <= limit : dom.lastValue() >= limit;
+// }
+//
+// private boolean revise(Domain d1, Domain d2) {
+// int sizeBefore = d1.size();
+// for (int a = d1.last(); a != -1; a = d1.prev(a)) {
+// int va = d1.toVal(a);
+// if ((va > 0 && d2.firstValue() >= 0 && va * d2.firstValue() <= k) || (va < 0 && d2.lastValue() >= 0 && va * d2.lastValue() <= k))
+// break; // because all values of d1 are necessarily supported
+// if (checkLimit(va, k, d2))
+// continue;
+// d1.removeElementary(a);
+// }
+// return d1.afterElementaryCalls(sizeBefore);
+// }
+//
+// @Override
+// public boolean runPropagator(Variable dummy) {
+// return revise(dx, dy) && revise(dy, dx);
+// }
+// }
+//
+// public static final class MulGE2Old extends PrimitiveBinaryMul {
+//
+// @Override
+// public boolean isSatisfiedBy(int[] t) {
+// return t[0] * t[1] >= k;
+// }
+//
+// public MulGE2Old(Problem pb, Variable x, Variable y, int k) {
+// super(pb, x, y, k);
+// }
+//
+// private boolean checkLimit(int c, int k, Domain dom) { // c*y >= k
+// if (c == 0)
+// return k <= 0;
+// int limit = Kit.smallestIntegerGE(c, k);
+// return c > 0 ? dom.lastValue() >= limit : dom.firstValue() <= limit;
+// }
+//
+// private boolean revise(Domain d1, Domain d2) {
+// int sizeBefore = d1.size();
+// for (int a = d1.first(); a != -1; a = d1.next(a)) {
+// int va = d1.toVal(a);
+// if ((va > 0 && d2.lastValue() >= 0 && va * d2.lastValue() >= k) || (va < 0 && d2.firstValue() >= 0 && va * d2.firstValue() >= k))
+// break; // because all values of d1 are necessarily supported
+// if (checkLimit(va, k, d2))
+// continue;
+// d1.removeElementary(a);
+// }
+// return d1.afterElementaryCalls(sizeBefore);
+// }
+//
+// @Override
+// public boolean runPropagator(Variable dummy) {
+// return revise(dx, dy) && revise(dy, dx);
+// }
+// }
+
+// public static boolean enforceEQ(Domain dx, Domain dy, int k) { // x = y + k
+// if (dx.removeValuesAddNotIn(dy, -k) == false)
+// return false;
+// if (dx.size() == dy.size())
+// return true;
+// assert dx.size() < dy.size();
+// boolean consistent = dy.removeValuesAddNotIn(dx, k);
+// assert consistent;
+// return true;
+// }
+
+// public static boolean enforceMulEQ(Domain dx, Domain dy, int k) { // x = y * k
+// assert dx.iterateOnValuesStoppingWhen(v -> v != 0 && v % k != 0) == false; // we assume that trivial inconsistent values have been deleted
+// // initially (for code efficiency, avoiding systematic check)
+// if (dx.removeValuesDivNotIn(dy, k) == false)
+// return false;
+// if (dx.size() == dy.size())
+// return true;
+// assert dx.size() < dy.size();
+// boolean consistent = dy.removeValuesMulNotIn(dx, k);
+// assert consistent;
+// return true;
+// }
+
+// public static boolean enforceNE(Domain dx, Domain dy, int k) { // x != y + k
+// if (dx.size() == 1)
+// return dy.removeValueIfPresent(dx.uniqueValue() - k);
+// if (dy.size() == 1)
+// return dx.removeValueIfPresent(dy.uniqueValue() + k);
+// return true;
+// }

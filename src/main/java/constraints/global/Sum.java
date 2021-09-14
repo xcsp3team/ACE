@@ -46,21 +46,34 @@ import variables.Domain;
 import variables.DomainInfinite;
 import variables.Variable;
 
+/**
+ * This is the root class for any constraint 'sum'. The three directs (abstract) subclasses are: SumSimple, SumWeighted and SumViewWeighted.
+ * 
+ * @author Christophe Lecoutre
+ */
 public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFiltering {
 
+	/**
+	 * The limit (right-hand term) of the constraint
+	 */
 	protected long limit;
 
-	protected long min, max; // used in most of the subclasses
+	/**
+	 * The minimal sum (of the left-hand expression) that can be computed at a given moment; used during filtering in most of the subclasses
+	 */
+	protected long min;
 
-	protected long minComputableObjectiveValue, maxComputableObjectiveValue; // cached values
+	/**
+	 * The maximal sum (of the left-hand expression) that can be computed at a given moment; used during filtering in most of the subclasses
+	 */
+	protected long max;
 
 	public final long limit() {
 		return limit;
 	}
 
-	public final void limit(long newLimit) {
+	public final void setLimit(long newLimit) {
 		this.limit = newLimit;
-		control(minComputableObjectiveValue - 1 <= limit && limit <= maxComputableObjectiveValue + 1);
 	}
 
 	public Sum(Problem pb, Variable[] scp) {
@@ -113,10 +126,9 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				return new SumSimpleGE(pb, scp, limit + 1);
 			case EQ:
 				return new SumSimpleEQ(pb, scp, limit);
-			case NE:
+			default: // NE
 				return new SumSimpleNE(pb, scp, limit);
 			}
-			throw new AssertionError();
 		}
 
 		public static long sum(int[] t) {
@@ -171,11 +183,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 		public SumSimple(Problem pb, Variable[] scp, long limit) {
 			super(pb, scp);
-			control(Variable.areAllDistinct(scp));
-			this.minComputableObjectiveValue = minComputableObjectiveValue();
-			this.maxComputableObjectiveValue = maxComputableObjectiveValue();
-			control(minComputableObjectiveValue <= maxComputableObjectiveValue);
-			limit(limit);
+			control(Variable.areAllDistinct(scp) && minComputableObjectiveValue() <= maxComputableObjectiveValue());
+			setLimit(limit);
 			defineKey(limit);
 		}
 
@@ -479,13 +488,12 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				return new SumWeightedGE(pb, vs, coeffs, limit + 1);
 			case EQ:
 				return new SumWeightedEQ(pb, vs, coeffs, limit);
-			case NE:
+			default: // NE:
 				return new SumWeightedNE(pb, vs, coeffs, limit);
 			}
-			throw new AssertionError();
 		}
 
-		public static long weightedSum(int[] t, int[] coeffs) {
+		public static final long weightedSum(int[] t, int[] coeffs) {
 			assert t.length == coeffs.length;
 			// note that no overflow control is performed here
 			long sum = 0;
@@ -494,7 +502,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			return sum;
 		}
 
-		public static long minPossibleSum(Variable[] scp, int[] coeffs) {
+		public static final long minPossibleSum(Variable[] scp, int[] coeffs) {
 			BigInteger sum = BigInteger.valueOf(0);
 			for (int i = 0; i < scp.length; i++) {
 				BigInteger value = BigInteger.valueOf(coeffs[i] >= 0 ? scp[i].dom.smallestInitialValue() : scp[i].dom.greatestInitialValue());
@@ -503,7 +511,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			return sum.longValueExact();
 		}
 
-		public static long maxPossibleSum(Variable[] scp, int[] coeffs) {
+		public static final long maxPossibleSum(Variable[] scp, int[] coeffs) {
 			BigInteger sum = BigInteger.valueOf(0);
 			for (int i = 0; i < scp.length; i++) {
 				BigInteger value = BigInteger.valueOf(coeffs[i] >= 0 ? scp[i].dom.greatestInitialValue() : scp[i].dom.smallestInitialValue());
@@ -512,29 +520,29 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			return sum.longValueExact();
 		}
 
-		public long minComputableObjectiveValue() {
+		public final long minComputableObjectiveValue() {
 			return minPossibleSum(scp, coeffs);
 		}
 
-		public long maxComputableObjectiveValue() {
+		public final long maxComputableObjectiveValue() {
 			return maxPossibleSum(scp, coeffs);
 		}
 
-		public long minCurrentObjectiveValue() {
+		public final long minCurrentObjectiveValue() {
 			long sum = 0;
 			for (int i = 0; i < scp.length; i++)
 				sum += coeffs[i] * (coeffs[i] >= 0 ? scp[i].dom.firstValue() : scp[i].dom.lastValue());
 			return sum;
 		}
 
-		public long maxCurrentObjectiveValue() {
+		public final long maxCurrentObjectiveValue() {
 			long sum = 0;
 			for (int i = 0; i < scp.length; i++)
 				sum += coeffs[i] * (coeffs[i] >= 0 ? scp[i].dom.lastValue() : scp[i].dom.firstValue());
 			return sum;
 		}
 
-		protected long currWeightedSum() {
+		protected final long currWeightedSum() {
 			long sum = 0;
 			for (int i = 0; i < scp.length; i++)
 				sum += scp[i].dom.singleValue() * coeffs[i];
@@ -546,10 +554,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		public SumWeighted(Problem pb, Variable[] scp, int[] coeffs, long limit) {
 			super(pb, scp);
 			this.coeffs = coeffs;
-			this.minComputableObjectiveValue = minComputableObjectiveValue();
-			this.maxComputableObjectiveValue = maxComputableObjectiveValue();
-			control(minComputableObjectiveValue <= maxComputableObjectiveValue); // Important: we check this way that no overflow is possible
-			limit(limit);
+			control(minPossibleSum(scp, coeffs) <= maxPossibleSum(scp, coeffs)); // Important: we check this way that no overflow is possible
+			setLimit(limit);
 			defineKey(coeffs, limit);
 			control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])), "" + Kit.join(coeffs));
 
@@ -570,7 +576,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			return symmetryMatching;
 		}
 
-		protected void recomputeBounds() {
+		protected final void recomputeBounds() {
 			min = max = 0;
 			for (int i = 0; i < scp.length; i++) {
 				Domain dom = scp[i].dom;
@@ -692,16 +698,16 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				return weightedSum(t, coeffs) == limit;
 			}
 
-			private boolean guaranteedGAC;
+			private boolean ac;
 
 			public SumWeightedEQ(Problem pb, Variable[] scp, int[] coeffs, long limit) {
 				super(pb, scp, coeffs, limit);
-				this.guaranteedGAC = Stream.of(scp).allMatch(x -> x.dom.initSize() <= 2); // in this case, bounds consistency is GAC
+				this.ac = Stream.of(scp).allMatch(x -> x.dom.initSize() <= 2); // in this case, bounds consistency is GAC
 			}
 
 			@Override
 			public boolean isGuaranteedAC() {
-				return guaranteedGAC;
+				return ac;
 			}
 
 			@Override
@@ -766,7 +772,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			public SumWeightedNE(Problem pb, Variable[] scp, int[] coeffs, long limit) {
 				super(pb, scp, coeffs, limit);
-				control(scp.length >= 2 && !Arrays.stream(scp).anyMatch(x -> x.dom.size() == 1));
+				control(scp.length >= 2 && Arrays.stream(scp).allMatch(x -> x.dom.size() > 1));
 				this.sentinel1 = scp[0];
 				this.sentinel2 = scp[scp.length - 1];
 			}
@@ -1021,10 +1027,9 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			default: // case NE:
 				throw new AssertionError("not implemented"); // return new SumWeightedNE(pb, vs, coeffs, limit);
 			}
-			// throw new AssertionError();
 		}
 
-		public static long weightedSum(int[] t, View[] views, int[] coeffs) {
+		public static final long weightedSum(int[] t, View[] views, int[] coeffs) {
 			assert t.length == coeffs.length && t.length == coeffs.length;
 			// note that no overflow control is performed here
 			long sum = 0;
@@ -1033,7 +1038,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			return sum;
 		}
 
-		public static long minPossibleSum(View[] views, int[] coeffs) {
+		public static final long minPossibleSum(View[] views, int[] coeffs) {
 			BigInteger sum = BigInteger.valueOf(0);
 			for (int i = 0; i < views.length; i++) {
 				if (views[i] instanceof ViewVariable) {
@@ -1045,7 +1050,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			return sum.longValueExact();
 		}
 
-		public static long maxPossibleSum(View[] views, int[] coeffs) {
+		public static final long maxPossibleSum(View[] views, int[] coeffs) {
 			BigInteger sum = BigInteger.valueOf(0);
 			for (int i = 0; i < views.length; i++) {
 				if (views[i] instanceof ViewVariable) {
@@ -1057,57 +1062,52 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			return sum.longValueExact();
 		}
 
-		public long minComputableObjectiveValue() {
+		public final long minComputableObjectiveValue() {
 			return minPossibleSum(views, coeffs);
 		}
 
-		public long maxComputableObjectiveValue() {
+		public final long maxComputableObjectiveValue() {
 			return maxPossibleSum(views, coeffs);
 		}
 
-		public long minCurrentObjectiveValue() {
+		public final long minCurrentObjectiveValue() {
 			long sum = 0;
 			for (int i = 0; i < views.length; i++)
 				sum += coeffs[i] * (coeffs[i] >= 0 ? views[i].minValue() : views[i].maxValue());
 			return sum;
 		}
 
-		public long maxCurrentObjectiveValue() {
+		public final long maxCurrentObjectiveValue() {
 			long sum = 0;
 			for (int i = 0; i < views.length; i++)
 				sum += coeffs[i] * (coeffs[i] >= 0 ? views[i].maxValue() : views[i].minValue());
 			return sum;
 		}
 
-		protected long currWeightedSum() {
+		protected final long currWeightedSum() {
 			long sum = 0;
 			for (int i = 0; i < views.length; i++)
 				sum += views[i].uniqueValue() * coeffs[i];
 			return sum;
 		}
 
-		public final XNode<IVar>[] trees;
+		protected final int[] coeffs;
 
-		public final int[] coeffs;
-
-		final View[] views;
+		protected final View[] views;
 
 		public SumViewWeighted(Problem pb, XNode<IVar>[] trees, int[] coeffs, long limit) {
 			super(pb, Utilities.collect(Variable.class, Stream.of(trees).map(tree -> tree.vars()))); // pb.translate(Utilities.collect(IVar.class, trees)));
-			this.trees = trees;
 			this.coeffs = coeffs;
 			// System.out.println("trees " + Kit.join(trees));
 			this.views = Stream.of(trees).map(tree -> tree.type == TypeExpr.VAR ? new ViewVariable(tree) : new ViewTree01(tree)).toArray(View[]::new);
-			this.minComputableObjectiveValue = minComputableObjectiveValue();
-			this.maxComputableObjectiveValue = maxComputableObjectiveValue();
-			control(minComputableObjectiveValue <= maxComputableObjectiveValue); // Important: we check this way that no overflow is possible
-			limit(limit);
+			control(minComputableObjectiveValue() <= maxComputableObjectiveValue()); // Important: we check this way that no overflow is possible
+			setLimit(limit);
 			defineKey(coeffs, limit);
 			control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])));
 
 		}
 
-		protected void recomputeBounds() {
+		protected final void recomputeBounds() {
 			min = max = 0;
 			for (int i = 0; i < views.length; i++) {
 				int coeff = coeffs[i];

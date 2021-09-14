@@ -31,7 +31,18 @@ public interface Optimizable {
 	 * @param newLimit
 	 *            the new limit/bound
 	 */
-	void limit(long newLimit);
+	void setLimit(long newLimit);
+
+	/**
+	 * Sets the new limit/bound of the objective, which is represented by this object. A control may be possibly made.
+	 * 
+	 * @param newLimit
+	 *            the new limit/bound
+	 */
+	default void limit(long newLimit) {
+		setLimit(newLimit);
+		assert minComputableObjectiveValue() - 1 <= newLimit && newLimit <= maxComputableObjectiveValue() + 1;
+	}
 
 	/**
 	 * Returns the minimal value of the objective that can be computed according to the initial domains of the involved variables.
