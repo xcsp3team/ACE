@@ -18,7 +18,7 @@ import org.xcsp.common.Types.TypeOperatorRel;
 import org.xcsp.common.Utilities;
 
 import constraints.ConstraintGlobal;
-import constraints.intension.PrimitiveBinary;
+import constraints.intension.Primitive2;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
@@ -161,7 +161,7 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 		int alpha = 0;
 		while (alpha < half) {
 			Domain dom1 = list1[alpha].dom, dom2 = list2[alpha].dom;
-			if (PrimitiveBinary.enforceLE(dom1, dom2) == false) // enforce (AC on) x <= y (list1[alpha] <= list2[alpha])
+			if (Primitive2.enforceLE(dom1, dom2) == false) // enforce (AC on) x <= y (list1[alpha] <= list2[alpha])
 				return false;
 			if (dom1.size() == 1 && dom2.size() == 1) {
 				if (dom1.singleValue() < dom2.singleValue())

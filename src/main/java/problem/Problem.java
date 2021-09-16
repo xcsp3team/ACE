@@ -168,22 +168,22 @@ import constraints.global.Sum.SumWeighted.SumWeightedGE;
 import constraints.global.Sum.SumWeighted.SumWeightedLE;
 import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
 import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
-import constraints.intension.Primitive.Disjonctive2D;
-import constraints.intension.Primitive.DisjonctiveVar;
-import constraints.intension.PrimitiveBinary;
-import constraints.intension.PrimitiveBinary.Log2;
-import constraints.intension.PrimitiveBinary.Log2.Log2EQ;
-import constraints.intension.PrimitiveBinary.PrimitiveBinaryNoCst.Disjonctive;
-import constraints.intension.PrimitiveBinary.Sub2;
-import constraints.intension.PrimitiveBinary.Sub2.Sub2NE;
-import constraints.intension.PrimitiveLogic.PrimitiveLogicEq;
-import constraints.intension.PrimitiveTernary;
-import constraints.intension.PrimitiveTernary.PrimitiveTernaryAdd;
-import constraints.intension.PrimitiveTernary.PrimitiveTernaryLog;
+import constraints.intension.Primitive2;
+import constraints.intension.Primitive2.PrimitiveBinaryNoCst.Disjonctive;
+import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Sub2;
+import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Sub2.Sub2NE;
+import constraints.intension.Primitive3;
+import constraints.intension.Primitive3.Add3;
+import constraints.intension.Primitive4.Disjonctive2D;
+import constraints.intension.Primitive4.DisjonctiveVar;
+import constraints.intension.Reification.Reif2;
+import constraints.intension.Reification.Reif2.Reif2EQ;
+import constraints.intension.Reification.Reif3;
+import constraints.intension.Reification.ReifLogic;
+import dashboard.Control;
 import dashboard.Control.SettingCtrs;
 import dashboard.Control.SettingGeneral;
 import dashboard.Control.SettingVars;
-import dashboard.Control.SettingXml;
 import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicValuesDirect.Last;
 import heuristics.HeuristicValuesDirect.Values;
@@ -725,10 +725,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	/**** Posting Constraints */
 	/*********************************************************************************************/
 
-	// public final boolean isBasicType(int type) {
-	// return type == 0;
-	// }
-
 	private CtrEntity unimplemented(String msg) {
 		return (CtrEntity) Kit.exit("\nunimplemented case for " + msg);
 	}
@@ -753,11 +749,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Replacing trees by variables
 	// ************************************************************************
 
+	/**
+	 * The number of auxiliary variables introduced when replacing tree expressions
+	 */
+	public int nAuxVariables;
+
 	private String idAux() {
 		return AUXILIARY_VARIABLE_PREFIX + varEntities.allEntities.size();
 	}
-
-	public int nAuxVariables;
 
 	private Var newAuxVar(Object values) {
 		Dom dom = values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
@@ -806,7 +805,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			Object values = trees[i].possibleValues();
 			return values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
 		};
-
 		// if multiple occurrences of the same variable in a tree, there is a possible problem of reasoning with similar trees
 		boolean similarTrees = trees.length > 1 && Stream.of(trees).allMatch(tree -> tree.listOfVars().size() == tree.vars().length);
 		similarTrees = similarTrees && IntStream.range(1, trees.length).allMatch(i -> areSimilar(trees[0], trees[i]));
@@ -853,7 +851,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private Matcher logic_y_relop_z__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, var, var), var));
 
 	// logic
-	private Matcher logic_X = new Matcher(logic_vars);
 	private Matcher logic_X__eq_x = new Matcher(node(TypeExpr.EQ, logic_vars, var));
 	private Matcher logic_X__ne_x = new Matcher(node(TypeExpr.NE, logic_vars, var));
 
@@ -875,70 +872,68 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return null;
 	}
 
-	public final CtrEntity intension1(XNodeParent<IVar> tree) {
-		assert tree.vars().length == 1;
-		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
-		Variable x = (Variable) tree.var(0);
-
-		if (head.mustPreserveUnaryConstraints()) {
-			if (!head.control.constraints.intensionToExtensionUnaryCtrs)
-				return post(new ConstraintIntension(this, new Variable[] { x }, tree));
-			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
-			int[] conflicts = x.dom.valuesChecking(va -> evaluator.evaluate(va) != 1);
-			if (conflicts.length < x.dom.size() / 2)
-				return post(new Extension1(this, x, conflicts, false));
-			return post(new Extension1(this, x, x.dom.valuesChecking(va -> evaluator.evaluate(va) == 1), true));
-		}
-		TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
-		x.dom.removeValuesAtConstructionTime(v -> evaluator.evaluate(v) != 1);
-		features.nRemovedUnaryCtrs++;
-		return ctrEntities.new CtrAloneDummy("Removed unary constraint by domain reduction");
-	}
-
 	@Override
 	public final CtrEntity intension(XNodeParent<IVar> tree) {
-		if (tree.vars().length == 1)
-			return intension1(tree);
+		Control control = head.control;
+
 		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
-		Variable[] scp = (Variable[]) tree.vars(); // keep it here, after canonization
-		assert Variable.haveSameType(scp);
+		Variable[] scp = (Variable[]) tree.vars(); // keep this statement here, after canonization
+		int arity = scp.length;
 		// System.out.println("Tree " + tree);
-		if (head.control.extension.convertingIntension(scp) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
+
+		if (arity == 1) {
+			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
+			Variable x = (Variable) tree.var(0);
+			if (head.mustPreserveUnaryConstraints()) {
+				if (!control.constraints.intensionToExtension1)
+					return post(new ConstraintIntension(this, scp, tree));
+				int[] values = x.dom.valuesChecking(v -> evaluator.evaluate(v) != 1); // initially, conflicts
+				boolean positive = values.length >= x.dom.size() / 2;
+				if (positive)
+					values = x.dom.valuesChecking(v -> evaluator.evaluate(v) == 1); // we store supports instead
+				return post(new Extension1(this, x, values, positive));
+			}
+			x.dom.removeValuesAtConstructionTime(v -> evaluator.evaluate(v) != 1);
+			features.nRemovedUnaryCtrs++;
+			return ctrEntities.new CtrAloneDummy("Removed unary constraint by domain reduction");
+		}
+
+		assert Variable.haveSameType(scp);
+		if (control.extension.convertingIntension(scp) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
 
-		int arity = scp.length;
-		SettingXml settings = head.control.xml;
 		if (arity == 2 && x_mul_y__eq_k.matches(tree)) {
-			Var[] t = (Var[]) tree.arrayOfVars();
+			// we can use scp because we are sure that the two variables are different (arity is 2) ; so no need to use tree.arrayOfVars()
 			int k = tree.val(0);
+			// we can intercept the cases where k=0 or k=1
 			if (k == 0)
-				return intension(api.or(api.eq(t[0], 0), api.eq(t[1], 0)));
+				return intension(api.or(api.eq(scp[0], 0), api.eq(scp[1], 0)));
 			if (k == 1)
-				return forall(range(2), i -> api.equal(t[i], 1));
+				return forall(range(2), i -> api.equal(scp[i], 1));
 		}
 
-		if (arity == 2 && settings.primitiveBinaryInSolver) {
+		if (arity == 2 && control.xml.recognizePrimitive2) {
 			Constraint c = null;
 			if (x_relop_y.matches(tree))
 				c = Sub2.buildFrom(this, scp[0], scp[1], tree.relop(0), 0);
 			else if (x_ariop_y__relop_k.matches(tree))
-				c = PrimitiveBinary.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0), tree.val(0));
+				c = Primitive2.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0), tree.val(0));
 			else if (k_relop__x_ariop_y.matches(tree))
-				c = PrimitiveBinary.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0).arithmeticInversion(), tree.val(0));
+				c = Primitive2.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0).arithmeticInversion(), tree.val(0));
 			else if (x_relop__y_ariop_k.matches(tree))
-				c = PrimitiveBinary.buildFrom(this, scp[0], tree.relop(0), scp[1], tree.ariop(0), tree.val(0));
+				c = Primitive2.buildFrom(this, scp[0], tree.relop(0), scp[1], tree.ariop(0), tree.val(0));
 			else if (y_ariop_k__relop_x.matches(tree))
-				c = PrimitiveBinary.buildFrom(this, scp[1], tree.relop(0).arithmeticInversion(), scp[0], tree.ariop(0), tree.val(0));
+				c = Primitive2.buildFrom(this, scp[1], tree.relop(0).arithmeticInversion(), scp[0], tree.ariop(0), tree.val(0));
 			else if (logic_y_relop_k__eq_x.matches(tree))
-				c = Log2.buildFrom(this, scp[1], scp[0], tree.relop(1), tree.val(0));
+				c = Reif2.buildFrom(this, scp[1], scp[0], tree.relop(1), tree.val(0));
 			else if (logic_y_relop_k__iff_x.matches(tree))
-				c = Log2.buildFrom(this, scp[1], scp[0], tree.relop(0), tree.val(0));
+				c = Reif2.buildFrom(this, scp[1], scp[0], tree.relop(0), tree.val(0));
 			else if (logic_k_relop_y__eq_x.matches(tree))
-				c = Log2.buildFrom(this, scp[1], scp[0], tree.relop(1).arithmeticInversion(), tree.val(0));
+				c = Reif2.buildFrom(this, scp[1], scp[0], tree.relop(1).arithmeticInversion(), tree.val(0));
 			else if (unalop_x__eq_y.matches(tree))
-				c = PrimitiveBinary.buildFrom(this, scp[1], tree.unalop(0), scp[0]);
+				c = Primitive2.buildFrom(this, scp[1], tree.unalop(0), scp[0]);
 			else if (disjonctive.matches(tree)) {
 				Variable[] scp0 = (Variable[]) tree.sons[0].vars(), scp1 = (Variable[]) tree.sons[1].vars();
 				if (scp0.length == 2 && scp1.length == 2 && scp0[0] == scp1[1] && scp0[1] == scp1[0]) {
@@ -949,44 +944,40 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (c != null)
 				return post(c);
 		}
-		if (arity == 3 && settings.primitiveTernaryInSolver) {
+		if (arity == 3 && control.xml.recognizePrimitive3) {
 			Constraint c = null;
 			if (x_ariop_y__relop_z.matches(tree))
-				c = PrimitiveTernary.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0), scp[2]);
+				c = Primitive3.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0), scp[2]);
 			else if (z_relop__x_ariop_y.matches(tree))
-				c = PrimitiveTernary.buildFrom(this, scp[1], tree.ariop(0), scp[2], tree.relop(0).arithmeticInversion(), scp[0]);
+				c = Primitive3.buildFrom(this, scp[1], tree.ariop(0), scp[2], tree.relop(0).arithmeticInversion(), scp[0]);
 			else if (logic_y_relop_z__eq_x.matches(tree))
-				c = PrimitiveTernaryLog.buildFrom(this, scp[2], scp[0], tree.relop(1), scp[1]);
+				c = Reif3.buildFrom(this, scp[2], scp[0], tree.relop(1), scp[1]);
 			if (c != null)
 				return post(c);
 		}
-		if (settings.recognizeLogicInSolver) {
+		if (control.xml.recognizeReifLogic) {
 			Constraint c = null;
 			if (logic_X__eq_x.matches(tree)) {
 				Variable[] list = IntStream.range(0, scp.length - 1).mapToObj(i -> scp[i]).toArray(Variable[]::new);
-				c = PrimitiveLogicEq.buildFrom(this, scp[scp.length - 1], tree.logop(0), list);
+				c = ReifLogic.buildFrom(this, scp[scp.length - 1], tree.logop(0), list);
 			}
 			// TODO other cases to be implemented
 			if (c != null)
 				return post(c);
 
 		}
-		// if (arity >= 2 && tree.type == OR && Stream.of(tree.sons).allMatch(son -> x_relop_k.matches(son))) {
-		// }
+		// if (arity >= 2 && tree.type == OR && Stream.of(tree.sons).allMatch(son -> x_relop_k.matches(son))) { }
 
-		if (settings.recognizeExtremumInSolver) {
-			if (min_relop.matches(tree)) {
+		if (control.xml.recognizeExtremum) {
+			if (min_relop.matches(tree))
 				return minimum((Var[]) tree.sons[0].vars(), basicCondition(tree));
-			}
-			if (max_relop.matches(tree)) {
+			if (max_relop.matches(tree))
 				return maximum((Var[]) tree.sons[0].vars(), basicCondition(tree));
-			}
 		}
-		if (settings.recognizeSumInSolver) {
-			// System.out.println("tree " + tree);
+		if (control.xml.recognizeSum) {
 			if (add_vars__relop.matches(tree)) {
 				Var[] list = (Var[]) tree.sons[0].arrayOfVars();
-				return sum(list, Kit.repeat(1, list.length), basicCondition(tree)); // TODO direct call ? without coeffs set to 1
+				return sum(list, Kit.repeat(1, list.length), basicCondition(tree));
 			}
 			if (add_mul_vals__relop.matches(tree)) {
 				Var[] list = (Var[]) tree.sons[0].arrayOfVars();
@@ -1306,7 +1297,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final CtrEntity ordered(Var[] list, Var[] lengths, TypeOperatorRel op) {
 		control(list.length == lengths.length + 1);
 		return forall(range(list.length - 1),
-				i -> post(PrimitiveTernaryAdd.buildFrom(this, (Variable) list[i], (Variable) lengths[i], op, (Variable) list[i + 1])));
+				i -> post(Add3.buildFrom(this, (Variable) list[i], (Variable) lengths[i], op.toConditionOperator(), (Variable) list[i + 1])));
 		// intension(XNodeParent.build(op.toExpr(), add(list[i], lengths[i]), list[i + 1])));
 	}
 
@@ -1925,7 +1916,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public CtrEntity channel(Var[] list1, int startIndex1, Var[] list2, int startIndex2) {
 		control(Stream.of(list1).noneMatch(x -> x == null) && Stream.of(list2).noneMatch(x -> x == null));
 		control(startIndex1 == 0 && startIndex2 == 0, "unimplemented case for channel");
-		if (list1.length == list2.length) { // additional constraints
+		if (list1.length == list2.length) { // TODO additional constraints; controlling the fact of posting them?
 			allDifferent(list1);
 			allDifferent(list2);
 		}
@@ -1937,7 +1928,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(Stream.of(list).noneMatch(x -> x == null) && startIndex == 0);
 		control(Variable.areAllInitiallyBoolean((Variable[]) list) && ((Variable) value).dom.areInitValuesExactly(range(list.length)));
 		// exactly((VariableInteger[]) list, 1, 1); // TODO what would be the benefit of posting it?
-		return forall(range(list.length), i -> post(new Log2EQ(this, (Variable) list[i], (Variable) value, i))); // intension(iff(list[i], eq(value, i))));
+		return forall(range(list.length), i -> post(new Reif2EQ(this, (Variable) list[i], (Variable) value, i))); // intension(iff(list[i], eq(value, i))));
 	}
 
 	// ************************************************************************

@@ -17,7 +17,7 @@ import java.util.stream.IntStream;
 import org.xcsp.common.Utilities;
 
 import constraints.ConstraintGlobal;
-import constraints.intension.PrimitiveBinary;
+import constraints.intension.Primitive2;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
@@ -201,7 +201,7 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 			}
 			// If index is singleton, we update dom(list[index]) and dom(value) so that they are both equal to the intersection of the two domains
 			if (idom.size() == 1) {
-				if (PrimitiveBinary.enforceEQ(list[idom.single()].dom, vdom) == false)
+				if (Primitive2.enforceEQ(list[idom.single()].dom, vdom) == false)
 					return false;
 				if (vdom.size() == 1)
 					return entailed();
@@ -436,7 +436,7 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 				}
 				// If indexes are both singleton, we enforce matrix[rindex][cindex] == value
 				if (rdom.size() == 1 && cdom.size() == 1) {
-					if (PrimitiveBinary.enforceEQ(matrix[rdom.singleValue()][cdom.singleValue()].dom, vdom) == false)
+					if (Primitive2.enforceEQ(matrix[rdom.singleValue()][cdom.singleValue()].dom, vdom) == false)
 						return false;
 					if (vdom.size() == 1)
 						return entailed();

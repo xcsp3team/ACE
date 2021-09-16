@@ -10,19 +10,12 @@
 
 package constraints.intension;
 
-import static constraints.intension.PrimitiveBinary.enforceEQ;
-import static constraints.intension.PrimitiveBinary.enforceGE;
-import static constraints.intension.PrimitiveBinary.enforceGT;
-import static constraints.intension.PrimitiveBinary.enforceLE;
-import static constraints.intension.PrimitiveBinary.enforceLT;
-import static constraints.intension.PrimitiveBinary.enforceNE;
 import static utility.Kit.control;
 
 import java.math.BigInteger;
 
 import org.xcsp.common.Types.TypeArithmeticOperator;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
-import org.xcsp.common.Types.TypeOperatorRel;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
@@ -35,35 +28,118 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class PrimitiveTernary extends Primitive implements TagAC, TagCallCompleteFiltering, TagNotSymmetric { // TODO GAC not true some
+/**
+ * This class contains all propagators defined for ternary primitive constraints such as for example x + y = z, |x - y| > z or x%y = z <br />
+ * Important: in Java, integer division rounds toward 0. <br/>
+ * This implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 = 3 <br />
+ * See https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.17.2
+ * 
+ * @author Christophe Lecoutre
+ */
+public abstract class Primitive3 extends Primitive implements TagAC, TagCallCompleteFiltering, TagNotSymmetric { // TODO GAC not true some
 																														// times
 
 	public static Constraint buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, Variable z) {
 		switch (aop) {
 		case ADD:
-			return PrimitiveTernaryAdd.buildFrom(pb, x, y, op, z);
+			return Add3.buildFrom(pb, x, y, op, z);
 		case SUB:
-			return PrimitiveTernarySub.buildFrom(pb, x, y, op, z);
+			return Sub3.buildFrom(pb, x, y, op, z);
 		case MUL:
-			return PrimitiveTernaryMul.buildFrom(pb, x, y, op, z);
+			return Mul3.buildFrom(pb, x, y, op, z);
 		case DIV:
-			return PrimitiveTernaryDiv.buildFrom(pb, x, y, op, z);
+			return Div3.buildFrom(pb, x, y, op, z);
 		case MOD:
-			return PrimitiveTernaryMod.buildFrom(pb, x, y, op, z);
+			return Mod3.buildFrom(pb, x, y, op, z);
 		case DIST:
-			return PrimitiveTernaryDist.buildFrom(pb, x, y, op, z);
-		default:
-			return null; // nothing implemented for POW
+			return Dist3.buildFrom(pb, x, y, op, z);
+		default: // POW
+			throw new AssertionError("not implemented"); // TODO interesting?
 		}
 	}
 
-	Variable x, y, z;
+	/**
+	 * The first variable involved in the ternary primitive constraint
+	 */
+	protected final Variable x;
 
-	Domain dx, dy, dz;
+	/**
+	 * The second variable involved in the ternary primitive constraint
+	 */
+	protected final Variable y;
 
-	int[] rx, ry, rzx, rzy; // residues for values in the domains of x, y and z
+	/**
+	 * The third variable involved in the ternary primitive constraint
+	 */
+	protected final Variable z;
 
-	public PrimitiveTernary(Problem pb, Variable x, Variable y, Variable z) {
+	/**
+	 * The domain of x, the first involved variable
+	 */
+	protected final Domain dx;
+
+	/**
+	 * The domain of y, the second involved variable
+	 */
+	protected final Domain dy;
+
+	/**
+	 * The domain of y, the third involved variable
+	 */
+	protected final Domain dz;
+
+	/**
+	 * Residues used for (value indexes of) x (possibly, null)
+	 */
+	protected int[] rx;
+
+	/**
+	 * Residues used for (value indexes of) y (possibly, null)
+	 */
+	protected int[] ry;
+
+	/**
+	 * Residues used for (value indexes of) z, targeted towards x
+	 */
+	protected int[] rzx;
+
+	/**
+	 * Residues used for (value indexes of) z, targeted towards y
+	 */
+	protected int[] rzy;
+
+	/**
+	 * Builds the structure of residues for x, y and z (only targeted towards x for z)
+	 */
+	protected void buildThreeResidueStructure() {
+		this.rx = new int[dx.initSize()];
+		this.ry = new int[dy.initSize()];
+		this.rzx = new int[dz.initSize()];
+	}
+
+	/**
+	 * Builds the structure of residues for x, y and z
+	 */
+	protected void buildFourResidueStructure() {
+		this.rx = new int[dx.initSize()];
+		this.ry = new int[dy.initSize()];
+		this.rzx = Kit.repeat(-1, dz.initSize());
+		this.rzy = Kit.repeat(-1, dz.initSize());
+	}
+
+	/**
+	 * Builds a ternary primitive constraint for the specified problem with the three specified variables
+	 * 
+	 * @param pb
+	 *            the problem to which the ternary primitive constraint is attached
+	 * @param x
+	 *            the first variable of the ternary primitive
+	 * @param y
+	 *            the second variable of the ternary primitive
+	 * @param z
+	 *            the third variable of the ternary primitive
+	 */
+	public Primitive3(Problem pb, Variable x, Variable y, Variable z) {
 		super(pb, pb.api.vars(x, y, z));
 		this.x = x;
 		this.y = y;
@@ -73,52 +149,35 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagCa
 		this.dz = z.dom;
 	}
 
-	protected void buildThreeResidueStructure() {
-		this.rx = new int[dx.initSize()];
-		this.ry = new int[dy.initSize()];
-		this.rzx = new int[dz.initSize()];
-	}
-
-	protected void buildFourResidueStructure() {
-		this.rx = new int[dx.initSize()];
-		this.ry = new int[dy.initSize()];
-		this.rzx = Kit.repeat(-1, dz.initSize());
-		this.rzy = Kit.repeat(-1, dz.initSize());
-	}
-
 	// ************************************************************************
-	// ***** Classes for x + y <op> z (CtrPrimitiveTernaryAdd)
+	// ***** Classes for x + y <op> z
 	// ************************************************************************
 
-	public static abstract class PrimitiveTernaryAdd extends PrimitiveTernary {
-
-		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeOperatorRel op, Variable z) {
-			return buildFrom(pb, x, y, op.toConditionOperator(), z);
-		}
+	public static abstract class Add3 extends Primitive3 {
 
 		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			switch (op) {
 			case EQ:
-				return new AddEQ3(pb, x, y, z);
+				return new Add3EQ(pb, x, y, z);
 			default:
 				return SumWeighted.buildFrom(pb, pb.api.vars(z, x, y), pb.api.vals(-1, 1, 1), op, 0); // we order variables according to coeffs
 			}
 		}
 
-		public PrimitiveTernaryAdd(Problem pb, Variable x, Variable y, Variable z) {
+		public Add3(Problem pb, Variable x, Variable y, Variable z) {
 			super(pb, x, y, z);
 		}
 
-		public static final class AddEQ3 extends PrimitiveTernaryAdd { // O(d^2)
+		public static final class Add3EQ extends Add3 { // O(d^2)
 
 			boolean multidirectional = false; // hard coding
 
 			@Override
-			public final boolean isSatisfiedBy(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] + t[1] == t[2];
 			}
 
-			public AddEQ3(Problem pb, Variable x, Variable y, Variable z) {
+			public Add3EQ(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
 				buildThreeResidueStructure();
 			}
@@ -128,7 +187,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagCa
 				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about GAC Guaranteed?
 					if (dz.removeValuesLT(dx.firstValue() + dy.firstValue()) == false || dz.removeValuesGT(dx.lastValue() + dy.lastValue()) == false)
 						return false;
-					return PrimitiveBinary.enforceAddGE(dx, dy, dz.firstValue()) && PrimitiveBinary.enforceAddLE(dx, dy, dz.lastValue());
+					return Primitive2.enforceAddGE(dx, dy, dz.firstValue()) && Primitive2.enforceAddLE(dx, dy, dz.lastValue());
 				}
 
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
@@ -231,47 +290,47 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagCa
 	}
 
 	// ************************************************************************
-	// ***** Classes for x - y <op> z (CtrPrimitiveTernarySub)
+	// ***** Classes for x - y <op> z
 	// ************************************************************************
 
-	public static abstract class PrimitiveTernarySub extends PrimitiveTernary {
+	public static abstract class Sub3 extends Primitive3 {
 
 		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
-			return PrimitiveTernaryAdd.buildFrom(pb, y, z, op, x); // x - y op z is equivalent to y + z op x
+			return Add3.buildFrom(pb, y, z, op, x); // x - y op z is equivalent to y + z op x
 		}
 
-		public PrimitiveTernarySub(Problem pb, Variable x, Variable y, Variable z) {
+		public Sub3(Problem pb, Variable x, Variable y, Variable z) {
 			super(pb, x, y, z);
 		}
 	}
 
 	// ************************************************************************
-	// ***** Classes for x * y <op> z (CtrPrimitiveTernaryMul)
+	// ***** Classes for x * y <op> z
 	// ************************************************************************
 
-	public static abstract class PrimitiveTernaryMul extends PrimitiveTernary {
+	public static abstract class Mul3 extends Primitive3 {
 
 		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			switch (op) {
 			case EQ:
-				return x.dom.is01() ? new MulEQ3b(pb, x, y, z) : y.dom.is01() ? new MulEQ3b(pb, y, x, z) : new MulEQ3(pb, y, x, z);
+				return x.dom.is01() ? new Mul3bEQ(pb, x, y, z) : y.dom.is01() ? new Mul3bEQ(pb, y, x, z) : new Mul3EQ(pb, y, x, z);
 			default:
-				return null;
+				throw new AssertionError("not implemented");
 			}
 		}
 
-		public PrimitiveTernaryMul(Problem pb, Variable x, Variable y, Variable z) {
+		public Mul3(Problem pb, Variable x, Variable y, Variable z) {
 			super(pb, x, y, z);
 		}
 
-		public static final class MulEQ3b extends PrimitiveTernaryMul {
+		public static final class Mul3bEQ extends Mul3 {
 
 			@Override
-			public final boolean isSatisfiedBy(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] * t[1] == t[2];
 			}
 
-			public MulEQ3b(Problem pb, Variable x, Variable y, Variable z) {
+			public Mul3bEQ(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
 				control(dx.is01(), "The first variable should be of type 01");
 			}
@@ -292,7 +351,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagCa
 					return false;
 
 				if (dx.first() == 1) // x = 1 => y = z
-					return PrimitiveBinary.enforceEQ(dy, dz);
+					return Primitive2.enforceEQ(dy, dz);
 
 				assert dx.size() == 2 && dz.containsValue(0) && dz.size() > 1; // because if 0 not in z, dx.size() cannot be 2
 				// every value of dy is supported (by both 0 in x and z); we still need to filter z (and possibly 1 out of dx)
@@ -312,14 +371,14 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagCa
 			}
 		}
 
-		public static final class MulEQ3 extends PrimitiveTernaryMul {
+		public static final class Mul3EQ extends Mul3 {
 
 			@Override
-			public final boolean isSatisfiedBy(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] * t[1] == t[2];
 			}
 
-			public MulEQ3(Problem pb, Variable x, Variable y, Variable z) {
+			public Mul3EQ(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
 				buildFourResidueStructure();
 				control(Utilities.isSafeInt(BigInteger.valueOf(dx.firstValue()).multiply(BigInteger.valueOf(dy.firstValue())).longValueExact()));
@@ -335,7 +394,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagCa
 					int min2 = Math.min(v3, v4), max2 = Math.max(v3, v4);
 					if (dz.removeValuesLT(Math.min(min1, min2)) == false || dz.removeValuesGT(Math.max(max1, max2)) == false)
 						return false;
-					return PrimitiveBinary.enforceMulGE(dx, dy, dz.firstValue()) && PrimitiveBinary.enforceMulLE(dx, dy, dz.lastValue());
+					return Primitive2.enforceMulGE(dx, dy, dz.firstValue()) && Primitive2.enforceMulLE(dx, dy, dz.lastValue());
 				}
 				if (!dy.containsValue(0) || !dz.containsValue(0)) // if 0 is present in dy and dz, all values of x are supported
 					extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
@@ -412,32 +471,32 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagCa
 	}
 
 	// ************************************************************************
-	// ***** Classes for x / y <op> z (CtrPrimitiveTernaryDiv)
+	// ***** Classes for x / y <op> z
 	// ************************************************************************
 
-	public static abstract class PrimitiveTernaryDiv extends PrimitiveTernary {
+	public static abstract class Div3 extends Primitive3 {
 
 		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			switch (op) {
 			case EQ:
-				return new DivEQ3(pb, x, y, z);
+				return new Div3EQ(pb, x, y, z);
 			default:
-				return null;
+				throw new AssertionError("not implemented");
 			}
 		}
 
-		public PrimitiveTernaryDiv(Problem pb, Variable x, Variable y, Variable z) {
+		public Div3(Problem pb, Variable x, Variable y, Variable z) {
 			super(pb, x, y, z);
 		}
 
-		public static final class DivEQ3 extends PrimitiveTernaryDiv {
+		public static final class Div3EQ extends Div3 {
 
 			@Override
-			public final boolean isSatisfiedBy(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] / t[1] == t[2];
 			}
 
-			public DivEQ3(Problem pb, Variable x, Variable y, Variable z) {
+			public Div3EQ(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
 				buildFourResidueStructure();
 				control(x.dom.firstValue() >= 0 && y.dom.firstValue() > 0 && z.dom.firstValue() >= 0);
@@ -448,7 +507,7 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagCa
 				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about GAC Guaranteed?
 					if (dz.removeValuesLT(dx.firstValue() / dy.lastValue()) == false || dz.removeValuesGT(dx.lastValue() / dy.firstValue()) == false)
 						return false;
-					return PrimitiveBinary.enforceDivGE(dx, dy, dz.firstValue()) && PrimitiveBinary.enforceDivLE(dx, dy, dz.lastValue());
+					return Primitive2.enforceDivGE(dx, dy, dz.firstValue()) && Primitive2.enforceDivLE(dx, dy, dz.lastValue());
 				}
 
 				if (dx.firstValue() >= dy.lastValue() && dz.removeValueIfPresent(0) == false)
@@ -536,29 +595,29 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagCa
 	// ***** Classes for x % y <op> z (CtrPrimitiveTernaryMod)
 	// ************************************************************************
 
-	public static abstract class PrimitiveTernaryMod extends PrimitiveTernary {
+	public static abstract class Mod3 extends Primitive3 {
 
 		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			switch (op) {
 			case EQ:
-				return new ModEQ3(pb, x, y, z);
+				return new Mod3EQ(pb, x, y, z);
 			default:
-				return null;
+				throw new AssertionError("not implemented");
 			}
 		}
 
-		public PrimitiveTernaryMod(Problem pb, Variable x, Variable y, Variable z) {
+		public Mod3(Problem pb, Variable x, Variable y, Variable z) {
 			super(pb, x, y, z);
 		}
 
-		public static final class ModEQ3 extends PrimitiveTernaryMod {
+		public static final class Mod3EQ extends Mod3 {
 
 			@Override
-			public final boolean isSatisfiedBy(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return t[0] % t[1] == t[2];
 			}
 
-			public ModEQ3(Problem pb, Variable x, Variable y, Variable z) {
+			public Mod3EQ(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
 				buildFourResidueStructure();
 				control(x.dom.firstValue() >= 0 && y.dom.firstValue() > 0 && z.dom.firstValue() >= 0);
@@ -648,32 +707,32 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagCa
 	// ***** Classes for |x - y| <op> z (CtrPrimitiveTernaryDist)
 	// ************************************************************************
 
-	public static abstract class PrimitiveTernaryDist extends PrimitiveTernary {
+	public static abstract class Dist3 extends Primitive3 {
 
 		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			switch (op) {
 			case EQ:
-				return new DistEQ3(pb, x, y, z);
+				return new Dist3EQ(pb, x, y, z);
 			default:
-				return null;
+				return null; // to be able to post it differently // throw new AssertionError("not implemented");
 			}
 		}
 
-		public PrimitiveTernaryDist(Problem pb, Variable x, Variable y, Variable z) {
+		public Dist3(Problem pb, Variable x, Variable y, Variable z) {
 			super(pb, x, y, z);
 		}
 
 		// time java ac GolombRuler-10.xml -varh=Dom => same search tree with CT, Intension and DistEQ3
-		public static final class DistEQ3 extends PrimitiveTernaryDist {
+		public static final class Dist3EQ extends Dist3 {
 
 			boolean multidirectional = true; // hard coding
 
 			@Override
-			public final boolean isSatisfiedBy(int[] t) {
+			public boolean isSatisfiedBy(int[] t) {
 				return Math.abs(t[0] - t[1]) == t[2];
 			}
 
-			public DistEQ3(Problem pb, Variable x, Variable y, Variable z) {
+			public Dist3EQ(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
 				buildFourResidueStructure();
 			}
@@ -788,204 +847,4 @@ public abstract class PrimitiveTernary extends Primitive implements TagAC, TagCa
 		}
 	}
 
-	// ************************************************************************
-	// ***** Classes for x = (y <op> z) (CtrPrimitiveTernaryLog)
-	// ************************************************************************
-
-	public static abstract class PrimitiveTernaryLog extends PrimitiveTernary {
-
-		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
-			switch (op) {
-			case LT:
-				return new LogLT3(pb, x, y, z);
-			case LE:
-				return new LogLE3(pb, x, y, z);
-			case GE:
-				return new LogGE3(pb, x, y, z);
-			case GT:
-				return new LogGT3(pb, x, y, z);
-			case EQ:
-				return new LogEQ3(pb, x, y, z);
-			case NE:
-				return new LogNE3(pb, x, y, z);
-			}
-			throw new AssertionError();
-		}
-
-		public PrimitiveTernaryLog(Problem pb, Variable x, Variable y, Variable z) {
-			super(pb, x, y, z);
-			control(dx.is01(), "The first variable should be of type 01");
-		}
-
-		public static final class LogLT3 extends PrimitiveTernaryLog {
-
-			@Override
-			public final boolean isSatisfiedBy(int[] t) {
-				return (t[0] == 1) == (t[1] < t[2]);
-			}
-
-			public LogLT3(Problem pb, Variable x, Variable y, Variable z) {
-				super(pb, x, y, z);
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				if (dx.last() == 0)
-					return enforceGE(dy, dz); // x = 0 => y >= z
-				if (dx.first() == 1)
-					return enforceLT(dy, dz); // x = 1 => y < z
-				if (dy.lastValue() < dz.firstValue())
-					return dx.removeIfPresent(0); // y < z => x != 0
-				if (dy.firstValue() >= dz.lastValue())
-					return dx.removeIfPresent(1); // y >= z => x != 1
-				return true;
-			}
-		}
-
-		public static final class LogLE3 extends PrimitiveTernaryLog {
-
-			@Override
-			public final boolean isSatisfiedBy(int[] t) {
-				return (t[0] == 1) == (t[1] <= t[2]);
-			}
-
-			public LogLE3(Problem pb, Variable x, Variable y, Variable z) {
-				super(pb, x, y, z);
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				if (dx.last() == 0)
-					return enforceGT(dy, dz); // x = 0 => y > z
-				if (dx.first() == 1)
-					return enforceLE(dy, dz); // x = 1 => y <= z
-				if (dy.lastValue() <= dz.firstValue())
-					return dx.removeIfPresent(0); // y <= z => x != 0
-				if (dy.firstValue() > dz.lastValue())
-					return dx.removeIfPresent(1); // y > z => x != 1
-				return true;
-			}
-		}
-
-		public static final class LogGE3 extends PrimitiveTernaryLog {
-
-			@Override
-			public final boolean isSatisfiedBy(int[] t) {
-				return (t[0] == 1) == (t[1] >= t[2]);
-			}
-
-			public LogGE3(Problem pb, Variable x, Variable y, Variable z) {
-				super(pb, x, y, z);
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				if (dx.last() == 0)
-					return enforceLT(dy, dz); // x = 0 => y < z
-				if (dx.first() == 1)
-					return enforceGE(dy, dz); // x = 1 => y >= z
-				if (dy.firstValue() >= dz.lastValue())
-					return dx.removeIfPresent(0); // y >= z => x != 0
-				if (dy.lastValue() < dz.firstValue())
-					return dx.removeIfPresent(1); // y < z => x != 1
-				return true;
-			}
-		}
-
-		public static final class LogGT3 extends PrimitiveTernaryLog {
-
-			@Override
-			public final boolean isSatisfiedBy(int[] t) {
-				return (t[0] == 1) == (t[1] > t[2]);
-			}
-
-			public LogGT3(Problem pb, Variable x, Variable y, Variable z) {
-				super(pb, x, y, z);
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				if (dx.last() == 0)
-					return enforceLE(dy, dz); // x = 0 => y <= z
-				if (dx.first() == 1)
-					return enforceGT(dy, dz); // x = 1 => y > z
-				if (dy.firstValue() > dz.lastValue())
-					return dx.removeIfPresent(0); // y > z => x != 0
-				if (dy.lastValue() <= dz.firstValue())
-					return dx.removeIfPresent(1); // y <= z => x != 1
-				return true;
-			}
-		}
-
-		public static final class LogEQ3 extends PrimitiveTernaryLog {
-
-			@Override
-			public final boolean isSatisfiedBy(int[] t) {
-				return (t[0] == 1) == (t[1] == t[2]);
-			}
-
-			private int residue; // for a common value in the domains of y and z, supporting (x,1)
-
-			public LogEQ3(Problem pb, Variable x, Variable y, Variable z) {
-				super(pb, x, y, z);
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				if (dy.size() == 1 && dz.size() == 1)
-					return dx.removeIfPresent(dy.firstValue() == dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
-				if (dx.last() == 0)
-					return (dy.size() > 1 && dz.size() > 1) || (enforceNE(dy, dz) && entailed()); // x = 0 => y != z
-				if (dx.first() == 1)
-					return enforceEQ(dy, dz); // x = 1 => y = z
-				assert dx.size() == 2;
-				// we know that (x,0) is supported because the domain of y and/or the domain of z is not singleton
-				if (dy.containsValue(residue) && dz.containsValue(residue))
-					return true;
-				// we look for a support for (x,1), and record it as a residue
-				int v = dy.commonValueWith(dz); // dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) : dz.firstCommonValueWith(dy);
-				if (v != Integer.MAX_VALUE)
-					residue = v;
-				else
-					return dx.remove(1) && entailed(); // since inconsistency not possible and dy and dz are disjoint
-				return true;
-			}
-		}
-
-		public static final class LogNE3 extends PrimitiveTernaryLog {
-
-			@Override
-			public final boolean isSatisfiedBy(int[] t) {
-				return (t[0] == 1) == (t[1] != t[2]);
-			}
-
-			int residue; // for a common value in the domains of y and z, supporting (x,0)
-
-			public LogNE3(Problem pb, Variable x, Variable y, Variable z) {
-				super(pb, x, y, z);
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				if (dy.size() == 1 && dz.size() == 1)
-					return dx.removeIfPresent(dy.firstValue() != dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
-				if (dx.last() == 0)
-					return enforceEQ(dy, dz); // x = 0 => y = z
-				if (dx.first() == 1)
-					return (dy.size() > 1 && dz.size() > 1) || (enforceNE(dy, dz) && entailed()); // x = 1 => y != z
-				assert dx.size() == 2;
-				// we know that (x,1) is supported because the domain of y and/or the domain of z is not singleton
-				if (dy.containsValue(residue) && dz.containsValue(residue))
-					return true;
-				// we look for a support for (x,0), and record it as a residue
-				int v = dy.commonValueWith(dz); // dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) : dz.firstCommonValueWith(dy);
-				if (v != Integer.MAX_VALUE)
-					residue = v;
-				else {
-					return dx.remove(0) && entailed(); // since inconsistency not possible and dy and dz are disjoint
-				}
-				return true;
-			}
-		}
-	}
 }

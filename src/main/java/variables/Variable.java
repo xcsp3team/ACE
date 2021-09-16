@@ -42,6 +42,8 @@ import variables.DomainFinite.DomainValues;
  * (finite) set of values which can be assigned to it. When a value is assigned to a variable, the domain of this variable is reduced to this value. When a
  * solver tries to assign a value to a variable, it uses a <code>ValueOrderingHeuristic</code> object in order to know which value must be tried first. A
  * variable can occur in different constraints of the problem to which it is attached.
+ * 
+ * @author Christophe Lecoutre
  */
 public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic, Comparable<Variable> {
 

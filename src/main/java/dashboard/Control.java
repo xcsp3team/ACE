@@ -144,12 +144,13 @@ public class Control {
 
 		public final String discardedClasses = addS("discardedClasses", "dc", EMPTY_STRING, s_dc);
 		public final String dirForCampaign = addS("dirForCampaign", "dir", EMPTY_STRING, s_dir);
-		public final boolean primitiveUnaryInSolver = addB("primitiveUnaryInSolver", "p1sol", true, "", HIDDEN);
-		public final boolean primitiveBinaryInSolver = addB("primitiveBinaryInSolver", "p2sol", true, "", HIDDEN);
-		public final boolean primitiveTernaryInSolver = addB("primitiveTernarnyInSolver", "p3sol", true, "", HIDDEN);
-		public final boolean recognizeLogicInSolver = addB("primitiveLogicInSolver", "rlsol", true, "", HIDDEN);
-		public final boolean recognizeExtremumInSolver = addB("recognizeExtremumInSolver", "resol", true, "", HIDDEN);
-		public final boolean recognizeSumInSolver = addB("recognizeSumInSolver", "rssol", true, "", HIDDEN);
+
+		// The following options determine whether special forms of intension constraints must be recognized/intercepted
+		public final boolean recognizePrimitive2 = addB("recognizePrimitive2", "rp2", true, "", HIDDEN);
+		public final boolean recognizePrimitive3 = addB("recognizePrimitive3", "rp3", true, "", HIDDEN);
+		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "", HIDDEN);
+		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "", HIDDEN);
+		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "", HIDDEN);
 	}
 
 	public final SettingXml xml = new SettingXml();
@@ -345,7 +346,8 @@ public class Control {
 		public boolean preserveUnaryCtrs = addB("preserveUnaryCtrs", "puc", true, "");
 		public int decomposeIntention = addI("decomposeIntention", "di", 1, "0: no decomposition, 1: conditional decomposition, 2: forced decompostion");
 		public boolean viewForSum = addB("viewForSum", "vs", false, "");
-		public boolean intensionToExtensionUnaryCtrs = addB("intensionToExtensionUnaryCtrs", "ieuc", true, "");
+		public boolean intensionToExtension1 = addB("intensionToExtension1", "ieuc", true,
+				"Must we convert unary intension constraints into unary extension ones?");
 		public final TypeCtr ignoredCtrType = org.xcsp.common.Types.valueOf(TypeCtr.class, addS("ignoreCtrType", "ignoreType", "", s_ignoreType));
 		public final int ignoreCtrArity = addI("ignoreCtrArity", "ignoreArity", -1, s_ignoreArity);
 		public boolean ignorePrimitives = addB("ignorePrimitives", "ip", false, "");

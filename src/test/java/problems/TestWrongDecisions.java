@@ -35,7 +35,7 @@ public class TestWrongDecisions {
 	@Parameters(name = "{index}: {0} has {1} wrong decisions")
 	public static Collection<Object[]> data() {
 
-		add("/csp/Rlfap-scen-11-f06", 13121, "-varh=WdegOnDom");
+		add("/csp/Rlfap-scen-11-f06", 15739, "-varh=WdegOnDom");
 		add("/csp/Crossword-lex-vg-5-6", 2426, "-varh=WdegOnDom");
 		add("/csp/Crossword-lex-vg-5-6", 9199, "-varh=DdegOnDom -positive=str1");
 		add("/csp/Crossword-lex-vg-5-6", 9199, "-varh=DdegOnDom -positive=str2");
