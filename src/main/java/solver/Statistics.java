@@ -160,7 +160,8 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	public long nAssignments;
 
 	/**
-	 * The number of failed assignments (positive decisions directly leading to a failure) made by the solver when building the search tree
+	 * The number of failed assignments (positive decisions directly leading to a failure) made by the solver when
+	 * building the search tree
 	 */
 	public long nFailedAssignments;
 

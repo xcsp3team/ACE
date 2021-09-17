@@ -22,8 +22,8 @@ import sets.SetLinkedFinite.LinkedSetOrderedWithBits;
 import utility.Kit;
 
 /**
- * A finite domain for a variable (from a constraint network), composed of a finite set of integers. Such a domain is defined from a range or an array; see the
- * two intern subclasses.
+ * A finite domain for a variable (from a constraint network), composed of a finite set of integers. Such a domain is
+ * defined from a range or an array; see the two intern subclasses.
  * 
  * @author Christophe Lecoutre
  *
@@ -103,7 +103,8 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 	}
 
 	/**
-	 * This class gives the description of a domain composed of a list of integers included between two (integer) bounds.
+	 * This class gives the description of a domain composed of a list of integers included between two (integer)
+	 * bounds.
 	 */
 	public final static class DomainRange extends DomainFinite {
 
@@ -146,7 +147,8 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 	}
 
 	/**
-	 * This class describes domains composed of a list of integers that are not necessarily contiguous. Be careful: the values are sorted.
+	 * This class describes domains composed of a list of integers that are not necessarily contiguous. Be careful: the
+	 * values are sorted.
 	 */
 	public static class DomainValues extends DomainFinite {
 
@@ -189,6 +191,7 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 		public int toIdx(int v) {
 			if (indexes != null)
 				return v < firstValue || v > lastValue ? -1 : indexes[v - firstValue];
+			System.exit(1);
 			return Arrays.binarySearch(values, v); // TODO should we prefer using a map ? it seems so, but to be tested.
 		}
 
@@ -204,8 +207,8 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 	}
 
 	/**
-	 * This class describes domains composed of a list of symbols, where each such symbol is associated with a value (just introduced to handle symbols in the
-	 * solver).
+	 * This class describes domains composed of a list of symbols, where each such symbol is associated with a value
+	 * (just introduced to handle symbols in the solver).
 	 */
 	public final static class DomainSymbols extends DomainValues {
 
@@ -219,7 +222,8 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 		public DomainSymbols(Variable var, int[] vals, String[] symbols) {
 			super(var, vals);
 			Kit.control(symbols != null && symbols.length > 0 && vals.length == symbols.length, () -> "badly formed set of symbols for variable " + var);
-			// below we sort the array of symbols according to the way the array of values have been sorted (in the super-constructor)
+			// below we sort the array of symbols according to the way the array of values have been sorted (in the
+			// super-constructor)
 			this.symbols = Arrays.stream(Kit.buildMapping(this.values, vals)).mapToObj(i -> symbols[i]).toArray(String[]::new);
 		}
 

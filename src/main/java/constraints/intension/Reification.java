@@ -10,12 +10,12 @@
 
 package constraints.intension;
 
-import static constraints.intension.Primitive2.enforceEQ;
-import static constraints.intension.Primitive2.enforceGE;
-import static constraints.intension.Primitive2.enforceGT;
-import static constraints.intension.Primitive2.enforceLE;
-import static constraints.intension.Primitive2.enforceLT;
-import static constraints.intension.Primitive2.enforceNE;
+import static propagation.GAC.enforceEQ;
+import static propagation.GAC.enforceGE;
+import static propagation.GAC.enforceGT;
+import static propagation.GAC.enforceLE;
+import static propagation.GAC.enforceLT;
+import static propagation.GAC.enforceNE;
 import static utility.Kit.control;
 
 import java.util.stream.Stream;
@@ -42,7 +42,8 @@ public final class Reification {
 	 *********************************************************************************************/
 
 	/**
-	 * The root class for simple reification forms: a variable is defined as the result of a logical comparison involving another variable
+	 * The root class for simple reification forms: a variable is defined as the result of a logical comparison
+	 * involving another variable
 	 */
 	public static abstract class Reif2 extends Primitive2 implements TagNotSymmetric {
 
@@ -313,7 +314,8 @@ public final class Reification {
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dy.size() == 1 && dz.size() == 1)
-					return dx.removeIfPresent(dy.firstValue() == dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
+					return dx.removeIfPresent(dy.firstValue() == dz.firstValue() ? 0 : 1); // remember that indexes and
+																							// values match for x
 				if (dx.last() == 0)
 					return (dy.size() > 1 && dz.size() > 1) || (enforceNE(dy, dz) && entailed()); // x = 0 => y != z
 				if (dx.first() == 1)
@@ -323,7 +325,8 @@ public final class Reification {
 				if (dy.containsValue(residue) && dz.containsValue(residue))
 					return true;
 				// we look for a support for (x,1), and record it as a residue
-				int v = dy.commonValueWith(dz); // dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) : dz.firstCommonValueWith(dy);
+				int v = dy.commonValueWith(dz); // dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) :
+												// dz.firstCommonValueWith(dy);
 				if (v != Integer.MAX_VALUE)
 					residue = v;
 				else
@@ -348,7 +351,8 @@ public final class Reification {
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dy.size() == 1 && dz.size() == 1)
-					return dx.removeIfPresent(dy.firstValue() != dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
+					return dx.removeIfPresent(dy.firstValue() != dz.firstValue() ? 0 : 1); // remember that indexes and
+																							// values match for x
 				if (dx.last() == 0)
 					return enforceEQ(dy, dz); // x = 0 => y = z
 				if (dx.first() == 1)
@@ -358,7 +362,8 @@ public final class Reification {
 				if (dy.containsValue(residue) && dz.containsValue(residue))
 					return true;
 				// we look for a support for (x,0), and record it as a residue
-				int v = dy.commonValueWith(dz); // dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) : dz.firstCommonValueWith(dy);
+				int v = dy.commonValueWith(dz); // dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) :
+												// dz.firstCommonValueWith(dy);
 				if (v != Integer.MAX_VALUE)
 					residue = v;
 				else {
@@ -370,7 +375,8 @@ public final class Reification {
 	}
 
 	/**********************************************************************************************
-	 * Logical Reification : Classes for x = (y and z), x = (y or z) and extensions to more than two variables in the right term
+	 * Logical Reification : Classes for x = (y and z), x = (y or z) and extensions to more than two variables in the
+	 * right term
 	 *********************************************************************************************/
 
 	public static abstract class ReifLogic extends Primitive implements TagAC, TagCallCompleteFiltering, TagNotSymmetric {

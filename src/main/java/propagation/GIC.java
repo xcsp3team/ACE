@@ -1,11 +1,13 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package propagation;
 
 import java.util.ArrayList;
@@ -403,7 +405,8 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 
 		private void buildIntervalsFor(Variable x, boolean direct) {
 			int depth = solver.depth();
-			boolean firstDecision = depth - 1 == target; // depth - 1 == target means that it is the decision to be removed ;
+			boolean firstDecision = depth - 1 == target; // depth - 1 == target means that it is the decision to be
+															// removed ;
 			Interval[] intervals = allIntervals[x.num];
 			Domain dom = x.dom;
 			for (int a = dom.lastRemoved(); a != -1 && dom.removedLevelOf(a) == depth; a = dom.prevRemoved(a))
@@ -608,7 +611,8 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 					nVals = Variable.nValidValuesFor(variables);
 					nUnks = unknown.size();
 
-					// Kit.prn("after init, NbVals=" + Variable.computeNbCurrentValuesFor(variables)+ " NbUnk = " + unknown.size() + " nbDecs="
+					// Kit.prn("after init, NbVals=" + Variable.computeNbCurrentValuesFor(variables)+ " NbUnk = " +
+					// unknown.size() + " nbDecs="
 					// +
 					// decisionVars.length);
 
@@ -639,7 +643,8 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 
 					// rebuilding the path (without the deleted decision)
 					for (int i = 0; i < decisionVars.length; i++) {
-						// Kit.log.info("at " + solver.getDepth() + " replay " + decisionVars[i] + "=" + decisonsIdxs[i]);
+						// Kit.log.info("at " + solver.getDepth() + " replay " + decisionVars[i] + "=" +
+						// decisonsIdxs[i]);
 						solver.assign(decisionVars[i], decisonsIdxs[i]);
 						for (Interval interval : known[solver.depth()])
 							if (interval.var.dom.contains(interval.idx))

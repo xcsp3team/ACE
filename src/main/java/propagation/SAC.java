@@ -72,7 +72,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			if (nBefore == nEffectiveSingletonTests)
 				break;
 		}
-		assert controlArcConsistency();
+		assert controlGAC();
 		return true;
 	}
 
@@ -545,7 +545,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				if (nBefore == nEffectiveSingletonTests)
 					break;
 			}
-			assert solver.finished() || (controlArcConsistency() && controlSAC());
+			assert solver.finished() || (controlGAC() && controlSAC());
 			return true;
 		}
 	}

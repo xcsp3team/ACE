@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package propagation;
 
 import java.util.stream.Collectors;
@@ -11,9 +21,10 @@ import utility.Reflector;
 import variables.Variable;
 
 /**
- * A queue is used to store the variables that have to be considered by constraint propagation. A variable is added to the queue when its domain has been
- * reduced so as to propagate this event. Constraint propagation iteratively involves picking one variable in this set (by means of a so-called revision
- * ordering heuristic) and then performs some filtering.
+ * A queue is used to store the variables that have to be considered by constraint propagation. A variable is added to
+ * the queue when its domain has been reduced so as to propagate this event. Constraint propagation iteratively involves
+ * picking one variable in this set (by means of a so-called revision ordering heuristic) and then performs some
+ * filtering.
  * 
  * @author Christophe Lecoutre
  */
@@ -49,7 +60,8 @@ public final class Queue extends SetSparse {
 		super(propagation.solver.head.problem.variables.length);
 		this.propagation = propagation;
 		Head head = propagation.solver.head;
-		String className = head.problem.features.maxDomSize() <= 4 ? First.class.getSimpleName() : head.control.revh.clazz; // 4 used arbitrarily (hard coding)
+		String className = head.problem.features.maxDomSize() <= 4 ? First.class.getSimpleName() : head.control.revh.clazz;
+		// above, 4 is used arbitrarily (hard coding)
 		this.heuristic = Reflector.buildObject(className, head.availableClasses.get(HeuristicRevisions.class), this, head.control.revh.anti);
 		this.variables = head.problem.variables;
 	}
@@ -67,7 +79,8 @@ public final class Queue extends SetSparse {
 	}
 
 	/**
-	 * Adds the specified variable to the queue. This method must be called when the domain of the specified variable has been modified.
+	 * Adds the specified variable to the queue. This method must be called when the domain of the specified variable
+	 * has been modified.
 	 * 
 	 * @param x
 	 *            a variable to be added

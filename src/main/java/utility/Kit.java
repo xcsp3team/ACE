@@ -99,7 +99,8 @@ public final class Kit {
 					// c.setTimeInMillis(record.getMillis());
 					Thread t = Thread.currentThread(); // Head.currentThread();
 					if (t instanceof Head && ((Head) t).control.general.verbose > 1)
-						System.err.println("\n" + record.getLevel() + " : " + record.getMessage()); // + " " + c.getTime());
+						System.err.println("\n" + record.getLevel() + " : " + record.getMessage()); // + " " +
+																									// c.getTime());
 					if (record.getLevel() == Level.SEVERE) {
 						System.err.println(record.getLevel() + " forces us to stop");
 						System.out.println("\ns UNSUPPORTED");
@@ -160,9 +161,10 @@ public final class Kit {
 	}
 
 	/**
-	 * Builds a 1-dimensional array of objects from the specified sequence of parameters. Each element of the sequence must only contain variables (and possibly
-	 * null values), either stand-alone or present in arrays (of any dimension). All variables are collected in order, and concatenated to form a 1-dimensional
-	 * array. Note that null values are simply discarded.
+	 * Builds a 1-dimensional array of objects from the specified sequence of parameters. Each element of the sequence
+	 * must only contain variables (and possibly null values), either stand-alone or present in arrays (of any
+	 * dimension). All variables are collected in order, and concatenated to form a 1-dimensional array. Note that null
+	 * values are simply discarded.
 	 */
 	public static Object[] concat(Object first, Object... next) {
 		List<Object> list = new ArrayList<>();
@@ -1021,7 +1023,8 @@ public final class Kit {
 	}
 
 	// (3,-5) => -2; (3,10) => 3; (-3,-5) => 2; (-3,10) => -3; (3,0) => 0; (-3,0) => 0
-	// 3y <= -5 => y <= -2; 3y <= 10 => y <= 3; -3y <= -5 => y >= 2; -3y <= 10 => y >= -3; 3y <= 0 => y <= 0; -3y <= 0 => y >= 0
+	// 3y <= -5 => y <= -2; 3y <= 10 => y <= 3; -3y <= -5 => y >= 2; -3y <= 10 => y >= -3; 3y <= 0 => y <= 0; -3y <= 0
+	// => y >= 0
 	public static int greatestIntegerLE(int c, int k) { // c*y <= k
 		if (c == 0)
 			return k >= 0 ? Integer.MIN_VALUE : Integer.MAX_VALUE;
@@ -1033,7 +1036,8 @@ public final class Kit {
 	}
 
 	// (3,-5) => -1; (3,10) => 4; (-3,-5) => 1; (-3,10) => -4; (3,0) => 0; (-3,0) => 0
-	// 3y >= -5 => y >= -1; 3y >= 10 => y >= 4; -3y >= -5 => y <= 1; -3y >= 10 => y <= -4; 3y >= 0 => y>= 0; -3y >= 0 => y <= 0
+	// 3y >= -5 => y >= -1; 3y >= 10 => y >= 4; -3y >= -5 => y <= 1; -3y >= 10 => y <= -4; 3y >= 0 => y>= 0; -3y >= 0 =>
+	// y <= 0
 	public static int smallestIntegerGE(int c, int k) { // c*y >= k
 		if (c == 0)
 			return k <= 0 ? Integer.MIN_VALUE : Integer.MAX_VALUE;

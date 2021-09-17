@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package propagation;
 
 import constraints.Constraint;
@@ -5,25 +15,31 @@ import solver.Solver;
 import variables.Variable;
 
 /**
- * This class gives the description of a backward propagation technique. Such a propagation technique corresponds to a retrospective approach which works with
- * assigned variables. The domains of the unassigned variables are not modified.
+ * This class gives the description of a backward propagation technique. Such a propagation technique corresponds to a
+ * retrospective approach which works with assigned variables. The domains of the unassigned variables are not modified.
  * 
  * @author Christophe Lecoutre
  */
 public abstract class Backward extends Propagation {
 
+	/**
+	 * Builds for the specified solver an object implementing a backward propagation technique
+	 * 
+	 * @param solver
+	 *            the solver to which the propagation object is attached
+	 */
 	public Backward(Solver solver) {
 		super(solver);
 	}
 
 	@Override
 	public final boolean runInitially() {
-		return true; // nothing to do at preprocessing
+		return true; // nothing to do
 	}
 
 	@Override
 	public final boolean runAfterRefutation(Variable x) {
-		return true; // nothing to do when refuting a value
+		return true; // nothing to do
 	}
 
 	/**********************************************************************************************

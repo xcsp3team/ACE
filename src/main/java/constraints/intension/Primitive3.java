@@ -24,20 +24,22 @@ import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
+import propagation.GAC;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
 /**
- * This class contains all propagators defined for ternary primitive constraints such as for example x + y = z, |x - y| > z or x%y = z <br />
+ * This class contains all propagators defined for ternary primitive constraints such as for example x + y = z, |x - y|
+ * > z or x%y = z <br />
  * Important: in Java, integer division rounds toward 0. <br/>
  * This implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 = 3 <br />
  * See https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.17.2
  * 
  * @author Christophe Lecoutre
  */
-public abstract class Primitive3 extends Primitive implements TagAC, TagCallCompleteFiltering, TagNotSymmetric { // TODO GAC not true some
-																														// times
+public abstract class Primitive3 extends Primitive implements TagAC, TagCallCompleteFiltering, TagNotSymmetric {
+	// TODO AC not true sometimes
 
 	public static Constraint buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, Variable z) {
 		switch (aop) {
@@ -160,7 +162,8 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 			case EQ:
 				return new Add3EQ(pb, x, y, z);
 			default:
-				return SumWeighted.buildFrom(pb, pb.api.vars(z, x, y), pb.api.vals(-1, 1, 1), op, 0); // we order variables according to coeffs
+				// we order variables according to coeffs
+				return SumWeighted.buildFrom(pb, pb.api.vars(z, x, y), pb.api.vals(-1, 1, 1), op, 0);
 			}
 		}
 
@@ -187,7 +190,7 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about GAC Guaranteed?
 					if (dz.removeValuesLT(dx.firstValue() + dy.firstValue()) == false || dz.removeValuesGT(dx.lastValue() + dy.lastValue()) == false)
 						return false;
-					return Primitive2.enforceAddGE(dx, dy, dz.firstValue()) && Primitive2.enforceAddLE(dx, dy, dz.lastValue());
+					return GAC.enforceAddGE(dx, dy, dz.firstValue()) && GAC.enforceAddLE(dx, dy, dz.lastValue());
 				}
 
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
@@ -342,7 +345,8 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 				if (dz.containsOnlyValue(0)) { // if z = 0
 					if (dx.first() == 0 && dy.containsValue(0)) // 0 in dx and 0 in dy => every value is supported
 						return true;
-					return dx.first() == 0 ? dx.reduceTo(0) : dy.reduceToValue(0); // if 0 not in dy => x must be 0, else => y must be 0
+					return dx.first() == 0 ? dx.reduceTo(0) : dy.reduceToValue(0); // if 0 not in dy => x must be 0,
+																					// else => y must be 0
 				}
 				if (dz.containsValue(0)) { // if 0 in dz
 					if (dx.first() == 1 && !dy.containsValue(0) && dz.removeValue(0) == false)
@@ -351,10 +355,12 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 					return false;
 
 				if (dx.first() == 1) // x = 1 => y = z
-					return Primitive2.enforceEQ(dy, dz);
+					return GAC.enforceEQ(dy, dz);
 
-				assert dx.size() == 2 && dz.containsValue(0) && dz.size() > 1; // because if 0 not in z, dx.size() cannot be 2
-				// every value of dy is supported (by both 0 in x and z); we still need to filter z (and possibly 1 out of dx)
+				assert dx.size() == 2 && dz.containsValue(0) && dz.size() > 1;
+				// above, because if 0 not in z, dx.size() cannot be 2
+				// every value of dy is supported (by both 0 in x and z); we still need to filter z (and possibly 1 out
+				// of dx)
 
 				int sizeBefore = dz.size();
 				for (int c = dz.first(); c != -1; c = dz.next(c)) {
@@ -394,9 +400,10 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 					int min2 = Math.min(v3, v4), max2 = Math.max(v3, v4);
 					if (dz.removeValuesLT(Math.min(min1, min2)) == false || dz.removeValuesGT(Math.max(max1, max2)) == false)
 						return false;
-					return Primitive2.enforceMulGE(dx, dy, dz.firstValue()) && Primitive2.enforceMulLE(dx, dy, dz.lastValue());
+					return GAC.enforceMulGE(dx, dy, dz.firstValue()) && GAC.enforceMulLE(dx, dy, dz.lastValue());
 				}
-				if (!dy.containsValue(0) || !dz.containsValue(0)) // if 0 is present in dy and dz, all values of x are supported
+				if (!dy.containsValue(0) || !dz.containsValue(0))
+					// if 0 is present in dy and dz, all values of x are supported
 					extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int va = dx.toVal(a);
 						if (va == 0) {
@@ -418,7 +425,8 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 						if (dx.remove(a) == false)
 							return false;
 					}
-				if (!dx.containsValue(0) || !dz.containsValue(0)) // if 0 is present in dx and dz, all values of y are supported
+				if (!dx.containsValue(0) || !dz.containsValue(0))
+					// if 0 is present in dx and dz, all values of y are supported
 					extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
 						int vb = dy.toVal(b);
 						if (vb == 0) {
@@ -451,7 +459,8 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 						continue;
 					for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int va = dx.toVal(a);
-						if (va == 0) // because it involves vc=0, and vc = 0 already handled (and we need to be careful about division by zero
+						if (va == 0) // because it involves vc=0, and vc = 0 already handled (and we need to be careful
+										// about division by zero
 							continue;
 						int vb = vc / va;
 						if (va > 0 && vc > 0 && va * dy.firstValue() > vc) // TODO other ways of breaking?
@@ -507,7 +516,7 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about GAC Guaranteed?
 					if (dz.removeValuesLT(dx.firstValue() / dy.lastValue()) == false || dz.removeValuesGT(dx.lastValue() / dy.firstValue()) == false)
 						return false;
-					return Primitive2.enforceDivGE(dx, dy, dz.firstValue()) && Primitive2.enforceDivLE(dx, dy, dz.lastValue());
+					return GAC.enforceDivGE(dx, dy, dz.firstValue()) && GAC.enforceDivLE(dx, dy, dz.lastValue());
 				}
 
 				if (dx.firstValue() >= dy.lastValue() && dz.removeValueIfPresent(0) == false)
@@ -633,7 +642,8 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 						continue;
 					for (int b = dy.first(); b != -1; b = dy.next(b)) {
 						int vb = dy.toVal(b);
-						if (va < vb) // means that the remainder with remaining values of y lead to va (and this has been considered earlier)
+						if (va < vb) // means that the remainder with remaining values of y lead to va (and this has
+										// been considered earlier)
 							break;
 						if (dz.containsValue(va % vb)) {
 							rx[a] = b;

@@ -25,8 +25,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * The root class of any object that can be used to manage constraint propagation. For simplicity, propagation and consistency concepts are not distinguished,
- * So, some subclasses are given the name of consistencies.
+ * The root class of any object that can be used to manage constraint propagation. For simplicity, propagation and
+ * consistency concepts are not distinguished, So, some subclasses are given the name of consistencies.
  * 
  * @author Christophe Lecoutre
  */
@@ -37,7 +37,8 @@ public abstract class Propagation {
 	 *************************************************************************/
 
 	/**
-	 * Builds and returns the propagation to be attached to the specified solver. If preprocessing and search stages are disabled, null is returned.
+	 * Builds and returns the propagation to be attached to the specified solver. If preprocessing and search stages are
+	 * disabled, null is returned.
 	 * 
 	 * @param solver
 	 *            the solver to which the propagation object is attached
@@ -53,17 +54,13 @@ public abstract class Propagation {
 	 * Inner classes for managing auxiliary queues and reasoning with nogoods
 	 *************************************************************************/
 
-	protected static class SetSparseMap extends SetSparse {
-
-		public static SetSparseMap[] buildArray(int length, int capacity) {
-			return IntStream.range(0, length).mapToObj(i -> new SetSparseMap(capacity)).toArray(SetSparseMap[]::new);
-		}
+	static class SetSparseMap extends SetSparse {
 
 		public final int[] values;
 
 		public SetSparseMap(int capacity, boolean initiallyFull) {
 			super(capacity, initiallyFull);
-			values = Kit.range(capacity);
+			this.values = Kit.range(capacity);
 		}
 
 		public SetSparseMap(int capacity) {
@@ -137,19 +134,21 @@ public abstract class Propagation {
 	public final Queue queue;
 
 	/**
-	 * Auxiliary queues for handling constraints with different levels of propagator complexities. Currently, its usage is experimental.
+	 * Auxiliary queues for handling constraints with different levels of propagator complexities. Currently, its usage
+	 * is experimental.
 	 */
 	public final SetSparseMap[] auxiliaryQueues;
 
 	/**
-	 * This field is used as a clock to enumerate time. It is used to avoid performing some useless calls of constraint propagators by comparing time-stamps
-	 * attached to variables with time-stamps attached to constraints.
+	 * This field is used as a clock to enumerate time. It is used to avoid performing some useless calls of constraint
+	 * propagators by comparing time-stamps attached to variables with time-stamps attached to constraints.
 	 * 
 	 */
 	public long time;
 
 	/**
-	 * The constraint that is currently used in propagation. This is null if no constraint is currently used for filtering. This is relevant for AC.
+	 * The constraint that is currently used in propagation. This is null if no constraint is currently used for
+	 * filtering. This is relevant for AC.
 	 */
 	public Constraint currFilteringCtr;
 
@@ -159,13 +158,14 @@ public abstract class Propagation {
 	public Variable lastWipeoutVar;
 
 	/**
-	 * The object to be used when picking a variable from the queue in order to reason first with recorded nogoods (if any)
+	 * The object to be used when picking a variable from the queue in order to reason first with recorded nogoods (if
+	 * any)
 	 */
 	private NogoodReasoning nogoodReasoning = new NogoodReasoning();
 
 	/**
-	 * When true, indicates that the object is currently performing a form of search during propagation. This may be the case for some forms of propagation
-	 * based on strong consistencies.
+	 * When true, indicates that the object is currently performing a form of search during propagation. This may be the
+	 * case for some forms of propagation based on strong consistencies.
 	 */
 	public boolean performingProperSearch;
 
@@ -206,20 +206,21 @@ public abstract class Propagation {
 	 * Builds a propagation object to be attached to the specified solver
 	 * 
 	 * @param solver
-	 *            a solver
+	 *            the solver to which the propagation object is attached
 	 */
 	public Propagation(Solver solver) {
 		this.solver = solver;
 		this.queue = this instanceof Forward ? new Queue((Forward) this) : null;
 		this.settings = solver.head.control.propagation;
 		int nAuxQueues = settings.useAuxiliaryQueues ? Constraint.MAX_FILTERING_COMPLEXITY : 0;
-		this.auxiliaryQueues = this instanceof Forward ? SetSparseMap.buildArray(nAuxQueues, solver.problem.constraints.length) : null;
-
+		this.auxiliaryQueues = this instanceof Forward
+				? IntStream.range(0, nAuxQueues).mapToObj(i -> new SetSparseMap(solver.problem.constraints.length)).toArray(SetSparseMap[]::new)
+				: null;
 	}
 
 	/**
-	 * Pick and delete a variable from the queue and call filtering algorithms associated with the constraints involving the variable. Possibly postpone
-	 * filtering if auxiliary queues are used.
+	 * Pick and delete a variable from the queue and call filtering algorithms associated with the constraints involving
+	 * the variable. Possibly postpone filtering if auxiliary queues are used.
 	 * 
 	 * @return false iff an inconsistency is detected
 	 */
@@ -290,7 +291,8 @@ public abstract class Propagation {
 	}
 
 	/**
-	 * This method is called to run constraint propagation, typically at the beginning of search (i.e., in a preprocessing stage).
+	 * This method is called to run constraint propagation, typically at the beginning of search (i.e., in a
+	 * preprocessing stage).
 	 * 
 	 * @return false iff an inconsistency is detected
 	 */
@@ -306,9 +308,10 @@ public abstract class Propagation {
 	public abstract boolean runAfterAssignment(Variable x);
 
 	/**
-	 * This method is called when a binary branching scheme is used by the solver. Indeed, after a positive decision (value assigned to a variable), one can
-	 * proceed with a negative decision (value removed from the domain of the variable), and to run constraint propagation before selecting another variable.
-	 * This method is always called with a variable whose domain is not empty.
+	 * This method is called when a binary branching scheme is used by the solver. Indeed, after a positive decision
+	 * (value assigned to a variable), one can proceed with a negative decision (value removed from the domain of the
+	 * variable), and to run constraint propagation before selecting another variable. This method is always called with
+	 * a variable whose domain is not empty.
 	 * 
 	 * @param x
 	 *            the variable that has just been subject to a refutation (negative decision)
@@ -318,8 +321,8 @@ public abstract class Propagation {
 
 	/**
 	 * To be called when the domain of the specified variable has just been reduced. <br />
-	 * Be careful: the domain of the specified variable is not necessarily already reduced, and so may be different from the specified value, which is then
-	 * considered as the virtual size of the domain of the specified variable.
+	 * Be careful: the domain of the specified variable is not necessarily already reduced, and so may be different from
+	 * the specified value, which is then considered as the virtual size of the domain of the specified variable.
 	 * 
 	 * @param x
 	 *            the variable whose domain has just been reduced

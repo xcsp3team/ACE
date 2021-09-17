@@ -31,8 +31,6 @@ import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Dist2;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Div2;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Mod2;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Mul2;
-import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Mul2.Mul2GE;
-import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Mul2.Mul2LE;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Sub2;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant2.Dist2b;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant2.Dist2b.Dist2bEQ;
@@ -46,12 +44,14 @@ import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
+import propagation.GAC;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
 /**
- * This class contains all propagators defined for binary primitive constraints such as for example x < y, x*y = 10 or |x-y| < 2. <br />
+ * This class contains all propagators defined for binary primitive constraints such as for example x < y, x*y = 10 or
+ * |x-y| < 2. <br />
  * Important: in Java, integer division rounds toward 0. <br/>
  * This implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 = 3 <br />
  * See https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.17.2
@@ -65,81 +65,6 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 	 *********************************************************************************************/
 
 	public static final int UNITIALIZED = -1;
-
-	public static boolean enforceLT(Domain dx, Domain dy) { // x < y
-		return dx.removeValuesGE(dy.lastValue()) && dy.removeValuesLE(dx.firstValue());
-	}
-
-	public static boolean enforceLT(Domain dx, Domain dy, int k) { // x < y + k
-		return dx.removeValuesGE(dy.lastValue() + k) && dy.removeValuesLE(dx.firstValue() - k);
-	}
-
-	public static boolean enforceLE(Domain dx, Domain dy) { // x <= y
-		return dx.removeValuesGT(dy.lastValue()) && dy.removeValuesLT(dx.firstValue());
-	}
-
-	public static boolean enforceLE(Domain dx, Domain dy, int k) { // x <= y + k
-		return dx.removeValuesGT(dy.lastValue() + k) && dy.removeValuesLT(dx.firstValue() - k);
-	}
-
-	public static boolean enforceGE(Domain dx, Domain dy) { // x >= y
-		return dx.removeValuesLT(dy.firstValue()) && dy.removeValuesGT(dx.lastValue());
-	}
-
-	public static boolean enforceGE(Domain dx, Domain dy, int k) { // x >= y + k
-		return dx.removeValuesLT(dy.firstValue() + k) && dy.removeValuesGT(dx.lastValue() - k);
-	}
-
-	public static boolean enforceGT(Domain dx, Domain dy) { // x > y
-		return dx.removeValuesLE(dy.firstValue()) && dy.removeValuesGE(dx.lastValue());
-	}
-
-	public static boolean enforceGT(Domain dx, Domain dy, int k) { // x > y + k
-		return dx.removeValuesLE(dy.firstValue() + k) && dy.removeValuesGE(dx.lastValue() - k);
-	}
-
-	public static boolean enforceEQ(Domain dx, Domain dy) { // x = y
-		if (dx.removeValuesNotIn(dy) == false)
-			return false;
-		if (dx.size() == dy.size())
-			return true;
-		assert dx.size() < dy.size();
-		boolean consistent = dy.removeValuesNotIn(dx);
-		assert consistent && dx.size() == dy.size();
-		return true;
-	}
-
-	public static boolean enforceNE(Domain dx, Domain dy) { // x != y
-		if (dx.size() == 1)
-			return dy.removeValueIfPresent(dx.singleValue());
-		if (dy.size() == 1)
-			return dx.removeValueIfPresent(dy.singleValue());
-		return true;
-	}
-
-	public static boolean enforceAddLE(Domain dx, Domain dy, int k) { // x + y <= k
-		return dx.removeValuesGT(k - dy.firstValue()) && dy.removeValuesGT(k - dx.firstValue());
-	}
-
-	public static boolean enforceAddGE(Domain dx, Domain dy, int k) { // x + y >= k
-		return dx.removeValuesLT(k - dy.lastValue()) && dy.removeValuesLT(k - dx.lastValue());
-	}
-
-	public static boolean enforceMulLE(Domain dx, Domain dy, int k) { // x * y <= k
-		return Mul2LE.revise(dx, dy, k) && Mul2LE.revise(dy, dx, k);
-	}
-
-	public static boolean enforceMulGE(Domain dx, Domain dy, int k) { // x * y >= k
-		return Mul2GE.revise(dx, dy, k) && Mul2GE.revise(dy, dx, k);
-	}
-
-	public static boolean enforceDivLE(Domain dx, Domain dy, int k) { // x / y <= k
-		return dx.removeValuesNumeratorsGT(k, dy.lastValue()) && dy.removeValuesDenominatorsGT(k, dx.firstValue());
-	}
-
-	public static boolean enforceDivGE(Domain dx, Domain dy, int k) { // x / y >= k
-		return dx.removeValuesNumeratorsLT(k, dy.firstValue()) && dy.removeValuesDenominatorsLT(k, dx.lastValue());
-	}
 
 	public static Constraint buildFrom(Problem pb, Variable x, TypeUnaryArithmeticOperator aop, Variable y) {
 		switch (aop) {
@@ -214,7 +139,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 	protected final Variable y;
 
 	/**
-	 * The constant used in the binary primitive constraint. Note that it is not relevant for two subclasses (propagators).
+	 * The constant used in the binary primitive constraint. Note that it is not relevant for two subclasses
+	 * (propagators).
 	 */
 	protected final int k;
 
@@ -254,7 +180,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 	}
 
 	/**
-	 * Builds a binary primitive constraint for the specified problem with the two specified variables and the specified constant
+	 * Builds a binary primitive constraint for the specified problem with the two specified variables and the specified
+	 * constant
 	 * 
 	 * @param pb
 	 *            the problem to which the binary primitive constraint is attached
@@ -519,7 +446,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return enforceAddLE(dx, dy, k);
+					return GAC.enforceAddLE(dx, dy, k);
 				}
 			}
 
@@ -536,7 +463,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return enforceAddGE(dx, dy, k);
+					return GAC.enforceAddGE(dx, dy, k);
 				}
 			}
 
@@ -635,7 +562,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return enforceLE(dx, dy, k);
+					return GAC.enforceLE(dx, dy, k);
 				}
 			}
 
@@ -652,7 +579,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return enforceGE(dx, dy, k);
+					return GAC.enforceGE(dx, dy, k);
 				}
 			}
 
@@ -824,7 +751,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				public Mul2EQ(Problem pb, Variable x, Variable y, int k) {
 					super(pb, x, y, k);
-					control(k > 1, "if k is 0 or 1, other constraints should be posted"); // TODO could we just impose k != 0?
+					control(k > 1, "if k is 0 or 1, other constraints should be posted");
+					// TODO could we just impose k != 0?
 					dx.removeValuesAtConstructionTime(v -> v == 0 || k % v != 0);
 					dy.removeValuesAtConstructionTime(v -> v == 0 || k % v != 0);
 					this.sp = new SimplePropagatorEQ(dx, dy, true) {
@@ -842,7 +770,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return sp.runPropagator(dummy); // return dx.removeValuesInvNotIn(dy, k) && dy.removeValuesInvNotIn(dx, k);
+					return sp.runPropagator(dummy);
+					// return dx.removeValuesInvNotIn(dy, k) && dy.removeValuesInvNotIn(dx, k);
 				}
 			}
 
@@ -915,7 +844,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return enforceDivLE(dx, dy, k); // dx.removeValuesNumeratorsGT(k, dy.lastValue()) && dy.removeValuesDenominatorsGT(k, dx.firstValue());
+					return GAC.enforceDivLE(dx, dy, k);
 				}
 			}
 
@@ -932,7 +861,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return enforceDivGE(dx, dy, k); // dx.removeValuesNumeratorsLT(k, dy.firstValue()) && dy.removeValuesDenominatorsLT(k, dx.lastValue());
+					return GAC.enforceDivGE(dx, dy, k);
 				}
 			}
 
@@ -951,7 +880,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					if ((dx.lastValue() / dy.firstValue() < k) || (dx.firstValue() / dy.lastValue() > k)) // possible because only positive values
+					if ((dx.lastValue() / dy.firstValue() < k) || (dx.firstValue() / dy.lastValue() > k))
+						// possible because only positive values
 						return dx.fail();
 					extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int va = dx.toVal(a);
@@ -1020,8 +950,10 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				public Mod2EQ(Problem pb, Variable x, Variable y, int k) {
 					super(pb, x, y, k);
 					buildResiduesForBothVariables();
-					dx.removeValuesAtConstructionTime(v -> v < k); // because the remainder is at most k-1, whatever the value of y
-					dy.removeValuesAtConstructionTime(v -> v <= k); // because the remainder is at most k-1, whatever the value for x
+					dx.removeValuesAtConstructionTime(v -> v < k); // because the remainder is at most k-1, whatever the
+																	// value of y
+					dy.removeValuesAtConstructionTime(v -> v <= k); // because the remainder is at most k-1, whatever
+																	// the value for x
 					// note that k for x is always supported, whatever the remaining value in y
 				}
 
@@ -1032,14 +964,16 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 							continue;
 						int va = dx.toVal(a);
 						if (va == k)
-							continue; // because dy.lastValue() > k by construction (see constructor), and so there is a support
+							continue; // because dy.lastValue() > k by construction (see constructor), and so there is a
+										// support
 						for (int b = dy.first(); b != -1; b = dy.next(b)) {
 							int vb = dy.toVal(b);
 							if (va % vb == k) {
 								rx[a] = b;
 								continue extern;
 							}
-							if (va < vb) // means that the remainder with remaining values of y always lead to va (and it is not k)
+							if (va < vb) // means that the remainder with remaining values of y always lead to va (and
+											// it is not k)
 								break;
 							// here, we know that va >= vb and va != k (see code earlier)
 							if (va < 2 * vb) { // it means that the quotient was 1, and will remain 1 (and 0 later)
@@ -1068,7 +1002,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 							}
 						} else {
 							// we know that va >= k and vb > k by construction
-							int va = vb + k; // no neex to start at va = k because k % vb is 0 (and 0 is not possible for k)
+							int va = vb + k; // no neex to start at va = k because k % vb is 0 (and 0 is not possible
+												// for k)
 							while (va <= dx.lastValue()) {
 								assert va % vb == k;
 								if (dx.containsValue(va)) {
@@ -1137,7 +1072,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean isSatisfiedBy(int[] t) {
-					return Math.abs(t[0] - t[1]) >= k; // equivalent to disjunctive: t[0] + k <= t[1] || t[1] + k <= t[0];
+					return Math.abs(t[0] - t[1]) >= k; // equivalent to disjunctive: t[0] + k <= t[1] || t[1] + k <=
+														// t[0];
 				}
 
 				public Dist2GE(Problem pb, Variable x, Variable y, int k) {
@@ -1182,7 +1118,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return sp.runPropagator(dummy); // return dx.removeValuesAtDistanceNE(k, dy) && dy.removeValuesAtDistanceNE(k, dx);
+					return sp.runPropagator(dummy);
+					// return dx.removeValuesAtDistanceNE(k, dy) && dy.removeValuesAtDistanceNE(k, dx);
 				}
 			}
 
@@ -1235,7 +1172,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				case LE:
 				case GE:
 				case GT:
-					// IMPORTANT: keep this order for the variables and the coefficient (that must be increasingly ordered)
+					// IMPORTANT: keep this order for the variables and the coefficient (that must be increasingly
+					// ordered)
 					return SumWeighted.buildFrom(pb, pb.vars(y, x), new int[] { -k, 1 }, op, 0);
 				case EQ:
 					return new Mul2bEQ(pb, x, y, k);
@@ -1262,7 +1200,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				public Mul2bEQ(Problem pb, Variable x, Variable y, int k) {
 					super(pb, x, y, k);
-					dx.removeValuesAtConstructionTime(v -> v != 0 && v % k != 0); // non multiple deleted (important for avoiding systematic checks)
+					dx.removeValuesAtConstructionTime(v -> v != 0 && v % k != 0); // non multiple deleted (important for
+																					// avoiding systematic checks)
 					this.sp = new SimplePropagatorEQ(dx, dy, true) {
 						@Override
 						final int valxFor(int b) {
@@ -1317,7 +1256,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				case NE:
 					return x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0 && k > 1 ? new Div2bNE(pb, x, y, k) : null;
 				default:
-					throw new AssertionError("not implemented"); // not relevant to implement them? (since an auxiliary variable can be introduced)
+					throw new AssertionError("not implemented"); // not relevant to implement them? (since an auxiliary
+																	// variable can be introduced)
 				}
 			}
 
@@ -1386,7 +1326,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				case NE:
 					return new Mod2bNE(pb, x, y, k);
 				default:
-					throw new AssertionError("not implemented"); // not relevant to implement them? (since an auxiliary variable can be introduced)
+					throw new AssertionError("not implemented"); // not relevant to implement them? (since an auxiliary
+																	// variable can be introduced)
 				}
 			}
 
@@ -1406,7 +1347,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				public Mod2bEQ(Problem pb, Variable x, Variable y, int k) {
 					super(pb, x, y, k);
-					dx.removeValuesAtConstructionTime(v -> v >= k); // because the remainder is at most k-1, whatever the value of y
+					dx.removeValuesAtConstructionTime(v -> v >= k); // because the remainder is at most k-1, whatever
+																	// the value of y
 					this.sp = new SimplePropagatorEQ(dx, dy, false) {
 						@Override
 						final int valxFor(int b) {
@@ -1432,7 +1374,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 					super(pb, x, y, k);
 				}
 
-				int watch1 = -1, watch2 = -1; // watching two different (indexes of) values of y leading to two different remainders
+				int watch1 = -1, watch2 = -1; // watching two different (indexes of) values of y leading to two
+												// different remainders
 
 				private int findWatch(int other) {
 					if (other == -1)
@@ -1450,7 +1393,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 						return dy.removeValuesModIn(dx, k) && entailed();
 					if (watch1 == -1 || !dy.contains(watch1))
 						watch1 = findWatch(watch2);
-					if (watch1 == -1) { // watch2 is the only remaining valid watch (we know that it is still valid since the domain is not empty)
+					if (watch1 == -1) { // watch2 is the only remaining valid watch (we know that it is still valid
+										// since the domain is not empty)
 						assert watch2 != -1 && dy.contains(watch2);
 						return dx.removeValueIfPresent(dy.toVal(watch2) % k) && entailed();
 					}
@@ -1476,7 +1420,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				case NE:
 					return new Dist2bNE(pb, x, y, k);
 				default:
-					throw new AssertionError("not implemented"); // not relevant to implement them? (since an auxiliary variable can be introduced)
+					throw new AssertionError("not implemented"); // not relevant to implement them? (since an auxiliary
+																	// variable can be introduced)
 				}
 			}
 
@@ -1563,7 +1508,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 // int sizeBefore = d1.size();
 // for (int a = d1.last(); a != -1; a = d1.prev(a)) {
 // int va = d1.toVal(a);
-// if ((va > 0 && d2.firstValue() >= 0 && va * d2.firstValue() <= k) || (va < 0 && d2.lastValue() >= 0 && va * d2.lastValue() <= k))
+// if ((va > 0 && d2.firstValue() >= 0 && va * d2.firstValue() <= k) || (va < 0 && d2.lastValue() >= 0 && va *
+// d2.lastValue() <= k))
 // break; // because all values of d1 are necessarily supported
 // if (checkLimit(va, k, d2))
 // continue;
@@ -1600,7 +1546,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 // int sizeBefore = d1.size();
 // for (int a = d1.first(); a != -1; a = d1.next(a)) {
 // int va = d1.toVal(a);
-// if ((va > 0 && d2.lastValue() >= 0 && va * d2.lastValue() >= k) || (va < 0 && d2.firstValue() >= 0 && va * d2.firstValue() >= k))
+// if ((va > 0 && d2.lastValue() >= 0 && va * d2.lastValue() >= k) || (va < 0 && d2.firstValue() >= 0 && va *
+// d2.firstValue() >= k))
 // break; // because all values of d1 are necessarily supported
 // if (checkLimit(va, k, d2))
 // continue;
@@ -1627,7 +1574,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 // }
 
 // public static boolean enforceMulEQ(Domain dx, Domain dy, int k) { // x = y * k
-// assert dx.iterateOnValuesStoppingWhen(v -> v != 0 && v % k != 0) == false; // we assume that trivial inconsistent values have been deleted
+// assert dx.iterateOnValuesStoppingWhen(v -> v != 0 && v % k != 0) == false; // we assume that trivial inconsistent
+// values have been deleted
 // // initially (for code efficiency, avoiding systematic check)
 // if (dx.removeValuesDivNotIn(dy, k) == false)
 // return false;

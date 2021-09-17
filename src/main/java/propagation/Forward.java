@@ -1,24 +1,43 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package propagation;
+
+import static utility.Kit.control;
 
 import solver.Solver;
 import utility.Enums.Branching;
-import utility.Kit;
 import utility.Reflector;
 import variables.Variable;
 
 /**
- * This class gives the description of a forward propagation technique. Such a propagation technique corresponds to a prospective approach which works with
- * unassigned variables. The domains of the unassigned variables can be filtered.
+ * This class gives the description of a forward propagation technique. Such a propagation technique corresponds to a
+ * prospective approach which works with unassigned variables. The domains of the unassigned variables can be filtered.
  * 
  * @author Christophe Lecoutre
  */
 public abstract class Forward extends Propagation {
 
 	/**
-	 * The reviser object attached to the forward propagation object.
+	 * The reviser object attached to the forward propagation object. <br />
+	 * IMPORTANT: It is used only by constraints whose filtering algorithms are given by a generic scheme (instead of
+	 * being given by specific propagators). It may be also useful when dealing with MaxCSP.
 	 */
 	public final Reviser reviser;
 
+	/**
+	 * Builds for the specified solver an object implementing a forward propagation technique
+	 * 
+	 * @param solver
+	 *            the solver to which the propagation object is attached
+	 */
 	public Forward(Solver solver) {
 		super(solver);
 		this.reviser = Reflector.buildObject(settings.reviser, Reviser.class, this);
@@ -30,7 +49,7 @@ public abstract class Forward extends Propagation {
 
 	@Override
 	public boolean runAfterAssignment(Variable x) {
-		assert x.assigned() && queue.isEmpty() : queue.size() + " " + x.assigned(); // (queue.size() == 0 || this instanceof PropagationIsomorphism)
+		assert x.assigned() && queue.isEmpty() : queue.size() + " " + x.assigned(); // and if PropagationIsomorphism?
 		queue.add(x);
 		return propagate();
 	}
@@ -47,19 +66,20 @@ public abstract class Forward extends Propagation {
 	 *********************************************************************************************/
 
 	/**
-	 * This class implements the <i>forward checking (mode 0) </i> technique. This mode corresponds to the <i>nFC2 </i> algorithm of: <br>
-	 * [Bessiere Meseguer Freuder Larossa 99, On forward checking for non-binary constraint satisfaction].
+	 * This class implements Forward Checking. This code corresponds to the <i>nFC2 </i> algorithm of: <br>
+	 * "On Forward Checking for Non-binary Constraint Satisfaction", CP 1999: 88-102, by Christian Bessière, Pedro
+	 * Meseguer, Eugene C. Freuder, Javier Larrosa.
 	 */
 	public static final class FC extends Forward {
 
 		public FC(Solver solver) {
 			super(solver);
-			Kit.control(auxiliaryQueues.length == 0, () -> "For FC, we have to just use one queue");
+			control(auxiliaryQueues.length == 0, () -> "For FC, we have to just use one queue");
 		}
 
 		@Override
 		public boolean runInitially() {
-			return true; // nothing to do at preprocessing
+			return true; // nothing to do
 		}
 
 		@Override
@@ -73,7 +93,7 @@ public abstract class Forward extends Propagation {
 
 		@Override
 		public boolean runAfterRefutation(Variable x) {
-			return true; // nothing to do at refutations
+			return true; // nothing to do
 		}
 	}
 }

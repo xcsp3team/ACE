@@ -53,7 +53,7 @@ public class NogoodMinimizer {
 				solver.assign(x, a);
 				consistent = propagation.runAfterAssignment(x);
 			}
-			assert !consistent || !(propagation instanceof GAC) || ((GAC) propagation).controlArcConsistency();
+			assert !consistent || !(propagation instanceof GAC) || ((GAC) propagation).controlGAC();
 		}
 		if (consistent)
 			return -1;

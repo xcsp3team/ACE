@@ -34,8 +34,8 @@ import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
 
 /**
- * The abstract class representing intension constraints, which are constraints whose semantics is given by a Boolean expression tree involving variable). Most
- * of the times, primitives are used instead of this general form.
+ * The abstract class representing intension constraints, which are constraints whose semantics is given by a Boolean
+ * expression tree involving variable). Most of the times, primitives are used instead of this general form.
  * 
  * @author Christophe Lecoutre
  */
@@ -61,8 +61,8 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 	 *********************************************************************************************/
 
 	/**
-	 * The structure for managing Boolean expression trees. This is basically a tree evaluator with additional information concerning which constraints share
-	 * the same structure.
+	 * The structure for managing Boolean expression trees. This is basically a tree evaluator with additional
+	 * information concerning which constraints share the same structure.
 	 */
 	public final static class IntensionStructure extends TreeEvaluator implements ConstraintRegister {
 
@@ -84,8 +84,8 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 		}
 
 		/**
-		 * Builds an intension structure for the specified Boolean expression tree, while using the specified map of symbols because symbolic variables are
-		 * involved
+		 * Builds an intension structure for the specified Boolean expression tree, while using the specified map of
+		 * symbols because symbolic variables are involved
 		 * 
 		 * @param tree
 		 *            a Boolean expression tree
@@ -107,7 +107,8 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 	public XNodeParent<IVar> tree;
 
 	/**
-	 * The object that can be used to evaluate the Boolean expression tree, after having specified values for involved variables
+	 * The object that can be used to evaluate the Boolean expression tree, after having specified values for involved
+	 * variables
 	 */
 	private IntensionStructure treeEvaluator;
 
@@ -115,8 +116,6 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 	 * The object used to build a canonized form of the key of the constraint
 	 */
 	private final KeyCanonizer keyCanonizer;
-
-	private boolean canonize = false; // TODO hard coding
 
 	@Override
 	public int[] symmetryMatching() {
@@ -129,7 +128,8 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 	}
 
 	/**
-	 * Build an intension constraint from the specified Boolean expression tree for the specified problem, and with the specified scope
+	 * Build an intension constraint from the specified Boolean expression tree for the specified problem, and with the
+	 * specified scope
 	 * 
 	 * @param pb
 	 *            the problem to which the constraint is attached
@@ -143,8 +143,11 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 		assert tree.exactlyVars(scp);
 		control(Stream.of(scp).allMatch(x -> x instanceof VariableInteger) || Stream.of(scp).allMatch(x -> x instanceof VariableSymbolic),
 				"Currently, it is not possible to mix integer and symbolic variables");
+		boolean canonize = false; // TODO hard coding
 		this.tree = canonize ? (XNodeParent<IVar>) tree.canonization() : tree;
-		this.keyCanonizer = scp.length > 30 || tree.size() > 200 ? null : new KeyCanonizer(tree); // TODO hard coding (not built if too costly)
+		this.keyCanonizer = scp.length > 30 || tree.size() > 200 ? null : new KeyCanonizer(tree); // TODO hard coding
+																									// (not built if too
+																									// costly)
 		String key = defineKey(keyCanonizer == null ? tree.toPostfixExpression(tree.vars()) : keyCanonizer.key());
 		Map<String, IntensionStructure> map = pb.head.structureSharing.mapForIntension;
 		this.treeEvaluator = map.get(key);
@@ -164,7 +167,8 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 // return false;
 // if (tree.type != TypeExpr.EQ || tree.sons.length != 2)
 // return false;
-// int g = tree.sons[0].type == TypeExpr.VAR && ((XNodeLeaf)tree.sons[0]).value == scp[pos] ? 0: tree.sons[1].type == TypeExpr.VAR &&
+// int g = tree.sons[0].type == TypeExpr.VAR && ((XNodeLeaf)tree.sons[0]).value == scp[pos] ? 0: tree.sons[1].type ==
+// TypeExpr.VAR &&
 // ((XNodeLeaf)tree.sons[1]).value == scp[pos] ? 1 : -1;
 // if (g == -1)
 // return false;

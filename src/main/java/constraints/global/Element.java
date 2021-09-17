@@ -17,11 +17,11 @@ import java.util.stream.IntStream;
 import org.xcsp.common.Utilities;
 
 import constraints.ConstraintGlobal;
-import constraints.intension.Primitive2;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
+import propagation.GAC;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -56,7 +56,8 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 			control(Variable.areAllDistinct(list) && index != value, "i=" + index + " x=" + Kit.join(list) + " v=" + value);
 			control(list.length == idom.initSize(), " pb with " + this + " " + index);
 			// control above because we reason with indexes (and not values) for idom
-			// for example if idom={2,3,5}, we have list.length=3 and we refer to variables of list with indexes 0, 1 and 2
+			// for example if idom={2,3,5}, we have list.length=3 and we refer to variables of list with indexes 0, 1
+			// and 2
 			// this is enforced at construction (in problem)
 		}
 
@@ -123,7 +124,8 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 		private final int[] indexSentinels;
 
 		/**
-		 * For each (index of a) value v in value's domain, we store the index i of a variable from list such that v is in dom(list[i]).
+		 * For each (index of a) value v in value's domain, we store the index i of a variable from list such that v is
+		 * in dom(list[i]).
 		 */
 		private final int[] valueSentinels;
 
@@ -178,7 +180,8 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 		public boolean runPropagator(Variable dummy) {
 			// If index is not singleton, we try to prune values :
 			// - in value's domain, we prune the values which aren't in any of list variables'domains
-			// - in index's domain, we prune the values v for which there is no value j such that list[v] and value both have j in their
+			// - in index's domain, we prune the values v for which there is no value j such that list[v] and value both
+			// have j in their
 			// domains
 			if (idom.size() > 1) {
 				// Update valueSentinels and domain of the value variable
@@ -199,9 +202,10 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 						break;
 				}
 			}
-			// If index is singleton, we update dom(list[index]) and dom(value) so that they are both equal to the intersection of the two domains
+			// If index is singleton, we update dom(list[index]) and dom(value) so that they are both equal to the
+			// intersection of the two domains
 			if (idom.size() == 1) {
-				if (Primitive2.enforceEQ(list[idom.single()].dom, vdom) == false)
+				if (propagation.GAC.enforceEQ(list[idom.single()].dom, vdom) == false)
 					return false;
 				if (vdom.size() == 1)
 					return entailed();
@@ -209,7 +213,8 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 			return true;
 		}
 
-		private boolean controlAC() {
+		@Override
+		public boolean controlGAC() {
 			control(idom.size() != 1 || list[idom.single()].dom.subsetOf(vdom), () -> "index is singleton and dom(index) is not included in dom(result).");
 			for (int a = idom.first(); a != -1; a = idom.next(a))
 				control(list[a].dom.overlapWith(vdom), () -> "One var has no value in dom(result).");
@@ -413,7 +418,8 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 			public boolean runPropagator(Variable dummy) {
 				// If indexes are not both singleton, we try to prune values :
 				// - in value's domain, we prune the values which aren't in any of list variables'domains
-				// - in indexes's domain, we prune the values v for which there is no value v such that matrix and value both have j in their
+				// - in indexes's domain, we prune the values v for which there is no value v such that matrix and value
+				// both have j in their
 				// domains
 				if (rdom.size() > 1 || cdom.size() > 1) {
 					// Update valueSentinels and domain of the value variable
@@ -436,7 +442,7 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 				}
 				// If indexes are both singleton, we enforce matrix[rindex][cindex] == value
 				if (rdom.size() == 1 && cdom.size() == 1) {
-					if (Primitive2.enforceEQ(matrix[rdom.singleValue()][cdom.singleValue()].dom, vdom) == false)
+					if (GAC.enforceEQ(matrix[rdom.singleValue()][cdom.singleValue()].dom, vdom) == false)
 						return false;
 					if (vdom.size() == 1)
 						return entailed();

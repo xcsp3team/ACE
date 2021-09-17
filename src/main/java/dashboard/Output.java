@@ -55,8 +55,8 @@ import utility.Kit.Stopwatch;
 import variables.Variable;
 
 /**
- * The role of this class is to output data concerning the resolution of problem instances. These data are collected by means of an XML document that may be
- * saved. A part of the data are also directly displayed on the standard output.
+ * The role of this class is to output data concerning the resolution of problem instances. These data are collected by
+ * means of an XML document that may be saved. A part of the data are also directly displayed on the standard output.
  * 
  * @author Christophe Lecoutre
  */
@@ -485,7 +485,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(REVISIONS, "(" + stats.nRevisions() + ",useless=" + stats.nUselessRevisions() + ")", stats.nRevisions() > 0);
 		m.put(N_VALUES, Variable.nValidValuesFor(head.problem.variables));
 		Propagation propagation = head.solver.propagation;
-		m.put(REMOVED_BY_AC, propagation instanceof GAC ? ((GAC) (propagation)).nPreproValueRemovals : 0);
+		m.put(REMOVED_BY_AC, propagation instanceof GAC ? ((GAC) (propagation)).preproRemovals : 0);
 		// m.put("nTotalRemovedValues", nPreproRemovedValues);
 		m.put(UNSAT, head.solver.stopping == Stopping.FULL_EXPLORATION);
 		m.separator(stats.prepro.nRemovedTuples > 0 || stats.prepro.nAddedNogoods > 0 || stats.prepro.nAddedCtrs > 0);

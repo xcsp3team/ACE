@@ -348,7 +348,8 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	public final List<ObserverOnAssignments> observersOnAssignments;
 
 	/**
-	 * The list of observers on removals, i.e., value deletions in domains. Whenever a domain is reduced, a callback function is called.
+	 * The list of observers on removals, i.e., value deletions in domains. Whenever a domain is reduced, a callback
+	 * function is called.
 	 */
 	public final Collection<ObserverOnRemovals> observersOnRemovals = new ArrayList<>();
 
@@ -434,7 +435,8 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	public final Solutions solutions;
 
 	/**
-	 * The object managing past and future variables, i.e., the variables that are, and are not, explicitly assigned by the solver
+	 * The object managing past and future variables, i.e., the variables that are, and are not, explicitly assigned by
+	 * the solver
 	 */
 	public final FutureVariables futVars;
 
@@ -512,7 +514,8 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 		this.problem = head.problem;
 		this.problem.solver = this;
 
-		this.solutions = new Solutions(this, head.control.general.nSearchedSolutions); // BE CAREFUL: build solutions before propagation
+		this.solutions = new Solutions(this, head.control.general.nSearchedSolutions); // BE CAREFUL: build solutions
+																						// before propagation
 		this.propagation = Propagation.buildFor(this); // may be null
 		if (!head.control.propagation.useAuxiliaryQueues)
 			Stream.of(problem.constraints).forEach(c -> c.filteringComplexity = 0);
@@ -535,6 +538,9 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 
 		this.entailed = new SetSparseReversible(problem.constraints.length, nLevels, false);
 
+		this.tracer = head.control.general.trace.length() != 0 ? new Tracer(head.control.general.trace) : null;
+		this.stats = new Statistics(this);
+
 		this.observersOnSolving = collectObserversOnSolving();
 		this.observersOnRuns = collectObserversOnRuns();
 		this.observersOnBacktracksSystematic = collectObserversOnBacktracksSystematic();
@@ -544,9 +550,6 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 
 		this.runProgressSaver = head.control.valh.runProgressSaving ? new RunProgressSaver() : null;
 		this.warmStarter = head.control.valh.warmStart.length() > 0 ? new WarmStarter(head.control.valh.warmStart) : null;
-
-		this.tracer = head.control.general.trace.length() != 0 ? new Tracer(head.control.general.trace) : null;
-		this.stats = new Statistics(this);
 
 		this.nogoodMinimizer = new NogoodMinimizer(this);
 	}
@@ -696,8 +699,9 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	}
 
 	/**
-	 * This method allows to keep running the solver from the given level. Initially, this method is called from the level <code>0</code>. The principle of this
-	 * method is to choose a variable and some values for this variable (maybe, all) until a domain becomes empty.
+	 * This method allows to keep running the solver from the given level. Initially, this method is called from the
+	 * level <code>0</code>. The principle of this method is to choose a variable and some values for this variable
+	 * (maybe, all) until a domain becomes empty.
 	 */
 	public void explore() {
 		maxDepth = 0;
@@ -716,10 +720,13 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 				if (copContinue) {
 					// first, we directly change the limit value of the leading objective constraint
 					problem.optimizer.ctr.limit(problem.optimizer.ctr.objectiveValue() + (problem.optimizer.minimization ? -1 : 1));
-					// next, we backtrack to the level where a value for a variable in the scope of the objective was removed for the last time
+					// next, we backtrack to the level where a value for a variable in the scope of the objective was
+					// removed for the last time
 					int backtrackLevel = -1;
 					for (int i = 0; i < objectiveCtr.scp.length; i++) {
-						Variable x = objectiveCtr.scp[objectiveCtr.futvars.dense[i]]; // variables (of the objective) from the last to the first assigned
+						Variable x = objectiveCtr.scp[objectiveCtr.futvars.dense[i]]; // variables (of the objective)
+																						// from the last to the first
+																						// assigned
 						if (x.assignmentLevel <= backtrackLevel)
 							break;
 						backtrackLevel = Math.max(backtrackLevel, x.dom.lastRemovedLevel());
@@ -727,10 +734,12 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 					assert backtrackLevel != -1;
 					while (depth() > backtrackLevel)
 						backtrack(futVars.lastPast());
-					// check with java -ea ac /home/lecoutre/workspace/AbsCon/build/resources/main/cop/Photo.xml.lzma -ev
+					// check with java -ea ac /home/lecoutre/workspace/AbsCon/build/resources/main/cop/Photo.xml.lzma
+					// -ev
 					// java -ea ac /home/lecoutre/workspace/AbsCon/build/resources/main/cop/Recipe.xml.lzma
 				}
-				if (problem.settings.framework == COP) // && isEntailed(objectiveCtr)) TODO why is-it incorrect to use the second part of the test?
+				if (problem.settings.framework == COP) // && isEntailed(objectiveCtr)) TODO why is-it incorrect to use
+														// the second part of the test?
 					entailed.clear();
 				if (!finished() && !restarter.currRunFinished())
 					manageContradiction(objectiveCtr);

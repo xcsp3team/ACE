@@ -18,18 +18,19 @@ import org.xcsp.common.Types.TypeOperatorRel;
 import org.xcsp.common.Utilities;
 
 import constraints.ConstraintGlobal;
-import constraints.intension.Primitive2;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
+import propagation.GAC;
 import variables.Domain;
 import variables.Variable;
 
 /**
- * This constraint ensures that the tuple formed by the values assigned to a first list is less than (or equal to) the tuple formed by the values assigned to a
- * second list. The filtering algorithm is derived from "Propagation algorithms for lexicographic ordering constraints", Artificial Intelligence, 170(10):
- * 803-834 (2006) by Alan M. Frisch, Brahim Hnich, Zeynep Kiziltan, Ian Miguel, and Toby Walsh. The code below is quite close to the one that can be found in
+ * This constraint ensures that the tuple formed by the values assigned to a first list is less than (or equal to) the
+ * tuple formed by the values assigned to a second list. The filtering algorithm is derived from "Propagation algorithms
+ * for lexicographic ordering constraints", Artificial Intelligence, 170(10): 803-834 (2006) by Alan M. Frisch, Brahim
+ * Hnich, Zeynep Kiziltan, Ian Miguel, and Toby Walsh. The code below is quite close to the one that can be found in
  * Chapter 12 of "Constraint Networks", ISTE/Wiely (2009) by C. Lecoutre.
  * 
  * @author Christophe Lecoutre
@@ -83,7 +84,8 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 	private final int[] pos2;
 
 	/**
-	 * This field indicates if the ordering between the two lists must be strictly respected; if true then we have <= (le), otherwise we have < (lt)
+	 * This field indicates if the ordering between the two lists must be strictly respected; if true then we have <=
+	 * (le), otherwise we have < (lt)
 	 */
 	private final boolean strictOrdering;
 
@@ -130,7 +132,8 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 		this.strictOrdering = strictOrdering;
 		this.lex_times = new int[scp.length];
 		this.lex_vals = new int[scp.length];
-		defineKey(strictOrdering); // TODO adding the positions pos1 and pos2? (in case there are several occurrences of the same variable)
+		defineKey(strictOrdering); // TODO adding the positions pos1 and pos2? (in case there are several occurrences of
+									// the same variable)
 	}
 
 	private void set(int p, int v) {
@@ -161,7 +164,7 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 		int alpha = 0;
 		while (alpha < half) {
 			Domain dom1 = list1[alpha].dom, dom2 = list2[alpha].dom;
-			if (Primitive2.enforceLE(dom1, dom2) == false) // enforce (AC on) x <= y (list1[alpha] <= list2[alpha])
+			if (GAC.enforceLE(dom1, dom2) == false) // enforce (AC on) x <= y (list1[alpha] <= list2[alpha])
 				return false;
 			if (dom1.size() == 1 && dom2.size() == 1) {
 				if (dom1.singleValue() < dom2.singleValue())

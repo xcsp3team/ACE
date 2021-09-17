@@ -55,7 +55,8 @@ import variables.Variable;
 
 /**
  * This class allows us to represent constraints. <br>
- * A constraint is attached to a problem and is uniquely identified by a number <code>num</code> (and an identifier <code>id</code>).<br>
+ * A constraint is attached to a problem and is uniquely identified by a number <code>num</code> (and an identifier
+ * <code>id</code>).<br>
  * A constraint involves a subset of variables of the problem.
  * 
  * @author Christophe Lecoutre
@@ -75,8 +76,10 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	@Override
 	public void afterProblemConstruction() {
 		int n = problem.variables.length, r = scp.length;
-		if (settings.arityLimitForVapArrayLb < r && (n < settings.arityLimitForVapArrayUb || r > n / 3)) { // TODO hard coding
-			this.positions = Kit.repeat(-1, n); // if a variable does not belong to the constraint, then its position is set to -1
+		if (settings.arityLimitForVapArrayLb < r && (n < settings.arityLimitForVapArrayUb || r > n / 3)) { // TODO hard
+																											// coding
+			this.positions = Kit.repeat(-1, n); // if a variable does not belong to the constraint, then its position is
+												// set to -1
 			for (int i = 0; i < r; i++)
 				this.positions[scp[i].num] = i;
 			this.futvars = new SetSparse(r, true);
@@ -143,8 +146,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	public static final int MAX_FILTERING_COMPLEXITY = 2;
 
 	/**
-	 * A special constraint that can be used (for instance) by methods that requires returning three-state values: null, a classical constraint, and this
-	 * special constraint/marker.
+	 * A special constraint that can be used (for instance) by methods that requires returning three-state values: null,
+	 * a classical constraint, and this special constraint/marker.
 	 */
 	public static final Constraint TAG = new Constraint() {
 		@Override
@@ -164,14 +167,15 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Computes the greatest number k of variables such that, whatever is the selection of k variables in the specified array, the size of the Cartesian product
-	 * of the domains of these variables does not exceed the specified limit.
+	 * Computes the greatest number k of variables such that, whatever is the selection of k variables in the specified
+	 * array, the size of the Cartesian product of the domains of these variables does not exceed the specified limit.
 	 * 
 	 * @param vars
 	 *            an array of variables
 	 * @param spaceLimitation
 	 *            a limit in term of number of tuples
-	 * @return the greatest number of variables ensuring that the Cartesian product of the domains of the selected variables does not exceed the specified limit
+	 * @return the greatest number of variables ensuring that the Cartesian product of the domains of the selected
+	 *         variables does not exceed the specified limit
 	 */
 	public static final int howManyVariablesWithin(Variable[] vars, int spaceLimitation) {
 		return howManyVariablesWithin(Stream.of(vars).mapToInt(x -> x.dom.size()).toArray(), spaceLimitation);
@@ -200,8 +204,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Returns true if the num(ber)s of the constraints in the specified array are normalized, meaning that the num(ber) of the constraint at index i of the
-	 * array is i.
+	 * Returns true if the num(ber)s of the constraints in the specified array are normalized, meaning that the num(ber)
+	 * of the constraint at index i of the array is i.
 	 * 
 	 * @param ctrs
 	 *            an array of constraints
@@ -260,7 +264,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	public final Problem problem;
 
 	/**
-	 * The number of the constraint; it is <code>-1</code> when not fully initialized or not a direct constraint of the problem.
+	 * The number of the constraint; it is <code>-1</code> when not fully initialized or not a direct constraint of the
+	 * problem.
 	 */
 	public int num = -1;
 
@@ -277,8 +282,9 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	public final Domain[] doms;
 
 	/**
-	 * The position of all variables of the problem in the constraint. It is -1 when not involved. For constraint of small arity, this array is not necessarily
-	 * built. So, you need to call <code> positionOf </code> instead of accessing directly this field.
+	 * The position of all variables of the problem in the constraint. It is -1 when not involved. For constraint of
+	 * small arity, this array is not necessarily built. So, you need to call <code> positionOf </code> instead of
+	 * accessing directly this field.
 	 */
 	private int[] positions;
 
@@ -295,16 +301,23 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	private String key;
 
 	/**
-	 * The object that can be used to iterate over the (valid) tuples of the Cartesian product of the domains of the constraint scope.
+	 * The object that can be used to iterate over the (valid) tuples of the Cartesian product of the domains of the
+	 * constraint scope.
 	 */
 	public final TupleIterator tupleIterator;
 
 	protected final Supporter supporter;
 
-	/** Indicates if for each domain of a variable involved in the constraint, the index of any value corresponds to this value. */
+	/**
+	 * Indicates if for each domain of a variable involved in the constraint, the index of any value corresponds to this
+	 * value.
+	 */
 	public final boolean indexesMatchValues;
 
-	/** This field is used to store a tuple of (int) values. Is is inserted as a field in order to avoid overhead of memory allocations. */
+	/**
+	 * This field is used to store a tuple of (int) values. Is is inserted as a field in order to avoid overhead of
+	 * memory allocations.
+	 */
 	protected final int[] vals;
 
 	public int cost = 1;
@@ -314,7 +327,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	public int filteringComplexity;
 
 	/**
-	 * Indicates if filtering (e.g. GAC) must be controlled. If the number of uninstantiated variables is greater than this value, filtering is not achieved.
+	 * Indicates if filtering (e.g. GAC) must be controlled. If the number of uninstantiated variables is greater than
+	 * this value, filtering is not achieved.
 	 */
 	public final int genericFilteringThreshold;
 
@@ -359,8 +373,9 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Defines the key of the constraint from the signature, the type of the domains, and the specified data. Keys are currently used for deciding if two
-	 * constraints can share some structures (this is the case when they have the same keys), and also for symmetry-breaking.
+	 * Defines the key of the constraint from the signature, the type of the domains, and the specified data. Keys are
+	 * currently used for deciding if two constraints can share some structures (this is the case when they have the
+	 * same keys), and also for symmetry-breaking.
 	 * 
 	 * @param data
 	 *            a sequence of objects that must be considered when building the key of the constraint
@@ -411,7 +426,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Returns true if the constraint is irreflexive. Currently, this can be only called on binary constraints, but certainly could be generalized.
+	 * Returns true if the constraint is irreflexive. Currently, this can be only called on binary constraints, but
+	 * certainly could be generalized.
 	 * 
 	 * @return true if the constraint is irreflexive
 	 */
@@ -451,7 +467,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		if (this instanceof TagNotAC)
 			return false;
 		if (this instanceof SpecificPropagator)
-			throw new UnsupportedOperationException(getClass().getName()); // to force the user to tag constraints or override the function
+			// exception launched to force the user to tag constraints or override the function
+			throw new UnsupportedOperationException(getClass().getName());
 		return genericFilteringThreshold == Integer.MAX_VALUE;
 	}
 
@@ -480,7 +497,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Returns the intension structure (i.e., object to evaluate a Boolean expression tree) if this object is an intension constraint, null otherwise
+	 * Returns the intension structure (i.e., object to evaluate a Boolean expression tree) if this object is an
+	 * intension constraint, null otherwise
 	 * 
 	 * @return the extension structure if this object is an intension constraint, or null
 	 */
@@ -489,7 +507,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Returns the extension structure (i.e., object like a table) if this object is an extension constraint, null otherwise
+	 * Returns the extension structure (i.e., object like a table) if this object is an extension constraint, null
+	 * otherwise
 	 * 
 	 * @return the extension structure if this object is an extension constraint, or null
 	 */
@@ -589,7 +608,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Records the fact that the specified variable is not more a past variable (i.e., no more explicitly assigned by the solver)
+	 * Records the fact that the specified variable is not more a past variable (i.e., no more explicitly assigned by
+	 * the solver)
 	 * 
 	 * @param x
 	 *            the variable that is no more explicitly assigned
@@ -600,8 +620,9 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Determines if the specified tuple satisfies the constraint, i.e., if the specified tuple belongs to the relation defining the constraint. Be careful:
-	 * although indexes of values are managed in the core of the solver, at this stage, the given tuple contains values (and not indexes of values).
+	 * Determines if the specified tuple satisfies the constraint, i.e., if the specified tuple belongs to the relation
+	 * defining the constraint. Be careful: although indexes of values are managed in the core of the solver, at this
+	 * stage, the given tuple contains values (and not indexes of values).
 	 * 
 	 * @param t
 	 *            a tuple of values
@@ -610,8 +631,9 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	public abstract boolean isSatisfiedBy(int[] t);
 
 	/**
-	 * Determines if the specified tuple corresponds to a support of the constraint, i.e., if the tuple of values corresponding to the indexes in the specified
-	 * tuple satisfies the constraint. Be careful: the given tuple must contains indexes of values.
+	 * Determines if the specified tuple corresponds to a support of the constraint, i.e., if the tuple of values
+	 * corresponding to the indexes in the specified tuple satisfies the constraint. Be careful: the given tuple must
+	 * contains indexes of values.
 	 * 
 	 * @param t
 	 *            a tuple of indexes (of values)
@@ -626,9 +648,11 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Returns a tuple with the indexes of the values of the current instantiation of the variables in the constraint scope
+	 * Returns a tuple with the indexes of the values of the current instantiation of the variables in the constraint
+	 * scope
 	 * 
-	 * @return a tuple with the indexes of the values of the current instantiation of the variables in the constraint scope
+	 * @return a tuple with the indexes of the values of the current instantiation of the variables in the constraint
+	 *         scope
 	 */
 	private int[] instantiationIndexes() {
 		int[] t = tupleIterator.buffer;
@@ -638,8 +662,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Returns true if the current instantiation of the variables of the constraint scope satisfies the constraint. IMPORTANT: all variables of the constraint
-	 * scope must be fixed (i.e., with singleton domains).
+	 * Returns true if the current instantiation of the variables of the constraint scope satisfies the constraint.
+	 * IMPORTANT: all variables of the constraint scope must be fixed (i.e., with singleton domains).
 	 * 
 	 * @return true if the current instantiation of the variables of the constraint scope satisfies the constraint
 	 */
@@ -648,18 +672,21 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Returns 0 if the constraint is satisfied by the current instantiation, or the cost that is associated with the constraint, otherwise. IMPORTANT: all
-	 * variables of the constraint scope must be fixed (i.e., with singleton domains).
+	 * Returns 0 if the constraint is satisfied by the current instantiation, or the cost that is associated with the
+	 * constraint, otherwise. IMPORTANT: all variables of the constraint scope must be fixed (i.e., with singleton
+	 * domains).
 	 * 
-	 * @return 0 if the constraint is satisfied by the current instantiation, or the cost that is associated with the constraint
+	 * @return 0 if the constraint is satisfied by the current instantiation, or the cost that is associated with the
+	 *         constraint
 	 */
 	public long costOfCurrentInstantiation() {
 		return checkIndexes(instantiationIndexes()) ? 0 : cost;
 	}
 
 	/**
-	 * Determines if the specified tuple of indexes (usually a support) is still valid. We have just to test that all indexes are still in the domains of the
-	 * variables involved in the constraint. Do not call the <code> isSatisfiedBy </code> method instead since it does not take removed values into account.
+	 * Determines if the specified tuple of indexes (usually a support) is still valid. We have just to test that all
+	 * indexes are still in the domains of the variables involved in the constraint. Do not call the
+	 * <code> isSatisfiedBy </code> method instead since it does not take removed values into account.
 	 * 
 	 * @param t
 	 *            a tuple of indexes (of values)
@@ -673,8 +700,9 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Seeks a support (i.e., a valid tuple satisfying the constraint) for the constraint when considering the current state of the domains and the tuple
-	 * currently managed by the tuple iterator (this current tuple included in the search). A lexicographic order is used.
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint) for the constraint when considering the current
+	 * state of the domains and the tuple currently managed by the tuple iterator (this current tuple included in the
+	 * search). A lexicographic order is used.
 	 * 
 	 * @return true if a support can be found from the current tuple managed by the object 'tupleIterator'
 	 */
@@ -683,7 +711,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order, and returns true is such a support can be found
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order, and
+	 * returns true is such a support can be found
 	 * 
 	 * @return true if a support can be found
 	 */
@@ -693,8 +722,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the requirement that the support involves
-	 * the specified pair (x,a), and returns true is such a support can be found
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the
+	 * requirement that the support involves the specified pair (x,a), and returns true is such a support can be found
 	 * 
 	 * @param x
 	 *            a variable
@@ -708,9 +737,9 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the requirement that the support involves
-	 * the specified pair (x,a), and returns true is such a support can be found. The support (containing indexes of values instead of values) is recorded in
-	 * the specified buffer.
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the
+	 * requirement that the support involves the specified pair (x,a), and returns true is such a support can be found.
+	 * The support (containing indexes of values instead of values) is recorded in the specified buffer.
 	 * 
 	 * @param x
 	 *            a variable
@@ -726,8 +755,9 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the requirement that the support involves
-	 * the specified pairs (x,a) and (y,b), and returns true is such a support can be found. T
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the
+	 * requirement that the support involves the specified pairs (x,a) and (y,b), and returns true is such a support can
+	 * be found. T
 	 * 
 	 * @param x
 	 *            a first variable
@@ -745,9 +775,11 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the requirement that the support must come
-	 * after the current tuple (excluded) managed by the tuple iterator, and returns true is such a support can be found. Note that the current tuple (of the
-	 * tuple iterator) is not necessarily valid (as it may have been deleted). Besides, if some values have been fixed in the tuple iterator, they remain fixed.
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the
+	 * requirement that the support must come after the current tuple (excluded) managed by the tuple iterator, and
+	 * returns true is such a support can be found. Note that the current tuple (of the tuple iterator) is not
+	 * necessarily valid (as it may have been deleted). Besides, if some values have been fixed in the tuple iterator,
+	 * they remain fixed.
 	 * 
 	 * @return true if another support can be found from the current tuple (excluded) managed by the tuple iterator
 	 */
@@ -760,8 +792,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Seeks a conflict (i.e., a valid tuple not satisfying the constraint), while considering a lexicographic order, and returns true is such a conflict can be
-	 * found
+	 * Seeks a conflict (i.e., a valid tuple not satisfying the constraint), while considering a lexicographic order,
+	 * and returns true is such a conflict can be found
 	 * 
 	 * @return true if a conflict can be found
 	 */
@@ -771,8 +803,9 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Seeks a conflict (i.e., a valid tuple not satisfying the constraint), while considering a lexicographic order and the requirement that the conflict
-	 * involves the specified pair (x,a), and returns true is such a conflict can be found
+	 * Seeks a conflict (i.e., a valid tuple not satisfying the constraint), while considering a lexicographic order and
+	 * the requirement that the conflict involves the specified pair (x,a), and returns true is such a conflict can be
+	 * found
 	 * 
 	 * @param x
 	 *            a variable
@@ -786,7 +819,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Returns the number of conflicts (i.e., valid tuples not satisfying the constraint) involving the specified pair (x,a)
+	 * Returns the number of conflicts (i.e., valid tuples not satisfying the constraint) involving the specified pair
+	 * (x,a)
 	 * 
 	 * @param x
 	 *            a variable
@@ -867,16 +901,18 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * This is the method that is called for filtering. We know that the domain of the specified variable has been recently reduced, but this is not necessarily
-	 * the only one in that situation.
+	 * This is the method that is called for filtering. We know that the domain of the specified variable has been
+	 * recently reduced, but this is not necessarily the only one in that situation.
 	 */
 	public final boolean filterFrom(Variable x) {
 		// System.out.println("filtering " + this + " " + x + " " + this.getClass().getSimpleName());
 		if (infiniteDomainVars.length > 0 && handleHugeDomains()) // Experimental (to be finished)
 			return true;
-		// For CSP, some conditions allow us to directly return true (because we know then that there is no filtering possibility)
+		// For CSP, some conditions allow us to directly return true (because we know then that there is no filtering
+		// possibility)
 		if (problem.settings.framework == TypeFramework.CSP) {
-			// if the condition is replaced by != TypeFramework.MACSP, there is a pb with java -ea ac PlaneparkingTask.xml -ea -cm=false -ev -trace
+			// if the condition is replaced by != TypeFramework.MACSP, there is a pb with java -ea ac
+			// PlaneparkingTask.xml -ea -cm=false -ev -trace
 			// possibly too with GraphColoring-sum-GraphColoring_1-fullins-3.xml.lzma
 			if (futvars.size() == 0) {
 				assert !isGuaranteedAC() || isSatisfiedByCurrentInstantiation() : "Unsatisfied constraint " + this + "while AC should be guaranteed";
@@ -899,7 +935,13 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		return consistent;
 	}
 
-	public boolean controlArcConsistency() {
+	/**
+	 * Returns true if the constraint is GAC. IMPORTANT: the control is incomplete. The constraint can be currently
+	 * ignored, and the test is not performed if the number of valid tuples is too large.
+	 * 
+	 * @return true if the constraint is GAC
+	 */
+	public boolean controlGAC() {
 		if (ignored)
 			return true;
 		if (Domain.nValidTuplesBounded(doms) > 1000)
