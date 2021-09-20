@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package constraints.extension;
 
 import java.util.Arrays;
@@ -13,7 +23,7 @@ import variables.Variable;
  * @author Christophe Lecoutre
  *
  */
-public final class STR1NEG extends STR1 implements TagNegative {
+public final class STR1N extends STR1 implements TagNegative {
 
 	@Override
 	public void afterProblemConstruction() {
@@ -26,7 +36,15 @@ public final class STR1NEG extends STR1 implements TagNegative {
 	 */
 	protected int[][] nConflicts;
 
-	public STR1NEG(Problem pb, Variable[] scp) {
+	/**
+	 * Builds an extension constraint, with STR1N as specific filtering method
+	 * 
+	 * @param pb
+	 *            the problem to which the constraint is attached
+	 * @param scp
+	 *            the scope of the constraint
+	 */
+	public STR1N(Problem pb, Variable[] scp) {
 		super(pb, scp);
 	}
 

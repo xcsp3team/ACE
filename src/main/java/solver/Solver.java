@@ -366,7 +366,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	private List<ObserverOnRuns> collectObserversOnRuns() {
 		if (!head.control.solving.enableSearch)
 			return new ArrayList<>();
-		Stream<Object> stream = Stream.concat(Stream.of(this, problem.optimizer, restarter, heuristic, lastConflict, ipsRecorder,
+		Stream<Object> stream = Stream.concat(Stream.of(this, problem.optimizer, restarter, decisions, heuristic, lastConflict, ipsRecorder,
 				(nogoodRecorder != null ? nogoodRecorder.symmetryHandler : null), head.output, stats), Stream.of(problem.constraints));
 		return stream.filter(c -> c instanceof ObserverOnRuns).map(o -> (ObserverOnRuns) o).collect(toCollection(ArrayList::new));
 	}
@@ -384,7 +384,8 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	}
 
 	private List<ObserverOnAssignments> collectObserversOnAssignments() {
-		return Stream.of(heuristic).filter(o -> o instanceof ObserverOnAssignments).map(o -> (ObserverOnAssignments) o).collect(toCollection(ArrayList::new));
+		return Stream.of(decisions, heuristic).filter(o -> o instanceof ObserverOnAssignments).map(o -> (ObserverOnAssignments) o)
+				.collect(toCollection(ArrayList::new));
 	}
 
 	private List<ObserverOnConflicts> collectObserversOnConflicts() {
@@ -498,7 +499,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 		propagation.reset();
 		restarter.reset();
 		resetNoSolutions();
-		decisions.reset();
+		control(decisions.set.isEmpty()); // otherwise decisions.set.clear();
 		heuristic.setPriorityVars(problem.priorityVars, 0);
 		// lastConflict.beforeRun();
 		if (nogoodRecorder != null)
@@ -580,11 +581,9 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 
 	public void assign(Variable x, int a) {
 		assert !x.assigned();
-
 		stats.nAssignments++;
 		futVars.remove(x);
 		x.assign(a);
-		decisions.addPositiveDecision(x, a);
 		for (ObserverOnAssignments obs : observersOnAssignments)
 			obs.afterAssignment(x, a);
 	}
@@ -594,7 +593,6 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 		int depthBeforeBacktrack = depth();
 		futVars.add(x);
 		x.unassign();
-		decisions.delPositiveDecision(x);
 		for (ObserverOnAssignments obs : observersOnAssignments)
 			obs.afterUnassignment(x);
 		for (ObserverOnBacktracksSystematic obs : observersOnBacktracksSystematic)
@@ -788,7 +786,6 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 				doRun();
 			for (ObserverOnRuns observer : observersOnRuns)
 				observer.afterRun();
-			decisions.reset(); // TODO put in an observer ?
 		}
 		for (ObserverOnSolving observer : observersOnSolving)
 			observer.afterSearch();

@@ -22,8 +22,8 @@ import sets.SetDenseReversible;
 import variables.Variable;
 
 /**
- * This is STR (Simple Tabular Reduction), for filtering extension (table) constraints, as introduced by Julian Ullmann: "Partition search for non-binary
- * constraint satisfaction". Inf. Sci. 177(18): 3639-3678 (2007).
+ * This is STR (Simple Tabular Reduction), for filtering extension (table) constraints, as introduced by Julian Ullmann:
+ * "Partition search for non-binary constraint satisfaction". Inf. Sci. 177(18): 3639-3678 (2007).
  * 
  * @author Christophe Lecoutre
  *
@@ -38,7 +38,7 @@ public class STR1 extends ExtensionSpecific {
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
 		this.tuples = ((Table) extStructure()).tuples;
-		if (!(this instanceof CT)) { // because CT has very specific structures
+		if (!(this instanceof CT)) { // because CT (technically a subclass of STR1) has very specific structures
 			this.set = new SetDenseReversible(tuples.length, problem.variables.length + 1);
 			this.ac = Variable.litterals(scp).booleanArray();
 			this.cnts = new int[scp.length];
@@ -48,7 +48,7 @@ public class STR1 extends ExtensionSpecific {
 
 	@Override
 	public void restoreBefore(int depth) {
-		if (set != null) // if not CT
+		if (set != null) // i.e., if not CT
 			set.restoreLimitAtLevel(depth);
 	}
 
@@ -72,7 +72,8 @@ public class STR1 extends ExtensionSpecific {
 	protected boolean[][] ac;
 
 	/**
-	 * When used during filtering, cnts[x] is the number of values in the current domain of x with no found support (yet)
+	 * When used during filtering, cnts[x] is the number of values in the current domain of x with no found support
+	 * (yet)
 	 */
 	protected int[] cnts;
 

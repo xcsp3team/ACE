@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package constraints.extension;
 
 import java.util.Arrays;
@@ -11,7 +21,7 @@ import sets.SetDenseReversible;
 import variables.Domain;
 import variables.Variable;
 
-public class STR2NEG extends ExtensionSpecific implements TagNegative {
+public class STR2N extends ExtensionSpecific implements TagNegative {
 
 	/**********************************************************************************************
 	 * Implementing interfaces
@@ -44,14 +54,23 @@ public class STR2NEG extends ExtensionSpecific implements TagNegative {
 
 	protected int[][] nConflicts; // nConflicts[x][a] indicates the number of conflicts in the current table for (x,a)
 
-	protected int[] nMaxConflicts; // nMaxConflicts[x] indicates the maximum number of conflicts in the current table for a value of x
+	protected int[] nMaxConflicts; // nMaxConflicts[x] indicates the maximum number of conflicts in the current table
+									// for a value of x
 
 	protected long[] nValidTuples; // 1D = variable position
 
 	protected int sSupSize;
 	protected int[] sSup;
 
-	public STR2NEG(Problem pb, Variable[] scp) {
+	/**
+	 * Builds an extension constraint, with STR2N as specific filtering method
+	 * 
+	 * @param pb
+	 *            the problem to which the constraint is attached
+	 * @param scp
+	 *            the scope of the constraint
+	 */
+	public STR2N(Problem pb, Variable[] scp) {
 		super(pb, scp);
 	}
 

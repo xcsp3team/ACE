@@ -27,11 +27,11 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the code for CT (Compact-Table), as described in: Jordan Demeulenaere, Renaud Hartert, Christophe Lecoutre, Guillaume Perez, Laurent Perron,
- * Jean-Charles Régin, Pierre Schaus: Compact-Table: Efficiently Filtering Table Constraints with Reversible Sparse Bit-Sets. CP 2016: 207-223
+ * This is the code for CT (Compact-Table), as described in: Jordan Demeulenaere, Renaud Hartert, Christophe Lecoutre,
+ * Guillaume Perez, Laurent Perron, Jean-Charles Régin, Pierre Schaus: Compact-Table: Efficiently Filtering Table
+ * Constraints with Reversible Sparse Bit-Sets. CP 2016: 207-223
  * 
  * @author Christophe Lecoutre
- *
  */
 public class CT extends STR1Optimized implements TagStarredCompatible {
 
@@ -134,7 +134,8 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 	int[] stackStructure; // stores, in sequence, pairs (d,nb) with d the depth where nb words have been stacked
 	int topStacked = -1, topStack = -1;
 
-	private boolean[] modifiedWords; // modifiedWords[i] indicates if the ith word has already been modified (and stored for future use when backtracking)
+	private boolean[] modifiedWords; // modifiedWords[i] indicates if the ith word has already been modified (and stored
+										// for future use when backtracking)
 
 	/**
 	 * deltaSizes[x] indicates how many values are in the delta set of x
@@ -345,7 +346,7 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 	 *********************************************************************************************/
 
 	/**
-	 * A version of CT using compression of masks
+	 * A variant of CT using compression of masks
 	 */
 	public final static class CT2 extends CT {
 
