@@ -191,7 +191,6 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 		public int toIdx(int v) {
 			if (indexes != null)
 				return v < firstValue || v > lastValue ? -1 : indexes[v - firstValue];
-			System.exit(1);
 			return Arrays.binarySearch(values, v); // TODO should we prefer using a map ? it seems so, but to be tested.
 		}
 

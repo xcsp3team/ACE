@@ -29,8 +29,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This constraint ensures that all values assigned to the variables of its scope are all equal. It is essentially an ease of modeling for the user (because it
- * can be decomposed into binary equality constraints).
+ * This constraint ensures that all values assigned to the variables of its scope are all equal. It is essentially an
+ * ease of modeling for the user (because it can be decomposed into binary equality constraints).
  * 
  * @author Christophe Lecoutre
  * 
@@ -57,7 +57,8 @@ public final class AllEqual extends ConstraintGlobal implements ObserverOnBacktr
 	}
 
 	/**
-	 * a map such that keys are all possible values (from variable domains), and values are their indexes in the reversible sparse set
+	 * a map such that keys are all possible values (from variable domains), and values are their indexes in the
+	 * reversible sparse set
 	 */
 	private final Map<Integer, Integer> map;
 
@@ -82,7 +83,8 @@ public final class AllEqual extends ConstraintGlobal implements ObserverOnBacktr
 	public AllEqual(Problem pb, Variable[] list) {
 		super(pb, list);
 		int[] values = Variable.setOfvaluesIn(list).stream().mapToInt(v -> v).sorted().toArray();
-		this.map = IntStream.range(0, values.length).boxed().collect(toMap(i -> values[i], i -> i, (v1, v2) -> v1 + v2, TreeMap::new)); // useless merger
+		this.map = IntStream.range(0, values.length).boxed().collect(toMap(i -> values[i], i -> i, (v1, v2) -> v1 + v2, TreeMap::new)); // useless
+																																		// merger
 		this.lastRemovedValues = new SetDense(map.size());
 		control(list.length > 1 && values.length > 1);
 	}
@@ -92,7 +94,8 @@ public final class AllEqual extends ConstraintGlobal implements ObserverOnBacktr
 		if (remainingValues.size() == 1) // only one remaining value, so entailed
 			return entailed();
 
-		Variable y = x.dom.size() == 1 ? x : Variable.firstSingletonVariableIn(scp); // we look for a variable with a singleton domain
+		Variable y = x.dom.size() == 1 ? x : Variable.firstSingletonVariableIn(scp); // we look for a variable with a
+																						// singleton domain
 
 		if (y != null) { // we remove the unique value from the domains of the future variables
 			int v = y.dom.singleValue();
@@ -116,8 +119,9 @@ public final class AllEqual extends ConstraintGlobal implements ObserverOnBacktr
 		if (lastRemovedValues.size() == remainingValues.size())
 			return x.dom.fail();
 
-		for (int i = scp.length - 1; i >= 0; i--) // for domino-5000, the reverse (0 to scp.length) is very slow. (due to revision ordering heuristic)
-			scp[i].dom.removeValuesIn(lastRemovedValues); // no possible inconsistency at this level
+		for (int i = scp.length - 1; i >= 0; i--) // for domino-5000, the reverse (0 to scp.length) is very slow. (due
+													// to revision ordering heuristic)
+			doms[i].removeValuesIn(lastRemovedValues); // no possible inconsistency at this level
 
 		int depth = problem.solver.depth();
 		for (int i = lastRemovedValues.limit; i >= 0; i--)

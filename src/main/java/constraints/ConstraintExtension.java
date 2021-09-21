@@ -44,8 +44,9 @@ import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
 
 /**
- * This is the root class for representing extension constraints, also called table constraints. Two direct subclasses are ExtensionGeneric (for implementing AC
- * filtering à la AC3rm) and ExtensionSpecific (for implementing specific propagators).
+ * This is the root class for representing extension constraints, also called table constraints. Two direct subclasses
+ * are ExtensionGeneric (for implementing AC filtering à la AC3rm) and ExtensionSpecific (for implementing specific
+ * propagators).
  * 
  * @author Christophe Lecoutre
  *
@@ -57,8 +58,8 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 *********************************************************************************************/
 
 	/**
-	 * This class is is used for unary extension constraints. Typically, filtering is performed at the root node of the search tree, and the constraint becomes
-	 * entailed. BE CAREFUL: this is not a subclass of ConstraintExtension.
+	 * This class is is used for unary extension constraints. Typically, filtering is performed at the root node of the
+	 * search tree, and the constraint becomes entailed. BE CAREFUL: this is not a subclass of ConstraintExtension.
 	 */
 	public static final class Extension1 extends Constraint implements SpecificPropagator, TagAC, TagCallCompleteFiltering {
 
@@ -68,7 +69,8 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		}
 
 		/**
-		 * The set of values authorized (if positive is true) or forbidden (if positive is false) by this unary constraint
+		 * The set of values authorized (if positive is true) or forbidden (if positive is false) by this unary
+		 * constraint
 		 */
 		private final int[] values;
 
@@ -78,8 +80,8 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		private final boolean positive;
 
 		/**
-		 * Builds a unary extension constraint for the specified problem, involving the specified variable, and with semantics defined from the specified values
-		 * and Boolean parameter
+		 * Builds a unary extension constraint for the specified problem, involving the specified variable, and with
+		 * semantics defined from the specified values and Boolean parameter
 		 * 
 		 * @param pb
 		 *            the problem to which the constraint is attached
@@ -100,7 +102,8 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			// control(problem.solver.depth() == 0); // note sure that it can be used because after solutions, the entailed set may be reset
+			// control(problem.solver.depth() == 0); // note sure that it is true because after solutions, the entailed
+			// set may be reset
 			if (positive && scp[0].dom.removeValuesNotIn(values) == false)
 				return false;
 			if (!positive && scp[0].dom.removeValuesIn(values) == false)
@@ -127,7 +130,8 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		}
 
 		/**
-		 * This class is for extension constraints with a classical generic AC filtering (iterating over lists of valid tuples in order to find a support).
+		 * This class is for extension constraints with a classical generic AC filtering (iterating over lists of valid
+		 * tuples in order to find a support).
 		 */
 		public static final class ExtensionV extends ExtensionGeneric {
 
@@ -146,8 +150,8 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		}
 
 		/**
-		 * This class is for extension constraints with a generic AC filtering following the VA (valid-allowed) scheme (iterating over both lists of valid
-		 * tuples and allowed tuples in order to find a support).
+		 * This class is for extension constraints with a generic AC filtering following the VA (valid-allowed) scheme
+		 * (iterating over both lists of valid tuples and allowed tuples in order to find a support).
 		 */
 		public static final class ExtensionVA extends ExtensionGeneric implements TagPositive {
 
@@ -238,9 +242,10 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	}
 
 	/**
-	 * Builds and returns an extension constraint for the specified problem, with the specified scope and the semantics defined from the specified tuples.
-	 * Tuples contains symbols or integers. The specified Boolean indicates if tuples are supports or conflicts. The last parameter indicates if the tuples are
-	 * starred (null when the information is not known).
+	 * Builds and returns an extension constraint for the specified problem, with the specified scope and the semantics
+	 * defined from the specified tuples. Tuples contains symbols or integers. The specified Boolean indicates if tuples
+	 * are supports or conflicts. The last parameter indicates if the tuples are starred (null when the information is
+	 * not known).
 	 * 
 	 * @param pb
 	 * @param scp
@@ -284,8 +289,8 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	}
 
 	/**
-	 * In this overriding, we know that we can check directly indexes with the extension structure (by construction). As a result, we do not directly check
-	 * values anymore (see the other method).
+	 * In this overriding, we know that we can check directly indexes with the extension structure (by construction). As
+	 * a result, we do not directly check values anymore (see the other method).
 	 */
 	@Override
 	public final boolean checkIndexes(int[] t) {
@@ -303,8 +308,9 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	protected ExtensionStructure extStructure;
 
 	/**
-	 * Builds and returns the extension structure to be attached to this constraint. This method is used instead of implementing it directly in the constraint
-	 * constructor in order to be able to use a cache (map), and so, not systematically building a new extension structure.
+	 * Builds and returns the extension structure to be attached to this constraint. This method is used instead of
+	 * implementing it directly in the constraint constructor in order to be able to use a cache (map), and so, not
+	 * systematically building a new extension structure.
 	 * 
 	 * @return the extension structure to be attached to this constraint
 	 */
@@ -343,8 +349,8 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	}
 
 	/**
-	 * Records the tuples defining the semantics of the extension constraint. These tuples are inserted in the extension structure adequately, for example under
-	 * the form of a matrix, a trie or an MDD.
+	 * Records the tuples defining the semantics of the extension constraint. These tuples are inserted in the extension
+	 * structure adequately, for example under the form of a matrix, a trie or an MDD.
 	 * 
 	 * @param tuples
 	 *            the tuples defining the semantics of the extension constraint
@@ -352,7 +358,8 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 *            indicates if the tuples are supports or conflicts
 	 */
 	public final void storeTuples(int[][] tuples, boolean positive) {
-		String tableKey = signature() + " " + tuples + " " + positive; // TODO be careful, we assume that the address of tuples can be used. Is that correct?
+		String tableKey = signature() + " " + tuples + " " + positive; // TODO be careful, we assume that the address of
+																		// tuples can be used. Is that correct?
 		String key = setKey(
 				problem.features.collecting.tableKeys.computeIfAbsent(tableKey, k -> signature() + "r" + problem.features.collecting.tableKeys.size()));
 		control((positive && this instanceof TagPositive) || (!positive && this instanceof TagNegative)

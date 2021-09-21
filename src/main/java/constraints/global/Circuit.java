@@ -12,9 +12,7 @@ package constraints.global;
 
 import static utility.Kit.control;
 
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.IntStream;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 import constraints.global.AllDifferent.AllDifferentComplete;
@@ -22,32 +20,63 @@ import problem.Problem;
 import sets.SetSparse;
 import variables.Variable;
 
+/**
+ * The constraint circuit ensures that the values taken by a sequence of variables <x0,x1, ...> forms a circuit, with
+ * the assumption that each pair (i,xi) represents an arc. See for example "Introducing global constraints in CHIP",
+ * Mathematical and Computer Modelling, 20(12):97–123, 1994 by N. Beldiceanu and E. Contejean.
+ * 
+ * @author Christophe Lecoutre
+ * 
+ */
 public final class Circuit extends AllDifferentComplete {
 
 	@Override
 	public boolean isSatisfiedBy(int[] t) {
 		if (super.isSatisfiedBy(t) == false)
 			return false;
-		int nLoops = (int) IntStream.range(0, t.length).filter(i -> t[i] == i).count();
+		int nLoops = 0, first = -1;
+		for (int i = 0; i < t.length; i++)
+			if (t[i] == i)
+				nLoops++;
+			else if (first == -1)
+				first = i;
 		if (nLoops == t.length)
-			return false; // no circuit at all
-		int i = 0;
-		while (i < scp.length && t[i] == i)
-			i++;
-		Set<Integer> s = new TreeSet<>();
-		while (t[i] != i && !s.contains(t[i])) {
-			s.add(t[i]);
+			return false; // because no circuit at all
+		Arrays.fill(tmp, false);
+		int i = first, size = 0;
+		while (!tmp[t[i]]) {
+			if (t[i] == i)
+				return false; // because badly formed circuit
+			tmp[t[i]] = true;
 			i = t[i];
+			size++;
 		}
-		return s.size() == (t.length - nLoops);
+		return size == t.length - nLoops;
 	}
 
-	private SetSparse set;
+	/**
+	 * A sparse set used during filtering
+	 */
+	private final SetSparse set;
 
-	public Circuit(Problem pb, Variable[] scp) {
-		super(pb, scp);
-		this.set = new SetSparse(scp.length);
-		control(Stream.of(scp).allMatch(x -> x.dom.areInitValuesSubsetOf(pb.api.range(scp.length))));
+	/**
+	 * A temporary array
+	 */
+	private final boolean[] tmp;
+
+	/**
+	 * Build a constraint Circuit for the specified problem over the specified array/list of variables
+	 * 
+	 * @param pb
+	 *            the problem to which the constraint is attached
+	 * @param list
+	 *            the involved variables
+	 */
+	public Circuit(Problem pb, Variable[] list) {
+		super(pb, list);
+		this.set = new SetSparse(list.length);
+		this.tmp = new boolean[list.length];
+		control(Stream.of(list).allMatch(x -> x.dom.areInitValuesSubsetOf(pb.api.range(list.length))));
 	}
 
 	@Override
@@ -61,30 +90,31 @@ public final class Circuit extends AllDifferentComplete {
 			return false;
 		int minimalCircuitLength = 0;
 		for (int i = 0; i < scp.length; i++)
-			if (scp[i].dom.containsValue(i) == false)
+			if (doms[i].containsValue(i) == false)
 				minimalCircuitLength++;
+		Arrays.fill(tmp, false);
 		for (int i = 0; i < scp.length; i++) {
-			if (scp[i].dom.size() == 1) {
-				int j = scp[i].dom.singleValue();
-				if (i == j)
-					continue; // because self-loop
-				set.clear();
-				set.add(i); // i belongs to the circuit
-				if (scp[j].dom.removeValueIfPresent(j) == false) // because self-loop not possible for j
+			if (doms[i].size() > 1 || tmp[i])
+				continue;
+			int j = doms[i].singleValue();
+			if (i == j)
+				continue; // because self-loop
+			set.clear();
+			set.add(i); // i belongs to the circuit
+			if (doms[j].removeValueIfPresent(j) == false) // because self-loop not possible for j
+				return false;
+			while (set.size() + 1 < minimalCircuitLength) {
+				if (doms[j].removeValuesIn(set) == false)
+					return false; // because we cannot close the circuit now (it would be too short)
+				if (doms[j].size() > 1)
+					break;
+				tmp[j] = true;
+				if (set.contains(j))
+					return false; // because two times the same value (and too short circuit)
+				set.add(j); // j belongs to the circuit
+				j = doms[j].singleValue(); // we know that the *new value of j* is different from the previous one
+				if (doms[j].removeValueIfPresent(j) == false) // because self-loop not possible for j
 					return false;
-				while (set.size() + 1 < minimalCircuitLength) {
-					if (scp[j].dom.removeValuesIn(set) == false)
-						return false; // because we cannot close the circuit now (it would be too short)
-					if (scp[j].dom.size() == 1) {
-						if (set.contains(j))
-							return false; // because two times the same value
-						set.add(j); // j belongs to the circuit
-						j = scp[j].dom.singleValue(); // we know for sure here that the *new value of j* is different from the previous one
-						if (scp[j].dom.removeValueIfPresent(j) == false) // because self-loop not possible for j
-							return false;
-					} else
-						break;
-				}
 			}
 		}
 		return true;

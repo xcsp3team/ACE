@@ -37,10 +37,12 @@ import sets.SetLinked;
 import utility.Kit;
 
 /**
- * A domain for a variable (from a constraint network) is composed of a set of integer values. The domain is initially full, but typically reduced when
- * logically reasoning (with constraints). When handling a domain, to simplify programming, one usually iterates over the indexes of the values; if the domains
- * contains d values, the indexes range from 0 to d-1. For instance, if the domain is the set of values <code> {1,4,5} </code>, their indexes are respectively
- * <code> {0,1,2} </code>. The correspondence between indexes of values and values is given by the methods <code> toIdx </code> and <code> toVal </code>.
+ * A domain for a variable (from a constraint network) is composed of a set of integer values. The domain is initially
+ * full, but typically reduced when logically reasoning (with constraints). When handling a domain, to simplify
+ * programming, one usually iterates over the indexes of the values; if the domains contains d values, the indexes range
+ * from 0 to d-1. For instance, if the domain is the set of values <code> {1,4,5} </code>, their indexes are
+ * respectively <code> {0,1,2} </code>. The correspondence between indexes of values and values is given by the methods
+ * <code> toIdx </code> and <code> toVal </code>.
  *
  * @author Christophe Lecoutre
  *
@@ -81,7 +83,8 @@ public interface Domain extends SetLinked {
 	 * @return a type identifier
 	 */
 	static int typeIdentifierForRange(int min, int max) {
-		// adding a third value, Integer.MAX_VALUE, which is not an authorized domain value since there is a safety margin, to specify a range (avoiding
+		// adding a third value, Integer.MAX_VALUE, which is not an authorized domain value since there is a safety
+		// margin, to specify a range (avoiding
 		// confusion with a domain only containing min and max)
 		return typeIdentifierFor(min, max, Integer.MAX_VALUE);
 	}
@@ -94,7 +97,8 @@ public interface Domain extends SetLinked {
 	 * @return a type identifier
 	 */
 	static int typeIdentifierForSymbols(int... values) {
-		// adding a third value, Integer.MAX_VALUE -1, which is not an authorized domain value since there is a safety margin, to specify a
+		// adding a third value, Integer.MAX_VALUE -1, which is not an authorized domain value since there is a safety
+		// margin, to specify a
 		// domain of symbols (avoiding confusion with a domain containing the specified integers)
 		return Domain.typeIdentifierFor(Utilities.collectInt(values, Integer.MAX_VALUE - 1));
 	}
@@ -174,8 +178,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns the index of the greatest value of the specified domain which is less than the specified value. When true, the specified Boolean requires
-	 * strictness. If no such value exists, -1 is returned.
+	 * Returns the index of the greatest value of the specified domain which is less than the specified value. When
+	 * true, the specified Boolean requires strictness. If no such value exists, -1 is returned.
 	 * 
 	 * @param dom
 	 *            a domain
@@ -191,8 +195,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns the index of the smallest value of the specified domain which is greater than the specified value. When true, the specified Boolean requires
-	 * strictness. If no such value exists, Integer.MAX_VALUE is returned.
+	 * Returns the index of the smallest value of the specified domain which is greater than the specified value. When
+	 * true, the specified Boolean requires strictness. If no such value exists, Integer.MAX_VALUE is returned.
 	 * 
 	 * @param dom
 	 *            a domain
@@ -285,15 +289,17 @@ public interface Domain extends SetLinked {
 	void setPropagation(Propagation propagation);
 
 	/**
-	 * Indicates if indexes (of values) and values match, i.e. if for every index a, we have toVal(a) = a, and for every value v, we have toIdx(v)=v.
+	 * Indicates if indexes (of values) and values match, i.e. if for every index a, we have toVal(a) = a, and for every
+	 * value v, we have toIdx(v)=v.
 	 * 
 	 * @return {@code true} iff indexes (of values) and values match
 	 */
 	boolean indexesMatchValues();
 
 	/**
-	 * Returns the index of the specified value, or a negative integer if the specified value does not belong to the initial domain. No assumption is made about
-	 * the fact that the specified value belongs or not to the current domain.
+	 * Returns the index of the specified value, or a negative integer if the specified value does not belong to the
+	 * initial domain. No assumption is made about the fact that the specified value belongs or not to the current
+	 * domain.
 	 * 
 	 * @param v
 	 *            a value
@@ -382,7 +388,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns the unique value of the domain. This is similar to firstValue(), and lastValue(), but with an assert/control.
+	 * Returns the unique value of the domain. This is similar to firstValue(), and lastValue(), but with an
+	 * assert/control.
 	 */
 	default int singleValue() {
 		return toVal(single());
@@ -424,8 +431,9 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns a value present in both this domain and the specified one. There is no guarantee about the returned value (for example, it may not be the first
-	 * possible one of the domain). If no common value is present, Integer.MAX_VALUE is returned.
+	 * Returns a value present in both this domain and the specified one. There is no guarantee about the returned value
+	 * (for example, it may not be the first possible one of the domain). If no common value is present,
+	 * Integer.MAX_VALUE is returned.
 	 * 
 	 * @param dom
 	 *            an other domain
@@ -501,7 +509,7 @@ public interface Domain extends SetLinked {
 	 *            an index (of value)
 	 */
 	default void removeAtConstructionTime(int a) {
-		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " at construction time");
+		System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " at		 construction time");
 		Problem problem = var().problem;
 		control(problem.solver == null, () -> "Must be called before the solver being built.");
 		remove(a, 0);
@@ -510,7 +518,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes at construction time (hence, definitively) every value whose index is tested as true by the specified predicate. <br />
+	 * Removes at construction time (hence, definitively) every value whose index is tested as true by the specified
+	 * predicate. <br />
 	 * Important: this method must only called when building the problem.
 	 * 
 	 * @param p
@@ -547,8 +556,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Method to call when elementary calls for removing some values may have been executed (i.e., calls to removeElementary) in order to take it into account
-	 * for propagation.
+	 * Method to call when elementary calls for removing some values may have been executed (i.e., calls to
+	 * removeElementary) in order to take it into account for propagation.
 	 * 
 	 * @param sizeBefore
 	 *            the size of the domain before elementary calls
@@ -560,17 +569,20 @@ public interface Domain extends SetLinked {
 
 	/**
 	 * Removes the value at the specified index. <br />
-	 * The value is assumed to be present, and the variable to which the domain is attached is assumed to be future (i.e. non explicitly assigned). <br />
+	 * The value is assumed to be present, and the variable to which the domain is attached is assumed to be future
+	 * (i.e. non explicitly assigned). <br />
 	 * Important: the management of this removal with respect to propagation is not handled: removal is said elementary.
 	 * 
 	 * @param a
 	 *            an index (of value)
 	 */
 	default void removeElementary(int a) {
-		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " from " + propagation().currFilteringCtr);
+		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + "
+		// from " + propagation().currFilteringCtr);
 		Variable x = var();
 		assert !x.assigned() && contains(a) : x + " " + x.assigned() + " " + contains(a);
-		int depth = propagation().solver.stackVariable(x); // stacking variables (to keep track of propagation) must always be performed before domain reduction
+		int depth = propagation().solver.stackVariable(x); // stacking variables (to keep track of propagation) must
+															// always be performed before domain reduction
 		remove(a, depth);
 		for (ObserverOnRemovals observer : x.problem.solver.observersOnRemovals)
 			observer.afterRemoval(x, a);
@@ -609,7 +621,8 @@ public interface Domain extends SetLinked {
 	 */
 
 	/**
-	 * Removes each index whose corresponding flag is true in the specified array. The number of removed indexes is given by the second argument.
+	 * Removes each index whose corresponding flag is true in the specified array. The number of removed indexes is
+	 * given by the second argument.
 	 * 
 	 * @param flags
 	 *            an array of flags indicating which indexes must be removed
@@ -632,7 +645,8 @@ public interface Domain extends SetLinked {
 
 	/**
 	 * Removes the values at the indexes given in the specified set. <br />
-	 * If the specified boolean is set to true, a test is performed to only consider values that are present in the current domain. <br />
+	 * If the specified boolean is set to true, a test is performed to only consider values that are present in the
+	 * current domain. <br />
 	 * Returns false if an inconsistency is detected. <br />
 	 * The management of these removals with respect to propagation is handled.
 	 */
@@ -679,7 +693,8 @@ public interface Domain extends SetLinked {
 		if (size() == 1)
 			return 0; // 0 removal
 		Variable x = var();
-		int depth = propagation().solver.stackVariable(x); // stacking variables must always be performed before domain reduction
+		int depth = propagation().solver.stackVariable(x); // stacking variables must always be performed before domain
+															// reduction
 		int nRemovals = reduceTo(a, depth);
 		for (ObserverOnRemovals observer : x.problem.solver.observersOnRemovals)
 			observer.afterRemovals(x, nRemovals);
@@ -835,8 +850,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes all values that, when multiplied by the specified coefficient, verify the condition defined by the specified relational operator and the
-	 * specified limit
+	 * Removes all values that, when multiplied by the specified coefficient, verify the condition defined by the
+	 * specified relational operator and the specified limit
 	 * 
 	 * @param type
 	 *            the relational operator used for the condition
@@ -1033,31 +1048,30 @@ public interface Domain extends SetLinked {
 
 	/**
 	 * Removes all values that are present in the specified array, and returns false if the domain becomes empty. <br />
-	 * IMPORTANT: the specified set must be increasingly ordered.
 	 * 
 	 * @param set
 	 *            an array of integers
 	 * @return false if an inconsistency (empty domain) is detected
 	 */
 	default boolean removeValuesIn(int[] set) {
-		assert Kit.isStrictlyIncreasing(set);
-		int sizeBefore = size();
-		if (sizeBefore == 1)
-			return Arrays.binarySearch(set, firstValue()) < 0 || fail();
+		int sizeBefore = size(), cnt = 0;
 		for (int i = set.length - 1; i >= 0; i--) {
 			int v = set[i];
 			if (containsValue(v)) {
+				if (size() == 1)
+					return fail();
 				removeElementary(toIdx(v));
-				if (size() == 0)
-					break;
+				if (++cnt == sizeBefore)
+					break; // since all values of the domain have been considered
 			}
 		}
 		return afterElementaryCalls(sizeBefore);
 	}
 
 	/**
-	 * Removes all values that are not present in the specified array, and returns false if the domain becomes empty. <br />
-	 * IMPORTANT: the specified set must be increasingly ordered.
+	 * Removes all values that are not present in the specified array, and returns false if the domain becomes empty.
+	 * <br />
+	 * VERY IMPORTANT: the specified set must be increasingly ordered.
 	 * 
 	 * @param set
 	 *            an array of integers
@@ -1070,34 +1084,32 @@ public interface Domain extends SetLinked {
 			return Arrays.binarySearch(set, firstValue()) >= 0 || fail();
 		int i = 0;
 		for (int a = first(); a != -1; a = next(a)) {
-			int va = toVal(a);
-			while (i < set.length && va > set[i])
+			int v = toVal(a);
+			while (i < set.length && v > set[i])
 				i++;
-			if (i == set.length || va != set[i])
+			if (i == set.length || v != set[i])
 				removeElementary(a);
 		}
 		return afterElementaryCalls(sizeBefore);
 	}
 
 	/**
-	 * Removes all values that are present in the specified dense set, and returns false if the domain becomes empty. <br />
-	 * IMPORTANT: the specified set must be increasingly ordered.
+	 * Removes all values that are present in the specified dense set, and returns false if the domain becomes empty.
 	 * 
 	 * @param set
 	 *            a dense set
 	 * @return false if an inconsistency (empty domain) is detected
 	 */
 	default boolean removeValuesIn(SetDense set) {
-		assert set.isStrictlyIncreasing();
-		int sizeBefore = size();
-		if (sizeBefore == 1)
-			return Arrays.binarySearch(set.dense, 0, set.size(), firstValue()) < 0 || fail();
+		int sizeBefore = size(), cnt = 0;
 		for (int i = set.limit; i >= 0; i--) {
 			int v = set.dense[i];
 			if (containsValue(v)) {
+				if (size() == 1)
+					return fail();
 				removeElementary(toIdx(v));
-				if (size() == 0)
-					break;
+				if (++cnt == sizeBefore)
+					break; // since all values of the domain have been considered
 			}
 		}
 		return afterElementaryCalls(sizeBefore);
