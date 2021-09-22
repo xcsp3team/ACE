@@ -27,27 +27,24 @@ import sets.SetSparseReversible;
 import utility.Kit;
 import variables.Variable;
 
+/**
+ * The constraint cumulative is useful when a resource of limited quantity must be shared for achieving several tasks.
+ * The constraint cumulative enforces that at each point in time, the cumulated height of tasks that overlap that point,
+ * does not exceed a specified limit. For example, in a scheduling context where several tasks require some specific
+ * quantities of a single resource, the cumulative constraint imposes that a strict limit on the total consumption of
+ * the resource is never exceeded at each point of a time line.
+ * 
+ * So, the context is to manage a collection of tasks, each one being described by 3 attributes: its starting time, its
+ * width (length or duration), and its height (resource consumption).
+ * 
+ * @author Christophe Lecoutre
+ * 
+ */
 public abstract class Cumulative extends ConstraintGlobal implements TagCallCompleteFiltering, TagNotAC, ObserverOnBacktracksSystematic {
 
-	@Override
-	public boolean isSatisfiedBy(int[] tuple) {
-		int wgap = !movableWidths ? -1 : nTasks;
-		int hgap = !movableHeights ? -1 : this instanceof CumulativeVarH ? nTasks : nTasks * 2;
-		int min = Integer.MAX_VALUE, max = Integer.MIN_VALUE;
-		for (int i = 0; i < nTasks; i++) {
-			min = Math.min(min, tuple[i]);
-			max = Math.max(max, tuple[i] + (wgap == -1 ? wwidths[i] : tuple[wgap + i]));
-		}
-		for (int t = min; t <= max; t++) {
-			int sum = 0;
-			for (int i = 0; i < nTasks; i++)
-				if (tuple[i] <= t && t < tuple[i] + (wgap == -1 ? wwidths[i] : tuple[wgap + i]))
-					sum += (hgap == -1 ? wheights[i] : tuple[hgap + i]);
-			if (sum > limit)
-				return false;
-		}
-		return true;
-	}
+	/**********************************************************************************************
+	 * Implementing interfaces
+	 *********************************************************************************************/
 
 	@Override
 	public void afterProblemConstruction() {
@@ -60,31 +57,13 @@ public abstract class Cumulative extends ConstraintGlobal implements TagCallComp
 		timetableReasoner.relevantTasks.restoreLimitAtLevel(depth);
 	}
 
-	protected final int nTasks;
-
-	protected final Variable[] starts; // starting times of tasks
-	protected int[] wwidths; // widths of tasks ; working values (either constants or minimal values in variable domains)
-	protected int[] wheights; // heights of tasks ; working values (either constants or minimal values in variable domains)
-	protected int limit; // cumulative limit
-
-	protected TimetableReasoner timetableReasoner;
-	protected EnergeticReasoner energeticReasoner;
-
-	protected long margin;
+	/**********************************************************************************************
+	 * Two inner classes for reasoning
+	 *********************************************************************************************/
 
 	/**
-	 * indicates if widths are given by variables (and not constants)
-	 */
-	protected boolean movableWidths;
-
-	/**
-	 * indicates if heights are given by variables (and not constants)
-	 */
-	protected boolean movableHeights;
-
-	/**
-	 * The filtering algorithm is mainly based upon "Simple and Scalable Time-Table Filtering for the Cumulative Constraint" <br />
-	 * by S. Gay, R. Hartert and P. Schaus. CP 2015: 149-157
+	 * Filtering mainly based on "Simple and Scalable Time-Table Filtering for the Cumulative Constraint", CP 2015:
+	 * 149-157, by S. Gay, R. Hartert and P. Schaus.
 	 */
 	class TimetableReasoner {
 		class Slot {
@@ -168,7 +147,8 @@ public abstract class Cumulative extends ConstraintGlobal implements TagCallComp
 
 		private void updateRelevantTasks() {
 			int depth = problem.solver.depth();
-			// we compute the relevant time bounds: minimum relevant start time and maximum relevant end time from current future variables
+			// we compute the relevant time bounds: minimum relevant start time and maximum relevant end time from
+			// current future variables
 			int smin = Integer.MAX_VALUE, emax = Integer.MIN_VALUE;
 			for (int j = futvars.limit; j >= 0; j--) {
 				int i = futvars.dense[j];
@@ -197,7 +177,8 @@ public abstract class Cumulative extends ConstraintGlobal implements TagCallComp
 						break;
 					assert slots[k].height != 0;
 					int rs = slots[k].start, re = slots[k].end;
-					if (me <= ms || me <= rs || re <= ms) { // if no mandatory part or if the rectangle and the mandatory parts are disjoint
+					if (me <= ms || me <= rs || re <= ms) { // if no mandatory part or if the rectangle and the
+															// mandatory parts are disjoint
 						if (starts[i].dom.removeValuesInRange(rs - wwidths[i] + 1, re) == false)
 							return false;
 					} // else something else ?
@@ -208,6 +189,9 @@ public abstract class Cumulative extends ConstraintGlobal implements TagCallComp
 		}
 	}
 
+	/**
+	 * Filtering based on a form of energetic reasoning
+	 */
 	class EnergeticReasoner {
 		private Integer[] sortedTasks; // according to heights
 
@@ -291,21 +275,115 @@ public abstract class Cumulative extends ConstraintGlobal implements TagCallComp
 		}
 	}
 
+	/**********************************************************************************************
+	 * Class members
+	 *********************************************************************************************/
+
+	@Override
+	public boolean isSatisfiedBy(int[] tuple) {
+		int wgap = !movableWidths ? -1 : nTasks;
+		int hgap = !movableHeights ? -1 : this instanceof CumulativeVarH ? nTasks : nTasks * 2;
+		int min = Integer.MAX_VALUE, max = Integer.MIN_VALUE;
+		for (int i = 0; i < nTasks; i++) {
+			min = Math.min(min, tuple[i]);
+			max = Math.max(max, tuple[i] + (wgap == -1 ? wwidths[i] : tuple[wgap + i]));
+		}
+		for (int t = min; t <= max; t++) {
+			int sum = 0;
+			for (int i = 0; i < nTasks; i++)
+				if (tuple[i] <= t && t < tuple[i] + (wgap == -1 ? wwidths[i] : tuple[wgap + i]))
+					sum += (hgap == -1 ? wheights[i] : tuple[hgap + i]);
+			if (sum > limit)
+				return false;
+		}
+		return true;
+	}
+
+	/**
+	 * The number of tasks
+	 */
+	protected final int nTasks;
+
+	/**
+	 * starts[i] gives the starting time of the ith task
+	 */
+	protected final Variable[] starts;
+
+	/**
+	 * The widths of tasks; used as working values (either constants or minimal values in variable domains)
+	 */
+	protected int[] wwidths;
+
+	/**
+	 * heights of tasks; used as working values (either constants or minimal values in variable domains)
+	 */
+	protected int[] wheights;
+
+	/**
+	 * indicates if widths are given by variables (and not constants)
+	 */
+	protected boolean movableWidths;
+
+	/**
+	 * indicates if heights are given by variables (and not constants)
+	 */
+	protected boolean movableHeights;
+
+	/**
+	 * Cumulative limit
+	 */
+	protected int limit;
+
+	/**
+	 * The object that allows us to reasoning from a timetable
+	 */
+	protected TimetableReasoner timetableReasoner;
+
+	/**
+	 * The object that allows us to reason energetically
+	 */
+	protected EnergeticReasoner energeticReasoner;
+
+	/**
+	 * The current margin (in term of volume) that we globally have
+	 */
+	protected long margin;
+
+	/**
+	 * Returns the maximal possible width of the ith task
+	 * 
+	 * @param i
+	 *            the index of a task
+	 * @return the maximal possible width of the ith task
+	 */
 	protected int maxWidth(int i) {
 		return wwidths[i];
 	}
 
+	/**
+	 * Returns the maximal possible height of the ith task
+	 * 
+	 * @param i
+	 *            the index of a task
+	 * @return the maximal possible height of the ith task
+	 */
 	protected int maxHeight(int i) {
 		return wheights[i];
 	}
 
+	/**
+	 * Returns the (minimal) volume occupied by all tasks
+	 */
 	protected long tasksVolume() {
 		long sum = 0;
 		for (int i = 0; i < nTasks; i++)
-			sum += wwidths[i] * wheights[i]; // this is correct because we always store the minimal values in these arrays
+			sum += wwidths[i] * wheights[i]; // correct because we always store the minimal values in these arrays
 		return sum;
 	}
 
+	/**
+	 * Returns the horizon, i.e. the maximal length of the time line that can be used by the tasks
+	 */
 	private int horizon() {
 		int min = Integer.MAX_VALUE, max = Integer.MIN_VALUE;
 		for (int i = 0; i < nTasks; i++) {
@@ -318,7 +396,6 @@ public abstract class Cumulative extends ConstraintGlobal implements TagCallComp
 	public Cumulative(Problem pb, Variable[] scp, Variable[] starts, int[] widths, int[] heights, int limit) {
 		super(pb, scp);
 		control(starts.length > 1 && Stream.of(starts).allMatch(x -> x.dom.firstValue() >= 0));
-
 		this.nTasks = starts.length;
 		this.starts = starts;
 		this.movableWidths = widths == null;
@@ -326,27 +403,18 @@ public abstract class Cumulative extends ConstraintGlobal implements TagCallComp
 		this.movableHeights = heights == null;
 		this.wheights = movableHeights ? new int[nTasks] : heights;
 		this.limit = limit;
-
 		this.timetableReasoner = new TimetableReasoner();
 		this.energeticReasoner = new EnergeticReasoner();
-
-		// System.out.println(this);
 	}
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
 		long volume = this instanceof CumulativeCst ? ((CumulativeCst) this).volume : tasksVolume();
 		this.margin = horizon() * limit - volume;
-		if (margin < 0) {
+		if (margin < 0) { // it seems that we cannot limit (only use) this test at depth 0
 			System.out.println("margin " + margin + " " + horizon() + " " + limit);
 			return false;
 		}
-		// if (problem.solver.depth() == 0) { // we update the margin
-		// margin = horizon() * limit - volume;
-		// System.out.println("margin " + margin + " " + horizon() + " " + limit);
-		// if (margin < 0)
-		// return false;
-		// }
 
 		Boolean b = timetableReasoner.buildSlots();
 		if (b == Boolean.FALSE)
@@ -368,6 +436,10 @@ public abstract class Cumulative extends ConstraintGlobal implements TagCallComp
 		return "constraint cumulative: " + Kit.join(starts) + " lengths=" + Kit.join(this.wwidths) + " heights=" + Kit.join(wheights) + " limit=" + limit;
 	}
 
+	/**********************************************************************************************
+	 * The four variants, depending on the fact that some parameters are constants or variables
+	 *********************************************************************************************/
+
 	public static final class CumulativeCst extends Cumulative {
 		long volume;
 
@@ -379,6 +451,7 @@ public abstract class Cumulative extends ConstraintGlobal implements TagCallComp
 		}
 	}
 
+	// TO FINALIZE
 	public static final class CumulativeVarW extends Cumulative {
 
 		Variable[] widths;
@@ -391,13 +464,13 @@ public abstract class Cumulative extends ConstraintGlobal implements TagCallComp
 		public CumulativeVarW(Problem pb, Variable[] starts, Variable[] widths, int[] heights, int limit) {
 			super(pb, pb.vars(starts, widths), starts, null, heights, limit);
 			this.widths = widths;
-			control(scp.length == 2 * nTasks);
-			control(widths.length == nTasks && heights.length == nTasks);
+			control(scp.length == 2 * nTasks && widths.length == nTasks && heights.length == nTasks);
 			control(Stream.of(widths).allMatch(x -> x.dom.firstValue() >= 0) && IntStream.of(heights).allMatch(h -> h >= 0));
 		}
 
 	}
 
+	// TO TEST
 	public static final class CumulativeVarH extends Cumulative {
 
 		Variable[] heights;
@@ -410,8 +483,7 @@ public abstract class Cumulative extends ConstraintGlobal implements TagCallComp
 		public CumulativeVarH(Problem pb, Variable[] starts, int[] widths, Variable[] heights, int limit) {
 			super(pb, pb.vars(starts, heights), starts, widths, null, limit);
 			this.heights = heights;
-			control(scp.length == 2 * nTasks);
-			control(widths.length == nTasks && heights.length == nTasks);
+			control(scp.length == 2 * nTasks && widths.length == nTasks && heights.length == nTasks);
 			control(IntStream.of(widths).allMatch(h -> h >= 0) && Stream.of(heights).allMatch(x -> x.dom.firstValue() >= 0));
 		}
 
@@ -439,6 +511,7 @@ public abstract class Cumulative extends ConstraintGlobal implements TagCallComp
 		}
 	}
 
+	// TO FINALIZE
 	public static final class CumulativeVarWH extends Cumulative {
 
 		Variable[] widths;
@@ -458,8 +531,7 @@ public abstract class Cumulative extends ConstraintGlobal implements TagCallComp
 			super(pb, pb.vars(starts, widths, heights), starts, null, null, limit);
 			this.widths = widths;
 			this.heights = heights;
-			control(scp.length == 3 * nTasks);
-			control(widths.length == nTasks && heights.length == nTasks);
+			control(scp.length == 3 * nTasks && widths.length == nTasks && heights.length == nTasks);
 			control(Stream.of(widths).allMatch(x -> x.dom.firstValue() >= 0) && Stream.of(heights).allMatch(x -> x.dom.firstValue() >= 0));
 		}
 	}

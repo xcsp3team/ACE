@@ -640,7 +640,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	}
 
 	public final boolean tryAssignment(Variable x) {
-		return tryAssignment(x, x.heuristic.bestIndex());
+		return tryAssignment(x, x.heuristic.bestValueIndex());
 	}
 
 	/**
@@ -708,7 +708,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 				if (futVars.size() == 0)
 					break;
 				maxDepth = Math.max(maxDepth, depth());
-				if (tryAssignment(heuristic.bestVar()) == false)
+				if (tryAssignment(heuristic.bestVariable()) == false)
 					manageContradiction(null);
 			}
 			if (futVars.size() == 0) {

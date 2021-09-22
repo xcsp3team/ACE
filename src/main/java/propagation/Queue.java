@@ -121,7 +121,7 @@ public final class Queue extends SetSparse {
 	 * @return a variable of the queue
 	 */
 	public Variable pickAndDelete() {
-		return pickAndDelete(heuristic.bestPosition());
+		return pickAndDelete(heuristic.bestInQueue());
 	}
 
 	public void incrementTimeOfPresentVariables() {

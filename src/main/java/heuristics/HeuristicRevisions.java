@@ -15,8 +15,10 @@ import propagation.Queue;
 import variables.Variable;
 
 /**
- * A revision ordering heuristic is attached to the propagation queue (set) that contains variables. <br />
- * It is used by the solver (actually, the propagation object) to select a variable in order to pursue constraint propagation.
+ * A revision ordering heuristic is attached to the propagation queue (i.e., set used to guide propagation) that
+ * contains variables. <br />
+ * It is used by the solver (actually, the propagation object) to iteratively select a variable in order to pursue
+ * constraint propagation.
  * 
  * @author Christophe Lecoutre
  */
@@ -45,7 +47,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 	 * 
 	 * @return a position in the queue
 	 */
-	public abstract int bestPosition();
+	public abstract int bestInQueue();
 
 	// ************************************************************************
 	// ***** HeuristicRevisionsDirect
@@ -68,7 +70,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 			}
 
 			@Override
-			public int bestPosition() {
+			public int bestInQueue() {
 				return 0;
 			}
 		}
@@ -80,7 +82,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 			}
 
 			@Override
-			public int bestPosition() {
+			public int bestInQueue() {
 				return queue.limit;
 			}
 		}
@@ -92,7 +94,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 			}
 
 			@Override
-			public int bestPosition() {
+			public int bestInQueue() {
 				return queue.propagation.solver.head.random.nextInt(queue.size());
 			}
 		}
@@ -110,8 +112,8 @@ public abstract class HeuristicRevisions extends Heuristic {
 		}
 
 		/**
-		 * Returns the (raw) score of the specified variable (which is present in in the propagation queue). It is usually the method to overridde in order to
-		 * define a new heuristic.
+		 * Returns the (raw) score of the specified variable (which is present in in the propagation queue). It is
+		 * usually the method to overridde in order to define a new heuristic.
 		 * 
 		 * @param x
 		 *            a variable
@@ -120,7 +122,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 		protected abstract double scoreOf(Variable x);
 
 		@Override
-		public int bestPosition() {
+		public int bestInQueue() {
 			int pos = 0;
 			double bestScore = scoreOf(queue.var(0)) * multiplier;
 			for (int i = 1; i <= queue.limit; i++) {

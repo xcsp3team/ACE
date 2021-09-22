@@ -40,7 +40,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	private int lastDepthWithOnlySingletons = Integer.MAX_VALUE;
 
 	@Override
-	protected final Variable bestUnpriorityVar() {
+	protected final Variable bestUnpriorityVariable() {
 		assert solver.futVars.size() > 0;
 
 		if (solver.head.control.solving.branching != Branching.BIN) {
@@ -374,7 +374,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		protected abstract void update();
 
 		@Override
-		protected Variable bestUnpriorityVar() {
+		protected Variable bestUnpriorityVariable() {
 			assert lastVar != null || solver.depth() > lastDepth : lastVar + " " + solver.depth() + " " + lastDepth;
 			if (lastVar != null)
 				update();

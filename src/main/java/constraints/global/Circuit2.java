@@ -28,7 +28,7 @@ import variables.Variable;
  * @author Christophe Lecoutre
  * 
  */
-public final class Circuit extends AllDifferentComplete {
+public final class Circuit2 extends AllDifferentComplete {
 
 	@Override
 	public boolean isSatisfiedBy(int[] t) {
@@ -54,6 +54,10 @@ public final class Circuit extends AllDifferentComplete {
 		return size == t.length - nLoops;
 	}
 
+	private final SetSparse heads;
+
+	private final SetSparse pheads;
+
 	/**
 	 * A sparse set used during filtering
 	 */
@@ -72,11 +76,14 @@ public final class Circuit extends AllDifferentComplete {
 	 * @param list
 	 *            the involved variables
 	 */
-	public Circuit(Problem pb, Variable[] list) {
+	public Circuit2(Problem pb, Variable[] list) {
 		super(pb, list);
 		this.set = new SetSparse(list.length);
 		this.tmp = new boolean[list.length];
 		control(Stream.of(list).allMatch(x -> 0 <= x.dom.firstValue() && x.dom.lastValue() < list.length));
+
+		this.heads = new SetSparse(list.length);
+		this.pheads = new SetSparse(list.length);
 	}
 
 	@Override
@@ -90,42 +97,73 @@ public final class Circuit extends AllDifferentComplete {
 			return false;
 		if (futvars.size() == 0)
 			return true;
+
 		int minimalCircuitLength = 0;
 		for (int i = 0; i < scp.length; i++)
 			if (doms[i].containsValue(i) == false)
 				minimalCircuitLength++;
+
+		// init TODO si circuit deja fermé le detecter et finaliser entailed()
+		heads.clear();
+		pheads.fill();
 		Arrays.fill(tmp, false);
 		for (int i = 0; i < scp.length; i++) {
-			if (doms[i].size() > 1 || tmp[i])
+			if (doms[i].size() == 1) {
+				if (pheads.contains(i))
+					pheads.remove(i);
+				int j = doms[i].singleValue();
+				if (i == j)
+					continue;
+				if (pheads.contains(j))
+					pheads.remove(j);
+				if (tmp[i] == false)
+					heads.add(i);
+				tmp[j] = true;
+				if (heads.contains(j))
+					heads.remove(j);
+			}
+		}
+
+		//
+		Arrays.fill(tmp, false);
+		for (int p = heads.limit; p >= 0; p--) {
+			int i = heads.dense[p];
+			if (tmp[i])
 				continue;
+			control(doms[i].size() == 1 && doms[i].singleValue() != i);
 			int j = doms[i].singleValue();
-			if (i == j)
-				continue; // because self-loop
+			int head = i;
 			set.clear();
-			set.add(i); // i belongs to the circuit
-			if (doms[j].removeValueIfPresent(j) == false) // because self-loop not possible for j
-				return false;
-			while (set.size() + 1 < minimalCircuitLength) {
+			// set.add(i); // i belongs to the circuit
+			while (true) {
+				int before = doms[j].size();
+				if (set.contains(j))
+					return false; // because two times the same value (and too short circuit)
+				if (doms[j].removeValueIfPresent(j) == false) // because self-loop not possible for j
+					return false;
+				if (set.size() + 2 < minimalCircuitLength)
+					if (doms[j].removeValueIfPresent(head) == false)
+						return false;
 				if (doms[j].removeValuesIn(set) == false)
 					return false; // because we cannot close the circuit now (it would be too short)
 				if (doms[j].size() > 1)
 					break;
-				tmp[j] = true;
-				if (set.contains(j))
-					return false; // because two times the same value (and too short circuit)
+
 				set.add(j); // j belongs to the circuit
 				j = doms[j].singleValue(); // we know that the *new value of j* is different from the previous one
-				if (doms[j].removeValueIfPresent(j) == false) // because self-loop not possible for j
-					return false;
-			}
-			if (doms[j].size() == 1 && doms[j].singleValue() == set.dense[0]) {
-				// System.out.println("closed circuit " + (set.size() + 1));
-				// for (int l = 0; l < set.limit; l++) System.out.println(l + ": " + set.dense[l]);
-				// System.out.println(" plus " + j + " " + doms[j].singleValue());
-				for (int k = 0; k < scp.length; k++)
-					if (j != k && !set.contains(k) && doms[k].reduceToValue(k) == false)
-						return false;
-				return entailed();
+				if (before > 1) {
+					if (pheads.contains(j))
+						pheads.remove(j);
+					if (heads.contains(j))
+						tmp[j] = true;
+				}
+
+				if (j == head) { // closed circuit
+					for (int k = 0; k < scp.length; k++)
+						if (k != head && !set.contains(k) && doms[k].reduceToValue(k) == false)
+							return false;
+					return entailed();
+				}
 
 			}
 

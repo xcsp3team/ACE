@@ -475,7 +475,19 @@ public final class Kit {
 	}
 
 	public static int countIn(boolean value, boolean[] t) {
-		return IntStream.range(0, t.length).filter(i -> t[i] == value).map(i -> 1).sum();
+		int cnt = 0;
+		for (boolean b : t)
+			if (b == value)
+				cnt++;
+		return cnt;
+	}
+
+	public static int countIn(int value, int[] t) {
+		int cnt = 0;
+		for (int v : t)
+			if (v == value)
+				cnt++;
+		return cnt;
 	}
 
 	public static final long addSafe(long left, long right) {

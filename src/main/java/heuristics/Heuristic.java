@@ -13,7 +13,8 @@ package heuristics;
 import interfaces.Tags.TagMaximize;
 
 /**
- * This is the abstract root class for representing heuristics.
+ * This is the abstract root class for representing any heuristic (variable ordering heuristic, value ordering
+ * heuristic, revision ordering heuristic, etc.).
  * 
  * @author Christophe Lecoutre
  *
@@ -21,8 +22,9 @@ import interfaces.Tags.TagMaximize;
 public abstract class Heuristic {
 
 	/**
-	 * The coefficient used when computing scores of objects, the one with the best score being selected by this heuristic. The best one is the smallest one if
-	 * the multiplier/coefficient is -1 (minimization) and it is the greatest one if the multiplier is +1 (maximization).
+	 * The coefficient used when computing scores of objects, the one with the best score being selected by this
+	 * heuristic. The best one is the smallest one if the multiplier/coefficient is -1 (minimization) and it is the
+	 * greatest one if the multiplier is +1 (maximization).
 	 */
 	public int multiplier;
 

@@ -27,7 +27,6 @@ public final class Among extends ConstraintGlobal implements TagSymmetric, TagAC
 			if (values.contains(v))
 				cnt++;
 		return cnt == k;
-		// return IntStream.of(t).filter(v -> values.contains(v)).count() == k;
 	}
 
 	/**
@@ -35,6 +34,9 @@ public final class Among extends ConstraintGlobal implements TagSymmetric, TagAC
 	 */
 	private final Set<Integer> values;
 
+	/**
+	 * The limit (number of occurrences) to reach
+	 */
 	private final int k;
 
 	/**
@@ -44,7 +46,8 @@ public final class Among extends ConstraintGlobal implements TagSymmetric, TagAC
 
 	public Among(Problem pb, Variable[] list, int[] values, int k) {
 		super(pb, list);
-		this.values = IntStream.of(values).boxed().collect(Collectors.toCollection(HashSet::new)); // TODO HashSet better than TreeSet, right?
+		this.values = IntStream.of(values).boxed().collect(Collectors.toCollection(HashSet::new));
+		// TODO HashSet better than TreeSet, right?
 		this.k = k;
 		this.mixedVariables = new SetSparse(list.length);
 		control(Kit.isStrictlyIncreasing(values), "Values must be given in increasing order");

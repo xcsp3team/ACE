@@ -50,14 +50,29 @@ public abstract class HeuristicValues extends Heuristic {
 		return heuristic;
 	}
 
-	/** The variable that uses this value ordering heuristic. */
+	/**
+	 * The variable to which this value ordering heuristic is attached
+	 */
 	protected final Variable x;
 
-	/** The domain of the variable that uses this value ordering heuristic. Redundant field. */
+	/**
+	 * The domain of the variable x (redundant field)
+	 */
 	protected final Domain dx;
 
+	/**
+	 * The option settings concerning the value ordering heuristics
+	 */
 	protected SettingValh settings;
 
+	/**
+	 * Builds a value ordering heuristic for the specified variable
+	 * 
+	 * @param x
+	 *            the variable to which this object is attached
+	 * @param antiHeuristic
+	 *            indicates if one should take the reverse ordering of the natural one
+	 */
 	public HeuristicValues(Variable x, boolean antiHeuristic) {
 		super(antiHeuristic);
 		this.x = x;
@@ -67,7 +82,8 @@ public abstract class HeuristicValues extends Heuristic {
 	}
 
 	/**
-	 * Returns the (raw) score of the specified value index. This is usually the method to be overridden in order to define a new heuristic.
+	 * Returns the (raw) score of the specified value index. This is usually the method to be overridden in order to
+	 * define a new heuristic.
 	 */
 	protected abstract double scoreOf(int a);
 
@@ -76,7 +92,7 @@ public abstract class HeuristicValues extends Heuristic {
 	 */
 	protected abstract int identifyBestValueIndex();
 
-	public int bestIndex() {
+	public final int bestValueIndex() {
 		Solver solver = x.problem.solver;
 		if (solver.solutions.found == 0) {
 			if (settings.warmStart.length() > 0) {
@@ -89,11 +105,10 @@ public abstract class HeuristicValues extends Heuristic {
 					return a;
 			}
 		} else if (settings.solutionSaving && !(this instanceof Bivs2)) {
-			if (solver.restarter.numRun % settings.solutionSavingGap != 0) { // every k runs, we do not use solution saving
+			if (solver.restarter.numRun % settings.solutionSavingGap != 0) { // every k runs, we do not use solution
+																				// saving
 				// int a = -1;
-				// if (x == solver.impacting)
-				// a = dx.first();
-				// else
+				// if (x == solver.impacting) a = dx.first(); else
 				int a = solver.solutions.last[x.num];
 				if (dx.contains(a)) // && (!priorityVar || solver.rs.random.nextDouble() < 0.5))
 					return a;
@@ -107,16 +122,19 @@ public abstract class HeuristicValues extends Heuristic {
 	// ************************************************************************
 
 	/**
-	 * This class gives the description of a fixed/static value ordering heuristic. <br>
-	 * It means that all values are definitively ordered at construction.
+	 * This class gives the description of a fixed/static value ordering heuristic. It means that all values are
+	 * definitively ordered at construction.
 	 */
 	public static abstract class HeuristicValuesFixed extends HeuristicValues {
-		/** The set of (indexes of) values increasingly ordered by this static heuristic (the first one is the best one). */
+		/**
+		 * The set of indexes (of values) increasingly ordered by this static heuristic (the first one is the best one).
+		 */
 		private final int[] fixed;
 
 		public HeuristicValuesFixed(Variable x, boolean antiHeuristic) {
 			super(x, antiHeuristic);
-			// we build an ordered map with entries of the form (a, heuristic score of a multiplied by the optimization coefficient) for every a
+			// we build an ordered map with entries of the form (a, heuristic score of a multiplied by the optimization
+			// coefficient) for every a
 			Map<Integer, Double> map = IntStream.range(0, dx.initSize()).filter(a -> dx.contains(a)).boxed()
 					.collect(Collectors.toMap(a -> a, a -> scoreOf(a) * multiplier));
 			map = Kit.sort(map, (e1, e2) -> e1.getValue() > e2.getValue() ? -1 : e1.getValue() < e2.getValue() ? 1 : e1.getKey() - e2.getKey());
@@ -125,27 +143,10 @@ public abstract class HeuristicValues extends Heuristic {
 
 		@Override
 		protected final int identifyBestValueIndex() {
-			assert dx.size() > 0 : "The domain is empty";
 			for (int a : fixed)
 				if (dx.contains(a))
 					return a;
-			throw new AssertionError();
-		}
-
-		public static class LetterFrequency extends HeuristicValuesFixed implements TagExperimental {
-
-			// Static order according to the frequency of letters in French; 'a' is the 3rd most frequent letter, 'b' is the 17th most frequent
-			// letter,..., 'z' is the 23th most frequent letter. This corresponds to the order: e s a i t n r u l o d c p m v q f b g h j x y z w k
-			private static int[] letterPositionsFr = { 2, 17, 11, 10, 0, 16, 18, 19, 3, 20, 25, 8, 13, 5, 9, 12, 15, 6, 1, 4, 7, 14, 24, 21, 22, 23 };
-
-			public LetterFrequency(Variable x, boolean antiHeuristic) {
-				super(x, antiHeuristic);
-			}
-
-			@Override
-			public double scoreOf(int a) {
-				return letterPositionsFr[a];
-			}
+			throw new AssertionError("The domain is empty");
 		}
 
 		public static final class Srand extends HeuristicValuesFixed {
@@ -157,6 +158,23 @@ public abstract class HeuristicValues extends Heuristic {
 			@Override
 			public double scoreOf(int a) {
 				return x.problem.head.random.nextDouble();
+			}
+		}
+
+		public static final class LetterFrequency extends HeuristicValuesFixed implements TagExperimental {
+
+			// Static order according to the frequency of letters in French; 'a' is the 3rd most frequent letter, 'b' is
+			// the 17th most frequent letter,..., 'z' is the 23th most frequent letter. This corresponds to the order: e
+			// s a i t n r u l o d c p m v q f b g h j x y z w k
+			private static int[] letterPositionsFr = { 2, 17, 11, 10, 0, 16, 18, 19, 3, 20, 25, 8, 13, 5, 9, 12, 15, 6, 1, 4, 7, 14, 24, 21, 22, 23 };
+
+			public LetterFrequency(Variable x, boolean antiHeuristic) {
+				super(x, antiHeuristic);
+			}
+
+			@Override
+			public double scoreOf(int a) {
+				return letterPositionsFr[a];
 			}
 		}
 

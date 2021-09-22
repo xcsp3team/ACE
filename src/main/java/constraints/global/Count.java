@@ -24,33 +24,43 @@ import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import sets.SetSparse;
+import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Count extends ConstraintGlobal implements TagAC { // For the moment all inherited classes guarantee GAC
-
-	public static int countIn(int value, int[] t, int from, int to) {
-		int cnt = 0;
-		for (int i = from; i < to; i++)
-			if (t[i] == value)
-				cnt++;
-		return cnt;
-	}
-
-	public static int countIn(int value, int[] t) {
-		return countIn(value, t, 0, t.length);
-	}
+/**
+ * The constraint Count imposes that the number of variables from a specified list of variables that take their values
+ * from a specified set (but typically, the set only contains one value) respects a numerical condition. This constraint
+ * captures known constraints (usually) called AtLeast, AtMost, Exactly and Among. The constraint Among is defined in a
+ * separate file.
+ * 
+ * @author Christophe Lecoutre
+ */
+public abstract class Count extends ConstraintGlobal implements TagAC {
+	// For the moment all inherited classes guarantee GAC
 
 	/**
-	 * The list where the number of occurrences of the value is counted
+	 * The list where we have to count the number of occurrences of the value
 	 */
 	protected final Variable[] list;
 
 	/**
-	 * The value that must be counted in the list of the constraint.
+	 * The value whose number of occurrences (in the list) must be counted
 	 */
 	protected final int value;
 
+	/**
+	 * Builds a constraint Count for the specified problem
+	 * 
+	 * @param pb
+	 *            the problem to which the constraint is attached
+	 * @param scp
+	 *            the scope of the constraint
+	 * @param list
+	 *            the list where counting is done
+	 * @param value
+	 *            the value whose number of occurrences must be counted
+	 */
 	public Count(Problem pb, Variable[] scp, Variable[] list, int value) {
 		super(pb, scp);
 		this.list = list;
@@ -82,10 +92,22 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 		}
 
 		/**
-		 * The right-operand used in the comparison (i.e., the number of occurrences used as limit).
+		 * The right-operand used in the comparison (i.e., the number of occurrences used as a limit).
 		 */
 		protected final int k;
 
+		/**
+		 * Builds a constraint Count for the specified problem, with a limit (k) defined by a constant
+		 * 
+		 * @param pb
+		 *            the problem to which the constraint is attached
+		 * @param list
+		 *            the list where counting is done
+		 * @param value
+		 *            the value whose number of occurrences must be counted
+		 * @param k
+		 *            the limit used for comparison in the right-operand
+		 */
 		public CountCst(Problem pb, Variable[] list, int value, int k) {
 			super(pb, list, list, value);
 			this.k = k;
@@ -101,7 +123,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
-				return countIn(value, t) <= k;
+				return Kit.countIn(value, t) <= k;
 			}
 
 			public AtMostK(Problem pb, Variable[] list, int value, int k) {
@@ -111,7 +133,8 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 			@Override
 			public boolean runPropagator(Variable x) {
 				if (!x.dom.containsOnlyValue(value))
-					return true; // because we only filter when the recently filtered variable x has been assigned to the value
+					return true; // because we only filter when the recently filtered variable x has been assigned to
+									// the value
 				int cnt = 0;
 				for (Variable y : scp)
 					if (y.dom.containsOnlyValue(value) && ++cnt > k)
@@ -136,7 +159,8 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 			@Override
 			public boolean runPropagator(Variable x) {
 				if (!x.dom.containsOnlyValue(value))
-					return true; // because we only filter when the recently filtered variable x has been assigned to the value
+					return true; // because we only filter when the recently filtered variable x has been assigned to
+									// the value
 				for (Variable y : scp)
 					if (y != x && y.dom.removeValueIfPresent(value) == false)
 						return false;
@@ -151,7 +175,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
-				return countIn(value, t) >= k;
+				return Kit.countIn(value, t) >= k;
 			}
 
 			/**
@@ -162,7 +186,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 			public AtLeastK(Problem pb, Variable[] list, int value, int k) {
 				super(pb, list, value, k);
 				if (k > 1) {
-					sentinels = new SetSparse(list.length);
+					this.sentinels = new SetSparse(list.length);
 					IntStream.range(0, k + 1).forEach(i -> sentinels.add(i)); // k+1 sentinels
 				}
 			}
@@ -242,7 +266,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
-				return countIn(value, t) == k;
+				return Kit.countIn(value, t) == k;
 			}
 
 			public ExactlyK(Problem pb, Variable[] list, int value, int k) {
@@ -251,7 +275,8 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 
 			@Override
 			public boolean runPropagator(Variable x) {
-				if (x.dom.size() > 1 && x.dom.containsValue(value)) // removing these two lines, and add TagCompletFilteringAtEachCall is an alternative
+				if (x.dom.size() > 1 && x.dom.containsValue(value))
+					// removing these two lines, and adding TagCallCompleteFiltering is an alternative
 					return true;
 
 				// nGuaranteedOccurrences denotes the number of singleton domains with the specified value
@@ -317,10 +342,28 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 			}
 		}
 
+		/**
+		 * The right-operand used in the comparison (i.e., the number of occurrences used as a limit).
+		 */
 		protected final Variable k;
 
-		protected final int indexOfKInList; // -1 if not present
+		/**
+		 * The index of the variable in the list if present, -1 otherwise
+		 */
+		protected final int indexOfKInList;
 
+		/**
+		 * Builds a constraint Count for the specified problem, with a limit (k) defined by a variable
+		 * 
+		 * @param pb
+		 *            the problem to which the constraint is attached
+		 * @param list
+		 *            the list where counting is done
+		 * @param value
+		 *            the value whose number of occurrences must be counted
+		 * @param k
+		 *            the limit used for comparison in the right-operand
+		 */
 		public CountVar(Problem pb, Variable[] list, int value, Variable k) {
 			super(pb, pb.vars(list, k), list, value);
 			this.k = k;
@@ -330,23 +373,29 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 		}
 
 		/**
-		 * Exactly k variables of the specified vector of variables, where k is a variable, must be assigned to the specified value
-		 * 
+		 * Exactly k variables of the specified vector of variables, where k is a variable, must be assigned to the
+		 * specified value
 		 */
 		public final static class ExactlyVarK extends CountVar implements TagCallCompleteFiltering {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
-				return indexOfKInList != -1 ? countIn(value, t) == t[indexOfKInList] : countIn(value, t, 0, t.length - 1) == t[t.length - 1];
+				if (indexOfKInList != -1)
+					return Kit.countIn(value, t) == t[indexOfKInList];
+				int cnt = 0;
+				for (int i = 0; i < t.length - 1; i++)
+					if (t[i] == value)
+						cnt++;
+				return cnt == t[t.length - 1];
+			}
+
+			public ExactlyVarK(Problem pb, Variable[] list, int value, Variable k) {
+				super(pb, list, value, k);
 			}
 
 			@Override
 			public int[] symmetryMatching() {
 				return IntStream.range(0, scp.length).map(i -> i == indexOfKInList || (indexOfKInList == -1 && i == scp.length - 1) ? 2 : 1).toArray();
-			}
-
-			public ExactlyVarK(Problem pb, Variable[] list, int value, Variable k) {
-				super(pb, list, value, k);
 			}
 
 			@Override
@@ -365,22 +414,24 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 					if (vk < nGuaranteedOccurrences || vk > nPossibleOccurrences)
 						return dk.fail();
 				} else {
-					// possible update of the domain of k when present in the vector, first by removing value (if present)
-					// so as to update immediately nPossibleOccurrences
+					// possible update of the domain of k when present in the vector, first by removing value (if
+					// present) so as to update immediately nPossibleOccurrences
 					if (indexOfKInList != -1) {
 						int a = dk.toIdxIfPresent(value);
 						if (a != -1) {
 							boolean deleted = false;
 							for (int b = dk.first(); b != -1; b = dk.next(b))
 								if (b == a) {
-									if (value < nGuaranteedOccurrences + 1 || nPossibleOccurrences < value) { // +1 by assuming we assign the value
+									if (value < nGuaranteedOccurrences + 1 || nPossibleOccurrences < value) {
+										// +1 by assuming we assign the value
 										if (dk.remove(a) == false)
 											return false;
 										deleted = true;
 									}
 								} else {
 									int vb = dk.toVal(b);
-									if (vb < nGuaranteedOccurrences || nPossibleOccurrences - 1 < vb) { // -1 by assuming we assign vb (and not value)
+									if (vb < nGuaranteedOccurrences || nPossibleOccurrences - 1 < vb) {
+										// -1 by assuming we assign vb (and not value)
 										if (dk.remove(b) == false)
 											return false;
 									}
@@ -400,33 +451,25 @@ public abstract class Count extends ConstraintGlobal implements TagAC { // For t
 					if (vk == nGuaranteedOccurrences) {
 						int toremove = nPossibleOccurrences - vk;
 						// remove value from all non singleton domains
-						// for (int i = futvars.limit; i >= 0; i--) {
-						// Domain dom = scp[futvars.dense[i]].dom;
-						// if (dom.size() > 1 && dom.isPresentValue(value)) {
-						// dom.removeValue(value); // no inconsistency possible
-						// toremove--;
-						// }
-						// }
-						if (toremove > 0)
-							for (Variable x : list)
-								if (x.dom.size() > 1 && x.dom.containsValue(value))
-									x.dom.removeValue(value);
+						for (int i = futvars.limit; toremove > 0 && i >= 0; i--) {
+							Domain dom = scp[futvars.dense[i]].dom;
+							if (dom.size() > 1 && dom.containsValue(value)) {
+								dom.removeValue(value); // no inconsistency possible
+								toremove--;
+							}
+						}
 						return entailed();
 					}
 					if (vk == nPossibleOccurrences) {
 						int toassign = vk - nGuaranteedOccurrences;
 						// // assign all non singleton domains containing the value
-						// for (int i = futvars.limit; i >= 0 && toassign > 0; i--) {
-						// Domain dom = scp[futvars.dense[i]].dom;
-						// if (dom.size() > 1 && dom.isPresentValue(value)) {
-						// dom.reduceToValue(value);
-						// toassign--;
-						// }
-						// }
-						if (toassign > 0)
-							for (Variable x : list)
-								if (x.dom.size() > 1 && x.dom.containsValue(value))
-									x.dom.reduceToValue(value);
+						for (int i = futvars.limit; toassign > 0 && i >= 0; i--) {
+							Domain dom = scp[futvars.dense[i]].dom;
+							if (dom.size() > 1 && dom.containsValue(value)) {
+								dom.reduceToValue(value); // no inconsistency possible
+								toassign--;
+							}
+						}
 						return entailed();
 					}
 				}

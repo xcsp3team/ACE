@@ -178,7 +178,8 @@ public class Control {
 		String s_rs = "Records all found solutions in a list of " + Solutions.class.getName();
 
 		public TypeFramework framework = null;
-		public long nSearchedSolutions = addL("nSearchedSolutions", "s", -1, s_s); // -1 for indicating that it is not initialized
+		public long nSearchedSolutions = addL("nSearchedSolutions", "s", -1, s_s); // -1 for indicating that it is not
+																					// initialized
 		public final long timeout = addL("timeout", "t", PLUS_INFINITY, s_timeout);
 		public int verbose = addI("verbose", "v", 0, s_verbose);
 		public int jsonLimit = addI("jsonLimit", "jsonLimit", 1000, "");
@@ -308,7 +309,8 @@ public class Control {
 
 		private Object[] controlAndFinalizeVariablesLists(Object[] priority1Vars, Object[] priority2Vars) {
 			// Selected variables are only valid for XCSP
-			// control about instantiatedVars and instantiatedVals is made in reduceDomainsFromUserInstantiation of Problem
+			// control about instantiatedVars and instantiatedVals is made in reduceDomainsFromUserInstantiation of
+			// Problem
 			Object[] t = Kit.concat(instantiatedVars, priority1Vars, priority2Vars);
 			if (t.length > 0) {
 				Kit.control(Stream.of(t).distinct().count() == t.length, () -> "Two variables are identical in your lists (-sel -pr1 -pr2)");
@@ -358,7 +360,8 @@ public class Control {
 		public final int arityLimitForVapArrayLb = addI("arityLimitForVapArrayLb", "alvalb", 2, "");
 		public final int arityLimitForVapArrayUb = addI("arityLimitForVapArrayUb", "alvaub", 10000, "");
 
-		// public boolean normalizeCtrs = addB("normalizeCtrs", "nc", false, "Merging constraints of similar scope (when possible)", TO_IMPLEMENT);
+		// public boolean normalizeCtrs = addB("normalizeCtrs", "nc", false, "Merging constraints of similar scope (when
+		// possible)", TO_IMPLEMENT);
 	}
 
 	public final SettingCtrs constraints = new SettingCtrs();
@@ -500,7 +503,8 @@ public class Control {
 		String s_rrc = "Coefficient used for increasing the cutoff, when restart data are reset";
 
 		public int nRunsLimit = addI("nRunsLimit", "r_n", Integer.MAX_VALUE, s_n);
-		public long cutoff = addL("cutoff", "r_c", 10, s_c); // for COP, this value is initially multiplied by 10 in Restarter
+		public long cutoff = addL("cutoff", "r_c", 10, s_c); // for COP, this value is initially multiplied by 10 in
+																// Restarter
 		public double factor = addD("factor", "r_f", 1.1, s_f);
 		public final RestartMeasure measure = addE("measure", "r_m", RestartMeasure.FAILED, s_m);
 		public int nRestartsResetPeriod = addI("nRestartsResetPeriod", "r_rrp", 90, s_rrp);
@@ -561,7 +565,8 @@ public class Control {
 		public final boolean anti = addB("anti", "anti_valh", false, "must we follow the anti heuristic?");
 
 		public boolean runProgressSaving = addB("runProgressSaving", "rps", false, "");
-		// solution saving breaks determinism of search trees because it depends in which order domains are pruned (and becomes singleton or not)
+		// solution saving breaks determinism of search trees because it depends in which order domains are pruned (and
+		// becomes singleton or not)
 		public boolean solutionSaving = addB("solutionSaving", "sos", true, "");
 		public final int solutionSavingGap = addI("solutionSavingGap", "sosg", Integer.MAX_VALUE, "");
 		public String warmStart = addS("warmStart", "warm", "", "").trim();
@@ -569,8 +574,11 @@ public class Control {
 		public boolean bivsStoppedAtFirstSolution = addB("bivsStoppedAtFirstSolution", "bivs_s", true, "");
 		public boolean bivsOptimistic = addB("bivsOptimistic", "bivs_o", true, "");
 		public final int bivsDistance = addI("bivsDistance", "bivs_d", 2, "0: only if in the objective constraint, 1: if at distance 0 or 1, 2: any varriable");
-		public final int bivsLimit = addI("bivsLimit", "bivs_l", Integer.MAX_VALUE, ""); // MAX_VALUE means no control/limit ; otherwise bivs applied only if
-																							// the domain size is <= bivsl
+		public final int bivsLimit = addI("bivsLimit", "bivs_l", Integer.MAX_VALUE, ""); // MAX_VALUE means no
+																							// control/limit ; otherwise
+																							// bivs applied only if
+																							// the domain size is <=
+																							// bivsl
 		public final boolean optValHeuristic = addB("optValHeuristic", "ovh", false, "");
 	}
 
@@ -584,8 +592,6 @@ public class Control {
 	public final SettingRevh revh = new SettingRevh();
 
 	public class SettingLocalSearch extends SettingGroup {
-		// public final String classForNeighborHeuristic = addS("classForNeighborHeuristic", "cnh", BestGlobal.class, "");
-		// public final String classForTabu = addS("classForTabu", "cft", TabuManagerVariableValue.class, "");
 		public final int tabuListSize = addI("tabuListSize", "tabs", 5, "");
 		public final double thresholdForRandomVariableSelection = addD("thresholdForRandomVariableSelection", "trvars", 0.0, "");
 		public final double thresholdForRandomValueSelection = addD("thresholdForRandomValueSelection", "trvals", 0.0, "");
@@ -628,7 +634,8 @@ public class Control {
 		Kit.control(optimization.lb <= optimization.ub);
 		// as
 		// C0
-		// Kit.control(!constraints.normalizeCtrs || (!problem.isSymmetryBreaking() && general.framework != TypeFramework.MAXCSP));
+		// Kit.control(!constraints.normalizeCtrs || (!problem.isSymmetryBreaking() && general.framework !=
+		// TypeFramework.MAXCSP));
 		settings.controlKeys();
 		if (general.makeExceptionsVisible)
 			org.xcsp.modeler.Compiler.ev = true;
@@ -713,7 +720,8 @@ public class Control {
 								: lastCharacter == 'm' ? baseValue * 1000000 : (Double) Kit.exit("Bad character for " + tag + " " + att);
 				Kit.control((longValue && Long.MIN_VALUE <= value && value <= Long.MAX_VALUE)
 						|| (!longValue && Integer.MIN_VALUE <= value && value <= Integer.MAX_VALUE));
-				return longValue ? new Long((long) value) : (Number) new Integer((int) value); // BE CAREFUL: problem if cast omitted
+				return longValue ? new Long((long) value) : (Number) new Integer((int) value); // BE CAREFUL: problem if
+																								// cast omitted
 			}
 
 			/** Returns the value (an integer) of the specified attribute for the specified tag. */

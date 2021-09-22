@@ -47,7 +47,8 @@ import variables.DomainInfinite;
 import variables.Variable;
 
 /**
- * This is the root class for any constraint 'sum'. The three directs (abstract) subclasses are: SumSimple, SumWeighted and SumViewWeighted.
+ * This is the root class for any constraint Sum. The three directs (abstract) subclasses are: SumSimple, SumWeighted
+ * and SumViewWeighted.
  * 
  * @author Christophe Lecoutre
  */
@@ -59,12 +60,14 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 	protected long limit;
 
 	/**
-	 * The minimal sum (of the left-hand expression) that can be computed at a given moment; used during filtering in most of the subclasses
+	 * The minimal sum (of the left-hand expression) that can be computed at a given moment; used during filtering in
+	 * most of the subclasses
 	 */
 	protected long min;
 
 	/**
-	 * The maximal sum (of the left-hand expression) that can be computed at a given moment; used during filtering in most of the subclasses
+	 * The maximal sum (of the left-hand expression) that can be computed at a given moment; used during filtering in
+	 * most of the subclasses
 	 */
 	protected long max;
 
@@ -109,8 +112,9 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 	 *********************************************************************************************/
 
 	/**
-	 * Root class for managing simple sum constraints (i.e., sum constraints without integer coefficients associated with variables). Note that no overflow is
-	 * possible because all sum of integer values (int) cannot exceed long values.
+	 * Root class for managing simple sum constraints (i.e., sum constraints without integer coefficients associated
+	 * with variables). Note that no overflow is possible because all sum of integer values (int) cannot exceed long
+	 * values.
 	 */
 	public static abstract class SumSimple extends Sum implements TagSymmetric {
 
@@ -313,7 +317,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			public SumSimpleEQ(Problem pb, Variable[] scp, long limit) {
 				super(pb, scp, limit);
-				this.ac = Stream.of(scp).allMatch(x -> x.dom.initSize() <= 2); // in this case, bounds consistency is equivalent to AC
+				this.ac = Stream.of(scp).allMatch(x -> x.dom.initSize() <= 2); // in this case, bounds consistency is
+																				// equivalent to AC
 			}
 
 			@Override
@@ -396,8 +401,10 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					if (x != sentinel)
 						sum += x.dom.singleValue(); // no overflow possible because int values are added to a long
 				long v = limit - sum;
-				if (sum + v == limit && Integer.MIN_VALUE <= v && v <= Integer.MAX_VALUE) // if no overflow and within Integer bounds
-					sentinel.dom.removeValueIfPresent((int) v); // no inconsistency possible since at least two values in the domain
+				if (sum + v == limit && Integer.MIN_VALUE <= v && v <= Integer.MAX_VALUE) // if no overflow and within
+																							// Integer bounds
+					sentinel.dom.removeValueIfPresent((int) v); // no inconsistency possible since at least two values
+																// in the domain
 				return true; // TODO it seems that we can write return entailed()
 			}
 
@@ -554,7 +561,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		public SumWeighted(Problem pb, Variable[] scp, int[] coeffs, long limit) {
 			super(pb, scp);
 			this.coeffs = coeffs;
-			control(minPossibleSum(scp, coeffs) <= maxPossibleSum(scp, coeffs)); // Important: we check this way that no overflow is possible
+			control(minPossibleSum(scp, coeffs) <= maxPossibleSum(scp, coeffs)); // Important: we check this way that no
+																					// overflow is possible
 			setLimit(limit);
 			defineKey(coeffs, limit);
 			control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])), "" + Kit.join(coeffs));
@@ -702,7 +710,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			public SumWeightedEQ(Problem pb, Variable[] scp, int[] coeffs, long limit) {
 				super(pb, scp, coeffs, limit);
-				this.ac = Stream.of(scp).allMatch(x -> x.dom.initSize() <= 2); // in this case, bounds consistency is GAC
+				this.ac = Stream.of(scp).allMatch(x -> x.dom.initSize() <= 2); // in this case, bounds consistency is
+																				// GAC
 			}
 
 			@Override
@@ -790,7 +799,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				long sum = 0;
 				for (int i = 0; i < scp.length; i++)
 					if (scp[i] != sentinel)
-						sum += scp[i].dom.singleValue() * coeffs[i]; // no overflow possible because it was controlled at construction
+						sum += scp[i].dom.singleValue() * coeffs[i]; // no overflow possible because it was controlled
+																		// at construction
 					else
 						p = i;
 				long v = (limit - sum) / coeffs[p];
@@ -1096,11 +1106,13 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		protected final View[] views;
 
 		public SumViewWeighted(Problem pb, XNode<IVar>[] trees, int[] coeffs, long limit) {
-			super(pb, Utilities.collect(Variable.class, Stream.of(trees).map(tree -> tree.vars()))); // pb.translate(Utilities.collect(IVar.class, trees)));
+			super(pb, Utilities.collect(Variable.class, Stream.of(trees).map(tree -> tree.vars()))); // pb.translate(Utilities.collect(IVar.class,
+																										// trees)));
 			this.coeffs = coeffs;
 			// System.out.println("trees " + Kit.join(trees));
 			this.views = Stream.of(trees).map(tree -> tree.type == TypeExpr.VAR ? new ViewVariable(tree) : new ViewTree01(tree)).toArray(View[]::new);
-			control(minComputableObjectiveValue() <= maxComputableObjectiveValue()); // Important: we check this way that no overflow is possible
+			control(minComputableObjectiveValue() <= maxComputableObjectiveValue()); // Important: we check this way
+																						// that no overflow is possible
 			setLimit(limit);
 			defineKey(coeffs, limit);
 			control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])));

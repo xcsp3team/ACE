@@ -45,7 +45,7 @@ public abstract class HeuristicVariablesFixed extends HeuristicVariables impleme
 	}
 
 	@Override
-	protected Variable bestUnpriorityVar() {
+	protected Variable bestUnpriorityVariable() {
 		assert solver.problem.priorityVars.length == 0;
 		for (int i = solver.propagation.performingProperSearch ? 0 : solver.futVars.nPast(); i < ordering.length; i++)
 			if (!ordering[i].assigned()) // required in all cases because some variables may have been disconnected

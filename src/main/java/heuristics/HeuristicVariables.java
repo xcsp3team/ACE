@@ -26,7 +26,8 @@ import variables.Variable;
 
 /**
  * This class gives the description of a variable ordering heuristic. <br>
- * A variable ordering heuristic is used by a backtrack search solver to select a variable (to be assigned) at each step of search. <br>
+ * A variable ordering heuristic is used by a backtrack search solver to select a variable (to be assigned) at each step
+ * of search. <br>
  */
 public abstract class HeuristicVariables extends Heuristic {
 
@@ -78,19 +79,27 @@ public abstract class HeuristicVariables extends Heuristic {
 		}
 	}
 
-	/** The backtrack search solver that uses this variable ordering heuristic. */
+	/**
+	 * The solver to which this object is attached
+	 */
 	protected final Solver solver;
 
-	/** The variables that must be assigned in priority. */
+	/**
+	 * The variables that must be assigned in priority (possibly, an empty array).
+	 */
 	protected Variable[] priorityVars;
 
 	/**
-	 * Relevant only if priorityVariables is not an array of size 0. Variables must be assigned in the order strictly given by priorityVariables from 0 to
-	 * nbStrictPriorityVariables-1. Variables in priorityVariables recorded between nbStrictPriorityVariables and priorityVariables.length-1 must then be
-	 * assigned in priority but in any order given by the heuristic. Beyond priorityVariables.length-1, the heuristic can select any future variable.
+	 * Relevant only if priorityVars is not an array of size 0. Variables must be assigned in the order strictly given
+	 * by priorityVars from 0 to nbStrictlyPriorityVars-1. Variables in priorityVars recorded between
+	 * nbStriclytPriorityVars and priorityVars.length-1 must then be assigned in priority but in any order given by the
+	 * heuristic. Beyond priorityVars.length-1, the heuristic can select any future variable.
 	 */
 	private int nStrictlyPriorityVars;
 
+	/**
+	 * The option settings concerning the variable ordering heuristics
+	 */
 	protected SettingVarh settings;
 
 	protected BestScoredVariable bestScoredVariable;
@@ -106,8 +115,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	}
 
 	public HeuristicVariables(Solver solver, boolean antiHeuristic) {
-		super(antiHeuristic); // anti ? (this instanceof TagMinimize ? TypeOptimization.MAX : TypeOptimization.MIN ) : (this instanceof TagMinimize ?
-								// TypeOptimization.MAX : TypeOptimization.MIN );
+		super(antiHeuristic);
 		this.solver = solver;
 		SettingVars settingVars = solver.head.control.variables;
 		if (settingVars.priorityVars.length > 0) {
@@ -121,19 +129,30 @@ public abstract class HeuristicVariables extends Heuristic {
 		this.bestScoredVariable = new BestScoredVariable(solver.head.control.varh.discardAux);
 	}
 
-	/** Returns the score of the specified variable. This is the method to override when defining a new heuristic. */
+	/**
+	 * Returns the score of the specified variable. This is the method to override when defining a new heuristic.
+	 */
 	public abstract double scoreOf(Variable x);
 
-	/** Returns the score of the specified variable, while considering the optimization coeff (i.e., minimization or maximization). */
+	/**
+	 * Returns the "optimized" score of the specified variable, i.e., the score of the variable while considering the
+	 * optimization multiplier (to deal with either minimization or maximization).
+	 * 
+	 * @param x
+	 *            a variable
+	 * @return the "optimized" score of the specified variable
+	 */
 	public final double scoreOptimizedOf(Variable x) {
 		if (x.dom instanceof DomainInfinite)
-			return multiplier == -1 ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY; // because such variables must be computed (and not
-																							// assigned)
+			// because such variables must be computed (and not assigned); but EXPERIMENTAL
+			return multiplier == -1 ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 		return scoreOf(x) * multiplier;
 	}
 
-	/** Returns the preferred variable among those that are priority. */
-	private Variable bestPriorityVar() {
+	/**
+	 * Returns the preferred variable among those that are priority.
+	 */
+	private Variable bestPriorityVariable() {
 		int nPast = solver.futVars.nPast();
 		if (nPast < priorityVars.length) {
 			if (nPast < nStrictlyPriorityVars)
@@ -159,13 +178,17 @@ public abstract class HeuristicVariables extends Heuristic {
 		return null;
 	}
 
-	/** Returns the preferred variable among those that are not priority. Called only if no variable has been selected in priority. */
-	protected abstract Variable bestUnpriorityVar();
+	/**
+	 * Returns the preferred variable among those that are not priority.
+	 */
+	protected abstract Variable bestUnpriorityVariable();
 
-	/** Returns the preferred variable (next variable to be assigned) of the problem. */
-	public final Variable bestVar() {
-		Variable x = bestPriorityVar();
-		return x != null ? x : bestUnpriorityVar();
+	/**
+	 * Returns the preferred variable, i.e., the variable that should be assigned next by the solver
+	 */
+	public final Variable bestVariable() {
+		Variable x = bestPriorityVariable();
+		return x != null ? x : bestUnpriorityVariable();
 	}
 
 	/**
@@ -189,8 +212,10 @@ public abstract class HeuristicVariables extends Heuristic {
 			nOrdered = 0;
 		}
 
-		private int[] order;
+		private final int[] order;
+
 		private int nOrdered;
+
 		private int posLastConflict = -1;
 
 		public Memory(Solver solver, boolean antiHeuristic) {
@@ -200,7 +225,7 @@ public abstract class HeuristicVariables extends Heuristic {
 		}
 
 		@Override
-		protected final Variable bestUnpriorityVar() {
+		protected final Variable bestUnpriorityVariable() {
 			int pos = -1;
 			for (int i = 0; i < nOrdered; i++)
 				if (!solver.problem.variables[order[i]].assigned()) {
@@ -226,7 +251,8 @@ public abstract class HeuristicVariables extends Heuristic {
 
 		@Override
 		public double scoreOf(Variable x) {
-			return x.ddeg() / x.dom.size(); // TODO x.wdeg() is currently no more possible car weighetd degrees are in another heuristic class
+			return x.ddeg() / x.dom.size(); // TODO x.wdeg() is currently no more possible car weighetd degrees are in
+											// another heuristic class
 		}
 	}
 

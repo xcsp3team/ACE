@@ -35,7 +35,7 @@ public abstract class HeuristicVariablesDirect extends HeuristicVariables {
 		}
 
 		@Override
-		protected Variable bestUnpriorityVar() {
+		protected Variable bestUnpriorityVariable() {
 			return solver.futVars.get(solver.head.random.nextInt(solver.futVars.size()));
 		}
 	}

@@ -30,7 +30,7 @@ import variables.Variable;
 
 /**
  * This constraint ensures that all values assigned to the variables of its scope are all equal. It is essentially an
- * ease of modeling for the user (because it can be decomposed into binary equality constraints).
+ * ease of modeling for the user (because it can be easily decomposed into binary equality constraints).
  * 
  * @author Christophe Lecoutre
  * 
@@ -94,8 +94,8 @@ public final class AllEqual extends ConstraintGlobal implements ObserverOnBacktr
 		if (remainingValues.size() == 1) // only one remaining value, so entailed
 			return entailed();
 
-		Variable y = x.dom.size() == 1 ? x : Variable.firstSingletonVariableIn(scp); // we look for a variable with a
-																						// singleton domain
+		// we look for a variable with a singleton domain
+		Variable y = x.dom.size() == 1 ? x : Variable.firstSingletonVariableIn(scp);
 
 		if (y != null) { // we remove the unique value from the domains of the future variables
 			int v = y.dom.singleValue();
