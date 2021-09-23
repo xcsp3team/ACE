@@ -238,7 +238,7 @@ public class Restarter implements ObserverOnRuns {
 		public static abstract class HeuristicFreezing {
 
 			public static HeuristicFreezing buildFor(RestarterLNS restarter) {
-				if (restarter.solver.head.control.lns.heuristic.equals("Impact"))
+				if (restarter.solver.head.control.lns.clazz.equals("Impact"))
 					return new Impact(restarter);
 				return new Rand(restarter);
 			}

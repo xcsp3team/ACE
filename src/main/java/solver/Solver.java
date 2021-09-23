@@ -10,6 +10,7 @@
 
 package solver;
 
+import static java.lang.Integer.parseInt;
 import static java.util.stream.Collectors.toCollection;
 import static org.xcsp.common.Types.TypeFramework.COP;
 import static utility.Enums.Stopping.EXCEEDED_TIME;
@@ -26,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -58,19 +60,7 @@ import utility.Kit;
 import variables.DomainInfinite;
 import variables.Variable;
 
-public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
-
-	@Override
-	public void beforeRun() {
-		if (runProgressSaver != null)
-			runProgressSaver.beforeRun();
-	}
-
-	@Override
-	public void afterRun() {
-		if (runProgressSaver != null)
-			runProgressSaver.afterRun();
-	}
+public class Solver implements ObserverOnBacktracksSystematic {
 
 	@Override
 	public void restoreBefore(int depth) {
@@ -82,20 +72,26 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	 * classes for warm starts and run progress saving
 	 *********************************************************************************************/
 
+	/**
+	 * A warm starter allows us to record an instantiation (solution) given by the user, and to guide search from it (as
+	 * long as no solution is found). This is mainly useful for optimization problems.
+	 */
 	public final class WarmStarter {
-		int[] sol;
+
+		/**
+		 * The recorded instantiation (typically, solution) to be used for guiding search. It contains value indexes
+		 * (and not values).
+		 */
+		private int[] instantiation;
 
 		private String[] possiblyDecompact(String[] t) {
 			List<String> list = null;
 			for (int i = 0; i < t.length; i++) {
-				boolean compact = t[i].contains(Constants.TIMES);
-				if (compact && list == null) {
-					list = new ArrayList<>();
-					for (int j = 0; j < i; j++)
-						list.add(t[j]);
-				}
+				boolean presentTimes = t[i].contains(Constants.TIMES);
+				if (presentTimes && list == null) // putting previous elements in a new list
+					list = IntStream.range(0, i).mapToObj(j -> t[j]).collect(Collectors.toCollection(ArrayList::new));
 				if (list != null) {
-					if (compact) {
+					if (presentTimes) {
 						String[] tmp = t[i].split(Constants.TIMES);
 						assert tmp.length == 2;
 						for (int j = Integer.parseInt(tmp[1]) - 1; j >= 0; j--)
@@ -104,10 +100,23 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 						list.add(t[i]);
 				}
 			}
-			return list != null ? list.stream().toArray(String[]::new) : t;
+			int n = problem.variables.length;
+			if (list == null) {
+				if (t.length == n)
+					return t; // because good size
+				list = Stream.of(t).collect(Collectors.toCollection(ArrayList::new));
+			}
+			int p = list.size();
+			control(1 < p && p <= n, () -> p + " vs " + n + (p == 1 ? " did you control the path for the file?" : ""));
+			if (p < n) {
+				log.warning("Missing values are completed with * (for presumably auxiliary variables). Is that correct?");
+				for (int j = 0; j < n - p; j++)
+					list.add("*");
+			}
+			return list.stream().toArray(String[]::new);
 		}
 
-		WarmStarter(String s) {
+		private WarmStarter(String s) {
 			File file = new File(s);
 			if (file.exists()) { // TODO if the string starts with ~/, that does not work (the path must be explicit)
 				try (BufferedReader in = new BufferedReader(new FileReader(s))) {
@@ -120,30 +129,32 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 				}
 			}
 			String[] t = possiblyDecompact(s.split(Constants.REG_WS));
-			int p = t.length, n = problem.variables.length;
-			Kit.control(1 < p && p <= n, () -> p + " vs " + n + (p == 1 ? " did you control the path for the file?" : ""));
-			if (p < n) {
-				Kit.log.warning("Missing values are completed with * (for presumably auxiliary variables). Is that correct?");
-				t = Stream.concat(Stream.of(t), IntStream.range(0, n - p).mapToObj(i -> "*")).toArray(String[]::new);
-			}
-			this.sol = new int[t.length];
-			for (int i = 0; i < sol.length; i++) {
-				if (t[i].equals("*"))
-					sol[i] = -1;
-				else {
-					int a = problem.variables[i].dom.toIdxIfPresent(Integer.parseInt(t[i]));
-					Kit.control(a != -1, "pb with " + problem.variables[i] + " and " + t[i]);
-					sol[i] = a;
-				}
-			}
+			this.instantiation = IntStream.range(0, t.length).map(i -> t[i].equals("*") ? -1 : problem.variables[i].dom.toIdxIfPresent(parseInt(t[i])))
+					.toArray();
+			assert IntStream.range(0, t.length).noneMatch(i -> !t[i].equals("*") && instantiation[i] == -1);
 		}
 
-		public int valueOf(Variable x) {
-			return sol[x.num];
+		public int valueIndexOf(Variable x) {
+			return instantiation[x.num];
 		}
 	}
 
-	public final class RunProgressSaver {
+	public final class RunProgressSaver implements ObserverOnRuns {
+
+		@Override
+		public void beforeRun() {
+			currSize = 0;
+		}
+
+		@Override
+		public void afterRun() {
+			if (desactivated())
+				return;
+			for (int i = 0; i < prevLongestRunBranch.length; i++)
+				prevLongestRunBranch[i] = currLongestRunBranch[i];
+			prevSize = currSize;
+		}
+
 		int[] prevLongestRunBranch;
 		int prevSize;
 		int[] currLongestRunBranch;
@@ -155,7 +166,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 		}
 
 		boolean desactivated() {
-			return solutions.found > 0 && head.control.valh.solutionSaving;
+			return solutions.found > 0 && head.control.valh.solutionSaving > 0;
 		}
 
 		void manageEmptyDomainBeforeBacktracking() {
@@ -170,19 +181,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 			}
 		}
 
-		void beforeRun() {
-			currSize = 0;
-		}
-
-		void afterRun() {
-			if (desactivated())
-				return;
-			for (int i = 0; i < prevLongestRunBranch.length; i++)
-				prevLongestRunBranch[i] = currLongestRunBranch[i];
-			prevSize = currSize;
-		}
-
-		public int valueOf(Variable x) {
+		public int valueIndexOf(Variable x) {
 			return prevSize == 0 ? -1 : prevLongestRunBranch[x.num]; // prevSize == 0 means to be at the first run
 		}
 	}
@@ -366,7 +365,7 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 	private List<ObserverOnRuns> collectObserversOnRuns() {
 		if (!head.control.solving.enableSearch)
 			return new ArrayList<>();
-		Stream<Object> stream = Stream.concat(Stream.of(this, problem.optimizer, restarter, decisions, heuristic, lastConflict, ipsRecorder,
+		Stream<Object> stream = Stream.concat(Stream.of(this, problem.optimizer, restarter, runProgressSaver, decisions, heuristic, lastConflict, ipsRecorder,
 				(nogoodRecorder != null ? nogoodRecorder.symmetryHandler : null), head.output, stats), Stream.of(problem.constraints));
 		return stream.filter(c -> c instanceof ObserverOnRuns).map(o -> (ObserverOnRuns) o).collect(toCollection(ArrayList::new));
 	}
@@ -536,11 +535,15 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 		this.nogoodRecorder = NogoodRecorder.buildFor(this); // may be null
 		this.ipsRecorder = IpsRecorder.buildFor(this); // may be null
 		this.proofer = ipsRecorder != null && ipsRecorder.reductionOperator.enablePElimination() ? new Proofer() : null;
+		this.nogoodMinimizer = new NogoodMinimizer(this);
 
 		this.entailed = new SetSparseReversible(problem.constraints.length, nLevels, false);
 
 		this.tracer = head.control.general.trace.length() != 0 ? new Tracer(head.control.general.trace) : null;
 		this.stats = new Statistics(this);
+
+		this.runProgressSaver = head.control.valh.runProgressSaving ? new RunProgressSaver() : null;
+		this.warmStarter = head.control.valh.warmStart.length() > 0 ? new WarmStarter(head.control.valh.warmStart) : null;
 
 		this.observersOnSolving = collectObserversOnSolving();
 		this.observersOnRuns = collectObserversOnRuns();
@@ -548,11 +551,6 @@ public class Solver implements ObserverOnRuns, ObserverOnBacktracksSystematic {
 		this.observersOnDecisions = collectObserversOnDecisions();
 		this.observersOnAssignments = collectObserversOnAssignments();
 		this.observersOnConflicts = collectObserversOnConflicts();
-
-		this.runProgressSaver = head.control.valh.runProgressSaving ? new RunProgressSaver() : null;
-		this.warmStarter = head.control.valh.warmStart.length() > 0 ? new WarmStarter(head.control.valh.warmStart) : null;
-
-		this.nogoodMinimizer = new NogoodMinimizer(this);
 	}
 
 	public int depth() {

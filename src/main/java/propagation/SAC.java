@@ -34,7 +34,8 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 	}
 
 	/**
-	 * The method to implement for performing singleton tests on the specified variable. It returns the number of removed values.
+	 * The method to implement for performing singleton tests on the specified variable. It returns the number of
+	 * removed values.
 	 */
 	protected int checkSAC(Variable x) {
 		int sizeBefore = x.dom.size();
@@ -172,7 +173,8 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			protected HeuristicVariables heuristic;
 
 			public CellIterator() {
-				this.heuristic = new WdegOnDom(solver, false); // hard coding ; alternatives: null, new Dom(solver, false), new DdegOnDom(solver, false) ...
+				this.heuristic = new WdegOnDom(solver, false); // hard coding ; alternatives: null, new Dom(solver,
+																// false), new DdegOnDom(solver, false) ...
 			}
 
 			@Override
@@ -268,7 +270,9 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			this.positions = Stream.of(solver.problem.variables).map(x -> new Cell[x.dom.initSize()]).toArray(Cell[][]::new);
 			IntStream.range(0, Variable.nInitValuesFor(solver.problem.variables)).forEach(i -> trash = new Cell(trash));
 			this.sizes = new int[solver.problem.variables.length];
-			String s = solver.head.control.propagation.classForSACSelector.substring(solver.head.control.propagation.classForSACSelector.lastIndexOf('$') + 1);
+			String s = "CellIterator"; // TODO hard coding
+										// solver.head.control.propagation.classForSACSelector.substring(solver.head.control.propagation.classForSACSelector.lastIndexOf('$')
+										// + 1);
 			this.cellSelector = Reflector.buildObject(s, CellSelector.class, this);
 		}
 
@@ -463,8 +467,8 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		protected final QueueForSAC3 queueOfCells;
 
 		/**
-		 * 0 = desactivated ; 1 = select last failed value (when starting a new branch) ; 2 = select last failed value + last failed variable (if last branch of
-		 * size 0)
+		 * 0 = desactivated ; 1 = select last failed value (when starting a new branch) ; 2 = select last failed value +
+		 * last failed variable (if last branch of size 0)
 		 */
 		protected final int lastConflictMode;
 
@@ -489,7 +493,8 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				super.eraseLastBuiltBranch(branchSize);
 			else
 				queueOfCells.clear();
-			// else is possible when queue.size > 0 with elements no more valid: some indexes of the queue may have been removed by GAC enforcment
+			// else is possible when queue.size > 0 with elements no more valid: some indexes of the queue may have been
+			// removed by GAC enforcment
 		}
 
 		protected final boolean buildBranch() {
@@ -647,7 +652,8 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		}
 
 		protected boolean buildBranch() {
-			// Kit.prn("building the branch number " + nbBuiltBranches + " queue size=" + queueESAC.nbUncheckedVariables);
+			// Kit.prn("building the branch number " + nbBuiltBranches + " queue size=" +
+			// queueESAC.nbUncheckedVariables);
 			currIndexOfVarHeuristic = (currIndexOfVarHeuristic + 1) % varHeuristics.length;
 			for (boolean finished = false; !finished;) {
 				makeSelection();

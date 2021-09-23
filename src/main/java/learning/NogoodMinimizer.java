@@ -17,7 +17,7 @@ import solver.Solver;
 import utility.Enums.Stopping;
 import variables.Variable;
 
-public class NogoodMinimizer {
+public final class NogoodMinimizer {
 
 	private Solver solver;
 	private Propagation propagation;
@@ -109,7 +109,8 @@ public class NogoodMinimizer {
 
 	// ****************************************/
 
-	// private boolean addTransitionDecisionTo(int indexOfLastTransitionDecision, int[] tmp, int nbFoundTransitionDecisions, int[] decs, int nbDecs) {
+	// private boolean addTransitionDecisionTo(int indexOfLastTransitionDecision, int[] tmp, int
+	// nbFoundTransitionDecisions, int[] decs, int nbDecs) {
 	// tmp[nbFoundTransitionDecisions] = decs[indexOfLastTransitionDecision];
 	// int limit = Math.max(0, nbFoundTransitionDecisions - 1);
 	// while (tmp[limit] < 0)
@@ -151,7 +152,8 @@ public class NogoodMinimizer {
 	// }
 	//
 	// /**
-	// * Returns the index in decisions of the transition decision, or -1 if it is not found. It is possible since we just use the original
+	// * Returns the index in decisions of the transition decision, or -1 if it is not found. It is possible since we
+	// just use the original
 	// * constraints of the problem and not the noggods recorded so far (it ssem rather difficult).
 	// */
 	// private int searchTransitionDecision(int left, int right, int[] decs, int nbDecs, int limitDepth) {
@@ -203,7 +205,8 @@ public class NogoodMinimizer {
 	// while (decs[initialLeftOffset] < 0)
 	// initialLeftOffset++;
 	// int right = nbDecs - 1; // right excluded
-	// while (consistent && nbFoundTransitionDecisions < rs.cp.settingLearning.nogoodArityLimit && initialLeftOffset < right) {
+	// while (consistent && nbFoundTransitionDecisions < rs.cp.settingLearning.nogoodArityLimit && initialLeftOffset <
+	// right) {
 	// assert decs[initialLeftOffset] > 0;
 	// int IndexOfTransitionDecision = searchTransitionDecision(initialLeftOffset, right, decs, nbDecs, depth());
 	// if (IndexOfTransitionDecision == -1)

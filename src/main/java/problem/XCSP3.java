@@ -127,10 +127,10 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		try {
 			if (problem.head.control.general.verbose > 1)
 				XParser.VERBOSE = true;
-			if (settings.discardedClasses.indexOf(',') < 0)
-				loadInstance(name(), settings.discardedClasses);
+			if (settings.discardClasses.indexOf(',') < 0)
+				loadInstance(name(), settings.discardClasses);
 			else
-				loadInstance(name(), settings.discardedClasses.split(","));
+				loadInstance(name(), settings.discardClasses.split(","));
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("Problem when parsing the instance. Fix the problem.");

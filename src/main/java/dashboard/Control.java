@@ -37,6 +37,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xcsp.common.Constants;
+import org.xcsp.common.Types;
 import org.xcsp.common.Types.TypeCtr;
 import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Utilities;
@@ -57,7 +58,6 @@ import main.HeadExtraction;
 import propagation.GAC;
 import propagation.Reviser;
 import propagation.Reviser.Reviser3;
-import propagation.SAC.QueueForSAC3.CellIterator;
 import solver.Restarter.RestarterLNS.HeuristicFreezing.Rand;
 import solver.Solutions;
 import solver.Solver;
@@ -115,21 +115,11 @@ public class Control {
 		}
 
 		protected String addS(String attribute, String shortcut, String defaultValue, String description, int... priority) {
-			return settings.addS(pr(priority), tag(), attribute, shortcut, defaultValue, description);
+			return settings.addS(pr(priority), tag(), attribute, shortcut, defaultValue, description).trim();
 		}
 
 		protected String addS(String attribute, String shortcut, Class<?> defaultValue, Class<?> root, String description, int... priority) {
-			return settings.addS(pr(priority), tag(), attribute, shortcut, defaultValue, root, description);
-		}
-
-		private Class<?> getLastButOneSuperclassOf(Class<?> clazz) {
-			for (Class<?> superclass = clazz.getSuperclass(); superclass != Object.class; superclass = superclass.getSuperclass())
-				clazz = superclass;
-			return clazz;
-		}
-
-		protected String addS(String attribute, String shortcut, Class<?> defaultValue, String description, int... priority) {
-			return addS(attribute, shortcut, defaultValue, getLastButOneSuperclassOf(defaultValue), description);
+			return settings.addS(pr(priority), tag(), attribute, shortcut, defaultValue, root, description).trim();
 		}
 
 		protected <T extends Enum<T>> T addE(String attribute, String shortcut, T defaultValue, String description, int... priority) {
@@ -138,19 +128,18 @@ public class Control {
 	}
 
 	public class SettingXml extends SettingGroup {
-		String s_dc = "Names of classes (tags) to discard (use comma as separator if several classes). Effective iff an XCSP3 file is loaded.";
-		String s_dir = "Indicates the name of a directory where results (XML files) for a campaign will be stored."
-				+ "\n\tIf the value is the empty string, results are not saved.";
-
-		public final String discardedClasses = addS("discardedClasses", "dc", EMPTY_STRING, s_dc);
-		public final String dirForCampaign = addS("dirForCampaign", "dir", EMPTY_STRING, s_dir);
+		public final String discardClasses = addS("discardClasses", "dc", EMPTY_STRING,
+				"Names of classes (tags) to be discarded (use comma as separator if several classes). Effective iff an XCSP3 file is loaded.");
+		public final String dirForCampaign = addS("dirForCampaign", "dir", EMPTY_STRING,
+				"Indicates the name of a directory where results (XML files) for a campaign will be stored."
+						+ "\n\tIf the value is the empty string, results are not saved.");
 
 		// The following options determine whether special forms of intension constraints must be recognized/intercepted
-		public final boolean recognizePrimitive2 = addB("recognizePrimitive2", "rp2", true, "", HIDDEN);
-		public final boolean recognizePrimitive3 = addB("recognizePrimitive3", "rp3", true, "", HIDDEN);
-		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "", HIDDEN);
-		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "", HIDDEN);
-		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "", HIDDEN);
+		public final boolean recognizePrimitive2 = addB("recognizePrimitive2", "rp2", true, "should we attempt to recognize binary primitives?", HIDDEN);
+		public final boolean recognizePrimitive3 = addB("recognizePrimitive3", "rp3", true, "should we attempt to recognize ternary primitives?", HIDDEN);
+		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "should we attempt to recognize logical reification forms?", HIDDEN);
+		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "should we attempt to recognize minimum/maximum constraints?", HIDDEN);
+		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "should we attempt to recognize sum constraints?", HIDDEN);
 	}
 
 	public final SettingXml xml = new SettingXml();
@@ -338,9 +327,6 @@ public class Control {
 	public final SettingVars variables = new SettingVars();
 
 	public class SettingCtrs extends SettingGroup {
-		String s_ignoreType = "Ignore all constraints of this type. Works for XCSP3";
-		String s_ignoreArity = "Ignore all constraints of this arity. Works for XCSP3";
-
 		String r2 = "When > 0, redundant allDifferent constraints are sought (at most as the given value) and posted (if any) to improve the filtering capability of the solver."
 				+ "\n\tTry this on a pigeons instance.";
 		String r5 = "Create Permutation constraints instead of classic AllDifferent when possible. Less filtering but may be faster.";
@@ -348,20 +334,15 @@ public class Control {
 		public boolean preserveUnaryCtrs = addB("preserveUnaryCtrs", "puc", true, "");
 		public int decomposeIntention = addI("decomposeIntention", "di", 1, "0: no decomposition, 1: conditional decomposition, 2: forced decompostion");
 		public boolean viewForSum = addB("viewForSum", "vs", false, "");
-		public boolean intensionToExtension1 = addB("intensionToExtension1", "ieuc", true,
-				"Must we convert unary intension constraints into unary extension ones?");
-		public final TypeCtr ignoredCtrType = org.xcsp.common.Types.valueOf(TypeCtr.class, addS("ignoreCtrType", "ignoreType", "", s_ignoreType));
-		public final int ignoreCtrArity = addI("ignoreCtrArity", "ignoreArity", -1, s_ignoreArity);
-		public boolean ignorePrimitives = addB("ignorePrimitives", "ip", false, "");
+		public boolean intensionToExtension1 = addB("intensionToExtension1", "ie1", true, "Must we convert unary intension constraints into extension ones?");
+		public final TypeCtr ignoredType = Types.valueOf(TypeCtr.class, addS("ignoreType", "ignoreType", "", "Ignore all constraints of this type."));
+		public final int ignoreArity = addI("ignoreArity", "ignoreArity", -1, "Ignore all constraints with this arity.");
 
 		public final int inferAllDifferentNb = addI("inferAllDifferentNb", "iad", 0, r2);
 		public final int inferAllDifferentSize = addI("inferAllDifferentSize", "iadsz", 5, "");
 		public final boolean recognizePermutations = addB("recognizePermutations", "perm", false, r5);
 		public final int arityLimitForVapArrayLb = addI("arityLimitForVapArrayLb", "alvalb", 2, "");
 		public final int arityLimitForVapArrayUb = addI("arityLimitForVapArrayUb", "alvaub", 10000, "");
-
-		// public boolean normalizeCtrs = addB("normalizeCtrs", "nc", false, "Merging constraints of similar scope (when
-		// possible)", TO_IMPLEMENT);
 	}
 
 	public final SettingCtrs constraints = new SettingCtrs();
@@ -399,8 +380,8 @@ public class Control {
 		public final Extension positive = addE("positive", "positive", Extension.CT, s_positive);
 		public final Extension negative = addE("negative", "negative", Extension.V, s_negative);
 		public final boolean validForBinary = addB("validForBinary", "vfor2", true, "");
-		public final String classBinary = addS("classBinary", "cfor2", Bits.class, "");
-		public final String classTernary = addS("classTernary", "cfor3", Matrix3D.class, "");
+		public final String structureClass2 = addS("structureClass2", "sc2", Bits.class, null, "Structures to be used for binary table constraints");
+		public final String structureClass3 = addS("structureClass3", "sc3", Matrix3D.class, null, "Structures to be used for ternary table constraints");
 		public final int arityLimitForSwitchingToPositive = addI("arityLimitForSwitchingToPositive", "ntop", -1, "");
 		public final int arityLimitForSwitchingToNegative = addI("arityLimitForSwitchingToNegative", "pton", -1, "");
 		public final boolean decremental = addB("decremental", "exd", true, ""); // true required for CT for the moment
@@ -440,7 +421,7 @@ public class Control {
 				+ "\n\tGAC is not enforced if the size of the current Cartesian product is more than than 2 up the specified value.";
 		String q3 = "For intension constraints, GAC is guaranteed to be enforced if the arity is not more than the specified value.";
 
-		public String clazz = addS("clazz", "p", GAC.class, "name of the class to be used for propagation (for example, FC or SAC3)");
+		public String clazz = addS("clazz", "p", GAC.class, null, "name of the class to be used for propagation (for example, FC or SAC3)");
 		public final int variant = addI("variant", "pv", 0, s_pv, HIDDEN);
 		public final boolean useAuxiliaryQueues = addB("useAuxiliaryQueues", "uaq", false, s_uaq);
 		public String reviser = addS("reviser", "reviser", Reviser3.class, Reviser.class, "class to be used for performing revisions");
@@ -454,7 +435,6 @@ public class Control {
 		public boolean strongOnlyAtPreprocessing = addB("strongOnlyAtPreprocessing", "sop", false, "");
 		public final boolean strongOnlyWhenACEffective = addB("strongOnlyWhenACEffective", "soe", false, "");
 		public final boolean strongOnlyWhenNotSingleton = addB("strongOnlyWhenNotSingleton", "sons", true, "");
-		public final String classForSACSelector = addS("classForSACSelector", "csac", CellIterator.class, "");
 		public final int weakCutoff = addI("weakCutoff", "wc", 15, "");
 		public final String classForFailedValues = addS("classForFailedValues", "fvc", "", "", HIDDEN);
 	}
@@ -473,7 +453,7 @@ public class Control {
 
 	public class SettingLNS extends SettingGroup {
 		public final boolean enabled = addB("enabled", "lns_e", false, "LNS activated if true");
-		public final String heuristic = addS("heuristic", "lns_h", Rand.class, "class to be used when freezing");
+		public final String clazz = addS("clazz", "lns_h", Rand.class, null, "class to be used as freezing heuristic");
 		public final int nFreeze = addI("nFreeze", "lns_n", 0, "number of variables to freeze when restarting.");
 		public final int pFreeze = addI("pFreeze", "lns_p", 10, "percentage of variables to freeze when restarting.");
 	}
@@ -485,7 +465,7 @@ public class Control {
 		String s_branching = "The branching scheme used for search."
 				+ "\n\tPossible values are bin for binary branching, non for non-binary (or d-way) branching, and res for restricted binarybranching.";
 
-		public String clazz = addS("clazz", "s_class", Solver.class, s_class);
+		public String clazz = addS("clazz", "s_class", Solver.class, null, s_class);
 		public boolean enablePrepro = addB("enablePrepro", "prepro", true, "must we perform preprocessing?");
 		public boolean enableSearch = addB("enableSearch", "search", true, "must we perform search?");
 		public final Branching branching = addE("branching", "branching", Branching.BIN, s_branching);
@@ -547,7 +527,7 @@ public class Control {
 	public final SettingExtraction extraction = new SettingExtraction();
 
 	public class SettingVarh extends SettingGroup {
-		public String heuristic = addS("heuristic", "varh", Wdeg.class, HeuristicVariables.class, "name of the class used for selecting variables");
+		public final String heuristic = addS("heuristic", "varh", Wdeg.class, HeuristicVariables.class, "class of the variable ordering heuristic");
 		public final boolean anti = addB("anti", "anti_varh", false, "must we follow the anti heuristic?");
 		public int lc = addI("lc", "lc", 2, "value for lc (last conflict); 0 if not activated");
 		public final ConstraintWeighting weighting = addE("weighting", "wt", ConstraintWeighting.CACD, "how to manage weights for wdeg variants");
@@ -558,18 +538,11 @@ public class Control {
 	public final SettingVarh varh = new SettingVarh();
 
 	public class SettingValh extends SettingGroup {
-		String s1 = "The name of the class that selects the next value to be assigned to the last selected variable."
-				+ "\n\tAn example is valh=First that indicates that at each step the next value to be assigned is the first value in the current domain (a kind of lexicographic order).";
-
-		public String heuristic = addS("heuristic", "valh", First.class, HeuristicValues.class, "name of the class used for selecting values");
-		public final boolean anti = addB("anti", "anti_valh", false, "must we follow the anti heuristic?");
-
-		public boolean runProgressSaving = addB("runProgressSaving", "rps", false, "");
-		// solution saving breaks determinism of search trees because it depends in which order domains are pruned (and
-		// becomes singleton or not)
-		public boolean solutionSaving = addB("solutionSaving", "sos", true, "");
-		public final int solutionSavingGap = addI("solutionSavingGap", "sosg", Integer.MAX_VALUE, "");
-		public String warmStart = addS("warmStart", "warm", "", "").trim();
+		public final String clazz = addS("clazz", "valh", First.class, HeuristicValues.class, "class of the value ordering heuristic");
+		public final boolean anti = addB("anti", "anti_valh", false, "reverse of the natural heuristic order?");
+		public final boolean runProgressSaving = addB("runProgressSaving", "rps", false, "run progress saving");
+		public final int solutionSaving = addI("solutionSaving", "sos", 1, "solution saving (0 disabled, 1 enabled, otherwise desactivation period");
+		public final String warmStart = addS("warmStart", "warm", "", "a starting instantiation (solution) to be used with solution saving");
 
 		public boolean bivsStoppedAtFirstSolution = addB("bivsStoppedAtFirstSolution", "bivs_s", true, "");
 		public boolean bivsOptimistic = addB("bivsOptimistic", "bivs_o", true, "");
@@ -585,16 +558,16 @@ public class Control {
 	public final SettingValh valh = new SettingValh();
 
 	public class SettingRevh extends SettingGroup {
-		public final String clazz = addS("clazz", "revh", Dom.class, HeuristicRevisions.class, "class for the revision ordering heuristic");
+		public final String clazz = addS("clazz", "revh", Dom.class, HeuristicRevisions.class, "class of the revision ordering heuristic");
 		public final boolean anti = addB("anti", "anti_revh", false, "must we follow the anti heuristic?");
 	}
 
 	public final SettingRevh revh = new SettingRevh();
 
 	public class SettingLocalSearch extends SettingGroup {
-		public final int tabuListSize = addI("tabuListSize", "tabs", 5, "");
-		public final double thresholdForRandomVariableSelection = addD("thresholdForRandomVariableSelection", "trvars", 0.0, "");
-		public final double thresholdForRandomValueSelection = addD("thresholdForRandomValueSelection", "trvals", 0.0, "");
+		public final int tabuSize = addI("tabuSize", "tabs", 5, "Size of the tabu list");
+		public final double thresholdRandomVar = addD("thresholdRandomVar", "trvar", 0.0, "Threshold for randomly selecting variables");
+		public final double thresholdRandomVal = addD("thresholdRandomVal", "trval", 0.0, "Threshold for randomly selecting values");
 	}
 
 	public final SettingLocalSearch localSearch = new SettingLocalSearch();
@@ -609,13 +582,12 @@ public class Control {
 	public final SettingExperimental experimental = new SettingExperimental();
 
 	public class SettingHardCoding extends SettingGroup {
-		public final String classForDecompositionSolver = "Decomposer2";
 	}
 
 	public final SettingHardCoding hardCoding = new SettingHardCoding();
 
 	public final boolean mustBuildConflictStructures = settings.addB(3, "constraints", "mustBuildConflictStructures", "mbcs",
-			!propagation.reviser.equals(Reviser.class.getSimpleName()) || valh.heuristic.equals(Conflicts.class.getSimpleName()), "");
+			!propagation.reviser.equals(Reviser.class.getSimpleName()) || valh.clazz.equals(Conflicts.class.getSimpleName()), "");
 
 	private Control() {
 		if (general.trace.length() > 0 && general.verbose < 1)
@@ -666,6 +638,9 @@ public class Control {
 
 		private static class UserSettings {
 
+			public static final String MIN = "min";
+			public static final String MAX = "max";
+
 			private Document document;
 
 			private XPath xPath;
@@ -708,9 +683,9 @@ public class Control {
 
 			private Number numberFor(String shortcut, String tag, String att, Object defaultValue, boolean longValue) {
 				String s = stringFor(shortcut, tag, att, defaultValue).toLowerCase();
-				if (s.equals(Control.MIN))
+				if (s.equals(MIN))
 					return longValue ? Long.MIN_VALUE : (Number) Integer.MIN_VALUE; // problem if cast omitted
-				if (s.equals(Control.MAX) || s.equals(Control.ALL))
+				if (s.equals(MAX) || s.equals(Control.ALL))
 					return longValue ? Long.MAX_VALUE : (Number) Integer.MAX_VALUE; // problem if cast omitted
 				char lastCharacter = s.charAt(s.length() - 1);
 				Long baseValue = Kit.parseLong(Character.isDigit(lastCharacter) ? s : s.substring(0, s.length() - 1));
@@ -783,7 +758,8 @@ public class Control {
 		}
 
 		public String addS(int priority, String tag, String attribute, String shortcut, Class<?> defaultValue, Class<?> root, String description) {
-			return add(new Setting<String>(priority, tag, attribute, shortcut, defaultValue, root, description)).value;
+			return add(new Setting<String>(priority, tag, attribute, shortcut, defaultValue,
+					root == null ? Reflector.getLastButOneSuperclassOf(defaultValue) : root, description)).value;
 		}
 
 		public <T extends Enum<T>> T addE(int priority, String tag, String attribute, String shortcut, T defaultValue, String description) {
@@ -938,10 +914,9 @@ public class Control {
 	 *********************************************************************************************/
 
 	public static final String DEFAULT_CONFIGURATION = "defaultConfiguration";
+
 	public static final String CONFIGURATION = "configuration";
 
-	public static final String MIN = "min";
-	public static final String MAX = "max";
 	public static final String ALL = "all";
 
 	private static String staticControlFilename;
@@ -954,9 +929,9 @@ public class Control {
 	public static void main(String[] args) {
 		Integer maximumPriority = args.length != 2 ? null : Kit.parseInteger(args[1]);
 		if (args.length != 2 || maximumPriority == null || maximumPriority < 1 || maximumPriority > 3) {
-			System.out.println("\tTool used to generate a default settings file.");
+			System.out.println("\tTool used to generate a default option settings file.");
 			System.out.println("\tUsage : " + Control.class.getName() + " <outputFileName> <maximumPriority>");
-			System.out.println("\n\toutputFileName : name of the generated settings file.");
+			System.out.println("\n\toutputFileName : name of the generated option settings file.");
 			System.out.println("\n\tmaximumPriority : only parameters with a priority value lower than this number (between 1 and 3) are generated");
 		} else {
 			new File(Kit.getPathOf(args[0])).mkdirs();

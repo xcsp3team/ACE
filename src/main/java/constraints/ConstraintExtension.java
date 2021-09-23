@@ -138,9 +138,9 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			@Override
 			protected ExtensionStructure buildExtensionStructure() {
 				if (scp.length == 2)
-					return Reflector.buildObject(esettings.classBinary, ExtensionStructure.class, this);
+					return Reflector.buildObject(esettings.structureClass2, ExtensionStructure.class, this);
 				if (scp.length == 3)
-					return Reflector.buildObject(esettings.classTernary, ExtensionStructure.class, this);
+					return Reflector.buildObject(esettings.structureClass3, ExtensionStructure.class, this);
 				return new Table(this);
 			}
 

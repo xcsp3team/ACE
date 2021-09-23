@@ -37,7 +37,7 @@ public abstract class HeuristicValues extends Heuristic {
 		if (x.heuristic != null)
 			return x.heuristic; // already built by some objects, we do not change it
 		SettingValh settings = x.problem.head.control.valh;
-		String className = x.dom instanceof DomainInfinite ? First.class.getName() : settings.heuristic;
+		String className = x.dom instanceof DomainInfinite ? First.class.getName() : settings.clazz;
 		Set<Class<?>> classes = x.problem.head.availableClasses.get(HeuristicValues.class);
 		HeuristicValues heuristic = Reflector.buildObject(className, classes, x, settings.anti);
 		if (heuristic instanceof Bivs) {
@@ -96,17 +96,19 @@ public abstract class HeuristicValues extends Heuristic {
 		Solver solver = x.problem.solver;
 		if (solver.solutions.found == 0) {
 			if (settings.warmStart.length() > 0) {
-				int a = solver.warmStarter.valueOf(x);
+				int a = solver.warmStarter.valueIndexOf(x);
 				if (a != -1 && dx.contains(a))
 					return a;
 			} else if (settings.runProgressSaving) {
-				int a = solver.runProgressSaver.valueOf(x);
+				int a = solver.runProgressSaver.valueIndexOf(x);
 				if (a != -1 && dx.contains(a))
 					return a;
 			}
-		} else if (settings.solutionSaving && !(this instanceof Bivs2)) {
-			if (solver.restarter.numRun % settings.solutionSavingGap != 0) { // every k runs, we do not use solution
-																				// saving
+		} else if (settings.solutionSaving > 0 && !(this instanceof Bivs2)) {
+			// note that solution saving may break determinism of search trees because it depends in which order domains
+			// are pruned (and become singleton or not)
+			if (settings.solutionSaving == 1 || solver.restarter.numRun == 0 || solver.restarter.numRun % settings.solutionSaving != 0) {
+				// every k runs, we do not use solution saving, where k is the value of solutionSaving (if k > 1)
 				// int a = -1;
 				// if (x == solver.impacting) a = dx.first(); else
 				int a = solver.solutions.last[x.num];

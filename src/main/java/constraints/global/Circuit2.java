@@ -68,6 +68,8 @@ public final class Circuit2 extends AllDifferentComplete {
 	 */
 	private final boolean[] tmp;
 
+	private final boolean[] pred;
+
 	/**
 	 * Build a constraint Circuit for the specified problem over the specified array/list of variables
 	 * 
@@ -80,6 +82,7 @@ public final class Circuit2 extends AllDifferentComplete {
 		super(pb, list);
 		this.set = new SetSparse(list.length);
 		this.tmp = new boolean[list.length];
+		this.pred = new boolean[list.length];
 		control(Stream.of(list).allMatch(x -> 0 <= x.dom.firstValue() && x.dom.lastValue() < list.length));
 
 		this.heads = new SetSparse(list.length);
@@ -99,37 +102,62 @@ public final class Circuit2 extends AllDifferentComplete {
 			return true;
 
 		int minimalCircuitLength = 0;
-		for (int i = 0; i < scp.length; i++)
+		// for (int i = 0; i < scp.length; i++)
+		// if (doms[i].containsValue(i) == false)
+		// minimalCircuitLength++;
+
+		heads.clear();
+		int circuitNode = -1;
+		pheads.fill();
+		int nArcs = 0;
+		Arrays.fill(pred, false);
+		for (int i = 0; i < scp.length; i++) {
 			if (doms[i].containsValue(i) == false)
 				minimalCircuitLength++;
-
-		// init TODO si circuit deja fermé le detecter et finaliser entailed()
-		heads.clear();
-		pheads.fill();
-		Arrays.fill(tmp, false);
-		for (int i = 0; i < scp.length; i++) {
 			if (doms[i].size() == 1) {
-				if (pheads.contains(i))
-					pheads.remove(i);
+				// if (pheads.contains(i)) pheads.remove(i);
 				int j = doms[i].singleValue();
 				if (i == j)
-					continue;
-				if (pheads.contains(j))
-					pheads.remove(j);
-				if (tmp[i] == false)
+					continue; // because auto-loop
+				nArcs++;
+				// if (pheads.contains(j)) pheads.remove(j);
+				if (pred[i] == false)
 					heads.add(i);
-				tmp[j] = true;
-				if (heads.contains(j))
+				if (pred[j] == true)
+					return false; // fail because two predecessors
+				pred[j] = true;
+				if (heads.contains(j)) {
 					heads.remove(j);
+					if (heads.isEmpty()) // it means that we have a closed circuit
+						circuitNode = i;
+				}
 			}
 		}
-
-		//
+		if (circuitNode != -1) {
+			if (!heads.isEmpty())
+				return false; // because a closed circuit and a separate chain
+			set.clear();
+			int i = circuitNode;
+			set.add(i);
+			while (true) {
+				i = doms[i].singleValue();
+				if (i == circuitNode)
+					break;
+				set.add(i);
+			}
+			if (set.size() < nArcs)
+				return false;
+			for (int k = 0; k < scp.length; k++)
+				if (!set.contains(k) && doms[k].reduceToValue(k) == false)
+					return false;
+			return entailed();
+		}
+		int cnt = 0;
 		Arrays.fill(tmp, false);
 		for (int p = heads.limit; p >= 0; p--) {
 			int i = heads.dense[p];
 			if (tmp[i])
-				continue;
+				continue; // because it is a head that has just been reached from another head after filtering
 			control(doms[i].size() == 1 && doms[i].singleValue() != i);
 			int j = doms[i].singleValue();
 			int head = i;
@@ -146,28 +174,28 @@ public final class Circuit2 extends AllDifferentComplete {
 						return false;
 				if (doms[j].removeValuesIn(set) == false)
 					return false; // because we cannot close the circuit now (it would be too short)
+				if (pred[j])
+					cnt++;
 				if (doms[j].size() > 1)
 					break;
-
 				set.add(j); // j belongs to the circuit
 				j = doms[j].singleValue(); // we know that the *new value of j* is different from the previous one
 				if (before > 1) {
-					if (pheads.contains(j))
-						pheads.remove(j);
+					// if (pheads.contains(j)) pheads.remove(j);
 					if (heads.contains(j))
 						tmp[j] = true;
 				}
-
 				if (j == head) { // closed circuit
 					for (int k = 0; k < scp.length; k++)
 						if (k != head && !set.contains(k) && doms[k].reduceToValue(k) == false)
 							return false;
 					return entailed();
 				}
-
 			}
-
 		}
+		if (cnt < nArcs)
+			return false;
+
 		return true;
 	}
 

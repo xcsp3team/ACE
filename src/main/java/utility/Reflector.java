@@ -37,11 +37,17 @@ public class Reflector {
 	// need to synchronize access to this structure ?
 	private final static Map<String, String> mapOfClassNames = Collections.synchronizedMap(new HashMap<String, String>());
 
+	public static Class<?> getLastButOneSuperclassOf(Class<?> clazz) {
+		for (Class<?> superclass = clazz.getSuperclass(); superclass != Object.class; superclass = superclass.getSuperclass())
+			clazz = superclass;
+		return clazz;
+	}
+
 	/**
-	 * Replaces all occurrences of the given old char with the given new char. This method is used as the standard method of the String class do not behave
-	 * correctly for some characters.
+	 * Replaces all occurrences of the given old char with the given new char. This method is used as the standard
+	 * method of the String class do not behave correctly for some characters.
 	 */
-	static String replaceAll(String s, char oldChar, char newChar) {
+	private static String replaceAll(String s, char oldChar, char newChar) {
 		StringBuilder sb = new StringBuilder(s);
 		for (int i = 0; i < sb.length(); i++)
 			if (sb.charAt(i) == oldChar)
@@ -50,8 +56,8 @@ public class Reflector {
 	}
 
 	/**
-	 * Returns the absolute name of the given class (without the extension .class) wrt the given package name. Hence, this name starts with the given package
-	 * name (and not with the root of a file system).
+	 * Returns the absolute name of the given class (without the extension .class) wrt the given package name. Hence,
+	 * this name starts with the given package name (and not with the root of a file system).
 	 * 
 	 * @param classFile
 	 *            a given File denoting a class.
@@ -92,7 +98,8 @@ public class Reflector {
 	}
 
 	/**
-	 * Returns a list of all (not abstract) classes which inherit from the given root class and which can be found from the given directory.
+	 * Returns a list of all (not abstract) classes which inherit from the given root class and which can be found from
+	 * the given directory.
 	 * 
 	 * @param rootClass
 	 *            a given class
@@ -116,7 +123,8 @@ public class Reflector {
 	}
 
 	/**
-	 * Returns a list of all (not abstract) classes which inherit from the given root class and which can be found from the given directory.
+	 * Returns a list of all (not abstract) classes which inherit from the given root class and which can be found from
+	 * the given directory.
 	 * 
 	 * @param rootClass
 	 *            a given class
@@ -239,7 +247,8 @@ public class Reflector {
 		while (st.hasMoreTokens()) {
 			String classPathToken = st.nextToken();
 			if (classPathToken.endsWith(".jar")) {
-				String basicDirectory = replaceAll(basicPackage, '.', JAR_SEPARATOR_CHAR); // in jar '/' is always the class separator
+				String basicDirectory = replaceAll(basicPackage, '.', JAR_SEPARATOR_CHAR); // in jar '/' is always the
+																							// class separator
 				String path = searchClassInJar(classPathToken, basicDirectory, className + ".class");
 				if (path != null)
 					return path;
@@ -271,7 +280,8 @@ public class Reflector {
 				// absoluteClassName = searchAbsoluteNameOf(rootClass.getPackage().getName(), className);
 				// Kit.control(absoluteClassName != null, () -> "Class " + key + " not found");
 				if (absoluteClassName == null)
-					absoluteClassName = className; // at this point, it means that the class has been defined outside directory AbsCon
+					absoluteClassName = className; // at this point, it means that the class has been defined outside
+													// directory AbsCon
 				mapOfClassNames.put(key, absoluteClassName);
 			}
 		}

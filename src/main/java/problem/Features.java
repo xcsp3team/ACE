@@ -35,12 +35,13 @@ import constraints.ConstraintExtension.Extension1;
 import constraints.extension.CSmart;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart;
+import dashboard.Control.SettingCtrs;
 import dashboard.Output;
 import variables.Variable;
 
 /**
- * This class stores some information (features such as sizes of domains, types of constraints, etc.) about the problem (constraint network), and ways of
- * displaying it.
+ * This class stores some information (features such as sizes of domains, types of constraints, etc.) about the problem
+ * (constraint network), and ways of displaying it.
  * 
  * @author Christophe Lecoutre
  */
@@ -68,8 +69,8 @@ public final class Features {
 		public final TreeMap<T, Integer> repartition = new TreeMap<>();
 
 		/**
-		 * Adds an element (key) to the repartitioner. If this is the first occurrence, it is recorded with associated counter 1. Otherwise, its associated
-		 * counter is incremented by 1.
+		 * Adds an element (key) to the repartitioner. If this is the first occurrence, it is recorded with associated
+		 * counter 1. Otherwise, its associated counter is incremented by 1.
 		 * 
 		 * @param key
 		 *            the specified key to consider
@@ -129,7 +130,8 @@ public final class Features {
 		public final List<Constraint> constraints = new ArrayList<>();
 
 		/**
-		 * The keys used for tables, that have been collected so far, and used when storing tuples of a table constraint. Relevant only for symmetry-breaking.
+		 * The keys used for tables, that have been collected so far, and used when storing tuples of a table
+		 * constraint. Relevant only for symmetry-breaking.
 		 */
 		public final Map<String, String> tableKeys = new HashMap<>();
 
@@ -175,8 +177,8 @@ public final class Features {
 		public final boolean mustDiscard(XCtr c) {
 			if (mustDiscard(c.vars()))
 				return true;
-			boolean mustDiscard = problem.head.control.constraints.ignoredCtrType == c.type
-					|| problem.head.control.constraints.ignoreCtrArity == c.vars().length;
+			SettingCtrs settings = problem.head.control.constraints;
+			boolean mustDiscard = settings.ignoredType == c.type || settings.ignoreArity == c.vars().length;
 			if (mustDiscard)
 				nDiscardedCtrs++;
 			return mustDiscard;
@@ -196,7 +198,8 @@ public final class Features {
 		private void printNumber(int n) {
 			if (problem.head.control.general.verbose > 1) {
 				int nDigits = (int) Math.log10(n) + 1;
-				IntStream.range(0, nDigits).forEach(i -> System.out.print("\b")); // we need to discard previous characters
+				IntStream.range(0, nDigits).forEach(i -> System.out.print("\b")); // we need to discard previous
+																					// characters
 				System.out.print((n + 1) + "");
 			}
 		}
