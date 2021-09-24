@@ -16,7 +16,7 @@ import constraints.Constraint;
 import constraints.ConstraintGlobal;
 import dashboard.Control.SettingPropagation;
 import interfaces.Observers.ObserverOnConflicts;
-import learning.IpsRecorderForDominance;
+import learning.IpsRecorderDominance;
 import sets.SetSparse;
 import solver.Solver;
 import utility.Kit;
@@ -97,14 +97,14 @@ public abstract class Propagation {
 				if (dom.size() == 1 && solver.nogoodRecorder.checkWatchesOf(x, dom.first(), false) == false)
 					return false;
 			if (ipsDominanceReasoning == null) { // first call
-				ipsDominanceReasoning = solver.ipsRecorder instanceof IpsRecorderForDominance ? Boolean.TRUE : Boolean.FALSE;
+				ipsDominanceReasoning = solver.ipsRecorder instanceof IpsRecorderDominance ? Boolean.TRUE : Boolean.FALSE;
 				if (ipsDominanceReasoning) {
 					this.absentValuesSentinel = new int[solver.problem.variables.length];
 					this.sentinelLevel = new long[solver.problem.variables.length];
 				}
 			}
 			if (ipsDominanceReasoning) {
-				IpsRecorderForDominance ipsRecorder = (IpsRecorderForDominance) solver.ipsRecorder;
+				IpsRecorderDominance ipsRecorder = (IpsRecorderDominance) solver.ipsRecorder;
 				if (sentinelLevel[x.num] != solver.stats.safeNumber())
 					absentValuesSentinel[x.num] = -1;
 				int depth = solver.depth();

@@ -33,7 +33,7 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 		}
 
 		@Override
-		public int identifyBestValueIndex() {
+		public int computeBestValueIndex() {
 			return dx.first();
 		}
 	}
@@ -44,7 +44,7 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 		}
 
 		@Override
-		public int identifyBestValueIndex() {
+		public int computeBestValueIndex() {
 			return dx.last();
 		}
 	}
@@ -55,7 +55,7 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 		}
 
 		@Override
-		public int identifyBestValueIndex() {
+		public int computeBestValueIndex() {
 			int a = dx.first();
 			for (int cnt = dx.size() / 2; cnt > 0; cnt--)
 				a = dx.next(a);
@@ -72,7 +72,7 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 		}
 
 		@Override
-		public int identifyBestValueIndex() {
+		public int computeBestValueIndex() {
 			int a = progressSaving[x.num];
 			return a != -1 && dx.contains(a) ? a : dx.first();
 		}
@@ -84,7 +84,7 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 		}
 
 		@Override
-		public int identifyBestValueIndex() {
+		public int computeBestValueIndex() {
 			return dx.any();
 		}
 	}
@@ -96,7 +96,7 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 		}
 
 		@Override
-		public int identifyBestValueIndex() {
+		public int computeBestValueIndex() {
 			int run = x.problem.solver.restarter.numRun;
 			if (run % 3 == 0)
 				return dx.first();
@@ -114,7 +114,7 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 		}
 
 		@Override
-		public int identifyBestValueIndex() {
+		public int computeBestValueIndex() {
 			cnt++;
 			if (cnt % 3 == 0)
 				return dx.first();
@@ -129,14 +129,14 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 		private boolean min;
 		private Variable[] others;
 
-		public Values(Variable x, boolean antiHeuristic, Variable[] others) {
-			super(x, antiHeuristic);
-			this.min = !antiHeuristic;
+		public Values(Variable x, boolean anti, Variable[] others) {
+			super(x, anti);
+			this.min = !anti;
 			this.others = others;
 		}
 
 		@Override
-		public int identifyBestValueIndex() {
+		public int computeBestValueIndex() {
 			if (dx.size() == 1)
 				return dx.first();
 			if (min) { // to minimize the number of distinct values

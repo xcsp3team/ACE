@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package heuristics;
 
 import static utility.Enums.ConstraintWeighting.CACD;
@@ -28,8 +38,8 @@ import variables.Variable;
 
 /**
  * This class gives the description of a dynamic variable ordering heuristic. <br>
- * It means that at each step of the search, this kind of object is solicited in order to determine which variable has to be selected according to the current
- * state of the problem.
+ * It means that at each step of the search, this kind of object is solicited in order to determine which variable has
+ * to be selected according to the current state of the problem.
  */
 public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
@@ -150,8 +160,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	// ************************************************************************
 
 	/**
-	 * The subclasses of this class allow us to define the heuristics wdeg and wdeg/dom. There exists four variants for each of these two heuristics: VAR, UNIT,
-	 * CACD and CHS.
+	 * The subclasses of this class allow us to define the heuristics wdeg and wdeg/dom. There exists four variants for
+	 * each of these two heuristics: VAR, UNIT, CACD and CHS.
 	 */
 	public static abstract class WdegVariant extends HeuristicVariablesDynamic
 			implements ObserverOnRuns, ObserverOnAssignments, ObserverOnConflicts, TagMaximize {
@@ -218,7 +228,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public void afterUnassignment(Variable x) {
 			if (settings.weighting != VAR && settings.weighting != CHS)
 				for (Constraint c : x.ctrs)
-					if (c.futvars.size() == 2) { // since a variable has just been unassigned, it means that there was only one future variable
+					if (c.futvars.size() == 2) { // since a variable has just been unassigned, it means that there was
+													// only one future variable
 						int y = c.futvars.dense[0]; // the other variable whose score must be updated
 						vscores[c.scp[y].num] += cvscores[c.num][y];
 					}
@@ -237,7 +248,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					alpha = Double.max(ALPHA_LIMIT, alpha - ALPHA_DECREMENT);
 				} else {
 					double increment = 1;
-					cscores[c.num] += increment; // just +1 in that case (can be useful for other objects, but not directly for wdeg)
+					cscores[c.num] += increment; // just +1 in that case (can be useful for other objects, but not
+													// directly for wdeg)
 					SetDense futvars = c.futvars;
 					for (int i = futvars.limit; i >= 0; i--) {
 						Variable y = c.scp[futvars.dense[i]];
@@ -262,6 +274,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				}
 				ctime[c.num] = time;
 			}
+		}
+
+		@Override
+		public void whenBacktrack() {
 		}
 
 		public WdegVariant(Solver solver, boolean antiHeuristic) {
@@ -452,7 +468,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				for (Variable x : solver.futVars)
 					impact *= x.dom.size() / (double) lastSizes[x.num];
 			else
-				impact = 0; // because the last positive decision failed, so a big impact (0 is the strongest impact value)
+				impact = 0; // because the last positive decision failed, so a big impact (0 is the strongest impact
+							// value)
 			impacts[lastVar.num] = (1 - alpha) * impacts[lastVar.num] + alpha * impact;
 			assert 0 <= impact && impact <= 1 && 0 <= impacts[lastVar.num] && impacts[lastVar.num] <= 1;
 		}

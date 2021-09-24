@@ -38,8 +38,8 @@ import interfaces.Observers.ObserverOnConstruction;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Observers.ObserverOnSolving;
 import learning.IpsRecorder;
-import learning.IpsRecorderForEquivalence;
-import learning.ReductionOperator;
+import learning.IpsRecorderEquivalence;
+import learning.ReductionOperators;
 import main.Head;
 import optimization.Optimizer;
 import problem.Features;
@@ -540,19 +540,19 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 			m.put(MEM, Kit.memoryInMb());
 		m.separator();
 		IpsRecorder ipsRecorder = head.solver.ipsRecorder;
-		if (ipsRecorder instanceof IpsRecorderForEquivalence && !ipsRecorder.stopped) {
-			IpsRecorderForEquivalence recorder = (IpsRecorderForEquivalence) ipsRecorder;
+		if (ipsRecorder instanceof IpsRecorderEquivalence && !ipsRecorder.stopped) {
+			IpsRecorderEquivalence recorder = (IpsRecorderEquivalence) ipsRecorder;
 			m.put(MAP_SIZE, recorder.getMapSize());
 			m.put(N_INFERENCES, recorder.nInferences);
 			m.put(N_TOO_LARGE_KEYS, recorder.nTooLargeKeys);
 		}
 		if (ipsRecorder != null) {
-			ReductionOperator ro = ipsRecorder.reductionOperator;
-			m.put(N_SELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbSEliminableVariables()));
-			m.put(N_RELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbREliminableVariables()));
-			m.put(N_IELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbIEliminableVariables()));
-			m.put(N_DELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbDEliminableVariables()));
-			m.put(N_PELIMINABLES, Kit.decimalFormat.format(ro.getProportionOfNbPEliminableVariables()));
+			ReductionOperators ro = ipsRecorder.reductionOperators;
+			m.put(N_SELIMINABLES, Kit.decimalFormat.format(ro.proportionOfSEliminableVariables()));
+			m.put(N_RELIMINABLES, Kit.decimalFormat.format(ro.proportionOfREliminableVariables()));
+			m.put(N_IELIMINABLES, Kit.decimalFormat.format(ro.proportionOfIEliminableVariables()));
+			m.put(N_DELIMINABLES, Kit.decimalFormat.format(ro.proportionOfDEliminableVariables()));
+			m.put(N_PELIMINABLES, Kit.decimalFormat.format(ro.proportionOfPEliminableVariables()));
 			m.separator();
 		}
 		return m;

@@ -1,11 +1,13 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package learning;
 
 import java.util.HashMap;
@@ -20,7 +22,7 @@ import utility.Kit.ByteArrayHashKey;
 import variables.Domain;
 import variables.Variable;
 
-public final class IpsRecorderForEquivalence extends IpsRecorder {
+public final class IpsRecorderEquivalence extends IpsRecorder {
 
 	private static final Integer zero = 0;
 
@@ -53,7 +55,7 @@ public final class IpsRecorderForEquivalence extends IpsRecorder {
 	// mapOfHashKeys.clear();
 	// }
 
-	public IpsRecorderForEquivalence(Solver solver) {
+	public IpsRecorderEquivalence(Solver solver) {
 		super(solver);
 		if (variables.length > 1500) // hard coding
 			stopped = true;
@@ -91,7 +93,7 @@ public final class IpsRecorderForEquivalence extends IpsRecorder {
 	}
 
 	private void buildHashKey() {
-		int[] ids = moreThanOneSolution ? reductionOperator.extractForAllSolutions() : reductionOperator.extract();
+		int[] ids = moreThanOneSolution ? reductionOperators.extractForAllSolutions() : reductionOperators.extract();
 		int keySize = 0;
 		for (int i = 0; i < ids.length; i++) {
 			Variable var = solver.problem.variables[ids[i]];
@@ -123,7 +125,7 @@ public final class IpsRecorderForEquivalence extends IpsRecorder {
 	}
 
 	@Override
-	public boolean dealWhenOpeningNode() {
+	public boolean whenOpeningNode() {
 		if (stopped)
 			return true;
 
@@ -157,7 +159,7 @@ public final class IpsRecorderForEquivalence extends IpsRecorder {
 	}
 
 	@Override
-	public void dealWhenClosingNode() {
+	public void whenClosingNode() {
 		if (stopped)
 			return;
 		if (mustStop()) {

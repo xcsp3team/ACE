@@ -22,12 +22,12 @@ import variables.Variable;
  */
 public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
-	public HeuristicValuesDynamic(Variable x, boolean antiHeuristic) {
-		super(x, antiHeuristic);
+	public HeuristicValuesDynamic(Variable x, boolean anti) {
+		super(x, anti);
 	}
 
 	@Override
-	public int identifyBestValueIndex() {
+	public int computeBestValueIndex() {
 		assert dx.size() != 0 : "The domain is empty";
 		// System.out.println("\nchoosing for " + x);
 		int best = dx.first();
@@ -58,8 +58,8 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 		public SetDense inconsistent;
 
-		public Bivs(Variable x, boolean antiHeuristic) {
-			super(x, antiHeuristic);
+		public Bivs(Variable x, boolean anti) {
+			super(x, anti);
 			Kit.control(x.problem.optimizer != null);
 			this.multiplier = x.problem.optimizer.minimization ? -1 : 1; // scoreCoeff follows minimization/maximization
 			this.lbBased = x.problem.head.control.valh.bivsOptimistic == x.problem.optimizer.minimization;
@@ -69,11 +69,11 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		}
 
 		@Override
-		public int identifyBestValueIndex() {
+		public int computeBestValueIndex() {
 			inconsistent.clear();
 			if ((settings.bivsStoppedAtFirstSolution && solver.solutions.found > 0) || dx.size() > settings.bivsLimit)
 				return dx.first(); // First in that case
-			return super.identifyBestValueIndex();
+			return super.computeBestValueIndex();
 		}
 
 		@Override
@@ -97,12 +97,12 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 	public static final class Bivs2 extends Bivs { // experimental (solutionsaving as tiebreaking)
 
-		public Bivs2(Variable x, boolean antiHeuristic) {
-			super(x, antiHeuristic);
+		public Bivs2(Variable x, boolean anti) {
+			super(x, anti);
 		}
 
 		@Override
-		public int identifyBestValueIndex() {
+		public int computeBestValueIndex() {
 			inconsistent.clear();
 			int aLast = solver.solutions.found == 0 ? -1 : solver.solutions.last[x.num];
 			if ((settings.bivsStoppedAtFirstSolution && solver.solutions.found > 0) || dx.size() > settings.bivsLimit) {
@@ -125,8 +125,8 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 	public static final class Conflicts extends HeuristicValuesDynamic {
 
-		public Conflicts(Variable x, boolean antiHeuristic) {
-			super(x, antiHeuristic);
+		public Conflicts(Variable x, boolean anti) {
+			super(x, anti);
 		}
 
 		@Override
@@ -143,8 +143,8 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 		private int[] nDecisions;
 
-		public Failures(Variable x, boolean antiHeuristic) {
-			super(x, antiHeuristic);
+		public Failures(Variable x, boolean anti) {
+			super(x, anti);
 			this.nDecisions = Kit.repeat(1, dx.initSize()); // we use 1 for avoiding divisions by 0
 		}
 
@@ -154,8 +154,8 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		}
 
 		@Override
-		public int identifyBestValueIndex() {
-			int a = super.identifyBestValueIndex();
+		public int computeBestValueIndex() {
+			int a = super.computeBestValueIndex();
 			nDecisions[a]++;
 			return a;
 		}
@@ -165,8 +165,8 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	 * This heuristic selects a value according to the number of times this value is assigned to the other variables.
 	 */
 	public static final class Occurrences extends HeuristicValuesDynamic {
-		public Occurrences(Variable x, boolean antiHeuristic) {
-			super(x, antiHeuristic);
+		public Occurrences(Variable x, boolean anti) {
+			super(x, anti);
 		}
 
 		@Override

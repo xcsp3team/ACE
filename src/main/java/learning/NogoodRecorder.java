@@ -10,26 +10,13 @@
 
 package learning;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.xcsp.common.Utilities;
-
 import dashboard.Control.SettingLearning;
-import interfaces.Observers.ObserverOnRuns;
 import solver.Decisions;
 import solver.Solver;
 import utility.Enums.LearningNogood;
-import utility.Enums.Stopping;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -42,7 +29,8 @@ public final class NogoodRecorder {
 		return null;
 	}
 
-	public boolean checkValues(int[] t) {
+	public boolean checkIndexes(int[] t) {
+		// note that nogoods are stored with indexes of values
 		extern: for (int i = 0; i < nNogoods; i++) {
 			for (int d : nogoods[i].literals) {
 				int x = decisions.numIn(d);
@@ -55,11 +43,7 @@ public final class NogoodRecorder {
 		return true;
 	}
 
-	public boolean checkIndexes(int[] t) {
-		return checkValues(t); // because nogoods are stored with indexes of values
-	}
-
-	private class WatchCell {
+	private static final class WatchCell {
 
 		private Nogood nogood;
 
@@ -70,6 +54,50 @@ public final class NogoodRecorder {
 			this.nextCell = nextCell;
 		}
 	}
+
+	public final Solver solver;
+
+	final Decisions decisions; // redundant field
+
+	final SettingLearning settings;
+
+	Nogood[] nogoods;
+
+	public int nNogoods;
+
+	private final WatchCell[][] pws; // positive watch lists; pws[x][a] is the first cell (so, nogood) involving the
+										// positive literal (x=a) as being watched
+
+	private final WatchCell[][] nws; // negative watch lists; nws[x][a] is the first cell (nogood) involving the
+										// negative literal (x!=a) as being watched
+
+	private WatchCell free; // reference to the first free cell (i.e. the pool of free cells)
+
+	// public final SymmetryHandler symmetryHandler;
+
+	private int[] tmp;
+
+	public void reset() {
+		nNogoods = 0;
+		Kit.fill(pws, null); // TODO put them in free instead
+		Kit.fill(nws, null); // TODO put them in free instead
+		// Kit.control(symmetryHandler == null);
+	}
+
+	public NogoodRecorder(Solver solver) {
+		this.solver = solver;
+		this.decisions = solver.decisions;
+		this.settings = solver.head.control.learning;
+		this.nogoods = new Nogood[settings.nogoodBaseLimit];
+		this.pws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
+		this.nws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
+		this.tmp = new int[solver.problem.variables.length];
+		// symmetryHandler = settings.nogood == RST_SYM ? new SymmetryHandler(this,problem.variables.length) : null;
+	}
+
+	/**********************************************************************************************
+	 * About filtering
+	 *********************************************************************************************/
 
 	private boolean canBeWatched(int decision) {
 		assert decision != 0;
@@ -143,43 +171,9 @@ public final class NogoodRecorder {
 		return true;
 	}
 
-	private final Solver solver;
-
-	private final Decisions decisions; // redundant field
-
-	private final SettingLearning settings;
-
-	private Nogood[] nogoods;
-
-	public int nNogoods;
-
-	private final WatchCell[][] pws; // positive watch lists; pws[x][a] is the first cell (so, nogood) involving the positive literal (x=a) as being watched
-
-	private final WatchCell[][] nws; // negative watch lists; nws[x][a] is the first cell (nogood) involving the negative literal (x!=a) as being watched
-
-	private WatchCell free; // reference to the first free cell (i.e. the pool of free cells)
-
-	public final SymmetryHandler symmetryHandler;
-
-	private int[] tmp;
-
-	public void reset() {
-		nNogoods = 0;
-		Kit.fill(pws, null); // TODO put them in free instead
-		Kit.fill(nws, null); // TODO put them in free instead
-		Kit.control(symmetryHandler == null);
-	}
-
-	public NogoodRecorder(Solver solver) {
-		this.solver = solver;
-		this.decisions = solver.decisions;
-		this.settings = solver.head.control.learning;
-		this.nogoods = new Nogood[settings.nogoodBaseLimit];
-		this.pws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
-		this.nws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
-		this.tmp = new int[solver.problem.variables.length];
-		this.symmetryHandler = settings.nogood == LearningNogood.RST_SYM ? new SymmetryHandler(solver.problem.variables.length) : null;
-	}
+	/**********************************************************************************************
+	 * About recording
+	 *********************************************************************************************/
 
 	private void addWatchFor(Nogood nogood, int position, boolean firstWatch) {
 		int decision = nogood.literals[position];
@@ -197,14 +191,13 @@ public final class NogoodRecorder {
 		nogood.setWatchedPosition(position, firstWatch);
 	}
 
-	private void addNogood(int[] decs, boolean toBeSorted) {
+	public void addNogood(int[] decs, boolean toBeSorted) {
 		if (nNogoods < nogoods.length) {
 			decs = toBeSorted ? Kit.sort(decs) : decs;
 			Nogood nogood = nogoods[nNogoods++] = new Nogood(decs);
 			addWatchFor(nogood, decs.length - 2, true);
 			addWatchFor(nogood, decs.length - 1, false);
-			if (symmetryHandler != null)
-				symmetryHandler.addNogood(decs);
+			// if (symmetryHandler != null) symmetryHandler.addNogood(decs);
 		}
 	}
 
@@ -233,19 +226,18 @@ public final class NogoodRecorder {
 							Kit.log.fine("Empty nogood => Inconistency");
 							return; // inconsistency proved
 						}
-						addNogood(minimizedNogood, symmetryHandler != null);
+						addNogood(minimizedNogood, false); // symmetryHandler != null);
 					}
 				} else { // if (dr.isFailedAssignment(i)){
 							// record negative decisions for direct insertion of the nogod
 					for (int j = 0; j < nMetPositiveDecisions; j++)
 						currentNogood[j] = -tmp[j];
 					currentNogood[nMetPositiveDecisions] = d;
-					addNogood(currentNogood, symmetryHandler != null);
+					addNogood(currentNogood, false); // symmetryHandler != null);
 				}
-				if (symmetryHandler != null)
-					symmetryHandler.handleSymmetricNaryNogoods(currentNogood);
-			} else if (symmetryHandler != null)
-				symmetryHandler.handleSymmetricUnaryNogoods(d);
+				// if (symmetryHandler != null) symmetryHandler.handleSymmetricNaryNogoods(currentNogood);
+			}
+			// else if (symmetryHandler != null) symmetryHandler.handleSymmetricUnaryNogoods(d);
 		}
 		// display();
 		assert controlWatches();
@@ -287,123 +279,6 @@ public final class NogoodRecorder {
 		return sb.append("}").toString();
 	}
 
-	private class SymmetryHandler implements ObserverOnRuns {
-
-		@Override
-		public void beforeRun() {
-			boolean effective = false;
-			for (int decision : decisionsToBePerformedAtNextRun) {
-				Variable x = decisions.varIn(decision);
-				int a = decisions.idxIn(decision);
-				if (x.dom.contains(a)) {
-					x.dom.removeElementary(a);
-					Kit.log.info("Remove Unary sym nogood : " + decisions.stringOf(decision));
-					if (x.dom.size() == 0) {
-						solver.stopping = Stopping.FULL_EXPLORATION;
-						break;
-					}
-					effective = true;
-				}
-			}
-			decisionsToBePerformedAtNextRun.clear();
-			if (solver.stopping != Stopping.FULL_EXPLORATION && effective && !solver.propagation.runInitially())
-				solver.stopping = Stopping.FULL_EXPLORATION;
-		}
-
-		private Map<Integer, Integer>[] mapOfSymmetryGroupGenerators;
-
-		private Set<int[]>[] nogoodsSetsBySize;
-
-		private int[][] tmps; // tmps[i] is a temporary array of size i; built in a lazy manner
-
-		private Set<Integer> decisionsToBePerformedAtNextRun = new HashSet<>();
-
-		private final int unaryLimit, nonunaryLimit;
-
-		private List<Integer> unaryNogoodsToHandle = new ArrayList<>();
-
-		private LinkedList<int[]> naryNogoodsToHandle = new LinkedList<>();
-
-		private SymmetryHandler(int nVariables) {
-			this.mapOfSymmetryGroupGenerators = new Map[solver.problem.symmetryGroupGenerators.size()];
-			int cnt = 0;
-			for (List<int[]> generator : solver.problem.symmetryGroupGenerators) {
-				Map<Integer, Integer> map = mapOfSymmetryGroupGenerators[cnt] = new HashMap<>();
-				for (int[] cycle : generator)
-					for (int i = 0; i < cycle.length; i++)
-						map.put(cycle[i], cycle[(i + 1) % cycle.length]);
-				cnt++;
-			}
-			this.nogoodsSetsBySize = new TreeSet[nVariables + 1];
-			this.tmps = new int[nVariables + 1][];
-			this.unaryLimit = settings.unarySymmetryLimit;
-			this.nonunaryLimit = settings.nonunarySymmetryLimit;
-		}
-
-		private void addNogood(int[] decs) {
-			assert nNogoods < nogoods.length;
-			(nogoodsSetsBySize[decs.length] == null ? nogoodsSetsBySize[decs.length] = new TreeSet<>(Utilities.lexComparatorInt)
-					: nogoodsSetsBySize[decs.length]).add(decs);
-		}
-
-		private void handleSymmetricUnaryNogoods(int decision) {
-			unaryNogoodsToHandle.clear();
-			unaryNogoodsToHandle.add(decision);
-			for (int i = 0; i < unaryLimit && unaryNogoodsToHandle.size() != 0; i++) {
-				int pickedDecision = unaryNogoodsToHandle.remove(unaryNogoodsToHandle.size() - 1);
-				int a = decisions.idxIn(pickedDecision);
-				int x = decisions.numIn(pickedDecision);
-				for (Map<Integer, Integer> map : mapOfSymmetryGroupGenerators) {
-					Integer y = map.get(x);
-					if (y != null) {
-						int symmetricDecision = decisions.negativeDecisionFor(y, a);
-						if (!decisionsToBePerformedAtNextRun.contains(symmetricDecision)) {
-							decisionsToBePerformedAtNextRun.add(symmetricDecision);
-							unaryNogoodsToHandle.add(symmetricDecision);
-						}
-					}
-				}
-			}
-		}
-
-		private void handleSymmetricNaryNogoods(int[] initialNogood) {
-			naryNogoodsToHandle.clear();
-			naryNogoodsToHandle.add(initialNogood);
-			int currentSpace = 0;
-			while (currentSpace < nonunaryLimit && naryNogoodsToHandle.size() != 0) {
-				int[] pickedNogood = naryNogoodsToHandle.poll(); // removeLast();
-				assert Kit.isIncreasing(pickedNogood);
-				int[] currentSymmetricNogood = tmps[pickedNogood.length] == null ? tmps[pickedNogood.length] = new int[pickedNogood.length]
-						: tmps[pickedNogood.length];
-				for (Map<Integer, Integer> map : mapOfSymmetryGroupGenerators) {
-					boolean changed = false;
-					for (int j = 0; j < pickedNogood.length; j++) {
-						int a = decisions.idxIn(pickedNogood[j]);
-						int x = decisions.numIn(pickedNogood[j]);
-						Integer y = map.get(x);
-						if (y != null) {
-							// if (solver.problem.getVariable(symmetricId).domain.getElements().getDroppedLevelFor(index) == 0) {
-							// changed = false; break; }
-							currentSymmetricNogood[j] = decisions.negativeDecisionFor(y, a);
-							changed = true;
-						} else
-							currentSymmetricNogood[j] = decisions.negativeDecisionFor(x, a);
-					}
-					if (changed) {
-						Arrays.sort(currentSymmetricNogood);
-						if (!nogoodsSetsBySize[currentSymmetricNogood.length].contains(currentSymmetricNogood)) {
-							int[] symmetricNogood = currentSymmetricNogood.clone();
-							NogoodRecorder.this.addNogood(symmetricNogood, false);
-							naryNogoodsToHandle.add(symmetricNogood);
-							currentSpace += symmetricNogood.length * symmetricNogood.length;
-							// display(symmetricNogood);
-						}
-					}
-				}
-			}
-		}
-	}
-
 }
 
 // public void addNogoodFrom(int[] decs) {
@@ -437,7 +312,8 @@ public final class NogoodRecorder {
 // for (WatchCell cell = firstCell; cell != null; cell = cell.nextCell) {
 // int[] cellDecisions = cell.nogood.decisions;
 // if (cellDecisions.length == 2
-// && ((decs[0] == cellDecisions[0] && decs[1] == cellDecisions[1]) || (decs[0] == cellDecisions[1] && decs[1] == cellDecisions[0])))
+// && ((decs[0] == cellDecisions[0] && decs[1] == cellDecisions[1]) || (decs[0] == cellDecisions[1] && decs[1] ==
+// cellDecisions[0])))
 // return true;
 // }
 // return false;

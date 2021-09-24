@@ -419,6 +419,18 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
+	 * 
+	 * @return the number of free variables (i.e., with non singleton domains) involved in the constraitn
+	 */
+	public final int nFreeVariables() {
+		int cnt = 0;
+		for (int i = futvars.limit; i >= 0; i--)
+			if (scp[futvars.dense[i]].dom.size() > 1)
+				cnt++;
+		return cnt;
+	}
+
+	/**
 	 * Returns the weighted degree of the constraint.
 	 */
 	public final double wdeg() {
@@ -487,8 +499,6 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Returns true is this constraint is currently entailed
-	 * 
 	 * @return true is this constraint is currently entailed
 	 */
 	public boolean entailed() {

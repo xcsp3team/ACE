@@ -1,46 +1,57 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL LIBRE CeCILL which accompanies this
- * distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package learning;
 
 import java.util.stream.IntStream;
 
 import utility.Bit;
-import utility.Kit;
-import variables.Variable;
 
 public final class Ips {
 
-	public static boolean FIRST_WATCH = true;
-	public static boolean SECOND_WATCH = false;
+	/**
+	 * nums[i] is the num(ber) of the ith variable involved in the IPS
+	 */
+	public final int[] nums;
 
-	public final int[] nums; // nums[i] is the num(ber) of the ith involved variable
+	/**
+	 * binDoms[i] is the binary representation of the domain of the ith variable involved in the IPS
+	 */
+	public final long[][] binDoms;
 
-	public final long[][] binDoms; // binDoms[i] is the binary representation of the domain of the ith involved variable
+	/**
+	 * The first watched position in nums; nums[watchPos0] is the number of the first watched involved variable
+	 */
+	private int watchPos0 = -1;
 
-	private int watchVar0 = -1;
+	/**
+	 * The second watched position in nums; nums[watchPos1] is the number of the second watched involved variable
+	 */
+	private int watchPos1 = -1;
 
-	private int watchVar1 = -1;
-
+	/**
+	 * The value index for the first watched position in nums
+	 */
 	private int watchIdx0 = -1;
 
+	/**
+	 * The value index for the second watched position in nums
+	 */
 	private int watchIdx1 = -1;
 
 	public int varNumFor(int watch) {
-		return nums[watch == 0 ? watchVar0 : watchVar1];
+		return nums[watch == 0 ? watchPos0 : watchPos1];
 	}
 
-	public long[] binDomFor(int watch) {
-		return binDoms[watch == 0 ? watchVar0 : watchVar1];
-	}
-
-	public int watchVarFor(int watch) {
-		return watch == 0 ? watchVar0 : watchVar1;
+	public int watchPosFor(int watch) {
+		return watch == 0 ? watchPos0 : watchPos1;
 	}
 
 	public int watchIdxFor(int watch) {
@@ -48,12 +59,12 @@ public final class Ips {
 	}
 
 	public boolean isWatched(int x) {
-		return nums[watchVar0] == x || nums[watchVar1] == x;
+		return nums[watchPos0] == x || nums[watchPos1] == x;
 	}
 
 	public int watchFor(int x) {
 		// assert isWatched(x);
-		return nums[watchVar0] == x ? 0 : 1;
+		return nums[watchPos0] == x ? 0 : 1;
 	}
 
 	public void setIndex(int watchPosition, int a) {
@@ -65,38 +76,28 @@ public final class Ips {
 
 	public void setWatch(int watch, int pos, int a) {
 		if (watch == 0) {
-			watchVar0 = pos;
+			watchPos0 = pos;
 			watchIdx0 = a;
 		} else {
-			watchVar1 = pos;
+			watchPos1 = pos;
 			watchIdx1 = a;
 		}
 	}
 
-	public Ips(IpsRecorderForDominance recorder, int[] nums) {
+	public Ips(IpsRecorderDominance recorder, int[] nums) {
 		this.nums = nums;
-		Variable[] variables = recorder.solver.problem.variables;
-		this.binDoms = IntStream.of(nums).mapToObj(x -> variables[x].dom.binary().clone()).toArray(long[][]::new);
+		this.binDoms = IntStream.of(nums).mapToObj(x -> recorder.solver.problem.variables[x].dom.binary().clone()).toArray(long[][]::new);
 		recorder.nGeneratedIps++;
 	}
 
-	public Ips(IpsRecorderForDominance recorder, Ips ips, boolean[] proof) {
-		int cnt = Kit.countIn(true, proof);
-		this.nums = new int[cnt];
-		this.binDoms = new long[cnt][];
-		for (int i = 0, j = 0; i < proof.length; i++) {
-			if (proof[i]) {
-				nums[j] = i;
-				binDoms[j] = recorder.solver.problem.variables[i].dom.binary().clone();
-				// binDoms[cnt] = solver != null ? solver.problem.variables[i].dom.binary().clone() :ips.binDoms[i];
-				j++;
-			}
-		}
-		recorder.nGeneratedIps++;
+	public Ips(IpsRecorderDominance recorder, boolean[] proof) {
+		this(recorder, IntStream.range(0, proof.length).filter(i -> proof[i]).toArray());
 	}
 
 	@Override
 	public boolean equals(Object o) {
+		if (!(o instanceof Ips))
+			return false;
 		Ips ips = (Ips) o;
 		if (nums.length != ips.nums.length)
 			return false;
@@ -112,7 +113,7 @@ public final class Ips {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder().append("IPS of size " + nums.length + " with watch1 = " + watchVar0 + " and watch2 = " + watchVar1 + "\n");
+		StringBuilder sb = new StringBuilder().append("IPS of size " + nums.length + " with watch1 = " + watchPos0 + " and watch2 = " + watchPos1 + "\n");
 		for (int i = 0; i < nums.length; i++)
 			sb.append(nums[i] + " : " + Bit.decrypt(binDoms[i]) + " \n");
 		return sb.append("end\n").toString();

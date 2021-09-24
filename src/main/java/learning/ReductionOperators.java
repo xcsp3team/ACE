@@ -1,30 +1,39 @@
-/**
- * AbsCon - Copyright (c) 2017, CRIL-CNRS - lecoutre@cril.fr
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
- * All rights reserved.
- * 
- * This program and the accompanying materials are made available under the terms of the CONTRAT DE LICENCE DE LOGICIEL
- * LIBRE CeCILL which accompanies this distribution, and is available at http://www.cecill.info
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
  */
+
 package learning;
 
 import java.util.Arrays;
 
 import constraints.Constraint;
 import propagation.GAC;
-import solver.Solver;
+import solver.FutureVariables;
 import utility.Kit;
-import variables.Domain;
 import variables.Variable;
 
-public final class ReductionOperator {
-	private IpsRecorder recorder;
+public final class ReductionOperators {
 
-	private boolean isGACGuaranteed;
+	/**
+	 * The recorder to which this object is attached
+	 */
+	private final IpsRecorder recorder;
 
-	private boolean binaryNetwork;
+	/**
+	 * indicates if (G)AC is guaranteed
+	 */
+	private final boolean acGuaranteed;
 
-	private final boolean[] selectedVariables;
+	/**
+	 * indicates if there is no constraint involving more than 2 variables
+	 */
+	private final boolean binaryNetwork;
 
 	private boolean eliminateEntailedVariables;
 	private boolean eliminateInitialDomainVariables;
@@ -32,37 +41,46 @@ public final class ReductionOperator {
 	private boolean eliminateDegreeVariables;
 	private boolean eliminateNotInProofVariables;
 
-	private double nbSEliminableVariables;
-	private double nbREliminableVariables;
-	private double nbIEliminableVariables;
-	private double nbDEliminableVariables;
-	private double nbPEliminableVariables;
+	/**
+	 * The variables of the problem (redundant field)
+	 */
+	private final Variable[] variables;
 
-	private int nbExtractions;
+	private final boolean[] selectedVariables;
 
 	private final int[] tmpVariable;
 
-	public double getProportionOfNbSEliminableVariables() {
-		return nbSEliminableVariables / nbExtractions;
+	private final Constraint[] nonUniversal;
+
+	private double nSEliminables;
+	private double nREliminables;
+	private double nIEliminables;
+	private double nDEliminables;
+	private double nPEliminables;
+
+	private int nExtractions;
+
+	public double proportionOfSEliminableVariables() {
+		return nSEliminables / nExtractions;
 	}
 
-	public double getProportionOfNbREliminableVariables() {
-		return nbREliminableVariables / nbExtractions;
+	public double proportionOfREliminableVariables() {
+		return nREliminables / nExtractions;
 	}
 
-	public double getProportionOfNbIEliminableVariables() {
-		return nbIEliminableVariables / nbExtractions;
+	public double proportionOfIEliminableVariables() {
+		return nIEliminables / nExtractions;
 	}
 
-	public double getProportionOfNbDEliminableVariables() {
-		return nbDEliminableVariables / nbExtractions;
+	public double proportionOfDEliminableVariables() {
+		return nDEliminables / nExtractions;
 	}
 
-	public double getProportionOfNbPEliminableVariables() {
-		return nbPEliminableVariables / nbExtractions;
+	public double proportionOfPEliminableVariables() {
+		return nPEliminables / nExtractions;
 	}
 
-	public boolean enablePElimination() {
+	public final boolean enablePElimination() {
 		return eliminateNotInProofVariables;
 	}
 
@@ -70,61 +88,44 @@ public final class ReductionOperator {
 		return c == '0' ? false : c == '1' ? true : (Boolean) Kit.exit("The expected character should have been 0 or 1");
 	}
 
-	private void parseReductionMode(String s) {
-		Kit.control(s.length() == 5);
-		eliminateEntailedVariables = parse(s.charAt(0));
-		eliminateInitialDomainVariables = parse(s.charAt(1));
-		eliminateDegreeVariables = parse(s.charAt(2));
-		eliminateJustifiedVariables = parse(s.charAt(3));
-		eliminateNotInProofVariables = parse(s.charAt(4));
-		if (eliminateNotInProofVariables && recorder instanceof IpsRecorderForEquivalence) {
-			eliminateNotInProofVariables = false;
-			Kit.log.warning("partial state operator 'eliminateNotInProofVariables' set to false");
-
-		}
-
-	}
-
-	public ReductionOperator(IpsRecorder recorder) {
+	public ReductionOperators(IpsRecorder recorder) {
 		this.recorder = recorder;
-		Solver solver = recorder.solver;
-		isGACGuaranteed = solver.propagation.getClass() == GAC.class && ((GAC) solver.propagation).guaranteed;
-		binaryNetwork = solver.problem.features.maxCtrArity() == 2;
-		tmpVariable = new int[solver.problem.variables.length];
-		parseReductionMode(recorder.solver.head.control.learning.stateOperators);
-		// Kit.control(!eliminateNotInProofVariables || !(stateRecordingManager instanceof StateEquivalenceManager));
-		selectedVariables = new boolean[solver.problem.variables.length];
-	}
+		this.acGuaranteed = recorder.solver.propagation.getClass() == GAC.class && ((GAC) recorder.solver.propagation).guaranteed;
+		this.binaryNetwork = recorder.solver.problem.features.maxCtrArity() == 2;
+		String s = recorder.solver.head.control.learning.stateOperators;
+		Kit.control(s.length() == 5);
+		this.eliminateEntailedVariables = parse(s.charAt(0));
+		this.eliminateInitialDomainVariables = parse(s.charAt(1));
+		this.eliminateDegreeVariables = parse(s.charAt(2));
+		this.eliminateJustifiedVariables = parse(s.charAt(3));
+		this.eliminateNotInProofVariables = parse(s.charAt(4));
+		if (eliminateNotInProofVariables && recorder instanceof IpsRecorderEquivalence) {
+			this.eliminateNotInProofVariables = false;
+			Kit.log.warning("partial state operator 'eliminateNotInProofVariables' set to false");
+		}
+		this.variables = recorder.solver.problem.variables;
+		this.selectedVariables = new boolean[variables.length];
+		this.tmpVariable = new int[variables.length];
 
-	private int getNbFreeVariablesIn(Constraint ctr) {
-		int cnt = 0;
-		for (int i = ctr.futvars.limit; i >= 0; i--)
-			if (ctr.scp[ctr.futvars.dense[i]].dom.size() != 1)
-				cnt++;
-		return cnt;
+		this.nonUniversal = eliminateDegreeVariables ? new Constraint[variables.length] : null;
 	}
 
 	private boolean canEliminateSingleton(Variable x) {
 		assert x.dom.size() == 1;
-		if (!isGACGuaranteed)
+		if (!acGuaranteed) // TODO can we relax a little bit this condition?
 			return false;
 		if (binaryNetwork)
 			return true;
 		for (Constraint c : x.ctrs)
-			if (getNbFreeVariablesIn(c) > 1)
+			if (c.nFreeVariables() > 1)
 				return false;
 		return true;
 	}
 
-	private Constraint[] nonUniversal;
-
 	private void initEliminateDegree() {
-		if (nonUniversal == null)
-			nonUniversal = new Constraint[recorder.solver.problem.variables.length];
-		else
-			Arrays.fill(nonUniversal, null);
+		Arrays.fill(nonUniversal, null);
 		for (Constraint c : recorder.solver.problem.constraints) {
-			if (getNbFreeVariablesIn(c) < 2)
+			if (c.nFreeVariables() < 2)
 				continue; // as the constraint is necessarily universal
 			for (Variable x : c.scp) {
 				if (nonUniversal[x.num] == null)
@@ -149,26 +150,26 @@ public final class ReductionOperator {
 		return true;
 	}
 
-	public boolean canEliminate(Variable x) {
+	private boolean canEliminate(Variable x) {
 		if (eliminateEntailedVariables && x.dom.size() == 1 && canEliminateSingleton(x)) {
-			nbSEliminableVariables++;
+			nSEliminables++;
 			return true;
 		}
 		if (eliminateInitialDomainVariables && x.dom.size() == x.dom.initSize()) {
-			nbREliminableVariables++;
+			nREliminables++;
 			return true;
 		}
 		if (eliminateDegreeVariables && canEliminateDegree(x)) {
-			nbDEliminableVariables++;
+			nDEliminables++;
 			return true;
 		}
 		return false;
 	}
 
 	private boolean canEliminateDeduced(Variable x) {
-		Domain dom = x.dom;
-		for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a)) {
-			Constraint explanation = recorder.justifier.justifications[x.num][a];
+		Constraint[] justification = recorder.explainer.justifications[x.num];
+		for (int a = x.dom.lastRemoved(); a != -1; a = x.dom.prevRemoved(a)) {
+			Constraint explanation = justification[a];
 			if (explanation == null)
 				return false;
 			if (explanation == Constraint.TAG)
@@ -177,21 +178,18 @@ public final class ReductionOperator {
 				if (x != y && !selectedVariables[y.num])
 					return false;
 		}
-		nbIEliminableVariables++;
+		nIEliminables++;
 		return true;
 	}
 
 	public int[] extract() {
-		nbExtractions++;
+		nExtractions++;
 		int selectionLimit = 0;
 		Arrays.fill(selectedVariables, false);
 		if (eliminateDegreeVariables)
 			initEliminateDegree();
-		Solver solver = recorder.solver;
-		Variable[] variables = solver.problem.variables;
 		if (eliminateNotInProofVariables) {
-			// System.out.println(" proof at level = " + (solver.getCurrentDepth() + 1));
-			boolean[] proofVariables = solver.proofer.proofVariables[solver.depth()];
+			boolean[] proofVariables = recorder.solver.proofer.proofVariables[recorder.solver.depth()];
 			// TODO paS PLUS 1 A PRIORI
 			for (int i = 0; i < proofVariables.length; i++)
 				if (proofVariables[i]) {
@@ -200,10 +198,11 @@ public final class ReductionOperator {
 						selectedVariables[i] = true;
 					}
 				} else
-					nbPEliminableVariables++;
-		} else if (solver.problem.features.maxCtrArity() == 2) {
-			nbSEliminableVariables += solver.futVars.nPast();
-			for (Variable x : solver.futVars) {
+					nPEliminables++;
+		} else if (binaryNetwork) {
+			FutureVariables futVars = recorder.solver.futVars;
+			nSEliminables += futVars.nPast();
+			for (Variable x = futVars.first(); x != null; x = futVars.next(x)) {
 				if (!canEliminate(x)) {
 					tmpVariable[selectionLimit++] = x.num;
 					selectedVariables[x.num] = true;
@@ -216,36 +215,32 @@ public final class ReductionOperator {
 					selectedVariables[x.num] = true;
 				}
 		}
-
 		if (eliminateJustifiedVariables) {
-			int nbSelectedVariables = 0;
+			int cnt = 0;
 			for (int i = 0; i < selectionLimit; i++)
 				if (!canEliminateDeduced(variables[tmpVariable[i]]))
-					tmpVariable[nbSelectedVariables++] = tmpVariable[i];
-			selectionLimit = nbSelectedVariables;
+					tmpVariable[cnt++] = tmpVariable[i];
+			selectionLimit = cnt;
 		}
-
 		int[] t = new int[selectionLimit];
 		for (int i = 0; i < selectionLimit; i++)
 			t[i] = tmpVariable[i];
-		// System.arraycopy(tmpVariable, 0, t, 0, selectionLimit);
-
-		// System.out.println(solver.variables.length + " nbS=" + nbSEliminableVariables + " nbR=" +
-		// nbREliminableVariables + " nbI=" + nbIEliminableVariables); // + " " + cpt);
+		// System.out.println(solver.variables.length + " nbS=" + nSEliminables + " nbR=" + nREliminables + " nbI=" +
+		// nIEliminables);
 		return t;
 	}
 
 	public int[] extractForAllSolutions() {
-		Solver solver = recorder.solver;
 		int selectionLimit = 0;
-		if (solver.problem.features.maxCtrArity() == 2) {
-			nbSEliminableVariables += solver.futVars.nPast();
-			for (Variable x : solver.futVars) {
+		if (binaryNetwork) {
+			FutureVariables futVars = recorder.solver.futVars;
+			nSEliminables += futVars.nPast();
+			for (Variable x = futVars.first(); x != null; x = futVars.next(x)) {
 				if (x.dom.size() == 1 && canEliminateSingleton(x))
 					tmpVariable[selectionLimit++] = x.num;
 			}
 		} else {
-			for (Variable x : solver.problem.variables)
+			for (Variable x : variables)
 				if (x.dom.size() == 1 && canEliminateSingleton(x))
 					tmpVariable[selectionLimit++] = x.num;
 		}
@@ -254,18 +249,11 @@ public final class ReductionOperator {
 		return variableIndices;
 	}
 
-	// public int[] copy() {
-	// return
-	// Toolkit.buildArrayWithIntegerValues(stateRecordingManager.getSystematicSolver().getProblem().variables.length,
-	// 0);
-	// }
-
 	public int[] extract2() {
-		nbExtractions++;
-		Solver solver = recorder.solver;
-		boolean[] proofVariables = solver.proofer.proofVariables[solver.depth()];
+		nExtractions++;
+		boolean[] proofVariables = recorder.solver.proofer.proofVariables[recorder.solver.depth()];
 		int selectionLimit = 0;
-		for (int i = 0; i < solver.problem.variables.length; i++) {
+		for (int i = 0; i < variables.length; i++) {
 			if (proofVariables[i]) {
 				// if (canEliminate(solver.getVariable(i)))
 				// ; // System.out.println("ok " + solver.getVariable(i).domain.getCurrentSize());
@@ -277,11 +265,6 @@ public final class ReductionOperator {
 		int[] t = new int[selectionLimit];
 		for (int i = 0; i < selectionLimit; i++)
 			t[i] = tmpVariable[i];
-		// System.arraycopy(tmpVariable, 0, t, 0, selectionLimit);
-		//
-		// // System.out.println("size = " + selectionLimit);
-		// // System.out.println(solver.variables.length + " nbS=" + nbSEliminableVariables + " nbR=" +
-		// nbREliminableVariables + " nbI=" + nbIEliminableVariables); // + " " + cpt);
 		return t;
 	}
 }

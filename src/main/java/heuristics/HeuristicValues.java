@@ -28,8 +28,8 @@ import variables.DomainInfinite;
 import variables.Variable;
 
 /**
- * This class gives the description of a value ordering heuristic. <br>
- * A value ordering heuristic is attached to a variable and allows selecting (indexes of) values.
+ * This class gives the description of a value ordering heuristic. A value ordering heuristic is attached to a variable
+ * and allows selecting (indexes of) values.
  */
 public abstract class HeuristicValues extends Heuristic {
 
@@ -61,7 +61,7 @@ public abstract class HeuristicValues extends Heuristic {
 	protected final Domain dx;
 
 	/**
-	 * The option settings concerning the value ordering heuristics
+	 * The setting options concerning the value ordering heuristics
 	 */
 	protected SettingValh settings;
 
@@ -70,36 +70,44 @@ public abstract class HeuristicValues extends Heuristic {
 	 * 
 	 * @param x
 	 *            the variable to which this object is attached
-	 * @param antiHeuristic
-	 *            indicates if one should take the reverse ordering of the natural one
+	 * @param anti
+	 *            indicates if one must take the reverse ordering of the natural one
 	 */
-	public HeuristicValues(Variable x, boolean antiHeuristic) {
-		super(antiHeuristic);
+	public HeuristicValues(Variable x, boolean anti) {
+		super(anti);
 		this.x = x;
 		this.dx = x.dom;
 		this.settings = x.problem.head.control.valh;
-		// this.priorityVar = x.pb.priorityVars != null && Kit.isPresent(x, x.pb.priorityVars);
 	}
 
 	/**
-	 * Returns the (raw) score of the specified value index. This is usually the method to be overridden in order to
-	 * define a new heuristic.
+	 * Returns the (raw) score of the specified value index. This is the method to override for defining a new
+	 * heuristic.
+	 * 
+	 * @param a
+	 *            a value index
+	 * @return the (raw) score of the specified value index
 	 */
 	protected abstract double scoreOf(int a);
 
 	/**
-	 * Returns the (index of the) preferred value in the domain of the variable.
+	 * Searches and returns the preferred value index in the current domain of x according to the heuristic
 	 */
-	protected abstract int identifyBestValueIndex();
+	protected abstract int computeBestValueIndex();
 
+	/**
+	 * Returns the preferred value index in the current domain of x according to the heuristic
+	 * 
+	 * @return the preferred value index in the current domain of x
+	 */
 	public final int bestValueIndex() {
 		Solver solver = x.problem.solver;
 		if (solver.solutions.found == 0) {
-			if (settings.warmStart.length() > 0) {
+			if (solver.warmStarter != null) {
 				int a = solver.warmStarter.valueIndexOf(x);
 				if (a != -1 && dx.contains(a))
 					return a;
-			} else if (settings.runProgressSaving) {
+			} else if (solver.runProgressSaver != null) {
 				int a = solver.runProgressSaver.valueIndexOf(x);
 				if (a != -1 && dx.contains(a))
 					return a;
@@ -116,7 +124,7 @@ public abstract class HeuristicValues extends Heuristic {
 					return a;
 			}
 		}
-		return identifyBestValueIndex();
+		return computeBestValueIndex();
 	}
 
 	// ************************************************************************
@@ -133,8 +141,8 @@ public abstract class HeuristicValues extends Heuristic {
 		 */
 		private final int[] fixed;
 
-		public HeuristicValuesFixed(Variable x, boolean antiHeuristic) {
-			super(x, antiHeuristic);
+		public HeuristicValuesFixed(Variable x, boolean anti) {
+			super(x, anti);
 			// we build an ordered map with entries of the form (a, heuristic score of a multiplied by the optimization
 			// coefficient) for every a
 			Map<Integer, Double> map = IntStream.range(0, dx.initSize()).filter(a -> dx.contains(a)).boxed()
@@ -144,7 +152,7 @@ public abstract class HeuristicValues extends Heuristic {
 		}
 
 		@Override
-		protected final int identifyBestValueIndex() {
+		protected final int computeBestValueIndex() {
 			for (int a : fixed)
 				if (dx.contains(a))
 					return a;
@@ -153,8 +161,8 @@ public abstract class HeuristicValues extends Heuristic {
 
 		public static final class Srand extends HeuristicValuesFixed {
 
-			public Srand(Variable x, boolean antiHeuristic) {
-				super(x, antiHeuristic);
+			public Srand(Variable x, boolean anti) {
+				super(x, anti);
 			}
 
 			@Override
@@ -170,8 +178,8 @@ public abstract class HeuristicValues extends Heuristic {
 			// s a i t n r u l o d c p m v q f b g h j x y z w k
 			private static int[] letterPositionsFr = { 2, 17, 11, 10, 0, 16, 18, 19, 3, 20, 25, 8, 13, 5, 9, 12, 15, 6, 1, 4, 7, 14, 24, 21, 22, 23 };
 
-			public LetterFrequency(Variable x, boolean antiHeuristic) {
-				super(x, antiHeuristic);
+			public LetterFrequency(Variable x, boolean anti) {
+				super(x, anti);
 			}
 
 			@Override

@@ -88,7 +88,8 @@ public interface Observers {
 	}
 
 	/**
-	 * Interface for observing successive runs (possibly, only one run if restarting is deactivated) performed by the solver
+	 * Interface for observing successive runs (possibly, only one run if restarting is deactivated) performed by the
+	 * solver
 	 */
 	interface ObserverOnRuns {
 
@@ -119,13 +120,15 @@ public interface Observers {
 		void restoreBefore(int depthBeforeBacktrack);
 
 		/**
-		 * Interface for observing backtracks performed by the solver. Used for observers that systematically require restoration.
+		 * Interface for observing backtracks performed by the solver. Used for observers that systematically require
+		 * restoration.
 		 */
 		interface ObserverOnBacktracksSystematic extends ObserverOnBacktracks {
 		}
 
 		/**
-		 * Interface for observing backtracks performed by the solver. Used for observers that does not systematically require restoration.
+		 * Interface for observing backtracks performed by the solver. Used for observers that does not systematically
+		 * require restoration.
 		 */
 		interface ObserveronBacktracksUnsystematic extends ObserverOnBacktracks {
 		}
@@ -214,7 +217,8 @@ public interface Observers {
 	interface ObserverOnConflicts {
 
 		/**
-		 * Called when the domain of the specified variable has become empty (so-called domain wipeout) when filtering with the specified constraint
+		 * Called when the domain of the specified variable has become empty (so-called domain wipeout) when filtering
+		 * with the specified constraint
 		 * 
 		 * @param c
 		 *            a constraint
@@ -223,7 +227,10 @@ public interface Observers {
 		 */
 		void whenWipeout(Constraint c, Variable x);
 
-		// public void whenReduction(Constraint c, Variable x);
+		/**
+		 * Called when the solver is about to backtrack
+		 */
+		void whenBacktrack();
 	}
 
 }

@@ -13,7 +13,7 @@ package heuristics;
 import interfaces.Tags.TagMaximize;
 
 /**
- * This is the abstract root class for representing any heuristic (variable ordering heuristic, value ordering
+ * This is the abstract root class used for representing any heuristic (variable ordering heuristic, value ordering
  * heuristic, revision ordering heuristic, etc.).
  * 
  * @author Christophe Lecoutre
@@ -22,7 +22,7 @@ import interfaces.Tags.TagMaximize;
 public abstract class Heuristic {
 
 	/**
-	 * The coefficient used when computing scores of objects, the one with the best score being selected by this
+	 * The coefficient used when computing scores of objects, the one with the best score being selected by the
 	 * heuristic. The best one is the smallest one if the multiplier/coefficient is -1 (minimization) and it is the
 	 * greatest one if the multiplier is +1 (maximization).
 	 */
@@ -31,12 +31,12 @@ public abstract class Heuristic {
 	/**
 	 * Builds an heuristic
 	 * 
-	 * @param antiHeuristic
-	 *            indicates if one should take the reverse ordering of the natural one
+	 * @param anti
+	 *            indicates if one must take the reverse ordering of the natural one
 	 */
-	public Heuristic(boolean antiHeuristic) {
+	public Heuristic(boolean anti) {
 		// we translate the specified Boolean into a coefficient that can be used directly when computing scores
-		this.multiplier = (!antiHeuristic && !(this instanceof TagMaximize)) || (antiHeuristic && this instanceof TagMaximize) ? -1 : 1;
+		this.multiplier = (!anti && !(this instanceof TagMaximize)) || (anti && this instanceof TagMaximize) ? -1 : 1;
 	}
 
 	/**

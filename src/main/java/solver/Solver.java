@@ -116,6 +116,12 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			return list.stream().toArray(String[]::new);
 		}
 
+		/**
+		 * Builds a warm starter from the specified string
+		 * 
+		 * @param s
+		 *            the name of a file containing an instantiation or a string representing an instantiation
+		 */
 		private WarmStarter(String s) {
 			File file = new File(s);
 			if (file.exists()) { // TODO if the string starts with ~/, that does not work (the path must be explicit)
@@ -134,55 +140,78 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			assert IntStream.range(0, t.length).noneMatch(i -> !t[i].equals("*") && instantiation[i] == -1);
 		}
 
+		/**
+		 * @param x
+		 *            a variable
+		 * @return the value index that has been recorded for the specified variable (possibly -1)
+		 */
 		public int valueIndexOf(Variable x) {
 			return instantiation[x.num];
 		}
 	}
 
-	public final class RunProgressSaver implements ObserverOnRuns {
+	/**
+	 * A run progress saver allows us to record a partial instantiation corresponding to the longest branch previously
+	 * developed.
+	 */
+	public final class RunProgressSaver implements ObserverOnRuns, ObserverOnConflicts {
 
 		@Override
 		public void beforeRun() {
-			currSize = 0;
+			branchSize = 0;
 		}
 
 		@Override
 		public void afterRun() {
-			if (desactivated())
+			if (stopped()) {
+				// observersOnRuns.remove(this); not possible while iterating this list
+				observersOnConflicts.remove(this);
 				return;
-			for (int i = 0; i < prevLongestRunBranch.length; i++)
-				prevLongestRunBranch[i] = currLongestRunBranch[i];
-			prevSize = currSize;
+			}
+			Arrays.fill(branch, -1);
 		}
 
-		int[] prevLongestRunBranch;
-		int prevSize;
-		int[] currLongestRunBranch;
-		int currSize;
-
-		RunProgressSaver() {
-			this.prevLongestRunBranch = new int[problem.variables.length];
-			this.currLongestRunBranch = new int[problem.variables.length];
+		@Override
+		public void whenWipeout(Constraint c, Variable x) {
 		}
 
-		boolean desactivated() {
-			return solutions.found > 0 && head.control.valh.solutionSaving > 0;
-		}
-
-		void manageEmptyDomainBeforeBacktracking() {
-			if (desactivated())
-				return;
-			int d = depth(); // or Variable.nSingletonVariablesIn(pb.variables) ??
-			if (d >= currSize) {
-				currSize = d;
-				for (int i = 0; i < prevLongestRunBranch.length; i++)
-					prevLongestRunBranch[i] = problem.variables[i].dom.size() == 1 ? problem.variables[i].dom.single() : -1;
-				// System.out.println("new " + Kit.join(prevLongestRunBranch));
+		@Override
+		public void whenBacktrack() {
+			if (depth() >= branchSize) { // TODO or Variable.nSingletonVariablesIn(problem.variables) ??
+				branchSize = depth();
+				for (int i = 0; i < branch.length; i++)
+					branch[i] = problem.variables[i].dom.size() == 1 ? problem.variables[i].dom.single() : -1;
 			}
 		}
 
+		/**
+		 * The size of the previous longest branch (partial instantiation)
+		 */
+		private int branchSize;
+
+		/**
+		 * The previous longest branch (partial instantiation)
+		 */
+		private int[] branch;
+
+		private RunProgressSaver() {
+			this.branch = Kit.repeat(-1, problem.variables.length);
+		}
+
+		/**
+		 * @return true if run progress saving must be stopped
+		 */
+		private boolean stopped() {
+			return solutions.found > 0 && head.control.valh.solutionSaving > 0; // solution saving is now in charge
+		}
+
+		/**
+		 * @param x
+		 *            a variable
+		 * @return the value index recorded for the specified variable in the previously longest branch (may be -1)
+		 */
 		public int valueIndexOf(Variable x) {
-			return prevSize == 0 ? -1 : prevLongestRunBranch[x.num]; // prevSize == 0 means to be at the first run
+			return branch[x.num];
 		}
 	}
 
@@ -285,7 +314,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 * Intern class Tracer
 	 *********************************************************************************************/
 
-	public final class Tracer implements ObserverOnDecisions {
+	public final class Tracer implements ObserverOnDecisions, ObserverOnConflicts {
 		private int minDepthLimit, maxDepthLimit;
 
 		private Tracer(String s) {
@@ -298,7 +327,12 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			return !propagation.performingProperSearch && minDepthLimit <= depth() && depth() <= maxDepthLimit;
 		}
 
-		public void onBacktrack() {
+		@Override
+		public void whenWipeout(Constraint c, Variable x) {
+		}
+
+		@Override
+		public void whenBacktrack() {
 			if (canCurrentlyPrint())
 				log.fine("        Backtrack ");
 		}
@@ -350,7 +384,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 * The list of observers on removals, i.e., value deletions in domains. Whenever a domain is reduced, a callback
 	 * function is called.
 	 */
-	public final Collection<ObserverOnRemovals> observersOnRemovals = new ArrayList<>();
+	public final Collection<ObserverOnRemovals> observersOnRemovals;
 
 	/**
 	 * The list of observers on conflicts encountered during search
@@ -365,8 +399,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	private List<ObserverOnRuns> collectObserversOnRuns() {
 		if (!head.control.solving.enableSearch)
 			return new ArrayList<>();
-		Stream<Object> stream = Stream.concat(Stream.of(this, problem.optimizer, restarter, runProgressSaver, decisions, heuristic, lastConflict, ipsRecorder,
-				(nogoodRecorder != null ? nogoodRecorder.symmetryHandler : null), head.output, stats), Stream.of(problem.constraints));
+		Stream<Object> stream = Stream.concat(
+				Stream.of(this, problem.optimizer, restarter, runProgressSaver, decisions, heuristic, lastConflict, ipsRecorder, head.output, stats),
+				Stream.of(problem.constraints)); // and nogoodRecorder.symmetryHandler
 		return stream.filter(c -> c instanceof ObserverOnRuns).map(o -> (ObserverOnRuns) o).collect(toCollection(ArrayList::new));
 	}
 
@@ -387,8 +422,14 @@ public class Solver implements ObserverOnBacktracksSystematic {
 				.collect(toCollection(ArrayList::new));
 	}
 
+	private List<ObserverOnRemovals> collectObserversOnRemovals() {
+		return Stream.of(ipsRecorder != null ? ipsRecorder.explainer : null).filter(o -> o != null).map(o -> (ObserverOnRemovals) o)
+				.collect(toCollection(ArrayList::new));
+	}
+
 	private List<ObserverOnConflicts> collectObserversOnConflicts() {
-		return Stream.of(heuristic).filter(o -> o instanceof ObserverOnConflicts).map(o -> (ObserverOnConflicts) o).collect(toCollection(ArrayList::new));
+		return Stream.of(runProgressSaver, heuristic, ipsRecorder, tracer).filter(o -> o instanceof ObserverOnConflicts).map(o -> (ObserverOnConflicts) o)
+				.collect(toCollection(ArrayList::new));
 	}
 
 	/**********************************************************************************************
@@ -534,7 +575,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 
 		this.nogoodRecorder = NogoodRecorder.buildFor(this); // may be null
 		this.ipsRecorder = IpsRecorder.buildFor(this); // may be null
-		this.proofer = ipsRecorder != null && ipsRecorder.reductionOperator.enablePElimination() ? new Proofer() : null;
+		this.proofer = ipsRecorder != null && ipsRecorder.reductionOperators.enablePElimination() ? new Proofer() : null;
 		this.nogoodMinimizer = new NogoodMinimizer(this);
 
 		this.entailed = new SetSparseReversible(problem.constraints.length, nLevels, false);
@@ -550,6 +591,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		this.observersOnBacktracksSystematic = collectObserversOnBacktracksSystematic();
 		this.observersOnDecisions = collectObserversOnDecisions();
 		this.observersOnAssignments = collectObserversOnAssignments();
+		this.observersOnRemovals = collectObserversOnRemovals();
 		this.observersOnConflicts = collectObserversOnConflicts();
 	}
 
@@ -625,7 +667,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		for (ObserverOnDecisions observer : observersOnDecisions)
 			observer.beforePositiveDecision(x, a);
 		assign(x, a);
-		boolean consistent = propagation.runAfterAssignment(x) && (ipsRecorder == null || ipsRecorder.dealWhenOpeningNode());
+		boolean consistent = propagation.runAfterAssignment(x) && (ipsRecorder == null || ipsRecorder.whenOpeningNode());
 		if (!consistent) {
 			x.failed[a]++;
 			stats.nWrongDecisions++;
@@ -639,22 +681,6 @@ public class Solver implements ObserverOnBacktracksSystematic {
 
 	public final boolean tryAssignment(Variable x) {
 		return tryAssignment(x, x.heuristic.bestValueIndex());
-	}
-
-	/**
-	 * Called when an empty domain has been encountered.
-	 */
-	protected void manageEmptyDomainBeforeBacktracking() {
-		if (runProgressSaver != null)
-			runProgressSaver.manageEmptyDomainBeforeBacktracking();
-
-		if (tracer != null)
-			tracer.onBacktrack();
-		stats.nBacktracks++;
-		if (ipsRecorder != null)
-			ipsRecorder.dealWhenClosingNode();
-		if (futVars.nPast() == 0)
-			stopping = Stopping.FULL_EXPLORATION;
 	}
 
 	protected final boolean tryRefutation(Variable x, int a) {
@@ -673,8 +699,13 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			if (!consistent)
 				stats.nWrongDecisions++;
 		}
-		if (!consistent)
-			manageEmptyDomainBeforeBacktracking();
+		if (!consistent) {
+			stats.nBacktracks++;
+			for (ObserverOnConflicts observer : observersOnConflicts)
+				observer.whenBacktrack();
+			if (futVars.nPast() == 0)
+				stopping = Stopping.FULL_EXPLORATION;
+		}
 		return consistent;
 	}
 

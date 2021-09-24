@@ -15,10 +15,9 @@ import propagation.Queue;
 import variables.Variable;
 
 /**
- * A revision ordering heuristic is attached to the propagation queue (i.e., set used to guide propagation) that
- * contains variables. <br />
- * It is used by the solver (actually, the propagation object) to iteratively select a variable in order to pursue
- * constraint propagation.
+ * This class gives the description of a revision ordering heuristic. A revision ordering heuristic is attached to the
+ * propagation queue (i.e., set used to guide propagation). It is used by the solver (actually, the propagation object)
+ * to iteratively select a variable (from the propagation queue) in order to perform constraint propagation.
  * 
  * @author Christophe Lecoutre
  */
@@ -34,11 +33,11 @@ public abstract class HeuristicRevisions extends Heuristic {
 	 * 
 	 * @param queue
 	 *            a queue containing variables used during propagation
-	 * @param antiHeuristic
-	 *            indicates if one should take the reverse ordering of the natural one
+	 * @param anti
+	 *            indicates if one must take the reverse ordering of the natural one
 	 */
-	public HeuristicRevisions(Queue queue, boolean antiHeuristic) {
-		super(antiHeuristic);
+	public HeuristicRevisions(Queue queue, boolean anti) {
+		super(anti);
 		this.queue = queue;
 	}
 
@@ -107,17 +106,17 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 	public static abstract class HeuristicRevisionsDynamic extends HeuristicRevisions {
 
-		public HeuristicRevisionsDynamic(Queue queue, boolean antiHeuristic) {
-			super(queue, antiHeuristic);
+		public HeuristicRevisionsDynamic(Queue queue, boolean anti) {
+			super(queue, anti);
 		}
 
 		/**
-		 * Returns the (raw) score of the specified variable (which is present in in the propagation queue). It is
-		 * usually the method to overridde in order to define a new heuristic.
+		 * Returns the (raw) score of the specified variable (which is present in in the propagation queue). This is the
+		 * method to override for defining a new heuristic.
 		 * 
 		 * @param x
 		 *            a variable
-		 * @return the score of the specified variable according to the heuristic
+		 * @return the (raw) score of the specified variable according to the heuristic
 		 */
 		protected abstract double scoreOf(Variable x);
 
@@ -141,8 +140,8 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class Dom extends HeuristicRevisionsDynamic {
 
-			public Dom(Queue queue, boolean antiHeuristic) {
-				super(queue, antiHeuristic);
+			public Dom(Queue queue, boolean anti) {
+				super(queue, anti);
 			}
 
 			@Override
@@ -153,8 +152,8 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class Ddeg extends HeuristicRevisionsDynamic implements TagMaximize {
 
-			public Ddeg(Queue queue, boolean antiHeuristic) {
-				super(queue, antiHeuristic);
+			public Ddeg(Queue queue, boolean anti) {
+				super(queue, anti);
 			}
 
 			@Override
@@ -165,8 +164,8 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class DdegOnDom extends HeuristicRevisionsDynamic implements TagMaximize {
 
-			public DdegOnDom(Queue queue, boolean antiHeuristic) {
-				super(queue, antiHeuristic);
+			public DdegOnDom(Queue queue, boolean anti) {
+				super(queue, anti);
 			}
 
 			@Override
@@ -177,8 +176,8 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class Wdeg extends HeuristicRevisionsDynamic implements TagMaximize {
 
-			public Wdeg(Queue queue, boolean antiHeuristic) {
-				super(queue, antiHeuristic);
+			public Wdeg(Queue queue, boolean anti) {
+				super(queue, anti);
 			}
 
 			@Override
@@ -189,8 +188,8 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class WdegOnDom extends HeuristicRevisionsDynamic implements TagMaximize {
 
-			public WdegOnDom(Queue queue, boolean antiHeuristic) {
-				super(queue, antiHeuristic);
+			public WdegOnDom(Queue queue, boolean anti) {
+				super(queue, anti);
 			}
 
 			@Override
@@ -201,8 +200,8 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class Lexico extends HeuristicRevisionsDynamic {
 
-			public Lexico(Queue queue, boolean antiHeuristic) {
-				super(queue, antiHeuristic);
+			public Lexico(Queue queue, boolean anti) {
+				super(queue, anti);
 			}
 
 			@Override
