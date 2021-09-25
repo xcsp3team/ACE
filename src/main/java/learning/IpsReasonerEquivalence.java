@@ -19,52 +19,49 @@ import utility.Bit;
 import utility.Enums.Stopping;
 import utility.Kit;
 import utility.Kit.ByteArrayHashKey;
-import variables.Domain;
 import variables.Variable;
 
-public final class IpsRecorderEquivalence extends IpsRecorder {
+public final class IpsReasonerEquivalence extends IpsReasoner {
 
-	private static final Integer zero = 0;
+	public final Map<ByteArrayHashKey, Integer> mapOfHashKeys;
 
-	private Map<ByteArrayHashKey, Integer> mapOfHashKeys = new HashMap<>(2000);
+	private final ByteArrayHashKey[] openNodesKeys;
 
-	private ByteArrayHashKey[] currentOpenNodesKeys;
+	private final int[] openNodesSols; // number of solutions
 
-	private int[] currentOpenNodesNbFoundSolutions;
+	private final int nBytesPerVariableNum;
+
+	private final Deflater compressor;
 
 	private ByteArrayHashKey currentHashKey;
 
-	private boolean moreThanOneSolution;
-
-	private int nBytesPerVariableId;
-
-	private Deflater compressor;
-
-	private byte[] tmpInput = new byte[50000]; // TODO
+	private byte[] tmpInput = new byte[50000]; // TODO why this value?
 
 	private byte[] tmpOutput = new byte[20000];
 
-	public int nTooLargeKeys, nInferredSolutions;
+	public int nTooLargeKeys;
 
-	public int getMapSize() {
-		return mapOfHashKeys.size();
-	}
+	/**
+	 * indicates the number of solution inferred by reasoning with IPSs
+	 */
+	public int nInferredSolutions;
 
-	// @Override
-	// public void clear() {
-	// mapOfHashKeys.clear();
-	// }
-
-	public IpsRecorderEquivalence(Solver solver) {
+	/**
+	 * Builds an object recording IPS and reasoning on them by equivalence
+	 * 
+	 * @param solver
+	 *            the solver to which this object is attached
+	 */
+	public IpsReasonerEquivalence(Solver solver) {
 		super(solver);
-		if (variables.length > 1500) // hard coding
+		int n = variables.length;
+		if (n > 1500) // hard coding
 			stopped = true;
-		currentOpenNodesKeys = new ByteArrayHashKey[variables.length];
-		currentOpenNodesNbFoundSolutions = new int[variables.length];
-		moreThanOneSolution = solver.solutions.limit > 1;
-		nBytesPerVariableId = (variables.length <= Math.pow(2, 8) ? 1 : variables.length <= Math.pow(2, 16) ? 2 : variables.length <= Math.pow(2, 24) ? 3 : 4);
-		if (settings.compressionLevelForStateEquivalence != Deflater.NO_COMPRESSION)
-			compressor = new Deflater(settings.compressionLevelForStateEquivalence);
+		this.mapOfHashKeys = new HashMap<>(2000);
+		this.openNodesKeys = new ByteArrayHashKey[n];
+		this.openNodesSols = new int[n];
+		this.nBytesPerVariableNum = n <= Math.pow(2, 8) ? 1 : n <= Math.pow(2, 16) ? 2 : n <= Math.pow(2, 24) ? 3 : 4;
+		this.compressor = settings.ipsCompressionEquivalence != Deflater.NO_COMPRESSION ? new Deflater(settings.ipsCompressionEquivalence) : null;
 	}
 
 	@Override
@@ -76,7 +73,7 @@ public final class IpsRecorderEquivalence extends IpsRecorder {
 	}
 
 	private byte[] compress(int limit) {
-		assert limit >= settings.compressionLimitForStateEquivalence;
+		assert limit >= settings.ipsCompressionLimitEquivalence;
 
 		compressor.reset();
 		compressor.setInput(tmpInput, 0, limit);
@@ -93,20 +90,16 @@ public final class IpsRecorderEquivalence extends IpsRecorder {
 	}
 
 	private void buildHashKey() {
-		int[] ids = moreThanOneSolution ? reductionOperators.extractForAllSolutions() : reductionOperators.extract();
+		Variable[] vars = solver.solutions.limit > 1 ? extractor.extractForAllSolutions() : extractor.extract();
 		int keySize = 0;
-		for (int i = 0; i < ids.length; i++) {
-			Variable var = solver.problem.variables[ids[i]];
-			Domain dom = var.dom;
-			if (keySize + nBytesPerVariableId + dom.initSize() / 8 >= tmpInput.length) {
+		for (Variable x : vars) {
+			if (keySize + nBytesPerVariableNum + x.dom.initSize() / 8 >= tmpInput.length) {
 				keySize = -1;
 				break;
 			}
-			keySize = Bit.convert(var.num, nBytesPerVariableId, tmpInput, keySize);
-			// if (elements.getNbPresentElements() == elements.getMaximumSize()) // decomment if all solutions are
-			// seeked
-			// continue;
-			keySize = Bit.convert(dom.binary(), dom.initSize(), tmpInput, keySize);
+			keySize = Bit.convert(x.num, nBytesPerVariableNum, tmpInput, keySize);
+			// if (dom.size() == dom.initSize()) continue; // decomment if all solutions are seeked
+			keySize = Bit.convert(x.dom.binary(), x.dom.initSize(), tmpInput, keySize);
 		}
 		if (currentHashKey == null)
 			currentHashKey = new ByteArrayHashKey();
@@ -115,7 +108,7 @@ public final class IpsRecorderEquivalence extends IpsRecorder {
 			nTooLargeKeys++;
 		} else {
 			byte[] t = null;
-			if (compressor == null || keySize < settings.compressionLimitForStateEquivalence) {
+			if (compressor == null || keySize < settings.ipsCompressionLimitEquivalence) {
 				t = new byte[keySize];
 				System.arraycopy(tmpInput, 0, t, 0, keySize);
 			} else
@@ -128,19 +121,14 @@ public final class IpsRecorderEquivalence extends IpsRecorder {
 	public boolean whenOpeningNode() {
 		if (stopped)
 			return true;
-
-		int level = solver.depth();
-		if (level == variables.length)
+		int depth = solver.depth();
+		if (depth == variables.length)
 			return true;
-
 		buildHashKey();
-
 		if (currentHashKey.t == null) {
-			currentOpenNodesKeys[level] = null;
+			openNodesKeys[depth] = null;
 			return true;
 		}
-		// if (currentHashKey.t.length == 0) Kit.prn("open empty noggod");
-
 		Integer value = mapOfHashKeys.get(currentHashKey);
 		if (value != null) {
 			nInferences++;
@@ -151,10 +139,9 @@ public final class IpsRecorderEquivalence extends IpsRecorder {
 			// else mapOfHashKeys.put(currentHashKey, value - 1);
 			return false;
 		}
-
-		currentOpenNodesKeys[level] = currentHashKey;
+		openNodesKeys[depth] = currentHashKey;
 		currentHashKey = null;
-		currentOpenNodesNbFoundSolutions[level] = (int) solver.solutions.found;
+		openNodesSols[depth] = (int) solver.solutions.found;
 		return true;
 	}
 
@@ -167,49 +154,20 @@ public final class IpsRecorderEquivalence extends IpsRecorder {
 					+ Kit.memoryInMb() + ")");
 			mapOfHashKeys.clear();
 			stopped = true;
-			// display();
 			return;
 		}
-
-		ByteArrayHashKey hashKey = currentOpenNodesKeys[solver.depth()];
+		ByteArrayHashKey hashKey = openNodesKeys[solver.depth()];
 		if (hashKey == null)
 			return; // since the key was too large and so not recorded
 		if (hashKey.t.length == 0)
 			solver.stopping = Stopping.FULL_EXPLORATION;
-		int nSolutions = (int) solver.solutions.found - currentOpenNodesNbFoundSolutions[solver.depth()];
-		mapOfHashKeys.put(hashKey, nSolutions == 0 ? zero : nSolutions);
+		int nSolutions = (int) solver.solutions.found - openNodesSols[solver.depth()];
+		mapOfHashKeys.put(hashKey, nSolutions == 0 ? 0 : nSolutions);
 	}
-
-	// public boolean dealWhenOpeningRefutationNode() {
-	// if (stop)
-	// return true;
-	//
-	// int level = solver.getCurrentDepth();
-	// if (level == variables.length)
-	// return true;
-	//
-	// buildHashKey();
-	// // solver.problem.displayExhaustively();
-	// if (currentHashKey.t == null)
-	// return true;
-	//
-	// Integer value = mapOfHashKeys.get(currentHashKey);
-	// if (value != null) {
-	// nbInferences++;
-	// if (value > 0) {
-	// nbInferredSolutions += value;
-	// solver.statistics.incrementNbFoundSolutionsOf(value);
-	// }
-	// // else
-	// // mapOfHashKeys.put(currentHashKey, value - 1);
-	// return false;
-	// }
-	// return true;
-	// }
 
 	@Override
 	public void displayStats() {
-		if (!stopped) // && !Data.competitionMode)
+		if (!stopped)
 			Kit.log.finer("  mapSize=" + mapOfHashKeys.size() + "  nbInferences=" + nInferences + "  nbInferredSolutions=" + nInferredSolutions + "  usedMem="
 					+ Kit.memoryInMb() + "  nbTooLargeKeys=" + nTooLargeKeys);
 	}

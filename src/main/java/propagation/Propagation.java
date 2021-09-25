@@ -16,7 +16,7 @@ import constraints.Constraint;
 import constraints.ConstraintGlobal;
 import dashboard.Control.SettingPropagation;
 import interfaces.Observers.ObserverOnConflicts;
-import learning.IpsRecorderDominance;
+import learning.IpsReasonerDominance;
 import sets.SetSparse;
 import solver.Solver;
 import utility.Kit;
@@ -93,24 +93,24 @@ public abstract class Propagation {
 
 		public boolean isNogoodConsistent(Variable x) {
 			Domain dom = x.dom;
-			if (solver.nogoodRecorder != null)
-				if (dom.size() == 1 && solver.nogoodRecorder.checkWatchesOf(x, dom.first(), false) == false)
+			if (solver.nogoodReasoner != null)
+				if (dom.size() == 1 && solver.nogoodReasoner.checkWatchesOf(x, dom.first(), false) == false)
 					return false;
 			if (ipsDominanceReasoning == null) { // first call
-				ipsDominanceReasoning = solver.ipsRecorder instanceof IpsRecorderDominance ? Boolean.TRUE : Boolean.FALSE;
+				ipsDominanceReasoning = solver.ipsReasoner instanceof IpsReasonerDominance ? Boolean.TRUE : Boolean.FALSE;
 				if (ipsDominanceReasoning) {
 					this.absentValuesSentinel = new int[solver.problem.variables.length];
 					this.sentinelLevel = new long[solver.problem.variables.length];
 				}
 			}
 			if (ipsDominanceReasoning) {
-				IpsRecorderDominance ipsRecorder = (IpsRecorderDominance) solver.ipsRecorder;
+				IpsReasonerDominance ipsReasoner = (IpsReasonerDominance) solver.ipsReasoner;
 				if (sentinelLevel[x.num] != solver.stats.safeNumber())
 					absentValuesSentinel[x.num] = -1;
 				int depth = solver.depth();
 				int lastRemoved = dom.lastRemoved();
 				for (int a = lastRemoved; a != absentValuesSentinel[x.num] && dom.removedLevelOf(a) == depth; a = dom.prevRemoved(a))
-					if (!ipsRecorder.checkWatchesOf(x.num, a))
+					if (!ipsReasoner.checkWatchesOf(x, a))
 						return false;
 				sentinelLevel[x.num] = solver.stats.safeNumber();
 				absentValuesSentinel[x.num] = lastRemoved;

@@ -21,20 +21,20 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class IpsRecorder implements ObserverOnRuns, ObserverOnConflicts {
+public abstract class IpsReasoner implements ObserverOnRuns, ObserverOnConflicts {
 
 	/**
-	 * Builds and returns an object recording Inconsistent Partial States (IPSs), or null.
+	 * Builds and returns an object used for recording and reasoning with Inconsistent Partial States (IPSs), or null.
 	 * 
 	 * @param solver
-	 *            the solver to which the recorder is attached
-	 * @return an object recording IPSs or null
+	 *            the solver to which the built reasoner will be attached
+	 * @return an object recording and reasoning with IPSs, or null
 	 */
-	public static IpsRecorder buildFor(Solver solver) {
-		if (solver.head.control.learning.state == LearningIps.EQUIVALENCE)
-			return new IpsRecorderEquivalence(solver);
-		if (solver.head.control.learning.state == LearningIps.DOMINANCE)
-			return new IpsRecorderDominance(solver);
+	public static IpsReasoner buildFor(Solver solver) {
+		if (solver.head.control.learning.ips == LearningIps.EQUIVALENCE)
+			return new IpsReasonerEquivalence(solver);
+		if (solver.head.control.learning.ips == LearningIps.DOMINANCE)
+			return new IpsReasonerDominance(solver);
 		return null;
 	}
 
@@ -112,7 +112,7 @@ public abstract class IpsRecorder implements ObserverOnRuns, ObserverOnConflicts
 	/**
 	 * The object embedding so-called reduction operators, which allow us to build IPSs
 	 */
-	public final ReductionOperators reductionOperators;
+	public final IpsExtractor extractor;
 
 	/**
 	 * The object storing the explanation (as a constraint) of every value removal
@@ -128,10 +128,16 @@ public abstract class IpsRecorder implements ObserverOnRuns, ObserverOnConflicts
 
 	public int nInferences;
 
-	public IpsRecorder(Solver solver) {
+	/**
+	 * Builds an object recording and reasoning with IPSs for the specified solver
+	 * 
+	 * @param solver
+	 *            the solver to which this object is attached
+	 */
+	public IpsReasoner(Solver solver) {
 		this.solver = solver;
 		this.variables = solver.problem.variables;
-		this.reductionOperators = new ReductionOperators(this);
+		this.extractor = new IpsExtractor(this);
 		this.explainer = new Explainer();
 		this.settings = solver.head.control.learning;
 	}
@@ -140,8 +146,16 @@ public abstract class IpsRecorder implements ObserverOnRuns, ObserverOnConflicts
 		return Kit.memory() > 600000000; // TODO hard coding
 	}
 
+	/**
+	 * Called when a new node of the search tree is opened
+	 * 
+	 * @return false if an inconsistency is detected
+	 */
 	public abstract boolean whenOpeningNode();
 
+	/**
+	 * Called when the current node of the search tree is closed (i.e., when backtracking)
+	 */
 	public abstract void whenClosingNode();
 
 	public void displayStats() {

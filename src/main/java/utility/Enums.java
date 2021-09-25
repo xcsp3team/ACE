@@ -29,7 +29,7 @@ public class Enums {
 	}
 
 	public static enum LearningNogood {
-		NO, RST, MIN_STD, RST_MIN, RST_SYM;
+		NO, RST, RST_MIN, RST_SYM;
 
 		public boolean isRstType() {
 			return this == RST || this == RST_MIN || this == RST_SYM;

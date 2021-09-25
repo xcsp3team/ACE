@@ -508,11 +508,11 @@ public class Control {
 		public final int nogoodArityLimit = addI("nogoodArityLimit", "l_ngal", Integer.MAX_VALUE, "", HIDDEN);
 		public final int unarySymmetryLimit = addI("unarySymmetryLimit", "l_usl", Integer.MAX_VALUE, "", HIDDEN);
 		public final int nonunarySymmetryLimit = addI("nonunarySymmetryLimit", "l_nsl", 2000, "", HIDDEN);
-		public final LearningIps state = addE("state", "l_ps", LearningIps.NO, s_ps);
-		public final String stateOperators = addS("stateOperators", "l_pso", "11011", s_pso).trim();
-		public final int compressionLevelForStateEquivalence = addI("compressionLevelForStateEquivalence", "l_clevel", Deflater.NO_COMPRESSION, "", HIDDEN);
+		public final LearningIps ips = addE("ips", "ips", LearningIps.NO, s_ps);
+		public final String ipsOperators = addS("ipsOperators", "ipso", "11011", s_pso).trim();
+		public final int ipsCompressionEquivalence = addI("ipsCompressionEquivalence", "ipsc", Deflater.NO_COMPRESSION, "", HIDDEN);
 		// BEST_SPEED or BEST_COMPRESSION as alternatives
-		public final int compressionLimitForStateEquivalence = addI("compressionLimitForStateEquivalence", "l_climit", 300, "", HIDDEN);
+		public final int ipsCompressionLimitEquivalence = addI("ipsCompressionLimitEquivalence", "ipscl", 300, "", HIDDEN);
 	}
 
 	public final SettingLearning learning = new SettingLearning();

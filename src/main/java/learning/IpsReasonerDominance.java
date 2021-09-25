@@ -10,6 +10,8 @@
 
 package learning;
 
+import static utility.Kit.control;
+
 import solver.Solver;
 import utility.Bit;
 import utility.Enums.Stopping;
@@ -17,56 +19,90 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public final class IpsRecorderDominance extends IpsRecorder {
+public final class IpsReasonerDominance extends IpsReasoner {
 
-	protected Ips[] waitingNogoods;
+	/**
+	 * watches[x][a] is the (head of the) linked list of cells containing IPSs with (x,a) being watched
+	 */
+	private final WatchCell[] watches;
 
-	protected WatchCell[] watches; // 1D = variable id ; value = reference to the first cell involving the variable as
-									// watch in a hypernogood
+	/**
+	 * The first free cell (i.e. from the pool of free cells)
+	 */
+	private WatchCell free;
 
-	protected WatchCell free; // reference to the first free cell (i.e. the pool of free cells)
+	private final int[] offsets;
 
-	protected int nTotalRemovals, nWipeouts, nIps;
-
-	public int nGeneratedIps;
-
-	private int[] offsets;
-
+	/**
+	 * Store for IPSs that must wait for right conditions before entering a watching list
+	 */
 	private Ips[] quarantine = new Ips[100];
 
+	/**
+	 * The number of IPSs in the quarantine store
+	 */
 	private int quarantineSize;
 
-	private int[] topBeforeRefutations;
+	private final int[] topBeforeRefutations;
+
+	private final Ips[] waitingNogoods;
+
+	/**
+	 * The number of inferred value deletions
+	 */
+	private int nRemovals;
+
+	/**
+	 * The number of inferred wipe-outs
+	 */
+	private int nWipeouts;
+
+	/**
+	 * The number of IPSs
+	 */
+	private int nIps;
 
 	private static final class WatchCell {
+
 		/**
 		 * The IPS recorded in the cell
 		 */
 		private Ips ips;
 
-		private WatchCell nextCell;
+		/**
+		 * The next cell, following this one, or null
+		 */
+		private WatchCell next;
 
-		WatchCell(Ips state, WatchCell nextCell) {
-			this.ips = state;
-			this.nextCell = nextCell;
+		WatchCell(Ips ips, WatchCell next) {
+			this.ips = ips;
+			this.next = next;
 		}
 	}
 
-	public IpsRecorderDominance(Solver solver) {
+	/**
+	 * Builds an object recording IPS and reasoning on them by dominance
+	 * 
+	 * @param solver
+	 *            the solver to which this object is attached
+	 */
+	public IpsReasonerDominance(Solver solver) {
 		super(solver);
-		Kit.control(solver.propagation != null);
-
+		control(solver.propagation != null);
 		int capacity = 0;
-		offsets = new int[variables.length];
+		this.offsets = new int[variables.length];
 		for (int i = 0; i < offsets.length; i++) {
 			offsets[i] = capacity;
 			capacity += variables[i].dom.initSize();
 		}
-		watches = new WatchCell[capacity];
-		if (reductionOperators.enablePElimination())
-			topBeforeRefutations = new int[offsets.length + 1]; // offsets.length is equal to the nb of variables
-		else
-			waitingNogoods = new Ips[offsets.length + 1];
+		this.watches = new WatchCell[capacity];
+		if (extractor.enablePElimination()) {
+			this.topBeforeRefutations = new int[variables.length + 1];
+			this.waitingNogoods = null;
+		} else {
+			this.topBeforeRefutations = null;
+			this.waitingNogoods = new Ips[variables.length + 1];
+		}
 	}
 
 	private void insertIps(Ips ips, int accessKey) {
@@ -74,31 +110,29 @@ public final class IpsRecorderDominance extends IpsRecorder {
 			watches[accessKey] = new WatchCell(ips, watches[accessKey]);
 		else {
 			WatchCell cell = free;
-			free = free.nextCell;
+			free = free.next;
 			cell.ips = ips;
-			cell.nextCell = watches[accessKey];
+			cell.next = watches[accessKey];
 			watches[accessKey] = cell;
 		}
 	}
 
 	private boolean canFindAnotherWatch(Ips ips, int watchPosition) {
 		int pos = ips.watchPosFor(watchPosition);
-		int x = ips.nums[pos];
-		long[] binDom = variables[x].dom.binary();
-		int a = Bit.firstPositionOfNonInclusion(binDom, ips.binDoms[pos]);
+		Variable x = ips.vars[pos];
+		int a = Bit.firstPositionOfNonInclusion(x.dom.binary(), ips.doms[pos]);
 		if (a != -1) {
-			insertIps(ips, offsets[x] + a);
+			insertIps(ips, offsets[x.num] + a);
 			ips.setIndex(watchPosition, a);
 			return true;
 		}
-		for (int i = 0; i < ips.nums.length; i++) {
-			int y = ips.nums[i];
+		for (int i = 0; i < ips.size(); i++) {
+			Variable y = ips.vars[i];
 			if (ips.isWatched(y))
 				continue;
-			binDom = variables[y].dom.binary();
-			a = Bit.firstPositionOfNonInclusion(binDom, ips.binDoms[i]);
+			a = Bit.firstPositionOfNonInclusion(y.dom.binary(), ips.doms[i]);
 			if (a != -1) {
-				insertIps(ips, offsets[y] + a);
+				insertIps(ips, offsets[y.num] + a);
 				ips.setWatch(watchPosition, i, a); // indexPosition);addWatch(ips, watchPosition, i, &);
 				return true;
 			}
@@ -106,25 +140,24 @@ public final class IpsRecorderDominance extends IpsRecorder {
 		return false;
 	}
 
-	public boolean checkWatchesOf(int x, int a) {
-		int lit = offsets[x] + a;
-		WatchCell previous = null;
-		WatchCell current = watches[lit];
+	public boolean checkWatchesOf(Variable x, int a) {
+		int lit = offsets[x.num] + a;
+		WatchCell previous = null, current = watches[lit];
 		while (current != null) {
 			Ips ips = current.ips;
 			int watch = ips.watchFor(x); // watch is 0 or 1 (first or second watch)
 			if (canFindAnotherWatch(ips, watch)) {
-				WatchCell tmp = current.nextCell;
+				WatchCell tmp = current.next;
 				if (previous == null)
-					watches[lit] = current.nextCell;
+					watches[lit] = current.next;
 				else
-					previous.nextCell = current.nextCell;
-				current.nextCell = free;
+					previous.next = current.next;
+				current.next = free;
 				free = current;
 				current = tmp;
 			} else {
 				previous = current;
-				current = current.nextCell;
+				current = current.next;
 				if (!dealWithInference(ips, ips.watchPosFor(watch == 0 ? 1 : 0)))
 					return false;
 			}
@@ -133,12 +166,10 @@ public final class IpsRecorderDominance extends IpsRecorder {
 	}
 
 	private boolean canFindAWatch(Ips ips, int discardedPosition) {
-		int[] nums = ips.nums;
-		for (int i = 0; i < nums.length; i++) {
+		for (int i = 0; i < ips.size(); i++) {
 			if (i == discardedPosition)
 				continue;
-			long[] binDom = variables[nums[i]].dom.binary();
-			int a = Bit.firstPositionOfNonInclusion(binDom, ips.binDoms[i]);
+			int a = Bit.firstPositionOfNonInclusion(ips.vars[i].dom.binary(), ips.doms[i]);
 			if (a != -1) {
 				ips.setWatch(discardedPosition == -1 ? 0 : 1, i, a);
 				return true;
@@ -147,29 +178,29 @@ public final class IpsRecorderDominance extends IpsRecorder {
 		return false;
 	}
 
-	protected boolean dealWithInference(Ips ips, int pos) {
-		Variable x = variables[ips.nums[pos]];
-		long[] domainRepresentation = ips.binDoms[pos];
+	private boolean dealWithInference(Ips ips, int pos) {
+		Variable x = ips.vars[pos];
+		long[] set = ips.doms[pos];
 		Domain dom = x.dom;
-		if (x.assigned() && Bit.isPresent(domainRepresentation, dom.first())) {
+		if (x.assigned() && Bit.isPresent(set, dom.first())) {
 			if (solver.proofer != null)
-				solver.proofer.updateProof(ips.nums);
+				solver.proofer.updateProof(ips.vars);
 			nWipeouts++;
 			return false;
 		}
 
 		int sizeBefore = dom.size();
 		for (int a = dom.first(); a != -1; a = dom.next(a))
-			if (Bit.isPresent(domainRepresentation, a))
+			if (Bit.isPresent(set, a))
 				dom.removeElementary(a);
 		int nRemovals = sizeBefore - dom.size();
 		if (nRemovals > 0) {
 			if (solver.proofer != null)
-				solver.proofer.updateProof(ips.nums);
+				solver.proofer.updateProof(ips.vars);
 			if (dom.size() == 0)
 				nWipeouts++;
 			else
-				nTotalRemovals += nRemovals;
+				nRemovals += nRemovals;
 			if (dom.afterElementaryCalls(sizeBefore) == false)
 				return false;
 		}
@@ -179,14 +210,13 @@ public final class IpsRecorderDominance extends IpsRecorder {
 	private boolean manageQuarantine() {
 		for (int i = 0; i < quarantineSize; i++) {
 			Ips ips = quarantine[i];
-			int[] nums = ips.nums;
-			if (nums.length == 1) {
+			if (ips.size() == 1) {
 				if (!dealWithInference(ips, 0))
 					return false;
 			} else {
 				if (!canFindAWatch(ips, -1)) {
 					if (solver.proofer != null)
-						solver.proofer.updateProof(ips.nums);
+						solver.proofer.updateProof(ips.vars);
 					nWipeouts++;
 					return false;
 				}
@@ -206,27 +236,27 @@ public final class IpsRecorderDominance extends IpsRecorder {
 		return true;
 	}
 
-	private void preparePartialBacktrack(int level) {
+	private void preparePartialBacktrack(int depth) {
 		int top = solver.stackedVariables.top;
 		Variable[] stack = solver.stackedVariables.stack;
-		topBeforeRefutations[level] = top;
-		if (top == -1 || stack[top].dom.lastRemovedLevel() < level)
+		topBeforeRefutations[depth] = top;
+		if (top == -1 || stack[top].dom.lastRemovedLevel() < depth)
 			return;
 		for (int i = top; stack[i] != null; i--)
-			stack[i].dom.setMark(level); // getLastDropped();
+			stack[i].dom.setMark(depth); // getLastDropped();
 	}
 
 	@Override
 	public boolean whenOpeningNode() {
-		if (reductionOperators.enablePElimination())
+		if (extractor.enablePElimination())
 			topBeforeRefutations[solver.depth()] = -2;
-		if (!manageQuarantine() || !solver.propagation.propagate())
+		if (manageQuarantine() == false || solver.propagation.propagate() == false)
 			return false;
-		if (reductionOperators.enablePElimination()) {
+		if (extractor.enablePElimination()) {
 			preparePartialBacktrack(solver.depth());
 			// waitingNogoods[solver.getCurrentDepth()] = new Ips(solver, reductionOperator.copy());
 		} else
-			waitingNogoods[solver.depth()] = new Ips(this, reductionOperators.extract());
+			waitingNogoods[solver.depth()] = new Ips(extractor.extract());
 		return true;
 	}
 
@@ -244,7 +274,6 @@ public final class IpsRecorderDominance extends IpsRecorder {
 			}
 			stack[i].dom.restoreBefore(depth);
 		}
-		// int[] currentFrontiers = frontiers[level];
 		for (int i = topBefore; stack[i] != null; i--)
 			stack[i].dom.restoreAtMark(depth); // restoreElementsDroppedStrictlyAfter(currentFrontiers[cnt]);
 	}
@@ -255,19 +284,19 @@ public final class IpsRecorderDominance extends IpsRecorder {
 		if (depth == 0)
 			return;
 		Ips ips = null;
-		if (reductionOperators.enablePElimination()) {
+		if (extractor.enablePElimination()) {
 			int topBefore = topBeforeRefutations[depth];
 			if (topBefore == -2)
 				return;
 			performPartialBacktrack(topBefore, depth);
-			ips = new Ips(this, reductionOperators.extract());
+			ips = new Ips(extractor.extract());
 			// ips = new Ips(solver, ((SystematicSolver) solver).getProofVariablesAt(solver.getCurrentDepth()));
 			// ips = new Ips(waitingNogoods[level],
 			// ((SystematicSolver)solver).getProofVariablesAt(solver.getCurrentDepth() ));
 		} else
 			ips = waitingNogoods[depth];
 		assert ips != null;
-		if (ips.nums.length == 0) {
+		if (ips.size() == 0) {
 			Kit.log.info("empty nogood");
 			solver.stopping = Stopping.FULL_EXPLORATION;
 		} else {
@@ -282,14 +311,14 @@ public final class IpsRecorderDominance extends IpsRecorder {
 
 	@Override
 	public void displayStats() {
-		Kit.log.info("nIPSs" + nGeneratedIps + " nTotalRemovals=" + nTotalRemovals + " nWipeouts=" + nWipeouts);
+		Kit.log.info("nIPSs" + nIps + " nRemovals=" + nRemovals + " nWipeouts=" + nWipeouts);
 	}
 
 	public void display() {
 		Kit.log.fine("nIPSs = " + nIps);
 		for (int i = 0; i < watches.length; i++) {
 			String s = "Watches for " + solver.problem.variables[i] + " ";
-			for (WatchCell cell = watches[i]; cell != null; cell = cell.nextCell)
+			for (WatchCell cell = watches[i]; cell != null; cell = cell.next)
 				s += cell.ips.toString();
 			Kit.log.fine(s);
 		}

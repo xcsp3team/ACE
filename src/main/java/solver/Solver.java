@@ -45,9 +45,8 @@ import interfaces.Observers.ObserverOnDecisions;
 import interfaces.Observers.ObserverOnRemovals;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Observers.ObserverOnSolving;
-import learning.IpsRecorder;
-import learning.NogoodMinimizer;
-import learning.NogoodRecorder;
+import learning.IpsReasoner;
+import learning.NogoodReasoner;
 import main.Head;
 import problem.Problem;
 import propagation.Forward;
@@ -286,9 +285,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 				proofVariables[depth()][x.num] = true;
 		}
 
-		public void updateProof(int[] nums) {
-			for (int num : nums)
-				proofVariables[depth()][num] = true;
+		public void updateProof(Variable[] vars) {
+			for (Variable x : vars)
+				proofVariables[depth()][x.num] = true;
 		}
 
 		public void updateProofAll() {
@@ -400,7 +399,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		if (!head.control.solving.enableSearch)
 			return new ArrayList<>();
 		Stream<Object> stream = Stream.concat(
-				Stream.of(this, problem.optimizer, restarter, runProgressSaver, decisions, heuristic, lastConflict, ipsRecorder, head.output, stats),
+				Stream.of(this, problem.optimizer, restarter, runProgressSaver, decisions, heuristic, lastConflict, ipsReasoner, head.output, stats),
 				Stream.of(problem.constraints)); // and nogoodRecorder.symmetryHandler
 		return stream.filter(c -> c instanceof ObserverOnRuns).map(o -> (ObserverOnRuns) o).collect(toCollection(ArrayList::new));
 	}
@@ -423,12 +422,12 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	private List<ObserverOnRemovals> collectObserversOnRemovals() {
-		return Stream.of(ipsRecorder != null ? ipsRecorder.explainer : null).filter(o -> o != null).map(o -> (ObserverOnRemovals) o)
+		return Stream.of(ipsReasoner != null ? ipsReasoner.explainer : null).filter(o -> o != null).map(o -> (ObserverOnRemovals) o)
 				.collect(toCollection(ArrayList::new));
 	}
 
 	private List<ObserverOnConflicts> collectObserversOnConflicts() {
-		return Stream.of(runProgressSaver, heuristic, ipsRecorder, tracer).filter(o -> o instanceof ObserverOnConflicts).map(o -> (ObserverOnConflicts) o)
+		return Stream.of(runProgressSaver, heuristic, ipsReasoner, tracer).filter(o -> o instanceof ObserverOnConflicts).map(o -> (ObserverOnConflicts) o)
 				.collect(toCollection(ArrayList::new));
 	}
 
@@ -483,9 +482,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 
 	public final StackedVariables stackedVariables;
 
-	public final NogoodRecorder nogoodRecorder;
+	public final NogoodReasoner nogoodReasoner;
 
-	public final IpsRecorder ipsRecorder;
+	public final IpsReasoner ipsReasoner;
 
 	public final Proofer proofer;
 
@@ -496,8 +495,6 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	public final WarmStarter warmStarter;
 
 	public int minDepth, maxDepth;
-
-	public NogoodMinimizer nogoodMinimizer;
 
 	/**
 	 * when null, the solver is still running
@@ -542,9 +539,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		control(decisions.set.isEmpty()); // otherwise decisions.set.clear();
 		heuristic.setPriorityVars(problem.priorityVars, 0);
 		// lastConflict.beforeRun();
-		if (nogoodRecorder != null)
-			nogoodRecorder.reset();
-		control(ipsRecorder == null);
+		if (nogoodReasoner != null)
+			nogoodReasoner.reset();
+		control(ipsReasoner == null);
 		control(stackedVariables.top == -1, () -> "Top= " + stackedVariables.top);
 		this.stats = new Statistics(this); // for simplicity, stats are rebuilt
 		control(proofer == null);
@@ -573,10 +570,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		int size = Stream.of(problem.variables).mapToInt(x -> x.dom.initSize()).reduce(0, (sum, domSize) -> sum + Math.min(nLevels, domSize));
 		this.stackedVariables = new StackedVariables(size + nLevels);
 
-		this.nogoodRecorder = NogoodRecorder.buildFor(this); // may be null
-		this.ipsRecorder = IpsRecorder.buildFor(this); // may be null
-		this.proofer = ipsRecorder != null && ipsRecorder.reductionOperators.enablePElimination() ? new Proofer() : null;
-		this.nogoodMinimizer = new NogoodMinimizer(this);
+		this.nogoodReasoner = NogoodReasoner.buildFor(this); // may be null
+		this.ipsReasoner = IpsReasoner.buildFor(this); // may be null
+		this.proofer = ipsReasoner != null && ipsReasoner.extractor.enablePElimination() ? new Proofer() : null;
 
 		this.entailed = new SetSparseReversible(problem.constraints.length, nLevels, false);
 
@@ -667,7 +663,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		for (ObserverOnDecisions observer : observersOnDecisions)
 			observer.beforePositiveDecision(x, a);
 		assign(x, a);
-		boolean consistent = propagation.runAfterAssignment(x) && (ipsRecorder == null || ipsRecorder.whenOpeningNode());
+		boolean consistent = propagation.runAfterAssignment(x) && (ipsReasoner == null || ipsReasoner.whenOpeningNode());
 		if (!consistent) {
 			x.failed[a]++;
 			stats.nWrongDecisions++;
@@ -773,8 +769,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			}
 		}
 		minDepth = decisions.minDepth(); // need to be recorded before backtracking to the root
-		if (nogoodRecorder != null && !finished() && !restarter.allRunsFinished())
-			nogoodRecorder.addNogoodsOfCurrentBranch();
+		if (nogoodReasoner != null && !finished() && !restarter.allRunsFinished())
+			nogoodReasoner.addNogoodsOfCurrentBranch();
 	}
 
 	private void backtrackTo(Variable x) {

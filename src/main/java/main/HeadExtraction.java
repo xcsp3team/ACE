@@ -312,7 +312,7 @@ public class HeadExtraction extends Head {
 		Input.loadArguments(args);
 		HeadExtraction extraction = new HeadExtraction();
 		Kit.control(!extraction.control.problem.isSymmetryBreaking(), () -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
-		Kit.control(extraction.control.learning.state == LearningIps.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
+		Kit.control(extraction.control.learning.ips == LearningIps.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
 		// Kit.control(extraction.configuration.restartsCutoff == Long.MAX_VALUE || extraction.configuration.nogoodType == null,
 		// "Be careful of nogood recording from restarts.");
 		Kit.control(extraction.control.solving.clazz.equals(Solver.class.getSimpleName()), () -> extraction.control.solving.clazz);

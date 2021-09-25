@@ -36,14 +36,14 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	@Override
 	public final void beforePreprocessing() {
 		stopwatch.start();
-		prepro.nAddedNogoods = solver.nogoodRecorder != null ? solver.nogoodRecorder.nNogoods : 0;
+		prepro.nAddedNogoods = solver.nogoodReasoner != null ? solver.nogoodReasoner.nNogoods : 0;
 		prepro.nAddedCtrs = solver.problem.constraints.length;
 	}
 
 	@Override
 	public final void afterPreprocessing() {
 		times.preproWck += stopwatch.wckTime();
-		prepro.nAddedNogoods = solver.nogoodRecorder != null ? solver.nogoodRecorder.nNogoods - prepro.nAddedNogoods : 0;
+		prepro.nAddedNogoods = solver.nogoodReasoner != null ? solver.nogoodReasoner.nNogoods - prepro.nAddedNogoods : 0;
 		prepro.nAddedCtrs = solver.problem.constraints.length - prepro.nAddedCtrs;
 		prepro.nRemovedValues = Variable.nRemovedValuesFor(solver.problem.variables);
 		prepro.nRemovedTuples = solver.propagation.nTuplesRemoved;

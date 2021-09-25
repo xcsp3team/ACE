@@ -18,12 +18,12 @@ import solver.FutureVariables;
 import utility.Kit;
 import variables.Variable;
 
-public final class ReductionOperators {
+public final class IpsExtractor {
 
 	/**
-	 * The recorder to which this object is attached
+	 * The IPS reasoner to which this object is attached
 	 */
-	private final IpsRecorder recorder;
+	private final IpsReasoner ipsReasoner;
 
 	/**
 	 * indicates if (G)AC is guaranteed
@@ -48,7 +48,7 @@ public final class ReductionOperators {
 
 	private final boolean[] selectedVariables;
 
-	private final int[] tmpVariable;
+	private final Variable[] tmpVariable;
 
 	private final Constraint[] nonUniversal;
 
@@ -88,24 +88,24 @@ public final class ReductionOperators {
 		return c == '0' ? false : c == '1' ? true : (Boolean) Kit.exit("The expected character should have been 0 or 1");
 	}
 
-	public ReductionOperators(IpsRecorder recorder) {
-		this.recorder = recorder;
-		this.acGuaranteed = recorder.solver.propagation.getClass() == GAC.class && ((GAC) recorder.solver.propagation).guaranteed;
-		this.binaryNetwork = recorder.solver.problem.features.maxCtrArity() == 2;
-		String s = recorder.solver.head.control.learning.stateOperators;
+	public IpsExtractor(IpsReasoner ipsReasoner) {
+		this.ipsReasoner = ipsReasoner;
+		this.acGuaranteed = ipsReasoner.solver.propagation.getClass() == GAC.class && ((GAC) ipsReasoner.solver.propagation).guaranteed;
+		this.binaryNetwork = ipsReasoner.solver.problem.features.maxCtrArity() == 2;
+		String s = ipsReasoner.solver.head.control.learning.ipsOperators;
 		Kit.control(s.length() == 5);
 		this.eliminateEntailedVariables = parse(s.charAt(0));
 		this.eliminateInitialDomainVariables = parse(s.charAt(1));
 		this.eliminateDegreeVariables = parse(s.charAt(2));
 		this.eliminateJustifiedVariables = parse(s.charAt(3));
 		this.eliminateNotInProofVariables = parse(s.charAt(4));
-		if (eliminateNotInProofVariables && recorder instanceof IpsRecorderEquivalence) {
+		if (eliminateNotInProofVariables && ipsReasoner instanceof IpsReasonerEquivalence) {
 			this.eliminateNotInProofVariables = false;
 			Kit.log.warning("partial state operator 'eliminateNotInProofVariables' set to false");
 		}
-		this.variables = recorder.solver.problem.variables;
+		this.variables = ipsReasoner.solver.problem.variables;
 		this.selectedVariables = new boolean[variables.length];
-		this.tmpVariable = new int[variables.length];
+		this.tmpVariable = new Variable[variables.length];
 
 		this.nonUniversal = eliminateDegreeVariables ? new Constraint[variables.length] : null;
 	}
@@ -124,7 +124,7 @@ public final class ReductionOperators {
 
 	private void initEliminateDegree() {
 		Arrays.fill(nonUniversal, null);
-		for (Constraint c : recorder.solver.problem.constraints) {
+		for (Constraint c : ipsReasoner.solver.problem.constraints) {
 			if (c.nFreeVariables() < 2)
 				continue; // as the constraint is necessarily universal
 			for (Variable x : c.scp) {
@@ -167,7 +167,7 @@ public final class ReductionOperators {
 	}
 
 	private boolean canEliminateDeduced(Variable x) {
-		Constraint[] justification = recorder.explainer.justifications[x.num];
+		Constraint[] justification = ipsReasoner.explainer.justifications[x.num];
 		for (int a = x.dom.lastRemoved(); a != -1; a = x.dom.prevRemoved(a)) {
 			Constraint explanation = justification[a];
 			if (explanation == null)
@@ -182,88 +182,87 @@ public final class ReductionOperators {
 		return true;
 	}
 
-	public int[] extract() {
+	public Variable[] extract() {
 		nExtractions++;
-		int selectionLimit = 0;
+		int cnt = 0;
 		Arrays.fill(selectedVariables, false);
 		if (eliminateDegreeVariables)
 			initEliminateDegree();
 		if (eliminateNotInProofVariables) {
-			boolean[] proofVariables = recorder.solver.proofer.proofVariables[recorder.solver.depth()];
+			boolean[] proofVariables = ipsReasoner.solver.proofer.proofVariables[ipsReasoner.solver.depth()];
 			// TODO paS PLUS 1 A PRIORI
 			for (int i = 0; i < proofVariables.length; i++)
 				if (proofVariables[i]) {
 					if (!canEliminate(variables[i])) {
-						tmpVariable[selectionLimit++] = i;
+						tmpVariable[cnt++] = variables[i];
 						selectedVariables[i] = true;
 					}
 				} else
 					nPEliminables++;
 		} else if (binaryNetwork) {
-			FutureVariables futVars = recorder.solver.futVars;
+			FutureVariables futVars = ipsReasoner.solver.futVars;
 			nSEliminables += futVars.nPast();
 			for (Variable x = futVars.first(); x != null; x = futVars.next(x)) {
 				if (!canEliminate(x)) {
-					tmpVariable[selectionLimit++] = x.num;
+					tmpVariable[cnt++] = x;
 					selectedVariables[x.num] = true;
 				}
 			}
 		} else {
 			for (Variable x : variables)
 				if (!canEliminate(x)) {
-					tmpVariable[selectionLimit++] = x.num;
+					tmpVariable[cnt++] = x;
 					selectedVariables[x.num] = true;
 				}
 		}
 		if (eliminateJustifiedVariables) {
-			int cnt = 0;
-			for (int i = 0; i < selectionLimit; i++)
-				if (!canEliminateDeduced(variables[tmpVariable[i]]))
-					tmpVariable[cnt++] = tmpVariable[i];
-			selectionLimit = cnt;
+			int cntbis = 0;
+			for (int i = 0; i < cnt; i++)
+				if (!canEliminateDeduced(tmpVariable[i]))
+					tmpVariable[cntbis++] = tmpVariable[i];
+			cnt = cntbis;
 		}
-		int[] t = new int[selectionLimit];
-		for (int i = 0; i < selectionLimit; i++)
+		Variable[] t = new Variable[cnt];
+		for (int i = 0; i < cnt; i++)
 			t[i] = tmpVariable[i];
-		// System.out.println(solver.variables.length + " nbS=" + nSEliminables + " nbR=" + nREliminables + " nbI=" +
+		// System.out.println(variables.length + " nbS=" + nSEliminables + " nbR=" + nREliminables + " nbI=" +
 		// nIEliminables);
 		return t;
 	}
 
-	public int[] extractForAllSolutions() {
-		int selectionLimit = 0;
+	public Variable[] extractForAllSolutions() {
+		int cnt = 0;
 		if (binaryNetwork) {
-			FutureVariables futVars = recorder.solver.futVars;
+			FutureVariables futVars = ipsReasoner.solver.futVars;
 			nSEliminables += futVars.nPast();
 			for (Variable x = futVars.first(); x != null; x = futVars.next(x)) {
 				if (x.dom.size() == 1 && canEliminateSingleton(x))
-					tmpVariable[selectionLimit++] = x.num;
+					tmpVariable[cnt++] = x;
 			}
 		} else {
 			for (Variable x : variables)
 				if (x.dom.size() == 1 && canEliminateSingleton(x))
-					tmpVariable[selectionLimit++] = x.num;
+					tmpVariable[cnt++] = x;
 		}
-		int[] variableIndices = new int[selectionLimit];
-		System.arraycopy(tmpVariable, 0, variableIndices, 0, selectionLimit);
-		return variableIndices;
+		Variable[] t = new Variable[cnt];
+		for (int i = 0; i < cnt; i++)
+			t[i] = tmpVariable[i];
+		return t;
 	}
 
-	public int[] extract2() {
+	public Variable[] extract2() {
 		nExtractions++;
-		boolean[] proofVariables = recorder.solver.proofer.proofVariables[recorder.solver.depth()];
-		int selectionLimit = 0;
+		boolean[] proofVariables = ipsReasoner.solver.proofer.proofVariables[ipsReasoner.solver.depth()];
+		int cnt = 0;
 		for (int i = 0; i < variables.length; i++) {
 			if (proofVariables[i]) {
-				// if (canEliminate(solver.getVariable(i)))
-				// ; // System.out.println("ok " + solver.getVariable(i).domain.getCurrentSize());
+				// if (canEliminate(variables[i])) System.out.println("ok " + variables[i].dom.getCurrentSize());
 				// else
-				tmpVariable[selectionLimit++] = i;
+				tmpVariable[cnt++] = variables[i];
 			}
 		}
-		// System.out.println("selectionLimit = " + selectionLimit);
-		int[] t = new int[selectionLimit];
-		for (int i = 0; i < selectionLimit; i++)
+		Variable[] t = new Variable[cnt];
+		for (int i = 0; i < cnt; i++)
 			t[i] = tmpVariable[i];
 		return t;
 	}

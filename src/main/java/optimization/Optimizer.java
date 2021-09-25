@@ -73,8 +73,8 @@ public abstract class Optimizer implements ObserverOnRuns { // Pilot for (mono-o
 				control(problem.features.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
 				problem.solver.restarter.forceRootPropagation = true;
 				problem.solver.restoreProblem();
-				if (problem.solver.nogoodRecorder != null)
-					problem.solver.nogoodRecorder.reset();
+				if (problem.solver.nogoodReasoner != null)
+					problem.solver.nogoodReasoner.reset();
 				shiftLimitWhenFailure();
 			}
 		}

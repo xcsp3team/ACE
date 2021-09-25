@@ -37,9 +37,9 @@ import dashboard.Control.SettingVars;
 import interfaces.Observers.ObserverOnConstruction;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Observers.ObserverOnSolving;
-import learning.IpsRecorder;
-import learning.IpsRecorderEquivalence;
-import learning.ReductionOperators;
+import learning.IpsExtractor;
+import learning.IpsReasoner;
+import learning.IpsReasonerEquivalence;
 import main.Head;
 import optimization.Optimizer;
 import problem.Features;
@@ -516,7 +516,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		if (Kit.memory() > 10000000000L)
 			m.put(MEM, Kit.memoryInMb());
 		m.put(WCK, Stopwatch.formattedTimeInSeconds(stats.times.searchWck));
-		m.put(N_NOGOODS, head.solver.nogoodRecorder != null ? head.solver.nogoodRecorder.nNogoods : 0);
+		m.put(N_NOGOODS, head.solver.nogoodReasoner != null ? head.solver.nogoodReasoner.nNogoods : 0);
 		if (head.solver.solutions.found > 0) {
 			if (head.problem.settings.framework == TypeFramework.CSP)
 				m.put(SOLS, head.solver.solutions.found);
@@ -539,20 +539,19 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		if (Kit.memory() > 10000000000L)
 			m.put(MEM, Kit.memoryInMb());
 		m.separator();
-		IpsRecorder ipsRecorder = head.solver.ipsRecorder;
-		if (ipsRecorder instanceof IpsRecorderEquivalence && !ipsRecorder.stopped) {
-			IpsRecorderEquivalence recorder = (IpsRecorderEquivalence) ipsRecorder;
-			m.put(MAP_SIZE, recorder.getMapSize());
-			m.put(N_INFERENCES, recorder.nInferences);
-			m.put(N_TOO_LARGE_KEYS, recorder.nTooLargeKeys);
+		IpsReasoner ipsReasoner = head.solver.ipsReasoner;
+		if (ipsReasoner instanceof IpsReasonerEquivalence && !ipsReasoner.stopped) {
+			m.put(MAP_SIZE, ((IpsReasonerEquivalence) ipsReasoner).mapOfHashKeys.size());
+			m.put(N_INFERENCES, ((IpsReasonerEquivalence) ipsReasoner).nInferences);
+			m.put(N_TOO_LARGE_KEYS, ((IpsReasonerEquivalence) ipsReasoner).nTooLargeKeys);
 		}
-		if (ipsRecorder != null) {
-			ReductionOperators ro = ipsRecorder.reductionOperators;
-			m.put(N_SELIMINABLES, Kit.decimalFormat.format(ro.proportionOfSEliminableVariables()));
-			m.put(N_RELIMINABLES, Kit.decimalFormat.format(ro.proportionOfREliminableVariables()));
-			m.put(N_IELIMINABLES, Kit.decimalFormat.format(ro.proportionOfIEliminableVariables()));
-			m.put(N_DELIMINABLES, Kit.decimalFormat.format(ro.proportionOfDEliminableVariables()));
-			m.put(N_PELIMINABLES, Kit.decimalFormat.format(ro.proportionOfPEliminableVariables()));
+		if (ipsReasoner != null) {
+			IpsExtractor extractor = ipsReasoner.extractor;
+			m.put(N_SELIMINABLES, Kit.decimalFormat.format(extractor.proportionOfSEliminableVariables()));
+			m.put(N_RELIMINABLES, Kit.decimalFormat.format(extractor.proportionOfREliminableVariables()));
+			m.put(N_IELIMINABLES, Kit.decimalFormat.format(extractor.proportionOfIEliminableVariables()));
+			m.put(N_DELIMINABLES, Kit.decimalFormat.format(extractor.proportionOfDEliminableVariables()));
+			m.put(N_PELIMINABLES, Kit.decimalFormat.format(extractor.proportionOfPEliminableVariables()));
 			m.separator();
 		}
 		return m;
@@ -564,7 +563,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(REVISIONS, "(" + stats.nRevisions() + ",useless=" + stats.nUselessRevisions() + ")", stats.nRevisions() > 0);
 		m.put(N_SINGLETON_TESTS, head.solver.propagation.nSingletonTests);
 		m.put(N_EFFECTIVE_SINGLETON_TESTS, head.solver.propagation.nEffectiveSingletonTests);
-		m.put(N_NOGOODS, head.solver.nogoodRecorder != null ? head.solver.nogoodRecorder.nNogoods : 0);
+		m.put(N_NOGOODS, head.solver.nogoodReasoner != null ? head.solver.nogoodReasoner.nNogoods : 0);
 		m.separator();
 		m.put(STOP, head.solver.stopping == null ? "no" : head.solver.stopping.toString());
 		m.put(N_WRONG, stats.nWrongDecisions);
