@@ -25,7 +25,7 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * The root class of any object that can be used to manage constraint propagation. For simplicity, propagation and
+ * The is the root class for any object used to manage constraint propagation. For simplicity, propagation and
  * consistency concepts are not distinguished, So, some subclasses are given the name of consistencies.
  * 
  * @author Christophe Lecoutre
@@ -54,8 +54,11 @@ public abstract class Propagation {
 	 * Inner classes for managing auxiliary queues and reasoning with nogoods
 	 *************************************************************************/
 
-	static class SetSparseMap extends SetSparse {
+	static final class SetSparseMap extends SetSparse {
 
+		/**
+		 * Values associated with elements (indexes) currently stored in the set
+		 */
 		public final int[] values;
 
 		public SetSparseMap(int capacity, boolean initiallyFull) {
@@ -67,23 +70,27 @@ public abstract class Propagation {
 			this(capacity, false);
 		}
 
-		public int valueForPosition(int i) {
-			return values[dense[i]];
-		}
-
 		@Override
-		public final boolean add(int e) {
+		public final boolean add(int a) {
 			throw new RuntimeException("Must not be called without a second argument");
 		}
 
-		public boolean add(int e, int value) {
-			boolean b = super.add(e);
-			values[e] = value; // even if e is already present, the new value is recorded
+		/**
+		 * Ass the specified element, while recording an associated value
+		 * 
+		 * @param a
+		 *            an element (typically, index of value)
+		 * @param value
+		 * @return true if the element has been added
+		 */
+		public boolean add(int a, int value) {
+			boolean b = super.add(a);
+			values[a] = value; // even if a is already present, the new value is recorded
 			return b;
 		}
 	}
 
-	private class NogoodReasoning {
+	private final class NogoodReasoning {
 
 		private Boolean ipsDominanceReasoning;
 
@@ -180,7 +187,7 @@ public abstract class Propagation {
 	public int nTuplesRemoved;
 
 	/**
-	 * Settings about propagation
+	 * The setting options concerning propagation
 	 */
 	protected final SettingPropagation settings;
 
@@ -197,6 +204,8 @@ public abstract class Propagation {
 
 	/**
 	 * Increments the value of the clock (time counter), and returns it.
+	 * 
+	 * @return the incremented time of the clock
 	 */
 	public final long incrementTime() {
 		return ++time;

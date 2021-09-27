@@ -25,12 +25,20 @@ import variables.DomainInfinite;
 import variables.Variable;
 
 /**
- * This class gives the description of a variable ordering heuristic. <br>
- * A variable ordering heuristic is used by a backtrack search solver to select a variable (to be assigned) at each step
- * of search. <br>
+ * This is the class for building variable ordering heuristics. A variable ordering heuristic is used by a backtrack
+ * search solver to select a variable (to be assigned) at each step of search.
+ * 
+ * @author Christophe Lecoutre
  */
 public abstract class HeuristicVariables extends Heuristic {
 
+	/**
+	 * Builds and returns a variable ordering heuristic to be used with the specified solver
+	 * 
+	 * @param solver
+	 *            the solver to which the heuristic will be attached
+	 * @return a variable ordering heuristic
+	 */
 	public static HeuristicVariables buildFor(Solver solver) {
 		Set<Class<?>> classes = solver.head.availableClasses.get(HeuristicVariables.class);
 		if (solver.head.control.solving.enableSearch || solver.propagation instanceof GIC2)
@@ -80,7 +88,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	}
 
 	/**
-	 * The solver to which this object is attached
+	 * The solver to which the heuristic is attached
 	 */
 	protected final Solver solver;
 
@@ -98,7 +106,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	private int nStrictlyPriorityVars;
 
 	/**
-	 * The option settings concerning the variable ordering heuristics
+	 * The setting options concerning the variable ordering heuristics
 	 */
 	protected SettingVarh settings;
 

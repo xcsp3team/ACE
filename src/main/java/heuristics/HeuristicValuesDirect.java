@@ -10,12 +10,18 @@
 
 package heuristics;
 
-import interfaces.Tags.TagExperimental;
 import variables.Variable;
 
+/**
+ * This is the root class for building direct value ordering heuristics, i.e., heuristics for which we directly know
+ * which value index has to be returned (most of the time, without searching)
+ * 
+ * @author Christophe Lecoutre
+ */
 public abstract class HeuristicValuesDirect extends HeuristicValues {
+
 	public HeuristicValuesDirect(Variable x, boolean dummy) {
-		super(x, dummy); // dummy because has no influence with this direct heuristic
+		super(x, dummy); // dummy because has no influence with such heuristics
 	}
 
 	@Override
@@ -63,21 +69,6 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 		}
 	}
 
-	public static class ProgressSaving extends HeuristicValuesDirect implements TagExperimental { // TODO: code to be updated
-		private int[] progressSaving;
-
-		public ProgressSaving(Variable x, boolean dummy) {
-			super(x, dummy);
-			// progressSaving = ((SolverBacktrack) (x.pb.solver)).lcReasoner.getProgressSaving();
-		}
-
-		@Override
-		public int computeBestValueIndex() {
-			int a = progressSaving[x.num];
-			return a != -1 && dx.contains(a) ? a : dx.first();
-		}
-	}
-
 	public static final class Rand extends HeuristicValuesDirect {
 		public Rand(Variable x, boolean dummy) {
 			super(x, dummy);
@@ -89,6 +80,9 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 		}
 	}
 
+	/**
+	 * This (meta-)heuristic uses a cycle composed of First, Last and Rand at every new sequence of three runs
+	 */
 	public static final class RunRobin extends HeuristicValuesDirect {
 
 		public RunRobin(Variable x, boolean dummy) {
@@ -106,8 +100,12 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 		}
 	}
 
+	/**
+	 * This (meta-)heuristic uses a cycle composed of First, Last and Rand at every new sequence of three nodes
+	 */
 	public static final class Robin extends HeuristicValuesDirect {
-		int cnt = -1;
+
+		private int cnt = -1;
 
 		public Robin(Variable x, boolean dummy) {
 			super(x, dummy);
@@ -126,20 +124,27 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 
 	public static final class Values extends HeuristicValuesDirect {
 
-		private boolean min;
+		/**
+		 * Indicates if one searches to minimize or maximize the number of distinct values
+		 */
+		private boolean minimize;
+
+		/**
+		 * The variables of interest when minimizing (or maximizing) the number of distinct values
+		 */
 		private Variable[] others;
 
 		public Values(Variable x, boolean anti, Variable[] others) {
 			super(x, anti);
-			this.min = !anti;
+			this.minimize = !anti;
 			this.others = others;
 		}
 
 		@Override
 		public int computeBestValueIndex() {
 			if (dx.size() == 1)
-				return dx.first();
-			if (min) { // to minimize the number of distinct values
+				return 0; // we don't care about the score returned because the domain is singleton
+			if (minimize) { // minimizing the number of distinct values
 				for (Variable y : others)
 					if (y != x && y.dom.size() == 1) {
 						int a = dx.toIdxIfPresent(y.dom.firstValue());
@@ -148,25 +153,25 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 					}
 				return dx.first();
 			}
-			// to maximize the number of distinct values
-			throw new UnsupportedOperationException();
+			// maximizing the number of distinct values
+			throw new AssertionError("max Values not implemented");
 		}
 	}
 
-	// public static final class MinCost extends HeuristicValuesDirect implements TagExperimental {
-	// private int[] argMinSumMinCosts;
-	//
-	// public MinCost(Variable x, boolean dummy) {
-	// super(x, dummy);
-	// Kit.control(x.pb.solver.propagation instanceof PFC);
-	// argMinSumMinCosts = ((PFC) x.pb.solver.propagation).argMinSumMinCosts;
-	// }
-	//
-	// @Override
-	// public int identifyBestValueIndex() {
-	// assert dx.isPresent(argMinSumMinCosts[x.num]);
-	// return argMinSumMinCosts[x.num];
-	// }
-	// }
-
 }
+
+// public static final class MinCost extends HeuristicValuesDirect implements TagExperimental {
+// private int[] argMinSumMinCosts;
+//
+// public MinCost(Variable x, boolean dummy) {
+// super(x, dummy);
+// control(x.pb.solver.propagation instanceof PFC);
+// argMinSumMinCosts = ((PFC) x.pb.solver.propagation).argMinSumMinCosts;
+// }
+//
+// @Override
+// public int computeBestValueIndex() {
+// assert dx.isPresent(argMinSumMinCosts[x.num]);
+// return argMinSumMinCosts[x.num];
+// }
+// }

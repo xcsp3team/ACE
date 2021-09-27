@@ -10,6 +10,8 @@
 
 package heuristics;
 
+import static utility.Kit.control;
+
 import constraints.Constraint;
 import optimization.Optimizable;
 import sets.SetDense;
@@ -18,7 +20,9 @@ import utility.Kit;
 import variables.Variable;
 
 /**
- * This class gives the description of a dynamic value ordering heuristic.
+ * This is the root class for building dynamic value ordering heuristics.
+ * 
+ * @author Christophe Lecoutre
  */
 public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
@@ -28,8 +32,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 	@Override
 	public int computeBestValueIndex() {
-		assert dx.size() != 0 : "The domain is empty";
-		// System.out.println("\nchoosing for " + x);
+		assert dx.size() > 0 : "The domain is empty";
 		int best = dx.first();
 		double bestScore = scoreOf(best) * multiplier;
 		for (int a = dx.next(best); a != -1; a = dx.next(a)) {
@@ -39,7 +42,6 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 				bestScore = score;
 			}
 		}
-		// System.out.println("choosing " + x + " " + best);
 		return best;
 	}
 
@@ -47,24 +49,36 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	// ***** Subclasses
 	// ************************************************************************
 
+	/**
+	 * Heuristic as defined in "Making the First Solution Good!", ICTAI 2017: 1073-1077 by Jean-Guillaume Fages and
+	 * Charles Prud'homme
+	 */
 	public static class Bivs extends HeuristicValuesDynamic {
-		Solver solver;
 
-		Optimizable c;
+		protected Solver solver;
 
-		boolean lbBased;
+		/**
+		 * The objective constraint
+		 */
+		private Optimizable oc;
 
-		int nTests;
+		/**
+		 * Indicates if this is the lower bound (or the upper bound) of the objective constraint that must be considered
+		 */
+		private boolean lbBased;
 
+		/**
+		 * The set of inconsistent value indexes found when performing singleton tests
+		 */
 		public SetDense inconsistent;
 
 		public Bivs(Variable x, boolean anti) {
 			super(x, anti);
-			Kit.control(x.problem.optimizer != null);
-			this.multiplier = x.problem.optimizer.minimization ? -1 : 1; // scoreCoeff follows minimization/maximization
-			this.lbBased = x.problem.head.control.valh.bivsOptimistic == x.problem.optimizer.minimization;
 			this.solver = x.problem.solver;
-			this.c = x.problem.optimizer.ctr;
+			this.oc = x.problem.optimizer.ctr;
+			control(x.problem.optimizer != null);
+			this.multiplier = x.problem.optimizer.minimization ? -1 : 1; // multiplier follows minimization/maximization
+			this.lbBased = x.problem.head.control.valh.bivsOptimistic == x.problem.optimizer.minimization;
 			this.inconsistent = new SetDense(x.dom.initSize());
 		}
 
@@ -77,8 +91,8 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		}
 
 		@Override
-		public double scoreOf(int a) {
-			// System.out.println("trying " + x + " " + a + " " + scoreCoeff);
+		public final double scoreOf(int a) {
+			// System.out.println("trying " + x + " " + a + " " + multiplier);
 			solver.assign(x, a);
 			boolean consistent = solver.propagation.runAfterAssignment(x);
 			long score = 0;
@@ -86,16 +100,16 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 				inconsistent.add(a);
 				score = multiplier == -1 ? Long.MAX_VALUE : Long.MIN_VALUE;
 			} else
-				score = lbBased ? c.minCurrentObjectiveValue() : c.maxCurrentObjectiveValue();
-			// if (x.id().equals("k"))
-			// System.out.println("score of " + x + " " + a + " : " + score);
+				score = lbBased ? oc.minCurrentObjectiveValue() : oc.maxCurrentObjectiveValue();
 			solver.backtrack(x);
-			nTests++;
 			return score;
 		}
 	}
 
-	public static final class Bivs2 extends Bivs { // experimental (solutionsaving as tiebreaking)
+	/**
+	 * Bivs with solution saving as tie-breaker
+	 */
+	public static final class Bivs2 extends Bivs {
 
 		public Bivs2(Variable x, boolean anti) {
 			super(x, anti);
@@ -104,17 +118,18 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		@Override
 		public int computeBestValueIndex() {
 			inconsistent.clear();
-			int aLast = solver.solutions.found == 0 ? -1 : solver.solutions.last[x.num];
+			int last = solver.solutions.found == 0 ? -1 : solver.solutions.last[x.num];
 			if ((settings.bivsStoppedAtFirstSolution && solver.solutions.found > 0) || dx.size() > settings.bivsLimit) {
-				if (aLast != -1 && dx.contains(aLast))
-					return aLast;
+				if (last != -1 && dx.contains(last))
+					return last; // solution saving in that case
 				return dx.first(); // First in that case
 			}
 			int best = dx.first();
 			double bestScore = scoreOf(best) * multiplier;
 			for (int a = dx.next(best); a != -1; a = dx.next(a)) {
 				double score = scoreOf(a) * multiplier;
-				if (score > bestScore || (score == bestScore && a == aLast)) {
+				if (score > bestScore || (score == bestScore && a == last)) { // tie breaking by solution saving in
+																				// priority
 					best = a;
 					bestScore = score;
 				}
@@ -165,13 +180,16 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	 * This heuristic selects a value according to the number of times this value is assigned to the other variables.
 	 */
 	public static final class Occurrences extends HeuristicValuesDynamic {
+
 		public Occurrences(Variable x, boolean anti) {
 			super(x, anti);
 		}
 
 		@Override
 		public double scoreOf(int a) {
-			int v = x.dom.toVal(a);
+			if (dx.size() == 1)
+				return 0; // we don't care about the score returned because the domain is singleton
+			int v = dx.toVal(a);
 			int cnt = 0;
 			for (Variable y : x.problem.variables)
 				if (y.dom.containsOnlyValue(v))

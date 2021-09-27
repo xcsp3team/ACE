@@ -68,7 +68,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	/**********************************************************************************************
-	 * classes for warm starts and run progress saving
+	 * Classes for warm starts and run progress saving
 	 *********************************************************************************************/
 
 	/**
@@ -193,6 +193,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		 */
 		private int[] branch;
 
+		/**
+		 * Builds a run progress saver
+		 */
 		private RunProgressSaver() {
 			this.branch = Kit.repeat(-1, problem.variables.length);
 		}
@@ -432,7 +435,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	/**********************************************************************************************
-	 * Fields and Constructor
+	 * Fields and Methods
 	 *********************************************************************************************/
 
 	/**
@@ -547,6 +550,12 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		control(proofer == null);
 	}
 
+	/**
+	 * Builds a backtrack solver for the specified main object
+	 * 
+	 * @param head
+	 *            The main object to which the solver is attached
+	 */
 	public Solver(Head head) {
 		this.head = head;
 		this.problem = head.problem;
@@ -591,17 +600,11 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		this.observersOnConflicts = collectObserversOnConflicts();
 	}
 
+	/**
+	 * @return the current depth reached in the search tree: this is the number of explicitly assigned variables
+	 */
 	public int depth() {
 		return futVars.nPast();
-	}
-
-	public void entail(Constraint c) {
-		// System.out.println("entailed at " + depth() + " " + c);
-		entailed.add(c.num, depth());
-	}
-
-	public boolean isEntailed(Constraint c) {
-		return entailed.contains(c.num);
 	}
 
 	/**
@@ -615,7 +618,35 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		return stackedVariables.push(x);
 	}
 
-	public void assign(Variable x, int a) {
+	/**
+	 * Records the specified constraint as being entailed (at the current level)
+	 * 
+	 * @param c
+	 *            a constraint
+	 */
+	public void entail(Constraint c) {
+		// System.out.println("entailed at " + depth() + " " + c);
+		entailed.add(c.num, depth());
+	}
+
+	/**
+	 * @param c
+	 *            a constraint
+	 * @return true if the specified constraint is currently (recorded as being) entailed
+	 */
+	public boolean isEntailed(Constraint c) {
+		return entailed.contains(c.num);
+	}
+
+	/**
+	 * Assigns the specified value index to the specified variable
+	 * 
+	 * @param x
+	 *            a variable
+	 * @param a
+	 *            a value index
+	 */
+	public final void assign(Variable x, int a) {
 		assert !x.assigned();
 		stats.nAssignments++;
 		futVars.remove(x);
@@ -624,36 +655,54 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			obs.afterAssignment(x, a);
 	}
 
+	/**
+	 * Backtracks by discarding the last positive decision involving the specified variable
+	 * 
+	 * @param x
+	 *            a variable
+	 */
 	public final void backtrack(Variable x) { // should we call it unassign or retract instead?
 		// System.out.println("back " + x + x.dom.uniqueValue());
 		int depthBeforeBacktrack = depth();
 		futVars.add(x);
 		x.unassign();
-		for (ObserverOnAssignments obs : observersOnAssignments)
-			obs.afterUnassignment(x);
-		for (ObserverOnBacktracksSystematic obs : observersOnBacktracksSystematic)
-			obs.restoreBefore(depthBeforeBacktrack);
+		for (ObserverOnAssignments observer : observersOnAssignments)
+			observer.afterUnassignment(x);
+		for (ObserverOnBacktracksSystematic observer : observersOnBacktracksSystematic)
+			observer.restoreBefore(depthBeforeBacktrack);
 		if (propagation instanceof Forward)
 			propagation.queue.clear();
 	}
 
+	/**
+	 * Backtracks by discarding the last positive decision (variable assignment)
+	 */
 	public final void backtrack() {
 		backtrack(futVars.lastPast());
 	}
 
-	public final boolean tryAssignment(Variable x, int a) {
+	/**
+	 * Performs a positive decision, x = a, followed by constraint propagation
+	 * 
+	 * @param x
+	 *            a variable
+	 * @param a
+	 *            the index of a value in the domain of x
+	 * @return false if an inconsistency is detected
+	 */
+	protected final boolean tryAssignment(Variable x, int a) {
 		boolean b = false; // TODO temporary
 		if (b && x.heuristic instanceof Bivs) {
 			SetDense inconsistent = ((Bivs) x.heuristic).inconsistent;
 			if (inconsistent.size() > 0) {
-				boolean inc = inconsistent.size() == x.dom.size();
-				if (!inc) {
+				boolean conflict = inconsistent.size() == x.dom.size();
+				if (!conflict) {
 					boolean r = x.dom.remove(inconsistent);
 					assert r;
-					inc = propagation.propagate() == false;
+					conflict = propagation.propagate() == false;
 				}
 				inconsistent.clear();
-				if (inc) {
+				if (conflict) {
 					stats.nWrongDecisions++; // necessary for updating restart data
 					stats.nFailedAssignments++;
 					return false;
@@ -675,10 +724,27 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		return true;
 	}
 
-	public final boolean tryAssignment(Variable x) {
+	/**
+	 * Performs a positive decision (variable assignment) involving the specified variable. The value to be assigned is
+	 * chosen by the value ordering heuristic attached to the variable.
+	 * 
+	 * @param x
+	 *            a variable
+	 * @return false if an inconsistency is detected
+	 */
+	private final boolean tryAssignment(Variable x) {
 		return tryAssignment(x, x.heuristic.bestValueIndex());
 	}
 
+	/**
+	 * Performs a negative decision, x != a, followed by constraint propagation
+	 * 
+	 * @param x
+	 *            a variable
+	 * @param a
+	 *            the index of a value in the domain of x
+	 * @return false if an inconsistency is detected
+	 */
 	protected final boolean tryRefutation(Variable x, int a) {
 		if (x.dom instanceof DomainInfinite)
 			return false;
@@ -706,9 +772,13 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	/**
-	 * Called when a contradiction has been encountered.
+	 * Manages contradiction by backtracking. The specified constraint, if not null, is the objective constraint that
+	 * must be checked/filtered.
+	 * 
+	 * @param oc
+	 *            the objective constraint
 	 */
-	private void manageContradiction(ConstraintGlobal objectiveToCheck) {
+	private void manageContradiction(ConstraintGlobal oc) {
 		for (boolean consistent = false; !consistent && stopping != Stopping.FULL_EXPLORATION;) {
 			Variable x = futVars.lastPast();
 			if (x == lastPastBeforeRun[nRecursiveRuns - 1] && !head.control.lns.enabled)
@@ -716,17 +786,15 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			else {
 				int a = x.dom.single();
 				backtrack(x);
-				consistent = tryRefutation(x, a) && propagation.propagate(objectiveToCheck);
+				consistent = tryRefutation(x, a) && propagation.propagate(oc);
 			}
 		}
 	}
 
 	/**
-	 * This method allows to keep running the solver from the given level. Initially, this method is called from the
-	 * level <code>0</code>. The principle of this method is to choose a variable and some values for this variable
-	 * (maybe, all) until a domain becomes empty.
+	 * This method allows us to explore the search space.
 	 */
-	public void explore() {
+	protected void explore() {
 		maxDepth = 0;
 		while (!finished() && !restarter.currRunFinished()) {
 			while (!finished() && !restarter.currRunFinished()) {
@@ -739,17 +807,17 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			if (futVars.size() == 0) {
 				solutions.handleNewSolution();
 				boolean copContinue = problem.settings.framework == COP && !head.control.restarts.restartAfterSolution;
-				ConstraintGlobal objectiveCtr = copContinue ? (ConstraintGlobal) problem.optimizer.ctr : null;
+				ConstraintGlobal oc = copContinue ? (ConstraintGlobal) problem.optimizer.ctr : null; // objective
+																										// constraint
 				if (copContinue) {
 					// first, we directly change the limit value of the leading objective constraint
 					problem.optimizer.ctr.limit(problem.optimizer.ctr.objectiveValue() + (problem.optimizer.minimization ? -1 : 1));
 					// next, we backtrack to the level where a value for a variable in the scope of the objective was
 					// removed for the last time
 					int backtrackLevel = -1;
-					for (int i = 0; i < objectiveCtr.scp.length; i++) {
-						Variable x = objectiveCtr.scp[objectiveCtr.futvars.dense[i]]; // variables (of the objective)
-																						// from the last to the first
-																						// assigned
+					for (int i = 0; i < oc.scp.length; i++) {
+						// variables (of the objective) from the last to the first assigned
+						Variable x = oc.scp[oc.futvars.dense[i]];
 						if (x.assignmentLevel <= backtrackLevel)
 							break;
 						backtrackLevel = Math.max(backtrackLevel, x.dom.lastRemovedLevel());
@@ -757,15 +825,13 @@ public class Solver implements ObserverOnBacktracksSystematic {
 					assert backtrackLevel != -1;
 					while (depth() > backtrackLevel)
 						backtrack(futVars.lastPast());
-					// check with java -ea ac /home/lecoutre/workspace/AbsCon/build/resources/main/cop/Photo.xml.lzma
-					// -ev
-					// java -ea ac /home/lecoutre/workspace/AbsCon/build/resources/main/cop/Recipe.xml.lzma
+					// check with java -ea ace Photo.xml.lzma -ev ; java -ea ace Recipe.xml.lzma
 				}
 				if (problem.settings.framework == COP) // && isEntailed(objectiveCtr)) TODO why is-it incorrect to use
 														// the second part of the test?
 					entailed.clear();
 				if (!finished() && !restarter.currRunFinished())
-					manageContradiction(objectiveCtr);
+					manageContradiction(oc);
 			}
 		}
 		minDepth = decisions.minDepth(); // need to be recorded before backtracking to the root
@@ -773,7 +839,13 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			nogoodReasoner.addNogoodsOfCurrentBranch();
 	}
 
-	private void backtrackTo(Variable x) {
+	/**
+	 * Backtracks up to the level of the search tree where the specified variable has been assigned
+	 * 
+	 * @param x
+	 *            a variable
+	 */
+	private final void backtrackTo(Variable x) {
 		if (x != null && !x.assigned()) // TODO LNS does not necessarily respect the last past recorded variable
 			x = null;
 		// assert x == null || x.isAssigned();
@@ -781,10 +853,17 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			backtrack(futVars.lastPast());
 	}
 
+	/**
+	 * Backtracks up to the root node of the search tree
+	 */
 	public final void backtrackToTheRoot() {
 		backtrackTo(null);
 	}
 
+	/**
+	 * Executes preprocessing by running constraint propagation on the initial problem (i.e., the problem before taking
+	 * any search decision)
+	 */
 	private final void doPrepro() {
 		for (ObserverOnSolving observer : observersOnSolving)
 			observer.beforePreprocessing();
@@ -794,14 +873,22 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			observer.afterPreprocessing();
 	}
 
-	public Solver doRun() {
+	/**
+	 * Executes a run (partial exploration of the search space) until a condition is verified
+	 * 
+	 * @return this object
+	 */
+	public final Solver doRun() {
 		lastPastBeforeRun[nRecursiveRuns++] = futVars.lastPast();
 		explore();
 		backtrackTo(lastPastBeforeRun[--nRecursiveRuns]);
 		return this;
 	}
 
-	protected final void doSearch() {
+	/**
+	 * Explores the search space with a sequence of so-called runs
+	 */
+	private final void doSearch() {
 		for (ObserverOnSolving observer : observersOnSolving)
 			observer.beforeSearch();
 		while (!finished() && !restarter.allRunsFinished()) {
@@ -817,9 +904,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	/**
-	 * This method allows to solve the attached problem instance.
+	 * This method allows us to solve the attached problem instance
 	 */
-	public void solve() {
+	public final void solve() {
 		for (ObserverOnSolving observer : observersOnSolving)
 			observer.beforeSolving();
 		if (Variable.firstWipeoutVariableIn(problem.variables) != null)
@@ -834,15 +921,15 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	/**
-	 * Called in order to get the problem back in its initial state.
+	 * Called in order to get the problem back to its initial state
 	 */
 	public final void restoreProblem() {
 		backtrackToTheRoot();
 		// we also undo preprocessing propagation
-		stackedVariables.restoreBefore(0);
-		observersOnBacktracksSystematic.stream().forEach(obs -> obs.restoreBefore(0));
+		for (ObserverOnBacktracksSystematic observer : observersOnBacktracksSystematic)
+			observer.restoreBefore(0);
 		assert decisions.set.size() == 0; // decisions.reset();
-		// nPurged not updated; see java -ea abscon.Resolution problems.patt.QuasiGroup -data=6 -model=v5 -ev -cm=false
+		// nPurged not updated; see java -ea ace problems.patt.QuasiGroup -data=6 -model=v5 -ev
 		assert Stream.of(problem.variables).allMatch(x -> x.dom.controlStructures());
 	}
 }

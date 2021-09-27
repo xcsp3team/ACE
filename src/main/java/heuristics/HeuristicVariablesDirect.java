@@ -13,10 +13,16 @@ package heuristics;
 import solver.Solver;
 import variables.Variable;
 
+/**
+ * This is the root class for building direct variable ordering heuristics, i.e., heuristics for which we directly know
+ * which variable has to be returned (most of the time, without searching)
+ * 
+ * @author Christophe Lecoutre
+ */
 public abstract class HeuristicVariablesDirect extends HeuristicVariables {
 
-	public HeuristicVariablesDirect(Solver solver, boolean antiHeuristic) {
-		super(solver, antiHeuristic);
+	public HeuristicVariablesDirect(Solver solver, boolean anti) {
+		super(solver, anti);
 	}
 
 	@Override
@@ -30,8 +36,8 @@ public abstract class HeuristicVariablesDirect extends HeuristicVariables {
 
 	public static final class Rand extends HeuristicVariablesDirect {
 
-		public Rand(Solver solver, boolean antiHeuristic) {
-			super(solver, antiHeuristic);
+		public Rand(Solver solver, boolean anti) {
+			super(solver, anti);
 		}
 
 		@Override

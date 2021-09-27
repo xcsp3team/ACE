@@ -20,17 +20,18 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This propagation object solicits every constraint propagator (i.e., filtering algorithm attached to a constraint)
- * until a fixed point is reached (contrary to FC). Note that it is only when every propagator ensures GAC (Generalized
- * Arc Consistency) that GAC is really enforced completely on the full constraint network; this information is recorded
- * in a field. Recall that GAC is the maximal level of possible filtering when constraints are treated independently.
+ * This is the class for (Generalized) Arc Consistency. Such a propagation object solicits every constraint propagator
+ * (i.e., filtering algorithm attached to a constraint) until a fixed point is reached (contrary to FC). Note that it is
+ * only when every propagator ensures GAC (Generalized Arc Consistency) that GAC is really enforced completely on the
+ * full constraint network; this information is recorded in a field. Recall that GAC is the maximal level of possible
+ * filtering when constraints are treated independently.
  * 
  * @author Christophe Lecoutre
  */
 public class GAC extends Forward {
 
 	/**********************************************************************************************
-	 * Static members
+	 * Static methods
 	 *********************************************************************************************/
 
 	/**
@@ -329,7 +330,7 @@ public class GAC extends Forward {
 	 */
 	protected final boolean enforceArcConsistencyAfterAssignment(Variable x) {
 		assert x.assigned() && queue.isEmpty() : queue.size() + " " + x.assigned();
-		// (queue.isEmpty() || this instanceof PropagationIsomorphism)
+		// assert (queue.isEmpty() || this instanceof PropagationIsomorphism)
 		// For the control below, note that when full GAC is guaranteed, we can avoid useless filtering if the variable
 		// was already singleton (no removed value at the current depth) and GAC was already guaranteed.
 		// TODO : the control could be more precise? (is there a constraint for which there is a problem to have

@@ -546,7 +546,7 @@ public class Control {
 
 		public boolean bivsStoppedAtFirstSolution = addB("bivsStoppedAtFirstSolution", "bivs_s", true, "");
 		public boolean bivsOptimistic = addB("bivsOptimistic", "bivs_o", true, "");
-		public final int bivsDistance = addI("bivsDistance", "bivs_d", 2, "0: only if in the objective constraint, 1: if at distance 0 or 1, 2: any varriable");
+		public final int bivsDistance = addI("bivsDistance", "bivs_d", 2, "0: only if in the objective constraint; 1: if at distance 0 or 1; 2: any variable");
 		public final int bivsLimit = addI("bivsLimit", "bivs_l", Integer.MAX_VALUE, ""); // MAX_VALUE means no
 																							// control/limit ; otherwise
 																							// bivs applied only if

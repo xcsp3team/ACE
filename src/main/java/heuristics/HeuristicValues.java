@@ -28,24 +28,31 @@ import variables.DomainInfinite;
 import variables.Variable;
 
 /**
- * This class gives the description of a value ordering heuristic. A value ordering heuristic is attached to a variable
- * and allows selecting (indexes of) values.
+ * This is the class for building value ordering heuristics. A value ordering heuristic is attached to a variable and
+ * allows us to select (indexes of) values.
+ * 
+ * @author Christophe Lecoutre
  */
 public abstract class HeuristicValues extends Heuristic {
 
+	/**
+	 * Builds and returns a value ordering heuristic to be used for the specified variable
+	 * 
+	 * @param x
+	 *            a variable
+	 * @return a value ordering heuristic for the specified variable
+	 */
 	public static final HeuristicValues buildFor(Variable x) {
 		if (x.heuristic != null)
-			return x.heuristic; // already built by some objects, we do not change it
+			return x.heuristic; // already built by some objects, so we do not change it
 		SettingValh settings = x.problem.head.control.valh;
 		String className = x.dom instanceof DomainInfinite ? First.class.getName() : settings.clazz;
 		Set<Class<?>> classes = x.problem.head.availableClasses.get(HeuristicValues.class);
 		HeuristicValues heuristic = Reflector.buildObject(className, classes, x, settings.anti);
-		if (heuristic instanceof Bivs) {
-			if (settings.bivsDistance < 2) {
-				int distance = x.distanceWithObjective();
-				if (distance == 2 || (distance == 1 && settings.bivsDistance == 0))
-					heuristic = new First(x, settings.anti);
-			}
+		if (heuristic instanceof Bivs && settings.bivsDistance < 2) { // limited form of Bivs according to the distance
+			int distance = x.distanceWithObjective();
+			if (distance == 2 || (distance == 1 && settings.bivsDistance == 0))
+				heuristic = new First(x, settings.anti);
 		}
 		return heuristic;
 	}
@@ -91,12 +98,16 @@ public abstract class HeuristicValues extends Heuristic {
 	protected abstract double scoreOf(int a);
 
 	/**
-	 * Searches and returns the preferred value index in the current domain of x according to the heuristic
+	 * Searches and returns the preferred value index in the current domain of x, according to the heuristic
+	 * 
+	 * @return the preferred value index in the current domain of x
 	 */
 	protected abstract int computeBestValueIndex();
 
 	/**
-	 * Returns the preferred value index in the current domain of x according to the heuristic
+	 * Returns the preferred value index in the current domain of x according to the heuristic. Meta-reasoning
+	 * techniques such as warm starting, run progress saving and solution saving are checked first before considering
+	 * the heuristic selection criterion.
 	 * 
 	 * @return the preferred value index in the current domain of x
 	 */
@@ -117,8 +128,7 @@ public abstract class HeuristicValues extends Heuristic {
 			// are pruned (and become singleton or not)
 			if (settings.solutionSaving == 1 || solver.restarter.numRun == 0 || solver.restarter.numRun % settings.solutionSaving != 0) {
 				// every k runs, we do not use solution saving, where k is the value of solutionSaving (if k > 1)
-				// int a = -1;
-				// if (x == solver.impacting) a = dx.first(); else
+				// int a = -1; if (x == solver.impacting) a = dx.first(); else
 				int a = solver.solutions.last[x.num];
 				if (dx.contains(a)) // && (!priorityVar || solver.rs.random.nextDouble() < 0.5))
 					return a;
@@ -132,16 +142,17 @@ public abstract class HeuristicValues extends Heuristic {
 	// ************************************************************************
 
 	/**
-	 * This class gives the description of a fixed/static value ordering heuristic. It means that all values are
-	 * definitively ordered at construction.
+	 * This is the class for building static value ordering heuristics. It means that, for such heuristics, all values
+	 * are definitively ordered at construction.
 	 */
-	public static abstract class HeuristicValuesFixed extends HeuristicValues {
+	public static abstract class HeuristicValuesStatic extends HeuristicValues {
+
 		/**
 		 * The set of indexes (of values) increasingly ordered by this static heuristic (the first one is the best one).
 		 */
 		private final int[] fixed;
 
-		public HeuristicValuesFixed(Variable x, boolean anti) {
+		public HeuristicValuesStatic(Variable x, boolean anti) {
 			super(x, anti);
 			// we build an ordered map with entries of the form (a, heuristic score of a multiplied by the optimization
 			// coefficient) for every a
@@ -159,7 +170,7 @@ public abstract class HeuristicValues extends Heuristic {
 			throw new AssertionError("The domain is empty");
 		}
 
-		public static final class Srand extends HeuristicValuesFixed {
+		public static final class Srand extends HeuristicValuesStatic {
 
 			public Srand(Variable x, boolean anti) {
 				super(x, anti);
@@ -171,12 +182,12 @@ public abstract class HeuristicValues extends Heuristic {
 			}
 		}
 
-		public static final class LetterFrequency extends HeuristicValuesFixed implements TagExperimental {
+		public static final class LetterFrequency extends HeuristicValuesStatic implements TagExperimental {
 
 			// Static order according to the frequency of letters in French; 'a' is the 3rd most frequent letter, 'b' is
 			// the 17th most frequent letter,..., 'z' is the 23th most frequent letter. This corresponds to the order: e
 			// s a i t n r u l o d c p m v q f b g h j x y z w k
-			private static int[] letterPositionsFr = { 2, 17, 11, 10, 0, 16, 18, 19, 3, 20, 25, 8, 13, 5, 9, 12, 15, 6, 1, 4, 7, 14, 24, 21, 22, 23 };
+			private static int[] fr = { 2, 17, 11, 10, 0, 16, 18, 19, 3, 20, 25, 8, 13, 5, 9, 12, 15, 6, 1, 4, 7, 14, 24, 21, 22, 23 };
 
 			public LetterFrequency(Variable x, boolean anti) {
 				super(x, anti);
@@ -184,7 +195,7 @@ public abstract class HeuristicValues extends Heuristic {
 
 			@Override
 			public double scoreOf(int a) {
-				return letterPositionsFr[a];
+				return fr[a];
 			}
 		}
 

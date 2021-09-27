@@ -10,26 +10,46 @@
 
 package propagation;
 
+import static utility.Kit.control;
+
 import solver.Solver;
-import utility.Kit;
 import variables.Variable;
 
+/**
+ * An object performing a consistency stronger than GAC.
+ * 
+ * @author Christophe Lecoutre
+ */
 public abstract class StrongConsistency extends GAC {
 
+	/**
+	 * A limit in term of passes (main filtering turns)
+	 */
 	protected int nPassesLimit = Integer.MAX_VALUE; // TODO hard coding
 
-	protected boolean onlyBounds, onlyNeighbours; // TODO hard coding
+	/**
+	 * Indicates if the strong filtering only concerns the bounds of the variable domains
+	 */
+	protected boolean onlyBounds; // TODO hard coding
 
+	/**
+	 * Indicates if the strong filtering only concerns the neighbors of the event (variable)
+	 */
+	protected boolean onlyNeighbours; // TODO hard coding
+
+	/**
+	 * Indicates if a verbose mode is used (to display information about filtering)
+	 */
 	protected final int verbose;
 
 	public StrongConsistency(Solver solver) {
 		super(solver);
 		this.verbose = solver.head.control.general.verbose;
-		Kit.control(solver.observersOnSolving == null || solver.observersOnSolving.size() == 0);
+		control(solver.observersOnSolving == null || solver.observersOnSolving.size() == 0);
 	}
 
 	/**
-	 * Performs strong inference. The method to implement for each subclass of Strong.
+	 * Performs strong inference. The method to implement for each subclass of StrongConsistency.
 	 */
 	protected abstract boolean enforceStrongConsistency();
 

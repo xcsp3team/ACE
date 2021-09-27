@@ -34,8 +34,14 @@ public abstract class Supporter {
 	 */
 	protected Constraint c;
 
+	/**
+	 * Indicates if multidirectionality of supports must be used
+	 */
 	protected boolean multidirectionality;
 
+	/**
+	 * A temporary array
+	 */
 	protected int[] buffer;
 
 	public Supporter(Constraint c) {
@@ -61,9 +67,6 @@ public abstract class Supporter {
 
 		public abstract boolean findArcSupportFor(int x, int a);
 
-		public boolean findArcSupportFor(Variable x, int a) {
-			return findArcSupportFor(c.positionOf(x), a);
-		}
 	}
 
 	public static final class SupporterHardBary extends SupporterHard {

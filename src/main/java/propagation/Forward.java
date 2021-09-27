@@ -18,8 +18,8 @@ import utility.Reflector;
 import variables.Variable;
 
 /**
- * This class gives the description of a forward propagation technique. Such a propagation technique corresponds to a
- * prospective approach which works with unassigned variables. The domains of the unassigned variables can be filtered.
+ * This is the root class for forward propagation. Such form of propagation corresponds to a prospective approach that
+ * deals with unassigned variables. The domains of the unassigned variables can be filtered.
  * 
  * @author Christophe Lecoutre
  */
@@ -33,7 +33,7 @@ public abstract class Forward extends Propagation {
 	public final Reviser reviser;
 
 	/**
-	 * Builds for the specified solver an object implementing a forward propagation technique
+	 * Builds a forward propagation object for the specified solver
 	 * 
 	 * @param solver
 	 *            the solver to which the propagation object is attached
@@ -66,7 +66,7 @@ public abstract class Forward extends Propagation {
 	 *********************************************************************************************/
 
 	/**
-	 * This class implements Forward Checking. This code corresponds to the <i>nFC2 </i> algorithm of: <br>
+	 * This is the class for Forward Checking (FC). This code corresponds to the <i>nFC2 </i> algorithm of: <br>
 	 * "On Forward Checking for Non-binary Constraint Satisfaction", CP 1999: 88-102, by Christian Bessière, Pedro
 	 * Meseguer, Eugene C. Freuder, Javier Larrosa.
 	 */

@@ -15,15 +15,15 @@ import solver.Solver;
 import variables.Variable;
 
 /**
- * This class gives the description of a backward propagation technique. Such a propagation technique corresponds to a
- * retrospective approach which works with assigned variables. The domains of the unassigned variables are not modified.
+ * This is the root class for backward propagation. Such form of propagation corresponds to a retrospective approach
+ * that deals with assigned variables. The domains of the unassigned variables are not modified.
  * 
  * @author Christophe Lecoutre
  */
 public abstract class Backward extends Propagation {
 
 	/**
-	 * Builds for the specified solver an object implementing a backward propagation technique
+	 * Builds a backward propagation object for the specified solver
 	 * 
 	 * @param solver
 	 *            the solver to which the propagation object is attached

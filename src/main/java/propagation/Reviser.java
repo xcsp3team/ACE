@@ -23,8 +23,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * A reviser is attached to a propagation technique and allows us to manage revisions (within a generic filtering scheme). If all constraints have specific
- * propagators, this object is not used.
+ * A reviser is attached to a propagation technique and allows us to manage revisions (within a generic filtering
+ * scheme). If all constraints have specific propagators, this object is not used.
  * 
  * @author Christophe Lecoutre
  */
@@ -41,16 +41,24 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 	public long nRevisions;
 
 	/**
-	 * The number of useless revisions, i.e., the number of calls to <code> revise(c,x) </code> that leads to no inference (value removal)
+	 * The number of useless revisions, i.e., the number of calls to <code> revise(c,x) </code> that leads to no
+	 * inference (value removal)
 	 */
 	public long nUselessRevisions;
 
+	/**
+	 * Builds a reviser for the specified propagation object
+	 * 
+	 * @param propagation
+	 *            an object managing constraint propagation
+	 */
 	public Reviser(Forward propagation) {
 		this.propagation = propagation;
 	}
 
 	/**
-	 * Returns true if the revision of the domain of the specified variable should be executed for the specified constraint
+	 * Returns true if the revision of the domain of the specified variable should be executed for the specified
+	 * constraint
 	 * 
 	 * @param c
 	 *            a constraint
@@ -80,8 +88,8 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 	}
 
 	/**
-	 * Revises the domain of the specified variable for the specified constraint, and returns false if an inconsistency is detected. In some cases, the revision
-	 * can be avoided (because proved as useless).
+	 * Revises the domain of the specified variable for the specified constraint, and returns false if an inconsistency
+	 * is detected. In some cases, the revision can be avoided (because proved as useless).
 	 * 
 	 * @param c
 	 *            a constraint
@@ -193,7 +201,8 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 			return -1;
 		}
 
-		private short seekSupportPosition(long[] bitSup, long[] bitDom, int[] bitSupDense, SetSparse set) { // for the variant
+		private short seekSupportPosition(long[] bitSup, long[] bitDom, int[] bitSupDense, SetSparse set) { // for the
+																											// variant
 			if (set.size() <= bitSupDense.length) {
 				int[] dense = set.dense;
 				for (int i = set.limit; i >= 0; i--) {
