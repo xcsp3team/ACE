@@ -10,6 +10,8 @@
 
 package propagation;
 
+import static utility.Kit.control;
+
 import java.util.stream.Stream;
 
 import constraints.Constraint;
@@ -19,12 +21,27 @@ import propagation.Reviser.Reviser3;
 import utility.Kit;
 import variables.Variable;
 
+/**
+ * A "supporter" is attached to a constraint and allows us to benefit from residues (which are like cache) when looking
+ * for supports of values (within a generic filtering scheme). If all constraints have specific propagators, this kind
+ * of object is not used.
+ * 
+ * @author Christophe Lecoutre
+ */
 public abstract class Supporter {
 
+	/**
+	 * Builds an object that is useful to look efficiently for supports, because benefiting from residues and
+	 * multidirectionality
+	 * 
+	 * @param c
+	 *            a constraint
+	 * @return an object managing residues and multidirectionality
+	 */
 	public static Supporter buildFor(Constraint c) {
 		if (c.problem.head.control.propagation.residues && c.scp.length > 1 && !(c instanceof SpecificPropagator)
 				&& !(c.problem.head.control.propagation.reviser.equals(Reviser3.class.getSimpleName()) && c.extStructure() instanceof Bits)) {
-			return c.scp.length == 2 ? new SupporterHardBary(c) : new SupporterHardNary(c);
+			return c.scp.length == 2 ? new SupporterBary(c) : new SupporterNary(c);
 		}
 		return null;
 	}
@@ -40,99 +57,85 @@ public abstract class Supporter {
 	protected boolean multidirectionality;
 
 	/**
-	 * A temporary array
+	 * Builds an object that is useful for efficiently looking for supports of values
+	 * 
+	 * @param c
+	 *            a constraint
 	 */
-	protected int[] buffer;
-
 	public Supporter(Constraint c) {
 		this.c = c;
 		this.multidirectionality = c.problem.head.control.propagation.multidirectionality;
-		this.buffer = c.tupleIterator.buffer;
 	}
+
+	public abstract boolean findArcSupportFor(int x, int a);
 
 	/**********************************************************************************************
 	 * Subclasses
 	 *********************************************************************************************/
 
-	public static abstract class SupporterHard extends Supporter {
+	/**
+	 * Supporter for a binary constraint
+	 */
+	public static final class SupporterBary extends Supporter {
 
 		/**
-		 * MUST be called when the constraint relation is modified
+		 * residues[x][a] is the residue (last found support) for (x,a); this is a value index in the domain of the
+		 * second variable y involved in the constraint c
 		 */
-		public abstract void reset();
+		private final int[][] residues;
 
-		public SupporterHard(Constraint c) {
+		public SupporterBary(Constraint c) {
 			super(c);
-		}
-
-		public abstract boolean findArcSupportFor(int x, int a);
-
-	}
-
-	public static final class SupporterHardBary extends SupporterHard {
-
-		public final int[][] residues;
-
-		@Override
-		public void reset() {
-			Kit.fill(residues, -1);
-		}
-
-		public SupporterHardBary(Constraint c) {
-			super(c);
-			Kit.control(c.scp.length == 2);
+			control(c.scp.length == 2);
 			this.residues = Variable.litterals(c.scp).intArray(-1);
 		}
 
 		@Override
 		public boolean findArcSupportFor(int x, int a) {
-			int q = x == 0 ? 1 : 0;
+			int y = x == 0 ? 1 : 0;
 			int b = residues[x][a];
-			if (b != -1 && c.doms[q].contains(b)) {
-				// if (c.problem.solver.propagation instanceof TagBinaryRelationFiltering) {
-				// buffer[x] = a;
-				// buffer[q] = b;
-				// if (c.checkIndexes(buffer))
-				// return true;
-				// } else
+			if (b != -1 && c.doms[y].contains(b)) {
+				// note that if we would dynamically modify the relation, we would need to check again validity
 				return true;
 			}
-			if (c.seekFirstSupportWith(x, a, buffer)) {
-				b = buffer[q];
+			if (c.seekFirstSupportWith(x, a)) {
+				b = c.tupleIterator.buffer[y]; // the support is in the buffer of tupleIterator
 				residues[x][a] = b;
 				if (multidirectionality)
-					residues[q][b] = a;
+					residues[y][b] = a;
 				return true;
 			}
 			return false;
 		}
 	}
 
-	public static final class SupporterHardNary extends SupporterHard {
+	/**
+	 * Supporter for a non binary constraint (i.e., a constraint wit an arity strictly greater than 2)
+	 */
+	public static final class SupporterNary extends Supporter {
 
+		/**
+		 * residues[x][a] is the residue (last found support) for (x,a); this is a tuple of value indexes, one for each
+		 * variable involved in the constraint c
+		 */
 		private final int[][][] residues;
 
-		@Override
-		public void reset() {
-			Stream.of(residues).forEach(m -> Kit.fill(m, -1));
-		}
-
-		public SupporterHardNary(Constraint c) {
+		public SupporterNary(Constraint c) {
 			super(c);
-			Kit.control(c.scp.length > 2);
+			control(c.scp.length > 2);
 			this.residues = Stream.of(c.scp).map(x -> Kit.repeat(-1, x.dom.initSize(), c.scp.length)).toArray(int[][][]::new);
 		}
 
 		@Override
 		public boolean findArcSupportFor(int x, int a) {
-			int q = x == 0 ? 1 : 0;
 			int[] residue = residues[x][a];
-			if (residue[q] != -1 && c.isValid(residue))
+			if (residue[0] != -1 && c.isValid(residue))
 				return true;
-			if (c.seekFirstSupportWith(x, a, buffer)) {
+			if (c.seekFirstSupportWith(x, a)) {
+				int[] buffer = c.tupleIterator.buffer; // the support is in the buffer of tupleIterator
 				if (multidirectionality)
-					for (int i = 0; i < residues.length; i++)
-						Kit.copy(buffer, residues[i][buffer[i]]);
+					for (int y = 0; y < residues.length; y++)
+						Kit.copy(buffer, residues[y][buffer[y]]);
 				else
 					Kit.copy(buffer, residues[x][a]);
 				return true;

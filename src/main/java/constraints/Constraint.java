@@ -44,7 +44,6 @@ import problem.Problem;
 import propagation.Forward;
 import propagation.Reviser;
 import propagation.Supporter;
-import propagation.Supporter.SupporterHard;
 import sets.SetDense;
 import sets.SetSparse;
 import utility.Kit;
@@ -845,7 +844,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 
 	public boolean findArcSupportFor(int x, int a) {
 		if (supporter != null)
-			return ((SupporterHard) supporter).findArcSupportFor(x, a);
+			return supporter.findArcSupportFor(x, a);
 		if (extStructure() instanceof Bits) {
 			long[] t1 = ((Bits) extStructure()).sups(x)[a];
 			long[] t2 = scp[x == 0 ? 1 : 0].dom.binary();

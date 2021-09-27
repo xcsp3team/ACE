@@ -375,8 +375,8 @@ public final class Reification {
 	}
 
 	/**********************************************************************************************
-	 * Logical Reification : Classes for x = (y and z), x = (y or z) and extensions to more than two variables in the
-	 * right term
+	 * Logical Reification : Classes for x = (y and z), x = (y or z) and their extensions to more than two variables in
+	 * the right term
 	 *********************************************************************************************/
 
 	public static abstract class ReifLogic extends Primitive implements TagAC, TagCallCompleteFiltering, TagNotSymmetric {

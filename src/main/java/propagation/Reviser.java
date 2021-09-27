@@ -24,7 +24,7 @@ import variables.Variable;
 
 /**
  * A reviser is attached to a propagation technique and allows us to manage revisions (within a generic filtering
- * scheme). If all constraints have specific propagators, this object is not used.
+ * scheme). If all constraints have specific propagators, this kind of object is not used.
  * 
  * @author Christophe Lecoutre
  */

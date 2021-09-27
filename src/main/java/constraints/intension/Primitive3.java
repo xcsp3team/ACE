@@ -30,8 +30,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This class contains all propagators defined for ternary primitive constraints such as for example x + y = z, |x - y|
- * > z or x%y = z <br />
+ * This class contains many propagators for ternary primitive constraints such as for example x + y = z, |x - y| > z or
+ * x%y = z <br />
  * Important: in Java, integer division rounds toward 0. <br/>
  * This implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 = 3 <br />
  * See https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.17.2
