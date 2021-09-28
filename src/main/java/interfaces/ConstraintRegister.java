@@ -16,24 +16,19 @@ import constraints.Constraint;
 import variables.Domain;
 
 /**
- * An interface for objects that register constraints that are associated to them. Note that, for the moment, constraints must have necessarily the same types
- * of domains.
+ * An interface for objects that register constraints that are associated to them. Note that, for the moment,
+ * constraints must have necessarily the same types of domains.
  * 
  * @author Christophe Lecoutre
- * 
  */
 public interface ConstraintRegister {
 
 	/**
-	 * Returns the list of constraints registered by this object
-	 * 
 	 * @return the list of constraints registered by this object
 	 */
 	abstract List<Constraint> registeredCtrs();
 
 	/**
-	 * Returns the first constraint that is registered with the object
-	 * 
 	 * @return the first constraint that is registered with the object
 	 */
 	default Constraint firstRegisteredCtr() {

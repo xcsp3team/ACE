@@ -1,5 +1,7 @@
 package utility;
 
+import static utility.Kit.control;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -270,7 +272,7 @@ public class Reflector {
 			if (absoluteClassName == null) {
 				absoluteClassName = searchAbsoluteNameOf(classPackageName, className);
 				// absoluteClassName = searchAbsoluteNameOf(rootClass.getPackage().getName(), className);
-				// Kit.control(absoluteClassName != null, () -> "Class " + key + " not found");
+				// control(absoluteClassName != null, () -> "Class " + key + " not found");
 				if (absoluteClassName == null)
 					absoluteClassName = className; // at this point, it means that the class has been defined outside
 													// directory AbsCon
@@ -281,19 +283,22 @@ public class Reflector {
 	}
 
 	/**
-	 * An object of the class whose name is given is built. The specified objects are passed to the constructor.
+	 * Builds and returns an object of the class whose name is specified. The class must inherit from the specified root
+	 * class. The constructor that is compatible with the specified parameters is called to build the object.
 	 * 
 	 * @param className
 	 *            the name of a class
+	 * @param rootClass
+	 *            the root class of the object to be built
 	 * @param parameters
-	 *            the parameters used by the constructor
+	 *            the parameters to be used when building the object
 	 * @return an object of the class whose name is given
 	 */
 	public static <T> T buildObject(String className, Class<T> rootClass, Object... parameters) {
 		try {
 			Class<?> cn = Class.forName(computeAbsoluteClassName(className, rootClass)), rcn = Class.forName(rootClass.getName());
-			Kit.control(rcn.isAssignableFrom(cn), () -> className + " does not extend " + rootClass.getName());
-			Kit.control(!Modifier.isAbstract(cn.getModifiers()), () -> className + " is abstract");
+			control(rcn.isAssignableFrom(cn), () -> className + " does not extend " + rootClass.getName());
+			control(!Modifier.isAbstract(cn.getModifiers()), () -> className + " is abstract");
 			for (Constructor<?> constructor : cn.getConstructors())
 				if (constructor.getGenericParameterTypes().length == parameters.length)
 					return (T) constructor.newInstance(parameters);
@@ -305,11 +310,11 @@ public class Reflector {
 	}
 
 	/**
-	 * An object of the class whose name is given is built. Be careful: the default constructor is used.
+	 * Builds and returns an object of the class whose name is specified. Be careful: the default constructor is used.
 	 * 
 	 * @param className
 	 *            the name of a class
-	 * @return an object of the class whose name is given
+	 * @return an object of the class whose name is specified
 	 */
 	public static Object buildObject(String className) throws Exception {
 		Constructor<?> c = Class.forName(className).getDeclaredConstructors()[0];
@@ -317,6 +322,21 @@ public class Reflector {
 		return c.newInstance();
 	}
 
+	/**
+	 * Builds and returns an object of the class whose name is specified. The class must be among those that are
+	 * specified (inheriting from the type T). The constructor that is compatible with the specified parameters is
+	 * called to build the object.
+	 * 
+	 * @param <T>
+	 *            the root class of the object
+	 * @param className
+	 *            the name of a class
+	 * @param classes
+	 *            the set of possible target classes
+	 * @param parameters
+	 *            the parameters to be used when building the object
+	 * @return an object of the class whose name is specified
+	 */
 	public static <T> T buildObject(String className, Set<Class<?>> classes, Object... parameters) {
 		try {
 			Class<?> clazz = null;
@@ -324,10 +344,10 @@ public class Reflector {
 				clazz = classes.stream().filter(c -> c.getName().endsWith(className)).findFirst().orElse(null);
 			else
 				clazz = classes.stream().filter(c -> c.getName().endsWith("$" + className) || c.getName().endsWith("." + className)).findFirst().orElse(null);
-			Kit.control(clazz != null, () -> "It was impossible to load " + className);
+			control(clazz != null, () -> "It was impossible to load " + className);
 			Constructor<?> cstr = Stream.of(clazz.getConstructors()).filter(c -> c.getGenericParameterTypes().length == parameters.length).findFirst()
 					.orElse(null);
-			Kit.control(cstr != null, () -> "It was impossible to find the appropriate constructor for " + className);
+			control(cstr != null, () -> "It was impossible to find the appropriate constructor for " + className);
 			return (T) cstr.newInstance(parameters);
 		} catch (Exception e) {
 			(e.getCause() == null ? e : e.getCause()).printStackTrace();

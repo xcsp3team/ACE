@@ -45,7 +45,6 @@ import utility.Kit;
  * <code> toIdx </code> and <code> toVal </code>.
  *
  * @author Christophe Lecoutre
- *
  */
 public interface Domain extends SetLinked {
 
@@ -84,8 +83,7 @@ public interface Domain extends SetLinked {
 	 */
 	static int typeIdentifierForRange(int min, int max) {
 		// adding a third value, Integer.MAX_VALUE, which is not an authorized domain value since there is a safety
-		// margin, to specify a range (avoiding
-		// confusion with a domain only containing min and max)
+		// margin, to specify a range (avoiding confusion with a domain only containing min and max)
 		return typeIdentifierFor(min, max, Integer.MAX_VALUE);
 	}
 
@@ -98,8 +96,7 @@ public interface Domain extends SetLinked {
 	 */
 	static int typeIdentifierForSymbols(int... values) {
 		// adding a third value, Integer.MAX_VALUE -1, which is not an authorized domain value since there is a safety
-		// margin, to specify a
-		// domain of symbols (avoiding confusion with a domain containing the specified integers)
+		// margin, to specify a domain of symbols (avoiding confusion with a domain containing the specified integers)
 		return Domain.typeIdentifierFor(Utilities.collectInt(values, Integer.MAX_VALUE - 1));
 	}
 

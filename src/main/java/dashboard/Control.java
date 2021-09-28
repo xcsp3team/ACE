@@ -493,18 +493,11 @@ public class Control {
 	public final SettingRestarts restarts = new SettingRestarts();
 
 	public class SettingLearning extends SettingGroup {
-		String s_ng = "Indicates the way nogoods are collected." + "\nBy default, this is nogood recording from restarts.";
-		String s_bgbl = "The limit, in term of number of nogoods, for the base.";
-		String s_ps = "Indicates the way partial states are collected." + "\nBy default, no such learning.";
-		String s_pso = "Indicates which operators are used to extract partial states: a sequence of 5 bits is used.";
-
-		public LearningNogood nogood = addE("nogood", "l_ng", LearningNogood.RST, s_ng);
-		public final int nogoodBaseLimit = addI("nogoodBaseLimit", "l_ngbl", 200000, s_bgbl);
-		public final int nogoodArityLimit = addI("nogoodArityLimit", "l_ngal", Integer.MAX_VALUE, "", HIDDEN);
-		public final int unarySymmetryLimit = addI("unarySymmetryLimit", "l_usl", Integer.MAX_VALUE, "", HIDDEN);
-		public final int nonunarySymmetryLimit = addI("nonunarySymmetryLimit", "l_nsl", 2000, "", HIDDEN);
-		public final LearningIps ips = addE("ips", "ips", LearningIps.NO, s_ps);
-		public final String ipsOperators = addS("ipsOperators", "ipso", "11011", s_pso).trim();
+		public LearningNogood nogood = addE("nogood", "l_ng", LearningNogood.RST, "Nogood recording technique (nogood recording from restarts by default)");
+		public final int nogoodBaseLimit = addI("nogoodBaseLimit", "l_ngbl", 200000, "The maximum number of nogoods that can be stored in the base");
+		public final int nogoodArityLimit = addI("nogoodArityLimit", "l_ngal", Integer.MAX_VALUE, "The maximum arity of a nogood that can be recorded", HIDDEN);
+		public final LearningIps ips = addE("ips", "ips", LearningIps.NO, "IPS extraction technique (currently, no such learning by default)");
+		public final String ipsOperators = addS("ipsOperators", "ipso", "11011", "Reduction operators for IPSs; a sequence of 5 bits is used").trim();
 		public final int ipsCompressionEquivalence = addI("ipsCompressionEquivalence", "ipsc", Deflater.NO_COMPRESSION, "", HIDDEN);
 		// BEST_SPEED or BEST_COMPRESSION as alternatives
 		public final int ipsCompressionLimitEquivalence = addI("ipsCompressionLimitEquivalence", "ipscl", 300, "", HIDDEN);

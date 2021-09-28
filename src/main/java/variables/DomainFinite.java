@@ -26,7 +26,6 @@ import utility.Kit;
  * defined from a range or an array; see the two intern subclasses.
  * 
  * @author Christophe Lecoutre
- *
  */
 public abstract class DomainFinite extends LinkedSetOrderedWithBits implements Domain {
 

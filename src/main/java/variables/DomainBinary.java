@@ -16,10 +16,9 @@ import propagation.Propagation;
 import sets.SetLinkedBinary;
 
 /**
- * A binary domain for a variable (from a constraint network).
+ * A binary domain for a variable (of a constraint network).
  * 
  * @author Christophe Lecoutre
- *
  */
 public final class DomainBinary extends SetLinkedBinary implements Domain {
 

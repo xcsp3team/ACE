@@ -13,10 +13,9 @@ package variables;
 import propagation.Propagation;
 
 /**
- * EXPERIMENTAL (TO BE CONTINUED/FINISHED)
+ * EXPERIMENTAL (TO BE CONTINUED)
  * 
  * @author Christophe Lecoutre
- * 
  */
 public final class DomainInfinite implements Domain {
 

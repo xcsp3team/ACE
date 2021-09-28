@@ -17,7 +17,6 @@ import variables.Variable;
  * These are the interfaces used for observers.
  * 
  * @author Christophe Lecoutre
- * 
  */
 public interface Observers {
 

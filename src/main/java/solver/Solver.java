@@ -491,7 +491,10 @@ public class Solver implements ObserverOnBacktracksSystematic {
 
 	public final Proofer proofer;
 
-	public final SetSparseReversible entailed; // the number (field num) of entailed constraints
+	/**
+	 * This reversible sparse set records the entailed constraints (their num) per level
+	 */
+	public final SetSparseReversible entailed;
 
 	public final RunProgressSaver runProgressSaver;
 
@@ -515,10 +518,16 @@ public class Solver implements ObserverOnBacktracksSystematic {
 
 	private int nRecursiveRuns = 0;
 
-	public final boolean isFullExploration() {
-		return stopping == FULL_EXPLORATION;
+	/**
+	 * @return true if after full exploration of the search space no solution has been found
+	 */
+	public final boolean unsat() {
+		return stopping == FULL_EXPLORATION && solutions.found == 0;
 	}
 
+	/**
+	 * @return true if the solving process is finished
+	 */
 	public final boolean finished() {
 		if (stopping != null)
 			return true;
@@ -561,19 +570,20 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		this.problem = head.problem;
 		this.problem.solver = this;
 
-		this.solutions = new Solutions(this, head.control.general.nSearchedSolutions); // BE CAREFUL: build solutions
-																						// before propagation
+		this.solutions = new Solutions(this, head.control.general.nSearchedSolutions);
+		// BE CAREFUL: build solutions before propagation
 		this.propagation = Propagation.buildFor(this); // may be null
 		if (!head.control.propagation.useAuxiliaryQueues)
-			Stream.of(problem.constraints).forEach(c -> c.filteringComplexity = 0);
-		this.restarter = Restarter.buildFor(this);
+			for (Constraint c : problem.constraints)
+				c.filteringComplexity = 0;
 
+		this.restarter = Restarter.buildFor(this);
 		this.heuristic = HeuristicVariables.buildFor(this);
 		for (Variable x : problem.variables)
 			x.heuristic = HeuristicValues.buildFor(x); // buildValueOrderingHeuristic();
 		this.lastConflict = head.control.varh.lc > 0 ? new LastConflict(this, head.control.varh.lc) : null;
-		this.decisions = new Decisions(this);
 
+		this.decisions = new Decisions(this);
 		this.futVars = new FutureVariables(this);
 		int nLevels = problem.variables.length + 1;
 		int size = Stream.of(problem.variables).mapToInt(x -> x.dom.initSize()).reduce(0, (sum, domSize) -> sum + Math.min(nLevels, domSize));

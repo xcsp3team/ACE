@@ -1287,10 +1287,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity allEqual(Var... scp) {
-		// note that using a table on large instances of Domino is very expensive; using a smart table is also very
-		// expensive
+		// note that using a table on large instances of Domino is very expensive
+		// using a smart table is also very expensive
 		return post(new AllEqual(this, translate(scp)));
-		// return post(ExtensionSmart.buildAllEqual(this, translate(scp)));
+		// return post(CSmart.allEqual(this, translate(scp)));
 	}
 
 	@Override
