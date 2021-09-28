@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package constraints.extension.structures;
 
 import constraints.Constraint;
@@ -5,10 +15,10 @@ import constraints.ConstraintExtension;
 import utility.Kit;
 
 /**
- * This is the root class for extension structures represented by matrix forms. Currently, 2-dimensional and 3-dimensional matrices are implemented.
+ * This is the root class for extension structures represented by matrix forms. Currently, 2-dimensional and
+ * 3-dimensional matrices are implemented.
  * 
  * @author Christophe Lecoutre
- *
  */
 public abstract class Matrix extends ExtensionStructure {
 
@@ -27,7 +37,8 @@ public abstract class Matrix extends ExtensionStructure {
 		}
 
 		/**
-		 * Supports[a][b] is 1 if the pair of value indexes (a,b) is a support of the binary constraint(s) registered with the structure
+		 * Supports[a][b] is 1 if the pair of value indexes (a,b) is a support of the binary constraint(s) registered
+		 * with the structure
 		 */
 		protected boolean[][] supports;
 
@@ -88,7 +99,8 @@ public abstract class Matrix extends ExtensionStructure {
 		}
 
 		/**
-		 * Supports[a][b][c] is 1 if the triplet of value indexes (a,b,c) is a support of the ternary constraint(s) registered with the structure
+		 * Supports[a][b][c] is 1 if the triplet of value indexes (a,b,c) is a support of the ternary constraint(s)
+		 * registered with the structure
 		 */
 		protected boolean[][][] supports;
 

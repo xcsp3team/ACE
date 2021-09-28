@@ -67,6 +67,15 @@ public abstract class Supporter {
 		this.multidirectionality = c.problem.head.control.propagation.multidirectionality;
 	}
 
+	/**
+	 * Returns true if a support can be found for (x,a) on c
+	 * 
+	 * @param x
+	 *            a variable involved in the constraint c
+	 * @param a
+	 *            a value index for x
+	 * @return true if a support can be found for (x,a) on c
+	 */
 	public abstract boolean findArcSupportFor(int x, int a);
 
 	/**********************************************************************************************

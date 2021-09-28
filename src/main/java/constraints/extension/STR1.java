@@ -26,9 +26,10 @@ import variables.Variable;
  * "Partition search for non-binary constraint satisfaction". Inf. Sci. 177(18): 3639-3678 (2007).
  * 
  * @author Christophe Lecoutre
- *
  */
 public class STR1 extends ExtensionSpecific {
+	// TODO why not using a counter 'time' and replace boolean[][] ac by int[][] ac
+	// we just do time++ instead of Arrays.fill(ac[x],false); the gain must be unnoticeable, right?
 
 	/**********************************************************************************************
 	 * Implementing Interfaces
@@ -38,12 +39,9 @@ public class STR1 extends ExtensionSpecific {
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
 		this.tuples = ((Table) extStructure()).tuples;
-		if (!(this instanceof CT)) { // because CT (technically a subclass of STR1) has very specific structures
+		control(this.tuples.length > 0);
+		if (!(this instanceof CT)) // because CT (technically a subclass of STR1) has very specific structures
 			this.set = new SetDenseReversible(tuples.length, problem.variables.length + 1);
-			this.ac = Variable.litterals(scp).booleanArray();
-			this.cnts = new int[scp.length];
-		}
-		control(tuples.length > 0);
 	}
 
 	@Override
@@ -97,10 +95,15 @@ public class STR1 extends ExtensionSpecific {
 	public STR1(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		control(scp.length > 1, "Arity must be at least 2");
+		boolean build = !(this instanceof CT || this instanceof STR2N);
+		if (build) {
+			this.ac = Variable.litterals(scp).booleanArray();
+			this.cnts = new int[scp.length];
+		}
 	}
 
 	@Override
-	protected ExtensionStructure buildExtensionStructure() {
+	protected final ExtensionStructure buildExtensionStructure() {
 		return new Table(this);
 	}
 

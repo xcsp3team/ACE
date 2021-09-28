@@ -21,20 +21,13 @@ import variables.Variable;
  * This is STR (Simple Tabular Reduction) for filtering negative extension (table) constraints.
  * 
  * @author Christophe Lecoutre
- *
  */
 public final class STR1N extends STR1 implements TagNegative {
-
-	@Override
-	public void afterProblemConstruction() {
-		super.afterProblemConstruction();
-		this.nConflicts = Variable.litterals(scp).intArray();
-	}
 
 	/**
 	 * nConflicts[x][a] indicates, during filtering, the number of valid conflicts encountered with (x,a)
 	 */
-	protected int[][] nConflicts;
+	private final int[][] nConflicts;
 
 	/**
 	 * Builds an extension constraint, with STR1N as specific filtering method
@@ -46,6 +39,7 @@ public final class STR1N extends STR1 implements TagNegative {
 	 */
 	public STR1N(Problem pb, Variable[] scp) {
 		super(pb, scp);
+		this.nConflicts = Variable.litterals(scp).intArray();
 	}
 
 	@Override

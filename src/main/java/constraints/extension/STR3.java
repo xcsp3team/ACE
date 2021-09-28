@@ -190,19 +190,24 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 
 	/*** Fields related to propagation during search ***/
 
-	protected int[][][] subtables; // 1D = variable (position) ; 2D = index ; 3D = order; value = position in sparseSetOfTuples
+	protected int[][][] subtables; // 1D = variable (position) ; 2D = index ; 3D = order; value = position in
+									// sparseSetOfTuples
 
-	protected int[][] separators; // 1D = variable (position) ; 2D = index ; value = separator in the associated subtable
+	protected int[][] separators; // 1D = variable (position) ; 2D = index ; value = separator in the associated
+									// subtable
 
-	protected short[][][] subtablesShort; // 1D = variable (position) ; 2D = index ; 3D = order; value = position in sparseSetOfTuples
+	protected short[][][] subtablesShort; // 1D = variable (position) ; 2D = index ; 3D = order; value = position in
+											// sparseSetOfTuples
 
-	protected short[][] separatorsShort; // 1D = variable (position) ; 2D = index ; value = separator in the associated subtable
+	protected short[][] separatorsShort; // 1D = variable (position) ; 2D = index ; value = separator in the associated
+											// subtable
 
 	protected int[] offsetsForMaps; // 1D = variable (position)
 
 	protected SetSparseMapSTR3[] separatorsMaps; // 1D = depth
 
-	protected LocalSetSparseByte[] deps; // 1D = tuple position in sparseSetOfTuples ; value = variable position (so we can obtain the value in
+	protected LocalSetSparseByte[] deps; // 1D = tuple position in sparseSetOfTuples ; value = variable position (so we
+											// can obtain the value in
 	// the tuple)
 
 	public STR3(Problem pb, Variable[] scp) {
@@ -273,7 +278,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 	 * Methods related to propagation at preprocessing
 	 *********************************************************************************************/
 
-	protected int initializeBeforePropagationAtPreprocessing() {
+	private int initializeBeforePropagationAtPreprocessing() {
 		int cnt = 0;
 		for (int i = 0; i < scp.length; i++) {
 			cnt += (cnts[i] = doms[i].size());
@@ -282,7 +287,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 		return cnt;
 	}
 
-	protected boolean updateDomainsAtPreprocessing(int cnt) {
+	private boolean updateDomainsAtPreprocessing(int cnt) {
 		for (int x = scp.length - 1; x >= 0 && cnt > 0; x--) {
 			int nRemovals = cnts[x];
 			if (nRemovals == 0)
@@ -294,7 +299,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 		return true;
 	}
 
-	protected boolean filterAtPreprocessing() {
+	private boolean filterAtPreprocessing() {
 		int cnt = initializeBeforePropagationAtPreprocessing();
 		for (int i = set.limit; i >= 0; i--) {
 			int[] tuple = tuples[set.dense[i]];
@@ -362,7 +367,8 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 	 * Methods related to propagation during search
 	 *********************************************************************************************/
 
-	// bug to fix for java abscon.Resolution BinPacking-tab-Schwerin1_BPP10.xml.lzma -rc=10 -lc=4 -f=cop -positive=str3 -rn=20 -varh=DDegOnDom -ev
+	// bug to fix for java ace BinPacking-tab-Schwerin1_BPP10.xml.lzma -rc=10 -lc=4 -f=cop -positive=str3 -rn=20
+	// -varh=DDegOnDom -ev
 	protected void suppressInvalidTuplesFromRemovedValuesInDomainAtPosition(int x) {
 		Domain dom = doms[x];
 		if (subtables != null) {

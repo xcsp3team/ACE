@@ -150,11 +150,8 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 																									// costly)
 		String key = defineKey(keyCanonizer == null ? tree.toPostfixExpression(tree.vars()) : keyCanonizer.key());
 		Map<String, IntensionStructure> map = pb.head.structureSharing.mapForIntension;
-		this.treeEvaluator = map.get(key);
-		if (treeEvaluator == null) {
-			this.treeEvaluator = scp[0] instanceof VariableInteger ? new IntensionStructure(tree) : new IntensionStructure(tree, pb.symbolic.mapOfSymbols);
-			map.put(key, treeEvaluator);
-		}
+		this.treeEvaluator = map.computeIfAbsent(key,
+				s -> scp[0] instanceof VariableInteger ? new IntensionStructure(tree) : new IntensionStructure(tree, pb.symbolic.mapOfSymbols));
 		treeEvaluator.register(this);
 	}
 }

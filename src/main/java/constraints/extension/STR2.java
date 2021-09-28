@@ -26,12 +26,8 @@ import variables.Variable;
  * This implementation can deal with starred tables.
  * 
  * @author Christophe Lecoutre
- *
  */
 public final class STR2 extends STR1Optimized implements TagStarredCompatible {
-
-	// TODO why not using a counter 'time' and replace boolean[][] ac by int[][] ac (we just do time++ instead of
-	// Arrays.fill(ac[x],false); the gain must be unnoticeable?
 
 	/**
 	 * Builds an extension constraint, with STR2 as specific filtering method

@@ -396,7 +396,7 @@ public class Head extends Thread {
 	public final Stopwatch instanceStopwatch = new Stopwatch();
 
 	public boolean mustPreserveUnaryConstraints() {
-		return control.constraints.preserveUnaryCtrs || this instanceof HeadExtraction || control.problem.isSymmetryBreaking()
+		return control.constraints.preserve1 || this instanceof HeadExtraction || control.problem.isSymmetryBreaking()
 				|| control.general.framework == TypeFramework.MAXCSP;
 	}
 

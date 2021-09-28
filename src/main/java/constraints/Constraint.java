@@ -75,10 +75,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	@Override
 	public void afterProblemConstruction() {
 		int n = problem.variables.length, r = scp.length;
-		if (settings.arityLimitForVapArrayLb < r && (n < settings.arityLimitForVapArrayUb || r > n / 3)) { // TODO hard
-																											// coding
-			this.positions = Kit.repeat(-1, n); // if a variable does not belong to the constraint, then its position is
-												// set to -1
+		if (settings.positionsLb <= r && (n < settings.positionsUb || r > n / 3)) { // TODO hard coding
+			this.positions = Kit.repeat(-1, n); // if a variable is not involved, then its position is set to -1
 			for (int i = 0; i < r; i++)
 				this.positions[scp[i].num] = i;
 			this.futvars = new SetSparse(r, true);
@@ -970,18 +968,6 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	/**********************************************************************************************
 	 * Control and display
 	 *********************************************************************************************/
-
-	// public final void control(boolean conditionToBeRespected, Supplier<String> message) {
-	// Kit.control(conditionToBeRespected, message);
-	// }
-	//
-	// public final void control(boolean conditionToBeRespected, String message) {
-	// Kit.control(conditionToBeRespected, () -> message);
-	// }
-	//
-	// public final void control(boolean conditionToBeRespected) {
-	// Kit.control(conditionToBeRespected, () -> "");
-	// }
 
 	public StringBuilder signature() {
 		return Variable.signatureFor(scp);

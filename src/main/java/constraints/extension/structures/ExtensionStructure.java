@@ -24,11 +24,10 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the root class for representing the structures to be used with extension (table) constraints. For example, this can be a matrix (if the constraint is
- * binary), a trie or an MDD.
+ * This is the root class for representing the structures to be used with extension (table) constraints. For example,
+ * this can be a matrix (if the constraint is binary), a trie or an MDD.
  * 
  * @author Christophe Lecoutre
- *
  */
 public abstract class ExtensionStructure implements ConstraintRegister {
 
@@ -63,8 +62,8 @@ public abstract class ExtensionStructure implements ConstraintRegister {
 	}
 
 	/**
-	 * Records the tuples defining the semantics of the extension constraint. The structure is built adequately, for example under the form of a matrix, a trie
-	 * or an MDD.
+	 * Records the tuples defining the semantics of the extension constraint. The structure is built adequately, for
+	 * example under the form of a matrix, a trie or an MDD.
 	 * 
 	 * @param tuples
 	 *            the tuples defining the semantics of the extension constraint
@@ -74,18 +73,20 @@ public abstract class ExtensionStructure implements ConstraintRegister {
 	public abstract void storeTuples(int[][] tuples, boolean positive);
 
 	/**
-	 * Determines if the specified tuple corresponds to a support of the extension constraint, i.e., if the tuple of values corresponding to the indexes in the
-	 * specified tuple satisfies the constraint. Be careful: the given tuple must contains indexes of values.
+	 * Determines if the specified tuple corresponds to a support of the extension constraint, i.e., if the tuple of
+	 * values corresponding to the indexes in the specified tuple satisfies the constraint. Be careful: the given tuple
+	 * must contains indexes of values.
 	 * 
 	 * @param t
 	 *            a tuple of indexes (of values)
-	 * @return true if the tuple of values corresponding to the specified tuple of indexes satisfies the extension constraint
+	 * @return true if the tuple of values corresponding to the specified tuple of indexes satisfies the extension
+	 *         constraint
 	 */
 	public abstract boolean checkIndexes(int[] t);
 
 	/**
-	 * Returns the first support for (x,a) that can be found from the specified tuple (included in the search), or null. This method is currently only used by
-	 * ExtensionVA.
+	 * Returns the first support for (x,a) that can be found from the specified tuple (included in the search), or null.
+	 * This method is currently only used by ExtensionVA.
 	 * 
 	 * @param x
 	 *            a variable
@@ -125,7 +126,8 @@ public abstract class ExtensionStructure implements ConstraintRegister {
 		if (scp.length == 1)
 			return new int[] { 1 };
 		if (!Variable.haveSameDomainType(scp))
-			return Kit.range(1, scp.length); // TODO there exists a possibility of finding symmetry of variables (but not a single group)
+			return Kit.range(1, scp.length); // TODO there exists a possibility of finding symmetry of variables (but
+												// not a single group)
 		if (scp.length == 2) {
 			Domain dom0 = scp[0].dom, dom1 = scp[1].dom;
 			int[] t = c.tupleIterator.buffer;
@@ -153,8 +155,9 @@ public abstract class ExtensionStructure implements ConstraintRegister {
 	}
 
 	/**
-	 * Removes the tuple of the extension structure. This operation can only performed for some specific structures, and is used with second-order consistencies
-	 * such as path-consistency or dual-consisteny. Note that the tuple contains index of values (and not values)
+	 * Removes the tuple of the extension structure. This operation can only performed for some specific structures, and
+	 * is used with second-order consistencies such as path-consistency or dual-consisteny. Note that the tuple contains
+	 * index of values (and not values)
 	 * 
 	 * @param t
 	 *            a tuple of indexes (of values)

@@ -14,7 +14,6 @@ import java.util.Arrays;
 
 import problem.Problem;
 import propagation.StrongConsistency;
-import utility.Kit;
 import variables.Variable;
 
 /**
@@ -22,7 +21,6 @@ import variables.Variable;
  * filtering extension (table) constraints.
  * 
  * @author Christophe Lecoutre
- *
  */
 public abstract class STR1Optimized extends STR1 {
 
@@ -30,19 +28,11 @@ public abstract class STR1Optimized extends STR1 {
 	 * Interfaces
 	 *********************************************************************************************/
 
-	private final static int UNITIALIZED = -2;
-
 	@Override
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
-		int r = scp.length;
-		this.sVal = new int[r];
-		this.sSup = new int[r];
-		if (esettings.decremental) {
-			this.lastSizesStack = new int[problem.variables.length + 1][r];
-			Arrays.fill(lastSizesStack[0], UNITIALIZED);
-		} else
-			this.lastSizes = Kit.repeat(UNITIALIZED, r);
+		if (esettings.decremental && !(this instanceof STR2N))
+			this.lastSizesStack = new int[problem.variables.length + 1][scp.length];
 	}
 
 	@Override
@@ -51,7 +41,7 @@ public abstract class STR1Optimized extends STR1 {
 		if (esettings.decremental && depth > 0) // second part (depth > 0) for ensuring that aggressive runs can be used
 			lastDepth = Math.max(0, Math.min(lastDepth, depth - 1));
 		else
-			Arrays.fill(lastSizes, UNITIALIZED);
+			Arrays.fill(lastSizes, 0); // we can use 0 because domains are necessarily not empty when we start filtering
 	}
 
 	/**********************************************************************************************
@@ -67,7 +57,7 @@ public abstract class STR1Optimized extends STR1 {
 	 * The (dense) set of positions of variables for which validity must be checked. Relevant positions are at indexes
 	 * from 0 to sValSize (excluded).
 	 */
-	protected int[] sVal;
+	protected final int[] sVal;
 
 	/**
 	 * The number of variables for which support searching must be done (i.e., variables with some values that still
@@ -79,7 +69,7 @@ public abstract class STR1Optimized extends STR1 {
 	 * The (dense) set of positions of variables for which support searching must be done. Relevant positions are at
 	 * indexes from 0 to sSupSize (excluded).
 	 */
-	protected int[] sSup;
+	protected final int[] sSup;
 
 	/**
 	 * lastSizes[x] is the domain size of x at the last call
@@ -116,6 +106,9 @@ public abstract class STR1Optimized extends STR1 {
 	 */
 	public STR1Optimized(Problem pb, Variable[] scp) {
 		super(pb, scp);
+		this.sVal = new int[scp.length];
+		this.sSup = new int[scp.length];
+		this.lastSizes = !esettings.decremental && !(this instanceof STR2N) ? new int[scp.length] : null;
 	}
 
 	/**

@@ -117,7 +117,7 @@ import constraints.Constraint.CtrTrue;
 import constraints.ConstraintExtension;
 import constraints.ConstraintExtension.Extension1;
 import constraints.ConstraintIntension;
-import constraints.extension.CMDD;
+import constraints.extension.CMDD.CMDDO;
 import constraints.extension.CSmart;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart.HybridTuple;
@@ -239,7 +239,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			for (int i = 0; i < LIM; i++)
 				terms[LIM + i] = new Term((coeffs == null ? 1 : coeffs[scp.length - 1 - i]) * scp[scp.length - 1 - i].dom.distance(), scp[scp.length - 1 - i]);
 		}
-		terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new); // we discard terms of small coeffs
+		terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new); // we discard
+																											// terms of
+																											// small
+																											// coeffs
 		if (terms.length > 0) {
 			Variable[] t = Stream.of(terms).map(term -> term.obj).toArray(Variable[]::new);
 
@@ -282,7 +285,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			} else if (c instanceof ExtremumCst) {
 				if (strong)
 					for (Variable x : c.scp)
-						x.heuristic = optimizer.minimization ? new First(x, false) : new Last(x, false); // the boolean is dummy
+						x.heuristic = optimizer.minimization ? new First(x, false) : new Last(x, false); // the boolean
+																											// is dummy
 			} else if (c instanceof NValuesCst) {
 				assert c instanceof NValuesCstLE;
 				if (strong)
@@ -307,11 +311,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// Variable[] scp = c.scp;
 		// if (c instanceof SumSimple || c instanceof ExtremumCst || c instanceof ObjVar) {
 		// for (Variable x : scp)
-		// x.heuristicVal = optimizationPilot.minimization ? new First(x, false) : new Last(x, false); // the boolean is dummy
+		// x.heuristicVal = optimizationPilot.minimization ? new First(x, false) : new Last(x, false); // the boolean is
+		// dummy
 		// } else if (c instanceof SumWeighted) {
 		// int[] coeffs = ((SumWeighted) optimizationPilot.ctr).coeffs;
 		// // for (int i = 0; i < scp.length; i++) {
-		// // boolean f = optimizationPilot.minimization && coeffs[i] >= 0 || !optimizationPilot.minimization && coeffs[i] < 0;
+		// // boolean f = optimizationPilot.minimization && coeffs[i] >= 0 || !optimizationPilot.minimization &&
+		// coeffs[i] < 0;
 		// // System.out.println("before " + scp[i].heuristicVal);
 		// // scp[i].heuristicVal = f ? new First(scp[i], false) : new Last(scp[i], false); // the boolean is dummy
 		// // System.out.println("after " + scp[i].heuristicVal);
@@ -335,9 +341,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// for (int i = 0; i < LIM; i++)
 		// terms[i] = new Term(coeffs[i] * scp[i].dom.highestValueDistance(), scp[i]);
 		// for (int i = 0; i < LIM; i++)
-		// terms[LIM + i] = new Term(coeffs[scp.length - 1 - i] * scp[scp.length - 1 - i].dom.highestValueDistance(), scp[scp.length - 1 - i]);
+		// terms[LIM + i] = new Term(coeffs[scp.length - 1 - i] * scp[scp.length - 1 - i].dom.highestValueDistance(),
+		// scp[scp.length - 1 - i]);
 		// }
-		// terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new); // we discard terms of small coeffs
+		// terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new); // we
+		// discard terms of small coeffs
 		// if (terms.length > 0) {
 		// Variable[] t = Stream.of(terms).map(term -> term.var).toArray(Variable[]::new);
 		//
@@ -347,7 +355,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// for (int i = 0; i < t.length; i++)
 		// tt[i] = t[t.length - 1 - i];
 		// // for (int i = 0; i < tt.length; i++) {
-		// // boolean f = optimizationPilot.minimization && coeffs[i] >= 0 || !optimizationPilot.minimization && coeffs[i] < 0;
+		// // boolean f = optimizationPilot.minimization && coeffs[i] >= 0 || !optimizationPilot.minimization &&
+		// coeffs[i] < 0;
 		// // scp[i].heuristicVal = f ? new First(scp[i], false) : new Last(scp[i], false); // the boolean is dummy
 		// // }
 		// // this.priorityVars = tt;
@@ -430,12 +439,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public Optimizer optimizer;
 
 	/**
-	 * The priority variables. For example, those that have to be assigned in priority by a backtrack search solver. There is 0 priority variable by default.
+	 * The priority variables. For example, those that have to be assigned in priority by a backtrack search solver.
+	 * There is 0 priority variable by default.
 	 */
 	public Variable[] priorityVars = new Variable[0];
 
 	/**
-	 * The priority variables put in the array above at indices ranging from 0 to this field value should be assigned strictly in that order.
+	 * The priority variables put in the array above at indices ranging from 0 to this field value should be assigned
+	 * strictly in that order.
 	 */
 	public int nStrictPriorityVars;
 
@@ -445,7 +456,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public Features features;
 
 	/**
-	 * The object used to manage symbolic values. Basically, it transforms symbols into integers, but this is not visible for the user (modeler).
+	 * The object used to manage symbolic values. Basically, it transforms symbols into integers, but this is not
+	 * visible for the user (modeler).
 	 */
 	public Symbolic symbolic = new Symbolic();
 
@@ -490,8 +502,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	/**
-	 * Method that resets the problem instance. Each variable and each constraint is reset. The specified Boolean parameter indicates whether the weighted
-	 * degrees values must not be reset or not. Currently, this is only used by HeadExtraction.
+	 * Method that resets the problem instance. Each variable and each constraint is reset. The specified Boolean
+	 * parameter indicates whether the weighted degrees values must not be reset or not. Currently, this is only used by
+	 * HeadExtraction.
 	 */
 	public void reset() {
 		Stream.of(variables).forEach(x -> x.reset());
@@ -503,7 +516,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			log.info("Reset of problem instance");
 	}
 
-	public void reduceTo(boolean[] presentVariables, boolean[] presentConstraints) { // currently, used by HeadExtraction
+	public void reduceTo(boolean[] presentVariables, boolean[] presentConstraints) { // currently, used by
+																						// HeadExtraction
 		control(symmetryGroupGenerators.size() == 0 && presentVariables.length == variables.length && presentConstraints.length == constraints.length);
 		assert Variable.firstWipeoutVariableIn(variables) == null && Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints);
 		priorityVars = IntStream.range(0, variables.length).filter(i -> presentVariables[i]).mapToObj(i -> variables[i]).toArray(Variable[]::new);
@@ -524,14 +538,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		List<Constraint> constraints = features.collecting.constraints;
 		if (head.control.problem.isSymmetryBreaking()) {
 			int nBefore = constraints.size();
-			// for (Constraint c : features.collecting.constraints) if (Constraint.getSymmetryMatching(c.key) == null) Constraint.putSymmetryMatching(c.key,
+			// for (Constraint c : features.collecting.constraints) if (Constraint.getSymmetryMatching(c.key) == null)
+			// Constraint.putSymmetryMatching(c.key,
 			// c.defineSymmetryMatching());
 			List<List<int[]>> generators = ReinforcerAutomorphism.buildGenerators(variables, constraints);
 			for (List<int[]> generator : generators) {
 				int[] cycle1 = generator.get(0);
 				Variable x = variables.get(cycle1[0]);
 				Variable y = variables.get(cycle1[1]);
-				if (head.control.problem.symmetryBreaking == SymmetryBreaking.LE) { // we only consider the two first variables
+				if (head.control.problem.symmetryBreaking == SymmetryBreaking.LE) { // we only consider the two first
+																					// variables
 					lessEqual(x, y);
 				} else {
 					List<Variable> list1 = new ArrayList<>(), list2 = new ArrayList<>();
@@ -569,13 +585,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	/**
-	 * This method is called when the initialization is finished in order to put, among other things, variables and constraints into arrays.
+	 * This method is called when the initialization is finished in order to put, among other things, variables and
+	 * constraints into arrays.
 	 */
 	private final void storeToArrays() {
 		this.variables = features.collecting.variables.toArray(new Variable[0]);
 		this.constraints = features.collecting.constraints.toArray(new Constraint[0]);
 		Constraint[] sortedConstraints = features.collecting.constraints.stream().sorted((c1, c2) -> c1.scp.length - c2.scp.length).toArray(Constraint[]::new);
-		// TODO for the moment we cannot use the sortedConstraints as the main array (pb with nums, and anyway would it be useful?)
+		// TODO for the moment we cannot use the sortedConstraints as the main array (pb with nums, and anyway would it
+		// be useful?)
 		List<Constraint>[] lists = IntStream.range(0, variables.length).mapToObj(i -> new ArrayList<>()).toArray(List[]::new);
 		for (Constraint c : sortedConstraints)
 			for (Variable x : c.scp)
@@ -616,7 +634,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				isolatedVars.add(x);
 				if (reduceIsolatedVars) {
 					nRemovedValues += x.dom.size() - 1;
-					x.dom.removeValuesAtConstructionTime(v -> v != x.dom.firstValue()); // we arbitrarily keep the first value
+					x.dom.removeValuesAtConstructionTime(v -> v != x.dom.firstValue()); // we arbitrarily keep the first
+																						// value
 				}
 			}
 			if (x.dom.size() == 1)
@@ -637,7 +656,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		super(api, modelVariant, argsForPb);
 		this.head = head;
 		head.problem = this; // required because it is needed during the initialization of some objects
-		head.observersConstruction.add(0, this); // Must be the first in the list when calling onConstructionSolverFinished
+		head.observersConstruction.add(0, this); // Must be the first in the list when calling
+													// onConstructionSolverFinished
 		this.settings = head.control.general;
 		this.features = new Features(this);
 
@@ -647,7 +667,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		head.output.afterData();
 		api.model();
 
-		// after possibly adding some additional (redundant or symmetry-breaking) constraints, we store variables and constraints into arrays
+		// after possibly adding some additional (redundant or symmetry-breaking) constraints, we store variables and
+		// constraints into arrays
 		inferAdditionalConstraints();
 		storeToArrays();
 
@@ -655,7 +676,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		reduceDomainsFromUserInstantiation();
 		reduceDomainsOfIsolatedVariables();
 
-		// if (Solver.class.getSimpleName().equals(head.control.solving.clazz)) optimizer = new OptimizerBasic(this, "#violatedConstraints");
+		// if (Solver.class.getSimpleName().equals(head.control.solving.clazz)) optimizer = new OptimizerBasic(this,
+		// "#violatedConstraints");
 	}
 
 	/**
@@ -805,7 +827,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			Object values = trees[i].possibleValues();
 			return values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
 		};
-		// if multiple occurrences of the same variable in a tree, there is a possible problem of reasoning with similar trees
+		// if multiple occurrences of the same variable in a tree, there is a possible problem of reasoning with similar
+		// trees
 		boolean similarTrees = trees.length > 1 && Stream.of(trees).allMatch(tree -> tree.listOfVars().size() == tree.vars().length);
 		similarTrees = similarTrees && IntStream.range(1, trees.length).allMatch(i -> areSimilar(trees[0], trees[i]));
 		Var[] aux = newAuxVarArray(trees.length, similarTrees ? doms.apply(0) : doms);
@@ -905,7 +928,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		if (arity == 2 && x_mul_y__eq_k.matches(tree)) {
-			// we can use scp because we are sure that the two variables are different (arity is 2) ; so no need to use tree.arrayOfVars()
+			// we can use scp because we are sure that the two variables are different (arity is 2) ; so no need to use
+			// tree.arrayOfVars()
 			int k = tree.val(0);
 			// we can intercept the cases where k=0 or k=1
 			if (k == 0)
@@ -1091,7 +1115,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		assert Kit.isStrictlyIncreasing(values) && IntStream.of(values).noneMatch(v -> v == STAR);
 		if (head.mustPreserveUnaryConstraints())
 			return post(new Extension1(this, x, values, positive));
-		// else the unary extension constraint is definitively taken into consideration by modifying the domain of the variable
+		// else the unary extension constraint is definitively taken into consideration by modifying the domain of the
+		// variable
 		x.dom.removeValuesAtConstructionTime(v -> (Arrays.binarySearch(values, v) < 0) == positive);
 		features.nRemovedUnaryCtrs++;
 		return null;
@@ -1131,16 +1156,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrAlone regular(Var[] list, Automaton automaton) {
-		return post(new CMDD(this, translate(list), automaton));
+		return post(new CMDDO(this, translate(list), automaton));
 	}
 
 	@Override
 	public final CtrAlone mdd(Var[] list, Transition[] transitions) {
-		return post(new CMDD(this, translate(list), transitions));
+		return post(new CMDDO(this, translate(list), transitions));
 	}
 
 	public final CtrAlone mdd(Var[] list, int[][] tuples) {
-		return post(new CMDD(this, translate(list), tuples));
+		return post(new CMDDO(this, translate(list), tuples));
 	}
 
 	// public final CtrAlone mddOr(Var[] scp, MDDCD[] t) {
@@ -1217,15 +1242,17 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		if (head.control.global.typeDistinctVectors == 0)
 			return post(new DistinctLists(this, list1, list2));
-		if (head.control.global.smartTable)
+		if (head.control.global.hybrid)
 			return post(CSmart.distinctVectors(this, list1, list2));
 		return api.disjunction(IntStream.range(0, list1.length).mapToObj(i -> api.ne(list1[i], list2[i])));
-		// return extension(vars(list1, list2), Table.starredDistinctVectors(list1, list2), true); // TODO problem if several occurrences of the same variable
+		// return extension(vars(list1, list2), Table.starredDistinctVectors(list1, list2), true); // TODO problem if
+		// several occurrences of the same variable
 	}
 
 	/**
-	 * Builds a DistinctVectors constraint. The tuple of values corresponding to the assignment of the variables in the array specified as first parameter must
-	 * be different from the tuple of values corresponding to the assignment of the variables in the array specified as second parameter.
+	 * Builds a DistinctVectors constraint. The tuple of values corresponding to the assignment of the variables in the
+	 * array specified as first parameter must be different from the tuple of values corresponding to the assignment of
+	 * the variables in the array specified as second parameter.
 	 */
 	private CtrEntity distinctVectors(Variable[][] lists) {
 		return forall(range(lists.length).range(lists.length), (i, j) -> {
@@ -1260,7 +1287,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity allEqual(Var... scp) {
-		// note that using a table on large instances of Domino is very expensive; using a smart table is also very expensive
+		// note that using a table on large instances of Domino is very expensive; using a smart table is also very
+		// expensive
 		return post(new AllEqual(this, translate(scp)));
 		// return post(ExtensionSmart.buildAllEqual(this, translate(scp)));
 	}
@@ -1280,8 +1308,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ************************************************************************
 
 	/**
-	 * Ensures that the specified array of variables is ordered according to the specified operator, when considering the associated lengths. We must have
-	 * x[i]+lengths[i] op x[i+1]. Can be decomposed into a sequence of binary constraints.
+	 * Ensures that the specified array of variables is ordered according to the specified operator, when considering
+	 * the associated lengths. We must have x[i]+lengths[i] op x[i+1]. Can be decomposed into a sequence of binary
+	 * constraints.
 	 */
 	@Override
 	public final CtrEntity ordered(Var[] list, int[] lengths, TypeOperatorRel op) {
@@ -1290,8 +1319,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	/**
-	 * Ensures that the specified array of variables is ordered according to the specified operator, when considering the associated lengths. We must have
-	 * list[i]+lengths[i] op list[i+1]. Can be decomposed into a sequence of binary constraints.
+	 * Ensures that the specified array of variables is ordered according to the specified operator, when considering
+	 * the associated lengths. We must have list[i]+lengths[i] op list[i+1]. Can be decomposed into a sequence of binary
+	 * constraints.
 	 */
 	@Override
 	public final CtrEntity ordered(Var[] list, Var[] lengths, TypeOperatorRel op) {
@@ -1302,9 +1332,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	/**
-	 * Builds and returns a Lexicographic constraint. The tuple of values corresponding to the assignment of the variables in the array specified as first
-	 * parameter must be before the tuple of values corresponding to the assignment of the variables in the array specified as second parameter. The meaning of
-	 * the relation "before" is given by the value of the specified operator that must be one value among LT, LE, GT, and GE.
+	 * Builds and returns a Lexicographic constraint. The tuple of values corresponding to the assignment of the
+	 * variables in the array specified as first parameter must be before the tuple of values corresponding to the
+	 * assignment of the variables in the array specified as second parameter. The meaning of the relation "before" is
+	 * given by the value of the specified operator that must be one value among LT, LE, GT, and GE.
 	 */
 	private final CtrAlone lexSimple(Var[] t1, Var[] t2, TypeOperatorRel op) {
 		return post(Lexicographic.buildFrom(this, translate(t1), translate(t2), op));
@@ -1346,18 +1377,21 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private CtrAlone sum(Variable[] list, int[] coeffs, TypeConditionOperatorRel op, long limit, boolean inversable) {
-		// we canonize terms (group together several occurrences of the same variables and discard terms of coefficient 0)
+		// we canonize terms (group together several occurrences of the same variables and discard terms of coefficient
+		// 0)
 		Term[] terms = new Term[list.length];
 		for (int i = 0; i < terms.length; i++)
 			terms[i] = new Term(coeffs == null ? 1 : coeffs[i], list[i]);
-		// Term[] terms = IntStream.range(0, list.length).mapToObj(i -> new Term(coeffs == null ? 1 : coeffs[i], list[i])).toArray(Term[]::new);
+		// Term[] terms = IntStream.range(0, list.length).mapToObj(i -> new Term(coeffs == null ? 1 : coeffs[i],
+		// list[i])).toArray(Term[]::new);
 
 		if (!Variable.areAllDistinct(list)) {
 			Set<Entry<Object, Long>> entries = Stream.of(terms).collect(groupingBy(t -> t.obj, summingLong((Term t) -> (int) t.coeff))).entrySet();
 			terms = entries.stream().map(e -> new Term(e.getValue(), e.getKey())).toArray(Term[]::new);
 			log.info("Sum constraint with several ocurrences of the same variable");
 		}
-		terms = Stream.of(terms).filter(t -> t.coeff != 0).sorted().toArray(Term[]::new); // we discard terms of coeff 0 and sort them
+		terms = Stream.of(terms).filter(t -> t.coeff != 0).sorted().toArray(Term[]::new); // we discard terms of coeff 0
+																							// and sort them
 		list = Stream.of(terms).map(t -> t.obj).toArray(Variable[]::new);
 		control(Stream.of(terms).allMatch(t -> Utilities.isSafeInt(t.coeff)));
 		coeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
@@ -1389,7 +1423,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			// control(0 <= limit && limit <= list.length);
 			// int l = (int) limit;
 			// return op == LT ? api.atMost(vs, 1, l - 1)
-			// : op == LE ? api.atMost(vs, 1, l) : op == GE ? api.atLeast(vs, 1, l) : op == GT ? api.atLeast(vs, 1, l + 1) : api.exactly(vs, 1, l);
+			// : op == LE ? api.atMost(vs, 1, l) : op == GE ? api.atLeast(vs, 1, l) : op == GT ? api.atLeast(vs, 1, l +
+			// 1) : api.exactly(vs, 1, l);
 			// }
 
 			return post(SumSimple.buildFrom(this, list, op, limit));
@@ -1407,7 +1442,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(Stream.of(list).noneMatch(x -> x == null), "A variable is null");
 		control(list.length == coeffs.length, "the number of variables is different from the number of coefficients");
 
-		Object rightTerm = condition.rightTerm(); // a constant, a variable, a range or an int array according to the type of the condition
+		Object rightTerm = condition.rightTerm(); // a constant, a variable, a range or an int array according to the
+													// type of the condition
 
 		// we remove terms with coefficient 0
 		if (IntStream.of(coeffs).anyMatch(v -> v == 0)) {
@@ -1435,7 +1471,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (op == TypeConditionOperatorSet.IN) {
 				boolean mdd = false; // hard coding for the moment
 				if (mdd)
-					return post(new CMDD(this, translate(list), coeffs, rightTerm));
+					return post(new CMDDO(this, translate(list), coeffs, rightTerm));
 				sum(list, coeffs, GE, min);
 				sum(list, coeffs, LE, max);
 				if (condition instanceof ConditionIntset) {
@@ -1494,7 +1530,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					for (int i = 0; i < trees.length; i++)
 						terms[i] = new Term(coeffs == null ? 1 : coeffs[i], trees[i]);
 					terms[terms.length - 1] = new Term(-1, new XNodeLeaf<>(VAR, (Variable) rightTerm));
-					terms = Stream.of(terms).filter(t -> t.coeff != 0).sorted().toArray(Term[]::new); // we discard terms of coeff 0 and sort them
+					terms = Stream.of(terms).filter(t -> t.coeff != 0).sorted().toArray(Term[]::new); // we discard
+																										// terms of
+																										// coeff 0 and
+																										// sort them
 					XNode<IVar>[] tt = Stream.of(terms).map(t -> t.obj).toArray(XNode[]::new);
 					control(Stream.of(terms).allMatch(t -> Utilities.isSafeInt(t.coeff)));
 					coeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
@@ -1705,7 +1744,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 							else
 								greaterEqual(y, vars[i]);
 					});
-				if (head.control.global.smartTable)
+				if (head.control.global.hybrid)
 					c = minimum ? CSmart.minimum(this, vars, y) : CSmart.maximum(this, vars, y);
 				else
 					c = minimum ? new Minimum(this, vars, y) : new Maximum(this, vars, y);
@@ -1767,22 +1806,24 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrAlone element(Var[] list, Condition condition) {
 		if (condition instanceof ConditionVal && ((ConditionRel) condition).operator == EQ)
-			return (CtrAlone) atLeast((VariableInteger[]) translate(list), safeInt(((ConditionVal) condition).k), 1); // element(list, safeInt(((ConditionVal)
-		// TODO for EQ - VAR using sentinelVal1, sentinelVal2 (for two values in dom(value)), and sentinelVar1, sentinelVar2 for two variables in list //
+			return (CtrAlone) atLeast((VariableInteger[]) translate(list), safeInt(((ConditionVal) condition).k), 1); // element(list,
+																														// safeInt(((ConditionVal)
+		// TODO for EQ - VAR using sentinelVal1, sentinelVal2 (for two values in dom(value)), and sentinelVar1,
+		// sentinelVar2 for two variables in list //
 		// condition).k));
 		return (CtrAlone) unimplemented("element");
 	}
 
 	private CtrAlone element(Var[] list, Var index, int value) {
-		if (head.control.global.jokerTable)
+		if (head.control.global.starred)
 			return extension(vars(index, list), Table.starredElement(translate(list), (Variable) index, value), true);
 		return post(new ElementCst(this, translate(list), (Variable) index, value));
 	}
 
 	private CtrAlone element(Var[] list, Var index, Var value) {
-		if (head.control.global.smartTable)
+		if (head.control.global.hybrid)
 			return post(CSmart.element(this, translate(list), (Variable) index, (Variable) value));
-		if (head.control.global.jokerTable) {
+		if (head.control.global.starred) {
 			// TODO controls (for example index != value and index not in list?
 			Var[] scp = Utilities.indexOf(value, list) == -1 ? vars(index, list, value) : vars(index, list);
 			return extension(scp, Table.starredElement(translate(list), (Variable) index, (Variable) value), true);
@@ -1928,7 +1969,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(Stream.of(list).noneMatch(x -> x == null) && startIndex == 0);
 		control(Variable.areAllInitiallyBoolean((Variable[]) list) && ((Variable) value).dom.areInitValuesExactly(range(list.length)));
 		// exactly((VariableInteger[]) list, 1, 1); // TODO what would be the benefit of posting it?
-		return forall(range(list.length), i -> post(new Reif2EQ(this, (Variable) list[i], (Variable) value, i))); // intension(iff(list[i], eq(value, i))));
+		return forall(range(list.length), i -> post(new Reif2EQ(this, (Variable) list[i], (Variable) value, i))); // intension(iff(list[i],
+																													// eq(value,
+																													// i))));
 	}
 
 	// ************************************************************************
@@ -1954,12 +1997,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * 
 	 * a) posting allDifferent(origins) really seems uninteresting (too weak)
 	 * 
-	 * b) posting cumulative(origins, lengths, null, Kit.repeat(1, origins.length), api.condition(LE, 1)) does not seem to be very interesting. To be checked!
+	 * b) posting cumulative(origins, lengths, null, Kit.repeat(1, origins.length), api.condition(LE, 1)) does not seem
+	 * to be very interesting. To be checked!
 	 */
 	@Override
 	public final CtrEntity noOverlap(Var[] origins, int[] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
-		if (head.control.global.redundNoOverlap) { // we post redundant constraints (after introducing auxiliary variables)
+		if (head.control.global.redundNoOverlap) { // we post redundant constraints (after introducing auxiliary
+													// variables)
 			Var[] aux = newAuxVarArray(origins.length, range(origins.length));
 			allDifferent(aux);
 			for (int i = 0; i < origins.length; i++)
@@ -1998,7 +2043,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity noOverlap(Var[][] origins, int[][] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
-		if (head.control.global.redundNoOverlap) { // we post two redundant cumulative constraints, and a global noOverlap
+		if (head.control.global.redundNoOverlap) { // we post two redundant cumulative constraints, and a global
+													// noOverlap
 			AssertionError e = new AssertionError("No overlap problem");
 			Var[] ox = Stream.of(origins).map(t -> t[0]).toArray(Var[]::new), oy = Stream.of(origins).map(t -> t[1]).toArray(Var[]::new);
 			int[] tx = Stream.of(lengths).mapToInt(t -> t[0]).toArray(), ty = Stream.of(lengths).mapToInt(t -> t[1]).toArray();
@@ -2016,9 +2062,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				Variable xi = (Variable) origins[i][0], xj = (Variable) origins[j][0], yi = (Variable) origins[i][1], yj = (Variable) origins[j][1];
 				int wi = lengths[i][0], wj = lengths[j][0], hi = lengths[i][1], hj = lengths[j][1];
 				if (head.control.global.typeNoOverlap == INTENSION_DECOMPOSITION)
-					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi))); // VERY expensive
+					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi))); // VERY
+																														// expensive
 				else if (head.control.global.typeNoOverlap == EXTENSION_STARRED)
-					extension(vars(xi, xj, yi, yj), Table.starredNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true); // seems to be rather efficient
+					extension(vars(xi, xj, yi, yj), Table.starredNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true); // seems
+																															// to
+																															// be
+																															// rather
+																															// efficient
 				else if (head.control.global.typeNoOverlap == EXTENSION_SMART)
 					post(CSmart.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				else
@@ -2079,7 +2130,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		boolean sameType = Variable.haveSameDomainType(vars);
 		if (!sameType || head.control.global.typeBinpacking == 1) { // decomposing in sum constraints
 			int[] values = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).toArray();
-			return forall(range(values.length), v -> sum(Stream.of(list).map(x -> api.eq(x, v)), sizes, condition)); // TODO add nValues ? other ?
+			return forall(range(values.length), v -> sum(Stream.of(list).map(x -> api.eq(x, v)), sizes, condition)); // TODO
+																														// add
+																														// nValues
+																														// ?
+																														// other
+																														// ?
 		}
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
@@ -2276,7 +2332,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(type.generalizable());
 		if (!switchToSatisfaction(opt, type, null, list)) {
 			long lb = head.control.optimization.lb, ub = head.control.optimization.ub;
-			// TODO what about several occurrences of the same variable in list? if SUM transform into weighted sum, or just fail?
+			// TODO what about several occurrences of the same variable in list? if SUM transform into weighted sum, or
+			// just fail?
 			Constraint clb = type == SUM ? new SumSimpleGE(this, list, lb)
 					: type == MINIMUM ? new MinimumCstGE(this, list, lb)
 							: type == MAXIMUM ? new MaximumCstGE(this, list, lb) : new NValuesCstGE(this, list, lb);

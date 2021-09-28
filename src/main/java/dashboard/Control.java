@@ -331,7 +331,7 @@ public class Control {
 				+ "\n\tTry this on a pigeons instance.";
 		String r5 = "Create Permutation constraints instead of classic AllDifferent when possible. Less filtering but may be faster.";
 
-		public boolean preserveUnaryCtrs = addB("preserveUnaryCtrs", "puc", true, "");
+		public boolean preserve1 = addB("preserve1", "pc1", true, "Must we keep unary constraints (instead of filtering them straight)");
 		public int decomposeIntention = addI("decomposeIntention", "di", 1, "0: no decomposition, 1: conditional decomposition, 2: forced decompostion");
 		public boolean viewForSum = addB("viewForSum", "vs", false, "");
 		public boolean intensionToExtension1 = addB("intensionToExtension1", "ie1", true, "Must we convert unary intension constraints into extension ones?");
@@ -341,8 +341,8 @@ public class Control {
 		public final int inferAllDifferentNb = addI("inferAllDifferentNb", "iad", 0, r2);
 		public final int inferAllDifferentSize = addI("inferAllDifferentSize", "iadsz", 5, "");
 		public final boolean recognizePermutations = addB("recognizePermutations", "perm", false, r5);
-		public final int arityLimitForVapArrayLb = addI("arityLimitForVapArrayLb", "alvalb", 2, "");
-		public final int arityLimitForVapArrayUb = addI("arityLimitForVapArrayUb", "alvaub", 10000, "");
+		public final int positionsLb = addI("positionsLb", "poslb", 3, "Minimal arity to build the array positions");
+		public final int positionsUb = addI("positionsUb", "posub", 10000, "maximal number of variables to build the array positions");
 	}
 
 	public final SettingCtrs constraints = new SettingCtrs();
@@ -350,10 +350,6 @@ public class Control {
 	public class SettingGlobal extends SettingGroup {
 		String s1 = "Type 0 for propagators will be the priority choice in case of export.";
 		String s = "Allows the user to select the propagator for ";
-
-		String r1 = "When set to yes, some global constraints are encoded into classical table constraintss.";
-		String r2 = "When set to yes, some global constraints are encoded into joker table constraintss.";
-		String r3 = "When set to yes, some global constraints are encoded into smart table constraints.";
 
 		public final boolean priorityType0 = addB("priorityType0", "g_pt0", true, s1);
 		public final int typeAllDifferent = addI("typeAllDifferent", "g_ad", 0, s + "allDifferent");
@@ -365,9 +361,8 @@ public class Control {
 		public final boolean redundNoOverlap = addB("redundNoOverlap", "r_no", true, "");
 		public final int typeBinpacking = addI("typeBinpacking", "g_bp", 0, s + "binPacking");
 
-		public final boolean basicTable = addB("basicTable", "bt", false, r1);
-		public final boolean jokerTable = addB("jokerTable", "jt", false, r2);
-		public final boolean smartTable = addB("smartTable", "st", false, r3);
+		public final boolean starred = addB("starred", "starred", false, "When true, some global constraints are encoded by starred tables");
+		public final boolean hybrid = addB("hybrid", "hybrid", false, "When true, some global constraints are encoded by hybrid/smart tables");
 	}
 
 	public final SettingGlobal global = new SettingGlobal();

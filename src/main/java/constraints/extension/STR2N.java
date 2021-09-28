@@ -12,31 +12,21 @@ package constraints.extension;
 
 import java.util.Arrays;
 
-import constraints.ConstraintExtension.ExtensionSpecific;
-import constraints.extension.structures.ExtensionStructure;
-import constraints.extension.structures.Table;
 import interfaces.Tags.TagNegative;
 import problem.Problem;
-import sets.SetDenseReversible;
 import variables.Domain;
 import variables.Variable;
 
-public class STR2N extends ExtensionSpecific implements TagNegative {
+/**
+ * This is STR (Simple Tabular Reduction), optimized version, for filtering negative extension (table) constraints.
+ * 
+ * @author Christophe Lecoutre
+ */
+public final class STR2N extends STR1Optimized implements TagNegative {
 
 	/**********************************************************************************************
 	 * Implementing interfaces
 	 *********************************************************************************************/
-
-	@Override
-	public void afterProblemConstruction() {
-		super.afterProblemConstruction();
-		this.tuples = ((Table) extStructure).tuples;
-		this.set = new SetDenseReversible(tuples.length, problem.variables.length + 1);
-		this.nConflicts = Variable.litterals(scp).intArray();
-		this.nMaxConflicts = new int[scp.length];
-		this.nValidTuples = new long[scp.length];
-		this.sSup = new int[scp.length];
-	}
 
 	@Override
 	public void restoreBefore(int depth) {
@@ -48,19 +38,20 @@ public class STR2N extends ExtensionSpecific implements TagNegative {
 	 * Class members
 	 *********************************************************************************************/
 
-	protected int[][] tuples; // redundant field (reference to tuples in Table)
+	/**
+	 * nConflicts[x][a] indicates, during filtering, the number of valid conflicts encountered with (x,a)
+	 */
+	private int[][] nConflicts;
 
-	protected SetDenseReversible set;
+	/**
+	 * nMaxConflicts[x] indicates, during filtering, the maximum number of valid conflicts for a value of x
+	 */
+	private int[] nMaxConflicts;
 
-	protected int[][] nConflicts; // nConflicts[x][a] indicates the number of conflicts in the current table for (x,a)
-
-	protected int[] nMaxConflicts; // nMaxConflicts[x] indicates the maximum number of conflicts in the current table
-									// for a value of x
-
-	protected long[] nValidTuples; // 1D = variable position
-
-	protected int sSupSize;
-	protected int[] sSup;
+	/**
+	 * nValidTuples[x] indicates, during filtering, the number of valid tuples for a value of x
+	 */
+	private long[] nValidTuples;
 
 	/**
 	 * Builds an extension constraint, with STR2N as specific filtering method
@@ -72,14 +63,12 @@ public class STR2N extends ExtensionSpecific implements TagNegative {
 	 */
 	public STR2N(Problem pb, Variable[] scp) {
 		super(pb, scp);
+		this.nConflicts = Variable.litterals(scp).intArray();
+		this.nMaxConflicts = new int[scp.length];
+		this.nValidTuples = new long[scp.length];
 	}
 
-	@Override
-	protected ExtensionStructure buildExtensionStructure() {
-		return new Table(this);
-	}
-
-	protected void initializeStructuresBeforeFiltering() {
+	private void initializeStructuresBeforeFiltering() {
 		sSupSize = 0;
 		long nValid = Domain.nValidTuplesBounded(doms);
 		for (int i = futvars.limit; i >= 0; i--) {

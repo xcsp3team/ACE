@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package constraints.extension.structures;
 
 import java.util.Arrays;
@@ -18,11 +28,10 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the class for extension structures represented by bits, i.e., when bit vectors are used to represent supports and conflicts. Currently, this is only
- * relevant for binary extension constraints.
+ * This is the class for extension structures represented by bits, i.e., when bit vectors are used to represent supports
+ * and conflicts. Currently, this is only relevant for binary extension constraints.
  * 
  * @author Christophe Lecoutre
- *
  */
 public final class Bits extends ExtensionStructure {
 
@@ -33,7 +42,8 @@ public final class Bits extends ExtensionStructure {
 	/**
 	 * Map used to share longs (seen as parts of bit vectors) in order to save memory space
 	 */
-	public static final Map<LongArrayHashKey, long[]> map = Collections.synchronizedMap(new HashMap<LongArrayHashKey, long[]>(2000)); // hard coding
+	public static final Map<LongArrayHashKey, long[]> map = Collections.synchronizedMap(new HashMap<LongArrayHashKey, long[]>(2000)); // hard
+																																		// coding
 
 	private static LongArrayHashKey hashKey = new LongArrayHashKey();
 
@@ -78,24 +88,26 @@ public final class Bits extends ExtensionStructure {
 	}
 
 	/**
-	 * sups0[a] is the vector of bits used to indicate which indexes (of values) support the index a for the fist variable; the vector of bits is composed of
-	 * long (bit set to 1 when a support)
+	 * sups0[a] is the vector of bits used to indicate which indexes (of values) support the index a for the fist
+	 * variable; the vector of bits is composed of long (bit set to 1 when a support)
 	 */
 	private long[][] sups0;
 
 	/**
-	 * sups1[b] is the vector of bits used to indicate which indexes (of values) support the index b for the second variable; the vector of bits is composed of
-	 * long (bit set to 1 when a support)
+	 * sups1[b] is the vector of bits used to indicate which indexes (of values) support the index b for the second
+	 * variable; the vector of bits is composed of long (bit set to 1 when a support)
 	 */
 	private long[][] sups1;
 
 	/**
-	 * sups0Filtered[a] is the sequence of longs of the vector of bits, used for the index a of the first variable, that are relevant (i.e., different from 0)
+	 * sups0Filtered[a] is the sequence of longs of the vector of bits, used for the index a of the first variable, that
+	 * are relevant (i.e., different from 0)
 	 */
 	private int[][] sups0Filtered;
 
 	/**
-	 * sups1Filtered[b] is the sequence of longs of the vector of bits , used for the index b of the second variable, that are relevant (i.e., different from 0)
+	 * sups1Filtered[b] is the sequence of longs of the vector of bits , used for the index b of the second variable,
+	 * that are relevant (i.e., different from 0)
 	 */
 	private int[][] sups1Filtered;
 
@@ -257,7 +269,8 @@ public final class Bits extends ExtensionStructure {
 // Constraint ctr = getFirstDependentCtr();
 // Domain domain0 = ctr.scp[0].dom, domain1 = ctr.scp[1].dom;
 // int[][] nbConflicts = ctr.getConflictsStructure().getNbConflicts();
-// EvaluationManager evaluationManager = new EvaluationManager(Symbolic.replaceSymbols(ctr.pb.symbolic, canonicalPredicate));
+// EvaluationManager evaluationManager = new EvaluationManager(Symbolic.replaceSymbols(ctr.pb.symbolic,
+// canonicalPredicate));
 // int cnt = 0;
 // int[] tmp = ctr.tupleManager.localTuple;
 // for (int i = 0; i < domain0.initSize(); i++) {
