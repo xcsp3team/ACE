@@ -25,7 +25,6 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		// System.out.println("trying" + x + " " + a);
 		solver.assign(x, a);
 		boolean consistent = enforceArcConsistencyAfterAssignment(x);
-		// System.out.println("consistent trying" + x + " " + a + " " + consistent);
 		solver.backtrack(x);
 		nSingletonTests++;
 		if (!consistent)
@@ -170,11 +169,11 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		}
 
 		public final class CellIterator implements CellSelector {
-			protected HeuristicVariables heuristic;
+
+			private HeuristicVariables heuristic;
 
 			public CellIterator() {
-				this.heuristic = new WdegOnDom(solver, false); // hard coding ; alternatives: null, new Dom(solver,
-																// false), new DdegOnDom(solver, false) ...
+				this.heuristic = new WdegOnDom(solver, false); // hard coding
 			}
 
 			@Override
@@ -271,8 +270,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			IntStream.range(0, Variable.nInitValuesFor(solver.problem.variables)).forEach(i -> trash = new Cell(trash));
 			this.sizes = new int[solver.problem.variables.length];
 			String s = "CellIterator"; // TODO hard coding
-										// solver.head.control.propagation.classForSACSelector.substring(solver.head.control.propagation.classForSACSelector.lastIndexOf('$')
-										// + 1);
+			// settings.classForSACSelector.substring(settings.classForSACSelector.lastIndexOf('$') + 1);
 			this.cellSelector = Reflector.buildObject(s, CellSelector.class, this);
 		}
 
@@ -652,8 +650,6 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		}
 
 		protected boolean buildBranch() {
-			// Kit.prn("building the branch number " + nbBuiltBranches + " queue size=" +
-			// queueESAC.nbUncheckedVariables);
 			currIndexOfVarHeuristic = (currIndexOfVarHeuristic + 1) % varHeuristics.length;
 			for (boolean finished = false; !finished;) {
 				makeSelection();
@@ -666,9 +662,6 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 					}
 				} else {
 					queueESAC.addLastVariable();
-					// Kit.prn("fail for " + selectedVariable + " last =" + (queueESAC.nbUncheckedVariables >0 ?
-					// queueESAC.uncheckedVariables[queueESAC.nbUncheckedVariables - 1] :
-					// ""));
 					lastFailedVar = currSelectedVar;
 					lastFailedIdx = currSelectedIdx;
 					solver.backtrack(currSelectedVar);
@@ -688,7 +681,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			nBranchesBuilt = sumBranchSizes = 0;
 			lastFailedVar = null;
 			queueESAC.initialize();
-			long nbEffectiveSingletonTestsBefore = nEffectiveSingletonTests;
+			long nBefore = nEffectiveSingletonTests;
 			while (queueESAC.nUncheckedVars > 0) {
 				performingProperSearch = true;
 				boolean consistent = buildBranch();
@@ -698,12 +691,11 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 					return false;
 				if (solver.finished())
 					return true;
-				// if (nbBuiltBranches > 1 && stopwatch.getCurrentWckTime() / 1000.0
-				// > 40 && lastBuiltBranchSize > 0) {
+				// if (nBranchesBuilt > 1 && stopwatch.getCurrentWckTime() / 1000.0 > 40 && lastBuiltBranchSize > 0) {
 				// OutputManager.printInfo("Stopping ESAC"); break; }
 			}
 			if (verbose > 1)
-				displayPassInfo(0, nEffectiveSingletonTests - nbEffectiveSingletonTestsBefore, true);
+				displayPassInfo(0, nEffectiveSingletonTests - nBefore, true);
 			return true;
 		}
 	}

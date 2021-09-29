@@ -36,7 +36,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 	@Override
 	public void afterProblemConstruction() {
 		super.afterProblemConstruction();
-		TableWithSubtables table = (TableWithSubtables) extStructure();
+		TableAugmented table = (TableAugmented) extStructure();
 		this.tuples = table.tuples;
 		this.set = new SetSparseReversible(tuples.length, problem.variables.length + 1);
 
@@ -100,16 +100,16 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 		}
 
 		@Override
-		public final boolean add(int e) {
+		public final boolean add(int a) {
 			throw new RuntimeException("Must not be called without a second argument");
 		}
 
-		public boolean add(int e, int position, int separator) {
+		public boolean add(int a, int position, int separator) {
 			assert position < Byte.MAX_VALUE;
-			boolean added = super.add(e);
+			boolean added = super.add(a);
 			if (added) {
-				positions[e] = (short) position;
-				sseparators[e] = separator;
+				positions[a] = (short) position;
+				sseparators[a] = separator;
 			}
 			return added;
 		}
@@ -119,7 +119,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 	// ***** SubTable for STR3
 	// ************************************************************************
 
-	private static final class TableWithSubtables extends Table {
+	private static final class TableAugmented extends Table {
 
 		public int[][][] subtables; // subtables[x][a][k] is the tid (position in tuples) of the kth tuple where x = a
 
@@ -148,7 +148,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 			buildSubtables();
 		}
 
-		public TableWithSubtables(ConstraintExtension c) {
+		public TableAugmented(ConstraintExtension c) {
 			super(c);
 		}
 
@@ -215,21 +215,17 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 	}
 
 	final class LocalSetSparseByte {
-		public byte[] dense;
+		private byte[] dense;
 
-		public byte[] sparse;
+		private byte[] sparse;
 
-		public byte limit;
+		private byte limit;
 
 		public LocalSetSparseByte(int capacity, boolean initiallyFull) {
 			control(0 < capacity && capacity <= Byte.MAX_VALUE);
 			this.dense = Kit.range((byte) capacity);
 			this.sparse = Kit.range((byte) capacity);
 			this.limit = (byte) (initiallyFull ? dense.length - 1 : -1);
-		}
-
-		public boolean isPresent(byte e) {
-			return sparse[e] <= limit;
 		}
 
 		public boolean add(byte e) {
@@ -266,26 +262,12 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 
 	@Override
 	protected ExtensionStructure buildExtensionStructure() {
-		return new TableWithSubtables(this);
+		return new TableAugmented(this);
 	}
-
-	// @Override
-	// protected void initSpecificStructures() {
-	//
-	// }
 
 	/**********************************************************************************************
 	 * Methods related to propagation at preprocessing
 	 *********************************************************************************************/
-
-	private int initializeBeforePropagationAtPreprocessing() {
-		int cnt = 0;
-		for (int i = 0; i < scp.length; i++) {
-			cnt += (cnts[i] = doms[i].size());
-			Arrays.fill(ac[i], false);
-		}
-		return cnt;
-	}
 
 	private boolean updateDomainsAtPreprocessing(int cnt) {
 		for (int x = scp.length - 1; x >= 0 && cnt > 0; x--) {
@@ -300,7 +282,11 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 	}
 
 	private boolean filterAtPreprocessing() {
-		int cnt = initializeBeforePropagationAtPreprocessing();
+		int cnt = 0;
+		for (int i = 0; i < scp.length; i++) {
+			cnt += (cnts[i] = doms[i].size());
+			Arrays.fill(ac[i], false);
+		}
 		for (int i = set.limit; i >= 0; i--) {
 			int[] tuple = tuples[set.dense[i]];
 			if (isValid(tuple)) {
@@ -331,8 +317,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 		// initialization of separators and deps
 		if (subtables != null) {
 			for (int x = scp.length - 1; x >= 0; x--) {
-				Domain dom = scp[x].dom;
-				for (int a = dom.first(); a != -1; a = dom.next(a)) {
+				for (int a = scp[x].dom.first(); a != -1; a = scp[x].dom.next(a)) {
 					int[] subtable = subtables[x][a];
 					int p = subtable.length - 1;
 					while (!set.contains(subtable[p]))
@@ -346,8 +331,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 			}
 		} else {
 			for (int x = scp.length - 1; x >= 0; x--) {
-				Domain dom = scp[x].dom;
-				for (int a = dom.first(); a != -1; a = dom.next(a)) {
+				for (int a = scp[x].dom.first(); a != -1; a = scp[x].dom.next(a)) {
 					control(subtablesShort[x][a].length < Short.MAX_VALUE);
 					short[] subtableShort = subtablesShort[x][a];
 					int p = subtableShort.length - 1;
@@ -369,7 +353,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 
 	// bug to fix for java ace BinPacking-tab-Schwerin1_BPP10.xml.lzma -rc=10 -lc=4 -f=cop -positive=str3 -rn=20
 	// -varh=DDegOnDom -ev
-	protected void suppressInvalidTuplesFromRemovedValuesInDomainAtPosition(int x) {
+	protected void suppressInvalidTuplesFromRemovalsOf(int x) {
 		Domain dom = doms[x];
 		if (subtables != null) {
 			for (int a = dom.lastRemoved(); a != frontiers[x]; a = dom.prevRemoved(a)) {
@@ -390,9 +374,9 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 		int limitBefore = set.limit;
 		Variable lastPast = problem.solver.futVars.lastPast();
 		if (lastPast != null && positionOf(lastPast) != -1)
-			suppressInvalidTuplesFromRemovedValuesInDomainAtPosition(positionOf(lastPast));
+			suppressInvalidTuplesFromRemovalsOf(positionOf(lastPast));
 		for (int i = futvars.limit; i >= 0; i--)
-			suppressInvalidTuplesFromRemovedValuesInDomainAtPosition(futvars.dense[i]);
+			suppressInvalidTuplesFromRemovalsOf(futvars.dense[i]);
 		if (set.limit < limitBefore) // tuples have been removed if this condition holds
 			if (set.limits[problem.solver.depth()] == SetDense.UNINITIALIZED)
 				set.limits[problem.solver.depth()] = limitBefore;

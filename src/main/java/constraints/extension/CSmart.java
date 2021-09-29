@@ -24,7 +24,6 @@ import java.util.stream.Stream;
 
 import constraints.Constraint;
 import constraints.ConstraintExtension.ExtensionSpecific;
-import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.TableSmart;
 import constraints.extension.structures.TableSmart.HybridTuple;
 import problem.Problem;
@@ -153,8 +152,8 @@ public final class CSmart extends ExtensionSpecific {
 	protected SetDenseReversible set;
 
 	/**
-	 * The sparse sets used during filtering: nac[x] is the sparse set for indexes (of values) of x, which have not been found a support yet (nac stands for not
-	 * arc-consistent).
+	 * The sparse sets used during filtering: nac[x] is the sparse set for indexes (of values) of x, which have not been
+	 * found a support yet (nac stands for not arc-consistent).
 	 */
 	public SetSparse[] nac;
 
@@ -177,7 +176,7 @@ public final class CSmart extends ExtensionSpecific {
 	public CSmart(Problem pb, Variable[] scp, HybridTuple... smartTuples) {
 		super(pb, scp);
 		this.hybridTuples = smartTuples;
-		this.extStructure = buildExtensionStructure();
+		this.extStructure = new TableSmart(this, hybridTuples);
 		this.nac = IntStream.range(0, scp.length).mapToObj(i -> new SetSparse(scp[i].dom.initSize(), true)).toArray(SetSparse[]::new);
 		Stream.of(smartTuples).forEach(st -> st.attach(this));
 		this.sVal = new int[scp.length];
@@ -187,11 +186,6 @@ public final class CSmart extends ExtensionSpecific {
 
 	public CSmart(Problem pb, Variable[] scp, Stream<HybridTuple> smartTuples) {
 		this(pb, scp, smartTuples.toArray(HybridTuple[]::new));
-	}
-
-	@Override
-	public ExtensionStructure buildExtensionStructure() {
-		return new TableSmart(this, hybridTuples);
 	}
 
 	protected void initRestorationStructuresBeforeFiltering() {
@@ -204,7 +198,11 @@ public final class CSmart extends ExtensionSpecific {
 	}
 
 	protected void manageLastPastVariable() {
-		if (lastSafeNumber != problem.solver.stats.safeNumber() || problem.solver.propagation instanceof StrongConsistency) { // 2nd condition due to Inverse4
+		if (lastSafeNumber != problem.solver.stats.safeNumber() || problem.solver.propagation instanceof StrongConsistency) { // 2nd
+																																// condition
+																																// due
+																																// to
+																																// Inverse4
 			lastSafeNumber = problem.solver.stats.safeNumber();
 			Variable lastPast = problem.solver.futVars.lastPast();
 			int x = lastPast == null ? -1 : positionOf(lastPast);

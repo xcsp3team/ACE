@@ -319,7 +319,7 @@ public class SetLinkedFinite implements SetLinked {
 			super(initSize);
 			binaryRepresentation = new long[initSize / Long.SIZE + (initSize % Long.SIZE != 0 ? 1 : 0)];
 			Arrays.fill(binaryRepresentation, Bit.ALL_LONG_BITS_TO_1);
-			binaryRepresentation[binaryRepresentation.length - 1] = Bit.bitsA1To(initSize - ((binaryRepresentation.length - 1) * Long.SIZE));
+			binaryRepresentation[binaryRepresentation.length - 1] = Bit.bitsAt1To(initSize - ((binaryRepresentation.length - 1) * Long.SIZE));
 		}
 
 		@Override

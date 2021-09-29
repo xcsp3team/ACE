@@ -180,7 +180,7 @@ public final class Bits extends ExtensionStructure {
 				Arrays.fill(t, Bit.ALL_LONG_BITS_TO_1);
 				int remainder = dom1.initSize() % Long.SIZE;
 				if (remainder != 0)
-					t[t.length - 1] = Bit.bitsA1To(remainder);
+					t[t.length - 1] = Bit.bitsAt1To(remainder);
 			}
 			if (c.indexesMatchValues)
 				for (int[] tuple : tuples)

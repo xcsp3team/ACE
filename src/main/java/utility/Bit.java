@@ -357,7 +357,7 @@ public final class Bit {
 		return (t[idx / Long.SIZE] & ONE_LONG_BIT_TO_1[idx % Long.SIZE]) != 0; // ALL_LONG_BITS_TO_0;
 	}
 
-	public static long bitsA1To(int limit) {
+	public static long bitsAt1To(int limit) {
 		long v = 0;
 		for (int i = 0; i < limit; i++)
 			v |= ONE_LONG_BIT_TO_1[i];

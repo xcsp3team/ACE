@@ -298,23 +298,44 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	}
 
 	/**
-	 * The settings related to extension constraints
+	 * The setting options concerning extension constraints
 	 */
 	protected final SettingExtension esettings;
 
 	/**
 	 * The extension structure defining the semantics of the constraint
 	 */
-	protected ExtensionStructure extStructure;
+	public ExtensionStructure extStructure;
 
 	/**
-	 * Builds and returns the extension structure to be attached to this constraint. This method is used instead of
-	 * implementing it directly in the constraint constructor in order to be able to use a cache (map), and so, not
-	 * systematically building a new extension structure.
+	 * Builds and returns the extension structure to be attached to this constraint. This method is sometimes used (in
+	 * which case, it has to be overridden) instead of implementing it directly in the constraint constructor in order
+	 * to be able to use a cache (map), and so, not systematically building a new extension structure.
 	 * 
 	 * @return the extension structure to be attached to this constraint
 	 */
-	protected abstract ExtensionStructure buildExtensionStructure();
+	protected ExtensionStructure buildExtensionStructure() {
+		return null;
+	}
+
+	/**
+	 * Builds and returns the extension structure to be attached to this constraint from the specified table and the
+	 * specified Boolean
+	 * 
+	 * @param tuples
+	 *            the tuples defining the semantics of the extension constraint
+	 * @param positive
+	 *            indicates if the tuples are supports or conflicts
+	 * @return the extension structure to be attached to this constraint
+	 */
+	protected ExtensionStructure buildExtensionStructure(int[][] tuples, boolean positive) {
+		ExtensionStructure es = buildExtensionStructure(); // note that the constraint is automatically registered
+		control(es != null, "Maybe you have to override buildExtensionStructure()");
+		es.originalTuples = this instanceof ExtensionGeneric || problem.head.control.problem.isSymmetryBreaking() ? tuples : null;
+		es.originalPositive = positive;
+		es.storeTuples(tuples, positive);
+		return es;
+	}
 
 	@Override
 	public ExtensionStructure extStructure() {
@@ -365,16 +386,12 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		control((positive && this instanceof TagPositive) || (!positive && this instanceof TagNegative)
 				|| (!(this instanceof TagPositive) && !(this instanceof TagNegative)), positive + " " + this.getClass().getName());
 
-		// if (supporter != null)
-		// ((SupporterHard) supporter).reset();
+		// if (supporter != null) supporter).reset();
 
 		Map<String, ExtensionStructure> map = problem.head.structureSharing.mapForExtension;
 		extStructure = map.get(key);
 		if (extStructure == null) {
-			extStructure = buildExtensionStructure(); // note that the constraint is automatically registered
-			extStructure.originalTuples = this instanceof ExtensionGeneric || problem.head.control.problem.isSymmetryBreaking() ? tuples : null;
-			extStructure.originalPositive = positive;
-			extStructure.storeTuples(tuples, positive);
+			extStructure = buildExtensionStructure(tuples, positive);
 			map.put(key, extStructure);
 		} else {
 			extStructure.register(this);

@@ -26,206 +26,244 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Element extends ConstraintGlobal implements TagNotSymmetric, TagAC, TagCallCompleteFiltering {
+public abstract class Element extends ConstraintGlobal implements TagAC, TagCallCompleteFiltering, TagNotSymmetric {
 
+	/**
+	 * Builds an Element constraint for the specified problem and with the specified scope
+	 * 
+	 * @param pb
+	 *            the problem to which the constraint is attached
+	 * @param scp
+	 *            The scope of the constraint
+	 */
 	public Element(Problem pb, Variable[] scp) {
 		super(pb, scp);
 	}
 
 	/**********************************************************************************************
-	 * ElementArray
+	 * ElementList, with its two subclasses ElementCst and ElementVar
 	 *********************************************************************************************/
 
-	public abstract static class ElementArray extends Element {
+	/**
+	 * The root class of Element constraints based on a list (vector) of variables
+	 */
+	public abstract static class ElementList extends Element {
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
 			throw new AssertionError("actually, we reason with checkIndexes. This is less expensive (no need to convert all values)");
 		}
 
+		/**
+		 * The list of variables
+		 */
 		protected final Variable[] list;
 
-		protected final Domain idom; // domain of the index variable
-		protected final int ipos; // position in scope of the index variable
+		/**
+		 * The domain of the index variable
+		 */
+		protected final Domain idom;
 
-		public ElementArray(Problem pb, Variable[] list, Variable index, Object value) {
+		/**
+		 * The position in the constraint scope of the index variable
+		 */
+		protected final int ipos;
+
+		/**
+		 * Builds an Element constraint for the specified problem, with the specified list, index and value
+		 * 
+		 * @param pb
+		 *            the problem to which the constraint is attached
+		 * @param list
+		 *            the list (vector) of variables
+		 * @param index
+		 *            the variable used as index
+		 * @param value
+		 *            the object (constant or variable) used as target value
+		 */
+		public ElementList(Problem pb, Variable[] list, Variable index, Object value) {
 			super(pb, Utilities.collect(Variable.class, list, index, value)); // value may be a variable
 			this.list = list;
 			this.idom = index.dom;
 			this.ipos = IntStream.range(0, scp.length).filter(i -> scp[i] == index).findFirst().getAsInt();
 			control(Variable.areAllDistinct(list) && index != value, "i=" + index + " x=" + Kit.join(list) + " v=" + value);
 			control(list.length == idom.initSize(), " pb with " + this + " " + index);
-			// control above because we reason with indexes (and not values) for idom
+			// the last control above because we reason with indexes (and not values) for idom
 			// for example if idom={2,3,5}, we have list.length=3 and we refer to variables of list with indexes 0, 1
-			// and 2
-			// this is enforced at construction (in problem)
+			// and 2 ; this is enforced at construction (in Problem)
 		}
 
-	}
+		// ************************************************************************
+		// ***** Constraint ElementCst
+		// ************************************************************************
 
-	// ************************************************************************
-	// ***** Constraint ElementCst
-	// ************************************************************************
+		public final static class ElementCst extends ElementList {
 
-	public final static class ElementCst extends ElementArray {
-		private final int k;
-
-		@Override
-		public boolean checkIndexes(int[] t) {
-			return list[t[ipos]].dom.toVal(t[t[ipos]]) == k;
-		}
-
-		public ElementCst(Problem pb, Variable[] list, Variable index, int value) {
-			super(pb, list, index, value);
-			this.k = value;
-			defineKey(value);
-			idom.removeAtConstructionTime(a -> !list[a].dom.containsValue(k));
-			if (ipos < list.length && idom.toVal(ipos) != k) // special case (index in list)
-				idom.removeValueAtConstructionTime(k); // equivalent to idom.removeAtConstructionTime(ipos). right?
-		}
-
-		@Override
-		public boolean runPropagator(Variable dummy) {
-			if (idom.size() > 1) { // checking that the values of index are still valid
-				int sizeBefore = idom.size();
-				for (int a = idom.first(); a != -1; a = idom.next(a))
-					if (!list[a].dom.containsValue(k))
-						idom.removeElementary(a);
-				if (idom.afterElementaryCalls(sizeBefore) == false)
-					return false;
+			@Override
+			public boolean checkIndexes(int[] t) {
+				return list[t[ipos]].dom.toVal(t[t[ipos]]) == k;
 			}
-			// be careful : not a else because of statements above that may modify the domain of index
-			if (idom.size() > 1)
-				return true;
-			return list[idom.single()].dom.reduceToValue(k) && entailed();
-		}
-	}
 
-	// ************************************************************************
-	// ***** Constraint ElementVar
-	// ************************************************************************
+			/**
+			 * The value used as target constant
+			 */
+			private final int k;
 
-	/**
-	 * Such a constraint is satisfied iff list[index] = value
-	 */
-	public final static class ElementVar extends ElementArray {
-
-		private final Domain vdom; // domain of the value variable
-		private final int vpos; // position of the value variable in scope
-
-		@Override
-		public boolean checkIndexes(int[] t) {
-			return list[t[ipos]].dom.toVal(t[t[ipos]]) == vdom.toVal(t[vpos]);
-		}
-
-		/**
-		 * For each variable in list, we store a (normalized) value that is both in its domain and in value's domain
-		 */
-		private final int[] indexSentinels;
-
-		/**
-		 * For each (index of a) value v in value's domain, we store the index i of a variable from list such that v is
-		 * in dom(list[i]).
-		 */
-		private final int[] valueSentinels;
-
-		public ElementVar(Problem pb, Variable[] list, Variable index, Variable value) {
-			super(pb, list, index, value);
-			this.vdom = value.dom;
-			this.vpos = IntStream.range(0, scp.length).filter(i -> scp[i] == value).findFirst().getAsInt();
-			this.valueSentinels = Kit.repeat(-1, value.dom.initSize());
-			this.indexSentinels = Kit.repeat(-1, list.length);
-			defineKey();
-			// TODO control that each value in vdom is in at least one domain of the list?
-		}
-
-		private boolean validIndex(int i) {
-			int v = indexSentinels[i];
-			if (v != -1 && list[i].dom.containsValue(v) && vdom.containsValue(v))
-				return true;
-			Domain dom = list[i].dom;
-			for (int a = dom.first(); a != -1; a = dom.next(a)) {
-				int va = dom.toVal(a);
-				if (vdom.containsValue(va)) {
-					indexSentinels[i] = va;
-					return true;
-				}
+			public ElementCst(Problem pb, Variable[] list, Variable index, int value) {
+				super(pb, list, index, value);
+				this.k = value;
+				defineKey(value);
+				idom.removeAtConstructionTime(a -> !list[a].dom.containsValue(k));
+				if (ipos < list.length && idom.toVal(ipos) != k) // special case (index in list)
+					idom.removeValueAtConstructionTime(k); // equivalent to idom.removeAtConstructionTime(ipos). right?
 			}
-			return false;
-		}
 
-		private boolean filterIndex() {
-			return idom.removeIndexesChecking(i -> !validIndex(i));
-		}
-
-		private boolean validValue(int a) {
-			int va = vdom.toVal(a);
-			int sentinel = valueSentinels[a];
-			if (sentinel != -1 && idom.contains(sentinel) && list[sentinel].dom.containsValue(va))
-				return true;
-			for (int i = idom.first(); i != -1; i = idom.next(i)) {
-				if (list[i].dom.containsValue(va)) {
-					valueSentinels[a] = i;
-					return true;
-				}
-			}
-			return false;
-		}
-
-		private boolean filterValue() {
-			return vdom.removeIndexesChecking(a -> !validValue(a));
-		}
-
-		@Override
-		public boolean runPropagator(Variable dummy) {
-			// If index is not singleton, we try to prune values :
-			// - in value's domain, we prune the values which aren't in any of list variables'domains
-			// - in index's domain, we prune the values v for which there is no value j such that list[v] and value both
-			// have j in their
-			// domains
-			if (idom.size() > 1) {
-				// Update valueSentinels and domain of the value variable
-				if (filterValue() == false)
-					return false;
-				while (true) {
-					// Update listSentinels and domain of the index variable
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				if (idom.size() > 1) { // checking that the values of index are still valid
 					int sizeBefore = idom.size();
-					if (filterIndex() == false)
+					for (int a = idom.first(); a != -1; a = idom.next(a))
+						if (!list[a].dom.containsValue(k))
+							idom.removeElementary(a);
+					if (idom.afterElementaryCalls(sizeBefore) == false)
 						return false;
-					if (sizeBefore == idom.size())
-						break;
-					// Update valueSentinels and domain of the value variable
-					sizeBefore = vdom.size();
+				}
+				// be careful : not a else because of statements above that may modify the domain of index
+				if (idom.size() > 1)
+					return true;
+				return list[idom.single()].dom.reduceToValue(k) && entailed();
+			}
+		}
+
+		// ************************************************************************
+		// ***** Constraint ElementVar
+		// ************************************************************************
+
+		public final static class ElementVar extends ElementList {
+
+			@Override
+			public boolean checkIndexes(int[] t) {
+				return list[t[ipos]].dom.toVal(t[t[ipos]]) == vdom.toVal(t[vpos]);
+			}
+
+			/**
+			 * The domain of the variable used for value
+			 */
+			private final Domain vdom;
+
+			/**
+			 * The position in the constraint scope of the value variable
+			 */
+			private final int vpos;
+
+			/**
+			 * For each variable in list, we store a (normalized) value that is both in its domain and in vdom
+			 */
+			private final int[] indexSentinels;
+
+			/**
+			 * For each (index of a) value v in vdom, we store the index i of a variable in list such that v is in
+			 * dom(list[i]).
+			 */
+			private final int[] valueSentinels;
+
+			public ElementVar(Problem pb, Variable[] list, Variable index, Variable value) {
+				super(pb, list, index, value);
+				this.vdom = value.dom;
+				this.vpos = IntStream.range(0, scp.length).filter(i -> scp[i] == value).findFirst().getAsInt();
+				this.valueSentinels = Kit.repeat(-1, value.dom.initSize());
+				this.indexSentinels = Kit.repeat(-1, list.length);
+				defineKey();
+				// TODO control that each value in vdom is in at least one domain of the list?
+			}
+
+			private boolean validIndex(int i) {
+				int v = indexSentinels[i];
+				if (v != -1 && list[i].dom.containsValue(v) && vdom.containsValue(v))
+					return true;
+				Domain dom = list[i].dom;
+				for (int a = dom.first(); a != -1; a = dom.next(a)) {
+					v = dom.toVal(a);
+					if (vdom.containsValue(v)) {
+						indexSentinels[i] = v;
+						return true;
+					}
+				}
+				return false;
+			}
+
+			private boolean filterIndex() {
+				return idom.removeIndexesChecking(i -> !validIndex(i));
+			}
+
+			private boolean validValue(int a) {
+				int v = vdom.toVal(a);
+				int sentinel = valueSentinels[a];
+				if (sentinel != -1 && idom.contains(sentinel) && list[sentinel].dom.containsValue(v))
+					return true;
+				for (int i = idom.first(); i != -1; i = idom.next(i)) {
+					if (list[i].dom.containsValue(v)) {
+						valueSentinels[a] = i;
+						return true;
+					}
+				}
+				return false;
+			}
+
+			private boolean filterValue() {
+				return vdom.removeIndexesChecking(a -> !validValue(a));
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				// If idom is not singleton, we try to prune values :
+				// - in vdom, we prune the values which aren't in any domain of list variables
+				// - in idom, we prune the values v for which there is no j such that list[v].dom and vdom
+				// both contain j
+				if (idom.size() > 1) {
+					// Updating vdom (and valueSentinels)
 					if (filterValue() == false)
 						return false;
-					if (sizeBefore == vdom.size())
-						break;
+					while (true) {
+						// Updating idom (and indexSentinels)
+						int sizeBefore = idom.size();
+						if (filterIndex() == false)
+							return false;
+						if (sizeBefore == idom.size())
+							break;
+						// Updating vdom (and valueSentinels)
+						sizeBefore = vdom.size();
+						if (filterValue() == false)
+							return false;
+						if (sizeBefore == vdom.size())
+							break;
+					}
 				}
+				// If index is singleton, we update dom(list[index]) and vdom so that they are both equal to the
+				// intersection of the two domains
+				if (idom.size() == 1) {
+					if (propagation.GAC.enforceEQ(list[idom.single()].dom, vdom) == false)
+						return false;
+					if (vdom.size() == 1)
+						return entailed();
+				}
+				return true;
 			}
-			// If index is singleton, we update dom(list[index]) and dom(value) so that they are both equal to the
-			// intersection of the two domains
-			if (idom.size() == 1) {
-				if (propagation.GAC.enforceEQ(list[idom.single()].dom, vdom) == false)
-					return false;
-				if (vdom.size() == 1)
-					return entailed();
-			}
-			return true;
-		}
 
-		@Override
-		public boolean controlGAC() {
-			control(idom.size() != 1 || list[idom.single()].dom.subsetOf(vdom), () -> "index is singleton and dom(index) is not included in dom(result).");
-			for (int a = idom.first(); a != -1; a = idom.next(a))
-				control(list[a].dom.overlapWith(vdom), () -> "One var has no value in dom(result).");
-			extern: for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
-				int v = vdom.toVal(a);
-				for (int b = idom.first(); b != -1; b = idom.next(b))
-					if (list[b].dom.containsValue(v))
-						continue extern;
-				control(false, () -> "value " + v + " is in dom(value) but in no list variable whose index is still in dom(index).");
+			@Override
+			public boolean controlGAC() {
+				control(idom.size() != 1 || list[idom.single()].dom.subsetOf(vdom), () -> "index is singleton and dom(index) is not included in dom(result).");
+				for (int a = idom.first(); a != -1; a = idom.next(a))
+					control(list[a].dom.overlapWith(vdom), () -> "One var has no value in dom(result).");
+				extern: for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
+					int v = vdom.toVal(a);
+					for (int b = idom.first(); b != -1; b = idom.next(b))
+						if (list[b].dom.containsValue(v))
+							continue extern;
+					control(false, () -> "value " + v + " is in dom(value) but in no list variable whose index is still in dom(index).");
+				}
+				return true;
 			}
-			return true;
 		}
 	}
 
@@ -235,10 +273,24 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 
 	public abstract static class ElementMatrix extends Element {
 
+		/**
+		 * The matrix of variables
+		 */
 		protected Variable[][] matrix;
 
-		protected Domain rdom, cdom;
-		protected int rindexPosition, cindexPosition; // in scope
+		/**
+		 * The domain of the row index variable
+		 */
+		protected Domain rdom;
+
+		/**
+		 * The domain of the column index variable
+		 */
+		protected Domain cdom;
+
+		protected int rindexPosition;
+
+		protected int cindexPosition; // in scope
 
 		public ElementMatrix(Problem pb, Variable[][] matrix, Variable rindex, Variable cindex, Object value) {
 			super(pb, Utilities.collect(Variable.class, matrix, rindex, cindex, value)); // value may be a variable
@@ -417,10 +469,9 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				// If indexes are not both singleton, we try to prune values :
-				// - in value's domain, we prune the values which aren't in any of list variables'domains
-				// - in indexes's domain, we prune the values v for which there is no value v such that matrix and value
-				// both have j in their
-				// domains
+				// - in vdom, we prune the values which aren't in any of list variables'domains
+				// - in rdom and cdom, we prune the values v for which there is no value v such that matrix and value
+				// both have j in their domains
 				if (rdom.size() > 1 || cdom.size() > 1) {
 					// Update valueSentinels and domain of the value variable
 					if (filterValue() == false)
@@ -440,7 +491,7 @@ public abstract class Element extends ConstraintGlobal implements TagNotSymmetri
 							break;
 					}
 				}
-				// If indexes are both singleton, we enforce matrix[rindex][cindex] == value
+				// If indexes are both singleton, we enforce value to the corresponding cell of the matrix
 				if (rdom.size() == 1 && cdom.size() == 1) {
 					if (GAC.enforceEQ(matrix[rdom.singleValue()][cdom.singleValue()].dom, vdom) == false)
 						return false;

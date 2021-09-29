@@ -50,7 +50,7 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 		this.current = new long[nWords];
 		this.tmp = new long[nWords];
 		this.tmp2 = new long[nWords];
-		this.lastWord1Then0 = tuples.length % 64 != 0 ? Bit.bitsA1To(tuples.length % 64) : Bit.ALL_LONG_BITS_TO_1;
+		this.lastWord1Then0 = tuples.length % 64 != 0 ? Bit.bitsAt1To(tuples.length % 64) : Bit.ALL_LONG_BITS_TO_1;
 		this.lastWord0Then1 = tuples.length % 64 != 0 ? Bit.bitsAt1From(tuples.length % 64) : 0L;
 		fillTo1(current);
 
@@ -113,7 +113,10 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 	 * Class members
 	 *********************************************************************************************/
 
-	private long[] current; // current table
+	/**
+	 * The current table (used as bit vector)
+	 */
+	private long[] current;
 
 	/**
 	 * masks[x][a] gives the mask for (x,a), used when filtering
@@ -125,8 +128,22 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 	 */
 	private long[][][] masksS;
 
-	private long[] tmp, tmp2;
-	private long lastWord0Then1, lastWord1Then0;
+	/**
+	 * A buffer, used as bit vector during filtering
+	 */
+	private long[] tmp;
+
+	/**
+	 * A second buffer, used as bit vector during filtering
+	 */
+	private long[] tmp2;
+
+	/**
+	 * A constant to be used with the last word
+	 */
+	private long lastWord0Then1;
+
+	private long lastWord1Then0;
 
 	int factorStacked = 10, factorStack = 10; // factors used for enlarging arrays when necessary
 	long[] stackedWords; // stores the values of the words that have been stacked
@@ -134,8 +151,11 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 	int[] stackStructure; // stores, in sequence, pairs (d,nb) with d the depth where nb words have been stacked
 	int topStacked = -1, topStack = -1;
 
-	private boolean[] modifiedWords; // modifiedWords[i] indicates if the ith word has already been modified (and stored
-										// for future use when backtracking)
+	/**
+	 * modifiedWords[i] indicates if the ith word has already been modified (and stored for future use when
+	 * backtracking)
+	 */
+	private boolean[] modifiedWords;
 
 	/**
 	 * deltaSizes[x] indicates how many values are in the delta set of x
@@ -152,13 +172,21 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 	 */
 	private int[][] residues;
 
+	private boolean starred;
+
 	/**
 	 * Field indicating if this is the first time the filtering algorithm (propagator) is called
 	 */
 	private boolean firstCall = true;
 
-	private boolean starred;
-
+	/**
+	 * Builds an extension constraint, with CT as specific filtering method
+	 * 
+	 * @param pb
+	 *            the problem to which the constraint is attached
+	 * @param scp
+	 *            the scope of the constraint
+	 */
 	public CT(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		control(esettings.decremental);
@@ -280,6 +308,27 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 	}
 
 	@Override
+	protected final boolean updateDomains() {
+		// we update domains (inconsistency is no more possible)
+		for (int i = sSupSize - 1; i >= 0; i--) {
+			int x = sSup[i];
+			Domain dom = doms[x];
+			for (int a = dom.first(); a != -1; a = dom.next(a)) {
+				int r = residues[x][a];
+				if (Bit.nonNullIntersection2(current, masks[x][a], r)) // if ((current[r] & masks[x][a][r]) != 0L)
+					continue;
+				r = Bit.firstNonNullWord2(current, masks[x][a], nonZeros);
+				if (r != -1) {
+					residues[x][a] = r;
+				} else
+					dom.remove(a); // no possible inconsistency
+			}
+			lastSizes[x] = dom.size();
+		}
+		return true;
+	}
+
+	@Override
 	public final boolean runPropagator(Variable z) {
 		if (firstCall)
 			return firstCall();
@@ -318,27 +367,6 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 		if (nonZeros.size() == 0)
 			return z.dom.fail(); // inconsistency detected
 		return updateDomains();
-	}
-
-	@Override
-	protected final boolean updateDomains() {
-		// we update domains (inconsistency is no more possible)
-		for (int i = sSupSize - 1; i >= 0; i--) {
-			int x = sSup[i];
-			Domain dom = doms[x];
-			for (int a = dom.first(); a != -1; a = dom.next(a)) {
-				int r = residues[x][a];
-				if (Bit.nonNullIntersection2(current, masks[x][a], r)) // if ((current[r] & masks[x][a][r]) != 0L)
-					continue;
-				r = Bit.firstNonNullWord2(current, masks[x][a], nonZeros);
-				if (r != -1) {
-					residues[x][a] = r;
-				} else
-					dom.remove(a); // no possible inconsistency
-			}
-			lastSizes[x] = dom.size();
-		}
-		return true;
 	}
 
 	/**********************************************************************************************
