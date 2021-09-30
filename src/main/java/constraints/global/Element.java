@@ -26,15 +26,22 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
+/**
+ * The constraint Element ensures that the value taken by the variable in a list (vector) of variables at a specified
+ * index (given by a variable) is equal to a specified value (given by a constant or a variable). The matrix variant
+ * involves a matrix of variables and two indices.
+ * 
+ * @author Christophe Lecoutre
+ */
 public abstract class Element extends ConstraintGlobal implements TagAC, TagCallCompleteFiltering, TagNotSymmetric {
 
 	/**
-	 * Builds an Element constraint for the specified problem and with the specified scope
+	 * Builds a constraint Element for the specified problem and with the specified scope
 	 * 
 	 * @param pb
 	 *            the problem to which the constraint is attached
 	 * @param scp
-	 *            The scope of the constraint
+	 *            the scope of the constraint
 	 */
 	public Element(Problem pb, Variable[] scp) {
 		super(pb, scp);
@@ -51,11 +58,11 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
-			throw new AssertionError("actually, we reason with checkIndexes. This is less expensive (no need to convert all values)");
+			throw new AssertionError("Actually, we reason with checkIndexes. This is less expensive (no need to convert all values)");
 		}
 
 		/**
-		 * The list of variables
+		 * The list (vector) of variables
 		 */
 		protected final Variable[] list;
 
@@ -65,12 +72,12 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 		protected final Domain idom;
 
 		/**
-		 * The position in the constraint scope of the index variable
+		 * The position of the index variable in the constraint scope
 		 */
 		protected final int ipos;
 
 		/**
-		 * Builds an Element constraint for the specified problem, with the specified list, index and value
+		 * Builds a constraint Element for the specified problem, with the specified arguments: list, index and value
 		 * 
 		 * @param pb
 		 *            the problem to which the constraint is attached
@@ -79,10 +86,10 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 		 * @param index
 		 *            the variable used as index
 		 * @param value
-		 *            the object (constant or variable) used as target value
+		 *            the object (integer constant or variable) used as target value
 		 */
 		public ElementList(Problem pb, Variable[] list, Variable index, Object value) {
-			super(pb, Utilities.collect(Variable.class, list, index, value)); // value may be a variable
+			super(pb, Utilities.collect(Variable.class, list, index, value));
 			this.list = list;
 			this.idom = index.dom;
 			this.ipos = IntStream.range(0, scp.length).filter(i -> scp[i] == index).findFirst().getAsInt();
@@ -97,6 +104,9 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 		// ***** Constraint ElementCst
 		// ************************************************************************
 
+		/**
+		 * The constraint Element with an integer constant used as target value
+		 */
 		public final static class ElementCst extends ElementList {
 
 			@Override
@@ -105,22 +115,24 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			}
 
 			/**
-			 * The value used as target constant
+			 * The integer constant used as target value
 			 */
 			private final int k;
 
 			public ElementCst(Problem pb, Variable[] list, Variable index, int value) {
 				super(pb, list, index, value);
 				this.k = value;
-				defineKey(value);
+				// some values may be deleted at construction time
 				idom.removeAtConstructionTime(a -> !list[a].dom.containsValue(k));
 				if (ipos < list.length && idom.toVal(ipos) != k) // special case (index in list)
 					idom.removeValueAtConstructionTime(k); // equivalent to idom.removeAtConstructionTime(ipos). right?
+				defineKey(value);
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (idom.size() > 1) { // checking that the values of index are still valid
+				if (idom.size() > 1) {
+					// checking that the values of index are still valid
 					int sizeBefore = idom.size();
 					for (int a = idom.first(); a != -1; a = idom.next(a))
 						if (!list[a].dom.containsValue(k))
@@ -139,6 +151,9 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 		// ***** Constraint ElementVar
 		// ************************************************************************
 
+		/**
+		 * The constraint Element with an integer variable used as target value
+		 */
 		public final static class ElementVar extends ElementList {
 
 			@Override
@@ -147,23 +162,24 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			}
 
 			/**
-			 * The domain of the variable used for value
+			 * The domain of the value variable
 			 */
 			private final Domain vdom;
 
 			/**
-			 * The position in the constraint scope of the value variable
+			 * The position of the value variable in the constraint scope
 			 */
 			private final int vpos;
 
 			/**
-			 * For each variable in list, we store a (normalized) value that is both in its domain and in vdom
+			 * indexSentinels[i] stores, for the ith variable of the list (vector), a value that is both in its domain
+			 * and in vdom
 			 */
 			private final int[] indexSentinels;
 
 			/**
-			 * For each (index of a) value v in vdom, we store the index i of a variable in list such that v is in
-			 * dom(list[i]).
+			 * valueSentinels[a] stores, for each index a of a value v in vdom, the index i of a variable in list such
+			 * that v is in the domain of this variable
 			 */
 			private final int[] valueSentinels;
 
@@ -173,7 +189,6 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 				this.vpos = IntStream.range(0, scp.length).filter(i -> scp[i] == value).findFirst().getAsInt();
 				this.valueSentinels = Kit.repeat(-1, value.dom.initSize());
 				this.indexSentinels = Kit.repeat(-1, list.length);
-				defineKey();
 				// TODO control that each value in vdom is in at least one domain of the list?
 			}
 
@@ -217,21 +232,21 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				// If idom is not singleton, we try to prune values :
-				// - in vdom, we prune the values which aren't in any domain of list variables
-				// - in idom, we prune the values v for which there is no j such that list[v].dom and vdom
-				// both contain j
+				// - in vdom, we prune the values which are not in any domain of the list variables
+				// - in idom, we prune the values i for which there is no v such that list[i].dom and vdom
+				// both contain v
 				if (idom.size() > 1) {
-					// Updating vdom (and valueSentinels)
+					// updating vdom (and valueSentinels)
 					if (filterValue() == false)
 						return false;
 					while (true) {
-						// Updating idom (and indexSentinels)
+						// updating idom (and indexSentinels)
 						int sizeBefore = idom.size();
 						if (filterIndex() == false)
 							return false;
 						if (sizeBefore == idom.size())
 							break;
-						// Updating vdom (and valueSentinels)
+						// updating vdom (and valueSentinels)
 						sizeBefore = vdom.size();
 						if (filterValue() == false)
 							return false;
@@ -268,37 +283,46 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 	}
 
 	/**********************************************************************************************
-	 * ElementMatrix
+	 * ElementMatrix, with its two subclasses ElementMatrixCst and ElementMatrixVar
 	 *********************************************************************************************/
 
+	/**
+	 * The root class of Element constraints based on a matrix of variables
+	 */
 	public abstract static class ElementMatrix extends Element {
 
 		/**
 		 * The matrix of variables
 		 */
-		protected Variable[][] matrix;
+		protected final Variable[][] matrix;
 
 		/**
 		 * The domain of the row index variable
 		 */
-		protected Domain rdom;
+		protected final Domain rdom;
 
 		/**
 		 * The domain of the column index variable
 		 */
-		protected Domain cdom;
+		protected final Domain cdom;
 
-		protected int rindexPosition;
+		/**
+		 * The position of the row index variable in the constraint scope
+		 */
+		protected final int rpos;
 
-		protected int cindexPosition; // in scope
+		/**
+		 * The position of the column index variable in the constraint scope
+		 */
+		protected final int cpos;
 
 		public ElementMatrix(Problem pb, Variable[][] matrix, Variable rindex, Variable cindex, Object value) {
 			super(pb, Utilities.collect(Variable.class, matrix, rindex, cindex, value)); // value may be a variable
 			this.matrix = matrix;
 			this.rdom = rindex.dom;
 			this.cdom = cindex.dom;
-			this.rindexPosition = IntStream.range(0, scp.length).filter(i -> scp[i] == rindex).findFirst().getAsInt();
-			this.cindexPosition = IntStream.range(0, scp.length).filter(i -> scp[i] == cindex).findFirst().getAsInt();
+			this.rpos = IntStream.range(0, scp.length).filter(i -> scp[i] == rindex).findFirst().getAsInt();
+			this.cpos = IntStream.range(0, scp.length).filter(i -> scp[i] == cindex).findFirst().getAsInt();
 			int n = matrix.length, m = matrix[0].length;
 			control(Variable.areAllDistinct(pb.vars(matrix)) && rindex != cindex, () -> Kit.join(matrix) + " " + rindex + " " + cindex);
 			rdom.removeValuesAtConstructionTime(v -> v < 0 || v >= n);
@@ -309,38 +333,45 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 		// ***** Constraint ElementMatrixCst
 		// ************************************************************************
 
+		/**
+		 * The matrix variant of the constraint Element with an integer constant used as target value
+		 */
 		public final static class ElementMatrixCst extends ElementMatrix {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
-				int i = t[rindexPosition], j = t[cindexPosition];
-				return t[i * matrix.length + j] == value;
+				int i = t[rpos], j = t[cpos];
+				return t[i * matrix.length + j] == k;
 			}
 
-			private int value;
+			/**
+			 * The integer constant used as target value
+			 */
+			private final int k;
 
-			private int[] rsentinels, csentinels;
+			private final int[] rsentinels, csentinels;
 
 			public ElementMatrixCst(Problem pb, Variable[][] matrix, Variable rindex, Variable cindex, int value) {
 				super(pb, matrix, rindex, cindex, value);
-				this.value = value;
+				this.k = value;
 				defineKey(value);
 				int n = matrix.length, m = matrix[0].length;
 				this.rsentinels = new int[n];
 				this.csentinels = new int[m];
+				// defineKey(value);
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				// filtering the domain of rindex
+				// filtering rdom
 				int sizeBefore = rdom.size();
 				if (sizeBefore > 1) {
 					extern: for (int a = rdom.last(); a != -1; a = rdom.prev(a)) {
 						int b = rsentinels[a];
-						if (cdom.contains(b) && matrix[rdom.toVal(a)][cdom.toVal(b)].dom.containsValue(value))
+						if (cdom.contains(b) && matrix[rdom.toVal(a)][cdom.toVal(b)].dom.containsValue(k))
 							continue;
 						for (b = cdom.last(); b != -1; b = cdom.prev(b))
-							if (matrix[rdom.toVal(a)][cdom.toVal(b)].dom.containsValue(value)) {
+							if (matrix[rdom.toVal(a)][cdom.toVal(b)].dom.containsValue(k)) {
 								rsentinels[a] = b;
 								continue extern;
 							}
@@ -350,15 +381,15 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 						return false;
 				}
 
-				// filtering the domain of cindex
+				// filtering cdom
 				sizeBefore = cdom.size();
 				if (sizeBefore > 1) {
 					extern: for (int b = cdom.last(); b != -1; b = cdom.prev(b)) {
 						int a = csentinels[b];
-						if (rdom.contains(a) && matrix[rdom.toVal(a)][cdom.toVal(b)].dom.containsValue(value))
+						if (rdom.contains(a) && matrix[rdom.toVal(a)][cdom.toVal(b)].dom.containsValue(k))
 							continue;
 						for (a = rdom.last(); a != -1; a = rdom.prev(a)) {
-							if (matrix[rdom.toVal(a)][cdom.toVal(b)].dom.containsValue(value)) {
+							if (matrix[rdom.toVal(a)][cdom.toVal(b)].dom.containsValue(k)) {
 								csentinels[b] = a;
 								continue extern;
 							}
@@ -370,7 +401,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 				}
 				// be careful : below, not a else because of statements above that may modify the domain of indexes
 				// TODO are we sure it is GAC?
-				return rdom.size() > 1 || cdom.size() > 1 || (matrix[rdom.singleValue()][cdom.singleValue()].dom.reduceToValue(value) && entailed());
+				return rdom.size() > 1 || cdom.size() > 1 || (matrix[rdom.singleValue()][cdom.singleValue()].dom.reduceToValue(k) && entailed());
 			}
 		}
 
@@ -378,16 +409,26 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 		// ***** Constraint ElementMatrixVar
 		// ************************************************************************
 
+		/**
+		 * The matrix variant of the constraint Element with an integer variable used as target value
+		 */
 		public final static class ElementMatrixVar extends ElementMatrix {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
-				int i = t[rindexPosition], j = t[cindexPosition];
+				int i = t[rpos], j = t[cpos];
 				return t[i * matrix.length + j] == t[vpos];
 			}
 
-			private final Domain vdom; // domain of the value variable
-			private final int vpos; // position in scope of the value variable
+			/**
+			 * The domain of the value variable
+			 */
+			private final Domain vdom;
+
+			/**
+			 * The position of the value variable in the constraint scope
+			 */
+			private final int vpos;
 
 			private final int[] rindexColSentinels, rindexValSentinels;
 			private final int[] cindexRowSentinels, cindexValSentinels;
@@ -469,21 +510,20 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				// If indexes are not both singleton, we try to prune values :
-				// - in vdom, we prune the values which aren't in any of list variables'domains
-				// - in rdom and cdom, we prune the values v for which there is no value v such that matrix and value
-				// both have j in their domains
+				// - in vdom, we prune the values which are not in any of the domains of the list variables
+				// - in rdom and cdom, we prune the values that cannot lead to any value in vdom
 				if (rdom.size() > 1 || cdom.size() > 1) {
-					// Update valueSentinels and domain of the value variable
+					// updating vdom (and some sentinels)
 					if (filterValue() == false)
 						return false;
 					while (true) {
-						// Update listSentinels and domain of the index variable
+						// updating rdom,and cdom (and some sentinels)
 						int sizeBefore = rdom.size() + cdom.size();
 						if (filterIndex() == false)
 							return false;
 						if (sizeBefore == rdom.size() + cdom.size())
 							break;
-						// Update valueSentinels and domain of the value variable
+						// updating vdom (and some sentinels)
 						sizeBefore = vdom.size();
 						if (filterValue() == false)
 							return false;

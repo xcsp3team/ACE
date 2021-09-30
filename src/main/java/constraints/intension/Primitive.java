@@ -16,8 +16,9 @@ import problem.Problem;
 import variables.Variable;
 
 /**
- * This is the root class of any primitive constraint. A primitive constraint is a classical form of an intension
- * constraint of small arity. For example, it can be x < y, or |x-y| = z. A specific propagator is used.
+ * This is the root class of any primitive constraint. A primitive constraint is a constraint of small arity defined by
+ * a Boolean tree expression (i.e., it is an intension constraint) with a classical (i.e., well-identified) form. For
+ * example, it can be x < y, x%2 = y, or |x-y| = z. A specific propagator is used.
  * 
  * @author Christophe Lecoutre
  */

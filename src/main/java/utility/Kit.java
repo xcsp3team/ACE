@@ -137,7 +137,7 @@ public final class Kit {
 
 	public static Object exit(String message, Throwable e) {
 		System.out.println(preprint("\n! ERROR with message: " + message + "\n  Use the solver option -ev for more details\n", RED));
-		if (!(Thread.currentThread() instanceof Head) || ((Head) Thread.currentThread()).control.general.makeExceptionsVisible)
+		if (!(Thread.currentThread() instanceof Head) || ((Head) Thread.currentThread()).control.general.exceptionsVisible)
 			e.printStackTrace();
 		System.exit(1);
 		// log.severe(message);

@@ -135,7 +135,7 @@ public class Campagn { // using the cluster
 		Kit.control(queueMode >= 0 && queueMode <= 8, () -> "The queue mode must be set to 0 (short), 1 (normal) or 2 (long)");
 
 		// Arguments.handlerOfConfigurationParametersValues.loadConfigurationFile(defaultConfigurationFileName);
-		this.directoryName = (Control.buildControlPanelFor(defaultSettingsFileName)).xml.dirForCampaign;
+		this.directoryName = (Control.buildControlPanelFor(defaultSettingsFileName)).xml.campaignDir;
 		Kit.control(!directoryName.trim().equals(""));
 		saveContext();
 		File file = new File(getDirectoryNameOfConfigurations());

@@ -33,7 +33,7 @@ import variables.Variable;
 public abstract class NValues extends ConstraintGlobal implements TagNotAC { // not call filtering-complete
 
 	/**
-	 * the array of variables in which we count the number of different (assigned) values
+	 * The list of variables in which we count the number of different (assigned) values
 	 */
 	protected final Variable[] list;
 
@@ -67,7 +67,7 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 			int sentinel = sentinels[x];
 			if (dom.containsValue(sentinel) && !fixedVals.contains(sentinel))
 				continue;
-			if (dom.size() > 5) // hard coding for avoiding iterating systematically over all values
+			if (dom.size() > 5) // TODO hard coding for avoiding iterating systematically over all values
 				continue;
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
 				int va = dom.toVal(a);

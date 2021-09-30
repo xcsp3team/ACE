@@ -26,7 +26,6 @@ import variables.Variable;
  * Mathematical and Computer Modelling, 20(12):97–123, 1994 by N. Beldiceanu and E. Contejean.
  * 
  * @author Christophe Lecoutre
- * 
  */
 public final class Circuit extends AllDifferentComplete {
 
@@ -126,9 +125,7 @@ public final class Circuit extends AllDifferentComplete {
 					if (j != k && !set.contains(k) && doms[k].reduceToValue(k) == false)
 						return false;
 				return entailed();
-
 			}
-
 		}
 		return true;
 	}

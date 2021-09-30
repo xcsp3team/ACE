@@ -208,7 +208,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	public Output(Head head, String configFileName) {
 		this.head = head;
-		if (head.control.xml.dirForCampaign.length() > 0) {
+		if (head.control.xml.campaignDir.length() > 0) {
 			this.document = Kit.createNewDocument();
 			this.root = document.createElement(TypeOutput.RESOLUTIONS.toString());
 			root.setAttribute(CONFIGURATION_FILE_NAME, configFileName);
@@ -298,7 +298,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		if (document == null)
 			return null;
 		root.setAttribute(TOTAL_WCK_TIME, totalWck + "");
-		String dirName = head.control.xml.dirForCampaign + File.separator + RESULTS_DIRECTORY;
+		String dirName = head.control.xml.campaignDir + File.separator + RESULTS_DIRECTORY;
 		File file = new File(dirName);
 		if (!file.exists())
 			file.mkdirs();

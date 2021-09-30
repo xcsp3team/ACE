@@ -625,8 +625,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private void reduceDomainsOfIsolatedVariables() {
 		// TODO other frameworks ?
-		boolean reduceIsolatedVars = head.control.variables.reduceIsolatedVars && settings.nSearchedSolutions == 1 && !head.control.problem.isSymmetryBreaking()
-				&& settings.framework == TypeFramework.CSP;
+		boolean reduceIsolatedVars = head.control.variables.reduceIsolated && settings.framework == TypeFramework.CSP && settings.nSearchedSolutions == 1
+				&& !head.control.problem.isSymmetryBreaking();
 		List<Variable> isolatedVars = new ArrayList<>(), fixedVars = new ArrayList<>();
 		int nRemovedValues = 0;
 		for (Variable x : variables) {
@@ -634,8 +634,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				isolatedVars.add(x);
 				if (reduceIsolatedVars) {
 					nRemovedValues += x.dom.size() - 1;
-					x.dom.removeValuesAtConstructionTime(v -> v != x.dom.firstValue()); // we arbitrarily keep the first
-																						// value
+					x.dom.removeValuesAtConstructionTime(v -> v != x.dom.firstValue()); // first value arbitrarily kept
 				}
 			}
 			if (x.dom.size() == 1)
@@ -2265,10 +2264,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private boolean switchToSatisfaction(TypeOptimization opt, TypeObjective obj, int[] coeffs, Variable... list) {
-		int limit = settings.limitForSatisfaction;
+		int limit = settings.satisfactionLimit;
 		if (limit == PLUS_INFINITY_INT)
 			return false;
-		// head.control.toCSP();
 		if (obj == EXPRESSION) {
 			control(list.length == 1 && coeffs == null);
 			intension(opt == MINIMIZE ? XNodeParent.le(list[0], limit) : XNodeParent.ge(list[0], limit));

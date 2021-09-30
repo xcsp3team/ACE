@@ -14,6 +14,7 @@ import static org.xcsp.common.Constants.EMPTY_STRING;
 import static org.xcsp.common.Constants.MINUS_INFINITY;
 import static org.xcsp.common.Constants.PLUS_INFINITY;
 import static org.xcsp.common.Constants.PLUS_INFINITY_INT;
+import static utility.Kit.control;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -59,7 +60,6 @@ import propagation.GAC;
 import propagation.Reviser;
 import propagation.Reviser.Reviser3;
 import solver.Restarter.RestarterLNS.HeuristicFreezing.Rand;
-import solver.Solutions;
 import solver.Solver;
 import utility.Enums.Branching;
 import utility.Enums.ConstraintWeighting;
@@ -128,24 +128,20 @@ public class Control {
 	}
 
 	public class SettingXml extends SettingGroup {
-		public final String discardClasses = addS("discardClasses", "dc", EMPTY_STRING,
-				"Names of classes (tags) to be discarded (use comma as separator if several classes). Effective iff an XCSP3 file is loaded.");
-		public final String dirForCampaign = addS("dirForCampaign", "dir", EMPTY_STRING,
-				"Indicates the name of a directory where results (XML files) for a campaign will be stored."
-						+ "\n\tIf the value is the empty string, results are not saved.");
+		public final String discardClasses = addS("discardClasses", "dc", "", "XCSP3 classes (tags) to be discarded (comma as separator)");
+		public final String campaignDir = addS("campaignDir", "cd", "", "Name of a campaign directory where results (XML files) are stored.");
 
 		// The following options determine whether special forms of intension constraints must be recognized/intercepted
-		public final boolean recognizePrimitive2 = addB("recognizePrimitive2", "rp2", true, "should we attempt to recognize binary primitives?", HIDDEN);
-		public final boolean recognizePrimitive3 = addB("recognizePrimitive3", "rp3", true, "should we attempt to recognize ternary primitives?", HIDDEN);
-		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "should we attempt to recognize logical reification forms?", HIDDEN);
-		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "should we attempt to recognize minimum/maximum constraints?", HIDDEN);
-		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "should we attempt to recognize sum constraints?", HIDDEN);
+		public final boolean recognizePrimitive2 = addB("recognizePrimitive2", "rp2", true, "should we attempt to recognize binary primitives?");
+		public final boolean recognizePrimitive3 = addB("recognizePrimitive3", "rp3", true, "should we attempt to recognize ternary primitives?");
+		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "should we attempt to recognize logical reification forms?");
+		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "should we attempt to recognize minimum/maximum constraints?");
+		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "should we attempt to recognize sum constraints?");
 	}
 
 	public final SettingXml xml = new SettingXml();
 
 	public class SettingGeneral extends SettingGroup {
-		String s_framework = "The kind of problem instance to be solved (the specified value is case-insensitive).";
 		String s_s = "The number of solutions that must be found before the solver stops." + "\n\tFor all solutions, use -s=all or -s=max.";
 		String s_timeout = "The number of milliseconds that are passed before the solver stops."
 				+ "\n\tYou can use the letter s as a suffix to denote seconds as e.g., -t=10s." + "\n\tFor no timeout, use -t= or -t=max.";
@@ -154,21 +150,9 @@ public class Control {
 				+ "\n\t0 : only some global statistics are listed ;" + "\n\t1 : in addition, solutions are  shown ;"
 				+ "\n\t2 : in addition, additionnal information about the problem instance to be solved is given ;"
 				+ "\n\t3 : in addition, for each constraint, allowed or unallowed tuples are displayed.";
-		String s_trace = "Displays every decision taken during search with -trace."
-				+ "\n\tYou can control the trace with a required min depth and/or max depth as eg -trace=10-20.";
-		String s_seed = "The seed that can be used for some random-based methods.";
-		String s_ev = "Makes exceptions visible.";
-		String s_ea = "Enables annotations (currently, mainly concerns priority variables).";
-		String l_cfs = "Only valid if a COP is loaded and if the framework is set to CSP by the user."
-				+ "\n\tIn that case, the objective is turned into a constraint specified by this limit.";
-		String s_cfs = "Only valid if a COP is loaded and if the framework is set to CSP by the user."
-				+ "\n\tIn that case, the objective is turned into a constraint specified by this condition."
-				+ "\t The condition has the form (operator,value) as e.g., (lt,10). Currently, not operative, so must be implemented for XCSP3";
-		String s_rs = "Records all found solutions in a list of " + Solutions.class.getName();
 
 		public TypeFramework framework = null;
-		public long nSearchedSolutions = addL("nSearchedSolutions", "s", -1, s_s); // -1 for indicating that it is not
-																					// initialized
+		public long nSearchedSolutions = addL("nSearchedSolutions", "s", -1, s_s); // -1 when not initialized
 		public final long timeout = addL("timeout", "t", PLUS_INFINITY, s_timeout);
 		public int verbose = addI("verbose", "v", 0, s_verbose);
 		public int jsonLimit = addI("jsonLimit", "jsonLimit", 1000, "");
@@ -176,14 +160,13 @@ public class Control {
 		public boolean xmlCompact = addB("xmlCompact", "xmlCompact", true, "");
 		public boolean xmlAllSolutions = addB("xmlAllSolutions", "xas", false, "");
 
-		public final String trace = addS("trace", "trace", EMPTY_STRING, s_trace);
-		public final long seed = addL("seed", "seed", 0, s_seed);
-		public final boolean makeExceptionsVisible = addB("makeExceptionsVisible", "ev", false, s_ev);
-		public final boolean enableAnnotations = addB("enableAnnotations", "ea", false, s_ea);
-		public final int limitForSatisfaction = addI("limitForSatisfaction", "lfs", PLUS_INFINITY_INT, l_cfs);
-		public final String conditionForSatisfaction = addS("conditionForSatisfaction", "cfs", EMPTY_STRING, s_cfs, TO_IMPLEMENT);
-		public final boolean recordSolutions = addB("recordSolutions", "rs", false, s_rs, HIDDEN);
-		public final boolean noPrintColors = addB("noPrintColors", "npc", false, "", HIDDEN);
+		public final String trace = addS("trace", "trace", EMPTY_STRING, "Displays a trace (with possible depth control as eg -trace=10-20");
+		public final long seed = addL("seed", "seed", 0, "The seed that can be used for some random-based methods.");
+		public final boolean exceptionsVisible = addB("exceptionsVisible", "ev", false, "Makes exceptions visible.");
+		public final boolean enableAnnotations = addB("enableAnnotations", "ea", false, "Enables annotations (currently, mainly concerns priority variables).");
+		public final int satisfactionLimit = addI("satisfactionLimit", "sal", PLUS_INFINITY_INT, "converting the objective into a constraint with this limit");
+		public final boolean recordSolutions = addB("recordSolutions", "rs", false, "Records all found solutions", HIDDEN);
+		public final boolean noPrintColors = addB("noPrintColors", "npc", false, "Don't use special color characters in the terminal", HIDDEN);
 	}
 
 	public final SettingGeneral general = new SettingGeneral();
@@ -196,33 +179,16 @@ public class Control {
 
 	public void toCOP() {
 		if (general.nSearchedSolutions == -1)
-			general.nSearchedSolutions = PLUS_INFINITY; // default value for COP (in order to find optimum)
+			general.nSearchedSolutions = PLUS_INFINITY; // default value for COP (in order to find an optimum)
 		general.framework = TypeFramework.COP;
 	}
 
 	public class SettingProblem extends SettingGroup {
-		String s_data = "Parameter similar to the one defined for " + org.xcsp.modeler.Compiler.class.getName();
-		String s_dataFormat = "Parameter similar to the one defined for " + org.xcsp.modeler.Compiler.class.getName();
-		String s_dataexport = "Parameter similar to the one defined for " + org.xcsp.modeler.Compiler.class.getName();
-		String s_variant = "Parameter similar to the one defined for " + org.xcsp.modeler.Compiler.class.getName();
-
-		String s_sb = "Allows us to post (if possible) symmetry breaking constraints using the method described in [Lecoutre and Tabary 2009]."
-				+ "\n\tSaucy is required to run the different methods.";
-		String s_sbv = "Try to save space by sharing bit vectors.";
-		String s_cg = "Add binary constraints to get a complete constraint graph.";
-
-		String s_be = "Transforms a CN only involving (non-binary) extensional constraints into a binary CN."
-				+ "\n\tCurrently, only works for XCSP2. To be implemented for XCSP3 for just the hidden encoding.";
-
-		public final String data = addS("data", "data", EMPTY_STRING, s_data);
-		public final String dataFormat = addS("dataFormat", "dataFormat", EMPTY_STRING, s_dataFormat);
-		public final boolean dataexport = addB("dataexport", "dataexport", false, s_dataexport);
-		public final String variant = addS("variant", "variant", EMPTY_STRING, s_variant);
-
-		public final boolean shareBitVectors = addB("shareBitVectors", "sbv", false, s_sbv, HIDDEN);
-		// public final boolean completeGraph = addB("completeGraph", "cg", false, s_cg, HIDDEN); // used for PC8
-
-		public final SymmetryBreaking symmetryBreaking = addE("symmetryBreaking", "sb", SymmetryBreaking.NO, s_sb);
+		public final String data = addS("data", "data", "", "Parameter similar to the one defined for " + org.xcsp.modeler.Compiler.class.getName());
+		public final String variant = addS("variant", "variant", "", "Parameter similar to the one defined for " + org.xcsp.modeler.Compiler.class.getName());
+		public final boolean shareBitVectors = addB("shareBitVectors", "sbv", false, "Trying to save space by sharing bit vectors.", HIDDEN);
+		public final SymmetryBreaking symmetryBreaking = addE("symmetryBreaking", "sb", SymmetryBreaking.NO,
+				"Symmetry-breaking method (requires Saucy to be installed");
 
 		public boolean isSymmetryBreaking() {
 			return symmetryBreaking != SymmetryBreaking.NO;
@@ -248,13 +214,12 @@ public class Control {
 				+ "\n\tThis list is composed of a sequence of tokens separated by commas (no whitespace)."
 				+ "\n\tEach token is variable id, a variable number (integer) or an interval of the form i..j with i and j integers.."
 				+ "\n\tFor example, -pr2=2..10,31,-4 will denote the list 2 3 5 6 7 8 9 10 31.";
-		String s_riv = "When set to true, only keep one arbitrary value in the domain of each variable involved in no constraint.";
 
 		protected final String selection = addS("selection", "sel", EMPTY_STRING, s_sel);
 		protected final String instantiation = addS("instantiation", "ins", EMPTY_STRING, s_ins);
 		protected final String priority1 = addS("priority1", "pr1", EMPTY_STRING, s_pr1);
 		protected final String priority2 = addS("priority2", "pr2", EMPTY_STRING, s_pr2);
-		public final boolean reduceIsolatedVars = addB("reduceIsolatedVars", "riv", true, s_riv);
+		public final boolean reduceIsolated = addB("reduceIsolated", "riv", true, "Arbitrary keeping a single value in the domain of isolated variables");
 
 		private Object[] readSelectionList(String s) {
 			if (s == null || s.trim().length() == 0)
@@ -263,8 +228,8 @@ public class Control {
 			Set<Object> set = new HashSet<>();
 			for (String token : s.split(",")) {
 				if (token.contains("..")) {
-					Kit.control(token.matches("-?\\d+\\.\\.\\d+"), () -> msg + " Pb with " + token);
-					Kit.control(set.isEmpty() || set.iterator().next() instanceof Integer, () -> msg);
+					control(token.matches("-?\\d+\\.\\.\\d+"), () -> msg + " Pb with " + token);
+					control(set.isEmpty() || set.iterator().next() instanceof Integer, () -> msg);
 					int[] t = Utilities.toIntegers(token.split("\\.\\."));
 					for (int num = Math.abs(t[0]); num <= t[1]; num++)
 						if (t[0] >= 0)
@@ -274,13 +239,13 @@ public class Control {
 				} else {
 					Integer num = Kit.parseInteger(token);
 					if (num != null) {
-						Kit.control(set.isEmpty() || set.iterator().next() instanceof Integer, () -> msg);
+						control(set.isEmpty() || set.iterator().next() instanceof Integer, () -> msg);
 						if (num >= 0)
 							set.add(num);
 						else
 							set.remove(-num);
 					} else {
-						Kit.control(set.isEmpty() || set.iterator().next() instanceof String, () -> msg);
+						control(set.isEmpty() || set.iterator().next() instanceof String, () -> msg);
 						set.add(token); // id
 					}
 				}
@@ -292,18 +257,17 @@ public class Control {
 			if (instantiation.trim().length() == 0)
 				return left ? new Object[0] : new int[0];
 			String[] t = instantiation.trim().split(":");
-			Kit.control(t.length == 2, () -> instantiation);
+			control(t.length == 2, () -> instantiation);
 			return left ? readSelectionList(t[0]) : Utilities.toIntegers(t[1].split(","));
 		}
 
 		private Object[] controlAndFinalizeVariablesLists(Object[] priority1Vars, Object[] priority2Vars) {
-			// Selected variables are only valid for XCSP
-			// control about instantiatedVars and instantiatedVals is made in reduceDomainsFromUserInstantiation of
-			// Problem
+			// Selected variables are only valid for XCSP ; control about instantiatedVars and instantiatedVals is made
+			// in reduceDomainsFromUserInstantiation of Problem
 			Object[] t = Kit.concat(instantiatedVars, priority1Vars, priority2Vars);
 			if (t.length > 0) {
-				Kit.control(Stream.of(t).distinct().count() == t.length, () -> "Two variables are identical in your lists (-sel -pr1 -pr2)");
-				Kit.control(selectedVars.length == 0 || Stream.of(t).allMatch(o -> Arrays.binarySearch(selectedVars, o) >= 0),
+				control(Stream.of(t).distinct().count() == t.length, () -> "Two variables are identical in your lists (-sel -pr1 -pr2)");
+				control(selectedVars.length == 0 || Stream.of(t).allMatch(o -> Arrays.binarySearch(selectedVars, o) >= 0),
 						() -> "One variable present in one of your list -ins -pr1 or -pr2 is not present in your selection (-sel).");
 			}
 			return t;
@@ -339,7 +303,7 @@ public class Control {
 		public final int ignoreArity = addI("ignoreArity", "ignoreArity", -1, "Ignore all constraints with this arity.");
 
 		public final int inferAllDifferentNb = addI("inferAllDifferentNb", "iad", 0, r2);
-		public final int inferAllDifferentSize = addI("inferAllDifferentSize", "iadsz", 5, "");
+		public final int inferAllDifferentSize = addI("inferAllDifferentSize", "iadsz", 5, "Size under which inferred AllDifferent are no more considered");
 		public final boolean recognizePermutations = addB("recognizePermutations", "perm", false, r5);
 		public final int positionsLb = addI("positionsLb", "poslb", 3, "Minimal arity to build the array positions");
 		public final int positionsUb = addI("positionsUb", "posub", 10000, "maximal number of variables to build the array positions");
@@ -348,10 +312,8 @@ public class Control {
 	public final SettingCtrs constraints = new SettingCtrs();
 
 	public class SettingGlobal extends SettingGroup {
-		String s1 = "Type 0 for propagators will be the priority choice in case of export.";
 		String s = "Allows the user to select the propagator for ";
 
-		public final boolean priorityType0 = addB("priorityType0", "g_pt0", true, s1);
 		public final int typeAllDifferent = addI("typeAllDifferent", "g_ad", 0, s + "allDifferent");
 		public final int typeDistinctVectors = addI("typeDistinctVectors", "g_dv", 0, s + "distinctvectors");
 		public final int typeAllEqual = addI("typeAllEqual", "g_ae", 0, s + "allEqual");
@@ -406,18 +368,14 @@ public class Control {
 	public final SettingOptimization optimization = new SettingOptimization();
 
 	public class SettingPropagation extends SettingGroup {
-		String s_pv = "Variant for a second order consistency";
 		String s_uaq = "If enabled, queues of constraints are used in addition to the queue of variables. The purpose is to propagate less often the most costly constraints.";
 
-		String q1 = "For intension constraints, control the effort for (G)AC."
-				+ "\n\tGAC is not enforced if the current number of future variables is more than the specified value.";
-
-		String q2 = "For intension constraints, control the effort for (G)AC."
-				+ "\n\tGAC is not enforced if the size of the current Cartesian product is more than than 2 up the specified value.";
+		String q1 = "For intension constraints, GAC is not enforced if the current number of future variables is more than the specified value.";
+		String q2 = "For intension constraints, GAC is not enforced if the size of the current Cartesian product is more than than 2 up the specified value.";
 		String q3 = "For intension constraints, GAC is guaranteed to be enforced if the arity is not more than the specified value.";
 
 		public String clazz = addS("clazz", "p", GAC.class, null, "name of the class to be used for propagation (for example, FC or SAC3)");
-		public final int variant = addI("variant", "pv", 0, s_pv, HIDDEN);
+		public final int variant = addI("variant", "pv", 0, "Propagation Variant (only used for some consistencies)", HIDDEN);
 		public final boolean useAuxiliaryQueues = addB("useAuxiliaryQueues", "uaq", false, s_uaq);
 		public String reviser = addS("reviser", "reviser", Reviser3.class, Reviser.class, "class to be used for performing revisions");
 		public boolean residues = addB("residues", "res", true, "Must we use redidues (GAC3rm)?");
@@ -431,7 +389,6 @@ public class Control {
 		public final boolean strongOnlyWhenACEffective = addB("strongOnlyWhenACEffective", "soe", false, "");
 		public final boolean strongOnlyWhenNotSingleton = addB("strongOnlyWhenNotSingleton", "sons", true, "");
 		public final int weakCutoff = addI("weakCutoff", "wc", 15, "");
-		public final String classForFailedValues = addS("classForFailedValues", "fvc", "", "", HIDDEN);
 	}
 
 	public final SettingPropagation propagation = new SettingPropagation();
@@ -456,11 +413,10 @@ public class Control {
 	public final SettingLNS lns = new SettingLNS();
 
 	public class SettingSolving extends SettingGroup {
-		String s_class = "The name of the class used to explore the search space.\n\tTypically, this is " + Solver.class.getSimpleName();
 		String s_branching = "The branching scheme used for search."
 				+ "\n\tPossible values are bin for binary branching, non for non-binary (or d-way) branching, and res for restricted binarybranching.";
 
-		public String clazz = addS("clazz", "s_class", Solver.class, null, s_class);
+		public String clazz = addS("clazz", "s_class", Solver.class, null, "The name of the class used to explore the search space");
 		public boolean enablePrepro = addB("enablePrepro", "prepro", true, "must we perform preprocessing?");
 		public boolean enableSearch = addB("enableSearch", "search", true, "must we perform search?");
 		public final Branching branching = addE("branching", "branching", Branching.BIN, s_branching);
@@ -469,25 +425,21 @@ public class Control {
 	public final SettingSolving solving = new SettingSolving();
 
 	public class SettingRestarts extends SettingGroup {
-		String s_n = "The maximal number of runs (restarts) to be performed.\n\tA value strictly greater than 1 is relevant only if a cutoff value is given.";
 		String s_c = "The number of the counter (number of backtracks, number of failed assignments, ...) before the solver restarts."
 				+ "\n\tWhen no value is given, the cutoff is set to Integer.MAX_VALUE.";
-		String s_f = "The geometric increasing factor of the number (e.g. the number of failed assignments) used to break successive runs.";
-		String s_m = "The kind of events to be counted so as to force restarts when the cutoff is reached.";
 		String s_rrp = "Period, in term of number of restarts, for resetting restart data.";
 		String s_rrc = "Coefficient used for increasing the cutoff, when restart data are reset";
 
-		public int nRunsLimit = addI("nRunsLimit", "r_n", Integer.MAX_VALUE, s_n);
-		public long cutoff = addL("cutoff", "r_c", 10, s_c); // for COP, this value is initially multiplied by 10 in
-																// Restarter
-		public double factor = addD("factor", "r_f", 1.1, s_f);
-		public final RestartMeasure measure = addE("measure", "r_m", RestartMeasure.FAILED, s_m);
+		public int nRunsLimit = addI("nRunsLimit", "r_n", Integer.MAX_VALUE, "maximal number of runs (restarts) to be performed");
+		public long cutoff = addL("cutoff", "r_c", 10, s_c); // for COP, it is initially multiplied by 10 in Restarter
+		public double factor = addD("factor", "r_f", 1.1, "The geometric increasing factor when updating the curtoff");
+		public final RestartMeasure measure = addE("measure", "r_m", RestartMeasure.FAILED, "The metrics used for measuring and comparing to the cutoff");
 		public int nRestartsResetPeriod = addI("nRestartsResetPeriod", "r_rrp", 90, s_rrp);
 		public final int nRestartsResetCoefficient = addI("nRestartsResetCoefficient", "r_rrc", 2, s_rrc);
 		public final int varhResetPeriod = addI("varhResetPeriod", "r_rp", Integer.MAX_VALUE, "");
 		public final int varhSolResetPeriod = addI("varhSolResetPeriod", "r_srp", 30, "");
 		public boolean restartAfterSolution = addB("restartAfterSolution", "ras", false, "");
-		public boolean luby = addB("luby", "r_luby", false, "");
+		public boolean luby = addB("luby", "r_luby", false, "True if a Luby series must be used instead of a geometric one");
 	}
 
 	public final SettingRestarts restarts = new SettingRestarts();
@@ -580,30 +532,18 @@ public class Control {
 	private Control() {
 		if (general.trace.length() > 0 && general.verbose < 1)
 			general.verbose = 1;
-		int verbose = general.verbose;
-		Kit.control(0 <= verbose && verbose <= 3, () -> "Verbose must be in 0..3");
-		Kit.log.setLevel(verbose == 0 ? Level.CONFIG : verbose == 1 ? Level.FINE : verbose == 2 ? Level.FINER : Level.FINEST);
-		if (general.conditionForSatisfaction.trim().length() != 0) {
-			String s = general.conditionForSatisfaction;
-			Kit.control(s.matches("\\((lt|le|ge|gt|ne|eq),\\d+\\)"), () -> "Bad form of the condition for satisfaction : " + s);
-		}
-		// () -> "The value of operatorForSatisfaction must be in {eq,ne,lt,le,gt,ge}.");
-		Kit.control(0 <= lns.pFreeze && lns.pFreeze < 100, () -> "percentageOfVariablesToFreeze should be between 0 and 100 (excluded)");
-
-		Kit.control(learning.nogood != LearningNogood.RST_SYM);
-		Kit.control(optimization.lb <= optimization.ub);
-		// as
-		// C0
-		// Kit.control(!constraints.normalizeCtrs || (!problem.isSymmetryBreaking() && general.framework !=
-		// TypeFramework.MAXCSP));
+		control(0 <= general.verbose && general.verbose <= 3, () -> "Verbose must be in 0..3");
+		Kit.log.setLevel(general.verbose == 0 ? Level.CONFIG : general.verbose == 1 ? Level.FINE : general.verbose == 2 ? Level.FINER : Level.FINEST);
+		control(0 <= lns.pFreeze && lns.pFreeze < 100, () -> "percentageOfVariablesToFreeze should be between 0 and 100 (excluded)");
+		control(learning.nogood != LearningNogood.RST_SYM);
+		control(optimization.lb <= optimization.ub);
 		settings.controlKeys();
-		if (general.makeExceptionsVisible)
+		if (general.exceptionsVisible)
 			org.xcsp.modeler.Compiler.ev = true;
 		if (general.noPrintColors)
 			Kit.useColors = false;
 		if (general.framework == TypeFramework.MAXCSP)
 			optimization.lb = 0L;
-
 	}
 
 	/**********************************************************************************************
@@ -658,7 +598,7 @@ public class Control {
 				// try in document
 				try {
 					NodeList nodes = (NodeList) xPath.compile("//" + (tag != null ? tag : "*") + "/@" + att).evaluate(document, XPathConstants.NODESET);
-					Kit.control(nodes.getLength() <= 1, () -> "Problem with several possibilities for " + tag + " " + att);
+					control(nodes.getLength() <= 1, () -> "Problem with several possibilities for " + tag + " " + att);
 					if (nodes.getLength() == 0)
 						return defaultValue.toString();
 					value = nodes.item(0).getNodeValue();
@@ -677,7 +617,7 @@ public class Control {
 					return longValue ? Long.MAX_VALUE : (Number) Integer.MAX_VALUE; // problem if cast omitted
 				char lastCharacter = s.charAt(s.length() - 1);
 				Long baseValue = Kit.parseLong(Character.isDigit(lastCharacter) ? s : s.substring(0, s.length() - 1));
-				Kit.control(baseValue != null, () -> "An integer/long value was expected for " + tag + "/" + att);
+				control(baseValue != null, () -> "An integer/long value was expected for " + tag + "/" + att);
 				double value = Character.isDigit(lastCharacter) ? baseValue
 						: lastCharacter == 'k' || lastCharacter == 's' ? baseValue * 1000
 								: lastCharacter == 'm' ? baseValue * 1000000 : (Double) Kit.exit("Bad character for " + tag + " " + att);
@@ -700,7 +640,7 @@ public class Control {
 			/** Returns the value (a double) of the specified attribute for the specified tag. */
 			private double doubleFor(String shortcut, String tag, String att, Double defaultValue) {
 				Double d = Utilities.toDouble(stringFor(shortcut, tag, att, defaultValue));
-				Kit.control(d != null, () -> "A double value was expected for " + tag + "/" + att);
+				control(d != null, () -> "A double value was expected for " + tag + "/" + att);
 				return d;
 			}
 
@@ -715,9 +655,9 @@ public class Control {
 		private <T> Setting<T> add(Setting<T> setting) {
 			Kit.control(setting.shortcut != null, () -> "A shortcut must be given");
 			for (Setting<?> p : settings) {
-				Kit.control(p.shortcut == null || !p.shortcut.equals(setting.shortcut),
+				control(p.shortcut == null || !p.shortcut.equals(setting.shortcut),
 						() -> "The parameters " + p.key() + " and " + setting.key() + " with the same shortcut " + setting.shortcut);
-				Kit.control(!p.key().equals(setting.key()), () -> "The parameters " + p.key() + " and " + setting.key() + " with the same value");
+				control(!p.key().equals(setting.key()), () -> "The parameters " + p.key() + " and " + setting.key() + " with the same value");
 			}
 			settings.add(setting);
 			Kit.control(setting.priority >= 1 && setting.priority <= 4 && setting.tag != null && setting.attribute != null && setting.defaultValue != null
@@ -757,7 +697,7 @@ public class Control {
 		public void controlKeys() {
 			String k = Input.argsForSolving.keySet().stream().filter(key -> settings.stream().noneMatch(s -> s.key().equals(key) || s.shortcut.equals(key)))
 					.findFirst().orElse(null);
-			Kit.control(k == null, () -> "The parameter " + k + " is unknown");
+			control(k == null, () -> "The parameter " + k + " is unknown");
 		}
 
 		public void display() {
@@ -878,7 +818,7 @@ public class Control {
 						root.appendChild(document.createElement(setting.tag));
 						list = document.getElementsByTagName(setting.tag);
 					}
-					Kit.control(list.getLength() == 1);
+					control(list.getLength() == 1);
 					Object value = setting.defaultValue;
 					if (value instanceof Number) {
 						Number n = (Number) setting.defaultValue;

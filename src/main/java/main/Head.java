@@ -83,7 +83,8 @@ public class Head extends Thread {
 	public static final String SEED = "seed";
 
 	/**
-	 * The set of objects in charge of solving a problem. Typically, there is only one object. However, in portfolio mode, it contains more than one object.
+	 * The set of objects in charge of solving a problem. Typically, there is only one object. However, in portfolio
+	 * mode, it contains more than one object.
 	 */
 	private static Head[] heads;
 
@@ -147,7 +148,7 @@ public class Head extends Thread {
 		String fileName = head.output.save(head.stopwatch.wckTime());
 		if (fileName != null) {
 			String variantParallelName = Kit.attValueFor(Input.lastArgument(), VARIANT_PARALLEL, NAME);
-			String resultsFileName = head.control.xml.dirForCampaign;
+			String resultsFileName = head.control.xml.campaignDir;
 			if (resultsFileName != "")
 				resultsFileName += File.separator;
 			resultsFileName += Output.RESULTS_DIRECTORY + File.separator + head.output.outputFileNameFrom(head.problem.name(), variantParallelName);
@@ -206,7 +207,10 @@ public class Head extends Thread {
 			new Head().control.settings.display(); // the usage is displayed
 		else {
 			Input.loadArguments(args); // Always start with that
-			heads = Stream.of(loadVariantNames()).map(v -> new Head(v)).peek(h -> h.start()).toArray(Head[]::new); // threads built and started
+			heads = Stream.of(loadVariantNames()).map(v -> new Head(v)).peek(h -> h.start()).toArray(Head[]::new); // threads
+																													// built
+																													// and
+																													// started
 		}
 	}
 
@@ -252,7 +256,9 @@ public class Head extends Thread {
 				if (file.isDirectory()) {
 					Kit.control(!file.getName().contains("."));
 					loadRecursively(file, packageName + "." + file.getName());
-				} else if (file.getName().endsWith(DOT_CLASS) && file.getName().charAt(0) != '/') // second part for a class in the default package
+				} else if (file.getName().endsWith(DOT_CLASS) && file.getName().charAt(0) != '/') // second part for a
+																									// class in the
+																									// default package
 					dealWith(Class.forName(packageName + '.' + file.getName().substring(0, file.getName().length() - DOT_CLASS.length())));
 		}
 
@@ -281,7 +287,8 @@ public class Head extends Thread {
 						}
 				// we load loaded classes, next
 				ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-				// however, if we need to look at unloaded classes, as for example some in a subclass of Propagation, we need to put lines
+				// however, if we need to look at unloaded classes, as for example some in a subclass of Propagation, we
+				// need to put lines
 				// as the one below which is commented
 				// Class<?> _ = Propagation.class;
 				for (Package p : Package.getPackages()) {
@@ -307,7 +314,8 @@ public class Head extends Thread {
 	}
 
 	/**
-	 * This class stores information (through maps) about shared data structures, concerning intension, extension and MDD constraints
+	 * This class stores information (through maps) about shared data structures, concerning intension, extension and
+	 * MDD constraints
 	 */
 	public static class StructureSharing {
 
@@ -372,7 +380,8 @@ public class Head extends Thread {
 	public List<ObserverOnConstruction> observersConstruction = new ArrayList<>();
 
 	/**
-	 * The index of the current problem instance to be solved. of course, when there is only one instance to be solved, this is 0.
+	 * The index of the current problem instance to be solved. of course, when there is only one instance to be solved,
+	 * this is 0.
 	 */
 	public int instanceIndex;
 
@@ -382,12 +391,14 @@ public class Head extends Thread {
 	public AvailableClasses availableClasses = new AvailableClasses();
 
 	/**
-	 * The object that stores information (through maps) about shared data structures, concerning intension, extension and MDD constraints
+	 * The object that stores information (through maps) about shared data structures, concerning intension, extension
+	 * and MDD constraints
 	 */
 	public StructureSharing structureSharing = new StructureSharing();
 
 	/**
-	 * The object that may be used in different steps of resolution: randomization of heuristics, generation of random solutions,...
+	 * The object that may be used in different steps of resolution: randomization of heuristics, generation of random
+	 * solutions,...
 	 */
 	public final Random random = new Random();
 
@@ -408,8 +419,14 @@ public class Head extends Thread {
 		this.control = Control.buildControlPanelFor(controlFileName);
 		this.output = new Output(this, controlFileName);
 		this.permamentObserversConstruction = Stream.of(output).map(o -> (ObserverOnConstruction) o).collect(toCollection(ArrayList::new));
-		// adding as permanent construction observer GraphViz (when problem built) ?: Graphviz.saveGraph(problem, control.general.saveNetworkGraph);
-		this.observersConstruction = permamentObserversConstruction.stream().collect(toCollection(ArrayList::new)); // need this if we run HeadExtraction
+		// adding as permanent construction observer GraphViz (when problem built) ?: Graphviz.saveGraph(problem,
+		// control.general.saveNetworkGraph);
+		this.observersConstruction = permamentObserversConstruction.stream().collect(toCollection(ArrayList::new)); // need
+																													// this
+																													// if
+																													// we
+																													// run
+																													// HeadExtraction
 	}
 
 	public Head() {
@@ -431,13 +448,14 @@ public class Head extends Thread {
 			try {
 				api = (ProblemAPI) Reflector.buildObject(Input.problemName);
 			} catch (Exception e) {
-				api = (ProblemAPI) Reflector.buildObject("problems." + Input.problemName); // is it still relevant to try that?
+				api = (ProblemAPI) Reflector.buildObject("problems." + Input.problemName); // is it still relevant to
+																							// try that?
 			}
 		} catch (Exception e) {
 			return (Problem) Kit.exit("The class " + Input.problemName + " cannot be found.", e);
 		}
 		SettingProblem settings = control.problem;
-		this.problem = new Problem(api, settings.variant, settings.data, settings.dataFormat, settings.dataexport, Input.argsForProblem, this);
+		this.problem = new Problem(api, settings.variant, settings.data, "", false, Input.argsForProblem, this);
 		for (ObserverOnConstruction obs : observersConstruction)
 			obs.afterProblemConstruction();
 		problem.display();
@@ -488,7 +506,7 @@ public class Head extends Thread {
 			} catch (Throwable e) {
 				crashed[i] = true;
 				System.out.println(Kit.preprint("\n! ERROR (use -ev for more details)", Kit.RED));
-				if (control.general.makeExceptionsVisible)
+				if (control.general.exceptionsVisible)
 					e.printStackTrace();
 			}
 		}

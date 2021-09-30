@@ -70,16 +70,16 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 		switch (aop) {
 		case ABS: // |x| = y
 			return new Dist2bEQ(pb, x, y, 0);
-		case NEG: // -x = y
-			return new Neg2EQ(pb, x, y);
+		case NEG: // x = -y
+			return new Neg2EQ(pb, x, y); // TODO why not using x + y = 0 instead (one less propagator)?
 		case SQR: // x*x = y
 			List<int[]> list = new ArrayList<>();
 			for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
-				int v = x.dom.toVal(a);
-				if ((long) v * v <= y.dom.greatestInitialValue() && y.dom.containsValue(v * v))
-					list.add(new int[] { v, v * v });
+				int v = x.dom.toVal(a), v2 = Utilities.safeInt((long) v * v);
+				if (v2 <= y.dom.greatestInitialValue() && y.dom.containsValue(v2))
+					list.add(new int[] { v, v2 });
 			}
-			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), list.parallelStream().toArray(int[][]::new), true, Boolean.FALSE);
+			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), list.stream().toArray(int[][]::new), true, Boolean.FALSE);
 		default: // not(x) = y
 			control(x.dom.is01() && y.dom.is01());
 			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), new int[][] { { 0, 1 }, { 1, 0 } }, true, Boolean.FALSE);
@@ -163,13 +163,6 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 	 * Residues used for (value indexes of) y (possibly, null)
 	 */
 	protected int[] ry;
-
-	/**
-	 * Builds the structure of residues for x, the first involved variable
-	 */
-	protected void buildResiduesForFirstVariable() {
-		this.rx = Kit.repeat(UNITIALIZED, dx.initSize());
-	}
 
 	/**
 	 * Builds the structures of residues for x and y, the two involved variables

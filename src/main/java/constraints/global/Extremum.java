@@ -35,25 +35,44 @@ import variables.Variable;
 
 public abstract class Extremum extends ConstraintGlobal implements TagCallCompleteFiltering, TagAC {
 
+	/**
+	 * The list (vector) of variables
+	 */
 	protected final Variable[] list;
 
 	public Extremum(Problem pb, Variable[] list, Variable ext) {
-		super(pb, pb.api.vars(ext, list));
+		super(pb, pb.api.vars(ext, list)); // ext may be null
 		this.list = list;
 	}
 
-	public Extremum(Problem pb, Variable[] list) {
-		this(pb, list, null);
-	}
+	/**********************************************************************************************
+	 * ExtremumVar, with its two subclasses Maximum and Minimum
+	 *********************************************************************************************/
 
 	public abstract static class ExtremumVar extends Extremum {
 
-		protected final Domain domExt;
+		/**
+		 * The domain of the target variable (used as value)
+		 */
+		protected final Domain vdom;
 
 		/**
 		 * sentinels[a] denotes the sentinel for the value at index a in the domain of the extremum variable
 		 */
 		protected final Variable[] sentinels;
+
+		public ExtremumVar(Problem pb, Variable[] list, Variable value) {
+			super(pb, list, value);
+			this.vdom = value.dom;
+			this.sentinels = IntStream.range(0, vdom.initSize()).mapToObj(a -> findSentinelFor(vdom.toVal(a))).toArray(Variable[]::new);
+			vdom.removeAtConstructionTime(a -> sentinels[a] == null);
+			control(list.length > 1 && Stream.of(list).noneMatch(x -> x == value), "vector length = " + list.length);
+		}
+
+		@Override
+		public int[] symmetryMatching() {
+			return IntStream.range(0, scp.length).map(i -> i == 0 ? 1 : 2).toArray();
+		}
 
 		protected Variable findSentinelFor(int v, Variable except) {
 			for (Variable x : list)
@@ -69,19 +88,6 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 			return null;
 		}
 
-		@Override
-		public int[] symmetryMatching() {
-			return IntStream.range(0, scp.length).map(i -> i == 0 ? 1 : 2).toArray();
-		}
-
-		public ExtremumVar(Problem pb, Variable[] list, Variable ext) {
-			super(pb, list, ext);
-			this.domExt = ext.dom;
-			this.sentinels = IntStream.range(0, domExt.initSize()).mapToObj(a -> findSentinelFor(domExt.toVal(a))).toArray(Variable[]::new);
-			domExt.removeAtConstructionTime(a -> sentinels[a] == null);
-			control(list.length > 1 && Stream.of(list).noneMatch(x -> x == ext), "vector length = " + list.length);
-		}
-
 		// ************************************************************************
 		// ***** Constraint maximum
 		// ************************************************************************
@@ -90,20 +96,27 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
-				return t[0] == IntStream.range(1, t.length).map(i -> t[i]).max().getAsInt();
+				boolean found = false;
+				for (int i = 1; i < t.length; i++) {
+					if (t[i] > t[0])
+						return false;
+					if (t[i] == t[0])
+						found = true;
+				}
+				return found;
+			}
+
+			public Maximum(Problem pb, Variable[] list, Variable value) {
+				super(pb, list, value);
 			}
 
 			private int computeLimitForSentinel(Variable sentinel) {
-				for (int a = domExt.last(); a != -1; a = domExt.prev(a)) {
-					int v = domExt.toVal(a);
+				for (int a = vdom.last(); a != -1; a = vdom.prev(a)) {
+					int v = vdom.toVal(a);
 					if (sentinels[a] != sentinel || findSentinelFor(v, sentinel) != null)
 						return v;
 				}
 				return Integer.MIN_VALUE;
-			}
-
-			public Maximum(Problem pb, Variable[] list, Variable max) {
-				super(pb, list, max);
 			}
 
 			@Override
@@ -115,13 +128,13 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 					if (x.dom.lastValue() > maxLast)
 						maxLast = x.dom.lastValue();
 				}
-				// Filtering the domain of the extremum (max) variable
-				if (domExt.removeValuesLT(maxFirst) == false || domExt.removeValuesGT(maxLast) == false)
+				// Filtering vdom (the domain of the target extremum variable)
+				if (vdom.removeValuesLT(maxFirst) == false || vdom.removeValuesGT(maxLast) == false)
 					return false;
-				int sizeBefore = domExt.size();
+				int sizeBefore = vdom.size();
 
-				if (domExt.removeIndexesChecking(a -> {
-					int v = domExt.toVal(a);
+				if (vdom.removeIndexesChecking(a -> {
+					int v = vdom.toVal(a);
 					if (!sentinels[a].dom.containsValue(v)) {
 						Variable s = findSentinelFor(v);
 						if (s == null)
@@ -133,13 +146,13 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 					return false;
 
 				// Filtering the domains of variables in the vector
-				int lastMax = domExt.lastValue();
+				int lastMax = vdom.lastValue();
 				for (Variable x : list)
 					if (x.dom.removeValuesGT(lastMax) == false)
 						return false;
 
-				// Possibly filtering the domain of the sentinel from the last value of the Max variable
-				Variable sentinel = sentinels[domExt.last()];
+				// Possibly filtering the domain of the sentinel from the last value of vdom
+				Variable sentinel = sentinels[vdom.last()];
 				int valLimit = computeLimitForSentinel(sentinel);
 				if (valLimit == lastMax)
 					return true; // because another sentinel exists
@@ -149,7 +162,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 					int v = domSentinel.toVal(a);
 					if (v <= valLimit)
 						break;
-					if (!domExt.containsValue(v))
+					if (!vdom.containsValue(v))
 						domSentinel.removeElementary(a);
 				}
 				return domSentinel.afterElementaryCalls(sizeBefore); // necessarily true
@@ -164,20 +177,27 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
-				return t[0] == IntStream.range(1, t.length).map(i -> t[i]).min().getAsInt();
+				boolean found = false;
+				for (int i = 1; i < t.length; i++) {
+					if (t[i] < t[0])
+						return false;
+					if (t[i] == t[0])
+						found = true;
+				}
+				return found;
+			}
+
+			public Minimum(Problem pb, Variable[] list, Variable value) {
+				super(pb, list, value);
 			}
 
 			private int computeLimitForSentinel(Variable sentinel) {
-				for (int a = domExt.first(); a != -1; a = domExt.next(a)) {
-					int v = domExt.toVal(a);
+				for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
+					int v = vdom.toVal(a);
 					if (sentinels[a] != sentinel || findSentinelFor(v, sentinel) != null)
 						return v;
 				}
 				return Integer.MAX_VALUE;
-			}
-
-			public Minimum(Problem pb, Variable[] list, Variable min) {
-				super(pb, list, min);
 			}
 
 			@Override
@@ -190,33 +210,33 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 						minLast = x.dom.lastValue();
 				}
 
-				// filtering the domain of the Min variable
-				if (domExt.removeValuesGT(minLast) == false || domExt.removeValuesLT(minFirst) == false)
+				// filtering the domain of vdom
+				if (vdom.removeValuesGT(minLast) == false || vdom.removeValuesLT(minFirst) == false)
 					return false;
-				int sizeBefore = domExt.size();
-				for (int a = domExt.first(); a != -1; a = domExt.next(a)) {
-					int v = domExt.toVal(a);
+				int sizeBefore = vdom.size();
+				for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
+					int v = vdom.toVal(a);
 					if (!sentinels[a].dom.containsValue(v)) {
 						Variable s = findSentinelFor(v);
 						if (s != null)
 							sentinels[a] = s;
-						else if (domExt.size() == 1)
-							return domExt.fail();
+						else if (vdom.size() == 1)
+							return vdom.fail();
 						else
-							domExt.removeElementary(a);
+							vdom.removeElementary(a);
 					}
 				}
-				if (domExt.afterElementaryCalls(sizeBefore) == false)
+				if (vdom.afterElementaryCalls(sizeBefore) == false)
 					return false;
 
-				// Filtering the domains of variables in the vector
-				int firstMin = domExt.firstValue();
+				// Filtering the domains of variables in the list
+				int firstMin = vdom.firstValue();
 				for (Variable x : list)
 					if (x.dom.removeValuesLT(firstMin) == false)
 						return false;
 
-				// Possibly filtering the domain of the sentinel for the first value of the Min variable
-				Variable sentinel = sentinels[domExt.first()];
+				// Possibly filtering the domain of the sentinel for the first value of vdom
+				Variable sentinel = sentinels[vdom.first()];
 				int valLimit = computeLimitForSentinel(sentinel);
 				if (valLimit == firstMin)
 					return true; // because another sentinel exists
@@ -226,13 +246,17 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 					int v = domSentinel.toVal(a);
 					if (v >= valLimit)
 						break;
-					if (!domExt.containsValue(v))
+					if (!vdom.containsValue(v))
 						domSentinel.removeElementary(a);
 				}
 				return domSentinel.afterElementaryCalls(sizeBefore); // necessarily true
 			}
 		}
 	}
+
+	/**********************************************************************************************
+	 * ExtremumCst, with its two subclasses MaximumCst and MinimumCst
+	 *********************************************************************************************/
 
 	public static abstract class ExtremumCst extends Extremum implements Optimizable, TagSymmetric {
 
@@ -269,9 +293,13 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 		}
 
 		public ExtremumCst(Problem pb, Variable[] list, long limit) {
-			super(pb, list);
+			super(pb, list, null);
 			limit(limit);
 		}
+
+		// ************************************************************************
+		// ***** Constraints maximumCst
+		// ************************************************************************
 
 		public static abstract class MaximumCst extends ExtremumCst {
 
@@ -317,7 +345,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 
 			@Override
 			public long objectiveValue() {
-				return Stream.of(doms).mapToInt(dom -> dom.singleValue()).max().getAsInt();
+				return maxCurrentObjectiveValue(); // = minCurrentObjectiveValue()
 			}
 
 			public MaximumCst(Problem pb, Variable[] scp, long limit) {
@@ -328,7 +356,10 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 
 				@Override
 				public boolean isSatisfiedBy(int[] vals) {
-					return IntStream.of(vals).max().getAsInt() <= limit;
+					for (int v : vals)
+						if (v > limit)
+							return false;
+					return true;
 				}
 
 				public MaximumCstLE(Problem pb, Variable[] scp, long limit) {
@@ -349,7 +380,10 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 
 				@Override
 				public boolean isSatisfiedBy(int[] vals) {
-					return IntStream.of(vals).max().getAsInt() >= limit;
+					for (int v : vals)
+						if (v >= limit)
+							return true;
+					return false;
 				}
 
 				private int sentinel1, sentinel2;
@@ -401,10 +435,17 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 
 				@Override
 				public boolean isSatisfiedBy(int[] vals) {
-					return IntStream.of(vals).max().getAsInt() == limit;
+					boolean found = false;
+					for (int v : vals) {
+						if (v > value)
+							return false;
+						if (v == value)
+							found = true;
+					}
+					return found;
 				}
 
-				private int value;
+				private final int value;
 
 				/** Two sentinels for tracking the presence of the value. */
 				private Variable sentinel1, sentinel2;
@@ -412,6 +453,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 				public MaximumCstEQ(Problem pb, Variable[] scp, long limit) {
 					super(pb, scp, limit);
 					this.value = Utilities.safeInt(limit, true);
+					// we remove any value strictly greater than value ; this way we can reason with two sentinels
 					for (Variable x : scp)
 						x.dom.removeValuesAtConstructionTime(v -> v > this.value); // making it more efficient?
 					this.sentinel1 = scp[0];
@@ -426,7 +468,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 				}
 
 				@Override
-				public boolean runPropagator(Variable x) {
+				public boolean runPropagator(Variable dummy) {
 					if (!sentinel1.dom.containsValue(value)) {
 						Variable sentinel = findAnotherSentinel();
 						if (sentinel != null)
@@ -445,6 +487,10 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 				}
 			}
 		}
+
+		// ************************************************************************
+		// ***** Constraints minimumCst
+		// ************************************************************************
 
 		public static abstract class MinimumCst extends ExtremumCst {
 
@@ -490,7 +536,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 
 			@Override
 			public long objectiveValue() {
-				return Stream.of(doms).mapToInt(dom -> dom.singleValue()).min().getAsInt();
+				return minCurrentObjectiveValue(); // = maxCurrentObjectiveValue
 			}
 
 			public MinimumCst(Problem pb, Variable[] scp, long limit) {
@@ -501,15 +547,18 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 
 				@Override
 				public boolean isSatisfiedBy(int[] vals) {
-					return IntStream.of(vals).min().getAsInt() <= limit;
+					for (int v : vals)
+						if (v <= limit)
+							return true;
+					return false;
 				}
 
 				private int sentinel1, sentinel2;
 
 				public MinimumCstLE(Problem pb, Variable[] scp, long limit) {
 					super(pb, scp, Math.min(limit, minLastInitialValues(scp)));
-					sentinel1 = 0;
-					sentinel2 = scp.length - 1;
+					this.sentinel1 = 0;
+					this.sentinel2 = scp.length - 1;
 					control(scp[sentinel1].dom.firstValue() <= limit && scp[sentinel2].dom.firstValue() <= limit, "unsound sentinels");
 				}
 
@@ -550,7 +599,10 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 
 				@Override
 				public boolean isSatisfiedBy(int[] vals) {
-					return IntStream.of(vals).min().getAsInt() >= limit;
+					for (int v : vals)
+						if (v < limit)
+							return false;
+					return true;
 				}
 
 				public MinimumCstGE(Problem pb, Variable[] scp, long limit) {
@@ -572,10 +624,17 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 
 				@Override
 				public boolean isSatisfiedBy(int[] vals) {
-					return IntStream.of(vals).min().getAsInt() == limit;
+					boolean found = false;
+					for (int v : vals) {
+						if (v < value)
+							return false;
+						if (v == value)
+							found = true;
+					}
+					return found;
 				}
 
-				private int value;
+				private final int value;
 
 				/** Two sentinels for tracking the presence of the value. */
 				private Variable sentinel1, sentinel2;
@@ -583,6 +642,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 				public MinimumCstEQ(Problem pb, Variable[] scp, long limit) {
 					super(pb, scp, limit);
 					this.value = Utilities.safeInt(limit, true);
+					// we remove any value strictly less than value ; this way we can reason with two sentinels
 					for (Variable x : scp)
 						x.dom.removeValuesAtConstructionTime(v -> v < this.value); // making it more efficient?
 					this.sentinel1 = scp[0];
@@ -597,7 +657,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagCallComple
 				}
 
 				@Override
-				public boolean runPropagator(Variable x) {
+				public boolean runPropagator(Variable dummy) {
 					if (!sentinel1.dom.containsValue(value)) {
 						Variable sentinel = findAnotherSentinel();
 						if (sentinel != null)
