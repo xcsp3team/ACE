@@ -1023,14 +1023,13 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 * @return false if an inconsistency is detected
 	 */
 	public final boolean filterFrom(Variable x) {
-		// System.out.println("filtering " + this + " " + x + " " + this.getClass().getSimpleName());
+		// System.out.println("filtering " + this + " " + x + " " + getClass().getSimpleName());
 		if (infiniteDomainVars.length > 0 && handleHugeDomains()) // Experimental (to be finished)
 			return true;
-		// For CSP, some conditions allow us to directly return true (because we know then that there is no filtering
-		// possibility)
+		// For CSP, sometimes we can directly return true (because we know then that there is no filtering possibility)
 		if (problem.settings.framework == TypeFramework.CSP) {
-			// if the condition is replaced by != TypeFramework.MACSP, there is a pb with java -ea ac
-			// PlaneparkingTask.xml -ea -cm=false -ev -trace
+			// TODO if the condition is replaced by != TypeFramework.MACSP, there is a pb with:
+			// java -ea ac PlaneparkingTask.xml -ea -cm=false -ev -trace
 			// possibly too with GraphColoring-sum-GraphColoring_1-fullins-3.xml.lzma
 			if (futvars.size() == 0) {
 				assert !isGuaranteedAC() || isSatisfiedByCurrentInstantiation() : "Unsatisfied constraint " + this + "while AC should be guaranteed";

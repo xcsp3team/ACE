@@ -13,7 +13,7 @@ package utility;
 public class Enums {
 
 	public static enum Branching {
-		BIN, RES, NON;
+		BIN, NON;
 	}
 
 	public static enum OptimizationStrategy {

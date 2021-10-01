@@ -52,7 +52,6 @@ import heuristics.HeuristicRevisions;
 import heuristics.HeuristicRevisions.HeuristicRevisionsDynamic.Dom;
 import heuristics.HeuristicValues;
 import heuristics.HeuristicValuesDirect.First;
-import heuristics.HeuristicValuesDynamic.Conflicts;
 import heuristics.HeuristicVariables;
 import heuristics.HeuristicVariablesDynamic.Wdeg;
 import interfaces.Tags.TagExperimental;
@@ -337,12 +336,8 @@ public class Control {
 	public final SettingGlobal global = new SettingGlobal();
 
 	public class SettingExtension extends SettingGroup {
-		String s_positive = "For (non-binary) constraints defined in extension, there are many ways of representing and propagating them."
-				+ "\n\tWe have v for GAC-valid, a for GAC-allowed, va for GAC-valid+allowed, str1 for simple tabular reduction, str2 and mdd...";
-		String s_negative = "For non-binary constraints defined in extension, representation of negative table constraints...";
-
-		public final Extension positive = addE("positive", "positive", Extension.CT, s_positive);
-		public final Extension negative = addE("negative", "negative", Extension.V, s_negative);
+		public final Extension positive = addE("positive", "positive", Extension.CT, "Algorithm for (non-binary) positive table constraints");
+		public final Extension negative = addE("negative", "negative", Extension.V, "Algorithm for (non-binary) negtaive table constraint");
 		public final boolean validForBinary = addB("validForBinary", "vfor2", true, "");
 		public final String structureClass2 = addS("structureClass2", "sc2", Bits.class, null, "Structures to be used for binary table constraints");
 		public final String structureClass3 = addS("structureClass3", "sc3", Matrix3D.class, null, "Structures to be used for ternary table constraints");
@@ -380,7 +375,7 @@ public class Control {
 		public String clazz = addS("clazz", "p", GAC.class, null, "Class to be used for propagation (for example, FC, GAC or SAC3)");
 		public final int variant = addI("variant", "pv", 0, "Propagation Variant (only used for some consistencies)", HIDDEN);
 		public final boolean useAuxiliaryQueues = addB("useAuxiliaryQueues", "uaq", false, s_uaq);
-		public String reviser = addS("reviser", "reviser", Reviser3.class, Reviser.class, "class to be used for performing revisions");
+		public final String reviser = addS("reviser", "reviser", Reviser3.class, Reviser.class, "class to be used for performing revisions");
 		public boolean residues = addB("residues", "res", true, "Must we use redidues (GAC3rm)?");
 		public boolean bitResidues = addB("bitResidues", "bres", true, "Must we use bit resides (GAC3bit+rm)?");
 		public final boolean multidirectionality = addB("multidirectionality", "mul", true, "");
@@ -420,13 +415,10 @@ public class Control {
 	public final SettingLNS lns = new SettingLNS();
 
 	public class SettingSolving extends SettingGroup {
-		String s_branching = "The branching scheme used for search."
-				+ "\n\tPossible values are bin for binary branching, non for non-binary (or d-way) branching, and res for restricted binarybranching.";
-
 		public String clazz = addS("clazz", "s_class", Solver.class, null, "The name of the class used to explore the search space");
 		public boolean enablePrepro = addB("enablePrepro", "prepro", true, "must we perform preprocessing?");
 		public boolean enableSearch = addB("enableSearch", "search", true, "must we perform search?");
-		public final Branching branching = addE("branching", "branching", Branching.BIN, s_branching);
+		public final Branching branching = addE("branching", "branching", Branching.BIN, "Branching scheme for search (binary or non-binary)");
 	}
 
 	public final SettingSolving solving = new SettingSolving();
@@ -509,7 +501,6 @@ public class Control {
 	public final SettingRevh revh = new SettingRevh();
 
 	public class SettingExperimental extends SettingGroup {
-		public final boolean testB = addB("testB", "test", false, "", HIDDEN);
 		public int testI1 = addI("testI1", "testI1", 0, "", HIDDEN);
 		public int testI2 = addI("testI2", "testI2", 0, "", HIDDEN);
 		public int testI3 = addI("testI3", "testI3", 0, "", HIDDEN);
@@ -517,12 +508,8 @@ public class Control {
 
 	public final SettingExperimental experimental = new SettingExperimental();
 
-	public final boolean mustBuildConflictStructures = settings.addB(3, "constraints", "mustBuildConflictStructures", "mbcs",
-			!propagation.reviser.equals(Reviser.class.getSimpleName()) || valh.clazz.equals(Conflicts.class.getSimpleName()), "");
-
 	private Control() {
-		if (general.trace.length() > 0 && general.verbose < 1)
-			general.verbose = 1;
+		general.verbose = general.verbose < 1 && general.trace.length() > 0 ? 1 : general.verbose;
 		control(0 <= general.verbose && general.verbose <= 3, () -> "Verbose must be in 0..3");
 		Kit.log.setLevel(general.verbose == 0 ? Level.CONFIG : general.verbose == 1 ? Level.FINE : general.verbose == 2 ? Level.FINER : Level.FINEST);
 		control(0 <= lns.pFreeze && lns.pFreeze < 100, () -> "percentageOfVariablesToFreeze should be between 0 and 100 (excluded)");

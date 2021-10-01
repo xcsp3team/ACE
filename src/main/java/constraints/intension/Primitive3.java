@@ -601,7 +601,7 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 	}
 
 	// ************************************************************************
-	// ***** Classes for x % y <op> z (CtrPrimitiveTernaryMod)
+	// ***** Classes for x % y <op> z
 	// ************************************************************************
 
 	public static abstract class Mod3 extends Primitive3 {
@@ -714,7 +714,7 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 	}
 
 	// ************************************************************************
-	// ***** Classes for |x - y| <op> z (CtrPrimitiveTernaryDist)
+	// ***** Classes for |x - y| <op> z
 	// ************************************************************************
 
 	public static abstract class Dist3 extends Primitive3 {

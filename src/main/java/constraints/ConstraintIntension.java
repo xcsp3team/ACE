@@ -10,8 +10,6 @@
 
 package constraints;
 
-import static utility.Kit.control;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +33,7 @@ import variables.Variable.VariableSymbolic;
 
 /**
  * The abstract class representing intension constraints, which are constraints whose semantics is given by a Boolean
- * expression tree involving variable). Most of the times, primitives are used instead of this general form.
+ * expression tree involving variables. Most of the times, primitives are used instead of this general form.
  * 
  * @author Christophe Lecoutre
  */
@@ -62,7 +60,7 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 
 	/**
 	 * The structure for managing Boolean expression trees. This is basically a tree evaluator with additional
-	 * information concerning which constraints share the same structure.
+	 * information concerning which constraints share the same structures.
 	 */
 	public final static class IntensionStructure extends TreeEvaluator implements ConstraintRegister {
 
@@ -141,13 +139,11 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 	public ConstraintIntension(Problem pb, Variable[] scp, XNodeParent<IVar> tree) {
 		super(pb, scp);
 		assert tree.exactlyVars(scp);
-		control(Stream.of(scp).allMatch(x -> x instanceof VariableInteger) || Stream.of(scp).allMatch(x -> x instanceof VariableSymbolic),
-				"Currently, it is not possible to mix integer and symbolic variables");
+		assert Stream.of(scp).allMatch(x -> x instanceof VariableInteger)
+				|| Stream.of(scp).allMatch(x -> x instanceof VariableSymbolic) : "Currently, it is not possible to mix integer and symbolic variables";
 		boolean canonize = false; // TODO hard coding
 		this.tree = canonize ? (XNodeParent<IVar>) tree.canonization() : tree;
 		this.keyCanonizer = scp.length > 30 || tree.size() > 200 ? null : new KeyCanonizer(tree); // TODO hard coding
-																									// (not built if too
-																									// costly)
 		String key = defineKey(keyCanonizer == null ? tree.toPostfixExpression(tree.vars()) : keyCanonizer.key());
 		Map<String, IntensionStructure> map = pb.head.structureSharing.mapForIntension;
 		this.treeEvaluator = map.computeIfAbsent(key,

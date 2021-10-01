@@ -580,6 +580,11 @@ public final class Kit {
 		objects[j] = tmp;
 	}
 
+	public static <T> void swap(T[] objects) {
+		control(objects.length == 2);
+		swap(objects, 0, 1);
+	}
+
 	private static int maxDepthOf(Object o) {
 		return o == null || !o.getClass().isArray() ? 0 : 1 + IntStream.range(0, Array.getLength(o)).map(i -> maxDepthOf(Array.get(o, i))).max().orElse(0);
 	}

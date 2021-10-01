@@ -22,17 +22,19 @@ import org.xcsp.common.Constants;
 import constraints.ConstraintExtension.ExtensionGeneric;
 import constraints.ConstraintIntension.IntensionStructure;
 import constraints.extension.structures.ExtensionStructure;
+import heuristics.HeuristicValuesDynamic.Conflicts;
 import interfaces.ConstraintRegister;
 import interfaces.SpecificPropagator;
 import problem.Problem;
+import propagation.Reviser;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
 /**
- * This class allows us to record some information about the number of conflicts (disallowed tuples) for pairs (x,a) in the context of a constraint. This can be
- * useful for some forms of reasoning (like, for example, avoiding a useless filtering operation). Such structures are only relevant for some intension and
- * extension constraints.
+ * This class allows us to record some information about the number of conflicts (disallowed tuples) for pairs (x,a) in
+ * the context of a constraint. This can be useful for some forms of reasoning (like, for example, avoiding a useless
+ * filtering operation). Such structures are only relevant for some intension and extension constraints.
  * 
  * @author Christophe Lecoutre
  */
@@ -59,7 +61,8 @@ public final class ConflictsStructure implements ConstraintRegister {
 	private static final BigInteger BARY_VALID_LIMIT = BigInteger.valueOf(1000000);
 
 	/**
-	 * The limit in term of number of tuples, for non binary constraints, to decide if the conflicts structure must be built
+	 * The limit in term of number of tuples, for non binary constraints, to decide if the conflicts structure must be
+	 * built
 	 */
 	private static final BigInteger NARY_VALID_LIMIT = BigInteger.valueOf(10000);
 
@@ -69,14 +72,16 @@ public final class ConflictsStructure implements ConstraintRegister {
 	private static final long MEMORY_LIMIT = 400000000L;
 
 	/**
-	 * Attempts to build some structures recording the number of conflicts (disallowed tuples) for each pair (x,a). This can be useful for some forms of
-	 * reasoning (like, for example, avoiding a useless filtering operation). Such structures are only relevant for some intension and extension constraints.
+	 * Attempts to build some structures recording the number of conflicts (disallowed tuples) for each pair (x,a). This
+	 * can be useful for some forms of reasoning (like, for example, avoiding a useless filtering operation). Such
+	 * structures are only relevant for some intension and extension constraints.
 	 * 
 	 * @param problem
 	 *            a problem
 	 */
 	public static void buildFor(Problem problem) {
-		if (!problem.head.control.mustBuildConflictStructures)
+		if (problem.head.control.propagation.reviser.equals(Reviser.class.getSimpleName())
+				&& problem.head.control.valh.clazz.equals(Conflicts.class.getSimpleName()))
 			return;
 		for (IntensionStructure structure : problem.head.structureSharing.mapForIntension.values()) {
 			ConstraintIntension c1 = (ConstraintIntension) structure.firstRegisteredCtr();
@@ -114,13 +119,14 @@ public final class ConflictsStructure implements ConstraintRegister {
 	 *************************************************************************/
 
 	/**
-	 * nConflicts[x][a] is the number of conflicts for (x,a) where x is the position of a variable in the constraint scope and a an index of value.
+	 * nConflicts[x][a] is the number of conflicts for (x,a) where x is the position of a variable in the constraint
+	 * scope and a an index of value.
 	 */
 	public int[][] nConflicts;
 
 	/**
-	 * nMaxConflicts[x] is the maximal number of conflicts when considering all pairs (x,a) where x is the position of a variable in the constraint scope and a
-	 * an index of value
+	 * nMaxConflicts[x] is the maximal number of conflicts when considering all pairs (x,a) where x is the position of a
+	 * variable in the constraint scope and a an index of value
 	 */
 	public int[] nMaxConflicts;
 

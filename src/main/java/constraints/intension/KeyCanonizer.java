@@ -14,6 +14,7 @@ import static utility.Kit.control;
 
 import java.util.Arrays;
 import java.util.Stack;
+import java.util.stream.Stream;
 
 import org.xcsp.common.Constants;
 import org.xcsp.common.IVar;
@@ -26,30 +27,20 @@ import org.xcsp.common.predicates.XNodeParent;
 
 import utility.Kit;
 
+/**
+ * A class useful to compute canonical forms of intension constraints. This is useful for example for symmetry-breaking.
+ *
+ * @author Christophe Lecoutre
+ */
 public final class KeyCanonizer {
 
 	private static final String SUB_ABS = "subabs";
 
-	/**
-	 * The initial tree expression
-	 */
-	private XNodeParent<IVar> tree;
+	/**********************************************************************************************
+	 * Intern class: Node
+	 *********************************************************************************************/
 
-	/**
-	 * The root of the new tree expression that is built in order to get a canonized form
-	 */
-	private Node root;
-
-	/**
-	 * Returns the canonical form of the initially specified tree expression, under the form of a String
-	 * 
-	 * @return the canonical form of the initially specified tree expressio
-	 */
-	public String key() {
-		return root.toString();
-	}
-
-	private final class Node implements Comparable<Node> {
+	private final static class Node implements Comparable<Node> {
 
 		@Override
 		public int compareTo(Node node) {
@@ -79,17 +70,7 @@ public final class KeyCanonizer {
 
 		private Node[] sons;
 
-		private Node(String label) {
-			this.label = label;
-			this.sons = new Node[0];
-		}
-
-		private Node(String label, Node son) {
-			this.label = label;
-			this.sons = new Node[] { son };
-		}
-
-		private Node(String label, Node[] sons) {
+		private Node(String label, Node... sons) {
 			this.label = label;
 			this.sons = sons;
 		}
@@ -97,14 +78,11 @@ public final class KeyCanonizer {
 		private Node cloneUnderPermutation(String label1, String label2) {
 			if (sons.length == 0)
 				return label.equals(label1) ? new Node(label2) : label.equals(label2) ? new Node(label1) : new Node(label);
-			Node[] newSons = new Node[sons.length];
-			for (int i = 0; i < sons.length; i++)
-				newSons[i] = sons[i].cloneUnderPermutation(label1, label2);
-			return new Node(label, newSons);
+			return new Node(label, Stream.of(sons).map(son -> son.cloneUnderPermutation(label1, label2)).toArray(Node[]::new));
 		}
 
 		private void renderCanonical() {
-			if (sons.length != 0) {
+			if (sons.length > 1) {
 				for (Node son : sons)
 					son.renderCanonical();
 				if (label.equals(SUB_ABS) || TreeEvaluator.isSymmetric(label))
@@ -113,10 +91,8 @@ public final class KeyCanonizer {
 					TypeConditionOperatorRel operator = label == null ? null : Types.valueOf(TypeConditionOperatorRel.class, label);
 					if (operator != null && Utilities.isInteger(sons[0].label) && !Utilities.isInteger(sons[1].label)) {
 						label = operator.arithmeticInversion().toString().toLowerCase();
-						Node tmp = sons[0];
-						sons[0] = sons[1];
-						sons[1] = tmp;
-						// TODO : just keep LT and GT by modifying limit (so as to find more equivalent expressions) ????
+						Kit.swap(sons);
+						// TODO : just keep LT and GT by modifying limit (so as to find more equivalent expressions)?
 					}
 				}
 			}
@@ -150,7 +126,6 @@ public final class KeyCanonizer {
 				return null;
 			if (sons.length != 2)
 				return null;
-			// Kit.prn("op=" + operator);
 			if (!Utilities.isInteger(sons[1].label))
 				return null;
 			Node leftSon = sons[0];
@@ -204,6 +179,36 @@ public final class KeyCanonizer {
 		}
 	}
 
+	/**********************************************************************************************
+	 * Class members
+	 *********************************************************************************************/
+
+	/**
+	 * The initial tree expression
+	 */
+	private XNodeParent<IVar> tree;
+
+	/**
+	 * The root of the new tree expression that is built in order to get a canonized form
+	 */
+	private Node root;
+
+	/**
+	 * Returns the canonical form of the initially specified tree expression, under the form of a String
+	 * 
+	 * @return the canonical form of the initially specified tree expression
+	 */
+	public String key() {
+		return root.toString();
+	}
+
+	public KeyCanonizer(XNodeParent<IVar> tree) {
+		this.tree = tree;
+		this.root = buildInitialTree();
+		// System.out.println(root);
+		root.renderCanonical();
+	}
+
 	private Node buildInitialTree() {
 		Stack<Node> stack = new Stack<>();
 		for (String token : tree.toPostfixExpression(tree.vars()).split(Constants.REG_WS)) {
@@ -241,7 +246,7 @@ public final class KeyCanonizer {
 					stack.push(new Node(token, sons));
 
 				} else {
-					stack.push(new Node(token, new Node[] { son1, son2 }));
+					stack.push(new Node(token, son1, son2));
 				}
 			} else { // if (arity == 3) {
 				Node[] childs = new Node[arity];
@@ -252,15 +257,6 @@ public final class KeyCanonizer {
 		}
 		assert stack.size() == 1;
 		return stack.pop();
-	}
-
-	public KeyCanonizer(XNodeParent<IVar> tree) {
-		this.tree = tree;
-		this.root = buildInitialTree();
-		// System.out.println(root);
-		root.renderCanonical();
-		// Node n = root.cloneUnderPermutation(InstanceTokens.getParameterNameFor(1), InstanceTokens.getParameterNameFor(0));
-		// n.renderCanonical();
 	}
 
 	public int[] computeSymmetryMatching() {
@@ -282,30 +278,3 @@ public final class KeyCanonizer {
 		return permutation;
 	}
 }
-
-// int getSign() {
-// if (childs.length == 0) {
-// if (label.startsWith(InstanceTokens.PARAMETER_PREFIX)) {
-// int id = Integer.parseInt(label.substring(InstanceTokens.PARAMETER_PREFIX.length()));
-// Domain domain = involvedVariables[id].domain;
-// if (domain.toValue(0) >= 0)
-// return 1;
-// if (domain.toValue(domain.getMaximumSize() - 1) <= 0)
-// return -1;
-// return 0;
-// }
-// Integer i = Integer.parseInt(label);
-// return i >= 0 ? 1 : -1;
-// }
-// if (label.equals(PredicateTokens.ABS) || label.equals(SUB_ABS))
-// return 1;
-//
-// int res = childs[0].getSign();
-// if (res == 0)
-// return 0;
-// for (int i = 1; i < childs.length; i++) {
-// if (childs[i].getSign() != res)
-// return 0;
-// }
-// return res;
-// }
