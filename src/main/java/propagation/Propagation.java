@@ -36,6 +36,8 @@ public abstract class Propagation {
 	 * Static members
 	 *************************************************************************/
 
+	private static final int MAX_FILTERING_COMPLEXITY = 2;
+
 	/**
 	 * Builds and returns the propagation to be attached to the specified solver. If preprocessing and search stages are
 	 * disabled, null is returned.
@@ -221,7 +223,7 @@ public abstract class Propagation {
 		this.solver = solver;
 		this.queue = this instanceof Forward ? new Queue((Forward) this) : null;
 		this.settings = solver.head.control.propagation;
-		int nAuxQueues = settings.useAuxiliaryQueues ? Constraint.MAX_FILTERING_COMPLEXITY : 0;
+		int nAuxQueues = settings.useAuxiliaryQueues ? MAX_FILTERING_COMPLEXITY : 0;
 		this.auxiliaryQueues = this instanceof Forward
 				? IntStream.range(0, nAuxQueues).mapToObj(i -> new SetSparseMap(solver.problem.constraints.length)).toArray(SetSparseMap[]::new)
 				: null;

@@ -49,7 +49,7 @@ public class NotAllEqual extends ConstraintGlobal implements TagSymmetric, TagAC
 	}
 
 	@Override
-	public boolean runPropagator(Variable evt) {
+	public boolean runPropagator(Variable x) {
 		Variable unfixed = null;
 		int uniqueFixedVal = Integer.MAX_VALUE; // this value cannot be present in integer domains
 		// iteration over future variables first
@@ -76,7 +76,7 @@ public class NotAllEqual extends ConstraintGlobal implements TagSymmetric, TagAC
 				return entailed();
 		}
 		if (unfixed == null)
-			return evt.dom.fail(); // because all variables are assigned to the same value
+			return x.dom.fail(); // because all variables are assigned to the same value
 		assert uniqueFixedVal != Integer.MAX_VALUE;
 		return unfixed.dom.removeValueIfPresent(uniqueFixedVal) && entailed();
 	}

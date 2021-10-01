@@ -24,14 +24,16 @@ public class HeadExtraction extends Head {
 	public List<List<Constraint>> cores = new ArrayList<>();
 
 	/**
-	 * Global array to denote the variables that are currently present. If presentVars[i] = false, then this variable has been removed (logically).
+	 * Global array to denote the variables that are currently present. If presentVars[i] = false, then this variable
+	 * has been removed (logically).
 	 */
 	private boolean[] presentVars;
 
 	/**
 	 * 
 	 * 
-	 * Global array to denote the constraints that are currently present. If presentCtrs[i] = false, then this constraint has been removed (logically).
+	 * Global array to denote the constraints that are currently present. If presentCtrs[i] = false, then this
+	 * constraint has been removed (logically).
 	 */
 	private boolean[] presentCtrs;
 
@@ -103,7 +105,7 @@ public class HeadExtraction extends Head {
 
 	private boolean[] updatePresentConstraintsFrom(boolean[] presentVars, boolean[] presentCtrs) {
 		for (int i = 0; i < presentCtrs.length; i++)
-			presentCtrs[i] = presentCtrs[i] && Constraint.isPresentScope(problem.constraints[i], presentVars);
+			presentCtrs[i] = presentCtrs[i] && problem.constraints[i].isScopeCoveredBy(presentVars);
 		return presentCtrs;
 	}
 
@@ -112,7 +114,7 @@ public class HeadExtraction extends Head {
 			presentVars[currVars[i].num] = false;
 		for (int i = 0; i < presentCtrs.length; i++)
 			if (presentCtrs[i])
-				presentCtrs[i] = Constraint.isPresentScope(problem.constraints[i], presentVars);
+				presentCtrs[i] = problem.constraints[i].isScopeCoveredBy(presentVars);
 	}
 
 	private void updatePossiblyArrays(Constraint[] currCtrs, int min) {
@@ -313,7 +315,8 @@ public class HeadExtraction extends Head {
 		HeadExtraction extraction = new HeadExtraction();
 		Kit.control(!extraction.control.problem.isSymmetryBreaking(), () -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
 		Kit.control(extraction.control.learning.ips == LearningIps.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
-		// Kit.control(extraction.configuration.restartsCutoff == Long.MAX_VALUE || extraction.configuration.nogoodType == null,
+		// Kit.control(extraction.configuration.restartsCutoff == Long.MAX_VALUE || extraction.configuration.nogoodType
+		// == null,
 		// "Be careful of nogood recording from restarts.");
 		Kit.control(extraction.control.solving.clazz.equals(Solver.class.getSimpleName()), () -> extraction.control.solving.clazz);
 		extraction.start();

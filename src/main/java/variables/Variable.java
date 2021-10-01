@@ -37,11 +37,11 @@ import variables.DomainFinite.DomainSymbols;
 import variables.DomainFinite.DomainValues;
 
 /**
- * This class gives the description of a variable. <br>
- * A variable is attached to a problem and is uniquely identified by a number called <code>num</code>. A domain is attached to a variable and corresponds to the
- * (finite) set of values which can be assigned to it. When a value is assigned to a variable, the domain of this variable is reduced to this value. When a
- * solver tries to assign a value to a variable, it uses a <code>ValueOrderingHeuristic</code> object in order to know which value must be tried first. A
- * variable can occur in different constraints of the problem to which it is attached.
+ * A variable is attached to a problem and is uniquely identified by a number called <code>num</code>. A domain is
+ * attached to a variable and corresponds to the (finite) set of values which can be assigned to it. When a value is
+ * assigned to a variable, the domain of this variable is reduced to this value. When a solver tries to assign a value
+ * to a variable, it uses a <code>ValueOrderingHeuristic</code> object in order to know which value must be tried first.
+ * A variable can occur in different constraints of the problem to which it is attached.
  * 
  * @author Christophe Lecoutre
  */
@@ -54,15 +54,16 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	public static final class VariableInteger extends Variable implements IVar.Var {
 
 		/**
-		 * Builds a variable with a domain composed of all specified integer values. A range can be specified by giving an array of values composed of three
-		 * integers, the last one being the special value Domain.TAG_RANGE
+		 * Builds a variable with a domain composed of all specified integer values. A range can be specified by giving
+		 * an array of values composed of three integers, the last one being the special value Domain.TAG_RANGE
 		 */
 		public VariableInteger(Problem problem, String name, int[] values) {
 			super(problem, name);
 			assert Kit.isStrictlyIncreasing(values);
 			int firstValue = values[0], lastValue = values[values.length - 1];
 			if (values.length == 1)
-				this.dom = new DomainRange(this, firstValue, firstValue); // TODO using DomainRange for better reasoning with ranges (when handling/combining
+				this.dom = new DomainRange(this, firstValue, firstValue); // TODO using DomainRange for better reasoning
+																			// with ranges (when handling/combining
 																			// expressions)?
 			else if (values.length == 2)
 				this.dom = new DomainBinary(this, firstValue, lastValue);
@@ -102,7 +103,7 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**********************************************************************************************
-	 * Interfaces
+	 * Implementing Interfaces
 	 *********************************************************************************************/
 
 	@Override
@@ -128,8 +129,8 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	private static final int NB_NEIGHBOURS_LIMIT_FOR_STORING_NEIGHBOURS = 300;
 
 	/**
-	 * A special variable that can be used (for instance) by methods that requires returning three-state values: null,a variable of the problem, or this special
-	 * marker.
+	 * A special variable that can be used (for instance) by methods that requires returning three-state values: null,a
+	 * variable of the problem, or this special marker.
 	 */
 	public static final Variable TAG = new Variable(null, null) {
 	};
@@ -143,7 +144,8 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	public static final boolean areNumsStrictlyIncreasing(Variable... vars) {
-		return IntStream.range(0, vars.length - 1).allMatch(i -> vars[i].num < vars[i + 1].num); // stronger than using compareTo
+		return IntStream.range(0, vars.length - 1).allMatch(i -> vars[i].num < vars[i + 1].num); // stronger than using
+																									// compareTo
 	}
 
 	// Be aware, for a constraint scope, this method considers more that just the explicitly assigned variables
@@ -234,7 +236,8 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 
 	public static boolean isValidTuple(Variable[] vars, String[] tuple) {
 		assert vars.length == tuple.length;
-		return IntStream.range(0, vars.length).allMatch(i -> ((DomainSymbols) vars[i].dom).toIdx(tuple[i]) != -1); // to control
+		return IntStream.range(0, vars.length).allMatch(i -> ((DomainSymbols) vars[i].dom).toIdx(tuple[i]) != -1); // to
+																													// control
 	}
 
 	public static int[][] filterTuples(Variable[] vars, int[][] tuples, boolean indexes) {
@@ -423,7 +426,8 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	public Domain dom;
 
 	/**
-	 * The number of the variable. This is an integer between 0 and n-1, where n is the number of variables in the constraint network.
+	 * The number of the variable. This is an integer between 0 and n-1, where n is the number of variables in the
+	 * constraint network.
 	 */
 	public int num = UNSET_NUM;
 
@@ -443,8 +447,8 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	public Constraint[] ctrs;
 
 	/**
-	 * The set of variables that are neighbors to the variable. Two variables are neighbors if they are involved together in a constraint. This array may be
-	 * null if this is too space-consuming.
+	 * The set of variables that are neighbors to the variable. Two variables are neighbors if they are involved
+	 * together in a constraint. This array may be null if this is too space-consuming.
 	 */
 	public Variable[] nghs;
 
@@ -464,7 +468,8 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	public int[] failed;
 
 	private Variable[] computeNeighbours(int neighborArityLimit) {
-		if (ctrs.length == 0 || ctrs[ctrs.length - 1].scp.length > neighborArityLimit) // the last constraint is the one with the largest scope
+		if (ctrs.length == 0 || ctrs[ctrs.length - 1].scp.length > neighborArityLimit) // the last constraint is the one
+																						// with the largest scope
 			return null;
 		Set<Variable> set = new TreeSet<>();
 		for (Constraint c : ctrs)
@@ -478,7 +483,8 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**
-	 * This method is called when the initialization of the problem is finished in order to record the constraints involving this variable.
+	 * This method is called when the initialization of the problem is finished in order to record the constraints
+	 * involving this variable.
 	 */
 	public final void storeInvolvingConstraints(List<Constraint> constraints) {
 		assert IntStream.range(0, constraints.size() - 1).allMatch(i -> ctrs[i].scp.length <= ctrs[i + 1].scp.length);
@@ -531,7 +537,8 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**
-	 * Returns true if the variable is assigned (already said past, or not future), i.e., explicitly assigned by the solver
+	 * Returns true if the variable is assigned (already said past, or not future), i.e., explicitly assigned by the
+	 * solver
 	 * 
 	 * @return true if the variable is assigned
 	 */
@@ -544,7 +551,8 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	 * 
 	 * @param x
 	 *            a given variable
-	 * @return the (first) binary constraint involving the variable and the specified one if it exits and <code> null </code> otherwise
+	 * @return the (first) binary constraint involving the variable and the specified one if it exits and
+	 *         <code> null </code> otherwise
 	 */
 	public final Constraint firstBinaryConstraintWith(Variable x) {
 		assert this != x;
@@ -578,8 +586,8 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**
-	 * Returns the distance of the variable with respect to the objective, computed as follows: 0 if directly involved in the objective, 1 if a neighbor is
-	 * involved in the objective, 2 otherwise
+	 * Returns the distance of the variable with respect to the objective, computed as follows: 0 if directly involved
+	 * in the objective, 1 if a neighbor is involved in the objective, 2 otherwise
 	 * 
 	 * @return the distance of the variable with respect to the objective
 	 */
@@ -629,8 +637,8 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**
-	 * Returns the dynamic degree of this variable, i.e., the number of constraints involving this variable and at least another future (i.e., not explicitly
-	 * assigned) variable
+	 * Returns the dynamic degree of this variable, i.e., the number of constraints involving this variable and at least
+	 * another future (i.e., not explicitly assigned) variable
 	 * 
 	 * @return the dynamic degree of this variable
 	 */
@@ -643,8 +651,6 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**
-	 * Returns the ratio dynamic degree of this variable over the domain size of this variable
-	 * 
 	 * @return the ratio dynamic degree of this variable over the domain size of this variable
 	 */
 	public final double ddegOnDom() {
@@ -652,8 +658,6 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**
-	 * Returns the weighted degree of this variable
-	 * 
 	 * @return the weighted degree of this variable
 	 */
 	public final double wdeg() {
@@ -661,8 +665,6 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**
-	 * Returns the ratio weighted degree of this variable over the domain size of this variable
-	 * 
 	 * @return the ratio weighted degree of this variable over the domain size of this variable
 	 */
 	public final double wdegOnDom() {
@@ -674,6 +676,12 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		return id();
 	}
 
+	/**
+	 * Displays information about the variable
+	 * 
+	 * @param exhaustively
+	 *            true if detailed information must be displayed
+	 */
 	public final void display(boolean exhaustively) {
 		Kit.log.finer("Variable " + this + " with num=" + num + ", degree=" + ctrs.length + ", " + dom.size() + " values {" + dom.stringOfCurrentValues()
 				+ "} and domain type " + dom.typeName() + " " + (this.assigned() ? " is assigned" : ""));

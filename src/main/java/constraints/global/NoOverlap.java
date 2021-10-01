@@ -59,7 +59,7 @@ public final class NoOverlap extends ConstraintGlobal implements TagNotAC {
 		return a > dom.lastValue() && dom.firstValue() > b;
 	}
 
-	// TODO: some optimizations of the code are apparently possible a
+	// TODO: some optimizations of the code are apparently possible
 	public boolean filter(Variable[] x1, int[] t1, Variable[] x2, int[] t2) {
 		for (int i = 0; i < half; i++) {
 			Domain dom1 = x1[i].dom;
@@ -76,9 +76,11 @@ public final class NoOverlap extends ConstraintGlobal implements TagNotAC {
 					int j = overlappings.dense[0];
 					if (!overlap(x2[i].dom.firstValue() + t2[i], x2[j].dom, x2[i].dom.lastValue() - t2[j]))
 						continue;
-					// otherwise it means that overlapping is present on both dimensions (so, there is no support for (x1[i],v))
+					// otherwise it means that overlapping is present on both dimensions (so, there is no support for
+					// (x1[i],v))
 				} else {
-					// we now look for a value w in the domain of x2[i] that is compatible with first axis overlapping boxes
+					// we now look for a value w in the domain of x2[i] that is compatible with first axis overlapping
+					// boxes
 					// a kind of k-wise consistency is used (see paper about sweep for information about the principle)
 					// also, a local form of energetic reasoning is used
 					Domain dom2 = x2[i].dom;
@@ -98,19 +100,24 @@ public final class NoOverlap extends ConstraintGlobal implements TagNotAC {
 							volume += t1[j] * t2[j];
 						}
 						int diffX = maxX - minX + 1, diffY = maxY - minY + 1;
-						// we can remove up to t2[i] at diffY because there may be no possible overlapping on x along this height
+						// we can remove up to t2[i] at diffY because there may be no possible overlapping on x along
+						// this height
 						if (w < minY && minY < w + t2[i])
 							diffY -= Math.min(maxY, w + t2[i]) - minY;
 						else if (minY <= w && w < maxY)
 							diffY -= Math.min(maxY, w + t2[i]) - w;
 						if (volume > diffX * diffY) { // not enough room for the items
-							// System.out.println("volume " + volume + " size=" + set.size() + " surface=" + surface + " xi=" + v + " yi=" + w);
+							// System.out.println("volume " + volume + " size=" + set.size() + " surface=" + surface + "
+							// xi=" + v + " yi=" + w);
 							// for (int k = set.limit; k >= 0; k--) {
 							// int j = set.dense[k];
-							// System.out.println("xi=" + j + " " + x1[j].dom.firstValue() + ".." + x1[j].dom.lastValue() + " (" + t1[j] + ")");
-							// System.out.println("yj=" + j + " " + x2[j].dom.firstValue() + ".." + x2[j].dom.lastValue() + " (" + t2[j] + ")");
+							// System.out.println("xi=" + j + " " + x1[j].dom.firstValue() + ".." +
+							// x1[j].dom.lastValue() + " (" + t1[j] + ")");
+							// System.out.println("yj=" + j + " " + x2[j].dom.firstValue() + ".." +
+							// x2[j].dom.lastValue() + " (" + t2[j] + ")");
 							// }
-							// System.out.println("minX=" + minX + " maxX=" + maxX + " minY=" + minY + " maxY=" + maxY + " t2i=" + t2[i]);
+							// System.out.println("minX=" + minX + " maxX=" + maxX + " minY=" + minY + " maxY=" + maxY +
+							// " t2i=" + t2[i]);
 							continue intern; // to try another value w
 						}
 						continue extern; // because found support

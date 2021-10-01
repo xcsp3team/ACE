@@ -262,8 +262,8 @@ public class Restarter implements ObserverOnRuns {
 
 			public abstract void freezeVariables(int[] solution);
 
-			public static class Impact extends HeuristicFreezing { // TO BE FINALIZED (note sure that it is
-																	// correct/coherent)
+			public static class Impact extends HeuristicFreezing {
+				// TO BE FINALIZED (note sure that it is correct/coherent)
 
 				private final Variable[] variables;
 

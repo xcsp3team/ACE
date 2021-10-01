@@ -15,6 +15,7 @@ import static org.xcsp.common.Types.TypeFramework.CSP;
 import static org.xcsp.common.Types.TypeFramework.MAXCSP;
 import static utility.Kit.GREEN;
 import static utility.Kit.RED;
+import static utility.Kit.control;
 import static utility.Kit.log;
 import static utility.Kit.preprint;
 
@@ -33,7 +34,6 @@ import org.xcsp.modeler.entities.VarEntities.VarEntity;
 import constraints.Constraint;
 import problem.Problem;
 import utility.Enums.Stopping;
-import utility.Kit;
 import variables.Variable;
 
 /**
@@ -49,7 +49,8 @@ public final class Solutions {
 	public final Solver solver;
 
 	/**
-	 * The maximum number of solutions to be found, before stopping. When equal to PLUS_INFINITY, all solutions are searched for (no limit is fixed).
+	 * The maximum number of solutions to be found, before stopping. When equal to PLUS_INFINITY, all solutions are
+	 * searched for (no limit is fixed).
 	 */
 	public long limit;
 
@@ -59,7 +60,8 @@ public final class Solutions {
 	public long found;
 
 	/**
-	 * For optimization problems, the best bound found by the solver if found > 0, the specified upper bound initially given otherwise
+	 * For optimization problems, the best bound found by the solver if found > 0, the specified upper bound initially
+	 * given otherwise
 	 */
 	public long bestBound;
 
@@ -99,8 +101,8 @@ public final class Solutions {
 	private class XML {
 
 		/**
-		 * The string used to display a solution in XML. It lists variables of the problem (but not the auxiliary variables that are been automatically
-		 * introduced).
+		 * The string used to display a solution in XML. It lists variables of the problem (but not the auxiliary
+		 * variables that are been automatically introduced).
 		 */
 		private final String xmlVars;
 
@@ -128,7 +130,7 @@ public final class Solutions {
 		}
 
 		private String compactValues(boolean discardAuxiliary) {
-			Kit.control(solver.problem.features.nSymbolicVars == 0);
+			control(solver.problem.features.nSymbolicVars == 0);
 			List<Integer> list = new ArrayList<>();
 			List<String> compactList = new ArrayList<>();
 			for (VarEntity va : solver.problem.varEntities.allEntities) {
@@ -299,7 +301,7 @@ public final class Solutions {
 	 *            indicates if the solution must be checked
 	 */
 	public void handleNewSolution(boolean controlSolution) {
-		Kit.control(!controlSolution || controlFoundSolution());
+		control(!controlSolution || controlFoundSolution());
 		found++;
 		lastRun = solver.restarter.numRun;
 		// solutionHamming();
@@ -312,7 +314,7 @@ public final class Solutions {
 			return;
 		if (solver.problem.settings.framework == MAXCSP) {
 			int z = (int) Stream.of(solver.problem.constraints).filter(c -> !c.isSatisfiedByCurrentInstantiation()).count();
-			Kit.control(z < bestBound, () -> "z=" + z + " bb=" + bestBound);
+			control(z < bestBound, () -> "z=" + z + " bb=" + bestBound);
 			bestBound = z;
 		} else if (solver.problem.optimizer != null) { // COP
 			bestBound = solver.problem.optimizer.value();
@@ -337,11 +339,11 @@ public final class Solutions {
 
 	private boolean controlFoundSolution() {
 		Variable x = Variable.firstNonSingletonVariableIn(solver.problem.variables);
-		Kit.control(x == null, () -> "Problem with last solution: variable " + x + " has not a unique value");
+		control(x == null, () -> "Problem with last solution: variable " + x + " has not a unique value");
 		if (solver.problem.settings.framework == MAXCSP)
 			return true;
-		Constraint c = Constraint.firstUnsatisfiedHardConstraint(solver.problem.constraints);
-		Kit.control(c == null, () -> "Problem with last solution: constraint " + c + " " + c.getClass().getName() + " not satisfied : ");
+		Constraint c = Constraint.firstUnsatisfiedConstraint(solver.problem.constraints);
+		control(c == null, () -> "Problem with last solution: constraint " + c + " " + c.getClass().getName() + " not satisfied : ");
 		return true;
 	}
 }

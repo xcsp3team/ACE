@@ -19,8 +19,8 @@ import utility.Kit;
 import variables.Variable;
 
 /**
- * This object implements last-conflict reasoning (lc). <br />
- * See "Reasoning from last conflict(s) in constraint programming". Artif. Intell. 173(18): 1592-1614 (2009) by C. Lecoutre, L. Sais, S. Tabary, and V. Vidal.
+ * This object implements last-conflict reasoning (lc). See "Reasoning from last conflict(s) in constraint programming".
+ * Artif. Intell. 173(18): 1592-1614 (2009) by C. Lecoutre, L. Sais, S. Tabary, and V. Vidal.
  * 
  * @author Christophe Lecoutre
  */

@@ -419,14 +419,10 @@ public class Head extends Thread {
 		this.control = Control.buildControlPanelFor(controlFileName);
 		this.output = new Output(this, controlFileName);
 		this.permamentObserversConstruction = Stream.of(output).map(o -> (ObserverOnConstruction) o).collect(toCollection(ArrayList::new));
-		// adding as permanent construction observer GraphViz (when problem built) ?: Graphviz.saveGraph(problem,
-		// control.general.saveNetworkGraph);
-		this.observersConstruction = permamentObserversConstruction.stream().collect(toCollection(ArrayList::new)); // need
-																													// this
-																													// if
-																													// we
-																													// run
-																													// HeadExtraction
+		// adding as permanent construction observer GraphViz (when problem built) ? so as to execute
+		// Graphviz.saveGraph(problem)
+		this.observersConstruction = permamentObserversConstruction.stream().collect(toCollection(ArrayList::new));
+		// statement above needed if we run HeadExtraction
 	}
 
 	public Head() {

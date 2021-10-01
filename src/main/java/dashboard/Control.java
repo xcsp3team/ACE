@@ -46,6 +46,8 @@ import org.xcsp.common.Utilities;
 import constraints.Constraint;
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.Matrix.Matrix3D;
+import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
+import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstGE;
 import heuristics.HeuristicRevisions;
 import heuristics.HeuristicRevisions.HeuristicRevisionsDynamic.Dom;
 import heuristics.HeuristicValues;
@@ -56,6 +58,8 @@ import heuristics.HeuristicVariablesDynamic.Wdeg;
 import interfaces.Tags.TagExperimental;
 import main.Head;
 import main.HeadExtraction;
+import optimization.ObjectiveVariable;
+import optimization.Optimizer;
 import propagation.GAC;
 import propagation.Reviser;
 import propagation.Reviser.Reviser3;
@@ -167,21 +171,24 @@ public class Control {
 		public final int satisfactionLimit = addI("satisfactionLimit", "sal", PLUS_INFINITY_INT, "converting the objective into a constraint with this limit");
 		public final boolean recordSolutions = addB("recordSolutions", "rs", false, "Records all found solutions", HIDDEN);
 		public final boolean noPrintColors = addB("noPrintColors", "npc", false, "Don't use special color characters in the terminal", HIDDEN);
+
+		public void decideFramework(Optimizer optimizer) {
+			control(framework == null);
+			if (optimizer != null) { // to COP
+				if (nSearchedSolutions == -1)
+					nSearchedSolutions = PLUS_INFINITY; // default value for COP (in order to find an optimum)
+				framework = TypeFramework.COP;
+				if (optimizer.ctr instanceof ObjectiveVariable || optimizer.ctr instanceof MaximumCstLE || optimizer.ctr instanceof MinimumCstGE)
+					restarts.restartAfterSolution = true;
+			} else {
+				if (nSearchedSolutions == -1)
+					nSearchedSolutions = 1; // default value for CSP
+				framework = TypeFramework.CSP;
+			}
+		}
 	}
 
 	public final SettingGeneral general = new SettingGeneral();
-
-	public void toCSP() {
-		if (general.nSearchedSolutions == -1)
-			general.nSearchedSolutions = 1; // default value for CSP
-		general.framework = TypeFramework.CSP;
-	}
-
-	public void toCOP() {
-		if (general.nSearchedSolutions == -1)
-			general.nSearchedSolutions = PLUS_INFINITY; // default value for COP (in order to find an optimum)
-		general.framework = TypeFramework.COP;
-	}
 
 	public class SettingProblem extends SettingGroup {
 		public final String data = addS("data", "data", "", "Parameter similar to the one defined for " + org.xcsp.modeler.Compiler.class.getName());
@@ -370,11 +377,7 @@ public class Control {
 	public class SettingPropagation extends SettingGroup {
 		String s_uaq = "If enabled, queues of constraints are used in addition to the queue of variables. The purpose is to propagate less often the most costly constraints.";
 
-		String q1 = "For intension constraints, GAC is not enforced if the current number of future variables is more than the specified value.";
-		String q2 = "For intension constraints, GAC is not enforced if the size of the current Cartesian product is more than than 2 up the specified value.";
-		String q3 = "For intension constraints, GAC is guaranteed to be enforced if the arity is not more than the specified value.";
-
-		public String clazz = addS("clazz", "p", GAC.class, null, "name of the class to be used for propagation (for example, FC or SAC3)");
+		public String clazz = addS("clazz", "p", GAC.class, null, "Class to be used for propagation (for example, FC, GAC or SAC3)");
 		public final int variant = addI("variant", "pv", 0, "Propagation Variant (only used for some consistencies)", HIDDEN);
 		public final boolean useAuxiliaryQueues = addB("useAuxiliaryQueues", "uaq", false, s_uaq);
 		public String reviser = addS("reviser", "reviser", Reviser3.class, Reviser.class, "class to be used for performing revisions");
@@ -382,9 +385,13 @@ public class Control {
 		public boolean bitResidues = addB("bitResidues", "bres", true, "Must we use bit resides (GAC3bit+rm)?");
 		public final boolean multidirectionality = addB("multidirectionality", "mul", true, "");
 
-		public final int futureLimitation = addI("futureLimitation", "fl", -1, q1);
-		public final int spaceLimitation = addI("spaceLimitation", "sl", 20, q2);
-		public final int arityLimitForGACGuaranteed = addI("arityLimitForGACGuaranteed", "aggac", 2, q3);
+		// three ways of control on (G)AC for intention constraints
+		public final int futureLimit = addI("futureLimit", "fl", -1,
+				"AC not enforced when the number of future variables is greater than this value (if not -1)");
+		public final int spaceLimit = addI("spaceLimit", "sl", 20,
+				"AC not enforced when size of the Cartesian product of domains is  greater than 2 to the power of this value (if not -1)");
+		public final int arityLimit = addI("arityLimit", "al", 2, "AC not enforced if the arity is greater than this value");
+
 		public boolean strongOnlyAtPreprocessing = addB("strongOnlyAtPreprocessing", "sop", false, "");
 		public final boolean strongOnlyWhenACEffective = addB("strongOnlyWhenACEffective", "soe", false, "");
 		public final boolean strongOnlyWhenNotSingleton = addB("strongOnlyWhenNotSingleton", "sons", true, "");
@@ -487,11 +494,8 @@ public class Control {
 		public boolean bivsStoppedAtFirstSolution = addB("bivsStoppedAtFirstSolution", "bivs_s", true, "");
 		public boolean bivsOptimistic = addB("bivsOptimistic", "bivs_o", true, "");
 		public final int bivsDistance = addI("bivsDistance", "bivs_d", 2, "0: only if in the objective constraint; 1: if at distance 0 or 1; 2: any variable");
-		public final int bivsLimit = addI("bivsLimit", "bivs_l", Integer.MAX_VALUE, ""); // MAX_VALUE means no
-																							// control/limit ; otherwise
-																							// bivs applied only if
-																							// the domain size is <=
-																							// bivsl
+		public final int bivsLimit = addI("bivsLimit", "bivs_l", Integer.MAX_VALUE,
+				"MAX_VALUE means no control/limit; otherwise bivs applied only if the domain size is <= bivsl");
 		public final boolean optValHeuristic = addB("optValHeuristic", "ovh", false, "");
 	}
 
@@ -499,18 +503,10 @@ public class Control {
 
 	public class SettingRevh extends SettingGroup {
 		public final String clazz = addS("clazz", "revh", Dom.class, HeuristicRevisions.class, "class of the revision ordering heuristic");
-		public final boolean anti = addB("anti", "anti_revh", false, "must we follow the anti heuristic?");
+		public final boolean anti = addB("anti", "anti_revh", false, "reverse of the natural heuristic order?");
 	}
 
 	public final SettingRevh revh = new SettingRevh();
-
-	public class SettingLocalSearch extends SettingGroup {
-		public final int tabuSize = addI("tabuSize", "tabs", 5, "Size of the tabu list");
-		public final double thresholdRandomVar = addD("thresholdRandomVar", "trvar", 0.0, "Threshold for randomly selecting variables");
-		public final double thresholdRandomVal = addD("thresholdRandomVal", "trval", 0.0, "Threshold for randomly selecting values");
-	}
-
-	public final SettingLocalSearch localSearch = new SettingLocalSearch();
 
 	public class SettingExperimental extends SettingGroup {
 		public final boolean testB = addB("testB", "test", false, "", HIDDEN);
@@ -520,11 +516,6 @@ public class Control {
 	}
 
 	public final SettingExperimental experimental = new SettingExperimental();
-
-	public class SettingHardCoding extends SettingGroup {
-	}
-
-	public final SettingHardCoding hardCoding = new SettingHardCoding();
 
 	public final boolean mustBuildConflictStructures = settings.addB(3, "constraints", "mustBuildConflictStructures", "mbcs",
 			!propagation.reviser.equals(Reviser.class.getSimpleName()) || valh.clazz.equals(Conflicts.class.getSimpleName()), "");

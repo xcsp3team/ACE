@@ -401,8 +401,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					if (x != sentinel)
 						sum += x.dom.singleValue(); // no overflow possible because int values are added to a long
 				long v = limit - sum;
-				if (sum + v == limit && Integer.MIN_VALUE <= v && v <= Integer.MAX_VALUE) // if no overflow and within
-																							// Integer bounds
+				if (sum + v == limit && Integer.MIN_VALUE <= v && v <= Integer.MAX_VALUE)
+					// if no overflow and within Integer bounds
 					sentinel.dom.removeValueIfPresent((int) v); // no inconsistency possible since at least two values
 																// in the domain
 				return true; // TODO it seems that we can write return entailed()
@@ -1180,7 +1180,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		}
 
 		// ************************************************************************
-		// ***** Constraint SumWeightedGE
+		// ***** Constraint SumViewWeightedGE
 		// ************************************************************************
 
 		public static final class SumViewWeightedGE extends SumViewWeighted implements TagAC, Optimizable {
@@ -1232,7 +1232,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		}
 
 		// ************************************************************************
-		// ***** Constraint SumWeightedEQ
+		// ***** Constraint SumViewWeightedEQ
 		// ************************************************************************
 
 		public static final class SumViewWeightedEQ extends SumViewWeighted implements TagNotAC {
@@ -1274,9 +1274,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				assert controlFCLevel();
 				return true;
 			}
-
 		}
-
 	}
 
 }

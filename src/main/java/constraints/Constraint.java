@@ -53,14 +53,13 @@ import variables.TupleIterator;
 import variables.Variable;
 
 /**
- * This class allows us to represent constraints. <br>
- * A constraint is attached to a problem and is uniquely identified by a number <code>num</code> (and an identifier
- * <code>id</code>).<br>
- * A constraint involves a subset of variables of the problem.
+ * A constraint is attached to a problem, involves a subset of variables of the problem, and allows us to reason so as
+ * to filter the search space (i.e., the domains of the variables). A variable is uniquely identified by a number (field
+ * <code>num</code>).
  * 
  * @author Christophe Lecoutre
  */
-public abstract class Constraint implements ICtr, ObserverOnConstruction, Comparable<Constraint> {
+public abstract class Constraint implements ObserverOnConstruction, Comparable<Constraint>, ICtr {
 
 	/*************************************************************************
 	 ***** Implementing Interfaces
@@ -75,7 +74,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	@Override
 	public void afterProblemConstruction() {
 		int n = problem.variables.length, r = scp.length;
-		if (settings.positionsLb <= r && (n < settings.positionsUb || r > n / 3)) { // TODO hard coding
+		if (settings.positionsLb <= r && (n < settings.positionsUb || r > n / 3)) { // TODO hard coding (3)
 			this.positions = Kit.repeat(-1, n); // if a variable is not involved, then its position is set to -1
 			for (int i = 0; i < r; i++)
 				this.positions[scp[i].num] = i;
@@ -87,60 +86,64 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/*************************************************************************
-	 ***** Two very special kinds of constraints called False and True
+	 ***** Two very special constraints called CtrFalse and CtrTrue
 	 *************************************************************************/
 
 	/**
-	 * A class for constraints never satisfied (to be used in very special situations)
+	 * A class for trivial constraints never satisfied or always satisfied (to be used in very special situations)
 	 */
-	public static class CtrFalse extends Constraint implements SpecificPropagator, TagCallCompleteFiltering, TagAC {
+	public static abstract class CtrTrivial extends Constraint implements SpecificPropagator, TagAC, TagCallCompleteFiltering {
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
-			return false;
+			return value;
 		}
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			return false;
+			return value;
 		}
+
+		/**
+		 * The trivial value (false or true) of the constraint
+		 */
+		private boolean value;
 
 		/**
 		 * A message indicating the reason why such a constraint is built
 		 */
 		public String message;
 
-		public CtrFalse(Problem pb, Variable[] scp, String message) {
+		public CtrTrivial(Problem pb, Variable[] scp, boolean value, String message) {
 			super(pb, scp);
+			this.value = value;
 			this.message = message;
 		}
-	}
 
-	/**
-	 * A class for constraints always satisfied (to be used in very special situations)
-	 */
-	public static class CtrTrue extends Constraint implements SpecificPropagator, TagCallCompleteFiltering, TagAC {
+		/**
+		 * A class for never satisfied constraints (to be used in very special situations)
+		 */
+		public static final class CtrFalse extends CtrTrivial {
 
-		@Override
-		public boolean isSatisfiedBy(int[] t) {
-			return true;
+			public CtrFalse(Problem pb, Variable[] scp, String message) {
+				super(pb, scp, false, message);
+			}
 		}
 
-		@Override
-		public boolean runPropagator(Variable dummy) {
-			return true;
-		}
+		/**
+		 * A class for always satisfied constraints (to be used in very special situations)
+		 */
+		public static final class CtrTrue extends CtrTrivial {
 
-		public CtrTrue(Problem pb, Variable[] scp) {
-			super(pb, scp);
+			public CtrTrue(Problem pb, Variable[] scp, String message) {
+				super(pb, scp, true, message);
+			}
 		}
 	}
 
 	/*************************************************************************
 	 ***** Static members
 	 *************************************************************************/
-
-	public static final int MAX_FILTERING_COMPLEXITY = 2;
 
 	/**
 	 * A special constraint that can be used (for instance) by methods that requires returning three-state values: null,
@@ -149,56 +152,9 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	public static final Constraint TAG = new Constraint() {
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
-			throw new AssertionError();
+			throw new AssertionError("should not be called");
 		}
 	};
-
-	private static final int howManyVariablesWithin(int[] sizes, int spaceLimitation) {
-		double limit = Math.pow(2, spaceLimitation);
-		Arrays.sort(sizes);
-		double prod = 1;
-		int i = sizes.length - 1;
-		for (; i >= 0 && prod <= limit; i--)
-			prod = prod * sizes[i];
-		return prod > limit ? (sizes.length - i - 1) : ALL;
-	}
-
-	/**
-	 * Computes the greatest number k of variables such that, whatever is the selection of k variables in the specified
-	 * array, the size of the Cartesian product of the domains of these variables does not exceed the specified limit.
-	 * 
-	 * @param vars
-	 *            an array of variables
-	 * @param spaceLimitation
-	 *            a limit in term of number of tuples
-	 * @return the greatest number of variables ensuring that the Cartesian product of the domains of the selected
-	 *         variables does not exceed the specified limit
-	 */
-	public static final int howManyVariablesWithin(Variable[] vars, int spaceLimitation) {
-		return howManyVariablesWithin(Stream.of(vars).mapToInt(x -> x.dom.size()).toArray(), spaceLimitation);
-	}
-
-	public static Constraint firstUnsatisfiedHardConstraint(Constraint[] constraints, int[] solution) {
-		for (Constraint c : constraints) {
-			if (c.ignored)
-				continue;
-			int[] t = c.tupleIterator.buffer;
-			for (int i = 0; i < t.length; i++)
-				t[i] = solution != null ? solution[c.scp[i].num] : c.scp[i].dom.single();
-			if (c.checkIndexes(t) == false)
-				return c;
-		}
-		return null;
-	}
-
-	public static Constraint firstUnsatisfiedHardConstraint(Constraint[] constraints) {
-		return firstUnsatisfiedHardConstraint(constraints, null);
-	}
-
-	public static int nPairsOfCtrsWithSimilarScopeIn(Constraint... ctrs) {
-		return IntStream.range(0, ctrs.length)
-				.map(i -> (int) IntStream.range(i + 1, ctrs.length).filter(j -> Variable.areSimilarArrays(ctrs[i].scp, ctrs[j].scp)).count()).sum();
-	}
 
 	/**
 	 * Returns true if the num(ber)s of the constraints in the specified array are normalized, meaning that the num(ber)
@@ -212,28 +168,103 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		return IntStream.range(0, ctrs.length).noneMatch(i -> i != ctrs[i].num);
 	}
 
-	public static final boolean isPresentScope(Constraint c, boolean[] presentVars) {
-		for (Variable x : c.scp)
-			if (!presentVars[x.num])
-				return false;
-		return true;
+	/**
+	 * Computes the greatest number k such that, whatever is the selection of k integers in the specified array, the
+	 * number of tuples that can be built by considering sets of these selected sizes does not exceed the specified
+	 * limit.
+	 * 
+	 * @param sizes
+	 *            an array of integers representing the sizes of sets (domains)
+	 * @param limit
+	 *            a limit in term of number of tuples
+	 */
+	private static final int howManyVariablesWithin(int[] sizes, double limit) {
+		control(limit > 1);
+		Arrays.sort(sizes);
+		double prod = 1;
+		for (int i = sizes.length - 1; i >= 0 && prod <= limit; i--) {
+			prod = prod * sizes[i];
+			if (prod > limit)
+				return sizes.length - i - 1;
+		}
+		return ALL;
 	}
 
+	/**
+	 * Computes the greatest number k of variables such that, whatever is the selection of k variables in the specified
+	 * array, the size of the Cartesian product of the domains of these variables does not exceed 2 to the power of the
+	 * specified exponent.
+	 * 
+	 * @param vars
+	 *            an array of variables
+	 * @param exponent
+	 *            a limit (equal to 2 to the power given by this exponent) in term of number of tuples
+	 * @return the greatest number of variables ensuring that any selection of this size does not exceed the specified
+	 *         limit
+	 */
+	public static final int howManyVariablesWithin(Variable[] vars, int exponent) {
+		return howManyVariablesWithin(Stream.of(vars).mapToInt(x -> x.dom.size()).toArray(), Math.pow(2, exponent));
+	}
+
+	/**
+	 * @param ctrs
+	 *            an array of constraints
+	 * @param instantiation
+	 *            an instantiation (containing indexes of values) to be checked (possibly, null)
+	 * @return the first unsatisfied constraint in the specified array with respect to the specified instantiation (or
+	 *         with respect to the current instantiation of the involved variables if the specified instantiation is
+	 *         null), or null if there is none
+	 */
+	public static final Constraint firstUnsatisfiedConstraint(Constraint[] ctrs, int[] instantiation) {
+		for (Constraint c : ctrs) {
+			if (c.ignored)
+				continue;
+			int[] t = c.tupleIterator.buffer;
+			for (int i = 0; i < t.length; i++)
+				t[i] = instantiation != null ? instantiation[c.scp[i].num] : c.scp[i].dom.single();
+			if (c.checkIndexes(t) == false)
+				return c;
+		}
+		return null;
+	}
+
+	/**
+	 * @param ctrs
+	 *            an array of constraints
+	 * @return the first unsatisfied constraint in the specified array with respect to the current instantiation of the
+	 *         variables involved in the constraints
+	 */
+	public static final Constraint firstUnsatisfiedConstraint(Constraint[] ctrs) {
+		return firstUnsatisfiedConstraint(ctrs, null);
+	}
+
+	/**
+	 * @param ctrs
+	 *            an array of constraints
+	 * @return the sum of costs of all constraints in the specified array that are covered by the current instantiation
+	 */
 	public static final long costOfCoveredConstraintsIn(Constraint[] ctrs) {
 		// note that using streams is costly
 		long cost = 0;
 		for (Constraint c : ctrs)
-			if (c.futvars.size() == 0)
+			if (!c.ignored && c.futvars.size() == 0)
 				cost = Kit.addSafe(cost, c.costOfCurrentInstantiation());
 		return cost;
 	}
 
-	public static int[][] buildTable(Constraint... ctrs) {
+	/**
+	 * Builds and returns a table with all tuples (instantiations) satisfying the specified constraints. Note that it
+	 * may lead to a combinatorial explosion.
+	 * 
+	 * @param ctrs
+	 *            an array of constraints
+	 * @return a table with all tuples (instantiations) satisfying the specified constraints
+	 */
+	public static final int[][] buildTable(Constraint... ctrs) {
 		Variable[] scp = Variable.scopeOf(ctrs);
-		int[][] positions = Stream.of(ctrs).map(c -> IntStream.range(0, c.scp.length).map(i -> Utilities.indexOf(c.scp[i], scp)).toArray())
-				.toArray(int[][]::new);
+		int[][] positions = Stream.of(ctrs).map(c -> Stream.of(c.scp).mapToInt(x -> Utilities.indexOf(x, scp)).toArray()).toArray(int[][]::new);
 		List<int[]> list = new ArrayList<>();
-		int[] values = new int[scp.length];
+		int[] support = new int[scp.length];
 		EnumerationCartesian ec = new EnumerationCartesian(Variable.domSizeArrayOf(scp, true));
 		start: while (ec.hasNext()) {
 			int[] indexes = ec.next();
@@ -245,8 +276,8 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 					continue start;
 			}
 			for (int i = 0; i < indexes.length; i++)
-				values[i] = scp[i].dom.toVal(indexes[i]);
-			list.add(values.clone()); // cloning is necessary
+				support[i] = scp[i].dom.toVal(indexes[i]);
+			list.add(support.clone()); // cloning is necessary
 		}
 		return Kit.intArray2D(list);
 	}
@@ -261,8 +292,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	public final Problem problem;
 
 	/**
-	 * The number of the constraint; it is <code>-1</code> when not fully initialized or not a direct constraint of the
-	 * problem.
+	 * The number of the constraint; it is -1 when not fully initialized or not a direct constraint of the problem.
 	 */
 	public int num = -1;
 
@@ -276,6 +306,9 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 */
 	public final Variable[] scp;
 
+	/**
+	 * doms[i] is the domain of scp[i] (redundant field)
+	 */
 	public final Domain[] doms;
 
 	/**
@@ -285,17 +318,10 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 */
 	private int[] positions;
 
-	public SetDense futvars;
-
-	/** Indicates if the constraint must be ignored. */
-	public boolean ignored;
-
-	// public int entailedLevel = -1;
-
 	/**
-	 * The key of the constraint. This field is only used for symmetry detection, when activated.
+	 * A dense set for storing (the positions in scp of) the variables that are not explicitly assigned by the solver
 	 */
-	private String key;
+	public SetDense futvars;
 
 	/**
 	 * The object that can be used to iterate over the (valid) tuples of the Cartesian product of the domains of the
@@ -303,13 +329,69 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 */
 	public final TupleIterator tupleIterator;
 
+	/**
+	 * An object that can be useful to look efficiently after supports (using a cache technique called residues); useful
+	 * only with some kind of constraints
+	 */
 	protected final Supporter supporter;
 
 	/**
-	 * Indicates if for each domain of a variable involved in the constraint, the index of any value corresponds to this
+	 * The object that manages information about the number of conflicts of pairs (x,a) for the constraint; useful only
+	 * with some kind of constraints
+	 */
+	public ConflictsStructure conflictsStructure;
+
+	/**
+	 * Indicates if for each domain of a variable involved in the constraint, the index of any value is equal to this
 	 * value.
 	 */
 	public final boolean indexesMatchValues;
+
+	/**
+	 * Indicates if the constraint must be ignored (may be useful in some specific situations).
+	 */
+	public boolean ignored;
+
+	/**
+	 * The key of the constraint. This field is only used for symmetry detection, when activated.
+	 */
+	private String key;
+
+	/**
+	 * The (dissatisfaction) cost of the constraint when it is not satisfied
+	 */
+	public int cost = 1;
+
+	/**
+	 * The last time the constraint was solicited for filtering
+	 */
+	public long time;
+
+	/**
+	 * The complexity of filtering this constraint. Currently, not used.
+	 */
+	public int filteringComplexity;
+
+	/**
+	 * Indicates if filtering (e.g. GAC) must be controlled. If the number of uninstantiated variables is greater than
+	 * this value, filtering is not achieved; useful only with some kind of constraints
+	 */
+	public final int genericFilteringThreshold;
+
+	/**
+	 * The number of times the constraint has been effective when solicited for filtering
+	 */
+	public int nEffectiveFilterings;
+
+	/**
+	 * The array of variables with infinite domains. Currently, not used.
+	 */
+	public Variable[] infiniteDomainVars;
+
+	/**
+	 * The setting options concerning constraints
+	 */
+	public SettingCtrs settings;
 
 	/**
 	 * This field is used to store a tuple of (int) values. Is is inserted as a field in order to avoid overhead of
@@ -317,55 +399,27 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 */
 	protected final int[] vals;
 
-	public int cost = 1;
-
-	public long time;
-
-	public int filteringComplexity;
-
-	/**
-	 * Indicates if filtering (e.g. GAC) must be controlled. If the number of uninstantiated variables is greater than
-	 * this value, filtering is not achieved.
-	 */
-	public final int genericFilteringThreshold;
-
-	public int nEffectiveFilterings;
-
-	public Variable[] infiniteDomainVars;
-
-	public SettingCtrs settings;
-
-	/**
-	 * The object that manages information about the number of conflicts of pairs (x,a) for the constraint.
-	 */
-	public ConflictsStructure conflictsStructure;
-
 	/**********************************************************************************************
 	 * General methods
 	 *********************************************************************************************/
 
-	public final String defaultId() {
-		return "c" + num;
-	}
-
-	public final String explicitId() {
-		return id;
-	}
-
+	/**
+	 * Returns the identifier of the constraint, either an explicitly defined (in field id) or a default one
+	 * 
+	 * @return the identifier of the constraint
+	 */
 	public final String getId() {
-		return id != null ? id : defaultId();
+		return id != null ? id : "c" + num;
 	}
 
-	public String getKey() {
+	/**
+	 * Returns the key associated with the constraint; useful for symmetry-breaking
+	 * 
+	 * @return the key of the constraint
+	 */
+	public final String getKey() {
 		if (key == null)
 			defineKey(); // without any parameter
-		return key;
-	}
-
-	public String setKey(String key) {
-		control(this.key == null, "should not be called twice");
-		this.key = key;
-		// System.out.println("jjjjj " + key);
 		return key;
 	}
 
@@ -375,17 +429,22 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 * same keys), and also for symmetry-breaking.
 	 * 
 	 * @param data
-	 *            a sequence of objects that must be considered when building the key of the constraint
+	 *            a sequence of objects that must be considered to form the key of the constraint
+	 * @return the key
 	 */
 	protected final String defineKey(Object... data) {
-		StringBuilder sb = signature().append(' ').append(getClass().getSimpleName());
+		control(this.key == null, "should not be called twice");
+		StringBuilder sb = signature();
 		for (Object obj : data)
 			sb.append('|').append(obj instanceof Collection ? Kit.join((Collection<?>) obj) : obj.getClass().isArray() ? Kit.join(obj) : obj.toString());
-		return setKey(sb.toString());
+		this.key = sb.toString();
+		return this.key;
 	}
 
 	/**
-	 * @return the position of the variable or <code>-1</code> if the variable is not involved in the constraint
+	 * @param x
+	 *            a variable
+	 * @return the position of the variable in the scope of the constraint, or -1
 	 */
 	public final int positionOf(Variable x) {
 		if (positions != null)
@@ -396,28 +455,30 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		return -1;
 	}
 
-	/** Determines if the specified variable is involved in this constraint. */
+	/**
+	 * @param x
+	 *            a variable
+	 * @return true if the the specified variable is involved in this constraint
+	 */
 	public final boolean involves(Variable x) {
 		return positionOf(x) != -1;
 	}
 
-	/** Determines if the specified variables are involved in this constraint. */
-	public final boolean involves(Variable x, Variable y) {
-		return positionOf(x) != -1 && positionOf(y) != -1;
-	}
-
-	public final boolean isScopeCoveredBy(Variable[] vars) {
-		int cnt = 0;
-		for (Variable x : vars)
-			if (involves(x))
-				if (++cnt == scp.length)
-					return true;
-		return false;
+	/**
+	 * @param presentVars
+	 *            an array of Boolean, one for each variable of the problem
+	 * @return true if any variable involved in the constraint is such that the corresponding Boolean in the specified
+	 *         array is true
+	 */
+	public final boolean isScopeCoveredBy(boolean[] presentVars) {
+		for (Variable x : scp)
+			if (!presentVars[x.num])
+				return false;
+		return true;
 	}
 
 	/**
-	 * 
-	 * @return the number of free variables (i.e., with non singleton domains) involved in the constraitn
+	 * @return the number of free variables (i.e., with non singleton domains) involved in the constraint
 	 */
 	public final int nFreeVariables() {
 		int cnt = 0;
@@ -428,7 +489,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * Returns the weighted degree of the constraint.
+	 * @return the weighted degree of the constraint
 	 */
 	public final double wdeg() {
 		return ((WdegVariant) problem.solver.heuristic).cscores[num];
@@ -440,24 +501,35 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 * 
 	 * @return true if the constraint is irreflexive
 	 */
-	public boolean isIrreflexive() {
+	public final boolean isIrreflexive() {
 		control(scp.length == 2);
 		int[] tuple = tupleIterator.buffer;
-		int p = scp[0].dom.size() > scp[1].dom.size() ? 1 : 0, q = p == 0 ? 1 : 0;
-		Domain dx = scp[p].dom, dy = scp[q].dom;
+		int x = scp[0].dom.size() > scp[1].dom.size() ? 1 : 0, y = x == 0 ? 1 : 0;
+		Domain dx = scp[x].dom, dy = scp[y].dom;
 		for (int a = dx.first(); a != -1; a = dx.next(a)) {
 			int b = dy.toIdx(dx.toVal(a));
 			if (b < 0)
 				continue;
-			tuple[p] = a;
-			tuple[q] = b;
+			tuple[x] = a;
+			tuple[y] = b;
 			if (checkIndexes(tuple))
 				return false;
 		}
 		return true;
 	}
 
-	public boolean isSubstitutableBy(int x, int a, int b) {
+	/**
+	 * Returns true if a is substitutable by b for x on the constraint
+	 * 
+	 * @param x
+	 *            a variable
+	 * @param a
+	 *            a first value index
+	 * @param b
+	 *            a second value index
+	 * @return true if a is substitutable by b for x on the constraint
+	 */
+	public final boolean isSubstitutableBy(int x, int a, int b) {
 		tupleIterator.firstValidTupleWith(x, a);
 		return !tupleIterator.findValidTupleChecking(t -> {
 			t[x] = a;
@@ -468,6 +540,9 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		});
 	}
 
+	/**
+	 * @return true if (G)AC is guaranteed by this constraint
+	 */
 	public boolean isGuaranteedAC() {
 		if (this.infiniteDomainVars.length > 0)
 			return false;
@@ -481,6 +556,9 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		return genericFilteringThreshold == Integer.MAX_VALUE;
 	}
 
+	/**
+	 * @return true if the constraint is symmetric, false if it is not, and null if undetermined
+	 */
 	public Boolean isSymmetric() {
 		if (this instanceof TagSymmetric)
 			return Boolean.TRUE;
@@ -489,6 +567,9 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		return null;
 	}
 
+	/**
+	 * @return an array with colors (integers) showing which variables are locally symmetric
+	 */
 	public int[] symmetryMatching() { // default method that can be redefined
 		Boolean b = isSymmetric();
 		control(b != null);
@@ -498,7 +579,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	/**
 	 * @return true is this constraint is currently entailed
 	 */
-	public boolean entailed() {
+	public final boolean entailed() {
 		problem.solver.entail(this);
 		return true;
 	}
@@ -523,7 +604,13 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		return null;
 	}
 
-	public void cloneStructures(boolean onlyConflictsStructure) {
+	/**
+	 * Clone some shared structures.
+	 * 
+	 * @param onlyConflicts
+	 *            when true, shared structures other than conflicts structures must also be cloned
+	 */
+	public void cloneStructures(boolean onlyConflicts) {
 		if (conflictsStructure != null && conflictsStructure.registeredCtrs().size() > 1) {
 			conflictsStructure.unregister(this);
 			conflictsStructure = new ConflictsStructure(this, conflictsStructure);
@@ -552,38 +639,43 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	private final int computeGenericFilteringThreshold() {
 		if (this instanceof SpecificPropagator || this instanceof ConstraintExtension)
 			return Integer.MAX_VALUE; // because not concerned
-		int arityLimit = problem.head.control.propagation.arityLimitForGACGuaranteed;
+		int arityLimit = problem.head.control.propagation.arityLimit;
 		if (scp.length <= arityLimit)
 			return Integer.MAX_VALUE;
-		int futureLimitation = problem.head.control.propagation.futureLimitation;
-		if (futureLimitation != -1)
-			return futureLimitation < scp.length ? Math.max(arityLimit, futureLimitation) : Integer.MAX_VALUE;
-		int spaceLimitation = problem.head.control.propagation.spaceLimitation;
-		if (spaceLimitation != -1)
-			return Math.max(arityLimit, howManyVariablesWithin(scp, spaceLimitation));
+		int futureLimit = problem.head.control.propagation.futureLimit;
+		if (futureLimit != -1)
+			return futureLimit < scp.length ? Math.max(arityLimit, futureLimit) : Integer.MAX_VALUE;
+		int spaceLimit = problem.head.control.propagation.spaceLimit;
+		if (spaceLimit != -1)
+			return Math.max(arityLimit, howManyVariablesWithin(scp, spaceLimit));
 		return Integer.MAX_VALUE;
 	}
 
+	/**
+	 * Build a constraint for the specified problem, and with the specified scope
+	 * 
+	 * @param pb
+	 *            the problem to which the constraint is attached
+	 * @param scp
+	 *            the scope of the constraint
+	 */
 	public Constraint(Problem pb, Variable[] scp) {
 		this.problem = pb;
-		this.scp = scp = Stream.of(scp).distinct().toArray(Variable[]::new); // this.scp and scp updated
+		this.scp = scp = Stream.of(scp).distinct().toArray(Variable[]::new); // IMPORTANT: this.scp and scp both updated
 		control(scp.length >= 1 && Stream.of(scp).allMatch(x -> x != null), () -> this + " with a scope badly formed ");
-		// for (Variable x : scp) x.collectedCtrs.add(this);
-		this.infiniteDomainVars = Stream.of(scp).filter(x -> x.dom instanceof DomainInfinite).toArray(Variable[]::new);
-
 		this.doms = Variable.buildDomainsArrayFor(scp);
+
 		this.tupleIterator = new TupleIterator(this.doms);
-		this.vals = new int[scp.length];
-		this.settings = pb.head.control.constraints;
+		this.supporter = Supporter.buildFor(this);
 
-		this.genericFilteringThreshold = computeGenericFilteringThreshold();
 		this.indexesMatchValues = Stream.of(scp).allMatch(x -> x.dom.indexesMatchValues());
+		this.genericFilteringThreshold = computeGenericFilteringThreshold();
 
-		if (this instanceof SpecificPropagator)
-			pb.features.nSpecificCtrs++;
 		pb.head.observersConstruction.add(this);
 
-		this.supporter = Supporter.buildFor(this);
+		this.infiniteDomainVars = Stream.of(scp).filter(x -> x.dom instanceof DomainInfinite).toArray(Variable[]::new);
+		this.vals = new int[scp.length];
+		this.settings = pb.head.control.constraints;
 	}
 
 	public final void reset() {
@@ -661,7 +753,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 * @return a tuple with the indexes of the values of the current instantiation of the variables in the constraint
 	 *         scope
 	 */
-	private int[] instantiationIndexes() {
+	private final int[] instantiationIndexes() {
 		int[] t = tupleIterator.buffer;
 		for (int i = t.length - 1; i >= 0; i--)
 			t[i] = doms[i].single();
@@ -674,7 +766,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 * 
 	 * @return true if the current instantiation of the variables of the constraint scope satisfies the constraint
 	 */
-	public boolean isSatisfiedByCurrentInstantiation() {
+	public final boolean isSatisfiedByCurrentInstantiation() {
 		return checkIndexes(instantiationIndexes());
 	}
 
@@ -686,7 +778,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 * @return 0 if the constraint is satisfied by the current instantiation, or the cost that is associated with the
 	 *         constraint
 	 */
-	public long costOfCurrentInstantiation() {
+	public final long costOfCurrentInstantiation() {
 		return checkIndexes(instantiationIndexes()) ? 0 : cost;
 	}
 
@@ -794,6 +886,13 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		return tupleIterator.nextValidTupleCautiously() != -1 && seekSupport();
 	}
 
+	/**
+	 * Seeks a conflict (i.e., a valid tuple not satisfying the constraint) for the constraint when considering the
+	 * current state of the domains and the tuple currently managed by the tuple iterator (this current tuple included
+	 * in the search). A lexicographic order is used.
+	 * 
+	 * @return true if a conflict can be found from the current tuple managed by the object 'tupleIterator'
+	 */
 	private final boolean seekConflict() {
 		return tupleIterator.findValidTupleNotSatisfying(this);
 	}
@@ -835,12 +934,12 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 *            an index (of value) for the variable
 	 * @return the number of conflicts involving the specified pair (x,a)
 	 */
-	public long nConflictsFor(int x, int a) {
+	public final long nConflictsFor(int x, int a) {
 		tupleIterator.firstValidTupleWith(x, a);
 		return tupleIterator.countValidTuplesChecking(t -> !checkIndexes(t));
 	}
 
-	public boolean findArcSupportFor(int x, int a) {
+	public final boolean findArcSupportFor(int x, int a) {
 		if (supporter != null)
 			return supporter.findArcSupportFor(x, a);
 		if (extStructure() instanceof Bits) {
@@ -860,6 +959,7 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 * Methods related to filtering
 	 *********************************************************************************************/
 
+	// EXPERIMENTAL not finalized
 	private boolean handleHugeDomains() {
 		assert infiniteDomainVars.length > 0;
 		// TODO huge domains are not finalized
@@ -882,6 +982,13 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		return false;
 	}
 
+	/**
+	 * Performs a generic form of filtering
+	 * 
+	 * @param x
+	 *            a variable whose domain has been recently reduced
+	 * @return false if an inconsistency is detected
+	 */
 	private boolean genericFiltering(Variable x) {
 		if (futvars.size() > genericFilteringThreshold)
 			return true;
@@ -908,8 +1015,12 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	}
 
 	/**
-	 * This is the method that is called for filtering. We know that the domain of the specified variable has been
-	 * recently reduced, but this is not necessarily the only one in that situation.
+	 * This is the method that is called for filtering domains. We know that the domain of the specified variable has
+	 * been recently reduced, but this is not necessarily the only one.
+	 * 
+	 * @param x
+	 *            a variable whose domain has been recently reduced
+	 * @return false if an inconsistency is detected
 	 */
 	public final boolean filterFrom(Variable x) {
 		// System.out.println("filtering " + this + " " + x + " " + this.getClass().getSimpleName());
@@ -969,8 +1080,14 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 	 * Control and display
 	 *********************************************************************************************/
 
+	/**
+	 * Returns the signature of the constraint, obtained by concatenating the name of its class with the signature of
+	 * the involved variables
+	 * 
+	 * @return the signature of the constraint
+	 */
 	public StringBuilder signature() {
-		return Variable.signatureFor(scp);
+		return Variable.signatureFor(scp).insert(0, this.getClass().getSimpleName());
 	}
 
 	@Override
@@ -978,6 +1095,12 @@ public abstract class Constraint implements ICtr, ObserverOnConstruction, Compar
 		return getId() + "(" + Stream.of(scp).map(x -> x.id()).collect(Collectors.joining(",")) + ")";
 	}
 
+	/**
+	 * Displays information about the constraint
+	 * 
+	 * @param exhaustively
+	 *            true if detailed information must be displayed
+	 */
 	public void display(boolean exhaustively) {
 		Kit.log.finer("Constraint " + toString());
 		Kit.log.finer("\tClass = " + getClass().getName()

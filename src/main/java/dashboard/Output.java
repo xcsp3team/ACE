@@ -37,6 +37,7 @@ import dashboard.Control.SettingVars;
 import interfaces.Observers.ObserverOnConstruction;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Observers.ObserverOnSolving;
+import interfaces.SpecificPropagator;
 import learning.IpsExtractor;
 import learning.IpsReasoner;
 import learning.IpsReasonerEquivalence;
@@ -414,7 +415,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(COUNT, head.problem.constraints.length);
 		m.put(N_REMOVED1, features.nRemovedUnaryCtrs);
 		m.put(N_CONVERTED, features.nConvertedConstraints);
-		m.put(N_SPECIFIC, features.nSpecificCtrs);
+		m.put(N_SPECIFIC, Stream.of(head.problem.constraints).filter(c -> c instanceof SpecificPropagator).count());
 		m.put(N_MERGED, features.nMergedCtrs);
 		m.put(N_DISCARDED, features.nDiscardedCtrs);
 		m.put(N_ADDED, features.nAddedCtrs);

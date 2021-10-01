@@ -30,6 +30,12 @@ import sets.SetDense;
 import variables.Domain;
 import variables.Variable;
 
+/**
+ * The constraint NValues imposes that the number of different values assigned to a specified list of variables respects
+ * a numerical condition.
+ * 
+ * @author Christophe Lecoutre
+ */
 public abstract class NValues extends ConstraintGlobal implements TagNotAC { // not call filtering-complete
 
 	/**
@@ -37,30 +43,55 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 	 */
 	protected final Variable[] list;
 
+	/**
+	 * Used to collect assigned values, at the beginning of the filtering process
+	 */
 	protected final Set<Integer> fixedVals;
 
-	protected final SetDense unfixedVars; // unfixed variables with domains not in fixed vals (this is an approximation)
+	/**
+	 * Used to collect relevant unassigned variables, at the beginning of the filtering process. For any variable in
+	 * this set, the domain of x is not a subset of fixedVals. However, this set is computed as an approximation (for
+	 * complexity reasons).
+	 */
+	protected final SetDense relevantUnfixedVars;
 
+	/**
+	 * sentinels[x] is a value in the domain of x that is not, at a certain moment, in fixedVals, which may explain why
+	 * x is in relevantUnfixedVars
+	 */
 	protected final int[] sentinels;
 
+	/**
+	 * Builds a constraint NValues for the specified problem, and with the specified scope and list where to count
+	 * 
+	 * @param pb
+	 *            the problem to which the constraint is attached
+	 * @param scp
+	 *            the scope of the constraint
+	 * @param list
+	 *            the list of variables in which we count the number of different values
+	 */
 	public NValues(Problem pb, Variable[] scp, Variable[] list) {
 		super(pb, scp);
 		this.list = list;
 		this.fixedVals = new HashSet<>(Variable.setOfvaluesIn(list).size());
-		this.unfixedVars = new SetDense(list.length);
+		this.relevantUnfixedVars = new SetDense(list.length);
 		this.sentinels = new int[list.length];
 	}
 
+	/**
+	 * At the beginning of the filtering process, initialize the two sets fixedVals and relevantUnfixedVars
+	 */
 	protected void initializeSets() {
 		fixedVals.clear();
-		unfixedVars.clear();
+		relevantUnfixedVars.clear();
 		for (int i = 0; i < list.length; i++)
 			if (list[i].dom.size() == 1)
 				fixedVals.add(list[i].dom.firstValue());
 			else
-				unfixedVars.add(i);
-		extern: for (int i = unfixedVars.limit; i >= 0; i--) {
-			int x = unfixedVars.dense[i];
+				relevantUnfixedVars.add(i);
+		extern: for (int i = relevantUnfixedVars.limit; i >= 0; i--) {
+			int x = relevantUnfixedVars.dense[i];
 			Domain dom = list[x].dom;
 			if (dom.size() > fixedVals.size())
 				continue;
@@ -70,13 +101,13 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 			if (dom.size() > 5) // TODO hard coding for avoiding iterating systematically over all values
 				continue;
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
-				int va = dom.toVal(a);
-				if (!fixedVals.contains(va)) {
-					sentinels[x] = va;
+				int v = dom.toVal(a);
+				if (!fixedVals.contains(v)) {
+					sentinels[x] = v;
 					continue extern;
 				}
 			}
-			unfixedVars.removeAtPosition(i); // because all values in its domain correspond to fixed values
+			relevantUnfixedVars.removeAtPosition(i); // because all values in its domain correspond to fixed values
 		}
 	}
 
@@ -84,6 +115,9 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 	 * NValuesCst
 	 *********************************************************************************************/
 
+	/**
+	 * The constraint NValues with an integer constant used as right-hand term of the numerical condition
+	 */
 	public static abstract class NValuesCst extends NValues implements Optimizable {
 
 		public static Constraint buildFrom(Problem pb, Variable[] scp, TypeConditionOperatorRel op, long limit) {
@@ -101,7 +135,7 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 				if (limit == 1)
 					return new AllEqual(pb, scp);
 				if (limit == scp.length)
-					return new AllDifferentComplete(pb, scp);
+					return new AllDifferentComplete(pb, scp); // TODO how to avoid directly setting the variant?
 				return null; // TODO other cases not implemented
 			default: // case NE:
 				if (limit == 1)
@@ -110,6 +144,9 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 			}
 		}
 
+		/**
+		 * The limit (may be dynamic, if this object is a constraint objective)
+		 */
 		protected long limit;
 
 		@Override
@@ -171,8 +208,8 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 					if (fixedVals.size() > limit)
 						return x == null ? false : x.dom.fail();
 					if (fixedVals.size() == limit) {
-						for (int i = unfixedVars.limit; i >= 0; i--)
-							if (list[unfixedVars.dense[i]].dom.removeValuesNotIn(fixedVals) == false)
+						for (int i = relevantUnfixedVars.limit; i >= 0; i--)
+							if (list[relevantUnfixedVars.dense[i]].dom.removeValuesNotIn(fixedVals) == false)
 								return false;
 						return entailed();
 					}
@@ -196,13 +233,13 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 			public boolean runPropagator(Variable x) {
 				if (x == null || x.dom.size() == 1) {
 					initializeSets();
-					if (fixedVals.size() + unfixedVars.size() < limit)
+					if (fixedVals.size() + relevantUnfixedVars.size() < limit)
 						return x == null ? false : x.dom.fail();
-					if (fixedVals.size() + unfixedVars.size() == limit) {
-						for (int i = unfixedVars.limit; i >= 0; i--)
-							if (list[unfixedVars.dense[i]].dom.removeValuesIn(fixedVals) == false)
+					if (fixedVals.size() + relevantUnfixedVars.size() == limit) {
+						for (int i = relevantUnfixedVars.limit; i >= 0; i--)
+							if (list[relevantUnfixedVars.dense[i]].dom.removeValuesIn(fixedVals) == false)
 								return false;
-						if (unfixedVars.size() == 0)
+						if (relevantUnfixedVars.size() == 0)
 							return entailed();
 					}
 				}
@@ -215,6 +252,9 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 	 * NValuesVar
 	 *********************************************************************************************/
 
+	/**
+	 * The constraint NValues with an integer variable used as right-hand term of the numerical condition
+	 */
 	public static abstract class NValuesVar extends NValues {
 
 		public static Constraint buildFrom(Problem pb, Variable[] scp, TypeConditionOperatorRel op, Variable k) {
@@ -227,6 +267,9 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 			}
 		}
 
+		/**
+		 * The integer variable used as limit
+		 */
 		protected Variable k;
 
 		public NValuesVar(Problem pb, Variable[] list, Variable k) {
@@ -235,7 +278,7 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 			this.k = k;
 		}
 
-		public static final class NValuesVarEQ extends NValuesVar {
+		public final static class NValuesVarEQ extends NValuesVar {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
@@ -248,20 +291,20 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 
 			@Override
 			public boolean runPropagator(Variable x) {
-				if (x.dom.size() == 1) {
+				if (x == null || x.dom.size() == 1) {
 					initializeSets();
-					if (k.dom.removeValuesLT(fixedVals.size()) == false || k.dom.removeValuesGT(fixedVals.size() + unfixedVars.size()) == false)
+					if (k.dom.removeValuesLT(fixedVals.size()) == false || k.dom.removeValuesGT(fixedVals.size() + relevantUnfixedVars.size()) == false)
 						return false;
 					if (k.dom.size() == 1) {
 						int limit = k.dom.singleValue();
 						if (fixedVals.size() == limit) {
-							for (int i = unfixedVars.limit; i >= 0; i--)
-								if (list[unfixedVars.dense[i]].dom.removeValuesNotIn(fixedVals) == false)
+							for (int i = relevantUnfixedVars.limit; i >= 0; i--)
+								if (list[relevantUnfixedVars.dense[i]].dom.removeValuesNotIn(fixedVals) == false)
 									return false;
 							return entailed();
-						} else if (fixedVals.size() + unfixedVars.size() == limit) {
-							for (int i = unfixedVars.limit; i >= 0; i--)
-								if (list[unfixedVars.dense[i]].dom.removeValuesIn(fixedVals) == false)
+						} else if (fixedVals.size() + relevantUnfixedVars.size() == limit) {
+							for (int i = relevantUnfixedVars.limit; i >= 0; i--)
+								if (list[relevantUnfixedVars.dense[i]].dom.removeValuesIn(fixedVals) == false)
 									return false;
 						}
 					}

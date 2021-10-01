@@ -31,7 +31,8 @@ import variables.Variable;
 import variables.Variable.VariableInteger;
 
 /**
- * These classes are useful to reinforce a constraint network by adding either redundant constraints or symmetry-breaking constraints.
+ * These classes are useful to reinforce a constraint network by adding either redundant constraints or
+ * symmetry-breaking constraints.
  * 
  * @author Christophe Lecoutre
  */
@@ -66,15 +67,15 @@ public class Reinforcer {
 			for (int i = 0; i < scp.length; i++)
 				for (int j = i + 1; j < scp.length; j++) {
 					Variable x = scp[i], y = scp[j];
-					Kit.control(constraints.stream().anyMatch(c -> c.isIrreflexive() && c.involves(x, y)), "pb clique with " + x + " " + y);
+					Kit.control(constraints.stream().anyMatch(c -> c.isIrreflexive() && c.involves(x) && c.involves(y)), "pb clique with " + x + " " + y);
 				}
 			return true;
 		}
 
 		/**
-		 * Builds and returns a list of cliques (irreflexive pairwise variables) from the specified array of variables with respect to the specified list of
-		 * constraints. Each such clique can be used to build an AllDifferent constraint. The two last parameters are used to control the number and the size of
-		 * the cliques.
+		 * Builds and returns a list of cliques (irreflexive pairwise variables) from the specified array of variables
+		 * with respect to the specified list of constraints. Each such clique can be used to build an AllDifferent
+		 * constraint. The two last parameters are used to control the number and the size of the cliques.
 		 * 
 		 * @param variables
 		 *            a list of variables
@@ -84,7 +85,8 @@ public class Reinforcer {
 		 *            the maximum number of cliques to find
 		 * @param sLimit
 		 *            the minimum size of cliques to be taken into account
-		 * @return a list of cliques (irreflexive pairwise variables) from the specified array of variables with respect to the specified list of constraints
+		 * @return a list of cliques (irreflexive pairwise variables) from the specified array of variables with respect
+		 *         to the specified list of constraints
 		 */
 		public static List<Variable[]> buildCliques(List<Variable> variables, List<Constraint> constraints, int nLimit, int sLimit) {
 			int[][] variableNeighbours = computeIrreflexiveNeigbours(variables, constraints);
@@ -127,7 +129,9 @@ public class Reinforcer {
 				System.out.println(" clique " + k + " of size " + scp.length + " {" + Kit.join(scp) + "}");
 				assert controlClique(scp, constraints);
 				for (int i = 0; i <= set.limit; i++)
-					degrees[set.dense[i]] = countNeighboursAtLevel(variableNeighbours[set.dense[i]], 0, levels); // reinitialization of degrees
+					degrees[set.dense[i]] = countNeighboursAtLevel(variableNeighbours[set.dense[i]], 0, levels); // reinitialization
+																													// of
+																													// degrees
 			}
 			return cliques;
 		}
@@ -364,19 +368,21 @@ public class Reinforcer {
 		}
 
 		/**
-		 * Builds and returns a list of generators (based on a computed automorphism group) from the specified array of variables with respect to the specified
-		 * list of constraints. Each such generator can be used to build a symmetry-breaking constraint.
+		 * Builds and returns a list of generators (based on a computed automorphism group) from the specified array of
+		 * variables with respect to the specified list of constraints. Each such generator can be used to build a
+		 * symmetry-breaking constraint.
 		 * 
 		 * @param variables
 		 *            an array of variables
 		 * @param constraints
 		 *            a list of constraints
-		 * @return a list of generators (based on a computed automorphism group) from the specified array of variables with respect to the specified list of
-		 *         constraints
+		 * @return a list of generators (based on a computed automorphism group) from the specified array of variables
+		 *         with respect to the specified list of constraints
 		 */
 		public static List<List<int[]>> buildGenerators(List<Variable> variables, List<Constraint> constraints) {
 			stopwatch = new Stopwatch();
-			Map<Integer, List<Integer>> groupsOfColors = new HashMap<>(); // 1D = color number ; value = list of node ids with this color
+			Map<Integer, List<Integer>> groupsOfColors = new HashMap<>(); // 1D = color number ; value = list of node
+																			// ids with this color
 			int[] variableNodes = buildVariableNodes(groupsOfColors, variables);
 			List<Node> constraintNodes = buildConstraintNodes(groupsOfColors, constraints, variables.size());
 			String graphFilename = saveInGAPFormat(groupsOfColors, constraintNodes, variableNodes.length + constraintNodes.size());

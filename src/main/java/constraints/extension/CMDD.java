@@ -267,9 +267,9 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive {
 
 		public CMDDO(Problem pb, Variable[] scp, Transition[] transitions) {
 			this(pb, scp);
-			String s = signature() + " " + transitions;
+			String mddKey = signature() + " " + transitions;
 			// TODO be careful, we assume above that the address of transitions can be used. Is that correct?
-			this.extStructure = problem.head.structureSharing.mapForMDDs.computeIfAbsent(s, r -> new MDD(this, transitions));
+			this.extStructure = problem.head.structureSharing.mapForMDDs.computeIfAbsent(mddKey, r -> new MDD(this, transitions));
 			// what about the key?
 		}
 

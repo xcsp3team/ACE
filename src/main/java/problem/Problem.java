@@ -112,8 +112,8 @@ import org.xcsp.modeler.implementation.ProblemIMP;
 
 import constraints.ConflictsStructure;
 import constraints.Constraint;
-import constraints.Constraint.CtrFalse;
-import constraints.Constraint.CtrTrue;
+import constraints.Constraint.CtrTrivial.CtrFalse;
+import constraints.Constraint.CtrTrivial.CtrTrue;
 import constraints.ConstraintExtension;
 import constraints.ConstraintExtension.Extension1;
 import constraints.ConstraintIntension;
@@ -258,22 +258,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public void afterProblemConstruction() {
-		control(Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints), "Non normalized nums in the problem");
-		control(Stream.of(variables).map(x -> x.id()).distinct().count() == variables.length, "Two variables have the same id");
-		control(settings.framework == null);
-		if (optimizer != null)
-			head.control.toCOP();
-		else
-			head.control.toCSP();
+		head.control.general.decideFramework(optimizer); // modifying a few options
 
-		Stream.of(variables).peek(x -> control(Stream.of(x.ctrs).noneMatch(c -> c.num == -1))).forEach(x -> x.dom.setNumberOfLevels(variables.length + 1));
-
+		assert Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints) : "Non normalized nums in the problem";
+		assert Stream.of(variables).map(x -> x.id()).distinct().count() == variables.length : "Two variables have the same id";
+		for (Variable x : variables) {
+			assert Stream.of(x.ctrs).noneMatch(c -> c.num == -1);
+			x.dom.setNumberOfLevels(variables.length + 1);
+		}
 		ConflictsStructure.buildFor(this);
-
 		priorityVars = priorityVars.length == 0 && annotations.decision != null ? (Variable[]) annotations.decision : priorityVars;
-		if (settings.framework == COP
-				&& (optimizer.ctr instanceof ObjectiveVariable || optimizer.ctr instanceof MaximumCstLE || optimizer.ctr instanceof MinimumCstGE))
-			head.control.restarts.restartAfterSolution = true;
 
 		boolean strong = false;
 		if (settings.framework == COP && head.control.valh.optValHeuristic) { // TODO experimental
@@ -674,9 +668,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// we may reduce the domains of some variables
 		reduceDomainsFromUserInstantiation();
 		reduceDomainsOfIsolatedVariables();
-
-		// if (Solver.class.getSimpleName().equals(head.control.solving.clazz)) optimizer = new OptimizerBasic(this,
-		// "#violatedConstraints");
 	}
 
 	/**
@@ -1123,7 +1114,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	public final CtrAlone extension(IVar[] scp, Object[] tuples, boolean positive, Boolean starred) {
 		if (tuples.length == 0)
-			return post(positive ? new CtrFalse(this, translate(scp), "Extension with 0 support") : new CtrTrue(this, translate(scp)));
+			return post(
+					positive ? new CtrFalse(this, translate(scp), "Extension with 0 support") : new CtrTrue(this, translate(scp), "Extension with 0 conflict"));
 		if (scp.length == 1) {
 			control(starred == null);
 			Variable x = (Variable) scp[0];
@@ -1376,21 +1368,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private CtrAlone sum(Variable[] list, int[] coeffs, TypeConditionOperatorRel op, long limit, boolean inversable) {
-		// we canonize terms (group together several occurrences of the same variables and discard terms of coefficient
-		// 0)
+		// grouping together several occurrences of the same variables and discarding terms of coefficient 0
 		Term[] terms = new Term[list.length];
 		for (int i = 0; i < terms.length; i++)
 			terms[i] = new Term(coeffs == null ? 1 : coeffs[i], list[i]);
-		// Term[] terms = IntStream.range(0, list.length).mapToObj(i -> new Term(coeffs == null ? 1 : coeffs[i],
-		// list[i])).toArray(Term[]::new);
 
 		if (!Variable.areAllDistinct(list)) {
 			Set<Entry<Object, Long>> entries = Stream.of(terms).collect(groupingBy(t -> t.obj, summingLong((Term t) -> (int) t.coeff))).entrySet();
 			terms = entries.stream().map(e -> new Term(e.getValue(), e.getKey())).toArray(Term[]::new);
 			log.info("Sum constraint with several ocurrences of the same variable");
 		}
-		terms = Stream.of(terms).filter(t -> t.coeff != 0).sorted().toArray(Term[]::new); // we discard terms of coeff 0
-																							// and sort them
+		// we discard terms of coeff 0 and sort them
+		terms = Stream.of(terms).filter(t -> t.coeff != 0).sorted().toArray(Term[]::new);
+
 		list = Stream.of(terms).map(t -> t.obj).toArray(Variable[]::new);
 		control(Stream.of(terms).allMatch(t -> Utilities.isSafeInt(t.coeff)));
 		coeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
@@ -1647,11 +1637,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Object rightTerm = condition.rightTerm();
 			Variable[] scp = translate(clean(list));
-			Constraint c = null;
-			if (condition instanceof ConditionVal)
-				c = NValuesCst.buildFrom(this, scp, op, (long) rightTerm);
-			else // condition instanceof ConditionVar
-				c = NValuesVar.buildFrom(this, scp, op, (Variable) rightTerm);
+			Constraint c = condition instanceof ConditionVal ? NValuesCst.buildFrom(this, scp, op, (long) rightTerm)
+					: NValuesVar.buildFrom(this, scp, op, (Variable) rightTerm);
 			if (c != null)
 				return post(c);
 		}

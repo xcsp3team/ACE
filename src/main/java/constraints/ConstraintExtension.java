@@ -379,10 +379,9 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 *            indicates if the tuples are supports or conflicts
 	 */
 	public final void storeTuples(int[][] tuples, boolean positive) {
-		String tableKey = signature() + " " + tuples + " " + positive; // TODO be careful, we assume that the address of
-																		// tuples can be used. Is that correct?
-		String key = setKey(
-				problem.features.collecting.tableKeys.computeIfAbsent(tableKey, k -> signature() + "r" + problem.features.collecting.tableKeys.size()));
+		String tableKey = signature() + " " + tuples + " " + positive;
+		// TODO be careful, we assume that the address of tuples can be used. Is that correct?
+		String key = defineKey(problem.features.collecting.tableKeys.computeIfAbsent(tableKey, k -> "r" + problem.features.collecting.tableKeys.size()));
 		control((positive && this instanceof TagPositive) || (!positive && this instanceof TagNegative)
 				|| (!(this instanceof TagPositive) && !(this instanceof TagNegative)), positive + " " + this.getClass().getName());
 

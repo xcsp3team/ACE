@@ -290,7 +290,8 @@ public final class Features {
 
 	public int nIsolatedVars, nFixedVars, nSymbolicVars;
 	public int nRemovedUnaryCtrs, nConvertedConstraints; // conversion intension to extension
-	public int nSpecificCtrs, nMergedCtrs, nDiscardedCtrs, nAddedCtrs;
+
+	public int nMergedCtrs, nDiscardedCtrs, nAddedCtrs;
 
 	public long nEffectiveFilterings;
 
