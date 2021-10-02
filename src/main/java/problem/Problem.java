@@ -266,7 +266,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			assert Stream.of(x.ctrs).noneMatch(c -> c.num == -1);
 			x.dom.setNumberOfLevels(variables.length + 1);
 		}
-		ConflictsStructure.buildFor(this);
+
 		priorityVars = priorityVars.length == 0 && annotations.decision != null ? (Variable[]) annotations.decision : priorityVars;
 
 		boolean strong = false;
@@ -361,6 +361,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public void afterSolverConstruction() {
+		ConflictsStructure.buildFor(this);
 		Stream.of(variables).forEach(x -> x.dom.setPropagation(solver.propagation));
 	}
 

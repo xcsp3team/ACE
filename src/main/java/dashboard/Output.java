@@ -218,14 +218,14 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		}
 	}
 
-	public String outputFileNameFrom(String fullInstanceName, String configurationFileName) {
+	public String outputFileNameFrom(String fullInstanceName, String controlFilename) {
 		String hostName = "unknown";
 		try {
 			hostName = InetAddress.getLocalHost().getCanonicalHostName();
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
-		return getOutputFileNamePrefixFrom(fullInstanceName, configurationFileName) + hostName + "_" + Kit.date() + ".xml";
+		return getOutputFileNamePrefixFrom(fullInstanceName, controlFilename) + hostName + "_" + Kit.date() + ".xml";
 	}
 
 	public Element record(TypeOutput output, Collection<Entry<String, Object>> entries, Element parent) {
@@ -303,8 +303,9 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		File file = new File(dirName);
 		if (!file.exists())
 			file.mkdirs();
-		// we record the name of the output file, the first time a saving operation is execute
-		this.outputFileName = this.outputFileName != null ? this.outputFileName : outputFileNameFrom(head.problem.name(), head.control.settingsFilename);
+		// we record the name of the output file, the first time a saving operation is executed
+		this.outputFileName = this.outputFileName != null ? this.outputFileName
+				: outputFileNameFrom(head.problem.name(), head.control.userSettings.controlFilename);
 		return Utilities.save(document, dirName + File.separator + outputFileName);
 	}
 

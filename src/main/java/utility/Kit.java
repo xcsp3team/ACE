@@ -73,6 +73,7 @@ import org.xcsp.common.predicates.XNode;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import dashboard.Control;
 import dashboard.Input;
 import main.Head;
 
@@ -89,16 +90,17 @@ public final class Kit {
 		Handler handler = new StreamHandler() {
 			@Override
 			public synchronized void publish(LogRecord record) {
+				Thread t = Thread.currentThread();
+				Control control = t instanceof Head ? ((Head) t).control : null;
 				if (record.getLevel().intValue() < Level.INFO.intValue()) {
 					if (Input.portfolio)
-						System.out.println("From " + ((Head) Thread.currentThread()).control.settingsFilename + " :");
+						System.out.println("From " + control.userSettings.controlFilename + " :");
 					System.out.println(record.getMessage());
 				} else {
 					if (Input.portfolio)
-						System.err.println("From " + ((Head) Thread.currentThread()).control.settingsFilename + " :");
+						System.err.println("From " + control.userSettings.controlFilename + " :");
 					// c.setTimeInMillis(record.getMillis());
-					Thread t = Thread.currentThread(); // Head.currentThread();
-					if (t instanceof Head && ((Head) t).control.general.verbose > 1)
+					if (control != null && control.general.verbose > 1)
 						System.err.println("\n" + record.getLevel() + " : " + record.getMessage()); // + " " +
 																									// c.getTime());
 					if (record.getLevel() == Level.SEVERE) {

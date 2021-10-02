@@ -107,7 +107,7 @@ public final class Input {
 		control(args.length > 0);
 		Input.portfolio = Kit.isXMLFileWithRoot(lastArgument(), Head.VARIANT_PARALLEL);
 		int cursor = 0;
-		Input.controlFilename = Kit.isXMLFileWithRoot(args[cursor], Control.CONFIGURATION) ? args[cursor++] : Control.DEFAULT_CONFIGURATION;
+		Input.controlFilename = Kit.isXMLFileWithRoot(args[cursor], Control.SETTINGS) ? args[cursor++] : Control.DEFAULT_SETTINGS;
 		// control of this file performed later
 		cursor += setNInstancesToSolveFrom(args[cursor]);
 		control(!portfolio || nInstancesToSolve == 1);

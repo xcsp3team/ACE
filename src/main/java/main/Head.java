@@ -204,7 +204,7 @@ public class Head extends Thread {
 	 */
 	public static void main(String[] args) {
 		if (args.length == 0 && !isAvailableIn())
-			new Head().control.settings.display(); // the usage is displayed
+			new Head().control.display(); // the usage is displayed
 		else {
 			Input.loadArguments(args); // Always start with that
 			heads = Stream.of(loadVariantNames()).map(v -> new Head(v)).peek(h -> h.start()).toArray(Head[]::new); // threads
@@ -416,7 +416,7 @@ public class Head extends Thread {
 	}
 
 	public Head(String controlFileName) {
-		this.control = Control.buildControlPanelFor(controlFileName);
+		this.control = new Control(controlFileName);
 		this.output = new Output(this, controlFileName);
 		this.permamentObserversConstruction = Stream.of(output).map(o -> (ObserverOnConstruction) o).collect(toCollection(ArrayList::new));
 		// adding as permanent construction observer GraphViz (when problem built) ? so as to execute
