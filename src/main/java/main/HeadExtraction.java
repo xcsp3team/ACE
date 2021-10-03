@@ -1,5 +1,7 @@
 package main;
 
+import static utility.Kit.control;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -10,17 +12,26 @@ import java.util.stream.IntStream;
 
 import constraints.Constraint;
 import dashboard.Input;
+import learning.IpsReasoner.LearningIps;
 import problem.Problem;
 import solver.Solver;
-import utility.Enums.Extraction;
-import utility.Enums.LearningIps;
-import utility.Enums.Stopping;
+import solver.Solver.Stopping;
 import utility.Kit;
-import utility.Kit.Stopwatch;
+import utility.Stopwatch;
 import variables.Variable;
 
 public class HeadExtraction extends Head {
 
+	/**
+	 * Different ways of conducting extraction
+	 */
+	public enum Extraction {
+		DEC_VAR, DEC_CON, VAR, CON, INC, INC_FIRST, MAX_CSP;
+	}
+
+	/**
+	 * The list of colelcted cores
+	 */
 	public List<List<Constraint>> cores = new ArrayList<>();
 
 	/**
@@ -234,10 +245,10 @@ public class HeadExtraction extends Head {
 			if (nActiveConstraints >= nPreviousActiveConstraints)
 				break;
 			nPreviousActiveConstraints = nActiveConstraints;
-			Kit.control(Kit.isSubsumed(activeCtrs, presentCtrs));
+			control(Kit.isSubsumed(activeCtrs, presentCtrs));
 			Kit.and(presentCtrs, activeCtrs);
 			boolean sat = solveCurrentNetwork(updatePresentVariablesFrom(presentVars, presentCtrs), presentCtrs, true);
-			Kit.control(!sat);
+			control(!sat);
 		}
 		Kit.log.info("End wcore.");
 		return true;
@@ -313,12 +324,12 @@ public class HeadExtraction extends Head {
 	public static void main(String[] args) {
 		Input.loadArguments(args);
 		HeadExtraction extraction = new HeadExtraction();
-		Kit.control(!extraction.control.problem.isSymmetryBreaking(), () -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
-		Kit.control(extraction.control.learning.ips == LearningIps.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
-		// Kit.control(extraction.configuration.restartsCutoff == Long.MAX_VALUE || extraction.configuration.nogoodType
+		control(!extraction.control.problem.isSymmetryBreaking(), () -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
+		control(extraction.control.learning.ips == LearningIps.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
+		// control(extraction.configuration.restartsCutoff == Long.MAX_VALUE || extraction.configuration.nogoodType
 		// == null,
 		// "Be careful of nogood recording from restarts.");
-		Kit.control(extraction.control.solving.clazz.equals(Solver.class.getSimpleName()), () -> extraction.control.solving.clazz);
+		control(extraction.control.solving.clazz.equals(Solver.class.getSimpleName()), () -> extraction.control.solving.clazz);
 		extraction.start();
 	}
 

@@ -13,7 +13,7 @@ package optimization;
 import static org.xcsp.common.Types.TypeFramework.COP;
 import static org.xcsp.common.Types.TypeOptimization.MAXIMIZE;
 import static org.xcsp.common.Types.TypeOptimization.MINIMIZE;
-import static utility.Enums.Stopping.FULL_EXPLORATION;
+import static solver.Solver.Stopping.FULL_EXPLORATION;
 import static utility.Kit.control;
 
 import org.xcsp.common.Types.TypeOptimization;
@@ -24,7 +24,20 @@ import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 
-public abstract class Optimizer implements ObserverOnRuns { // Pilot for (mono-objective) optimization
+/**
+ * A pilot for dealing with (mono-objective) optimization. Subclasses define various strategies to conduct search toward
+ * optimality.
+ * 
+ * @author Christophe Lecoutre
+ */
+public abstract class Optimizer implements ObserverOnRuns {
+
+	/**
+	 * Currently, three strategies to conduct search toward optimality
+	 */
+	public static enum OptimizationStrategy {
+		INCREASING, DECREASING, DICHOTOMIC;
+	}
 
 	/**********************************************************************************************
 	 * Implementing interface
@@ -33,7 +46,8 @@ public abstract class Optimizer implements ObserverOnRuns { // Pilot for (mono-o
 	@Override
 	public final void afterRun() {
 		control(problem.head.control.general.framework == COP);
-		if (problem.solver.solutions.lastRun == problem.solver.restarter.numRun) { // a better solution has been found during the last run
+		if (problem.solver.solutions.lastRun == problem.solver.restarter.numRun) { // a better solution has been found
+																					// during the last run
 			if (minimization) {
 				maxBound = problem.solver.solutions.bestBound - 1;
 				cub.limit(maxBound);
@@ -81,55 +95,6 @@ public abstract class Optimizer implements ObserverOnRuns { // Pilot for (mono-o
 	}
 
 	/**********************************************************************************************
-	 * Sharing bounds between workers
-	 *********************************************************************************************/
-
-	private static Long sharedMinBound = Long.MIN_VALUE;
-	private static Long sharedMaxBound = Long.MAX_VALUE;
-
-	public final boolean possiblyUpdateSharedBounds() {
-		if (!Input.portfolio)
-			return false;
-		boolean modified = false;
-		synchronized (sharedMinBound) {
-			if (minBound > sharedMinBound) {
-				sharedMinBound = minBound;
-				modified = true;
-			}
-		}
-		synchronized (sharedMaxBound) {
-			if (maxBound < sharedMaxBound) {
-				sharedMaxBound = maxBound;
-				modified = true;
-			}
-		}
-		return modified;
-	}
-
-	public final boolean possiblyUpdateLocalBounds() {
-		if (!Input.portfolio)
-			return false;
-		boolean modified = false;
-		synchronized (sharedMinBound) {
-			if (sharedMinBound > minBound) {
-				minBound = sharedMinBound.longValue();
-				modified = true;
-			}
-		}
-		synchronized (sharedMaxBound) {
-			if (sharedMaxBound < maxBound) {
-				maxBound = sharedMaxBound.longValue();
-				modified = true;
-			}
-		}
-		if (modified) {
-			Kit.log.fine("New Bounds updated from other workers : " + stringBounds());
-			problem.solver.restarter.forceRootPropagation = true;
-		}
-		return modified;
-	}
-
-	/**********************************************************************************************
 	 * Class
 	 *********************************************************************************************/
 
@@ -144,12 +109,14 @@ public abstract class Optimizer implements ObserverOnRuns { // Pilot for (mono-o
 	public final boolean minimization;
 
 	/**
-	 * the constraint ensuring that minimal bound (lower bound) of the optimization bounding interval is respected; may be useless.
+	 * the constraint ensuring that minimal bound (lower bound) of the optimization bounding interval is respected; may
+	 * be useless.
 	 */
 	public final Optimizable clb;
 
 	/**
-	 * the constraint ensuring that maximal bound (upper bound) of the optimization bounding interval is respected; may be useless.
+	 * the constraint ensuring that maximal bound (upper bound) of the optimization bounding interval is respected; may
+	 * be useless.
 	 */
 	public final Optimizable cub;
 
@@ -159,12 +126,14 @@ public abstract class Optimizer implements ObserverOnRuns { // Pilot for (mono-o
 	public final Optimizable ctr;
 
 	/**
-	 * solutions searched for must have a cost greater than or equal to this bound (valid for both minimization and maximization).
+	 * solutions searched for must have a cost greater than or equal to this bound (valid for both minimization and
+	 * maximization).
 	 */
 	public long minBound;
 
 	/**
-	 * solutions searched for must have a cost less than or equal to this bound (valid for both minimization and maximization).
+	 * solutions searched for must have a cost less than or equal to this bound (valid for both minimization and
+	 * maximization).
 	 */
 	public long maxBound;
 
@@ -208,16 +177,18 @@ public abstract class Optimizer implements ObserverOnRuns { // Pilot for (mono-o
 
 	// TODO problem when incremental is used with STR2 and CT for Increasing and Dichotomic strategies
 	// It seems that SVal is not correctly updated
-	// java ace Fapp-m2s-01-0200_c18.xml.lzma -os=dichotomic -positive=str2 PROBLEM but STR1 ok ; if decremental set to false in STRoptimized,
+	// java ace Fapp-m2s-01-0200_c18.xml.lzma -os=dichotomic -positive=str2 PROBLEM but STR1 ok ; if decremental set to
+	// false in STRoptimized,
 	// STR2 ok (but not CT that need decremental); why?
 
 	/**
-	 * An optimization strategy based on decreasingly updating the maximal bound (assuming minimization) whenever a solution is found; this is related to branch
-	 * and bound (and related to ramp-down strategy).
+	 * An optimization strategy based on decreasingly updating the maximal bound (assuming minimization) whenever a
+	 * solution is found; this is related to branch and bound (and related to ramp-down strategy).
 	 */
 	public static final class OptimizerDecreasing extends Optimizer {
 		// Assuming minimization (similar observation for maximization):
-		// with this strategy, the limit of clb never changes, so, the constraint makes sense (i.e. filters) only if -lb is set by the user
+		// with this strategy, the limit of clb never changes, so, the constraint makes sense (i.e. filters) only if -lb
+		// is set by the user
 		// otherwise, it does not matter because the constraint is entailed
 
 		public OptimizerDecreasing(Problem pb, TypeOptimization opt, Optimizable clb, Optimizable cub) {
@@ -236,8 +207,8 @@ public abstract class Optimizer implements ObserverOnRuns { // Pilot for (mono-o
 	}
 
 	/**
-	 * An optimization strategy based on increasingly updating the minimal bound (assuming minimization); this is sometimes called iterative optimization (or
-	 * ramp-up strategy).
+	 * An optimization strategy based on increasingly updating the minimal bound (assuming minimization); this is
+	 * sometimes called iterative optimization (or ramp-up strategy).
 	 */
 	public static final class OptimizerIncreasing extends Optimizer {
 
@@ -294,5 +265,55 @@ public abstract class Optimizer implements ObserverOnRuns { // Pilot for (mono-o
 			else
 				clb.limit(minBound + offset);
 		}
+	}
+
+	/**********************************************************************************************
+	 * Sharing bounds between workers (when in portfolio mode)
+	 *********************************************************************************************/
+
+	private static Long sharedMinBound = Long.MIN_VALUE;
+
+	private static Long sharedMaxBound = Long.MAX_VALUE;
+
+	public final boolean possiblyUpdateSharedBounds() {
+		if (!Input.portfolio)
+			return false;
+		boolean modified = false;
+		synchronized (sharedMinBound) {
+			if (minBound > sharedMinBound) {
+				sharedMinBound = minBound;
+				modified = true;
+			}
+		}
+		synchronized (sharedMaxBound) {
+			if (maxBound < sharedMaxBound) {
+				sharedMaxBound = maxBound;
+				modified = true;
+			}
+		}
+		return modified;
+	}
+
+	public final boolean possiblyUpdateLocalBounds() {
+		if (!Input.portfolio)
+			return false;
+		boolean modified = false;
+		synchronized (sharedMinBound) {
+			if (sharedMinBound > minBound) {
+				minBound = sharedMinBound.longValue();
+				modified = true;
+			}
+		}
+		synchronized (sharedMaxBound) {
+			if (sharedMaxBound < maxBound) {
+				maxBound = sharedMaxBound.longValue();
+				modified = true;
+			}
+		}
+		if (modified) {
+			Kit.log.fine("New Bounds updated from other workers : " + stringBounds());
+			problem.solver.restarter.forceRootPropagation = true;
+		}
+		return modified;
 	}
 }

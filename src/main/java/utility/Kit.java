@@ -20,8 +20,6 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.net.URL;
@@ -90,8 +88,7 @@ public final class Kit {
 		Handler handler = new StreamHandler() {
 			@Override
 			public synchronized void publish(LogRecord record) {
-				Thread t = Thread.currentThread();
-				Control control = t instanceof Head ? ((Head) t).control : null;
+				Control control = Thread.currentThread() instanceof Head ? ((Head) Thread.currentThread()).control : null;
 				if (record.getLevel().intValue() < Level.INFO.intValue()) {
 					if (Input.portfolio)
 						System.out.println("From " + control.userSettings.controlFilename + " :");
@@ -378,28 +375,16 @@ public final class Kit {
 		return Stream.of(array).map(c -> shortArray(c)).toArray(short[][]::new);
 	}
 
-	public static short[][][] shortArray3D(Collection<Short>[][] array) {
-		return Stream.of(array).map(c -> shortArray2D(c)).toArray(short[][][]::new);
+	public static int[] intArray(Collection<Integer> collection) {
+		return collection.stream().mapToInt(i -> i).toArray();
 	}
 
 	public static int[][] intArray2D(Collection<Integer>[] array) {
 		return Stream.of(array).map(c -> intArray(c)).toArray(int[][]::new);
 	}
 
-	public static int[][][] intArray3D(Collection<Integer>[][] array) {
-		return Stream.of(array).map(c -> intArray2D(c)).toArray(int[][][]::new);
-	}
-
-	public static int[] intArray(Collection<Integer> collection) {
-		return collection.stream().mapToInt(i -> i).toArray();
-	}
-
 	public static int[][] intArray2D(Collection<int[]> collection) {
 		return collection.stream().toArray(int[][]::new);
-	}
-
-	public static int[][][] intArray3D(Collection<int[][]> collection) {
-		return collection.stream().toArray(int[][][]::new);
 	}
 
 	/**********************************************************************************************
@@ -751,85 +736,6 @@ public final class Kit {
 		}
 	}
 
-	public static class Stopwatch {
-
-		private static DecimalFormat df1 = new DecimalFormat("0.0", new DecimalFormatSymbols(Locale.US));
-		private static DecimalFormat df2 = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.US));
-
-		public static String formattedTimeInSeconds(long time) {
-			double l = time / 1000.0;
-			return l < 10 ? df2.format(l) : df1.format(l);
-		}
-
-		/**
-		 * This field indicates whether CPU time can be computed
-		 */
-		private boolean cpuTimeSupported;
-
-		/**
-		 * The start wall clock time
-		 */
-		private long starWckTime;
-
-		/**
-		 * Builds a stopwatch and starts it
-		 */
-		public Stopwatch() {
-			cpuTimeSupported = ManagementFactory.getThreadMXBean().isCurrentThreadCpuTimeSupported();
-			start();
-		}
-
-		private long computeCpuTime() {
-			assert cpuTimeSupported;
-			ThreadMXBean threads = ManagementFactory.getThreadMXBean();
-			return Arrays.stream(threads.getAllThreadIds()).map(id -> threads.getThreadCpuTime(id)).sum();
-			// return time; // ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
-		}
-
-		/**
-		 * Starts the stopwatch
-		 */
-		public void start() {
-			starWckTime = System.currentTimeMillis();
-		}
-
-		/**
-		 * Returns the wall clock time in milliseconds, since the stopwatch has been started
-		 * 
-		 * @return the wall clock time in milliseconds
-		 */
-		public long wckTime() {
-			return System.currentTimeMillis() - starWckTime;
-		}
-
-		/**
-		 * Returns the wall clock time in seconds, since the stopwatch has been started
-		 * 
-		 * @return the wall clock time in seconds
-		 */
-		public String wckTimeInSeconds() {
-			return formattedTimeInSeconds(System.currentTimeMillis() - starWckTime);
-		}
-
-		/**
-		 * Returns the CPU time in milliseconds, or -1 if not supported
-		 * 
-		 * @return the CPU time in milliseconds
-		 */
-		public long cpuTime() {
-			return cpuTimeSupported ? computeCpuTime() / 1000000 : -1;
-		}
-
-		/**
-		 * Returns the CPU time in seconds, or -1 if not supported
-		 * 
-		 * @return the CPU time in seconds
-		 */
-		public String cpuTimeInSeconds() {
-			return cpuTimeSupported ? cpuTime() / 1000.0 + "" : "-1";
-		}
-	}
-
 	public static String date() {
 		Calendar c = new GregorianCalendar();
 		c.setTimeInMillis(System.currentTimeMillis());
@@ -1035,10 +941,6 @@ public final class Kit {
 
 	public static <T extends IVar> T[] vars(Object... objects) {
 		return (T[]) Utilities.collect(IVar.class, Stream.of(objects).map(o -> o instanceof XNode ? ((XNode<?>) o).vars() : o));
-	}
-
-	public static int[] vals(Object... objects) {
-		return Utilities.collectInt(objects);
 	}
 
 	// (3,-5) => -2; (3,10) => 3; (-3,-5) => 2; (-3,10) => -3; (3,0) => 0; (-3,0) => 0

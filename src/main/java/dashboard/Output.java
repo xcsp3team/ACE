@@ -11,16 +11,16 @@
 package dashboard;
 
 import static java.util.stream.Collectors.joining;
+import static utility.Kit.control;
+import static utility.Kit.log;
 
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -48,41 +48,86 @@ import propagation.GAC;
 import propagation.Propagation;
 import propagation.SAC;
 import propagation.SAC.SACGreedy;
+import solver.Solver.Stopping;
 import solver.Statistics;
-import utility.Enums.Stopping;
-import utility.Enums.TypeOutput;
 import utility.Kit;
-import utility.Kit.Stopwatch;
+import utility.Stopwatch;
 import variables.Variable;
 
 /**
- * The role of this class is to output data concerning the resolution of problem instances. These data are collected by
- * means of an XML document that may be saved. A part of the data are also directly displayed on the standard output.
+ * The role of this class is to output some data/information concerning the solving process of problem instances. These
+ * data are collected by means of an XML document that may be saved. A part of the data are also directly displayed on
+ * the standard output.
  * 
  * @author Christophe Lecoutre
  */
 public class Output implements ObserverOnConstruction, ObserverOnSolving, ObserverOnRuns {
 
 	/**********************************************************************************************
-	 * Constants
+	 * Implementing interfaces
 	 *********************************************************************************************/
 
-	public static final String RESULTS_DIRECTORY = "results";
-	public static final String SETTINGS_DIRECTORY = "configurations";
-	public static final String CONTEXT_DIRECTORY = "context";
-	public static final String MULTITHREAD_RESULTS = "multithreadResults";
-	public static final String CONFIGURATION_FILE_NAME = "configurationFileName";
-	public static final String TOTAL_WCK_TIME = "totalWckTime";
+	@Override
+	public void afterProblemConstruction() {
+		control(head.problem.variables.length > 0, () -> "No variable in your model");
+		this.features = head.problem.features;
+		InformationBloc dinfo = domainsInfo();
+		InformationBloc vinfo = variablesInfo();
+		InformationBloc cinfo = constraintsInfo();
+		InformationBloc oinfo = head.problem.optimizer != null ? objectiveInfo() : null;
+		record(DOMAINS, dinfo, resolution);
+		record(VARIABLES, vinfo, resolution);
+		record(CONSTRAINTS, cinfo, resolution);
+		if (oinfo != null)
+			record(OBJECTIVE, oinfo, resolution);
+		log.config("\n" + dinfo + "\n" + vinfo + "\n" + cinfo + (oinfo == null ? "" : "\n" + oinfo));
+	}
 
-	public static final String INSTANCE = "Instance";
-	public static final String DOMAINS = "Domains";
-	public static final String VARIABLES = "Variables";
-	public static final String CONSTRAINTS = "Constraints";
-	public static final String OBJECTIVE = "Objective";
-	public static final String SOLVER = "Solver";
-	public static final String PREPROCESSING = "Preprocessing";
-	public static final String RUN = "Run";
-	public static final String GLOBAL = "Global";
+	@Override
+	public void afterSolverConstruction() {
+		this.stats = head.solver.stats;
+		InformationBloc info = solverInfo();
+		this.solver = record(SOLVER, info, resolution);
+		log.config("\n" + info);
+	}
+
+	@Override
+	public final void afterPreprocessing() {
+		InformationBloc info = preproInfo();
+		record(PREPROCESSING, info, solver);
+		log.config("\n" + info + "\n");
+	}
+
+	@Override
+	public final void afterRun() {
+		InformationBloc info = runInfo();
+		record(RUN, info, solver);
+		log.config(info.toString());
+	}
+
+	@Override
+	public final void afterSolving() {
+		InformationBloc info = globalInfo();
+		record(GLOBAL, info, solver);
+		log.config("\n" + info);
+	}
+
+	/**********************************************************************************************
+	 * Static members
+	 *********************************************************************************************/
+
+	public static final String RESOLUTIONS = "resolutions";
+	public static final String RESOLUTION = "resolution";
+	public static final String INSTANCE = "instance";
+	public static final String DOMAINS = "domains";
+	public static final String VARIABLES = "variables";
+	public static final String CONSTRAINTS = "constraints";
+	public static final String OBJECTIVE = "objective";
+	public static final String SOLVER = "solver";
+	public static final String PREPROCESSING = "preprocessing";
+	public static final String RUN = "run";
+	public static final String GLOBAL = "global";
+
 	public static final String NUMBER = "number";
 	public static final String NAME = "name";
 	public static final String N_TYPES = "nTypes";
@@ -129,7 +174,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String N_FAILED = "fails";
 	public static final String N_NOGOODS = "ngds";
 	public static final String REVISIONS = "revisions";
-	public static final String GUARANTEED_GAC = "guaranteedGAC";
+	public static final String GUARANTEED_AC = "guaranteedAC";
 	public static final String N_REMOVED_TUPLES = "nRemovedTuples";
 	public static final String N_ADDED_CTRS = "nAddedCtrs";
 	public static final String REMOVED_BY_AC = "removedByAC";
@@ -138,8 +183,8 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String N_SINGLETON_TESTS = "nSingTests";
 	public static final String N_EFFECTIVE_SINGLETON_TESTS = "nEffSingTests";
 	public static final String N_FOUND_SINGLETONS = "nSingFound";
-	public static final String N_BUILT_BRANCHES = "nBranches";
-	public static final String SUM_BRANCH_SIZES = "sumBranches";
+	public static final String N_BRANCHES = "nBranches";
+	public static final String SUM_BRANCHES = "sumBranches";
 
 	public static final String INSTANTIATION = "instantiation";
 	public static final String SELECTION = "selection";
@@ -155,6 +200,8 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String WCK = "wck";
 	public static final String CPU = "cpu";
 	public static final String MEM = "mem";
+	public static final String STOP = "stop";
+	public static final String N_NODES = "nNodes";
 
 	public static final String MAP_SIZE = "mapSize";
 	public static final String N_INFERENCES = "nInferences";
@@ -165,14 +212,14 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String N_IELIMINABLES = "nIEliminables";
 	public static final String N_PELIMINABLES = "nPEliminables";
 
-	public static final String STOP = "Stop";
+	public static final String RESULTS_DIRECTORY = "results";
+	public static final String SETTINGS_DIRECTORY = "configurations";
+	public static final String CONTEXT_DIRECTORY = "context";
+	public static final String MULTITHREAD_RESULTS = "multithreadResults";
+	public static final String CONFIGURATION_FILE_NAME = "configurationFileName";
+	public static final String TOTAL_WCK_TIME = "totalWckTime";
 
-	public static final String N_NODES = "nNodes";
 	public static final String COMMENT_PREFIX = "  ";
-
-	/**********************************************************************************************
-	 * Static
-	 *********************************************************************************************/
 
 	public static String getOutputFileNamePrefixFrom(String fullInstanceName, String fullConfigurationName) {
 		return Kit.getRawInstanceName(fullInstanceName) + (fullConfigurationName != null ? "_" + Kit.getXMLBaseNameOf(fullConfigurationName) + "_" : "");
@@ -187,8 +234,14 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	 */
 	private final Head head;
 
+	/**
+	 * The features of the problem (redundant field)
+	 */
 	private Features features;
 
+	/**
+	 * The statistics of the solver (redundant field)
+	 */
 	private Statistics stats;
 
 	/**
@@ -198,21 +251,29 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private Element root;
 
-	private Element resolElt;
+	private Element resolution;
 
-	private Element solverElt;
+	private Element solver;
 
 	/**
 	 * The filename of the generated XML file (with details about the solving process), if in campaign mode
 	 */
 	private String outputFileName;
 
-	public Output(Head head, String configFileName) {
+	/**
+	 * Builds an object Output for the specified head
+	 * 
+	 * @param head
+	 *            the head to which the object is attached
+	 * @param configurationFilename
+	 *            the name of the file with option settings
+	 */
+	public Output(Head head, String configurationFilename) {
 		this.head = head;
 		if (head.control.xml.campaignDir.length() > 0) {
 			this.document = Kit.createNewDocument();
-			this.root = document.createElement(TypeOutput.RESOLUTIONS.toString());
-			root.setAttribute(CONFIGURATION_FILE_NAME, configFileName);
+			this.root = document.createElement(RESOLUTIONS);
+			root.setAttribute(CONFIGURATION_FILE_NAME, configurationFilename);
 			document.appendChild(root);
 			document.normalize();
 		}
@@ -228,10 +289,22 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		return getOutputFileNamePrefixFrom(fullInstanceName, controlFilename) + hostName + "_" + Kit.date() + ".xml";
 	}
 
-	public Element record(TypeOutput output, Collection<Entry<String, Object>> entries, Element parent) {
+	/**
+	 * Builds and records a new element to the document (if not null). The element is created from the specified tag,
+	 * entries for attributes and the parent node
+	 * 
+	 * @param tag
+	 *            the tag for the element to be created
+	 * @param entries
+	 *            the entries representing attributes
+	 * @param parent
+	 *            the parent of the new created element, or root if null
+	 * @return a new created element, or null
+	 */
+	public Element record(String tag, Stream<Entry<String, Object>> entries, Element parent) {
 		if (document == null)
 			return null;
-		Element child = Utilities.element(document, output.toString(), entries);
+		Element child = Utilities.element(document, tag, entries);
 		if (parent == null)
 			root.appendChild(child);
 		else
@@ -239,62 +312,28 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		return child;
 	}
 
+	private Element record(String tag, InformationBloc bloc, Element parent) {
+		return record(tag, bloc.filtered_entries(), parent);
+	}
+
 	public void beforeData() { // not a method from an observer
-		this.resolElt = record(TypeOutput.RESOLUTION, null, root);
+		this.resolution = record(RESOLUTION, (Stream<Entry<String, Object>>) null, root);
 	}
 
 	public void afterData() { // not a method from an observer
 		InformationBloc info = instanceInfo(head.instanceIndex);
 		save(head.instanceStopwatch.wckTime());
-		Kit.log.config(COMMENT_PREFIX + Kit.preprint("Instance ", Kit.BLUE) + head.problem.name() + "\n");
-		record(TypeOutput.INSTANCE, info.entries(), resolElt);
+		log.config(COMMENT_PREFIX + Kit.preprint("Instance ", Kit.BLUE) + head.problem.name() + "\n");
+		record(INSTANCE, info.filtered_entries(), resolution);
 	}
 
-	@Override
-	public void afterProblemConstruction() {
-		Kit.control(head.problem.variables.length > 0, () -> "No variable in your model");
-		this.features = head.problem.features;
-		InformationBloc dinfo = domainsInfo();
-		InformationBloc vinfo = variablesInfo();
-		InformationBloc cinfo = constraintsInfo();
-		InformationBloc oinfo = head.problem.optimizer != null ? objectiveInfo() : null;
-		record(TypeOutput.DOMAINS, dinfo.entries(), resolElt);
-		record(TypeOutput.VARIABLES, vinfo.entries(), resolElt);
-		record(TypeOutput.CONSTRAINTS, cinfo.entries(), resolElt);
-		if (oinfo != null)
-			record(TypeOutput.OBJECTIVE, oinfo.entries(), resolElt);
-		Kit.log.config("\n" + dinfo.toString() + "\n" + vinfo.toString() + "\n" + cinfo.toString() + (oinfo == null ? "" : "\n" + oinfo.toString()));
-	}
-
-	@Override
-	public void afterSolverConstruction() {
-		this.stats = head.solver.stats;
-		InformationBloc info = solverInfo();
-		this.solverElt = record(TypeOutput.SOLVER, info.entries(), resolElt);
-		Kit.log.config("\n" + info.toString());
-	}
-
-	@Override
-	public final void afterPreprocessing() {
-		InformationBloc info = preproInfo();
-		record(TypeOutput.PREPROCESSING, info.entries(), solverElt);
-		Kit.log.config("\n" + info.toString() + "\n");
-	}
-
-	@Override
-	public final void afterRun() {
-		InformationBloc info = runInfo();
-		record(TypeOutput.RUN, info.entries(), solverElt);
-		Kit.log.config(info.toString());
-	}
-
-	@Override
-	public final void afterSolving() {
-		InformationBloc info = globalInfo();
-		record(TypeOutput.GLOBAL, info.entries(), solverElt);
-		Kit.log.config("\n" + info.toString());
-	}
-
+	/**
+	 * Saves the XMl document, if in campaign mode
+	 * 
+	 * @param totalWck
+	 *            the total elapsed wall clock time
+	 * @return the filename of the saved XMl document, or null
+	 */
 	public String save(long totalWck) {
 		if (document == null)
 			return null;
@@ -313,65 +352,69 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	 * Section about blocks of information, of the form of pairs (key-value), that can be displayed
 	 *********************************************************************************************/
 
-	public final static class InformationBloc {
+	private final static class InformationBloc {
 
-		public static final String SEPARATOR = "separator";
+		private static final String SEPARATOR = "separator";
 
+		/**
+		 * Name of the information bloc
+		 */
 		private String name;
 
-		private List<Entry<String, Object>> list = new ArrayList<>();
+		/**
+		 * List of entries (i.e., pairs keys-values) in the information bloc
+		 */
+		private List<Entry<String, Object>> entries = new ArrayList<>();
 
-		public InformationBloc(String name) {
+		private InformationBloc(String name) {
 			this.name = name;
 		}
 
-		public InformationBloc put(String key, Object value, boolean condition) {
+		private InformationBloc put(String key, Object value, boolean condition) {
 			if (value instanceof String && ((String) value).length() == 0)
-				return this;
+				return this; // not recorded because empty string
 			if (value instanceof Integer && ((Integer) value) == 0 && !key.contentEquals("run"))
-				return this;
+				return this; // not recorded because 0, except if the key is 'run'
 			if (value instanceof Long && ((Long) value) == 0)
-				return this;
-			// if (value instanceof Number && ((Number) value).doubleValue() == 0)
-			// return this;
+				return this; // not recorded because 0
 			if (condition)
-				list.add(new SimpleEntry<>(key, value));
+				entries.add(new SimpleEntry<>(key, value));
 			return this;
 		}
 
-		public InformationBloc put(String key, Object value) {
+		private InformationBloc put(String key, Object value) {
 			return put(key, value, true);
 		}
 
-		public InformationBloc separator(boolean condition) {
+		private InformationBloc separator(boolean condition) {
 			return put(SEPARATOR, null, condition);
 		}
 
-		public InformationBloc separator() {
+		private InformationBloc separator() {
 			return put(SEPARATOR, null, true);
 		}
 
-		public List<Entry<String, Object>> entries() {
-			return list.stream().filter(e -> e.getKey() != SEPARATOR).collect(Collectors.toCollection(ArrayList::new));
+		private Stream<Entry<String, Object>> filtered_entries() {
+			return entries.stream().filter(e -> e.getKey() != SEPARATOR);
 		}
 
 		@Override
 		public String toString() {
-			String s = (name.equals(RUN) ? "" : Output.COMMENT_PREFIX + Kit.preprint(name, Kit.BLUE) + "\n") + Output.COMMENT_PREFIX + Output.COMMENT_PREFIX;
+			StringBuilder sb = new StringBuilder(COMMENT_PREFIX).append(COMMENT_PREFIX);
 			boolean sep = true;
-			for (int i = 0; i < list.size(); i++) {
-				Entry<String, Object> e = list.get(i);
-				if (e.getKey() == SEPARATOR) {
-					s += "\n" + Output.COMMENT_PREFIX + Output.COMMENT_PREFIX;
+			for (Entry<String, Object> entry : entries) {
+				if (entry.getKey() == SEPARATOR) {
+					sb.append("\n").append(COMMENT_PREFIX).append(COMMENT_PREFIX);
 					sep = true;
 				} else {
 					if (!sep)
-						s += "  ";
-					s += (e.getKey() + "=" + e.getValue());
+						sb.append("  ");
+					sb.append(entry.getKey()).append("=").append(entry.getValue());
 					sep = false;
 				}
 			}
-			return s;
+			// The special character in preprint cannot be put in StringBuilder
+			return (name.equals(RUN) ? "" : COMMENT_PREFIX + Kit.preprint(name, Kit.BLUE) + "\n") + sb.toString();
 		}
 	}
 
@@ -393,7 +436,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		InformationBloc m = new InformationBloc(DOMAINS);
 		m.put(N_TYPES, features.nDomTypes());
 		m.put(N_VALUES, Variable.nValidValuesFor(head.problem.variables));
-		Kit.control(features.nValuesRemovedAtConstructionTime == head.problem.nValueRemovals);
+		control(features.nValuesRemovedAtConstructionTime == head.problem.nValueRemovals);
 		m.put(N_DELETED, head.problem.nValueRemovals);
 		m.put(SIZES, features.domSizes);
 		return m;
@@ -463,7 +506,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		Optimizer optimizer = head.problem.optimizer;
 		if (optimizer.ctr == null)
 			return null;
-		Kit.control(optimizer.ctr != null);
+		control(optimizer.ctr != null);
 		InformationBloc m = new InformationBloc(OBJECTIVE);
 		m.put(WAY, (optimizer.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName());
 		m.put(TYPE, optimizer.ctr.getClass().getSimpleName());
@@ -471,9 +514,9 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		return m;
 	}
 
-	private final InformationBloc solverInfo() {
+	private InformationBloc solverInfo() {
 		InformationBloc m = new InformationBloc(SOLVER);
-		m.put(GUARANTEED_GAC, head.solver.propagation.getClass() == GAC.class ? ((GAC) head.solver.propagation).guaranteed : "");
+		m.put(GUARANTEED_AC, head.solver.propagation.getClass() == GAC.class ? ((GAC) head.solver.propagation).guaranteed : "");
 		m.separator();
 		m.put(WCK, head.instanceStopwatch.wckTimeInSeconds());
 		m.put(CPU, head.stopwatch.cpuTimeInSeconds());
@@ -481,7 +524,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		return m;
 	}
 
-	private final InformationBloc preproInfo() {
+	private InformationBloc preproInfo() {
 		InformationBloc m = new InformationBloc(PREPROCESSING);
 		m.put(N_EFFECTIVE, head.problem.features.nEffectiveFilterings);
 		m.put(REVISIONS, "(" + stats.nRevisions() + ",useless=" + stats.nUselessRevisions() + ")", stats.nRevisions() > 0);
@@ -498,8 +541,8 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(N_SINGLETON_TESTS, propagation.nSingletonTests);
 		m.put(N_EFFECTIVE_SINGLETON_TESTS, propagation.nEffectiveSingletonTests);
 		m.put(N_FOUND_SINGLETONS, propagation instanceof SAC ? ((SAC) (propagation)).nFoundSingletons : 0);
-		m.put(N_BUILT_BRANCHES, propagation instanceof SACGreedy ? ((SACGreedy) (propagation)).nBranchesBuilt : 0);
-		m.put(SUM_BRANCH_SIZES, propagation instanceof SACGreedy ? ((SACGreedy) (propagation)).sumBranchSizes : 0);
+		m.put(N_BRANCHES, propagation instanceof SACGreedy ? ((SACGreedy) (propagation)).nBranchesBuilt : 0);
+		m.put(SUM_BRANCHES, propagation instanceof SACGreedy ? ((SACGreedy) (propagation)).sumBranchSizes : 0);
 		m.separator();
 		m.put(SOLS, head.solver.solutions.found);
 		m.put(SOL1_CPU, stats.times.firstSolCpu / 1000.0, head.solver.solutions.found > 0);
@@ -573,7 +616,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 			if (head.problem.settings.framework != TypeFramework.CSP) {
 				m.put(BOUND, head.solver.solutions.bestBound);
 				m.put(BOUND_WCK, stats.times.lastSolWck / 1000.0);
-				m.put(BOUND_CPU, stats.times.lastSolCpu / 1000.0);
+				// m.put(BOUND_CPU, stats.times.lastSolCpu / 1000.0);
 			}
 			m.put(SOLS, head.solver.solutions.found);
 			m.put(SOL1_CPU, stats.times.firstSolCpu / 1000.0);

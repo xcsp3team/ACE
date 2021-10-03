@@ -54,10 +54,9 @@ import interfaces.Observers.ObserverOnConstruction;
 import problem.Problem;
 import propagation.Propagation;
 import solver.Solver;
-import utility.Enums.TypeOutput;
 import utility.Kit;
-import utility.Kit.Stopwatch;
 import utility.Reflector;
+import utility.Stopwatch;
 
 /**
  * This is the class of the head in charge of solving a problem instance.
@@ -154,7 +153,7 @@ public class Head extends Thread {
 			resultsFileName += Output.RESULTS_DIRECTORY + File.separator + head.output.outputFileNameFrom(head.problem.name(), variantParallelName);
 			Kit.copy(fileName, resultsFileName);
 			Document document = Kit.load(resultsFileName);
-			Kit.modify(document, TypeOutput.RESOLUTIONS.toString(), Output.CONFIGURATION_FILE_NAME, variantParallelName);
+			Kit.modify(document, Output.RESOLUTIONS, Output.CONFIGURATION_FILE_NAME, variantParallelName);
 			long totalWCKTime = 0;
 			long totalVisitedNodes = 0;
 			for (Head h : heads) {

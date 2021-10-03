@@ -27,12 +27,17 @@ import problem.XCSP3;
 import utility.Kit;
 
 /**
- * This class allows us to handle arguments given by the user on the command line. These arguments may concern the problem to solve or more generally the
- * solving process (i.e., options to choose like for example which search heuristics to use).
+ * This class allows us to handle arguments given by the user on the command line. These arguments may concern the
+ * problem to solve or more generally the solving process (i.e., options to choose like for example which search
+ * heuristics to use).
  * 
  * @author Christophe Lecoutre
  */
 public final class Input {
+
+	public static final String SETTINGS = "settings";
+
+	public static final String DEFAULT_SETTINGS = "defaultSettings";
 
 	private static final String OPTION_PREFIX = "-";
 
@@ -42,7 +47,8 @@ public final class Input {
 	public static String[] args;
 
 	/**
-	 * The user arguments given on the command that concern the problem (instance). For XCSP3 instances, the array only contains the XCSP3 filename.
+	 * The user arguments given on the command that concern the problem (instance). For XCSP3 instances, the array only
+	 * contains the XCSP3 filename.
 	 */
 	public static String[] argsForProblem;
 
@@ -62,8 +68,8 @@ public final class Input {
 	public static String controlFilename;
 
 	/**
-	 * The name of the package corresponding to the problem to be loaded. If an XCSP3 instance is given by the user on the command line, the package is
-	 * problem.XCSP3.
+	 * The name of the package corresponding to the problem to be loaded. If an XCSP3 instance is given by the user on
+	 * the command line, the package is problem.XCSP3.
 	 */
 	public static String problemName;
 
@@ -82,7 +88,7 @@ public final class Input {
 	}
 
 	private static int setNInstancesToSolveFrom(String token) {
-		if (token.toLowerCase().equals(Control.ALL)) {
+		if (token.toLowerCase().equals(Control.UserSettings.ALL)) {
 			nInstancesToSolve = Integer.MAX_VALUE;
 			return 1;
 		}
@@ -103,11 +109,12 @@ public final class Input {
 	 *            arguments given by the sued on the command line
 	 */
 	public static void loadArguments(String... args) {
-		Input.args = args = Stream.of(args).filter(s -> s.length() > 0).toArray(String[]::new); // cleaning and storing args
+		Input.args = args = Stream.of(args).filter(s -> s.length() > 0).toArray(String[]::new); // cleaning and storing
+																								// args
 		control(args.length > 0);
 		Input.portfolio = Kit.isXMLFileWithRoot(lastArgument(), Head.VARIANT_PARALLEL);
 		int cursor = 0;
-		Input.controlFilename = Kit.isXMLFileWithRoot(args[cursor], Control.SETTINGS) ? args[cursor++] : Control.DEFAULT_SETTINGS;
+		Input.controlFilename = Kit.isXMLFileWithRoot(args[cursor], SETTINGS) ? args[cursor++] : DEFAULT_SETTINGS;
 		// control of this file performed later
 		cursor += setNInstancesToSolveFrom(args[cursor]);
 		control(!portfolio || nInstancesToSolve == 1);

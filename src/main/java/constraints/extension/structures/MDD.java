@@ -742,7 +742,7 @@ public final class MDD extends ExtensionStructure {
 		// root.buildSonsClasses();
 		LinkedList<int[][]> list = new LinkedList<>();
 		root.collectCompressedTuples(list, new int[firstRegisteredCtr().scp.length][], 0);
-		return Kit.intArray3D(list);
+		return list.stream().toArray(int[][][]::new);
 	}
 
 	@SuppressWarnings("unused")

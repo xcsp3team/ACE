@@ -16,7 +16,6 @@ import interfaces.Observers.ObserverOnConflicts;
 import interfaces.Observers.ObserverOnRemovals;
 import interfaces.Observers.ObserverOnRuns;
 import solver.Solver;
-import utility.Enums.LearningIps;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -36,6 +35,10 @@ public abstract class IpsReasoner implements ObserverOnRuns, ObserverOnConflicts
 		if (solver.head.control.learning.ips == LearningIps.DOMINANCE)
 			return new IpsReasonerDominance(solver);
 		return null;
+	}
+
+	public enum LearningIps {
+		NO, EQUIVALENCE, DOMINANCE;
 	}
 
 	/**********************************************************************************************

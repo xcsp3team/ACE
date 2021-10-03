@@ -14,7 +14,7 @@ import interfaces.Observers.ObserverOnDecisions;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Observers.ObserverOnSolving;
 import propagation.Forward;
-import utility.Kit.Stopwatch;
+import utility.Stopwatch;
 import variables.Variable;
 
 /**
@@ -109,16 +109,16 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 
 		public long lastSolWck;
 
-		public long lastSolCpu;
+		// public long lastSolCpu;
 
 		/**
 		 * Updates some data (times) when a new solution is found
 		 */
 		public void onNewSolution() {
-			lastSolCpu = solver.head.stopwatch.cpuTime();
+			// lastSolCpu = solver.head.stopwatch.cpuTime();
 			lastSolWck = solver.head.instanceStopwatch.wckTime();
 			if (solver.solutions.found == 1) {
-				firstSolCpu = lastSolCpu;
+				firstSolCpu = solver.head.stopwatch.cpuTime();
 				firstSolWck = lastSolWck;
 			}
 		}

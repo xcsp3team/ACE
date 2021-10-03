@@ -194,17 +194,15 @@ import optimization.ObjectiveVariable.ObjVarGE;
 import optimization.ObjectiveVariable.ObjVarLE;
 import optimization.Optimizable;
 import optimization.Optimizer;
+import optimization.Optimizer.OptimizationStrategy;
 import optimization.Optimizer.OptimizerDecreasing;
 import optimization.Optimizer.OptimizerDichotomic;
 import optimization.Optimizer.OptimizerIncreasing;
 import problem.Reinforcer.ReinforcerAllDifferent;
 import problem.Reinforcer.ReinforcerAutomorphism;
 import solver.Solver;
-import utility.Enums.ExportMode;
-import utility.Enums.OptimizationStrategy;
-import utility.Enums.SymmetryBreaking;
 import utility.Kit;
-import utility.Kit.Stopwatch;
+import utility.Stopwatch;
 import variables.Domain;
 import variables.Variable;
 import variables.Variable.VariableInteger;
@@ -222,9 +220,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	public static final int BASE = 0;
 	public static final int INTENSION_DECOMPOSITION = 1;
-	public static final int EXTENSION = 2;
+	public static final int EXTENSION_ORDINARY = 2;
 	public static final int EXTENSION_STARRED = 22;
-	public static final int EXTENSION_SMART = 222;
+	public static final int EXTENSION_HYBRID = 222;
+
+	public static enum SymmetryBreaking {
+		NO, SB_LE, SB_LEX;
+	}
 
 	private Variable[] prioritySumVars(Variable[] scp, int[] coeffs) {
 		assert coeffs == null || IntStream.range(0, coeffs.length - 1).allMatch(i -> coeffs[i] <= coeffs[i + 1]);
@@ -541,7 +543,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				int[] cycle1 = generator.get(0);
 				Variable x = variables.get(cycle1[0]);
 				Variable y = variables.get(cycle1[1]);
-				if (head.control.problem.symmetryBreaking == SymmetryBreaking.LE) { // we only consider the two first
+				if (head.control.problem.symmetryBreaking == SymmetryBreaking.SB_LE) { // we only consider the two first
 																					// variables
 					lessEqual(x, y);
 				} else {
@@ -1061,7 +1063,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Converting intension to extension
 	// ************************************************************************
 
+	private static enum ExportMode {
+		NO,
+		INTENSION,
+		EXTENSION, // EXTENSION is for automatic mode (either supports or conflicts)
+		EXTENSION_SUPPORTS,
+		EXTENSION_CONFLICTS;
+	}
+
 	private Converter converter = new Converter() {
+
 		@Override
 		public StringBuilder signatureFor(Var[] scp) {
 			return Variable.signatureFor((Variable[]) scp);
@@ -2004,7 +2015,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				int li = lengths[i], lj = lengths[j];
 				if (head.control.global.typeNoOverlap == INTENSION_DECOMPOSITION)
 					intension(or(le(add(xi, li), xj), le(add(xj, lj), xi)));
-				else if (head.control.global.typeNoOverlap == EXTENSION_SMART)
+				else if (head.control.global.typeNoOverlap == EXTENSION_HYBRID)
 					post(CSmart.noOverlap(this, xi, xj, li, lj));
 				else
 					post(new Disjonctive(this, xi, li, xj, lj)); // BASE
@@ -2057,7 +2068,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 																															// be
 																															// rather
 																															// efficient
-				else if (head.control.global.typeNoOverlap == EXTENSION_SMART)
+				else if (head.control.global.typeNoOverlap == EXTENSION_HYBRID)
 					post(CSmart.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				else
 					post(new Disjonctive2D(this, xi, xj, yi, yj, wi, wj, hi, hj));
@@ -2072,7 +2083,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i][0], xj = (Variable) origins[j][0], yi = (Variable) origins[i][1], yj = (Variable) origins[j][1];
 				Variable wi = (Variable) lengths[i][0], wj = (Variable) lengths[j][0], hi = (Variable) lengths[i][1], hj = (Variable) lengths[j][1];
-				if (head.control.global.typeNoOverlap == EXTENSION_SMART && Stream.of(wi, wj, hi, hj).allMatch(x -> x.dom.initSize() == 2))
+				if (head.control.global.typeNoOverlap == EXTENSION_HYBRID && Stream.of(wi, wj, hi, hj).allMatch(x -> x.dom.initSize() == 2))
 					post(CSmart.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				else
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
@@ -2234,8 +2245,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ************************************************************************
 	// ***** Managing objectives
 	// ************************************************************************
-
-	public final static String vfsComment = "Either you set -f=cop or you set -f=csp together with -vfs=v where v is an integer value forcing the value of the objective.";
 
 	private Optimizer buildOptimizer(TypeOptimization opt, Optimizable clb, Optimizable cub) {
 		control(optimizer == null, "Only mono-objective currently supported");

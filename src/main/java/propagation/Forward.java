@@ -13,7 +13,7 @@ package propagation;
 import static utility.Kit.control;
 
 import solver.Solver;
-import utility.Enums.Branching;
+import solver.Solver.Branching;
 import utility.Reflector;
 import variables.Variable;
 

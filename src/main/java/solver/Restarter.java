@@ -18,7 +18,7 @@ import interfaces.Observers.ObserverOnRuns;
 import optimization.ObjectiveVariable;
 import optimization.Optimizer;
 import sets.SetDense;
-import utility.Enums.Stopping;
+import solver.Solver.Stopping;
 import utility.Kit;
 import variables.Variable;
 
@@ -38,6 +38,13 @@ public class Restarter implements ObserverOnRuns {
 	 */
 	public static Restarter buildFor(Solver solver) {
 		return solver.head.control.lns.enabled ? new RestarterLNS(solver) : new Restarter(solver);
+	}
+
+	/**
+	 * Different criteria to be used as measures for restarts
+	 */
+	public static enum RestartMeasure {
+		FAILED, WRONG, BACKTRACK, SOLUTION;
 	}
 
 	/**********************************************************************************************

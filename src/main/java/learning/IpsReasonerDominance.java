@@ -13,8 +13,8 @@ package learning;
 import static utility.Kit.control;
 
 import solver.Solver;
+import solver.Solver.Stopping;
 import utility.Bit;
-import utility.Enums.Stopping;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;

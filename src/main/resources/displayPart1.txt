@@ -1,8 +1,8 @@
 To run ACE (AbsCon Essence), you must use a command like:
-  java ace <xcsp3Instance> <solverOptions>
+  java ace <xcsp3Instance> <options>
 
   <xcsp3Instance> is the name of a file containing an XCSP3 instance
   
-  <solverOptions> is the list of options  (separated by whitespace) used for solving the instance.
+  <options> is the list of options  (separated by whitespace) used for solving the instance.
 	Any such parameter is of the form -name=value (potentially -name for some flag parameters).
 	The different parameters and their values are listed below.

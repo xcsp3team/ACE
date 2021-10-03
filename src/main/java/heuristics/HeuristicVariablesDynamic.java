@@ -10,9 +10,9 @@
 
 package heuristics;
 
-import static utility.Enums.ConstraintWeighting.CACD;
-import static utility.Enums.ConstraintWeighting.CHS;
-import static utility.Enums.ConstraintWeighting.VAR;
+import static heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting.CACD;
+import static heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting.CHS;
+import static heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting.VAR;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -29,8 +29,7 @@ import interfaces.Observers.ObserverOnRuns;
 import interfaces.Tags.TagMaximize;
 import sets.SetDense;
 import solver.Solver;
-import utility.Enums.Branching;
-import utility.Enums.SingletonStrategy;
+import solver.Solver.Branching;
 import utility.Kit;
 import utility.Kit.CombinatorOfTwoInts;
 import variables.Domain;
@@ -44,6 +43,14 @@ import variables.Variable;
  * @author Christophe Lecoutre
  */
 public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
+
+	/**
+	 * Three strategies to deal with fixed variables (i.e., variables with singleton domains) while not being explictly
+	 * assigned by the solver
+	 */
+	public enum SingletonStrategy {
+		ANY, FIRST, LAST;
+	}
 
 	public HeuristicVariablesDynamic(Solver solver, boolean anti) {
 		super(solver, anti);
@@ -167,6 +174,14 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	 */
 	public static abstract class WdegVariant extends HeuristicVariablesDynamic
 			implements ObserverOnRuns, ObserverOnAssignments, ObserverOnConflicts, TagMaximize {
+
+		/**
+		 * The four variants for constraint weighting. VAR is a basic variant. UNIT is for classical weighting, cacd its
+		 * variant (ICTAI'19) and CHS (as developed by from Marseille guys)
+		 */
+		public static enum ConstraintWeighting {
+			VAR, UNIT, CACD, CHS;
+		}
 
 		/**
 		 * Constants used by CHS

@@ -15,6 +15,7 @@ import static utility.Kit.control;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import constraints.Constraint;
 import constraints.ConstraintExtension;
@@ -132,13 +133,13 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 				for (int i = 0; i < tuples.length; i++)
 					for (int j = 0; j < tuples[i].length; j++)
 						tmp[j][tuples[i][j]].add(i);
-				subtables = Kit.intArray3D(tmp);
+				subtables = Stream.of(tmp).map(c -> Kit.intArray2D(c)).toArray(int[][][]::new);
 			} else {
 				List<Short>[][] tmp = Variable.litterals(ctr.scp).listArray();
 				for (int i = 0; i < tuples.length; i++)
 					for (int j = 0; j < tuples[i].length; j++)
 						tmp[j][tuples[i][j]].add((short) i);
-				subtablesShort = Kit.shortArray3D(tmp);
+				subtablesShort = Stream.of(tmp).map(c -> Kit.shortArray2D(c)).toArray(short[][][]::new);
 			}
 		}
 

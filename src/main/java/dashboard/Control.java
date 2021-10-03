@@ -44,6 +44,7 @@ import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
+import constraints.ConstraintExtension.Extension;
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.Matrix.Matrix3D;
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
@@ -53,46 +54,46 @@ import heuristics.HeuristicRevisions.HeuristicRevisionsDynamic.Dom;
 import heuristics.HeuristicValues;
 import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicVariables;
+import heuristics.HeuristicVariablesDynamic.SingletonStrategy;
 import heuristics.HeuristicVariablesDynamic.Wdeg;
+import heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting;
 import interfaces.Tags.TagExperimental;
+import learning.IpsReasoner.LearningIps;
+import learning.NogoodReasoner.LearningNogood;
 import main.Head;
 import main.HeadExtraction;
+import main.HeadExtraction.Extraction;
 import optimization.ObjectiveVariable;
 import optimization.Optimizer;
+import optimization.Optimizer.OptimizationStrategy;
+import problem.Problem.SymmetryBreaking;
 import propagation.GAC;
 import propagation.Reviser;
 import propagation.Reviser.Reviser3;
+import solver.Restarter.RestartMeasure;
 import solver.Restarter.RestarterLNS.HeuristicFreezing.Rand;
 import solver.Solver;
-import utility.Enums.Branching;
-import utility.Enums.ConstraintWeighting;
-import utility.Enums.Extension;
-import utility.Enums.Extraction;
-import utility.Enums.LearningIps;
-import utility.Enums.LearningNogood;
-import utility.Enums.OptimizationStrategy;
-import utility.Enums.RestartMeasure;
-import utility.Enums.SingletonStrategy;
-import utility.Enums.SymmetryBreaking;
+import solver.Solver.Branching;
 import utility.Kit;
 import utility.Reflector;
 import variables.Variable;
 
+/**
+ * This class allows us to manage all options concerning the problem (typically, the way to represent it) and the solver
+ * (typically, the way to conduct search).
+ * 
+ * @author Christophe Lecoutre
+ */
 public final class Control {
 
 	/**********************************************************************************************
 	 * Static
 	 *********************************************************************************************/
 
-	public static final String SETTINGS = "settings";
-
-	public static final String DEFAULT_SETTINGS = "defaultSettings";
-
-	public static final String ALL = "all";
-
+	/**
+	 * Value to be used as priority level for hiding an option (when saving the control file)
+	 */
 	private static final int HIDDEN = 4;
-
-	private static final int TO_IMPLEMENT = 4;
 
 	public static void main(String[] args) {
 		Integer maximumPriority = args.length != 2 ? null : Kit.parseInteger(args[1]);
@@ -112,6 +113,9 @@ public final class Control {
 	 * Fields and methods
 	 *********************************************************************************************/
 
+	/**
+	 * The various options, from different groups, stored in a unique list
+	 */
 	private final List<Option<?>> options;
 
 	public final UserSettings userSettings;
@@ -181,7 +185,7 @@ public final class Control {
 		control(0 <= general.verbose && general.verbose <= 3, () -> "Verbose must be in 0..3");
 		Kit.log.setLevel(general.verbose == 0 ? Level.CONFIG : general.verbose == 1 ? Level.FINE : general.verbose == 2 ? Level.FINER : Level.FINEST);
 		control(0 <= lns.pFreeze && lns.pFreeze < 100, () -> "percentageOfVariablesToFreeze should be between 0 and 100 (excluded)");
-		control(learning.nogood != LearningNogood.RST_SYM);
+		control(learning.nogood == LearningNogood.NO || learning.nogood == LearningNogood.RST, "other values currently not available");
 		control(optimization.lb <= optimization.ub);
 		controlKeys();
 		if (general.exceptionsVisible)
@@ -192,7 +196,7 @@ public final class Control {
 			optimization.lb = 0L;
 	}
 
-	public void controlKeys() {
+	private void controlKeys() {
 		String k = Input.argsForSolving.keySet().stream().filter(key -> options.stream().noneMatch(s -> s.key().equals(key) || s.shortcut.equals(key)))
 				.findFirst().orElse(null);
 		control(k == null, () -> "The parameter " + k + " is unknown");
@@ -200,7 +204,7 @@ public final class Control {
 
 	private void save(String outputFilename, int maximumPriority) {
 		Document document = Kit.createNewDocument();
-		Node root = document.appendChild(document.createElement(Control.SETTINGS));
+		Node root = document.appendChild(document.createElement(Input.SETTINGS));
 		for (Option<?> option : options)
 			if (option.priority <= maximumPriority) {
 				NodeList list = document.getElementsByTagName(option.tag);
@@ -226,9 +230,9 @@ public final class Control {
 			while (scanner1.hasNext())
 				System.out.println(scanner1.nextLine());
 			String tag = null;
-			for (Option<?> setting : options)
-				if (setting.priority != HIDDEN && setting.priority != TO_IMPLEMENT)
-					System.out.print((!setting.tag.equals(tag) ? "\n  " + (tag = setting.tag) + "\n" : "") + setting);
+			for (Option<?> option : options)
+				if (option.priority != HIDDEN)
+					System.out.print((!option.tag.equals(tag) ? "\n  " + (tag = option.tag) + "\n" : "") + option);
 			System.out.println();
 			while (scanner2.hasNext())
 				System.out.println(scanner2.nextLine());
@@ -331,48 +335,49 @@ public final class Control {
 
 	private class SettingGroup {
 
-		private <T> Option<T> add(Option<T> option) {
+		private <T> T add(Option<T> option) {
 			control(option.shortcut != null, () -> "A shortcut must be given");
 			for (Option<?> opt : options) {
 				control(!option.shortcut.equals(opt.shortcut), () -> opt.key() + " and " + option.key() + " with the same shortcut " + option.shortcut);
 				control(!opt.key().equals(option.key()), () -> "The parameters " + opt.key() + " and " + option.key() + " with the same value");
 			}
 			options.add(option);
-			return option;
+			return option.value;
 		}
 
 		protected String tag() {
-			return getClass().getSimpleName().substring(0, 1).toLowerCase() + getClass().getSimpleName().substring(1);
+			control(getClass().getSimpleName().startsWith("Setting"));
+			return getClass().getSimpleName().substring(7);
 		}
 
 		protected int addI(String attribute, String shortcut, int defaultValue, String description, int... priority) {
-			return add(new Option<>(tag(), attribute, shortcut, defaultValue, description, priority)).value;
+			return add(new Option<>(tag(), attribute, shortcut, defaultValue, description, priority));
 		}
 
 		protected long addL(String attribute, String shortcut, long defaultValue, String description, int... priority) {
-			return add(new Option<>(tag(), attribute, shortcut, defaultValue, description, priority)).value;
+			return add(new Option<>(tag(), attribute, shortcut, defaultValue, description, priority));
 		}
 
 		protected double addD(String attribute, String shortcut, double defaultValue, String description, int... priority) {
-			return add(new Option<>(tag(), attribute, shortcut, defaultValue, description, priority)).value;
+			return add(new Option<>(tag(), attribute, shortcut, defaultValue, description, priority));
 		}
 
 		protected boolean addB(String attribute, String shortcut, boolean defaultValue, String description, int... priority) {
-			return add(new Option<>(tag(), attribute, shortcut, defaultValue, description, priority)).value;
+			return add(new Option<>(tag(), attribute, shortcut, defaultValue, description, priority));
 		}
 
 		protected String addS(String attribute, String shortcut, String defaultValue, String description, int... priority) {
-			return add(new Option<>(tag(), attribute, shortcut, defaultValue, description, priority)).value;
+			return add(new Option<>(tag(), attribute, shortcut, defaultValue, description, priority)).trim();
 		}
 
 		protected String addS(String attribute, String shortcut, Class<?> defaultValue, Class<?> root, String description, int... priority) {
 			String df = defaultValue == null ? "" : defaultValue.getName().substring(defaultValue.getName().lastIndexOf(".") + 1);
 			root = root == null ? Reflector.getLastButOneSuperclassOf(defaultValue) : root;
-			return add(new Option<String>(tag(), attribute, shortcut, df, root, description, priority)).value.trim();
+			return add(new Option<String>(tag(), attribute, shortcut, df, root, description, priority)).trim();
 		}
 
 		protected <T extends Enum<T>> T addE(String attribute, String shortcut, T defaultValue, String description, int... priority) {
-			return add(new OptionEnum<>(tag(), attribute, shortcut, defaultValue, description, priority)).value;
+			return add(new OptionEnum<>(tag(), attribute, shortcut, defaultValue, description, priority));
 		}
 	}
 
@@ -723,44 +728,50 @@ public final class Control {
 
 	public class UserSettings {
 
+		public static final String ALL = "all";
 		public static final String MIN = "min";
 		public static final String MAX = "max";
 
+		/**
+		 * The document for the XML control file specified by the user (may be null)
+		 */
 		private Document document;
 
+		/**
+		 * The object useful to make requests on the document
+		 */
 		private XPath xPath;
 
 		public final String controlFilename;
 
 		private UserSettings(String controlFilename) {
 			this.controlFilename = controlFilename != null ? controlFilename : Input.controlFilename;
-			if (controlFilename != null && !controlFilename.equals(Control.DEFAULT_SETTINGS)) {
+			if (controlFilename != null && !controlFilename.equals(Input.DEFAULT_SETTINGS)) {
 				// Loads the XML file containing all settings from the user.
-				document = Kit.load(new File(controlFilename));
-				xPath = XPathFactory.newInstance().newXPath();
+				this.document = Kit.load(new File(controlFilename));
+				this.xPath = XPathFactory.newInstance().newXPath();
 			}
 		}
 
 		/** Returns the value (a String) of the specified attribute for the specified tag. */
 		private String stringFor(String shortcut, String tag, String att, Object defaultValue) {
 			// try with shortcut
-			String value = shortcut == null ? null : Input.argsForSolving.get(shortcut);
-			if (value != null)
-				return value.length() == 0 && !(defaultValue instanceof String) ? defaultValue.toString() : value;
+			String s = shortcut == null ? null : Input.argsForSolving.get(shortcut);
+			if (s != null)
+				return s.length() == 0 && !(defaultValue instanceof String) ? defaultValue.toString() : s;
 			// try with tag+attribute
-			value = Input.argsForSolving.get((tag != null ? tag + "/" : "") + att);
-			if (value != null)
-				return value;
+			s = Input.argsForSolving.get((tag != null ? tag + "/" : "") + att);
+			if (s != null)
+				return s;
 			if (document == null)
 				return defaultValue.toString();
-			// try in document
-			try {
+			try { // try in document
 				NodeList nodes = (NodeList) xPath.compile("//" + (tag != null ? tag : "*") + "/@" + att).evaluate(document, XPathConstants.NODESET);
 				control(nodes.getLength() <= 1, () -> "Problem with several possibilities for " + tag + " " + att);
 				if (nodes.getLength() == 0)
 					return defaultValue.toString();
-				value = nodes.item(0).getNodeValue();
-				return value.length() == 0 && !(defaultValue instanceof String) ? defaultValue.toString() : value;
+				s = nodes.item(0).getNodeValue();
+				return s.length() == 0 && !(defaultValue instanceof String) ? defaultValue.toString() : s;
 			} catch (XPathExpressionException e) {
 				Kit.exit("problem xpath", e);
 			}
@@ -771,7 +782,7 @@ public final class Control {
 			String s = stringFor(shortcut, tag, att, defaultValue).toLowerCase();
 			if (s.equals(MIN))
 				return longValue ? Long.MIN_VALUE : (Number) Integer.MIN_VALUE; // problem if cast omitted
-			if (s.equals(MAX) || s.equals(Control.ALL))
+			if (s.equals(MAX) || s.equals(ALL))
 				return longValue ? Long.MAX_VALUE : (Number) Integer.MAX_VALUE; // problem if cast omitted
 			char lastCharacter = s.charAt(s.length() - 1);
 			Long baseValue = Kit.parseLong(Character.isDigit(lastCharacter) ? s : s.substring(0, s.length() - 1));

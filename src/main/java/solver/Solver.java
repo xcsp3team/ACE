@@ -13,8 +13,8 @@ package solver;
 import static java.lang.Integer.parseInt;
 import static java.util.stream.Collectors.toCollection;
 import static org.xcsp.common.Types.TypeFramework.COP;
-import static utility.Enums.Stopping.EXCEEDED_TIME;
-import static utility.Enums.Stopping.FULL_EXPLORATION;
+import static solver.Solver.Stopping.EXCEEDED_TIME;
+import static solver.Solver.Stopping.FULL_EXPLORATION;
 import static utility.Kit.control;
 import static utility.Kit.log;
 
@@ -53,13 +53,25 @@ import propagation.Forward;
 import propagation.Propagation;
 import sets.SetDense;
 import sets.SetSparseReversible;
-import utility.Enums.Branching;
-import utility.Enums.Stopping;
 import utility.Kit;
 import variables.DomainInfinite;
 import variables.Variable;
 
 public class Solver implements ObserverOnBacktracksSystematic {
+
+	/**
+	 * Two ways of branching: binary (2-way) branching or non-binary (d-way) branching
+	 */
+	public static enum Branching {
+		BIN, NON;
+	}
+
+	/**
+	 * Different reasons why the solving process has stopped
+	 */
+	public static enum Stopping {
+		FULL_EXPLORATION, REACHED_GOAL, EXCEEDED_TIME;
+	}
 
 	@Override
 	public void restoreBefore(int depth) {

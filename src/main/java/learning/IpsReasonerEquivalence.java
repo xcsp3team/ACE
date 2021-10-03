@@ -15,8 +15,8 @@ import java.util.Map;
 import java.util.zip.Deflater;
 
 import solver.Solver;
+import solver.Solver.Stopping;
 import utility.Bit;
-import utility.Enums.Stopping;
 import utility.Kit;
 import utility.Kit.ByteArrayHashKey;
 import variables.Variable;

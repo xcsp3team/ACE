@@ -24,9 +24,9 @@ import constraints.extension.STR3;
 import heuristics.HeuristicVariables;
 import heuristics.HeuristicVariablesDynamic.WdegOnDom;
 import solver.Solver;
-import utility.Enums.Stopping;
+import solver.Solver.Stopping;
 import utility.Kit;
-import utility.Kit.Stopwatch;
+import utility.Stopwatch;
 import variables.Domain;
 import variables.Variable;
 

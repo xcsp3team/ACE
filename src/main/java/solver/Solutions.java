@@ -33,7 +33,7 @@ import org.xcsp.modeler.entities.VarEntities.VarEntity;
 
 import constraints.Constraint;
 import problem.Problem;
-import utility.Enums.Stopping;
+import solver.Solver.Stopping;
 import variables.Variable;
 
 /**

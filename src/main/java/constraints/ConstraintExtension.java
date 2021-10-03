@@ -53,6 +53,10 @@ import variables.Variable.VariableSymbolic;
  */
 public abstract class ConstraintExtension extends Constraint implements TagAC, TagCallCompleteFiltering {
 
+	public static enum Extension {
+		V, VA, STR1, STR2, STR3, STR1N, STR2N, CT, CMDDO, CMDDS, RPWC, RPWC2;
+	}
+
 	/**********************************************************************************************
 	 ***** Inner classes (Extension1, ExtensionGeneric and ExtensionSpecific)
 	 *********************************************************************************************/

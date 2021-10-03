@@ -17,7 +17,6 @@ import dashboard.Control.SettingLearning;
 import sets.SetDense;
 import solver.Decisions;
 import solver.Solver;
-import utility.Enums.LearningNogood;
 import utility.Kit;
 import variables.Variable;
 
@@ -34,6 +33,17 @@ public final class NogoodReasoner {
 		if (solver.head.control.solving.enableSearch && solver.head.control.learning.nogood != LearningNogood.NO && solver.propagation.queue != null)
 			return new NogoodReasoner(solver);
 		return null;
+	}
+
+	/**
+	 * Different ways of learning nogoods.
+	 */
+	public static enum LearningNogood {
+		NO, RST, RST_MIN, RST_SYM;
+
+		public boolean isRstType() {
+			return this == RST || this == RST_MIN || this == RST_SYM;
+		}
 	}
 
 	/**********************************************************************************************

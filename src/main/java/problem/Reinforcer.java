@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 import constraints.Constraint;
 import sets.SetSparse;
 import utility.Kit;
-import utility.Kit.Stopwatch;
+import utility.Stopwatch;
 import variables.Domain;
 import variables.Variable;
 import variables.Variable.VariableInteger;

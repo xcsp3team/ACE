@@ -10,6 +10,8 @@
 
 package variables;
 
+import static utility.Kit.control;
+
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
@@ -93,7 +95,7 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 	public DomainFinite(Variable var, int initSize) {
 		super(initSize);
 		this.var = var;
-		Kit.control(0 < initSize && initSize <= Constants.MAX_SAFE_INT);
+		control(0 < initSize && initSize <= Constants.MAX_SAFE_INT);
 	}
 
 	@Override
@@ -126,7 +128,7 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 			super(var, max - min + 1);
 			this.min = min;
 			this.max = max;
-			Kit.control(Constants.MIN_SAFE_INT <= min && min <= max && max <= Constants.MAX_SAFE_INT, () -> "badly formed domain for variable " + var);
+			control(Constants.MIN_SAFE_INT <= min && min <= max && max <= Constants.MAX_SAFE_INT, () -> "badly formed domain for variable " + var);
 		}
 
 		@Override
@@ -174,7 +176,7 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 			super(var, values.length);
 			assert Kit.isStrictlyIncreasing(values);
 			assert this instanceof DomainSymbols || IntStream.range(0, values.length - 1).anyMatch(i -> values[i + 1] != values[i] + 1);
-			Kit.control(Constants.MIN_SAFE_INT <= values[0] && values[values.length - 1] <= Constants.MAX_SAFE_INT);
+			control(Constants.MIN_SAFE_INT <= values[0] && values[values.length - 1] <= Constants.MAX_SAFE_INT);
 			this.values = values;
 			this.firstValue = values[0];
 			this.lastValue = values[values.length - 1];
@@ -219,7 +221,7 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 
 		public DomainSymbols(Variable var, int[] vals, String[] symbols) {
 			super(var, vals);
-			Kit.control(symbols != null && symbols.length > 0 && vals.length == symbols.length, () -> "badly formed set of symbols for variable " + var);
+			control(symbols != null && symbols.length > 0 && vals.length == symbols.length, () -> "badly formed set of symbols for variable " + var);
 			// below we sort the array of symbols according to the way the array of values have been sorted (in the
 			// super-constructor)
 			this.symbols = Arrays.stream(Kit.buildMapping(this.values, vals)).mapToObj(i -> symbols[i]).toArray(String[]::new);

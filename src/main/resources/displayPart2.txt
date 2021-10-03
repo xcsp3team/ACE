@@ -1,5 +1,5 @@
 By the way, there are also two other optional (command line) parameters that can be put just after ace: 
-  java ace {settingsFile} {nInstances} <xcsp3Instance> <solverOptions>
+  java ace {settingsFile} {nInstances} <xcsp3Instance> <options>
 
   <settingsFile> is the name of a XML file that contains the settings for some solver options.
 	For example, you can generate such a file with a command like : java dashboard.Control
@@ -19,8 +19,8 @@ Let us consider some examples:
 	The solver will restart up to 1000 times, and the cutoff value that is used for determining the moment the solver has to restart is initially set to 10 (backtracks).
 	The cutoff value is increased at each restart by a factor set to 1.1 (default value).
   
-  java ace mac.xml queens-12.xml -s=10
-	The instance queens-12.xml is solved using the configuration set in the XML file called mac.xml (but -s=10 has the priority).
+  java ace settings.xml queens-12.xml -s=10
+	The instance queens-12.xml is solved using the configuration set in the XML file called settings.xml (but -s=10 has the priority).
 
   java main.HeadExtraction scen11-f8.xml
 	A minimal unsatisfiable core is extracted: this core is in the file 'extraction_0_xx.xml' where xx stands for the highest value among all (intermediate) generated files.
