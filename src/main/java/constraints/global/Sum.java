@@ -565,7 +565,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 																					// overflow is possible
 			setLimit(limit);
 			defineKey(coeffs, limit);
-			control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])), "" + Kit.join(coeffs));
+			control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])), () -> "" + Kit.join(coeffs));
 
 		}
 

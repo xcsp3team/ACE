@@ -65,7 +65,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 		super(pb, scp);
 		this.list = list;
 		this.value = value;
-		control(Stream.of(list).allMatch(x -> x.dom.containsValue(value) && x.dom.size() > 1), "Badly formed scope.");
+		control(Stream.of(list).allMatch(x -> x.dom.containsValue(value) && x.dom.size() > 1), "Badly formed scope");
 	}
 
 	/**********************************************************************************************

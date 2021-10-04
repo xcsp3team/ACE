@@ -220,10 +220,10 @@ public final class ConflictsStructure implements ConstraintRegister {
 			Variable x = c.scp[i];
 			int max = Integer.MIN_VALUE;
 			for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
-				control(nConflicts[i][a] == c.nConflictsFor(i, a), "pb with " + c + " " + x);
+				assert nConflicts[i][a] == c.nConflictsFor(i, a) : "pb with " + c + " " + x;
 				max = Math.max(max, nConflicts[i][a]);
 			}
-			control(max == nMaxConflicts[i], "pb with " + c + " " + x);
+			assert max == nMaxConflicts[i] : "pb with " + c + " " + x;
 		}
 		return true;
 	}

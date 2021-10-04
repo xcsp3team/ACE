@@ -31,7 +31,6 @@ import sets.SetDense;
 import solver.Solver;
 import solver.Solver.Branching;
 import utility.Kit;
-import utility.Kit.CombinatorOfTwoInts;
 import variables.Domain;
 import variables.Variable;
 
@@ -150,19 +149,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 	}
 
-	public static final class DomThenDeg extends HeuristicVariablesDynamic {
-		private CombinatorOfTwoInts combinator;
-
-		public DomThenDeg(Solver solver, boolean anti) {
-			super(solver, anti);
-			this.combinator = new CombinatorOfTwoInts(solver.problem.features.maxVarDegree());
-		}
-
-		@Override
-		public double scoreOf(Variable x) {
-			return combinator.combinedMaxMinLongValueFor(x.dom.size(), x.deg());
-		}
-	}
+	
 
 	// ************************************************************************
 	// ***** Subclasses for Wdeg variants

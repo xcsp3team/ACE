@@ -21,27 +21,18 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Array;
-import java.math.BigInteger;
 import java.net.URL;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.StringTokenizer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Handler;
@@ -52,7 +43,6 @@ import java.util.logging.Logger;
 import java.util.logging.StreamHandler;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -76,13 +66,15 @@ import dashboard.Input;
 import main.Head;
 
 public final class Kit {
-	private Kit() {
-	}
 
-	public static NumberFormat numberFormat = NumberFormat.getInstance();
-	public static DecimalFormat decimalFormat = new DecimalFormat("###.##", new DecimalFormatSymbols(Locale.ENGLISH));
-
+	/**
+	 * The logger for ACE
+	 */
 	public static Logger log = Logger.getLogger("Logger ACE");
+
+	/**
+	 * The piece of code for initializing the logger
+	 */
 	static {
 		LogManager.getLogManager().reset();
 		Handler handler = new StreamHandler() {
@@ -98,8 +90,7 @@ public final class Kit {
 						System.err.println("From " + control.userSettings.controlFilename + " :");
 					// c.setTimeInMillis(record.getMillis());
 					if (control != null && control.general.verbose > 1)
-						System.err.println("\n" + record.getLevel() + " : " + record.getMessage()); // + " " +
-																									// c.getTime());
+						System.err.println("\n" + record.getLevel() + " : " + record.getMessage());
 					if (record.getLevel() == Level.SEVERE) {
 						System.err.println(record.getLevel() + " forces us to stop");
 						System.out.println("\ns UNSUPPORTED");
@@ -109,29 +100,6 @@ public final class Kit {
 			}
 		};
 		log.addHandler(handler);
-	}
-
-	public static void copy(String srcFileName, String dstFileName) {
-		try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(srcFileName));
-				BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(dstFileName));) {
-			byte[] bytes = new byte[1024];
-			for (int nb = in.read(bytes, 0, bytes.length); nb > 0; nb = in.read(bytes, 0, bytes.length))
-				out.write(bytes, 0, nb);
-		} catch (Exception e) {
-			Kit.exit(e);
-		}
-	}
-
-	public static Object control(boolean conditionToBeRespected, Supplier<String> message) {
-		return conditionToBeRespected ? null : exit(message.get(), new Exception());
-	}
-
-	public static Object control(boolean conditionToBeRespected, String message) {
-		return conditionToBeRespected ? null : exit(message, new Exception());
-	}
-
-	public static Object control(boolean conditionToBeRespected) {
-		return control(conditionToBeRespected, () -> "");
 	}
 
 	public static Object exit(String message, Throwable e) {
@@ -151,26 +119,62 @@ public final class Kit {
 		return exit("", e);
 	}
 
-	private static void collectObjects(Object o, List<Object> list) {
-		if (o != null)
-			if (o.getClass().isArray())
-				IntStream.range(0, Array.getLength(o)).forEach(i -> collectObjects(Array.get(o, i), list));
-			else
-				list.add(o);
+	/**
+	 * Controls that the specified condition is respected. Otherwise exits with the specified message
+	 * 
+	 * @param condition
+	 *            a condition
+	 * @param message
+	 *            a message supplier to be displayed
+	 */
+	public static void control(boolean condition, Supplier<String> message) {
+		if (!condition)
+			exit(message.get(), new Exception());
 	}
 
 	/**
-	 * Builds a 1-dimensional array of objects from the specified sequence of parameters. Each element of the sequence
-	 * must only contain variables (and possibly null values), either stand-alone or present in arrays (of any
-	 * dimension). All variables are collected in order, and concatenated to form a 1-dimensional array. Note that null
-	 * values are simply discarded.
+	 * Controls that the specified condition is respected. Otherwise exits with the specified message
+	 * 
+	 * @param condition
+	 *            a condition
+	 * @param message
+	 *            a message to be displayed
 	 */
-	public static Object[] concat(Object first, Object... next) {
-		List<Object> list = new ArrayList<>();
-		collectObjects(first, list);
-		Stream.of(next).forEach(o -> collectObjects(o, list));
-		return list.toArray(new Object[list.size()]);
+	public static void control(boolean condition, String message) {
+		if (!condition)
+			exit(message, new Exception());
 	}
+
+	/**
+	 * Controls that the specified condition is respected. Otherwise exits.
+	 * 
+	 * @param condition
+	 *            a condition
+	 */
+	public static void control(boolean condition) {
+		control(condition, "");
+	}
+
+	public static void copy(String srcFileName, String dstFileName) {
+		try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(srcFileName));
+				BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(dstFileName));) {
+			byte[] bytes = new byte[1024];
+			for (int nb = in.read(bytes, 0, bytes.length); nb > 0; nb = in.read(bytes, 0, bytes.length))
+				out.write(bytes, 0, nb);
+		} catch (Exception e) {
+			Kit.exit(e);
+		}
+	}
+
+	public static <K, V extends Comparable<? super V>> Map<K, V> sort(Map<K, V> map, Comparator<? super Entry<K, V>> cmp) {
+		Map<K, V> result = new LinkedHashMap<>();
+		map.entrySet().stream().sorted(cmp).forEachOrdered(e -> result.put(e.getKey(), e.getValue()));
+		return result;
+	}
+
+	/**********************************************************************************************
+	 * Functions on Arrays
+	 *********************************************************************************************/
 
 	public static final Comparator<int[]> lexComparatorInt = (t1, t2) -> {
 		for (int i = 0; i < t1.length; i++)
@@ -181,85 +185,8 @@ public final class Kit {
 		return 0;
 	};
 
-	public static final Comparator<long[]> lexComparatorLong = (t1, t2) -> {
-		for (int i = 0; i < t1.length; i++)
-			if (t1[i] < t2[i])
-				return -1;
-			else if (t1[i] > t2[i])
-				return +1;
-		return 0;
-	};
-
-	public static <K, V extends Comparable<? super V>> Map<K, V> sort(Map<K, V> map, Comparator<? super Entry<K, V>> cmp) {
-		Map<K, V> result = new LinkedHashMap<>();
-		map.entrySet().stream().sorted(cmp).forEachOrdered(e -> result.put(e.getKey(), e.getValue()));
-		return result;
-	}
-
-	public static String capitalize(String s) {
-		char[] t = s.toCharArray();
-		IntStream.range(0, t.length).forEach(i -> t[i] = i == 0 ? Character.toUpperCase(t[i]) : Character.toLowerCase(t[i]));
-		return new String(t);
-	}
-
-	public static String camelCaseOf(String s) {
-		return Stream.of(s.split("_")).map(tok -> capitalize(tok)).collect(Collectors.joining());
-	}
-
-	public static boolean[] and(boolean[] inOut, boolean[] in) {
-		assert inOut.length == in.length;
-		for (int i = 0; i < inOut.length; i++)
-			inOut[i] = inOut[i] && in[i];
-		return inOut;
-	}
-
-	public static boolean[] or(boolean[] inOut, boolean[] in) {
-		assert inOut.length == in.length;
-		for (int i = 0; i < inOut.length; i++)
-			inOut[i] = inOut[i] || in[i];
-		return inOut;
-	}
-
-	public static boolean isSubsumed(boolean[] t1, boolean[] t2) {
-		assert t1.length == t2.length;
-		for (int i = 0; i < t1.length; i++)
-			if (t1[i] && !t2[i])
-				return false;
-		return true;
-	}
-
-	public static boolean[] repeat(boolean value, int length) {
-		boolean[] t = new boolean[length];
-		Arrays.fill(t, value);
-		return t;
-	}
-
-	public static char[] repeat(char value, int length) {
-		char[] t = new char[length];
-		Arrays.fill(t, value);
-		return t;
-	}
-
-	public static short[] repeat(short value, int length) {
-		short[] t = new short[length];
-		Arrays.fill(t, value);
-		return t;
-	}
-
 	public static int[] repeat(int value, int length) {
 		int[] t = new int[length];
-		Arrays.fill(t, value);
-		return t;
-	}
-
-	public static long[] repeat(long value, int length) {
-		long[] t = new long[length];
-		Arrays.fill(t, value);
-		return t;
-	}
-
-	public static double[] repeat(double value, int length) {
-		double[] t = new double[length];
 		Arrays.fill(t, value);
 		return t;
 	}
@@ -271,7 +198,15 @@ public final class Kit {
 		return m;
 	}
 
-	// Implementing Fisher–Yates shuffle (see https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle)
+	/**
+	 * Randoms the specified array with the specified Random object. Implementing Fisher–Yates shuffle <br/>
+	 * See https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+	 * 
+	 * @param dense
+	 *            an array to be shuffled
+	 * @param random
+	 *            a random object
+	 */
 	public static void shuffle(int[] dense, Random random) {
 		for (int i = dense.length - 1; i > 0; i--) {
 			int j = random.nextInt(i + 1);
@@ -279,34 +214,6 @@ public final class Kit {
 			dense[i] = dense[j];
 			dense[j] = tmp;
 		}
-	}
-
-	public static byte[] range(byte length) {
-		Kit.control(0 < length);
-		byte[] t = new byte[length];
-		for (byte i = 0; i < t.length; i++)
-			t[i] = i;
-		return t;
-	}
-
-	public static short[] range(short minIncluded, short maxIncluded) {
-		Kit.control(minIncluded <= maxIncluded, () -> minIncluded + ".." + maxIncluded);
-		short[] t = new short[maxIncluded - minIncluded + 1];
-		for (short i = minIncluded; i <= maxIncluded; i++)
-			t[i - minIncluded] = i;
-		return t;
-	}
-
-	public static short[] range(short length) {
-		return range((short) 0, (short) (length - 1));
-	}
-
-	public static int[] range(int minIncluded, int maxIncluded, int step) {
-		Kit.control(minIncluded <= maxIncluded);
-		List<Integer> list = new ArrayList<>();
-		for (int i = minIncluded; i <= maxIncluded; i += step)
-			list.add(i);
-		return Kit.intArray(list);
 	}
 
 	public static int[] range(int minIncluded, int maxIncluded) {
@@ -318,25 +225,12 @@ public final class Kit {
 		return range(0, length - 1);
 	}
 
-	public static long[] range(long length) {
-		Kit.control(0 < length && length <= Integer.MAX_VALUE);
-		return LongStream.range(0, length).toArray();
-	}
-
 	public static boolean[][] cloneDeeply(boolean[][] m) {
 		return Stream.of(m).map(t -> t.clone()).toArray(boolean[][]::new);
 	}
 
-	public static boolean[][][] cloneDeeply(boolean[][][] c) {
-		return Stream.of(c).map(m -> cloneDeeply(m)).toArray(boolean[][][]::new);
-	}
-
 	public static int[][] cloneDeeply(int[][] m) {
 		return Stream.of(m).map(t -> t.clone()).toArray(int[][]::new);
-	}
-
-	public static int[][][] cloneDeeply(int[][][] c) {
-		return Stream.of(c).map(m -> cloneDeeply(m)).toArray(int[][][]::new);
 	}
 
 	public static long[][] cloneDeeply(long[][] m) {
@@ -345,16 +239,6 @@ public final class Kit {
 
 	public static void fill(boolean[][] m, boolean value) {
 		for (boolean[] t : m)
-			Arrays.fill(t, value);
-	}
-
-	public static void fill(boolean[][][] c, boolean value) {
-		for (boolean[][] m : c)
-			fill(m, value);
-	}
-
-	public static void fill(int[][] m, int value) {
-		for (int[] t : m)
 			Arrays.fill(t, value);
 	}
 
@@ -387,10 +271,6 @@ public final class Kit {
 		return collection.stream().toArray(int[][]::new);
 	}
 
-	/**********************************************************************************************
-	 * Search in Arrays
-	 *********************************************************************************************/
-
 	/**
 	 * Returns true iff the specified value belongs to the specified array. Comparison are made by references.
 	 */
@@ -422,10 +302,6 @@ public final class Kit {
 		return false;
 	}
 
-	public static boolean withNoNegativeValues(long[][] m) {
-		return Stream.of(m).noneMatch(t -> Arrays.stream(t).anyMatch(v -> v < 0));
-	}
-
 	public static boolean allDifferentValues(int[] t, int... except) {
 		for (int i = 0; i < t.length; i++) {
 			if (Utilities.indexOf(t[i], except) != -1)
@@ -441,16 +317,8 @@ public final class Kit {
 	 * 
 	 *********************************************************************************************/
 
-	public static boolean isIncreasing(int[] t) {
-		return IntStream.range(0, t.length - 1).noneMatch(i -> t[i] > t[i + 1]);
-	}
-
 	public static boolean isStrictlyIncreasing(int[] t) {
 		return IntStream.range(0, t.length - 1).noneMatch(i -> t[i] >= t[i + 1]);
-	}
-
-	public static boolean isIncreasing(double[] t) {
-		return IntStream.range(0, t.length - 1).noneMatch(i -> t[i] > t[i + 1]);
 	}
 
 	public static <T extends Comparable<T>> boolean isStrictlyIncreasing(T[] t) {
@@ -495,30 +363,9 @@ public final class Kit {
 		return t;
 	}
 
-	public static long[] sort(long[] t) {
-		Arrays.sort(t);
-		return t;
-	}
-
-	public static double[] sort(double[] t) {
-		Arrays.sort(t);
-		return t;
-	}
-
-	public static <E> E[] sort(E[] t) {
-		Arrays.sort(t);
-		return t;
-	}
-
 	public static <E> E[] sort(E[] t, Comparator<E> comparator) {
 		Arrays.sort(t, comparator);
 		return t;
-	}
-
-	public static String getRawInstanceName(String s) {
-		int first = s.lastIndexOf(File.separator) != -1 ? s.lastIndexOf(File.separator) + 1 : 0;
-		int last = s.lastIndexOf(".") != -1 ? s.lastIndexOf(".") : s.length();
-		return first > last ? s.substring(first) : s.substring(first, last);
 	}
 
 	public static String getXMLBaseNameOf(String s) {
@@ -527,14 +374,6 @@ public final class Kit {
 		int last = s.toLowerCase().lastIndexOf(".xml");
 		last = (last == -1 ? s.length() : last);
 		return s.substring(first, last);
-	}
-
-	public static Integer parseInteger(String token) {
-		try {
-			return Integer.parseInt(token);
-		} catch (NumberFormatException e) {
-			return null;
-		}
 	}
 
 	public static Long parseLong(String token) {
@@ -595,14 +434,6 @@ public final class Kit {
 		return sb;
 	}
 
-	public static StringBuilder join(StringBuilder sb, Object array, int length, String... delimiters) {
-		return join(sb, array, length, 1, maxDepthOf(array), null, delimiters);
-	}
-
-	public static StringBuilder join(StringBuilder sb, Object array, String... delimiters) {
-		return join(sb, array, Array.getLength(array), delimiters);
-	}
-
 	public static <T> String join(Object array, int length, Function<T, String> mapper, String... delimiters) {
 		return join(new StringBuilder(), array, length, 1, maxDepthOf(array), mapper, delimiters).toString();
 	}
@@ -623,55 +454,14 @@ public final class Kit {
 		return join(c.toArray(), delimiters);
 	}
 
-	public static String[] split(StringTokenizer st, int nb) {
-		return IntStream.range(0, nb).mapToObj(i -> st.nextToken()).toArray(String[]::new);
-	}
-
-	public static String[] split(StringTokenizer st) {
-		return split(st, st.countTokens());
-	}
-
 	public static String getPathOf(String pathAndFileName) {
 		int last = pathAndFileName.lastIndexOf("/");
 		return last == -1 ? "" : pathAndFileName.substring(0, last + 1);
 	}
 
-	/**********************************************************************************************
-	 * useful classes
-	 *********************************************************************************************/
-
-	public static class Contractor {
-		private Map<IntArrayHashKey, int[]> map;
-
-		private IntArrayHashKey hashKey;
-
-		public Contractor() {
-			map = new HashMap<>(2000);
-		}
-
-		public void clear() {
-			map.clear();
-		}
-
-		public void contract(int[][] m) {
-			for (int i = 0; i < m.length; i++) {
-				if (hashKey == null)
-					hashKey = new IntArrayHashKey();
-				hashKey.t = m[i];
-				int[] t = map.get(hashKey);
-				if (t == null) {
-					map.put(hashKey, m[i]);
-					hashKey = null;
-				} else
-					m[i] = t;
-			}
-		}
-
-		public void contract(Collection<int[][]> collection) {
-			for (int[][] m : collection)
-				contract(m);
-		}
-	}
+	/*************************************************************************
+	 ***** 
+	 *************************************************************************/
 
 	public static class ByteArrayHashKey {
 		public byte[] t;
@@ -761,63 +551,6 @@ public final class Kit {
 		long size = memory();
 		long m = size / 1000000, k = size / 1000 - m * 1000;
 		return m + "M" + k;
-	}
-
-	/*
-	 * This class allows to represent two integer values inside a single int or long value.
-	 */
-	public static final class CombinatorOfTwoInts {
-		private final int maxLeftValue, maxRightValue;
-		private final int offset; // used for managing pairs of values as a unique int
-		private final long maxPossibleCombinedValue;
-
-		public int leftValueIn(int combinedValue) {
-			assert 0 <= combinedValue && combinedValue <= maxPossibleCombinedValue;
-			return combinedValue / offset;
-		}
-
-		public int rightValueIn(int combinedValue) {
-			assert 0 <= combinedValue && combinedValue <= maxPossibleCombinedValue;
-			return combinedValue % offset;
-		}
-
-		public int combinedIntValueFor(int leftValue, int rightValue) {
-			assert 0 <= leftValue && leftValue <= maxLeftValue && 0 <= rightValue && rightValue <= maxRightValue
-					&& maxPossibleCombinedValue <= Integer.MAX_VALUE;
-			return leftValue * offset + rightValue;
-		}
-
-		public long combinedLongValueFor(int leftValue, int rightValue) {
-			assert 0 <= leftValue && leftValue <= maxLeftValue && 0 <= rightValue && rightValue <= maxRightValue;
-			return leftValue * offset + rightValue;
-		}
-
-		public long combinedMinMaxLongValueFor(int leftValue, int rightValue) {
-			assert 0 <= leftValue && leftValue <= maxLeftValue && 0 <= rightValue && rightValue <= maxRightValue;
-			return (maxLeftValue - leftValue) * offset + rightValue;
-		}
-
-		public long combinedMaxMinLongValueFor(int leftValue, int rightValue) {
-			assert 0 <= leftValue && leftValue <= maxLeftValue && 0 <= rightValue && rightValue <= maxRightValue;
-			return leftValue * offset + (maxRightValue - rightValue);
-		}
-
-		public CombinatorOfTwoInts(int maxLeftValue, int maxRightValue) {
-			this.maxLeftValue = maxLeftValue;
-			this.maxRightValue = maxRightValue;
-			Kit.control(0 < maxLeftValue && 0 < maxRightValue);
-			this.offset = maxRightValue + 1;
-			BigInteger b = (BigInteger.valueOf(maxLeftValue).multiply(BigInteger.valueOf(offset))).add(BigInteger.valueOf(maxRightValue));
-			this.maxPossibleCombinedValue = b.longValueExact();
-		}
-
-		public CombinatorOfTwoInts(int maxRightValue) {
-			this(Integer.MAX_VALUE - 1, maxRightValue);
-		}
-
-		public CombinatorOfTwoInts() {
-			this(Integer.MAX_VALUE - 1, Integer.MAX_VALUE - 1);
-		}
 	}
 
 	public static boolean useColors = true;

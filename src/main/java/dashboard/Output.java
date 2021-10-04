@@ -17,9 +17,13 @@ import static utility.Kit.log;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -115,6 +119,16 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	/**********************************************************************************************
 	 * Static members
 	 *********************************************************************************************/
+
+	/**
+	 * An object for formatting numbers when outputting
+	 */
+	private static NumberFormat numberFormat = NumberFormat.getInstance();
+
+	/**
+	 * An object for formatting decimal numbers when outputting
+	 */
+	public static DecimalFormat decimalFormat = new DecimalFormat("###.##", new DecimalFormatSymbols(Locale.ENGLISH));
 
 	public static final String RESOLUTIONS = "resolutions";
 	public static final String RESOLUTION = "resolution";
@@ -222,7 +236,11 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String COMMENT_PREFIX = "  ";
 
 	public static String getOutputFileNamePrefixFrom(String fullInstanceName, String fullConfigurationName) {
-		return Kit.getRawInstanceName(fullInstanceName) + (fullConfigurationName != null ? "_" + Kit.getXMLBaseNameOf(fullConfigurationName) + "_" : "");
+		String s = fullInstanceName;
+		int first = s.lastIndexOf(File.separator) != -1 ? s.lastIndexOf(File.separator) + 1 : 0;
+		int last = s.lastIndexOf(".") != -1 ? s.lastIndexOf(".") : s.length();
+		s = first > last ? s.substring(first) : s.substring(first, last);
+		return s + (fullConfigurationName != null ? "_" + Kit.getXMLBaseNameOf(fullConfigurationName) + "_" : "");
 	}
 
 	/**********************************************************************************************
@@ -567,7 +585,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 				m.put(SOLS, head.solver.solutions.found);
 			else {
 				if (head.problem.optimizer.minBound == 0 || head.problem.optimizer.minBound == Long.MIN_VALUE)
-					m.put(BOUND, Kit.numberFormat.format(head.solver.solutions.bestBound));
+					m.put(BOUND, numberFormat.format(head.solver.solutions.bestBound));
 				else
 					m.put(BOUNDS, head.problem.optimizer.stringBounds());
 			}
@@ -592,11 +610,11 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		}
 		if (ipsReasoner != null) {
 			IpsExtractor extractor = ipsReasoner.extractor;
-			m.put(N_SELIMINABLES, Kit.decimalFormat.format(extractor.proportionOfSEliminableVariables()));
-			m.put(N_RELIMINABLES, Kit.decimalFormat.format(extractor.proportionOfREliminableVariables()));
-			m.put(N_IELIMINABLES, Kit.decimalFormat.format(extractor.proportionOfIEliminableVariables()));
-			m.put(N_DELIMINABLES, Kit.decimalFormat.format(extractor.proportionOfDEliminableVariables()));
-			m.put(N_PELIMINABLES, Kit.decimalFormat.format(extractor.proportionOfPEliminableVariables()));
+			m.put(N_SELIMINABLES, decimalFormat.format(extractor.proportionOfSEliminableVariables()));
+			m.put(N_RELIMINABLES, decimalFormat.format(extractor.proportionOfREliminableVariables()));
+			m.put(N_IELIMINABLES, decimalFormat.format(extractor.proportionOfIEliminableVariables()));
+			m.put(N_DELIMINABLES, decimalFormat.format(extractor.proportionOfDEliminableVariables()));
+			m.put(N_PELIMINABLES, decimalFormat.format(extractor.proportionOfPEliminableVariables()));
 			m.separator();
 		}
 		return m;

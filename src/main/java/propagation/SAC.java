@@ -431,7 +431,8 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			private double alpha, beta;
 
 			public ShavingEvaluator(int nVariables, double alpha, double ratiosThreshold) {
-				this.sucessRatios = Kit.repeat(1.0, nVariables);
+				this.sucessRatios = new double[nVariables];
+				Arrays.fill(sucessRatios, 1.0);
 				this.nFailuresSinceLastSuccess = new int[nVariables];
 				this.ratiosThreshold = ratiosThreshold;
 				this.alpha = alpha;

@@ -138,7 +138,7 @@ public final class KeyCanonizer {
 			return t;
 		}
 
-		public Integer isPrecedence(boolean order) {
+		private Integer isPrecedence(boolean order) {
 			if (!label.equals(TypeExpr.LE.lcname))
 				return null;
 			if (!sons[1].label.equals("%" + (order ? 1 : 0)))
@@ -150,7 +150,7 @@ public final class KeyCanonizer {
 				return null;
 			if (!leftSon.sons[0].label.equals("%" + (order ? 0 : 1)))
 				return null;
-			return Kit.parseInteger(leftSon.sons[1].label);
+			return Utilities.toInteger(leftSon.sons[1].label);
 		}
 
 		public int[] isDisjonctive() {

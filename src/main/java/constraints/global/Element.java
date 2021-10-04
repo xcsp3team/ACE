@@ -93,7 +93,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			this.list = list;
 			this.idom = index.dom;
 			this.ipos = IntStream.range(0, scp.length).filter(i -> scp[i] == index).findFirst().getAsInt();
-			control(Variable.areAllDistinct(list) && index != value, "i=" + index + " x=" + Kit.join(list) + " v=" + value);
+			control(Variable.areAllDistinct(list) && index != value, () -> "i=" + index + " x=" + Kit.join(list) + " v=" + value);
 			control(list.length == idom.initSize(), " pb with " + this + " " + index);
 			// the last control above because we reason with indexes (and not values) for idom
 			// for example if idom={2,3,5}, we have list.length=3 and we refer to variables of list with indexes 0, 1

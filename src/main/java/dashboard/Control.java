@@ -96,7 +96,7 @@ public final class Control {
 	private static final int HIDDEN = 4;
 
 	public static void main(String[] args) {
-		Integer maximumPriority = args.length != 2 ? null : Kit.parseInteger(args[1]);
+		Integer maximumPriority = args.length != 2 ? null : Utilities.toInteger(args[1]);
 		if (args.length != 2 || maximumPriority == null || maximumPriority < 1 || maximumPriority > 3) {
 			System.out.println("\tTool used to generate a default option settings file.");
 			System.out.println("\tUsage : " + Control.class.getName() + " <outputFileName> <maximumPriority>");
@@ -259,7 +259,8 @@ public final class Control {
 
 		private Class<?> root;
 
-		private final String[] experimentalNames = Kit.sort(new String[] { Extraction.MAX_CSP.name(), Extraction.INC.name(), Extraction.INC_FIRST.name() });
+		private final String[] discarded = Stream.of(Extraction.MAX_CSP.name(), Extraction.INC.name(), Extraction.INC_FIRST.name()).sorted()
+				.toArray(String[]::new);
 
 		private T getValue(String shortcut, String tag, String attribute, T defaultValue) {
 			if (defaultValue == null)
@@ -315,8 +316,7 @@ public final class Control {
 						.map(c -> c.getSimpleName()).collect(joining(" ")) + "\n";
 			if (value instanceof Enum<?>)
 				s += "\tPossible values: " + Stream.of(value.getClass().getDeclaredFields())
-						.filter(f -> f.isEnumConstant() && Arrays.binarySearch(experimentalNames, f.getName()) < 0).map(f -> f.getName()).collect(joining(" "))
-						+ "\n";
+						.filter(f -> f.isEnumConstant() && Arrays.binarySearch(discarded, f.getName()) < 0).map(f -> f.getName()).collect(joining(" ")) + "\n";
 			return s;
 		}
 	}
@@ -488,7 +488,7 @@ public final class Control {
 						else
 							set.remove(num);
 				} else {
-					Integer num = Kit.parseInteger(token);
+					Integer num = Utilities.toInteger(token);
 					if (num != null) {
 						control(set.isEmpty() || set.iterator().next() instanceof Integer, () -> msg);
 						if (num >= 0)
@@ -501,7 +501,7 @@ public final class Control {
 					}
 				}
 			}
-			return Kit.sort(set.toArray(new Object[set.size()]));
+			return set.stream().sorted().toArray();
 		}
 
 		private Object splitSelection(boolean left) {
@@ -515,7 +515,7 @@ public final class Control {
 		private Object[] controlAndFinalizeVariablesLists(Object[] priority1Vars, Object[] priority2Vars) {
 			// Selected variables are only valid for XCSP ; control about instantiatedVars and instantiatedVals is made
 			// in reduceDomainsFromUserInstantiation of Problem
-			Object[] t = Kit.concat(instantiatedVars, priority1Vars, priority2Vars);
+			Object[] t = Stream.concat(Stream.concat(Stream.of(instantiatedVars), Stream.of(priority1Vars)), Stream.of(priority2Vars)).toArray(Object[]::new);
 			if (t.length > 0) {
 				control(Stream.of(t).distinct().count() == t.length, () -> "Two variables are identical in your lists (-sel -pr1 -pr2)");
 				control(selectedVars.length == 0 || Stream.of(t).allMatch(o -> Arrays.binarySearch(selectedVars, o) >= 0),

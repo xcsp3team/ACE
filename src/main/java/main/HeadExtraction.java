@@ -22,6 +22,21 @@ import variables.Variable;
 
 public class HeadExtraction extends Head {
 
+	public static boolean[] and(boolean[] inOut, boolean[] in) {
+		assert inOut.length == in.length;
+		for (int i = 0; i < inOut.length; i++)
+			inOut[i] = inOut[i] && in[i];
+		return inOut;
+	}
+
+	public static boolean isSubsumed(boolean[] t1, boolean[] t2) {
+		assert t1.length == t2.length;
+		for (int i = 0; i < t1.length; i++)
+			if (t1[i] && !t2[i])
+				return false;
+		return true;
+	}
+
 	/**
 	 * Different ways of conducting extraction
 	 */
@@ -30,7 +45,7 @@ public class HeadExtraction extends Head {
 	}
 
 	/**
-	 * The list of colelcted cores
+	 * The list of collected cores
 	 */
 	public List<List<Constraint>> cores = new ArrayList<>();
 
@@ -245,8 +260,8 @@ public class HeadExtraction extends Head {
 			if (nActiveConstraints >= nPreviousActiveConstraints)
 				break;
 			nPreviousActiveConstraints = nActiveConstraints;
-			control(Kit.isSubsumed(activeCtrs, presentCtrs));
-			Kit.and(presentCtrs, activeCtrs);
+			control(isSubsumed(activeCtrs, presentCtrs));
+			and(presentCtrs, activeCtrs);
 			boolean sat = solveCurrentNetwork(updatePresentVariablesFrom(presentVars, presentCtrs), presentCtrs, true);
 			control(!sat);
 		}
@@ -255,14 +270,17 @@ public class HeadExtraction extends Head {
 	}
 
 	private void buildOrInitializeStructures(List<List<Constraint>> cores) {
+		int n = problem.variables.length, e = problem.constraints.length;
 		if (cores.size() == 0) {
-			presentVars = Kit.repeat(true, problem.variables.length);
-			presentCtrs = Kit.repeat(true, problem.constraints.length);
-			localVars = new boolean[problem.variables.length];
-			localCtrs = new boolean[problem.constraints.length];
-			activeCtrs = new boolean[problem.constraints.length];
-			tmpVars = new boolean[problem.variables.length];
-			tmpCtrs = new boolean[problem.constraints.length];
+			presentVars = new boolean[n];
+			presentCtrs = new boolean[e];
+			Arrays.fill(presentVars, true);
+			Arrays.fill(presentCtrs, true);
+			localVars = new boolean[n];
+			localCtrs = new boolean[e];
+			activeCtrs = new boolean[e];
+			tmpVars = new boolean[n];
+			tmpCtrs = new boolean[e];
 		} else {
 			Arrays.fill(presentVars, true);
 			Arrays.fill(presentCtrs, true);

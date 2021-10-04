@@ -241,10 +241,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			for (int i = 0; i < LIM; i++)
 				terms[LIM + i] = new Term((coeffs == null ? 1 : coeffs[scp.length - 1 - i]) * scp[scp.length - 1 - i].dom.distance(), scp[scp.length - 1 - i]);
 		}
-		terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new); // we discard
-																											// terms of
-																											// small
-																											// coeffs
+		// we discard terms of small coeffs
+		terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new);
 		if (terms.length > 0) {
 			Variable[] t = Stream.of(terms).map(term -> term.obj).toArray(Variable[]::new);
 
@@ -544,7 +542,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				Variable x = variables.get(cycle1[0]);
 				Variable y = variables.get(cycle1[1]);
 				if (head.control.problem.symmetryBreaking == SymmetryBreaking.SB_LE) { // we only consider the two first
-																					// variables
+																						// variables
 					lessEqual(x, y);
 				} else {
 					List<Variable> list1 = new ArrayList<>(), list2 = new ArrayList<>();
@@ -1967,9 +1965,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(Stream.of(list).noneMatch(x -> x == null) && startIndex == 0);
 		control(Variable.areAllInitiallyBoolean((Variable[]) list) && ((Variable) value).dom.areInitValuesExactly(range(list.length)));
 		// exactly((VariableInteger[]) list, 1, 1); // TODO what would be the benefit of posting it?
-		return forall(range(list.length), i -> post(new Reif2EQ(this, (Variable) list[i], (Variable) value, i))); // intension(iff(list[i],
-																													// eq(value,
-																													// i))));
+		return forall(range(list.length), i -> post(new Reif2EQ(this, (Variable) list[i], (Variable) value, i)));
+		// intension(iff(list[i], eq(value, i))));
 	}
 
 	// ************************************************************************
@@ -2060,14 +2057,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				Variable xi = (Variable) origins[i][0], xj = (Variable) origins[j][0], yi = (Variable) origins[i][1], yj = (Variable) origins[j][1];
 				int wi = lengths[i][0], wj = lengths[j][0], hi = lengths[i][1], hj = lengths[j][1];
 				if (head.control.global.typeNoOverlap == INTENSION_DECOMPOSITION)
-					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi))); // VERY
-																														// expensive
+					// VERY expensive
+					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
 				else if (head.control.global.typeNoOverlap == EXTENSION_STARRED)
-					extension(vars(xi, xj, yi, yj), Table.starredNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true); // seems
-																															// to
-																															// be
-																															// rather
-																															// efficient
+					// seems to be rather efficient
+					extension(vars(xi, xj, yi, yj), Table.starredNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true);
 				else if (head.control.global.typeNoOverlap == EXTENSION_HYBRID)
 					post(CSmart.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				else

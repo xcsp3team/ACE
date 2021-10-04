@@ -13,6 +13,7 @@ package solver;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import dashboard.Output;
 import interfaces.Observers.ObserverOnDecisions;
 import interfaces.Observers.ObserverOnRuns;
 import utility.Kit;
@@ -121,10 +122,9 @@ public final class LastConflict implements ObserverOnRuns, ObserverOnDecisions {
 		private void display() {
 			if (storeSize > 0)
 				update(0); // last update to be done since not taken into account when backtracking to level 0
-			String s = IntStream.range(1, k + 1)
-					.mapToObj(i -> i + ":(#=" + cnts[i] + (cnts[i] == 0 ? "" : ",avg=" + Kit.decimalFormat.format(jmps[i] / (double) cnts[i])))
-					.collect(Collectors.joining(")  "));
-			Kit.log.info("last-conflicts  " + s + ")\n");
+			Kit.log.info(() -> "last-conflicts  " + IntStream.range(1, k + 1)
+					.mapToObj(i -> i + ":(#=" + cnts[i] + (cnts[i] == 0 ? "" : ",avg=" + Output.decimalFormat.format(jmps[i] / (double) cnts[i])))
+					.collect(Collectors.joining(")  ")) + ")\n");
 		}
 	}
 

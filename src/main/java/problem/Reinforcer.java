@@ -1,6 +1,7 @@
 package problem;
 
 import static java.util.stream.Collectors.joining;
+import static utility.Kit.control;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -67,7 +68,7 @@ public class Reinforcer {
 			for (int i = 0; i < scp.length; i++)
 				for (int j = i + 1; j < scp.length; j++) {
 					Variable x = scp[i], y = scp[j];
-					Kit.control(constraints.stream().anyMatch(c -> c.isIrreflexive() && c.involves(x) && c.involves(y)), "pb clique with " + x + " " + y);
+					control(constraints.stream().anyMatch(c -> c.isIrreflexive() && c.involves(x) && c.involves(y)), "pb clique with " + x + " " + y);
 				}
 			return true;
 		}

@@ -96,8 +96,10 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 		public SetSparseMapSTR3(int capacity, boolean initiallyFull) {
 			super(capacity, initiallyFull);
 			control(0 < capacity && capacity <= Short.MAX_VALUE);
-			positions = Kit.range((short) capacity);
-			sseparators = Kit.range(capacity);
+			this.positions = new short[capacity];
+			for (short i = 0; i < positions.length; i++)
+				positions[i] = i;
+			this.sseparators = Kit.range(capacity);
 		}
 
 		@Override
@@ -224,8 +226,12 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 
 		public LocalSetSparseByte(int capacity, boolean initiallyFull) {
 			control(0 < capacity && capacity <= Byte.MAX_VALUE);
-			this.dense = Kit.range((byte) capacity);
-			this.sparse = Kit.range((byte) capacity);
+			this.dense = new byte[capacity];
+			for (byte i = 0; i < dense.length; i++)
+				dense[i] = i;
+			this.sparse = new byte[capacity];
+			for (byte i = 0; i < sparse.length; i++)
+				sparse[i] = i;
 			this.limit = (byte) (initiallyFull ? dense.length - 1 : -1);
 		}
 

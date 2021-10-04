@@ -10,6 +10,8 @@
 
 package constraints.extension.structures;
 
+import java.util.stream.Stream;
+
 import constraints.Constraint;
 import constraints.ConstraintExtension;
 import utility.Kit;
@@ -111,7 +113,7 @@ public abstract class Matrix extends ExtensionStructure {
 
 		public Matrix3D(ConstraintExtension c, Matrix3D matrix3D) { // called by reflection when cloning structures
 			this(c);
-			this.supports = Kit.cloneDeeply(matrix3D.supports);
+			this.supports = Stream.of(matrix3D.supports).map(m -> Kit.cloneDeeply(m)).toArray(boolean[][][]::new);
 		}
 
 		@Override
@@ -119,7 +121,8 @@ public abstract class Matrix extends ExtensionStructure {
 			Constraint c = firstRegisteredCtr();
 			this.supports = new boolean[c.doms[0].initSize()][c.doms[1].initSize()][c.doms[2].initSize()];
 			if (!positive)
-				Kit.fill(supports, true);
+				for (boolean[][] m : supports)
+					Kit.fill(m, true);
 			for (int[] tuple : tuples)
 				if (c.indexesMatchValues)
 					supports[tuple[0]][tuple[1]][tuple[2]] = positive;
