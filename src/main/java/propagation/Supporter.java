@@ -12,6 +12,7 @@ package propagation;
 
 import static utility.Kit.control;
 
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
@@ -19,7 +20,6 @@ import constraints.extension.structures.Bits;
 import interfaces.SpecificPropagator;
 import propagation.Reviser.Reviser3;
 import utility.Kit;
-import variables.Variable;
 
 /**
  * A "supporter" is attached to a constraint and allows us to benefit from residues (which are like cache) when looking
@@ -96,7 +96,7 @@ public abstract class Supporter {
 		public SupporterBary(Constraint c) {
 			super(c);
 			control(c.scp.length == 2);
-			this.residues = Variable.litterals(c.scp).intArray(-1);
+			this.residues = Stream.of(c.scp).map(x -> Kit.repeat(-1, x.dom.initSize())).toArray(int[][]::new); // Variable.litterals(c.scp).intArray(-1);
 		}
 
 		@Override
@@ -132,7 +132,8 @@ public abstract class Supporter {
 		public SupporterNary(Constraint c) {
 			super(c);
 			control(c.scp.length > 2);
-			this.residues = Stream.of(c.scp).map(x -> Kit.repeat(-1, x.dom.initSize(), c.scp.length)).toArray(int[][][]::new);
+			this.residues = Stream.of(c.scp).map(x -> IntStream.range(0, x.dom.initSize()).mapToObj(a -> Kit.repeat(-1, c.scp.length)).toArray(int[][]::new))
+					.toArray(int[][][]::new);
 		}
 
 		@Override

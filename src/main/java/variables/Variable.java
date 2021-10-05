@@ -288,51 +288,55 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	public static class Litterals {
+
 		private Variable[] vars;
-		private boolean initSize = true;
 
 		private Litterals(Variable[] vars) {
 			this.vars = vars;
 		}
 
+		/**
+		 * @return a matrix m with a boolean for each literal (x,a)
+		 */
 		public boolean[][] booleanArray() {
-			return Stream.of(vars).map(x -> new boolean[initSize ? x.dom.initSize() : x.dom.size()]).toArray(boolean[][]::new);
+			return Stream.of(vars).map(x -> new boolean[x.dom.initSize()]).toArray(boolean[][]::new);
 		}
 
+		/**
+		 * @return a matrix m with a short for each literal (x,a)
+		 */
 		public short[][] shortArray() {
-			return Stream.of(vars).map(x -> new short[initSize ? x.dom.initSize() : x.dom.size()]).toArray(short[][]::new);
+			return Stream.of(vars).map(x -> new short[x.dom.initSize()]).toArray(short[][]::new);
 		}
 
+		/**
+		 * @return a matrix m with an int for each literal (x,a)
+		 */
 		public int[][] intArray() {
-			return Stream.of(vars).map(x -> new int[initSize ? x.dom.initSize() : x.dom.size()]).toArray(int[][]::new);
+			return Stream.of(vars).map(x -> new int[x.dom.initSize()]).toArray(int[][]::new);
 		}
 
-		public int[][] intArray(int value) {
-			return Stream.of(vars).map(x -> Kit.repeat(value, initSize ? x.dom.initSize() : x.dom.size())).toArray(int[][]::new);
-		}
-
+		/**
+		 * @return a matrix m with a long for each literal (x,a)
+		 */
 		public long[][] longArray() {
-			return Stream.of(vars).map(x -> new long[initSize ? x.dom.initSize() : x.dom.size()]).toArray(long[][]::new);
+			return Stream.of(vars).map(x -> new long[x.dom.initSize()]).toArray(long[][]::new);
 		}
 
-		public long[][][] longArray(int thirdDimensionSize) {
-			return Stream.of(vars).map(x -> new long[initSize ? x.dom.initSize() : x.dom.size()][thirdDimensionSize]).toArray(long[][][]::new);
-		}
-
+		/**
+		 * @return a matrix m with a list for each literal (x,a)
+		 */
 		public <E> List<E>[][] listArray() {
-			return Stream.of(vars)
-					.map(x -> IntStream.range(0, initSize ? x.dom.initSize() : x.dom.size()).mapToObj(i -> new ArrayList<>()).toArray(List[]::new))
-					.toArray(List[][]::new);
-		}
-
-		public <T> T[][] toArray(Class<T> clazz) {
-			T[][] a = Utilities.buildArray(clazz, vars.length, 0);
-			for (int i = 0; i < vars.length; i++)
-				a[i] = Utilities.buildArray(clazz, initSize ? vars[i].dom.initSize() : vars[i].dom.size());
-			return a;
+			return Stream.of(vars).map(x -> IntStream.range(0, x.dom.initSize()).mapToObj(i -> new ArrayList<>()).toArray(List[]::new)).toArray(List[][]::new);
 		}
 	}
 
+	/**
+	 * Returns an object Literals useful to build matrices of primitive types
+	 * 
+	 * @param vars
+	 *            an array of variables
+	 */
 	public static Litterals litterals(Variable[] vars) {
 		return new Litterals(vars);
 	}
@@ -563,8 +567,17 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**
-	 * Determines if this variable and the specified one are involved together in at least one constraint.
+	 * Returns true if this variable belongs to the specified array
+	 * 
+	 * @param t
+	 *            an array of variables
 	 */
+	public final boolean presentIn(Variable[] t) {
+		for (Variable x : t)
+			if (x == this)
+				return true;
+		return false;
+	}
 
 	/**
 	 * Returns true if the variable and the specified one are involved together in at least a constraint
@@ -698,19 +711,4 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 // VarEntities.VarAlone va = problem.varEntities.varToVarAlone.get(this);
 // if (va != null)
 // va.id = id;
-// }
-
-/// **
-// * Both arrays must be increasingly sorted. Returns true iff the first set contains the second set.
-// */
-// public static final boolean contains(Variable[] vars1, Variable... vars2) {
-// assert areNumsStrictlyIncreasing(vars1) && areNumsStrictlyIncreasing(vars2);
-// int i = 0;
-// for (int j = 0; j < vars2.length; j++) {
-// while (i < vars1.length && vars1[i].num < vars2[j].num)
-// i++;
-// if (i == vars1.length || vars1[i].num != vars2[j].num)
-// return false;
-// }
-// return true;
 // }

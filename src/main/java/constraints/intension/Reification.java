@@ -31,7 +31,6 @@ import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
-import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
@@ -400,7 +399,7 @@ public final class Reification {
 			super(pb, pb.api.vars(x, list));
 			this.x = x;
 			this.dx = x.dom;
-			control(list.length > 1 && !Kit.isPresent(x, list) && Variable.areAllInitiallyBoolean(scp), "Variables must be 01");
+			control(list.length > 1 && !x.presentIn(list) && Variable.areAllInitiallyBoolean(scp), "Variables must be 01");
 		}
 
 		public static abstract class ReifLogic2 extends ReifLogic {

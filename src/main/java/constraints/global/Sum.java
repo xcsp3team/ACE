@@ -1035,7 +1035,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			case EQ:
 				return new SumViewWeightedEQ(pb, trees, coeffs, limit);
 			default: // case NE:
-				throw new AssertionError("not implemented"); // return new SumWeightedNE(pb, vs, coeffs, limit);
+				throw new AssertionError("not implemented");
 			}
 		}
 
@@ -1106,8 +1106,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		protected final View[] views;
 
 		public SumViewWeighted(Problem pb, XNode<IVar>[] trees, int[] coeffs, long limit) {
-			super(pb, Utilities.collect(Variable.class, Stream.of(trees).map(tree -> tree.vars()))); // pb.translate(Utilities.collect(IVar.class,
-																										// trees)));
+			super(pb, Utilities.collect(Variable.class, Stream.of(trees).map(tree -> tree.vars())));
 			this.coeffs = coeffs;
 			// System.out.println("trees " + Kit.join(trees));
 			this.views = Stream.of(trees).map(tree -> tree.type == TypeExpr.VAR ? new ViewVariable(tree) : new ViewTree01(tree)).toArray(View[]::new);

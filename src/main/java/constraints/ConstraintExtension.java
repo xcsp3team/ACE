@@ -242,7 +242,18 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	}
 
 	private static boolean isStarred(Object tuples) {
-		return tuples instanceof int[][] ? Kit.isPresent(STAR, (int[][]) tuples) : Kit.isPresent(STAR_SYMBOL, (String[][]) tuples);
+		if (tuples instanceof int[][]) {
+			for (int[] t : (int[][]) tuples)
+				for (int v : t)
+					if (v == STAR)
+						return true;
+		} else {
+			for (String[] t : (String[][]) tuples)
+				for (String s : t)
+					if (s.equals(STAR_SYMBOL))
+						return true;
+		}
+		return false;
 	}
 
 	/**

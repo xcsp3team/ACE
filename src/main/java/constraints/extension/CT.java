@@ -15,6 +15,7 @@ import static utility.Kit.control;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import org.xcsp.common.Constants;
 
@@ -55,7 +56,7 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 		fillTo1(current);
 
 		this.starred = ((Table) extStructure()).starred;
-		this.masks = Variable.litterals(scp).longArray(nWords);
+		this.masks = Stream.of(scp).map(x -> new long[x.dom.initSize()][nWords]).toArray(long[][][]::new);
 		if (!this.starred) {
 			for (int x = 0; x < scp.length; x++) {
 				long[][] mask = masks[x];
@@ -74,7 +75,7 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 							Bit.setTo1(mask[a], j);
 				maskCompression(mask);
 			}
-			this.masksS = Variable.litterals(scp).longArray(nWords);
+			this.masksS = Stream.of(scp).map(x -> new long[x.dom.initSize()][nWords]).toArray(long[][][]::new);
 			for (int x = 0; x < scp.length; x++) {
 				long[][] mask = masksS[x];
 				for (int j = 0; j < tuples.length; j++)

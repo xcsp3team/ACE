@@ -30,7 +30,6 @@ import problem.Problem;
 import propagation.StrongConsistency;
 import sets.SetDenseReversible;
 import sets.SetSparse;
-import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
@@ -51,7 +50,7 @@ public final class CSmart extends ExtensionSpecific {
 	}
 
 	public static Constraint atMost1(Problem pb, Variable[] list, Variable value) {
-		control(!Kit.isPresent(value, list), () -> "Not handled for the moment");
+		control(!value.presentIn(list), () -> "Not handled for the moment");
 		Stream<HybridTuple> hts = IntStream.range(0, list.length)
 				.mapToObj(i -> new HybridTuple(IntStream.range(0, list.length).filter(j -> j != i).mapToObj(j -> ne(value, list[j]))));
 		return new CSmart(pb, pb.distinctSorted(pb.vars(list, value)), hts);
@@ -65,14 +64,14 @@ public final class CSmart extends ExtensionSpecific {
 	}
 
 	public static Constraint minimum(Problem pb, Variable[] list, Variable min) {
-		control(!Kit.isPresent(min, list), () -> "Not handled for the moment");
+		control(!min.presentIn(list), () -> "Not handled for the moment");
 		Stream<HybridTuple> hts = IntStream.range(0, list.length)
 				.mapToObj(i -> new HybridTuple(IntStream.range(0, list.length).mapToObj(j -> j != i ? le(list[i], list[j]) : eq(list[i], min))));
 		return new CSmart(pb, pb.distinctSorted(pb.vars(list, min)), hts);
 	}
 
 	public static Constraint maximum(Problem pb, Variable[] list, Variable max) {
-		control(!Kit.isPresent(max, list), () -> "Not handled for the moment");
+		control(!max.presentIn(list), () -> "Not handled for the moment");
 		Stream<HybridTuple> hts = IntStream.range(0, list.length)
 				.mapToObj(i -> new HybridTuple(IntStream.range(0, list.length).mapToObj(j -> j != i ? ge(list[i], list[j]) : eq(list[i], max))));
 		return new CSmart(pb, pb.distinctSorted(pb.vars(list, max)), hts);

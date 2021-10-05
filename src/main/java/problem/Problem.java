@@ -50,6 +50,8 @@ import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.relo
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.unalop;
 import static org.xcsp.common.predicates.XNode.node;
 import static org.xcsp.common.predicates.XNodeParent.add;
+import static org.xcsp.common.predicates.XNodeParent.eq;
+import static org.xcsp.common.predicates.XNodeParent.ge;
 import static org.xcsp.common.predicates.XNodeParent.iff;
 import static org.xcsp.common.predicates.XNodeParent.le;
 import static org.xcsp.common.predicates.XNodeParent.mul;
@@ -180,10 +182,10 @@ import constraints.intension.Reification.Reif2;
 import constraints.intension.Reification.Reif2.Reif2EQ;
 import constraints.intension.Reification.Reif3;
 import constraints.intension.Reification.ReifLogic;
-import dashboard.Control;
 import dashboard.Control.SettingCtrs;
 import dashboard.Control.SettingGeneral;
 import dashboard.Control.SettingVars;
+import dashboard.Control.SettingXml;
 import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicValuesDirect.Last;
 import heuristics.HeuristicValuesDirect.Values;
@@ -556,7 +558,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 								list2.add(variables.get(cycle[(i + 1) % cycle.length]));
 							}
 					VariableInteger[] t1 = list1.toArray(new VariableInteger[list1.size()]), t2 = list2.toArray(new VariableInteger[list2.size()]);
-					control(Kit.isStrictlyIncreasing(t1));
+					control(IntStream.range(0, t1.length - 1).noneMatch(i -> t1[i].compareTo(t1[i + 1]) >= 0));
 					lexSimple(t1, t2, TypeOperatorRel.LE);
 				}
 			}
@@ -686,8 +688,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Posting variables
 	// ************************************************************************
 
-	/** A map that gives access to each variable through its id. */
-	public final Map<String, Variable> mapForVars = new HashMap<>();
+	/**
+	 * A map that gives access to each variable through its id.
+	 */
+	private final Map<String, Variable> mapForVars = new HashMap<>();
 
 	@Override
 	public Class<VariableInteger> classVI() {
@@ -750,9 +754,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return t instanceof Variable[] ? (Variable[]) t : Stream.of(t).map(x -> (Variable) x).toArray(Variable[]::new);
 	}
 
-	private Variable[][] translate2D(IVar[][] m) {
-		return m instanceof Variable[][] ? (Variable[][]) m : Stream.of(m).map(t -> translate(t)).toArray(Variable[][]::new);
-	}
+	// private Variable[][] translate2D(IVar[][] m) {
+	// return m instanceof Variable[][] ? (Variable[][]) m : Stream.of(m).map(t ->
+	// translate(t)).toArray(Variable[][]::new);
+	// }
 
 	private Range range(int length) {
 		return new Range(length);
@@ -888,8 +893,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity intension(XNodeParent<IVar> tree) {
-		Control control = head.control;
-
 		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
 		Variable[] scp = (Variable[]) tree.vars(); // keep this statement here, after canonization
 		int arity = scp.length;
@@ -899,7 +902,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 			Variable x = (Variable) tree.var(0);
 			if (head.mustPreserveUnaryConstraints()) {
-				if (!control.constraints.intensionToExtension1)
+				if (!head.control.constraints.intensionToExtension1)
 					return post(new ConstraintIntension(this, scp, tree));
 				int[] values = x.dom.valuesChecking(v -> evaluator.evaluate(v) != 1); // initially, conflicts
 				boolean positive = values.length >= x.dom.size() / 2;
@@ -913,23 +916,23 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		assert Variable.haveSameType(scp);
-		if (control.extension.convertingIntension(scp) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
+		if (head.control.extension.convertingIntension(scp) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
 
 		if (arity == 2 && x_mul_y__eq_k.matches(tree)) {
-			// we can use scp because we are sure that the two variables are different (arity is 2) ; so no need to use
-			// tree.arrayOfVars()
 			int k = tree.val(0);
-			// we can intercept the cases where k=0 or k=1
+			// we can intercept the cases where k=0 or k=1; below, we can use scp because we are sure
+			// that the two variables are different (arity is 2) ; so no need to use tree.arrayOfVars()
 			if (k == 0)
-				return intension(api.or(api.eq(scp[0], 0), api.eq(scp[1], 0)));
+				return intension(or(eq(scp[0], 0), eq(scp[1], 0)));
 			if (k == 1)
-				return forall(range(2), i -> api.equal(scp[i], 1));
+				return forall(range(2), i -> equal(scp[i], 1));
 		}
 
-		if (arity == 2 && control.xml.recognizePrimitive2) {
+		SettingXml xml = head.control.xml;
+		if (arity == 2 && xml.recognizePrimitive2) {
 			Constraint c = null;
 			if (x_relop_y.matches(tree))
 				c = Sub2.buildFrom(this, scp[0], scp[1], tree.relop(0), 0);
@@ -959,7 +962,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (c != null)
 				return post(c);
 		}
-		if (arity == 3 && control.xml.recognizePrimitive3) {
+		if (arity == 3 && xml.recognizePrimitive3) {
 			Constraint c = null;
 			if (x_ariop_y__relop_z.matches(tree))
 				c = Primitive3.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0), scp[2]);
@@ -970,7 +973,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (c != null)
 				return post(c);
 		}
-		if (control.xml.recognizeReifLogic) {
+		if (xml.recognizeReifLogic) {
 			Constraint c = null;
 			if (logic_X__eq_x.matches(tree)) {
 				Variable[] list = IntStream.range(0, scp.length - 1).mapToObj(i -> scp[i]).toArray(Variable[]::new);
@@ -983,13 +986,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 		// if (arity >= 2 && tree.type == OR && Stream.of(tree.sons).allMatch(son -> x_relop_k.matches(son))) { }
 
-		if (control.xml.recognizeExtremum) {
+		if (xml.recognizeExtremum) {
 			if (min_relop.matches(tree))
 				return minimum((Var[]) tree.sons[0].vars(), basicCondition(tree));
 			if (max_relop.matches(tree))
 				return maximum((Var[]) tree.sons[0].vars(), basicCondition(tree));
 		}
-		if (control.xml.recognizeSum) {
+		if (xml.recognizeSum) {
 			if (add_vars__relop.matches(tree)) {
 				Var[] list = (Var[]) tree.sons[0].arrayOfVars();
 				return sum(list, Kit.repeat(1, list.length), basicCondition(tree));
@@ -1010,14 +1013,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (tree.relop(0) == EQ && tree.sons[1].type == LONG) {
 				Integer k = tree.sons[1].val(0);
 				if (k == 0)
-					return intension(api.or(Stream.of(list).map(x -> api.eq(x, 0))));
+					return intension(or(Stream.of(list).map(x -> eq(x, 0))));
 				if (k == 1)
-					return forall(range(list.length), i -> api.equal(list[i], 1));
+					return forall(range(list.length), i -> equal(list[i], 1));
 			}
 			return product(list, basicCondition(tree));
 		}
 
-		// System.out.println("tree1 " + tree);
 		boolean b = head.control.constraints.decomposeIntention > 0 && scp[0] instanceof VariableInteger && scp.length + 1 >= tree.listOfVars().size(); //
 		// at most a variable occurring twice
 		b = b || head.control.constraints.decomposeIntention == 2;
@@ -1052,8 +1054,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				}
 			}
 		}
-
-		// System.out.println("tree2 " + tree);
 		return post(new ConstraintIntension(this, scp, tree));
 	}
 
@@ -1266,8 +1266,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity allDifferentList(Var[]... lists) {
 		control(lists.length >= 2);
-		Variable[][] m = translate2D(lists);
-		return lists.length == 2 ? distinctVectors(m[0], m[1]) : distinctVectors(m);
+		Variable[][] m = lists instanceof Variable[][] ? (Variable[][]) lists : Stream.of(lists).map(t -> translate(t)).toArray(Variable[][]::new); // translate2D(lists);
+		return m.length == 2 ? distinctVectors(m[0], m[1]) : distinctVectors(m);
 	}
 
 	@Override
@@ -2122,12 +2122,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		boolean sameType = Variable.haveSameDomainType(vars);
 		if (!sameType || head.control.global.typeBinpacking == 1) { // decomposing in sum constraints
 			int[] values = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).toArray();
-			return forall(range(values.length), v -> sum(Stream.of(list).map(x -> api.eq(x, v)), sizes, condition)); // TODO
-																														// add
-																														// nValues
-																														// ?
-																														// other
-																														// ?
+			return forall(range(values.length), v -> sum(Stream.of(list).map(x -> api.eq(x, v)), sizes, condition));
+			// TODO add nValues ? other ?
 		}
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
@@ -2178,7 +2174,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	// ************************************************************************
-	// ***** Constraint instantiation
+	// ***** Constraints instantiation and refutation
 	// ************************************************************************
 
 	@Override
@@ -2242,14 +2238,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private Optimizer buildOptimizer(TypeOptimization opt, Optimizable clb, Optimizable cub) {
 		control(optimizer == null, "Only mono-objective currently supported");
-		// head.control.toCOP();
 		if (head.control.optimization.strategy == OptimizationStrategy.DECREASING)
 			return new OptimizerDecreasing(this, opt, clb, cub);
 		if (head.control.optimization.strategy == OptimizationStrategy.INCREASING)
 			return new OptimizerIncreasing(this, opt, clb, cub);
 		control(head.control.optimization.strategy == OptimizationStrategy.DICHOTOMIC);
 		return new OptimizerDichotomic(this, opt, clb, cub);
-
 		// the code below must be changed, as for heuristics, if we want to use it, see in Head, HandlerClasses
 		// return Reflector.buildObject(suffix, Optimizer.class, this, opt, c);
 	}
@@ -2260,7 +2254,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return false;
 		if (obj == EXPRESSION) {
 			control(list.length == 1 && coeffs == null);
-			intension(opt == MINIMIZE ? XNodeParent.le(list[0], limit) : XNodeParent.ge(list[0], limit));
+			intension(opt == MINIMIZE ? le(list[0], limit) : ge(list[0], limit));
 		} else if (coeffs != null) {
 			control(obj == SUM);
 			sum(list, coeffs, opt == MINIMIZE ? LE : GE, limit);
@@ -2307,22 +2301,30 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return optimize(MAXIMIZE, x);
 	}
 
+	private final ObjEntity optimize(TypeOptimization opt, XNode<IVar> tree) {
+		return optimize(opt, replaceByVariable(tree));
+	}
+
 	@Override
 	public final ObjEntity minimize(XNode<IVar> tree) {
-		return minimize(replaceByVariable(tree));
+		return optimize(MINIMIZE, tree);
 	}
 
 	@Override
 	public final ObjEntity maximize(XNode<IVar> tree) {
-		return maximize(replaceByVariable(tree));
+		return optimize(MAXIMIZE, tree);
 	}
 
 	private ObjEntity optimize(TypeOptimization opt, TypeObjective type, Variable[] list) {
-		control(type.generalizable());
+		control(type.generalizable() && list.length > 0);
 		if (!switchToSatisfaction(opt, type, null, list)) {
+			if (list.length == 1) {
+				control(type != NVALUES);
+				return optimize(opt, list[0]);
+			}
 			long lb = head.control.optimization.lb, ub = head.control.optimization.ub;
-			// TODO what about several occurrences of the same variable in list? if SUM transform into weighted sum, or
-			// just fail?
+			// TODO what about several occurrences of the same variable in list?0
+			// if SUM, should we transform into weighted sum, or just fail?
 			Constraint clb = type == SUM ? new SumSimpleGE(this, list, lb)
 					: type == MINIMUM ? new MinimumCstGE(this, list, lb)
 							: type == MAXIMUM ? new MaximumCstGE(this, list, lb) : new NValuesCstGE(this, list, lb);
@@ -2345,8 +2347,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private ObjEntity optimize(TypeOptimization opt, TypeObjective type, Variable[] list, int[] coeffs) {
-		control(type == SUM && coeffs != null);
+		control(type == SUM && coeffs != null && list.length == coeffs.length && list.length > 0);
 		if (!switchToSatisfaction(opt, type, coeffs, list)) {
+			if (list.length == 1)
+				return optimize(opt, mul(list[0], coeffs[0]));
 			long lb = head.control.optimization.lb, ub = head.control.optimization.ub;
 			optimizer = buildOptimizer(opt, (Optimizable) sum(list, coeffs, GE, lb, false).ctr, (Optimizable) sum(list, coeffs, LE, ub, false).ctr);
 		}
@@ -2355,58 +2359,52 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final ObjEntity minimize(TypeObjective type, IVar[] list, int[] coeffs) {
-		control(type == SUM && coeffs != null && list.length == coeffs.length);
-		if (list.length == 1)
-			return minimize(mul(list[0], coeffs[0]));
 		return optimize(MINIMIZE, type, translate(list), coeffs);
 	}
 
 	@Override
 	public final ObjEntity maximize(TypeObjective type, IVar[] list, int[] coeffs) {
-		control(type == SUM && coeffs != null && list.length == coeffs.length);
-		if (list.length == 1)
-			return maximize(mul(list[0], coeffs[0]));
 		return optimize(MAXIMIZE, type, translate(list), coeffs);
+	}
+
+	private ObjEntity optimize(TypeOptimization opt, TypeObjective type, XNode<IVar>[] trees) {
+		control(type != EXPRESSION && type != LEX && trees.length > 0);
+		if (trees.length == 1) {
+			control(type != NVALUES);
+			return optimize(opt, trees[0]);
+		}
+		return optimize(opt, type, translate(replaceByVariables(trees)));
 	}
 
 	@Override
 	public ObjEntity minimize(TypeObjective type, XNode<IVar>[] trees) {
-		control(type != EXPRESSION && type != LEX);
-		if (trees.length == 1) {
-			control(type != NVALUES);
-			return minimize(trees[0]);
-		}
-		return minimize(type, replaceByVariables(trees));
-	}
-
-	@Override
-	public ObjEntity minimize(TypeObjective type, XNode<IVar>[] trees, int[] coeffs) {
-		control(type != EXPRESSION && type != LEX && trees.length == coeffs.length);
-		if (trees.length == 1) {
-			control(type != NVALUES);
-			return minimize(mul(trees[0], coeffs[0]));
-		}
-		return minimize(type, replaceByVariables(trees), coeffs);
+		return optimize(MINIMIZE, type, trees);
 	}
 
 	@Override
 	public ObjEntity maximize(TypeObjective type, XNode<IVar>[] trees) {
-		control(type != EXPRESSION && type != LEX);
+		return optimize(MAXIMIZE, type, trees);
+	}
+
+	private ObjEntity optimize(TypeOptimization opt, TypeObjective type, XNode<IVar>[] trees, int[] coeffs) {
+		control(type != EXPRESSION && type != LEX && trees.length == coeffs.length && trees.length > 0);
+		if (type == SUM && trees.length > 1)
+			return optimize(opt, type, translate(replaceByVariables(trees)), coeffs);
 		if (trees.length == 1) {
 			control(type != NVALUES);
-			return maximize(trees[0]);
+			return optimize(opt, mul(trees[0], coeffs[0]));
 		}
-		return maximize(type, replaceByVariables(trees));
+		return optimize(opt, type, translate(replaceByVariables(IntStream.range(0, trees.length).mapToObj(i -> mul(trees[i], coeffs[i])))));
+	}
+
+	@Override
+	public ObjEntity minimize(TypeObjective type, XNode<IVar>[] trees, int[] coeffs) {
+		return optimize(MINIMIZE, type, trees, coeffs);
 	}
 
 	@Override
 	public ObjEntity maximize(TypeObjective type, XNode<IVar>[] trees, int[] coeffs) {
-		control(type != EXPRESSION && type != LEX && trees.length == coeffs.length);
-		if (trees.length == 1) {
-			control(type != NVALUES);
-			return maximize(mul(trees[0], coeffs[0]));
-		}
-		return maximize(type, replaceByVariables(trees), coeffs);
+		return optimize(MAXIMIZE, type, trees, coeffs);
 	}
 
 	/**********************************************************************************************

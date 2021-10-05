@@ -230,7 +230,14 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
-			return Kit.allDifferentValues(t, exceptValues);
+			for (int i = 0; i < t.length; i++) {
+				if (Utilities.indexOf(t[i], exceptValues) != -1)
+					continue;
+				for (int j = i + 1; j < t.length; j++)
+					if (t[i] == t[j])
+						return false;
+			}
+			return true;
 		}
 
 		private int[] exceptValues;

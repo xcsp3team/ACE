@@ -10,6 +10,7 @@
 
 package learning;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -139,8 +140,10 @@ public final class NogoodReasoner {
 
 	public void reset() {
 		nNogoods = 0;
-		Kit.fill(pws, null); // TODO put them in free instead
-		Kit.fill(nws, null); // TODO put them in free instead
+		for (WatchCell[] t : pws) // TODO put them in free instead
+			Arrays.fill(t, null);
+		for (WatchCell[] t : nws) // TODO put them in free instead
+			Arrays.fill(t, null);
 		// control(symmetryHandler == null);
 	}
 
@@ -258,7 +261,8 @@ public final class NogoodReasoner {
 
 	public void addNogood(int[] negativeDecisions, boolean toBeSorted) {
 		if (nNogoods < nogoods.length) {
-			negativeDecisions = toBeSorted ? Kit.sort(negativeDecisions) : negativeDecisions;
+			if (toBeSorted)
+				Arrays.sort(negativeDecisions);
 			Nogood nogood = new Nogood(negativeDecisions);
 			nogoods[nNogoods++] = nogood;
 			addWatchFor(nogood, negativeDecisions.length - 2, true);

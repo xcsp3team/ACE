@@ -51,7 +51,7 @@ public abstract class Matrix extends ExtensionStructure {
 
 		public Matrix2D(ConstraintExtension c, Matrix2D matrix2D) { // called by reflection when cloning structures
 			this(c);
-			this.supports = Kit.cloneDeeply(matrix2D.supports);
+			this.supports = Stream.of(matrix2D.supports).map(t -> t.clone()).toArray(boolean[][]::new);
 		}
 
 		@Override
@@ -113,7 +113,7 @@ public abstract class Matrix extends ExtensionStructure {
 
 		public Matrix3D(ConstraintExtension c, Matrix3D matrix3D) { // called by reflection when cloning structures
 			this(c);
-			this.supports = Stream.of(matrix3D.supports).map(m -> Kit.cloneDeeply(m)).toArray(boolean[][][]::new);
+			this.supports = Stream.of(matrix3D.supports).map(m -> Stream.of(m).map(t -> t.clone()).toArray(boolean[][]::new)).toArray(boolean[][][]::new);
 		}
 
 		@Override

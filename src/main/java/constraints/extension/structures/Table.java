@@ -30,8 +30,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the class for the tabular forms of extension structures. All supports (allowed tuples) or all conflicts (disallowed tuples) are simply recorded in an
- * array. Note that tuples are recorded with indexes (of values).
+ * This is the class for the tabular forms of extension structures. All supports (allowed tuples) or all conflicts
+ * (disallowed tuples) are simply recorded in an array. Note that tuples are recorded with indexes (of values).
  * 
  * @author Christophe Lecoutre
  */
@@ -58,7 +58,7 @@ public class Table extends ExtensionStructure {
 	 * @return a starred table corresponding to the specified Element constraint
 	 */
 	public static int[][] starredElement(Variable[] list, Variable index, int value) {
-		control(Variable.areAllDistinct(list) && !Kit.isPresent(index, list));
+		control(Variable.areAllDistinct(list) && !index.presentIn(list));
 		control(index.dom.areInitValuesExactly(new Range(list.length)) && Variable.areAllDomainsContainingValue(list, value));
 		return IntStream.range(0, list.length).mapToObj(i -> IntStream.range(0, list.length + 1).map(j -> j == 0 ? i : j == i + 1 ? value : STAR).toArray())
 				.toArray(int[][]::new);
@@ -76,7 +76,7 @@ public class Table extends ExtensionStructure {
 	 * @return a starred table corresponding to the specified Element constraint
 	 */
 	public static int[][] starredElement(Variable[] list, Variable index, Variable value) {
-		control(Variable.areAllDistinct(list) && !Kit.isPresent(index, list) && index != value);
+		control(Variable.areAllDistinct(list) && !index.presentIn(list) && index != value);
 		control(index.dom.areInitValuesExactly(new Range(list.length)));
 		Domain domResult = value.dom;
 		int resultPositionInVector = Utilities.indexOf(value, list);
@@ -191,7 +191,8 @@ public class Table extends ExtensionStructure {
 			}
 			return false;
 		}
-		return (Arrays.binarySearch(tuples, t, Utilities.lexComparatorInt) >= 0) == positive; // costly but not used during filtering
+		return (Arrays.binarySearch(tuples, t, Utilities.lexComparatorInt) >= 0) == positive; // costly but not used
+																								// during filtering
 	}
 
 	/**
@@ -265,7 +266,8 @@ public class Table extends ExtensionStructure {
 	}
 
 	@Override
-	public int[] nextSupport(int x, int a, int[] current) { // can only called by some algorithms (if subtables have been created)
+	public int[] nextSupport(int x, int a, int[] current) { // can only called by some algorithms (if subtables have
+															// been created)
 		int[][] subtable = subtables[x][a];
 		int res = Arrays.binarySearch(subtable, current, Utilities.lexComparatorInt);
 		if (res >= 0)

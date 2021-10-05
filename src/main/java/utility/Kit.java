@@ -10,18 +10,17 @@
 
 package utility;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -102,6 +101,14 @@ public final class Kit {
 		log.addHandler(handler);
 	}
 
+	/**
+	 * Quits the program by displaying the specified message and exception
+	 * 
+	 * @param message
+	 *            a message to be displayed
+	 * @param e
+	 *            an exception to be displayed
+	 */
 	public static Object exit(String message, Throwable e) {
 		System.out.println(preprint("\n! ERROR with message: " + message + "\n  Use the solver option -ev for more details\n", RED));
 		if (!(Thread.currentThread() instanceof Head) || ((Head) Thread.currentThread()).control.general.exceptionsVisible)
@@ -111,10 +118,22 @@ public final class Kit {
 		return null;
 	}
 
+	/**
+	 * Quits the program by displaying the specified message
+	 * 
+	 * @param message
+	 *            a message to be displayed
+	 */
 	public static Object exit(String message) {
 		return exit(message, new Exception());
 	}
 
+	/**
+	 * Quits the program by displaying the specified exception
+	 * 
+	 * @param e
+	 *            an exception to be displayed
+	 */
 	public static Object exit(Throwable e) {
 		return exit("", e);
 	}
@@ -155,13 +174,18 @@ public final class Kit {
 		control(condition, "");
 	}
 
-	public static void copy(String srcFileName, String dstFileName) {
-		try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(srcFileName));
-				BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(dstFileName));) {
-			byte[] bytes = new byte[1024];
-			for (int nb = in.read(bytes, 0, bytes.length); nb > 0; nb = in.read(bytes, 0, bytes.length))
-				out.write(bytes, 0, nb);
-		} catch (Exception e) {
+	/**
+	 * Copies a file to a target file
+	 * 
+	 * @param sourceFilename
+	 *            the filename of the file to copy
+	 * @param targetFilename
+	 *            the filename of target file
+	 */
+	public static void copy(String sourceFilename, String targetFilename) {
+		try {
+			Files.copy(new File(sourceFilename).toPath(), new File(targetFilename).toPath(), StandardCopyOption.REPLACE_EXISTING);
+		} catch (IOException e) {
 			Kit.exit(e);
 		}
 	}
@@ -176,30 +200,22 @@ public final class Kit {
 	 * Functions on Arrays
 	 *********************************************************************************************/
 
-	public static final Comparator<int[]> lexComparatorInt = (t1, t2) -> {
-		for (int i = 0; i < t1.length; i++)
-			if (t1[i] < t2[i])
-				return -1;
-			else if (t1[i] > t2[i])
-				return +1;
-		return 0;
-	};
-
+	/**
+	 * Builds and returns an array of the specified length with the specified value repeated
+	 * 
+	 * @param value
+	 *            a value to be repeated
+	 * @param length
+	 *            the length of the array to be built
+	 */
 	public static int[] repeat(int value, int length) {
 		int[] t = new int[length];
 		Arrays.fill(t, value);
 		return t;
 	}
 
-	public static int[][] repeat(int value, int length1, int length2) {
-		int[][] m = new int[length1][length2];
-		for (int[] t : m)
-			Arrays.fill(t, value);
-		return m;
-	}
-
 	/**
-	 * Randoms the specified array with the specified Random object. Implementing Fisher–Yates shuffle <br/>
+	 * Randomly reorders the specified array with the specified Random object. Implementing Fisher–Yates shuffle <br/>
 	 * See https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
 	 * 
 	 * @param dense
@@ -225,10 +241,6 @@ public final class Kit {
 		return range(0, length - 1);
 	}
 
-	public static boolean[][] cloneDeeply(boolean[][] m) {
-		return Stream.of(m).map(t -> t.clone()).toArray(boolean[][]::new);
-	}
-
 	public static int[][] cloneDeeply(int[][] m) {
 		return Stream.of(m).map(t -> t.clone()).toArray(int[][]::new);
 	}
@@ -239,11 +251,6 @@ public final class Kit {
 
 	public static void fill(boolean[][] m, boolean value) {
 		for (boolean[] t : m)
-			Arrays.fill(t, value);
-	}
-
-	public static void fill(Object[][] m, Object value) {
-		for (Object[] t : m)
 			Arrays.fill(t, value);
 	}
 
@@ -271,23 +278,6 @@ public final class Kit {
 		return collection.stream().toArray(int[][]::new);
 	}
 
-	/**
-	 * Returns true iff the specified value belongs to the specified array. Comparison are made by references.
-	 */
-	public static <T> boolean isPresent(T value, T[] t) {
-		for (T v : t)
-			if (v == value)
-				return true;
-		return false;
-	}
-
-	public static boolean isPresent(String s, String[][] m) {
-		for (String[] t : m)
-			if (isPresent(s, t))
-				return true;
-		return false;
-	}
-
 	public static boolean isPresent(int value, int[] t) {
 		for (int v : t)
 			if (v == value)
@@ -295,34 +285,8 @@ public final class Kit {
 		return false;
 	}
 
-	public static boolean isPresent(int value, int[]... m) {
-		for (int[] t : m)
-			if (isPresent(value, t))
-				return true;
-		return false;
-	}
-
-	public static boolean allDifferentValues(int[] t, int... except) {
-		for (int i = 0; i < t.length; i++) {
-			if (Utilities.indexOf(t[i], except) != -1)
-				continue;
-			for (int j = i + 1; j < t.length; j++)
-				if (t[i] == t[j])
-					return false;
-		}
-		return true;
-	}
-
-	/**********************************************************************************************
-	 * 
-	 *********************************************************************************************/
-
 	public static boolean isStrictlyIncreasing(int[] t) {
 		return IntStream.range(0, t.length - 1).noneMatch(i -> t[i] >= t[i + 1]);
-	}
-
-	public static <T extends Comparable<T>> boolean isStrictlyIncreasing(T[] t) {
-		return IntStream.range(0, t.length - 1).noneMatch(i -> t[i].compareTo(t[i + 1]) >= 0);
 	}
 
 	public static boolean isLexIncreasing(int[][] t) {
@@ -343,49 +307,6 @@ public final class Kit {
 			if (v == value)
 				cnt++;
 		return cnt;
-	}
-
-	public static final long addSafe(long left, long right) {
-		if (right > 0 ? left > Long.MAX_VALUE - right : left < Long.MIN_VALUE - right)
-			Kit.exit("pb overflow " + left + " " + right);
-		return left + right;
-	}
-
-	public static int[] buildMapping(int[] src, int[] dst) {
-		int[] mapping = new int[src.length];
-		for (int i = 0; i < src.length; i++)
-			mapping[i] = Utilities.indexOf(src[i], dst);
-		return mapping;
-	}
-
-	public static int[] sort(int[] t) {
-		Arrays.sort(t);
-		return t;
-	}
-
-	public static <E> E[] sort(E[] t, Comparator<E> comparator) {
-		Arrays.sort(t, comparator);
-		return t;
-	}
-
-	public static String getXMLBaseNameOf(String s) {
-		int first = s.lastIndexOf(File.separator);
-		first = (first == -1 ? 0 : first + 1);
-		int last = s.toLowerCase().lastIndexOf(".xml");
-		last = (last == -1 ? s.length() : last);
-		return s.substring(first, last);
-	}
-
-	public static Long parseLong(String token) {
-		try {
-			return Long.parseLong(token);
-		} catch (NumberFormatException e) {
-			return null;
-		}
-	}
-
-	public static int trunc(long l) {
-		return l <= Integer.MIN_VALUE ? Integer.MIN_VALUE : l >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) l;
 	}
 
 	public static void copy(int[] src, int[] dst) {
@@ -411,6 +332,65 @@ public final class Kit {
 		swap(objects, 0, 1);
 	}
 
+	public static final long addSafe(long left, long right) {
+		if (right > 0 ? left > Long.MAX_VALUE - right : left < Long.MIN_VALUE - right)
+			Kit.exit("pb overflow " + left + " " + right);
+		return left + right;
+	}
+
+	public static int[] buildMapping(int[] src, int[] dst) {
+		int[] mapping = new int[src.length];
+		for (int i = 0; i < src.length; i++)
+			mapping[i] = Utilities.indexOf(src[i], dst);
+		return mapping;
+	}
+
+	public static <E> E[] sort(E[] t, Comparator<E> comparator) {
+		Arrays.sort(t, comparator);
+		return t;
+	}
+
+	public static Long parseLong(String token) {
+		try {
+			return Long.parseLong(token);
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
+	public static int trunc(long l) {
+		return l <= Integer.MIN_VALUE ? Integer.MIN_VALUE : l >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) l;
+	}
+
+	/**********************************************************************************************
+	 * Functions on Strings
+	 *********************************************************************************************/
+
+	public static boolean useColors = true;
+
+	public static final String BLACK = "\033[0;30m";
+	public static final String YELLOW = "\u001b[33m";
+	public static final String CYAN = "\033[0;36m";
+	public static final String PURPLE = "\033[95m";
+	public static final String BLUE = "\033[94m";
+	public static final String ORANGE = "\033[93m";
+	public static final String RED = "\033[91m";
+	public static final String GREEN = "\033[92m";
+	public static final String WHITE_BOLD = "\033[1m";
+	public static final String WHITE = "\033[0m";
+
+	public static String preprint(String s, String color) {
+		return useColors ? color + s + WHITE : s;
+	}
+
+	public static String getXMLBaseNameOf(String s) {
+		int first = s.lastIndexOf(File.separator);
+		first = (first == -1 ? 0 : first + 1);
+		int last = s.toLowerCase().lastIndexOf(".xml");
+		last = (last == -1 ? s.length() : last);
+		return s.substring(first, last);
+	}
+
 	private static int maxDepthOf(Object o) {
 		return o == null || !o.getClass().isArray() ? 0 : 1 + IntStream.range(0, Array.getLength(o)).map(i -> maxDepthOf(Array.get(o, i))).max().orElse(0);
 	}
@@ -434,7 +414,7 @@ public final class Kit {
 		return sb;
 	}
 
-	public static <T> String join(Object array, int length, Function<T, String> mapper, String... delimiters) {
+	private static <T> String join(Object array, int length, Function<T, String> mapper, String... delimiters) {
 		return join(new StringBuilder(), array, length, 1, maxDepthOf(array), mapper, delimiters).toString();
 	}
 
@@ -450,7 +430,7 @@ public final class Kit {
 		return join(array, Array.getLength(array), delimiters);
 	}
 
-	public static String join(Collection<? extends Object> c, String... delimiters) {
+	public static String join(Collection<?> c, String... delimiters) {
 		return join(c.toArray(), delimiters);
 	}
 
@@ -460,7 +440,7 @@ public final class Kit {
 	}
 
 	/*************************************************************************
-	 ***** 
+	 ***** Inner classes
 	 *************************************************************************/
 
 	public static class ByteArrayHashKey {
@@ -551,23 +531,6 @@ public final class Kit {
 		long size = memory();
 		long m = size / 1000000, k = size / 1000 - m * 1000;
 		return m + "M" + k;
-	}
-
-	public static boolean useColors = true;
-
-	public static final String BLACK = "\033[0;30m"; // BLACK
-	public static final String YELLOW = "\u001b[33m"; // YELLOW
-	public static final String CYAN = "\033[0;36m"; // CYAN
-	public static final String PURPLE = "\033[95m";
-	public static final String BLUE = "\033[94m";
-	public static final String ORANGE = "\033[93m";
-	public static final String RED = "\033[91m";
-	public static final String GREEN = "\033[92m";
-	public static final String WHITE_BOLD = "\033[1m";
-	public static final String WHITE = "\033[0m";
-
-	public static String preprint(String s, String color) {
-		return useColors ? color + s + WHITE : s;
 	}
 
 	/*************************************************************************

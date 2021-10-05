@@ -167,7 +167,7 @@ public abstract class HeuristicVariables extends Heuristic {
 				return priorityVars[nPast];
 			if (settings.lc > 0) {
 				Variable x = solver.lastConflict.priorityVariable();
-				if (x != null && Kit.isPresent(x, priorityVars))
+				if (x != null && x.presentIn(priorityVars))
 					return x;
 			}
 			Variable bestVar = null;
