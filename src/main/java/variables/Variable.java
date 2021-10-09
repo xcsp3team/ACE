@@ -10,14 +10,14 @@
 
 package variables;
 
+import static java.util.stream.Collectors.joining;
+
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -51,20 +51,28 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	 * Subclasses
 	 *********************************************************************************************/
 
+	/**
+	 * The class for integer variables
+	 */
 	public static final class VariableInteger extends Variable implements IVar.Var {
 
 		/**
-		 * Builds a variable with a domain composed of all specified integer values. A range can be specified by giving
-		 * an array of values composed of three integers, the last one being the special value Domain.TAG_RANGE
+		 * Builds a variable with the specified id and a domain composed of all specified integer values
+		 * 
+		 * @param problem
+		 *            the problem to which the integer variable is attached
+		 * @param id
+		 *            the id (name) of the variable
+		 * @param values
+		 *            the values in the domain of the variable
 		 */
-		public VariableInteger(Problem problem, String name, int[] values) {
-			super(problem, name);
+		public VariableInteger(Problem problem, String id, int[] values) {
+			super(problem, id);
 			assert Kit.isStrictlyIncreasing(values);
 			int firstValue = values[0], lastValue = values[values.length - 1];
 			if (values.length == 1)
-				this.dom = new DomainRange(this, firstValue, firstValue); // TODO using DomainRange for better reasoning
-																			// with ranges (when handling/combining
-																			// expressions)?
+				// TODO using DomainRange for better reasoning with ranges (when handling/combining expressions)?
+				this.dom = new DomainRange(this, firstValue, firstValue);
 			else if (values.length == 2)
 				this.dom = new DomainBinary(this, firstValue, lastValue);
 			else {
@@ -73,13 +81,31 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 			}
 		}
 
-		public VariableInteger(Problem problem, String name, IntegerInterval interval) {
-			super(problem, name);
+		/**
+		 * Builds a variable with the specified id and a domain formed by the specified interval
+		 * 
+		 * @param problem
+		 *            the problem to which the integer variable is attached
+		 * @param id
+		 *            the id (name) of the variable
+		 * @param interval
+		 *            the interval of values of the domain
+		 */
+		public VariableInteger(Problem problem, String id, IntegerInterval interval) {
+			super(problem, id);
 			this.dom = new DomainRange(this, Utilities.safeIntWhileHandlingInfinity(interval.inf), Utilities.safeIntWhileHandlingInfinity(interval.sup));
 		}
 
-		public VariableInteger(Problem problem, String name) {
-			super(problem, name);
+		/**
+		 * Builds a variable with the specified id and an infinite domain
+		 * 
+		 * @param problem
+		 *            the problem to which the integer variable is attached
+		 * @param id
+		 *            the id (name) of the variable
+		 */
+		public VariableInteger(Problem problem, String id) {
+			super(problem, id);
 			this.dom = new DomainInfinite(this);
 		}
 
@@ -89,13 +115,23 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		}
 	}
 
+	/**
+	 * The class for symbolic variables
+	 */
 	public static final class VariableSymbolic extends Variable implements IVar.VarSymbolic {
 
 		/**
-		 * Builds a variable with a domain composed of all specified symbolic values.
+		 * Builds a variable with the specified id and a domain composed of all specified symbolic values
+		 * 
+		 * @param problem
+		 *            the problem to which the symbolic variable is attached
+		 * @param id
+		 *            the id (name) of the variable
+		 * @param symbols
+		 *            the values in the domain of the variable
 		 */
-		public VariableSymbolic(Problem problem, String name, String[] symbols) {
-			super(problem, name);
+		public VariableSymbolic(Problem problem, String id, String[] symbols) {
+			super(problem, id);
 			int[] values = problem.symbolic.manageSymbols(symbols); // values associated with symbols
 			this.dom = new DomainSymbols(this, values, symbols);
 			problem.features.nSymbolicVars++;
@@ -135,65 +171,59 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	public static final Variable TAG = new Variable(null, null) {
 	};
 
-	public static final Comparator<Variable> decreasingDomSizeComparator = (x, y) -> Integer.compare(y.dom.size(), x.dom.size());
-
-	public static final Comparator<Variable> decreasingStaticDegComparator = (x, y) -> Integer.compare(y.deg(), x.deg());
-
+	/**
+	 * Returns true if the num(ber)s of the variables in the specified array are normalized, meaning that the num(ber)
+	 * of the variable at index i of the array is i.
+	 * 
+	 * @param vars
+	 *            an array of variables
+	 * @return true if the num(ber)s of the variables in the specified array are normalized
+	 */
 	public static final boolean areNumsNormalized(Variable... vars) {
 		return IntStream.range(0, vars.length).allMatch(i -> i == vars[i].num);
 	}
 
-	public static final boolean areNumsStrictlyIncreasing(Variable... vars) {
-		return IntStream.range(0, vars.length - 1).allMatch(i -> vars[i].num < vars[i + 1].num); // stronger than using
-																									// compareTo
-	}
-
-	// Be aware, for a constraint scope, this method considers more that just the explicitly assigned variables
-	public static final boolean areAllFixed(Variable... vars) {
-		return Stream.of(vars).allMatch(x -> x.dom.size() == 1);
-	}
-
+	/**
+	 * @param vars
+	 *            an array of variables
+	 * @return true if the specified variables are all distinct, i.e., there is two occurrences of the same variable
+	 */
 	public static final boolean areAllDistinct(Variable... vars) {
 		return IntStream.range(0, vars.length).noneMatch(i -> IntStream.range(i + 1, vars.length).anyMatch(j -> vars[i] == vars[j]));
 	}
 
+	/**
+	 * @param vars
+	 *            an array of variables
+	 * @return true if the specified variables have all a 0/1 domain
+	 */
 	public static final boolean areAllInitiallyBoolean(Variable... vars) {
 		return Stream.of(vars).allMatch(x -> x.dom.is01());
 	}
 
+	/**
+	 * @param vars
+	 *            an array of variables
+	 * @return true if the specified variables have all the same domain type
+	 */
 	public static final boolean haveSameDomainType(Variable... vars) {
 		return IntStream.range(1, vars.length).allMatch(i -> vars[i].dom.typeIdentifier() == vars[0].dom.typeIdentifier());
 	}
 
+	/**
+	 * @param vars
+	 *            an array of variables
+	 * @return true if the specified variables have all the same type
+	 */
 	public static final boolean haveSameType(Variable... vars) {
 		return IntStream.range(1, vars.length).allMatch(i -> vars[i].getClass() == vars[0].getClass());
 	}
 
-	public static final boolean areDomainsFull(Variable... vars) {
-		return Stream.of(vars).allMatch(x -> x.dom.nRemoved() == 0);
-	}
-
-	public static final boolean areSortedDomainsIn(Variable... vars) {
-		return Stream.of(vars).allMatch(x -> IntStream.range(0, x.dom.initSize() - 1).allMatch(i -> x.dom.toVal(i) < x.dom.toVal(i + 1)));
-	}
-
-	public static final boolean areAllDomainsContainingValue(Variable[] vars, int v) {
-		for (Variable y : vars)
-			if (!y.dom.containsValue(v))
-				return false;
-		return true;
-	}
-
 	/**
-	 * returns the first variable of the specified array different from the specified variable.
+	 * @param vars
+	 *            an array of variables
+	 * @return the first variable in the specified array with an empty domain, or null
 	 */
-	public static final Variable firstDifferentVariableIn(Variable[] vars, Variable x) {
-		for (Variable y : vars)
-			if (y != x)
-				return y;
-		return null;
-	}
-
 	public static final Variable firstWipeoutVariableIn(Variable... vars) {
 		for (Variable x : vars)
 			if (x.dom.size() == 0)
@@ -201,6 +231,11 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		return null;
 	}
 
+	/**
+	 * @param vars
+	 *            an array of variables
+	 * @return the first variable in the specified array with a singleton domain, or null
+	 */
 	public static final Variable firstSingletonVariableIn(Variable... vars) {
 		for (Variable x : vars)
 			if (x.dom.size() == 1)
@@ -208,6 +243,11 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		return null;
 	}
 
+	/**
+	 * @param vars
+	 *            an array of variables
+	 * @return the first variable in the specified array with a non singleton domain, or null
+	 */
 	public static final Variable firstNonSingletonVariableIn(Variable... vars) {
 		for (Variable x : vars)
 			if (x.dom.size() != 1)
@@ -215,47 +255,26 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		return null;
 	}
 
-	public static final int nSingletonVariablesIn(Variable... vars) {
-		int cnt = 0;
-		for (Variable x : vars)
-			if (x.dom.size() == 1)
-				cnt++;
-		return cnt;
-	}
-
-	public static final int maxInitDomSize(Variable... vars) {
-		return Stream.of(vars).mapToInt(x -> x.dom.initSize()).max().getAsInt();
-	}
-
+	/**
+	 * @param vars
+	 *            an array of variables
+	 * @param tuple
+	 *            a tuple of values of value indexes
+	 * @param indexes
+	 *            indicates if the tuple contains values (when true) or value indexes
+	 * @return true if the specified tuple is valid with respect to the specified array of variables
+	 */
 	public static boolean isValidTuple(Variable[] vars, int[] tuple, boolean indexes) {
 		assert vars.length == tuple.length;
-		// System.out.println("Tuple = " + Kit.join(tuple));
 		return IntStream.range(0, vars.length)
 				.allMatch(i -> tuple[i] == Constants.STAR || (indexes ? vars[i].dom.contains(tuple[i]) : vars[i].dom.containsValue(tuple[i])));
 	}
 
-	public static boolean isValidTuple(Variable[] vars, String[] tuple) {
-		assert vars.length == tuple.length;
-		return IntStream.range(0, vars.length).allMatch(i -> ((DomainSymbols) vars[i].dom).toIdx(tuple[i]) != -1); // to
-																													// control
-	}
-
-	public static int[][] filterTuples(Variable[] vars, int[][] tuples, boolean indexes) {
-		return Stream.of(tuples).filter(t -> isValidTuple(vars, t, indexes)).toArray(int[][]::new);
-	}
-
-	public static String[][] filterTuples(Variable[] vars, String[][] tuples) {
-		return Stream.of(tuples).filter(t -> isValidTuple(vars, t)).toArray(String[][]::new);
-	}
-
-	public static int[] filterValues(Variable x, int[] values, boolean indexes) {
-		return IntStream.of(values).filter(v -> indexes ? x.dom.contains(v) : x.dom.containsValue(v)).toArray();
-	}
-
-	public static String[] filterValues(Variable x, String[] values) {
-		return Stream.of(values).filter(v -> ((DomainSymbols) x.dom).toIdx(v) != -1).toArray(String[]::new);
-	}
-
+	/**
+	 * @param vars
+	 *            an array of variables
+	 * @return the set of values contained in the domains of the specified variables
+	 */
 	public static final Set<Integer> setOfvaluesIn(Variable... vars) {
 		Set<Integer> set = new LinkedHashSet<>();
 		for (Variable x : vars)
@@ -263,30 +282,49 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		return set;
 	}
 
+	// For the next 3 methods, no possible overflow because at construction time, we check that the total number of
+	// values is smaller than Integer.MAX_VALUE
+
+	/**
+	 * @param vars
+	 *            an array of variables
+	 * @return the sum of the size of the initial domains of the specified variables
+	 */
 	public static final int nInitValuesFor(Variable... vars) {
-		long l = Stream.of(vars).mapToLong(x -> x.dom.initSize()).sum();
-		return Math.toIntExact(l);
-	}
-
-	public static int nValidValuesFor(Variable... vars) {
-		long l = 0;
+		int sum = 0;
 		for (Variable x : vars)
-			l += x.dom.size();
-		return Math.toIntExact(l);
+			sum += x.dom.initSize();
+		return sum;
 	}
 
-	// no overflow possible because at construction time, we check that the nb of values is less than Integer.MAX_VALUE
+	/**
+	 * @param vars
+	 *            an array of variables
+	 * @return the sum of the size of the current domains of the specified variables
+	 */
+	public static int nValidValuesFor(Variable... vars) {
+		int sum = 0;
+		for (Variable x : vars)
+			sum += x.dom.size();
+		return sum;
+	}
+
+	/**
+	 * @param vars
+	 *            an array of variables
+	 * @return the summed number of removed values from the current domains of the specified variables
+	 */
 	public static final int nRemovedValuesFor(Variable... vars) {
-		return Stream.of(vars).mapToInt(x -> x.dom.nRemoved()).sum();
+		int sum = 0;
+		for (Variable x : vars)
+			sum += x.dom.nRemoved();
+		return sum;
 	}
 
-	public static final int[] buildCumulatedSizesArray(Variable[] vars, boolean initSize) {
-		int[] sizes = new int[vars.length];
-		for (int i = 1; i < sizes.length; i++)
-			sizes[i] = sizes[i - 1] + (initSize ? vars[i - 1].dom.initSize() : vars[i - 1].dom.size());
-		return sizes;
-	}
-
+	/**
+	 * A useful class for building matrices to be associated with literals, i.e., pairs (x,a) where x is a variable of
+	 * the problem and a a value index in the domain of x
+	 */
 	public static class Litterals {
 
 		private Variable[] vars;
@@ -332,7 +370,7 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**
-	 * Returns an object Literals useful to build matrices of primitive types
+	 * Returns an object Literals, which is useful to build matrices of primitive types
 	 * 
 	 * @param vars
 	 *            an array of variables
@@ -341,32 +379,30 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		return new Litterals(vars);
 	}
 
+	/**
+	 * @param vars
+	 *            an array of variables
+	 * @return a two-dimensional array storing for each variable, the values of its initial domain
+	 */
 	public static int[][] initDomainValues(Variable... vars) {
-		return Stream.of(vars).map(x -> IntStream.range(0, x.dom.initSize()).map(a -> x.dom.toVal(a)).toArray()).toArray(int[][]::new);
+		int[][] m = new int[vars.length][];
+		for (int i = 0; i < vars.length; i++) {
+			Domain dom = vars[i].dom;
+			if (dom instanceof DomainValues)
+				m[i] = ((DomainValues) dom).values;
+			else
+				m[i] = IntStream.range(0, dom.initSize()).map(a -> dom.toVal(a)).toArray();
+		}
+		return m;
 	}
 
-	public static int[][] currDomainValues(Variable[] vars) {
-		return Stream.of(vars).map(x -> IntStream.range(0, x.dom.initSize()).filter(a -> x.dom.contains(a)).map(a -> x.dom.toVal(a)).toArray())
-				.toArray(int[][]::new);
-	}
-
-	/** Arrays are not necessarily sorted. */
-	public static final boolean areSimilarArrays(Variable[] vars1, Variable... vars2) {
-		return vars1.length == vars2.length && Stream.of(vars1).allMatch(x -> Stream.of(vars2).anyMatch(y -> x == y));
-	}
-
-	public static final boolean isPermutationElligible(Variable... vars) {
-		return vars[0].problem.head.control.constraints.recognizePermutations && vars[0].dom.initSize() == vars.length && haveSameDomainType(vars);
-	}
-
-	public static final int[] domSizeArrayOf(Variable[] vars, boolean initSize) {
-		return Stream.of(vars).mapToInt(x -> initSize ? x.dom.initSize() : x.dom.size()).toArray();
-	}
-
-	public static final Domain[] buildDomainsArrayFor(Variable... vars) {
-		return Stream.of(vars).map(x -> x.dom).toArray(Domain[]::new);
-	}
-
+	/**
+	 * @param ctrs
+	 *            an array of constraints
+	 * 
+	 * @return an array of variables with those that are successively encountered when considering the scope of the
+	 *         specified constraints
+	 */
 	public static final Variable[] scopeOf(Constraint[] ctrs) {
 		Set<Variable> set = new LinkedHashSet<>();
 		for (Constraint c : ctrs)
@@ -375,6 +411,11 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		return set.stream().toArray(Variable[]::new);
 	}
 
+	/**
+	 * @param vars
+	 *            an array of variables
+	 * @return the signature of the specified variables by considering the name of their domain types
+	 */
 	public static final StringBuilder signatureFor(Variable... vars) {
 		StringBuilder sb = new StringBuilder();
 		for (Variable x : vars)
@@ -382,37 +423,51 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		return sb;
 	}
 
-	public static final boolean isInducedBy(Variable x, boolean[] presentConstraints) {
-		for (Constraint c : x.ctrs)
-			if (presentConstraints[c.num])
-				return true;
-		return false;
-	}
-
+	/**
+	 * Returns a string composed of the values assigned to the variables that are successively encountered when
+	 * considering the specified object. Carriage return characters and the specified prefix can be used when listing
+	 * these values, so as to show the structure of the arrays.
+	 * 
+	 * @param obj
+	 *            an object that can be a stand-alone variable or an array (of any dimension) fo variables, or even null
+	 * @param prefix
+	 *            a prefix used when the specified object is an array with (at least) two dimensions
+	 * @return a string corresponding to the complete instantiation of the variables that are present in the specified
+	 *         object
+	 */
 	public static String instantiationOf(Object obj, String prefix) {
 		if (obj == null)
 			return "*";
 		if (obj instanceof Variable) {
 			Variable x = (Variable) obj;
-			return x.dom.prettyValueOf(x.problem.solver.solutions.last[x.num]); // .valueIndexInLastSolution);
+			return x.dom.prettyValueOf(x.problem.solver.solutions.last[x.num]);
 		}
 		assert obj.getClass().isArray();
 		if (obj instanceof Variable[]) {
 			// assert Stream.of((Variable[]) obj).noneMatch(x -> x != null && x.dom.size() != 1);
-			return "[" + Stream.of((Variable[]) obj).map(x -> instantiationOf(x, null)).collect(Collectors.joining(", ")) + "]";
+			return "[" + Stream.of((Variable[]) obj).map(x -> instantiationOf(x, null)).collect(joining(", ")) + "]";
 		}
-		return "[\n" + prefix + "  " + Stream.of((Object[]) obj).map(o -> instantiationOf(o, prefix)).collect(Collectors.joining(",\n" + prefix + "  ")) + "\n"
-				+ prefix + " ]";
+		return "[\n" + prefix + "  " + Stream.of((Object[]) obj).map(o -> instantiationOf(o, prefix)).collect(joining(",\n" + prefix + "  ")) + "\n" + prefix
+				+ " ]";
 	}
 
-	/** Only whitespace as separator. The array only contains variables, and can be of any dimension. */
+	/**
+	 * Returns a string composed of the values assigned to the variables that are successively encountered when
+	 * considering the specified array. Only whitespace is used as separator, and the array only contains variables, and
+	 * can be of any dimension.
+	 * 
+	 * @param array
+	 *            an array (of any dimension) of variables
+	 * @return a string corresponding to the complete instantiation of the variables that are present in the specified
+	 *         array
+	 */
 	public static String rawInstantiationOf(Object array) {
 		if (array instanceof Variable[]) {
-			// we need instantiation because of possible *; the prefix is useless
-			return Stream.of((Variable[]) array).map(x -> instantiationOf(x, null)).collect(Collectors.joining(" "));
+			// we call instantiation because of possible *; the prefix is useless
+			return Stream.of((Variable[]) array).map(x -> instantiationOf(x, null)).collect(joining(" "));
 		}
 		// recursive call
-		return Stream.of((Object[]) array).map(o -> rawInstantiationOf(o)).collect(Collectors.joining(" "));
+		return Stream.of((Object[]) array).map(o -> rawInstantiationOf(o)).collect(joining(" "));
 	}
 
 	/**********************************************************************************************
@@ -709,6 +764,4 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 // public final void setId(String id) {
 // this.id = id;
 // VarEntities.VarAlone va = problem.varEntities.varToVarAlone.get(this);
-// if (va != null)
-// va.id = id;
-// }
+// if (va != null) va.id = id; }

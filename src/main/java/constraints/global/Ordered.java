@@ -25,7 +25,7 @@ import variables.Variable;
 
 public abstract class Ordered extends ConstraintGlobal implements TagAC, TagCallCompleteFiltering, TagNotSymmetric {
 
-	public static Ordered build(Problem pb, Variable[] x, int[] lengths, TypeOperatorRel op) {
+	public static Ordered buildFrom(Problem pb, Variable[] x, int[] lengths, TypeOperatorRel op) {
 		switch (op) {
 		case LT:
 			return new OrderedLT(pb, x, lengths);

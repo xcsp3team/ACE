@@ -259,7 +259,7 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 		for (int x = 0; x < scp.length; x++) {
 			Domain dom = doms[x];
 			for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a))
-				Bit.or2(tmp, !starred ? masks[x][a] : masksS[x][a], nonZeros);
+				Bit.or(tmp, !starred ? masks[x][a] : masksS[x][a], nonZeros);
 		}
 		Bit.inverse(tmp, nonZeros);
 		for (int i = nonZeros.limit; i >= 0; i--) {
@@ -274,7 +274,7 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 		for (int x = 0; x < scp.length; x++) {
 			Domain dom = doms[x];
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
-				int r = Bit.firstNonNullWord2(current, masks[x][a], nonZeros);
+				int r = Bit.firstNonNullWord(current, masks[x][a], nonZeros);
 				if (r != -1)
 					residues[x][a] = r;
 				else if (dom.remove(a) == false)
@@ -318,7 +318,7 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 				int r = residues[x][a];
 				if (Bit.nonNullIntersection2(current, masks[x][a], r)) // if ((current[r] & masks[x][a][r]) != 0L)
 					continue;
-				r = Bit.firstNonNullWord2(current, masks[x][a], nonZeros);
+				r = Bit.firstNonNullWord(current, masks[x][a], nonZeros);
 				if (r != -1) {
 					residues[x][a] = r;
 				} else
@@ -341,16 +341,16 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 			Domain dom = doms[x];
 			if (deltaSizes[x] <= dom.size()) {
 				for (int cnt = deltaSizes[x] - 1, a = dom.lastRemoved(); cnt >= 0; cnt--) {
-					Bit.or2(tmp, !starred ? masks[x][a] : masksS[x][a], nonZeros);
+					Bit.or(tmp, !starred ? masks[x][a] : masksS[x][a], nonZeros);
 					a = dom.prevRemoved(a);
 				}
 			} else if (dom.size() == 1) {
-				Bit.orInverse2(tmp, masks[x][dom.first()], nonZeros);
+				Bit.orInverse(tmp, masks[x][dom.first()], nonZeros);
 			} else {
 				fillTo0(tmp2);
 				for (int a = dom.first(); a != -1; a = dom.next(a))
-					Bit.or2(tmp2, masks[x][a], nonZeros);
-				Bit.orInverse2(tmp, tmp2, nonZeros); // Bit.or(tmp, Bit.inverse(tmp2, nonZeros), nonZeros);
+					Bit.or(tmp2, masks[x][a], nonZeros);
+				Bit.orInverse(tmp, tmp2, nonZeros); // Bit.or(tmp, Bit.inverse(tmp2, nonZeros), nonZeros);
 			}
 		}
 		// we update the current table (array 'current') while possibly deleting words at 0 in nonZeros

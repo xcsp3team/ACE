@@ -10,6 +10,8 @@
 
 package utility;
 
+import static java.util.stream.Collectors.joining;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,7 +42,6 @@ import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.StreamHandler;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -110,7 +111,7 @@ public final class Kit {
 	 *            an exception to be displayed
 	 */
 	public static Object exit(String message, Throwable e) {
-		System.out.println(preprint("\n! ERROR with message: " + message + "\n  Use the solver option -ev for more details\n", RED));
+		System.out.println(print("\n! ERROR with message: " + message + "\n  Use the solver option -ev for more details\n", RED));
 		if (!(Thread.currentThread() instanceof Head) || ((Head) Thread.currentThread()).control.general.exceptionsVisible)
 			e.printStackTrace();
 		System.exit(1);
@@ -278,6 +279,13 @@ public final class Kit {
 		return collection.stream().toArray(int[][]::new);
 	}
 
+	/**
+	 * @param value
+	 *            an integer
+	 * @param t
+	 *            an array of integers
+	 * @return true if the specified value is present in the specified array
+	 */
 	public static boolean isPresent(int value, int[] t) {
 		for (int v : t)
 			if (v == value)
@@ -285,6 +293,11 @@ public final class Kit {
 		return false;
 	}
 
+	/**
+	 * @param t
+	 *            an array of integers
+	 * @return true if all values in the specified array are strictly increasingly ordered
+	 */
 	public static boolean isStrictlyIncreasing(int[] t) {
 		return IntStream.range(0, t.length - 1).noneMatch(i -> t[i] >= t[i + 1]);
 	}
@@ -293,6 +306,13 @@ public final class Kit {
 		return IntStream.range(0, t.length - 1).noneMatch(i -> Utilities.lexComparatorInt.compare(t[i], t[i + 1]) > 0);
 	}
 
+	/**
+	 * @param value
+	 *            a boolean
+	 * @param t
+	 *            an array of boolean
+	 * @return the number of occurrences of the specified value in the specified array
+	 */
 	public static int countIn(boolean value, boolean[] t) {
 		int cnt = 0;
 		for (boolean b : t)
@@ -301,6 +321,13 @@ public final class Kit {
 		return cnt;
 	}
 
+	/**
+	 * @param value
+	 *            an integer
+	 * @param t
+	 *            an array of integers
+	 * @return the number of occurrences of the specified value in the specified array
+	 */
 	public static int countIn(int value, int[] t) {
 		int cnt = 0;
 		for (int v : t)
@@ -314,6 +341,16 @@ public final class Kit {
 			dst[i] = src[i];
 	}
 
+	/**
+	 * Swaps the two integers in the specified array at the two specified indexes
+	 * 
+	 * @param tuple
+	 * @param i
+	 *            a first index
+	 * @param j
+	 *            a second index
+	 * @return the same tuple
+	 */
 	public static int[] swap(int[] tuple, int i, int j) {
 		int tmp = tuple[i];
 		tuple[i] = tuple[j];
@@ -321,12 +358,32 @@ public final class Kit {
 		return tuple;
 	}
 
+	/**
+	 * Swaps the two objects in the specified array at the two specified indexes
+	 * 
+	 * @param <T>
+	 *            the type of the objects
+	 * @param objects
+	 *            an array of objects
+	 * @param i
+	 *            a first index
+	 * @param j
+	 *            a second index
+	 */
 	public static <T> void swap(T[] objects, int i, int j) {
 		T tmp = objects[i];
 		objects[i] = objects[j];
 		objects[j] = tmp;
 	}
 
+	/**
+	 * Swaps the two objects in the specified array
+	 * 
+	 * @param <T>
+	 *            the type of the objects
+	 * @param objects
+	 *            an array of (two) objects
+	 */
 	public static <T> void swap(T[] objects) {
 		control(objects.length == 2);
 		swap(objects, 0, 1);
@@ -379,7 +436,14 @@ public final class Kit {
 	public static final String WHITE_BOLD = "\033[1m";
 	public static final String WHITE = "\033[0m";
 
-	public static String preprint(String s, String color) {
+	/**
+	 * @param s
+	 *            a string
+	 * @param color
+	 *            a color to be used
+	 * @return the specified string with the specified color (if colors can be used) or the same specified string
+	 */
+	public static String print(String s, String color) {
 		return useColors ? color + s + WHITE : s;
 	}
 
@@ -437,6 +501,42 @@ public final class Kit {
 	public static String getPathOf(String pathAndFileName) {
 		int last = pathAndFileName.lastIndexOf("/");
 		return last == -1 ? "" : pathAndFileName.substring(0, last + 1);
+	}
+
+	/**
+	 * @return a string with the current date involving the year, month, day, hour, and minute
+	 */
+	public static String date() {
+		Calendar c = new GregorianCalendar();
+		c.setTimeInMillis(System.currentTimeMillis());
+		return IntStream.of(Calendar.YEAR, Calendar.MONTH, Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE).mapToObj(v -> "" + c.get(v))
+				.collect(joining("_"));
+	}
+
+	public static String dateOf(Class<?> clazz) {
+		try {
+			File f = new File(clazz.getResource(clazz.getSimpleName() + ".class").toURI());
+			return new SimpleDateFormat("(dd MMM yyyy 'at' HH:mm)").format(f.lastModified());
+		} catch (Exception e) {
+			return "";
+		}
+	}
+
+	/**
+	 * @return the amount of memory (in bytes) that is currently used by the JVM
+	 */
+	public static long memory() {
+		Runtime rt = Runtime.getRuntime();
+		return rt.totalMemory() - rt.freeMemory();
+	}
+
+	/**
+	 * @return a string indicating in mega-bytes the amount of memory that is currently used by the JVM
+	 */
+	public static String memoryInMb() {
+		long size = memory();
+		long m = size / 1000000, k = size / 1000 - m * 1000;
+		return m + "M" + k;
 	}
 
 	/*************************************************************************
@@ -504,33 +604,6 @@ public final class Kit {
 		public boolean equals(Object object) {
 			return Arrays.equals(t, ((LongArrayHashKey) object).t);
 		}
-	}
-
-	public static String date() {
-		Calendar c = new GregorianCalendar();
-		c.setTimeInMillis(System.currentTimeMillis());
-		return IntStream.of(Calendar.YEAR, Calendar.MONTH, Calendar.DAY_OF_MONTH, Calendar.HOUR_OF_DAY, Calendar.MINUTE).mapToObj(v -> "" + c.get(v))
-				.collect(Collectors.joining("_"));
-	}
-
-	public static String dateOf(Class<?> clazz) {
-		try {
-			File f = new File(clazz.getResource(clazz.getSimpleName() + ".class").toURI());
-			return new SimpleDateFormat("(dd MMM yyyy 'at' HH:mm)").format(f.lastModified()).toString();
-		} catch (Exception e) {
-			return "";
-		}
-	}
-
-	public static long memory() {
-		Runtime rt = Runtime.getRuntime();
-		return rt.totalMemory() - rt.freeMemory();
-	}
-
-	public static String memoryInMb() {
-		long size = memory();
-		long m = size / 1000000, k = size / 1000 - m * 1000;
-		return m + "M" + k;
 	}
 
 	/*************************************************************************

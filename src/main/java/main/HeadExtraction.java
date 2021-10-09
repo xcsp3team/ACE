@@ -20,7 +20,7 @@ import utility.Kit;
 import utility.Stopwatch;
 import variables.Variable;
 
-public class HeadExtraction extends Head {
+public final class HeadExtraction extends Head {
 
 	public static boolean[] and(boolean[] inOut, boolean[] in) {
 		assert inOut.length == in.length;
@@ -35,6 +35,13 @@ public class HeadExtraction extends Head {
 			if (t1[i] && !t2[i])
 				return false;
 		return true;
+	}
+
+	public static final boolean isInducedBy(Variable x, boolean[] presentConstraints) {
+		for (Constraint c : x.ctrs)
+			if (presentConstraints[c.num])
+				return true;
+		return false;
 	}
 
 	/**
@@ -125,7 +132,7 @@ public class HeadExtraction extends Head {
 
 	private boolean[] updatePresentVariablesFrom(boolean[] presentVars, boolean[] presentCtrs) {
 		for (int i = 0; i < presentVars.length; i++)
-			presentVars[i] = presentVars[i] && Variable.isInducedBy(problem.variables[i], presentCtrs);
+			presentVars[i] = presentVars[i] && isInducedBy(problem.variables[i], presentCtrs);
 		return presentVars;
 	}
 
@@ -148,7 +155,7 @@ public class HeadExtraction extends Head {
 			presentCtrs[currCtrs[i].num] = false;
 		for (int i = 0; i < presentVars.length; i++)
 			if (presentVars[i])
-				presentVars[i] = Variable.isInducedBy(problem.variables[i], presentCtrs);
+				presentVars[i] = isInducedBy(problem.variables[i], presentCtrs);
 	}
 
 	private boolean solveCurrentNetwork(boolean[] presentVars, boolean[] presentCtrs, boolean preserveWeightedDegrees) {

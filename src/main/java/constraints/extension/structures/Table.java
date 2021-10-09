@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.xcsp.common.Range;
 import org.xcsp.common.Utilities;
@@ -59,7 +60,7 @@ public class Table extends ExtensionStructure {
 	 */
 	public static int[][] starredElement(Variable[] list, Variable index, int value) {
 		control(Variable.areAllDistinct(list) && !index.presentIn(list));
-		control(index.dom.areInitValuesExactly(new Range(list.length)) && Variable.areAllDomainsContainingValue(list, value));
+		control(index.dom.areInitValuesExactly(new Range(list.length)) && Stream.of(list).allMatch(x -> x.dom.containsValue(value)));
 		return IntStream.range(0, list.length).mapToObj(i -> IntStream.range(0, list.length + 1).map(j -> j == 0 ? i : j == i + 1 ? value : STAR).toArray())
 				.toArray(int[][]::new);
 	}

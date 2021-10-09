@@ -16,13 +16,14 @@ import static org.xcsp.common.Types.TypeOptimization.MINIMIZE;
 import static solver.Solver.Stopping.FULL_EXPLORATION;
 import static utility.Kit.control;
 
+import java.util.stream.Stream;
+
 import org.xcsp.common.Types.TypeOptimization;
 
 import dashboard.Input;
 import interfaces.Observers.ObserverOnRuns;
 import problem.Problem;
 import utility.Kit;
-import variables.Variable;
 
 /**
  * A pilot for dealing with (mono-objective) optimization. Subclasses define various strategies to conduct search toward
@@ -154,7 +155,7 @@ public abstract class Optimizer implements ObserverOnRuns {
 	 * @return the current value of the problem objective
 	 */
 	public final long value() {
-		assert Variable.areAllFixed(problem.variables) && clb.objectiveValue() == cub.objectiveValue();
+		assert Stream.of(problem.variables).allMatch(x -> x.dom.size() == 1) && clb.objectiveValue() == cub.objectiveValue();
 		return cub.objectiveValue();
 	}
 

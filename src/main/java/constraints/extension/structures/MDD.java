@@ -525,7 +525,7 @@ public final class MDD extends ExtensionStructure {
 	public void storeTuples(int[][] tuples, boolean positive) {
 		Kit.control(positive && tuples.length > 0);
 		Constraint c = firstRegisteredCtr();
-		int[] domainSizes = Variable.domSizeArrayOf(c.scp, true);
+		int[] domainSizes = Stream.of(c.scp).mapToInt(x -> x.dom.initSize()).toArray();
 		Map<IntArrayHashKey, Node> reductionMap = new HashMap<>(2000);
 		this.root = new Node(0, domainSizes[0], positive);
 		if (c.indexesMatchValues) {
@@ -646,7 +646,8 @@ public final class MDD extends ExtensionStructure {
 	}
 
 	public void displayTuples() {
-		int cnt = root.displayTuples(Variable.buildDomainsArrayFor(firstRegisteredCtr().scp), new int[firstRegisteredCtr().scp.length], 0, 0);
+		Domain[] doms = Stream.of(firstRegisteredCtr().scp).map(x -> x.dom).toArray(Domain[]::new);
+		int cnt = root.displayTuples(doms, new int[doms.length], 0, 0);
 		Kit.log.info(" => " + cnt + " tuples");
 	}
 

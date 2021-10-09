@@ -155,18 +155,10 @@ public final class Bit {
 		return (t1[j] & t2[j]) != 0L;
 	}
 
-	// public static void or(long[] inout, long[] in, SetDense dset) {
-	// int[] dense = dset.dense;
-	// for (int i = dset.limit; i >= 0; i--) {
-	// int j = dense[i];
-	// inout[j] |= in[j];
-	// }
-	// }
-
-	public static void or2(long[] inout, long[] in, SetDense dset) {
-		int[] dense = dset.dense;
+	public static void or(long[] inout, long[] in, SetDense set) {
+		int[] dense = set.dense;
 		if (inout.length != in.length) { // mask compression mode used for 'in'
-			for (int i = dset.limit; i >= 0; i--) {
+			for (int i = set.limit; i >= 0; i--) {
 				int j = dense[i];
 				boolean found = false;
 				if (in[1] == 0L) {
@@ -188,25 +180,17 @@ public final class Bit {
 					inout[j] |= in[0]; // default word
 			}
 		} else { // non mask compression mode
-			for (int i = dset.limit; i >= 0; i--) {
+			for (int i = set.limit; i >= 0; i--) {
 				int j = dense[i];
 				inout[j] |= in[j];
 			}
 		}
 	}
 
-	// public static void orInverse(long[] inout, long[] in, SetDense dset) {
-	// int[] dense = dset.dense;
-	// for (int i = dset.limit; i >= 0; i--) {
-	// int j = dense[i];
-	// inout[j] |= ~in[j];
-	// }
-	// }
-
-	public static void orInverse2(long[] inout, long[] in, SetDense dset) {
-		int[] dense = dset.dense;
+	public static void orInverse(long[] inout, long[] in, SetDense set) {
+		int[] dense = set.dense;
 		if (inout.length != in.length) { // mask compression mode used for in
-			for (int i = dset.limit; i >= 0; i--) {
+			for (int i = set.limit; i >= 0; i--) {
 				int j = dense[i];
 				boolean found = false;
 				if (in[1] == 0L) {
@@ -228,35 +212,25 @@ public final class Bit {
 					inout[j] |= ~in[0]; // default word
 			}
 		} else { // non mask compression mode
-			for (int i = dset.limit; i >= 0; i--) {
+			for (int i = set.limit; i >= 0; i--) {
 				int j = dense[i];
 				inout[j] |= ~in[j];
 			}
 		}
 	}
 
-	public static void and(long[] inout, long[] in, SetDense dset) {
-		int[] dense = dset.dense;
-		for (int i = dset.limit; i >= 0; i--) {
+	public static void and(long[] inout, long[] in, SetDense set) {
+		int[] dense = set.dense;
+		for (int i = set.limit; i >= 0; i--) {
 			int j = dense[i];
 			inout[j] &= in[j];
 		}
 	}
 
-	// public static int firstNonNullWord(long[] t1, long[] t2, SetDense dset) {
-	// int[] dense = dset.dense;
-	// for (int i = dset.limit; i >= 0; i--) {
-	// int j = dense[i];
-	// if ((t1[j] & t2[j]) != 0L)
-	// return j;
-	// }
-	// return -1;
-	// }
-
-	public static int firstNonNullWord2(long[] t1, long[] t2, SetDense dset) {
-		int[] dense = dset.dense;
+	public static int firstNonNullWord(long[] t1, long[] t2, SetDense set) {
+		int[] dense = set.dense;
 		if (t1.length != t2.length) { // mask compression mode used for t2
-			for (int i = dset.limit; i >= 0; i--) {
+			for (int i = set.limit; i >= 0; i--) {
 				int j = dense[i];
 				boolean found = false;
 				if (t2[1] == 0L) {
@@ -280,24 +254,22 @@ public final class Bit {
 					if ((t1[j] & t2[0]) != 0L)
 						return j;
 			}
-			return -1;
-		}
-		for (int i = dset.limit; i >= 0; i--) {
-			int j = dense[i];
-			if ((t1[j] & t2[j]) != 0L)
-				return j;
+		} else { // non mask compression mode
+			for (int i = set.limit; i >= 0; i--) {
+				int j = dense[i];
+				if ((t1[j] & t2[j]) != 0L)
+					return j;
+			}
 		}
 		return -1;
 	}
 
-	public static int firstErasingWord(long[] t1, long[] t2, SetDense dset) {
-		int[] dense = dset.dense;
-		for (int i = dset.limit; i >= 0; i--) {
+	public static int firstErasingWord(long[] t1, long[] t2, SetDense set) {
+		int[] dense = set.dense;
+		for (int i = set.limit; i >= 0; i--) {
 			int j = dense[i];
-			if ((t1[j] & t2[j]) != t1[j]) {
-				// System.out.println(dset.limit() - i);
+			if ((t1[j] & t2[j]) != t1[j])
 				return j;
-			}
 		}
 		return -1;
 	}
@@ -308,9 +280,9 @@ public final class Bit {
 		return inout;
 	}
 
-	public static long[] inverse(long[] inout, SetDense dset) {
-		int[] dense = dset.dense;
-		for (int i = dset.limit; i >= 0; i--) {
+	public static long[] inverse(long[] inout, SetDense set) {
+		int[] dense = set.dense;
+		for (int i = set.limit; i >= 0; i--) {
 			int j = dense[i];
 			inout[j] = ~inout[j];
 		}
@@ -323,9 +295,9 @@ public final class Bit {
 		return out;
 	}
 
-	public static long[] inverse(long[] out, long[] in, SetDense dset) {
-		int[] dense = dset.dense;
-		for (int i = dset.limit; i >= 0; i--) {
+	public static long[] inverse(long[] out, long[] in, SetDense set) {
+		int[] dense = set.dense;
+		for (int i = set.limit; i >= 0; i--) {
 			int j = dense[i];
 			out[j] = ~in[j];
 		}
@@ -353,8 +325,8 @@ public final class Bit {
 		return -1;
 	}
 
-	public static boolean isPresent(long[] t, int idx) {
-		return (t[idx / Long.SIZE] & ONE_LONG_BIT_TO_1[idx % Long.SIZE]) != 0; // ALL_LONG_BITS_TO_0;
+	public static boolean isPresent(long[] t, int bitPosition) {
+		return (t[bitPosition / Long.SIZE] & ONE_LONG_BIT_TO_1[bitPosition % Long.SIZE]) != 0; // ALL_LONG_BITS_TO_0;
 	}
 
 	public static long bitsAt1To(int limit) {
@@ -396,28 +368,62 @@ public final class Bit {
 		return (t[bytePosition] & ONE_BYTE_BIT_TO_1[bitPosition % 8]) != 0;
 	}
 
-	public static String decrypt(long v, int limit) {
+	/**
+	 * Returns a string of the specified length (or 64 if length >= 64) forming a sequence of 0 and 1 corresponding to
+	 * the specified long
+	 * 
+	 * @param v
+	 *            a long, seen as a sequence of 64 bits
+	 * @param length
+	 *            the length of the string to be built
+	 * @return a string forming a sequence of 0 and 1
+	 */
+	private static String decrypt(long v, int length) {
 		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < limit; i++)
+		for (int i = 0; i < length; i++)
 			sb.append(((v & ONE_LONG_BIT_TO_1[i]) != 0) ? "1" : "0");
 		return sb.toString();
 	}
 
+	/**
+	 * Returns a string forming a sequence of 0 and 1 corresponding to the specified long
+	 * 
+	 * @param v
+	 *            a long, seen as a sequence of 64 bits
+	 * @return a string forming a sequence of 0 and 1
+	 */
 	public static String decrypt(long v) {
 		return decrypt(v, Long.SIZE);
 	}
 
-	public static String decrypt(long[] t, int globalLimit) {
+	/**
+	 * Returns a string of the specified length (or 64*t.length if length >= 64*t.length) forming a sequence of 0 and 1
+	 * corresponding to the specified array of long
+	 * 
+	 * @param t
+	 *            an array of long, seen as sequences of 64 bits
+	 * @param length
+	 *            the length of the string to be built
+	 * @return a string forming a sequence of 0 and 1
+	 */
+	public static String decrypt(long[] t, int length) {
 		StringBuilder sb = new StringBuilder();
 		for (long l : t) {
-			if (globalLimit <= 0)
+			if (length <= 0)
 				break;
-			sb.append(decrypt(l, Math.min(globalLimit, Long.SIZE))).append(' ');
-			globalLimit -= 64;
+			sb.append(decrypt(l, Math.min(length, Long.SIZE))).append(' ');
+			length -= Long.SIZE;
 		}
 		return sb.toString();
 	}
 
+	/**
+	 * Returns a string forming a sequence of 0 and 1 corresponding to the specified array of long
+	 * 
+	 * @param t
+	 *            an array of long, seen as sequences of 64 bits
+	 * @return a string forming a sequence of 0 and 1
+	 */
 	public static String decrypt(long[] t) {
 		return decrypt(t, Integer.MAX_VALUE);
 	}
@@ -425,7 +431,7 @@ public final class Bit {
 	public static int convert(int v, int nBytesToCopy, byte[] buffer, int position) {
 		for (int i = 0; i < nBytesToCopy; i++) {
 			buffer[position++] = (byte) v;
-			v = v >> 8;
+			v = v >> Byte.SIZE;
 		}
 		return position;
 	}
@@ -436,16 +442,15 @@ public final class Bit {
 				if (nBitsToCopy <= 0)
 					return position;
 				buffer[position++] = (byte) l;
-				l = l >> 8;
-				nBitsToCopy -= 8;
+				l = l >> Byte.SIZE;
+				nBitsToCopy -= Byte.SIZE;
 			}
 		}
 		return position;
 	}
 
 	public static void main(String[] args) {
-		long[] t1 = { 4532, -65, 900 };
-		long[] t2 = { 4532, 675, -900 };
+		long[] t1 = { 4532, -65, 900 }, t2 = { 4532, 675, -900 };
 		System.out.println(decrypt(t1, 115));
 		System.out.println(decrypt(t2, 115));
 		System.out.println(firstPositionOfNonInclusion(t1, t2));

@@ -25,7 +25,6 @@ import static org.xcsp.common.Types.TypeExpr.IFF;
 import static org.xcsp.common.Types.TypeExpr.LONG;
 import static org.xcsp.common.Types.TypeExpr.MUL;
 import static org.xcsp.common.Types.TypeExpr.VAR;
-import static org.xcsp.common.Types.TypeFramework.COP;
 import static org.xcsp.common.Types.TypeObjective.EXPRESSION;
 import static org.xcsp.common.Types.TypeObjective.LEX;
 import static org.xcsp.common.Types.TypeObjective.MAXIMUM;
@@ -123,6 +122,7 @@ import constraints.extension.CMDD.CMDDO;
 import constraints.extension.CSmart;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart.HybridTuple;
+import constraints.global.AllDifferent;
 import constraints.global.AllDifferent.AllDifferentBound;
 import constraints.global.AllDifferent.AllDifferentComplete;
 import constraints.global.AllDifferent.AllDifferentCounting;
@@ -186,12 +186,9 @@ import dashboard.Control.SettingCtrs;
 import dashboard.Control.SettingGeneral;
 import dashboard.Control.SettingVars;
 import dashboard.Control.SettingXml;
-import heuristics.HeuristicValuesDirect.First;
-import heuristics.HeuristicValuesDirect.Last;
-import heuristics.HeuristicValuesDirect.Values;
+import heuristics.HeuristicValues;
 import interfaces.Observers.ObserverOnConstruction;
 import main.Head;
-import optimization.ObjectiveVariable;
 import optimization.ObjectiveVariable.ObjVarGE;
 import optimization.ObjectiveVariable.ObjVarLE;
 import optimization.Optimizable;
@@ -226,139 +223,30 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public static final int EXTENSION_STARRED = 22;
 	public static final int EXTENSION_HYBRID = 222;
 
+	/**
+	 * Different ways of breaking symmetries
+	 */
 	public static enum SymmetryBreaking {
 		NO, SB_LE, SB_LEX;
 	}
 
-	private Variable[] prioritySumVars(Variable[] scp, int[] coeffs) {
-		assert coeffs == null || IntStream.range(0, coeffs.length - 1).allMatch(i -> coeffs[i] <= coeffs[i + 1]);
-		int LIM = 3; // HARD CODING
-		Term[] terms = new Term[Math.min(scp.length, 2 * LIM)];
-		if (terms.length == scp.length)
-			for (int i = 0; i < terms.length; i++)
-				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * scp[i].dom.distance(), scp[i]);
-		else {
-			for (int i = 0; i < LIM; i++)
-				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * scp[i].dom.distance(), scp[i]);
-			for (int i = 0; i < LIM; i++)
-				terms[LIM + i] = new Term((coeffs == null ? 1 : coeffs[scp.length - 1 - i]) * scp[scp.length - 1 - i].dom.distance(), scp[scp.length - 1 - i]);
-		}
-		// we discard terms of small coeffs
-		terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new);
-		if (terms.length > 0) {
-			Variable[] t = Stream.of(terms).map(term -> term.obj).toArray(Variable[]::new);
-
-			if (t.length > LIM)
-				t = Arrays.copyOfRange(t, t.length - LIM, t.length);
-			Variable[] tt = new Variable[t.length];
-			for (int i = 0; i < t.length; i++)
-				tt[i] = t[t.length - 1 - i];
-			return tt;
-		}
-		return null;
-	}
+	/**********************************************************************************************
+	 *** Implementing Interfaces
+	 *********************************************************************************************/
 
 	@Override
 	public void afterProblemConstruction() {
-		head.control.general.decideFramework(optimizer); // modifying a few options
-
-		assert Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints) : "Non normalized nums in the problem";
 		assert Stream.of(variables).map(x -> x.id()).distinct().count() == variables.length : "Two variables have the same id";
+		assert Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints) : "Non normalized nums in the problem";
+
+		head.control.general.decideFramework(optimizer); // modifying a few options
 		for (Variable x : variables) {
 			assert Stream.of(x.ctrs).noneMatch(c -> c.num == -1);
 			x.dom.setNumberOfLevels(variables.length + 1);
 		}
-
-		priorityVars = priorityVars.length == 0 && annotations.decision != null ? (Variable[]) annotations.decision : priorityVars;
-
-		boolean strong = false;
-		if (settings.framework == COP && head.control.valh.optValHeuristic) { // TODO experimental
-			Constraint c = ((Constraint) optimizer.ctr);
-			if (c instanceof ObjectiveVariable) {
-				Variable x = c.scp[0];
-				x.heuristic = optimizer.minimization ? new First(x, false) : new Last(x, false);
-				this.priorityVars = new Variable[] { x };
-			} else if (c instanceof ExtremumCst) {
-				if (strong)
-					for (Variable x : c.scp)
-						x.heuristic = optimizer.minimization ? new First(x, false) : new Last(x, false); // the boolean
-																											// is dummy
-			} else if (c instanceof NValuesCst) {
-				assert c instanceof NValuesCstLE;
-				if (strong)
-					for (Variable x : c.scp)
-						x.heuristic = new Values(x, false, c.scp);
-			} else if (c instanceof SumWeighted) { // || c instanceof SumSimple) {
-				int[] coeffs = c instanceof SumSimple ? null : ((SumWeighted) c).coeffs;
-				Variable[] vars = prioritySumVars(c.scp, coeffs);
-				if (vars != null) {
-					for (Variable x : vars) {
-						int coeff = c instanceof SumSimple ? 1 : coeffs[c.positionOf(x)];
-						boolean f = optimizer.minimization && coeff >= 0 || !optimizer.minimization && coeff < 0;
-						System.out.println("before " + x + " " + x.heuristic);
-						x.heuristic = f ? new First(x, false) : new Last(x, false); // the boolean is dummy
-						System.out.println("after " + x.heuristic);
-					}
-					this.priorityVars = vars;
-				}
-			}
-		}
-
-		// Variable[] scp = c.scp;
-		// if (c instanceof SumSimple || c instanceof ExtremumCst || c instanceof ObjVar) {
-		// for (Variable x : scp)
-		// x.heuristicVal = optimizationPilot.minimization ? new First(x, false) : new Last(x, false); // the boolean is
-		// dummy
-		// } else if (c instanceof SumWeighted) {
-		// int[] coeffs = ((SumWeighted) optimizationPilot.ctr).coeffs;
-		// // for (int i = 0; i < scp.length; i++) {
-		// // boolean f = optimizationPilot.minimization && coeffs[i] >= 0 || !optimizationPilot.minimization &&
-		// coeffs[i] < 0;
-		// // System.out.println("before " + scp[i].heuristicVal);
-		// // scp[i].heuristicVal = f ? new First(scp[i], false) : new Last(scp[i], false); // the boolean is dummy
-		// // System.out.println("after " + scp[i].heuristicVal);
-		// // }
-		// } else {
-		// assert c instanceof NValuesLE;
-		// for (Variable x : scp)
-		// x.heuristicVal = new Values(x, false, scp);
-		// }
-		// if (c instanceof ObjVar)
-		// this.priorityVars = new Variable[] { scp[0] };
-		// else if (c instanceof SumWeighted) {
-		// int[] coeffs = ((SumWeighted) c).coeffs;
-		// assert IntStream.range(0, coeffs.length - 1).allMatch(i -> coeffs[i] <= coeffs[i + 1]);
-		// int LIM = 3;
-		// Term[] terms = new Term[Math.min(scp.length, 2 * LIM)];
-		// if (terms.length == scp.length)
-		// for (int i = 0; i < terms.length; i++)
-		// terms[i] = new Term(coeffs[i] * scp[i].dom.highestValueDistance(), scp[i]);
-		// else {
-		// for (int i = 0; i < LIM; i++)
-		// terms[i] = new Term(coeffs[i] * scp[i].dom.highestValueDistance(), scp[i]);
-		// for (int i = 0; i < LIM; i++)
-		// terms[LIM + i] = new Term(coeffs[scp.length - 1 - i] * scp[scp.length - 1 - i].dom.highestValueDistance(),
-		// scp[scp.length - 1 - i]);
-		// }
-		// terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new); // we
-		// discard terms of small coeffs
-		// if (terms.length > 0) {
-		// Variable[] t = Stream.of(terms).map(term -> term.var).toArray(Variable[]::new);
-		//
-		// if (t.length > LIM)
-		// t = Arrays.copyOfRange(t, t.length - LIM, t.length);
-		// Variable[] tt = new Variable[t.length];
-		// for (int i = 0; i < t.length; i++)
-		// tt[i] = t[t.length - 1 - i];
-		// // for (int i = 0; i < tt.length; i++) {
-		// // boolean f = optimizationPilot.minimization && coeffs[i] >= 0 || !optimizationPilot.minimization &&
-		// coeffs[i] < 0;
-		// // scp[i].heuristicVal = f ? new First(scp[i], false) : new Last(scp[i], false); // the boolean is dummy
-		// // }
-		// // this.priorityVars = tt;
-		// }
-		// }
-
+		this.priorityVars = priorityVars.length == 0 && annotations.decision != null ? (Variable[]) annotations.decision : priorityVars;
+		Variable[] r = HeuristicValues.possibleOptimizationInterference(this);
+		this.priorityVars = r != null ? r : priorityVars;
 	}
 
 	@Override
@@ -367,9 +255,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Stream.of(variables).forEach(x -> x.dom.setPropagation(solver.propagation));
 	}
 
-	// ************************************************************************
-	// ***** Class Symbolic
-	// ************************************************************************
+	/**********************************************************************************************
+	 *** Inner Class Symbolic
+	 *********************************************************************************************/
 
 	public static final class Symbolic {
 
@@ -406,9 +294,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 	}
 
-	// ************************************************************************
-	// ***** Fields
-	// ************************************************************************
+	/**********************************************************************************************
+	 *** Fields and General Methods
+	 *********************************************************************************************/
 
 	/**
 	 * The main object, leading (head of) resolution
@@ -473,29 +361,20 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 */
 	public int nValueRemovals;
 
-	// ************************************************************************
-	// ***** Parameters
-	// ************************************************************************
+	/**
+	 * The number of auxiliary variables introduced when replacing tree expressions
+	 */
+	public int nAuxVariables;
+
+	/**
+	 * The number of auxiliary (equality) constraints introduced when replacing tree expressions
+	 */
+	public int nAuxConstraints;
 
 	@Override
 	public final String name() {
 		String name = super.name();
 		return name.matches("XCSP[23]-.*") ? name.substring(6) : name;
-	}
-
-	/**
-	 * Adds a constraint that has already been built. Should not be called when modeling. Advanced use.
-	 */
-	public final CtrAlone post(Constraint c, TypeClass... classes) {
-		// control about if the constraint must be discarded is done in loadCtr of class XCSP3
-		c.num = features.collecting.add(c);
-		return ctrEntities.new CtrAlone(c, classes);
-	}
-
-	public final Optimizable postObj(Constraint c) {
-		// System.out.println("\n" + Output.COMMENT_PREFIX + "Loading objective...");
-		c.num = features.collecting.add(c);
-		return (Optimizable) c;
 	}
 
 	/**
@@ -652,8 +531,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		super(api, modelVariant, argsForPb);
 		this.head = head;
 		head.problem = this; // required because it is needed during the initialization of some objects
-		head.observersConstruction.add(0, this); // Must be the first in the list when calling
-													// onConstructionSolverFinished
+		head.observersConstruction.add(0, this); // Must be the first in the list when calling afterSolverConstruction
 		this.settings = head.control.general;
 		this.features = new Features(this);
 
@@ -663,8 +541,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		head.output.afterData();
 		api.model();
 
-		// after possibly adding some additional (redundant or symmetry-breaking) constraints, we store variables and
-		// constraints into arrays
+		// after possibly adding some additional constraints, we store variables and constraints into arrays
 		inferAdditionalConstraints();
 		storeToArrays();
 
@@ -684,14 +561,36 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 	}
 
-	// ************************************************************************
-	// ***** Posting variables
-	// ************************************************************************
+	/**********************************************************************************************
+	 *** Posting Variables
+	 *********************************************************************************************/
 
 	/**
 	 * A map that gives access to each variable through its id.
 	 */
 	private final Map<String, Variable> mapForVars = new HashMap<>();
+
+	/**
+	 * A cache used to avoid computing several times the same sets of values
+	 */
+	private final Map<Object, int[]> cache = new HashMap<>();
+
+	/**
+	 * Posts the specified variable, i.e., records it as being a variable of the problem
+	 * 
+	 * @param x
+	 *            a variable to be posted
+	 * @return the posted variable
+	 */
+	private final Variable post(Variable x) {
+		control(!mapForVars.containsKey(x.id()), x.id() + " duplicated");
+		int num = features.collecting.add(x);
+		if (num == -1)
+			return null; // because the variable is discarded
+		x.num = num;
+		mapForVars.put(x.id(), x);
+		return x;
+	}
 
 	@Override
 	public Class<VariableInteger> classVI() {
@@ -708,83 +607,37 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return settings.framework;
 	}
 
-	/**
-	 * Adds a variable that has already be built. Should not be called directly when modeling.
-	 */
-	public final Variable addVar(Variable x) {
-		control(!mapForVars.containsKey(x.id()), x.id() + " duplicated");
-		int num = features.collecting.add(x);
-		if (num == -1)
-			return null; // because the variable is discarded
-		x.num = num;
-		mapForVars.put(x.id(), x);
-		return x;
-	}
-
 	@Override
 	public VariableInteger buildVarInteger(String id, Dom dom) {
 		VariableInteger x = null;
 		if (dom.values.length == 1 && dom.values[0] instanceof IntegerInterval)
 			x = new VariableInteger(this, id, (IntegerInterval) dom.values[0]);
-		else {
-			// TODO use a cache here to avoid building the array of values several times?
-			x = new VariableInteger(this, id, IntegerEntity.toIntArray((IntegerEntity[]) dom.values));
-		}
-		return (VariableInteger) addVar(x);
+		else
+			x = new VariableInteger(this, id, cache.computeIfAbsent(dom.values, k -> IntegerEntity.toIntArray((IntegerEntity[]) k)));
+		return (VariableInteger) post(x);
 	}
 
 	@Override
 	public VariableSymbolic buildVarSymbolic(String id, DomSymbolic dom) {
-		return (VariableSymbolic) addVar(new VariableSymbolic(this, id, (String[]) dom.values));
-	}
-
-	/*********************************************************************************************/
-	/**** Posting Constraints */
-	/*********************************************************************************************/
-
-	private CtrEntity unimplemented(String msg) {
-		return (CtrEntity) Kit.exit("\nunimplemented case for " + msg);
-	}
-
-	private CtrEntity unimplementedIf(boolean b, String msg) {
-		return b ? unimplemented(msg) : null;
-	}
-
-	public Variable[] translate(IVar[] t) {
-		return t instanceof Variable[] ? (Variable[]) t : Stream.of(t).map(x -> (Variable) x).toArray(Variable[]::new);
-	}
-
-	// private Variable[][] translate2D(IVar[][] m) {
-	// return m instanceof Variable[][] ? (Variable[][]) m : Stream.of(m).map(t ->
-	// translate(t)).toArray(Variable[][]::new);
-	// }
-
-	private Range range(int length) {
-		return new Range(length);
+		return (VariableSymbolic) post(new VariableSymbolic(this, id, (String[]) dom.values));
 	}
 
 	// ************************************************************************
 	// ***** Replacing trees by variables
 	// ************************************************************************
 
-	/**
-	 * The number of auxiliary variables introduced when replacing tree expressions
-	 */
-	public int nAuxVariables;
-
 	private String idAux() {
 		return AUXILIARY_VARIABLE_PREFIX + varEntities.allEntities.size();
 	}
 
-	private Var newAuxVar(Object values) {
-		Dom dom = values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
+	private Var auxVar(Object values) {
 		nAuxVariables++;
-		return api.var(idAux(), dom, "auxiliary variable");
+		return api.var(idAux(), values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values), "auxiliary variable");
 	}
 
-	private Var[] newAuxVarArray(int length, Object values) {
-		control(length > 1);
+	private Var[] auxVarArray(int length, Object values) {
 		nAuxVariables += length;
+		control(length > 1);
 		values = values instanceof Range ? api.dom((Range) values) : values instanceof int[] ? api.dom((int[]) values) : values;
 		if (values instanceof Dom)
 			return api.array(idAux(), api.size(length), (Dom) values, "auxiliary variables");
@@ -792,18 +645,27 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private void replacement(Var aux, XNode<IVar> tree, boolean tuplesComputed, int[][] tuples) {
+		nAuxConstraints++;
 		Variable[] treeVars = (Variable[]) tree.vars();
 		if (!tuplesComputed && head.control.extension.convertingIntension(treeVars))
-			tuples = new TreeEvaluator(tree).computeTuples(Variable.currDomainValues(treeVars));
+			tuples = new TreeEvaluator(tree).computeTuples(Variable.initDomainValues(treeVars)); // or current values?
 		if (tuples != null) {
-			extension(vars(treeVars, aux), tuples, true); // extension(eq(aux, tree));
 			features.nConvertedConstraints++;
+			extension(vars(treeVars, aux), tuples, true);
 		} else
 			equal(aux, tree);
 	}
 
+	/**
+	 * Returns a new (auxiliary) variable representing the specified tree expression after having posted an equality
+	 * constraint, i.e., a constraint forcing the new variable to be equal to the tree expression
+	 * 
+	 * @param tree
+	 *            a tree expression
+	 * @return a new (auxiliary) variable representing the specified tree expression
+	 */
 	public Variable replaceByVariable(XNode<IVar> tree) {
-		Var aux = newAuxVar(tree.possibleValues());
+		Var aux = auxVar(tree.possibleValues());
 		replacement(aux, tree, false, null);
 		return (Variable) aux;
 	}
@@ -818,16 +680,24 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return IntStream.range(0, tree1.arity()).allMatch(i -> areSimilar(tree1.sons[i], tree2.sons[i]));
 	}
 
+	/**
+	 * Returns an array of new (auxiliary) variables representing the specified tree expressions after having posted
+	 * equality constraints, i.e., for each new variable, a constraint forcing it to be equal to the corresponding tree
+	 * expression
+	 * 
+	 * @param trees
+	 *            an array of tree expressions
+	 * @return an array of new (auxiliary) variables representing the specified tree expressions
+	 */
 	private Var[] replaceByVariables(XNode<IVar>[] trees) {
 		IntToDom doms = i -> {
 			Object values = trees[i].possibleValues();
 			return values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
 		};
-		// if multiple occurrences of the same variable in a tree, there is a possible problem of reasoning with similar
-		// trees
+		// if multiple occurrences of the same variable in a tree, possible problem of reasoning with similar trees?
 		boolean similarTrees = trees.length > 1 && Stream.of(trees).allMatch(tree -> tree.listOfVars().size() == tree.vars().length);
 		similarTrees = similarTrees && IntStream.range(1, trees.length).allMatch(i -> areSimilar(trees[0], trees[i]));
-		Var[] aux = newAuxVarArray(trees.length, similarTrees ? doms.apply(0) : doms);
+		Var[] aux = auxVarArray(trees.length, similarTrees ? doms.apply(0) : doms);
 		int[][] tuples = null;
 		if (similarTrees) {
 			Variable[] treeVars = (Variable[]) trees[0].vars();
@@ -839,8 +709,52 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return aux;
 	}
 
+	/**
+	 * Returns an array of new (auxiliary) variables representing the specified tree expressions after having posted
+	 * equality constraints, i.e., for each new variable, a constraint forcing it to be equal to the corresponding tree
+	 * expression in the stream
+	 * 
+	 * @param trees
+	 *            a stream of tree expressions
+	 * @return an array of new (auxiliary) variables representing the specified tree expressions
+	 */
 	private Var[] replaceByVariables(Stream<XNode<IVar>> trees) {
 		return replaceByVariables(trees.toArray(XNode[]::new));
+	}
+
+	/**********************************************************************************************
+	 *** Posting Constraints
+	 *********************************************************************************************/
+
+	/**
+	 * Posts the specified constraint, i.e., records it as being a constraint of the problem
+	 * 
+	 * @param x
+	 *            a constraint to be posted
+	 * @param classes
+	 *            the XCSP3 classes coming with the constraint
+	 * @return the posted constraint
+	 */
+	public final CtrAlone post(Constraint c, TypeClass... classes) {
+		// the control about if the constraint must be discarded is done in loadCtr of class XCSP3
+		c.num = features.collecting.add(c);
+		return ctrEntities.new CtrAlone(c, classes);
+	}
+
+	private CtrEntity unimplemented(String msg) {
+		return (CtrEntity) Kit.exit("\nunimplemented case for " + msg);
+	}
+
+	private CtrEntity unimplementedIf(boolean b, String msg) {
+		return b ? unimplemented(msg) : null;
+	}
+
+	public Variable[] translate(IVar[] t) {
+		return t instanceof Variable[] ? (Variable[]) t : Stream.of(t).map(x -> (Variable) x).toArray(Variable[]::new);
+	}
+
+	private Range range(int length) {
+		return new Range(length);
 	}
 
 	// ************************************************************************
@@ -1020,7 +934,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return product(list, basicCondition(tree));
 		}
 
-		boolean b = head.control.constraints.decomposeIntention > 0 && scp[0] instanceof VariableInteger && scp.length + 1 >= tree.listOfVars().size(); //
+		boolean b = head.control.constraints.decomposeIntention > 0 && scp[0] instanceof VariableInteger && scp.length + 1 >= tree.listOfVars().size();
 		// at most a variable occurring twice
 		b = b || head.control.constraints.decomposeIntention == 2;
 		if (b) {
@@ -1061,7 +975,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Converting intension to extension
 	// ************************************************************************
 
-	private static enum ExportMode {
+	/**
+	 * Different ways of converting towards extension
+	 */
+	private static enum ExtensionMode {
 		NO,
 		INTENSION,
 		EXTENSION, // EXTENSION is for automatic mode (either supports or conflicts)
@@ -1083,9 +1000,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		@Override
 		public ModifiableBoolean mode() {
-			ExportMode exportMode = ExportMode.EXTENSION; // later, maybe a control parameter
-			return new ModifiableBoolean(exportMode != ExportMode.EXTENSION_SUPPORTS && exportMode != ExportMode.EXTENSION_CONFLICTS ? null
-					: exportMode == ExportMode.EXTENSION_SUPPORTS);
+			ExtensionMode exportMode = ExtensionMode.EXTENSION; // later, maybe a control parameter
+			return new ModifiableBoolean(exportMode != ExtensionMode.EXTENSION_SUPPORTS && exportMode != ExtensionMode.EXTENSION_CONFLICTS ? null
+					: exportMode == ExtensionMode.EXTENSION_SUPPORTS);
 		}
 	};
 
@@ -1109,45 +1026,43 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 *            the values considered as supports (i.e., authorized) or conflicts for the variable
 	 * @param positive
 	 *            if true, specified values are supports; otherwise are conflicts
-	 * @return
+	 * @return a unary extension constraint
 	 */
-	private final CtrAlone extension(Variable x, int[] values, final boolean positive) {
-		assert Kit.isStrictlyIncreasing(values) && IntStream.of(values).noneMatch(v -> v == STAR);
+	public final CtrAlone extension(Variable x, int[] values, boolean positive) {
+		assert values.length > 0 && Kit.isStrictlyIncreasing(values) && IntStream.of(values).noneMatch(v -> v == STAR);
 		if (head.mustPreserveUnaryConstraints())
 			return post(new Extension1(this, x, values, positive));
-		// else the unary extension constraint is definitively taken into consideration by modifying the domain of the
-		// variable
+		// else the unary constraint is definitively taken into consideration by modifying the domain of the variable
 		x.dom.removeValuesAtConstructionTime(v -> (Arrays.binarySearch(values, v) < 0) == positive);
 		features.nRemovedUnaryCtrs++;
 		return null;
 	}
 
-	public final CtrAlone extension(IVar[] scp, Object[] tuples, boolean positive, Boolean starred) {
+	public final CtrAlone extension(IVar[] list, Object[] tuples, boolean positive, Boolean starred) {
+		Variable[] scp = translate(list);
 		if (tuples.length == 0)
-			return post(
-					positive ? new CtrFalse(this, translate(scp), "Extension with 0 support") : new CtrTrue(this, translate(scp), "Extension with 0 conflict"));
-		if (scp.length == 1) {
+			return post(positive ? new CtrFalse(this, scp, "Extension with 0 support") : new CtrTrue(this, scp, "Extension with 0 conflict"));
+		if (list.length == 1) {
 			control(starred == null);
-			Variable x = (Variable) scp[0];
-			int[][] m = x instanceof VariableSymbolic ? symbolic.replaceSymbols((String[][]) tuples) : (int[][]) tuples;
+			int[][] m = scp[0] instanceof VariableSymbolic ? symbolic.replaceSymbols((String[][]) tuples) : (int[][]) tuples;
 			int[] values = Stream.of(m).mapToInt(t -> t[0]).toArray();
-			return extension(x, values, positive);
+			return extension(scp[0], values, positive);
 		}
-		return post(ConstraintExtension.buildFrom(this, translate(scp), tuples, positive, starred));
+		return post(ConstraintExtension.buildFrom(this, scp, tuples, positive, starred));
 	}
 
 	@Override
-	public final CtrAlone extension(Var[] scp, int[][] tuples, boolean positive) {
-		return extension(scp, tuples, positive, DONT_KNOW);
+	public final CtrAlone extension(Var[] list, int[][] tuples, boolean positive) {
+		return extension(list, tuples, positive, DONT_KNOW);
 	}
 
 	@Override
-	public final CtrAlone extension(VarSymbolic[] scp, String[][] tuples, boolean positive) {
-		return extension(scp, tuples, positive, DONT_KNOW);
+	public final CtrAlone extension(VarSymbolic[] list, String[][] tuples, boolean positive) {
+		return extension(list, tuples, positive, DONT_KNOW);
 	}
 
 	@Override
-	public final CtrAlone extension(Var[] scp, AbstractTuple[] tuples, boolean positive) {
+	public final CtrAlone extension(Var[] list, AbstractTuple[] tuples, boolean positive) {
 		return (CtrAlone) unimplemented("extension with abstract tuples");
 	}
 
@@ -1169,10 +1084,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return post(new CMDDO(this, translate(list), tuples));
 	}
 
-	// public final CtrAlone mddOr(Var[] scp, MDDCD[] t) {
-	// return addCtr(new CtrOrMDD(this, translate(scp), t));
-	// }
-
 	// ************************************************************************
 	// ***** Constraint allDifferent
 	// ************************************************************************
@@ -1181,7 +1092,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (scp.length <= 1)
 			return ctrEntities.new CtrAloneDummy("Removed alldiff constraint with scope length = " + scp.length);
 		if (head.control.global.typeAllDifferent == 0)
-			return post(Variable.isPermutationElligible(scp) ? new AllDifferentPermutation(this, scp) : new AllDifferentComplete(this, scp));
+			return post(head.control.constraints.recognizePermutations && AllDifferent.isPermutationElligible(scp) ? new AllDifferentPermutation(this, scp)
+					: new AllDifferentComplete(this, scp));
 		if (head.control.global.typeAllDifferent == 1)
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
 				if (i < j)
@@ -1357,16 +1269,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Constraint sum
 	// ************************************************************************
 
-	private static class Term implements Comparable<Term> {
+	public static class Term implements Comparable<Term> {
 		@Override
 		public int compareTo(Term term) {
 			return Long.compare(coeff, term.coeff);
 		}
 
-		long coeff;
-		Object obj; // typically, a variable or a tree
+		public long coeff;
+		public Object obj; // typically, a variable or a tree
 
-		private Term(long coeff, Object obj) {
+		public Term(long coeff, Object obj) {
 			this.coeff = coeff;
 			this.obj = obj;
 		}
@@ -1852,7 +1764,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// third, we introduce an auxiliary variable for dealing with the other cases
 		int min = Stream.of(list).mapToInt(x -> ((Variable) x).dom.firstValue()).min().getAsInt();
 		int max = Stream.of(list).mapToInt(x -> ((Variable) x).dom.lastValue()).max().getAsInt();
-		Var aux = newAuxVar(new Range(min, max + 1));
+		Var aux = auxVar(new Range(min, max + 1));
 		if (condition instanceof ConditionRel) {
 			intension(XNodeParent.build(((ConditionRel) condition).operator.toExpr(), aux, condition.rightTerm()));
 		} else
@@ -2000,7 +1912,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		unimplementedIf(!zeroIgnored, "noOverlap");
 		if (head.control.global.redundNoOverlap) { // we post redundant constraints (after introducing auxiliary
 													// variables)
-			Var[] aux = newAuxVarArray(origins.length, range(origins.length));
+			Var[] aux = auxVarArray(origins.length, range(origins.length));
 			allDifferent(aux);
 			for (int i = 0; i < origins.length; i++)
 				for (int j = i + 1; j < origins.length; j++)
@@ -2232,9 +2144,21 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return post(new CSmart(this, translate(scp), smartTuples));
 	}
 
-	// ************************************************************************
-	// ***** Managing objectives
-	// ************************************************************************
+	/**********************************************************************************************
+	 *** Posting Objectives
+	 *********************************************************************************************/
+
+	/**
+	 * Posts the specified objective (constraint), i.e., records it as being the objective of the problem
+	 * 
+	 * @param x
+	 *            an objective constraint to be posted
+	 * @return the posted objective
+	 */
+	public final Optimizable postObj(Constraint c) {
+		c.num = features.collecting.add(c);
+		return (Optimizable) c;
+	}
 
 	private Optimizer buildOptimizer(TypeOptimization opt, Optimizable clb, Optimizable cub) {
 		control(optimizer == null, "Only mono-objective currently supported");

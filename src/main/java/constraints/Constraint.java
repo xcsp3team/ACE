@@ -265,7 +265,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		int[][] positions = Stream.of(ctrs).map(c -> Stream.of(c.scp).mapToInt(x -> Utilities.indexOf(x, scp)).toArray()).toArray(int[][]::new);
 		List<int[]> list = new ArrayList<>();
 		int[] support = new int[scp.length];
-		EnumerationCartesian ec = new EnumerationCartesian(Variable.domSizeArrayOf(scp, true));
+		EnumerationCartesian ec = new EnumerationCartesian(Stream.of(scp).mapToInt(x -> x.dom.initSize()).toArray());
 		start: while (ec.hasNext()) {
 			int[] indexes = ec.next();
 			for (int i = 0; i < ctrs.length; i++) {
@@ -663,7 +663,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		this.problem = pb;
 		this.scp = scp = Stream.of(scp).distinct().toArray(Variable[]::new); // IMPORTANT: this.scp and scp both updated
 		control(scp.length >= 1 && Stream.of(scp).allMatch(x -> x != null), () -> this + " with a scope badly formed ");
-		this.doms = Variable.buildDomainsArrayFor(scp);
+		this.doms = Stream.of(scp).map(x -> x.dom).toArray(Domain[]::new);
 
 		this.tupleIterator = new TupleIterator(this.doms);
 		this.supporter = Supporter.buildFor(this);

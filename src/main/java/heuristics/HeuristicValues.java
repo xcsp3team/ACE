@@ -10,16 +10,29 @@
 
 package heuristics;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import constraints.Constraint;
+import constraints.global.Extremum.ExtremumCst;
+import constraints.global.NValues.NValuesCst;
+import constraints.global.NValues.NValuesCst.NValuesCstLE;
+import constraints.global.Sum.SumSimple;
+import constraints.global.Sum.SumWeighted;
 import dashboard.Control.SettingValh;
 import heuristics.HeuristicValuesDirect.First;
+import heuristics.HeuristicValuesDirect.Last;
+import heuristics.HeuristicValuesDirect.Values;
 import heuristics.HeuristicValuesDynamic.Bivs;
 import heuristics.HeuristicValuesDynamic.Bivs2;
 import interfaces.Tags.TagExperimental;
+import optimization.ObjectiveVariable;
+import problem.Problem;
+import problem.Problem.Term;
 import solver.Solver;
 import utility.Kit;
 import utility.Reflector;
@@ -34,6 +47,10 @@ import variables.Variable;
  * @author Christophe Lecoutre
  */
 public abstract class HeuristicValues extends Heuristic {
+
+	/*************************************************************************
+	 ***** Static members
+	 *************************************************************************/
 
 	/**
 	 * Builds and returns a value ordering heuristic to be used for the specified variable
@@ -56,6 +73,88 @@ public abstract class HeuristicValues extends Heuristic {
 		}
 		return heuristic;
 	}
+
+	private static Variable[] prioritySumVars(Variable[] scp, int[] coeffs) {
+		assert coeffs == null || IntStream.range(0, coeffs.length - 1).allMatch(i -> coeffs[i] <= coeffs[i + 1]);
+		int LIM = 3; // HARD CODING
+		Term[] terms = new Term[Math.min(scp.length, 2 * LIM)];
+		if (terms.length == scp.length)
+			for (int i = 0; i < terms.length; i++)
+				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * scp[i].dom.distance(), scp[i]);
+		else {
+			for (int i = 0; i < LIM; i++)
+				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * scp[i].dom.distance(), scp[i]);
+			for (int i = 0; i < LIM; i++)
+				terms[LIM + i] = new Term((coeffs == null ? 1 : coeffs[scp.length - 1 - i]) * scp[scp.length - 1 - i].dom.distance(), scp[scp.length - 1 - i]);
+		}
+		// we discard terms of small coeffs
+		terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new);
+		if (terms.length > 0) {
+			Variable[] t = Stream.of(terms).map(term -> term.obj).toArray(Variable[]::new);
+
+			if (t.length > LIM)
+				t = Arrays.copyOfRange(t, t.length - LIM, t.length);
+			Variable[] tt = new Variable[t.length];
+			for (int i = 0; i < t.length; i++)
+				tt[i] = t[t.length - 1 - i];
+			return tt;
+		}
+		return null;
+	}
+
+	/**
+	 * Possibly modifies the value ordering heuristics of some variables according to the objective function
+	 * (constraint), and returns the variables that must be considered as being priority for search, or null.
+	 * EXPERIMENTAL code to be finalized
+	 * 
+	 * @param problem
+	 *            a problem
+	 * @return the variables that must be considered as being priority for search, or null
+	 */
+	public static Variable[] possibleOptimizationInterference(Problem problem) {
+		if (problem.optimizer == null || !problem.head.control.valh.optValHeuristic) // experimental
+			return null;
+		boolean strong = false; // hard coding
+		Constraint c = ((Constraint) problem.optimizer.ctr);
+		boolean minimization = problem.optimizer.minimization;
+		if (c instanceof ObjectiveVariable) {
+			Variable x = c.scp[0];
+			x.heuristic = minimization ? new First(x, false) : new Last(x, false);
+			return new Variable[] { x };
+		}
+		if (c instanceof ExtremumCst) {
+			if (strong)
+				for (Variable x : c.scp)
+					x.heuristic = minimization ? new First(x, false) : new Last(x, false); // the boolean is dummy
+			return null;
+		}
+		if (c instanceof NValuesCst) {
+			assert c instanceof NValuesCstLE;
+			if (strong)
+				for (Variable x : c.scp)
+					x.heuristic = new Values(x, false, c.scp);
+			return null;
+		}
+		if (c instanceof SumWeighted || c instanceof SumSimple) {
+			int[] coeffs = c instanceof SumSimple ? null : ((SumWeighted) c).coeffs;
+			Variable[] vars = prioritySumVars(c.scp, coeffs);
+			if (vars != null) {
+				for (Variable x : vars) {
+					int coeff = c instanceof SumSimple ? 1 : coeffs[c.positionOf(x)];
+					boolean f = minimization && coeff >= 0 || !minimization && coeff < 0;
+					System.out.println("before " + x + " " + x.heuristic);
+					x.heuristic = f ? new First(x, false) : new Last(x, false); // the boolean is dummy
+					System.out.println("after " + x.heuristic);
+				}
+				return vars;
+			}
+		}
+		return null;
+	}
+
+	/*************************************************************************
+	 ***** Fields and Methods
+	 *************************************************************************/
 
 	/**
 	 * The variable to which this value ordering heuristic is attached
@@ -137,9 +236,9 @@ public abstract class HeuristicValues extends Heuristic {
 		return computeBestValueIndex();
 	}
 
-	// ************************************************************************
-	// ***** HeuristicValuesFixed
-	// ************************************************************************
+	/*************************************************************************
+	 ***** HeuristicValuesStatic
+	 *************************************************************************/
 
 	/**
 	 * This is the class for building static value ordering heuristics. It means that, for such heuristics, all values

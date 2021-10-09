@@ -250,8 +250,7 @@ public final class TableSmart extends ExtensionStructure {
 			this.initialTuple = initialTuple != null ? initialTuple : Kit.repeat(STAR, scp.length);
 			this.tuple = IntStream.range(0, scp.length).map(i -> initialTuple[i] == STAR ? STAR : scp[i].dom.toIdx(initialTuple[i])).toArray();
 			this.nac = c.nac;
-			this.tmp = new SetDense(Variable.maxInitDomSize(scp));
-			assert Variable.areSortedDomainsIn(scp);
+			this.tmp = new SetDense(Stream.of(scp).mapToInt(x -> x.dom.initSize()).max().getAsInt());
 
 			// Converting Boolean tree expressions into restriction objects
 			List<Restriction> list = new ArrayList<>();

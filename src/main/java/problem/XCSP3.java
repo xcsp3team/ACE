@@ -10,6 +10,8 @@
 
 package problem;
 
+import static org.xcsp.common.Types.TypeFlag.STARRED_TUPLES;
+import static org.xcsp.common.Types.TypeFlag.UNCLEAN_TUPLES;
 import static org.xcsp.common.Utilities.join;
 import static org.xcsp.parser.callbacks.XCallbacks.XCallbacksParameters.RECOGNIZE_BINARY_PRIMITIVES;
 import static org.xcsp.parser.callbacks.XCallbacks.XCallbacksParameters.RECOGNIZE_EXTREMUM_CASES;
@@ -68,9 +70,9 @@ import org.xcsp.parser.entries.XVariables.XVar;
 import org.xcsp.parser.entries.XVariables.XVarInteger;
 import org.xcsp.parser.entries.XVariables.XVarSymbolic;
 
-import constraints.Constraint.CtrTrivial.CtrFalse;
 import dashboard.Control.SettingXml;
 import dashboard.Input;
+import variables.DomainFinite.DomainSymbols;
 import variables.Variable;
 import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
@@ -328,12 +330,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrFalse(String id, XVar[] list) {
-		if (problem.settings.framework == TypeFramework.MAXCSP)
-			problem.post(new CtrFalse(problem, trVars(Stream.of(list).map(x -> (XVarInteger) x).toArray(XVarInteger[]::new)), "CtrHard False for MaxCSP"));
-		// extension((VarInteger[]) trVars(Stream.of(list).map(x -> (XVarInteger) x).toArray(XVarInteger[]::new)), new
-		// int[][] { {} });
-		else
-			throw new RuntimeException("Constraint with only conflicts");
+		throw new RuntimeException("Constraint with only conflicts"); // and if MAXCSP?
 	}
 
 	// ************************************************************************
@@ -352,15 +349,17 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrExtension(String id, XVarInteger x, int[] values, boolean positive, Set<TypeFlag> flags) {
-		control(!flags.contains(TypeFlag.STARRED_TUPLES));
-		values = flags.contains(TypeFlag.UNCLEAN_TUPLES) ? Variable.filterValues(trVar(x), values, false) : values;
-		problem.extension(vars(trVar(x)), dub(values), positive);
+		control(!flags.contains(STARRED_TUPLES));
+		VariableInteger y = trVar(x);
+		values = flags.contains(UNCLEAN_TUPLES) ? IntStream.of(values).filter(v -> y.dom.containsValue(v)).toArray() : values;
+		problem.extension(y, values, positive);
 	}
 
 	@Override
 	public void buildCtrExtension(String id, XVarInteger[] list, int[][] tuples, boolean positive, Set<TypeFlag> flags) {
-		tuples = flags.contains(TypeFlag.UNCLEAN_TUPLES) ? Variable.filterTuples(trVars(list), tuples, false) : tuples;
-		problem.extension(trVars(list), tuples, positive, flags.contains(TypeFlag.STARRED_TUPLES));
+		Variable[] scp = trVars(list);
+		tuples = flags.contains(UNCLEAN_TUPLES) ? Stream.of(tuples).filter(t -> Variable.isValidTuple(scp, t, false)).toArray(int[][]::new) : tuples;
+		problem.extension(scp, tuples, positive, flags.contains(STARRED_TUPLES));
 	}
 
 	@Override
@@ -854,15 +853,18 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrExtension(String id, XVarSymbolic x, String[] values, boolean positive, Set<TypeFlag> flags) {
-		control(!flags.contains(TypeFlag.STARRED_TUPLES), "Forbidden for unary constraints");
-		values = flags.contains(TypeFlag.UNCLEAN_TUPLES) ? Variable.filterValues(trVar(x), values) : values;
-		problem.extension(vars(trVar(x)), dub(values), positive);
+		control(!flags.contains(STARRED_TUPLES), "Forbidden for unary constraints");
+		VariableSymbolic y = trVar(x);
+		values = flags.contains(UNCLEAN_TUPLES) ? Stream.of(values).filter(v -> ((DomainSymbols) y.dom).toIdx(v) != -1).toArray(String[]::new) : values;
+		problem.extension(vars(y), dub(values), positive);
 	}
 
 	@Override
 	public void buildCtrExtension(String id, XVarSymbolic[] list, String[][] tuples, boolean positive, Set<TypeFlag> flags) {
-		tuples = flags.contains(TypeFlag.UNCLEAN_TUPLES) ? Variable.filterTuples(trVars(list), tuples) : tuples;
-		problem.extension(trVars(list), tuples, positive, flags.contains(TypeFlag.STARRED_TUPLES));
+		Variable[] vars = trVars(list);
+		tuples = flags.contains(UNCLEAN_TUPLES) ? Stream.of(tuples)
+				.filter(t -> IntStream.range(0, vars.length).allMatch(i -> ((DomainSymbols) vars[i].dom).toIdx(t[i]) != -1)).toArray(String[][]::new) : tuples;
+		problem.extension(trVars(list), tuples, positive, flags.contains(STARRED_TUPLES));
 	}
 
 	@Override

@@ -492,7 +492,7 @@ public class Head extends Thread {
 
 	@Override
 	public void run() {
-		log.config("\n" + Kit.preprint("ACE (AbsCon Essence)", Kit.ORANGE) + " v1.0beta " + Kit.dateOf(Head.class));
+		log.config("\n" + Kit.print("ACE (AbsCon Essence)", Kit.ORANGE) + " v1.0beta " + Kit.dateOf(Head.class));
 		stopwatch.start();
 		boolean[] crashed = new boolean[Input.nInstancesToSolve];
 		for (int i = 0; i < Input.nInstancesToSolve; i++) {
@@ -500,7 +500,7 @@ public class Head extends Thread {
 				solveInstance(i);
 			} catch (Throwable e) {
 				crashed[i] = true;
-				System.out.println(Kit.preprint("\n! ERROR (use -ev for more details)", Kit.RED));
+				System.out.println(Kit.print("\n! ERROR (use -ev for more details)", Kit.RED));
 				if (control.general.exceptionsVisible)
 					e.printStackTrace();
 			}

@@ -38,6 +38,7 @@ import interfaces.Tags.TagStarredCompatible;
 import problem.Problem;
 import utility.Kit;
 import utility.Reflector;
+import variables.Domain;
 import variables.TupleIterator;
 import variables.Variable;
 import variables.Variable.VariableInteger;
@@ -224,10 +225,10 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	}
 
 	private static int[][] reverseTuples(Variable[] scp, int[][] tuples) {
-		control(Variable.areDomainsFull(scp));
+		control(Stream.of(scp).allMatch(x -> x.dom.nRemoved() == 0));
 		assert Kit.isLexIncreasing(tuples);
 		int cnt = 0;
-		TupleIterator tupleIterator = new TupleIterator(Variable.buildDomainsArrayFor(scp));
+		TupleIterator tupleIterator = new TupleIterator(Stream.of(scp).map(x -> x.dom).toArray(Domain[]::new));
 		int[] idxs = tupleIterator.firstValidTuple(), vals = new int[idxs.length];
 		List<int[]> list = new ArrayList<>();
 		do {
