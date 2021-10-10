@@ -242,7 +242,7 @@ public class Table extends ExtensionStructure {
 		}
 		this.positive = positive;
 		Arrays.sort(this.tuples, Utilities.lexComparatorInt);
-		Kit.control(!starred || positive);
+		control(!starred || positive);
 		if (subtables != null)
 			buildSubtables();
 	}

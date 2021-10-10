@@ -10,10 +10,10 @@
 
 package sets;
 
+import static utility.Kit.control;
+
 import java.util.Arrays;
 import java.util.stream.IntStream;
-
-import utility.Kit;
 
 /**
  * A reversible dense set is a dense set that can be handled at different levels.
@@ -39,9 +39,10 @@ public class SetDenseReversible extends SetDense {
 	}
 
 	/**
-	 * Builds a reversible dense set from the values in the specified array, and with the specified number of possible levels. These values are those that can
-	 * be contained at any time in the set. Most of the time, these values are exactly the indexes 0, 1, 2, ... and the dense set is then said to be simple.
-	 * Initially, the set is full or empty depending on the value of the specified boolean.
+	 * Builds a reversible dense set from the values in the specified array, and with the specified number of possible
+	 * levels. These values are those that can be contained at any time in the set. Most of the time, these values are
+	 * exactly the indexes 0, 1, 2, ... and the dense set is then said to be simple. Initially, the set is full or empty
+	 * depending on the value of the specified boolean.
 	 * 
 	 * @param dense
 	 * @param nLevels
@@ -51,13 +52,14 @@ public class SetDenseReversible extends SetDense {
 	 */
 	public SetDenseReversible(int[] dense, int nLevels, boolean initiallyFull) {
 		super(dense, initiallyFull);
-		Kit.control(nLevels > 0);
+		control(nLevels > 0);
 		limits = IntStream.generate(() -> UNINITIALIZED).limit(nLevels).toArray();
 	}
 
 	/**
-	 * Builds a reversible dense set with the specified capacity and the specified number of possible levels. The dense set is simple, meaning that it is aimed
-	 * at containing indexes 0, 1, 2, ... Initially, the set is full or empty depending on the value of the specified boolean.
+	 * Builds a reversible dense set with the specified capacity and the specified number of possible levels. The dense
+	 * set is simple, meaning that it is aimed at containing indexes 0, 1, 2, ... Initially, the set is full or empty
+	 * depending on the value of the specified boolean.
 	 * 
 	 * @param capacity
 	 *            the capacity of the dense set
@@ -71,8 +73,8 @@ public class SetDenseReversible extends SetDense {
 	}
 
 	/**
-	 * Builds a reversible dense set with the specified capacity and the specified number of possible levels. The dense set is simple, meaning that it is aimed
-	 * at containing indexes 0, 1, 2, ... Initially, the set is full.
+	 * Builds a reversible dense set with the specified capacity and the specified number of possible levels. The dense
+	 * set is simple, meaning that it is aimed at containing indexes 0, 1, 2, ... Initially, the set is full.
 	 * 
 	 * @param capacity
 	 *            the capacity of the dense set
@@ -102,8 +104,9 @@ public class SetDenseReversible extends SetDense {
 	}
 
 	/**
-	 * Removes the element at the specified position. Technically, this element is swapped with the last one, before decrementing the limit of the set.If this
-	 * is the first element removed at the specified level, the current limit for this level is recorded.
+	 * Removes the element at the specified position. Technically, this element is swapped with the last one, before
+	 * decrementing the limit of the set.If this is the first element removed at the specified level, the current limit
+	 * for this level is recorded.
 	 * 
 	 * @param i
 	 *            the position of the element to be removed

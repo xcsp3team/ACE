@@ -10,16 +10,17 @@
 
 package learning;
 
+import static utility.Kit.control;
+
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import solver.Decisions;
-import utility.Kit;
 
 /**
- * Strictly speaking, an object of this class is used as if it was a nogood constraint, i.e. a disjunction of negative decisions that must be enforced (to be
- * true). However, nogoods are handled apart during constraint propagation.
+ * Strictly speaking, an object of this class is used as if it was a nogood constraint, i.e. a disjunction of negative
+ * decisions that must be enforced (to be true). However, nogoods are handled apart during constraint propagation.
  * 
  * @author Christophe Lecoutre
  */
@@ -80,7 +81,7 @@ public final class Nogood {
 	 *            the negative decisions (literals) forming the nogood
 	 */
 	public Nogood(int[] negativeDecisions) {
-		Kit.control(negativeDecisions.length > 1 && Arrays.stream(negativeDecisions).noneMatch(d -> d >= 0));
+		control(negativeDecisions.length > 1 && Arrays.stream(negativeDecisions).noneMatch(d -> d >= 0));
 		this.literals = negativeDecisions;
 		this.watch1 = 0;
 		this.watch2 = negativeDecisions.length - 1;

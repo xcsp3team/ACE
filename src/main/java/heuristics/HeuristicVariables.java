@@ -10,6 +10,8 @@
 
 package heuristics;
 
+import static utility.Kit.control;
+
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -19,7 +21,6 @@ import interfaces.Observers.ObserverOnRuns;
 import problem.Problem;
 import propagation.GIC.GIC2;
 import solver.Solver;
-import utility.Kit;
 import utility.Reflector;
 import variables.DomainInfinite;
 import variables.Variable;
@@ -229,7 +230,7 @@ public abstract class HeuristicVariables extends Heuristic {
 		public Memory(Solver solver, boolean antiHeuristic) {
 			super(solver, antiHeuristic);
 			this.order = new int[solver.problem.variables.length];
-			Kit.control(!solver.head.control.varh.discardAux);
+			control(!solver.head.control.varh.discardAux);
 		}
 
 		@Override
@@ -242,7 +243,7 @@ public abstract class HeuristicVariables extends Heuristic {
 				}
 			if (pos != -1) {
 				if (posLastConflict > pos) {
-					Kit.control(posLastConflict < nOrdered);
+					control(posLastConflict < nOrdered);
 					int vid = order[pos];
 					order[pos] = order[posLastConflict];
 					order[posLastConflict] = vid;

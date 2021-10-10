@@ -10,6 +10,8 @@
 
 package sets;
 
+import static utility.Kit.control;
+
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
@@ -40,14 +42,14 @@ public class SetLinkedFinite implements SetLinked {
 	protected int last;
 
 	/**
-	 * The backward linking of all present indexes of the list (from last to first). Hence, <code> prevs[a] == b </code> means that b is the previous present
-	 * index in the list before a, or -1 if there is none..
+	 * The backward linking of all present indexes of the list (from last to first). Hence, <code> prevs[a] == b </code>
+	 * means that b is the previous present index in the list before a, or -1 if there is none..
 	 */
 	private final int[] prevs;
 
 	/**
-	 * The forward linking of all present indexes of the list (from first to last). Hence, <code> nexts[a] == b </code> means that b is the next present index
-	 * in the list after a, or -1 if there is none.
+	 * The forward linking of all present indexes of the list (from first to last). Hence, <code> nexts[a] == b </code>
+	 * means that b is the next present index in the list after a, or -1 if there is none.
 	 */
 	private final int[] nexts;
 
@@ -57,14 +59,16 @@ public class SetLinkedFinite implements SetLinked {
 	protected int lastRemoved;
 
 	/**
-	 * The backward linking of all absent indexes of the list (from last to first). Hence, <code> prevRemoved[a] == b </code> means that b is the previously
-	 * deleted index of the list before a, or -1 if there is none.
+	 * The backward linking of all absent indexes of the list (from last to first). Hence,
+	 * <code> prevRemoved[a] == b </code> means that b is the previously deleted index of the list before a, or -1 if
+	 * there is none.
 	 */
 	private final int[] prevRemoved;
 
 	/**
-	 * The level at which absent indexes have been removed from the list. Hence, <code> removedLevels[a] == i </code> means that i is the removal level of the
-	 * index a and <code> removedLevels[a] == -1 </code> means that the index a is still present.
+	 * The level at which absent indexes have been removed from the list. Hence, <code> removedLevels[a] == i </code>
+	 * means that i is the removal level of the index a and <code> removedLevels[a] == -1 </code> means that the index a
+	 * is still present.
 	 */
 	public final int[] removedLevels;
 
@@ -81,7 +85,7 @@ public class SetLinkedFinite implements SetLinked {
 	}
 
 	public SetLinkedFinite(int initSize) {
-		Kit.control(0 < initSize && initSize <= Constants.MAX_SAFE_INT, () -> "capacity=" + initSize);
+		control(0 < initSize && initSize <= Constants.MAX_SAFE_INT, () -> "capacity=" + initSize);
 		this.size = initSize;
 		this.first = 0;
 		this.last = initSize - 1;
@@ -290,14 +294,14 @@ public class SetLinkedFinite implements SetLinked {
 			}
 			cnt++;
 		}
-		Kit.control(cnt == size(), () -> "pb nb elements " + size());
+		control(cnt == size(), () -> "pb nb elements " + size());
 		for (int a = last; a != -1; a = prevs[a])
 			if (removedLevels[a] != -1 || prevs[a] != -1 && a <= prevs[a]) {
 				Kit.log.info("pb backward present : absent = " + removedLevels[a] + " i= " + a + " prev = " + prevs[a]);
 				return false;
 			}
 		for (int a = lastRemoved; a != -1; a = prevRemoved[a]) {
-			Kit.control(removedLevels[a] != -1, () -> "bad value of absentLevels");
+			control(removedLevels[a] != -1, () -> "bad value of absentLevels");
 			if (prevRemoved[a] != -1 && removedLevels[prevRemoved[a]] > removedLevels[a]) {
 				Kit.log.info("level of " + a + " = " + removedLevels[a] + " level of " + prevRemoved[a] + " = " + removedLevels[prevRemoved[a]]);
 				return false;

@@ -171,16 +171,16 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 
 // public int deduce() {
 //
-// Kit.control(futvars.size() == 1);
+// control(futvars.size() == 1);
 // int pos = futvars.dense[0];
-// Kit.control(scp[pos].dom instanceof DomainHuge);
-// Kit.control(tree.type == TypeExpr.EQ && tree.sons.length == 2);
+// control(scp[pos].dom instanceof DomainHuge);
+// control(tree.type == TypeExpr.EQ && tree.sons.length == 2);
 //
 // long sum = 0;
 // for (int i = 0; i < scp.length; i++)
 // if (i != pos)
 // sum += scp[i].dom.uniqueValue();
 // long res = limit - sum;
-// Kit.control(Utilities.isSafeInt(res));
+// control(Utilities.isSafeInt(res));
 // return (int) res;
 // }

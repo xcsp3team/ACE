@@ -10,6 +10,8 @@
 
 package solver;
 
+import static utility.Kit.control;
+
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -141,7 +143,7 @@ public final class LastConflict implements ObserverOnRuns, ObserverOnDecisions {
 		this.k = k;
 		this.store = new Variable[k];
 		this.statistics = new Statistics(k);
-		Kit.control(k > 0);
+		control(k > 0);
 	}
 
 	/**

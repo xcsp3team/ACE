@@ -14,8 +14,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * A dense set is basically composed of an array (of integers) and a limit: at any time, it contains the elements (typically, indexes of values) in the array at
- * indexes ranging from 0 to the limit (included).
+ * A dense set is basically composed of an array (of integers) and a limit: at any time, it contains the elements
+ * (typically, indexes of values) in the array at indexes ranging from 0 to the limit (included).
  * 
  * @author Christophe Lecoutre
  */
@@ -34,9 +34,9 @@ public class SetDense { // implements Iterable<Integer> {
 	public int limit;
 
 	/**
-	 * Builds a dense set from the values in the specified array. These values are those that can be contained at any time in the set. Most of the time, these
-	 * values are exactly the indexes 0, 1, 2, ... and the dense set is then said to be simple. Initially, the set is full or empty depending on the value of
-	 * the specified boolean.
+	 * Builds a dense set from the values in the specified array. These values are those that can be contained at any
+	 * time in the set. Most of the time, these values are exactly the indexes 0, 1, 2, ... and the dense set is then
+	 * said to be simple. Initially, the set is full or empty depending on the value of the specified boolean.
 	 * 
 	 * @param dense
 	 *            the values that can be contained in the set
@@ -50,8 +50,8 @@ public class SetDense { // implements Iterable<Integer> {
 	}
 
 	/**
-	 * Builds a dense set with the specified capacity. The dense set is simple, meaning that it is aimed at containing indexes 0, 1, 2, ... Initially, the set
-	 * is full or empty depending on the value of the specified boolean.
+	 * Builds a dense set with the specified capacity. The dense set is simple, meaning that it is aimed at containing
+	 * indexes 0, 1, 2, ... Initially, the set is full or empty depending on the value of the specified boolean.
 	 * 
 	 * @param capacity
 	 *            the capacity of the dense set
@@ -60,12 +60,13 @@ public class SetDense { // implements Iterable<Integer> {
 	 */
 	public SetDense(int capacity, boolean initiallyFull) {
 		this(IntStream.range(0, capacity).toArray(), initiallyFull);
-		// we build a canonical dense set, i.e. a set with values 0, 1, 2 ... (even if this is only useful when initialyFull is true or a sparse set is built)
+		// we build a canonical dense set, i.e. a set with values 0, 1, 2 ... (even if this is only useful when
+		// initialyFull is true or a sparse set is built)
 	}
 
 	/**
-	 * Builds a dense set with the specified capacity. The dense set is simple, meaning that it is aimed at containing indexes 0, 1, 2, ... Initially, the set
-	 * is empty.
+	 * Builds a dense set with the specified capacity. The dense set is simple, meaning that it is aimed at containing
+	 * indexes 0, 1, 2, ... Initially, the set is empty.
 	 * 
 	 * @param capacity
 	 *            the capacity of the dense set
@@ -78,7 +79,10 @@ public class SetDense { // implements Iterable<Integer> {
 	 * Increases the capacity of the set (ratio set to 2)
 	 */
 	public void increaseCapacity() {
-		dense = IntStream.range(0, capacity() * 2).map(i -> i < dense.length ? dense[i] : i).toArray(); // increase ratio set to 2; hard coding
+		dense = IntStream.range(0, capacity() * 2).map(i -> i < dense.length ? dense[i] : i).toArray(); // increase
+																										// ratio set to
+																										// 2; hard
+																										// coding
 	}
 
 	/**
@@ -164,7 +168,8 @@ public class SetDense { // implements Iterable<Integer> {
 	}
 
 	/**
-	 * Returns true if the set contains the specified element. BE CAREFUL: for a pure dense set (i.e., not a sparse set), this is not O(1)
+	 * Returns true if the set contains the specified element. BE CAREFUL: for a pure dense set (i.e., not a sparse
+	 * set), this is not O(1)
 	 * 
 	 * @param a
 	 *            an element (typically, index of value)
@@ -185,8 +190,8 @@ public class SetDense { // implements Iterable<Integer> {
 	}
 
 	/**
-	 * Adds the specified element. For a pure dense set (i.e., not a sparse set), the absence of the element is not tested, and so the element is always
-	 * systematically added.
+	 * Adds the specified element. For a pure dense set (i.e., not a sparse set), the absence of the element is not
+	 * tested, and so the element is always systematically added.
 	 * 
 	 * @param a
 	 *            an element (typically, index of value)
@@ -237,7 +242,8 @@ public class SetDense { // implements Iterable<Integer> {
 	}
 
 	/**
-	 * Removes the element at the specified position. Technically, this element is swapped with the last one, before decrementing the limit of the set.
+	 * Removes the element at the specified position. Technically, this element is swapped with the last one, before
+	 * decrementing the limit of the set.
 	 * 
 	 * @param i
 	 *            the position of the element to be removed
@@ -253,7 +259,8 @@ public class SetDense { // implements Iterable<Integer> {
 	}
 
 	/**
-	 * Removed the first element of the set. Technically, this element is swapped with the last one, before decrementing the limit of the set.
+	 * Removed the first element of the set. Technically, this element is swapped with the last one, before decrementing
+	 * the limit of the set.
 	 * 
 	 * @return the element that has been removed
 	 */
@@ -301,7 +308,7 @@ public class SetDense { // implements Iterable<Integer> {
 	//
 	// @Override
 	// public Iterator<Integer> iterator() {
-	// Kit.control(iteration.cursor == -1, () -> "Simple (not nested) Iteration can only be used ");
+	// control(iteration.cursor == -1, () -> "Simple (not nested) Iteration can only be used ");
 	// iteration.cursor = limit;
 	// return iteration;
 	// }

@@ -88,7 +88,8 @@ public abstract class Matcher implements ObserverOnConstruction {
 	protected SetSparse stackTarjan;
 
 	/**
-	 * neighborsOfValues[u] contains all neighbors (nodes) of node u. We have possibly arity + 1 (for node T) such nodes.
+	 * neighborsOfValues[u] contains all neighbors (nodes) of node u. We have possibly arity + 1 (for node T) such
+	 * nodes.
 	 */
 	protected SetSparse[] neighborsOfValues;
 
@@ -170,8 +171,9 @@ public abstract class Matcher implements ObserverOnConstruction {
 	}
 
 	/**
-	 * Computes Tarjan algorithm and prunes some values from the domains. Nodes are given a number as follows: a) i for the ith variable of the scope, b)
-	 * arity+v for a value v between minValue and maxValue, c) arity+intervalSize for node T
+	 * Computes Tarjan algorithm and prunes some values from the domains. Nodes are given a number as follows: a) i for
+	 * the ith variable of the scope, b) arity+v for a value v between minValue and maxValue, c) arity+intervalSize for
+	 * node T
 	 * 
 	 * @param node
 	 *            : Starting vertex for the search
@@ -215,8 +217,6 @@ public abstract class Matcher implements ObserverOnConstruction {
 					else if (arity <= nodeSCC && nodeSCC < arity + intervalSize)
 						currValsSCC.add(nodeSCC - arity);
 				}
-				// System.out.println(this + " valsSize=" + currValsSCC.size());
-				// System.out.println("Size= " + currVarsSCC.size() + " vs " + unfixedVars.size());
 				if (currVarsSCC.size() > 0)
 					for (int i = 0; i <= currValsSCC.limit; i++) {
 						int u = currValsSCC.dense[i];
@@ -240,7 +240,8 @@ public abstract class Matcher implements ObserverOnConstruction {
 						// if (a >= 0 && !currSCC.isPresent(x) && varToVal[x] != u)
 						// scp[x].dom.remove(a);
 						// }
-						// System.out.println(ctr + " while removing " + domainValueOf(u) + " DIff=" + (ctr.pb.nValuesRemoved - nb) + " " +
+						// System.out.println(ctr + " while removing " + domainValueOf(u) + " DIff=" +
+						// (ctr.pb.nValuesRemoved - nb) + " " +
 						// currSCC.size());
 					}
 				// }
@@ -249,8 +250,8 @@ public abstract class Matcher implements ObserverOnConstruction {
 	}
 
 	/**
-	 * Finds the strongly connected components of the flow graph as defined in Ian P. Gent, Ian Miguel, and Peter Nightingale, The AllDifferent Constraint: An
-	 * Empirical Survey, and prunes the domains to reach GAC
+	 * Finds the strongly connected components of the flow graph as defined in Ian P. Gent, Ian Miguel, and Peter
+	 * Nightingale, The AllDifferent Constraint: An Empirical Survey, and prunes the domains to reach GAC
 	 */
 	public final void removeInconsistentValues() {
 		time++;
@@ -272,7 +273,8 @@ public abstract class Matcher implements ObserverOnConstruction {
 
 	/**
 	 * @param normalizedValue
-	 *            : index between 0 and (maxDomainValue - minDomainValue). Domain values used in this class are normalized to use Sparse containers
+	 *            : index between 0 and (maxDomainValue - minDomainValue). Domain values used in this class are
+	 *            normalized to use Sparse containers
 	 * 
 	 * @return domain value corresponding to the normalized value in parameter
 	 */
@@ -284,8 +286,8 @@ public abstract class Matcher implements ObserverOnConstruction {
 	 * @param domainValue
 	 *            : any domain value
 	 * 
-	 * @return normalized value between 0 and (maxDomainValue - minDomainValue), corresponding to the domain value in parameter. Domain values used in this
-	 *         class are normalized to use Sparse containers
+	 * @return normalized value between 0 and (maxDomainValue - minDomainValue), corresponding to the domain value in
+	 *         parameter. Domain values used in this class are normalized to use Sparse containers
 	 */
 	protected int normalizedValueOf(int domainValue) {
 		return domainValue - minValue;
@@ -313,7 +315,8 @@ public abstract class Matcher implements ObserverOnConstruction {
 		}
 
 		/**
-		 * Finds a matching for the unmatched parameter variable while keeping the matched variables (may change the matched values though).
+		 * Finds a matching for the unmatched parameter variable while keeping the matched variables (may change the
+		 * matched values though).
 		 * 
 		 * @param x
 		 *            : An unmatched variable
@@ -352,7 +355,8 @@ public abstract class Matcher implements ObserverOnConstruction {
 		}
 
 		/**
-		 * Finds a matching for all the unmatched variables while keeping the matched variables (may change the matched values though).
+		 * Finds a matching for all the unmatched variables while keeping the matched variables (may change the matched
+		 * values though).
 		 * 
 		 * @return true if a matching has been found, false otherwise (constraint unsatisfiable)
 		 */
@@ -388,7 +392,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 		protected void computeNeighbors() {
 			for (SetSparse set : neighborsOfValues)
 				set.clear();
-			// Kit.control(neighborsOfT.isEmpty()); // not empty for a test case with queens. Should we clear?
+			// control(neighborsOfT.isEmpty()); // not empty for a test case with queens. Should we clear?
 			for (int x = 0; x < arity; x++) {
 				Domain dom = scp[x].dom;
 				for (int a = dom.first(); a != -1; a = dom.next(a)) {
@@ -458,7 +462,8 @@ public abstract class Matcher implements ObserverOnConstruction {
 		@Override
 		public void afterProblemConstruction() {
 			super.afterProblemConstruction();
-			// valToVars = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparseReversible(arity, false, ctr.pb.variables.length + 1))
+			// valToVars = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparseReversible(arity, false,
+			// ctr.pb.variables.length + 1))
 			// .toArray(SetSparseReversible[]::new);
 			valToVars = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparse(arity, false)).toArray(SetSparse[]::new);
 
@@ -483,8 +488,6 @@ public abstract class Matcher implements ObserverOnConstruction {
 			this.minValue = Math.min(this.minValue, IntStream.of(keys).min().getAsInt());
 			this.maxValue = Math.max(this.maxValue, IntStream.of(keys).max().getAsInt());
 			this.intervalSize = maxValue - minValue + 1;
-
-			// System.out.println("Interval " + this.intervalSize);
 
 			queueBFS = new SetSparse(Math.max(arity, intervalSize));
 			predBFS = Kit.repeat(-1, Math.max(arity, intervalSize));

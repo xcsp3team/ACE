@@ -13,6 +13,7 @@ package heuristics;
 import static heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting.CACD;
 import static heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting.CHS;
 import static heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting.VAR;
+import static utility.Kit.control;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -148,8 +149,6 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			return x.dom.size();
 		}
 	}
-
-	
 
 	// ************************************************************************
 	// ***** Subclasses for Wdeg variants
@@ -387,8 +386,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public ActivityImpactAbstract(Solver solver, boolean anti) {
 			super(solver, anti);
 			this.lastSizes = Stream.of(solver.problem.variables).mapToInt(x -> x.dom.size()).toArray();
-			Kit.control(solver.head.control.solving.branching == Branching.BIN);
-			Kit.control(solver.head.control.restarts.varhResetPeriod != 0);
+			control(solver.head.control.solving.branching == Branching.BIN);
+			control(solver.head.control.restarts.varhResetPeriod != 0);
 		}
 
 		protected abstract void update();

@@ -238,7 +238,7 @@ public final class MDD extends ExtensionStructure {
 			if (node == null)
 				map.put(num, this);
 			else
-				Kit.control(node == this, () -> "two nodes with the same id in the MDD " + num);
+				control(node == this, () -> "two nodes with the same id in the MDD " + num);
 			return sons == null || Stream.of(sons).noneMatch(child -> !child.controlUniqueNodes(map));
 		}
 
@@ -523,7 +523,7 @@ public final class MDD extends ExtensionStructure {
 
 	@Override
 	public void storeTuples(int[][] tuples, boolean positive) {
-		Kit.control(positive && tuples.length > 0);
+		control(positive && tuples.length > 0);
 		Constraint c = firstRegisteredCtr();
 		int[] domainSizes = Stream.of(c.scp).mapToInt(x -> x.dom.initSize()).toArray();
 		Map<IntArrayHashKey, Node> reductionMap = new HashMap<>(2000);
@@ -576,7 +576,7 @@ public final class MDD extends ExtensionStructure {
 			if (possibleWells.contains(src))
 				possibleWells.remove(src);
 		}
-		Kit.control(possibleRoots.size() == 1 && possibleWells.size() == 1,
+		control(possibleRoots.size() == 1 && possibleWells.size() == 1,
 				() -> "sizes= " + possibleRoots.size() + " " + possibleWells.stream().collect(Collectors.joining(" ")));
 		String sroot = possibleRoots.toArray(new String[1])[0];
 		String swell = possibleWells.toArray(new String[1])[0];
@@ -588,7 +588,7 @@ public final class MDD extends ExtensionStructure {
 			long v = tr.value instanceof Integer ? (Integer) tr.value : (Long) tr.value;
 			int val = Utilities.safeInt(v);
 			int idx = domains[node1.level].toIdx(val);
-			Kit.control(idx != -1);
+			control(idx != -1);
 			Node node2 = nodes.computeIfAbsent(tr.end, k -> new Node(node1.level + 1, domains[node1.level + 1].initSize(), true));
 			// MDDNode node2 = nodes.get(tr[2]);
 			// if (node2 == null)
@@ -801,7 +801,7 @@ public final class MDD extends ExtensionStructure {
 
 // public static void storeTuples1(int nbStates, int nbLetters, int[][] transitions, int initialState, int[]
 // finalStates, int nbLevels) {
-// Kit.control(nbLevels > 1);
+// control(nbLevels > 1);
 // Map<Integer, MDDNode> map = new HashMap<Integer, MDDNode>();
 // MDDNode root = new MDDNode(this,0, false, nbLetters); // TODO a virer la declaertaionxxxxxxxxxxxxxxxxxxxxxxxxxxx
 // List<MDDNode> listOfNodesAtCurrentLevel = new ArrayList<MDDNode>(), nextList = new ArrayList<MDDNode>();

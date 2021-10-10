@@ -1,5 +1,7 @@
 package propagation;
 
+import static utility.Kit.control;
+
 import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -580,7 +582,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 
 			private QueueESAC() {
 				this.uncheckedVars = new Variable[solver.problem.variables.length];
-				Kit.control(!solver.head.control.varh.discardAux);
+				control(!solver.head.control.varh.discardAux);
 			}
 
 			public void initialize() {
@@ -620,7 +622,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			}
 
 			private boolean controlUncheckedVariables() {
-				IntStream.range(0, nUncheckedVars).forEach(i -> Kit.control(!uncheckedVars[i].assigned(), () -> uncheckedVars[i] + " is assigned"));
+				IntStream.range(0, nUncheckedVars).forEach(i -> control(!uncheckedVars[i].assigned(), () -> uncheckedVars[i] + " is assigned"));
 				return true;
 			}
 		}

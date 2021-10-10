@@ -140,7 +140,7 @@ public abstract class Optimizer implements ObserverOnRuns {
 
 	public Optimizer(Problem pb, TypeOptimization opt, Optimizable clb, Optimizable cub) {
 		this.problem = pb;
-		Kit.control(opt != null && clb != null && cub != null);
+		control(opt != null && clb != null && cub != null);
 		this.minimization = opt == MINIMIZE;
 		this.clb = clb;
 		this.cub = cub;

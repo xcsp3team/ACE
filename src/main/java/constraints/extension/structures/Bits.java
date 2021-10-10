@@ -10,6 +10,8 @@
 
 package constraints.extension.structures;
 
+import static utility.Kit.control;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -148,7 +150,7 @@ public final class Bits extends ExtensionStructure {
 
 	public Bits(ConstraintExtension c) {
 		super(c);
-		Kit.control(c.scp.length == 2);
+		control(c.scp.length == 2);
 	}
 
 	public Bits(ConstraintExtension c, Bits bits) { // called by reflection when cloning structures

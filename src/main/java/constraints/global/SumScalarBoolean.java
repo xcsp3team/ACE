@@ -24,16 +24,41 @@ import variables.Variable;
 
 public abstract class SumScalarBoolean extends ConstraintGlobal implements TagAC, TagCallCompleteFiltering {
 
+	/**
+	 * The variables on the left of the scalar terms
+	 */
 	protected final Variable[] list;
+
+	/**
+	 * The variables on the right of the scalar terms
+	 */
 	protected final Variable[] coeffs;
 
-	protected final int half; // number of terms (products) on the left
+	/**
+	 * The number of terms (half of the scope size)
+	 */
+	protected final int half;
 
-	protected int min, max; // used to store computed bounds when filtering
-	protected final SetDense set01vs1; // used to store the indexes of terms such that one variable has domain {0,1} and the other domain {1}
+	/**
+	 * The minimal sum of the scalar terms (on the left-hand expression) that can be computed at a given moment; used
+	 * during filtering in most of the subclasses
+	 */
+	protected int min;
+
+	/**
+	 * The maximal sum of the scalar terms (on the left-hand expression) that can be computed at a given moment; used
+	 * during filtering in most of the subclasses
+	 */
+	protected int max;
+
+	/**
+	 * Dense set used to store the indexes of terms such that one variable has domain {0,1} and the other domain {1}
+	 */
+	protected final SetDense set01vs1;
 
 	public SumScalarBoolean(Problem pb, Variable[] list, Variable[] coeffs, Variable limit) {
-		super(pb, pb.api.vars(list, coeffs, limit)); // limit is null if the object is from a subclass of SumScalarBooleanCst
+		super(pb, pb.api.vars(list, coeffs, limit));
+		// note that limit is null if the object is from a subclass of SumScalarBooleanCst
 		this.list = list;
 		this.coeffs = coeffs;
 		this.half = list.length;
@@ -57,12 +82,14 @@ public abstract class SumScalarBoolean extends ConstraintGlobal implements TagAC
 		set01vs1.clear();
 		for (int i = 0; i < half; i++) {
 			Domain dom1 = scp[i].dom, dom2 = scp[i + half].dom;
-			if (dom1.contains(1) && dom2.contains(1)) { // if one 1 is missing nothing to do because the product is necessarily 0
+			if (dom1.contains(1) && dom2.contains(1)) { // if one 1 is missing nothing to do because the product is
+														// necessarily 0
 				max++;
 				if (!dom1.contains(0) && !dom2.contains(0))
 					min++;
 				else if (dom1.size() == 1 || dom2.size() == 1)
-					set01vs1.add(i); // we add i iff we have (0,1) versus 1 (or equivalently 1 versus (0,1)) ; the only way to filter here
+					set01vs1.add(i); // we add i iff we have (0,1) versus 1 (or equivalently 1 versus (0,1)) ; the only
+										// way to filter here
 			}
 		}
 	}
@@ -179,7 +206,8 @@ public abstract class SumScalarBoolean extends ConstraintGlobal implements TagAC
 				set01vs01.clear();
 				for (int i = 0; i < half; i++) {
 					Domain dom1 = scp[i].dom, dom2 = scp[i + half].dom;
-					if (dom1.contains(1) && dom2.contains(1)) { // if one 1 is missing nothing to do because the product is necessarily 0
+					if (dom1.contains(1) && dom2.contains(1)) {
+						// if one 1 is missing nothing to do because the product is necessarily 0
 						max++;
 						if (!dom1.contains(0) && !dom2.contains(0))
 							min++;
@@ -231,7 +259,8 @@ public abstract class SumScalarBoolean extends ConstraintGlobal implements TagAC
 			case GT:
 				return new SumScalarBooleanVarLE(pb, list, coeffs, pb.replaceByVariable(pb.api.add(limit, 1)));
 			default:
-				throw new UnsupportedOperationException("NE and EQ are not implemented"); // TODO useful to have propagators?
+				throw new UnsupportedOperationException("NE and EQ are not implemented"); // TODO useful to have
+																							// propagators?
 			}
 		}
 

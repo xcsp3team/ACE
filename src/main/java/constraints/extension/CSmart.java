@@ -222,7 +222,7 @@ public final class CSmart extends ExtensionSpecific {
 			if (dom.size() == lastSizes[x]) {
 				// if (!backtrack && dom.getSize() == lastSizes[vap])
 				nac[x].limit = lastSizes[x] - 1;
-				// Kit.control(scp[vap].dom.isExactly(supportlesss[vap])); // TODO TO MODIFY AS AN ASSERT
+				// control(scp[vap].dom.isExactly(supportlesss[vap])); // TODO TO MODIFY AS AN ASSERT
 				// *************************************************
 			} else {
 				nac[x].clear();

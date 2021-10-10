@@ -20,19 +20,51 @@ import org.xcsp.common.Types.TypeConditionOperatorRel;
 import constraints.ConstraintGlobal;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
+import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import variables.Domain;
 import variables.Variable;
 
+/**
+ * This is the root class for any constraint Product. This kind of constraints is clearly less frequent than Sum.
+ * Currently, there are three subclasses.
+ * 
+ * @author Christophe Lecoutre
+ */
 public abstract class Product extends ConstraintGlobal implements TagCallCompleteFiltering {
 
+	/**
+	 * The limit (right-hand term) of the constraint
+	 */
 	protected long limit;
 
-	protected long min, max; // used in most of the subclasses
+	/**
+	 * The minimal product (of the left-hand expression) that can be computed at a given moment; used during filtering
+	 * in most of the subclasses
+	 */
+	protected long min;
 
+	/**
+	 * The maximal product (of the left-hand expression) that can be computed at a given moment; used during filtering
+	 * in most of the subclasses
+	 */
+	protected long max;
+
+	/**
+	 * The minimal product (of the left-hand expression) that can be computed at a given moment, when excluding
+	 * variables whose domains contain 0.
+	 */
 	protected long minWithout0;
 
+	/**
+	 * Builds a constraint Product for the specified problem, and with the specified scope
+	 * 
+	 * @param pb
+	 *            the problem to which the constraint is attached
+	 * @param scp
+	 *            the scope of the constraint
+	 */
 	public Product(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		control(scp.length > 1);
@@ -43,8 +75,8 @@ public abstract class Product extends ConstraintGlobal implements TagCallComplet
 	 *********************************************************************************************/
 
 	/**
-	 * Root class for managing simple sum constraints (i.e., sum constraints without integer coefficients associated with variables). Note that no overflow is
-	 * possible because all sum of integer values (int) cannot exceed long values.
+	 * Root class for managing simple Product constraints. Currently, the code is valid only for integer variables with
+	 * positive domains, i.e., domains containing no negative value.
 	 */
 	public static abstract class ProductSimple extends Product implements TagSymmetric {
 
@@ -65,13 +97,24 @@ public abstract class Product extends ConstraintGlobal implements TagCallComplet
 			}
 		}
 
-		protected final long product(int[] t) {
+		/**
+		 * @param t
+		 *            an array of integers
+		 * @return the product of the values in the specified array
+		 */
+		public static final long product(int[] t) {
 			long l = 1;
 			for (int v : t)
 				l *= v;
 			return l;
 		}
 
+		/**
+		 * Returns the product of the values currently assigned to the variables in the scope. IMPORTANT: all variables
+		 * must be assigned.
+		 * 
+		 * @return the product of the values currently assigned to the variables in the scope.
+		 */
 		protected final long currProduct() {
 			long sum = 0;
 			for (Variable x : scp)
@@ -94,6 +137,22 @@ public abstract class Product extends ConstraintGlobal implements TagCallComplet
 			this.limit = limit;
 		}
 
+		/**
+		 * Remove 0 from the domain of every variable in the scope (if present). IMPORTANT: must be only called at
+		 * construction time.
+		 */
+		protected void remove0() {
+			for (Domain dom : doms)
+				if (dom.containsValue(0))
+					dom.removeValueAtConstructionTime(0);
+		}
+
+		/**
+		 * Recomputes the minimal and maximal sums (seen as bounds) that can be obtained with respect to the current
+		 * domains of the involved variables.
+		 * 
+		 * @return the number of variables with 0 in their domains
+		 */
 		protected final int recomputeBounds() {
 			int n0 = 0;
 			min = max = minWithout0 = 1;
@@ -121,6 +180,8 @@ public abstract class Product extends ConstraintGlobal implements TagCallComplet
 
 			public ProductSimpleLE(Problem pb, Variable[] scp, long limit) {
 				super(pb, scp, limit);
+				if (limit < 0)
+					remove0();
 			}
 
 			@Override
@@ -138,9 +199,9 @@ public abstract class Product extends ConstraintGlobal implements TagCallComplet
 					max = max / dom.lastValue();
 					if (min != 0)
 						dom.removeValuesGT(limit / (min / dom.firstValue()));
-					else if (dom.firstValue() == 0) { // otherwise another variable has 0 as first value (and so no filtering is possible)
-						if (n0 == 1)
-							dom.removeValuesGT(limit / minWithout0);
+					else if (dom.firstValue() == 0 && n0 == 1) {
+						// otherwise another variable has 0 as first value (and so no filtering is possible)
+						dom.removeValuesGT(limit / minWithout0);
 					}
 					assert dom.size() > 0;
 					max = max * dom.lastValue();
@@ -164,9 +225,8 @@ public abstract class Product extends ConstraintGlobal implements TagCallComplet
 
 			public ProductSimpleGE(Problem pb, Variable[] scp, long limit) {
 				super(pb, scp, limit);
-				for (Domain dom : doms)
-					if (dom.containsValue(0))
-						dom.removeValueAtConstructionTime(0); // because limit is assumed to be > 0
+				if (limit > 0)
+					remove0();
 			}
 
 			@Override
@@ -195,7 +255,7 @@ public abstract class Product extends ConstraintGlobal implements TagCallComplet
 		// ***** Constraint ProductSimpleEQ
 		// ************************************************************************
 
-		public static final class ProductSimpleEQ extends ProductSimple {
+		public static final class ProductSimpleEQ extends ProductSimple implements TagNotAC {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
@@ -204,21 +264,15 @@ public abstract class Product extends ConstraintGlobal implements TagCallComplet
 
 			public ProductSimpleEQ(Problem pb, Variable[] scp, long limit) {
 				super(pb, scp, limit);
-				for (Domain dom : doms)
-					if (dom.containsValue(0))
-						dom.removeValueAtConstructionTime(0); // because limit is assumed to be > 0
+				if (limit != 0)
+					remove0();
 			}
 
 			@Override
-			public boolean isGuaranteedAC() {
-				return false; // guaranteedGAC;
-			}
-
-			@Override
-			public boolean runPropagator(Variable evt) {
+			public boolean runPropagator(Variable x) {
 				recomputeBounds();
 				if (limit < min || limit > max)
-					return evt.dom.fail();
+					return x.dom.fail();
 				if (futvars.size() > 0) {
 					int lastModified = futvars.limit, i = futvars.limit;
 					do {

@@ -10,6 +10,8 @@
 
 package constraints.extension.structures;
 
+import static utility.Kit.control;
+
 import java.util.stream.Stream;
 
 import constraints.Constraint;
@@ -46,7 +48,7 @@ public abstract class Matrix extends ExtensionStructure {
 
 		public Matrix2D(ConstraintExtension c) {
 			super(c);
-			Kit.control(c.scp.length == 2);
+			control(c.scp.length == 2);
 		}
 
 		public Matrix2D(ConstraintExtension c, Matrix2D matrix2D) { // called by reflection when cloning structures
@@ -108,7 +110,7 @@ public abstract class Matrix extends ExtensionStructure {
 
 		public Matrix3D(ConstraintExtension c) {
 			super(c);
-			Kit.control(c.scp.length == 3);
+			control(c.scp.length == 3);
 		}
 
 		public Matrix3D(ConstraintExtension c, Matrix3D matrix3D) { // called by reflection when cloning structures

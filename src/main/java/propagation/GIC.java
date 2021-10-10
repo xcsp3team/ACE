@@ -10,6 +10,8 @@
 
 package propagation;
 
+import static utility.Kit.control;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -44,8 +46,8 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		this.heuristic = new WdegOnDom(solver, false);
 		this.nInverseTests = new int[solver.problem.variables.length + 1];
 		this.baseNbSolutionsLimit = solver.solutions.limit;
-		Kit.control(solver.head.control.restarts.cutoff == Long.MAX_VALUE, () -> "With GIC, there is currently no possibility of restarts.");
-		Kit.control(!Stream.of(solver.problem.constraints).anyMatch(c -> c.getClass().isAssignableFrom(STR3.class)),
+		control(solver.head.control.restarts.cutoff == Long.MAX_VALUE, () -> "With GIC, there is currently no possibility of restarts.");
+		control(!Stream.of(solver.problem.constraints).anyMatch(c -> c.getClass().isAssignableFrom(STR3.class)),
 				() -> "GIC currently not compatible with STR3");
 
 	}
@@ -77,7 +79,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 			if (c instanceof STR1) { // || constraint instanceof AllDifferent) {
 				int bef = solver.problem.nValueRemovals;
 				((STR1) c).runPropagator(null); // to update tables
-				Kit.control(solver.problem.nValueRemovals == bef);
+				control(solver.problem.nValueRemovals == bef);
 			}
 	}
 
@@ -102,7 +104,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 					x.dom.removeElementary(a);
 					nValuesRemoved++;
 				}
-			Kit.control(dom.size() != 0, () -> "Not possible to reach inconsistency with GIC (or your instance is unsat)");
+			control(dom.size() != 0, () -> "Not possible to reach inconsistency with GIC (or your instance is unsat)");
 		}
 		after(nSolutionsBefore, nValuesRemoved);
 		return true;
@@ -147,7 +149,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 						x.dom.removeElementary(a);
 						nValuesRemoved++;
 					}
-				Kit.control(dom.size() != 0, () -> "Not possible to reach inconsistency with GIC (or your instance is unsat)");
+				control(dom.size() != 0, () -> "Not possible to reach inconsistency with GIC (or your instance is unsat)");
 			}
 			after(nSolutionsBefore, nValuesRemoved);
 			return true;
@@ -253,7 +255,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		}
 
 		private void handleSolution(int[] solution) {
-			// Kit.control(solver.solutionManager.control(solution));
+			// control(solver.solutionManager.control(solution));
 			for (int j = sSupSize - 1; j >= 0; j--) {
 				int num = sSups[j];
 				int a = solution[num];
@@ -436,7 +438,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 					for (Interval interval : unknown) {
 						if (inTransfer.contains(interval))
 							continue;
-						Kit.control(interval.minDepth <= interval.maxDepth, () -> "" + interval);
+						control(interval.minDepth <= interval.maxDepth, () -> "" + interval);
 						// test x = a
 						Variable x = interval.var;
 						int a = interval.idx;
@@ -469,12 +471,12 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 					int nbDecisions = solver.depth() - depthBefore;
 					for (int i = 0; i < nbDecisions; i++)
 						solver.backtrack();
-					Kit.control(solver.depth() == target);
+					control(solver.depth() == target);
 				} else
 					for (Interval interval : unknown) {
 						if (inTransfer.contains(interval))
 							continue;
-						Kit.control(interval.minDepth <= interval.maxDepth, () -> "" + interval);
+						control(interval.minDepth <= interval.maxDepth, () -> "" + interval);
 						// test x = a
 						Variable x = interval.var;
 						int a = interval.idx;
@@ -664,21 +666,21 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		}
 
 		private boolean controlIntervals() {
-			Kit.control(inTransfer.size() == 0, () -> "Control cannot be performed with inTransfer not empty");
+			control(inTransfer.size() == 0, () -> "Control cannot be performed with inTransfer not empty");
 			int nIntervals1 = 0;
 			for (int i = 0; i < allIntervals.length; i++)
 				for (int j = 0; j < allIntervals[i].length; j++)
 					if (allIntervals[i][j] != null) {
 						nIntervals1++;
 						if (allIntervals[i][j].isFixed())
-							Kit.control(known[allIntervals[i][j].maxDepth].contains(allIntervals[i][j]));
+							control(known[allIntervals[i][j].maxDepth].contains(allIntervals[i][j]));
 						else
-							Kit.control(unknown.contains(allIntervals[i][j]));
+							control(unknown.contains(allIntervals[i][j]));
 					}
 			int nIntervals2 = unknown.size();
 			for (int i = target; i <= origin; i++)
 				nIntervals2 += known[i].size();
-			Kit.control(nIntervals1 == nIntervals2);
+			control(nIntervals1 == nIntervals2);
 			return true;
 		}
 

@@ -10,6 +10,8 @@
 
 package learning;
 
+import static utility.Kit.control;
+
 import java.util.Arrays;
 
 import constraints.Constraint;
@@ -93,7 +95,7 @@ public final class IpsExtractor {
 		this.acGuaranteed = ipsReasoner.solver.propagation.getClass() == GAC.class && ((GAC) ipsReasoner.solver.propagation).guaranteed;
 		this.binaryNetwork = ipsReasoner.solver.problem.features.maxCtrArity() == 2;
 		String s = ipsReasoner.solver.head.control.learning.ipsOperators;
-		Kit.control(s.length() == 5);
+		control(s.length() == 5);
 		this.eliminateEntailedVariables = parse(s.charAt(0));
 		this.eliminateInitialDomainVariables = parse(s.charAt(1));
 		this.eliminateDegreeVariables = parse(s.charAt(2));

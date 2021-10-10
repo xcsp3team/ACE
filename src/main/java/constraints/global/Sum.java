@@ -79,6 +79,14 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		this.limit = newLimit;
 	}
 
+	/**
+	 * Builds a constraint Sum for the specified problem, and with the specified scope
+	 * 
+	 * @param pb
+	 *            the problem to which the constraint is attached
+	 * @param scp
+	 *            the scope of the constraint
+	 */
 	public Sum(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		control(scp.length > 1);
@@ -112,7 +120,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 	 *********************************************************************************************/
 
 	/**
-	 * Root class for managing simple sum constraints (i.e., sum constraints without integer coefficients associated
+	 * Root class for managing simple Sum constraints (i.e., Sum constraints without integer coefficients associated
 	 * with variables). Note that no overflow is possible because all sum of integer values (int) cannot exceed long
 	 * values.
 	 */
@@ -135,6 +143,11 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			}
 		}
 
+		/**
+		 * @param t
+		 *            an array of integers
+		 * @return the sum of the values in the specified array
+		 */
 		public static long sum(int[] t) {
 			long l = 0;
 			for (int v : t)
@@ -142,16 +155,26 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			return l;
 		}
 
-		public static long minPossibleSum(Variable[] scp) {
+		/**
+		 * @param vars
+		 *            an array of variables
+		 * @return the minimal possible sum of the specified variables
+		 */
+		public static long minPossibleSum(Variable[] vars) {
 			long sum = 0;
-			for (Variable x : scp)
+			for (Variable x : vars)
 				sum += x.dom.smallestInitialValue();
 			return sum;
 		}
 
-		public static long maxPossibleSum(Variable[] scp) {
+		/**
+		 * @param vars
+		 *            an array of variables
+		 * @return the maximal possible sum of the specified variables
+		 */
+		public static long maxPossibleSum(Variable[] vars) {
 			long sum = 0;
-			for (Variable x : scp)
+			for (Variable x : vars)
 				sum += x.dom.greatestInitialValue();
 			return sum;
 		}
@@ -178,6 +201,12 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			return sum;
 		}
 
+		/**
+		 * Returns the sum of the values currently assigned to the variables in the scope. IMPORTANT: all variables must
+		 * be assigned.
+		 * 
+		 * @return the sum of the values currently assigned to the variables in the scope.
+		 */
 		protected final long currSum() {
 			long sum = 0;
 			for (Variable x : scp)
@@ -192,6 +221,10 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			defineKey(limit);
 		}
 
+		/**
+		 * Recomputes the minimal and maximal sums (seen as bounds) that can be obtained with respect to the current
+		 * domains of the involved variables.
+		 */
 		protected final void recomputeBounds() {
 			min = max = 0;
 			for (Domain dom : doms) {

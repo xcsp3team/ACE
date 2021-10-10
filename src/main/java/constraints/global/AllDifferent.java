@@ -789,7 +789,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 
 		public AllDifferentBound(Problem pb, Variable[] scp) {
 			super(pb, scp);
-			Kit.control(Variable.haveSameDomainType(scp));
+			control(Variable.haveSameDomainType(scp));
 			d = scp[0].dom.initSize();
 			minReasoner = new MinBoundReasoner();
 			maxReasoner = new MaxBoundReasoner();

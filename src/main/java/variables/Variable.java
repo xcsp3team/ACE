@@ -11,6 +11,7 @@
 package variables;
 
 import static java.util.stream.Collectors.joining;
+import static utility.Kit.control;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -564,11 +565,11 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	public Variable(Problem pb, String id) {
 		this.problem = pb;
 		this.id = id;
-		Kit.control((id == null) == (pb == null)); // Only the variable TAG has no explicit name
+		control((id == null) == (pb == null)); // Only the variable TAG has no explicit name
 	}
 
 	public void reset() {
-		assert !assigned() && dom.controlStructures(); // && Kit.control(dom.nRemoved() == 0 ??
+		assert !assigned() && dom.controlStructures(); // && control(dom.nRemoved() == 0 ??
 		time = 0;
 	}
 

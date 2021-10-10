@@ -11,6 +11,7 @@
 package main;
 
 import static java.util.stream.Collectors.toCollection;
+import static utility.Kit.control;
 import static utility.Kit.log;
 
 import java.io.File;
@@ -113,7 +114,7 @@ public class Head extends Thread {
 			if (iteration) {
 				Element modification = (Element) modifications.item(nModifications - 1);
 				String path = modification.getAttribute(PATH);
-				Kit.control(path.equals(SEED));
+				control(path.equals(SEED));
 				String attributeName = modification.getAttribute(ATTRIBUTE);
 				int min = Integer.parseInt(modification.getAttribute(MIN)), max = Integer.parseInt(modification.getAttribute(MAX)),
 						step = Integer.parseInt(modification.getAttribute(STEP));
@@ -189,7 +190,7 @@ public class Head extends Thread {
 			if (!file.exists())
 				file.mkdirs();
 			else
-				Kit.control(file.isDirectory());
+				control(file.isDirectory());
 			return loadSequentialVariants(Input.controlFilename, Input.lastArgument(), prefix);
 		}
 		return new String[] { Input.controlFilename };
@@ -253,7 +254,7 @@ public class Head extends Thread {
 			packageName = packageName.startsWith(".") ? packageName.substring(1) : packageName;
 			for (File file : directory.listFiles())
 				if (file.isDirectory()) {
-					Kit.control(!file.getName().contains("."));
+					control(!file.getName().contains("."));
 					loadRecursively(file, packageName + "." + file.getName());
 				} else if (file.getName().endsWith(DOT_CLASS) && file.getName().charAt(0) != '/') // second part for a
 																									// class in the

@@ -1,13 +1,13 @@
 package sets;
 
+import static utility.Kit.control;
+
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import utility.Kit;
-
 /**
- * A reversible sparse set is a sparse set that can be handled at different levels (for technical reasons, this class does not inherit from SetSparse but from
- * SetDenseReversible).
+ * A reversible sparse set is a sparse set that can be handled at different levels (for technical reasons, this class
+ * does not inherit from SetSparse but from SetDenseReversible).
  * 
  * @author Christophe Lecoutre
  */
@@ -19,8 +19,9 @@ public class SetSparseReversible extends SetDenseReversible {
 	public int[] sparse;
 
 	/**
-	 * Builds a reversible sparse set with the specified capacity and the specified number of possible levels. The sparse set is simple, meaning that it is
-	 * aimed at containing indexes 0, 1, 2, ... Initially, the set is full or empty depending on the value of the specified boolean.
+	 * Builds a reversible sparse set with the specified capacity and the specified number of possible levels. The
+	 * sparse set is simple, meaning that it is aimed at containing indexes 0, 1, 2, ... Initially, the set is full or
+	 * empty depending on the value of the specified boolean.
 	 * 
 	 * @param capacity
 	 *            the capacity of the sparse set
@@ -32,12 +33,12 @@ public class SetSparseReversible extends SetDenseReversible {
 	public SetSparseReversible(int capacity, int nLevels, boolean initiallyFull) {
 		super(capacity, nLevels, initiallyFull);
 		this.sparse = IntStream.range(0, capacity).toArray();
-		Kit.control(Arrays.equals(dense, sparse));
+		control(Arrays.equals(dense, sparse));
 	}
 
 	/**
-	 * Builds a reversible sparse set with the specified capacity and the specified number of possible levels. The sparse set is simple, meaning that it is
-	 * aimed at containing indexes 0, 1, 2, ... Initially, the set is full.
+	 * Builds a reversible sparse set with the specified capacity and the specified number of possible levels. The
+	 * sparse set is simple, meaning that it is aimed at containing indexes 0, 1, 2, ... Initially, the set is full.
 	 * 
 	 * @param capacity
 	 *            the capacity of the sparse set

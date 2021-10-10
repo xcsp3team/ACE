@@ -10,11 +10,12 @@
 
 package solver;
 
+import static utility.Kit.control;
+
 import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
-import utility.Kit;
 import variables.Variable;
 
 /**
@@ -76,7 +77,7 @@ public final class FutureVariables implements Iterable<Variable> {
 		this.nexts = IntStream.range(1, vars.length + 1).map(i -> i < vars.length ? i : -1).toArray();
 		this.pasts = new int[vars.length];
 		this.pastLimit = -1;
-		Kit.control(Variable.areNumsNormalized(vars));
+		control(Variable.areNumsNormalized(vars));
 	}
 
 	/**
@@ -251,7 +252,7 @@ public final class FutureVariables implements Iterable<Variable> {
 			return iterator2;
 		}
 		System.out.println("CURSORS=" + iterator1.cursor + " " + iterator2.cursor);
-		Kit.control(false, () -> "Only two nested iterations can only be used for the moment");
+		control(false, () -> "Only two nested iterations can only be used for the moment");
 		return null;
 	}
 

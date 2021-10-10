@@ -84,8 +84,8 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 	private final int[] pos2;
 
 	/**
-	 * This field indicates if the ordering between the two lists must be strictly respected; if true then we have <=
-	 * (le), otherwise we have < (lt)
+	 * This field indicates if the ordering between the two lists must be strictly respected; if true then we have to
+	 * enforce <= (le), otherwise we have to enforce < (lt)
 	 */
 	private final boolean strictOrdering;
 

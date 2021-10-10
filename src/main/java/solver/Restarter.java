@@ -10,6 +10,8 @@
 
 package solver;
 
+import static utility.Kit.control;
+
 import java.util.function.Supplier;
 
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
@@ -263,7 +265,7 @@ public class Restarter implements ObserverOnRuns {
 				int nf = restarter.solver.head.control.lns.nFreeze, pf = restarter.solver.head.control.lns.pFreeze;
 				this.fragment = new SetDense(n);
 				int fragmentSize = 0 < nf && nf < n ? nf : 0 < pf && pf < 100 ? 1 + (pf * n) / 100 : -1;
-				Kit.control(0 < fragmentSize && fragmentSize < n, () -> "You must specify the number or percentage of variables to freeze for LNS");
+				control(0 < fragmentSize && fragmentSize < n, () -> "You must specify the number or percentage of variables to freeze for LNS");
 				this.fragment.limit = fragmentSize - 1;
 			}
 
