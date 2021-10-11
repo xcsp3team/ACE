@@ -251,7 +251,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 
 	/**
 	 * Finds the strongly connected components of the flow graph as defined in Ian P. Gent, Ian Miguel, and Peter
-	 * Nightingale, The AllDifferent Constraint: An Empirical Survey, and prunes the domains to reach GAC
+	 * Nightingale, The AllDifferent Constraint: An Empirical Survey, and prunes the domains to reach (G)AC
 	 */
 	public final void removeInconsistentValues() {
 		time++;
@@ -298,7 +298,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 	 *********************************************************************************************/
 
 	/**
-	 * Class used to perform GAC filtering in the AllDifferent constraint
+	 * Class used to perform AC filtering for the AllDifferent constraint
 	 */
 	public static class MatcherAllDifferent extends Matcher {
 

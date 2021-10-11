@@ -373,7 +373,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	public int filteringComplexity;
 
 	/**
-	 * Indicates if filtering (e.g. GAC) must be controlled. If the number of uninstantiated variables is greater than
+	 * Indicates if filtering (e.g. AC) must be controlled. If the number of uninstantiated variables is greater than
 	 * this value, filtering is not achieved; useful only with some kind of constraints
 	 */
 	public final int genericFilteringThreshold;
@@ -1053,12 +1053,12 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Returns true if the constraint is GAC. IMPORTANT: the control is incomplete. The constraint can be currently
+	 * Returns true if the constraint is AC. IMPORTANT: the control is incomplete. The constraint can be currently
 	 * ignored, and the test is not performed if the number of valid tuples is too large.
 	 * 
-	 * @return true if the constraint is GAC
+	 * @return true if the constraint is AC
 	 */
-	public boolean controlGAC() {
+	public boolean controlAC() {
 		if (ignored)
 			return true;
 		if (Domain.nValidTuplesBounded(doms) > 1000)

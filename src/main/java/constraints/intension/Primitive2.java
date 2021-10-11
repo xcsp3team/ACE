@@ -44,7 +44,7 @@ import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
-import propagation.GAC;
+import propagation.AC;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -439,7 +439,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return GAC.enforceAddLE(dx, dy, k);
+					return AC.enforceAddLE(dx, dy, k);
 				}
 			}
 
@@ -456,7 +456,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return GAC.enforceAddGE(dx, dy, k);
+					return AC.enforceAddGE(dx, dy, k);
 				}
 			}
 
@@ -555,7 +555,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return GAC.enforceLE(dx, dy, k);
+					return AC.enforceLE(dx, dy, k);
 				}
 			}
 
@@ -572,7 +572,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return GAC.enforceGE(dx, dy, k);
+					return AC.enforceGE(dx, dy, k);
 				}
 			}
 
@@ -837,7 +837,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return GAC.enforceDivLE(dx, dy, k);
+					return AC.enforceDivLE(dx, dy, k);
 				}
 			}
 
@@ -854,7 +854,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return GAC.enforceDivGE(dx, dy, k);
+					return AC.enforceDivGE(dx, dy, k);
 				}
 			}
 

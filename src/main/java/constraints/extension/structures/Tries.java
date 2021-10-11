@@ -52,12 +52,14 @@ public class Tries extends ExtensionStructure {
 	}
 
 	/**
-	 * The roots of tries. There is a trie per variable as in [Gent et al. Data structures for GAC for extensional constraints. CP'07]
+	 * The roots of tries. There is a trie per variable as described in in "Data structures for GAC for extensional
+	 * constraints", CP'07 by Gent et al.
 	 */
 	private final Node[] roots;
 
 	/**
-	 * When set to true, the array sons of each node is initialized, what allows us to iterate all sons of a node without traversing the parent. <br>
+	 * When set to true, the array sons of each node is initialized, what allows us to iterate all sons of a node
+	 * without traversing the parent. <br>
 	 * It remains to prove that it represents an optimization. One drawback is space consumption.
 	 */
 	private boolean directAccess;

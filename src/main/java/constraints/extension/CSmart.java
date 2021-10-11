@@ -160,7 +160,7 @@ public final class CSmart extends ExtensionSpecific {
 	protected int[] sVal; // positions of the variables for which validity must be checked
 
 	protected int sSupSize;
-	protected int[] sSup; // positions of the variables for which GAC of values must be checked
+	protected int[] sSup; // positions of the variables for which AC of values must be checked
 
 	protected int[] lastSizes; // [vap] ; value = last domain sizes
 	protected int[][] lastSizesStack; // 1D = level ; 2D = variable position

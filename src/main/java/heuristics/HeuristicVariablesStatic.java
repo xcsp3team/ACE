@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package heuristics;
 
 import java.util.Map;
@@ -49,7 +59,7 @@ public abstract class HeuristicVariablesStatic extends HeuristicVariables implem
 	protected Variable bestUnpriorityVariable() {
 		assert solver.problem.priorityVars.length == 0;
 		for (int i = solver.propagation.performingProperSearch ? 0 : solver.futVars.nPast(); i < ordering.length; i++)
-			if (!ordering[i].assigned()) // required in all cases because some variables may have been disconnected
+			if (!ordering[i].assigned()) // required in all cases? because possible proper search?
 				return ordering[i];
 		throw new AssertionError();
 	}
@@ -73,6 +83,9 @@ public abstract class HeuristicVariablesStatic extends HeuristicVariables implem
 		}
 	}
 
+	/**
+	 * This heuristic selects the (first) variable with the highest degree
+	 */
 	public static final class Deg extends HeuristicVariablesStatic implements TagMaximize {
 
 		public Deg(Solver solver, boolean anti) {
@@ -85,6 +98,9 @@ public abstract class HeuristicVariablesStatic extends HeuristicVariables implem
 		}
 	}
 
+	/**
+	 * This heuristic randomly selects a variable
+	 */
 	public static final class Srand extends HeuristicVariablesStatic {
 
 		public Srand(Solver solver, boolean anti) {

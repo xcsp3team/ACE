@@ -743,8 +743,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			public SumWeightedEQ(Problem pb, Variable[] scp, int[] coeffs, long limit) {
 				super(pb, scp, coeffs, limit);
-				this.ac = Stream.of(scp).allMatch(x -> x.dom.initSize() <= 2); // in this case, bounds consistency is
-																				// GAC
+				this.ac = Stream.of(scp).allMatch(x -> x.dom.initSize() <= 2); // in this case, bounds consistency is AC
 			}
 
 			@Override

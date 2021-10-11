@@ -24,7 +24,7 @@ import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
-import propagation.GAC;
+import propagation.AC;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -187,10 +187,10 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about GAC Guaranteed?
+				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about AC Guaranteed?
 					if (dz.removeValuesLT(dx.firstValue() + dy.firstValue()) == false || dz.removeValuesGT(dx.lastValue() + dy.lastValue()) == false)
 						return false;
-					return GAC.enforceAddGE(dx, dy, dz.firstValue()) && GAC.enforceAddLE(dx, dy, dz.lastValue());
+					return AC.enforceAddGE(dx, dy, dz.firstValue()) && AC.enforceAddLE(dx, dy, dz.lastValue());
 				}
 
 				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
@@ -355,7 +355,7 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 					return false;
 
 				if (dx.first() == 1) // x = 1 => y = z
-					return GAC.enforceEQ(dy, dz);
+					return AC.enforceEQ(dy, dz);
 
 				assert dx.size() == 2 && dz.containsValue(0) && dz.size() > 1;
 				// above, because if 0 not in z, dx.size() cannot be 2
@@ -393,14 +393,14 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about GAC Guaranteed?
+				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about AC Guaranteed?
 					int v1 = dx.firstValue() * dy.firstValue(), v2 = dx.firstValue() * dy.lastValue();
 					int v3 = dx.lastValue() * dy.firstValue(), v4 = dx.lastValue() * dy.lastValue();
 					int min1 = Math.min(v1, v2), max1 = Math.max(v1, v2);
 					int min2 = Math.min(v3, v4), max2 = Math.max(v3, v4);
 					if (dz.removeValuesLT(Math.min(min1, min2)) == false || dz.removeValuesGT(Math.max(max1, max2)) == false)
 						return false;
-					return GAC.enforceMulGE(dx, dy, dz.firstValue()) && GAC.enforceMulLE(dx, dy, dz.lastValue());
+					return AC.enforceMulGE(dx, dy, dz.firstValue()) && AC.enforceMulLE(dx, dy, dz.lastValue());
 				}
 				if (!dy.containsValue(0) || !dz.containsValue(0))
 					// if 0 is present in dy and dz, all values of x are supported
@@ -513,10 +513,10 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about GAC Guaranteed?
+				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about AC Guaranteed?
 					if (dz.removeValuesLT(dx.firstValue() / dy.lastValue()) == false || dz.removeValuesGT(dx.lastValue() / dy.firstValue()) == false)
 						return false;
-					return GAC.enforceDivGE(dx, dy, dz.firstValue()) && GAC.enforceDivLE(dx, dy, dz.lastValue());
+					return AC.enforceDivGE(dx, dy, dz.firstValue()) && AC.enforceDivLE(dx, dy, dz.lastValue());
 				}
 
 				if (dx.firstValue() >= dy.lastValue() && dz.removeValueIfPresent(0) == false)

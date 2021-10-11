@@ -13,8 +13,8 @@ package heuristics;
 import interfaces.Tags.TagMaximize;
 
 /**
- * This is the abstract root class used for representing any heuristic (variable ordering heuristic, value ordering
- * heuristic, revision ordering heuristic, etc.).
+ * This is the abstract root class used for representing any kind of heuristics (variable ordering heuristics, value
+ * ordering heuristics, revision ordering heuristics, etc.).
  * 
  * @author Christophe Lecoutre
  *

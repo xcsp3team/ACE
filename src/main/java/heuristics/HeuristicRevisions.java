@@ -48,9 +48,9 @@ public abstract class HeuristicRevisions extends Heuristic {
 	 */
 	public abstract int bestInQueue();
 
-	// ************************************************************************
-	// ***** HeuristicRevisionsDirect
-	// ************************************************************************
+	/*************************************************************************
+	 ***** HeuristicRevisionsDirect
+	 *************************************************************************/
 
 	/**
 	 * This is the root class for building direct revision ordering heuristics, i.e., heuristics for which we directly
@@ -107,9 +107,9 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 	}
 
-	// ************************************************************************
-	// ***** HeuristicRevisionDynamic
-	// ************************************************************************
+	/*************************************************************************
+	 ***** HeuristicRevisionsDynamic
+	 *************************************************************************/
 
 	/**
 	 * This is the root class for building dynamic revision ordering heuristics.

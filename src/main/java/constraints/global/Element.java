@@ -21,7 +21,7 @@ import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
-import propagation.GAC;
+import propagation.AC;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -257,7 +257,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 				// If index is singleton, we update dom(list[index]) and vdom so that they are both equal to the
 				// intersection of the two domains
 				if (idom.size() == 1) {
-					if (propagation.GAC.enforceEQ(list[idom.single()].dom, vdom) == false)
+					if (propagation.AC.enforceEQ(list[idom.single()].dom, vdom) == false)
 						return false;
 					if (vdom.size() == 1)
 						return entailed();
@@ -266,7 +266,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			}
 
 			@Override
-			public boolean controlGAC() {
+			public boolean controlAC() {
 				control(idom.size() != 1 || list[idom.single()].dom.subsetOf(vdom), () -> "index is singleton and dom(index) is not included in dom(result).");
 				for (int a = idom.first(); a != -1; a = idom.next(a))
 					control(list[a].dom.overlapWith(vdom), () -> "One var has no value in dom(result).");
@@ -400,7 +400,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 						return false;
 				}
 				// be careful : below, not a else because of statements above that may modify the domain of indexes
-				// TODO are we sure it is GAC?
+				// TODO are we sure it is AC?
 				return rdom.size() > 1 || cdom.size() > 1 || (matrix[rdom.singleValue()][cdom.singleValue()].dom.reduceToValue(k) && entailed());
 			}
 		}
@@ -533,7 +533,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 				}
 				// If indexes are both singleton, we enforce value to the corresponding cell of the matrix
 				if (rdom.size() == 1 && cdom.size() == 1) {
-					if (GAC.enforceEQ(matrix[rdom.singleValue()][cdom.singleValue()].dom, vdom) == false)
+					if (AC.enforceEQ(matrix[rdom.singleValue()][cdom.singleValue()].dom, vdom) == false)
 						return false;
 					if (vdom.size() == 1)
 						return entailed();

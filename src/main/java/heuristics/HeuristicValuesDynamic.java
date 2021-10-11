@@ -14,6 +14,7 @@ import static utility.Kit.control;
 
 import constraints.Constraint;
 import optimization.Optimizable;
+import optimization.Optimizer;
 import sets.SetDense;
 import solver.Solver;
 import utility.Kit;
@@ -50,10 +51,23 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	// ************************************************************************
 
 	/**
-	 * Heuristic as defined in "Making the First Solution Good!", ICTAI 2017: 1073-1077 by Jean-Guillaume Fages and
-	 * Charles Prud'homme
+	 * Heuristic as defined in "Making the First Solution Good!", ICTAI 2017: 1073-1077 by J.-G. Fages and C. Prud'homme
 	 */
 	public static class Bivs extends HeuristicValuesDynamic {
+
+		/**
+		 * Return true if BIVS can be applied to the variable. It depends on the distance of the variable with the
+		 * objective and the value of some setting options.
+		 * 
+		 * @return true if BIVS can be applied to the variable
+		 */
+		public boolean canBeApplied() {
+			if (settings.bivsDistance == 2)
+				return true; // because no restriction at all
+			// limited form of BIVS according to the distance
+			int distance = x.distanceWithObjective();
+			return distance == 0 || (distance == 1 && settings.bivsDistance > 0);
+		}
 
 		protected Solver solver;
 
@@ -75,17 +89,18 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		public Bivs(Variable x, boolean anti) {
 			super(x, anti);
 			this.solver = x.problem.solver;
-			this.oc = x.problem.optimizer.ctr;
-			control(x.problem.optimizer != null);
-			this.multiplier = x.problem.optimizer.minimization ? -1 : 1; // multiplier follows minimization/maximization
-			this.lbBased = x.problem.head.control.valh.bivsOptimistic == x.problem.optimizer.minimization;
+			Optimizer optimizer = x.problem.optimizer;
+			control(optimizer != null);
+			this.oc = optimizer.ctr;
+			this.multiplier = optimizer.minimization ? -1 : 1; // multiplier follows minimization/maximization
+			this.lbBased = settings.bivsOptimistic == optimizer.minimization;
 			this.inconsistent = new SetDense(x.dom.initSize());
 		}
 
 		@Override
 		public int computeBestValueIndex() {
 			inconsistent.clear();
-			if ((settings.bivsStoppedAtFirstSolution && solver.solutions.found > 0) || dx.size() > settings.bivsLimit)
+			if ((settings.bivsFirst && solver.solutions.found > 0) || dx.size() > settings.bivsLimit)
 				return dx.first(); // First in that case
 			return super.computeBestValueIndex();
 		}
@@ -107,7 +122,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	}
 
 	/**
-	 * Bivs with solution saving as tie-breaker
+	 * BIVS with solution saving as tie-breaker
 	 */
 	public static final class Bivs2 extends Bivs {
 
@@ -119,7 +134,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		public int computeBestValueIndex() {
 			inconsistent.clear();
 			int last = solver.solutions.found == 0 ? -1 : solver.solutions.last[x.num];
-			if ((settings.bivsStoppedAtFirstSolution && solver.solutions.found > 0) || dx.size() > settings.bivsLimit) {
+			if ((settings.bivsFirst && solver.solutions.found > 0) || dx.size() > settings.bivsLimit) {
 				if (last != -1 && dx.contains(last))
 					return last; // solution saving in that case
 				return dx.first(); // First in that case
@@ -128,8 +143,8 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 			double bestScore = scoreOf(best) * multiplier;
 			for (int a = dx.next(best); a != -1; a = dx.next(a)) {
 				double score = scoreOf(a) * multiplier;
-				if (score > bestScore || (score == bestScore && a == last)) { // tie breaking by solution saving in
-																				// priority
+				if (score > bestScore || (score == bestScore && a == last)) {
+					// tie breaking by solution saving in priority
 					best = a;
 					bestScore = score;
 				}
@@ -191,6 +206,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 				return 0; // we don't care about the score returned because the domain is singleton
 			int v = dx.toVal(a);
 			int cnt = 0;
+			// TODO bad complexity O(nd) whereas we could have O(n+d)
 			for (Variable y : x.problem.variables)
 				if (y.dom.containsOnlyValue(v))
 					cnt++;

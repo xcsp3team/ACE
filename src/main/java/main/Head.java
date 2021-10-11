@@ -207,10 +207,8 @@ public class Head extends Thread {
 			new Head().control.display(); // the usage is displayed
 		else {
 			Input.loadArguments(args); // Always start with that
-			heads = Stream.of(loadVariantNames()).map(v -> new Head(v)).peek(h -> h.start()).toArray(Head[]::new); // threads
-																													// built
-																													// and
-																													// started
+			heads = Stream.of(loadVariantNames()).map(v -> new Head(v)).peek(h -> h.start()).toArray(Head[]::new);
+			// just above, threads built and started
 		}
 	}
 

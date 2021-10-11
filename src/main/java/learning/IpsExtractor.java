@@ -15,7 +15,7 @@ import static utility.Kit.control;
 import java.util.Arrays;
 
 import constraints.Constraint;
-import propagation.GAC;
+import propagation.AC;
 import solver.FutureVariables;
 import utility.Kit;
 import variables.Variable;
@@ -92,7 +92,7 @@ public final class IpsExtractor {
 
 	public IpsExtractor(IpsReasoner ipsReasoner) {
 		this.ipsReasoner = ipsReasoner;
-		this.acGuaranteed = ipsReasoner.solver.propagation.getClass() == GAC.class && ((GAC) ipsReasoner.solver.propagation).guaranteed;
+		this.acGuaranteed = ipsReasoner.solver.propagation.getClass() == AC.class && ((AC) ipsReasoner.solver.propagation).guaranteed;
 		this.binaryNetwork = ipsReasoner.solver.problem.features.maxCtrArity() == 2;
 		String s = ipsReasoner.solver.head.control.learning.ipsOperators;
 		control(s.length() == 5);

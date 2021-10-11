@@ -67,7 +67,7 @@ import optimization.ObjectiveVariable;
 import optimization.Optimizer;
 import optimization.Optimizer.OptimizationStrategy;
 import problem.Problem.SymmetryBreaking;
-import propagation.GAC;
+import propagation.AC;
 import propagation.Reviser;
 import propagation.Reviser.Reviser3;
 import solver.Restarter.RestartMeasure;
@@ -118,6 +118,9 @@ public final class Control {
 	 */
 	private final List<Option<?>> options;
 
+	/**
+	 * The object dealing with options given by the user, either on the command line or by means of an XML control file
+	 */
 	public final UserSettings userSettings;
 
 	public final SettingXml xml;
@@ -128,27 +131,25 @@ public final class Control {
 
 	public final SettingVars variables;
 
-	public final SettingCtrs constraints;
+	public final SettingOptimization optimization;
 
-	public final SettingGlobal global;
+	public final SettingCtrs constraints;
 
 	public final SettingExtension extension;
 
-	public final SettingOptimization optimization;
+	public final SettingGlobal global;
 
 	public final SettingPropagation propagation;
 
 	public final SettingShaving shaving;
 
-	public final SettingLNS lns;
+	public final SettingLearning learning;
 
 	public final SettingSolving solving;
 
 	public final SettingRestarts restarts;
 
-	public final SettingLearning learning;
-
-	public final SettingExtraction extraction;
+	public final SettingLNS lns;
 
 	public final SettingVarh varh;
 
@@ -156,29 +157,39 @@ public final class Control {
 
 	public final SettingRevh revh;
 
+	public final SettingExtraction extraction;
+
 	public final SettingExperimental experimental;
 
 	public Control(String controlFilename) {
 		this.options = new ArrayList<>();
 		this.userSettings = new UserSettings(controlFilename);
+
 		this.xml = new SettingXml();
 		this.general = new SettingGeneral();
+
 		this.problem = new SettingProblem();
 		this.variables = new SettingVars();
-		this.constraints = new SettingCtrs();
-		this.global = new SettingGlobal();
-		this.extension = new SettingExtension();
 		this.optimization = new SettingOptimization();
+
+		this.constraints = new SettingCtrs();
+		this.extension = new SettingExtension();
+		this.global = new SettingGlobal();
+
 		this.propagation = new SettingPropagation();
 		this.shaving = new SettingShaving();
-		this.lns = new SettingLNS();
+		this.learning = new SettingLearning();
+
 		this.solving = new SettingSolving();
 		this.restarts = new SettingRestarts();
-		this.learning = new SettingLearning();
+		this.lns = new SettingLNS();
+
 		this.extraction = new SettingExtraction();
+
+		this.revh = new SettingRevh();
 		this.varh = new SettingVarh();
 		this.valh = new SettingValh();
-		this.revh = new SettingRevh();
+
 		this.experimental = new SettingExperimental();
 
 		general.verbose = general.verbose < 1 && general.trace.length() > 0 ? 1 : general.verbose;
@@ -197,8 +208,8 @@ public final class Control {
 	}
 
 	private void controlKeys() {
-		String k = Input.argsForSolving.keySet().stream().filter(key -> options.stream().noneMatch(s -> s.key().equals(key) || s.shortcut.equals(key)))
-				.findFirst().orElse(null);
+		Stream<String> keys = Input.argsForSolving.keySet().stream();
+		String k = keys.filter(key -> options.stream().noneMatch(s -> s.key().equals(key) || s.shortcut.equals(key))).findFirst().orElse(null);
 		control(k == null, () -> "The parameter " + k + " is unknown");
 	}
 
@@ -345,7 +356,7 @@ public final class Control {
 			return option.value;
 		}
 
-		protected String tag() {
+		private String tag() {
 			control(getClass().getSimpleName().startsWith("Setting"));
 			return getClass().getSimpleName().substring(7);
 		}
@@ -394,9 +405,6 @@ public final class Control {
 	}
 
 	public class SettingGeneral extends SettingGroup {
-		String s_s = "The number of solutions that must be found before the solver stops." + "\n\tFor all solutions, use -s=all or -s=max.";
-		String s_timeout = "The number of milliseconds that are passed before the solver stops."
-				+ "\n\tYou can use the letter s as a suffix to denote seconds as e.g., -t=10s." + "\n\tFor no timeout, use -t= or -t=max.";
 		String s_verbose = "Displays more or less precise information concerning the problem instance and the solution(s) found."
 				+ "\n\tThe specified value must belong  in {0,1,2,3}." + "\n\tThis mode is used as follows."
 				+ "\n\t0 : only some global statistics are listed ;" + "\n\t1 : in addition, solutions are  shown ;"
@@ -404,8 +412,10 @@ public final class Control {
 				+ "\n\t3 : in addition, for each constraint, allowed or unallowed tuples are displayed.";
 
 		public TypeFramework framework = null;
-		public long nSearchedSolutions = addL("nSearchedSolutions", "s", -1, s_s); // -1 when not initialized
-		public final long timeout = addL("timeout", "t", PLUS_INFINITY, s_timeout);
+		public long solLimit = addL("solLimit", "s", -1, "The limit in number of found solutions before stopping; for no limit, use -s=all");
+		// above, -1 when not initialized
+		public final long timeout = addL("timeout", "t", PLUS_INFINITY,
+				"The limit in milliseconds before stopping; you can indicate seconds as e.g. in -t=10s.");
 		public int verbose = addI("verbose", "v", 0, s_verbose);
 		public int jsonLimit = addI("jsonLimit", "jsonLimit", 1000, "");
 		public final boolean jsonAux = addB("jsonAux", "jsonAux", false, "");
@@ -423,14 +433,14 @@ public final class Control {
 		public void decideFramework(Optimizer optimizer) {
 			control(framework == null);
 			if (optimizer != null) { // to COP
-				if (nSearchedSolutions == -1)
-					nSearchedSolutions = PLUS_INFINITY; // default value for COP (in order to find an optimum)
+				if (solLimit == -1)
+					solLimit = PLUS_INFINITY; // default value for COP (in order to find an optimum)
 				framework = TypeFramework.COP;
 				if (optimizer.ctr instanceof ObjectiveVariable || optimizer.ctr instanceof MaximumCstLE || optimizer.ctr instanceof MinimumCstGE)
 					restarts.restartAfterSolution = true;
 			} else {
-				if (nSearchedSolutions == -1)
-					nSearchedSolutions = 1; // default value for CSP
+				if (solLimit == -1)
+					solLimit = 1; // default value for CSP
 				framework = TypeFramework.CSP;
 			}
 		}
@@ -539,6 +549,12 @@ public final class Control {
 		public final int nStrictPriorityVars = instantiatedVars.length + priority1Vars.length;
 	}
 
+	public class SettingOptimization extends SettingGroup {
+		public long lb = addL("lb", "lb", MINUS_INFINITY, "initial lower bound");
+		public long ub = addL("ub", "ub", PLUS_INFINITY, "initial upper bound");
+		public final OptimizationStrategy strategy = addE("strategy", "os", OptimizationStrategy.DECREASING, "optimization strategy");
+	}
+
 	public class SettingCtrs extends SettingGroup {
 		String r2 = "When > 0, redundant allDifferent constraints are sought (at most as the given value) and posted (if any) to improve the filtering capability of the solver."
 				+ "\n\tTry this on a pigeons instance.";
@@ -557,22 +573,6 @@ public final class Control {
 		public final boolean recognizePermutations = addB("recognizePermutations", "perm", false, r5);
 		public final int positionsLb = addI("positionsLb", "poslb", 3, "Minimal arity to build the array positions");
 		public final int positionsUb = addI("positionsUb", "posub", 10000, "maximal number of variables to build the array positions");
-	}
-
-	public class SettingGlobal extends SettingGroup {
-		String s = "Allows the user to select the propagator for ";
-
-		public final int typeAllDifferent = addI("typeAllDifferent", "g_ad", 0, s + "allDifferent");
-		public final int typeDistinctVectors = addI("typeDistinctVectors", "g_dv", 0, s + "distinctvectors");
-		public final int typeAllEqual = addI("typeAllEqual", "g_ae", 0, s + "allEqual");
-		public final int typeNotAllEqual = addI("typeNotAllEqual", "g_nae", 0, s + "notAllEqual");
-		public final int typeOrdered = addI("typeOrdered", "g_ord", 1, s + "odered");
-		public final int typeNoOverlap = addI("typeNoOverlap", "g_no", 0, s + "noOverlap");
-		public final boolean redundNoOverlap = addB("redundNoOverlap", "r_no", true, "");
-		public final int typeBinpacking = addI("typeBinpacking", "g_bp", 0, s + "binPacking");
-
-		public final boolean starred = addB("starred", "starred", false, "When true, some global constraints are encoded by starred tables");
-		public final boolean hybrid = addB("hybrid", "hybrid", false, "When true, some global constraints are encoded by hybrid/smart tables");
 	}
 
 	public class SettingExtension extends SettingGroup {
@@ -599,21 +599,31 @@ public final class Control {
 		}
 	}
 
-	public class SettingOptimization extends SettingGroup {
-		public long lb = addL("lb", "lb", MINUS_INFINITY, "initial lower bound");
-		public long ub = addL("ub", "ub", PLUS_INFINITY, "initial upper bound");
-		public final OptimizationStrategy strategy = addE("strategy", "os", OptimizationStrategy.DECREASING, "optimization strategy");
+	public class SettingGlobal extends SettingGroup {
+		String s = "Allows the user to select the propagator for ";
+
+		public final int typeAllDifferent = addI("typeAllDifferent", "g_ad", 0, s + "allDifferent");
+		public final int typeDistinctVectors = addI("typeDistinctVectors", "g_dv", 0, s + "distinctvectors");
+		public final int typeAllEqual = addI("typeAllEqual", "g_ae", 0, s + "allEqual");
+		public final int typeNotAllEqual = addI("typeNotAllEqual", "g_nae", 0, s + "notAllEqual");
+		public final int typeOrdered = addI("typeOrdered", "g_ord", 1, s + "odered");
+		public final int typeNoOverlap = addI("typeNoOverlap", "g_no", 0, s + "noOverlap");
+		public final boolean redundNoOverlap = addB("redundNoOverlap", "r_no", true, "");
+		public final int typeBinpacking = addI("typeBinpacking", "g_bp", 0, s + "binPacking");
+
+		public final boolean starred = addB("starred", "starred", false, "When true, some global constraints are encoded by starred tables");
+		public final boolean hybrid = addB("hybrid", "hybrid", false, "When true, some global constraints are encoded by hybrid/smart tables");
 	}
 
 	public class SettingPropagation extends SettingGroup {
 		String s_uaq = "If enabled, queues of constraints are used in addition to the queue of variables. The purpose is to propagate less often the most costly constraints.";
 
-		public String clazz = addS("clazz", "p", GAC.class, null, "Class to be used for propagation (for example, FC, GAC or SAC3)");
+		public String clazz = addS("clazz", "p", AC.class, null, "Class to be used for propagation (for example, FC, AC or SAC3)");
 		public final int variant = addI("variant", "pv", 0, "Propagation Variant (only used for some consistencies)", HIDDEN);
 		public final boolean useAuxiliaryQueues = addB("useAuxiliaryQueues", "uaq", false, s_uaq);
 		public final String reviser = addS("reviser", "reviser", Reviser3.class, Reviser.class, "class to be used for performing revisions");
-		public boolean residues = addB("residues", "res", true, "Must we use redidues (GAC3rm)?");
-		public boolean bitResidues = addB("bitResidues", "bres", true, "Must we use bit resides (GAC3bit+rm)?");
+		public boolean residues = addB("residues", "res", true, "Must we use redidues (AC3rm)?");
+		public boolean bitResidues = addB("bitResidues", "bres", true, "Must we use bit resides (AC3bit+rm)?");
 		public final boolean multidirectionality = addB("multidirectionality", "mul", true, "");
 
 		// three ways of control on (G)AC for intention constraints
@@ -680,20 +690,18 @@ public final class Control {
 		public final int ipsCompressionLimitEquivalence = addI("ipsCompressionLimitEquivalence", "ipscl", 300, "", HIDDEN);
 	}
 
-	public class SettingExtraction extends SettingGroup {
-		String s = "\n\tValid only with the command: java " + HeadExtraction.class.getName();
-
-		public final Extraction method = addE("method", "e_m", Extraction.VAR, "method for extracting unsatisfiable cores." + s);
-		public final int nCores = addI("nCores", "e_nc", 1, "number of unsatifiable cores to be extracted." + s);
+	public class SettingRevh extends SettingGroup {
+		public final String clazz = addS("clazz", "revh", Dom.class, HeuristicRevisions.class, "class of the revision ordering heuristic");
+		public final boolean anti = addB("anti", "anti_revh", false, "reverse of the natural heuristic order?");
 	}
 
 	public class SettingVarh extends SettingGroup {
-		public final String heuristic = addS("heuristic", "varh", Wdeg.class, HeuristicVariables.class, "class of the variable ordering heuristic");
-		public final boolean anti = addB("anti", "anti_varh", false, "must we follow the anti heuristic?");
-		public int lc = addI("lc", "lc", 2, "value for lc (last conflict); 0 if not activated");
+		public final String clazz = addS("clazz", "varh", Wdeg.class, HeuristicVariables.class, "class of the variable ordering heuristic");
+		public final boolean anti = addB("anti", "anti_varh", false, "reverse of the natural heuristic order?");
+		public final int lc = addI("lc", "lc", 2, "value for lc (last conflict); 0 if not activated");
 		public final ConstraintWeighting weighting = addE("weighting", "wt", ConstraintWeighting.CACD, "how to manage weights for wdeg variants");
 		public final SingletonStrategy singleton = addE("singleton", "sing", SingletonStrategy.LAST, "how to manage singleton variables during search");
-		public final boolean discardAux = addB("discardAux", "da", false, "must we discard auxiliary variables introduced by the solver?");
+		public final boolean discardAux = addB("discardAux", "da", false, "must we not branch on auxiliary variables introduced by the solver?");
 	}
 
 	public class SettingValh extends SettingGroup {
@@ -703,17 +711,18 @@ public final class Control {
 		public final int solutionSaving = addI("solutionSaving", "sos", 1, "solution saving (0 disabled, 1 enabled, otherwise desactivation period");
 		public final String warmStart = addS("warmStart", "warm", "", "a starting instantiation (solution) to be used with solution saving");
 
-		public boolean bivsStoppedAtFirstSolution = addB("bivsStoppedAtFirstSolution", "bivs_s", true, "");
-		public boolean bivsOptimistic = addB("bivsOptimistic", "bivs_o", true, "");
+		public final boolean bivsFirst = addB("bivsFirst", "bivs_f", true, "bivs stopped at first found solution?");
+		public final boolean bivsOptimistic = addB("bivsOptimistic", "bivs_o", true, "optimistic bivs mode? (or pessimistic?)");
 		public final int bivsDistance = addI("bivsDistance", "bivs_d", 2, "0: only if in the objective constraint; 1: if at distance 0 or 1; 2: any variable");
-		public final int bivsLimit = addI("bivsLimit", "bivs_l", Integer.MAX_VALUE,
-				"MAX_VALUE means no control/limit; otherwise bivs applied only if the domain size is <= bivsl");
+		public final int bivsLimit = addI("bivsLimit", "bivs_l", Integer.MAX_VALUE, "bivs applied only if the domain size is <= bivsl");
 		public final boolean optValHeuristic = addB("optValHeuristic", "ovh", false, "");
 	}
 
-	public class SettingRevh extends SettingGroup {
-		public final String clazz = addS("clazz", "revh", Dom.class, HeuristicRevisions.class, "class of the revision ordering heuristic");
-		public final boolean anti = addB("anti", "anti_revh", false, "reverse of the natural heuristic order?");
+	public class SettingExtraction extends SettingGroup {
+		String s = "\n\tValid only with the command: java " + HeadExtraction.class.getName();
+
+		public final Extraction method = addE("method", "e_m", Extraction.VAR, "method for extracting unsatisfiable cores." + s);
+		public final int nCores = addI("nCores", "e_nc", 1, "number of unsatifiable cores to be extracted." + s);
 	}
 
 	public class SettingExperimental extends SettingGroup {
@@ -726,6 +735,10 @@ public final class Control {
 	 ***** Handling user settings (from the command line, and also possibly from a file)
 	 *********************************************************************************************/
 
+	/**
+	 * This class allows us to deal with options given by the user, either on the command line or by means of an XML
+	 * control file
+	 */
 	public class UserSettings {
 
 		public static final String ALL = "all";

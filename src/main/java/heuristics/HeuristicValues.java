@@ -66,17 +66,14 @@ public abstract class HeuristicValues extends Heuristic {
 		String className = x.dom instanceof DomainInfinite ? First.class.getName() : settings.clazz;
 		Set<Class<?>> classes = x.problem.head.availableClasses.get(HeuristicValues.class);
 		HeuristicValues heuristic = Reflector.buildObject(className, classes, x, settings.anti);
-		if (heuristic instanceof Bivs && settings.bivsDistance < 2) { // limited form of Bivs according to the distance
-			int distance = x.distanceWithObjective();
-			if (distance == 2 || (distance == 1 && settings.bivsDistance == 0))
-				heuristic = new First(x, settings.anti);
-		}
+		if (heuristic instanceof Bivs && !((Bivs) heuristic).canBeApplied())
+			heuristic = new First(x, settings.anti); // we change because Bivs cannot be applied
 		return heuristic;
 	}
 
 	private static Variable[] prioritySumVars(Variable[] scp, int[] coeffs) {
 		assert coeffs == null || IntStream.range(0, coeffs.length - 1).allMatch(i -> coeffs[i] <= coeffs[i + 1]);
-		int LIM = 3; // HARD CODING
+		int LIM = 3; // hard coding
 		Term[] terms = new Term[Math.min(scp.length, 2 * LIM)];
 		if (terms.length == scp.length)
 			for (int i = 0; i < terms.length; i++)
@@ -91,13 +88,8 @@ public abstract class HeuristicValues extends Heuristic {
 		terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new);
 		if (terms.length > 0) {
 			Variable[] t = Stream.of(terms).map(term -> term.obj).toArray(Variable[]::new);
-
-			if (t.length > LIM)
-				t = Arrays.copyOfRange(t, t.length - LIM, t.length);
-			Variable[] tt = new Variable[t.length];
-			for (int i = 0; i < t.length; i++)
-				tt[i] = t[t.length - 1 - i];
-			return tt;
+			Variable[] tt = t.length > LIM ? Arrays.copyOfRange(t, t.length - LIM, t.length) : t;
+			return IntStream.range(0, tt.length).mapToObj(i -> tt[tt.length - 1 - i]).toArray(Variable[]::new);
 		}
 		return null;
 	}
@@ -105,7 +97,7 @@ public abstract class HeuristicValues extends Heuristic {
 	/**
 	 * Possibly modifies the value ordering heuristics of some variables according to the objective function
 	 * (constraint), and returns the variables that must be considered as being priority for search, or null.
-	 * EXPERIMENTAL code to be finalized
+	 * EXPERIMENTAL (code to be finalized)
 	 * 
 	 * @param problem
 	 *            a problem
@@ -297,7 +289,6 @@ public abstract class HeuristicValues extends Heuristic {
 				return fr[a];
 			}
 		}
-
 	}
 
 }

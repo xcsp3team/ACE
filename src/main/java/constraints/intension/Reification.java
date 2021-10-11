@@ -10,12 +10,12 @@
 
 package constraints.intension;
 
-import static propagation.GAC.enforceEQ;
-import static propagation.GAC.enforceGE;
-import static propagation.GAC.enforceGT;
-import static propagation.GAC.enforceLE;
-import static propagation.GAC.enforceLT;
-import static propagation.GAC.enforceNE;
+import static propagation.AC.enforceEQ;
+import static propagation.AC.enforceGE;
+import static propagation.AC.enforceGT;
+import static propagation.AC.enforceLE;
+import static propagation.AC.enforceLT;
+import static propagation.AC.enforceNE;
 import static utility.Kit.control;
 
 import java.util.stream.Stream;

@@ -22,7 +22,7 @@ import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
-import propagation.GAC;
+import propagation.AC;
 import variables.Domain;
 import variables.Variable;
 
@@ -164,7 +164,7 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 		int alpha = 0;
 		while (alpha < half) {
 			Domain dom1 = list1[alpha].dom, dom2 = list2[alpha].dom;
-			if (GAC.enforceLE(dom1, dom2) == false) // enforce (AC on) x <= y (list1[alpha] <= list2[alpha])
+			if (AC.enforceLE(dom1, dom2) == false) // enforce (AC on) x <= y (list1[alpha] <= list2[alpha])
 				return false;
 			if (dom1.size() == 1 && dom2.size() == 1) {
 				if (dom1.singleValue() < dom2.singleValue())

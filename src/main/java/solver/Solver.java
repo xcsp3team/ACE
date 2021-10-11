@@ -582,7 +582,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		this.problem = head.problem;
 		this.problem.solver = this;
 
-		this.solutions = new Solutions(this, head.control.general.nSearchedSolutions);
+		this.solutions = new Solutions(this, head.control.general.solLimit);
 		// BE CAREFUL: build solutions before propagation
 		this.propagation = Propagation.buildFor(this); // may be null
 		if (!head.control.propagation.useAuxiliaryQueues)

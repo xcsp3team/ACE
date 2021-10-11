@@ -34,6 +34,9 @@ public abstract class HeuristicVariablesDirect extends HeuristicVariables {
 	 * Subclasses
 	 *************************************************************************/
 
+	/**
+	 * This heuristic randomly selects a variable
+	 */
 	public static final class Rand extends HeuristicVariablesDirect {
 
 		public Rand(Solver solver, boolean anti) {

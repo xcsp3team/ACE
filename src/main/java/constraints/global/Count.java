@@ -37,7 +37,7 @@ import variables.Variable;
  * @author Christophe Lecoutre
  */
 public abstract class Count extends ConstraintGlobal implements TagAC {
-	// For the moment all inherited classes guarantee GAC
+	// For the moment all inherited classes guarantee AC
 
 	/**
 	 * The list where we have to count the number of occurrences of the value

@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package propagation;
 
 import static utility.Kit.control;
@@ -74,7 +84,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			if (nBefore == nEffectiveSingletonTests)
 				break;
 		}
-		assert controlGAC();
+		assert controlAC();
 		return true;
 	}
 
@@ -495,7 +505,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			else
 				queueOfCells.clear();
 			// else is possible when queue.size > 0 with elements no more valid: some indexes of the queue may have been
-			// removed by GAC enforcment
+			// removed by AC enforcment
 		}
 
 		protected final boolean buildBranch() {
@@ -551,7 +561,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				if (nBefore == nEffectiveSingletonTests)
 					break;
 			}
-			assert solver.finished() || (controlGAC() && controlSAC());
+			assert solver.finished() || (controlAC() && controlSAC());
 			return true;
 		}
 	}
@@ -597,12 +607,12 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			public Variable selectNextVariable() {
 				bestScoredVariable.reset(false);
 				if (nUncheckedVars == 0) { // we keep building the branch
-					solver.futVars.execute(x -> bestScoredVariable.update(x, varHeuristics[currIndexOfVarHeuristic].scoreOptimizedOf(x)));
+					solver.futVars.execute(x -> bestScoredVariable.consider(x, varHeuristics[currIndexOfVarHeuristic].scoreOptimizedOf(x)));
 				} else {
 					assert controlUncheckedVariables();
 					int bestPos = 0;
 					for (int i = 0; i < nUncheckedVars; i++)
-						if (bestScoredVariable.update(uncheckedVars[i], varHeuristics[currIndexOfVarHeuristic].scoreOptimizedOf(uncheckedVars[i])))
+						if (bestScoredVariable.consider(uncheckedVars[i], varHeuristics[currIndexOfVarHeuristic].scoreOptimizedOf(uncheckedVars[i])))
 							bestPos = i;
 					Kit.swap(uncheckedVars, --nUncheckedVars, bestPos);
 				}
@@ -631,11 +641,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			super(solver);
 			this.queueESAC = new QueueESAC();
 			this.varHeuristics = new HeuristicVariables[] { new WdegVariant.WdegOnDom(solver, false) };
-			// this.variableOrderingHeuristics = new VariableOrderingHeuristic[] {
-			// new Dom((BacktrackSearchSolver) solver, OptimizationType.MIN), new
-			// DomThenDDeg((BacktrackSearchSolver) solver, OptimizationType.MIN),
-			// new WDegOnDom((BacktrackSearchSolver) solver, OptimizationType.MAX)
-			// };
+			// including other heuristics?
 			double ratio = solver.head.control.shaving.ratio, alpha = solver.head.control.shaving.alpha;
 			this.shavingEvaluator = ratio != 0 ? new ShavingEvaluator(solver.problem.variables.length, alpha, ratio) : null;
 		}

@@ -43,14 +43,34 @@ public abstract class HeuristicVariables extends Heuristic {
 	public static HeuristicVariables buildFor(Solver solver) {
 		Set<Class<?>> classes = solver.head.availableClasses.get(HeuristicVariables.class);
 		if (solver.head.control.solving.enableSearch || solver.propagation instanceof GIC2)
-			return Reflector.buildObject(solver.head.control.varh.heuristic, classes, solver, solver.head.control.varh.anti);
+			return Reflector.buildObject(solver.head.control.varh.clazz, classes, solver, solver.head.control.varh.anti);
 		return null;
 	}
 
+	/**
+	 * Useful to record the best variable out of a set, when considering a score computed for each of them
+	 */
 	public static class BestScoredVariable {
+
+		/**
+		 * The current best variable, i.e., the variable with the current best score; used during an iteration over all
+		 * variables
+		 */
 		public Variable variable;
+
+		/**
+		 * The score of the current best variable
+		 */
 		public double score;
+
+		/**
+		 * true if we must prefer the variable with the lowest score, instead of the variable with the highest score
+		 */
 		public boolean minimization;
+
+		/**
+		 * true if we must ignore auxiliary variables (introduced by the solver)
+		 */
 		private boolean discardAux;
 
 		public BestScoredVariable(boolean discardAux) {
@@ -68,23 +88,27 @@ public abstract class HeuristicVariables extends Heuristic {
 			return this;
 		}
 
-		public boolean update(Variable x, double s) {
+		/**
+		 * Considers the specified variable with the specified score: compares it with the current best scored variable,
+		 * and updates it if necessary.
+		 * 
+		 * @param x
+		 *            a variable
+		 * @param s
+		 *            the score of the variable
+		 * @return true if x becomes the new best scored variable
+		 */
+		public boolean consider(Variable x, double s) {
 			if (discardAux && x.isAuxiliaryVariableIntroducedBySolver()) {
 				assert x.id().startsWith(Problem.AUXILIARY_VARIABLE_PREFIX);
 				return false;
 			}
-			if (minimization) {
-				if (s < score) {
-					variable = x;
-					score = s;
-					return true;
-				}
-			} else if (s > score) {
+			boolean modification = ((minimization && s < score) || (!minimization && s > score));
+			if (modification) {
 				variable = x;
 				score = s;
-				return true;
 			}
-			return false; // not updated
+			return modification;
 		}
 	}
 
@@ -111,6 +135,9 @@ public abstract class HeuristicVariables extends Heuristic {
 	 */
 	protected SettingVarh settings;
 
+	/**
+	 * The object used to record the best scored variable, when looking for it
+	 */
 	protected BestScoredVariable bestScoredVariable;
 
 	public final void setPriorityVars(Variable[] priorityVars, int nbStrictPriorityVars) {
@@ -123,11 +150,11 @@ public abstract class HeuristicVariables extends Heuristic {
 		this.nStrictlyPriorityVars = 0;
 	}
 
-	public HeuristicVariables(Solver solver, boolean antiHeuristic) {
-		super(antiHeuristic);
+	public HeuristicVariables(Solver solver, boolean anti) {
+		super(anti);
 		this.solver = solver;
 		SettingVars settingVars = solver.head.control.variables;
-		if (settingVars.priorityVars.length > 0) {
+		if (settingVars.priorityVars.length > 0) { // used in priory wrt those of the problem
 			this.priorityVars = Stream.of(settingVars.priorityVars).map(o -> solver.problem.findVarWithNumOrId(o)).toArray(Variable[]::new);
 			this.nStrictlyPriorityVars = settingVars.nStrictPriorityVars;
 		} else {
@@ -214,6 +241,10 @@ public abstract class HeuristicVariables extends Heuristic {
 	 * Special heuristic
 	 *************************************************************************/
 
+	/**
+	 * An implementation of COS (Conflict Ordering Search) based on ddeg/dom as underlying heuristic. IMPORTANT: new
+	 * code is necessary to have COS based on wdeg/dom.
+	 */
 	public static final class Memory extends HeuristicVariables implements ObserverOnRuns {
 
 		@Override
@@ -221,16 +252,22 @@ public abstract class HeuristicVariables extends Heuristic {
 			nOrdered = 0;
 		}
 
+		/**
+		 * order[i] is the number of the ith variable to be assigned; valid only for i ranging from 0 to nOrdered-1.
+		 */
 		private final int[] order;
 
+		/**
+		 * Indicates how many variables are currently ordered in the array order
+		 */
 		private int nOrdered;
 
 		private int posLastConflict = -1;
 
-		public Memory(Solver solver, boolean antiHeuristic) {
-			super(solver, antiHeuristic);
+		public Memory(Solver solver, boolean anti) {
+			super(solver, anti);
 			this.order = new int[solver.problem.variables.length];
-			control(!solver.head.control.varh.discardAux);
+			control(!settings.discardAux);
 		}
 
 		@Override
@@ -251,7 +288,7 @@ public abstract class HeuristicVariables extends Heuristic {
 				posLastConflict = pos;
 			} else {
 				bestScoredVariable.reset(false);
-				solver.futVars.execute(x -> bestScoredVariable.update(x, scoreOptimizedOf(x)));
+				solver.futVars.execute(x -> bestScoredVariable.consider(x, scoreOptimizedOf(x)));
 				pos = posLastConflict = nOrdered;
 				order[nOrdered++] = bestScoredVariable.variable.num;
 			}
@@ -260,8 +297,8 @@ public abstract class HeuristicVariables extends Heuristic {
 
 		@Override
 		public double scoreOf(Variable x) {
-			return x.ddeg() / x.dom.size(); // TODO x.wdeg() is currently no more possible car weighetd degrees are in
-											// another heuristic class
+			return x.ddeg() / x.dom.size();
+			// TODO x.wdeg() is currently no more possible since weighted degrees are in another heuristic class
 		}
 	}
 

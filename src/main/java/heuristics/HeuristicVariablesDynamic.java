@@ -45,7 +45,7 @@ import variables.Variable;
 public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	/**
-	 * Three strategies to deal with fixed variables (i.e., variables with singleton domains) while not being explictly
+	 * Three strategies to deal with fixed variables (i.e., variables with singleton domains) while not being explicitly
 	 * assigned by the solver
 	 */
 	public enum SingletonStrategy {
@@ -61,13 +61,12 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	@Override
 	protected final Variable bestUnpriorityVariable() {
 		assert solver.futVars.size() > 0;
-
-		if (solver.head.control.solving.branching != Branching.BIN) {
+		if (solver.head.control.solving.branching != Branching.BIN) { // if not binary branching
 			Variable x = solver.decisions.varOfLastDecisionIf(false);
 			if (x != null)
 				return x;
 		}
-		if (settings.lc > 0) {
+		if (settings.lc > 0) { // if last-conflict mode
 			Variable x = solver.lastConflict.priorityVariable();
 			if (x != null) {
 				return x;
@@ -79,17 +78,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				lastDepthWithOnlySingletons = Integer.MAX_VALUE;
 				for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 					if (x.dom.size() != 1)
-						bestScoredVariable.update(x, scoreOptimizedOf(x));
+						bestScoredVariable.consider(x, scoreOptimizedOf(x));
 				}
-				// for (int e = solver.futVars.first; e != -1; e = solver.futVars.nexts[e]) {
-				// Variable x = solver.problem.variables[e];
-				// if (x.dom.size() != 1)
-				// bestScoredVariable.update(x, scoreOptimizedOf(x));
-				// }
-				// solver.futVars.execute(x -> {
-				// if (x.dom.size() != 1)
-				// bestScoredVariable.update(x, scoreOptimizedOf(x));
-				// });
 			}
 			if (bestScoredVariable.variable == null) {
 				lastDepthWithOnlySingletons = solver.depth();
@@ -100,10 +90,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 				if (first && x.dom.size() == 1)
 					return x;
-				bestScoredVariable.update(x, scoreOptimizedOf(x));
+				bestScoredVariable.consider(x, scoreOptimizedOf(x));
 			}
 			if (bestScoredVariable.variable == null) {
-				return solver.futVars.first(); // if discardAux was set to true
+				return solver.futVars.first(); // possible if discardAux was set to true
 			}
 		}
 		return bestScoredVariable.variable;
@@ -162,8 +152,16 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			implements ObserverOnRuns, ObserverOnAssignments, ObserverOnConflicts, TagMaximize {
 
 		/**
-		 * The four variants for constraint weighting. VAR is a basic variant. UNIT is for classical weighting, cacd its
-		 * variant (ICTAI'19) and CHS (as developed by from Marseille guys)
+		 * The four variants for constraint weighting.
+		 * <ul>
+		 * <li>VAR is a basic variant</li>
+		 * <li>UNIT is for classical weighting, as described in "Boosting Systematic Search by Weighting Constraints",
+		 * ECAI 2004: 146-150, by F. Boussemart, F. Hemery, C. Lecoutre, and L. Sais.</li>
+		 * <li>cacd its variant, as described in "Refining Constraint Weighting", ICTAI 2019: 71-77 by H. Wattez, C.
+		 * Lecoutre, A. Paparrizou, and S. Tabary</li>
+		 * <li>CHS, as described in "Conflict history based search for constraint satisfaction problem", SAC 2019:
+		 * 1117-1122 by D. Habet, and C. Terrioux</li>
+		 * </ul>
 		 */
 		public static enum ConstraintWeighting {
 			VAR, UNIT, CACD, CHS;
@@ -231,8 +229,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public void afterUnassignment(Variable x) {
 			if (settings.weighting != VAR && settings.weighting != CHS)
 				for (Constraint c : x.ctrs)
-					if (c.futvars.size() == 2) { // since a variable has just been unassigned, it means that there was
-													// only one future variable
+					if (c.futvars.size() == 2) {
+						// since a variable has just been unassigned, it means that there was only one future variable
 						int y = c.futvars.dense[0]; // the other variable whose score must be updated
 						vscores[c.scp[y].num] += cvscores[c.num][y];
 					}
@@ -292,7 +290,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					? Stream.of(solver.problem.constraints).map(c -> new double[c.scp.length]).toArray(double[][]::new)
 					: null;
 
-			boolean b = false; // EXPERIMENTAL
+			boolean b = false; // EXPERIMENTAL (code to be finalized or discarded)
 			if (b && solver.problem.optimizer != null && solver.problem.optimizer.ctr instanceof Sum) {
 				Sum c = (Sum) solver.problem.optimizer.ctr;
 				int[] coeffs = c instanceof SumSimple ? null : ((SumWeighted) c).coeffs;
@@ -317,13 +315,12 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				for (double[] t : cvscores)
 					Arrays.fill(t, 0);
 		}
-
 	}
 
 	/**
 	 * The heuristic wdeg (with its four variants: VAR, UNIT, CACD, CHS)
 	 */
-	public static class Wdeg extends WdegVariant {
+	public static final class Wdeg extends WdegVariant {
 
 		public Wdeg(Solver solver, boolean anti) {
 			super(solver, anti);
@@ -345,7 +342,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	/**
 	 * The heuristic wdeg/dom (with its four variants: VAR, UNIT, CACD, CHS)
 	 */
-	public static class WdegOnDom extends WdegVariant {
+	public static final class WdegOnDom extends WdegVariant {
 
 		public WdegOnDom(Solver solver, boolean anti) {
 			super(solver, anti);
@@ -368,11 +365,18 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	// ***** Subclasses for Activity/Impact
 	// ************************************************************************
 
+	/**
+	 * The root class for activity-based and impact-based search heuristics. IMPORTANT: the code is for a basic variant
+	 * of such heuristics. Certainly, better implementations or variants are possible.
+	 */
 	public static abstract class ActivityImpactAbstract extends HeuristicVariables implements ObserverOnRuns {
 		protected Variable lastVar; // if null, either just after pre-processing, or singleton variable
 		protected int lastDepth = -1;
 		protected int[] lastSizes;
 
+		/**
+		 * Parameter used in the heuristic
+		 */
 		protected double alpha;
 
 		@Override
@@ -398,12 +402,12 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			if (lastVar != null)
 				update();
 			bestScoredVariable.reset(true);
-			solver.futVars.execute(x -> {
+			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 				if (x.dom.size() > 1 || settings.singleton != SingletonStrategy.LAST) {
 					lastSizes[x.num] = x.dom.size();
-					bestScoredVariable.update(x, scoreOptimizedOf(x));
+					bestScoredVariable.consider(x, scoreOptimizedOf(x));
 				}
-			});
+			}
 			if (bestScoredVariable.variable == null) {
 				assert settings.singleton == SingletonStrategy.LAST || solver.head.control.varh.discardAux;
 				return solver.futVars.first();
@@ -414,7 +418,16 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 	}
 
+	/**
+	 * A basic variant of activity-based search heuristic, as described in "Activity-Based Search for Black-Box
+	 * Constraint Programming Solvers", CPAIOR 2012: 228-243 by L. Michel, and P. Van Hentenryck. Certainly, better
+	 * implementations or variants are possible.
+	 */
 	public static final class Activity extends ActivityImpactAbstract {
+
+		/**
+		 * activities[x] gives the current activity of variable x
+		 */
 		private double[] activities;
 
 		@Override
@@ -435,7 +448,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		protected void update() {
 			if (solver.depth() > lastDepth) { // the last positive decision succeeded
-				solver.futVars.execute(x -> activities[x.num] = x.dom.size() != lastSizes[x.num] ? activities[x.num] + 1 : activities[x.num] * alpha);
+				for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x))
+					activities[x.num] = x.dom.size() != lastSizes[x.num] ? activities[x.num] + 1 : activities[x.num] * alpha;
 			} else
 				activities[lastVar.num] += 2; // because the last positive decision failed, so a big activity
 		}
@@ -446,7 +460,15 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 	}
 
+	/**
+	 * A basic variant of impact-based search heuristic, as described in "Impact-Based Search Strategies for Constraint
+	 * Programming", CP 2004: 557-571 by P. Refalo. Certainly, better implementations or variants are possible.
+	 */
 	public static final class Impact extends ActivityImpactAbstract {
+
+		/**
+		 * impacts[x] gives the current impact of variable x
+		 */
 		private double[] impacts;
 
 		@Override
@@ -468,11 +490,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		protected void update() {
 			double impact = 1;
 			if (solver.depth() > lastDepth) // the last positive decision succeeded
-				for (Variable x : solver.futVars)
+				for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x))
 					impact *= x.dom.size() / (double) lastSizes[x.num];
 			else
-				impact = 0; // because the last positive decision failed, so a big impact (0 is the strongest impact
-							// value)
+				impact = 0; // because the last positive decision failed, so a big impact (0 is the strongest one)
 			impacts[lastVar.num] = (1 - alpha) * impacts[lastVar.num] + alpha * impact;
 			assert 0 <= impact && impact <= 1 && 0 <= impacts[lastVar.num] && impacts[lastVar.num] <= 1;
 		}

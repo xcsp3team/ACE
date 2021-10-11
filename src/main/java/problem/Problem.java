@@ -501,7 +501,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private void reduceDomainsOfIsolatedVariables() {
 		// TODO other frameworks ?
-		boolean reduceIsolatedVars = head.control.variables.reduceIsolated && settings.framework == TypeFramework.CSP && settings.nSearchedSolutions == 1
+		boolean reduceIsolatedVars = head.control.variables.reduceIsolated && settings.framework == TypeFramework.CSP && settings.solLimit == 1
 				&& !head.control.problem.isSymmetryBreaking();
 		List<Variable> isolatedVars = new ArrayList<>(), fixedVars = new ArrayList<>();
 		int nRemovedValues = 0;

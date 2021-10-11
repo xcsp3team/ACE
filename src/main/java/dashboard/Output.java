@@ -48,7 +48,7 @@ import learning.IpsReasonerEquivalence;
 import main.Head;
 import optimization.Optimizer;
 import problem.Features;
-import propagation.GAC;
+import propagation.AC;
 import propagation.Propagation;
 import propagation.SAC;
 import propagation.SAC.SACGreedy;
@@ -534,7 +534,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private InformationBloc solverInfo() {
 		InformationBloc m = new InformationBloc(SOLVER);
-		m.put(GUARANTEED_AC, head.solver.propagation.getClass() == GAC.class ? ((GAC) head.solver.propagation).guaranteed : "");
+		m.put(GUARANTEED_AC, head.solver.propagation.getClass() == AC.class ? ((AC) head.solver.propagation).guaranteed : "");
 		m.separator();
 		m.put(WCK, head.instanceStopwatch.wckTimeInSeconds());
 		m.put(CPU, head.stopwatch.cpuTimeInSeconds());
@@ -548,7 +548,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(REVISIONS, "(" + stats.nRevisions() + ",useless=" + stats.nUselessRevisions() + ")", stats.nRevisions() > 0);
 		m.put(N_VALUES, Variable.nValidValuesFor(head.problem.variables));
 		Propagation propagation = head.solver.propagation;
-		m.put(REMOVED_BY_AC, propagation instanceof GAC ? ((GAC) (propagation)).preproRemovals : 0);
+		m.put(REMOVED_BY_AC, propagation instanceof AC ? ((AC) (propagation)).preproRemovals : 0);
 		// m.put("nTotalRemovedValues", nPreproRemovedValues);
 		m.put(UNSAT, head.solver.stopping == Stopping.FULL_EXPLORATION);
 		m.separator(stats.prepro.nRemovedTuples > 0 || stats.prepro.nAddedNogoods > 0 || stats.prepro.nAddedCtrs > 0);

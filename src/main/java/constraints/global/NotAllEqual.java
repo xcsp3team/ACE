@@ -21,11 +21,12 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This constraint ensures that all values assigned to the variables of its scope are not all equal. It is a special case of a counting constraint.
+ * This constraint ensures that all values assigned to the variables of its scope are not all equal. It is a special
+ * case of the constraint Count.
  * 
  * @author Christophe Lecoutre
  */
-public class NotAllEqual extends ConstraintGlobal implements TagSymmetric, TagAC, TagCallCompleteFiltering {
+public class NotAllEqual extends ConstraintGlobal implements TagAC, TagCallCompleteFiltering, TagSymmetric {
 
 	@Override
 	public final boolean isSatisfiedBy(int[] t) {

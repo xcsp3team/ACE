@@ -12,12 +12,6 @@ package propagation;
 
 import static utility.Kit.control;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
@@ -28,44 +22,85 @@ import heuristics.HeuristicVariablesDynamic.WdegOnDom;
 import solver.Solver;
 import solver.Solver.Stopping;
 import utility.Kit;
-import utility.Stopwatch;
 import variables.Domain;
 import variables.Variable;
 
+/**
+ * This is the class for Global Inverse Consistency (GIC). This kind of consistency is very strong as once enforced, it
+ * guarantees that each literal (x,a) belongs to at least one solution. It can only be executes on some special
+ * problems. For example, see "Computing and restoring global inverse consistency in interactive constraint
+ * satisfaction", Artif. Intell. 241: 153-169 (2016) by C. Bessiere, H. Fargier, and C. Lecoutre.
+ * 
+ * @author Christophe Lecoutre
+ */
 public class GIC extends StrongConsistency { // GIC is GIC1
 
+	/**
+	 * The heuristic used to find solutions when enforcing this consistency
+	 */
 	protected HeuristicVariables heuristic;
 
+	/**
+	 * nInverseTest[x] is the number of times a value in the domain of x has been checked to be GIC
+	 */
 	public int[] nInverseTests;
-	public int nITests;
 
-	private long baseNbSolutionsLimit;
+	/**
+	 * Indicates the total number of times a literal (i.e., a value for a variable) has been checked to be GIC
+	 */
+	public int nTotalInverseTests;
 
+	private long limitBackup;
+
+	/**
+	 * Builds for the specified solver a propagation object that enforces GIC (Global Inverse Consistency).
+	 * 
+	 * @param solver
+	 *            the solver to which this object is attached
+	 */
 	public GIC(Solver solver) {
 		super(solver);
 		this.heuristic = new WdegOnDom(solver, false);
 		this.nInverseTests = new int[solver.problem.variables.length + 1];
-		this.baseNbSolutionsLimit = solver.solutions.limit;
+		this.limitBackup = solver.solutions.limit;
 		control(solver.head.control.restarts.cutoff == Long.MAX_VALUE, () -> "With GIC, there is currently no possibility of restarts.");
-		control(!Stream.of(solver.problem.constraints).anyMatch(c -> c.getClass().isAssignableFrom(STR3.class)),
+		control(Stream.of(solver.problem.constraints).allMatch(c -> !c.getClass().isAssignableFrom(STR3.class)),
 				() -> "GIC currently not compatible with STR3");
 
 	}
 
+	/**
+	 * Code to be executed when a new solution, involving the literal (x,a), has been found. For the base class, there
+	 * is nothing to do.
+	 * 
+	 * @param x
+	 *            a variable
+	 * @param a
+	 *            a value index for x
+	 */
 	protected void handleNewSolution(Variable x, int a) {
 	}
 
-	protected boolean isInverse(Variable x, int a) {
+	/**
+	 * Checks if the literal (x,a) is GIC; if it is not the case, deletes it.
+	 * 
+	 * @param x
+	 *            a variable
+	 * @param a
+	 *            a value index for x
+	 * @return true if the literal (x,a) is GIC
+	 */
+	protected final boolean isInverse(Variable x, int a) {
 		nInverseTests[solver.depth()]++;
-		nITests++;
+		nTotalInverseTests++;
 		solver.resetNoSolutions();
 		solver.assign(x, a);
-		HeuristicVariables h = solver.heuristic;
+		HeuristicVariables heuristicBackup = solver.heuristic;
 		solver.heuristic = heuristic;
-		solver.solutions.limit = 1;
+		solver.solutions.limit = 1; // enough to check GIC
 		boolean inverse = enforceArcConsistencyAfterAssignment(x) && solver.doRun().stopping == Stopping.REACHED_GOAL;
-		solver.solutions.limit = baseNbSolutionsLimit;
-		solver.heuristic = h;
+		solver.solutions.limit = limitBackup; // we restore the initial limit
+		solver.heuristic = heuristicBackup;
 		if (inverse)
 			handleNewSolution(x, a);
 		else
@@ -74,7 +109,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		return inverse;
 	}
 
-	protected void updateSTRStructures() {
+	protected final void updateSTRStructures() {
 		for (Constraint c : solver.problem.constraints)
 			if (c instanceof STR1) { // || constraint instanceof AllDifferent) {
 				int bef = solver.problem.nValueRemovals;
@@ -83,83 +118,110 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 			}
 	}
 
-	protected final void after(long nSolutionsBefore, int nValuesRemoved) {
-		if (verbose >= 1) // && nbValuesRemoved > 0)
-			Kit.log.info("nbGICInconsistentValues=" + nValuesRemoved + " at depth=" + solver.depth() + " for " + nInverseTests[solver.depth()] + " tests");
-		solver.resetNoSolutions();
-		solver.solutions.found = nSolutionsBefore;
-		updateSTRStructures();
-		performingProperSearch = false;
+	protected void beforeFiltering() {
 	}
 
-	@Override
-	public boolean enforceStrongConsistency() {
-		performingProperSearch = true;
-		long nSolutionsBefore = solver.solutions.found;
-		int nValuesRemoved = 0;
+	/**
+	 * Enforces GIC by removing all values that are proved to be GIC-inconsistent
+	 * 
+	 * @return the number of deleted values
+	 */
+	protected int filtering() {
+		int cnt = 0;
 		for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 			Domain dom = x.dom;
 			for (int a = dom.first(); a != -1; a = dom.next(a))
 				if (!isInverse(x, a)) {
 					x.dom.removeElementary(a);
-					nValuesRemoved++;
+					cnt++;
 				}
 			control(dom.size() != 0, () -> "Not possible to reach inconsistency with GIC (or your instance is unsat)");
 		}
-		after(nSolutionsBefore, nValuesRemoved);
+		return cnt;
+	}
+
+	@Override
+	public boolean enforceStrongConsistency() {
+		performingProperSearch = true;
+		beforeFiltering();
+		long foundBackup = solver.solutions.found;
+		int nValuesRemoved = filtering();
+		if (verbose >= 1) // && nbValuesRemoved > 0)
+			Kit.log.info("notGIC=" + nValuesRemoved + " at depth=" + solver.depth() + " for " + nInverseTests[solver.depth()] + " tests");
+		solver.resetNoSolutions();
+		solver.solutions.found = foundBackup;
+		updateSTRStructures();
+		performingProperSearch = false;
 		return true;
 	}
 
 	/**********************************************************************************************
-	 ***** Subclasses
+	 ***** Subclasses, including GIC2 and GIC3
 	 *********************************************************************************************/
 
 	public static abstract class GICAdvanced extends GIC {
 
-		protected int[] cnts; // cnts[x] is the number of values in the current domain of x with no found support (yet)
+		/**
+		 * When used during filtering, cnts[x] is the number of values in the current domain of x that are not proved to
+		 * be inverse (yet)
+		 */
+		protected int[] cnts;
 
+		/**
+		 * The number of variables for which GIC must still be checked (i.e., variables with some values that still must
+		 * be checked to be GIC)
+		 */
 		protected int sSupSize;
-		protected int[] sSups; // nums of the variables for which GIC must be checked
 
-		protected int cursor; // global variable used by some methods
+		/**
+		 * The (dense) set of variable numbers for which GIC must still be checked. Relevant positions are at indexes
+		 * from 0 to sSupSize (excluded).
+		 */
+		protected int[] sSup;
+
+		/**
+		 * Global variable used by some methods during filtering
+		 */
+		protected int cursor;
 
 		public GICAdvanced(Solver solver) {
 			super(solver);
 			this.cnts = new int[solver.problem.variables.length];
-			this.sSups = new int[solver.problem.variables.length];
+			this.sSup = new int[solver.problem.variables.length];
 		}
-
-		protected abstract void intializationAdvanced();
 
 		protected abstract boolean isInverseAdvanced(Variable x, int a);
 
 		@Override
-		public boolean enforceStrongConsistency() {
-			intializationAdvanced();
-			performingProperSearch = true;
-			long nSolutionsBefore = solver.solutions.found;
-			int nValuesRemoved = 0;
+		protected int filtering() {
+			int cnt = 0;
 			for (cursor = sSupSize - 1; cursor >= 0; cursor--) {
-				Variable x = solver.problem.variables[sSups[cursor]];
+				Variable x = solver.problem.variables[sSup[cursor]];
 				if (cnts[x.num] == 0)
 					continue;
 				Domain dom = x.dom;
 				for (int a = dom.first(); a != -1; a = dom.next(a))
 					if (!isInverseAdvanced(x, a)) {
 						x.dom.removeElementary(a);
-						nValuesRemoved++;
+						cnt++;
 					}
 				control(dom.size() != 0, () -> "Not possible to reach inconsistency with GIC (or your instance is unsat)");
 			}
-			after(nSolutionsBefore, nValuesRemoved);
-			return true;
+			return cnt;
 		}
+
 	}
 
 	public static class GIC2 extends GICAdvanced {
 
+		/**
+		 * A global clock for GIC
+		 */
 		protected int timestamp;
 
+		/**
+		 * stamps[x][a] is the last time (x,a) has been checked to be GIC
+		 */
 		protected int[][] stamps;
 
 		public GIC2(Solver solver) {
@@ -167,9 +229,9 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 			this.stamps = Variable.litterals(solver.problem.variables).intArray();
 		}
 
-		protected void handleSolution(Variable x, int a, int[] solution) {
+		protected final void handleSolution(Variable x, int a, int[] solution) {
 			for (int k = cursor - 1; k >= 0; k--) {
-				int id = sSups[k];
+				int id = sSup[k];
 				if (stamps[id][solution[id]] != timestamp) {
 					stamps[id][solution[id]] = timestamp;
 					cnts[id]--;
@@ -183,13 +245,13 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		}
 
 		@Override
-		protected void intializationAdvanced() {
+		protected void beforeFiltering() {
 			timestamp++;
 			sSupSize = 0;
 			for (Variable x : solver.futVars) {
 				if (x.dom.size() > 1) {
 					cnts[x.num] = x.dom.size();
-					sSups[sSupSize++] = x.num;
+					sSup[sSupSize++] = x.num;
 				}
 			}
 		}
@@ -200,8 +262,11 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		}
 	}
 
-	public static class GIC3 extends GIC2 {
+	public static final class GIC3 extends GIC2 {
 
+		/**
+		 * residues[x][a] is the residual solution (i.e., last found solution) involving the literal (x,a)
+		 */
 		private int[][][] residues;
 
 		public GIC3(Solver solver) {
@@ -228,470 +293,6 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 			}
 			return isInverse(x, a);
 		}
-	}
-
-	public static class GIC4 extends GICAdvanced {
-
-		protected int[][] solutions; // recorded solutions
-		private int solutionsLimit;
-
-		protected boolean[][] gic;
-
-		private int sValSize;
-		private int[] sVal; // nums of the variables for which validity must be checked
-
-		private int[] lastSizes;
-
-		public GIC4(Solver solver) {
-			super(solver);
-			Variable[] variables = solver.problem.variables;
-			solutions = new int[Variable.nInitValuesFor(variables)][];
-			solutionsLimit = -1;
-			gic = Variable.litterals(variables).booleanArray();
-			sVal = new int[variables.length];
-			lastSizes = Kit.repeat(-2, variables.length);
-
-			algo = solver.head.control.experimental.testI3;
-		}
-
-		private void handleSolution(int[] solution) {
-			// control(solver.solutionManager.control(solution));
-			for (int j = sSupSize - 1; j >= 0; j--) {
-				int num = sSups[j];
-				int a = solution[num];
-				if (!gic[num][a]) {
-					if (--cnts[num] == 0)
-						sSups[j] = sSups[--sSupSize];
-					gic[num][a] = true;
-				}
-			}
-		}
-
-		@Override
-		protected void handleNewSolution(Variable x, int a) {
-			solutionsLimit++;
-			if (solutions[solutionsLimit] == null)
-				solutions[solutionsLimit] = new int[solver.problem.variables.length];
-			int[] solution = solver.solutions.last;
-			Kit.copy(solution, solutions[solutionsLimit]);
-			handleSolution(solution);
-		}
-
-		@Override
-		protected void intializationAdvanced() {
-			sValSize = sSupSize = 0;
-			if (solver.futVars.lastPast() != null)
-				sVal[sValSize++] = solver.futVars.lastPast().num;
-			for (Variable x : solver.futVars) {
-				int num = x.num;
-				int domSize = x.dom.size();
-				cnts[num] = domSize;
-				if (lastSizes[num] != domSize)
-					sVal[sValSize++] = num;
-				sSups[sSupSize++] = num;
-				Arrays.fill(gic[num], false);
-			}
-
-			Variable[] variables = solver.problem.variables;
-			for (int i = solutionsLimit; i >= 0; i--) {
-				int[] solution = solutions[i];
-				boolean valid = true;
-				for (int j = sValSize - 1; j >= 0; j--) {
-					int num = sVal[j];
-					if (!variables[num].dom.contains(solution[num])) {
-						valid = false;
-						break;
-					}
-				}
-				if (valid)
-					handleSolution(solution);
-				else {
-					Kit.swap(solutions, i, solutionsLimit--);
-				}
-				// solution removed but we swap to save the array (in order to avoid building a new array object
-			}
-		}
-
-		@Override
-		protected boolean isInverseAdvanced(Variable x, int a) {
-			return gic[x.num][a] || isInverse(x, a);
-		}
-
-		@Override
-		public boolean enforceStrongConsistency() {
-			boolean consistent = super.enforceStrongConsistency();
-			restoreAfterDeletingOneDecision();
-			solver.futVars.execute(x -> lastSizes[x.num] = x.dom.size());
-			return consistent;
-		}
-
-		@Override
-		public boolean runAfterAssignment(Variable x) {
-			return !performingProperSearch && x.dom.lastRemovedLevel() != solver.depth() && solver.depth() != solver.head.control.experimental.testI1 ? true
-					: super.runAfterAssignment(x);
-		}
-
-		/**********************************************************************************************
-		 * Code for restoring GIC after deleting a decision
-		 *********************************************************************************************/
-
-		private int nTurns, origin, target;
-
-		public int nVals, nUnks, nUnksAfterAC, nTests;
-		public long wck, nItestsRestor;
-
-		private Variable[] decisionVars;
-		private int[] decisonsIdxs;
-
-		private Interval[][] allIntervals; // 1D= vid ; 2D= idx
-
-		private List<Interval> unknown;
-
-		private List<Interval> inTransfer;
-
-		private List<Interval>[] known; // 1D=level
-
-		class Interval implements Comparable<Interval> {
-			private Variable var;
-			private int idx;
-			private int minDepth;
-			private int maxDepth;
-
-			private Interval(Variable x, int a, int min, int max) {
-				this.var = x;
-				this.idx = a;
-				this.minDepth = min;
-				this.maxDepth = max;
-				assert min <= max;
-				if (minDepth == maxDepth)
-					known[minDepth].add(this);
-				else
-					unknown.add(this);
-			}
-
-			private void increaseMin(int min) {
-				if (this.minDepth < min) {
-					this.minDepth = min;
-					if (minDepth == maxDepth) {
-						known[minDepth].add(this);
-						inTransfer.add(this);
-					}
-				}
-			}
-
-			private void decreaseMax(int max) {
-				if (this.maxDepth > max) {
-					this.maxDepth = max;
-					if (minDepth == maxDepth) {
-						// System.out.println("youpi");
-						known[minDepth].add(this);
-						inTransfer.add(this);
-					}
-				}
-			}
-
-			private boolean isFixed() {
-				return minDepth == maxDepth;
-			}
-
-			@Override
-			public String toString() {
-				return var + "=" + idx + " in [" + minDepth + ".." + maxDepth + "]";
-			}
-
-			@Override
-			public int compareTo(Interval interval) {
-				return Integer.compare(maxDepth, interval.maxDepth);
-			}
-		}
-
-		private void buildIntervalsFor(Variable x, boolean direct) {
-			int depth = solver.depth();
-			boolean firstDecision = depth - 1 == target; // depth - 1 == target means that it is the decision to be
-															// removed ;
-			Interval[] intervals = allIntervals[x.num];
-			Domain dom = x.dom;
-			for (int a = dom.lastRemoved(); a != -1 && dom.removedLevelOf(a) == depth; a = dom.prevRemoved(a))
-				intervals[a] = firstDecision ? new Interval(x, a, depth, origin) : new Interval(x, a, depth - 1, direct ? depth - 1 : origin);
-			// origin is the largest possible value ; -1 because a decision will be removed
-		}
-
-		private void updateMaxFor(Variable x) {
-			int depth = solver.depth();
-			Interval[] intervals = allIntervals[x.num];
-			Domain dom = x.dom;
-			for (int a = dom.lastRemoved(); a != -1 && dom.removedLevelOf(a) == depth; a = dom.prevRemoved(a))
-				intervals[a].decreaseMax(depth);
-		}
-
-		private int finalizeIntervals() {
-			int nbTests = 0;
-			int nbUselessTests = 0;
-			// int cnt = 0;
-			while (unknown.size() > 0) {
-				// cnt++;
-				assert inTransfer.size() == 0;
-				if (algo == 3) {
-					Collections.sort(unknown);
-					// System.out.println(" sorted " + unknown.size());
-					int depthBefore = solver.depth();
-					for (Interval interval : unknown) {
-						if (inTransfer.contains(interval))
-							continue;
-						control(interval.minDepth <= interval.maxDepth, () -> "" + interval);
-						// test x = a
-						Variable x = interval.var;
-						int a = interval.idx;
-						int nbDecisionsTaken = solver.depth() - depthBefore, nbDecisions = interval.maxDepth - 1 - depthBefore;
-						assert nbDecisions > 0;
-						for (int i = nbDecisionsTaken; i < nbDecisions; i++) {
-							solver.assign(decisionVars[i], decisonsIdxs[i]);
-							enforceArcConsistencyAfterAssignment(decisionVars[i]);
-						}
-						boolean inverse = isInverse(x, a);
-						nbTests++;
-						if (!inverse) {
-							// Kit.log.info("tests useless" + var + " " + idx + " : " + inverse);
-							nbUselessTests++;
-						}
-						// for (int i = 0; i < nbDecisions; i++)
-						// solver.backtrack();
-						// update interval(s)
-						if (inverse) {
-							int[] solution = solutions[solutionsLimit];
-							solver.futVars.execute(y -> {
-								if (allIntervals[y.num][solution[y.num]] != null)
-									allIntervals[y.num][solution[y.num]].increaseMin(interval.maxDepth);
-							});
-							solutionsLimit--;
-							// mms[ind].increaseMin(mms[ind].max);
-						} else
-							interval.decreaseMax(interval.maxDepth - 1);
-					}
-					int nbDecisions = solver.depth() - depthBefore;
-					for (int i = 0; i < nbDecisions; i++)
-						solver.backtrack();
-					control(solver.depth() == target);
-				} else
-					for (Interval interval : unknown) {
-						if (inTransfer.contains(interval))
-							continue;
-						control(interval.minDepth <= interval.maxDepth, () -> "" + interval);
-						// test x = a
-						Variable x = interval.var;
-						int a = interval.idx;
-						assert solver.depth() == target;
-
-						if (algo == 1) {
-							int nbDecisions = interval.maxDepth - 1 - solver.depth();
-							assert nbDecisions > 0;
-							for (int i = 0; i < nbDecisions; i++) {
-								solver.assign(decisionVars[i], decisonsIdxs[i]);
-								enforceArcConsistencyAfterAssignment(decisionVars[i]);
-							}
-							boolean inverse = isInverse(x, a);
-							nbTests++;
-							if (!inverse) {
-								// Kit.log.info("tests useless" + var + " " + idx + " : " + inverse);
-								nbUselessTests++;
-							}
-							for (int i = 0; i < nbDecisions; i++)
-								solver.backtrack();
-							// update interval(s)
-							if (inverse) {
-								int[] solution = solutions[solutionsLimit];
-								solver.futVars.execute(y -> {
-									if (allIntervals[y.num][solution[y.num]] != null)
-										allIntervals[y.num][solution[y.num]].increaseMin(interval.maxDepth);
-								});
-								solutionsLimit--;
-								// mms[ind].increaseMin(mms[ind].max);
-							} else
-								interval.decreaseMax(interval.maxDepth - 1);
-							// }
-						} else {
-							int nbDecisions = interval.minDepth - solver.depth();
-							assert nbDecisions > 0;
-							for (int i = 0; i < nbDecisions; i++) {
-								solver.assign(decisionVars[i], decisonsIdxs[i]);
-								enforceArcConsistencyAfterAssignment(decisionVars[i]);
-							}
-							boolean inverse = isInverse(x, a);
-							nbTests++;
-							if (inverse) {
-								nbUselessTests++;
-							}
-							for (int i = 0; i < nbDecisions; i++)
-								solver.backtrack();
-							// update interval(s)
-							if (inverse) {
-								int[] solution = solutions[solutionsLimit];
-								interval.increaseMin(interval.minDepth + 1);
-								solver.futVars.execute(y -> {
-									if (y != interval.var && allIntervals[y.num][solution[y.num]] != null)
-										allIntervals[y.num][solution[y.num]].increaseMin(interval.minDepth);
-								});
-								solutionsLimit--;
-								// mms[ind].increaseMin(mms[ind].max);
-							} else
-								interval.decreaseMax(interval.minDepth);
-						}
-					}
-				unknown.removeAll(inTransfer);
-				inTransfer.clear();
-			}
-			solver.resetNoSolutions();
-			Kit.log.info("nbUselessTests=" + nbUselessTests);
-			return nbTests;
-		}
-
-		private int algo;
-
-		// private long cpu;
-
-		private void restoreAfterDeletingOneDecision() {
-			origin = solver.head.control.experimental.testI1;
-			target = solver.head.control.experimental.testI2;
-			if (nTurns == 0 && origin > 0 && solver.depth() == origin) {
-				nTurns++;
-				int nbItestsBefore = this.nITests;
-				Stopwatch stopwatch = new Stopwatch();
-				if (algo == 0) { // naive
-					// Stopwatch stopwatch = new Stopwatch();
-					int nbDecisionsToReplay = origin - target - 1;
-					decisionVars = new Variable[nbDecisionsToReplay];
-					decisonsIdxs = new int[nbDecisionsToReplay];
-
-					int cnt = 0;
-					while (solver.futVars.nPast() > 0) {
-						Variable x = solver.futVars.lastPast();
-						int a = x.dom.single();
-						solver.backtrack(x);
-						if (cnt == nbDecisionsToReplay)
-							break;
-						decisionVars[nbDecisionsToReplay - 1 - cnt] = x;
-						decisonsIdxs[nbDecisionsToReplay - 1 - cnt] = a;
-						cnt++;
-					}
-					System.out.println("Backtracked to " + solver.depth());
-					for (int i = 0; i < decisionVars.length; i++) {
-						solver.assign(decisionVars[i], decisonsIdxs[i]);
-						// Kit.prn("new ass " + decisionVars[i] + "=" + decisonsInds[i]);
-						runAfterAssignment(decisionVars[i]);
-					}
-				} else {
-					// building structures
-					Variable[] variables = solver.problem.variables;
-					allIntervals = new Interval[variables.length][];
-					for (int i = 0; i < allIntervals.length; i++)
-						allIntervals[i] = new Interval[variables[i].dom.initSize()];
-					int nbDecisionsToReplay = origin - target - 1;
-					decisionVars = new Variable[nbDecisionsToReplay];
-					decisonsIdxs = new int[nbDecisionsToReplay];
-					unknown = new ArrayList<>();
-					inTransfer = new ArrayList<>();
-					known = new List[solver.problem.variables.length + 1];
-					for (int i = target; i <= origin; i++)
-						known[i] = new ArrayList<>();
-
-					// initializing structures
-					int cnt = 0;
-					while (solver.futVars.nPast() > 0) { // lastPast(); x != null; x = solver.futVars.prevPast(x)) {
-						Variable x = solver.futVars.lastPast();
-						int a = x.dom.single();
-						buildIntervalsFor(x, true);
-						solver.futVars.execute(y -> buildIntervalsFor(y, false));
-						solver.backtrack(x);
-						if (cnt == nbDecisionsToReplay)
-							break;
-						decisionVars[nbDecisionsToReplay - 1 - cnt] = x;
-						decisonsIdxs[nbDecisionsToReplay - 1 - cnt] = a;
-						// Kit.prn("store " + var + " " + ind);
-						cnt++;
-					}
-					assert controlIntervals();
-					nVals = Variable.nValidValuesFor(variables);
-					nUnks = unknown.size();
-
-					// Kit.prn("after init, NbVals=" + Variable.computeNbCurrentValuesFor(variables)+ " NbUnk = " +
-					// unknown.size() + " nbDecs="
-					// +
-					// decisionVars.length);
-
-					// updating intervals using AC
-					performingProperSearch = true;
-					for (int i = 0; i < decisionVars.length; i++) {
-						solver.assign(decisionVars[i], decisonsIdxs[i]);
-						// Kit.prn("new ass " + decisionVars[i] + "=" + decisonsInds[i]);
-						enforceArcConsistencyAfterAssignment(decisionVars[i]);
-						updateMaxFor(decisionVars[i]);
-						solver.futVars.execute(y -> updateMaxFor(y));
-					}
-					for (int i = 0; i < decisionVars.length; i++)
-						solver.backtrack();
-					unknown.removeAll(inTransfer);
-					inTransfer.clear();
-					assert controlIntervals();
-
-					System.out.println("After AC, NbUnk = " + unknown.size());
-					// display();
-					nUnksAfterAC = unknown.size();
-
-					// finalizing intervals using inverse tests
-					nTests = finalizeIntervals();
-					// Kit.prn("After finalize, NbUnk = " + unknown.size() + " nbTests=" + nbTests);
-					System.out.println("After Finalize");
-					assert controlIntervals();
-
-					// rebuilding the path (without the deleted decision)
-					for (int i = 0; i < decisionVars.length; i++) {
-						// Kit.log.info("at " + solver.getDepth() + " replay " + decisionVars[i] + "=" +
-						// decisonsIdxs[i]);
-						solver.assign(decisionVars[i], decisonsIdxs[i]);
-						for (Interval interval : known[solver.depth()])
-							if (interval.var.dom.contains(interval.idx))
-								interval.var.dom.removeElementary(interval.idx);
-							else
-								assert interval.var.dom.removedLevelOf(interval.idx) == solver.depth();
-						this.updateSTRStructures();
-					}
-
-					Kit.log.info("nbVals=" + nVals + " nbUnks=" + nUnks + " nbUnksAfterAc=" + nUnksAfterAC + " nbTests=" + nTests);
-					performingProperSearch = false;
-				}
-				nItestsRestor = nITests - nbItestsBefore;
-				wck = stopwatch.wckTime();
-				System.out.println("Wck=" + wck + " nbITestsR=" + nItestsRestor);
-			}
-		}
-
-		private boolean controlIntervals() {
-			control(inTransfer.size() == 0, () -> "Control cannot be performed with inTransfer not empty");
-			int nIntervals1 = 0;
-			for (int i = 0; i < allIntervals.length; i++)
-				for (int j = 0; j < allIntervals[i].length; j++)
-					if (allIntervals[i][j] != null) {
-						nIntervals1++;
-						if (allIntervals[i][j].isFixed())
-							control(known[allIntervals[i][j].maxDepth].contains(allIntervals[i][j]));
-						else
-							control(unknown.contains(allIntervals[i][j]));
-					}
-			int nIntervals2 = unknown.size();
-			for (int i = target; i <= origin; i++)
-				nIntervals2 += known[i].size();
-			control(nIntervals1 == nIntervals2);
-			return true;
-		}
-
-		@SuppressWarnings("unused")
-		private void display() {
-			Kit.log.fine("Unknown : " + Stream.of(unknown).map(it -> it.toString()).collect(Collectors.joining(" ")));
-			Kit.log.fine("Known : " + (IntStream.range(target, origin + 1)
-					.mapToObj(i -> "  level " + i + " : " + (Stream.of(known[i]).map(it -> it.toString()).collect(Collectors.joining(" "))))
-					.collect(Collectors.joining("\n"))));
-		}
-
 	}
 
 }

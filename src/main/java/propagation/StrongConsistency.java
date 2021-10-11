@@ -16,11 +16,11 @@ import solver.Solver;
 import variables.Variable;
 
 /**
- * An object performing a consistency stronger than GAC.
+ * An object performing a consistency stronger than AC.
  * 
  * @author Christophe Lecoutre
  */
-public abstract class StrongConsistency extends GAC {
+public abstract class StrongConsistency extends AC {
 
 	/**
 	 * A limit in term of passes (main filtering turns)
@@ -50,6 +50,8 @@ public abstract class StrongConsistency extends GAC {
 
 	/**
 	 * Performs strong inference. The method to implement for each subclass of StrongConsistency.
+	 * 
+	 * @return false if an inconsistency is detected
 	 */
 	protected abstract boolean enforceStrongConsistency();
 
