@@ -36,6 +36,7 @@ import interfaces.Tags.TagNegative;
 import interfaces.Tags.TagPositive;
 import interfaces.Tags.TagStarredCompatible;
 import problem.Problem;
+import problem.Problem.SymmetryBreaking;
 import utility.Kit;
 import utility.Reflector;
 import variables.Domain;
@@ -222,7 +223,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			control(c instanceof TagStarredCompatible); // currently, STR2, STR2S, CT, CT2 and MDDSHORT
 			return c;
 		}
-		if (scp.length == 2 && settings.validForBinary)
+		if (scp.length == 2 && settings.generic2)
 			return new ExtensionV(pb, scp); // return new STR2(pb, scp);
 		return (ConstraintExtension) Reflector.buildObject(className, classes, pb, scp);
 	}
@@ -286,7 +287,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		else
 			assert starred == isStarred(tuples) : starred + " \n" + Kit.join(tuples);
 		int[][] m = scp[0] instanceof VariableSymbolic ? pb.symbolic.replaceSymbols((String[][]) tuples) : (int[][]) tuples;
-		if (scp[0] instanceof VariableInteger && !starred && pb.head.control.extension.mustReverse(scp.length, positive)) {
+		if (scp[0] instanceof VariableInteger && !starred && pb.head.control.extension.reverse(scp.length, positive)) {
 			m = reverseTuples(scp, m);
 			positive = !positive;
 		}
@@ -350,7 +351,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	protected ExtensionStructure buildExtensionStructure(int[][] tuples, boolean positive) {
 		ExtensionStructure es = buildExtensionStructure(); // note that the constraint is automatically registered
 		control(es != null, "Maybe you have to override buildExtensionStructure()");
-		es.originalTuples = this instanceof ExtensionGeneric || problem.head.control.problem.isSymmetryBreaking() ? tuples : null;
+		es.originalTuples = this instanceof ExtensionGeneric || problem.head.control.problem.symmetryBreaking != SymmetryBreaking.NO ? tuples : null;
 		es.originalPositive = positive;
 		es.storeTuples(tuples, positive);
 		return es;

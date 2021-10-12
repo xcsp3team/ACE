@@ -45,7 +45,6 @@ import constraints.extension.structures.Bits;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.MDD;
 import dashboard.Control;
-import dashboard.Control.SettingProblem;
 import dashboard.Input;
 import dashboard.Output;
 import heuristics.HeuristicRevisions;
@@ -53,6 +52,7 @@ import heuristics.HeuristicValues;
 import heuristics.HeuristicVariables;
 import interfaces.Observers.ObserverOnConstruction;
 import problem.Problem;
+import problem.Problem.SymmetryBreaking;
 import propagation.Propagation;
 import solver.Solver;
 import utility.Kit;
@@ -148,7 +148,7 @@ public class Head extends Thread {
 		String fileName = head.output.save(head.stopwatch.wckTime());
 		if (fileName != null) {
 			String variantParallelName = Kit.attValueFor(Input.lastArgument(), VARIANT_PARALLEL, NAME);
-			String resultsFileName = head.control.xml.campaignDir;
+			String resultsFileName = head.control.general.campaignDir;
 			if (resultsFileName != "")
 				resultsFileName += File.separator;
 			resultsFileName += Output.RESULTS_DIRECTORY + File.separator + head.output.outputFileNameFrom(head.problem.name(), variantParallelName);
@@ -405,8 +405,8 @@ public class Head extends Thread {
 	public final Stopwatch instanceStopwatch = new Stopwatch();
 
 	public boolean mustPreserveUnaryConstraints() {
-		return control.constraints.preserve1 || this instanceof HeadExtraction || control.problem.isSymmetryBreaking()
-				|| control.general.framework == TypeFramework.MAXCSP;
+		return control.constraints.preserve1 || this instanceof HeadExtraction || control.problem.symmetryBreaking != SymmetryBreaking.NO
+				|| problem.framework == TypeFramework.MAXCSP;
 	}
 
 	public boolean isTimeExpiredForCurrentInstance() {
@@ -448,8 +448,7 @@ public class Head extends Thread {
 		} catch (Exception e) {
 			return (Problem) Kit.exit("The class " + Input.problemName + " cannot be found.", e);
 		}
-		SettingProblem settings = control.problem;
-		this.problem = new Problem(api, settings.variant, settings.data, "", false, Input.argsForProblem, this);
+		this.problem = new Problem(api, control.problem.variant, control.problem.data, "", false, Input.argsForProblem, this);
 		for (ObserverOnConstruction obs : observersConstruction)
 			obs.afterProblemConstruction();
 		problem.display();

@@ -127,7 +127,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 
 		public AllDifferentPermutation(Problem pb, Variable[] scp) {
 			super(pb, scp);
-			control(settings.recognizePermutations && isPermutationElligible(scp));
+			control(pb.head.control.global.permutations && isPermutationElligible(scp));
 			residues1 = new Variable[scp[0].dom.initSize()];
 			residues2 = new Variable[scp[0].dom.initSize()];
 			Arrays.fill(residues1, scp[0]);

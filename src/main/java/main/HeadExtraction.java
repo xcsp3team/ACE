@@ -14,6 +14,7 @@ import constraints.Constraint;
 import dashboard.Input;
 import learning.IpsReasoner.LearningIps;
 import problem.Problem;
+import problem.Problem.SymmetryBreaking;
 import solver.Solver;
 import solver.Solver.Stopping;
 import utility.Kit;
@@ -349,7 +350,8 @@ public final class HeadExtraction extends Head {
 	public static void main(String[] args) {
 		Input.loadArguments(args);
 		HeadExtraction extraction = new HeadExtraction();
-		control(!extraction.control.problem.isSymmetryBreaking(), () -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
+		control(extraction.control.problem.symmetryBreaking == SymmetryBreaking.NO,
+				() -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
 		control(extraction.control.learning.ips == LearningIps.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
 		// control(extraction.configuration.restartsCutoff == Long.MAX_VALUE || extraction.configuration.nogoodType
 		// == null,

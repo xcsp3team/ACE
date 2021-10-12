@@ -1027,7 +1027,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		if (infiniteDomainVars.length > 0 && handleHugeDomains()) // Experimental (to be finished)
 			return true;
 		// For CSP, sometimes we can directly return true (because we know then that there is no filtering possibility)
-		if (problem.settings.framework == TypeFramework.CSP) {
+		if (problem.framework == TypeFramework.CSP) {
 			// TODO if the condition is replaced by != TypeFramework.MACSP, there is a pb with:
 			// java -ea ac PlaneparkingTask.xml -ea -cm=false -ev -trace
 			// possibly too with GraphColoring-sum-GraphColoring_1-fullins-3.xml.lzma

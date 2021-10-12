@@ -70,7 +70,7 @@ import org.xcsp.parser.entries.XVariables.XVar;
 import org.xcsp.parser.entries.XVariables.XVarInteger;
 import org.xcsp.parser.entries.XVariables.XVarSymbolic;
 
-import dashboard.Control.SettingXml;
+import dashboard.Control.SettingGeneral;
 import dashboard.Input;
 import variables.DomainFinite.DomainSymbols;
 import variables.Variable;
@@ -120,7 +120,6 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void model() {
-		SettingXml settings = problem.head.control.xml;
 		implem.currParameters.remove(RECOGNIZE_UNARY_PRIMITIVES);
 		implem.currParameters.remove(RECOGNIZE_BINARY_PRIMITIVES);
 		implem.currParameters.remove(RECOGNIZE_TERNARY_PRIMITIVES);
@@ -128,12 +127,13 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		implem.currParameters.remove(RECOGNIZE_EXTREMUM_CASES);
 		implem.currParameters.remove(RECOGNIZE_SUM_CASES);
 		try {
-			if (problem.head.control.general.verbose > 1)
+			SettingGeneral options = problem.head.control.general;
+			if (options.verbose > 1)
 				XParser.VERBOSE = true;
-			if (settings.discardClasses.indexOf(',') < 0)
-				loadInstance(name(), settings.discardClasses);
+			if (options.discardClasses.indexOf(',') < 0)
+				loadInstance(name(), options.discardClasses);
 			else
-				loadInstance(name(), settings.discardClasses.split(","));
+				loadInstance(name(), options.discardClasses.split(","));
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("Problem when parsing the instance. Fix the problem.");

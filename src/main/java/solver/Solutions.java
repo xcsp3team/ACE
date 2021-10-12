@@ -197,7 +197,7 @@ public final class Solutions {
 		private String lastSolution() { // note that auxiliary variables are not considered
 			assert found > 0;
 			StringBuilder sb = new StringBuilder("<instantiation id='sol").append(found).append("' type='solution'");
-			sb.append(solver.problem.settings.framework != CSP ? " cost='" + bestBound + "'" : "").append(">");
+			sb.append(solver.problem.framework != CSP ? " cost='" + bestBound + "'" : "").append(">");
 			sb.append(" <list> ").append(xmlVars).append(" </list> <values> ").append(vals(solver.problem.settings.xmlCompact, true));
 			return sb.append(" </values> </instantiation>").toString();
 		}
@@ -240,7 +240,7 @@ public final class Solutions {
 		this.solver = solver;
 		this.limit = limit;
 		this.bestBound = solver.head.control.optimization.ub;
-		this.store = solver.head.control.general.recordSolutions ? new ArrayList<>() : null;
+		this.store = null; // solver.head.control.general.recordSolutions ? new ArrayList<>() : null;
 		this.xml = new XML();
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
 	}
@@ -249,7 +249,7 @@ public final class Solutions {
 	 * Displays final results when the solving process is finished (possibly, interrupted).
 	 */
 	public void displayFinalResults() {
-		TypeFramework framework = solver.problem.settings.framework;
+		TypeFramework framework = solver.problem.framework;
 		boolean fullExploration = solver.stopping == Stopping.FULL_EXPLORATION;
 		synchronized (lock) {
 			if (!lock.get()) {
@@ -312,7 +312,7 @@ public final class Solutions {
 
 		if (solver.propagation.performingProperSearch)
 			return;
-		if (solver.problem.settings.framework == MAXCSP) {
+		if (solver.problem.framework == MAXCSP) {
 			int z = (int) Stream.of(solver.problem.constraints).filter(c -> !c.isSatisfiedByCurrentInstantiation()).count();
 			control(z < bestBound, () -> "z=" + z + " bb=" + bestBound);
 			bestBound = z;
@@ -325,7 +325,7 @@ public final class Solutions {
 		// The following code must stay after recording/storing the solution
 		if (solver.head.control.general.verbose > 1)
 			log.config(lastSolutionInJsonFormat() + "\n");
-		if (solver.head.control.general.verbose > 2 || solver.head.control.general.xmlAllSolutions)
+		if (solver.head.control.general.verbose > 2 || solver.head.control.general.xmlEachSolution)
 			log.config("     " + xml.lastSolution());
 		// solver.problem.api.prettyDisplay(vars_values(false, false).split("\\s+"));
 	}
@@ -340,7 +340,7 @@ public final class Solutions {
 	private boolean controlFoundSolution() {
 		Variable x = Variable.firstNonSingletonVariableIn(solver.problem.variables);
 		control(x == null, () -> "Problem with last solution: variable " + x + " has not a unique value");
-		if (solver.problem.settings.framework == MAXCSP)
+		if (solver.problem.framework == MAXCSP)
 			return true;
 		Constraint c = Constraint.firstUnsatisfiedConstraint(solver.problem.constraints);
 		control(c == null, () -> "Problem with last solution: constraint " + c + " " + c.getClass().getName() + " not satisfied : ");

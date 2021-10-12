@@ -288,7 +288,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	 */
 	public Output(Head head, String configurationFilename) {
 		this.head = head;
-		if (head.control.xml.campaignDir.length() > 0) {
+		if (head.control.general.campaignDir.length() > 0) {
 			this.document = Kit.createNewDocument();
 			this.root = document.createElement(RESOLUTIONS);
 			root.setAttribute(CONFIGURATION_FILE_NAME, configurationFilename);
@@ -356,7 +356,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		if (document == null)
 			return null;
 		root.setAttribute(TOTAL_WCK_TIME, totalWck + "");
-		String dirName = head.control.xml.campaignDir + File.separator + RESULTS_DIRECTORY;
+		String dirName = head.control.general.campaignDir + File.separator + RESULTS_DIRECTORY;
 		File file = new File(dirName);
 		if (!file.exists())
 			file.mkdirs();
@@ -581,7 +581,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(WCK, Stopwatch.formattedTimeInSeconds(stats.times.searchWck));
 		m.put(N_NOGOODS, head.solver.nogoodReasoner != null ? head.solver.nogoodReasoner.nNogoods : 0);
 		if (head.solver.solutions.found > 0) {
-			if (head.problem.settings.framework == TypeFramework.CSP)
+			if (head.problem.framework == TypeFramework.CSP)
 				m.put(SOLS, head.solver.solutions.found);
 			else {
 				if (head.problem.optimizer.minBound == 0 || head.problem.optimizer.minBound == Long.MIN_VALUE)
@@ -631,7 +631,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(STOP, head.solver.stopping == null ? "no" : head.solver.stopping.toString());
 		m.put(N_WRONG, stats.nWrongDecisions);
 		if (head.solver.solutions.found > 0) {
-			if (head.problem.settings.framework != TypeFramework.CSP) {
+			if (head.problem.framework != TypeFramework.CSP) {
 				m.put(BOUND, head.solver.solutions.bestBound);
 				m.put(BOUND_WCK, stats.times.lastSolWck / 1000.0);
 				// m.put(BOUND_CPU, stats.times.lastSolCpu / 1000.0);

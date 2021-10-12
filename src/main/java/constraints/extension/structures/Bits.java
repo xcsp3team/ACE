@@ -71,7 +71,7 @@ public final class Bits extends ExtensionStructure {
 	}
 
 	private static boolean saveSpace(Problem problem, long[][] sups0, long[][] sups1) {
-		if (problem.head.control.problem.shareBitVectors) {
+		if (problem.head.control.problem.shareBits) {
 			int nBefore = problem.features.nSharedBitVectors;
 			problem.features.nSharedBitVectors += saveSpace(sups0);
 			problem.features.nSharedBitVectors += saveSpace(sups1);

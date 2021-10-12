@@ -11,10 +11,10 @@
 package dashboard;
 
 import static java.util.stream.Collectors.joining;
-import static org.xcsp.common.Constants.EMPTY_STRING;
 import static org.xcsp.common.Constants.MINUS_INFINITY;
 import static org.xcsp.common.Constants.PLUS_INFINITY;
 import static org.xcsp.common.Constants.PLUS_INFINITY_INT;
+import static problem.Problem.SymmetryBreaking.NO;
 import static utility.Kit.control;
 
 import java.io.File;
@@ -40,7 +40,6 @@ import org.w3c.dom.NodeList;
 import org.xcsp.common.Constants;
 import org.xcsp.common.Types;
 import org.xcsp.common.Types.TypeCtr;
-import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
@@ -123,8 +122,6 @@ public final class Control {
 	 */
 	public final UserSettings userSettings;
 
-	public final SettingXml xml;
-
 	public final SettingGeneral general;
 
 	public final SettingProblem problem;
@@ -136,6 +133,8 @@ public final class Control {
 	public final SettingCtrs constraints;
 
 	public final SettingExtension extension;
+
+	public final SettingIntension intension;
 
 	public final SettingGlobal global;
 
@@ -165,7 +164,6 @@ public final class Control {
 		this.options = new ArrayList<>();
 		this.userSettings = new UserSettings(controlFilename);
 
-		this.xml = new SettingXml();
 		this.general = new SettingGeneral();
 
 		this.problem = new SettingProblem();
@@ -174,6 +172,7 @@ public final class Control {
 
 		this.constraints = new SettingCtrs();
 		this.extension = new SettingExtension();
+		this.intension = new SettingIntension();
 		this.global = new SettingGlobal();
 
 		this.propagation = new SettingPropagation();
@@ -203,8 +202,19 @@ public final class Control {
 			org.xcsp.modeler.Compiler.ev = true;
 		if (general.noPrintColors)
 			Kit.useColors = false;
-		if (general.framework == TypeFramework.MAXCSP)
-			optimization.lb = 0L;
+		// if (framework == TypeFramework.MAXCSP) optimization.lb = 0L;
+	}
+
+	public void framework(Optimizer optimizer) {
+		if (optimizer != null) {
+			if (general.solLimit == -1)
+				general.solLimit = PLUS_INFINITY; // default value for COP (in order to find an optimum)
+			if (optimizer.ctr instanceof ObjectiveVariable || optimizer.ctr instanceof MaximumCstLE || optimizer.ctr instanceof MinimumCstGE)
+				restarts.restartAfterSolution = true;
+		} else {
+			if (general.solLimit == -1)
+				general.solLimit = 1; // default value for CSP
+		}
 	}
 
 	private void controlKeys() {
@@ -258,7 +268,7 @@ public final class Control {
 
 	private class Option<T> {
 
-		private final String tag, attribute, shortcut;
+		protected final String tag, attribute, shortcut;
 
 		protected final T defaultValue;
 
@@ -298,9 +308,9 @@ public final class Control {
 		private Option(String tag, String attribute, String shortcut, T defaultValue, String description, int... priority) {
 			this.tag = tag;
 			this.attribute = attribute;
-			this.shortcut = shortcut;
+			this.shortcut = shortcut == null || shortcut.length() == 0 ? attribute : shortcut;
 			this.defaultValue = defaultValue;
-			this.value = getValue(shortcut, tag, attribute, defaultValue);
+			this.value = getValue(this.shortcut, tag, attribute, defaultValue);
 			this.description = description;
 			this.priority = priority.length == 0 ? 1 : priority.length == 1 ? priority[0] : (Integer) Kit.exit("Only zero or one priority value expected");
 		}
@@ -336,7 +346,7 @@ public final class Control {
 
 		private OptionEnum(String tag, String attribute, String shortcut, T defaultValue, String description, int... priority) {
 			super(tag, attribute, shortcut, defaultValue, description, priority);
-			this.value = Enum.valueOf((Class<T>) defaultValue.getClass(), userSettings.stringFor(shortcut, tag, attribute, defaultValue).toUpperCase());
+			this.value = Enum.valueOf((Class<T>) defaultValue.getClass(), userSettings.stringFor(this.shortcut, tag, attribute, defaultValue).toUpperCase());
 		}
 	}
 
@@ -392,70 +402,34 @@ public final class Control {
 		}
 	}
 
-	public class SettingXml extends SettingGroup {
-		public final String discardClasses = addS("discardClasses", "dc", "", "XCSP3 classes (tags) to be discarded (comma as separator)");
-		public final String campaignDir = addS("campaignDir", "cd", "", "Name of a campaign directory where results (XML files) are stored.");
-
-		// The following options determine whether special forms of intension constraints must be recognized/intercepted
-		public final boolean recognizePrimitive2 = addB("recognizePrimitive2", "rp2", true, "should we attempt to recognize binary primitives?");
-		public final boolean recognizePrimitive3 = addB("recognizePrimitive3", "rp3", true, "should we attempt to recognize ternary primitives?");
-		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "should we attempt to recognize logical reification forms?");
-		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "should we attempt to recognize minimum/maximum constraints?");
-		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "should we attempt to recognize sum constraints?");
-	}
-
 	public class SettingGeneral extends SettingGroup {
-		String s_verbose = "Displays more or less precise information concerning the problem instance and the solution(s) found."
-				+ "\n\tThe specified value must belong  in {0,1,2,3}." + "\n\tThis mode is used as follows."
-				+ "\n\t0 : only some global statistics are listed ;" + "\n\t1 : in addition, solutions are  shown ;"
+		String s_verbose = "\n\t0 : only some global statistics are listed ;" + "\n\t1 : in addition, solutions are  shown ;"
 				+ "\n\t2 : in addition, additionnal information about the problem instance to be solved is given ;"
 				+ "\n\t3 : in addition, for each constraint, allowed or unallowed tuples are displayed.";
 
-		public TypeFramework framework = null;
-		public long solLimit = addL("solLimit", "s", -1, "The limit in number of found solutions before stopping; for no limit, use -s=all");
-		// above, -1 when not initialized
-		public final long timeout = addL("timeout", "t", PLUS_INFINITY,
-				"The limit in milliseconds before stopping; you can indicate seconds as e.g. in -t=10s.");
-		public int verbose = addI("verbose", "v", 0, s_verbose);
-		public int jsonLimit = addI("jsonLimit", "jsonLimit", 1000, "");
-		public final boolean jsonAux = addB("jsonAux", "jsonAux", false, "");
-		public boolean xmlCompact = addB("xmlCompact", "xmlCompact", true, "");
-		public boolean xmlAllSolutions = addB("xmlAllSolutions", "xas", false, "");
-
-		public final String trace = addS("trace", "trace", EMPTY_STRING, "Displays a trace (with possible depth control as eg -trace=10-20");
-		public final long seed = addL("seed", "seed", 0, "The seed that can be used for some random-based methods.");
+		// below, -1 when not initialized
+		public long solLimit = addL("solLimit", "s", -1, "The limit on the number of found solutions before stopping; for no limit, use -s=all");
+		public final long timeout = addL("timeout", "t", PLUS_INFINITY, "The limit in milliseconds before stopping; seconds can be indicated as in -t=10s");
+		public final String discardClasses = addS("discardClasses", "dc", "", "XCSP3 classes (tags) to be discarded (comma as separator)");
+		public final String campaignDir = addS("campaignDir", "cd", "", "Name of a campaign directory where results (XML files) are stored.");
+		public final String trace = addS("trace", "trace", "", "Displays a trace (with possible depth control as eg -trace=10-20");
+		public final int jsonLimit = addI("jsonLimit", "jl", 1000, "The limit on the number of variables for displaying solutions in JSON");
+		public final boolean jsonAux = addB("jsonAux", "ja", false, "Take auxiliary variables when displaying solutions in JSON");
+		public final boolean xmlCompact = addB("xmlCompact", "xc", true, "Compress values when displaying solutions in XML");
+		public final boolean xmlEachSolution = addB("xmlEachSolution", "xe", false, "During search, display all found solutions in XML");
+		public final boolean noPrintColors = addB("noPrintColors", "npc", false, "Don't use special color characters in the terminal");
 		public final boolean exceptionsVisible = addB("exceptionsVisible", "ev", false, "Makes exceptions visible.");
 		public final boolean enableAnnotations = addB("enableAnnotations", "ea", false, "Enables annotations (currently, mainly concerns priority variables).");
-		public final int satisfactionLimit = addI("satisfactionLimit", "sal", PLUS_INFINITY_INT, "converting the objective into a constraint with this limit");
-		public final boolean recordSolutions = addB("recordSolutions", "rs", false, "Records all found solutions", HIDDEN);
-		public final boolean noPrintColors = addB("noPrintColors", "npc", false, "Don't use special color characters in the terminal", HIDDEN);
-
-		public void decideFramework(Optimizer optimizer) {
-			control(framework == null);
-			if (optimizer != null) { // to COP
-				if (solLimit == -1)
-					solLimit = PLUS_INFINITY; // default value for COP (in order to find an optimum)
-				framework = TypeFramework.COP;
-				if (optimizer.ctr instanceof ObjectiveVariable || optimizer.ctr instanceof MaximumCstLE || optimizer.ctr instanceof MinimumCstGE)
-					restarts.restartAfterSolution = true;
-			} else {
-				if (solLimit == -1)
-					solLimit = 1; // default value for CSP
-				framework = TypeFramework.CSP;
-			}
-		}
+		public final int satisfactionLimit = addI("satisfactionLimit", "satl", PLUS_INFINITY_INT, "Converting the objective into a constraint with this limit");
+		public final long seed = addL("seed", "seed", 0, "The seed that can be used for some random-based methods.");
+		public int verbose = addI("verbose", "v", 0, "Verbosity level (value between 0 and 3)" + s_verbose);
 	}
 
 	public class SettingProblem extends SettingGroup {
-		public final String data = addS("data", "data", "", "Parameter similar to the one defined for " + org.xcsp.modeler.Compiler.class.getName());
-		public final String variant = addS("variant", "variant", "", "Parameter similar to the one defined for " + org.xcsp.modeler.Compiler.class.getName());
-		public final boolean shareBitVectors = addB("shareBitVectors", "sbv", false, "Trying to save space by sharing bit vectors.", HIDDEN);
-		public final SymmetryBreaking symmetryBreaking = addE("symmetryBreaking", "sb", SymmetryBreaking.NO,
-				"Symmetry-breaking method (requires Saucy to be installed");
-
-		public boolean isSymmetryBreaking() {
-			return symmetryBreaking != SymmetryBreaking.NO;
-		}
+		public final String data = addS("data", "", "", "Parameter similar to the one defined for " + org.xcsp.modeler.Compiler.class.getName());
+		public final String variant = addS("variant", "", "", "Parameter similar to the one defined for " + org.xcsp.modeler.Compiler.class.getName());
+		public final boolean shareBits = addB("shareBits", "", false, "Trying to save space by sharing bit vectors.");
+		public final SymmetryBreaking symmetryBreaking = addE("symmetryBreaking", "sb", NO, "Symmetry-breaking method (requires Saucy to be installed");
 	}
 
 	public class SettingVars extends SettingGroup {
@@ -476,10 +450,10 @@ public final class Control {
 				+ "\n\tEach token is variable id, a variable number (integer) or an interval of the form i..j with i and j integers.."
 				+ "\n\tFor example, -pr2=2..10,31,-4 will denote the list 2 3 5 6 7 8 9 10 31.";
 
-		protected final String selection = addS("selection", "sel", EMPTY_STRING, s_sel);
-		protected final String instantiation = addS("instantiation", "ins", EMPTY_STRING, s_ins);
-		protected final String priority1 = addS("priority1", "pr1", EMPTY_STRING, s_pr1);
-		protected final String priority2 = addS("priority2", "pr2", EMPTY_STRING, s_pr2);
+		protected final String selection = addS("selection", "sel", "", s_sel);
+		protected final String instantiation = addS("instantiation", "ins", "", s_ins);
+		protected final String priority1 = addS("priority1", "pr1", "", s_pr1);
+		protected final String priority2 = addS("priority2", "pr2", "", s_pr2);
 		public final boolean reduceIsolated = addB("reduceIsolated", "riv", true, "Arbitrary keeping a single value in the domain of isolated variables");
 
 		private Object[] readSelectionList(String s) {
@@ -556,63 +530,61 @@ public final class Control {
 	}
 
 	public class SettingCtrs extends SettingGroup {
-		String r2 = "When > 0, redundant allDifferent constraints are sought (at most as the given value) and posted (if any) to improve the filtering capability of the solver."
-				+ "\n\tTry this on a pigeons instance.";
-		String r5 = "Create Permutation constraints instead of classic AllDifferent when possible. Less filtering but may be faster.";
-
 		public final boolean preserve1 = addB("preserve1", "pc1", true, "Must we keep unary constraints (instead of filtering them straight)");
-		public final int decomposeIntention = addI("decomposeIntention", "di", 1, "0: no decomposition, 1: conditional decomposition, 2: forced decompostion");
-		public final boolean viewForSum = addB("viewForSum", "vs", false, "");
-		public final boolean intensionToExtension1 = addB("intensionToExtension1", "ie1", true,
-				"Must we convert unary intension constraints into extension ones?");
-		public final TypeCtr ignoredType = Types.valueOf(TypeCtr.class, addS("ignoreType", "ignoreType", "", "Ignore all constraints of this type."));
-		public final int ignoreArity = addI("ignoreArity", "ignoreArity", -1, "Ignore all constraints with this arity.");
-
-		public final int inferAllDifferentNb = addI("inferAllDifferentNb", "iad", 0, r2);
-		public final int inferAllDifferentSize = addI("inferAllDifferentSize", "iadsz", 5, "Size under which inferred AllDifferent are no more considered");
-		public final boolean recognizePermutations = addB("recognizePermutations", "perm", false, r5);
+		public final TypeCtr ignoredType = Types.valueOf(TypeCtr.class, addS("ignoreType", "", "", "Dicard all constraints of this type"));
+		public final int ignoreArity = addI("ignoreArity", "", -1, "Discard all constraints of this arity");
 		public final int positionsLb = addI("positionsLb", "poslb", 3, "Minimal arity to build the array positions");
-		public final int positionsUb = addI("positionsUb", "posub", 10000, "maximal number of variables to build the array positions");
+		public final int positionsUb = addI("positionsUb", "posub", 10000, "Maximal number of variables to build the array positions");
 	}
 
 	public class SettingExtension extends SettingGroup {
-		public final Extension positive = addE("positive", "positive", Extension.CT, "Algorithm for (non-binary) positive table constraints");
-		public final Extension negative = addE("negative", "negative", Extension.V, "Algorithm for (non-binary) negtaive table constraint");
-		public final boolean validForBinary = addB("validForBinary", "vfor2", true, "");
+		public final Extension positive = addE("positive", "", Extension.CT, "Algorithm for (non-binary) positive table constraints");
+		public final Extension negative = addE("negative", "", Extension.V, "Algorithm for (non-binary) negative table constraint");
+		public final boolean generic2 = addB("generic2", "", true, "Should we use a generic filtering scheme for binary table constraints?");
 		public final String structureClass2 = addS("structureClass2", "sc2", Bits.class, null, "Structures to be used for binary table constraints");
 		public final String structureClass3 = addS("structureClass3", "sc3", Matrix3D.class, null, "Structures to be used for ternary table constraints");
-		public final int arityLimitForSwitchingToPositive = addI("arityLimitForSwitchingToPositive", "ntop", -1, "");
-		public final int arityLimitForSwitchingToNegative = addI("arityLimitForSwitchingToNegative", "pton", -1, "");
-		public final boolean decremental = addB("decremental", "exd", true, ""); // true required for CT for the moment
-		public final int variant = addI("variant", "exv", 0, "");
+		public final int arityLimitToPositive = addI("arityLimitToPositive", "alp", -1, "Limit on arity for converting negative table constraints to positive");
+		public final int arityLimitToNegative = addI("arityLimitToNegative", "aln", -1, "Limit on arity for converting positive table constraints to negative");
+		public final int variant = addI("variant", "extv", 0, "Variant to be used for some algorithms (e.g., VA or CMDD)");
+		public final boolean decremental = addB("decremental", "extd", true, "Should we use a decremental mode for some algorithms (e.g., STR2, CT or CMDD)");
 
-		public final int arityLimitForConvertingIntension = addI("arityLimitForConvertingIntension", "alc", 0, "");
-		public final int spaceLimitForConvertingIntension = addI("spaceLimitForConvertingIntension", "plc", 20, "");
-
-		public boolean mustReverse(int arity, boolean positive) {
-			return (positive && arity <= arityLimitForSwitchingToNegative) || (!positive && arity <= arityLimitForSwitchingToPositive);
+		public boolean reverse(int arity, boolean positive) {
+			return (positive && arity <= arityLimitToNegative) || (!positive && arity <= arityLimitToPositive);
 		}
+	}
 
-		public boolean convertingIntension(Variable[] vars) {
-			return vars.length <= arityLimitForConvertingIntension
-					&& Constraint.howManyVariablesWithin(vars, spaceLimitForConvertingIntension) == Constants.ALL;
+	public class SettingIntension extends SettingGroup {
+		public final int decompose = addI("decompose", "di", 1, "0: no decomposition, 1: conditional decomposition, 2: forced decompostion");
+		public final boolean toExtension1 = addB("toExtension1", "ie1", true, "Must we convert unary intension constraints to extension?");
+		public final int arityLimitToExtension = addI("arityLimitToExtension", "ale", 0, "Limit on arity for possibly converting to extension");
+		public final int spaceLimitToExtension = addI("spaceLimitToExtension", "sle", 20, "Limit on space for possibly converting to extension");
+		// The following options determine whether special forms of intension constraints must be recognized/intercepted
+		public final boolean recognizePrimitive2 = addB("recognizePrimitive2", "rp2", true, "should we attempt to recognize binary primitives?");
+		public final boolean recognizePrimitive3 = addB("recognizePrimitive3", "rp3", true, "should we attempt to recognize ternary primitives?");
+		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "should we attempt to recognize logical reification forms?");
+		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "should we attempt to recognize minimum/maximum constraints?");
+		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "should we attempt to recognize sum constraints?");
+
+		public boolean toExtension(Variable[] vars) {
+			return vars.length <= arityLimitToExtension && Constraint.howManyVariablesWithin(vars, spaceLimitToExtension) == Constants.ALL;
 		}
 	}
 
 	public class SettingGlobal extends SettingGroup {
-		String s = "Allows the user to select the propagator for ";
-
-		public final int typeAllDifferent = addI("typeAllDifferent", "g_ad", 0, s + "allDifferent");
-		public final int typeDistinctVectors = addI("typeDistinctVectors", "g_dv", 0, s + "distinctvectors");
-		public final int typeAllEqual = addI("typeAllEqual", "g_ae", 0, s + "allEqual");
-		public final int typeNotAllEqual = addI("typeNotAllEqual", "g_nae", 0, s + "notAllEqual");
-		public final int typeOrdered = addI("typeOrdered", "g_ord", 1, s + "odered");
-		public final int typeNoOverlap = addI("typeNoOverlap", "g_no", 0, s + "noOverlap");
+		public final int allDifferent = addI("allDifferent", "g_ad", 0, "Algorithm for AllDifferent");
+		public final int distinctVectors = addI("distinctVectors", "g_dv", 0, "Algorithm for DistinctVectors");
+		public final int allEqual = addI("allEqual", "g_ae", 0, "Algorithm for AllEqual");
+		public final int notAllEqual = addI("notAllEqual", "g_nae", 0, "Algorithm for NotAllEqual");
+		public final int noOverlap = addI("noOverlap", "g_no", 0, "Algorithm for NoOverlap");
 		public final boolean redundNoOverlap = addB("redundNoOverlap", "r_no", true, "");
-		public final int typeBinpacking = addI("typeBinpacking", "g_bp", 0, s + "binPacking");
+		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");
+		public final boolean viewForSum = addB("viewForSum", "vs", false, "Should we use views for Sum constraints, when possible?");
+		public final boolean permutations = addB("permutations", "", false, "Use permutation constraints for AllDifferent if possible (may be faster)");
+		public final int allDifferentNb = addI("allDifferentNb", "iad", 0, "Number of possibly automatically inferred AllDifferent");
+		public final int allDifferentSize = addI("allDifferentSize", "iadsz", 5, "Limit on the size of possibly automatically inferred AllDifferent");
 
-		public final boolean starred = addB("starred", "starred", false, "When true, some global constraints are encoded by starred tables");
-		public final boolean hybrid = addB("hybrid", "hybrid", false, "When true, some global constraints are encoded by hybrid/smart tables");
+		public final boolean starred = addB("starred", "", false, "When true, some global constraints are encoded by starred tables");
+		public final boolean hybrid = addB("hybrid", "", false, "When true, some global constraints are encoded by hybrid/smart tables");
 	}
 
 	public class SettingPropagation extends SettingGroup {

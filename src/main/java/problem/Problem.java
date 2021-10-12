@@ -182,10 +182,10 @@ import constraints.intension.Reification.Reif2;
 import constraints.intension.Reification.Reif2.Reif2EQ;
 import constraints.intension.Reification.Reif3;
 import constraints.intension.Reification.ReifLogic;
-import dashboard.Control.SettingCtrs;
 import dashboard.Control.SettingGeneral;
+import dashboard.Control.SettingGlobal;
+import dashboard.Control.SettingIntension;
 import dashboard.Control.SettingVars;
-import dashboard.Control.SettingXml;
 import heuristics.HeuristicValues;
 import interfaces.Observers.ObserverOnConstruction;
 import main.Head;
@@ -239,7 +239,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		assert Stream.of(variables).map(x -> x.id()).distinct().count() == variables.length : "Two variables have the same id";
 		assert Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints) : "Non normalized nums in the problem";
 
-		head.control.general.decideFramework(optimizer); // modifying a few options
+		this.framework = optimizer != null ? TypeFramework.COP : TypeFramework.CSP; // currently, MAXCSP is not possible
+		head.control.framework(optimizer); // modifying a few options
 		for (Variable x : variables) {
 			assert Stream.of(x.ctrs).noneMatch(c -> c.num == -1);
 			x.dom.setNumberOfLevels(variables.length + 1);
@@ -307,6 +308,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * The solver used to solve the problem; equivalent to head.solver.
 	 */
 	public Solver solver;
+
+	/**
+	 * The framework of the problem (CSP or COP); currently, MAXCSP is not managed
+	 */
+	public TypeFramework framework;
 
 	/**
 	 * The set of variables of the problem, in the order they have been defined (posted).
@@ -412,7 +418,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Stopwatch stopwatch = new Stopwatch();
 		List<Variable> variables = features.collecting.variables;
 		List<Constraint> constraints = features.collecting.constraints;
-		if (head.control.problem.isSymmetryBreaking()) {
+		if (head.control.problem.symmetryBreaking != SymmetryBreaking.NO) {
 			int nBefore = constraints.size();
 			// for (Constraint c : features.collecting.constraints) if (Constraint.getSymmetryMatching(c.key) == null)
 			// Constraint.putSymmetryMatching(c.key,
@@ -447,11 +453,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (head.control.general.verbose > 0)
 				System.out.println("Time for generating symmetry-breaking constraints: " + stopwatch.wckTimeInSeconds());
 		}
-		SettingCtrs settings = head.control.constraints;
-		if (settings.inferAllDifferentNb > 0) {
+		SettingGlobal options = head.control.global;
+		if (options.allDifferentNb > 0) {
 			stopwatch.start();
-			List<Variable[]> cliques = ReinforcerAllDifferent.buildCliques(variables, constraints, settings.inferAllDifferentNb,
-					settings.inferAllDifferentSize);
+			List<Variable[]> cliques = ReinforcerAllDifferent.buildCliques(variables, constraints, options.allDifferentNb, options.allDifferentSize);
 			for (Variable[] clique : cliques)
 				allDifferent(clique);
 			features.nCliques = cliques.size();
@@ -501,8 +506,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private void reduceDomainsOfIsolatedVariables() {
 		// TODO other frameworks ?
-		boolean reduceIsolatedVars = head.control.variables.reduceIsolated && settings.framework == TypeFramework.CSP && settings.solLimit == 1
-				&& !head.control.problem.isSymmetryBreaking();
+		boolean reduceIsolatedVars = head.control.variables.reduceIsolated && framework == TypeFramework.CSP && settings.solLimit == 1
+				&& head.control.problem.symmetryBreaking == SymmetryBreaking.NO;
 		List<Variable> isolatedVars = new ArrayList<>(), fixedVars = new ArrayList<>();
 		int nRemovedValues = 0;
 		for (Variable x : variables) {
@@ -604,7 +609,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public TypeFramework typeFramework() {
-		return settings.framework;
+		return framework;
 	}
 
 	@Override
@@ -647,7 +652,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private void replacement(Var aux, XNode<IVar> tree, boolean tuplesComputed, int[][] tuples) {
 		nAuxConstraints++;
 		Variable[] treeVars = (Variable[]) tree.vars();
-		if (!tuplesComputed && head.control.extension.convertingIntension(treeVars))
+		if (!tuplesComputed && head.control.intension.toExtension(treeVars))
 			tuples = new TreeEvaluator(tree).computeTuples(Variable.initDomainValues(treeVars)); // or current values?
 		if (tuples != null) {
 			features.nConvertedConstraints++;
@@ -701,7 +706,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		int[][] tuples = null;
 		if (similarTrees) {
 			Variable[] treeVars = (Variable[]) trees[0].vars();
-			if (head.control.extension.convertingIntension(treeVars))
+			if (head.control.intension.toExtension(treeVars))
 				tuples = new TreeEvaluator(trees[0]).computeTuples(Variable.initDomainValues(treeVars));
 		}
 		for (int i = 0; i < trees.length; i++)
@@ -812,11 +817,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		int arity = scp.length;
 		// System.out.println("Tree " + tree);
 
+		SettingIntension options = head.control.intension;
 		if (arity == 1) {
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 			Variable x = (Variable) tree.var(0);
 			if (head.mustPreserveUnaryConstraints()) {
-				if (!head.control.constraints.intensionToExtension1)
+				if (!options.toExtension1)
 					return post(new ConstraintIntension(this, scp, tree));
 				int[] values = x.dom.valuesChecking(v -> evaluator.evaluate(v) != 1); // initially, conflicts
 				boolean positive = values.length >= x.dom.size() / 2;
@@ -830,7 +836,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		assert Variable.haveSameType(scp);
-		if (head.control.extension.convertingIntension(scp) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
+		if (options.toExtension(scp) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
@@ -845,8 +851,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return forall(range(2), i -> equal(scp[i], 1));
 		}
 
-		SettingXml xml = head.control.xml;
-		if (arity == 2 && xml.recognizePrimitive2) {
+		if (arity == 2 && options.recognizePrimitive2) {
 			Constraint c = null;
 			if (x_relop_y.matches(tree))
 				c = Sub2.buildFrom(this, scp[0], scp[1], tree.relop(0), 0);
@@ -876,7 +881,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (c != null)
 				return post(c);
 		}
-		if (arity == 3 && xml.recognizePrimitive3) {
+		if (arity == 3 && options.recognizePrimitive3) {
 			Constraint c = null;
 			if (x_ariop_y__relop_z.matches(tree))
 				c = Primitive3.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0), scp[2]);
@@ -887,7 +892,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (c != null)
 				return post(c);
 		}
-		if (xml.recognizeReifLogic) {
+		if (options.recognizeReifLogic) {
 			Constraint c = null;
 			if (logic_X__eq_x.matches(tree)) {
 				Variable[] list = IntStream.range(0, scp.length - 1).mapToObj(i -> scp[i]).toArray(Variable[]::new);
@@ -900,13 +905,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 		// if (arity >= 2 && tree.type == OR && Stream.of(tree.sons).allMatch(son -> x_relop_k.matches(son))) { }
 
-		if (xml.recognizeExtremum) {
+		if (options.recognizeExtremum) {
 			if (min_relop.matches(tree))
 				return minimum((Var[]) tree.sons[0].vars(), basicCondition(tree));
 			if (max_relop.matches(tree))
 				return maximum((Var[]) tree.sons[0].vars(), basicCondition(tree));
 		}
-		if (xml.recognizeSum) {
+		if (options.recognizeSum) {
 			if (add_vars__relop.matches(tree)) {
 				Var[] list = (Var[]) tree.sons[0].arrayOfVars();
 				return sum(list, Kit.repeat(1, list.length), basicCondition(tree));
@@ -934,9 +939,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return product(list, basicCondition(tree));
 		}
 
-		boolean b = head.control.constraints.decomposeIntention > 0 && scp[0] instanceof VariableInteger && scp.length + 1 >= tree.listOfVars().size();
+		boolean b = options.decompose > 0 && scp[0] instanceof VariableInteger && scp.length + 1 >= tree.listOfVars().size();
 		// at most a variable occurring twice
-		b = b || head.control.constraints.decomposeIntention == 2;
+		b = b || options.decompose == 2;
 		if (b) {
 			XNode<IVar>[] sons = tree.sons;
 			int nParentSons = 0;
@@ -1091,19 +1096,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private CtrEntity allDifferent(Variable[] scp) {
 		if (scp.length <= 1)
 			return ctrEntities.new CtrAloneDummy("Removed alldiff constraint with scope length = " + scp.length);
-		if (head.control.global.typeAllDifferent == 0)
-			return post(head.control.constraints.recognizePermutations && AllDifferent.isPermutationElligible(scp) ? new AllDifferentPermutation(this, scp)
+		if (head.control.global.allDifferent == 0)
+			return post(head.control.global.permutations && AllDifferent.isPermutationElligible(scp) ? new AllDifferentPermutation(this, scp)
 					: new AllDifferentComplete(this, scp));
-		if (head.control.global.typeAllDifferent == 1)
+		if (head.control.global.allDifferent == 1)
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
 				if (i < j)
 					post(new Sub2NE(this, scp[i], scp[j], 0));
 			});
-		if (head.control.global.typeAllDifferent == 2)
+		if (head.control.global.allDifferent == 2)
 			return post(new AllDifferentWeak(this, scp));
-		if (head.control.global.typeAllDifferent == 3)
+		if (head.control.global.allDifferent == 3)
 			return post(new AllDifferentCounting(this, scp));
-		if (head.control.global.typeAllDifferent == 4)
+		if (head.control.global.allDifferent == 4)
 			return post(new AllDifferentBound(this, scp));
 		throw new UnsupportedOperationException();
 	}
@@ -1123,13 +1128,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(exceptValues.length >= 1 && Kit.isStrictlyIncreasing(exceptValues));
 		Variable[] scp = translate(list);
 		boolean toTest = true; // TODO is it efficient? the three approaches should be experimentally tested
-		if (toTest && head.control.global.typeAllDifferent == 0) {
+		if (toTest && head.control.global.allDifferent == 0) {
 			Set<Integer> values = Variable.setOfvaluesIn(scp);
 			for (int v : exceptValues)
 				values.remove(v);
 			return post(new CardinalityConstant(this, scp, values.stream().mapToInt(i -> i).sorted().toArray(), 0, 1));
 		}
-		if (head.control.global.typeAllDifferent == 1) // decomposition
+		if (head.control.global.allDifferent == 1) // decomposition
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
 				if (i < j) {
 					List<int[]> conflicts = new ArrayList<>();
@@ -1153,7 +1158,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Variable[] list1 = normalized ? t1 : IntStream.range(0, t1.length).filter(i -> t1[i] != t2[i]).mapToObj(i -> t1[i]).toArray(Variable[]::new);
 		Variable[] list2 = normalized ? t2 : IntStream.range(0, t2.length).filter(i -> t1[i] != t2[i]).mapToObj(i -> t2[i]).toArray(Variable[]::new);
 
-		if (head.control.global.typeDistinctVectors == 0)
+		if (head.control.global.distinctVectors == 0)
 			return post(new DistinctLists(this, list1, list2));
 		if (head.control.global.hybrid)
 			return post(CSmart.distinctVectors(this, list1, list2));
@@ -1432,7 +1437,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public CtrEntity sum(XNode<IVar>[] trees, int[] coeffs, Condition condition) {
 		control(trees.length > 0, "A constraint sum is posted with a scope of 0 variable");
-		if (head.control.constraints.viewForSum && condition instanceof ConditionRel) {
+		if (head.control.global.viewForSum && condition instanceof ConditionRel) {
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Object rightTerm = condition.rightTerm();
 			if (op != NE && Stream.of(trees).allMatch(tree -> tree.type.isPredicateOperator() && tree.vars().length == 1)) {
@@ -1441,10 +1446,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					for (int i = 0; i < trees.length; i++)
 						terms[i] = new Term(coeffs == null ? 1 : coeffs[i], trees[i]);
 					terms[terms.length - 1] = new Term(-1, new XNodeLeaf<>(VAR, (Variable) rightTerm));
-					terms = Stream.of(terms).filter(t -> t.coeff != 0).sorted().toArray(Term[]::new); // we discard
-																										// terms of
-																										// coeff 0 and
-																										// sort them
+					// we discard terms of coeff 0 and sort them
+					terms = Stream.of(terms).filter(t -> t.coeff != 0).sorted().toArray(Term[]::new);
 					XNode<IVar>[] tt = Stream.of(terms).map(t -> t.obj).toArray(XNode[]::new);
 					control(Stream.of(terms).allMatch(t -> Utilities.isSafeInt(t.coeff)));
 					coeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
@@ -1922,9 +1925,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i], xj = (Variable) origins[j];
 				int li = lengths[i], lj = lengths[j];
-				if (head.control.global.typeNoOverlap == INTENSION_DECOMPOSITION)
+				if (head.control.global.noOverlap == INTENSION_DECOMPOSITION)
 					intension(or(le(add(xi, li), xj), le(add(xj, lj), xi)));
-				else if (head.control.global.typeNoOverlap == EXTENSION_HYBRID)
+				else if (head.control.global.noOverlap == EXTENSION_HYBRID)
 					post(CSmart.noOverlap(this, xi, xj, li, lj));
 				else
 					post(new Disjonctive(this, xi, li, xj, lj)); // BASE
@@ -1939,7 +1942,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i], xj = (Variable) origins[j];
 				Variable wi = (Variable) lengths[i], wj = (Variable) lengths[j];
-				if (head.control.global.typeNoOverlap == INTENSION_DECOMPOSITION)
+				if (head.control.global.noOverlap == INTENSION_DECOMPOSITION)
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi)));
 				else
 					post(new DisjonctiveVar(this, xi, xj, wi, wj));
@@ -1968,13 +1971,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i][0], xj = (Variable) origins[j][0], yi = (Variable) origins[i][1], yj = (Variable) origins[j][1];
 				int wi = lengths[i][0], wj = lengths[j][0], hi = lengths[i][1], hj = lengths[j][1];
-				if (head.control.global.typeNoOverlap == INTENSION_DECOMPOSITION)
+				if (head.control.global.noOverlap == INTENSION_DECOMPOSITION)
 					// VERY expensive
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
-				else if (head.control.global.typeNoOverlap == EXTENSION_STARRED)
+				else if (head.control.global.noOverlap == EXTENSION_STARRED)
 					// seems to be rather efficient
 					extension(vars(xi, xj, yi, yj), Table.starredNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true);
-				else if (head.control.global.typeNoOverlap == EXTENSION_HYBRID)
+				else if (head.control.global.noOverlap == EXTENSION_HYBRID)
 					post(CSmart.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				else
 					post(new Disjonctive2D(this, xi, xj, yi, yj, wi, wj, hi, hj));
@@ -1989,7 +1992,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i][0], xj = (Variable) origins[j][0], yi = (Variable) origins[i][1], yj = (Variable) origins[j][1];
 				Variable wi = (Variable) lengths[i][0], wj = (Variable) lengths[j][0], hi = (Variable) lengths[i][1], hj = (Variable) lengths[j][1];
-				if (head.control.global.typeNoOverlap == EXTENSION_HYBRID && Stream.of(wi, wj, hi, hj).allMatch(x -> x.dom.initSize() == 2))
+				if (head.control.global.noOverlap == EXTENSION_HYBRID && Stream.of(wi, wj, hi, hj).allMatch(x -> x.dom.initSize() == 2))
 					post(CSmart.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				else
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
@@ -2032,7 +2035,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(list.length > 2 && list.length == sizes.length);
 		Variable[] vars = translate(list);
 		boolean sameType = Variable.haveSameDomainType(vars);
-		if (!sameType || head.control.global.typeBinpacking == 1) { // decomposing in sum constraints
+		if (!sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
 			int[] values = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).toArray();
 			return forall(range(values.length), v -> sum(Stream.of(list).map(x -> api.eq(x, v)), sizes, condition));
 			// TODO add nValues ? other ?
