@@ -105,7 +105,7 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 	public XNodeParent<IVar> tree;
 
 	/**
-	 * The object that can be used to evaluate the Boolean expression tree, after having specified values for involved
+	 * The object that can be used to evaluate the Boolean expression tree, when values are specified for involved
 	 * variables
 	 */
 	private IntensionStructure treeEvaluator;

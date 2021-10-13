@@ -10,7 +10,6 @@
 
 package dashboard;
 
-import static java.util.stream.Collectors.joining;
 import static utility.Kit.control;
 import static utility.Kit.log;
 
@@ -25,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.w3c.dom.Document;
@@ -437,16 +435,14 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	}
 
 	private InformationBloc instanceInfo(int instanceNumber) {
-		SettingVars settings = head.control.variables;
+		SettingVars options = head.control.variables;
 		InformationBloc m = new InformationBloc(INSTANCE);
 		m.put(NAME, head.problem.name());
 		m.put(NUMBER, instanceNumber, Input.nInstancesToSolve > 1);
-		m.separator(settings.selectedVars.length > 0 || settings.instantiatedVars.length > 0 || settings.priorityVars.length > 0);
-		m.put(SELECTION, Stream.of(settings.selectedVars).map(o -> o.toString()).collect(joining(",")));
-		m.put(INSTANTIATION, IntStream.range(0, settings.instantiatedVars.length)
-				.mapToObj(i -> settings.instantiatedVars[i] + "=" + settings.instantiatedVals[i]).collect(joining(",")));
-		m.put(PRIORITY, Stream.of(settings.priorityVars).map(o -> o.toString()).collect(joining(",")));
-		m.put(N_STRICT_PRIORITY, settings.nStrictPriorityVars);
+		m.separator(options.selection.length() > 0 || options.instantiation.length() > 0 || options.priority1.length() > 0 || options.priority2.length() > 0);
+		m.put(SELECTION, options.selection);
+		m.put(INSTANTIATION, options.instantiation);
+		m.put(PRIORITY, options.priority1 + " - " + options.priority2);
 		return m;
 	}
 

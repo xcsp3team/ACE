@@ -185,7 +185,6 @@ import constraints.intension.Reification.ReifLogic;
 import dashboard.Control.SettingGeneral;
 import dashboard.Control.SettingGlobal;
 import dashboard.Control.SettingIntension;
-import dashboard.Control.SettingVars;
 import heuristics.HeuristicValues;
 import interfaces.Observers.ObserverOnConstruction;
 import main.Head;
@@ -398,8 +397,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			log.info("Reset of problem instance");
 	}
 
-	public void reduceTo(boolean[] presentVariables, boolean[] presentConstraints) { // currently, used by
-																						// HeadExtraction
+	public void reduceTo(boolean[] presentVariables, boolean[] presentConstraints) {
+		// currently, used by HeadExtraction
 		control(symmetryGroupGenerators.size() == 0 && presentVariables.length == variables.length && presentConstraints.length == constraints.length);
 		assert Variable.firstWipeoutVariableIn(variables) == null && Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints);
 		priorityVars = IntStream.range(0, variables.length).filter(i -> presentVariables[i]).mapToObj(i -> variables[i]).toArray(Variable[]::new);
@@ -484,26 +483,42 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		assert Variable.areNumsNormalized(variables);// && Constraint.areIdsNormalized(constraints); TODO
 	}
 
-	public Variable findVarWithNumOrId(Object o) {
-		String msg = "Check your solving options -ins -pr1 and -pr2";
+	/**
+	 * @param o
+	 *            an object that must be either the id of a variable or the number of a variable
+	 * @return the variable with the specified id or number
+	 */
+	public Variable variableWithNumOrId(Object o) {
 		Variable x = o instanceof Integer ? variables[(Integer) o] : mapForVars.get(o);
-		control(x != null, "The variable " + o + " cannot be found. " + msg);
-		control(x.num != Variable.UNSET_NUM, "You cannot use the discarded variable " + o + ". " + msg);
+		assert x != null : "The variable " + o + " cannot be found";
+		assert x.num != Variable.UNSET_NUM : "You cannot use the discarded variable " + o;
 		return x;
 	}
 
+	/**
+	 * Takes into account the instantiation possibly specified by the user, by reducing domains
+	 */
 	private void reduceDomainsFromUserInstantiation() {
-		SettingVars settings = head.control.variables;
-		control(settings.instantiatedVars.length == settings.instantiatedVals.length,
-				"In the instantiation, the number of variables (ids or names) is different from the number of values.");
-		for (int i = 0; i < settings.instantiatedVars.length; i++) {
-			Variable x = findVarWithNumOrId(settings.instantiatedVars[i]);
-			int v = settings.instantiatedVals[i];
-			control(x.dom.containsValue(v), "Value " + v + " not present in domain of " + x + ". Check  -ins.");
+		String instantiation = head.control.variables.instantiation;
+		if (instantiation.length() == 0)
+			return;
+		String[] t = instantiation.split(":");
+		control(t.length == 2, "Problem with " + instantiation);
+		Object[] vars = Variable.extractFrom(t[0]);
+		int[] vals = Utilities.toIntegers(t[1].split(","));
+		control(vars.length == vals.length, "In the instantiation, the number of variables (ids or nums) is different from the number of values.");
+		for (int i = 0; i < vars.length; i++) {
+			Variable x = variableWithNumOrId(vars[i]);
+			int v = vals[i];
+			assert x.dom.containsValue(v) : "Value " + v + " not present in domain of " + x + ". Check  -ins.";
 			x.dom.removeValuesAtConstructionTime(w -> w != v);
 		}
 	}
 
+	/**
+	 * If the context allows it, reduce the domains of isolated variables (i.e., involved in no constraint) to an
+	 * arbitrary value
+	 */
 	private void reduceDomainsOfIsolatedVariables() {
 		// TODO other frameworks ?
 		boolean reduceIsolatedVars = head.control.variables.reduceIsolated && framework == TypeFramework.CSP && settings.solLimit == 1

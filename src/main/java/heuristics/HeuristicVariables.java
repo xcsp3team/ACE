@@ -16,7 +16,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import dashboard.Control.SettingVarh;
-import dashboard.Control.SettingVars;
 import interfaces.Observers.ObserverOnRuns;
 import problem.Problem;
 import propagation.GIC.GIC2;
@@ -153,10 +152,12 @@ public abstract class HeuristicVariables extends Heuristic {
 	public HeuristicVariables(Solver solver, boolean anti) {
 		super(anti);
 		this.solver = solver;
-		SettingVars settingVars = solver.head.control.variables;
-		if (settingVars.priorityVars.length > 0) { // used in priory wrt those of the problem
-			this.priorityVars = Stream.of(settingVars.priorityVars).map(o -> solver.problem.findVarWithNumOrId(o)).toArray(Variable[]::new);
-			this.nStrictlyPriorityVars = settingVars.nStrictPriorityVars;
+		String priority1 = solver.head.control.variables.priority1, priority2 = solver.head.control.variables.priority2;
+		if (priority1.length() > 0 || priority2.length() > 0) { // used in priory wrt those of problem
+			Object[] p1 = Variable.extractFrom(priority1), p2 = Variable.extractFrom(priority2);
+			this.priorityVars = Stream.concat(Stream.of(p1), Stream.of(p2)).map(o -> solver.problem.variableWithNumOrId(o)).toArray(Variable[]::new);
+			assert Stream.of(priorityVars).distinct().count() == priorityVars.length;
+			this.nStrictlyPriorityVars = p1.length;
 		} else {
 			this.priorityVars = solver.problem.priorityVars;
 			this.nStrictlyPriorityVars = solver.problem.nStrictPriorityVars;

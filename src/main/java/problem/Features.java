@@ -13,7 +13,6 @@ package problem;
 import static java.util.stream.Collectors.joining;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -141,6 +140,11 @@ public final class Features {
 		public final Set<String> discardedVars = new HashSet<>();
 
 		/**
+		 * The ids or numbers of variables selected by the user (if empty, no selection)
+		 */
+		private final Object[] selectedVars = Variable.extractFrom(problem.head.control.variables.selection);
+
+		/**
 		 * Returns true if the specified variable must be discarded
 		 * 
 		 * @param x
@@ -148,18 +152,17 @@ public final class Features {
 		 * @return true if the specified variable must be discarded
 		 */
 		private boolean mustDiscard(IVar x) {
-			Object[] selectedVars = problem.head.control.variables.selectedVars;
 			if (selectedVars.length == 0)
 				return false;
 			int num = collecting.variables.size() + discardedVars.size();
-			boolean mustDiscard = Arrays.binarySearch(selectedVars, selectedVars[0] instanceof Integer ? num : x.id()) < 0;
+			boolean mustDiscard = Stream.of(selectedVars).anyMatch(o -> o.equals(num) || o.equals(x.id()));
 			if (mustDiscard)
 				discardedVars.add(x.id());
 			return mustDiscard;
 		}
 
 		private boolean mustDiscard(IVar[] scp) {
-			if (problem.head.control.variables.selectedVars.length == 0)
+			if (selectedVars.length == 0)
 				return false;
 			boolean mustDiscard = Stream.of(scp).map(x -> x.id()).anyMatch(id -> discardedVars.contains(id));
 			if (mustDiscard)
@@ -261,7 +264,7 @@ public final class Features {
 	/**
 	 * The object used for collecting variables and constraints at construction (initialization)
 	 */
-	public final Collecting collecting = new Collecting();
+	public final Collecting collecting;
 
 	/**
 	 * Statistical repartition of variable degrees
@@ -289,6 +292,7 @@ public final class Features {
 	public final Repartitioner<String> ctrTypes;
 
 	public int nIsolatedVars, nFixedVars, nSymbolicVars;
+
 	public int nRemovedUnaryCtrs, nConvertedConstraints; // conversion intension to extension
 
 	public int nMergedCtrs, nDiscardedCtrs, nAddedCtrs;
@@ -334,6 +338,7 @@ public final class Features {
 
 	protected Features(Problem problem) {
 		this.problem = problem;
+		this.collecting = new Collecting();
 		boolean verbose = problem.head.control.general.verbose > 1;
 		this.varDegrees = new Repartitioner<>(verbose);
 		this.domSizes = new Repartitioner<>(verbose);

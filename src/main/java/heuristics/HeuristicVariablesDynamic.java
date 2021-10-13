@@ -419,9 +419,9 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	}
 
 	/**
-	 * A basic variant of activity-based search heuristic, as described in "Activity-Based Search for Black-Box
-	 * Constraint Programming Solvers", CPAIOR 2012: 228-243 by L. Michel, and P. Van Hentenryck. Certainly, better
-	 * implementations or variants are possible.
+	 * Activity-based search heuristic is described in "Activity-Based Search for Black-Box Constraint Programming
+	 * Solvers", CPAIOR 2012: 228-243 by L. Michel, and P. Van Hentenryck. Here, this is a basic variant. Certainly,
+	 * better implementations or variants are possible.
 	 */
 	public static final class Activity extends ActivityImpactAbstract {
 
@@ -461,8 +461,9 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	}
 
 	/**
-	 * A basic variant of impact-based search heuristic, as described in "Impact-Based Search Strategies for Constraint
-	 * Programming", CP 2004: 557-571 by P. Refalo. Certainly, better implementations or variants are possible.
+	 * Impact-based search heuristic is described in "Impact-Based Search Strategies for Constraint Programming", CP
+	 * 2004: 557-571 by P. Refalo. Here, this is a basic variant. Certainly, better implementations or variants are
+	 * possible.
 	 */
 	public static final class Impact extends ActivityImpactAbstract {
 

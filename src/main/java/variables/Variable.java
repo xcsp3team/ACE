@@ -15,6 +15,7 @@ import static utility.Kit.control;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -413,18 +414,6 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**
-	 * @param vars
-	 *            an array of variables
-	 * @return the signature of the specified variables by considering the name of their domain types
-	 */
-	public static final StringBuilder signatureFor(Variable... vars) {
-		StringBuilder sb = new StringBuilder();
-		for (Variable x : vars)
-			sb.append(x.dom.typeName()).append(' ');
-		return sb;
-	}
-
-	/**
 	 * Returns a string composed of the values assigned to the variables that are successively encountered when
 	 * considering the specified object. Carriage return characters and the specified prefix can be used when listing
 	 * these values, so as to show the structure of the arrays.
@@ -469,6 +458,52 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 		}
 		// recursive call
 		return Stream.of((Object[]) array).map(o -> rawInstantiationOf(o)).collect(joining(" "));
+	}
+
+	/**
+	 * @param vars
+	 *            an array of variables
+	 * @return the signature of the specified variables by considering the name of their domain types
+	 */
+	public static final StringBuilder signatureFor(Variable... vars) {
+		StringBuilder sb = new StringBuilder();
+		for (Variable x : vars)
+			sb.append(x.dom.typeName()).append(' ');
+		return sb;
+	}
+
+	/**
+	 * Analyzes the specified string in order to extract the id or number of variables
+	 * 
+	 * @param s
+	 *            a string denoting a list of variable ids and/or numbers
+	 * @return an array with the ids or numbers of variables involved in the specified string
+	 */
+	public static Object[] extractFrom(String s) {
+		if (s == null || s.trim().length() == 0)
+			return new Object[0];
+		Set<Object> set = new HashSet<>();
+		for (String token : s.split(",")) {
+			if (token.contains("..")) {
+				control(token.matches("-?\\d+\\.\\.\\d+"), () -> " Pb with " + token);
+				int[] t = Utilities.toIntegers(token.split("\\.\\."));
+				for (int num = Math.abs(t[0]); num <= t[1]; num++)
+					if (t[0] >= 0)
+						set.add(num);
+					else
+						set.remove(num);
+			} else {
+				Integer num = Utilities.toInteger(token);
+				if (num != null) {
+					if (num >= 0)
+						set.add(num);
+					else
+						set.remove(-num);
+				} else
+					set.add(token); // must be the id of a variable
+			}
+		}
+		return set.stream().toArray();
 	}
 
 	/**********************************************************************************************

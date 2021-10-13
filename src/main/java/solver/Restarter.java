@@ -62,9 +62,9 @@ public class Restarter implements ObserverOnRuns {
 	@Override
 	public void beforeRun() {
 		numRun++;
-		if ((numRun - solver.solutions.lastRun) % settings.nRestartsResetPeriod == 0) {
+		if ((numRun - solver.solutions.lastRun) % settings.resetPeriod == 0) {
 			nRestartsSinceReset = 0;
-			baseCutoff = baseCutoff * settings.nRestartsResetCoefficient;
+			baseCutoff = baseCutoff * settings.resetCoefficient;
 			System.out.println("    ...resetting restart cutoff to " + baseCutoff);
 		}
 		// we rerun propagation if a solution has just been found (since the objective constraint has changed), or if it
@@ -199,7 +199,7 @@ public class Restarter implements ObserverOnRuns {
 	 * @return true if no more run must be started
 	 */
 	public boolean allRunsFinished() {
-		return numRun + 1 >= settings.nRunsLimit;
+		return numRun + 1 >= settings.nRuns;
 	}
 
 	/**********************************************************************************************

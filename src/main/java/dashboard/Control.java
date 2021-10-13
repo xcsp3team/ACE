@@ -20,10 +20,8 @@ import static utility.Kit.control;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 import java.util.zip.Deflater;
@@ -60,7 +58,6 @@ import interfaces.Tags.TagExperimental;
 import learning.IpsReasoner.LearningIps;
 import learning.NogoodReasoner.LearningNogood;
 import main.Head;
-import main.HeadExtraction;
 import main.HeadExtraction.Extraction;
 import optimization.ObjectiveVariable;
 import optimization.Optimizer;
@@ -125,40 +122,27 @@ public final class Control {
 	public final SettingGeneral general;
 
 	public final SettingProblem problem;
-
 	public final SettingVars variables;
-
+	public final SettingCtrs constraints;
 	public final SettingOptimization optimization;
 
-	public final SettingCtrs constraints;
-
 	public final SettingExtension extension;
-
 	public final SettingIntension intension;
-
 	public final SettingGlobal global;
 
 	public final SettingPropagation propagation;
-
 	public final SettingShaving shaving;
-
 	public final SettingLearning learning;
 
 	public final SettingSolving solving;
-
 	public final SettingRestarts restarts;
-
 	public final SettingLNS lns;
 
+	public final SettingRevh revh;
 	public final SettingVarh varh;
-
 	public final SettingValh valh;
 
-	public final SettingRevh revh;
-
 	public final SettingExtraction extraction;
-
-	public final SettingExperimental experimental;
 
 	public Control(String controlFilename) {
 		this.options = new ArrayList<>();
@@ -168,9 +152,9 @@ public final class Control {
 
 		this.problem = new SettingProblem();
 		this.variables = new SettingVars();
+		this.constraints = new SettingCtrs();
 		this.optimization = new SettingOptimization();
 
-		this.constraints = new SettingCtrs();
 		this.extension = new SettingExtension();
 		this.intension = new SettingIntension();
 		this.global = new SettingGlobal();
@@ -183,13 +167,11 @@ public final class Control {
 		this.restarts = new SettingRestarts();
 		this.lns = new SettingLNS();
 
-		this.extraction = new SettingExtraction();
-
 		this.revh = new SettingRevh();
 		this.varh = new SettingVarh();
 		this.valh = new SettingValh();
 
-		this.experimental = new SettingExperimental();
+		this.extraction = new SettingExtraction();
 
 		general.verbose = general.verbose < 1 && general.trace.length() > 0 ? 1 : general.verbose;
 		control(0 <= general.verbose && general.verbose <= 3, () -> "Verbose must be in 0..3");
@@ -330,7 +312,7 @@ public final class Control {
 			String s = new String();
 			s += "    -" + key() + (shortcut != null ? " -" + shortcut : "") + "\n";
 			s += "\t" + (description == null || description.length() == 0 ? "Description is missing..." : description) + "\n";
-			s += "\tDefault value is : " + (defaultValue instanceof String && ((String) defaultValue).length() == 0 ? "\"\" (empty string)" : defaultValue)
+			s += "\tDefault value is: " + (defaultValue instanceof String && ((String) defaultValue).length() == 0 ? "\"\" (empty string)" : defaultValue)
 					+ "\n";
 			if (root != null)
 				s += "\tPossible values: " + Stream.of(Reflector.searchClassesInheritingFrom(root)).filter(c -> !(TagExperimental.class.isAssignableFrom(c)))
@@ -450,83 +432,11 @@ public final class Control {
 				+ "\n\tEach token is variable id, a variable number (integer) or an interval of the form i..j with i and j integers.."
 				+ "\n\tFor example, -pr2=2..10,31,-4 will denote the list 2 3 5 6 7 8 9 10 31.";
 
-		protected final String selection = addS("selection", "sel", "", s_sel);
-		protected final String instantiation = addS("instantiation", "ins", "", s_ins);
-		protected final String priority1 = addS("priority1", "pr1", "", s_pr1);
-		protected final String priority2 = addS("priority2", "pr2", "", s_pr2);
+		public final String selection = addS("selection", "sel", "", s_sel);
+		public final String instantiation = addS("instantiation", "ins", "", s_ins);
+		public final String priority1 = addS("priority1", "pr1", "", s_pr1);
+		public final String priority2 = addS("priority2", "pr2", "", s_pr2);
 		public final boolean reduceIsolated = addB("reduceIsolated", "riv", true, "Arbitrary keeping a single value in the domain of isolated variables");
-
-		private Object[] readSelectionList(String s) {
-			if (s == null || s.trim().length() == 0)
-				return new Object[0];
-			String msg = "Badly formed list. For example, you cannot mix ids and numbers of variables in the same list.";
-			Set<Object> set = new HashSet<>();
-			for (String token : s.split(",")) {
-				if (token.contains("..")) {
-					control(token.matches("-?\\d+\\.\\.\\d+"), () -> msg + " Pb with " + token);
-					control(set.isEmpty() || set.iterator().next() instanceof Integer, () -> msg);
-					int[] t = Utilities.toIntegers(token.split("\\.\\."));
-					for (int num = Math.abs(t[0]); num <= t[1]; num++)
-						if (t[0] >= 0)
-							set.add(num);
-						else
-							set.remove(num);
-				} else {
-					Integer num = Utilities.toInteger(token);
-					if (num != null) {
-						control(set.isEmpty() || set.iterator().next() instanceof Integer, () -> msg);
-						if (num >= 0)
-							set.add(num);
-						else
-							set.remove(-num);
-					} else {
-						control(set.isEmpty() || set.iterator().next() instanceof String, () -> msg);
-						set.add(token); // id
-					}
-				}
-			}
-			return set.stream().sorted().toArray();
-		}
-
-		private Object splitSelection(boolean left) {
-			if (instantiation.trim().length() == 0)
-				return left ? new Object[0] : new int[0];
-			String[] t = instantiation.trim().split(":");
-			control(t.length == 2, () -> instantiation);
-			return left ? readSelectionList(t[0]) : Utilities.toIntegers(t[1].split(","));
-		}
-
-		private Object[] controlAndFinalizeVariablesLists(Object[] priority1Vars, Object[] priority2Vars) {
-			// Selected variables are only valid for XCSP ; control about instantiatedVars and instantiatedVals is made
-			// in reduceDomainsFromUserInstantiation of Problem
-			Object[] t = Stream.concat(Stream.concat(Stream.of(instantiatedVars), Stream.of(priority1Vars)), Stream.of(priority2Vars)).toArray(Object[]::new);
-			if (t.length > 0) {
-				control(Stream.of(t).distinct().count() == t.length, () -> "Two variables are identical in your lists (-sel -pr1 -pr2)");
-				control(selectedVars.length == 0 || Stream.of(t).allMatch(o -> Arrays.binarySearch(selectedVars, o) >= 0),
-						() -> "One variable present in one of your list -ins -pr1 or -pr2 is not present in your selection (-sel).");
-			}
-			return t;
-		}
-
-		// either nums of selected variables or ids of selected variables
-		public final Object[] selectedVars = readSelectionList(selection);
-
-		// either nums of instantiated variables or ids of instantiated variables
-		public final Object[] instantiatedVars = (Object[]) splitSelection(true);
-
-		public final int[] instantiatedVals = (int[]) splitSelection(false);
-
-		private final Object[] priority1Vars = readSelectionList(priority1), priority2Vars = readSelectionList(priority2);
-
-		public final Object[] priorityVars = controlAndFinalizeVariablesLists(priority1Vars, priority2Vars);
-
-		public final int nStrictPriorityVars = instantiatedVars.length + priority1Vars.length;
-	}
-
-	public class SettingOptimization extends SettingGroup {
-		public long lb = addL("lb", "lb", MINUS_INFINITY, "initial lower bound");
-		public long ub = addL("ub", "ub", PLUS_INFINITY, "initial upper bound");
-		public final OptimizationStrategy strategy = addE("strategy", "os", OptimizationStrategy.DECREASING, "optimization strategy");
 	}
 
 	public class SettingCtrs extends SettingGroup {
@@ -537,16 +447,22 @@ public final class Control {
 		public final int positionsUb = addI("positionsUb", "posub", 10000, "Maximal number of variables to build the array positions");
 	}
 
+	public class SettingOptimization extends SettingGroup {
+		public long lb = addL("lb", "", MINUS_INFINITY, "Initial lower bound");
+		public long ub = addL("ub", "", PLUS_INFINITY, "Initial upper bound");
+		public final OptimizationStrategy strategy = addE("strategy", "os", OptimizationStrategy.DECREASING, "Optimization strategy");
+	}
+
 	public class SettingExtension extends SettingGroup {
 		public final Extension positive = addE("positive", "", Extension.CT, "Algorithm for (non-binary) positive table constraints");
 		public final Extension negative = addE("negative", "", Extension.V, "Algorithm for (non-binary) negative table constraint");
-		public final boolean generic2 = addB("generic2", "", true, "Should we use a generic filtering scheme for binary table constraints?");
+		public final boolean generic2 = addB("generic2", "", true, "Must we use a generic filtering scheme for binary table constraints?");
 		public final String structureClass2 = addS("structureClass2", "sc2", Bits.class, null, "Structures to be used for binary table constraints");
 		public final String structureClass3 = addS("structureClass3", "sc3", Matrix3D.class, null, "Structures to be used for ternary table constraints");
 		public final int arityLimitToPositive = addI("arityLimitToPositive", "alp", -1, "Limit on arity for converting negative table constraints to positive");
 		public final int arityLimitToNegative = addI("arityLimitToNegative", "aln", -1, "Limit on arity for converting positive table constraints to negative");
 		public final int variant = addI("variant", "extv", 0, "Variant to be used for some algorithms (e.g., VA or CMDD)");
-		public final boolean decremental = addB("decremental", "extd", true, "Should we use a decremental mode for some algorithms (e.g., STR2, CT or CMDD)");
+		public final boolean decremental = addB("decremental", "extd", true, "Must we use a decremental mode for some algorithms (e.g., STR2, CT or CMDD)");
 
 		public boolean reverse(int arity, boolean positive) {
 			return (positive && arity <= arityLimitToNegative) || (!positive && arity <= arityLimitToPositive);
@@ -559,11 +475,11 @@ public final class Control {
 		public final int arityLimitToExtension = addI("arityLimitToExtension", "ale", 0, "Limit on arity for possibly converting to extension");
 		public final int spaceLimitToExtension = addI("spaceLimitToExtension", "sle", 20, "Limit on space for possibly converting to extension");
 		// The following options determine whether special forms of intension constraints must be recognized/intercepted
-		public final boolean recognizePrimitive2 = addB("recognizePrimitive2", "rp2", true, "should we attempt to recognize binary primitives?");
-		public final boolean recognizePrimitive3 = addB("recognizePrimitive3", "rp3", true, "should we attempt to recognize ternary primitives?");
-		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "should we attempt to recognize logical reification forms?");
-		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "should we attempt to recognize minimum/maximum constraints?");
-		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "should we attempt to recognize sum constraints?");
+		public final boolean recognizePrimitive2 = addB("recognizePrimitive2", "rp2", true, "Must we attempt to recognize binary primitives?");
+		public final boolean recognizePrimitive3 = addB("recognizePrimitive3", "rp3", true, "Must we attempt to recognize ternary primitives?");
+		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "Must we attempt to recognize logical reification forms?");
+		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "Must we attempt to recognize minimum/maximum constraints?");
+		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "Must we attempt to recognize sum constraints?");
 
 		public boolean toExtension(Variable[] vars) {
 			return vars.length <= arityLimitToExtension && Constraint.howManyVariablesWithin(vars, spaceLimitToExtension) == Constants.ALL;
@@ -576,26 +492,26 @@ public final class Control {
 		public final int allEqual = addI("allEqual", "g_ae", 0, "Algorithm for AllEqual");
 		public final int notAllEqual = addI("notAllEqual", "g_nae", 0, "Algorithm for NotAllEqual");
 		public final int noOverlap = addI("noOverlap", "g_no", 0, "Algorithm for NoOverlap");
-		public final boolean redundNoOverlap = addB("redundNoOverlap", "r_no", true, "");
+		public final boolean redundNoOverlap = addB("redundNoOverlap", "r_no", true, "Must we post redundant constraints for NoOverlap?");
 		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");
-		public final boolean viewForSum = addB("viewForSum", "vs", false, "Should we use views for Sum constraints, when possible?");
-		public final boolean permutations = addB("permutations", "", false, "Use permutation constraints for AllDifferent if possible (may be faster)");
-		public final int allDifferentNb = addI("allDifferentNb", "iad", 0, "Number of possibly automatically inferred AllDifferent");
-		public final int allDifferentSize = addI("allDifferentSize", "iadsz", 5, "Limit on the size of possibly automatically inferred AllDifferent");
+		public final boolean viewForSum = addB("viewForSum", "vs", false, "Must we use views for Sum constraints, when possible?");
+		public final boolean permutations = addB("permutations", "", false,
+				"Must we use permutation constraints for AllDifferent if possible? (may be faster)");
+		public final int allDifferentNb = addI("allDifferentNb", "adn", 0, "Number of possibly automatically inferred AllDifferent");
+		public final int allDifferentSize = addI("allDifferentSize", "ads", 5, "Limit on the size of possibly automatically inferred AllDifferent");
 
 		public final boolean starred = addB("starred", "", false, "When true, some global constraints are encoded by starred tables");
 		public final boolean hybrid = addB("hybrid", "", false, "When true, some global constraints are encoded by hybrid/smart tables");
 	}
 
 	public class SettingPropagation extends SettingGroup {
-		String s_uaq = "If enabled, queues of constraints are used in addition to the queue of variables. The purpose is to propagate less often the most costly constraints.";
-
 		public String clazz = addS("clazz", "p", AC.class, null, "Class to be used for propagation (for example, FC, AC or SAC3)");
 		public final int variant = addI("variant", "pv", 0, "Propagation Variant (only used for some consistencies)", HIDDEN);
-		public final boolean useAuxiliaryQueues = addB("useAuxiliaryQueues", "uaq", false, s_uaq);
-		public final String reviser = addS("reviser", "reviser", Reviser3.class, Reviser.class, "class to be used for performing revisions");
-		public boolean residues = addB("residues", "res", true, "Must we use redidues (AC3rm)?");
-		public boolean bitResidues = addB("bitResidues", "bres", true, "Must we use bit resides (AC3bit+rm)?");
+		public final boolean useAuxiliaryQueues = addB("useAuxiliaryQueues", "uaq", false, "Must we use auxiliary queues of constraints?");
+		// above, the purpose is to propagate less often the most costly constraints
+		public final String reviser = addS("reviser", "reviser", Reviser3.class, Reviser.class, "Class to be used for performing revisions");
+		public final boolean residues = addB("residues", "res", true, "Must we use redidues (AC3rm)?");
+		public final boolean bitResidues = addB("bitResidues", "bres", true, "Must we use bit resides (AC3bit+rm)?");
 		public final boolean multidirectionality = addB("multidirectionality", "mul", true, "");
 
 		// three ways of control on (G)AC for intention constraints
@@ -612,95 +528,83 @@ public final class Control {
 	}
 
 	public class SettingShaving extends SettingGroup {
-		public int parameter = addI("parameter", "s_p", 1, "", HIDDEN);
+		public final int parameter = addI("parameter", "s_p", 1, "", HIDDEN);
 		public final double eligibilityThreshod = addD("eligibilityThreshod", "s_et", 3.0, "", HIDDEN);
 		public final int limitedPropagationSamplingSize = addI("limitedPropagationSamplingSize", "s_lpss", 100, "", HIDDEN);
 		public final double ratio = addD("ratio", "s_r", 0.0, "");
 		public final double alpha = addD("alpha", "s_a", 0.0, "");
 	}
 
-	public class SettingLNS extends SettingGroup {
-		public final boolean enabled = addB("enabled", "lns_e", false, "LNS activated if true");
-		public final String clazz = addS("clazz", "lns_h", Rand.class, null, "class to be used as freezing heuristic");
-		public final int nFreeze = addI("nFreeze", "lns_n", 0, "number of variables to freeze when restarting.");
-		public final int pFreeze = addI("pFreeze", "lns_p", 10, "percentage of variables to freeze when restarting.");
+	public class SettingLearning extends SettingGroup {
+		public final LearningNogood nogood = addE("nogood", "ng", LearningNogood.RST, "Nogood recording technique (from restarts by default)");
+		public final int nogoodBaseLimit = addI("nogoodBaseLimit", "ngbl", 200000, "The maximum number of nogoods that can be stored in the base");
+		public final int nogoodArityLimit = addI("nogoodArityLimit", "ngal", Integer.MAX_VALUE, "The maximum arity of a nogood that can be recorded");
+		public final LearningIps ips = addE("ips", "", LearningIps.NO, "IPS extraction technique (currently, no such learning by default)");
+		public final String ipsOperators = addS("ipsOperators", "ipso", "11011", "Reduction operators for IPSs; a sequence of 5 bits is used");
+		public final int ipsCompression = addI("ipsCompression", "ipsc", Deflater.NO_COMPRESSION, "IPS Compression for equivalence reasoning");
+		// BEST_SPEED or BEST_COMPRESSION as alternatives
+		public final int ipsCompressionLimit = addI("ipsCompressionLimit", "ipscl", 300, "IPS Compression limit for equivalence reasoning");
 	}
 
 	public class SettingSolving extends SettingGroup {
-		public String clazz = addS("clazz", "s_class", Solver.class, null, "The name of the class used to explore the search space");
-		public boolean enablePrepro = addB("enablePrepro", "prepro", true, "must we perform preprocessing?");
-		public boolean enableSearch = addB("enableSearch", "search", true, "must we perform search?");
+		public final String clazz = addS("clazz", "s_class", Solver.class, null, "Class for solving (usually, Solver)");
+		public final boolean enablePrepro = addB("enablePrepro", "prepro", true, "Must we perform preprocessing?");
+		public boolean enableSearch = addB("enableSearch", "search", true, "Must we perform search?");
 		public final Branching branching = addE("branching", "branching", Branching.BIN, "Branching scheme for search (binary or non-binary)");
 	}
 
 	public class SettingRestarts extends SettingGroup {
-		String s_c = "The number of the counter (number of backtracks, number of failed assignments, ...) before the solver restarts."
-				+ "\n\tWhen no value is given, the cutoff is set to Integer.MAX_VALUE.";
-		String s_rrp = "Period, in term of number of restarts, for resetting restart data.";
-		String s_rrc = "Coefficient used for increasing the cutoff, when restart data are reset";
-
-		public int nRunsLimit = addI("nRunsLimit", "r_n", Integer.MAX_VALUE, "maximal number of runs (restarts) to be performed");
-		public long cutoff = addL("cutoff", "r_c", 10, s_c); // for COP, it is initially multiplied by 10 in Restarter
-		public double factor = addD("factor", "r_f", 1.1, "The geometric increasing factor when updating the curtoff");
-		public final RestartMeasure measure = addE("measure", "r_m", RestartMeasure.FAILED, "The metrics used for measuring and comparing to the cutoff");
-		public int nRestartsResetPeriod = addI("nRestartsResetPeriod", "r_rrp", 90, s_rrp);
-		public final int nRestartsResetCoefficient = addI("nRestartsResetCoefficient", "r_rrc", 2, s_rrc);
-		public final int varhResetPeriod = addI("varhResetPeriod", "r_rp", Integer.MAX_VALUE, "");
-		public final int varhSolResetPeriod = addI("varhSolResetPeriod", "r_srp", 30, "");
-		public boolean restartAfterSolution = addB("restartAfterSolution", "ras", false, "");
-		public boolean luby = addB("luby", "r_luby", false, "True if a Luby series must be used instead of a geometric one");
+		public int nRuns = addI("nRuns", "r_n", Integer.MAX_VALUE, "Maximal number of runs (restarts) to be performed");
+		public long cutoff = addL("cutoff", "r_c", 10, "Cutoff as a value of, e.g., the number of failed asignments before restarting");
+		// the cutoff,for COP, it is initially multiplied by 10 in Restarter
+		public final double factor = addD("factor", "r_f", 1.1, "The geometric increasing factor when updating the cutoff");
+		public final RestartMeasure measure = addE("measure", "r_m", RestartMeasure.FAILED, "The metrics used for measuring and comparing with the cutoff");
+		public final int resetPeriod = addI("resetPeriod", "r_rp", 90, "Period, in term of number of restarts, for resetting restart data.");
+		public final int resetCoefficient = addI("resetCoefficient", "r_rc", 2, "Coefficient used for increasing the cutoff, when restart data are reset");
+		public final int varhResetPeriod = addI("varhResetPeriod", "r_vrp", Integer.MAX_VALUE, "");
+		public final int varhSolResetPeriod = addI("varhSolResetPeriod", "r_vsrp", 30, "");
+		public boolean restartAfterSolution = addB("restartAfterSolution", "ras", false, "Must we restart every time a solution is found?");
+		public final boolean luby = addB("luby", "", false, "Must we use a Luby series instead of a geometric one?");
 	}
 
-	public class SettingLearning extends SettingGroup {
-		public LearningNogood nogood = addE("nogood", "l_ng", LearningNogood.RST, "Nogood recording technique (nogood recording from restarts by default)");
-		public final int nogoodBaseLimit = addI("nogoodBaseLimit", "l_ngbl", 200000, "The maximum number of nogoods that can be stored in the base");
-		public final int nogoodArityLimit = addI("nogoodArityLimit", "l_ngal", Integer.MAX_VALUE, "The maximum arity of a nogood that can be recorded", HIDDEN);
-		public final LearningIps ips = addE("ips", "ips", LearningIps.NO, "IPS extraction technique (currently, no such learning by default)");
-		public final String ipsOperators = addS("ipsOperators", "ipso", "11011", "Reduction operators for IPSs; a sequence of 5 bits is used").trim();
-		public final int ipsCompressionEquivalence = addI("ipsCompressionEquivalence", "ipsc", Deflater.NO_COMPRESSION, "", HIDDEN);
-		// BEST_SPEED or BEST_COMPRESSION as alternatives
-		public final int ipsCompressionLimitEquivalence = addI("ipsCompressionLimitEquivalence", "ipscl", 300, "", HIDDEN);
+	public class SettingLNS extends SettingGroup {
+		public final boolean enabled = addB("enabled", "lns_e", false, "Must we activate LNS?");
+		public final String clazz = addS("clazz", "lns_h", Rand.class, null, "Class of the freezing heuristic");
+		public final int nFreeze = addI("nFreeze", "lns_n", 0, "Number of variables to freeze when restarting");
+		public final int pFreeze = addI("pFreeze", "lns_p", 10, "Percentage of variables to freeze when restarting");
 	}
 
 	public class SettingRevh extends SettingGroup {
-		public final String clazz = addS("clazz", "revh", Dom.class, HeuristicRevisions.class, "class of the revision ordering heuristic");
-		public final boolean anti = addB("anti", "anti_revh", false, "reverse of the natural heuristic order?");
+		public final String clazz = addS("clazz", "revh", Dom.class, HeuristicRevisions.class, "Class of the revision ordering heuristic");
+		public final boolean anti = addB("anti", "anti_revh", false, "Must we use the reverse of the natural heuristic order?");
 	}
 
 	public class SettingVarh extends SettingGroup {
-		public final String clazz = addS("clazz", "varh", Wdeg.class, HeuristicVariables.class, "class of the variable ordering heuristic");
-		public final boolean anti = addB("anti", "anti_varh", false, "reverse of the natural heuristic order?");
-		public final int lc = addI("lc", "lc", 2, "value for lc (last conflict); 0 if not activated");
-		public final ConstraintWeighting weighting = addE("weighting", "wt", ConstraintWeighting.CACD, "how to manage weights for wdeg variants");
-		public final SingletonStrategy singleton = addE("singleton", "sing", SingletonStrategy.LAST, "how to manage singleton variables during search");
-		public final boolean discardAux = addB("discardAux", "da", false, "must we not branch on auxiliary variables introduced by the solver?");
+		public final String clazz = addS("clazz", "varh", Wdeg.class, HeuristicVariables.class, "Class of the variable ordering heuristic");
+		public final boolean anti = addB("anti", "anti_varh", false, "Must we use the reverse of the natural heuristic order?");
+		public final int lc = addI("lc", "lc", 2, "Value for lc (last conflict); 0 if not activated");
+		public final ConstraintWeighting weighting = addE("weighting", "wt", ConstraintWeighting.CACD, "How to manage weights for wdeg variants");
+		public final SingletonStrategy singleton = addE("singleton", "sing", SingletonStrategy.LAST, "How to manage singleton variables during search");
+		public final boolean discardAux = addB("discardAux", "da", false, "Must we not branch on auxiliary variables introduced by the solver?");
 	}
 
 	public class SettingValh extends SettingGroup {
-		public final String clazz = addS("clazz", "valh", First.class, HeuristicValues.class, "class of the value ordering heuristic");
-		public final boolean anti = addB("anti", "anti_valh", false, "reverse of the natural heuristic order?");
-		public final boolean runProgressSaving = addB("runProgressSaving", "rps", false, "run progress saving");
-		public final int solutionSaving = addI("solutionSaving", "sos", 1, "solution saving (0 disabled, 1 enabled, otherwise desactivation period");
-		public final String warmStart = addS("warmStart", "warm", "", "a starting instantiation (solution) to be used with solution saving");
+		public final String clazz = addS("clazz", "valh", First.class, HeuristicValues.class, "Class of the value ordering heuristic");
+		public final boolean anti = addB("anti", "anti_valh", false, "Must we use the reverse of the natural heuristic order?");
+		public final boolean runProgressSaving = addB("runProgressSaving", "rps", false, "Must we use run progress saving?");
+		public final int solutionSaving = addI("solutionSaving", "sos", 1, "Solution saving (0: disabled, 1: enabled, otherwise desactivation period");
+		public final String warmStart = addS("warmStart", "warm", "", "A starting instantiation (solution) to be used with solution saving");
 
-		public final boolean bivsFirst = addB("bivsFirst", "bivs_f", true, "bivs stopped at first found solution?");
-		public final boolean bivsOptimistic = addB("bivsOptimistic", "bivs_o", true, "optimistic bivs mode? (or pessimistic?)");
+		public final boolean bivsFirst = addB("bivsFirst", "bivs_f", true, "Must we stop BIVS at first found solution?");
+		public final boolean bivsOptimistic = addB("bivsOptimistic", "bivs_o", true, "Must we use the optimistic BIVS mode?");
 		public final int bivsDistance = addI("bivsDistance", "bivs_d", 2, "0: only if in the objective constraint; 1: if at distance 0 or 1; 2: any variable");
-		public final int bivsLimit = addI("bivsLimit", "bivs_l", Integer.MAX_VALUE, "bivs applied only if the domain size is <= bivsl");
-		public final boolean optValHeuristic = addB("optValHeuristic", "ovh", false, "");
+		public final int bivsLimit = addI("bivsLimit", "bivs_l", Integer.MAX_VALUE, "BIVS applied only if the domain size is <= this value");
+		public final boolean optValHeuristic = addB("optValHeuristic", "ovh", false, ""); // experimental
 	}
 
 	public class SettingExtraction extends SettingGroup {
-		String s = "\n\tValid only with the command: java " + HeadExtraction.class.getName();
-
-		public final Extraction method = addE("method", "e_m", Extraction.VAR, "method for extracting unsatisfiable cores." + s);
-		public final int nCores = addI("nCores", "e_nc", 1, "number of unsatifiable cores to be extracted." + s);
-	}
-
-	public class SettingExperimental extends SettingGroup {
-		public int testI1 = addI("testI1", "testI1", 0, "", HIDDEN);
-		public int testI2 = addI("testI2", "testI2", 0, "", HIDDEN);
-		public int testI3 = addI("testI3", "testI3", 0, "", HIDDEN);
+		public final Extraction method = addE("method", "e_m", Extraction.VAR, "Method for extracting unsatisfiable cores with HeadExtraction");
+		public final int nCores = addI("nCores", "e_n", 1, "Number of unsatifiable cores to be extracted with HeadExtraction");
 	}
 
 	/**********************************************************************************************

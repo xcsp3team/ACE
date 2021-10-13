@@ -25,11 +25,12 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * A constraint that ensures that two lists/vectors of variables (of same size) are not equal, i.e., do not form the same tuple of values. IMPORTANT: for the
- * moment, when the same variable occurs several times, AC is not guaranteed. We find 279360 solutions for: <br />
+ * A constraint that ensures that two lists/vectors of variables (of same size) are not equal, i.e., do not form the
+ * same tuple of values. IMPORTANT: for the moment, when the same variable occurs several times, AC is not guaranteed.
+ * We find 279360 solutions for: <br />
  * java ace Crossword-ogd-p02.xml -s=all -varh=Dom -g_dv=1 // intension <br />
- * java ace Crossword-ogd-p02.xml -s=all -varh=Dom -g_dv=1 -st // smart tables <br />
- * java ace Crossword-ogd-p02.xml -s=all -varh=Dom // distinct vectors
+ * java ace Crossword-ogd-p02.xml -s=all -varh=Dom -g_dv=1 -hybrid // smart tables <br />
+ * java ace Crossword-ogd-p02.xml -s=all -varh=Dom // distinct lists
  * 
  * @author Christophe Lecoutre
  * 
