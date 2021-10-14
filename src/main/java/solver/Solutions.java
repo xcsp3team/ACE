@@ -198,7 +198,7 @@ public final class Solutions {
 			assert found > 0;
 			StringBuilder sb = new StringBuilder("<instantiation id='sol").append(found).append("' type='solution'");
 			sb.append(solver.problem.framework != CSP ? " cost='" + bestBound + "'" : "").append(">");
-			sb.append(" <list> ").append(xmlVars).append(" </list> <values> ").append(vals(solver.problem.settings.xmlCompact, true));
+			sb.append(" <list> ").append(xmlVars).append(" </list> <values> ").append(vals(solver.problem.options.xmlCompact, true));
 			return sb.append(" </values> </instantiation>").toString();
 		}
 	}

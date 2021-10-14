@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 
 import constraints.Constraint;
 import constraints.ConstraintGlobal;
-import dashboard.Control.SettingPropagation;
+import dashboard.Control.OptionsPropagation;
 import interfaces.Observers.ObserverOnConflicts;
 import learning.IpsReasonerDominance;
 import sets.SetSparse;
@@ -189,9 +189,9 @@ public abstract class Propagation {
 	public int nTuplesRemoved;
 
 	/**
-	 * The setting options concerning propagation
+	 * The options concerning propagation
 	 */
-	protected final SettingPropagation settings;
+	protected final OptionsPropagation options;
 
 	/*************************************************************************
 	 * Methods
@@ -222,8 +222,8 @@ public abstract class Propagation {
 	public Propagation(Solver solver) {
 		this.solver = solver;
 		this.queue = this instanceof Forward ? new Queue((Forward) this) : null;
-		this.settings = solver.head.control.propagation;
-		int nAuxQueues = settings.useAuxiliaryQueues ? MAX_FILTERING_COMPLEXITY : 0;
+		this.options = solver.head.control.propagation;
+		int nAuxQueues = options.useAuxiliaryQueues ? MAX_FILTERING_COMPLEXITY : 0;
 		this.auxiliaryQueues = this instanceof Forward
 				? IntStream.range(0, nAuxQueues).mapToObj(i -> new SetSparseMap(solver.problem.constraints.length)).toArray(SetSparseMap[]::new)
 				: null;

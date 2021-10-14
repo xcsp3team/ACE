@@ -11,7 +11,7 @@
 package learning;
 
 import constraints.Constraint;
-import dashboard.Control.SettingLearning;
+import dashboard.Control.OptionsLearning;
 import interfaces.Observers.ObserverOnConflicts;
 import interfaces.Observers.ObserverOnRemovals;
 import interfaces.Observers.ObserverOnRuns;
@@ -123,9 +123,9 @@ public abstract class IpsReasoner implements ObserverOnRuns, ObserverOnConflicts
 	public final Explainer explainer;
 
 	/**
-	 * The setting options concerning learning
+	 * The options concerning learning
 	 */
-	protected final SettingLearning settings;
+	protected final OptionsLearning options;
 
 	public boolean stopped = false;
 
@@ -142,7 +142,7 @@ public abstract class IpsReasoner implements ObserverOnRuns, ObserverOnConflicts
 		this.variables = solver.problem.variables;
 		this.extractor = new IpsExtractor(this);
 		this.explainer = new Explainer();
-		this.settings = solver.head.control.learning;
+		this.options = solver.head.control.learning;
 	}
 
 	protected boolean mustStop() {

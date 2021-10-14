@@ -35,7 +35,7 @@ import org.xcsp.common.Utilities;
 import constraints.Constraint;
 import constraints.ConstraintExtension;
 import constraints.ConstraintIntension;
-import dashboard.Control.SettingVars;
+import dashboard.Control.OptionsVariables;
 import interfaces.Observers.ObserverOnConstruction;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Observers.ObserverOnSolving;
@@ -435,7 +435,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	}
 
 	private InformationBloc instanceInfo(int instanceNumber) {
-		SettingVars options = head.control.variables;
+		OptionsVariables options = head.control.variables;
 		InformationBloc m = new InformationBloc(INSTANCE);
 		m.put(NAME, head.problem.name());
 		m.put(NUMBER, instanceNumber, Input.nInstancesToSolve > 1);

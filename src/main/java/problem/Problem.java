@@ -49,6 +49,7 @@ import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.relo
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.unalop;
 import static org.xcsp.common.predicates.XNode.node;
 import static org.xcsp.common.predicates.XNodeParent.add;
+import static org.xcsp.common.predicates.XNodeParent.build;
 import static org.xcsp.common.predicates.XNodeParent.eq;
 import static org.xcsp.common.predicates.XNodeParent.ge;
 import static org.xcsp.common.predicates.XNodeParent.iff;
@@ -182,9 +183,9 @@ import constraints.intension.Reification.Reif2;
 import constraints.intension.Reification.Reif2.Reif2EQ;
 import constraints.intension.Reification.Reif3;
 import constraints.intension.Reification.ReifLogic;
-import dashboard.Control.SettingGeneral;
-import dashboard.Control.SettingGlobal;
-import dashboard.Control.SettingIntension;
+import dashboard.Control.OptionsGeneral;
+import dashboard.Control.OptionsGlobal;
+import dashboard.Control.OptionsIntension;
 import heuristics.HeuristicValues;
 import interfaces.Observers.ObserverOnConstruction;
 import main.Head;
@@ -357,9 +358,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final List<List<int[]>> symmetryGroupGenerators = new ArrayList<>();
 
 	/**
-	 * The settings for general options
+	 * The general options
 	 */
-	public final SettingGeneral settings;
+	public final OptionsGeneral options;
 
 	/**
 	 * The cumulated number of removals (value deletions) made all along the solving process
@@ -393,7 +394,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Stream.of(constraints).forEach(c -> c.ignored = false);
 		// should we rebuild a Features object?
 		nValueRemovals = 0;
-		if (settings.verbose > 0)
+		if (options.verbose > 0)
 			log.info("Reset of problem instance");
 	}
 
@@ -409,7 +410,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				constraints[i].reset();
 		// stuff = new ProblemStuff(this); // TODO reset or building a new object ?
 		nValueRemovals = 0;
-		if (settings.verbose > 0)
+		if (options.verbose > 0)
 			log.info("Reduction to (#V=" + priorityVars.length + ",#C=" + Kit.countIn(true, presentConstraints) + ")");
 	}
 
@@ -452,7 +453,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (head.control.general.verbose > 0)
 				System.out.println("Time for generating symmetry-breaking constraints: " + stopwatch.wckTimeInSeconds());
 		}
-		SettingGlobal options = head.control.global;
+		OptionsGlobal options = head.control.global;
 		if (options.allDifferentNb > 0) {
 			stopwatch.start();
 			List<Variable[]> cliques = ReinforcerAllDifferent.buildCliques(variables, constraints, options.allDifferentNb, options.allDifferentSize);
@@ -521,7 +522,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 */
 	private void reduceDomainsOfIsolatedVariables() {
 		// TODO other frameworks ?
-		boolean reduceIsolatedVars = head.control.variables.reduceIsolated && framework == TypeFramework.CSP && settings.solLimit == 1
+		boolean reduceIsolatedVars = head.control.variables.reduceIsolated && framework == TypeFramework.CSP && options.solLimit == 1
 				&& head.control.problem.symmetryBreaking == SymmetryBreaking.NO;
 		List<Variable> isolatedVars = new ArrayList<>(), fixedVars = new ArrayList<>();
 		int nRemovedValues = 0;
@@ -552,7 +553,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		this.head = head;
 		head.problem = this; // required because it is needed during the initialization of some objects
 		head.observersConstruction.add(0, this); // Must be the first in the list when calling afterSolverConstruction
-		this.settings = head.control.general;
+		this.options = head.control.general;
 		this.features = new Features(this);
 
 		// we load data and build the model (we follow the scheme of the Compiler API from XCSP-Java-Tools)
@@ -574,10 +575,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * Displays information about the (variables and constraints of the) problem
 	 */
 	public final void display() {
-		if (settings.verbose >= 2) {
+		if (options.verbose >= 2) {
 			log.finer("\nProblem " + name());
-			Stream.of(variables).forEach(x -> x.display(settings.verbose == 3));
-			Stream.of(constraints).forEach(c -> c.display(settings.verbose == 3));
+			Stream.of(variables).forEach(x -> x.display(options.verbose == 3));
+			Stream.of(constraints).forEach(c -> c.display(options.verbose == 3));
 		}
 	}
 
@@ -832,7 +833,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		int arity = scp.length;
 		// System.out.println("Tree " + tree);
 
-		SettingIntension options = head.control.intension;
+		OptionsIntension options = head.control.intension;
 		if (arity == 1) {
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 			Variable x = (Variable) tree.var(0);
@@ -1286,7 +1287,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	// ************************************************************************
-	// ***** Constraint sum
+	// ***** Constraints Sum and Product
 	// ************************************************************************
 
 	public static class Term implements Comparable<Term> {
@@ -1350,14 +1351,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		if (only1) {
-			// if (rs.cp.hardCoding.convertBooleanSumAsCountingCtr && op != NE && Variable.areInitiallyBoolean(list)) {
-			// control(0 <= limit && limit <= list.length);
-			// int l = (int) limit;
-			// return op == LT ? api.atMost(vs, 1, l - 1)
-			// : op == LE ? api.atMost(vs, 1, l) : op == GE ? api.atLeast(vs, 1, l) : op == GT ? api.atLeast(vs, 1, l +
-			// 1) : api.exactly(vs, 1, l);
-			// }
-
+			// TODO if op != NE && Variable.areInitiallyBoolean(list), return atMost, atLeast or exactly?
+			// not sure at all that it may be more efficient
 			return post(SumSimple.buildFrom(this, list, op, limit));
 		}
 		return post(SumWeighted.buildFrom(this, list, coeffs, op, limit));
@@ -1389,7 +1384,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			assert coeffs[0] != 0;
 			if (condition instanceof ConditionSet) // rightTerm is either an object Range or an int array
 				rightTerm = api.set(rightTerm);
-			XNodeParent<IVar> tree = XNodeParent.build(condition.operatorTypeExpr(), coeffs[0] == 1 ? list[0] : api.mul(list[0], coeffs[0]), rightTerm);
+			XNodeParent<IVar> tree = build(condition.operatorTypeExpr(), coeffs[0] == 1 ? list[0] : api.mul(list[0], coeffs[0]), rightTerm);
 			return extension(tree); // we directly generate a table constraint because the arity is 1 or 2
 		}
 
@@ -1483,7 +1478,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (condition instanceof ConditionRel) {
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Object rightTerm = condition.rightTerm();
-			VariableInteger[] scp = (VariableInteger[]) translate(clean(list));
+			Variable[] scp = translate(clean(list));
 			if (condition instanceof ConditionVal)
 				return post(ProductSimple.buildFrom(this, scp, op, (long) rightTerm));
 		}
@@ -1648,7 +1643,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Constraint minimum/ maximum
 	// ************************************************************************
 
-	private final CtrEntity extremum(final Var[] list, Condition condition, boolean minimum) {
+	private final CtrEntity extremum(Var[] list, Condition condition, boolean minimum) {
 		if (condition instanceof ConditionRel) {
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Object rightTerm = condition.rightTerm();
@@ -1656,7 +1651,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			Constraint c = null;
 			if (condition instanceof ConditionVal) {
 				if (vars.length == 1)
-					return intension(XNodeParent.build(op.toExpr(), vars[0], (long) rightTerm));
+					return intension(build(op.toExpr(), vars[0], (long) rightTerm));
 				c = ExtremumCst.buildFrom(this, vars, op, (long) rightTerm, minimum);
 			} else if (op == EQ) {
 				Variable y = (Variable) rightTerm;
@@ -1731,12 +1726,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrAlone element(Var[] list, Condition condition) {
+		// this corresponds to Member
 		if (condition instanceof ConditionVal && ((ConditionRel) condition).operator == EQ)
-			return (CtrAlone) atLeast((VariableInteger[]) translate(list), safeInt(((ConditionVal) condition).k), 1); // element(list,
-																														// safeInt(((ConditionVal)
-		// TODO for EQ - VAR using sentinelVal1, sentinelVal2 (for two values in dom(value)), and sentinelVar1,
-		// sentinelVar2 for two variables in list //
-		// condition).k));
+			return (CtrAlone) atLeast((VariableInteger[]) translate(list), safeInt(((ConditionVal) condition).k), 1);
+		// TODO for LT, LE, GE and GT, posting minimum or maximum constraints if ConditionRel?
+		// for EQ - VAR using sentinelVal1, sentinelVal2 (for two values in dom(value)),
+		// and sentinelVar1,sentinelVar2 for two variables in list ?
 		return (CtrAlone) unimplemented("element");
 	}
 
@@ -2059,7 +2054,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			// return addCtr(new BinPackingSimple(this, translate(list), sizes, limit - (op == LT ? 1 : 0)));
+			// return post(new BinPackingSimple(this, vars, sizes, limit - (op == LT ? 1 : 0)));
 			return post(new BinPacking2(this, vars, sizes, limit - (op == LT ? 1 : 0))); // TODO add nValues ? other ?
 		}
 		return unimplemented("binPacking");
@@ -2077,12 +2072,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public CtrEntity circuit(Var[] list, int startIndex, int size) {
-		return unimplemented("circuit");
+		return unimplemented("circuit"); // TODO just posting two constraints?
 	}
 
 	@Override
 	public CtrEntity circuit(Var[] list, int startIndex, Var size) {
-		return unimplemented("circuit");
+		return unimplemented("circuit"); // TODO just posting two constraints?
 	}
 
 	// ************************************************************************
@@ -2127,7 +2122,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	// ************************************************************************
-	// ***** Meta-Constraint slide
+	// ***** Meta-Constraint slide, ifThen and ifThenElse
 	// ************************************************************************
 
 	@Override
@@ -2138,10 +2133,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return manageLoop(() -> IntStream.range(0, range.stop).filter(i -> i % range.step == 0).mapToObj(i -> (Constraint) ((CtrAlone) template.apply(i)).ctr)
 				.toArray(Constraint[]::new));
 	}
-
-	// ************************************************************************
-	// ***** Meta-Constraints ifThen and ifThenElse
-	// ************************************************************************
 
 	@Override
 	public final CtrEntity ifThen(CtrEntity c1, CtrEntity c2) {
@@ -2169,7 +2160,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	/**
 	 * Posts the specified objective (constraint), i.e., records it as being the objective of the problem
 	 * 
-	 * @param x
+	 * @param c
 	 *            an objective constraint to be posted
 	 * @return the posted objective
 	 */
@@ -2191,7 +2182,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private boolean switchToSatisfaction(TypeOptimization opt, TypeObjective obj, int[] coeffs, Variable... list) {
-		int limit = settings.satisfactionLimit;
+		int limit = options.satisfactionLimit;
 		if (limit == PLUS_INFINITY_INT)
 			return false;
 		if (obj == EXPRESSION) {
@@ -2355,7 +2346,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public void decisionVariables(IVar[] list) {
-		if (settings.enableAnnotations)
+		if (options.enableAnnotations)
 			super.decisionVariables(list);
 	}
 

@@ -15,7 +15,7 @@ import static utility.Kit.control;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import dashboard.Control.SettingVarh;
+import dashboard.Control.OptionsVarh;
 import interfaces.Observers.ObserverOnRuns;
 import problem.Problem;
 import propagation.GIC.GIC2;
@@ -130,9 +130,9 @@ public abstract class HeuristicVariables extends Heuristic {
 	private int nStrictlyPriorityVars;
 
 	/**
-	 * The setting options concerning the variable ordering heuristics
+	 * The options concerning the variable ordering heuristics
 	 */
-	protected SettingVarh settings;
+	protected OptionsVarh options;
 
 	/**
 	 * The object used to record the best scored variable, when looking for it
@@ -162,7 +162,7 @@ public abstract class HeuristicVariables extends Heuristic {
 			this.priorityVars = solver.problem.priorityVars;
 			this.nStrictlyPriorityVars = solver.problem.nStrictPriorityVars;
 		}
-		this.settings = solver.head.control.varh;
+		this.options = solver.head.control.varh;
 		this.bestScoredVariable = new BestScoredVariable(solver.head.control.varh.discardAux);
 	}
 
@@ -194,7 +194,7 @@ public abstract class HeuristicVariables extends Heuristic {
 		if (nPast < priorityVars.length) {
 			if (nPast < nStrictlyPriorityVars)
 				return priorityVars[nPast];
-			if (settings.lc > 0) {
+			if (options.lc > 0) {
 				Variable x = solver.lastConflict.priorityVariable();
 				if (x != null && x.presentIn(priorityVars))
 					return x;
@@ -268,7 +268,7 @@ public abstract class HeuristicVariables extends Heuristic {
 		public Memory(Solver solver, boolean anti) {
 			super(solver, anti);
 			this.order = new int[solver.problem.variables.length];
-			control(!settings.discardAux);
+			control(!options.discardAux);
 		}
 
 		@Override

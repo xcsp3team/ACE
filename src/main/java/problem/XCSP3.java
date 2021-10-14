@@ -70,7 +70,7 @@ import org.xcsp.parser.entries.XVariables.XVar;
 import org.xcsp.parser.entries.XVariables.XVarInteger;
 import org.xcsp.parser.entries.XVariables.XVarSymbolic;
 
-import dashboard.Control.SettingGeneral;
+import dashboard.Control.OptionsGeneral;
 import dashboard.Input;
 import variables.DomainFinite.DomainSymbols;
 import variables.Variable;
@@ -127,7 +127,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		implem.currParameters.remove(RECOGNIZE_EXTREMUM_CASES);
 		implem.currParameters.remove(RECOGNIZE_SUM_CASES);
 		try {
-			SettingGeneral options = problem.head.control.general;
+			OptionsGeneral options = problem.head.control.general;
 			if (options.verbose > 1)
 				XParser.VERBOSE = true;
 			if (options.discardClasses.indexOf(',') < 0)

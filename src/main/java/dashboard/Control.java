@@ -94,9 +94,9 @@ public final class Control {
 	public static void main(String[] args) {
 		Integer maximumPriority = args.length != 2 ? null : Utilities.toInteger(args[1]);
 		if (args.length != 2 || maximumPriority == null || maximumPriority < 1 || maximumPriority > 3) {
-			System.out.println("\tTool used to generate a default option settings file.");
+			System.out.println("\tTool used to generate a default option control file.");
 			System.out.println("\tUsage : " + Control.class.getName() + " <outputFileName> <maximumPriority>");
-			System.out.println("\n\toutputFileName : name of the generated option settings file.");
+			System.out.println("\n\toutputFileName : name of the generated option control file.");
 			System.out.println("\n\tmaximumPriority : only parameters with a priority value lower than this number (between 1 and 3) are generated");
 		} else {
 			new File(Kit.getPathOf(args[0])).mkdirs();
@@ -119,59 +119,59 @@ public final class Control {
 	 */
 	public final UserSettings userSettings;
 
-	public final SettingGeneral general;
+	public final OptionsGeneral general;
 
-	public final SettingProblem problem;
-	public final SettingVars variables;
-	public final SettingCtrs constraints;
-	public final SettingOptimization optimization;
+	public final OptionsProblem problem;
+	public final OptionsVariables variables;
+	public final OptionsConstraints constraints;
+	public final OptionsOptimization optimization;
 
-	public final SettingExtension extension;
-	public final SettingIntension intension;
-	public final SettingGlobal global;
+	public final OptionsExtension extension;
+	public final OptionsIntension intension;
+	public final OptionsGlobal global;
 
-	public final SettingPropagation propagation;
-	public final SettingShaving shaving;
-	public final SettingLearning learning;
+	public final OptionsPropagation propagation;
+	public final OptionsShaving shaving;
+	public final OptionsLearning learning;
 
-	public final SettingSolving solving;
-	public final SettingRestarts restarts;
-	public final SettingLNS lns;
+	public final OptionsSolving solving;
+	public final OptionsRestarts restarts;
+	public final OptionsLNS lns;
 
-	public final SettingRevh revh;
-	public final SettingVarh varh;
-	public final SettingValh valh;
+	public final OptionsRevh revh;
+	public final OptionsVarh varh;
+	public final OptionsValh valh;
 
-	public final SettingExtraction extraction;
+	public final OptionsExtraction extraction;
 
 	public Control(String controlFilename) {
 		this.options = new ArrayList<>();
 		this.userSettings = new UserSettings(controlFilename);
 
-		this.general = new SettingGeneral();
+		this.general = new OptionsGeneral();
 
-		this.problem = new SettingProblem();
-		this.variables = new SettingVars();
-		this.constraints = new SettingCtrs();
-		this.optimization = new SettingOptimization();
+		this.problem = new OptionsProblem();
+		this.variables = new OptionsVariables();
+		this.constraints = new OptionsConstraints();
+		this.optimization = new OptionsOptimization();
 
-		this.extension = new SettingExtension();
-		this.intension = new SettingIntension();
-		this.global = new SettingGlobal();
+		this.extension = new OptionsExtension();
+		this.intension = new OptionsIntension();
+		this.global = new OptionsGlobal();
 
-		this.propagation = new SettingPropagation();
-		this.shaving = new SettingShaving();
-		this.learning = new SettingLearning();
+		this.propagation = new OptionsPropagation();
+		this.shaving = new OptionsShaving();
+		this.learning = new OptionsLearning();
 
-		this.solving = new SettingSolving();
-		this.restarts = new SettingRestarts();
-		this.lns = new SettingLNS();
+		this.solving = new OptionsSolving();
+		this.restarts = new OptionsRestarts();
+		this.lns = new OptionsLNS();
 
-		this.revh = new SettingRevh();
-		this.varh = new SettingVarh();
-		this.valh = new SettingValh();
+		this.revh = new OptionsRevh();
+		this.varh = new OptionsVarh();
+		this.valh = new OptionsValh();
 
-		this.extraction = new SettingExtraction();
+		this.extraction = new OptionsExtraction();
 
 		general.verbose = general.verbose < 1 && general.trace.length() > 0 ? 1 : general.verbose;
 		control(0 <= general.verbose && general.verbose <= 3, () -> "Verbose must be in 0..3");
@@ -336,7 +336,7 @@ public final class Control {
 	 * Groups of options
 	 *********************************************************************************************/
 
-	private class SettingGroup {
+	private class OptionGroup {
 
 		private <T> T add(Option<T> option) {
 			control(option.shortcut != null, () -> "A shortcut must be given");
@@ -349,7 +349,7 @@ public final class Control {
 		}
 
 		private String tag() {
-			control(getClass().getSimpleName().startsWith("Setting"));
+			control(getClass().getSimpleName().startsWith("Options"));
 			return getClass().getSimpleName().substring(7);
 		}
 
@@ -384,7 +384,7 @@ public final class Control {
 		}
 	}
 
-	public class SettingGeneral extends SettingGroup {
+	public class OptionsGeneral extends OptionGroup {
 		String s_verbose = "\n\t0 : only some global statistics are listed ;" + "\n\t1 : in addition, solutions are  shown ;"
 				+ "\n\t2 : in addition, additionnal information about the problem instance to be solved is given ;"
 				+ "\n\t3 : in addition, for each constraint, allowed or unallowed tuples are displayed.";
@@ -407,14 +407,14 @@ public final class Control {
 		public int verbose = addI("verbose", "v", 0, "Verbosity level (value between 0 and 3)" + s_verbose);
 	}
 
-	public class SettingProblem extends SettingGroup {
+	public class OptionsProblem extends OptionGroup {
 		public final String data = addS("data", "", "", "Parameter similar to the one defined for " + org.xcsp.modeler.Compiler.class.getName());
 		public final String variant = addS("variant", "", "", "Parameter similar to the one defined for " + org.xcsp.modeler.Compiler.class.getName());
 		public final boolean shareBits = addB("shareBits", "", false, "Trying to save space by sharing bit vectors.");
 		public final SymmetryBreaking symmetryBreaking = addE("symmetryBreaking", "sb", NO, "Symmetry-breaking method (requires Saucy to be installed");
 	}
 
-	public class SettingVars extends SettingGroup {
+	public class OptionsVariables extends OptionGroup {
 		String s_sel = "Allows us to give a list of variable that will form the subproblem to be solved."
 				+ "\n\tThis list is composed of a sequence of tokens separated by commas (no whitespace)."
 				+ "\n\tEach token is a variable id a variable number or an interval of the form i..j with i and j integers."
@@ -439,7 +439,7 @@ public final class Control {
 		public final boolean reduceIsolated = addB("reduceIsolated", "riv", true, "Arbitrary keeping a single value in the domain of isolated variables");
 	}
 
-	public class SettingCtrs extends SettingGroup {
+	public class OptionsConstraints extends OptionGroup {
 		public final boolean preserve1 = addB("preserve1", "pc1", true, "Must we keep unary constraints (instead of filtering them straight)");
 		public final TypeCtr ignoredType = Types.valueOf(TypeCtr.class, addS("ignoreType", "", "", "Dicard all constraints of this type"));
 		public final int ignoreArity = addI("ignoreArity", "", -1, "Discard all constraints of this arity");
@@ -447,13 +447,13 @@ public final class Control {
 		public final int positionsUb = addI("positionsUb", "posub", 10000, "Maximal number of variables to build the array positions");
 	}
 
-	public class SettingOptimization extends SettingGroup {
+	public class OptionsOptimization extends OptionGroup {
 		public long lb = addL("lb", "", MINUS_INFINITY, "Initial lower bound");
 		public long ub = addL("ub", "", PLUS_INFINITY, "Initial upper bound");
 		public final OptimizationStrategy strategy = addE("strategy", "os", OptimizationStrategy.DECREASING, "Optimization strategy");
 	}
 
-	public class SettingExtension extends SettingGroup {
+	public class OptionsExtension extends OptionGroup {
 		public final Extension positive = addE("positive", "", Extension.CT, "Algorithm for (non-binary) positive table constraints");
 		public final Extension negative = addE("negative", "", Extension.V, "Algorithm for (non-binary) negative table constraint");
 		public final boolean generic2 = addB("generic2", "", true, "Must we use a generic filtering scheme for binary table constraints?");
@@ -469,7 +469,7 @@ public final class Control {
 		}
 	}
 
-	public class SettingIntension extends SettingGroup {
+	public class OptionsIntension extends OptionGroup {
 		public final int decompose = addI("decompose", "di", 1, "0: no decomposition, 1: conditional decomposition, 2: forced decompostion");
 		public final boolean toExtension1 = addB("toExtension1", "ie1", true, "Must we convert unary intension constraints to extension?");
 		public final int arityLimitToExtension = addI("arityLimitToExtension", "ale", 0, "Limit on arity for possibly converting to extension");
@@ -486,7 +486,7 @@ public final class Control {
 		}
 	}
 
-	public class SettingGlobal extends SettingGroup {
+	public class OptionsGlobal extends OptionGroup {
 		public final int allDifferent = addI("allDifferent", "g_ad", 0, "Algorithm for AllDifferent");
 		public final int distinctVectors = addI("distinctVectors", "g_dv", 0, "Algorithm for DistinctVectors");
 		public final int allEqual = addI("allEqual", "g_ae", 0, "Algorithm for AllEqual");
@@ -504,30 +504,26 @@ public final class Control {
 		public final boolean hybrid = addB("hybrid", "", false, "When true, some global constraints are encoded by hybrid/smart tables");
 	}
 
-	public class SettingPropagation extends SettingGroup {
-		public String clazz = addS("clazz", "p", AC.class, null, "Class to be used for propagation (for example, FC, AC or SAC3)");
-		public final int variant = addI("variant", "pv", 0, "Propagation Variant (only used for some consistencies)", HIDDEN);
+	public class OptionsPropagation extends OptionGroup {
+		public final String clazz = addS("clazz", "p", AC.class, null, "Class to be used for propagation (for example, FC, AC or SAC3)");
+		public final int variant = addI("variant", "pv", 0, "Propagation Variant (only used for some consistencies)");
 		public final boolean useAuxiliaryQueues = addB("useAuxiliaryQueues", "uaq", false, "Must we use auxiliary queues of constraints?");
 		// above, the purpose is to propagate less often the most costly constraints
-		public final String reviser = addS("reviser", "reviser", Reviser3.class, Reviser.class, "Class to be used for performing revisions");
+		public final String reviser = addS("reviser", "", Reviser3.class, Reviser.class, "Class to be used for performing revisions");
 		public final boolean residues = addB("residues", "res", true, "Must we use redidues (AC3rm)?");
 		public final boolean bitResidues = addB("bitResidues", "bres", true, "Must we use bit resides (AC3bit+rm)?");
-		public final boolean multidirectionality = addB("multidirectionality", "mul", true, "");
-
-		// three ways of control on (G)AC for intention constraints
+		public final boolean multidirectionality = addB("multidirectionality", "mul", true, "Must we use multidirectionality");
+		// now, three ways of control on (G)AC for intention constraints
 		public final int futureLimit = addI("futureLimit", "fl", -1,
 				"AC not enforced when the number of future variables is greater than this value (if not -1)");
 		public final int spaceLimit = addI("spaceLimit", "sl", 20,
 				"AC not enforced when size of the Cartesian product of domains is  greater than 2 to the power of this value (if not -1)");
 		public final int arityLimit = addI("arityLimit", "al", 2, "AC not enforced if the arity is greater than this value");
-
-		public boolean strongOnlyAtPreprocessing = addB("strongOnlyAtPreprocessing", "sop", false, "");
-		public final boolean strongOnlyWhenACEffective = addB("strongOnlyWhenACEffective", "soe", false, "");
-		public final boolean strongOnlyWhenNotSingleton = addB("strongOnlyWhenNotSingleton", "sons", true, "");
-		public final int weakCutoff = addI("weakCutoff", "wc", 15, "");
+		public boolean strongOnce = addB("strongOnce", "so", false, "Must we only apply the strong consistency (when chosen) before search?");
+		public final boolean strongAC = addB("strongAC", "sac", false, "Must we only apply the strong consistency (when chosen) when AC is effective?");
 	}
 
-	public class SettingShaving extends SettingGroup {
+	public class OptionsShaving extends OptionGroup {
 		public final int parameter = addI("parameter", "s_p", 1, "", HIDDEN);
 		public final double eligibilityThreshod = addD("eligibilityThreshod", "s_et", 3.0, "", HIDDEN);
 		public final int limitedPropagationSamplingSize = addI("limitedPropagationSamplingSize", "s_lpss", 100, "", HIDDEN);
@@ -535,7 +531,7 @@ public final class Control {
 		public final double alpha = addD("alpha", "s_a", 0.0, "");
 	}
 
-	public class SettingLearning extends SettingGroup {
+	public class OptionsLearning extends OptionGroup {
 		public final LearningNogood nogood = addE("nogood", "ng", LearningNogood.RST, "Nogood recording technique (from restarts by default)");
 		public final int nogoodBaseLimit = addI("nogoodBaseLimit", "ngbl", 200000, "The maximum number of nogoods that can be stored in the base");
 		public final int nogoodArityLimit = addI("nogoodArityLimit", "ngal", Integer.MAX_VALUE, "The maximum arity of a nogood that can be recorded");
@@ -546,14 +542,14 @@ public final class Control {
 		public final int ipsCompressionLimit = addI("ipsCompressionLimit", "ipscl", 300, "IPS Compression limit for equivalence reasoning");
 	}
 
-	public class SettingSolving extends SettingGroup {
+	public class OptionsSolving extends OptionGroup {
 		public final String clazz = addS("clazz", "s_class", Solver.class, null, "Class for solving (usually, Solver)");
 		public final boolean enablePrepro = addB("enablePrepro", "prepro", true, "Must we perform preprocessing?");
 		public boolean enableSearch = addB("enableSearch", "search", true, "Must we perform search?");
 		public final Branching branching = addE("branching", "branching", Branching.BIN, "Branching scheme for search (binary or non-binary)");
 	}
 
-	public class SettingRestarts extends SettingGroup {
+	public class OptionsRestarts extends OptionGroup {
 		public int nRuns = addI("nRuns", "r_n", Integer.MAX_VALUE, "Maximal number of runs (restarts) to be performed");
 		public long cutoff = addL("cutoff", "r_c", 10, "Cutoff as a value of, e.g., the number of failed asignments before restarting");
 		// the cutoff,for COP, it is initially multiplied by 10 in Restarter
@@ -567,19 +563,19 @@ public final class Control {
 		public final boolean luby = addB("luby", "", false, "Must we use a Luby series instead of a geometric one?");
 	}
 
-	public class SettingLNS extends SettingGroup {
+	public class OptionsLNS extends OptionGroup {
 		public final boolean enabled = addB("enabled", "lns_e", false, "Must we activate LNS?");
 		public final String clazz = addS("clazz", "lns_h", Rand.class, null, "Class of the freezing heuristic");
 		public final int nFreeze = addI("nFreeze", "lns_n", 0, "Number of variables to freeze when restarting");
 		public final int pFreeze = addI("pFreeze", "lns_p", 10, "Percentage of variables to freeze when restarting");
 	}
 
-	public class SettingRevh extends SettingGroup {
+	public class OptionsRevh extends OptionGroup {
 		public final String clazz = addS("clazz", "revh", Dom.class, HeuristicRevisions.class, "Class of the revision ordering heuristic");
 		public final boolean anti = addB("anti", "anti_revh", false, "Must we use the reverse of the natural heuristic order?");
 	}
 
-	public class SettingVarh extends SettingGroup {
+	public class OptionsVarh extends OptionGroup {
 		public final String clazz = addS("clazz", "varh", Wdeg.class, HeuristicVariables.class, "Class of the variable ordering heuristic");
 		public final boolean anti = addB("anti", "anti_varh", false, "Must we use the reverse of the natural heuristic order?");
 		public final int lc = addI("lc", "lc", 2, "Value for lc (last conflict); 0 if not activated");
@@ -588,7 +584,7 @@ public final class Control {
 		public final boolean discardAux = addB("discardAux", "da", false, "Must we not branch on auxiliary variables introduced by the solver?");
 	}
 
-	public class SettingValh extends SettingGroup {
+	public class OptionsValh extends OptionGroup {
 		public final String clazz = addS("clazz", "valh", First.class, HeuristicValues.class, "Class of the value ordering heuristic");
 		public final boolean anti = addB("anti", "anti_valh", false, "Must we use the reverse of the natural heuristic order?");
 		public final boolean runProgressSaving = addB("runProgressSaving", "rps", false, "Must we use run progress saving?");
@@ -602,7 +598,7 @@ public final class Control {
 		public final boolean optValHeuristic = addB("optValHeuristic", "ovh", false, ""); // experimental
 	}
 
-	public class SettingExtraction extends SettingGroup {
+	public class OptionsExtraction extends OptionGroup {
 		public final Extraction method = addE("method", "e_m", Extraction.VAR, "Method for extracting unsatisfiable cores with HeadExtraction");
 		public final int nCores = addI("nCores", "e_n", 1, "Number of unsatifiable cores to be extracted with HeadExtraction");
 	}

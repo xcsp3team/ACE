@@ -282,7 +282,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			IntStream.range(0, Variable.nInitValuesFor(solver.problem.variables)).forEach(i -> trash = new Cell(trash));
 			this.sizes = new int[solver.problem.variables.length];
 			String s = "CellIterator"; // TODO hard coding
-			// settings.classForSACSelector.substring(settings.classForSACSelector.lastIndexOf('$') + 1);
+			// options.classForSACSelector.substring(options.classForSACSelector.lastIndexOf('$') + 1);
 			this.cellSelector = Reflector.buildObject(s, CellSelector.class, this);
 		}
 

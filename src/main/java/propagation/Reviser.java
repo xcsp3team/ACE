@@ -12,7 +12,6 @@ package propagation;
 
 import constraints.Constraint;
 import constraints.extension.structures.Bits;
-import dashboard.Control.SettingPropagation;
 import interfaces.SpecificPropagator;
 import problem.Problem;
 import sets.SetLinked;
@@ -167,8 +166,7 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 		public Reviser3(Forward propagation) {
 			super(propagation);
 			Problem pb = propagation.solver.problem;
-			SettingPropagation settings = pb.head.control.propagation;
-			if (settings.bitResidues) {
+			if (pb.head.control.propagation.bitResidues) {
 				long nResidues = 0;
 				this.bitRmResidues = new short[pb.constraints.length][][];
 				int limit = residueLimit;

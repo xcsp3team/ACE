@@ -34,7 +34,6 @@ import constraints.ConstraintExtension.Extension1;
 import constraints.extension.CSmart;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart;
-import dashboard.Control.SettingCtrs;
 import dashboard.Output;
 import variables.Variable;
 
@@ -180,8 +179,7 @@ public final class Features {
 		public final boolean mustDiscard(XCtr c) {
 			if (mustDiscard(c.vars()))
 				return true;
-			SettingCtrs settings = problem.head.control.constraints;
-			boolean mustDiscard = settings.ignoredType == c.type || settings.ignoreArity == c.vars().length;
+			boolean mustDiscard = problem.head.control.constraints.ignoredType == c.type || problem.head.control.constraints.ignoreArity == c.vars().length;
 			if (mustDiscard)
 				nDiscardedCtrs++;
 			return mustDiscard;

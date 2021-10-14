@@ -61,7 +61,7 @@ public final class IpsReasonerEquivalence extends IpsReasoner {
 		this.openNodesKeys = new ByteArrayHashKey[n];
 		this.openNodesSols = new int[n];
 		this.nBytesPerVariableNum = n <= Math.pow(2, 8) ? 1 : n <= Math.pow(2, 16) ? 2 : n <= Math.pow(2, 24) ? 3 : 4;
-		this.compressor = settings.ipsCompression != Deflater.NO_COMPRESSION ? new Deflater(settings.ipsCompression) : null;
+		this.compressor = options.ipsCompression != Deflater.NO_COMPRESSION ? new Deflater(options.ipsCompression) : null;
 	}
 
 	@Override
@@ -73,7 +73,7 @@ public final class IpsReasonerEquivalence extends IpsReasoner {
 	}
 
 	private byte[] compress(int limit) {
-		assert limit >= settings.ipsCompressionLimit;
+		assert limit >= options.ipsCompressionLimit;
 
 		compressor.reset();
 		compressor.setInput(tmpInput, 0, limit);
@@ -108,7 +108,7 @@ public final class IpsReasonerEquivalence extends IpsReasoner {
 			nTooLargeKeys++;
 		} else {
 			byte[] t = null;
-			if (compressor == null || keySize < settings.ipsCompressionLimit) {
+			if (compressor == null || keySize < options.ipsCompressionLimit) {
 				t = new byte[keySize];
 				System.arraycopy(tmpInput, 0, t, 0, keySize);
 			} else

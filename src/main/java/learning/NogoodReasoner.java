@@ -14,7 +14,7 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import dashboard.Control.SettingLearning;
+import dashboard.Control.OptionsLearning;
 import sets.SetDense;
 import solver.Decisions;
 import solver.Solver;
@@ -83,9 +83,9 @@ public final class NogoodReasoner {
 	public final Decisions decisions;
 
 	/**
-	 * The setting options concerning learning
+	 * The options concerning learning
 	 */
-	final SettingLearning settings;
+	final OptionsLearning options;
 
 	/**
 	 * Arrays with recorded nogoods (at indexes ranging from 0 to nNogoods, excluded)
@@ -129,13 +129,13 @@ public final class NogoodReasoner {
 	public NogoodReasoner(Solver solver) {
 		this.solver = solver;
 		this.decisions = solver.decisions;
-		this.settings = solver.head.control.learning;
-		this.nogoods = new Nogood[settings.nogoodBaseLimit];
+		this.options = solver.head.control.learning;
+		this.nogoods = new Nogood[options.nogoodBaseLimit];
 		this.pws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
 		this.nws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
 		this.tmp = new int[solver.problem.variables.length];
-		// nogoodMinimizer = settings.nogood == LearningNogood.RST_MIN ? new NogoodMinimizer(solver) : null;
-		// symmetryHandler = settings.nogood == RST_SYM ? new SymmetryHandler(this,problem.variables.length) : null;
+		// nogoodMinimizer = options.nogood == LearningNogood.RST_MIN ? new NogoodMinimizer(solver) : null;
+		// symmetryHandler = options.nogood == RST_SYM ? new SymmetryHandler(this,problem.variables.length) : null;
 	}
 
 	public void reset() {
@@ -273,7 +273,7 @@ public final class NogoodReasoner {
 
 	public void addNogoodsOfCurrentBranch() {
 		SetDense set = decisions.set;
-		if (!settings.nogood.isRstType() || set.size() < 2)
+		if (!options.nogood.isRstType() || set.size() < 2)
 			return;
 		int nMetPositiveDecisions = 0;
 		for (int i = 0; i <= set.limit; i++) {
@@ -282,7 +282,7 @@ public final class NogoodReasoner {
 				tmp[nMetPositiveDecisions++] = d;
 			else if (nMetPositiveDecisions > 0) {
 				int[] negativeDecisions = new int[nMetPositiveDecisions + 1];
-				// if (settings.nogood == LearningNogood.RST_MIN && decisions.isFailedAssignment(i)) {
+				// if (options.nogood == LearningNogood.RST_MIN && decisions.isFailedAssignment(i)) {
 				// boolean bottomUp = true; // hard coding
 				// for (int j = 0; j < nMetPositiveDecisions; j++)
 				// currentNogood[j] = tmp[bottomUp ? nMetPositiveDecisions - j - 1 : j];

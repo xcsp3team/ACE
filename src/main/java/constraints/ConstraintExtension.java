@@ -27,7 +27,7 @@ import constraints.ConstraintExtension.ExtensionGeneric.ExtensionV;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.Tries;
-import dashboard.Control.SettingExtension;
+import dashboard.Control.OptionsExtension;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.SpecificPropagator;
 import interfaces.Tags.TagAC;
@@ -147,9 +147,9 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			@Override
 			protected ExtensionStructure buildExtensionStructure() {
 				if (scp.length == 2)
-					return Reflector.buildObject(esettings.structureClass2, ExtensionStructure.class, this);
+					return Reflector.buildObject(extOptions.structureClass2, ExtensionStructure.class, this);
 				if (scp.length == 3)
-					return Reflector.buildObject(esettings.structureClass3, ExtensionStructure.class, this);
+					return Reflector.buildObject(extOptions.structureClass3, ExtensionStructure.class, this);
 				return new Table(this);
 			}
 
@@ -166,8 +166,8 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 
 			@Override
 			protected ExtensionStructure buildExtensionStructure() {
-				assert esettings.variant == 0 || esettings.variant == 1 || esettings.variant == 11;
-				return esettings.variant == 0 ? new Table(this).withSubtables() : new Tries(this, esettings.variant == 11);
+				assert extOptions.variant == 0 || extOptions.variant == 1 || extOptions.variant == 11;
+				return extOptions.variant == 0 ? new Table(this).withSubtables() : new Tries(this, extOptions.variant == 11);
 			}
 
 			public ExtensionVA(Problem pb, Variable[] scp) {
@@ -212,10 +212,10 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 *********************************************************************************************/
 
 	private static ConstraintExtension build(Problem pb, Variable[] scp, boolean positive, boolean starred) {
-		SettingExtension settings = pb.head.control.extension;
+		OptionsExtension options = pb.head.control.extension;
 		control(scp.length > 1);
 		Set<Class<?>> classes = pb.head.availableClasses.get(ConstraintExtension.class);
-		String className = (positive ? settings.positive : settings.negative).toString();
+		String className = (positive ? options.positive : options.negative).toString();
 		className = className.equals("V") || className.equals("VA") ? "Extension" + className : className;
 		if (starred) {
 			control(positive);
@@ -223,7 +223,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			control(c instanceof TagStarredCompatible); // currently, STR2, STR2S, CT, CT2 and MDDSHORT
 			return c;
 		}
-		if (scp.length == 2 && settings.generic2)
+		if (scp.length == 2 && options.generic2)
 			return new ExtensionV(pb, scp); // return new STR2(pb, scp);
 		return (ConstraintExtension) Reflector.buildObject(className, classes, pb, scp);
 	}
@@ -318,9 +318,9 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	}
 
 	/**
-	 * The setting options concerning extension constraints
+	 * The options concerning extension constraints
 	 */
-	protected final SettingExtension esettings;
+	protected final OptionsExtension extOptions;
 
 	/**
 	 * The extension structure defining the semantics of the constraint
@@ -386,7 +386,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 */
 	public ConstraintExtension(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		this.esettings = pb.head.control.extension;
+		this.extOptions = pb.head.control.extension;
 	}
 
 	/**

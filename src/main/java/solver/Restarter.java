@@ -15,7 +15,7 @@ import static utility.Kit.control;
 import java.util.function.Supplier;
 
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
-import dashboard.Control.SettingRestarts;
+import dashboard.Control.OptionsRestarts;
 import interfaces.Observers.ObserverOnRuns;
 import optimization.ObjectiveVariable;
 import optimization.Optimizer;
@@ -62,15 +62,15 @@ public class Restarter implements ObserverOnRuns {
 	@Override
 	public void beforeRun() {
 		numRun++;
-		if ((numRun - solver.solutions.lastRun) % settings.resetPeriod == 0) {
+		if ((numRun - solver.solutions.lastRun) % options.resetPeriod == 0) {
 			nRestartsSinceReset = 0;
-			baseCutoff = baseCutoff * settings.resetCoefficient;
+			baseCutoff = baseCutoff * options.resetCoefficient;
 			System.out.println("    ...resetting restart cutoff to " + baseCutoff);
 		}
 		// we rerun propagation if a solution has just been found (since the objective constraint has changed), or if it
 		// must be forced anyway
 		boolean rerunPropagation = forceRootPropagation || (solver.problem.optimizer != null && numRun - 1 == solver.solutions.lastRun);
-		if (rerunPropagation || (solver.head.control.propagation.strongOnlyAtPreprocessing && 0 < numRun && numRun % 60 == 0)) { // TODO
+		if (rerunPropagation || (solver.head.control.propagation.strongOnce && 0 < numRun && numRun % 60 == 0)) { // TODO
 																																	// hard
 																																	// coding
 			if (solver.propagation.runInitially() == false)
@@ -79,7 +79,7 @@ public class Restarter implements ObserverOnRuns {
 			nRestartsSinceReset = 0;
 		}
 		if (currCutoff != Long.MAX_VALUE) {
-			long offset = settings.luby ? lubyCutoffFor(nRestartsSinceReset + 1) * 150 : (long) (baseCutoff * Math.pow(settings.factor, nRestartsSinceReset));
+			long offset = options.luby ? lubyCutoffFor(nRestartsSinceReset + 1) * 150 : (long) (baseCutoff * Math.pow(options.factor, nRestartsSinceReset));
 			currCutoff = measureSupplier.get() + offset;
 		}
 		nRestartsSinceReset++;
@@ -95,9 +95,9 @@ public class Restarter implements ObserverOnRuns {
 	public Solver solver;
 
 	/**
-	 * The settings used for piloting the restarter (redundant field).
+	 * The options for piloting the restarter (redundant field).
 	 */
-	private SettingRestarts settings;
+	private OptionsRestarts options;
 
 	/**
 	 * The measure function used for handling cutoff values
@@ -134,7 +134,7 @@ public class Restarter implements ObserverOnRuns {
 	 */
 	public void reset() {
 		numRun = -1;
-		currCutoff = baseCutoff = settings.cutoff;
+		currCutoff = baseCutoff = options.cutoff;
 		nRestartsSinceReset = 0;
 	}
 
@@ -145,7 +145,7 @@ public class Restarter implements ObserverOnRuns {
 	 */
 	private Supplier<Long> measureSupplier() {
 		Solver sb = solver != null ? solver : null;
-		switch (settings.measure) {
+		switch (options.measure) {
 		case FAILED:
 			return () -> sb.stats.nFailedAssignments;
 		case WRONG:
@@ -168,9 +168,9 @@ public class Restarter implements ObserverOnRuns {
 	public Restarter(Solver solver) {
 		this.solver = solver;
 		// this.cop = solver.head.control.general.framework == TypeFramework.COP;
-		this.settings = solver.head.control.restarts;
-		if (solver.problem.optimizer != null && settings.cutoff < Integer.MAX_VALUE)
-			settings.cutoff *= 10; // For COPs, the cutoff value is multiplied by 10; hard coding
+		this.options = solver.head.control.restarts;
+		if (solver.problem.optimizer != null && options.cutoff < Integer.MAX_VALUE)
+			options.cutoff *= 10; // For COPs, the cutoff value is multiplied by 10; hard coding
 		this.measureSupplier = measureSupplier();
 		reset();
 	}
@@ -190,7 +190,7 @@ public class Restarter implements ObserverOnRuns {
 			return true;
 		if (optimizer == null || numRun != solver.solutions.lastRun)
 			return false;
-		return settings.restartAfterSolution || optimizer.ctr instanceof MaximumCstLE || optimizer.ctr instanceof ObjectiveVariable;
+		return options.restartAfterSolution || optimizer.ctr instanceof MaximumCstLE || optimizer.ctr instanceof ObjectiveVariable;
 	}
 
 	/**
@@ -199,7 +199,7 @@ public class Restarter implements ObserverOnRuns {
 	 * @return true if no more run must be started
 	 */
 	public boolean allRunsFinished() {
-		return numRun + 1 >= settings.nRuns;
+		return numRun + 1 >= options.nRuns;
 	}
 
 	/**********************************************************************************************

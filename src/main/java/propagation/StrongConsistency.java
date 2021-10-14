@@ -73,9 +73,9 @@ public abstract class StrongConsistency extends AC {
 		int nBefore = solver.problem.nValueRemovals;
 		if (enforceArcConsistency() == false)
 			return false;
-		if (settings.strongOnlyWhenACEffective && solver.problem.nValueRemovals == nBefore)
+		if (options.strongAC && solver.problem.nValueRemovals == nBefore)
 			return true;
-		if (settings.strongOnlyAtPreprocessing && solver.restarter.numRun % 60 != 0)
+		if (options.strongOnce && solver.restarter.numRun % 60 != 0)
 			return true;
 		System.out.println("more");
 		return enforceMore();
@@ -86,8 +86,10 @@ public abstract class StrongConsistency extends AC {
 		int nBefore = solver.problem.nValueRemovals;
 		if (enforceArcConsistencyAfterAssignment(x) == false)
 			return false;
-		if (performingProperSearch || settings.strongOnlyAtPreprocessing || (settings.strongOnlyWhenACEffective && solver.problem.nValueRemovals == nBefore)
-				|| (settings.strongOnlyWhenNotSingleton && x.dom.lastRemovedLevel() != solver.depth() && hasSolverPropagatedAfterLastButOneDecision()))
+		if (performingProperSearch || options.strongOnce || (options.strongAC && solver.problem.nValueRemovals == nBefore)
+				|| (x.dom.lastRemovedLevel() != solver.depth() && hasSolverPropagatedAfterLastButOneDecision()))
+			// the last part of condition means that no value has been deleted by the assignment and propagation was
+			// previously made
 			return true;
 		return enforceMore();
 	}
@@ -97,7 +99,7 @@ public abstract class StrongConsistency extends AC {
 		int nBefore = solver.problem.nValueRemovals;
 		if (enforceArcConsistencyAfterRefutation(x) == false)
 			return false;
-		if (performingProperSearch || settings.strongOnlyAtPreprocessing || (settings.strongOnlyWhenACEffective && solver.problem.nValueRemovals == nBefore))
+		if (performingProperSearch || options.strongOnce || (options.strongAC && solver.problem.nValueRemovals == nBefore))
 			return true;
 		return enforceMore();
 	}

@@ -66,14 +66,14 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			if (x != null)
 				return x;
 		}
-		if (settings.lc > 0) { // if last-conflict mode
+		if (options.lc > 0) { // if last-conflict mode
 			Variable x = solver.lastConflict.priorityVariable();
 			if (x != null) {
 				return x;
 			}
 		}
 		bestScoredVariable.reset(false);
-		if (settings.singleton == SingletonStrategy.LAST) {
+		if (options.singleton == SingletonStrategy.LAST) {
 			if (solver.depth() <= lastDepthWithOnlySingletons) {
 				lastDepthWithOnlySingletons = Integer.MAX_VALUE;
 				for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
@@ -86,7 +86,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				return solver.futVars.first();
 			}
 		} else {
-			boolean first = settings.singleton == SingletonStrategy.FIRST;
+			boolean first = options.singleton == SingletonStrategy.FIRST;
 			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 				if (first && x.dom.size() == 1)
 					return x;
@@ -209,7 +209,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				reset();
 			}
 			alpha = ALPHA0;
-			if (settings.weighting == CHS) { // smoothing
+			if (options.weighting == CHS) { // smoothing
 				for (int i = 0; i < cscores.length; i++)
 					cscores[i] *= (Math.pow(SMOOTHING, time - ctime[i]));
 			}
@@ -217,7 +217,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void afterAssignment(Variable x, int a) {
-			if (settings.weighting != VAR && settings.weighting != CHS)
+			if (options.weighting != VAR && options.weighting != CHS)
 				for (Constraint c : x.ctrs)
 					if (c.futvars.size() == 1) {
 						int y = c.futvars.dense[0]; // the other variable whose score must be updated
@@ -227,7 +227,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void afterUnassignment(Variable x) {
-			if (settings.weighting != VAR && settings.weighting != CHS)
+			if (options.weighting != VAR && options.weighting != CHS)
 				for (Constraint c : x.ctrs)
 					if (c.futvars.size() == 2) {
 						// since a variable has just been unassigned, it means that there was only one future variable
@@ -239,10 +239,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void whenWipeout(Constraint c, Variable x) {
 			time++;
-			if (settings.weighting == VAR)
+			if (options.weighting == VAR)
 				vscores[x.num]++;
 			else if (c != null) {
-				if (settings.weighting == CHS) {
+				if (options.weighting == CHS) {
 					double r = 1.0 / (time - ctime[c.num]);
 					double increment = alpha * (r - cscores[c.num]);
 					cscores[c.num] += increment;
@@ -254,7 +254,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					SetDense futvars = c.futvars;
 					for (int i = futvars.limit; i >= 0; i--) {
 						Variable y = c.scp[futvars.dense[i]];
-						if (settings.weighting == CACD) { // in this case, the increment is not 1 as for UNIT
+						if (options.weighting == CACD) { // in this case, the increment is not 1 as for UNIT
 							Domain dom = y.dom;
 							boolean test = false; // EXPERIMENTAL ; this variant does not seem to be interesting
 							if (test) {
@@ -283,10 +283,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		public WdegVariant(Solver solver, boolean anti) {
 			super(solver, anti);
-			this.ctime = settings.weighting != VAR ? new int[solver.problem.constraints.length] : null;
-			this.vscores = settings.weighting != CHS ? new double[solver.problem.variables.length] : null;
-			this.cscores = settings.weighting != VAR ? new double[solver.problem.constraints.length] : null;
-			this.cvscores = settings.weighting != VAR && settings.weighting != CHS
+			this.ctime = options.weighting != VAR ? new int[solver.problem.constraints.length] : null;
+			this.vscores = options.weighting != CHS ? new double[solver.problem.variables.length] : null;
+			this.cscores = options.weighting != VAR ? new double[solver.problem.constraints.length] : null;
+			this.cvscores = options.weighting != VAR && options.weighting != CHS
 					? Stream.of(solver.problem.constraints).map(c -> new double[c.scp.length]).toArray(double[][]::new)
 					: null;
 
@@ -328,7 +328,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public double scoreOf(Variable x) {
-			if (settings.weighting == CHS) {
+			if (options.weighting == CHS) {
 				double d = 0;
 				for (Constraint c : x.ctrs)
 					if (c.futvars.size() > 1)
@@ -350,7 +350,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public double scoreOf(Variable x) {
-			if (settings.weighting == CHS) {
+			if (options.weighting == CHS) {
 				double d = 0;
 				for (Constraint c : x.ctrs)
 					if (c.futvars.size() > 1)
@@ -403,13 +403,13 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				update();
 			bestScoredVariable.reset(true);
 			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
-				if (x.dom.size() > 1 || settings.singleton != SingletonStrategy.LAST) {
+				if (x.dom.size() > 1 || options.singleton != SingletonStrategy.LAST) {
 					lastSizes[x.num] = x.dom.size();
 					bestScoredVariable.consider(x, scoreOptimizedOf(x));
 				}
 			}
 			if (bestScoredVariable.variable == null) {
-				assert settings.singleton == SingletonStrategy.LAST || solver.head.control.varh.discardAux;
+				assert options.singleton == SingletonStrategy.LAST || solver.head.control.varh.discardAux;
 				return solver.futVars.first();
 			}
 			lastVar = bestScoredVariable.variable.dom.size() == 1 ? null : bestScoredVariable.variable;

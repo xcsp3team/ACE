@@ -31,7 +31,7 @@ import constraints.extension.structures.Bits;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.global.Sum.SumSimple.SumSimpleEQ;
 import constraints.global.Sum.SumWeighted.SumWeightedEQ;
-import dashboard.Control.SettingCtrs;
+import dashboard.Control.OptionsConstraints;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.Observers.ObserverOnConstruction;
 import interfaces.SpecificPropagator;
@@ -74,7 +74,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	@Override
 	public void afterProblemConstruction() {
 		int n = problem.variables.length, r = scp.length;
-		if (settings.positionsLb <= r && (n < settings.positionsUb || r > n / 3)) { // TODO hard coding (3)
+		if (options.positionsLb <= r && (n < options.positionsUb || r > n / 3)) { // TODO hard coding (3)
 			this.positions = Kit.repeat(-1, n); // if a variable is not involved, then its position is set to -1
 			for (int i = 0; i < r; i++)
 				this.positions[scp[i].num] = i;
@@ -389,9 +389,9 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	public Variable[] infiniteDomainVars;
 
 	/**
-	 * The setting options concerning constraints
+	 * The options concerning constraints
 	 */
-	public SettingCtrs settings;
+	public OptionsConstraints options;
 
 	/**
 	 * This field is used to store a tuple of (int) values. Is is inserted as a field in order to avoid overhead of
@@ -675,7 +675,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 
 		this.infiniteDomainVars = Stream.of(scp).filter(x -> x.dom instanceof DomainInfinite).toArray(Variable[]::new);
 		this.vals = new int[scp.length];
-		this.settings = pb.head.control.constraints;
+		this.options = pb.head.control.constraints;
 	}
 
 	public final void reset() {

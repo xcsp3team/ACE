@@ -57,16 +57,16 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 		/**
 		 * Return true if BIVS can be applied to the variable. It depends on the distance of the variable with the
-		 * objective and the value of some setting options.
+		 * objective and the value of some options.
 		 * 
 		 * @return true if BIVS can be applied to the variable
 		 */
 		public boolean canBeApplied() {
-			if (settings.bivsDistance == 2)
+			if (options.bivsDistance == 2)
 				return true; // because no restriction at all
 			// limited form of BIVS according to the distance
 			int distance = x.distanceWithObjective();
-			return distance == 0 || (distance == 1 && settings.bivsDistance > 0);
+			return distance == 0 || (distance == 1 && options.bivsDistance > 0);
 		}
 
 		protected Solver solver;
@@ -93,14 +93,14 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 			control(optimizer != null);
 			this.oc = optimizer.ctr;
 			this.multiplier = optimizer.minimization ? -1 : 1; // multiplier follows minimization/maximization
-			this.lbBased = settings.bivsOptimistic == optimizer.minimization;
+			this.lbBased = options.bivsOptimistic == optimizer.minimization;
 			this.inconsistent = new SetDense(x.dom.initSize());
 		}
 
 		@Override
 		public int computeBestValueIndex() {
 			inconsistent.clear();
-			if ((settings.bivsFirst && solver.solutions.found > 0) || dx.size() > settings.bivsLimit)
+			if ((options.bivsFirst && solver.solutions.found > 0) || dx.size() > options.bivsLimit)
 				return dx.first(); // First in that case
 			return super.computeBestValueIndex();
 		}
@@ -134,7 +134,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		public int computeBestValueIndex() {
 			inconsistent.clear();
 			int last = solver.solutions.found == 0 ? -1 : solver.solutions.last[x.num];
-			if ((settings.bivsFirst && solver.solutions.found > 0) || dx.size() > settings.bivsLimit) {
+			if ((options.bivsFirst && solver.solutions.found > 0) || dx.size() > options.bivsLimit) {
 				if (last != -1 && dx.contains(last))
 					return last; // solution saving in that case
 				return dx.first(); // First in that case

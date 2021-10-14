@@ -301,7 +301,7 @@ public class AC extends Forward {
 	public AC(Solver solver) {
 		super(solver);
 		this.guaranteed = Stream.of(solver.problem.constraints).allMatch(c -> c.isGuaranteedAC());
-		// this.fvbc = FailedValueBasedConsistency.buildFor(settings.classForFailedValues, this)
+		// this.fvbc = FailedValueBasedConsistency.buildFor(options.classForFailedValues, this)
 	}
 
 	/**

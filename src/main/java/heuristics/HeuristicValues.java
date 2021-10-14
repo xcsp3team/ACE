@@ -23,7 +23,7 @@ import constraints.global.NValues.NValuesCst;
 import constraints.global.NValues.NValuesCst.NValuesCstLE;
 import constraints.global.Sum.SumSimple;
 import constraints.global.Sum.SumWeighted;
-import dashboard.Control.SettingValh;
+import dashboard.Control.OptionsValh;
 import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicValuesDirect.Last;
 import heuristics.HeuristicValuesDirect.Values;
@@ -62,12 +62,12 @@ public abstract class HeuristicValues extends Heuristic {
 	public static final HeuristicValues buildFor(Variable x) {
 		if (x.heuristic != null)
 			return x.heuristic; // already built by some objects, so we do not change it
-		SettingValh settings = x.problem.head.control.valh;
-		String className = x.dom instanceof DomainInfinite ? First.class.getName() : settings.clazz;
+		OptionsValh options = x.problem.head.control.valh;
+		String className = x.dom instanceof DomainInfinite ? First.class.getName() : options.clazz;
 		Set<Class<?>> classes = x.problem.head.availableClasses.get(HeuristicValues.class);
-		HeuristicValues heuristic = Reflector.buildObject(className, classes, x, settings.anti);
+		HeuristicValues heuristic = Reflector.buildObject(className, classes, x, options.anti);
 		if (heuristic instanceof Bivs && !((Bivs) heuristic).canBeApplied())
-			heuristic = new First(x, settings.anti); // we change because Bivs cannot be applied
+			heuristic = new First(x, options.anti); // we change because Bivs cannot be applied
 		return heuristic;
 	}
 
@@ -159,9 +159,9 @@ public abstract class HeuristicValues extends Heuristic {
 	protected final Domain dx;
 
 	/**
-	 * The setting options concerning the value ordering heuristics
+	 * The options concerning the value ordering heuristics
 	 */
-	protected SettingValh settings;
+	protected OptionsValh options;
 
 	/**
 	 * Builds a value ordering heuristic for the specified variable
@@ -175,7 +175,7 @@ public abstract class HeuristicValues extends Heuristic {
 		super(anti);
 		this.x = x;
 		this.dx = x.dom;
-		this.settings = x.problem.head.control.valh;
+		this.options = x.problem.head.control.valh;
 	}
 
 	/**
@@ -214,10 +214,10 @@ public abstract class HeuristicValues extends Heuristic {
 				if (a != -1 && dx.contains(a))
 					return a;
 			}
-		} else if (settings.solutionSaving > 0 && !(this instanceof Bivs2)) {
+		} else if (options.solutionSaving > 0 && !(this instanceof Bivs2)) {
 			// note that solution saving may break determinism of search trees because it depends in which order domains
 			// are pruned (and become singleton or not)
-			if (settings.solutionSaving == 1 || solver.restarter.numRun == 0 || solver.restarter.numRun % settings.solutionSaving != 0) {
+			if (options.solutionSaving == 1 || solver.restarter.numRun == 0 || solver.restarter.numRun % options.solutionSaving != 0) {
 				// every k runs, we do not use solution saving, where k is the value of solutionSaving (if k > 1)
 				// int a = -1; if (x == solver.impacting) a = dx.first(); else
 				int a = solver.solutions.last[x.num];
