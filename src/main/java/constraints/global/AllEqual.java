@@ -46,9 +46,9 @@ public final class AllEqual extends ConstraintGlobal implements ObserverOnBacktr
 	}
 
 	@Override
-	public void afterProblemConstruction() {
-		super.afterProblemConstruction();
-		this.remainingValues = new SetSparseReversible(map.size(), problem.variables.length + 1);
+	public void afterProblemConstruction(int n) {
+		super.afterProblemConstruction(n);
+		this.remainingValues = new SetSparseReversible(map.size(), n + 1);
 	}
 
 	@Override

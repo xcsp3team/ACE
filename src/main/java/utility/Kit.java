@@ -111,7 +111,7 @@ public final class Kit {
 	 *            an exception to be displayed
 	 */
 	public static Object exit(String message, Throwable e) {
-		System.out.println(print("\n! ERROR with message: " + message + "\n  Use the solver option -ev for more details\n", RED));
+		System.out.println(coloredString("\n! ERROR with message: " + message + "\n  Use the solver option -ev for more details\n", RED));
 		if (!(Thread.currentThread() instanceof Head) || ((Head) Thread.currentThread()).control.general.exceptionsVisible)
 			e.printStackTrace();
 		System.exit(1);
@@ -443,8 +443,12 @@ public final class Kit {
 	 *            a color to be used
 	 * @return the specified string with the specified color (if colors can be used) or the same specified string
 	 */
-	public static String print(String s, String color) {
+	public static String coloredString(String s, String color) {
 		return useColors ? color + s + WHITE : s;
+	}
+
+	public static void coloredPrint(String s, String color) {
+		System.out.println(coloredString(s, color));
 	}
 
 	public static String getXMLBaseNameOf(String s) {

@@ -10,9 +10,9 @@
 
 package constraints.global;
 
+import static java.util.stream.Collectors.joining;
 import static utility.Kit.control;
 
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -20,6 +20,7 @@ import constraints.Constraint;
 import constraints.global.AllDifferent.AllDifferentComplete;
 import constraints.global.Cardinality.CardinalityConstant;
 import interfaces.Observers.ObserverOnConstruction;
+import problem.Problem;
 import sets.SetSparse;
 import sets.SetSparseReversible;
 import utility.Kit;
@@ -28,12 +29,33 @@ import variables.Variable;
 
 public abstract class Matcher implements ObserverOnConstruction {
 
+	@Override
+	public void afterProblemConstruction(int n) {
+		this.unfixedVars = new SetSparseReversible(arity, n + 1);
+
+		this.neighborsOfValues = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparse(arity + 1)).toArray(SetSparse[]::new);
+		this.neighborsOfT = new SetSparse(intervalSize);
+		this.currValsSCC = new SetSparse(intervalSize);
+
+		int nNodes = arity + intervalSize + 1;
+		this.visitTime = Kit.repeat(-1, nNodes);
+		this.stackTarjan = new SetSparse(nNodes);
+		this.numDFS = new int[nNodes];
+		this.lowLink = new int[nNodes];
+	}
+
 	public void restoreAtDepthBefore(int depth) {
 		unfixedVars.restoreLimitAtLevel(depth);
 	}
 
-	protected final Constraint ctr;
+	/**
+	 * The problem to which this object is (indirectly) attached
+	 */
+	protected final Problem problem;
 
+	/**
+	 * The scope of the constraint to which this object is attached
+	 */
 	protected final Variable[] scp;
 
 	protected final int arity;
@@ -108,7 +130,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 	 */
 	protected SetSparse currValsSCC;
 
-	protected SetSparse currVarsSCC;
+	protected final SetSparse currVarsSCC;
 
 	/**
 	 * queue used to perform BFS
@@ -120,10 +142,10 @@ public abstract class Matcher implements ObserverOnConstruction {
 	 */
 	protected int[] predBFS;
 
-	public Matcher(Constraint ctr, Variable[] scp) {
-		this.ctr = ctr;
-		this.scp = scp;
-		this.arity = scp.length;
+	public Matcher(Constraint c) {
+		this.problem = c.problem;
+		this.scp = c.scp;
+		this.arity = c.scp.length;
 
 		this.unmatchedVars = new SetSparse(arity);
 		this.varToVal = Kit.repeat(-1, arity);
@@ -133,26 +155,10 @@ public abstract class Matcher implements ObserverOnConstruction {
 		this.maxValue = Stream.of(scp).mapToInt(x -> x.dom.lastValue()).max().getAsInt();
 		this.intervalSize = maxValue - minValue + 1;
 
-		ctr.problem.head.observersConstruction.add(this);
+		c.problem.head.observersConstruction.add(this);
 
 		// TODO use classical sets (not sparse sets or arrays) if big gap between
 		// minValue and maxValue AND number of values is a lot smaller than maxValue-minValue
-	}
-
-	@Override
-	public void afterProblemConstruction() {
-		unfixedVars = new SetSparseReversible(arity, ctr.problem.variables.length + 1);
-
-		neighborsOfValues = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparse(arity + 1)).toArray(SetSparse[]::new);
-		neighborsOfT = new SetSparse(intervalSize);
-		currValsSCC = new SetSparse(intervalSize);
-
-		int nNodes = arity + intervalSize + 1;
-		visitTime = Kit.repeat(-1, nNodes);
-		stackTarjan = new SetSparse(nNodes);
-		numDFS = new int[nNodes];
-		lowLink = new int[nNodes];
-
 	}
 
 	protected abstract boolean findMaximumMatching();
@@ -200,12 +206,6 @@ public abstract class Matcher implements ObserverOnConstruction {
 			splitSCC = splitSCC || (lowLink[node] > 1 || nVisitedNodes < visitTime.length);
 			if (splitSCC) {
 				currVarsSCC.clear();
-				// for (int j = 0; j <= ctr.futvars.limit; j++) { // j >= 0; j--) {
-				// int x = ctr.futvars.dense[j];
-				// if (scp[x].dom.size() > 1)
-				// currVarsSCC.add(x);
-				// }
-
 				for (int j = 0; j <= unfixedVars.limit; j++)
 					currVarsSCC.add(unfixedVars.dense[j]);
 				currValsSCC.clear();
@@ -241,8 +241,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 						// scp[x].dom.remove(a);
 						// }
 						// System.out.println(ctr + " while removing " + domainValueOf(u) + " DIff=" +
-						// (ctr.pb.nValuesRemoved - nb) + " " +
-						// currSCC.size());
+						// (ctr.pb.nValuesRemoved - nb) + " " + currSCC.size());
 					}
 				// }
 			}
@@ -298,7 +297,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 	 *********************************************************************************************/
 
 	/**
-	 * Class used to perform AC filtering for the AllDifferent constraint
+	 * Class used to perform AC filtering for AllDifferent
 	 */
 	public static class MatcherAllDifferent extends Matcher {
 
@@ -307,11 +306,11 @@ public abstract class Matcher implements ObserverOnConstruction {
 		 */
 		private final int[] valToVar;
 
-		public MatcherAllDifferent(AllDifferentComplete ctr) {
-			super(ctr, ctr.scp);
-			queueBFS = new SetSparse(arity);
-			predBFS = Kit.repeat(-1, arity);
-			valToVar = Kit.repeat(-1, intervalSize);
+		public MatcherAllDifferent(AllDifferentComplete c) {
+			super(c);
+			this.queueBFS = new SetSparse(arity);
+			this.predBFS = Kit.repeat(-1, arity);
+			this.valToVar = Kit.repeat(-1, intervalSize);
 		}
 
 		/**
@@ -374,7 +373,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 						unmatchedVars.add(x);
 					}
 					if (scp[x].dom.size() == 1 && unfixedVars.contains(x))
-						unfixedVars.remove(x, ctr.problem.solver.depth());
+						unfixedVars.remove(x, problem.solver.depth());
 				}
 			}
 			while (!unmatchedVars.isEmpty())
@@ -420,7 +419,16 @@ public abstract class Matcher implements ObserverOnConstruction {
 	 * MatcherCardinality
 	 *********************************************************************************************/
 
+	/**
+	 * Class used to perform AC filtering for Cardinality
+	 */
 	public static class MatcherCardinality extends Matcher {
+
+		@Override
+		public void afterProblemConstruction(int n) {
+			super.afterProblemConstruction(n);
+			this.valToVars = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparse(arity, false)).toArray(SetSparse[]::new);
+		}
 
 		/**
 		 * Variables the values are matched to. In a GCC, a value can be matched to several variables.
@@ -446,31 +454,15 @@ public abstract class Matcher implements ObserverOnConstruction {
 		/**
 		 * Set of the variables each value can be assigned to (the value is in these variables' initial domains).
 		 */
-		private SetSparse[] possibleVars;
+		private final SetSparse[] possibleVars;
 
 		/**
 		 * Predecessor value of values in the DFS
 		 */
 		private int[] predValue;
 
-		@Override
-		public void restoreAtDepthBefore(int depth) {
-			super.restoreAtDepthBefore(depth);
-			// for (SetSparseReversible set : value2Variables) set.restore(depth);
-		}
-
-		@Override
-		public void afterProblemConstruction() {
-			super.afterProblemConstruction();
-			// valToVars = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparseReversible(arity, false,
-			// ctr.pb.variables.length + 1))
-			// .toArray(SetSparseReversible[]::new);
-			valToVars = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparse(arity, false)).toArray(SetSparse[]::new);
-
-		}
-
 		/**
-		 * @param ctr
+		 * @param c
 		 *            : Global cardinality constraint the algorithm will filter.
 		 * @param scp
 		 *            : Initial scope of the constraint.
@@ -481,18 +473,18 @@ public abstract class Matcher implements ObserverOnConstruction {
 		 * @param maxOccs
 		 *            : Number of times each value should be assigned at most.
 		 */
-		public MatcherCardinality(CardinalityConstant ctr, Variable[] scp, int[] keys, int[] minOccs, int[] maxOccs) {
-			super(ctr, scp);
+		public MatcherCardinality(CardinalityConstant c, int[] keys, int[] minOccs, int[] maxOccs) {
+			super(c);
 			this.keys = keys;
 
 			this.minValue = Math.min(this.minValue, IntStream.of(keys).min().getAsInt());
 			this.maxValue = Math.max(this.maxValue, IntStream.of(keys).max().getAsInt());
 			this.intervalSize = maxValue - minValue + 1;
 
-			queueBFS = new SetSparse(Math.max(arity, intervalSize));
-			predBFS = Kit.repeat(-1, Math.max(arity, intervalSize));
+			this.queueBFS = new SetSparse(Math.max(arity, intervalSize));
+			this.predBFS = Kit.repeat(-1, Math.max(arity, intervalSize));
 
-			predValue = Kit.repeat(-1, intervalSize);
+			this.predValue = Kit.repeat(-1, intervalSize);
 
 			this.minOccs = new int[intervalSize];
 			this.maxOccs = Kit.repeat(Integer.MAX_VALUE, intervalSize);
@@ -501,7 +493,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 				this.maxOccs[normalizedValueOf(keys[i])] = maxOccs[i];
 			}
 
-			possibleVars = new SetSparse[intervalSize];
+			this.possibleVars = new SetSparse[intervalSize];
 			for (int u = 0; u < intervalSize; u++) {
 				possibleVars[u] = new SetSparse(arity);
 				for (int x = 0; x < arity; x++)
@@ -628,7 +620,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 				if (varToVal[x] == -1)
 					unmatchedVars.add(x);
 				else if (scp[x].dom.size() == 1 && unfixedVars.contains(x))
-					unfixedVars.remove(x, ctr.problem.solver.depth()); // currDepth);
+					unfixedVars.remove(x, problem.solver.depth()); // currDepth);
 			}
 			while (!unmatchedVars.isEmpty())
 				if (!findMatchingForVariable(unmatchedVars.pop())) // , currDepth))
@@ -675,7 +667,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 		@Override
 		public String toString() {
 			StringBuilder sb = new StringBuilder();
-			sb.append("varToVal : " + IntStream.of(varToVal).mapToObj(u -> domainValueOf(u) + " ").collect(Collectors.joining()));
+			sb.append("varToVal : " + IntStream.of(varToVal).mapToObj(u -> domainValueOf(u) + " ").collect(joining()));
 			sb.append("\nvalue2Variables :\n");
 			for (int u = 0; u < intervalSize; u++) {
 				sb.append("Value " + domainValueOf(u) + " : ");
@@ -684,7 +676,6 @@ public abstract class Matcher implements ObserverOnConstruction {
 				sb.append("\n");
 			}
 			sb.append("predVariable : " + Kit.join(predBFS) + "\n");
-			// sb.append("found path : " + Kit.implode(foundPath) + "\n");
 			return sb.toString();
 		}
 	}

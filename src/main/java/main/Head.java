@@ -450,7 +450,7 @@ public class Head extends Thread {
 		}
 		this.problem = new Problem(api, control.problem.variant, control.problem.data, "", false, Input.argsForProblem, this);
 		for (ObserverOnConstruction obs : observersConstruction)
-			obs.afterProblemConstruction();
+			obs.afterProblemConstruction(this.problem.variables.length);
 		problem.display();
 		return problem;
 	}
@@ -490,7 +490,7 @@ public class Head extends Thread {
 
 	@Override
 	public void run() {
-		log.config("\n" + Kit.print("ACE (AbsCon Essence)", Kit.ORANGE) + " v1.0beta " + Kit.dateOf(Head.class));
+		log.config("\n" + Kit.coloredString("ACE (AbsCon Essence)", Kit.ORANGE) + " v1.0beta " + Kit.dateOf(Head.class));
 		stopwatch.start();
 		boolean[] crashed = new boolean[Input.nInstancesToSolve];
 		for (int i = 0; i < Input.nInstancesToSolve; i++) {
@@ -498,7 +498,7 @@ public class Head extends Thread {
 				solveInstance(i);
 			} catch (Throwable e) {
 				crashed[i] = true;
-				System.out.println(Kit.print("\n! ERROR (use -ev for more details)", Kit.RED));
+				System.out.println(Kit.coloredString("\n! ERROR (use -ev for more details)", Kit.RED));
 				if (control.general.exceptionsVisible)
 					e.printStackTrace();
 			}

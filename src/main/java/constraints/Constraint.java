@@ -72,8 +72,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	@Override
-	public void afterProblemConstruction() {
-		int n = problem.variables.length, r = scp.length;
+	public void afterProblemConstruction(int n) {
+		int r = scp.length;
 		if (options.positionsLb <= r && (n < options.positionsUb || r > n / 3)) { // TODO hard coding (3)
 			this.positions = Kit.repeat(-1, n); // if a variable is not involved, then its position is set to -1
 			for (int i = 0; i < r; i++)

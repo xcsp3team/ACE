@@ -128,10 +128,10 @@ public final class CSmart extends ExtensionSpecific {
 	private static final int UNINITIALIZED = -2; // Integer.MAX_VALUE;
 
 	@Override
-	public void afterProblemConstruction() {
-		super.afterProblemConstruction();
-		this.set = new SetDenseReversible(hybridTuples.length, problem.variables.length + 1);
-		this.lastSizesStack = new int[problem.variables.length + 1][scp.length];
+	public void afterProblemConstruction(int n) {
+		super.afterProblemConstruction(n);
+		this.set = new SetDenseReversible(hybridTuples.length, n + 1);
+		this.lastSizesStack = new int[n + 1][scp.length];
 		Arrays.fill(lastSizesStack[0], UNINITIALIZED);
 	}
 

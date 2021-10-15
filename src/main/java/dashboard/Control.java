@@ -488,6 +488,7 @@ public final class Control {
 
 	public class OptionsGlobal extends OptionGroup {
 		public final int allDifferent = addI("allDifferent", "g_ad", 0, "Algorithm for AllDifferent");
+		public final int allDifferentExcept = addI("allDifferentExcept", "g_ade", 0, "Algorithm for AllDifferentExcept");
 		public final int distinctVectors = addI("distinctVectors", "g_dv", 0, "Algorithm for DistinctVectors");
 		public final int allEqual = addI("allEqual", "g_ae", 0, "Algorithm for AllEqual");
 		public final int notAllEqual = addI("notAllEqual", "g_nae", 0, "Algorithm for NotAllEqual");

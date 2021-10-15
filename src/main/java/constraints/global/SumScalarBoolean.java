@@ -125,7 +125,7 @@ public abstract class SumScalarBoolean extends ConstraintGlobal implements TagAC
 			case EQ:
 				return new SumScalarBooleanEQ(pb, list, coeffs, limit);
 			default:
-				throw new UnsupportedOperationException("NE is not implemented"); // TODO useful to have a propagator ?
+				throw new AssertionError("NE is not implemented"); // TODO useful to have a propagator ?
 			}
 		}
 

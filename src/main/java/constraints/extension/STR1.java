@@ -36,12 +36,12 @@ public class STR1 extends ExtensionSpecific {
 	 *********************************************************************************************/
 
 	@Override
-	public void afterProblemConstruction() {
-		super.afterProblemConstruction();
+	public void afterProblemConstruction(int n) {
+		super.afterProblemConstruction(n);
 		this.tuples = ((Table) extStructure()).tuples;
 		control(this.tuples.length > 0);
 		if (!(this instanceof CT)) // because CT (technically a subclass of STR1) has very specific structures
-			this.set = new SetDenseReversible(tuples.length, problem.variables.length + 1);
+			this.set = new SetDenseReversible(tuples.length, n + 1);
 	}
 
 	@Override

@@ -35,18 +35,17 @@ import variables.Variable;
 public final class STR3 extends ExtensionSpecific implements TagPositive, ObserverOnSolving {
 
 	@Override
-	public void afterProblemConstruction() {
-		super.afterProblemConstruction();
+	public void afterProblemConstruction(int n) {
+		super.afterProblemConstruction(n);
 		TableAugmented table = (TableAugmented) extStructure();
 		this.tuples = table.tuples;
-		this.set = new SetSparseReversible(tuples.length, problem.variables.length + 1);
+		this.set = new SetSparseReversible(tuples.length, n + 1);
 
 		this.offsetsForMaps = new int[scp.length];
 		for (int i = 1; i < offsetsForMaps.length; i++)
 			offsetsForMaps[i] = offsetsForMaps[i - 1] + scp[i - 1].dom.initSize();
 		int nValues = Variable.nInitValuesFor(scp);
-		this.separatorsMaps = IntStream.rangeClosed(0, problem.variables.length).mapToObj(i -> new SetSparseMapSTR3(nValues, false))
-				.toArray(SetSparseMapSTR3[]::new);
+		this.separatorsMaps = IntStream.rangeClosed(0, n).mapToObj(i -> new SetSparseMapSTR3(nValues, false)).toArray(SetSparseMapSTR3[]::new);
 		// above do we need rangeClosed ?
 		this.deps = IntStream.range(0, set.dense.length).mapToObj(i -> new LocalSetSparseByte(scp.length, false)).toArray(LocalSetSparseByte[]::new);
 		if (set.capacity() >= Short.MAX_VALUE)

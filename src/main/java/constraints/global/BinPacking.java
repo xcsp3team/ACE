@@ -104,9 +104,9 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC { 
 	public static final class BinPacking2 extends BinPacking implements ObserverOnBacktracksSystematic {
 
 		@Override
-		public void afterProblemConstruction() {
-			super.afterProblemConstruction();
-			this.usableBins = new SetSparseReversible(bins.length, problem.variables.length + 1);
+		public void afterProblemConstruction(int n) {
+			super.afterProblemConstruction(n);
+			this.usableBins = new SetSparseReversible(bins.length, n + 1);
 		}
 
 		@Override
@@ -133,7 +133,8 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC { 
 		private Bin[] bins;
 		private Bin[] sortedBins;
 
-		private SetDense[] fronts; // fronts[i] is the set of items which are in front of the ith bin (in the ordered sequence of bins) such that i is the first
+		private SetDense[] fronts; // fronts[i] is the set of items which are in front of the ith bin (in the ordered
+									// sequence of bins) such that i is the first
 									// position where they can be put
 
 		private SetSparseReversible usableBins; // set of currently usable bins
@@ -164,7 +165,8 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC { 
 			for (int i = 0; i < scp.length; i++)
 				if (scp[i].dom.size() == 1) {
 					bins[scp[i].dom.single()].capacity -= sizes[i]; // the capacity is updated
-					// if (bins[scp[i].dom.unique()].capacity < 0) // TODO why it does not work ? because we update useless abandoned bins
+					// if (bins[scp[i].dom.unique()].capacity < 0) // TODO why it does not work ? because we update
+					// useless abandoned bins
 					// return x.dom.fail();
 				}
 
@@ -173,14 +175,16 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC { 
 			int sortLimit = usableBins.limit + 1;
 			start: while (true) {
 				maxSize = -1;
-				Arrays.sort(sortedBins, 0, sortLimit, (b1, b2) -> Integer.compare(b1.capacity, b2.capacity)); // increasing sort
+				Arrays.sort(sortedBins, 0, sortLimit, (b1, b2) -> Integer.compare(b1.capacity, b2.capacity)); // increasing
+																												// sort
 				if (sortedBins[0].capacity < 0)
 					return x.dom.fail(); // TODO 1: moving it at line 112 (avoid the first sort) ?
 				for (SetDense set : fronts) // TODO 2: only clearing from 0 to usableBins.limit ?
 					set.clear();
 				// for (int ii = futvars.limit; ii >= 0; ii--) {
 				// int p = futvars.dense[ii];
-				for (int p = 0; p < scp.length; p++) { // TODO 3: only iterating over future variables? (but the condition remains)
+				for (int p = 0; p < scp.length; p++) { // TODO 3: only iterating over future variables? (but the
+														// condition remains)
 					Domain dom = scp[p].dom;
 					if (dom.size() == 1)
 						continue; // because already considered (when reducing the appropriate bin capacity)
@@ -239,17 +243,20 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC { 
 				// are in front of the leftmost one (due to other constraints)
 
 				// margin is a global value computed when reasoning from the jth sorted bin to the rightmost one
-				int margin = cumulatedCapacities - lost - cumulatedSizes; // the margin is computed from the object of max size (when only one possible)
+				int margin = cumulatedCapacities - lost - cumulatedSizes; // the margin is computed from the object of
+																			// max size (when only one possible)
 				if (margin < 0)
 					return x.dom.fail();
-				if (onyOnePossibleInTheBin && margin - (max - min) < 0) { // we can remove some values if the smallest item cannot be put in the bin j
+				if (onyOnePossibleInTheBin && margin - (max - min) < 0) { // we can remove some values if the smallest
+																			// item cannot be put in the bin j
 					for (int k = 0; k <= fronts[j].limit; k++) {
 						int i = fronts[j].dense[k];
 						if (margin - (max - sizes[i]) < 0 && scp[i].dom.removeValueIfPresent(sortedBins[j].index) == false)
 							return false;
 					}
 				}
-				// maybe, some items in front of a bin on the left have a size greater than the margin (we can then remove them from bins on the right)
+				// maybe, some items in front of a bin on the left have a size greater than the margin (we can then
+				// remove them from bins on the right)
 				if (maxSize > margin) {
 					for (int left = 0; left < j; left++) {
 						if (fronts[left].size() == 0)
@@ -283,7 +290,8 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC { 
 				return true;
 
 			// we discard bins that are now identified as useless because we cannot even put the smallest item in it
-			for (int j = usableBins.limit; j >= 0; j--) { // for breaking, we should go from 0 to ..., but removing an element in usableBins could be a pb
+			for (int j = usableBins.limit; j >= 0; j--) { // for breaking, we should go from 0 to ..., but removing an
+															// element in usableBins could be a pb
 				int i = sortedBins[j].index;
 				assert usableBins.contains(i);
 				if (sortedBins[j].capacity < sizes[smallestFreeItem] || i > maxUsableBin || i < minUsableBin)

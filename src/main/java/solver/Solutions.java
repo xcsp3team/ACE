@@ -17,7 +17,7 @@ import static utility.Kit.GREEN;
 import static utility.Kit.RED;
 import static utility.Kit.control;
 import static utility.Kit.log;
-import static utility.Kit.print;
+import static utility.Kit.coloredString;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -259,22 +259,22 @@ public final class Solutions {
 					System.out.println("\n  Solution " + found + " in JSON format:\n" + lastSolutionInJsonFormat() + "\n");
 				if (fullExploration) {
 					if (found == 0)
-						System.out.println(print("s UNSATISFIABLE", GREEN));
+						System.out.println(coloredString("s UNSATISFIABLE", GREEN));
 					else
-						System.out.println(framework == COP ? print("s OPTIMUM FOUND", GREEN) : print("s SATISFIABLE", GREEN));
+						System.out.println(framework == COP ? coloredString("s OPTIMUM FOUND", GREEN) : coloredString("s SATISFIABLE", GREEN));
 				} else {
 					if (found == 0)
-						System.out.println(print("s UNKNOWN", RED));
+						System.out.println(coloredString("s UNKNOWN", RED));
 					else
-						System.out.println(framework == COP ? print("s SATISFIABLE", GREEN) : print("s SATISFIABLE", GREEN));
+						System.out.println(framework == COP ? coloredString("s SATISFIABLE", GREEN) : coloredString("s SATISFIABLE", GREEN));
 				}
 				if (found > 0)
-					System.out.println("\n" + print("v", GREEN) + " " + xml.lastSolution());
-				System.out.println("\n" + print("d WRONG DECISIONS", GREEN) + " " + solver.stats.nWrongDecisions);
-				System.out.println(print("d NUMBER OF" + (fullExploration ? "" : " FOUND") + " SOLUTIONS", GREEN) + " " + found);
+					System.out.println("\n" + coloredString("v", GREEN) + " " + xml.lastSolution());
+				System.out.println("\n" + coloredString("d WRONG DECISIONS", GREEN) + " " + solver.stats.nWrongDecisions);
+				System.out.println(coloredString("d NUMBER OF" + (fullExploration ? "" : " FOUND") + " SOLUTIONS", GREEN) + " " + found);
 				if (framework == COP && found > 0)
-					System.out.println(print("d BOUND " + bestBound, GREEN));
-				System.out.println(fullExploration ? print("d COMPLETE EXPLORATION", GREEN) : print("d INCOMPLETE EXPLORATION", RED));
+					System.out.println(coloredString("d BOUND " + bestBound, GREEN));
+				System.out.println(fullExploration ? coloredString("d COMPLETE EXPLORATION", GREEN) : coloredString("d INCOMPLETE EXPLORATION", RED));
 				System.out.println("\nc real time : " + solver.head.stopwatch.cpuTimeInSeconds());
 				System.out.flush();
 			}
@@ -318,7 +318,7 @@ public final class Solutions {
 			bestBound = z;
 		} else if (solver.problem.optimizer != null) { // COP
 			bestBound = solver.problem.optimizer.value();
-			System.out.println(print("o " + bestBound, GREEN) + "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
+			System.out.println(coloredString("o " + bestBound, GREEN) + "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
 			// solver.restarter.currCutoff += 20;
 			// + " \t#" + found); // + "); (hamming: " + h1 + ", in_objective: " + h2 + ")");
 		}

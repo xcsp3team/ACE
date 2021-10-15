@@ -124,7 +124,6 @@ import constraints.extension.CSmart;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableSmart.HybridTuple;
 import constraints.global.AllDifferent;
-import constraints.global.AllDifferent.AllDifferentBound;
 import constraints.global.AllDifferent.AllDifferentComplete;
 import constraints.global.AllDifferent.AllDifferentCounting;
 import constraints.global.AllDifferent.AllDifferentExceptWeak;
@@ -174,7 +173,6 @@ import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
 import constraints.intension.Primitive2;
 import constraints.intension.Primitive2.PrimitiveBinaryNoCst.Disjonctive;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Sub2;
-import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Sub2.Sub2NE;
 import constraints.intension.Primitive3;
 import constraints.intension.Primitive3.Add3;
 import constraints.intension.Primitive4.Disjonctive2D;
@@ -235,7 +233,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 *********************************************************************************************/
 
 	@Override
-	public void afterProblemConstruction() {
+	public void afterProblemConstruction(int n) {
 		assert Stream.of(variables).map(x -> x.id()).distinct().count() == variables.length : "Two variables have the same id";
 		assert Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints) : "Non normalized nums in the problem";
 
@@ -1021,7 +1019,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		@Override
 		public ModifiableBoolean mode() {
-			ExtensionMode exportMode = ExtensionMode.EXTENSION; // later, maybe a control parameter
+			ExtensionMode exportMode = ExtensionMode.EXTENSION; // later, maybe a
+																// control parameter
 			return new ModifiableBoolean(exportMode != ExtensionMode.EXTENSION_SUPPORTS && exportMode != ExtensionMode.EXTENSION_CONFLICTS ? null
 					: exportMode == ExtensionMode.EXTENSION_SUPPORTS);
 		}
@@ -1106,27 +1105,35 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	// ************************************************************************
-	// ***** Constraint allDifferent
+	// ***** Constraints AllDifferent and DistinctVectors
 	// ************************************************************************
 
 	private CtrEntity allDifferent(Variable[] scp) {
-		if (scp.length <= 1)
-			return ctrEntities.new CtrAloneDummy("Removed alldiff constraint with scope length = " + scp.length);
-		if (head.control.global.allDifferent == 0)
-			return post(head.control.global.permutations && AllDifferent.isPermutationElligible(scp) ? new AllDifferentPermutation(this, scp)
-					: new AllDifferentComplete(this, scp));
-		if (head.control.global.allDifferent == 1)
+		if (scp.length <= 1) {
+			Kit.coloredPrint("Warning: AllDifferent with a scope of length " + scp.length + " : " + Kit.join(scp), Kit.ORANGE);
+			return null;
+		}
+		if (scp.length == 2)
+			return different(scp[0], scp[1]);
+
+		switch (head.control.global.allDifferent) {
+		case 0:
+			if (head.control.global.permutations && AllDifferent.isPermutationElligible(scp))
+				return post(new AllDifferentPermutation(this, scp));
+			return post(new AllDifferentComplete(this, scp));
+		case 1:
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
 				if (i < j)
-					post(new Sub2NE(this, scp[i], scp[j], 0));
+					different(scp[i], scp[j]);
 			});
-		if (head.control.global.allDifferent == 2)
+		case 2:
 			return post(new AllDifferentWeak(this, scp));
-		if (head.control.global.allDifferent == 3)
+		case 3:
 			return post(new AllDifferentCounting(this, scp));
-		if (head.control.global.allDifferent == 4)
-			return post(new AllDifferentBound(this, scp));
-		throw new UnsupportedOperationException();
+		// case 4: return post(new AllDifferentBound(this, scp));
+		default:
+			throw new AssertionError("Invalid mode");
+		}
 	}
 
 	@Override
@@ -1139,33 +1146,38 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return allDifferent(translate(list));
 	}
 
+	private CtrAlone binaryDifferentExcept(Variable x, Variable y, int[] exceptValues) {
+		int[] t = x.dom.valuesChecking(v -> !Kit.isPresent(v, exceptValues) && y.dom.containsValue(v));
+		return extension(vars(x, y), IntStream.of(t).mapToObj(v -> new int[] { v, v }).toArray(int[][]::new), false, false);
+	}
+
 	@Override
 	public final CtrEntity allDifferent(Var[] list, int[] exceptValues) {
 		control(exceptValues.length >= 1 && Kit.isStrictlyIncreasing(exceptValues));
 		Variable[] scp = translate(list);
-		boolean toTest = true; // TODO is it efficient? the three approaches should be experimentally tested
-		if (toTest && head.control.global.allDifferent == 0) {
+		if (scp.length <= 1) {
+			Kit.coloredPrint("Warning: AllDifferentExcept with a scope of length " + scp.length + " : " + Kit.join(scp), Kit.ORANGE);
+			return null;
+		}
+		if (scp.length == 2)
+			return binaryDifferentExcept(scp[0], scp[1], exceptValues);
+
+		switch (head.control.global.allDifferentExcept) {
+		case 0: // TODO is it efficient? the three approaches should be experimentally tested
 			Set<Integer> values = Variable.setOfvaluesIn(scp);
 			for (int v : exceptValues)
 				values.remove(v);
 			return post(new CardinalityConstant(this, scp, values.stream().mapToInt(i -> i).sorted().toArray(), 0, 1));
-		}
-		if (head.control.global.allDifferent == 1) // decomposition
+		case 1: // decomposition
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
-				if (i < j) {
-					List<int[]> conflicts = new ArrayList<>();
-					Domain domi = scp[i].dom, domj = scp[j].dom;
-					for (int a = domi.first(); a != -1; a = domi.next(a)) {
-						int va = domi.toVal(a);
-						if (!Kit.isPresent(va, exceptValues) && domj.containsValue(va))
-							conflicts.add(new int[] { va, va });
-					}
-					extension(vars(scp[i], scp[j]), Kit.intArray2D(conflicts), false, false);
-				}
+				if (i < j)
+					binaryDifferentExcept(scp[i], scp[j], exceptValues);
 			});
-		// if (head.control.global.typeAllDifferent == 2)
-		return post(new AllDifferentExceptWeak(this, scp, exceptValues));
-
+		case 2:
+			return post(new AllDifferentExceptWeak(this, scp, exceptValues));
+		default:
+			throw new AssertionError("Invalid mode");
+		}
 	}
 
 	private CtrEntity distinctVectors(Variable[] t1, Variable[] t2) {
@@ -1199,7 +1211,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity allDifferentList(Var[]... lists) {
 		control(lists.length >= 2);
-		Variable[][] m = lists instanceof Variable[][] ? (Variable[][]) lists : Stream.of(lists).map(t -> translate(t)).toArray(Variable[][]::new); // translate2D(lists);
+		Variable[][] m = lists instanceof Variable[][] ? (Variable[][]) lists : Stream.of(lists).map(t -> translate(t)).toArray(Variable[][]::new);
 		return m.length == 2 ? distinctVectors(m[0], m[1]) : distinctVectors(m);
 	}
 

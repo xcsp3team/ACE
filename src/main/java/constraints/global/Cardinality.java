@@ -83,7 +83,7 @@ public abstract class Cardinality extends ConstraintGlobal implements ObserverOn
 			this.values = values;
 			this.minOccs = minOccs;
 			this.maxOccs = maxOccs;
-			this.matcher = new MatcherCardinality(this, scp, values, minOccs, maxOccs);
+			this.matcher = new MatcherCardinality(this, values, minOccs, maxOccs);
 			defineKey(values, minOccs, maxOccs);
 		}
 

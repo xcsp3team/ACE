@@ -78,20 +78,34 @@ import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
 
 /**
- * This class corresponds to a problem loading instances in XCSP3 format.
+ * This class allows us to load instances in XCSP3 format. This class is the interface part while the class Problem is
+ * the implementation part. This separation is due to historical reasons (from the API JvCSP3), but could be removed in
+ * the future so as to simplify code.
+ * 
+ * @author Christophe Lecoutre
  */
 public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
-	private Implem implem = new Implem(this); // implementation for callbacks
+	/**
+	 * Implementation for callbacks
+	 */
+	private Implem implem = new Implem(this);
 
 	@Override
 	public Implem implem() {
 		return implem;
 	}
 
-	private Problem problem; // set at the beginning of data() because the api and the imp objects have not been linked
-								// at time of field construction
+	/**
+	 * The implementation for this object (representing the loaded instance). This field is set when the method data()
+	 * is called because the related interface and implementation objects have not been linked at time of field
+	 * construction.
+	 */
+	private Problem problem;
 
+	/**
+	 * The filenames of all instances that must be loaded. Usually, there is only one filename.
+	 */
 	private List<String> filenames;
 
 	@Override
@@ -107,7 +121,10 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		return list;
 	}
 
-	public void data() { // called automatically by reflection
+	/**
+	 * Stores the filename(s) of the instances in XCSP3 format that must be loaded. This method is called by reflection.
+	 */
+	public void data() {
 		this.problem = (Problem) imp();
 		String s = problem.askString("File or directory:");
 		if (filenames == null) {
@@ -120,6 +137,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void model() {
+		// we now recognize special constraint forms inside the class Problem
 		implem.currParameters.remove(RECOGNIZE_UNARY_PRIMITIVES);
 		implem.currParameters.remove(RECOGNIZE_BINARY_PRIMITIVES);
 		implem.currParameters.remove(RECOGNIZE_TERNARY_PRIMITIVES);
@@ -130,10 +148,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 			OptionsGeneral options = problem.head.control.general;
 			if (options.verbose > 1)
 				XParser.VERBOSE = true;
-			if (options.discardClasses.indexOf(',') < 0)
-				loadInstance(name(), options.discardClasses);
-			else
-				loadInstance(name(), options.discardClasses.split(","));
+			loadInstance(name(), options.discardClasses.split(","));
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("Problem when parsing the instance. Fix the problem.");
@@ -143,7 +158,6 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void beginInstance(TypeFramework type) {
-		// if (type == TypeFramework.COP) problem.head.control.toCOP();
 	}
 
 	private void copyBasicAttributes(ModelingEntity entity, ParsingEntry entry) {
@@ -256,21 +270,6 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		completeMapVar(va, a);
 	}
 
-	@Override
-	public void buildVarInteger(XVarInteger x, int minValue, int maxValue) {
-		throw new AssertionError();
-	}
-
-	@Override
-	public void buildVarInteger(XVarInteger x, int[] values) {
-		throw new AssertionError();
-	}
-
-	@Override
-	public void buildVarSymbolic(XVarSymbolic x, String[] values) {
-		throw new AssertionError();
-	}
-
 	/**********************************************************************************************
 	 * Methods for loading constraints
 	 *********************************************************************************************/
@@ -317,10 +316,9 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void loadCtr(XCtr c) {
-		if (problem.features.collecting.mustDiscard(c)) // .vars()))
+		if (problem.features.collecting.mustDiscard(c))
 			return;
 		int sizeBefore = problem.ctrEntities.allEntities.size();
-
 		XCallbacks2.super.loadCtr(c);
 		if (sizeBefore == problem.ctrEntities.allEntities.size())
 			return; // must have been a true constraint (should be checked)
@@ -334,7 +332,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	// ************************************************************************
-	// ***** Constraint intension
+	// ***** Constraint Intension
 	// ************************************************************************
 
 	@Override
@@ -344,13 +342,13 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	// ************************************************************************
-	// ***** Constraint extension
+	// ***** Constraint Extension
 	// ************************************************************************
 
 	@Override
 	public void buildCtrExtension(String id, XVarInteger x, int[] values, boolean positive, Set<TypeFlag> flags) {
 		control(!flags.contains(STARRED_TUPLES));
-		VariableInteger y = trVar(x);
+		Variable y = trVar(x);
 		values = flags.contains(UNCLEAN_TUPLES) ? IntStream.of(values).filter(v -> y.dom.containsValue(v)).toArray() : values;
 		problem.extension(y, values, positive);
 	}
@@ -368,7 +366,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	// ************************************************************************
-	// ***** Constraints Regular and Mdd
+	// ***** Constraints Regular, Mdd and Stretch
 	// ************************************************************************
 
 	@Override
@@ -379,6 +377,16 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void buildCtrMDD(String id, XVarInteger[] list, Transition[] transitions) {
 		problem.mdd(trVars(list), transitions);
+	}
+
+	@Override
+	public void buildCtrStretch(String id, XVarInteger[] list, int[] values, int[] widthsMin, int[] widthsMax) {
+		problem.stretch(trVars(list), values, widthsMin, widthsMax, null);
+	}
+
+	@Override
+	public void buildCtrStretch(String id, XVarInteger[] list, int[] values, int[] widthsMin, int[] widthsMax, int[][] patterns) {
+		problem.stretch(trVars(list), values, widthsMin, widthsMax, patterns);
 	}
 
 	// ************************************************************************
@@ -416,7 +424,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	// ************************************************************************
-	// ***** Constraint ordered/lexicographic
+	// ***** Constraint Ordered/Lexicographic
 	// ************************************************************************
 
 	@Override
@@ -445,7 +453,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	// ************************************************************************
-	// ***** Constraint sum
+	// ***** Constraint Sum and Count
 	// ************************************************************************
 
 	@Override
@@ -478,10 +486,6 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	public void buildCtrSum(String id, XNode<XVarInteger>[] trees, XVarInteger[] coeffs, Condition condition) {
 		unimplementedCase(id, join(trees), join(coeffs), condition); // TODO
 	}
-
-	// ************************************************************************
-	// ***** Constraint count
-	// ************************************************************************
 
 	@Override
 	public void buildCtrCount(String id, XVarInteger[] list, int[] values, Condition condition) {
@@ -522,6 +526,10 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	public void buildCtrAmong(String id, XVarInteger[] list, int[] values, XVarInteger k) {
 		problem.count(trVars(list), values, trVar(condition(EQ, k)));
 	}
+
+	// ************************************************************************
+	// ***** Constraint NValues and Cardinality
+	// ************************************************************************
 
 	@Override
 	public void buildCtrNValues(String id, XVarInteger[] list, Condition condition) {
@@ -568,6 +576,10 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		problem.cardinality(trVars(list), trVars(values), closed, occursMin, occursMax);
 	}
 
+	// ************************************************************************
+	// ***** Constraint Maximum and Minimum
+	// ************************************************************************
+
 	@Override
 	public void buildCtrMaximum(String id, XVarInteger[] list, Condition condition) {
 		problem.maximum(trVars(list), trVar(condition));
@@ -597,6 +609,10 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	public void buildCtrMinimum(String id, XNode<XVarInteger>[] trees, Condition condition) {
 		problem.minimum(trVar(trees), trVar(condition));
 	}
+
+	// ************************************************************************
+	// ***** Constraint Element and Channel
+	// ************************************************************************
 
 	@Override
 	public void buildCtrElement(String id, XVarInteger[] list, Condition condition) {
@@ -643,15 +659,9 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		problem.channel(trVars(list), startIndex, trVar(value));
 	}
 
-	@Override
-	public void buildCtrStretch(String id, XVarInteger[] list, int[] values, int[] widthsMin, int[] widthsMax) {
-		problem.stretch(trVars(list), values, widthsMin, widthsMax, null);
-	}
-
-	@Override
-	public void buildCtrStretch(String id, XVarInteger[] list, int[] values, int[] widthsMin, int[] widthsMax, int[][] patterns) {
-		problem.stretch(trVars(list), values, widthsMin, widthsMax, patterns);
-	}
+	// ************************************************************************
+	// ***** Constraint NoOverlap
+	// ************************************************************************
 
 	@Override
 	public void buildCtrNoOverlap(String id, XVarInteger[] origins, int[] lengths, boolean zeroIgnored) {
@@ -672,6 +682,10 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	public void buildCtrNoOverlap(String id, XVarInteger[][] origins, XVarInteger[][] lengths, boolean zeroIgnored) {
 		problem.noOverlap(trVars2D(origins), trVars2D(lengths), zeroIgnored);
 	}
+
+	// ************************************************************************
+	// ***** Constraint Cumulative and BinPacking
+	// ************************************************************************
 
 	@Override
 	public void buildCtrCumulative(String id, XVarInteger[] origins, int[] lengths, int[] heights, Condition condition) {
@@ -714,8 +728,17 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	@Override
-	public void buildCtrInstantiation(String id, XVarInteger[] list, int[] values) {
-		problem.instantiation(trVars(list), values);
+	public void buildCtrBinPacking(String id, XVarInteger[] list, int[] sizes, Condition condition) {
+		problem.binpacking(trVars(list), sizes, trVar(condition));
+	}
+
+	// ************************************************************************
+	// ***** Constraint Circuit, Clause and Instantiation
+	// ************************************************************************
+
+	@Override
+	public void buildCtrCircuit(String id, XVarInteger[] list, int startIndex) {
+		problem.circuit(trVars(list), startIndex);
 	}
 
 	@Override
@@ -724,13 +747,8 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	@Override
-	public void buildCtrCircuit(String id, XVarInteger[] list, int startIndex) {
-		problem.circuit(trVars(list), startIndex);
-	}
-
-	@Override
-	public void buildCtrBinPacking(String id, XVarInteger[] list, int[] sizes, Condition condition) {
-		problem.binpacking(trVars(list), sizes, trVar(condition));
+	public void buildCtrInstantiation(String id, XVarInteger[] list, int[] values) {
+		problem.instantiation(trVars(list), values);
 	}
 
 	/**********************************************************************************************
@@ -848,7 +866,6 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	public void buildCtrIntension(String id, XVarSymbolic[] scope, XNodeParent<XVarSymbolic> tree) {
 		control(tree.exactlyVars(scope), "Pb with scope");
 		problem.intension((XNodeParent<IVar>) trVarSymbolic(tree));
-		// problem.intension(trVars(scope), (XNodeParent<IVar>) (Object) tree);
 	}
 
 	@Override
@@ -861,10 +878,10 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrExtension(String id, XVarSymbolic[] list, String[][] tuples, boolean positive, Set<TypeFlag> flags) {
-		Variable[] vars = trVars(list);
+		Variable[] scp = trVars(list);
 		tuples = flags.contains(UNCLEAN_TUPLES) ? Stream.of(tuples)
-				.filter(t -> IntStream.range(0, vars.length).allMatch(i -> ((DomainSymbols) vars[i].dom).toIdx(t[i]) != -1)).toArray(String[][]::new) : tuples;
-		problem.extension(trVars(list), tuples, positive, flags.contains(STARRED_TUPLES));
+				.filter(t -> IntStream.range(0, scp.length).allMatch(i -> ((DomainSymbols) scp[i].dom).toIdx(t[i]) != -1)).toArray(String[][]::new) : tuples;
+		problem.extension(scp, tuples, positive, flags.contains(STARRED_TUPLES));
 	}
 
 	@Override

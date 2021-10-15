@@ -43,12 +43,12 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive {
 	 *********************************************************************************************/
 
 	@Override
-	public void afterProblemConstruction() {
-		super.afterProblemConstruction();
+	public void afterProblemConstruction(int n) {
+		super.afterProblemConstruction(n);
 		this.mdd = (MDD) extStructure();
 		this.trueNodes = new int[mdd.nNodes()];
 		if (extOptions.decremental)
-			this.set = new SetSparseReversible(mdd.nNodes(), problem.variables.length + 1, false);
+			this.set = new SetSparseReversible(mdd.nNodes(), n + 1, false);
 		else
 			this.falseNodes = new int[mdd.nNodes()];
 		this.ac = Variable.litterals(scp).booleanArray();

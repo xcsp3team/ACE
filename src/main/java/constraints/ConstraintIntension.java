@@ -45,8 +45,8 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 	}
 
 	@Override
-	public void afterProblemConstruction() {
-		super.afterProblemConstruction();
+	public void afterProblemConstruction(int n) {
+		super.afterProblemConstruction(n);
 		for (Evaluator evaluator : treeEvaluator.evaluators)
 			if (evaluator instanceof F1Evaluator)
 				((F1Evaluator) evaluator).function = problem.features.externFunctionArity1;

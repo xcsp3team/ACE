@@ -70,8 +70,8 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	 *********************************************************************************************/
 
 	@Override
-	public void afterProblemConstruction() {
-		control(head.problem.variables.length > 0, () -> "No variable in your model");
+	public void afterProblemConstruction(int n) {
+		control(n > 0, () -> "No variable in your model");
 		this.features = head.problem.features;
 		InformationBloc dinfo = domainsInfo();
 		InformationBloc vinfo = variablesInfo();
@@ -339,7 +339,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public void afterData() { // not a method from an observer
 		InformationBloc info = instanceInfo(head.instanceIndex);
 		save(head.instanceStopwatch.wckTime());
-		log.config(COMMENT_PREFIX + Kit.print("Instance ", Kit.BLUE) + head.problem.name() + "\n");
+		log.config(COMMENT_PREFIX + Kit.coloredString("Instance ", Kit.BLUE) + head.problem.name() + "\n");
 		record(INSTANCE, info.filtered_entries(), resolution);
 	}
 
@@ -430,7 +430,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 				}
 			}
 			// The special character in preprint cannot be put in StringBuilder
-			return (name.equals(RUN) ? "" : COMMENT_PREFIX + Kit.print(name, Kit.BLUE) + "\n") + sb.toString();
+			return (name.equals(RUN) ? "" : COMMENT_PREFIX + Kit.coloredString(name, Kit.BLUE) + "\n") + sb.toString();
 		}
 	}
 

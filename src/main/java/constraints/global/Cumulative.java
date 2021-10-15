@@ -47,9 +47,9 @@ public abstract class Cumulative extends ConstraintGlobal implements TagCallComp
 	 *********************************************************************************************/
 
 	@Override
-	public void afterProblemConstruction() {
-		super.afterProblemConstruction();
-		timetableReasoner.relevantTasks = new SetSparseReversible(nTasks, problem.variables.length + 1);
+	public void afterProblemConstruction(int n) {
+		super.afterProblemConstruction(n);
+		timetableReasoner.relevantTasks = new SetSparseReversible(nTasks, n + 1);
 	}
 
 	@Override

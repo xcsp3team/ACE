@@ -33,8 +33,11 @@ public interface Observers {
 
 		/**
 		 * Called when the construction of the problem is finished
+		 * 
+		 * @param n
+		 *            the number of variables
 		 */
-		default void afterProblemConstruction() {
+		default void afterProblemConstruction(int n) {
 		}
 
 		/**

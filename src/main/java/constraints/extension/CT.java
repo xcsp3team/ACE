@@ -44,8 +44,8 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 	}
 
 	@Override
-	public final void afterProblemConstruction() {
-		super.afterProblemConstruction();
+	public final void afterProblemConstruction(int n) {
+		super.afterProblemConstruction(n);
 
 		int nWords = (int) Math.ceil(tuples.length / 64.0);
 		this.current = new long[nWords];
@@ -91,7 +91,7 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 		this.modifiedWords = new boolean[nWords];
 
 		this.deltaSizes = new int[scp.length];
-		this.nonZeros = new SetDenseReversible(current.length, problem.variables.length + 1);
+		this.nonZeros = new SetDenseReversible(current.length, n + 1);
 		this.residues = Variable.litterals(scp).intArray();
 		this.firstCall = true;
 	}

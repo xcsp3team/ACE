@@ -21,7 +21,7 @@ import sets.SetSparse;
 import variables.Variable;
 
 /**
- * The constraint circuit ensures that the values taken by a sequence of variables <x0,x1, ...> forms a circuit, with
+ * The constraint Circuit ensures that the values taken by a sequence of variables <x0,x1, ...> forms a circuit, with
  * the assumption that each pair (i,xi) represents an arc. See for example "Introducing global constraints in CHIP",
  * Mathematical and Computer Modelling, 20(12):97–123, 1994 by N. Beldiceanu and E. Contejean.
  * 
@@ -64,18 +64,18 @@ public final class Circuit extends AllDifferentComplete {
 	private final boolean[] tmp;
 
 	/**
-	 * Build a constraint Circuit for the specified problem over the specified array/list of variables
+	 * Build a constraint Circuit for the specified problem over the specified array of variables
 	 * 
 	 * @param pb
 	 *            the problem to which the constraint is attached
-	 * @param list
-	 *            the involved variables
+	 * @param scp
+	 *            the scope of the constraint
 	 */
-	public Circuit(Problem pb, Variable[] list) {
-		super(pb, list);
-		this.set = new SetSparse(list.length);
-		this.tmp = new boolean[list.length];
-		control(Stream.of(list).allMatch(x -> 0 <= x.dom.firstValue() && x.dom.lastValue() < list.length));
+	public Circuit(Problem pb, Variable[] scp) {
+		super(pb, scp);
+		this.set = new SetSparse(scp.length);
+		this.tmp = new boolean[scp.length];
+		control(Stream.of(scp).allMatch(x -> 0 <= x.dom.firstValue() && x.dom.lastValue() < scp.length));
 	}
 
 	@Override

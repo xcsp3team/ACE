@@ -439,15 +439,15 @@ public interface Domain extends SetLinked {
 	default int commonValueWith(Domain dom) {
 		if (size() <= dom.size())
 			for (int a = first(); a != -1; a = next(a)) {
-				int va = toVal(a);
-				if (dom.containsValue(va))
-					return va;
+				int v = toVal(a);
+				if (dom.containsValue(v))
+					return v;
 			}
 		else
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
-				int va = dom.toVal(a);
-				if (containsValue(va))
-					return va;
+				int v = dom.toVal(a);
+				if (containsValue(v))
+					return v;
 			}
 		return Integer.MAX_VALUE;
 	}
@@ -487,9 +487,9 @@ public interface Domain extends SetLinked {
 	default int[] valuesChecking(Predicate<Integer> p) {
 		List<Integer> values = new ArrayList<>();
 		for (int a = first(); a != -1; a = next(a)) {
-			int va = toVal(a);
-			if (p.test(va))
-				values.add(va);
+			int v = toVal(a);
+			if (p.test(v))
+				values.add(v);
 		}
 		return Kit.intArray(values);
 	}

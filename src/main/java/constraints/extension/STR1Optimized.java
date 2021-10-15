@@ -29,16 +29,17 @@ public abstract class STR1Optimized extends STR1 {
 	 *********************************************************************************************/
 
 	@Override
-	public void afterProblemConstruction() {
-		super.afterProblemConstruction();
+	public void afterProblemConstruction(int n) {
+		super.afterProblemConstruction(n);
 		if (extOptions.decremental && !(this instanceof STR2N))
-			this.lastSizesStack = new int[problem.variables.length + 1][scp.length];
+			this.lastSizesStack = new int[n + 1][scp.length];
 	}
 
 	@Override
 	public void restoreBefore(int depth) {
 		super.restoreBefore(depth);
-		if (extOptions.decremental && depth > 0) // second part (depth > 0) for ensuring that aggressive runs can be used
+		if (extOptions.decremental && depth > 0) // second part (depth > 0) for ensuring that aggressive runs can be
+													// used
 			lastDepth = Math.max(0, Math.min(lastDepth, depth - 1));
 		else
 			Arrays.fill(lastSizes, 0); // we can use 0 because domains are necessarily not empty when we start filtering
