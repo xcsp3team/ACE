@@ -48,7 +48,6 @@ import optimization.Optimizer;
 import problem.Features;
 import propagation.AC;
 import propagation.Propagation;
-import propagation.SAC;
 import propagation.SAC.SACGreedy;
 import solver.Solver.Stopping;
 import solver.Statistics;
@@ -554,7 +553,6 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.separator(propagation.nSingletonTests > 0);
 		m.put(N_SINGLETON_TESTS, propagation.nSingletonTests);
 		m.put(N_EFFECTIVE_SINGLETON_TESTS, propagation.nEffectiveSingletonTests);
-		m.put(N_FOUND_SINGLETONS, propagation instanceof SAC ? ((SAC) (propagation)).nFoundSingletons : 0);
 		m.put(N_BRANCHES, propagation instanceof SACGreedy ? ((SACGreedy) (propagation)).nBranchesBuilt : 0);
 		m.put(SUM_BRANCHES, propagation instanceof SACGreedy ? ((SACGreedy) (propagation)).sumBranchSizes : 0);
 		m.separator();

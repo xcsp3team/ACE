@@ -24,17 +24,28 @@ import propagation.SAC.QueueForSAC3.Cell;
 import solver.Solver;
 import utility.Kit;
 import utility.Reflector;
+import variables.Domain;
 import variables.Variable;
 
+/**
+ * This is the class for Singleton Arc Consistency (AC). Information about SAC and algorithms enforcing it can be found
+ * in: <br/>
+ * "Efficient algorithms for singleton arc consistency", Constraints An Int. J. 16(1): 25-53 (2011), by C. Bessiere, S.
+ * Cardon, R. Debruyne, and C. Lecoutre
+ * 
+ * @author Christophe Lecoutre
+ */
 public class SAC extends StrongConsistency { // SAC is SAC1
 
-	public int nFoundSingletons;
-
 	/**
-	 * Returns true iff (x,a) is SAC.
+	 * @param x
+	 *            a variable
+	 * @param a
+	 *            a value index for x
+	 * @return true iff (x,a) is SAC
 	 */
 	protected boolean checkSAC(Variable x, int a) {
-		// System.out.println("trying" + x + " " + a);
+		// System.out.println("checking" + x + " " + a);
 		solver.assign(x, a);
 		boolean consistent = enforceArcConsistencyAfterAssignment(x);
 		solver.backtrack(x);
@@ -45,42 +56,48 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 	}
 
 	/**
-	 * The method to implement for performing singleton tests on the specified variable. It returns the number of
-	 * removed values.
+	 * Enforces SAC on the specified variable, i.e., performs all singleton tests on the values in the domain of the
+	 * specified variable
+	 * 
+	 * @param x
+	 *            a variable
+	 * @return the number of values removed by enforcing SAC on the specified variable
 	 */
 	protected int checkSAC(Variable x) {
-		int sizeBefore = x.dom.size();
+		Domain dx = x.dom;
+		int sizeBefore = dx.size();
 		if (onlyBounds) {
-			while (x.dom.size() > 0 && checkSAC(x, x.dom.first()) == false)
-				x.dom.removeElementary(x.dom.first());
-			while (x.dom.size() > 1 && checkSAC(x, x.dom.last()) == false)
-				x.dom.removeElementary(x.dom.last());
+			while (dx.size() > 0 && checkSAC(x, dx.first()) == false)
+				dx.removeElementary(dx.first());
+			while (dx.size() > 1 && checkSAC(x, dx.last()) == false)
+				dx.removeElementary(dx.last());
 		} else
-			for (int a = x.dom.first(); a != -1; a = x.dom.next(a))
+			for (int a = dx.first(); a != -1; a = dx.next(a))
 				if (checkSAC(x, a) == false)
-					x.dom.removeElementary(a);
-		return sizeBefore - x.dom.size();
+					dx.removeElementary(a);
+		return sizeBefore - dx.size();
 	}
 
 	@Override
 	protected boolean enforceStrongConsistency() {
-		for (int cnt = 0; cnt < nPassesLimit; cnt++) {
+		for (int i = 0; i < nPassesLimit; i++) {
 			long nBefore = nEffectiveSingletonTests;
 			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 				if (onlyNeighbours && !x.isNeighborOf(solver.decisions.varOfLastDecisionIf(true)))
 					continue;
-				if (x.dom.size() == 1) {
-					nFoundSingletons++;
+				if (x.dom.size() == 1)
 					continue;
-				}
 				int nRemovals = checkSAC(x);
-				if (nRemovals > 0 && (x.dom.size() == 0 || enforceArcConsistencyAfterRefutation(x) == false))
-					return false;
+				if (nRemovals > 0)
+					if (x.dom.size() == 0)
+						return x.dom.fail();
+					else if (enforceArcConsistencyAfterRefutation(x) == false)
+						return false;
 				if (solver.finished())
 					return true;
 			}
 			if (verbose > 1)
-				displayPassInfo(cnt, nEffectiveSingletonTests - nBefore, nEffectiveSingletonTests - nBefore == 0);
+				displayPassInfo(i, nEffectiveSingletonTests - nBefore, nEffectiveSingletonTests - nBefore == 0);
 			if (nBefore == nEffectiveSingletonTests)
 				break;
 		}
@@ -93,7 +110,11 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 	}
 
 	/**
-	 * Control method : returns true iff (x,a) is SAC.
+	 * @param x
+	 *            a variable
+	 * @param a
+	 *            a value index for x
+	 * @return true iff (x,a) is SAC
 	 */
 	private boolean controlSAC(Variable x, int a) {
 		solver.assign(x, a);
@@ -105,7 +126,8 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 	}
 
 	/**
-	 * Control method : returns true iff the CN is SAC.
+	 * 
+	 * @return true iff the problem is SAC
 	 */
 	protected final boolean controlSAC() {
 		if (nPassesLimit == Integer.MAX_VALUE)
@@ -117,16 +139,16 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		return true;
 	}
 
-	protected final void displayPassInfo(int cnt, long nEffective, boolean lastMessage) {
-		Kit.log.info("Singleton Pass " + cnt + " nEfectiveTests=" + nEffective + " nbValuesRemoved=" + Variable.nRemovedValuesFor(solver.problem.variables)
+	protected final void displayPassInfo(int i, long nEffective, boolean lastMessage) {
+		Kit.log.info("Singleton Pass " + i + " nEfectiveTests=" + nEffective + " nbValuesRemoved=" + Variable.nRemovedValuesFor(solver.problem.variables)
 				+ (lastMessage ? "\n" : ""));
 	}
 
 	/**********************************************************************************************
-	 * Subclasses
+	 * Inner classes
 	 *********************************************************************************************/
 
-	public static final class QueueForSAC3 {
+	public final class QueueForSAC3 {
 
 		public final class Cell {
 			public Variable x;
@@ -146,45 +168,56 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			}
 		}
 
-		public interface CellSelector {
-			Cell select();
+		public abstract class CellSelector {
+
+			protected abstract Cell select();
+
+			protected Cell firstSingletonCell() {
+				if (priorityToSingletons)
+					for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
+						if (x.dom.size() == 1) {
+							Cell cell = positions[x.num][x.dom.first()];
+							if (cell != null)
+								return cell;
+						}
+					}
+				return null;
+			}
 		}
 
-		public final class Fifo implements CellSelector {
+		public final class Fifo extends CellSelector {
+
 			@Override
 			public Cell select() {
-				if (priorityToSingletons) {
-					Cell cell = firstSingletonCell();
-					if (cell != null)
-						return cell;
-				}
-				for (Cell cell = head; cell != null; cell = cell.next) // first valid cell
+				Cell cell = firstSingletonCell();
+				if (cell != null)
+					return cell;
+				for (cell = head; cell != null; cell = cell.next) // first valid cell
 					if (cell.x.dom.contains(cell.a))
 						return cell;
 				return null;
 			}
 		}
 
-		public final class Lifo implements CellSelector {
+		public final class Lifo extends CellSelector {
+
 			@Override
 			public Cell select() {
-				if (priorityToSingletons) {
-					Cell cell = firstSingletonCell();
-					if (cell != null)
-						return cell;
-				}
-				for (Cell cell = tail; cell != null; cell = cell.prev) // last valid cell
+				Cell cell = firstSingletonCell();
+				if (cell != null)
+					return cell;
+				for (cell = tail; cell != null; cell = cell.prev) // last valid cell
 					if (cell.x.dom.contains(cell.a))
 						return cell;
 				return null;
 			}
 		}
 
-		public final class CellIterator implements CellSelector {
+		public final class CellHeuristic extends CellSelector {
 
 			private HeuristicVariables heuristic;
 
-			public CellIterator() {
+			public CellHeuristic() {
 				this.heuristic = new WdegOnDom(solver, false); // hard coding
 			}
 
@@ -217,27 +250,30 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			}
 		}
 
-		private Solver solver;
-
 		private boolean priorityToSingletons;
 
 		private Cell head, tail, trash;
 		private Cell priorityCell;
 
-		public int size;
+		protected Cell[][] positions;
 
-		private Cell[][] positions;
-
+		/**
+		 * sizes[x] indicates the number of cells for x
+		 */
 		private int[] sizes;
 
+		/**
+		 * size indicates the number of remaining cells
+		 */
+		public int size;
+
+		/**
+		 * The heuristic to select the next cell (literal)
+		 */
 		private CellSelector cellSelector;
 
-		public boolean isPresent(Variable x, int a) {
-			return positions[x.num][a] != null;
-		}
-
 		public void setPriorityTo(Variable x, int a) {
-			assert priorityCell == null && isPresent(x, a);
+			assert priorityCell == null && positions[x.num][a] != null;
 			priorityCell = positions[x.num][a];
 		}
 
@@ -254,17 +290,6 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			}
 		}
 
-		private Cell firstSingletonCell() {
-			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
-				if (x.dom.size() == 1) {
-					Cell cell = positions[x.num][x.dom.first()];
-					if (cell != null)
-						return cell;
-				}
-			}
-			return null;
-		}
-
 		public Cell pickNextCell() {
 			if (size == 0)
 				return null;
@@ -276,12 +301,11 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		}
 
 		public QueueForSAC3(Solver solver, boolean priorityToSingletons) {
-			this.solver = solver;
 			this.priorityToSingletons = priorityToSingletons;
 			this.positions = Stream.of(solver.problem.variables).map(x -> new Cell[x.dom.initSize()]).toArray(Cell[][]::new);
 			IntStream.range(0, Variable.nInitValuesFor(solver.problem.variables)).forEach(i -> trash = new Cell(trash));
 			this.sizes = new int[solver.problem.variables.length];
-			String s = "CellIterator"; // TODO hard coding
+			String s = CellHeuristic.class.getSimpleName(); // TODO hard coding
 			// options.classForSACSelector.substring(options.classForSACSelector.lastIndexOf('$') + 1);
 			this.cellSelector = Reflector.buildObject(s, CellSelector.class, this);
 		}
@@ -513,8 +537,6 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				Variable x = cell.x;
 				int a = cell.a;
 				nSingletonTests++;
-				if (x.dom.size() == 1)
-					nFoundSingletons++;
 				assert !x.assigned() && x.dom.contains(a) && queue.isEmpty();
 				solver.assign(x, a);
 				if (enforceArcConsistencyAfterAssignment(x)) {
