@@ -80,7 +80,7 @@ public final class Circuit extends AllDifferentComplete {
 
 	@Override
 	public boolean isGuaranteedAC() {
-		return false;
+		return false; // to override TagAC inherited from AllDifferentComplete
 	}
 
 	@Override

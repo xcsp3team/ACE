@@ -35,21 +35,12 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This the root class of several filtering algorithms for the constraint AllDifferent.
+ * This constraint AllDifferent ensures that all values assigned to the variables of its scope are all different. This
+ * class is the root class of several filtering algorithms for the constraint AllDifferent.
  * 
- * @author Christophe Lecoutre
+ * @author Christophe Lecoutre and Vincent Perradin (for the complete algorithm)
  */
 public abstract class AllDifferent extends ConstraintGlobal implements TagSymmetric {
-
-	/**
-	 * @param vars
-	 *            an array of variables
-	 * @return true if one could post an AllDifferent constraint on the specified variables that would represent a
-	 *         permutation
-	 */
-	public static final boolean isPermutationElligible(Variable... vars) {
-		return vars[0].dom.initSize() == vars.length && Variable.haveSameDomainType(vars);
-	}
 
 	@Override
 	public boolean isSatisfiedBy(int[] t) {
@@ -70,7 +61,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 	 */
 	public AllDifferent(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		// control(scp.length > 2);
+		control(scp.length > 2);
 	}
 
 	/**********************************************************************************************
@@ -78,7 +69,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 	 *********************************************************************************************/
 
 	/**
-	 * A complete filtering algorithm
+	 * A complete filtering algorithm enforcing (G)AC.
 	 * 
 	 * @author Vincent Perradin
 	 */
@@ -112,12 +103,18 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 	 * AllDifferentPermutation
 	 *********************************************************************************************/
 
-	public static final class AllDifferentPermutation extends AllDifferent implements TagNotAC, ObserverOnBacktracksSystematic {
+	/**
+	 * A specific filtering algorithm for permutations (the number of values is equal to the number of variables).
+	 */
+	public static final class AllDifferentPermutation extends AllDifferent implements TagNotAC, TagCallCompleteFiltering, ObserverOnBacktracksSystematic {
 
-		@Override
-		public void restoreBefore(int depth) {
-			unfixedVars.restoreLimitAtLevel(depth);
-			unfixedIdxs.restoreLimitAtLevel(depth);
+		/**
+		 * @param vars
+		 *            an array of variables
+		 * @return true if any instantiation with different values on the specified variables represents a permutation
+		 */
+		public static final boolean isElligible(Variable... vars) {
+			return vars[0].dom.initSize() == vars.length && Variable.haveSameDomainType(vars);
 		}
 
 		@Override
@@ -127,23 +124,28 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 			this.unfixedIdxs = new SetSparseReversible(scp[0].dom.initSize(), n + 1);
 		}
 
+		@Override
+		public void restoreBefore(int depth) {
+			unfixedVars.restoreLimitAtLevel(depth);
+			unfixedIdxs.restoreLimitAtLevel(depth);
+		}
+
 		private SetSparseReversible unfixedVars, unfixedIdxs;
 
 		private Variable[] sentinels1, sentinels2;
 
 		public AllDifferentPermutation(Problem pb, Variable[] scp) {
 			super(pb, scp);
-			control(pb.head.control.global.permutations && isPermutationElligible(scp));
+			control(pb.head.control.global.permutation && isElligible(scp));
 			int d = scp[0].dom.initSize();
-			// scp[0] and scp[-1] are the sentinels set arbitrarily initially
+			// scp[0] and scp[-1] are the sentinels that are set arbitrarily initially
 			this.sentinels1 = IntStream.range(0, d).mapToObj(a -> scp[0]).toArray(Variable[]::new);
 			this.sentinels2 = IntStream.range(0, d).mapToObj(a -> scp[scp.length - 1]).toArray(Variable[]::new);
 		}
 
 		private Variable findSentinel(int a, Variable otherSentinel) {
-			int[] dense = unfixedVars.dense;
 			for (int i = unfixedVars.limit; i >= 0; i--) {
-				Variable x = scp[dense[i]];
+				Variable x = scp[unfixedVars.dense[i]];
 				if (x != otherSentinel && x.dom.contains(a))
 					return x;
 			}
@@ -152,24 +154,21 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			int level = problem.solver.depth();
+			int depth = problem.solver.depth();
 			int[] dense = unfixedVars.dense;
 			for (int i = unfixedVars.limit; i >= 0; i--) {
-				Variable x = scp[dense[i]];
-				if (x.dom.size() == 1) {
-					int a = x.dom.single();
-					unfixedVars.remove(dense[i], level);
-					unfixedIdxs.remove(a, level);
+				Domain dx = scp[dense[i]].dom;
+				if (dx.size() == 1) {
+					int a = dx.single();
+					unfixedVars.remove(dense[i], depth);
+					unfixedIdxs.remove(a, depth);
 					for (int j = unfixedVars.limit; j >= 0; j--) {
-						Variable y = scp[dense[j]];
-						Domain dy = y.dom;
+						Domain dy = scp[dense[j]].dom;
 						if (dy.contains(a)) {
 							if (dy.remove(a) == false)
 								return false;
-							if (dy.size() == 1) {
-								// System.out.println("moving from " + i + " to " + (j+1));
+							if (dy.size() == 1)
 								i = Math.max(i, j + 1); // +1 because i-- before a new iteration
-							}
 						}
 					}
 				}
@@ -186,8 +185,8 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 						x = sentinels2[a];
 						if (x.dom.reduceTo(a) == false)
 							return false;
-						unfixedVars.remove(positionOf(x), level);
-						unfixedIdxs.remove(a, level);
+						unfixedVars.remove(positionOf(x), depth);
+						unfixedIdxs.remove(a, depth);
 					}
 				}
 				assert sentinels1[a].dom.size() > 1 : sentinels1[a] + " " + a + " " + sentinels1[a].dom.size();
@@ -198,8 +197,8 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 					else {
 						x = sentinels1[a];
 						x.dom.reduceTo(a);
-						unfixedVars.remove(positionOf(x), level);
-						unfixedIdxs.remove(a, level);
+						unfixedVars.remove(positionOf(x), depth);
+						unfixedIdxs.remove(a, depth);
 					}
 				}
 			}
@@ -218,17 +217,15 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 		 */
 		private Set<Integer> values;
 
-		private int mode = 0; // TODO hard coding
-
-		public AllDifferentWeak(Problem pb, Variable[] scp) {
+		public AllDifferentWeak(Problem pb, Variable[] scp, boolean stronger) {
 			super(pb, scp);
-			this.values = mode == 0 ? null : new HashSet<>();
+			this.values = stronger ? new HashSet<>() : null;
 		}
 
 		@Override
 		public boolean runPropagator(Variable x) {
 			if (x.dom.size() == 1) {
-				// ensures basic filtering
+				// ensures basic filtering (like a clique of binary constraints)
 				int v = x.dom.singleValue();
 				for (int i = futvars.limit; i >= 0; i--) {
 					Variable y = scp[futvars.dense[i]];
@@ -253,10 +250,23 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 
 	}
 
-	public static final class AllDifferentExceptWeak extends AllDifferent implements TagNotAC {
+	public static final class AllDifferentExceptWeak extends AllDifferent implements TagNotAC, TagCallCompleteFiltering, ObserverOnBacktracksSystematic {
+
+		@Override
+		public void afterProblemConstruction(int n) {
+			super.afterProblemConstruction(n);
+			this.treated = new SetSparseReversible(scp.length, n + 1, false);
+		}
+
+		@Override
+		public void restoreBefore(int depth) {
+			treated.restoreLimitAtLevel(depth);
+		}
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
+			if (exceptValues == null)
+				return super.isSatisfiedBy(t);
 			for (int i = 0; i < t.length; i++) {
 				if (Utilities.indexOf(t[i], exceptValues) != -1)
 					continue;
@@ -272,26 +282,71 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 		 */
 		private int[] exceptValues;
 
-		public AllDifferentExceptWeak(Problem pb, Variable[] scp, int[] exceptValues) {
+		/**
+		 * A temporary set used to collect values, during filtering
+		 */
+		private Set<Integer> values;
+
+		private SetSparseReversible treated;
+
+		private boolean stronger;
+
+		public AllDifferentExceptWeak(Problem pb, Variable[] scp, int[] exceptValues, boolean stronger) {
 			super(pb, scp);
+			control(exceptValues == null || exceptValues.length > 0);
 			this.exceptValues = exceptValues;
-			control(exceptValues.length > 0);
-			defineKey(exceptValues);
+			this.values = new HashSet<>();
+			this.stronger = stronger;
+			if (exceptValues != null)
+				defineKey(exceptValues);
 		}
 
 		@Override
 		public boolean runPropagator(Variable x) {
-			if (x.dom.size() == 1) {
-				int v = x.dom.singleValue();
-				if (Utilities.indexOf(v, exceptValues) != -1)
-					return true;
+			int depth = problem.solver.depth();
+			values.clear();
+			if (x.assigned() && !treated.contains(positionOf(x)) && (exceptValues == null || Utilities.indexOf(x.dom.singleValue(), exceptValues) == -1)) {
+				values.add(x.dom.singleValue());
+				treated.add(positionOf(x), depth);
+			}
+			for (int i = futvars.limit; i >= 0; i--) {
+				Variable y = scp[futvars.dense[i]];
+				if (y.dom.size() == 1 && !treated.contains(positionOf(y))
+						&& (exceptValues == null || Utilities.indexOf(y.dom.singleValue(), exceptValues) == -1)) {
+					if (values.contains(y.dom.singleValue()))
+						return y.dom.fail();
+					values.add(y.dom.singleValue());
+					treated.add(positionOf(y), depth);
+				}
+			}
+			if (values.size() > 0) {
+				// ensures basic filtering (like a clique of binary constraints)
 				for (int i = futvars.limit; i >= 0; i--) {
 					Variable y = scp[futvars.dense[i]];
-					if (y != x && y.dom.removeValueIfPresent(v) == false)
+					if (y.dom.size() > 1 && y.dom.removeValuesIn(values) == false)
 						return false;
 				}
 			}
-			return true;
+			if (!stronger)
+				return true;
+			// checking trivial inconsistency (less values than variables)
+			values.clear();
+			int nPastVariables = scp.length - futvars.size();
+			if (exceptValues != null)
+				for (int i = futvars.limit + 1; i < scp.length; i++) // past variables
+					if (Utilities.indexOf(scp[futvars.dense[i]].dom.singleValue(), exceptValues) != -1)
+						nPastVariables--; // because assigned to an ignored value
+			for (int i = futvars.limit; i >= 0; i--) {
+				Domain dom = scp[futvars.dense[i]].dom;
+				for (int a = dom.first(); a != -1; a = dom.next(a)) {
+					int v = dom.toVal(a);
+					if (exceptValues == null || Utilities.indexOf(v, exceptValues) == -1)
+						values.add(v);
+				}
+				if (nPastVariables + values.size() >= scp.length)
+					return true;
+			}
+			return x.dom.fail();
 		}
 	}
 
@@ -302,14 +357,14 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 	public static final class AllDifferentCounting extends AllDifferent implements TagNotAC, TagCallCompleteFiltering, ObserverOnBacktracksSystematic {
 
 		@Override
-		public void restoreBefore(int depth) {
-			unfixedVars.restoreLimitAtLevel(depth);
-		}
-
-		@Override
 		public void afterProblemConstruction(int n) {
 			super.afterProblemConstruction(n);
 			unfixedVars = new SetSparseReversible(scp.length, n + 1);
+		}
+
+		@Override
+		public void restoreBefore(int depth) {
+			unfixedVars.restoreLimitAtLevel(depth);
 		}
 
 		private SetSparse[] sets;

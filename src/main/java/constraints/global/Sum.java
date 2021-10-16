@@ -831,8 +831,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				long sum = 0;
 				for (int i = 0; i < scp.length; i++)
 					if (scp[i] != sentinel)
-						sum += scp[i].dom.singleValue() * coeffs[i]; // no overflow possible because it was controlled
-																		// at construction
+						sum += scp[i].dom.singleValue() * coeffs[i]; // no overflow possible (controlled at construction)
 					else
 						p = i;
 				long v = (limit - sum) / coeffs[p];

@@ -33,9 +33,8 @@ import variables.Variable;
  * java ace Crossword-ogd-p02.xml -s=all -varh=Dom // distinct lists
  * 
  * @author Christophe Lecoutre
- * 
  */
-public final class DistinctLists extends ConstraintGlobal implements ObserverOnBacktracksSystematic, TagCallCompleteFiltering, TagNotSymmetric {
+public final class DistinctLists extends ConstraintGlobal implements TagCallCompleteFiltering, TagNotSymmetric, ObserverOnBacktracksSystematic {
 
 	@Override
 	public boolean isSatisfiedBy(int[] t) {

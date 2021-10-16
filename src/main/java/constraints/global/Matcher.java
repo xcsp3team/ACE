@@ -18,7 +18,6 @@ import java.util.stream.Stream;
 
 import constraints.Constraint;
 import constraints.global.AllDifferent.AllDifferentComplete;
-import constraints.global.Cardinality.CardinalityConstant;
 import interfaces.Observers.ObserverOnConstruction;
 import problem.Problem;
 import sets.SetSparse;
@@ -27,21 +26,16 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
+/**
+ * The object used to compute a maximal matching, and to delete inconsistent values
+ * 
+ * @author Vincent Perradin
+ */
 public abstract class Matcher implements ObserverOnConstruction {
 
 	@Override
 	public void afterProblemConstruction(int n) {
 		this.unfixedVars = new SetSparseReversible(arity, n + 1);
-
-		this.neighborsOfValues = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparse(arity + 1)).toArray(SetSparse[]::new);
-		this.neighborsOfT = new SetSparse(intervalSize);
-		this.currValsSCC = new SetSparse(intervalSize);
-
-		int nNodes = arity + intervalSize + 1;
-		this.visitTime = Kit.repeat(-1, nNodes);
-		this.stackTarjan = new SetSparse(nNodes);
-		this.numDFS = new int[nNodes];
-		this.lowLink = new int[nNodes];
 	}
 
 	public void restoreAtDepthBefore(int depth) {
@@ -87,7 +81,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 	/**
 	 * visitTime[n] is the time of the last visit (DFS) to node n (variable or value or T)
 	 */
-	protected int[] visitTime;
+	protected final int[] visitTime;
 
 	/**
 	 * number of visited nodes in the current DFS
@@ -97,17 +91,17 @@ public abstract class Matcher implements ObserverOnConstruction {
 	/**
 	 * numDFS[n] is the number (order) of node n when reached/discovered during DFS
 	 */
-	protected int[] numDFS;
+	private final int[] numDFS;
 
 	/**
 	 * lowLink[n] is the minimum number of all nodes reachable from node n by following edges used by the current DFS
 	 */
-	protected int[] lowLink;
+	protected final int[] lowLink;
 
 	/**
 	 * stack used to compute strongly connected components in the current DFS
 	 */
-	protected SetSparse stackTarjan;
+	private final SetSparse stackTarjan;
 
 	/**
 	 * neighborsOfValues[u] contains all neighbors (nodes) of node u. We have possibly arity + 1 (for node T) such
@@ -128,7 +122,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 	/**
 	 * current strongly connected component
 	 */
-	protected SetSparse currValsSCC;
+	private SetSparse currValsSCC;
 
 	protected final SetSparse currVarsSCC;
 
@@ -154,6 +148,16 @@ public abstract class Matcher implements ObserverOnConstruction {
 		this.minValue = Stream.of(scp).mapToInt(x -> x.dom.firstValue()).min().getAsInt();
 		this.maxValue = Stream.of(scp).mapToInt(x -> x.dom.lastValue()).max().getAsInt();
 		this.intervalSize = maxValue - minValue + 1;
+
+		this.neighborsOfValues = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparse(arity + 1)).toArray(SetSparse[]::new);
+		this.neighborsOfT = new SetSparse(intervalSize);
+		this.currValsSCC = new SetSparse(intervalSize);
+
+		int nNodes = arity + intervalSize + 1;
+		this.visitTime = Kit.repeat(-1, nNodes);
+		this.stackTarjan = new SetSparse(nNodes);
+		this.numDFS = new int[nNodes];
+		this.lowLink = new int[nNodes];
 
 		c.problem.head.observersConstruction.add(this);
 
@@ -424,12 +428,6 @@ public abstract class Matcher implements ObserverOnConstruction {
 	 */
 	public static class MatcherCardinality extends Matcher {
 
-		@Override
-		public void afterProblemConstruction(int n) {
-			super.afterProblemConstruction(n);
-			this.valToVars = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparse(arity, false)).toArray(SetSparse[]::new);
-		}
-
 		/**
 		 * Variables the values are matched to. In a GCC, a value can be matched to several variables.
 		 */
@@ -473,7 +471,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 		 * @param maxOccs
 		 *            : Number of times each value should be assigned at most.
 		 */
-		public MatcherCardinality(CardinalityConstant c, int[] keys, int[] minOccs, int[] maxOccs) {
+		public MatcherCardinality(Cardinality c, int[] keys, int[] minOccs, int[] maxOccs) {
 			super(c);
 			this.keys = keys;
 
@@ -500,6 +498,8 @@ public abstract class Matcher implements ObserverOnConstruction {
 					if (scp[x].dom.containsValue(domainValueOf(u)))
 						possibleVars[u].add(x);
 			}
+
+			this.valToVars = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparse(arity, false)).toArray(SetSparse[]::new);
 		}
 
 		private void handleAugmentingPath(int x, int u) { // , int currDepth) {

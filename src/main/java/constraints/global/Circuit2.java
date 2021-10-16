@@ -26,7 +26,6 @@ import variables.Variable;
  * Mathematical and Computer Modelling, 20(12):97–123, 1994 by N. Beldiceanu and E. Contejean.
  * 
  * @author Christophe Lecoutre
- * 
  */
 public final class Circuit2 extends AllDifferentComplete {
 

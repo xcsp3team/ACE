@@ -42,12 +42,12 @@ import variables.DomainFinite.DomainValues;
  * A variable is attached to a problem and is uniquely identified by a number called <code>num</code>. A domain is
  * attached to a variable and corresponds to the (finite) set of values which can be assigned to it. When a value is
  * assigned to a variable, the domain of this variable is reduced to this value. When a solver tries to assign a value
- * to a variable, it uses a <code>ValueOrderingHeuristic</code> object in order to know which value must be tried first.
- * A variable can occur in different constraints of the problem to which it is attached.
+ * to a variable, it uses a value ordering heuristic in order to determine which value must be tried first. A variable
+ * can occur in different constraints of the problem to which it is attached.
  * 
  * @author Christophe Lecoutre
  */
-public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic, Comparable<Variable> {
+public abstract class Variable implements ObserveronBacktracksUnsystematic, Comparable<Variable>, IVar {
 
 	/**********************************************************************************************
 	 * Subclasses
@@ -473,7 +473,8 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	}
 
 	/**
-	 * Analyzes the specified string in order to extract the id or number of variables
+	 * Analyzes the specified string in order to extract the id or number of variables. This method is used to treat
+	 * options set by the user concerning possible priority variables or partial instantiations.
 	 * 
 	 * @param s
 	 *            a string denoting a list of variable ids and/or numbers
@@ -563,8 +564,8 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	public int[] failed;
 
 	private Variable[] computeNeighbours(int neighborArityLimit) {
-		if (ctrs.length == 0 || ctrs[ctrs.length - 1].scp.length > neighborArityLimit) // the last constraint is the one
-																						// with the largest scope
+		if (ctrs.length == 0 || ctrs[ctrs.length - 1].scp.length > neighborArityLimit)
+			// the last constraint is the one with the largest scope
 			return null;
 		Set<Variable> set = new TreeSet<>();
 		for (Constraint c : ctrs)
@@ -582,8 +583,8 @@ public abstract class Variable implements IVar, ObserveronBacktracksUnsystematic
 	 * involving this variable.
 	 */
 	public final void storeInvolvingConstraints(List<Constraint> constraints) {
-		assert IntStream.range(0, constraints.size() - 1).allMatch(i -> ctrs[i].scp.length <= ctrs[i + 1].scp.length);
 		this.ctrs = constraints.stream().toArray(Constraint[]::new);
+		assert IntStream.range(0, ctrs.length - 1).allMatch(i -> ctrs[i].scp.length <= ctrs[i + 1].scp.length);
 		this.nghs = problem.variables.length > NB_VARIABLES_LIMIT_FOR_STORING_NEIGHBOURS ? null : computeNeighbours(NB_NEIGHBOURS_LIMIT_FOR_STORING_NEIGHBOURS);
 		this.failed = new int[dom.initSize()];
 		problem.features.varDegrees.add(deg());

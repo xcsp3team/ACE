@@ -41,12 +41,12 @@ public class NotAllEqual extends ConstraintGlobal implements TagAC, TagCallCompl
 	 * 
 	 * @param pb
 	 *            the problem to which the constraint is attached
-	 * @param list
+	 * @param scp
 	 *            the involved variables
 	 */
-	public NotAllEqual(Problem pb, Variable[] list) {
-		super(pb, list);
-		control(list.length > 2);
+	public NotAllEqual(Problem pb, Variable[] scp) {
+		super(pb, scp);
+		control(scp.length > 2);
 	}
 
 	@Override

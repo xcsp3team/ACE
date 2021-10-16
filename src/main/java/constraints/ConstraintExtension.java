@@ -285,7 +285,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		if (starred == null)
 			starred = isStarred(tuples);
 		else
-			assert starred == isStarred(tuples) : starred + " \n" + Kit.join(tuples);
+			assert starred == isStarred(tuples) : starred;
 		int[][] m = scp[0] instanceof VariableSymbolic ? pb.symbolic.replaceSymbols((String[][]) tuples) : (int[][]) tuples;
 		if (scp[0] instanceof VariableInteger && !starred && pb.head.control.extension.reverse(scp.length, positive)) {
 			m = reverseTuples(scp, m);

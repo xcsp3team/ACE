@@ -33,7 +33,13 @@ import problem.Problem;
 import variables.Domain;
 import variables.Variable;
 
-public abstract class Extremum extends ConstraintGlobal implements TagCallCompleteFiltering, TagAC {
+/**
+ * The constraint Minimum and Maximum ensure that the minimal values or maximal values assigned to the variables in the
+ * scope of the constraint respects a condition. This is the abstract root class.
+ * 
+ * @author Christophe Lecoutre
+ */
+public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCallCompleteFiltering {
 
 	/**
 	 * The list (vector) of variables

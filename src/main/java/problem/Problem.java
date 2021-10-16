@@ -122,8 +122,7 @@ import constraints.ConstraintIntension;
 import constraints.extension.CMDD.CMDDO;
 import constraints.extension.CSmart;
 import constraints.extension.structures.Table;
-import constraints.extension.structures.TableSmart.HybridTuple;
-import constraints.global.AllDifferent;
+import constraints.extension.structures.TableHybrid.HybridTuple;
 import constraints.global.AllDifferent.AllDifferentComplete;
 import constraints.global.AllDifferent.AllDifferentCounting;
 import constraints.global.AllDifferent.AllDifferentExceptWeak;
@@ -131,8 +130,8 @@ import constraints.global.AllDifferent.AllDifferentPermutation;
 import constraints.global.AllDifferent.AllDifferentWeak;
 import constraints.global.AllEqual;
 import constraints.global.Among;
-import constraints.global.BinPacking.BinPacking2;
-import constraints.global.Cardinality.CardinalityConstant;
+import constraints.global.BinPacking.BinPackingEnergetic;
+import constraints.global.Cardinality;
 import constraints.global.Circuit;
 import constraints.global.Count.CountCst.AtLeast1;
 import constraints.global.Count.CountCst.AtLeastK;
@@ -234,7 +233,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public void afterProblemConstruction(int n) {
-		assert Stream.of(variables).map(x -> x.id()).distinct().count() == variables.length : "Two variables have the same id";
+		assert Stream.of(variables).map(x -> x.id()).distinct().count() == n : "Two variables have the same id";
 		assert Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints) : "Non normalized nums in the problem";
 
 		this.framework = optimizer != null ? TypeFramework.COP : TypeFramework.CSP; // currently, MAXCSP is not possible
@@ -1118,7 +1117,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		switch (head.control.global.allDifferent) {
 		case 0:
-			if (head.control.global.permutations && AllDifferent.isPermutationElligible(scp))
+			if (head.control.global.permutation && AllDifferentPermutation.isElligible(scp))
 				return post(new AllDifferentPermutation(this, scp));
 			return post(new AllDifferentComplete(this, scp));
 		case 1:
@@ -1127,7 +1126,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					different(scp[i], scp[j]);
 			});
 		case 2:
-			return post(new AllDifferentWeak(this, scp));
+			return post(new AllDifferentWeak(this, scp, false));
+		// return post(new AllDifferentExceptWeak(this, scp, null, false));
+		case 22:
+			return post(new AllDifferentWeak(this, scp, true));
+		// return post(new AllDifferentExceptWeak(this, scp, null, true));
 		case 3:
 			return post(new AllDifferentCounting(this, scp));
 		// case 4: return post(new AllDifferentBound(this, scp));
@@ -1167,14 +1170,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			Set<Integer> values = Variable.setOfvaluesIn(scp);
 			for (int v : exceptValues)
 				values.remove(v);
-			return post(new CardinalityConstant(this, scp, values.stream().mapToInt(i -> i).sorted().toArray(), 0, 1));
+			return post(new Cardinality(this, scp, values.stream().mapToInt(i -> i).sorted().toArray(), 0, 1));
 		case 1: // decomposition
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
 				if (i < j)
 					binaryDifferentExcept(scp[i], scp[j], exceptValues);
 			});
 		case 2:
-			return post(new AllDifferentExceptWeak(this, scp, exceptValues));
+			return post(new AllDifferentExceptWeak(this, scp, exceptValues, false));
+		case 22:
+			return post(new AllDifferentExceptWeak(this, scp, exceptValues, true));
 		default:
 			throw new AssertionError("Invalid mode");
 		}
@@ -1241,12 +1246,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity allEqual(VarSymbolic... scp) {
-		throw new UnsupportedOperationException("Not implemented");
+		return unimplemented("AllEqual");
 	}
 
 	@Override
 	public final CtrEntity allEqualList(Var[]... lists) {
-		throw new UnsupportedOperationException("Not implemnted");
+		return unimplemented("AllEqual");
 	}
 
 	// ************************************************************************
@@ -1274,7 +1279,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(list.length == lengths.length + 1);
 		return forall(range(list.length - 1),
 				i -> post(Add3.buildFrom(this, (Variable) list[i], (Variable) lengths[i], op.toConditionOperator(), (Variable) list[i + 1])));
-		// intension(XNodeParent.build(op.toExpr(), add(list[i], lengths[i]), list[i + 1])));
+		// intension(build(op.toExpr(), add(list[i], lengths[i]), list[i + 1])));
 	}
 
 	/**
@@ -1614,7 +1619,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Variable[] scp = translate(clean(list));
 		if (mustBeClosed)
 			postClosed(scp, values);
-		return post(new CardinalityConstant(this, scp, values, occurs));
+		return post(new Cardinality(this, scp, values, occurs));
+	}
+
+	@Override
+	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, int[] occursMin, int[] occursMax) {
+		control(values.length == occursMin.length && values.length == occursMax.length);
+		Variable[] scp = translate(clean(list));
+		if (mustBeClosed)
+			postClosed(scp, values);
+		return post(new Cardinality(this, scp, values, occursMin, occursMax));
 	}
 
 	@Override
@@ -1625,12 +1639,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			postClosed(scp, values);
 		// TODO should we filer variables of scp not involving values[i]?
 		return forall(range(values.length), i -> post(new ExactlyVarK(this, scp, values[i], (Variable) occurs[i])));
-	}
-
-	@Override
-	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, int[] occursMin, int[] occursMax) {
-		control(values.length == occursMin.length && values.length == occursMax.length);
-		return post(new CardinalityConstant(this, translate(clean(list)), values, occursMin, occursMax));
 	}
 
 	@Override
@@ -2067,7 +2075,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
 			// return post(new BinPackingSimple(this, vars, sizes, limit - (op == LT ? 1 : 0)));
-			return post(new BinPacking2(this, vars, sizes, limit - (op == LT ? 1 : 0))); // TODO add nValues ? other ?
+			return post(new BinPackingEnergetic(this, vars, sizes, limit - (op == LT ? 1 : 0))); // TODO add nValues ?
+																									// other ?
 		}
 		return unimplemented("binPacking");
 	}

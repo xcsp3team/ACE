@@ -496,8 +496,7 @@ public final class Control {
 		public final boolean redundNoOverlap = addB("redundNoOverlap", "r_no", true, "Must we post redundant constraints for NoOverlap?");
 		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");
 		public final boolean viewForSum = addB("viewForSum", "vs", false, "Must we use views for Sum constraints, when possible?");
-		public final boolean permutations = addB("permutations", "", false,
-				"Must we use permutation constraints for AllDifferent if possible? (may be faster)");
+		public final boolean permutation = addB("permutation", "", false, "Must we use permutation constraints for AllDifferent if possible? (may be faster)");
 		public final int allDifferentNb = addI("allDifferentNb", "adn", 0, "Number of possibly automatically inferred AllDifferent");
 		public final int allDifferentSize = addI("allDifferentSize", "ads", 5, "Limit on the size of possibly automatically inferred AllDifferent");
 
@@ -509,7 +508,7 @@ public final class Control {
 		public final String clazz = addS("clazz", "p", AC.class, null, "Class to be used for propagation (for example, FC, AC or SAC3)");
 		public final int variant = addI("variant", "pv", 0, "Propagation Variant (only used for some consistencies)");
 		public final boolean useAuxiliaryQueues = addB("useAuxiliaryQueues", "uaq", false, "Must we use auxiliary queues of constraints?");
-		// above, the purpose is to propagate less often the most costly constraints
+		// above, the purpose is to propagate less often the most costly constraints (to be finalized)
 		public final String reviser = addS("reviser", "", Reviser3.class, Reviser.class, "Class to be used for performing revisions");
 		public final boolean residues = addB("residues", "res", true, "Must we use redidues (AC3rm)?");
 		public final boolean bitResidues = addB("bitResidues", "bres", true, "Must we use bit resides (AC3bit+rm)?");
@@ -520,8 +519,8 @@ public final class Control {
 		public final int spaceLimit = addI("spaceLimit", "sl", 20,
 				"AC not enforced when size of the Cartesian product of domains is  greater than 2 to the power of this value (if not -1)");
 		public final int arityLimit = addI("arityLimit", "al", 2, "AC not enforced if the arity is greater than this value");
-		public boolean strongOnce = addB("strongOnce", "so", false, "Must we only apply the strong consistency (when chosen) before search?");
-		public final boolean strongAC = addB("strongAC", "sac", false, "Must we only apply the strong consistency (when chosen) when AC is effective?");
+		public boolean strongOnce = addB("strongOnce", "so", false, "Must we only apply the strong consistency (if chosen) before search?");
+		public final boolean strongAC = addB("strongAC", "sac", false, "Must we only apply the strong consistency (if chosen) when AC is effective?");
 	}
 
 	public class OptionsShaving extends OptionGroup {

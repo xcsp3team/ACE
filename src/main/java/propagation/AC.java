@@ -379,7 +379,7 @@ public class AC extends Forward {
 
 	private boolean controlAC(boolean discardObjectiveConstraint) {
 		for (Constraint c : solver.problem.constraints) {
-			if (discardObjectiveConstraint && c == solver.problem.optimizer.ctr)
+			if (discardObjectiveConstraint && solver.problem.optimizer != null && c == solver.problem.optimizer.ctr)
 				continue;
 			if (c.isGuaranteedAC() && c.controlAC() == false)
 				return false;

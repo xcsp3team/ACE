@@ -1,3 +1,13 @@
+/*
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
+ *
+ * Copyright (c) 2021. All rights reserved.
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
+ * 
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ */
+
 package main;
 
 import static utility.Kit.control;
@@ -168,7 +178,6 @@ public final class HeadExtraction extends Head {
 	}
 
 	private boolean solveFor(boolean[] presentVars, Variable[] currVars, int min, int max, int center) {
-		// Kit.log.info("min = " + min + " max = " + max + " center = " + center + " ");
 		for (int i = min; i <= center; i++)
 			presentVars[currVars[i].num] = true;
 		for (int i = center + 1; i <= max; i++)
@@ -177,7 +186,6 @@ public final class HeadExtraction extends Head {
 	}
 
 	private boolean solveFor(boolean[] presentCtrs, Constraint[] currCtrs, int min, int max, int center) {
-		// Kit.log.info("min = " + min + " max = " + max + " center = " + center + " ");
 		for (int i = min; i <= center; i++)
 			presentCtrs[currCtrs[i].num] = true;
 		for (int i = center + 1; i <= max; i++)

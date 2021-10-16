@@ -33,7 +33,7 @@ import constraints.ConstraintExtension;
 import constraints.ConstraintExtension.Extension1;
 import constraints.extension.CSmart;
 import constraints.extension.structures.Table;
-import constraints.extension.structures.TableSmart;
+import constraints.extension.structures.TableHybrid;
 import dashboard.Output;
 import variables.Variable;
 
@@ -244,7 +244,7 @@ public final class Features {
 			if (c.extStructure() instanceof Table)
 				tableSizes.add(((Table) c.extStructure()).tuples.length);
 			if (c instanceof CSmart)
-				tableSizes.add(((TableSmart) c.extStructure()).hybridTuples.length);
+				tableSizes.add(((TableHybrid) c.extStructure()).hybridTuples.length);
 			return num;
 		}
 

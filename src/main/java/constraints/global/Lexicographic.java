@@ -34,7 +34,6 @@ import variables.Variable;
  * Chapter 12 of "Constraint Networks", ISTE/Wiely (2009) by C. Lecoutre.
  * 
  * @author Christophe Lecoutre
- * 
  */
 public abstract class Lexicographic extends ConstraintGlobal implements TagAC, TagCallCompleteFiltering, TagNotSymmetric {
 

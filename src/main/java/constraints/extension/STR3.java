@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import constraints.Constraint;
 import constraints.ConstraintExtension;
 import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
@@ -32,32 +31,33 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
+/**
+ * This is STR3 (Simple Tabular Reduction, v3), for filtering extension (table) constraints, as described in: <br />
+ * "STR3: A path-optimal filtering algorithm for table constraints", Artificial Intelligence 220: 1-27 (2015) by C.
+ * Lecoutre, C. Likitvivatanavong, and R. H. C. Yap.
+ * 
+ * @author Christophe Lecoutre
+ */
 public final class STR3 extends ExtensionSpecific implements TagPositive, ObserverOnSolving {
+
+	/**********************************************************************************************
+	 * Implementing Interfaces
+	 *********************************************************************************************/
 
 	@Override
 	public void afterProblemConstruction(int n) {
 		super.afterProblemConstruction(n);
-		TableAugmented table = (TableAugmented) extStructure();
-		this.tuples = table.tuples;
-		this.set = new SetSparseReversible(tuples.length, n + 1);
+		this.table = (TableAugmented) extStructure();
+		this.set = new SetSparseReversible(table.tuples.length, n + 1);
 
-		this.offsetsForMaps = new int[scp.length];
-		for (int i = 1; i < offsetsForMaps.length; i++)
-			offsetsForMaps[i] = offsetsForMaps[i - 1] + scp[i - 1].dom.initSize();
 		int nValues = Variable.nInitValuesFor(scp);
 		this.separatorsMaps = IntStream.rangeClosed(0, n).mapToObj(i -> new SetSparseMapSTR3(nValues, false)).toArray(SetSparseMapSTR3[]::new);
 		// above do we need rangeClosed ?
 		this.deps = IntStream.range(0, set.dense.length).mapToObj(i -> new LocalSetSparseByte(scp.length, false)).toArray(LocalSetSparseByte[]::new);
 		if (set.capacity() >= Short.MAX_VALUE)
-			separators = Variable.litterals(scp).intArray();
+			this.separators = Variable.litterals(scp).intArray();
 		else
-			separatorsShort = Variable.litterals(scp).shortArray();
-
-		this.ac = Variable.litterals(scp).booleanArray();
-		this.cnts = new int[scp.length];
-		this.frontiers = new int[scp.length];
-		this.subtables = table.subtables;
-		this.subtablesShort = table.subtablesShort;
+			this.separatorsShort = Variable.litterals(scp).shortArray();
 	}
 
 	@Override
@@ -87,60 +87,33 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 		}
 	}
 
-	public final class SetSparseMapSTR3 extends SetSparse {
-		public short[] positions;
-
-		public int[] sseparators;
-
-		public SetSparseMapSTR3(int capacity, boolean initiallyFull) {
-			super(capacity, initiallyFull);
-			control(0 < capacity && capacity <= Short.MAX_VALUE);
-			this.positions = new short[capacity];
-			for (short i = 0; i < positions.length; i++)
-				positions[i] = i;
-			this.sseparators = Kit.range(capacity);
-		}
-
-		@Override
-		public final boolean add(int a) {
-			throw new RuntimeException("Must not be called without a second argument");
-		}
-
-		public boolean add(int a, int position, int separator) {
-			assert position < Byte.MAX_VALUE;
-			boolean added = super.add(a);
-			if (added) {
-				positions[a] = (short) position;
-				sseparators[a] = separator;
-			}
-			return added;
-		}
-	}
-
-	// ************************************************************************
-	// ***** SubTable for STR3
-	// ************************************************************************
+	/**********************************************************************************************
+	 * Inner classes
+	 *********************************************************************************************/
 
 	private static final class TableAugmented extends Table {
 
-		public int[][][] subtables; // subtables[x][a][k] is the tid (position in tuples) of the kth tuple where x = a
+		/**
+		 * subtables[x][a][k] is the tid (position in tuples) of the kth tuple where x = a
+		 */
+		public int[][][] subtables;
 
-		public short[][][] subtablesShort;
+		public short[][][] subtablesShort; // short version
 
 		protected void buildSubtables() {
-			Constraint ctr = firstRegisteredCtr();
+			Variable[] scp = firstRegisteredCtr().scp;
 			if (tuples.length >= Short.MAX_VALUE) {
-				List<Integer>[][] tmp = Variable.litterals(ctr.scp).listArray();
-				for (int i = 0; i < tuples.length; i++)
-					for (int j = 0; j < tuples[i].length; j++)
-						tmp[j][tuples[i][j]].add(i);
-				subtables = Stream.of(tmp).map(c -> Kit.intArray2D(c)).toArray(int[][][]::new);
+				List<Integer>[][] tmp = Variable.litterals(scp).listArray();
+				for (int tid = 0; tid < tuples.length; tid++)
+					for (int x = 0; x < scp.length; x++)
+						tmp[x][tuples[tid][x]].add(tid);
+				subtables = Stream.of(tmp).map(m -> Kit.intArray2D(m)).toArray(int[][][]::new);
 			} else {
-				List<Short>[][] tmp = Variable.litterals(ctr.scp).listArray();
-				for (int i = 0; i < tuples.length; i++)
-					for (int j = 0; j < tuples[i].length; j++)
-						tmp[j][tuples[i][j]].add((short) i);
-				subtablesShort = Stream.of(tmp).map(c -> Kit.shortArray2D(c)).toArray(short[][][]::new);
+				List<Short>[][] tmp = Variable.litterals(scp).listArray();
+				for (int tid = 0; tid < tuples.length; tid++)
+					for (int x = 0; x < scp.length; x++)
+						tmp[x][tuples[tid][x]].add((short) tid);
+				subtablesShort = Stream.of(tmp).map(m -> Kit.shortArray2D(m)).toArray(short[][][]::new);
 			}
 		}
 
@@ -174,49 +147,37 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 
 	}
 
-	// ************************************************************************
-	// ***** Fields
-	// ************************************************************************
+	private final class SetSparseMapSTR3 extends SetSparse {
+		public short[] positions;
 
-	protected int[][] tuples;
+		public int[] sseparators;
 
-	protected SetSparseReversible set;
+		public SetSparseMapSTR3(int capacity, boolean initiallyFull) {
+			super(capacity, initiallyFull);
+			control(0 < capacity && capacity <= Short.MAX_VALUE);
+			this.positions = new short[capacity];
+			for (short i = 0; i < positions.length; i++)
+				positions[i] = i;
+			this.sseparators = Kit.range(capacity);
+		}
 
-	protected int[] frontiers; // 1D variable position
+		@Override
+		public final boolean add(int a) {
+			throw new RuntimeException("Must not be called without a second argument");
+		}
 
-	/*** Fields related to propagation at preprocessing ***/
-
-	protected boolean[][] ac; // ac[x][a] indicates if a support has been found for (x,a)
-
-	protected int[] cnts; // cnts[x] is the number of values in the current domain of x with no found support (yet)
-
-	/*** Fields related to propagation during search ***/
-
-	protected int[][][] subtables; // 1D = variable (position) ; 2D = index ; 3D = order; value = position in
-									// sparseSetOfTuples
-
-	protected int[][] separators; // 1D = variable (position) ; 2D = index ; value = separator in the associated
-									// subtable
-
-	protected short[][][] subtablesShort; // 1D = variable (position) ; 2D = index ; 3D = order; value = position in
-											// sparseSetOfTuples
-
-	protected short[][] separatorsShort; // 1D = variable (position) ; 2D = index ; value = separator in the associated
-											// subtable
-
-	protected int[] offsetsForMaps; // 1D = variable (position)
-
-	protected SetSparseMapSTR3[] separatorsMaps; // 1D = depth
-
-	protected LocalSetSparseByte[] deps; // 1D = tuple position in sparseSetOfTuples ; value = variable position (so we
-											// can obtain the value in
-	// the tuple)
-
-	public STR3(Problem pb, Variable[] scp) {
-		super(pb, scp);
+		public boolean add(int a, int position, int separator) {
+			assert position < Byte.MAX_VALUE;
+			boolean added = super.add(a);
+			if (added) {
+				positions[a] = (short) position;
+				sseparators[a] = separator;
+			}
+			return added;
+		}
 	}
 
-	final class LocalSetSparseByte {
+	private final class LocalSetSparseByte {
 		private byte[] dense;
 
 		private byte[] sparse;
@@ -263,7 +224,62 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 			limit--;
 			return true; // removed
 		}
+	}
 
+	/**********************************************************************************************
+	 * Fields, constructor and preprocessing
+	 *********************************************************************************************/
+
+	/**
+	 * The (augmented) table used with STR3
+	 */
+	private TableAugmented table;
+
+	/**
+	 * The reversible sparse set storing the indexes (of tuples) of the current table
+	 */
+	private SetSparseReversible set;
+
+	/**
+	 * Only used at preprocessing, ac[x][a] indicates if a support has been found for (x,a)
+	 */
+	private boolean[][] ac;
+
+	/**
+	 * Only used at preprocessing, cnts[x] is the number of values in the current domain of x with no found support
+	 * (yet)
+	 */
+	protected int[] cnts;
+
+	/**
+	 * separators[x][a] is the separator for (x,a) in the associated subtable
+	 */
+	private int[][] separators;
+
+	private short[][] separatorsShort; // short version
+
+	private final int[] offsetsForMaps; // 1D = variable (position)
+
+	private SetSparseMapSTR3[] separatorsMaps; // 1D = depth
+
+	/**
+	 * deps[p] is the variable position of the tuple at position p in set (so we can obtain the value in the tuple)
+	 */
+	private LocalSetSparseByte[] deps;
+
+	/**
+	 * frontiers[x] is the frontier for variable x
+	 */
+	private final int[] frontiers;
+
+	public STR3(Problem pb, Variable[] scp) {
+		super(pb, scp);
+		this.offsetsForMaps = new int[scp.length];
+		for (int i = 1; i < offsetsForMaps.length; i++)
+			offsetsForMaps[i] = offsetsForMaps[i - 1] + scp[i - 1].dom.initSize();
+		this.ac = Variable.litterals(scp).booleanArray();
+		this.cnts = new int[scp.length];
+		this.frontiers = new int[scp.length];
 	}
 
 	@Override
@@ -294,7 +310,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 			Arrays.fill(ac[i], false);
 		}
 		for (int i = set.limit; i >= 0; i--) {
-			int[] tuple = tuples[set.dense[i]];
+			int[] tuple = table.tuples[set.dense[i]];
 			if (isValid(tuple)) {
 				for (int x = scp.length - 1; x >= 0; x--) {
 					int a = tuple[x];
@@ -321,10 +337,10 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 		for (int i = 0; i < frontiers.length; i++)
 			frontiers[i] = doms[i].lastRemoved();
 		// initialization of separators and deps
-		if (subtables != null) {
+		if (table.subtables != null) {
 			for (int x = scp.length - 1; x >= 0; x--) {
 				for (int a = scp[x].dom.first(); a != -1; a = scp[x].dom.next(a)) {
-					int[] subtable = subtables[x][a];
+					int[] subtable = table.subtables[x][a];
 					int p = subtable.length - 1;
 					while (!set.contains(subtable[p]))
 						p--;
@@ -338,8 +354,8 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 		} else {
 			for (int x = scp.length - 1; x >= 0; x--) {
 				for (int a = scp[x].dom.first(); a != -1; a = scp[x].dom.next(a)) {
-					control(subtablesShort[x][a].length < Short.MAX_VALUE);
-					short[] subtableShort = subtablesShort[x][a];
+					control(table.subtablesShort[x][a].length < Short.MAX_VALUE);
+					short[] subtableShort = table.subtablesShort[x][a];
 					int p = subtableShort.length - 1;
 					while (!set.contains(subtableShort[p]))
 						p--;
@@ -357,19 +373,19 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 	 * Methods related to propagation during search
 	 *********************************************************************************************/
 
-	// bug to fix for java ace BinPacking-tab-Schwerin1_BPP10.xml.lzma -rc=10 -lc=4 -f=cop -positive=str3 -rn=20
+	// bug to fix for java ace BinPacking-tab-Schwerin1_BPP10.xml.lzma -r_c=10 -lc=4 -positive=str3 -r_n=20
 	// -varh=DDegOnDom -ev
 	protected void suppressInvalidTuplesFromRemovalsOf(int x) {
 		Domain dom = doms[x];
-		if (subtables != null) {
+		if (table.subtables != null) {
 			for (int a = dom.lastRemoved(); a != frontiers[x]; a = dom.prevRemoved(a)) {
-				int[] t = subtables[x][a];
+				int[] t = table.subtables[x][a];
 				for (int p = separators[x][a]; p >= 0; p--)
 					set.remove(t[p]);
 			}
 		} else {
 			for (int a = dom.lastRemoved(); a != frontiers[x]; a = dom.prevRemoved(a)) {
-				short[] t = subtablesShort[x][a];
+				short[] t = table.subtablesShort[x][a];
 				for (int p = separatorsShort[x][a]; p >= 0; p--)
 					set.remove(t[p]);
 			}
@@ -395,16 +411,16 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 		SetSparseMapSTR3 map = separatorsMaps[problem.solver.depth()];
 		int limitBefore = set.limit;
 		supressInvalidTuples();
-		if (subtables != null) {
+		if (table.subtables != null) {
 			for (int i = set.limit + 1; i <= limitBefore; i++) {
-				int[] tuple = tuples[set.dense[i]]; // suppressed tuple
+				int[] tuple = table.tuples[set.dense[i]]; // suppressed tuple
 				LocalSetSparseByte dependencies = deps[set.dense[i]];
 				for (int j = dependencies.limit; j >= 0; j--) {
 					byte x = dependencies.dense[j];
 					if (!scp[x].assigned()) {
 						int a = tuple[x];
 						if (scp[x].dom.contains(a)) {
-							int[] subtable = subtables[x][a];
+							int[] subtable = table.subtables[x][a];
 							int separator = separators[x][a], p = separator;
 							while (p >= 0 && !set.contains(subtable[p]))
 								p--;
@@ -426,14 +442,14 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 			}
 		} else {
 			for (int i = set.limit + 1; i <= limitBefore; i++) {
-				int[] supressedTuple = tuples[set.dense[i]];
+				int[] supressedTuple = table.tuples[set.dense[i]];
 				LocalSetSparseByte dependencies = deps[set.dense[i]];
 				for (int j = dependencies.limit; j >= 0; j--) {
 					byte x = dependencies.dense[j];
 					if (!scp[x].assigned()) {
 						int a = supressedTuple[x];
 						if (scp[x].dom.contains(a)) {
-							short[] subtable = subtablesShort[x][a];
+							short[] subtable = table.subtablesShort[x][a];
 							short separator = separatorsShort[x][a], p = separator;
 							while (p >= 0 && !set.contains(subtable[p]))
 								p--;

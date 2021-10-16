@@ -55,7 +55,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public final class TableSmart extends ExtensionStructure {
+public final class TableHybrid extends ExtensionStructure {
 
 	@Override
 	public boolean checkIndexes(int[] t) {
@@ -71,7 +71,7 @@ public final class TableSmart extends ExtensionStructure {
 	 */
 	public final HybridTuple[] hybridTuples;
 
-	public TableSmart(ConstraintExtension c, HybridTuple[] hybridTuples) {
+	public TableHybrid(ConstraintExtension c, HybridTuple[] hybridTuples) {
 		super(c);
 		this.hybridTuples = hybridTuples;
 	}

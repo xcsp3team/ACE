@@ -15,13 +15,19 @@ import static utility.Kit.control;
 import org.xcsp.common.Utilities;
 
 import constraints.ConstraintGlobal;
+import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
 import problem.Problem;
 import sets.SetDense;
 import variables.Domain;
 import variables.Variable;
 
-public final class NoOverlap extends ConstraintGlobal implements TagNotAC {
+/**
+ * This constraint NoOverlap ensures that items defined as rectangles of various sizes do not overlap.
+ * 
+ * @author Christophe Lecoutre
+ */
+public final class NoOverlap extends ConstraintGlobal implements TagNotAC, TagCallCompleteFiltering {
 
 	@Override
 	public boolean isSatisfiedBy(int[] tuple) {
@@ -34,14 +40,32 @@ public final class NoOverlap extends ConstraintGlobal implements TagNotAC {
 		return true;
 	}
 
+	/**
+	 * xs[i] is the position of the ith item along the x-axis
+	 */
 	private final Variable[] xs;
+
+	/**
+	 * widths[i] is the width of the ith item
+	 */
 	private final int[] widths;
+
+	/**
+	 * ys[i] is the position of the ith item along the y-axis
+	 */
 	private final Variable[] ys;
+
+	/**
+	 * heights[i] is the height of the ith item
+	 */
 	private final int[] heights;
 
-	private int half;
+	/**
+	 * The number of items (half of the scope size)
+	 */
+	private final int half;
 
-	private SetDense overlappings;
+	private final SetDense overlappings;
 
 	public NoOverlap(Problem pb, Variable[] xs, int[] widths, Variable[] ys, int[] heights) {
 		super(pb, Utilities.collect(Variable.class, xs, ys));
@@ -107,17 +131,6 @@ public final class NoOverlap extends ConstraintGlobal implements TagNotAC {
 						else if (minY <= w && w < maxY)
 							diffY -= Math.min(maxY, w + t2[i]) - w;
 						if (volume > diffX * diffY) { // not enough room for the items
-							// System.out.println("volume " + volume + " size=" + set.size() + " surface=" + surface + "
-							// xi=" + v + " yi=" + w);
-							// for (int k = set.limit; k >= 0; k--) {
-							// int j = set.dense[k];
-							// System.out.println("xi=" + j + " " + x1[j].dom.firstValue() + ".." +
-							// x1[j].dom.lastValue() + " (" + t1[j] + ")");
-							// System.out.println("yj=" + j + " " + x2[j].dom.firstValue() + ".." +
-							// x2[j].dom.lastValue() + " (" + t2[j] + ")");
-							// }
-							// System.out.println("minX=" + minX + " maxX=" + maxX + " minY=" + minY + " maxY=" + maxY +
-							// " t2i=" + t2[i]);
 							continue intern; // to try another value w
 						}
 						continue extern; // because found support
@@ -135,5 +148,16 @@ public final class NoOverlap extends ConstraintGlobal implements TagNotAC {
 	public boolean runPropagator(Variable x) {
 		return filter(xs, widths, ys, heights) && filter(ys, heights, xs, widths);
 	}
-
 }
+
+// System.out.println("volume " + volume + " size=" + set.size() + " surface=" + surface + "
+// xi=" + v + " yi=" + w);
+// for (int k = set.limit; k >= 0; k--) {
+// int j = set.dense[k];
+// System.out.println("xi=" + j + " " + x1[j].dom.firstValue() + ".." +
+// x1[j].dom.lastValue() + " (" + t1[j] + ")");
+// System.out.println("yj=" + j + " " + x2[j].dom.firstValue() + ".." +
+// x2[j].dom.lastValue() + " (" + t2[j] + ")");
+// }
+// System.out.println("minX=" + minX + " maxX=" + maxX + " minY=" + minY + " maxY=" + maxY +
+// " t2i=" + t2[i]);

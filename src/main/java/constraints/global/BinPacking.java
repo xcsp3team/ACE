@@ -25,9 +25,15 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
-// Problems in PyCSP3 to be tested: BinPacking2.py and NursingWorkload and TestBinpacking (dans special)
-
-public abstract class BinPacking extends ConstraintGlobal implements TagNotAC { // not call filtering-complete
+/**
+ * This constraint BinPacking ensures that we cannot exceed the capacity (limit) of bins where we put various items (of
+ * various sizes). The code is still experimental (problems to be tested: BinPacking2.py, NursingWorkload and
+ * TestBinpacking from special).
+ * 
+ * @author Christophe Lecoutre
+ */
+public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
+	// TODO both suclasses are call filtering-complete? to check and test
 
 	@Override
 	public final boolean isSatisfiedBy(int[] t) {
@@ -40,10 +46,20 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC { 
 		return true;
 	}
 
+	/**
+	 * sizes[i] is the size of the ith item
+	 */
 	protected final int[] sizes;
+
+	/**
+	 * limits[j] is the capacity of the jth bin
+	 */
 	protected final int[] limits;
 
-	protected final long[] sums; // only used when checking values
+	/**
+	 * A temporary array used when checking values
+	 */
+	protected final long[] sums;
 
 	public BinPacking(Problem pb, Variable[] scp, int[] sizes, int[] limits) {
 		super(pb, scp);
@@ -101,7 +117,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC { 
 
 	}
 
-	public static final class BinPacking2 extends BinPacking implements ObserverOnBacktracksSystematic {
+	public static final class BinPackingEnergetic extends BinPacking implements ObserverOnBacktracksSystematic {
 
 		@Override
 		public void afterProblemConstruction(int n) {
@@ -130,16 +146,25 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC { 
 			}
 		}
 
+		/**
+		 * The array of possible bins
+		 */
 		private Bin[] bins;
+
+		/**
+		 * The array of bins, sorted according to their current remaining capacities
+		 */
 		private Bin[] sortedBins;
 
-		private SetDense[] fronts; // fronts[i] is the set of items which are in front of the ith bin (in the ordered
-									// sequence of bins) such that i is the first
-									// position where they can be put
+		/**
+		 * fronts[i] is the set of items which are in front of the ith bin (in the ordered sequence of bins) such that i
+		 * is the first position where they can be put
+		 */
+		private SetDense[] fronts;
 
 		private SetSparseReversible usableBins; // set of currently usable bins
 
-		public BinPacking2(Problem pb, Variable[] scp, int[] sizes, int[] limits) {
+		public BinPackingEnergetic(Problem pb, Variable[] scp, int[] sizes, int[] limits) {
 			super(pb, scp, sizes, limits);
 			int nBins = scp[0].dom.initSize();
 			this.bins = IntStream.range(0, nBins).mapToObj(i -> new Bin()).toArray(Bin[]::new);
@@ -147,14 +172,12 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC { 
 			this.fronts = IntStream.range(0, nBins).mapToObj(i -> new SetDense(scp.length)).toArray(SetDense[]::new);
 		}
 
-		public BinPacking2(Problem pb, Variable[] scp, int[] sizes, int limit) {
+		public BinPackingEnergetic(Problem pb, Variable[] scp, int[] sizes, int limit) {
 			this(pb, scp, sizes, Kit.repeat(limit, scp[0].dom.initSize()));
 		}
 
 		@Override
 		public boolean runPropagator(Variable x) {
-			// System.out.println(this);
-
 			// initialization
 			for (int j = 0; j <= usableBins.limit; j++) {
 				int i = usableBins.dense[j];
@@ -243,12 +266,12 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC { 
 				// are in front of the leftmost one (due to other constraints)
 
 				// margin is a global value computed when reasoning from the jth sorted bin to the rightmost one
-				int margin = cumulatedCapacities - lost - cumulatedSizes; // the margin is computed from the object of
-																			// max size (when only one possible)
+				int margin = cumulatedCapacities - lost - cumulatedSizes;
+				// the margin is computed from the object of max size (when only one possible)
 				if (margin < 0)
 					return x.dom.fail();
-				if (onyOnePossibleInTheBin && margin - (max - min) < 0) { // we can remove some values if the smallest
-																			// item cannot be put in the bin j
+				if (onyOnePossibleInTheBin && margin - (max - min) < 0) {
+					// we can remove some values if the smallest item cannot be put in the bin j
 					for (int k = 0; k <= fronts[j].limit; k++) {
 						int i = fronts[j].dense[k];
 						if (margin - (max - sizes[i]) < 0 && scp[i].dom.removeValueIfPresent(sortedBins[j].index) == false)
@@ -290,8 +313,8 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC { 
 				return true;
 
 			// we discard bins that are now identified as useless because we cannot even put the smallest item in it
-			for (int j = usableBins.limit; j >= 0; j--) { // for breaking, we should go from 0 to ..., but removing an
-															// element in usableBins could be a pb
+			for (int j = usableBins.limit; j >= 0; j--) {
+				// for breaking, we should go from 0 to ..., but removing an element in usableBins could be a pb
 				int i = sortedBins[j].index;
 				assert usableBins.contains(i);
 				if (sortedBins[j].capacity < sizes[smallestFreeItem] || i > maxUsableBin || i < minUsableBin)

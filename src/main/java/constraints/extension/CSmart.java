@@ -24,8 +24,8 @@ import java.util.stream.Stream;
 
 import constraints.Constraint;
 import constraints.ConstraintExtension.ExtensionSpecific;
-import constraints.extension.structures.TableSmart;
-import constraints.extension.structures.TableSmart.HybridTuple;
+import constraints.extension.structures.TableHybrid;
+import constraints.extension.structures.TableHybrid.HybridTuple;
 import problem.Problem;
 import propagation.StrongConsistency;
 import sets.SetDenseReversible;
@@ -175,7 +175,7 @@ public final class CSmart extends ExtensionSpecific {
 	public CSmart(Problem pb, Variable[] scp, HybridTuple... smartTuples) {
 		super(pb, scp);
 		this.hybridTuples = smartTuples;
-		this.extStructure = new TableSmart(this, hybridTuples);
+		this.extStructure = new TableHybrid(this, hybridTuples);
 		this.nac = IntStream.range(0, scp.length).mapToObj(i -> new SetSparse(scp[i].dom.initSize(), true)).toArray(SetSparse[]::new);
 		Stream.of(smartTuples).forEach(st -> st.attach(this));
 		this.sVal = new int[scp.length];
@@ -197,11 +197,8 @@ public final class CSmart extends ExtensionSpecific {
 	}
 
 	protected void manageLastPastVariable() {
-		if (lastSafeNumber != problem.solver.stats.safeNumber() || problem.solver.propagation instanceof StrongConsistency) { // 2nd
-																																// condition
-																																// due
-																																// to
-																																// Inverse4
+		if (lastSafeNumber != problem.solver.stats.safeNumber() || problem.solver.propagation instanceof StrongConsistency) {
+			// 2nd condition due to Inverse4
 			lastSafeNumber = problem.solver.stats.safeNumber();
 			Variable lastPast = problem.solver.futVars.lastPast();
 			int x = lastPast == null ? -1 : positionOf(lastPast);
