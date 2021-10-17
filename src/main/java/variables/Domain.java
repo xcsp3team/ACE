@@ -877,7 +877,7 @@ public interface Domain extends SetLinked {
 			newLimit++;
 		if (limit < 0 && type == LE && -limit % coeff != 0)
 			newLimit--;
-		return type == LE ? removeValuesLE(Kit.trunc(newLimit)) : removeValuesGE(Kit.trunc(newLimit));
+		return type == LE ? removeValuesLE(Kit.round(newLimit)) : removeValuesGE(Kit.round(newLimit));
 	}
 
 	default boolean removeValuesModIn(Domain dom, int coeff) {

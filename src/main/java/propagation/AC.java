@@ -310,7 +310,7 @@ public class AC extends Forward {
 	 * 
 	 * @return false iff an inconsistency is detected
 	 */
-	protected final boolean enforceArcConsistency() {
+	protected final boolean enforceAC() {
 		int nBefore = solver.problem.nValueRemovals;
 		queue.fill();
 		if (propagate() == false)
@@ -329,7 +329,7 @@ public class AC extends Forward {
 	 *            the variable that has just been assigned
 	 * @return false iff an inconsistency is detected
 	 */
-	protected final boolean enforceArcConsistencyAfterAssignment(Variable x) {
+	protected final boolean enforceACafterAssignment(Variable x) {
 		assert x.assigned() && queue.isEmpty() : queue.size() + " " + x.assigned();
 		// assert (queue.isEmpty() || this instanceof PropagationIsomorphism)
 		// For the control below, note that when full AC is guaranteed, we can avoid useless filtering if the variable
@@ -355,7 +355,7 @@ public class AC extends Forward {
 	 *            the variable that has just been subject to a refutation (negative decision)
 	 * @return false iff an inconsistency is detected
 	 */
-	protected boolean enforceArcConsistencyAfterRefutation(Variable x) {
+	protected boolean enforceACafterRefutation(Variable x) {
 		if (!super.runAfterRefutation(x))
 			return false;
 		assert controlAC(true); // TODO also checking the objective when not in the phase following a new solution?
@@ -364,17 +364,17 @@ public class AC extends Forward {
 
 	@Override
 	public boolean runInitially() {
-		return enforceArcConsistency();
+		return enforceAC();
 	}
 
 	@Override
 	public boolean runAfterAssignment(Variable x) {
-		return enforceArcConsistencyAfterAssignment(x);
+		return enforceACafterAssignment(x);
 	}
 
 	@Override
 	public boolean runAfterRefutation(Variable x) {
-		return enforceArcConsistencyAfterRefutation(x);
+		return enforceACafterRefutation(x);
 	}
 
 	private boolean controlAC(boolean discardObjectiveConstraint) {

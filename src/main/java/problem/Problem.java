@@ -194,8 +194,8 @@ import optimization.Optimizer.OptimizationStrategy;
 import optimization.Optimizer.OptimizerDecreasing;
 import optimization.Optimizer.OptimizerDichotomic;
 import optimization.Optimizer.OptimizerIncreasing;
-import problem.Reinforcer.ReinforcerAllDifferent;
-import problem.Reinforcer.ReinforcerAutomorphism;
+import problem.Reinforcer.Cliques;
+import problem.Reinforcer.Automorphisms;
 import solver.Solver;
 import utility.Kit;
 import utility.Stopwatch;
@@ -418,17 +418,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (head.control.problem.symmetryBreaking != SymmetryBreaking.NO) {
 			int nBefore = constraints.size();
 			// for (Constraint c : features.collecting.constraints) if (Constraint.getSymmetryMatching(c.key) == null)
-			// Constraint.putSymmetryMatching(c.key,
-			// c.defineSymmetryMatching());
-			List<List<int[]>> generators = ReinforcerAutomorphism.buildGenerators(variables, constraints);
+			// Constraint.putSymmetryMatching(c.key, c.defineSymmetryMatching());
+			List<List<int[]>> generators = Automorphisms.buildGenerators(variables, constraints);
 			for (List<int[]> generator : generators) {
 				int[] cycle1 = generator.get(0);
 				Variable x = variables.get(cycle1[0]);
 				Variable y = variables.get(cycle1[1]);
-				if (head.control.problem.symmetryBreaking == SymmetryBreaking.SB_LE) { // we only consider the two first
-																						// variables
-					lessEqual(x, y);
-				} else {
+				if (head.control.problem.symmetryBreaking == SymmetryBreaking.SB_LE)
+					lessEqual(x, y); // we only consider the two first variables
+				else {
 					List<Variable> list1 = new ArrayList<>(), list2 = new ArrayList<>();
 					for (int[] cycle : generator)
 						if (cycle.length == 2) {
@@ -453,7 +451,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		OptionsGlobal options = head.control.global;
 		if (options.allDifferentNb > 0) {
 			stopwatch.start();
-			List<Variable[]> cliques = ReinforcerAllDifferent.buildCliques(variables, constraints, options.allDifferentNb, options.allDifferentSize);
+			List<Variable[]> cliques = Cliques.buildCliques(variables, constraints, options.allDifferentNb, options.allDifferentSize);
 			for (Variable[] clique : cliques)
 				allDifferent(clique);
 			features.nCliques = cliques.size();

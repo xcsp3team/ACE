@@ -278,15 +278,15 @@ public final class MDD extends ExtensionStructure {
 			return cnt;
 		}
 
-		public void collectCompressedTuples(List<int[][]> list, int[][] t, int level) {
+		public void collectCompressedTuples(List<int[][]> list, int[][] m, int level) {
 			if (this == nodeT)
-				list.add(Kit.cloneDeeply(t));
+				list.add(Stream.of(m).map(t -> t.clone()).toArray(int[][]::new));
 			if (isLeaf())
 				return;
 			for (int i = 0; i < sonsClasses.length; i++) {
-				t[level] = sonsClasses[i];
+				m[level] = sonsClasses[i];
 				Node representativeChild = sons[sonsClasses[i][0]];
-				representativeChild.collectCompressedTuples(list, t, level + 1);
+				representativeChild.collectCompressedTuples(list, m, level + 1);
 			}
 		}
 

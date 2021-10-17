@@ -65,6 +65,11 @@ import dashboard.Control;
 import dashboard.Input;
 import main.Head;
 
+/**
+ * This class contains many useful methods.
+ * 
+ * @author Christophe Lecoutre
+ */
 public final class Kit {
 
 	/**
@@ -81,13 +86,11 @@ public final class Kit {
 			@Override
 			public synchronized void publish(LogRecord record) {
 				Control control = Thread.currentThread() instanceof Head ? ((Head) Thread.currentThread()).control : null;
-				if (record.getLevel().intValue() < Level.INFO.intValue()) {
-					if (Input.portfolio)
-						System.out.println("From " + control.userSettings.controlFilename + " :");
+				if (control != null && Input.portfolio)
+					System.out.println("From " + control.userSettings.controlFilename + " :");
+				if (record.getLevel().intValue() < Level.INFO.intValue())
 					System.out.println(record.getMessage());
-				} else {
-					if (Input.portfolio)
-						System.err.println("From " + control.userSettings.controlFilename + " :");
+				else {
 					// c.setTimeInMillis(record.getMillis());
 					if (control != null && control.general.verbose > 1)
 						System.err.println("\n" + record.getLevel() + " : " + record.getMessage());
@@ -233,28 +236,32 @@ public final class Kit {
 		}
 	}
 
-	public static int[] range(int minIncluded, int maxIncluded) {
-		Kit.control(minIncluded <= maxIncluded);
-		return IntStream.range(minIncluded, maxIncluded + 1).toArray();
+	/**
+	 * @param start
+	 *            the first value of the series that increases arithmetically by 1
+	 * @param length
+	 *            the length of the series
+	 * @return an array of integers of the specified length with values: start, start + 1, start + 2 , ...
+	 */
+	public static int[] series(int start, int length) {
+		Kit.control(length > 0);
+		return IntStream.range(start, start + length).toArray();
 	}
 
-	public static int[] range(int length) {
-		return range(0, length - 1);
+	/**
+	 * @param length
+	 *            the length of the series
+	 * @return an array of integers of the specified length with values, 0, 1, 2 , ...
+	 */
+	public static int[] series(int length) {
+		return series(0, length);
 	}
 
-	public static int[][] cloneDeeply(int[][] m) {
-		return Stream.of(m).map(t -> t.clone()).toArray(int[][]::new);
-	}
-
-	public static long[][] cloneDeeply(long[][] m) {
-		return Stream.of(m).map(t -> t.clone()).toArray(long[][]::new);
-	}
-
-	public static void fill(boolean[][] m, boolean value) {
-		for (boolean[] t : m)
-			Arrays.fill(t, value);
-	}
-
+	/**
+	 * @param collection
+	 *            a collection of short integers
+	 * @return an array containing all short values from the specified collection
+	 */
 	public static short[] shortArray(Collection<Short> collection) {
 		short[] t = new short[collection.size()];
 		Iterator<Short> it = collection.iterator();
@@ -263,20 +270,31 @@ public final class Kit {
 		return t;
 	}
 
+	/**
+	 * @param array
+	 *            an array of collections of short integers
+	 * @return a matrix containing all short values from the specified array
+	 */
 	public static short[][] shortArray2D(Collection<Short>[] array) {
 		return Stream.of(array).map(c -> shortArray(c)).toArray(short[][]::new);
 	}
 
+	/**
+	 * @param collection
+	 *            a collection of integers
+	 * @return an array containing all values from the specified collection
+	 */
 	public static int[] intArray(Collection<Integer> collection) {
 		return collection.stream().mapToInt(i -> i).toArray();
 	}
 
+	/**
+	 * @param array
+	 *            an array of collections of integers
+	 * @return a matrix containing all values from the specified array
+	 */
 	public static int[][] intArray2D(Collection<Integer>[] array) {
 		return Stream.of(array).map(c -> intArray(c)).toArray(int[][]::new);
-	}
-
-	public static int[][] intArray2D(Collection<int[]> collection) {
-		return collection.stream().toArray(int[][]::new);
 	}
 
 	/**
@@ -302,6 +320,11 @@ public final class Kit {
 		return IntStream.range(0, t.length - 1).noneMatch(i -> t[i] >= t[i + 1]);
 	}
 
+	/**
+	 * @param t
+	 *            a matrix of integers
+	 * @return true if all rows in the specified matrix are strictly increasingly ordered
+	 */
 	public static boolean isLexIncreasing(int[][] t) {
 		return IntStream.range(0, t.length - 1).noneMatch(i -> Utilities.lexComparatorInt.compare(t[i], t[i + 1]) > 0);
 	}
@@ -336,6 +359,14 @@ public final class Kit {
 		return cnt;
 	}
 
+	/**
+	 * Copies all values from the second specified array into the first specified array
+	 * 
+	 * @param src
+	 *            a first array of integers
+	 * @param dst
+	 *            a second array of integers
+	 */
 	public static void copy(int[] src, int[] dst) {
 		for (int i = dst.length - 1; i >= 0; i--)
 			dst[i] = src[i];
@@ -389,33 +420,25 @@ public final class Kit {
 		swap(objects, 0, 1);
 	}
 
+	/**
+	 * @param left
+	 *            the first operand to be added
+	 * @param right
+	 *            the second operand to be added
+	 * @return the sum of the two specified long, or exits in case of an overflow
+	 */
 	public static final long addSafe(long left, long right) {
 		if (right > 0 ? left > Long.MAX_VALUE - right : left < Long.MIN_VALUE - right)
 			Kit.exit("pb overflow " + left + " " + right);
 		return left + right;
 	}
 
-	public static int[] buildMapping(int[] src, int[] dst) {
-		int[] mapping = new int[src.length];
-		for (int i = 0; i < src.length; i++)
-			mapping[i] = Utilities.indexOf(src[i], dst);
-		return mapping;
-	}
-
-	public static <E> E[] sort(E[] t, Comparator<E> comparator) {
-		Arrays.sort(t, comparator);
-		return t;
-	}
-
-	public static Long parseLong(String token) {
-		try {
-			return Long.parseLong(token);
-		} catch (NumberFormatException e) {
-			return null;
-		}
-	}
-
-	public static int trunc(long l) {
+	/**
+	 * @param l
+	 *            a long integer
+	 * @return the value l possibly rounded to the extreme possible values of type Integer
+	 */
+	public static int round(long l) {
 		return l <= Integer.MIN_VALUE ? Integer.MIN_VALUE : l >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) l;
 	}
 
@@ -486,18 +509,55 @@ public final class Kit {
 		return join(new StringBuilder(), array, length, 1, maxDepthOf(array), mapper, delimiters).toString();
 	}
 
+	/**
+	 * @param array
+	 *            an array of objects
+	 * @param length
+	 * @param delimiters
+	 *            delimiters to be used when concatenating
+	 * @return a string obtained by concatenating the string representation of the objects in the specified array, up to
+	 *         a limit given by the specified length, while using the specified delimiters
+	 */
 	public static String join(Object array, int length, String... delimiters) {
 		return join(new StringBuilder(), array, length, 1, maxDepthOf(array), null, delimiters).toString();
 	}
 
+	/**
+	 * @param <T>
+	 *            the type of objects subject to the mapper
+	 * @param array
+	 *            an array of objects
+	 * @param mapper
+	 *            a mapper to transform objects of the specified type
+	 * @param delimiters
+	 *            delimiters to be used when concatenating
+	 * @return a string obtained by concatenating the string representation of the objects in the specified array while
+	 *         using the specified mapper for objects of type T, and the specified delimiters
+	 */
 	public static <T> String join(Object array, Function<T, String> mapper, String... delimiters) {
 		return join(array, Array.getLength(array), mapper, delimiters);
 	}
 
+	/**
+	 * @param array
+	 *            an array of objects
+	 * @param delimiters
+	 *            delimiters to be used when concatenating
+	 * @return a string obtained by concatenating the string representation of the objects in the specified array while
+	 *         using the specified delimiters
+	 */
 	public static String join(Object array, String... delimiters) {
 		return join(array, Array.getLength(array), delimiters);
 	}
 
+	/**
+	 * @param c
+	 *            a collection of objects
+	 * @param delimiters
+	 *            delimiters to be used when concatenating
+	 * @return a string obtained by concatenating the string representation of the objects in the specified collection
+	 *         while using the specified delimiters
+	 */
 	public static String join(Collection<?> c, String... delimiters) {
 		return join(c.toArray(), delimiters);
 	}

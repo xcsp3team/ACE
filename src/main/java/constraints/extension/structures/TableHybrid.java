@@ -780,8 +780,8 @@ public final class TableHybrid extends ExtensionStructure {
 
 			@Override
 			public void collect() {
-				if (domx.size() <= nacx.size()) { // TODO is that useful? don't we always have nacx smaller than domx by
-													// initialization?
+				if (domx.size() <= nacx.size()) {
+					// TODO is that useful? don't we always have nacx smaller than domx by initialization?
 					for (int a = domx.first(); a != -1; a = domx.next(a))
 						if (nacx.contains(a) && !set.contains(a))
 							nacx.remove(a);

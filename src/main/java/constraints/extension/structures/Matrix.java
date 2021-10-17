@@ -12,11 +12,11 @@ package constraints.extension.structures;
 
 import static utility.Kit.control;
 
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
 import constraints.ConstraintExtension;
-import utility.Kit;
 
 /**
  * This is the root class for extension structures represented by matrix forms. Currently, 2-dimensional and
@@ -61,7 +61,8 @@ public abstract class Matrix extends ExtensionStructure {
 			Constraint c = firstRegisteredCtr();
 			this.supports = new boolean[c.doms[0].initSize()][c.doms[1].initSize()];
 			if (!positive)
-				Kit.fill(supports, true);
+				for (boolean[] t : supports)
+					Arrays.fill(t, true);
 			for (int[] tuple : tuples)
 				if (c.indexesMatchValues)
 					supports[tuple[0]][tuple[1]] = positive;
@@ -124,7 +125,8 @@ public abstract class Matrix extends ExtensionStructure {
 			this.supports = new boolean[c.doms[0].initSize()][c.doms[1].initSize()][c.doms[2].initSize()];
 			if (!positive)
 				for (boolean[][] m : supports)
-					Kit.fill(m, true);
+					for (boolean[] t : m)
+						Arrays.fill(t, true);
 			for (int[] tuple : tuples)
 				if (c.indexesMatchValues)
 					supports[tuple[0]][tuple[1]][tuple[2]] = positive;

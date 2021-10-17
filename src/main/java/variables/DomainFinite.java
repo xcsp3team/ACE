@@ -224,7 +224,8 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 			control(symbols != null && symbols.length > 0 && vals.length == symbols.length, () -> "badly formed set of symbols for variable " + var);
 			// below we sort the array of symbols according to the way the array of values have been sorted (in the
 			// super-constructor)
-			this.symbols = Arrays.stream(Kit.buildMapping(this.values, vals)).mapToObj(i -> symbols[i]).toArray(String[]::new);
+			int[] mapping = IntStream.range(0, values.length).map(i -> Utilities.indexOf(values[i], vals)).toArray();
+			this.symbols = IntStream.of(mapping).mapToObj(i -> symbols[i]).toArray(String[]::new);
 		}
 
 		@Override

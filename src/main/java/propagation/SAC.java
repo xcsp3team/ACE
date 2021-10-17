@@ -47,7 +47,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 	protected boolean checkSAC(Variable x, int a) {
 		// System.out.println("checking" + x + " " + a);
 		solver.assign(x, a);
-		boolean consistent = enforceArcConsistencyAfterAssignment(x);
+		boolean consistent = enforceACafterAssignment(x);
 		solver.backtrack(x);
 		nSingletonTests++;
 		if (!consistent)
@@ -91,7 +91,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				if (nRemovals > 0)
 					if (x.dom.size() == 0)
 						return x.dom.fail();
-					else if (enforceArcConsistencyAfterRefutation(x) == false)
+					else if (enforceACafterRefutation(x) == false)
 						return false;
 				if (solver.finished())
 					return true;
@@ -118,7 +118,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 	 */
 	private boolean controlSAC(Variable x, int a) {
 		solver.assign(x, a);
-		boolean consistent = enforceArcConsistencyAfterAssignment(x);
+		boolean consistent = enforceACafterAssignment(x);
 		solver.backtrack(x);
 		if (!consistent)
 			Kit.log.warning(x + " " + a + " not singleton consistent");
@@ -255,7 +255,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		private Cell head, tail, trash;
 		private Cell priorityCell;
 
-		protected Cell[][] positions;
+		public Cell[][] positions;
 
 		/**
 		 * sizes[x] indicates the number of cells for x
@@ -313,8 +313,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		public void clear() {
 			size = 0;
 			for (int i = 0; i < positions.length; i++)
-				for (int j = 0; j < positions[i].length; j++)
-					positions[i][j] = null;
+				Arrays.fill(positions[i], null);
 			Arrays.fill(sizes, 0);
 			if (head == null)
 				return;
@@ -343,8 +342,9 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		}
 
 		public void remove(Cell cell) {
-			Variable x = cell.x;
-			int a = cell.a;
+			size--;
+			sizes[cell.x.num]--;
+			positions[cell.x.num][cell.a] = null;
 			Cell prev = cell.prev;
 			Cell next = cell.next;
 			if (prev == null)
@@ -357,9 +357,6 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				next.prev = prev;
 			cell.next = trash;
 			trash = cell;
-			positions[x.num][a] = null;
-			sizes[x.num]--;
-			size--;
 		}
 
 		public boolean remove(Variable x, int a) {
@@ -419,10 +416,10 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		}
 
 		protected boolean canFindAnotherExtensionInsteadOf(Variable x, int a) {
-			if (solver.depth() == nodeDepth) // meaning that branchSize = 0
+			if (solver.depth() == nodeDepth) // meaning that branch size = 0
 				return false;
 			x.dom.removeElementary(a); // to avoid considering this value again when extending the branch
-			return x.dom.size() > 0 && enforceArcConsistencyAfterRefutation(x);
+			return x.dom.size() > 0 && enforceACafterRefutation(x);
 		}
 
 		/**
@@ -436,7 +433,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			if (x.dom.size() == 0)
 				return false;
 			assert queue.isEmpty();
-			return enforceArcConsistencyAfterRefutation(x);
+			return enforceACafterRefutation(x);
 		}
 
 		/**
@@ -539,7 +536,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				nSingletonTests++;
 				assert !x.assigned() && x.dom.contains(a) && queue.isEmpty();
 				solver.assign(x, a);
-				if (enforceArcConsistencyAfterAssignment(x)) {
+				if (enforceACafterAssignment(x)) {
 					if (solver.depth() == solver.problem.variables.length) {
 						System.out.println("found solution");
 						if (stopSACWhenFoundSolution)
@@ -686,7 +683,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				makeSelection();
 				nSingletonTests++;
 				solver.assign(currSelectedVar, currSelectedIdx);
-				if (enforceArcConsistencyAfterAssignment(currSelectedVar)) {
+				if (enforceACafterAssignment(currSelectedVar)) {
 					if (solver.depth() == solver.problem.variables.length) {
 						solver.solutions.handleNewSolution();
 						finished = true;

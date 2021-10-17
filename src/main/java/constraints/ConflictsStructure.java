@@ -16,6 +16,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.xcsp.common.Constants;
 
@@ -205,7 +206,7 @@ public final class ConflictsStructure implements ConstraintRegister {
 	 *            a conflicts structure to be cloned
 	 */
 	public ConflictsStructure(Constraint c, ConflictsStructure conflictsStructure) {
-		this.nConflicts = Kit.cloneDeeply(conflictsStructure.nConflicts);
+		this.nConflicts = Stream.of(conflictsStructure.nConflicts).map(t -> t.clone()).toArray(int[][]::new);
 		this.nMaxConflicts = conflictsStructure.nMaxConflicts.clone();
 		registeredCtrs.add(c);
 	}

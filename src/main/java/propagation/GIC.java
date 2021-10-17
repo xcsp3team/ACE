@@ -98,7 +98,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 		HeuristicVariables heuristicBackup = solver.heuristic;
 		solver.heuristic = heuristic;
 		solver.solutions.limit = 1; // enough to check GIC
-		boolean inverse = enforceArcConsistencyAfterAssignment(x) && solver.doRun().stopping == Stopping.REACHED_GOAL;
+		boolean inverse = enforceACafterAssignment(x) && solver.doRun().stopping == Stopping.REACHED_GOAL;
 		solver.solutions.limit = limitBackup; // we restore the initial limit
 		solver.heuristic = heuristicBackup;
 		if (inverse)

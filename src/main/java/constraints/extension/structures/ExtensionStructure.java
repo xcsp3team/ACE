@@ -126,7 +126,7 @@ public abstract class ExtensionStructure implements ConstraintRegister {
 		if (scp.length == 1)
 			return new int[] { 1 };
 		if (!Variable.haveSameDomainType(scp))
-			return Kit.range(1, scp.length); // TODO there exists a possibility of finding symmetry of variables (but
+			return Kit.series(1, scp.length); // TODO there exists a possibility of finding symmetry of variables (but
 												// not a single group)
 		if (scp.length == 2) {
 			Domain dom0 = scp[0].dom, dom1 = scp[1].dom;

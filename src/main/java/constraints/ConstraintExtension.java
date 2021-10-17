@@ -243,7 +243,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			else
 				list.add(vals.clone());
 		} while (tupleIterator.nextValidTuple() != -1);
-		return Kit.intArray2D(list);
+		return list.stream().toArray(int[][]::new);
 	}
 
 	private static boolean isStarred(Object tuples) {

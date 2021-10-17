@@ -19,7 +19,6 @@ import interfaces.Observers.ObserverOnConflicts;
 import learning.IpsReasonerDominance;
 import sets.SetSparse;
 import solver.Solver;
-import utility.Kit;
 import utility.Reflector;
 import variables.Domain;
 import variables.Variable;
@@ -63,13 +62,9 @@ public abstract class Propagation {
 		 */
 		public final int[] values;
 
-		public SetSparseMap(int capacity, boolean initiallyFull) {
-			super(capacity, initiallyFull);
-			this.values = Kit.range(capacity);
-		}
-
 		public SetSparseMap(int capacity) {
-			this(capacity, false);
+			super(capacity, false);
+			this.values = new int[capacity];
 		}
 
 		@Override

@@ -40,9 +40,9 @@ import variables.Variable.VariableInteger;
 public class Reinforcer {
 
 	/**
-	 * Class for inferring AllDifferent constraints
+	 * Class for identifying cliques (so as to be able to post AllDifferent constraints)
 	 */
-	public static final class ReinforcerAllDifferent {
+	public static final class Cliques {
 
 		public static final String N_CLIQUES = "nCliques";
 
@@ -129,21 +129,20 @@ public class Reinforcer {
 				cliques.add(scp);
 				System.out.println(" clique " + k + " of size " + scp.length + " {" + Kit.join(scp) + "}");
 				assert controlClique(scp, constraints);
-				for (int i = 0; i <= set.limit; i++)
-					degrees[set.dense[i]] = countNeighboursAtLevel(variableNeighbours[set.dense[i]], 0, levels); // reinitialization
-																													// of
-																													// degrees
+				for (int i = 0; i <= set.limit; i++) // reinitialization of degrees
+					degrees[set.dense[i]] = countNeighboursAtLevel(variableNeighbours[set.dense[i]], 0, levels);
 			}
 			return cliques;
 		}
 	}
 
 	/**
-	 * Class for inferring symmetry-breaking constraints
+	 * Class for identifying automorphisms (so as to be able to post symmetry-breaking constraints)
 	 */
-	public static final class ReinforcerAutomorphism {
+	public static final class Automorphisms {
 
 		public static final String N_GENERATORS = "nGenerators";
+
 		public static final String SYMMETRY_WALL_CLOCK_TIME = "symmetryWckTime";
 
 		public static Stopwatch stopwatch;
@@ -327,21 +326,15 @@ public class Reinforcer {
 			List<List<int[]>> generators = new ArrayList<>();
 			String cmd = System.getenv("HOME") + File.separator + "tools" + File.separator + "saucy-1.1" + File.separator + "saucy -t 20 -g " + filename;
 			Kit.log.info("Command for symmetry breaking is " + cmd);
-			Process p = null;
 			try {
-				p = Runtime.getRuntime().exec(cmd);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			if (p != null)
+				Process p = Runtime.getRuntime().exec(cmd);
 				try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
 					in.readLine();
 					String line = in.readLine().trim();
 					while (!line.equals("]")) {
 						List<int[]> generator = parseGenerator(line, nVariables);
-						if (generator.size() > 0) // {
-							generators.add(generator); // break; }
-						// else System.out.println(" not exploitable generator : " + line);
+						if (generator.size() > 0)
+							generators.add(generator);
 						line = in.readLine();
 					}
 					in.close();
@@ -351,6 +344,9 @@ public class Reinforcer {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			return generators;
 		}
 

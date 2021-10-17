@@ -71,7 +71,7 @@ public abstract class StrongConsistency extends AC {
 	@Override
 	public boolean runInitially() {
 		int nBefore = solver.problem.nValueRemovals;
-		if (enforceArcConsistency() == false)
+		if (enforceAC() == false)
 			return false;
 		if (options.strongAC && solver.problem.nValueRemovals == nBefore)
 			return true;
@@ -84,7 +84,7 @@ public abstract class StrongConsistency extends AC {
 	@Override
 	public boolean runAfterAssignment(Variable x) {
 		int nBefore = solver.problem.nValueRemovals;
-		if (enforceArcConsistencyAfterAssignment(x) == false)
+		if (enforceACafterAssignment(x) == false)
 			return false;
 		if (performingProperSearch || options.strongOnce || (options.strongAC && solver.problem.nValueRemovals == nBefore)
 				|| (x.dom.lastRemovedLevel() != solver.depth() && hasSolverPropagatedAfterLastButOneDecision()))
@@ -97,7 +97,7 @@ public abstract class StrongConsistency extends AC {
 	@Override
 	public boolean runAfterRefutation(Variable x) {
 		int nBefore = solver.problem.nValueRemovals;
-		if (enforceArcConsistencyAfterRefutation(x) == false)
+		if (enforceACafterRefutation(x) == false)
 			return false;
 		if (performingProperSearch || options.strongOnce || (options.strongAC && solver.problem.nValueRemovals == nBefore))
 			return true;

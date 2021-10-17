@@ -908,7 +908,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					newLimit++;
 				if (limit < 0 && type == LE && -limit % coeff != 0)
 					newLimit--;
-				return type == LE ? removeValuesLE(Kit.trunc(newLimit)) : removeValuesGE(Kit.trunc(newLimit));
+				return type == LE ? removeValuesLE(Kit.round(newLimit)) : removeValuesGE(Kit.round(newLimit));
 			}
 
 			static class ViewVariable extends View {

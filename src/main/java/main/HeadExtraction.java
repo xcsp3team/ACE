@@ -197,7 +197,8 @@ public final class HeadExtraction extends Head {
 		Kit.log.info("Start Finding Minimal Core of variables ...");
 		List<Variable> core = new ArrayList<>();
 		for (boolean finished = false; !finished;) {
-			Variable[] currVars = Kit.sort(arrayOfPossiblyPresentVars(), varComparator.core(core));
+			Variable[] currVars = arrayOfPossiblyPresentVars();
+			Arrays.sort(currVars, varComparator.core(core));
 			Arrays.fill(localVars, false);
 			int min = core.size(), max = currVars.length - 1;
 			for (int i = 0; i < min; i++)
@@ -228,7 +229,8 @@ public final class HeadExtraction extends Head {
 		Kit.log.info("Start Finding Minimal Core of constraints (dichotomic) ...");
 		List<Constraint> core = new ArrayList<>();
 		for (boolean finished = false; !finished;) {
-			Constraint[] currCtrs = Kit.sort(arrayOfPossiblyPresentCtrs(), ctrComparator.coreAndMode(core, solver.stopping != Stopping.FULL_EXPLORATION));
+			Constraint[] currCtrs = arrayOfPossiblyPresentCtrs();
+			Arrays.sort(currCtrs, ctrComparator.coreAndMode(core, solver.stopping != Stopping.FULL_EXPLORATION));
 			Arrays.fill(localCtrs, false);
 			int min = core.size(), max = currCtrs.length - 1;
 			for (int i = 0; i < min; i++)

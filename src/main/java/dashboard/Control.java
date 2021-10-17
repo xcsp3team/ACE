@@ -670,8 +670,7 @@ public final class Control {
 			if (s.equals(MAX) || s.equals(ALL))
 				return longValue ? Long.MAX_VALUE : (Number) Integer.MAX_VALUE; // problem if cast omitted
 			char lastCharacter = s.charAt(s.length() - 1);
-			Long baseValue = Kit.parseLong(Character.isDigit(lastCharacter) ? s : s.substring(0, s.length() - 1));
-			control(baseValue != null, () -> "An integer/long value was expected for " + tag + "/" + att);
+			Long baseValue = Long.parseLong(Character.isDigit(lastCharacter) ? s : s.substring(0, s.length() - 1));
 			double value = Character.isDigit(lastCharacter) ? baseValue
 					: lastCharacter == 'k' || lastCharacter == 's' ? baseValue * 1000
 							: lastCharacter == 'm' ? baseValue * 1000000 : (Double) Kit.exit("Bad character for " + tag + " " + att);

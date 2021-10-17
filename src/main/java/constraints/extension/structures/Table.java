@@ -97,7 +97,7 @@ public class Table extends ExtensionStructure {
 				}
 			}
 		}
-		return Kit.intArray2D(tuples);
+		return tuples.stream().toArray(int[][]::new);
 	}
 
 	public static int[][] starredDistinctVectors(Variable[] t1, Variable[] t2) {
@@ -122,7 +122,7 @@ public class Table extends ExtensionStructure {
 					}
 				}
 			}
-			tuples = Kit.intArray2D(list);
+			tuples = list.stream().toArray(int[][]::new);
 			cache.put(key, tuples);
 		}
 		return tuples;
@@ -150,7 +150,7 @@ public class Table extends ExtensionStructure {
 					}
 				}
 			}
-			tuples = Kit.intArray2D(list);
+			tuples = list.stream().toArray(int[][]::new);
 			cache.put(key, tuples);
 		}
 		return tuples;
@@ -174,7 +174,7 @@ public class Table extends ExtensionStructure {
 		addNonOverlappingTuplesFor(list, x2.dom, x1.dom, w2, false, true);
 		addNonOverlappingTuplesFor(list, y1.dom, y2.dom, h1, true, false);
 		addNonOverlappingTuplesFor(list, y2.dom, y1.dom, h2, false, false);
-		return Kit.intArray2D(list);
+		return list.stream().toArray(int[][]::new);
 	}
 
 	/**********************************************************************************************

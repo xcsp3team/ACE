@@ -51,7 +51,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 		this.set = new SetSparseReversible(table.tuples.length, n + 1);
 
 		int nValues = Variable.nInitValuesFor(scp);
-		this.separatorsMaps = IntStream.rangeClosed(0, n).mapToObj(i -> new SetSparseMapSTR3(nValues, false)).toArray(SetSparseMapSTR3[]::new);
+		this.separatorsMaps = IntStream.rangeClosed(0, n).mapToObj(i -> new SetSparseMapSTR3(nValues)).toArray(SetSparseMapSTR3[]::new);
 		// above do we need rangeClosed ?
 		this.deps = IntStream.range(0, set.dense.length).mapToObj(i -> new LocalSetSparseByte(scp.length, false)).toArray(LocalSetSparseByte[]::new);
 		if (set.capacity() >= Short.MAX_VALUE)
@@ -152,13 +152,13 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 
 		public int[] sseparators;
 
-		public SetSparseMapSTR3(int capacity, boolean initiallyFull) {
-			super(capacity, initiallyFull);
+		public SetSparseMapSTR3(int capacity) {
+			super(capacity, false);
 			control(0 < capacity && capacity <= Short.MAX_VALUE);
 			this.positions = new short[capacity];
 			for (short i = 0; i < positions.length; i++)
 				positions[i] = i;
-			this.sseparators = Kit.range(capacity);
+			this.sseparators = new int[capacity];
 		}
 
 		@Override
@@ -249,7 +249,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 	 * Only used at preprocessing, cnts[x] is the number of values in the current domain of x with no found support
 	 * (yet)
 	 */
-	protected int[] cnts;
+	private int[] cnts;
 
 	/**
 	 * separators[x][a] is the separator for (x,a) in the associated subtable
@@ -375,7 +375,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 
 	// bug to fix for java ace BinPacking-tab-Schwerin1_BPP10.xml.lzma -r_c=10 -lc=4 -positive=str3 -r_n=20
 	// -varh=DDegOnDom -ev
-	protected void suppressInvalidTuplesFromRemovalsOf(int x) {
+	private void suppressInvalidTuplesFromRemovalsOf(int x) {
 		Domain dom = doms[x];
 		if (table.subtables != null) {
 			for (int a = dom.lastRemoved(); a != frontiers[x]; a = dom.prevRemoved(a)) {
@@ -392,7 +392,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 		}
 	}
 
-	protected void supressInvalidTuples() {
+	private void supressInvalidTuples() {
 		int limitBefore = set.limit;
 		Variable lastPast = problem.solver.futVars.lastPast();
 		if (lastPast != null && positionOf(lastPast) != -1)

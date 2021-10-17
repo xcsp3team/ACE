@@ -117,7 +117,7 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 
 	@Override
 	public int[] symmetryMatching() {
-		return keyCanonizer != null ? keyCanonizer.computeSymmetryMatching() : Kit.range(1, scp.length);
+		return keyCanonizer != null ? keyCanonizer.computeSymmetryMatching() : Kit.series(1, scp.length);
 	}
 
 	@Override

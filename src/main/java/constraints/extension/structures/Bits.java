@@ -155,8 +155,8 @@ public final class Bits extends ExtensionStructure {
 
 	public Bits(ConstraintExtension c, Bits bits) { // called by reflection when cloning structures
 		this(c);
-		this.sups0 = Kit.cloneDeeply(bits.sups0);
-		this.sups1 = Kit.cloneDeeply(bits.sups1);
+		this.sups0 = Stream.of(bits.sups0).map(t -> t.clone()).toArray(long[][]::new);
+		this.sups1 = Stream.of(bits.sups1).map(t -> t.clone()).toArray(long[][]::new);
 		buildFilters();
 		this.sharing = bits.sharing;
 	}

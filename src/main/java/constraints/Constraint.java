@@ -279,7 +279,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 				support[i] = scp[i].dom.toVal(indexes[i]);
 			list.add(support.clone()); // cloning is necessary
 		}
-		return Kit.intArray2D(list);
+		return list.stream().toArray(int[][]::new);
 	}
 
 	/*************************************************************************
@@ -573,7 +573,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	public int[] symmetryMatching() { // default method that can be redefined
 		Boolean b = isSymmetric();
 		control(b != null);
-		return b ? Kit.repeat(1, scp.length) : Kit.range(1, scp.length);
+		return b ? Kit.repeat(1, scp.length) : Kit.series(1, scp.length);
 	}
 
 	/**

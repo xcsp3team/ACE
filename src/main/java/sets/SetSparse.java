@@ -34,7 +34,7 @@ public class SetSparse extends SetDense {
 	 */
 	public SetSparse(int capacity, boolean initiallyFull) {
 		super(capacity, initiallyFull);
-		this.sparse = Kit.range(capacity);
+		this.sparse = Kit.series(capacity);
 		control(Arrays.equals(dense, sparse));
 	}
 
