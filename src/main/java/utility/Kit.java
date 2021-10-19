@@ -674,8 +674,6 @@ public final class Kit {
 	 ***** Handling Documents
 	 *************************************************************************/
 
-	public static final String W3C_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema";
-
 	private static Object handleException(Exception e) {
 		if (e instanceof SAXException) { // superclass of SAXParseException
 			Kit.log.warning("\n** SAX error " + ((SAXParseException) e).getMessage());
@@ -689,6 +687,11 @@ public final class Kit {
 		return Kit.exit(e);
 	}
 
+	/**
+	 * Creates and returns a new (empty) XML document
+	 * 
+	 * @return a document
+	 */
 	public static Document createNewDocument() {
 		try {
 			return DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
@@ -698,26 +701,33 @@ public final class Kit {
 	}
 
 	/**
-	 * Build a DOM object that corresponds to the specified input stream.
+	 * Builds a Document (DOM object) corresponding to the specified input stream.
 	 * 
 	 * @param inputStream
 	 *            the input stream that denotes the XML document to be loaded.
 	 * @param schema
 	 *            the schema to be used (<code> null </code> if not used) to validate the document
-	 * @return a DOM object
+	 * @return a document
 	 */
-	private static Document load(InputStream is, URL schema) {
+	private static Document load(InputStream inputStream, URL schema) {
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			factory.setNamespaceAware(true);
 			if (schema != null)
-				factory.setSchema(SchemaFactory.newInstance(W3C_XML_SCHEMA).newSchema(schema));
-			return factory.newDocumentBuilder().parse(is);
+				factory.setSchema(SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema").newSchema(schema));
+			return factory.newDocumentBuilder().parse(inputStream);
 		} catch (Exception e) {
 			return (Document) handleException(e);
 		}
 	}
 
+	/**
+	 * Loads the specified file as an XML document (DOM object)
+	 * 
+	 * @param file
+	 *            a file
+	 * @return a document
+	 */
 	public static Document load(File file) {
 		try (FileInputStream f = new FileInputStream(file)) {
 			return load(f, null); // no schema

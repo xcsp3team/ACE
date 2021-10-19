@@ -194,8 +194,8 @@ import optimization.Optimizer.OptimizationStrategy;
 import optimization.Optimizer.OptimizerDecreasing;
 import optimization.Optimizer.OptimizerDichotomic;
 import optimization.Optimizer.OptimizerIncreasing;
-import problem.Reinforcer.Cliques;
 import problem.Reinforcer.Automorphisms;
+import problem.Reinforcer.Cliques;
 import solver.Solver;
 import utility.Kit;
 import utility.Stopwatch;
@@ -809,15 +809,23 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	// sum
 	private Matcher add_vars__relop = new Matcher(node(relop, add_vars, varOrVal));
+	private Matcher relop__add_vars = new Matcher(node(relop, varOrVal, add_vars));
 	private Matcher add_mul_vals__relop = new Matcher(node(relop, add_mul_vals, varOrVal));
 	private Matcher add_mul_vars__relop = new Matcher(node(relop, add_mul_vars, varOrVal));
+	private Matcher relop__add_mul_vals = new Matcher(node(relop, varOrVal, add_mul_vals));
+	private Matcher relop__add_mul_vars = new Matcher(node(relop, varOrVal, add_mul_vars));
 
 	// product
 	private Matcher mul_vars__relop = new Matcher(node(relop, mul_vars, val));
 
 	private Condition basicCondition(XNodeParent<IVar> tree) {
-		if (tree.type.isRelationalOperator() && tree.sons.length == 2 && tree.sons[1].type.oneOf(VAR, LONG))
-			return tree.sons[1].type == VAR ? new ConditionVar(tree.relop(0), tree.sons[1].var(0)) : new ConditionVal(tree.relop(0), tree.sons[1].val(0));
+		if (!tree.type.isRelationalOperator() || tree.sons.length != 2)
+			return null;
+		if (tree.sons[0].type.oneOf(VAR, LONG) || tree.sons[1].type.oneOf(VAR, LONG)) {
+			int side = tree.sons[1].type.oneOf(VAR, LONG) ? 1 : 0;
+			TypeConditionOperatorRel op = side == 0 ? tree.relop(0).arithmeticInversion() : tree.relop(0);
+			return tree.sons[side].type == VAR ? new ConditionVar(op, tree.sons[side].var(0)) : new ConditionVal(op, tree.sons[side].val(0));
+		}
 		return null;
 	}
 
@@ -923,18 +931,21 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return maximum((Var[]) tree.sons[0].vars(), basicCondition(tree));
 		}
 		if (options.recognizeSum) {
-			if (add_vars__relop.matches(tree)) {
-				Var[] list = (Var[]) tree.sons[0].arrayOfVars();
+			if (add_vars__relop.matches(tree) || relop__add_vars.matches(tree)) {
+				int side = add_vars__relop.matches(tree) ? 0 : 1;
+				Var[] list = (Var[]) tree.sons[side].arrayOfVars();
 				return sum(list, Kit.repeat(1, list.length), basicCondition(tree));
 			}
-			if (add_mul_vals__relop.matches(tree)) {
-				Var[] list = (Var[]) tree.sons[0].arrayOfVars();
-				int[] coeffs = Stream.of(tree.sons[0].sons).mapToInt(s -> s.type == VAR ? 1 : s.val(0)).toArray();
+			if (add_mul_vals__relop.matches(tree) || relop__add_mul_vals.matches(tree)) {
+				int side = add_mul_vals__relop.matches(tree) ? 0 : 1;
+				Var[] list = (Var[]) tree.sons[side].arrayOfVars();
+				int[] coeffs = Stream.of(tree.sons[side].sons).mapToInt(s -> s.type == VAR ? 1 : s.val(0)).toArray();
 				return sum(list, coeffs, basicCondition(tree));
 			}
-			if (add_mul_vars__relop.matches(tree)) {
-				Var[] list = Stream.of(tree.sons[0].sons).map(s -> s.var(0)).toArray(Var[]::new);
-				Var[] coeffs = Stream.of(tree.sons[0].sons).map(s -> s.var(1)).toArray(Var[]::new);
+			if (add_mul_vars__relop.matches(tree) || relop__add_mul_vars.matches(tree)) {
+				int side = add_mul_vars__relop.matches(tree) ? 0 : 1;
+				Var[] list = Stream.of(tree.sons[side].sons).map(s -> s.var(0)).toArray(Var[]::new);
+				Var[] coeffs = Stream.of(tree.sons[side].sons).map(s -> s.var(1)).toArray(Var[]::new);
 				return sum(list, coeffs, basicCondition(tree));
 			}
 		}
