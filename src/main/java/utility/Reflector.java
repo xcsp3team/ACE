@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
@@ -43,6 +42,13 @@ public class Reflector {
 	// need to synchronize access to this structure ?
 	private final static Map<String, String> mapOfClassNames = Collections.synchronizedMap(new HashMap<String, String>());
 
+	/**
+	 * Returns the last but one super class of the specified class
+	 * 
+	 * @param clazz
+	 *            a class
+	 * @return the last but one super class of the specified class
+	 */
 	public static Class<?> getLastButOneSuperclassOf(Class<?> clazz) {
 		for (Class<?> superclass = clazz.getSuperclass(); superclass != Object.class; superclass = superclass.getSuperclass())
 			clazz = superclass;
@@ -62,13 +68,14 @@ public class Reflector {
 	}
 
 	/**
-	 * Returns the absolute name of the given class (without the extension .class) wrt the given package name. Hence,
-	 * this name starts with the given package name (and not with the root of a file system).
+	 * Returns the absolute name of the specified class (without the extension .class) with respect to the specified
+	 * package name. Hence, this name starts with the given package name (and not with the root of a file system).
 	 * 
 	 * @param classFile
-	 *            a given File denoting a class.
+	 *            a File denoting a class.
 	 * @param basicPackageName
-	 *            a given package name
+	 *            a package name
+	 * @return the absolute name of the specified class
 	 */
 	private static String absoluteClassNameOf(File classFile, String basicPackageName) {
 		String s = replaceAll(classFile.getAbsolutePath(), File.separatorChar, '.');
@@ -78,6 +85,15 @@ public class Reflector {
 		return s.substring(firstIndex, lastIndex);
 	}
 
+	/**
+	 * Returns the name of the field for the specified second object in the specified first object, or null
+	 * 
+	 * @param parentObject
+	 *            an object
+	 * @param fieldObject
+	 *            a field to be looked for in the object
+	 * @return the name of the field for the specified second object in the specified first object, or null
+	 */
 	public static String findFieldName(Object parentObject, Object fieldObject) {
 		for (Field field : parentObject.getClass().getDeclaredFields()) {
 			field.setAccessible(true);
@@ -152,8 +168,7 @@ public class Reflector {
 				String packTmp = replaceAll(rootClass.getPackage().getName(), '.', JAR_SEPARATOR_CHAR);
 				if (!name.endsWith(".class") || !name.startsWith(packTmp))
 					continue;
-				// .class is removed and each '/' is replaced by '.' as in jar '/'
-				// is always the class separator
+				// .class is removed and each '/' is replaced by '.' as in jar '/' is always the class separator
 				name = replaceAll(name.substring(0, name.lastIndexOf(".")), JAR_SEPARATOR_CHAR, '.');
 				updateListIfSubclassing(list, rootClass, name, requiredModifiers, forbiddenModifiers);
 			}
@@ -176,20 +191,20 @@ public class Reflector {
 	}
 
 	/**
-	 * Returns all classes that inherit from the given root class (by considering the CLASSPATH environment variable).
+	 * Returns all classes that inherit from the specified root class (by considering the CLASSPATH environment
+	 * variable).
 	 * 
 	 * @param rootClass
-	 *            a given class
+	 *            a class
 	 * @param requiredModifiers
 	 *            a set of required modifiers for all subclasses
 	 * @param forbiddenModifiers
 	 *            a set of forbidden modifiers for all subclasses
+	 * @return all classes that inherit from the specified root class
 	 */
-	public static Class<?>[] searchClassesInheritingFrom(Class<?> rootClass, int requiredModifiers, int forbiddenModifiers) {
+	private static Class<?>[] searchClassesInheritingFrom(Class<?> rootClass, int requiredModifiers, int forbiddenModifiers) {
 		List<Class<?>> classes = new ArrayList<>();
-		StringTokenizer st = new StringTokenizer(System.getProperty("java.class.path", "."), File.pathSeparator);
-		while (st.hasMoreTokens()) {
-			String token = st.nextToken();
+		for (String token : System.getProperty("java.class.path", ".").split(File.pathSeparator)) {
 			if (token.endsWith(".jar"))
 				classes.addAll(searchClassesInheretingFromInJar(rootClass, token, requiredModifiers, forbiddenModifiers));
 			else {
@@ -201,21 +216,26 @@ public class Reflector {
 		return classes.toArray(new Class[classes.size()]);
 	}
 
+	/**
+	 * Returns all classes that inherit from the specified root class (by considering the CLASSPATH environment
+	 * variable).
+	 * 
+	 * @param rootClass
+	 *            a class
+	 * @return all classes that inherit from the specified root class
+	 */
 	public static Class<?>[] searchClassesInheritingFrom(Class<?> rootClass) {
 		return searchClassesInheritingFrom(rootClass, Modifier.PUBLIC, Modifier.ABSTRACT);
 	}
 
-	public static String searchClassInDirectory(File dir, String name) {
+	private static String searchClassInDirectory(File dir, String name) {
 		for (File f : dir.listFiles())
 			if (f.isDirectory()) {
 				String path = searchClassInDirectory(f, name);
 				if (path != null)
 					return path;
-			} else {
-				// System.out.println(f.getName());
-				if (f.getName().equals(name))
-					return f.getPath();
-			}
+			} else if (f.getName().equals(name))
+				return f.getPath();
 		return null;
 	}
 
@@ -230,8 +250,6 @@ public class Reflector {
 					continue;
 				if (!name.substring(name.lastIndexOf('/') + 1).equals(className))
 					continue;
-				// Kit.prn("found for " + jarName + " " + basicDirectory + " " +
-				// className + " : " + name);
 				return replaceAll(name.substring(0, name.lastIndexOf(".")), JAR_SEPARATOR_CHAR, '.');
 			}
 		} catch (IOException e) {
@@ -241,20 +259,18 @@ public class Reflector {
 	}
 
 	/**
-	 * Returns the absolute name of the class whose name is given.
+	 * Returns the absolute name of the class whose name is specified.
 	 * 
 	 * @param basicPackage
 	 *            the (absolute) name of a package
 	 * @param className
-	 *            the name of a class that must be found in the package (or subpackages) whose name is given
+	 *            the name of a class that must be found in the package (or sub-packages) whose name is specified
 	 */
-	public static String searchAbsoluteNameOf(String basicPackage, String className) {
-		StringTokenizer st = new StringTokenizer(System.getProperty("java.class.path", "."), File.pathSeparator);
-		while (st.hasMoreTokens()) {
-			String classPathToken = st.nextToken();
+	private static String searchAbsoluteNameOf(String basicPackage, String className) {
+		for (String classPathToken : System.getProperty("java.class.path", ".").split(File.pathSeparator)) {
 			if (classPathToken.endsWith(".jar")) {
-				String basicDirectory = replaceAll(basicPackage, '.', JAR_SEPARATOR_CHAR); // in jar '/' is always the
-																							// class separator
+				String basicDirectory = replaceAll(basicPackage, '.', JAR_SEPARATOR_CHAR);
+				// note that in jar '/' is always the class separator
 				String path = searchClassInJar(classPathToken, basicDirectory, className + ".class");
 				if (path != null)
 					return path;
@@ -278,20 +294,17 @@ public class Reflector {
 		if (i != -1)
 			className = rootClass.getName().substring(classPackageName.length() + 1, i + 1) + className;
 		String key = classPackageName + className;
-		String absoluteClassName = null;
+		String name = null;
 		synchronized (mapOfClassNames) {
-			absoluteClassName = mapOfClassNames.get(key);
-			if (absoluteClassName == null) {
-				absoluteClassName = searchAbsoluteNameOf(classPackageName, className);
-				// absoluteClassName = searchAbsoluteNameOf(rootClass.getPackage().getName(), className);
-				// control(absoluteClassName != null, () -> "Class " + key + " not found");
-				if (absoluteClassName == null)
-					absoluteClassName = className; // at this point, it means that the class has been defined outside
-													// directory AbsCon
-				mapOfClassNames.put(key, absoluteClassName);
+			name = mapOfClassNames.get(key);
+			if (name == null) {
+				name = searchAbsoluteNameOf(classPackageName, className);
+				if (name == null)
+					name = className; // at this point, it means that the class has been defined outside directory ace
+				mapOfClassNames.put(key, name);
 			}
 		}
-		return absoluteClassName;
+		return name;
 	}
 
 	/**

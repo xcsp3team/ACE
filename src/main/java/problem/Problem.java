@@ -405,7 +405,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		for (int i = 0; i < constraints.length; i++)
 			if (!(constraints[i].ignored = !presentConstraints[i]))
 				constraints[i].reset();
-		// stuff = new ProblemStuff(this); // TODO reset or building a new object ?
+		// features = new Features(this); // TODO reset or building a new object?
 		nValueRemovals = 0;
 		if (options.verbose > 0)
 			log.info("Reduction to (#V=" + priorityVars.length + ",#C=" + Kit.countIn(true, presentConstraints) + ")");
@@ -417,8 +417,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		List<Constraint> constraints = features.collecting.constraints;
 		if (head.control.problem.symmetryBreaking != SymmetryBreaking.NO) {
 			int nBefore = constraints.size();
-			// for (Constraint c : features.collecting.constraints) if (Constraint.getSymmetryMatching(c.key) == null)
-			// Constraint.putSymmetryMatching(c.key, c.defineSymmetryMatching());
 			List<List<int[]>> generators = Automorphisms.buildGenerators(variables, constraints);
 			for (List<int[]> generator : generators) {
 				int[] cycle1 = generator.get(0);

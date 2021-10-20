@@ -295,41 +295,62 @@ public final class Features {
 
 	public int nMergedCtrs, nDiscardedCtrs, nAddedCtrs;
 
+	/**
+	 * Number of times a (generic or specific) propagator for a constraint has been effective
+	 */
 	public long nEffectiveFilterings;
 
 	public int nSharedBitVectors;
 
 	/**
-	 * Number of generators, when using reinforcing techniques for symmetry-breaking constraint
+	 * Number of generators, when using reinforcing techniques for posting symmetry-breaking constraints
 	 */
 	public int nGenerators;
 
 	/**
-	 * Number of cliques, when using reinforcing techniques for AllDifferent constraints
+	 * Number of cliques, when using reinforcing techniques for posting AllDifferent constraints
 	 */
 	public int nCliques;
 
 	public ExternFunctionArity1 externFunctionArity1;
 	public ExternFunctionArity2 externFunctionArity2;
 
-	public int nValuesRemovedAtConstructionTime; // sum over all variable domains
+	/**
+	 * Numbers of values that have been deleted at construction time. It is computed as a sum over all variable domains.
+	 */
+	public int nValuesRemovedAtConstructionTime;
 
+	/**
+	 * @return the number of distinct domain types
+	 */
 	public int nDomTypes() {
 		return (int) Stream.of(problem.variables).mapToInt(x -> x.dom.typeIdentifier()).distinct().count();
 	}
 
+	/**
+	 * @return the greatest domain size
+	 */
 	public int maxDomSize() {
 		return domSizes.repartition.lastKey();
 	}
 
+	/**
+	 * @return the greatest variable degree
+	 */
 	public int maxVarDegree() {
 		return varDegrees.repartition.lastKey();
 	}
 
+	/**
+	 * @return the smallest constraint arity
+	 */
 	public int minCtrArity() {
 		return ctrArities.repartition.firstKey();
 	}
 
+	/**
+	 * @return the greatest constraint arity
+	 */
 	public int maxCtrArity() {
 		return ctrArities.repartition.lastKey();
 	}

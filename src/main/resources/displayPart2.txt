@@ -14,15 +14,14 @@ Let us consider some examples:
   java ace queens-12.xml -s=10 -varh=Dom 
 	The instance queens-12.xml is solved using the variable ordering heuristic 'min Dom'.
 
-  java ace scen11-f8.xml -r_n=1000 -r_c=10
-	The instance scen11-f8.xml.
-	The solver will restart up to 1000 times, and the cutoff value that is used for determining the moment the solver has to restart is initially set to 10 (backtracks).
+  java ace scen11-f8.xml -r_n=1000 -r_c=100
+	The instance scen11-f8.xml is solved, with up to 1000 restarts, and a cutoff value (for restarts) initially set to 100 (backtracks).
 	The cutoff value is increased at each restart by a factor set to 1.1 (default value).
   
   java ace options.xml queens-12.xml -s=10
-	The instance queens-12.xml is solved using the configuration set in the XML file called options.xml (but -s=10 has the priority).
+	The instance queens-12.xml is solved using the options in the XML file called options.xml (but -s=10 has the priority).
 
   java main.HeadExtraction scen11-f8.xml
-	A minimal unsatisfiable core is extracted: this core is in the file 'extraction_0_xx.xml' where xx stands for the highest value among all (intermediate) generated files.
+	A minimal unsatisfiable core is extracted.
 
    

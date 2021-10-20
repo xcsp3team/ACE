@@ -406,7 +406,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	public final List<ObserverOnConflicts> observersOnConflicts;
 
 	private List<ObserverOnSolving> collectObserversOnSolving() {
-		Stream<Object> stream = Stream.concat(Stream.of(problem.constraints), Stream.of(head.output, stats));
+		Stream<Object> stream = Stream.concat(Stream.of(problem.constraints), Stream.of(stats, head.output));
 		return stream.filter(c -> c instanceof ObserverOnSolving).map(o -> (ObserverOnSolving) o).collect(toCollection(ArrayList::new));
 	}
 

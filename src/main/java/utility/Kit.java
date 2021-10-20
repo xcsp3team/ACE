@@ -722,7 +722,7 @@ public final class Kit {
 	}
 
 	/**
-	 * Loads the specified file as an XML document (DOM object)
+	 * Loads the specified XML file
 	 * 
 	 * @param file
 	 *            a file
@@ -739,6 +739,13 @@ public final class Kit {
 		}
 	}
 
+	/**
+	 * Loads the XML file whose name is specified
+	 * 
+	 * @param fileName
+	 *            a filename
+	 * @return a document
+	 */
 	public static Document load(String fileName) {
 		if (fileName.endsWith("xml.bz2") || fileName.endsWith("xml.lzma"))
 			try {
@@ -754,6 +761,19 @@ public final class Kit {
 		return load(new File(fileName));
 	}
 
+	/**
+	 * Modifies the specified document by setting the specified attribute value to the specified attribute name, when
+	 * considering the specified path
+	 * 
+	 * @param document
+	 *            a document
+	 * @param path
+	 *            a path in the document
+	 * @param attName
+	 *            the name of an attribute
+	 * @param attValue
+	 *            the (new) value of the attribute
+	 */
 	public static void modify(Document document, String path, String attName, String attValue) {
 		try {
 			NodeList result = (NodeList) XPathFactory.newInstance().newXPath().compile("//" + path).evaluate(document, XPathConstants.NODESET);
@@ -764,10 +784,30 @@ public final class Kit {
 		}
 	}
 
+	/**
+	 * Returns the value of the specified attribute for the specified tag, in the document whose filename is specified
+	 * 
+	 * @param fileName
+	 *            the name of an XML file
+	 * @param tagName
+	 *            the name of a tag
+	 * @param attName
+	 *            the name of an attribute
+	 * @return the value of the specified attribute for the specified tag, in the document whose filename is specified
+	 */
 	public static String attValueFor(String fileName, String tagName, String attName) {
 		return ((Element) load(fileName).getElementsByTagName(tagName).item(0)).getAttribute(attName);
 	}
 
+	/**
+	 * Returns true if the root of the specified XML file has a name starting with the specified string
+	 * 
+	 * @param fileName
+	 *            the name of an XML file
+	 * @param rootToken
+	 *            a string
+	 * @return true if the root of the specified XML file has a name starting with the specified string
+	 */
 	public static boolean isXMLFileWithRoot(String fileName, String rootToken) {
 		File file = new File(fileName);
 		if (!file.isFile())

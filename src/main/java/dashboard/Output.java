@@ -193,7 +193,6 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	public static final String N_SINGLETON_TESTS = "nSingTests";
 	public static final String N_EFFECTIVE_SINGLETON_TESTS = "nEffSingTests";
-	public static final String N_FOUND_SINGLETONS = "nSingFound";
 	public static final String N_BRANCHES = "nBranches";
 	public static final String SUM_BRANCHES = "sumBranches";
 
@@ -331,11 +330,17 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		return record(tag, bloc.filtered_entries(), parent);
 	}
 
-	public void beforeData() { // not a method from an observer
+	/**
+	 * Method called before loading/setting data. REMARK: this is not a method from an observer.
+	 */
+	public void beforeData() {
 		this.resolution = record(RESOLUTION, (Stream<Entry<String, Object>>) null, root);
 	}
 
-	public void afterData() { // not a method from an observer
+	/**
+	 * Method called after loading/setting data. REMARK: this is not a method from an observer.
+	 */
+	public void afterData() {
 		InformationBloc info = instanceInfo(head.instanceIndex);
 		save(head.instanceStopwatch.wckTime());
 		log.config(COMMENT_PREFIX + Kit.coloredString("Instance ", Kit.BLUE) + head.problem.name() + "\n");

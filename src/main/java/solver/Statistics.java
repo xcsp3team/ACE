@@ -109,13 +109,10 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 
 		public long lastSolWck;
 
-		// public long lastSolCpu;
-
 		/**
 		 * Updates some data (times) when a new solution is found
 		 */
 		public void onNewSolution() {
-			// lastSolCpu = solver.head.stopwatch.cpuTime();
 			lastSolWck = solver.head.instanceStopwatch.wckTime();
 			if (solver.solutions.found == 1) {
 				firstSolCpu = solver.head.stopwatch.cpuTime();
@@ -168,12 +165,12 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	/**
 	 * The object used to collect data about the preprocessing stage
 	 */
-	public Prepro prepro = new Prepro();
+	public final Prepro prepro = new Prepro();
 
 	/**
 	 * The object used to collect times taken by different operations
 	 */
-	public Times times = new Times();
+	public final Times times = new Times();
 
 	/**
 	 * Builds an object to collect statistics about the specified solver
