@@ -21,6 +21,11 @@ import solver.Solver;
 import utility.Kit;
 import variables.Variable;
 
+/**
+ * This class allows us to record and reason with nogoods.
+ * 
+ * @author Christophe Lecoutre
+ */
 public final class NogoodReasoner {
 
 	/**

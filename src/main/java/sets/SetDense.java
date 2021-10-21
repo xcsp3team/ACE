@@ -79,10 +79,8 @@ public class SetDense { // implements Iterable<Integer> {
 	 * Increases the capacity of the set (ratio set to 2)
 	 */
 	public void increaseCapacity() {
-		dense = IntStream.range(0, capacity() * 2).map(i -> i < dense.length ? dense[i] : i).toArray(); // increase
-																										// ratio set to
-																										// 2; hard
-																										// coding
+		dense = IntStream.range(0, capacity() * 2).map(i -> i < dense.length ? dense[i] : i).toArray();
+		// above, increase ratio set to 2; hard coding
 	}
 
 	/**

@@ -233,8 +233,6 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 * Classes for StackedVariables and Proofer
 	 *********************************************************************************************/
 
-	public static int cnt = 0;
-
 	/**
 	 * The object for recording which variables are modified (i.e., with a reduced domain) at each level of search
 	 */
@@ -405,9 +403,13 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 */
 	public final List<ObserverOnConflicts> observersOnConflicts;
 
+	private <T> List<T> collectObservers(Stream<?> stream, Class<T> clazz) {
+		return stream.filter(o -> o != null && clazz.isAssignableFrom(o.getClass())).map(o -> (T) o).collect(toCollection(ArrayList::new));
+	}
+
 	private List<ObserverOnSolving> collectObserversOnSolving() {
 		Stream<Object> stream = Stream.concat(Stream.of(problem.constraints), Stream.of(stats, head.output));
-		return stream.filter(c -> c instanceof ObserverOnSolving).map(o -> (ObserverOnSolving) o).collect(toCollection(ArrayList::new));
+		return collectObservers(stream, ObserverOnSolving.class);
 	}
 
 	private List<ObserverOnRuns> collectObserversOnRuns() {
@@ -415,35 +417,34 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			return new ArrayList<>();
 		Stream<Object> stream = Stream.concat(
 				Stream.of(this, problem.optimizer, restarter, runProgressSaver, decisions, heuristic, lastConflict, ipsReasoner, head.output, stats),
-				Stream.of(problem.constraints)); // and nogoodRecorder.symmetryHandler
-		return stream.filter(c -> c instanceof ObserverOnRuns).map(o -> (ObserverOnRuns) o).collect(toCollection(ArrayList::new));
+				Stream.of(problem.constraints)); // and nogoodRecorder.symmetryHandler?
+		return collectObservers(stream, ObserverOnRuns.class);
 	}
 
 	private List<ObserverOnBacktracksSystematic> collectObserversOnBacktracksSystematic() {
 		// keep 'this' at first position in the list
 		Stream<Object> stream = Stream.concat(Stream.of(this, propagation), Stream.of(problem.constraints));
-		return stream.filter(c -> c instanceof ObserverOnBacktracksSystematic).map(o -> (ObserverOnBacktracksSystematic) o)
-				.collect(toCollection(ArrayList::new));
+		return collectObservers(stream, ObserverOnBacktracksSystematic.class);
 	}
 
 	private List<ObserverOnDecisions> collectObserversOnDecisions() {
 		Stream<Object> stream = Stream.of(this, lastConflict, proofer, tracer, stats);
-		return stream.filter(o -> o instanceof ObserverOnDecisions).map(o -> (ObserverOnDecisions) o).collect(toCollection(ArrayList::new));
+		return collectObservers(stream, ObserverOnDecisions.class);
 	}
 
 	private List<ObserverOnAssignments> collectObserversOnAssignments() {
-		return Stream.of(decisions, heuristic).filter(o -> o instanceof ObserverOnAssignments).map(o -> (ObserverOnAssignments) o)
-				.collect(toCollection(ArrayList::new));
+		Stream<Object> stream = Stream.of(decisions, heuristic);
+		return collectObservers(stream, ObserverOnAssignments.class);
 	}
 
 	private List<ObserverOnRemovals> collectObserversOnRemovals() {
-		return Stream.of(ipsReasoner != null ? ipsReasoner.explainer : null).filter(o -> o != null).map(o -> (ObserverOnRemovals) o)
-				.collect(toCollection(ArrayList::new));
+		Stream<Object> stream = Stream.of(ipsReasoner != null ? ipsReasoner.explainer : null);
+		return collectObservers(stream, ObserverOnRemovals.class);
 	}
 
 	private List<ObserverOnConflicts> collectObserversOnConflicts() {
-		return Stream.of(runProgressSaver, heuristic, ipsReasoner, tracer).filter(o -> o instanceof ObserverOnConflicts).map(o -> (ObserverOnConflicts) o)
-				.collect(toCollection(ArrayList::new));
+		Stream<Object> stream = Stream.of(runProgressSaver, heuristic, ipsReasoner, tracer);
+		return collectObservers(stream, ObserverOnConflicts.class);
 	}
 
 	/**********************************************************************************************
@@ -495,12 +496,24 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 */
 	public final FutureVariables futVars;
 
+	/**
+	 * The object that records (stacks) the variables whose domains are modified at every depth of search
+	 */
 	public final StackedVariables stackedVariables;
 
+	/**
+	 * The object that allows us to record and reason with nogoods
+	 */
 	public final NogoodReasoner nogoodReasoner;
 
+	/**
+	 * The object that allows us to record and reason with inconsistent partial states (IPSs)
+	 */
 	public final IpsReasoner ipsReasoner;
 
+	/**
+	 * Object currently unavailable (To be finalized)
+	 */
 	public final Proofer proofer;
 
 	/**
@@ -508,8 +521,14 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 */
 	public final SetSparseReversible entailed;
 
+	/**
+	 * The object that allows us to apply the technique called "run progress saving"
+	 */
 	public final RunProgressSaver runProgressSaver;
 
+	/**
+	 * The object that allows us to guide search from an instantiation (solution) given by the user
+	 */
 	public final WarmStarter warmStarter;
 
 	public int minDepth, maxDepth;
@@ -519,7 +538,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 */
 	public Stopping stopping;
 
-	public final Tracer tracer;
+	private final Tracer tracer;
 
 	/**
 	 * The statistics of the solver

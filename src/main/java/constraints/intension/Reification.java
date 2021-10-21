@@ -324,8 +324,7 @@ public final class Reification {
 				if (dy.containsValue(residue) && dz.containsValue(residue))
 					return true;
 				// we look for a support for (x,1), and record it as a residue
-				int v = dy.commonValueWith(dz); // dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) :
-												// dz.firstCommonValueWith(dy);
+				int v = dy.commonValueWith(dz);
 				if (v != Integer.MAX_VALUE)
 					residue = v;
 				else
@@ -361,8 +360,7 @@ public final class Reification {
 				if (dy.containsValue(residue) && dz.containsValue(residue))
 					return true;
 				// we look for a support for (x,0), and record it as a residue
-				int v = dy.commonValueWith(dz); // dy.size() <= dz.size() ? dy.firstCommonValueWith(dz) :
-												// dz.firstCommonValueWith(dy);
+				int v = dy.commonValueWith(dz);
 				if (v != Integer.MAX_VALUE)
 					residue = v;
 				else {
@@ -488,7 +486,7 @@ public final class Reification {
 
 			protected Variable[] list;
 
-			protected Variable sentinel1, sentinel2; // for variables in the list supporting (x,0) if and, (x,1) if or
+			protected Variable sentinel1, sentinel2; // for variables of list supporting (x,0) if 'and', (x,1) if 'or'
 
 			public ReifLogicn(Problem pb, Variable x, Variable[] list) {
 				super(pb, x, list);

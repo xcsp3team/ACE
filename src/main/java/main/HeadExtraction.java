@@ -31,7 +31,19 @@ import utility.Kit;
 import utility.Stopwatch;
 import variables.Variable;
 
+/**
+ * This is the class of the main object (head) in charge of extracting an unsatisfiable core.
+ * 
+ * @author Christophe Lecoutre
+ */
 public final class HeadExtraction extends Head {
+
+	/**
+	 * Different ways of conducting extraction
+	 */
+	public enum Extraction {
+		DEC_VAR, DEC_CON, VAR, CON, INC, INC_FIRST, MAX_CSP;
+	}
 
 	public static boolean[] and(boolean[] inOut, boolean[] in) {
 		assert inOut.length == in.length;
@@ -56,13 +68,6 @@ public final class HeadExtraction extends Head {
 	}
 
 	/**
-	 * Different ways of conducting extraction
-	 */
-	public enum Extraction {
-		DEC_VAR, DEC_CON, VAR, CON, INC, INC_FIRST, MAX_CSP;
-	}
-
-	/**
 	 * The list of collected cores
 	 */
 	public List<List<Constraint>> cores = new ArrayList<>();
@@ -74,8 +79,6 @@ public final class HeadExtraction extends Head {
 	private boolean[] presentVars;
 
 	/**
-	 * 
-	 * 
 	 * Global array to denote the constraints that are currently present. If presentCtrs[i] = false, then this
 	 * constraint has been removed (logically).
 	 */
@@ -363,9 +366,7 @@ public final class HeadExtraction extends Head {
 		control(extraction.control.problem.symmetryBreaking == SymmetryBreaking.NO,
 				() -> "Do not use symmetry breaking method when extracting unsatisfiable cores.");
 		control(extraction.control.learning.ips == LearningIps.NO, () -> "Do not use partial state learning when extracting unsatisfiable cores.");
-		// control(extraction.configuration.restartsCutoff == Long.MAX_VALUE || extraction.configuration.nogoodType
-		// == null,
-		// "Be careful of nogood recording from restarts.");
+		// what about nogood recording from restarts?
 		control(extraction.control.solving.clazz.equals(Solver.class.getSimpleName()), () -> extraction.control.solving.clazz);
 		extraction.start();
 	}

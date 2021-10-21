@@ -10,6 +10,7 @@
 
 package main;
 
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
 import static utility.Kit.control;
 import static utility.Kit.log;
@@ -24,17 +25,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Utilities;
 import org.xcsp.modeler.api.ProblemAPI;
@@ -60,7 +58,7 @@ import utility.Reflector;
 import utility.Stopwatch;
 
 /**
- * This is the class of the head in charge of solving a problem instance.
+ * This is the class of the main object (head) in charge of solving a problem instance.
  * 
  * @author Christophe Lecoutre
  */
@@ -70,90 +68,29 @@ public class Head extends Thread {
 	 * Static members
 	 *********************************************************************************************/
 
-	public static final String VARIANT = "variant";
-	public static final String VARIANT_PARALLEL = "variantParallel";
-	public static final String NAME = "name";
-	public static final String MODIFICATION = "modification";
-	public static final String PATH = "path";
-	public static final String ATTRIBUTE = "attribute";
-	public static final String VALUE = "value";
-	public static final String MIN = "min";
-	public static final String MAX = "max";
-	public static final String STEP = "step";
-	public static final String SEED = "seed";
-
 	/**
 	 * The set of objects in charge of solving a problem. Typically, there is only one object. However, in portfolio
 	 * mode, it contains more than one object.
 	 */
 	private static Head[] heads;
 
-	public final static String[] loadSequentialVariants(String configurationFileName, String configurationVariantsFileName, String prefix) {
-		List<String> list = new ArrayList<>();
-		Document document = Kit.load(configurationVariantsFileName);
-		NodeList variants = document.getElementsByTagName(VARIANT);
-		for (int i = 0; i < variants.getLength(); i++) {
-			Element variant = (Element) variants.item(i);
-			Element parent = (Element) variant.getParentNode();
-			if (!document.getDocumentElement().getTagName().equals(VARIANT_PARALLEL) && parent.getTagName().equals(VARIANT_PARALLEL))
-				continue;
-			Document docVariant = Kit.load(configurationFileName);
-			String docFilename = prefix + (parent.getTagName().equals(VARIANT_PARALLEL) ? parent.getAttribute(NAME) + "_" : "") + variant.getAttribute(NAME)
-					+ ".xml";
-			NodeList modifications = variant.getElementsByTagName(MODIFICATION);
-			int nModifications = modifications.getLength();
-			boolean iteration = nModifications > 0 && !((Element) modifications.item(nModifications - 1)).getAttribute(MIN).equals("");
-			int limit = nModifications - (iteration ? 1 : 0);
-			for (int j = 0; j < limit; j++) {
-				Element modificationElement = (Element) modifications.item(j);
-				String path = modificationElement.getAttribute(PATH);
-				String attributeName = modificationElement.getAttribute(ATTRIBUTE);
-				String attributeValue = modificationElement.getAttribute(VALUE);
-				Kit.modify(docVariant, path, attributeName, attributeValue);
-			}
-			if (iteration) {
-				Element modification = (Element) modifications.item(nModifications - 1);
-				String path = modification.getAttribute(PATH);
-				control(path.equals(SEED));
-				String attributeName = modification.getAttribute(ATTRIBUTE);
-				int min = Integer.parseInt(modification.getAttribute(MIN)), max = Integer.parseInt(modification.getAttribute(MAX)),
-						step = Integer.parseInt(modification.getAttribute(STEP));
-				String basis = docFilename.substring(0, docFilename.lastIndexOf(".xml"));
-				for (int cnt = min; cnt <= max; cnt += step) {
-					Kit.modify(docVariant, path, attributeName, cnt + "");
-					list.add(Utilities.save(docVariant, basis + cnt + ".xml"));
-				}
-			} else
-				list.add(Utilities.save(docVariant, docFilename));
-		}
-		return list.toArray(new String[list.size()]);
-	}
-
-	public final static String[] loadParallelVariants(String configurationVariantsFileName, String prefix) {
-		List<String> list = new ArrayList<>();
-		Document document = Kit.load(configurationVariantsFileName);
-		if (!document.getDocumentElement().getTagName().equals(VARIANT_PARALLEL)) {
-			NodeList nodeList = document.getElementsByTagName(VARIANT_PARALLEL);
-			for (int i = 0; i < nodeList.getLength(); i++) {
-				Document docVariant = Kit.createNewDocument();
-				Element element = (Element) docVariant.importNode(nodeList.item(i), true);
-				docVariant.appendChild(element);
-				list.add(Utilities.save(docVariant, prefix + element.getAttribute(NAME) + ".xml"));
-			}
-		}
-		return list.toArray(new String[list.size()]);
-	}
-
+	/**
+	 * Method called in portfolio mode (not the usual case). This mode needs to be entirely revised (and so, should not
+	 * be used for the moment).
+	 * 
+	 * @param head
+	 *            a main resolution object
+	 */
 	public synchronized static void saveMultithreadResultsFiles(Head head) {
 		String fileName = head.output.save(head.stopwatch.wckTime());
 		if (fileName != null) {
-			String variantParallelName = Kit.attValueFor(Input.lastArgument(), VARIANT_PARALLEL, NAME);
-			String resultsFileName = head.control.general.campaignDir;
-			if (resultsFileName != "")
-				resultsFileName += File.separator;
-			resultsFileName += Output.RESULTS_DIRECTORY + File.separator + head.output.outputFileNameFrom(head.problem.name(), variantParallelName);
-			Kit.copy(fileName, resultsFileName);
-			Document document = Kit.load(resultsFileName);
+			String variantParallelName = Kit.attValueFor(Input.lastArgument(), Input.VARIANT_PARALLEL, Input.NAME);
+			String resultsFilename = head.control.general.campaignDir;
+			if (resultsFilename != "")
+				resultsFilename += File.separator;
+			resultsFilename += Output.RESULTS_DIRECTORY + File.separator + head.output.outputFileNameFrom(head.problem.name(), variantParallelName);
+			Kit.copy(fileName, resultsFilename);
+			Document document = Kit.load(resultsFilename);
 			Kit.modify(document, Output.RESOLUTIONS, Output.CONFIGURATION_FILE_NAME, variantParallelName);
 			long totalWCKTime = 0;
 			long totalVisitedNodes = 0;
@@ -166,11 +103,11 @@ public class Head extends Thread {
 			multiThreadedResults.setAttribute(Output.WCK, Double.toString((double) totalWCKTime / 1000));
 			multiThreadedResults.setAttribute(Output.N_NODES, Long.toString(totalVisitedNodes));
 			root.appendChild(multiThreadedResults);
-			Utilities.save(document, resultsFileName);
+			Utilities.save(document, resultsFilename);
 		}
 	}
 
-	public static boolean isAvailableIn() {
+	private static boolean isAvailableIn() {
 		try {
 			return System.in.available() > 0;
 		} catch (Throwable e) {
@@ -178,20 +115,15 @@ public class Head extends Thread {
 		}
 	}
 
-	public final static String[] loadVariantNames() {
+	private final static String[] loadVariantNames() {
 		if (Input.portfolio) {
-			String prefix = Kit.attValueFor(Input.controlFilename, "xml", "exportMode");
-			if (prefix.equals("NO"))
-				prefix = ".";
-			if (prefix != "")
-				prefix += File.separator;
-			prefix += Output.SETTINGS_DIRECTORY + File.separator;
+			String prefix = Output.SETTINGS_DIRECTORY + File.separator;
 			File file = new File(prefix);
 			if (!file.exists())
 				file.mkdirs();
 			else
 				control(file.isDirectory());
-			return loadSequentialVariants(Input.controlFilename, Input.lastArgument(), prefix);
+			return Input.loadSequentialVariants(Input.controlFilename, Input.lastArgument(), prefix);
 		}
 		return new String[] { Input.controlFilename };
 	}
@@ -206,9 +138,9 @@ public class Head extends Thread {
 		if (args.length == 0 && !isAvailableIn())
 			new Head().control.display(); // the usage is displayed
 		else {
-			Input.loadArguments(args); // Always start with that
+			Input.loadArguments(args); // always start with that
+			// heads (threads) are built and started
 			heads = Stream.of(loadVariantNames()).map(v -> new Head(v)).peek(h -> h.start()).toArray(Head[]::new);
-			// just above, threads built and started
 		}
 	}
 
@@ -216,6 +148,10 @@ public class Head extends Thread {
 	 * Inner classes for available classes and shared structures
 	 *********************************************************************************************/
 
+	/**
+	 * This class is useful for storing in a map several entries (key, value) where the value is a set of (available)
+	 * classes that inherit from a root class (the key).
+	 */
 	public static class AvailableClasses {
 
 		private static final String DOT_CLASS = ".class";
@@ -225,12 +161,15 @@ public class Head extends Thread {
 		 */
 		private Map<Class<?>, Set<Class<?>>> map = new HashMap<>();
 
+		/**
+		 * Returns all available classes (value) that inherit from the specified class (seen as a key)
+		 * 
+		 * @param clazz
+		 *            a class
+		 * @return all available classes that inherit from the specified class
+		 */
 		public Set<Class<?>> get(Class<?> clazz) {
 			return map.get(clazz);
-		}
-
-		private AvailableClasses() {
-			loadClasses();
 		}
 
 		private boolean dealWith(Class<?> clazz, Class<?> rootClass) {
@@ -254,20 +193,18 @@ public class Head extends Thread {
 				if (file.isDirectory()) {
 					control(!file.getName().contains("."));
 					loadRecursively(file, packageName + "." + file.getName());
-				} else if (file.getName().endsWith(DOT_CLASS) && file.getName().charAt(0) != '/') // second part for a
-																									// class in the
-																									// default package
+				} else if (file.getName().endsWith(DOT_CLASS) && file.getName().charAt(0) != '/')
+					// above, second part of the condition for a class in the default package
 					dealWith(Class.forName(packageName + '.' + file.getName().substring(0, file.getName().length() - DOT_CLASS.length())));
 		}
 
-		private void loadClasses() {
+		private AvailableClasses() {
+			// we load classes
 			try {
-				// we load classes from jar files, first (it is necessary when ACE is run from a jar)
-				for (String classPathToken : System.getProperty("java.class.path", ".").split(File.pathSeparator))
-					if (classPathToken.endsWith(".jar"))
-						try (JarInputStream jarFile = new JarInputStream(new FileInputStream(classPathToken))) {
-							// if (classPathToken.endsWith("CyclesAlgorithmsPlugin.jar"))
-							// continue;
+				// first, we load classes from jar files (this is necessary when ACE is run from a jar)
+				for (String token : System.getProperty("java.class.path", ".").split(File.pathSeparator))
+					if (token.endsWith(".jar"))
+						try (JarInputStream jarFile = new JarInputStream(new FileInputStream(token))) {
 							while (true) {
 								JarEntry jarEntry = jarFile.getNextJarEntry();
 								if (jarEntry == null)
@@ -283,12 +220,10 @@ public class Head extends Thread {
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
-				// we load loaded classes, next
+				// next, we load loaded classes
 				ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 				// however, if we need to look at unloaded classes, as for example some in a subclass of Propagation, we
-				// need to put lines
-				// as the one below which is commented
-				// Class<?> _ = Propagation.class;
+				// need to put lines as this one: Class<?> _ = Propagation.class;
 				for (Package p : Package.getPackages()) {
 					String name = p.getName();
 					if (!name.startsWith("constraints") && !name.startsWith("heuristics") && !name.startsWith("propagation"))
@@ -304,10 +239,8 @@ public class Head extends Thread {
 
 		@Override
 		public String toString() {
-			String s = "";
-			for (Entry<Class<?>, Set<Class<?>>> entry : map.entrySet())
-				s += entry.getKey() + " : " + entry.getValue().stream().map(c -> c.getName()).collect(Collectors.joining(" ")) + "\n";
-			return s;
+			return map.entrySet().stream().map(e -> e.getKey() + " : " + e.getValue().stream().map(c -> c.getName()).collect(joining(" ")))
+					.collect(joining("\n"));
 		}
 	}
 
@@ -400,19 +333,38 @@ public class Head extends Thread {
 	 */
 	public final Random random = new Random();
 
+	/**
+	 * The main stopwatch
+	 */
 	public final Stopwatch stopwatch = new Stopwatch();
 
+	/**
+	 * The stopwatch used when solving an instance
+	 */
 	public final Stopwatch instanceStopwatch = new Stopwatch();
 
+	/**
+	 * @return true if unary constraints must be preserved (and not be directly taken into account by reducing variable
+	 *         domains)
+	 */
 	public boolean mustPreserveUnaryConstraints() {
 		return control.constraints.preserve1 || this instanceof HeadExtraction || control.problem.symmetryBreaking != SymmetryBreaking.NO
 				|| problem.framework == TypeFramework.MAXCSP;
 	}
 
+	/**
+	 * @return true if time has expired for solving the current problem instance
+	 */
 	public boolean isTimeExpiredForCurrentInstance() {
 		return control.general.timeout <= instanceStopwatch.wckTime();
 	}
 
+	/**
+	 * Builds the main resolution object
+	 * 
+	 * @param controlFileName
+	 *            the name of a file with options (possibly, null)
+	 */
 	public Head(String controlFileName) {
 		this.control = new Control(controlFileName);
 		this.output = new Output(this, controlFileName);
@@ -423,6 +375,9 @@ public class Head extends Thread {
 		// statement above needed if we run HeadExtraction
 	}
 
+	/**
+	 * Builds the main resolution object
+	 */
 	public Head() {
 		this(null);
 	}

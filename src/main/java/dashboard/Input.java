@@ -20,9 +20,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xcsp.common.Utilities;
 
-import main.Head;
 import problem.XCSP3;
 import utility.Kit;
 
@@ -36,10 +38,20 @@ import utility.Kit;
 public final class Input {
 
 	public static final String SETTINGS = "settings";
-
 	public static final String DEFAULT_SETTINGS = "defaultSettings";
-
 	private static final String OPTION_PREFIX = "-";
+
+	public static final String VARIANT = "variant";
+	public static final String VARIANT_PARALLEL = "variantParallel";
+	public static final String NAME = "name";
+	public static final String MODIFICATION = "modification";
+	public static final String PATH = "path";
+	public static final String ATTRIBUTE = "attribute";
+	public static final String VALUE = "value";
+	public static final String MIN = "min";
+	public static final String MAX = "max";
+	public static final String STEP = "step";
+	public static final String SEED = "seed";
 
 	/**
 	 * All user arguments given on the command line
@@ -112,7 +124,7 @@ public final class Input {
 		Input.args = args = Stream.of(args).filter(s -> s.length() > 0).toArray(String[]::new); // cleaning and storing
 																								// args
 		control(args.length > 0);
-		Input.portfolio = Kit.isXMLFileWithRoot(lastArgument(), Head.VARIANT_PARALLEL);
+		Input.portfolio = Kit.isXMLFileWithRoot(lastArgument(), VARIANT_PARALLEL);
 		int cursor = 0;
 		Input.controlFilename = Kit.isXMLFileWithRoot(args[cursor], SETTINGS) ? args[cursor++] : DEFAULT_SETTINGS;
 		// control of this file performed later
@@ -139,4 +151,61 @@ public final class Input {
 			// TODO control validity of key-value
 		}
 	}
+
+	public final static String[] loadSequentialVariants(String controlFilename, String controlVariantsFilename, String prefix) {
+		List<String> list = new ArrayList<>();
+		Document document = Kit.load(controlVariantsFilename);
+		NodeList variants = document.getElementsByTagName(VARIANT);
+		for (int i = 0; i < variants.getLength(); i++) {
+			Element variant = (Element) variants.item(i);
+			Element parent = (Element) variant.getParentNode();
+			if (!document.getDocumentElement().getTagName().equals(VARIANT_PARALLEL) && parent.getTagName().equals(VARIANT_PARALLEL))
+				continue;
+			Document docVariant = Kit.load(controlFilename);
+			String docFilename = prefix + (parent.getTagName().equals(VARIANT_PARALLEL) ? parent.getAttribute(NAME) + "_" : "") + variant.getAttribute(NAME)
+					+ ".xml";
+			NodeList modifications = variant.getElementsByTagName(MODIFICATION);
+			int nModifications = modifications.getLength();
+			boolean iteration = nModifications > 0 && !((Element) modifications.item(nModifications - 1)).getAttribute(MIN).equals("");
+			int limit = nModifications - (iteration ? 1 : 0);
+			for (int j = 0; j < limit; j++) {
+				Element modificationElement = (Element) modifications.item(j);
+				String path = modificationElement.getAttribute(PATH);
+				String attributeName = modificationElement.getAttribute(ATTRIBUTE);
+				String attributeValue = modificationElement.getAttribute(VALUE);
+				Kit.modify(docVariant, path, attributeName, attributeValue);
+			}
+			if (iteration) {
+				Element modification = (Element) modifications.item(nModifications - 1);
+				String path = modification.getAttribute(PATH);
+				control(path.equals(SEED));
+				String attributeName = modification.getAttribute(ATTRIBUTE);
+				int min = Integer.parseInt(modification.getAttribute(MIN)), max = Integer.parseInt(modification.getAttribute(MAX)),
+						step = Integer.parseInt(modification.getAttribute(STEP));
+				String basis = docFilename.substring(0, docFilename.lastIndexOf(".xml"));
+				for (int cnt = min; cnt <= max; cnt += step) {
+					Kit.modify(docVariant, path, attributeName, cnt + "");
+					list.add(Utilities.save(docVariant, basis + cnt + ".xml"));
+				}
+			} else
+				list.add(Utilities.save(docVariant, docFilename));
+		}
+		return list.toArray(new String[list.size()]);
+	}
+
+	public final static String[] loadParallelVariants(String controlVariantsFilename, String prefix) {
+		List<String> list = new ArrayList<>();
+		Document document = Kit.load(controlVariantsFilename);
+		if (!document.getDocumentElement().getTagName().equals(VARIANT_PARALLEL)) {
+			NodeList nodeList = document.getElementsByTagName(VARIANT_PARALLEL);
+			for (int i = 0; i < nodeList.getLength(); i++) {
+				Document docVariant = Kit.createNewDocument();
+				Element element = (Element) docVariant.importNode(nodeList.item(i), true);
+				docVariant.appendChild(element);
+				list.add(Utilities.save(docVariant, prefix + element.getAttribute(NAME) + ".xml"));
+			}
+		}
+		return list.toArray(new String[list.size()]);
+	}
+
 }
