@@ -20,7 +20,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -288,8 +287,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 						list.add(x);
 				}
 				System.out.println("bestgap " + bestGap);
-				Random r = problem.head.random;
-				return list.get(r.nextInt(list.size()));
+				return list.get(problem.head.random.nextInt(list.size()));
 			}
 		}
 
@@ -831,7 +829,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				long sum = 0;
 				for (int i = 0; i < scp.length; i++)
 					if (scp[i] != sentinel)
-						sum += scp[i].dom.singleValue() * coeffs[i]; // no overflow possible (controlled at construction)
+						sum += scp[i].dom.singleValue() * coeffs[i]; // no overflow possible (controlled at
+																		// construction)
 					else
 						p = i;
 				long v = (limit - sum) / coeffs[p];

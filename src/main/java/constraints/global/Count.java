@@ -72,6 +72,9 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 	 * CountCst
 	 *********************************************************************************************/
 
+	/**
+	 * Constraints Count where the right-hand operand (of the condition that must be respected) is a constant (integer)
+	 */
 	public static abstract class CountCst extends Count {
 
 		public static CountCst buildFrom(Problem pb, Variable[] scp, int value, TypeConditionOperatorRel op, int k) {
@@ -331,6 +334,9 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 	 * CountVar
 	 *********************************************************************************************/
 
+	/**
+	 * Constraints Count where the right-hand operand (of the condition that must be respected) is a variable
+	 */
 	public static abstract class CountVar extends Count {
 
 		public static CountVar buildFrom(Problem pb, Variable[] scp, int value, TypeConditionOperatorRel op, Variable k) {

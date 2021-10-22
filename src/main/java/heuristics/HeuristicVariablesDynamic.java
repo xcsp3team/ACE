@@ -77,6 +77,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			if (solver.depth() <= lastDepthWithOnlySingletons) {
 				lastDepthWithOnlySingletons = Integer.MAX_VALUE;
 				for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
+					if (options.connected && x.firstAssignedNeighbor() == null)
+						continue;
 					if (x.dom.size() != 1)
 						bestScoredVariable.consider(x, scoreOptimizedOf(x));
 				}

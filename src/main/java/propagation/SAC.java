@@ -16,11 +16,12 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import constraints.extension.STR3;
 import heuristics.HeuristicVariables;
 import heuristics.HeuristicVariables.BestScoredVariable;
 import heuristics.HeuristicVariablesDynamic.WdegOnDom;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
-import propagation.SAC.QueueForSAC3.Cell;
+import propagation.SAC.SAC3.LocalQueue.Cell;
 import solver.Solver;
 import utility.Kit;
 import utility.Reflector;
@@ -28,8 +29,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the class for Singleton Arc Consistency (AC). Information about SAC and algorithms enforcing it can be found
- * in: <br/>
+ * This is the class for Singleton Arc Consistency (AC). Some information about SAC and algorithms enforcing it can be
+ * found for example in: <br/>
  * "Efficient algorithms for singleton arc consistency", Constraints An Int. J. 16(1): 25-53 (2011), by C. Bessiere, S.
  * Cardon, R. Debruyne, and C. Lecoutre
  * 
@@ -145,253 +146,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 	}
 
 	/**********************************************************************************************
-	 * Inner classes
-	 *********************************************************************************************/
-
-	public final class QueueForSAC3 {
-
-		public final class Cell {
-			public Variable x;
-			public int a;
-
-			private Cell prev, next;
-
-			private Cell(Cell next) {
-				this.next = next;
-			}
-
-			private void set(Variable x, int a, Cell prev, Cell next) {
-				this.x = x;
-				this.a = a;
-				this.prev = prev;
-				this.next = next;
-			}
-		}
-
-		public abstract class CellSelector {
-
-			protected abstract Cell select();
-
-			protected Cell firstSingletonCell() {
-				if (priorityToSingletons)
-					for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
-						if (x.dom.size() == 1) {
-							Cell cell = positions[x.num][x.dom.first()];
-							if (cell != null)
-								return cell;
-						}
-					}
-				return null;
-			}
-		}
-
-		public final class Fifo extends CellSelector {
-
-			@Override
-			public Cell select() {
-				Cell cell = firstSingletonCell();
-				if (cell != null)
-					return cell;
-				for (cell = head; cell != null; cell = cell.next) // first valid cell
-					if (cell.x.dom.contains(cell.a))
-						return cell;
-				return null;
-			}
-		}
-
-		public final class Lifo extends CellSelector {
-
-			@Override
-			public Cell select() {
-				Cell cell = firstSingletonCell();
-				if (cell != null)
-					return cell;
-				for (cell = tail; cell != null; cell = cell.prev) // last valid cell
-					if (cell.x.dom.contains(cell.a))
-						return cell;
-				return null;
-			}
-		}
-
-		public final class CellHeuristic extends CellSelector {
-
-			private HeuristicVariables heuristic;
-
-			public CellHeuristic() {
-				this.heuristic = new WdegOnDom(solver, false); // hard coding
-			}
-
-			@Override
-			public Cell select() {
-				Cell bestCell = null;
-				double bestEvaluation = -1;
-				for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
-					if (sizes[x.num] == 0)
-						continue;
-					if (priorityToSingletons && x.dom.size() == 1) {
-						Cell cell = positions[x.num][x.dom.first()];
-						if (cell != null)
-							return cell;
-					} else {
-						double evaluation = heuristic == null ? sizes[x.num] : heuristic.scoreOptimizedOf(x);
-						if (bestCell == null || evaluation > bestEvaluation) {
-							for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
-								Cell cell = positions[x.num][a];
-								if (cell != null) {
-									bestCell = cell;
-									bestEvaluation = evaluation;
-									break;
-								}
-							}
-						}
-					}
-				}
-				return bestCell;
-			}
-		}
-
-		private boolean priorityToSingletons;
-
-		private Cell head, tail, trash;
-		private Cell priorityCell;
-
-		public Cell[][] positions;
-
-		/**
-		 * sizes[x] indicates the number of cells for x
-		 */
-		private int[] sizes;
-
-		/**
-		 * size indicates the number of remaining cells
-		 */
-		public int size;
-
-		/**
-		 * The heuristic to select the next cell (literal)
-		 */
-		private CellSelector cellSelector;
-
-		public void setPriorityTo(Variable x, int a) {
-			assert priorityCell == null && positions[x.num][a] != null;
-			priorityCell = positions[x.num][a];
-		}
-
-		public void setPriorityOf(Variable x) {
-			assert priorityCell == null;
-			if (sizes[x.num] == 0)
-				return;
-			for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
-				Cell cell = positions[x.num][a];
-				if (cell != null) {
-					priorityCell = cell;
-					break;
-				}
-			}
-		}
-
-		public Cell pickNextCell() {
-			if (size == 0)
-				return null;
-			Cell cell = priorityCell != null ? priorityCell : cellSelector.select();
-			priorityCell = null;
-			if (cell != null)
-				remove(cell);
-			return cell; // even if removed, fields x and a are still operational (if cell is not null)
-		}
-
-		public QueueForSAC3(Solver solver, boolean priorityToSingletons) {
-			this.priorityToSingletons = priorityToSingletons;
-			this.positions = Stream.of(solver.problem.variables).map(x -> new Cell[x.dom.initSize()]).toArray(Cell[][]::new);
-			IntStream.range(0, Variable.nInitValuesFor(solver.problem.variables)).forEach(i -> trash = new Cell(trash));
-			this.sizes = new int[solver.problem.variables.length];
-			String s = CellHeuristic.class.getSimpleName(); // TODO hard coding
-			// options.classForSACSelector.substring(options.classForSACSelector.lastIndexOf('$') + 1);
-			this.cellSelector = Reflector.buildObject(s, CellSelector.class, this);
-		}
-
-		public void clear() {
-			size = 0;
-			for (int i = 0; i < positions.length; i++)
-				Arrays.fill(positions[i], null);
-			Arrays.fill(sizes, 0);
-			if (head == null)
-				return;
-			if (trash != null) {
-				tail.next = trash;
-				trash.prev = tail;
-			}
-			trash = head;
-			head = tail = null;
-		}
-
-		public void add(Variable x, int a) {
-			if (positions[x.num][a] != null)
-				return;
-			Cell cell = trash;
-			trash = trash.next;
-			cell.set(x, a, tail, null);
-			if (head == null)
-				head = cell;
-			else
-				tail.next = cell;
-			tail = cell;
-			positions[x.num][a] = cell;
-			sizes[x.num]++;
-			size++;
-		}
-
-		public void remove(Cell cell) {
-			size--;
-			sizes[cell.x.num]--;
-			positions[cell.x.num][cell.a] = null;
-			Cell prev = cell.prev;
-			Cell next = cell.next;
-			if (prev == null)
-				head = next;
-			else
-				prev.next = next;
-			if (next == null)
-				tail = prev;
-			else
-				next.prev = prev;
-			cell.next = trash;
-			trash = cell;
-		}
-
-		public boolean remove(Variable x, int a) {
-			Cell cell = positions[x.num][a];
-			if (cell == null)
-				return false;
-			remove(cell);
-			return true;
-		}
-
-		public void fill(boolean onlyBounds) {
-			clear();
-			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
-				if (onlyBounds) {
-					add(x, x.dom.first());
-					add(x, x.dom.last());
-				} else
-					for (int a = x.dom.first(); a != -1; a = x.dom.next(a))
-						add(x, a);
-			}
-		}
-
-		public void fill() {
-			fill(false);
-		}
-
-		public void display() {
-			for (Cell cell = head; cell != null; cell = cell.next)
-				System.out.print(cell.x + "-" + cell.a + " ");
-			System.out.println();
-		}
-	}
-
-	/**********************************************************************************************
-	 * Subclasses
+	 * SACGreedy, root of SAC3 and ESAC3
 	 *********************************************************************************************/
 
 	public static abstract class SACGreedy extends SAC {
@@ -404,7 +159,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		/**
 		 * Parameters for tuning the greedy SAC approaches.
 		 */
-		protected boolean maximumBranchExtension = false, stopSACWhenFoundSolution = false; // hard coding
+		protected boolean maximumBranchExtension = false, stopSACWhenFoundSolution = true; // hard coding
 
 		/**
 		 * The depth at which the first singleton check of each branch is performed.
@@ -423,13 +178,18 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		}
 
 		/**
-		 * Actions to perform when a value has been detected non SAC.
+		 * Called when a literal has been shown to be SAC-inconsistent
+		 * 
+		 * @param x
+		 *            a variable
+		 * @param a
+		 *            a value index for x
+		 * @return false if an inconsistency is detected
 		 */
 		protected boolean manageInconsistentValue(Variable x, int a) {
 			nEffectiveSingletonTests++;
 			x.dom.removeElementary(a);
-			if (shavingEvaluator != null)
-				shavingEvaluator.updateRatioAfterShavingSuccess(x);
+			// if (shavingEvaluator != null) shavingEvaluator.updateRatioAfterShavingSuccess(x);
 			if (x.dom.size() == 0)
 				return false;
 			assert queue.isEmpty();
@@ -437,7 +197,10 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		}
 
 		/**
-		 * Restore the problem to the state it was before developing the branch.
+		 * Restores the problem to the state it was before developing the branch
+		 * 
+		 * @param branchSize
+		 *            the size of the branch that has just been built
 		 */
 		protected void eraseLastBuiltBranch(int branchSize) {
 			nBranchesBuilt++;
@@ -445,14 +208,406 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			for (int i = 0; i < branchSize; i++) {
 				Variable lastPast = solver.futVars.lastPast();
 				solver.backtrack(lastPast);
-				if (shavingEvaluator != null)
-					shavingEvaluator.updateRatioAfterShavingFailure(lastPast);
+				// if (shavingEvaluator != null) shavingEvaluator.updateRatioAfterShavingFailure(lastPast);
 			}
 		}
 
-		protected ShavingEvaluator shavingEvaluator;
+	}
 
-		public class ShavingEvaluator { // still experimental
+	/**********************************************************************************************
+	 * SAC3
+	 *********************************************************************************************/
+
+	/**
+	 * Algorithm SAC3 for enforcing SAC in a greedy manner.
+	 */
+	public static class SAC3 extends SACGreedy {
+
+		// ************************************************************************
+		// ***** Inner class: LocalQueue
+		// ************************************************************************
+
+		public final class LocalQueue {
+
+			public final class Cell {
+				public Variable x;
+				public int a;
+
+				private Cell prev, next;
+
+				private Cell(Cell next) {
+					this.next = next;
+				}
+
+				private void set(Variable x, int a, Cell prev, Cell next) {
+					this.x = x;
+					this.a = a;
+					this.prev = prev;
+					this.next = next;
+				}
+			}
+
+			public abstract class CellSelector {
+
+				protected abstract Cell select();
+
+				protected Cell firstSingletonCell() {
+					for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x))
+						if (x.dom.size() == 1) {
+							Cell cell = positions[x.num][x.dom.first()];
+							if (cell != null)
+								return cell;
+						}
+					return null;
+				}
+			}
+
+			public final class Fifo extends CellSelector {
+
+				@Override
+				public Cell select() {
+					Cell cell = firstSingletonCell();
+					if (cell != null)
+						return cell;
+					for (cell = head; cell != null; cell = cell.next) // first valid cell
+						if (cell.x.dom.contains(cell.a))
+							return cell;
+					return null;
+				}
+			}
+
+			public final class Lifo extends CellSelector {
+
+				@Override
+				public Cell select() {
+					Cell cell = firstSingletonCell();
+					if (cell != null)
+						return cell;
+					for (cell = tail; cell != null; cell = cell.prev) // last valid cell
+						if (cell.x.dom.contains(cell.a))
+							return cell;
+					return null;
+				}
+			}
+
+			public final class CellHeuristic extends CellSelector {
+
+				private HeuristicVariables heuristic;
+
+				public CellHeuristic() {
+					this.heuristic = new WdegOnDom(solver, false); // hard coding
+				}
+
+				@Override
+				public Cell select() {
+					Cell bestCell = null;
+					double bestEvaluation = -1;
+					for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
+						if (sizes[x.num] == 0)
+							continue;
+						if (x.dom.size() == 1) { // priority to singletons
+							Cell cell = positions[x.num][x.dom.first()];
+							if (cell != null)
+								return cell;
+						} else {
+							double evaluation = heuristic == null ? sizes[x.num] : heuristic.scoreOptimizedOf(x);
+							if (bestCell == null || evaluation > bestEvaluation) {
+								for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
+									Cell cell = positions[x.num][a];
+									if (cell != null) {
+										bestCell = cell;
+										bestEvaluation = evaluation;
+										break;
+									}
+								}
+							}
+						}
+					}
+					return bestCell;
+				}
+			}
+
+			/**
+			 * The head (first cell) of the queue
+			 */
+			private Cell head;
+
+			/**
+			 * The tail (last cell) of the queue
+			 */
+			private Cell tail;
+
+			/**
+			 * The pool of available cells
+			 */
+			private Cell trash;
+
+			private Cell priorityCell;
+
+			/**
+			 * positions[x][a] indicates the cell in the queue corresponding to (x,a), or null if it is not present
+			 */
+			public Cell[][] positions;
+
+			/**
+			 * sizes[x] indicates the number of cells involving x in the queue
+			 */
+			private int[] sizes;
+
+			/**
+			 * size indicates the current number of cells in the queue
+			 */
+			public int size;
+
+			/**
+			 * The heuristic used to select the next cell (literal)
+			 */
+			private CellSelector cellSelector;
+
+			public LocalQueue(Solver solver) {
+				this.positions = Stream.of(solver.problem.variables).map(x -> new Cell[x.dom.initSize()]).toArray(Cell[][]::new);
+				IntStream.range(0, Variable.nInitValuesFor(solver.problem.variables)).forEach(i -> trash = new Cell(trash));
+				this.sizes = new int[solver.problem.variables.length];
+				this.cellSelector = Reflector.buildObject(CellHeuristic.class.getSimpleName(), CellSelector.class, this);
+				// hard coding for the choice of CellHeuristic
+			}
+
+			/**
+			 * Clears the queue
+			 */
+			public void clear() {
+				for (Cell[] t : positions)
+					Arrays.fill(t, null);
+				size = 0;
+				Arrays.fill(sizes, 0);
+				if (head == null)
+					return;
+				if (trash != null) {
+					tail.next = trash;
+					trash.prev = tail;
+				}
+				trash = head;
+				head = tail = null;
+			}
+
+			private void fill(boolean onlyBounds) {
+				clear();
+				for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
+					if (onlyBounds) {
+						add(x, x.dom.first());
+						add(x, x.dom.last());
+					} else
+						for (int a = x.dom.first(); a != -1; a = x.dom.next(a))
+							add(x, a);
+				}
+			}
+
+			/**
+			 * Fills the queue with all possible literals
+			 */
+			public void fill() {
+				fill(false);
+			}
+
+			/**
+			 * Adds the specified literal (x,a) to the queue, if not already present
+			 * 
+			 * @param x
+			 *            a variable
+			 * @param a
+			 *            a value index for x
+			 */
+			public void add(Variable x, int a) {
+				if (positions[x.num][a] != null)
+					return;
+				Cell cell = trash;
+				trash = trash.next;
+				cell.set(x, a, tail, null);
+				if (head == null)
+					head = cell;
+				else
+					tail.next = cell;
+				tail = cell;
+				positions[x.num][a] = cell;
+				sizes[x.num]++;
+				size++;
+			}
+
+			/**
+			 * Removes the specified cell from the queue
+			 * 
+			 * @param cell
+			 *            a cell
+			 */
+			private void remove(Cell cell) {
+				size--;
+				sizes[cell.x.num]--;
+				positions[cell.x.num][cell.a] = null;
+				Cell prev = cell.prev;
+				Cell next = cell.next;
+				if (prev == null)
+					head = next;
+				else
+					prev.next = next;
+				if (next == null)
+					tail = prev;
+				else
+					next.prev = prev;
+				cell.next = trash;
+				trash = cell;
+			}
+
+			/**
+			 * Picks and deletes a literal (cell) from the queue
+			 * 
+			 * @return the cell that has been picked and deleted, or null if there was none
+			 */
+			public Cell pickNextCell() {
+				if (size == 0)
+					return null;
+				Cell cell = priorityCell != null ? priorityCell : cellSelector.select();
+				priorityCell = null;
+				if (cell != null)
+					remove(cell);
+				return cell; // even if removed, fields x and a are still operational (if cell is not null)
+			}
+
+			public void setPriorityTo(Variable x, int a) {
+				assert priorityCell == null && positions[x.num][a] != null;
+				priorityCell = positions[x.num][a];
+			}
+
+			public void setPriorityOf(Variable x) {
+				assert priorityCell == null;
+				if (sizes[x.num] == 0)
+					return;
+				for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
+					Cell cell = positions[x.num][a];
+					if (cell != null) {
+						priorityCell = cell;
+						break;
+					}
+				}
+			}
+
+			public void display() {
+				for (Cell cell = head; cell != null; cell = cell.next)
+					System.out.print(cell.x + "-" + cell.a + " ");
+				System.out.println();
+			}
+		}
+
+		// ************************************************************************
+		// ***** Class members
+		// ************************************************************************
+
+		/**
+		 * The queue used for SAC3; it contains literals that must be proved to be SAC (or not)
+		 */
+		protected final LocalQueue localQueue;
+
+		/**
+		 * 0 = desactivated ; 1 = select last failed value (when starting a new branch) ; 2 = select last failed value +
+		 * last failed variable (if last branch of size 0)
+		 */
+		protected final int lastConflictMode;
+
+		public SAC3(Solver solver) {
+			super(solver);
+			this.localQueue = new LocalQueue(solver);
+			this.lastConflictMode = 1; // hard coding
+		}
+
+		@Override
+		protected boolean manageInconsistentValue(Variable x, int a) {
+			if (!super.manageInconsistentValue(x, a))
+				return false;
+			if (lastConflictMode == 2)
+				localQueue.setPriorityOf(x); // for the next branch to be built
+			return true;
+		}
+
+		@Override
+		protected void eraseLastBuiltBranch(int branchSize) {
+			if (branchSize > 0)
+				super.eraseLastBuiltBranch(branchSize);
+			else
+				localQueue.clear();
+			// the else part is possible when queue.size > 0 with elements no more valid: some indexes of the queue may
+			// have been removed by AC enforcment
+		}
+
+		private final boolean buildBranch() {
+			for (Cell cell = localQueue.pickNextCell(); cell != null; cell = localQueue.pickNextCell()) {
+				Variable x = cell.x;
+				int a = cell.a;
+				nSingletonTests++;
+				assert !x.assigned() && x.dom.contains(a) && queue.isEmpty();
+				solver.assign(x, a);
+				if (enforceACafterAssignment(x)) {
+					if (solver.depth() == solver.problem.variables.length) {
+						System.out.println("found solution");
+						if (stopSACWhenFoundSolution)
+							solver.solutions.handleNewSolution();
+					}
+				} else {
+					solver.backtrack(x);
+					int lastBuiltBranchSize = solver.depth() - nodeDepth;
+					if (lastBuiltBranchSize == 0)
+						return manageInconsistentValue(x, a);
+					localQueue.add(x, a);
+					if (!maximumBranchExtension || !canFindAnotherExtensionInsteadOf(x, a)) {
+						if (lastConflictMode > 0)
+							localQueue.setPriorityTo(x, a); // for the next branch to be built
+						break;
+					}
+				}
+			}
+			eraseLastBuiltBranch(solver.depth() - nodeDepth);
+			return true;
+		}
+
+		@Override
+		protected boolean enforceStrongConsistency() {
+			nodeDepth = solver.depth();
+			nBranchesBuilt = sumBranchSizes = 0;
+			for (int cnt = 0; cnt < nPassesLimit; cnt++) {
+				long nBefore = nEffectiveSingletonTests;
+				localQueue.fill();
+				while (localQueue.size > 0) {
+					performingProperSearch = true;
+					boolean consistent = buildBranch();
+					performingProperSearch = false;
+					if (!consistent)
+						return false;
+					if (stopSACWhenFoundSolution && solver.finished())
+						return true; // TODO no more compatible with solver.reset()
+				}
+				if (verbose > 1)
+					displayPassInfo(cnt, nEffectiveSingletonTests - nBefore, nEffectiveSingletonTests - nBefore == 0);
+				if (nBefore == nEffectiveSingletonTests)
+					break;
+			}
+			assert solver.finished() || controlAC() && controlSAC();
+			return true;
+		}
+	}
+
+	/**********************************************************************************************
+	 * ESAC3
+	 *********************************************************************************************/
+
+	/**
+	 * Algorithm ESAC3 for enforcing Existential SAC in a greedy manner.
+	 */
+	public static final class ESAC3 extends SACGreedy {
+
+		// ************************************************************************
+		// ***** Inner classes: ShavingEvaluator and LocalQueue
+		// ************************************************************************
+
+		private final class ShavingEvaluator { // still experimental
+
 			private static final double INCREMENT = 0.05;
 
 			private double ratiosThreshold;
@@ -487,131 +642,30 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				nFailuresSinceLastSuccess[x.num]++;
 			}
 
-			public void updateRatioAfterUntest(Variable x) {
+			public void updateRatioWhenIgnored(Variable x) {
 				sucessRatios[x.num] += INCREMENT / nFailuresSinceLastSuccess[x.num];
 				// sucessRatios[variable.getId()] * alpha + beta * NEUTRAL_VALUE;
 			}
 		}
-	}
 
-	public static class SAC3 extends SACGreedy {
+		private final class LocalQueue {
 
-		protected final QueueForSAC3 queueOfCells;
-
-		/**
-		 * 0 = desactivated ; 1 = select last failed value (when starting a new branch) ; 2 = select last failed value +
-		 * last failed variable (if last branch of size 0)
-		 */
-		protected final int lastConflictMode;
-
-		public SAC3(Solver solver) {
-			super(solver);
-			this.queueOfCells = new QueueForSAC3(solver, true);
-			this.lastConflictMode = 1; // hard coding
-		}
-
-		@Override
-		protected boolean manageInconsistentValue(Variable x, int a) {
-			if (!super.manageInconsistentValue(x, a))
-				return false;
-			if (lastConflictMode == 2)
-				queueOfCells.setPriorityOf(x); // for the next branch to be built
-			return true;
-		}
-
-		@Override
-		protected void eraseLastBuiltBranch(int branchSize) {
-			if (branchSize > 0)
-				super.eraseLastBuiltBranch(branchSize);
-			else
-				queueOfCells.clear();
-			// else is possible when queue.size > 0 with elements no more valid: some indexes of the queue may have been
-			// removed by AC enforcment
-		}
-
-		protected final boolean buildBranch() {
-			for (Cell cell = queueOfCells.pickNextCell(); cell != null; cell = queueOfCells.pickNextCell()) {
-				Variable x = cell.x;
-				int a = cell.a;
-				nSingletonTests++;
-				assert !x.assigned() && x.dom.contains(a) && queue.isEmpty();
-				solver.assign(x, a);
-				if (enforceACafterAssignment(x)) {
-					if (solver.depth() == solver.problem.variables.length) {
-						System.out.println("found solution");
-						if (stopSACWhenFoundSolution)
-							solver.solutions.handleNewSolution();
-					}
-				} else {
-					solver.backtrack(x);
-					int lastBuiltBranchSize = solver.depth() - nodeDepth;
-					if (lastBuiltBranchSize == 0)
-						return manageInconsistentValue(x, a);
-					queueOfCells.add(x, a);
-					if (!maximumBranchExtension || !canFindAnotherExtensionInsteadOf(x, a)) {
-						if (lastConflictMode > 0)
-							queueOfCells.setPriorityTo(x, a); // for the next branch to be built
-						break;
-					}
-				}
-			}
-			eraseLastBuiltBranch(solver.depth() - nodeDepth);
-			return true;
-		}
-
-		@Override
-		protected boolean enforceStrongConsistency() {
-			nodeDepth = solver.depth();
-			nBranchesBuilt = sumBranchSizes = 0;
-			for (int cnt = 0; cnt < nPassesLimit; cnt++) {
-				long nBefore = nEffectiveSingletonTests;
-				queueOfCells.fill();
-				while (queueOfCells.size > 0) {
-					performingProperSearch = true;
-					boolean consistent = buildBranch();
-					performingProperSearch = false;
-					if (!consistent)
-						return false;
-					if (stopSACWhenFoundSolution && solver.finished())
-						return true; // TODO no more compatible with solver.reset()
-				}
-				if (verbose > 1)
-					displayPassInfo(cnt, nEffectiveSingletonTests - nBefore, nEffectiveSingletonTests - nBefore == 0);
-				if (nBefore == nEffectiveSingletonTests)
-					break;
-			}
-			assert solver.finished() || (controlAC() && controlSAC());
-			return true;
-		}
-	}
-
-	public static class ESAC3 extends SACGreedy {
-
-		private Variable lastFailedVar;
-
-		private int lastFailedIdx;
-
-		private Variable currSelectedVar;
-
-		private int currSelectedIdx;
-
-		private int currIndexOfVarHeuristic = -1;
-
-		private HeuristicVariables[] varHeuristics;
-
-		private QueueESAC queueESAC;
-
-		class QueueESAC {
-
+			/**
+			 * The number of variables that still need to be checked to be ESAC
+			 */
 			private int nUncheckedVars;
 
+			/**
+			 * The (dense) set of variables that still need to be checked to be ESAC
+			 */
 			private Variable[] uncheckedVars;
 
 			private BestScoredVariable bestScoredVariable = new BestScoredVariable();
 
-			private QueueESAC() {
+			private LocalQueue() {
 				this.uncheckedVars = new Variable[solver.problem.variables.length];
 				control(!solver.head.control.varh.discardAux);
+				control(Stream.of(solver.problem.constraints).noneMatch(c -> c instanceof STR3)); // TODO why?
 			}
 
 			public void initialize() {
@@ -620,7 +674,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 					if (shavingEvaluator == null || shavingEvaluator.isEligible(x))
 						uncheckedVars[nUncheckedVars++] = x;
 					else
-						shavingEvaluator.updateRatioAfterUntest(x);
+						shavingEvaluator.updateRatioWhenIgnored(x);
 			}
 
 			public Variable selectNextVariable() {
@@ -644,8 +698,8 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				return uncheckedVars[--nUncheckedVars];
 			}
 
-			public void addLastVariable() {
-				if (nUncheckedVars > 0 || uncheckedVars[0] == currSelectedVar)
+			public void addLastVariable(Variable x) {
+				if (nUncheckedVars > 0 || uncheckedVars[0] == x)
 					// otherwise,the last assigned variable was to keep building the branch, looking for a solution
 					nUncheckedVars++;
 			}
@@ -656,49 +710,72 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			}
 		}
 
+		// ************************************************************************
+		// ***** Class members
+		// ************************************************************************
+
+		/**
+		 * The queue used for ESAC3; it contains variables that must be proved to be ESAC (or not)
+		 */
+		private LocalQueue localQueue;
+
+		/**
+		 * The heuristics used to select variables when building branches
+		 */
+		private HeuristicVariables[] varHeuristics;
+
+		/**
+		 * The variable involved in the last failed singleton test
+		 */
+		private Variable lastFailedVar;
+
+		/**
+		 * The value index involved in the last failed singleton test
+		 */
+		private int lastFailedIdx;
+
+		private int currIndexOfVarHeuristic = -1;
+
+		protected ShavingEvaluator shavingEvaluator;
+
 		public ESAC3(Solver solver) {
 			super(solver);
-			this.queueESAC = new QueueESAC();
+			this.localQueue = new LocalQueue();
 			this.varHeuristics = new HeuristicVariables[] { new WdegVariant.WdegOnDom(solver, false) };
 			// including other heuristics?
 			double ratio = solver.head.control.shaving.ratio, alpha = solver.head.control.shaving.alpha;
 			this.shavingEvaluator = ratio != 0 ? new ShavingEvaluator(solver.problem.variables.length, alpha, ratio) : null;
 		}
 
-		private void makeSelection() {
-			if (lastFailedVar == null || nBranchesBuilt < varHeuristics.length) {
-				currSelectedVar = queueESAC.selectNextVariable();
-				currSelectedIdx = currSelectedVar.dom.first();
-			} else {
-				currSelectedVar = queueESAC.pick(lastFailedVar);
-				currSelectedIdx = lastFailedVar.dom.contains(lastFailedIdx) ? lastFailedIdx : lastFailedVar.dom.first();
-			}
-			lastFailedVar = null;
-			assert !currSelectedVar.assigned() && currSelectedVar.dom.contains(currSelectedIdx) && queue.isEmpty();
-		}
-
-		protected boolean buildBranch() {
+		private boolean buildBranch() {
 			currIndexOfVarHeuristic = (currIndexOfVarHeuristic + 1) % varHeuristics.length;
 			for (boolean finished = false; !finished;) {
-				makeSelection();
+				// making the selection
+				boolean test = lastFailedVar == null || nBranchesBuilt < varHeuristics.length;
+				Variable x = test ? localQueue.selectNextVariable() : localQueue.pick(lastFailedVar);
+				int a = test ? x.dom.first() : x.dom.contains(lastFailedIdx) ? lastFailedIdx : x.dom.first();
+
+				lastFailedVar = null;
+				assert !x.assigned() && x.dom.contains(a) && queue.isEmpty();
+
 				nSingletonTests++;
-				solver.assign(currSelectedVar, currSelectedIdx);
-				if (enforceACafterAssignment(currSelectedVar)) {
+				solver.assign(x, a);
+				if (enforceACafterAssignment(x)) {
 					if (solver.depth() == solver.problem.variables.length) {
 						solver.solutions.handleNewSolution();
 						finished = true;
 					}
 				} else {
-					queueESAC.addLastVariable();
-					lastFailedVar = currSelectedVar;
-					lastFailedIdx = currSelectedIdx;
-					solver.backtrack(currSelectedVar);
-					finished = !maximumBranchExtension || !canFindAnotherExtensionInsteadOf(currSelectedVar, currSelectedIdx);
+					localQueue.addLastVariable(x);
+					lastFailedVar = x;
+					lastFailedIdx = a;
+					solver.backtrack(x);
+					finished = !maximumBranchExtension || !canFindAnotherExtensionInsteadOf(x, a);
 				}
+				if (finished && solver.depth() == nodeDepth)
+					return manageInconsistentValue(x, a);
 			}
 			int lastBuiltBranchSize = solver.depth() - nodeDepth;
-			if (lastBuiltBranchSize == 0)
-				return manageInconsistentValue(currSelectedVar, currSelectedIdx);
 			eraseLastBuiltBranch(lastBuiltBranchSize);
 			return true;
 		}
@@ -708,9 +785,9 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			nodeDepth = solver.depth();
 			nBranchesBuilt = sumBranchSizes = 0;
 			lastFailedVar = null;
-			queueESAC.initialize();
+			localQueue.initialize();
 			long nBefore = nEffectiveSingletonTests;
-			while (queueESAC.nUncheckedVars > 0) {
+			while (localQueue.nUncheckedVars > 0) {
 				performingProperSearch = true;
 				boolean consistent = buildBranch();
 				solver.resetNoSolutions();
@@ -719,8 +796,6 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 					return false;
 				if (solver.finished())
 					return true;
-				// if (nBranchesBuilt > 1 && stopwatch.getCurrentWckTime() / 1000.0 > 40 && lastBuiltBranchSize > 0) {
-				// OutputManager.printInfo("Stopping ESAC"); break; }
 			}
 			if (verbose > 1)
 				displayPassInfo(0, nEffectiveSingletonTests - nBefore, true);

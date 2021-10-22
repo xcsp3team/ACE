@@ -10,8 +10,6 @@
 
 package constraints.intension;
 
-import static utility.Kit.control;
-
 import java.util.Arrays;
 import java.util.Stack;
 import java.util.stream.Stream;
@@ -96,75 +94,6 @@ public final class KeyCanonizer {
 					}
 				}
 			}
-		}
-
-		private boolean isProductTerm(int[] t) {
-			if (label.startsWith("%")) {
-				t[Integer.parseInt(label.substring(1))] = 1;
-				return true; // trival term 1*Xi
-			}
-			if (label.equals(TypeExpr.NEG.lcname)) {
-				control(sons.length == 1 && sons[0].label.startsWith("%"));
-				t[Integer.parseInt(sons[0].label.substring(1))] = -1;
-				return true;
-			}
-			if (!label.equals(TypeExpr.MUL.lcname))
-				return false;
-			if (sons.length != 2)
-				return false;
-			if (!Utilities.isInteger(sons[1].label))
-				return false;
-			if (!sons[0].label.startsWith("%"))
-				return false;
-			t[Integer.parseInt(sons[0].label.substring(1))] = Integer.parseInt(sons[1].label);
-			return true;
-		}
-
-		public int[] isSumWeighted(int size) {
-			TypeConditionOperatorRel operator = label == null ? null : Types.valueOf(TypeConditionOperatorRel.class, label);
-			if (operator == null)
-				return null;
-			if (sons.length != 2)
-				return null;
-			if (!Utilities.isInteger(sons[1].label))
-				return null;
-			Node leftSon = sons[0];
-			if (!leftSon.label.equals(TypeExpr.ADD.lcname))
-				return null;
-			int[] t = new int[size];
-			for (int i = 0; i < leftSon.sons.length; i++)
-				if (!leftSon.sons[i].isProductTerm(t))
-					return null;
-			return t;
-		}
-
-		private Integer isPrecedence(boolean order) {
-			if (!label.equals(TypeExpr.LE.lcname))
-				return null;
-			if (!sons[1].label.equals("%" + (order ? 1 : 0)))
-				return null;
-			Node leftSon = sons[0];
-			if (!leftSon.label.equals(TypeExpr.ADD.lcname))
-				return null;
-			if (leftSon.sons.length != 2)
-				return null;
-			if (!leftSon.sons[0].label.equals("%" + (order ? 0 : 1)))
-				return null;
-			return Utilities.toInteger(leftSon.sons[1].label);
-		}
-
-		public int[] isDisjonctive() {
-			if (!label.equals(TypeExpr.OR.lcname))
-				return null;
-			if (sons.length != 2)
-				return null;
-			Integer i1 = sons[0].isPrecedence(true);
-			if (i1 == null)
-				return null;
-			Integer i2 = sons[1].isPrecedence(false);
-			if (i2 == null)
-				return null;
-			return new int[] { i1, i2 };
 		}
 
 		private StringBuilder toStringBuilder(StringBuilder sb) {

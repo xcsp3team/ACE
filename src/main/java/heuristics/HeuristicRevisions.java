@@ -10,8 +10,6 @@
 
 package heuristics;
 
-import java.util.Random;
-
 import interfaces.Tags.TagMaximize;
 import propagation.Queue;
 import variables.Variable;
@@ -92,16 +90,13 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class Rand extends HeuristicRevisionsDirect {
 
-			private final Random random;
-
 			public Rand(Queue queue, boolean dummy) {
 				super(queue, dummy);
-				this.random = queue.propagation.solver.head.random;
 			}
 
 			@Override
 			public int bestInQueue() {
-				return random.nextInt(queue.size());
+				return queue.propagation.solver.head.random.nextInt(queue.size());
 			}
 		}
 

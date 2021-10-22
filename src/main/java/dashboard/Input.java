@@ -152,7 +152,7 @@ public final class Input {
 		}
 	}
 
-	public final static String[] loadSequentialVariants(String controlFilename, String controlVariantsFilename, String prefix) {
+	public static String[] loadSequentialVariants(String controlFilename, String controlVariantsFilename, String prefix) {
 		List<String> list = new ArrayList<>();
 		Document document = Kit.load(controlVariantsFilename);
 		NodeList variants = document.getElementsByTagName(VARIANT);
@@ -193,7 +193,7 @@ public final class Input {
 		return list.toArray(new String[list.size()]);
 	}
 
-	public final static String[] loadParallelVariants(String controlVariantsFilename, String prefix) {
+	public static String[] loadParallelVariants(String controlVariantsFilename, String prefix) {
 		List<String> list = new ArrayList<>();
 		Document document = Kit.load(controlVariantsFilename);
 		if (!document.getDocumentElement().getTagName().equals(VARIANT_PARALLEL)) {

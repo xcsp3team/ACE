@@ -274,12 +274,16 @@ public final class Bit {
 		return -1;
 	}
 
-	public static long[] inverse(long[] inout) {
-		for (int i = 0; i < inout.length; i++)
-			inout[i] = ~inout[i];
-		return inout;
-	}
-
+	/**
+	 * Inverses all bits of the specified bit vector, when only considering the long at the specified positions (given
+	 * by the specified dense set)
+	 * 
+	 * @param inout
+	 *            a bit vector defined by the sequence of bits over an array of long
+	 * @param set
+	 *            a dense set with positions of long for the bit vector
+	 * @return the same bit vector (after inversion)
+	 */
 	public static long[] inverse(long[] inout, SetDense set) {
 		int[] dense = set.dense;
 		for (int i = set.limit; i >= 0; i--) {
@@ -289,21 +293,13 @@ public final class Bit {
 		return inout;
 	}
 
-	public static long[] inverse(long[] out, long[] in) {
-		for (int i = 0; i < in.length; i++)
-			out[i] = ~in[i];
-		return out;
-	}
-
-	public static long[] inverse(long[] out, long[] in, SetDense set) {
-		int[] dense = set.dense;
-		for (int i = set.limit; i >= 0; i--) {
-			int j = dense[i];
-			out[j] = ~in[j];
-		}
-		return out;
-	}
-
+	/**
+	 * Counts and returns the number of bits at 1 in the specified bit vector
+	 * 
+	 * @param t
+	 *            a bit vector defined by the sequence of bits over an array of long
+	 * @return the number of bits at 1 in the specified bit vector
+	 */
 	public static int count1(long[] t) {
 		int cnt = 0;
 		for (int i = 0; i < t.length; i++)
@@ -325,44 +321,100 @@ public final class Bit {
 		return -1;
 	}
 
+	/**
+	 * @param t
+	 *            a bit vector defined by the sequence of bits over an array of longs
+	 * @param bitPosition
+	 *            the position of a bit in the bit vector
+	 * @return true if in the specified bit vector the bit at the specified position is 1
+	 */
 	public static boolean isPresent(long[] t, int bitPosition) {
 		return (t[bitPosition / Long.SIZE] & ONE_LONG_BIT_TO_1[bitPosition % Long.SIZE]) != 0; // ALL_LONG_BITS_TO_0;
 	}
 
-	public static long bitsAt1To(int limit) {
+	/**
+	 * @param bitPosition
+	 *            the position of a bit in the bit vector (long)
+	 * @return a bit vector (long) defined by a sequence of 1 followed by a sequence of 0 from the specified position
+	 */
+	public static long bitsAt1To(int bitPosition) {
 		long v = 0;
-		for (int i = 0; i < limit; i++)
+		for (int i = 0; i < bitPosition; i++)
 			v |= ONE_LONG_BIT_TO_1[i];
 		return v;
 	}
 
-	public static long bitsAt1From(int from) {
+	/**
+	 * @param bitPosition
+	 *            the position of a bit in the bit vector (long)
+	 * @return a bit vector (long) defined by a sequence of 0 followed by a sequence of 1 from the specified position
+	 */
+	public static long bitsAt1From(int bitPosition) {
 		long v = 0;
-		for (int i = from; i < 64; i++)
+		for (int i = bitPosition; i < 64; i++)
 			v |= ONE_LONG_BIT_TO_1[i];
 		return v;
 	}
 
+	/**
+	 * Sets to 0 the bit at the specified position of the specified bit vector
+	 * 
+	 * @param t
+	 *            a bit vector defined by the sequence of bits over an array of bytes
+	 * @param bitPosition
+	 *            the position of a bit in the bit vector
+	 */
 	public static void setTo0(byte[] t, int bitPosition) {
 		int bytePosition = bitPosition / 8;
 		t[bytePosition] &= ONE_BYTE_BIT_TO_0[bitPosition % 8];
 	}
 
+	/**
+	 * Sets to 1 the bit at the specified position of the specified bit vector
+	 * 
+	 * @param t
+	 *            a bit vector defined by the sequence of bits over an array of bytes
+	 * @param bitPosition
+	 *            the position of a bit in the bit vector
+	 */
 	public static void setTo1(byte[] t, int bitPosition) {
 		int bytePosition = bitPosition / 8;
 		t[bytePosition] |= ONE_BYTE_BIT_TO_1[bitPosition % 8];
 	}
 
+	/**
+	 * Sets to 0 the bit at the specified position of the specified bit vector
+	 * 
+	 * @param t
+	 *            a bit vector defined by the sequence of bits over an array of longs
+	 * @param bitPosition
+	 *            the position of a bit in the bit vector
+	 */
 	public static void setTo0(long[] t, int bitPosition) {
 		int bytePosition = bitPosition / 64;
 		t[bytePosition] &= ONE_LONG_BIT_TO_0[bitPosition % 64];
 	}
 
+	/**
+	 * Sets to 1 the bit at the specified position of the specified bit vector
+	 * 
+	 * @param t
+	 *            a bit vector defined by the sequence of bits over an array of longs
+	 * @param bitPosition
+	 *            the position of a bit in the bit vector
+	 */
 	public static void setTo1(long[] t, int bitPosition) {
 		int bytePosition = bitPosition / 64;
 		t[bytePosition] |= ONE_LONG_BIT_TO_1[bitPosition % 64];
 	}
 
+	/**
+	 * @param t
+	 *            a bit vector defined by the sequence of bits over an array of bytes
+	 * @param bitPosition
+	 *            the position of a bit in the bit vector
+	 * @return true is the bit at the specified position is 1 in the specified bit vector
+	 */
 	public static boolean isAt1(byte[] t, int bitPosition) {
 		int bytePosition = bitPosition / 8;
 		return (t[bytePosition] & ONE_BYTE_BIT_TO_1[bitPosition % 8]) != 0;

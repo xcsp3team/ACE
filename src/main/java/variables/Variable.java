@@ -691,6 +691,26 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	}
 
 	/**
+	 * Returns the first (explicitly) assigned variable that is a neighbor of this variable. REMARK: this may be costly
+	 * to call
+	 * 
+	 * @return the first (explicitly) assigned variable that is a neighbor of this variable.
+	 */
+	public final Variable firstAssignedNeighbor() {
+		if (nghs != null) {
+			for (Variable x : nghs)
+				if (x.assigned())
+					return x;
+		} else {
+			for (Constraint c : ctrs)
+				for (Variable x : c.scp)
+					if (this != x && x.assigned())
+						return x;
+		}
+		return null;
+	}
+
+	/**
 	 * Returns the distance of the variable with respect to the objective, computed as follows: 0 if directly involved
 	 * in the objective, 1 if a neighbor is involved in the objective, 2 otherwise
 	 * 

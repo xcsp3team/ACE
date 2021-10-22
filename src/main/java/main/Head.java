@@ -331,7 +331,7 @@ public class Head extends Thread {
 	 * The object that may be used in different steps of resolution: randomization of heuristics, generation of random
 	 * solutions,...
 	 */
-	public final Random random = new Random();
+	public Random random;
 
 	/**
 	 * The main stopwatch
@@ -391,7 +391,7 @@ public class Head extends Thread {
 	 */
 	public Problem buildProblem(int i) {
 		this.instanceIndex = i;
-		random.setSeed(control.general.seed + i);
+		random = new Random(control.general.seed + i);
 		ProblemAPI api = null;
 		try {
 			try {

@@ -33,7 +33,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -55,7 +54,6 @@ import javax.xml.xpath.XPathFactory;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xcsp.common.IVar;
 import org.xcsp.common.Utilities;
@@ -579,6 +577,12 @@ public final class Kit {
 				.collect(joining("_"));
 	}
 
+	/**
+	 * @param clazz
+	 *            a class
+	 * @return a string with the last modified date of the file of the specified class, involving the year, month, day,
+	 *         hour, and minute
+	 */
 	public static String dateOf(Class<?> clazz) {
 		try {
 			File f = new File(clazz.getResource(clazz.getSimpleName() + ".class").toURI());
@@ -822,24 +826,6 @@ public final class Kit {
 		} catch (Exception e) {
 			return (Boolean) Kit.exit("Problem with " + fileName, e);
 		}
-	}
-
-	public static Iterable<Node> iterable(NodeList nodeList) {
-		return () -> new Iterator<>() {
-			private int index = 0;
-
-			@Override
-			public boolean hasNext() {
-				return index < nodeList.getLength();
-			}
-
-			@Override
-			public Node next() {
-				if (!hasNext())
-					throw new NoSuchElementException();
-				return nodeList.item(index++);
-			}
-		};
 	}
 
 	public static <T extends IVar> T[] vars(Object... objects) {

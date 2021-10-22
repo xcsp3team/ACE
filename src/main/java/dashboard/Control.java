@@ -581,6 +581,7 @@ public final class Control {
 		public final int lc = addI("lc", "lc", 2, "Value for lc (last conflict); 0 if not activated");
 		public final ConstraintWeighting weighting = addE("weighting", "wt", ConstraintWeighting.CACD, "How to manage weights for wdeg variants");
 		public final SingletonStrategy singleton = addE("singleton", "sing", SingletonStrategy.LAST, "How to manage singleton variables during search");
+		public final boolean connected = addB("connected", "", false, "Must we select a variable necessarily connected to an already explicitly assigned one?");
 		public final boolean discardAux = addB("discardAux", "da", false, "Must we not branch on auxiliary variables introduced by the solver?");
 	}
 
