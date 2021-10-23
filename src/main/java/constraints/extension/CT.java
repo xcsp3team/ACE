@@ -316,7 +316,7 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 			Domain dom = doms[x];
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
 				int r = residues[x][a];
-				if (Bit.nonNullIntersection2(current, masks[x][a], r)) // if ((current[r] & masks[x][a][r]) != 0L)
+				if (Bit.nonNullIntersection(current, masks[x][a], r)) // if ((current[r] & masks[x][a][r]) != 0L)
 					continue;
 				r = Bit.firstNonNullWord(current, masks[x][a], nonZeros);
 				if (r != -1) {

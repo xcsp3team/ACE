@@ -419,7 +419,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	 * these values, so as to show the structure of the arrays.
 	 * 
 	 * @param obj
-	 *            an object that can be a stand-alone variable or an array (of any dimension) fo variables, or even null
+	 *            an object that can be a stand-alone variable or an array (of any dimension) of variables, or even null
 	 * @param prefix
 	 *            a prefix used when the specified object is an array with (at least) two dimensions
 	 * @return a string corresponding to the complete instantiation of the variables that are present in the specified
@@ -776,7 +776,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	}
 
 	/**
-	 * @return the ratio dynamic degree of this variable over the domain size of this variable
+	 * @return the ratio computed as the dynamic degree of this variable over the domain size of this variable
 	 */
 	public final double ddegOnDom() {
 		return ddeg() / (double) dom.size();
@@ -790,7 +790,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	}
 
 	/**
-	 * @return the ratio weighted degree of this variable over the domain size of this variable
+	 * @return the ratio computed as the weighted degree of this variable over the domain size of this variable
 	 */
 	public final double wdegOnDom() {
 		return wdeg() / dom.size();

@@ -31,7 +31,7 @@ import org.xcsp.parser.entries.XObjectives.XObj;
 import constraints.Constraint;
 import constraints.ConstraintExtension;
 import constraints.ConstraintExtension.Extension1;
-import constraints.extension.CSmart;
+import constraints.extension.CHybrid;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableHybrid;
 import dashboard.Output;
@@ -243,7 +243,7 @@ public final class Features {
 					: (c instanceof ConstraintExtension ? "-" + c.extStructure().getClass().getSimpleName() : "")));
 			if (c.extStructure() instanceof Table)
 				tableSizes.add(((Table) c.extStructure()).tuples.length);
-			if (c instanceof CSmart)
+			if (c instanceof CHybrid)
 				tableSizes.add(((TableHybrid) c.extStructure()).hybridTuples.length);
 			return num;
 		}

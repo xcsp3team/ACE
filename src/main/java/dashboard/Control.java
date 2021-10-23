@@ -397,6 +397,7 @@ public final class Control {
 		public final String trace = addS("trace", "trace", "", "Displays a trace (with possible depth control as eg -trace=10-20");
 		public final int jsonLimit = addI("jsonLimit", "jl", 1000, "The limit on the number of variables for displaying solutions in JSON");
 		public final boolean jsonAux = addB("jsonAux", "ja", false, "Take auxiliary variables when displaying solutions in JSON");
+		public final String jsonSave = addS("jsonSave", "js", "", "Save the first solution in a file whose name is this value");
 		public final boolean xmlCompact = addB("xmlCompact", "xc", true, "Compress values when displaying solutions in XML");
 		public final boolean xmlEachSolution = addB("xmlEachSolution", "xe", false, "During search, display all found solutions in XML");
 		public final boolean noPrintColors = addB("noPrintColors", "npc", false, "Don't use special color characters in the terminal");
@@ -639,13 +640,24 @@ public final class Control {
 			}
 		}
 
-		/** Returns the value (a String) of the specified attribute for the specified tag. */
+		/**
+		 * 
+		 * @param shortcut
+		 *            a shortcut corresponding to tag + attribute
+		 * @param tag
+		 *            a tag
+		 * @param att
+		 *            an attribute for the tag
+		 * @param defaultValue
+		 *            a default value if the attribute is not present
+		 * @return the value (a string) of the specified attribute for the specified tag, or the specified default value
+		 */
 		private String stringFor(String shortcut, String tag, String att, Object defaultValue) {
-			// try with shortcut
+			// try first with shortcut
 			String s = shortcut == null ? null : Input.argsForSolving.get(shortcut);
 			if (s != null)
 				return s.length() == 0 && !(defaultValue instanceof String) ? defaultValue.toString() : s;
-			// try with tag+attribute
+			// try then with tag+attribute
 			s = Input.argsForSolving.get((tag != null ? tag + "/" : "") + att);
 			if (s != null)
 				return s;
@@ -680,24 +692,69 @@ public final class Control {
 			return longValue ? (long) value : (Number) (int) value; // BE CAREFUL: problem if cast omitted
 		}
 
-		/** Returns the value (an integer) of the specified attribute for the specified tag. */
+		/**
+		 * 
+		 * @param shortcut
+		 *            a shortcut corresponding to tag + attribute
+		 * @param tag
+		 *            a tag
+		 * @param att
+		 *            an attribute for the tag
+		 * @param defaultValue
+		 *            a default value if the attribute is not present
+		 * @return the value (an int) of the specified attribute for the specified tag, or the specified default value
+		 */
 		private int intFor(String shortcut, String tag, String att, Integer defaultValue) {
 			return (Integer) numberFor(shortcut, tag, att, defaultValue, false);
 		}
 
-		/** Returns the value (a long integer) of the specified attribute for the specified tag. */
+		/**
+		 * 
+		 * @param shortcut
+		 *            a shortcut corresponding to tag + attribute
+		 * @param tag
+		 *            a tag
+		 * @param att
+		 *            an attribute for the tag
+		 * @param defaultValue
+		 *            a default value if the attribute is not present
+		 * @return the value (a long) of the specified attribute for the specified tag, or the specified default value
+		 */
 		private Long longFor(String shortcut, String tag, String att, Long defaultValue) {
 			return (Long) numberFor(shortcut, tag, att, defaultValue, true);
 		}
 
-		/** Returns the value (a double) of the specified attribute for the specified tag. */
+		/**
+		 * 
+		 * @param shortcut
+		 *            a shortcut corresponding to tag + attribute
+		 * @param tag
+		 *            a tag
+		 * @param att
+		 *            an attribute for the tag
+		 * @param defaultValue
+		 *            a default value if the attribute is not present
+		 * @return the value (a double) of the specified attribute for the specified tag, or the specified default value
+		 */
 		private double doubleFor(String shortcut, String tag, String att, Double defaultValue) {
 			Double d = Utilities.toDouble(stringFor(shortcut, tag, att, defaultValue));
 			control(d != null, () -> "A double value was expected for " + tag + "/" + att);
 			return d;
 		}
 
-		/** Returns the value (a boolean) of the specified attribute for the specified tag. */
+		/**
+		 * 
+		 * @param shortcut
+		 *            a shortcut corresponding to tag + attribute
+		 * @param tag
+		 *            a tag
+		 * @param att
+		 *            an attribute for the tag
+		 * @param defaultValue
+		 *            a default value if the attribute is not present
+		 * @return the value (a boolean) of the specified attribute for the specified tag, or the specified default
+		 *         value
+		 */
 		private boolean booleanFor(String shortcut, String tag, String att, Boolean defaultValue) {
 			Boolean b = Utilities.toBoolean(stringFor(shortcut, tag, att, defaultValue));
 			control(b != null, () -> "A boolean value was expected for " + tag + "/" + att);

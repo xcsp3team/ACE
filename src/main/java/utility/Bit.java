@@ -12,46 +12,47 @@ package utility;
 
 import sets.SetDense;
 
+/**
+ * This class contains various methods on bit vectors.
+ * 
+ * @author Christophe Lecoutre
+ */
 public final class Bit {
 
-	public static final short ALL_SHORT_BITS_TO_1 = -1;
+	// public static final short ALL_SHORT_BITS_TO_1 = -1;
 
-	public static final int ALL_INT_BITS_TO_1 = -1; // 0xFFFFFFFF;
-
+	/**
+	 * A word (long) with only bits set to 1
+	 */
 	public static final long ALL_LONG_BITS_TO_1 = -1; // 0xFFFFFFFFFFFFFFFFL;
 
-	public static final byte[] ONE_BYTE_BIT_TO_0 = buildOneByteBitTo0();
+	/**
+	 * ONE_BYTE_BIT_TO_0[i] is a word (byte) with only one bit to 0, the one at position i
+	 */
+	private static final byte[] ONE_BYTE_BIT_TO_0 = buildOneByteBitTo0();
 
-	public static final int[] ONE_INT_BIT_TO_0 = buildOneIntBitTo0();
-
+	/**
+	 * ONE_LONG_BIT_TO_0[i] is a word (long) with only one bit to 0, the one at position i
+	 */
 	public static final long[] ONE_LONG_BIT_TO_0 = buildOneLongBitTo0();
 
-	public static final byte[] ONE_BYTE_BIT_TO_1 = buildOneByteBitTo1();
+	/**
+	 * ONE_BYTE_BIT_TO_1[i] is a word (long) with only one bit to 1, the one at position i
+	 */
+	private static final byte[] ONE_BYTE_BIT_TO_1 = buildOneByteBitTo1();
 
-	public static final short[] ONE_SHORT_BIT_TO_1 = buildOneShortBitTo1();
-
-	public static final int[] ONE_INT_BIT_TO_1 = buildOneIntBitTo1();
-
+	/**
+	 * ONE_LONG_BIT_TO_1[i] is a word (long) with only one bit to 1, the one at position i
+	 */
 	public static final long[] ONE_LONG_BIT_TO_1 = buildOneLongBitTo1();
 
 	private static byte[] buildOneByteBitTo0() {
 		byte[] t = new byte[8];
-		t[7] = 0x7F;
-		byte current = (byte) 0xBF;
+		t[7] = 0x7F; // 0x7FFFFFFF for int
+		byte current = (byte) 0xBF; // 0xBFFFFFFF for int
 		for (int i = 6; i >= 0; i--) {
 			t[i] = current;
 			current = (byte) (current >> 1);
-		}
-		return t;
-	}
-
-	private static int[] buildOneIntBitTo0() {
-		int[] t = new int[32];
-		t[31] = 0x7FFFFFFF;
-		int current = 0xBFFFFFFF;
-		for (int i = 30; i >= 0; i--) {
-			t[i] = current;
-			current = current >> 1;
 		}
 		return t;
 	}
@@ -69,30 +70,10 @@ public final class Bit {
 
 	private static byte[] buildOneByteBitTo1() {
 		byte[] t = new byte[8];
-		byte current = 0x01;
+		byte current = 0x01; // 0x0001 for short and 0x00000001 for int
 		for (int i = 0; i < t.length; i++) {
 			t[i] = current;
 			current = (byte) (current << 1);
-		}
-		return t;
-	}
-
-	private static short[] buildOneShortBitTo1() {
-		short[] t = new short[16];
-		short current = 0x0001;
-		for (int i = 0; i < t.length; i++) {
-			t[i] = current;
-			current = (short) (current << 1);
-		}
-		return t;
-	}
-
-	private static int[] buildOneIntBitTo1() {
-		int[] t = new int[32];
-		int current = 0x00000001;
-		for (int i = 0; i < t.length; i++) {
-			t[i] = current;
-			current = current << 1;
 		}
 		return t;
 	}
@@ -108,16 +89,12 @@ public final class Bit {
 	}
 
 	/**
-	 * Is t1 included in t2 (considering that each bit represents an element of a set)?
+	 * @param t1
+	 *            a first bit vector defined by the sequence of bits over an array of long
+	 * @param t2
+	 *            a second bit vector defined by the sequence of bits over an array of long
+	 * @return the first position in the bit vectors of a bit at 1 in t1 and at 0 in t2, or -1
 	 */
-	public static boolean isIncluded(long[] t1, long[] t2) {
-		assert t1.length == t2.length;
-		for (int i = 0; i < t1.length; i++)
-			if ((t1[i] | t2[i]) != t2[i])
-				return false;
-		return true;
-	}
-
 	public static int firstPositionOfNonInclusion(long[] t1, long[] t2) {
 		assert t1.length == t2.length;
 		int position = 0;
@@ -126,7 +103,7 @@ public final class Bit {
 				long l1 = t1[i], l2 = t2[i];
 				for (int j = 0; j < 64; j++)
 					if ((l1 & ONE_LONG_BIT_TO_1[j]) == 0)
-						continue;
+						continue; // because 0 in l1
 					else if ((l2 & ONE_LONG_BIT_TO_1[j]) == 0)
 						return position + j;
 			}
@@ -135,7 +112,19 @@ public final class Bit {
 		return -1;
 	}
 
-	public static boolean nonNullIntersection2(long[] t1, long[] t2, int j) {
+	/**
+	 * Returns true if the intersection of the two words of the specified bit vectors at the specified position is not
+	 * 0. Possibly, mask compression may have been used for the second bit vector.
+	 * 
+	 * @param t1
+	 *            a first bit vector defined by the sequence of bits over an array of long
+	 * @param t2
+	 *            a second bit vector defined by the sequence of bits over an array of long
+	 * @param j
+	 *            the position of a word (long) for the bit vectors
+	 * @return true if the intersection of the two words of the specified bit vectors at the specified position is not 0
+	 */
+	public static boolean nonNullIntersection(long[] t1, long[] t2, int j) {
 		if (t1.length != t2.length) { // mask compression mode used for t2
 			if (t2[1] == 0L) {
 				for (int k = 2; k < t2.length; k += 2)
@@ -155,6 +144,18 @@ public final class Bit {
 		return (t1[j] & t2[j]) != 0L;
 	}
 
+	/**
+	 * Applies a bitwise 'or' on the two specified bit vectors, with the result being stored in the first one. Only
+	 * positions in the specified dense set are considered. Possibly, mask compression may have been used for the second
+	 * bit vector.
+	 * 
+	 * @param inout
+	 *            a first bit vector defined by the sequence of bits over an array of long
+	 * @param in
+	 *            a second bit vector defined by the sequence of bits over an array of long
+	 * @param set
+	 *            a dense set with the positions of words (long) that are relevant for the bit vectors
+	 */
 	public static void or(long[] inout, long[] in, SetDense set) {
 		int[] dense = set.dense;
 		if (inout.length != in.length) { // mask compression mode used for 'in'
@@ -187,6 +188,18 @@ public final class Bit {
 		}
 	}
 
+	/**
+	 * Applies a bitwise 'or' on the two specified bit vectors, after applying a bitwise "not" on the second bit vector,
+	 * with the result being stored in the first one. Only positions in the specified dense set are considered.
+	 * Possibly, mask compression may have been used for the second bit vector.
+	 * 
+	 * @param inout
+	 *            a first bit vector defined by the sequence of bits over an array of long
+	 * @param in
+	 *            a second bit vector defined by the sequence of bits over an array of long
+	 * @param set
+	 *            a dense set with the positions of words (long) that are relevant for the bit vectors
+	 */
 	public static void orInverse(long[] inout, long[] in, SetDense set) {
 		int[] dense = set.dense;
 		if (inout.length != in.length) { // mask compression mode used for in
@@ -219,14 +232,20 @@ public final class Bit {
 		}
 	}
 
-	public static void and(long[] inout, long[] in, SetDense set) {
-		int[] dense = set.dense;
-		for (int i = set.limit; i >= 0; i--) {
-			int j = dense[i];
-			inout[j] &= in[j];
-		}
-	}
-
+	/**
+	 * Returns the first position of a long for the specified bit vectors where the intersection of the corresponding
+	 * words in the bit vectors is not 0, or -1 if no such position exists. Only positions in the specified dense set
+	 * are considered. Possibly, mask compression may have been used for t2.
+	 * 
+	 * @param t1
+	 *            a first bit vector defined by the sequence of bits over an array of long
+	 * @param t2
+	 *            a second bit vector defined by the sequence of bits over an array of long
+	 * @param set
+	 *            a dense set with positions of words (long) that are relevant for the bit vectors
+	 * @return the first position of a long for the specified bit vectors where the intersection of the corresponding
+	 *         words in the bit vectors is not 0, or -1 if no such position exists
+	 */
 	public static int firstNonNullWord(long[] t1, long[] t2, SetDense set) {
 		int[] dense = set.dense;
 		if (t1.length != t2.length) { // mask compression mode used for t2
@@ -264,16 +283,6 @@ public final class Bit {
 		return -1;
 	}
 
-	public static int firstErasingWord(long[] t1, long[] t2, SetDense set) {
-		int[] dense = set.dense;
-		for (int i = set.limit; i >= 0; i--) {
-			int j = dense[i];
-			if ((t1[j] & t2[j]) != t1[j])
-				return j;
-		}
-		return -1;
-	}
-
 	/**
 	 * Inverses all bits of the specified bit vector, when only considering the long at the specified positions (given
 	 * by the specified dense set)
@@ -281,7 +290,7 @@ public final class Bit {
 	 * @param inout
 	 *            a bit vector defined by the sequence of bits over an array of long
 	 * @param set
-	 *            a dense set with positions of long for the bit vector
+	 *            a dense set with the positions of words (long) that are relevant for the bit vector
 	 * @return the same bit vector (after inversion)
 	 */
 	public static long[] inverse(long[] inout, SetDense set) {
@@ -307,6 +316,11 @@ public final class Bit {
 		return cnt;
 	}
 
+	/**
+	 * @param t
+	 *            a bit vector defined by the sequence of bits over an array of longs
+	 * @return the position in the specified bit vector of the first bit at 0
+	 */
 	public static int firstZeroIn(long[] t) {
 		int position = 0;
 		for (int i = 0; i < t.length; i++) {

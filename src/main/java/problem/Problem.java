@@ -120,7 +120,7 @@ import constraints.ConstraintExtension;
 import constraints.ConstraintExtension.Extension1;
 import constraints.ConstraintIntension;
 import constraints.extension.CMDD.CMDDO;
-import constraints.extension.CSmart;
+import constraints.extension.CHybrid;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableHybrid.HybridTuple;
 import constraints.global.AllDifferent.AllDifferentComplete;
@@ -1201,7 +1201,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (head.control.global.distinctVectors == 0)
 			return post(new DistinctLists(this, list1, list2));
 		if (head.control.global.hybrid)
-			return post(CSmart.distinctVectors(this, list1, list2));
+			return post(CHybrid.distinctVectors(this, list1, list2));
 		return api.disjunction(IntStream.range(0, list1.length).mapToObj(i -> api.ne(list1[i], list2[i])));
 		// return extension(vars(list1, list2), Table.starredDistinctVectors(list1, list2), true); // TODO problem if
 		// several occurrences of the same variable
@@ -1246,9 +1246,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity allEqual(Var... scp) {
 		// note that using a table on large instances of Domino is very expensive
-		// using a smart table is also very expensive
+		// using a smart table is also very expensive: return post(CSmart.allEqual(this, translate(scp)));
 		return post(new AllEqual(this, translate(scp)));
-		// return post(CSmart.allEqual(this, translate(scp)));
 	}
 
 	@Override
@@ -1273,7 +1272,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity ordered(Var[] list, int[] lengths, TypeOperatorRel op) {
 		control(list.length == lengths.length + 1);
-		return forall(range(list.length - 1), i -> post(Sub2.buildFrom(this, (Variable) list[i], (Variable) list[i + 1], op, -lengths[i])));
+		return forall(range(list.length - 1),
+				i -> post(Sub2.buildFrom(this, (Variable) list[i], (Variable) list[i + 1], op.toConditionOperator(), -lengths[i])));
 	}
 
 	/**
@@ -1286,7 +1286,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(list.length == lengths.length + 1);
 		return forall(range(list.length - 1),
 				i -> post(Add3.buildFrom(this, (Variable) list[i], (Variable) lengths[i], op.toConditionOperator(), (Variable) list[i + 1])));
-		// intension(build(op.toExpr(), add(list[i], lengths[i]), list[i + 1])));
 	}
 
 	/**
@@ -1693,7 +1692,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 								greaterEqual(y, vars[i]);
 					});
 				if (head.control.global.hybrid)
-					c = minimum ? CSmart.minimum(this, vars, y) : CSmart.maximum(this, vars, y);
+					c = minimum ? CHybrid.minimum(this, vars, y) : CHybrid.maximum(this, vars, y);
 				else
 					c = minimum ? new Minimum(this, vars, y) : new Maximum(this, vars, y);
 			}
@@ -1770,7 +1769,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private CtrAlone element(Var[] list, Var index, Var value) {
 		if (head.control.global.hybrid)
-			return post(CSmart.element(this, translate(list), (Variable) index, (Variable) value));
+			return post(CHybrid.element(this, translate(list), (Variable) index, (Variable) value));
 		if (head.control.global.starred) {
 			// TODO controls (for example index != value and index not in list?
 			Var[] scp = Utilities.indexOf(value, list) == -1 ? vars(index, list, value) : vars(index, list);
@@ -1965,7 +1964,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				if (head.control.global.noOverlap == INTENSION_DECOMPOSITION)
 					intension(or(le(add(xi, li), xj), le(add(xj, lj), xi)));
 				else if (head.control.global.noOverlap == EXTENSION_HYBRID)
-					post(CSmart.noOverlap(this, xi, xj, li, lj));
+					post(CHybrid.noOverlap(this, xi, xj, li, lj));
 				else
 					post(new Disjonctive(this, xi, li, xj, lj)); // BASE
 			}
@@ -2015,7 +2014,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					// seems to be rather efficient
 					extension(vars(xi, xj, yi, yj), Table.starredNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true);
 				else if (head.control.global.noOverlap == EXTENSION_HYBRID)
-					post(CSmart.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
+					post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				else
 					post(new Disjonctive2D(this, xi, xj, yi, yj, wi, wj, hi, hj));
 			}
@@ -2030,7 +2029,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				Variable xi = (Variable) origins[i][0], xj = (Variable) origins[j][0], yi = (Variable) origins[i][1], yj = (Variable) origins[j][1];
 				Variable wi = (Variable) lengths[i][0], wj = (Variable) lengths[j][0], hi = (Variable) lengths[i][1], hj = (Variable) lengths[j][1];
 				if (head.control.global.noOverlap == EXTENSION_HYBRID && Stream.of(wi, wj, hi, hj).allMatch(x -> x.dom.initSize() == 2))
-					post(CSmart.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
+					post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				else
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
 			}
@@ -2177,8 +2176,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ************************************************************************
 
 	/** Builds and returns a smart constraint. */
-	public final CtrAlone smart(IVar[] scp, HybridTuple... smartTuples) {
-		return post(new CSmart(this, translate(scp), smartTuples));
+	public final CtrAlone hybrid(IVar[] scp, HybridTuple... smartTuples) {
+		return post(new CHybrid(this, translate(scp), smartTuples));
 	}
 
 	/**********************************************************************************************

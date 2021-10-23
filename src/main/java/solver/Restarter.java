@@ -71,8 +71,8 @@ public class Restarter implements ObserverOnRuns {
 		// must be forced anyway
 		boolean rerunPropagation = forceRootPropagation || (solver.problem.optimizer != null && numRun - 1 == solver.solutions.lastRun);
 		if (rerunPropagation || (solver.head.control.propagation.strongOnce && 0 < numRun && numRun % 60 == 0)) { // TODO
-																																	// hard
-																																	// coding
+																													// hard
+																													// coding
 			if (solver.propagation.runInitially() == false)
 				solver.stopping = Stopping.FULL_EXPLORATION;
 			forceRootPropagation = false;
@@ -208,6 +208,11 @@ public class Restarter implements ObserverOnRuns {
 
 	public final static class RestarterLNS extends Restarter {
 
+		/**
+		 * Limit of exploration (if the number of past variables is smaller, then we must stop)
+		 */
+		private int explorationLimit;
+
 		@Override
 		public void beforeRun() {
 			super.beforeRun();
@@ -226,6 +231,12 @@ public class Restarter implements ObserverOnRuns {
 					}
 				}
 			}
+			explorationLimit = solver.futVars.nPast();
+		}
+
+		@Override
+		public boolean currRunFinished() {
+			return super.currRunFinished() || solver.futVars.nPast() < explorationLimit;
 		}
 
 		@Override

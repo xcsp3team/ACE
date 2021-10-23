@@ -41,7 +41,7 @@ import org.xcsp.common.predicates.XNodeLeaf;
 import org.xcsp.common.predicates.XNodeParent;
 
 import constraints.ConstraintExtension;
-import constraints.extension.CSmart;
+import constraints.extension.CHybrid;
 import sets.SetDense;
 import sets.SetSparse;
 import utility.Kit;
@@ -245,7 +245,7 @@ public final class TableHybrid extends ExtensionStructure {
 			}
 		}
 
-		public void attach(CSmart c) {
+		public void attach(CHybrid c) {
 			this.scp = c.scp;
 			this.initialTuple = initialTuple != null ? initialTuple : Kit.repeat(STAR, scp.length);
 			this.tuple = IntStream.range(0, scp.length).map(i -> initialTuple[i] == STAR ? STAR : scp[i].dom.toIdx(initialTuple[i])).toArray();
@@ -1152,11 +1152,8 @@ public final class TableHybrid extends ExtensionStructure {
 
 			private void collectThroughSmallestDomain() {
 				Domain domSmall = domx.size() < domy.size() ? domx : domy, domBig = domSmall == domx ? domy : domx;
-				int start = valTimeLocal == valTime && newResidue ? residue : domSmall.first(); // are we sure that the
-																								// smallest domain is
-																								// the same (no
-																								// removal between? it
-																								// seems so)
+				int start = valTimeLocal == valTime && newResidue ? residue : domSmall.first();
+				// abobe, are we sure that the smallest domain is the same (no removal between? it seems so)
 				if (scp[x].assigned() || scp[y].assigned()) {
 					assert domSmall.single() == start;
 					if (domBig.contains(start)) {

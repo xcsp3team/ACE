@@ -15,10 +15,12 @@ import static org.xcsp.common.Types.TypeFramework.CSP;
 import static org.xcsp.common.Types.TypeFramework.MAXCSP;
 import static utility.Kit.GREEN;
 import static utility.Kit.RED;
+import static utility.Kit.coloredString;
 import static utility.Kit.control;
 import static utility.Kit.log;
-import static utility.Kit.coloredString;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -208,15 +210,15 @@ public final class Solutions {
 	 * 
 	 * @return the last found solution in JSON format
 	 */
-	private String lastSolutionInJsonFormat() {
+	private String lastSolutionInJsonFormat(boolean pure) {
 		assert found > 0;
 		boolean discardAuxiliary = !solver.head.control.general.jsonAux;
-		String PREFIX = "   ";
+		String PREFIX = pure ? "" : "   ";
 		StringBuilder sb = new StringBuilder(PREFIX).append("{\n");
 		for (VarEntity va : solver.problem.varEntities.allEntities) {
 			if (undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
 				continue;
-			sb.append(PREFIX).append(" ").append(va.id).append(": ");
+			sb.append(PREFIX).append(" ").append(pure ? "'" : "").append(va.id).append(pure ? "'" : "").append(": ");
 			if (va instanceof VarAlone) {
 				Variable x = (Variable) ((VarAlone) va).var;
 				sb.append(x.dom.prettyValueOf(last[x.num])); // valueIndexInLastSolution));
@@ -256,7 +258,7 @@ public final class Solutions {
 				lock.set(true);
 				System.out.println();
 				if (found > 0 && solver.problem.variables.length <= solver.head.control.general.jsonLimit)
-					System.out.println("\n  Solution " + found + " in JSON format:\n" + lastSolutionInJsonFormat() + "\n");
+					System.out.println("\n  Solution " + found + " in JSON format:\n" + lastSolutionInJsonFormat(false) + "\n");
 				if (fullExploration) {
 					if (found == 0)
 						System.out.println(coloredString("s UNSATISFIABLE", GREEN));
@@ -320,11 +322,19 @@ public final class Solutions {
 			bestBound = solver.problem.optimizer.value();
 			System.out.println(coloredString("o " + bestBound, GREEN) + "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
 			// solver.restarter.currCutoff += 20;
-			// + " \t#" + found); // + "); (hamming: " + h1 + ", in_objective: " + h2 + ")");
+			// (hamming: " + h1 + ", in_objective: " + h2 + ")");
 		}
 		// The following code must stay after recording/storing the solution
+		if (solver.head.control.general.jsonSave.length() > 0 && (solver.head.control.general.verbose > 1 || found == 1)) {
+			String s = lastSolutionInJsonFormat(true);
+			try (PrintWriter out = new PrintWriter(solver.head.control.general.jsonSave + found + ".json")) {
+				out.println(s);
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
 		if (solver.head.control.general.verbose > 1)
-			log.config(lastSolutionInJsonFormat() + "\n");
+			log.config(lastSolutionInJsonFormat(false) + "\n");
 		if (solver.head.control.general.verbose > 2 || solver.head.control.general.xmlEachSolution)
 			log.config("     " + xml.lastSolution());
 		// solver.problem.api.prettyDisplay(vars_values(false, false).split("\\s+"));

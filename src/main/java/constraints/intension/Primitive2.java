@@ -18,7 +18,6 @@ import java.util.List;
 
 import org.xcsp.common.Types.TypeArithmeticOperator;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
-import org.xcsp.common.Types.TypeOperatorRel;
 import org.xcsp.common.Types.TypeUnaryArithmeticOperator;
 import org.xcsp.common.Utilities;
 
@@ -516,10 +515,6 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 		// ************************************************************************
 
 		public static abstract class Sub2 extends PrimitiveBinaryVariant1 {
-
-			public static Primitive2 buildFrom(Problem pb, Variable x, Variable y, TypeOperatorRel op, int k) {
-				return buildFrom(pb, x, y, op.toConditionOperator(), k);
-			}
 
 			public static Primitive2 buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
 				switch (op) {

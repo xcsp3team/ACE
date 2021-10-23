@@ -234,7 +234,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 *********************************************************************************************/
 
 	/**
-	 * The object for recording which variables are modified (i.e., with a reduced domain) at each level of search
+	 * The object used for recording which variables are modified (i.e., with a reduced domain) at each level of search
 	 */
 	public final class StackedVariables {
 
@@ -326,7 +326,11 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 * Intern class Tracer
 	 *********************************************************************************************/
 
+	/**
+	 * The object used for displaying the trace of the solver
+	 */
 	public final class Tracer implements ObserverOnDecisions, ObserverOnConflicts {
+
 		private int minDepthLimit, maxDepthLimit;
 
 		private Tracer(String s) {
@@ -538,6 +542,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 */
 	public Stopping stopping;
 
+	/**
+	 * The object used for displaying the trace of the solver
+	 */
 	private final Tracer tracer;
 
 	/**
