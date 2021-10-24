@@ -724,7 +724,8 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 			case EQ:
 				return new Dist3EQ(pb, x, y, z);
 			default:
-				return null; // to be able to post it differently // throw new AssertionError("not implemented");
+				return null; // to be able to post it differently, rather than throw new AssertionError("not
+								// implemented");
 			}
 		}
 

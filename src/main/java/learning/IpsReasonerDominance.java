@@ -120,7 +120,7 @@ public final class IpsReasonerDominance extends IpsReasoner {
 	private boolean canFindAnotherWatch(Ips ips, int watchPosition) {
 		int pos = ips.watchPosFor(watchPosition);
 		Variable x = ips.vars[pos];
-		int a = Bit.firstPositionOfNonInclusion(x.dom.binary(), ips.doms[pos]);
+		int a = Bit.firstNonInclusionIndex(x.dom.binary(), ips.doms[pos]);
 		if (a != -1) {
 			insertIps(ips, offsets[x.num] + a);
 			ips.setIndex(watchPosition, a);
@@ -130,7 +130,7 @@ public final class IpsReasonerDominance extends IpsReasoner {
 			Variable y = ips.vars[i];
 			if (ips.isWatched(y))
 				continue;
-			a = Bit.firstPositionOfNonInclusion(y.dom.binary(), ips.doms[i]);
+			a = Bit.firstNonInclusionIndex(y.dom.binary(), ips.doms[i]);
 			if (a != -1) {
 				insertIps(ips, offsets[y.num] + a);
 				ips.setWatch(watchPosition, i, a); // indexPosition);addWatch(ips, watchPosition, i, &);
@@ -169,7 +169,7 @@ public final class IpsReasonerDominance extends IpsReasoner {
 		for (int i = 0; i < ips.size(); i++) {
 			if (i == discardedPosition)
 				continue;
-			int a = Bit.firstPositionOfNonInclusion(ips.vars[i].dom.binary(), ips.doms[i]);
+			int a = Bit.firstNonInclusionIndex(ips.vars[i].dom.binary(), ips.doms[i]);
 			if (a != -1) {
 				ips.setWatch(discardedPosition == -1 ? 0 : 1, i, a);
 				return true;

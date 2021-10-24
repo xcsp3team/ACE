@@ -37,12 +37,12 @@ import sets.SetLinked;
 import utility.Kit;
 
 /**
- * A domain for a variable (from a constraint network) is composed of a set of integer values. The domain is initially
- * full, but typically reduced when logically reasoning (with constraints). When handling a domain, to simplify
- * programming, one usually iterates over the indexes of the values; if the domains contains d values, the indexes range
- * from 0 to d-1. For instance, if the domain is the set of values <code> {1,4,5} </code>, their indexes are
- * respectively <code> {0,1,2} </code>. The correspondence between indexes of values and values is given by the methods
- * <code> toIdx </code> and <code> toVal </code>.
+ * A domain for a variable (entity of a constraint network) is composed of a set of integer values. The domain is
+ * initially full, but typically reduced when logically reasoning (with constraints). When handling a domain, to
+ * simplify programming, one usually iterates over the indexes of the values; if the domains contains d values, the
+ * indexes then range from 0 to d-1. For instance, if the domain is the set of values <code> {1,4,5} </code>, their
+ * indexes are respectively <code> {0,1,2} </code>. The correspondence between indexes of values and values is given by
+ * the methods <code> toIdx </code> and <code> toVal </code>.
  *
  * @author Christophe Lecoutre
  */
@@ -97,7 +97,7 @@ public interface Domain extends SetLinked {
 	static int typeIdentifierForSymbols(int... values) {
 		// adding a third value, Integer.MAX_VALUE -1, which is not an authorized domain value since there is a safety
 		// margin, to specify a domain of symbols (avoiding confusion with a domain containing the specified integers)
-		return Domain.typeIdentifierFor(Utilities.collectInt(values, Integer.MAX_VALUE - 1));
+		return typeIdentifierFor(Utilities.collectInt(values, Integer.MAX_VALUE - 1));
 	}
 
 	/**
@@ -113,29 +113,41 @@ public interface Domain extends SetLinked {
 		return doms1.length == doms2.length && IntStream.range(0, doms1.length).allMatch(i -> doms1[i].typeIdentifier() == doms2[i].typeIdentifier());
 	}
 
-	static void setMarks(Variable[] variables) {
-		for (Variable x : variables)
+	/**
+	 * Records a mark in the domain of each variable of the specified array
+	 * 
+	 * @param vars
+	 *            an array of variables
+	 */
+	static void setMarks(Variable[] vars) {
+		for (Variable x : vars)
 			x.dom.setMark();
 	}
 
-	static void restoreAtMarks(Variable[] variables) {
-		for (Variable x : variables)
+	/**
+	 * Restores the domain of each variable of the specified array with the previously recorded marks
+	 * 
+	 * @param vars
+	 *            an array of variables
+	 */
+	static void restoreAtMarks(Variable[] vars) {
+		for (Variable x : vars)
 			x.dom.restoreAtMark();
 	}
 
 	/**
-	 * Returns the number of valid tuples
+	 * Returns the number of valid tuples in the Cartesian product of the specified domains
 	 * 
 	 * @param doms
 	 *            an array of domains
-	 * @param usingInitSize
-	 *            indicates if the initial size of the domains must be considered (or the current size)
+	 * @param initial
+	 *            true if the initial size of the domains must be considered, otherwise the current size
 	 * @return the number of valid tuples
 	 */
-	static BigInteger nValidTuples(Domain[] doms, boolean usingInitSize) {
+	static BigInteger nValidTuples(Domain[] doms, boolean initial) {
 		BigInteger prod = BigInteger.ONE;
 		for (Domain dom : doms)
-			prod = prod.multiply(BigInteger.valueOf(usingInitSize ? dom.initSize() : dom.size()));
+			prod = prod.multiply(BigInteger.valueOf(initial ? dom.initSize() : dom.size()));
 		return prod;
 	}
 
@@ -154,7 +166,7 @@ public interface Domain extends SetLinked {
 		for (int i = 0; i < doms.length; i++) {
 			if (i == discardedPosition)
 				continue;
-			int size = doms[i].size(); // generalizing with a parameter (usingInitSize)?
+			int size = doms[i].size(); // generalizing with a parameter (initial)?
 			long ll = l * size;
 			if (ll / size != l)
 				return Long.MAX_VALUE; // because overflow
@@ -183,7 +195,7 @@ public interface Domain extends SetLinked {
 	 * @param v
 	 *            a value
 	 * @param strict
-	 *            indicates if < must be considered instead of <= when looking for the greatest value
+	 *            indicates if '<' must be considered instead of '<=' when looking for the greatest value
 	 * @return the index of the greatest value of the specified domain which is less than the specified value, or -1
 	 */
 	static int greatestIndexOfValueLessThan(Domain dom, int v, boolean strict) {
@@ -200,7 +212,7 @@ public interface Domain extends SetLinked {
 	 * @param v
 	 *            a value
 	 * @param strict
-	 *            indicates if > must be considered instead of >= when looking for the smallest value
+	 *            indicates if '>' must be considered instead of '>=' when looking for the smallest value
 	 * @return the index of the greatest value of the specified domain which is less than the specified value, or -1
 	 */
 	static int smallestIndexOfValueGreaterThan(Domain dom, int v, boolean strict) {
@@ -213,43 +225,35 @@ public interface Domain extends SetLinked {
 	 *********************************************************************************************/
 
 	/**
-	 * Returns true if the initial domain exactly corresponds to the specified range
-	 * 
 	 * @param range
 	 *            a range of values
 	 * @return true if the initial domain exactly corresponds to the specified range
 	 */
-	default boolean areInitValuesExactly(Range range) {
+	default boolean initiallyExactly(Range range) {
 		control(range.step == 1);
 		return initSize() == range.length() && IntStream.range(0, initSize()).allMatch(a -> toVal(a) == range.start + a);
 	}
 
 	/**
-	 * Returns true if the initial domain is a subset of the specified set of values
-	 * 
 	 * @param values
 	 *            an array of values
 	 * @return true if the initial domain is a subset of the specified set of values
 	 */
-	default boolean areInitValuesSubsetOf(int[] values) {
+	default boolean initiallySubsetOf(int[] values) {
 		return initSize() <= values.length && IntStream.range(0, initSize()).allMatch(a -> Kit.isPresent(toVal(a), values));
 	}
 
 	/**
-	 * Returns true if the initial domain is a subset of the specified range
-	 * 
 	 * @param range
 	 *            a range of values
 	 * @return true if the initial domain is a subset of the specified range
 	 */
-	default boolean areInitValuesSubsetOf(Range range) {
+	default boolean initiallySubsetOf(Range range) {
 		control(range.step == 1);
 		return initSize() <= range.length() && IntStream.range(0, initSize()).allMatch(a -> range.start <= toVal(a) && toVal(a) < range.stop);
 	}
 
 	/**
-	 * Returns the variable to which the domain is attached
-	 * 
 	 * @return the variable to which the domain is attached
 	 */
 	Variable var();
@@ -262,8 +266,6 @@ public interface Domain extends SetLinked {
 	int typeIdentifier();
 
 	/**
-	 * Returns the name of the type of the domain
-	 * 
 	 * @return the name of the type of the domain
 	 */
 	default String typeName() {
@@ -271,8 +273,6 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns the propagation object that interacts with domains
-	 * 
 	 * @return the propagation object that interacts with domains
 	 */
 	Propagation propagation();
@@ -286,8 +286,8 @@ public interface Domain extends SetLinked {
 	void setPropagation(Propagation propagation);
 
 	/**
-	 * Indicates if indexes (of values) and values match, i.e. if for every index a, we have toVal(a) = a, and for every
-	 * value v, we have toIdx(v)=v.
+	 * Indicates if value indexes and values match, i.e. if for every index a, we have toVal(a) = a, and for every value
+	 * v, we have toIdx(v)=v.
 	 * 
 	 * @return {@code true} iff indexes (of values) and values match
 	 */
@@ -305,19 +305,19 @@ public interface Domain extends SetLinked {
 	int toIdx(int v);
 
 	/**
-	 * Returns the value at the specified index
+	 * Returns the value at the specified index. The index is assumed to be a valid one, i.e., an integer between 0 and
+	 * d-1 where d is the initial size of the domain.
 	 * 
 	 * @param a
-	 *            an index (of value)
+	 *            a value index
 	 * @return the value at the specified index
 	 */
 	int toVal(int a);
 
 	/**
-	 * Returns the index of the specified value if the value belongs to the current domain, -1 otherwise.
-	 * 
 	 * @param v
 	 *            a value
+	 * @return the index of the specified value if it belongs to the current domain, -1 otherwise
 	 */
 	default int toIdxIfPresent(int v) {
 		int a = toIdx(v);
@@ -356,7 +356,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns the index of the unique value of the domain. This is similar to first(), but with an assert/control.
+	 * Returns the index of the unique value of the current domain. This is similar to first(), but with an
+	 * assert/control.
 	 */
 	default int single() {
 		assert size() == 1 : "Current size = " + size();
@@ -364,7 +365,7 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns randomly the index of a value in the domain.
+	 * Returns randomly the index of a value in the current domain.
 	 */
 	default int any() {
 		return get(propagation().solver.head.random.nextInt(size()));
@@ -385,7 +386,7 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns the unique value of the domain. This is similar to firstValue(), and lastValue(), but with an
+	 * Returns the unique value of the current domain. This is similar to firstValue(), and lastValue(), but with an
 	 * assert/control.
 	 */
 	default int singleValue() {
@@ -393,7 +394,7 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns randomly a value of the domain.
+	 * Returns randomly a value of the current domain.
 	 */
 	default int anyValue() {
 		return toVal(any());
@@ -460,7 +461,7 @@ public interface Domain extends SetLinked {
 	 * @return true if the domain and the specified one contain a common value
 	 */
 	default boolean overlapWith(Domain dom) {
-		return this.commonValueWith(dom) != Integer.MAX_VALUE;
+		return commonValueWith(dom) != Integer.MAX_VALUE;
 	}
 
 	/**
@@ -503,7 +504,7 @@ public interface Domain extends SetLinked {
 	 * Important: this method must only called when building the problem.
 	 * 
 	 * @param a
-	 *            an index (of value)
+	 *            a value index
 	 */
 	default void removeAtConstructionTime(int a) {
 		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " at
@@ -566,13 +567,12 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes the value at the specified index. <br />
-	 * The value is assumed to be present, and the variable to which the domain is attached is assumed to be future
-	 * (i.e. non explicitly assigned). <br />
+	 * Removes the value at the specified index. The value is assumed to be present, and the variable to which the
+	 * domain is attached is assumed to be future (i.e. non explicitly assigned). <br />
 	 * Important: the management of this removal with respect to propagation is not handled: removal is said elementary.
 	 * 
 	 * @param a
-	 *            an index (of value)
+	 *            a value index
 	 */
 	default void removeElementary(int a) {
 		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + "
@@ -588,10 +588,13 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes the value at the specified index. <br />
-	 * The value is assumed to be present. <br />
-	 * Returns false if an inconsistency is detected (because this is the index of the last value of the domain). <br />
-	 * The management of this removal with respect to propagation is handled.
+	 * Removes the value at the specified index. The value is assumed to be present. It returns false if an
+	 * inconsistency is detected (because this is the index of the last value of the domain). <br />
+	 * Important: the management of this removal with respect to propagation is handled.
+	 * 
+	 * @param a
+	 *            a value index
+	 * @return false if an inconsistency is detected
 	 */
 	default boolean remove(int a) {
 		assert contains(a);
@@ -602,28 +605,24 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes the value at the specified index, if present.<br />
-	 * Returns false if an inconsistency is detected (because this is the index of the last value of the domain). <br />
-	 * But if the index is not present, returns true (non aggressive mode). <br />
-	 * The management of this removal with respect to propagation is handled.
+	 * Removes the value at the specified index, if present. It returns false if an inconsistency is detected (because
+	 * this is the index of the last value of the domain). <br />
+	 * Important: the management of this removal with respect to propagation is handled.
+	 * 
+	 * @param a
+	 *            a value index
+	 * @return false if an inconsistency is detected
 	 */
 	default boolean removeIfPresent(int a) {
 		return !contains(a) || remove(a);
 	}
 
 	/**
-	 * Removes the values (at the indexes) given by the specified array of flags. <br>
-	 * When a flag is set to false, this means that the corresponding value must be removed. <br />
-	 * Returns false if an inconsistency is detected. <br />
-	 * The management of these removals with respect to propagation is handled.
-	 */
-
-	/**
-	 * Removes each index whose corresponding flag is true in the specified array. The number of removed indexes is
-	 * given by the second argument.
+	 * Removes each index whose corresponding flag is false in the specified array. The number of removed indexes is
+	 * given by the second argument. The management of these removals with respect to propagation is handled.
 	 * 
 	 * @param flags
-	 *            an array of flags indicating which indexes must be removed
+	 *            an array of flags indicating which indexes must be removed (when false)
 	 * @param nRemovals
 	 *            the number of indexes to be removed
 	 * @return false if an inconsistency (empty domain) is detected
@@ -642,11 +641,15 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes the values at the indexes given in the specified set. <br />
-	 * If the specified boolean is set to true, a test is performed to only consider values that are present in the
-	 * current domain. <br />
-	 * Returns false if an inconsistency is detected. <br />
-	 * The management of these removals with respect to propagation is handled.
+	 * Removes the values at the indexes given in the specified set. If the specified boolean is set to true, a test is
+	 * performed to only consider values that are present in the current domain. The management of these removals with
+	 * respect to propagation is handled.
+	 * 
+	 * @param idxs
+	 *            a dense set with indexes of values
+	 * @param testPresence
+	 *            when true, the presence of values is tested first
+	 * @return false if an inconsistency is detected
 	 */
 	default boolean remove(SetDense idxs, boolean testPresence) {
 		int sizeBefore = size();
@@ -671,20 +674,24 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes the values at the indexes given in the specified set. <br />
-	 * It is assumed that all these values are currently present in the domain. <br />
-	 * Returns false if an inconsistency is detected. <br />
-	 * The management of these removals with respect to propagation is handled.
+	 * Removes the values at the indexes given in the specified set. It is assumed that all these values are currently
+	 * present in the domain.The management of these removals with respect to propagation is handled.
+	 * 
+	 * @param idxs
+	 *            a dense set with indexes of values
+	 * @return false if an inconsistency is detected
 	 */
 	default boolean remove(SetDense idxs) {
 		return remove(idxs, false);
 	}
 
 	/**
-	 * Reduces the domain at the value at the specified index. <br />
-	 * The value is assumed to be present. <br />
-	 * Returns the number of removed values.<br />
+	 * Reduces the domain at the value at the specified index. The value is assumed to be present. <br />
 	 * Important: the management of this removal with respect to propagation is not handled.
+	 * 
+	 * @param a
+	 *            a value index
+	 * @return the number of removed values
 	 */
 	default int reduceToElementary(int a) {
 		assert contains(a) : a + " is not present";
@@ -703,9 +710,8 @@ public interface Domain extends SetLinked {
 
 	/**
 	 * Removes any value whose index is different from the specified index. <br />
-	 * Returns false if an inconsistency is detected (domain wipe-out). <br />
-	 * Important: the value at the specified index is not necessarily present in the domain. <br />
-	 * In that case, false is returned.
+	 * Important: the value at the specified index is not necessarily present in the domain. In that case, false is
+	 * returned.
 	 * 
 	 * @param a
 	 *            a value index
@@ -717,7 +723,6 @@ public interface Domain extends SetLinked {
 
 	/**
 	 * Removes the values that are different from the specified value. <br />
-	 * Returns false if an inconsistency is detected (domain wipe-out). <br />
 	 * Important: the specified value is not necessarily present in the domain.
 	 *
 	 * @param v
@@ -740,8 +745,7 @@ public interface Domain extends SetLinked {
 
 	/**
 	 * Removes the specified value. <br />
-	 * Important: the value is assumed to be present. <br />
-	 * Returns false if an inconsistency is detected (domain wipe-out). <br />
+	 * Important: the value is assumed to be present.
 	 * 
 	 * @param v
 	 *            a value
@@ -754,9 +758,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes the specified value, if present. <br />
-	 * If the value is not present, the method returns true (non aggressive mode). <br />
-	 * Otherwise, false is returned if an inconsistency is detected (domain wipe-out). <br />
+	 * Removes the specified value, if present. If the value is not present, the method returns true (non aggressive
+	 * mode). Otherwise, false is returned if an inconsistency is detected (domain wipe-out).
 	 * 
 	 * @param v
 	 *            a value

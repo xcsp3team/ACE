@@ -43,7 +43,7 @@ import variables.DomainFinite.DomainValues;
  * attached to a variable and corresponds to the (finite) set of values which can be assigned to it. When a value is
  * assigned to a variable, the domain of this variable is reduced to this value. When a solver tries to assign a value
  * to a variable, it uses a value ordering heuristic in order to determine which value must be tried first. A variable
- * can occur in different constraints of the problem to which it is attached.
+ * can of course occur in different constraints of the problem to which it is attached.
  * 
  * @author Christophe Lecoutre
  */
@@ -544,7 +544,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 
 	/**
 	 * The set of variables that are neighbors to the variable. Two variables are neighbors if they are involved
-	 * together in a constraint. This array may be null if this is too space-consuming.
+	 * together in a constraint. This array may be null if this is too costly in temr of memory space.
 	 */
 	public Variable[] nghs;
 

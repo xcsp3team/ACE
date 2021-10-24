@@ -13,9 +13,6 @@ package solver;
 import static org.xcsp.common.Types.TypeFramework.COP;
 import static org.xcsp.common.Types.TypeFramework.CSP;
 import static org.xcsp.common.Types.TypeFramework.MAXCSP;
-import static utility.Kit.GREEN;
-import static utility.Kit.RED;
-import static utility.Kit.coloredString;
 import static utility.Kit.control;
 import static utility.Kit.log;
 
@@ -36,6 +33,7 @@ import org.xcsp.modeler.entities.VarEntities.VarEntity;
 import constraints.Constraint;
 import problem.Problem;
 import solver.Solver.Stopping;
+import utility.Kit.Color;
 import variables.Variable;
 
 /**
@@ -259,24 +257,22 @@ public final class Solutions {
 				System.out.println();
 				if (found > 0 && solver.problem.variables.length <= solver.head.control.general.jsonLimit)
 					System.out.println("\n  Solution " + found + " in JSON format:\n" + lastSolutionInJsonFormat(false) + "\n");
-				if (fullExploration) {
-					if (found == 0)
-						System.out.println(coloredString("s UNSATISFIABLE", GREEN));
-					else
-						System.out.println(framework == COP ? coloredString("s OPTIMUM FOUND", GREEN) : coloredString("s SATISFIABLE", GREEN));
-				} else {
-					if (found == 0)
-						System.out.println(coloredString("s UNKNOWN", RED));
-					else
-						System.out.println(framework == COP ? coloredString("s SATISFIABLE", GREEN) : coloredString("s SATISFIABLE", GREEN));
-				}
+				if (fullExploration)
+					Color.GREEN.println(found == 0 ? "s UNSATISFIABLE" : framework == COP ? "s OPTIMUM FOUND" : "s SATISFIABLE");
+				else if (found == 0)
+					Color.RED.println("s UNKNOWN");
+				else
+					Color.GREEN.println("s SATISFIABLE");
 				if (found > 0)
-					System.out.println("\n" + coloredString("v", GREEN) + " " + xml.lastSolution());
-				System.out.println("\n" + coloredString("d WRONG DECISIONS", GREEN) + " " + solver.stats.nWrongDecisions);
-				System.out.println(coloredString("d NUMBER OF" + (fullExploration ? "" : " FOUND") + " SOLUTIONS", GREEN) + " " + found);
+					Color.GREEN.println("\nv", " " + xml.lastSolution());
+				Color.GREEN.println("\nd WRONG DECISIONS", " " + solver.stats.nWrongDecisions);
+				Color.GREEN.println("d NUMBER OF" + (fullExploration ? "" : " FOUND") + " SOLUTIONS", " " + found);
 				if (framework == COP && found > 0)
-					System.out.println(coloredString("d BOUND " + bestBound, GREEN));
-				System.out.println(fullExploration ? coloredString("d COMPLETE EXPLORATION", GREEN) : coloredString("d INCOMPLETE EXPLORATION", RED));
+					Color.GREEN.println("d BOUND " + bestBound);
+				if (fullExploration)
+					Color.GREEN.println("d COMPLETE EXPLORATION");
+				else
+					Color.RED.println("d INCOMPLETE EXPLORATION");
 				System.out.println("\nc real time : " + solver.head.stopwatch.cpuTimeInSeconds());
 				System.out.flush();
 			}
@@ -320,7 +316,8 @@ public final class Solutions {
 			bestBound = z;
 		} else if (solver.problem.optimizer != null) { // COP
 			bestBound = solver.problem.optimizer.value();
-			System.out.println(coloredString("o " + bestBound, GREEN) + "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
+			Color.GREEN.println("o " + bestBound, "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
+
 			// solver.restarter.currCutoff += 20;
 			// (hamming: " + h1 + ", in_objective: " + h2 + ")");
 		}

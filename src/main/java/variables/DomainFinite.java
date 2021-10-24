@@ -44,7 +44,7 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 		return true;
 	}
 
-	private Variable var;
+	private Variable x;
 
 	private Integer typeIdentifier;
 
@@ -54,7 +54,7 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 
 	@Override
 	public final Variable var() {
-		return var;
+		return x;
 	}
 
 	/**
@@ -87,14 +87,14 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 	/**
 	 * Builds a finite domain of the specified initial size for the specified variable
 	 * 
-	 * @param var
+	 * @param x
 	 *            the variable to which the domain is associated
 	 * @param initSize
 	 *            the initial size of the domain
 	 */
-	public DomainFinite(Variable var, int initSize) {
+	public DomainFinite(Variable x, int initSize) {
 		super(initSize);
-		this.var = var;
+		this.x = x;
 		control(0 < initSize && initSize <= Constants.MAX_SAFE_INT);
 	}
 
@@ -124,11 +124,11 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 			return Domain.typeIdentifierForRange(min, max);
 		}
 
-		public DomainRange(Variable var, int min, int max) {
-			super(var, max - min + 1);
+		public DomainRange(Variable x, int min, int max) {
+			super(x, max - min + 1);
 			this.min = min;
 			this.max = max;
-			control(Constants.MIN_SAFE_INT <= min && min <= max && max <= Constants.MAX_SAFE_INT, () -> "badly formed domain for variable " + var);
+			control(Constants.MIN_SAFE_INT <= min && min <= max && max <= Constants.MAX_SAFE_INT, () -> "badly formed domain for variable " + x);
 		}
 
 		@Override
@@ -138,7 +138,8 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 
 		@Override
 		public int toVal(int a) {
-			return (a + min) <= max ? a + min : -1;
+			// assert a + min <= max;
+			return a + min;
 		}
 
 		@Override
@@ -172,8 +173,8 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 			return Domain.typeIdentifierFor(values);
 		}
 
-		public DomainValues(Variable var, int... values) {
-			super(var, values.length);
+		public DomainValues(Variable x, int... values) {
+			super(x, values.length);
 			assert Kit.isStrictlyIncreasing(values);
 			assert this instanceof DomainSymbols || IntStream.range(0, values.length - 1).anyMatch(i -> values[i + 1] != values[i] + 1);
 			control(Constants.MIN_SAFE_INT <= values[0] && values[values.length - 1] <= Constants.MAX_SAFE_INT);
@@ -219,9 +220,9 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 			return Domain.typeIdentifierForSymbols(values);
 		}
 
-		public DomainSymbols(Variable var, int[] vals, String[] symbols) {
-			super(var, vals);
-			control(symbols != null && symbols.length > 0 && vals.length == symbols.length, () -> "badly formed set of symbols for variable " + var);
+		public DomainSymbols(Variable x, int[] vals, String[] symbols) {
+			super(x, vals);
+			control(symbols != null && symbols.length > 0 && vals.length == symbols.length, () -> "badly formed set of symbols for variable " + x);
 			// below we sort the array of symbols according to the way the array of values have been sorted (in the
 			// super-constructor)
 			int[] mapping = IntStream.range(0, values.length).map(i -> Utilities.indexOf(values[i], vals)).toArray();

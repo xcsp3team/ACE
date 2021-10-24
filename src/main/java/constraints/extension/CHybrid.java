@@ -34,7 +34,7 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the code for CHybrid to deal with so-called hybrid/smart tables. The code follows a Simple Tabular reduction
+ * This is the code for CHybrid to deal with so-called hybrid/smart tables. The code follows a Simple Tabular Reduction
  * (STR) general scheme. See "The Smart Table Constraint", CPAIOR 2015: 271-287, by J.-B. Mairy, Y. Deville, and C.
  * Lecoutre. <br />
  * IMPORTANT: the code is under revision, and is planned to be finalized within the end of year 2021.
@@ -292,9 +292,9 @@ public final class CHybrid extends ExtensionSpecific {
 			int x = futvars.dense[i];
 			Domain dom = scp[x].dom;
 			if (dom.size() == lastSizes[x]) {
-				// if (!backtrack && dom.getSize() == lastSizes[vap])
+				// if (!backtrack && dom.size() == lastSizes[x])
 				nac[x].limit = lastSizes[x] - 1;
-				// control(scp[vap].dom.isExactly(supportlesss[vap])); // TODO TO MODIFY AS AN ASSERT
+				// control(scp[x].dom.isExactly(nac[x])); // TODO TO MODIFY AS AN ASSERT
 				// *************************************************
 			} else {
 				nac[x].clear();

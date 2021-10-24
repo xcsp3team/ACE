@@ -54,6 +54,7 @@ import problem.Problem.SymmetryBreaking;
 import propagation.Propagation;
 import solver.Solver;
 import utility.Kit;
+import utility.Kit.Color;
 import utility.Reflector;
 import utility.Stopwatch;
 
@@ -445,7 +446,7 @@ public class Head extends Thread {
 
 	@Override
 	public void run() {
-		log.config("\n" + Kit.coloredString("ACE (AbsCon Essence)", Kit.ORANGE) + " v1.0beta " + Kit.dateOf(Head.class));
+		log.config("\n" + Color.ORANGE.coloring("ACE (AbsCon Essence)") + " v1.0beta " + Kit.dateOf(Head.class));
 		stopwatch.start();
 		boolean[] crashed = new boolean[Input.nInstancesToSolve];
 		for (int i = 0; i < Input.nInstancesToSolve; i++) {
@@ -453,7 +454,7 @@ public class Head extends Thread {
 				solveInstance(i);
 			} catch (Throwable e) {
 				crashed[i] = true;
-				System.out.println(Kit.coloredString("\n! ERROR (use -ev for more details)", Kit.RED));
+				Color.RED.println("\n! ERROR (use -ev for more details)");
 				if (control.general.exceptionsVisible)
 					e.printStackTrace();
 			}

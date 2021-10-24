@@ -119,8 +119,8 @@ import constraints.Constraint.CtrTrivial.CtrTrue;
 import constraints.ConstraintExtension;
 import constraints.ConstraintExtension.Extension1;
 import constraints.ConstraintIntension;
-import constraints.extension.CMDD.CMDDO;
 import constraints.extension.CHybrid;
+import constraints.extension.CMDD.CMDDO;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableHybrid.HybridTuple;
 import constraints.global.AllDifferent.AllDifferentComplete;
@@ -198,6 +198,7 @@ import problem.Reinforcer.Automorphisms;
 import problem.Reinforcer.Cliques;
 import solver.Solver;
 import utility.Kit;
+import utility.Kit.Color;
 import utility.Stopwatch;
 import variables.Domain;
 import variables.Variable;
@@ -1116,7 +1117,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private CtrEntity allDifferent(Variable[] scp) {
 		if (scp.length <= 1) {
-			Kit.coloredPrint("Warning: AllDifferent with a scope of length " + scp.length + " : " + Kit.join(scp), Kit.ORANGE);
+			Color.ORANGE.println("Warning: AllDifferent with a scope of length " + scp.length + " : " + Kit.join(scp));
 			return null;
 		}
 		if (scp.length == 2)
@@ -1166,7 +1167,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(exceptValues.length >= 1 && Kit.isStrictlyIncreasing(exceptValues));
 		Variable[] scp = translate(list);
 		if (scp.length <= 1) {
-			Kit.coloredPrint("Warning: AllDifferentExcept with a scope of length " + scp.length + " : " + Kit.join(scp), Kit.ORANGE);
+			Color.ORANGE.println("Warning: AllDifferentExcept with a scope of length " + scp.length + " : " + Kit.join(scp));
 			return null;
 		}
 		if (scp.length == 2)
@@ -1614,7 +1615,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private CtrArray postClosed(Variable[] list, int[] values) {
 		return forall(range(list.length), i -> {
-			if (!list[i].dom.areInitValuesSubsetOf(values))
+			if (!list[i].dom.initiallySubsetOf(values))
 				extension(list[i], api.select(values, v -> list[i].dom.containsValue(v)), true);
 		});
 	}
@@ -1783,7 +1784,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		unimplementedIf(startIndex != 0 || (rank != null && rank != TypeRank.ANY), "element");
 		Domain idom = ((Variable) index).dom;
 		// first, we discard some possibly useless variables from list
-		if (!idom.areInitValuesExactly(api.range(0, list.length))) {
+		if (!idom.initiallyExactly(api.range(0, list.length))) {
 			List<Variable> tmp = new ArrayList<>();
 			for (int a = idom.first(); a != -1; a = idom.next(a)) {
 				int va = idom.toVal(a);
@@ -1914,7 +1915,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity channel(Var[] list, int startIndex, Var value) {
 		control(Stream.of(list).noneMatch(x -> x == null) && startIndex == 0);
-		control(Variable.areAllInitiallyBoolean((Variable[]) list) && ((Variable) value).dom.areInitValuesExactly(range(list.length)));
+		control(Variable.areAllInitiallyBoolean((Variable[]) list) && ((Variable) value).dom.initiallyExactly(range(list.length)));
 		// exactly((VariableInteger[]) list, 1, 1); // TODO what would be the benefit of posting it?
 		return forall(range(list.length), i -> post(new Reif2EQ(this, (Variable) list[i], (Variable) value, i)));
 		// intension(iff(list[i], eq(value, i))));

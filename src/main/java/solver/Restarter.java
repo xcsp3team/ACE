@@ -25,7 +25,7 @@ import utility.Kit;
 import variables.Variable;
 
 /**
- * A restarter is used by a solver in order to manage restarts (successive runs from the root node).
+ * A restarter is used by a solver in order to manage restarts (successive runs restarting from the root node).
  * 
  * @author Christophe Lecoutre
  */

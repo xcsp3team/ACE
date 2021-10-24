@@ -16,13 +16,13 @@ import propagation.Propagation;
 import sets.SetLinkedBinary;
 
 /**
- * A binary domain for a variable (of a constraint network).
+ * A binary domain for a variable (entity of a constraint network).
  * 
  * @author Christophe Lecoutre
  */
 public final class DomainBinary extends SetLinkedBinary implements Domain {
 
-	private Variable var;
+	private Variable x;
 
 	private Integer typeIdentifier;
 
@@ -34,7 +34,7 @@ public final class DomainBinary extends SetLinkedBinary implements Domain {
 
 	@Override
 	public final Variable var() {
-		return var;
+		return x;
 	}
 
 	@Override
@@ -60,15 +60,15 @@ public final class DomainBinary extends SetLinkedBinary implements Domain {
 	/**
 	 * Builds a binary domain for the specified variable from the specified values
 	 * 
-	 * @param var
+	 * @param x
 	 *            the variable to which the domain is associated
 	 * @param firstValue
 	 *            the first value of the domain
 	 * @param secondValue
 	 *            the second value of the domain
 	 */
-	public DomainBinary(Variable var, int firstValue, int secondValue) {
-		this.var = var;
+	public DomainBinary(Variable x, int firstValue, int secondValue) {
+		this.x = x;
 		this.firstValue = firstValue;
 		this.secondValue = secondValue;
 	}
@@ -80,7 +80,7 @@ public final class DomainBinary extends SetLinkedBinary implements Domain {
 
 	@Override
 	public int toVal(int a) {
-		assert a == 0 || a == 1;
+		// assert a == 0 || a == 1;
 		return a == 0 ? firstValue : secondValue;
 	}
 

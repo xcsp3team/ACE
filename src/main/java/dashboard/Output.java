@@ -13,6 +13,7 @@ package dashboard;
 import static utility.Kit.control;
 import static utility.Kit.log;
 
+//import java.awt.Color;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -52,6 +53,7 @@ import propagation.SAC.SACGreedy;
 import solver.Solver.Stopping;
 import solver.Statistics;
 import utility.Kit;
+import utility.Kit.Color;
 import utility.Stopwatch;
 import variables.Variable;
 
@@ -343,7 +345,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public void afterData() {
 		InformationBloc info = instanceInfo(head.instanceIndex);
 		save(head.instanceStopwatch.wckTime());
-		log.config(COMMENT_PREFIX + Kit.coloredString("Instance ", Kit.BLUE) + head.problem.name() + "\n");
+		log.config(COMMENT_PREFIX + Color.BLUE.coloring("Instance ") + head.problem.name() + "\n");
 		record(INSTANCE, info.filtered_entries(), resolution);
 	}
 
@@ -434,7 +436,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 				}
 			}
 			// The special character in preprint cannot be put in StringBuilder
-			return (name.equals(RUN) ? "" : COMMENT_PREFIX + Kit.coloredString(name, Kit.BLUE) + "\n") + sb.toString();
+			return (name.equals(RUN) ? "" : COMMENT_PREFIX + Color.BLUE.coloring(name) + "\n") + sb.toString();
 		}
 	}
 

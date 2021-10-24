@@ -55,9 +55,7 @@ import javax.xml.xpath.XPathFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-import org.xcsp.common.IVar;
 import org.xcsp.common.Utilities;
-import org.xcsp.common.predicates.XNode;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -114,7 +112,7 @@ public final class Kit {
 	 *            an exception to be displayed
 	 */
 	public static Object exit(String message, Throwable e) {
-		System.out.println(coloredString("\n! ERROR with message: " + message + "\n  Use the solver option -ev for more details\n", RED));
+		Color.RED.println("\n! ERROR with message: " + message + "\n  Use the solver option -ev for more details\n");
 		if (!(Thread.currentThread() instanceof Head) || ((Head) Thread.currentThread()).control.general.exceptionsVisible)
 			e.printStackTrace();
 		System.exit(1);
@@ -446,40 +444,88 @@ public final class Kit {
 	 * Functions on Strings
 	 *********************************************************************************************/
 
+	/**
+	 * Indicates if one really must use colors when the method 'coloring' is called
+	 */
 	public static boolean useColors = true;
 
-	public static final String BLACK = "\033[0;30m";
-	public static final String YELLOW = "\u001b[33m";
-	public static final String CYAN = "\033[0;36m";
-	public static final String PURPLE = "\033[95m";
-	public static final String BLUE = "\033[94m";
-	public static final String ORANGE = "\033[93m";
-	public static final String RED = "\033[91m";
-	public static final String GREEN = "\033[92m";
-	public static final String WHITE_BOLD = "\033[1m";
-	public static final String WHITE = "\033[0m";
+	/**
+	 * Different colors to be used when printing, for example, on the standard output
+	 */
+	public static enum Color {
+		BLACK("\033[0;30m"),
+		YELLOW("\u001b[33m"),
+		CYAN("\033[0;36m"),
+		PURPLE("\033[95m"),
+		BLUE("\033[94m"),
+		ORANGE("\033[93m"),
+		RED("\033[91m"),
+		GREEN("\033[92m"),
+		WHITE_BOLD("\033[1m"),
+		WHITE("\033[0m");
+
+		private String code;
+
+		private Color(String code) {
+			this.code = code;
+		}
+
+		/**
+		 * @param s
+		 *            a string
+		 * @return the specified string with this color (if colors can be used) or the same specified string
+		 */
+		public String coloring(String s) {
+			return useColors ? this.code + s + WHITE.code : s;
+		}
+
+		/**
+		 * Prints the specified first string with this color, if colors can be used (otherwise, in classical white
+		 * color), followed by the specified second string in white
+		 * 
+		 * @param coloredPart
+		 *            a string to be printed in color
+		 * @param uncoloredPart
+		 *            a string to be displayed in classical white color
+		 */
+		public void println(String coloredPart, String uncoloredPart) {
+			System.out.println(coloring(coloredPart) + uncoloredPart);
+		}
+
+		/**
+		 * Prints the specified string with this color, if colors can be used (otherwise, in classical white color)
+		 * 
+		 * @param s
+		 *            a string to be printed
+		 */
+		public void println(String s) {
+			System.out.println(coloring(s));
+		}
+	}
 
 	/**
+	 * Returns the base name of the specified XML filename, i.e., the name without any path and any extension '.xml'
+	 * 
 	 * @param s
 	 *            a string
-	 * @param color
-	 *            a color to be used
-	 * @return the specified string with the specified color (if colors can be used) or the same specified string
+	 * @return the base name of the specified XML filename
 	 */
-	public static String coloredString(String s, String color) {
-		return useColors ? color + s + WHITE : s;
-	}
-
-	public static void coloredPrint(String s, String color) {
-		System.out.println(coloredString(s, color));
-	}
-
 	public static String getXMLBaseNameOf(String s) {
 		int first = s.lastIndexOf(File.separator);
 		first = (first == -1 ? 0 : first + 1);
 		int last = s.toLowerCase().lastIndexOf(".xml");
 		last = (last == -1 ? s.length() : last);
 		return s.substring(first, last);
+	}
+
+	/**
+	 * @param pathAndFileName
+	 *            a string
+	 * @return the path of the specified filename
+	 */
+	public static String getPathOf(String pathAndFileName) {
+		int last = pathAndFileName.lastIndexOf(File.separator);
+		return last == -1 ? "" : pathAndFileName.substring(0, last + 1);
 	}
 
 	private static int maxDepthOf(Object o) {
@@ -560,11 +606,6 @@ public final class Kit {
 	 */
 	public static String join(Collection<?> c, String... delimiters) {
 		return join(c.toArray(), delimiters);
-	}
-
-	public static String getPathOf(String pathAndFileName) {
-		int last = pathAndFileName.lastIndexOf("/");
-		return last == -1 ? "" : pathAndFileName.substring(0, last + 1);
 	}
 
 	/**
@@ -828,14 +869,21 @@ public final class Kit {
 		}
 	}
 
-	public static <T extends IVar> T[] vars(Object... objects) {
-		return (T[]) Utilities.collect(IVar.class, Stream.of(objects).map(o -> o instanceof XNode ? ((XNode<?>) o).vars() : o));
-	}
-
-	// (3,-5) => -2; (3,10) => 3; (-3,-5) => 2; (-3,10) => -3; (3,0) => 0; (-3,0) => 0
-	// 3y <= -5 => y <= -2; 3y <= 10 => y <= 3; -3y <= -5 => y >= 2; -3y <= 10 => y >= -3; 3y <= 0 => y <= 0; -3y <= 0
-	// => y >= 0
-	public static int greatestIntegerLE(int c, int k) { // c*y <= k
+	/**
+	 * Returns the greatest integer x such that c*x <= k where c and k are specified integers. <br />
+	 * The coefficient must be positive, as we note that (3,-5) => -2; (3,10) => 3; (-3,-5) => 2; (-3,10) => -3; (3,0)
+	 * => 0; (-3,0) => 0 <br/>
+	 * 3y <= -5 => y <= -2; 3y <= 10 => y <= 3; -3y <= -5 => y >= 2; -3y <= 10 => y >= -3; 3y <= 0 => y <= 0; -3y <= 0
+	 * => y >= 0
+	 * 
+	 * @param c
+	 *            a coefficient
+	 * @param k
+	 *            a limit
+	 * @return the greatest integer x such that c*x <= k
+	 */
+	public static int greatestIntegerLE(int c, int k) { // c*x <= k
+		control(c >= 0);
 		if (c == 0)
 			return k >= 0 ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 		int limit = k / c;
@@ -845,10 +893,21 @@ public final class Kit {
 		return limit;
 	}
 
-	// (3,-5) => -1; (3,10) => 4; (-3,-5) => 1; (-3,10) => -4; (3,0) => 0; (-3,0) => 0
-	// 3y >= -5 => y >= -1; 3y >= 10 => y >= 4; -3y >= -5 => y <= 1; -3y >= 10 => y <= -4; 3y >= 0 => y>= 0; -3y >= 0 =>
-	// y <= 0
-	public static int smallestIntegerGE(int c, int k) { // c*y >= k
+	/**
+	 * Returns the smallest integer x such that c*x >= k where c and k are specified integers. <br />
+	 * The coefficient must be positive, as we note that (3,-5) => -1; (3,10) => 4; (-3,-5) => 1; (-3,10) => -4; (3,0)
+	 * => 0; (-3,0) => 0 <br />
+	 * 3y >= -5 => y >= -1; 3y >= 10 => y >= 4; -3y >= -5 => y <= 1; -3y >= 10 => y <= -4; 3y >= 0 => y>= 0; -3y >= 0 =>
+	 * y <= 0
+	 * 
+	 * @param c
+	 *            a coefficient
+	 * @param k
+	 *            a limit
+	 * @return the smallest integer x such that c*x >= k
+	 */
+	public static int smallestIntegerGE(int c, int k) { // c*x >= k
+		control(c >= 0);
 		if (c == 0)
 			return k <= 0 ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 		int limit = k / c;
@@ -865,7 +924,6 @@ public final class Kit {
 		System.out.println();
 		for (int[] t : new int[][] { { 3, -5 }, { 3, 10 }, { -3, -5 }, { -3, 10 }, { 3, 0 }, { -3, 0 }, { -10, 20 }, { -3, 5 }, { -9, 1 }, { 10, 1 } })
 			System.out.println(t[0] + " " + t[1] + " => " + smallestIntegerGE(t[0], t[1]));
-
 	}
 
 }
