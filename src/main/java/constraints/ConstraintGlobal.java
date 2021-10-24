@@ -15,7 +15,8 @@ import problem.Problem;
 import variables.Variable;
 
 /**
- * The abstract class representing global constraints, which are essentially constraints with a specific form of filtering (propagator).
+ * The abstract class representing global constraints, which are essentially constraints with a specific form of
+ * filtering (propagator).
  * 
  * @author Christophe Lecoutre
  */
@@ -25,7 +26,7 @@ public abstract class ConstraintGlobal extends Constraint implements SpecificPro
 	 * Builds a global constraint for the specified problem, and with the specified scope
 	 * 
 	 * @param pb
-	 *            the problem to which the constraint is attached
+	 *            the problem to which this constraint belongs
 	 * @param scp
 	 *            the scope of the constraint
 	 */

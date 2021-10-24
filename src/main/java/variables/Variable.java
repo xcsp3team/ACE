@@ -544,7 +544,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 
 	/**
 	 * The set of variables that are neighbors to the variable. Two variables are neighbors if they are involved
-	 * together in a constraint. This array may be null if this is too costly in temr of memory space.
+	 * together in a constraint. This array may be null if this is too costly in term of memory space.
 	 */
 	public Variable[] nghs;
 

@@ -23,8 +23,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.IVar;
-import org.xcsp.common.predicates.TreeEvaluator.ExternFunctionArity1;
-import org.xcsp.common.predicates.TreeEvaluator.ExternFunctionArity2;
 import org.xcsp.parser.entries.XConstraints.XCtr;
 import org.xcsp.parser.entries.XObjectives.XObj;
 
@@ -311,9 +309,6 @@ public final class Features {
 	 * Number of cliques, when using reinforcing techniques for posting AllDifferent constraints
 	 */
 	public int nCliques;
-
-	public ExternFunctionArity1 externFunctionArity1;
-	public ExternFunctionArity2 externFunctionArity2;
 
 	/**
 	 * Numbers of values that have been deleted at construction time. It is computed as a sum over all variable domains.

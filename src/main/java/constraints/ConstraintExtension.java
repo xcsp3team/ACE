@@ -46,12 +46,11 @@ import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
 
 /**
- * This is the root class for representing extension constraints, also called table constraints. Two direct subclasses
+ * This is the root class for representing Extension constraints, also called table constraints. Two direct subclasses
  * are ExtensionGeneric (for implementing AC filtering à la AC3rm) and ExtensionSpecific (for implementing specific
  * propagators).
  * 
  * @author Christophe Lecoutre
- *
  */
 public abstract class ConstraintExtension extends Constraint implements TagAC, TagCallCompleteFiltering {
 
@@ -59,7 +58,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 * Various filtering algorithms for extension (table) constraints
 	 */
 	public static enum Extension {
-		V, VA, STR1, STR2, STR3, STR1N, STR2N, CT, CMDDO, CMDDS, RPWC, RPWC2;
+		V, VA, STR1, STR2, STR3, STR1N, STR2N, CT, CMDDO, CMDDS; // , RPWC, RPWC2;
 	}
 
 	/**********************************************************************************************

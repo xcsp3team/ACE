@@ -49,11 +49,14 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This class contains many propagators for binary primitive constraints such as for example x < y, x*y = 10 or |x-y| <
- * 2. <br />
- * Important: in Java, integer division rounds toward 0. <br/>
- * This implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 = 3 <br />
- * See https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.17.2
+ * This class contains many propagators for binary primitive constraints such as for example:
+ * <ul>
+ * <li>x < y</li>
+ * <li>x*y = 10</li>
+ * <li>|x-y| <2</li>
+ * </ul>
+ * Important: in Java, integer division rounds toward 0. This implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 =
+ * 3; see https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.17.2
  * 
  * @author Christophe Lecoutre
  */
@@ -65,8 +68,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 	public static final int UNITIALIZED = -1;
 
-	public static Constraint buildFrom(Problem pb, Variable x, TypeUnaryArithmeticOperator aop, Variable y) {
-		switch (aop) {
+	public static Constraint buildFrom(Problem pb, Variable x, TypeUnaryArithmeticOperator uaop, Variable y) {
+		switch (uaop) {
 		case ABS: // |x| = y
 			return new Dist2bEQ(pb, x, y, 0);
 		case NEG: // x = -y
@@ -74,9 +77,9 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 		case SQR: // x*x = y
 			List<int[]> list = new ArrayList<>();
 			for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
-				int v = x.dom.toVal(a), v2 = Utilities.safeInt((long) v * v);
-				if (v2 <= y.dom.greatestInitialValue() && y.dom.containsValue(v2))
-					list.add(new int[] { v, v2 });
+				int v = x.dom.toVal(a), vv = Utilities.safeInt((long) v * v);
+				if (vv <= y.dom.greatestInitialValue() && y.dom.containsValue(vv))
+					list.add(new int[] { v, vv });
 			}
 			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), list.stream().toArray(int[][]::new), true, Boolean.FALSE);
 		default: // not(x) = y
@@ -990,7 +993,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 							}
 						} else {
 							// we know that va >= k and vb > k by construction
-							int va = vb + k; // no neex to start at va = k because k % vb is 0 (and 0 is not possible
+							int va = vb + k; // no need to start at va = k because k % vb is 0 (and 0 is not possible
 												// for k)
 							while (va <= dx.lastValue()) {
 								assert va % vb == k;
@@ -1027,7 +1030,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 					return new Dist2GE(pb, x, y, k + 1);
 				case EQ:
 					return new Dist2EQ(pb, x, y, k); // return pb.extension(eq(dist(x, y), k));
-				// TODO ok for java ace csp/Rlfap-scen-11-f06.xml.lzma -varh=Dom -ev but not for -varh=DomOnWdeg.
+				// TODO ok for java ace csp/Rlfap-scen-11-f06.xml.lzma -varh=Dom -ev but not ok for -varh=WdegOnDom.
 				// Must be because of conflict occurring on assigned variables in DISTEQ2
 				default: // NE
 					return new Dist2NE(pb, x, y, k);
@@ -1060,8 +1063,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean isSatisfiedBy(int[] t) {
-					return Math.abs(t[0] - t[1]) >= k; // equivalent to disjunctive: t[0] + k <= t[1] || t[1] + k <=
-														// t[0];
+					return Math.abs(t[0] - t[1]) >= k;
+					// equivalent to disjunctive: t[0] + k <= t[1] || t[1] + k <= t[0];
 				}
 
 				public Dist2GE(Problem pb, Variable x, Variable y, int k) {
@@ -1160,8 +1163,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				case LE:
 				case GE:
 				case GT:
-					// IMPORTANT: keep this order for the variables and the coefficient (that must be increasingly
-					// ordered)
+					// IMPORTANT: keep this order for the variables and the coefficients (must be in increasing order)
 					return SumWeighted.buildFrom(pb, pb.vars(y, x), new int[] { -k, 1 }, op, 0);
 				case EQ:
 					return new Mul2bEQ(pb, x, y, k);
@@ -1244,8 +1246,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				case NE:
 					return x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0 && k > 1 ? new Div2bNE(pb, x, y, k) : null;
 				default:
-					throw new AssertionError("not implemented"); // not relevant to implement them? (since an auxiliary
-																	// variable can be introduced)
+					// not relevant to implement them? (since an auxiliary variable can be introduced?)
+					throw new AssertionError("not implemented");
 				}
 			}
 
@@ -1314,8 +1316,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				case NE:
 					return new Mod2bNE(pb, x, y, k);
 				default:
-					throw new AssertionError("not implemented"); // not relevant to implement them? (since an auxiliary
-																	// variable can be introduced)
+					// not relevant to implement them? (since an auxiliary variable can be introduced?)
+					throw new AssertionError("not implemented");
 				}
 			}
 
@@ -1362,8 +1364,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 					super(pb, x, y, k);
 				}
 
-				int watch1 = -1, watch2 = -1; // watching two different (indexes of) values of y leading to two
-												// different remainders
+				int watch1 = -1, watch2 = -1; // watching two different value indexes of y leading to two different
+												// remainders
 
 				private int findWatch(int other) {
 					if (other == -1)
@@ -1408,8 +1410,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				case NE:
 					return new Dist2bNE(pb, x, y, k);
 				default:
-					throw new AssertionError("not implemented"); // not relevant to implement them? (since an auxiliary
-																	// variable can be introduced)
+					// not relevant to implement them? (since an auxiliary variable can be introduced?)
+					throw new AssertionError("not implemented");
 				}
 			}
 

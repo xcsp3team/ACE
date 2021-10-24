@@ -10,6 +10,8 @@
 
 package constraints;
 
+import static utility.Kit.control;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +19,6 @@ import java.util.stream.Stream;
 
 import org.xcsp.common.IVar;
 import org.xcsp.common.predicates.TreeEvaluator;
-import org.xcsp.common.predicates.TreeEvaluator.Evaluator;
 import org.xcsp.common.predicates.TreeEvaluator.F1Evaluator;
 import org.xcsp.common.predicates.TreeEvaluator.F2Evaluator;
 import org.xcsp.common.predicates.XNodeParent;
@@ -29,30 +30,14 @@ import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 import variables.Variable.VariableInteger;
-import variables.Variable.VariableSymbolic;
 
 /**
- * The abstract class representing intension constraints, which are constraints whose semantics is given by a Boolean
+ * The abstract class representing Intension constraints, which are constraints whose semantics is given by a Boolean
  * expression tree involving variables. Most of the times, primitives are used instead of this general form.
  * 
  * @author Christophe Lecoutre
  */
 public final class ConstraintIntension extends Constraint implements TagCallCompleteFiltering {
-
-	@Override
-	public final boolean isSatisfiedBy(int[] vals) {
-		return treeEvaluator.evaluate(vals) == 1; // recall that 1 stands for true
-	}
-
-	@Override
-	public void afterProblemConstruction(int n) {
-		super.afterProblemConstruction(n);
-		for (Evaluator evaluator : treeEvaluator.evaluators)
-			if (evaluator instanceof F1Evaluator)
-				((F1Evaluator) evaluator).function = problem.features.externFunctionArity1;
-			else if (evaluator instanceof F2Evaluator)
-				((F2Evaluator) evaluator).function = problem.features.externFunctionArity2;
-	}
 
 	/**********************************************************************************************
 	 * Intern class
@@ -99,6 +84,11 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 	 * Class members
 	 *********************************************************************************************/
 
+	@Override
+	public final boolean isSatisfiedBy(int[] t) {
+		return treeEvaluator.evaluate(t) == 1; // recall that 1 stands for true
+	}
+
 	/**
 	 * The Boolean expression tree giving the semantics of the constraint
 	 */
@@ -111,7 +101,7 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 	private IntensionStructure treeEvaluator;
 
 	/**
-	 * The object used to build a canonized form of the key of the constraint
+	 * The object used to build a canonized form of the key of the constraint (mainly used for symmetry-breaking)
 	 */
 	private final KeyCanonizer keyCanonizer;
 
@@ -126,21 +116,20 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 	}
 
 	/**
-	 * Build an intension constraint from the specified Boolean expression tree for the specified problem, and with the
+	 * Build an Intension constraint for the specified problem from the specified Boolean expression tree, and with the
 	 * specified scope
 	 * 
 	 * @param pb
-	 *            the problem to which the constraint is attached
+	 *            the problem to which this constraint belongs
 	 * @param scp
 	 *            the scope of the constraint
 	 * @param tree
-	 *            the Boolean expression tree giving the semantics to the constraint
+	 *            the Boolean expression tree giving the semantics of the constraint
 	 */
 	public ConstraintIntension(Problem pb, Variable[] scp, XNodeParent<IVar> tree) {
 		super(pb, scp);
 		assert tree.exactlyVars(scp);
-		assert Stream.of(scp).allMatch(x -> x instanceof VariableInteger)
-				|| Stream.of(scp).allMatch(x -> x instanceof VariableSymbolic) : "Currently, it is not possible to mix integer and symbolic variables";
+		assert Variable.haveSameType(scp) : "Currently, it is not possible to mix integer and symbolic variables";
 		boolean canonize = false; // TODO hard coding
 		this.tree = canonize ? (XNodeParent<IVar>) tree.canonization() : tree;
 		this.keyCanonizer = scp.length > 30 || tree.size() > 200 ? null : new KeyCanonizer(tree); // TODO hard coding
@@ -148,38 +137,30 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 		Map<String, IntensionStructure> map = pb.head.structureSharing.mapForIntension;
 		this.treeEvaluator = map.computeIfAbsent(key,
 				s -> scp[0] instanceof VariableInteger ? new IntensionStructure(tree) : new IntensionStructure(tree, pb.symbolic.mapOfSymbols));
+		control(Stream.of(treeEvaluator.evaluators).noneMatch(e -> e instanceof F1Evaluator || e instanceof F2Evaluator));
 		treeEvaluator.register(this);
 	}
 }
 
 // public boolean isEligibleForSettingHugeDomainVariable() {
-// if (futvars.size() != 1)
-// return false;
+// if (futvars.size() != 1) return false;
 // int pos = futvars.dense[0];
-// if (!(scp[pos].dom instanceof DomainHuge))
-// return false;
-// if (tree.type != TypeExpr.EQ || tree.sons.length != 2)
-// return false;
+// if (!(scp[pos].dom instanceof DomainHuge)) return false;
+// if (tree.type != TypeExpr.EQ || tree.sons.length != 2) return false;
 // int g = tree.sons[0].type == TypeExpr.VAR && ((XNodeLeaf)tree.sons[0]).value == scp[pos] ? 0: tree.sons[1].type ==
 // TypeExpr.VAR &&
 // ((XNodeLeaf)tree.sons[1]).value == scp[pos] ? 1 : -1;
-// if (g == -1)
-// return false;
-//
-//
+// if (g == -1) return false;
 // }
 
 // public int deduce() {
-//
 // control(futvars.size() == 1);
 // int pos = futvars.dense[0];
 // control(scp[pos].dom instanceof DomainHuge);
 // control(tree.type == TypeExpr.EQ && tree.sons.length == 2);
-//
 // long sum = 0;
 // for (int i = 0; i < scp.length; i++)
-// if (i != pos)
-// sum += scp[i].dom.uniqueValue();
+// if (i != pos)sum += scp[i].dom.uniqueValue();
 // long res = limit - sum;
 // control(Utilities.isSafeInt(res));
 // return (int) res;
