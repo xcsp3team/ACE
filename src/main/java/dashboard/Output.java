@@ -553,10 +553,10 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(REMOVED_BY_AC, propagation instanceof AC ? ((AC) (propagation)).preproRemovals : 0);
 		// m.put("nTotalRemovedValues", nPreproRemovedValues);
 		m.put(UNSAT, head.solver.stopping == Stopping.FULL_EXPLORATION);
-		m.separator(stats.prepro.nRemovedTuples > 0 || stats.prepro.nAddedNogoods > 0 || stats.prepro.nAddedCtrs > 0);
-		m.put(N_REMOVED_TUPLES, stats.prepro.nRemovedTuples);
-		m.put(N_NOGOODS, stats.prepro.nAddedNogoods);
-		m.put(N_ADDED_CTRS, stats.prepro.nAddedCtrs);
+		m.separator(stats.preprocessing.nRemovedTuples > 0 || stats.preprocessing.nAddedNogoods > 0 || stats.preprocessing.nAddedCtrs > 0);
+		m.put(N_REMOVED_TUPLES, stats.preprocessing.nRemovedTuples);
+		m.put(N_NOGOODS, stats.preprocessing.nAddedNogoods);
+		m.put(N_ADDED_CTRS, stats.preprocessing.nAddedCtrs);
 		m.separator(propagation.nSingletonTests > 0);
 		m.put(N_SINGLETON_TESTS, propagation.nSingletonTests);
 		m.put(N_EFFECTIVE_SINGLETON_TESTS, propagation.nEffectiveSingletonTests);

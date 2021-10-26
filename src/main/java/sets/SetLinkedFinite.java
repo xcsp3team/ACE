@@ -26,6 +26,7 @@ import utility.Kit;
  * @author Christophe Lecoutre
  */
 public class SetLinkedFinite implements SetLinked {
+
 	/**
 	 * The number of present elements (indexes).
 	 */
@@ -84,6 +85,12 @@ public class SetLinkedFinite implements SetLinked {
 		this.lastRemoved = -1; // useful if some values have been deleted at construction time
 	}
 
+	/**
+	 * Builds a finite linked set of the specified initial size
+	 * 
+	 * @param initSize
+	 *            the initial size of the set
+	 */
 	public SetLinkedFinite(int initSize) {
 		control(0 < initSize && initSize <= Constants.MAX_SAFE_INT, () -> "capacity=" + initSize);
 		this.size = initSize;

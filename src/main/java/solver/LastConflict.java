@@ -10,9 +10,9 @@
 
 package solver;
 
+import static java.util.stream.Collectors.joining;
 import static utility.Kit.control;
 
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import dashboard.Output;
@@ -108,8 +108,16 @@ public final class LastConflict implements ObserverOnRuns, ObserverOnDecisions {
 	 */
 	private class Statistics {
 		private int startLevel;
-		private int[] cnts; // cnts[i] is the number of times we stop reasoning at level i
-		private int[] jmps; // jmps[i] is the cumulated jump sizes when we stop reasoning at level i
+
+		/**
+		 * cnts[i] is the number of times we stop reasoning at level i
+		 */
+		private int[] cnts;
+
+		/**
+		 * jmps[i] is the cumulated jump sizes when we stop reasoning at level i
+		 */
+		private int[] jmps;
 
 		private Statistics(int k) {
 			cnts = new int[k + 1];
@@ -126,7 +134,7 @@ public final class LastConflict implements ObserverOnRuns, ObserverOnDecisions {
 				update(0); // last update to be done since not taken into account when backtracking to level 0
 			Kit.log.info(() -> "last-conflicts  " + IntStream.range(1, k + 1)
 					.mapToObj(i -> i + ":(#=" + cnts[i] + (cnts[i] == 0 ? "" : ",avg=" + Output.decimalFormat.format(jmps[i] / (double) cnts[i])))
-					.collect(Collectors.joining(")  ")) + ")\n");
+					.collect(joining(")  ")) + ")\n");
 		}
 	}
 

@@ -190,8 +190,6 @@ public final class Solutions {
 		}
 
 		/**
-		 * Returns the last found solution in XML format
-		 * 
 		 * @return the last found solution in XML format
 		 */
 		private String lastSolution() { // note that auxiliary variables are not considered
@@ -204,8 +202,6 @@ public final class Solutions {
 	}
 
 	/**
-	 * Returns the last found solution in JSON format
-	 * 
 	 * @return the last found solution in JSON format
 	 */
 	private String lastSolutionInJsonFormat(boolean pure) {

@@ -70,9 +70,8 @@ public class Restarter implements ObserverOnRuns {
 		// we rerun propagation if a solution has just been found (since the objective constraint has changed), or if it
 		// must be forced anyway
 		boolean rerunPropagation = forceRootPropagation || (solver.problem.optimizer != null && numRun - 1 == solver.solutions.lastRun);
-		if (rerunPropagation || (solver.head.control.propagation.strongOnce && 0 < numRun && numRun % 60 == 0)) { // TODO
-																													// hard
-																													// coding
+		if (rerunPropagation || (solver.head.control.propagation.strongOnce && 0 < numRun && numRun % 60 == 0)) {
+			// TODO hard coding
 			if (solver.propagation.runInitially() == false)
 				solver.stopping = Stopping.FULL_EXPLORATION;
 			forceRootPropagation = false;
@@ -282,7 +281,7 @@ public class Restarter implements ObserverOnRuns {
 
 			public abstract void freezeVariables(int[] solution);
 
-			public static class Impact extends HeuristicFreezing {
+			public static final class Impact extends HeuristicFreezing {
 				// TO BE FINALIZED (note sure that it is correct/coherent)
 
 				private final Variable[] variables;
@@ -334,7 +333,7 @@ public class Restarter implements ObserverOnRuns {
 				}
 			}
 
-			public static class Rand extends HeuristicFreezing {
+			public static final class Rand extends HeuristicFreezing {
 
 				public Rand(RestarterLNS restarter) {
 					super(restarter);

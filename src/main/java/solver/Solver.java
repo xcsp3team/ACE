@@ -57,6 +57,11 @@ import utility.Kit;
 import variables.DomainInfinite;
 import variables.Variable;
 
+/**
+ * The object used to solve a problem.
+ * 
+ * @author Christophe Lecoutre
+ */
 public class Solver implements ObserverOnBacktracksSystematic {
 
 	/**
@@ -552,8 +557,15 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 */
 	public Statistics stats;
 
+	/**
+	 * The last assigned variable when each recursive run is started
+	 */
 	private final Variable[] lastPastBeforeRun = new Variable[2];
 
+	/**
+	 * The number of recursive runs called. This is possible because, in addition to the original run, some strong
+	 * consistencies require some forms of local runs.
+	 */
 	private int nRecursiveRuns = 0;
 
 	/**
@@ -696,7 +708,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 */
 	public final void assign(Variable x, int a) {
 		assert !x.assigned();
-		stats.nAssignments++;
+		stats.whenAssignment(x, a);
 		futVars.remove(x);
 		x.assign(a);
 		for (ObserverOnAssignments obs : observersOnAssignments)
@@ -751,8 +763,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 				}
 				inconsistent.clear();
 				if (conflict) {
-					stats.nWrongDecisions++; // necessary for updating restart data
-					stats.nFailedAssignments++;
+					stats.whenFailedAssignment(x, a);
 					return false;
 				}
 			}
@@ -762,9 +773,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		assign(x, a);
 		boolean consistent = propagation.runAfterAssignment(x) && (ipsReasoner == null || ipsReasoner.whenOpeningNode());
 		if (!consistent) {
-			x.failed[a]++;
-			stats.nWrongDecisions++;
-			stats.nFailedAssignments++;
+			stats.whenFailedAssignment(x, a);
 			// if (ngdRecorder != null) ngdRecorder.addCurrentNogood();
 			return false;
 		}

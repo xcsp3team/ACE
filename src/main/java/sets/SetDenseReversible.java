@@ -85,22 +85,28 @@ public class SetDenseReversible extends SetDense {
 		this(capacity, nLevels, true);
 	}
 
+	/**
+	 * Records the current limit at the specified level, which can be restored later
+	 * 
+	 * @param level
+	 *            an integer
+	 */
 	public final void storeLimitAtLevel(int level) {
 		if (limits[level] == UNINITIALIZED)
 			limits[level] = limit;
 	}
 
+	/**
+	 * Restores the limit that was recorded earlier at the specified level
+	 * 
+	 * @param level
+	 *            an integer
+	 */
 	public void restoreLimitAtLevel(int level) {
 		if (limits[level] != UNINITIALIZED) {
 			limit = limits[level];
 			limits[level] = UNINITIALIZED;
 		}
-	}
-
-	public void moveLimitAtLevel(int gap, int level) {
-		assert limit - gap >= -1;
-		storeLimitAtLevel(level);
-		limit -= gap;
 	}
 
 	/**

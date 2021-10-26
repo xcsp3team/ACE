@@ -796,6 +796,14 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 		return wdeg() / dom.size();
 	}
 
+	public final double frOnDom() {
+		return problem.solver.stats.assignments.failureRate(this) / dom.size();
+	}
+
+	public final double fraOnDom() {
+		return problem.solver.stats.assignments.failureAgedRate(this) / dom.size();
+	}
+
 	@Override
 	public final String toString() {
 		return id();

@@ -241,7 +241,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		head.control.framework(optimizer); // modifying a few options
 		for (Variable x : variables) {
 			assert Stream.of(x.ctrs).noneMatch(c -> c.num == -1);
-			x.dom.setNumberOfLevels(variables.length + 1);
+			x.dom.setNumberOfLevels(n + 1);
 		}
 		this.priorityVars = priorityVars.length == 0 && annotations.decision != null ? (Variable[]) annotations.decision : priorityVars;
 		Variable[] r = HeuristicValues.possibleOptimizationInterference(this);

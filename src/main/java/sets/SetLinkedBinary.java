@@ -32,8 +32,9 @@ public class SetLinkedBinary implements SetLinked {
 	private byte lastRemoved;
 
 	/**
-	 * The level at which absent elements (indexes) have been removed from the set. Hence, <code> removedLevels[a] == i </code> means that i is the removal
-	 * level of the index a and <code> removedLevels[a] == -1 </code> means that the index a is still present.
+	 * The level at which absent elements (indexes) have been removed from the set. Hence,
+	 * <code> removedLevels[a] == i </code> means that i is the removal level of the index a and
+	 * <code> removedLevels[a] == -1 </code> means that the index a is still present.
 	 */
 	private int[] removedlevels;
 
@@ -48,6 +49,9 @@ public class SetLinkedBinary implements SetLinked {
 		this.nLevels = nLevels;
 	}
 
+	/**
+	 * Builds a binary linked set, i.e., a set that can only contains the two indexes 0 and 1
+	 */
 	public SetLinkedBinary() {
 		this.size = 2;
 		this.lastRemoved = -1;

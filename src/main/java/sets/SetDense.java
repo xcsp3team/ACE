@@ -51,7 +51,9 @@ public class SetDense { // implements Iterable<Integer> {
 
 	/**
 	 * Builds a dense set with the specified capacity. The dense set is simple, meaning that it is aimed at containing
-	 * indexes 0, 1, 2, ... Initially, the set is full or empty depending on the value of the specified boolean.
+	 * indexes 0, 1, 2, ... Initially, the set is full or empty depending on the value of the specified boolean. Note
+	 * that we build a canonical dense set, i.e. a set with values 0, 1, 2 ... (even if this is only useful when
+	 * initialyFull is true or a sparse set is built).
 	 * 
 	 * @param capacity
 	 *            the capacity of the dense set
@@ -60,8 +62,6 @@ public class SetDense { // implements Iterable<Integer> {
 	 */
 	public SetDense(int capacity, boolean initiallyFull) {
 		this(IntStream.range(0, capacity).toArray(), initiallyFull);
-		// we build a canonical dense set, i.e. a set with values 0, 1, 2 ... (even if this is only useful when
-		// initialyFull is true or a sparse set is built)
 	}
 
 	/**
@@ -80,7 +80,6 @@ public class SetDense { // implements Iterable<Integer> {
 	 */
 	public void increaseCapacity() {
 		dense = IntStream.range(0, capacity() * 2).map(i -> i < dense.length ? dense[i] : i).toArray();
-		// above, increase ratio set to 2; hard coding
 	}
 
 	/**
@@ -93,8 +92,6 @@ public class SetDense { // implements Iterable<Integer> {
 	}
 
 	/**
-	 * Return the current size of the set
-	 * 
 	 * @return the current size of the set
 	 */
 	public final int size() {
@@ -102,8 +99,6 @@ public class SetDense { // implements Iterable<Integer> {
 	}
 
 	/**
-	 * Returns true if the set is empty
-	 * 
 	 * @return true if the set is empty
 	 */
 	public final boolean isEmpty() {
@@ -111,8 +106,6 @@ public class SetDense { // implements Iterable<Integer> {
 	}
 
 	/**
-	 * Returns true if the set is full
-	 * 
 	 * @return true if the set is full
 	 */
 	public final boolean isFull() {
@@ -134,8 +127,6 @@ public class SetDense { // implements Iterable<Integer> {
 	}
 
 	/**
-	 * Returns the first value of the set
-	 * 
 	 * @return the first value of the set
 	 */
 	public final int first() {
@@ -144,8 +135,6 @@ public class SetDense { // implements Iterable<Integer> {
 	}
 
 	/**
-	 * Returns the last value of the set
-	 * 
 	 * @return the last value of the set
 	 */
 	public final int last() {
@@ -154,11 +143,17 @@ public class SetDense { // implements Iterable<Integer> {
 
 	private int mark = UNINITIALIZED;
 
+	/**
+	 * Records the current limit as a mark that can be restored later
+	 */
 	public final void setMark() {
 		assert mark == UNINITIALIZED;
 		mark = limit;
 	}
 
+	/**
+	 * Restores the limit that was recorded as a mark earlier
+	 */
 	public final void restoreAtMark() {
 		assert mark != UNINITIALIZED;
 		limit = mark;
@@ -178,13 +173,6 @@ public class SetDense { // implements Iterable<Integer> {
 			if (dense[i] == a)
 				return true;
 		return false;
-	}
-
-	public final boolean isStrictlyIncreasing() {
-		for (int i = limit; i > 0; i--)
-			if (dense[i] < dense[i - 1])
-				return false;
-		return true;
 	}
 
 	/**

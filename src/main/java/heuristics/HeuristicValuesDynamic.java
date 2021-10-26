@@ -173,6 +173,8 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 		private int[] nDecisions;
 
+		public int[] failed;
+
 		public Failures(Variable x, boolean anti) {
 			super(x, anti);
 			this.nDecisions = Kit.repeat(1, dx.initSize()); // we use 1 for avoiding divisions by 0
@@ -180,7 +182,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 		@Override
 		public double scoreOf(int a) {
-			return x.failed[a] / (double) nDecisions[a];
+			return failed[a] / (double) nDecisions[a];
 		}
 
 		@Override

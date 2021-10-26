@@ -103,7 +103,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	}
 
 	// ************************************************************************
-	// ***** Subclasses for classical dynamic heuristics
+	// ***** Subclasses for classical and failure-based dynamic heuristics
 	// ************************************************************************
 
 	public static final class Ddeg extends HeuristicVariablesDynamic implements TagMaximize {
@@ -139,6 +139,30 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public double scoreOf(Variable x) {
 			return x.dom.size();
+		}
+	}
+
+	public static final class FrOnDom extends HeuristicVariablesDynamic implements TagMaximize {
+
+		public FrOnDom(Solver solver, boolean anti) {
+			super(solver, anti);
+		}
+
+		@Override
+		public double scoreOf(Variable x) {
+			return x.frOnDom();
+		}
+	}
+
+	public static final class FraOnDom extends HeuristicVariablesDynamic implements TagMaximize {
+
+		public FraOnDom(Solver solver, boolean anti) {
+			super(solver, anti);
+		}
+
+		@Override
+		public double scoreOf(Variable x) {
+			return x.fraOnDom();
 		}
 	}
 
