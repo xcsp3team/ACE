@@ -341,7 +341,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
 				int i = t[rpos], j = t[cpos];
-				return t[i * matrix.length + j] == k;
+				return t[i * matrix[0].length + j] == k;
 			}
 
 			/**
@@ -417,7 +417,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
 				int i = t[rpos], j = t[cpos];
-				return t[i * matrix.length + j] == t[vpos];
+				return t[i * matrix[0].length + j] == t[vpos];
 			}
 
 			/**

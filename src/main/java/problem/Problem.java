@@ -1898,7 +1898,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public CtrEntity channel(Var[] list, int startIndex) {
-		return unimplemented("channel");
+		unimplementedIf(startIndex != 0, "channel");
+		allDifferent(list); // TODO additional constraint; controlling the fact of posting it?
+		return forall(range(list.length), i -> element(list, list[i], i));
+		// return unimplemented("channel");
 	}
 
 	@Override

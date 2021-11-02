@@ -112,7 +112,7 @@ public final class Solutions {
 
 		private void updateCompactList(int value, int cnt, List<String> ls) {
 			String v = value == Constants.STAR ? Constants.STAR_SYMBOL : value + "";
-			if (cnt > 1) // hard coding
+			if (cnt > 2) // hard coding
 				ls.add(v + Constants.TIMES + cnt);
 			else
 				for (int k = 0; k < cnt; k++)
