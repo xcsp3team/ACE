@@ -23,10 +23,12 @@ import org.xcsp.common.Types.TypeConditionOperatorRel;
 import constraints.Constraint;
 import constraints.ConstraintGlobal;
 import constraints.global.AllDifferent.AllDifferentComplete;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagNotAC;
 import optimization.Optimizable;
 import problem.Problem;
 import sets.SetDense;
+import sets.SetSparseReversible;
 import variables.Domain;
 import variables.Variable;
 
@@ -132,11 +134,8 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 			case GT:
 				return limit == 1 ? new NotAllEqual(pb, scp) : new NValuesCstGE(pb, scp, limit + 1);
 			case EQ:
-				if (limit == 1)
-					return new AllEqual(pb, scp);
-				if (limit == scp.length)
-					return new AllDifferentComplete(pb, scp); // TODO how to avoid directly setting the variant?
-				return null; // TODO other cases not implemented
+				// TODO how to avoid directly setting the algorithm for AllDifferentComplete below?
+				return limit == 1 ? new AllEqual(pb, scp) : limit == scp.length ? new AllDifferentComplete(pb, scp) : new NValuesCstEQ(pb, scp, limit);
 			default: // case NE:
 				if (limit == 1)
 					return new NotAllEqual(pb, scp);
@@ -187,6 +186,7 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 		public NValuesCst(Problem pb, Variable[] list, long k) {
 			super(pb, list, list);
 			limit(k);
+			control(1 <= k && k <= list.length);
 			defineKey(k);
 		}
 
@@ -246,6 +246,78 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 				return true;
 			}
 		}
+
+		public final static class NValuesCstEQ extends NValuesCst implements ObserverOnBacktracksSystematic {
+
+			@Override
+			public boolean isSatisfiedBy(int[] t) {
+				return Arrays.stream(t).distinct().count() == limit;
+			}
+
+			@Override
+			public void afterProblemConstruction(int n) {
+				super.afterProblemConstruction(n);
+				distinctIdxs = new SetSparseReversible(scp[0].dom.initSize(), n + 1, false);
+				// it is possible to use scp[0].dom.initSize() because variables have the same domain type
+			}
+
+			@Override
+			public void restoreBefore(int depth) {
+				distinctIdxs.restoreLimitAtLevel(depth);
+			}
+
+			private SetSparseReversible distinctIdxs;
+
+			private int[] residues;
+
+			public NValuesCstEQ(Problem pb, Variable[] list, long k) {
+				super(pb, list, k);
+				control(Variable.haveSameDomainType(list)); // for the moment
+				control(1 < k && k < list.length);
+				this.residues = new int[list.length];
+			}
+
+			@Override
+			public boolean runPropagator(Variable x) {
+				if (x.dom.size() == 1) {
+					int a = x.dom.single();
+					if (!distinctIdxs.contains(a))
+						distinctIdxs.add(a, problem.solver.depth());
+					int p = distinctIdxs.size();
+					if (p > limit)
+						return x.dom.fail();
+					if (p == limit) {
+						for (int j = futvars.limit; j >= 0; j--) {
+							Variable y = scp[futvars.dense[j]];
+							if (y != x && y.dom.removeIndexesChecking(b -> !distinctIdxs.contains(b)) == false)
+								return false;
+						}
+						return entailed();
+					}
+					int cnt = 0; // we make a rough approximation to determine if limit can be reached
+					for (int j = futvars.limit; j >= 0; j--) {
+						int y = futvars.dense[j];
+						Domain dy = scp[y].dom;
+						int b = residues[y];
+						if (dy.contains(b) && !distinctIdxs.contains(b))
+							cnt++;
+						else {
+							for (b = dy.first(); b != -1; b = dy.next(b)) {
+								if (!distinctIdxs.contains(b)) {
+									residues[y] = b;
+									cnt++;
+									break;
+								}
+							}
+						}
+						if (p + cnt >= limit)
+							break;
+					}
+				}
+				return true;
+			}
+		}
+
 	}
 
 	/**********************************************************************************************

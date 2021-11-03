@@ -1901,7 +1901,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		unimplementedIf(startIndex != 0, "channel");
 		allDifferent(list); // TODO additional constraint; controlling the fact of posting it?
 		return forall(range(list.length), i -> element(list, list[i], i));
-		// return unimplemented("channel");
 	}
 
 	@Override
