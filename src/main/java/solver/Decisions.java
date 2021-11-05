@@ -236,7 +236,8 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	 */
 	public final String stringOf(int dec) {
 		assert dec != 0;
-		return varIn(dec) + (dec > 0 ? "=" : "!=") + valIn(dec) + (valIn(dec) != idxIn(dec) ? "(" + idxIn(dec) + ")" : "");
+		return varIn(dec) + (dec > 0 ? "=" : "!=") + valIn(dec);
+		// + (valIn(dec) != idxIn(dec) ? "(" + idxIn(dec) + ")" : "");
 	}
 
 	@Override

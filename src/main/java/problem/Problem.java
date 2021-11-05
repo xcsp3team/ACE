@@ -1235,6 +1235,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return ctrSet1.append(ctrSet2);
 	}
 
+	public final CtrEntity allDifferentMatrix(Var[][] matrix, int[] exceptValues) {
+		CtrArray ctrSet1 = forall(range(matrix.length), i -> allDifferent(matrix[i], exceptValues));
+		CtrArray ctrSet2 = forall(range(matrix[0].length), i -> allDifferent(api.columnOf(matrix, i), exceptValues));
+		return ctrSet1.append(ctrSet2);
+	}
+
 	@Override
 	public CtrEntity allDifferent(XNode<IVar>[] trees) {
 		return allDifferent(replaceByVariables(trees));
@@ -1607,6 +1613,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public CtrEntity nValues(Var[] list, Condition condition, int[] exceptValues) {
 		return unimplemented("nValues");
+	}
+
+	public CtrEntity nValues(XNode<IVar>[] trees, Condition condition) {
+		return nValues(replaceByVariables(trees), condition);
 	}
 
 	// ************************************************************************

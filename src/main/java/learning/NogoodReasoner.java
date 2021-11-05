@@ -10,6 +10,8 @@
 
 package learning;
 
+import static java.util.stream.Collectors.joining;
+
 import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -29,7 +31,7 @@ import variables.Variable;
 public final class NogoodReasoner {
 
 	/**
-	 * Builds and returns an object used for recording and reasoning with nogoods, or null.
+	 * Builds and returns an object used for recording and reasoning with nogoods, or null
 	 * 
 	 * @param solver
 	 *            the solver to which the built reasoner will be attached
@@ -47,6 +49,9 @@ public final class NogoodReasoner {
 	public static enum LearningNogood {
 		NO, RST, RST_MIN, RST_SYM;
 
+		/**
+		 * @return true is the learning mechanism is related to restarts
+		 */
 		public boolean isRstType() {
 			return this == RST || this == RST_MIN || this == RST_SYM;
 		}
@@ -143,6 +148,9 @@ public final class NogoodReasoner {
 		// symmetryHandler = options.nogood == RST_SYM ? new SymmetryHandler(this,problem.variables.length) : null;
 	}
 
+	/**
+	 * Clears the nogood base
+	 */
 	public void reset() {
 		nNogoods = 0;
 		for (WatchCell[] t : pws) // TODO put them in free instead
@@ -152,10 +160,17 @@ public final class NogoodReasoner {
 		// control(symmetryHandler == null);
 	}
 
+	/**
+	 * Important: currently not caleld
+	 * 
+	 * @param t
+	 *            a tuple of indexes (of values)
+	 * @return true if the tuple of values corresponding to the specified tuple of indexes satisfies the nogoods
+	 */
 	public boolean checkIndexes(int[] t) {
 		// note that nogoods are stored with indexes of values
 		extern: for (int i = 0; i < nNogoods; i++) {
-			for (int d : nogoods[i].literals) {
+			for (int d : nogoods[i].decisions) {
 				int x = decisions.numIn(d);
 				int a = decisions.idxIn(d);
 				if (t[x] != a)
@@ -178,12 +193,12 @@ public final class NogoodReasoner {
 	}
 
 	private boolean canFindAnotherWatchFor(Nogood nogood, boolean firstWatch) {
-		int[] literals = nogood.literals;
-		int start = nogood.getWatchedPosition(firstWatch);
+		int[] literals = nogood.decisions;
+		int start = nogood.getWatch(firstWatch);
 		int r = literals.length, limit = r + start;
 		for (int j = start + 1; j < limit; j++) {
 			int i = j % r; // going from start+1 to literals.length and from 0 to start
-			if (!nogood.isPositionWatched(i) && canBeWatched(literals[i])) {
+			if (!nogood.isWatch(i) && canBeWatched(literals[i])) {
 				addWatchFor(nogood, i, firstWatch);
 				return true;
 			}
@@ -192,10 +207,10 @@ public final class NogoodReasoner {
 	}
 
 	/**
-	 * Performs the specified decision
+	 * Applies the specified decision
 	 * 
 	 * @param decision
-	 *            the decision to be performed
+	 *            the decision to be applied
 	 * @return false if an inconsistency is detected
 	 */
 	private boolean apply(int decision) {
@@ -209,11 +224,11 @@ public final class NogoodReasoner {
 		WatchCell previous = null, current = watchCells[a];
 		while (current != null) {
 			Nogood nogood = current.nogood;
-			int watchedDecision2 = nogood.getSecondWatchedDecision(watchedDecision);
+			int watchedDecision2 = nogood.watchedDecisionOtherThan(watchedDecision);
 			if (!decisions.varIn(watchedDecision2).dom.contains(decisions.idxIn(watchedDecision2))) {
 				previous = current;
 				current = current.next;
-			} else if (canFindAnotherWatchFor(nogood, nogood.isDecisionWatchedByFirstWatch(watchedDecision))) {
+			} else if (canFindAnotherWatchFor(nogood, nogood.firstWatchedDecision() == watchedDecision)) {
 				WatchCell tmp = current.next;
 				if (previous == null)
 					watchCells[a] = current.next;
@@ -225,7 +240,7 @@ public final class NogoodReasoner {
 			} else {
 				previous = current;
 				current = current.next;
-				if (apply(nogood.getSecondWatchedDecision(watchedDecision)) == false)
+				if (apply(nogood.watchedDecisionOtherThan(watchedDecision)) == false)
 					return false;
 			}
 		}
@@ -233,15 +248,24 @@ public final class NogoodReasoner {
 		return true;
 	}
 
+	/**
+	 * Checks and infers the consequences of the specified decision
+	 * 
+	 * @param x
+	 *            a variable
+	 * @param a
+	 *            a value index for x
+	 * @param positive
+	 *            true if the studied decision is positive (x=a), false if it is negative (x != a)
+	 * @return false if an inconsistency is detected
+	 */
 	public boolean checkWatchesOf(Variable x, int a, boolean positive) {
 		return positive ? checkWatchesOf(pws[x.num], a, decisions.positiveDecisionFor(x.num, a))
 				: checkWatchesOf(nws[x.num], a, decisions.negativeDecisionFor(x.num, a));
 	}
 
 	// public boolean runPropagator(Variable x) {
-	// if (x.dom.size() == 1 && checkWatchesOf(x, x.dom.first(), false) == false)
-	// return false;
-	// return true;
+	// return x.dom.size() > 1 || checkWatchesOf(x, x.dom.first(), false);
 	// }
 
 	/**********************************************************************************************
@@ -249,7 +273,7 @@ public final class NogoodReasoner {
 	 *********************************************************************************************/
 
 	private void addWatchFor(Nogood nogood, int position, boolean firstWatch) {
-		int decision = nogood.literals[position];
+		int decision = nogood.decisions[position];
 		WatchCell[] cells = decision > 0 ? pws[decisions.numIn(decision)] : nws[decisions.numIn(decision)];
 		int a = decisions.idxIn(decision);
 		if (free == null)
@@ -261,9 +285,17 @@ public final class NogoodReasoner {
 			cell.next = cells[a];
 			cells[a] = cell;
 		}
-		nogood.setWatchedPosition(position, firstWatch);
+		nogood.setWatch(position, firstWatch);
 	}
 
+	/**
+	 * Adds a nogood from the specified (negative) decisions
+	 * 
+	 * @param negativeDecisions
+	 *            the (negative) decisions forming the nogood to be added
+	 * @param toBeSorted
+	 *            true if the decisions must be sorted
+	 */
 	public void addNogood(int[] negativeDecisions, boolean toBeSorted) {
 		if (nNogoods < nogoods.length) {
 			if (toBeSorted)
@@ -276,6 +308,9 @@ public final class NogoodReasoner {
 		}
 	}
 
+	/**
+	 * Adds all nogoods that can be extracted from the current branch
+	 */
 	public void addNogoodsOfCurrentBranch() {
 		SetDense set = decisions.set;
 		if (!options.nogood.isRstType() || set.size() < 2)
@@ -312,7 +347,7 @@ public final class NogoodReasoner {
 		assert controlWatches();
 	}
 
-	private boolean control(WatchCell[][] watches, boolean positive) {
+	private boolean controlLists(WatchCell[][] watches, boolean positive) {
 		for (int x = 0; x < watches.length; x++)
 			for (int a = 0; a < watches[x].length; a++) {
 				int decision = positive ? decisions.positiveDecisionFor(x, a) : decisions.negativeDecisionFor(x, a);
@@ -334,13 +369,13 @@ public final class NogoodReasoner {
 		return false;
 	}
 
-	protected boolean controlWatches() {
-		if (!control(pws, true) || !control(nws, false))
+	private boolean controlWatches() {
+		if (!controlLists(pws, true) || !controlLists(nws, false))
 			return false;
 		for (int i = 0; i < nNogoods; i++) {
 			if (nogoods[i] == null)
 				continue;
-			if (!controlNogood(nogoods[i].getWatchedDecision(true), nogoods[i]) || !controlNogood(nogoods[i].getWatchedDecision(false), nogoods[i]))
+			if (!controlNogood(nogoods[i].firstWatchedDecision(), nogoods[i]) || !controlNogood(nogoods[i].secondWatchedDecision(), nogoods[i]))
 				return false;
 		}
 		return true;
@@ -349,7 +384,8 @@ public final class NogoodReasoner {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("Nogoods = {\n");
-		IntStream.range(0, nNogoods).forEach(i -> sb.append(nogoods[i].toString(decisions)).append("\n"));
+		for (int i = 0; i < nNogoods; i++)
+			sb.append(IntStream.of(nogoods[i].decisions).mapToObj(d -> decisions.stringOf(d)).collect(joining(" "))).append("\n");
 		return sb.append("}").toString();
 	}
 

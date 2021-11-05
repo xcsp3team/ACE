@@ -414,6 +414,11 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	@Override
+	public void buildCtrAllDifferentMatrix(String id, XVarInteger[][] matrix, int[] except) {
+		problem.allDifferentMatrix(trVars2D(matrix), except);
+	}
+
+	@Override
 	public void buildCtrAllDifferent(String id, XNode<XVarInteger>[] trees) {
 		problem.allDifferent(trVar(trees));
 	}
@@ -539,6 +544,11 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void buildCtrNValuesExcept(String id, XVarInteger[] list, int[] values, Condition condition) {
 		problem.nValues(trVars(list), trVar(condition), values);
+	}
+
+	@Override
+	public void buildCtrNValues(String id, XNode<XVarInteger>[] trees, Condition condition) {
+		problem.nValues(trVar(trees), trVar(condition));
 	}
 
 	@Override

@@ -13,10 +13,6 @@ package learning;
 import static utility.Kit.control;
 
 import java.util.Arrays;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import solver.Decisions;
 
 /**
  * Strictly speaking, an object of this class is used as if it was a nogood constraint, i.e. a disjunction of negative
@@ -29,65 +25,95 @@ public final class Nogood {
 	/**
 	 * The negative literals (decisions) of the nogood (since it is a classical nogood)
 	 */
-	public final int[] literals;
+	public final int[] decisions;
 
 	/**
-	 * The first watch on the nogood, that is to say the position of a literal that can still be satisfied
+	 * The first watch on the nogood, that is to say the index of a decision that can still be satisfied
 	 */
 	private int watch1;
 
 	/**
-	 * The second watch on the nogood, that is to say the position of a literal that can still be satisfied
+	 * The second watch on the nogood, that is to say the index of a decision that can still be satisfied
 	 */
 	private int watch2;
 
-	public int getWatchedPosition(boolean firstWatch) {
-		return firstWatch ? watch1 : watch2;
-	}
-
-	public int getWatchedDecision(boolean firstWatch) {
-		return literals[firstWatch ? watch1 : watch2];
-	}
-
-	public void setWatchedPosition(int position, boolean firstWatch) {
-		if (firstWatch)
-			watch1 = position;
-		else
-			watch2 = position;
-	}
-
-	public boolean isPositionWatched(int position) {
-		return watch1 == position || watch2 == position;
-	}
-
-	public boolean isDecisionWatched(int decision) {
-		return literals[watch1] == decision || literals[watch2] == decision;
-	}
-
-	public boolean isDecisionWatchedByFirstWatch(int watchedDecision) {
-		assert isDecisionWatched(watchedDecision);
-		return literals[watch1] == watchedDecision;
-	}
-
-	public int getSecondWatchedDecision(int watchedDecision) {
-		assert isDecisionWatched(watchedDecision);
-		return literals[watch1] == watchedDecision ? literals[watch2] : literals[watch1];
+	/**
+	 * @param first
+	 *            true if the first watch is concerned, false for the second one
+	 * @return the first or second watch according to the value of the specified Boolean
+	 */
+	public int getWatch(boolean first) {
+		return first ? watch1 : watch2;
 	}
 
 	/**
-	 * Builds a nogood from the specified literals (negative decisions)
+	 * @return the first watched decision
+	 */
+	public int firstWatchedDecision() {
+		return decisions[watch1];
+	}
+
+	/**
+	 * @return the second watched decision
+	 */
+	public int secondWatchedDecision() {
+		return decisions[watch2];
+	}
+
+	/**
+	 * Sets the specified value (index of decision) for the watch identified by the specified Boolean
+	 * 
+	 * @param index
+	 *            the value of the watch (index of a decision)
+	 * @param first
+	 *            true if the first watch is concerned, false for the second one
+	 */
+	public void setWatch(int index, boolean first) {
+		if (first)
+			watch1 = index;
+		else
+			watch2 = index;
+	}
+
+	/**
+	 * @param index
+	 *            the index of a decision
+	 * @return true if the specified index corresponds to the first or second watch
+	 */
+	public boolean isWatch(int index) {
+		return watch1 == index || watch2 == index;
+	}
+
+	/**
+	 * @param decision
+	 *            a decision
+	 * @return true if the specified decision corresponds to the first or second watched decision
+	 */
+	public boolean isDecisionWatched(int decision) {
+		return decisions[watch1] == decision || decisions[watch2] == decision;
+	}
+
+	/**
+	 * @param watchedDecision
+	 *            a watched decision
+	 * @return the watched decision which is not the specified one
+	 */
+	public int watchedDecisionOtherThan(int watchedDecision) {
+		assert isDecisionWatched(watchedDecision);
+		return decisions[watch1] == watchedDecision ? decisions[watch2] : decisions[watch1];
+	}
+
+	/**
+	 * Builds a nogood from the specified (negative) decision)
 	 * 
 	 * @param negativeDecisions
-	 *            the negative decisions (literals) forming the nogood
+	 *            the negative decisions forming the nogood
 	 */
 	public Nogood(int[] negativeDecisions) {
 		control(negativeDecisions.length > 1 && Arrays.stream(negativeDecisions).noneMatch(d -> d >= 0));
-		this.literals = negativeDecisions;
+		this.decisions = negativeDecisions;
 		this.watch1 = 0;
 		this.watch2 = negativeDecisions.length - 1;
 	}
 
-	public String toString(Decisions decisions) {
-		return IntStream.of(literals).mapToObj(d -> decisions.varIn(d) + (d < 0 ? "!=" : "=") + decisions.valIn(d)).collect(Collectors.joining(" "));
-	}
 }
