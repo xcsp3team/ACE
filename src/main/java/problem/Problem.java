@@ -1257,6 +1257,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return post(new AllEqual(this, translate(scp)));
 	}
 
+	public CtrEntity allEqual(XNode<IVar>[] trees) {
+		return allEqual(replaceByVariables(trees));
+	}
+
 	@Override
 	public final CtrEntity allEqual(VarSymbolic... scp) {
 		return unimplemented("AllEqual");
@@ -1585,6 +1589,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return post(new ExactlyVarK(this, scp, values[0], (Variable) rightTerm));
 		}
 		return unimplemented("count");
+	}
+
+	public final CtrEntity count(XNode<IVar>[] trees, int[] values, Condition condition) {
+		return count(replaceByVariables(trees), values, condition);
 	}
 
 	@Override

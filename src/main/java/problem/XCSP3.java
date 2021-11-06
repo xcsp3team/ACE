@@ -428,6 +428,11 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		problem.allEqual(trVars(list));
 	}
 
+	@Override
+	public void buildCtrAllEqual(String id, XNode<XVarInteger>[] trees) {
+		problem.allEqual(trVar(trees));
+	}
+
 	// ************************************************************************
 	// ***** Constraint Ordered/Lexicographic
 	// ************************************************************************
@@ -495,6 +500,11 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void buildCtrCount(String id, XVarInteger[] list, int[] values, Condition condition) {
 		problem.count(trVars(list), values, trVar(condition));
+	}
+
+	@Override
+	public void buildCtrCount(String id, XNode<XVarInteger>[] trees, int[] values, Condition condition) {
+		problem.count(trVar(trees), values, trVar(condition));
 	}
 
 	@Override
