@@ -75,7 +75,7 @@ public abstract class StrongConsistency extends AC {
 			return false;
 		if (options.strongAC && solver.problem.nValueRemovals == nBefore)
 			return true;
-		if (options.strongOnce && solver.restarter.numRun % 60 != 0)
+		if (options.strongOnce && (solver.restarter.numRun + 1) % 60 != 0)
 			return true;
 		System.out.println("more");
 		return enforceMore();

@@ -262,7 +262,7 @@ public final class Solutions {
 				if (found > 0)
 					Color.GREEN.println("\nv", " " + xml.lastSolution());
 				Color.GREEN.println("\nd WRONG DECISIONS", " " + solver.stats.nWrongDecisions);
-				Color.GREEN.println("d NUMBER OF" + (fullExploration ? "" : " FOUND") + " SOLUTIONS", " " + found);
+				Color.GREEN.println("d FOUND SOLUTIONS", " " + found);
 				if (framework == COP && found > 0)
 					Color.GREEN.println("d BOUND " + bestBound);
 				if (fullExploration)
