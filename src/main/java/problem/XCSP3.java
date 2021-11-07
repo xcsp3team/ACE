@@ -762,6 +762,16 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	@Override
+	public void buildCtrCircuit(String id, XVarInteger[] list, int startIndex, int size) {
+		problem.circuit(trVars(list), startIndex, size);
+	}
+
+	@Override
+	public void buildCtrCircuit(String id, XVarInteger[] list, int startIndex, XVarInteger size) {
+		problem.circuit(trVars(list), startIndex, trVar(size));
+	}
+
+	@Override
 	public void buildCtrClause(String id, XVarInteger[] pos, XVarInteger[] neg) {
 		problem.clause(trVars(pos), trVars(neg));
 	}

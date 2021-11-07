@@ -2120,12 +2120,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public CtrEntity circuit(Var[] list, int startIndex, int size) {
-		return unimplemented("circuit"); // TODO just posting two constraints?
+		unimplementedIf(startIndex != 0, "circuit");
+		api.sum(IntStream.range(0, list.length).mapToObj(i -> api.ne(list[i], i)), null, api.condition(EQ, size));
+		return post(new Circuit(this, translate(list)));
 	}
 
 	@Override
 	public CtrEntity circuit(Var[] list, int startIndex, Var size) {
-		return unimplemented("circuit"); // TODO just posting two constraints?
+		unimplementedIf(startIndex != 0, "circuit");
+		api.sum(IntStream.range(0, list.length).mapToObj(i -> api.ne(list[i], i)), null, api.condition(EQ, size));
+		return post(new Circuit(this, translate(list)));
 	}
 
 	// ************************************************************************
