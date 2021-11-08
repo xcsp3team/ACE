@@ -1970,8 +1970,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity noOverlap(Var[] origins, int[] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
-		if (head.control.global.redundNoOverlap) { // we post redundant constraints (after introducing auxiliary
-													// variables)
+		if (head.control.global.redundNoOverlap) {
+			// we post redundant constraints (after introducing auxiliary variables)
 			Var[] aux = auxVarArray(origins.length, range(origins.length));
 			allDifferent(aux);
 			for (int i = 0; i < origins.length; i++)
@@ -2010,9 +2010,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity noOverlap(Var[][] origins, int[][] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
-		if (head.control.global.redundNoOverlap) { // we post two redundant cumulative constraints, and a global
-													// noOverlap
-			AssertionError e = new AssertionError("No overlap problem");
+		unimplementedIf(origins[0].length != 2, "noOverlap");
+		if (head.control.global.redundNoOverlap) {
+			// we post two redundant cumulative constraints, and a global noOverlap
 			Var[] ox = Stream.of(origins).map(t -> t[0]).toArray(Var[]::new), oy = Stream.of(origins).map(t -> t[1]).toArray(Var[]::new);
 			int[] tx = Stream.of(lengths).mapToInt(t -> t[0]).toArray(), ty = Stream.of(lengths).mapToInt(t -> t[1]).toArray();
 			int minX = Stream.of(ox).mapToInt(x -> ((Variable) x).dom.firstValue()).min().orElseThrow();
