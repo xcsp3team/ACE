@@ -19,6 +19,7 @@ import static utility.Kit.log;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -31,8 +32,10 @@ import org.xcsp.modeler.entities.VarEntities.VarArray;
 import org.xcsp.modeler.entities.VarEntities.VarEntity;
 
 import constraints.Constraint;
+import main.HeadExtraction;
 import problem.Problem;
 import solver.Solver.Stopping;
+import utility.Kit;
 import utility.Kit.Color;
 import variables.Variable;
 
@@ -247,30 +250,39 @@ public final class Solutions {
 	public void displayFinalResults() {
 		TypeFramework framework = solver.problem.framework;
 		boolean fullExploration = solver.stopping == Stopping.FULL_EXPLORATION;
-		synchronized (lock) {
-			if (!lock.get()) {
-				lock.set(true);
-				System.out.println();
-				if (found > 0 && solver.problem.variables.length <= solver.head.control.general.jsonLimit)
-					System.out.println("\n  Solution " + found + " in JSON format:\n" + lastSolutionInJsonFormat(false) + "\n");
-				if (fullExploration)
-					Color.GREEN.println(found == 0 ? "s UNSATISFIABLE" : framework == COP ? "s OPTIMUM FOUND" : "s SATISFIABLE");
-				else if (found == 0)
-					Color.RED.println("s UNKNOWN");
-				else
-					Color.GREEN.println("s SATISFIABLE");
-				if (found > 0)
-					Color.GREEN.println("\nv", " " + xml.lastSolution());
-				Color.GREEN.println("\nd WRONG DECISIONS", " " + solver.stats.nWrongDecisions);
-				Color.GREEN.println("d FOUND SOLUTIONS", " " + found);
-				if (framework == COP && found > 0)
-					Color.GREEN.println("d BOUND " + bestBound);
-				if (fullExploration)
-					Color.GREEN.println("d COMPLETE EXPLORATION");
-				else
-					Color.RED.println("d INCOMPLETE EXPLORATION");
-				System.out.println("\nc real time : " + solver.head.stopwatch.cpuTimeInSeconds());
-				System.out.flush();
+		if (solver.head instanceof HeadExtraction) {
+			HeadExtraction head = (HeadExtraction) solver.head;
+			for (List<Constraint> core : head.cores) {
+				Color.GREEN.println("\nc CORE",
+						" #C=" + core.size() + " #V=" + core.stream().collect(Collectors.toCollection(HashSet::new)).size() + " => { " + Kit.join(core) + " }");
+			}
+			Color.GREEN.println("d NRUNS " + head.nRuns);
+		} else {
+			synchronized (lock) {
+				if (!lock.get()) {
+					lock.set(true);
+					System.out.println();
+					if (solver.head.control.general.verbose >= 0 && found > 0 && solver.problem.variables.length <= solver.head.control.general.jsonLimit)
+						System.out.println("\n  Solution " + found + " in JSON format:\n" + lastSolutionInJsonFormat(false) + "\n");
+					if (fullExploration)
+						Color.GREEN.println(found == 0 ? "s UNSATISFIABLE" : framework == COP ? "s OPTIMUM FOUND" : "s SATISFIABLE");
+					else if (found == 0)
+						Color.RED.println("s UNKNOWN");
+					else
+						Color.GREEN.println("s SATISFIABLE");
+					if (!solver.head.control.general.xmlEachSolution && found > 0)
+						Color.GREEN.println("\nv", " " + xml.lastSolution());
+					Color.GREEN.println("\nd WRONG DECISIONS", " " + solver.stats.nWrongDecisions);
+					Color.GREEN.println("d FOUND SOLUTIONS", " " + found);
+					if (framework == COP && found > 0)
+						Color.GREEN.println("d BOUND " + bestBound);
+					if (fullExploration)
+						Color.GREEN.println("d COMPLETE EXPLORATION");
+					else
+						Color.RED.println("d INCOMPLETE EXPLORATION");
+					Kit.log.config("\nc real time : " + solver.head.stopwatch.cpuTimeInSeconds());
+					System.out.flush();
+				}
 			}
 		}
 	}
@@ -329,7 +341,7 @@ public final class Solutions {
 		if (solver.head.control.general.verbose > 1)
 			log.config(lastSolutionInJsonFormat(false) + "\n");
 		if (solver.head.control.general.verbose > 2 || solver.head.control.general.xmlEachSolution)
-			log.config("     " + xml.lastSolution());
+			Color.GREEN.println("v", " " + xml.lastSolution());
 		// solver.problem.api.prettyDisplay(vars_values(false, false).split("\\s+"));
 	}
 

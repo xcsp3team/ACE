@@ -174,8 +174,9 @@ public final class Control {
 		this.extraction = new OptionsExtraction();
 
 		general.verbose = general.verbose < 1 && general.trace.length() > 0 ? 1 : general.verbose;
-		control(0 <= general.verbose && general.verbose <= 3, () -> "Verbose must be in 0..3");
-		Kit.log.setLevel(general.verbose == 0 ? Level.CONFIG : general.verbose == 1 ? Level.FINE : general.verbose == 2 ? Level.FINER : Level.FINEST);
+		control(-1 <= general.verbose && general.verbose <= 3, () -> "Verbose must be in -1..3");
+		Kit.log.setLevel(general.verbose == -1 ? Level.OFF
+				: general.verbose == 0 ? Level.CONFIG : general.verbose == 1 ? Level.FINE : general.verbose == 2 ? Level.FINER : Level.FINEST);
 		control(0 <= lns.pFreeze && lns.pFreeze < 100, () -> "percentageOfVariablesToFreeze should be between 0 and 100 (excluded)");
 		control(learning.nogood == LearningNogood.NO || learning.nogood == LearningNogood.RST, "other values currently not available");
 		control(optimization.lb <= optimization.ub);
@@ -405,7 +406,7 @@ public final class Control {
 		public final boolean enableAnnotations = addB("enableAnnotations", "ea", false, "Enables annotations (currently, mainly concerns priority variables).");
 		public final int satisfactionLimit = addI("satisfactionLimit", "satl", PLUS_INFINITY_INT, "Converting the objective into a constraint with this limit");
 		public final long seed = addL("seed", "seed", 0, "The seed that can be used for some random-based methods.");
-		public int verbose = addI("verbose", "v", 0, "Verbosity level (value between 0 and 3)" + s_verbose);
+		public int verbose = addI("verbose", "v", 0, "Verbosity level (value between -1 and 3)" + s_verbose);
 	}
 
 	public class OptionsProblem extends OptionGroup {

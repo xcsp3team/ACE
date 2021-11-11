@@ -398,8 +398,8 @@ public class Head extends Thread {
 			try {
 				api = (ProblemAPI) Reflector.buildObject(Input.problemName);
 			} catch (Exception e) {
-				api = (ProblemAPI) Reflector.buildObject("problems." + Input.problemName); // is it still relevant to
-																							// try that?
+				api = (ProblemAPI) Reflector.buildObject("problems." + Input.problemName);
+				// is it still relevant to try that?
 			}
 		} catch (Exception e) {
 			return (Problem) Kit.exit("The class " + Input.problemName + " cannot be found.", e);

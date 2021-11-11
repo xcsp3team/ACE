@@ -1481,6 +1481,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public CtrEntity sum(XNode<IVar>[] trees, int[] coeffs, Condition condition) {
 		control(trees.length > 0, "A constraint sum is posted with a scope of 0 variable");
+		if (coeffs != null && IntStream.of(coeffs).anyMatch(c -> c == 0)) { // we discard useless terms, if any
+			int[] clone = coeffs.clone(); // to be able to use streams
+			return sum(IntStream.range(0, trees.length).filter(i -> clone[i] != 0).mapToObj(i -> trees[i]).toArray(XNode[]::new),
+					IntStream.of(coeffs).filter(c -> c != 0).toArray(), condition);
+		}
 		if (head.control.global.viewForSum && condition instanceof ConditionRel) {
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Object rightTerm = condition.rightTerm();
@@ -2373,6 +2378,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private ObjEntity optimize(TypeOptimization opt, TypeObjective type, XNode<IVar>[] trees, int[] coeffs) {
 		control(type != EXPRESSION && type != LEX && trees.length == coeffs.length && trees.length > 0);
+		if (IntStream.of(coeffs).anyMatch(c -> c == 0)) // we discard useless terms, if any is present
+			return optimize(opt, type, IntStream.range(0, trees.length).filter(i -> coeffs[i] != 0).mapToObj(i -> trees[i]).toArray(XNode[]::new),
+					IntStream.range(0, trees.length).filter(i -> coeffs[i] != 0).map(i -> coeffs[i]).toArray());
 		if (type == SUM && trees.length > 1)
 			return optimize(opt, type, translate(replaceByVariables(trees)), coeffs);
 		if (trees.length == 1) {

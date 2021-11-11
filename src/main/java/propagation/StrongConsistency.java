@@ -13,6 +13,7 @@ package propagation;
 import static utility.Kit.control;
 
 import solver.Solver;
+import utility.Kit;
 import variables.Variable;
 
 /**
@@ -77,7 +78,7 @@ public abstract class StrongConsistency extends AC {
 			return true;
 		if (options.strongOnce && (solver.restarter.numRun + 1) % 60 != 0)
 			return true;
-		System.out.println("more");
+		Kit.log.config("more");
 		return enforceMore();
 	}
 

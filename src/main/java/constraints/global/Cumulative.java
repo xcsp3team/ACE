@@ -411,7 +411,7 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 		long volume = this instanceof CumulativeCst ? ((CumulativeCst) this).volume : tasksVolume();
 		this.margin = horizon() * limit - volume;
 		if (margin < 0) { // it seems that we cannot limit (only use) this test at depth 0
-			System.out.println("margin " + margin + " " + horizon() + " " + limit);
+			Kit.log.config("margin " + margin + " " + horizon() + " " + limit);
 			return false;
 		}
 

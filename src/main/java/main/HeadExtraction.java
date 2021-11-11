@@ -15,9 +15,7 @@ import static utility.Kit.control;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import constraints.Constraint;
@@ -100,7 +98,7 @@ public final class HeadExtraction extends Head {
 
 	private CtrComparator ctrComparator = new CtrComparator();
 
-	private int nRuns, nCalls;
+	public int nRuns;
 
 	private class VarComparator implements Comparator<Variable> {
 		private List<Variable> core;
@@ -315,7 +313,7 @@ public final class HeadExtraction extends Head {
 		problem = buildProblem(i);
 		solver = buildSolver(problem);
 		Stopwatch stopwatch = new Stopwatch();
-		cores.clear(); // = new ArrayList<List<Constraint>>();
+		cores.clear();
 		for (int cnt = 0; cnt < control.extraction.nCores; cnt++) {
 			stopwatch.start();
 			buildOrInitializeStructures(cores);
@@ -327,9 +325,7 @@ public final class HeadExtraction extends Head {
 				minimalCoreOfVars();
 			List<Constraint> core = minimalCoreOfCtrs();
 			cores.add(core);
-			Kit.log.config("New Core " + (nCalls++) + " with #C=" + core.size() + ",#V=" + core.stream().collect(Collectors.toCollection(HashSet::new)).size()
-					+ " => { " + Kit.join(core) + " }");
-			Kit.log.config("in wck = " + (stopwatch.wckTimeInSeconds()) + " and nRuns = " + nRuns);
+			Kit.log.config("\tNew core in wck = " + (stopwatch.wckTimeInSeconds()) + " and nRuns = " + nRuns);
 		}
 	}
 

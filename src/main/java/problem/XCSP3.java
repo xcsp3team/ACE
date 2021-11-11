@@ -72,6 +72,7 @@ import org.xcsp.parser.entries.XVariables.XVarSymbolic;
 
 import dashboard.Control.OptionsGeneral;
 import dashboard.Input;
+import utility.Kit;
 import variables.DomainFinite.DomainSymbols;
 import variables.Variable;
 import variables.Variable.VariableInteger;
@@ -132,7 +133,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 			Input.nInstancesToSolve = filenames.size();
 		}
 		problem.parameters.get(0).setValue(name());
-		System.out.println();
+		Kit.log.config("");
 	}
 
 	@Override

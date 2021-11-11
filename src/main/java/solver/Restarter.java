@@ -65,7 +65,7 @@ public class Restarter implements ObserverOnRuns {
 		if ((numRun - solver.solutions.lastRun) % options.resetPeriod == 0) {
 			nRestartsSinceReset = 0;
 			baseCutoff = baseCutoff * options.resetCoefficient;
-			System.out.println("    ...resetting restart cutoff to " + baseCutoff);
+			Kit.log.config("    ...resetting restart cutoff to " + baseCutoff);
 		}
 		// we rerun propagation if a solution has just been found (since the objective constraint has changed), or if it
 		// must be forced anyway

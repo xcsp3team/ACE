@@ -33,6 +33,7 @@ import constraints.extension.CHybrid;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableHybrid;
 import dashboard.Output;
+import utility.Kit;
 import variables.Variable;
 
 /**
@@ -214,7 +215,7 @@ public final class Features {
 			if (mustDiscard(x))
 				return -1;
 			if (variables.isEmpty()) // first call
-				System.out.print(Output.COMMENT_PREFIX + "Loading variables...");
+				Kit.log.config(Output.COMMENT_PREFIX + "Loading variables...");
 			int num = variables.size();
 			printNumber(num);
 			variables.add(x);
@@ -231,7 +232,7 @@ public final class Features {
 		 */
 		public int add(Constraint c) {
 			if (constraints.isEmpty()) // first call
-				System.out.println("\n" + Output.COMMENT_PREFIX + "Loading constraints...");
+				Kit.log.config("\n" + Output.COMMENT_PREFIX + "Loading constraints...");
 			int num = constraints.size();
 			printNumber(num);
 			constraints.add(c);

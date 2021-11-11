@@ -127,7 +127,7 @@ public class Reinforcer {
 					break;
 				VariableInteger[] scp = IntStream.range(0, cliqueSize).mapToObj(i -> variables.get(clique[i])).sorted().toArray(VariableInteger[]::new);
 				cliques.add(scp);
-				System.out.println(" clique " + k + " of size " + scp.length + " {" + Kit.join(scp) + "}");
+				Kit.log.config(" clique " + k + " of size " + scp.length + " {" + Kit.join(scp) + "}");
 				assert controlClique(scp, constraints);
 				for (int i = 0; i <= set.limit; i++) // reinitialization of degrees
 					degrees[set.dense[i]] = countNeighboursAtLevel(variableNeighbours[set.dense[i]], 0, levels);
