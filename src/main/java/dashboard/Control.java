@@ -399,6 +399,7 @@ public final class Control {
 		public final int jsonLimit = addI("jsonLimit", "jl", 1000, "The limit on the number of variables for displaying solutions in JSON");
 		public final boolean jsonAux = addB("jsonAux", "ja", false, "Take auxiliary variables when displaying solutions in JSON");
 		public final String jsonSave = addS("jsonSave", "js", "", "Save the first solution in a file whose name is this value");
+		public final boolean jsonQuotes = addB("jsonQuotes", "jq", false, "Surround keys with quotes when solutions are displayed on the standard output");
 		public final boolean xmlCompact = addB("xmlCompact", "xc", true, "Compress values when displaying solutions in XML");
 		public final boolean xmlEachSolution = addB("xmlEachSolution", "xe", false, "During search, display all found solutions in XML");
 		public final boolean noPrintColors = addB("noPrintColors", "npc", false, "Don't use special color characters in the terminal");

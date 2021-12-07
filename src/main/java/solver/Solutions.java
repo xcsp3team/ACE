@@ -263,7 +263,8 @@ public final class Solutions {
 					lock.set(true);
 					System.out.println();
 					if (solver.head.control.general.verbose >= 0 && found > 0 && solver.problem.variables.length <= solver.head.control.general.jsonLimit)
-						System.out.println("\n  Solution " + found + " in JSON format:\n" + lastSolutionInJsonFormat(false) + "\n");
+						System.out.println(
+								"\n  Solution " + found + " in JSON format:\n" + lastSolutionInJsonFormat(solver.head.control.general.jsonQuotes) + "\n");
 					if (fullExploration)
 						Color.GREEN.println(found == 0 ? "s UNSATISFIABLE" : framework == COP ? "s OPTIMUM FOUND" : "s SATISFIABLE");
 					else if (found == 0)
@@ -275,7 +276,7 @@ public final class Solutions {
 					Color.GREEN.println("\nd WRONG DECISIONS", " " + solver.stats.nWrongDecisions);
 					Color.GREEN.println("d FOUND SOLUTIONS", " " + found);
 					if (framework == COP && found > 0)
-						Color.GREEN.println("d BOUND " + bestBound);
+						Color.GREEN.println("d BOUND", " " + bestBound);
 					if (fullExploration)
 						Color.GREEN.println("d COMPLETE EXPLORATION");
 					else
@@ -339,7 +340,7 @@ public final class Solutions {
 			}
 		}
 		if (solver.head.control.general.verbose > 1)
-			log.config(lastSolutionInJsonFormat(false) + "\n");
+			log.config(lastSolutionInJsonFormat(solver.head.control.general.jsonQuotes) + "\n");
 		if (solver.head.control.general.verbose > 2 || solver.head.control.general.xmlEachSolution)
 			Color.GREEN.println("v", " " + xml.lastSolution());
 		// solver.problem.api.prettyDisplay(vars_values(false, false).split("\\s+"));

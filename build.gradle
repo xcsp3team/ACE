@@ -11,7 +11,7 @@ java {
 //targetCompatibility = 1.11 
 
 archivesBaseName = "ACE"
-version = '1.0beta'
+version = '2.0beta'
  
 repositories {
  mavenCentral()
