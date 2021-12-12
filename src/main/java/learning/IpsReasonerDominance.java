@@ -19,6 +19,11 @@ import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
+/**
+ * This class allows us to record and reason with inconsistent partial states (IPSs), under the angle of dominance.
+ * 
+ * @author Christophe Lecoutre
+ */
 public final class IpsReasonerDominance extends IpsReasoner {
 
 	/**

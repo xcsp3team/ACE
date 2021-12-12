@@ -19,7 +19,7 @@ import java.util.stream.IntStream;
 import variables.Variable;
 
 /**
- * This abstract class allows us to manage past and future variables. It is used by solvers.
+ * This class allows us to manage past and future variables. It is used by solvers.
  * 
  * @author Christophe Lecoutre
  */

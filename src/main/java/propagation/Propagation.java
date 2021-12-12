@@ -25,7 +25,7 @@ import variables.Variable;
 
 /**
  * The is the root class for any object used to manage constraint propagation. For simplicity, propagation and
- * consistency concepts are not distinguished, So, some subclasses are given the name of consistencies.
+ * consistency concepts are not distinguished. So, some subclasses are given the name of consistencies.
  * 
  * @author Christophe Lecoutre
  */

@@ -21,6 +21,11 @@ import utility.Kit;
 import utility.Kit.ByteArrayHashKey;
 import variables.Variable;
 
+/**
+ * This class allows us to record and reason with inconsistent partial states (IPSs), under the angle of equivalence.
+ * 
+ * @author Christophe Lecoutre
+ */
 public final class IpsReasonerEquivalence extends IpsReasoner {
 
 	public final Map<ByteArrayHashKey, Integer> mapOfHashKeys;

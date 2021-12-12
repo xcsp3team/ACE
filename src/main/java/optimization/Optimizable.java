@@ -11,7 +11,7 @@
 package optimization;
 
 /**
- * An interface for any object (actually, a constraint) that can be used to represent an objective. (to be optimized).
+ * An interface for any object (actually, a constraint) that can be used to represent an objective.
  *
  * @author Christophe Lecoutre
  *
@@ -45,28 +45,32 @@ public interface Optimizable {
 	}
 
 	/**
-	 * Returns the minimal value of the objective that can be computed according to the initial domains of the involved variables.
+	 * Returns the minimal value of the objective that can be computed according to the initial domains of the involved
+	 * variables.
 	 * 
 	 * @return the minimal value of the objective that can be computed
 	 */
 	long minComputableObjectiveValue();
 
 	/**
-	 * Returns the maximal value of the objective that can be computed according to the initial domains of the involved variables.
+	 * Returns the maximal value of the objective that can be computed according to the initial domains of the involved
+	 * variables.
 	 * 
 	 * @return the maximal value of the objective that can be computed
 	 */
 	long maxComputableObjectiveValue();
 
 	/**
-	 * Returns the minimal value of the objective that can be computed according to the current domains of the involved variables.
+	 * Returns the minimal value of the objective that can be computed according to the current domains of the involved
+	 * variables.
 	 * 
 	 * @return the minimal value of the objective that can be currently computed
 	 */
 	long minCurrentObjectiveValue();
 
 	/**
-	 * Returns the maximal value of the objective that can be computed according to the current domains of the involved variables.
+	 * Returns the maximal value of the objective that can be computed according to the current domains of the involved
+	 * variables.
 	 * 
 	 * @return the maximal value of the objective that can be currently computed
 	 */

@@ -20,6 +20,11 @@ import solver.FutureVariables;
 import utility.Kit;
 import variables.Variable;
 
+/**
+ * This class allows us to extract inconsistent partial states (IPSs) from various operators.
+ * 
+ * @author Christophe Lecoutre
+ */
 public final class IpsExtractor {
 
 	/**

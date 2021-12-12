@@ -386,12 +386,12 @@ public final class Control {
 	}
 
 	public class OptionsGeneral extends OptionGroup {
-		String s_verbose = "\n\t0 : only some global statistics are listed ;" + "\n\t1 : in addition, solutions are  shown ;"
-				+ "\n\t2 : in addition, additionnal information about the problem instance to be solved is given ;"
+		String s_verbose = "\n\t0 : only some global statistics are listed;" + "\n\t1 : in addition, solutions are  shown;"
+				+ "\n\t2 : in addition, additionnal information about the problem instance to be solved is given;"
 				+ "\n\t3 : in addition, for each constraint, allowed or unallowed tuples are displayed.";
 
 		// below, -1 when not initialized
-		public long solLimit = addL("solLimit", "s", -1, "The limit on the number of found solutions before stopping; for no limit, use -s=all");
+		public long solLimit = addL("solLimit", "s", -1, "The limit on the number of found solutions before stopping; for no limit, use -s=all or s=-1");
 		public final long timeout = addL("timeout", "t", PLUS_INFINITY, "The limit in milliseconds before stopping; seconds can be indicated as in -t=10s");
 		public final String discardClasses = addS("discardClasses", "dc", "", "XCSP3 classes (tags) to be discarded (comma as separator)");
 		public final String campaignDir = addS("campaignDir", "cd", "", "Name of a campaign directory where results (XML files) are stored.");
@@ -414,7 +414,7 @@ public final class Control {
 		public final String data = addS("data", "", "", "Parameter similar to the one defined for " + org.xcsp.modeler.Compiler.class.getName());
 		public final String variant = addS("variant", "", "", "Parameter similar to the one defined for " + org.xcsp.modeler.Compiler.class.getName());
 		public final boolean shareBits = addB("shareBits", "", false, "Trying to save space by sharing bit vectors.");
-		public final SymmetryBreaking symmetryBreaking = addE("symmetryBreaking", "sb", NO, "Symmetry-breaking method (requires Saucy to be installed");
+		public final SymmetryBreaking symmetryBreaking = addE("symmetryBreaking", "sb", NO, "Symmetry-breaking method (requires Saucy to be installed)");
 	}
 
 	public class OptionsVariables extends OptionGroup {

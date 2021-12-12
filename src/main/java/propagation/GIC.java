@@ -27,7 +27,7 @@ import variables.Variable;
 
 /**
  * This is the class for Global Inverse Consistency (GIC). This kind of consistency is very strong as once enforced, it
- * guarantees that each literal (x,a) belongs to at least one solution. It can only be executes on some special
+ * guarantees that each literal (x,a) belongs to at least one solution. It can only be executed on some special
  * problems. For example, see "Computing and restoring global inverse consistency in interactive constraint
  * satisfaction", Artif. Intell. 241: 153-169 (2016) by C. Bessiere, H. Fargier, and C. Lecoutre.
  * 

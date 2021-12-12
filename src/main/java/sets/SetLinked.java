@@ -18,7 +18,7 @@ import java.util.function.Consumer;
  * indexes/elements is 0, 1, 2... , 9. One can remove indexes of the list. Then, one can iterate, in a forward way,
  * currently present indexes by using the methods <code> first </code> and <code> next </code>. Also, one can iterate,
  * in a backward way, currently present indexes by using the methods <code> last </code> and <code> prev </code>.
- * Initially, the set is full. On can iterate over deleted indexes by using the methods <code> lastRemoved </code> and
+ * Initially, the set is full. One can iterate over deleted indexes by using the methods <code> lastRemoved </code> and
  * <code> prevRemoved </code>. Each deleted index has an associated level that can be obtained by using the method
  * removedLevelOf. This kind of interface is notably used for managing the indexes of values of variable domains.
  * 

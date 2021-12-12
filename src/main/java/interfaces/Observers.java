@@ -26,7 +26,7 @@ public interface Observers {
 	interface ObserverOnConstruction {
 
 		/**
-		 * Celled before the main objects (problem and solver) are started to be built
+		 * Called before the main objects (problem and solver) are started to be built
 		 */
 		default void beforeAnyConstruction() {
 		}
