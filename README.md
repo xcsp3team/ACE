@@ -3,15 +3,15 @@
 <img width="35%" src="src/main/resources/logoAce.png" alt="logo"/>
 </div>
 
-ACE (AbsCon Essence) is an open-source Java-written Constraint Solver, developed by Christophe Lecoutre (CRIL).
+ACE (AbsCon Essence) is an open-source constraint solver developed by Christophe Lecoutre (CRIL) in Java.
 
 Current stable version of ACE is 2.0 (December 15, 2021).
 
 ACE focuses on:
 - integer variables, including 0/1 (Boolean) variables,
-- state-of-the-art table constraints, including ordinary, short, and smart table constraints,
-- popular global constraints (allDifferent, count, element, cardinality, etc.),
-- search heuristics (wdeg, impact, activity, last-conflict, cos, ...),
+- state-of-the-art table constraints, including ordinary, starred, and hybrid table constraints,
+- popular global constraints (AllDifferent, Count, Element, Cardinality, Cumulative, etc.),
+- search heuristics (wdeg, impact, last-conflict, BIVS, solution-saving, ...),
 - mono-criterion optimization
 
 ACE is distributed under License MIT
