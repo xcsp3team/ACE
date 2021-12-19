@@ -1838,31 +1838,35 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	/**
 	 * Builds a binary extension constraint because the vector is an array of integer values (and not variables).
 	 */
-	private CtrEntity element(int[] list, int startIndex, Var index, Var value, int startValue) {
+	private CtrEntity element(int[] list, int startIndex, Var index, TypeConditionOperatorRel op, Var value) {
 		List<int[]> l = new ArrayList<>();
 		Domain dx = ((Variable) index).dom, dz = ((Variable) value).dom;
 		for (int a = dx.first(); a != -1; a = dx.next(a)) {
 			int va = dx.toVal(a) - startIndex;
-			if (0 <= va && va < list.length && dz.containsValue(list[va] - startValue))
-				l.add(new int[] { va + startIndex, list[va] - startValue });
+			if (0 <= va && va < list.length) { // if valid value index a in dx
+				int v = list[va];
+				if (op == EQ) {
+					if (dz.containsValue(v))
+						l.add(new int[] { va + startIndex, v });
+				} else {
+					for (int b = dz.first(); b != -1; b = dz.next(b)) {
+						int vb = dz.toVal(b);
+						boolean valid = op == LT ? v < vb : op == LE ? v <= vb : op == GE ? v >= vb : op == GT ? v > vb : v != vb;
+						if (valid)
+							l.add(new int[] { va + startIndex, vb });
+					}
+				}
+			}
 		}
 		return extension(vars(index, value), org.xcsp.common.structures.Table.clean(l), true);
-	}
-
-	/**
-	 * Builds a binary extension constraint because the vector is an array of integer values (and not variables).
-	 */
-	private CtrEntity element(int[] list, int startIndex, Var index, TypeRank rank, Var value) {
-		unimplementedIf(rank != null && rank != TypeRank.ANY, "element");
-		return element(list, startIndex, index, value, 0);
 	}
 
 	@Override
 	public final CtrEntity element(int[] list, int startIndex, Var index, TypeRank rank, Condition condition) {
 		unimplementedIf(rank != null && rank != TypeRank.ANY, "element");
-		if (condition instanceof ConditionVar && ((ConditionRel) condition).operator == EQ)
-			return element(list, startIndex, index, rank, (Var) condition.rightTerm());
-		return unimplemented("element");
+		if (condition instanceof ConditionVar) // && ((ConditionRel) condition).operator == EQ)
+			return element(list, startIndex, index, ((ConditionRel) condition).operator, (Var) condition.rightTerm());
+		return unimplemented("element: " + startIndex + " " + condition);
 	}
 
 	private CtrEntity element(int[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, Var value) {

@@ -102,7 +102,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		 */
 		public Extension1(Problem pb, Variable x, int[] values, boolean positive) {
 			super(pb, new Variable[] { x });
-			assert values.length > 0 && Kit.isStrictlyIncreasing(values);
+			assert values.length > 0 && Kit.isStrictlyIncreasing(values) : "" + values.length;
 			this.values = values;
 			this.positive = positive;
 			defineKey(values, positive);
