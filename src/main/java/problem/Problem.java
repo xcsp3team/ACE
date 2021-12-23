@@ -133,6 +133,7 @@ import constraints.global.Among;
 import constraints.global.BinPacking.BinPackingEnergetic;
 import constraints.global.Cardinality;
 import constraints.global.Circuit;
+import constraints.global.Circuit2;
 import constraints.global.Count.CountCst.AtLeast1;
 import constraints.global.Count.CountCst.AtLeastK;
 import constraints.global.Count.CountCst.AtMost1;
@@ -2124,21 +2125,22 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public CtrEntity circuit(Var[] list, int startIndex) {
 		unimplementedIf(startIndex != 0, "circuit");
-		return post(new Circuit(this, translate(list)));
+		Variable[] vars = translate(list);
+		return post(head.control.global.circuit == 0 ? new Circuit(this, vars) : new Circuit2(this, vars));
 	}
 
 	@Override
 	public CtrEntity circuit(Var[] list, int startIndex, int size) {
 		unimplementedIf(startIndex != 0, "circuit");
 		api.sum(IntStream.range(0, list.length).mapToObj(i -> api.ne(list[i], i)), null, api.condition(EQ, size));
-		return post(new Circuit(this, translate(list)));
+		return circuit(list, startIndex);
 	}
 
 	@Override
 	public CtrEntity circuit(Var[] list, int startIndex, Var size) {
 		unimplementedIf(startIndex != 0, "circuit");
 		api.sum(IntStream.range(0, list.length).mapToObj(i -> api.ne(list[i], i)), null, api.condition(EQ, size));
-		return post(new Circuit(this, translate(list)));
+		return circuit(list, startIndex);
 	}
 
 	// ************************************************************************

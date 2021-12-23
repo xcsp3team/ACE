@@ -75,11 +75,8 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
-			return t[0] + w1 <= t[1] || t[1] + w2 <= t[0] || t[2] + h1 <= t[3] || t[3] + h2 <= t[2]; // x1+w1 <= x2 or
-																										// x2+w2 <= x1
-																										// or y1+h1 <=
-																										// y2 or y2+h2
-																										// <= y1
+			return t[0] + w1 <= t[1] || t[1] + w2 <= t[0] || t[2] + h1 <= t[3] || t[3] + h2 <= t[2];
+			// x1+w1 <= x2 or x2+w2 <= x1 or y1+h1 <= y2 or y2+h2 <= y1
 		}
 
 		public Disjonctive2D(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2, int w1, int w2, int h1, int h2) {

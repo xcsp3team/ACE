@@ -28,6 +28,7 @@ import variables.Variable;
  * @author Christophe Lecoutre
  */
 public final class Circuit2 extends AllDifferentComplete {
+	// This version is currently under development
 
 	@Override
 	public boolean isSatisfiedBy(int[] t) {
@@ -110,14 +111,17 @@ public final class Circuit2 extends AllDifferentComplete {
 		pheads.fill();
 		int nArcs = 0;
 		Arrays.fill(pred, false);
+		int nSelfLoops = 0;
 		for (int i = 0; i < scp.length; i++) {
 			if (doms[i].containsValue(i) == false)
 				minimalCircuitLength++;
 			if (doms[i].size() == 1) {
 				// if (pheads.contains(i)) pheads.remove(i);
 				int j = doms[i].singleValue();
-				if (i == j)
+				if (i == j) {
+					nSelfLoops++;
 					continue; // because auto-loop
+				}
 				nArcs++;
 				// if (pheads.contains(j)) pheads.remove(j);
 				if (pred[i] == false)
@@ -132,6 +136,9 @@ public final class Circuit2 extends AllDifferentComplete {
 				}
 			}
 		}
+		if (nSelfLoops == scp.length) // TODO: we should prune when all but two variables are self loops (using three
+										// residues?)
+			return false;
 		if (circuitNode != -1) {
 			if (!heads.isEmpty())
 				return false; // because a closed circuit and a separate chain

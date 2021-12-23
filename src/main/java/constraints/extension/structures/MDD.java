@@ -442,20 +442,22 @@ public final class MDD extends ExtensionStructure {
 		for (int i = 0; i < arity; i++) {
 			for (Node node : prevs.values()) {
 				for (Transition tr : nextTrs.get(node.state)) {
-					int v = Utilities.safeInt((Long) tr.value);
-					int a = c.doms[i].toIdx(v);
-					if (a != -1) {
-						String nextState = tr.end;
-						if (i == arity - 1) {
-							node.sons[a] = Utilities.indexOf(nextState, automaton.finalStates) != -1 ? nodeT : nodeF;
-						} else {
-							// MDDNode nextNode = nexts.computeIfAbsent(nextState, k -> new MDDNode(this, i + 1,
-							// domains[i].initSize(), true,
-							// nextState)); // pb with i not final
-							Node nextNode = nexts.get(nextState);
-							if (nextNode == null)
-								nexts.put(nextState, nextNode = new Node(i + 1, c.doms[i].initSize(), true, nextState));
-							node.sons[a] = nextNode;
+					int[] values = tr.value instanceof int[] ? (int[]) tr.value : new int[] { Utilities.safeInt((Long) tr.value) };
+					for (int v : values) {
+						int a = c.doms[i].toIdx(v);
+						if (a != -1) {
+							String nextState = tr.end;
+							if (i == arity - 1) {
+								node.sons[a] = Utilities.indexOf(nextState, automaton.finalStates) != -1 ? nodeT : nodeF;
+							} else {
+								// MDDNode nextNode = nexts.computeIfAbsent(nextState, k -> new MDDNode(this, i + 1,
+								// domains[i].initSize(), true,
+								// nextState)); // pb with i not final
+								Node nextNode = nexts.get(nextState);
+								if (nextNode == null)
+									nexts.put(nextState, nextNode = new Node(i + 1, c.doms[i].initSize(), true, nextState));
+								node.sons[a] = nextNode;
+							}
 						}
 					}
 				}

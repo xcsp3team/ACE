@@ -287,7 +287,7 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive {
 		protected boolean recursiveExploration(Node node) {
 			Domain dom = scp[node.level].dom;
 			boolean supported = false, finished = false;
-			if (dom.size() < node.nSonsNotNodeF()) {
+			if (dom.size() < node.nSonsNotNodeF() || node.sonsClasses == null) {
 				for (int a = dom.first(); a != -1 && !finished; a = dom.next(a)) {
 					if (explore(node.sons[a])) {
 						supported = true;

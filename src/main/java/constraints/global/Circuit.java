@@ -94,13 +94,13 @@ public final class Circuit extends AllDifferentComplete {
 			if (doms[i].containsValue(i) == false)
 				minimalCircuitLength++;
 		Arrays.fill(tmp, false);
-		int cnt = 0;
+		int nSelfLoops = 0;
 		for (int i = 0; i < scp.length; i++) {
 			if (doms[i].size() > 1 || tmp[i])
 				continue;
 			int j = doms[i].singleValue();
 			if (i == j) {
-				cnt++;
+				nSelfLoops++;
 				continue; // because self-loop
 			}
 			set.clear();
@@ -130,7 +130,7 @@ public final class Circuit extends AllDifferentComplete {
 				return entailed();
 			}
 		}
-		if (cnt == scp.length) // TODO: we should prune when all but two are self loops
+		if (nSelfLoops == scp.length) // TODO: we should prune when all but two variables are self loops
 			return false;
 		return true;
 	}

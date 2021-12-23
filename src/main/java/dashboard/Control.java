@@ -495,6 +495,7 @@ public final class Control {
 		public final int distinctVectors = addI("distinctVectors", "g_dv", 0, "Algorithm for DistinctVectors");
 		public final int allEqual = addI("allEqual", "g_ae", 0, "Algorithm for AllEqual");
 		public final int notAllEqual = addI("notAllEqual", "g_nae", 0, "Algorithm for NotAllEqual");
+		public final int circuit = addI("circuit", "g_circ", 0, "Algorithm for Circuit");
 		public final int noOverlap = addI("noOverlap", "g_no", 0, "Algorithm for NoOverlap");
 		public final boolean redundNoOverlap = addB("redundNoOverlap", "r_no", true, "Must we post redundant constraints for NoOverlap?");
 		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");
