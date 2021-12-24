@@ -1100,6 +1100,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrAlone regular(Var[] list, Automaton automaton) {
+		unimplementedIf(!automaton.isDeterministic(), "non deterministic automaton");
 		return post(new CMDDO(this, translate(list), automaton));
 	}
 

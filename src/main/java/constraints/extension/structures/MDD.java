@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.xcsp.common.Condition;
 import org.xcsp.common.Constants;
 import org.xcsp.common.Range;
 import org.xcsp.common.Utilities;
@@ -439,10 +440,13 @@ public final class MDD extends ExtensionStructure {
 		Map<String, List<Transition>> nextTrs = buildNextTransitions(automaton);
 		Map<String, Node> prevs = new HashMap<>(), nexts = new HashMap<>();
 		prevs.put((String) root.state, root);
+		Object allValues = c.doms[0].allValues(); // remember that all domains have the same type
+		int[] domValues = allValues instanceof Range ? ((Range) allValues).toArray() : (int[]) allValues;
 		for (int i = 0; i < arity; i++) {
 			for (Node node : prevs.values()) {
 				for (Transition tr : nextTrs.get(node.state)) {
-					int[] values = tr.value instanceof int[] ? (int[]) tr.value : new int[] { Utilities.safeInt((Long) tr.value) };
+					int[] values = tr.value instanceof Condition ? ((Condition) tr.value).filtering(domValues)
+							: new int[] { Utilities.safeInt((Long) tr.value) };
 					for (int v : values) {
 						int a = c.doms[i].toIdx(v);
 						if (a != -1) {
