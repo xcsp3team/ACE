@@ -1322,6 +1322,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return forall(range(matrix[0].length - 1), j -> lexSimple(api.columnOf(matrix, j), api.columnOf(matrix, j + 1), op));
 	}
 
+	@Override
+	public final CtrEntity precedence(Var[] list, int[] values, boolean covered) {
+		return unimplemented("precedence");
+	}
+
 	// ************************************************************************
 	// ***** Constraints Sum and Product
 	// ************************************************************************

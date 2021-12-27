@@ -463,6 +463,11 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		problem.lexMatrix(trVars2D(matrix), operator);
 	}
 
+	@Override
+	public void buildCtrPrecedence(String id, XVarInteger[] list, int[] values, boolean covered) {
+		problem.precedence(trVars(list), values, covered);
+	}
+
 	// ************************************************************************
 	// ***** Constraint Sum and Count
 	// ************************************************************************
