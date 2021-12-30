@@ -160,6 +160,7 @@ import constraints.global.NValues.NValuesCst.NValuesCstGE;
 import constraints.global.NValues.NValuesCst.NValuesCstLE;
 import constraints.global.NValues.NValuesVar;
 import constraints.global.NoOverlap;
+import constraints.global.Precedence;
 import constraints.global.Product.ProductSimple;
 import constraints.global.Sum.SumSimple;
 import constraints.global.Sum.SumSimple.SumSimpleGE;
@@ -1322,9 +1323,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return forall(range(matrix[0].length - 1), j -> lexSimple(api.columnOf(matrix, j), api.columnOf(matrix, j + 1), op));
 	}
 
+	private CtrEntity precedence(Var[] list, int s, int t) {
+		different(list[0], t);
+		return forall(new Range(1, list.length), i -> disjunction(api.ne(list[i], t), IntStream.range(0, i).mapToObj(j -> api.eq(list[j], s))));
+	}
+
 	@Override
 	public final CtrEntity precedence(Var[] list, int[] values, boolean covered) {
-		return unimplemented("precedence");
+		return post(new Precedence(this, translate(list), values, covered));
+
+		// return forall(range(values.length - 1), i -> precedence(list, values[i], values[i + 1]));
 	}
 
 	// ************************************************************************
