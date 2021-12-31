@@ -1385,7 +1385,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 		boolean only1 = coeffs[0] == 1 && coeffs[coeffs.length - 1] == 1; // if only 1 since sorted
 		if (op == EQ) {
-			boolean postTwoConstraints = false; // TODO hard coding for the moment
+			boolean postTwoConstraints = head.control.global.eqDecForSum;
 			if (postTwoConstraints) {
 				if (only1) {
 					post(new SumSimpleLE(this, list, limit));

@@ -500,6 +500,7 @@ public final class Control {
 		public final boolean redundNoOverlap = addB("redundNoOverlap", "r_no", true, "Must we post redundant constraints for NoOverlap?");
 		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");
 		public final boolean viewForSum = addB("viewForSum", "vs", false, "Must we use views for Sum constraints, when possible?");
+		public final boolean eqDecForSum = addB("eqDecForSum", "eqs", false, "Must we post two constraints for Sum constraints, when the operator is EQ?");
 		public final boolean permutation = addB("permutation", "", false, "Must we use permutation constraints for AllDifferent if possible? (may be faster)");
 		public final int allDifferentNb = addI("allDifferentNb", "adn", 0, "Number of possibly automatically inferred AllDifferent");
 		public final int allDifferentSize = addI("allDifferentSize", "ads", 5, "Limit on the size of possibly automatically inferred AllDifferent");
