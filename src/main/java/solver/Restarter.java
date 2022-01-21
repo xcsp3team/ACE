@@ -78,7 +78,8 @@ public class Restarter implements ObserverOnRuns {
 			nRestartsSinceReset = 0;
 		}
 		if (currCutoff != Long.MAX_VALUE) {
-			long offset = options.luby ? lubyCutoffFor(nRestartsSinceReset + 1) * 150 : (long) (baseCutoff * Math.pow(options.factor, nRestartsSinceReset));
+			long offset = options.luby ? lubyCutoffFor(nRestartsSinceReset + (long) 1) * 150
+					: (long) (baseCutoff * Math.pow(options.factor, nRestartsSinceReset));
 			currCutoff = measureSupplier.get() + offset;
 		}
 		nRestartsSinceReset++;

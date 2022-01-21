@@ -13,6 +13,7 @@ package solver;
 import static utility.Kit.control;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
@@ -230,6 +231,8 @@ public final class FutureVariables implements Iterable<Variable> {
 
 		@Override
 		public Variable next() {
+			if (!hasNext())
+				throw new NoSuchElementException();
 			Variable x = vars[cursor];
 			cursor = nexts[cursor];
 			return x;

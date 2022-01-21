@@ -45,6 +45,7 @@ import java.util.logging.StreamHandler;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -670,8 +671,8 @@ public final class Kit {
 		}
 
 		@Override
-		public boolean equals(Object object) {
-			return Arrays.equals(t, ((ByteArrayHashKey) object).t);
+		public boolean equals(Object obj) {
+			return obj != null && getClass() == obj.getClass() && Arrays.equals(t, ((ByteArrayHashKey) obj).t);
 		}
 	}
 
@@ -691,8 +692,8 @@ public final class Kit {
 		}
 
 		@Override
-		public boolean equals(Object object) {
-			return Arrays.equals(t, ((IntArrayHashKey) object).t);
+		public boolean equals(Object obj) {
+			return obj != null && getClass() == obj.getClass() && Arrays.equals(t, ((IntArrayHashKey) obj).t);
 		}
 	}
 
@@ -712,8 +713,8 @@ public final class Kit {
 		}
 
 		@Override
-		public boolean equals(Object object) {
-			return Arrays.equals(t, ((LongArrayHashKey) object).t);
+		public boolean equals(Object obj) {
+			return obj != null && getClass() == obj.getClass() && Arrays.equals(t, ((LongArrayHashKey) obj).t);
 		}
 	}
 
@@ -759,6 +760,8 @@ public final class Kit {
 	private static Document load(InputStream inputStream, URL schema) {
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, ""); // Compliant
+			factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, ""); // compliant
 			factory.setNamespaceAware(true);
 			if (schema != null)
 				factory.setSchema(SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema").newSchema(schema));

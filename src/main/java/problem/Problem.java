@@ -70,7 +70,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Condition;
-import org.xcsp.common.Condition.ConditionIntset;
 import org.xcsp.common.Condition.ConditionIntvl;
 import org.xcsp.common.Condition.ConditionRel;
 import org.xcsp.common.Condition.ConditionSet;
@@ -1440,30 +1439,32 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// then, we handle the cases when the condition involves a set operator (IN or NOTIN)
 		if (condition instanceof ConditionSet) {
 			TypeConditionOperatorSet op = ((ConditionSet) condition).operator;
-			int[] t = condition instanceof ConditionIntset ? (int[]) rightTerm : null;
-			int min = condition instanceof ConditionIntvl ? ((Range) rightTerm).start : t[0];
-			int max = condition instanceof ConditionIntvl ? ((Range) rightTerm).stop - 1 : t[t.length - 1];
-			if (op == TypeConditionOperatorSet.IN) {
-				boolean mdd = false; // hard coding for the moment
-				if (mdd)
-					return post(new CMDDO(this, translate(list), coeffs, rightTerm));
-				sum(list, coeffs, GE, min);
-				sum(list, coeffs, LE, max);
-				if (condition instanceof ConditionIntset) {
-					for (int v = t[0], index = 0; v < t[t.length - 1]; v++) {
+			if (op == TypeConditionOperatorSet.NOTIN) {
+				if (condition instanceof ConditionIntvl)
+					for (int v : ((Range) rightTerm))
+						sum(list, coeffs, NE, v);
+				else
+					for (int v : (int[]) rightTerm)
+						sum(list, coeffs, NE, v);
+			} else { // IN
+				// boolean mdd = false; // hard coding for the moment
+				// if (mdd)
+				// return post(new CMDDO(this, translate(list), coeffs, rightTerm));
+				if (condition instanceof ConditionIntvl) {
+					sum(list, coeffs, GE, ((Range) rightTerm).start);
+					sum(list, coeffs, LE, ((Range) rightTerm).stop - 1);
+				} else {
+					int[] t = (int[]) rightTerm;
+					int min = t[0], max = t[t.length - 1];
+					sum(list, coeffs, GE, min);
+					sum(list, coeffs, LE, max);
+					for (int v = min + 1, index = 1; v < max; v++) {
 						if (v < t[index])
 							sum(list, coeffs, NE, v);
 						else
 							index++;
 					}
 				}
-			} else { // NOTIN
-				if (condition instanceof ConditionIntvl)
-					for (int v = min; v <= max; v++)
-						sum(list, coeffs, NE, v);
-				else
-					for (int v : t)
-						sum(list, coeffs, NE, v);
 			}
 			return null; // null because several constraints // TODO returning a special value?
 		}
@@ -1829,7 +1830,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				if (0 <= va && va < list.length)
 					tmp.add((Variable) list[va]);
 				else
-					return (CtrAlone) unimplemented("element with an index (variable) with a bad value");
+					return (CtrAlone) unimplemented("element with an index (variable) with a bad value " + va + " " + index);
 			}
 			list = tmp.stream().toArray(Var[]::new);
 		}
@@ -2043,8 +2044,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			int maxX = IntStream.range(0, ox.length).map(i -> ((Variable) ox[i]).dom.lastValue() + tx[i]).max().orElseThrow();
 			int minY = Stream.of(oy).mapToInt(x -> ((Variable) x).dom.firstValue()).min().orElseThrow();
 			int maxY = IntStream.range(0, oy.length).map(i -> ((Variable) oy[i]).dom.lastValue() + ty[i]).max().orElseThrow();
-			cumulative(ox, tx, null, ty, api.condition(LE, maxY - minY));
-			cumulative(oy, ty, null, tx, api.condition(LE, maxX - minX));
+			cumulative(ox, tx, null, ty, api.condition(LE, maxY - (long) minY));
+			cumulative(oy, ty, null, tx, api.condition(LE, maxX - (long) minX));
 			post(new NoOverlap(this, translate(ox), tx, translate(oy), ty));
 		}
 

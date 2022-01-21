@@ -14,7 +14,6 @@ import static utility.Kit.control;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Constants;
@@ -409,7 +408,7 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 				}
 				if (compressible) {
 					long def = defaultWord == null ? 0 : (long) defaultWord, way = 0L; // way todo
-					masks[a] = LongStream.range(0, 2 + cnt).map(i -> i == 0 ? def : i == 1 ? way : maskCollect[(int) i - 2]).toArray();
+					masks[a] = IntStream.range(0, 2 + cnt).mapToLong(i -> i == 0 ? def : i == 1 ? way : maskCollect[i - 2]).toArray();
 				}
 			}
 		}

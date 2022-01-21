@@ -329,8 +329,8 @@ public class Reinforcer {
 			try {
 				Process p = Runtime.getRuntime().exec(cmd);
 				try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-					in.readLine();
-					String line = in.readLine().trim();
+					String line = in.readLine();
+					line = in.readLine().trim();
 					while (!line.equals("]")) {
 						List<int[]> generator = parseGenerator(line, nVariables);
 						if (generator.size() > 0)
@@ -342,10 +342,10 @@ public class Reinforcer {
 					p.destroy();
 					// Runtime.getRuntime().exec("rm " + graphFileName);
 				} catch (Exception e) {
-					e.printStackTrace();
+					Kit.exit(e);
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				Kit.exit(e);
 			}
 			return generators;
 		}

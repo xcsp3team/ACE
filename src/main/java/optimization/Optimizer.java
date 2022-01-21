@@ -272,23 +272,31 @@ public abstract class Optimizer implements ObserverOnRuns {
 	 * Sharing bounds between workers (when in portfolio mode)
 	 *********************************************************************************************/
 
-	private static Long sharedMinBound = Long.MIN_VALUE;
+	private static class MyLong {
+		Long value;
 
-	private static Long sharedMaxBound = Long.MAX_VALUE;
+		MyLong(Long v) {
+			this.value = v;
+		}
+	}
+
+	private static MyLong sharedMinBound = new MyLong(Long.MIN_VALUE);
+
+	private static MyLong sharedMaxBound = new MyLong(Long.MAX_VALUE);
 
 	public final boolean possiblyUpdateSharedBounds() {
 		if (!Input.portfolio)
 			return false;
 		boolean modified = false;
 		synchronized (sharedMinBound) {
-			if (minBound > sharedMinBound) {
-				sharedMinBound = minBound;
+			if (minBound > sharedMinBound.value) {
+				sharedMinBound.value = minBound;
 				modified = true;
 			}
 		}
 		synchronized (sharedMaxBound) {
-			if (maxBound < sharedMaxBound) {
-				sharedMaxBound = maxBound;
+			if (maxBound < sharedMaxBound.value) {
+				sharedMaxBound.value = maxBound;
 				modified = true;
 			}
 		}
@@ -300,14 +308,14 @@ public abstract class Optimizer implements ObserverOnRuns {
 			return false;
 		boolean modified = false;
 		synchronized (sharedMinBound) {
-			if (sharedMinBound > minBound) {
-				minBound = sharedMinBound.longValue();
+			if (sharedMinBound.value > minBound) {
+				minBound = sharedMinBound.value;
 				modified = true;
 			}
 		}
 		synchronized (sharedMaxBound) {
-			if (sharedMaxBound < maxBound) {
-				maxBound = sharedMaxBound.longValue();
+			if (sharedMaxBound.value < maxBound) {
+				maxBound = sharedMaxBound.value;
 				modified = true;
 			}
 		}

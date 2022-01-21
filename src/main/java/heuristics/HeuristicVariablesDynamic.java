@@ -16,14 +16,9 @@ import static heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighti
 import static utility.Kit.control;
 
 import java.util.Arrays;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import constraints.global.Sum;
-import constraints.global.Sum.SumSimple;
-import constraints.global.Sum.SumWeighted;
 import interfaces.Observers.ObserverOnAssignments;
 import interfaces.Observers.ObserverOnConflicts;
 import interfaces.Observers.ObserverOnRuns;
@@ -237,7 +232,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			alpha = ALPHA0;
 			if (options.weighting == CHS) { // smoothing
 				for (int i = 0; i < cscores.length; i++)
-					cscores[i] *= (Math.pow(SMOOTHING, time - ctime[i]));
+					cscores[i] *= (Math.pow(SMOOTHING, (double) time - ctime[i]));
 			}
 		}
 
@@ -282,18 +277,18 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 						Variable y = c.scp[futvars.dense[i]];
 						if (options.weighting == CACD) { // in this case, the increment is not 1 as for UNIT
 							Domain dom = y.dom;
-							boolean test = false; // EXPERIMENTAL ; this variant does not seem to be interesting
-							if (test) {
-								int depth = solver.depth();
-								int nRemoved = 0;
-								for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a)) {
-									if (dom.removedLevelOf(a) != depth)
-										break;
-									nRemoved++;
-								}
-								increment = 1.0 / (futvars.size() * (dom.size() + nRemoved));
-							} else
-								increment = 1.0 / (futvars.size() * (dom.size() == 0 ? 0.5 : dom.size()));
+							// boolean test = false; // EXPERIMENTAL ; this variant does not seem to be interesting
+							// if (test) {
+							// int depth = solver.depth();
+							// int nRemoved = 0;
+							// for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a)) {
+							// if (dom.removedLevelOf(a) != depth)
+							// break;
+							// nRemoved++;
+							// }
+							// increment = 1.0 / (futvars.size() * (dom.size() + nRemoved));
+							// } else
+							increment = 1.0 / (futvars.size() * (dom.size() == 0 ? 0.5 : dom.size()));
 						}
 						vscores[y.num] += increment;
 						cvscores[c.num][futvars.dense[i]] += increment;
@@ -316,16 +311,17 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					? Stream.of(solver.problem.constraints).map(c -> new double[c.scp.length]).toArray(double[][]::new)
 					: null;
 
-			boolean b = false; // EXPERIMENTAL (code to be finalized or discarded)
-			if (b && solver.problem.optimizer != null && solver.problem.optimizer.ctr instanceof Sum) {
-				Sum c = (Sum) solver.problem.optimizer.ctr;
-				int[] coeffs = c instanceof SumSimple ? null : ((SumWeighted) c).coeffs;
-				long[] gaps = IntStream.range(0, c.scp.length).mapToLong(i -> Math.abs((coeffs == null ? 1 : coeffs[i]) * c.scp[i].dom.distance())).toArray();
-				long minGap = LongStream.of(gaps).min().getAsLong();
-				for (int i = 0; i < c.scp.length; i++) {
-					vscores[c.scp[i].num] += 1 + gaps[i] - minGap; // Math.log(1 + gaps[i] - minGap) / Math.log(2);
-				}
-			}
+			// boolean b = false; // EXPERIMENTAL (code to be finalized or discarded)
+			// if (b && solver.problem.optimizer != null && solver.problem.optimizer.ctr instanceof Sum) {
+			// Sum c = (Sum) solver.problem.optimizer.ctr;
+			// int[] coeffs = c instanceof SumSimple ? null : ((SumWeighted) c).coeffs;
+			// long[] gaps = IntStream.range(0, c.scp.length).mapToLong(i -> Math.abs((coeffs == null ? 1 : coeffs[i]) *
+			// c.scp[i].dom.distance())).toArray();
+			// long minGap = LongStream.of(gaps).min().getAsLong();
+			// for (int i = 0; i < c.scp.length; i++) {
+			// vscores[c.scp[i].num] += 1 + gaps[i] - minGap; // Math.log(1 + gaps[i] - minGap) / Math.log(2);
+			// }
+			// }
 		}
 
 		@Override

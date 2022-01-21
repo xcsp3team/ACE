@@ -102,7 +102,7 @@ public final class Features {
 				return "[" + repartition.entrySet().stream().map(e -> e.getKey() + SEP + e.getValue()).collect(joining(JOIN)) + "]";
 			int half = DEFAULT_DISPLAY_LIMIT / 2;
 			String s1 = repartition.entrySet().stream().limit(half).map(e -> e.getKey() + SEP + e.getValue()).collect(joining(JOIN));
-			String s2 = repartition.entrySet().stream().skip(repartition.size() - half).map(e -> e.getKey() + SEP + e.getValue()).collect(joining(JOIN));
+			String s2 = repartition.entrySet().stream().skip(repartition.size() - (long) half).map(e -> e.getKey() + SEP + e.getValue()).collect(joining(JOIN));
 			return "[" + s1 + "..." + s2 + "]";
 		}
 	}

@@ -86,7 +86,7 @@ public final class KeyCanonizer {
 				if (label.equals(SUB_ABS) || TreeEvaluator.isSymmetric(label))
 					Arrays.sort(sons);
 				else if (sons.length == 2) {
-					TypeConditionOperatorRel operator = label == null ? null : Types.valueOf(TypeConditionOperatorRel.class, label);
+					TypeConditionOperatorRel operator = Types.valueOf(TypeConditionOperatorRel.class, label);
 					if (operator != null && Utilities.isInteger(sons[0].label) && !Utilities.isInteger(sons[1].label)) {
 						label = operator.arithmeticInversion().toString().toLowerCase();
 						Kit.swap(sons);

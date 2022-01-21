@@ -87,7 +87,7 @@ public class Head extends Thread {
 		if (fileName != null) {
 			String variantParallelName = Kit.attValueFor(Input.lastArgument(), Input.VARIANT_PARALLEL, Input.NAME);
 			String resultsFilename = head.control.general.campaignDir;
-			if (resultsFilename != "")
+			if (resultsFilename.length() != 0)
 				resultsFilename += File.separator;
 			resultsFilename += Output.RESULTS_DIRECTORY + File.separator + head.output.outputFileNameFrom(head.problem.name(), variantParallelName);
 			Kit.copy(fileName, resultsFilename);

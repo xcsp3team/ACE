@@ -77,12 +77,13 @@ public abstract class HeuristicValues extends Heuristic {
 		Term[] terms = new Term[Math.min(scp.length, 2 * LIM)];
 		if (terms.length == scp.length)
 			for (int i = 0; i < terms.length; i++)
-				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * scp[i].dom.distance(), scp[i]);
+				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * (long) scp[i].dom.distance(), scp[i]);
 		else {
 			for (int i = 0; i < LIM; i++)
-				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * scp[i].dom.distance(), scp[i]);
+				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * (long) scp[i].dom.distance(), scp[i]);
 			for (int i = 0; i < LIM; i++)
-				terms[LIM + i] = new Term((coeffs == null ? 1 : coeffs[scp.length - 1 - i]) * scp[scp.length - 1 - i].dom.distance(), scp[scp.length - 1 - i]);
+				terms[LIM + i] = new Term((coeffs == null ? 1 : coeffs[scp.length - 1 - i]) * (long) scp[scp.length - 1 - i].dom.distance(),
+						scp[scp.length - 1 - i]);
 		}
 		// we discard terms of small coeffs
 		terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new);
@@ -132,7 +133,7 @@ public abstract class HeuristicValues extends Heuristic {
 			Variable[] vars = prioritySumVars(c.scp, coeffs);
 			if (vars != null) {
 				for (Variable x : vars) {
-					int coeff = c instanceof SumSimple ? 1 : coeffs[c.positionOf(x)];
+					int coeff = coeffs == null ? 1 : coeffs[c.positionOf(x)];
 					boolean f = minimization && coeff >= 0 || !minimization && coeff < 0;
 					System.out.println("before " + x + " " + x.heuristic);
 					x.heuristic = f ? new First(x, false) : new Last(x, false); // the boolean is dummy

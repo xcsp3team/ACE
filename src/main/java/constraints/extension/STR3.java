@@ -100,7 +100,7 @@ public final class STR3 extends ExtensionSpecific implements TagPositive, Observ
 
 		public short[][][] subtablesShort; // short version
 
-		protected void buildSubtables() {
+		private void buildSubtables() {
 			Variable[] scp = firstRegisteredCtr().scp;
 			if (tuples.length >= Short.MAX_VALUE) {
 				List<Integer>[][] tmp = Variable.litterals(scp).listArray();

@@ -89,7 +89,7 @@ public final class Precedence extends ConstraintGlobal implements TagNotAC, TagC
 	 */
 	public Precedence(Problem pb, Variable[] list, int[] values, boolean covered) {
 		super(pb, list);
-		control(list.length > values.length && values.length > 1);
+		control((!covered || list.length > values.length) && values.length > 1);
 		this.r = scp.length;
 		this.k = values.length;
 		this.values = values;

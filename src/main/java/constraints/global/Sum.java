@@ -1070,7 +1070,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		}
 
 		public static final long weightedSum(int[] t, View[] views, int[] coeffs) {
-			assert t.length == coeffs.length && t.length == coeffs.length;
+			assert t.length == views.length && t.length == coeffs.length;
 			// note that no overflow control is performed here
 			long sum = 0;
 			for (int i = 0; i < t.length; i++)

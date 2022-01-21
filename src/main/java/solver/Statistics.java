@@ -177,7 +177,7 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 		}
 
 		public double failureAgedRate(Variable x) {
-			return (failedPerVariable[x.num] / (double) perVariable[x.num]) + (1 / (nFailedAssignments - lastFailed[x.num] + 1));
+			return (failedPerVariable[x.num] / (double) perVariable[x.num]) + (1 / (double) (nFailedAssignments - lastFailed[x.num] + 1));
 		}
 
 	}

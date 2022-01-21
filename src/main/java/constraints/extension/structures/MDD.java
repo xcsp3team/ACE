@@ -591,7 +591,7 @@ public final class MDD extends ExtensionStructure {
 		// TODO reordering transitions to guarantee that the src node has already been generated
 		for (Transition tr : transitions) {
 			Node node1 = nodes.get(tr.start);
-			long v = tr.value instanceof Integer ? (Integer) tr.value : (Long) tr.value;
+			long v = ((Number) tr.value).longValue(); // instanceof Integer ? (Integer) tr.value : (Long) tr.value;
 			int val = Utilities.safeInt(v);
 			int idx = domains[node1.level].toIdx(val);
 			control(idx != -1);
