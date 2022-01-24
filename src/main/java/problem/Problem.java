@@ -1575,7 +1575,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			int value = values[0];
 			VariableInteger[] scp = Stream.of(list).filter(x -> x.dom.containsValue(value) && x.dom.size() > 1).toArray(VariableInteger[]::new);
 			int k = l - (int) Stream.of(list).filter(x -> x.dom.containsOnlyValue(value)).count();
-			control(scp.length > 0 && 0 <= k && k <= scp.length);
+			control(scp.length > 0 && 0 <= k && k <= scp.length, Kit.join(scp) + " " + k);
 			if (op == LT)
 				return atMost(scp, value, k - 1);
 			if (op == LE)
@@ -2007,6 +2007,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i], xj = (Variable) origins[j];
 				int li = lengths[i], lj = lengths[j];
+				if (xi.dom.lastValue() + li <= xj.dom.firstValue() || xj.dom.lastValue() + lj <= xi.dom.firstValue())
+					continue;
 				if (head.control.global.noOverlap == INTENSION_DECOMPOSITION)
 					intension(or(le(add(xi, li), xj), le(add(xj, lj), xi)));
 				else if (head.control.global.noOverlap == EXTENSION_HYBRID)
@@ -2053,6 +2055,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i][0], xj = (Variable) origins[j][0], yi = (Variable) origins[i][1], yj = (Variable) origins[j][1];
 				int wi = lengths[i][0], wj = lengths[j][0], hi = lengths[i][1], hj = lengths[j][1];
+				if (xi.dom.lastValue() + wi <= xj.dom.firstValue() || xj.dom.lastValue() + wj <= xi.dom.firstValue())
+					continue;
+				if (yi.dom.lastValue() + hi <= yj.dom.firstValue() || yj.dom.lastValue() + hj <= yi.dom.firstValue())
+					continue;
 				if (head.control.global.noOverlap == INTENSION_DECOMPOSITION)
 					// VERY expensive
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
