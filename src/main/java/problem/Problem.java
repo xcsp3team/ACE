@@ -2040,6 +2040,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		unimplementedIf(origins[0].length != 2, "noOverlap");
 		if (head.control.global.redundNoOverlap) {
 			// we post two redundant cumulative constraints, and a global noOverlap
+			// TODO post only if pressure is high (related to number of continues below)
 			Var[] ox = Stream.of(origins).map(t -> t[0]).toArray(Var[]::new), oy = Stream.of(origins).map(t -> t[1]).toArray(Var[]::new);
 			int[] tx = Stream.of(lengths).mapToInt(t -> t[0]).toArray(), ty = Stream.of(lengths).mapToInt(t -> t[1]).toArray();
 			int minX = Stream.of(ox).mapToInt(x -> ((Variable) x).dom.firstValue()).min().orElseThrow();
@@ -2048,7 +2049,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			int maxY = IntStream.range(0, oy.length).map(i -> ((Variable) oy[i]).dom.lastValue() + ty[i]).max().orElseThrow();
 			cumulative(ox, tx, null, ty, api.condition(LE, maxY - (long) minY));
 			cumulative(oy, ty, null, tx, api.condition(LE, maxX - (long) minX));
-			post(new NoOverlap(this, translate(ox), tx, translate(oy), ty));
+			post(new NoOverlap(this, translate(ox), tx, translate(oy), ty)); // may be very expensive
 		}
 
 		for (int i = 0; i < origins.length; i++)

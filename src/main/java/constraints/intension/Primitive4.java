@@ -99,6 +99,10 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
+			if (dx1.lastValue() + w1 <= dx2.firstValue() || dx2.lastValue() + w2 <= dx1.firstValue())
+				return entailed();
+			if (dy1.lastValue() + h1 <= dy2.firstValue() || dy2.lastValue() + h2 <= dy1.firstValue())
+				return entailed();
 			int minx1 = dx1.firstValue() + w1, minx2 = dx2.firstValue() + w2;
 			int miny1 = dy1.firstValue() + h1, miny2 = dy2.firstValue() + h2;
 			boolean bx1 = minx1 <= dx2.lastValue(), bx2 = minx2 <= dx1.lastValue();

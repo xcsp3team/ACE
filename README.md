@@ -21,13 +21,14 @@ ACE is distributed under License MIT
 For some general information about the structure of the code of the solver ACE, see this [short guide](https://github.com/xcsp3team/ace/blob/main/shortGuide.pdf). 
 
 
+
 ## Building a JAR
 
 1. clone the repository:  
    `git clone https://github.com/xcsp3team/ace.git`
 1. change directory:  
    `cd ace`
-1. run Gradle (of course, you need Gradle to be installed):  
+1. run Gradle (of course, you need Gradle to be installed; version > v7.0):  
    `gradle build -x test`  
 1. test the JAR:  
    `java -jar build/libs/ACE-YY-MM.jar`   

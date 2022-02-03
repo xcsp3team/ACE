@@ -29,6 +29,7 @@ import variables.Variable;
  * @author Christophe Lecoutre
  */
 public final class Precedence extends ConstraintGlobal implements TagNotAC, TagCallCompleteFiltering, ObserverOnBacktracksSystematic {
+	// TODO: replace size by left and right to reason from both sides
 
 	@Override
 	public boolean isSatisfiedBy(int[] t) {
@@ -57,15 +58,23 @@ public final class Precedence extends ConstraintGlobal implements TagNotAC, TagC
 		reinit = true;
 	}
 
-	private final int r, k;
+	/**
+	 * The arity of the constraint
+	 */
+	private final int r;
+
+	/**
+	 * The number of involved values
+	 */
+	private final int k;
 
 	private int[] values;
 
 	private boolean covered;
 
 	/**
-	 * The number of values that still must be considered because possibly assigned (those at indexes ranging from 0 to
-	 * size-1)
+	 * The number of values that still must be considered (those at indexes ranging from 0 to size-1) because of
+	 * possibly assigned values
 	 */
 	private int size;
 
