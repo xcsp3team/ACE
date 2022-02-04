@@ -392,6 +392,11 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 			}
 
 			@Override
+			public boolean isGuaranteedAC() {
+				return false;
+			}
+
+			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about AC Guaranteed?
 					int v1 = dx.firstValue() * dy.firstValue(), v2 = dx.firstValue() * dy.lastValue();
