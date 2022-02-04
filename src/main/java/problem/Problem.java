@@ -2100,6 +2100,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
+			if (origins.length == 1) {
+				if (heights[0] == 0 || heights[0] < limit + (op == LT ? 0 : 1))
+					return null; // discarded constraint because initially entailed // return CtrTrue ?
+				return post(new CtrFalse(this, translate(origins), "Unary Cumulative"));
+			}
 			return post(new CumulativeCst(this, translate(origins), lengths, heights, op == LT ? limit + 1 : limit));
 		}
 		return unimplemented("cumulative");
