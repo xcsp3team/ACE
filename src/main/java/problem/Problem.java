@@ -130,6 +130,7 @@ import constraints.global.AllDifferent.AllDifferentWeak;
 import constraints.global.AllEqual;
 import constraints.global.Among;
 import constraints.global.BinPacking.BinPackingEnergetic;
+import constraints.global.BinPacking.BinPackingEnergeticLoad;
 import constraints.global.Cardinality;
 import constraints.global.Circuit;
 import constraints.global.Circuit2;
@@ -1497,6 +1498,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public CtrEntity sum(XNode<IVar>[] trees, int[] coeffs, Condition condition) {
 		control(trees.length > 0, "A constraint sum is posted with a scope of 0 variable");
+
 		if (coeffs != null && IntStream.of(coeffs).anyMatch(c -> c == 0)) { // we discard useless terms, if any
 			int[] clone = coeffs.clone(); // to be able to use streams
 			return sum(IntStream.range(0, trees.length).filter(i -> clone[i] != 0).mapToObj(i -> trees[i]).toArray(XNode[]::new),
@@ -2130,8 +2132,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Variable[] vars = translate(list);
 		boolean sameType = Variable.haveSameDomainType(vars);
 		if (!sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
-			int[] values = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).toArray();
-			return forall(range(values.length), v -> sum(Stream.of(list).map(x -> api.eq(x, v)), sizes, condition));
+			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).toArray();
+			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, condition));
 			// TODO add nValues ? other ?
 		}
 		if (condition instanceof ConditionVal) {
@@ -2143,6 +2145,21 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 																									// other ?
 		}
 		return unimplemented("binPacking");
+	}
+
+	public final CtrEntity binpacking(Var[] list, int[] sizes, Condition[] conditions, int startIndex) {
+		control(Stream.of(conditions).allMatch(c -> c instanceof ConditionVar && ((ConditionVar) c).operator == EQ));
+		Variable[] vars = translate(list);
+		boolean sameType = Variable.haveSameDomainType(vars);
+		if (!sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
+			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).toArray();
+			control(bins.length == conditions.length);
+			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, conditions[i]));
+			// TODO add nValues ? other ?
+		}
+
+		Variable[] loads = Stream.of(conditions).map(c -> ((ConditionVar) c).x).toArray(Variable[]::new);
+		return post(new BinPackingEnergeticLoad(this, vars, sizes, loads)); // limit - (op == LT ? 1 : 0)));
 	}
 
 	// ************************************************************************

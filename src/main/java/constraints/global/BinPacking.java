@@ -15,6 +15,8 @@ import static utility.Kit.control;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
+import org.xcsp.common.Range;
+
 import constraints.ConstraintGlobal;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagNotAC;
@@ -33,10 +35,10 @@ import variables.Variable;
  * @author Christophe Lecoutre
  */
 public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
-	// TODO both suclasses are call filtering-complete? to check and test
+	// TODO both subclasses are call filtering-complete? to check and test
 
 	@Override
-	public final boolean isSatisfiedBy(int[] t) {
+	public boolean isSatisfiedBy(int[] t) {
 		Arrays.fill(sums, 0);
 		for (int i = 0; i < t.length; i++)
 			sums[scp[i].dom.toIdx(t[i])] += sizes[i];
@@ -45,6 +47,16 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 				return false;
 		return true;
 	}
+
+	/**
+	 * The number of items to be put in the bins
+	 */
+	protected int nItems;
+
+	/**
+	 * The number of bins
+	 */
+	protected int nBins;
 
 	/**
 	 * sizes[i] is the size of the ith item
@@ -63,10 +75,13 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 
 	public BinPacking(Problem pb, Variable[] scp, int[] sizes, int[] limits) {
 		super(pb, scp);
-		control(scp.length >= 2 && Variable.haveSameDomainType(scp)); // TODO to be relaxed when possible
+		this.nItems = sizes.length;
+		this.nBins = scp[0].dom.initSize();
+		control(sizes.length >= 2 && Variable.haveSameDomainType(IntStream.range(0, nItems).mapToObj(i -> scp[i]).toArray(Variable[]::new)));
+		control(scp[0].dom.initiallyExactly(new Range(0, scp[0].dom.initSize())));
+		// TODO second condition above to be relaxed when possible
 		this.sizes = sizes;
 		this.limits = limits;
-		int nBins = scp[0].dom.initSize();
 		this.sums = new long[nBins];
 		defineKey(sizes, limits);
 	}
@@ -117,7 +132,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 
 	}
 
-	public static final class BinPackingEnergetic extends BinPacking implements ObserverOnBacktracksSystematic {
+	public static class BinPackingEnergetic extends BinPacking implements ObserverOnBacktracksSystematic {
 
 		@Override
 		public void afterProblemConstruction(int n) {
@@ -166,10 +181,9 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 
 		public BinPackingEnergetic(Problem pb, Variable[] scp, int[] sizes, int[] limits) {
 			super(pb, scp, sizes, limits);
-			int nBins = scp[0].dom.initSize();
 			this.bins = IntStream.range(0, nBins).mapToObj(i -> new Bin()).toArray(Bin[]::new);
 			this.sortedBins = bins.clone();
-			this.fronts = IntStream.range(0, nBins).mapToObj(i -> new SetDense(scp.length)).toArray(SetDense[]::new);
+			this.fronts = IntStream.range(0, nBins).mapToObj(i -> new SetDense(sizes.length)).toArray(SetDense[]::new);
 		}
 
 		public BinPackingEnergetic(Problem pb, Variable[] scp, int[] sizes, int limit) {
@@ -185,7 +199,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 				sortedBins[j] = bins[i];
 			}
 			// updating the capacity of bins
-			for (int i = 0; i < scp.length; i++)
+			for (int i = 0; i < nItems; i++)
 				if (scp[i].dom.size() == 1) {
 					bins[scp[i].dom.single()].capacity -= sizes[i]; // the capacity is updated
 					// if (bins[scp[i].dom.unique()].capacity < 0) // TODO why it does not work ? because we update
@@ -201,13 +215,13 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 				Arrays.sort(sortedBins, 0, sortLimit, (b1, b2) -> Integer.compare(b1.capacity, b2.capacity)); // increasing
 																												// sort
 				if (sortedBins[0].capacity < 0)
-					return x.dom.fail(); // TODO 1: moving it at line 112 (avoid the first sort) ?
+					return x.dom.fail(); // TODO 1: moving it earlier (avoid the first sort) ?
 				for (SetDense set : fronts) // TODO 2: only clearing from 0 to usableBins.limit ?
 					set.clear();
 				// for (int ii = futvars.limit; ii >= 0; ii--) {
 				// int p = futvars.dense[ii];
-				for (int p = 0; p < scp.length; p++) { // TODO 3: only iterating over future variables? (but the
-														// condition remains)
+				for (int p = 0; p < nItems; p++) { // TODO 3: only iterating over future variables? (but the
+													// condition remains)
 					Domain dom = scp[p].dom;
 					if (dom.size() == 1)
 						continue; // because already considered (when reducing the appropriate bin capacity)
@@ -300,7 +314,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 
 			// we look for the index of the smallest free item, and also compute the min and max usable bin numbers
 			int smallestFreeItem = -1, minUsableBin = Integer.MAX_VALUE, maxUsableBin = -1;
-			for (int i = 0; i < scp.length; i++) {
+			for (int i = 0; i < nItems; i++) {
 				if (scp[i].dom.size() > 1) {
 					if (smallestFreeItem == -1)
 						smallestFreeItem = i;
@@ -323,4 +337,55 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 			return true;
 		}
 	}
+
+	public static final class BinPackingEnergeticLoad extends BinPackingEnergetic {
+		// TODO : to be finalized
+
+		@Override
+		public final boolean isSatisfiedBy(int[] t) {
+			Arrays.fill(sums, 0);
+			for (int i = 0; i < nItems; i++)
+				sums[scp[i].dom.toIdx(t[i])] += sizes[i];
+			for (int i = 0; i < sums.length; i++)
+				if (sums[i] != t[nItems + i])
+					return false;
+			return true;
+		}
+
+		private Variable[] loads;
+
+		@Override
+		public boolean runPropagator(Variable x) {
+			for (int i = 0; i < nBins; i++)
+				limits[i] = loads[i].dom.lastValue();
+			if (super.runPropagator(x) == false)
+				return false;
+			Arrays.fill(sums, 0);
+			for (int i = 0; i < nItems; i++)
+				if (scp[i].dom.size() == 1)
+					sums[scp[i].dom.single()] += sizes[i];
+			for (int i = 0; i < nBins; i++) {
+				long currentFill = sums[i];
+				if (loads[i].dom.size() == 1) {
+					int cap = loads[i].dom.singleValue();
+					for (int j = 0; j < nItems; j++)
+						if (scp[j].dom.size() > 1 && currentFill + sizes[j] > cap)
+							if (scp[j].dom.removeIfPresent(i) == false)
+								return false;
+				} else {
+					if (loads[i].dom.removeValuesLT(currentFill) == false)
+						return false;
+				}
+			}
+			return true;
+		}
+
+		public BinPackingEnergeticLoad(Problem pb, Variable[] list, int[] sizes, Variable[] loads) {
+			super(pb, pb.vars(list, loads), sizes, new int[loads.length]);
+			control(list.length == sizes.length && nBins == loads.length && scp.length == list.length + loads.length);
+			this.loads = loads;
+		}
+
+	}
+
 }

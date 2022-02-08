@@ -758,6 +758,11 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		problem.binpacking(trVars(list), sizes, trVar(condition));
 	}
 
+	@Override
+	public void buildCtrBinPacking(String id, XVarInteger[] list, int[] sizes, Condition[] conditions, int startIndex) {
+		problem.binpacking(trVars(list), sizes, Stream.of(conditions).map(c -> trVar(c)).toArray(Condition[]::new), startIndex);
+	}
+
 	// ************************************************************************
 	// ***** Constraint Circuit, Clause and Instantiation
 	// ************************************************************************
