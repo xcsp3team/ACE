@@ -76,9 +76,9 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 	public BinPacking(Problem pb, Variable[] scp, int[] sizes, int[] limits) {
 		super(pb, scp);
 		this.nItems = sizes.length;
-		this.nBins = scp[0].dom.initSize();
-		control(sizes.length >= 2 && Variable.haveSameDomainType(IntStream.range(0, nItems).mapToObj(i -> scp[i]).toArray(Variable[]::new)));
-		control(scp[0].dom.initiallyExactly(new Range(0, scp[0].dom.initSize())));
+		this.nBins = limits.length;
+		control(nItems >= 2 && Variable.haveSameDomainType(IntStream.range(0, nItems).mapToObj(i -> scp[i]).toArray(Variable[]::new)));
+		control(nBins == scp[0].dom.initSize() && scp[0].dom.initiallyExactly(new Range(0, nBins)));
 		// TODO second condition above to be relaxed when possible
 		this.sizes = sizes;
 		this.limits = limits;
@@ -339,7 +339,8 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 	}
 
 	public static final class BinPackingEnergeticLoad extends BinPackingEnergetic {
-		// TODO : to be finalized
+
+		private final SetDense freeItems;
 
 		@Override
 		public final boolean isSatisfiedBy(int[] t) {
@@ -356,25 +357,72 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 
 		@Override
 		public boolean runPropagator(Variable x) {
+			// we call the super propagator after setting the highest possible limits
 			for (int i = 0; i < nBins; i++)
 				limits[i] = loads[i].dom.lastValue();
 			if (super.runPropagator(x) == false)
 				return false;
+
 			Arrays.fill(sums, 0);
+			freeItems.clear();
 			for (int i = 0; i < nItems; i++)
 				if (scp[i].dom.size() == 1)
 					sums[scp[i].dom.single()] += sizes[i];
+				else
+					freeItems.add(i);
 			for (int i = 0; i < nBins; i++) {
 				long currentFill = sums[i];
 				if (loads[i].dom.size() == 1) {
-					int cap = loads[i].dom.singleValue();
-					for (int j = 0; j < nItems; j++)
-						if (scp[j].dom.size() > 1 && currentFill + sizes[j] > cap)
-							if (scp[j].dom.removeIfPresent(i) == false)
-								return false;
+					int load = loads[i].dom.singleValue();
+					int possibleExtent = 0;
+					int minSize = 0;
+					for (int k = freeItems.limit; k >= 0; k--) {
+						int j = freeItems.dense[k];
+						if (scp[j].dom.containsValue(i)) {
+							if (currentFill + sizes[j] > load) {
+								if (scp[j].dom.removeValue(i) == false)
+									return false;
+							} else {
+								possibleExtent += sizes[j];
+								minSize = Math.min(minSize, sizes[j]);
+							}
+						}
+					}
+					if (currentFill + possibleExtent < load)
+						return x.dom.fail();
+					if (currentFill + possibleExtent == load) {
+						for (int k = freeItems.limit; k >= 0; k--) {
+							int j = freeItems.dense[k];
+							if (scp[j].dom.containsValue(i))
+								scp[j].dom.reduceTo(i);
+						}
+					} else if (currentFill + possibleExtent - minSize < load)
+						return x.dom.fail();
 				} else {
 					if (loads[i].dom.removeValuesLT(currentFill) == false)
 						return false;
+					int loadMin = loads[i].dom.firstValue();
+					int loadMax = loads[i].dom.lastValue();
+					int possibleExtent = 0;
+					for (int k = freeItems.limit; k >= 0; k--) {
+						int j = freeItems.dense[k];
+						if (scp[j].dom.containsValue(i)) {
+							if (currentFill + sizes[j] > loadMax) {
+								if (scp[j].dom.removeValue(i) == false)
+									return false;
+							} else
+								possibleExtent += sizes[j];
+						}
+					}
+					if (currentFill + possibleExtent < loadMin)
+						return x.dom.fail();
+					if (currentFill + possibleExtent == loadMin) {
+						for (int k = freeItems.limit; k >= 0; k--) {
+							int j = freeItems.dense[k];
+							if (scp[j].dom.containsValue(i))
+								scp[j].dom.reduceTo(i);
+						}
+					}
 				}
 			}
 			return true;
@@ -384,6 +432,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 			super(pb, pb.vars(list, loads), sizes, new int[loads.length]);
 			control(list.length == sizes.length && nBins == loads.length && scp.length == list.length + loads.length);
 			this.loads = loads;
+			this.freeItems = new SetDense(nItems);
 		}
 
 	}
