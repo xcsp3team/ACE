@@ -695,6 +695,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 *            the variable that has been explicitly assigned
 	 */
 	public final void doPastVariable(Variable x) {
+		// if (!ignored)
 		if (positions != null)
 			((SetSparse) futvars).remove(positions[x.num]);
 		else
@@ -714,8 +715,10 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 *            the variable that is no more explicitly assigned
 	 */
 	public final void undoPastVariable(Variable x) {
+		// if (!ignored) {
 		assert x.assigned() && scp[futvars.dense[futvars.size()]] == x;
 		futvars.limit++;
+		// }
 	}
 
 	/**

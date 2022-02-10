@@ -20,7 +20,8 @@ import problem.Problem;
 import variables.Variable;
 
 /**
- * This root class is used when the objective of the problem (constraint network) is given by a variable whose value must be minimized or maximized.
+ * This root class is used when the objective of the problem (constraint network) is given by a variable whose value
+ * must be minimized or maximized.
  *
  * @author Christophe Lecoutre
  *
@@ -65,7 +66,7 @@ public abstract class ObjectiveVariable extends ConstraintGlobal implements Opti
 	/**
 	 * The variable to be optimized (minimized or maximized)
 	 */
-	protected Variable x;
+	public final Variable x;
 
 	/**
 	 * The current limit used for optimization
@@ -73,7 +74,8 @@ public abstract class ObjectiveVariable extends ConstraintGlobal implements Opti
 	protected long limit;
 
 	/**
-	 * Builds an objective for the specified problem represented by the specified variable, with initially the specified limit
+	 * Builds an objective for the specified problem represented by the specified variable, with initially the specified
+	 * limit
 	 * 
 	 * @param pb
 	 *            the problem to which the objective is attached
@@ -89,8 +91,9 @@ public abstract class ObjectiveVariable extends ConstraintGlobal implements Opti
 	}
 
 	/**
-	 * The class for an objective variable that must be minimized. To enforce convergence, the limit is updated at each new solution and the constraint enforces
-	 * that the value of the variable is less than or equal to the current limit.
+	 * The class for an objective variable that must be minimized. To enforce convergence, the limit is updated at each
+	 * new solution and the constraint enforces that the value of the variable is less than or equal to the current
+	 * limit.
 	 */
 	public static final class ObjVarLE extends ObjectiveVariable {
 
@@ -114,8 +117,9 @@ public abstract class ObjectiveVariable extends ConstraintGlobal implements Opti
 	}
 
 	/**
-	 * The class for an objective variable that must be maximized. To enforce convergence, the limit is updated at each new solution and the constraint enforces
-	 * that the value of the variable is greater than or equal to the current limit.
+	 * The class for an objective variable that must be maximized. To enforce convergence, the limit is updated at each
+	 * new solution and the constraint enforces that the value of the variable is greater than or equal to the current
+	 * limit.
 	 */
 	public static final class ObjVarGE extends ObjectiveVariable {
 

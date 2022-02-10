@@ -77,6 +77,14 @@ public final class Features {
 			repartition.put(key, nb == null ? 1 : nb + 1);
 		}
 
+		public void remove(T key) {
+			Integer nb = repartition.get(key);
+			if (nb > 1)
+				repartition.put(key, nb - 1);
+			else
+				repartition.remove(key);
+		}
+
 		public int size() {
 			return repartition.size();
 		}

@@ -127,7 +127,8 @@ public final class Solutions {
 				list.add(Constants.STAR);
 			else if (object instanceof Variable) {
 				Variable x = (Variable) object;
-				list.add(x.dom.toVal(last[x.num])); // ((Variable) object).valueIndexInLastSolution));
+				if (solver.problem.features.collecting.variables.contains(x))
+					list.add(x.dom.toVal(last[x.num])); // ((Variable) object).valueIndexInLastSolution));
 			} else // recursive call
 				Stream.of((Object[]) object).forEach(o -> updateList(o, list));
 		}
@@ -218,7 +219,8 @@ public final class Solutions {
 			sb.append(PREFIX).append(" ").append(pure ? "'" : "").append(va.id).append(pure ? "'" : "").append(": ");
 			if (va instanceof VarAlone) {
 				Variable x = (Variable) ((VarAlone) va).var;
-				sb.append(x.dom.prettyValueOf(last[x.num])); // valueIndexInLastSolution));
+				if (solver.problem.features.collecting.variables.contains(x))
+					sb.append(x.dom.prettyValueOf(last[x.num])); // valueIndexInLastSolution));
 			} else
 				sb.append(Variable.instantiationOf(VarArray.class.cast(va).vars, PREFIX));
 			sb.append(",\n");

@@ -167,6 +167,7 @@ import constraints.global.Sum.SumSimple.SumSimpleGE;
 import constraints.global.Sum.SumSimple.SumSimpleLE;
 import constraints.global.Sum.SumViewWeighted;
 import constraints.global.Sum.SumWeighted;
+import constraints.global.Sum.SumWeighted.SumWeightedEQ;
 import constraints.global.Sum.SumWeighted.SumWeightedGE;
 import constraints.global.Sum.SumWeighted.SumWeightedLE;
 import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
@@ -188,6 +189,7 @@ import dashboard.Control.OptionsIntension;
 import heuristics.HeuristicValues;
 import interfaces.Observers.ObserverOnConstruction;
 import main.Head;
+import optimization.ObjectiveVariable;
 import optimization.ObjectiveVariable.ObjVarGE;
 import optimization.ObjectiveVariable.ObjVarLE;
 import optimization.Optimizable;
@@ -237,7 +239,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public void afterProblemConstruction(int n) {
 		assert Stream.of(variables).map(x -> x.id()).distinct().count() == n : "Two variables have the same id";
-		assert Variable.areNumsNormalized(variables) && Constraint.areNumsNormalized(constraints) : "Non normalized nums in the problem";
+		assert Variable.areNumsNormalized(variables) : "Non normalized nums in the problem";
+		assert Constraint.areNumsNormalized(constraints) : "Non normalized nums in the problem";
 
 		this.framework = optimizer != null ? TypeFramework.COP : TypeFramework.CSP; // currently, MAXCSP is not possible
 		head.control.framework(optimizer); // modifying a few options
@@ -467,7 +470,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 */
 	private final void storeToArrays() {
 		this.variables = features.collecting.variables.toArray(new Variable[0]);
+		for (int i = 0; i < variables.length; i++)
+			variables[i].num = i;
 		this.constraints = features.collecting.constraints.toArray(new Constraint[0]);
+		for (int i = 0; i < constraints.length; i++)
+			constraints[i].num = i;
+
 		Constraint[] sortedConstraints = features.collecting.constraints.stream().sorted((c1, c2) -> c1.scp.length - c2.scp.length).toArray(Constraint[]::new);
 		// TODO for the moment we cannot use the sortedConstraints as the main array (pb with nums, and anyway would it
 		// be useful?)
@@ -544,6 +552,33 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 	}
 
+	private void replaceObjectiveVariable() {
+		if (optimizer != null && optimizer.ctr instanceof ObjectiveVariable) {
+			Variable x = ((ObjectiveVariable) optimizer.ctr).x;
+			Constraint[] t = features.collecting.constraints.stream().filter(c -> c.involves(x)).toArray(Constraint[]::new);
+			if (t.length == 3 && t[1] == optimizer.clb && t[2] == optimizer.cub) {
+				if (t[0] instanceof SumWeightedEQ) {
+					Variable[] scp = t[0].scp;
+					int[] coeffs = ((SumWeighted) t[0]).coeffs;
+					int pos = Utilities.indexOf(x, t[0].scp);
+					control(pos != -1 && coeffs[pos] == -1);
+					TypeOptimization opt = optimizer.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE;
+					for (Constraint c : t) {
+						// c.ignored = true;
+						head.observersConstruction.remove(c);
+						features.collecting.constraints.remove(c);
+					}
+					features.collecting.variables.remove(x);
+					features.domSizes.remove(x.dom.initSize());
+					// x.dom = new DomainRange(x, 0, 0);
+					optimizer = null;
+					optimize(opt, TypeObjective.SUM, IntStream.range(0, scp.length).filter(i -> i != pos).mapToObj(i -> scp[i]).toArray(Variable[]::new),
+							IntStream.range(0, coeffs.length).filter(i -> i != pos).map(i -> coeffs[i]).toArray());
+				}
+			}
+		}
+	}
+
 	public Problem(ProblemAPI api, String modelVariant, String data, String dataFormat, boolean dataSaving, String[] argsForPb, Head head) {
 		super(api, modelVariant, argsForPb);
 		this.head = head;
@@ -557,6 +592,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		loadData(data, dataFormat, dataSaving);
 		head.output.afterData();
 		api.model();
+
+		replaceObjectiveVariable();
 
 		// after possibly adding some additional constraints, we store variables and constraints into arrays
 		inferAdditionalConstraints();
@@ -1615,6 +1652,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	public final CtrEntity count(XNode<IVar>[] trees, int[] values, Condition condition) {
+		if (trees.length == 1)
+			return count(new Var[] { (Var) replaceByVariable(trees[0]) }, values, condition);
 		return count(replaceByVariables(trees), values, condition);
 	}
 
