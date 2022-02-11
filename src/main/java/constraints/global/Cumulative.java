@@ -25,6 +25,7 @@ import problem.Problem;
 import sets.SetSparse;
 import sets.SetSparseReversible;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
 
 /**
@@ -102,10 +103,11 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 		}
 
 		private Boolean buildSlots() { // so, building the timetable
+			nSlots = 0;
 			ticks.clear();
-			// for (int i = 0; i < origins.length; i++) {
-			for (int j = relevantTasks.limit; j >= 0; j--) {
-				int i = relevantTasks.dense[j];
+			for (int i = 0; i < nTasks; i++) {
+				// for (int j = relevantTasks.limit; j >= 0; j--) { // ok for Cst but for VarH does not seem correct
+				// int i = relevantTasks.dense[j];
 				int ms = mandatoryStart(i), me = mandatoryEnd(i);
 				if (me <= ms)
 					continue; // no mandatory part here
@@ -120,15 +122,14 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 				}
 				offsets[me] -= wheights[i];
 			}
-			if (ticks.size() == 0)
-				return Boolean.TRUE;
-
 			int nRelevantTicks = 0;
 			for (int j = 0; j <= ticks.limit; j++)
 				if (offsets[ticks.dense[j]] != 0) // ticks with offset at 0 are not relevant (and so, are discarded)
 					slots[nRelevantTicks++].start = ticks.dense[j];
-			Arrays.sort(slots, 0, nRelevantTicks, (t1, t2) -> t1.start < t2.start ? -1 : t1.start > t2.start ? 1 : 0);
+			if (nRelevantTicks == 0)
+				return Boolean.TRUE;
 
+			Arrays.sort(slots, 0, nRelevantTicks, (t1, t2) -> t1.start < t2.start ? -1 : t1.start > t2.start ? 1 : 0);
 			for (int k = 0, height = 0; k < nRelevantTicks - 1; k++) {
 				height += offsets[slots[k].start];
 				if (height > limit)
@@ -151,6 +152,8 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 			int smin = Integer.MAX_VALUE, emax = Integer.MIN_VALUE;
 			for (int j = futvars.limit; j >= 0; j--) {
 				int i = futvars.dense[j];
+				if (i >= nTasks)
+					continue;
 				smin = Math.min(smin, starts[i].dom.firstValue());
 				emax = Math.max(emax, starts[i].dom.lastValue() + maxWidth(i));
 			}
@@ -176,8 +179,8 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 						break;
 					assert slots[k].height != 0;
 					int rs = slots[k].start, re = slots[k].end;
-					if (me <= ms || me <= rs || re <= ms) { // if no mandatory part or if the rectangle and the
-															// mandatory parts are disjoint
+					if (me <= ms || me <= rs || re <= ms) {
+						// if no mandatory part or if the rectangle and the mandatory parts are disjoint
 						if (starts[i].dom.removeValuesInRange(rs - wwidths[i] + 1, re) == false)
 							return false;
 					} // else something else ?
@@ -292,8 +295,15 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 			for (int i = 0; i < nTasks; i++)
 				if (tuple[i] <= t && t < tuple[i] + (wgap == -1 ? wwidths[i] : tuple[wgap + i]))
 					sum += (hgap == -1 ? wheights[i] : tuple[hgap + i]);
-			if (sum > limit)
+			if (sum > limit) {
+				System.out.println(this.num + " " + Kit.join(this.scp));
+				System.out.println("At time " + t + " the sum is " + sum + " and exceeds " + limit);
+				System.out.println("tuple " + Kit.join(tuple));
+				for (int i = 0; i < nTasks; i++)
+					if (tuple[i] <= t && t < tuple[i] + (wgap == -1 ? wwidths[i] : tuple[wgap + i]))
+						System.out.println("adding " + (hgap == -1 ? wheights[i] : tuple[hgap + i]) + " from task " + i);
 				return false;
+			}
 		}
 		return true;
 	}
@@ -469,10 +479,9 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 
 	}
 
-	// TO TEST
 	public static final class CumulativeVarH extends Cumulative {
 
-		Variable[] heights;
+		private Variable[] heights;
 
 		@Override
 		protected int maxHeight(int i) {
@@ -492,20 +501,25 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 				wheights[i] = heights[i].dom.firstValue();
 			if (super.runPropagator(dummy) == false)
 				return false;
-			for (int i = 0; i < nTasks; i++) {
-				if (starts[i].dom.size() == 1 && heights[i].dom.size() > 1) {
-					int start = starts[i].dom.singleValue();
+			if (timetableReasoner.nSlots > 0)
+				for (int i = 0; i < nTasks; i++) {
+					if (heights[i].dom.size() == 1)
+						continue;
+					int ms = timetableReasoner.mandatoryStart(i), me = timetableReasoner.mandatoryEnd(i);
+					if (me <= ms)
+						continue; // no mandatory part here
 					int increase = heights[i].dom.lastValue() - heights[i].dom.firstValue();
 					for (int k = 0; k < timetableReasoner.nSlots; k++) {
 						Slot slot = timetableReasoner.slots[k];
 						int surplus = slot.height + increase - limit;
 						if (surplus <= 0)
 							break;
-						if (!(start + wwidths[i] <= slot.start || slot.end <= start)) // if overlapping
-							heights[i].dom.removeValuesGT(heights[i].dom.lastValue() - surplus); // no possible conflict
+						if (!(ms + wwidths[i] <= slot.start || slot.end <= ms)) // if overlapping
+							heights[i].dom.removeValuesGT(heights[i].dom.lastValue() - surplus); // no possible
+																									// conflict
 					}
+					// }
 				}
-			}
 			return true;
 		}
 	}
@@ -532,6 +546,34 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 			this.heights = heights;
 			control(scp.length == 3 * nTasks && widths.length == nTasks && heights.length == nTasks);
 			control(Stream.of(widths).allMatch(x -> x.dom.firstValue() >= 0) && Stream.of(heights).allMatch(x -> x.dom.firstValue() >= 0));
+		}
+	}
+
+	public static final class CumulativeVarC extends Cumulative {
+
+		private Domain limitDom;
+
+		public CumulativeVarC(Problem pb, Variable[] starts, int[] widths, int[] heights, Variable limit) {
+			super(pb, pb.vars(starts, limit), starts, widths, heights, limit.dom.lastValue());
+			this.limitDom = limit.dom;
+			control(scp.length == nTasks + 1 && widths.length == nTasks && heights.length == nTasks);
+			control(IntStream.of(widths).allMatch(w -> w >= 0) && IntStream.of(heights).allMatch(h -> h >= 0));
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			limit = limitDom.lastValue();
+			if (super.runPropagator(dummy) == false)
+				return false;
+			if (limitDom.size() > 1 && timetableReasoner.nSlots > 0) {
+				Slot slot = timetableReasoner.slots[0];
+				for (int a = limitDom.first(); a != -1; a = limitDom.next(a)) {
+					int v = limitDom.toVal(a);
+					if (slot.height > v)
+						limitDom.remove(a); // no inconsistency possible
+				}
+			}
+			return true;
 		}
 	}
 

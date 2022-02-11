@@ -142,6 +142,8 @@ import constraints.global.Count.CountCst.Exactly1;
 import constraints.global.Count.CountCst.ExactlyK;
 import constraints.global.Count.CountVar.ExactlyVarK;
 import constraints.global.Cumulative.CumulativeCst;
+import constraints.global.Cumulative.CumulativeVarC;
+import constraints.global.Cumulative.CumulativeVarH;
 import constraints.global.DistinctLists;
 import constraints.global.Element.ElementList.ElementCst;
 import constraints.global.Element.ElementList.ElementVar;
@@ -2148,16 +2150,30 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			}
 			return post(new CumulativeCst(this, translate(origins), lengths, heights, op == LT ? limit + 1 : limit));
 		}
+		if (condition instanceof ConditionVar) {
+			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
+			control(op == LE);
+			Variable limit = (Variable) (((ConditionVar) condition).x);
+			return post(new CumulativeVarC(this, translate(origins), lengths, heights, limit));
+		}
 		return unimplemented("cumulative");
 	}
 
 	@Override
 	public final CtrEntity cumulative(Var[] origins, Var[] lengths, Var[] ends, int[] heights, Condition condition) {
+		unimplementedIf(ends != null, "cumulative");
 		return unimplemented("cumulative");
 	}
 
 	@Override
 	public final CtrEntity cumulative(Var[] origins, int[] lengths, Var[] ends, Var[] heights, Condition condition) {
+		unimplementedIf(ends != null, "cumulative");
+		if (condition instanceof ConditionVal) {
+			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
+			control(op == LT || op == LE);
+			int limit = Utilities.safeInt(((ConditionVal) condition).k);
+			return post(new CumulativeVarH(this, translate(origins), lengths, translate(heights), op == LT ? limit + 1 : limit));
+		}
 		return unimplemented("cumulative");
 	}
 
