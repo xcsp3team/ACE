@@ -47,8 +47,8 @@ public abstract class Optimizer implements ObserverOnRuns {
 	@Override
 	public final void afterRun() {
 		control(problem.framework == COP);
-		if (problem.solver.solutions.lastRun == problem.solver.restarter.numRun) { // a better solution has been found
-																					// during the last run
+		if (problem.solver.solutions.lastRun == problem.solver.restarter.numRun) {
+			// a better solution has been found during the last run
 			if (minimization) {
 				maxBound = problem.solver.solutions.bestBound - 1;
 				cub.limit(maxBound);

@@ -70,6 +70,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Condition;
+import org.xcsp.common.Condition.ConditionIntset;
 import org.xcsp.common.Condition.ConditionIntvl;
 import org.xcsp.common.Condition.ConditionRel;
 import org.xcsp.common.Condition.ConditionSet;
@@ -207,6 +208,7 @@ import utility.Kit;
 import utility.Kit.Color;
 import utility.Stopwatch;
 import variables.Domain;
+import variables.DomainFinite.DomainRange;
 import variables.Variable;
 import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
@@ -471,12 +473,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * constraints into arrays.
 	 */
 	private final void storeToArrays() {
+		features.collecting.fix();
 		this.variables = features.collecting.variables.toArray(new Variable[0]);
-		for (int i = 0; i < variables.length; i++)
-			variables[i].num = i;
+		// for (int i = 0; i < variables.length; i++)
+		// variables[i].num = i;
 		this.constraints = features.collecting.constraints.toArray(new Constraint[0]);
-		for (int i = 0; i < constraints.length; i++)
-			constraints[i].num = i;
+		// for (int i = 0; i < constraints.length; i++)
+		// constraints[i].num = i;
 
 		Constraint[] sortedConstraints = features.collecting.constraints.stream().sorted((c1, c2) -> c1.scp.length - c2.scp.length).toArray(Constraint[]::new);
 		// TODO for the moment we cannot use the sortedConstraints as the main array (pb with nums, and anyway would it
@@ -558,7 +561,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (optimizer != null && optimizer.ctr instanceof ObjectiveVariable) {
 			Variable x = ((ObjectiveVariable) optimizer.ctr).x;
 			Constraint[] t = features.collecting.constraints.stream().filter(c -> c.involves(x)).toArray(Constraint[]::new);
-			if (t.length == 3 && t[1] == optimizer.clb && t[2] == optimizer.cub) {
+			if (x.dom instanceof DomainRange && t.length == 3 && t[1] == optimizer.clb && t[2] == optimizer.cub) {
 				if (t[0] instanceof SumWeightedEQ) {
 					Variable[] scp = t[0].scp;
 					int[] coeffs = ((SumWeighted) t[0]).coeffs;
@@ -571,11 +574,18 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 						features.collecting.constraints.remove(c);
 					}
 					features.collecting.variables.remove(x);
-					features.domSizes.remove(x.dom.initSize());
 					// x.dom = new DomainRange(x, 0, 0);
 					optimizer = null;
 					optimize(opt, TypeObjective.SUM, IntStream.range(0, scp.length).filter(i -> i != pos).mapToObj(i -> scp[i]).toArray(Variable[]::new),
 							IntStream.range(0, coeffs.length).filter(i -> i != pos).map(i -> coeffs[i]).toArray());
+					if (x.dom.firstValue() > optimizer.clb.limit()) {
+						optimizer.clb.setLimit(x.dom.firstValue());
+						optimizer.minBound = x.dom.firstValue();
+					}
+					if (x.dom.lastValue() < optimizer.cub.limit()) {
+						optimizer.cub.setLimit(x.dom.lastValue());
+						optimizer.maxBound = x.dom.lastValue();
+					}
 				}
 			}
 		}
@@ -1889,6 +1899,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Var aux = auxVar(new Range(min, max + 1));
 		if (condition instanceof ConditionRel) {
 			intension(XNodeParent.build(((ConditionRel) condition).operator.toExpr(), aux, condition.rightTerm()));
+		} else if (condition instanceof ConditionIntset) {
+			int[] t = ((ConditionIntset) condition).t;
+			extension((Variable) aux, t, ((ConditionIntset) condition).operator == TypeConditionOperatorSet.IN);
 		} else
 			return (CtrAlone) unimplemented("element " + condition);
 		return element(list, index, aux);

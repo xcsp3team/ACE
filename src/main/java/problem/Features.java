@@ -227,7 +227,7 @@ public final class Features {
 			int num = variables.size();
 			printNumber(num);
 			variables.add(x);
-			domSizes.add(x.dom.initSize());
+			// domSizes.add(x.dom.initSize());
 			return num;
 		}
 
@@ -244,15 +244,36 @@ public final class Features {
 			int num = constraints.size();
 			printNumber(num);
 			constraints.add(c);
-			int arity = c.scp.length;
-			ctrArities.add(arity);
-			ctrTypes.add(c.getClass().getSimpleName() + (arity == 1 && !(c instanceof Extension1) ? "u"
-					: (c instanceof ConstraintExtension ? "-" + c.extStructure().getClass().getSimpleName() : "")));
-			if (c.extStructure() instanceof Table)
-				tableSizes.add(((Table) c.extStructure()).tuples.length);
-			if (c instanceof CHybrid)
-				tableSizes.add(((TableHybrid) c.extStructure()).hybridTuples.length);
+			// int arity = c.scp.length;
+			// ctrArities.add(arity);
+			// ctrTypes.add(c.getClass().getSimpleName() + (arity == 1 && !(c instanceof Extension1) ? "u"
+			// : (c instanceof ConstraintExtension ? "-" + c.extStructure().getClass().getSimpleName() : "")));
+			// if (c.extStructure() instanceof Table)
+			// tableSizes.add(((Table) c.extStructure()).tuples.length);
+			// if (c instanceof CHybrid)
+			// tableSizes.add(((TableHybrid) c.extStructure()).hybridTuples.length);
 			return num;
+		}
+
+		public void fix() {
+			int i = 0;
+			for (Variable x : variables) {
+				x.num = i++;
+				domSizes.add(x.dom.initSize());
+			}
+			i = 0;
+			for (Constraint c : constraints) {
+				c.num = i++;
+				int arity = c.scp.length;
+				ctrArities.add(arity);
+				ctrTypes.add(c.getClass().getSimpleName() + (arity == 1 && !(c instanceof Extension1) ? "u"
+						: (c instanceof ConstraintExtension ? "-" + c.extStructure().getClass().getSimpleName() : "")));
+				if (c.extStructure() instanceof Table)
+					tableSizes.add(((Table) c.extStructure()).tuples.length);
+				if (c instanceof CHybrid)
+					tableSizes.add(((TableHybrid) c.extStructure()).hybridTuples.length);
+			}
+
 		}
 
 	}
