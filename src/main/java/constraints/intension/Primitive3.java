@@ -22,6 +22,7 @@ import constraints.Constraint;
 import constraints.global.Sum.SumWeighted;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
+import interfaces.Tags.TagNotCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import propagation.AC;
@@ -155,7 +156,7 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 	// ***** Classes for x + y <op> z
 	// ************************************************************************
 
-	public static abstract class Add3 extends Primitive3 {
+	public static abstract class Add3 extends Primitive3 implements TagNotCallCompleteFiltering {
 
 		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			switch (op) {
@@ -488,7 +489,7 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 	// ***** Classes for x / y <op> z
 	// ************************************************************************
 
-	public static abstract class Div3 extends Primitive3 {
+	public static abstract class Div3 extends Primitive3 implements TagNotCallCompleteFiltering {
 
 		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			switch (op) {

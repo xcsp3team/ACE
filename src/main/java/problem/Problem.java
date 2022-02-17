@@ -1844,14 +1844,29 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ************************************************************************
 
 	@Override
-	public final CtrAlone element(Var[] list, Condition condition) {
-		// this corresponds to Member
-		if (condition instanceof ConditionVal && ((ConditionRel) condition).operator == EQ)
-			return (CtrAlone) atLeast((VariableInteger[]) translate(list), safeInt(((ConditionVal) condition).k), 1);
+	public final CtrEntity element(Var[] list, Condition condition) {
+		// this corresponds to constraint Member
+		if (condition instanceof ConditionVal) {
+			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
+			int k = safeInt(((ConditionVal) condition).k);
+			if (op == EQ)
+				return atLeast((VariableInteger[]) translate(list), k, 1);
+			if (op == NE)
+				return forall(range(list.length), i -> different(list[i], k));
+		}
+		if (condition instanceof ConditionVar) {
+			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
+			Variable x = (Variable) ((ConditionVar) condition).x;
+			if (op == EQ)
+				return extension(vars(list, x), Table.starredMember(translate(list), x), true);
+			if (op == NE)
+				return forall(range(list.length), i -> different(list[i], x));
+		}
+
 		// TODO for LT, LE, GE and GT, posting minimum or maximum constraints if ConditionRel?
 		// for EQ - VAR using sentinelVal1, sentinelVal2 (for two values in dom(value)),
 		// and sentinelVar1,sentinelVar2 for two variables in list ?
-		return (CtrAlone) unimplemented("element");
+		return unimplemented("element");
 	}
 
 	private CtrAlone element(Var[] list, Var index, int value) {

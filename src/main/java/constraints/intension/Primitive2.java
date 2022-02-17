@@ -17,10 +17,12 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.xcsp.common.IVar;
 import org.xcsp.common.Types.TypeArithmeticOperator;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Types.TypeUnaryArithmeticOperator;
 import org.xcsp.common.Utilities;
+import org.xcsp.common.predicates.XNodeParent;
 
 import constraints.Constraint;
 import constraints.Constraint.CtrTrivial.CtrFalse;
@@ -1252,21 +1254,104 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 		public static abstract class Div2b extends PrimitiveBinaryVariant2 {
 
-			public static Primitive2 buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
+			public static Constraint buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
+				control(k > 1); // || or k < 0 ?
 				switch (op) {
+				case LT:
+					return new Div2bLT(pb, x, y, k);
+				case LE:
+					return new Div2bLE(pb, x, y, k);
+				case GE:
+					return new Div2bGE(pb, x, y, k);
+				case GT:
+					return new Div2bGT(pb, x, y, k);
 				case EQ:
-					return x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0 && k > 1 ? new Div2bEQ(pb, x, y, k) : null;
+					if (x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0 && k > 1)
+						return new Div2bEQ(pb, x, y, k);
+					break;
 				case NE:
-					return x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0 && k > 1 ? new Div2bNE(pb, x, y, k) : null;
-				default:
-					// not relevant to implement them? (since an auxiliary variable can be introduced?)
-					throw new AssertionError("not implemented");
+					if (x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0 && k > 1)
+						return new Div2bNE(pb, x, y, k);
+					break;
 				}
+				XNodeParent<IVar> p = XNodeParent.build(op.toExpr(), x, XNodeParent.div(y, k));
+				return new ConstraintIntension(pb, new Variable[] { x, y }, p); // TODO may be very costly
+				// throw new AssertionError("not implemented");
 			}
 
 			public Div2b(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
 				control(dx.firstValue() >= 0 && dy.firstValue() >= 0 && k > 1, dx.firstValue() + " " + dy.firstValue() + " " + k);
+			}
+
+			public static final class Div2bLT extends Div2b {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					return t[0] < t[1] / k;
+				}
+
+				public Div2bLT(Problem pb, Variable x, Variable y, int k) {
+					super(pb, x, y, k);
+				}
+
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					return dx.removeValuesGE(dy.lastValue() / k) && dy.removeValuesLE(dx.firstValue() * k + k - 1);
+
+				}
+			}
+
+			public static final class Div2bLE extends Div2b {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					return t[0] <= t[1] / k;
+				}
+
+				public Div2bLE(Problem pb, Variable x, Variable y, int k) {
+					super(pb, x, y, k);
+				}
+
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					return dx.removeValuesGT(dy.lastValue() / k) && dy.removeValuesLT(dx.firstValue() * k);
+
+				}
+			}
+
+			public static final class Div2bGE extends Div2b {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					return t[0] >= t[1] / k;
+				}
+
+				public Div2bGE(Problem pb, Variable x, Variable y, int k) {
+					super(pb, x, y, k);
+				}
+
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					return dx.removeValuesLT(dy.firstValue() / k) && dy.removeValuesGT(dx.lastValue() * k + k - 1);
+				}
+			}
+
+			public static final class Div2bGT extends Div2b {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					return t[0] > t[1] / k;
+				}
+
+				public Div2bGT(Problem pb, Variable x, Variable y, int k) {
+					super(pb, x, y, k);
+				}
+
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					return dx.removeValuesLE(dy.firstValue() / k) && dy.removeValuesGE(dx.lastValue() * k);
+				}
 			}
 
 			public static final class Div2bEQ extends Div2b {

@@ -43,6 +43,12 @@ public interface Tags {
 	}
 
 	/**
+	 * Tag for indicating that a constraint does not necessarily produce full filtering at each call
+	 */
+	interface TagNotCallCompleteFiltering {
+	}
+
+	/**
 	 * Tag for indicating that a constraint guarantees enforcing (G)AC
 	 */
 	interface TagAC {

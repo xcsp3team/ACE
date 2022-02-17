@@ -100,6 +100,35 @@ public class Table extends ExtensionStructure {
 		return tuples.stream().toArray(int[][]::new);
 	}
 
+	/**
+	 * Returns a starred table corresponding to the specified Element/Member constraint
+	 * 
+	 * @param list
+	 *            the parameter 'list' (vector) of the Element constraint
+	 * @param value
+	 *            the parameter 'value' of the Element constraint
+	 * @return a starred table corresponding to the specified Element/Member constraint
+	 */
+	public static int[][] starredMember(Variable[] list, Variable value) {
+		control(Variable.areAllDistinct(list) && !value.presentIn(list));
+		int arity = list.length + 1;
+		List<int[]> tuples = new ArrayList<>();
+		Domain vdom = value.dom;
+		for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
+			int v = vdom.toVal(a);
+			for (int i = 0; i < list.length; i++) {
+				Domain dom = list[i].dom;
+				if (dom.containsValue(v)) {
+					int[] tuple = Kit.repeat(STAR, arity);
+					tuple[0] = v;
+					tuple[i + 1] = v;
+					tuples.add(tuple);
+				}
+			}
+		}
+		return tuples.stream().toArray(int[][]::new);
+	}
+
 	public static int[][] starredDistinctVectors(Variable[] t1, Variable[] t2) {
 		control(t1.length == t2.length);
 		String key = "DistinctVectors " + Variable.signatureFor(t1) + " " + Variable.signatureFor(t2);

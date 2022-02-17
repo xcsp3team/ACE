@@ -38,6 +38,7 @@ import interfaces.SpecificPropagator;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
+import interfaces.Tags.TagNotCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
@@ -1041,7 +1042,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 			if (futvars.size() == 1 && !x.assigned() && scp.length > 1)
 				return true;
 		}
-		if (time > x.time && this instanceof TagCallCompleteFiltering)
+		if (time > x.time && this instanceof TagCallCompleteFiltering && !(this instanceof TagNotCallCompleteFiltering))
 			return true;
 		int nBefore = problem.nValueRemovals;
 		boolean consistent = this instanceof SpecificPropagator ? ((SpecificPropagator) this).runPropagator(x) : genericFiltering(x);
