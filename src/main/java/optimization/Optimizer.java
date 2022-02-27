@@ -57,7 +57,8 @@ public abstract class Optimizer implements ObserverOnRuns {
 				clb.limit(minBound);
 			}
 			possiblyUpdateLocalBounds();
-			control(minBound - 1 <= maxBound || problem.head.control.optimization.ub != Long.MAX_VALUE, () -> " minB=" + minBound + " maxB=" + maxBound);
+			control(minBound == Long.MIN_VALUE || minBound - 1 <= maxBound || problem.head.control.optimization.ub != Long.MAX_VALUE,
+					() -> " minB=" + minBound + " maxB=" + maxBound);
 			possiblyUpdateSharedBounds();
 			if (minBound > maxBound)
 				problem.solver.stopping = FULL_EXPLORATION;

@@ -65,7 +65,6 @@ import optimization.Optimizer.OptimizationStrategy;
 import problem.Problem.SymmetryBreaking;
 import propagation.AC;
 import propagation.Reviser;
-import propagation.Reviser.Reviser3;
 import solver.Restarter.RestartMeasure;
 import solver.Restarter.RestarterLNS.HeuristicFreezing.Rand;
 import solver.Solver;
@@ -514,7 +513,7 @@ public final class Control {
 		public final int variant = addI("variant", "pv", 0, "Propagation Variant (only used for some consistencies)");
 		public final boolean useAuxiliaryQueues = addB("useAuxiliaryQueues", "uaq", false, "Must we use auxiliary queues of constraints?");
 		// above, the purpose is to propagate less often the most costly constraints (to be finalized)
-		public final String reviser = addS("reviser", "", Reviser3.class, Reviser.class, "Class to be used for performing revisions");
+		public final String reviser = addS("reviser", "", Reviser.class, Reviser.class, "Class to be used for performing revisions");
 		public final boolean residues = addB("residues", "res", true, "Must we use redidues (AC3rm)?");
 		public final boolean bitResidues = addB("bitResidues", "bres", true, "Must we use bit resides (AC3bit+rm)?");
 		public final boolean multidirectionality = addB("multidirectionality", "mul", true, "Must we use multidirectionality");

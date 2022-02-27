@@ -193,9 +193,10 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 		}
 
 		private short seekSupportPosition(long[] bitSup, long[] bitDom) {
-			for (short i = 0; i < bitSup.length; i++)
+			for (short i = 0; i < bitSup.length; i++) {
 				if ((bitSup[i] & bitDom[i]) != 0)
 					return i;
+			}
 			return -1;
 		}
 

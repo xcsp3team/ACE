@@ -709,6 +709,11 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		problem.noOverlap(trVars2D(origins), trVars2D(lengths), zeroIgnored);
 	}
 
+	@Override
+	public void buildCtrNoOverlap(String id, XVarInteger[] xs, XVarInteger[] ys, XVarInteger[] lx, int[] ly, boolean zeroIgnored) {
+		problem.noOverlap(trVars(xs), trVars(ys), trVars(lx), ly, zeroIgnored);
+	}
+
 	// ************************************************************************
 	// ***** Constraint Cumulative and BinPacking
 	// ************************************************************************

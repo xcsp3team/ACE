@@ -2160,6 +2160,18 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return null;
 	}
 
+	public final CtrEntity noOverlap(Var[] xs, Var[] ys, Var[] lx, int[] ly, boolean zeroIgnored) {
+		unimplementedIf(!zeroIgnored, "noOverlap");
+		for (int i = 0; i < xs.length; i++)
+			for (int j = i + 1; j < xs.length; j++) {
+				Variable xi = (Variable) xs[i], xj = (Variable) xs[j], yi = (Variable) ys[i], yj = (Variable) ys[j];
+				Variable wi = (Variable) lx[i], wj = (Variable) lx[j];
+				int hi = ly[i], hj = ly[j];
+				intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
+			}
+		return null;
+	}
+
 	// ************************************************************************
 	// ***** Constraints Cumulative and BinPacking
 	// ************************************************************************
