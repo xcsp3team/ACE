@@ -27,6 +27,7 @@ import constraints.intension.Reification.ReifLogic.ReifLogic2.LogEqAnd2;
 import constraints.intension.Reification.ReifLogic.ReifLogic2.LogEqOr2;
 import constraints.intension.Reification.ReifLogic.ReifLogicn.LogEqAnd;
 import constraints.intension.Reification.ReifLogic.ReifLogicn.LogEqOr;
+import constraints.intension.Reification.ReifLogic.ReifLogicn.LogEqXor;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
@@ -384,6 +385,8 @@ public final class Reification {
 				return list.length == 2 ? new LogEqOr2(pb, x, list) : new LogEqOr(pb, x, list);
 			case AND:
 				return list.length == 2 ? new LogEqAnd2(pb, x, list) : new LogEqAnd(pb, x, list);
+			case XOR:
+				return new LogEqXor(pb, x, list);
 			default:
 				throw new AssertionError("unimplemented case");
 			}
@@ -627,6 +630,78 @@ public final class Reification {
 							return true;
 						}
 					return dx.remove(1) && entailed();
+				}
+			}
+
+			public static final class LogEqXor extends ReifLogicn {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					int cnt = 0;
+					for (int i = 1; i < t.length; i++)
+						if (t[i] == 1)
+							cnt++;
+					return (t[0] == 1) == (cnt % 2 == 1);
+				}
+
+				private Variable findSentinel(Variable other) {
+					for (Variable y : list)
+						if (y != other && y.dom.size() == 2)
+							return y;
+					return null;
+				}
+
+				public LogEqXor(Problem pb, Variable x, Variable[] list) {
+					super(pb, x, list);
+				}
+
+				private int toBeRemoved(Variable sentinel) {
+					int cnt = 0;
+					for (Variable z : list)
+						if (z != sentinel && z.dom.single() == 1)
+							cnt++;
+					return dx.first() == 0 ? (cnt % 2 == 0 ? 1 : 0) : (cnt % 2 == 0 ? 0 : 1);
+				}
+
+				@Override
+				public boolean runPropagator(Variable evt) {
+					if (dx.size() == 2) {
+						// only one sentinel is necessary for having AC
+						if (sentinel1.dom.size() == 2 || sentinel2.dom.size() == 2)
+							return true;
+						Variable y = findSentinel(sentinel2);
+						if (y == null) {
+							int cnt = 0;
+							for (Variable z : list)
+								if (z.dom.single() == 1)
+									cnt++;
+							int a = cnt % 2 == 0 ? 1 : 0;
+							return dx.remove(a) && entailed();
+						}
+						sentinel1 = y;
+						return true;
+
+					}
+					// if x=0 or x=1, we need two valid sentinels
+					if (sentinel1.dom.size() == 1) {
+						Variable y = findSentinel(sentinel2);
+						if (y == null) {
+							int a = toBeRemoved(sentinel2);
+							return sentinel2.dom.remove(a) && entailed();
+						}
+						sentinel1 = y;
+					}
+					assert sentinel1 != sentinel2;
+					if (sentinel2.dom.size() == 1) {
+						Variable y = findSentinel(sentinel1);
+						if (y == null) {
+							int a = toBeRemoved(sentinel1);
+							return sentinel1.dom.remove(a) && entailed();
+						}
+						sentinel2 = y;
+					}
+					return true;
+
 				}
 			}
 		}
