@@ -26,6 +26,7 @@ import org.xcsp.common.Types.TypeLogicalOperator;
 import constraints.intension.Reification.ReifLogic.ReifLogic2.LogEqAnd2;
 import constraints.intension.Reification.ReifLogic.ReifLogic2.LogEqOr2;
 import constraints.intension.Reification.ReifLogic.ReifLogicn.LogEqAnd;
+import constraints.intension.Reification.ReifLogic.ReifLogicn.LogEqIff;
 import constraints.intension.Reification.ReifLogic.ReifLogicn.LogEqOr;
 import constraints.intension.Reification.ReifLogic.ReifLogicn.LogEqXor;
 import interfaces.Tags.TagAC;
@@ -387,6 +388,8 @@ public final class Reification {
 				return list.length == 2 ? new LogEqAnd2(pb, x, list) : new LogEqAnd(pb, x, list);
 			case XOR:
 				return new LogEqXor(pb, x, list);
+			case IFF:
+				return new LogEqIff(pb, x, list);
 			default:
 				throw new AssertionError("unimplemented case");
 			}
@@ -702,6 +705,86 @@ public final class Reification {
 					}
 					return true;
 
+				}
+			}
+
+			public static final class LogEqIff extends ReifLogicn {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					int first = t[1], i = 2;
+					for (; i < t.length; i++)
+						if (t[i] != first)
+							break;
+					return (t[0] == 1) == (i == t.length);
+				}
+
+				private Variable findSentinel(Variable other, int a) {
+					for (Variable y : list)
+						if (y != other && y.dom.contains(a))
+							return y;
+					return null;
+				}
+
+				public LogEqIff(Problem pb, Variable x, Variable[] list) {
+					super(pb, x, list);
+				}
+
+				@Override
+				public boolean runPropagator(Variable evt) {
+					if (dx.size() == 2) {
+						boolean sing0 = false, sing1 = false, size2 = false;
+						for (Variable y : list) {
+							if (y.dom.size() == 2)
+								size2 = true;
+							else if (y.dom.first() == 0) { // y=0
+								if (sing1)
+									return dx.remove(1) & entailed();
+								sing0 = true;
+							} else { // y=1
+								if (sing0)
+									return dx.remove(1) & entailed();
+								sing1 = true;
+							}
+						}
+						if (!size2)
+							return dx.remove(0) & entailed(); // because all assigned to 0 or to 1 (in list)
+					} else if (dx.first() == 0) { // x=0 (so, we must have both 0 and 1 assigned)
+						// we use sentinel1 for a domain with 0 present and sentinel2 for a domain with 1 present
+						if (!sentinel1.dom.contains(0)) {
+							Variable y = findSentinel(sentinel2, 0);
+							if (y == null)
+								return sentinel2.dom.reduceTo(0) && entailed(); // may fail if 0 is not present
+							sentinel1 = y;
+						}
+						if (!sentinel2.dom.contains(1)) {
+							Variable y = findSentinel(sentinel1, 1);
+							if (y == null)
+								return sentinel1.dom.reduceTo(1) && entailed();
+							sentinel2 = y;
+						}
+						if (sentinel1.dom.size() == 2 && sentinel2.dom.size() == 2)
+							return true;
+						if (sentinel1.dom.size() == 2 && findSentinel(sentinel1, 0) == null)
+							sentinel1.dom.reduceTo(0); // no possible failure here
+						if (sentinel2.dom.size() == 2 && findSentinel(sentinel2, 1) == null)
+							sentinel2.dom.reduceTo(1); // no possible failure here
+						if (sentinel1.dom.size() == 1 && sentinel2.dom.size() == 1)
+							return entailed();
+					} else {
+						// x=1 (so we must have all variables of list assigned to either 0 or 1)
+						for (Variable y : list) {
+							if (y.dom.size() == 1) {
+								int a = y.dom.first();
+								// we must set all variables of list to a
+								for (Variable z : list)
+									if (z != y && z.dom.reduceTo(a) == false)
+										return false;
+								return entailed();
+							}
+						}
+					}
+					return true;
 				}
 			}
 		}
