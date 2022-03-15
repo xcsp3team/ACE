@@ -756,6 +756,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * @return an array of new (auxiliary) variables representing the specified tree expressions
 	 */
 	private Var[] replaceByVariables(XNode<IVar>[] trees) {
+		if (trees.length == 1)
+			return new Var[] { (Var) replaceByVariable(trees[0]) };
 		IntToDom doms = i -> {
 			Object values = trees[i].possibleValues();
 			return values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
@@ -1573,6 +1575,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				}
 			}
 		}
+		if (coeffs == null)
+			coeffs = Kit.repeat(1, trees.length);
 		return sum(replaceByVariables(trees), coeffs, condition);
 	}
 
@@ -1671,6 +1675,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity count(Var[] list, Var[] values, Condition condition) {
+		control(list.length > 0, "A constraint Count is posted with a scope without any variable");
+		if (values.length == 1) {
+			// if (list.length ==1)
+			// return
+			return sum(Stream.of(list).map(x -> eq(x, values[0])), null, condition);
+		}
 		return unimplemented("count");
 	}
 
@@ -1876,6 +1886,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private CtrAlone element(Var[] list, Var index, Var value) {
+		if (index == value) {
+			control(Utilities.indexOf(value, list) == -1);
+			Var[] scp = vars(list, value);
+			return extension(scp, Table.starredElement(translate(list), (Variable) index), true);
+		}
 		if (head.control.global.hybrid)
 			return post(CHybrid.element(this, translate(list), (Variable) index, (Variable) value));
 		if (head.control.global.starred) {

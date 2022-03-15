@@ -316,11 +316,19 @@ public final class Solutions {
 		// solutionHamming();
 		if (found >= limit)
 			solver.stopping = Stopping.REACHED_GOAL;
+		if (solver.propagation.performingProperSearch) {
+			if (solver.problem.optimizer != null) { // COP
+				long bound = solver.problem.optimizer.value();
+				if (solver.problem.optimizer.minimization && bound < bestBound || !solver.problem.optimizer.minimization && bound > bestBound) {
+					bestBound = bound;
+					Color.GREEN.println("o " + bestBound, "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
+					record(null);
+				}
+			}
+			return;
+		}
 		record(null);
 		solver.stats.times.onNewSolution();
-
-		if (solver.propagation.performingProperSearch)
-			return;
 		if (solver.problem.framework == MAXCSP) {
 			int z = (int) Stream.of(solver.problem.constraints).filter(c -> !c.isSatisfiedByCurrentInstantiation()).count();
 			control(z < bestBound, () -> "z=" + z + " bb=" + bestBound);

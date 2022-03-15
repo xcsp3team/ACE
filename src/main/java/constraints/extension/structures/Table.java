@@ -101,6 +101,31 @@ public class Table extends ExtensionStructure {
 	}
 
 	/**
+	 * Returns a starred table corresponding to the specified Element constraint
+	 * 
+	 * @param list
+	 *            the parameter 'list' (vector) of the Element constraint
+	 * @param indexAndValue
+	 *            the variable playing both the parameter 'index' and the parameter 'value' of the Element constraint
+	 * @return a starred table corresponding to the specified Element constraint
+	 */
+	public static int[][] starredElement(Variable[] list, Variable indexAndValue) {
+		control(Variable.areAllDistinct(list) && !indexAndValue.presentIn(list));
+		control(indexAndValue.dom.initiallyExactly(new Range(list.length)));
+		int arity = list.length + 1;
+		List<int[]> tuples = new ArrayList<>();
+		for (int i = 0; i < list.length; i++) {
+			if (list[i].dom.containsValue(i)) {
+				int[] tuple = Kit.repeat(STAR, arity);
+				tuple[i] = i;
+				tuple[arity - 1] = i;
+				tuples.add(tuple);
+			}
+		}
+		return tuples.stream().toArray(int[][]::new);
+	}
+
+	/**
 	 * Returns a starred table corresponding to the specified Element/Member constraint
 	 * 
 	 * @param list

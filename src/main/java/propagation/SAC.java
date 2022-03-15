@@ -547,8 +547,8 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				if (enforceACafterAssignment(x)) {
 					if (solver.depth() == solver.problem.variables.length) {
 						Kit.log.config("found solution");
-						if (stopSACWhenFoundSolution)
-							solver.solutions.handleNewSolution();
+						// if (stopSACWhenFoundSolution)
+						solver.solutions.handleNewSolution();
 					}
 				} else {
 					solver.backtrack(x);
