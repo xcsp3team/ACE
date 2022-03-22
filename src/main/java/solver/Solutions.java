@@ -240,7 +240,8 @@ public final class Solutions {
 	public Solutions(Solver solver, long limit) {
 		this.solver = solver;
 		this.limit = limit;
-		this.bestBound = solver.head.control.optimization.ub;
+		this.bestBound = solver.problem.optimizer == null || solver.problem.optimizer.minimization ? solver.head.control.optimization.ub
+				: solver.head.control.optimization.lb;
 		this.store = null; // solver.head.control.general.recordSolutions ? new ArrayList<>() : null;
 		this.xml = new XML();
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
@@ -324,7 +325,8 @@ public final class Solutions {
 					Color.GREEN.println("o " + bestBound, "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
 					record(null);
 				}
-			}
+			} else
+				record(null);
 			return;
 		}
 		record(null);

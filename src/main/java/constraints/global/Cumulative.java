@@ -460,13 +460,14 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 		}
 	}
 
-	// TO FINALIZE
 	public static final class CumulativeVarW extends Cumulative {
 
-		Variable[] widths;
+		private Variable[] widths;
 
 		@Override
 		protected int maxWidth(int i) {
+			if (widths == null) // because called when in the super-constructor
+				return scp[starts.length + i].dom.lastValue();
 			return widths[i].dom.lastValue();
 		}
 
@@ -475,6 +476,37 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 			this.widths = widths;
 			control(scp.length == 2 * nTasks && widths.length == nTasks && heights.length == nTasks);
 			control(Stream.of(widths).allMatch(x -> x.dom.firstValue() >= 0) && IntStream.of(heights).allMatch(h -> h >= 0));
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			for (int i = 0; i < nTasks; i++)
+				wwidths[i] = widths[i].dom.firstValue();
+			if (super.runPropagator(dummy) == false)
+				return false;
+			boolean b = true;
+			if (b)
+				if (timetableReasoner.nSlots > 0)
+					for (int i = 0; i < nTasks; i++) {
+						if (widths[i].dom.size() == 1)
+							continue;
+						int gap = widths[i].dom.lastValue() - widths[i].dom.firstValue();
+						int ms1 = timetableReasoner.mandatoryStart(i), me1 = timetableReasoner.mandatoryEnd(i), me2 = me1 + gap;
+						if (me2 <= ms1)
+							continue; // no mandatory part here
+						int ms2 = me1 >= ms1 ? me1 : ms1;
+						int virtual_height = wheights[i]; // height of the new "virtual" task (from ms2 to me2)
+						for (int k = 0; k < timetableReasoner.nSlots; k++) {
+							Slot slot = timetableReasoner.slots[k];
+							if (slot.height + virtual_height - limit <= 0)
+								break; // because we can no more find a conflict
+							if (!(me2 <= slot.start || slot.end <= ms2)) // if overlapping
+								// widths[i].dom.removeValue(widths[i].dom.lastValue());
+								widths[i].dom.removeValuesGT(widths[i].dom.lastValue() - (me2 - slot.start));
+							// no possible conflict
+						}
+					}
+			return true;
 		}
 
 	}
@@ -514,38 +546,13 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 						int surplus = slot.height + increase - limit;
 						if (surplus <= 0)
 							break;
-						if (!(ms + wwidths[i] <= slot.start || slot.end <= ms)) // if overlapping
-							heights[i].dom.removeValuesGT(heights[i].dom.lastValue() - surplus); // no possible
-																									// conflict
+						// if (!(ms + wwidths[i] <= slot.start || slot.end <= ms)) // Not Correct. right?
+						if (!(me <= slot.start || slot.end <= ms)) // if overlapping
+							heights[i].dom.removeValuesGT(heights[i].dom.lastValue() - surplus);
+						// no possible conflict
 					}
-					// }
 				}
 			return true;
-		}
-	}
-
-	// TO FINALIZE
-	public static final class CumulativeVarWH extends Cumulative {
-
-		Variable[] widths;
-		Variable[] heights;
-
-		@Override
-		protected int maxWidth(int i) {
-			return widths[i].dom.lastValue();
-		}
-
-		@Override
-		protected int maxHeight(int i) {
-			return heights[i].dom.lastValue();
-		}
-
-		public CumulativeVarWH(Problem pb, Variable[] starts, Variable[] widths, Variable[] heights, int limit) {
-			super(pb, pb.vars(starts, widths, heights), starts, null, null, limit);
-			this.widths = widths;
-			this.heights = heights;
-			control(scp.length == 3 * nTasks && widths.length == nTasks && heights.length == nTasks);
-			control(Stream.of(widths).allMatch(x -> x.dom.firstValue() >= 0) && Stream.of(heights).allMatch(x -> x.dom.firstValue() >= 0));
 		}
 	}
 
@@ -574,6 +581,33 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 				}
 			}
 			return true;
+		}
+	}
+
+	// TO BE FINALIZED
+	public static final class CumulativeVarWH extends Cumulative {
+
+		Variable[] widths;
+		Variable[] heights;
+
+		@Override
+		protected int maxWidth(int i) {
+			if (widths == null) // because called when in the super-constructor
+				return scp[starts.length + i].dom.lastValue();
+			return widths[i].dom.lastValue();
+		}
+
+		@Override
+		protected int maxHeight(int i) {
+			return heights[i].dom.lastValue();
+		}
+
+		public CumulativeVarWH(Problem pb, Variable[] starts, Variable[] widths, Variable[] heights, int limit) {
+			super(pb, pb.vars(starts, widths, heights), starts, null, null, limit);
+			this.widths = widths;
+			this.heights = heights;
+			control(scp.length == 3 * nTasks && widths.length == nTasks && heights.length == nTasks);
+			control(Stream.of(widths).allMatch(x -> x.dom.firstValue() >= 0) && Stream.of(heights).allMatch(x -> x.dom.firstValue() >= 0));
 		}
 	}
 

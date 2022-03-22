@@ -768,6 +768,17 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		problem.binpacking(trVars(list), sizes, Stream.of(conditions).map(c -> trVar(c)).toArray(Condition[]::new), startIndex);
 	}
 
+	@Override
+	public void buildCtrKnapsack(String id, XVarInteger[] list, int[] weights, int[] profits, int limit, Condition condition) {
+		problem.knapsack(trVars(list), weights, profits, limit, trVar(condition));
+
+	}
+
+	@Override
+	public void buildCtrKnapsack(String id, XVarInteger[] list, int[] weights, int[] profits, XVarInteger limit, Condition condition) {
+		problem.knapsack(trVars(list), weights, profits, trVar(limit), trVar(condition));
+	}
+
 	// ************************************************************************
 	// ***** Constraint Circuit, Clause and Instantiation
 	// ************************************************************************

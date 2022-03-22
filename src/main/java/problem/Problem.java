@@ -145,6 +145,7 @@ import constraints.global.Count.CountVar.ExactlyVarK;
 import constraints.global.Cumulative.CumulativeCst;
 import constraints.global.Cumulative.CumulativeVarC;
 import constraints.global.Cumulative.CumulativeVarH;
+import constraints.global.Cumulative.CumulativeVarW;
 import constraints.global.DistinctLists;
 import constraints.global.Element.ElementList.ElementCst;
 import constraints.global.Element.ElementList.ElementVar;
@@ -2217,6 +2218,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity cumulative(Var[] origins, Var[] lengths, Var[] ends, int[] heights, Condition condition) {
 		unimplementedIf(ends != null, "cumulative");
+		if (condition instanceof ConditionVal) {
+			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
+			control(op == LT || op == LE);
+			int limit = Utilities.safeInt(((ConditionVal) condition).k);
+			return post(new CumulativeVarW(this, translate(origins), translate(lengths), heights, op == LT ? limit + 1 : limit));
+		}
 		return unimplemented("cumulative");
 	}
 
@@ -2270,6 +2277,18 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		Variable[] loads = Stream.of(conditions).map(c -> ((ConditionVar) c).x).toArray(Variable[]::new);
 		return post(new BinPackingEnergeticLoad(this, vars, sizes, loads)); // limit - (op == LT ? 1 : 0)));
+	}
+
+	public final CtrEntity knapsack(Var[] list, int[] weights, int[] profits, int limit, Condition condition) {
+		// for the moment, no dedicated propagator (just decompostion)
+		sum(list, weights, Condition.buildFrom(LE, limit));
+		return sum(list, profits, condition);
+	}
+
+	public final CtrEntity knapsack(Var[] list, int[] weights, int[] profits, Var limit, Condition condition) {
+		// for the moment, no dedicated propagator (just decompostion)
+		sum(list, weights, Condition.buildFrom(LE, limit));
+		return sum(list, profits, condition);
 	}
 
 	// ************************************************************************
