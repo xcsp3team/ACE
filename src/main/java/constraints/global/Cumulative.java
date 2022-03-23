@@ -573,7 +573,7 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 			if (super.runPropagator(dummy) == false)
 				return false;
 			if (limitDom.size() > 1 && timetableReasoner.nSlots > 0) {
-				Slot slot = timetableReasoner.slots[0];
+				Slot slot = timetableReasoner.slots[0]; // the first slot is the highest
 				for (int a = limitDom.first(); a != -1; a = limitDom.next(a)) {
 					int v = limitDom.toVal(a);
 					if (slot.height > v)
@@ -584,11 +584,10 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 		}
 	}
 
-	// TO BE FINALIZED
 	public static final class CumulativeVarWH extends Cumulative {
 
-		Variable[] widths;
-		Variable[] heights;
+		private Variable[] widths;
+		private Variable[] heights;
 
 		@Override
 		protected int maxWidth(int i) {
@@ -608,6 +607,56 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 			this.heights = heights;
 			control(scp.length == 3 * nTasks && widths.length == nTasks && heights.length == nTasks);
 			control(Stream.of(widths).allMatch(x -> x.dom.firstValue() >= 0) && Stream.of(heights).allMatch(x -> x.dom.firstValue() >= 0));
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			for (int i = 0; i < nTasks; i++) {
+				wwidths[i] = widths[i].dom.firstValue();
+				wheights[i] = heights[i].dom.firstValue();
+			}
+			if (super.runPropagator(dummy) == false)
+				return false;
+			if (timetableReasoner.nSlots > 0)
+				for (int i = 0; i < nTasks; i++) {
+					if (widths[i].dom.size() == 1)
+						continue;
+					int gap = widths[i].dom.lastValue() - widths[i].dom.firstValue();
+					int ms1 = timetableReasoner.mandatoryStart(i), me1 = timetableReasoner.mandatoryEnd(i), me2 = me1 + gap;
+					if (me2 <= ms1)
+						continue; // no mandatory part here
+					int ms2 = me1 >= ms1 ? me1 : ms1;
+					int virtual_height = wheights[i]; // height of the new "virtual" task (from ms2 to me2)
+					for (int k = 0; k < timetableReasoner.nSlots; k++) {
+						Slot slot = timetableReasoner.slots[k];
+						if (slot.height + virtual_height - limit <= 0)
+							break; // because we can no more find a conflict
+						if (!(me2 <= slot.start || slot.end <= ms2)) // if overlapping
+							// widths[i].dom.removeValue(widths[i].dom.lastValue());
+							widths[i].dom.removeValuesGT(widths[i].dom.lastValue() - (me2 - slot.start));
+						// no possible conflict
+					}
+				}
+			if (timetableReasoner.nSlots > 0)
+				for (int i = 0; i < nTasks; i++) {
+					if (heights[i].dom.size() == 1)
+						continue;
+					int ms = timetableReasoner.mandatoryStart(i), me = timetableReasoner.mandatoryEnd(i);
+					if (me <= ms)
+						continue; // no mandatory part here
+					int increase = heights[i].dom.lastValue() - heights[i].dom.firstValue();
+					for (int k = 0; k < timetableReasoner.nSlots; k++) {
+						Slot slot = timetableReasoner.slots[k];
+						int surplus = slot.height + increase - limit;
+						if (surplus <= 0)
+							break;
+						// if (!(ms + wwidths[i] <= slot.start || slot.end <= ms)) // Not Correct. right?
+						if (!(me <= slot.start || slot.end <= ms)) // if overlapping
+							heights[i].dom.removeValuesGT(heights[i].dom.lastValue() - surplus);
+						// no possible conflict
+					}
+				}
+			return true;
 		}
 	}
 

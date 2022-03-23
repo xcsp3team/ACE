@@ -374,7 +374,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					control(problem.solver.depth() == 0);
+					// control(problem.solver.depth() == 0); // Not possible when used as objective constraint?
 					for (Variable y : scp)
 						if (y.dom.removeValuesGT(limit) == false)
 							return false;
