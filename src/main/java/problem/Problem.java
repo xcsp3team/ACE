@@ -147,6 +147,7 @@ import constraints.global.Cumulative.CumulativeVarC;
 import constraints.global.Cumulative.CumulativeVarH;
 import constraints.global.Cumulative.CumulativeVarW;
 import constraints.global.Cumulative.CumulativeVarWH;
+import constraints.global.Cumulative.CumulativeVarWHC;
 import constraints.global.DistinctLists;
 import constraints.global.Element.ElementList.ElementCst;
 import constraints.global.Element.ElementList.ElementVar;
@@ -1412,7 +1413,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 	}
 
-	private CtrAlone sum(Variable[] list, int[] coeffs, TypeConditionOperatorRel op, long limit, boolean inversable) {
+	private CtrEntity sum(Variable[] list, int[] coeffs, TypeConditionOperatorRel op, long limit, boolean inversable) {
 		// grouping together several occurrences of the same variables and discarding terms of coefficient 0
 		Term[] terms = new Term[list.length];
 		for (int i = 0; i < terms.length; i++)
@@ -1436,6 +1437,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			op = op.arithmeticInversion();
 			limit = -limit;
 		}
+		if (list.length == 1) {
+			control(coeffs[0] != 0);
+			return postExprSubjectToCondition(coeffs[0] != 1 ? api.mul(list[0], coeffs[0]) : list[0], Condition.buildFrom(op, limit));
+		}
+
 		boolean only1 = coeffs[0] == 1 && coeffs[coeffs.length - 1] == 1; // if only 1 since sorted
 		if (op == EQ) {
 			boolean postTwoConstraints = head.control.global.eqDecForSum;
@@ -1903,6 +1909,21 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return post(new ElementVar(this, translate(list), (Variable) index, (Variable) value));
 	}
 
+	private CtrEntity postExprSubjectToCondition(Object obj, Condition condition) {
+		if (condition instanceof ConditionRel)
+			return intension(XNodeParent.build(((ConditionRel) condition).operator.toExpr(), obj, condition.rightTerm()));
+		if (condition instanceof ConditionIntset) {
+			control(obj instanceof Variable); // for the moment, only managed for a variable in this case
+			int[] t = ((ConditionIntset) condition).t;
+			return extension((Variable) obj, t, ((ConditionIntset) condition).operator == TypeConditionOperatorSet.IN);
+		}
+		if (condition instanceof ConditionIntvl) {
+			Range r = (Range) condition.rightTerm();
+			return intension(api.and(api.ge(obj, r.start), api.lt(obj, r.stop)));
+		}
+		return unimplemented("with  " + condition);
+	}
+
 	@Override
 	public final CtrAlone element(Var[] list, int startIndex, Var index, TypeRank rank, Condition condition) {
 		unimplementedIf(startIndex != 0 || (rank != null && rank != TypeRank.ANY), "element");
@@ -1929,13 +1950,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		int min = Stream.of(list).mapToInt(x -> ((Variable) x).dom.firstValue()).min().getAsInt();
 		int max = Stream.of(list).mapToInt(x -> ((Variable) x).dom.lastValue()).max().getAsInt();
 		Var aux = auxVar(new Range(min, max + 1));
-		if (condition instanceof ConditionRel) {
-			intension(XNodeParent.build(((ConditionRel) condition).operator.toExpr(), aux, condition.rightTerm()));
-		} else if (condition instanceof ConditionIntset) {
-			int[] t = ((ConditionIntset) condition).t;
-			extension((Variable) aux, t, ((ConditionIntset) condition).operator == TypeConditionOperatorSet.IN);
-		} else
-			return (CtrAlone) unimplemented("element " + condition);
+		postExprSubjectToCondition(aux, condition);
 		return element(list, index, aux);
 	}
 
@@ -1991,7 +2006,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		unimplementedIf(startRowIndex != 0 && startColIndex != 0, "element");
 		if (condition instanceof ConditionVar && ((ConditionRel) condition).operator == EQ)
 			return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, (Var) condition.rightTerm());
-		return unimplemented("element");
+		int[] values = Stream.of(matrix).flatMapToInt(t -> IntStream.of(t)).distinct().sorted().toArray();
+		Var aux = auxVar(values);
+		postExprSubjectToCondition(aux, condition);
+		return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, aux);
 	}
 
 	private CtrEntity element(Var[][] matrix, int startRowIndex, Var rowIndex, int startColIndex, Var colIndex, int value) {
@@ -2249,7 +2267,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
 			return post(new CumulativeVarWH(this, translate(origins), translate(lengths), translate(heights), op == LT ? limit + 1 : limit));
 		}
-
+		if (condition instanceof ConditionVar) {
+			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
+			control(op == LE);
+			Variable limit = (Variable) (((ConditionVar) condition).x);
+			return post(new CumulativeVarWHC(this, translate(origins), translate(lengths), translate(heights), limit));
+		}
 		return unimplemented("cumulative");
 	}
 
@@ -2530,7 +2553,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (list.length == 1)
 				return optimize(opt, mul(list[0], coeffs[0]));
 			long lb = head.control.optimization.lb, ub = head.control.optimization.ub;
-			optimizer = buildOptimizer(opt, (Optimizable) sum(list, coeffs, GE, lb, false).ctr, (Optimizable) sum(list, coeffs, LE, ub, false).ctr);
+			optimizer = buildOptimizer(opt, (Optimizable) ((CtrAlone) sum(list, coeffs, GE, lb, false)).ctr,
+					(Optimizable) ((CtrAlone) sum(list, coeffs, LE, ub, false)).ctr);
 		}
 		return null;
 	}

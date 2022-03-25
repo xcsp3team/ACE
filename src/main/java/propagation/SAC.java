@@ -790,7 +790,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			while (localQueue.nUncheckedVars > 0) {
 				performingProperSearch = true;
 				boolean consistent = buildBranch();
-				solver.resetNoSolutions();
+				// solver.resetNoSolutions();
 				performingProperSearch = false;
 				if (!consistent)
 					return false;
