@@ -10,7 +10,6 @@
 
 package constraints.intension;
 
-import static org.xcsp.common.Constants.STAR;
 import static utility.Kit.control;
 
 import java.math.BigInteger;
@@ -25,7 +24,6 @@ import org.xcsp.common.Utilities;
 import org.xcsp.common.predicates.XNodeParent;
 
 import constraints.Constraint;
-import constraints.Constraint.CtrTrivial.CtrFalse;
 import constraints.ConstraintExtension;
 import constraints.ConstraintIntension;
 import constraints.global.Sum.SumWeighted;
@@ -1171,16 +1169,9 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 					// IMPORTANT: keep this order for the variables and the coefficients (must be in increasing order)
 					return SumWeighted.buildFrom(pb, pb.vars(y, x), new int[] { -k, 1 }, op, 0);
 				case EQ:
-					if (k == 0) {
-						if (x.dom.containsValue(0) && y.dom.containsValue(0))
-							return ConstraintExtension.buildFrom(pb, new Variable[] { x, y }, new int[][] { { 0, STAR }, { STAR, 0 } }, true, true);
-						if (x.dom.containsValue(0))
-							return new ConstraintIntension(pb, new Variable[] { x }, pb.api.eq(x, 0)); // TODO simplify
-																										// this
-						if (y.dom.containsValue(0))
-							return new ConstraintIntension(pb, new Variable[] { y }, pb.api.eq(y, 0));
-						return new CtrFalse(pb, new Variable[] { x, y }, "Mul by 0");
-					}
+					if (k == 0)
+						return new ConstraintIntension(pb, new Variable[] { x }, pb.api.eq(x, 0)); // TODO simplify
+
 					return new Mul2bEQ(pb, x, y, k);
 				default: // NE
 					return new Mul2bNE(pb, x, y, k);
