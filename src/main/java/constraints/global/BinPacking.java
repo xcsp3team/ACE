@@ -14,7 +14,6 @@ import static utility.Kit.control;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import org.xcsp.common.Range;
 
@@ -362,14 +361,14 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 		public boolean runPropagator(Variable x) {
 			// we call the super propagator after setting the highest possible limits
 
-			if (futvars.size() == 0) {
-				int[] t = Stream.of(scp).mapToInt(y -> y.dom.singleValue()).toArray();
-				if (!isSatisfiedBy(t)) {
-					cnt++;
-					System.out.println("bef " + cnt); // pb to fix for java ace GeneralizedBACP-reduced_UD2-gbac.xml
-														// -valh=Bivs
-				}
-			}
+			// if (futvars.size() == 0) {
+			// int[] t = Stream.of(scp).mapToInt(y -> y.dom.singleValue()).toArray();
+			// if (!isSatisfiedBy(t)) {
+			// cnt++;
+			// System.out.println("bef " + cnt); // pb to fix for java ace GeneralizedBACP-reduced_UD2-gbac.xml
+			// // -valh=Bivs
+			// }
+			// }
 			for (int i = 0; i < nBins; i++)
 				limits[i] = loads[i].dom.lastValue();
 			if (super.runPropagator(x) == false)
@@ -437,12 +436,12 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 					}
 				}
 			}
-			if (futvars.size() == 0) {
-				int[] t = Stream.of(scp).mapToInt(y -> y.dom.singleValue()).toArray();
-				if (!isSatisfiedBy(t))
-					System.out.println("after " + cnt); // pb to fix for java ace GeneralizedBACP-reduced_UD2-gbac.xml
-				// -valh=Bivs
-			}
+			// if (futvars.size() == 0) {
+			// int[] t = Stream.of(scp).mapToInt(y -> y.dom.singleValue()).toArray();
+			// if (!isSatisfiedBy(t))
+			// System.out.println("after " + cnt); // pb to fix for java ace GeneralizedBACP-reduced_UD2-gbac.xml
+			// // -valh=Bivs
+			// }
 			return true;
 		}
 

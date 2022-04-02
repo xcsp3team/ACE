@@ -834,10 +834,9 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					else
 						p = i;
 				long v = (limit - sum) / coeffs[p];
-				control(v * coeffs[p] + sum == limit);
 				if ((limit - sum) % coeffs[p] == 0 && Integer.MIN_VALUE <= v && v <= Integer.MAX_VALUE)
 					sentinel.dom.removeValueIfPresent((int) v); // no inconsistency possible since at least two values
-				return true;
+				return entailed();
 			}
 
 			@Override

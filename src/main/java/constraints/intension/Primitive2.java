@@ -1171,7 +1171,6 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				case EQ:
 					if (k == 0)
 						return new ConstraintIntension(pb, new Variable[] { x }, pb.api.eq(x, 0)); // TODO simplify
-
 					return new Mul2bEQ(pb, x, y, k);
 				default: // NE
 					return new Mul2bNE(pb, x, y, k);
