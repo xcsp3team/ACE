@@ -454,6 +454,8 @@ public final class Control {
 		public long lb = addL("lb", "", MINUS_INFINITY, "Initial lower bound");
 		public long ub = addL("ub", "", PLUS_INFINITY, "Initial upper bound");
 		public final OptimizationStrategy strategy = addE("strategy", "os", OptimizationStrategy.DECREASING, "Optimization strategy");
+		public final boolean replaceObjVar = addB("replaceObjVar", "rov", true,
+				"Must we replace the objective variable by an objective constraint, when possible?");
 	}
 
 	public class OptionsExtension extends OptionGroup {

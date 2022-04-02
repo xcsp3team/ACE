@@ -157,6 +157,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public double scoreOf(Variable x) {
+			// System.out.println("score of " + x + " : " + x.fraOnDom());
 			return x.fraOnDom();
 		}
 	}

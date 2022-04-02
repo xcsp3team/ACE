@@ -561,7 +561,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private void replaceObjectiveVariable() {
-		if (optimizer != null && optimizer.ctr instanceof ObjectiveVariable) {
+		if (head.control.optimization.replaceObjVar && optimizer != null && optimizer.ctr instanceof ObjectiveVariable) {
 			Variable x = ((ObjectiveVariable) optimizer.ctr).x;
 			Constraint[] t = features.collecting.constraints.stream().filter(c -> c.involves(x)).toArray(Constraint[]::new);
 			if (x.dom instanceof DomainRange && t.length == 3 && t[1] == optimizer.clb && t[2] == optimizer.cub) {
@@ -1528,7 +1528,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			}
 			return null; // null because several constraints // TODO returning a special value?
 		}
-
 		// finally, we handle the cases where the condition involves a relational operator
 		TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 		return condition instanceof ConditionVal ? sum(list, coeffs, op, (long) rightTerm) : sum(vars(list, (Variable) rightTerm), api.vals(coeffs, -1), op, 0);
@@ -2321,6 +2320,31 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// for the moment, no dedicated propagator (just decompostion)
 		sum(list, weights, Condition.buildFrom(LE, limit));
 		return sum(list, profits, condition);
+	}
+
+	public final CtrEntity flow(Var[] list, int[] balance, int[][] arcs) {
+		// for the moment, no dedicated propagator (just decompostion)
+		int[] nodes = IntStream.range(0, arcs.length).flatMap(t -> IntStream.of(arcs[t])).distinct().sorted().toArray();
+		control(nodes.length == balance.length);
+		int sm = nodes[0];
+		List<Var>[] preds = (List<Var>[]) IntStream.range(0, nodes.length).mapToObj(i -> new ArrayList<>()).toArray(List<?>[]::new);
+		List<Var>[] succs = (List<Var>[]) IntStream.range(0, nodes.length).mapToObj(i -> new ArrayList<>()).toArray(List<?>[]::new);
+		for (int i = 0; i < arcs.length; i++) {
+			preds[arcs[i][1] - sm].add(list[i]);
+			succs[arcs[i][0] - sm].add(list[i]);
+		}
+		for (int i = 0; i < nodes.length; i++) {
+			List<Var> s = succs[i], p = preds[i];
+			int[] coeffs = IntStream.range(0, s.size() + p.size()).map(j -> j < s.size() ? 1 : -1).toArray();
+			sum((Var[]) vars(succs[i], preds[i]), coeffs, Condition.buildFrom(EQ, balance[i]));
+		}
+		return null;
+	}
+
+	public final CtrEntity flow(Var[] list, int[] balance, int[][] arcs, int[] weights, Condition condition) {
+		// for the moment, no dedicated propagator (just decompostion)
+		flow(list, balance, arcs);
+		return sum(list, weights, condition);
 	}
 
 	// ************************************************************************

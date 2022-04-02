@@ -779,6 +779,16 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		problem.knapsack(trVars(list), weights, profits, trVar(limit), trVar(condition));
 	}
 
+	@Override
+	public void buildCtrFlow(String id, XVarInteger[] list, int[] balance, int[][] arcs) {
+		problem.flow(trVars(list), balance, arcs);
+	}
+
+	@Override
+	public void buildCtrFlow(String id, XVarInteger[] list, int[] balance, int[][] arcs, int[] weights, Condition condition) {
+		problem.flow(trVars(list), balance, arcs, weights, trVar(condition));
+	}
+
 	// ************************************************************************
 	// ***** Constraint Circuit, Clause and Instantiation
 	// ************************************************************************

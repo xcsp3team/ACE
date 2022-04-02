@@ -1090,7 +1090,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 * @return the signature of the constraint
 	 */
 	public StringBuilder signature() {
-		return Variable.signatureFor(scp).insert(0, this.getClass().getSimpleName());
+		return Variable.signatureFor(scp).insert(0, " ").insert(0, this.getClass().getSimpleName());
 	}
 
 	@Override
