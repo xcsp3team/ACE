@@ -636,6 +636,11 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		problem.minimum(trVar(trees), trVar(condition));
 	}
 
+	@Override
+	public void buildCtrMaximumArg(String id, XVarInteger[] list, TypeRank rank, Condition condition) {
+		problem.maximumArg(trVars(list), rank, trVar(condition));
+	}
+
 	// ************************************************************************
 	// ***** Constraint Element and Channel
 	// ************************************************************************

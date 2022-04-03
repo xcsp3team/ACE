@@ -34,7 +34,7 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * The constraint Minimum and Maximum ensure that the minimal values or maximal values assigned to the variables in the
+ * The constraints Minimum and Maximum ensure that the minimal values or maximal values assigned to the variables in the
  * scope of the constraint respects a condition. This is the abstract root class.
  * 
  * @author Christophe Lecoutre
@@ -95,7 +95,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 		}
 
 		// ************************************************************************
-		// ***** Constraint maximum
+		// ***** Constraint Maximum
 		// ************************************************************************
 
 		public static final class Maximum extends ExtremumVar {
@@ -176,7 +176,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 		}
 
 		// ************************************************************************
-		// ***** Constraint minimum
+		// ***** Constraint Minimum
 		// ************************************************************************
 
 		public static final class Minimum extends ExtremumVar {
@@ -304,7 +304,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 		}
 
 		// ************************************************************************
-		// ***** Constraints maximumCst
+		// ***** Constraints MaximumCst
 		// ************************************************************************
 
 		public static abstract class MaximumCst extends ExtremumCst {
@@ -495,7 +495,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 		}
 
 		// ************************************************************************
-		// ***** Constraints minimumCst
+		// ***** Constraints MinimumCst
 		// ************************************************************************
 
 		public static abstract class MinimumCst extends ExtremumCst {

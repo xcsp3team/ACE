@@ -160,6 +160,7 @@ import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstGE;
 import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstLE;
 import constraints.global.Extremum.ExtremumVar.Maximum;
 import constraints.global.Extremum.ExtremumVar.Minimum;
+import constraints.global.ExtremumArg.ExtremumArgVar.MaximumArg;
 import constraints.global.Lexicographic;
 import constraints.global.NValues.NValuesCst;
 import constraints.global.NValues.NValuesCst.NValuesCstGE;
@@ -1854,6 +1855,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity maximum(XNode<IVar>[] trees, Condition condition) {
 		return maximum(replaceByVariables(trees), condition);
+	}
+
+	@Override
+	public final CtrEntity maximumArg(Var[] list, TypeRank rank, Condition condition) {
+		unimplementedIf(!(condition instanceof ConditionVar), "maximumArg");
+		TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
+		unimplementedIf(op != EQ, "maximumArg");
+		Variable x = (Variable) ((ConditionVar) condition).x;
+		return post(new MaximumArg(this, translate(list), x, rank));
 	}
 
 	// ************************************************************************
