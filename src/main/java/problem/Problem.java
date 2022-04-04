@@ -161,6 +161,7 @@ import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstLE;
 import constraints.global.Extremum.ExtremumVar.Maximum;
 import constraints.global.Extremum.ExtremumVar.Minimum;
 import constraints.global.ExtremumArg.ExtremumArgVar.MaximumArg;
+import constraints.global.ExtremumArg.ExtremumArgVar.MinimumArg;
 import constraints.global.Lexicographic;
 import constraints.global.NValues.NValuesCst;
 import constraints.global.NValues.NValuesCst.NValuesCstGE;
@@ -1857,13 +1858,22 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return maximum(replaceByVariables(trees), condition);
 	}
 
-	@Override
-	public final CtrEntity maximumArg(Var[] list, TypeRank rank, Condition condition) {
-		unimplementedIf(!(condition instanceof ConditionVar), "maximumArg");
-		TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
-		unimplementedIf(op != EQ, "maximumArg");
-		Variable x = (Variable) ((ConditionVar) condition).x;
-		return post(new MaximumArg(this, translate(list), x, rank));
+	final CtrEntity maximumArg(Var[] list, TypeRank rank, Condition condition) {
+		unimplementedIf(!(condition instanceof ConditionVar && (((ConditionVar) condition).operator) == EQ), "maximumArg");
+		return post(new MaximumArg(this, translate(list), (Variable) ((ConditionVar) condition).x, rank));
+	}
+
+	final CtrEntity maximumArg(XNode<IVar>[] trees, TypeRank rank, Condition condition) {
+		return maximumArg(replaceByVariables(trees), rank, condition);
+	}
+
+	final CtrEntity minimumArg(Var[] list, TypeRank rank, Condition condition) {
+		unimplementedIf(!(condition instanceof ConditionVar && (((ConditionVar) condition).operator) == EQ), "minimumArg");
+		return post(new MinimumArg(this, translate(list), (Variable) ((ConditionVar) condition).x, rank));
+	}
+
+	final CtrEntity minimumArg(XNode<IVar>[] trees, TypeRank rank, Condition condition) {
+		return minimumArg(replaceByVariables(trees), rank, condition);
 	}
 
 	// ************************************************************************

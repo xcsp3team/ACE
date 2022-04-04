@@ -13,7 +13,6 @@ package constraints.global;
 import static utility.Kit.control;
 
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import org.xcsp.common.Range;
 import org.xcsp.common.Types.TypeRank;
@@ -59,8 +58,8 @@ public abstract class ExtremumArg extends ConstraintGlobal implements TagCallCom
 			super(pb, list, index);
 			this.idom = index.dom;
 			this.rank = rank;
-			control(list.length > 1 && Stream.of(list).noneMatch(x -> x == index), "vector length = " + list.length);
-			control(idom.indexesMatchValues() && idom.initiallyExactly(new Range(list.length)));
+			control(list.length > 1 && scp.length == list.length + 1, "vector length = " + list.length);
+			control(idom.indexesMatchValues() && idom.initiallyExactly(new Range(list.length))); // For the moment
 		}
 
 		@Override
@@ -70,7 +69,7 @@ public abstract class ExtremumArg extends ConstraintGlobal implements TagCallCom
 
 		@Override
 		public boolean isGuaranteedAC() {
-			return rank == TypeRank.ANY; // code to be refined to reach AC for FIRST and LAST
+			return rank == TypeRank.ANY; // code needs to be refined to reach AC when FIRST and LAST
 		}
 
 		// ************************************************************************
@@ -117,8 +116,9 @@ public abstract class ExtremumArg extends ConstraintGlobal implements TagCallCom
 					maxMaxd = Math.max(maxMaxd, list[a].dom.lastValue());
 				}
 				// we remove some values from the domain of the index variable
+				int limit = Math.max(maxMin, maxMind);
 				for (int a = idom.first(); a != -1; a = idom.next(a)) {
-					if (list[a].dom.lastValue() < maxMin || list[a].dom.lastValue() < maxMind)
+					if (list[a].dom.lastValue() < limit)
 						idom.remove(a); // no inconsistency possible
 				}
 				if (rank == TypeRank.FIRST) {
@@ -178,7 +178,19 @@ public abstract class ExtremumArg extends ConstraintGlobal implements TagCallCom
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
-				return true; // TODO
+				int v = t[t[0] + 1];
+				for (int i = 1; i < t.length; i++)
+					if (t[i] < v)
+						return false;
+				if (rank == TypeRank.FIRST)
+					for (int i = 1; i <= t[0]; i++)
+						if (t[i] == v)
+							return false;
+				if (rank == TypeRank.LAST)
+					for (int i = t[0] + 2; i < t.length; i++)
+						if (t[i] == v)
+							return false;
+				return true;
 			}
 
 			public MinimumArg(Problem pb, Variable[] list, Variable index, TypeRank rank) {
@@ -187,6 +199,69 @@ public abstract class ExtremumArg extends ConstraintGlobal implements TagCallCom
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
+				// we compute minMin and minMax
+				int minMin = Integer.MAX_VALUE, minMax = Integer.MAX_VALUE;
+				for (int a = idom.first(); a != -1; a = idom.next(a)) {
+					minMin = Math.min(minMin, list[a].dom.firstValue());
+					minMax = Math.min(minMax, list[a].dom.lastValue());
+				}
+				// we remove too small values in other variables (those that cannot be anymore used to be indexed)
+				int minMind = Integer.MAX_VALUE, minMaxd = Integer.MAX_VALUE; // d for deleted indexes
+				for (int a = idom.lastRemoved(); a != -1; a = idom.prevRemoved(a)) {
+					if (list[a].dom.removeValuesLT(minMin) == false)
+						return false;
+					minMind = Math.min(minMind, list[a].dom.firstValue());
+					minMaxd = Math.min(minMaxd, list[a].dom.lastValue());
+				}
+				// we remove some values from the domain of the index variable
+				for (int a = idom.first(); a != -1; a = idom.next(a)) {
+					if (list[a].dom.firstValue() > minMax || list[a].dom.firstValue() > minMaxd)
+						idom.remove(a); // no inconsistency possible
+				}
+				if (rank == TypeRank.FIRST) {
+					boolean safe = false, sing = false;
+					for (int a = 0; a < list.length; a++)
+						if (list[a].dom.containsValue(minMin)) {
+							if (!idom.contains(a)) {
+								if (!safe && list[a].dom.removeValue(minMin) == false)
+									return false;
+							} else {
+								safe = true;
+								if (sing) {
+									idom.remove(a); // no inconsistency possible
+									minMind = Math.min(minMind, list[a].dom.firstValue());
+									minMaxd = Math.min(minMaxd, list[a].dom.lastValue());
+								} else if (list[a].dom.size() == 1)
+									sing = true;
+							}
+						}
+				}
+				if (rank == TypeRank.LAST) {
+					boolean safe = false, sing = false;
+					for (int a = list.length - 1; a >= 0; a--)
+						if (list[a].dom.containsValue(minMin)) {
+							if (!idom.contains(a)) {
+								if (!safe && list[a].dom.removeValue(minMin) == false)
+									return false;
+							} else {
+								safe = true;
+								if (sing) {
+									idom.remove(a); // no inconsistency possible
+									minMind = Math.min(minMind, list[a].dom.firstValue());
+									minMaxd = Math.min(minMaxd, list[a].dom.lastValue());
+								} else if (list[a].dom.size() == 1)
+									sing = true;
+							}
+						}
+				}
+				if (idom.size() == 1) {
+					int a = idom.single();
+					if (list[a].dom.removeValuesGT(minMaxd) == false)
+						return false;
+					if (rank == TypeRank.ANY && list[a].dom.lastValue() <= minMind)
+						return entailed();
+
+				}
 				return true;
 			}
 		}
