@@ -74,6 +74,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 					if (options.connected && x.firstAssignedNeighbor() == null)
 						continue;
+					// if (x.ctrs.length <= 1)
+					// continue;
 					if (x.dom.size() != 1)
 						bestScoredVariable.consider(x, scoreOptimizedOf(x));
 				}

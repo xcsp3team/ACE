@@ -122,6 +122,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 					return t; // because good size
 				list = Stream.of(t).collect(Collectors.toCollection(ArrayList::new));
 			}
+			if (list.size() > n) // maybe withoyut '*', we get the right number of values
+				list = list.stream().filter(s -> !s.equals(Constants.STAR_SYMBOL)).collect(Collectors.toCollection(ArrayList::new));
 			int p = list.size();
 			control(1 < p && p <= n, () -> p + " vs " + n + (p == 1 ? " did you control the path for the file?" : ""));
 			if (p < n) {

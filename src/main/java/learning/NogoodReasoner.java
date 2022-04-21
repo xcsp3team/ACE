@@ -297,6 +297,11 @@ public final class NogoodReasoner {
 	 *            true if the decisions must be sorted
 	 */
 	public void addNogood(int[] negativeDecisions, boolean toBeSorted) {
+		// if (negativeDecisions.length < 3) {
+		// System.out.println(" nog : " + IntStream.of(negativeDecisions).mapToObj(d ->
+		// decisions.stringOf(d)).collect(joining(" ")));
+		// }
+
 		if (nNogoods < nogoods.length) {
 			if (toBeSorted)
 				Arrays.sort(negativeDecisions);

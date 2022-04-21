@@ -145,8 +145,11 @@ public final class Input {
 			int equalPosition = arg.indexOf('=');
 			String key = equalPosition > 1 ? arg.substring(1, equalPosition) : arg.substring(1);
 			String value = equalPosition > 1 ? (equalPosition == arg.length() - 1 ? "" : arg.substring(equalPosition + 1)) : "true";
-			control(!setOfUserKeys.contains(key), () -> "The configuration key " + key + " appears several times.");
-			Input.argsForSolving.put(key, value);
+			if (setOfUserKeys.contains(key))
+				control(Input.argsForSolving.get(key).contentEquals(value), () -> "The configuration key " + key
+						+ " appears several times with different values: " + value + " vs " + Input.argsForSolving.get(key));
+			else
+				Input.argsForSolving.put(key, value);
 			setOfUserKeys.add(key);
 			// TODO control validity of key-value
 		}

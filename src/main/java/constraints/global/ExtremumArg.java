@@ -117,10 +117,9 @@ public abstract class ExtremumArg extends ConstraintGlobal implements TagCallCom
 				}
 				// we remove some values from the domain of the index variable
 				int limit = Math.max(maxMin, maxMind);
-				for (int a = idom.first(); a != -1; a = idom.next(a)) {
+				for (int a = idom.first(); a != -1; a = idom.next(a))
 					if (list[a].dom.lastValue() < limit)
 						idom.remove(a); // no inconsistency possible
-				}
 				if (rank == TypeRank.FIRST) {
 					boolean safe = false, sing = false;
 					for (int a = 0; a < list.length; a++)
@@ -214,10 +213,10 @@ public abstract class ExtremumArg extends ConstraintGlobal implements TagCallCom
 					minMaxd = Math.min(minMaxd, list[a].dom.lastValue());
 				}
 				// we remove some values from the domain of the index variable
-				for (int a = idom.first(); a != -1; a = idom.next(a)) {
-					if (list[a].dom.firstValue() > minMax || list[a].dom.firstValue() > minMaxd)
+				int limit = Math.min(minMax, minMaxd);
+				for (int a = idom.first(); a != -1; a = idom.next(a))
+					if (list[a].dom.firstValue() > limit)
 						idom.remove(a); // no inconsistency possible
-				}
 				if (rank == TypeRank.FIRST) {
 					boolean safe = false, sing = false;
 					for (int a = 0; a < list.length; a++)

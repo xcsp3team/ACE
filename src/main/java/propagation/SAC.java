@@ -546,7 +546,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				solver.assign(x, a);
 				if (enforceACafterAssignment(x)) {
 					if (solver.depth() == solver.problem.variables.length) {
-						// Kit.log.config("found solution");
+						// System.out.println("found solution");
 						// if (stopSACWhenFoundSolution)
 						solver.solutions.handleNewSolution();
 					}

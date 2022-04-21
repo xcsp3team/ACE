@@ -647,12 +647,38 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			@Override
 			public boolean runPropagator(Variable x) {
+				// if (limit == 0) {
+				// // System.out.println(this);
+				// return true;
+				// }
 				recomputeBounds();
 				if (max <= limit)
 					return entailed();
+				boolean test = false;
+
+				// if (min > limit) {
+				// System.out.println("failing " + min + " " + scp[0].assignmentLevel);
+				// scp[0].dom.display(false);
+				// for (int i = 1; i < scp.length; i++)
+				// System.out.print(scp[i].dom.firstValue() + ".." + scp[i].dom.lastValue() + " ");
+				// System.out.println();
+				// // for (int i = futvars.limit; i >= 0; i--) {
+				// // Domain dom = scp[futvars.dense[i]].dom;
+				// // if (dom.size() != 1)
+				// // System.out.println("failing next");
+				// // }
+				//
+				// // return x == null ? false : x.dom.fail();
+				// }
+				// if (!test)
+				// return true;
 				if (min > limit)
 					return x == null ? false : x.dom.fail();
+				// boolean test = false;
+				// if (test)
 				for (int i = futvars.limit; i >= 0; i--) {
+					// if (futvars.dense[i] == 0)
+					// continue; // TTTTTTT just test
 					Domain dom = scp[futvars.dense[i]].dom;
 					if (dom.size() == 1)
 						continue;

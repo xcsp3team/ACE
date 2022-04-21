@@ -562,6 +562,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 	}
 
+	public Variable replacedObjVar;
+
 	private void replaceObjectiveVariable() {
 		if (head.control.optimization.replaceObjVar && optimizer != null && optimizer.ctr instanceof ObjectiveVariable) {
 			Variable x = ((ObjectiveVariable) optimizer.ctr).x;
@@ -591,6 +593,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 						optimizer.cub.setLimit(x.dom.lastValue());
 						optimizer.maxBound = x.dom.lastValue();
 					}
+					replacedObjVar = x;
 				}
 			}
 		}
@@ -1996,7 +1999,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				}
 			}
 		}
-		return extension(vars(index, value), org.xcsp.common.structures.Table.clean(l), true);
+		int[][] table = org.xcsp.common.structures.Table.clean(l);
+		return extension(vars(index, value), table, true);
 	}
 
 	@Override
@@ -2331,19 +2335,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	public final CtrEntity knapsack(Var[] list, int[] weights, int[] profits, int limit, Condition condition) {
-		// for the moment, no dedicated propagator (just decompostion)
+		// for the moment, no dedicated propagator (just decomposition)
 		sum(list, weights, Condition.buildFrom(LE, limit));
 		return sum(list, profits, condition);
 	}
 
 	public final CtrEntity knapsack(Var[] list, int[] weights, int[] profits, Var limit, Condition condition) {
-		// for the moment, no dedicated propagator (just decompostion)
+		// for the moment, no dedicated propagator (just decomposition)
 		sum(list, weights, Condition.buildFrom(LE, limit));
 		return sum(list, profits, condition);
 	}
 
 	public final CtrEntity flow(Var[] list, int[] balance, int[][] arcs) {
-		// for the moment, no dedicated propagator (just decompostion)
+		// for the moment, no dedicated propagator (just decomposition)
 		int[] nodes = IntStream.range(0, arcs.length).flatMap(t -> IntStream.of(arcs[t])).distinct().sorted().toArray();
 		control(nodes.length == balance.length);
 		int sm = nodes[0];
@@ -2362,7 +2366,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	public final CtrEntity flow(Var[] list, int[] balance, int[][] arcs, int[] weights, Condition condition) {
-		// for the moment, no dedicated propagator (just decompostion)
+		// for the moment, no dedicated propagator (just decomposition)
 		flow(list, balance, arcs);
 		return sum(list, weights, condition);
 	}

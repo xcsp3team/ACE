@@ -1245,10 +1245,12 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 		public static abstract class Div2b extends PrimitiveBinaryVariant2 {
 
 			public static Constraint buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
-				control(k > 1); // || or k < 0 ?
+				if (k == 1)
+					return new ConstraintIntension(pb, new Variable[] { x, y }, XNodeParent.build(op.toExpr(), x, y));
+				control(k > 1, x + " " + op + " " + y + "/" + k); // || or k < 0 ?
 				switch (op) {
 				case LT:
-					return new Div2bLT(pb, x, y, k);
+					return k == 1 ? buildFrom(pb, x, op, y, TypeArithmeticOperator.ADD, 0) : new Div2bLT(pb, x, y, k);
 				case LE:
 					return new Div2bLE(pb, x, y, k);
 				case GE:

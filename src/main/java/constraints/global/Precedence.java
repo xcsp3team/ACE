@@ -82,7 +82,7 @@ public final class Precedence extends ConstraintGlobal implements TagNotAC, TagC
 
 	private int[] firsts;
 
-	private int dist = 5; // if dist is r, do we have GAC?
+	private int dist = 5; // if dist is r, do we have AC?
 
 	/**
 	 * Builds a constraint Precedence for the specified problem

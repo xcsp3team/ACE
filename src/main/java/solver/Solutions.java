@@ -129,6 +129,8 @@ public final class Solutions {
 				Variable x = (Variable) object;
 				if (solver.problem.features.collecting.variables.contains(x))
 					list.add(x.dom.toVal(last[x.num])); // ((Variable) object).valueIndexInLastSolution));
+				else if (x == solver.problem.replacedObjVar)
+					list.add((int) bestBound);
 			} else // recursive call
 				Stream.of((Object[]) object).forEach(o -> updateList(o, list));
 		}
@@ -221,6 +223,8 @@ public final class Solutions {
 				Variable x = (Variable) ((VarAlone) va).var;
 				if (solver.problem.features.collecting.variables.contains(x))
 					sb.append(x.dom.prettyValueOf(last[x.num])); // valueIndexInLastSolution));
+				else if (x == solver.problem.replacedObjVar)
+					sb.append(bestBound);
 			} else
 				sb.append(Variable.instantiationOf(VarArray.class.cast(va).vars, PREFIX));
 			sb.append(",\n");
@@ -261,6 +265,8 @@ public final class Solutions {
 			}
 			Color.GREEN.println("d NRUNS " + head.nRuns);
 		} else {
+			// if (found > 0 && last == null)
+			// return;
 			synchronized (lock) {
 				if (!lock.get()) {
 					lock.set(true);
