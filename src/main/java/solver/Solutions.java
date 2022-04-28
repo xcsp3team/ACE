@@ -178,7 +178,7 @@ public final class Solutions {
 					sb.append(" ");
 				if (va instanceof VarAlone) {
 					Variable x = (Variable) ((VarAlone) va).var;
-					sb.append(x.dom.prettyValueOf(last[x.num])); // .valueIndexInLastSolution));
+					sb.append(x.dom.prettyValueOf(x == solver.problem.replacedObjVar ? (int) bestBound : last[x.num])); // .valueIndexInLastSolution));
 				} else
 					sb.append(Variable.rawInstantiationOf(VarArray.class.cast(va).vars));
 			}
