@@ -357,7 +357,7 @@ public final class Solutions {
 				e.printStackTrace();
 			}
 		}
-		if (solver.head.control.general.verbose > 1)
+		if (solver.head.control.general.verbose > 1 || solver.head.control.general.jsonEachSolution)
 			log.config(lastSolutionInJsonFormat(solver.head.control.general.jsonQuotes) + "\n");
 		if (solver.head.control.general.verbose > 2 || solver.head.control.general.xmlEachSolution)
 			Color.GREEN.println("v", " " + xml.lastSolution());
