@@ -43,7 +43,6 @@ public abstract class STR1Optimized extends STR1 {
 			lastDepth = Math.max(0, Math.min(lastDepth, depth - 1));
 		else if (lastSizes != null)
 			Arrays.fill(lastSizes, 0); // we can use 0 because domains are necessarily not empty when we start filtering
-
 	}
 
 	/**********************************************************************************************

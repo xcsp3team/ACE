@@ -130,7 +130,8 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		String s = problem.askString("File or directory:");
 		if (filenames == null) {
 			filenames = collect(new ArrayList<>(), new File(s)).stream().sorted().collect(Collectors.toList());
-			Input.nInstancesToSolve = filenames.size();
+			if (Input.nInstancesToSolve == 1)
+				Input.nInstancesToSolve = filenames.size();
 		}
 		problem.parameters.get(0).setValue(name());
 		Kit.log.config("");

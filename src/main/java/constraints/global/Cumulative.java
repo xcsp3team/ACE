@@ -179,8 +179,8 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 						break;
 					assert slots[k].height != 0;
 					int rs = slots[k].start, re = slots[k].end;
+					// if no mandatory part or if the rectangle and the mandatory parts are disjoint
 					if (me <= ms || me <= rs || re <= ms) {
-						// if no mandatory part or if the rectangle and the mandatory parts are disjoint
 						if (starts[i].dom.removeValuesInRange(rs - wwidths[i] + 1, re) == false)
 							return false;
 					} // else something else ?

@@ -24,4 +24,9 @@ Let us consider some examples:
   java main.HeadExtraction scen11-f8.xml
 	A minimal unsatisfiable core is extracted.
 
-   
+  
+ Finally, to execute all XCSP3 instances in a directory:  
+   java ace problem.XCSP3 <directory> 
+ and to execute the first k XCSP3 instances in a directory:
+   java ace k problem.XCSP3 <directory> 
+ 

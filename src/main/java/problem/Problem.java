@@ -573,7 +573,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					Variable[] scp = t[0].scp;
 					int[] coeffs = ((SumWeighted) t[0]).coeffs;
 					int pos = Utilities.indexOf(x, t[0].scp);
-					control(pos != -1 && coeffs[pos] == -1);
+					control(pos != -1, " " + Kit.join(t[0].scp) + " - " + x + " " + pos);
+					if (coeffs[pos] == -1)
+						return; // How to handle that? (anyway, it must be rare (see StillLife-wastage-03.xml)
 					TypeOptimization opt = optimizer.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE;
 					for (Constraint c : t) {
 						// c.ignored = true;
@@ -1548,6 +1550,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (condition instanceof ConditionRel && Variable.areAllInitiallyBoolean(translate(list)) && Variable.areAllInitiallyBoolean(translate(coeffs))) {
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Object rightTerm = condition.rightTerm();
+			if (list.length == 1) { // no need to generate a specialized constraint in this case
+				XNodeParent<IVar> tree = build(condition.operatorTypeExpr(), api.mul(list[0], coeffs[0]), rightTerm);
+				return intension(tree);
+			}
 			if (condition instanceof ConditionVal && op != NE)
 				return post(SumScalarBooleanCst.buildFrom(this, translate(list), translate(coeffs), op, safeInt((long) rightTerm)));
 			if (condition instanceof ConditionVar && op != NE && op != EQ)

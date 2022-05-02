@@ -134,7 +134,7 @@ public abstract class SumScalarBoolean extends ConstraintGlobal implements TagAC
 		public SumScalarBooleanCst(Problem pb, Variable[] list, Variable[] coeffs, int limit) {
 			super(pb, list, coeffs);
 			this.limit = limit;
-			control(0 < limit && limit < list.length);
+			control(0 < limit && limit < list.length, limit + " " + list.length);
 		}
 
 		public static final class SumScalarBooleanLE extends SumScalarBooleanCst {
