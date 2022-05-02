@@ -446,7 +446,7 @@ public class Head extends Thread {
 
 	@Override
 	public void run() {
-		log.config("\n" + Color.ORANGE.coloring("ACE (AbsCon Essence)") + " v2.0beta " + Kit.dateOf(Head.class));
+		log.config("\n" + Color.ORANGE.coloring("ACE (AbsCon Essence)") + " v2.0 " + Kit.dateOf(Head.class));
 		stopwatch.start();
 		boolean[] crashed = new boolean[Input.nInstancesToSolve];
 		for (int i = 0; i < Input.nInstancesToSolve; i++) {

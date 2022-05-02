@@ -137,33 +137,25 @@ public final class Solutions {
 
 		private String compactValues(boolean discardAuxiliary) {
 			control(solver.problem.features.nSymbolicVars == 0);
-			List<Integer> list = new ArrayList<>();
 			List<String> compactList = new ArrayList<>();
 			for (VarEntity va : solver.problem.varEntities.allEntities) {
 				if (undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
 					continue;
+				List<Integer> list = new ArrayList<>();
 				updateList(va instanceof VarAlone ? ((VarAlone) va).var : VarArray.class.cast(va).vars, list);
-				int last = list.get(list.size() - 1);
-				for (int i = list.size() - 2; i >= 0; i--)
-					if (list.get(i) != last) {
-						int prev = list.get(0);
-						int cnt = 1;
-						for (int j = 1; j <= i; j++) {
-							if (list.get(j) == prev)
-								cnt++;
-							else {
-								updateCompactList(prev, cnt, compactList);
-								prev = list.get(j);
-								cnt = 1;
-							}
-						}
+				int prev = list.get(0);
+				int cnt = 1;
+				for (int i = 1; i < list.size(); i++) {
+					if (list.get(i) == prev)
+						cnt++;
+					else {
 						updateCompactList(prev, cnt, compactList);
-						for (int j = 0; j <= i; j++)
-							list.remove(0);
-						break;
+						prev = list.get(i);
+						cnt = 1;
 					}
+				}
+				updateCompactList(prev, cnt, compactList);
 			}
-			updateCompactList(list.get(0), list.size(), compactList);
 			return compactList.stream().collect(Collectors.joining(" "));
 		}
 
@@ -202,7 +194,8 @@ public final class Solutions {
 			assert found > 0;
 			StringBuilder sb = new StringBuilder("<instantiation id='sol").append(found).append("' type='solution'");
 			sb.append(solver.problem.framework != CSP ? " cost='" + bestBound + "'" : "").append(">");
-			sb.append(" <list> ").append(xmlVars).append(" </list> <values> ").append(vals(solver.problem.options.xmlCompact, true));
+			sb.append(" <list> ").append(xmlVars).append(" </list> <values> ");
+			sb.append(vals(solver.problem.options.xmlCompact, true));
 			return sb.append(" </values> </instantiation>").toString();
 		}
 	}
@@ -292,6 +285,7 @@ public final class Solutions {
 						Color.RED.println("d INCOMPLETE EXPLORATION");
 					Kit.log.config("\nc real time : " + solver.head.stopwatch.cpuTimeInSeconds());
 					System.out.flush();
+					// System.exit(0);
 				}
 			}
 		}
