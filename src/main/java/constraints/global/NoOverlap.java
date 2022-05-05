@@ -67,6 +67,9 @@ public final class NoOverlap extends ConstraintGlobal implements TagNotAC, TagCa
 
 	private final SetDense overlappings;
 
+	private int[][] residues1;
+	private int[][] residues2;
+
 	public NoOverlap(Problem pb, Variable[] xs, int[] widths, Variable[] ys, int[] heights) {
 		super(pb, Utilities.collect(Variable.class, xs, ys));
 		control(xs.length > 1 && xs.length == widths.length && ys.length == heights.length && xs.length == ys.length);
@@ -77,14 +80,42 @@ public final class NoOverlap extends ConstraintGlobal implements TagNotAC, TagCa
 		this.heights = heights;
 		this.half = xs.length;
 		this.overlappings = new SetDense(half);
+		this.residues1 = Variable.litterals(xs).intArray();
+		this.residues2 = Variable.litterals(ys).intArray();
 	}
 
 	private boolean overlap(int a, Domain dom, int b) {
 		return a > dom.lastValue() && dom.firstValue() > b;
 	}
 
+	private boolean findSupport(Variable[] x1, int[] t1, Variable[] x2, int[] t2, int w, int ww) { // ww = w + t2[i]
+		long volume = 0;
+		int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+		int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+		for (int k = overlappings.limit; k >= 0; k--) {
+			int j = overlappings.dense[k];
+			if (overlap(ww, x2[j].dom, w - t2[j]))
+				return false; // to try another value w
+			minX = Math.min(minX, x1[j].dom.firstValue());
+			minY = Math.min(minY, x2[j].dom.firstValue());
+			maxX = Math.max(maxX, x1[j].dom.lastValue() + t1[j]);
+			maxY = Math.max(maxY, x2[j].dom.lastValue() + t2[j]);
+			volume += t1[j] * t2[j];
+		}
+		int diffX = maxX - minX + 1, diffY = maxY - minY + 1;
+		// we can remove up to t2[i] at diffY because there may be no possible overlapping on x along
+		// this height
+		if (w < minY && minY < ww)
+			diffY -= Math.min(maxY, ww) - minY;
+		else if (minY <= w && w < maxY)
+			diffY -= Math.min(maxY, ww) - w;
+		if (volume > diffX * diffY) // not enough room for the items
+			return false; // to try another value w
+		return true; // because found support
+	}
+
 	// TODO: some optimizations of the code are apparently possible
-	public boolean filter(Variable[] x1, int[] t1, Variable[] x2, int[] t2) {
+	public boolean filter(Variable[] x1, int[] t1, Variable[] x2, int[] t2, int[][] residues) {
 		for (int i = 0; i < half; i++) {
 			Domain dom1 = x1[i].dom;
 			extern: for (int a = dom1.first(); a != -1; a = dom1.next(a)) {
@@ -108,32 +139,20 @@ public final class NoOverlap extends ConstraintGlobal implements TagNotAC, TagCa
 					// a kind of k-wise consistency is used (see paper about sweep for information about the principle)
 					// also, a local form of energetic reasoning is used
 					Domain dom2 = x2[i].dom;
-					intern: for (int b = dom2.first(); b != -1; b = dom2.next(b)) {
-						long volume = 0;
-						int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
-						int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+					int residue = residues[i][a];
+					if (dom2.contains(residue)) {
+						int w = dom2.toVal(residue);
+						if (findSupport(x1, t1, x2, t2, w, w + t2[i]))
+							continue extern;
+					}
+					for (int b = dom2.first(); b != -1; b = dom2.next(b)) {
+						if (b == residue)
+							continue;
 						int w = dom2.toVal(b);
-						for (int k = overlappings.limit; k >= 0; k--) {
-							int j = overlappings.dense[k];
-							if (overlap(w + t2[i], x2[j].dom, w - t2[j]))
-								continue intern; // to try another value w
-							minX = Math.min(minX, x1[j].dom.firstValue());
-							minY = Math.min(minY, x2[j].dom.firstValue());
-							maxX = Math.max(maxX, x1[j].dom.lastValue() + t1[j]);
-							maxY = Math.max(maxY, x2[j].dom.lastValue() + t2[j]);
-							volume += t1[j] * t2[j];
+						if (findSupport(x1, t1, x2, t2, w, w + t2[i])) {
+							residues[i][a] = b;
+							continue extern;
 						}
-						int diffX = maxX - minX + 1, diffY = maxY - minY + 1;
-						// we can remove up to t2[i] at diffY because there may be no possible overlapping on x along
-						// this height
-						if (w < minY && minY < w + t2[i])
-							diffY -= Math.min(maxY, w + t2[i]) - minY;
-						else if (minY <= w && w < maxY)
-							diffY -= Math.min(maxY, w + t2[i]) - w;
-						if (volume > diffX * diffY) { // not enough room for the items
-							continue intern; // to try another value w
-						}
-						continue extern; // because found support
 					}
 				}
 				// at this step, no support has been found
@@ -146,7 +165,7 @@ public final class NoOverlap extends ConstraintGlobal implements TagNotAC, TagCa
 
 	@Override
 	public boolean runPropagator(Variable x) {
-		return filter(xs, widths, ys, heights) && filter(ys, heights, xs, widths);
+		return filter(xs, widths, ys, heights, residues1) && filter(ys, heights, xs, widths, residues2);
 	}
 }
 

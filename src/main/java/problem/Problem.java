@@ -2184,7 +2184,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			int maxY = IntStream.range(0, oy.length).map(i -> ((Variable) oy[i]).dom.lastValue() + ty[i]).max().orElseThrow();
 			cumulative(ox, tx, null, ty, api.condition(LE, maxY - (long) minY));
 			cumulative(oy, ty, null, tx, api.condition(LE, maxX - (long) minX));
-			post(new NoOverlap(this, translate(ox), tx, translate(oy), ty)); // may be very expensive
+			post(new NoOverlap(this, translate(ox), tx, translate(oy), ty)); // TODO: may be very expensive
 		}
 
 		for (int i = 0; i < origins.length; i++)
@@ -2195,11 +2195,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					continue;
 				if (yi.dom.lastValue() + hi <= yj.dom.firstValue() || yj.dom.lastValue() + hj <= yi.dom.firstValue())
 					continue;
-				if (head.control.global.noOverlap == INTENSION_DECOMPOSITION)
-					// VERY expensive
+				if (head.control.global.noOverlap == INTENSION_DECOMPOSITION) // VERY expensive
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
-				else if (head.control.global.noOverlap == EXTENSION_STARRED)
-					// seems to be rather efficient
+				else if (head.control.global.noOverlap == EXTENSION_STARRED) // seems to be rather efficient
 					extension(vars(xi, xj, yi, yj), Table.starredNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true);
 				else if (head.control.global.noOverlap == EXTENSION_HYBRID)
 					post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
@@ -2248,11 +2246,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
 			if (origins.length == 1) {
-				if (heights[0] == 0 || heights[0] < limit + (op == LT ? 0 : 1))
+				if (heights[0] == 0 || heights[0] <= limit - (op == LT ? 1 : 0))
 					return null; // discarded constraint because initially entailed // return CtrTrue ?
 				return post(new CtrFalse(this, translate(origins), "Unary Cumulative"));
 			}
-			return post(new CumulativeCst(this, translate(origins), lengths, heights, op == LT ? limit + 1 : limit));
+			return post(new CumulativeCst(this, translate(origins), lengths, heights, op == LT ? limit - 1 : limit));
 		}
 		if (condition instanceof ConditionVar) {
 			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
@@ -2270,7 +2268,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			return post(new CumulativeVarW(this, translate(origins), translate(lengths), heights, op == LT ? limit + 1 : limit));
+			return post(new CumulativeVarW(this, translate(origins), translate(lengths), heights, op == LT ? limit - 1 : limit));
 		}
 		return unimplemented("cumulative");
 	}
@@ -2282,7 +2280,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			return post(new CumulativeVarH(this, translate(origins), lengths, translate(heights), op == LT ? limit + 1 : limit));
+			return post(new CumulativeVarH(this, translate(origins), lengths, translate(heights), op == LT ? limit - 1 : limit));
 		}
 		return unimplemented("cumulative");
 	}
@@ -2294,7 +2292,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			return post(new CumulativeVarWH(this, translate(origins), translate(lengths), translate(heights), op == LT ? limit + 1 : limit));
+			return post(new CumulativeVarWH(this, translate(origins), translate(lengths), translate(heights), op == LT ? limit - 1 : limit));
 		}
 		if (condition instanceof ConditionVar) {
 			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;

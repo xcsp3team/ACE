@@ -285,7 +285,6 @@ public final class Solutions {
 						Color.RED.println("d INCOMPLETE EXPLORATION");
 					Kit.log.config("\nc real time : " + solver.head.stopwatch.cpuTimeInSeconds());
 					System.out.flush();
-					// System.exit(0);
 				}
 			}
 		}
