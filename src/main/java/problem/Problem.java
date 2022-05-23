@@ -576,6 +576,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					control(pos != -1, " " + Kit.join(t[0].scp) + " - " + x + " " + pos);
 					if (coeffs[pos] == -1)
 						return; // How to handle that? (anyway, it must be rare (see StillLife-wastage-03.xml)
+					if (coeffs[pos] != 1)
+						return;
 					TypeOptimization opt = optimizer.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE;
 					for (Constraint c : t) {
 						// c.ignored = true;

@@ -114,7 +114,7 @@ public final class NoOverlap extends ConstraintGlobal implements TagNotAC, TagCa
 		return true; // because found support
 	}
 
-	// TODO: some optimizations of the code are apparently possible
+	// TODO: optimizations of the code?
 	public boolean filter(Variable[] x1, int[] t1, Variable[] x2, int[] t2, int[][] residues) {
 		for (int i = 0; i < half; i++) {
 			Domain dom1 = x1[i].dom;
