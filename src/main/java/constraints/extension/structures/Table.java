@@ -210,24 +210,34 @@ public class Table extends ExtensionStructure {
 		return tuples;
 	}
 
-	private static void addNonOverlappingTuplesFor(List<int[]> list, Domain dom1, Domain dom2, int offset, boolean first, boolean xAxis) {
+	private static void addNonOverlappingTuplesFor(List<int[]> list, Domain dom1, Domain dom2, int offset, boolean first, Boolean xAxis) {
 		for (int a = dom1.first(); a != -1; a = dom1.next(a)) {
 			int va = dom1.toVal(a);
 			for (int b = dom2.last(); b != -1; b = dom2.prev(b)) {
 				int vb = dom2.toVal(b);
 				if (va + offset > vb)
 					break;
-				list.add(xAxis ? new int[] { first ? va : vb, first ? vb : va, STAR, STAR } : new int[] { STAR, STAR, first ? va : vb, first ? vb : va });
+				if (xAxis == null)
+					list.add(new int[] { first ? va : vb, first ? vb : va });
+				else
+					list.add(xAxis ? new int[] { first ? va : vb, first ? vb : va, STAR, STAR } : new int[] { STAR, STAR, first ? va : vb, first ? vb : va });
 			}
 		}
 	}
 
+	public static int[][] starredNoOverlap(Variable x1, Variable x2, int w1, int w2) {
+		List<int[]> list = new ArrayList<>();
+		addNonOverlappingTuplesFor(list, x1.dom, x2.dom, w1, true, null);
+		addNonOverlappingTuplesFor(list, x2.dom, x1.dom, w2, false, null);
+		return list.stream().toArray(int[][]::new);
+	}
+
 	public static int[][] starredNoOverlap(Variable x1, Variable x2, Variable y1, Variable y2, int w1, int w2, int h1, int h2) {
 		List<int[]> list = new ArrayList<>();
-		addNonOverlappingTuplesFor(list, x1.dom, x2.dom, w1, true, true);
-		addNonOverlappingTuplesFor(list, x2.dom, x1.dom, w2, false, true);
-		addNonOverlappingTuplesFor(list, y1.dom, y2.dom, h1, true, false);
-		addNonOverlappingTuplesFor(list, y2.dom, y1.dom, h2, false, false);
+		addNonOverlappingTuplesFor(list, x1.dom, x2.dom, w1, true, Boolean.TRUE);
+		addNonOverlappingTuplesFor(list, x2.dom, x1.dom, w2, false, Boolean.TRUE);
+		addNonOverlappingTuplesFor(list, y1.dom, y2.dom, h1, true, Boolean.FALSE);
+		addNonOverlappingTuplesFor(list, y2.dom, y1.dom, h2, false, Boolean.FALSE);
 		return list.stream().toArray(int[][]::new);
 	}
 
