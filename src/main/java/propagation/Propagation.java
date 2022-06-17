@@ -19,6 +19,7 @@ import interfaces.Observers.ObserverOnConflicts;
 import learning.IpsReasonerDominance;
 import sets.SetSparse;
 import solver.Solver;
+import solver.Solver.Stopping;
 import utility.Reflector;
 import variables.Domain;
 import variables.Variable;
@@ -188,6 +189,12 @@ public abstract class Propagation {
 	 */
 	protected final OptionsPropagation options;
 
+	/**
+	 * This field is set to true when running propagation from scratch at the root node must be made when a restart
+	 * occurs.
+	 */
+	public boolean runAtNextRoot;
+
 	/*************************************************************************
 	 * Methods
 	 *************************************************************************/
@@ -299,11 +306,31 @@ public abstract class Propagation {
 
 	/**
 	 * This method is called to run constraint propagation, typically at the beginning of search (i.e., in a
-	 * preprocessing stage).
+	 * preprocessing stage), but it can also be called when at root node of a new run
 	 * 
 	 * @return false iff an inconsistency is detected
 	 */
 	public abstract boolean runInitially();
+
+	/**
+	 * This method is called to possibly run constraint propagation, at the root of the search tree, typically before
+	 * performing a new run (restart).
+	 * 
+	 * @return true iff constraint propagation has been rerun
+	 */
+	public boolean runPossiblyAtRoot() {
+		// we rerun propagation if a solution has just been found (since the objective constraint has changed), or if it
+		// must be forced anyway
+		int numRun = solver.restarter.numRun;
+		boolean rerun = runAtNextRoot || (solver.problem.optimizer != null && numRun - 1 == solver.solutions.lastRun)
+				|| (options.strongOnce && 0 < numRun && numRun % 60 == 0); // TODO hard coding for 60
+		if (rerun) {
+			if (runInitially() == false)
+				solver.stopping = Stopping.FULL_EXPLORATION;
+			runAtNextRoot = false;
+		}
+		return rerun;
+	}
 
 	/**
 	 * This method is called after the specified variable has been assigned in order to propagate this event.

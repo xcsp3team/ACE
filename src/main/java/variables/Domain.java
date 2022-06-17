@@ -34,6 +34,7 @@ import problem.Problem;
 import propagation.Propagation;
 import sets.SetDense;
 import sets.SetLinked;
+import solver.Solver;
 import utility.Kit;
 
 /**
@@ -368,7 +369,7 @@ public interface Domain extends SetLinked {
 	 * Returns randomly the index of a value in the current domain.
 	 */
 	default int any() {
-		return get(propagation().solver.head.random.nextInt(size()));
+		return get(var().problem.head.random.nextInt(size()));
 	}
 
 	/**
@@ -499,6 +500,10 @@ public interface Domain extends SetLinked {
 	 * Methods for updating the domain (i.e., removing values)
 	 *********************************************************************************************/
 
+	default boolean handleReduction() {
+		return var().problem.solver.propagation.handleReduction(var());
+	}
+
 	/**
 	 * Removes at construction time (hence, definitively) the value at the specified index. <br />
 	 * Important: this method must only called when building the problem.
@@ -563,7 +568,7 @@ public interface Domain extends SetLinked {
 	 * @return false if an inconsistency is detected
 	 */
 	default boolean afterElementaryCalls(int sizeBefore) {
-		return size() == sizeBefore ? true : propagation().handleReduction(var());
+		return size() == sizeBefore ? true : handleReduction();
 	}
 
 	/**
@@ -579,10 +584,11 @@ public interface Domain extends SetLinked {
 		// from " + propagation().currFilteringCtr);
 		Variable x = var();
 		assert !x.assigned() && contains(a) : x + " " + x.assigned() + " " + contains(a);
-		int depth = propagation().solver.stackVariable(x); // stacking variables (to keep track of propagation) must
-															// always be performed before domain reduction
+		Solver solver = x.problem.solver;
+		int depth = solver.stackVariable(x);
+		// stacking variables (to keep track of propagation) must always be performed before domain reduction
 		remove(a, depth);
-		for (ObserverOnRemovals observer : x.problem.solver.observersOnRemovals)
+		for (ObserverOnRemovals observer : solver.observersOnRemovals)
 			observer.afterRemoval(x, a);
 		x.problem.nValueRemovals++;
 	}
@@ -601,7 +607,7 @@ public interface Domain extends SetLinked {
 		if (size() == 1)
 			return fail();
 		removeElementary(a);
-		return propagation().handleReduction(var());
+		return handleReduction();
 	}
 
 	/**
@@ -637,7 +643,7 @@ public interface Domain extends SetLinked {
 				removeElementary(a);
 				cnt++;
 			}
-		return propagation().handleReduction(var());
+		return handleReduction();
 	}
 
 	/**
@@ -670,7 +676,7 @@ public interface Domain extends SetLinked {
 			return fail();
 		for (int i = idxs.limit; i >= 0; i--)
 			removeElementary(idxs.dense[i]);
-		return propagation().handleReduction(var());
+		return handleReduction();
 	}
 
 	/**
@@ -698,10 +704,11 @@ public interface Domain extends SetLinked {
 		if (size() == 1)
 			return 0; // 0 removal
 		Variable x = var();
-		int depth = propagation().solver.stackVariable(x); // stacking variables must always be performed before domain
-															// reduction
+		Solver solver = x.problem.solver;
+		int depth = solver.stackVariable(x);
+		// stacking variables must always be performed before domain reduction
 		int nRemovals = reduceTo(a, depth);
-		for (ObserverOnRemovals observer : x.problem.solver.observersOnRemovals)
+		for (ObserverOnRemovals observer : solver.observersOnRemovals)
 			observer.afterRemovals(x, nRemovals);
 		x.problem.nValueRemovals += nRemovals;
 		assert nRemovals >= 0 && size() == 1 : "nRemovals: " + nRemovals + " size:" + size();
@@ -718,7 +725,7 @@ public interface Domain extends SetLinked {
 	 * @return false if an inconsistency (empty domain) is detected
 	 */
 	default boolean reduceTo(int a) {
-		return !contains(a) ? fail() : reduceToElementary(a) == 0 || propagation().handleReduction(var());
+		return !contains(a) ? fail() : reduceToElementary(a) == 0 || handleReduction();
 	}
 
 	/**
@@ -731,7 +738,7 @@ public interface Domain extends SetLinked {
 	 */
 	default boolean reduceToValue(int v) {
 		int a = toIdxIfPresent(v);
-		return a == -1 ? fail() : reduceToElementary(a) == 0 || propagation().handleReduction(var());
+		return a == -1 ? fail() : reduceToElementary(a) == 0 || handleReduction();
 	}
 
 	/**
@@ -740,7 +747,7 @@ public interface Domain extends SetLinked {
 	 * @return false
 	 */
 	default boolean fail() {
-		return propagation().handleReduction(var(), 0);
+		return var().problem.solver.propagation.handleReduction(var(), 0);
 	}
 
 	/**

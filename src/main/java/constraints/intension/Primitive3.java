@@ -158,6 +158,8 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 
 	public static abstract class Add3 extends Primitive3 implements TagNotCallCompleteFiltering {
 
+		private static final int RUNNING_LIMIT = 200; // TODO hard coding_
+
 		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			switch (op) {
 			case EQ:
@@ -177,6 +179,11 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 			boolean multidirectional = false; // hard coding
 
 			@Override
+			public boolean isGuaranteedAC() {
+				return dx.size() * (double) dy.size() <= RUNNING_LIMIT;
+			}
+
+			@Override
 			public boolean isSatisfiedBy(int[] t) {
 				return t[0] + t[1] == t[2];
 			}
@@ -188,7 +195,7 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about AC Guaranteed?
+				if (dx.size() * (double) dy.size() > RUNNING_LIMIT) {
 					if (dz.removeValuesLT(dx.firstValue() + dy.firstValue()) == false || dz.removeValuesGT(dx.lastValue() + dy.lastValue()) == false)
 						return false;
 					return AC.enforceAddGE(dx, dy, dz.firstValue()) && AC.enforceAddLE(dx, dy, dz.lastValue());

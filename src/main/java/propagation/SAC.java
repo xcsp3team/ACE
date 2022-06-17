@@ -46,7 +46,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 	 * @return true iff (x,a) is SAC
 	 */
 	protected boolean checkSAC(Variable x, int a) {
-		// System.out.println("checking" + x + " " + a);
+		// System.out.println("checking " + x + " " + a);
 		solver.assign(x, a);
 		boolean consistent = enforceACafterAssignment(x);
 		solver.backtrack(x);
@@ -189,6 +189,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		protected boolean manageInconsistentValue(Variable x, int a) {
 			nEffectiveSingletonTests++;
 			x.dom.removeElementary(a);
+			// System.out.println("removing " + x + " " + a);
 			// if (shavingEvaluator != null) shavingEvaluator.updateRatioAfterShavingSuccess(x);
 			if (x.dom.size() == 0)
 				return false;
@@ -248,10 +249,18 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			}
 
 			public abstract class CellSelector {
-
 				protected abstract Cell select();
+			}
 
-				protected Cell firstSingletonCell() {
+			public final class Fifo_Lifo extends CellSelector {
+
+				private boolean fifo;
+
+				protected Fifo_Lifo(boolean fifo) {
+					this.fifo = fifo;
+				}
+
+				private Cell firstSingletonCell() {
 					for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x))
 						if (x.dom.size() == 1) {
 							Cell cell = positions[x.num][x.dom.first()];
@@ -260,32 +269,21 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 						}
 					return null;
 				}
-			}
-
-			public final class Fifo extends CellSelector {
 
 				@Override
 				public Cell select() {
 					Cell cell = firstSingletonCell();
 					if (cell != null)
 						return cell;
-					for (cell = head; cell != null; cell = cell.next) // first valid cell
-						if (cell.x.dom.contains(cell.a))
-							return cell;
-					return null;
-				}
-			}
+					if (fifo) {
+						for (cell = head; cell != null; cell = cell.next) // first valid cell
+							if (cell.x.dom.contains(cell.a))
+								return cell;
+					} else
+						for (cell = tail; cell != null; cell = cell.prev) // last valid cell
+							if (cell.x.dom.contains(cell.a))
+								return cell;
 
-			public final class Lifo extends CellSelector {
-
-				@Override
-				public Cell select() {
-					Cell cell = firstSingletonCell();
-					if (cell != null)
-						return cell;
-					for (cell = tail; cell != null; cell = cell.prev) // last valid cell
-						if (cell.x.dom.contains(cell.a))
-							return cell;
 					return null;
 				}
 			}
@@ -542,6 +540,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				Variable x = cell.x;
 				int a = cell.a;
 				nSingletonTests++;
+				// System.out.println("checking " + x + " " + a);
 				assert !x.assigned() && x.dom.contains(a) && queue.isEmpty();
 				solver.assign(x, a);
 				if (enforceACafterAssignment(x)) {

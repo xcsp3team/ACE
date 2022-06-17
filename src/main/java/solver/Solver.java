@@ -476,6 +476,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 * The object used for constraint propagation
 	 */
 	public Propagation propagation;
+
 	/**
 	 * The object that implements the restarting policy of the solver
 	 */

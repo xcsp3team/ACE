@@ -87,7 +87,7 @@ public abstract class Optimizer implements ObserverOnRuns {
 			if (minBound <= maxBound) { // we continue after resetting
 				problem.solver.stopping = null;
 				control(problem.features.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
-				problem.solver.restarter.forceRootPropagation = true;
+				problem.solver.propagation.runAtNextRoot = true;
 				problem.solver.restoreProblem();
 				if (problem.solver.nogoodReasoner != null)
 					problem.solver.nogoodReasoner.reset();
@@ -322,7 +322,7 @@ public abstract class Optimizer implements ObserverOnRuns {
 		}
 		if (modified) {
 			Kit.log.fine("New Bounds updated from other workers : " + stringBounds());
-			problem.solver.restarter.forceRootPropagation = true;
+			problem.solver.propagation.runAtNextRoot = true;
 		}
 		return modified;
 	}

@@ -20,7 +20,6 @@ import interfaces.Observers.ObserverOnRuns;
 import optimization.ObjectiveVariable;
 import optimization.Optimizer;
 import sets.SetDense;
-import solver.Solver.Stopping;
 import utility.Kit;
 import variables.Variable;
 
@@ -67,16 +66,8 @@ public class Restarter implements ObserverOnRuns {
 			baseCutoff = baseCutoff * options.resetCoefficient;
 			Kit.log.config("    ...resetting restart cutoff to " + baseCutoff);
 		}
-		// we rerun propagation if a solution has just been found (since the objective constraint has changed), or if it
-		// must be forced anyway
-		boolean rerunPropagation = forceRootPropagation || (solver.problem.optimizer != null && numRun - 1 == solver.solutions.lastRun);
-		if (rerunPropagation || (solver.head.control.propagation.strongOnce && 0 < numRun && numRun % 60 == 0)) {
-			// TODO hard coding
-			if (solver.propagation.runInitially() == false)
-				solver.stopping = Stopping.FULL_EXPLORATION;
-			forceRootPropagation = false;
+		if (solver.propagation.runPossiblyAtRoot()) // if propagation has been run
 			nRestartsSinceReset = 0;
-		}
 		if (currCutoff != Long.MAX_VALUE) {
 			long offset = options.luby ? lubyCutoffFor(nRestartsSinceReset + (long) 1) * 150
 					: (long) (baseCutoff * Math.pow(options.factor, nRestartsSinceReset));
@@ -125,14 +116,9 @@ public class Restarter implements ObserverOnRuns {
 	private int nRestartsSinceReset;
 
 	/**
-	 * Set to true when running propagation from scratch at the root node must be made when a restart occurs.
-	 */
-	public boolean forceRootPropagation;
-
-	/**
 	 * Resets the object. This is usually not used.
 	 */
-	public void reset() {
+	public final void reset() {
 		numRun = -1;
 		currCutoff = baseCutoff = options.cutoff;
 		nRestartsSinceReset = 0;
@@ -172,7 +158,7 @@ public class Restarter implements ObserverOnRuns {
 		if (solver.problem.optimizer != null && options.cutoff < Integer.MAX_VALUE)
 			options.cutoff *= 10; // For COPs, the cutoff value is multiplied by 10; hard coding
 		this.measureSupplier = measureSupplier();
-		reset();
+		currCutoff = baseCutoff = options.cutoff; // reset();
 	}
 
 	private long cnt;
