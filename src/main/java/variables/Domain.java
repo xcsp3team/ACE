@@ -31,7 +31,6 @@ import org.xcsp.common.Utilities;
 
 import interfaces.Observers.ObserverOnRemovals;
 import problem.Problem;
-import propagation.Propagation;
 import sets.SetDense;
 import sets.SetLinked;
 import solver.Solver;
@@ -272,19 +271,6 @@ public interface Domain extends SetLinked {
 	default String typeName() {
 		return "D" + typeIdentifier();
 	}
-
-	/**
-	 * @return the propagation object that interacts with domains
-	 */
-	Propagation propagation();
-
-	/**
-	 * Sets the propagation object that interacts with domains
-	 * 
-	 * @param propagation
-	 *            a propagation object
-	 */
-	void setPropagation(Propagation propagation);
 
 	/**
 	 * Indicates if value indexes and values match, i.e. if for every index a, we have toVal(a) = a, and for every value

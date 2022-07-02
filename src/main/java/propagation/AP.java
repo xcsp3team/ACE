@@ -26,9 +26,9 @@ public class AP extends StrongConsistency {
 
 	private final static int GAP = 60;
 
-	private ESAC3 esac;
+	private final ESAC3 esac;
 
-	private SAC sac;
+	private final SAC sac;
 
 	private final Propagation[] alternatives;
 
@@ -67,22 +67,16 @@ public class AP extends StrongConsistency {
 			int before = Variable.nValidValuesFor(solver.problem.variables);
 			Propagation strong = whichStrongPropagation();
 			strong.time = time;
-			// for (Constraint c : solver.problem.constraints)
-			// c.time = 0;
-			// TODO propagation() in Domain not using the right object ? TO TEST
-			// for (Variable x : solver.problem.variables)
-			// x.time = 0;
 			solver.propagation = strong;
 			if (strong.runInitially() == false)
 				solver.stopping = Stopping.FULL_EXPLORATION;
 			time = strong.time;
 			solver.propagation = this;
-			int nRemovals = before - Variable.nValidValuesFor(solver.problem.variables);
-			System.out.println(
-					"After running " + strong.getClass().getSimpleName() + " removals=" + nRemovals + " " + Variable.nValidValuesFor(solver.problem.variables));
-			// System.out.println("nb singleton checks " + strong.nSingletonTests);
+			int after = Variable.nValidValuesFor(solver.problem.variables);
+			System.out.println("After running " + strong.getClass().getSimpleName() + " removals=" + (before - after) + " "
+					+ Variable.nValidValuesFor(solver.problem.variables));
 			propagations.add(strong);
-			removals.add(nRemovals);
+			removals.add(before - after);
 			rerun = true;
 		}
 		return rerun;

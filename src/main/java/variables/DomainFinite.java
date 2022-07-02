@@ -19,7 +19,6 @@ import org.xcsp.common.Constants;
 import org.xcsp.common.Range;
 import org.xcsp.common.Utilities;
 
-import propagation.Propagation;
 import sets.SetLinkedFinite.LinkedSetOrderedWithBits;
 import utility.Kit;
 
@@ -48,8 +47,6 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 
 	private Integer typeIdentifier;
 
-	private Propagation propagation;
-
 	private Boolean indexesMatchValues;
 
 	@Override
@@ -67,16 +64,6 @@ public abstract class DomainFinite extends LinkedSetOrderedWithBits implements D
 	@Override
 	public final int typeIdentifier() {
 		return typeIdentifier != null ? typeIdentifier : (typeIdentifier = computeTypeIdentifier());
-	}
-
-	@Override
-	public final Propagation propagation() {
-		return propagation;
-	}
-
-	@Override
-	public final void setPropagation(Propagation propagation) {
-		this.propagation = propagation;
 	}
 
 	@Override

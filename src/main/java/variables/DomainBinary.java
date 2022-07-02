@@ -12,7 +12,6 @@ package variables;
 
 import java.util.stream.IntStream;
 
-import propagation.Propagation;
 import sets.SetLinkedBinary;
 
 /**
@@ -26,8 +25,6 @@ public final class DomainBinary extends SetLinkedBinary implements Domain {
 
 	private Integer typeIdentifier;
 
-	private Propagation propagation;
-
 	private Boolean indexesMatchValues;
 
 	private int firstValue, secondValue; // typically, 0 and 1
@@ -40,16 +37,6 @@ public final class DomainBinary extends SetLinkedBinary implements Domain {
 	@Override
 	public final int typeIdentifier() {
 		return typeIdentifier != null ? typeIdentifier : (typeIdentifier = Domain.typeIdentifierFor(firstValue, secondValue));
-	}
-
-	@Override
-	public final Propagation propagation() {
-		return propagation;
-	}
-
-	@Override
-	public final void setPropagation(Propagation propagation) {
-		this.propagation = propagation;
 	}
 
 	@Override

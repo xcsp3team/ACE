@@ -10,8 +10,6 @@
 
 package variables;
 
-import propagation.Propagation;
-
 /**
  * EXPERIMENTAL (TO BE CONTINUED)
  * 
@@ -22,8 +20,6 @@ public final class DomainInfinite implements Domain {
 	private Variable var;
 
 	private Integer typeIdentifier;
-
-	private Propagation propagation;
 
 	private Integer assignedValue;
 
@@ -38,16 +34,6 @@ public final class DomainInfinite implements Domain {
 	public final int typeIdentifier() {
 		return typeIdentifier != null ? typeIdentifier : (typeIdentifier = Domain.typeIdentifierFor(Integer.MIN_VALUE, Integer.MAX_VALUE));
 		// should we be careful about avoiding confusion with other types of domains?
-	}
-
-	@Override
-	public final Propagation propagation() {
-		return propagation;
-	}
-
-	@Override
-	public final void setPropagation(Propagation propagation) {
-		this.propagation = propagation;
 	}
 
 	@Override
