@@ -228,7 +228,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void beforeRun() {
-			if (runReset() || (solver.restarter.numRun - solver.solutions.lastRun) % solver.head.control.restarts.varhSolResetPeriod == 0) {
+			if (runReset()) {
 				Kit.log.config("    ...resetting weights (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
 				reset();
 			}

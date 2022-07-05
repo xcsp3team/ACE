@@ -235,7 +235,8 @@ public abstract class HeuristicVariables extends Heuristic {
 	 */
 	protected boolean runReset() {
 		int numRun = solver.restarter.numRun;
-		return 0 < numRun && numRun % solver.head.control.restarts.varhResetPeriod == 0;
+		return ((0 < numRun && numRun % solver.head.control.restarts.varhResetPeriod == 0)
+				|| (numRun - solver.solutions.lastRun) % solver.head.control.restarts.varhSolResetPeriod == 0);
 	}
 
 	/*************************************************************************

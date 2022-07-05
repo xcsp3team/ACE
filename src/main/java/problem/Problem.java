@@ -265,7 +265,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public void afterSolverConstruction() {
 		ConflictsStructure.buildFor(this);
-		// Stream.of(variables).forEach(x -> x.dom.setPropagation(solver.propagation));
 	}
 
 	/**********************************************************************************************
