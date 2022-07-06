@@ -361,7 +361,13 @@ public final class Solutions {
 	 * This method must be called whenever a new solution is found by the solver
 	 */
 	public void handleNewSolution() {
-		handleNewSolution(true);
+		synchronized (lock) {
+			if (!lock.get()) {
+				lock.set(true);
+				handleNewSolution(true);
+				lock.set(false);
+			}
+		}
 	}
 
 	private boolean controlFoundSolution() {
