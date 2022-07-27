@@ -209,7 +209,7 @@ public class SetDense { // implements Iterable<Integer> {
 	public final void resetTo(SetDense set) {
 		assert capacity() >= set.size();
 		clear();
-		for (int i = 0; i < set.size(); i++)
+		for (int i = 0; i <= set.limit; i++)
 			add(set.dense[i]);
 	}
 

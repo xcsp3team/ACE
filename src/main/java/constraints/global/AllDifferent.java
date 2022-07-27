@@ -83,7 +83,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 		/**
 		 * The object used to compute a maximal matching, and to delete inconsistent values
 		 */
-		private Matcher matcher;
+		private final Matcher matcher;
 
 		public AllDifferentComplete(Problem pb, Variable[] scp) {
 			super(pb, scp);

@@ -27,19 +27,24 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * The object used to compute a maximal matching, and to delete inconsistent values
+ * The object used to compute a maximal matching, and to delete inconsistent values <br/>
+ * TODO : the algorithm is poorly incremental, and besides is recursive (how to avoid recursion?)
  * 
- * @author Vincent Perradin
+ * @author Vincent Perradin (refactoring by Christophe Lecoutre)
  */
 public abstract class Matcher implements ObserverOnConstruction {
 
 	@Override
 	public void afterProblemConstruction(int n) {
 		this.unfixedVars = new SetSparseReversible(arity, n + 1);
+		if (this instanceof MatcherAllDifferent)
+			this.fixedVars = new SetSparseReversible(arity, n + 1, false);
 	}
 
 	public void restoreAtDepthBefore(int depth) {
 		unfixedVars.restoreLimitAtLevel(depth);
+		if (fixedVars != null)
+			fixedVars.restoreLimitAtLevel(depth);
 	}
 
 	/**
@@ -54,9 +59,11 @@ public abstract class Matcher implements ObserverOnConstruction {
 
 	protected final int arity;
 
-	protected int minValue, maxValue;
+	protected final int minValue, maxValue;
 
-	protected int intervalSize;
+	protected final int intervalSize;
+
+	protected final int T; // special node
 
 	/**
 	 * current time (for stamping)
@@ -67,6 +74,8 @@ public abstract class Matcher implements ObserverOnConstruction {
 	 * variables that have no singleton domains
 	 */
 	protected SetSparseReversible unfixedVars;
+
+	protected SetSparseReversible fixedVars;
 
 	/**
 	 * queue of currently unmatched variables
@@ -141,13 +150,14 @@ public abstract class Matcher implements ObserverOnConstruction {
 		this.scp = c.scp;
 		this.arity = c.scp.length;
 
-		this.unmatchedVars = new SetSparse(arity);
-		this.varToVal = Kit.repeat(-1, arity);
-		this.currVarsSCC = new SetSparse(arity);
-
 		this.minValue = Stream.of(scp).mapToInt(x -> x.dom.firstValue()).min().getAsInt();
 		this.maxValue = Stream.of(scp).mapToInt(x -> x.dom.lastValue()).max().getAsInt();
 		this.intervalSize = maxValue - minValue + 1;
+		this.T = arity + intervalSize;
+
+		this.unmatchedVars = new SetSparse(arity);
+		this.varToVal = Kit.repeat(-1, arity);
+		this.currVarsSCC = new SetSparse(arity);
 
 		this.neighborsOfValues = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparse(arity + 1)).toArray(SetSparse[]::new);
 		this.neighborsOfT = new SetSparse(intervalSize);
@@ -169,17 +179,6 @@ public abstract class Matcher implements ObserverOnConstruction {
 
 	protected abstract void computeNeighbors();
 
-	private void update(int adjacentNode, int node) {
-		if (visitTime[adjacentNode] == time) {
-			if (stackTarjan.contains(adjacentNode) && numDFS[adjacentNode] < lowLink[node])
-				lowLink[node] = numDFS[adjacentNode];
-		} else {
-			tarjanRemoveValues(adjacentNode);
-			if (lowLink[adjacentNode] < lowLink[node])
-				lowLink[node] = lowLink[adjacentNode];
-		}
-	}
-
 	/**
 	 * Computes Tarjan algorithm and prunes some values from the domains. Nodes are given a number as follows: a) i for
 	 * the ith variable of the scope, b) arity+v for a value v between minValue and maxValue, c) arity+intervalSize for
@@ -189,67 +188,83 @@ public abstract class Matcher implements ObserverOnConstruction {
 	 *            : Starting vertex for the search
 	 */
 	protected final void tarjanRemoveValues(int node) {
-		// System.out.println("TRV = " + node);
 		assert visitTime[node] < time;
 		visitTime[node] = time;
 		numDFS[node] = lowLink[node] = ++nVisitedNodes;
 		stackTarjan.add(node);
 
-		if (node < arity) {// node for a variable {
-			update(arity + varToVal[node], node);
-		} else if (node < arity + intervalSize) { // node for a value
+		if (node < arity) { // node for a variable
+			int adjacentNode = arity + varToVal[node];
+			if (visitTime[adjacentNode] != time) { // This code is repeated 3 times to save stacking (recursive calls)
+				tarjanRemoveValues(adjacentNode);
+				lowLink[node] = Math.min(lowLink[node], lowLink[adjacentNode]);
+			} else if (stackTarjan.contains(adjacentNode))
+				lowLink[node] = Math.min(lowLink[node], numDFS[adjacentNode]);
+		} else if (node < T) { // node for a value
 			SetSparse neighbors = neighborsOfValues[node - arity];
-			for (int i = 0; i <= neighbors.limit; i++)
-				update(neighbors.dense[i] == arity ? arity + intervalSize : neighbors.dense[i], node);
+			for (int i = 0; i <= neighbors.limit; i++) {
+				int adjacentNode = neighbors.dense[i] == arity ? T : neighbors.dense[i];
+				if (visitTime[adjacentNode] != time) {
+					tarjanRemoveValues(adjacentNode);
+					lowLink[node] = Math.min(lowLink[node], lowLink[adjacentNode]);
+				} else if (stackTarjan.contains(adjacentNode))
+					lowLink[node] = Math.min(lowLink[node], numDFS[adjacentNode]);
+			}
 		} else {
-			assert node == arity + intervalSize; // node for T
-			for (int i = 0; i <= neighborsOfT.limit; i++)
-				update(arity + neighborsOfT.dense[i], node);
+			assert node == T; // node for T
+			for (int i = 0; i <= neighborsOfT.limit; i++) {
+				int adjacentNode = arity + neighborsOfT.dense[i];
+				if (visitTime[adjacentNode] != time) {
+					tarjanRemoveValues(adjacentNode);
+					lowLink[node] = Math.min(lowLink[node], lowLink[adjacentNode]);
+				} else if (stackTarjan.contains(adjacentNode))
+					lowLink[node] = Math.min(lowLink[node], numDFS[adjacentNode]);
+			}
 		}
-		if (lowLink[node] == numDFS[node]) {
-			splitSCC = splitSCC || (lowLink[node] > 1 || nVisitedNodes < visitTime.length);
+		if (lowLink[node] == numDFS[node]) { // if node is the root of a SCC
+			splitSCC = splitSCC || lowLink[node] > 1 || nVisitedNodes < visitTime.length;
 			if (splitSCC) {
-				currVarsSCC.clear();
-				for (int j = 0; j <= unfixedVars.limit; j++)
-					currVarsSCC.add(unfixedVars.dense[j]);
+				// if (node == T) {
+				// int nodeSCC = -1;
+				// while (nodeSCC != node)
+				// nodeSCC = stackTarjan.pop();
+				// return;
+				// }
+
+				currVarsSCC.resetTo(unfixedVars);
 				currValsSCC.clear();
 				int nodeSCC = -1;
 				while (nodeSCC != node) {
 					nodeSCC = stackTarjan.pop();
 					if (nodeSCC < arity)
 						currVarsSCC.remove(nodeSCC);
-					else if (arity <= nodeSCC && nodeSCC < arity + intervalSize)
+					else if (nodeSCC < T)
 						currValsSCC.add(nodeSCC - arity);
 				}
+				// System.out.println(" hhh " + node + " " + currVarsSCC.size() + " " + currValsSCC.size());
+				// System.out.println("fff " + currVarsSCC.size() + " " + currValsSCC.size());
 				if (currVarsSCC.size() > 0)
 					for (int i = 0; i <= currValsSCC.limit; i++) {
-						int u = currValsSCC.dense[i];
-						for (int j = 0; j <= currVarsSCC.limit; j++) {
-							int x = currVarsSCC.dense[j];
-							int a = scp[x].dom.toIdxIfPresent(domainValueOf(u));
-							if (a >= 0 && varToVal[x] != u)
-								scp[x].dom.remove(a);
-						}
-
-						// for (int j = ctr.futvars.limit; j >= 0; j--) {
-						// int x = ctr.futvars.dense[j];
-						// int a = scp[x].dom.toPresentIdx(domainValueOf(u));
-						// if (a >= 0 && !currSCC.isPresent(x) && varToVal[x] != u)
-						// scp[x].dom.remove(a);
-						// }
-						// int nb = ctr.pb.nValuesRemoved;
-						// for (int j = 0; j <= unfixedVars.limit; j++) {
-						// int x = unfixedVars.dense[j];
-						// int a = scp[x].dom.toPresentIdx(domainValueOf(u));
-						// if (a >= 0 && !currSCC.isPresent(x) && varToVal[x] != u)
-						// scp[x].dom.remove(a);
-						// }
-						// System.out.println(ctr + " while removing " + domainValueOf(u) + " DIff=" +
-						// (ctr.pb.nValuesRemoved - nb) + " " + currSCC.size());
+						int v = currValsSCC.dense[i];
+						SetSparse neighbors = neighborsOfValues[v];
+						if (neighbors.size() < currVarsSCC.size()) {
+							int w = domainValueOf(v);
+							for (int j = 0; j <= neighbors.limit; j++) {
+								int x = neighbors.dense[j];
+								if (x < arity && currVarsSCC.contains(x) && varToVal[x] != v)
+									scp[x].dom.removeValue(w);
+							}
+						} else
+							for (int j = 0; j <= currVarsSCC.limit; j++) {
+								int x = currVarsSCC.dense[j];
+								int a = scp[x].dom.toIdxIfPresent(domainValueOf(v));
+								if (a >= 0 && varToVal[x] != v)
+									scp[x].dom.remove(a);
+							}
 					}
-				// }
 			}
 		}
+
 	}
 
 	/**
@@ -263,14 +278,10 @@ public abstract class Matcher implements ObserverOnConstruction {
 		splitSCC = false;
 		nVisitedNodes = 0;
 		for (int x = 0; x < arity; x++) {
+			if (fixedVars != null && fixedVars.contains(x))
+				continue;
 			if (visitTime[x] < time)
 				tarjanRemoveValues(x);
-			Domain dom = scp[x].dom;
-			for (int a = dom.first(); a != -1; a = dom.next(a)) {
-				int u = normalizedValueOf(dom.toVal(a));
-				if (visitTime[arity + u] < time)
-					tarjanRemoveValues(arity + u);
-			}
 		}
 	}
 
@@ -366,25 +377,24 @@ public abstract class Matcher implements ObserverOnConstruction {
 		@Override
 		public boolean findMaximumMatching() {
 			unmatchedVars.clear();
+			int depth = problem.solver.depth();
 			for (int x = 0; x < arity; x++) {
-				int u = varToVal[x];
-				if (u == -1)
+				int v = varToVal[x];
+				if (v == -1)
 					unmatchedVars.add(x);
 				else {
-					assert valToVar[u] == x;
-					if (!scp[x].dom.containsValue(domainValueOf(u))) {
-						varToVal[x] = valToVar[u] = -1;
+					assert valToVar[v] == x;
+					if (!scp[x].dom.containsValue(domainValueOf(v))) {
+						varToVal[x] = valToVar[v] = -1;
 						unmatchedVars.add(x);
 					}
 					if (scp[x].dom.size() == 1 && unfixedVars.contains(x))
-						unfixedVars.remove(x, problem.solver.depth());
+						unfixedVars.remove(x, depth);
 				}
 			}
 			while (!unmatchedVars.isEmpty())
 				if (!findMatchingFor(unmatchedVars.pop()))
 					return false;
-			// for (int x = 0; x < arity; x++)
-			// System.out.println(x + "<->" + varToVal[x] + " " + valToVar[varToVal[x]]);
 			return true;
 		}
 
@@ -393,24 +403,40 @@ public abstract class Matcher implements ObserverOnConstruction {
 		 */
 		@Override
 		protected void computeNeighbors() {
+			int depth = problem.solver.depth();
 			for (SetSparse set : neighborsOfValues)
 				set.clear();
-			// control(neighborsOfT.isEmpty()); // not empty for a test case with queens. Should we clear?
+			neighborsOfT.clear();
 			for (int x = 0; x < arity; x++) {
+				if (fixedVars.contains(x))
+					continue;
 				Domain dom = scp[x].dom;
-				for (int a = dom.first(); a != -1; a = dom.next(a)) {
-					int u = normalizedValueOf(dom.toVal(a));
-					if (valToVar[u] == x)
-						neighborsOfValues[u].add(arity);
-					else if (valToVar[u] != -1)
-						neighborsOfT.remove(u);
-					else {
-						neighborsOfValues[u].remove(arity);
-						neighborsOfT.add(u);
+				if (dom.size() == 1) { // we discard trivial SCCs (variable assignments) after treating them
+					int v = dom.singleValue();
+					for (int j = unfixedVars.limit; j >= 0; j--) {
+						int y = unfixedVars.dense[j];
+						if (y != x) {
+							int a = scp[y].dom.toIdxIfPresent(v);
+							if (a >= 0)
+								scp[y].dom.remove(a); // no possible inconsistency
+						}
 					}
-					neighborsOfValues[u].add(x);
+					fixedVars.add(x, depth);
+					continue;
+				}
+				for (int a = dom.first(); a != -1; a = dom.next(a)) {
+					int v = normalizedValueOf(dom.toVal(a));
+					neighborsOfValues[v].add(x);
+					if (valToVar[v] == x)
+						neighborsOfValues[v].add(arity); // E3
+					else {
+						neighborsOfValues[v].add(x); // E2
+						if (valToVar[v] == -1) // unmatched values
+							neighborsOfT.add(v); // E4
+					}
 				}
 			}
+
 		}
 
 		@Override
@@ -474,10 +500,13 @@ public abstract class Matcher implements ObserverOnConstruction {
 		public MatcherCardinality(Cardinality c, int[] keys, int[] minOccs, int[] maxOccs) {
 			super(c);
 			this.keys = keys;
+			control(this.minValue <= IntStream.of(keys).min().getAsInt());
+			control(this.maxValue >= IntStream.of(keys).max().getAsInt());
 
-			this.minValue = Math.min(this.minValue, IntStream.of(keys).min().getAsInt());
-			this.maxValue = Math.max(this.maxValue, IntStream.of(keys).max().getAsInt());
-			this.intervalSize = maxValue - minValue + 1;
+			// this.minValue = Math.min(this.minValue, IntStream.of(keys).min().getAsInt());
+			// this.maxValue = Math.max(this.maxValue, IntStream.of(keys).max().getAsInt());
+			// this.intervalSize = maxValue - minValue + 1;
+			// this.T = arity + intervalSize;
 
 			this.queueBFS = new SetSparse(Math.max(arity, intervalSize));
 			this.predBFS = Kit.repeat(-1, Math.max(arity, intervalSize));
@@ -502,20 +531,20 @@ public abstract class Matcher implements ObserverOnConstruction {
 			this.valToVars = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparse(arity, false)).toArray(SetSparse[]::new);
 		}
 
-		private void handleAugmentingPath(int x, int u) { // , int currDepth) {
-			while (predBFS[u] != -1) {
-				int y = predBFS[u];
-				varToVal[x] = u;
-				valToVars[u].add(x); // , currDepth);
-				valToVars[u].remove(y); // , currDepth);
+		private void handleAugmentingPath(int x, int v) {
+			while (predBFS[v] != -1) {
+				int y = predBFS[v];
+				varToVal[x] = v;
+				valToVars[v].add(x);
+				valToVars[v].remove(y);
 				x = y;
-				u = predValue[u];
+				v = predValue[v];
 			}
-			varToVal[x] = u;
-			valToVars[u].add(x);// , currDepth);
+			varToVal[x] = v;
+			valToVars[v].add(x);
 		}
 
-		private boolean findMatchingForValue(int u) { // , int currDepth) {
+		private boolean findMatchingForValue(int u) {
 			time++;
 			queueBFS.resetTo(u);
 			predBFS[u] = -1;
@@ -528,12 +557,12 @@ public abstract class Matcher implements ObserverOnConstruction {
 					if (dom.containsValue(domainValueOf(v))) {
 						int w = varToVal[x];
 						if (w == -1) {
-							handleAugmentingPath(x, v); // , currDepth);
+							handleAugmentingPath(x, v);
 							return true;
 						} else if (w != v) {
 							if (valToVars[w].size() > minOccs[w] && varToVal[x] == w) {
 								valToVars[w].remove(x); // IfPresent(x);
-								handleAugmentingPath(x, v); // , currDepth);
+								handleAugmentingPath(x, v);
 								return true;
 							} else if (visitTime[w] < time) {
 								visitTime[w] = time;
@@ -548,7 +577,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 			return false;
 		}
 
-		private boolean findMatchingForVariable(int x) { // , int currDepth) {
+		private boolean findMatchingForVariable(int x) {
 			time++;
 			queueBFS.resetTo(x);
 			predBFS[x] = -1;
@@ -562,13 +591,13 @@ public abstract class Matcher implements ObserverOnConstruction {
 						while (predBFS[y] != -1) {
 							int v = varToVal[y]; // previous value
 							varToVal[y] = u;
-							valToVars[u].add(y); // , currDepth);
-							valToVars[v].remove(y); // , currDepth);
+							valToVars[u].add(y);
+							valToVars[v].remove(y);
 							y = predBFS[y];
 							u = v;
 						}
 						varToVal[y] = u;
-						valToVars[u].add(y); // , currDepth);
+						valToVars[u].add(y);
 						return true;
 					}
 					for (int i = 0; i < valToVars[u].size(); i++) {
@@ -595,15 +624,15 @@ public abstract class Matcher implements ObserverOnConstruction {
 					if (dom.size() == 1) {
 						int v = normalizedValueOf(dom.firstValue());
 						if (u != -1)
-							valToVars[u].remove(x); // , currDepth);
+							valToVars[u].remove(x);
 						if (maxOccs[v] == valToVars[v].size()) {
 							varToVal[x] = -1;
 						} else {
 							varToVal[x] = v;
-							valToVars[v].add(x); // , currDepth);
+							valToVars[v].add(x);
 						}
 					} else if (u != -1) {
-						valToVars[u].remove(x); // , currDepth);
+						valToVars[u].remove(x);
 						varToVal[x] = -1;
 					}
 				}
@@ -612,7 +641,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 			for (int i = 0; i < keys.length; i++) {
 				int u = normalizedValueOf(keys[i]);
 				while (valToVars[u].size() < minOccs[u])
-					if (!findMatchingForValue(u)) // , currDepth))
+					if (!findMatchingForValue(u))
 						return false;
 			}
 			unmatchedVars.clear();
@@ -620,10 +649,10 @@ public abstract class Matcher implements ObserverOnConstruction {
 				if (varToVal[x] == -1)
 					unmatchedVars.add(x);
 				else if (scp[x].dom.size() == 1 && unfixedVars.contains(x))
-					unfixedVars.remove(x, problem.solver.depth()); // currDepth);
+					unfixedVars.remove(x, problem.solver.depth());
 			}
 			while (!unmatchedVars.isEmpty())
-				if (!findMatchingForVariable(unmatchedVars.pop())) // , currDepth))
+				if (!findMatchingForVariable(unmatchedVars.pop()))
 					return false;
 			return true;
 		}
