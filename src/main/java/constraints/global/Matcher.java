@@ -19,7 +19,6 @@ import java.util.stream.Stream;
 import constraints.Constraint;
 import constraints.global.AllDifferent.AllDifferentComplete;
 import interfaces.Observers.ObserverOnConstruction;
-import problem.Problem;
 import sets.SetSparse;
 import sets.SetSparseReversible;
 import utility.Kit;
@@ -27,8 +26,12 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * The object used to compute a maximal matching, and to delete inconsistent values <br/>
- * TODO : the algorithm is poorly incremental, and besides is recursive (how to avoid recursion?)
+ * This is the object used to compute a maximal matching, and to delete inconsistent values. The algorithm basically
+ * finds the strongly connected components of the flow graph, and prunes domains so as to reach (G)AC, as described in
+ * "The AllDifferent Constraint: An Empirical Survey" by I. Gent, I. Miguel, and P. Nightingale, Artif. Intell. 172(18),
+ * 2008.
+ * 
+ * TODO : the code below is poorly incremental, and besides is recursive (how to avoid recursion?)
  * 
  * @author Vincent Perradin (refactoring by Christophe Lecoutre)
  */
@@ -45,12 +48,13 @@ public abstract class Matcher implements ObserverOnConstruction {
 		unfixedVars.restoreLimitAtLevel(depth);
 		if (fixedVars != null)
 			fixedVars.restoreLimitAtLevel(depth);
+		// cnt++;
 	}
 
 	/**
-	 * The problem to which this object is (indirectly) attached
+	 * The constraint to which this object is (indirectly) attached
 	 */
-	protected final Problem problem;
+	protected final Constraint constraint;
 
 	/**
 	 * The scope of the constraint to which this object is attached
@@ -113,8 +117,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 	private final SetSparse stackTarjan;
 
 	/**
-	 * neighborsOfValues[u] contains all neighbors (nodes) of node u. We have possibly arity + 1 (for node T) such
-	 * nodes.
+	 * neighborsOfValues[u] contains all neighbors of node u; we have possibly arity + 1 (for node T) such nodes
 	 */
 	protected SetSparse[] neighborsOfValues;
 
@@ -129,11 +132,14 @@ public abstract class Matcher implements ObserverOnConstruction {
 	protected boolean splitSCC;
 
 	/**
-	 * current strongly connected component
+	 * the values in the current SCC
 	 */
-	private SetSparse currValsSCC;
+	private final SetSparse valsInSCC;
 
-	protected final SetSparse currVarsSCC;
+	/**
+	 * the variables not in the current SCC
+	 */
+	private final SetSparse varsOutSCC;
 
 	/**
 	 * queue used to perform BFS
@@ -145,8 +151,11 @@ public abstract class Matcher implements ObserverOnConstruction {
 	 */
 	protected int[] predBFS;
 
+	// int cnt = 1;
+	// int[][] data;
+
 	public Matcher(Constraint c) {
-		this.problem = c.problem;
+		this.constraint = c;
 		this.scp = c.scp;
 		this.arity = c.scp.length;
 
@@ -157,17 +166,19 @@ public abstract class Matcher implements ObserverOnConstruction {
 
 		this.unmatchedVars = new SetSparse(arity);
 		this.varToVal = Kit.repeat(-1, arity);
-		this.currVarsSCC = new SetSparse(arity);
+		this.varsOutSCC = new SetSparse(arity);
 
 		this.neighborsOfValues = IntStream.range(0, intervalSize).mapToObj(i -> new SetSparse(arity + 1)).toArray(SetSparse[]::new);
 		this.neighborsOfT = new SetSparse(intervalSize);
-		this.currValsSCC = new SetSparse(intervalSize);
+		this.valsInSCC = new SetSparse(intervalSize);
 
 		int nNodes = arity + intervalSize + 1;
 		this.visitTime = Kit.repeat(-1, nNodes);
 		this.stackTarjan = new SetSparse(nNodes);
 		this.numDFS = new int[nNodes];
 		this.lowLink = new int[nNodes];
+
+		// this.data = new int[nNodes][2];
 
 		c.problem.head.observersConstruction.add(this);
 
@@ -185,7 +196,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 	 * node T
 	 * 
 	 * @param node
-	 *            : Starting vertex for the search
+	 *            starting vertex for the search
 	 */
 	protected final void tarjanRemoveValues(int node) {
 		assert visitTime[node] < time;
@@ -224,44 +235,47 @@ public abstract class Matcher implements ObserverOnConstruction {
 		if (lowLink[node] == numDFS[node]) { // if node is the root of a SCC
 			splitSCC = splitSCC || lowLink[node] > 1 || nVisitedNodes < visitTime.length;
 			if (splitSCC) {
-				// if (node == T) {
-				// int nodeSCC = -1;
-				// while (nodeSCC != node)
-				// nodeSCC = stackTarjan.pop();
-				// return;
-				// }
-
-				currVarsSCC.resetTo(unfixedVars);
-				currValsSCC.clear();
+				// first, we compute varsOutSCC and valsInSCC
+				varsOutSCC.resetTo(unfixedVars);
+				valsInSCC.clear();
 				int nodeSCC = -1;
 				while (nodeSCC != node) {
 					nodeSCC = stackTarjan.pop();
 					if (nodeSCC < arity)
-						currVarsSCC.remove(nodeSCC);
+						varsOutSCC.remove(nodeSCC);
 					else if (nodeSCC < T)
-						currValsSCC.add(nodeSCC - arity);
+						valsInSCC.add(nodeSCC - arity);
 				}
-				// System.out.println(" hhh " + node + " " + currVarsSCC.size() + " " + currValsSCC.size());
-				// System.out.println("fff " + currVarsSCC.size() + " " + currValsSCC.size());
-				if (currVarsSCC.size() > 0)
-					for (int i = 0; i <= currValsSCC.limit; i++) {
-						int v = currValsSCC.dense[i];
-						SetSparse neighbors = neighborsOfValues[v];
-						if (neighbors.size() < currVarsSCC.size()) {
-							int w = domainValueOf(v);
+
+				// second, we remove appropriate values (linking values in the CSS with variables outside the SCC)
+				if (varsOutSCC.size() > 0 && valsInSCC.size() > 0) {
+					// System.out.println(" at node " + node + " : " + varsOutSCC.size() + " " + valsInSCC.size() + "
+					// from " + constraint.num);
+
+					// if (data[node][0] == cnt && data[node][1] == valsInSCC.size()) // Seems not efficient at all
+					// return;
+					// data[node][0] = cnt;
+					// data[node][1] = valsInSCC.size();
+
+					for (int i = 0; i <= valsInSCC.limit; i++) {
+						int nv = valsInSCC.dense[i];
+						int v = domainValueOf(nv);
+						SetSparse neighbors = neighborsOfValues[nv];
+						if (neighbors.size() < varsOutSCC.size()) {
 							for (int j = 0; j <= neighbors.limit; j++) {
 								int x = neighbors.dense[j];
-								if (x < arity && currVarsSCC.contains(x) && varToVal[x] != v)
-									scp[x].dom.removeValue(w);
+								if (x < arity && varsOutSCC.contains(x) && varToVal[x] != nv)
+									scp[x].dom.removeValue(v);
 							}
 						} else
-							for (int j = 0; j <= currVarsSCC.limit; j++) {
-								int x = currVarsSCC.dense[j];
-								int a = scp[x].dom.toIdxIfPresent(domainValueOf(v));
-								if (a >= 0 && varToVal[x] != v)
+							for (int j = 0; j <= varsOutSCC.limit; j++) {
+								int x = varsOutSCC.dense[j];
+								int a = scp[x].dom.toIdxIfPresent(v);
+								if (a >= 0 && varToVal[x] != nv)
 									scp[x].dom.remove(a);
 							}
 					}
+				}
 			}
 		}
 
@@ -287,8 +301,8 @@ public abstract class Matcher implements ObserverOnConstruction {
 
 	/**
 	 * @param normalizedValue
-	 *            : index between 0 and (maxDomainValue - minDomainValue). Domain values used in this class are
-	 *            normalized to use Sparse containers
+	 *            index between 0 and (maxDomainValue - minDomainValue). Domain values used in this class are normalized
+	 *            to use Sparse containers
 	 * 
 	 * @return domain value corresponding to the normalized value in parameter
 	 */
@@ -333,7 +347,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 		 * matched values though).
 		 * 
 		 * @param x
-		 *            : An unmatched variable
+		 *            an unmatched variable
 		 * @return true if a matching has been found for the variable, false otherwise (constraint unsatisfiable)
 		 */
 		private boolean findMatchingFor(int x) {
@@ -344,19 +358,19 @@ public abstract class Matcher implements ObserverOnConstruction {
 				int y = queueBFS.shift();
 				Domain dom = scp[y].dom;
 				for (int a = dom.first(); a != -1; a = dom.next(a)) {
-					int v = normalizedValueOf(dom.toVal(a));
-					int z = valToVar[v];
-					assert z == -1 || varToVal[z] == v;
+					int nv = normalizedValueOf(dom.toVal(a));
+					int z = valToVar[nv];
+					assert z == -1 || varToVal[z] == nv;
 					if (z == -1) { // we have found a free value, so we are good
 						while (predBFS[y] != -1) {
-							int w = varToVal[y];
-							varToVal[y] = v;
-							valToVar[v] = y;
-							v = w;
+							int nw = varToVal[y];
+							varToVal[y] = nv;
+							valToVar[nv] = y;
+							nv = nw;
 							y = predBFS[y];
 						}
-						varToVal[y] = v;
-						valToVar[v] = y;
+						varToVal[y] = nv;
+						valToVar[nv] = y;
 						return true;
 					} else if (visitTime[z] < time) {
 						visitTime[z] = time;
@@ -377,15 +391,15 @@ public abstract class Matcher implements ObserverOnConstruction {
 		@Override
 		public boolean findMaximumMatching() {
 			unmatchedVars.clear();
-			int depth = problem.solver.depth();
+			int depth = constraint.problem.solver.depth();
 			for (int x = 0; x < arity; x++) {
-				int v = varToVal[x];
-				if (v == -1)
+				int nv = varToVal[x];
+				if (nv == -1)
 					unmatchedVars.add(x);
 				else {
-					assert valToVar[v] == x;
-					if (!scp[x].dom.containsValue(domainValueOf(v))) {
-						varToVal[x] = valToVar[v] = -1;
+					assert valToVar[nv] == x;
+					if (!scp[x].dom.containsValue(domainValueOf(nv))) {
+						varToVal[x] = valToVar[nv] = -1;
 						unmatchedVars.add(x);
 					}
 					if (scp[x].dom.size() == 1 && unfixedVars.contains(x))
@@ -403,7 +417,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 		 */
 		@Override
 		protected void computeNeighbors() {
-			int depth = problem.solver.depth();
+			int depth = constraint.problem.solver.depth();
 			for (SetSparse set : neighborsOfValues)
 				set.clear();
 			neighborsOfT.clear();
@@ -425,14 +439,14 @@ public abstract class Matcher implements ObserverOnConstruction {
 					continue;
 				}
 				for (int a = dom.first(); a != -1; a = dom.next(a)) {
-					int v = normalizedValueOf(dom.toVal(a));
-					neighborsOfValues[v].add(x);
-					if (valToVar[v] == x)
-						neighborsOfValues[v].add(arity); // E3
+					int nv = normalizedValueOf(dom.toVal(a));
+					neighborsOfValues[nv].add(x);
+					if (valToVar[nv] == x)
+						neighborsOfValues[nv].add(arity); // E3
 					else {
-						neighborsOfValues[v].add(x); // E2
-						if (valToVar[v] == -1) // unmatched values
-							neighborsOfT.add(v); // E4
+						neighborsOfValues[nv].add(x); // E2
+						if (valToVar[nv] == -1) // unmatched values
+							neighborsOfT.add(nv); // E4
 					}
 				}
 			}
@@ -487,15 +501,15 @@ public abstract class Matcher implements ObserverOnConstruction {
 
 		/**
 		 * @param c
-		 *            : Global cardinality constraint the algorithm will filter.
+		 *            the cardinality constraint to be filtered
 		 * @param scp
-		 *            : Initial scope of the constraint.
+		 *            initial scope of the constraint.
 		 * @param keys
-		 *            : Constrained values.
+		 *            constrained values.
 		 * @param minOccs
-		 *            : Number of times each value should be assigned at least.
+		 *            number of times each value should be assigned at least
 		 * @param maxOccs
-		 *            : Number of times each value should be assigned at most.
+		 *            number of times each value should be assigned at most
 		 */
 		public MatcherCardinality(Cardinality c, int[] keys, int[] minOccs, int[] maxOccs) {
 			super(c);
@@ -644,12 +658,13 @@ public abstract class Matcher implements ObserverOnConstruction {
 					if (!findMatchingForValue(u))
 						return false;
 			}
+			int depth = constraint.problem.solver.depth();
 			unmatchedVars.clear();
 			for (int x = 0; x < arity; x++) {
 				if (varToVal[x] == -1)
 					unmatchedVars.add(x);
 				else if (scp[x].dom.size() == 1 && unfixedVars.contains(x))
-					unfixedVars.remove(x, problem.solver.depth());
+					unfixedVars.remove(x, depth);
 			}
 			while (!unmatchedVars.isEmpty())
 				if (!findMatchingForVariable(unmatchedVars.pop()))
@@ -680,17 +695,13 @@ public abstract class Matcher implements ObserverOnConstruction {
 			}
 		}
 
-		private void checkMatchingConsistency() {
-			control(IntStream.range(0, intervalSize)
-					.allMatch(u -> IntStream.range(0, valToVars[u].size()).allMatch(i -> varToVal[valToVars[u].dense[i]] == u)));
-			control(IntStream.range(0, arity).allMatch(x -> varToVal[x] == -1 || valToVars[varToVal[x]].contains(x)));
-		}
-
 		@SuppressWarnings("unused")
 		private void checkMatchingValidity() {
 			control(IntStream.range(0, arity).allMatch(x -> varToVal[x] != -1 && scp[x].dom.containsValue(domainValueOf(varToVal[x]))));
 			control(IntStream.range(0, intervalSize).allMatch(u -> minOccs[u] <= valToVars[u].size() && valToVars[u].size() <= maxOccs[u]));
-			checkMatchingConsistency();
+			control(IntStream.range(0, intervalSize)
+					.allMatch(u -> IntStream.range(0, valToVars[u].size()).allMatch(i -> varToVal[valToVars[u].dense[i]] == u)));
+			control(IntStream.range(0, arity).allMatch(x -> varToVal[x] == -1 || valToVars[varToVal[x]].contains(x)));
 		}
 
 		@Override

@@ -566,8 +566,8 @@ public interface Domain extends SetLinked {
 	 *            a value index
 	 */
 	default void removeElementary(int a) {
-		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + "
-		// from " + propagation().currFilteringCtr);
+		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : ""));
+		// ) + " from "+ var().problem.solver.propagation.currFilteringCtr);
 		Variable x = var();
 		assert !x.assigned() && contains(a) : x + " " + x.assigned() + " " + contains(a);
 		Solver solver = x.problem.solver;
