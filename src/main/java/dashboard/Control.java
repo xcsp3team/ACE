@@ -469,6 +469,7 @@ public final class Control {
 		public final int arityLimitToNegative = addI("arityLimitToNegative", "aln", -1, "Limit on arity for converting positive table constraints to negative");
 		public final int variant = addI("variant", "extv", 0, "Variant to be used for some algorithms (e.g., VA or CMDD)");
 		public final boolean decremental = addB("decremental", "extd", true, "Must we use a decremental mode for some algorithms (e.g., STR2, CT or CMDD)");
+		public final int small = addI("small", "exts", 10, "table size threshold for considering a special propagator");
 
 		public boolean reverse(int arity, boolean positive) {
 			return (positive && arity <= arityLimitToNegative) || (!positive && arity <= arityLimitToPositive);

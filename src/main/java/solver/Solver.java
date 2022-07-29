@@ -15,6 +15,7 @@ import static java.util.stream.Collectors.toCollection;
 import static org.xcsp.common.Types.TypeFramework.COP;
 import static solver.Solver.Stopping.EXCEEDED_TIME;
 import static solver.Solver.Stopping.FULL_EXPLORATION;
+import static solver.Solver.Stopping.REACHED_GOAL;
 import static utility.Kit.control;
 import static utility.Kit.log;
 
@@ -48,6 +49,7 @@ import interfaces.Observers.ObserverOnSolving;
 import learning.IpsReasoner;
 import learning.NogoodReasoner;
 import main.Head;
+import main.HeadExtraction;
 import problem.Problem;
 import propagation.Forward;
 import propagation.Propagation;
@@ -941,7 +943,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	public final Solver doRun() {
 		lastPastBeforeRun[nRecursiveRuns++] = futVars.lastPast();
 		explore();
-		backtrackTo(lastPastBeforeRun[--nRecursiveRuns]);
+		if (stopping != REACHED_GOAL || head instanceof HeadExtraction)
+			backtrackTo(lastPastBeforeRun[--nRecursiveRuns]);
 		return this;
 	}
 
@@ -977,7 +980,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			doSearch();
 		for (ObserverOnSolving observer : observersOnSolving)
 			observer.afterSolving();
-		restoreProblem();
+		if (stopping != REACHED_GOAL || head instanceof HeadExtraction)
+			restoreProblem();
 	}
 
 	/**

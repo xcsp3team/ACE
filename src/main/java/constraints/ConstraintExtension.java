@@ -24,6 +24,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.ConstraintExtension.ExtensionGeneric.ExtensionV;
+import constraints.extension.STR0;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.Tries;
@@ -58,7 +59,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 * Various filtering algorithms for extension (table) constraints
 	 */
 	public static enum Extension {
-		V, VA, STR1, STR2, STR3, STR1N, STR2N, CT, CMDDO, CMDDS; // , RPWC, RPWC2;
+		V, VA, STR0, STR1, STR2, STR3, STR1N, STR2N, CT, CMDDO, CMDDS; // , RPWC, RPWC2;
 	}
 
 	/**********************************************************************************************
@@ -290,7 +291,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			m = reverseTuples(scp, m);
 			positive = !positive;
 		}
-		ConstraintExtension c = build(pb, scp, positive, starred);
+		ConstraintExtension c = positive && m.length <= pb.head.control.extension.small ? new STR0(pb, scp) : build(pb, scp, positive, starred);
 		c.storeTuples(m, positive);
 		return c;
 	}
