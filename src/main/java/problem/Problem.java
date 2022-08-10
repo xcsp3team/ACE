@@ -1294,6 +1294,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	@Override
+	public final CtrEntity allDifferentList(Var[][] lists, int[][] except) {
+		control(lists.length >= 2);
+		Variable[][] m = lists instanceof Variable[][] ? (Variable[][]) lists : Stream.of(lists).map(t -> translate(t)).toArray(Variable[][]::new);
+		// TODO : for the moment, only possibility of starred tables
+		return forall(range(m.length).range(m.length), (i, j) -> {
+			if (i < j) {
+				int[][] table = Table.starredDistinctVectors(m[i], m[j], except);
+				extension(vars(m[i], m[j]), table, true);
+			}
+		});
+	}
+
+	@Override
 	public final CtrEntity allDifferentMatrix(Var[][] matrix) {
 		CtrArray ctrSet1 = forall(range(matrix.length), i -> allDifferent(matrix[i]));
 		CtrArray ctrSet2 = forall(range(matrix[0].length), i -> allDifferent(api.columnOf(matrix, i)));
@@ -1672,7 +1685,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity count(Var[] list, int[] values, Condition condition) {
-		control(list.length > 0, "A constraint Count is posted with a scope without any variable");
+		control(list.length > 0, "A constraint Count is posted with a scope with no variable");
 		if (condition instanceof ConditionRel) {
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Object rightTerm = condition.rightTerm();
@@ -1680,8 +1693,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (condition instanceof ConditionVal)
 				return count(scp, values, op, (long) rightTerm);
 			assert condition instanceof ConditionVar;
-			if (values.length == 1 && op == EQ)
-				return post(new ExactlyVarK(this, scp, values[0], (Variable) rightTerm));
+			if (values.length == 1 && op == EQ) {
+				int value = values[0];
+				scp = Stream.of(scp).filter(x -> x.dom.containsValue(value)).toArray(VariableInteger[]::new);
+				return post(new ExactlyVarK(this, scp, value, (Variable) rightTerm));
+			}
 		}
 		return unimplemented("count");
 	}

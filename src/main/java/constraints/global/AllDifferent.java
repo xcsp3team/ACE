@@ -210,7 +210,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 	 * AllDifferentWeak and AllDifferentExceptWeak
 	 *********************************************************************************************/
 
-	public static final class AllDifferentWeak extends AllDifferent implements TagNotAC { // not call filtering-complete
+	public static class AllDifferentWeak extends AllDifferent implements TagNotAC { // not call filtering-complete
 
 		/**
 		 * A temporary set used to collect values, during filtering
@@ -220,6 +220,10 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 		public AllDifferentWeak(Problem pb, Variable[] scp, boolean stronger) {
 			super(pb, scp);
 			this.values = stronger ? new HashSet<>() : null;
+		}
+
+		public AllDifferentWeak(Problem pb, Variable[] scp) {
+			this(pb, scp, false);
 		}
 
 		@Override

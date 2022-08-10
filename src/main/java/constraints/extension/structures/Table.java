@@ -154,13 +154,21 @@ public class Table extends ExtensionStructure {
 		return tuples.stream().toArray(int[][]::new);
 	}
 
-	public static int[][] starredDistinctVectors(Variable[] t1, Variable[] t2) {
+	public static int[][] starredDistinctVectors(Variable[] t1, Variable[] t2, int[][] except) {
 		control(t1.length == t2.length);
-		String key = "DistinctVectors " + Variable.signatureFor(t1) + " " + Variable.signatureFor(t2);
+		control(Variable.areAllDistinct(Stream.concat(Stream.of(t1), Stream.of(t2)).toArray(Variable[]::new)));
+		String key = "DistinctVectors " + Variable.signatureFor(t1) + " " + Variable.signatureFor(t2) + (except == null ? "" : Kit.join(except));
 		int[][] tuples = cache.get(key);
 		if (tuples == null) {
 			int half = t1.length;
 			List<int[]> list = new ArrayList<>();
+			if (except != null)
+				for (int[] t : except) {
+					if (Variable.isValidTuple(t1, t, false))
+						list.add(IntStream.range(0, 2 * half).map(i -> i < half ? t[i] : STAR).toArray());
+					if (Variable.isValidTuple(t2, t, false))
+						list.add(IntStream.range(0, 2 * half).map(i -> i >= half ? t[i - half] : STAR).toArray());
+				}
 			for (int i = 0; i < half; i++) {
 				Domain dom1 = t1[i].dom, dom2 = t2[i].dom;
 				for (int a = dom1.first(); a != -1; a = dom1.next(a)) {

@@ -405,10 +405,8 @@ public class Head extends Thread {
 			return (Problem) Kit.exit("The class " + Input.problemName + " cannot be found.", e);
 		}
 		this.problem = new Problem(api, control.problem.variant, control.problem.data, "", false, Input.argsForProblem, this);
-		for (ObserverOnConstruction obs : observersConstruction) {
-			// System.out.println(obs);
+		for (ObserverOnConstruction obs : observersConstruction)
 			obs.afterProblemConstruction(this.problem.variables.length);
-		}
 		problem.display();
 		return problem;
 	}

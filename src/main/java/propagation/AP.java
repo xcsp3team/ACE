@@ -21,6 +21,9 @@ import variables.Variable;
 
 /**
  * This is the class ...
+ * 
+ * TODO: BUG for java ace WallBuilder-instance.1.xml -jl=10000 -valh=Last -p=AP
+ * 
  */
 public class AP extends StrongConsistency {
 
