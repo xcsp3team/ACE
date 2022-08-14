@@ -124,8 +124,14 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 			return Mod2b.buildFrom(pb, x, op, y, k);
 		case DIST:
 			return Dist2b.buildFrom(pb, x, op, y, k);
-		default: // POW
-			throw new AssertionError("not implemented"); // TODO interesting?
+		default: // case POW:
+			List<int[]> list = new ArrayList<>();
+			for (int a = y.dom.first(); a != -1; a = y.dom.next(a)) {
+				int v = y.dom.toVal(a), vv = Utilities.safeInt((long) Math.pow(v, k));
+				if (x.dom.smallestInitialValue() <= vv && vv <= x.dom.greatestInitialValue() && x.dom.containsValue(vv))
+					list.add(new int[] { vv, v });
+			}
+			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), list.stream().toArray(int[][]::new), true, Boolean.FALSE);
 		}
 	}
 

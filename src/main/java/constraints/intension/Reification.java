@@ -67,7 +67,11 @@ public final class Reification {
 
 		public Reif2(Problem pb, Variable x, Variable y, int k) {
 			super(pb, x, y, k);
-			control(dx.is01(), "The first variable should be of type 01");
+			if (!dx.is01()) {
+				control(dx.initSize() >= 2 && dx.toVal(0) == 0 && dx.toVal(1) == 1 && (dx.contains(0) && dx.contains(1)));
+				dx.removeAtConstructionTime(v -> v > 1);
+			}
+			// control(dx.is01(), "The first variable should be of type 01 " + x);
 		}
 
 		public static final class Reif2LE extends Reif2 {

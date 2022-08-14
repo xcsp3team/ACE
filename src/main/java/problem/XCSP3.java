@@ -359,7 +359,6 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	public void buildCtrExtension(String id, XVarInteger[] list, int[][] tuples, boolean positive, Set<TypeFlag> flags) {
 		Variable[] scp = trVars(list);
 		tuples = flags.contains(UNCLEAN_TUPLES) ? Stream.of(tuples).filter(t -> Variable.isValidTuple(scp, t, false)).toArray(int[][]::new) : tuples;
-		// System.out.println("hhhh" + Kit.join(tuples));
 		problem.extension(scp, tuples, positive, flags.contains(STARRED_TUPLES));
 	}
 
