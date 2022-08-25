@@ -1673,6 +1673,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return atLeast(scp, value, k + 1);
 			if (op == EQ)
 				return exactly(scp, value, k);
+			if (op == NE) {
+				control(0 < k && k < scp.length);
+				Var aux = auxVar(IntStream.range(0, scp.length + 1).filter(i -> i != k).toArray());
+				return count(scp, values, Condition.buildFrom(EQ, aux));
+			}
 		} else {
 			if (op == EQ) {
 				if (l == list.length)
