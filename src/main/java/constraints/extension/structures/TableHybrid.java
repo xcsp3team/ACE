@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.xcsp.common.Condition;
 import org.xcsp.common.IVar;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Types.TypeConditionOperatorSet;
@@ -39,6 +40,9 @@ import org.xcsp.common.Utilities;
 import org.xcsp.common.predicates.XNode;
 import org.xcsp.common.predicates.XNodeLeaf;
 import org.xcsp.common.predicates.XNodeParent;
+import org.xcsp.common.structures.AbstractTuple;
+import org.xcsp.common.structures.AbstractTuple.OrdinaryTuple;
+import org.xcsp.common.structures.AbstractTuple.SmartTuple;
 
 import constraints.ConstraintExtension;
 import constraints.extension.CHybrid;
@@ -51,7 +55,7 @@ import variables.DomainFinite.DomainSymbols;
 import variables.Variable;
 
 /**
- * This is the class for representing hybrid/smart tables.
+ * This is the class for representing hybrid (smart) tables.
  * 
  * @author Christophe Lecoutre
  */
@@ -144,6 +148,23 @@ public final class TableHybrid extends ExtensionStructure {
 		 * null. This tuple is no more useful once the hybrid tuple is attached to its constraint.
 		 */
 		private int[] initialTuple;
+
+		public static HybridTuple convert(AbstractTuple abstractTuple, IVar[] scp) {
+			if (abstractTuple instanceof OrdinaryTuple)
+				return new HybridTuple(((OrdinaryTuple) abstractTuple).values);
+			SmartTuple smartTuple = ((SmartTuple) abstractTuple);
+			int[] tuple = Kit.repeat(STAR, smartTuple.values.length);
+			List<XNodeParent<? extends IVar>> restrictions = new ArrayList<>();
+			for (int i = 0; i < smartTuple.values.length; i++) {
+				Object value = smartTuple.values[i];
+				if (value instanceof Integer)
+					tuple[i] = (Integer) value;
+				else
+					restrictions.add(Condition.toNode(scp[i], ((Condition) value)));
+			}
+			return new HybridTuple(tuple, restrictions);
+
+		}
 
 		/**
 		 * The restrictions that are given initially. Note that they correspond to Boolean tree expressions (for stating

@@ -1154,7 +1154,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrAlone extension(Var[] list, AbstractTuple[] tuples, boolean positive) {
-		return (CtrAlone) unimplemented("extension with abstract tuples");
+		unimplementedIf(!positive, "negative hybrid tables not implemented");
+		return hybrid(list, Stream.of(tuples).map(t -> HybridTuple.convert(t, list)));
 	}
 
 	// ************************************************************************
@@ -2492,6 +2493,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	/** Builds and returns a smart constraint. */
 	public final CtrAlone hybrid(IVar[] scp, HybridTuple... smartTuples) {
+		return post(new CHybrid(this, translate(scp), smartTuples));
+	}
+
+	public final CtrAlone hybrid(IVar[] scp, Stream<HybridTuple> smartTuples) {
 		return post(new CHybrid(this, translate(scp), smartTuples));
 	}
 
