@@ -110,6 +110,7 @@ import org.xcsp.modeler.entities.CtrEntities.CtrAlone;
 import org.xcsp.modeler.entities.CtrEntities.CtrArray;
 import org.xcsp.modeler.entities.CtrEntities.CtrEntity;
 import org.xcsp.modeler.entities.ObjEntities.ObjEntity;
+import org.xcsp.modeler.entities.VarEntities.VarArray;
 import org.xcsp.modeler.implementation.ProblemIMP;
 
 import constraints.ConflictsStructure;
@@ -260,6 +261,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		this.priorityVars = priorityVars.length == 0 && annotations.decision != null ? (Variable[]) annotations.decision : priorityVars;
 		Variable[] r = HeuristicValues.possibleOptimizationInterference(this);
 		this.priorityVars = r != null ? r : priorityVars;
+		this.varArrays = varEntities.varArrays.stream().filter(va -> !va.id.startsWith(AUXILIARY_VARIABLE_PREFIX)).toArray(VarArray[]::new);
 	}
 
 	@Override
@@ -382,6 +384,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * The number of auxiliary variables introduced when replacing tree expressions
 	 */
 	public int nAuxVariables;
+
+	/**
+	 * The variable arrays, as present in the XCSP3 instance (excluding the possibly introduced auxiliary arrays)
+	 */
+	public VarArray[] varArrays;
 
 	/**
 	 * The number of auxiliary (equality) constraints introduced when replacing tree expressions
@@ -1765,10 +1772,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, int[] occurs) {
+		// int limit = Utilities.safeInt(IntStream.range(0, values.length).mapToLong(i -> Utilities.safeInt(values[i] *
+		// (long) occurs[i], true)).sum(), true);
 		control(values.length == occurs.length);
 		Variable[] scp = translate(clean(list));
-		if (mustBeClosed)
+		if (mustBeClosed) {
+			// sum(list, Kit.repeat(1, list.length), Condition.buildFrom(EQ, limit));
 			postClosed(scp, values);
+		}
+		// else sum(list, Kit.repeat(1, list.length), Condition.buildFrom(GE, limit));
 		return post(new Cardinality(this, scp, values, occurs));
 	}
 

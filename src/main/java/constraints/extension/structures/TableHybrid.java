@@ -232,6 +232,19 @@ public final class TableHybrid extends ExtensionStructure {
 		}
 
 		/**
+		 * Builds a unary restriction of the form x <op> {v1,v2, ...}
+		 */
+		private Restriction1 buildRestriction1From(int x, TypeConditionOperatorSet op, int[] t) {
+			switch (op) {
+			case IN:
+				return new Rstr1IN(x, t);
+			case NOTIN:
+				return new Rstr1NOTIN(x, t);
+			}
+			throw new AssertionError();
+		}
+
+		/**
 		 * Builds a binary restriction of the form x <op> y
 		 */
 		private Restriction2 buildRestriction2From(int x, TypeConditionOperatorRel op, int y) {
@@ -276,33 +289,44 @@ public final class TableHybrid extends ExtensionStructure {
 			// Converting Boolean tree expressions into restriction objects
 			List<Restriction> list = new ArrayList<>();
 			for (XNodeParent<? extends IVar> tree : initialRestrictions) {
-				TypeConditionOperatorRel op = tree.type.toRelop(); // TODO dealing with IN and NOTIN too
-				control(op != null && tree.sons.length == 2);
+				control(tree.sons.length == 2, tree.toString());
 				XNode<? extends IVar> son0 = tree.sons[0], son1 = tree.sons[1];
 				control(son0.type == TypeExpr.VAR, () -> "Left side operand must be a variable");
-				control(son1.type != TypeExpr.SYMBOL, () -> "Symbolic values not possible for the moment");
 				int x = c.positionOf((Variable) ((XNodeLeaf<?>) son0).value);
-				if (son1.type == TypeExpr.LONG) {
-					int v = Utilities.safeInt(((long) ((XNodeLeaf<?>) son1).value));
-					if (op == EQ) {
-						control(tuple[x] == STAR && scp[x].dom.containsValue(v));
-						tuple[x] = scp[x].dom.toIdx(v); // for a constant, we directly put it in tuple (no need to build
-														// a Restriction object)
+				if (tree.type.oneOf(TypeExpr.IN, TypeExpr.NOTIN)) {
+					TypeConditionOperatorSet op = tree.type.toSetop();
+					if (son1.type == TypeExpr.SET) {
+						int[] t = Stream.of(son1.sons).mapToInt(s -> Utilities.safeInt((long) ((XNodeLeaf<?>) s).value)).toArray();
+						list.add(buildRestriction1From(x, op, t));
 					} else
-						list.add(buildRestriction1From(x, op, v));
-				} else if (son1.type == TypeExpr.VAR) {
-					int y = c.positionOf((Variable) ((XNodeLeaf<?>) son1).value);
-					list.add(buildRestriction2From(x, op, y));
-				} else if (son1.type == TypeExpr.ADD) {
-					XNode<?>[] grandSons = ((XNodeParent<?>) son1).sons;
-					if (grandSons.length == 2 && grandSons[0].type == TypeExpr.VAR && grandSons[1].type == TypeExpr.LONG) {
-						int y = c.positionOf((Variable) ((XNodeLeaf<?>) grandSons[0]).value);
-						int k = Utilities.safeInt(((long) ((XNodeLeaf<?>) grandSons[1]).value));
-						list.add(buildRestriction2From(x, op, y, k));
+						Kit.exit("Currently, unimplemented case"); // range
+
+				} else {
+					TypeConditionOperatorRel op = tree.type.toRelop(); // TODO dealing with IN and NOTIN too
+					control(op != null, "" + op);
+					control(son1.type != TypeExpr.SYMBOL, () -> "Symbolic values not possible for the moment");
+					if (son1.type == TypeExpr.LONG) {
+						int v = Utilities.safeInt(((long) ((XNodeLeaf<?>) son1).value));
+						if (op == EQ) {
+							control(tuple[x] == STAR && scp[x].dom.containsValue(v));
+							tuple[x] = scp[x].dom.toIdx(v); // for a constant, we directly put it in tuple (no need to
+															// build a Restriction object)
+						} else
+							list.add(buildRestriction1From(x, op, v));
+					} else if (son1.type == TypeExpr.VAR) {
+						int y = c.positionOf((Variable) ((XNodeLeaf<?>) son1).value);
+						list.add(buildRestriction2From(x, op, y));
+					} else if (son1.type == TypeExpr.ADD) {
+						XNode<?>[] grandSons = ((XNodeParent<?>) son1).sons;
+						if (grandSons.length == 2 && grandSons[0].type == TypeExpr.VAR && grandSons[1].type == TypeExpr.LONG) {
+							int y = c.positionOf((Variable) ((XNodeLeaf<?>) grandSons[0]).value);
+							int k = Utilities.safeInt(((long) ((XNodeLeaf<?>) grandSons[1]).value));
+							list.add(buildRestriction2From(x, op, y, k));
+						} else
+							Kit.exit("Currently, unimplemented case");
 					} else
 						Kit.exit("Currently, unimplemented case");
-				} else
-					Kit.exit("Currently, unimplemented case");
+				}
 			}
 			// for each variable (position), we count the number of times it is seen at left (1), and at right (2) of
 			// the restrictions

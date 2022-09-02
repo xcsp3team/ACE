@@ -592,6 +592,7 @@ public final class Control {
 		public final SingletonStrategy singleton = addE("singleton", "sing", SingletonStrategy.LAST, "How to manage singleton variables during search");
 		public final boolean connected = addB("connected", "", false, "Must we select a variable necessarily connected to an already explicitly assigned one?");
 		public final boolean discardAux = addB("discardAux", "da", false, "Must we not branch on auxiliary variables introduced by the solver?");
+		public final boolean arrayPriorityRunRobin = addB("arrayPriorityRunRobin", "aprr", false, "Must we set priority to variable arrays in turn?");
 	}
 
 	public class OptionsValh extends OptionGroup {

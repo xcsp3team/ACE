@@ -154,6 +154,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String N_AUXILIARY = "nAuxiliary";
 	public static final String DEGREES = "degrees";
 
+	public static final String N_ARRAYS = "nArrays";
 	public static final String N_REMOVED1 = "nRemoved1";
 	public static final String N_CONVERTED = "nConverted";
 	public static final String N_SPECIFIC = "nSpecific";
@@ -465,6 +466,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	private InformationBloc variablesInfo() {
 		InformationBloc m = new InformationBloc(VARIABLES);
 		m.put(COUNT, head.problem.variables.length);
+		m.put(N_ARRAYS, head.problem.varArrays.length);
 		m.put(N_DISCARDED, features.collecting.discardedVars.size());
 		m.put(N_ISOLATED, features.nIsolatedVars);
 		m.put(N_FIXED, features.nFixedVars);

@@ -74,6 +74,17 @@ public class Restarter implements ObserverOnRuns {
 			currCutoff = measureSupplier.get() + offset;
 		}
 		nRestartsSinceReset++;
+
+		if (solver.head.control.varh.arrayPriorityRunRobin) {
+			// TODO control that aprr is not used with pr1 or pr2
+			int k = solver.problem.varArrays.length;
+			// for (VarArray va : solver.problem.varArrays) System.out.println("hhhh " + Kit.join(va.flatVars));
+			int index = numRun % (k + 1);
+			if (index == 0)
+				solver.heuristic.resetPriorityVars();
+			else
+				solver.heuristic.setPriorityVars((Variable[]) solver.problem.varArrays[index - 1].flatVars, 0);
+		}
 	}
 
 	/**********************************************************************************************
