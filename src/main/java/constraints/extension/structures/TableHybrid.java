@@ -213,7 +213,7 @@ public final class TableHybrid extends ExtensionStructure {
 		/**
 		 * Builds a unary restriction of the form x <op> v
 		 */
-		private Restriction1 buildRestriction1From(int x, TypeConditionOperatorRel op, int v) {
+		private Restriction1Rel buildRestriction1From(int x, TypeConditionOperatorRel op, int v) {
 			switch (op) {
 			case LT:
 				return new Rstr1LE(x, v, true);
@@ -290,11 +290,18 @@ public final class TableHybrid extends ExtensionStructure {
 			List<Restriction> list = new ArrayList<>();
 			for (XNodeParent<? extends IVar> tree : initialRestrictions) {
 				control(tree.sons.length == 2, tree.toString());
+				TypeExpr type = tree.type;
 				XNode<? extends IVar> son0 = tree.sons[0], son1 = tree.sons[1];
+				if (son0.type != TypeExpr.VAR) {
+					type = type.arithmeticInversion(); // add controls
+					XNode<? extends IVar> tmp = son0;
+					son0 = son1;
+					son1 = tmp;
+				}
 				control(son0.type == TypeExpr.VAR, () -> "Left side operand must be a variable");
 				int x = c.positionOf((Variable) ((XNodeLeaf<?>) son0).value);
-				if (tree.type.oneOf(TypeExpr.IN, TypeExpr.NOTIN)) {
-					TypeConditionOperatorSet op = tree.type.toSetop();
+				if (type.oneOf(TypeExpr.IN, TypeExpr.NOTIN)) {
+					TypeConditionOperatorSet op = type.toSetop();
 					if (son1.type == TypeExpr.SET) {
 						int[] t = Stream.of(son1.sons).mapToInt(s -> Utilities.safeInt((long) ((XNodeLeaf<?>) s).value)).toArray();
 						list.add(buildRestriction1From(x, op, t));
@@ -302,7 +309,7 @@ public final class TableHybrid extends ExtensionStructure {
 						Kit.exit("Currently, unimplemented case"); // range
 
 				} else {
-					TypeConditionOperatorRel op = tree.type.toRelop(); // TODO dealing with IN and NOTIN too
+					TypeConditionOperatorRel op = type.toRelop(); // TODO dealing with IN and NOTIN too
 					control(op != null, "" + op);
 					control(son1.type != TypeExpr.SYMBOL, () -> "Symbolic values not possible for the moment");
 					if (son1.type == TypeExpr.LONG) {
@@ -311,8 +318,13 @@ public final class TableHybrid extends ExtensionStructure {
 							control(tuple[x] == STAR && scp[x].dom.containsValue(v));
 							tuple[x] = scp[x].dom.toIdx(v); // for a constant, we directly put it in tuple (no need to
 															// build a Restriction object)
-						} else
-							list.add(buildRestriction1From(x, op, v));
+						} else {
+							Restriction1Rel res = buildRestriction1From(x, op, v);
+							if (res.pivot == -1 || res.pivot == Integer.MAX_VALUE) {
+								control(tuple[x] == STAR);
+							} else
+								list.add(res);
+						}
 					} else if (son1.type == TypeExpr.VAR) {
 						int y = c.positionOf((Variable) ((XNodeLeaf<?>) son1).value);
 						list.add(buildRestriction2From(x, op, y));
@@ -388,9 +400,9 @@ public final class TableHybrid extends ExtensionStructure {
 						if (restriction.isValid() == false)
 							return false;
 					}
-				} else if (restriction.isValid() == false)
+				} else if (restriction.isValid() == false) {
 					return false;
-
+				}
 				// if (restriction.valTimeLocal != valTime && !restriction.isValid())
 				// return false;
 			}
@@ -553,8 +565,9 @@ public final class TableHybrid extends ExtensionStructure {
 				super(x);
 				this.op = op;
 				this.pivot = pivot;
-				control(pivot != -1 && pivot != Integer.MAX_VALUE,
-						() -> "useless restriction if the pivot cannot be computed (and correspond to an index of value)");
+				// control(pivot != -1 && pivot != Integer.MAX_VALUE,
+				// () -> "useless restriction if the pivot cannot be computed (and correspond to an index of value) : "
+				// + this);
 			}
 
 			@Override
@@ -1016,7 +1029,7 @@ public final class TableHybrid extends ExtensionStructure {
 
 			@Override
 			public boolean isValid() {
-				return strict ? domx.first() < domy.last() : domx.first() <= domy.last();
+				return strict ? domx.last() > domy.first() : domy.last() >= domy.first();
 			}
 
 			@Override

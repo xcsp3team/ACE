@@ -41,11 +41,13 @@ import static org.xcsp.common.predicates.MatcherInterface.logic_vars;
 import static org.xcsp.common.predicates.MatcherInterface.max_vars;
 import static org.xcsp.common.predicates.MatcherInterface.min_vars;
 import static org.xcsp.common.predicates.MatcherInterface.mul_vars;
+import static org.xcsp.common.predicates.MatcherInterface.set_vals;
 import static org.xcsp.common.predicates.MatcherInterface.val;
 import static org.xcsp.common.predicates.MatcherInterface.var;
 import static org.xcsp.common.predicates.MatcherInterface.varOrVal;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.ariop;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.relop;
+import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.setop;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.unalop;
 import static org.xcsp.common.predicates.XNode.node;
 import static org.xcsp.common.predicates.XNodeParent.add;
@@ -862,6 +864,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	// unary
 	private Matcher x_relop_k = new Matcher(node(relop, var, val));
+	private Matcher k_relop_x = new Matcher(node(relop, val, var));
+	private Matcher x_setop_vals = new Matcher(node(setop, var, set_vals));
 
 	// binary
 	private Matcher x_relop_y = new Matcher(node(relop, var, var));
@@ -912,6 +916,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return null;
 	}
 
+	private boolean mayBeHybrid(XNode<IVar> tree) {
+		// TODO accelerate things here (avoid too many tests)
+		return x_relop_k.matches(tree) || k_relop_x.matches(tree) || x_setop_vals.matches(tree) || x_relop_y.matches(tree);
+	}
+
 	@Override
 	public final CtrEntity intension(XNodeParent<IVar> tree) {
 		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
@@ -941,6 +950,18 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (options.toExtension(scp) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
 			features.nConvertedConstraints++;
 			return extension(tree);
+		}
+
+		if (options.toHybrid) { // TOD section to finalize with various cases
+			if (tree.type == TypeExpr.IMP) {
+				XNode<IVar> son0 = tree.sons[0], son1 = tree.sons[1];
+				if (mayBeHybrid(son0) && mayBeHybrid(son1)) { // TODO and check no shared variables ?
+					XNodeParent<IVar> newson0 = XNodeParent.build(son0.type.logicalInversion(), (Object[]) son0.sons);
+					HybridTuple ht1 = new HybridTuple((int[]) null, newson0);
+					HybridTuple ht2 = new HybridTuple((int[]) null, (XNodeParent<IVar>) son1);
+					return hybrid(scp, ht1, ht2);
+				}
+			}
 		}
 
 		if (arity == 2 && x_mul_y__eq_k.matches(tree)) {

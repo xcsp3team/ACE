@@ -488,6 +488,7 @@ public final class Control {
 		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "Must we attempt to recognize logical reification forms?");
 		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "Must we attempt to recognize minimum/maximum constraints?");
 		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "Must we attempt to recognize sum constraints?");
+		public final boolean toHybrid = addB("toHybrid", "toh", false, "Must we convert toward hybrid tables, when possible?");
 
 		public boolean toExtension(Variable[] vars) {
 			return vars.length <= arityLimitToExtension && Constraint.howManyVariablesWithin(vars, spaceLimitToExtension) == Constants.ALL;
