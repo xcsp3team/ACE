@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.w3c.dom.Document;
@@ -155,6 +156,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String DEGREES = "degrees";
 
 	public static final String N_ARRAYS = "nArrays";
+	public static final String PRIORITY_ARRAYS = "priorityArrays";
 	public static final String N_REMOVED1 = "nRemoved1";
 	public static final String N_CONVERTED = "nConverted";
 	public static final String N_SPECIFIC = "nSpecific";
@@ -466,12 +468,13 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	private InformationBloc variablesInfo() {
 		InformationBloc m = new InformationBloc(VARIABLES);
 		m.put(COUNT, head.problem.variables.length);
-		m.put(N_ARRAYS, head.problem.varArrays.length);
 		m.put(N_DISCARDED, features.collecting.discardedVars.size());
 		m.put(N_ISOLATED, features.nIsolatedVars);
 		m.put(N_FIXED, features.nFixedVars);
 		m.put(N_SYMBOLIC, features.nSymbolicVars);
 		m.put(N_AUXILIARY, head.problem.nAuxVariables);
+		m.put(N_ARRAYS, "" + head.problem.arrays.length);
+		m.put(PRIORITY_ARRAYS, "" + Stream.of(head.problem.priorityArrays).map(pa -> pa.id).collect(Collectors.joining(",")));
 		m.put(DEGREES, features.varDegrees);
 		return m;
 	}

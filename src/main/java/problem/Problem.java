@@ -261,7 +261,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		this.priorityVars = priorityVars.length == 0 && annotations.decision != null ? (Variable[]) annotations.decision : priorityVars;
 		Variable[] r = HeuristicValues.possibleOptimizationInterference(this);
 		this.priorityVars = r != null ? r : priorityVars;
-		this.varArrays = varEntities.varArrays.stream().filter(va -> !va.id.startsWith(AUXILIARY_VARIABLE_PREFIX)).toArray(VarArray[]::new);
+		this.arrays = varEntities.varArrays.stream().filter(va -> !va.id.startsWith(AUXILIARY_VARIABLE_PREFIX)).toArray(VarArray[]::new);
+		control(priorityVars.length == 0 || (head.control.variables.priorityArrays.length() == 0 && !head.control.varh.arrayPriorityRunRobin));
+		int[] indexes = Stream.of(Variable.extractFrom(head.control.variables.priorityArrays))
+				.mapToInt(
+						v -> v instanceof Integer ? (Integer) v : IntStream.range(0, arrays.length).filter(i -> arrays[i].id.equals(v)).findFirst().orElse(-1))
+				.toArray();
+		control(IntStream.of(indexes).allMatch(i -> 0 <= i && i < arrays.length),
+				"the value of the option -pra is not valid: " + head.control.variables.priorityArrays);
+		this.priorityArrays = IntStream.of(indexes).mapToObj(i -> arrays[i]).toArray(VarArray[]::new);
 	}
 
 	@Override
@@ -388,7 +396,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	/**
 	 * The variable arrays, as present in the XCSP3 instance (excluding the possibly introduced auxiliary arrays)
 	 */
-	public VarArray[] varArrays;
+	public VarArray[] arrays;
+
+	/**
+	 * The priority variable arrays, subset of arrays (usually, empty)
+	 */
+	public VarArray[] priorityArrays;
 
 	/**
 	 * The number of auxiliary (equality) constraints introduced when replacing tree expressions

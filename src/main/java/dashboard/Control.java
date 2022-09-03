@@ -440,6 +440,7 @@ public final class Control {
 		public final String instantiation = addS("instantiation", "ins", "", s_ins);
 		public final String priority1 = addS("priority1", "pr1", "", s_pr1);
 		public final String priority2 = addS("priority2", "pr2", "", s_pr2);
+		public final String priorityArrays = addS("priorityArrays", "pra", "", "Index(es) or id(s) of the variable array(s) that must be assigned in priority");
 		public final boolean reduceIsolated = addB("reduceIsolated", "riv", true, "Arbitrary keeping a single value in the domain of isolated variables");
 	}
 

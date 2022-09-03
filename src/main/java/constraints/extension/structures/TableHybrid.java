@@ -1143,6 +1143,9 @@ public final class TableHybrid extends ExtensionStructure {
 			}
 		}
 
+		/**
+		 * Restriction of the form x = y
+		 */
 		final class Rstr2EQ extends Restriction2 {
 
 			@Override
