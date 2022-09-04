@@ -12,12 +12,15 @@ package heuristics;
 
 import static utility.Kit.control;
 
+import java.util.Arrays;
+
 import constraints.Constraint;
 import optimization.Optimizable;
 import optimization.Optimizer;
 import sets.SetDense;
 import solver.Solver;
 import utility.Kit;
+import variables.Domain;
 import variables.Variable;
 
 /**
@@ -198,21 +201,50 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	 */
 	public static final class Occurrences extends HeuristicValuesDynamic {
 
+		private long last = -1;
+
+		private int[] counts;
+
 		public Occurrences(Variable x, boolean anti) {
 			super(x, anti);
+			this.counts = new int[dx.initSize()];
 		}
 
 		@Override
 		public double scoreOf(int a) {
 			if (dx.size() == 1)
 				return 0; // we don't care about the score returned because the domain is singleton
-			int v = dx.toVal(a);
-			int cnt = 0;
-			// TODO bad complexity O(nd) whereas we could have O(n+d)
-			for (Variable y : x.problem.variables)
-				if (y.dom.containsOnlyValue(v))
-					cnt++;
-			return cnt;
+			if (last != x.problem.solver.stats.safeNumber()) {
+				// System.out.println("commpuuu " + x.problem.solver.stats.safeNumber());
+				Arrays.fill(counts, 0);
+				Variable[] vars = x.problem.varEntities.varToVarArray.containsKey(x) ? (Variable[]) x.problem.varEntities.varToVarArray.get(x).flatVars
+						: x.problem.variables; // we reasdon on the array where x belongs if it exists
+				for (Variable y : vars) {
+					// System.out.println("hhhh " + y);
+					Domain dom = y.dom;
+					if (dom.size() == 1) {
+						if (dx.typeIdentifier() == dom.typeIdentifier())
+							counts[dom.single()]++;
+						else {
+							int b = dx.toIdxIfPresent(dom.singleValue());
+							if (b != -1)
+								counts[b]++;
+						}
+					}
+				}
+				last = x.problem.solver.stats.safeNumber();
+			}
+			return counts[a];
+
+			// System.out.println("hhh " + x.problem.varEntities.varToVarArray.get(x));
+
+			// int v = dx.toVal(a);
+			// int cnt = 0;
+			// // TODO bad complexity O(nd) whereas we could have O(n+d)
+			// for (Variable y : x.problem.variables)
+			// if (y.dom.containsOnlyValue(v))
+			// cnt++;
+			// return cnt;
 		}
 	}
 

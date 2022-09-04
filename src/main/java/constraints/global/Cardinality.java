@@ -17,6 +17,7 @@ import constraints.global.Matcher.MatcherCardinality;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
+import interfaces.Tags.TagPostponableFiltering;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import utility.Kit;
@@ -27,7 +28,8 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre and Vincent Perradin
  */
-public final class Cardinality extends ConstraintGlobal implements TagAC, TagCallCompleteFiltering, TagSymmetric, ObserverOnBacktracksSystematic {
+public final class Cardinality extends ConstraintGlobal
+		implements TagAC, TagCallCompleteFiltering, TagPostponableFiltering, TagSymmetric, ObserverOnBacktracksSystematic {
 
 	@Override
 	public void restoreBefore(int depth) {
@@ -126,6 +128,7 @@ public final class Cardinality extends ConstraintGlobal implements TagAC, TagCal
 
 	@Override
 	public boolean runPropagator(Variable x) {
+		// System.out.println("running " + x + " at level " + problem.solver.depth());
 		if (!matcher.findMaximumMatching())
 			return x.dom.fail();
 		matcher.removeInconsistentValues();

@@ -40,6 +40,7 @@ import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagNotCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
+import interfaces.Tags.TagPostponableFiltering;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import propagation.Forward;
@@ -353,6 +354,10 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 */
 	public boolean ignored;
 
+	public final boolean postponable;
+
+	public Variable postponedEvent;
+
 	/**
 	 * The key of the constraint. This field is only used for symmetry detection, when activated.
 	 */
@@ -367,11 +372,6 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 * The last time the constraint was solicited for filtering
 	 */
 	public long time;
-
-	/**
-	 * The complexity of filtering this constraint. Currently, not used.
-	 */
-	public int filteringComplexity;
 
 	/**
 	 * Indicates if filtering (e.g. AC) must be controlled. If the number of uninstantiated variables is greater than
@@ -633,6 +633,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		this.vals = null;
 		this.genericFilteringThreshold = Integer.MAX_VALUE;
 		this.indexesMatchValues = false;
+		this.postponable = false;
 		this.infiniteDomainVars = new Variable[0];
 		this.supporter = null;
 	}
@@ -671,6 +672,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 
 		this.indexesMatchValues = Stream.of(scp).allMatch(x -> x.dom.indexesMatchValues());
 		this.genericFilteringThreshold = computeGenericFilteringThreshold();
+		this.postponable = pb.head.control.propagation.postponableConstraints && scp.length > 20 && this instanceof TagPostponableFiltering;
 
 		pb.head.observersConstruction.add(this);
 
@@ -1027,7 +1029,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 * @return false if an inconsistency is detected
 	 */
 	public final boolean filterFrom(Variable x) {
-		// System.out.println("filtering " + this + " " + x + " " + getClass().getSimpleName());
+		// if (this instanceof Cardinality)
+		// System.out.println("filtering "); // + this + " " + x + " " + getClass().getSimpleName());
 		if (infiniteDomainVars.length > 0 && handleHugeDomains()) // Experimental (to be finished)
 			return true;
 		// For CSP, sometimes we can directly return true (because we know then that there is no filtering possibility)
@@ -1042,7 +1045,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 			if (futvars.size() == 1 && !x.assigned() && scp.length > 1)
 				return true;
 		}
-		if (time > x.time && this instanceof TagCallCompleteFiltering && !(this instanceof TagNotCallCompleteFiltering))
+		if (time > x.time && this instanceof TagCallCompleteFiltering && !(this instanceof TagNotCallCompleteFiltering) && !postponable)
 			return true;
 		int nBefore = problem.nValueRemovals;
 		boolean consistent = this instanceof SpecificPropagator ? ((SpecificPropagator) this).runPropagator(x) : genericFiltering(x);

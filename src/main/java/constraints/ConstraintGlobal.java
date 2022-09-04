@@ -32,6 +32,5 @@ public abstract class ConstraintGlobal extends Constraint implements SpecificPro
 	 */
 	public ConstraintGlobal(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		this.filteringComplexity = 1;
 	}
 }

@@ -518,7 +518,7 @@ public final class Control {
 	public class OptionsPropagation extends OptionGroup {
 		public final String clazz = addS("clazz", "p", AC.class, null, "Class to be used for propagation (for example, FC, AC or SAC3)");
 		public final int variant = addI("variant", "pv", 0, "Propagation Variant (only used for some consistencies)");
-		public final boolean useAuxiliaryQueues = addB("useAuxiliaryQueues", "uaq", false, "Must we use auxiliary queues of constraints?");
+		public final boolean postponableConstraints = addB("postponableConstraints", "ppc", false, "Must we postpone filtering for expensive constraints?");
 		// above, the purpose is to propagate less often the most costly constraints (to be finalized)
 		public final String reviser = addS("reviser", "", Reviser3.class, Reviser.class, "Class to be used for performing revisions");
 		public final boolean residues = addB("residues", "res", true, "Must we use redidues (AC3rm)?");

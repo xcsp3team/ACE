@@ -10,7 +10,8 @@
 
 package propagation;
 
-import java.util.stream.IntStream;
+import java.util.HashSet;
+import java.util.Set;
 
 import constraints.Constraint;
 import constraints.ConstraintGlobal;
@@ -142,7 +143,9 @@ public abstract class Propagation {
 	 * Auxiliary queues for handling constraints with different levels of propagator complexities. Currently, its usage
 	 * is experimental.
 	 */
-	public final SetSparseMap[] auxiliaryQueues;
+	// public final SetSparseMap[] auxiliaryQueues;
+
+	public final Set<Constraint> postponedConstraints;
 
 	/**
 	 * This field is used as a clock to enumerate time. It is used to avoid performing some useless calls of constraint
@@ -199,11 +202,9 @@ public abstract class Propagation {
 	 * Methods
 	 *************************************************************************/
 
-	public final void reset() {
+	public final void clear() {
 		queue.clear();
-		for (SetSparseMap auxiliaryQueue : auxiliaryQueues)
-			auxiliaryQueue.clear();
-		nTuplesRemoved = 0;
+		postponedConstraints.clear();
 	}
 
 	/**
@@ -225,10 +226,12 @@ public abstract class Propagation {
 		this.solver = solver;
 		this.queue = this instanceof Forward ? new Queue((Forward) this) : null;
 		this.options = solver.head.control.propagation;
-		int nAuxQueues = options.useAuxiliaryQueues ? MAX_FILTERING_COMPLEXITY : 0;
-		this.auxiliaryQueues = this instanceof Forward
-				? IntStream.range(0, nAuxQueues).mapToObj(i -> new SetSparseMap(solver.problem.constraints.length)).toArray(SetSparseMap[]::new)
-				: null;
+		// int nAuxQueues = options.useAuxiliaryQueues ? MAX_FILTERING_COMPLEXITY : 0;
+		// this.auxiliaryQueues = this instanceof Forward
+		// ? IntStream.range(0, nAuxQueues).mapToObj(i -> new
+		// SetSparseMap(solver.problem.constraints.length)).toArray(SetSparseMap[]::new)
+		// : null;
+		this.postponedConstraints = new HashSet<>();
 	}
 
 	/**
@@ -244,14 +247,16 @@ public abstract class Propagation {
 			return false;
 		for (Constraint c : x.ctrs)
 			if (!c.ignored && !solver.isEntailed(c)) {
-				if (c.filteringComplexity == 0) {
+				if (!c.postponable) {
 					currFilteringCtr = c;
 					boolean consistent = c.filterFrom(x);
 					currFilteringCtr = null;
 					if (!consistent)
 						return false;
-				} else if (c.time <= x.time)
-					auxiliaryQueues[c.filteringComplexity - 1].add(c.num, x.num);
+				} else {// if (c.time <= x.time)
+					postponedConstraints.add(c); // auxiliaryQueues[c.filteringComplexity - 1].add(c.num, x.num);
+					c.postponedEvent = x;
+				}
 			}
 		return true;
 	}
@@ -263,30 +268,40 @@ public abstract class Propagation {
 	 */
 	public boolean propagate() {
 		while (true) {
-			while (queue.size() != 0) // propagation wrt the main queue
+			while (queue.size() != 0) // propagation with respect to the main queue
 				if (pickAndFilter() == false)
 					return false;
-			for (SetSparseMap auxiliaryQueue : auxiliaryQueues) // propagation wrt the auxiliary queues
-				while (!auxiliaryQueue.isEmpty()) {
-					int cnum = auxiliaryQueue.shift();
-					int xnum = auxiliaryQueue.values[cnum];
-					Constraint c = solver.problem.constraints[cnum];
-					Variable x = solver.problem.variables[xnum];
-					// TODO : next instruction forces filtering, code may be improved to filter only when necessary
-					c.time = x.time;
-					if (!c.ignored && !solver.isEntailed(c)) { // means that the constraint is ignored or entailed
-						currFilteringCtr = c;
-						boolean consistent = c.filterFrom(x);
-						currFilteringCtr = null;
-						if (!consistent)
-							return false;
-					}
-					// auxiliaryQueue.remove(auxiliaryQueue.dense[0]);
-				}
+			for (Constraint c : postponedConstraints) { // propagation with respect to postponed constraints
+				assert !c.ignored && !solver.isEntailed(c);
+				currFilteringCtr = c;
+				boolean consistent = c.filterFrom(c.postponedEvent);
+				currFilteringCtr = null;
+				if (!consistent)
+					return false;
+			}
+			postponedConstraints.clear();
+			// for (SetSparseMap auxiliaryQueue : auxiliaryQueues) // propagation wrt the auxiliary queues
+			// while (!auxiliaryQueue.isEmpty()) {
+			// int cnum = auxiliaryQueue.shift();
+			// int xnum = auxiliaryQueue.values[cnum];
+			// Constraint c = solver.problem.constraints[cnum];
+			// Variable x = solver.problem.variables[xnum];
+			// // TODO : next instruction forces filtering, code may be improved to filter only when necessary
+			// c.time = x.time;
+			// if (!c.ignored && !solver.isEntailed(c)) { // means that the constraint is ignored or entailed
+			// currFilteringCtr = c;
+			// boolean consistent = c.filterFrom(x);
+			// currFilteringCtr = null;
+			// if (!consistent)
+			// return false;
+			// }
+			// // auxiliaryQueue.remove(auxiliaryQueue.dense[0]);
+			// }
 			if (queue.size() == 0)
 				break;
 		}
 		return true;
+
 	}
 
 	/**

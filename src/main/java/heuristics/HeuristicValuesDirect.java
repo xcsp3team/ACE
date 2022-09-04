@@ -147,9 +147,9 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 			if (minimize) { // minimizing the number of distinct values
 				for (Variable y : others)
 					if (y != x && y.dom.size() == 1) {
-						int a = dx.toIdxIfPresent(y.dom.firstValue());
+						int a = dx.toIdxIfPresent(y.dom.singleValue());
 						if (a >= 0)
-							return a;
+							return a; // because already assigned
 					}
 				return dx.first();
 			}

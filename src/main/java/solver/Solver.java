@@ -51,7 +51,6 @@ import learning.NogoodReasoner;
 import main.Head;
 import main.HeadExtraction;
 import problem.Problem;
-import propagation.Forward;
 import propagation.Propagation;
 import sets.SetDense;
 import sets.SetSparseReversible;
@@ -600,7 +599,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 
 	public void reset() { // called by very special objects (for example, when extracting a MUC)
 		control(futVars.nPast() == 0);
-		propagation.reset();
+		propagation.clear();
+		propagation.nTuplesRemoved = 0;
 		restarter.reset();
 		resetNoSolutions();
 		control(decisions.set.isEmpty()); // otherwise decisions.set.clear();
@@ -628,9 +628,6 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		this.solutions = new Solutions(this, head.control.general.solLimit);
 		// BE CAREFUL: build solutions before propagation
 		this.propagation = Propagation.buildFor(this); // may be null
-		if (!head.control.propagation.useAuxiliaryQueues)
-			for (Constraint c : problem.constraints)
-				c.filteringComplexity = 0;
 
 		this.restarter = Restarter.buildFor(this);
 		this.heuristic = HeuristicVariables.buildFor(this);
@@ -735,8 +732,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			observer.afterUnassignment(x);
 		for (ObserverOnBacktracksSystematic observer : observersOnBacktracksSystematic)
 			observer.restoreBefore(depthBeforeBacktrack);
-		if (propagation instanceof Forward)
-			propagation.queue.clear();
+		propagation.clear();
 	}
 
 	/**

@@ -61,6 +61,13 @@ public interface Tags {
 	}
 
 	/**
+	 * Tag for indicating that a constraint can be postponed when filtering (requires a propagator independent of which
+	 * variables (domains) were recently reduced)
+	 */
+	interface TagPostponableFiltering {
+	}
+
+	/**
 	 * Tag for indicating that a table constraint is negative (i.e., contains conflicts)
 	 */
 	interface TagNegative {

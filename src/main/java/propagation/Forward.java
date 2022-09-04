@@ -74,7 +74,7 @@ public abstract class Forward extends Propagation {
 
 		public FC(Solver solver) {
 			super(solver);
-			control(auxiliaryQueues.length == 0, () -> "For FC, we have to just use one queue");
+			control(!solver.head.control.propagation.postponableConstraints, () -> "For FC, we have to use classical propagation");
 		}
 
 		@Override

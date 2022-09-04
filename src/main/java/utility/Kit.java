@@ -116,7 +116,7 @@ public final class Kit {
 		Color.RED.println("\n! ERROR with message: " + message + "\n  Use the solver option -ev for more details\n");
 		if (!(Thread.currentThread() instanceof Head) || ((Head) Thread.currentThread()).control.general.exceptionsVisible)
 			e.printStackTrace();
-		System.exit(1);
+		Runtime.getRuntime().halt(0); // System.exit(1);
 		// log.severe(message);
 		return null;
 	}
