@@ -367,6 +367,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 			// cnt++;
 			// System.out.println("bef " + cnt); // pb to fix for java ace GeneralizedBACP-reduced_UD2-gbac.xml
 			// // -valh=Bivs
+			// TODO other pb : java ace TeamAssignment-data1_6_6.xml -valh=Asgs
 			// }
 			// }
 			for (int i = 0; i < nBins; i++)

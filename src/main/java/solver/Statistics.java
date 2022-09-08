@@ -10,14 +10,16 @@
 
 package solver;
 
-import java.util.stream.Stream;
-
-import heuristics.HeuristicValuesDynamic.Failures;
+import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments;
+import heuristics.HeuristicValuesDynamic.TagRequireFailedPerValue;
+import heuristics.HeuristicValuesDynamic.TagRequirePerValue;
+import heuristics.HeuristicVariablesDynamic.FrOnDom;
+import heuristics.HeuristicVariablesDynamic.FraOnDom;
+import interfaces.Observers.ObserverOnAssignments;
 import interfaces.Observers.ObserverOnDecisions;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Observers.ObserverOnSolving;
 import propagation.Forward;
-import utility.Kit;
 import utility.Stopwatch;
 import variables.Variable;
 
@@ -26,7 +28,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public final class Statistics implements ObserverOnSolving, ObserverOnRuns, ObserverOnDecisions {
+public final class Statistics implements ObserverOnSolving, ObserverOnRuns, ObserverOnDecisions, ObserverOnAssignments {
 
 	/*************************************************************************
 	 ***** Implemented Interfaces
@@ -73,7 +75,6 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 		nNodes++;
 		if (x.dom.size() > 1)
 			nDecisions++;
-		// nAssignments++; done elsewhere
 	}
 
 	@Override
@@ -82,6 +83,25 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 			nNodes++;
 			nDecisions++;
 		}
+	}
+
+	@Override
+	public void afterAssignment(Variable x, int a) {
+		nAssignments++;
+		if (varAssignments != null && varAssignments[x.num] != null)
+			varAssignments[x.num].whenAssignment(a);
+	}
+
+	@Override
+	public void afterFailedAssignment(Variable x, int a) {
+		nFailedAssignments++;
+		if (varAssignments != null && varAssignments[x.num] != null)
+			varAssignments[x.num].whenFailedAssignment(a);
+		nWrongDecisions++;
+	}
+
+	@Override
+	public void afterUnassignment(Variable x) {
 	}
 
 	/*************************************************************************
@@ -133,54 +153,148 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	}
 
 	/**
-	 * Some statistics about the assignments
+	 * Some statistics about the assignments concerning a variable
 	 */
-	public final class Assignments {
-		/**
-		 * perVariable[x] is the number of assignments involving x, performed by the solver
-		 */
-		public final int[] perVariable;
+	public final class VarAssignments {
 
 		/**
-		 * failedPerVariable[x] is is the number of failed assignments involving x, performed by the solver
+		 * the number of assignments concerning the variable performed by the solver
 		 */
-		public final int[] failedPerVariable;
+		private int n;
 
 		/**
-		 * lastFailed[x] is the last time (wrt nFailedAssignments) there was a failed assignment involving x
+		 * the number of failed assignments concerning the variable performed by the solver
 		 */
-		public long[] lastFailed;
+		private int nFailed;
 
 		/**
-		 * failedPerValue[x][a] gives the number of failed assignments for (x,a)
+		 * the last time (wrt nFailedAssignments) there was a failed assignment involving the variable
 		 */
-		public int[][] failedPerValue;
+		private long lastFailed;
 
-		private Assignments() {
-			Variable[] variables = solver.problem.variables;
-			this.perVariable = Kit.repeat(2, variables.length); // initialization so as to have 0.5 as failure rate
-																// initially
-			this.failedPerVariable = Kit.repeat(1, variables.length);
-			this.lastFailed = new long[variables.length];
-			if (Stream.of(variables).anyMatch(x -> x.heuristic instanceof Failures)) {
-				this.failedPerValue = new int[variables.length][];
-				for (Variable x : variables)
-					if (x.heuristic instanceof Failures) {
-						failedPerValue[x.num] = new int[x.dom.initSize()];
-						((Failures) x.heuristic).failed = failedPerValue[x.num];
-					}
-			}
+		/**
+		 * the number of assignments concerning each value of the variable
+		 */
+		public int[] nPerValue;
+
+		/**
+		 * the number of failed assignments concerning each value of the variable
+		 */
+		public int[] nFailedPerValue;
+
+		// private int[] stack;
+
+		private VarAssignments(Variable x, boolean buildPerValue, boolean buildFailedPerValue) {
+			this.n = 2; // so as to have 0.5 as failure rate initially
+			this.nFailed = 1; // so as to have 0.5 as failure rate initially
+			this.nPerValue = buildPerValue ? new int[x.dom.initSize()] : null;
+			this.nFailedPerValue = buildFailedPerValue ? new int[x.dom.initSize()] : null;
+			((HeuristicUsingAssignments) x.heuristic).assignments = this;
+
+			// this.stack = new int[variables.length + 1];
 		}
 
-		public double failureRate(Variable x) {
-			return failedPerVariable[x.num] / (double) perVariable[x.num];
+		public void whenAssignment(int a) {
+			n++;
+			if (nPerValue != null)
+				nPerValue[a]++;
+			// stack[solver.depth()] = solver.depth();
 		}
 
-		public double failureAgedRate(Variable x) {
-			return (failedPerVariable[x.num] / (double) perVariable[x.num]) + (1 / (double) (nFailedAssignments - lastFailed[x.num] + 1));
+		public void whenFailedAssignment(int a) {
+			nFailed++;
+			lastFailed = nFailedAssignments;
+			if (nFailedPerValue != null)
+				nFailedPerValue[a]++;
+		}
+
+		public double failureRate() {
+			return nFailed / (double) n;
+		}
+
+		public double failureAgedRate() {
+			return (nFailed / (double) n) + (1 / (double) (nFailedAssignments - lastFailed + 1));
 		}
 
 	}
+
+	// /**
+	// * Some statistics about the assignments
+	// */
+	// public final class Assignments {
+	//
+	// /**
+	// * perVariable[x] is the number of assignments involving x, performed by the solver
+	// */
+	// private final int[] perVariable;
+	//
+	// /**
+	// * failedPerVariable[x] is is the number of failed assignments involving x, performed by the solver
+	// */
+	// public final int[] failedPerVariable;
+	//
+	// /**
+	// * lastFailed[x] is the last time (wrt nFailedAssignments) there was a failed assignment involving x
+	// */
+	// public long[] lastFailed;
+	//
+	// /**
+	// * failedPerValue[x][a] gives the number of assignments for (x,a)
+	// */
+	// public int[][] perValue;
+	//
+	// /**
+	// * failedPerValue[x][a] gives the number of failed assignments for (x,a)
+	// */
+	// public int[][] failedPerValue;
+	//
+	// // private int[] stack;
+	//
+	// private Assignments() {
+	// Variable[] variables = solver.problem.variables;
+	// this.perVariable = Kit.repeat(2, variables.length); // so as to have 0.5 as failure rate initially
+	// this.failedPerVariable = Kit.repeat(1, variables.length);
+	// this.lastFailed = new long[variables.length];
+	//
+	// for (Variable x : variables) {
+	// if (x.heuristic instanceof HeuristicUsingAssignments)
+	// ((HeuristicUsingAssignments) x.heuristic).assignments = this;
+	//
+	// }
+	//
+	// if (Stream.of(variables).anyMatch(x -> x.heuristic instanceof Failures)) {
+	// this.failedPerValue = new int[variables.length][];
+	// for (Variable x : variables)
+	// if (x.heuristic instanceof Failures) {
+	// failedPerValue[x.num] = new int[x.dom.initSize()];
+	// ((Failures) x.heuristic).failed = failedPerValue[x.num];
+	// }
+	// }
+	// // this.stack = new int[variables.length + 1];
+	// }
+	//
+	// public void whenAssignment(Variable x, int a) {
+	// perVariable[x.num]++;
+	// // stack[solver.depth()] = solver.depth();
+	// }
+	//
+	// public void whenFailedAssignment(Variable x, int a) {
+	// failedPerVariable[x.num]++;
+	// lastFailed[x.num] = nFailedAssignments;
+	// if (failedPerValue != null && failedPerValue[x.num] != null)
+	// failedPerValue[x.num][a]++;
+	// }
+	//
+	// public double failureRate(Variable x) {
+	// return failedPerVariable[x.num] / (double) perVariable[x.num];
+	// }
+	//
+	// public double failureAgedRate(Variable x) {
+	// return (failedPerVariable[x.num] / (double) perVariable[x.num]) + (1 / (double) (nFailedAssignments -
+	// lastFailed[x.num] + 1));
+	// }
+	//
+	// }
 
 	/*************************************************************************
 	 ***** Fields and Methods
@@ -233,9 +347,9 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	public final Times times = new Times();
 
 	/**
-	 * The object used to collect data about assignments (per variable or per value)
+	 * The array of objects used to collect data about assignments (per variable or per value)
 	 */
-	public final Assignments assignments;
+	public VarAssignments[] varAssignments;
 
 	/**
 	 * Builds an object to collect statistics about the specified solver
@@ -245,21 +359,18 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	 */
 	public Statistics(Solver solver) {
 		this.solver = solver;
-		this.assignments = new Assignments();
-	}
-
-	public void whenAssignment(Variable x, int a) {
-		nAssignments++;
-		assignments.perVariable[x.num]++;
-	}
-
-	public void whenFailedAssignment(Variable x, int a) {
-		nWrongDecisions++;
-		nFailedAssignments++;
-		assignments.failedPerVariable[x.num]++;
-		assignments.lastFailed[x.num] = nFailedAssignments;
-		if (assignments.failedPerValue != null && assignments.failedPerValue[x.num] != null)
-			assignments.failedPerValue[x.num][a]++;
+		Variable[] vars = solver.problem.variables;
+		if (solver.heuristic instanceof FrOnDom || solver.heuristic instanceof FraOnDom)
+			varAssignments = new VarAssignments[vars.length];
+		for (int i = 0; i < vars.length; i++) {
+			boolean b2 = vars[i].heuristic instanceof TagRequirePerValue;
+			boolean b3 = vars[i].heuristic instanceof TagRequireFailedPerValue;
+			if (b2 || b3) {
+				if (varAssignments == null)
+					varAssignments = new VarAssignments[vars.length];
+				varAssignments[i] = new VarAssignments(vars[i], b2, b3);
+			}
+		}
 	}
 
 	public long safeNumber() {

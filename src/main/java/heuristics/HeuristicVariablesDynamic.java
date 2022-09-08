@@ -159,7 +159,6 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public double scoreOf(Variable x) {
-			// System.out.println("score of " + x + " : " + x.fraOnDom());
 			return x.fraOnDom();
 		}
 	}
@@ -247,6 +246,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 						int y = c.futvars.dense[0]; // the other variable whose score must be updated
 						vscores[c.scp[y].num] -= cvscores[c.num][y];
 					}
+		}
+
+		@Override
+		public void afterFailedAssignment(Variable x, int a) {
 		}
 
 		@Override

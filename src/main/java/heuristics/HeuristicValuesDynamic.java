@@ -14,12 +14,15 @@ import static utility.Kit.control;
 
 import java.util.Arrays;
 
+import org.xcsp.modeler.entities.VarEntities.VarArray;
+
 import constraints.Constraint;
+import interfaces.Tags.TagMaximize;
 import optimization.Optimizable;
 import optimization.Optimizer;
 import sets.SetDense;
 import solver.Solver;
-import utility.Kit;
+import solver.Statistics.VarAssignments;
 import variables.Domain;
 import variables.Variable;
 
@@ -41,11 +44,14 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		double bestScore = scoreOf(best) * multiplier;
 		for (int a = dx.next(best); a != -1; a = dx.next(a)) {
 			double score = scoreOf(a) * multiplier;
+			// System.out.println("check " + score + " " + bestScore);
 			if (score > bestScore) {
+				// System.out.println("better " + score + " " + bestScore);
 				best = a;
 				bestScore = score;
 			}
 		}
+		// System.out.println("best " + bestScore);
 		return best;
 	}
 
@@ -156,6 +162,151 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		}
 	}
 
+	public static final class Dist extends HeuristicValuesDynamic implements TagMaximize {
+
+		public Dist(Variable x, boolean anti) {
+			super(x, anti);
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			int v = dx.toVal(a);
+			int prev = dx.prev(a), next = dx.next(a);
+			int score = (prev == -1 ? 0 : v - dx.toVal(prev)) + (next == -1 ? 0 : dx.toVal(next) - v);
+			// System.out.println("score " + score);
+			return score;
+		}
+	}
+
+	public interface TagRequirePerValue {
+	}
+
+	public interface TagRequireFailedPerValue {
+	}
+
+	public static abstract class HeuristicUsingAssignments extends HeuristicValuesDynamic {
+		public VarAssignments assignments; // will be defined when constructing Assignments
+
+		public HeuristicUsingAssignments(Variable x, boolean anti) {
+			super(x, anti);
+		}
+	}
+
+	public static class Asgs extends HeuristicUsingAssignments implements TagRequirePerValue {
+
+		public Asgs(Variable x, boolean anti) {
+			super(x, anti);
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			return assignments.nPerValue[a];
+		}
+	}
+
+	public static class Flrs extends HeuristicUsingAssignments implements TagRequireFailedPerValue {
+
+		public Flrs(Variable x, boolean anti) {
+			super(x, anti);
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			return assignments.nFailedPerValue[a];
+		}
+	}
+
+	public static final class FlrsR extends Flrs implements TagRequirePerValue {
+
+		public FlrsR(Variable x, boolean anti) {
+			super(x, anti);
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			return assignments.nPerValue[a] == 0 ? 0 : assignments.nFailedPerValue[a] / (double) assignments.nPerValue[a];
+		}
+	}
+
+	/**
+	 * This heuristic selects a value according to the number of times this value is assigned to the other variables.
+	 */
+	public static class Occs extends HeuristicUsingAssignments {
+
+		protected final int[] nOccurrences;
+
+		private long last = -1;
+
+		private final Variable[] variablesOfInterest; // we reason on the array where x belongs if it exists
+
+		public Occs(Variable x, boolean anti) {
+			super(x, anti);
+			this.nOccurrences = new int[dx.initSize()];
+			VarArray va = x.problem.varEntities.varToVarArray.get(x);
+			this.variablesOfInterest = va != null ? (Variable[]) va.flatVars : x.problem.variables;
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			if (dx.size() == 1)
+				return 0; // we don't care about the score returned because the domain is singleton
+			if (last != x.problem.solver.stats.safeNumber()) {
+				Arrays.fill(nOccurrences, 0);
+				for (Variable y : variablesOfInterest) {
+					Domain dom = y.dom;
+					if (dom.size() == 1) {
+						if (dx.typeIdentifier() == dom.typeIdentifier())
+							nOccurrences[dom.single()]++;
+						else {
+							int b = dx.toIdxIfPresent(dom.singleValue());
+							if (b != -1)
+								nOccurrences[b]++;
+						}
+					}
+				}
+				last = x.problem.solver.stats.safeNumber();
+			}
+			return nOccurrences[a];
+		}
+	}
+
+	public static final class AsgsFp extends Asgs implements TagRequireFailedPerValue {
+
+		public AsgsFp(Variable x, boolean anti) {
+			super(x, anti);
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			return assignments.nPerValue[a] + 2 * assignments.nFailedPerValue[a];
+		}
+	}
+
+	public static final class AsgsFm extends Asgs implements TagRequireFailedPerValue {
+
+		public AsgsFm(Variable x, boolean anti) {
+			super(x, anti);
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			return assignments.nPerValue[a] - 2 * assignments.nFailedPerValue[a];
+		}
+	}
+
+	public static final class AsgsO extends Occs implements TagRequirePerValue {
+
+		public AsgsO(Variable x, boolean anti) {
+			super(x, anti);
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			return assignments.nPerValue[a] + nOccurrences[a];
+		}
+	}
+
+	// This class cannot be really used as defined below (large arity is highly problematic)
 	public static final class Conflicts extends HeuristicValuesDynamic {
 
 		public Conflicts(Variable x, boolean anti) {
@@ -167,84 +318,8 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 			assert !x.assigned() && dx.contains(a);
 			long nConflicts = 0;
 			for (Constraint c : x.ctrs)
-				nConflicts += c.nConflictsFor(c.positionOf(x), a);
+				nConflicts += c.nConflictsFor(c.positionOf(x), a); // Very expensive
 			return nConflicts;
-		}
-	}
-
-	public static final class Failures extends HeuristicValuesDynamic {
-
-		private int[] nDecisions;
-
-		public int[] failed;
-
-		public Failures(Variable x, boolean anti) {
-			super(x, anti);
-			this.nDecisions = Kit.repeat(1, dx.initSize()); // we use 1 for avoiding divisions by 0
-		}
-
-		@Override
-		public double scoreOf(int a) {
-			return failed[a] / (double) nDecisions[a];
-		}
-
-		@Override
-		public int computeBestValueIndex() {
-			int a = super.computeBestValueIndex();
-			nDecisions[a]++;
-			return a;
-		}
-	}
-
-	/**
-	 * This heuristic selects a value according to the number of times this value is assigned to the other variables.
-	 */
-	public static final class Occurrences extends HeuristicValuesDynamic {
-
-		private long last = -1;
-
-		private int[] counts;
-
-		public Occurrences(Variable x, boolean anti) {
-			super(x, anti);
-			this.counts = new int[dx.initSize()];
-		}
-
-		@Override
-		public double scoreOf(int a) {
-			if (dx.size() == 1)
-				return 0; // we don't care about the score returned because the domain is singleton
-			if (last != x.problem.solver.stats.safeNumber()) {
-				// System.out.println("commpuuu " + x.problem.solver.stats.safeNumber());
-				Arrays.fill(counts, 0);
-				Variable[] vars = x.problem.varEntities.varToVarArray.containsKey(x) ? (Variable[]) x.problem.varEntities.varToVarArray.get(x).flatVars
-						: x.problem.variables; // we reasdon on the array where x belongs if it exists
-				for (Variable y : vars) {
-					// System.out.println("hhhh " + y);
-					Domain dom = y.dom;
-					if (dom.size() == 1) {
-						if (dx.typeIdentifier() == dom.typeIdentifier())
-							counts[dom.single()]++;
-						else {
-							int b = dx.toIdxIfPresent(dom.singleValue());
-							if (b != -1)
-								counts[b]++;
-						}
-					}
-				}
-				last = x.problem.solver.stats.safeNumber();
-			}
-			return counts[a];
-
-			// System.out.println("hhh " + x.problem.varEntities.varToVarArray.get(x));
-
-			// int v = dx.toVal(a);
-			// int cnt = 0;
-			// // TODO bad complexity O(nd) whereas we could have O(n+d)
-			// for (Variable y : x.problem.variables)
-			// if (y.dom.containsOnlyValue(v))
-			// cnt++;
-			// return cnt;
 		}
 	}
 

@@ -48,6 +48,10 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	}
 
 	@Override
+	public void afterFailedAssignment(Variable x, int a) {
+	}
+
+	@Override
 	public void afterUnassignment(Variable x) {
 		// deletes the last positive decision from the store as well as any potential negative decisions following it
 		int[] dense = set.dense;

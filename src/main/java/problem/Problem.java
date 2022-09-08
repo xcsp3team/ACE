@@ -2241,7 +2241,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity noOverlap(Var[][] origins, int[][] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
-		unimplementedIf(origins[0].length != 2, "noOverlap");
+		unimplementedIf(origins[0].length != 2, "noOverlap " + Utilities.join(origins));
 		if (head.control.global.redundNoOverlap) {
 			// we post two redundant cumulative constraints, and a global noOverlap
 			// TODO post only if pressure is high (related to number of continues below)

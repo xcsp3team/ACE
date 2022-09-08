@@ -180,6 +180,16 @@ public interface Observers {
 		void afterAssignment(Variable x, int a);
 
 		/**
+		 * Called after the variable assignment x=a has been taken, but immediately failed when running propagation
+		 * 
+		 * @param x
+		 *            a variable
+		 * @param a
+		 *            an index (of value) for the variable x
+		 */
+		void afterFailedAssignment(Variable x, int a);
+
+		/**
 		 * Called after the variable x has been unassigned (due to backtrack)
 		 * 
 		 * @param x

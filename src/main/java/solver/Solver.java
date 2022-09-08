@@ -445,7 +445,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	private List<ObserverOnAssignments> collectObserversOnAssignments() {
-		Stream<Object> stream = Stream.of(decisions, heuristic);
+		Stream<Object> stream = Stream.of(decisions, heuristic, stats);
 		return collectObservers(stream, ObserverOnAssignments.class);
 	}
 
@@ -709,8 +709,6 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 *            a value index
 	 */
 	public final void assign(Variable x, int a) {
-		assert !x.assigned();
-		stats.whenAssignment(x, a);
 		futVars.remove(x);
 		x.assign(a);
 		for (ObserverOnAssignments obs : observersOnAssignments)
@@ -724,8 +722,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 *            a variable
 	 */
 	public final void backtrack(Variable x) { // should we call it unassign or retract instead?
-		// System.out.println("back " + x + x.dom.uniqueValue());
-		int depthBeforeBacktrack = depth();
+		int depthBeforeBacktrack = depth(); // keep it at this position
 		futVars.add(x);
 		x.unassign();
 		for (ObserverOnAssignments observer : observersOnAssignments)
@@ -764,7 +761,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 				}
 				inconsistent.clear();
 				if (conflict) {
-					stats.whenFailedAssignment(x, a);
+					for (ObserverOnAssignments observer : observersOnAssignments)
+						observer.afterFailedAssignment(x, a);
 					return false;
 				}
 			}
@@ -774,7 +772,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		assign(x, a);
 		boolean consistent = propagation.runAfterAssignment(x) && (ipsReasoner == null || ipsReasoner.whenOpeningNode());
 		if (!consistent) {
-			stats.whenFailedAssignment(x, a);
+			for (ObserverOnAssignments observer : observersOnAssignments)
+				observer.afterFailedAssignment(x, a);
 			// if (ngdRecorder != null) ngdRecorder.addCurrentNogood();
 			return false;
 		}
