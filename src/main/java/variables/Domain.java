@@ -402,6 +402,14 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
+	 * Returns the difference between the second value and the first value of the domain (or 0 if only one present
+	 * value)
+	 */
+	default int regretValue() {
+		return size() <= 1 ? 0 : toVal(next(first())) - firstValue();
+	}
+
+	/**
 	 * Returns the distance of the domain, that is the difference between the highest and smallest values
 	 */
 	default int distance() {

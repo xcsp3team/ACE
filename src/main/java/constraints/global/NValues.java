@@ -29,6 +29,7 @@ import optimization.Optimizable;
 import problem.Problem;
 import sets.SetDense;
 import sets.SetSparseReversible;
+import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
@@ -188,6 +189,11 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 			limit(k);
 			control(1 <= k && k <= list.length);
 			defineKey(k);
+		}
+
+		@Override
+		public int[] symmetryMatching() {
+			return Variable.haveSameDomainType(scp) ? Kit.repeat(1, scp.length) : Kit.series(1, scp.length);
 		}
 
 		public final static class NValuesCstLE extends NValuesCst {

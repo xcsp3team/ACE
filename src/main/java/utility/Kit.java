@@ -800,11 +800,15 @@ public final class Kit {
 		if (fileName.endsWith("xml.bz2") || fileName.endsWith("xml.lzma"))
 			try {
 				Process p = Runtime.getRuntime().exec((fileName.endsWith("xml.bz2") ? "bunzip2 -c " : "lzma -c -d ") + fileName);
-				Document document = load(p.getInputStream(), null);
-				p.waitFor();
-				p.exitValue();
-				p.destroy();
-				return document;
+				try (InputStream is = p.getInputStream()) {
+					Document document = load(is, null);
+					p.waitFor();
+					p.exitValue();
+					p.destroy();
+					return document;
+				} catch (Exception e) {
+					return (Document) Kit.exit("Problem with " + fileName, e);
+				}
 			} catch (Exception e) {
 				return (Document) Kit.exit("Problem with " + fileName, e);
 			}

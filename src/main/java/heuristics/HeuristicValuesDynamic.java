@@ -278,7 +278,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 		@Override
 		public double scoreOf(int a) {
-			return assignments.nPerValue[a] + 2 * assignments.nFailedPerValue[a];
+			return assignments.nPerValue[a] + 2 * assignments.nFailedPerValue[a]; // WHY 2 as coeff ?
 		}
 	}
 

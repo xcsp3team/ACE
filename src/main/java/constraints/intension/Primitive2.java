@@ -1082,6 +1082,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
+					if (dx.lastValue() + k <= dy.firstValue() || dy.lastValue() + k <= dx.firstValue())
+						return entailed();
 					return dx.removeValuesInRange(dy.lastValue() - k + 1, dy.firstValue() + k)
 							&& dy.removeValuesInRange(dx.lastValue() - k + 1, dx.firstValue() + k);
 				}

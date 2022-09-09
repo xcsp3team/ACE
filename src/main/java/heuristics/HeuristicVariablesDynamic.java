@@ -139,6 +139,18 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 	}
 
+	public static final class Regret extends HeuristicVariablesDynamic implements TagMaximize {
+
+		public Regret(Solver solver, boolean anti) {
+			super(solver, anti);
+		}
+
+		@Override
+		public double scoreOf(Variable x) {
+			return x.dom.regretValue();
+		}
+	}
+
 	public static final class FrOnDom extends HeuristicVariablesDynamic implements TagMaximize {
 
 		public FrOnDom(Solver solver, boolean anti) {

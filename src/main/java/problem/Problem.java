@@ -386,7 +386,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final OptionsGeneral options;
 
 	/**
-	 * The cumulated number of removals (value deletions) made all along the solving process
+	 * The accumulated number of removals (value deletions) made all along the solving process
 	 */
 	public int nValueRemovals;
 
@@ -501,11 +501,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private final void storeToArrays() {
 		features.collecting.fix();
 		this.variables = features.collecting.variables.toArray(new Variable[0]);
-		// for (int i = 0; i < variables.length; i++)
-		// variables[i].num = i;
 		this.constraints = features.collecting.constraints.toArray(new Constraint[0]);
-		// for (int i = 0; i < constraints.length; i++)
-		// constraints[i].num = i;
 
 		Constraint[] sortedConstraints = features.collecting.constraints.stream().sorted((c1, c2) -> c1.scp.length - c2.scp.length).toArray(Constraint[]::new);
 		// TODO for the moment we cannot use the sortedConstraints as the main array (pb with nums, and anyway would it
@@ -725,6 +721,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Replacing trees by variables
 	// ************************************************************************
 
+	private XNode<IVar>[] treesToArray(Stream<XNode<IVar>> trees) {
+		return trees.toArray(XNode[]::new);
+	}
+
 	private String idAux() {
 		return AUXILIARY_VARIABLE_PREFIX + varEntities.allEntities.size();
 	}
@@ -820,7 +820,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * @return an array of new (auxiliary) variables representing the specified tree expressions
 	 */
 	private Var[] replaceByVariables(Stream<XNode<IVar>> trees) {
-		return replaceByVariables(trees.toArray(XNode[]::new));
+		return replaceByVariables(treesToArray(trees));
 	}
 
 	/**********************************************************************************************

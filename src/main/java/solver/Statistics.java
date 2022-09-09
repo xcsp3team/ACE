@@ -189,7 +189,8 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 			this.nFailed = 1; // so as to have 0.5 as failure rate initially
 			this.nPerValue = buildPerValue ? new int[x.dom.initSize()] : null;
 			this.nFailedPerValue = buildFailedPerValue ? new int[x.dom.initSize()] : null;
-			((HeuristicUsingAssignments) x.heuristic).assignments = this;
+			if (x.heuristic instanceof HeuristicUsingAssignments)
+				((HeuristicUsingAssignments) x.heuristic).assignments = this;
 
 			// this.stack = new int[variables.length + 1];
 		}
@@ -360,12 +361,13 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	public Statistics(Solver solver) {
 		this.solver = solver;
 		Variable[] vars = solver.problem.variables;
-		if (solver.heuristic instanceof FrOnDom || solver.heuristic instanceof FraOnDom)
+		boolean b1 = solver.heuristic instanceof FrOnDom || solver.heuristic instanceof FraOnDom;
+		if (b1)
 			varAssignments = new VarAssignments[vars.length];
 		for (int i = 0; i < vars.length; i++) {
 			boolean b2 = vars[i].heuristic instanceof TagRequirePerValue;
 			boolean b3 = vars[i].heuristic instanceof TagRequireFailedPerValue;
-			if (b2 || b3) {
+			if (b1 || b2 || b3) {
 				if (varAssignments == null)
 					varAssignments = new VarAssignments[vars.length];
 				varAssignments[i] = new VarAssignments(vars[i], b2, b3);
