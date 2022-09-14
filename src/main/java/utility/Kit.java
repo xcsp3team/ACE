@@ -113,7 +113,7 @@ public final class Kit {
 	 *            an exception to be displayed
 	 */
 	public static Object exit(String message, Throwable e) {
-		Color.RED.println("\n! ERROR with message: " + message + "\n  Use the solver option -ev for more details\n");
+		Color.RED.println("\n! ERROR: " + message + "\n  Use the solver option -ev for more details\n");
 		if (!(Thread.currentThread() instanceof Head) || ((Head) Thread.currentThread()).control.general.exceptionsVisible)
 			e.printStackTrace();
 		Runtime.getRuntime().halt(0); // System.exit(1);

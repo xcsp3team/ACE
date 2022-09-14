@@ -423,7 +423,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public void beforeRun() {
 			lastVar = null;
 			lastDepth = -1;
-			for (int i = 0; i < solver.problem.variables.length; i++)
+			for (int i = 0; i < lastSizes.length; i++)
 				lastSizes[i] = solver.problem.variables[i].dom.size();
 		}
 
@@ -482,7 +482,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public Activity(Solver solver, boolean anti) {
 			super(solver, anti);
 			alpha = 0.99; // alpha as an aging decay
-			activities = new double[solver.problem.variables.length];
+			this.activities = new double[solver.problem.variables.length];
 		}
 
 		@Override
@@ -497,6 +497,70 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public double scoreOf(Variable x) {
 			return -activities[x.num] / x.dom.size(); // minus because we have to minimize
+		}
+	}
+
+	public static final class CRBS extends ActivityImpactAbstract implements TagMaximize {
+
+		/**
+		 * correlation matrix
+		 */
+		private int[][] a;
+
+		private double theta = 0.1;
+
+		@Override
+		public void beforeRun() {
+			super.beforeRun();
+			if (runReset()) {
+				Kit.log.info("Reset of correlation matrix");
+				Stream.of(a).forEach(t -> Arrays.fill(t, 0));
+			}
+		}
+
+		public CRBS(Solver solver, boolean anti) {
+			super(solver, anti);
+			this.a = new int[solver.problem.variables.length][solver.problem.variables.length];
+		}
+
+		@Override
+		protected void update() {
+			int i = lastVar.num;
+			if (solver.depth() > lastDepth) { // the last positive decision succeeded
+				for (int j = 0; j < a.length; j++) {
+					if (i == j)
+						a[i][i]--;
+					else if (solver.problem.variables[j].dom.size() != lastSizes[j]) {
+						a[i][j]++;
+						a[j][i]++;
+
+					} else {
+						a[i][j]--;
+						a[j][i]--;
+					}
+				}
+			} else { // the last positive decision failed
+				for (int j = 0; j < a.length; j++) {
+					if (i == j)
+						a[i][i] += 2;
+					else {
+						a[i][j]++;
+						a[j][i]++;
+					}
+				}
+			}
+		}
+
+		@Override
+		public double scoreOf(Variable x) {
+			int[] t = a[x.num];
+			int sp = 0, sf = 0;
+			for (Variable y : solver.problem.variables)
+				if (y.assigned())
+					sp += t[y.num];
+				else
+					sf += t[y.num];
+			return (sp + theta * sf) / x.dom.size();
 		}
 	}
 

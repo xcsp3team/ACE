@@ -88,13 +88,13 @@ public final class Reification {
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dx.last() == 0)
-					return dy.firstValue() > k || dy.removeValuesLE(k); // x = 0 => y > k
+					return (dy.firstValue() > k || dy.removeValuesLE(k)) && entailed(); // x = 0 => y > k
 				if (dx.first() == 1)
-					return dy.lastValue() <= k || dy.removeValuesGT(k); // x = 1 => y <= k
+					return (dy.lastValue() <= k || dy.removeValuesGT(k)) && entailed(); // x = 1 => y <= k
 				if (dy.lastValue() <= k)
-					return dx.removeIfPresent(0); // y <= k => x != 0
+					return dx.removeIfPresent(0) && entailed(); // y <= k => x != 0
 				if (dy.firstValue() > k)
-					return dx.removeIfPresent(1); // y > k => x != 1
+					return dx.removeIfPresent(1) && entailed(); // y > k => x != 1
 				return true;
 			}
 		}
@@ -113,13 +113,13 @@ public final class Reification {
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dx.last() == 0)
-					return dy.lastValue() < k || dy.removeValuesGE(k); // x = 0 => y < k
+					return (dy.lastValue() < k || dy.removeValuesGE(k)) && entailed(); // x = 0 => y < k
 				if (dx.first() == 1)
-					return dy.firstValue() >= k || dy.removeValuesLT(k); // x = 1 => y >= k
+					return (dy.firstValue() >= k || dy.removeValuesLT(k)) && entailed(); // x = 1 => y >= k
 				if (dy.firstValue() >= k)
-					return dx.removeIfPresent(0); // y >= k => x != 0
+					return dx.removeIfPresent(0) && entailed(); // y >= k => x != 0
 				if (dy.lastValue() < k)
-					return dx.removeIfPresent(1); // y < k => x != 1
+					return dx.removeIfPresent(1) && entailed(); // y < k => x != 1
 				return true;
 			}
 		}
@@ -140,11 +140,11 @@ public final class Reification {
 				if (dx.last() == 0)
 					return dy.removeValueIfPresent(k) && entailed(); // x = 0 => y != k
 				if (dx.first() == 1)
-					return dy.reduceToValue(k); // x = 1 => y = k
+					return dy.reduceToValue(k) && entailed(); // x = 1 => y = k
 				if (!dy.containsValue(k))
 					return dx.removeIfPresent(1) && entailed(); // y != k => x != 1
 				if (dy.size() == 1)
-					return dx.removeIfPresent(0); // y = k => x != 0
+					return dx.removeIfPresent(0) && entailed(); // y = k => x != 0
 				return true;
 			}
 		}
@@ -163,11 +163,11 @@ public final class Reification {
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dx.last() == 0)
-					return dy.reduceToValue(k); // x = 0 => y = k
+					return dy.reduceToValue(k) && entailed(); // x = 0 => y = k
 				if (dx.first() == 1)
 					return dy.removeValueIfPresent(k) && entailed(); // x = 1 => x != k
 				if (!dy.containsValue(k))
-					return dx.removeIfPresent(0); // y != k => x != 0
+					return dx.removeIfPresent(0) && entailed(); // y != k => x != 0
 				if (dy.size() == 1)
 					return dx.removeIfPresent(1) && entailed(); // y = k => x != 1
 				return true;
