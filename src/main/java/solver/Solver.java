@@ -688,7 +688,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 */
 	public void entail(Constraint c) {
 		// System.out.println("entailed at " + depth() + " " + c);
-		entailed.add(c.num, depth());
+		if (!isEntailed(c))
+			entailed.add(c.num, depth());
 	}
 
 	/**

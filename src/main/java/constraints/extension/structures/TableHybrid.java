@@ -159,8 +159,9 @@ public final class TableHybrid extends ExtensionStructure {
 				Object value = smartTuple.values[i];
 				if (value instanceof Integer)
 					tuple[i] = (Integer) value;
-				else
+				else {
 					restrictions.add(Condition.toNode(scp[i], ((Condition) value)));
+				}
 			}
 			return new HybridTuple(tuple, restrictions);
 
@@ -312,6 +313,10 @@ public final class TableHybrid extends ExtensionStructure {
 					TypeConditionOperatorRel op = type.toRelop(); // TODO dealing with IN and NOTIN too
 					control(op != null, "" + op);
 					control(son1.type != TypeExpr.SYMBOL, () -> "Symbolic values not possible for the moment");
+					if (son1.type == TypeExpr.PAR) {
+						Variable y = scp[(int) ((XNodeLeaf<?>) son1).value];
+						son1 = new XNodeLeaf<>(TypeExpr.VAR, y);
+					}
 					if (son1.type == TypeExpr.LONG) {
 						int v = Utilities.safeInt(((long) ((XNodeLeaf<?>) son1).value));
 						if (op == EQ) {
@@ -388,11 +393,12 @@ public final class TableHybrid extends ExtensionStructure {
 			valTime++;
 			for (int i = sValSize - 1; i >= 0; i--) {
 				int x = sVal[i];
+				int a = tuple[x];
+				if (a != STAR && !scp[x].dom.contains(a))
+					return false;
 				Restriction restriction = whichRestrictions[x];
 				if (restriction == null) {
-					int a = tuple[x];
-					if (a != STAR && !scp[x].dom.contains(a))
-						return false;
+					continue;
 				} else if (restriction instanceof RestrictionComplex) {
 					RestrictionComplex rc = (RestrictionComplex) restriction;
 					if (rc.valTimeLocal != valTime) {
