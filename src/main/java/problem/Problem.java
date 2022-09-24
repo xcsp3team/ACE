@@ -961,6 +961,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					HybridTuple ht2 = new HybridTuple((int[]) null, (XNodeParent<IVar>) son1);
 					return hybrid(scp, ht1, ht2);
 				}
+			} else if (tree.type == TypeExpr.OR && Stream.of(tree.sons).allMatch(son -> mayBeHybrid(son))) {
+				// TODO and check no shared variables ?
+				Stream<HybridTuple> stream = Stream.of(tree.sons).map(son -> new HybridTuple((int[]) null, (XNodeParent<IVar>) son));
+				return hybrid(scp, stream);
 			}
 		}
 
@@ -2199,7 +2203,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity noOverlap(Var[] origins, int[] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
-		if (head.control.global.redundNoOverlap) {
+		if (origins.length >= 10 && head.control.global.redundNoOverlap) { // TODO hard coding 10
 			// we post redundant constraints (after introducing auxiliary variables)
 			Var[] aux = auxVarArray(origins.length, range(origins.length));
 			allDifferent(aux);

@@ -39,6 +39,9 @@ import variables.Variable;
  * Lecoutre. <br />
  * IMPORTANT: the code is under revision, and is planned to be finalized within the end of year 2021.
  * 
+ * 
+ * TODO : Bug for java -ea ace BallSort2-agrressive-instance01.xml -valh=Asgs -trace
+ * 
  * @author Christophe Lecoutre
  */
 public final class CHybrid extends ExtensionSpecific {

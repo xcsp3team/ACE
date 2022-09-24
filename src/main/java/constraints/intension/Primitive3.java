@@ -200,73 +200,83 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 						return false;
 					return AC.enforceAddGE(dx, dy, dz.firstValue()) && AC.enforceAddLE(dx, dy, dz.lastValue());
 				}
+				boolean connexz = dz.connex();
+				boolean avoidx = false, avoidy = false;
+				if (connexz) {
+					int minx = dx.firstValue(), maxx = dx.lastValue();
+					int miny = dy.firstValue(), maxy = dy.lastValue();
+					avoidx = dz.enclose(minx + miny, maxx + miny) || dz.enclose(minx + maxy, maxx + maxy);
+					avoidy = dz.enclose(miny + minx, maxy + minx) || dz.enclose(miny + maxx, maxy + maxx);
+				}
+				if (!avoidx)
+					extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
+						int va = dx.toVal(a);
+						if (dy.contains(rx[a]) && dz.containsValue(va + dy.toVal(rx[a])))
+							continue;
+						if (dy.size() <= dz.size())
+							for (int b = dy.first(); b != -1; b = dy.next(b)) {
+								int vc = va + dy.toVal(b);
+								if (vc > dz.lastValue())
+									break;
+								if (dz.containsValue(vc)) {
+									rx[a] = b;
+									if (multidirectional) {
+										ry[b] = a;
+										rzx[dz.toIdx(vc)] = a;
+									}
+									continue extern;
+								}
+							}
+						else
+							for (int c = dz.first(); c != -1; c = dz.next(c)) {
+								int vb = dz.toVal(c) - va;
+								if (vb > dy.lastValue())
+									break;
+								if (dy.containsValue(vb)) {
+									rx[a] = dy.toIdx(vb);
+									if (multidirectional) {
+										ry[dy.toIdx(vb)] = a;
+										rzx[c] = a;
+									}
+									continue extern;
+								}
+							}
+						if (dx.remove(a) == false)
+							return false;
+					}
 
-				extern: for (int a = dx.first(); a != -1; a = dx.next(a)) {
-					int va = dx.toVal(a);
-					if (dy.contains(rx[a]) && dz.containsValue(va + dy.toVal(rx[a])))
-						continue;
-					if (dy.size() <= dz.size())
-						for (int b = dy.first(); b != -1; b = dy.next(b)) {
-							int vc = va + dy.toVal(b);
-							if (vc > dz.lastValue())
-								break;
-							if (dz.containsValue(vc)) {
-								rx[a] = b;
-								if (multidirectional) {
+				if (!avoidy)
+					extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
+						int vb = dy.toVal(b);
+						if (dx.contains(ry[b]) && dz.containsValue(vb + dx.toVal(ry[b])))
+							continue;
+						if (dx.size() <= dz.size())
+							for (int a = dx.first(); a != -1; a = dx.next(a)) {
+								int vc = vb + dx.toVal(a);
+								if (vc > dz.lastValue())
+									break;
+								if (dz.containsValue(vc)) {
 									ry[b] = a;
-									rzx[dz.toIdx(vc)] = a;
+									if (multidirectional)
+										rzx[dz.toIdx(vc)] = a;
+									continue extern;
 								}
-								continue extern;
 							}
-						}
-					else
-						for (int c = dz.first(); c != -1; c = dz.next(c)) {
-							int vb = dz.toVal(c) - va;
-							if (vb > dy.lastValue())
-								break;
-							if (dy.containsValue(vb)) {
-								rx[a] = dy.toIdx(vb);
-								if (multidirectional) {
-									ry[dy.toIdx(vb)] = a;
-									rzx[c] = a;
+						else
+							for (int c = dz.first(); c != -1; c = dz.next(c)) {
+								int va = dz.toVal(c) - vb;
+								if (va > dx.lastValue())
+									break;
+								if (dx.containsValue(va)) {
+									ry[b] = dx.toIdx(va);
+									if (multidirectional)
+										rzx[c] = dx.toIdx(va);
+									continue extern;
 								}
-								continue extern;
 							}
-						}
-					if (dx.remove(a) == false)
-						return false;
-				}
-				extern: for (int b = dy.first(); b != -1; b = dy.next(b)) {
-					int vb = dy.toVal(b);
-					if (dx.contains(ry[b]) && dz.containsValue(vb + dx.toVal(ry[b])))
-						continue;
-					if (dx.size() <= dz.size())
-						for (int a = dx.first(); a != -1; a = dx.next(a)) {
-							int vc = vb + dx.toVal(a);
-							if (vc > dz.lastValue())
-								break;
-							if (dz.containsValue(vc)) {
-								ry[b] = a;
-								if (multidirectional)
-									rzx[dz.toIdx(vc)] = a;
-								continue extern;
-							}
-						}
-					else
-						for (int c = dz.first(); c != -1; c = dz.next(c)) {
-							int va = dz.toVal(c) - vb;
-							if (va > dx.lastValue())
-								break;
-							if (dx.containsValue(va)) {
-								ry[b] = dx.toIdx(va);
-								if (multidirectional)
-									rzx[c] = dx.toIdx(va);
-								continue extern;
-							}
-						}
-					if (dy.remove(b) == false)
-						return false;
-				}
+						if (dy.remove(b) == false)
+							return false;
+					}
 				extern: for (int c = dz.first(); c != -1; c = dz.next(c)) {
 					int vc = dz.toVal(c);
 					if (dx.contains(rzx[c]) && dy.containsValue(vc - dx.toVal(rzx[c])))

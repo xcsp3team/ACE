@@ -474,6 +474,29 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
+	 * Returns true is the (current) domain is a contiguous sequence of integers
+	 * 
+	 * @return true is the (current) domain is a contiguous sequence of integers
+	 */
+	default boolean connex() {
+		return lastValue() - firstValue() + 1 == size();
+	}
+
+	/**
+	 * Returns true if the (current) domain encloses the specified interval of values. The control is only performed at
+	 * the bounds of the domain (which may contain some holes).
+	 * 
+	 * @param minValueIncluded
+	 *            the minimal value of the interval (included)
+	 * @param maxValueIncluded
+	 *            the maximal value of the interval (included)
+	 * @return true if the (current) domain encloses the specified interval of values
+	 */
+	default boolean enclose(int minValueIncluded, int maxValueIncluded) {
+		return firstValue() <= minValueIncluded && maxValueIncluded <= lastValue();
+	}
+
+	/**
 	 * Returns an array containing all values evaluated as true by the specified predicate.
 	 * 
 	 * @param p
