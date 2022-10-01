@@ -17,6 +17,8 @@ import java.util.Arrays;
 import org.xcsp.modeler.entities.VarEntities.VarArray;
 
 import constraints.Constraint;
+import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequireFailedPerValue;
+import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequirePerValue;
 import interfaces.Tags.TagMaximize;
 import optimization.Optimizable;
 import optimization.Optimizer;
@@ -178,13 +180,20 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		}
 	}
 
-	public interface TagRequirePerValue {
-	}
-
-	public interface TagRequireFailedPerValue {
-	}
+	// public interface TagRequirePerValue {
+	// }
+	//
+	// public interface TagRequireFailedPerValue {
+	// }
 
 	public static abstract class HeuristicUsingAssignments extends HeuristicValuesDynamic {
+
+		public interface TagRequirePerValue {
+		}
+
+		public interface TagRequireFailedPerValue {
+		}
+
 		public VarAssignments assignments; // will be defined when constructing Assignments
 
 		public HeuristicUsingAssignments(Variable x, boolean anti) {
@@ -231,7 +240,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	/**
 	 * This heuristic selects a value according to the number of times this value is assigned to the other variables.
 	 */
-	public static class Occs extends HeuristicUsingAssignments {
+	public static class Occs extends HeuristicValuesDynamic {
 
 		protected final int[] nOccurrences;
 
@@ -291,18 +300,6 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		@Override
 		public double scoreOf(int a) {
 			return assignments.nPerValue[a] - 2 * assignments.nFailedPerValue[a];
-		}
-	}
-
-	public static final class AsgsO extends Occs implements TagRequirePerValue {
-
-		public AsgsO(Variable x, boolean anti) {
-			super(x, anti);
-		}
-
-		@Override
-		public double scoreOf(int a) {
-			return assignments.nPerValue[a] + nOccurrences[a];
 		}
 	}
 

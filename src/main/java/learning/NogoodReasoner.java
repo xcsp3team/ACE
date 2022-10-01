@@ -349,6 +349,10 @@ public final class NogoodReasoner {
 			}
 			// else if (symmetryHandler != null) symmetryHandler.handleSymmetricUnaryNogoods(d);
 		}
+		// if (nNogoods > 800) {
+		// System.out.println(this);
+		// System.exit(1);
+		// }
 		assert controlWatches();
 	}
 

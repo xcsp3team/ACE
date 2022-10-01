@@ -530,20 +530,34 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	/**
 	 * Takes into account the instantiation possibly specified by the user, by reducing domains
 	 */
-	private void reduceDomainsFromUserInstantiation() {
+	private void reduceDomainsFromUserInstantiationAndRefutation() {
 		String instantiation = head.control.variables.instantiation;
-		if (instantiation.length() == 0)
-			return;
-		String[] t = instantiation.split(":");
-		control(t.length == 2, "Problem with " + instantiation);
-		Object[] vars = Variable.extractFrom(t[0]);
-		int[] vals = Utilities.toIntegers(t[1].split(","));
-		control(vars.length == vals.length, "In the instantiation, the number of variables (ids or nums) is different from the number of values.");
-		for (int i = 0; i < vars.length; i++) {
-			Variable x = variableWithNumOrId(vars[i]);
-			int v = vals[i];
-			assert x.dom.containsValue(v) : "Value " + v + " not present in domain of " + x + ". Check  -ins.";
-			x.dom.removeValuesAtConstructionTime(w -> w != v);
+		if (instantiation.length() > 0) {
+			String[] t = instantiation.split(":");
+			control(t.length == 2, "Problem with " + instantiation);
+			Object[] vars = Variable.extractFrom(t[0]);
+			int[] vals = Utilities.toIntegers(t[1].split(","));
+			control(vars.length == vals.length, "In the instantiation, the number of variables (ids or nums) is different from the number of values.");
+			for (int i = 0; i < vars.length; i++) {
+				Variable x = variableWithNumOrId(vars[i]);
+				int v = vals[i];
+				assert x.dom.containsValue(v) : "Value " + v + " not present in domain of " + x + ". Check  -ins.";
+				x.dom.removeValuesAtConstructionTime(w -> w != v);
+			}
+		}
+		String refutation = head.control.variables.refutation;
+		if (refutation.length() > 0) {
+			String[] t = refutation.split(":");
+			control(t.length == 2, "Problem with " + refutation);
+			Object[] vars = Variable.extractFrom(t[0]);
+			int[] vals = Utilities.toIntegers(t[1].split(","));
+			control(vars.length == vals.length, "In the refutation, the number of variables (ids or nums) is different from the number of values.");
+			for (int i = 0; i < vars.length; i++) {
+				Variable x = variableWithNumOrId(vars[i]);
+				int v = vals[i];
+				assert x.dom.containsValue(v) : "Value " + v + " not present in domain of " + x + ". Check  -ref.";
+				x.dom.removeValueAtConstructionTime(v);
+			}
 		}
 	}
 
@@ -641,7 +655,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		storeToArrays();
 
 		// we may reduce the domains of some variables
-		reduceDomainsFromUserInstantiation();
+		reduceDomainsFromUserInstantiationAndRefutation();
 		reduceDomainsOfIsolatedVariables();
 	}
 
@@ -952,7 +966,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return extension(tree);
 		}
 
-		if (options.toHybrid) { // TOD section to finalize with various cases
+		if (options.toHybrid) { // TODO section to finalize with various cases
 			if (tree.type == TypeExpr.IMP) {
 				XNode<IVar> son0 = tree.sons[0], son1 = tree.sons[1];
 				if (mayBeHybrid(son0) && mayBeHybrid(son1)) { // TODO and check no shared variables ?

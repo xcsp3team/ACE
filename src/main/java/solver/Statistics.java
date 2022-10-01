@@ -11,8 +11,8 @@
 package solver;
 
 import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments;
-import heuristics.HeuristicValuesDynamic.TagRequireFailedPerValue;
-import heuristics.HeuristicValuesDynamic.TagRequirePerValue;
+import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequireFailedPerValue;
+import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequirePerValue;
 import heuristics.HeuristicVariablesDynamic.FrOnDom;
 import heuristics.HeuristicVariablesDynamic.FraOnDom;
 import interfaces.Observers.ObserverOnAssignments;

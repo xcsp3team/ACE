@@ -15,7 +15,6 @@ import static utility.Kit.control;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -483,7 +482,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	public static Object[] extractFrom(String s) {
 		if (s == null || s.trim().length() == 0)
 			return new Object[0];
-		Set<Object> set = new HashSet<>();
+		Set<Object> set = new LinkedHashSet<>();
 		for (String token : s.split(",")) {
 			if (token.contains("..")) {
 				control(token.matches("-?\\d+\\.\\.\\d+"), () -> " Pb with " + token);

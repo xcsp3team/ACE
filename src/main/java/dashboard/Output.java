@@ -348,7 +348,8 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public void afterData() {
 		InformationBloc info = instanceInfo(head.instanceIndex);
 		save(head.instanceStopwatch.wckTime());
-		log.config(COMMENT_PREFIX + Color.BLUE.coloring("Instance ") + head.problem.name() + "\n");
+		// log.config(COMMENT_PREFIX + Color.BLUE.coloring("Instance ") + head.problem.name() + "\n");
+		log.config(info + "\n");
 		record(INSTANCE, info.filtered_entries(), resolution);
 	}
 
@@ -451,7 +452,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.separator(options.selection.length() > 0 || options.instantiation.length() > 0 || options.priority1.length() > 0 || options.priority2.length() > 0);
 		m.put(SELECTION, options.selection);
 		m.put(INSTANTIATION, options.instantiation);
-		m.put(PRIORITY, options.priority1 + " - " + options.priority2);
+		m.put(PRIORITY, options.priority1.length() > 0 || options.priority2.length() > 0 ? options.priority1 + " - " + options.priority2 : "");
 		return m;
 	}
 

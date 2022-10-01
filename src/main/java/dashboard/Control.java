@@ -423,11 +423,11 @@ public final class Control {
 				+ "\n\tThis list is composed of a sequence of tokens separated by commas (no whitespace)."
 				+ "\n\tEach token is a variable id a variable number or an interval of the form i..j with i and j integers."
 				+ "\n\tFor example, -sel=2..10,31,-4 will denote the list 2 3 5 6 7 8 9 10 31." + "\n\tThis is only valid for a XCSP instance.";
-		String s_ins = "Allows us to give an instantiation of variables for the problem to be solved."
-				+ "\n\tThis instantiation is given under the form vars:values."
+		String s_insref = "Allows us to give an instantiation (-ins) or refutation (-ref) of variables for the problem to be solved."
+				+ "\n\tThis instantiation/refutation is given under the form vars:values."
 				+ "\n\tvars is a sequence of variable ids or numbers separated by commas (no whitespace)."
 				+ "\n\tvalues is a sequence of integers (the values for variables) separated by commas (no whitespace)."
-				+ "\n\tFor example, -ins=x2,x4,x9:1,11,4 will denote the instantiation {x2=1,x4=11,x9=4}.";
+				+ "\n\tFor example, -ins=x2,x4,x9:1,11,4 will denote the instantiation {x2=1,x4=11,x9=4} (or refutation).";
 		String s_pr1 = "Allows us to give a list of variables that will become strict priority variables (to be used by the variable ordering heuristic)."
 				+ "\n\tThis list is composed of a sequence of strings (ids of variables) or integers (numbers of variables) separated by commas (no whitespace)."
 				+ "\n\tFor example, -pr1=2,8,1,10 will denote the list 2 8 1 10.";
@@ -437,7 +437,8 @@ public final class Control {
 				+ "\n\tFor example, -pr2=2..10,31,-4 will denote the list 2 3 5 6 7 8 9 10 31.";
 
 		public final String selection = addS("selection", "sel", "", s_sel);
-		public final String instantiation = addS("instantiation", "ins", "", s_ins);
+		public final String instantiation = addS("instantiation", "ins", "", s_insref);
+		public final String refutation = addS("refutation", "ref", "", s_insref);
 		public final String priority1 = addS("priority1", "pr1", "", s_pr1);
 		public final String priority2 = addS("priority2", "pr2", "", s_pr2);
 		public final String priorityArrays = addS("priorityArrays", "pra", "", "Index(es) or id(s) of the variable array(s) that must be assigned in priority");
