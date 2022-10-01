@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.xcsp.modeler.entities.VarEntities.VarArray;
+
 import constraints.Constraint;
 import constraints.global.Extremum.ExtremumCst;
 import constraints.global.NValues.NValuesCst;
@@ -26,7 +28,7 @@ import constraints.global.Sum.SumWeighted;
 import dashboard.Control.OptionsValh;
 import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicValuesDirect.Last;
-import heuristics.HeuristicValuesDirect.Values;
+import heuristics.HeuristicValuesDirect.Vals;
 import heuristics.HeuristicValuesDynamic.Bivs;
 import heuristics.HeuristicValuesDynamic.Bivs2;
 import interfaces.Tags.TagExperimental;
@@ -98,7 +100,8 @@ public abstract class HeuristicValues extends Heuristic {
 	/**
 	 * Possibly modifies the value ordering heuristics of some variables according to the objective function
 	 * (constraint), and returns the variables that must be considered as being priority for search, or null.
-	 * EXPERIMENTAL (code to be finalized)
+	 * 
+	 * TODO: EXPERIMENTAL (code to be finalized)
 	 * 
 	 * @param problem
 	 *            a problem
@@ -124,8 +127,10 @@ public abstract class HeuristicValues extends Heuristic {
 		if (c instanceof NValuesCst) {
 			assert c instanceof NValuesCstLE;
 			if (strong)
-				for (Variable x : c.scp)
-					x.heuristic = new Values(x, false, c.scp);
+				for (Variable x : c.scp) {
+					x.heuristic = new Vals(x, false);
+					((Vals) x.heuristic).variablesOfInterest = c.scp;
+				}
 			return null;
 		}
 		if (c instanceof SumWeighted || c instanceof SumSimple) {
@@ -177,6 +182,17 @@ public abstract class HeuristicValues extends Heuristic {
 		this.x = x;
 		this.dx = x.dom;
 		this.options = x.problem.head.control.valh;
+	}
+
+	/**
+	 * Returns either the variables of the array to which x belongs or all problem variables (if x does not belong to an
+	 * array)
+	 * 
+	 * @return either the variables of the array to which x belongs or all problem variables
+	 */
+	public Variable[] variablesOfInterest() {
+		VarArray va = x.problem.varEntities.varToVarArray.get(x);
+		return va != null ? (Variable[]) va.flatVars : x.problem.variables;
 	}
 
 	/**

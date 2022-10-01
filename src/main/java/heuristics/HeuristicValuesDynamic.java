@@ -14,8 +14,6 @@ import static utility.Kit.control;
 
 import java.util.Arrays;
 
-import org.xcsp.modeler.entities.VarEntities.VarArray;
-
 import constraints.Constraint;
 import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequireFailedPerValue;
 import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequirePerValue;
@@ -58,7 +56,257 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	}
 
 	// ************************************************************************
-	// ***** Subclasses
+	// ***** Specific heuristics
+	// ************************************************************************
+
+	/**
+	 * This heuristic selects a value according to the number of times this value is assigned to the other variables.
+	 */
+	public static class Occs extends HeuristicValuesDynamic {
+
+		protected final int[] nOccurrences;
+
+		private final Variable[] variablesOfInterest; // we reason on the array where x belongs if it exists
+
+		private long last = -1;
+
+		public Occs(Variable x, boolean anti) {
+			super(x, anti);
+			this.nOccurrences = new int[dx.initSize()];
+			this.variablesOfInterest = variablesOfInterest();
+		}
+
+		protected void updateFrom(Domain dom) {
+			if (dom.size() == 1) {
+				if (dx.typeIdentifier() == dom.typeIdentifier())
+					nOccurrences[dom.single()]++;
+				else {
+					int b = dx.toIdxIfPresent(dom.singleValue());
+					if (b != -1)
+						nOccurrences[b]++;
+				}
+			}
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			if (dx.size() == 1)
+				return 0; // we don't care about the score returned because the domain is singleton
+			if (last != x.problem.solver.stats.safeNumber()) {
+				Arrays.fill(nOccurrences, 0);
+				for (Variable y : variablesOfInterest)
+					updateFrom(y.dom);
+				last = x.problem.solver.stats.safeNumber();
+			}
+			return nOccurrences[a];
+		}
+	}
+
+	public static class OccsR extends Occs { // refined Occs
+
+		private static int[] COEFFS = new int[] { 0, 10, 5, 3, 2, 2 }; // score for domains of size 1 to 5
+
+		public OccsR(Variable x, boolean anti) {
+			super(x, anti);
+		}
+
+		@Override
+		protected void updateFrom(Domain dom) {
+			if (dom.size() <= 5) { // TODO hard coding : only reasoning with domains of size at most 5
+				int coeff = COEFFS[dom.size()];
+				if (dx.typeIdentifier() == dom.typeIdentifier()) {
+					for (int a = dom.first(); a != -1; a = dom.next(a))
+						nOccurrences[a] += coeff;
+				} else {
+					for (int a = dom.first(); a != -1; a = dom.next(a)) {
+						int b = dx.toIdxIfPresent(dom.toVal(a));
+						if (b != -1)
+							nOccurrences[b] += coeff;
+					}
+				}
+			}
+		}
+	}
+
+	public static abstract class HeuristicUsingAssignments extends HeuristicValuesDynamic {
+
+		public interface TagRequirePerValue {
+		}
+
+		public interface TagRequireFailedPerValue {
+		}
+
+		public VarAssignments assignments; // will be defined when constructing Assignments
+
+		public HeuristicUsingAssignments(Variable x, boolean anti) {
+			super(x, anti);
+		}
+	}
+
+	public static class Asgs extends HeuristicUsingAssignments implements TagRequirePerValue {
+
+		public Asgs(Variable x, boolean anti) {
+			super(x, anti);
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			return assignments.nPerValue[a];
+		}
+	}
+
+	// Asgs enlarged to the array
+	public static class AsgsE extends HeuristicUsingAssignments implements TagRequirePerValue {
+		private final int[] t;
+
+		private final Variable[] variablesOfInterest; // we reason on the array where x belongs if it exists
+
+		private long last = -1;
+
+		public AsgsE(Variable x, boolean anti) {
+			super(x, anti);
+			this.t = new int[dx.initSize()];
+			this.variablesOfInterest = variablesOfInterest();
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			if (dx.size() == 1)
+				return 0; // we don't care about the score returned because the domain is singleton
+			if (last != x.problem.solver.stats.safeNumber()) {
+				for (int b = dx.first(); b != -1; b = dx.next(b))
+					t[b] = assignments.nPerValue[b];
+				for (Variable y : variablesOfInterest) {
+					Domain dom = y.dom;
+					if (dom.size() == 1) {
+						int b = dom.single();
+						if (dx.typeIdentifier() == dom.typeIdentifier())
+							t[b] += assignments.nPerValue[b];
+						else {
+							int c = dx.toIdxIfPresent(dom.toVal(b));
+							if (c != -1)
+								t[c] += assignments.nPerValue[b];
+						}
+					}
+				}
+				last = x.problem.solver.stats.safeNumber();
+			}
+			return t[a];
+		}
+	}
+
+	public static final class AsgsFp extends Asgs implements TagRequireFailedPerValue {
+
+		public AsgsFp(Variable x, boolean anti) {
+			super(x, anti);
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			return assignments.nPerValue[a] + 2 * assignments.nFailedPerValue[a]; // WHY 2 as coeff ?
+		}
+	}
+
+	public static final class AsgsFm extends Asgs implements TagRequireFailedPerValue {
+
+		public AsgsFm(Variable x, boolean anti) {
+			super(x, anti);
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			return assignments.nPerValue[a] - 2 * assignments.nFailedPerValue[a];
+		}
+	}
+
+	public static class Flrs extends HeuristicUsingAssignments implements TagRequireFailedPerValue {
+
+		public Flrs(Variable x, boolean anti) {
+			super(x, anti);
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			return assignments.nFailedPerValue[a];
+		}
+	}
+
+	public static final class FlrsR extends Flrs implements TagRequirePerValue {
+
+		public FlrsR(Variable x, boolean anti) {
+			super(x, anti);
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			return assignments.nPerValue[a] == 0 ? 0 : assignments.nFailedPerValue[a] / (double) assignments.nPerValue[a];
+		}
+	}
+
+	// Flrs enlarged to the array
+	public static class FlrsE extends Flrs {
+		private final int[] t;
+
+		private final Variable[] variablesOfInterest; // we reason on the array where x belongs if it exists
+
+		private long last = -1;
+
+		public FlrsE(Variable x, boolean anti) {
+			super(x, anti);
+			this.t = new int[dx.initSize()];
+			this.variablesOfInterest = variablesOfInterest();
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			if (dx.size() == 1)
+				return 0; // we don't care about the score returned because the domain is singleton
+			if (last != x.problem.solver.stats.safeNumber()) {
+				for (int b = dx.first(); b != -1; b = dx.next(b))
+					t[b] = assignments.nFailedPerValue[b];
+				for (Variable y : variablesOfInterest) {
+					Domain dom = y.dom;
+					if (dom.size() == 1) {
+						int b = dom.single();
+						if (dx.typeIdentifier() == dom.typeIdentifier())
+							t[b] += assignments.nFailedPerValue[b];
+						else {
+							int c = dx.toIdxIfPresent(dom.toVal(b));
+							if (c != -1)
+								t[c] += assignments.nFailedPerValue[b];
+						}
+					}
+				}
+				last = x.problem.solver.stats.safeNumber();
+			}
+			return t[a];
+		}
+	}
+
+	public static class Dist extends HeuristicValuesDynamic {
+
+		private final Variable[] variablesOfInterest; // we reason on the array where x belongs if it exists
+
+		public Dist(Variable x, boolean anti) {
+			super(x, anti);
+			this.variablesOfInterest = variablesOfInterest();
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			if (dx.size() == 1)
+				return 0; // we don't care about the score returned because the domain is singleton
+			int v = dx.toVal(a);
+			int d = 0;
+			for (Variable y : variablesOfInterest)
+				if (y.dom.size() == 1)
+					d += Math.abs(v - y.dom.singleValue());
+			return d;
+		}
+	}
+
+	// ************************************************************************
+	// ***** BIVS variants
 	// ************************************************************************
 
 	/**
@@ -164,144 +412,9 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		}
 	}
 
-	public static final class Dist extends HeuristicValuesDynamic implements TagMaximize {
-
-		public Dist(Variable x, boolean anti) {
-			super(x, anti);
-		}
-
-		@Override
-		public double scoreOf(int a) {
-			int v = dx.toVal(a);
-			int prev = dx.prev(a), next = dx.next(a);
-			int score = (prev == -1 ? 0 : v - dx.toVal(prev)) + (next == -1 ? 0 : dx.toVal(next) - v);
-			// System.out.println("score " + score);
-			return score;
-		}
-	}
-
-	// public interface TagRequirePerValue {
-	// }
-	//
-	// public interface TagRequireFailedPerValue {
-	// }
-
-	public static abstract class HeuristicUsingAssignments extends HeuristicValuesDynamic {
-
-		public interface TagRequirePerValue {
-		}
-
-		public interface TagRequireFailedPerValue {
-		}
-
-		public VarAssignments assignments; // will be defined when constructing Assignments
-
-		public HeuristicUsingAssignments(Variable x, boolean anti) {
-			super(x, anti);
-		}
-	}
-
-	public static class Asgs extends HeuristicUsingAssignments implements TagRequirePerValue {
-
-		public Asgs(Variable x, boolean anti) {
-			super(x, anti);
-		}
-
-		@Override
-		public double scoreOf(int a) {
-			return assignments.nPerValue[a];
-		}
-	}
-
-	public static class Flrs extends HeuristicUsingAssignments implements TagRequireFailedPerValue {
-
-		public Flrs(Variable x, boolean anti) {
-			super(x, anti);
-		}
-
-		@Override
-		public double scoreOf(int a) {
-			return assignments.nFailedPerValue[a];
-		}
-	}
-
-	public static final class FlrsR extends Flrs implements TagRequirePerValue {
-
-		public FlrsR(Variable x, boolean anti) {
-			super(x, anti);
-		}
-
-		@Override
-		public double scoreOf(int a) {
-			return assignments.nPerValue[a] == 0 ? 0 : assignments.nFailedPerValue[a] / (double) assignments.nPerValue[a];
-		}
-	}
-
-	/**
-	 * This heuristic selects a value according to the number of times this value is assigned to the other variables.
-	 */
-	public static class Occs extends HeuristicValuesDynamic {
-
-		protected final int[] nOccurrences;
-
-		private long last = -1;
-
-		private final Variable[] variablesOfInterest; // we reason on the array where x belongs if it exists
-
-		public Occs(Variable x, boolean anti) {
-			super(x, anti);
-			this.nOccurrences = new int[dx.initSize()];
-			VarArray va = x.problem.varEntities.varToVarArray.get(x);
-			this.variablesOfInterest = va != null ? (Variable[]) va.flatVars : x.problem.variables;
-		}
-
-		@Override
-		public double scoreOf(int a) {
-			if (dx.size() == 1)
-				return 0; // we don't care about the score returned because the domain is singleton
-			if (last != x.problem.solver.stats.safeNumber()) {
-				Arrays.fill(nOccurrences, 0);
-				for (Variable y : variablesOfInterest) {
-					Domain dom = y.dom;
-					if (dom.size() == 1) {
-						if (dx.typeIdentifier() == dom.typeIdentifier())
-							nOccurrences[dom.single()]++;
-						else {
-							int b = dx.toIdxIfPresent(dom.singleValue());
-							if (b != -1)
-								nOccurrences[b]++;
-						}
-					}
-				}
-				last = x.problem.solver.stats.safeNumber();
-			}
-			return nOccurrences[a];
-		}
-	}
-
-	public static final class AsgsFp extends Asgs implements TagRequireFailedPerValue {
-
-		public AsgsFp(Variable x, boolean anti) {
-			super(x, anti);
-		}
-
-		@Override
-		public double scoreOf(int a) {
-			return assignments.nPerValue[a] + 2 * assignments.nFailedPerValue[a]; // WHY 2 as coeff ?
-		}
-	}
-
-	public static final class AsgsFm extends Asgs implements TagRequireFailedPerValue {
-
-		public AsgsFm(Variable x, boolean anti) {
-			super(x, anti);
-		}
-
-		@Override
-		public double scoreOf(int a) {
-			return assignments.nPerValue[a] - 2 * assignments.nFailedPerValue[a];
-		}
-	}
+	// ************************************************************************
+	// ***** Other heuristics
+	// ************************************************************************
 
 	// This class cannot be really used as defined below (large arity is highly problematic)
 	public static final class Conflicts extends HeuristicValuesDynamic {
@@ -317,6 +430,22 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 			for (Constraint c : x.ctrs)
 				nConflicts += c.nConflictsFor(c.positionOf(x), a); // Very expensive
 			return nConflicts;
+		}
+	}
+
+	public static final class InternDist extends HeuristicValuesDynamic implements TagMaximize {
+
+		public InternDist(Variable x, boolean anti) {
+			super(x, anti);
+		}
+
+		@Override
+		public double scoreOf(int a) {
+			int v = dx.toVal(a);
+			int prev = dx.prev(a), next = dx.next(a);
+			int score = (prev == -1 ? 0 : v - dx.toVal(prev)) + (next == -1 ? 0 : dx.toVal(next) - v);
+			// System.out.println("score " + score);
+			return score;
 		}
 	}
 

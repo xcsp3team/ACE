@@ -10,6 +10,7 @@
 
 package heuristics;
 
+import sets.SetDense;
 import variables.Variable;
 
 /**
@@ -20,8 +21,8 @@ import variables.Variable;
  */
 public abstract class HeuristicValuesDirect extends HeuristicValues {
 
-	public HeuristicValuesDirect(Variable x, boolean dummy) {
-		super(x, dummy); // dummy because has no influence with such heuristics
+	public HeuristicValuesDirect(Variable x, boolean anti) {
+		super(x, anti);
 	}
 
 	@Override
@@ -30,12 +31,12 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 	}
 
 	// ************************************************************************
-	// ***** Subclasses
+	// ***** Specific heuristics
 	// ************************************************************************
 
 	public static final class First extends HeuristicValuesDirect {
 		public First(Variable x, boolean dummy) {
-			super(x, dummy);
+			super(x, dummy); // dummy because has no influence with such an heuristic
 		}
 
 		@Override
@@ -80,13 +81,57 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 		}
 	}
 
+	public static final class Vals extends HeuristicValuesDirect {
+
+		public Variable[] variablesOfInterest; // public so as to be able to modify it in some contexts
+
+		private SetDense set;
+
+		public Vals(Variable x, boolean anti) {
+			super(x, anti);
+			this.variablesOfInterest = variablesOfInterest();
+			this.set = anti ? new SetDense(dx.initSize()) : null;
+		}
+
+		@Override
+		public int computeBestValueIndex() {
+			if (dx.size() == 1)
+				return 0; // we don't care about the score returned because the domain is singleton
+			if (multiplier == -1) { // if minimizing the number of distinct values
+				for (Variable y : variablesOfInterest)
+					if (y != x && y.dom.size() == 1) {
+						int a = dx.toIdxIfPresent(y.dom.singleValue());
+						if (a >= 0)
+							return a; // because already assigned
+					}
+			} else {
+				// maximizing the number of distinct values
+				set.clear();
+				for (Variable y : variablesOfInterest)
+					if (y != x && y.dom.size() == 1) {
+						int a = dx.toIdxIfPresent(y.dom.singleValue());
+						if (a >= 0 && !set.contains(a))
+							set.add(a);
+					}
+				for (int a = dx.first(); a != -1; a = dx.next(a))
+					if (!set.contains(a))
+						return a; // because not already assigned
+			}
+			return dx.first(); // if no value being a possible candidate, we return the first value
+		}
+	}
+
+	// ************************************************************************
+	// ***** Combining heuristics
+	// ************************************************************************
+
 	/**
 	 * This (meta-)heuristic uses a cycle composed of First, Last and Rand at every new sequence of three runs
 	 */
 	public static final class RunRobin extends HeuristicValuesDirect {
 
-		public RunRobin(Variable x, boolean dummy) {
-			super(x, dummy);
+		public RunRobin(Variable x, boolean anti) {
+			super(x, anti);
 		}
 
 		@Override
@@ -107,8 +152,8 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 
 		private int cnt = -1;
 
-		public Robin(Variable x, boolean dummy) {
-			super(x, dummy);
+		public Robin(Variable x, boolean anti) {
+			super(x, anti);
 		}
 
 		@Override
@@ -119,42 +164,6 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 			if (cnt % 3 == 1)
 				return dx.last();
 			return dx.any();
-		}
-	}
-
-	public static final class Values extends HeuristicValuesDirect {
-
-		/**
-		 * Indicates if one searches to minimize or maximize the number of distinct values
-		 */
-		private boolean minimize;
-
-		/**
-		 * The variables of interest when minimizing (or maximizing) the number of distinct values
-		 */
-		private Variable[] others;
-
-		public Values(Variable x, boolean anti, Variable[] others) {
-			super(x, anti);
-			this.minimize = !anti;
-			this.others = others;
-		}
-
-		@Override
-		public int computeBestValueIndex() {
-			if (dx.size() == 1)
-				return 0; // we don't care about the score returned because the domain is singleton
-			if (minimize) { // minimizing the number of distinct values
-				for (Variable y : others)
-					if (y != x && y.dom.size() == 1) {
-						int a = dx.toIdxIfPresent(y.dom.singleValue());
-						if (a >= 0)
-							return a; // because already assigned
-					}
-				return dx.first();
-			}
-			// maximizing the number of distinct values
-			throw new AssertionError("max Values not implemented");
 		}
 	}
 
