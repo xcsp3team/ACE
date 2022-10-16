@@ -104,8 +104,7 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 						if (a >= 0)
 							return a; // because already assigned
 					}
-			} else {
-				// maximizing the number of distinct values
+			} else { // maximizing the number of distinct values
 				set.clear();
 				for (Variable y : variablesOfInterest)
 					if (y != x && y.dom.size() == 1) {

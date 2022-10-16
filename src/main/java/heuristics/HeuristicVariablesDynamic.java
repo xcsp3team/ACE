@@ -382,7 +382,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	/**
 	 * The heuristic wdeg/dom (with its four variants: VAR, UNIT, CACD, CHS)
 	 */
-	public static final class WdegOnDom extends WdegVariant {
+	public static class WdegOnDom extends WdegVariant {
 
 		public WdegOnDom(Solver solver, boolean anti) {
 			super(solver, anti);
@@ -399,6 +399,62 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			}
 			return vscores[x.num] / x.dom.size();
 		}
+	}
+
+	/**
+	 * An implementation of COS (Conflict Ordering Search) based on wdeg/dom as underlying heuristic.
+	 */
+	public static final class Memory extends WdegOnDom {
+
+		@Override
+		public void beforeRun() {
+			super.beforeRun();
+			nOrdered = 0;
+		}
+
+		/**
+		 * order[i] is the number of the ith variable to be assigned; valid only for i ranging from 0 to nOrdered-1.
+		 */
+		private final int[] order;
+
+		/**
+		 * Indicates how many variables are currently ordered in the array order
+		 */
+		private int nOrdered;
+
+		private int posLastConflict = -1;
+
+		public Memory(Solver solver, boolean anti) {
+			super(solver, anti);
+			this.order = new int[solver.problem.variables.length];
+			control(!options.discardAux);
+		}
+
+		@Override
+		protected final Variable bestUnpriorityVariable() {
+			int pos = -1;
+			for (int i = 0; i < nOrdered; i++)
+				if (!solver.problem.variables[order[i]].assigned()) {
+					pos = i;
+					break;
+				}
+			if (pos != -1) {
+				if (posLastConflict > pos) {
+					control(posLastConflict < nOrdered);
+					int vid = order[pos];
+					order[pos] = order[posLastConflict];
+					order[posLastConflict] = vid;
+				}
+				posLastConflict = pos;
+			} else {
+				bestScoredVariable.reset(false);
+				solver.futVars.execute(x -> bestScoredVariable.consider(x, scoreOptimizedOf(x)));
+				pos = posLastConflict = nOrdered;
+				order[nOrdered++] = bestScoredVariable.variable.num;
+			}
+			return solver.problem.variables[order[pos]];
+		}
+
 	}
 
 	// ************************************************************************

@@ -38,7 +38,7 @@ public class STR0 extends ExtensionSpecific {
 	public void afterProblemConstruction(int n) {
 		super.afterProblemConstruction(n);
 		this.tuples = ((Table) extStructure()).tuples;
-		control(this.tuples.length > 0);
+		control(tuples.length > 0);
 		this.set = new SetDense(tuples.length, true);
 	}
 
@@ -73,17 +73,6 @@ public class STR0 extends ExtensionSpecific {
 	protected int[] cnts;
 
 	/**
-	 * The number of variables for which validity must be checked during the filtering process
-	 */
-	protected int sValSize;
-
-	/**
-	 * The (dense) set of positions of variables for which validity must be checked. Relevant positions are at indexes
-	 * from 0 to sValSize (excluded).
-	 */
-	// protected final int[] sVal;
-
-	/**
 	 * The number of variables for which support searching must be done (i.e., variables with some values that still
 	 * must be checked to be AC)
 	 */
@@ -112,7 +101,6 @@ public class STR0 extends ExtensionSpecific {
 		control(scp.length > 1, "Arity must be at least 2");
 		this.ac = Variable.litterals(scp).booleanArray();
 		this.cnts = new int[scp.length];
-		// this.sVal = new int[scp.length];
 		this.sSup = new int[scp.length];
 	}
 
@@ -142,15 +130,22 @@ public class STR0 extends ExtensionSpecific {
 		}
 	}
 
-	private boolean isValidTuple(int[] tuple) {
+	boolean universal;
+
+	private boolean isValidTuple(int[] t) {
 		// for (int i = sValSize - 1; i >= 0; i--) {
 		// int x = sVal[i];
 		// if (tuple[x] != STAR && !doms[x].contains(tuple[x]))
 		// return false;
 		// }
-		for (int x = tuple.length - 1; x >= 0; x--) {
-			if (tuple[x] != STAR && !doms[x].contains(tuple[x]))
+		universal = true;
+		for (int x = t.length - 1; x >= 0; x--) {
+			if (t[x] == STAR)
+				continue;
+			if (!doms[x].contains(t[x]))
 				return false;
+			if (doms[x].size() > 1)
+				universal = false;
 		}
 		return true;
 	}
@@ -177,6 +172,8 @@ public class STR0 extends ExtensionSpecific {
 		for (int i = set.limit; i >= 0; i--) {
 			int[] tuple = tuples[set.dense[i]];
 			if (isValidTuple(tuple)) {
+				if (universal)
+					return entailed();
 				for (int j = sSupSize - 1; j >= 0; j--) {
 					int x = sSup[j];
 					int a = tuple[x];

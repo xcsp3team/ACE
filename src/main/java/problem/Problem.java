@@ -264,6 +264,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Variable[] r = HeuristicValues.possibleOptimizationInterference(this);
 		this.priorityVars = r != null ? r : priorityVars;
 		this.arrays = varEntities.varArrays.stream().filter(va -> !va.id.startsWith(AUXILIARY_VARIABLE_PREFIX)).toArray(VarArray[]::new);
+		control(priorityVars.length == 0 || !head.control.variables.stayArrayFocus);
 		control(priorityVars.length == 0 || (head.control.variables.priorityArrays.length() == 0 && !head.control.varh.arrayPriorityRunRobin));
 		int[] indexes = Stream.of(Variable.extractFrom(head.control.variables.priorityArrays))
 				.mapToInt(
@@ -998,9 +999,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				c = Sub2.buildFrom(this, scp[0], scp[1], tree.relop(0), 0);
 			else if (x_ariop_y__relop_k.matches(tree))
 				c = Primitive2.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0), tree.val(0));
-			else if (k_relop__x_ariop_y.matches(tree))
+			else if (k_relop__x_ariop_y.matches(tree)) {
+				if (tree.val(0) <= 0) {
+					Kit.warning("discarded constraint (because useless) : " + tree);
+					return null;
+				}
 				c = Primitive2.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0).arithmeticInversion(), tree.val(0));
-			else if (x_relop__y_ariop_k.matches(tree))
+			} else if (x_relop__y_ariop_k.matches(tree))
 				c = Primitive2.buildFrom(this, scp[0], tree.relop(0), scp[1], tree.ariop(0), tree.val(0));
 			else if (y_ariop_k__relop_x.matches(tree))
 				c = Primitive2.buildFrom(this, scp[1], tree.relop(0).arithmeticInversion(), scp[0], tree.ariop(0), tree.val(0));

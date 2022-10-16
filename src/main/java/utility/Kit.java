@@ -505,6 +505,16 @@ public final class Kit {
 	}
 
 	/**
+	 * Displays a warning based on the specified message
+	 * 
+	 * @param message
+	 *            the message to display
+	 */
+	public static void warning(String message) {
+		Color.ORANGE.println("\n  WARNING: " + message);
+	}
+
+	/**
 	 * Returns the base name of the specified XML filename, i.e., the name without any path and any extension '.xml'
 	 * 
 	 * @param s

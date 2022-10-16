@@ -16,7 +16,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import dashboard.Control.OptionsVarh;
-import interfaces.Observers.ObserverOnRuns;
 import problem.Problem;
 import propagation.GIC.GIC2;
 import solver.Solver;
@@ -255,61 +254,61 @@ public abstract class HeuristicVariables extends Heuristic {
 	 * An implementation of COS (Conflict Ordering Search) based on ddeg/dom as underlying heuristic. IMPORTANT: new
 	 * code is necessary to have COS based on wdeg/dom.
 	 */
-	public static final class Memory extends HeuristicVariables implements ObserverOnRuns {
-
-		@Override
-		public void beforeRun() {
-			nOrdered = 0;
-		}
-
-		/**
-		 * order[i] is the number of the ith variable to be assigned; valid only for i ranging from 0 to nOrdered-1.
-		 */
-		private final int[] order;
-
-		/**
-		 * Indicates how many variables are currently ordered in the array order
-		 */
-		private int nOrdered;
-
-		private int posLastConflict = -1;
-
-		public Memory(Solver solver, boolean anti) {
-			super(solver, anti);
-			this.order = new int[solver.problem.variables.length];
-			control(!options.discardAux);
-		}
-
-		@Override
-		protected final Variable bestUnpriorityVariable() {
-			int pos = -1;
-			for (int i = 0; i < nOrdered; i++)
-				if (!solver.problem.variables[order[i]].assigned()) {
-					pos = i;
-					break;
-				}
-			if (pos != -1) {
-				if (posLastConflict > pos) {
-					control(posLastConflict < nOrdered);
-					int vid = order[pos];
-					order[pos] = order[posLastConflict];
-					order[posLastConflict] = vid;
-				}
-				posLastConflict = pos;
-			} else {
-				bestScoredVariable.reset(false);
-				solver.futVars.execute(x -> bestScoredVariable.consider(x, scoreOptimizedOf(x)));
-				pos = posLastConflict = nOrdered;
-				order[nOrdered++] = bestScoredVariable.variable.num;
-			}
-			return solver.problem.variables[order[pos]];
-		}
-
-		@Override
-		public double scoreOf(Variable x) {
-			return x.ddeg() / (double) x.dom.size();
-			// TODO x.wdeg() is currently no more possible since weighted degrees are in another heuristic class
-		}
-	}
+	// public static final class Memory extends HeuristicVariables implements ObserverOnRuns {
+	//
+	// @Override
+	// public void beforeRun() {
+	// nOrdered = 0;
+	// }
+	//
+	// /**
+	// * order[i] is the number of the ith variable to be assigned; valid only for i ranging from 0 to nOrdered-1.
+	// */
+	// private final int[] order;
+	//
+	// /**
+	// * Indicates how many variables are currently ordered in the array order
+	// */
+	// private int nOrdered;
+	//
+	// private int posLastConflict = -1;
+	//
+	// public Memory(Solver solver, boolean anti) {
+	// super(solver, anti);
+	// this.order = new int[solver.problem.variables.length];
+	// control(!options.discardAux);
+	// }
+	//
+	// @Override
+	// protected final Variable bestUnpriorityVariable() {
+	// int pos = -1;
+	// for (int i = 0; i < nOrdered; i++)
+	// if (!solver.problem.variables[order[i]].assigned()) {
+	// pos = i;
+	// break;
+	// }
+	// if (pos != -1) {
+	// if (posLastConflict > pos) {
+	// control(posLastConflict < nOrdered);
+	// int vid = order[pos];
+	// order[pos] = order[posLastConflict];
+	// order[posLastConflict] = vid;
+	// }
+	// posLastConflict = pos;
+	// } else {
+	// bestScoredVariable.reset(false);
+	// solver.futVars.execute(x -> bestScoredVariable.consider(x, scoreOptimizedOf(x)));
+	// pos = posLastConflict = nOrdered;
+	// order[nOrdered++] = bestScoredVariable.variable.num;
+	// }
+	// return solver.problem.variables[order[pos]];
+	// }
+	//
+	// @Override
+	// public double scoreOf(Variable x) {
+	// return x.ddeg() / (double) x.dom.size();
+	// // TODO x.wdeg() is currently no more possible since weighted degrees are in another heuristic class
+	// }
+	// }
 
 }

@@ -246,7 +246,7 @@ public abstract class HeuristicValues extends Heuristic {
 	}
 
 	/*************************************************************************
-	 ***** HeuristicValuesStatic
+	 ***** Static Heuristics
 	 *************************************************************************/
 
 	/**
