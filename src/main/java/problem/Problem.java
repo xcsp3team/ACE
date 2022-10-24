@@ -762,7 +762,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		nAuxConstraints++;
 		Variable[] treeVars = (Variable[]) tree.vars();
 		if (!tuplesComputed && head.control.intension.toExtension(treeVars))
-			tuples = new TreeEvaluator(tree).computeTuples(Variable.initDomainValues(treeVars)); // or current values?
+			tuples = new TreeEvaluator(tree).computeTuples(Variable.initDomainValues(treeVars), null); // or current
+																										// values?
 		if (tuples != null) {
 			features.nConvertedConstraints++;
 			extension(vars(treeVars, aux), tuples, true);
@@ -818,7 +819,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (similarTrees) {
 			Variable[] treeVars = (Variable[]) trees[0].vars();
 			if (head.control.intension.toExtension(treeVars))
-				tuples = new TreeEvaluator(trees[0]).computeTuples(Variable.initDomainValues(treeVars));
+				tuples = new TreeEvaluator(trees[0]).computeTuples(Variable.initDomainValues(treeVars), null);
 		}
 		for (int i = 0; i < trees.length; i++)
 			replacement(aux[i], trees[i], similarTrees, tuples);
