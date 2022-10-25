@@ -112,7 +112,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 
 		@Override
 		protected void updateFrom(Domain dom) {
-			if (dom.size() <= COEFFS.length) { // TODO hard coding : only reasoning with domains of size at most 5
+			if (dom.size() < COEFFS.length) { // TODO hard coding : only reasoning with domains of size at most 5
 				int coeff = COEFFS[dom.size()];
 				if (dx.typeIdentifier() == dom.typeIdentifier()) {
 					for (int a = dom.first(); a != -1; a = dom.next(a))
