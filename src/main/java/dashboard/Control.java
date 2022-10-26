@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Level;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.zip.Deflater;
 
@@ -36,9 +37,12 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xcsp.common.Constants;
+import org.xcsp.common.IVar;
 import org.xcsp.common.Types;
 import org.xcsp.common.Types.TypeCtr;
 import org.xcsp.common.Utilities;
+import org.xcsp.common.predicates.XNode;
+import org.xcsp.common.predicates.XNodeParent;
 
 import constraints.Constraint;
 import constraints.ConstraintExtension.Extension;
@@ -492,8 +496,10 @@ public final class Control {
 		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "Must we attempt to recognize sum constraints?");
 		public final boolean toHybrid = addB("toHybrid", "toh", false, "Must we convert toward hybrid tables, when possible?");
 
-		public boolean toExtension(Variable[] vars) {
-			return vars.length <= arityLimitToExtension && Constraint.howManyVariablesWithin(vars, spaceLimitToExtension) == Constants.ALL;
+		public boolean toExtension(Variable[] vars, XNode<IVar> tree) {
+			Variable[] t = tree == null || !(tree instanceof XNodeParent) || !((XNodeParent<?>) tree).isEqVar() ? vars
+					: IntStream.range(0, vars.length - 1).mapToObj(i -> vars[i]).toArray(Variable[]::new);
+			return t.length <= arityLimitToExtension && Constraint.howManyVariablesWithin(t, spaceLimitToExtension) == Constants.ALL;
 		}
 	}
 

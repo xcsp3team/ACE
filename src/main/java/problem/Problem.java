@@ -148,7 +148,9 @@ import constraints.global.Count.CountVar.ExactlyVarK;
 import constraints.global.Cumulative.CumulativeCst;
 import constraints.global.Cumulative.CumulativeVarC;
 import constraints.global.Cumulative.CumulativeVarH;
+import constraints.global.Cumulative.CumulativeVarHC;
 import constraints.global.Cumulative.CumulativeVarW;
+import constraints.global.Cumulative.CumulativeVarWC;
 import constraints.global.Cumulative.CumulativeVarWH;
 import constraints.global.Cumulative.CumulativeVarWHC;
 import constraints.global.DistinctLists;
@@ -761,7 +763,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private void replacement(Var aux, XNode<IVar> tree, boolean tuplesComputed, int[][] tuples) {
 		nAuxConstraints++;
 		Variable[] treeVars = (Variable[]) tree.vars();
-		if (!tuplesComputed && head.control.intension.toExtension(treeVars))
+		if (!tuplesComputed && head.control.intension.toExtension(treeVars, null))
 			tuples = new TreeEvaluator(tree).computeTuples(Variable.initDomainValues(treeVars), null); // or current
 																										// values?
 		if (tuples != null) {
@@ -818,7 +820,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		int[][] tuples = null;
 		if (similarTrees) {
 			Variable[] treeVars = (Variable[]) trees[0].vars();
-			if (head.control.intension.toExtension(treeVars))
+			if (head.control.intension.toExtension(treeVars, null))
 				tuples = new TreeEvaluator(trees[0]).computeTuples(Variable.initDomainValues(treeVars), null);
 		}
 		for (int i = 0; i < trees.length; i++)
@@ -963,7 +965,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		assert Variable.haveSameType(scp);
-		if (options.toExtension(scp) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
+		if (options.toExtension(scp, tree) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
@@ -2363,6 +2365,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
 			return post(new CumulativeVarW(this, translate(origins), translate(lengths), heights, op == LT ? limit - 1 : limit));
 		}
+		if (condition instanceof ConditionVar) {
+			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
+			control(op == LE);
+			Variable limit = (Variable) (((ConditionVar) condition).x);
+			return post(new CumulativeVarWC(this, translate(origins), translate(lengths), heights, limit));
+		}
 		return unimplemented("cumulative");
 	}
 
@@ -2374,6 +2382,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
 			return post(new CumulativeVarH(this, translate(origins), lengths, translate(heights), op == LT ? limit - 1 : limit));
+		}
+		if (condition instanceof ConditionVar) {
+			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
+			control(op == LE);
+			Variable limit = (Variable) (((ConditionVar) condition).x);
+			return post(new CumulativeVarHC(this, translate(origins), lengths, translate(heights), limit));
 		}
 		return unimplemented("cumulative");
 	}

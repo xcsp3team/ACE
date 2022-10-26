@@ -205,7 +205,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 *         limit
 	 */
 	public static final int howManyVariablesWithin(Variable[] vars, int exponent) {
-		return howManyVariablesWithin(Stream.of(vars).mapToInt(x -> x.dom.size()).toArray(), Math.pow(2, exponent));
+		return howManyVariablesWithin(Stream.of(vars).filter(x -> x != null).mapToInt(x -> x.dom.size()).toArray(), Math.pow(2, exponent));
 	}
 
 	/**
