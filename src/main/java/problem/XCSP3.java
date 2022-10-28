@@ -795,14 +795,8 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	@Override
-	public void buildCtrKnapsack(String id, XVarInteger[] list, int[] weights, int[] profits, int limit, Condition condition) {
-		problem.knapsack(trVars(list), weights, profits, limit, trVar(condition));
-
-	}
-
-	@Override
-	public void buildCtrKnapsack(String id, XVarInteger[] list, int[] weights, int[] profits, XVarInteger limit, Condition condition) {
-		problem.knapsack(trVars(list), weights, profits, trVar(limit), trVar(condition));
+	public void buildCtrKnapsack(String id, XVarInteger[] list, int[] weights, Condition wcondition, int[] profits, Condition pcondition) {
+		problem.knapsack(trVars(list), weights, trVar(wcondition), profits, trVar(pcondition));
 	}
 
 	@Override

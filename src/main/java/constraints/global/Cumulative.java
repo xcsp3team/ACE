@@ -30,10 +30,10 @@ import variables.Variable;
 
 /**
  * The constraint Cumulative is useful when a resource of limited quantity must be shared for achieving several tasks.
- * The constraint Cumulative enforces that at each point in time, the cumulated height of tasks that overlap that point,
- * does not exceed a specified limit. For example, in a scheduling context where several tasks require some specific
- * quantities of a single resource, the cumulative constraint imposes that a strict limit on the total consumption of
- * the resource is never exceeded at each point of a time line.
+ * The constraint Cumulative enforces that at each point in time, the accumulated height of tasks that overlap that
+ * point, does not exceed a specified limit. For example, in a scheduling context where several tasks require some
+ * specific quantities of a single resource, the cumulative constraint imposes that a strict limit on the total
+ * consumption of the resource is never exceeded at each point of a time line.
  * 
  * So, the context is to manage a collection of tasks, each one being described by 3 attributes: its starting time, its
  * width (length or duration), and its height (resource consumption).
@@ -525,7 +525,6 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 				}
 			}
 		}
-
 	}
 
 	public static final class CumulativeVarW extends CumulativeVar {

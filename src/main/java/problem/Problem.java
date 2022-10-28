@@ -2445,16 +2445,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return post(new BinPackingEnergeticLoad(this, vars, sizes, loads)); // limit - (op == LT ? 1 : 0)));
 	}
 
-	public final CtrEntity knapsack(Var[] list, int[] weights, int[] profits, int limit, Condition condition) {
+	public final CtrEntity knapsack(Var[] list, int[] weights, Condition wcondition, int[] profits, Condition pcondition) {
 		// for the moment, no dedicated propagator (just decomposition)
-		sum(list, weights, Condition.buildFrom(LE, limit));
-		return sum(list, profits, condition);
-	}
-
-	public final CtrEntity knapsack(Var[] list, int[] weights, int[] profits, Var limit, Condition condition) {
-		// for the moment, no dedicated propagator (just decomposition)
-		sum(list, weights, Condition.buildFrom(LE, limit));
-		return sum(list, profits, condition);
+		sum(list, weights, wcondition);
+		return sum(list, profits, pcondition);
 	}
 
 	public final CtrEntity flow(Var[] list, int[] balance, int[][] arcs) {
