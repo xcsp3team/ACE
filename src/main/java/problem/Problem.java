@@ -2415,7 +2415,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Variable[] vars = translate(list);
 		boolean sameType = Variable.haveSameDomainType(vars);
 		if (!sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
-			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).toArray();
+			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).sorted().toArray();
 			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, condition));
 			// TODO add nValues ? other ?
 		}
@@ -2424,25 +2424,52 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
 			// return post(new BinPackingSimple(this, vars, sizes, limit - (op == LT ? 1 : 0)));
-			return post(new BinPackingEnergetic(this, vars, sizes, limit - (op == LT ? 1 : 0))); // TODO add nValues ?
-																									// other ?
+			return post(new BinPackingEnergetic(this, vars, sizes, limit - (op == LT ? 1 : 0)));
+			// TODO add nValues ? other ?
 		}
 		return unimplemented("binPacking");
 	}
 
+	public final CtrEntity binpacking(Var[] list, int[] sizes, int[] limits) {
+		control(list.length > 2 && list.length == sizes.length);
+		Variable[] vars = translate(list);
+		boolean sameType = Variable.haveSameDomainType(vars);
+		if (!sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
+			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).sorted().toArray();
+			control(0 <= bins[0] && bins[bins.length - 1] < limits.length);
+			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, Condition.buildFrom(LE, limits[bins[i]])));
+		}
+		return post(new BinPackingEnergetic(this, vars, sizes, limits)); // TODO add nValues ? other ?
+	}
+
+	public final CtrEntity binpacking(Var[] list, int[] sizes, Var[] loads) {
+		control(list.length > 2 && list.length == sizes.length);
+		Variable[] vars = translate(list);
+		boolean sameType = Variable.haveSameDomainType(vars);
+		if (!sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
+			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).sorted().toArray();
+			control(0 <= bins[0] && bins[bins.length - 1] < loads.length);
+			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, Condition.buildFrom(EQ, loads[bins[i]])));
+		}
+		return post(new BinPackingEnergeticLoad(this, vars, sizes, translate(loads))); // TODO add nValues ? other ?
+	}
+
 	public final CtrEntity binpacking(Var[] list, int[] sizes, Condition[] conditions, int startIndex) {
+		control(list.length > 2 && list.length == sizes.length);
 		control(Stream.of(conditions).allMatch(c -> c instanceof ConditionVar && ((ConditionVar) c).operator == EQ));
 		Variable[] vars = translate(list);
 		boolean sameType = Variable.haveSameDomainType(vars);
 		if (!sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
-			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).toArray();
+			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).sorted().toArray();
 			control(bins.length == conditions.length);
 			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, conditions[i]));
 			// TODO add nValues ? other ?
 		}
-
-		Variable[] loads = Stream.of(conditions).map(c -> ((ConditionVar) c).x).toArray(Variable[]::new);
-		return post(new BinPackingEnergeticLoad(this, vars, sizes, loads)); // limit - (op == LT ? 1 : 0)));
+		if (Stream.of(conditions).allMatch(c -> c instanceof ConditionVar && ((ConditionVar) c).operator == EQ)) {
+			Variable[] loads = Stream.of(conditions).map(c -> ((ConditionVar) c).x).toArray(Variable[]::new);
+			return post(new BinPackingEnergeticLoad(this, vars, sizes, loads));
+		}
+		return unimplemented("binPacking");
 	}
 
 	public final CtrEntity knapsack(Var[] list, int[] weights, Condition wcondition, int[] profits, Condition pcondition) {
