@@ -110,6 +110,10 @@ public final class Precedence extends ConstraintGlobal implements TagNotAC, TagC
 				scp[j].dom.removeValueAtConstructionTime(values[i]);
 	}
 
+	public Precedence(Problem pb, Variable[] list) {
+		this(pb, list, Variable.setOfvaluesIn(list).stream().mapToInt(v -> v).sorted().toArray(), false);
+	}
+
 	@Override
 	public boolean runPropagator(Variable x) {
 		if (reinit)

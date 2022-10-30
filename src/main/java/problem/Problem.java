@@ -1471,10 +1471,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return forall(new Range(1, list.length), i -> disjunction(api.ne(list[i], t), IntStream.range(0, i).mapToObj(j -> api.eq(list[j], s))));
 	}
 
+	public final CtrEntity precedence(Var[] list) {
+		return post(new Precedence(this, translate(list)));
+	}
+
 	@Override
 	public final CtrEntity precedence(Var[] list, int[] values, boolean covered) {
 		return post(new Precedence(this, translate(list), values, covered));
-
 		// return forall(range(values.length - 1), i -> precedence(list, values[i], values[i + 1]));
 	}
 

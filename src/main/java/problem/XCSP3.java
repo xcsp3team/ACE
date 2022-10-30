@@ -470,6 +470,11 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	@Override
+	public void buildCtrPrecedence(String id, XVarInteger[] list) {
+		problem.precedence(trVars(list));
+	}
+
+	@Override
 	public void buildCtrPrecedence(String id, XVarInteger[] list, int[] values, boolean covered) {
 		problem.precedence(trVars(list), values, covered);
 	}
