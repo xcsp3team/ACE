@@ -795,13 +795,13 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	@Override
-	public void buildCtrBinPacking(String id, XVarInteger[] list, int[] sizes, int[] limits) {
-		problem.binpacking(trVars(list), sizes, limits);
+	public void buildCtrBinPacking(String id, XVarInteger[] list, int[] sizes, int[] capacities, boolean loads) {
+		problem.binpacking(trVars(list), sizes, capacities, loads);
 	}
 
 	@Override
-	public void buildCtrBinPacking(String id, XVarInteger[] list, int[] sizes, XVarInteger[] loads) {
-		problem.binpacking(trVars(list), sizes, trVars(loads));
+	public void buildCtrBinPacking(String id, XVarInteger[] list, int[] sizes, XVarInteger[] capacities, boolean loads) {
+		problem.binpacking(trVars(list), sizes, trVars(capacities), loads);
 	}
 
 	@Override

@@ -2433,28 +2433,31 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return unimplemented("binPacking");
 	}
 
-	public final CtrEntity binpacking(Var[] list, int[] sizes, int[] limits) {
+	public final CtrEntity binpacking(Var[] list, int[] sizes, int[] capacities, boolean loads) {
 		control(list.length > 2 && list.length == sizes.length);
+		TypeConditionOperatorRel op = loads ? EQ : LE;
 		Variable[] vars = translate(list);
 		boolean sameType = Variable.haveSameDomainType(vars);
-		if (!sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
+		if (loads | !sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
 			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).sorted().toArray();
-			control(0 <= bins[0] && bins[bins.length - 1] < limits.length);
-			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, Condition.buildFrom(LE, limits[bins[i]])));
+			control(0 <= bins[0] && bins[bins.length - 1] < capacities.length);
+			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, Condition.buildFrom(op, capacities[bins[i]])));
 		}
-		return post(new BinPackingEnergetic(this, vars, sizes, limits)); // TODO add nValues ? other ?
+		return post(new BinPackingEnergetic(this, vars, sizes, capacities)); // TODO add nValues ? other ?
 	}
 
-	public final CtrEntity binpacking(Var[] list, int[] sizes, Var[] loads) {
+	public final CtrEntity binpacking(Var[] list, int[] sizes, Var[] capacities, boolean loads) {
 		control(list.length > 2 && list.length == sizes.length);
+		TypeConditionOperatorRel op = loads ? EQ : LE;
 		Variable[] vars = translate(list);
 		boolean sameType = Variable.haveSameDomainType(vars);
-		if (!sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
+		if (!loads | !sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
 			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).sorted().toArray();
-			control(0 <= bins[0] && bins[bins.length - 1] < loads.length);
-			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, Condition.buildFrom(EQ, loads[bins[i]])));
+			control(0 <= bins[0] && bins[bins.length - 1] < capacities.length);
+			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, Condition.buildFrom(op, capacities[bins[i]])));
 		}
-		return post(new BinPackingEnergeticLoad(this, vars, sizes, translate(loads))); // TODO add nValues ? other ?
+		return post(new BinPackingEnergeticLoad(this, vars, sizes, translate(capacities))); // TODO add nValues ? other
+																							// ?
 	}
 
 	public final CtrEntity binpacking(Var[] list, int[] sizes, Condition[] conditions, int startIndex) {
