@@ -1863,7 +1863,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (mustBeClosed)
 			postClosed(scp, values);
 		// TODO should we filer variables of scp not involving values[i]?
-		return forall(range(values.length), i -> post(new ExactlyVarK(this, scp, values[i], (Variable) occurs[i])));
+		return forall(range(values.length), i -> {
+			Variable[] filteredScp = Stream.of(scp).filter(x -> x.dom.containsValue(values[i])).toArray(Variable[]::new);
+			control(filteredScp.length > 1);
+			post(new ExactlyVarK(this, filteredScp, values[i], (Variable) occurs[i]));
+		});
 	}
 
 	@Override
@@ -2558,7 +2562,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity instantiation(Var[] list, int[] values) {
-		control(list.length == values.length && list.length > 0);
+		control(list.length == values.length && list.length > 0, list.length + " vs " + values.length);
 		return forall(range(list.length), i -> equal(list[i], values[i]));
 	}
 

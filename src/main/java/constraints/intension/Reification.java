@@ -501,7 +501,7 @@ public final class Reification {
 			public ReifLogicn(Problem pb, Variable x, Variable[] list) {
 				super(pb, x, list);
 				this.list = list;
-				control(list.length > 2);
+				control(list.length >= 2);
 				this.sentinel1 = list[0]; // arbitrary sentinel
 				this.sentinel2 = list[1]; // arbitrary sentinel
 			}
