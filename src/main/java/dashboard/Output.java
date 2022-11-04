@@ -426,6 +426,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 		@Override
 		public String toString() {
+			String sep_char = ":";
 			StringBuilder sb = new StringBuilder(COMMENT_PREFIX).append(COMMENT_PREFIX);
 			boolean sep = true;
 			for (Entry<String, Object> entry : entries) {
@@ -435,7 +436,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 				} else {
 					if (!sep)
 						sb.append("  ");
-					sb.append(entry.getKey()).append("=").append(entry.getValue());
+					sb.append(entry.getKey()).append(sep_char).append(entry.getValue());
 					sep = false;
 				}
 			}
