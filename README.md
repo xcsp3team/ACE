@@ -5,7 +5,7 @@
 
 ACE (AbsCon Essence) is an open-source constraint solver developed by Christophe Lecoutre (CRIL) in Java.
 
-Current stable version of ACE is 2.0 (December 15, 2021).
+Current stable version of ACE is 2.1 (November 10, 2021).
 
 ACE focuses on:
 - integer variables, including 0/1 (Boolean) variables,
