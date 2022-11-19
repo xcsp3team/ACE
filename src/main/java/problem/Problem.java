@@ -1222,7 +1222,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrAlone extension(Var[] list, AbstractTuple[] tuples, boolean positive) {
 		unimplementedIf(!positive, "negative hybrid tables not implemented");
-		return hybrid(list, Stream.of(tuples).map(t -> HybridTuple.convert(t, list)));
+		return hybrid(list, Stream.of(tuples).filter(t -> HybridTuple.isValid(t, list)).map(t -> HybridTuple.convert(t, list)));
 	}
 
 	// ************************************************************************

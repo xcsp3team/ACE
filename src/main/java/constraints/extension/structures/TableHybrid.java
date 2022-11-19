@@ -149,6 +149,23 @@ public final class TableHybrid extends ExtensionStructure {
 		 */
 		private int[] initialTuple;
 
+		public static boolean isValid(AbstractTuple abstractTuple, IVar[] scp) {
+			if (abstractTuple instanceof OrdinaryTuple) {
+				int[] values = ((OrdinaryTuple) abstractTuple).values;
+				for (int i = 0; i < values.length; i++)
+					if (values[i] != STAR && ((Variable) scp[i]).dom.toIdx(values[i]) == -1)
+						return false;
+				return true;
+			}
+			SmartTuple smartTuple = ((SmartTuple) abstractTuple);
+			for (int i = 0; i < smartTuple.values.length; i++) {
+				Object value = smartTuple.values[i];
+				if (value instanceof Integer && (Integer) value != STAR && ((Variable) scp[i]).dom.toIdx((Integer) value) == -1)
+					return false;
+			}
+			return true;
+		}
+
 		public static HybridTuple convert(AbstractTuple abstractTuple, IVar[] scp) {
 			if (abstractTuple instanceof OrdinaryTuple)
 				return new HybridTuple(((OrdinaryTuple) abstractTuple).values);
@@ -164,7 +181,6 @@ public final class TableHybrid extends ExtensionStructure {
 				}
 			}
 			return new HybridTuple(tuple, restrictions);
-
 		}
 
 		/**
