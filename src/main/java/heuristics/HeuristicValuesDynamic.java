@@ -333,12 +333,12 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		/**
 		 * The objective constraint
 		 */
-		private Optimizable oc;
+		protected Optimizable oc;
 
 		/**
 		 * Indicates if this is the lower bound (or the upper bound) of the objective constraint that must be considered
 		 */
-		private boolean lbBased;
+		protected boolean lbBased;
 
 		/**
 		 * The set of inconsistent value indexes found when performing singleton tests
@@ -410,6 +410,38 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 			}
 			return best;
 		}
+	}
+	
+	/**
+	 * BIVS 3 
+	 */
+	
+	public static final class Bivs3 extends Bivs{
+	    public Bivs3(Variable x, boolean anti) {
+            super(x, anti);
+        }
+	    
+	    @Override
+        public final double scoreOf(int a) {
+            solver.assign(x, a);
+            boolean consistent = solver.propagation.runAfterAssignment(x);
+            long score = 0;
+            if (!consistent) {
+                inconsistent.add(a);
+                score = multiplier == -1 ? Long.MAX_VALUE : Long.MIN_VALUE;
+            } else
+                score = lbBased ? oc.minCurrentObjectiveValue() : oc.maxCurrentObjectiveValue();
+            solver.backtrack(x);
+            return score;
+        }
+	    
+	    @Override
+        public int computeBestValueIndex() {
+	        inconsistent.clear();
+            if ((options.bivsFirst && solver.solutions.found > 0) || dx.size() > options.bivsLimit)
+                return dx.first(); // First in that case
+	        
+	    }
 	}
 
 	// ************************************************************************
