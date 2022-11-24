@@ -17,6 +17,7 @@ import java.util.Arrays;
 import constraints.Constraint;
 import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequireFailedPerValue;
 import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequirePerValue;
+import interfaces.Observers.ObserverOnAssignments;
 import interfaces.Tags.TagMaximize;
 import optimization.Optimizable;
 import optimization.Optimizer;
@@ -365,7 +366,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		}
 
 		@Override
-		public final double scoreOf(int a) {
+		public double scoreOf(int a) {
 			// System.out.println("trying " + x + " " + a + " " + multiplier);
 			solver.assign(x, a);
 			boolean consistent = solver.propagation.runAfterAssignment(x);
@@ -416,13 +417,13 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	 * BIVS 3 
 	 */
 	
-	public static final class Bivs3 extends Bivs{
+	public static final class Bivs3 extends Bivs implements ObserverOnAssignments{
 	    public Bivs3(Variable x, boolean anti) {
             super(x, anti);
         }
 	    
 	    @Override
-        public final double scoreOf(int a) {
+        public double scoreOf(int a) {
             solver.assign(x, a);
             boolean consistent = solver.propagation.runAfterAssignment(x);
             long score = 0;
@@ -440,8 +441,26 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	        inconsistent.clear();
             if ((options.bivsFirst && solver.solutions.found > 0) || dx.size() > options.bivsLimit)
                 return dx.first(); // First in that case
-	        
+	        return 0;
 	    }
+
+        @Override
+        public void afterAssignment(Variable x, int a) {
+            // TODO Auto-generated method stub
+            
+        }
+
+        @Override
+        public void afterFailedAssignment(Variable x, int a) {
+            // TODO Auto-generated method stub
+            
+        }
+
+        @Override
+        public void afterUnassignment(Variable x) {
+            // TODO Auto-generated method stub
+            
+        }
 	}
 
 	// ************************************************************************
