@@ -42,7 +42,6 @@ import org.xcsp.common.predicates.XNodeLeaf;
 import org.xcsp.common.predicates.XNodeParent;
 import org.xcsp.common.structures.AbstractTuple;
 import org.xcsp.common.structures.AbstractTuple.OrdinaryTuple;
-import org.xcsp.common.structures.AbstractTuple.SmartTuple;
 
 import constraints.ConstraintExtension;
 import constraints.extension.CHybrid;
@@ -157,9 +156,9 @@ public final class TableHybrid extends ExtensionStructure {
 						return false;
 				return true;
 			}
-			SmartTuple smartTuple = ((SmartTuple) abstractTuple);
-			for (int i = 0; i < smartTuple.values.length; i++) {
-				Object value = smartTuple.values[i];
+			Object[] values = ((AbstractTuple.HybridTuple) abstractTuple).values;
+			for (int i = 0; i < values.length; i++) {
+				Object value = values[i];
 				if (value instanceof Integer && (Integer) value != STAR && ((Variable) scp[i]).dom.toIdx((Integer) value) == -1)
 					return false;
 			}
@@ -169,11 +168,11 @@ public final class TableHybrid extends ExtensionStructure {
 		public static HybridTuple convert(AbstractTuple abstractTuple, IVar[] scp) {
 			if (abstractTuple instanceof OrdinaryTuple)
 				return new HybridTuple(((OrdinaryTuple) abstractTuple).values);
-			SmartTuple smartTuple = ((SmartTuple) abstractTuple);
-			int[] tuple = Kit.repeat(STAR, smartTuple.values.length);
+			Object[] values = ((AbstractTuple.HybridTuple) abstractTuple).values;
+			int[] tuple = Kit.repeat(STAR, values.length);
 			List<XNodeParent<? extends IVar>> restrictions = new ArrayList<>();
-			for (int i = 0; i < smartTuple.values.length; i++) {
-				Object value = smartTuple.values[i];
+			for (int i = 0; i < values.length; i++) {
+				Object value = values[i];
 				if (value instanceof Integer)
 					tuple[i] = (Integer) value;
 				else {
@@ -296,6 +295,18 @@ public final class TableHybrid extends ExtensionStructure {
 			}
 		}
 
+		/**
+		 * Builds a ternary restriction of the form x >= y +/- z
+		 */
+		private Restriction3 buildRestriction3From(int x, TypeConditionOperatorRel op, int y, int z) {
+			switch (op) {
+			case EQ:
+				return new Rstr3Add(x, y, z);
+			default:
+				throw new AssertionError("Currently, unimplemented operator " + op);
+			}
+		}
+
 		public void attach(CHybrid c) {
 			this.scp = c.scp;
 			this.initialTuple = initialTuple != null ? initialTuple : Kit.repeat(STAR, scp.length);
@@ -326,12 +337,21 @@ public final class TableHybrid extends ExtensionStructure {
 						Kit.exit("Currently, unimplemented case"); // range
 
 				} else {
-					TypeConditionOperatorRel op = type.toRelop(); // TODO dealing with IN and NOTIN too
+					TypeConditionOperatorRel op = type.toRelop(); // TODO code for dealing with IN and NOTIN too
 					control(op != null, "" + op);
 					control(son1.type != TypeExpr.SYMBOL, () -> "Symbolic values not possible for the moment");
+					// we replace PAR by VAR
 					if (son1.type == TypeExpr.PAR) {
 						Variable y = scp[(int) ((XNodeLeaf<?>) son1).value];
 						son1 = new XNodeLeaf<>(TypeExpr.VAR, y);
+					}
+					if (son1.type == TypeExpr.ADD) {
+						for (int i = 0; i < son1.sons.length; i++) {
+							if (son1.sons[i].type == TypeExpr.PAR) {
+								Variable y = scp[(int) ((XNodeLeaf<?>) son1.sons[i]).value];
+								son1.sons[i] = new XNodeLeaf<>(TypeExpr.VAR, y);
+							}
+						}
 					}
 					if (son1.type == TypeExpr.LONG) {
 						int v = Utilities.safeInt(((long) ((XNodeLeaf<?>) son1).value));
@@ -355,8 +375,14 @@ public final class TableHybrid extends ExtensionStructure {
 							int y = c.positionOf((Variable) ((XNodeLeaf<?>) grandSons[0]).value);
 							int k = Utilities.safeInt(((long) ((XNodeLeaf<?>) grandSons[1]).value));
 							list.add(buildRestriction2From(x, op, y, k));
+						} else if (grandSons.length == 2 && grandSons[0].type == TypeExpr.VAR && grandSons[1].type == TypeExpr.VAR) {
+							int y = c.positionOf((Variable) ((XNodeLeaf<?>) grandSons[0]).value);
+							int z = c.positionOf((Variable) ((XNodeLeaf<?>) grandSons[1]).value);
+							list.add(buildRestriction3From(x, op, y, z));
 						} else
 							Kit.exit("Currently, unimplemented case");
+					} else if (son1.type == TypeExpr.SUB) {
+						Kit.exit("Currently, unimplemented case");
 					} else
 						Kit.exit("Currently, unimplemented case");
 				}
@@ -378,11 +404,15 @@ public final class TableHybrid extends ExtensionStructure {
 				whichRestrictions[r.x] = r;
 				if (r instanceof Restriction2)
 					whichRestrictions[((Restriction2) r).y] = r;
-				else if (r instanceof RestrictionMultiple)
+				else if (r instanceof Restriction3) {
+					whichRestrictions[((Restriction3) r).y] = r;
+					whichRestrictions[((Restriction3) r).z] = r;
+				} else if (r instanceof RestrictionMultiple)
 					for (Restriction rr : ((RestrictionMultiple) r).subrestrictions)
 						if (rr instanceof Restriction2)
 							whichRestrictions[((Restriction2) rr).y] = r;
 			}
+			// System.out.println(this);
 		}
 
 		/**
@@ -889,7 +919,7 @@ public final class TableHybrid extends ExtensionStructure {
 		}
 
 		/**
-		 * Binary restriction be based on a relational operator, i.e. the form x <op> y
+		 * Binary restriction based on a relational operator, i.e. the form x <op> y
 		 */
 		abstract class Restriction2 extends RestrictionComplex {
 
@@ -1236,7 +1266,7 @@ public final class TableHybrid extends ExtensionStructure {
 			private void collectThroughSmallestDomain() {
 				Domain domSmall = domx.size() < domy.size() ? domx : domy, domBig = domSmall == domx ? domy : domx;
 				int start = valTimeLocal == valTime && newResidue ? residue : domSmall.first();
-				// abobe, are we sure that the smallest domain is the same (no removal between? it seems so)
+				// above, are we sure that the smallest domain is the same (no removal between? it seems so)
 				if (scp[x].assigned() || scp[y].assigned()) {
 					assert domSmall.single() == start;
 					if (domBig.contains(start)) {
@@ -1527,6 +1557,101 @@ public final class TableHybrid extends ExtensionStructure {
 		}
 
 		/**********************************************************************************************
+		 * Classes for ternary restrictions of the form x <op> y +/- z
+		 *********************************************************************************************/
+
+		/**
+		 * Ternary restriction based on a relational operator, i.e. the form x <op> y +/- y
+		 */
+		abstract class Restriction3 extends RestrictionComplex {
+
+			/**
+			 * The operator involved in the ternary restriction
+			 */
+			protected TypeConditionOperatorRel op;
+
+			/**
+			 * The second variable (given by its position in the constraint scope) in the restriction (i.e., at the
+			 * right side of the restriction)
+			 */
+			protected int y;
+
+			/**
+			 * The domain of y (redundant field)
+			 */
+			protected Domain domy;
+
+			/**
+			 * The third variable (given by its position in the constraint scope) in the restriction (i.e., at the right
+			 * side of the restriction)
+			 */
+			protected int z;
+
+			/**
+			 * The domain of z (redundant field)
+			 */
+			protected Domain domz;
+
+			/**
+			 * The sparse set for unsupported indexes of y (redundant field)
+			 */
+			protected SetSparse nacy;
+
+			/**
+			 * The sparse set for unsupported indexes of z (redundant field)
+			 */
+			protected SetSparse nacz;
+
+			protected Restriction3(int x, TypeConditionOperatorRel op, int y, boolean addition, int z) {
+				super(x);
+				this.op = op;
+				this.y = y;
+				this.domy = scp[y].dom;
+				this.nacy = nac[y];
+				this.z = z;
+				this.domz = scp[z].dom;
+				this.nacz = nac[z];
+				// control(domx.typeIdentifier() == domy.typeIdentifier() || this instanceof Rstr2EQVal);
+			}
+
+			@Override
+			public String toString() {
+				return scp[x] + " " + op + " " + scp[y] + (this instanceof Rstr3Add ? "+" : "<op>") + scp[z];
+			}
+		}
+
+		/**
+		 * Restriction of the form x = y + z
+		 */
+		final class Rstr3Add extends Restriction3 {
+
+			@Override
+			public boolean checkIndexes(int[] t) {
+				return t[x] == t[y] + t[z];
+			}
+
+			protected Rstr3Add(int x, int y, int z) {
+				super(x, EQ, y, true, z);
+				System.out.println("building " + this);
+			}
+
+			@Override
+			public boolean isValidFor(int a) {
+				return false; // TODO
+			}
+
+			@Override
+			public boolean isValid() {
+				throw new AssertionError("Not impelmented");
+			}
+
+			@Override
+			public void collect() {
+				// TODO
+			}
+		}
+
+		/**********************************************************************************************
 		 * Classes for restrictions of the form x <op1> y and x <op2> z ...
 		 *********************************************************************************************/
 
@@ -1545,7 +1670,9 @@ public final class TableHybrid extends ExtensionStructure {
 			protected RestrictionMultiple(int x, List<Restriction> restrictions) {
 				super(x);
 				this.subrestrictions = restrictions.toArray(new Restriction[restrictions.size()]);
-				assert restrictions.size() > 1 && Stream.of(subrestrictions).allMatch(r -> r.x == x && !(r instanceof RestrictionMultiple));
+				assert restrictions.size() > 1;
+				// for the moment, restriction3 not considered
+				assert Stream.of(subrestrictions).allMatch(r -> r.x == x && !(r instanceof RestrictionMultiple) && !(r instanceof Restriction3));
 			}
 
 			@Override

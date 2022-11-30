@@ -32,6 +32,15 @@ import variables.Variable;
  * various sizes). The code is still experimental (problems to be tested: BinPacking2.py, NursingWorkload and
  * TestBinpacking from special).
  * 
+ * 
+ * TODO : bug with java ace BinPackingGecode.xml
+ * 
+ * java ace BinPackingGecode.xml -warm="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 18 19 17 21 22 21 22 20 16
+ * 23 23 24 24 15 13 14 22 12 21 24 23 23 24 20 11 2 3 4 0" (solution obtained with the other variant)
+ * 
+ * java ace BinPackingGecode-dec.xml disappear if '|| i < minUsableBin || i > maxUsableBin)' is put in comment (but is
+ * it the origin of the problem?)
+ * 
  * @author Christophe Lecoutre
  */
 public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
@@ -214,6 +223,11 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 				maxSize = -1;
 				Arrays.sort(sortedBins, 0, sortLimit, (b1, b2) -> Integer.compare(b1.capacity, b2.capacity)); // increasing
 																												// sort
+				// System.out.println("hhh");
+				// for (int j = 0; j < sortLimit; j++) {
+				// System.out.println(sortedBins[j]);
+				// }
+
 				if (sortedBins[0].capacity < 0)
 					return x.dom.fail(); // TODO 1: moving it earlier (avoid the first sort) ?
 				for (SetDense set : fronts) // TODO 2: only clearing from 0 to usableBins.limit ?
@@ -252,74 +266,85 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 				break;
 			}
 
-			// energetic reasoning
-			int cumulatedCapacities = 0, cumulatedSizes = 0;
-			for (int j = usableBins.limit; j >= 0; j--) {
-				int capacity = sortedBins[j].capacity;
-				cumulatedCapacities += capacity;
-				if (fronts[j].size() == 0)
-					continue;
-				int min = Integer.MAX_VALUE, max = -1;
-				for (int k = 0; k <= fronts[j].limit; k++) {
-					int size = sizes[fronts[j].dense[k]];
-					min = Math.min(min, size);
-					max = Math.max(max, size);
-					cumulatedSizes += size;
-				}
-				boolean onyOnePossibleInTheBin = min > capacity / 2;
-				sortedBins[j].lost = onyOnePossibleInTheBin ? capacity - max : 0; // local j-lost place
-				int lost = sortedBins[j].lost;
-				// under certain conditions, we can combine several local lost places
-				for (int jj = usableBins.limit; jj > j; jj--) {
-					if (min <= sortedBins[jj].lost)
-						sortedBins[jj].lost = 0;
-					else
-						lost += sortedBins[jj].lost;
-				}
-				// note that even if several bins have the same current capacity, it does not mean that all items
-				// are in front of the leftmost one (due to other constraints)
-
-				// margin is a global value computed when reasoning from the jth sorted bin to the rightmost one
-				int margin = cumulatedCapacities - lost - cumulatedSizes;
-				// the margin is computed from the object of max size (when only one possible)
-				if (margin < 0)
-					return x.dom.fail();
-				if (onyOnePossibleInTheBin && margin - (max - min) < 0) {
-					// we can remove some values if the smallest item cannot be put in the bin j
+			boolean energetic = true;
+			if (energetic) {
+				// energetic reasoning
+				int cumulatedCapacities = 0, cumulatedSizes = 0;
+				for (int j = usableBins.limit; j >= 0; j--) {
+					int capacity = sortedBins[j].capacity;
+					cumulatedCapacities += capacity;
+					if (fronts[j].size() == 0)
+						continue;
+					int min = Integer.MAX_VALUE, max = -1;
 					for (int k = 0; k <= fronts[j].limit; k++) {
-						int i = fronts[j].dense[k];
-						if (margin - (max - sizes[i]) < 0 && scp[i].dom.removeValueIfPresent(sortedBins[j].index) == false)
-							return false;
+						int size = sizes[fronts[j].dense[k]];
+						min = Math.min(min, size);
+						max = Math.max(max, size);
+						cumulatedSizes += size;
 					}
-				}
-				// maybe, some items in front of a bin on the left have a size greater than the margin (we can then
-				// remove them from bins on the right)
-				if (maxSize > margin) {
-					for (int left = 0; left < j; left++) {
-						if (fronts[left].size() == 0)
-							continue;
-						for (int k = 0; k <= fronts[left].limit; k++) {
-							int p = fronts[left].dense[k];
-							int size = sizes[p];
-							if (size <= margin)
-								continue;
-							for (int right = usableBins.limit; right >= j; right--) {
-								if (scp[p].dom.removeValueIfPresent(sortedBins[right].index) == false)
+					boolean onyOnePossibleInTheBin = min > capacity / 2;
+					sortedBins[j].lost = onyOnePossibleInTheBin ? capacity - max : 0; // local j-lost place
+					int lost = sortedBins[j].lost;
+					// under certain conditions, we can combine several local lost places
+					for (int jj = usableBins.limit; jj > j; jj--) {
+						if (min <= sortedBins[jj].lost)
+							sortedBins[jj].lost = 0;
+						else
+							lost += sortedBins[jj].lost;
+					}
+					// note that even if several bins have the same current capacity, it does not mean that all items
+					// are in front of the leftmost one (due to other constraints)
+
+					// margin is a global value computed when reasoning from the jth sorted bin to the rightmost one
+					int margin = cumulatedCapacities - lost - cumulatedSizes;
+
+					// the margin is computed from the object of max size (when only one possible)
+
+					boolean firstPart = true;
+					if (firstPart) {
+						if (margin < 0)
+							return x.dom.fail();
+						if (onyOnePossibleInTheBin && margin - (max - min) < 0) {
+							// we can remove some values if the smallest item cannot be put in the bin j
+							for (int k = 0; k <= fronts[j].limit; k++) {
+								int i = fronts[j].dense[k];
+								if (margin - (max - sizes[i]) < 0 && scp[i].dom.removeValueIfPresent(sortedBins[j].index) == false)
 									return false;
 							}
 						}
 					}
+					// maybe, some items in front of a bin on the left have a size greater than the margin (we can then
+					// remove them from bins on the right)
+					boolean additionalFiltering = true;
+					if (additionalFiltering)
+						if (maxSize > margin) {
+							for (int left = 0; left < j; left++) {
+								if (fronts[left].size() == 0)
+									continue;
+								for (int k = 0; k <= fronts[left].limit; k++) {
+									int p = fronts[left].dense[k];
+									int size = sizes[p];
+									if (size <= margin)
+										continue;
+									for (int right = usableBins.limit; right >= j; right--) {
+										if (scp[p].dom.removeValueIfPresent(sortedBins[right].index) == false)
+											return false;
+									}
+								}
+							}
+						}
 				}
 			}
 
 			// we look for the index of the smallest free item, and also compute the min and max usable bin numbers
 			int smallestFreeItem = -1, minUsableBin = Integer.MAX_VALUE, maxUsableBin = -1;
 			for (int i = 0; i < nItems; i++) {
-				if (scp[i].dom.size() > 1) {
-					if (smallestFreeItem == -1)
+				Domain dom = scp[i].dom;
+				if (dom.size() > 1) {
+					if (smallestFreeItem == -1 || sizes[i] < sizes[smallestFreeItem])
 						smallestFreeItem = i;
-					minUsableBin = Math.min(minUsableBin, scp[i].dom.first());
-					maxUsableBin = Math.max(maxUsableBin, scp[i].dom.last());
+					minUsableBin = Math.min(minUsableBin, dom.first());
+					maxUsableBin = Math.max(maxUsableBin, dom.last());
 				}
 			}
 
@@ -331,7 +356,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 				// for breaking, we should go from 0 to ..., but removing an element in usableBins could be a pb
 				int i = sortedBins[j].index;
 				assert usableBins.contains(i);
-				if (sortedBins[j].capacity < sizes[smallestFreeItem] || i > maxUsableBin || i < minUsableBin)
+				if (sortedBins[j].capacity < sizes[smallestFreeItem] || i < minUsableBin || i > maxUsableBin)
 					usableBins.remove(i, problem.solver.depth());
 			}
 			return true;
