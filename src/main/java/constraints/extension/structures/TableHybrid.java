@@ -792,8 +792,8 @@ public final class TableHybrid extends ExtensionStructure {
 			protected Restriction1Set(int x, TypeConditionOperatorSet op, int[] values) {
 				super(x);
 				this.op = op;
-				this.set = IntStream.of(values).mapToObj(v -> domx.toIdx(v)).collect(Collectors.toCollection(TreeSet::new));
-				assert values.length > 1 && Kit.isStrictlyIncreasing(values) && IntStream.of(values).allMatch(v -> domx.toIdx(v) >= 0);
+				this.set = IntStream.of(values).mapToObj(v -> domx.toIdx(v)).filter(v -> v >= 0).collect(Collectors.toCollection(TreeSet::new));
+				assert set.size() >= 1 && Kit.isStrictlyIncreasing(values);
 			}
 
 			@Override

@@ -14,6 +14,7 @@ import static utility.Kit.control;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.xcsp.common.Range;
 
@@ -38,8 +39,14 @@ import variables.Variable;
  * java ace BinPackingGecode.xml -warm="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 18 19 17 21 22 21 22 20 16
  * 23 23 24 24 15 13 14 22 12 21 24 23 23 24 20 11 2 3 4 0" (solution obtained with the other variant)
  * 
- * java ace BinPackingGecode-dec.xml disappear if '|| i < minUsableBin || i > maxUsableBin)' is put in comment (but is
- * it the origin of the problem?)
+ * pb with java ace BinPackingGecode.xml disappear if '|| i < minUsableBin || i > maxUsableBin)' is put in comment (but
+ * is it the origin of the problem?)
+ * 
+ * 
+ * pb with Mapping-full2x2_mp3.xml disappear when using -varh=Dom does-it come from BinPacjking?
+ * 
+ * // another pb for the load variant seems to be to fixed for java ace GeneralizedBACP-reduced_UD2-gbac.xml -valh=Bivs
+ * // also java ace TeamAssignment-data1_6_6.xml -valh=Asgs
  * 
  * @author Christophe Lecoutre
  */
@@ -353,10 +360,10 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 
 			// we discard bins that are now identified as useless because we cannot even put the smallest item in it
 			for (int j = usableBins.limit; j >= 0; j--) {
-				// for breaking, we should go from 0 to ..., but removing an element in usableBins could be a pb
+				// for breaking, we should go from 0 to ..., but removing an element in usableBins could be a problem
 				int i = sortedBins[j].index;
 				assert usableBins.contains(i);
-				if (sortedBins[j].capacity < sizes[smallestFreeItem] || i < minUsableBin || i > maxUsableBin)
+				if (sortedBins[j].capacity < sizes[smallestFreeItem]) // || i < minUsableBin || i > maxUsableBin)
 					usableBins.remove(i, problem.solver.depth());
 			}
 			return true;
@@ -373,8 +380,10 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 			for (int i = 0; i < nItems; i++)
 				sums[scp[i].dom.toIdx(t[i])] += sizes[i];
 			for (int i = 0; i < sums.length; i++)
-				if (sums[i] != t[nItems + i])
+				if (sums[i] != t[nItems + i]) {
+					System.out.println("pb " + i + " " + sums[i] + " vs " + t[nItems + i]);
 					return false;
+				}
 			return true;
 		}
 
@@ -384,17 +393,26 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 
 		@Override
 		public boolean runPropagator(Variable x) {
-			// we call the super propagator after setting the highest possible limits
+			// if (this.num == 39 && problem.solver.depth() >= 78) {
+			// System.out.println("filtering " + this + " at level " + problem.solver.depth() + "fitvars " +
+			// futvars.size());
+			// scp[13].dom.display(true);
+			// }
 
-			// if (futvars.size() == 0) {
-			// int[] t = Stream.of(scp).mapToInt(y -> y.dom.singleValue()).toArray();
-			// if (!isSatisfiedBy(t)) {
-			// cnt++;
-			// System.out.println("bef " + cnt); // pb to fix for java ace GeneralizedBACP-reduced_UD2-gbac.xml
-			// // -valh=Bivs
-			// TODO other pb : java ace TeamAssignment-data1_6_6.xml -valh=Asgs
-			// }
-			// }
+			if (futvars.size() == 0) {
+				int[] t = Stream.of(scp).mapToInt(y -> y.dom.singleValue()).toArray();
+				if (!isSatisfiedBy(t)) {
+					cnt++;
+					System.out.println(this + " bef " + cnt);
+					System.out.println("limits : " + Kit.join(limits));
+					System.out.println("sizes : " + Kit.join(sizes));
+					for (Variable y : scp)
+						y.dom.display(true);
+					System.exit(1);
+				}
+			}
+
+			// we call the super propagator after setting the highest possible limits
 			for (int i = 0; i < nBins; i++)
 				limits[i] = loads[i].dom.lastValue();
 			if (super.runPropagator(x) == false)
@@ -454,6 +472,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 					if (currentFill + possibleExtent < loadMin)
 						return x.dom.fail();
 					if (currentFill + possibleExtent == loadMin) {
+						loads[i].dom.reduceToValue(loadMin);
 						for (int k = freeItems.limit; k >= 0; k--) {
 							int j = freeItems.dense[k];
 							if (scp[j].dom.containsValue(i))
@@ -462,12 +481,6 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 					}
 				}
 			}
-			// if (futvars.size() == 0) {
-			// int[] t = Stream.of(scp).mapToInt(y -> y.dom.singleValue()).toArray();
-			// if (!isSatisfiedBy(t))
-			// System.out.println("after " + cnt); // pb to fix for java ace GeneralizedBACP-reduced_UD2-gbac.xml
-			// // -valh=Bivs
-			// }
 			return true;
 		}
 

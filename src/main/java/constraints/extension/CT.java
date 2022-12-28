@@ -257,8 +257,16 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 		fillTo0(tmp);
 		for (int x = 0; x < scp.length; x++) {
 			Domain dom = doms[x];
-			for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a))
+			int cnt = 0;
+			for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a)) {
 				Bit.or(tmp, !starred ? masks[x][a] : masksS[x][a], nonZeros);
+				cnt++;
+			}
+			if (cnt + dom.size() != dom.initSize()) { // if some values have been removed at construction time
+				for (int a = 0; a < dom.initSize(); a++)
+					if (!dom.contains(a))
+						Bit.or(tmp, !starred ? masks[x][a] : masksS[x][a], nonZeros);
+			}
 		}
 		Bit.inverse(tmp, nonZeros);
 		for (int i = nonZeros.limit; i >= 0; i--) {

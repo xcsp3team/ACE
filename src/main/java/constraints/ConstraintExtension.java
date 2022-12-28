@@ -220,7 +220,8 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		if (starred) {
 			control(positive);
 			ConstraintExtension c = (ConstraintExtension) Reflector.buildObject(className, classes, pb, scp);
-			control(c instanceof TagStarredCompatible); // currently, STR2, STR2S, CT, CT2 and MDDSHORT
+			control(c instanceof TagStarredCompatible, c.getClass() + " is not compatible with starred tables");
+			// currently, only STR2, STR2S, CT, CT2 and MDDSHORT
 			return c;
 		}
 		if (scp.length == 2 && options.generic2)

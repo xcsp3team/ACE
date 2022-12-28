@@ -284,6 +284,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void loadGroup(XGroup group) {
+		System.out.println("gggg " + group);
 		CtrEntity entity = problem.manageLoop(() -> {
 			if (group.template instanceof XCtr)
 				loadCtrs((XCtr) group.template, group.argss, group);

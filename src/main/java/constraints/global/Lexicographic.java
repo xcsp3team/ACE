@@ -38,15 +38,19 @@ import variables.Variable;
 public abstract class Lexicographic extends ConstraintGlobal implements TagAC, TagCallCompleteFiltering, TagNotSymmetric {
 
 	public static Lexicographic buildFrom(Problem pb, Variable[] list1, Variable[] list2, TypeOperatorRel op) {
+		control(list1.length == list2.length);
+		int[] keep = IntStream.range(0, list1.length).filter(i -> list1[i] != list2[i]).toArray();
+		Variable[] safeList1 = keep.length == list1.length ? list1 : IntStream.of(keep).mapToObj(i -> list1[i]).toArray(Variable[]::new);
+		Variable[] safeList2 = keep.length == list1.length ? list2 : IntStream.of(keep).mapToObj(i -> list2[i]).toArray(Variable[]::new);
 		switch (op) {
 		case LT:
-			return new LexicographicLT(pb, list1, list2);
+			return new LexicographicLT(pb, safeList1, safeList2);
 		case LE:
-			return new LexicographicLE(pb, list1, list2);
+			return new LexicographicLE(pb, safeList1, safeList2);
 		case GE:
-			return new LexicographicLE(pb, list2, list1);
+			return new LexicographicLE(pb, safeList2, safeList1);
 		default: // GT
-			return new LexicographicLT(pb, list2, list1);
+			return new LexicographicLT(pb, safeList2, safeList1);
 		}
 	}
 
