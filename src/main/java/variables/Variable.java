@@ -471,41 +471,6 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 		return sb;
 	}
 
-	/**
-	 * Analyzes the specified string in order to extract the id or number of variables. This method is used to treat
-	 * options set by the user concerning possible priority variables or partial instantiations.
-	 * 
-	 * @param s
-	 *            a string denoting a list of variable ids and/or numbers
-	 * @return an array with the ids or numbers of variables involved in the specified string
-	 */
-	public static Object[] extractFrom(String s) {
-		if (s == null || s.trim().length() == 0)
-			return new Object[0];
-		Set<Object> set = new LinkedHashSet<>();
-		for (String token : s.split(",")) {
-			if (token.contains("..")) {
-				control(token.matches("-?\\d+\\.\\.\\d+"), () -> " Pb with " + token);
-				int[] t = Utilities.toIntegers(token.split("\\.\\."));
-				for (int num = Math.abs(t[0]); num <= t[1]; num++)
-					if (t[0] >= 0)
-						set.add(num);
-					else
-						set.remove(num);
-			} else {
-				Integer num = Utilities.toInteger(token);
-				if (num != null) {
-					if (num >= 0)
-						set.add(num);
-					else
-						set.remove(-num);
-				} else
-					set.add(token); // must be the id of a variable
-			}
-		}
-		return set.stream().toArray();
-	}
-
 	/**********************************************************************************************
 	 * Class Members
 	 *********************************************************************************************/

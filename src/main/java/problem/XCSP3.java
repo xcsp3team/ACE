@@ -282,8 +282,17 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		copyBasicAttributes(entity, block);
 	}
 
+	public int nGroups;
+
+	private int[] ignoredGroups;
+
 	@Override
 	public void loadGroup(XGroup group) {
+		if (nGroups == 0)
+			ignoredGroups = Stream.of(Kit.extractFrom(problem.head.control.constraints.ignoreGroups)).mapToInt(v -> (Integer) v).toArray();
+		nGroups++;
+		if (Kit.isPresent(nGroups, ignoredGroups))
+			return;
 		CtrEntity entity = problem.manageLoop(() -> {
 			if (group.template instanceof XCtr)
 				loadCtrs((XCtr) group.template, group.argss, group);
@@ -298,6 +307,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		});
 		if (entity != null)
 			copyBasicAttributes(entity, group);
+
 	}
 
 	@Override

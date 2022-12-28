@@ -19,6 +19,7 @@ import dashboard.Control.OptionsVarh;
 import problem.Problem;
 import propagation.GIC.GIC2;
 import solver.Solver;
+import utility.Kit;
 import utility.Reflector;
 import variables.DomainInfinite;
 import variables.Variable;
@@ -154,7 +155,7 @@ public abstract class HeuristicVariables extends Heuristic {
 		String priority1 = solver.head.control.variables.priority1, priority2 = solver.head.control.variables.priority2;
 		if (priority1.length() > 0 || priority2.length() > 0) { // used in priory wrt those of problem
 			control(solver.problem.priorityArrays.length == 0 && !solver.head.control.varh.arrayPriorityRunRobin);
-			Object[] p1 = Variable.extractFrom(priority1), p2 = Variable.extractFrom(priority2);
+			Object[] p1 = Kit.extractFrom(priority1), p2 = Kit.extractFrom(priority2);
 			this.priorityVars = Stream.concat(Stream.of(p1), Stream.of(p2)).map(o -> solver.problem.variableWithNumOrId(o)).toArray(Variable[]::new);
 			assert Stream.of(priorityVars).distinct().count() == priorityVars.length;
 			this.nStrictlyPriorityVars = p1.length;

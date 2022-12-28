@@ -454,6 +454,7 @@ public final class Control {
 		public final boolean preserve1 = addB("preserve1", "pc1", true, "Must we keep unary constraints (instead of filtering them straight)");
 		public final TypeCtr ignoredType = Types.valueOf(TypeCtr.class, addS("ignoreType", "", "", "Dicard all constraints of this type"));
 		public final int ignoreArity = addI("ignoreArity", "", -1, "Discard all constraints of this arity");
+		public final String ignoreGroups = addS("ignoreGroups", "ig", "", "Index(es) of the group(s) of constraints that must be discarded");
 		public final int positionsLb = addI("positionsLb", "poslb", 3, "Minimal arity to build the array positions");
 		public final int positionsUb = addI("positionsUb", "posub", 10000, "Maximal number of variables to build the array positions");
 	}

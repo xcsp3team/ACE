@@ -105,7 +105,7 @@ public final class Features {
 		public String toString() {
 			if (repartition.size() == 0)
 				return "";
-			String SEP = "#", JOIN = ",";
+			String SEP = ":", JOIN = ",";
 			if (repartition.size() <= displayLimit)
 				return "[" + repartition.entrySet().stream().map(e -> e.getKey() + SEP + e.getValue()).collect(joining(JOIN)) + "]";
 			int half = DEFAULT_DISPLAY_LIMIT / 2;
@@ -148,7 +148,7 @@ public final class Features {
 		/**
 		 * The ids or numbers of variables selected by the user (if empty, no selection)
 		 */
-		private final Object[] selectedVars = Variable.extractFrom(problem.head.control.variables.selection);
+		private final Object[] selectedVars = Kit.extractFrom(problem.head.control.variables.selection);
 
 		/**
 		 * Returns true if the specified variable must be discarded

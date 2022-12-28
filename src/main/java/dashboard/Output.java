@@ -48,6 +48,7 @@ import learning.IpsReasonerEquivalence;
 import main.Head;
 import optimization.Optimizer;
 import problem.Features;
+import problem.XCSP3;
 import propagation.AC;
 import propagation.Propagation;
 import propagation.SAC.SACGreedy;
@@ -162,6 +163,8 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String N_SPECIFIC = "nSpecific";
 	public static final String N_MERGED = "nMerged";
 	public static final String N_ADDED = "nAdded";
+	public static final String N_GROUPS = "nGroups";
+	public static final String IGNORED_GROUPS = "ignoredGroups";
 	public static final String N_GENERATORS = "nGenerators";
 	public static final String N_CLIQUES = "nCliques";
 	public static final String ARITIES = "arities";
@@ -490,6 +493,9 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(N_MERGED, features.nMergedCtrs);
 		m.put(N_DISCARDED, features.nDiscardedCtrs);
 		m.put(N_ADDED, features.nAddedCtrs);
+		if (head.problem.api instanceof XCSP3)
+			m.put(N_GROUPS, ((XCSP3) head.problem.api).nGroups);
+		m.put(IGNORED_GROUPS, head.control.constraints.ignoreGroups);
 		m.put(N_GENERATORS, features.nGenerators); // for symmetry-breaking constraints
 		m.put(N_CLIQUES, features.nCliques); // for redundant AllDifferent constraints
 		m.put(ARITIES, features.ctrArities);

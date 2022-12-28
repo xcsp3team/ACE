@@ -268,7 +268,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		this.arrays = varEntities.varArrays.stream().filter(va -> !va.id.startsWith(AUXILIARY_VARIABLE_PREFIX)).toArray(VarArray[]::new);
 		control(priorityVars.length == 0 || !head.control.variables.stayArrayFocus);
 		control(priorityVars.length == 0 || (head.control.variables.priorityArrays.length() == 0 && !head.control.varh.arrayPriorityRunRobin));
-		int[] indexes = Stream.of(Variable.extractFrom(head.control.variables.priorityArrays))
+		int[] indexes = Stream.of(Kit.extractFrom(head.control.variables.priorityArrays))
 				.mapToInt(
 						v -> v instanceof Integer ? (Integer) v : IntStream.range(0, arrays.length).filter(i -> arrays[i].id.equals(v)).findFirst().orElse(-1))
 				.toArray();
@@ -538,7 +538,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (instantiation.length() > 0) {
 			String[] t = instantiation.split(":");
 			control(t.length == 2, "Problem with " + instantiation);
-			Object[] vars = Variable.extractFrom(t[0]);
+			Object[] vars = Kit.extractFrom(t[0]);
 			int[] vals = Utilities.toIntegers(t[1].split(","));
 			control(vars.length == vals.length, "In the instantiation, the number of variables (ids or nums) is different from the number of values.");
 			for (int i = 0; i < vars.length; i++) {
@@ -552,7 +552,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (refutation.length() > 0) {
 			String[] t = refutation.split(":");
 			control(t.length == 2, "Problem with " + refutation);
-			Object[] vars = Variable.extractFrom(t[0]);
+			Object[] vars = Kit.extractFrom(t[0]);
 			int[] vals = Utilities.toIntegers(t[1].split(","));
 			control(vars.length == vals.length, "In the refutation, the number of variables (ids or nums) is different from the number of values.");
 			for (int i = 0; i < vars.length; i++) {
@@ -1744,18 +1744,17 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return atLeast(scp, value, k + 1);
 			if (op == EQ)
 				return exactly(scp, value, k);
-			if (op == NE) {
-				control(0 < k && k < scp.length);
-				Var aux = auxVar(IntStream.range(0, scp.length + 1).filter(i -> i != k).toArray());
-				return count(scp, values, Condition.buildFrom(EQ, aux));
-			}
-		} else {
-			if (op == EQ) {
-				if (l == list.length)
-					return forall(range(list.length), i -> intension(XNodeParent.in(list[i], api.set(values))));
-				return post(new Among(this, list, values, l));
-			}
+			control(op == NE && 0 < k && k < scp.length);
+			Var aux = auxVar(IntStream.range(0, scp.length + 1).filter(i -> i != k).toArray());
+			return count(scp, values, Condition.buildFrom(EQ, aux));
 		}
+
+		if (op == EQ) {
+			if (l == list.length)
+				return forall(range(list.length), i -> intension(XNodeParent.in(list[i], api.set(values))));
+			return post(new Among(this, list, values, l));
+		}
+
 		return unimplemented("count");
 	}
 
