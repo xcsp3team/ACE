@@ -55,9 +55,11 @@ import static org.xcsp.common.predicates.XNodeParent.build;
 import static org.xcsp.common.predicates.XNodeParent.eq;
 import static org.xcsp.common.predicates.XNodeParent.ge;
 import static org.xcsp.common.predicates.XNodeParent.iff;
+import static org.xcsp.common.predicates.XNodeParent.in;
 import static org.xcsp.common.predicates.XNodeParent.le;
 import static org.xcsp.common.predicates.XNodeParent.mul;
 import static org.xcsp.common.predicates.XNodeParent.or;
+import static org.xcsp.common.predicates.XNodeParent.set;
 import static utility.Kit.log;
 
 import java.util.ArrayList;
@@ -159,8 +161,10 @@ import constraints.global.Element.ElementList.ElementVar;
 import constraints.global.Element.ElementMatrix.ElementMatrixCst;
 import constraints.global.Element.ElementMatrix.ElementMatrixVar;
 import constraints.global.Extremum.ExtremumCst;
+import constraints.global.Extremum.ExtremumCst.MaximumCst;
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstGE;
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
+import constraints.global.Extremum.ExtremumCst.MinimumCst;
 import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstGE;
 import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstLE;
 import constraints.global.Extremum.ExtremumVar.Maximum;
@@ -735,7 +739,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	// ************************************************************************
-	// ***** Replacing trees by variables
+	// ***** Replacing trees by variables and simplifying conditions
 	// ************************************************************************
 
 	private XNode<IVar>[] treesToArray(Stream<XNode<IVar>> trees) {
@@ -839,6 +843,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 */
 	private Var[] replaceByVariables(Stream<XNode<IVar>> trees) {
 		return replaceByVariables(treesToArray(trees));
+	}
+
+	private Condition simplifyComplexCondition(Condition condition, Object values) {
+		Var aux = auxVar(values); // we introduce an auxiliary variable
+		intension(Condition.toNode(aux, condition)); // linking the auxiliary variable to the condition
+		return Condition.buildFrom(EQ, aux);
 	}
 
 	/**********************************************************************************************
@@ -1482,7 +1492,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	// ************************************************************************
-	// ***** Constraints Sum and Product
+	// ***** Constraints Sum
 	// ************************************************************************
 
 	public static class Term implements Comparable<Term> {
@@ -1683,9 +1693,21 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return sum(replaceByVariables(trees), coeffs, condition);
 	}
 
-	public CtrEntity sum(Stream<XNode<IVar>> trees, int[] coeffs, Condition condition) {
-		return sum(trees.toArray(XNode[]::new), coeffs, condition);
+	private CtrEntity sum(XNode<IVar>[] trees, Condition condition) {
+		return sum(trees, null, condition);
 	}
+
+	private CtrEntity sum(Stream<XNode<IVar>> trees, int[] coeffs, Condition condition) {
+		return sum(treesToArray(trees), coeffs, condition);
+	}
+
+	private CtrEntity sum(Stream<XNode<IVar>> trees, Condition condition) {
+		return sum(trees, null, condition);
+	}
+
+	// ************************************************************************
+	// ***** Constraint product
+	// ************************************************************************
 
 	public final CtrEntity product(Var[] list, Condition condition) {
 		if (condition instanceof ConditionRel) {
@@ -1703,6 +1725,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ************************************************************************
 
 	private CtrEntity atLeast(VariableInteger[] list, int value, int k) {
+		assert 0 <= k && k <= list.length;
 		if (k == 0)
 			return ctrEntities.new CtrAloneDummy("atleast witk k = 0");
 		if (k == list.length)
@@ -1711,6 +1734,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private CtrEntity atMost(VariableInteger[] list, int value, int k) {
+		assert 0 <= k && k <= list.length;
 		if (k == 0)
 			return refutation(list, value);
 		if (k == list.length)
@@ -1748,50 +1772,51 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			Var aux = auxVar(IntStream.range(0, scp.length + 1).filter(i -> i != k).toArray());
 			return count(scp, values, Condition.buildFrom(EQ, aux));
 		}
-
 		if (op == EQ) {
 			if (l == list.length)
-				return forall(range(list.length), i -> intension(XNodeParent.in(list[i], api.set(values))));
+				return forall(range(list.length), i -> intension(in(list[i], set(values))));
 			return post(new Among(this, list, values, l));
 		}
-
-		return unimplemented("count");
+		return null; // so as to handle it differently after the call
 	}
 
 	@Override
 	public final CtrEntity count(Var[] list, int[] values, Condition condition) {
-		control(list.length > 0, "A constraint Count is posted with a scope with no variable");
+		VariableInteger[] scp = Stream.of(list).filter(x -> x != null && ((Variable) x).dom.overlapWith(values)).toArray(VariableInteger[]::new);
+		control(scp.length > 0, "A constraint Count is posted with an empty scope");
 		if (condition instanceof ConditionRel) {
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Object rightTerm = condition.rightTerm();
-			VariableInteger[] scp = (VariableInteger[]) translate(clean(list));
-			if (condition instanceof ConditionVal)
-				return count(scp, values, op, (long) rightTerm);
-			assert condition instanceof ConditionVar;
-			if (values.length == 1 && op == EQ) {
-				int value = values[0];
-				scp = Stream.of(scp).filter(x -> x.dom.containsValue(value)).toArray(VariableInteger[]::new);
-				return post(new ExactlyVarK(this, scp, value, (Variable) rightTerm));
+			if (condition instanceof ConditionVal) {
+				CtrEntity ce = count(scp, values, op, (long) rightTerm);
+				if (ce != null)
+					return ce;
+			} else if (op == EQ) {
+				if (values.length == 1)
+					return post(new ExactlyVarK(this, scp, values[0], (Variable) rightTerm));
+				return sum(Stream.of(scp).map(x -> in(x, set(values))), condition);
 			}
 		}
-		return unimplemented("count");
+		return count(scp, values, simplifyComplexCondition(condition, range(scp.length + 1)));
 	}
 
 	public final CtrEntity count(XNode<IVar>[] trees, int[] values, Condition condition) {
-		if (trees.length == 1)
-			return count(new Var[] { (Var) replaceByVariable(trees[0]) }, values, condition);
 		return count(replaceByVariables(trees), values, condition);
 	}
 
 	@Override
 	public final CtrEntity count(Var[] list, Var[] values, Condition condition) {
-		control(list.length > 0, "A constraint Count is posted with a scope without any variable");
-		if (values.length == 1) {
-			// if (list.length ==1)
-			// return
-			return sum(Stream.of(list).map(x -> eq(x, values[0])), null, condition);
-		}
-		return unimplemented("count");
+		control(list.length > 0, "A constraint Count is posted with an empty scope");
+		// TODO should we handle the case 'list.length == 1' differently ?
+		Variable[] vals = translate(clean(values));
+		control(vals.length > 0, "A constraint Count is posted with no value");
+		if (vals.length == 1)
+			return sum(Stream.of(list).map(x -> eq(x, vals[0])), condition);
+		return sum(Stream.of(list).map(x -> in(x, set((Object[]) vals))), condition);
+	}
+
+	public final CtrEntity count(XNode<IVar>[] trees, Var[] values, Condition condition) {
+		return count(replaceByVariables(trees), values, condition);
 	}
 
 	// ************************************************************************
@@ -1800,25 +1825,25 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public CtrEntity nValues(Var[] list, Condition condition) {
+		Variable[] scp = translate(clean(list));
 		if (condition instanceof ConditionRel) {
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Object rightTerm = condition.rightTerm();
-			Variable[] scp = translate(clean(list));
 			Constraint c = condition instanceof ConditionVal ? NValuesCst.buildFrom(this, scp, op, (long) rightTerm)
 					: NValuesVar.buildFrom(this, scp, op, (Variable) rightTerm);
 			if (c != null)
 				return post(c);
 		}
-		return unimplemented("nValues");
+		return nValues((Var[]) scp, simplifyComplexCondition(condition, range(scp.length + 1)));
+	}
+
+	public CtrEntity nValues(XNode<IVar>[] trees, Condition condition) {
+		return nValues(replaceByVariables(trees), condition);
 	}
 
 	@Override
 	public CtrEntity nValues(Var[] list, Condition condition, int[] exceptValues) {
 		return unimplemented("nValues");
-	}
-
-	public CtrEntity nValues(XNode<IVar>[] trees, Condition condition) {
-		return nValues(replaceByVariables(trees), condition);
 	}
 
 	// ************************************************************************
@@ -1888,40 +1913,42 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	// ************************************************************************
-	// ***** Constraint minimum/ maximum
+	// ***** Constraint minimum/maximum
 	// ************************************************************************
 
 	private final CtrEntity extremum(Var[] list, Condition condition, boolean minimum) {
+		Variable[] scp = translate(clean(list));
 		if (condition instanceof ConditionRel) {
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Object rightTerm = condition.rightTerm();
-			Variable[] vars = translate(clean(list));
 			Constraint c = null;
 			if (condition instanceof ConditionVal) {
-				if (vars.length == 1)
-					return intension(build(op.toExpr(), vars[0], (long) rightTerm));
-				c = ExtremumCst.buildFrom(this, vars, op, (long) rightTerm, minimum);
+				if (scp.length == 1)
+					return intension(build(op.toExpr(), scp[0], (long) rightTerm));
+				c = ExtremumCst.buildFrom(this, scp, op, (long) rightTerm, minimum);
 			} else if (op == EQ) {
 				Variable y = (Variable) rightTerm;
-				if (vars.length == 1)
-					return equal(vars[0], y);
-				if (Stream.of(vars).anyMatch(x -> x == y))
-					return forall(range(vars.length), i -> {
-						if (y != vars[i])
+				if (scp.length == 1)
+					return equal(scp[0], y);
+				if (Stream.of(scp).anyMatch(x -> x == y))
+					return forall(range(scp.length), i -> {
+						if (y != scp[i])
 							if (minimum)
-								lessEqual(y, vars[i]);
+								lessEqual(y, scp[i]);
 							else
-								greaterEqual(y, vars[i]);
+								greaterEqual(y, scp[i]);
 					});
 				if (head.control.global.hybrid)
-					c = minimum ? CHybrid.minimum(this, vars, y) : CHybrid.maximum(this, vars, y);
+					c = minimum ? CHybrid.minimum(this, scp, y) : CHybrid.maximum(this, scp, y);
 				else
-					c = minimum ? new Minimum(this, vars, y) : new Maximum(this, vars, y);
+					c = minimum ? new Minimum(this, scp, y) : new Maximum(this, scp, y);
 			}
 			if (c != null)
 				return post(c);
 		}
-		return unimplemented(minimum ? "minimum" : "maximum");
+		int lb = Utilities.safeInt(minimum ? MinimumCst.minFirstInitialValues(scp) : MaximumCst.maxFirstInitialValues(scp));
+		int ub = Utilities.safeInt(minimum ? MinimumCst.minLastInitialValues(scp) : MaximumCst.maxLastInitialValues(scp));
+		return extremum((Var[]) scp, simplifyComplexCondition(condition, new Range(lb, ub + 1)), minimum);
 	}
 
 	private final CtrEntity extremum(Var[] list, int startIndex, Var index, TypeRank rank, Condition condition, boolean minimum) {

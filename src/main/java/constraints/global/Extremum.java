@@ -309,14 +309,14 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 
 		public static abstract class MaximumCst extends ExtremumCst {
 
-			static long maxFirstInitialValues(Variable[] scp) {
+			public static long maxFirstInitialValues(Variable[] scp) {
 				long max = Long.MIN_VALUE;
 				for (Variable x : scp)
 					max = Math.max(max, x.dom.smallestInitialValue());
 				return max;
 			}
 
-			static long maxLastInitialValues(Variable[] scp) {
+			public static long maxLastInitialValues(Variable[] scp) {
 				long max = Long.MIN_VALUE;
 				for (Variable x : scp)
 					max = Math.max(max, x.dom.greatestInitialValue());
@@ -500,14 +500,14 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 
 		public static abstract class MinimumCst extends ExtremumCst {
 
-			static long minFirstInitialValues(Variable[] scp) {
+			public static long minFirstInitialValues(Variable[] scp) {
 				long min = Long.MAX_VALUE;
 				for (Variable x : scp)
 					min = Math.min(min, x.dom.smallestInitialValue());
 				return min;
 			}
 
-			static long minLastInitialValues(Variable[] scp) {
+			public static long minLastInitialValues(Variable[] scp) {
 				long min = Long.MAX_VALUE;
 				for (Variable x : scp)
 					min = Math.min(min, x.dom.greatestInitialValue());

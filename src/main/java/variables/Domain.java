@@ -460,6 +460,40 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
+	 * Returns a value present in both this domain and the specified list of integers. There is no guarantee about the
+	 * returned value (for example, it may not be the first possible one of the domain). If no common value is present,
+	 * Integer.MAX_VALUE is returned.
+	 * 
+	 * @param values
+	 *            a list of integers
+	 * @return a value present in both the domain and the specified list of integers, or Integer.MAX_VALUE
+	 */
+	default int commonValueWith(int[] values) {
+		if (size() <= values.length)
+			for (int a = first(); a != -1; a = next(a)) {
+				int v = toVal(a);
+				if (Kit.isPresent(v, values))
+					return v;
+			}
+		else
+			for (int v : values)
+				if (containsValue(v))
+					return v;
+		return Integer.MAX_VALUE;
+	}
+
+	/**
+	 * Returns true if the domain and the specified list contain a common value
+	 * 
+	 * @param values
+	 *            a list of integers
+	 * @return true if the domain and the specified list contain a common value
+	 */
+	default boolean overlapWith(int[] values) {
+		return commonValueWith(values) != Integer.MAX_VALUE;
+	}
+
+	/**
 	 * Returns true if the (current) domain is a subset of the (current) specified one
 	 * 
 	 * @param dom

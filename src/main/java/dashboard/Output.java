@@ -145,38 +145,38 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	public static final String NUMBER = "number";
 	public static final String NAME = "name";
-	public static final String N_TYPES = "nTypes";
-	public static final String N_VALUES = "nValues";
-	public static final String N_DELETED = "nDeleted";
+	public static final String N_TYPES = "types";
+	public static final String N_VALUES = "values";
+	public static final String N_DELETED = "deleted";
 	public static final String COUNT = "count";
-	public static final String N_DISCARDED = "nDiscarded";
-	public static final String N_ISOLATED = "nIsolated";
-	public static final String N_FIXED = "nFixed";
-	public static final String N_SYMBOLIC = "nSymbolic";
-	public static final String N_AUXILIARY = "nAuxiliary";
+	public static final String N_DISCARDED = "discarded";
+	public static final String N_ISOLATED = "isolated";
+	public static final String N_FIXED = "fixed";
+	public static final String N_SYMBOLIC = "symbolic";
+	public static final String N_AUXILIARY = "auxiliary";
 	public static final String DEGREES = "degrees";
 
-	public static final String N_ARRAYS = "nArrays";
+	public static final String N_ARRAYS = "arrays";
 	public static final String PRIORITY_ARRAYS = "priorityArrays";
-	public static final String N_REMOVED1 = "nRemoved1";
-	public static final String N_CONVERTED = "nConverted";
-	public static final String N_SPECIFIC = "nSpecific";
-	public static final String N_MERGED = "nMerged";
-	public static final String N_ADDED = "nAdded";
-	public static final String N_GROUPS = "nGroups";
+	public static final String N_REMOVED1 = "removed1";
+	public static final String N_CONVERTED = "converted";
+	public static final String N_SPECIFIC = "specific";
+	public static final String N_MERGED = "merged";
+	public static final String N_ADDED = "added";
+	public static final String N_GROUPS = "groups";
 	public static final String IGNORED_GROUPS = "ignoredGroups";
-	public static final String N_GENERATORS = "nGenerators";
-	public static final String N_CLIQUES = "nCliques";
+	public static final String N_GENERATORS = "generators";
+	public static final String N_CLIQUES = "cliques";
 	public static final String ARITIES = "arities";
 	public static final String DISTRIBUTION = "distribution";
 	public static final String SIZES = "sizes";
 	public static final String TYPES = "types";
 	public static final String TABLES = "tables";
-	public static final String N_TUPLES = "nTuples";
+	public static final String N_TUPLES = "tuples";
 
-	public static final String N_EXT_STRUCTURES = "nExtStructures";
-	public static final String N_INT_STRUCTURES = "nIntStructures";
-	public static final String N_CFT_STRUCTURES = "nCftStructures";
+	public static final String N_EXT_STRUCTURES = "extStructures";
+	public static final String N_INT_STRUCTURES = "intStructures";
+	public static final String N_CFT_STRUCTURES = "cftStructures";
 	public static final String SHARED = "shared";
 	public static final String UNBUILT = "unbuilt";
 	public static final String SHARED_BITS = "sharedBits";
@@ -194,14 +194,14 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String N_NOGOODS = "ngds";
 	public static final String REVISIONS = "revisions";
 	public static final String GUARANTEED_AC = "guaranteedAC";
-	public static final String N_REMOVED_TUPLES = "nRemovedTuples";
-	public static final String N_ADDED_CTRS = "nAddedCtrs";
+	public static final String N_REMOVED_TUPLES = "removedTuples";
+	public static final String N_ADDED_CTRS = "addedCtrs";
 	public static final String REMOVED_BY_AC = "removedByAC";
 	public static final String UNSAT = "unsat";
 
-	public static final String N_SINGLETON_TESTS = "nSingTests";
-	public static final String N_EFFECTIVE_SINGLETON_TESTS = "nEffSingTests";
-	public static final String N_BRANCHES = "nBranches";
+	public static final String N_SINGLETON_TESTS = "singTests";
+	public static final String N_EFFECTIVE_SINGLETON_TESTS = "effSingTests";
+	public static final String N_BRANCHES = "branches";
 	public static final String SUM_BRANCHES = "sumBranches";
 
 	public static final String INSTANTIATION = "instantiation";
@@ -219,10 +219,10 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String CPU = "cpu";
 	public static final String MEM = "mem";
 	public static final String STOP = "stop";
-	public static final String N_NODES = "nNodes";
+	public static final String N_NODES = "nodes";
 
 	public static final String MAP_SIZE = "mapSize";
-	public static final String N_INFERENCES = "nInferences";
+	public static final String N_INFERENCES = "inferences";
 	public static final String N_TOO_LARGE_KEYS = "nTooLargeKeys";
 	public static final String N_SELIMINABLES = "nSEliminables";
 	public static final String N_RELIMINABLES = "nREliminables";
