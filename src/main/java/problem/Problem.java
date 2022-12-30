@@ -2363,7 +2363,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	// ************************************************************************
-	// ***** Constraints Cumulative and BinPacking
+	// ***** Constraint Cumulative
 	// ************************************************************************
 
 	@Override
@@ -2443,6 +2443,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return unimplemented("cumulative");
 	}
 
+	// ************************************************************************
+	// ***** Constraint BinPacking
+	// ************************************************************************
+
 	public final CtrEntity binpacking(Var[] list, int[] sizes, Condition condition) {
 		control(list.length > 2 && list.length == sizes.length);
 		Variable[] vars = translate(list);
@@ -2507,6 +2511,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 		return unimplemented("binPacking");
 	}
+
+	// ************************************************************************
+	// ***** Constraints Knapsack and Flow
+	// ************************************************************************
 
 	public final CtrEntity knapsack(Var[] list, int[] weights, Condition wcondition, int[] profits, Condition pcondition) {
 		// for the moment, no dedicated propagator (just decomposition)

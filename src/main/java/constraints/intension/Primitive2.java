@@ -950,10 +950,10 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				public Mod2EQ(Problem pb, Variable x, Variable y, int k) {
 					super(pb, x, y, k);
 					buildResiduesForBothVariables();
-					dx.removeValuesAtConstructionTime(v -> v < k); // because the remainder is at most k-1, whatever the
-																	// value of y
-					dy.removeValuesAtConstructionTime(v -> v <= k); // because the remainder is at most k-1, whatever
-																	// the value for x
+					dx.removeValuesAtConstructionTime(v -> v < k);
+					// above, because the remainder is at most k-1, whatever the value of y
+					dy.removeValuesAtConstructionTime(v -> v <= k);
+					// above, because the remainder is at most k-1, whatever the value for x
 					// note that k for x is always supported, whatever the remaining value in y
 				}
 
@@ -980,7 +980,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 								assert va / vb == 1;
 								if (va - k <= vb || dy.containsValue(va - k) == false)
 									break;
-								rx[a] = dy.toVal(va - k);
+								rx[a] = dy.toIdx(va - k);
 								continue extern;
 							}
 						}
