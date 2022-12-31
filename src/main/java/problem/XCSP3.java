@@ -470,6 +470,11 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	@Override
+	public void buildCtrLex(String id, XVarInteger[] list, int[] limit, TypeOperatorRel operator) {
+		problem.lex(trVars(list), limit, operator);
+	}
+
+	@Override
 	public void buildCtrLex(String id, XVarInteger[][] lists, TypeOperatorRel operator) {
 		problem.lex(trVars2D(lists), operator);
 	}

@@ -1455,6 +1455,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				i -> post(Add3.buildFrom(this, (Variable) list[i], (Variable) lengths[i], op.toConditionOperator(), (Variable) list[i + 1])));
 	}
 
+	public final CtrEntity lex(Var[] list, int[] limit, TypeOperatorRel op) {
+		return post(Lexicographic.buildFrom(this, translate(list), limit, op));
+	}
+
 	/**
 	 * Builds and returns a Lexicographic constraint. The tuple of values corresponding to the assignment of the
 	 * variables in the array specified as first parameter must be before the tuple of values corresponding to the
@@ -1994,6 +1998,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final CtrEntity maximum(XNode<IVar>[] trees, Condition condition) {
 		return maximum(replaceByVariables(trees), condition);
 	}
+
+	// ************************************************************************
+	// ***** Constraint minimumArg/maximumArg
+	// ************************************************************************
 
 	final CtrEntity maximumArg(Var[] list, TypeRank rank, Condition condition) {
 		unimplementedIf(!(condition instanceof ConditionVar && (((ConditionVar) condition).operator) == EQ), "maximumArg");
