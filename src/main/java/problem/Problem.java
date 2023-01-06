@@ -1867,11 +1867,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// (long) occurs[i], true)).sum(), true);
 		control(values.length == occurs.length);
 		Variable[] scp = translate(clean(list));
-		if (mustBeClosed) {
+		boolean closed = Stream.of(list).allMatch(x -> ((Variable) x).dom.enclose(values));
+		if (!closed && mustBeClosed) {
 			// sum(list, Kit.repeat(1, list.length), Condition.buildFrom(EQ, limit));
 			postClosed(scp, values);
+			closed = true;
 		}
 		// else sum(list, Kit.repeat(1, list.length), Condition.buildFrom(GE, limit));
+		if (closed && IntStream.of(occurs).allMatch(v -> v == 1))
+			return allDifferent(list);
 		return post(new Cardinality(this, scp, values, occurs));
 	}
 
@@ -2480,7 +2484,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		TypeConditionOperatorRel op = loads ? EQ : LE;
 		Variable[] vars = translate(list);
 		boolean sameType = Variable.haveSameDomainType(vars);
-		if (loads | !sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
+		if (loads || !sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
 			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).sorted().toArray();
 			control(0 <= bins[0] && bins[bins.length - 1] < capacities.length);
 			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, Condition.buildFrom(op, capacities[bins[i]])));
@@ -2493,7 +2497,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		TypeConditionOperatorRel op = loads ? EQ : LE;
 		Variable[] vars = translate(list);
 		boolean sameType = Variable.haveSameDomainType(vars);
-		if (!loads | !sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
+		if (!loads || !sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
 			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).sorted().toArray();
 			control(0 <= bins[0] && bins[bins.length - 1] < capacities.length);
 			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, Condition.buildFrom(op, capacities[bins[i]])));

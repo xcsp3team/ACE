@@ -531,6 +531,23 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
+	 * Returns true if each value from the specified list belongs to the (current) domain
+	 * 
+	 * @param values
+	 *            a list of values
+	 * @return true if each value from the specified list belongs to the (current) domain
+	 */
+	default boolean enclose(int[] values) {
+		assert IntStream.range(0, values.length).allMatch(i -> IntStream.range(i + 1, values.length).noneMatch(j -> values[i] == values[j]));
+		if (size() < values.length)
+			return false;
+		for (int v : values)
+			if (!containsValue(v))
+				return false;
+		return true;
+	}
+
+	/**
 	 * Returns an array containing all values evaluated as true by the specified predicate.
 	 * 
 	 * @param p

@@ -430,7 +430,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 				if (loads[i].dom.size() == 1) {
 					int load = loads[i].dom.singleValue();
 					int possibleExtent = 0;
-					int minSize = 0;
+					int minSize = Integer.MAX_VALUE;
 					for (int k = freeItems.limit; k >= 0; k--) {
 						int j = freeItems.dense[k];
 						if (scp[j].dom.containsValue(i)) {
