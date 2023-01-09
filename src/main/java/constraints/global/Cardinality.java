@@ -85,7 +85,7 @@ public final class Cardinality extends ConstraintGlobal
 	 */
 	public Cardinality(Problem pb, Variable[] scp, int[] values, int[] minOccs, int[] maxOccs) {
 		super(pb, scp);
-		control(values.length == minOccs.length && values.length == maxOccs.length);
+		control(scp.length > 1 && values.length == minOccs.length && values.length == maxOccs.length);
 		this.values = values;
 		this.minOccs = minOccs;
 		this.maxOccs = maxOccs;

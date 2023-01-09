@@ -157,11 +157,9 @@ public final class TableHybrid extends ExtensionStructure {
 				return true;
 			}
 			Object[] values = ((AbstractTuple.HybridTuple) abstractTuple).values;
-			for (int i = 0; i < values.length; i++) {
-				Object value = values[i];
-				if (value instanceof Integer && (Integer) value != STAR && ((Variable) scp[i]).dom.toIdx((Integer) value) == -1)
+			for (int i = 0; i < values.length; i++)
+				if (values[i] instanceof Integer && (Integer) values[i] != STAR && ((Variable) scp[i]).dom.toIdx((Integer) values[i]) == -1)
 					return false;
-			}
 			return true;
 		}
 
@@ -171,14 +169,11 @@ public final class TableHybrid extends ExtensionStructure {
 			Object[] values = ((AbstractTuple.HybridTuple) abstractTuple).values;
 			int[] tuple = Kit.repeat(STAR, values.length);
 			List<XNodeParent<? extends IVar>> restrictions = new ArrayList<>();
-			for (int i = 0; i < values.length; i++) {
-				Object value = values[i];
-				if (value instanceof Integer)
-					tuple[i] = (Integer) value;
-				else {
-					restrictions.add(Condition.toNode(scp[i], ((Condition) value)));
-				}
-			}
+			for (int i = 0; i < values.length; i++)
+				if (values[i] instanceof Integer)
+					tuple[i] = (Integer) values[i];
+				else
+					restrictions.add(Condition.toNode(scp[i], ((Condition) values[i])));
 			return new HybridTuple(tuple, restrictions);
 		}
 
@@ -357,8 +352,8 @@ public final class TableHybrid extends ExtensionStructure {
 						int v = Utilities.safeInt(((long) ((XNodeLeaf<?>) son1).value));
 						if (op == EQ) {
 							control(tuple[x] == STAR && scp[x].dom.containsValue(v));
-							tuple[x] = scp[x].dom.toIdx(v); // for a constant, we directly put it in tuple (no need to
-															// build a Restriction object)
+							// for a constant, we directly put it in tuple (no need to build a Restriction object)
+							tuple[x] = scp[x].dom.toIdx(v);
 						} else {
 							Restriction1Rel res = buildRestriction1From(x, op, v);
 							if (res.pivot == -1 || res.pivot == Integer.MAX_VALUE) {
@@ -618,8 +613,7 @@ public final class TableHybrid extends ExtensionStructure {
 				this.op = op;
 				this.pivot = pivot;
 				// control(pivot != -1 && pivot != Integer.MAX_VALUE,
-				// () -> "useless restriction if the pivot cannot be computed (and correspond to an index of value) : "
-				// + this);
+				// () -> "useless restriction if the pivot cannot be computed (and correspond to an index of value)");
 			}
 
 			@Override

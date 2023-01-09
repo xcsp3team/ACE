@@ -1865,9 +1865,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, int[] occurs) {
 		// int limit = Utilities.safeInt(IntStream.range(0, values.length).mapToLong(i -> Utilities.safeInt(values[i] *
 		// (long) occurs[i], true)).sum(), true);
-		control(values.length == occurs.length);
+		control(values.length == occurs.length && IntStream.of(occurs).allMatch(v -> v > 0));
 		Variable[] scp = translate(clean(list));
-		boolean closed = Stream.of(list).allMatch(x -> ((Variable) x).dom.enclose(values));
+		if (scp.length == 1) {
+			control(values.length == 1 && occurs[0] == 1);
+			return equal(scp[0], values[0]);
+		}
+		boolean closed = Stream.of(scp).allMatch(x -> x.dom.enclosedIn(values));
 		if (!closed && mustBeClosed) {
 			// sum(list, Kit.repeat(1, list.length), Condition.buildFrom(EQ, limit));
 			postClosed(scp, values);
@@ -1875,14 +1879,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 		// else sum(list, Kit.repeat(1, list.length), Condition.buildFrom(GE, limit));
 		if (closed && IntStream.of(occurs).allMatch(v -> v == 1))
-			return allDifferent(list);
+			return allDifferent(scp);
 		return post(new Cardinality(this, scp, values, occurs));
 	}
 
 	@Override
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, int[] occursMin, int[] occursMax) {
-		control(values.length == occursMin.length && values.length == occursMax.length);
+		control(values.length == occursMin.length && values.length == occursMax.length
+				&& IntStream.range(0, occursMin.length).allMatch(i -> 0 <= occursMin[i] && 0 < occursMax[i] && occursMin[i] <= occursMax[i]));
 		Variable[] scp = translate(clean(list));
+		if (scp.length == 1) {
+			control(values.length == 1 && occursMin[0] <= 1 && 1 <= occursMax[0]);
+			return equal(scp[0], values[0]);
+		}
 		if (mustBeClosed)
 			postClosed(scp, values);
 		return post(new Cardinality(this, scp, values, occursMin, occursMax));
@@ -1892,6 +1901,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, Var[] occurs) {
 		control(values.length == occurs.length && Stream.of(occurs).noneMatch(x -> x == null));
 		Variable[] scp = translate(clean(list));
+		// TODO what to do if scp.length ==1 ?
 		if (mustBeClosed)
 			postClosed(scp, values);
 		// TODO should we filer variables of scp not involving values[i]?
