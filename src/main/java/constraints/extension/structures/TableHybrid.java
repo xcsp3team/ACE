@@ -938,6 +938,10 @@ public final class TableHybrid extends ExtensionStructure {
 			 */
 			protected SetSparse nacy;
 
+			protected int nSupportlessValues() {
+				return nacx.size() + nacy.size();
+			}
+
 			protected Restriction2(int x, TypeConditionOperatorRel op, int y) {
 				super(x);
 				this.op = op;
@@ -988,17 +992,17 @@ public final class TableHybrid extends ExtensionStructure {
 			}
 
 			private void collectThroughInvalidValues() {
-				int first1 = domx.first(), last2 = domy.last();
+				int firstx = domx.first(), lasty = domy.last();
 				if (!scp[x].assigned()) {
 					tmp.clear();
-					for (int a = domx.last(); a != -1 && (strict ? a >= last2 : a > last2); a = domx.prev(a))
+					for (int a = domx.last(); a != -1 && (strict ? a >= lasty : a > lasty); a = domx.prev(a))
 						if (nacx.contains(a))
 							tmp.add(a);
 					nacx.resetTo(tmp);
 				}
 				if (!scp[y].assigned()) {
 					tmp.clear();
-					for (int a = domy.first(); a != -1 && (strict ? first1 >= a : first1 > a); a = domy.next(a))
+					for (int a = domy.first(); a != -1 && (strict ? firstx >= a : firstx > a); a = domy.next(a))
 						if (nacy.contains(a))
 							tmp.add(a);
 					nacy.resetTo(tmp);
@@ -1006,41 +1010,39 @@ public final class TableHybrid extends ExtensionStructure {
 			}
 
 			private void collectThroughSupportlessSets() {
-				int first1 = domx.first(), last2 = domy.last();
+				int firstx = domx.first(), lasty = domy.last();
 				if (!scp[x].assigned())
 					for (int i = nacx.limit; i >= 0; i--) {
 						int a = nacx.dense[i];
-						if (strict ? a < last2 : a <= last2)
+						if (strict ? a < lasty : a <= lasty)
 							nacx.remove(a);
 					}
 				if (!scp[y].assigned())
 					for (int i = nacy.limit; i >= 0; i--) {
 						int a = nacy.dense[i];
-						if (strict ? first1 < a : first1 <= a)
+						if (strict ? firstx < a : firstx <= a)
 							nacy.remove(a);
 					}
 			}
 
 			private void collectThroughValidValues() {
-				int first1 = domx.first(), last2 = domy.last();
+				int firstx = domx.first(), lasty = domy.last();
 				if (!scp[x].assigned())
-					for (int a = domx.first(); a != -1 && (strict ? a < last2 : a <= last2); a = domx.next(a))
+					for (int a = domx.first(); a != -1 && (strict ? a < lasty : a <= lasty); a = domx.next(a))
 						nacx.remove(a);
 				if (!scp[y].assigned())
-					for (int a = domy.last(); a != -1 && (strict ? first1 < a : first1 <= a); a = domy.prev(a))
+					for (int a = domy.last(); a != -1 && (strict ? firstx < a : firstx <= a); a = domy.prev(a))
 						nacy.remove(a);
 			}
 
 			@Override
 			public void collect() {
-				// three parameters (rough approximations of the true numbers) for choosing the cheapest way of
-				// collecting
+				// 2(+1) parameters (approximations of the true numbers) for choosing the cheapest way of collecting
 				int nInvalid = Math.max(domx.first() - domy.first(), 0) + Math.max(domx.last() - domy.last(), 0);
-				int nSupportlessValues = nacx.size() + nacy.size();
 				int nValid = Math.min(domx.last(), domy.last()) - domx.first() + domy.last() - Math.max(domx.first(), domy.first());
-				if (nInvalid < nSupportlessValues && nInvalid < nValid)
+				if (nInvalid < nSupportlessValues() && nInvalid < nValid)
 					collectThroughInvalidValues();
-				else if (nSupportlessValues < nValid)
+				else if (nSupportlessValues() < nValid)
 					collectThroughSupportlessSets();
 				else
 					collectThroughValidValues();
@@ -1049,8 +1051,8 @@ public final class TableHybrid extends ExtensionStructure {
 			@Override
 			public void collectForY() {
 				if (!scp[y].assigned()) {
-					int first1 = tmp.first();
-					for (int a = domy.last(); a != -1 && (strict ? first1 < a : first1 <= a); a = domy.prev(a))
+					int first = tmp.first();
+					for (int a = domy.last(); a != -1 && (strict ? first < a : first <= a); a = domy.prev(a))
 						nacy.remove(a);
 				}
 			}
@@ -1084,17 +1086,17 @@ public final class TableHybrid extends ExtensionStructure {
 			}
 
 			private void collectThroughInvalidValues() {
-				int last1 = domx.last(), first2 = domy.first();
+				int lastx = domx.last(), firsty = domy.first();
 				if (!scp[x].assigned()) {
 					tmp.clear();
-					for (int a = domx.first(); a != -1 && (strict ? a <= first2 : a < first2); a = domx.next(a))
+					for (int a = domx.first(); a != -1 && (strict ? a <= firsty : a < firsty); a = domx.next(a))
 						if (nacx.contains(a))
 							tmp.add(a);
 					nacx.resetTo(tmp);
 				}
 				if (!scp[y].assigned()) {
 					tmp.clear();
-					for (int a = domy.last(); a != -1 && (strict ? a >= last1 : a > last1); a = domy.prev(a))
+					for (int a = domy.last(); a != -1 && (strict ? a >= lastx : a > lastx); a = domy.prev(a))
 						if (nacy.contains(a))
 							tmp.add(a);
 					nacy.resetTo(tmp);
@@ -1102,40 +1104,39 @@ public final class TableHybrid extends ExtensionStructure {
 			}
 
 			private void collectThroughSupportlessSets() {
-				int last1 = domx.last(), first2 = domy.first();
+				int lastx = domx.last(), firsty = domy.first();
 				if (!scp[x].assigned())
 					for (int i = nacx.limit; i >= 0; i--) {
 						int a = nacx.dense[i];
-						if (strict ? a > first2 : a >= first2)
+						if (strict ? a > firsty : a >= firsty)
 							nacx.remove(a);
 					}
 				if (!scp[y].assigned())
 					for (int i = nacy.limit; i >= 0; i--) {
 						int a = nacy.dense[i];
-						if (strict ? last1 > a : last1 >= a)
+						if (strict ? lastx > a : lastx >= a)
 							nacy.remove(a);
 					}
 			}
 
 			private void collectThroughValidValues() {
-				int last1 = domx.last(), first2 = domy.first();
+				int lastx = domx.last(), firsty = domy.first();
 				if (!scp[x].assigned())
-					for (int a = domx.last(); a != -1 && (strict ? a > first2 : a >= first2); a = domx.prev(a))
+					for (int a = domx.last(); a != -1 && (strict ? a > firsty : a >= firsty); a = domx.prev(a))
 						nacx.remove(a);
 				if (!scp[y].assigned())
-					for (int a = domy.first(); a != -1 && (strict ? last1 > a : last1 >= a); a = domy.next(a))
+					for (int a = domy.first(); a != -1 && (strict ? lastx > a : lastx >= a); a = domy.next(a))
 						nacy.remove(a);
 			}
 
 			@Override
 			public void collect() {
-				// three parameters for choosing the cheapest way of collecting
-				int roughNbInvalidValues = Math.max(domy.first() - domx.first(), 0) + Math.max(domy.last() - domx.last(), 0);
-				int nbSupportlessValues = nacx.size() + nacy.size();
-				int roughNbValidValues = Math.min(domx.last(), domy.last()) - domy.first() + domx.last() - Math.max(domx.first(), domy.first());
-				if (roughNbInvalidValues < nbSupportlessValues && roughNbInvalidValues < roughNbValidValues)
+				// 2(+1) parameters (approximations of the true numbers) for choosing the cheapest way of collecting
+				int nInvalid = Math.max(domy.first() - domx.first(), 0) + Math.max(domy.last() - domx.last(), 0);
+				int nValid = Math.min(domx.last(), domy.last()) - domy.first() + domx.last() - Math.max(domx.first(), domy.first());
+				if (nInvalid < nSupportlessValues() && nInvalid < nValid)
 					collectThroughInvalidValues();
-				else if (nbSupportlessValues < roughNbValidValues)
+				else if (nSupportlessValues() < nValid)
 					collectThroughSupportlessSets();
 				else
 					collectThroughValidValues();
@@ -1144,8 +1145,8 @@ public final class TableHybrid extends ExtensionStructure {
 			@Override
 			public void collectForY() {
 				if (!scp[y].assigned()) {
-					int last1 = tmp.last();
-					for (int a = domy.first(); a != -1 && (strict ? last1 > a : last1 >= a); a = domy.next(a))
+					int last = tmp.last();
+					for (int a = domy.first(); a != -1 && (strict ? last > a : last >= a); a = domy.next(a))
 						nacy.remove(a);
 				}
 			}
@@ -1218,6 +1219,7 @@ public final class TableHybrid extends ExtensionStructure {
 
 			protected Rstr2EQ(int x, int y) {
 				super(x, EQ, y);
+				control(domx.typeIdentifier() == domy.typeIdentifier());
 			}
 
 			@Override
@@ -1231,9 +1233,9 @@ public final class TableHybrid extends ExtensionStructure {
 				if (domx.contains(residue) && domy.contains(residue))
 					return true;
 				newResidue = true;
-				Domain domSmall = domx.size() < domy.size() ? domx : domy, domBig = domSmall == domx ? domy : domx;
-				for (int a = domSmall.first(); a != -1; a = domSmall.next(a))
-					if (domBig.contains(a)) {
+				Domain small = domx.size() < domy.size() ? domx : domy, large = small == domx ? domy : domx;
+				for (int a = small.first(); a != -1; a = small.next(a))
+					if (large.contains(a)) {
 						residue = a;
 						return true;
 					}
@@ -1258,20 +1260,20 @@ public final class TableHybrid extends ExtensionStructure {
 			}
 
 			private void collectThroughSmallestDomain() {
-				Domain domSmall = domx.size() < domy.size() ? domx : domy, domBig = domSmall == domx ? domy : domx;
-				int start = valTimeLocal == valTime && newResidue ? residue : domSmall.first();
+				Domain small = domx.size() < domy.size() ? domx : domy, large = small == domx ? domy : domx;
+				int start = valTimeLocal == valTime && newResidue ? residue : small.first();
 				// above, are we sure that the smallest domain is the same (no removal between? it seems so)
 				if (scp[x].assigned() || scp[y].assigned()) {
-					assert domSmall.single() == start;
-					if (domBig.contains(start)) {
+					assert small.single() == start;
+					if (large.contains(start)) {
 						if (!scp[x].assigned())
 							nacx.remove(start);
 						if (!scp[y].assigned())
 							nacy.remove(start);
 					}
 				} else {
-					for (int a = start; a != -1; a = domSmall.next(a))
-						if (domBig.contains(a)) {
+					for (int a = start; a != -1; a = small.next(a))
+						if (large.contains(a)) {
 							nacx.remove(a);
 							nacy.remove(a);
 						}
@@ -1296,12 +1298,11 @@ public final class TableHybrid extends ExtensionStructure {
 			@Override
 			public void collect() {
 				// three parameters for choosing the cheapest way of collecting
-				int nbRemovedValues = domx.nRemoved() + domy.nRemoved();
-				int nbSupportlessValues = nacx.size() + nacy.size();
+				int nRemoved = domx.nRemoved() + domy.nRemoved();
 				int minDomainSize = Math.min(domx.size(), domy.size());
-				if (nbRemovedValues < nbSupportlessValues && nbRemovedValues < minDomainSize)
+				if (nRemoved < nSupportlessValues() && nRemoved < minDomainSize)
 					collectThroughRemovedValues();
-				else if (nbSupportlessValues < minDomainSize)
+				else if (nSupportlessValues() < minDomainSize)
 					collectThroughSupportlessSets();
 				else
 					collectThroughSmallestDomain();
@@ -1323,7 +1324,6 @@ public final class TableHybrid extends ExtensionStructure {
 			}
 
 			private int valResidue;
-			boolean newResidue;
 
 			protected Rstr2EQVal(int x, int y) {
 				super(x, EQ, y);
@@ -1336,14 +1336,12 @@ public final class TableHybrid extends ExtensionStructure {
 
 			@Override
 			public boolean isValid() {
-				newResidue = false;
 				if (domx.containsValue(valResidue) && domy.containsValue(valResidue))
 					return true;
-				newResidue = true;
-				Domain domSmall = domx.size() < domy.size() ? domx : domy, domBig = domSmall == domx ? domy : domx;
-				for (int a = domSmall.first(); a != -1; a = domSmall.next(a)) {
-					int v = domSmall.toVal(a);
-					if (domBig.containsValue(v)) {
+				Domain small = domx.size() < domy.size() ? domx : domy, large = small == domx ? domy : domx;
+				for (int a = small.first(); a != -1; a = small.next(a)) {
+					int v = small.toVal(a);
+					if (large.containsValue(v)) {
 						valResidue = v;
 						return true;
 					}
@@ -1375,29 +1373,29 @@ public final class TableHybrid extends ExtensionStructure {
 			}
 
 			private void collectThroughSmallestDomain() {
-				Domain domSmall = domx.size() < domy.size() ? domx : domy, domBig = domSmall == domx ? domy : domx;
+				Domain small = domx.size() < domy.size() ? domx : domy, large = small == domx ? domy : domx;
 				if (!scp[x].assigned() && !scp[y].assigned()) {
-					for (int a = domSmall.first(); a != -1; a = domSmall.next(a)) {
-						int v = domSmall.toVal(a);
-						int b = domBig.toIdxIfPresent(v);
+					for (int a = small.first(); a != -1; a = small.next(a)) {
+						int v = small.toVal(a);
+						int b = large.toIdxIfPresent(v);
 						if (b != -1) {
-							nacx.remove(domSmall == domx ? a : b);
-							nacy.remove(domSmall == domx ? b : a);
+							nacx.remove(small == domx ? a : b);
+							nacy.remove(small == domx ? b : a);
 						}
 					}
 				} else if (!scp[x].assigned()) {
-					for (int a = domSmall.first(); a != -1; a = domSmall.next(a)) {
-						int v = domSmall.toVal(a);
-						int b = domBig.toIdxIfPresent(v);
+					for (int a = small.first(); a != -1; a = small.next(a)) {
+						int v = small.toVal(a);
+						int b = large.toIdxIfPresent(v);
 						if (b != -1)
-							nacx.remove(domSmall == domx ? a : b);
+							nacx.remove(small == domx ? a : b);
 					}
 				} else if (!scp[y].assigned()) {
-					for (int a = domSmall.first(); a != -1; a = domSmall.next(a)) {
-						int v = domSmall.toVal(a);
-						int b = domBig.toIdxIfPresent(v);
+					for (int a = small.first(); a != -1; a = small.next(a)) {
+						int v = small.toVal(a);
+						int b = large.toIdxIfPresent(v);
 						if (b != -1)
-							nacy.remove(domSmall == domx ? b : a);
+							nacy.remove(small == domx ? b : a);
 					}
 				}
 			}
@@ -1420,12 +1418,11 @@ public final class TableHybrid extends ExtensionStructure {
 			@Override
 			public void collect() {
 				// three parameters for choosing the cheapest way of collecting
-				int nbRemovedValues = domx.nRemoved() + domy.nRemoved();
-				int nbSupportlessValues = nacx.size() + nacy.size();
+				int nRemoved = domx.nRemoved() + domy.nRemoved();
 				int minDomainSize = Math.min(domx.size(), domy.size());
-				if (nbRemovedValues < nbSupportlessValues && nbRemovedValues < minDomainSize)
+				if (nRemoved < nSupportlessValues() && nRemoved < minDomainSize)
 					collectThroughRemovedValues();
-				else if (nbSupportlessValues < minDomainSize)
+				else if (nSupportlessValues() < minDomainSize)
 					collectThroughSupportlessSets();
 				else
 					collectThroughSmallestDomain();
