@@ -269,7 +269,7 @@ public final class TableHybrid extends ExtensionStructure {
 			case GT:
 				return new Rstr2G(x, y, true);
 			case EQ:
-				return scp[0].dom.typeIdentifier() == scp[1].dom.typeIdentifier() ? new Rstr2EQ(x, y) : new Rstr2EQVal(x, y);
+				return scp[0].dom.typeIdentifier() == scp[1].dom.typeIdentifier() ? new Rstr2EQ(x, y) : new Rstr2EQVal(x, y, 0);
 			case NE:
 				return new Rstr2NE(x, y);
 			}
@@ -277,7 +277,7 @@ public final class TableHybrid extends ExtensionStructure {
 		}
 
 		/**
-		 * Builds a binary restriction of the form x >= y + k
+		 * Builds a binary restriction of the form x <op> y + k
 		 */
 		private Restriction2 buildRestriction2From(int x, TypeConditionOperatorRel op, int y, int k) {
 			switch (op) {
@@ -285,6 +285,8 @@ public final class TableHybrid extends ExtensionStructure {
 				return new Rstr2pG(x, y, false, k);
 			case GT:
 				return new Rstr2pG(x, y, true, k);
+			case EQ:
+				return new Rstr2EQVal(x, y, k);
 			default:
 				throw new AssertionError("Currently, unimplemented operator " + op);
 			}
@@ -1316,33 +1318,40 @@ public final class TableHybrid extends ExtensionStructure {
 
 		}
 
+		/**
+		 * Restriction of the form x = y + k
+		 */
 		final class Rstr2EQVal extends Restriction2 {
 
 			@Override
 			public boolean checkIndexes(int[] t) {
-				return domx.toVal(t[x]) == domy.toVal(t[y]);
+				return domx.toVal(t[x]) == domy.toVal(t[y]) + k;
 			}
+
+			private int k;
 
 			private int valResidue;
 
-			protected Rstr2EQVal(int x, int y) {
+			protected Rstr2EQVal(int x, int y, int k) {
 				super(x, EQ, y);
+				this.k = k;
 			}
 
 			@Override
 			public boolean isValidFor(int a) {
-				return domy.toIdxIfPresent(domx.toVal(a)) != -1;
+				return domy.toIdxIfPresent(domx.toVal(a) - k) != -1;
 			}
 
 			@Override
 			public boolean isValid() {
-				if (domx.containsValue(valResidue) && domy.containsValue(valResidue))
+				if (domx.containsValue(valResidue) && domy.containsValue(valResidue - k))
 					return true;
 				Domain small = domx.size() < domy.size() ? domx : domy, large = small == domx ? domy : domx;
+				int kk = small == domx ? -k : k;
 				for (int a = small.first(); a != -1; a = small.next(a)) {
 					int v = small.toVal(a);
-					if (large.containsValue(v)) {
-						valResidue = v;
+					if (large.containsValue(v + kk)) {
+						valResidue = small == domx ? v : v + k;
 						return true;
 					}
 				}
@@ -1353,7 +1362,7 @@ public final class TableHybrid extends ExtensionStructure {
 				if (!scp[x].assigned()) {
 					tmp.clear();
 					for (int a = domy.lastRemoved(); a != -1; a = domy.prevRemoved(a)) {
-						int v = domy.toVal(a);
+						int v = domy.toVal(a) + k;
 						int b = domx.toIdxIfPresent(v);
 						if (b != -1 && nacx.contains(b))
 							tmp.add(b);
@@ -1363,7 +1372,7 @@ public final class TableHybrid extends ExtensionStructure {
 				if (!scp[y].assigned()) {
 					tmp.clear();
 					for (int a = domx.lastRemoved(); a != -1; a = domx.prevRemoved(a)) {
-						int v = domx.toVal(a);
+						int v = domx.toVal(a) - k;
 						int b = domy.toIdxIfPresent(v);
 						if (b != -1 && nacy.contains(b))
 							tmp.add(b);
@@ -1374,9 +1383,10 @@ public final class TableHybrid extends ExtensionStructure {
 
 			private void collectThroughSmallestDomain() {
 				Domain small = domx.size() < domy.size() ? domx : domy, large = small == domx ? domy : domx;
+				int kk = small == domx ? -k : k;
 				if (!scp[x].assigned() && !scp[y].assigned()) {
 					for (int a = small.first(); a != -1; a = small.next(a)) {
-						int v = small.toVal(a);
+						int v = small.toVal(a) + kk;
 						int b = large.toIdxIfPresent(v);
 						if (b != -1) {
 							nacx.remove(small == domx ? a : b);
@@ -1385,14 +1395,14 @@ public final class TableHybrid extends ExtensionStructure {
 					}
 				} else if (!scp[x].assigned()) {
 					for (int a = small.first(); a != -1; a = small.next(a)) {
-						int v = small.toVal(a);
+						int v = small.toVal(a) + kk;
 						int b = large.toIdxIfPresent(v);
 						if (b != -1)
 							nacx.remove(small == domx ? a : b);
 					}
 				} else if (!scp[y].assigned()) {
 					for (int a = small.first(); a != -1; a = small.next(a)) {
-						int v = small.toVal(a);
+						int v = small.toVal(a) + kk;
 						int b = large.toIdxIfPresent(v);
 						if (b != -1)
 							nacy.remove(small == domx ? b : a);
@@ -1404,13 +1414,13 @@ public final class TableHybrid extends ExtensionStructure {
 				if (!scp[x].assigned())
 					for (int i = nacx.limit; i >= 0; i--) {
 						int a = nacx.dense[i];
-						if (domy.containsValue(domx.toVal(a)))
+						if (domy.containsValue(domx.toVal(a) - k))
 							nacx.remove(a);
 					}
 				if (!scp[y].assigned())
 					for (int i = nacy.limit; i >= 0; i--) {
 						int a = nacy.dense[i];
-						if (domx.containsValue(domy.toVal(a)))
+						if (domx.containsValue(domy.toVal(a) + k))
 							nacy.remove(a);
 					}
 			}
@@ -1433,15 +1443,11 @@ public final class TableHybrid extends ExtensionStructure {
 				if (!scp[y].assigned())
 					for (int i = 0; i < tmp.size(); i++) {
 						int a = tmp.dense[i];
-						int v = domx.toVal(a);
+						int v = domx.toVal(a) - k;
 						assert domy.containsValue(v);
 						nacy.remove(domy.toIdx(v));
-						// int b = domy.toIdxIfPresent(v);
-						// if (b != -1) // && supportless2.isPresent(idxx))
-						// nacy.remove(b);
 					}
 			}
-
 		}
 
 		/**
