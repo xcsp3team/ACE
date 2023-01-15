@@ -21,6 +21,8 @@ import static org.xcsp.common.Types.TypeConditionOperatorSet.IN;
 import static org.xcsp.common.Types.TypeConditionOperatorSet.NOTIN;
 import static utility.Kit.control;
 
+import static org.xcsp.common.Utilities.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,7 +51,6 @@ import sets.SetDense;
 import sets.SetSparse;
 import utility.Kit;
 import variables.Domain;
-import variables.DomainFinite.DomainRange;
 import variables.DomainFinite.DomainSymbols;
 import variables.Variable;
 
@@ -69,7 +70,7 @@ public final class TableHybrid extends ExtensionStructure {
 	}
 
 	/**
-	 * The set of hybrid/smart tuples/rows, each one being composed of a tuple subject to restrictions (unary or binary local constraints).
+	 * The set of hybrid/smart tuples/rows, each one being composed of a tuple subject to restrictions (unary, binary or ternary local constraints).
 	 */
 	public final HybridTuple[] hybridTuples;
 
@@ -93,7 +94,7 @@ public final class TableHybrid extends ExtensionStructure {
 	 *********************************************************************************************/
 
 	/**
-	 * An hybrid tuple can be seen as a starred tuple subject to restrictions that represent local unary or binary constraints
+	 * An hybrid tuple can be seen as a starred tuple subject to restrictions that represent local unary, binary or ternary constraints
 	 */
 	public static final class HybridTuple {
 
@@ -124,7 +125,7 @@ public final class TableHybrid extends ExtensionStructure {
 		private SetDense tmp;
 
 		/**
-		 * whichRestrictions[x] indicates the restriction where x occurs (it may correspond to either vap or vap2), or null.
+		 * whichRestrictions[x] indicates the restriction where x occurs, or null if not present in any restriction.
 		 */
 		private Restriction[] whichRestrictions;
 
@@ -303,6 +304,52 @@ public final class TableHybrid extends ExtensionStructure {
 			}
 		}
 
+		private Restriction buildRestriction(int x, TypeExpr type, XNode<? extends IVar> son1) {
+			if (type.oneOf(TypeExpr.IN, TypeExpr.NOTIN)) {
+				if (son1.type == TypeExpr.SET) {
+					int[] t = Stream.of(son1.sons).mapToInt(s -> safeInt((long) ((XNodeLeaf<?>) s).value)).toArray();
+					return buildRestriction1From(x, type.toSetop(), t);
+				}
+				throw new AssertionError("Currently, unimplemented case for range (anyway, needs an extension of XCSP3)");
+			}
+			TypeConditionOperatorRel op = type.toRelop();
+			control(op != null, "Relational operator expected");
+			control(son1.type != TypeExpr.SYMBOL, "Symbolic values not possible for the moment");
+			if (son1.type == TypeExpr.LONG) {
+				int k = safeInt(((long) ((XNodeLeaf<?>) son1).value));
+				control(op != EQ, "case normally avoided when parsing");
+				// if (op == EQ) {
+				// control(tuple[x] == STAR && scp[x].dom.containsValue(k));
+				// // for a constant, we directly put it in tuple (no need to build a Restriction object)
+				// tuple[x] = scp[x].dom.toIdx(k);
+				// }
+				Restriction1Rel res = buildRestriction1From(x, op, k);
+				if (res.pivot == -1 || res.pivot == Integer.MAX_VALUE) {
+					control(tuple[x] == STAR);
+					return null; // because the restriction is useless
+				}
+				return res;
+			}
+			if (son1.type == TypeExpr.PAR) {
+				int y = (int) ((XNodeLeaf<?>) son1).value;
+				control(tuple[y] == STAR);
+				return buildRestriction2From(x, op, y);
+			}
+			control(son1.type.oneOf(TypeExpr.ADD, TypeExpr.SUB));
+			XNode<?>[] grandSons = ((XNodeParent<?>) son1).sons;
+			control(grandSons.length == 2 && grandSons[0].type == TypeExpr.PAR);
+			int y = (int) ((XNodeLeaf<?>) grandSons[0]).value;
+			control(tuple[y] == STAR);
+			if (grandSons[1].type == TypeExpr.LONG) {
+				int k = safeInt(((long) ((XNodeLeaf<?>) grandSons[1]).value));
+				return buildRestriction2From(x, op, y, son1.type == TypeExpr.ADD ? k : -k);
+			}
+			control(son1.type == TypeExpr.ADD && grandSons[1].type == TypeExpr.PAR);
+			int z = (int) ((XNodeLeaf<?>) grandSons[1]).value;
+			control(tuple[z] == STAR);
+			return buildRestriction3From(x, op, y, z);
+		}
+
 		public void attach(CHybrid c) {
 			this.scp = c.scp;
 			this.initialTuple = initialTuple != null ? initialTuple : Kit.repeat(STAR, scp.length);
@@ -310,81 +357,23 @@ public final class TableHybrid extends ExtensionStructure {
 			this.nac = c.nac;
 			this.tmp = new SetDense(Stream.of(scp).mapToInt(x -> x.dom.initSize()).max().getAsInt());
 
-			// Converting Boolean tree expressions into restriction objects
+			// Converting Boolean tree expressions into Restriction objects
 			List<Restriction> list = new ArrayList<>();
 			for (XNodeParent<? extends IVar> tree : initialRestrictions) {
 				control(tree.sons.length == 2, tree.toString());
 				TypeExpr type = tree.type;
 				XNode<? extends IVar> son0 = tree.sons[0], son1 = tree.sons[1];
 				if (son0.type != TypeExpr.VAR) {
-					type = type.arithmeticInversion(); // add controls
-					XNode<? extends IVar> tmp = son0;
-					son0 = son1;
-					son1 = tmp;
+					type = type.arithmeticInversion();
+					control(type != null);
+					son0 = tree.sons[1];
+					son1 = tree.sons[0];
 				}
 				control(son0.type == TypeExpr.VAR, () -> "Left side operand must be a variable");
 				int x = c.positionOf((Variable) ((XNodeLeaf<?>) son0).value);
-				if (type.oneOf(TypeExpr.IN, TypeExpr.NOTIN)) {
-					TypeConditionOperatorSet op = type.toSetop();
-					if (son1.type == TypeExpr.SET) {
-						int[] t = Stream.of(son1.sons).mapToInt(s -> Utilities.safeInt((long) ((XNodeLeaf<?>) s).value)).toArray();
-						list.add(buildRestriction1From(x, op, t));
-					} else
-						Kit.exit("Currently, unimplemented case"); // range
-
-				} else {
-					TypeConditionOperatorRel op = type.toRelop(); // TODO code for dealing with IN and NOTIN too
-					control(op != null, "" + op);
-					control(son1.type != TypeExpr.SYMBOL, () -> "Symbolic values not possible for the moment");
-					// we replace PAR by VAR
-					if (son1.type == TypeExpr.PAR) {
-						Variable y = scp[(int) ((XNodeLeaf<?>) son1).value];
-						son1 = new XNodeLeaf<>(TypeExpr.VAR, y);
-					}
-					if (son1.type == TypeExpr.ADD) {
-						for (int i = 0; i < son1.sons.length; i++) {
-							if (son1.sons[i].type == TypeExpr.PAR) {
-								Variable y = scp[(int) ((XNodeLeaf<?>) son1.sons[i]).value];
-								son1.sons[i] = new XNodeLeaf<>(TypeExpr.VAR, y);
-							}
-						}
-					}
-					if (son1.type == TypeExpr.LONG) {
-						int v = Utilities.safeInt(((long) ((XNodeLeaf<?>) son1).value));
-						if (op == EQ) {
-							control(tuple[x] == STAR && scp[x].dom.containsValue(v));
-							// for a constant, we directly put it in tuple (no need to build a Restriction object)
-							tuple[x] = scp[x].dom.toIdx(v);
-						} else {
-							Restriction1Rel res = buildRestriction1From(x, op, v);
-							if (res.pivot == -1 || res.pivot == Integer.MAX_VALUE) {
-								control(tuple[x] == STAR);
-							} else
-								list.add(res);
-						}
-					} else if (son1.type == TypeExpr.VAR) {
-						int y = c.positionOf((Variable) ((XNodeLeaf<?>) son1).value);
-						control(tuple[y] == STAR);
-						list.add(buildRestriction2From(x, op, y));
-					} else if (son1.type == TypeExpr.ADD) {
-						XNode<?>[] grandSons = ((XNodeParent<?>) son1).sons;
-						if (grandSons.length == 2 && grandSons[0].type == TypeExpr.VAR && grandSons[1].type == TypeExpr.LONG) {
-							int y = c.positionOf((Variable) ((XNodeLeaf<?>) grandSons[0]).value);
-							control(tuple[y] == STAR);
-							int k = Utilities.safeInt(((long) ((XNodeLeaf<?>) grandSons[1]).value));
-							list.add(buildRestriction2From(x, op, y, k));
-						} else if (grandSons.length == 2 && grandSons[0].type == TypeExpr.VAR && grandSons[1].type == TypeExpr.VAR) {
-							int y = c.positionOf((Variable) ((XNodeLeaf<?>) grandSons[0]).value);
-							int z = c.positionOf((Variable) ((XNodeLeaf<?>) grandSons[1]).value);
-							control(tuple[y] == STAR && tuple[z] == STAR);
-							list.add(buildRestriction3From(x, op, y, z));
-						} else
-							Kit.exit("Currently, unimplemented case");
-					} else if (son1.type == TypeExpr.SUB) {
-						Kit.exit("Currently, unimplemented case");
-					} else
-						Kit.exit("Currently, unimplemented case");
-				}
+				Restriction res = buildRestriction(x, type, son1);
+				if (res != null)
+					list.add(res);
 			}
 			// for each variable, we count the number of times it is seen at left (1), and at right (2) of the restrictions
 			int[] cnt1 = new int[scp.length], cnt2 = new int[scp.length];
