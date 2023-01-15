@@ -69,8 +69,7 @@ public final class TableHybrid extends ExtensionStructure {
 	}
 
 	/**
-	 * The set of hybrid/smart tuples/rows, each one being composed of a tuple subject to restrictions (unary or binary
-	 * local constraints).
+	 * The set of hybrid/smart tuples/rows, each one being composed of a tuple subject to restrictions (unary or binary local constraints).
 	 */
 	public final HybridTuple[] hybridTuples;
 
@@ -94,8 +93,7 @@ public final class TableHybrid extends ExtensionStructure {
 	 *********************************************************************************************/
 
 	/**
-	 * An hybrid tuple can be seen as a starred tuple subject to restrictions that represent local unary or binary
-	 * constraints
+	 * An hybrid tuple can be seen as a starred tuple subject to restrictions that represent local unary or binary constraints
 	 */
 	public static final class HybridTuple {
 
@@ -105,8 +103,7 @@ public final class TableHybrid extends ExtensionStructure {
 		private Variable[] scp;
 
 		/**
-		 * The tuple used as a basis for this hybrid tuple. It can contain stars and indexes (of values). Do note that
-		 * it does not contain values (but indexes).
+		 * The tuple used as a basis for this hybrid tuple. It can contain stars and indexes (of values). Do note that it does not contain values (but indexes).
 		 */
 		private int[] tuple;
 
@@ -116,8 +113,8 @@ public final class TableHybrid extends ExtensionStructure {
 		private Restriction[] restrictions;
 
 		/**
-		 * The sparse sets used during filtering: nac[x] is the sparse set for indexes (of values) of x, which have not
-		 * been found a support yet (nac stands for not arc-consistent).
+		 * The sparse sets used during filtering: nac[x] is the sparse set for indexes (of values) of x, which have not been found a support yet (nac stands for
+		 * not arc-consistent).
 		 */
 		private SetSparse[] nac;
 
@@ -127,8 +124,7 @@ public final class TableHybrid extends ExtensionStructure {
 		private SetDense tmp;
 
 		/**
-		 * whichRestrictions[x] indicates the restriction where x occurs (it may correspond to either vap or vap2), or
-		 * null.
+		 * whichRestrictions[x] indicates the restriction where x occurs (it may correspond to either vap or vap2), or null.
 		 */
 		private Restriction[] whichRestrictions;
 
@@ -143,8 +139,8 @@ public final class TableHybrid extends ExtensionStructure {
 		private long supTime;
 
 		/**
-		 * The tuple that is given initially. IMPORTANT: It contains values (and not indexes of values), but can also be
-		 * null. This tuple is no more useful once the hybrid tuple is attached to its constraint.
+		 * The tuple that is given initially. IMPORTANT: It contains values (and not indexes of values), but can also be null. This tuple is no more useful once
+		 * the hybrid tuple is attached to its constraint.
 		 */
 		private int[] initialTuple;
 
@@ -178,9 +174,8 @@ public final class TableHybrid extends ExtensionStructure {
 		}
 
 		/**
-		 * The restrictions that are given initially. Note that they correspond to Boolean tree expressions (for stating
-		 * unary and binary local constraints). These expressions are no more useful once the hybrid tuple is attached
-		 * to its constraint.
+		 * The restrictions that are given initially. Note that they correspond to Boolean tree expressions (for stating unary and binary local constraints).
+		 * These expressions are no more useful once the hybrid tuple is attached to its constraint.
 		 */
 		private final List<XNodeParent<? extends IVar>> initialRestrictions;
 
@@ -259,6 +254,8 @@ public final class TableHybrid extends ExtensionStructure {
 		 * Builds a binary restriction of the form x <op> y
 		 */
 		private Restriction2 buildRestriction2From(int x, TypeConditionOperatorRel op, int y) {
+			if (scp[0].dom.typeIdentifier() != scp[1].dom.typeIdentifier())
+				return buildRestriction2From(x, op, y, 0);
 			switch (op) {
 			case LT:
 				return new Rstr2L(x, y, true);
@@ -269,7 +266,7 @@ public final class TableHybrid extends ExtensionStructure {
 			case GT:
 				return new Rstr2G(x, y, true);
 			case EQ:
-				return scp[0].dom.typeIdentifier() == scp[1].dom.typeIdentifier() ? new Rstr2EQ(x, y) : new Rstr2EQVal(x, y, 0);
+				return new Rstr2EQ(x, y);
 			case NE:
 				return new Rstr2NE(x, y);
 			}
@@ -280,11 +277,13 @@ public final class TableHybrid extends ExtensionStructure {
 		 * Builds a binary restriction of the form x <op> y + k
 		 */
 		private Restriction2 buildRestriction2From(int x, TypeConditionOperatorRel op, int y, int k) {
+			if (k == 0 && scp[0].dom.typeIdentifier() == scp[1].dom.typeIdentifier())
+				return buildRestriction2From(x, op, y);
 			switch (op) {
 			case GE:
-				return new Rstr2pG(x, y, false, k);
+				return new Rstr2GTVal(x, y, k - 1);
 			case GT:
-				return new Rstr2pG(x, y, true, k);
+				return new Rstr2GTVal(x, y, k);
 			case EQ:
 				return new Rstr2EQVal(x, y, k);
 			default:
@@ -365,16 +364,19 @@ public final class TableHybrid extends ExtensionStructure {
 						}
 					} else if (son1.type == TypeExpr.VAR) {
 						int y = c.positionOf((Variable) ((XNodeLeaf<?>) son1).value);
+						control(tuple[y] == STAR);
 						list.add(buildRestriction2From(x, op, y));
 					} else if (son1.type == TypeExpr.ADD) {
 						XNode<?>[] grandSons = ((XNodeParent<?>) son1).sons;
 						if (grandSons.length == 2 && grandSons[0].type == TypeExpr.VAR && grandSons[1].type == TypeExpr.LONG) {
 							int y = c.positionOf((Variable) ((XNodeLeaf<?>) grandSons[0]).value);
+							control(tuple[y] == STAR);
 							int k = Utilities.safeInt(((long) ((XNodeLeaf<?>) grandSons[1]).value));
 							list.add(buildRestriction2From(x, op, y, k));
 						} else if (grandSons.length == 2 && grandSons[0].type == TypeExpr.VAR && grandSons[1].type == TypeExpr.VAR) {
 							int y = c.positionOf((Variable) ((XNodeLeaf<?>) grandSons[0]).value);
 							int z = c.positionOf((Variable) ((XNodeLeaf<?>) grandSons[1]).value);
+							control(tuple[y] == STAR && tuple[z] == STAR);
 							list.add(buildRestriction3From(x, op, y, z));
 						} else
 							Kit.exit("Currently, unimplemented case");
@@ -384,14 +386,16 @@ public final class TableHybrid extends ExtensionStructure {
 						Kit.exit("Currently, unimplemented case");
 				}
 			}
-			// for each variable (position), we count the number of times it is seen at left (1), and at right (2) of
-			// the restrictions
+			// for each variable, we count the number of times it is seen at left (1), and at right (2) of the restrictions
 			int[] cnt1 = new int[scp.length], cnt2 = new int[scp.length];
 			for (Restriction r : list) {
 				cnt1[r.x]++;
 				if (r instanceof Restriction2)
 					cnt2[((Restriction2) r).y]++;
 			}
+			// for the moment, the code is valid for conditions below (we will extend the scope of hybrid tables later, notably with multiple restrictions)
+			control(IntStream.range(0, scp.length).allMatch(i -> cnt1[i] + cnt2[i] <= 1));
+
 			Map<Integer, List<Restriction>> byMainVariable = list.stream().collect(Collectors.groupingBy(r -> r.x));
 			this.restrictions = byMainVariable.entrySet().stream()
 					.map(e -> e.getValue().size() == 1 ? e.getValue().get(0) : new RestrictionMultiple(e.getKey(), e.getValue())).toArray(Restriction[]::new);
@@ -430,7 +434,7 @@ public final class TableHybrid extends ExtensionStructure {
 		}
 
 		/**
-		 * Returns true iff the the smart tuple is valid, considering the specified set of positions to check.
+		 * Returns true iff the the hybrid tuple is valid, considering the specified set of positions to check.
 		 */
 		public final boolean isValid(int[] sVal, int sValSize) {
 			valTime++;
@@ -499,7 +503,7 @@ public final class TableHybrid extends ExtensionStructure {
 			String s = "Hybrid tuple : " + (tuple == null ? "" : Kit.join(tuple, (Integer i) -> i == STAR ? "*" : i.toString()));
 			boolean b = true;
 			if (b)
-				return s + " : " + Stream.of(restrictions).map(r -> r.toString()).collect(Collectors.joining(", "));
+				return s + " : " + Stream.of(restrictions).map(r -> r.toString() + " (" + r.getClass() + ")").collect(Collectors.joining(", "));
 			s += "\n  " + restrictions.length + " restrictons : ";
 			for (Restriction r : restrictions)
 				s += "\n    Restriction " + r.toString() + " ";
@@ -519,8 +523,7 @@ public final class TableHybrid extends ExtensionStructure {
 		public abstract class Restriction {
 
 			/**
-			 * The main variable (given by its position in the constraint scope) in the restriction (i.e., at the left
-			 * side of the restriction)
+			 * The main variable (given by its position in the constraint scope) in the restriction (i.e., at the left side of the restriction)
 			 */
 			protected int x;
 
@@ -545,8 +548,8 @@ public final class TableHybrid extends ExtensionStructure {
 			public abstract boolean isValid();
 
 			/**
-			 * Returns true iff the specified index (of value) for the variable x is valid, i.e. the restriction is
-			 * valid for the smart tuple when x is set to (the value for) a
+			 * Returns true iff the specified index (of value) for the variable x is valid, i.e. the restriction is valid for the smart tuple when x is set to
+			 * (the value for) a
 			 * 
 			 * @param a
 			 *            an index (of value)
@@ -593,9 +596,8 @@ public final class TableHybrid extends ExtensionStructure {
 		}
 
 		/**
-		 * Unary restriction based on a relational operator, i.e., of the form x <op> v with <op> in
-		 * {lt,le,ge,gt,ne,eq}. We reason with indexes by computing the relevant index called pivot: this is the index
-		 * of the value in dom(x) that is related to v ; see subclass constructors for details).
+		 * Unary restriction based on a relational operator, i.e., of the form x <op> v with <op> in {lt,le,ge,gt,ne,eq}. We reason with indexes by computing
+		 * the relevant index called pivot: this is the index of the value in dom(x) that is related to v ; see subclass constructors for details).
 		 */
 		abstract class Restriction1Rel extends Restriction1 {
 
@@ -605,8 +607,7 @@ public final class TableHybrid extends ExtensionStructure {
 			private TypeConditionOperatorRel op;
 
 			/**
-			 * The index of the value in the domain of x that is related to the value v (that can be seen as a limit)
-			 * specified at construction in subclasses
+			 * The index of the value in the domain of x that is related to the value v (that can be seen as a limit) specified at construction in subclasses
 			 */
 			protected int pivot;
 
@@ -770,8 +771,8 @@ public final class TableHybrid extends ExtensionStructure {
 		}
 
 		/**
-		 * Unary restriction based on a set operator, i.e., of the form x <op> {v1, v2, ...} with <op> in {in, notin}.
-		 * Note that we reason with indexes of values (and not directly with values).
+		 * Unary restriction based on a set operator, i.e., of the form x <op> {v1, v2, ...} with <op> in {in, notin}. Note that we reason with indexes of
+		 * values (and not directly with values).
 		 */
 		abstract class Restriction1Set extends Restriction1 {
 
@@ -925,8 +926,7 @@ public final class TableHybrid extends ExtensionStructure {
 			protected TypeConditionOperatorRel op;
 
 			/**
-			 * The second variable (given by its position in the constraint scope) in the restriction (i.e., at the
-			 * right side of the restriction)
+			 * The second variable (given by its position in the constraint scope) in the restriction (i.e., at the right side of the restriction)
 			 */
 			protected int y;
 
@@ -950,15 +950,23 @@ public final class TableHybrid extends ExtensionStructure {
 				this.y = y;
 				this.domy = scp[y].dom;
 				this.nacy = nac[y];
-				control(domx.typeIdentifier() == domy.typeIdentifier() || this instanceof Rstr2EQVal);
+				// control(domx.typeIdentifier() == domy.typeIdentifier() || this instanceof Rstr2EQVal);
 			}
 
 			/**
-			 * Method called when the backward phase of a RestrictionMultiple object has been performed. More precisely,
-			 * in tmp, we have the indexes (of values) for scope[x] that are compatible with all subrestrictions of the
-			 * RestrictionMultiple. We call this method to perform the forward phase.
+			 * Method called when the backward phase of a RestrictionMultiple object has been performed. More precisely, in tmp, we have the indexes (of values)
+			 * for scope[x] that are compatible with all subrestrictions of the RestrictionMultiple. We call this method to perform the forward phase.
 			 */
 			public abstract void collectForY();
+
+		}
+
+		abstract class Restriction2Idx extends Restriction2 {
+
+			protected Restriction2Idx(int x, TypeConditionOperatorRel op, int y) {
+				super(x, op, y);
+				control(domx.typeIdentifier() == domy.typeIdentifier());
+			}
 
 			@Override
 			public String toString() {
@@ -969,7 +977,7 @@ public final class TableHybrid extends ExtensionStructure {
 		/**
 		 * Restriction of the form x < y (when strict) or x <= y
 		 */
-		final class Rstr2L extends Restriction2 {
+		final class Rstr2L extends Restriction2Idx {
 
 			@Override
 			public boolean checkIndexes(int[] t) {
@@ -1004,9 +1012,9 @@ public final class TableHybrid extends ExtensionStructure {
 				}
 				if (!scp[y].assigned()) {
 					tmp.clear();
-					for (int a = domy.first(); a != -1 && (strict ? firstx >= a : firstx > a); a = domy.next(a))
-						if (nacy.contains(a))
-							tmp.add(a);
+					for (int b = domy.first(); b != -1 && (strict ? firstx >= b : firstx > b); b = domy.next(b))
+						if (nacy.contains(b))
+							tmp.add(b);
 					nacy.resetTo(tmp);
 				}
 			}
@@ -1021,9 +1029,9 @@ public final class TableHybrid extends ExtensionStructure {
 					}
 				if (!scp[y].assigned())
 					for (int i = nacy.limit; i >= 0; i--) {
-						int a = nacy.dense[i];
-						if (strict ? firstx < a : firstx <= a)
-							nacy.remove(a);
+						int b = nacy.dense[i];
+						if (strict ? firstx < b : firstx <= b)
+							nacy.remove(b);
 					}
 			}
 
@@ -1033,8 +1041,8 @@ public final class TableHybrid extends ExtensionStructure {
 					for (int a = domx.first(); a != -1 && (strict ? a < lasty : a <= lasty); a = domx.next(a))
 						nacx.remove(a);
 				if (!scp[y].assigned())
-					for (int a = domy.last(); a != -1 && (strict ? firstx < a : firstx <= a); a = domy.prev(a))
-						nacy.remove(a);
+					for (int b = domy.last(); b != -1 && (strict ? firstx < b : firstx <= b); b = domy.prev(b))
+						nacy.remove(b);
 			}
 
 			@Override
@@ -1054,8 +1062,8 @@ public final class TableHybrid extends ExtensionStructure {
 			public void collectForY() {
 				if (!scp[y].assigned()) {
 					int first = tmp.first();
-					for (int a = domy.last(); a != -1 && (strict ? first < a : first <= a); a = domy.prev(a))
-						nacy.remove(a);
+					for (int b = domy.last(); b != -1 && (strict ? first < b : first <= b); b = domy.prev(b))
+						nacy.remove(b);
 				}
 			}
 		}
@@ -1063,7 +1071,7 @@ public final class TableHybrid extends ExtensionStructure {
 		/**
 		 * Restriction of the form x > y (when strict) or x >= y
 		 */
-		final class Rstr2G extends Restriction2 {
+		final class Rstr2G extends Restriction2Idx {
 
 			@Override
 			public boolean checkIndexes(int[] t) {
@@ -1098,9 +1106,9 @@ public final class TableHybrid extends ExtensionStructure {
 				}
 				if (!scp[y].assigned()) {
 					tmp.clear();
-					for (int a = domy.last(); a != -1 && (strict ? a >= lastx : a > lastx); a = domy.prev(a))
-						if (nacy.contains(a))
-							tmp.add(a);
+					for (int b = domy.last(); b != -1 && (strict ? b >= lastx : b > lastx); b = domy.prev(b))
+						if (nacy.contains(b))
+							tmp.add(b);
 					nacy.resetTo(tmp);
 				}
 			}
@@ -1115,9 +1123,9 @@ public final class TableHybrid extends ExtensionStructure {
 					}
 				if (!scp[y].assigned())
 					for (int i = nacy.limit; i >= 0; i--) {
-						int a = nacy.dense[i];
-						if (strict ? lastx > a : lastx >= a)
-							nacy.remove(a);
+						int b = nacy.dense[i];
+						if (strict ? lastx > b : lastx >= b)
+							nacy.remove(b);
 					}
 			}
 
@@ -1127,8 +1135,8 @@ public final class TableHybrid extends ExtensionStructure {
 					for (int a = domx.last(); a != -1 && (strict ? a > firsty : a >= firsty); a = domx.prev(a))
 						nacx.remove(a);
 				if (!scp[y].assigned())
-					for (int a = domy.first(); a != -1 && (strict ? lastx > a : lastx >= a); a = domy.next(a))
-						nacy.remove(a);
+					for (int b = domy.first(); b != -1 && (strict ? lastx > b : lastx >= b); b = domy.next(b))
+						nacy.remove(b);
 			}
 
 			@Override
@@ -1148,8 +1156,8 @@ public final class TableHybrid extends ExtensionStructure {
 			public void collectForY() {
 				if (!scp[y].assigned()) {
 					int last = tmp.last();
-					for (int a = domy.first(); a != -1 && (strict ? last > a : last >= a); a = domy.next(a))
-						nacy.remove(a);
+					for (int b = domy.first(); b != -1 && (strict ? last > b : last >= b); b = domy.next(b))
+						nacy.remove(b);
 				}
 			}
 
@@ -1158,7 +1166,7 @@ public final class TableHybrid extends ExtensionStructure {
 		/**
 		 * Restriction of the form x != y
 		 */
-		final class Rstr2NE extends Restriction2 {
+		final class Rstr2NE extends Restriction2Idx {
 
 			@Override
 			public boolean checkIndexes(int[] t) {
@@ -1208,7 +1216,7 @@ public final class TableHybrid extends ExtensionStructure {
 		/**
 		 * Restriction of the form x = y
 		 */
-		final class Rstr2EQ extends Restriction2 {
+		final class Rstr2EQ extends Restriction2Idx {
 
 			@Override
 			public boolean checkIndexes(int[] t) {
@@ -1318,23 +1326,35 @@ public final class TableHybrid extends ExtensionStructure {
 
 		}
 
+		abstract class Restriction2Val extends Restriction2 {
+
+			protected int k;
+
+			protected Restriction2Val(int x, TypeConditionOperatorRel op, int y, int k) {
+				super(x, op, y);
+				this.k = k;
+			}
+
+			@Override
+			public String toString() {
+				return scp[x] + " " + op + " " + scp[y] + " + " + k;
+			}
+		}
+
 		/**
 		 * Restriction of the form x = y + k
 		 */
-		final class Rstr2EQVal extends Restriction2 {
+		final class Rstr2EQVal extends Restriction2Val {
 
 			@Override
 			public boolean checkIndexes(int[] t) {
 				return domx.toVal(t[x]) == domy.toVal(t[y]) + k;
 			}
 
-			private int k;
-
 			private int valResidue;
 
 			protected Rstr2EQVal(int x, int y, int k) {
-				super(x, EQ, y);
-				this.k = k;
+				super(x, EQ, y, k);
 			}
 
 			@Override
@@ -1451,88 +1471,89 @@ public final class TableHybrid extends ExtensionStructure {
 		}
 
 		/**
-		 * Restriction of the form x > y + cst or the form x >= y + cst
+		 * Restriction of the form x > y + k
 		 */
-		final class Rstr2pG extends Restriction2 {
+		final class Rstr2GTVal extends Restriction2Val {
 
 			@Override
 			public boolean checkIndexes(int[] t) {
-				return strict ? t[x] > t[y] + cst : t[x] >= t[y] + cst;
+				return domx.toVal(t[x]) > domy.toVal(t[y]) + k;
 			}
 
-			private boolean strict;
-			private int cst;
-
-			protected Rstr2pG(int x, int y, boolean strict, int cst) {
-				super(x, strict ? GT : GE, y);
-				this.strict = strict;
-				this.cst = cst;
-				control(scp[x].dom instanceof DomainRange && scp[y].dom instanceof DomainRange);
+			protected Rstr2GTVal(int x, int y, int k) {
+				super(x, GT, y, k);
 			}
 
 			@Override
 			public boolean isValidFor(int a) {
-				return strict ? a > domy.first() + cst : a >= domy.first() + cst;
+				return domx.toVal(a) > domy.firstValue() + k;
 			}
 
 			@Override
 			public boolean isValid() {
-				return strict ? domx.last() > domy.first() + cst : domx.last() >= domy.first() + cst;
+				return domx.lastValue() > domy.firstValue() + k;
 			}
 
 			private void collectThroughInvalidValues() {
-				int last1 = domx.last(), first2 = domy.first();
 				if (!scp[x].assigned()) {
+					int limit = domy.firstValue() + k;
 					tmp.clear();
-					for (int a = domx.first(); a != -1 && (strict ? a <= first2 + cst : a < first2 + cst); a = domx.next(a))
+					for (int a = domx.first(); a != -1 && domx.toVal(a) <= limit; a = domx.next(a))
 						if (nacx.contains(a))
 							tmp.add(a);
 					nacx.resetTo(tmp);
 				}
 				if (!scp[y].assigned()) {
+					int limit = domx.lastValue() - k;
 					tmp.clear();
-					for (int a = domy.last(); a != -1 && (strict ? a + cst >= last1 : a + cst > last1); a = domy.prev(a))
-						if (nacy.contains(a))
-							tmp.add(a);
+					for (int b = domy.last(); b != -1 && domy.toVal(b) >= limit; b = domy.prev(b))
+						if (nacy.contains(b))
+							tmp.add(b);
 					nacy.resetTo(tmp);
 				}
 			}
 
 			private void collectThroughSupportlessSets() {
-				int last1 = domx.last(), first2 = domy.first();
-				if (!scp[x].assigned())
+				if (!scp[x].assigned()) {
+					int limit = domy.firstValue() + k;
 					for (int i = nacx.limit; i >= 0; i--) {
 						int a = nacx.dense[i];
-						if (strict ? a > first2 + cst : a >= first2 + cst)
+						if (domx.toVal(a) > limit)
 							nacx.remove(a);
 					}
-				if (!scp[y].assigned())
+				}
+				if (!scp[y].assigned()) {
+					int limit = domx.lastValue() - k;
 					for (int i = nacy.limit; i >= 0; i--) {
-						int a = nacy.dense[i];
-						if (strict ? last1 > a + cst : last1 >= a + cst)
-							nacy.remove(a);
+						int b = nacy.dense[i];
+						if (domy.toVal(b) < limit)
+							nacy.remove(b);
 					}
+				}
 			}
 
 			private void collectThroughValidValues() {
-				int last1 = domx.last(), first2 = domy.first();
-				if (!scp[x].assigned())
-					for (int a = domx.last(); a != -1 && (strict ? a > first2 + cst : a >= first2 + cst); a = domx.prev(a))
+				if (!scp[x].assigned()) {
+					int limit = domy.firstValue() + k;
+					for (int a = domx.last(); a != -1 && domx.toVal(a) > limit; a = domx.prev(a))
 						nacx.remove(a);
-				if (!scp[y].assigned())
-					for (int a = domy.first(); a != -1 && (strict ? last1 > a + cst : last1 >= a + cst); a = domy.next(a))
-						nacy.remove(a);
+				}
+				if (!scp[y].assigned()) {
+					int limit = domx.lastValue() - k;
+					for (int b = domy.first(); b != -1 && domy.toVal(b) < limit; b = domy.next(b))
+						nacy.remove(b);
+				}
 			}
 
 			@Override
 			public void collect() {
 				// three parameters for choosing the cheapest way of collecting
-				int roughNbInvalidValues = Math.max(domy.first() + cst - domx.first(), 0) + Math.max(domy.last() + cst - domx.last(), 0);
-				int nbSupportlessValues = nacx.size() + nacy.size();
-				int roughNbValidValues = Math.min(domx.last(), domy.last()) + cst - domy.first() + domx.last() - Math.max(domx.first(), domy.first() + cst);
-				if (roughNbInvalidValues < nbSupportlessValues && roughNbInvalidValues < roughNbValidValues)
+				int nInvalid = Math.max(domy.firstValue() + k - domx.firstValue(), 0) + Math.max(domy.lastValue() + k - domx.lastValue(), 0);
+				int nValid = Math.min(domx.lastValue(), domy.lastValue()) + k - domy.firstValue() + domx.lastValue()
+						- Math.max(domx.firstValue(), domy.firstValue() + k);
+				if (nInvalid < nSupportlessValues() && nInvalid < nValid)
 					collectThroughInvalidValues();
-				else if (nbSupportlessValues < roughNbValidValues)
+				else if (nSupportlessValues() < nValid)
 					collectThroughSupportlessSets();
 				else
 					collectThroughValidValues();
@@ -1541,15 +1562,10 @@ public final class TableHybrid extends ExtensionStructure {
 			@Override
 			public void collectForY() {
 				if (!scp[y].assigned()) {
-					int last1 = tmp.last();
-					for (int a = domy.first(); a != -1 && (strict ? last1 > a + cst : last1 >= a + cst); a = domy.next(a))
-						nacy.remove(a);
+					int limit = domx.toVal(tmp.last()) - k;
+					for (int b = domy.first(); b != -1 && domy.toVal(b) < limit; b = domy.next(b))
+						nacy.remove(b);
 				}
-			}
-
-			@Override
-			public String toString() {
-				return scp[x] + " " + op + " " + scp[y] + " + " + cst;
 			}
 		}
 
@@ -1568,8 +1584,7 @@ public final class TableHybrid extends ExtensionStructure {
 			protected TypeConditionOperatorRel op;
 
 			/**
-			 * The second variable (given by its position in the constraint scope) in the restriction (i.e., at the
-			 * right side of the restriction)
+			 * The second variable (given by its position in the constraint scope) in the restriction (i.e., at the right side of the restriction)
 			 */
 			protected int y;
 
@@ -1579,8 +1594,7 @@ public final class TableHybrid extends ExtensionStructure {
 			protected Domain domy;
 
 			/**
-			 * The third variable (given by its position in the constraint scope) in the restriction (i.e., at the right
-			 * side of the restriction)
+			 * The third variable (given by its position in the constraint scope) in the restriction (i.e., at the right side of the restriction)
 			 */
 			protected int z;
 
@@ -1639,7 +1653,7 @@ public final class TableHybrid extends ExtensionStructure {
 
 			@Override
 			public boolean isValid() {
-				throw new AssertionError("Not impelmented");
+				throw new AssertionError("Not implemented");
 			}
 
 			@Override
@@ -1653,14 +1667,12 @@ public final class TableHybrid extends ExtensionStructure {
 		 *********************************************************************************************/
 
 		/**
-		 * Restriction of the form of a conjunction of constraints: x <op1> y and x <op2> z ... with x the main common
-		 * variable
+		 * Restriction of the form of a conjunction of constraints: x <op1> y and x <op2> z ... with x the main common variable
 		 */
 		final class RestrictionMultiple extends RestrictionComplex {
 
 			/**
-			 * The restrictions involved in this multiple restriction. All involved restrictions are on the same main
-			 * variable.
+			 * The restrictions involved in this multiple restriction. All involved restrictions are on the same main variable.
 			 */
 			protected Restriction[] subrestrictions;
 
