@@ -284,7 +284,7 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 	@Override
 	public boolean isSatisfiedBy(int[] tuple) {
 		int wgap = !movableWidths ? -1 : nTasks;
-		int hgap = !movableHeights ? -1 : this instanceof CumulativeVarH ? nTasks : nTasks * 2;
+		int hgap = !movableHeights ? -1 : this instanceof CumulativeVarH || this instanceof CumulativeVarHC ? nTasks : nTasks * 2;
 		int min = Integer.MAX_VALUE, max = Integer.MIN_VALUE;
 		for (int i = 0; i < nTasks; i++) {
 			min = Math.min(min, tuple[i]);

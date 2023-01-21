@@ -240,10 +240,6 @@ public final class CHybrid extends ExtensionSpecific {
 			hybridTuple.attach(this);
 		this.sVal = new int[scp.length];
 		this.sSup = new int[scp.length];
-
-		// System.out.println("jjjjj " + Kit.join(scp));
-		// for (HybridTuple hybridTuple : hybridTuples)
-		// System.out.println("jjjjj " + hybridTuple);
 	}
 
 	/**
