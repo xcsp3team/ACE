@@ -652,7 +652,11 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 			public Mod3EQ(Problem pb, Variable x, Variable y, Variable z) {
 				super(pb, x, y, z);
 				buildFourResidueStructure();
-				control(x.dom.firstValue() >= 0 && y.dom.firstValue() > 0 && z.dom.firstValue() >= 0);
+				if (dy.containsValue(0)) {
+					control(dy.size() > 1);
+					dy.removeValueAtConstructionTime(0);
+				}
+				control(dx.firstValue() >= 0 && dy.firstValue() > 0 && dz.firstValue() >= 0);
 			}
 
 			@Override

@@ -947,6 +947,8 @@ public final class TableHybrid extends ExtensionStructure {
 				this.y = y;
 				this.domy = scp[y].dom;
 				this.nacy = nac[y];
+				control(x != y,
+						"Bad form for a binary restriction of a hybrid tuple: two occurrences of the same variable: " + scp[x] + " " + op + " " + scp[y]);
 				// control(domx.typeIdentifier() == domy.typeIdentifier() || this instanceof Rstr2EQVal);
 			}
 
@@ -1623,6 +1625,8 @@ public final class TableHybrid extends ExtensionStructure {
 				this.domz = scp[z].dom;
 				this.nacz = nac[z];
 				// control(domx.typeIdentifier() == domy.typeIdentifier() || this instanceof Rstr2EQVal);
+				control(x != y && x != z && y != z, "Bad form for a ternary restriction of a hybrid tuple: two occurrences of the same variable: " + scp[x]
+						+ " " + op + " " + scp[y] + (addition ? "+" : "-") + scp[z]);
 			}
 
 			@Override
