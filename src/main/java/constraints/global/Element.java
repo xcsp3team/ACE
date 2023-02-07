@@ -188,13 +188,13 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 				this.vdom = value.dom;
 				this.vpos = IntStream.range(0, scp.length).filter(i -> scp[i] == value).findFirst().getAsInt();
 				this.valueSentinels = Kit.repeat(-1, value.dom.initSize());
-				this.indexSentinels = Kit.repeat(-1, list.length);
+				this.indexSentinels = Kit.repeat(Integer.MIN_VALUE, list.length);
 				// TODO control that each value in vdom is in at least one domain of the list?
 			}
 
 			private boolean validIndex(int i) {
 				int v = indexSentinels[i];
-				if (v != -1 && list[i].dom.containsValue(v) && vdom.containsValue(v))
+				if (v != Integer.MIN_VALUE && list[i].dom.containsValue(v) && vdom.containsValue(v))
 					return true;
 				Domain dom = list[i].dom;
 				for (int a = dom.first(); a != -1; a = dom.next(a)) {
