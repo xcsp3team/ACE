@@ -215,7 +215,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 		public SumSimple(Problem pb, Variable[] scp, long limit) {
 			super(pb, scp);
-			control(Variable.areAllDistinct(scp) && minComputableObjectiveValue() <= maxComputableObjectiveValue());
+			control(Variable.areAllDistinct(scp), "" + Utilities.join(scp));
+			control(minComputableObjectiveValue() <= maxComputableObjectiveValue());
 			setLimit(limit);
 			defineKey(limit);
 		}

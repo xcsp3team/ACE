@@ -2774,6 +2774,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return optimize(opt, list[0]);
 			}
 			long lb = head.control.optimization.lb, ub = head.control.optimization.ub;
+			if (!Variable.areAllDistinct(list)) {
+
+			}
+
 			// TODO what about several occurrences of the same variable in list?0
 			// if SUM, should we transform into weighted sum, or just fail?
 			Constraint clb = type == SUM ? new SumSimpleGE(this, list, lb)

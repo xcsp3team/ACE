@@ -34,20 +34,6 @@ import variables.Variable;
  * TestBinpacking from special).
  * 
  * 
- * TODO : bug with java ace BinPackingGecode.xml
- * 
- * java ace BinPackingGecode.xml -warm="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 18 19 17 21 22 21 22 20 16
- * 23 23 24 24 15 13 14 22 12 21 24 23 23 24 20 11 2 3 4 0" (solution obtained with the other variant)
- * 
- * pb with java ace BinPackingGecode.xml disappear if '|| i < minUsableBin || i > maxUsableBin)' is put in comment (but
- * is it the origin of the problem?)
- * 
- * 
- * pb with Mapping-full2x2_mp3.xml disappear when using -varh=Dom does-it come from BinPacjking?
- * 
- * // another pb for the load variant seems to be to fixed for java ace GeneralizedBACP-reduced_UD2-gbac.xml -valh=Bivs
- * // also java ace TeamAssignment-data1_6_6.xml -valh=Asgs
- * 
  * @author Christophe Lecoutre
  */
 public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
@@ -93,6 +79,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 		super(pb, scp);
 		this.nItems = sizes.length;
 		this.nBins = limits.length;
+		control(IntStream.of(sizes).allMatch(v -> v >= 0));
 		control(nItems >= 2 && Variable.haveSameDomainType(IntStream.range(0, nItems).mapToObj(i -> scp[i]).toArray(Variable[]::new)));
 		control(nBins == scp[0].dom.initSize() && scp[0].dom.initiallyExactly(new Range(0, nBins)));
 		// TODO second condition above to be relaxed when possible
@@ -169,6 +156,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 			void set(int i, int c) {
 				this.index = i;
 				this.capacity = c;
+				this.lost = 0;
 			}
 
 			@Override
@@ -230,11 +218,6 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 				maxSize = -1;
 				Arrays.sort(sortedBins, 0, sortLimit, (b1, b2) -> Integer.compare(b1.capacity, b2.capacity)); // increasing
 																												// sort
-				// System.out.println("hhh");
-				// for (int j = 0; j < sortLimit; j++) {
-				// System.out.println(sortedBins[j]);
-				// }
-
 				if (sortedBins[0].capacity < 0)
 					return x.dom.fail(); // TODO 1: moving it earlier (avoid the first sort) ?
 				for (SetDense set : fronts) // TODO 2: only clearing from 0 to usableBins.limit ?
@@ -272,8 +255,9 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 				}
 				break;
 			}
-
 			boolean energetic = true;
+			if (!energetic)
+				return true;
 			if (energetic) {
 				// energetic reasoning
 				int cumulatedCapacities = 0, cumulatedSizes = 0;
@@ -363,7 +347,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 				// for breaking, we should go from 0 to ..., but removing an element in usableBins could be a problem
 				int i = sortedBins[j].index;
 				assert usableBins.contains(i);
-				if (sortedBins[j].capacity < sizes[smallestFreeItem]) // || i < minUsableBin || i > maxUsableBin)
+				if (sortedBins[j].capacity < sizes[smallestFreeItem] || i < minUsableBin || i > maxUsableBin)
 					usableBins.remove(i, problem.solver.depth());
 			}
 			return true;
@@ -393,25 +377,10 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 
 		@Override
 		public boolean runPropagator(Variable x) {
-			// if (this.num == 39 && problem.solver.depth() >= 78) {
-			// System.out.println("filtering " + this + " at level " + problem.solver.depth() + "fitvars " +
-			// futvars.size());
-			// scp[13].dom.display(true);
-			// }
-
 			if (futvars.size() == 0) {
-				int[] t = Stream.of(scp).mapToInt(y -> y.dom.singleValue()).toArray();
-				if (!isSatisfiedBy(t)) {
-					cnt++;
-					System.out.println(this + " bef " + cnt);
-					System.out.println("limits : " + Kit.join(limits));
-					System.out.println("sizes : " + Kit.join(sizes));
-					for (Variable y : scp)
-						y.dom.display(true);
-					System.exit(1);
-				}
+				assert isSatisfiedBy(Stream.of(scp).mapToInt(y -> y.dom.singleValue()).toArray());
+				return true;
 			}
-
 			// we call the super propagator after setting the highest possible limits
 			for (int i = 0; i < nBins; i++)
 				limits[i] = loads[i].dom.lastValue();
@@ -429,29 +398,33 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 				long currentFill = sums[i];
 				if (loads[i].dom.size() == 1) {
 					int load = loads[i].dom.singleValue();
+					assert currentFill <= load;
 					int possibleExtent = 0;
 					int minSize = Integer.MAX_VALUE;
 					for (int k = freeItems.limit; k >= 0; k--) {
 						int j = freeItems.dense[k];
-						if (scp[j].dom.containsValue(i)) {
-							if (currentFill + sizes[j] > load) {
-								if (scp[j].dom.removeValue(i) == false)
-									return false;
-							} else {
+						if (sizes[j] > 0 && scp[j].dom.containsValue(i)) {
+							if (currentFill + sizes[j] <= load) {
 								possibleExtent += sizes[j];
 								minSize = Math.min(minSize, sizes[j]);
-							}
+							} else if (scp[j].dom.removeValue(i) == false)
+								return false;
 						}
 					}
 					if (currentFill + possibleExtent < load)
 						return x.dom.fail();
 					if (currentFill + possibleExtent == load) {
-						for (int k = freeItems.limit; k >= 0; k--) {
+						for (int k = freeItems.limit; possibleExtent > 0 && k >= 0; k--) {
 							int j = freeItems.dense[k];
-							if (scp[j].dom.containsValue(i))
-								scp[j].dom.reduceTo(i);
+							if (sizes[j] > 0 && scp[j].dom.containsValue(i)) { // && currentFill + sizes[j] <= load) {
+																				// third part is induced
+								scp[j].dom.reduceToValue(i);
+								sums[i] += sizes[j];
+								freeItems.removeAtPosition(k);
+								possibleExtent -= sizes[j];
+							}
 						}
-					} else if (currentFill + possibleExtent - minSize < load)
+					} else if (minSize != Integer.MAX_VALUE && currentFill + possibleExtent - minSize < load)
 						return x.dom.fail();
 				} else {
 					if (loads[i].dom.removeValuesLT(currentFill) == false)
@@ -461,22 +434,24 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 					int possibleExtent = 0;
 					for (int k = freeItems.limit; k >= 0; k--) {
 						int j = freeItems.dense[k];
-						if (scp[j].dom.containsValue(i)) {
-							if (currentFill + sizes[j] > loadMax) {
-								if (scp[j].dom.removeValue(i) == false)
-									return false;
-							} else
+						if (sizes[j] > 0 && scp[j].dom.containsValue(i)) {
+							if (currentFill + sizes[j] <= loadMax) {
 								possibleExtent += sizes[j];
+							} else if (scp[j].dom.removeValue(i) == false)
+								return false;
 						}
 					}
 					if (currentFill + possibleExtent < loadMin)
 						return x.dom.fail();
 					if (currentFill + possibleExtent == loadMin) {
 						loads[i].dom.reduceToValue(loadMin);
-						for (int k = freeItems.limit; k >= 0; k--) {
+						for (int k = freeItems.limit; possibleExtent > 0 && k >= 0; k--) {
 							int j = freeItems.dense[k];
-							if (scp[j].dom.containsValue(i))
-								scp[j].dom.reduceTo(i);
+							if (sizes[j] > 0 && scp[j].dom.containsValue(i)) { // && currentFill + sizes[j] <= loadMax
+																				// (induced)
+								scp[j].dom.reduceToValue(i);
+								possibleExtent -= sizes[j];
+							}
 						}
 					}
 				}
@@ -486,11 +461,29 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 
 		public BinPackingEnergeticLoad(Problem pb, Variable[] list, int[] sizes, Variable[] loads) {
 			super(pb, pb.vars(list, loads), sizes, new int[loads.length]);
+			control(scp.length == list.length + loads.length);
 			control(list.length == sizes.length && nBins == loads.length && scp.length == list.length + loads.length);
 			this.loads = loads;
 			this.freeItems = new SetDense(nItems);
 		}
-
 	}
-
 }
+
+/*
+ * There were bugs (we must check that all is fixed)
+ * 
+ * bug with java ace BinPackingGecode.xml
+ * 
+ * java ace BinPackingGecode.xml -warm="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 18 19 17 21 22 21 22 20 16
+ * 23 23 24 24 15 13 14 22 12 21 24 23 23 24 20 11 2 3 4 0" (solution obtained with the other variant)
+ * 
+ * pb with java ace BinPackingGecode.xml disappear if '|| i < minUsableBin || i > maxUsableBin)' is put in comment (but
+ * is it the origin of the problem?)
+ * 
+ * 
+ * pb with Mapping-full2x2_mp3.xml disappear when using -varh=Dom does-it come from BinPacjking?
+ * 
+ * // another pb for the load variant seems to be to fixed for java ace GeneralizedBACP-reduced_UD2-gbac.xml -valh=Bivs
+ * // also java ace TeamAssignment-data1_6_6.xml -valh=Asgs
+ * 
+ */

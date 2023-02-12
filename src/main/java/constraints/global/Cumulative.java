@@ -192,7 +192,10 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 	}
 
 	/**
-	 * Filtering based on a form of energetic reasoning
+	 * Filtering based on a form of energetic reasoning.
+	 * 
+	 * TODO: this must be totally revised. Seems to be a problem with heighest and smallest heights while not
+	 * considering mandatory parts
 	 */
 	class EnergeticReasoner {
 		private Integer[] sortedTasks; // according to heights
@@ -431,11 +434,11 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 		if (b == Boolean.TRUE)
 			return true;
 
-		b = energeticReasoner.filter();
-		if (b == Boolean.FALSE)
-			return false; // seems better than x.dom.fail()
-		if (b == Boolean.TRUE)
-			return true;
+		// b = energeticReasoner.filter();
+		// if (b == Boolean.FALSE)
+		// return false; // seems better than x.dom.fail()
+		// if (b == Boolean.TRUE)
+		// return true;
 
 		return timetableReasoner.filter();
 	}
