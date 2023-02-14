@@ -19,7 +19,7 @@ ACE is distributed under License MIT
 
 ## Quick Description
 
-For some general information about the structure of the code of the solver ACE, see this [short guide](https://github.com/xcsp3team/ace/blob/main/shortGuide.pdf). 
+For some general information about the structure of the code of the solver ACE, see this [paper](https://arxiv.org/abs/2302.05405). 
 
 
 
