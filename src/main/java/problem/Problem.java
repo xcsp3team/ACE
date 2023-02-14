@@ -1519,7 +1519,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 	}
 
-	private CtrEntity sum(Variable[] list, int[] coeffs, TypeConditionOperatorRel op, long limit, boolean inversable) {
+	private Term[] handleSumTerms(Variable[] list, int[] coeffs) {
 		// grouping together several occurrences of the same variables and discarding terms of coefficient 0
 		Term[] terms = new Term[list.length];
 		for (int i = 0; i < terms.length; i++)
@@ -1532,9 +1532,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 		// we discard terms of coeff 0 and sort them
 		terms = Stream.of(terms).filter(t -> t.coeff != 0).sorted().toArray(Term[]::new);
-
-		list = Stream.of(terms).map(t -> t.obj).toArray(Variable[]::new);
 		control(Stream.of(terms).allMatch(t -> Utilities.isSafeInt(t.coeff)));
+		return terms;
+	}
+
+	private CtrEntity sum(Variable[] list, int[] coeffs, TypeConditionOperatorRel op, long limit, boolean inversable) {
+		Term[] terms = handleSumTerms(list, coeffs);
+		list = Stream.of(terms).map(t -> t.obj).toArray(Variable[]::new);
 		coeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
 
 		// we reverse if possible (to have some opportunity to have only coeffs equal to 1)
@@ -1582,8 +1586,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(Stream.of(list).noneMatch(x -> x == null), "A variable is null");
 		control(list.length == coeffs.length, "the number of variables is different from the number of coefficients");
 
-		Object rightTerm = condition.rightTerm(); // a constant, a variable, a range or an int array according to the
-													// type of the condition
+		Object rightTerm = condition.rightTerm(); // a constant, a variable, a range or an int array
 
 		// we remove terms with coefficient 0
 		if (IntStream.of(coeffs).anyMatch(v -> v == 0)) {
@@ -1614,8 +1617,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 						sum(list, coeffs, NE, v);
 			} else { // IN
 				// boolean mdd = false; // hard coding for the moment
-				// if (mdd)
-				// return post(new CMDDO(this, translate(list), coeffs, rightTerm));
+				// if (mdd) return post(new CMDDO(this, translate(list), coeffs, rightTerm));
 				if (condition instanceof ConditionIntvl) {
 					sum(list, coeffs, GE, ((Range) rightTerm).start);
 					sum(list, coeffs, LE, ((Range) rightTerm).stop - 1);
@@ -1865,22 +1867,33 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, int[] occurs) {
 		// int limit = Utilities.safeInt(IntStream.range(0, values.length).mapToLong(i -> Utilities.safeInt(values[i] *
 		// (long) occurs[i], true)).sum(), true);
-		control(values.length == occurs.length && IntStream.of(occurs).allMatch(v -> v > 0));
+		control(values.length == occurs.length && IntStream.of(occurs).allMatch(v -> v >= 0), "" + Kit.join(occurs));
+		int[] vals = values, occs = occurs;
+		if (IntStream.of(occurs).anyMatch(v -> v == 0)) {
+			int[] remaining = IntStream.range(0, values.length).filter(i -> occurs[i] != 0).toArray();
+			int[] discards = IntStream.range(0, values.length).filter(i -> occurs[i] == 0).map(i -> values[i]).toArray();
+			for (Var x : list)
+				extension((Variable) x, discards, false);
+			vals = IntStream.of(remaining).map(i -> values[i]).toArray();
+			occs = IntStream.of(remaining).map(i -> occurs[i]).toArray();
+		}
+
+		control(vals.length > 0 && vals.length == occs.length && IntStream.of(occs).allMatch(v -> v > 0), "" + Kit.join(occs));
 		Variable[] scp = translate(clean(list));
 		if (scp.length == 1) {
-			control(values.length == 1 && occurs[0] == 1);
-			return equal(scp[0], values[0]);
+			control(vals.length == 1 && occs[0] == 1);
+			return equal(scp[0], vals[0]);
 		}
 		boolean closed = Stream.of(scp).allMatch(x -> x.dom.enclosedIn(values));
 		if (!closed && mustBeClosed) {
 			// sum(list, Kit.repeat(1, list.length), Condition.buildFrom(EQ, limit));
-			postClosed(scp, values);
+			postClosed(scp, vals);
 			closed = true;
 		}
 		// else sum(list, Kit.repeat(1, list.length), Condition.buildFrom(GE, limit));
-		if (closed && IntStream.of(occurs).allMatch(v -> v == 1))
+		if (closed && IntStream.of(occs).allMatch(v -> v == 1))
 			return allDifferent(scp);
-		return post(new Cardinality(this, scp, values, occurs));
+		return post(new Cardinality(this, scp, vals, occs));
 	}
 
 	@Override
@@ -2775,7 +2788,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			}
 			long lb = head.control.optimization.lb, ub = head.control.optimization.ub;
 			if (!Variable.areAllDistinct(list)) {
-
+				if (type == SUM) {
+					Term[] terms = handleSumTerms(list, null);
+					list = Stream.of(terms).map(t -> t.obj).toArray(Variable[]::new);
+					int[] coeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
+					return optimize(opt, type, list, coeffs);
+				} else if (type == MAXIMUM || type == MINIMUM || type == NVALUES)
+					list = Stream.of(list).distinct().toArray(Variable[]::new);
+				else
+					throw new AssertionError("Unimplemented");
 			}
 
 			// TODO what about several occurrences of the same variable in list?0

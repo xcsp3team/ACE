@@ -37,6 +37,7 @@ import org.xcsp.common.IVar;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Types.TypeConditionOperatorSet;
 import org.xcsp.common.Types.TypeExpr;
+import org.xcsp.common.Utilities;
 import org.xcsp.common.predicates.XNode;
 import org.xcsp.common.predicates.XNodeLeaf;
 import org.xcsp.common.predicates.XNodeParent;
@@ -319,12 +320,12 @@ public final class TableHybrid extends ExtensionStructure {
 			control(son1.type != TypeExpr.SYMBOL, "Symbolic values not possible for the moment");
 			if (son1.type == TypeExpr.LONG) {
 				int k = safeInt(((long) ((XNodeLeaf<?>) son1).value));
-				control(op != EQ, "case normally avoided when parsing");
-				// if (op == EQ) {
-				// control(tuple[x] == STAR && scp[x].dom.containsValue(k));
-				// // for a constant, we directly put it in tuple (no need to build a Restriction object)
-				// tuple[x] = scp[x].dom.toIdx(k);
-				// }
+				if (op == EQ) {
+					control(tuple[x] == STAR && scp[x].dom.containsValue(k));
+					// for a constant, we directly put it in tuple (no need to build a Restriction object)
+					tuple[x] = scp[x].dom.toIdx(k);
+					return null;
+				}
 				Restriction1Rel res = buildRestriction1From(x, op, k);
 				if (res.pivot == -1 || res.pivot == Integer.MAX_VALUE) {
 					control(tuple[x] == STAR);
@@ -332,12 +333,17 @@ public final class TableHybrid extends ExtensionStructure {
 				}
 				return res;
 			}
+			if (son1.type == TypeExpr.VAR) {
+				int y = Utilities.indexOf(((XNodeLeaf<?>) son1).value, scp);
+				control(tuple[y] == STAR);
+				return buildRestriction2From(x, op, y);
+			}
 			if (son1.type == TypeExpr.PAR) {
 				int y = (int) ((XNodeLeaf<?>) son1).value;
 				control(tuple[y] == STAR);
 				return buildRestriction2From(x, op, y);
 			}
-			control(son1.type.oneOf(TypeExpr.ADD, TypeExpr.SUB));
+			control(son1.type.oneOf(TypeExpr.ADD, TypeExpr.SUB), son1 + " ");
 			XNode<?>[] grandSons = ((XNodeParent<?>) son1).sons;
 			control(grandSons.length == 2 && grandSons[0].type == TypeExpr.PAR);
 			int y = (int) ((XNodeLeaf<?>) grandSons[0]).value;
