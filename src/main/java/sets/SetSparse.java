@@ -180,4 +180,41 @@ public class SetSparse extends SetDense {
 	public String toString() {
 		return super.toString() + "\nsparse={" + IntStream.range(0, size()).mapToObj(i -> sparse[i] + "").collect(Collectors.joining(",")) + "}";
 	}
+
+	public static class SetSparseCnt extends SetSparse {
+
+		public long total;
+
+		public final long[] cnts;
+
+		public SetSparseCnt(int capacity, boolean initiallyFull) {
+			super(capacity, initiallyFull);
+			this.cnts = new long[capacity];
+		}
+
+		public SetSparseCnt(int capacity) {
+			this(capacity, false);
+		}
+
+		@Override
+		public void increaseCapacity() {
+			throw new AssertionError();
+		}
+
+		@Override
+		public void clear() {
+			super.clear();
+			total = 0;
+		}
+
+		public boolean add(int a, int cnt) {
+			total += cnt;
+			boolean added = super.add(a);
+			if (added)
+				cnts[a] = cnt;
+			else
+				cnts[a] += cnt;
+			return added;
+		}
+	}
 }

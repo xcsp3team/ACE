@@ -110,7 +110,7 @@ public abstract class HeuristicValues extends Heuristic {
 	public static Variable[] possibleOptimizationInterference(Problem problem) {
 		if (problem.optimizer == null || !problem.head.control.valh.optValHeuristic) // experimental
 			return null;
-		boolean strong = false; // hard coding
+		boolean strong = true; // hard coding
 		Constraint c = ((Constraint) problem.optimizer.ctr);
 		boolean minimization = problem.optimizer.minimization;
 		if (c instanceof ObjectiveVariable) {

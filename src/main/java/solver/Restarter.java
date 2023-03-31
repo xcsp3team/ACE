@@ -14,10 +14,11 @@ import static utility.Kit.control;
 
 import java.util.function.Supplier;
 
-import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
 import dashboard.Control.OptionsRestarts;
+import dashboard.Input;
+import heuristics.HeuristicVariables;
+import heuristics.HeuristicVariablesDynamic.RunRobin;
 import interfaces.Observers.ObserverOnRuns;
-import optimization.ObjectiveVariable;
 import optimization.Optimizer;
 import sets.SetDense;
 import utility.Kit;
@@ -61,6 +62,7 @@ public class Restarter implements ObserverOnRuns {
 	@Override
 	public void beforeRun() {
 		numRun++;
+		localStats.atStart();
 		if ((numRun - solver.solutions.lastRun) % options.resetPeriod == 0) {
 			nRestartsSinceReset = 0;
 			baseCutoff = baseCutoff * options.resetCoefficient;
@@ -84,6 +86,76 @@ public class Restarter implements ObserverOnRuns {
 				solver.heuristic.resetPriorityVars();
 			else
 				solver.heuristic.setPriorityVars((Variable[]) solver.problem.arrays[index - 1].flatVars, 0);
+		}
+	}
+
+	@Override
+	public void afterRun() {
+		localStats.atEnd();
+		// System.out.println(localStats);
+	}
+
+	class LocalStats {
+
+		public long nFoundSolutionAtRunStart;
+
+		public long boundAtRunStart = -1;
+
+		public long measureAtRunStart;
+
+		/**
+		 * nFoundSolutions[i] is the number of solutions found by run i
+		 */
+		long[] nFoundSolutions;
+
+		/**
+		 * gains[i] is the gain (bound improvement) obtained at run i
+		 */
+		long[] gains;
+
+		/**
+		 * lengths[i] is the length (measure as the number of failed assignments) of run i
+		 */
+		long[] lengths;
+
+		/**
+		 * heuristics[i] is the heuristic used at run i
+		 */
+		HeuristicVariables[] heuristics;
+
+		private LocalStats(int size) {
+			this.nFoundSolutions = new long[size];
+			this.gains = solver.problem.optimizer != null ? new long[size] : null;
+			this.lengths = new long[size];
+			this.heuristics = new HeuristicVariables[size];
+		}
+
+		private void atStart() {
+			nFoundSolutionAtRunStart = solver.solutions.found;
+			if (gains != null)
+				boundAtRunStart = solver.solutions.bestBound;
+			measureAtRunStart = measureSupplier.get();
+		}
+
+		private void atEnd() {
+			nFoundSolutions[numRun] = solver.solutions.found - nFoundSolutionAtRunStart;
+			if (gains != null) {
+				boolean firstSolutions = nFoundSolutionAtRunStart == 0 && solver.solutions.found > 0;
+				long l = (firstSolutions ? solver.solutions.firstBound : boundAtRunStart);
+				gains[numRun] = Math.abs(solver.solutions.bestBound - (firstSolutions ? solver.solutions.firstBound : boundAtRunStart))
+						+ (firstSolutions ? 1 : 0); // bonus de 1 ? other ?
+			}
+			lengths[numRun] = measureSupplier.get() - measureAtRunStart;
+			heuristics[numRun] = solver.heuristic instanceof RunRobin ? ((RunRobin) solver.heuristic).current : solver.heuristic;
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder("  Restart Stats:\n");
+			for (int i = 0; i <= numRun; i++)
+				sb.append("\t" + nFoundSolutions[i] + (gains != null ? " " + gains[i] : "") + " " + lengths[i] + " " + heuristics[i].getClass().getSimpleName()
+						+ "\n");
+			return sb.toString();
 		}
 	}
 
@@ -126,6 +198,8 @@ public class Restarter implements ObserverOnRuns {
 	 */
 	private int nRestartsSinceReset;
 
+	public LocalStats localStats;
+
 	/**
 	 * Resets the object. This is usually not used.
 	 */
@@ -149,7 +223,7 @@ public class Restarter implements ObserverOnRuns {
 			return () -> sb.stats.nWrongDecisions;
 		case BACKTRACK:
 			return () -> sb.stats.nBacktracks;
-		case SOLUTION:
+		case SOLUTION: // TODO: pb with CSP, as several similar solutions may be found
 			return () -> solver.solutions.found;
 		default:
 			throw new AssertionError();
@@ -170,6 +244,7 @@ public class Restarter implements ObserverOnRuns {
 			options.cutoff *= 10; // For COPs, the cutoff value is multiplied by 10; hard coding
 		this.measureSupplier = measureSupplier();
 		currCutoff = baseCutoff = options.cutoff; // reset();
+		this.localStats = new LocalStats(2000); // TODO: hard coding
 	}
 
 	private long cnt;
@@ -181,13 +256,18 @@ public class Restarter implements ObserverOnRuns {
 	 */
 	public boolean currRunFinished() {
 		Optimizer optimizer = solver.problem.optimizer;
-		if (optimizer != null && ((cnt++) % 5) == 0) // code for portfolio mode; hard coding
+		if (Input.portfolio && optimizer != null && ((cnt++) % 5) == 0) // code for portfolio mode; hard coding
 			optimizer.possiblyUpdateLocalBounds();
 		if (measureSupplier.get() >= currCutoff)
 			return true;
+		if (optimizer != null && solver.solutions.found - localStats.nFoundSolutionAtRunStart > 10) // for CSP, may be a
+																									// problem
+			return true;
 		if (optimizer == null || numRun != solver.solutions.lastRun)
 			return false;
-		return options.restartAfterSolution || optimizer.ctr instanceof MaximumCstLE || optimizer.ctr instanceof ObjectiveVariable;
+		return options.restartAfterSolution;
+		// for CSP, shouldnt'we add the last solution as nogood if restartAfterSolution (otherwise, possibility of
+		// finding it several times?)?
 	}
 
 	/**

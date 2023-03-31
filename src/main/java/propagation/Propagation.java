@@ -16,9 +16,13 @@ import java.util.Set;
 import constraints.Constraint;
 import constraints.ConstraintGlobal;
 import dashboard.Control.OptionsPropagation;
+import heuristics.HeuristicVariablesDynamic.PickOnDom;
+import heuristics.HeuristicVariablesDynamic.ProcOnDom;
+import heuristics.HeuristicVariablesDynamic.RunRobin;
 import interfaces.Observers.ObserverOnConflicts;
 import learning.IpsReasonerDominance;
 import sets.SetSparse;
+import sets.SetSparse.SetSparseCnt;
 import solver.Solver;
 import solver.Solver.Stopping;
 import utility.Reflector;
@@ -198,6 +202,10 @@ public abstract class Propagation {
 	 */
 	public boolean runAtNextRoot;
 
+	public SetSparseCnt historyX;
+
+	public SetSparseCnt historyC;
+
 	/*************************************************************************
 	 * Methods
 	 *************************************************************************/
@@ -232,6 +240,12 @@ public abstract class Propagation {
 		// SetSparseMap(solver.problem.constraints.length)).toArray(SetSparseMap[]::new)
 		// : null;
 		this.postponedConstraints = new HashSet<>();
+		String clazz = solver.head.control.varh.clazz;
+		this.historyX = clazz.equals(PickOnDom.class.getSimpleName()) || clazz.equals(RunRobin.class.getSimpleName())
+				? new SetSparseCnt(solver.problem.variables.length)
+				: null;
+		this.historyC = clazz.equals(ProcOnDom.class.getSimpleName()) ? new SetSparseCnt(solver.problem.constraints.length) : null;
+
 	}
 
 	/**
@@ -241,24 +255,34 @@ public abstract class Propagation {
 	 * @return false iff an inconsistency is detected
 	 */
 	protected final boolean pickAndFilter() {
+		boolean consistent = true;
 		Variable x = queue.pickAndDelete();
-		// System.out.println("picking " + x);
+		int pm = solver.head.control.varh.pickMode;
+		int before = solver.problem.nValueRemovals;
 		if (!nogoodReasoning.isNogoodConsistent(x))
-			return false;
-		for (Constraint c : x.ctrs)
-			if (!c.ignored && !solver.isEntailed(c)) {
-				if (!c.postponable) {
-					currFilteringCtr = c;
-					boolean consistent = c.filterFrom(x);
-					currFilteringCtr = null;
-					if (!consistent)
-						return false;
-				} else {// if (c.time <= x.time)
-					postponedConstraints.add(c); // auxiliaryQueues[c.filteringComplexity - 1].add(c.num, x.num);
-					c.postponedEvent = x;
+			consistent = false;
+		else {
+			for (Constraint c : x.ctrs) {
+				if (!c.ignored && !solver.isEntailed(c)) {
+					if (!c.postponable) {
+						currFilteringCtr = c;
+						int bef = solver.problem.nValueRemovals;
+						consistent = c.filterFrom(x);
+						if (historyC != null && solver.problem.nValueRemovals > bef)
+							historyC.add(c.num, pm == 0 ? 1 : consistent ? solver.problem.nValueRemovals - bef : 100);
+						currFilteringCtr = null;
+					} else {// if (c.time <= x.time)
+						postponedConstraints.add(c); // auxiliaryQueues[c.filteringComplexity - 1].add(c.num, x.num);
+						c.postponedEvent = x;
+					}
 				}
+				if (!consistent)
+					break;
 			}
-		return true;
+		}
+		if (historyX != null && solver.problem.nValueRemovals > before)
+			historyX.add(x.num, pm == 0 ? 1 : consistent ? solver.problem.nValueRemovals - before : 100); // TODO: 100
+		return consistent;
 	}
 
 	/**
@@ -267,6 +291,10 @@ public abstract class Propagation {
 	 * @return false iff an inconsistency is detected
 	 */
 	public boolean propagate() {
+		if (historyX != null)
+			historyX.clear();
+		if (historyC != null)
+			historyC.clear();
 		while (true) {
 			while (queue.size() != 0) // propagation with respect to the main queue
 				if (pickAndFilter() == false)
@@ -274,7 +302,10 @@ public abstract class Propagation {
 			for (Constraint c : postponedConstraints) { // propagation with respect to postponed constraints
 				assert !c.ignored && !solver.isEntailed(c);
 				currFilteringCtr = c;
+				int bef = solver.problem.nValueRemovals;
 				boolean consistent = c.filterFrom(c.postponedEvent);
+				if (historyC != null && solver.problem.nValueRemovals > bef)
+					historyC.add(c.num, solver.head.control.varh.pickMode == 0 ? 1 : consistent ? solver.problem.nValueRemovals - bef : 100);
 				currFilteringCtr = null;
 				if (!consistent)
 					return false;

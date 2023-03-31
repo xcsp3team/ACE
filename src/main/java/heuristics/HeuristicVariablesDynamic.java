@@ -11,6 +11,7 @@
 package heuristics;
 
 import static heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting.CACD;
+import static heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting.CACD_EXP;
 import static heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting.CHS;
 import static heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting.VAR;
 import static utility.Kit.control;
@@ -24,6 +25,7 @@ import interfaces.Observers.ObserverOnConflicts;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Tags.TagMaximize;
 import sets.SetDense;
+import sets.SetSparse.SetSparseCnt;
 import solver.Solver;
 import solver.Solver.Branching;
 import utility.Kit;
@@ -175,6 +177,161 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 	}
 
+	public static final class PickOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
+
+		private final SetSparseCnt set;
+
+		private final long[] nPicks;
+
+		private int pickMode;
+
+		public PickOnDom(Solver solver, boolean anti) {
+			super(solver, anti);
+			this.set = solver.propagation.historyX;
+			this.nPicks = new long[solver.problem.variables.length];
+			this.pickMode = solver.head.control.varh.pickMode;
+		}
+
+		@Override
+		public void reset() {
+			Arrays.fill(nPicks, 0);
+		}
+
+		@Override
+		public void beforeRun() {
+			if (runReset()) {
+				Kit.log.config("    ...resetting weights (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
+				reset();
+			}
+		}
+
+		@Override
+		public void whenWipeout(Constraint c, Variable x) {
+			int p = pickMode < 2 ? 0 : pickMode == 2 ? 100 : ((nPicks.length - solver.depth()) * 100) / nPicks.length;
+			int total = (int) set.total;
+			for (int i = set.limit; i >= 0; i--) {
+				int num = set.dense[i];
+				long cnt = set.cnts[num];
+				nPicks[num] += pickMode < 2 ? cnt : 1 + (p * cnt / total);
+			}
+		}
+
+		@Override
+		public void whenBacktrack() {
+		}
+
+		@Override
+		public double scoreOf(Variable x) {
+			return nPicks[x.num] / (double) x.dom.size();
+		}
+	}
+
+	public static final class RunRobin extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
+
+		private final HeuristicVariablesDynamic[] pool;
+
+		public HeuristicVariablesDynamic current;
+
+		public RunRobin(Solver solver, boolean anti) {
+			super(solver, anti);
+			this.pool = new HeuristicVariablesDynamic[] { new PickOnDom(solver, anti), new FraOnDom(solver, anti), new Wdeg(solver, anti) };
+		}
+
+		@Override
+		public void reset() {
+			for (HeuristicVariablesDynamic h : pool)
+				h.reset();
+		}
+
+		@Override
+		public void beforeRun() {
+			int run = solver.restarter.numRun;
+			current = pool[run % pool.length];
+			// System.out.println("using " + current.getClass().getSimpleName());
+			if (runReset()) {
+				Kit.log.config("    ...resetting weights (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
+				for (HeuristicVariablesDynamic h : pool)
+					h.reset();
+			}
+		}
+
+		@Override
+		public void whenWipeout(Constraint c, Variable x) {
+			if (current instanceof ObserverOnConflicts)
+				((ObserverOnConflicts) current).whenWipeout(c, x);
+		}
+
+		@Override
+		public void whenBacktrack() {
+		}
+
+		@Override
+		public double scoreOf(Variable x) {
+			return current.scoreOf(x);
+		}
+	}
+
+	public static final class ProcOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
+
+		private final SetSparseCnt set;
+
+		private final long[] weights;
+
+		private int pickMode;
+
+		private int nb = 3;
+
+		public ProcOnDom(Solver solver, boolean anti) {
+			super(solver, anti);
+			this.set = solver.propagation.historyC;
+			this.weights = new long[solver.problem.variables.length];
+			this.pickMode = solver.head.control.varh.pickMode;
+		}
+
+		@Override
+		public void reset() {
+			Arrays.fill(weights, 0);
+		}
+
+		@Override
+		public void beforeRun() {
+			if (runReset()) {
+				Kit.log.config("    ...resetting weights (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
+				reset();
+			}
+		}
+
+		@Override
+		public void whenWipeout(Constraint c, Variable x) {
+			int p = pickMode < 2 ? 0 : pickMode == 2 ? 100 : ((weights.length - solver.depth()) * 100) / weights.length;
+			// System.out.println("ffff " + p);
+			int total = (int) set.total;
+			// int m = 0;
+			for (int i = set.limit; i >= 0; i--) {
+				// m++;
+				// if (m > nb)
+				// break;
+				int num = set.dense[i];
+				long cnt = set.cnts[num];
+				Constraint ctr = solver.problem.constraints[num];
+				SetDense futvars = ctr.futvars;
+				for (int k = futvars.limit; k >= 0; k--) {
+					Variable y = ctr.scp[futvars.dense[k]];
+					weights[y.num] += pickMode < 2 ? cnt : 1 + (p * cnt / total);
+				}
+			}
+		}
+
+		@Override
+		public void whenBacktrack() {
+		}
+
+		@Override
+		public double scoreOf(Variable x) {
+			return weights[x.num] / (double) x.dom.size();
+		}
+	}
+
 	// ************************************************************************
 	// ***** Subclasses for Wdeg variants
 	// ************************************************************************
@@ -199,7 +356,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		 * </ul>
 		 */
 		public static enum ConstraintWeighting {
-			VAR, UNIT, CACD, CHS;
+			VAR, UNIT, UNIT_EXP, CACD, CACD_EXP, CHS;
+
+			public boolean is_exp() {
+				return this == UNIT_EXP || this == CACD_EXP;
+			}
 		}
 
 		/**
@@ -236,6 +397,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		 * field used by CHS
 		 */
 		private double alpha;
+
+		private Constraint lastWipeoutCtr;
+
+		private int nSuccessiveWipeoutCtr;
 
 		@Override
 		public void beforeRun() {
@@ -287,13 +452,20 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					cscores[c.num] += increment;
 					alpha = Double.max(ALPHA_LIMIT, alpha - ALPHA_DECREMENT);
 				} else {
+					if (lastWipeoutCtr != c) {
+						lastWipeoutCtr = c;
+						nSuccessiveWipeoutCtr = 0;
+					} else
+						nSuccessiveWipeoutCtr++;
+
 					double increment = 1;
 					cscores[c.num] += increment; // just +1 in that case (can be useful for other objects, but not
 													// directly for wdeg)
 					SetDense futvars = c.futvars;
 					for (int i = futvars.limit; i >= 0; i--) {
 						Variable y = c.scp[futvars.dense[i]];
-						if (options.weighting == CACD) { // in this case, the increment is not 1 as for UNIT
+						if (options.weighting == CACD || options.weighting == CACD_EXP) { // in this case, the increment
+																							// is not 1 as for UNIT
 							Domain dom = y.dom;
 							// boolean test = false; // EXPERIMENTAL ; this variant does not seem to be interesting
 							// if (test) {
@@ -306,8 +478,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 							// }
 							// increment = 1.0 / (futvars.size() * (dom.size() + nRemoved));
 							// } else
+
 							increment = 1.0 / (futvars.size() * (dom.size() == 0 ? 0.5 : dom.size()));
 						}
+						increment = options.weighting.is_exp() ? increment * Math.pow(2, nSuccessiveWipeoutCtr) : increment;
 						vscores[y.num] += increment;
 						cvscores[c.num][futvars.dense[i]] += increment;
 					}

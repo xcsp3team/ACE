@@ -15,6 +15,7 @@ import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequireFai
 import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequirePerValue;
 import heuristics.HeuristicVariablesDynamic.FrOnDom;
 import heuristics.HeuristicVariablesDynamic.FraOnDom;
+import heuristics.HeuristicVariablesDynamic.RunRobin;
 import interfaces.Observers.ObserverOnAssignments;
 import interfaces.Observers.ObserverOnDecisions;
 import interfaces.Observers.ObserverOnRuns;
@@ -168,7 +169,7 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 		private int nFailed;
 
 		/**
-		 * the last time (wrt nFailedAssignments) there was a failed assignment involving the variable
+		 * the last time (wrt the global nFailedAssignments) there was a failed assignment involving the variable
 		 */
 		private long lastFailed;
 
@@ -361,7 +362,7 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	public Statistics(Solver solver) {
 		this.solver = solver;
 		Variable[] vars = solver.problem.variables;
-		boolean b1 = solver.heuristic instanceof FrOnDom || solver.heuristic instanceof FraOnDom;
+		boolean b1 = solver.heuristic instanceof FrOnDom || solver.heuristic instanceof FraOnDom || solver.heuristic instanceof RunRobin;
 		if (b1)
 			varAssignments = new VarAssignments[vars.length];
 		for (int i = 0; i < vars.length; i++) {

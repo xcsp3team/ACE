@@ -10,8 +10,6 @@
 
 package optimization;
 
-import static utility.Kit.control;
-
 import constraints.ConstraintGlobal;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
@@ -108,7 +106,7 @@ public abstract class ObjectiveVariable extends ConstraintGlobal implements Opti
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			control(problem.solver.depth() == 0, () -> "depth: " + problem.solver.depth());
+			// control(problem.solver.depth() == 0, () -> "depth: " + problem.solver.depth());
 			if (x.dom.removeValuesGT(limit) == false)
 				return false;
 			assert x.dom.size() > 0;
@@ -134,7 +132,7 @@ public abstract class ObjectiveVariable extends ConstraintGlobal implements Opti
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			control(problem.solver.depth() == 0, () -> "depth: " + problem.solver.depth());
+			// control(problem.solver.depth() == 0, () -> "depth: " + problem.solver.depth());
 			if (x.dom.removeValuesLT(limit) == false)
 				return false;
 			assert x.dom.size() > 0;

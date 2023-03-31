@@ -297,10 +297,9 @@ public final class NogoodReasoner {
 	 *            true if the decisions must be sorted
 	 */
 	public void addNogood(int[] negativeDecisions, boolean toBeSorted) {
-		// if (negativeDecisions.length < 3) {
+		// if (negativeDecisions.length < 3)
 		// System.out.println(" nog : " + IntStream.of(negativeDecisions).mapToObj(d ->
 		// decisions.stringOf(d)).collect(joining(" ")));
-		// }
 
 		if (nNogoods < nogoods.length) {
 			if (toBeSorted)
@@ -318,6 +317,8 @@ public final class NogoodReasoner {
 	 */
 	public void addNogoodsOfCurrentBranch() {
 		SetDense set = decisions.set;
+		// System.out.println(IntStream.range(0, set.size()).mapToObj(i ->
+		// decisions.stringOf(set.dense[i])).collect(joining(" ")));
 		if (!options.nogood.isRstType() || set.size() < 2)
 			return;
 		int nMetPositiveDecisions = 0;

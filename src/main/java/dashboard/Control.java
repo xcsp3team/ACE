@@ -48,8 +48,6 @@ import constraints.Constraint;
 import constraints.ConstraintExtension.Extension;
 import constraints.extension.structures.Bits;
 import constraints.extension.structures.Matrix.Matrix3D;
-import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstLE;
-import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstGE;
 import heuristics.HeuristicRevisions;
 import heuristics.HeuristicRevisions.HeuristicRevisionsDynamic.Dom;
 import heuristics.HeuristicValues;
@@ -63,7 +61,6 @@ import learning.IpsReasoner.LearningIps;
 import learning.NogoodReasoner.LearningNogood;
 import main.Head;
 import main.HeadExtraction.Extraction;
-import optimization.ObjectiveVariable;
 import optimization.Optimizer;
 import optimization.Optimizer.OptimizationStrategy;
 import problem.Problem.SymmetryBreaking;
@@ -196,8 +193,8 @@ public final class Control {
 		if (optimizer != null) {
 			if (general.solLimit == -1)
 				general.solLimit = PLUS_INFINITY; // default value for COP (in order to find an optimum)
-			if (optimizer.ctr instanceof ObjectiveVariable || optimizer.ctr instanceof MaximumCstLE || optimizer.ctr instanceof MinimumCstGE)
-				restarts.restartAfterSolution = true;
+			// if (optimizer.ctr instanceof MaximumCstLE || optimizer.ctr instanceof MinimumCstGE) // || optimizer.ctr
+			// // instanceof ObjectiveVariable) restarts.restartAfterSolution = true;
 		} else {
 			if (general.solLimit == -1)
 				general.solLimit = 1; // default value for CSP
@@ -400,7 +397,7 @@ public final class Control {
 		public final String discardClasses = addS("discardClasses", "dc", "", "XCSP3 classes (tags) to be discarded (comma as separator)");
 		public final String campaignDir = addS("campaignDir", "cd", "", "Name of a campaign directory where results (XML files) are stored.");
 		public final String trace = addS("trace", "trace", "", "Displays a trace (with possible depth control as eg -trace=10-20");
-		public final int jsonLimit = addI("jsonLimit", "jl", 1000, "The limit on the number of variables for displaying solutions in JSON");
+		public final int jsonLimit = addI("jsonLimit", "jl", 10000, "The limit on the number of variables for displaying solutions in JSON");
 		public final boolean jsonAux = addB("jsonAux", "ja", false, "Take auxiliary variables when displaying solutions in JSON");
 		public final String jsonSave = addS("jsonSave", "js", "", "Save the first solution in a file whose name is this value");
 		public final boolean jsonQuotes = addB("jsonQuotes", "jq", false, "Surround keys with quotes when solutions are displayed on the standard output");
@@ -507,6 +504,7 @@ public final class Control {
 	public class OptionsGlobal extends OptionGroup {
 		public final int allDifferent = addI("allDifferent", "g_ad", 0, "Algorithm for AllDifferent");
 		public final int allDifferentExcept = addI("allDifferentExcept", "g_ade", 0, "Algorithm for AllDifferentExcept");
+		public final boolean gatherAllDifferent = addB("gatherAllDifferent", "g_gad", false, "");
 		public final int distinctVectors = addI("distinctVectors", "g_dv", 0, "Algorithm for DistinctVectors");
 		public final int allEqual = addI("allEqual", "g_ae", 0, "Algorithm for AllEqual");
 		public final int notAllEqual = addI("notAllEqual", "g_nae", 0, "Algorithm for NotAllEqual");
@@ -517,7 +515,7 @@ public final class Control {
 		public final boolean viewForSum = addB("viewForSum", "vs", false, "Must we use views for Sum constraints, when possible?");
 		public final boolean eqDecForSum = addB("eqDecForSum", "eqs", false, "Must we post two constraints for Sum constraints, when the operator is EQ?");
 		public final boolean permutation = addB("permutation", "", false, "Must we use permutation constraints for AllDifferent if possible? (may be faster)");
-		public final int allDifferentNb = addI("allDifferentNb", "adn", 0, "Number of possibly automatically inferred AllDifferent");
+		public final int allDifferentNb = addI("allDifferentNb", "adn", 10, "Number of possibly automatically inferred AllDifferent");
 		public final int allDifferentSize = addI("allDifferentSize", "ads", 5, "Limit on the size of possibly automatically inferred AllDifferent");
 
 		public final boolean starred = addB("starred", "", false, "When true, some global constraints are encoded by starred tables");
@@ -600,6 +598,8 @@ public final class Control {
 		public final boolean anti = addB("anti", "anti_varh", false, "Must we use the reverse of the natural heuristic order?");
 		public final int lc = addI("lc", "lc", 2, "Value for lc (last conflict); 0 if not activated");
 		public final ConstraintWeighting weighting = addE("weighting", "wt", ConstraintWeighting.CACD, "How to manage weights for wdeg variants");
+		public final int pickMode = addI("pickMode", "pm", 0, "How to manage incrementation of effective picked variables or constraints during propagation");
+		public final boolean mvarh = addB("mvarh", "mvarh", false, "Must we just maintain an approximation of the best scored variable?");
 		public final SingletonStrategy singleton = addE("singleton", "sing", SingletonStrategy.LAST, "How to manage singleton variables during search");
 		public final boolean connected = addB("connected", "", false, "Must we select a variable necessarily connected to an already explicitly assigned one?");
 		public final boolean discardAux = addB("discardAux", "da", false, "Must we not branch on auxiliary variables introduced by the solver?");

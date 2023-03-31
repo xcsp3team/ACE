@@ -63,6 +63,11 @@ public final class Solutions {
 	public long found;
 
 	/**
+	 * For optimization problems, the first bound found by the solver if found > 0 (otherwise, 0)
+	 */
+	public long firstBound;
+
+	/**
 	 * For optimization problems, the best bound found by the solver if found > 0, the specified upper bound initially
 	 * given otherwise
 	 */
@@ -336,6 +341,8 @@ public final class Solutions {
 			bestBound = z;
 		} else if (solver.problem.optimizer != null) { // COP
 			bestBound = solver.problem.optimizer.value();
+			if (found == 1)
+				firstBound = bestBound;
 			Color.GREEN.println("o " + bestBound, "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
 
 			// solver.restarter.currCutoff += 20;

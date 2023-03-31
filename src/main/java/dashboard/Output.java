@@ -38,6 +38,7 @@ import constraints.Constraint;
 import constraints.ConstraintExtension;
 import constraints.ConstraintIntension;
 import dashboard.Control.OptionsVariables;
+import heuristics.HeuristicVariablesDynamic.RunRobin;
 import interfaces.Observers.ObserverOnConstruction;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Observers.ObserverOnSolving;
@@ -433,13 +434,14 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 			StringBuilder sb = new StringBuilder(COMMENT_PREFIX).append(COMMENT_PREFIX);
 			boolean sep = true;
 			for (Entry<String, Object> entry : entries) {
-				if (entry.getKey() == SEPARATOR) {
+				String key = entry.getKey();
+				if (key == SEPARATOR) {
 					sb.append("\n").append(COMMENT_PREFIX).append(COMMENT_PREFIX);
 					sep = true;
 				} else {
 					if (!sep)
 						sb.append("  ");
-					sb.append(entry.getKey()).append(sep_char).append(entry.getValue());
+					sb.append(key).append(key.equals(RUN) ? "" : sep_char).append(entry.getValue());
 					sep = false;
 				}
 			}
@@ -588,7 +590,10 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		InformationBloc m = new InformationBloc(RUN);
 		m.put("run", head.solver.restarter.numRun);
 		m.put(DEPTHS, head.solver.minDepth + ".." + head.solver.maxDepth);
+		if (head.solver.heuristic instanceof RunRobin)
+			m.put("varh", ((RunRobin) head.solver.heuristic).current.getClass().getSimpleName());
 		m.put(N_EFFECTIVE, features.nEffectiveFilterings);
+		m.put(N_FAILED, stats.nFailedAssignments);
 		m.put(N_WRONG, stats.nWrongDecisions);
 		if (Kit.memory() > 10000000000L)
 			m.put(MEM, Kit.memoryInMb());

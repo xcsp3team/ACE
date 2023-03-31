@@ -617,7 +617,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					control(problem.solver.depth() == 0);
+					// control(problem.solver.depth() == 0);
 					for (Variable y : scp)
 						if (y.dom.removeValuesLT(limit) == false)
 							return false;

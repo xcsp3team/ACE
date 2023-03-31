@@ -393,7 +393,7 @@ public final class TableHybrid extends ExtensionStructure {
 			}
 			// for the moment, the code is valid for conditions below (we will extend the scope of hybrid tables later,
 			// notably with multiple restrictions)
-			control(IntStream.range(0, scp.length).allMatch(i -> cnt1[i] + cnt2[i] <= 1));
+			// control(IntStream.range(0, scp.length).allMatch(i -> cnt1[i] + cnt2[i] <= 1));
 
 			Map<Integer, List<Restriction>> byMainVariable = list.stream().collect(Collectors.groupingBy(r -> r.x));
 			this.restrictions = byMainVariable.entrySet().stream()
@@ -502,7 +502,7 @@ public final class TableHybrid extends ExtensionStructure {
 			String s = "Hybrid tuple : " + (tuple == null ? "" : Kit.join(tuple, (Integer i) -> i == STAR ? "*" : i.toString()));
 			boolean b = true;
 			if (b)
-				return s + " : " + Stream.of(restrictions).map(r -> r.toString() + " (" + r.getClass() + ")").collect(Collectors.joining(", "));
+				return s + " : " + Stream.of(restrictions).map(r -> r.toString() + " (" + r.getClass().getSimpleName() + ")").collect(Collectors.joining(", "));
 			s += "\n  " + restrictions.length + " restrictons : ";
 			for (Restriction r : restrictions)
 				s += "\n    Restriction " + r.toString() + " ";
@@ -1343,7 +1343,7 @@ public final class TableHybrid extends ExtensionStructure {
 
 			@Override
 			public String toString() {
-				return scp[x] + " " + op + " " + scp[y] + " + " + k;
+				return scp[x] + " " + op + " " + scp[y] + (k != 0 ? " + " + k : "");
 			}
 		}
 
@@ -1653,7 +1653,7 @@ public final class TableHybrid extends ExtensionStructure {
 
 			protected Rstr3Add(int x, int y, int z) {
 				super(x, EQ, y, true, z);
-				System.out.println("building " + this);
+				// System.out.println("building " + this);
 			}
 
 			@Override

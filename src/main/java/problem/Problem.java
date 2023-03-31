@@ -179,6 +179,7 @@ import constraints.global.NValues.NValuesVar;
 import constraints.global.NoOverlap;
 import constraints.global.Precedence;
 import constraints.global.Product.ProductSimple;
+import constraints.global.SubsetAllDifferent;
 import constraints.global.Sum.SumSimple;
 import constraints.global.Sum.SumSimple.SumSimpleGE;
 import constraints.global.Sum.SumSimple.SumSimpleLE;
@@ -654,6 +655,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		loadData(data, dataFormat, dataSaving);
 		head.output.afterData();
 		api.model();
+		if (subsetAllDifferentScopes.size() > 0)
+			post(new SubsetAllDifferent(this, subsetAllDifferentScopes.stream().toArray(Variable[][]::new)));
 
 		replaceObjectiveVariable();
 
@@ -788,6 +791,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public Variable replaceByVariable(XNode<IVar> tree) {
 		Var aux = auxVar(tree.possibleValues());
 		replacement(aux, tree, false, null);
+		return (Variable) aux;
+	}
+
+	public Variable replaceByOtherVariable(Var x) {
+		Var aux = auxVar(x.allValues());
+		equal(aux, x);
 		return (Variable) aux;
 	}
 
@@ -1051,6 +1060,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (c != null)
 				return post(c);
 		}
+
 		if (options.recognizeReifLogic) {
 			Constraint c = null;
 			if (logic_X__eq_x.matches(tree)) {
@@ -1100,10 +1110,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			}
 			return product(list, basicCondition(tree));
 		}
-
 		boolean b = options.decompose > 0 && scp[0] instanceof VariableInteger && scp.length + 1 >= tree.listOfVars().size();
 		// at most a variable occurring twice
 		b = b || options.decompose == 2;
+		// System.out.println("Tree4b " + tree + " " + b);
 		if (b) {
 			XNode<IVar>[] sons = tree.sons;
 			int nParentSons = 0;
@@ -1258,6 +1268,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Constraints AllDifferent and DistinctVectors
 	// ************************************************************************
 
+	private List<Variable[]> subsetAllDifferentScopes = new ArrayList<>();
+
 	private CtrEntity allDifferent(Variable[] scp) {
 		if (scp.length <= 1) {
 			Color.ORANGE.println("Warning: AllDifferent with a scope of length " + scp.length + " : " + Kit.join(scp));
@@ -1265,6 +1277,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 		if (scp.length == 2)
 			return different(scp[0], scp[1]);
+
+		if (head.control.global.gatherAllDifferent) {
+			subsetAllDifferentScopes.add(scp);
+			return null;
+		}
 
 		switch (head.control.global.allDifferent) {
 		case 0:
@@ -1865,21 +1882,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, int[] occurs) {
-		// int limit = Utilities.safeInt(IntStream.range(0, values.length).mapToLong(i -> Utilities.safeInt(values[i] *
-		// (long) occurs[i], true)).sum(), true);
-		control(values.length == occurs.length && IntStream.of(occurs).allMatch(v -> v >= 0), "" + Kit.join(occurs));
+		// int limit = safeInt(range(0, values.length).mapToLong(i -> safeInt(values[i] * (long) occurs[i],
+		// true)).sum(), true);
+		Variable[] scp = translate(clean(list));
+		control(values.length == occurs.length && IntStream.of(occurs).allMatch(v -> v >= 0));
 		int[] vals = values, occs = occurs;
 		if (IntStream.of(occurs).anyMatch(v -> v == 0)) {
+			int[] discarding = IntStream.range(0, values.length).filter(i -> occurs[i] == 0).map(i -> values[i]).toArray();
+			forall(range(scp.length), i -> extension(scp[i], discarding, false));
 			int[] remaining = IntStream.range(0, values.length).filter(i -> occurs[i] != 0).toArray();
-			int[] discards = IntStream.range(0, values.length).filter(i -> occurs[i] == 0).map(i -> values[i]).toArray();
-			for (Var x : list)
-				extension((Variable) x, discards, false);
 			vals = IntStream.of(remaining).map(i -> values[i]).toArray();
 			occs = IntStream.of(remaining).map(i -> occurs[i]).toArray();
 		}
-
-		control(vals.length > 0 && vals.length == occs.length && IntStream.of(occs).allMatch(v -> v > 0), "" + Kit.join(occs));
-		Variable[] scp = translate(clean(list));
+		control(vals.length > 0 && vals.length == occs.length && IntStream.of(occs).allMatch(v -> v > 0));
 		if (scp.length == 1) {
 			control(vals.length == 1 && occs[0] == 1);
 			return equal(scp[0], vals[0]);
@@ -1902,8 +1917,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				&& IntStream.range(0, occursMin.length).allMatch(i -> 0 <= occursMin[i] && 0 < occursMax[i] && occursMin[i] <= occursMax[i]));
 		Variable[] scp = translate(clean(list));
 		if (scp.length == 1) {
-			control(values.length == 1 && occursMin[0] <= 1 && 1 <= occursMax[0]);
-			return equal(scp[0], values[0]);
+			int[] required = IntStream.range(0, values.length).filter(i -> occursMin[i] > 0).toArray();
+			control(required.length <= 1); // because not possible to assign a unique variable to several values
+			if (required.length == 1) {
+				control(occursMin[required[0]] == 1);
+				return equal(scp[0], values[required[0]]);
+			}
+			// as all occursMax[i] > 0, all values may be used for the assignment, so we post a unary table
+			return extension(scp[0], values, true);
 		}
 		if (mustBeClosed)
 			postClosed(scp, values);
@@ -2427,17 +2448,20 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity cumulative(Var[] origins, Var[] lengths, Var[] ends, int[] heights, Condition condition) {
 		unimplementedIf(ends != null, "cumulative");
+		Variable[] ors = translate(origins), les = translate(lengths);
+		if (!Variable.areAllDistinct(les))
+			les = Stream.of(les).map(x -> replaceByOtherVariable((Var) x)).toArray(Variable[]::new);
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			return post(new CumulativeVarW(this, translate(origins), translate(lengths), heights, op == LT ? limit - 1 : limit));
+			return post(new CumulativeVarW(this, ors, les, heights, op == LT ? limit - 1 : limit));
 		}
 		if (condition instanceof ConditionVar) {
 			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
 			control(op == LE);
 			Variable limit = (Variable) (((ConditionVar) condition).x);
-			return post(new CumulativeVarWC(this, translate(origins), translate(lengths), heights, limit));
+			return post(new CumulativeVarWC(this, ors, les, heights, limit));
 		}
 		return unimplemented("cumulative");
 	}
@@ -2445,17 +2469,20 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity cumulative(Var[] origins, int[] lengths, Var[] ends, Var[] heights, Condition condition) {
 		unimplementedIf(ends != null, "cumulative");
+		Variable[] ors = translate(origins), hes = translate(heights);
+		if (!Variable.areAllDistinct(hes))
+			hes = Stream.of(hes).map(x -> replaceByOtherVariable((Var) x)).toArray(Variable[]::new);
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			return post(new CumulativeVarH(this, translate(origins), lengths, translate(heights), op == LT ? limit - 1 : limit));
+			return post(new CumulativeVarH(this, ors, lengths, hes, op == LT ? limit - 1 : limit));
 		}
 		if (condition instanceof ConditionVar) {
 			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
 			control(op == LE);
 			Variable limit = (Variable) (((ConditionVar) condition).x);
-			return post(new CumulativeVarHC(this, translate(origins), lengths, translate(heights), limit));
+			return post(new CumulativeVarHC(this, ors, lengths, hes, limit));
 		}
 		return unimplemented("cumulative");
 	}
@@ -2463,17 +2490,22 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity cumulative(Var[] origins, Var[] lengths, Var[] ends, Var[] heights, Condition condition) {
 		unimplementedIf(ends != null, "cumulative");
+		Variable[] ors = translate(origins), les = translate(lengths), hes = translate(heights);
+		if (!Variable.areAllDistinct(les))
+			les = Stream.of(les).map(x -> replaceByOtherVariable((Var) x)).toArray(Variable[]::new);
+		if (!Variable.areAllDistinct(hes))
+			hes = Stream.of(hes).map(x -> replaceByOtherVariable((Var) x)).toArray(Variable[]::new);
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			return post(new CumulativeVarWH(this, translate(origins), translate(lengths), translate(heights), op == LT ? limit - 1 : limit));
+			return post(new CumulativeVarWH(this, ors, les, hes, op == LT ? limit - 1 : limit));
 		}
 		if (condition instanceof ConditionVar) {
 			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
 			control(op == LE);
 			Variable limit = (Variable) (((ConditionVar) condition).x);
-			return post(new CumulativeVarWHC(this, translate(origins), translate(lengths), translate(heights), limit));
+			return post(new CumulativeVarWHC(this, ors, les, hes, limit));
 		}
 		return unimplemented("cumulative");
 	}

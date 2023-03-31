@@ -38,6 +38,8 @@ import variables.Variable;
  * So, the context is to manage a collection of tasks, each one being described by 3 attributes: its starting time, its
  * width (length or duration), and its height (resource consumption).
  * 
+ * TODO: energetic reasoner must be revised (deactivated because of bug)
+ * 
  * @author Christophe Lecoutre
  */
 public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, TagCallCompleteFiltering, ObserverOnBacktracksSystematic {
@@ -206,7 +208,7 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 			this.sortedTasks = IntStream.range(0, nTasks).boxed().toArray(Integer[]::new);
 			if (!movableHeights) {
 				Arrays.sort(sortedTasks, (i1, i2) -> wheights[i1] > wheights[i2] ? -1 : wheights[i1] < wheights[i2] ? 1 : 0);
-				int highest = wheights[sortedTasks[0]], lowest = wheights[sortedTasks[nTasks - 1]];
+				// int highest = wheights[sortedTasks[0]], lowest = wheights[sortedTasks[nTasks - 1]];
 				this.smallestHeights = new int[1]; // highest - lowest >= 3 ? 3 : highest > lowest ? 2 : 1];
 			} else
 				this.smallestHeights = new int[2];
@@ -270,8 +272,6 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 				int lost = gap < s1 ? gap : gap < s2 ? (s1Used ? gap : gap - s1) : (gap < s1 + s2 ? gap - s2 : gap - s1 - s2);
 				s1Used = s1 <= gap && gap < s2;
 				assert lost >= 0;
-				// System.out.println("lost " + lost + " " + (gap < s1) + " " + (gap < s2) + " " + (gap < s3));
-				// System.out.println("k== " + k + " " + lost + "sss " + s1 + " " + s2 + " " + s3);
 				currMargin -= slot.width() * lost;
 				if (currMargin < 0)
 					return Boolean.FALSE;
@@ -299,12 +299,12 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 				if (tuple[i] <= t && t < tuple[i] + (wgap == -1 ? wwidths[i] : tuple[wgap + i]))
 					sum += (hgap == -1 ? wheights[i] : tuple[hgap + i]);
 			if (sum > limit) {
-				System.out.println(this.num + " " + Kit.join(this.scp));
-				System.out.println("At time " + t + " the sum is " + sum + " and exceeds " + limit);
-				System.out.println("tuple " + Kit.join(tuple));
-				for (int i = 0; i < nTasks; i++)
-					if (tuple[i] <= t && t < tuple[i] + (wgap == -1 ? wwidths[i] : tuple[wgap + i]))
-						System.out.println("adding " + (hgap == -1 ? wheights[i] : tuple[hgap + i]) + " from task " + i);
+				// System.out.println(this.num + " " + Kit.join(this.scp));
+				// System.out.println("At time " + t + " the sum is " + sum + " and exceeds " + limit);
+				// System.out.println("tuple " + Kit.join(tuple));
+				// for (int i = 0; i < nTasks; i++)
+				// if (tuple[i] <= t && t < tuple[i] + (wgap == -1 ? wwidths[i] : tuple[wgap + i]))
+				// System.out.println("adding " + (hgap == -1 ? wheights[i] : tuple[hgap + i]) + " from task " + i);
 				return false;
 			}
 		}
@@ -434,7 +434,7 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 		if (b == Boolean.TRUE)
 			return true;
 
-		// b = energeticReasoner.filter();
+		// b = energeticReasoner.filter(); // TODO : to fix (seems to be a bug)
 		// if (b == Boolean.FALSE)
 		// return false; // seems better than x.dom.fail()
 		// if (b == Boolean.TRUE)
@@ -536,8 +536,10 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 
 		@Override
 		protected int maxWidth(int i) {
-			if (widths == null) // because called when in the super-constructor
+			if (widths == null) { // because called when in the super-constructor
+				control(scp.length == 2 * nTasks);
 				return scp[starts.length + i].dom.lastValue();
+			}
 			return widths[i].dom.lastValue();
 		}
 

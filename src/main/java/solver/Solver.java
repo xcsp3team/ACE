@@ -865,8 +865,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			if (futVars.size() == 0) {
 				solutions.handleNewSolution();
 				boolean copContinue = problem.framework == COP && !head.control.restarts.restartAfterSolution;
-				ConstraintGlobal oc = copContinue ? (ConstraintGlobal) problem.optimizer.ctr : null; // objective
-																										// constraint
+				ConstraintGlobal oc = copContinue ? (ConstraintGlobal) problem.optimizer.ctr : null;
+				// oc is the objective constraint
 				if (copContinue) {
 					// first, we directly change the limit value of the leading objective constraint
 					problem.optimizer.ctr.limit(problem.optimizer.ctr.objectiveValue() + (problem.optimizer.minimization ? -1 : 1));
@@ -885,8 +885,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 						backtrack(futVars.lastPast());
 					// check with java -ea ace Photo.xml.lzma -ev ; java -ea ace Recipe.xml.lzma
 				}
-				if (problem.framework == COP) // && isEntailed(objectiveCtr)) TODO why is-it incorrect to use
-												// the second part of the test?
+				if (problem.framework == COP)
+					// && isEntailed(objectiveCtr)) TODO why is-it incorrect to use the second part of the test?
 					entailed.clear();
 				if (!finished() && !restarter.currRunFinished())
 					manageContradiction(oc);
