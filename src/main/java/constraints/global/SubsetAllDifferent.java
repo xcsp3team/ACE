@@ -10,7 +10,10 @@
 
 package constraints.global;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.xcsp.common.Utilities;
 
@@ -31,37 +34,50 @@ public final class SubsetAllDifferent extends ConstraintGlobal implements TagNot
 		for (int i = 0; i < subsets.length; i++) {
 			Variable[] subset = subsets[i];
 			for (int j = 0; j < subset.length; j++)
-				for (int k = j + 1; k < subset.length; k++)
-					if (t[mapping[i][j]] == t[mapping[i][k]])
+				for (int k = j + 1; k < subset.length; k++) {
+					int v = t[mapping[i][j]], w = t[mapping[i][k]];
+					if (exceptValue != null && (v == exceptValue || w == exceptValue))
+						continue;
+					if (v == w)
 						return false;
+				}
 		}
 		return true;
 	}
 
 	private final Variable[][] subsets;
 
-	private final boolean[][] irreflexives;
+	private Integer exceptValue;
 
 	private final int[][] mapping;
 
-	public SubsetAllDifferent(Problem pb, Variable[][] subsets) {
+	private final boolean[][] irreflexives;
+
+	private int[][] neighbours;
+
+	public SubsetAllDifferent(Problem pb, Variable[][] subsets, Integer exceptValue) {
 		super(pb, Utilities.collect(Variable.class, (Object[]) subsets));
 		this.subsets = subsets;
+		this.exceptValue = exceptValue;
 		this.mapping = IntStream.range(0, subsets.length)
 				.mapToObj(i -> IntStream.range(0, subsets[i].length).map(j -> Utilities.indexOf(subsets[i][j], scp)).toArray()).toArray(int[][]::new);
 		int n = pb.features.collecting.variables.size();
-		this.irreflexives = new boolean[n][n];
+		this.irreflexives = IntStream.range(0, n).mapToObj(i -> new boolean[i + 1]).toArray(boolean[][]::new);
+		Set<Integer>[] sets = IntStream.range(0, n).mapToObj(i -> new HashSet<>()).toArray(Set[]::new);
 		for (int i = 0; i < subsets.length; i++) {
 			Variable[] subset = subsets[i];
 			for (int j = 0; j < subset.length; j++) {
 				int num1 = subset[j].num;
 				for (int k = j + 1; k < subset.length; k++) {
 					int num2 = subset[k].num;
-					irreflexives[num1][num2] = true;
-					irreflexives[num2][num1] = true;
+					assert num1 != num2;
+					irreflexives[Math.max(num1, num2)][Math.min(num1, num2)] = true;
+					sets[num1].add(num2);
+					sets[num2].add(num1);
 				}
 			}
 		}
+		this.neighbours = Stream.of(sets).map(set -> set.stream().mapToInt(i -> i).sorted().toArray()).toArray(int[][]::new);
 	}
 
 	@Override
@@ -69,10 +85,23 @@ public final class SubsetAllDifferent extends ConstraintGlobal implements TagNot
 		if (x.dom.size() == 1) {
 			// ensures basic filtering (like a clique of binary constraints)
 			int v = x.dom.singleValue();
-			for (int i = futvars.limit; i >= 0; i--) {
-				Variable y = scp[futvars.dense[i]];
-				if (irreflexives[x.num][y.num] && y != x && y.dom.removeValueIfPresent(v) == false)
-					return false;
+			if (exceptValue != null && v == exceptValue)
+				return true;
+			int xnum = x.num;
+			if (futvars.size() < neighbours[xnum].length) {
+				for (int i = futvars.limit; i >= 0; i--) {
+					Variable y = scp[futvars.dense[i]];
+					if (y != x && irreflexives[Math.max(xnum, y.num)][Math.min(xnum, y.num)] && y.dom.removeValueIfPresent(v) == false)
+						return false;
+				}
+			} else {
+				int[] t = neighbours[x.num];
+				for (int i = t.length - 1; i >= 0; i--) {
+					int ynum = t[i];
+					Variable y = problem.variables[ynum];
+					if (y != x && irreflexives[Math.max(xnum, ynum)][Math.min(xnum, ynum)] && y.dom.removeValueIfPresent(v) == false)
+						return false;
+				}
 			}
 		}
 		return true;

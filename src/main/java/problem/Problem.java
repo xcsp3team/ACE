@@ -656,7 +656,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		head.output.afterData();
 		api.model();
 		if (subsetAllDifferentScopes.size() > 0)
-			post(new SubsetAllDifferent(this, subsetAllDifferentScopes.stream().toArray(Variable[][]::new)));
+			post(new SubsetAllDifferent(this, subsetAllDifferentScopes.stream().toArray(Variable[][]::new), null));
+		if (subsetAllDifferentExceptScopes.size() > 0)
+			post(new SubsetAllDifferent(this, subsetAllDifferentExceptScopes.stream().toArray(Variable[][]::new), allDifferentExceptValue));
 
 		replaceObjectiveVariable();
 
@@ -1269,6 +1271,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ************************************************************************
 
 	private List<Variable[]> subsetAllDifferentScopes = new ArrayList<>();
+	private List<Variable[]> subsetAllDifferentExceptScopes = new ArrayList<>();
+	private Integer allDifferentExceptValue;
 
 	private CtrEntity allDifferent(Variable[] scp) {
 		if (scp.length <= 1) {
@@ -1332,6 +1336,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 		if (scp.length == 2)
 			return binaryDifferentExcept(scp[0], scp[1], exceptValues);
+
+		if (head.control.global.gatherAllDifferent) {
+			control(exceptValues.length == 1);
+			if (allDifferentExceptValue == null)
+				allDifferentExceptValue = exceptValues[0];
+			control(allDifferentExceptValue == exceptValues[0]);
+			subsetAllDifferentExceptScopes.add(scp);
+			return null;
+		}
 
 		switch (head.control.global.allDifferentExcept) {
 		case 0: // TODO is it efficient? the three approaches should be experimentally tested
