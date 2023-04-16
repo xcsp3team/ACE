@@ -573,8 +573,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 */
 	public int[] symmetryMatching() { // default method that can be redefined
 		Boolean b = isSymmetric();
-		// if (b == null)
-		// return Kit.series(1, scp.length);
+//		if (b == null)
+//			return Kit.series(1, scp.length);
 		control(b != null, "constraint " + this);
 		return b ? Kit.repeat(1, scp.length) : Kit.series(1, scp.length);
 	}
