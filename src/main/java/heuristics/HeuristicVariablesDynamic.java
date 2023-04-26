@@ -165,10 +165,23 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 	}
 
-	public static final class FraOnDom extends HeuristicVariablesDynamic implements TagMaximize {
+	public static final class FraOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, TagMaximize {
 
 		public FraOnDom(Solver solver, boolean anti) {
 			super(solver, anti);
+		}
+
+		@Override
+		public void reset() {
+			solver.stats.clearVarAssignments();
+		}
+
+		@Override
+		public void beforeRun() {
+			if (runReset()) {
+				Kit.log.config("    ...resetting stats (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
+				reset();
+			}
 		}
 
 		@Override

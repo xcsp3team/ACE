@@ -507,7 +507,6 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 // cumulatedSizes += size;
 // }
 // boolean onyOnePossibleInTheBin = min > capacity / 2;
-// System.out.println("hhhhh " + onyOnePossibleInTheBin);
 // sortedBins[j].lost = onyOnePossibleInTheBin ? capacity - max : 0; // local j-lost place
 // int lost = sortedBins[j].lost;
 // // under certain conditions, we can combine several local lost places
@@ -528,7 +527,6 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 // boolean firstPart = true;
 // if (firstPart) {
 // if (margin < 0) {
-// System.out.println("hhhh " + margin);
 // return x.dom.fail();
 // }
 // if (onyOnePossibleInTheBin && margin - (max - min) < 0) {

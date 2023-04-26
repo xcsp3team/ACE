@@ -10,6 +10,8 @@
 
 package solver;
 
+import java.util.Arrays;
+
 import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments;
 import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequireFailedPerValue;
 import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequirePerValue;
@@ -183,7 +185,14 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 		 */
 		public int[] nFailedPerValue;
 
-		// private int[] stack;
+		private void clear() {
+			n = 2; // so as to have 0.5 as failure rate initially
+			nFailed = 1; // so as to have 0.5 as failure rate initially
+			if (nPerValue != null)
+				Arrays.fill(nPerValue, 0);
+			if (nFailedPerValue != null)
+				Arrays.fill(nFailedPerValue, 0);
+		}
 
 		private VarAssignments(Variable x, boolean buildPerValue, boolean buildFailedPerValue) {
 			this.n = 2; // so as to have 0.5 as failure rate initially
@@ -192,15 +201,12 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 			this.nFailedPerValue = buildFailedPerValue ? new int[x.dom.initSize()] : null;
 			if (x.heuristic instanceof HeuristicUsingAssignments)
 				((HeuristicUsingAssignments) x.heuristic).assignments = this;
-
-			// this.stack = new int[variables.length + 1];
 		}
 
 		public void whenAssignment(int a) {
 			n++;
 			if (nPerValue != null)
 				nPerValue[a]++;
-			// stack[solver.depth()] = solver.depth();
 		}
 
 		public void whenFailedAssignment(int a) {
@@ -217,7 +223,6 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 		public double failureAgedRate() {
 			return (nFailed / (double) n) + (1 / (double) (nFailedAssignments - lastFailed + 1));
 		}
-
 	}
 
 	// /**
@@ -374,6 +379,11 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 				varAssignments[i] = new VarAssignments(vars[i], b2, b3);
 			}
 		}
+	}
+
+	public void clearVarAssignments() {
+		for (VarAssignments va : varAssignments)
+			va.clear();
 	}
 
 	public long safeNumber() {

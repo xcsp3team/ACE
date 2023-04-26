@@ -315,22 +315,38 @@ public final class MDD extends ExtensionStructure {
 			return this == nodeF ? "nodeF" : this == nodeT ? "nodeT" : level == 0 ? "root" : "n" + num;
 		}
 
-		private StringBuilder getTransitions(Domain[] doms, StringBuilder sb, Set<Node> processedNodes) {
+		private class Transition {
+			String src;
+			int val;
+			String dst;
+
+			Transition(String src, int val, String dst) {
+				this.src = src;
+				this.val = val;
+				this.dst = dst;
+			}
+		}
+
+		private List<Transition> getTransitions(Domain[] doms, List<Transition> transitions, Set<Node> processedNodes) {
 			if (sons != null) {
 				for (int i = 0; i < sons.length; i++)
 					if (sons[i] != nodeF)
-						sb.append("(").append(name()).append(",").append(starApart && i == sons.length - 1 ? "*" : doms[level].toVal(i)).append(",")
-								.append(sons[i].name()).append(")");
+						transitions.add(new Transition(name(), starApart && i == sons.length - 1 ? Constants.STAR_INT : doms[level].toVal(i), sons[i].name()));
 				processedNodes.add(this);
 				for (Node son : sons)
 					if (!processedNodes.contains(son))
-						son.getTransitions(doms, sb, processedNodes);
+						son.getTransitions(doms, transitions, processedNodes);
 			}
-			return sb;
+			return transitions;
 		}
 
 		public String getTransitions(Domain[] doms) {
-			return getTransitions(doms, new StringBuilder(), new HashSet<Node>()).toString();
+			StringBuilder sb = new StringBuilder("{\"transitions\":[");
+			for (Transition tr : getTransitions(doms, new ArrayList<>(), new HashSet<Node>()))
+				sb.append("\n  [\"" + tr.src).append("\",").append(tr.val).append(",\"").append(tr.dst).append("\"],");
+			sb.deleteCharAt(sb.length() - 1);
+			sb.append("\n]\n}");
+			return sb.toString();
 		}
 	}
 
@@ -522,6 +538,7 @@ public final class MDD extends ExtensionStructure {
 		root.buildSonsClasses();
 		nNodes = root.renameNodes(1, new HashMap<Integer, Node>()) + 1;
 		// System.out.println("MDD : nNodes=" + nNodes + " nBuiltNodes=" + nCreatedNodes);
+		// System.out.println(root.getTransitions(registeredCtrs().get(0).doms));
 		assert root.controlUniqueNodes(new HashMap<Integer, Node>());
 		// buildSplitter();
 		// root.display();

@@ -138,6 +138,8 @@ public class Restarter implements ObserverOnRuns {
 		}
 
 		private void atEnd() {
+			if (numRun >= nFoundSolutions.length)
+				return;
 			nFoundSolutions[numRun] = solver.solutions.found - nFoundSolutionAtRunStart;
 			if (gains != null) {
 				boolean firstSolutions = nFoundSolutionAtRunStart == 0 && solver.solutions.found > 0;
