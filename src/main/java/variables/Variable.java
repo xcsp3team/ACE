@@ -764,7 +764,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 		return problem.solver.stats.varAssignments[num].failureRate() / dom.size();
 	}
 
-	public final double fraOnDom() {
+	public final double frbaOnDom() {
 		return problem.solver.stats.varAssignments[num].failureAgedRate() / dom.size();
 	}
 
