@@ -140,7 +140,6 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 			}
 		}
 		problem.parameters.get(0).setValue(name());
-		Kit.log.config("");
 	}
 
 	@Override
