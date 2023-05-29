@@ -76,8 +76,7 @@ import utility.Reflector;
 import variables.Variable;
 
 /**
- * This class allows us to manage all options concerning the problem (typically, the way to represent it) and the solver
- * (typically, the way to conduct search).
+ * This class allows us to manage all options concerning the problem (typically, the way to represent it) and the solver (typically, the way to conduct search).
  * 
  * @author Christophe Lecoutre
  */
@@ -505,7 +504,7 @@ public final class Control {
 		public final int allDifferent = addI("allDifferent", "g_ad", 0, "Algorithm for AllDifferent");
 		public final int allDifferentExcept = addI("allDifferentExcept", "g_ade", 0, "Algorithm for AllDifferentExcept");
 		public final boolean gatherAllDifferent = addB("gatherAllDifferent", "g_gad", false, "");
-		public final int distinctVectors = addI("distinctVectors", "g_dv", 0, "Algorithm for DistinctVectors");
+		public final int distinctVectors = addI("distinctVectors", "g_dv", -1, "Algorithm for DistinctVectors");
 		public final int allEqual = addI("allEqual", "g_ae", 0, "Algorithm for AllEqual");
 		public final int notAllEqual = addI("notAllEqual", "g_nae", 0, "Algorithm for NotAllEqual");
 		public final int circuit = addI("circuit", "g_circ", 0, "Algorithm for Circuit");
@@ -630,8 +629,7 @@ public final class Control {
 	 *********************************************************************************************/
 
 	/**
-	 * This class allows us to deal with options given by the user, either on the command line or by means of an XML
-	 * control file
+	 * This class allows us to deal with options given by the user, either on the command line or by means of an XML control file
 	 */
 	public class UserSettings {
 
@@ -772,8 +770,7 @@ public final class Control {
 		 *            an attribute for the tag
 		 * @param defaultValue
 		 *            a default value if the attribute is not present
-		 * @return the value (a boolean) of the specified attribute for the specified tag, or the specified default
-		 *         value
+		 * @return the value (a boolean) of the specified attribute for the specified tag, or the specified default value
 		 */
 		private boolean booleanFor(String shortcut, String tag, String att, Boolean defaultValue) {
 			Boolean b = Utilities.toBoolean(stringFor(shortcut, tag, att, defaultValue));

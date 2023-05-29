@@ -155,7 +155,8 @@ import constraints.global.Cumulative.CumulativeVarW;
 import constraints.global.Cumulative.CumulativeVarWC;
 import constraints.global.Cumulative.CumulativeVarWH;
 import constraints.global.Cumulative.CumulativeVarWHC;
-import constraints.global.DistinctLists;
+import constraints.global.DistinctLists.DistinctLists2;
+import constraints.global.DistinctLists.DistinctListsK;
 import constraints.global.Element.ElementList.ElementCst;
 import constraints.global.Element.ElementList.ElementVar;
 import constraints.global.Element.ElementMatrix.ElementMatrixCst;
@@ -361,14 +362,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public Optimizer optimizer;
 
 	/**
-	 * The priority variables. For example, those that have to be assigned in priority by a backtrack search solver.
-	 * There is 0 priority variable by default.
+	 * The priority variables. For example, those that have to be assigned in priority by a backtrack search solver. There is 0 priority variable by default.
 	 */
 	public Variable[] priorityVars = new Variable[0];
 
 	/**
-	 * The priority variables put in the array above at indices ranging from 0 to this field value should be assigned
-	 * strictly in that order.
+	 * The priority variables put in the array above at indices ranging from 0 to this field value should be assigned strictly in that order.
 	 */
 	public int nStrictPriorityVars;
 
@@ -378,8 +377,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public Features features;
 
 	/**
-	 * The object used to manage symbolic values. Basically, it transforms symbols into integers, but this is not
-	 * visible for the user (modeler).
+	 * The object used to manage symbolic values. Basically, it transforms symbols into integers, but this is not visible for the user (modeler).
 	 */
 	public Symbolic symbolic = new Symbolic();
 
@@ -425,9 +423,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	/**
-	 * Method that resets the problem instance. Each variable and each constraint is reset. The specified Boolean
-	 * parameter indicates whether the weighted degrees values must not be reset or not. Currently, this is only used by
-	 * HeadExtraction.
+	 * Method that resets the problem instance. Each variable and each constraint is reset. The specified Boolean parameter indicates whether the weighted
+	 * degrees values must not be reset or not. Currently, this is only used by HeadExtraction.
 	 */
 	public void reset() {
 		Stream.of(variables).forEach(x -> x.reset());
@@ -503,8 +500,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	/**
-	 * This method is called when the initialization is finished in order to put, among other things, variables and
-	 * constraints into arrays.
+	 * This method is called when the initialization is finished in order to put, among other things, variables and constraints into arrays.
 	 */
 	private final void storeToArrays() {
 		features.collecting.fix();
@@ -570,8 +566,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	/**
-	 * If the context allows it, reduce the domains of isolated variables (i.e., involved in no constraint) to an
-	 * arbitrary value
+	 * If the context allows it, reduce the domains of isolated variables (i.e., involved in no constraint) to an arbitrary value
 	 */
 	private void reduceDomainsOfIsolatedVariables() {
 		// TODO other frameworks ?
@@ -783,8 +778,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	/**
-	 * Returns a new (auxiliary) variable representing the specified tree expression after having posted an equality
-	 * constraint, i.e., a constraint forcing the new variable to be equal to the tree expression
+	 * Returns a new (auxiliary) variable representing the specified tree expression after having posted an equality constraint, i.e., a constraint forcing the
+	 * new variable to be equal to the tree expression
 	 * 
 	 * @param tree
 	 *            a tree expression
@@ -813,9 +808,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	/**
-	 * Returns an array of new (auxiliary) variables representing the specified tree expressions after having posted
-	 * equality constraints, i.e., for each new variable, a constraint forcing it to be equal to the corresponding tree
-	 * expression
+	 * Returns an array of new (auxiliary) variables representing the specified tree expressions after having posted equality constraints, i.e., for each new
+	 * variable, a constraint forcing it to be equal to the corresponding tree expression
 	 * 
 	 * @param trees
 	 *            an array of tree expressions
@@ -844,9 +838,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	/**
-	 * Returns an array of new (auxiliary) variables representing the specified tree expressions after having posted
-	 * equality constraints, i.e., for each new variable, a constraint forcing it to be equal to the corresponding tree
-	 * expression in the stream
+	 * Returns an array of new (auxiliary) variables representing the specified tree expressions after having posted equality constraints, i.e., for each new
+	 * variable, a constraint forcing it to be equal to the corresponding tree expression in the stream
 	 * 
 	 * @param trees
 	 *            a stream of tree expressions
@@ -1372,8 +1365,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Variable[] list1 = normalized ? t1 : IntStream.range(0, t1.length).filter(i -> t1[i] != t2[i]).mapToObj(i -> t1[i]).toArray(Variable[]::new);
 		Variable[] list2 = normalized ? t2 : IntStream.range(0, t2.length).filter(i -> t1[i] != t2[i]).mapToObj(i -> t2[i]).toArray(Variable[]::new);
 
-		if (head.control.global.distinctVectors == 0)
-			return post(new DistinctLists(this, list1, list2));
+		if (head.control.global.distinctVectors <= 0)
+			return post(new DistinctLists2(this, list1, list2));
 		if (head.control.global.hybrid)
 			return post(CHybrid.distinctVectors(this, list1, list2));
 		return api.disjunction(IntStream.range(0, list1.length).mapToObj(i -> api.ne(list1[i], list2[i])));
@@ -1382,11 +1375,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	/**
-	 * Builds a DistinctVectors constraint. The tuple of values corresponding to the assignment of the variables in the
-	 * array specified as first parameter must be different from the tuple of values corresponding to the assignment of
-	 * the variables in the array specified as second parameter.
+	 * Builds a DistinctVectors constraint. The tuple of values corresponding to the assignment of the variables in the array specified as first parameter must
+	 * be different from the tuple of values corresponding to the assignment of the variables in the array specified as second parameter.
 	 */
 	private CtrEntity distinctVectors(Variable[][] lists) {
+		if (head.control.global.distinctVectors == -1)
+			return post(new DistinctListsK(this, lists));
 		return forall(range(lists.length).range(lists.length), (i, j) -> {
 			if (i < j) {
 				distinctVectors(lists[i], lists[j]);
@@ -1462,9 +1456,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ************************************************************************
 
 	/**
-	 * Ensures that the specified array of variables is ordered according to the specified operator, when considering
-	 * the associated lengths. We must have x[i]+lengths[i] op x[i+1]. Can be decomposed into a sequence of binary
-	 * constraints.
+	 * Ensures that the specified array of variables is ordered according to the specified operator, when considering the associated lengths. We must have
+	 * x[i]+lengths[i] op x[i+1]. Can be decomposed into a sequence of binary constraints.
 	 */
 	@Override
 	public final CtrEntity ordered(Var[] list, int[] lengths, TypeOperatorRel op) {
@@ -1474,9 +1467,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	/**
-	 * Ensures that the specified array of variables is ordered according to the specified operator, when considering
-	 * the associated lengths. We must have list[i]+lengths[i] op list[i+1]. Can be decomposed into a sequence of binary
-	 * constraints.
+	 * Ensures that the specified array of variables is ordered according to the specified operator, when considering the associated lengths. We must have
+	 * list[i]+lengths[i] op list[i+1]. Can be decomposed into a sequence of binary constraints.
 	 */
 	@Override
 	public final CtrEntity ordered(Var[] list, Var[] lengths, TypeOperatorRel op) {
@@ -1490,10 +1482,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	/**
-	 * Builds and returns a Lexicographic constraint. The tuple of values corresponding to the assignment of the
-	 * variables in the array specified as first parameter must be before the tuple of values corresponding to the
-	 * assignment of the variables in the array specified as second parameter. The meaning of the relation "before" is
-	 * given by the value of the specified operator that must be one value among LT, LE, GT, and GE.
+	 * Builds and returns a Lexicographic constraint. The tuple of values corresponding to the assignment of the variables in the array specified as first
+	 * parameter must be before the tuple of values corresponding to the assignment of the variables in the array specified as second parameter. The meaning of
+	 * the relation "before" is given by the value of the specified operator that must be one value among LT, LE, GT, and GE.
 	 */
 	private final CtrAlone lexSimple(Var[] t1, Var[] t2, TypeOperatorRel op) {
 		return post(Lexicographic.buildFrom(this, translate(t1), translate(t2), op));
@@ -2321,8 +2312,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * 
 	 * a) posting allDifferent(origins) really seems uninteresting (too weak)
 	 * 
-	 * b) posting cumulative(origins, lengths, null, Kit.repeat(1, origins.length), api.condition(LE, 1)) does not seem
-	 * to be very interesting. To be checked!
+	 * b) posting cumulative(origins, lengths, null, Kit.repeat(1, origins.length), api.condition(LE, 1)) does not seem to be very interesting. To be checked!
 	 */
 	@Override
 	public final CtrEntity noOverlap(Var[] origins, int[] lengths, boolean zeroIgnored) {
