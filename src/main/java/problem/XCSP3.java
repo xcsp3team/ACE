@@ -79,9 +79,8 @@ import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
 
 /**
- * This class allows us to load instances in XCSP3 format. This class is the interface part while the class Problem is
- * the implementation part. This separation is due to historical reasons (from the API JvCSP3), but could be removed in
- * the future so as to simplify code.
+ * This class allows us to load instances in XCSP3 format. This class is the interface part while the class Problem is the implementation part. This separation
+ * is due to historical reasons (from the API JvCSP3), but could be removed in the future so as to simplify code.
  * 
  * @author Christophe Lecoutre
  */
@@ -98,9 +97,8 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	/**
-	 * The implementation for this object (representing the loaded instance). This field is set when the method data()
-	 * is called because the related interface and implementation objects have not been linked at time of field
-	 * construction.
+	 * The implementation for this object (representing the loaded instance). This field is set when the method data() is called because the related interface
+	 * and implementation objects have not been linked at time of field construction.
 	 */
 	private Problem problem;
 
@@ -128,10 +126,18 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	public void data() {
 		this.problem = (Problem) imp();
 		String s = problem.askString("File or directory:");
-		if (filenames == null) {
-			filenames = collect(new ArrayList<>(), new File(s)).stream().sorted().collect(Collectors.toList());
-			if (Input.nInstancesToSolve == 1)
-				Input.nInstancesToSolve = filenames.size();
+		// if (filenames == null && problem.parameters.size() < problem.argsForPb.length) {
+		// filenames = IntStream.range(problem.parameters.size() - 1, problem.argsForPb.length).mapToObj(i -> problem.argsForPb[i])
+		// .collect(Collectors.toList());
+		// if (Input.nInstancesToSolve == 1)
+		// Input.nInstancesToSolve = filenames.size();
+		// } else
+		{
+			if (filenames == null) {
+				filenames = collect(new ArrayList<>(), new File(s)).stream().sorted().collect(Collectors.toList());
+				if (Input.nInstancesToSolve == 1)
+					Input.nInstancesToSolve = filenames.size();
+			}
 		}
 		problem.parameters.get(0).setValue(name());
 		Kit.log.config("");
