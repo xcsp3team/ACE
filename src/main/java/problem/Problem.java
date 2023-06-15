@@ -206,6 +206,7 @@ import dashboard.Control.OptionsGeneral;
 import dashboard.Control.OptionsGlobal;
 import dashboard.Control.OptionsIntension;
 import heuristics.HeuristicValues;
+import heuristics.HeuristicValues.HeuristicValuesStatic.Arbitrary;
 import interfaces.Observers.ObserverOnConstruction;
 import main.Head;
 import optimization.ObjectiveVariable;
@@ -958,7 +959,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
 		Variable[] scp = (Variable[]) tree.vars(); // keep this statement here, after canonization
 		int arity = scp.length;
-		// System.out.println("Tree " + tree);
+		// System.out.println("Tree " + tree + " " + arity);
 
 		OptionsIntension options = head.control.intension;
 		if (arity == 1) {
@@ -2932,6 +2933,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			super.decisionVariables(list);
 	}
 
+	public void staticValHeuristic(IVar[] list, int[] order) {
+		if (options.enableAnnotations)
+			for (Variable x : translate(list))
+				x.heuristic = new Arbitrary(x, order);
+	}
 }
 
 // public final Constraint addUniversalConstraintDynamicallyBetween(Variable x, Variable y) {

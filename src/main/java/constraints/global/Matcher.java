@@ -26,10 +26,9 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the object used to compute a maximal matching, and to delete inconsistent values. The algorithm basically
- * finds the strongly connected components of the flow graph, and prunes domains so as to reach (G)AC, as described in
- * "The AllDifferent Constraint: An Empirical Survey" by I. Gent, I. Miguel, and P. Nightingale, Artif. Intell. 172(18),
- * 2008.
+ * This is the object used to compute a maximal matching, and to delete inconsistent values. The algorithm basically finds the strongly connected components of
+ * the flow graph, and prunes domains so as to reach (G)AC, as described in "The AllDifferent Constraint: An Empirical Survey" by I. Gent, I. Miguel, and P.
+ * Nightingale, Artif. Intell. 172(18), 2008.
  * 
  * TODO : the code below is poorly incremental, and besides is recursive (how to avoid recursion?)
  * 
@@ -191,9 +190,8 @@ public abstract class Matcher implements ObserverOnConstruction {
 	protected abstract void computeNeighbors();
 
 	/**
-	 * Computes Tarjan algorithm and prunes some values from the domains. Nodes are given a number as follows: a) i for
-	 * the ith variable of the scope, b) arity+v for a value v between minValue and maxValue, c) arity+intervalSize for
-	 * node T
+	 * Computes Tarjan algorithm and prunes some values from the domains. Nodes are given a number as follows: a) i for the ith variable of the scope, b)
+	 * arity+v for a value v between minValue and maxValue, c) arity+intervalSize for node T
 	 * 
 	 * @param node
 	 *            starting vertex for the search
@@ -281,28 +279,31 @@ public abstract class Matcher implements ObserverOnConstruction {
 
 	}
 
+	protected boolean limited = false;
+
 	/**
-	 * Finds the strongly connected components of the flow graph as defined in Ian P. Gent, Ian Miguel, and Peter
-	 * Nightingale, The AllDifferent Constraint: An Empirical Survey, and prunes the domains to reach (G)AC
+	 * Finds the strongly connected components of the flow graph as defined in Ian P. Gent, Ian Miguel, and Peter Nightingale, The AllDifferent Constraint: An
+	 * Empirical Survey, and prunes the domains to reach (G)AC
 	 */
 	public final void removeInconsistentValues() {
 		time++;
 		computeNeighbors();
-		stackTarjan.clear();
-		splitSCC = false;
-		nVisitedNodes = 0;
-		for (int x = 0; x < arity; x++) {
-			if (fixedVars != null && fixedVars.contains(x))
-				continue;
-			if (visitTime[x] < time)
-				tarjanRemoveValues(x);
+		if (!limited) {
+			stackTarjan.clear();
+			splitSCC = false;
+			nVisitedNodes = 0;
+			for (int x = 0; x < arity; x++) {
+				if (fixedVars != null && fixedVars.contains(x))
+					continue;
+				if (visitTime[x] < time)
+					tarjanRemoveValues(x);
+			}
 		}
 	}
 
 	/**
 	 * @param normalizedValue
-	 *            index between 0 and (maxDomainValue - minDomainValue). Domain values used in this class are normalized
-	 *            to use Sparse containers
+	 *            index between 0 and (maxDomainValue - minDomainValue). Domain values used in this class are normalized to use Sparse containers
 	 * 
 	 * @return domain value corresponding to the normalized value in parameter
 	 */
@@ -314,8 +315,8 @@ public abstract class Matcher implements ObserverOnConstruction {
 	 * @param domainValue
 	 *            : any domain value
 	 * 
-	 * @return normalized value between 0 and (maxDomainValue - minDomainValue), corresponding to the domain value in
-	 *         parameter. Domain values used in this class are normalized to use Sparse containers
+	 * @return normalized value between 0 and (maxDomainValue - minDomainValue), corresponding to the domain value in parameter. Domain values used in this
+	 *         class are normalized to use Sparse containers
 	 */
 	protected int normalizedValueOf(int domainValue) {
 		return domainValue - minValue;
@@ -343,8 +344,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 		}
 
 		/**
-		 * Finds a matching for the unmatched parameter variable while keeping the matched variables (may change the
-		 * matched values though).
+		 * Finds a matching for the unmatched parameter variable while keeping the matched variables (may change the matched values though).
 		 * 
 		 * @param x
 		 *            an unmatched variable
@@ -383,8 +383,7 @@ public abstract class Matcher implements ObserverOnConstruction {
 		}
 
 		/**
-		 * Finds a matching for all the unmatched variables while keeping the matched variables (may change the matched
-		 * values though).
+		 * Finds a matching for all the unmatched variables while keeping the matched variables (may change the matched values though).
 		 * 
 		 * @return true if a matching has been found, false otherwise (constraint unsatisfiable)
 		 */
@@ -438,17 +437,18 @@ public abstract class Matcher implements ObserverOnConstruction {
 					fixedVars.add(x, depth);
 					continue;
 				}
-				for (int a = dom.first(); a != -1; a = dom.next(a)) {
-					int nv = normalizedValueOf(dom.toVal(a));
-					neighborsOfValues[nv].add(x);
-					if (valToVar[nv] == x)
-						neighborsOfValues[nv].add(arity); // E3
-					else {
-						neighborsOfValues[nv].add(x); // E2
-						if (valToVar[nv] == -1) // unmatched values
-							neighborsOfT.add(nv); // E4
+				if (!limited)
+					for (int a = dom.first(); a != -1; a = dom.next(a)) {
+						int nv = normalizedValueOf(dom.toVal(a));
+						neighborsOfValues[nv].add(x);
+						if (valToVar[nv] == x)
+							neighborsOfValues[nv].add(arity); // E3
+						else {
+							neighborsOfValues[nv].add(x); // E2
+							if (valToVar[nv] == -1) // unmatched values
+								neighborsOfT.add(nv); // E4
+						}
 					}
-				}
 			}
 
 		}

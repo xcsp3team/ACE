@@ -14,6 +14,8 @@ import static utility.Kit.control;
 
 import java.util.Arrays;
 
+import org.xcsp.common.Utilities;
+
 import constraints.Constraint;
 import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequireFailedPerValue;
 import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequirePerValue;
@@ -315,8 +317,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	public static class Bivs extends HeuristicValuesDynamic {
 
 		/**
-		 * Return true if BIVS can be applied to the variable. It depends on the distance of the variable with the
-		 * objective and the value of some options.
+		 * Return true if BIVS can be applied to the variable. It depends on the distance of the variable with the objective and the value of some options.
 		 * 
 		 * @return true if BIVS can be applied to the variable
 		 */
@@ -359,8 +360,8 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		@Override
 		public int computeBestValueIndex() {
 			inconsistent.clear();
-			if ((options.bivsFirst && solver.solutions.found > 0) || dx.size() > options.bivsLimit)
-				return dx.first(); // First in that case
+			// if ((options.bivsFirst && solver.solutions.found > 0) || dx.size() > options.bivsLimit)
+			// return dx.first(); // First in that case
 			return super.computeBestValueIndex();
 		}
 
@@ -409,6 +410,23 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 				}
 			}
 			return best;
+		}
+	}
+
+	public static final class Bivs3 extends Bivs {
+
+		public Bivs3(Variable x, boolean anti) {
+			super(x, anti);
+		}
+
+		@Override
+		public int computeBestValueIndex() {
+			Variable[] h1 = x.problem.solver.solutions.h1;
+			boolean present = Utilities.indexOf(x, h1) >= 0;
+			if (!present)
+				return x.dom.first();
+			// System.out.println("jjjjjjj");
+			return super.computeBestValueIndex();
 		}
 	}
 

@@ -88,14 +88,15 @@ public final class SubsetAllDifferent extends ConstraintGlobal implements TagNot
 			if (exceptValue != null && v == exceptValue)
 				return true;
 			int xnum = x.num;
-			if (futvars.size() < neighbours[xnum].length) {
+			int[] t = neighbours[x.num];
+			// System.out.println("ttt " + futvars.size() + " " + t.length);
+			if (futvars.size() < t.length) {
 				for (int i = futvars.limit; i >= 0; i--) {
 					Variable y = scp[futvars.dense[i]];
 					if (y != x && irreflexives[Math.max(xnum, y.num)][Math.min(xnum, y.num)] && y.dom.removeValueIfPresent(v) == false)
 						return false;
 				}
 			} else {
-				int[] t = neighbours[x.num];
 				for (int i = t.length - 1; i >= 0; i--) {
 					int ynum = t[i];
 					Variable y = problem.variables[ynum];
@@ -103,6 +104,7 @@ public final class SubsetAllDifferent extends ConstraintGlobal implements TagNot
 						return false;
 				}
 			}
+			// System.out.println("ttt2 " + futvars.size() + " " + t.length);
 		}
 		return true;
 	}

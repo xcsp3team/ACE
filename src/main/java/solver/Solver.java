@@ -90,14 +90,13 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 *********************************************************************************************/
 
 	/**
-	 * A warm starter allows us to record an instantiation (solution) given by the user, and to guide search from it (as
-	 * long as no solution is found). This is mainly useful for optimization problems.
+	 * A warm starter allows us to record an instantiation (solution) given by the user, and to guide search from it (as long as no solution is found). This is
+	 * mainly useful for optimization problems.
 	 */
 	public final class WarmStarter {
 
 		/**
-		 * The recorded instantiation (typically, solution) to be used for guiding search. It contains value indexes
-		 * (and not values).
+		 * The recorded instantiation (typically, solution) to be used for guiding search. It contains value indexes (and not values).
 		 */
 		private int[] instantiation;
 
@@ -170,8 +169,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	/**
-	 * A run progress saver allows us to record a partial instantiation corresponding to the longest branch previously
-	 * developed.
+	 * A run progress saver allows us to record a partial instantiation corresponding to the longest branch previously developed.
 	 */
 	public final class RunProgressSaver implements ObserverOnRuns, ObserverOnConflicts {
 
@@ -405,8 +403,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	public final List<ObserverOnAssignments> observersOnAssignments;
 
 	/**
-	 * The list of observers on removals, i.e., value deletions in domains. Whenever a domain is reduced, a callback
-	 * function is called.
+	 * The list of observers on removals, i.e., value deletions in domains. Whenever a domain is reduced, a callback function is called.
 	 */
 	public final Collection<ObserverOnRemovals> observersOnRemovals;
 
@@ -504,8 +501,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	public final Solutions solutions;
 
 	/**
-	 * The object managing past and future variables, i.e., the variables that are, and are not, explicitly assigned by
-	 * the solver
+	 * The object managing past and future variables, i.e., the variables that are, and are not, explicitly assigned by the solver
 	 */
 	public final FutureVariables futVars;
 
@@ -567,8 +563,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	private final Variable[] lastPastBeforeRun = new Variable[2];
 
 	/**
-	 * The number of recursive runs called. This is possible because, in addition to the original run, some strong
-	 * consistencies require some forms of local runs.
+	 * The number of recursive runs called. This is possible because, in addition to the original run, some strong consistencies require some forms of local
+	 * runs.
 	 */
 	private int nRecursiveRuns = 0;
 
@@ -783,8 +779,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	/**
-	 * Performs a positive decision (variable assignment) involving the specified variable. The value to be assigned is
-	 * chosen by the value ordering heuristic attached to the variable.
+	 * Performs a positive decision (variable assignment) involving the specified variable. The value to be assigned is chosen by the value ordering heuristic
+	 * attached to the variable.
 	 * 
 	 * @param x
 	 *            a variable
@@ -830,8 +826,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	/**
-	 * Manages contradiction by backtracking. The specified constraint, if not null, is the objective constraint that
-	 * must be checked/filtered.
+	 * Manages contradiction by backtracking. The specified constraint, if not null, is the objective constraint that must be checked/filtered.
 	 * 
 	 * @param oc
 	 *            the objective constraint
@@ -849,6 +844,19 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		}
 	}
 
+	private Variable residue;
+
+	private Variable oneUnfixed() {
+		if (residue != null && residue.dom.size() > 1)
+			return residue;
+		for (Variable x : problem.variables)
+			if (x.dom.size() > 1) {
+				residue = x;
+				return x;
+			}
+		return null;
+	}
+
 	/**
 	 * This method allows us to explore the search space.
 	 */
@@ -857,19 +865,22 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		while (!finished() && !restarter.currRunFinished()) {
 			while (!finished() && !restarter.currRunFinished()) {
 				if (futVars.size() == 0)
+					// if (oneUnfixed() == null || futVars.size() == 0)
 					break;
 				maxDepth = Math.max(maxDepth, depth());
 				if (tryAssignment(heuristic.bestVariable()) == false)
 					manageContradiction(null);
 			}
 			if (futVars.size() == 0) {
+				// if (oneUnfixed() == null || futVars.size() == 0) {
 				solutions.handleNewSolution();
 				boolean copContinue = problem.framework == COP && !head.control.restarts.restartAfterSolution;
 				ConstraintGlobal oc = copContinue ? (ConstraintGlobal) problem.optimizer.ctr : null;
 				// oc is the objective constraint
 				if (copContinue) {
 					// first, we directly change the limit value of the leading objective constraint
-					problem.optimizer.ctr.limit(problem.optimizer.ctr.objectiveValue() + (problem.optimizer.minimization ? -1 : 1));
+					problem.optimizer.ctr.limit(
+							problem.optimizer.ctr.objectiveValue() + (problem.optimizer.minimization ? -1 : 1) * head.control.optimization.boundDescentCoeff);
 					// next, we backtrack to the level where a value for a variable in the scope of the objective was
 					// removed for the last time
 					int backtrackLevel = -1;
@@ -880,9 +891,12 @@ public class Solver implements ObserverOnBacktracksSystematic {
 							break;
 						backtrackLevel = Math.max(backtrackLevel, x.dom.lastRemovedLevel());
 					}
-					assert backtrackLevel != -1;
-					while (depth() > backtrackLevel)
+					// assert backtrackLevel != -1;
+					if (backtrackLevel == -1)
 						backtrack(futVars.lastPast());
+					else
+						while (depth() > backtrackLevel)
+							backtrack(futVars.lastPast());
 					// check with java -ea ace Photo.xml.lzma -ev ; java -ea ace Recipe.xml.lzma
 				}
 				if (problem.framework == COP)
@@ -919,8 +933,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	/**
-	 * Executes preprocessing by running constraint propagation on the initial problem (i.e., the problem before taking
-	 * any search decision)
+	 * Executes preprocessing by running constraint propagation on the initial problem (i.e., the problem before taking any search decision)
 	 */
 	private final void doPrepro() {
 		for (ObserverOnSolving observer : observersOnSolving)

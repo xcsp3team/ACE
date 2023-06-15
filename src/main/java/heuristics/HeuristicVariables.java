@@ -25,8 +25,8 @@ import variables.DomainInfinite;
 import variables.Variable;
 
 /**
- * This is the class for building variable ordering heuristics. A variable ordering heuristic is used by a backtrack
- * search solver to select a variable (to be assigned) at each step of search.
+ * This is the class for building variable ordering heuristics. A variable ordering heuristic is used by a backtrack search solver to select a variable (to be
+ * assigned) at each step of search.
  * 
  * @author Christophe Lecoutre
  */
@@ -52,8 +52,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	public static class BestScoredVariable {
 
 		/**
-		 * The current best variable, i.e., the variable with the current best score; used during an iteration over all
-		 * variables
+		 * The current best variable, i.e., the variable with the current best score; used during an iteration over all variables
 		 */
 		public Variable variable;
 
@@ -88,8 +87,7 @@ public abstract class HeuristicVariables extends Heuristic {
 		}
 
 		/**
-		 * Considers the specified variable with the specified score: compares it with the current best scored variable,
-		 * and updates it if necessary.
+		 * Considers the specified variable with the specified score: compares it with the current best scored variable, and updates it if necessary.
 		 * 
 		 * @param x
 		 *            a variable
@@ -119,13 +117,12 @@ public abstract class HeuristicVariables extends Heuristic {
 	/**
 	 * The variables that must be assigned in priority (possibly, an empty array).
 	 */
-	protected Variable[] priorityVars;
+	public Variable[] priorityVars;
 
 	/**
-	 * Relevant only if priorityVars is not an array of size 0. Variables must be assigned in the order strictly given
-	 * by priorityVars from 0 to nbStrictlyPriorityVars-1. Variables in priorityVars recorded between
-	 * nbStriclytPriorityVars and priorityVars.length-1 must then be assigned in priority but in any order given by the
-	 * heuristic. Beyond priorityVars.length-1, the heuristic can select any future variable.
+	 * Relevant only if priorityVars is not an array of size 0. Variables must be assigned in the order strictly given by priorityVars from 0 to
+	 * nbStrictlyPriorityVars-1. Variables in priorityVars recorded between nbStriclytPriorityVars and priorityVars.length-1 must then be assigned in priority
+	 * but in any order given by the heuristic. Beyond priorityVars.length-1, the heuristic can select any future variable.
 	 */
 	private int nStrictlyPriorityVars;
 
@@ -180,8 +177,8 @@ public abstract class HeuristicVariables extends Heuristic {
 	public abstract double scoreOf(Variable x);
 
 	/**
-	 * Returns the "optimized" score of the specified variable, i.e., the score of the variable while considering the
-	 * optimization multiplier (to deal with either minimization or maximization).
+	 * Returns the "optimized" score of the specified variable, i.e., the score of the variable while considering the optimization multiplier (to deal with
+	 * either minimization or maximization).
 	 * 
 	 * @param x
 	 *            a variable
@@ -252,8 +249,8 @@ public abstract class HeuristicVariables extends Heuristic {
 	 *************************************************************************/
 
 	/**
-	 * An implementation of COS (Conflict Ordering Search) based on ddeg/dom as underlying heuristic. IMPORTANT: new
-	 * code is necessary to have COS based on wdeg/dom.
+	 * An implementation of COS (Conflict Ordering Search) based on ddeg/dom as underlying heuristic. IMPORTANT: new code is necessary to have COS based on
+	 * wdeg/dom.
 	 */
 	// public static final class Memory extends HeuristicVariables implements ObserverOnRuns {
 	//

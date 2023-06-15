@@ -461,6 +461,7 @@ public final class Control {
 		public final OptimizationStrategy strategy = addE("strategy", "os", OptimizationStrategy.DECREASING, "Optimization strategy");
 		public final boolean replaceObjVar = addB("replaceObjVar", "rov", true,
 				"Must we replace the objective variable by an objective constraint, when possible?");
+		public final int boundDescentCoeff = addI("boundDescentCoeff", "bdc", 1, "Bound descent coefficient");
 	}
 
 	public class OptionsExtension extends OptionGroup {

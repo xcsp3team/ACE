@@ -37,12 +37,11 @@ import solver.Solver;
 import utility.Kit;
 
 /**
- * A domain for a variable (entity of a constraint network) is composed of a set of integer values. The domain is
- * initially full, but typically reduced when logically reasoning (with constraints). When handling a domain, to
- * simplify programming, one usually iterates over the indexes of the values; if the domains contains d values, the
- * indexes then range from 0 to d-1. For instance, if the domain is the set of values <code> {1,4,5} </code>, their
- * indexes are respectively <code> {0,1,2} </code>. The correspondence between indexes of values and values is given by
- * the methods <code> toIdx </code> and <code> toVal </code>.
+ * A domain for a variable (entity of a constraint network) is composed of a set of integer values. The domain is initially full, but typically reduced when
+ * logically reasoning (with constraints). When handling a domain, to simplify programming, one usually iterates over the indexes of the values; if the domains
+ * contains d values, the indexes then range from 0 to d-1. For instance, if the domain is the set of values <code> {1,4,5} </code>, their indexes are
+ * respectively <code> {0,1,2} </code>. The correspondence between indexes of values and values is given by the methods <code> toIdx </code> and
+ * <code> toVal </code>.
  *
  * @author Christophe Lecoutre
  */
@@ -187,8 +186,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns the index of the greatest value of the specified domain which is less than the specified value. When
-	 * true, the specified Boolean requires strictness. If no such value exists, -1 is returned.
+	 * Returns the index of the greatest value of the specified domain which is less than the specified value. When true, the specified Boolean requires
+	 * strictness. If no such value exists, -1 is returned.
 	 * 
 	 * @param dom
 	 *            a domain
@@ -204,8 +203,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns the index of the smallest value of the specified domain which is greater than the specified value. When
-	 * true, the specified Boolean requires strictness. If no such value exists, Integer.MAX_VALUE is returned.
+	 * Returns the index of the smallest value of the specified domain which is greater than the specified value. When true, the specified Boolean requires
+	 * strictness. If no such value exists, Integer.MAX_VALUE is returned.
 	 * 
 	 * @param dom
 	 *            a domain
@@ -273,17 +272,15 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Indicates if value indexes and values match, i.e. if for every index a, we have toVal(a) = a, and for every value
-	 * v, we have toIdx(v)=v.
+	 * Indicates if value indexes and values match, i.e. if for every index a, we have toVal(a) = a, and for every value v, we have toIdx(v)=v.
 	 * 
 	 * @return {@code true} iff indexes (of values) and values match
 	 */
 	boolean indexesMatchValues();
 
 	/**
-	 * Returns the index of the specified value, or a negative integer if the specified value does not belong to the
-	 * initial domain. No assumption is made about the fact that the specified value belongs or not to the current
-	 * domain.
+	 * Returns the index of the specified value, or a negative integer if the specified value does not belong to the initial domain. No assumption is made about
+	 * the fact that the specified value belongs or not to the current domain.
 	 * 
 	 * @param v
 	 *            a value
@@ -292,8 +289,8 @@ public interface Domain extends SetLinked {
 	int toIdx(int v);
 
 	/**
-	 * Returns the value at the specified index. The index is assumed to be a valid one, i.e., an integer between 0 and
-	 * d-1 where d is the initial size of the domain.
+	 * Returns the value at the specified index. The index is assumed to be a valid one, i.e., an integer between 0 and d-1 where d is the initial size of the
+	 * domain.
 	 * 
 	 * @param a
 	 *            a value index
@@ -343,8 +340,7 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns the index of the unique value of the current domain. This is similar to first(), but with an
-	 * assert/control.
+	 * Returns the index of the unique value of the current domain. This is similar to first(), but with an assert/control.
 	 */
 	default int single() {
 		assert size() == 1 : "Current size = " + size();
@@ -373,8 +369,7 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns the unique value of the current domain. This is similar to firstValue(), and lastValue(), but with an
-	 * assert/control.
+	 * Returns the unique value of the current domain. This is similar to firstValue(), and lastValue(), but with an assert/control.
 	 */
 	default int singleValue() {
 		return toVal(single());
@@ -402,11 +397,17 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns the difference between the second value and the first value of the domain (or 0 if only one present
-	 * value)
+	 * Returns the difference between the second value and the first value of the domain (or 0 if only one present value)
 	 */
 	default int regretValue() {
 		return size() <= 1 ? 0 : toVal(next(first())) - firstValue();
+	}
+
+	/**
+	 * Returns the initial distance of the domain, that is the difference between the highest and smallest values
+	 */
+	default int initDistance() {
+		return greatestInitialValue() - smallestInitialValue();
 	}
 
 	/**
@@ -424,9 +425,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns a value present in both this domain and the specified one. There is no guarantee about the returned value
-	 * (for example, it may not be the first possible one of the domain). If no common value is present,
-	 * Integer.MAX_VALUE is returned.
+	 * Returns a value present in both this domain and the specified one. There is no guarantee about the returned value (for example, it may not be the first
+	 * possible one of the domain). If no common value is present, Integer.MAX_VALUE is returned.
 	 * 
 	 * @param dom
 	 *            an other domain
@@ -460,9 +460,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns a value present in both this domain and the specified list of integers. There is no guarantee about the
-	 * returned value (for example, it may not be the first possible one of the domain). If no common value is present,
-	 * Integer.MAX_VALUE is returned.
+	 * Returns a value present in both this domain and the specified list of integers. There is no guarantee about the returned value (for example, it may not
+	 * be the first possible one of the domain). If no common value is present, Integer.MAX_VALUE is returned.
 	 * 
 	 * @param values
 	 *            a list of integers
@@ -517,8 +516,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns true if the (current) domain encloses the specified interval of values. The control is only performed at
-	 * the bounds of the domain (which may contain some holes).
+	 * Returns true if the (current) domain encloses the specified interval of values. The control is only performed at the bounds of the domain (which may
+	 * contain some holes).
 	 * 
 	 * @param minValueIncluded
 	 *            the minimal value of the interval (included)
@@ -607,8 +606,7 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes at construction time (hence, definitively) every value whose index is tested as true by the specified
-	 * predicate. <br />
+	 * Removes at construction time (hence, definitively) every value whose index is tested as true by the specified predicate. <br />
 	 * Important: this method must only called when building the problem.
 	 * 
 	 * @param p
@@ -645,8 +643,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Method to call when elementary calls for removing some values may have been executed (i.e., calls to
-	 * removeElementary) in order to take it into account for propagation.
+	 * Method to call when elementary calls for removing some values may have been executed (i.e., calls to removeElementary) in order to take it into account
+	 * for propagation.
 	 * 
 	 * @param sizeBefore
 	 *            the size of the domain before elementary calls
@@ -657,8 +655,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes the value at the specified index. The value is assumed to be present, and the variable to which the
-	 * domain is attached is assumed to be future (i.e. non explicitly assigned). <br />
+	 * Removes the value at the specified index. The value is assumed to be present, and the variable to which the domain is attached is assumed to be future
+	 * (i.e. non explicitly assigned). <br />
 	 * Important: the management of this removal with respect to propagation is not handled: removal is said elementary.
 	 * 
 	 * @param a
@@ -679,8 +677,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes the value at the specified index. The value is assumed to be present. It returns false if an
-	 * inconsistency is detected (because this is the index of the last value of the domain). <br />
+	 * Removes the value at the specified index. The value is assumed to be present. It returns false if an inconsistency is detected (because this is the index
+	 * of the last value of the domain). <br />
 	 * Important: the management of this removal with respect to propagation is handled.
 	 * 
 	 * @param a
@@ -696,8 +694,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes the value at the specified index, if present. It returns false if an inconsistency is detected (because
-	 * this is the index of the last value of the domain). <br />
+	 * Removes the value at the specified index, if present. It returns false if an inconsistency is detected (because this is the index of the last value of
+	 * the domain). <br />
 	 * Important: the management of this removal with respect to propagation is handled.
 	 * 
 	 * @param a
@@ -709,8 +707,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes each index whose corresponding flag is false in the specified array. The number of removed indexes is
-	 * given by the second argument. The management of these removals with respect to propagation is handled.
+	 * Removes each index whose corresponding flag is false in the specified array. The number of removed indexes is given by the second argument. The
+	 * management of these removals with respect to propagation is handled.
 	 * 
 	 * @param flags
 	 *            an array of flags indicating which indexes must be removed (when false)
@@ -732,9 +730,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes the values at the indexes given in the specified set. If the specified boolean is set to true, a test is
-	 * performed to only consider values that are present in the current domain. The management of these removals with
-	 * respect to propagation is handled.
+	 * Removes the values at the indexes given in the specified set. If the specified boolean is set to true, a test is performed to only consider values that
+	 * are present in the current domain. The management of these removals with respect to propagation is handled.
 	 * 
 	 * @param idxs
 	 *            a dense set with indexes of values
@@ -765,8 +762,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes the values at the indexes given in the specified set. It is assumed that all these values are currently
-	 * present in the domain.The management of these removals with respect to propagation is handled.
+	 * Removes the values at the indexes given in the specified set. It is assumed that all these values are currently present in the domain.The management of
+	 * these removals with respect to propagation is handled.
 	 * 
 	 * @param idxs
 	 *            a dense set with indexes of values
@@ -802,8 +799,7 @@ public interface Domain extends SetLinked {
 
 	/**
 	 * Removes any value whose index is different from the specified index. <br />
-	 * Important: the value at the specified index is not necessarily present in the domain. In that case, false is
-	 * returned.
+	 * Important: the value at the specified index is not necessarily present in the domain. In that case, false is returned.
 	 * 
 	 * @param a
 	 *            a value index
@@ -850,8 +846,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes the specified value, if present. If the value is not present, the method returns true (non aggressive
-	 * mode). Otherwise, false is returned if an inconsistency is detected (domain wipe-out).
+	 * Removes the specified value, if present. If the value is not present, the method returns true (non aggressive mode). Otherwise, false is returned if an
+	 * inconsistency is detected (domain wipe-out).
 	 * 
 	 * @param v
 	 *            a value
@@ -943,8 +939,8 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes all values that, when multiplied by the specified coefficient, verify the condition defined by the
-	 * specified relational operator and the specified limit
+	 * Removes all values that, when multiplied by the specified coefficient, verify the condition defined by the specified relational operator and the
+	 * specified limit
 	 * 
 	 * @param type
 	 *            the relational operator used for the condition
@@ -1162,8 +1158,7 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Removes all values that are not present in the specified array, and returns false if the domain becomes empty.
-	 * <br />
+	 * Removes all values that are not present in the specified array, and returns false if the domain becomes empty. <br />
 	 * VERY IMPORTANT: the specified set must be increasingly ordered.
 	 * 
 	 * @param set

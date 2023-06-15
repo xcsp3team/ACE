@@ -43,8 +43,7 @@ import variables.DomainInfinite;
 import variables.Variable;
 
 /**
- * This is the class for building value ordering heuristics. A value ordering heuristic is attached to a variable and
- * allows us to select (indexes of) values.
+ * This is the class for building value ordering heuristics. A value ordering heuristic is attached to a variable and allows us to select (indexes of) values.
  * 
  * @author Christophe Lecoutre
  */
@@ -73,22 +72,22 @@ public abstract class HeuristicValues extends Heuristic {
 		return heuristic;
 	}
 
-	private static Variable[] prioritySumVars(Variable[] scp, int[] coeffs) {
+	public static Variable[] prioritySumVars(Variable[] scp, int[] coeffs) {
 		assert coeffs == null || IntStream.range(0, coeffs.length - 1).allMatch(i -> coeffs[i] <= coeffs[i + 1]);
-		int LIM = 3; // hard coding
+		int LIM = 415; // hard coding
 		Term[] terms = new Term[Math.min(scp.length, 2 * LIM)];
 		if (terms.length == scp.length)
 			for (int i = 0; i < terms.length; i++)
 				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * (long) scp[i].dom.distance(), scp[i]);
 		else {
 			for (int i = 0; i < LIM; i++)
-				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * (long) scp[i].dom.distance(), scp[i]);
+				terms[i] = new Term((coeffs == null ? 1 : coeffs[i]) * (long) scp[i].dom.initDistance(), scp[i]);
 			for (int i = 0; i < LIM; i++)
 				terms[LIM + i] = new Term((coeffs == null ? 1 : coeffs[scp.length - 1 - i]) * (long) scp[scp.length - 1 - i].dom.distance(),
 						scp[scp.length - 1 - i]);
 		}
 		// we discard terms of small coeffs
-		terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new);
+		// terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new);
 		if (terms.length > 0) {
 			Variable[] t = Stream.of(terms).map(term -> term.obj).toArray(Variable[]::new);
 			Variable[] tt = t.length > LIM ? Arrays.copyOfRange(t, t.length - LIM, t.length) : t;
@@ -98,8 +97,8 @@ public abstract class HeuristicValues extends Heuristic {
 	}
 
 	/**
-	 * Possibly modifies the value ordering heuristics of some variables according to the objective function
-	 * (constraint), and returns the variables that must be considered as being priority for search, or null.
+	 * Possibly modifies the value ordering heuristics of some variables according to the objective function (constraint), and returns the variables that must
+	 * be considered as being priority for search, or null.
 	 * 
 	 * TODO: EXPERIMENTAL (code to be finalized)
 	 * 
@@ -134,18 +133,22 @@ public abstract class HeuristicValues extends Heuristic {
 			return null;
 		}
 		if (c instanceof SumWeighted || c instanceof SumSimple) {
-			int[] coeffs = c instanceof SumSimple ? null : ((SumWeighted) c).coeffs;
-			Variable[] vars = prioritySumVars(c.scp, coeffs);
-			if (vars != null) {
-				for (Variable x : vars) {
-					int coeff = coeffs == null ? 1 : coeffs[c.positionOf(x)];
-					boolean f = minimization && coeff >= 0 || !minimization && coeff < 0;
-					System.out.println("before " + x + " " + x.heuristic);
-					x.heuristic = f ? new First(x, false) : new Last(x, false); // the boolean is dummy
-					System.out.println("after " + x.heuristic);
-				}
-				return vars;
-			}
+			// System.out.println("hhh");
+			for (Variable x : c.scp)
+				x.heuristic = minimization ? new First(x, false) : new Last(x, false); // the boolean is dummy
+			return c.scp;
+			// int[] coeffs = c instanceof SumSimple ? null : ((SumWeighted) c).coeffs;
+			// Variable[] vars = prioritySumVars(c.scp, coeffs);
+			// if (vars != null) {
+			// for (Variable x : vars) {
+			// int coeff = coeffs == null ? 1 : coeffs[c.positionOf(x)];
+			// boolean f = minimization && coeff >= 0 || !minimization && coeff < 0;
+			// System.out.println("before " + x + " " + x.heuristic);
+			// x.heuristic = f ? new First(x, false) : new Last(x, false); // the boolean is dummy
+			// System.out.println("after " + x.heuristic);
+			// }
+			// return vars;
+			// }
 		}
 		return null;
 	}
@@ -185,8 +188,7 @@ public abstract class HeuristicValues extends Heuristic {
 	}
 
 	/**
-	 * Returns either the variables of the array to which x belongs or all problem variables (if x does not belong to an
-	 * array)
+	 * Returns either the variables of the array to which x belongs or all problem variables (if x does not belong to an array)
 	 * 
 	 * @return either the variables of the array to which x belongs or all problem variables
 	 */
@@ -196,8 +198,7 @@ public abstract class HeuristicValues extends Heuristic {
 	}
 
 	/**
-	 * Returns the (raw) score of the specified value index. This is the method to override for defining a new
-	 * heuristic.
+	 * Returns the (raw) score of the specified value index. This is the method to override for defining a new heuristic.
 	 * 
 	 * @param a
 	 *            a value index
@@ -213,9 +214,8 @@ public abstract class HeuristicValues extends Heuristic {
 	protected abstract int computeBestValueIndex();
 
 	/**
-	 * Returns the preferred value index in the current domain of x according to the heuristic. Meta-reasoning
-	 * techniques such as warm starting, run progress saving and solution saving are checked first before considering
-	 * the heuristic selection criterion.
+	 * Returns the preferred value index in the current domain of x according to the heuristic. Meta-reasoning techniques such as warm starting, run progress
+	 * saving and solution saving are checked first before considering the heuristic selection criterion.
 	 * 
 	 * @return the preferred value index in the current domain of x
 	 */
@@ -250,24 +250,17 @@ public abstract class HeuristicValues extends Heuristic {
 	 *************************************************************************/
 
 	/**
-	 * This is the class for building static value ordering heuristics. It means that, for such heuristics, all values
-	 * are definitively ordered at construction.
+	 * This is the class for building static value ordering heuristics. It means that, for such heuristics, all values are definitively ordered at construction.
 	 */
 	public static abstract class HeuristicValuesStatic extends HeuristicValues {
 
 		/**
 		 * The set of indexes (of values) increasingly ordered by this static heuristic (the first one is the best one).
 		 */
-		private final int[] fixed;
+		protected int[] fixed;
 
 		public HeuristicValuesStatic(Variable x, boolean anti) {
 			super(x, anti);
-			// we build an ordered map with entries of the form (a, heuristic score of a multiplied by the optimization
-			// coefficient) for every a
-			Map<Integer, Double> map = IntStream.range(0, dx.initSize()).filter(a -> dx.contains(a)).boxed()
-					.collect(Collectors.toMap(a -> a, a -> scoreOf(a) * multiplier));
-			map = Kit.sort(map, (e1, e2) -> e1.getValue() > e2.getValue() ? -1 : e1.getValue() < e2.getValue() ? 1 : e1.getKey() - e2.getKey());
-			this.fixed = map.entrySet().stream().mapToInt(e -> e.getKey()).toArray();
 		}
 
 		@Override
@@ -278,7 +271,38 @@ public abstract class HeuristicValues extends Heuristic {
 			throw new AssertionError("The domain is empty");
 		}
 
-		public static final class Srand extends HeuristicValuesStatic {
+		public static final class Arbitrary extends HeuristicValuesStatic {
+
+			public Arbitrary(Variable x, boolean anti, int[] fixed) {
+				super(x, anti);
+				this.fixed = fixed;
+			}
+
+			public Arbitrary(Variable x, int[] fixed) {
+				this(x, false, fixed);
+			}
+
+			@Override
+			protected double scoreOf(int a) {
+				return 0; // dummy method
+			}
+
+		}
+
+		public static abstract class HeuristicValuesStaticInitiallyComputed extends HeuristicValuesStatic {
+
+			public HeuristicValuesStaticInitiallyComputed(Variable x, boolean anti) {
+				super(x, anti);
+				// we build an ordered map with entries of the form (a, heuristic score of a multiplied by the optimization
+				// coefficient) for every a
+				Map<Integer, Double> map = IntStream.range(0, dx.initSize()).filter(a -> dx.contains(a)).boxed()
+						.collect(Collectors.toMap(a -> a, a -> scoreOf(a) * multiplier));
+				map = Kit.sort(map, (e1, e2) -> e1.getValue() > e2.getValue() ? -1 : e1.getValue() < e2.getValue() ? 1 : e1.getKey() - e2.getKey());
+				this.fixed = map.entrySet().stream().mapToInt(e -> e.getKey()).toArray();
+			}
+		}
+
+		public static final class Srand extends HeuristicValuesStaticInitiallyComputed {
 
 			public Srand(Variable x, boolean anti) {
 				super(x, anti);
@@ -290,7 +314,7 @@ public abstract class HeuristicValues extends Heuristic {
 			}
 		}
 
-		public static final class LetterFrequency extends HeuristicValuesStatic implements TagExperimental {
+		public static final class LetterFrequency extends HeuristicValuesStaticInitiallyComputed implements TagExperimental {
 
 			// Static order according to the frequency of letters in French; 'a' is the 3rd most frequent letter, 'b' is
 			// the 17th most frequent letter,..., 'z' is the 23th most frequent letter. This corresponds to the order: e

@@ -26,8 +26,7 @@ import problem.Problem;
 import utility.Kit;
 
 /**
- * A pilot for dealing with (mono-objective) optimization. Subclasses define various strategies to conduct search toward
- * optimality.
+ * A pilot for dealing with (mono-objective) optimization. Subclasses define various strategies to conduct search toward optimality.
  * 
  * @author Christophe Lecoutre
  */
@@ -50,10 +49,10 @@ public abstract class Optimizer implements ObserverOnRuns {
 		if (problem.solver.solutions.lastRun == problem.solver.restarter.numRun) {
 			// a better solution has been found during the last run
 			if (minimization) {
-				maxBound = problem.solver.solutions.bestBound - 1;
+				maxBound = problem.solver.solutions.bestBound - (1 * problem.head.control.optimization.boundDescentCoeff);
 				cub.limit(maxBound);
 			} else {
-				minBound = problem.solver.solutions.bestBound + 1;
+				minBound = problem.solver.solutions.bestBound + (1 * problem.head.control.optimization.boundDescentCoeff);
 				clb.limit(minBound);
 			}
 			possiblyUpdateLocalBounds();
@@ -111,14 +110,12 @@ public abstract class Optimizer implements ObserverOnRuns {
 	public final boolean minimization;
 
 	/**
-	 * the constraint ensuring that minimal bound (lower bound) of the optimization bounding interval is respected; may
-	 * be useless.
+	 * the constraint ensuring that minimal bound (lower bound) of the optimization bounding interval is respected; may be useless.
 	 */
 	public final Optimizable clb;
 
 	/**
-	 * the constraint ensuring that maximal bound (upper bound) of the optimization bounding interval is respected; may
-	 * be useless.
+	 * the constraint ensuring that maximal bound (upper bound) of the optimization bounding interval is respected; may be useless.
 	 */
 	public final Optimizable cub;
 
@@ -128,14 +125,12 @@ public abstract class Optimizer implements ObserverOnRuns {
 	public final Optimizable ctr;
 
 	/**
-	 * solutions searched for must have a cost greater than or equal to this bound (valid for both minimization and
-	 * maximization).
+	 * solutions searched for must have a cost greater than or equal to this bound (valid for both minimization and maximization).
 	 */
 	public long minBound;
 
 	/**
-	 * solutions searched for must have a cost less than or equal to this bound (valid for both minimization and
-	 * maximization).
+	 * solutions searched for must have a cost less than or equal to this bound (valid for both minimization and maximization).
 	 */
 	public long maxBound;
 
@@ -184,8 +179,8 @@ public abstract class Optimizer implements ObserverOnRuns {
 	// STR2 ok (but not CT that need decremental); why?
 
 	/**
-	 * An optimization strategy based on decreasingly updating the maximal bound (assuming minimization) whenever a
-	 * solution is found; this is related to branch and bound (and related to ramp-down strategy).
+	 * An optimization strategy based on decreasingly updating the maximal bound (assuming minimization) whenever a solution is found; this is related to branch
+	 * and bound (and related to ramp-down strategy).
 	 */
 	public static final class OptimizerDecreasing extends Optimizer {
 		// Assuming minimization (similar observation for maximization):
@@ -209,8 +204,8 @@ public abstract class Optimizer implements ObserverOnRuns {
 	}
 
 	/**
-	 * An optimization strategy based on increasingly updating the minimal bound (assuming minimization); this is
-	 * sometimes called iterative optimization (or ramp-up strategy).
+	 * An optimization strategy based on increasingly updating the minimal bound (assuming minimization); this is sometimes called iterative optimization (or
+	 * ramp-up strategy).
 	 */
 	public static final class OptimizerIncreasing extends Optimizer {
 

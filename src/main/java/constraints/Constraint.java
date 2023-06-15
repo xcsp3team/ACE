@@ -55,9 +55,8 @@ import variables.TupleIterator;
 import variables.Variable;
 
 /**
- * A constraint is attached to a problem, involves a subset of variables of the problem, and allows us to reason so as
- * to filter the search space (i.e., the domains of the variables). A variable is uniquely identified by a number (field
- * <code>num</code>).
+ * A constraint is attached to a problem, involves a subset of variables of the problem, and allows us to reason so as to filter the search space (i.e., the
+ * domains of the variables). A variable is uniquely identified by a number (field <code>num</code>).
  * 
  * @author Christophe Lecoutre
  */
@@ -148,8 +147,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 *************************************************************************/
 
 	/**
-	 * A special constraint that can be used (for instance) by methods that requires returning three-state values: null,
-	 * a classical constraint, and this special constraint/marker.
+	 * A special constraint that can be used (for instance) by methods that requires returning three-state values: null, a classical constraint, and this
+	 * special constraint/marker.
 	 */
 	public static final Constraint TAG = new Constraint() {
 		@Override
@@ -159,8 +158,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	};
 
 	/**
-	 * Returns true if the num(ber)s of the constraints in the specified array are normalized, meaning that the num(ber)
-	 * of the constraint at index i of the array is i.
+	 * Returns true if the num(ber)s of the constraints in the specified array are normalized, meaning that the num(ber) of the constraint at index i of the
+	 * array is i.
 	 * 
 	 * @param ctrs
 	 *            an array of constraints
@@ -171,9 +170,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Computes the greatest number k such that, whatever is the selection of k integers in the specified array, the
-	 * number of tuples that can be built by considering sets of these selected sizes does not exceed the specified
-	 * limit.
+	 * Computes the greatest number k such that, whatever is the selection of k integers in the specified array, the number of tuples that can be built by
+	 * considering sets of these selected sizes does not exceed the specified limit.
 	 * 
 	 * @param sizes
 	 *            an array of integers representing the sizes of sets (domains)
@@ -193,16 +191,14 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Computes the greatest number k of variables such that, whatever is the selection of k variables in the specified
-	 * array, the size of the Cartesian product of the domains of these variables does not exceed 2 to the power of the
-	 * specified exponent.
+	 * Computes the greatest number k of variables such that, whatever is the selection of k variables in the specified array, the size of the Cartesian product
+	 * of the domains of these variables does not exceed 2 to the power of the specified exponent.
 	 * 
 	 * @param vars
 	 *            an array of variables
 	 * @param exponent
 	 *            a limit (equal to 2 to the power given by this exponent) in term of number of tuples
-	 * @return the greatest number of variables ensuring that any selection of this size does not exceed the specified
-	 *         limit
+	 * @return the greatest number of variables ensuring that any selection of this size does not exceed the specified limit
 	 */
 	public static final int howManyVariablesWithin(Variable[] vars, int exponent) {
 		return howManyVariablesWithin(Stream.of(vars).filter(x -> x != null).mapToInt(x -> x.dom.size()).toArray(), Math.pow(2, exponent));
@@ -213,9 +209,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 *            an array of constraints
 	 * @param instantiation
 	 *            an instantiation (containing indexes of values) to be checked (possibly, null)
-	 * @return the first unsatisfied constraint in the specified array with respect to the specified instantiation (or
-	 *         with respect to the current instantiation of the involved variables if the specified instantiation is
-	 *         null), or null if there is none
+	 * @return the first unsatisfied constraint in the specified array with respect to the specified instantiation (or with respect to the current instantiation
+	 *         of the involved variables if the specified instantiation is null), or null if there is none
 	 */
 	public static final Constraint firstUnsatisfiedConstraint(Constraint[] ctrs, int[] instantiation) {
 		for (Constraint c : ctrs) {
@@ -233,8 +228,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	/**
 	 * @param ctrs
 	 *            an array of constraints
-	 * @return the first unsatisfied constraint in the specified array with respect to the current instantiation of the
-	 *         variables involved in the constraints
+	 * @return the first unsatisfied constraint in the specified array with respect to the current instantiation of the variables involved in the constraints
 	 */
 	public static final Constraint firstUnsatisfiedConstraint(Constraint[] ctrs) {
 		return firstUnsatisfiedConstraint(ctrs, null);
@@ -255,8 +249,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Builds and returns a table with all tuples (instantiations) satisfying the specified constraints. Note that it
-	 * may lead to a combinatorial explosion.
+	 * Builds and returns a table with all tuples (instantiations) satisfying the specified constraints. Note that it may lead to a combinatorial explosion.
 	 * 
 	 * @param ctrs
 	 *            an array of constraints
@@ -314,9 +307,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	public final Domain[] doms;
 
 	/**
-	 * The position of all variables of the problem in the constraint. It is -1 when not involved. For constraint of
-	 * small arity, this array is not necessarily built. So, you need to call <code> positionOf </code> instead of
-	 * accessing directly this field.
+	 * The position of all variables of the problem in the constraint. It is -1 when not involved. For constraint of small arity, this array is not necessarily
+	 * built. So, you need to call <code> positionOf </code> instead of accessing directly this field.
 	 */
 	private int[] positions;
 
@@ -326,26 +318,22 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	public SetDense futvars;
 
 	/**
-	 * The object that can be used to iterate over the (valid) tuples of the Cartesian product of the domains of the
-	 * constraint scope.
+	 * The object that can be used to iterate over the (valid) tuples of the Cartesian product of the domains of the constraint scope.
 	 */
 	public final TupleIterator tupleIterator;
 
 	/**
-	 * An object that can be useful to look efficiently after supports (using a cache technique called residues); useful
-	 * only with some kind of constraints
+	 * An object that can be useful to look efficiently after supports (using a cache technique called residues); useful only with some kind of constraints
 	 */
 	protected final Supporter supporter;
 
 	/**
-	 * The object that manages information about the number of conflicts of pairs (x,a) for the constraint; useful only
-	 * with some kind of constraints
+	 * The object that manages information about the number of conflicts of pairs (x,a) for the constraint; useful only with some kind of constraints
 	 */
 	public ConflictsStructure conflictsStructure;
 
 	/**
-	 * Indicates if for each domain of a variable involved in the constraint, the index of any value is equal to this
-	 * value.
+	 * Indicates if for each domain of a variable involved in the constraint, the index of any value is equal to this value.
 	 */
 	public final boolean indexesMatchValues;
 
@@ -374,8 +362,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	public long time;
 
 	/**
-	 * Indicates if filtering (e.g. AC) must be controlled. If the number of uninstantiated variables is greater than
-	 * this value, filtering is not achieved; useful only with some kind of constraints
+	 * Indicates if filtering (e.g. AC) must be controlled. If the number of uninstantiated variables is greater than this value, filtering is not achieved;
+	 * useful only with some kind of constraints
 	 */
 	public final int genericFilteringThreshold;
 
@@ -395,8 +383,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	public OptionsConstraints options;
 
 	/**
-	 * This field is used to store a tuple of (int) values. Is is inserted as a field in order to avoid overhead of
-	 * memory allocations.
+	 * This field is used to store a tuple of (int) values. Is is inserted as a field in order to avoid overhead of memory allocations.
 	 */
 	protected final int[] vals;
 
@@ -425,9 +412,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Defines the key of the constraint from the signature, the type of the domains, and the specified data. Keys are
-	 * currently used for deciding if two constraints can share some structures (this is the case when they have the
-	 * same keys), and also for symmetry-breaking.
+	 * Defines the key of the constraint from the signature, the type of the domains, and the specified data. Keys are currently used for deciding if two
+	 * constraints can share some structures (this is the case when they have the same keys), and also for symmetry-breaking.
 	 * 
 	 * @param data
 	 *            a sequence of objects that must be considered to form the key of the constraint
@@ -468,8 +454,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	/**
 	 * @param presentVars
 	 *            an array of Boolean, one for each variable of the problem
-	 * @return true if any variable involved in the constraint is such that the corresponding Boolean in the specified
-	 *         array is true
+	 * @return true if any variable involved in the constraint is such that the corresponding Boolean in the specified array is true
 	 */
 	public final boolean isScopeCoveredBy(boolean[] presentVars) {
 		for (Variable x : scp)
@@ -497,8 +482,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Returns true if the constraint is irreflexive. Currently, this can be only called on binary constraints, but
-	 * certainly could be generalized.
+	 * Returns true if the constraint is irreflexive. Currently, this can be only called on binary constraints, but certainly could be generalized.
 	 * 
 	 * @return true if the constraint is irreflexive
 	 */
@@ -573,8 +557,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 */
 	public int[] symmetryMatching() { // default method that can be redefined
 		Boolean b = isSymmetric();
-//		if (b == null)
-//			return Kit.series(1, scp.length);
+		// if (b == null)
+		// return Kit.series(1, scp.length);
 		control(b != null, "constraint " + this);
 		return b ? Kit.repeat(1, scp.length) : Kit.series(1, scp.length);
 	}
@@ -588,8 +572,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Returns the intension structure (i.e., object to evaluate a Boolean expression tree) if this object is an
-	 * intension constraint, null otherwise
+	 * Returns the intension structure (i.e., object to evaluate a Boolean expression tree) if this object is an intension constraint, null otherwise
 	 * 
 	 * @return the extension structure if this object is an intension constraint, or null
 	 */
@@ -598,8 +581,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Returns the extension structure (i.e., object like a table) if this object is an extension constraint, null
-	 * otherwise
+	 * Returns the extension structure (i.e., object like a table) if this object is an extension constraint, null otherwise
 	 * 
 	 * @return the extension structure if this object is an extension constraint, or null
 	 */
@@ -713,8 +695,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Records the fact that the specified variable is not more a past variable (i.e., no more explicitly assigned by
-	 * the solver)
+	 * Records the fact that the specified variable is not more a past variable (i.e., no more explicitly assigned by the solver)
 	 * 
 	 * @param x
 	 *            the variable that is no more explicitly assigned
@@ -727,9 +708,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Determines if the specified tuple satisfies the constraint, i.e., if the specified tuple belongs to the relation
-	 * defining the constraint. Be careful: although indexes of values are managed in the core of the solver, at this
-	 * stage, the given tuple contains values (and not indexes of values).
+	 * Determines if the specified tuple satisfies the constraint, i.e., if the specified tuple belongs to the relation defining the constraint. Be careful:
+	 * although indexes of values are managed in the core of the solver, at this stage, the given tuple contains values (and not indexes of values).
 	 * 
 	 * @param t
 	 *            a tuple of values
@@ -738,9 +718,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	public abstract boolean isSatisfiedBy(int[] t);
 
 	/**
-	 * Determines if the specified tuple corresponds to a support of the constraint, i.e., if the tuple of values
-	 * corresponding to the indexes in the specified tuple satisfies the constraint. Be careful: the given tuple must
-	 * contains indexes of values.
+	 * Determines if the specified tuple corresponds to a support of the constraint, i.e., if the tuple of values corresponding to the indexes in the specified
+	 * tuple satisfies the constraint. Be careful: the given tuple must contains indexes of values.
 	 * 
 	 * @param t
 	 *            a tuple of indexes (of values)
@@ -755,11 +734,9 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Returns a tuple with the indexes of the values of the current instantiation of the variables in the constraint
-	 * scope
+	 * Returns a tuple with the indexes of the values of the current instantiation of the variables in the constraint scope
 	 * 
-	 * @return a tuple with the indexes of the values of the current instantiation of the variables in the constraint
-	 *         scope
+	 * @return a tuple with the indexes of the values of the current instantiation of the variables in the constraint scope
 	 */
 	private final int[] instantiationIndexes() {
 		int[] t = tupleIterator.buffer;
@@ -769,8 +746,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Returns true if the current instantiation of the variables of the constraint scope satisfies the constraint.
-	 * IMPORTANT: all variables of the constraint scope must be fixed (i.e., with singleton domains).
+	 * Returns true if the current instantiation of the variables of the constraint scope satisfies the constraint. IMPORTANT: all variables of the constraint
+	 * scope must be fixed (i.e., with singleton domains).
 	 * 
 	 * @return true if the current instantiation of the variables of the constraint scope satisfies the constraint
 	 */
@@ -779,21 +756,18 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Returns 0 if the constraint is satisfied by the current instantiation, or the cost that is associated with the
-	 * constraint, otherwise. IMPORTANT: all variables of the constraint scope must be fixed (i.e., with singleton
-	 * domains).
+	 * Returns 0 if the constraint is satisfied by the current instantiation, or the cost that is associated with the constraint, otherwise. IMPORTANT: all
+	 * variables of the constraint scope must be fixed (i.e., with singleton domains).
 	 * 
-	 * @return 0 if the constraint is satisfied by the current instantiation, or the cost that is associated with the
-	 *         constraint
+	 * @return 0 if the constraint is satisfied by the current instantiation, or the cost that is associated with the constraint
 	 */
 	public final long costOfCurrentInstantiation() {
 		return checkIndexes(instantiationIndexes()) ? 0 : cost;
 	}
 
 	/**
-	 * Determines if the specified tuple of indexes (usually a support) is still valid. We have just to test that all
-	 * indexes are still in the domains of the variables involved in the constraint. Do not call the
-	 * <code> isSatisfiedBy </code> method instead since it does not take removed values into account.
+	 * Determines if the specified tuple of indexes (usually a support) is still valid. We have just to test that all indexes are still in the domains of the
+	 * variables involved in the constraint. Do not call the <code> isSatisfiedBy </code> method instead since it does not take removed values into account.
 	 * 
 	 * @param t
 	 *            a tuple of indexes (of values)
@@ -807,9 +781,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Seeks a support (i.e., a valid tuple satisfying the constraint) for the constraint when considering the current
-	 * state of the domains and the tuple currently managed by the tuple iterator (this current tuple included in the
-	 * search). A lexicographic order is used.
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint) for the constraint when considering the current state of the domains and the tuple
+	 * currently managed by the tuple iterator (this current tuple included in the search). A lexicographic order is used.
 	 * 
 	 * @return true if a support can be found from the current tuple managed by the object 'tupleIterator'
 	 */
@@ -818,8 +791,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order, and
-	 * returns true is such a support can be found
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order, and returns true is such a support can be found
 	 * 
 	 * @return true if a support can be found
 	 */
@@ -829,8 +801,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the
-	 * requirement that the support involves the specified pair (x,a), and returns true is such a support can be found
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the requirement that the support involves
+	 * the specified pair (x,a), and returns true is such a support can be found
 	 * 
 	 * @param x
 	 *            a variable
@@ -844,9 +816,9 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the
-	 * requirement that the support involves the specified pair (x,a), and returns true is such a support can be found.
-	 * The support (containing indexes of values instead of values) is recorded in the specified buffer.
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the requirement that the support involves
+	 * the specified pair (x,a), and returns true is such a support can be found. The support (containing indexes of values instead of values) is recorded in
+	 * the specified buffer.
 	 * 
 	 * @param x
 	 *            a variable
@@ -862,9 +834,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the
-	 * requirement that the support involves the specified pairs (x,a) and (y,b), and returns true is such a support can
-	 * be found. T
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the requirement that the support involves
+	 * the specified pairs (x,a) and (y,b), and returns true is such a support can be found. T
 	 * 
 	 * @param x
 	 *            a first variable
@@ -882,11 +853,9 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the
-	 * requirement that the support must come after the current tuple (excluded) managed by the tuple iterator, and
-	 * returns true is such a support can be found. Note that the current tuple (of the tuple iterator) is not
-	 * necessarily valid (as it may have been deleted). Besides, if some values have been fixed in the tuple iterator,
-	 * they remain fixed.
+	 * Seeks a support (i.e., a valid tuple satisfying the constraint), while considering a lexicographic order and the requirement that the support must come
+	 * after the current tuple (excluded) managed by the tuple iterator, and returns true is such a support can be found. Note that the current tuple (of the
+	 * tuple iterator) is not necessarily valid (as it may have been deleted). Besides, if some values have been fixed in the tuple iterator, they remain fixed.
 	 * 
 	 * @return true if another support can be found from the current tuple (excluded) managed by the tuple iterator
 	 */
@@ -895,9 +864,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Seeks a conflict (i.e., a valid tuple not satisfying the constraint) for the constraint when considering the
-	 * current state of the domains and the tuple currently managed by the tuple iterator (this current tuple included
-	 * in the search). A lexicographic order is used.
+	 * Seeks a conflict (i.e., a valid tuple not satisfying the constraint) for the constraint when considering the current state of the domains and the tuple
+	 * currently managed by the tuple iterator (this current tuple included in the search). A lexicographic order is used.
 	 * 
 	 * @return true if a conflict can be found from the current tuple managed by the object 'tupleIterator'
 	 */
@@ -906,8 +874,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Seeks a conflict (i.e., a valid tuple not satisfying the constraint), while considering a lexicographic order,
-	 * and returns true is such a conflict can be found
+	 * Seeks a conflict (i.e., a valid tuple not satisfying the constraint), while considering a lexicographic order, and returns true is such a conflict can be
+	 * found
 	 * 
 	 * @return true if a conflict can be found
 	 */
@@ -917,9 +885,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Seeks a conflict (i.e., a valid tuple not satisfying the constraint), while considering a lexicographic order and
-	 * the requirement that the conflict involves the specified pair (x,a), and returns true is such a conflict can be
-	 * found
+	 * Seeks a conflict (i.e., a valid tuple not satisfying the constraint), while considering a lexicographic order and the requirement that the conflict
+	 * involves the specified pair (x,a), and returns true is such a conflict can be found
 	 * 
 	 * @param x
 	 *            a variable
@@ -933,8 +900,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Returns the number of conflicts (i.e., valid tuples not satisfying the constraint) involving the specified pair
-	 * (x,a)
+	 * Returns the number of conflicts (i.e., valid tuples not satisfying the constraint) involving the specified pair (x,a)
 	 * 
 	 * @param x
 	 *            a variable
@@ -1023,8 +989,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * This is the method that is called for filtering domains. We know that the domain of the specified variable has
-	 * been recently reduced, but this is not necessarily the only one.
+	 * This is the method that is called for filtering domains. We know that the domain of the specified variable has been recently reduced, but this is not
+	 * necessarily the only one.
 	 * 
 	 * @param x
 	 *            a variable whose domain has been recently reduced
@@ -1032,7 +998,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 */
 	public final boolean filterFrom(Variable x) {
 		// if (this instanceof Cardinality)
-		// System.out.println("filtering "); // + this + " " + x + " " + getClass().getSimpleName());
+		// System.out.println("filtering " + " " + x + " " + getClass().getSimpleName());
 		if (infiniteDomainVars.length > 0 && handleHugeDomains()) // Experimental (to be finished)
 			return true;
 		// For CSP, sometimes we can directly return true (because we know then that there is no filtering possibility)
@@ -1062,8 +1028,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Returns true if the constraint is AC. IMPORTANT: the control is incomplete. The constraint can be currently
-	 * ignored, and the test is not performed if the number of valid tuples is too large.
+	 * Returns true if the constraint is AC. IMPORTANT: the control is incomplete. The constraint can be currently ignored, and the test is not performed if the
+	 * number of valid tuples is too large.
 	 * 
 	 * @return true if the constraint is AC
 	 */
@@ -1089,8 +1055,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 *********************************************************************************************/
 
 	/**
-	 * Returns the signature of the constraint, obtained by concatenating the name of its class with the signature of
-	 * the involved variables
+	 * Returns the signature of the constraint, obtained by concatenating the name of its class with the signature of the involved variables
 	 * 
 	 * @return the signature of the constraint
 	 */

@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Constants;
@@ -32,6 +33,9 @@ import org.xcsp.modeler.entities.VarEntities.VarArray;
 import org.xcsp.modeler.entities.VarEntities.VarEntity;
 
 import constraints.Constraint;
+import heuristics.HeuristicValues;
+import heuristics.HeuristicValuesDirect.First;
+import heuristics.HeuristicValuesDirect.Last;
 import main.HeadExtraction;
 import problem.Problem;
 import solver.Solver.Stopping;
@@ -52,8 +56,7 @@ public final class Solutions {
 	public final Solver solver;
 
 	/**
-	 * The maximum number of solutions to be found, before stopping. When equal to PLUS_INFINITY, all solutions are
-	 * searched for (no limit is fixed).
+	 * The maximum number of solutions to be found, before stopping. When equal to PLUS_INFINITY, all solutions are searched for (no limit is fixed).
 	 */
 	public long limit;
 
@@ -68,8 +71,7 @@ public final class Solutions {
 	public long firstBound;
 
 	/**
-	 * For optimization problems, the best bound found by the solver if found > 0, the specified upper bound initially
-	 * given otherwise
+	 * For optimization problems, the best bound found by the solver if found > 0, the specified upper bound initially given otherwise
 	 */
 	public long bestBound;
 
@@ -109,8 +111,8 @@ public final class Solutions {
 	private class XML {
 
 		/**
-		 * The string used to display a solution in XML. It lists variables of the problem (but not the auxiliary
-		 * variables that are been automatically introduced).
+		 * The string used to display a solution in XML. It lists variables of the problem (but not the auxiliary variables that are been automatically
+		 * introduced).
 		 */
 		private final String xmlVars;
 
@@ -308,6 +310,22 @@ public final class Solutions {
 		// System.out.println("ccccc most " + x + " " + x.dom.toVal(lastSolution[x.num]));
 	}
 
+	public Variable[] h1 = new Variable[0];
+
+	private int h2 = -1;
+
+	private void solutionHamming() {
+		if (found <= 1)
+			return;
+		h1 = IntStream.range(0, last.length).filter(i -> last[i] != solver.problem.variables[i].dom.single()).mapToObj(i -> solver.problem.variables[i])
+				.sorted((x, y) -> x.assignmentLevel - y.assignmentLevel).toArray(Variable[]::new); // count();
+		if (solver.problem.optimizer != null) {
+			Constraint c = (Constraint) solver.problem.optimizer.ctr;
+			h2 = (int) IntStream.range(0, last.length)
+					.filter(i -> last[i] != solver.problem.variables[i].dom.single() && c.involves(solver.problem.variables[i])).count();
+		}
+	}
+
 	/**
 	 * This method must be called whenever a new solution is found by the solver.
 	 * 
@@ -317,8 +335,21 @@ public final class Solutions {
 	public void handleNewSolution(boolean controlSolution) {
 		control(!controlSolution || controlFoundSolution());
 		found++;
+		// if (found == 1) {
+		// Constraint c = ((Constraint) solver.problem.optimizer.ctr);
+		// boolean minimization = solver.problem.optimizer.minimization;
+		// for (Variable x : c.scp)
+		// x.heuristic = minimization ? new First(x, false) : new Last(x, false); // the boolean is dummy
+		// Variable[] t = HeuristicValues.prioritySumVars(c.scp, null);
+		// System.out.println("rrrr " + Kit.join(t));
+		// // Variable[] vars = HeuristicValues.possibleOptimizationInterference(solver.problem);
+		// // solver.problem.priorityVars = c.scp;
+		// solver.heuristic.priorityVars = t;
+		// // solver.heuristic = new Rand(solver, false);
+		// System.out.println("changing to Rand");
+		// }
 		lastRun = solver.restarter.numRun;
-		// solutionHamming();
+		solutionHamming();
 		if (found >= limit)
 			solver.stopping = Stopping.REACHED_GOAL;
 		if (solver.propagation.performingProperSearch) {
@@ -346,7 +377,9 @@ public final class Solutions {
 			Color.GREEN.println("o " + bestBound, "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
 
 			// solver.restarter.currCutoff += 20;
-			// (hamming: " + h1 + ", in_objective: " + h2 + ")");
+			// System.out.println("h1 : " + Kit.join(h1) + " h2 : " + h2);
+			// for (Variable x : h1)
+			// System.out.println(x + " " + x.assignmentLevel);
 		}
 		// The following code must stay after recording/storing the solution
 		if (solver.head.control.general.jsonSave.length() > 0 && (solver.head.control.general.verbose > 1 || found == 1)) {
@@ -386,17 +419,5 @@ public final class Solutions {
 		control(c == null, () -> "Problem with last solution: constraint " + c + " " + c.getClass().getName() + " not satisfied : ");
 		return true;
 	}
-}
 
-// private int h1 = -1, h2 = -1;
-//
-// private void solutionHamming() {
-// if (found <= 1)
-// return;
-// h1 = (int) IntStream.range(0, last.length).filter(i -> last[i] != solver.problem.variables[i].dom.single()).count();
-// if (solver.problem.optimizer != null) {
-// Constraint c = (Constraint) solver.problem.optimizer.ctr;
-// h2 = (int) IntStream.range(0, last.length)
-// .filter(i -> last[i] != solver.problem.variables[i].dom.single() && c.involves(solver.problem.variables[i])).count();
-// }
-// }
+}

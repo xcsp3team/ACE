@@ -1020,4 +1020,9 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		decisionVariables(trVars(list));
 	}
 
+	@Override
+	public void buildAnnotationValHeuristicStatic(XVarInteger[] list, int[] order) {
+		problem.staticValHeuristic(trVars(list), order);
+	}
+
 }
