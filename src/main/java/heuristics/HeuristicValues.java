@@ -268,7 +268,7 @@ public abstract class HeuristicValues extends Heuristic {
 			for (int a : fixed)
 				if (dx.contains(a))
 					return a;
-			throw new AssertionError("The domain is empty");
+			return dx.first(); // we return the first index otherwise (in case, fixed is incomplete) new AssertionError("The domain is empty");
 		}
 
 		public static final class Arbitrary extends HeuristicValuesStatic {

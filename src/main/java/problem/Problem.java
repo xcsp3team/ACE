@@ -2935,8 +2935,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	public void staticValHeuristic(IVar[] list, int[] order) {
 		if (options.enableAnnotations)
-			for (Variable x : translate(list))
-				x.heuristic = new Arbitrary(x, order);
+			for (Variable x : translate(list)) {
+				int[] fixed = IntStream.of(order).map(v -> x.dom.toIdx(v)).filter(a -> a >= 0).toArray();
+				x.heuristic = new Arbitrary(x, fixed);
+			}
 	}
 }
 
