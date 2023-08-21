@@ -21,8 +21,7 @@ import variables.Variable;
 
 /**
  * This is STR2 (Simple Tabular Reduction, v2), for filtering extension (table) constraints, as described in: <br />
- * Christophe Lecoutre: STR2: optimized simple tabular reduction for table constraints. Constraints An Int. J. 16(4):
- * 341-371 (2011) <br />
+ * Christophe Lecoutre: STR2: optimized simple tabular reduction for table constraints. Constraints An Int. J. 16(4): 341-371 (2011) <br />
  * This implementation can deal with starred tables.
  * 
  * @author Christophe Lecoutre
@@ -56,7 +55,7 @@ public final class STR2 extends STR1Optimized implements TagStarredCompatible {
 			for (int j = tuple.length - 1; j >= 0; j--)
 				if (tuple[j] != STAR && !doms[j].contains(tuple[j])) {
 					System.out.println(this + " at " + problem.solver.depth() + "\n" + Kit.join(tuple));
-					Stream.of(scp).forEach(x -> x.display(true));
+					Stream.of(scp).forEach(x -> x.display(2));
 					return false;
 				}
 		}

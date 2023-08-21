@@ -36,7 +36,7 @@ public class TestWrongDecisions {
 	public static Collection<Object[]> data() {
 
 		add("/csp/Rlfap-scen-11-f06", 15739, "-varh=WdegOnDom -adn=0");
-		add("/csp/Crossword-lex-vg-5-6", 2426, "-varh=WdegOnDom");
+		add("/csp/Crossword-lex-vg-5-6", 6240, "-varh=WdegOnDom");
 		add("/csp/Crossword-lex-vg-5-6", 9199, "-varh=DdegOnDom -positive=str1");
 		add("/csp/Crossword-lex-vg-5-6", 9199, "-varh=DdegOnDom -positive=str2");
 		add("/csp/Crossword-lex-vg-5-6", 9199, "-varh=DdegOnDom -positive=str3");

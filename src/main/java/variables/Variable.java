@@ -38,11 +38,10 @@ import variables.DomainFinite.DomainSymbols;
 import variables.DomainFinite.DomainValues;
 
 /**
- * A variable is attached to a problem and is uniquely identified by a number called <code>num</code>. A domain is
- * attached to a variable and corresponds to the (finite) set of values which can be assigned to it. When a value is
- * assigned to a variable, the domain of this variable is reduced to this value. When a solver tries to assign a value
- * to a variable, it uses a value ordering heuristic in order to determine which value must be tried first. A variable
- * can of course occur in different constraints of the problem to which it is attached.
+ * A variable is attached to a problem and is uniquely identified by a number called <code>num</code>. A domain is attached to a variable and corresponds to the
+ * (finite) set of values which can be assigned to it. When a value is assigned to a variable, the domain of this variable is reduced to this value. When a
+ * solver tries to assign a value to a variable, it uses a value ordering heuristic in order to determine which value must be tried first. A variable can of
+ * course occur in different constraints of the problem to which it is attached.
  * 
  * @author Christophe Lecoutre
  */
@@ -166,15 +165,15 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	private static final int NB_NEIGHBOURS_LIMIT_FOR_STORING_NEIGHBOURS = 300;
 
 	/**
-	 * A special variable that can be used (for instance) by methods that requires returning three-state values: null,a
-	 * variable of the problem, or this special marker.
+	 * A special variable that can be used (for instance) by methods that requires returning three-state values: null,a variable of the problem, or this special
+	 * marker.
 	 */
 	public static final Variable TAG = new Variable(null, null) {
 	};
 
 	/**
-	 * Returns true if the num(ber)s of the variables in the specified array are normalized, meaning that the num(ber)
-	 * of the variable at index i of the array is i.
+	 * Returns true if the num(ber)s of the variables in the specified array are normalized, meaning that the num(ber) of the variable at index i of the array
+	 * is i.
 	 * 
 	 * @param vars
 	 *            an array of variables
@@ -323,8 +322,8 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	}
 
 	/**
-	 * A useful class for building matrices to be associated with literals, i.e., pairs (x,a) where x is a variable of
-	 * the problem and a a value index in the domain of x
+	 * A useful class for building matrices to be associated with literals, i.e., pairs (x,a) where x is a variable of the problem and a a value index in the
+	 * domain of x
 	 */
 	public static class Litterals {
 
@@ -401,8 +400,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	 * @param ctrs
 	 *            an array of constraints
 	 * 
-	 * @return an array of variables with those that are successively encountered when considering the scope of the
-	 *         specified constraints
+	 * @return an array of variables with those that are successively encountered when considering the scope of the specified constraints
 	 */
 	public static final Variable[] scopeOf(Constraint[] ctrs) {
 		Set<Variable> set = new LinkedHashSet<>();
@@ -413,16 +411,14 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	}
 
 	/**
-	 * Returns a string composed of the values assigned to the variables that are successively encountered when
-	 * considering the specified object. Carriage return characters and the specified prefix can be used when listing
-	 * these values, so as to show the structure of the arrays.
+	 * Returns a string composed of the values assigned to the variables that are successively encountered when considering the specified object. Carriage
+	 * return characters and the specified prefix can be used when listing these values, so as to show the structure of the arrays.
 	 * 
 	 * @param obj
 	 *            an object that can be a stand-alone variable or an array (of any dimension) of variables, or even null
 	 * @param prefix
 	 *            a prefix used when the specified object is an array with (at least) two dimensions
-	 * @return a string corresponding to the complete instantiation of the variables that are present in the specified
-	 *         object
+	 * @return a string corresponding to the complete instantiation of the variables that are present in the specified object
 	 */
 	public static String instantiationOf(Object obj, String prefix) {
 		if (obj == null)
@@ -441,14 +437,12 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	}
 
 	/**
-	 * Returns a string composed of the values assigned to the variables that are successively encountered when
-	 * considering the specified array. Only whitespace is used as separator, and the array only contains variables, and
-	 * can be of any dimension.
+	 * Returns a string composed of the values assigned to the variables that are successively encountered when considering the specified array. Only whitespace
+	 * is used as separator, and the array only contains variables, and can be of any dimension.
 	 * 
 	 * @param array
 	 *            an array (of any dimension) of variables
-	 * @return a string corresponding to the complete instantiation of the variables that are present in the specified
-	 *         array
+	 * @return a string corresponding to the complete instantiation of the variables that are present in the specified array
 	 */
 	public static String rawInstantiationOf(Object array) {
 		if (array instanceof Variable[]) {
@@ -486,8 +480,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	public Domain dom;
 
 	/**
-	 * The number of the variable. This is an integer between 0 and n-1, where n is the number of variables in the
-	 * constraint network.
+	 * The number of the variable. This is an integer between 0 and n-1, where n is the number of variables in the constraint network.
 	 */
 	public int num = UNSET_NUM;
 
@@ -507,8 +500,8 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	public Constraint[] ctrs;
 
 	/**
-	 * The set of variables that are neighbors to the variable. Two variables are neighbors if they are involved
-	 * together in a constraint. This array may be null if this is too costly in term of memory space.
+	 * The set of variables that are neighbors to the variable. Two variables are neighbors if they are involved together in a constraint. This array may be
+	 * null if this is too costly in term of memory space.
 	 */
 	public Variable[] nghs;
 
@@ -543,8 +536,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	}
 
 	/**
-	 * This method is called when the initialization of the problem is finished in order to record the constraints
-	 * involving this variable.
+	 * This method is called when the initialization of the problem is finished in order to record the constraints involving this variable.
 	 */
 	public final void storeInvolvingConstraints(List<Constraint> constraints) {
 		this.ctrs = constraints.stream().toArray(Constraint[]::new);
@@ -597,8 +589,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	}
 
 	/**
-	 * Returns true if the variable is assigned (already said past, or not future), i.e., explicitly assigned by the
-	 * solver
+	 * Returns true if the variable is assigned (already said past, or not future), i.e., explicitly assigned by the solver
 	 * 
 	 * @return true if the variable is assigned
 	 */
@@ -611,8 +602,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	 * 
 	 * @param x
 	 *            a given variable
-	 * @return the (first) binary constraint involving the variable and the specified one if it exits and
-	 *         <code> null </code> otherwise
+	 * @return the (first) binary constraint involving the variable and the specified one if it exits and <code> null </code> otherwise
 	 */
 	public final Constraint firstBinaryConstraintWith(Variable x) {
 		assert this != x;
@@ -655,8 +645,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	}
 
 	/**
-	 * Returns the first (explicitly) assigned variable that is a neighbor of this variable. REMARK: this may be costly
-	 * to call
+	 * Returns the first (explicitly) assigned variable that is a neighbor of this variable. REMARK: this may be costly to call
 	 * 
 	 * @return the first (explicitly) assigned variable that is a neighbor of this variable.
 	 */
@@ -675,8 +664,8 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	}
 
 	/**
-	 * Returns the distance of the variable with respect to the objective, computed as follows: 0 if directly involved
-	 * in the objective, 1 if a neighbor is involved in the objective, 2 otherwise
+	 * Returns the distance of the variable with respect to the objective, computed as follows: 0 if directly involved in the objective, 1 if a neighbor is
+	 * involved in the objective, 2 otherwise
 	 * 
 	 * @return the distance of the variable with respect to the objective
 	 */
@@ -726,8 +715,8 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	}
 
 	/**
-	 * Returns the dynamic degree of this variable, i.e., the number of constraints involving this variable and at least
-	 * another future (i.e., not explicitly assigned) variable
+	 * Returns the dynamic degree of this variable, i.e., the number of constraints involving this variable and at least another future (i.e., not explicitly
+	 * assigned) variable
 	 * 
 	 * @return the dynamic degree of this variable
 	 */
@@ -776,14 +765,14 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	/**
 	 * Displays information about the variable
 	 * 
-	 * @param exhaustively
-	 *            true if detailed information must be displayed
+	 * @param mode
+	 *            0, 1 or 2 according to the desired detail
 	 */
-	public final void display(boolean exhaustively) {
+	public final void display(int mode) {
 		Kit.log.finer("Variable " + this + " with num=" + num + ", degree=" + ctrs.length + ", " + dom.size() + " values {" + dom.stringOfCurrentValues()
 				+ "} and domain type " + dom.typeName() + " " + (this.assigned() ? " is assigned" : ""));
-		if (exhaustively) {
-			dom.display(exhaustively);
+		if (mode >= 1) {
+			dom.display(mode);
 			Kit.log.finer("  ctrs = {" + Kit.join(ctrs) + "}\n  nghs = {" + Kit.join(nghs != null ? nghs : computeNeighbours(Integer.MAX_VALUE)) + "}\n");
 		}
 	}

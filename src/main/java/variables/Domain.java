@@ -1328,17 +1328,21 @@ public interface Domain extends SetLinked {
 	/**
 	 * Prints a description of the domain. Detailed information is given if the specified boolean is true
 	 * 
-	 * @param exhaustively
-	 *            a boolean used for getting more information
+	 * @param mode
+	 *            0, 1 or 2 according to the desired detail
 	 */
-	default void display(boolean exhaustively) {
-		System.out.println("  Domain " + this + " (imv=" + indexesMatchValues() + ", typeIdentifier=" + typeIdentifier() + ")");
-		System.out.println("\t initSize=" + initSize() + " and size=" + size());
-		if (size() != 0)
-			System.out.println("\t first=" + firstValue() + (indexesMatchValues() ? "" : "(" + first() + ")") + " and last=" + lastValue()
-					+ (indexesMatchValues() ? "" : "(" + last() + ")"));
-		if (exhaustively)
-			System.out.println("\t values = {" + stringOfCurrentValues() + "}" + "\nStructures\n" + stringOfStructures());
+	default void display(int mode) {
+		if (mode == 0)
+			System.out.println("  Domain " + this + " : " + stringOfCurrentValues());
+		if (mode >= 1) {
+			System.out.println("  Domain " + this + " (imv=" + indexesMatchValues() + ", typeIdentifier=" + typeIdentifier() + ")");
+			System.out.println("\t initSize=" + initSize() + " and size=" + size());
+			if (size() != 0)
+				System.out.println("\t first=" + firstValue() + (indexesMatchValues() ? "" : "(" + first() + ")") + " and last=" + lastValue()
+						+ (indexesMatchValues() ? "" : "(" + last() + ")"));
+			if (mode == 2)
+				System.out.println("\t values = {" + stringOfCurrentValues() + "}" + "\nStructures\n" + stringOfStructures());
+		}
 	}
 
 }

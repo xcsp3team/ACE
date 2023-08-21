@@ -34,8 +34,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * The constraints Minimum and Maximum ensure that the minimal values or maximal values assigned to the variables in the
- * scope of the constraint respects a condition. This is the abstract root class.
+ * The constraints Minimum and Maximum ensure that the minimal values or maximal values assigned to the variables in the scope of the constraint respects a
+ * condition. This is the abstract root class.
  * 
  * @author Christophe Lecoutre
  */

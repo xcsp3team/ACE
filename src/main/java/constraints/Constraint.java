@@ -1043,7 +1043,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 				if (seekFirstSupportWith(x, a) == false) {
 					System.out.println(" " + scp[x] + "=" + doms[x].toVal(a) + " not supported by " + this);
 					for (Domain dom : doms)
-						dom.display(false);
+						dom.display(1);
 					display(true);
 					return false;
 				}

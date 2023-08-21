@@ -31,8 +31,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the class for the tabular forms of extension structures. All supports (allowed tuples) or all conflicts
- * (disallowed tuples) are simply recorded in an array. Note that tuples are recorded with indexes (of values).
+ * This is the class for the tabular forms of extension structures. All supports (allowed tuples) or all conflicts (disallowed tuples) are simply recorded in an
+ * array. Note that tuples are recorded with indexes (of values).
  * 
  * @author Christophe Lecoutre
  */
@@ -247,6 +247,23 @@ public class Table extends ExtensionStructure {
 		addNonOverlappingTuplesFor(list, y1.dom, y2.dom, h1, true, Boolean.FALSE);
 		addNonOverlappingTuplesFor(list, y2.dom, y1.dom, h2, false, Boolean.FALSE);
 		return list.stream().toArray(int[][]::new);
+	}
+
+	public static int[][] starredIfThen(Variable x, Variable cnd, Variable y, Variable z) {
+		control(cnd.dom.is01());
+		List<int[]> tuples = new ArrayList<>();
+		Domain xdom = x.dom, ydom = y.dom, zdom = z.dom;
+		for (int a = zdom.first(); a != -1; a = zdom.next(a)) {
+			int v = zdom.toVal(a);
+			if (xdom.containsValue(v))
+				tuples.add(new int[] { v, 0, STAR, v });
+		}
+		for (int a = ydom.first(); a != -1; a = ydom.next(a)) {
+			int v = ydom.toVal(a);
+			if (xdom.containsValue(v))
+				tuples.add(new int[] { v, 1, v, STAR });
+		}
+		return tuples.stream().toArray(int[][]::new);
 	}
 
 	/**********************************************************************************************

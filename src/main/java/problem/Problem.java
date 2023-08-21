@@ -24,6 +24,7 @@ import static org.xcsp.common.Types.TypeExpr.ADD;
 import static org.xcsp.common.Types.TypeExpr.IFF;
 import static org.xcsp.common.Types.TypeExpr.LONG;
 import static org.xcsp.common.Types.TypeExpr.MUL;
+import static org.xcsp.common.Types.TypeExpr.IF;
 import static org.xcsp.common.Types.TypeExpr.VAR;
 import static org.xcsp.common.Types.TypeObjective.EXPRESSION;
 import static org.xcsp.common.Types.TypeObjective.LEX;
@@ -673,7 +674,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final void display() {
 		if (options.verbose >= 2) {
 			log.finer("\nProblem " + name());
-			Stream.of(variables).forEach(x -> x.display(options.verbose == 3));
+			Stream.of(variables).forEach(x -> x.display(2));
 			Stream.of(constraints).forEach(c -> c.display(options.verbose == 3));
 		}
 	}
@@ -1105,6 +1106,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					return forall(range(list.length), i -> equal(list[i], 1));
 			}
 			return product(list, basicCondition(tree));
+		}
+		if (tree.type == TypeExpr.EQ && tree.sons.length == 2 && tree.sons[0].type == IF && tree.sons[1].type == VAR) {
+			Variable x = (Variable) tree.sons[1].var(0);
+			XNode<IVar>[] grandsons = tree.sons[0].sons;
+			Variable cnd = grandsons[0].type == VAR ? (Variable) grandsons[0].var(0) : replaceByVariable(grandsons[0]);
+			Variable y = grandsons[1].type == VAR ? (Variable) grandsons[1].var(0) : replaceByVariable(grandsons[1]);
+			Variable z = grandsons[2].type == VAR ? (Variable) grandsons[2].var(0) : replaceByVariable(grandsons[2]);
+			return extension(vars(x, cnd, y, z), Table.starredIfThen(x, cnd, y, z), true, true);
 		}
 		boolean b = options.decompose > 0 && scp[0] instanceof VariableInteger && scp.length + 1 >= tree.listOfVars().size();
 		// at most a variable occurring twice

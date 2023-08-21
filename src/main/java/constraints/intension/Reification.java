@@ -43,8 +43,7 @@ public final class Reification {
 	 *********************************************************************************************/
 
 	/**
-	 * The root class for simple reification forms: a variable is defined as the result of a logical comparison
-	 * involving another variable
+	 * The root class for simple reification forms: a variable is defined as the result of a logical comparison involving another variable
 	 */
 	public static abstract class Reif2 extends Primitive2 implements TagNotSymmetric {
 
@@ -378,8 +377,7 @@ public final class Reification {
 	}
 
 	/**********************************************************************************************
-	 * Logical Reification : Classes for x = (y and z), x = (y or z) and their extensions to more than two variables in
-	 * the right term
+	 * Logical Reification : Classes for x = (y and z), x = (y or z) and their extensions to more than two variables in the right term
 	 *********************************************************************************************/
 
 	public static abstract class ReifLogic extends Primitive implements TagAC, TagCallCompleteFiltering, TagNotSymmetric {

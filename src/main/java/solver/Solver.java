@@ -284,7 +284,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 					.orElse(null);
 			if (x != null) {
 				System.out.println("Pb with " + x);
-				x.dom.display(true);
+				x.dom.display(2);
 				return false;
 			}
 			return true;

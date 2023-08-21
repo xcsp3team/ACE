@@ -20,11 +20,10 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the class for (Generalized) Arc Consistency (AC). Such a propagation object solicits every constraint
- * propagator (i.e., filtering algorithm attached to a constraint) until a fixed point is reached (contrary to FC). Note
- * that it is only when every propagator ensures AC that AC is really totally enforced on the full constraint network;
- * this information is recorded in a field. Recall that AC is the maximal level of possible filtering when constraints
- * are treated independently. <br />
+ * This is the class for (Generalized) Arc Consistency (AC). Such a propagation object solicits every constraint propagator (i.e., filtering algorithm attached
+ * to a constraint) until a fixed point is reached (contrary to FC). Note that it is only when every propagator ensures AC that AC is really totally enforced on
+ * the full constraint network; this information is recorded in a field. Recall that AC is the maximal level of possible filtering when constraints are treated
+ * independently. <br />
  * IMPORTANT: note that, for simplicity, we use the acronym AC (and not GAC) whatever is the arity of the constraints.
  * 
  * @author Christophe Lecoutre
@@ -279,8 +278,8 @@ public class AC extends Forward {
 	 *********************************************************************************************/
 
 	/**
-	 * Indicates if AC is guaranteed for each constraint (and so, for the full constraint network), either by a generic
-	 * scheme that does not require to wait for a certain number of assigned variables, or by a specific propagator.
+	 * Indicates if AC is guaranteed for each constraint (and so, for the full constraint network), either by a generic scheme that does not require to wait for
+	 * a certain number of assigned variables, or by a specific propagator.
 	 */
 	public final boolean guaranteed;
 
@@ -292,8 +291,8 @@ public class AC extends Forward {
 	// public final FailedValueBasedConsistency fvbc;
 
 	/**
-	 * Builds for the specified solver a propagation object that may reach AC as level of local consistency. This is the
-	 * case when all constraints guarantee to enforce AC.
+	 * Builds for the specified solver a propagation object that may reach AC as level of local consistency. This is the case when all constraints guarantee to
+	 * enforce AC.
 	 * 
 	 * @param solver
 	 *            the solver to which this object is attached
@@ -305,8 +304,8 @@ public class AC extends Forward {
 	}
 
 	/**
-	 * Propagates constraints until reaching a fixed-point. This is AC when all constraint propagators are complete
-	 * (i.e., guarantee AC). This method can be used by some subclasses enforcing a stronger level of consistency.
+	 * Propagates constraints until reaching a fixed-point. This is AC when all constraint propagators are complete (i.e., guarantee AC). This method can be
+	 * used by some subclasses enforcing a stronger level of consistency.
 	 * 
 	 * @return false iff an inconsistency is detected
 	 */
@@ -317,13 +316,14 @@ public class AC extends Forward {
 			return false;
 		preproRemovals = solver.problem.nValueRemovals - nBefore;
 		assert controlAC();
+		// for (Variable x : solver.problem.variables)
+		// x.dom.display(0);
 		return true;
 	}
 
 	/**
-	 * This method is called after the specified variable has been assigned in order to propagate this event. This is AC
-	 * when all constraint propagators are complete (i.e., guarantee AC). This method can be used by some subclasses
-	 * enforcing a stronger level of consistency.
+	 * This method is called after the specified variable has been assigned in order to propagate this event. This is AC when all constraint propagators are
+	 * complete (i.e., guarantee AC). This method can be used by some subclasses enforcing a stronger level of consistency.
 	 * 
 	 * @param x
 	 *            the variable that has just been assigned
@@ -347,9 +347,8 @@ public class AC extends Forward {
 	}
 
 	/**
-	 * This method is called after the specified variable has been subject to a value refutation (removal) in order to
-	 * propagate this event. This is AC when all constraint propagators are complete (i.e., guarantee AC). This method
-	 * can be used by some subclasses enforcing a stronger level of consistency.
+	 * This method is called after the specified variable has been subject to a value refutation (removal) in order to propagate this event. This is AC when all
+	 * constraint propagators are complete (i.e., guarantee AC). This method can be used by some subclasses enforcing a stronger level of consistency.
 	 * 
 	 * @param x
 	 *            the variable that has just been subject to a refutation (negative decision)
