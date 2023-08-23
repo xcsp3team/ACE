@@ -32,6 +32,7 @@ import constraints.extension.structures.ExtensionStructure;
 import constraints.global.Sum.SumSimple.SumSimpleEQ;
 import constraints.global.Sum.SumWeighted.SumWeightedEQ;
 import dashboard.Control.OptionsConstraints;
+import dashboard.Control.OptionsPropagation;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.Observers.ObserverOnConstruction;
 import interfaces.SpecificPropagator;
@@ -202,6 +203,13 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 */
 	public static final int howManyVariablesWithin(Variable[] vars, int exponent) {
 		return howManyVariablesWithin(Stream.of(vars).filter(x -> x != null).mapToInt(x -> x.dom.size()).toArray(), Math.pow(2, exponent));
+	}
+
+	public static final int computeGenericFilteringThreshold(Variable[] vars) {
+		OptionsPropagation options = vars[0].problem.head.control.propagation;
+		if (options.arityLimit == -1 || vars.length <= options.arityLimit || options.spaceLimit == -1)
+			return Integer.MAX_VALUE; // meaning no threshold
+		return Math.max(options.arityLimit, howManyVariablesWithin(vars, options.spaceLimit));
 	}
 
 	/**
@@ -622,21 +630,6 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		this.supporter = null;
 	}
 
-	private final int computeGenericFilteringThreshold() {
-		if (this instanceof SpecificPropagator || this instanceof ConstraintExtension)
-			return Integer.MAX_VALUE; // because not concerned
-		int arityLimit = problem.head.control.propagation.arityLimit;
-		if (scp.length <= arityLimit)
-			return Integer.MAX_VALUE;
-		int futureLimit = problem.head.control.propagation.futureLimit;
-		if (futureLimit != -1)
-			return futureLimit < scp.length ? Math.max(arityLimit, futureLimit) : Integer.MAX_VALUE;
-		int spaceLimit = problem.head.control.propagation.spaceLimit;
-		if (spaceLimit != -1)
-			return Math.max(arityLimit, howManyVariablesWithin(scp, spaceLimit));
-		return Integer.MAX_VALUE;
-	}
-
 	/**
 	 * Build a constraint for the specified problem, and with the specified scope
 	 * 
@@ -655,7 +648,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		this.supporter = Supporter.buildFor(this);
 
 		this.indexesMatchValues = Stream.of(scp).allMatch(x -> x.dom.indexesMatchValues());
-		this.genericFilteringThreshold = computeGenericFilteringThreshold();
+		this.genericFilteringThreshold = this instanceof SpecificPropagator || this instanceof ConstraintExtension ? Integer.MAX_VALUE
+				: computeGenericFilteringThreshold(scp);
 		this.postponable = pb.head.control.propagation.postponableConstraints && scp.length > 20 && this instanceof TagPostponableFiltering;
 
 		pb.head.observersConstruction.add(this);

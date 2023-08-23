@@ -21,10 +21,10 @@ import static org.xcsp.common.Types.TypeConditionOperatorRel.LE;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.LT;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.NE;
 import static org.xcsp.common.Types.TypeExpr.ADD;
+import static org.xcsp.common.Types.TypeExpr.IF;
 import static org.xcsp.common.Types.TypeExpr.IFF;
 import static org.xcsp.common.Types.TypeExpr.LONG;
 import static org.xcsp.common.Types.TypeExpr.MUL;
-import static org.xcsp.common.Types.TypeExpr.IF;
 import static org.xcsp.common.Types.TypeExpr.VAR;
 import static org.xcsp.common.Types.TypeObjective.EXPRESSION;
 import static org.xcsp.common.Types.TypeObjective.LEX;
@@ -197,6 +197,7 @@ import constraints.intension.Primitive2.PrimitiveBinaryNoCst.Disjonctive;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Sub2;
 import constraints.intension.Primitive3;
 import constraints.intension.Primitive3.Add3;
+import constraints.intension.Primitive3.IFT3;
 import constraints.intension.Primitive4.Disjonctive2D;
 import constraints.intension.Primitive4.DisjonctiveVar;
 import constraints.intension.Reification.Reif2;
@@ -769,9 +770,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private void replacement(Var aux, XNode<IVar> tree, boolean tuplesComputed, int[][] tuples) {
 		nAuxConstraints++;
 		Variable[] treeVars = (Variable[]) tree.vars();
+		if (treeVars == null || treeVars.length == 0)
+			return;
 		if (!tuplesComputed && head.control.intension.toExtension(treeVars, null))
-			tuples = new TreeEvaluator(tree).computeTuples(Variable.initDomainValues(treeVars), null); // or current
-																										// values?
+			tuples = new TreeEvaluator(tree).computeTuples(Variable.initDomainValues(treeVars), null); // or current values?
 		if (tuples != null) {
 			features.nConvertedConstraints++;
 			extension(vars(treeVars, aux), tuples, true);
@@ -957,12 +959,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity intension(XNodeParent<IVar> tree) {
+		OptionsIntension options = head.control.intension;
+
 		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
 		Variable[] scp = (Variable[]) tree.vars(); // keep this statement here, after canonization
 		int arity = scp.length;
 		// System.out.println("Tree " + tree + " " + arity);
 
-		OptionsIntension options = head.control.intension;
 		if (arity == 1) {
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 			Variable x = (Variable) tree.var(0);
@@ -1107,45 +1110,58 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			}
 			return product(list, basicCondition(tree));
 		}
-		if (tree.type == TypeExpr.EQ && tree.sons.length == 2 && tree.sons[0].type == IF && tree.sons[1].type == VAR) {
-			Variable x = (Variable) tree.sons[1].var(0);
-			XNode<IVar>[] grandsons = tree.sons[0].sons;
-			Variable cnd = grandsons[0].type == VAR ? (Variable) grandsons[0].var(0) : replaceByVariable(grandsons[0]);
-			Variable y = grandsons[1].type == VAR ? (Variable) grandsons[1].var(0) : replaceByVariable(grandsons[1]);
-			Variable z = grandsons[2].type == VAR ? (Variable) grandsons[2].var(0) : replaceByVariable(grandsons[2]);
-			return extension(vars(x, cnd, y, z), Table.starredIfThen(x, cnd, y, z), true, true);
-		}
-		boolean b = options.decompose > 0 && scp[0] instanceof VariableInteger && scp.length + 1 >= tree.listOfVars().size();
-		// at most a variable occurring twice
-		b = b || options.decompose == 2;
-		// System.out.println("Tree4b " + tree + " " + b);
-		if (b) {
-			XNode<IVar>[] sons = tree.sons;
-			int nParentSons = 0;
-			if (tree.type == TypeExpr.EQ) {
-				// we reason with grandsons for avoiding recursive similar changes when making replacements
-				for (XNode<IVar> son : sons) {
-					if (son instanceof XNodeParent) {
-						nParentSons++;
-						XNode<IVar>[] grandsons = son.sons;
-						boolean modified = false;
-						for (int j = 0; j < grandsons.length; j++) {
-							if (grandsons[j] instanceof XNodeParent && grandsons[j].type != TypeExpr.SET) {
-								grandsons[j] = new XNodeLeaf<>(TypeExpr.VAR, replaceByVariable(grandsons[j]));
-								modified = true;
+
+		if (Constraint.computeGenericFilteringThreshold(scp) < scp.length) { // if it may be useful to decompose
+			// First, two cases with the ternary operator if
+			if (tree.type == IF && options.recognizeIf) {
+				XNode<IVar>[] sons = tree.sons;
+				Variable cnd = sons[0].type == VAR ? (Variable) sons[0].var(0) : replaceByVariable(sons[0]);
+				Variable y = sons[1].type == VAR ? (Variable) sons[1].var(0) : replaceByVariable(sons[1]);
+				Variable z = sons[2].type == VAR ? (Variable) sons[2].var(0) : replaceByVariable(sons[2]);
+				return post(new IFT3(this, cnd, y, z));
+			}
+			if (tree.type == TypeExpr.EQ && tree.sons.length == 2 && tree.sons[0].type == IF && tree.sons[1].type == VAR && options.recognizeIf) {
+				Variable x = (Variable) tree.sons[1].var(0);
+				XNode<IVar>[] grandsons = tree.sons[0].sons;
+				Variable cnd = grandsons[0].type == VAR ? (Variable) grandsons[0].var(0) : replaceByVariable(grandsons[0]);
+				Variable y = grandsons[1].type == VAR ? (Variable) grandsons[1].var(0) : replaceByVariable(grandsons[1]);
+				Variable z = grandsons[2].type == VAR ? (Variable) grandsons[2].var(0) : replaceByVariable(grandsons[2]);
+				return extension(vars(x, cnd, y, z), Table.starredIfThen(x, cnd, y, z), true, true);
+			}
+			boolean tryingDecomposition = options.decompose > 0 && scp[0] instanceof VariableInteger; // && scp.length + 1 >= tree.listOfVars().size();
+			// at most a variable occurring twice
+			tryingDecomposition = tryingDecomposition || options.decompose == 2;
+			// System.out.println("Tree4b " + tree + " " + b);
+			if (tryingDecomposition) {
+				XNode<IVar>[] sons = tree.sons;
+				int nParentSons = 0;
+				if (tree.type == TypeExpr.EQ) {
+					// we reason with grandsons for avoiding recursive similar changes when making replacements
+					for (XNode<IVar> son : sons) {
+						if (son instanceof XNodeParent) {
+							nParentSons++;
+							XNode<IVar>[] grandsons = son.sons;
+							boolean modified = false;
+							for (int j = 0; j < grandsons.length; j++) {
+								// we limit to arity 2 max TODO something else?
+								if (grandsons[j] instanceof XNodeParent && grandsons[j].type != TypeExpr.SET && grandsons[j].sons.length <= 2) {
+									grandsons[j] = new XNodeLeaf<>(TypeExpr.VAR, replaceByVariable(grandsons[j]));
+									modified = true;
+								}
 							}
+							if (modified)
+								return intension(tree);
 						}
-						if (modified)
-							return intension(tree);
 					}
 				}
-			}
-			if (tree.type != TypeExpr.EQ || nParentSons > 1) {
-				// if not EQ or if more than one parent son then we flatten the first parent son
-				for (int i = 0; i < sons.length; i++) {
-					if (sons[i] instanceof XNodeParent && sons[i].type != TypeExpr.SET) {
-						sons[i] = new XNodeLeaf<>(TypeExpr.VAR, replaceByVariable(sons[i]));
-						return intension(tree);
+				if (tree.type != TypeExpr.EQ || nParentSons > 1) {
+					// if not EQ or if more than one parent son then we flatten the first parent son
+					for (int i = 0; i < sons.length; i++) {
+						if (sons[i] instanceof XNodeParent && sons[i].type != TypeExpr.SET && sons[i].sons.length <= 2) {
+							// we limit to arity 2 max TODO something else?
+							sons[i] = new XNodeLeaf<>(TypeExpr.VAR, replaceByVariable(sons[i]));
+							return intension(tree);
+						}
 					}
 				}
 			}

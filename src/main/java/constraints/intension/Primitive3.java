@@ -31,8 +31,7 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This class contains many propagators for ternary primitive constraints such as for example x + y = z, |x - y| > z or
- * x%y = z <br />
+ * This class contains many propagators for ternary primitive constraints such as for example x + y = z, |x - y| > z or x%y = z <br />
  * Important: in Java, integer division rounds toward 0. <br/>
  * This implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 = 3 <br />
  * See https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.17.2
@@ -881,6 +880,37 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 				}
 				return true;
 			}
+		}
+	}
+
+	// ************************************************************************
+	// ***** Class for ift(x,y,z)
+	// ************************************************************************
+
+	public static class IFT3 extends Primitive3 {
+
+		@Override
+		public boolean isSatisfiedBy(int[] t) {
+			return t[0] == 1 ? (t[1] == 1) : (t[2] == 1);
+		}
+
+		public IFT3(Problem pb, Variable x, Variable y, Variable z) {
+			super(pb, x, y, z);
+			control(dx.is01() && dy.is01() && dz.is01());
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			if (dx.size() == 2) {
+				if (!dy.contains(1))
+					return dx.remove(1) && dz.removeIfPresent(0) && entailed();
+				if (!dz.contains(1))
+					return dx.remove(0) && dy.removeIfPresent(0) && entailed();
+			} else if (!dx.contains(0))
+				return dy.removeIfPresent(0) && entailed();
+			else // only 0 in dx
+				return dz.removeIfPresent(0) && entailed();
+			return true;
 		}
 	}
 

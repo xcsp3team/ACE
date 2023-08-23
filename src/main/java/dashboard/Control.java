@@ -492,6 +492,7 @@ public final class Control {
 		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "Must we attempt to recognize logical reification forms?");
 		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "Must we attempt to recognize minimum/maximum constraints?");
 		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "Must we attempt to recognize sum constraints?");
+		public final boolean recognizeIf = addB("recognizeIf", "rif", true, "Must we recognize/decompose the ternary operatort if");
 		public final boolean toHybrid = addB("toHybrid", "toh", false, "Must we convert toward hybrid tables, when possible?");
 
 		public boolean toExtension(Variable[] vars, XNode<IVar> tree) {
@@ -531,12 +532,11 @@ public final class Control {
 		public final boolean residues = addB("residues", "res", true, "Must we use redidues (AC3rm)?");
 		public final boolean bitResidues = addB("bitResidues", "bres", true, "Must we use bit resides (AC3bit+rm)?");
 		public final boolean multidirectionality = addB("multidirectionality", "mul", true, "Must we use multidirectionality");
-		// now, three ways of control on (G)AC for intention constraints
-		public final int futureLimit = addI("futureLimit", "fl", -1,
-				"AC not enforced when the number of future variables is greater than this value (if not -1)");
+		// now, two ways of control on (G)AC for intention constraints
+		public final int arityLimit = addI("arityLimit", "al", 2,
+				"generic AC is systematically enforced if the arity is less than or equal to this value (or this value is -1)");
 		public final int spaceLimit = addI("spaceLimit", "sl", 20,
-				"AC not enforced when size of the Cartesian product of domains is  greater than 2 to the power of this value (if not -1)");
-		public final int arityLimit = addI("arityLimit", "al", 2, "AC not enforced if the arity is greater than this value");
+				"generic AC is systematically enforced if the size of the Cartesian product of domains is less than or equal to 2 to the power of this value (or this value is -1)");
 		public boolean strongOnce = addB("strongOnce", "so", false, "Must we only apply the strong consistency (if chosen) before search?");
 		public final boolean strongAC = addB("strongAC", "sac", false, "Must we only apply the strong consistency (if chosen) when AC is effective?");
 	}
