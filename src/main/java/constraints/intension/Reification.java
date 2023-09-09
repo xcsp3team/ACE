@@ -685,14 +685,13 @@ public final class Reification {
 						}
 						sentinel1 = y;
 						return true;
-
 					}
 					// if x=0 or x=1, we need two valid sentinels
 					if (sentinel1.dom.size() == 1) {
 						Variable y = findSentinel(sentinel2);
 						if (y == null) {
 							int a = toBeRemoved(sentinel2);
-							return sentinel2.dom.remove(a) && entailed();
+							return sentinel2.dom.removeIfPresent(a) && entailed();
 						}
 						sentinel1 = y;
 					}
@@ -701,12 +700,11 @@ public final class Reification {
 						Variable y = findSentinel(sentinel1);
 						if (y == null) {
 							int a = toBeRemoved(sentinel1);
-							return sentinel1.dom.remove(a) && entailed();
+							return sentinel1.dom.removeIfPresent(a) && entailed();
 						}
 						sentinel2 = y;
 					}
 					return true;
-
 				}
 			}
 

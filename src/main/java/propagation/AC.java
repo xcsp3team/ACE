@@ -380,8 +380,10 @@ public class AC extends Forward {
 		for (Constraint c : solver.problem.constraints) {
 			if (discardObjectiveConstraint && solver.problem.optimizer != null && c == solver.problem.optimizer.ctr)
 				continue;
-			if (c.isGuaranteedAC() && c.controlAC() == false)
+			if (c.isGuaranteedAC() && c.controlAC() == false) {
+				System.out.println(c + " " + solver.problem.optimizer.ctr);
 				return false;
+			}
 		}
 		return true;
 	}

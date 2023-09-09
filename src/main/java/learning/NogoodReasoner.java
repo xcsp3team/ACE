@@ -317,11 +317,10 @@ public final class NogoodReasoner {
 	 */
 	public void addNogoodsOfCurrentBranch() {
 		SetDense set = decisions.set;
-		// System.out.println(IntStream.range(0, set.size()).mapToObj(i ->
-		// decisions.stringOf(set.dense[i])).collect(joining(" ")));
 		if (!options.nogood.isRstType() || set.size() < 2)
 			return;
 		int nMetPositiveDecisions = 0;
+		int nBefore = nNogoods;
 		for (int i = 0; i <= set.limit; i++) {
 			int d = set.dense[i];
 			if (d > 0)
@@ -350,10 +349,13 @@ public final class NogoodReasoner {
 			}
 			// else if (symmetryHandler != null) symmetryHandler.handleSymmetricUnaryNogoods(d);
 		}
-		// if (nNogoods > 800) {
-		// System.out.println(this);
-		// System.exit(1);
-		// }
+		if (options.nogoodDisplayLimit > 0) {
+			for (int i = nBefore; i < nNogoods; i++) {
+				int[] t = nogoods[i].decisions;
+				if (t.length <= options.nogoodDisplayLimit)
+					System.out.println("      " + IntStream.of(t).mapToObj(d -> decisions.stringOf(d)).collect(joining(" ")));
+			}
+		}
 		assert controlWatches();
 	}
 
@@ -391,6 +393,10 @@ public final class NogoodReasoner {
 		return true;
 	}
 
+	private String appendNogood(StringBuilder sb, int i) {
+		return IntStream.of(nogoods[i].decisions).mapToObj(d -> decisions.stringOf(d)).collect(joining(" "));
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("Nogoods = {\n");
@@ -398,7 +404,6 @@ public final class NogoodReasoner {
 			sb.append(IntStream.of(nogoods[i].decisions).mapToObj(d -> decisions.stringOf(d)).collect(joining(" "))).append("\n");
 		return sb.append("}").toString();
 	}
-
 }
 
 // public void addNogoodFrom(int[] decs) {

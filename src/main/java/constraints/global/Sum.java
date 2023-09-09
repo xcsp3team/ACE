@@ -46,8 +46,7 @@ import variables.DomainInfinite;
 import variables.Variable;
 
 /**
- * This is the root class for any constraint Sum. The three directs (abstract) subclasses are: SumSimple, SumWeighted
- * and SumViewWeighted.
+ * This is the root class for any constraint Sum. The three directs (abstract) subclasses are: SumSimple, SumWeighted and SumViewWeighted.
  * 
  * @author Christophe Lecoutre
  */
@@ -59,14 +58,12 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 	protected long limit;
 
 	/**
-	 * The minimal sum (of the left-hand expression) that can be computed at a given moment; used during filtering in
-	 * most of the subclasses
+	 * The minimal sum (of the left-hand expression) that can be computed at a given moment; used during filtering in most of the subclasses
 	 */
 	protected long min;
 
 	/**
-	 * The maximal sum (of the left-hand expression) that can be computed at a given moment; used during filtering in
-	 * most of the subclasses
+	 * The maximal sum (of the left-hand expression) that can be computed at a given moment; used during filtering in most of the subclasses
 	 */
 	protected long max;
 
@@ -119,9 +116,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 	 *********************************************************************************************/
 
 	/**
-	 * Root class for managing simple Sum constraints (i.e., Sum constraints without integer coefficients associated
-	 * with variables). Note that no overflow is possible because all sum of integer values (int) cannot exceed long
-	 * values.
+	 * Root class for managing simple Sum constraints (i.e., Sum constraints without integer coefficients associated with variables). Note that no overflow is
+	 * possible because all sum of integer values (int) cannot exceed long values.
 	 */
 	public static abstract class SumSimple extends Sum implements TagSymmetric {
 
@@ -201,8 +197,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		}
 
 		/**
-		 * Returns the sum of the values currently assigned to the variables in the scope. IMPORTANT: all variables must
-		 * be assigned.
+		 * Returns the sum of the values currently assigned to the variables in the scope. IMPORTANT: all variables must be assigned.
 		 * 
 		 * @return the sum of the values currently assigned to the variables in the scope.
 		 */
@@ -222,8 +217,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		}
 
 		/**
-		 * Recomputes the minimal and maximal sums (seen as bounds) that can be obtained with respect to the current
-		 * domains of the involved variables.
+		 * Recomputes the minimal and maximal sums (seen as bounds) that can be obtained with respect to the current domains of the involved variables.
 		 */
 		protected final void recomputeBounds() {
 			min = max = 0;
@@ -598,7 +592,6 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			setLimit(limit);
 			defineKey(coeffs, limit);
 			control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])), () -> "" + Kit.join(coeffs));
-
 		}
 
 		@Override

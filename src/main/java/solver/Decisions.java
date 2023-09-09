@@ -179,8 +179,7 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	}
 
 	/**
-	 * Returns the variable involved in the last taken decision if the type of this decision is the value of the
-	 * specified Boolean, null otherwise.
+	 * Returns the variable involved in the last taken decision if the type of this decision is the value of the specified Boolean, null otherwise.
 	 */
 	public Variable varOfLastDecisionIf(boolean positive) {
 		return set.limit >= 0 && (set.last() >= 0) == positive ? varIn(set.last()) : null;
@@ -194,8 +193,7 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	}
 
 	/**
-	 * Returns true if the ith stored decision corresponds to a failed assignment (i.e., a positive decision leading
-	 * directly to a conflict when propagating)
+	 * Returns true if the ith stored decision corresponds to a failed assignment (i.e., a positive decision leading directly to a conflict when propagating)
 	 * 
 	 * @param i
 	 *            the position of a decision in the store

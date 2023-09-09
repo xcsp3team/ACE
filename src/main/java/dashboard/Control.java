@@ -558,6 +558,7 @@ public final class Control {
 		public final int ipsCompression = addI("ipsCompression", "ipsc", Deflater.NO_COMPRESSION, "IPS Compression for equivalence reasoning");
 		// BEST_SPEED or BEST_COMPRESSION as alternatives
 		public final int ipsCompressionLimit = addI("ipsCompressionLimit", "ipscl", 300, "IPS Compression limit for equivalence reasoning");
+		public final int nogoodDisplayLimit = addI("nogoodDisplayLimit", "ndl", 0, "Size limit of the nogoods (from restarts) for being displayed");
 	}
 
 	public class OptionsSolving extends OptionGroup {

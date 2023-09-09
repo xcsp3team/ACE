@@ -58,8 +58,8 @@ import variables.Variable;
  * <li>x*y = 10</li>
  * <li>|x-y| <2</li>
  * </ul>
- * Important: in Java, integer division rounds toward 0. This implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 =
- * 3; see https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.17.2
+ * Important: in Java, integer division rounds toward 0. This implies that: 10/3 = 3, -10/3 = -3, 10/-3 = -3, -10/-3 = 3; see
+ * https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.17.2
  * 
  * @author Christophe Lecoutre
  */
@@ -150,8 +150,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 	protected final Variable y;
 
 	/**
-	 * The constant used in the binary primitive constraint. Note that it is not relevant for two subclasses
-	 * (propagators).
+	 * The constant used in the binary primitive constraint. Note that it is not relevant for two subclasses (propagators).
 	 */
 	protected final int k;
 
@@ -184,8 +183,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 	}
 
 	/**
-	 * Builds a binary primitive constraint for the specified problem with the two specified variables and the specified
-	 * constant
+	 * Builds a binary primitive constraint for the specified problem with the two specified variables and the specified constant
 	 * 
 	 * @param pb
 	 *            the problem to which the binary primitive constraint is attached
@@ -1169,6 +1167,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 		public static abstract class Mul2b extends PrimitiveBinaryVariant2 {
 
 			public static Constraint buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
+				if (k == 0)
+					return new ConstraintIntension(pb, new Variable[] { x }, XNodeParent.build(op.toExpr(), x, 0));
 				switch (op) {
 				case LT:
 				case LE:
