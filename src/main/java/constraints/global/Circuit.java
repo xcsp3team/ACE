@@ -21,9 +21,9 @@ import sets.SetSparse;
 import variables.Variable;
 
 /**
- * The constraint Circuit ensures that the values taken by a sequence of variables <x0,x1, ...> forms a circuit, with
- * the assumption that each pair (i,xi) represents an arc. See for example "Introducing global constraints in CHIP",
- * Mathematical and Computer Modelling, 20(12):97–123, 1994 by N. Beldiceanu and E. Contejean.
+ * The constraint Circuit ensures that the values taken by a sequence of variables <x0,x1, ...> forms a circuit, with the assumption that each pair (i,xi)
+ * represents an arc. See for example "Introducing global constraints in CHIP", Mathematical and Computer Modelling, 20(12):97–123, 1994 by N. Beldiceanu and E.
+ * Contejean.
  * 
  * @author Christophe Lecoutre
  */
@@ -85,6 +85,7 @@ public final class Circuit extends AllDifferentComplete {
 
 	@Override
 	public boolean runPropagator(Variable x) {
+		// System.out.println(this);
 		if (super.runPropagator(x) == false)
 			return false;
 		if (futvars.size() == 0)

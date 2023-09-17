@@ -262,8 +262,8 @@ public class Restarter implements ObserverOnRuns {
 			optimizer.possiblyUpdateLocalBounds();
 		if (measureSupplier.get() >= currCutoff)
 			return true;
-		if (optimizer != null && solver.solutions.found - localStats.nFoundSolutionAtRunStart > 10) // for CSP, may be a
-																									// problem
+		if (optimizer != null && solver.solutions.found - localStats.nFoundSolutionAtRunStart > 10)
+			// for CSP, may be a problem
 			return true;
 		if (optimizer == null || numRun != solver.solutions.lastRun)
 			return false;

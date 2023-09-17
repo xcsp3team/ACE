@@ -70,14 +70,12 @@ public class Head extends Thread {
 	 *********************************************************************************************/
 
 	/**
-	 * The set of objects in charge of solving a problem. Typically, there is only one object. However, in portfolio
-	 * mode, it contains more than one object.
+	 * The set of objects in charge of solving a problem. Typically, there is only one object. However, in portfolio mode, it contains more than one object.
 	 */
 	private static Head[] heads;
 
 	/**
-	 * Method called in portfolio mode (not the usual case). This mode needs to be entirely revised (and so, should not
-	 * be used for the moment).
+	 * Method called in portfolio mode (not the usual case). This mode needs to be entirely revised (and so, should not be used for the moment).
 	 * 
 	 * @param head
 	 *            a main resolution object
@@ -150,8 +148,8 @@ public class Head extends Thread {
 	 *********************************************************************************************/
 
 	/**
-	 * This class is useful for storing in a map several entries (key, value) where the value is a set of (available)
-	 * classes that inherit from a root class (the key).
+	 * This class is useful for storing in a map several entries (key, value) where the value is a set of (available) classes that inherit from a root class
+	 * (the key).
 	 */
 	public static class AvailableClasses {
 
@@ -246,8 +244,7 @@ public class Head extends Thread {
 	}
 
 	/**
-	 * This class stores information (through maps) about shared data structures, concerning intension, extension and
-	 * MDD constraints
+	 * This class stores information (through maps) about shared data structures, concerning intension, extension and MDD constraints
 	 */
 	public static class StructureSharing {
 
@@ -312,8 +309,7 @@ public class Head extends Thread {
 	public List<ObserverOnConstruction> observersConstruction = new ArrayList<>();
 
 	/**
-	 * The index of the current problem instance to be solved. of course, when there is only one instance to be solved,
-	 * this is 0.
+	 * The index of the current problem instance to be solved. of course, when there is only one instance to be solved, this is 0.
 	 */
 	public int instanceIndex;
 
@@ -323,14 +319,12 @@ public class Head extends Thread {
 	public AvailableClasses availableClasses = new AvailableClasses();
 
 	/**
-	 * The object that stores information (through maps) about shared data structures, concerning intension, extension
-	 * and MDD constraints
+	 * The object that stores information (through maps) about shared data structures, concerning intension, extension and MDD constraints
 	 */
 	public StructureSharing structureSharing = new StructureSharing();
 
 	/**
-	 * The object that may be used in different steps of resolution: randomization of heuristics, generation of random
-	 * solutions,...
+	 * The object that may be used in different steps of resolution: randomization of heuristics, generation of random solutions,...
 	 */
 	public Random random;
 
@@ -345,8 +339,7 @@ public class Head extends Thread {
 	public final Stopwatch instanceStopwatch = new Stopwatch();
 
 	/**
-	 * @return true if unary constraints must be preserved (and not be directly taken into account by reducing variable
-	 *         domains)
+	 * @return true if unary constraints must be preserved (and not be directly taken into account by reducing variable domains)
 	 */
 	public boolean mustPreserveUnaryConstraints() {
 		return control.constraints.preserve1 || this instanceof HeadExtraction || control.problem.symmetryBreaking != SymmetryBreaking.NO
@@ -446,7 +439,7 @@ public class Head extends Thread {
 
 	@Override
 	public void run() {
-		log.config("\n" + Color.ORANGE.coloring("ACE (AbsCon Essence)") + " v2.1 " + Kit.dateOf(Head.class));
+		log.config("\n" + Color.ORANGE.coloring("ACE v2.1 ") + Kit.dateOf(Head.class) + "\n");
 		stopwatch.start();
 		boolean[] crashed = new boolean[Input.nInstancesToSolve];
 		for (int i = 0; i < Input.nInstancesToSolve; i++) {

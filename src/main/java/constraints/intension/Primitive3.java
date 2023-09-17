@@ -194,6 +194,13 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
+				if (dx.size() == 1)
+					return AC.enforceEQ(dz, dy, dx.singleValue());
+				if (dy.size() == 1)
+					return AC.enforceEQ(dz, dx, dy.singleValue());
+				if (dz.size() == 1)
+					return AC.enforceEQb(dx, dy, dz.singleValue());
+
 				if (dx.size() * (double) dy.size() > RUNNING_LIMIT) {
 					if (dz.removeValuesLT(dx.firstValue() + dy.firstValue()) == false || dz.removeValuesGT(dx.lastValue() + dy.lastValue()) == false)
 						return false;

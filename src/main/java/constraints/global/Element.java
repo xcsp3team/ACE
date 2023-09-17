@@ -27,9 +27,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * The constraint Element ensures that the value taken by the variable in a list (vector) of variables at a specified
- * index (given by a variable) is equal to a specified value (given by a constant or a variable). The matrix variant
- * involves a matrix of variables and two indices.
+ * The constraint Element ensures that the value taken by the variable in a list (vector) of variables at a specified index (given by a variable) is equal to a
+ * specified value (given by a constant or a variable). The matrix variant involves a matrix of variables and two indices.
  * 
  * @author Christophe Lecoutre
  */
@@ -172,14 +171,12 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			private final int vpos;
 
 			/**
-			 * indexSentinels[i] stores, for the ith variable of the list (vector), a value that is both in its domain
-			 * and in vdom
+			 * indexSentinels[i] stores, for the ith variable of the list (vector), a value that is both in its domain and in vdom
 			 */
 			private final int[] indexSentinels;
 
 			/**
-			 * valueSentinels[a] stores, for each index a of a value v in vdom, the index i of a variable in list such
-			 * that v is in the domain of this variable
+			 * valueSentinels[a] stores, for each index a of a value v in vdom, the index i of a variable in list such that v is in the domain of this variable
 			 */
 			private final int[] valueSentinels;
 
@@ -239,6 +236,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 					// updating vdom (and valueSentinels)
 					if (filterValue() == false)
 						return false;
+					int cnt = 0;
 					while (true) {
 						// updating idom (and indexSentinels)
 						int sizeBefore = idom.size();
@@ -257,7 +255,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 				// If index is singleton, we update dom(list[index]) and vdom so that they are both equal to the
 				// intersection of the two domains
 				if (idom.size() == 1) {
-					if (propagation.AC.enforceEQ(list[idom.single()].dom, vdom) == false)
+					if (AC.enforceEQ(list[idom.single()].dom, vdom) == false)
 						return false;
 					if (vdom.size() == 1)
 						return entailed();
@@ -275,7 +273,11 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 					for (int b = idom.first(); b != -1; b = idom.next(b))
 						if (list[b].dom.containsValue(v))
 							continue extern;
-					control(false, () -> "value " + v + " is in dom(value) but in no list variable whose index is still in dom(index).");
+					idom.display(1);
+					if (idom.size() == 1)
+						list[idom.singleValue()].display(2);
+					vdom.display(2);
+					control(false, () -> "pb in " + this + ": value " + v + " is in dom(value) but in no list variable whose index is still in dom(index).");
 				}
 				return true;
 			}

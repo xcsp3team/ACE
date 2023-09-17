@@ -1092,6 +1092,18 @@ public interface Domain extends SetLinked {
 		return afterElementaryCalls(sizeBefore);
 	}
 
+	default boolean removeSurplusValuesWrt(Domain dom) {
+		assert size() > dom.size() && dom.subsetOf(this); // we also assume that all values in dom are contained in this domain
+		int sizeBefore = size();
+		for (int a = first(); a != -1; a = next(a))
+			if (!dom.containsValue(toVal(a))) {
+				removeElementary(a);
+				if (size() == dom.size())
+					break;
+			}
+		return afterElementaryCalls(sizeBefore);
+	}
+
 	/**
 	 * Removes all values that are present in the specified set, and returns false if the domain becomes empty.
 	 * 

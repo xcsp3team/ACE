@@ -991,8 +991,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 * @return false if an inconsistency is detected
 	 */
 	public final boolean filterFrom(Variable x) {
-		// if (this instanceof Cardinality)
-		// System.out.println("filtering " + " " + x + " " + getClass().getSimpleName());
+		// System.out.println("filtering " + " " + x + " " + getClass().getSimpleName() + " " + Variable.nValidValuesFor(problem.variables));
 		if (infiniteDomainVars.length > 0 && handleHugeDomains()) // Experimental (to be finished)
 			return true;
 		// For CSP, sometimes we can directly return true (because we know then that there is no filtering possibility)

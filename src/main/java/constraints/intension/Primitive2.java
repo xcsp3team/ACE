@@ -495,7 +495,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return sp.runPropagator(dummy);
+					// return sp.runPropagator(dummy);
+					return AC.enforceEQb(dx, dy, k); // new algo
 				}
 			}
 
@@ -612,8 +613,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return sp.runPropagator(dummy);
-					// return enforceEQ(dx, dy, k);
+					// return sp.runPropagator(dummy);
+					return AC.enforceEQ(dx, dy, k); // new algo
 				}
 			}
 

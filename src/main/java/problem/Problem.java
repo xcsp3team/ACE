@@ -675,7 +675,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final void display() {
 		if (options.verbose >= 2) {
 			log.finer("\nProblem " + name());
-			Stream.of(variables).forEach(x -> x.display(2));
+			Stream.of(variables).forEach(x -> x.display(1));
 			Stream.of(constraints).forEach(c -> c.display(options.verbose == 3));
 		}
 	}
@@ -976,7 +976,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				boolean positive = values.length >= x.dom.size() / 2;
 				if (positive)
 					values = x.dom.valuesChecking(v -> evaluator.evaluate(v) == 1); // we store supports instead
-				return post(new Extension1(this, x, values, positive));
+				return values.length > 0 ? post(new Extension1(this, x, values, positive)) : null;
 			}
 			x.dom.removeValuesAtConstructionTime(v -> evaluator.evaluate(v) != 1);
 			features.nRemovedUnaryCtrs++;

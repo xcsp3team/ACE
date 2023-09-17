@@ -31,9 +31,13 @@ import org.xcsp.common.Utilities;
 import org.xcsp.common.predicates.TreeEvaluator;
 import org.xcsp.common.predicates.XNode;
 
+import constraints.Constraint;
 import constraints.ConstraintGlobal;
+import constraints.global.Sum.SumWeighted;
 import constraints.global.Sum.SumViewWeighted.View.ViewTree01;
 import constraints.global.Sum.SumViewWeighted.View.ViewVariable;
+import constraints.intension.Primitive3.Add3;
+import constraints.intension.Primitive3.Add3.Add3EQ;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
@@ -743,7 +747,6 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				}
 				return true;
 			}
-
 		}
 
 		// ************************************************************************
@@ -751,6 +754,10 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		// ************************************************************************
 
 		public static final class SumWeightedEQ extends SumWeighted {
+
+			private static final int RUNNING_LIMIT = 2000;
+
+			private final boolean degraded;
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
@@ -762,11 +769,12 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			public SumWeightedEQ(Problem pb, Variable[] scp, int[] coeffs, long limit) {
 				super(pb, scp, coeffs, limit);
 				this.ac = Stream.of(scp).allMatch(x -> x.dom.initSize() <= 2); // in this case, bounds consistency is AC
+				this.degraded = Variable.nInitValuesFor(scp) > RUNNING_LIMIT;
 			}
 
 			@Override
 			public boolean isGuaranteedAC() {
-				return ac;
+				return ac && !degraded;
 			}
 
 			@Override
@@ -774,9 +782,12 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				recomputeBounds();
 				if (limit < min || limit > max)
 					return x.dom.fail();
+				// if (!degraded || Variable.nValidValuesFor(scp) <= RUNNING_LIMIT)
 				if (futvars.size() > 0) {
 					int lastModified = futvars.limit, i = futvars.limit;
+					int cnt = 0;
 					do {
+						// System.out.println("turn" + cnt++ + " " + Variable.nValidValuesFor(scp));
 						Domain dom = scp[futvars.dense[i]].dom;
 						int sizeBefore = dom.size();
 						if (sizeBefore > 1) {
@@ -785,8 +796,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 							max -= coeff * (coeff >= 0 ? dom.lastValue() : dom.firstValue());
 							if (dom.removeValues(LT, limit - max, coeff) == false || dom.removeValues(GT, limit - min, coeff) == false)
 								return false;
-							if (sizeBefore != dom.size())
-								lastModified = i;
+							// if (sizeBefore != dom.size())
+							// lastModified = i;
 							min += coeff * (coeff >= 0 ? dom.firstValue() : dom.lastValue());
 							max += coeff * (coeff >= 0 ? dom.lastValue() : dom.firstValue());
 						}
