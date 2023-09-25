@@ -317,7 +317,7 @@ public class SetLinkedFinite implements SetLinked {
 		return true;
 	}
 
-	public static class LinkedSetOrderedWithBits extends SetLinkedFinite {
+	public static class SetLinkedFiniteWithBits extends SetLinkedFinite {
 
 		protected long[] binaryRepresentation;
 
@@ -326,7 +326,7 @@ public class SetLinkedFinite implements SetLinked {
 			return binaryRepresentation;
 		}
 
-		public LinkedSetOrderedWithBits(int initSize) {
+		public SetLinkedFiniteWithBits(int initSize) {
 			super(initSize);
 			binaryRepresentation = new long[initSize / Long.SIZE + (initSize % Long.SIZE != 0 ? 1 : 0)];
 			Arrays.fill(binaryRepresentation, Bit.ALL_LONG_BITS_TO_1);
@@ -348,11 +348,11 @@ public class SetLinkedFinite implements SetLinked {
 		}
 	}
 
-	public static final class LinkedSetOrderedWithBits2 extends LinkedSetOrderedWithBits {
+	public static final class SetLinkedFiniteWithBits2 extends SetLinkedFiniteWithBits {
 
 		public final SetSparse set;
 
-		public LinkedSetOrderedWithBits2(int initSize) {
+		public SetLinkedFiniteWithBits2(int initSize) {
 			super(initSize);
 			this.set = new SetSparse(binaryRepresentation.length, true);
 		}

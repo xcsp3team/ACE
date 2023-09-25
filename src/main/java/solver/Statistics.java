@@ -16,7 +16,7 @@ import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments;
 import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequireFailedPerValue;
 import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequirePerValue;
 import heuristics.HeuristicVariablesDynamic.FrOnDom;
-import heuristics.HeuristicVariablesDynamic.FraOnDom;
+import heuristics.HeuristicVariablesDynamic.FrbaOnDom;
 import heuristics.HeuristicVariablesDynamic.RunRobin;
 import interfaces.Observers.ObserverOnAssignments;
 import interfaces.Observers.ObserverOnDecisions;
@@ -367,7 +367,7 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	public Statistics(Solver solver) {
 		this.solver = solver;
 		Variable[] vars = solver.problem.variables;
-		boolean b1 = solver.heuristic instanceof FrOnDom || solver.heuristic instanceof FraOnDom || solver.heuristic instanceof RunRobin;
+		boolean b1 = solver.heuristic instanceof FrOnDom || solver.heuristic instanceof FrbaOnDom || solver.heuristic instanceof RunRobin;
 		if (b1)
 			varAssignments = new VarAssignments[vars.length];
 		for (int i = 0; i < vars.length; i++) {

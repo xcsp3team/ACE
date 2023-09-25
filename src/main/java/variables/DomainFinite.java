@@ -19,7 +19,7 @@ import org.xcsp.common.Constants;
 import org.xcsp.common.Range;
 import org.xcsp.common.Utilities;
 
-import sets.SetLinkedFinite.LinkedSetOrderedWithBits;
+import sets.SetLinkedFinite.SetLinkedFiniteWithBits;
 import utility.Kit;
 
 /**
@@ -28,7 +28,7 @@ import utility.Kit;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class DomainFinite extends LinkedSetOrderedWithBits implements Domain {
+public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Domain {
 
 	@Override
 	public boolean equals(Object obj) {

@@ -165,9 +165,9 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 	}
 
-	public static final class FraOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, TagMaximize {
+	public static final class FrbaOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, TagMaximize {
 
-		public FraOnDom(Solver solver, boolean anti) {
+		public FrbaOnDom(Solver solver, boolean anti) {
 			super(solver, anti);
 		}
 
@@ -247,7 +247,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		public RunRobin(Solver solver, boolean anti) {
 			super(solver, anti);
-			this.pool = new HeuristicVariablesDynamic[] { new PickOnDom(solver, anti), new FraOnDom(solver, anti), new Wdeg(solver, anti) };
+			this.pool = new HeuristicVariablesDynamic[] { new PickOnDom(solver, anti), new FrbaOnDom(solver, anti), new Wdeg(solver, anti) };
 		}
 
 		@Override

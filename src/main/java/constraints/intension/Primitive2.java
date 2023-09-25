@@ -963,16 +963,14 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 							continue;
 						int va = dx.toVal(a);
 						if (va == k)
-							continue; // because dy.lastValue() > k by construction (see constructor), and so there is a
-										// support
+							continue; // because dy.lastValue() > k by construction (see constructor), and so there is a support
 						for (int b = dy.first(); b != -1; b = dy.next(b)) {
 							int vb = dy.toVal(b);
 							if (va % vb == k) {
 								rx[a] = b;
 								continue extern;
 							}
-							if (va < vb) // means that the remainder with remaining values of y always lead to va (and
-											// it is not k)
+							if (va < vb) // means that the remainder with remaining values of y always lead to va (and it is not k)
 								break;
 							// here, we know that va >= vb and va != k (see code earlier)
 							if (va < 2 * vb) { // it means that the quotient was 1, and will remain 1 (and 0 later)
@@ -1001,8 +999,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 							}
 						} else {
 							// we know that va >= k and vb > k by construction
-							int va = vb + k; // no need to start at va = k because k % vb is 0 (and 0 is not possible
-												// for k)
+							int va = vb + k; // no need to start at va = k because k % vb is 0 (and 0 is not possible for k)
 							while (va <= dx.lastValue()) {
 								assert va % vb == k;
 								if (dx.containsValue(va)) {

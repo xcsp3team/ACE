@@ -2827,6 +2827,34 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private final ObjEntity optimize(TypeOptimization opt, XNode<IVar> tree) {
+		if (tree.type == ADD) { // recognizing a sum
+			tree = (XNodeParent<IVar>) tree.canonization();
+			XNode<IVar>[] sons = tree.sons;
+			List<Variable> vars = new ArrayList<>();
+			int[] coeffs = new int[sons.length];
+			for (int i = 0; i < sons.length; i++) {
+				XNode<IVar> son = sons[i];
+				if (son.type == VAR) {
+					vars.add((Variable) son.var(0));
+					coeffs[i] = 1;
+				} else {
+					XNode<IVar>[] gsons = son.sons;
+					if (son.type == TypeExpr.MUL && gsons.length == 2 && (gsons[0].type == LONG || gsons[1].type == LONG)) {
+						if (gsons[0].type == LONG) {
+							vars.add(gsons[1].type == VAR ? (Variable) gsons[1].var(0) : replaceByVariable(gsons[1]));
+							coeffs[i] = gsons[0].val(0);
+						} else {
+							vars.add(gsons[0].type == VAR ? (Variable) gsons[0].var(0) : replaceByVariable(gsons[0]));
+							coeffs[i] = gsons[1].val(0);
+						}
+					} else {
+						vars.add(replaceByVariable(son));
+						coeffs[i] = 1;
+					}
+				}
+			}
+			return optimize(opt, SUM, vars.stream().toArray(Variable[]::new), coeffs);
+		}
 		return optimize(opt, replaceByVariable(tree));
 	}
 

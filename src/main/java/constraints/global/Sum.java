@@ -785,7 +785,6 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				// if (!degraded || Variable.nValidValuesFor(scp) <= RUNNING_LIMIT)
 				if (futvars.size() > 0) {
 					int lastModified = futvars.limit, i = futvars.limit;
-					int cnt = 0;
 					do {
 						// System.out.println("turn" + cnt++ + " " + Variable.nValidValuesFor(scp));
 						Domain dom = scp[futvars.dense[i]].dom;
@@ -797,6 +796,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 							if (dom.removeValues(LT, limit - max, coeff) == false || dom.removeValues(GT, limit - min, coeff) == false)
 								return false;
 							// if (sizeBefore != dom.size())
+							// System.out.println("sizeBef=" + sizeBefore + " nRems=" + (sizeBefore - dom.size()));
 							// lastModified = i;
 							min += coeff * (coeff >= 0 ? dom.firstValue() : dom.lastValue());
 							max += coeff * (coeff >= 0 ? dom.lastValue() : dom.firstValue());
@@ -807,8 +807,6 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				assert controlFCLevel();
 				return true;
 			}
-
-			int cnt = 0;
 
 			public int deduce() { // experimental for infinite domains (to be finalized)
 				control(futvars.size() == 1);
