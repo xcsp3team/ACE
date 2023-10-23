@@ -29,14 +29,13 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * The constraint Cumulative is useful when a resource of limited quantity must be shared for achieving several tasks.
- * The constraint Cumulative enforces that at each point in time, the accumulated height of tasks that overlap that
- * point, does not exceed a specified limit. For example, in a scheduling context where several tasks require some
- * specific quantities of a single resource, the cumulative constraint imposes that a strict limit on the total
- * consumption of the resource is never exceeded at each point of a time line.
+ * The constraint Cumulative is useful when a resource of limited quantity must be shared for achieving several tasks. The constraint Cumulative enforces that
+ * at each point in time, the accumulated height of tasks that overlap that point, does not exceed a specified limit. For example, in a scheduling context where
+ * several tasks require some specific quantities of a single resource, the cumulative constraint imposes that a strict limit on the total consumption of the
+ * resource is never exceeded at each point of a time line.
  * 
- * So, the context is to manage a collection of tasks, each one being described by 3 attributes: its starting time, its
- * width (length or duration), and its height (resource consumption).
+ * So, the context is to manage a collection of tasks, each one being described by 3 attributes: its starting time, its width (length or duration), and its
+ * height (resource consumption).
  * 
  * TODO: energetic reasoner must be revised (deactivated because of bug)
  * 
@@ -64,8 +63,8 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 	 *********************************************************************************************/
 
 	/**
-	 * Filtering mainly based on "Simple and Scalable Time-Table Filtering for the Cumulative Constraint", CP 2015:
-	 * 149-157, by S. Gay, R. Hartert and P. Schaus.
+	 * Filtering mainly based on "Simple and Scalable Time-Table Filtering for the Cumulative Constraint", CP 2015: 149-157, by S. Gay, R. Hartert and P.
+	 * Schaus.
 	 */
 	class TimetableReasoner {
 		class Slot {
@@ -149,8 +148,7 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 
 		private void updateRelevantTasks() {
 			int depth = problem.solver.depth();
-			// we compute the relevant time bounds: minimum relevant start time and maximum relevant end time from
-			// current future variables
+			// we compute the relevant time bounds: minimum relevant start time and maximum relevant end time from current future variables
 			int smin = Integer.MAX_VALUE, emax = Integer.MIN_VALUE;
 			for (int j = futvars.limit; j >= 0; j--) {
 				int i = futvars.dense[j];
@@ -171,10 +169,13 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 			Variable lastPast = problem.solver.futVars.lastPast();
 			for (int j = 0; j < nTasks; j++) {
 				int i = energeticReasoner.sortedTasks[j];
+				if (wwidths[i] == 0 || wheights[0] == 0)
+					continue;
 				if (slots[0].height + wheights[i] <= limit)
 					break;
 				if (starts[i].assigned() && starts[i] != lastPast)
 					continue;
+
 				int ms = mandatoryStart(i), me = mandatoryEnd(i);
 				for (int k = 0; k < nSlots; k++) {
 					if (slots[k].height + wheights[i] <= limit)
@@ -196,8 +197,7 @@ public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, T
 	/**
 	 * Filtering based on a form of energetic reasoning.
 	 * 
-	 * TODO: this must be totally revised. Seems to be a problem with heighest and smallest heights while not
-	 * considering mandatory parts
+	 * TODO: this must be totally revised. Seems to be a problem with heighest and smallest heights while not considering mandatory parts
 	 */
 	class EnergeticReasoner {
 		private Integer[] sortedTasks; // according to heights
