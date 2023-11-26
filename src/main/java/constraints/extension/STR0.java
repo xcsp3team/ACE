@@ -20,11 +20,12 @@ import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import problem.Problem;
 import sets.SetDense;
+import utility.Kit;
 import variables.Variable;
 
 /**
- * This is a basic form of STR (Simple Tabular Reduction), for filtering extension (table) constraints. It can be used
- * when the table is small (avoiding consuming too much memory).
+ * This is a basic form of STR (Simple Tabular Reduction), for filtering extension (table) constraints. It can be used when the table is small (avoiding
+ * consuming too much memory).
  * 
  * @author Christophe Lecoutre
  */
@@ -67,20 +68,17 @@ public class STR0 extends ExtensionSpecific {
 	protected boolean[][] ac;
 
 	/**
-	 * When used during filtering, cnts[x] is the number of values in the current domain of x with no found support
-	 * (yet)
+	 * When used during filtering, cnts[x] is the number of values in the current domain of x with no found support (yet)
 	 */
 	protected int[] cnts;
 
 	/**
-	 * The number of variables for which support searching must be done (i.e., variables with some values that still
-	 * must be checked to be AC)
+	 * The number of variables for which support searching must be done (i.e., variables with some values that still must be checked to be AC)
 	 */
 	protected int sSupSize;
 
 	/**
-	 * The (dense) set of positions of variables for which support searching must be done. Relevant positions are at
-	 * indexes from 0 to sSupSize (excluded).
+	 * The (dense) set of positions of variables for which support searching must be done. Relevant positions are at indexes from 0 to sSupSize (excluded).
 	 */
 	protected final int[] sSup;
 

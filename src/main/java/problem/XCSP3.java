@@ -711,7 +711,12 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	public void buildCtrElement(String id, int[][] matrix, int startRowIndex, XVarInteger rowIndex, int startColIndex, XVarInteger colIndex,
 			Condition condition) {
 		control(startRowIndex == 0 && startColIndex == 0);
-		problem.element(matrix, startRowIndex, trVar(rowIndex), startColIndex, trVar(colIndex), trVar(condition));
+		if (rowIndex == colIndex) {
+			control(IntStream.range(0, matrix.length).allMatch(i -> matrix[i].length == matrix.length));
+			int[] list = IntStream.range(0, matrix.length).map(i -> matrix[i][i]).toArray();
+			buildCtrElement(id, list, 0, rowIndex, TypeRank.ANY, condition);
+		} else
+			problem.element(matrix, startRowIndex, trVar(rowIndex), startColIndex, trVar(colIndex), trVar(condition));
 	}
 
 	@Override
