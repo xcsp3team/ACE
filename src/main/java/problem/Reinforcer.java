@@ -32,8 +32,7 @@ import variables.Variable;
 import variables.Variable.VariableInteger;
 
 /**
- * These classes are useful to reinforce a constraint network by adding either redundant constraints or
- * symmetry-breaking constraints.
+ * These classes are useful to reinforce a constraint network by adding either redundant constraints or symmetry-breaking constraints.
  * 
  * @author Christophe Lecoutre
  */
@@ -74,9 +73,9 @@ public class Reinforcer {
 		}
 
 		/**
-		 * Builds and returns a list of cliques (irreflexive pairwise variables) from the specified array of variables
-		 * with respect to the specified list of constraints. Each such clique can be used to build an AllDifferent
-		 * constraint. The two last parameters are used to control the number and the size of the cliques.
+		 * Builds and returns a list of cliques (irreflexive pairwise variables) from the specified array of variables with respect to the specified list of
+		 * constraints. Each such clique can be used to build an AllDifferent constraint. The two last parameters are used to control the number and the size of
+		 * the cliques.
 		 * 
 		 * @param variables
 		 *            a list of variables
@@ -86,8 +85,7 @@ public class Reinforcer {
 		 *            the maximum number of cliques to find
 		 * @param sLimit
 		 *            the minimum size of cliques to be taken into account
-		 * @return a list of cliques (irreflexive pairwise variables) from the specified array of variables with respect
-		 *         to the specified list of constraints
+		 * @return a list of cliques (irreflexive pairwise variables) from the specified array of variables with respect to the specified list of constraints
 		 */
 		public static List<Variable[]> buildCliques(List<Variable> variables, List<Constraint> constraints, int nLimit, int sLimit) {
 			int[][] variableNeighbours = computeIrreflexiveNeigbours(variables, constraints);
@@ -365,16 +363,15 @@ public class Reinforcer {
 		}
 
 		/**
-		 * Builds and returns a list of generators (based on a computed automorphism group) from the specified array of
-		 * variables with respect to the specified list of constraints. Each such generator can be used to build a
-		 * symmetry-breaking constraint.
+		 * Builds and returns a list of generators (based on a computed automorphism group) from the specified array of variables with respect to the specified
+		 * list of constraints. Each such generator can be used to build a symmetry-breaking constraint.
 		 * 
 		 * @param variables
 		 *            an array of variables
 		 * @param constraints
 		 *            a list of constraints
-		 * @return a list of generators (based on a computed automorphism group) from the specified array of variables
-		 *         with respect to the specified list of constraints
+		 * @return a list of generators (based on a computed automorphism group) from the specified array of variables with respect to the specified list of
+		 *         constraints
 		 */
 		public static List<List<int[]>> buildGenerators(List<Variable> variables, List<Constraint> constraints) {
 			stopwatch = new Stopwatch();

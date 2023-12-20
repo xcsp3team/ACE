@@ -641,7 +641,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	public Constraint(Problem pb, Variable[] scp) {
 		this.problem = pb;
 		this.scp = scp = Stream.of(scp).distinct().toArray(Variable[]::new); // IMPORTANT: this.scp and scp both updated
-		control(scp.length >= 1 && Stream.of(scp).allMatch(x -> x != null), () -> this + " with a scope badly formed ");
+		control(scp.length >= 1 && Stream.of(scp).allMatch(x -> x != null), () -> " constraint with a scope badly formed ");
+
 		this.doms = Stream.of(scp).map(x -> x.dom).toArray(Domain[]::new);
 
 		this.tupleIterator = new TupleIterator(this.doms);

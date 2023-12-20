@@ -878,6 +878,19 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		problem.instantiation(trVars(list), values);
 	}
 
+	// @Override
+	public void buildCtrAdhoc(String id, String form, Map<String, Object> map) {
+		if (form.equals("myAllDiff")) {
+			XVarInteger[] list = (XVarInteger[]) map.get("list");
+			problem.allDifferent(trVars(list));
+		} else if (form.equals("mySum")) {
+			XVarInteger[] list = (XVarInteger[]) map.get("list");
+			int[] coeffs = (int[]) map.get("coeffs");
+			Condition condition = (Condition) map.get("condition");
+			problem.sum(trVars(list), coeffs, trVar(condition));
+		}
+	}
+
 	/**********************************************************************************************
 	 * Methods for loading objectives
 	 *********************************************************************************************/

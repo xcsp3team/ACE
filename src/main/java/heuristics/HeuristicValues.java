@@ -133,7 +133,6 @@ public abstract class HeuristicValues extends Heuristic {
 			return null;
 		}
 		if (c instanceof SumWeighted || c instanceof SumSimple) {
-			// System.out.println("hhh");
 			for (Variable x : c.scp)
 				x.heuristic = minimization ? new First(x, false) : new Last(x, false); // the boolean is dummy
 			return c.scp;

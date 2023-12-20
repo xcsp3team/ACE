@@ -491,7 +491,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				System.out.println("Time for generating symmetry-breaking constraints: " + stopwatch.wckTimeInSeconds());
 		}
 		OptionsGlobal options = head.control.global;
-		if (options.allDifferentNb > 0) {
+		if (options.allDifferentNb > 0 && constraints.size() > 0) {
 			stopwatch.start();
 			List<Variable[]> cliques = Cliques.buildCliques(variables, constraints, options.allDifferentNb, options.allDifferentSize);
 			for (Variable[] clique : cliques)
