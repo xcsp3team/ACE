@@ -3,9 +3,6 @@
 <img width="35%" src="src/main/resources/logoAce.png" alt="logo"/>
 </div>
 
-**WARNING.** *Currently, the site pycsp.org is not available. This is due to a payment problem, and as we follow **soviet-like procedures** here in France (most of the time, we must use purchase orders), this may take some time. 
-For the same kind of reasons, I have decided to limit/cancel my missions, as with CNRS, each mission requires a couple of hours for just filling forms. **This is not acceptable** (especially for the administrative agents who endure this Kafkaian world; some of them becoming depressed). I agree that our working environment is **not professional**.*
-
 ACE (AbsCon Essence) is an open-source constraint solver developed by Christophe Lecoutre (CRIL) in Java.
 ACE is embedded in the Python modeling library [PyCSP3](https://pycsp.org/), and is a competitive solver as shown by results of the [2022 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP22/) and [2023 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP23/).
 
