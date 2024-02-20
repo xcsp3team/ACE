@@ -42,8 +42,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the class for extension structures represented by Multi-valued Decision Diagrams (MDDs). All supports
- * (allowed tuples) are recorded as paths in the MDD. Note that tuples are recorded with indexes (of values).
+ * This is the class for extension structures represented by Multi-valued Decision Diagrams (MDDs). All supports (allowed tuples) are recorded as paths in the
+ * MDD. Note that tuples are recorded with indexes (of values).
  * 
  * @author Christophe Lecoutre
  */
@@ -74,8 +74,8 @@ public final class MDD extends ExtensionStructure {
 		public Node[] sons;
 
 		/**
-		 * Equivalence classes among sons of the node; sonsClasses[i][j] is the index of the jth son in the ith
-		 * equivalence class. Two indexes belong to the same class iff they reach the same child.
+		 * Equivalence classes among sons of the node; sonsClasses[i][j] is the index of the jth son in the ith equivalence class. Two indexes belong to the
+		 * same class iff they reach the same child.
 		 */
 		public int[][] sonsClasses;
 
@@ -85,8 +85,7 @@ public final class MDD extends ExtensionStructure {
 		private Integer nSonsNotNodeF;
 
 		/**
-		 * Object used temporarily when building an MDD from an automaton or a KnapsSack; This can be an Integer or a
-		 * String.
+		 * Object used temporarily when building an MDD from an automaton or a KnapsSack; This can be an Integer or a String.
 		 */
 		private Object state;
 
@@ -105,8 +104,8 @@ public final class MDD extends ExtensionStructure {
 		}
 
 		/**
-		 * Returns the number of internal nodes (i.e., other than terminal ones) that can be reached from this node.
-		 * Nodes whose id is in the specifies set must be ignored (because already counted)
+		 * Returns the number of internal nodes (i.e., other than terminal ones) that can be reached from this node. Nodes whose id is in the specifies set must
+		 * be ignored (because already counted)
 		 * 
 		 * @param set
 		 *            the ids of nodes that must ignored
@@ -131,8 +130,8 @@ public final class MDD extends ExtensionStructure {
 		}
 
 		/**
-		 * Builds a node for the MDD at the specified level. For each value index of the domain of the associated
-		 * variable, there is a son. If stars are managed apart, there is additionally one special son.
+		 * Builds a node for the MDD at the specified level. For each value index of the domain of the associated variable, there is a son. If stars are managed
+		 * apart, there is additionally one special son.
 		 * 
 		 * @param level
 		 *            a level in the MDD
@@ -410,8 +409,7 @@ public final class MDD extends ExtensionStructure {
 	private boolean discardClassForNodeF = true; // hard coding
 
 	/**
-	 * Indicates if one must try to reduce the MDD when processing tuples. TODO hard coding ; for the moment the code is
-	 * broken -see below)
+	 * Indicates if one must try to reduce the MDD when processing tuples. TODO hard coding ; for the moment the code is broken -see below)
 	 */
 	private boolean reductionWhileProcessingTuples = false;
 
@@ -657,7 +655,8 @@ public final class MDD extends ExtensionStructure {
 		boolean increasing = false;
 		if (!increasing) {
 			finalizeStoreTuples();
-			// displayTuples();
+			root.display();
+			displayTuples();
 		} else {
 			root = root.filter(values, Integer.MAX_VALUE);
 			recursiveReduction(root, new HashMap<>(2000));

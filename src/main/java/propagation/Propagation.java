@@ -30,8 +30,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * The is the root class for any object used to manage constraint propagation. For simplicity, propagation and
- * consistency concepts are not distinguished. So, some subclasses are given the name of consistencies.
+ * The is the root class for any object used to manage constraint propagation. For simplicity, propagation and consistency concepts are not distinguished. So,
+ * some subclasses are given the name of consistencies.
  * 
  * @author Christophe Lecoutre
  */
@@ -44,8 +44,7 @@ public abstract class Propagation {
 	private static final int MAX_FILTERING_COMPLEXITY = 2;
 
 	/**
-	 * Builds and returns the propagation to be attached to the specified solver. If preprocessing and search stages are
-	 * disabled, null is returned.
+	 * Builds and returns the propagation to be attached to the specified solver. If preprocessing and search stages are disabled, null is returned.
 	 * 
 	 * @param solver
 	 *            the solver to which the propagation object is attached
@@ -144,23 +143,21 @@ public abstract class Propagation {
 	public final Queue queue;
 
 	/**
-	 * Auxiliary queues for handling constraints with different levels of propagator complexities. Currently, its usage
-	 * is experimental.
+	 * Auxiliary queues for handling constraints with different levels of propagator complexities. Currently, its usage is experimental.
 	 */
 	// public final SetSparseMap[] auxiliaryQueues;
 
 	public final Set<Constraint> postponedConstraints;
 
 	/**
-	 * This field is used as a clock to enumerate time. It is used to avoid performing some useless calls of constraint
-	 * propagators by comparing time-stamps attached to variables with time-stamps attached to constraints.
+	 * This field is used as a clock to enumerate time. It is used to avoid performing some useless calls of constraint propagators by comparing time-stamps
+	 * attached to variables with time-stamps attached to constraints.
 	 * 
 	 */
 	public long time;
 
 	/**
-	 * The constraint that is currently used in propagation. This is null if no constraint is currently used for
-	 * filtering. This is relevant for AC.
+	 * The constraint that is currently used in propagation. This is null if no constraint is currently used for filtering. This is relevant for AC.
 	 */
 	public Constraint currFilteringCtr;
 
@@ -170,14 +167,13 @@ public abstract class Propagation {
 	public Variable lastWipeoutVar;
 
 	/**
-	 * The object to be used when picking a variable from the queue in order to reason first with recorded nogoods (if
-	 * any)
+	 * The object to be used when picking a variable from the queue in order to reason first with recorded nogoods (if any)
 	 */
 	private NogoodReasoning nogoodReasoning = new NogoodReasoning();
 
 	/**
-	 * When true, indicates that the object is currently performing a form of search during propagation. This may be the
-	 * case for some forms of propagation based on strong consistencies.
+	 * When true, indicates that the object is currently performing a form of search during propagation. This may be the case for some forms of propagation
+	 * based on strong consistencies.
 	 */
 	public boolean performingProperSearch;
 
@@ -197,8 +193,7 @@ public abstract class Propagation {
 	protected final OptionsPropagation options;
 
 	/**
-	 * This field is set to true when running propagation from scratch at the root node must be made when a restart
-	 * occurs.
+	 * This field is set to true when running propagation from scratch at the root node must be made when a restart occurs.
 	 */
 	public boolean runAtNextRoot;
 
@@ -210,7 +205,7 @@ public abstract class Propagation {
 	 * Methods
 	 *************************************************************************/
 
-	public final void clear() {
+	public void clear() {
 		queue.clear();
 		postponedConstraints.clear();
 	}
@@ -249,8 +244,8 @@ public abstract class Propagation {
 	}
 
 	/**
-	 * Pick and delete a variable from the queue and call filtering algorithms associated with the constraints involving
-	 * the variable. Possibly postpone filtering if auxiliary queues are used.
+	 * Pick and delete a variable from the queue and call filtering algorithms associated with the constraints involving the variable. Possibly postpone
+	 * filtering if auxiliary queues are used.
 	 * 
 	 * @return false iff an inconsistency is detected
 	 */
@@ -351,16 +346,15 @@ public abstract class Propagation {
 	}
 
 	/**
-	 * This method is called to run constraint propagation, typically at the beginning of search (i.e., in a
-	 * preprocessing stage), but it can also be called when at root node of a new run
+	 * This method is called to run constraint propagation, typically at the beginning of search (i.e., in a preprocessing stage), but it can also be called
+	 * when at root node of a new run
 	 * 
 	 * @return false iff an inconsistency is detected
 	 */
 	public abstract boolean runInitially();
 
 	/**
-	 * This method is called to possibly run constraint propagation, at the root of the search tree, typically before
-	 * performing a new run (restart).
+	 * This method is called to possibly run constraint propagation, at the root of the search tree, typically before performing a new run (restart).
 	 * 
 	 * @return true iff constraint propagation has been rerun
 	 */
@@ -388,10 +382,9 @@ public abstract class Propagation {
 	public abstract boolean runAfterAssignment(Variable x);
 
 	/**
-	 * This method is called when a binary branching scheme is used by the solver. Indeed, after a positive decision
-	 * (value assigned to a variable), one can proceed with a negative decision (value removed from the domain of the
-	 * variable), and to run constraint propagation before selecting another variable. This method is always called with
-	 * a variable whose domain is not empty.
+	 * This method is called when a binary branching scheme is used by the solver. Indeed, after a positive decision (value assigned to a variable), one can
+	 * proceed with a negative decision (value removed from the domain of the variable), and to run constraint propagation before selecting another variable.
+	 * This method is always called with a variable whose domain is not empty.
 	 * 
 	 * @param x
 	 *            the variable that has just been subject to a refutation (negative decision)
@@ -401,8 +394,8 @@ public abstract class Propagation {
 
 	/**
 	 * To be called when the domain of the specified variable has just been reduced. <br />
-	 * Be careful: the domain of the specified variable is not necessarily already reduced, and so may be different from
-	 * the specified value, which is then considered as the virtual size of the domain of the specified variable.
+	 * Be careful: the domain of the specified variable is not necessarily already reduced, and so may be different from the specified value, which is then
+	 * considered as the virtual size of the domain of the specified variable.
 	 * 
 	 * @param x
 	 *            the variable whose domain has just been reduced

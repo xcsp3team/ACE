@@ -1601,8 +1601,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		boolean only1 = coeffs[0] == 1 && coeffs[coeffs.length - 1] == 1; // if only 1 since sorted
 		if (op == EQ) {
-			boolean postTwoConstraints = head.control.global.eqDecForSum;
-			if (postTwoConstraints) {
+			if (head.control.global.eqDecForSum) {
 				if (only1) {
 					post(new SumSimpleLE(this, list, limit));
 					post(new SumSimpleGE(this, list, limit));
@@ -1612,6 +1611,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				}
 				return null; // null because several constraints // TODO returning a special value?
 				// return addCtr(new CtrExtensionMDD(this, list, coeffs, new Range(limit, limit+1))));
+			} else if (head.control.global.eqMddForSum) {
+				return post(new CMDDO(this, list, coeffs, new Range((int) limit, (int) limit + 1)));
 			}
 		}
 

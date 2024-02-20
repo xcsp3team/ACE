@@ -15,8 +15,8 @@ import solver.Solver;
 import variables.Variable;
 
 /**
- * This is the root class for backward propagation. Such form of propagation corresponds to a retrospective approach
- * that deals with assigned variables. The domains of the unassigned variables are not modified.
+ * This is the root class for backward propagation. Such form of propagation corresponds to a retrospective approach that deals with assigned variables. The
+ * domains of the unassigned variables are not modified.
  * 
  * @author Christophe Lecoutre
  */
@@ -30,6 +30,9 @@ public abstract class Backward extends Propagation {
 	 */
 	public Backward(Solver solver) {
 		super(solver);
+	}
+
+	public void clear() {
 	}
 
 	@Override

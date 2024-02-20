@@ -492,7 +492,7 @@ public final class Control {
 		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "Must we attempt to recognize logical reification forms?");
 		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "Must we attempt to recognize minimum/maximum constraints?");
 		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "Must we attempt to recognize sum constraints?");
-		public final boolean recognizeIf = addB("recognizeIf", "rif", true, "Must we recognize/decompose the ternary operatort if");
+		public final boolean recognizeIf = addB("recognizeIf", "rif", true, "Must we recognize/decompose the ternary operator if");
 		public final boolean toHybrid = addB("toHybrid", "toh", false, "Must we convert toward hybrid tables, when possible?");
 
 		public boolean toExtension(Variable[] vars, XNode<IVar> tree) {
@@ -515,6 +515,7 @@ public final class Control {
 		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");
 		public final boolean viewForSum = addB("viewForSum", "vs", false, "Must we use views for Sum constraints, when possible?");
 		public final boolean eqDecForSum = addB("eqDecForSum", "eqs", false, "Must we post two constraints for Sum constraints, when the operator is EQ?");
+		public final boolean eqMddForSum = addB("eqMddForSum", "eqm", false, "Must we post a MDD constraint for Sum constraints, when the operator is EQ?");
 		public final boolean permutation = addB("permutation", "", false, "Must we use permutation constraints for AllDifferent if possible? (may be faster)");
 		public final int allDifferentNb = addI("allDifferentNb", "adn", 10, "Number of possibly automatically inferred AllDifferent");
 		public final int allDifferentSize = addI("allDifferentSize", "ads", 5, "Limit on the size of possibly automatically inferred AllDifferent");

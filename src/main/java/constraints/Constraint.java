@@ -512,7 +512,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * Returns true if a is substitutable by b for x on the constraint
+	 * Returns true if a is substitutable by b for x on this constraint
 	 * 
 	 * @param x
 	 *            a variable
@@ -520,7 +520,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 *            a first value index
 	 * @param b
 	 *            a second value index
-	 * @return true if a is substitutable by b for x on the constraint
+	 * @return true if a is substitutable by b for x on this constraint
 	 */
 	public final boolean isSubstitutableBy(int x, int a, int b) {
 		tupleIterator.firstValidTupleWith(x, a);
