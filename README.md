@@ -4,15 +4,15 @@
 </div>
 
 ACE (AbsCon Essence) is an open-source constraint solver developed by Christophe Lecoutre (CRIL) in Java.
-ACE is embedded in the Python modeling library [PyCSP3](https://pycsp.org/), and is a competitive solver as shown by results of the [2022 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP22/) and [2023 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP23/).
+ACE is embedded in the Python modeling library [PyCSP3](https://pycsp.org/), and is a competitive solver as shown by results of both the [2022 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP22/) and the [2023 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP23/).
 
 Current stable version of ACE is 2.2 (December 05, 2023).
 
 ACE focuses on:
 - integer variables, including 0/1 (Boolean) variables,
 - state-of-the-art table constraints, including ordinary, starred, and hybrid table constraints,
-- popular global constraints (AllDifferent, Count, Element, Cardinality, Cumulative, etc.),
-- search heuristics (wdeg, impact, last-conflict, BIVS, solution-saving, ...),
+- popular global constraints (AllDifferent, Count, Element, Cardinality, Cumulative, BinPacking, etc.),
+- search heuristics (wdeg/dom, pick/dom, frba/dom, last-conflict, BIVS, solution-saving, ...),
 - mono-criterion optimization
 
 ACE is distributed under License MIT
