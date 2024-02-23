@@ -29,10 +29,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the class for Singleton Arc Consistency (AC). Some information about SAC and algorithms enforcing it can be
- * found for example in: <br/>
- * "Efficient algorithms for singleton arc consistency", Constraints An Int. J. 16(1): 25-53 (2011), by C. Bessiere, S.
- * Cardon, R. Debruyne, and C. Lecoutre
+ * This is the class for Singleton Arc Consistency (AC). Some information about SAC and algorithms enforcing it can be found for example in: <br/>
+ * "Efficient algorithms for singleton arc consistency", Constraints An Int. J. 16(1): 25-53 (2011), by C. Bessiere, S. Cardon, R. Debruyne, and C. Lecoutre
  * 
  * @author Christophe Lecoutre
  */
@@ -57,8 +55,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 	}
 
 	/**
-	 * Enforces SAC on the specified variable, i.e., performs all singleton tests on the values in the domain of the
-	 * specified variable
+	 * Enforces SAC on the specified variable, i.e., performs all singleton tests on the values in the domain of the specified variable
 	 * 
 	 * @param x
 	 *            a variable
@@ -505,8 +502,8 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 		protected final LocalQueue localQueue;
 
 		/**
-		 * 0 = desactivated ; 1 = select last failed value (when starting a new branch) ; 2 = select last failed value +
-		 * last failed variable (if last branch of size 0)
+		 * 0 = desactivated ; 1 = select last failed value (when starting a new branch) ; 2 = select last failed value + last failed variable (if last branch of
+		 * size 0)
 		 */
 		protected final int lastConflictMode;
 
