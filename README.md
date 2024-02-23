@@ -26,9 +26,9 @@ For some general information about the structure of the code of the solver ACE, 
 ## Building a JAR
 
 1. clone the repository:  
-   `git clone https://github.com/xcsp3team/ace.git`
+   `git clone https://github.com/xcsp3team/ACE.git --depth 1`
 1. change directory:  
-   `cd ace`
+   `cd ACE`
 1. run Gradle (of course, you need Gradle to be installed; version > v7.0):  
    `gradle build -x test`  
 1. test the JAR:  
