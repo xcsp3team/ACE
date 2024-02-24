@@ -19,8 +19,9 @@ repositories {
 
 dependencies {
   implementation fileTree(dir: 'lib', include: ['*.jar']) 
-  testImplementation 'junit:junit:4.12'
+  //testImplementation 'junit:junit:4.12'
 }
+
 // with this statement below (jar { }), we build a fat jar, i.e. a jar with included dependencies
 jar {
     manifest {

@@ -17,6 +17,7 @@ import static org.xcsp.common.Types.TypeOperatorRel.LT;
 import static utility.Kit.control;
 
 import java.math.BigInteger;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -51,6 +52,10 @@ public interface Domain extends SetLinked {
 	 * Static Members
 	 *********************************************************************************************/
 
+	static final DecimalFormat df2 = new DecimalFormat("00");
+	static final DecimalFormat df3 = new DecimalFormat("000");
+	static final DecimalFormat df4 = new DecimalFormat("0000");
+
 	/**
 	 * The cache used for storing type identifiers.
 	 */
@@ -64,6 +69,7 @@ public interface Domain extends SetLinked {
 	 * @return a type identifier
 	 */
 	static int typeIdentifierFor(int... values) {
+
 		int j = IntStream.range(0, types.size()).filter(i -> Arrays.equals(values, types.get(i))).findFirst().orElse(-1);
 		if (j != -1)
 			return j;
@@ -1313,7 +1319,17 @@ public interface Domain extends SetLinked {
 	 * @return a pretty form of the value whose index is specified
 	 */
 	default String prettyValueOf(int a) {
-		return toVal(a) + "";
+		int v = toVal(a);
+		if (!var().problem.head.control.general.jsonQuotes && toVal(0) >= 0 && var().id.chars().filter(ch -> ch == '[').count() == 2) {
+			int max = toVal(initSize() - 1);
+			if (max > 0) {
+				if (max < 100)
+					return (v < 10 ? " " : "") + v;
+				else if (max < 1000)
+					return (v < 10 ? "  " : v < 100 ? " " : "") + v;
+			}
+		}
+		return v + "";
 	}
 
 	/**

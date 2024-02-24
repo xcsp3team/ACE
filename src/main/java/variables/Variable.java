@@ -487,7 +487,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	/**
 	 * The id (name) of the variable
 	 */
-	private String id;
+	public final String id;
 
 	/**
 	 * The level where the variable has been explicitly assigned, or -1
