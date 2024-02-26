@@ -69,8 +69,7 @@ public final class TableHybrid extends ExtensionStructure {
 	}
 
 	/**
-	 * The set of hybrid/smart tuples/rows, each one being composed of a tuple subject to restrictions (unary, binary or
-	 * ternary local constraints).
+	 * The set of hybrid/smart tuples/rows, each one being composed of a tuple subject to restrictions (unary, binary or ternary local constraints).
 	 */
 	public final HybridTuple[] hybridTuples;
 
@@ -94,8 +93,7 @@ public final class TableHybrid extends ExtensionStructure {
 	 *********************************************************************************************/
 
 	/**
-	 * An hybrid tuple can be seen as a starred tuple subject to restrictions that represent local unary, binary or
-	 * ternary constraints
+	 * An hybrid tuple can be seen as a starred tuple subject to restrictions that represent local unary, binary or ternary constraints
 	 */
 	public static final class HybridTuple {
 
@@ -105,8 +103,7 @@ public final class TableHybrid extends ExtensionStructure {
 		private Variable[] scp;
 
 		/**
-		 * The tuple used as a basis for this hybrid tuple. It can contain stars and indexes (of values). Do note that
-		 * it does not contain values (but indexes).
+		 * The tuple used as a basis for this hybrid tuple. It can contain stars and indexes (of values). Do note that it does not contain values (but indexes).
 		 */
 		private int[] tuple;
 
@@ -116,8 +113,8 @@ public final class TableHybrid extends ExtensionStructure {
 		private Restriction[] restrictions;
 
 		/**
-		 * The sparse sets used during filtering: nac[x] is the sparse set for indexes (of values) of x, which have not
-		 * been found a support yet (nac stands for not arc-consistent).
+		 * The sparse sets used during filtering: nac[x] is the sparse set for indexes (of values) of x, which have not been found a support yet (nac stands for
+		 * not arc-consistent).
 		 */
 		private SetSparse[] nac;
 
@@ -142,8 +139,8 @@ public final class TableHybrid extends ExtensionStructure {
 		private long supTime;
 
 		/**
-		 * The tuple that is given initially. IMPORTANT: It contains values (and not indexes of values), but can also be
-		 * null. This tuple is no more useful once the hybrid tuple is attached to its constraint.
+		 * The tuple that is given initially. IMPORTANT: It contains values (and not indexes of values), but can also be null. This tuple is no more useful once
+		 * the hybrid tuple is attached to its constraint.
 		 */
 		private int[] initialTuple;
 
@@ -177,9 +174,8 @@ public final class TableHybrid extends ExtensionStructure {
 		}
 
 		/**
-		 * The restrictions that are given initially. Note that they correspond to Boolean tree expressions (for stating
-		 * unary and binary local constraints). These expressions are no more useful once the hybrid tuple is attached
-		 * to its constraint.
+		 * The restrictions that are given initially. Note that they correspond to Boolean tree expressions (for stating unary and binary local constraints).
+		 * These expressions are no more useful once the hybrid tuple is attached to its constraint.
 		 */
 		private final List<XNodeParent<? extends IVar>> initialRestrictions;
 
@@ -288,6 +284,10 @@ public final class TableHybrid extends ExtensionStructure {
 				return new Rstr2GTVal(x, y, k - 1);
 			case GT:
 				return new Rstr2GTVal(x, y, k);
+			case LT:
+				return new Rstr2GTVal(y, x, -k);
+			case LE:
+				return new Rstr2GTVal(y, x, -k + 1);
 			case EQ:
 				return new Rstr2EQVal(x, y, k);
 			default:
@@ -522,8 +522,7 @@ public final class TableHybrid extends ExtensionStructure {
 		public abstract class Restriction {
 
 			/**
-			 * The main variable (given by its position in the constraint scope) in the restriction (i.e., at the left
-			 * side of the restriction)
+			 * The main variable (given by its position in the constraint scope) in the restriction (i.e., at the left side of the restriction)
 			 */
 			protected int x;
 
@@ -548,8 +547,8 @@ public final class TableHybrid extends ExtensionStructure {
 			public abstract boolean isValid();
 
 			/**
-			 * Returns true iff the specified index (of value) for the variable x is valid, i.e. the restriction is
-			 * valid for the smart tuple when x is set to (the value for) a
+			 * Returns true iff the specified index (of value) for the variable x is valid, i.e. the restriction is valid for the smart tuple when x is set to
+			 * (the value for) a
 			 * 
 			 * @param a
 			 *            an index (of value)
@@ -572,7 +571,7 @@ public final class TableHybrid extends ExtensionStructure {
 				this.x = x;
 				this.domx = scp[x].dom;
 				this.nacx = nac[x];
-				control(tuple[x] == STAR, () -> getClass().getName() + "  " + Kit.join(tuple));
+				control(tuple[x] == STAR, () -> getClass().getName() + " " + Kit.join(tuple));
 			}
 		}
 
@@ -596,9 +595,8 @@ public final class TableHybrid extends ExtensionStructure {
 		}
 
 		/**
-		 * Unary restriction based on a relational operator, i.e., of the form x <op> v with <op> in
-		 * {lt,le,ge,gt,ne,eq}. We reason with indexes by computing the relevant index called pivot: this is the index
-		 * of the value in dom(x) that is related to v ; see subclass constructors for details).
+		 * Unary restriction based on a relational operator, i.e., of the form x <op> v with <op> in {lt,le,ge,gt,ne,eq}. We reason with indexes by computing
+		 * the relevant index called pivot: this is the index of the value in dom(x) that is related to v ; see subclass constructors for details).
 		 */
 		abstract class Restriction1Rel extends Restriction1 {
 
@@ -608,8 +606,7 @@ public final class TableHybrid extends ExtensionStructure {
 			private TypeConditionOperatorRel op;
 
 			/**
-			 * The index of the value in the domain of x that is related to the value v (that can be seen as a limit)
-			 * specified at construction in subclasses
+			 * The index of the value in the domain of x that is related to the value v (that can be seen as a limit) specified at construction in subclasses
 			 */
 			protected int pivot;
 
@@ -773,8 +770,8 @@ public final class TableHybrid extends ExtensionStructure {
 		}
 
 		/**
-		 * Unary restriction based on a set operator, i.e., of the form x <op> {v1, v2, ...} with <op> in {in, notin}.
-		 * Note that we reason with indexes of values (and not directly with values).
+		 * Unary restriction based on a set operator, i.e., of the form x <op> {v1, v2, ...} with <op> in {in, notin}. Note that we reason with indexes of
+		 * values (and not directly with values).
 		 */
 		abstract class Restriction1Set extends Restriction1 {
 
@@ -928,8 +925,7 @@ public final class TableHybrid extends ExtensionStructure {
 			protected TypeConditionOperatorRel op;
 
 			/**
-			 * The second variable (given by its position in the constraint scope) in the restriction (i.e., at the
-			 * right side of the restriction)
+			 * The second variable (given by its position in the constraint scope) in the restriction (i.e., at the right side of the restriction)
 			 */
 			protected int y;
 
@@ -959,9 +955,8 @@ public final class TableHybrid extends ExtensionStructure {
 			}
 
 			/**
-			 * Method called when the backward phase of a RestrictionMultiple object has been performed. More precisely,
-			 * in tmp, we have the indexes (of values) for scope[x] that are compatible with all subrestrictions of the
-			 * RestrictionMultiple. We call this method to perform the forward phase.
+			 * Method called when the backward phase of a RestrictionMultiple object has been performed. More precisely, in tmp, we have the indexes (of values)
+			 * for scope[x] that are compatible with all subrestrictions of the RestrictionMultiple. We call this method to perform the forward phase.
 			 */
 			public abstract void collectForY();
 
@@ -1590,8 +1585,7 @@ public final class TableHybrid extends ExtensionStructure {
 			protected TypeConditionOperatorRel op;
 
 			/**
-			 * The second variable (given by its position in the constraint scope) in the restriction (i.e., at the
-			 * right side of the restriction)
+			 * The second variable (given by its position in the constraint scope) in the restriction (i.e., at the right side of the restriction)
 			 */
 			protected int y;
 
@@ -1601,8 +1595,7 @@ public final class TableHybrid extends ExtensionStructure {
 			protected Domain domy;
 
 			/**
-			 * The third variable (given by its position in the constraint scope) in the restriction (i.e., at the right
-			 * side of the restriction)
+			 * The third variable (given by its position in the constraint scope) in the restriction (i.e., at the right side of the restriction)
 			 */
 			protected int z;
 
@@ -1677,14 +1670,12 @@ public final class TableHybrid extends ExtensionStructure {
 		 *********************************************************************************************/
 
 		/**
-		 * Restriction of the form of a conjunction of constraints: x <op1> y and x <op2> z ... with x the main common
-		 * variable
+		 * Restriction of the form of a conjunction of constraints: x <op1> y and x <op2> z ... with x the main common variable
 		 */
 		final class RestrictionMultiple extends RestrictionComplex {
 
 			/**
-			 * The restrictions involved in this multiple restriction. All involved restrictions are on the same main
-			 * variable.
+			 * The restrictions involved in this multiple restriction. All involved restrictions are on the same main variable.
 			 */
 			protected Restriction[] subrestrictions;
 

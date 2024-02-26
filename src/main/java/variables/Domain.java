@@ -1320,13 +1320,18 @@ public interface Domain extends SetLinked {
 	 */
 	default String prettyValueOf(int a) {
 		int v = toVal(a);
-		if (!var().problem.head.control.general.jsonQuotes && toVal(0) >= 0 && var().id.chars().filter(ch -> ch == '[').count() == 2) {
-			int max = toVal(initSize() - 1);
-			if (max > 0) {
-				if (max < 100)
-					return (v < 10 ? " " : "") + v;
-				else if (max < 1000)
-					return (v < 10 ? "  " : v < 100 ? " " : "") + v;
+		if (!var().problem.head.control.general.jsonQuotes && var().id.chars().filter(ch -> ch == '[').count() >= 2) {
+			int min = toVal(0), max = toVal(initSize() - 1);
+			if (min >= 0) {
+				if (max > 9) {
+					if (max < 100)
+						return (v < 10 ? " " : "") + v;
+					else if (max < 1000)
+						return (v < 10 ? "  " : v < 100 ? " " : "") + v;
+				}
+			} else {
+				if (min > -10 && max < 10)
+					return (v < 0 ? "" : " ") + v;
 			}
 		}
 		return v + "";

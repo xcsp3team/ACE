@@ -416,7 +416,10 @@ public final class Solutions {
 		if (solver.problem.framework == MAXCSP)
 			return true;
 		Constraint c = Constraint.firstUnsatisfiedConstraint(solver.problem.constraints);
-		control(c == null, () -> "Problem with last solution: constraint " + c + " " + c.getClass().getName() + " not satisfied : ");
+		control(c == null, () -> {
+			int[] vals = Stream.of(c.scp).mapToInt(y -> y.dom.singleValue()).toArray();
+			return "Problem with last solution: constraint " + c + " " + c.getClass().getName() + " not satisfied with values : " + Kit.join(vals);
+		});
 		return true;
 	}
 

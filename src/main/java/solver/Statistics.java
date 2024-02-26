@@ -23,6 +23,7 @@ import interfaces.Observers.ObserverOnDecisions;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Observers.ObserverOnSolving;
 import propagation.Forward;
+import utility.Kit;
 import utility.Stopwatch;
 import variables.Variable;
 
@@ -223,6 +224,12 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 		public double failureAgedRate() {
 			return (nFailed / (double) n) + (1 / (double) (nFailedAssignments - lastFailed + 1));
 		}
+
+		public String toString() {
+			return n + " " + nFailed + " npv=" + Kit.join(nPerValue) + " nfpv=" + Kit.join(nFailedPerValue);
+
+		}
+
 	}
 
 	// /**
@@ -338,8 +345,7 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	public long nAssignments;
 
 	/**
-	 * The number of failed assignments (positive decisions directly leading to a failure) made by the solver when
-	 * building the search tree
+	 * The number of failed assignments (positive decisions directly leading to a failure) made by the solver when building the search tree
 	 */
 	public long nFailedAssignments;
 

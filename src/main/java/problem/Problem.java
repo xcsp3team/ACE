@@ -1656,7 +1656,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// then, we handle the cases when the condition involves a set operator (IN or NOTIN)
 		if (condition instanceof ConditionSet) {
 			TypeConditionOperatorSet op = ((ConditionSet) condition).operator;
-			if (op == TypeConditionOperatorSet.NOTIN) {
+			if (op == TypeConditionOperatorSet.NOTIN) { // TODO should we introduce an auxiliary variable as for IN?
 				if (condition instanceof ConditionIntvl)
 					for (int v : ((Range) rightTerm))
 						sum(list, coeffs, NE, v);
@@ -1664,23 +1664,25 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					for (int v : (int[]) rightTerm)
 						sum(list, coeffs, NE, v);
 			} else { // IN
-				// boolean mdd = false; // hard coding for the moment
-				// if (mdd) return post(new CMDDO(this, translate(list), coeffs, rightTerm));
-				if (condition instanceof ConditionIntvl) {
-					sum(list, coeffs, GE, ((Range) rightTerm).start);
-					sum(list, coeffs, LE, ((Range) rightTerm).stop - 1);
-				} else {
-					int[] t = (int[]) rightTerm;
-					int min = t[0], max = t[t.length - 1];
-					sum(list, coeffs, GE, min);
-					sum(list, coeffs, LE, max);
-					for (int v = min + 1, index = 1; v < max; v++) {
-						if (v < t[index])
-							sum(list, coeffs, NE, v);
-						else
-							index++;
-					}
-				}
+				return sum(list, coeffs, Condition.buildFrom(EQ, auxVar(rightTerm)));
+
+				// if (head.control.global.eqMddForSum)
+				// return post(new CMDDO(this, translate(list), coeffs, rightTerm));
+				// if (condition instanceof ConditionIntvl) {
+				// sum(list, coeffs, GE, ((Range) rightTerm).start);
+				// sum(list, coeffs, LE, ((Range) rightTerm).stop - 1);
+				// } else {
+				// int[] t = (int[]) rightTerm;
+				// int min = t[0], max = t[t.length - 1];
+				// sum(list, coeffs, GE, min);
+				// sum(list, coeffs, LE, max);
+				// for (int v = min + 1, index = 1; v < max; v++) {
+				// if (v < t[index])
+				// sum(list, coeffs, NE, v);
+				// else
+				// index++;
+				// }
+				// }
 			}
 			return null; // null because several constraints // TODO returning a special value?
 		}
