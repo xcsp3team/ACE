@@ -1,5 +1,5 @@
 
-<div id="logo" style="margin-left:2cm">
+<div id="logo" align="center" style="margin-left:2cm">
 <img width="35%" src="src/main/resources/logoAce.png" alt="logo"/>
 </div>
 
