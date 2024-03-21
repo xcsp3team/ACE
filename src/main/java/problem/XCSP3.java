@@ -416,8 +416,18 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	@Override
+	public void buildCtrAllDifferent(String id, XNode<XVarInteger>[] trees) {
+		problem.allDifferent(trVar(trees));
+	}
+
+	@Override
 	public void buildCtrAllDifferentExcept(String id, XVarInteger[] list, int[] except) {
 		problem.allDifferent(trVars(list), except);
+	}
+
+	@Override
+	public void buildCtrAllDifferentExcept(String id, XNode<XVarInteger>[] trees, int[] except) {
+		problem.allDifferentExcept(trVar(trees), except);
 	}
 
 	@Override
@@ -441,11 +451,6 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	}
 
 	@Override
-	public void buildCtrAllDifferent(String id, XNode<XVarInteger>[] trees) {
-		problem.allDifferent(trVar(trees));
-	}
-
-	@Override
 	public void buildCtrAllEqual(String id, XVarInteger[] list) {
 		problem.allEqual(trVars(list));
 	}
@@ -453,6 +458,16 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void buildCtrAllEqual(String id, XNode<XVarInteger>[] trees) {
 		problem.allEqual(trVar(trees));
+	}
+
+	@Override
+	public void buildCtrAllEqualExcept(String id, XVarInteger[] list, int[] except) {
+		problem.allEqual(trVars(list), except);
+	}
+
+	@Override
+	public void buildCtrAllEqualExcept(String id, XNode<XVarInteger>[] trees, int[] except) {
+		problem.allEqual(trVar(trees), except);
 	}
 
 	// ************************************************************************

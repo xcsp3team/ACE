@@ -1336,8 +1336,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	@Override
-	public final CtrEntity allDifferent(VarSymbolic[] list) {
-		return allDifferent(translate(list));
+	public CtrEntity allDifferent(XNode<IVar>[] trees) {
+		return allDifferent(replaceByVariables(trees));
 	}
 
 	private CtrAlone binaryDifferentExcept(Variable x, Variable y, int[] exceptValues) {
@@ -1345,7 +1345,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return extension(vars(x, y), IntStream.of(t).mapToObj(v -> new int[] { v, v }).toArray(int[][]::new), false, false);
 	}
 
-	@Override
+	private CtrAlone binaryEqualExcept(Variable x, Variable y, int[] exceptValues) {
+		int[][] t1 = IntStream.of(exceptValues).filter(v -> x.dom.containsValue(v)).mapToObj(v -> new int[] { v, STAR }).toArray(int[][]::new);
+		int[][] t2 = IntStream.of(exceptValues).filter(v -> y.dom.containsValue(v)).mapToObj(v -> new int[] { STAR, v }).toArray(int[][]::new);
+		int[][] t3 = IntStream.of(x.dom.valuesChecking(v -> !Kit.isPresent(v, exceptValues) && y.dom.containsValue(v))).mapToObj(v -> new int[] { v, v })
+				.toArray(int[][]::new);
+		return extension(vars(x, y), Stream.concat(Stream.concat(Stream.of(t1), Stream.of(t2)), Stream.of(t3)).toArray(int[][]::new), true, true);
+	}
+
 	public final CtrEntity allDifferent(Var[] list, int[] exceptValues) {
 		control(exceptValues.length >= 1 && Kit.isStrictlyIncreasing(exceptValues));
 		Variable[] scp = translate(list);
@@ -1383,6 +1390,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		default:
 			throw new AssertionError("Invalid mode");
 		}
+	}
+
+	public final CtrEntity allDifferentExcept(XNode<IVar>[] trees, int[] exceptValues) {
+		return allDifferent(replaceByVariables(trees), exceptValues);
 	}
 
 	private CtrEntity distinctVectors(Variable[] t1, Variable[] t2) {
@@ -1448,8 +1459,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	@Override
-	public CtrEntity allDifferent(XNode<IVar>[] trees) {
-		return allDifferent(replaceByVariables(trees));
+	public final CtrEntity allDifferent(VarSymbolic[] list) {
+		return allDifferent(translate(list));
 	}
 
 	// ************************************************************************
@@ -1465,6 +1476,18 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	public CtrEntity allEqual(XNode<IVar>[] trees) {
 		return allEqual(replaceByVariables(trees));
+	}
+
+	public final CtrEntity allEqual(Var[] list, int[] exceptValues) {
+		Variable[] scp = translate(list);
+		return forall(range(scp.length).range(scp.length), (i, j) -> {
+			if (i < j)
+				binaryEqualExcept(scp[i], scp[j], exceptValues);
+		});
+	}
+
+	public CtrEntity allEqual(XNode<IVar>[] trees, int[] exceptValues) {
+		return allEqual(replaceByVariables(trees), exceptValues);
 	}
 
 	@Override
