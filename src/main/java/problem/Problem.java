@@ -964,7 +964,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
 		Variable[] scp = (Variable[]) tree.vars(); // keep this statement here, after canonization
 		int arity = scp.length;
-		// System.out.println("Tree " + tree + " " + arity);
+		System.out.println("Tree " + tree + " " + arity);
 
 		if (arity == 1) {
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
@@ -972,11 +972,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (head.mustPreserveUnaryConstraints()) {
 				if (!options.toExtension1)
 					return post(new ConstraintIntension(this, scp, tree));
+
 				int[] values = x.dom.valuesChecking(v -> evaluator.evaluate(v) != 1); // initially, conflicts
 				boolean positive = values.length >= x.dom.size() / 2;
 				if (positive)
 					values = x.dom.valuesChecking(v -> evaluator.evaluate(v) == 1); // we store supports instead
-				return values.length > 0 ? post(new Extension1(this, x, values, positive)) : null;
+				if (values.length == 0 && !positive)
+					return null;
+				return post(new Extension1(this, x, values, positive));
 			}
 			x.dom.removeValuesAtConstructionTime(v -> evaluator.evaluate(v) != 1);
 			features.nRemovedUnaryCtrs++;
