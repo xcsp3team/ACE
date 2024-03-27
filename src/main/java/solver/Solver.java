@@ -172,9 +172,11 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 * A run progress saver allows us to record a partial instantiation corresponding to the longest branch previously developed.
 	 */
 	public final class RunProgressSaver implements ObserverOnRuns, ObserverOnConflicts {
+		int cnt = 0;
 
 		@Override
 		public void beforeRun() {
+			// if (++cnt % 30 == 0)
 			branchSize = 0;
 		}
 
@@ -194,7 +196,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 
 		@Override
 		public void whenBacktrack() {
-			if (depth() >= branchSize) { // TODO or Variable.nSingletonVariablesIn(problem.variables) ??
+			if (depth() > branchSize) { // TODO or Variable.nSingletonVariablesIn(problem.variables) ??
+				System.out.println("New rps " + depth());
 				branchSize = depth();
 				for (int i = 0; i < branch.length; i++)
 					branch[i] = problem.variables[i].dom.size() == 1 ? problem.variables[i].dom.single() : -1;

@@ -34,8 +34,7 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * The constraint NValues imposes that the number of different values assigned to a specified list of variables respects
- * a numerical condition.
+ * The constraint NValues imposes that the number of different values assigned to a specified list of variables respects a numerical condition.
  * 
  * @author Christophe Lecoutre
  */
@@ -52,15 +51,13 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 	protected final Set<Integer> fixedVals;
 
 	/**
-	 * Used to collect relevant unassigned variables, at the beginning of the filtering process. For any variable in
-	 * this set, the domain of x is not a subset of fixedVals. However, this set is computed as an approximation (for
-	 * complexity reasons).
+	 * Used to collect relevant unassigned variables, at the beginning of the filtering process. For any variable in this set, the domain of x is not a subset
+	 * of fixedVals. However, this set is computed as an approximation (for complexity reasons).
 	 */
 	protected final SetDense relevantUnfixedVars;
 
 	/**
-	 * sentinels[x] is a value in the domain of x that is not, at a certain moment, in fixedVals, which may explain why
-	 * x is in relevantUnfixedVars
+	 * sentinels[x] is a value in the domain of x that is not, at a certain moment, in fixedVals, which may explain why x is in relevantUnfixedVars
 	 */
 	protected final int[] sentinels;
 
@@ -341,7 +338,8 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 			case EQ:
 				return new NValuesVarEQ(pb, scp, k);
 			default:
-				throw new AssertionError("not implemented");
+				return null;
+			// throw new AssertionError("not implemented");
 			}
 		}
 

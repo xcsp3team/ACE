@@ -2573,7 +2573,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(list.length > 2 && list.length == sizes.length);
 		Variable[] vars = translate(list);
 		boolean sameType = Variable.haveSameDomainType(vars);
-		if (!sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
+		if (!sameType || !(condition instanceof ConditionVal) || head.control.global.binpacking == 1) { // decomposing in sum constraints
 			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).sorted().toArray();
 			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, condition));
 			// TODO add nValues ? other ?
@@ -2612,8 +2612,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			control(0 <= bins[0] && bins[bins.length - 1] < capacities.length);
 			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, Condition.buildFrom(op, capacities[bins[i]])));
 		}
-		return post(new BinPackingEnergeticLoad(this, vars, sizes, translate(capacities))); // TODO add nValues ? other
-																							// ?
+		return post(new BinPackingEnergeticLoad(this, vars, sizes, translate(capacities))); // TODO add nValues ? other ?
 	}
 
 	public final CtrEntity binpacking(Var[] list, int[] sizes, Condition[] conditions, int startIndex) {
