@@ -827,6 +827,8 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 			public Div2(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
+				if (dy.containsValue(0))
+					dy.removeValueAtConstructionTime(0);
 				control(dx.firstValue() >= 0 && dy.firstValue() > 0 && k >= 0);
 			}
 
@@ -970,7 +972,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 								rx[a] = b;
 								continue extern;
 							}
-							if (va < vb) // means that the remainder with remaining values of y always lead to va (and it is not k)
+							if (va < vb) // means that the remainder with remaining values of y always lead to va
 								break;
 							// here, we know that va >= vb and va != k (see code earlier)
 							if (va < 2 * vb) { // it means that the quotient was 1, and will remain 1 (and 0 later)
@@ -999,7 +1001,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 							}
 						} else {
 							// we know that va >= k and vb > k by construction
-							int va = vb + k; // no need to start at va = k because k % vb is 0 (and 0 is not possible for k)
+							int va = k;
 							while (va <= dx.lastValue()) {
 								assert va % vb == k;
 								if (dx.containsValue(va)) {

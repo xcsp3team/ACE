@@ -17,6 +17,7 @@ import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
+import utility.Kit;
 import variables.Variable;
 
 /**
@@ -42,14 +43,13 @@ public final class FutureVariables implements Iterable<Variable> {
 	private int last;
 
 	/**
-	 * Backward linking (i.e., from last to first). With i being the number of a variable x, {@code prevs[i]} gives the
-	 * number of the variable y that precedes x.
+	 * Backward linking (i.e., from last to first). With i being the number of a variable x, {@code prevs[i]} gives the number of the variable y that precedes
+	 * x.
 	 */
 	private final int[] prevs;
 
 	/**
-	 * Forward linking (i.e., from first to last). With i being the number of a variable x, {@code nexts[i]} gives the
-	 * number of the variable y that follows x.
+	 * Forward linking (i.e., from first to last). With i being the number of a variable x, {@code nexts[i]} gives the number of the variable y that follows x.
 	 */
 	private final int[] nexts;
 
@@ -64,8 +64,7 @@ public final class FutureVariables implements Iterable<Variable> {
 	private int pastLimit;
 
 	/**
-	 * Builds an object to manage past and future variables, i.e, variables that are, or are not, explicitly assigned by
-	 * the solver
+	 * Builds an object to manage past and future variables, i.e, variables that are, or are not, explicitly assigned by the solver
 	 * 
 	 * @param solver
 	 *            the solver to which this object is attached
@@ -82,8 +81,7 @@ public final class FutureVariables implements Iterable<Variable> {
 	}
 
 	/**
-	 * Returns the number of future variables, i.e., the number of variables that have not been explicitly assigned by
-	 * the solver
+	 * Returns the number of future variables, i.e., the number of variables that have not been explicitly assigned by the solver
 	 * 
 	 * @return the number of future variables
 	 */
@@ -92,8 +90,7 @@ public final class FutureVariables implements Iterable<Variable> {
 	}
 
 	/**
-	 * Returns the number of past variables, i.e., the number of variables that have been explicitly assigned by the
-	 * solver
+	 * Returns the number of past variables, i.e., the number of variables that have been explicitly assigned by the solver
 	 * 
 	 * @return the number of past variables
 	 */
@@ -145,6 +142,11 @@ public final class FutureVariables implements Iterable<Variable> {
 		for (int cnt = 0; cnt < i; cnt++)
 			e = nexts[e];
 		return vars[e];
+	}
+
+	public Variable getPast(int i) {
+		assert 0 <= i && i <= pastLimit;
+		return vars[pasts[i]];
 	}
 
 	/**

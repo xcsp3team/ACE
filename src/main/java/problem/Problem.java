@@ -964,7 +964,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
 		Variable[] scp = (Variable[]) tree.vars(); // keep this statement here, after canonization
 		int arity = scp.length;
-		System.out.println("Tree " + tree + " " + arity);
+		// System.out.println("Tree " + tree + " " + arity);
 
 		if (arity == 1) {
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);

@@ -17,6 +17,8 @@ import static heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighti
 import static utility.Kit.control;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
@@ -33,17 +35,15 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the root class for building dynamic variable ordering heuristics. It means that at each step of the search,
- * such heuristic is solicited in order to determine which variable has to be selected according to the current state of
- * the problem.
+ * This is the root class for building dynamic variable ordering heuristics. It means that at each step of the search, such heuristic is solicited in order to
+ * determine which variable has to be selected according to the current state of the problem.
  * 
  * @author Christophe Lecoutre
  */
 public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	/**
-	 * Three strategies to deal with fixed variables (i.e., variables with singleton domains) while not being explicitly
-	 * assigned by the solver
+	 * Three strategies to deal with fixed variables (i.e., variables with singleton domains) while not being explicitly assigned by the solver
 	 */
 	public enum SingletonStrategy {
 		ANY, FIRST, LAST;
@@ -239,6 +239,88 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 	}
 
+	public static final class OrgnOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
+
+		private int mode;
+		private int size = 3;
+
+		private final long[] cnts;
+		private final long[] lastFailed;
+
+		private Set<Integer> set;
+
+		public OrgnOnDom(Solver solver, boolean anti) {
+			super(solver, anti);
+			this.mode = solver.head.control.varh.pickMode;
+			this.cnts = new long[solver.problem.variables.length];
+			this.lastFailed = this.mode == 0 ? null : new long[solver.problem.variables.length];
+			this.set = new HashSet<Integer>();
+		}
+
+		@Override
+		public void reset() {
+			Arrays.fill(cnts, 0);
+		}
+
+		@Override
+		public void beforeRun() {
+			if (runReset()) {
+				Kit.log.config("    ...resetting weights (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
+				reset();
+			}
+		}
+
+		@Override
+		public void whenWipeout(Constraint c, Variable x) {
+			if (solver.depth() == 0)
+				return;
+
+			int num = solver.futVars.lastPast().num; // because some propagators do not effectively prune values before failing
+			cnts[num]++;
+			set.clear();
+			set.add(num);
+
+			if (lastFailed != null)
+				lastFailed[num] = solver.stats.nFailedAssignments;
+
+			Domain dx = x.dom;
+			for (int a = dx.lastRemoved(); a != -1; a = dx.prevRemoved(a)) {
+				int level = dx.removedLevelOf(a);
+				if (level == 0)
+					break;
+				num = solver.futVars.getPast(level - 1).num;
+				if (!set.contains(num)) {
+					cnts[num]++;
+					set.add(num);
+					if (set.size() >= size)
+						break;
+				}
+				// cnts[y.num]++;
+			}
+
+		}
+
+		@Override
+		public void whenBacktrack() {
+		}
+
+		@Override
+		public double scoreOf(Variable x) {
+			double r = 1;
+			if (mode == 1)
+				r = (1 / (double) (solver.stats.nFailedAssignments - lastFailed[x.num] + 1));
+			else if (mode == 2)
+				r = Math.sqrt((1 / (double) (solver.stats.nFailedAssignments - lastFailed[x.num] + 1)));
+			else if (mode == 3) {
+				r = (1 / (double) (solver.stats.nFailedAssignments - lastFailed[x.num] + 1));
+				r = r * r;
+			}
+			return cnts[x.num] * r / (double) x.dom.size();
+
+			// (nFailed / (double) n) + (1 / (double) (solver.stats.nFailedAssignments - lastFailed[x.num] + 1));
+		}
+	}
+
 	public static final class RunRobin extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
 
 		private final HeuristicVariablesDynamic[] pool;
@@ -350,8 +432,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	// ************************************************************************
 
 	/**
-	 * The subclasses of this class allow us to define the heuristics wdeg and wdeg/dom. There exists four variants for
-	 * each of these two heuristics: VAR, UNIT, CACD and CHS.
+	 * The subclasses of this class allow us to define the heuristics wdeg and wdeg/dom. There exists four variants for each of these two heuristics: VAR, UNIT,
+	 * CACD and CHS.
 	 */
 	public static abstract class WdegVariant extends HeuristicVariablesDynamic
 			implements ObserverOnRuns, ObserverOnAssignments, ObserverOnConflicts, TagMaximize {
@@ -360,12 +442,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		 * The four variants for constraint weighting.
 		 * <ul>
 		 * <li>VAR is a basic variant</li>
-		 * <li>UNIT is for classical weighting, as described in "Boosting Systematic Search by Weighting Constraints",
-		 * ECAI 2004: 146-150, by F. Boussemart, F. Hemery, C. Lecoutre, and L. Sais.</li>
-		 * <li>cacd its variant, as described in "Refining Constraint Weighting", ICTAI 2019: 71-77 by H. Wattez, C.
-		 * Lecoutre, A. Paparrizou, and S. Tabary</li>
-		 * <li>CHS, as described in "Conflict history based search for constraint satisfaction problem", SAC 2019:
-		 * 1117-1122 by D. Habet, and C. Terrioux</li>
+		 * <li>UNIT is for classical weighting, as described in "Boosting Systematic Search by Weighting Constraints", ECAI 2004: 146-150, by F. Boussemart, F.
+		 * Hemery, C. Lecoutre, and L. Sais.</li>
+		 * <li>cacd its variant, as described in "Refining Constraint Weighting", ICTAI 2019: 71-77 by H. Wattez, C. Lecoutre, A. Paparrizou, and S. Tabary</li>
+		 * <li>CHS, as described in "Conflict history based search for constraint satisfaction problem", SAC 2019: 1117-1122 by D. Habet, and C. Terrioux</li>
 		 * </ul>
 		 */
 		public static enum ConstraintWeighting {
@@ -649,8 +729,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	// ************************************************************************
 
 	/**
-	 * The root class for activity-based and impact-based search heuristics. IMPORTANT: the code is for a basic variant
-	 * of such heuristics. Certainly, better implementations or variants are possible.
+	 * The root class for activity-based and impact-based search heuristics. IMPORTANT: the code is for a basic variant of such heuristics. Certainly, better
+	 * implementations or variants are possible.
 	 */
 	public static abstract class ActivityImpactAbstract extends HeuristicVariables implements ObserverOnRuns {
 		protected Variable lastVar; // if null, either just after pre-processing, or singleton variable
@@ -702,9 +782,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	}
 
 	/**
-	 * Activity-based search heuristic is described in "Activity-Based Search for Black-Box Constraint Programming
-	 * Solvers", CPAIOR 2012: 228-243 by L. Michel, and P. Van Hentenryck. Here, this is a basic variant. Certainly,
-	 * better implementations or variants are possible.
+	 * Activity-based search heuristic is described in "Activity-Based Search for Black-Box Constraint Programming Solvers", CPAIOR 2012: 228-243 by L. Michel,
+	 * and P. Van Hentenryck. Here, this is a basic variant. Certainly, better implementations or variants are possible.
 	 */
 	public static final class Activity extends ActivityImpactAbstract {
 
@@ -808,9 +887,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	}
 
 	/**
-	 * Impact-based search heuristic is described in "Impact-Based Search Strategies for Constraint Programming", CP
-	 * 2004: 557-571 by P. Refalo. Here, this is a basic variant. Certainly, better implementations or variants are
-	 * possible.
+	 * Impact-based search heuristic is described in "Impact-Based Search Strategies for Constraint Programming", CP 2004: 557-571 by P. Refalo. Here, this is a
+	 * basic variant. Certainly, better implementations or variants are possible.
 	 */
 	public static final class Impact extends ActivityImpactAbstract {
 

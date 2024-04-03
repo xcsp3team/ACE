@@ -55,6 +55,7 @@ import propagation.Propagation;
 import sets.SetDense;
 import sets.SetSparseReversible;
 import utility.Kit;
+import variables.Domain;
 import variables.DomainInfinite;
 import variables.Variable;
 
@@ -152,9 +153,13 @@ public class Solver implements ObserverOnBacktracksSystematic {
 					Kit.exit(e);
 				}
 			}
-			String[] t = possiblyDecompact(s.split(Constants.REG_WS));
+			String[] tt = possiblyDecompact(s.split(Constants.REG_WS));
+			boolean test = true;
+			String[] t = test ? Stream.of(tt).filter(tok -> !tok.equals("*")).toArray(String[]::new) : tt;
 			this.instantiation = IntStream.range(0, t.length).map(i -> t[i].equals("*") ? -1 : problem.variables[i].dom.toIdxIfPresent(parseInt(t[i])))
 					.toArray();
+			// for (int i = 0; i < t.length; i++)
+			// System.out.println(problem.variables[i] + " : " + t[i]);
 			assert IntStream.range(0, t.length).noneMatch(i -> !t[i].equals("*") && instantiation[i] == -1);
 		}
 
@@ -164,7 +169,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		 * @return the value index that has been recorded for the specified variable (possibly -1)
 		 */
 		public int valueIndexOf(Variable x) {
-			return instantiation[x.num];
+			return x.num < instantiation.length ? instantiation[x.num] : -1;
 		}
 	}
 
@@ -185,9 +190,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			if (stopped()) {
 				// observersOnRuns.remove(this); not possible while iterating this list
 				observersOnConflicts.remove(this);
-				return;
-			}
-			Arrays.fill(branch, -1);
+			} else
+				Arrays.fill(branch, -1);
 		}
 
 		@Override
@@ -196,11 +200,15 @@ public class Solver implements ObserverOnBacktracksSystematic {
 
 		@Override
 		public void whenBacktrack() {
-			if (depth() > branchSize) { // TODO or Variable.nSingletonVariablesIn(problem.variables) ??
-				System.out.println("New rps " + depth());
-				branchSize = depth();
-				for (int i = 0; i < branch.length; i++)
-					branch[i] = problem.variables[i].dom.size() == 1 ? problem.variables[i].dom.single() : -1;
+			int depth = depth();
+			if (depth > branchSize) { // TODO or Variable.nSingletonVariablesIn(problem.variables) ??
+				System.out.println("New rps " + depth + " " + futVars.lastPast());
+				branchSize = depth;
+				for (int i = 0; i < branch.length; i++) {
+					Domain dx = problem.variables[i].dom;
+					branch[i] = dx.size() == 1 ? dx.single() : -1;
+					// branch[i] = dx.size() == 1 && dx.lastRemovedLevel() <= depth - 1 ? dx.single() : -1;
+				}
 			}
 		}
 
@@ -910,7 +918,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			}
 		}
 		minDepth = decisions.minDepth(); // need to be recorded before backtracking to the root
-		if (nogoodReasoner != null && !finished() && !restarter.allRunsFinished())
+		if (nogoodReasoner != null) // && !finished() && !restarter.allRunsFinished())
 			nogoodReasoner.addNogoodsOfCurrentBranch();
 	}
 

@@ -296,11 +296,7 @@ public final class NogoodReasoner {
 	 * @param toBeSorted
 	 *            true if the decisions must be sorted
 	 */
-	public void addNogood(int[] negativeDecisions, boolean toBeSorted) {
-		// if (negativeDecisions.length < 3)
-		// System.out.println(" nog : " + IntStream.of(negativeDecisions).mapToObj(d ->
-		// decisions.stringOf(d)).collect(joining(" ")));
-
+	private Nogood addNogood(int[] negativeDecisions, boolean toBeSorted) {
 		if (nNogoods < nogoods.length) {
 			if (toBeSorted)
 				Arrays.sort(negativeDecisions);
@@ -308,8 +304,10 @@ public final class NogoodReasoner {
 			nogoods[nNogoods++] = nogood;
 			addWatchFor(nogood, negativeDecisions.length - 2, true);
 			addWatchFor(nogood, negativeDecisions.length - 1, false);
+			return nogood;
 			// if (symmetryHandler != null) symmetryHandler.addNogood(decs);
 		}
+		return null;
 	}
 
 	/**
@@ -325,37 +323,45 @@ public final class NogoodReasoner {
 			int d = set.dense[i];
 			if (d > 0)
 				tmp[nMetPositiveDecisions++] = d;
-			else if (nMetPositiveDecisions > 0) {
-				int[] negativeDecisions = new int[nMetPositiveDecisions + 1];
-				// if (options.nogood == LearningNogood.RST_MIN && decisions.isFailedAssignment(i)) {
-				// boolean bottomUp = true; // hard coding
-				// for (int j = 0; j < nMetPositiveDecisions; j++)
-				// currentNogood[j] = tmp[bottomUp ? nMetPositiveDecisions - j - 1 : j];
-				// currentNogood[currentNogood.length - 1] = -d;
-				// int[] minimizedNogood = nogoodMinimizer.extractMinimalNogoodFrom(currentNogood);
-				// if (minimizedNogood != null) {
-				// if (minimizedNogood.length == 0)
-				// return; // inconsistency proved
-				// addNogood(minimizedNogood, false); // symmetryHandler != null);
-				// }
-				// } else {
-				// record negative decisions for direct insertion of the nogod
-				for (int j = 0; j < nMetPositiveDecisions; j++)
-					negativeDecisions[j] = -tmp[j];
-				negativeDecisions[nMetPositiveDecisions] = d;
-				addNogood(negativeDecisions, false); // symmetryHandler != null);
-				// }
-				// if (symmetryHandler != null) symmetryHandler.handleSymmetricNaryNogoods(currentNogood);
+			else {
+				if (nMetPositiveDecisions == 0) {
+					if (options.nogoodDisplayLimit > 0)
+						System.out.println("      " + decisions.stringOf(d));
+					// if (symmetryHandler != null) symmetryHandler.handleSymmetricUnaryNogoods(d);
+				} else {
+					int[] negativeDecisions = new int[nMetPositiveDecisions + 1];
+					// if (options.nogood == LearningNogood.RST_MIN && decisions.isFailedAssignment(i)) {
+					// boolean bottomUp = true; // hard coding
+					// for (int j = 0; j < nMetPositiveDecisions; j++)
+					// currentNogood[j] = tmp[bottomUp ? nMetPositiveDecisions - j - 1 : j];
+					// currentNogood[currentNogood.length - 1] = -d;
+					// int[] minimizedNogood = nogoodMinimizer.extractMinimalNogoodFrom(currentNogood);
+					// if (minimizedNogood != null) {
+					// if (minimizedNogood.length == 0)
+					// return; // inconsistency proved
+					// addNogood(minimizedNogood, false); // symmetryHandler != null);
+					// }
+					// } else {
+					// record negative decisions for direct insertion of the nogod
+					for (int j = 0; j < nMetPositiveDecisions; j++)
+						negativeDecisions[j] = -tmp[j];
+					negativeDecisions[nMetPositiveDecisions] = d;
+					Nogood nogood = addNogood(negativeDecisions, false); // symmetryHandler != null);
+					if (options.nogoodDisplayLimit > 0 && nogood != null && nogood.decisions.length <= options.nogoodDisplayLimit)
+						System.out.println("      " + IntStream.of(nogood.decisions).mapToObj(dc -> decisions.stringOf(dc)).collect(joining(" ")));
+
+					// }
+					// if (symmetryHandler != null) symmetryHandler.handleSymmetricNaryNogoods(currentNogood);
+				}
 			}
-			// else if (symmetryHandler != null) symmetryHandler.handleSymmetricUnaryNogoods(d);
 		}
-		if (options.nogoodDisplayLimit > 0) {
-			for (int i = nBefore; i < nNogoods; i++) {
-				int[] t = nogoods[i].decisions;
-				if (t.length <= options.nogoodDisplayLimit)
-					System.out.println("      " + IntStream.of(t).mapToObj(d -> decisions.stringOf(d)).collect(joining(" ")));
-			}
-		}
+		// if (options.nogoodDisplayLimit > 0) {
+		// for (int i = nBefore; i < nNogoods; i++) {
+		// int[] t = nogoods[i].decisions;
+		// if (t.length <= options.nogoodDisplayLimit)
+		// System.out.println(" " + IntStream.of(t).mapToObj(d -> decisions.stringOf(d)).collect(joining(" ")));
+		// }
+		// }
 		assert controlWatches();
 	}
 
