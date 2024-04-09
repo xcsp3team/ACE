@@ -3,15 +3,15 @@
 <img width="35%" src="src/main/resources/logoAce.png" alt="logo"/>
 </div>
 
-ACE is an open-source constraint solver developed by Christophe Lecoutre (CRIL) in Java.
-ACE is embedded in the Python modeling library [PyCSP3](https://pycsp.org/), and is a competitive solver as shown by results of both the [2022 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP22/) and the [2023 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP23/).
+ACE is an open-source constraint solver developed by Christophe Lecoutre (CRIL, Univ. Artois) in Java.
+ACE is embedded in the Python modeling library [PyCSP3](https://pycsp.org/), and is a competitive solver as shown by the results obtained at both the [2022 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP22/) and the [2023 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP23/).
 
-Current stable version of ACE is 2.3 (March 27, 2024).
+The current stable version of ACE is 2.3 (March 27, 2024).
 
 ACE focuses on:
 - integer variables, including 0/1 (Boolean) variables,
 - state-of-the-art table constraints, including ordinary, starred, and hybrid table constraints,
-- popular global constraints (AllDifferent, Count, Element, Cardinality, Cumulative, BinPacking, etc.),
+- popular global constraints (AllDifferent, BinPacking, Cardinality, Count, Cumulative, Element, Lex, MDD, Minimum, NoOverlap, NValues, Regular, Sum, Table, etc.),
 - search heuristics (wdeg/dom, pick/dom, frba/dom, last-conflict, BIVS, solution-saving, ...),
 - mono-criterion optimization
 
@@ -20,7 +20,6 @@ ACE is distributed under License MIT
 ## Quick Description
 
 For some general information about the structure of the code of the solver ACE, see this [paper](https://arxiv.org/abs/2302.05405). 
-
 
 
 ## Building a JAR
