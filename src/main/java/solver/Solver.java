@@ -26,7 +26,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -173,16 +176,116 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		}
 	}
 
+	public final class LostReasoner implements ObserverOnRuns {
+		int cnt = -1;
+
+		int k = 2;
+
+		List<Variable> pretaboo = new ArrayList<>();
+		List<Variable> taboo = new ArrayList<>();
+
+		Map<Variable, Integer> map = new HashMap<>();
+
+		@Override
+		public void beforeRun() {
+			if (restarter.numRun % 30 == 29) {
+				for (Variable x : problem.variables) {
+					for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
+						System.out.println("checking " + a + " of " + x);
+						for (int b = x.dom.first(); b != -1; b = x.dom.next(b)) {
+							if (b == a)
+								continue;
+							System.out.print(" against " + b); // + " (" + x.ctrs.length + " ctrs)");
+							int k = 0;
+							for (Constraint c : x.ctrs) {
+								if (c == problem.optimizer.clb || c == problem.optimizer.cub)
+									continue;
+								// System.out.println(" checking " + c);
+								if (c.isSubstitutableBy(c.positionOf(x), a, b))
+									k++; // System.out.println(" => ok " + c);
+								// else
+								// System.out.println(" => not ok " + c);
+							}
+							System.out.println(" : " + k + " on " + x.ctrs.length);
+						}
+					}
+				}
+			}
+		}
+
+		private void add(int dec) {
+			Variable x = decisions.varIn(dec);
+			if (!taboo.contains(x)) {
+				int v = map.getOrDefault(x, 0);
+				map.put(x, v + 1);
+			}
+		}
+
+		@Override
+		public void afterRun() {
+			map.clear();
+			if (nogoodReasoner.unaryNogoodsofLastBranch.size() > 0) {
+				for (int dec : nogoodReasoner.unaryNogoodsofLastBranch)
+					add(dec);
+			} else {
+				int left = nogoodReasoner.nPreviousNogoods;
+				if (left < nogoodReasoner.nNogoods) {
+					int size = nogoodReasoner.nogoods[left].decisions.length;
+					if (size <= head.control.varh.lostDepth) {
+						for (int i = left; i < nogoodReasoner.nNogoods; i++) {
+							if (nogoodReasoner.nogoods[i].decisions.length != size)
+								break;
+							for (int dec : nogoodReasoner.nogoods[i].decisions)
+								add(dec);
+						}
+					}
+				}
+			}
+			if (map.size() == 0) {
+				// if (taboo.size() > 0) {
+				// heuristic.setPriorityVars(taboo.toArray(Variable[]::new), 0);
+				// // taboo.clear();
+				// } else
+				heuristic.resetPriorityVars();
+			} else {
+				List<Variable> list = new ArrayList<>();
+				map = Kit.sort(map, (e1, e2) -> e1.getValue() > e2.getValue() ? -1 : e1.getValue() < e2.getValue() ? 1 : 0);
+				for (Entry<Variable, Integer> entry : map.entrySet()) {
+					if (list.size() > head.control.varh.lostSize)
+						break;
+					list.add(entry.getKey());
+				}
+				taboo = list;
+				// cnt++;
+				// int rest = cnt % k;
+				// if (rest == 0) {
+				// heuristic.setPriorityVars(list.toArray(Variable[]::new), list.size());
+				// // pretaboo = list;
+				// // System.out.println("clear taboo " + Kit.join(list));
+				// taboo.clear();
+				// // k = problem.head.random.W(4) + 1;
+				// } else if (rest == 1) {
+				// heuristic.setPriorityVars(list.toArray(Variable[]::new), 0);
+				// taboo = list;
+				// // System.out.println("taboo=list " + Kit.join(list));
+				// }
+			}
+		}
+
+		private LostReasoner() {
+		}
+	}
+
 	/**
 	 * A run progress saver allows us to record a partial instantiation corresponding to the longest branch previously developed.
 	 */
-	public final class RunProgressSaver implements ObserverOnRuns, ObserverOnConflicts {
+	public final class RunProgressSaver implements ObserverOnRuns, ObserverOnAssignments { // ObserverOnConflicts {
 		int cnt = 0;
 
 		@Override
 		public void beforeRun() {
-			// if (++cnt % 30 == 0)
-			branchSize = 0;
+			if (++cnt % 8 == 0)
+				branchSize = 0;
 		}
 
 		@Override
@@ -190,18 +293,32 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			if (stopped()) {
 				// observersOnRuns.remove(this); not possible while iterating this list
 				observersOnConflicts.remove(this);
+				observersOnAssignments.remove(this);
 			} else
 				Arrays.fill(branch, -1);
 		}
 
-		@Override
-		public void whenWipeout(Constraint c, Variable x) {
-		}
+		// @Override
+		// public void whenWipeout(Constraint c, Variable x) {
+		// }
+		//
+		// @Override
+		// public void whenBacktrack() {
+		// int depth = depth();
+		// if (depth > branchSize) { // TODO or Variable.nSingletonVariablesIn(problem.variables) ??
+		// System.out.println("New rps " + depth + " " + futVars.lastPast());
+		// branchSize = depth;
+		// for (int i = 0; i < branch.length; i++) {
+		// Domain dx = problem.variables[i].dom;
+		// branch[i] = dx.size() == 1 ? dx.single() : -1;
+		// // branch[i] = dx.size() == 1 && dx.lastRemovedLevel() <= depth - 1 ? dx.single() : -1;
+		// }
+		// }
 
-		@Override
-		public void whenBacktrack() {
+		public void afterAssignment(Variable x, int a) {
 			int depth = depth();
 			if (depth > branchSize) { // TODO or Variable.nSingletonVariablesIn(problem.variables) ??
+				// if (depth % 20 == 0)
 				System.out.println("New rps " + depth + " " + futVars.lastPast());
 				branchSize = depth;
 				for (int i = 0; i < branch.length; i++) {
@@ -210,6 +327,13 @@ public class Solver implements ObserverOnBacktracksSystematic {
 					// branch[i] = dx.size() == 1 && dx.lastRemovedLevel() <= depth - 1 ? dx.single() : -1;
 				}
 			}
+		}
+
+		public void afterFailedAssignment(Variable x, int a) {
+
+		}
+
+		public void afterUnassignment(Variable x) {
 		}
 
 		/**
@@ -435,9 +559,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	private List<ObserverOnRuns> collectObserversOnRuns() {
 		if (!head.control.solving.enableSearch)
 			return new ArrayList<>();
-		Stream<Object> stream = Stream.concat(
-				Stream.of(this, problem.optimizer, restarter, runProgressSaver, decisions, heuristic, lastConflict, ipsReasoner, head.output, stats),
-				Stream.of(problem.constraints)); // and nogoodRecorder.symmetryHandler?
+		Stream<Object> stream = Stream.concat(Stream.of(this, problem.optimizer, restarter, runProgressSaver, decisions, heuristic, lastConflict, ipsReasoner,
+				lostReasoner, head.output, stats), Stream.of(problem.constraints)); // and nogoodRecorder.symmetryHandler?
 		return collectObservers(stream, ObserverOnRuns.class);
 	}
 
@@ -453,7 +576,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	private List<ObserverOnAssignments> collectObserversOnAssignments() {
-		Stream<Object> stream = Stream.of(decisions, heuristic, stats);
+		Stream<Object> stream = Stream.of(decisions, runProgressSaver, heuristic, stats);
 		return collectObservers(stream, ObserverOnAssignments.class);
 	}
 
@@ -550,6 +673,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 * The object that allows us to guide search from an instantiation (solution) given by the user
 	 */
 	public final WarmStarter warmStarter;
+
+	public final LostReasoner lostReasoner;
 
 	public int minDepth, maxDepth;
 
@@ -659,6 +784,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 
 		this.runProgressSaver = head.control.valh.runProgressSaving ? new RunProgressSaver() : null;
 		this.warmStarter = head.control.valh.warmStart.length() > 0 ? new WarmStarter(head.control.valh.warmStart) : null;
+		this.lostReasoner = head.control.varh.lostDepth > 0 ? new LostReasoner() : null;
 
 		this.observersOnSolving = collectObserversOnSolving();
 		this.observersOnRuns = collectObserversOnRuns();

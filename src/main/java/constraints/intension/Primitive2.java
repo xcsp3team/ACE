@@ -91,7 +91,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 		}
 	}
 
-	public static Primitive2 buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, int k) {
+	public static Constraint buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, int k) {
 		switch (aop) {
 		case ADD:
 			return Add2.buildFrom(pb, x, y, op, k);
@@ -106,7 +106,18 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 		case DIST:
 			return Dist2.buildFrom(pb, x, y, op, k);
 		default: // POW
-			throw new AssertionError("not implemented"); // TODO interesting?
+			List<int[]> list = new ArrayList<>();
+			for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
+				int v = x.dom.toVal(a);
+				for (int b = y.dom.first(); b != -1; b = y.dom.next(b)) {
+					int w = y.dom.toVal(b);
+					double p = Math.pow(v, w);
+					int pi = (int) p;
+					if (pi == p && op.isValidFor(pi, k))
+						list.add(new int[] { v, w });
+				}
+			}
+			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), list.stream().toArray(int[][]::new), true, Boolean.FALSE);
 		}
 	}
 

@@ -16,12 +16,15 @@ import static heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighti
 import static heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting.VAR;
 import static utility.Kit.control;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
+import heuristics.HeuristicVariablesDynamic.SingletonStrategy;
 import interfaces.Observers.ObserverOnAssignments;
 import interfaces.Observers.ObserverOnConflicts;
 import interfaces.Observers.ObserverOnRuns;
@@ -323,13 +326,20 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	public static final class RunRobin extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
 
-		private final HeuristicVariablesDynamic[] pool;
+		private HeuristicVariablesDynamic[] pool;
 
 		public HeuristicVariablesDynamic current;
 
 		public RunRobin(Solver solver, boolean anti) {
 			super(solver, anti);
-			this.pool = new HeuristicVariablesDynamic[] { new PickOnDom(solver, anti), new FrbaOnDom(solver, anti), new Wdeg(solver, anti) };
+			List<HeuristicVariablesDynamic> list = new ArrayList<>();
+			int mode = solver.head.control.varh.mode;
+			if (mode >= 0)
+				Stream.of(new PickOnDom(solver, anti), new FrbaOnDom(solver, anti), new Wdeg(solver, anti)).forEach(h -> list.add(h));
+			if (mode >= 1)
+				Stream.of(new Dom(solver, anti), new OrgnOnDom(solver, anti), new WdegOnDom(solver, anti)).forEach(h -> list.add(h));
+			this.pool = list.stream().toArray(HeuristicVariablesDynamic[]::new);
+
 		}
 
 		@Override

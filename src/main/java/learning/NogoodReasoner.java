@@ -12,7 +12,9 @@ package learning;
 
 import static java.util.stream.Collectors.joining;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -100,12 +102,16 @@ public final class NogoodReasoner {
 	/**
 	 * Arrays with recorded nogoods (at indexes ranging from 0 to nNogoods, excluded)
 	 */
-	private Nogood[] nogoods;
+	public Nogood[] nogoods;
 
 	/**
 	 * The number of recorded nogoods
 	 */
 	public int nNogoods;
+
+	public int nPreviousNogoods; // limit before the last call to addNogoodsOfCurrentBranch
+
+	public List<Integer> unaryNogoodsofLastBranch = new ArrayList<>();
 
 	/**
 	 * Positive watch lists; pws[x][a] is the first cell (nogood) involving the positive literal (x=a) as being watched
@@ -314,6 +320,8 @@ public final class NogoodReasoner {
 	 * Adds all nogoods that can be extracted from the current branch
 	 */
 	public void addNogoodsOfCurrentBranch() {
+		nPreviousNogoods = nNogoods;
+		unaryNogoodsofLastBranch.clear();
 		SetDense set = decisions.set;
 		if (!options.nogood.isRstType() || set.size() < 2)
 			return;
@@ -325,8 +333,10 @@ public final class NogoodReasoner {
 				tmp[nMetPositiveDecisions++] = d;
 			else {
 				if (nMetPositiveDecisions == 0) {
+					unaryNogoodsofLastBranch.add(d);
 					if (options.nogoodDisplayLimit > 0)
 						System.out.println("      " + decisions.stringOf(d));
+
 					// if (symmetryHandler != null) symmetryHandler.handleSymmetricUnaryNogoods(d);
 				} else {
 					int[] negativeDecisions = new int[nMetPositiveDecisions + 1];

@@ -20,6 +20,7 @@ import static org.xcsp.common.Types.TypeConditionOperatorRel.GT;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.LE;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.LT;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.NE;
+import static org.xcsp.common.Types.TypeConditionOperatorSet.IN;
 import static org.xcsp.common.Types.TypeExpr.ADD;
 import static org.xcsp.common.Types.TypeExpr.IF;
 import static org.xcsp.common.Types.TypeExpr.IFF;
@@ -1073,9 +1074,26 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			// TODO other cases to be implemented
 			if (c != null)
 				return post(c);
-
 		}
-		// if (arity >= 2 && tree.type == OR && Stream.of(tree.sons).allMatch(son -> x_relop_k.matches(son))) { }
+		if (arity > 2 && tree.type == TypeExpr.OR && Stream.of(tree.sons).allMatch(son -> son.type == TypeExpr.VAR))
+			return post(SumSimple.buildFrom(this, scp, NE, 0));
+
+		// Two cases with the ternary operator if
+		if (tree.type == IF && options.recognizeIf) {
+			XNode<IVar>[] sons = tree.sons;
+			Variable cnd = sons[0].type == VAR ? (Variable) sons[0].var(0) : replaceByVariable(sons[0]);
+			Variable y = sons[1].type == VAR ? (Variable) sons[1].var(0) : replaceByVariable(sons[1]);
+			Variable z = sons[2].type == VAR ? (Variable) sons[2].var(0) : replaceByVariable(sons[2]);
+			return post(new IFT3(this, cnd, y, z));
+		}
+		if (tree.type == TypeExpr.EQ && tree.sons.length == 2 && tree.sons[0].type == IF && tree.sons[1].type == VAR && options.recognizeIf) {
+			Variable x = (Variable) tree.sons[1].var(0);
+			XNode<IVar>[] grandsons = tree.sons[0].sons;
+			Variable cnd = grandsons[0].type == VAR ? (Variable) grandsons[0].var(0) : replaceByVariable(grandsons[0]);
+			Variable y = grandsons[1].type == VAR ? (Variable) grandsons[1].var(0) : replaceByVariable(grandsons[1]);
+			Variable z = grandsons[2].type == VAR ? (Variable) grandsons[2].var(0) : replaceByVariable(grandsons[2]);
+			return extension(vars(x, cnd, y, z), Table.starredIfThen(x, cnd, y, z), true, true);
+		}
 
 		if (options.recognizeExtremum) {
 			if (min_relop.matches(tree))
@@ -1114,27 +1132,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return product(list, basicCondition(tree));
 		}
 
-		if (Constraint.computeGenericFilteringThreshold(scp) < scp.length) { // if it may be useful to decompose
-			// First, two cases with the ternary operator if
-			if (tree.type == IF && options.recognizeIf) {
-				XNode<IVar>[] sons = tree.sons;
-				Variable cnd = sons[0].type == VAR ? (Variable) sons[0].var(0) : replaceByVariable(sons[0]);
-				Variable y = sons[1].type == VAR ? (Variable) sons[1].var(0) : replaceByVariable(sons[1]);
-				Variable z = sons[2].type == VAR ? (Variable) sons[2].var(0) : replaceByVariable(sons[2]);
-				return post(new IFT3(this, cnd, y, z));
-			}
-			if (tree.type == TypeExpr.EQ && tree.sons.length == 2 && tree.sons[0].type == IF && tree.sons[1].type == VAR && options.recognizeIf) {
-				Variable x = (Variable) tree.sons[1].var(0);
-				XNode<IVar>[] grandsons = tree.sons[0].sons;
-				Variable cnd = grandsons[0].type == VAR ? (Variable) grandsons[0].var(0) : replaceByVariable(grandsons[0]);
-				Variable y = grandsons[1].type == VAR ? (Variable) grandsons[1].var(0) : replaceByVariable(grandsons[1]);
-				Variable z = grandsons[2].type == VAR ? (Variable) grandsons[2].var(0) : replaceByVariable(grandsons[2]);
-				return extension(vars(x, cnd, y, z), Table.starredIfThen(x, cnd, y, z), true, true);
-			}
+		if (Constraint.howManyVariablesWithin(scp, 16) == Constants.ALL && tree.size() > 10 && scp.length <= 3) {
+			features.nConvertedConstraints++;
+			return extension(tree);
+		}
+
+		// System.out.println(
+		// "Tree2 " + tree + " " + Constraint.howManyVariablesWithin(scp, 16) + " " + Constraint.computeGenericFilteringThreshold(scp) + " " + scp.length);
+		if (Constraint.howManyVariablesWithin(scp, 16) != Constants.ALL) { // Constraint.computeGenericFilteringThreshold(scp) < scp.length) {
+			// if it may be useful to decompose
+
 			boolean tryingDecomposition = options.decompose > 0 && scp[0] instanceof VariableInteger; // && scp.length + 1 >= tree.listOfVars().size();
 			// at most a variable occurring twice
 			tryingDecomposition = tryingDecomposition || options.decompose == 2;
-			// System.out.println("Tree4b " + tree + " " + b);
 			if (tryingDecomposition) {
 				XNode<IVar>[] sons = tree.sons;
 				int nParentSons = 0;
@@ -1168,6 +1178,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					}
 				}
 			}
+			// System.out.println("trying2 " + tree);
 		}
 		return post(new ConstraintIntension(this, scp, tree));
 	}
@@ -2008,19 +2019,31 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity cardinality(Var[] list, Var[] values, boolean mustBeClosed, int[] occurs) {
 		control(values.length == occurs.length && Stream.of(values).noneMatch(x -> x == null));
-		return unimplemented("cardinality");
+		unimplementedIf(mustBeClosed, "for the moment");
+		Variable[] scp = translate(clean(list));
+		return forall(range(values.length), i -> {
+			sum(Stream.of(scp).map(x -> eq(x, values[i])), Condition.buildFrom(EQ, occurs[i]));
+		});
 	}
 
 	@Override
 	public final CtrEntity cardinality(Var[] list, Var[] values, boolean mustBeClosed, Var[] occurs) {
 		control(values.length == occurs.length && Stream.of(values).noneMatch(x -> x == null) && Stream.of(occurs).noneMatch(x -> x == null));
-		return unimplemented("cardinality");
+		unimplementedIf(mustBeClosed, "for the moment");
+		Variable[] scp = translate(clean(list));
+		return forall(range(values.length), i -> {
+			sum(Stream.of(scp).map(x -> eq(x, values[i])), Condition.buildFrom(EQ, occurs[i]));
+		});
 	}
 
 	@Override
 	public final CtrEntity cardinality(Var[] list, Var[] values, boolean mustBeClosed, int[] occursMin, int[] occursMax) {
 		control(values.length == occursMin.length && values.length == occursMax.length && Stream.of(values).noneMatch(x -> x == null));
-		return unimplemented("cardinality");
+		unimplementedIf(mustBeClosed, "for the moment");
+		Variable[] scp = translate(clean(list));
+		return forall(range(values.length), i -> {
+			sum(Stream.of(scp).map(x -> eq(x, values[i])), Condition.buildFrom(IN, new Range(occursMin[i], occursMax[i])));
+		});
 	}
 
 	// ************************************************************************
