@@ -89,7 +89,6 @@ public final class SubsetAllDifferent extends ConstraintGlobal implements TagNot
 				return true;
 			int xnum = x.num;
 			int[] t = neighbours[x.num];
-			// System.out.println("ttt " + futvars.size() + " " + t.length);
 			if (futvars.size() < t.length) {
 				for (int i = futvars.limit; i >= 0; i--) {
 					Variable y = scp[futvars.dense[i]];
@@ -104,7 +103,6 @@ public final class SubsetAllDifferent extends ConstraintGlobal implements TagNot
 						return false;
 				}
 			}
-			// System.out.println("ttt2 " + futvars.size() + " " + t.length);
 		}
 		return true;
 	}

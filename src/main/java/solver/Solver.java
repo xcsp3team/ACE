@@ -188,7 +188,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 
 		@Override
 		public void beforeRun() {
-			if (restarter.numRun % 30 == 29) {
+			boolean test = false;
+			if (test && restarter.numRun % 30 == 29) {
 				for (Variable x : problem.variables) {
 					for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
 						System.out.println("checking " + a + " of " + x);
@@ -198,7 +199,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 							System.out.print(" against " + b); // + " (" + x.ctrs.length + " ctrs)");
 							int k = 0;
 							for (Constraint c : x.ctrs) {
-								if (c == problem.optimizer.clb || c == problem.optimizer.cub)
+								if (problem.optimizer != null && (c == problem.optimizer.clb || c == problem.optimizer.cub))
 									continue;
 								// System.out.println(" checking " + c);
 								if (c.isSubstitutableBy(c.positionOf(x), a, b))

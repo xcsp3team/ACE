@@ -110,7 +110,7 @@ public final class TableHybrid extends ExtensionStructure {
 		/**
 		 * The set of restrictions for this hybrid tuple
 		 */
-		private Restriction[] restrictions;
+		private Restriction[] restrictions = new Restriction[0];
 
 		/**
 		 * The sparse sets used during filtering: nac[x] is the sparse set for indexes (of values) of x, which have not been found a support yet (nac stands for
@@ -327,9 +327,10 @@ public final class TableHybrid extends ExtensionStructure {
 					return null;
 				}
 				Restriction1Rel res = buildRestriction1From(x, op, k);
+				// TODO check cases that involve a restriction always false (and return an object mentioning it)
 				if (res.pivot == -1 || res.pivot == Integer.MAX_VALUE) {
 					control(tuple[x] == STAR);
-					return null; // because the restriction is useless
+					// return null; // AVOID THIS because in case of a restriction always false, the restriction would avoided ;; useless?
 				}
 				return res;
 			}
