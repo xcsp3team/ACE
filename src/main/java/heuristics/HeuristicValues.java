@@ -1,9 +1,9 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE (AbsCon Essence).
  *
  * Copyright (c) 2021. All rights reserved.
- * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
- * 
+ * Christophe Lecoutre, CRIL, Univ. Artois and CNRS.
+ *
  * Licensed under the MIT License.
  * See LICENSE file in the project root for full license information.
  */
@@ -44,7 +44,7 @@ import variables.Variable;
 
 /**
  * This is the class for building value ordering heuristics. A value ordering heuristic is attached to a variable and allows us to select (indexes of) values.
- * 
+ *
  * @author Christophe Lecoutre
  */
 public abstract class HeuristicValues extends Heuristic {
@@ -55,7 +55,7 @@ public abstract class HeuristicValues extends Heuristic {
 
 	/**
 	 * Builds and returns a value ordering heuristic to be used for the specified variable
-	 * 
+	 *
 	 * @param x
 	 *            a variable
 	 * @return a value ordering heuristic for the specified variable
@@ -99,9 +99,9 @@ public abstract class HeuristicValues extends Heuristic {
 	/**
 	 * Possibly modifies the value ordering heuristics of some variables according to the objective function (constraint), and returns the variables that must
 	 * be considered as being priority for search, or null.
-	 * 
+	 *
 	 * TODO: EXPERIMENTAL (code to be finalized)
-	 * 
+	 *
 	 * @param problem
 	 *            a problem
 	 * @return the variables that must be considered as being priority for search, or null
@@ -173,7 +173,7 @@ public abstract class HeuristicValues extends Heuristic {
 
 	/**
 	 * Builds a value ordering heuristic for the specified variable
-	 * 
+	 *
 	 * @param x
 	 *            the variable to which this object is attached
 	 * @param anti
@@ -188,7 +188,7 @@ public abstract class HeuristicValues extends Heuristic {
 
 	/**
 	 * Returns either the variables of the array to which x belongs or all problem variables (if x does not belong to an array)
-	 * 
+	 *
 	 * @return either the variables of the array to which x belongs or all problem variables
 	 */
 	public Variable[] variablesOfInterest() {
@@ -198,7 +198,7 @@ public abstract class HeuristicValues extends Heuristic {
 
 	/**
 	 * Returns the (raw) score of the specified value index. This is the method to override for defining a new heuristic.
-	 * 
+	 *
 	 * @param a
 	 *            a value index
 	 * @return the (raw) score of the specified value index
@@ -207,7 +207,7 @@ public abstract class HeuristicValues extends Heuristic {
 
 	/**
 	 * Searches and returns the preferred value index in the current domain of x, according to the heuristic
-	 * 
+	 *
 	 * @return the preferred value index in the current domain of x
 	 */
 	protected abstract int computeBestValueIndex();
@@ -215,7 +215,7 @@ public abstract class HeuristicValues extends Heuristic {
 	/**
 	 * Returns the preferred value index in the current domain of x according to the heuristic. Meta-reasoning techniques such as warm starting, run progress
 	 * saving and solution saving are checked first before considering the heuristic selection criterion.
-	 * 
+	 *
 	 * @return the preferred value index in the current domain of x
 	 */
 	public final int bestValueIndex() {

@@ -286,6 +286,34 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 			}
 
 		}
+
+		public static final class Or2 extends PrimitiveBinaryNoCst {
+
+			@Override
+			public boolean isSatisfiedBy(int[] t) {
+				return t[0] == 1 || t[1] == 1;
+			}
+
+			public Or2(Problem pb, Variable x, Variable y) {
+				super(pb, x, y);
+				assert x.dom.is01() && y.dom.is01();
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				if (dx.size() == 1) {
+					if (dx.single() == 0 && dy.removeIfPresent(0) == false)
+						return false;
+					return entailed();
+				}
+				if (dy.size() == 1) {
+					if (dy.single() == 0 && dx.removeIfPresent(0) == false)
+						return false;
+					return entailed();
+				}
+				return true;
+			}
+		}
 	}
 
 	/**********************************************************************************************

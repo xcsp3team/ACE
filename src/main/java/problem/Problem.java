@@ -47,6 +47,7 @@ import static org.xcsp.common.predicates.MatcherInterface.set_vals;
 import static org.xcsp.common.predicates.MatcherInterface.val;
 import static org.xcsp.common.predicates.MatcherInterface.var;
 import static org.xcsp.common.predicates.MatcherInterface.varOrVal;
+import static org.xcsp.common.predicates.MatcherInterface.x_ne_k;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.ariop;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.relop;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.setop;
@@ -193,7 +194,9 @@ import constraints.global.Sum.SumWeighted.SumWeightedGE;
 import constraints.global.Sum.SumWeighted.SumWeightedLE;
 import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
 import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
+import constraints.intension.Nogood;
 import constraints.intension.Primitive2;
+import constraints.intension.Primitive2.PrimitiveBinaryNoCst;
 import constraints.intension.Primitive2.PrimitiveBinaryNoCst.Disjonctive;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Sub2;
 import constraints.intension.Primitive3;
@@ -916,6 +919,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private Matcher logic_k_relop_y__iff_x = new Matcher(node(IFF, node(relop, val, var), var));
 	private Matcher unalop_x__eq_y = new Matcher(node(TypeExpr.EQ, node(unalop, var), var));
 	private Matcher disjonctive = new Matcher(node(TypeExpr.OR, node(TypeExpr.LE, node(ADD, var, val), var), node(TypeExpr.LE, node(ADD, var, val), var)));
+	private Matcher logic_or_x_y = new Matcher(node(TypeExpr.OR, var, var));
+
 	private Matcher x_mul_y__eq_k = new Matcher(node(TypeExpr.EQ, node(MUL, var, var), val));
 
 	// ternary
@@ -1049,7 +1054,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					int k0 = tree.sons[0].val(0), k1 = tree.sons[1].val(0);
 					c = new Disjonctive(this, scp0[0], k0, scp[1], k1);
 				}
-			}
+			} else if (logic_or_x_y.matches(tree))
+				c = new PrimitiveBinaryNoCst.Or2(this, scp[0], scp[1]);
+
 			if (c != null)
 				return post(c);
 		}
@@ -1075,9 +1082,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (c != null)
 				return post(c);
 		}
-		if (arity > 2 && tree.type == TypeExpr.OR && Stream.of(tree.sons).allMatch(son -> son.type == TypeExpr.VAR))
-			return post(SumSimple.buildFrom(this, scp, NE, 0));
-
+		if (arity > 2 && tree.type == TypeExpr.OR) {
+			if (Stream.of(tree.sons).allMatch(son -> son.type == VAR))
+				return post(new AtLeast1(this, scp, 1)); // return post(SumSimple.buildFrom(this, scp, NE, 0));
+			if (Stream.of(tree.sons).allMatch(son -> son.type == VAR || x_ne_k.matches(son))) 
+				return post(new Nogood(this, scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray()));
+		}
 		// Two cases with the ternary operator if
 		if (tree.type == IF && options.recognizeIf) {
 			XNode<IVar>[] sons = tree.sons;
@@ -1132,14 +1142,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return product(list, basicCondition(tree));
 		}
 
-		if (Constraint.howManyVariablesWithin(scp, 16) == Constants.ALL && tree.size() > 10 && scp.length <= 3) {
+		if (Constraint.howManyVariablesWithin(scp, 12) == Constants.ALL && tree.size() > 10 && scp.length <= 3) {
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
 
 		// System.out.println(
 		// "Tree2 " + tree + " " + Constraint.howManyVariablesWithin(scp, 16) + " " + Constraint.computeGenericFilteringThreshold(scp) + " " + scp.length);
-		if (Constraint.howManyVariablesWithin(scp, 16) != Constants.ALL) { // Constraint.computeGenericFilteringThreshold(scp) < scp.length) {
+		if (Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) { // Constraint.computeGenericFilteringThreshold(scp) < scp.length) {
 			// if it may be useful to decompose
 
 			boolean tryingDecomposition = options.decompose > 0 && scp[0] instanceof VariableInteger; // && scp.length + 1 >= tree.listOfVars().size();

@@ -327,8 +327,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		 */
 		public boolean canBeApplied() {
 			if (options.bivsDistance == 2)
-				return true; // because no restriction at all
-			// limited form of BIVS according to the distance
+				return true; // because no restriction at all limited form of BIVS according to the distance
 			int distance = x.distanceWithObjective();
 			return distance == 0 || (distance == 1 && options.bivsDistance > 0);
 		}

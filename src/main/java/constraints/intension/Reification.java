@@ -318,8 +318,7 @@ public final class Reification {
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dy.size() == 1 && dz.size() == 1)
-					return dx.removeIfPresent(dy.firstValue() == dz.firstValue() ? 0 : 1); // remember that indexes and
-																							// values match for x
+					return dx.removeIfPresent(dy.firstValue() == dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
 				if (dx.last() == 0)
 					return (dy.size() > 1 && dz.size() > 1) || (enforceNE(dy, dz) && entailed()); // x = 0 => y != z
 				if (dx.first() == 1)
@@ -354,8 +353,7 @@ public final class Reification {
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dy.size() == 1 && dz.size() == 1)
-					return dx.removeIfPresent(dy.firstValue() != dz.firstValue() ? 0 : 1); // remember that indexes and
-																							// values match for x
+					return dx.removeIfPresent(dy.firstValue() != dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
 				if (dx.last() == 0)
 					return enforceEQ(dy, dz); // x = 0 => y = z
 				if (dx.first() == 1)
