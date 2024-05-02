@@ -453,6 +453,7 @@ public final class Control {
 		public final String ignoreGroups = addS("ignoreGroups", "ig", "", "Index(es) of the group(s) of constraints that must be discarded");
 		public final int positionsLb = addI("positionsLb", "poslb", 3, "Minimal arity to build the array positions");
 		public final int positionsUb = addI("positionsUb", "posub", 10000, "Maximal number of variables to build the array positions");
+		public final int nogoodsMergingLimit = addI("nogoodsMergingLimit", "nml", 3, "Limit for merging (in a table) nogoods of same scope");
 	}
 
 	public class OptionsOptimization extends OptionGroup {

@@ -150,6 +150,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String N_VALUES = "values";
 	public static final String N_DELETED = "deleted";
 	public static final String COUNT = "count";
+	public static final String N_OMITTED = "omitted";
 	public static final String N_DISCARDED = "discarded";
 	public static final String N_ISOLATED = "isolated";
 	public static final String N_FIXED = "fixed";
@@ -475,6 +476,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	private InformationBloc variablesInfo() {
 		InformationBloc m = new InformationBloc(VARIABLES);
 		m.put(COUNT, head.problem.variables.length);
+		m.put(N_OMITTED, features.nOmittedVars); 
 		m.put(N_DISCARDED, features.collecting.discardedVars.size());
 		m.put(N_ISOLATED, features.nIsolatedVars);
 		m.put(N_FIXED, features.nFixedVars);

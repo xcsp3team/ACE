@@ -224,6 +224,7 @@ import optimization.Optimizer.OptimizationStrategy;
 import optimization.Optimizer.OptimizerDecreasing;
 import optimization.Optimizer.OptimizerDichotomic;
 import optimization.Optimizer.OptimizerIncreasing;
+import problem.Features.CollectedNogood;
 import problem.Reinforcer.Automorphisms;
 import problem.Reinforcer.Cliques;
 import solver.Solver;
@@ -459,6 +460,36 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			log.info("Reduction to (#V=" + priorityVars.length + ",#C=" + Kit.countIn(true, presentConstraints) + ")");
 	}
 
+	private void manageCollectedNogoods() {
+		if (features.collecting.nogoods.size() == 0)
+			return;
+		CollectedNogood[] nogoods = features.collecting.nogoods.toArray(CollectedNogood[]::new);
+		boolean[] t = new boolean[nogoods.length];
+		List<int[]> list = new ArrayList<>();
+		for (int i = 0; i < t.length; i++) {
+			if (t[i])
+				continue;
+			list.clear();
+			list.add(nogoods[i].vals);
+			for (int j = i + 1; j < t.length; j++) {
+				if (!t[j] && nogoods[j].sameScopeAs(nogoods[i])) {
+					list.add(nogoods[j].vals);
+					t[j] = true;
+				}
+			}
+			if (list.size() == 1)
+				post(new Nogood(this, nogoods[i].vars, nogoods[i].vals));
+			else {
+				if (list.size() > head.control.constraints.nogoodsMergingLimit) // TODO hard coding
+					post(ConstraintExtension.buildFrom(this, nogoods[i].vars, list.toArray(int[][]::new), false, false));
+				else {
+					for (int k = 0; k < list.size(); k++)
+						post(new Nogood(this, nogoods[i].vars, list.get(k)));
+				}
+			}
+		}
+	}
+
 	private void inferAdditionalConstraints() {
 		Stopwatch stopwatch = new Stopwatch();
 		List<Variable> variables = features.collecting.variables;
@@ -601,6 +632,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			features.nFixedVars += fixedVars.size();
 			log.info("Fixed variables : " + (fixedVars.size() <= 100 ? Kit.join(fixedVars) : "more than 100") + "\n");
 		}
+		if (api instanceof XCSP3)
+			features.nOmittedVars += ((XCSP3)api).omittedVariables.size();
 	}
 
 	public Variable replacedObjVar;
@@ -664,6 +697,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		replaceObjectiveVariable();
 
+		manageCollectedNogoods();
 		// after possibly adding some additional constraints, we store variables and constraints into arrays
 		inferAdditionalConstraints();
 		storeToArrays();
@@ -1085,8 +1119,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (arity > 2 && tree.type == TypeExpr.OR) {
 			if (Stream.of(tree.sons).allMatch(son -> son.type == VAR))
 				return post(new AtLeast1(this, scp, 1)); // return post(SumSimple.buildFrom(this, scp, NE, 0));
-			if (Stream.of(tree.sons).allMatch(son -> son.type == VAR || x_ne_k.matches(son))) 
-				return post(new Nogood(this, scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray()));
+			if (Stream.of(tree.sons).allMatch(son -> son.type == VAR || x_ne_k.matches(son))) {
+				features.collecting.addNogood(scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray());
+				return null; // post(new Nogood(this, scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray()));
+			}
 		}
 		// Two cases with the ternary operator if
 		if (tree.type == IF && options.recognizeIf) {
@@ -1261,6 +1297,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return null;
 	}
 
+	
 	public final CtrAlone extension(IVar[] list, Object[] tuples, boolean positive, Boolean starred) {
 		Variable[] scp = translate(list);
 		if (tuples.length == 0)
@@ -1271,6 +1308,37 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			int[] values = Stream.of(m).mapToInt(t -> t[0]).toArray();
 			return extension(scp[0], values, positive);
 		}
+		// we try to recognize nogoods
+		if (scp[0] instanceof VariableInteger) {
+			if (tuples.length == 1 && !positive) {
+				int[] tuple = (int[]) tuples[0];
+				if (IntStream.of(tuple).allMatch(v -> v != STAR)) {
+					features.collecting.addNogood(scp, tuple);
+					return null;
+				}
+			}
+			if (Variable.areAllInitiallyBoolean(scp) && tuples.length == scp.length && positive) {
+				Integer[] conflict = new Integer[scp.length];
+				loop: {
+					for (int[] tuple : (int[][]) tuples) {
+						int cnt = 0;
+						for (int j = 0; j < tuple.length; j++) {
+							if (tuple[j] == STAR)
+								continue;
+							if (cnt == 1 || conflict[j] != null)
+								break loop;
+							conflict[j] = tuple[j] == 1 ? 0 : 1;
+							cnt++;
+						}
+						if (cnt == 0)
+							break loop;
+					}
+					features.collecting.addNogood(scp, Stream.of(conflict).mapToInt(v -> v).toArray());
+					return null;
+				}
+			}
+		}
+
 		return post(ConstraintExtension.buildFrom(this, scp, tuples, positive, starred));
 	}
 

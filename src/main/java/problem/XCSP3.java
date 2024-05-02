@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Condition;
 import org.xcsp.common.Condition.ConditionVar;
 import org.xcsp.common.IVar;
+import org.xcsp.common.Utilities;
 import org.xcsp.common.Types.TypeCtr;
 import org.xcsp.common.Types.TypeExpr;
 import org.xcsp.common.Types.TypeFlag;
@@ -226,6 +227,8 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	 * Methods for loading variables, constraints and objectives
 	 *********************************************************************************************/
 
+	public final List<String> omittedVariables = new ArrayList<>();
+
 	@Override
 	public void loadVar(XVar v) {
 		implem.manageIdFor(v);
@@ -236,16 +239,19 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 				mapVar.put(v, (VariableSymbolic) var(v.id, (DomSymbolic) v.dom, v.note, v.classes));
 			else
 				unimplementedCase(v);
-		}
+		} else
+			omittedVariables.add(v.id);
 	}
 
 	// method for mapping variables inside arrays
 	private void completeMapVar(XArray va, Object a, int... indexes) {
-		if (a != null)
+		if (a != null) {
 			if (a.getClass().isArray())
 				IntStream.range(0, Array.getLength(a)).forEach(i -> completeMapVar(va, Array.get(a, i), vals(indexes, i)));
 			else
 				mapVar.put(va.varAt(indexes), (Variable) a);
+		} else 
+			omittedVariables.add(va.id + "[" + Utilities.join(indexes, "][") + "]");
 	}
 
 	@Override

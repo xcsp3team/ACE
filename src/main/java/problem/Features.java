@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -33,6 +34,7 @@ import constraints.extension.CHybrid;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableHybrid;
 import dashboard.Output;
+
 import utility.Kit;
 import variables.Variable;
 
@@ -119,6 +121,35 @@ public final class Features {
 	 * Auxiliary Class Collecting : to store (at construction time) variables and constraints (and also table keys)
 	 *********************************************************************************************/
 
+	public static final class CollectedNogood {
+
+		public final Variable[] vars;
+		
+		public final int[] vals;
+
+	
+		public CollectedNogood(Variable[] scp, int[] values) {
+			// is there a simpler and direct way to sort the nogood?
+			//System.out.println("hhhhhhbef" + Kit.join(scp) + " " + Kit.join(values));
+			Map<Variable, Integer> map = IntStream.range(0, scp.length).boxed().collect(Collectors.toMap(i -> scp[i],i -> values[i]));
+			map = Kit.sort(map, (e1, e2) -> e1.getKey().num - e2.getKey().num);
+			this.vars = map.entrySet().stream().map(e -> e.getKey()).toArray(Variable[]::new);
+			this.vals = map.entrySet().stream().mapToInt(e -> e.getValue()).toArray();
+			//System.out.println("hhhhhhaft" + Kit.join(vars) + " " + Kit.join(vals));
+		}
+		
+		public boolean sameScopeAs(CollectedNogood cn) {
+			if (vars.length != cn.vars.length)
+				return false;
+			for (int i=0; i< vars.length;i++)
+				if (vars[i] != cn.vars[i])
+					return false;
+			return true;
+		}
+		
+	}
+	
+	
 	/**
 	 * This class allows us to collect variables and constraints when loading the constraint network.
 	 */
@@ -133,6 +164,12 @@ public final class Features {
 		 * The constraints that have been collected so far
 		 */
 		public final List<Constraint> constraints = new ArrayList<>();
+		
+		/**
+		 * The nogoods that have been collected so far
+		 */
+		public final List<CollectedNogood> nogoods = new ArrayList<>();
+
 
 		/**
 		 * The keys used for tables, that have been collected so far, and used when storing tuples of a table
@@ -254,6 +291,10 @@ public final class Features {
 			// tableSizes.add(((TableHybrid) c.extStructure()).hybridTuples.length);
 			return num;
 		}
+		
+		public void addNogood(Variable[] vars, int[] vals) {
+			nogoods.add(new CollectedNogood(vars,vals));
+		}
 
 		public void fix() {
 			int i = 0;
@@ -317,7 +358,7 @@ public final class Features {
 	 */
 	public final Repartitioner<String> ctrTypes;
 
-	public int nIsolatedVars, nFixedVars, nSymbolicVars;
+	public int nIsolatedVars, nFixedVars, nSymbolicVars, nOmittedVars;
 
 	public int nRemovedUnaryCtrs, nConvertedConstraints; // conversion intension to extension
 
