@@ -26,6 +26,7 @@ import static org.xcsp.common.Types.TypeExpr.IF;
 import static org.xcsp.common.Types.TypeExpr.IFF;
 import static org.xcsp.common.Types.TypeExpr.LONG;
 import static org.xcsp.common.Types.TypeExpr.MUL;
+import static org.xcsp.common.Types.TypeExpr.SUB;
 import static org.xcsp.common.Types.TypeExpr.VAR;
 import static org.xcsp.common.Types.TypeObjective.EXPRESSION;
 import static org.xcsp.common.Types.TypeObjective.LEX;
@@ -36,6 +37,7 @@ import static org.xcsp.common.Types.TypeObjective.SUM;
 import static org.xcsp.common.Types.TypeOptimization.MAXIMIZE;
 import static org.xcsp.common.Types.TypeOptimization.MINIMIZE;
 import static org.xcsp.common.Utilities.safeInt;
+import static org.xcsp.common.predicates.MatcherInterface.addOrSub_varOrVals;
 import static org.xcsp.common.predicates.MatcherInterface.add_mul_vals;
 import static org.xcsp.common.predicates.MatcherInterface.add_mul_vars;
 import static org.xcsp.common.predicates.MatcherInterface.add_vars;
@@ -48,6 +50,7 @@ import static org.xcsp.common.predicates.MatcherInterface.val;
 import static org.xcsp.common.predicates.MatcherInterface.var;
 import static org.xcsp.common.predicates.MatcherInterface.varOrVal;
 import static org.xcsp.common.predicates.MatcherInterface.x_ne_k;
+import static org.xcsp.common.predicates.MatcherInterface.x_ne_y;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.ariop;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.relop;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.setop;
@@ -202,7 +205,9 @@ import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Sub2;
 import constraints.intension.Primitive3;
 import constraints.intension.Primitive3.Add3;
 import constraints.intension.Primitive3.IFT3;
+import constraints.intension.Primitive4.DblDiff;
 import constraints.intension.Primitive4.Disjonctive2D;
+import constraints.intension.Primitive4.Disjonctive2Db;
 import constraints.intension.Primitive4.DisjonctiveVar;
 import constraints.intension.Reification.Reif2;
 import constraints.intension.Reification.Reif2.Reif2EQ;
@@ -480,7 +485,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (list.size() == 1)
 				post(new Nogood(this, nogoods[i].vars, nogoods[i].vals));
 			else {
-				if (list.size() > head.control.constraints.nogoodsMergingLimit) // TODO hard coding
+				if (list.size() > head.control.constraints.nogoodsMergingLimit)
 					post(ConstraintExtension.buildFrom(this, nogoods[i].vars, list.toArray(int[][]::new), false, false));
 				else {
 					for (int k = 0; k < list.size(); k++)
@@ -633,7 +638,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			log.info("Fixed variables : " + (fixedVars.size() <= 100 ? Kit.join(fixedVars) : "more than 100") + "\n");
 		}
 		if (api instanceof XCSP3)
-			features.nOmittedVars += ((XCSP3)api).omittedVariables.size();
+			features.nOmittedVars += ((XCSP3) api).omittedVariables.size();
 	}
 
 	public Variable replacedObjVar;
@@ -858,6 +863,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * @return an array of new (auxiliary) variables representing the specified tree expressions
 	 */
 	private Var[] replaceByVariables(XNode<IVar>[] trees) {
+		for (int i = 0; i < trees.length; i++)
+			trees[i] = trees[i].canonization();
 		if (trees.length == 1)
 			return new Var[] { (Var) replaceByVariable(trees[0]) };
 		IntToDom doms = i -> {
@@ -977,6 +984,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private Matcher add_mul_vars__relop = new Matcher(node(relop, add_mul_vars, varOrVal));
 	private Matcher relop__add_mul_vals = new Matcher(node(relop, varOrVal, add_mul_vals));
 	private Matcher relop__add_mul_vars = new Matcher(node(relop, varOrVal, add_mul_vars));
+	private Matcher relop__addOrSub_varOrVals = new Matcher(node(relop, addOrSub_varOrVals, addOrSub_varOrVals));
 
 	// product
 	private Matcher mul_vars__relop = new Matcher(node(relop, mul_vars, val));
@@ -1123,6 +1131,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				features.collecting.addNogood(scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray());
 				return null; // post(new Nogood(this, scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray()));
 			}
+			if (arity == 4 && Stream.of(tree.sons).allMatch(son -> x_ne_y.matches(son)))
+				return post(new DblDiff(this, (Variable) tree.sons[0].var(0), (Variable) tree.sons[0].var(1), (Variable) tree.sons[1].var(0),
+						(Variable) tree.sons[1].var(1)));
 		}
 		// Two cases with the ternary operator if
 		if (tree.type == IF && options.recognizeIf) {
@@ -1164,6 +1175,29 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				Var[] list = Stream.of(tree.sons[side].sons).map(s -> s.var(0)).toArray(Var[]::new);
 				Var[] coeffs = Stream.of(tree.sons[side].sons).map(s -> s.var(1)).toArray(Var[]::new);
 				return sum(list, coeffs, basicCondition(tree));
+			}
+			if (relop__addOrSub_varOrVals.matches(tree)) {
+				XNode<IVar> son0 = tree.sons[0], son1 = tree.sons[1];
+				List<Var> list = new ArrayList<>();
+				List<Integer> coeffs = new ArrayList<>();
+				long limit = 0;
+				for (XNode<IVar> grandSon : son0.sons) {
+					boolean neg = son0.type == SUB && grandSon == son0.sons[1];
+					if (grandSon.type == VAR) {
+						list.add((Var) grandSon.var(0));
+						coeffs.add(neg ? -1 : 1);
+					} else
+						limit = limit + (grandSon.val(0) * (neg ? 1 : -1)); // the limit will be moved to the right
+				}
+				for (XNode<IVar> grandSon : son1.sons) {
+					boolean neg = son1.type == SUB && grandSon == son1.sons[1];
+					if (grandSon.type == VAR) {
+						list.add((Var) grandSon.var(0));
+						coeffs.add(neg ? 1 : -1);
+					} else
+						limit = limit + (grandSon.val(0) * (neg ? -1 : 1));
+				}
+				return sum(list.stream().toArray(Var[]::new), coeffs.stream().mapToInt(v -> v).toArray(), new ConditionVal(tree.relop(0), limit));
 			}
 		}
 		if (mul_vars__relop.matches(tree)) {
@@ -1297,7 +1331,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return null;
 	}
 
-	
 	public final CtrAlone extension(IVar[] list, Object[] tuples, boolean positive, Boolean starred) {
 		Variable[] scp = translate(list);
 		if (tuples.length == 0)
@@ -2572,7 +2605,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				Variable xi = (Variable) xs[i], xj = (Variable) xs[j], yi = (Variable) ys[i], yj = (Variable) ys[j];
 				Variable wi = (Variable) lx[i], wj = (Variable) lx[j];
 				int hi = ly[i], hj = ly[j];
-				intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
+				if (head.control.global.noOverlap == INTENSION_DECOMPOSITION)
+					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
+				else
+					post(new Disjonctive2Db(this, xi, xj, yi, yj, wi, wj, hi, hj));
 			}
 		return null;
 	}
