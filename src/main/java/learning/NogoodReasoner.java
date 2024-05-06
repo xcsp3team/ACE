@@ -167,7 +167,7 @@ public final class NogoodReasoner {
 	}
 
 	/**
-	 * Important: currently not caleld
+	 * Important: currently not called
 	 * 
 	 * @param t
 	 *            a tuple of indexes (of values)

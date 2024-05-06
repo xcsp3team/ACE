@@ -2539,6 +2539,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				Variable wi = (Variable) lengths[i], wj = (Variable) lengths[j];
 				if (head.control.global.noOverlap == INTENSION_DECOMPOSITION)
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi)));
+				else if (head.control.global.noOverlap == EXTENSION_HYBRID)
+					post(CHybrid.noOverlap(this, xi, xj, wi, wj));
 				else
 					post(new DisjonctiveVar(this, xi, xj, wi, wj));
 			}
@@ -2607,7 +2609,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				int hi = ly[i], hj = ly[j];
 				if (head.control.global.noOverlap == INTENSION_DECOMPOSITION)
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
-				else
+				else if (head.control.global.noOverlap == EXTENSION_HYBRID) {
+					boolean test = true;
+					if (test) {
+						Variable aux = (Variable)auxVar(new Range(0, 4));
+						post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj,aux));
+					} else
+						post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
+				} else
 					post(new Disjonctive2Db(this, xi, xj, yi, yj, wi, wj, hi, hj));
 			}
 		return null;

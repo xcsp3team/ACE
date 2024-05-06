@@ -30,13 +30,13 @@ import problem.Problem;
 import propagation.StrongConsistency;
 import sets.SetDenseReversible;
 import sets.SetSparse;
+import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the code for CHybrid to deal with so-called hybrid/smart tables. The code follows a Simple Tabular Reduction
- * (STR) general scheme. See "The Smart Table Constraint", CPAIOR 2015: 271-287, by J.-B. Mairy, Y. Deville, and C.
- * Lecoutre. <br />
+ * This is the code for CHybrid to deal with so-called hybrid/smart tables. The code follows a Simple Tabular Reduction (STR) general scheme. See "The Smart
+ * Table Constraint", CPAIOR 2015: 271-287, by J.-B. Mairy, Y. Deville, and C. Lecoutre. <br />
  * IMPORTANT: the code is under revision, and is planned to be finalized within the end of year 2021.
  * 
  * 
@@ -101,12 +101,34 @@ public final class CHybrid extends ExtensionSpecific {
 		return new CHybrid(pb, pb.vars(x1, x2), ht1, ht2);
 	}
 
+	public static Constraint noOverlap(Problem pb, Variable x1, Variable x2, Variable w1, Variable w2) {
+		HybridTuple ht1 = new HybridTuple(ge(x2, add(x1, w1))); // x2 >= x1 + w1
+		HybridTuple ht2 = new HybridTuple(ge(x1, add(x2, w2))); // x1 >= x2 + w2
+		return new CHybrid(pb, pb.vars(x1, x2, w1, w2), ht1, ht2);
+	}
+
 	public static Constraint noOverlap(Problem pb, Variable x1, Variable y1, Variable x2, Variable y2, int w1, int h1, int w2, int h2) {
 		HybridTuple ht1 = new HybridTuple(ge(x2, add(x1, w1))); // x2 >= x1 + w1
 		HybridTuple ht2 = new HybridTuple(ge(x1, add(x2, w2))); // x1 >= x2 + w2
 		HybridTuple ht3 = new HybridTuple(ge(y2, add(y1, h1))); // y2 >= y1 + h1
 		HybridTuple ht4 = new HybridTuple(ge(y1, add(y2, h2))); // y1 >= y2 + h2
 		return new CHybrid(pb, pb.vars(x1, y1, x2, y2), ht1, ht2, ht3, ht4);
+	}
+
+	public static Constraint noOverlap(Problem pb, Variable x1, Variable y1, Variable x2, Variable y2, Variable w1, int h1, Variable w2, int h2) {
+		HybridTuple ht1 = new HybridTuple(ge(x2, add(x1, w1))); // x2 >= x1 + w1
+		HybridTuple ht2 = new HybridTuple(ge(x1, add(x2, w2))); // x1 >= x2 + w2
+		HybridTuple ht3 = new HybridTuple(ge(y2, add(y1, h1))); // y2 >= y1 + h1
+		HybridTuple ht4 = new HybridTuple(ge(y1, add(y2, h2))); // y1 >= y2 + h2
+		return new CHybrid(pb, pb.vars(x1, y1, x2, y2, w1, w2), ht1, ht2, ht3, ht4);
+	}
+
+	public static Constraint noOverlap(Problem pb, Variable x1, Variable y1, Variable x2, Variable y2, Variable w1, int h1, Variable w2, int h2, Variable aux) {
+		HybridTuple ht1 = new HybridTuple(eq(aux, 0), ge(x2, add(x1, w1))); // x2 >= x1 + w1
+		HybridTuple ht2 = new HybridTuple(eq(aux, 1), ge(x1, add(x2, w2))); // x1 >= x2 + w2
+		HybridTuple ht3 = new HybridTuple(eq(aux, 3), ge(y2, add(y1, h1))); // y2 >= y1 + h1
+		HybridTuple ht4 = new HybridTuple(eq(aux, 3), ge(y1, add(y2, h2))); // y1 >= y2 + h2
+		return new CHybrid(pb, pb.vars(x1, y1, x2, y2, w1, w2, aux), ht1, ht2, ht3, ht4);
 	}
 
 	public static Constraint noOverlap(Problem pb, Variable x1, Variable y1, Variable x2, Variable y2, Variable w1, Variable h1, Variable w2, Variable h2) {
@@ -168,32 +190,28 @@ public final class CHybrid extends ExtensionSpecific {
 	protected SetDenseReversible set;
 
 	/**
-	 * The sparse sets used during filtering: nac[x] is the sparse set for indexes (of values) of x, which have not been
-	 * found a support yet (nac stands for not arc-consistent).
+	 * The sparse sets used during filtering: nac[x] is the sparse set for indexes (of values) of x, which have not been found a support yet (nac stands for not
+	 * arc-consistent).
 	 */
 	public SetSparse[] nac;
 
 	/**
-	 * The (dense) set of positions of variables for which validity must be checked. Relevant positions are at indexes
-	 * from 0 to sValSize (excluded).
+	 * The (dense) set of positions of variables for which validity must be checked. Relevant positions are at indexes from 0 to sValSize (excluded).
 	 */
 	protected int[] sVal;
 
 	/**
-	 * The number of variables for which support searching must be done (i.e., variables with some values that still
-	 * must be checked to be AC)
+	 * The number of variables for which support searching must be done (i.e., variables with some values that still must be checked to be AC)
 	 */
 	protected int sValSize;
 
 	/**
-	 * The (dense) set of positions of variables for which support searching must be done. Relevant positions are at
-	 * indexes from 0 to sSupSize (excluded).
+	 * The (dense) set of positions of variables for which support searching must be done. Relevant positions are at indexes from 0 to sSupSize (excluded).
 	 */
 	protected int[] sSup;
 
 	/**
-	 * The number of variables for which support searching must be done (i.e., variables with some values that still
-	 * must be checked to be AC)
+	 * The number of variables for which support searching must be done (i.e., variables with some values that still must be checked to be AC)
 	 */
 	protected int sSupSize;
 
@@ -213,8 +231,7 @@ public final class CHybrid extends ExtensionSpecific {
 	protected int lastDepth;
 
 	/**
-	 * A number used to determine whether the last past variable should be considered for validity testing (and for
-	 * possibly other roles in subclasses)
+	 * A number used to determine whether the last past variable should be considered for validity testing (and for possibly other roles in subclasses)
 	 */
 	protected long lastSafeNumber;
 
@@ -337,9 +354,9 @@ public final class CHybrid extends ExtensionSpecific {
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {
 			HybridTuple hybridTuple = hybridTuples[set.dense[i]];
-			if (hybridTuple.isValid(sVal, sValSize))
+			if (hybridTuple.isValid(sVal, sValSize)) {
 				sSupSize = hybridTuple.collect(sSup, sSupSize);
-			else
+			} else
 				set.removeAtPosition(i, depth);
 		}
 		return updateDomains();

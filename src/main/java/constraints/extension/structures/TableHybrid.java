@@ -19,6 +19,13 @@ import static org.xcsp.common.Types.TypeConditionOperatorRel.LT;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.NE;
 import static org.xcsp.common.Types.TypeConditionOperatorSet.IN;
 import static org.xcsp.common.Types.TypeConditionOperatorSet.NOTIN;
+import static org.xcsp.common.Types.TypeExpr.ADD;
+import static org.xcsp.common.Types.TypeExpr.LONG;
+import static org.xcsp.common.Types.TypeExpr.PAR;
+import static org.xcsp.common.Types.TypeExpr.SET;
+import static org.xcsp.common.Types.TypeExpr.SUB;
+import static org.xcsp.common.Types.TypeExpr.SYMBOL;
+import static org.xcsp.common.Types.TypeExpr.VAR;
 import static org.xcsp.common.Utilities.safeInt;
 import static utility.Kit.control;
 
@@ -301,25 +308,35 @@ public final class TableHybrid extends ExtensionStructure {
 		private Restriction3 buildRestriction3From(int x, TypeConditionOperatorRel op, int y, int z) {
 			switch (op) {
 			case EQ:
-				return new Rstr3Add(x, y, z);
+				return new Rstr3EQ(x, y, z);
+			case GE:
+				return new Rstr3GE(x, y, z);
 			default:
 				throw new AssertionError("Currently, unimplemented operator " + op);
 			}
 		}
 
-		private Restriction buildRestriction(int x, TypeExpr type, XNode<? extends IVar> son1) {
+		private int var_position(XNode<? extends IVar> node) {
+			control(node.type.oneOf(VAR, PAR));
+			int y = node.type == VAR ? Utilities.indexOf(((XNodeLeaf<?>) node).value, scp) : (int) ((XNodeLeaf<?>) node).value;
+			control(tuple[y] == STAR); // TODO can we discard this? in some situations? which ones?
+			return y;
+		}
+
+		private Restriction buildRestriction(int x, TypeExpr type, XNode<? extends IVar> node) {
+			// first, we handle unary set restrictions
 			if (type.oneOf(TypeExpr.IN, TypeExpr.NOTIN)) {
-				if (son1.type == TypeExpr.SET) {
-					int[] t = Stream.of(son1.sons).mapToInt(s -> safeInt((long) ((XNodeLeaf<?>) s).value)).toArray();
-					return buildRestriction1From(x, type.toSetop(), t);
-				}
+				if (node.type == SET)
+					return buildRestriction1From(x, type.toSetop(), Stream.of(node.sons).mapToInt(s -> safeInt((long) ((XNodeLeaf<?>) s).value)).toArray());
 				throw new AssertionError("Currently, unimplemented case for range (anyway, needs an extension of XCSP3)");
 			}
 			TypeConditionOperatorRel op = type.toRelop();
 			control(op != null, "Relational operator expected");
-			control(son1.type != TypeExpr.SYMBOL, "Symbolic values not possible for the moment");
-			if (son1.type == TypeExpr.LONG) {
-				int k = safeInt(((long) ((XNodeLeaf<?>) son1).value));
+			control(node.type != SYMBOL, "Symbolic values not possible for the moment");
+
+			// then, we handle unary relational restrictions (
+			if (node.type == LONG) {
+				int k = safeInt(((long) ((XNodeLeaf<?>) node).value));
 				if (op == EQ) {
 					control(tuple[x] == STAR && scp[x].dom.containsValue(k));
 					// for a constant, we directly put it in tuple (no need to build a Restriction object)
@@ -330,32 +347,24 @@ public final class TableHybrid extends ExtensionStructure {
 				// TODO check cases that involve a restriction always false (and return an object mentioning it)
 				if (res.pivot == -1 || res.pivot == Integer.MAX_VALUE) {
 					control(tuple[x] == STAR);
-					// return null; // AVOID THIS because in case of a restriction always false, the restriction would avoided ;; useless?
+					// return null; // AVOID THIS because in case of a restriction always false, the restriction would be avoided
 				}
 				return res;
 			}
-			if (son1.type == TypeExpr.VAR) {
-				int y = Utilities.indexOf(((XNodeLeaf<?>) son1).value, scp);
-				control(tuple[y] == STAR);
-				return buildRestriction2From(x, op, y);
+			// then, we handle simple binary restrictions
+			if (node.type.oneOf(VAR, PAR))
+				return buildRestriction2From(x, op, var_position(node));
+
+			control(node.type.oneOf(ADD, SUB));
+			XNode<?>[] sons = ((XNodeParent<?>) node).sons;
+			control(sons.length == 2 && sons[0].type.oneOf(VAR, PAR));
+			int y = var_position(sons[0]);
+			if (sons[1].type == LONG) {
+				int k = safeInt(((long) ((XNodeLeaf<?>) sons[1]).value));
+				return buildRestriction2From(x, op, y, node.type == ADD ? k : -k);
 			}
-			if (son1.type == TypeExpr.PAR) {
-				int y = (int) ((XNodeLeaf<?>) son1).value;
-				control(tuple[y] == STAR);
-				return buildRestriction2From(x, op, y);
-			}
-			control(son1.type.oneOf(TypeExpr.ADD, TypeExpr.SUB), son1 + " ");
-			XNode<?>[] grandSons = ((XNodeParent<?>) son1).sons;
-			control(grandSons.length == 2 && grandSons[0].type == TypeExpr.PAR);
-			int y = (int) ((XNodeLeaf<?>) grandSons[0]).value;
-			control(tuple[y] == STAR);
-			if (grandSons[1].type == TypeExpr.LONG) {
-				int k = safeInt(((long) ((XNodeLeaf<?>) grandSons[1]).value));
-				return buildRestriction2From(x, op, y, son1.type == TypeExpr.ADD ? k : -k);
-			}
-			control(son1.type == TypeExpr.ADD && grandSons[1].type == TypeExpr.PAR);
-			int z = (int) ((XNodeLeaf<?>) grandSons[1]).value;
-			control(tuple[z] == STAR);
+			control(node.type == ADD && sons[1].type.oneOf(VAR, PAR));
+			int z = var_position(sons[1]);
 			return buildRestriction3From(x, op, y, z);
 		}
 
@@ -372,13 +381,13 @@ public final class TableHybrid extends ExtensionStructure {
 				control(tree.sons.length == 2, tree.toString());
 				TypeExpr type = tree.type;
 				XNode<? extends IVar> son0 = tree.sons[0], son1 = tree.sons[1];
-				if (son0.type != TypeExpr.VAR) {
+				if (son0.type != VAR) {
 					type = type.arithmeticInversion();
 					control(type != null);
 					son0 = tree.sons[1];
 					son1 = tree.sons[0];
 				}
-				control(son0.type == TypeExpr.VAR, () -> "Left side operand must be a variable");
+				control(son0.type == VAR, () -> "Left side operand must be a variable");
 				int x = c.positionOf((Variable) ((XNodeLeaf<?>) son0).value);
 				Restriction res = buildRestriction(x, type, son1);
 				if (res != null)
@@ -1089,7 +1098,7 @@ public final class TableHybrid extends ExtensionStructure {
 
 			@Override
 			public boolean isValid() {
-				return strict ? domx.last() > domy.first() : domy.last() >= domy.first();
+				return strict ? domx.last() > domy.first() : domx.last() >= domy.first();
 			}
 
 			@Override
@@ -1589,6 +1598,8 @@ public final class TableHybrid extends ExtensionStructure {
 			 * The second variable (given by its position in the constraint scope) in the restriction (i.e., at the right side of the restriction)
 			 */
 			protected int y;
+			
+			private boolean addition;
 
 			/**
 			 * The domain of y (redundant field)
@@ -1619,6 +1630,7 @@ public final class TableHybrid extends ExtensionStructure {
 				super(x);
 				this.op = op;
 				this.y = y;
+				this.addition=addition;
 				this.domy = scp[y].dom;
 				this.nacy = nac[y];
 				this.z = z;
@@ -1631,28 +1643,27 @@ public final class TableHybrid extends ExtensionStructure {
 
 			@Override
 			public String toString() {
-				return scp[x] + " " + op + " " + scp[y] + (this instanceof Rstr3Add ? "+" : "<op>") + scp[z];
+				return scp[x] + " " + op + " " + scp[y] + " " + (addition ? "+" : "-") + " "  + scp[z];
 			}
 		}
 
 		/**
 		 * Restriction of the form x = y + z
 		 */
-		final class Rstr3Add extends Restriction3 {
+		final class Rstr3EQ extends Restriction3 {
 
 			@Override
 			public boolean checkIndexes(int[] t) {
-				return t[x] == t[y] + t[z];
+				return domx.toVal(t[x]) == domy.toVal(t[y]) + domz.toVal(t[z]); 
 			}
 
-			protected Rstr3Add(int x, int y, int z) {
+			protected Rstr3EQ(int x, int y, int z) {
 				super(x, EQ, y, true, z);
-				// System.out.println("building " + this);
 			}
 
 			@Override
 			public boolean isValidFor(int a) {
-				return false; // TODO
+				throw new AssertionError("Not implemented");
 			}
 
 			@Override
@@ -1662,8 +1673,57 @@ public final class TableHybrid extends ExtensionStructure {
 
 			@Override
 			public void collect() {
-				// TODO
+				throw new AssertionError("Not implemented");
 			}
+		}
+
+		/**
+		 * Restriction of the form x >= y + z
+		 */
+		final class Rstr3GE extends Restriction3 {
+
+			@Override
+			public boolean checkIndexes(int[] t) {
+				return domx.toVal(t[x]) >= domy.toVal(t[y]) + domz.toVal(t[z]);
+			}
+
+			protected Rstr3GE(int x, int y, int z) {
+				super(x, GE, y, true, z);
+			}
+
+			@Override
+			public boolean isValid() {
+				return domx.lastValue() >= domy.firstValue() + domz.firstValue();
+			}
+
+			@Override
+			public boolean isValidFor(int a) {
+				return domx.toVal(a) >= domy.firstValue() + domz.firstValue();
+			}
+
+			private void collectThroughValidValues() {
+				if (!scp[x].assigned()) {
+					int limit = domy.firstValue() + domz.firstValue();
+					for (int a = domx.last(); a != -1 && domx.toVal(a) >= limit; a = domx.prev(a))
+						nacx.remove(a);
+				}
+				if (!scp[y].assigned()) {
+					int limit = domx.lastValue() - domz.firstValue();
+					for (int b = domy.first(); b != -1 && domy.toVal(b) <= limit; b = domy.next(b))
+						nacy.remove(b);
+				}
+				if (!scp[z].assigned()) {
+					int limit = domx.lastValue() - domy.firstValue();
+					for (int b = domz.first(); b != -1 && domz.toVal(b) <= limit; b = domz.next(b))
+						nacz.remove(b);
+				}
+			}
+
+			@Override
+			public void collect() {
+				collectThroughValidValues();
+			}
+
 		}
 
 		/**********************************************************************************************
