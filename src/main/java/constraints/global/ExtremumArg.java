@@ -59,7 +59,7 @@ public abstract class ExtremumArg extends ConstraintGlobal implements TagCallCom
 			this.idom = index.dom;
 			this.rank = rank;
 			control(list.length > 1 && scp.length == list.length + 1, "vector length = " + list.length);
-			control(idom.indexesMatchValues() && idom.initiallyExactly(new Range(list.length))); // For the moment
+			control(idom.indexesMatchValues() && idom.initiallyRange(list.length)); // For the moment
 		}
 
 		@Override

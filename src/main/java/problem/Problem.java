@@ -14,6 +14,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingLong;
 import static org.xcsp.common.Constants.PLUS_INFINITY_INT;
 import static org.xcsp.common.Constants.STAR;
+import static org.xcsp.common.Constants.STAR_SYMBOL;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.EQ;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.GE;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.GT;
@@ -24,8 +25,11 @@ import static org.xcsp.common.Types.TypeConditionOperatorSet.IN;
 import static org.xcsp.common.Types.TypeExpr.ADD;
 import static org.xcsp.common.Types.TypeExpr.IF;
 import static org.xcsp.common.Types.TypeExpr.IFF;
+import static org.xcsp.common.Types.TypeExpr.IMP;
 import static org.xcsp.common.Types.TypeExpr.LONG;
 import static org.xcsp.common.Types.TypeExpr.MUL;
+import static org.xcsp.common.Types.TypeExpr.OR;
+import static org.xcsp.common.Types.TypeExpr.SET;
 import static org.xcsp.common.Types.TypeExpr.SUB;
 import static org.xcsp.common.Types.TypeExpr.VAR;
 import static org.xcsp.common.Types.TypeObjective.EXPRESSION;
@@ -208,6 +212,7 @@ import constraints.intension.Primitive3.IFT3;
 import constraints.intension.Primitive4.DblDiff;
 import constraints.intension.Primitive4.Disjonctive2D;
 import constraints.intension.Primitive4.Disjonctive2Db;
+import constraints.intension.Primitive4.Disjonctive2Dc;
 import constraints.intension.Primitive4.DisjonctiveVar;
 import constraints.intension.Reification.Reif2;
 import constraints.intension.Reification.Reif2.Reif2EQ;
@@ -252,11 +257,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	public static final String AUXILIARY_VARIABLE_PREFIX = "_ax_";
 
-	public static final int BASE = 0;
-	public static final int INTENSION_DECOMPOSITION = 1;
-	public static final int EXTENSION_ORDINARY = 2;
-	public static final int EXTENSION_STARRED = 22;
-	public static final int EXTENSION_HYBRID = 222;
+	public static final int DEFAULT = 0;
+	public static final int DECOMPOSITION = 1;
+
+	public static final int TABLE_ORDINARY = 10;
+	public static final int TABLE_STARRED = 11;
+	public static final int TABLE_HYBRID = 12;
 
 	/**
 	 * Different ways of breaking symmetries
@@ -312,7 +318,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		public int[] manageSymbols(String[] symbols) {
 			int[] t = new int[symbols.length];
 			for (int i = 0; i < t.length; i++) {
-				assert !symbols[i].equals(Constants.STAR_SYMBOL);
+				assert !symbols[i].equals(STAR_SYMBOL);
 				t[i] = mapOfSymbols.computeIfAbsent(symbols[i], k -> mapOfSymbols.size());
 			}
 			return t;
@@ -333,7 +339,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				m[i] = new int[tuples[i].length];
 				for (int j = 0; j < m[i].length; j++) {
 					Integer v = mapOfSymbols.get(tuples[i][j]);
-					m[i][j] = v != null ? v : tuples[i][j].equals(Constants.STAR_SYMBOL) ? Constants.STAR : Integer.parseInt(tuples[i][j]);
+					m[i][j] = v != null ? v : tuples[i][j].equals(STAR_SYMBOL) ? STAR : Integer.parseInt(tuples[i][j]);
 				}
 			}
 			return m;
@@ -657,7 +663,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 						return; // How to handle that? (anyway, it must be rare (see StillLife-wastage-03.xml)
 					if (coeffs[pos] != 1)
 						return;
-					TypeOptimization opt = optimizer.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE;
+					TypeOptimization opt = optimizer.minimization ? MINIMIZE : MAXIMIZE;
 					for (Constraint c : t) {
 						// c.ignored = true;
 						head.observersConstruction.remove(c);
@@ -849,7 +855,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return false;
 		if (tree1.arity() == 0) {
 			Object value1 = ((XNodeLeaf<?>) tree1).value, value2 = ((XNodeLeaf<?>) tree2).value;
-			return tree1.type == TypeExpr.VAR ? ((Variable) value1).dom.typeIdentifier() == ((Variable) value2).dom.typeIdentifier() : value1.equals(value2);
+			return tree1.type == VAR ? ((Variable) value1).dom.typeIdentifier() == ((Variable) value2).dom.typeIdentifier() : value1.equals(value2);
 		}
 		return IntStream.range(0, tree1.arity()).allMatch(i -> areSimilar(tree1.sons[i], tree2.sons[i]));
 	}
@@ -1020,7 +1026,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (head.mustPreserveUnaryConstraints()) {
 				if (!options.toExtension1)
 					return post(new ConstraintIntension(this, scp, tree));
-
 				int[] values = x.dom.valuesChecking(v -> evaluator.evaluate(v) != 1); // initially, conflicts
 				boolean positive = values.length >= x.dom.size() / 2;
 				if (positive)
@@ -1041,7 +1046,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		if (options.toHybrid) { // TODO section to finalize with various cases
-			if (tree.type == TypeExpr.IMP) {
+			if (tree.type == IMP) {
 				XNode<IVar> son0 = tree.sons[0], son1 = tree.sons[1];
 				if (mayBeHybrid(son0) && mayBeHybrid(son1)) { // TODO and check no shared variables ?
 					XNodeParent<IVar> newson0 = XNodeParent.build(son0.type.logicalInversion(), (Object[]) son0.sons);
@@ -1049,7 +1054,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					HybridTuple ht2 = new HybridTuple((int[]) null, (XNodeParent<IVar>) son1);
 					return hybrid(scp, ht1, ht2);
 				}
-			} else if (tree.type == TypeExpr.OR && Stream.of(tree.sons).allMatch(son -> mayBeHybrid(son))) {
+			} else if (tree.type == OR && Stream.of(tree.sons).allMatch(son -> mayBeHybrid(son))) {
 				// TODO and check no shared variables ?
 				Stream<HybridTuple> stream = Stream.of(tree.sons).map(son -> new HybridTuple((int[]) null, (XNodeParent<IVar>) son));
 				return hybrid(scp, stream);
@@ -1124,7 +1129,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (c != null)
 				return post(c);
 		}
-		if (arity > 2 && tree.type == TypeExpr.OR) {
+		if (arity > 2 && tree.type == OR) {
 			if (Stream.of(tree.sons).allMatch(son -> son.type == VAR))
 				return post(new AtLeast1(this, scp, 1)); // return post(SumSimple.buildFrom(this, scp, NE, 0));
 			if (Stream.of(tree.sons).allMatch(son -> son.type == VAR || x_ne_k.matches(son))) {
@@ -1237,8 +1242,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 							boolean modified = false;
 							for (int j = 0; j < grandsons.length; j++) {
 								// we limit to arity 2 max TODO something else?
-								if (grandsons[j] instanceof XNodeParent && grandsons[j].type != TypeExpr.SET && grandsons[j].sons.length <= 2) {
-									grandsons[j] = new XNodeLeaf<>(TypeExpr.VAR, replaceByVariable(grandsons[j]));
+								if (grandsons[j] instanceof XNodeParent && grandsons[j].type != SET && grandsons[j].sons.length <= 2) {
+									grandsons[j] = new XNodeLeaf<>(VAR, replaceByVariable(grandsons[j]));
 									modified = true;
 								}
 							}
@@ -1250,9 +1255,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				if (tree.type != TypeExpr.EQ || nParentSons > 1) {
 					// if not EQ or if more than one parent son then we flatten the first parent son
 					for (int i = 0; i < sons.length; i++) {
-						if (sons[i] instanceof XNodeParent && sons[i].type != TypeExpr.SET && sons[i].sons.length <= 2) {
+						if (sons[i] instanceof XNodeParent && sons[i].type != SET && sons[i].sons.length <= 2) {
 							// we limit to arity 2 max TODO something else?
-							sons[i] = new XNodeLeaf<>(TypeExpr.VAR, replaceByVariable(sons[i]));
+							sons[i] = new XNodeLeaf<>(VAR, replaceByVariable(sons[i]));
 							return intension(tree);
 						}
 					}
@@ -1432,21 +1437,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		switch (head.control.global.allDifferent) {
-		case 0:
+		case DEFAULT:
 			if (head.control.global.permutation && AllDifferentPermutation.isElligible(scp))
 				return post(new AllDifferentPermutation(this, scp));
 			return post(new AllDifferentComplete(this, scp));
-		case 1:
+		case DECOMPOSITION:
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
 				if (i < j)
 					different(scp[i], scp[j]);
 			});
 		case 2:
-			return post(new AllDifferentWeak(this, scp, false));
-		// return post(new AllDifferentExceptWeak(this, scp, null, false));
+			return post(new AllDifferentWeak(this, scp, false)); // return post(new AllDifferentExceptWeak(this, scp, null, false));
 		case 22:
-			return post(new AllDifferentWeak(this, scp, true));
-		// return post(new AllDifferentExceptWeak(this, scp, null, true));
+			return post(new AllDifferentWeak(this, scp, true)); // return post(new AllDifferentExceptWeak(this, scp, null, true));
 		case 3:
 			return post(new AllDifferentCounting(this, scp));
 		// case 4: return post(new AllDifferentBound(this, scp));
@@ -1496,14 +1499,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			subsetAllDifferentExceptScopes.add(scp);
 			return null;
 		}
-
 		switch (head.control.global.allDifferentExcept) {
-		case 0: // TODO is it efficient? the three approaches should be experimentally tested
+		case DEFAULT: // TODO is it efficient? the three approaches should be experimentally tested
 			Set<Integer> values = Variable.setOfvaluesIn(scp);
 			for (int v : exceptValues)
 				values.remove(v);
 			return post(new Cardinality(this, scp, values.stream().mapToInt(i -> i).sorted().toArray(), 0, 1));
-		case 1: // decomposition
+		case DECOMPOSITION:
 			return forall(range(scp.length).range(scp.length), (i, j) -> {
 				if (i < j)
 					binaryDifferentExcept(scp[i], scp[j], exceptValues);
@@ -1527,13 +1529,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Variable[] list1 = normalized ? t1 : IntStream.range(0, t1.length).filter(i -> t1[i] != t2[i]).mapToObj(i -> t1[i]).toArray(Variable[]::new);
 		Variable[] list2 = normalized ? t2 : IntStream.range(0, t2.length).filter(i -> t1[i] != t2[i]).mapToObj(i -> t2[i]).toArray(Variable[]::new);
 
-		if (head.control.global.distinctVectors <= 0)
+		switch (head.control.global.distinctVectors) {
+		case DEFAULT:
 			return post(new DistinctLists2(this, list1, list2));
-		if (head.control.global.hybrid)
+		case DECOMPOSITION:
+			return api.disjunction(IntStream.range(0, list1.length).mapToObj(i -> api.ne(list1[i], list2[i])));
+		// case TABLE_STARRED:
+		// // // TODO problem if several occurrences of the same variable
+		// return extension(vars(list1, list2), Table.starredDistinctVectors(list1, list2,null), true);
+		case TABLE_HYBRID:
 			return post(CHybrid.distinctVectors(this, list1, list2));
-		return api.disjunction(IntStream.range(0, list1.length).mapToObj(i -> api.ne(list1[i], list2[i])));
-		// return extension(vars(list1, list2), Table.starredDistinctVectors(list1, list2), true); // TODO problem if
-		// several occurrences of the same variable
+		default:
+			throw new AssertionError("Invalid mode");
+		}
 	}
 
 	/**
@@ -1541,13 +1549,18 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * be different from the tuple of values corresponding to the assignment of the variables in the array specified as second parameter.
 	 */
 	private CtrEntity distinctVectors(Variable[][] lists) {
-		if (head.control.global.distinctVectors == -1)
+		switch (head.control.global.distinctVectors) {
+		case DEFAULT:
 			return post(new DistinctListsK(this, lists));
-		return forall(range(lists.length).range(lists.length), (i, j) -> {
-			if (i < j) {
-				distinctVectors(lists[i], lists[j]);
-			}
-		});
+		case DECOMPOSITION:
+			return forall(range(lists.length).range(lists.length), (i, j) -> {
+				if (i < j) {
+					distinctVectors(lists[i], lists[j]);
+				}
+			});
+		default:
+			throw new AssertionError("Invalid mode");
+		}
 	}
 
 	@Override
@@ -2183,10 +2196,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 							else
 								greaterEqual(y, scp[i]);
 					});
-				if (head.control.global.hybrid)
-					c = minimum ? CHybrid.minimum(this, scp, y) : CHybrid.maximum(this, scp, y);
-				else
+				switch (head.control.global.element) {
+				case DEFAULT:
 					c = minimum ? new Minimum(this, scp, y) : new Maximum(this, scp, y);
+					break;
+				case TABLE_HYBRID:
+					c = minimum ? CHybrid.minimum(this, scp, y) : CHybrid.maximum(this, scp, y);
+					break;
+				default:
+					throw new AssertionError("Invalid mode");
+				}
 			}
 			if (c != null)
 				return post(c);
@@ -2285,17 +2304,21 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (op == NE)
 				return forall(range(list.length), i -> different(list[i], x));
 		}
-
 		// TODO for LT, LE, GE and GT, posting minimum or maximum constraints if ConditionRel?
-		// for EQ - VAR using sentinelVal1, sentinelVal2 (for two values in dom(value)),
-		// and sentinelVar1,sentinelVar2 for two variables in list ?
+		// for EQ - VAR using sentinelVal1, sentinelVal2 (for two values in dom(value)), and sentinelVar1,sentinelVar2 for two variables in list ?
 		return unimplemented("element");
 	}
 
 	private CtrAlone element(Var[] list, Var index, int value) {
-		if (head.control.global.starred)
+		switch (head.control.global.element) {
+		case DEFAULT:
+			return post(new ElementCst(this, translate(list), (Variable) index, value));
+		case TABLE_STARRED:
+		case TABLE_HYBRID:
 			return extension(vars(index, list), Table.starredElement(translate(list), (Variable) index, value), true);
-		return post(new ElementCst(this, translate(list), (Variable) index, value));
+		default:
+			throw new AssertionError("Invalid mode");
+		}
 	}
 
 	private CtrAlone element(Var[] list, Var index, Var value) {
@@ -2304,14 +2327,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			Var[] scp = vars(list, value);
 			return extension(scp, Table.starredElement(translate(list), (Variable) index), true);
 		}
-		if (head.control.global.hybrid)
-			return post(CHybrid.element(this, translate(list), (Variable) index, (Variable) value));
-		if (head.control.global.starred) {
+
+		switch (head.control.global.element) {
+		case DEFAULT:
+			return post(new ElementVar(this, translate(list), (Variable) index, (Variable) value));
+		case TABLE_STARRED:
 			// TODO controls (for example index != value and index not in list?
 			Var[] scp = Utilities.indexOf(value, list) == -1 ? vars(index, list, value) : vars(index, list);
 			return extension(scp, Table.starredElement(translate(list), (Variable) index, (Variable) value), true);
+		case TABLE_HYBRID:
+			return post(CHybrid.element(this, translate(list), (Variable) index, (Variable) value));
+		default:
+			throw new AssertionError("Invalid mode");
 		}
-		return post(new ElementVar(this, translate(list), (Variable) index, (Variable) value));
 	}
 
 	private CtrEntity postExprSubjectToCondition(Object obj, Condition condition) {
@@ -2334,7 +2362,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		unimplementedIf(startIndex != 0 || (rank != null && rank != TypeRank.ANY), "element");
 		Domain idom = ((Variable) index).dom;
 		// first, we discard some possibly useless variables from list
-		if (!idom.initiallyExactly(api.range(0, list.length))) {
+		if (!idom.initiallyRange(list.length)) {
 			List<Variable> tmp = new ArrayList<>();
 			for (int a = idom.first(); a != -1; a = idom.next(a)) {
 				int va = idom.toVal(a);
@@ -2472,7 +2500,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity channel(Var[] list, int startIndex, Var value) {
 		control(Stream.of(list).noneMatch(x -> x == null) && startIndex == 0);
-		control(Variable.areAllInitiallyBoolean((Variable[]) list) && ((Variable) value).dom.initiallyExactly(range(list.length)));
+		control(Variable.areAllInitiallyBoolean((Variable[]) list) && ((Variable) value).dom.initiallyRange(list.length));
 		// exactly((VariableInteger[]) list, 1, 1); // TODO what would be the benefit of posting it?
 		return forall(range(list.length), i -> post(new Reif2EQ(this, (Variable) list[i], (Variable) value, i)));
 		// intension(iff(list[i], eq(value, i))));
@@ -2520,12 +2548,24 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				int li = lengths[i], lj = lengths[j];
 				if (xi.dom.lastValue() + li <= xj.dom.firstValue() || xj.dom.lastValue() + lj <= xi.dom.firstValue())
 					continue;
-				if (head.control.global.noOverlap == INTENSION_DECOMPOSITION)
-					intension(or(le(add(xi, li), xj), le(add(xj, lj), xi)));
-				else if (head.control.global.noOverlap == EXTENSION_HYBRID)
-					post(CHybrid.noOverlap(this, xi, xj, li, lj));
-				else
-					post(new Disjonctive(this, xi, li, xj, lj)); // BASE
+				switch (head.control.global.noOverlap) {
+				case DEFAULT:
+					post(new Disjonctive(this, xi, li, xj, lj));
+					break;
+				case DECOMPOSITION:
+					post(new ConstraintIntension(this, new Variable[] { xi, xj }, or(le(add(xi, li), xj), le(add(xj, lj), xi)))); // otherwise recognize a
+																																	// Disjunctive
+					// intension(or(le(add(xi, li), xj), le(add(xj, lj), xi)));
+					break;
+				case TABLE_HYBRID:
+					if (head.control.global.noOverlapHybridAux)
+						post(CHybrid.noOverlap(this, xi, xj, li, lj, (Variable) auxVar(new Range(0, 2))));
+					else
+						post(CHybrid.noOverlap(this, xi, xj, li, lj));
+					break;
+				default:
+					throw new AssertionError("Invalid mode");
+				}
 			}
 		return null;
 	}
@@ -2537,12 +2577,22 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i], xj = (Variable) origins[j];
 				Variable wi = (Variable) lengths[i], wj = (Variable) lengths[j];
-				if (head.control.global.noOverlap == INTENSION_DECOMPOSITION)
-					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi)));
-				else if (head.control.global.noOverlap == EXTENSION_HYBRID)
-					post(CHybrid.noOverlap(this, xi, xj, wi, wj));
-				else
+				switch (head.control.global.noOverlap) {
+				case DEFAULT:
 					post(new DisjonctiveVar(this, xi, xj, wi, wj));
+					break;
+				case DECOMPOSITION:
+					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi)));
+					break;
+				case TABLE_HYBRID:
+					if (head.control.global.noOverlapHybridAux)
+						post(CHybrid.noOverlap(this, xi, xj, wi, wj, (Variable) auxVar(new Range(0, 2))));
+					else
+						post(CHybrid.noOverlap(this, xi, xj, wi, wj));
+					break;
+				default:
+					throw new AssertionError("Invalid mode");
+				}
 			}
 		return null;
 	}
@@ -2573,14 +2623,25 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					continue;
 				if (yi.dom.lastValue() + hi <= yj.dom.firstValue() || yj.dom.lastValue() + hj <= yi.dom.firstValue())
 					continue;
-				if (head.control.global.noOverlap == INTENSION_DECOMPOSITION) // VERY expensive
-					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
-				else if (head.control.global.noOverlap == EXTENSION_STARRED) // seems to be rather efficient
-					extension(vars(xi, xj, yi, yj), Table.starredNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true);
-				else if (head.control.global.noOverlap == EXTENSION_HYBRID)
-					post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
-				else
+				switch (head.control.global.noOverlap) {
+				case DEFAULT:
 					post(new Disjonctive2D(this, xi, xj, yi, yj, wi, wj, hi, hj));
+					break;
+				case DECOMPOSITION: // VERY expensive
+					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
+					break;
+				case TABLE_STARRED: // seems to be rather efficient
+					extension(vars(xi, xj, yi, yj), Table.starredNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true);
+					break;
+				case TABLE_HYBRID:
+					if (head.control.global.noOverlapHybridAux)
+						post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj, (Variable) auxVar(new Range(0, 4))));
+					else
+						post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
+					break;
+				default:
+					throw new AssertionError("Invalid mode");
+				}
 			}
 		return null;
 	}
@@ -2592,10 +2653,28 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i][0], xj = (Variable) origins[j][0], yi = (Variable) origins[i][1], yj = (Variable) origins[j][1];
 				Variable wi = (Variable) lengths[i][0], wj = (Variable) lengths[j][0], hi = (Variable) lengths[i][1], hj = (Variable) lengths[j][1];
-				if (head.control.global.noOverlap == EXTENSION_HYBRID && Stream.of(wi, wj, hi, hj).allMatch(x -> x.dom.initSize() == 2))
-					post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
-				else
+
+				// TODO to be tested if it is interesting
+				if (head.control.global.noOverlap == TABLE_HYBRID && Stream.of(wi, wj, hi, hj).allMatch(x -> x.dom.initSize() == 2)) {
+					post(CHybrid.noOverlapBin(this, xi, yi, xj, yj, wi, hi, wj, hj));
+					continue;
+				}
+				switch (head.control.global.noOverlap) {
+				case DEFAULT:
+					post(new Disjonctive2Dc(this, xi, xj, yi, yj, wi, wj, hi, hj));
+					break;
+				case DECOMPOSITION:
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
+					break;
+				case TABLE_HYBRID:
+					if (head.control.global.noOverlapHybridAux)
+						post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj, (Variable) auxVar(new Range(0, 4))));
+					else
+						post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
+					break;
+				default:
+					throw new AssertionError("Invalid mode");
+				}
 			}
 		return null;
 	}
@@ -2607,17 +2686,22 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				Variable xi = (Variable) xs[i], xj = (Variable) xs[j], yi = (Variable) ys[i], yj = (Variable) ys[j];
 				Variable wi = (Variable) lx[i], wj = (Variable) lx[j];
 				int hi = ly[i], hj = ly[j];
-				if (head.control.global.noOverlap == INTENSION_DECOMPOSITION)
-					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
-				else if (head.control.global.noOverlap == EXTENSION_HYBRID) {
-					boolean test = true;
-					if (test) {
-						Variable aux = (Variable)auxVar(new Range(0, 4));
-						post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj,aux));
-					} else
-						post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
-				} else
+				switch (head.control.global.noOverlap) {
+				case DEFAULT:
 					post(new Disjonctive2Db(this, xi, xj, yi, yj, wi, wj, hi, hj));
+					break;
+				case DECOMPOSITION:
+					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
+					break;
+				case TABLE_HYBRID:
+					if (head.control.global.noOverlapHybridAux)
+						post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj, (Variable) auxVar(new Range(0, 4))));
+					else
+						post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
+					break;
+				default:
+					throw new AssertionError("Invalid mode");
+				}
 			}
 		return null;
 	}
@@ -2722,7 +2806,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(list.length > 2 && list.length == sizes.length);
 		Variable[] vars = translate(list);
 		boolean sameType = Variable.haveSameDomainType(vars);
-		if (!sameType || !(condition instanceof ConditionVal) || head.control.global.binpacking == 1) { // decomposing in sum constraints
+		if (!sameType || !(condition instanceof ConditionVal) || head.control.global.binpacking == DECOMPOSITION) { // decomposing in sum constraints
 			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).sorted().toArray();
 			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, condition));
 			// TODO add nValues ? other ?
@@ -2743,7 +2827,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		TypeConditionOperatorRel op = loads ? EQ : LE;
 		Variable[] vars = translate(list);
 		boolean sameType = Variable.haveSameDomainType(vars);
-		if (loads || !sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
+		if (loads || !sameType || head.control.global.binpacking == DECOMPOSITION) { // decomposing in sum constraints
 			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).sorted().toArray();
 			control(0 <= bins[0] && bins[bins.length - 1] < capacities.length);
 			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, Condition.buildFrom(op, capacities[bins[i]])));
@@ -2756,7 +2840,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		TypeConditionOperatorRel op = loads ? EQ : LE;
 		Variable[] vars = translate(list);
 		boolean sameType = Variable.haveSameDomainType(vars);
-		if (!loads || !sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
+		if (!loads || !sameType || head.control.global.binpacking == DECOMPOSITION) { // decomposing in sum constraints
 			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).sorted().toArray();
 			control(0 <= bins[0] && bins[bins.length - 1] < capacities.length);
 			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, Condition.buildFrom(op, capacities[bins[i]])));
@@ -2769,7 +2853,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(Stream.of(conditions).allMatch(c -> c instanceof ConditionVar && ((ConditionVar) c).operator == EQ));
 		Variable[] vars = translate(list);
 		boolean sameType = Variable.haveSameDomainType(vars);
-		if (!sameType || head.control.global.binpacking == 1) { // decomposing in sum constraints
+		if (!sameType || head.control.global.binpacking == DECOMPOSITION) { // decomposing in sum constraints
 			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).sorted().toArray();
 			control(bins.length == conditions.length);
 			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, conditions[i]));
@@ -2825,7 +2909,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public CtrEntity circuit(Var[] list, int startIndex) {
 		unimplementedIf(startIndex != 0, "circuit");
 		Variable[] vars = translate(list);
-		return post(head.control.global.circuit == 0 ? new Circuit(this, vars) : new Circuit2(this, vars));
+		return post(head.control.global.circuit == DEFAULT ? new Circuit(this, vars) : new Circuit2(this, vars));
 	}
 
 	@Override

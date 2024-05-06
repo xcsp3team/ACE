@@ -60,7 +60,7 @@ public class Table extends ExtensionStructure {
 	 */
 	public static int[][] starredElement(Variable[] list, Variable index, int value) {
 		control(Variable.areAllDistinct(list) && !index.presentIn(list));
-		control(index.dom.initiallyExactly(new Range(list.length)) && Stream.of(list).allMatch(x -> x.dom.containsValue(value)));
+		control(index.dom.initiallyRange(list.length) && Stream.of(list).allMatch(x -> x.dom.containsValue(value)));
 		return IntStream.range(0, list.length).mapToObj(i -> IntStream.range(0, list.length + 1).map(j -> j == 0 ? i : j == i + 1 ? value : STAR).toArray())
 				.toArray(int[][]::new);
 	}
@@ -78,7 +78,7 @@ public class Table extends ExtensionStructure {
 	 */
 	public static int[][] starredElement(Variable[] list, Variable index, Variable value) {
 		control(Variable.areAllDistinct(list) && !index.presentIn(list) && index != value);
-		control(index.dom.initiallyExactly(new Range(list.length)));
+		control(index.dom.initiallyRange(list.length));
 		Domain domResult = value.dom;
 		int resultPositionInVector = Utilities.indexOf(value, list);
 		int arity = resultPositionInVector == -1 ? list.length + 2 : list.length + 1;
@@ -111,7 +111,7 @@ public class Table extends ExtensionStructure {
 	 */
 	public static int[][] starredElement(Variable[] list, Variable indexAndValue) {
 		control(Variable.areAllDistinct(list) && !indexAndValue.presentIn(list));
-		control(indexAndValue.dom.initiallyExactly(new Range(list.length)));
+		control(indexAndValue.dom.initiallyRange(list.length));
 		int arity = list.length + 1;
 		List<int[]> tuples = new ArrayList<>();
 		for (int i = 0; i < list.length; i++) {

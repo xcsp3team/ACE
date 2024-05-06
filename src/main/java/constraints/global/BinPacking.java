@@ -80,7 +80,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 		this.nBins = limits.length;
 		control(IntStream.of(sizes).allMatch(v -> v >= 0));
 		control(nItems >= 2 && Variable.haveSameDomainType(IntStream.range(0, nItems).mapToObj(i -> scp[i]).toArray(Variable[]::new)));
-		control(nBins == scp[0].dom.initSize() && scp[0].dom.initiallyExactly(new Range(0, nBins)));
+		control(nBins == scp[0].dom.initSize() && scp[0].dom.initiallyRange(nBins));
 		// TODO second condition above to be relaxed when possible
 		this.sizes = sizes;
 		this.limits = limits;

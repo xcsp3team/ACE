@@ -231,10 +231,30 @@ public interface Domain extends SetLinked {
 
 	/**
 	 * @param range
+	 *            a number corresponding to the range 0 to itself -1
+	 * @return true if the initial domain exactly corresponds to the specified range
+	 */
+	default boolean initiallyRange(int nb) {
+		return initSize() == nb && toVal(0) == 0 && toVal(nb - 1) == nb - 1;
+	}
+
+	/**
+	 * @param a
+	 *            the start value (included) of the range
+	 * @param b
+	 *            the stop value (excluded) of the range
+	 * @return true if the initial domain exactly corresponds to the specified range
+	 */
+	default boolean initiallyRange(int a, int b) {
+		return initSize() == (b - a) && toVal(0) == a && toVal(b - a - 1) == b - 1;
+	}
+
+	/**
+	 * @param range
 	 *            a range of values
 	 * @return true if the initial domain exactly corresponds to the specified range
 	 */
-	default boolean initiallyExactly(Range range) {
+	default boolean initiallyRange(Range range) {
 		control(range.step == 1);
 		return initSize() == range.length() && IntStream.range(0, initSize()).allMatch(a -> toVal(a) == range.start + a);
 	}

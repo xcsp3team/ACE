@@ -507,11 +507,12 @@ public final class Control {
 		public final int allDifferent = addI("allDifferent", "g_ad", 0, "Algorithm for AllDifferent");
 		public final int allDifferentExcept = addI("allDifferentExcept", "g_ade", 0, "Algorithm for AllDifferentExcept");
 		public final boolean gatherAllDifferent = addB("gatherAllDifferent", "g_gad", false, "");
-		public final int distinctVectors = addI("distinctVectors", "g_dv", -1, "Algorithm for DistinctVectors");
+		public final int distinctVectors = addI("distinctVectors", "g_dv", 0, "Algorithm for DistinctVectors");
 		public final int allEqual = addI("allEqual", "g_ae", 0, "Algorithm for AllEqual");
-		public final int notAllEqual = addI("notAllEqual", "g_nae", 0, "Algorithm for NotAllEqual");
+		public final int element = addI("element", "g_elt", 0, "Algorithm for Element");
 		public final int circuit = addI("circuit", "g_circ", 0, "Algorithm for Circuit");
 		public final int noOverlap = addI("noOverlap", "g_no", 0, "Algorithm for NoOverlap");
+		public final boolean noOverlapHybridAux = addB("noOverlapHybridAux", "oha", true, "Aux Mode for the hybrid tables for NoOverlap");
 		public final boolean redundNoOverlap = addB("redundNoOverlap", "r_no", true, "Must we post redundant constraints for NoOverlap?");
 		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");
 		public final boolean viewForSum = addB("viewForSum", "vs", false, "Must we use views for Sum constraints, when possible?");
@@ -523,8 +524,8 @@ public final class Control {
 		public final int allDifferentNb = addI("allDifferentNb", "adn", 10, "Number of possibly automatically inferred AllDifferent");
 		public final int allDifferentSize = addI("allDifferentSize", "ads", 5, "Limit on the size of possibly automatically inferred AllDifferent");
 
-		public final boolean starred = addB("starred", "", false, "When true, some global constraints are encoded by starred tables");
-		public final boolean hybrid = addB("hybrid", "", false, "When true, some global constraints are encoded by hybrid/smart tables");
+//		public final boolean starred = addB("starred", "", false, "When true, some global constraints are encoded by starred tables");
+//		public final boolean hybrid = addB("hybrid", "", false, "When true, some global constraints are encoded by hybrid/smart tables");
 	}
 
 	public class OptionsPropagation extends OptionGroup {

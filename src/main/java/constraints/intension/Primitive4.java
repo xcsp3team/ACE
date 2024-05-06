@@ -175,6 +175,73 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 		}
 	}
 
+	public static final class Disjonctive2Dc extends Primitive implements TagAC, TagCallCompleteFiltering {
+
+		final Domain dx1, dx2, dy1, dy2, dw1, dw2, dh1, dh2;
+
+		@Override
+		public boolean isSatisfiedBy(int[] t) {
+			return t[0] + t[4] <= t[1] || t[1] + t[5] <= t[0] || t[2] + t[6] <= t[3] || t[3] + t[7] <= t[2];
+			// x1+w1 <= x2 or x2+w2 <= x1 or y1+h1 <= y2 or y2+h2 <= y1
+		}
+
+		public Disjonctive2Dc(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2, Variable w1, Variable w2, Variable h1, Variable h2) {
+			super(pb, new Variable[] { x1, x2, y1, y2, w1, w2, h1, h2 });
+			control(scp.length == 8);
+			this.dx1 = x1.dom;
+			this.dx2 = x2.dom;
+			this.dy1 = y1.dom;
+			this.dy2 = y2.dom;
+			this.dw1 = w1.dom;
+			this.dw2 = w2.dom;
+			this.dh1 = h1.dom;
+			this.dh2 = h2.dom;
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			if (dx1.lastValue() + dw1.lastValue() <= dx2.firstValue() || dx2.lastValue() + dw2.lastValue() <= dx1.firstValue())
+				return entailed();
+			if (dy1.lastValue() + dh1.lastValue() <= dy2.firstValue() || dy2.lastValue() + dh2.lastValue() <= dy1.firstValue())
+				return entailed();
+			int minx1 = dx1.firstValue() + dw1.firstValue(), minx2 = dx2.firstValue() + dw2.firstValue();
+			int miny1 = dy1.firstValue() + dh1.firstValue(), miny2 = dy2.firstValue() + dh2.firstValue();
+			boolean bx1 = minx1 <= dx2.lastValue(), bx2 = minx2 <= dx1.lastValue();
+			boolean by1 = miny1 <= dy2.lastValue(), by2 = miny2 <= dy1.lastValue();
+			boolean bx = bx1 || bx2, by = by1 || by2;
+			if (bx && by)
+				return true;
+			if (!bx && !by)
+				return false;
+			if (bx) {
+				if (dx1.removeValuesInRange(dx2.lastValue() - dw1.firstValue() + 1, minx2) == false)
+					return false;
+				if (dx2.removeValuesInRange(dx1.lastValue() - dw2.firstValue() + 1, minx1) == false)
+					return false;
+				if (!bx1)
+					if (dw2.removeValuesGT(dx1.lastValue() - dx2.firstValue()) == false)
+						return false;
+				if (!bx2)
+					if (dw1.removeValuesGT(dx2.lastValue() - dx1.firstValue()) == false)
+						return false;
+				return true;
+			} else {
+				if (dy1.removeValuesInRange(dy2.lastValue() - dh1.firstValue() + 1, miny2) == false)
+					return false;
+				if (dy2.removeValuesInRange(dy1.lastValue() - dh2.firstValue() + 1, miny1) == false)
+					return false;
+				if (!by1)
+					if (dh2.removeValuesGT(dy1.lastValue() - dy2.firstValue()) == false)
+						return false;
+				if (!by2)
+					if (dh1.removeValuesGT(dy2.lastValue() - dy1.firstValue()) == false)
+						return false;
+				return true;
+				// return dy1.removeValuesInRange(dy2.lastValue() - h1 + 1, miny2) && dy2.removeValuesInRange(dy1.lastValue() - h2 + 1, miny1);
+			}
+		}
+	}
+
 	public static final class DblDiff extends Primitive4 {
 
 		/** Two sentinels for tracking the presence of two non singleton domains. */

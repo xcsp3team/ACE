@@ -95,17 +95,37 @@ public final class CHybrid extends ExtensionSpecific {
 		return new CHybrid(pb, pb.distinctSorted(pb.vars(t1, t2)), hts);
 	}
 
+	// 1D, widths being constants
+
 	public static Constraint noOverlap(Problem pb, Variable x1, Variable x2, int w1, int w2) {
 		HybridTuple ht1 = new HybridTuple(ge(x2, add(x1, w1))); // x2 >= x1 + w1
 		HybridTuple ht2 = new HybridTuple(ge(x1, add(x2, w2))); // x1 >= x2 + w2
 		return new CHybrid(pb, pb.vars(x1, x2), ht1, ht2);
 	}
 
+	public static Constraint noOverlap(Problem pb, Variable x1, Variable x2, int w1, int w2, Variable aux) {
+		control(aux.dom.initiallyRange(2));
+		HybridTuple ht1 = new HybridTuple(eq(aux, 0), ge(x2, add(x1, w1))); // x2 >= x1 + w1
+		HybridTuple ht2 = new HybridTuple(eq(aux, 1), ge(x1, add(x2, w2))); // x1 >= x2 + w2
+		return new CHybrid(pb, pb.vars(x1, x2, aux), ht1, ht2);
+	}
+
+	// 1D, widths being variables
+
 	public static Constraint noOverlap(Problem pb, Variable x1, Variable x2, Variable w1, Variable w2) {
 		HybridTuple ht1 = new HybridTuple(ge(x2, add(x1, w1))); // x2 >= x1 + w1
 		HybridTuple ht2 = new HybridTuple(ge(x1, add(x2, w2))); // x1 >= x2 + w2
 		return new CHybrid(pb, pb.vars(x1, x2, w1, w2), ht1, ht2);
 	}
+
+	public static Constraint noOverlap(Problem pb, Variable x1, Variable x2, Variable w1, Variable w2, Variable aux) {
+		control(aux.dom.initiallyRange(2));
+		HybridTuple ht1 = new HybridTuple(eq(aux, 0), ge(x2, add(x1, w1))); // x2 >= x1 + w1
+		HybridTuple ht2 = new HybridTuple(eq(aux, 1), ge(x1, add(x2, w2))); // x1 >= x2 + w2
+		return new CHybrid(pb, pb.vars(x1, x2, w1, w2, aux), ht1, ht2);
+	}
+
+	// 2D, widths and lengths being constants
 
 	public static Constraint noOverlap(Problem pb, Variable x1, Variable y1, Variable x2, Variable y2, int w1, int h1, int w2, int h2) {
 		HybridTuple ht1 = new HybridTuple(ge(x2, add(x1, w1))); // x2 >= x1 + w1
@@ -114,6 +134,17 @@ public final class CHybrid extends ExtensionSpecific {
 		HybridTuple ht4 = new HybridTuple(ge(y1, add(y2, h2))); // y1 >= y2 + h2
 		return new CHybrid(pb, pb.vars(x1, y1, x2, y2), ht1, ht2, ht3, ht4);
 	}
+
+	public static Constraint noOverlap(Problem pb, Variable x1, Variable y1, Variable x2, Variable y2, int w1, int h1, int w2, int h2, Variable aux) {
+		control(aux.dom.initiallyRange(4));
+		HybridTuple ht1 = new HybridTuple(eq(aux, 0), ge(x2, add(x1, w1))); // x2 >= x1 + w1
+		HybridTuple ht2 = new HybridTuple(eq(aux, 1), ge(x1, add(x2, w2))); // x1 >= x2 + w2
+		HybridTuple ht3 = new HybridTuple(eq(aux, 3), ge(y2, add(y1, h1))); // y2 >= y1 + h1
+		HybridTuple ht4 = new HybridTuple(eq(aux, 3), ge(y1, add(y2, h2))); // y1 >= y2 + h2
+		return new CHybrid(pb, pb.vars(x1, y1, x2, y2, aux), ht1, ht2, ht3, ht4);
+	}
+
+	// 2D, widths being variables and lengths being constants
 
 	public static Constraint noOverlap(Problem pb, Variable x1, Variable y1, Variable x2, Variable y2, Variable w1, int h1, Variable w2, int h2) {
 		HybridTuple ht1 = new HybridTuple(ge(x2, add(x1, w1))); // x2 >= x1 + w1
@@ -124,6 +155,7 @@ public final class CHybrid extends ExtensionSpecific {
 	}
 
 	public static Constraint noOverlap(Problem pb, Variable x1, Variable y1, Variable x2, Variable y2, Variable w1, int h1, Variable w2, int h2, Variable aux) {
+		control(aux.dom.initiallyRange(4));
 		HybridTuple ht1 = new HybridTuple(eq(aux, 0), ge(x2, add(x1, w1))); // x2 >= x1 + w1
 		HybridTuple ht2 = new HybridTuple(eq(aux, 1), ge(x1, add(x2, w2))); // x1 >= x2 + w2
 		HybridTuple ht3 = new HybridTuple(eq(aux, 3), ge(y2, add(y1, h1))); // y2 >= y1 + h1
@@ -131,7 +163,29 @@ public final class CHybrid extends ExtensionSpecific {
 		return new CHybrid(pb, pb.vars(x1, y1, x2, y2, w1, w2, aux), ht1, ht2, ht3, ht4);
 	}
 
+	// 2D, widths and lengths being variables
+
 	public static Constraint noOverlap(Problem pb, Variable x1, Variable y1, Variable x2, Variable y2, Variable w1, Variable h1, Variable w2, Variable h2) {
+		HybridTuple ht1 = new HybridTuple(ge(x2, add(x1, w1))); // x2 >= x1 + w1
+		HybridTuple ht2 = new HybridTuple(ge(x1, add(x2, w2))); // x1 >= x2 + w2
+		HybridTuple ht3 = new HybridTuple(ge(y2, add(y1, h1))); // y2 >= y1 + h1
+		HybridTuple ht4 = new HybridTuple(ge(y1, add(y2, h2))); // y1 >= y2 + h2
+		return new CHybrid(pb, pb.vars(x1, y1, x2, y2, w1, h1, w2, h2), ht1, ht2, ht3, ht4);
+	}
+
+	public static Constraint noOverlap(Problem pb, Variable x1, Variable y1, Variable x2, Variable y2, Variable w1, Variable h1, Variable w2, Variable h2,
+			Variable aux) {
+		control(aux.dom.initiallyRange(4));
+		HybridTuple ht1 = new HybridTuple(eq(aux, 0), ge(x2, add(x1, w1))); // x2 >= x1 + w1
+		HybridTuple ht2 = new HybridTuple(eq(aux, 1), ge(x1, add(x2, w2))); // x1 >= x2 + w2
+		HybridTuple ht3 = new HybridTuple(eq(aux, 3), ge(y2, add(y1, h1))); // y2 >= y1 + h1
+		HybridTuple ht4 = new HybridTuple(eq(aux, 3), ge(y1, add(y2, h2))); // y1 >= y2 + h2
+		return new CHybrid(pb, pb.vars(x1, y1, x2, y2, w1, h1, w2, h2, aux), ht1, ht2, ht3, ht4);
+	}
+
+	// special case (TODO : to be checked if remains interesting)
+
+	public static Constraint noOverlapBin(Problem pb, Variable x1, Variable y1, Variable x2, Variable y2, Variable w1, Variable h1, Variable w2, Variable h2) {
 		control(w1.dom.size() == 2 && h1.dom.size() == 2 && w2.dom.size() == 2 && h2.dom.size() == 2);
 		HybridTuple ht1 = new HybridTuple(eq(w1, w1.dom.firstValue()), ge(x2, add(x1, w1.dom.firstValue())));
 		HybridTuple ht2 = new HybridTuple(eq(w1, w1.dom.lastValue()), ge(x2, add(x1, w1.dom.lastValue())));
