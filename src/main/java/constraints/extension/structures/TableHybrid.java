@@ -151,6 +151,8 @@ public final class TableHybrid extends ExtensionStructure {
 		 */
 		private int[] initialTuple;
 
+		private int[] unstarredPositions;
+
 		public static boolean isValid(AbstractTuple abstractTuple, IVar[] scp) {
 			if (abstractTuple instanceof OrdinaryTuple) {
 				int[] values = ((OrdinaryTuple) abstractTuple).values;
@@ -422,7 +424,19 @@ public final class TableHybrid extends ExtensionStructure {
 						if (rr instanceof Restriction2)
 							whichRestrictions[((Restriction2) rr).y] = r;
 			}
+
+			this.unstarredPositions = IntStream.range(0, tuple.length).filter(i -> tuple[i] != STAR).toArray();
 			// System.out.println(this);
+		}
+
+		public final boolean isEntailed() {
+			for (int i : unstarredPositions)
+				if (!scp[i].dom.containsOnly(tuple[i]))
+					return false;
+			for (Restriction restriction : restrictions)
+				if (!restriction.isEntailed())
+					return false;
+			return true;
 		}
 
 		/**
@@ -571,6 +585,10 @@ public final class TableHybrid extends ExtensionStructure {
 			 */
 			public abstract void collect();
 
+			public boolean isEntailed() {
+				return false;
+			}
+
 			/**
 			 * Builds a restriction whose main variable (left-hand side) is the specified variable
 			 * 
@@ -674,6 +692,10 @@ public final class TableHybrid extends ExtensionStructure {
 					}
 			}
 
+			public boolean isEntailed() {
+				return domx.last() <= pivot;
+			}
+
 		}
 
 		/**
@@ -716,6 +738,10 @@ public final class TableHybrid extends ExtensionStructure {
 					}
 			}
 
+			public boolean isEntailed() {
+				return domx.first() >= pivot;
+			}
+
 		}
 
 		/**
@@ -748,6 +774,10 @@ public final class TableHybrid extends ExtensionStructure {
 				else
 					nacx.clear();
 			}
+
+			public boolean isEntailed() {
+				return !domx.contains(pivot);
+			}
 		}
 
 		/**
@@ -776,6 +806,10 @@ public final class TableHybrid extends ExtensionStructure {
 			@Override
 			public void collect() {
 				nacx.remove(pivot); // not a problem to call remove if the pivot is not present
+			}
+
+			public boolean isEntailed() {
+				return domx.containsOnly(pivot);
 			}
 		}
 
@@ -859,6 +893,15 @@ public final class TableHybrid extends ExtensionStructure {
 							nacx.remove(a);
 					}
 			}
+
+			public boolean isEntailed() {
+				if (domx.size() > set.size())
+					return false;
+				for (int a = domx.first(); a != -1; a = domx.next(a))
+					if (!set.contains(a))
+						return false;
+				return true;
+			}
 		}
 
 		/**
@@ -907,6 +950,18 @@ public final class TableHybrid extends ExtensionStructure {
 						if (!set.contains(a))
 							nacx.remove(a);
 					}
+			}
+
+			public boolean isEntailed() {
+				if (set.size() <= domx.size()) {
+					for (int a : set)
+						if (domx.contains(a))
+							return false;
+				} else
+					for (int a = domx.first(); a != -1; a = domx.next(a))
+						if (set.contains(a))
+							return false;
+				return true;
 			}
 		}
 
@@ -1077,6 +1132,10 @@ public final class TableHybrid extends ExtensionStructure {
 						nacy.remove(b);
 				}
 			}
+
+			public boolean isEntailed() {
+				return strict ? domx.last() < domy.first() : domx.last() <= domy.first();
+			}
 		}
 
 		/**
@@ -1172,6 +1231,10 @@ public final class TableHybrid extends ExtensionStructure {
 				}
 			}
 
+			public boolean isEntailed() {
+				return strict ? domx.first() > domy.last() : domx.first() >= domy.last();
+			}
+
 		}
 
 		/**
@@ -1221,6 +1284,14 @@ public final class TableHybrid extends ExtensionStructure {
 					else
 						nacy.clear();
 				}
+			}
+
+			public boolean isEntailed() {
+				if (domx.size() == 1)
+					return !domy.contains(domx.single());
+				if (domy.size() == 1)
+					return !domx.contains(domy.single());
+				return false;
 			}
 		}
 
@@ -1333,6 +1404,10 @@ public final class TableHybrid extends ExtensionStructure {
 			public void collectForY() {
 				if (!scp[y].assigned())
 					nacy.removeAll(tmp);
+			}
+
+			public boolean isEntailed() {
+				return domx.size() == 1 && domy.size() == 1 && domx.single() == domy.single();
 			}
 
 		}
@@ -1479,6 +1554,11 @@ public final class TableHybrid extends ExtensionStructure {
 						nacy.remove(domy.toIdx(v));
 					}
 			}
+
+			public boolean isEntailed() {
+				return domx.size() == 1 && domy.size() == 1 && domx.singleValue() == domy.singleValue() + k;
+			}
+
 		}
 
 		/**
@@ -1558,16 +1638,69 @@ public final class TableHybrid extends ExtensionStructure {
 
 			@Override
 			public void collect() {
-				// three parameters for choosing the cheapest way of collecting
-				int nInvalid = Math.max(domy.firstValue() + k - domx.firstValue(), 0) + Math.max(domy.lastValue() + k - domx.lastValue(), 0);
-				int nValid = Math.min(domx.lastValue(), domy.lastValue()) + k - domy.firstValue() + domx.lastValue()
-						- Math.max(domx.firstValue(), domy.firstValue() + k);
-				if (nInvalid < nSupportlessValues() && nInvalid < nValid)
-					collectThroughInvalidValues();
-				else if (nSupportlessValues() < nValid)
-					collectThroughSupportlessSets();
-				else
-					collectThroughValidValues();
+				// OLD VERSION : to be removed later
+				// // three parameters for choosing the cheapest way of collecting
+				// int nInvalid = Math.max(domy.firstValue() + k - domx.firstValue(), 0) + Math.max(domy.lastValue() + k - domx.lastValue(), 0);
+				// int nValid = Math.min(domx.lastValue(), domy.lastValue()) + k - domy.firstValue() + domx.lastValue()
+				// - Math.max(domx.firstValue(), domy.firstValue() + k);
+				// System.out.println("jjjjj " + nInvalid + " " + nValid);
+				//
+				// if (nInvalid < nSupportlessValues() && nInvalid < nValid)
+				// collectThroughInvalidValues();
+				// else if (nSupportlessValues() < nValid)
+				// collectThroughSupportlessSets();
+				// else
+				// collectThroughValidValues();
+
+				if (!scp[x].assigned() && nacx.size() > 0) {
+					int limit = domy.firstValue() + k;
+					int l1 = limit - domx.firstValue();
+					if (l1 < 0)
+						nacx.clear();
+					else {
+						int l2 = nacx.size(), l3 = domx.lastValue() - limit;
+						if (l1 < l2 && l1 < l3) {
+							tmp.clear();
+							for (int a = domx.first(); a != -1 && domx.toVal(a) <= limit; a = domx.next(a))
+								if (nacx.contains(a))
+									tmp.add(a); // we keep it as not AC
+							nacx.resetTo(tmp);
+						} else if (l2 < l3) {
+							for (int i = nacx.limit; i >= 0; i--) {
+								int a = nacx.dense[i];
+								if (domx.toVal(a) > limit)
+									nacx.remove(a);
+							}
+						} else
+							for (int a = domx.last(); a != -1 && domx.toVal(a) > limit; a = domx.prev(a))
+								nacx.remove(a);
+					}
+				}
+				if (!scp[y].assigned() && nacy.size() > 0) {
+					int limit = domx.lastValue() - k;
+					int l1 = domy.lastValue() - limit;
+					if (l1 < 0)
+						nacy.clear();
+					else {
+						int l2 = nacy.size(), l3 = limit - domy.firstValue();
+						if (l1 < l2 && l1 < l3) {
+							tmp.clear();
+							for (int b = domy.last(); b != -1 && domy.toVal(b) >= limit; b = domy.prev(b))
+								if (nacy.contains(b))
+									tmp.add(b);
+							nacy.resetTo(tmp);
+						} else if (l2 < l3) {
+							for (int i = nacy.limit; i >= 0; i--) {
+								int b = nacy.dense[i];
+								if (domy.toVal(b) < limit)
+									nacy.remove(b);
+							}
+
+						} else
+							for (int b = domy.first(); b != -1 && domy.toVal(b) < limit; b = domy.next(b))
+								nacy.remove(b);
+					}
+				}
 			}
 
 			@Override
@@ -1578,6 +1711,12 @@ public final class TableHybrid extends ExtensionStructure {
 						nacy.remove(b);
 				}
 			}
+
+			@Override
+			public boolean isEntailed() {
+				return domx.firstValue() > domy.lastValue() + k;
+			}
+
 		}
 
 		/**********************************************************************************************
@@ -1598,7 +1737,7 @@ public final class TableHybrid extends ExtensionStructure {
 			 * The second variable (given by its position in the constraint scope) in the restriction (i.e., at the right side of the restriction)
 			 */
 			protected int y;
-			
+
 			private boolean addition;
 
 			/**
@@ -1630,7 +1769,7 @@ public final class TableHybrid extends ExtensionStructure {
 				super(x);
 				this.op = op;
 				this.y = y;
-				this.addition=addition;
+				this.addition = addition;
 				this.domy = scp[y].dom;
 				this.nacy = nac[y];
 				this.z = z;
@@ -1643,7 +1782,7 @@ public final class TableHybrid extends ExtensionStructure {
 
 			@Override
 			public String toString() {
-				return scp[x] + " " + op + " " + scp[y] + " " + (addition ? "+" : "-") + " "  + scp[z];
+				return scp[x] + " " + op + " " + scp[y] + " " + (addition ? "+" : "-") + " " + scp[z];
 			}
 		}
 
@@ -1654,7 +1793,7 @@ public final class TableHybrid extends ExtensionStructure {
 
 			@Override
 			public boolean checkIndexes(int[] t) {
-				return domx.toVal(t[x]) == domy.toVal(t[y]) + domz.toVal(t[z]); 
+				return domx.toVal(t[x]) == domy.toVal(t[y]) + domz.toVal(t[z]);
 			}
 
 			protected Rstr3EQ(int x, int y, int z) {
@@ -1702,26 +1841,105 @@ public final class TableHybrid extends ExtensionStructure {
 			}
 
 			private void collectThroughValidValues() {
-				if (!scp[x].assigned()) {
+				if (!scp[x].assigned() && nacx.size() > 0) {
 					int limit = domy.firstValue() + domz.firstValue();
-					for (int a = domx.last(); a != -1 && domx.toVal(a) >= limit; a = domx.prev(a))
-						nacx.remove(a);
+					int l1 = limit - domx.firstValue();
+					if (l1 < 0)
+						nacx.clear();
+					else {
+						int l2 = nacx.size(), l3 = domx.lastValue() - limit;
+						if (l1 < l2 && l1 < l3) {
+							tmp.clear();
+							for (int a = domx.first(); a != -1 && domx.toVal(a) < limit; a = domx.next(a))
+								if (nacx.contains(a))
+									tmp.add(a);
+							nacx.resetTo(tmp);
+						} else if (l2 < l3) {
+							for (int i = nacx.limit; i >= 0; i--) {
+								int a = nacx.dense[i];
+								if (domx.toVal(a) >= limit)
+									nacx.remove(a);
+							}
+						} else
+							for (int a = domx.last(); a != -1 && domx.toVal(a) >= limit; a = domx.prev(a))
+								nacx.remove(a);
+					}
 				}
-				if (!scp[y].assigned()) {
+				if (!scp[y].assigned() && nacy.size() > 0) {
 					int limit = domx.lastValue() - domz.firstValue();
-					for (int b = domy.first(); b != -1 && domy.toVal(b) <= limit; b = domy.next(b))
-						nacy.remove(b);
+					int l1 = domy.lastValue() - limit;
+					if (l1 < 0)
+						nacy.clear();
+					else {
+						int l2 = nacy.size(), l3 = limit - domy.firstValue();
+						if (l1 < l2 && l1 < l3) {
+							tmp.clear();
+							for (int b = domy.last(); b != -1 && domy.toVal(b) > limit; b = domy.prev(b))
+								if (nacy.contains(b))
+									tmp.add(b);
+							nacy.resetTo(tmp);
+						} else if (l2 < l3) {
+							for (int i = nacy.limit; i >= 0; i--) {
+								int b = nacy.dense[i];
+								if (domy.toVal(b) <= limit)
+									nacy.remove(b);
+							}
+						} else
+							for (int b = domy.first(); b != -1 && domy.toVal(b) <= limit; b = domy.next(b))
+								nacy.remove(b);
+					}
 				}
-				if (!scp[z].assigned()) {
+				if (!scp[z].assigned() && nacz.size() > 0) {
 					int limit = domx.lastValue() - domy.firstValue();
-					for (int b = domz.first(); b != -1 && domz.toVal(b) <= limit; b = domz.next(b))
-						nacz.remove(b);
+					int l1 = domz.lastValue() - limit;
+					if (l1 < 0)
+						nacz.clear();
+					else {
+						int l2 = nacz.size(), l3 = limit - domz.firstValue();
+						if (l1 < l2 && l1 < l3) {
+							tmp.clear();
+							for (int b = domz.last(); b != -1 && domz.toVal(b) > limit; b = domz.prev(b))
+								if (nacz.contains(b))
+									tmp.add(b);
+							nacz.resetTo(tmp);
+						} else if (l2 < l3) {
+							for (int i = nacz.limit; i >= 0; i--) {
+								int b = nacz.dense[i];
+								if (domz.toVal(b) <= limit)
+									nacz.remove(b);
+							}
+						} else
+							for (int b = domz.first(); b != -1 && domz.toVal(b) <= limit; b = domz.next(b))
+								nacz.remove(b);
+					}
 				}
+
+				// if (!scp[x].assigned()) {
+				// int limit = domy.firstValue() + domz.firstValue();
+				// //System.out.println("hhhh " + (domx.lastValue() - limit));
+				// for (int a = domx.last(); a != -1 && domx.toVal(a) >= limit; a = domx.prev(a))
+				// nacx.remove(a);
+				// }
+				// if (!scp[y].assigned()) {
+				// int limit = domx.lastValue() - domz.firstValue();
+				// for (int b = domy.first(); b != -1 && domy.toVal(b) <= limit; b = domy.next(b))
+				// nacy.remove(b);
+				// }
+				// if (!scp[z].assigned()) {
+				// int limit = domx.lastValue() - domy.firstValue();
+				// for (int b = domz.first(); b != -1 && domz.toVal(b) <= limit; b = domz.next(b))
+				// nacz.remove(b);
+				// }
 			}
 
 			@Override
 			public void collect() {
 				collectThroughValidValues();
+			}
+
+			@Override
+			public boolean isEntailed() {
+				return domx.firstValue() > domy.lastValue() + domz.lastValue();
 			}
 
 		}

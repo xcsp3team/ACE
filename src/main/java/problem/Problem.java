@@ -281,7 +281,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		assert Variable.areNumsNormalized(variables) : "Non normalized nums in the problem";
 		assert Constraint.areNumsNormalized(constraints) : "Non normalized nums in the problem";
 
-		this.framework = optimizer != null ? TypeFramework.COP : TypeFramework.CSP; // currently, MAXCSP is not possible
+		this.framework = optimizer != null ? TypeFramework.COP : TypeFramework.CSP; // currently, MAXCSP is no more possible
 		head.control.framework(optimizer); // modifying a few options
 		for (Variable x : variables) {
 			assert Stream.of(x.ctrs).noneMatch(c -> c.num == -1);
@@ -297,8 +297,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				.mapToInt(
 						v -> v instanceof Integer ? (Integer) v : IntStream.range(0, arrays.length).filter(i -> arrays[i].id.equals(v)).findFirst().orElse(-1))
 				.toArray();
-		control(IntStream.of(indexes).allMatch(i -> 0 <= i && i < arrays.length),
-				"the value of the option -pra is not valid: " + head.control.variables.priorityArrays);
+		control(IntStream.of(indexes).allMatch(i -> 0 <= i && i < arrays.length),"value of option -pra not valid: " + head.control.variables.priorityArrays);
 		this.priorityArrays = IntStream.of(indexes).mapToObj(i -> arrays[i]).toArray(VarArray[]::new);
 	}
 
@@ -1221,9 +1220,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
-
-		// System.out.println(
-		// "Tree2 " + tree + " " + Constraint.howManyVariablesWithin(scp, 16) + " " + Constraint.computeGenericFilteringThreshold(scp) + " " + scp.length);
 		if (Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) { // Constraint.computeGenericFilteringThreshold(scp) < scp.length) {
 			// if it may be useful to decompose
 
@@ -1263,7 +1259,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					}
 				}
 			}
-			// System.out.println("trying2 " + tree);
 		}
 		return post(new ConstraintIntension(this, scp, tree));
 	}
@@ -2655,10 +2650,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				Variable wi = (Variable) lengths[i][0], wj = (Variable) lengths[j][0], hi = (Variable) lengths[i][1], hj = (Variable) lengths[j][1];
 
 				// TODO to be tested if it is interesting
-				if (head.control.global.noOverlap == TABLE_HYBRID && Stream.of(wi, wj, hi, hj).allMatch(x -> x.dom.initSize() == 2)) {
-					post(CHybrid.noOverlapBin(this, xi, yi, xj, yj, wi, hi, wj, hj));
-					continue;
-				}
+				// if (head.control.global.noOverlap == TABLE_HYBRID && Stream.of(wi, wj, hi, hj).allMatch(x -> x.dom.initSize() == 2)) {
+				// post(CHybrid.noOverlapBin(this, xi, yi, xj, yj, wi, hi, wj, hj));
+				// continue;
+				// }
 				switch (head.control.global.noOverlap) {
 				case DEFAULT:
 					post(new Disjonctive2Dc(this, xi, xj, yi, yj, wi, wj, hi, hj));

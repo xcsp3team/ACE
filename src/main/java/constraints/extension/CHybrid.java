@@ -139,7 +139,7 @@ public final class CHybrid extends ExtensionSpecific {
 		control(aux.dom.initiallyRange(4));
 		HybridTuple ht1 = new HybridTuple(eq(aux, 0), ge(x2, add(x1, w1))); // x2 >= x1 + w1
 		HybridTuple ht2 = new HybridTuple(eq(aux, 1), ge(x1, add(x2, w2))); // x1 >= x2 + w2
-		HybridTuple ht3 = new HybridTuple(eq(aux, 3), ge(y2, add(y1, h1))); // y2 >= y1 + h1
+		HybridTuple ht3 = new HybridTuple(eq(aux, 2), ge(y2, add(y1, h1))); // y2 >= y1 + h1
 		HybridTuple ht4 = new HybridTuple(eq(aux, 3), ge(y1, add(y2, h2))); // y1 >= y2 + h2
 		return new CHybrid(pb, pb.vars(x1, y1, x2, y2, aux), ht1, ht2, ht3, ht4);
 	}
@@ -158,7 +158,7 @@ public final class CHybrid extends ExtensionSpecific {
 		control(aux.dom.initiallyRange(4));
 		HybridTuple ht1 = new HybridTuple(eq(aux, 0), ge(x2, add(x1, w1))); // x2 >= x1 + w1
 		HybridTuple ht2 = new HybridTuple(eq(aux, 1), ge(x1, add(x2, w2))); // x1 >= x2 + w2
-		HybridTuple ht3 = new HybridTuple(eq(aux, 3), ge(y2, add(y1, h1))); // y2 >= y1 + h1
+		HybridTuple ht3 = new HybridTuple(eq(aux, 2), ge(y2, add(y1, h1))); // y2 >= y1 + h1
 		HybridTuple ht4 = new HybridTuple(eq(aux, 3), ge(y1, add(y2, h2))); // y1 >= y2 + h2
 		return new CHybrid(pb, pb.vars(x1, y1, x2, y2, w1, w2, aux), ht1, ht2, ht3, ht4);
 	}
@@ -178,12 +178,12 @@ public final class CHybrid extends ExtensionSpecific {
 		control(aux.dom.initiallyRange(4));
 		HybridTuple ht1 = new HybridTuple(eq(aux, 0), ge(x2, add(x1, w1))); // x2 >= x1 + w1
 		HybridTuple ht2 = new HybridTuple(eq(aux, 1), ge(x1, add(x2, w2))); // x1 >= x2 + w2
-		HybridTuple ht3 = new HybridTuple(eq(aux, 3), ge(y2, add(y1, h1))); // y2 >= y1 + h1
+		HybridTuple ht3 = new HybridTuple(eq(aux, 2), ge(y2, add(y1, h1))); // y2 >= y1 + h1
 		HybridTuple ht4 = new HybridTuple(eq(aux, 3), ge(y1, add(y2, h2))); // y1 >= y2 + h2
 		return new CHybrid(pb, pb.vars(x1, y1, x2, y2, w1, h1, w2, h2, aux), ht1, ht2, ht3, ht4);
 	}
 
-	// special case (TODO : to be checked if remains interesting)
+	// special case (TODO : to be checked if this remains relevant/interesting)
 
 	public static Constraint noOverlapBin(Problem pb, Variable x1, Variable y1, Variable x2, Variable y2, Variable w1, Variable h1, Variable w2, Variable h2) {
 		control(w1.dom.size() == 2 && h1.dom.size() == 2 && w2.dom.size() == 2 && h2.dom.size() == 2);
@@ -311,6 +311,7 @@ public final class CHybrid extends ExtensionSpecific {
 			hybridTuple.attach(this);
 		this.sVal = new int[scp.length];
 		this.sSup = new int[scp.length];
+		//System.out.println(this + " " + Kit.join(hybridTuples));
 	}
 
 	/**
@@ -408,6 +409,10 @@ public final class CHybrid extends ExtensionSpecific {
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {
 			HybridTuple hybridTuple = hybridTuples[set.dense[i]];
+			if (!options.discardHybridEntailment && hybridTuple.isEntailed()) {
+				//System.out.println("entailed");
+				return entailed();
+			}
 			if (hybridTuple.isValid(sVal, sValSize)) {
 				sSupSize = hybridTuple.collect(sSup, sSupSize);
 			} else
