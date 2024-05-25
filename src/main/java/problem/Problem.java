@@ -297,7 +297,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				.mapToInt(
 						v -> v instanceof Integer ? (Integer) v : IntStream.range(0, arrays.length).filter(i -> arrays[i].id.equals(v)).findFirst().orElse(-1))
 				.toArray();
-		control(IntStream.of(indexes).allMatch(i -> 0 <= i && i < arrays.length),"value of option -pra not valid: " + head.control.variables.priorityArrays);
+		control(IntStream.of(indexes).allMatch(i -> 0 <= i && i < arrays.length), "value of option -pra not valid: " + head.control.variables.priorityArrays);
 		this.priorityArrays = IntStream.of(indexes).mapToObj(i -> arrays[i]).toArray(VarArray[]::new);
 	}
 
@@ -817,6 +817,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private void replacement(Var aux, XNode<IVar> tree, boolean tuplesComputed, int[][] tuples) {
 		nAuxConstraints++;
+		// TODO if tree is a unique var, do not introduce an aux var
 		Variable[] treeVars = (Variable[]) tree.vars();
 		if (treeVars == null || treeVars.length == 0)
 			return;
@@ -1395,18 +1396,23 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Constraints regular and mdd
 	// ************************************************************************
 
+	private Variable[] duplicateMultiOccurrentVariables(Var[] list) {
+		return IntStream.range(0, list.length).mapToObj(i -> IntStream.range(0, i).anyMatch(j -> list[i] == list[j]) ? replaceByOtherVariable(list[i]): (Variable)list[i]).toArray(Variable[]::new);
+	}
+	
 	@Override
 	public final CtrAlone regular(Var[] list, Automaton automaton) {
 		unimplementedIf(!automaton.isDeterministic(), "non deterministic automaton");
-		return post(new CMDDO(this, translate(list), automaton));
+		return post(new CMDDO(this, duplicateMultiOccurrentVariables(list), automaton));
 	}
 
 	@Override
 	public final CtrAlone mdd(Var[] list, Transition[] transitions) {
-		return post(new CMDDO(this, translate(list), transitions));
+		return post(new CMDDO(this, duplicateMultiOccurrentVariables(list), transitions));
 	}
 
 	public final CtrAlone mdd(Var[] list, int[][] tuples) {
+		assert Variable.areAllDistinct(translate(list));
 		return post(new CMDDO(this, translate(list), tuples));
 	}
 
@@ -2467,7 +2473,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, safeInt(((ConditionVal) condition).k));
 		if (condition instanceof ConditionVar && ((ConditionRel) condition).operator == EQ)
 			return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, (Var) ((ConditionVar) condition).x);
-		return unimplemented("element");
+		int[] values = Variable.setOfvaluesIn((Variable[])vars(matrix)).stream().mapToInt(v -> v).toArray();
+		Var aux = auxVar(values);
+		postExprSubjectToCondition(aux, condition);
+		return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, aux);
 	}
 
 	// ************************************************************************
@@ -2529,14 +2538,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity noOverlap(Var[] origins, int[] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
-		if (origins.length >= 10 && head.control.global.redundNoOverlap) { // TODO hard coding 10
-			// we post redundant constraints (after introducing auxiliary variables)
-			Var[] aux = auxVarArray(origins.length, range(origins.length));
-			allDifferent(aux);
-			for (int i = 0; i < origins.length; i++)
-				for (int j = i + 1; j < origins.length; j++)
-					intension(iff(le(aux[i], aux[j]), le(origins[i], origins[j])));
-		}
+		// if (origins.length >= 10 && head.control.global.redundNoOverlap) { // TODO hard coding 10
+		// // we post redundant constraints (after introducing auxiliary variables)
+		// Var[] aux = auxVarArray(origins.length, range(origins.length));
+		// allDifferent(aux);
+		// for (int i = 0; i < origins.length; i++)
+		// for (int j = i + 1; j < origins.length; j++)
+		// intension(iff(le(aux[i], aux[j]), le(origins[i], origins[j])));
+		// }
 		for (int i = 0; i < origins.length; i++)
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i], xj = (Variable) origins[j];

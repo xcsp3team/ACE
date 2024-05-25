@@ -428,7 +428,6 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 			boolean present = Utilities.indexOf(x, h1) >= 0;
 			if (!present)
 				return x.dom.first();
-			// System.out.println("jjjjjjj");
 			return super.computeBestValueIndex();
 		}
 	}

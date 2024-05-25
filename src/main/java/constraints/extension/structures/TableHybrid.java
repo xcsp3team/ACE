@@ -321,7 +321,7 @@ public final class TableHybrid extends ExtensionStructure {
 		private int var_position(XNode<? extends IVar> node) {
 			control(node.type.oneOf(VAR, PAR));
 			int y = node.type == VAR ? Utilities.indexOf(((XNodeLeaf<?>) node).value, scp) : (int) ((XNodeLeaf<?>) node).value;
-			control(tuple[y] == STAR); // TODO can we discard this? in some situations? which ones?
+			//control(tuple[y] == STAR); // TODO can we discard this? in some situations? which ones?
 			return y;
 		}
 

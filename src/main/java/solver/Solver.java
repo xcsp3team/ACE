@@ -320,7 +320,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			int depth = depth();
 			if (depth > branchSize) { // TODO or Variable.nSingletonVariablesIn(problem.variables) ??
 				// if (depth % 20 == 0)
-				//System.out.println("New rps " + depth + " " + futVars.lastPast());
+				// System.out.println("New rps " + depth + " " + futVars.lastPast());
 				branchSize = depth;
 				for (int i = 0; i < branch.length; i++) {
 					Domain dx = problem.variables[i].dom;

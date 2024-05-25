@@ -513,7 +513,7 @@ public final class Control {
 		public final int allEqual = addI("allEqual", "g_ae", 0, "Algorithm for AllEqual");
 		public final int element = addI("element", "g_elt", 0, "Algorithm for Element");
 		public final int circuit = addI("circuit", "g_circ", 0, "Algorithm for Circuit");
-		public final int noOverlap = addI("noOverlap", "g_no", 0, "Algorithm for NoOverlap");
+		public final int noOverlap = addI("noOverlap", "g_no", 12, "Algorithm for NoOverlap");
 		public final boolean noOverlapHybridAux = addB("noOverlapHybridAux", "oha", true, "Aux Mode for the hybrid tables of NoOverlap");
 		public final boolean redundNoOverlap = addB("redundNoOverlap", "r_no", true, "Must we post redundant constraints for NoOverlap?");
 		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");
@@ -621,6 +621,8 @@ public final class Control {
 		public final String clazz = addS("clazz", "valh", First.class, HeuristicValues.class, "Class of the value ordering heuristic");
 		public final boolean anti = addB("anti", "anti_valh", false, "Must we use the reverse of the natural heuristic order?");
 		public final boolean runProgressSaving = addB("runProgressSaving", "rps", false, "Must we use run progress saving?");
+		public final boolean antiRunProgressSaving = addB("antiRunProgressSaving", "arps", false, "Must we use run anti progress saving?");
+
 		public final int solutionSaving = addI("solutionSaving", "sos", 1, "Solution saving (0: disabled, 1: enabled, otherwise desactivation period");
 		public final String warmStart = addS("warmStart", "warm", "", "A starting instantiation (solution) to be used with solution saving");
 

@@ -227,8 +227,16 @@ public abstract class HeuristicValues extends Heuristic {
 					return a;
 			} else if (solver.runProgressSaver != null) {
 				int a = solver.runProgressSaver.valueIndexOf(x);
-				if (a != -1 && dx.contains(a))
-					return a;
+				if (a != -1) {
+					if (options.antiRunProgressSaving) {
+						// only coded wrt First as heuristic
+						if (dx.size() == 1 || dx.first() != a)
+							return dx.first();
+						else
+							return dx.next(dx.first());
+					} else if (dx.contains(a))
+						return a;
+				}
 			}
 		} else if (options.solutionSaving > 0 && !(this instanceof Bivs2)) {
 			// note that solution saving may break determinism of search trees because it depends in which order domains
