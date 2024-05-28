@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import heuristics.HeuristicVariablesDynamic.SingletonStrategy;
+import heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting;
 import interfaces.Observers.ObserverOnAssignments;
 import interfaces.Observers.ObserverOnConflicts;
 import interfaces.Observers.ObserverOnRuns;
@@ -335,9 +335,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			List<HeuristicVariablesDynamic> list = new ArrayList<>();
 			int mode = solver.head.control.varh.mode;
 			if (mode >= 0)
-				Stream.of(new PickOnDom(solver, anti), new FrbaOnDom(solver, anti), new Wdeg(solver, anti)).forEach(h -> list.add(h));
+				Stream.of(new PickOnDom(solver, anti), new WdegOnDom(solver, anti), new FrbaOnDom(solver, anti), new Wdeg(solver, anti))
+						.forEach(h -> list.add(h));
 			if (mode >= 1)
-				Stream.of(new Dom(solver, anti), new OrgnOnDom(solver, anti), new WdegOnDom(solver, anti)).forEach(h -> list.add(h));
+				Stream.of(new Dom(solver, anti), new OrgnOnDom(solver, anti)).forEach(h -> list.add(h));
 			this.pool = list.stream().toArray(HeuristicVariablesDynamic[]::new);
 
 		}
@@ -352,6 +353,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public void beforeRun() {
 			int run = solver.restarter.numRun;
 			current = pool[run % pool.length];
+			if (current instanceof Wdeg)
+				options.weighting = ConstraintWeighting.CACD;
+			else if (current instanceof WdegOnDom)
+				options.weighting = ConstraintWeighting.UNIT;
 			// System.out.println("using " + current.getClass().getSimpleName());
 			if (runReset()) {
 				Kit.log.config("    ...resetting weights (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");

@@ -605,7 +605,7 @@ public final class Control {
 		public final String clazz = addS("clazz", "varh", Wdeg.class, HeuristicVariables.class, "Class of the variable ordering heuristic");
 		public final boolean anti = addB("anti", "anti_varh", false, "Must we use the reverse of the natural heuristic order?");
 		public final int lc = addI("lc", "lc", 2, "Value for lc (last conflict); 0 if not activated");
-		public final ConstraintWeighting weighting = addE("weighting", "wt", ConstraintWeighting.CACD, "How to manage weights for wdeg variants");
+		public ConstraintWeighting weighting = addE("weighting", "wt", ConstraintWeighting.CACD, "How to manage weights for wdeg variants");
 		public final int pickMode = addI("pickMode", "pm", 0, "How to manage incrementation of effective picked variables or constraints during propagation");
 		public final boolean mvarh = addB("mvarh", "mvarh", false, "Must we just maintain an approximation of the best scored variable?");
 		public final SingletonStrategy singleton = addE("singleton", "sing", SingletonStrategy.LAST, "How to manage singleton variables during search");

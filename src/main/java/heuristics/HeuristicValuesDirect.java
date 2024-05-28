@@ -14,8 +14,8 @@ import sets.SetDense;
 import variables.Variable;
 
 /**
- * This is the root class for building direct value ordering heuristics, i.e., heuristics for which we directly know
- * which value index has to be returned (most of the time, without searching)
+ * This is the root class for building direct value ordering heuristics, i.e., heuristics for which we directly know which value index has to be returned (most
+ * of the time, without searching)
  * 
  * @author Christophe Lecoutre
  */
@@ -135,12 +135,17 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 
 		@Override
 		public int computeBestValueIndex() {
-			int run = x.problem.solver.restarter.numRun;
-			if (run % 3 == 0)
+			int mod = x.problem.solver.restarter.numRun % 3;
+			if (mod == 0)
 				return dx.first();
-			if (run % 3 == 1)
+			if (mod == 1)
 				return dx.last();
 			return dx.any();
+		}
+
+		public String currentClass() {
+			int mod = x.problem.solver.restarter.numRun % 3;
+			return mod == 0 ? "First" : mod == 1 ? "Last" : "Rand";
 		}
 	}
 

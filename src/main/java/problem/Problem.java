@@ -872,24 +872,34 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		for (int i = 0; i < trees.length; i++)
 			trees[i] = trees[i].canonization();
 		if (trees.length == 1)
-			return new Var[] { (Var) replaceByVariable(trees[0]) };
+			return new Var[] { trees[0].type == VAR ? (Var) ((XNodeLeaf<?>) trees[0]).value : (Var) replaceByVariable(trees[0]) };
+		Var[] vars = Stream.of(trees).map(tree -> tree.type == VAR ? (Var) ((XNodeLeaf<?>) tree).value : null).toArray(Var[]::new);
+		XNode<IVar>[] real_trees = Stream.of(trees).filter(tree -> tree.type != VAR).toArray(XNode[]::new);
+		control(real_trees.length > 0);
 		IntToDom doms = i -> {
-			Object values = trees[i].possibleValues();
+			Object values = real_trees[i].possibleValues();
 			return values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
 		};
 		// if multiple occurrences of the same variable in a tree, possible problem of reasoning with similar trees?
-		boolean similarTrees = trees.length > 1 && Stream.of(trees).allMatch(tree -> tree.listOfVars().size() == tree.vars().length);
-		similarTrees = similarTrees && IntStream.range(1, trees.length).allMatch(i -> areSimilar(trees[0], trees[i]));
-		Var[] aux = auxVarArray(trees.length, similarTrees ? doms.apply(0) : doms);
+		boolean similarTrees = Stream.of(real_trees).allMatch(tree -> tree.listOfVars().size() == tree.vars().length);
+		similarTrees = similarTrees && IntStream.range(1, real_trees.length).allMatch(i -> areSimilar(real_trees[0], real_trees[i]));
+		Var[] aux = auxVarArray(real_trees.length, similarTrees ? doms.apply(0) : doms);
 		int[][] tuples = null;
 		if (similarTrees) {
-			Variable[] treeVars = (Variable[]) trees[0].vars();
+			Variable[] treeVars = (Variable[]) real_trees[0].vars();
 			if (head.control.intension.toExtension(treeVars, null))
-				tuples = new TreeEvaluator(trees[0]).computeTuples(Variable.initDomainValues(treeVars), null);
+				tuples = new TreeEvaluator(real_trees[0]).computeTuples(Variable.initDomainValues(treeVars), null);
 		}
+		for (int i = 0; i < real_trees.length; i++)
+			replacement(aux[i], real_trees[i], similarTrees, tuples);
+		int cnt = 0;
+		Var[] returned_vars = new Var[trees.length];
 		for (int i = 0; i < trees.length; i++)
-			replacement(aux[i], trees[i], similarTrees, tuples);
-		return aux;
+			if (vars[i] != null)
+				returned_vars[i] = vars[i];
+			else
+				returned_vars[i] = aux[cnt++];
+		return returned_vars; //aux;
 	}
 
 	/**
@@ -1216,8 +1226,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			}
 			return product(list, basicCondition(tree));
 		}
-
-		if (Constraint.howManyVariablesWithin(scp, 12) == Constants.ALL && tree.size() > 10 && scp.length <= 3) {
+		
+		if (Constraint.howManyVariablesWithin(scp, 19) == Constants.ALL && tree.size() > 10 && scp.length <= 3) {  // 2^19 is about 500,000
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
@@ -1397,9 +1407,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ************************************************************************
 
 	private Variable[] duplicateMultiOccurrentVariables(Var[] list) {
-		return IntStream.range(0, list.length).mapToObj(i -> IntStream.range(0, i).anyMatch(j -> list[i] == list[j]) ? replaceByOtherVariable(list[i]): (Variable)list[i]).toArray(Variable[]::new);
+		return IntStream.range(0, list.length)
+				.mapToObj(i -> IntStream.range(0, i).anyMatch(j -> list[i] == list[j]) ? replaceByOtherVariable(list[i]) : (Variable) list[i])
+				.toArray(Variable[]::new);
 	}
-	
+
 	@Override
 	public final CtrAlone regular(Var[] list, Automaton automaton) {
 		unimplementedIf(!automaton.isDeterministic(), "non deterministic automaton");
@@ -2473,7 +2485,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, safeInt(((ConditionVal) condition).k));
 		if (condition instanceof ConditionVar && ((ConditionRel) condition).operator == EQ)
 			return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, (Var) ((ConditionVar) condition).x);
-		int[] values = Variable.setOfvaluesIn((Variable[])vars(matrix)).stream().mapToInt(v -> v).toArray();
+		int[] values = Variable.setOfvaluesIn((Variable[]) vars(matrix)).stream().mapToInt(v -> v).toArray();
 		Var aux = auxVar(values);
 		postExprSubjectToCondition(aux, condition);
 		return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, aux);

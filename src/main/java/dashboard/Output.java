@@ -38,6 +38,7 @@ import constraints.Constraint;
 import constraints.ConstraintExtension;
 import constraints.ConstraintIntension;
 import dashboard.Control.OptionsVariables;
+import heuristics.HeuristicValuesDirect;
 import heuristics.HeuristicVariablesDynamic.RunRobin;
 import interfaces.Observers.ObserverOnConstruction;
 import interfaces.Observers.ObserverOnRuns;
@@ -61,9 +62,8 @@ import utility.Stopwatch;
 import variables.Variable;
 
 /**
- * The role of this class is to output some data/information concerning the solving process of problem instances. These
- * data are collected by means of an XML document that may be saved. A part of the data are also directly displayed on
- * the standard output.
+ * The role of this class is to output some data/information concerning the solving process of problem instances. These data are collected by means of an XML
+ * document that may be saved. A part of the data are also directly displayed on the standard output.
  * 
  * @author Christophe Lecoutre
  */
@@ -314,8 +314,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	}
 
 	/**
-	 * Builds and records a new element to the document (if not null). The element is created from the specified tag,
-	 * entries for attributes and the parent node
+	 * Builds and records a new element to the document (if not null). The element is created from the specified tag, entries for attributes and the parent node
 	 * 
 	 * @param tag
 	 *            the tag for the element to be created
@@ -476,7 +475,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	private InformationBloc variablesInfo() {
 		InformationBloc m = new InformationBloc(VARIABLES);
 		m.put(COUNT, head.problem.variables.length);
-		m.put(N_OMITTED, features.nOmittedVars); 
+		m.put(N_OMITTED, features.nOmittedVars);
 		m.put(N_DISCARDED, features.collecting.discardedVars.size());
 		m.put(N_ISOLATED, features.nIsolatedVars);
 		m.put(N_FIXED, features.nFixedVars);
@@ -592,8 +591,9 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		InformationBloc m = new InformationBloc(RUN);
 		m.put("run", head.solver.restarter.numRun);
 		m.put(DEPTHS, head.solver.minDepth + ".." + head.solver.maxDepth);
-		if (head.solver.heuristic instanceof RunRobin)
-			m.put("varh", ((RunRobin) head.solver.heuristic).current.getClass().getSimpleName());
+		String rb1 = head.solver.heuristic instanceof RunRobin ? ((RunRobin) head.solver.heuristic).current.getClass().getSimpleName() : "";
+		String rb2 = head.control.valh.clazz.equals("RunRobin") ? ((HeuristicValuesDirect.RunRobin) head.problem.variables[0].heuristic).currentClass() : "";
+		m.put("robin", rb1 + (rb1.length() > 0 && rb2.length() > 0 ? "-" : "") + rb2);
 		m.put(N_EFFECTIVE, features.nEffectiveFilterings);
 		m.put(N_FAILED, stats.nFailedAssignments);
 		m.put(N_WRONG, stats.nWrongDecisions);
