@@ -105,6 +105,10 @@ public final class Solutions {
 	 */
 	public List<String> undisplay = new ArrayList<>();
 
+	private int[] hamming;
+
+	private int hammingOpt;
+
 	/**
 	 * Class for outputting solutions in XML
 	 */
@@ -249,6 +253,7 @@ public final class Solutions {
 		this.store = null; // solver.head.control.general.recordSolutions ? new ArrayList<>() : null;
 		this.xml = new XML();
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
+		this.hamming = new int[solver.problem.varArrays.length + 2]; // +2 for stand-alone variables and solver auxiliary variables
 	}
 
 	/**
@@ -326,6 +331,45 @@ public final class Solutions {
 		}
 	}
 
+	private void hammingInformation() {
+		if (found <= 1)
+			return;
+		// int h = (int) IntStream.range(0, last.length).filter(i -> last[i] != solver.problem.variables[i].dom.single()).count();
+		// int hopt = -1;
+		// if (solver.problem.optimizer != null) {
+		// Constraint c = (Constraint) solver.problem.optimizer.ctr;
+		// hopt = (int) IntStream.range(0, last.length)
+		// .filter(i -> last[i] != solver.problem.variables[i].dom.single() && c.involves(solver.problem.variables[i])).count();
+		// }
+
+		StringBuilder sb = new StringBuilder();
+		int i = 0;
+		for (VarArray va : solver.problem.varArrays) {
+			int v = (int) Stream.of(va.flatVars).filter(x -> last[((Variable) x).num] != solver.problem.variables[((Variable) x).num].dom.single()).count();
+			hamming[i++] = v;
+			if (v > 0)
+				sb.append(" ").append(va.id).append(":").append(v);
+		}
+
+		int v = (int) Stream.of(solver.problem.varAlones).filter(x -> last[x.num] != solver.problem.variables[x.num].dom.single()).count();
+		hamming[i++] = v;
+		if (v > 0)
+			sb.append(" ").append("aln").append(":").append(v);
+
+		v = (int) Stream.of(solver.problem.auxiliaryVars).filter(x -> last[x.num] != solver.problem.variables[x.num].dom.single()).count();
+		hamming[i++] = v;
+		if (v > 0)
+			sb.append(" ").append(Problem.AUXILIARY_VARIABLE_PREFIX).append(":").append(v);
+		int h = IntStream.of(hamming).sum();
+
+		assert IntStream.of(hamming).sum() == IntStream.range(0, last.length).filter(j -> last[j] != solver.problem.variables[j].dom.single()).count();
+
+		if (solver.problem.optimizer != null) {
+			hammingOpt = (int) Stream.of(((Constraint) solver.problem.optimizer.ctr).scp)
+					.filter(x -> last[x.num] != solver.problem.variables[x.num].dom.single()).count();
+		}
+	}
+
 	/**
 	 * This method must be called whenever a new solution is found by the solver.
 	 * 
@@ -341,7 +385,6 @@ public final class Solutions {
 		// for (Variable x : c.scp)
 		// x.heuristic = minimization ? new First(x, false) : new Last(x, false); // the boolean is dummy
 		// Variable[] t = HeuristicValues.prioritySumVars(c.scp, null);
-		// System.out.println("rrrr " + Kit.join(t));
 		// // Variable[] vars = HeuristicValues.possibleOptimizationInterference(solver.problem);
 		// // solver.problem.priorityVars = c.scp;
 		// solver.heuristic.priorityVars = t;
@@ -350,6 +393,7 @@ public final class Solutions {
 		// }
 		lastRun = solver.restarter.numRun;
 		solutionHamming();
+		hammingInformation();
 		if (found >= limit)
 			solver.stopping = Stopping.REACHED_GOAL;
 		if (solver.propagation.performingProperSearch) {
@@ -374,12 +418,12 @@ public final class Solutions {
 			bestBound = solver.problem.optimizer.value();
 			if (found == 1)
 				firstBound = bestBound;
-			Color.GREEN.println("o " + bestBound, "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
+			Color.GREEN.println("o " + bestBound, "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()) + "  ham=" + IntStream.of(hamming).sum() + " ("
+					+ Kit.join(hamming) + ")" + "  opth=" + hammingOpt);
 
 			// solver.restarter.currCutoff += 20;
 			// System.out.println("h1 : " + Kit.join(h1) + " h2 : " + h2);
-			// for (Variable x : h1)
-			// System.out.println(x + " " + x.assignmentLevel);
+			// for (Variable x : h1) System.out.println(x + " " + x.assignmentLevel);
 		}
 		// The following code must stay after recording/storing the solution
 		if (solver.head.control.general.jsonSave.length() > 0 && (solver.head.control.general.verbose > 1 || found == 1)) {

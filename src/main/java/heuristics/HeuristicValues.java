@@ -238,7 +238,7 @@ public abstract class HeuristicValues extends Heuristic {
 						return a;
 				}
 			}
-		} else if (options.solutionSaving > 0 && !(this instanceof Bivs2)) {
+		} else if (options.solutionSaving > 0 && !(this instanceof Bivs2) && solver.restarter.numRun >= options.solutionSavingStart) {
 			// note that solution saving may break determinism of search trees because it depends in which order domains
 			// are pruned (and become singleton or not)
 			if (options.solutionSaving == 1 || solver.restarter.numRun == 0 || solver.restarter.numRun % options.solutionSaving != 0) {

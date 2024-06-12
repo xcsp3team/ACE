@@ -290,15 +290,23 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		this.priorityVars = priorityVars.length == 0 && annotations.decision != null ? (Variable[]) annotations.decision : priorityVars;
 		Variable[] r = HeuristicValues.possibleOptimizationInterference(this);
 		this.priorityVars = r != null ? r : priorityVars;
-		this.arrays = varEntities.varArrays.stream().filter(va -> !va.id.startsWith(AUXILIARY_VARIABLE_PREFIX)).toArray(VarArray[]::new);
+		this.auxiliaryVars = Stream.of(variables).filter(x -> x.id().startsWith(AUXILIARY_VARIABLE_PREFIX)).toArray(Variable[]::new);
+
+		this.varArrays = varEntities.varArrays.stream().filter(va -> !va.id.startsWith(AUXILIARY_VARIABLE_PREFIX)).toArray(VarArray[]::new);
+		this.varAlones = varEntities.varAlones.stream().filter(va -> !va.id.startsWith(AUXILIARY_VARIABLE_PREFIX)).map(va -> va.var).toArray(Variable[]::new);
 		control(priorityVars.length == 0 || !head.control.variables.stayArrayFocus);
 		control(priorityVars.length == 0 || (head.control.variables.priorityArrays.length() == 0 && !head.control.varh.arrayPriorityRunRobin));
-		int[] indexes = Stream.of(Kit.extractFrom(head.control.variables.priorityArrays))
-				.mapToInt(
-						v -> v instanceof Integer ? (Integer) v : IntStream.range(0, arrays.length).filter(i -> arrays[i].id.equals(v)).findFirst().orElse(-1))
+		int[] indexes = Stream.of(Kit.extractFrom(head.control.variables.priorityArrays)).mapToInt(
+				v -> v instanceof Integer ? (Integer) v : IntStream.range(0, varArrays.length).filter(i -> varArrays[i].id.equals(v)).findFirst().orElse(-1))
 				.toArray();
-		control(IntStream.of(indexes).allMatch(i -> 0 <= i && i < arrays.length), "value of option -pra not valid: " + head.control.variables.priorityArrays);
-		this.priorityArrays = IntStream.of(indexes).mapToObj(i -> arrays[i]).toArray(VarArray[]::new);
+		if (IntStream.of(indexes).allMatch(i -> 0 <= i && i < varArrays.length))
+			this.priorityArrays = IntStream.of(indexes).mapToObj(i -> varArrays[i]).toArray(VarArray[]::new);
+		else {
+			control(indexes.length == 1 && indexes[0] == varArrays.length, "value of option -pra not valid: " + head.control.variables.priorityArrays);
+			control(priorityVars.length == 0);
+			this.priorityVars = this.auxiliaryVars;
+			this.priorityArrays = new VarArray[0];
+		}
 	}
 
 	@Override
@@ -390,6 +398,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public int nStrictPriorityVars;
 
 	/**
+	 * The auxiliary variables introducing when loading
+	 */
+	public Variable[] auxiliaryVars;
+
+	/**
 	 * An object used to record many data corresponding to metrics and various features of the problem.
 	 */
 	public Features features;
@@ -422,7 +435,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	/**
 	 * The variable arrays, as present in the XCSP3 instance (excluding the possibly introduced auxiliary arrays)
 	 */
-	public VarArray[] arrays;
+	public VarArray[] varArrays;
+
+	/**
+	 * The variable alones, as present in the XCSP3 instance (excluding the possibly introduced auxiliary variables)
+	 */
+	public Variable[] varAlones;
 
 	/**
 	 * The priority variable arrays, subset of arrays (usually, empty)
@@ -899,7 +917,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				returned_vars[i] = vars[i];
 			else
 				returned_vars[i] = aux[cnt++];
-		return returned_vars; //aux;
+		return returned_vars; // aux;
 	}
 
 	/**
@@ -1226,8 +1244,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			}
 			return product(list, basicCondition(tree));
 		}
-		
-		if (Constraint.howManyVariablesWithin(scp, 19) == Constants.ALL && tree.size() > 10 && scp.length <= 3) {  // 2^19 is about 500,000
+
+		if (Constraint.howManyVariablesWithin(scp, 19) == Constants.ALL && tree.size() > 10 && scp.length <= 3) { // 2^19 is about 500,000
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}

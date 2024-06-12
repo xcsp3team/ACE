@@ -481,7 +481,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(N_FIXED, features.nFixedVars);
 		m.put(N_SYMBOLIC, features.nSymbolicVars);
 		m.put(N_AUXILIARY, head.problem.nAuxVariables);
-		m.put(N_ARRAYS, "" + head.problem.arrays.length);
+		m.put(N_ARRAYS, "" + head.problem.varArrays.length);
 		m.put(PRIORITY_ARRAYS, "" + Stream.of(head.problem.priorityArrays).map(pa -> pa.id).collect(Collectors.joining(",")));
 		m.put(DEGREES, features.varDegrees);
 		return m;
@@ -546,6 +546,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		InformationBloc m = new InformationBloc(OBJECTIVE);
 		m.put(WAY, (optimizer.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName());
 		m.put(TYPE, optimizer.ctr.getClass().getSimpleName());
+		m.put("arity", ((Constraint)optimizer.ctr).scp.length);
 		m.put(BOUNDS, (optimizer.clb.limit() + ".." + optimizer.cub.limit()));
 		return m;
 	}
@@ -589,7 +590,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private InformationBloc runInfo() {
 		InformationBloc m = new InformationBloc(RUN);
-		m.put("run", head.solver.restarter.numRun);
+		m.put("run", head.solver.restarter.numRun + 1);
 		m.put(DEPTHS, head.solver.minDepth + ".." + head.solver.maxDepth);
 		String rb1 = head.solver.heuristic instanceof RunRobin ? ((RunRobin) head.solver.heuristic).current.getClass().getSimpleName() : "";
 		String rb2 = head.control.valh.clazz.equals("RunRobin") ? ((HeuristicValuesDirect.RunRobin) head.problem.variables[0].heuristic).currentClass() : "";

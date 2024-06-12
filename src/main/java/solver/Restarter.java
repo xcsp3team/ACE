@@ -63,9 +63,16 @@ public class Restarter implements ObserverOnRuns {
 	public void beforeRun() {
 		numRun++;
 		localStats.atStart();
-		if ((numRun - solver.solutions.lastRun) % options.resetPeriod == 0) {
+		if (solver.head.control.valh.solutionSavingStart != -1) {
+			if (solver.solutions.found == 0)
+				solver.head.control.valh.solutionSavingStart++;
+			else if (solver.head.control.valh.solutionSavingStart == numRun)
+				Kit.log.config("\tStarting SOS");
+		}
+		if (numRun > 0 && numRun % options.resetPeriod == 0) {
+			// if ((numRun - solver.solutions.lastRun) % options.resetPeriod == 0) {
 			nRestartsSinceReset = 0;
-			baseCutoff = baseCutoff * options.resetCoefficient;
+			baseCutoff = baseCutoff + 5; // * options.resetCoefficient;
 			Kit.log.config("    ...resetting restart cutoff to " + baseCutoff);
 		}
 		if (solver.propagation.runPossiblyAtRoot()) // if propagation has been run
@@ -79,13 +86,13 @@ public class Restarter implements ObserverOnRuns {
 
 		if (solver.head.control.varh.arrayPriorityRunRobin) {
 			// TODO control that aprr is not used with pr1 or pr2
-			int k = solver.problem.arrays.length;
+			int k = solver.problem.varArrays.length;
 			// for (VarArray va : solver.problem.arrays) System.out.println("hhhh " + Kit.join(va.flatVars));
 			int index = numRun % (k + 1);
 			if (index == 0)
 				solver.heuristic.resetPriorityVars();
 			else
-				solver.heuristic.setPriorityVars((Variable[]) solver.problem.arrays[index - 1].flatVars, 0);
+				solver.heuristic.setPriorityVars((Variable[]) solver.problem.varArrays[index - 1].flatVars, 0);
 		}
 	}
 

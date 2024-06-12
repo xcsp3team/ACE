@@ -186,6 +186,15 @@ public final class Control {
 		if (general.noPrintColors)
 			Kit.useColors = false;
 		// if (framework == TypeFramework.MAXCSP) optimization.lb = 0L;
+		if (general.runRobin) {
+			varh.clazz = "RunRobin";
+			valh.clazz = "RunRobin";
+			if (valh.solutionSavingStart == -1)
+				valh.solutionSavingStart = 12;
+			restarts.cutoff = restarts.cutoff / 2;
+			restarts.factor=1.05;
+		}
+
 	}
 
 	public void framework(Optimizer optimizer) {
@@ -401,6 +410,8 @@ public final class Control {
 		public final String jsonSave = addS("jsonSave", "js", "", "Save the first solution in a file whose name is this value");
 		public final boolean jsonQuotes = addB("jsonQuotes", "jq", false, "Surround keys with quotes when solutions are displayed on the standard output");
 		public final boolean jsonEachSolution = addB("jsonEachSolution", "je", false, "During search, display all found solutions in JSON");
+		public final boolean solutionHamming = addB("solutionHamming", "sh", true,
+				"During search, display the Hamming distance between two successive solutions");
 		public final boolean xmlCompact = addB("xmlCompact", "xc", true, "Compress values when displaying solutions in XML");
 		public final boolean xmlEachSolution = addB("xmlEachSolution", "xe", false, "During search, display all found solutions in XML");
 		public final boolean noPrintColors = addB("noPrintColors", "npc", false, "Don't use special color characters in the terminal");
@@ -409,6 +420,7 @@ public final class Control {
 		public final int satisfactionLimit = addI("satisfactionLimit", "satl", PLUS_INFINITY_INT, "Converting the objective into a constraint with this limit");
 		public final long seed = addL("seed", "seed", 0, "The seed that can be used for some random-based methods.");
 		public int verbose = addI("verbose", "v", 0, "Verbosity level (value between -1 and 3)" + s_verbose);
+		public final boolean runRobin = addB("runRobin", "rr", false, "Using a Run Robin search strategy");
 	}
 
 	public class OptionsProblem extends OptionGroup {
@@ -454,8 +466,9 @@ public final class Control {
 		public final int positionsLb = addI("positionsLb", "poslb", 3, "Minimal arity to build the array positions");
 		public final int positionsUb = addI("positionsUb", "posub", 10000, "Maximal number of variables to build the array positions");
 		public final int nogoodsMergingLimit = addI("nogoodsMergingLimit", "nml", 3, "Limit for merging (in a table) nogoods of same scope");
-		
-		public final boolean discardHybridEntailment = addB("discardHybridEntailment", "dec", true, "Must we discard the mechansim of hybrid table entailment?");
+
+		public final boolean discardHybridEntailment = addB("discardHybridEntailment", "dec", true,
+				"Must we discard the mechansim of hybrid table entailment?");
 	}
 
 	public class OptionsOptimization extends OptionGroup {
@@ -526,8 +539,8 @@ public final class Control {
 		public final int allDifferentNb = addI("allDifferentNb", "adn", 10, "Number of possibly automatically inferred AllDifferent");
 		public final int allDifferentSize = addI("allDifferentSize", "ads", 5, "Limit on the size of possibly automatically inferred AllDifferent");
 
-//		public final boolean starred = addB("starred", "", false, "When true, some global constraints are encoded by starred tables");
-//		public final boolean hybrid = addB("hybrid", "", false, "When true, some global constraints are encoded by hybrid/smart tables");
+		// public final boolean starred = addB("starred", "", false, "When true, some global constraints are encoded by starred tables");
+		// public final boolean hybrid = addB("hybrid", "", false, "When true, some global constraints are encoded by hybrid/smart tables");
 	}
 
 	public class OptionsPropagation extends OptionGroup {
@@ -558,7 +571,7 @@ public final class Control {
 
 	public class OptionsLearning extends OptionGroup {
 		public final LearningNogood nogood = addE("nogood", "ng", LearningNogood.RST, "Nogood recording technique (from restarts by default)");
-		public final int nogoodBaseLimit = addI("nogoodBaseLimit", "ngbl", 200000, "The maximum number of nogoods that can be stored in the base");
+		public final int nogoodBaseLimit = addI("nogoodBaseLimit", "ngbl", 500000, "The maximum number of nogoods that can be stored in the base");
 		public final int nogoodArityLimit = addI("nogoodArityLimit", "ngal", Integer.MAX_VALUE, "The maximum arity of a nogood that can be recorded");
 		public final LearningIps ips = addE("ips", "", LearningIps.NO, "IPS extraction technique (currently, no such learning by default)");
 		public final String ipsOperators = addS("ipsOperators", "ipso", "11011", "Reduction operators for IPSs; a sequence of 5 bits is used");
@@ -579,10 +592,11 @@ public final class Control {
 		public int nRuns = addI("nRuns", "r_n", Integer.MAX_VALUE, "Maximal number of runs (restarts) to be performed");
 		public long cutoff = addL("cutoff", "r_c", 10, "Cutoff as a value of, e.g., the number of failed asignments before restarting");
 		// the cutoff,for COP, it is initially multiplied by 10 in Restarter
-		public final double factor = addD("factor", "r_f", 1.1, "The geometric increasing factor when updating the cutoff");
+		public double factor = addD("factor", "r_f", 1.1, "The geometric increasing factor when updating the cutoff");
 		public final RestartMeasure measure = addE("measure", "r_m", RestartMeasure.FAILED, "The metrics used for measuring and comparing with the cutoff");
 		public final int resetPeriod = addI("resetPeriod", "r_rp", 90, "Period, in term of number of restarts, for resetting restart data.");
 		public final int resetCoefficient = addI("resetCoefficient", "r_rc", 2, "Coefficient used for increasing the cutoff, when restart data are reset");
+		// public final int resetCoefficientMeta = addI("resetCoefficientMeta", "r_rcm", 270, "");
 		public final int varhResetPeriod = addI("varhResetPeriod", "r_vrp", Integer.MAX_VALUE, "");
 		public final int varhSolResetPeriod = addI("varhSolResetPeriod", "r_vsrp", 30, "");
 		public boolean restartAfterSolution = addB("restartAfterSolution", "ras", false, "Must we restart every time a solution is found?");
@@ -602,7 +616,7 @@ public final class Control {
 	}
 
 	public class OptionsVarh extends OptionGroup {
-		public final String clazz = addS("clazz", "varh", Wdeg.class, HeuristicVariables.class, "Class of the variable ordering heuristic");
+		public String clazz = addS("clazz", "varh", Wdeg.class, HeuristicVariables.class, "Class of the variable ordering heuristic");
 		public final boolean anti = addB("anti", "anti_varh", false, "Must we use the reverse of the natural heuristic order?");
 		public final int lc = addI("lc", "lc", 2, "Value for lc (last conflict); 0 if not activated");
 		public ConstraintWeighting weighting = addE("weighting", "wt", ConstraintWeighting.CACD, "How to manage weights for wdeg variants");
@@ -618,12 +632,13 @@ public final class Control {
 	}
 
 	public class OptionsValh extends OptionGroup {
-		public final String clazz = addS("clazz", "valh", First.class, HeuristicValues.class, "Class of the value ordering heuristic");
+		public String clazz = addS("clazz", "valh", First.class, HeuristicValues.class, "Class of the value ordering heuristic");
 		public final boolean anti = addB("anti", "anti_valh", false, "Must we use the reverse of the natural heuristic order?");
 		public final boolean runProgressSaving = addB("runProgressSaving", "rps", false, "Must we use run progress saving?");
 		public final boolean antiRunProgressSaving = addB("antiRunProgressSaving", "arps", false, "Must we use run anti progress saving?");
 
 		public final int solutionSaving = addI("solutionSaving", "sos", 1, "Solution saving (0: disabled, 1: enabled, otherwise desactivation period");
+		public int solutionSavingStart = addI("solutionSavingStart", "soss", -1, "At which run solution saving must be activated?");
 		public final String warmStart = addS("warmStart", "warm", "", "A starting instantiation (solution) to be used with solution saving");
 
 		public final boolean bivsFirst = addB("bivsFirst", "bivs_f", true, "Must we stop BIVS at first found solution?");

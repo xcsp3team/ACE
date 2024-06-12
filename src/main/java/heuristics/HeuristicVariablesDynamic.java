@@ -326,26 +326,26 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	public static final class RunRobin extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
 
-		private HeuristicVariablesDynamic[] pool;
+		private HeuristicVariables[] pool;
 
-		public HeuristicVariablesDynamic current;
+		public HeuristicVariables current;
 
 		public RunRobin(Solver solver, boolean anti) {
 			super(solver, anti);
-			List<HeuristicVariablesDynamic> list = new ArrayList<>();
+			List<HeuristicVariables> list = new ArrayList<>();
 			int mode = solver.head.control.varh.mode;
 			if (mode >= 0)
 				Stream.of(new PickOnDom(solver, anti), new WdegOnDom(solver, anti), new FrbaOnDom(solver, anti), new Wdeg(solver, anti))
-						.forEach(h -> list.add(h));
+						.forEach(h -> list.add(h)); // new CrbsOnDom(solver, anti),
 			if (mode >= 1)
 				Stream.of(new Dom(solver, anti), new OrgnOnDom(solver, anti)).forEach(h -> list.add(h));
-			this.pool = list.stream().toArray(HeuristicVariablesDynamic[]::new);
+			this.pool = list.stream().toArray(HeuristicVariables[]::new);
 
 		}
 
 		@Override
 		public void reset() {
-			for (HeuristicVariablesDynamic h : pool)
+			for (HeuristicVariables h : pool)
 				h.reset();
 		}
 
@@ -360,7 +360,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			// System.out.println("using " + current.getClass().getSimpleName());
 			if (runReset()) {
 				Kit.log.config("    ...resetting weights (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
-				for (HeuristicVariablesDynamic h : pool)
+				for (HeuristicVariables h : pool)
 					h.reset();
 			}
 		}
@@ -837,7 +837,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 	}
 
-	public static final class CRBS extends ActivityImpactAbstract implements TagMaximize {
+	public static final class CrbsOnDom extends ActivityImpactAbstract { // implements TagMaximize {
 
 		/**
 		 * correlation matrix
@@ -850,12 +850,14 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public void beforeRun() {
 			super.beforeRun();
 			if (runReset()) {
-				Kit.log.info("Reset of correlation matrix");
+				Kit.log.config("    ...reset of correlation matrix (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
 				Stream.of(a).forEach(t -> Arrays.fill(t, 0));
 			}
+			int mod = solver.restarter.numRun % 3;
+			theta = mod == 0 ? 0.1 : mod == 1 ? 0.5 : 0.9;
 		}
 
-		public CRBS(Solver solver, boolean anti) {
+		public CrbsOnDom(Solver solver, boolean anti) {
 			super(solver, anti);
 			this.a = new int[solver.problem.variables.length][solver.problem.variables.length];
 		}
@@ -886,6 +888,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					}
 				}
 			}
+			// System.out.println("jjjjj " + Kit.join(a));
 		}
 
 		@Override
@@ -897,7 +900,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					sp += t[y.num];
 				else
 					sf += t[y.num];
-			return (sp + theta * sf) / x.dom.size();
+			// return sf / (double) x.dom.size();
+			// return sp / (double) x.dom.size();
+			// return (sp + sf) / (double) x.dom.size();
+			return (sp + theta * sf) / (double) x.dom.size();
 		}
 	}
 
