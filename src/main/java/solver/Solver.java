@@ -36,6 +36,10 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Constants;
+import org.xcsp.common.IVar;
+import org.xcsp.common.IVar.Var;
+import org.xcsp.modeler.implementation.ProblemIMP;
+import org.xcsp.modeler.implementation.ProblemIMP3;
 
 import constraints.Constraint;
 import constraints.ConstraintGlobal;
@@ -156,14 +160,29 @@ public class Solver implements ObserverOnBacktracksSystematic {
 					Kit.exit(e);
 				}
 			}
-			String[] tt = possiblyDecompact(s.split(Constants.REG_WS));
-			boolean test = true;
-			String[] t = test ? Stream.of(tt).filter(tok -> !tok.equals("*")).toArray(String[]::new) : tt;
-			this.instantiation = IntStream.range(0, t.length).map(i -> t[i].equals("*") ? -1 : problem.variables[i].dom.toIdxIfPresent(parseInt(t[i])))
-					.toArray();
-			// for (int i = 0; i < t.length; i++)
-			// System.out.println(problem.variables[i] + " : " + t[i]);
-			assert IntStream.range(0, t.length).noneMatch(i -> !t[i].equals("*") && instantiation[i] == -1);
+			String[] tt = s.split(Constants.REG_WS);
+			if (tt[0].indexOf("=") != -1) {
+				Map<String, Variable> map = new HashMap<>();
+				for (Variable x : problem.variables)
+					map.put(x.id, x);
+
+				this.instantiation = new int[problem.variables.length];
+				Arrays.fill(instantiation, -1);
+				for (String token : tt) {
+					String[] t = token.split("=");
+					assert t.length == 2;
+					Variable x = map.get(t[0]);
+					assert x != null;
+					instantiation[x.num] = x.dom.toIdxIfPresent(parseInt(t[1]));
+				}
+			} else {
+				tt = possiblyDecompact(tt);
+				boolean test = true;
+				String[] t = test ? Stream.of(tt).filter(tok -> !tok.equals("*")).toArray(String[]::new) : tt;
+				this.instantiation = IntStream.range(0, t.length).map(i -> t[i].equals("*") ? -1 : problem.variables[i].dom.toIdxIfPresent(parseInt(t[i])))
+						.toArray();
+				assert IntStream.range(0, t.length).noneMatch(i -> !t[i].equals("*") && instantiation[i] == -1);
+			}
 		}
 
 		/**

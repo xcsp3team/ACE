@@ -1705,6 +1705,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * the relation "before" is given by the value of the specified operator that must be one value among LT, LE, GT, and GE.
 	 */
 	private final CtrAlone lexSimple(Var[] t1, Var[] t2, TypeOperatorRel op) {
+		if (t1.length == 1) {
+			control(t2.length == 1);
+			return (CtrAlone) intension(XNodeParent.build(op.toExpr(), t1[0], t2[0]));
+		}
 		return post(Lexicographic.buildFrom(this, translate(t1), translate(t2), op));
 	}
 
@@ -2139,7 +2143,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, int[] occursMin, int[] occursMax) {
 		control(values.length == occursMin.length && values.length == occursMax.length
-				&& IntStream.range(0, occursMin.length).allMatch(i -> 0 <= occursMin[i] && 0 < occursMax[i] && occursMin[i] <= occursMax[i]));
+				&& IntStream.range(0, occursMin.length).allMatch(i -> 0 <= occursMin[i] && occursMin[i] <= occursMax[i]));
 		Variable[] scp = translate(clean(list));
 		if (scp.length == 1) {
 			int[] required = IntStream.range(0, values.length).filter(i -> occursMin[i] > 0).toArray();

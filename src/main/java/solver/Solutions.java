@@ -152,6 +152,8 @@ public final class Solutions {
 			for (VarEntity va : solver.problem.varEntities.allEntities) {
 				if (undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
 					continue;
+				if (compactList.size() > 0)
+					compactList.add(" ");
 				List<Integer> list = new ArrayList<>();
 				updateList(va instanceof VarAlone ? ((VarAlone) va).var : VarArray.class.cast(va).vars, list);
 				int prev = list.get(0);
@@ -178,7 +180,7 @@ public final class Solutions {
 				if (undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
 					continue;
 				if (sb.length() > 0)
-					sb.append(" ");
+					sb.append("  ");
 				if (va instanceof VarAlone) {
 					Variable x = (Variable) ((VarAlone) va).var;
 					sb.append(x.dom.prettyValueOf(x == solver.problem.replacedObjVar ? (int) bestBound : last[x.num])); // .valueIndexInLastSolution));

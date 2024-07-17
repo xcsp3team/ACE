@@ -30,17 +30,17 @@ import org.xcsp.parser.entries.XObjectives.XObj;
 import constraints.Constraint;
 import constraints.ConstraintExtension;
 import constraints.ConstraintExtension.Extension1;
+import constraints.ConstraintIntension;
 import constraints.extension.CHybrid;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableHybrid;
 import dashboard.Output;
-
 import utility.Kit;
 import variables.Variable;
 
 /**
- * This class stores some information (features such as sizes of domains, types of constraints, etc.) about the problem
- * (constraint network), and ways of displaying it.
+ * This class stores some information (features such as sizes of domains, types of constraints, etc.) about the problem (constraint network), and ways of
+ * displaying it.
  * 
  * @author Christophe Lecoutre
  */
@@ -68,13 +68,15 @@ public final class Features {
 		public final TreeMap<T, Integer> repartition = new TreeMap<>();
 
 		/**
-		 * Adds an element (key) to the repartitioner. If this is the first occurrence, it is recorded with associated
-		 * counter 1. Otherwise, its associated counter is incremented by 1.
+		 * Adds an element (key) to the repartitioner. If this is the first occurrence, it is recorded with associated counter 1. Otherwise, its associated
+		 * counter is incremented by 1.
 		 * 
 		 * @param key
 		 *            the specified key to consider
 		 */
 		public void add(T key) {
+			if (key instanceof String && ((String) key).equals(ConstraintIntension.class.getSimpleName()))
+				key = (T) "Intension"; // to simplify output
 			Integer nb = repartition.get(key);
 			repartition.put(key, nb == null ? 1 : nb + 1);
 		}
@@ -124,32 +126,28 @@ public final class Features {
 	public static final class CollectedNogood {
 
 		public final Variable[] vars;
-		
+
 		public final int[] vals;
 
-	
 		public CollectedNogood(Variable[] scp, int[] values) {
 			// is there a simpler and direct way to sort the nogood?
-			//System.out.println("hhhhhhbef" + Kit.join(scp) + " " + Kit.join(values));
-			Map<Variable, Integer> map = IntStream.range(0, scp.length).boxed().collect(Collectors.toMap(i -> scp[i],i -> values[i]));
+			Map<Variable, Integer> map = IntStream.range(0, scp.length).boxed().collect(Collectors.toMap(i -> scp[i], i -> values[i]));
 			map = Kit.sort(map, (e1, e2) -> e1.getKey().num - e2.getKey().num);
 			this.vars = map.entrySet().stream().map(e -> e.getKey()).toArray(Variable[]::new);
 			this.vals = map.entrySet().stream().mapToInt(e -> e.getValue()).toArray();
-			//System.out.println("hhhhhhaft" + Kit.join(vars) + " " + Kit.join(vals));
 		}
-		
+
 		public boolean sameScopeAs(CollectedNogood cn) {
 			if (vars.length != cn.vars.length)
 				return false;
-			for (int i=0; i< vars.length;i++)
+			for (int i = 0; i < vars.length; i++)
 				if (vars[i] != cn.vars[i])
 					return false;
 			return true;
 		}
-		
+
 	}
-	
-	
+
 	/**
 	 * This class allows us to collect variables and constraints when loading the constraint network.
 	 */
@@ -164,16 +162,14 @@ public final class Features {
 		 * The constraints that have been collected so far
 		 */
 		public final List<Constraint> constraints = new ArrayList<>();
-		
+
 		/**
 		 * The nogoods that have been collected so far
 		 */
 		public final List<CollectedNogood> nogoods = new ArrayList<>();
 
-
 		/**
-		 * The keys used for tables, that have been collected so far, and used when storing tuples of a table
-		 * constraint. Relevant only for symmetry-breaking.
+		 * The keys used for tables, that have been collected so far, and used when storing tuples of a table constraint. Relevant only for symmetry-breaking.
 		 */
 		public final Map<String, String> tableKeys = new HashMap<>();
 
@@ -291,9 +287,9 @@ public final class Features {
 			// tableSizes.add(((TableHybrid) c.extStructure()).hybridTuples.length);
 			return num;
 		}
-		
+
 		public void addNogood(Variable[] vars, int[] vals) {
-			nogoods.add(new CollectedNogood(vars,vals));
+			nogoods.add(new CollectedNogood(vars, vals));
 		}
 
 		public void fix() {
