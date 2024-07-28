@@ -321,7 +321,7 @@ public final class TableHybrid extends ExtensionStructure {
 		private int var_position(XNode<? extends IVar> node) {
 			control(node.type.oneOf(VAR, PAR));
 			int y = node.type == VAR ? Utilities.indexOf(((XNodeLeaf<?>) node).value, scp) : (int) ((XNodeLeaf<?>) node).value;
-			//control(tuple[y] == STAR); // TODO can we discard this? in some situations? which ones?
+			// control(tuple[y] == STAR); // TODO can we discard this? in some situations? which ones?
 			return y;
 		}
 
@@ -349,6 +349,8 @@ public final class TableHybrid extends ExtensionStructure {
 				// TODO check cases that involve a restriction always false (and return an object mentioning it)
 				if (res.pivot == -1 || res.pivot == Integer.MAX_VALUE) {
 					control(tuple[x] == STAR);
+					if (op == NE)
+						return null; // because always true
 					// return null; // AVOID THIS because in case of a restriction always false, the restriction would be avoided
 				}
 				return res;
