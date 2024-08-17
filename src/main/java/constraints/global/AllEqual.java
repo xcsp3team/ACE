@@ -91,10 +91,9 @@ public final class AllEqual extends ConstraintGlobal implements TagAC, TagCallCo
 	public AllEqual(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		int[] values = Variable.setOfvaluesIn(scp).stream().mapToInt(v -> v).sorted().toArray();
-		this.map = IntStream.range(0, values.length).boxed().collect(toMap(i -> values[i], i -> i, (v1, v2) -> v1 + v2, TreeMap::new)); // useless
-																																		// merger
+		this.map = IntStream.range(0, values.length).boxed().collect(toMap(i -> values[i], i -> i, (v1, v2) -> v1 + v2, TreeMap::new)); // useless merger
 		this.lastRemoved = new SetDense(map.size());
-		control(scp.length > 1 && values.length > 1);
+		control(scp.length > 1 && values.length >= 1);
 	}
 
 	@Override
