@@ -567,13 +567,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 						nSuccessiveWipeoutCtr++;
 
 					double increment = 1;
-					cscores[c.num] += increment; // just +1 in that case (can be useful for other objects, but not
-													// directly for wdeg)
+					cscores[c.num] += increment; // just +1 in that case (can be useful for other objects, but not directly for wdeg)
 					SetDense futvars = c.futvars;
 					for (int i = futvars.limit; i >= 0; i--) {
 						Variable y = c.scp[futvars.dense[i]];
-						if (options.weighting == CACD || options.weighting == CACD_EXP) { // in this case, the increment
-																							// is not 1 as for UNIT
+						if (options.weighting == CACD || options.weighting == CACD_EXP) { // in this case, the increment is not 1 as for UNIT
 							Domain dom = y.dom;
 							// boolean test = false; // EXPERIMENTAL ; this variant does not seem to be interesting
 							// if (test) {

@@ -826,7 +826,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private Var[] auxVarArray(int length, Object values) {
 		nAuxVariables += length;
-		control(length > 1);
+		control(length >= 1);
 		values = values instanceof Range ? api.dom((Range) values) : values instanceof int[] ? api.dom((int[]) values) : values;
 		if (values instanceof Dom)
 			return api.array(idAux(), api.size(length), (Dom) values, "auxiliary variables");

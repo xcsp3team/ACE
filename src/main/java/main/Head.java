@@ -439,7 +439,7 @@ public class Head extends Thread {
 
 	@Override
 	public void run() {
-		log.config("\n" + Color.ORANGE.coloring("ACE v2.3 ") + Kit.dateOf(Head.class) + "\n");
+		log.config("\n" + Color.ORANGE.coloring("ACE v2.4 ") + Kit.dateOf(Head.class) + "\n");
 		stopwatch.start();
 		boolean[] crashed = new boolean[Input.nInstancesToSolve];
 		for (int i = 0; i < Input.nInstancesToSolve; i++) {
