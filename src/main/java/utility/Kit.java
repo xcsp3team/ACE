@@ -24,6 +24,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
@@ -32,6 +33,7 @@ import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -443,6 +445,25 @@ public final class Kit {
 		return l <= Integer.MIN_VALUE ? Integer.MIN_VALUE : l >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) l;
 	}
 
+	private static void generatePermutations(List<int[]> perms, int[] t, int left, int right) {
+		if (left == right)
+			perms.add(t.clone());
+		else
+			for (int i = left; i <= right; i++) {
+				swap(t, left, i);
+				generatePermutations(perms, t, left + 1, right);
+				swap(t, left, i);
+			}
+	}
+
+	public static int[][] allPermutations(int[] values) {
+		control(IntStream.range(0, values.length - 1).allMatch(i -> values[i] < values[i + 1]));
+		control(2 <= values.length && values.length <= 10, "Current limit wrt our current needs");
+		List<int[]> perms = new ArrayList<>();
+		generatePermutations(perms, values, 0, values.length - 1);
+		return perms.stream().toArray(int[][]::new);
+	}
+
 	/**********************************************************************************************
 	 * Functions on Strings
 	 *********************************************************************************************/
@@ -483,8 +504,8 @@ public final class Kit {
 		}
 
 		/**
-		 * Prints the specified first string with this color, if colors can be used (otherwise, in classical white
-		 * color), followed by the specified second string in white
+		 * Prints the specified first string with this color, if colors can be used (otherwise, in classical white color), followed by the specified second
+		 * string in white
 		 * 
 		 * @param coloredPart
 		 *            a string to be printed in color
@@ -574,8 +595,8 @@ public final class Kit {
 	 * @param length
 	 * @param delimiters
 	 *            delimiters to be used when concatenating
-	 * @return a string obtained by concatenating the string representation of the objects in the specified array, up to
-	 *         a limit given by the specified length, while using the specified delimiters
+	 * @return a string obtained by concatenating the string representation of the objects in the specified array, up to a limit given by the specified length,
+	 *         while using the specified delimiters
 	 */
 	public static String join(Object array, int length, String... delimiters) {
 		return join(new StringBuilder(), array, length, 1, maxDepthOf(array), null, delimiters).toString();
@@ -590,8 +611,8 @@ public final class Kit {
 	 *            a mapper to transform objects of the specified type
 	 * @param delimiters
 	 *            delimiters to be used when concatenating
-	 * @return a string obtained by concatenating the string representation of the objects in the specified array while
-	 *         using the specified mapper for objects of type T, and the specified delimiters
+	 * @return a string obtained by concatenating the string representation of the objects in the specified array while using the specified mapper for objects
+	 *         of type T, and the specified delimiters
 	 */
 	public static <T> String join(Object array, Function<T, String> mapper, String... delimiters) {
 		return join(array, Array.getLength(array), mapper, delimiters);
@@ -602,8 +623,7 @@ public final class Kit {
 	 *            an array of objects
 	 * @param delimiters
 	 *            delimiters to be used when concatenating
-	 * @return a string obtained by concatenating the string representation of the objects in the specified array while
-	 *         using the specified delimiters
+	 * @return a string obtained by concatenating the string representation of the objects in the specified array while using the specified delimiters
 	 */
 	public static String join(Object array, String... delimiters) {
 		return join(array, Array.getLength(array), delimiters);
@@ -614,8 +634,7 @@ public final class Kit {
 	 *            a collection of objects
 	 * @param delimiters
 	 *            delimiters to be used when concatenating
-	 * @return a string obtained by concatenating the string representation of the objects in the specified collection
-	 *         while using the specified delimiters
+	 * @return a string obtained by concatenating the string representation of the objects in the specified collection while using the specified delimiters
 	 */
 	public static String join(Collection<?> c, String... delimiters) {
 		return join(c.toArray(), delimiters);
@@ -634,8 +653,7 @@ public final class Kit {
 	/**
 	 * @param clazz
 	 *            a class
-	 * @return a string with the last modified date of the file of the specified class, involving the year, month, day,
-	 *         hour, and minute
+	 * @return a string with the last modified date of the file of the specified class, involving the year, month, day, hour, and minute
 	 */
 	public static String dateOf(Class<?> clazz) {
 		try {
@@ -664,8 +682,8 @@ public final class Kit {
 	}
 
 	/**
-	 * Analyzes the specified string in order to extract the id or number of objects (e.g., variables). This method is
-	 * used to treat options set by the user concerning objects (possible priority variables or partial instantiations).
+	 * Analyzes the specified string in order to extract the id or number of objects (e.g., variables). This method is used to treat options set by the user
+	 * concerning objects (possible priority variables or partial instantiations).
 	 * 
 	 * @param s
 	 *            a string denoting a list of object ids and/or numbers
@@ -863,8 +881,7 @@ public final class Kit {
 	}
 
 	/**
-	 * Modifies the specified document by setting the specified attribute value to the specified attribute name, when
-	 * considering the specified path
+	 * Modifies the specified document by setting the specified attribute value to the specified attribute name, when considering the specified path
 	 * 
 	 * @param document
 	 *            a document
@@ -925,10 +942,8 @@ public final class Kit {
 
 	/**
 	 * Returns the greatest integer x such that c*x <= k where c and k are specified integers. <br />
-	 * The coefficient must be positive, as we note that (3,-5) => -2; (3,10) => 3; (-3,-5) => 2; (-3,10) => -3; (3,0)
-	 * => 0; (-3,0) => 0 <br/>
-	 * 3y <= -5 => y <= -2; 3y <= 10 => y <= 3; -3y <= -5 => y >= 2; -3y <= 10 => y >= -3; 3y <= 0 => y <= 0; -3y <= 0
-	 * => y >= 0
+	 * The coefficient must be positive, as we note that (3,-5) => -2; (3,10) => 3; (-3,-5) => 2; (-3,10) => -3; (3,0) => 0; (-3,0) => 0 <br/>
+	 * 3y <= -5 => y <= -2; 3y <= 10 => y <= 3; -3y <= -5 => y >= 2; -3y <= 10 => y >= -3; 3y <= 0 => y <= 0; -3y <= 0 => y >= 0
 	 * 
 	 * @param c
 	 *            a coefficient
@@ -949,10 +964,8 @@ public final class Kit {
 
 	/**
 	 * Returns the smallest integer x such that c*x >= k where c and k are specified integers. <br />
-	 * The coefficient must be positive, as we note that (3,-5) => -1; (3,10) => 4; (-3,-5) => 1; (-3,10) => -4; (3,0)
-	 * => 0; (-3,0) => 0 <br />
-	 * 3y >= -5 => y >= -1; 3y >= 10 => y >= 4; -3y >= -5 => y <= 1; -3y >= 10 => y <= -4; 3y >= 0 => y>= 0; -3y >= 0 =>
-	 * y <= 0
+	 * The coefficient must be positive, as we note that (3,-5) => -1; (3,10) => 4; (-3,-5) => 1; (-3,10) => -4; (3,0) => 0; (-3,0) => 0 <br />
+	 * 3y >= -5 => y >= -1; 3y >= 10 => y >= 4; -3y >= -5 => y <= 1; -3y >= 10 => y <= -4; 3y >= 0 => y>= 0; -3y >= 0 => y <= 0
 	 * 
 	 * @param c
 	 *            a coefficient

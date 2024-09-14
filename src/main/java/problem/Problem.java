@@ -64,7 +64,6 @@ import static org.xcsp.common.predicates.XNodeParent.add;
 import static org.xcsp.common.predicates.XNodeParent.build;
 import static org.xcsp.common.predicates.XNodeParent.eq;
 import static org.xcsp.common.predicates.XNodeParent.ge;
-import static org.xcsp.common.predicates.XNodeParent.iff;
 import static org.xcsp.common.predicates.XNodeParent.in;
 import static org.xcsp.common.predicates.XNodeParent.le;
 import static org.xcsp.common.predicates.XNodeParent.mul;
@@ -171,6 +170,7 @@ import constraints.global.Element.ElementList.ElementCst;
 import constraints.global.Element.ElementList.ElementVar;
 import constraints.global.Element.ElementMatrix.ElementMatrixCst;
 import constraints.global.Element.ElementMatrix.ElementMatrixVar;
+import constraints.global.Element.Member;
 import constraints.global.Extremum.ExtremumCst;
 import constraints.global.Extremum.ExtremumCst.MaximumCst;
 import constraints.global.Extremum.ExtremumCst.MaximumCst.MaximumCstGE;
@@ -1462,6 +1462,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (scp.length == 2)
 			return different(scp[0], scp[1]);
 
+		// if (scp.length <= 4) { // does not seem to be interesting / faster
+		// Set<Integer> sv = Variable.setOfvaluesIn(scp);
+		// if (sv.size() == scp.length)
+		// return extension((Var[])scp, Kit.allPermutations(sv.stream().mapToInt(v -> v).toArray()), true);
+		// }
+
 		if (head.control.global.gatherAllDifferent) {
 			subsetAllDifferentScopes.add(scp);
 			return null;
@@ -2095,7 +2101,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public CtrEntity nValues(Var[] list, Condition condition, int[] exceptValues) {
-		return unimplemented("nValues");
+		// for the moment, we decompose (no specific propagator)
+		Var aux = auxVar(new Range(0, list.length + 1)); // we count first nValues without considering exceptValues
+		nValues(list, Condition.buildFrom(EQ, aux));
+
+		Var[] auxArray = auxVarArray(exceptValues.length, new int[] { 0, 1 });
+		for (int i = 0; i < exceptValues.length; i++)
+			member(list, exceptValues[i], auxArray[i]); // we determine if the excepting value is present
+
+		return sum(IntStream.range(0, exceptValues.length + 1).mapToObj(i -> i == 0 ? aux : auxArray[i - 1]).toArray(Var[]::new),
+				IntStream.range(0, exceptValues.length + 1).map(i -> i == 0 ? 1 : -1).toArray(), condition);
 	}
 
 	// ************************************************************************
@@ -2511,6 +2526,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Var aux = auxVar(values);
 		postExprSubjectToCondition(aux, condition);
 		return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, aux);
+	}
+
+	public CtrEntity member(Var[] list, int value, Var y) {
+		return post(new Member(this, translate(list), value, (Variable) y));
 	}
 
 	// ************************************************************************

@@ -13,6 +13,7 @@ package constraints.global;
 import static utility.Kit.control;
 
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.xcsp.common.Utilities;
 
@@ -44,6 +45,97 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 	 */
 	public Element(Problem pb, Variable[] scp) {
 		super(pb, scp);
+	}
+
+	/**********************************************************************************************
+	 * Member
+	 *********************************************************************************************/
+
+	public final static class Member extends Element {
+
+		@Override
+		public boolean isSatisfiedBy(int[] t) {
+			boolean found = false;
+			for (int i = 0; !found && i < list.length; i++)
+				if (t[i] == value)
+					found = true;
+			return found == (t[t.length - 1] == 1);
+		}
+
+		/**
+		 * The list (vector) of variables
+		 */
+		private final Variable[] list;
+
+		private int value;
+
+		private Variable y;
+
+		/**
+		 * Builds a constraint Element for the specified problem, with the specified arguments: list, index and value
+		 * 
+		 * @param pb
+		 *            the problem to which the constraint is attached
+		 * @param list
+		 *            the list (vector) of variables
+		 * @param value
+		 *            the value whose membership is sought
+		 * @param y
+		 *            the 0/1 variable indicating if the value is present
+		 */
+		public Member(Problem pb, Variable[] list, int value, Variable y) {
+			super(pb, Utilities.collect(Variable.class, list, y));
+			this.list = list;
+			this.value = value;
+			this.y = y;
+			control(list.length >= 2 && Variable.areAllDistinct(list) && y.dom.is01() && Stream.of(list).allMatch(x -> x != y));
+			control(scp[scp.length - 1] == y);
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			if (y.dom.size() == 1) {
+				if (y.dom.single() == 0) { // y = 0
+					for (Variable x : list)
+						if (x.dom.removeValueIfPresent(value) == false)
+							return false;
+					return entailed();
+				} else { // y = 1
+					int uniqueSentinel = -1;
+					for (int i = 0; i < list.length; i++) {
+						Domain dom = list[i].dom;
+						if (dom.size() == 1) {
+							if (dom.singleValue() == value)
+								return entailed();
+						} else {
+							if (dom.containsValue(value)) {
+								if (uniqueSentinel == -1)
+									uniqueSentinel = i;
+								else
+									return true; // because two sentinels
+							}
+						}
+					}
+					if (uniqueSentinel == -1)
+						return y.dom.fail();
+					return list[uniqueSentinel].dom.reduceToValue(value) && entailed();
+				}
+			}
+
+			boolean found = false;
+			for (Variable x : list) {
+				if (x.dom.size() == 1) {
+					if (x.dom.singleValue() == value)
+						return y.dom.remove(0) && entailed(); // no possible inconsistency here
+				} else {
+					if (x.dom.containsValue(value))
+						found = true;
+				}
+			}
+			if (!found)
+				return y.dom.remove(1) && entailed(); // no possible inconsistency here
+			return true;
+		}
 	}
 
 	/**********************************************************************************************

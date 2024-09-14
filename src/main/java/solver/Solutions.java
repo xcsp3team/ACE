@@ -347,10 +347,12 @@ public final class Solutions {
 		StringBuilder sb = new StringBuilder();
 		int i = 0;
 		for (VarArray va : solver.problem.varArrays) {
-			int v = (int) Stream.of(va.flatVars).filter(x -> last[((Variable) x).num] != solver.problem.variables[((Variable) x).num].dom.single()).count();
-			hamming[i++] = v;
-			if (v > 0)
-				sb.append(" ").append(va.id).append(":").append(v);
+			if (va.flatVars != null) {
+				int v = (int) Stream.of(va.flatVars).filter(x -> last[((Variable) x).num] != solver.problem.variables[((Variable) x).num].dom.single()).count();
+				hamming[i++] = v;
+				if (v > 0)
+					sb.append(" ").append(va.id).append(":").append(v);
+			}
 		}
 
 		int v = (int) Stream.of(solver.problem.varAlones).filter(x -> last[x.num] != solver.problem.variables[x.num].dom.single()).count();
@@ -423,7 +425,7 @@ public final class Solutions {
 			Color.GREEN.println("o " + bestBound, "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()) + "  ham=" + IntStream.of(hamming).sum() + " ("
 					+ Kit.join(hamming) + ")" + "  opth=" + hammingOpt);
 
-			// solver.restarter.currCutoff += 20;
+			// solver.restarter.currCutoff += 1; //20;
 			// System.out.println("h1 : " + Kit.join(h1) + " h2 : " + h2);
 			// for (Variable x : h1) System.out.println(x + " " + x.assignmentLevel);
 		}
