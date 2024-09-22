@@ -62,9 +62,6 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			return found == (t[t.length - 1] == 1);
 		}
 
-		/**
-		 * The list (vector) of variables
-		 */
 		private final Variable[] list;
 
 		private int value;
@@ -72,7 +69,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 		private Variable y;
 
 		/**
-		 * Builds a constraint Element for the specified problem, with the specified arguments: list, index and value
+		 * Builds a constraint Element for the specified problem, with the specified arguments: list, value and 0/1 variable (y)
 		 * 
 		 * @param pb
 		 *            the problem to which the constraint is attached
@@ -121,7 +118,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 					return list[uniqueSentinel].dom.reduceToValue(value) && entailed();
 				}
 			}
-
+			assert y.dom.size() == 2;
 			boolean found = false;
 			for (Variable x : list) {
 				if (x.dom.size() == 1) {

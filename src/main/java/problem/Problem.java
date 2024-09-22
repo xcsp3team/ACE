@@ -2466,9 +2466,20 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity element(int[] list, int startIndex, Var index, TypeRank rank, Condition condition) {
-		unimplementedIf(rank != null && rank != TypeRank.ANY, "element");
+		unimplementedIf(startIndex != 0 && rank != null && rank != TypeRank.ANY, "element");
 		if (condition instanceof ConditionVar) // && ((ConditionRel) condition).operator == EQ)
 			return element(list, startIndex, index, ((ConditionRel) condition).operator, (Var) condition.rightTerm());
+		if (condition instanceof ConditionVal && ((ConditionRel) condition).operator == EQ) {
+			List<Integer> tmp = new ArrayList<>();
+			int value = safeInt(((ConditionVal) condition).k);
+			Domain dx = ((Variable) index).dom;
+			for (int a = dx.first(); a != -1; a = dx.next(a)) {
+				int i = dx.toVal(a);
+				if (0 <= i && i < list.length && list[i] == value)
+					tmp.add(i);
+			}
+			return extension((Variable) index, tmp.stream().mapToInt(v -> v).toArray(), true);
+		}
 		return unimplemented("element: " + startIndex + " " + condition);
 	}
 
@@ -2530,6 +2541,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	public CtrEntity member(Var[] list, int value, Var y) {
 		return post(new Member(this, translate(list), value, (Variable) y));
+	}
+
+	public CtrEntity member(XNode<IVar>[] trees, int value, Var y) {
+		return member(replaceByVariables(trees), value, y);
 	}
 
 	// ************************************************************************
@@ -3229,11 +3244,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private ObjEntity optimize(TypeOptimization opt, TypeObjective type, Variable[] list, int[] coeffs) {
 		control(type == SUM && coeffs != null && list.length == coeffs.length && list.length > 0);
 		if (!switchToSatisfaction(opt, type, coeffs, list)) {
-			if (list.length == 1)
-				return optimize(opt, mul(list[0], coeffs[0]));
+			// we discard terms of coeff 0
+			Variable[] filtered_list = IntStream.range(0, list.length).filter(i -> coeffs[i] != 0).mapToObj(i -> list[i]).toArray(Variable[]::new);
+			int[] filtered_coeffs = IntStream.of(coeffs).filter(v -> v != 0).toArray();
+			if (filtered_list.length == 1)
+				return optimize(opt, mul(filtered_list[0], filtered_coeffs[0]));
 			long lb = head.control.optimization.lb, ub = head.control.optimization.ub;
-			optimizer = buildOptimizer(opt, (Optimizable) ((CtrAlone) sum(list, coeffs, GE, lb, false)).ctr,
-					(Optimizable) ((CtrAlone) sum(list, coeffs, LE, ub, false)).ctr);
+			optimizer = buildOptimizer(opt, (Optimizable) ((CtrAlone) sum(filtered_list, filtered_coeffs, GE, lb, false)).ctr,
+					(Optimizable) ((CtrAlone) sum(filtered_list, filtered_coeffs, LE, ub, false)).ctr);
 		}
 		return null;
 	}

@@ -35,7 +35,6 @@ import java.util.stream.Stream;
 import org.xcsp.common.Condition;
 import org.xcsp.common.Condition.ConditionVar;
 import org.xcsp.common.IVar;
-import org.xcsp.common.Utilities;
 import org.xcsp.common.Types.TypeCtr;
 import org.xcsp.common.Types.TypeExpr;
 import org.xcsp.common.Types.TypeFlag;
@@ -44,6 +43,7 @@ import org.xcsp.common.Types.TypeObjective;
 import org.xcsp.common.Types.TypeOperatorRel;
 import org.xcsp.common.Types.TypeRank;
 import org.xcsp.common.Types.TypeVar;
+import org.xcsp.common.Utilities;
 import org.xcsp.common.domains.Domains.Dom;
 import org.xcsp.common.domains.Domains.DomSymbolic;
 import org.xcsp.common.predicates.MatcherInterface;
@@ -250,7 +250,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 				IntStream.range(0, Array.getLength(a)).forEach(i -> completeMapVar(va, Array.get(a, i), vals(indexes, i)));
 			else
 				mapVar.put(va.varAt(indexes), (Variable) a);
-		} else 
+		} else
 			omittedVariables.add(va.id + "[" + Utilities.join(indexes, "][") + "]");
 	}
 
@@ -745,6 +745,16 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 			Condition condition) {
 		control(startRowIndex == 0 && startColIndex == 0);
 		problem.element(trVars2D(matrix), startRowIndex, trVar(rowIndex), startColIndex, trVar(colIndex), trVar(condition));
+	}
+
+	@Override
+	public void buildCtrElement(String id, XVarInteger[] list, int value, XVarInteger reifiedBy) {
+		problem.member(trVars(list), value, trVar(reifiedBy));
+	}
+
+	@Override
+	public void buildCtrElement(String id, XNode<XVarInteger>[] trees, int value, XVarInteger reifiedBy) {
+		problem.member(trVar(trees), value, trVar(reifiedBy)); 
 	}
 
 	@Override
