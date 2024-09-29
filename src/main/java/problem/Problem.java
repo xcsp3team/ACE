@@ -1168,6 +1168,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return post(new DblDiff(this, (Variable) tree.sons[0].var(0), (Variable) tree.sons[0].var(1), (Variable) tree.sons[1].var(0),
 						(Variable) tree.sons[1].var(1)));
 		}
+
 		// Two cases with the ternary operator if
 		if (tree.type == IF && options.recognizeIf) {
 			XNode<IVar>[] sons = tree.sons;
@@ -2196,8 +2197,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, Var[] occurs) {
-		control(values.length == occurs.length && Stream.of(occurs).noneMatch(x -> x == null)
-				&& IntStream.range(0, values.length - 1).allMatch(i -> values[i] < values[i + 1]));
+		control(values.length == occurs.length && Stream.of(occurs).noneMatch(x -> x == null));
 		Variable[] scp = translate(clean(list));
 		// TODO what to do if scp.length ==1 ?
 
@@ -2211,7 +2211,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// Stream.of(occurs).mapToInt(x -> ((Variable) x).dom.lastValue()).toArray()));
 
 		// if ((closed || mustBeClosed) && Variable.haveSameDomainType(scp) && scp[0].dom.connex() && scp[0].dom.firstValue() == 0
-		// && scp[0].dom.withExactlyTheseValues(values))
+		// && scp[0].dom.withExactlyTheseValues(values) && IntStream.range(0, values.length - 1).allMatch(i -> values[i] < values[i + 1]))
 		// binpacking((Var[]) scp, Kit.repeat(1, scp.length), occurs, true); // redundant constraint TODO to be checked (real interest?)
 
 		return forall(range(values.length), i -> {
