@@ -18,6 +18,7 @@ import constraints.ConstraintGlobal;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import problem.Problem;
+import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 

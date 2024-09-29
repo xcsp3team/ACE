@@ -590,6 +590,23 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
+	 * Returns true if the (current) domain exactly corresponds to to the specified list
+	 * 
+	 * @param values
+	 *            a list of values
+	 * @return true if the specified list gives the values of the current domain
+	 */
+	default boolean withExactlyTheseValues(int[] values) {
+		assert IntStream.range(0, values.length).allMatch(i -> IntStream.range(i + 1, values.length).noneMatch(j -> values[i] == values[j]));
+		if (size() != values.length)
+			return false;
+		for (int a = first(); a != -1; a = next(a))
+			if (!Kit.isPresent(toVal(a), values))
+				return false;
+		return true;
+	}
+
+	/**
 	 * Returns an array containing all values evaluated as true by the specified predicate.
 	 * 
 	 * @param p

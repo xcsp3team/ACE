@@ -1473,6 +1473,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return null;
 		}
 
+		int cnt = (int) Stream.of(scp).filter(x -> x.dom.size() >= 2 * scp.length).count();
+		if (cnt * 4 > 3 * scp.length) // if 75% of the domains are larger than two times the arity
+			return post(new AllDifferentWeak(this, scp, false)); // we avoid the complete algorithm as its practical interest is likely to be limited
+
 		switch (head.control.global.allDifferent) {
 		case DEFAULT:
 			if (head.control.global.permutation && AllDifferentPermutation.isElligible(scp))
@@ -2126,31 +2130,31 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, int[] occurs) {
-		// int limit = safeInt(range(0, values.length).mapToLong(i -> safeInt(values[i] * (long) occurs[i],
-		// true)).sum(), true);
-		Variable[] scp = translate(clean(list));
 		control(values.length == occurs.length && IntStream.of(occurs).allMatch(v -> v >= 0));
-		int[] vals = values, occs = occurs;
-		if (IntStream.of(occurs).anyMatch(v -> v == 0)) {
+		Variable[] scp = translate(clean(list));
+		int[] remaining = null;
+		boolean zeroOccurs = IntStream.of(occurs).anyMatch(v -> v == 0);
+		if (zeroOccurs) {
 			int[] discarding = IntStream.range(0, values.length).filter(i -> occurs[i] == 0).map(i -> values[i]).toArray();
-			forall(range(scp.length), i -> extension(scp[i], discarding, false));
-			int[] remaining = IntStream.range(0, values.length).filter(i -> occurs[i] != 0).toArray();
-			vals = IntStream.of(remaining).map(i -> values[i]).toArray();
-			occs = IntStream.of(remaining).map(i -> occurs[i]).toArray();
+			forall(range(scp.length), i -> extension(scp[i], discarding, false)); // we post unary constraints
+			remaining = IntStream.range(0, values.length).filter(i -> occurs[i] != 0).toArray();
 		}
+		int[] vals = zeroOccurs ? IntStream.of(remaining).map(i -> values[i]).toArray() : values;
+		int[] occs = zeroOccurs ? IntStream.of(remaining).map(i -> occurs[i]).toArray() : occurs;
+
 		control(vals.length > 0 && vals.length == occs.length && IntStream.of(occs).allMatch(v -> v > 0));
 		if (scp.length == 1) {
 			control(vals.length == 1 && occs[0] == 1);
 			return equal(scp[0], vals[0]);
 		}
-		boolean closed = Stream.of(scp).allMatch(x -> x.dom.enclosedIn(values));
-		if (!closed && mustBeClosed) {
-			// sum(list, Kit.repeat(1, list.length), Condition.buildFrom(EQ, limit));
+		boolean closed = Stream.of(scp).allMatch(x -> x.dom.enclosedIn(vals));
+		if (!closed && mustBeClosed)
 			postClosed(scp, vals);
-			closed = true;
-		}
-		// else sum(list, Kit.repeat(1, list.length), Condition.buildFrom(GE, limit));
-		if (closed && IntStream.of(occs).allMatch(v -> v == 1))
+		// if (closed || mustBeClosed) { // DOES NOT SEEM EFFECTIVE
+		// int limit = safeInt(IntStream.range(0, vals.length).mapToLong(i -> safeInt(vals[i] * (long) occs[i],true)).sum(), true);
+		// sum((Var[]) scp, Kit.repeat(1, scp.length), Condition.buildFrom(EQ, limit));
+		// }
+		if ((closed || mustBeClosed) && IntStream.of(occs).allMatch(v -> v == 1))
 			return allDifferent(scp);
 		return post(new Cardinality(this, scp, vals, occs));
 	}
@@ -2160,33 +2164,58 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(values.length == occursMin.length && values.length == occursMax.length
 				&& IntStream.range(0, occursMin.length).allMatch(i -> 0 <= occursMin[i] && occursMin[i] <= occursMax[i]));
 		Variable[] scp = translate(clean(list));
+		int[] remaining = null;
+		boolean zeroOccurs = IntStream.range(0, occursMax.length).anyMatch(i -> occursMax[i] == 0);
+		if (zeroOccurs) {
+			int[] discarding = IntStream.range(0, values.length).filter(i -> occursMax[i] == 0).map(i -> values[i]).toArray();
+			forall(range(scp.length), i -> extension(scp[i], discarding, false)); // we post unary constraints
+			remaining = IntStream.range(0, values.length).filter(i -> occursMax[i] > 0).toArray();
+		}
+		int[] vals = zeroOccurs ? IntStream.of(remaining).map(i -> values[i]).toArray() : values;
+		int[] occsMin = zeroOccurs ? IntStream.of(remaining).map(i -> occursMin[i]).toArray() : occursMin;
+		int[] occsMax = zeroOccurs ? IntStream.of(remaining).map(i -> occursMax[i]).toArray() : occursMax;
+
 		if (scp.length == 1) {
-			int[] required = IntStream.range(0, values.length).filter(i -> occursMin[i] > 0).toArray();
+			int[] required = IntStream.range(0, vals.length).filter(i -> occsMin[i] > 0).toArray();
 			control(required.length <= 1); // because not possible to assign a unique variable to several values
 			if (required.length == 1) {
-				control(occursMin[required[0]] == 1);
-				return equal(scp[0], values[required[0]]);
+				control(occsMin[required[0]] == 1);
+				return equal(scp[0], vals[required[0]]);
 			}
-			// as all occursMax[i] > 0, all values may be used for the assignment, so we post a unary table
-			return extension(scp[0], values, true);
+			return extension(scp[0], vals, true); // all values are such that occursMax[i] > 0, so may be used for the assignment (we post a unary table)
 		}
-		if (mustBeClosed)
-			postClosed(scp, values);
-		return post(new Cardinality(this, scp, values, occursMin, occursMax));
+
+		boolean closed = Stream.of(scp).allMatch(x -> x.dom.enclosedIn(vals));
+		if (!closed && mustBeClosed)
+			postClosed(scp, vals);
+		// TODO posting two sums from occsMin and occsMax ?
+		if ((closed || mustBeClosed) && IntStream.range(0, vals.length).allMatch(i -> occsMax[i] <= 1))
+			return allDifferent(scp);
+		return post(new Cardinality(this, scp, vals, occsMin, occsMax));
 	}
 
 	@Override
 	public final CtrEntity cardinality(Var[] list, int[] values, boolean mustBeClosed, Var[] occurs) {
-		control(values.length == occurs.length && Stream.of(occurs).noneMatch(x -> x == null));
+		control(values.length == occurs.length && Stream.of(occurs).noneMatch(x -> x == null)
+				&& IntStream.range(0, values.length - 1).allMatch(i -> values[i] < values[i + 1]));
 		Variable[] scp = translate(clean(list));
 		// TODO what to do if scp.length ==1 ?
-		if (mustBeClosed)
+
+		boolean closed = Stream.of(scp).allMatch(x -> x.dom.enclosedIn(values));
+		if (!closed && mustBeClosed)
 			postClosed(scp, values);
-		// TODO should we filer variables of scp not involving values[i]?
+		if (closed || mustBeClosed)
+			sum(occurs, Kit.repeat(1, occurs.length), Condition.buildFrom(EQ, scp.length)); // redundant constraint
+		// else
+		// post(new Cardinality(this, scp, values, Stream.of(occurs).mapToInt(x -> ((Variable) x).dom.firstValue()).toArray(),
+		// Stream.of(occurs).mapToInt(x -> ((Variable) x).dom.lastValue()).toArray()));
+
+		// if ((closed || mustBeClosed) && Variable.haveSameDomainType(scp) && scp[0].dom.connex() && scp[0].dom.firstValue() == 0
+		// && scp[0].dom.withExactlyTheseValues(values))
+		// binpacking((Var[]) scp, Kit.repeat(1, scp.length), occurs, true); // redundant constraint TODO to be checked (real interest?)
+
 		return forall(range(values.length), i -> {
-			Variable[] filteredScp = Stream.of(scp).filter(x -> x.dom.containsValue(values[i])).toArray(Variable[]::new);
-			control(filteredScp.length > 1);
-			post(new ExactlyVarK(this, filteredScp, values[i], (Variable) occurs[i]));
+			post(new ExactlyVarK(this, Stream.of(scp).filter(x -> x.dom.containsValue(values[i])).toArray(Variable[]::new), values[i], (Variable) occurs[i]));
 		});
 	}
 
@@ -2201,22 +2230,22 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	@Override
-	public final CtrEntity cardinality(Var[] list, Var[] values, boolean mustBeClosed, Var[] occurs) {
-		control(values.length == occurs.length && Stream.of(values).noneMatch(x -> x == null) && Stream.of(occurs).noneMatch(x -> x == null));
-		unimplementedIf(mustBeClosed, "for the moment");
-		Variable[] scp = translate(clean(list));
-		return forall(range(values.length), i -> {
-			sum(Stream.of(scp).map(x -> eq(x, values[i])), Condition.buildFrom(EQ, occurs[i]));
-		});
-	}
-
-	@Override
 	public final CtrEntity cardinality(Var[] list, Var[] values, boolean mustBeClosed, int[] occursMin, int[] occursMax) {
 		control(values.length == occursMin.length && values.length == occursMax.length && Stream.of(values).noneMatch(x -> x == null));
 		unimplementedIf(mustBeClosed, "for the moment");
 		Variable[] scp = translate(clean(list));
 		return forall(range(values.length), i -> {
 			sum(Stream.of(scp).map(x -> eq(x, values[i])), Condition.buildFrom(IN, new Range(occursMin[i], occursMax[i])));
+		});
+	}
+
+	@Override
+	public final CtrEntity cardinality(Var[] list, Var[] values, boolean mustBeClosed, Var[] occurs) {
+		control(values.length == occurs.length && Stream.of(values).noneMatch(x -> x == null) && Stream.of(occurs).noneMatch(x -> x == null));
+		unimplementedIf(mustBeClosed, "for the moment");
+		Variable[] scp = translate(clean(list));
+		return forall(range(values.length), i -> {
+			sum(Stream.of(scp).map(x -> eq(x, values[i])), Condition.buildFrom(EQ, occurs[i]));
 		});
 	}
 

@@ -399,6 +399,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 
 			public ExactlyVarK(Problem pb, Variable[] list, int value, Variable k) {
 				super(pb, list, value, k);
+				control(list.length > 1);
 			}
 
 			@Override

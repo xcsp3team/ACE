@@ -131,7 +131,12 @@ public final class Features {
 
 		public CollectedNogood(Variable[] scp, int[] values) {
 			// is there a simpler and direct way to sort the nogood?
-			Map<Variable, Integer> map = IntStream.range(0, scp.length).boxed().collect(Collectors.toMap(i -> scp[i], i -> values[i]));
+			assert IntStream.range(0, scp.length).allMatch(i -> scp[i].dom.containsValue(values[i]));
+			boolean singleton = Stream.of(scp).anyMatch(x -> x.dom.size() == 1);
+			Variable[] fscp = singleton ? Stream.of(scp).filter(x -> x.dom.size() > 1).toArray(Variable[]::new) : scp;
+			int[] fvalues = singleton ? IntStream.range(0, scp.length).filter(i -> scp[i].dom.size() > 1).map(i -> values[i]).toArray() : values;
+
+			Map<Variable, Integer> map = IntStream.range(0, fscp.length).boxed().collect(Collectors.toMap(i -> fscp[i], i -> fvalues[i]));
 			map = Kit.sort(map, (e1, e2) -> e1.getKey().num - e2.getKey().num);
 			this.vars = map.entrySet().stream().map(e -> e.getKey()).toArray(Variable[]::new);
 			this.vals = map.entrySet().stream().mapToInt(e -> e.getValue()).toArray();
