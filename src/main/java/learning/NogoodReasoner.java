@@ -335,7 +335,7 @@ public final class NogoodReasoner {
 				if (nMetPositiveDecisions == 0) {
 					unaryNogoodsofLastBranch.add(d);
 					if (options.nogoodDisplayLimit > 0)
-						System.out.println("      " + decisions.stringOf(d));
+						System.out.println("      nogood: " + decisions.stringOf(-d));
 
 					// if (symmetryHandler != null) symmetryHandler.handleSymmetricUnaryNogoods(d);
 				} else {
@@ -358,7 +358,7 @@ public final class NogoodReasoner {
 					negativeDecisions[nMetPositiveDecisions] = d;
 					Nogood nogood = addNogood(negativeDecisions, false); // symmetryHandler != null);
 					if (options.nogoodDisplayLimit > 0 && nogood != null && nogood.decisions.length <= options.nogoodDisplayLimit)
-						System.out.println("      " + IntStream.of(nogood.decisions).mapToObj(dc -> decisions.stringOf(dc)).collect(joining(" ")));
+						System.out.println("      nogood: " + IntStream.of(nogood.decisions).mapToObj(dc -> decisions.stringOf(-dc)).collect(joining(" ")));
 
 					// }
 					// if (symmetryHandler != null) symmetryHandler.handleSymmetricNaryNogoods(currentNogood);

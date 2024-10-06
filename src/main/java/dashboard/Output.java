@@ -492,6 +492,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(COUNT, head.problem.constraints.length);
 		m.put(N_REMOVED1, features.nRemovedUnaryCtrs);
 		m.put(N_CONVERTED, features.nConvertedConstraints);
+		m.put("nNogoods", features.collecting.nogoods.size());
 		m.put(N_SPECIFIC, Stream.of(head.problem.constraints).filter(c -> c instanceof SpecificPropagator).count());
 		m.put(N_MERGED, features.nMergedCtrs);
 		m.put(N_DISCARDED, features.nDiscardedCtrs);

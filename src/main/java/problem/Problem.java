@@ -53,6 +53,7 @@ import static org.xcsp.common.predicates.MatcherInterface.set_vals;
 import static org.xcsp.common.predicates.MatcherInterface.val;
 import static org.xcsp.common.predicates.MatcherInterface.var;
 import static org.xcsp.common.predicates.MatcherInterface.varOrVal;
+import static org.xcsp.common.predicates.MatcherInterface.x_eq_k;
 import static org.xcsp.common.predicates.MatcherInterface.x_ne_k;
 import static org.xcsp.common.predicates.MatcherInterface.x_ne_y;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.ariop;
@@ -997,6 +998,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private Matcher logic_or_x_y = new Matcher(node(TypeExpr.OR, var, var));
 
 	private Matcher x_mul_y__eq_k = new Matcher(node(TypeExpr.EQ, node(MUL, var, var), val));
+	private Matcher x_mul_y__eq_z = new Matcher(node(TypeExpr.EQ, node(MUL, var, var), var));
 
 	// ternary
 	private Matcher x_ariop_y__relop_z = new Matcher(node(relop, node(ariop, var, var), var));
@@ -1131,7 +1133,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				}
 			} else if (logic_or_x_y.matches(tree))
 				c = new PrimitiveBinaryNoCst.Or2(this, scp[0], scp[1]);
-
+			else if (x_mul_y__eq_z.matches(tree) && tree.var(0) == tree.var(1)) { // if x*x = z
+				Variable x = (Variable) tree.var(0), z = (Variable) tree.var(2);
+				int[] t = x.dom.valuesChecking(v -> z.dom.containsValue(v * v));
+				return extension(vars(x, z), IntStream.of(t).mapToObj(v -> new int[] { v, v * v }).toArray(int[][]::new), true, false);
+			}
 			if (c != null)
 				return post(c);
 		}
@@ -1157,12 +1163,32 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (c != null)
 				return post(c);
 		}
-		if (arity > 2 && tree.type == OR) {
-			if (Stream.of(tree.sons).allMatch(son -> son.type == VAR))
+		if (tree.type == OR) {
+			if (arity > 2 && Stream.of(tree.sons).allMatch(son -> son.type == VAR))
 				return post(new AtLeast1(this, scp, 1)); // return post(SumSimple.buildFrom(this, scp, NE, 0));
-			if (Stream.of(tree.sons).allMatch(son -> son.type == VAR || x_ne_k.matches(son))) {
-				features.collecting.addNogood(scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray());
-				return null; // post(new Nogood(this, scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray()));
+			if (arity >= 2) {
+				if (Stream.of(tree.sons)
+						.allMatch(son -> son.type == VAR || x_ne_k.matches(son) || (x_eq_k.matches(son) && ((Variable) son.var(0)).dom.is01()))) {
+					List<Integer> vals = new ArrayList<>();
+					for (XNode<IVar> son : tree.sons) {
+						int v = -1;
+						if (son.type == VAR) {
+							control(((Variable) son.var(0)).dom.is01());
+							v = 0;
+						} else if (x_ne_k.matches(son))
+							v = son.val(0);
+						else {
+							assert x_eq_k.matches(son) && ((Variable) son.var(0)).dom.is01() && (son.val(0) == 0 || son.val(0) == 1);
+							v = son.val(0) == 1 ? 0 : 1;
+						}
+						vals.add(v);
+						if (!((Variable) son.var(0)).dom.containsValue(v))
+							return post(new CtrTrue(this, scp, "Nogood trivially satisfied"));
+					}
+					features.collecting.addNogood(scp, vals.stream().mapToInt(v -> v).toArray());
+					// features.collecting.addNogood(scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray());
+					return null; // post(new Nogood(this, scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray()));
+				}
 			}
 			if (arity == 4 && Stream.of(tree.sons).allMatch(son -> x_ne_y.matches(son)))
 				return post(new DblDiff(this, (Variable) tree.sons[0].var(0), (Variable) tree.sons[0].var(1), (Variable) tree.sons[1].var(0),
@@ -1322,8 +1348,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		@Override
 		public ModifiableBoolean mode() {
-			ExtensionMode exportMode = ExtensionMode.EXTENSION; // later, maybe a
-																// control parameter
+			ExtensionMode exportMode = ExtensionMode.EXTENSION; // later, maybe a control parameter
 			return new ModifiableBoolean(exportMode != ExtensionMode.EXTENSION_SUPPORTS && exportMode != ExtensionMode.EXTENSION_CONFLICTS ? null
 					: exportMode == ExtensionMode.EXTENSION_SUPPORTS);
 		}
@@ -1401,7 +1426,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				}
 			}
 		}
-
 		return post(ConstraintExtension.buildFrom(this, scp, tuples, positive, starred));
 	}
 
