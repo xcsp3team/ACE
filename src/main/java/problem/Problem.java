@@ -2080,7 +2080,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					return ce;
 			} else if (op == EQ) {
 				if (values.length == 1)
-					return post(new ExactlyVarK(this, scp, values[0], (Variable) rightTerm));
+					return list.length == 1 ? equal(eq(list[0], values[0]), rightTerm) : post(new ExactlyVarK(this, scp, values[0], (Variable) rightTerm));
 				return sum(Stream.of(scp).map(x -> in(x, set(values))), condition);
 			}
 		}
