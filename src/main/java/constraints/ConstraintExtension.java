@@ -244,7 +244,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		return list.stream().toArray(int[][]::new);
 	}
 
-	private static boolean isStarred(Object tuples) {
+	public static boolean isStarred(Object tuples) {
 		if (tuples instanceof int[][]) {
 			for (int[] t : (int[][]) tuples)
 				for (int v : t)

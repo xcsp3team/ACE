@@ -42,9 +42,10 @@ import static org.xcsp.common.Types.TypeOptimization.MAXIMIZE;
 import static org.xcsp.common.Types.TypeOptimization.MINIMIZE;
 import static org.xcsp.common.Utilities.safeInt;
 import static org.xcsp.common.predicates.MatcherInterface.addOrSub_varOrVals;
-import static org.xcsp.common.predicates.MatcherInterface.add_mul_vals;
-import static org.xcsp.common.predicates.MatcherInterface.add_mul_vars;
+import static org.xcsp.common.predicates.MatcherInterface.add_mulVars;
 import static org.xcsp.common.predicates.MatcherInterface.add_vars;
+import static org.xcsp.common.predicates.MatcherInterface.add_varsOrTerms;
+import static org.xcsp.common.predicates.MatcherInterface.add_varsOrTerms_valEnding;
 import static org.xcsp.common.predicates.MatcherInterface.logic_vars;
 import static org.xcsp.common.predicates.MatcherInterface.max_vars;
 import static org.xcsp.common.predicates.MatcherInterface.min_vars;
@@ -215,8 +216,9 @@ import constraints.intension.Primitive4.Disjonctive2D;
 import constraints.intension.Primitive4.Disjonctive2Db;
 import constraints.intension.Primitive4.Disjonctive2Dc;
 import constraints.intension.Primitive4.DisjonctiveVar;
-import constraints.intension.Reification.Reif2;
-import constraints.intension.Reification.Reif2.Reif2EQ;
+import constraints.intension.Reification.Reif2.Reif2Rel;
+import constraints.intension.Reification.Reif2.Reif2Rel.Reif2EQ;
+import constraints.intension.Reification.Reif2.Reif2Set;
 import constraints.intension.Reification.Reif3;
 import constraints.intension.Reification.ReifLogic;
 import dashboard.Control.OptionsGeneral;
@@ -993,6 +995,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private Matcher logic_y_relop_k__iff_x = new Matcher(node(IFF, node(relop, var, val), var));
 	private Matcher logic_k_relop_y__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, val, var), var));
 	private Matcher logic_k_relop_y__iff_x = new Matcher(node(IFF, node(relop, val, var), var));
+	private Matcher logic_y_setop_vals__eq_x = new Matcher(node(TypeExpr.EQ, node(setop, var, set_vals), var));
+
 	private Matcher unalop_x__eq_y = new Matcher(node(TypeExpr.EQ, node(unalop, var), var));
 	private Matcher disjonctive = new Matcher(node(TypeExpr.OR, node(TypeExpr.LE, node(ADD, var, val), var), node(TypeExpr.LE, node(ADD, var, val), var)));
 	private Matcher logic_or_x_y = new Matcher(node(TypeExpr.OR, var, var));
@@ -1016,12 +1020,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// sum
 	private Matcher add_vars__relop = new Matcher(node(relop, add_vars, varOrVal));
 	private Matcher relop__add_vars = new Matcher(node(relop, varOrVal, add_vars));
-	private Matcher add_mul_vals__relop = new Matcher(node(relop, add_mul_vals, varOrVal));
-	private Matcher add_mul_vars__relop = new Matcher(node(relop, add_mul_vars, varOrVal));
-	private Matcher relop__add_mul_vals = new Matcher(node(relop, varOrVal, add_mul_vals));
-	private Matcher relop__add_mul_vars = new Matcher(node(relop, varOrVal, add_mul_vars));
+	private Matcher add_mul_vals__relop = new Matcher(node(relop, add_varsOrTerms, varOrVal));
+	private Matcher add_mul_vars__relop = new Matcher(node(relop, add_mulVars, varOrVal));
+	private Matcher relop__add_mul_vals = new Matcher(node(relop, varOrVal, add_varsOrTerms));
+	private Matcher relop__add_mul_vars = new Matcher(node(relop, varOrVal, add_mulVars));
 	private Matcher relop__addOrSub_varOrVals = new Matcher(node(relop, addOrSub_varOrVals, addOrSub_varOrVals));
-
+	private Matcher relop__add_varOrTerms_valEnding__var = new Matcher(node(relop, add_varsOrTerms_valEnding, var));
 	// product
 	private Matcher mul_vars__relop = new Matcher(node(relop, mul_vars, val));
 
@@ -1071,6 +1075,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		assert Variable.haveSameType(scp);
 		if (options.toExtension(scp, tree) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
+			System.out.println("converting " + tree);
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
@@ -1118,11 +1123,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			else if (y_ariop_k__relop_x.matches(tree))
 				c = Primitive2.buildFrom(this, scp[1], tree.relop(0).arithmeticInversion(), scp[0], tree.ariop(0), tree.val(0));
 			else if (logic_y_relop_k__eq_x.matches(tree) && scp[1].dom.is01())
-				c = Reif2.buildFrom(this, scp[1], scp[0], tree.relop(1), tree.val(0));
+				c = Reif2Rel.buildFrom(this, scp[1], scp[0], tree.relop(1), tree.val(0));
 			else if (logic_y_relop_k__iff_x.matches(tree) && scp[1].dom.is01())
-				c = Reif2.buildFrom(this, scp[1], scp[0], tree.relop(0), tree.val(0));
+				c = Reif2Rel.buildFrom(this, scp[1], scp[0], tree.relop(0), tree.val(0));
 			else if (logic_k_relop_y__eq_x.matches(tree) && scp[1].dom.is01())
-				c = Reif2.buildFrom(this, scp[1], scp[0], tree.relop(1).arithmeticInversion(), tree.val(0));
+				c = Reif2Rel.buildFrom(this, scp[1], scp[0], tree.relop(1).arithmeticInversion(), tree.val(0));
+			else if (logic_y_setop_vals__eq_x.matches(tree) && scp[1].dom.is01())
+				c = Reif2Set.buildFrom(this, scp[1], scp[0], tree.setop(0), tree.arrayOfVals());
 			else if (unalop_x__eq_y.matches(tree))
 				c = Primitive2.buildFrom(this, scp[1], tree.unalop(0), scp[0]);
 			else if (disjonctive.matches(tree)) {
@@ -1258,6 +1265,20 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 						limit = limit + (grandSon.val(0) * (neg ? -1 : 1));
 				}
 				return sum(list.stream().toArray(Var[]::new), coeffs.stream().mapToInt(v -> v).toArray(), new ConditionVal(tree.relop(0), limit));
+			}
+			if (relop__add_varOrTerms_valEnding__var.matches(tree)) {
+				XNode<?>[] gsons = tree.sons[0].sons;
+				int nTerms = gsons.length;
+				Var[] list = new Var[nTerms];
+				int[] coeffs = new int[nTerms];
+				for (int i = 0; i < gsons.length - 1; i++) {
+					list[i] = (Var) gsons[i].var(0);
+					coeffs[i] = gsons[i].type == VAR ? 1 : gsons[i].val(0);
+				}
+				list[nTerms - 1] = (Var) tree.sons[1].var(0);
+				coeffs[nTerms - 1] = -1;
+				int limit = gsons[nTerms - 1].val(0);
+				return sum(list, coeffs, Condition.buildFrom(tree.relop(0), -limit));
 			}
 		}
 		if (mul_vars__relop.matches(tree)) {
@@ -1425,6 +1446,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					return null;
 				}
 			}
+		}
+		if (list.length > 2 && head.control.extension.toMDD && positive) {
+			if (starred == null)
+				starred = ConstraintExtension.isStarred(tuples);
+			if (!starred)
+				return post(new CMDDO(this, translate(list), (int[][]) tuples));
+			else
+				return post(new CMDDO(this, translate(list), (int[][]) tuples));
 		}
 		return post(ConstraintExtension.buildFrom(this, scp, tuples, positive, starred));
 	}
@@ -2667,6 +2696,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// for (int j = i + 1; j < origins.length; j++)
 		// intension(iff(le(aux[i], aux[j]), le(origins[i], origins[j])));
 		// }
+
+		if (head.control.global.redundNoOverlap)
+			cumulative(origins, lengths, null, Kit.repeat(1, origins.length), api.condition(LE, 1)); // TODO is that relevant?
+
 		for (int i = 0; i < origins.length; i++)
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i], xj = (Variable) origins[j];
@@ -2678,8 +2711,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					post(new Disjonctive(this, xi, li, xj, lj));
 					break;
 				case DECOMPOSITION:
-					post(new ConstraintIntension(this, new Variable[] { xi, xj }, or(le(add(xi, li), xj), le(add(xj, lj), xi)))); // otherwise recognize a
-																																	// Disjunctive
+					post(new ConstraintIntension(this, new Variable[] { xi, xj }, or(le(add(xi, li), xj), le(add(xj, lj), xi))));
 					// intension(or(le(add(xi, li), xj), le(add(xj, lj), xi)));
 					break;
 				case TABLE_HYBRID:

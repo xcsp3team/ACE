@@ -18,11 +18,14 @@ import static propagation.AC.enforceLT;
 import static propagation.AC.enforceNE;
 import static utility.Kit.control;
 
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Types.TypeConditionOperatorRel;
+import org.xcsp.common.Types.TypeConditionOperatorSet;
 import org.xcsp.common.Types.TypeLogicalOperator;
 
+import constraints.intension.Reification.Reif2.Reif2Rel.Reif2NE;
 import constraints.intension.Reification.ReifLogic.ReifLogic2.LogEqAnd2;
 import constraints.intension.Reification.ReifLogic.ReifLogic2.LogEqOr2;
 import constraints.intension.Reification.ReifLogic.ReifLogicn.LogEqAnd;
@@ -33,13 +36,14 @@ import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
+import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
 public final class Reification {
 
 	/**********************************************************************************************
-	 * Binary Reification : Classes for x = (y <op> k)
+	 * Binary Reification : Classes for x = (y <op> k) or w = (y <setop> S)
 	 *********************************************************************************************/
 
 	/**
@@ -47,24 +51,7 @@ public final class Reification {
 	 */
 	public static abstract class Reif2 extends Primitive2 implements TagNotSymmetric {
 
-		public static Reif2 buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
-			switch (op) {
-			case LT:
-				return new Reif2LE(pb, x, y, k - 1);
-			case LE:
-				return new Reif2LE(pb, x, y, k);
-			case GE:
-				return new Reif2GE(pb, x, y, k);
-			case GT:
-				return new Reif2GE(pb, x, y, k + 1);
-			case EQ:
-				return new Reif2EQ(pb, x, y, k);
-			default: // NE
-				return new Reif2NE(pb, x, y, k);
-			}
-		}
-
-		public Reif2(Problem pb, Variable x, Variable y, int k) {
+		public Reif2(Problem pb, Variable x, Variable y, int k) { // k not relevant for some subclasses
 			super(pb, x, y, k);
 			if (!dx.is01()) {
 				control(dx.initSize() >= 2 && dx.toVal(0) == 0 && dx.toVal(1) == 1 && (dx.contains(0) && dx.contains(1)));
@@ -73,103 +60,209 @@ public final class Reification {
 			// control(dx.is01(), "The first variable should be of type 01 " + x);
 		}
 
-		public static final class Reif2LE extends Reif2 {
+		public static abstract class Reif2Rel extends Reif2 {
 
-			@Override
-			public boolean isSatisfiedBy(int[] t) {
-				return (t[0] == 1) == (t[1] <= k);
+			public static Reif2Rel buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, int k) {
+				switch (op) {
+				case LT:
+					return new Reif2LE(pb, x, y, k - 1);
+				case LE:
+					return new Reif2LE(pb, x, y, k);
+				case GE:
+					return new Reif2GE(pb, x, y, k);
+				case GT:
+					return new Reif2GE(pb, x, y, k + 1);
+				case EQ:
+					return new Reif2EQ(pb, x, y, k);
+				default: // NE
+					return new Reif2NE(pb, x, y, k);
+				}
 			}
 
-			public Reif2LE(Problem pb, Variable x, Variable y, int k) {
+			public Reif2Rel(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
+				// defineKey(k); // TODO pb because already called (something to change in the hierarchy)
 			}
 
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				if (dx.last() == 0)
-					return (dy.firstValue() > k || dy.removeValuesLE(k)) && entailed(); // x = 0 => y > k
-				if (dx.first() == 1)
-					return (dy.lastValue() <= k || dy.removeValuesGT(k)) && entailed(); // x = 1 => y <= k
-				if (dy.lastValue() <= k)
-					return dx.removeIfPresent(0) && entailed(); // y <= k => x != 0
-				if (dy.firstValue() > k)
-					return dx.removeIfPresent(1) && entailed(); // y > k => x != 1
-				return true;
+			public static final class Reif2LE extends Reif2Rel {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					return (t[0] == 1) == (t[1] <= k);
+				}
+
+				public Reif2LE(Problem pb, Variable x, Variable y, int k) {
+					super(pb, x, y, k);
+				}
+
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					if (dx.last() == 0)
+						return (dy.firstValue() > k || dy.removeValuesLE(k)) && entailed(); // x = 0 => y > k
+					if (dx.first() == 1)
+						return (dy.lastValue() <= k || dy.removeValuesGT(k)) && entailed(); // x = 1 => y <= k
+					if (dy.lastValue() <= k)
+						return dx.removeIfPresent(0) && entailed(); // y <= k => x != 0
+					if (dy.firstValue() > k)
+						return dx.removeIfPresent(1) && entailed(); // y > k => x != 1
+					return true;
+				}
+			}
+
+			public static final class Reif2GE extends Reif2Rel {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					return (t[0] == 1) == (t[1] >= k);
+				}
+
+				public Reif2GE(Problem pb, Variable x, Variable y, int k) {
+					super(pb, x, y, k);
+				}
+
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					if (dx.last() == 0)
+						return (dy.lastValue() < k || dy.removeValuesGE(k)) && entailed(); // x = 0 => y < k
+					if (dx.first() == 1)
+						return (dy.firstValue() >= k || dy.removeValuesLT(k)) && entailed(); // x = 1 => y >= k
+					if (dy.firstValue() >= k)
+						return dx.removeIfPresent(0) && entailed(); // y >= k => x != 0
+					if (dy.lastValue() < k)
+						return dx.removeIfPresent(1) && entailed(); // y < k => x != 1
+					return true;
+				}
+			}
+
+			public static final class Reif2EQ extends Reif2Rel {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					return (t[0] == 1) == (t[1] == k);
+				}
+
+				public Reif2EQ(Problem pb, Variable x, Variable y, int k) {
+					super(pb, x, y, k);
+				}
+
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					if (dx.last() == 0)
+						return dy.removeValueIfPresent(k) && entailed(); // x = 0 => y != k
+					if (dx.first() == 1)
+						return dy.reduceToValue(k) && entailed(); // x = 1 => y = k
+					if (!dy.containsValue(k))
+						return dx.removeIfPresent(1) && entailed(); // y != k => x != 1
+					if (dy.size() == 1)
+						return dx.removeIfPresent(0) && entailed(); // y = k => x != 0
+					return true;
+				}
+			}
+
+			public static final class Reif2NE extends Reif2Rel {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					return (t[0] == 1) == (t[1] != k);
+				}
+
+				public Reif2NE(Problem pb, Variable x, Variable y, int k) {
+					super(pb, x, y, k);
+				}
+
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					if (dx.last() == 0)
+						return dy.reduceToValue(k) && entailed(); // x = 0 => y = k
+					if (dx.first() == 1)
+						return dy.removeValueIfPresent(k) && entailed(); // x = 1 => x != k
+					if (!dy.containsValue(k))
+						return dx.removeIfPresent(0) && entailed(); // y != k => x != 0
+					if (dy.size() == 1)
+						return dx.removeIfPresent(1) && entailed(); // y = k => x != 1
+					return true;
+				}
 			}
 		}
 
-		public static final class Reif2GE extends Reif2 {
+		public static abstract class Reif2Set extends Reif2 {
 
-			@Override
-			public boolean isSatisfiedBy(int[] t) {
-				return (t[0] == 1) == (t[1] >= k);
+			public static Reif2Set buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorSet op, int[] values) {
+				switch (op) {
+				case IN:
+					return new Reif2In(pb, x, y, values);
+				default: // NOTIN
+					throw new AssertionError("unimplemented case");
+				}
 			}
 
-			public Reif2GE(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
+			int[] values;
+
+			public Reif2Set(Problem pb, Variable x, Variable y, int[] values) {
+				super(pb, x, y, -1); // -1 is a dummy value
+				this.values = IntStream.of(values).sorted().toArray();
+				// defineKey(values); // TODO pb because already called (something to change in the hierachy)
 			}
 
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				if (dx.last() == 0)
-					return (dy.lastValue() < k || dy.removeValuesGE(k)) && entailed(); // x = 0 => y < k
-				if (dx.first() == 1)
-					return (dy.firstValue() >= k || dy.removeValuesLT(k)) && entailed(); // x = 1 => y >= k
-				if (dy.firstValue() >= k)
-					return dx.removeIfPresent(0) && entailed(); // y >= k => x != 0
-				if (dy.lastValue() < k)
-					return dx.removeIfPresent(1) && entailed(); // y < k => x != 1
-				return true;
-			}
-		}
+			public static final class Reif2In extends Reif2Set {
 
-		public static final class Reif2EQ extends Reif2 {
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					for (int v : values)
+						if (v == t[1])
+							return t[0] == 1;
+					return t[0] == 0;
+				}
 
-			@Override
-			public boolean isSatisfiedBy(int[] t) {
-				return (t[0] == 1) == (t[1] == k);
-			}
+				private int sentinelIn = -1, sentinelOut = -1; // storing indexes of values
 
-			public Reif2EQ(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-			}
+				private boolean checkSentinelIn() {
+					if (sentinelIn != -1 && dy.contains(sentinelIn))
+						return true;
+					for (int v : values)
+						if (dy.containsValue(v)) {
+							sentinelIn = dy.toIdx(v);
+							return true;
+						}
+					return false;
+				}
 
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				if (dx.last() == 0)
-					return dy.removeValueIfPresent(k) && entailed(); // x = 0 => y != k
-				if (dx.first() == 1)
-					return dy.reduceToValue(k) && entailed(); // x = 1 => y = k
-				if (!dy.containsValue(k))
-					return dx.removeIfPresent(1) && entailed(); // y != k => x != 1
-				if (dy.size() == 1)
-					return dx.removeIfPresent(0) && entailed(); // y = k => x != 0
-				return true;
-			}
-		}
+				private boolean checkSentinelOut() {
+					if (dy.size() > values.length)
+						return true;
+					if (sentinelOut != -1 && dy.contains(sentinelOut))
+						return true;
+					int j = 0;
+					for (int a = dy.first(); a != -1; a = dy.next(a)) {
+						int v = dy.toVal(a);
+						while (j < values.length && values[j] < v)
+							j++;
+						if (j == values.length || values[j] != v) {
+							sentinelOut = a;
+							return true;
+						} else
+							j++;
+					}
+					return false;
+				}
 
-		public static final class Reif2NE extends Reif2 {
+				public Reif2In(Problem pb, Variable x, Variable y, int[] values) {
+					super(pb, x, y, values);
+				}
 
-			@Override
-			public boolean isSatisfiedBy(int[] t) {
-				return (t[0] == 1) == (t[1] != k);
-			}
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					if (dx.last() == 0)
+						return dy.removeValuesIn(values) && entailed(); // x = 0 => y not in S
+					if (dx.first() == 1)
+						return dy.removeValuesNotIn(values) && entailed(); // x = 1 => y in S
 
-			public Reif2NE(Problem pb, Variable x, Variable y, int k) {
-				super(pb, x, y, k);
-			}
-
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				if (dx.last() == 0)
-					return dy.reduceToValue(k) && entailed(); // x = 0 => y = k
-				if (dx.first() == 1)
-					return dy.removeValueIfPresent(k) && entailed(); // x = 1 => x != k
-				if (!dy.containsValue(k))
-					return dx.removeIfPresent(0) && entailed(); // y != k => x != 0
-				if (dy.size() == 1)
-					return dx.removeIfPresent(1) && entailed(); // y = k => x != 1
-				return true;
+					if (!checkSentinelIn())
+						return dx.remove(1) && entailed();
+					if (!checkSentinelOut())
+						return dx.remove(0) && entailed();
+					return true;
+				}
 			}
 		}
 	}

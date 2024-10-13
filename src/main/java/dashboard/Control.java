@@ -491,7 +491,8 @@ public final class Control {
 		public final int variant = addI("variant", "extv", 0, "Variant to be used for some algorithms (e.g., VA or CMDD)");
 		public final boolean decremental = addB("decremental", "extd", true, "Must we use a decremental mode for some algorithms (e.g., STR2, CT or CMDD)");
 		public final int small = addI("small", "exts", 10, "table size threshold for considering a special propagator");
-
+		public final boolean toMDD = addB("toMDD", "tomdd", false, "Must we attempt to convert extension constraints into MDDs (if possible)");
+		
 		public boolean reverse(int arity, boolean positive) {
 			return (positive && arity <= arityLimitToNegative) || (!positive && arity <= arityLimitToPositive);
 		}
