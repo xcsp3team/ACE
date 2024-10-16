@@ -1356,7 +1356,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
-		System.out.println("Tree " + tree);
+		//System.out.println("Tree " + tree);
 		return post(new ConstraintIntension(this, scp, tree));
 	}
 
