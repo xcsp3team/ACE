@@ -626,7 +626,7 @@ public final class Kit {
 	 * @return a string obtained by concatenating the string representation of the objects in the specified array while using the specified delimiters
 	 */
 	public static String join(Object array, String... delimiters) {
-		return join(array, Array.getLength(array), delimiters);
+		return array == null ? "" : join(array, Array.getLength(array), delimiters);
 	}
 
 	/**

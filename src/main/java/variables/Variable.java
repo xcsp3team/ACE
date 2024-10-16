@@ -520,16 +520,17 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	 */
 	public int[] failed;
 
-	private Variable[] computeNeighbours(int neighborArityLimit) {
-		if (ctrs.length == 0 || ctrs[ctrs.length - 1].scp.length > neighborArityLimit)
+	private Variable[] computeNeighbours(int neighborArityLimit) {;
+		if (ctrs.length == 0 || ctrs[ctrs.length - 1].scp.length > neighborArityLimit) {
 			// the last constraint is the one with the largest scope
 			return null;
+		}
 		Set<Variable> set = new TreeSet<>();
 		for (Constraint c : ctrs)
 			for (Variable x : c.scp)
 				if (x != this) {
 					set.add(x);
-					if (set.size() > neighborArityLimit)
+					if (set.size() > neighborArityLimit) 
 						return null;
 				}
 		return set.toArray(new Variable[set.size()]);

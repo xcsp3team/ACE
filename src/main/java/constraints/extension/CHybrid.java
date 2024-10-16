@@ -409,10 +409,8 @@ public final class CHybrid extends ExtensionSpecific {
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {
 			HybridTuple hybridTuple = hybridTuples[set.dense[i]];
-			if (!options.discardHybridEntailment && hybridTuple.isEntailed()) {
-				//System.out.println("entailed");
+			if (!options.discardHybridEntailment && hybridTuple.isEntailed()) 
 				return entailed();
-			}
 			if (hybridTuple.isValid(sVal, sValSize)) {
 				sSupSize = hybridTuple.collect(sSup, sSupSize);
 			} else

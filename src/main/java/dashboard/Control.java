@@ -192,7 +192,7 @@ public final class Control {
 			if (valh.solutionSavingStart == -1)
 				valh.solutionSavingStart = 12;
 			restarts.cutoff = restarts.cutoff / 2;
-			restarts.factor=1.05;
+			restarts.factor = 1.05;
 		}
 
 	}
@@ -492,7 +492,7 @@ public final class Control {
 		public final boolean decremental = addB("decremental", "extd", true, "Must we use a decremental mode for some algorithms (e.g., STR2, CT or CMDD)");
 		public final int small = addI("small", "exts", 10, "table size threshold for considering a special propagator");
 		public final boolean toMDD = addB("toMDD", "tomdd", false, "Must we attempt to convert extension constraints into MDDs (if possible)");
-		
+
 		public boolean reverse(int arity, boolean positive) {
 			return (positive && arity <= arityLimitToNegative) || (!positive && arity <= arityLimitToPositive);
 		}
@@ -510,6 +510,8 @@ public final class Control {
 		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "Must we attempt to recognize minimum/maximum constraints?");
 		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "Must we attempt to recognize sum constraints?");
 		public final boolean recognizeIf = addB("recognizeIf", "rif", true, "Must we recognize/decompose the ternary operator if");
+		public final int arityForClauseUnaryTrees = addI("arityForClauseUnaryTrees", "acut", PLUS_INFINITY_INT,
+				"Arity for recognizing clauses on unary tree expressions");
 		public final boolean toHybrid = addB("toHybrid", "toh", false, "Must we convert toward hybrid tables, when possible?");
 
 		public boolean toExtension(Variable[] vars, XNode<IVar> tree) {

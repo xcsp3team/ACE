@@ -308,7 +308,7 @@ public final class Features {
 				c.num = i++;
 				int arity = c.scp.length;
 				ctrArities.add(arity);
-				ctrTypes.add(c.getClass().getSimpleName() + (arity == 1 && !(c instanceof Extension1) ? "u"
+				ctrTypes.add(c.getClass().getSimpleName() + (arity == 1 && !(c instanceof Extension1) ? "_1"
 						: (c instanceof ConstraintExtension ? "-" + c.extStructure().getClass().getSimpleName() : "")));
 				if (c.extStructure() instanceof Table)
 					tableSizes.add(((Table) c.extStructure()).tuples.length);

@@ -151,6 +151,8 @@ import constraints.global.BinPacking.BinPackingEnergeticLoad;
 import constraints.global.Cardinality;
 import constraints.global.Circuit;
 import constraints.global.Circuit2;
+import constraints.global.ClauseUnaryTrees;
+import constraints.global.ClauseUnaryTrees.TreeUnaryBoolean;
 import constraints.global.Count.CountCst.AtLeast1;
 import constraints.global.Count.CountCst.AtLeastK;
 import constraints.global.Count.CountCst.AtMost1;
@@ -1026,6 +1028,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private Matcher relop__add_mul_vars = new Matcher(node(relop, varOrVal, add_mulVars));
 	private Matcher relop__addOrSub_varOrVals = new Matcher(node(relop, addOrSub_varOrVals, addOrSub_varOrVals));
 	private Matcher relop__add_varOrTerms_valEnding__var = new Matcher(node(relop, add_varsOrTerms_valEnding, var));
+
 	// product
 	private Matcher mul_vars__relop = new Matcher(node(relop, mul_vars, val));
 
@@ -1049,7 +1052,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final CtrEntity intension(XNodeParent<IVar> tree) {
 		OptionsIntension options = head.control.intension;
 
+		// System.out.println("tree1 " + tree);
 		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
+		/// System.out.println("tree2 " + tree);
 		Variable[] scp = (Variable[]) tree.vars(); // keep this statement here, after canonization
 		int arity = scp.length;
 		// System.out.println("Tree " + tree + " " + arity);
@@ -1074,11 +1079,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		assert Variable.haveSameType(scp);
-		if (options.toExtension(scp, tree) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
-			System.out.println("converting " + tree);
-			features.nConvertedConstraints++;
-			return extension(tree);
-		}
+		// if (options.toExtension(scp, tree) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
+		// System.out.println("converting " + tree);
+		// features.nConvertedConstraints++;
+		// return extension(tree);
+		// }
 
 		if (options.toHybrid) { // TODO section to finalize with various cases
 			if (tree.type == IMP) {
@@ -1197,7 +1202,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					return null; // post(new Nogood(this, scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray()));
 				}
 			}
-			if (arity == 4 && Stream.of(tree.sons).allMatch(son -> x_ne_y.matches(son)))
+
+			// TODO Just below, needs to be tested (arity >2, arity >=2 ?)
+			if (arity >= options.arityForClauseUnaryTrees && arity == tree.sons.length) {
+				TreeUnaryBoolean[] terms = ClauseUnaryTrees.canBuildTreeUnaryBooleans(tree.sons);
+				if (terms != null) {
+					return post(new ClauseUnaryTrees(this, terms));
+				}
+			}
+
+			if (arity == 4 && tree.sons.length == 2 && Stream.of(tree.sons).allMatch(son -> x_ne_y.matches(son)))
 				return post(new DblDiff(this, (Variable) tree.sons[0].var(0), (Variable) tree.sons[0].var(1), (Variable) tree.sons[1].var(0),
 						(Variable) tree.sons[1].var(1)));
 		}
@@ -1337,6 +1351,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				}
 			}
 		}
+		if (options.toExtension(scp, tree) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
+			// System.out.println("converting " + tree );
+			features.nConvertedConstraints++;
+			return extension(tree);
+		}
+		System.out.println("Tree " + tree);
 		return post(new ConstraintIntension(this, scp, tree));
 	}
 
@@ -1516,11 +1536,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (scp.length == 2)
 			return different(scp[0], scp[1]);
 
-		// if (scp.length <= 4) { // does not seem to be interesting / faster
-		// Set<Integer> sv = Variable.setOfvaluesIn(scp);
-		// if (sv.size() == scp.length)
-		// return extension((Var[])scp, Kit.allPermutations(sv.stream().mapToInt(v -> v).toArray()), true);
-		// }
+		if (scp.length <= 4 && scp[0] instanceof VariableInteger) { // TODO: increase the limit?
+			Set<Integer> sv = Variable.setOfvaluesIn(scp);
+			if (sv.size() == scp.length)
+				return extension((Var[]) scp, Kit.allPermutations(sv.stream().mapToInt(v -> v).toArray()), true);
+		}
 
 		if (head.control.global.gatherAllDifferent) {
 			subsetAllDifferentScopes.add(scp);
