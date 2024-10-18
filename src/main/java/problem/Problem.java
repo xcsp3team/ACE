@@ -983,15 +983,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ************************************************************************
 
 	// unary
-	private Matcher x_relop_k = new Matcher(node(relop, var, val));
+	public static Matcher x_relop_k = new Matcher(node(relop, var, val));
 	private Matcher k_relop_x = new Matcher(node(relop, val, var));
 	private Matcher x_setop_vals = new Matcher(node(setop, var, set_vals));
 
 	// binary
-	private Matcher x_relop_y = new Matcher(node(relop, var, var));
+	public static Matcher x_relop_y = new Matcher(node(relop, var, var));
 	private Matcher x_ariop_y__relop_k = new Matcher(node(relop, node(ariop, var, var), val));
 	private Matcher k_relop__x_ariop_y = new Matcher(node(relop, val, node(ariop, var, var)));
 	private Matcher x_relop__y_ariop_k = new Matcher(node(relop, var, node(ariop, var, val)));
+	public static Matcher y_add__relop_x = new Matcher(node(relop, node(TypeExpr.ADD, var, val), var));
 	private Matcher y_ariop_k__relop_x = new Matcher(node(relop, node(ariop, var, val), var));
 	private Matcher logic_y_relop_k__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, var, val), var));
 	private Matcher logic_y_relop_k__iff_x = new Matcher(node(IFF, node(relop, var, val), var));
@@ -1052,12 +1053,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final CtrEntity intension(XNodeParent<IVar> tree) {
 		OptionsIntension options = head.control.intension;
 
-		// System.out.println("tree1 " + tree);
 		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
-		/// System.out.println("tree2 " + tree);
+		// System.out.println("tree " + tree);
+
 		Variable[] scp = (Variable[]) tree.vars(); // keep this statement here, after canonization
 		int arity = scp.length;
-		// System.out.println("Tree " + tree + " " + arity);
 
 		if (arity == 1) {
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
@@ -1079,11 +1079,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		assert Variable.haveSameType(scp);
-		// if (options.toExtension(scp, tree) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
-		// System.out.println("converting " + tree);
-		// features.nConvertedConstraints++;
-		// return extension(tree);
-		// }
 
 		if (options.toHybrid) { // TODO section to finalize with various cases
 			if (tree.type == IMP) {
@@ -1203,12 +1198,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				}
 			}
 
-			// TODO Just below, needs to be tested (arity >2, arity >=2 ?)
 			if (arity >= options.arityForClauseUnaryTrees && arity == tree.sons.length) {
 				TreeUnaryBoolean[] terms = ClauseUnaryTrees.canBuildTreeUnaryBooleans(tree.sons);
-				if (terms != null) {
+				if (terms != null) 
 					return post(new ClauseUnaryTrees(this, terms));
-				}
+			}
+			if (arity >= options.arityForClauseHybridTrees) {
+				if (HybridTuple.canBuildHybridTuples(tree.sons))
+					return hybrid(scp, Stream.of(tree.sons).map(son -> new HybridTuple((int[]) null, (XNodeParent<?>) son)));
 			}
 
 			if (arity == 4 && tree.sons.length == 2 && Stream.of(tree.sons).allMatch(son -> x_ne_y.matches(son)))
@@ -1356,7 +1353,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
-		//System.out.println("Tree " + tree);
+		// System.out.println("Tree " + tree);
 		return post(new ConstraintIntension(this, scp, tree));
 	}
 
@@ -2717,6 +2714,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// intension(iff(le(aux[i], aux[j]), le(origins[i], origins[j])));
 		// }
 
+		System.out.println("gggggg");
+		//sum()
+		
 		if (head.control.global.redundNoOverlap)
 			cumulative(origins, lengths, null, Kit.repeat(1, origins.length), api.condition(LE, 1)); // TODO is that relevant?
 
@@ -3172,12 +3172,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ************************************************************************
 
 	/** Builds and returns a smart constraint. */
-	public final CtrAlone hybrid(IVar[] scp, HybridTuple... smartTuples) {
-		return post(new CHybrid(this, translate(scp), smartTuples));
+	public final CtrAlone hybrid(IVar[] scp, HybridTuple... hybridTuples) {
+		return post(new CHybrid(this, translate(scp), hybridTuples));
 	}
 
-	public final CtrAlone hybrid(IVar[] scp, Stream<HybridTuple> smartTuples) {
-		return post(new CHybrid(this, translate(scp), smartTuples));
+	public final CtrAlone hybrid(IVar[] scp, Stream<HybridTuple> hybridTuples) {
+		return post(new CHybrid(this, translate(scp), hybridTuples));
 	}
 
 	/**********************************************************************************************

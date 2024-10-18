@@ -257,7 +257,7 @@ public final class MDD extends ExtensionStructure {
 						Kit.log.fine("class " + i + " => {" + Kit.join(sonsClasses[i]) + "}");
 				Kit.log.fine("nSonsNotNodeF=" + nSonsNotNodeF);
 			}
-			Stream.of(sons).filter(s -> s.num > num).forEach(s -> s.display(cnts, displayClasses));
+			//Stream.of(sons).filter(s -> s.num > num).forEach(s -> s.display(cnts, displayClasses));
 		}
 
 		public void display() {

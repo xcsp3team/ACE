@@ -40,28 +40,28 @@ import variables.Variable;
  */
 public class ClauseUnaryTrees extends ConstraintGlobal implements TagAC, TagCallCompleteFiltering {
 
-	public static TreeUnaryBoolean[] canBuildTreeUnaryBooleans(XNode<IVar>[] sons) {
-		assert Stream.of(sons).allMatch(son -> son.vars().length == 1);
+	public static TreeUnaryBoolean[] canBuildTreeUnaryBooleans(XNode<IVar>[] trees) {
+		assert Stream.of(trees).allMatch(tree -> tree.vars().length == 1);
 		List<TreeUnaryBoolean> list = new ArrayList<>();
-		for (XNode<?> son : sons) {
-			Variable x = (Variable) son.var(0);
-			if (son.type == TypeExpr.VAR && x.dom.is01())
+		for (XNode<?> tree : trees) {
+			Variable x = (Variable) tree.var(0);
+			if (tree.type == TypeExpr.VAR && x.dom.is01())
 				list.add(new TreeUnaryBoolean.TreeVAR(x));
 			else {
-				if (!son.type.isRelationalOperator()) // TODO and IN, NOTIN
+				if (!tree.type.isRelationalOperator()) // TODO and IN, NOTIN
 					return null;
-				if (x_eq_k.matches(son))
-					list.add(new TreeUnaryBoolean.TreeEQ(x, son.val(0)));
-				else if (x_ne_k.matches(son))
-					list.add(new TreeUnaryBoolean.TreeNE(x, son.val(0)));
-				else if (x_lt_k.matches(son))
-					list.add(new TreeUnaryBoolean.TreeLE(x, son.val(0) - 1));
-				else if (x_le_k.matches(son))
-					list.add(new TreeUnaryBoolean.TreeLE(x, son.val(0)));
-				else if (x_ge_k.matches(son))
-					list.add(new TreeUnaryBoolean.TreeGE(x, son.val(0)));
-				else if (x_gt_k.matches(son))
-					list.add(new TreeUnaryBoolean.TreeGE(x, son.val(0) + 1));
+				if (x_eq_k.matches(tree))
+					list.add(new TreeUnaryBoolean.TreeEQ(x, tree.val(0)));
+				else if (x_ne_k.matches(tree))
+					list.add(new TreeUnaryBoolean.TreeNE(x, tree.val(0)));
+				else if (x_lt_k.matches(tree))
+					list.add(new TreeUnaryBoolean.TreeLE(x, tree.val(0) - 1));
+				else if (x_le_k.matches(tree))
+					list.add(new TreeUnaryBoolean.TreeLE(x, tree.val(0)));
+				else if (x_ge_k.matches(tree))
+					list.add(new TreeUnaryBoolean.TreeGE(x, tree.val(0)));
+				else if (x_gt_k.matches(tree))
+					list.add(new TreeUnaryBoolean.TreeGE(x, tree.val(0) + 1));
 				else 
 					return null;
 			}

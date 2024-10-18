@@ -53,6 +53,7 @@ import org.xcsp.common.structures.AbstractTuple.OrdinaryTuple;
 
 import constraints.ConstraintExtension;
 import constraints.extension.CHybrid;
+import problem.Problem;
 import sets.SetDense;
 import sets.SetSparse;
 import utility.Kit;
@@ -182,6 +183,20 @@ public final class TableHybrid extends ExtensionStructure {
 			return new HybridTuple(tuple, restrictions);
 		}
 
+		public static boolean canBuildHybridTuples(XNode<IVar>[] trees) {
+			for (XNode<IVar> tree : trees) {
+				if (Problem.x_relop_k.matches(tree))
+					continue;
+				if (Problem.x_relop_y.matches(tree))
+					continue;
+				if (Problem.y_add__relop_x.matches(tree))
+					continue;
+				// TODO 0/1 variablke, In, NOTON, ternary condition
+				return false;
+			}
+			return true;
+		}
+
 		/**
 		 * The restrictions that are given initially. Note that they correspond to Boolean tree expressions (for stating unary and binary local constraints).
 		 * These expressions are no more useful once the hybrid tuple is attached to its constraint.
@@ -263,7 +278,7 @@ public final class TableHybrid extends ExtensionStructure {
 		 * Builds a binary restriction of the form x <op> y
 		 */
 		private Restriction2 buildRestriction2From(int x, TypeConditionOperatorRel op, int y) {
-			if (scp[0].dom.typeIdentifier() != scp[1].dom.typeIdentifier())
+			if (scp[x].dom.typeIdentifier() != scp[y].dom.typeIdentifier())
 				return buildRestriction2From(x, op, y, 0);
 			switch (op) {
 			case LT:
@@ -286,7 +301,7 @@ public final class TableHybrid extends ExtensionStructure {
 		 * Builds a binary restriction of the form x <op> y + k
 		 */
 		private Restriction2 buildRestriction2From(int x, TypeConditionOperatorRel op, int y, int k) {
-			if (k == 0 && scp[0].dom.typeIdentifier() == scp[1].dom.typeIdentifier())
+			if (k == 0 && scp[x].dom.typeIdentifier() == scp[y].dom.typeIdentifier())
 				return buildRestriction2From(x, op, y);
 			switch (op) {
 			case GE:
@@ -300,7 +315,7 @@ public final class TableHybrid extends ExtensionStructure {
 			case EQ:
 				return new Rstr2EQVal(x, y, k);
 			default:
-				throw new AssertionError("Currently, unimplemented operator " + op);
+				return new Rstr2NEVal(x, y, k);
 			}
 		}
 
@@ -1717,6 +1732,93 @@ public final class TableHybrid extends ExtensionStructure {
 			@Override
 			public boolean isEntailed() {
 				return domx.firstValue() > domy.lastValue() + k;
+			}
+
+		}
+
+		/**
+		 * Restriction of the form x != y + k
+		 */
+		final class Rstr2NEVal extends Restriction2Val {
+
+			@Override
+			public boolean checkIndexes(int[] t) {
+				return domx.toVal(t[x]) != domy.toVal(t[y]) + k;
+			}
+
+			protected Rstr2NEVal(int x, int y, int k) {
+				super(x, NE, y, k);
+			}
+
+			@Override
+			public boolean isValid() {
+				return domx.size() > 1 || domy.size() > 1 || domx.singleValue() != domy.singleValue() + k;
+			}
+
+			@Override
+			public boolean isValidFor(int a) {
+				return domy.size() > 1 || domx.toVal(a) != domy.singleValue() + k;
+			}
+
+			@Override
+			public void collect() {
+				if (!scp[x].assigned()) {
+					int first = domy.size() != 1 ? -1 : domx.toIdx(domy.singleValue());
+					if (first != -1 && nacx.contains(first))
+						nacx.resetTo(first);
+					else
+						nacx.clear();
+						
+					
+//					if (domy.size() == 1 && nacx.contains(domx.toIdx(domy.singleValue())))
+//						nacx.resetTo(domx.toIdx(domy.singleValue()));
+//					else
+//						nacx.clear();
+				}
+				if (!scp[y].assigned()) {
+					int first = domx.size() != 1 ? -1 : domy.toIdx(domx.singleValue());
+					if (first != -1 && nacy.contains(first))
+						nacy.resetTo(first);
+					else
+						nacy.clear();
+				}
+					
+//					
+//					
+//					if (domx.size() != 1 || domy.toIdx(domx.singleValue())) == -1 )
+//						nacy.resetTo(domy.toIdx(domx.singleValue()));
+//					else
+//						nacy.clear();
+//					if (domx.size() == 1 && nacy.contains(domy.toIdx(domx.singleValue())))
+//						nacy.resetTo(domy.toIdx(domx.singleValue()));
+//					else
+//						nacy.clear();
+			}
+
+			@Override
+			public void collectForY() {
+				if (!scp[y].assigned()) {
+					int first = tmp.size() != 1 ? -1 : domy.toIdx(tmp.first());
+					if (first != -1 && nacy.contains(first))
+						nacy.resetTo(first);
+					else
+						nacy.clear();
+					
+					
+//					int first = tmp.first();
+//					if (tmp.size() == 1 && nacy.contains(domy.toIdx(domx.toVal(first))))
+//						nacy.resetTo(domy.toIdx(domx.toVal(first)));
+//					else
+//						nacy.clear();
+				}
+			}
+
+			public boolean isEntailed() {
+				if (domx.size() == 1)
+					return !domy.containsValue(domx.singleValue() - k);
+				if (domy.size() == 1)
+					return !domx.containsValue(domy.singleValue() + k);
+				return false;
 			}
 
 		}
