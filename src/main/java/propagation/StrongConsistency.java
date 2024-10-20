@@ -78,7 +78,7 @@ public abstract class StrongConsistency extends AC {
 			return true;
 		if (options.strongOnce && (solver.restarter.numRun + 1) % 60 != 0)
 			return true;
-		Kit.log.config("more");
+		// Kit.log.config("more");
 		return enforceMore();
 	}
 

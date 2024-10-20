@@ -17,6 +17,7 @@ import propagation.SAC.ESAC3;
 import propagation.SAC.SAC3;
 import solver.Solver;
 import solver.Solver.Stopping;
+import utility.Kit;
 import variables.Variable;
 
 /**
@@ -32,6 +33,8 @@ public class AP extends StrongConsistency {
 	private final ESAC3 esac;
 
 	private final SAC sac;
+
+	private int coeff = 1;
 
 	private final Propagation[] alternatives;
 
@@ -66,7 +69,7 @@ public class AP extends StrongConsistency {
 		if (solver.stopping == Stopping.FULL_EXPLORATION)
 			return rerun;
 		int numRun = solver.restarter.numRun;
-		if (0 < numRun && numRun % GAP == 0) {
+		if (0 < numRun && numRun % (GAP * coeff) == 0) {
 			int before = Variable.nValidValuesFor(solver.problem.variables);
 			Propagation strong = whichStrongPropagation();
 			strong.time = time;
@@ -76,10 +79,12 @@ public class AP extends StrongConsistency {
 			time = strong.time;
 			solver.propagation = this;
 			int after = Variable.nValidValuesFor(solver.problem.variables);
-			System.out.println("After running " + strong.getClass().getSimpleName() + " removals=" + (before - after) + " "
-					+ Variable.nValidValuesFor(solver.problem.variables));
+			int nRemovals = before - after;
+			if (strong == sac)
+				coeff = nRemovals == 0 ? coeff + 1 : Math.max(1, coeff - 1);
+			System.out.println(Kit.Color.CYAN.coloring("    ...filtering " + strong.getClass().getSimpleName()) + " removals=" + nRemovals + " coeff=" + coeff);
 			propagations.add(strong);
-			removals.add(before - after);
+			removals.add(nRemovals);
 			rerun = true;
 		}
 		return rerun;

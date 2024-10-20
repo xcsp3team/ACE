@@ -10,6 +10,7 @@
 
 package constraints.global;
 
+import static org.xcsp.common.predicates.MatcherInterface.k_le_x;
 import static org.xcsp.common.predicates.MatcherInterface.x_eq_k;
 import static org.xcsp.common.predicates.MatcherInterface.x_ge_k;
 import static org.xcsp.common.predicates.MatcherInterface.x_gt_k;
@@ -58,6 +59,8 @@ public class ClauseUnaryTrees extends ConstraintGlobal implements TagAC, TagCall
 					list.add(new TreeUnaryBoolean.TreeLE(x, tree.val(0) - 1));
 				else if (x_le_k.matches(tree))
 					list.add(new TreeUnaryBoolean.TreeLE(x, tree.val(0)));
+				else if (k_le_x.matches(tree))
+					list.add(new TreeUnaryBoolean.TreeGE(x, tree.val(0)));
 				else if (x_ge_k.matches(tree))
 					list.add(new TreeUnaryBoolean.TreeGE(x, tree.val(0)));
 				else if (x_gt_k.matches(tree))

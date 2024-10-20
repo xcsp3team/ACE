@@ -136,7 +136,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			case GT:
 				return new SumSimpleGE(pb, scp, limit + 1);
 			case EQ:
-				return new SumSimpleEQ(pb, scp, limit);
+				boolean b = Stream.of(scp).allMatch(x -> x.dom.is01());
+				return b ? new SumSimpleEQBoolean(pb, scp, limit) : new SumSimpleEQ(pb, scp, limit);
 			default: // NE
 				return new SumSimpleNE(pb, scp, limit);
 			}

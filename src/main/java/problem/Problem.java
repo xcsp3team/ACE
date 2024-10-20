@@ -23,6 +23,7 @@ import static org.xcsp.common.Types.TypeConditionOperatorRel.LT;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.NE;
 import static org.xcsp.common.Types.TypeConditionOperatorSet.IN;
 import static org.xcsp.common.Types.TypeExpr.ADD;
+import static org.xcsp.common.Types.TypeExpr.AND;
 import static org.xcsp.common.Types.TypeExpr.IF;
 import static org.xcsp.common.Types.TypeExpr.IFF;
 import static org.xcsp.common.Types.TypeExpr.IMP;
@@ -80,6 +81,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -139,6 +141,7 @@ import constraints.extension.CHybrid;
 import constraints.extension.CMDD.CMDDO;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableHybrid.HybridTuple;
+import constraints.global.AllDifferent;
 import constraints.global.AllDifferent.AllDifferentComplete;
 import constraints.global.AllDifferent.AllDifferentCounting;
 import constraints.global.AllDifferent.AllDifferentExceptWeak;
@@ -311,6 +314,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			control(priorityVars.length == 0);
 			this.priorityVars = this.auxiliaryVars;
 			this.priorityArrays = new VarArray[0];
+		}
+
+		if (this.priorityVars.length == 0 && head.control.varh.optVarHeuristic > 0 && optimizer != null) { // experimental
+			Variable[] scp = ((Constraint) optimizer.ctr).scp;
+			int from = Math.max(0, scp.length - head.control.varh.optVarHeuristic);
+			if (optimizer.ctr instanceof SumWeighted) {
+				this.priorityVars = IntStream.range(from, scp.length).map(i -> scp.length - i + from - 1).mapToObj(i -> scp[i]).toArray(Variable[]::new);
+				this.nStrictPriorityVars = this.priorityVars.length;
+			}
 		}
 	}
 
@@ -561,12 +573,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		OptionsGlobal options = head.control.global;
 		if (options.allDifferentNb > 0 && constraints.size() > 0) {
 			stopwatch.start();
+			Constraint[] presentAlldifferent = constraints.stream().filter(c -> c instanceof AllDifferent).toArray(Constraint[]::new);
 			List<Variable[]> cliques = Cliques.buildCliques(variables, constraints, options.allDifferentNb, options.allDifferentSize);
+			int cnt = 0;
 			for (Variable[] clique : cliques)
-				allDifferent(clique);
-			features.nCliques = cliques.size();
-			if (head.control.general.verbose > 0)
-				System.out.println("Time for generating redundant AllDifferent constraints: " + stopwatch.wckTimeInSeconds());
+				if (Stream.of(presentAlldifferent).noneMatch(c -> Variable.isContained_sorted(clique, c.scp))) {
+					allDifferent(clique);
+					cnt++;
+				}
+			if (cnt > 0) {
+				features.nCliques = cnt;
+				if (head.control.general.verbose > 0)
+					System.out.println("Time for generating redundant AllDifferent constraints: " + stopwatch.wckTimeInSeconds());
+			}
 		}
 	}
 
@@ -816,6 +835,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Replacing trees by variables and simplifying conditions
 	// ************************************************************************
 
+	private Map<XNode<IVar>, Variable> cacheForTrees = new TreeMap<>(); // BE CAREFUL : HASHMap does not call equals()
+
 	private XNode<IVar>[] treesToArray(Stream<XNode<IVar>> trees) {
 		return trees.toArray(XNode[]::new);
 	}
@@ -862,8 +883,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * @return a new (auxiliary) variable representing the specified tree expression
 	 */
 	public Variable replaceByVariable(XNode<IVar> tree) {
+		if (cacheForTrees.containsKey(tree))
+			return cacheForTrees.get(tree);
 		Var aux = auxVar(tree.possibleValues());
 		replacement(aux, tree, false, null);
+		cacheForTrees.put(tree, (Variable) aux);
 		return (Variable) aux;
 	}
 
@@ -875,6 +899,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private boolean areSimilar(XNode<IVar> tree1, XNode<IVar> tree2) {
 		if (tree1.type != tree2.type || tree1.arity() != tree2.arity())
+			return false;
+		Variable[] l1 = tree1.listOfVars().stream().toArray(Variable[]::new);
+		Variable[] l2 = tree2.listOfVars().stream().toArray(Variable[]::new);
+		if (l1.length != l2.length)
+			return false;
+		int[] t1 = IntStream.range(0, l1.length).map(i -> IntStream.range(0, i).filter(j -> l1[j] == l1[i]).findFirst().orElse(i)).toArray();
+		int[] t2 = IntStream.range(0, l2.length).map(i -> IntStream.range(0, i).filter(j -> l2[j] == l2[i]).findFirst().orElse(i)).toArray();
+		if (IntStream.range(0, t1.length).anyMatch(i -> t1[i] != t2[i]))
 			return false;
 		if (tree1.arity() == 0) {
 			Object value1 = ((XNodeLeaf<?>) tree1).value, value2 = ((XNodeLeaf<?>) tree2).value;
@@ -903,9 +935,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			Object values = real_trees[i].possibleValues();
 			return values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
 		};
-		// if multiple occurrences of the same variable in a tree, possible problem of reasoning with similar trees?
-		boolean similarTrees = Stream.of(real_trees).allMatch(tree -> tree.listOfVars().size() == tree.vars().length);
-		similarTrees = similarTrees && IntStream.range(1, real_trees.length).allMatch(i -> areSimilar(real_trees[0], real_trees[i]));
+		// if multiple occurrences of the same variable in a tree, this is managed in arSimialr
+		// boolean similarTrees = true; // Stream.of(real_trees).allMatch(tree -> tree.listOfVars().size() == tree.vars().length);
+		boolean similarTrees = IntStream.range(1, real_trees.length).allMatch(i -> areSimilar(real_trees[0], real_trees[i]));
 		Var[] aux = auxVarArray(real_trees.length, similarTrees ? doms.apply(0) : doms);
 		int[][] tuples = null;
 		if (similarTrees) {
@@ -1105,7 +1137,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (k == 1)
 				return forall(range(2), i -> equal(scp[i], 1));
 		}
-
 		if (arity == 2 && options.recognizePrimitive2) {
 			Constraint c = null;
 			if (x_relop_y.matches(tree))
@@ -1197,15 +1228,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					return null; // post(new Nogood(this, scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray()));
 				}
 			}
-
 			if (arity >= options.arityForClauseUnaryTrees && arity == tree.sons.length) {
 				TreeUnaryBoolean[] terms = ClauseUnaryTrees.canBuildTreeUnaryBooleans(tree.sons);
-				if (terms != null) 
+				if (terms != null)
 					return post(new ClauseUnaryTrees(this, terms));
 			}
 			if (arity >= options.arityForClauseHybridTrees) {
 				if (HybridTuple.canBuildHybridTuples(tree.sons))
-					return hybrid(scp, Stream.of(tree.sons).map(son -> new HybridTuple((int[]) null, (XNodeParent<?>) son)));
+					return hybrid(scp, Stream.of(tree.sons).map(son -> new HybridTuple((XNodeParent<?>) son)));
 			}
 
 			if (arity == 4 && tree.sons.length == 2 && Stream.of(tree.sons).allMatch(son -> x_ne_y.matches(son)))
@@ -1221,13 +1251,31 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			Variable z = sons[2].type == VAR ? (Variable) sons[2].var(0) : replaceByVariable(sons[2]);
 			return post(new IFT3(this, cnd, y, z));
 		}
-		if (tree.type == TypeExpr.EQ && tree.sons.length == 2 && tree.sons[0].type == IF && tree.sons[1].type == VAR && options.recognizeIf) {
-			Variable x = (Variable) tree.sons[1].var(0);
-			XNode<IVar>[] grandsons = tree.sons[0].sons;
-			Variable cnd = grandsons[0].type == VAR ? (Variable) grandsons[0].var(0) : replaceByVariable(grandsons[0]);
-			Variable y = grandsons[1].type == VAR ? (Variable) grandsons[1].var(0) : replaceByVariable(grandsons[1]);
-			Variable z = grandsons[2].type == VAR ? (Variable) grandsons[2].var(0) : replaceByVariable(grandsons[2]);
-			return extension(vars(x, cnd, y, z), Table.starredIfThen(x, cnd, y, z), true, true);
+		if (tree.type == TypeExpr.EQ) {
+			if (tree.sons.length == 2 && tree.sons[0].type == IF && tree.sons[1].type == VAR && options.recognizeIf) {
+				Variable x = (Variable) tree.sons[1].var(0);
+				XNode<IVar>[] grandsons = tree.sons[0].sons;
+				Variable cnd = grandsons[0].type == VAR ? (Variable) grandsons[0].var(0) : replaceByVariable(grandsons[0]);
+				Variable y = grandsons[1].type == VAR ? (Variable) grandsons[1].var(0) : replaceByVariable(grandsons[1]);
+				Variable z = grandsons[2].type == VAR ? (Variable) grandsons[2].var(0) : replaceByVariable(grandsons[2]);
+				return extension(vars(x, cnd, y, z), Table.starredIfThen(x, cnd, y, z), true, true);
+			}
+			if (tree.sons.length == 2 && tree.sons[1].type == AND && options.recognizeEqAnd) {
+				XNode<IVar>[] grandSons = tree.sons[1].sons;
+				if (Problem.x_relop_k.matches(tree.sons[0]) && Stream.of(grandSons).allMatch(grandson -> Problem.x_relop_k.matches(grandson))) {
+					// TODO extend it (with 01 var for example)
+					List<HybridTuple> list = new ArrayList<>();
+					List<XNodeParent<?>> sub = new ArrayList<>();
+					sub.add((XNodeParent<?>) tree.sons[0]);
+					for (XNode<?> grandSon : grandSons)
+						sub.add((XNodeParent<?>) grandSon);
+					list.add(new HybridTuple(sub));
+					for (XNode<?> grandSon : grandSons)
+						list.add(new HybridTuple((XNodeParent<?>) tree.sons[0].logicalInversionShallowCopy(),
+								(XNodeParent<?>) grandSon.logicalInversionShallowCopy()));
+					return hybrid(scp, list.stream());
+				}
+			}
 		}
 
 		if (options.recognizeExtremum) {
@@ -1308,6 +1356,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
+
 		if (Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) { // Constraint.computeGenericFilteringThreshold(scp) < scp.length) {
 			// if it may be useful to decompose
 
@@ -1348,12 +1397,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				}
 			}
 		}
+
 		if (options.toExtension(scp, tree) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
 			// System.out.println("converting " + tree );
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
-		// System.out.println("Tree " + tree);
+		// System.out.println("Tree remaining " + tree);
 		return post(new ConstraintIntension(this, scp, tree));
 	}
 
@@ -2222,7 +2272,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (!closed && mustBeClosed)
 			postClosed(scp, vals);
 		// if (closed || mustBeClosed) { // DOES NOT SEEM EFFECTIVE
-		// int limit = safeInt(IntStream.range(0, vals.length).mapToLong(i -> safeInt(vals[i] * (long) occs[i],true)).sum(), true);
+		// int limit = safeInt(IntStream.range(0, vals.length).mapToLong(i -> safeInt(vals[i] * (long) occs[i], true)).sum(), true);
 		// sum((Var[]) scp, Kit.repeat(1, scp.length), Condition.buildFrom(EQ, limit));
 		// }
 		if ((closed || mustBeClosed) && IntStream.of(occs).allMatch(v -> v == 1))
@@ -2714,10 +2764,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// intension(iff(le(aux[i], aux[j]), le(origins[i], origins[j])));
 		// }
 
-		System.out.println("gggggg");
-		//sum()
-		
-		if (head.control.global.redundNoOverlap)
+		if (origins.length >= head.control.global.redundNoOverlap)
 			cumulative(origins, lengths, null, Kit.repeat(1, origins.length), api.condition(LE, 1)); // TODO is that relevant?
 
 		for (int i = 0; i < origins.length; i++)
@@ -2778,7 +2825,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final CtrEntity noOverlap(Var[][] origins, int[][] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
 		unimplementedIf(origins[0].length != 2, "noOverlap " + Utilities.join(origins));
-		if (head.control.global.redundNoOverlap) {
+		if (origins.length >= head.control.global.redundNoOverlap) {
 			// we post two redundant cumulative constraints, and a global noOverlap
 			// TODO post only if pressure is high (related to number of continues below)
 			Var[] ox = Stream.of(origins).map(t -> t[0]).toArray(Var[]::new), oy = Stream.of(origins).map(t -> t[1]).toArray(Var[]::new);

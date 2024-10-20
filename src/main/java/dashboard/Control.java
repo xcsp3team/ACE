@@ -490,7 +490,7 @@ public final class Control {
 		public final int arityLimitToNegative = addI("arityLimitToNegative", "aln", -1, "Limit on arity for converting positive table constraints to negative");
 		public final int variant = addI("variant", "extv", 0, "Variant to be used for some algorithms (e.g., VA or CMDD)");
 		public final boolean decremental = addB("decremental", "extd", true, "Must we use a decremental mode for some algorithms (e.g., STR2, CT or CMDD)");
-		public final int small = addI("small", "exts", 10, "table size threshold for considering a special propagator");
+		public final int small = addI("small", "exts", 16, "table size threshold for considering a special propagator");
 		public final boolean toMDD = addB("toMDD", "tomdd", false, "Must we attempt to convert extension constraints into MDDs (if possible)");
 
 		public boolean reverse(int arity, boolean positive) {
@@ -510,6 +510,7 @@ public final class Control {
 		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "Must we attempt to recognize minimum/maximum constraints?");
 		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "Must we attempt to recognize sum constraints?");
 		public final boolean recognizeIf = addB("recognizeIf", "rif", true, "Must we recognize/decompose the ternary operator if");
+		public final boolean recognizeEqAnd = addB("recognizeEqAnd", "rea", false, "Must we recognize an expression eq-and?");
 		public final int arityForClauseUnaryTrees = addI("arityForClauseUnaryTrees", "acut", PLUS_INFINITY_INT,
 				"Arity for recognizing clauses on unary tree expressions");
 		public final int arityForClauseHybridTrees = addI("arityForClauseHybridTrees", "acht", PLUS_INFINITY_INT,
@@ -533,7 +534,7 @@ public final class Control {
 		public final int circuit = addI("circuit", "g_circ", 0, "Algorithm for Circuit");
 		public final int noOverlap = addI("noOverlap", "g_no", 12, "Algorithm for NoOverlap");
 		public final boolean noOverlapHybridAux = addB("noOverlapHybridAux", "oha", true, "Aux Mode for the hybrid tables of NoOverlap");
-		public final boolean redundNoOverlap = addB("redundNoOverlap", "r_no", true, "Must we post redundant constraints for NoOverlap?");
+		public final int redundNoOverlap = addI("redundNoOverlap", "r_no", 10, "Arity limit for posting redundant constraints for NoOverlap?");
 		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");
 		public final boolean viewForSum = addB("viewForSum", "vs", false, "Must we use views for Sum constraints, when possible?");
 		public final boolean eqDecForSum = addB("eqDecForSum", "eqs", false,
@@ -634,6 +635,8 @@ public final class Control {
 		public final int mode = addI("mode", "mode", 0, "general option used differently according to the context");
 		public final int lostDepth = addI("lostDepth", "ld", 0, "xx");
 		public final int lostSize = addI("lostSize", "ls", 4, "xx");
+		public final int optVarHeuristic = addI("optVarHeuristic", "ovarh", 0,
+				"On how many variables must we branch in a fixed static way on ther variables of the objective (when a weighted sum) according to coeff values?"); // experimental
 	}
 
 	public class OptionsValh extends OptionGroup {
@@ -650,7 +653,7 @@ public final class Control {
 		public final boolean bivsOptimistic = addB("bivsOptimistic", "bivs_o", true, "Must we use the optimistic BIVS mode?");
 		public final int bivsDistance = addI("bivsDistance", "bivs_d", 2, "0: only if in the objective constraint; 1: if at distance 0 or 1; 2: any variable");
 		public final int bivsLimit = addI("bivsLimit", "bivs_l", Integer.MAX_VALUE, "BIVS applied only if the domain size is <= this value");
-		public final boolean optValHeuristic = addB("optValHeuristic", "ovh", false, ""); // experimental
+		public final boolean optValHeuristic = addB("optValHeuristic", "ovalh", false, ""); // experimental
 	}
 
 	public class OptionsExtraction extends OptionGroup {

@@ -465,6 +465,29 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 		return sb;
 	}
 
+	/**
+	 * Returns true if the first specified array is contained in the second specified array. Both arrays are assumed to be sorted.
+	 * 
+	 * @param t1
+	 *            an array of variables
+	 * @param t2
+	 *            an array of variables
+	 * @return true if t1 is contained in t2
+	 */
+	public static final boolean isContained_sorted(Variable[] t1, Variable[] t2) {
+		if (t1.length > t2.length)
+			return false;
+		int j = 0;
+		for (int i = 0; i < t1.length; i++) {
+			while (j < t2.length && t2[j].num < t1[i].num)
+				j++;
+			if (j == t2.length || t2[j].num != t1[i].num)
+				return false;
+			j++;
+		}
+		return true;
+	}
+
 	/**********************************************************************************************
 	 * Class Members
 	 *********************************************************************************************/
@@ -520,7 +543,8 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	 */
 	public int[] failed;
 
-	private Variable[] computeNeighbours(int neighborArityLimit) {;
+	private Variable[] computeNeighbours(int neighborArityLimit) {
+		;
 		if (ctrs.length == 0 || ctrs[ctrs.length - 1].scp.length > neighborArityLimit) {
 			// the last constraint is the one with the largest scope
 			return null;
@@ -530,7 +554,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 			for (Variable x : c.scp)
 				if (x != this) {
 					set.add(x);
-					if (set.size() > neighborArityLimit) 
+					if (set.size() > neighborArityLimit)
 						return null;
 				}
 		return set.toArray(new Variable[set.size()]);

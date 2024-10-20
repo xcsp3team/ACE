@@ -360,7 +360,6 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrIntension(String id, XVarInteger[] scope, XNodeParent<XVarInteger> tree) {
-		control(tree.exactlyVars(scope), "Pb with scope");
 		problem.intension((XNodeParent<IVar>) trVar(tree));
 	}
 

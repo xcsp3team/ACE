@@ -73,7 +73,7 @@ public class Restarter implements ObserverOnRuns {
 			// if ((numRun - solver.solutions.lastRun) % options.resetPeriod == 0) {
 			nRestartsSinceReset = 0;
 			baseCutoff = baseCutoff + 5; // * options.resetCoefficient;
-			Kit.log.config("    ...resetting restart cutoff to " + baseCutoff);
+			Kit.log.config(Kit.Color.CYAN.coloring("    ...resetting") + " restart cutoff to " + baseCutoff);
 		}
 		if (solver.propagation.runPossiblyAtRoot()) // if propagation has been run
 			nRestartsSinceReset = 0;
