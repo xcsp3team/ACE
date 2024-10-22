@@ -102,6 +102,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		InformationBloc info = preproInfo();
 		record(PREPROCESSING, info, solver);
 		log.config("\n" + info + "\n");
+		log.config(COMMENT_PREFIX + Color.BLUE.coloring("search"));
 	}
 
 	@Override
@@ -433,10 +434,12 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 			String sep_char = ":";
 			StringBuilder sb = new StringBuilder(COMMENT_PREFIX).append(COMMENT_PREFIX);
 			boolean sep = true;
+			int l = sb.length();
 			for (Entry<String, Object> entry : entries) {
 				String key = entry.getKey();
 				if (key == SEPARATOR) {
-					sb.append("\n").append(COMMENT_PREFIX).append(COMMENT_PREFIX);
+					if (l != sb.length())
+						sb.append("\n").append(COMMENT_PREFIX).append(COMMENT_PREFIX);
 					sep = true;
 				} else {
 					if (!sep)
@@ -446,7 +449,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 				}
 			}
 			// The special character in preprint cannot be put in StringBuilder
-			return (name.equals(RUN) ? "" : COMMENT_PREFIX + Color.BLUE.coloring(name) + "\n") + sb.toString();
+			return (name.equals(RUN) ? "" : COMMENT_PREFIX + Color.BLUE.coloring(name) + (entries.size() > 0 ? "\n" : "")) + sb.toString();
 		}
 	}
 
@@ -497,6 +500,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(N_MERGED, features.nMergedCtrs);
 		m.put(N_DISCARDED, features.nDiscardedCtrs);
 		m.put(N_ADDED, features.nAddedCtrs);
+		m.put("postponable", features.nPostponableConstraints);
 		if (head.problem.api instanceof XCSP3)
 			m.put(N_GROUPS, ((XCSP3) head.problem.api).nGroups);
 		m.put(IGNORED_GROUPS, head.control.constraints.ignoreGroups);
@@ -547,7 +551,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		InformationBloc m = new InformationBloc(OBJECTIVE);
 		m.put(WAY, (optimizer.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName());
 		m.put(TYPE, optimizer.ctr.getClass().getSimpleName());
-		m.put("arity", ((Constraint)optimizer.ctr).scp.length);
+		m.put("arity", ((Constraint) optimizer.ctr).scp.length);
 		m.put(BOUNDS, (optimizer.clb.limit() + ".." + optimizer.cub.limit()));
 		return m;
 	}

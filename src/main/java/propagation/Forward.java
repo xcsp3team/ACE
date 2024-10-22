@@ -74,7 +74,7 @@ public abstract class Forward extends Propagation {
 
 		public FC(Solver solver) {
 			super(solver);
-			control(!solver.head.control.propagation.postponableConstraints, () -> "For FC, we have to use classical propagation");
+			control(solver.head.control.propagation.postponableLimit == -1, () -> "For FC, we have to use classical propagation");
 		}
 
 		@Override

@@ -509,7 +509,8 @@ public final class Control {
 		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "Must we attempt to recognize logical reification forms?");
 		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "Must we attempt to recognize minimum/maximum constraints?");
 		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "Must we attempt to recognize sum constraints?");
-		public final boolean recognizeIf = addB("recognizeIf", "rif", true, "Must we recognize/decompose the ternary operator if");
+		public final boolean recognizeIf = addB("recognizeIf", "rif", true, "Must we recognize/decompose the ternary operator if?");
+		public final int recognizeXor = addI("recognizeXor", "rxo", 1, "Must we recognize Xor constraints (two modes 1 and 2)?");
 		public final boolean recognizeEqAnd = addB("recognizeEqAnd", "rea", false, "Must we recognize an expression eq-and?");
 		public final int arityForClauseUnaryTrees = addI("arityForClauseUnaryTrees", "acut", PLUS_INFINITY_INT,
 				"Arity for recognizing clauses on unary tree expressions");
@@ -530,6 +531,8 @@ public final class Control {
 		public final boolean gatherAllDifferent = addB("gatherAllDifferent", "g_gad", false, "");
 		public final int distinctVectors = addI("distinctVectors", "g_dv", 0, "Algorithm for DistinctVectors");
 		public final int allEqual = addI("allEqual", "g_ae", 0, "Algorithm for AllEqual");
+		public final boolean redundantSumForCounts = addB("redundantSumForCounts", "rcs", true,
+				"Must we try to post redudant sums for sevaral counts acting as cardinality?");
 		public final int element = addI("element", "g_elt", 0, "Algorithm for Element");
 		public final int circuit = addI("circuit", "g_circ", 0, "Algorithm for Circuit");
 		public final int noOverlap = addI("noOverlap", "g_no", 12, "Algorithm for NoOverlap");
@@ -552,7 +555,7 @@ public final class Control {
 	public class OptionsPropagation extends OptionGroup {
 		public final String clazz = addS("clazz", "p", AC.class, null, "Class to be used for propagation (for example, FC, AC or SAC3)");
 		public final int variant = addI("variant", "pv", 0, "Propagation Variant (only used for some consistencies)");
-		public final boolean postponableConstraints = addB("postponableConstraints", "ppc", false, "Must we postpone filtering for expensive constraints?");
+		public final int postponableLimit = addI("postponableLimit", "ppc", 100, "Arity limit for postponing the filtering of expensive constraints");
 		// above, the purpose is to propagate less often the most costly constraints (to be finalized)
 		public final String reviser = addS("reviser", "", Reviser3.class, Reviser.class, "Class to be used for performing revisions");
 		public final boolean residues = addB("residues", "res", true, "Must we use redidues (AC3rm)?");

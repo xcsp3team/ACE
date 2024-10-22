@@ -31,13 +31,9 @@ import org.xcsp.common.Utilities;
 import org.xcsp.common.predicates.TreeEvaluator;
 import org.xcsp.common.predicates.XNode;
 
-import constraints.Constraint;
 import constraints.ConstraintGlobal;
-import constraints.global.Sum.SumWeighted;
 import constraints.global.Sum.SumViewWeighted.View.ViewTree01;
 import constraints.global.Sum.SumViewWeighted.View.ViewVariable;
-import constraints.intension.Primitive3.Add3;
-import constraints.intension.Primitive3.Add3.Add3EQ;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
@@ -54,7 +50,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFiltering {
+public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFiltering { //, TagPostponableFiltering {
 
 	/**
 	 * The limit (right-hand term) of the constraint
@@ -754,7 +750,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		// ***** Constraint SumWeightedEQ
 		// ************************************************************************
 
-		public static final class SumWeightedEQ extends SumWeighted {
+		public static final class SumWeightedEQ extends SumWeighted { // implements TagPostponableFiltering {
 
 			private static final int RUNNING_LIMIT = 2000;
 

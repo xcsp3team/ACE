@@ -15,11 +15,10 @@ import static utility.Kit.control;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import org.xcsp.common.Range;
-
 import constraints.ConstraintGlobal;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagNotAC;
+import interfaces.Tags.TagPostponableFiltering;
 import problem.Problem;
 import sets.SetDense;
 import sets.SetSparseReversible;
@@ -134,7 +133,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 
 	}
 
-	public static class BinPackingEnergetic extends BinPacking implements ObserverOnBacktracksSystematic {
+	public static class BinPackingEnergetic extends BinPacking implements ObserverOnBacktracksSystematic, TagPostponableFiltering {
 
 		@Override
 		public void afterProblemConstruction(int n) {

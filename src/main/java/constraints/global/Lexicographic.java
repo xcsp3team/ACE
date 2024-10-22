@@ -21,6 +21,7 @@ import constraints.ConstraintGlobal;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
+import interfaces.Tags.TagPostponableFiltering;
 import problem.Problem;
 import propagation.AC;
 import variables.Domain;
@@ -35,7 +36,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class Lexicographic extends ConstraintGlobal implements TagAC, TagCallCompleteFiltering, TagNotSymmetric {
+public abstract class Lexicographic extends ConstraintGlobal implements TagAC, TagCallCompleteFiltering, TagNotSymmetric, TagPostponableFiltering {
 
 	public static Lexicographic buildFrom(Problem pb, Variable[] list1, Variable[] list2, TypeOperatorRel op) {
 		control(list1.length == list2.length);

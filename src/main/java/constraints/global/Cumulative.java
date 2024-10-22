@@ -21,6 +21,7 @@ import constraints.global.Cumulative.TimetableReasoner.Slot;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
+import interfaces.Tags.TagPostponableFiltering;
 import problem.Problem;
 import sets.SetSparse;
 import sets.SetSparseReversible;
@@ -41,7 +42,8 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, TagCallCompleteFiltering, ObserverOnBacktracksSystematic {
+public abstract class Cumulative extends ConstraintGlobal
+		implements TagNotAC, TagCallCompleteFiltering, ObserverOnBacktracksSystematic, TagPostponableFiltering {
 
 	/**********************************************************************************************
 	 * Implementing interfaces

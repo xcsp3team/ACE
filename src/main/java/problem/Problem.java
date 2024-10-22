@@ -33,6 +33,7 @@ import static org.xcsp.common.Types.TypeExpr.OR;
 import static org.xcsp.common.Types.TypeExpr.SET;
 import static org.xcsp.common.Types.TypeExpr.SUB;
 import static org.xcsp.common.Types.TypeExpr.VAR;
+import static org.xcsp.common.Types.TypeExpr.XOR;
 import static org.xcsp.common.Types.TypeObjective.EXPRESSION;
 import static org.xcsp.common.Types.TypeObjective.LEX;
 import static org.xcsp.common.Types.TypeObjective.MAXIMUM;
@@ -208,6 +209,7 @@ import constraints.global.Sum.SumWeighted.SumWeightedGE;
 import constraints.global.Sum.SumWeighted.SumWeightedLE;
 import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
 import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
+import constraints.global.Xor;
 import constraints.intension.Nogood;
 import constraints.intension.Primitive2;
 import constraints.intension.Primitive2.PrimitiveBinaryNoCst;
@@ -587,6 +589,32 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					System.out.println("Time for generating redundant AllDifferent constraints: " + stopwatch.wckTimeInSeconds());
 			}
 		}
+
+		if (options.redundantSumForCounts && countEqCandidates.size() > 0) {
+			List<Integer> vals = new ArrayList<>();
+			List<Variable> vars = new ArrayList<>();
+			boolean[] t = new boolean[countEqCandidates.size()];
+			for (int i = 0; i < t.length; i++) {
+				if (t[i])
+					continue;
+				Variable[] list = (Variable[]) countEqCandidates.get(i)[0];
+				vals.clear();
+				vars.clear();
+				for (int j = i; j < t.length; j++) { // from i to be able to add the elements from position i
+					Variable[] list2 = (Variable[]) countEqCandidates.get(j)[0];
+					if (list.length == list2.length && IntStream.range(0, list.length).allMatch(k -> list[k].equals(list2[k]))) {
+						t[j] = true;
+						vals.add((Integer) countEqCandidates.get(j)[1]);
+						vars.add((Variable) countEqCandidates.get(j)[2]);
+					}
+				}
+				assert IntStream.range(0, vals.size()).noneMatch(k -> IntStream.range(k + 1, vals.size()).anyMatch(q -> vals.get(k).equals(vals.get(q))));
+				assert IntStream.range(0, vars.size()).noneMatch(k -> IntStream.range(k + 1, vars.size()).anyMatch(q -> vars.get(k).equals(vars.get(q))));
+				Set<Integer> set = Variable.setOfvaluesIn(list);
+				if (set.size() == vals.size() && vals.stream().allMatch(v -> set.contains(v)))
+					sum(vars.stream().toArray(Var[]::new), Kit.repeat(1, vars.size()), Condition.buildFrom(EQ, list.length));
+			}
+		}
 	}
 
 	/**
@@ -598,8 +626,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		this.constraints = features.collecting.constraints.toArray(new Constraint[0]);
 
 		Constraint[] sortedConstraints = features.collecting.constraints.stream().sorted((c1, c2) -> c1.scp.length - c2.scp.length).toArray(Constraint[]::new);
-		// TODO for the moment we cannot use the sortedConstraints as the main array (pb with nums, and anyway would it
-		// be useful?)
+		// TODO for the moment we cannot use the sortedConstraints as the main array (pb with nums, and anyway would it be useful?)
 		List<Constraint>[] lists = IntStream.range(0, variables.length).mapToObj(i -> new ArrayList<>()).toArray(List[]::new);
 		for (Constraint c : sortedConstraints)
 			for (Variable x : c.scp)
@@ -1086,10 +1113,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		OptionsIntension options = head.control.intension;
 
 		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
-		// System.out.println("tree " + tree);
-
 		Variable[] scp = (Variable[]) tree.vars(); // keep this statement here, after canonization
 		int arity = scp.length;
+		control(arity > 0);
+
+		// System.out.println("tree " + tree);
 
 		if (arity == 1) {
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
@@ -1241,6 +1269,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (arity == 4 && tree.sons.length == 2 && Stream.of(tree.sons).allMatch(son -> x_ne_y.matches(son)))
 				return post(new DblDiff(this, (Variable) tree.sons[0].var(0), (Variable) tree.sons[0].var(1), (Variable) tree.sons[1].var(0),
 						(Variable) tree.sons[1].var(1)));
+		}
+		if (arity > 2 && tree.type == XOR && options.recognizeXor > 0) {
+			if (options.recognizeXor == 2) // full recognition
+				return post(new Xor(this, Stream.of(tree.sons).map(son -> son.type == VAR ? son : replaceByVariable(son)).toArray(Variable[]::new)));
+			assert options.recognizeXor == 1;
+			if (Stream.of(tree.sons).allMatch(son -> son.type == VAR))
+				return post(new Xor(this, scp));
 		}
 
 		// Two cases with the ternary operator if
@@ -2107,6 +2142,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Constraint count
 	// ************************************************************************
 
+	private List<Object[]> countEqCandidates = new ArrayList<>();
+
 	private CtrEntity atLeast(VariableInteger[] list, int value, int k) {
 		assert 0 <= k && k <= list.length;
 		if (k == 0)
@@ -2169,6 +2206,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(scp.length > 0, "A constraint Count is posted with an empty scope");
 		if (condition instanceof ConditionRel) {
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
+
+			if (op == EQ && values.length == 1 && condition instanceof ConditionVar)
+				countEqCandidates.add(new Object[] { list, values[0], condition.rightTerm() });
+
 			Object rightTerm = condition.rightTerm();
 			if (condition instanceof ConditionVal) {
 				CtrEntity ce = count(scp, values, op, (long) rightTerm);

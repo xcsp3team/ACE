@@ -45,6 +45,7 @@ public class AP extends StrongConsistency {
 	public AP(Solver solver) {
 		super(solver);
 		this.esac = new ESAC3(solver);
+		this.esac.randomMode = true;
 		this.sac = new SAC3(solver);
 		this.alternatives = new Propagation[] { esac, sac };
 	}
@@ -55,7 +56,10 @@ public class AP extends StrongConsistency {
 	}
 
 	private Propagation whichStrongPropagation() {
-		return alternatives[propagations.size() % alternatives.length];
+		Propagation p = alternatives[propagations.size() % alternatives.length];
+		if (p instanceof SAC3 && Variable.nValidValuesFor(solver.problem.variables) > 10000)
+			p = esac;
+		return p;
 	}
 
 	@Override
@@ -82,7 +86,7 @@ public class AP extends StrongConsistency {
 			int nRemovals = before - after;
 			if (strong == sac)
 				coeff = nRemovals == 0 ? coeff + 1 : Math.max(1, coeff - 1);
-			System.out.println(Kit.Color.CYAN.coloring("    ...filtering " + strong.getClass().getSimpleName()) + " removals=" + nRemovals + " coeff=" + coeff);
+			System.out.println(Kit.Color.YELLOW.coloring(" ...filtering " + strong.getClass().getSimpleName()) + " removals=" + nRemovals + " coeff=" + coeff);
 			propagations.add(strong);
 			removals.add(nRemovals);
 			rerun = true;

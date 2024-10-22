@@ -412,7 +412,7 @@ public class Head extends Thread {
 	 * @return the solver that will be used to solve the specified problem
 	 */
 	protected final Solver buildSolver(Problem problem) {
-		log.config("\n" + Output.COMMENT_PREFIX + "Building solver... ");
+		log.config("\n " + Kit.Color.YELLOW.coloring("...Building") + " solver");
 		this.solver = Reflector.buildObject(control.solving.clazz, Solver.class, this);
 		for (ObserverOnConstruction obs : observersConstruction)
 			obs.afterSolverConstruction();

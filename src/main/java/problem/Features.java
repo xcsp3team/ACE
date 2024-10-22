@@ -261,7 +261,7 @@ public final class Features {
 			if (mustDiscard(x))
 				return -1;
 			if (variables.isEmpty()) // first call
-				Kit.log.config(Output.COMMENT_PREFIX + "Loading variables...");
+				Kit.log.config(" " + Kit.Color.YELLOW.coloring("...Loading") + " variables");
 			int num = variables.size();
 			printNumber(num);
 			variables.add(x);
@@ -278,7 +278,7 @@ public final class Features {
 		 */
 		public int add(Constraint c) {
 			if (constraints.isEmpty()) // first call
-				Kit.log.config("\n" + Output.COMMENT_PREFIX + "Loading constraints...");
+				Kit.log.config("\n " + Kit.Color.YELLOW.coloring("...Loading") + " constraints");
 			int num = constraints.size();
 			printNumber(num);
 			constraints.add(c);
@@ -314,6 +314,10 @@ public final class Features {
 					tableSizes.add(((Table) c.extStructure()).tuples.length);
 				if (c instanceof CHybrid)
 					tableSizes.add(((TableHybrid) c.extStructure()).hybridTuples.length);
+				if (c.postponable) {
+					nPostponableConstraints++;
+					System.out.println(c + " " + c.getClass());
+				}
 			}
 
 		}
@@ -363,7 +367,7 @@ public final class Features {
 
 	public int nRemovedUnaryCtrs, nConvertedConstraints; // conversion intension to extension
 
-	public int nMergedCtrs, nDiscardedCtrs, nAddedCtrs;
+	public int nMergedCtrs, nDiscardedCtrs, nAddedCtrs, nPostponableConstraints;
 
 	/**
 	 * Number of times a (generic or specific) propagator for a constraint has been effective

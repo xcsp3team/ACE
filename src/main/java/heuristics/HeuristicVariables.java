@@ -243,6 +243,10 @@ public abstract class HeuristicVariables extends Heuristic {
 		return ((0 < numRun && numRun % solver.head.control.restarts.varhResetPeriod == 0)
 				|| (numRun - solver.solutions.lastRun) % solver.head.control.restarts.varhSolResetPeriod == 0);
 	}
+	
+	protected  void resettingMessage(String s) {
+		Kit.log.config(Kit.Color.YELLOW.coloring(" ...resetting ") + s + " (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
+	}
 
 	/*************************************************************************
 	 * Special heuristic

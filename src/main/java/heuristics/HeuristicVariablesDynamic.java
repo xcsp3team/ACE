@@ -33,7 +33,6 @@ import sets.SetDense;
 import sets.SetSparse.SetSparseCnt;
 import solver.Solver;
 import solver.Solver.Branching;
-import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
@@ -182,7 +181,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			if (runReset()) {
-				Kit.log.config("    ...resetting stats (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
+				resettingMessage("stats"); 
 				reset();
 			}
 		}
@@ -216,7 +215,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			if (runReset()) {
-				Kit.log.config("    ...resetting weights (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
+				resettingMessage("picks");
 				reset();
 			}
 		}
@@ -268,7 +267,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			if (runReset()) {
-				Kit.log.config("    ...resetting weights (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
+				resettingMessage("stats");
 				reset();
 			}
 		}
@@ -359,7 +358,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				options.weighting = ConstraintWeighting.UNIT;
 			// System.out.println("using " + current.getClass().getSimpleName());
 			if (runReset()) {
-				Kit.log.config("    ...resetting weights (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
+				resettingMessage("heuristics data");
 				for (HeuristicVariables h : pool)
 					h.reset();
 			}
@@ -406,7 +405,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			if (runReset()) {
-				Kit.log.config("    ...resetting weights (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
+				resettingMessage("weights");
 				reset();
 			}
 		}
@@ -513,7 +512,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			if (runReset()) {
-				Kit.log.config("    ...resetting weights (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
+				resettingMessage("weights");
 				reset();
 			}
 			alpha = ALPHA0;
@@ -809,7 +808,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public void beforeRun() {
 			super.beforeRun();
 			if (runReset()) {
-				Kit.log.info("Reset of activities");
+				resettingMessage("activities");
 				Arrays.fill(activities, 0);
 			}
 		}
@@ -848,7 +847,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public void beforeRun() {
 			super.beforeRun();
 			if (runReset()) {
-				Kit.log.config("    ...reset of correlation matrix (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
+				resettingMessage("correlations");
 				Stream.of(a).forEach(t -> Arrays.fill(t, 0));
 			}
 			int mod = solver.restarter.numRun % 3;
@@ -920,7 +919,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public void beforeRun() {
 			super.beforeRun();
 			if (runReset()) {
-				Kit.log.info("Reset of impacts");
+				resettingMessage("impacts");
 				Arrays.fill(impacts, 0);
 			}
 		}

@@ -734,6 +734,8 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 
 		protected ShavingEvaluator shavingEvaluator;
 
+		public boolean randomMode;
+
 		public ESAC3(Solver solver) {
 			super(solver);
 			this.localQueue = new LocalQueue();
@@ -749,7 +751,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				// making the selection
 				boolean test = lastFailedVar == null || nBranchesBuilt < varHeuristics.length;
 				Variable x = test ? localQueue.selectNextVariable() : localQueue.pick(lastFailedVar);
-				int a = test ? x.dom.first() : x.dom.contains(lastFailedIdx) ? lastFailedIdx : x.dom.first();
+				int a = randomMode ? x.dom.any() : test ? x.dom.first() : x.dom.contains(lastFailedIdx) ? lastFailedIdx : x.dom.first();
 
 				lastFailedVar = null;
 				assert !x.assigned() && x.dom.contains(a) && queue.isEmpty();

@@ -651,7 +651,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		this.indexesMatchValues = Stream.of(scp).allMatch(x -> x.dom.indexesMatchValues());
 		this.genericFilteringThreshold = this instanceof SpecificPropagator || this instanceof ConstraintExtension ? Integer.MAX_VALUE
 				: computeGenericFilteringThreshold(scp);
-		this.postponable = pb.head.control.propagation.postponableConstraints && scp.length > 20 && this instanceof TagPostponableFiltering;
+		this.postponable = scp.length >= pb.head.control.propagation.postponableLimit && pb.head.control.propagation.postponableLimit > 0
+				&& this instanceof TagPostponableFiltering;
 
 		pb.head.observersConstruction.add(this);
 
