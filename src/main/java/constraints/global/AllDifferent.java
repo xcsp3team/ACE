@@ -26,6 +26,7 @@ import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
+import interfaces.Tags.TagPostponableFiltering;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import sets.SetSparse;
@@ -73,7 +74,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 	 * 
 	 * @author Vincent Perradin
 	 */
-	public static class AllDifferentComplete extends AllDifferent implements TagAC, TagCallCompleteFiltering, ObserverOnBacktracksSystematic {
+	public static class AllDifferentComplete extends AllDifferent implements TagAC, TagCallCompleteFiltering, ObserverOnBacktracksSystematic, TagPostponableFiltering {
 
 		@Override
 		public void restoreBefore(int depth) {

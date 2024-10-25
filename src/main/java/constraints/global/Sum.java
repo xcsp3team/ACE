@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.xcsp.common.Constants;
 import org.xcsp.common.IVar;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Types.TypeExpr;
@@ -37,6 +38,7 @@ import constraints.global.Sum.SumViewWeighted.View.ViewVariable;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
+import interfaces.Tags.TagPostponableFiltering;
 import interfaces.Tags.TagSymmetric;
 import optimization.Optimizable;
 import problem.Problem;
@@ -50,7 +52,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFiltering { //, TagPostponableFiltering {
+public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFiltering , TagPostponableFiltering {
 
 	/**
 	 * The limit (right-hand term) of the constraint
@@ -250,6 +252,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			@Override
 			public boolean runPropagator(Variable x) {
+				if (limit == Constants.PLUS_INFINITY)
+					return true;
 				recomputeBounds();
 				if (max <= limit)
 					return entailed();
@@ -309,6 +313,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			@Override
 			public boolean runPropagator(Variable x) {
+				if (limit == Constants.MINUS_INFINITY)
+					return true;
 				recomputeBounds();
 				if (min >= limit)
 					return entailed();
@@ -642,10 +648,9 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			@Override
 			public boolean runPropagator(Variable x) {
-				// if (limit == 0) {
-				// // System.out.println(this);
-				// return true;
-				// }
+				if (limit == Constants.PLUS_INFINITY)
+					return true;
+				// if (limit == 0) { System.out.println(this); return true; }
 				recomputeBounds();
 				if (max <= limit)
 					return entailed();
@@ -718,6 +723,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			@Override
 			public boolean runPropagator(Variable x) {
+				if (limit == Constants.MINUS_INFINITY)
+					return true;
 				recomputeBounds();
 				if (min >= limit)
 					return entailed();
@@ -750,7 +757,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		// ***** Constraint SumWeightedEQ
 		// ************************************************************************
 
-		public static final class SumWeightedEQ extends SumWeighted { // implements TagPostponableFiltering {
+		public static final class SumWeightedEQ extends SumWeighted implements TagPostponableFiltering {
 
 			private static final int RUNNING_LIMIT = 2000;
 

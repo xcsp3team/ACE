@@ -15,6 +15,7 @@ import static utility.Kit.control;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.xcsp.common.Constants;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
@@ -375,6 +376,8 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 				@Override
 				public boolean runPropagator(Variable dummy) {
 					// control(problem.solver.depth() == 0); // Not possible when used as objective constraint?
+					if (limit == Constants.PLUS_INFINITY)
+						return true;
 					for (Variable y : scp)
 						if (y.dom.removeValuesGT(limit) == false)
 							return false;
@@ -403,6 +406,8 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 
 				@Override
 				public boolean runPropagator(Variable x) {
+					if (limit == Constants.MINUS_INFINITY)
+						return true;
 					if (scp[sentinel1].dom.lastValue() < limit) {
 						int i = 0;
 						for (; i < scp.length; i++)
@@ -570,6 +575,8 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 
 				@Override
 				public boolean runPropagator(Variable x) {
+					if (limit == Constants.PLUS_INFINITY)
+						return true;
 					if (scp[sentinel1].dom.firstValue() > limit) {
 						int i = 0;
 						for (; i < scp.length; i++)
@@ -618,6 +625,8 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 				@Override
 				public boolean runPropagator(Variable dummy) {
 					// control(problem.solver.depth() == 0);
+					if (limit == Constants.MINUS_INFINITY)
+						return true;
 					for (Variable y : scp)
 						if (y.dom.removeValuesLT(limit) == false)
 							return false;

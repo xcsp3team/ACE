@@ -316,7 +316,7 @@ public final class Features {
 					tableSizes.add(((TableHybrid) c.extStructure()).hybridTuples.length);
 				if (c.postponable) {
 					nPostponableConstraints++;
-					System.out.println(c + " " + c.getClass());
+					// System.out.println(c + " " + c.getClass());
 				}
 			}
 

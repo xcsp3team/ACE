@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.xcsp.common.Constants;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 
 import constraints.Constraint;
@@ -206,6 +207,8 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 
 			@Override
 			public boolean runPropagator(Variable x) {
+				if (limit == Constants.PLUS_INFINITY)
+					return true;
 				if (x == null || x.dom.size() == 1) {
 					initializeSets();
 					if (fixedVals.size() > limit)
@@ -234,6 +237,8 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 
 			@Override
 			public boolean runPropagator(Variable x) {
+				if (limit == Constants.MINUS_INFINITY)
+					return true;
 				if (x == null || x.dom.size() == 1) {
 					initializeSets();
 					if (fixedVals.size() + relevantUnfixedVars.size() < limit)

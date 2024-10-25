@@ -127,8 +127,6 @@ public final class Cardinality extends ConstraintGlobal
 		this(pb, scp, values, Kit.repeat(minOccs, values.length), Kit.repeat(maxOccs, values.length));
 	}
 
-	long lastSafeNumber = -1;
-
 	@Override
 	public boolean runPropagator(Variable x) {
 		// System.out.println("running " + x + " at level " + problem.solver.depth());

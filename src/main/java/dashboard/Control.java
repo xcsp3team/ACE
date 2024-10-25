@@ -466,7 +466,8 @@ public final class Control {
 		public final int positionsLb = addI("positionsLb", "poslb", 3, "Minimal arity to build the array positions");
 		public final int positionsUb = addI("positionsUb", "posub", 10000, "Maximal number of variables to build the array positions");
 		public final int nogoodsMergingLimit = addI("nogoodsMergingLimit", "nml", 3, "Limit for merging (in a table) nogoods of same scope");
-
+		public final boolean postCtrTrues = addB("postCtrTrues", "pct", false, "Must we post CtrTrue encountered while loading/reformualting constraints?");
+		
 		public final boolean discardHybridEntailment = addB("discardHybridEntailment", "dec", true,
 				"Must we discard the mechansim of hybrid table entailment?");
 	}
@@ -511,7 +512,7 @@ public final class Control {
 		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "Must we attempt to recognize sum constraints?");
 		public final boolean recognizeIf = addB("recognizeIf", "rif", true, "Must we recognize/decompose the ternary operator if?");
 		public final int recognizeXor = addI("recognizeXor", "rxo", 1, "Must we recognize Xor constraints (two modes 1 and 2)?");
-		public final boolean recognizeEqAnd = addB("recognizeEqAnd", "rea", false, "Must we recognize an expression eq-and?");
+		public final boolean recognizeEqAnd = addB("recognizeEqAnd", "rea", false, "Must we recognize an expression eq-and (or iff-and)?");
 		public final int arityForClauseUnaryTrees = addI("arityForClauseUnaryTrees", "acut", PLUS_INFINITY_INT,
 				"Arity for recognizing clauses on unary tree expressions");
 		public final int arityForClauseHybridTrees = addI("arityForClauseHybridTrees", "acht", PLUS_INFINITY_INT,

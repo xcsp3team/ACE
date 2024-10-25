@@ -1016,6 +1016,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * @return the posted constraint
 	 */
 	public final CtrAlone post(Constraint c, TypeClass... classes) {
+		if (c == null)
+			return null;
 		// the control about if the constraint must be discarded is done in loadCtr of class XCSP3
 		c.num = features.collecting.add(c);
 		return ctrEntities.new CtrAlone(c, classes);
@@ -1249,7 +1251,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 						}
 						vals.add(v);
 						if (!((Variable) son.var(0)).dom.containsValue(v))
-							return post(new CtrTrue(this, scp, "Nogood trivially satisfied"));
+							return head.control.constraints.postCtrTrues ? post(new CtrTrue(this, scp, "Nogood trivially satisfied")) : null;
 					}
 					features.collecting.addNogood(scp, vals.stream().mapToInt(v -> v).toArray());
 					// features.collecting.addNogood(scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray());
@@ -1286,7 +1288,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			Variable z = sons[2].type == VAR ? (Variable) sons[2].var(0) : replaceByVariable(sons[2]);
 			return post(new IFT3(this, cnd, y, z));
 		}
-		if (tree.type == TypeExpr.EQ) {
+
+		if (tree.type == TypeExpr.EQ || tree.type == TypeExpr.IFF) {
 			if (tree.sons.length == 2 && tree.sons[0].type == IF && tree.sons[1].type == VAR && options.recognizeIf) {
 				Variable x = (Variable) tree.sons[1].var(0);
 				XNode<IVar>[] grandsons = tree.sons[0].sons;
@@ -1295,20 +1298,30 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				Variable z = grandsons[2].type == VAR ? (Variable) grandsons[2].var(0) : replaceByVariable(grandsons[2]);
 				return extension(vars(x, cnd, y, z), Table.starredIfThen(x, cnd, y, z), true, true);
 			}
-			if (tree.sons.length == 2 && tree.sons[1].type == AND && options.recognizeEqAnd) {
-				XNode<IVar>[] grandSons = tree.sons[1].sons;
-				if (Problem.x_relop_k.matches(tree.sons[0]) && Stream.of(grandSons).allMatch(grandson -> Problem.x_relop_k.matches(grandson))) {
-					// TODO extend it (with 01 var for example)
-					List<HybridTuple> list = new ArrayList<>();
-					List<XNodeParent<?>> sub = new ArrayList<>();
-					sub.add((XNodeParent<?>) tree.sons[0]);
-					for (XNode<?> grandSon : grandSons)
-						sub.add((XNodeParent<?>) grandSon);
-					list.add(new HybridTuple(sub));
-					for (XNode<?> grandSon : grandSons)
-						list.add(new HybridTuple((XNodeParent<?>) tree.sons[0].logicalInversionShallowCopy(),
-								(XNodeParent<?>) grandSon.logicalInversionShallowCopy()));
-					return hybrid(scp, list.stream());
+			if (tree.sons.length == 2 && options.recognizeEqAnd && (tree.sons[0].type == AND || tree.sons[1].type == AND)) {
+				XNode<?> son = tree.sons[0].type == AND ? tree.sons[1] : tree.sons[0];
+				XNode<IVar>[] grandSons = tree.sons[0].type == AND ? tree.sons[0].sons : tree.sons[1].sons;
+				son = son.type == VAR ? XNode.node(TypeExpr.EQ, son, XNode.longLeaf(1)) : Problem.x_relop_k.matches(son) ? son : null;
+				if (son != null && Stream.of(grandSons)
+						.allMatch(grandson -> grandson.type == VAR || Problem.x_relop_k.matches(grandson) || Problem.x_relop_y.matches(grandson))) {
+					int cnt = son.arrayOfVars().length;
+					for (int i = 0; i < grandSons.length; i++) {
+						if (grandSons[i].type == VAR)
+							grandSons[i] = XNode.node(TypeExpr.EQ, grandSons[i], XNode.longLeaf(1));
+						cnt += grandSons[i].arrayOfVars().length;
+					}
+					if (arity == cnt) {
+						List<HybridTuple> list = new ArrayList<>();
+						List<XNodeParent<?>> sub = new ArrayList<>();
+						sub.add((XNodeParent<?>) son);
+						for (XNode<?> grandSon : grandSons)
+							sub.add((XNodeParent<?>) grandSon);
+						list.add(new HybridTuple(sub));
+						for (XNode<?> grandSon : grandSons)
+							list.add(new HybridTuple((XNodeParent<?>) son.logicalInversionShallowCopy(),
+									(XNodeParent<?>) grandSon.logicalInversionShallowCopy()));
+						return hybrid(scp, list.stream());
+					}
 				}
 			}
 		}
@@ -1512,7 +1525,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final CtrAlone extension(IVar[] list, Object[] tuples, boolean positive, Boolean starred) {
 		Variable[] scp = translate(list);
 		if (tuples.length == 0)
-			return post(positive ? new CtrFalse(this, scp, "Extension with 0 support") : new CtrTrue(this, scp, "Extension with 0 conflict"));
+			return post(positive ? new CtrFalse(this, scp, "Extension with 0 support")
+					: head.control.constraints.postCtrTrues ? new CtrTrue(this, scp, "Extension with 0 conflict") : null);
 		if (list.length == 1) {
 			control(starred == null);
 			int[][] m = scp[0] instanceof VariableSymbolic ? symbolic.replaceSymbols((String[][]) tuples) : (int[][]) tuples;
@@ -2975,25 +2989,43 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Constraint Cumulative
 	// ************************************************************************
 
+	private int[] discardableTasks(int[] lengths, int[] heights) {
+		int rl = lengths == null ? 0 : lengths.length, rh = heights == null ? 0 : heights.length;
+		assert rl == 0 || rh == 0 || rl == rh;
+		if (IntStream.range(0, rl).anyMatch(i -> lengths[i] == 0) || IntStream.range(0, rh).anyMatch(i -> heights[i] == 0)) {
+			int[] t = IntStream.range(0, Math.max(rl, rh)).filter(i -> (rl == 0 || lengths[i] > 0) && (rh == 0 || heights[i] > 0)).toArray();
+			Kit.warning("Discarding " + (lengths.length - t.length) + " tasks (because of duration or height 0) of a Cumulative constraint");
+			control(t.length > 0);
+			return t;
+		}
+		return null;
+	}
+
 	@Override
 	public final CtrEntity cumulative(Var[] origins, int[] lengths, Var[] ends, int[] heights, Condition condition) {
 		unimplementedIf(ends != null, "cumulative");
+
+		int[] discardable = discardableTasks(lengths, heights);
+		Variable[] new_origins = translate(discardable == null ? origins : IntStream.of(discardable).mapToObj(i -> origins[i]).toArray(Var[]::new));
+		int[] new_lengths = discardable == null ? lengths : IntStream.of(discardable).map(i -> lengths[i]).toArray();
+		int[] new_heights = discardable == null ? heights : IntStream.of(discardable).map(i -> heights[i]).toArray();
+
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			if (origins.length == 1) {
-				if (heights[0] == 0 || heights[0] <= limit - (op == LT ? 1 : 0))
-					return null; // discarded constraint because initially entailed // return CtrTrue ?
-				return post(new CtrFalse(this, translate(origins), "Unary Cumulative"));
+			if (new_origins.length == 1) {
+				if (new_heights[0] <= limit - (op == LT ? 1 : 0)) // discarded constraint because initially entailed
+					return head.control.constraints.postCtrTrues ? post(new CtrTrue(this, new_origins, "Nogood trivially satisfied")) : null;
+				return post(new CtrFalse(this, new_origins, "Unary Cumulative"));
 			}
-			return post(new CumulativeCst(this, translate(origins), lengths, heights, op == LT ? limit - 1 : limit));
+			return post(new CumulativeCst(this, new_origins, new_lengths, new_heights, op == LT ? limit - 1 : limit));
 		}
 		if (condition instanceof ConditionVar) {
 			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
 			control(op == LE);
 			Variable limit = (Variable) (((ConditionVar) condition).x);
-			return post(new CumulativeVarC(this, translate(origins), lengths, heights, limit));
+			return post(new CumulativeVarC(this, new_origins, new_lengths, new_heights, limit));
 		}
 		return unimplemented("cumulative");
 	}
@@ -3001,20 +3033,25 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity cumulative(Var[] origins, Var[] lengths, Var[] ends, int[] heights, Condition condition) {
 		unimplementedIf(ends != null, "cumulative");
-		Variable[] ors = translate(origins), les = translate(lengths);
-		if (!Variable.areAllDistinct(les))
-			les = Stream.of(les).map(x -> replaceByOtherVariable((Var) x)).toArray(Variable[]::new);
+
+		int[] discardable = discardableTasks(null, heights);
+		Variable[] new_origins = translate(discardable == null ? origins : IntStream.of(discardable).mapToObj(i -> origins[i]).toArray(Variable[]::new));
+		Variable[] new_lengths = translate(discardable == null ? lengths : IntStream.of(discardable).mapToObj(i -> lengths[i]).toArray(Variable[]::new));
+		int[] new_heights = discardable == null ? heights : IntStream.of(discardable).map(i -> heights[i]).toArray();
+
+		if (!Variable.areAllDistinct(new_lengths))
+			new_lengths = Stream.of(new_lengths).map(x -> replaceByOtherVariable((Var) x)).toArray(Variable[]::new);
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			return post(new CumulativeVarW(this, ors, les, heights, op == LT ? limit - 1 : limit));
+			return post(new CumulativeVarW(this, new_origins, new_lengths, new_heights, op == LT ? limit - 1 : limit));
 		}
 		if (condition instanceof ConditionVar) {
 			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
 			control(op == LE);
 			Variable limit = (Variable) (((ConditionVar) condition).x);
-			return post(new CumulativeVarWC(this, ors, les, heights, limit));
+			return post(new CumulativeVarWC(this, new_origins, new_lengths, new_heights, limit));
 		}
 		return unimplemented("cumulative");
 	}
@@ -3022,20 +3059,25 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity cumulative(Var[] origins, int[] lengths, Var[] ends, Var[] heights, Condition condition) {
 		unimplementedIf(ends != null, "cumulative");
-		Variable[] ors = translate(origins), hes = translate(heights);
-		if (!Variable.areAllDistinct(hes))
-			hes = Stream.of(hes).map(x -> replaceByOtherVariable((Var) x)).toArray(Variable[]::new);
+
+		int[] discardable = discardableTasks(lengths, null);
+		Variable[] new_origins = translate(discardable == null ? origins : IntStream.of(discardable).mapToObj(i -> origins[i]).toArray(Variable[]::new));
+		int[] new_lengths = discardable == null ? lengths : IntStream.of(discardable).map(i -> lengths[i]).toArray();
+		Variable[] new_heights = translate(discardable == null ? heights : IntStream.of(discardable).mapToObj(i -> heights[i]).toArray(Variable[]::new));
+
+		if (!Variable.areAllDistinct(new_heights))
+			new_heights = Stream.of(new_heights).map(x -> replaceByOtherVariable((Var) x)).toArray(Variable[]::new);
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			return post(new CumulativeVarH(this, ors, lengths, hes, op == LT ? limit - 1 : limit));
+			return post(new CumulativeVarH(this, new_origins, new_lengths, new_heights, op == LT ? limit - 1 : limit));
 		}
 		if (condition instanceof ConditionVar) {
 			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
 			control(op == LE);
 			Variable limit = (Variable) (((ConditionVar) condition).x);
-			return post(new CumulativeVarHC(this, ors, lengths, hes, limit));
+			return post(new CumulativeVarHC(this, new_origins, new_lengths, new_heights, limit));
 		}
 		return unimplemented("cumulative");
 	}
@@ -3043,22 +3085,22 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity cumulative(Var[] origins, Var[] lengths, Var[] ends, Var[] heights, Condition condition) {
 		unimplementedIf(ends != null, "cumulative");
-		Variable[] ors = translate(origins), les = translate(lengths), hes = translate(heights);
-		if (!Variable.areAllDistinct(les))
-			les = Stream.of(les).map(x -> replaceByOtherVariable((Var) x)).toArray(Variable[]::new);
-		if (!Variable.areAllDistinct(hes))
-			hes = Stream.of(hes).map(x -> replaceByOtherVariable((Var) x)).toArray(Variable[]::new);
+		Variable[] new_origins = translate(origins), new_lengths = translate(lengths), new_heights = translate(heights);
+		if (!Variable.areAllDistinct(new_lengths))
+			new_lengths = Stream.of(new_lengths).map(x -> replaceByOtherVariable((Var) x)).toArray(Variable[]::new);
+		if (!Variable.areAllDistinct(new_heights))
+			new_heights = Stream.of(new_heights).map(x -> replaceByOtherVariable((Var) x)).toArray(Variable[]::new);
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			return post(new CumulativeVarWH(this, ors, les, hes, op == LT ? limit - 1 : limit));
+			return post(new CumulativeVarWH(this, new_origins, new_lengths, new_heights, op == LT ? limit - 1 : limit));
 		}
 		if (condition instanceof ConditionVar) {
 			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
 			control(op == LE);
 			Variable limit = (Variable) (((ConditionVar) condition).x);
-			return post(new CumulativeVarWHC(this, ors, les, hes, limit));
+			return post(new CumulativeVarWHC(this, new_origins, new_lengths, new_heights, limit));
 		}
 		return unimplemented("cumulative");
 	}

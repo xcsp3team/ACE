@@ -734,7 +734,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 
 		protected ShavingEvaluator shavingEvaluator;
 
-		public boolean randomMode;
+		public int limitedEnforcment;
 
 		public ESAC3(Solver solver) {
 			super(solver);
@@ -745,13 +745,22 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			this.shavingEvaluator = ratio != 0 ? new ShavingEvaluator(solver.problem.variables.length, alpha, ratio) : null;
 		}
 
+		private int chooseIndex(Variable x, boolean failMode) {
+			if (limitedEnforcment > 0 && x.dom.size() < 500) // TODO hard coding
+				return x.dom.any();
+			if (failMode && x.dom.contains(lastFailedIdx))
+				return lastFailedIdx;
+			return nBranchesBuilt % 2 == 0 ? x.dom.first() : x.dom.last();
+		}
+
 		private boolean buildBranch() {
 			currIndexOfVarHeuristic = (currIndexOfVarHeuristic + 1) % varHeuristics.length;
 			for (boolean finished = false; !finished;) {
 				// making the selection
-				boolean test = lastFailedVar == null || nBranchesBuilt < varHeuristics.length;
-				Variable x = test ? localQueue.selectNextVariable() : localQueue.pick(lastFailedVar);
-				int a = randomMode ? x.dom.any() : test ? x.dom.first() : x.dom.contains(lastFailedIdx) ? lastFailedIdx : x.dom.first();
+				boolean failMode = lastFailedVar != null && nBranchesBuilt >= varHeuristics.length;
+				Variable x = failMode ? localQueue.pick(lastFailedVar) : localQueue.selectNextVariable();
+				int a = chooseIndex(x, failMode); // randomMode && x.dom.size() < 500 ? x.dom.any() : test ? x.dom.first() : x.dom.contains(lastFailedIdx) ?
+													// lastFailedIdx : x.dom.first();
 
 				lastFailedVar = null;
 				assert !x.assigned() && x.dom.contains(a) && queue.isEmpty();
@@ -785,6 +794,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			lastFailedVar = null;
 			localQueue.initialize();
 			long nBefore = nEffectiveSingletonTests;
+			long bef = nSingletonTests;
 			while (localQueue.nUncheckedVars > 0) {
 				performingProperSearch = true;
 				boolean consistent = buildBranch();
@@ -794,6 +804,8 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 					return false;
 				if (solver.finished())
 					return true;
+				if (limitedEnforcment > 0 && ((nSingletonTests - bef) > solver.problem.variables.length * limitedEnforcment))
+					break;
 			}
 			if (verbose > 1)
 				displayPassInfo(0, nEffectiveSingletonTests - nBefore, true);

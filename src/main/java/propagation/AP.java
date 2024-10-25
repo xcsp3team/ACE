@@ -45,7 +45,7 @@ public class AP extends StrongConsistency {
 	public AP(Solver solver) {
 		super(solver);
 		this.esac = new ESAC3(solver);
-		this.esac.randomMode = true;
+		this.esac.limitedEnforcment = 10;
 		this.sac = new SAC3(solver);
 		this.alternatives = new Propagation[] { esac, sac };
 	}

@@ -460,7 +460,7 @@ public abstract class Cumulative extends ConstraintGlobal
 		public CumulativeCst(Problem pb, Variable[] starts, int[] widths, int[] heights, int limit) {
 			super(pb, starts, starts, widths, heights, limit);
 			control(widths.length == nTasks && heights.length == nTasks);
-			control(IntStream.of(widths).allMatch(w -> w >= 0) && IntStream.of(heights).allMatch(h -> h >= 0));
+			control(IntStream.of(widths).allMatch(w -> w > 0) && IntStream.of(heights).allMatch(h -> h > 0));
 			this.volume = tasksVolume();
 		}
 	}
@@ -473,6 +473,8 @@ public abstract class Cumulative extends ConstraintGlobal
 
 		public CumulativeVar(Problem pb, Variable[] scp, Variable[] starts, int[] widths, int[] heights, int limit) {
 			super(pb, scp, starts, widths, heights, limit);
+			control(widths == null || IntStream.of(widths).allMatch(w -> w > 0),"The width of a task is zero");
+			control(heights == null || IntStream.of(heights).allMatch(h -> h > 0),"The height of a task is zero");
 		}
 
 		protected final void filterWidthVariables(Variable[] widths) {
