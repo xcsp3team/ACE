@@ -277,6 +277,8 @@ public final class Solutions {
 			synchronized (lock) {
 				if (!lock.get()) {
 					lock.set(true);
+					if (solver.profiler != null)
+						solver.profiler.display(solver.problem.constraints);
 					System.out.println();
 					if (solver.head.control.general.verbose >= 0 && found > 0 && solver.problem.variables.length <= solver.head.control.general.jsonLimit)
 						System.out.println(
@@ -289,7 +291,7 @@ public final class Solutions {
 						Color.GREEN.println("s SATISFIABLE");
 					if (!solver.head.control.general.xmlEachSolution && found > 0)
 						Color.GREEN.println("\nv", " " + xml.lastSolution());
-					Color.GREEN.println("\nd WRONG DECISIONS", " " + solver.stats.nWrongDecisions);
+					Color.GREEN.println("\nd WRONG DECISIONS", " " + (solver.stats != null ? solver.stats.nWrongDecisions : 0));
 					Color.GREEN.println("d FOUND SOLUTIONS", " " + found);
 					if (framework == COP && found > 0)
 						Color.GREEN.println("d BOUND", " " + bestBound);
@@ -299,6 +301,7 @@ public final class Solutions {
 						Color.RED.println("d INCOMPLETE EXPLORATION");
 					Kit.log.config("\nc real time : " + solver.head.stopwatch.cpuTimeInSeconds());
 					System.out.flush();
+
 				}
 			}
 		}

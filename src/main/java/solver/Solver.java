@@ -36,10 +36,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Constants;
-import org.xcsp.common.IVar;
-import org.xcsp.common.IVar.Var;
-import org.xcsp.modeler.implementation.ProblemIMP;
-import org.xcsp.modeler.implementation.ProblemIMP3;
 
 import constraints.Constraint;
 import constraints.ConstraintGlobal;
@@ -57,11 +53,13 @@ import learning.IpsReasoner;
 import learning.NogoodReasoner;
 import main.Head;
 import main.HeadExtraction;
+import optimization.Optimizer;
 import problem.Problem;
 import propagation.Propagation;
 import sets.SetDense;
 import sets.SetSparseReversible;
 import utility.Kit;
+import utility.Profiler;
 import variables.Domain;
 import variables.DomainInfinite;
 import variables.Variable;
@@ -724,6 +722,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 */
 	private int nRecursiveRuns = 0;
 
+	public final Profiler profiler;
+
 	/**
 	 * @return true if after full exploration of the search space no solution has been found
 	 */
@@ -813,6 +813,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		this.observersOnAssignments = collectObserversOnAssignments();
 		this.observersOnRemovals = collectObserversOnRemovals();
 		this.observersOnConflicts = collectObserversOnConflicts();
+
+		this.profiler = head.control.general.profiling ? new Profiler() : null;
 	}
 
 	/**
@@ -1056,9 +1058,10 @@ public class Solver implements ObserverOnBacktracksSystematic {
 							backtrack(futVars.lastPast());
 					// check with java -ea ace Photo.xml.lzma -ev ; java -ea ace Recipe.xml.lzma
 				}
-				if (problem.framework == COP)
+				if (problem.framework == COP) {
 					// && isEntailed(objectiveCtr)) TODO why is-it incorrect to use the second part of the test?
 					entailed.clear();
+				}
 				if (!finished() && !restarter.currRunFinished())
 					manageContradiction(oc);
 			}

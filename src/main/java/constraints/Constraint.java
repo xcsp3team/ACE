@@ -993,7 +993,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 * @return false if an inconsistency is detected
 	 */
 	public final boolean filterFrom(Variable x) {
-		// System.out.println("filtering " + " " + x + " " + getClass().getSimpleName() + " " + Variable.nValidValuesFor(problem.variables));
+		// System.out.println("filtering " + " " + x + " " + getClass().getSimpleName() + " " + this + " " + Variable.nValidValuesFor(problem.variables));
 		if (infiniteDomainVars.length > 0 && handleHugeDomains()) // Experimental (to be finished)
 			return true;
 		// For CSP, sometimes we can directly return true (because we know then that there is no filtering possibility)
@@ -1011,7 +1011,11 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		if (time > x.time && this instanceof TagCallCompleteFiltering && !(this instanceof TagNotCallCompleteFiltering) && !postponable)
 			return true;
 		int nBefore = problem.nValueRemovals;
+		if (problem.solver.profiler != null)
+			problem.solver.profiler.beforeFiltering(this);
 		boolean consistent = this instanceof SpecificPropagator ? ((SpecificPropagator) this).runPropagator(x) : genericFiltering(x);
+		if (problem.solver.profiler != null)
+			problem.solver.profiler.afterFiltering(this);
 		if (!consistent || problem.nValueRemovals != nBefore) {
 			if (problem.solver.proofer != null)
 				problem.solver.proofer.updateProof(this);// TODO // ((SystematicSolver)solver).updateProofAll();

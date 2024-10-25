@@ -223,6 +223,7 @@ import constraints.intension.Primitive4.Disjonctive2D;
 import constraints.intension.Primitive4.Disjonctive2Db;
 import constraints.intension.Primitive4.Disjonctive2Dc;
 import constraints.intension.Primitive4.DisjonctiveVar;
+import constraints.intension.Reification.DisjonctiveReified;
 import constraints.intension.Reification.Reif2.Reif2Rel;
 import constraints.intension.Reification.Reif2.Reif2Rel.Reif2EQ;
 import constraints.intension.Reification.Reif2.Reif2Set;
@@ -2828,9 +2829,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				int li = lengths[i], lj = lengths[j];
 				if (xi.dom.lastValue() + li <= xj.dom.firstValue() || xj.dom.lastValue() + lj <= xi.dom.firstValue())
 					continue;
-				switch (head.control.global.noOverlap) {
+				switch (head.control.global.noOverlap1) {
 				case DEFAULT:
-					post(new Disjonctive(this, xi, li, xj, lj));
+					post(new DisjonctiveReified(this, xi, li, xj, lj, (Variable) auxVar(new Range(0, 2))));
+					// post(new Disjonctive(this, xi, li, xj, lj));
 					break;
 				case DECOMPOSITION:
 					post(new ConstraintIntension(this, new Variable[] { xi, xj }, or(le(add(xi, li), xj), le(add(xj, lj), xi))));
@@ -2856,7 +2858,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i], xj = (Variable) origins[j];
 				Variable wi = (Variable) lengths[i], wj = (Variable) lengths[j];
-				switch (head.control.global.noOverlap) {
+				switch (head.control.global.noOverlap1) {
 				case DEFAULT:
 					post(new DisjonctiveVar(this, xi, xj, wi, wj));
 					break;
@@ -2902,7 +2904,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					continue;
 				if (yi.dom.lastValue() + hi <= yj.dom.firstValue() || yj.dom.lastValue() + hj <= yi.dom.firstValue())
 					continue;
-				switch (head.control.global.noOverlap) {
+				switch (head.control.global.noOverlap2) {
 				case DEFAULT:
 					post(new Disjonctive2D(this, xi, xj, yi, yj, wi, wj, hi, hj));
 					break;
@@ -2938,7 +2940,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				// post(CHybrid.noOverlapBin(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				// continue;
 				// }
-				switch (head.control.global.noOverlap) {
+				switch (head.control.global.noOverlap2) {
 				case DEFAULT:
 					post(new Disjonctive2Dc(this, xi, xj, yi, yj, wi, wj, hi, hj));
 					break;
@@ -2965,7 +2967,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				Variable xi = (Variable) xs[i], xj = (Variable) xs[j], yi = (Variable) ys[i], yj = (Variable) ys[j];
 				Variable wi = (Variable) lx[i], wj = (Variable) lx[j];
 				int hi = ly[i], hj = ly[j];
-				switch (head.control.global.noOverlap) {
+				switch (head.control.global.noOverlap2) {
 				case DEFAULT:
 					post(new Disjonctive2Db(this, xi, xj, yi, yj, wi, wj, hi, hj));
 					break;

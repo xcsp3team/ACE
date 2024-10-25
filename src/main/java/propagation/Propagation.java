@@ -306,23 +306,6 @@ public abstract class Propagation {
 					return false;
 			}
 			postponedConstraints.clear();
-			// for (SetSparseMap auxiliaryQueue : auxiliaryQueues) // propagation wrt the auxiliary queues
-			// while (!auxiliaryQueue.isEmpty()) {
-			// int cnum = auxiliaryQueue.shift();
-			// int xnum = auxiliaryQueue.values[cnum];
-			// Constraint c = solver.problem.constraints[cnum];
-			// Variable x = solver.problem.variables[xnum];
-			// // TODO : next instruction forces filtering, code may be improved to filter only when necessary
-			// c.time = x.time;
-			// if (!c.ignored && !solver.isEntailed(c)) { // means that the constraint is ignored or entailed
-			// currFilteringCtr = c;
-			// boolean consistent = c.filterFrom(x);
-			// currFilteringCtr = null;
-			// if (!consistent)
-			// return false;
-			// }
-			// // auxiliaryQueue.remove(auxiliaryQueue.dense[0]);
-			// }
 			if (queue.size() == 0)
 				break;
 		}

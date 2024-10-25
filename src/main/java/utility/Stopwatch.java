@@ -24,9 +24,9 @@ import java.util.Locale;
  */
 public class Stopwatch {
 
-	private static DecimalFormat df1 = new DecimalFormat("0.0", new DecimalFormatSymbols(Locale.US));
+	public static final DecimalFormat df1 = new DecimalFormat("0.0", new DecimalFormatSymbols(Locale.US));
 
-	private static DecimalFormat df2 = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.US));
+	public static final DecimalFormat df2 = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.US));
 
 	/**
 	 * Returns a string representing a formatted time in seconds for the specified time (in milliseconds)

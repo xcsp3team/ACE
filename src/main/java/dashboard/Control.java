@@ -421,6 +421,7 @@ public final class Control {
 		public final long seed = addL("seed", "seed", 0, "The seed that can be used for some random-based methods.");
 		public int verbose = addI("verbose", "v", 0, "Verbosity level (value between -1 and 3)" + s_verbose);
 		public final boolean runRobin = addB("runRobin", "rr", false, "Using a Run Robin search strategy");
+		public final boolean profiling = addB("profiling", "prof", false, "Using a profiler?");
 	}
 
 	public class OptionsProblem extends OptionGroup {
@@ -467,7 +468,7 @@ public final class Control {
 		public final int positionsUb = addI("positionsUb", "posub", 10000, "Maximal number of variables to build the array positions");
 		public final int nogoodsMergingLimit = addI("nogoodsMergingLimit", "nml", 3, "Limit for merging (in a table) nogoods of same scope");
 		public final boolean postCtrTrues = addB("postCtrTrues", "pct", false, "Must we post CtrTrue encountered while loading/reformualting constraints?");
-		
+
 		public final boolean discardHybridEntailment = addB("discardHybridEntailment", "dec", true,
 				"Must we discard the mechansim of hybrid table entailment?");
 	}
@@ -536,7 +537,8 @@ public final class Control {
 				"Must we try to post redudant sums for sevaral counts acting as cardinality?");
 		public final int element = addI("element", "g_elt", 0, "Algorithm for Element");
 		public final int circuit = addI("circuit", "g_circ", 0, "Algorithm for Circuit");
-		public final int noOverlap = addI("noOverlap", "g_no", 12, "Algorithm for NoOverlap");
+		public final int noOverlap1 = addI("noOverlap1", "g_no1", 0, "Algorithm for NoOverlap 1D");
+		public final int noOverlap2 = addI("noOverlap2", "g_no2", 12, "Algorithm for NoOverlap 2D");
 		public final boolean noOverlapHybridAux = addB("noOverlapHybridAux", "oha", true, "Aux Mode for the hybrid tables of NoOverlap");
 		public final int redundNoOverlap = addI("redundNoOverlap", "r_no", 10, "Arity limit for posting redundant constraints for NoOverlap?");
 		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");

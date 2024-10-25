@@ -25,6 +25,7 @@ import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Types.TypeConditionOperatorSet;
 import org.xcsp.common.Types.TypeLogicalOperator;
 
+import constraints.intension.Primitive2.PrimitiveBinaryNoCst;
 import constraints.intension.Reification.Reif2.Reif2Rel.Reif2NE;
 import constraints.intension.Reification.ReifLogic.ReifLogic2.LogEqAnd2;
 import constraints.intension.Reification.ReifLogic.ReifLogic2.LogEqOr2;
@@ -464,6 +465,39 @@ public final class Reification {
 				}
 				return true;
 			}
+		}
+
+	}
+
+	public static final class DisjonctiveReified extends Primitive3 {
+
+		@Override
+		public boolean isSatisfiedBy(int[] t) {
+			return ((t[2] == 0) && (t[0] + wx <= t[1])) || ((t[2] == 1) && (t[1] + wy <= t[0]));
+		}
+
+		private final int wx, wy;
+
+		public DisjonctiveReified(Problem pb, Variable x, int wx, Variable y, int wy, Variable z) {
+			super(pb, x, y, z);
+			control(z.dom.is01());
+			this.wx = wx;
+			this.wy = wy;
+			defineKey(wx, wy);
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			if (dz.last() == 0) // z = 0 => x + wx <= y
+				return enforceLE(dx, dy, -wx);
+			if (dz.first() == 1) // z = 1 => y + wy <= x
+				return enforceLE(dy, dx, -wy);
+			if (dx.lastValue() + wx <= dy.firstValue()) // x + wx <= y => z = 0
+				return dz.removeIfPresent(1) && entailed();
+			if (dy.lastValue() + wy <= dx.firstValue()) // y + wy <= x => z = 1
+				return dz.removeIfPresent(0) && entailed();
+			return dx.removeValuesInRange(dy.lastValue() - wx + 1, dy.firstValue() + wy)
+					&& dy.removeValuesInRange(dx.lastValue() - wy + 1, dx.firstValue() + wx);
 		}
 	}
 
