@@ -70,7 +70,7 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 		}
 	}
 
-	public static final class Disjonctive2D extends Primitive4 {
+	public static final class Disjonctive2Cst extends Primitive4 {
 
 		final int w1, w2, h1, h2;
 
@@ -82,7 +82,7 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 			// x1+w1 <= x2 or x2+w2 <= x1 or y1+h1 <= y2 or y2+h2 <= y1
 		}
 
-		public Disjonctive2D(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2, int w1, int w2, int h1, int h2) {
+		public Disjonctive2Cst(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2, int w1, int w2, int h1, int h2) {
 			super(pb, new Variable[] { x1, x2, y1, y2 });
 			control(scp.length == 4);
 			this.w1 = w1;
@@ -117,7 +117,7 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 		}
 	}
 
-	public static final class Disjonctive2Db extends Primitive implements TagAC, TagCallCompleteFiltering {
+	public static final class Disjonctive2Mix extends Primitive implements TagAC, TagCallCompleteFiltering {
 
 		final int h1, h2;
 
@@ -129,7 +129,7 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 			// x1+w1 <= x2 or x2+w2 <= x1 or y1+h1 <= y2 or y2+h2 <= y1
 		}
 
-		public Disjonctive2Db(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2, Variable w1, Variable w2, int h1, int h2) {
+		public Disjonctive2Mix(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2, Variable w1, Variable w2, int h1, int h2) {
 			super(pb, new Variable[] { x1, x2, y1, y2, w1, w2 });
 			control(scp.length == 6);
 			this.h1 = h1;
@@ -175,7 +175,7 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 		}
 	}
 
-	public static final class Disjonctive2Dc extends Primitive implements TagAC, TagCallCompleteFiltering {
+	public static final class Disjonctive2Var extends Primitive implements TagAC, TagCallCompleteFiltering {
 
 		final Domain dx1, dx2, dy1, dy2, dw1, dw2, dh1, dh2;
 
@@ -185,7 +185,7 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 			// x1+w1 <= x2 or x2+w2 <= x1 or y1+h1 <= y2 or y2+h2 <= y1
 		}
 
-		public Disjonctive2Dc(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2, Variable w1, Variable w2, Variable h1, Variable h2) {
+		public Disjonctive2Var(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2, Variable w1, Variable w2, Variable h1, Variable h2) {
 			super(pb, new Variable[] { x1, x2, y1, y2, w1, w2, h1, h2 });
 			control(scp.length == 8);
 			this.dx1 = x1.dom;

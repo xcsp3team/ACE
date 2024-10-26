@@ -219,11 +219,13 @@ import constraints.intension.Primitive3;
 import constraints.intension.Primitive3.Add3;
 import constraints.intension.Primitive3.IFT3;
 import constraints.intension.Primitive4.DblDiff;
-import constraints.intension.Primitive4.Disjonctive2D;
-import constraints.intension.Primitive4.Disjonctive2Db;
-import constraints.intension.Primitive4.Disjonctive2Dc;
+import constraints.intension.Primitive4.Disjonctive2Cst;
+import constraints.intension.Primitive4.Disjonctive2Mix;
+import constraints.intension.Primitive4.Disjonctive2Var;
 import constraints.intension.Primitive4.DisjonctiveVar;
 import constraints.intension.Reification.DisjonctiveReified;
+import constraints.intension.Reification.Disjonctive2Reified2Cst;
+import constraints.intension.Reification.Disjonctive2ReifiedVar;
 import constraints.intension.Reification.Reif2.Reif2Rel;
 import constraints.intension.Reification.Reif2.Reif2Rel.Reif2EQ;
 import constraints.intension.Reification.Reif2.Reif2Set;
@@ -863,7 +865,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Replacing trees by variables and simplifying conditions
 	// ************************************************************************
 
-	private Map<XNode<IVar>, Variable> cacheForTrees = new TreeMap<>(); // BE CAREFUL : HASHMap does not call equals()
+	private Map<XNode<IVar>, Variable> cacheForTrees = new TreeMap<>(); // BE CAREFUL : HASHMap does not call equals(), and we need it
 
 	private XNode<IVar>[] treesToArray(Stream<XNode<IVar>> trees) {
 		return trees.toArray(XNode[]::new);
@@ -873,9 +875,21 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return AUXILIARY_VARIABLE_PREFIX + varEntities.allEntities.size();
 	}
 
-	private Var auxVar(Object values) {
+	private Var auxVarFrom(Dom dom) {
 		nAuxVariables++;
-		return api.var(idAux(), values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values), "auxiliary variable");
+		return api.var(idAux(), dom, "auxiliary variable");
+	}
+
+	private Var auxVar(Range values) {
+		return auxVarFrom(api.dom(values));
+	}
+
+	private Variable auxVar(int... values) {
+		return (Variable) auxVarFrom(api.dom(values));
+	}
+
+	private Var auxVar(Object values) {
+		return auxVarFrom(values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values));
 	}
 
 	private Var[] auxVarArray(int length, Object values) {
@@ -2204,7 +2218,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (op == EQ)
 				return exactly(scp, value, k);
 			control(op == NE && 0 < k && k < scp.length);
-			Var aux = auxVar(IntStream.range(0, scp.length + 1).filter(i -> i != k).toArray());
+			Variable aux = auxVar(IntStream.range(0, scp.length + 1).filter(i -> i != k).toArray());
 			return count(scp, values, Condition.buildFrom(EQ, aux));
 		}
 		if (op == EQ) {
@@ -2707,7 +2721,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (condition instanceof ConditionVar && ((ConditionRel) condition).operator == EQ)
 			return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, (Var) condition.rightTerm());
 		int[] values = Stream.of(matrix).flatMapToInt(t -> IntStream.of(t)).distinct().sorted().toArray();
-		Var aux = auxVar(values);
+		Var aux = (Var) auxVar(values);
 		postExprSubjectToCondition(aux, condition);
 		return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, aux);
 	}
@@ -2739,7 +2753,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (condition instanceof ConditionVar && ((ConditionRel) condition).operator == EQ)
 			return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, (Var) ((ConditionVar) condition).x);
 		int[] values = Variable.setOfvaluesIn((Variable[]) vars(matrix)).stream().mapToInt(v -> v).toArray();
-		Var aux = auxVar(values);
+		Var aux = (Var) auxVar(values);
 		postExprSubjectToCondition(aux, condition);
 		return element(matrix, startRowIndex, rowIndex, startColIndex, colIndex, aux);
 	}
@@ -2820,7 +2834,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// intension(iff(le(aux[i], aux[j]), le(origins[i], origins[j])));
 		// }
 
-		if (origins.length >= head.control.global.redundNoOverlap)
+		OptionsGlobal options = head.control.global;
+		if (origins.length >= options.noOverlapRedundLimit)
 			cumulative(origins, lengths, null, Kit.repeat(1, origins.length), api.condition(LE, 1)); // TODO is that relevant?
 
 		for (int i = 0; i < origins.length; i++)
@@ -2829,20 +2844,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				int li = lengths[i], lj = lengths[j];
 				if (xi.dom.lastValue() + li <= xj.dom.firstValue() || xj.dom.lastValue() + lj <= xi.dom.firstValue())
 					continue;
-				switch (head.control.global.noOverlap1) {
+				switch (options.noOverlap1) {
 				case DEFAULT:
-					post(new DisjonctiveReified(this, xi, li, xj, lj, (Variable) auxVar(new Range(0, 2))));
-					// post(new Disjonctive(this, xi, li, xj, lj));
+					post(options.noOverlapAux ? new DisjonctiveReified(this, xi, li, xj, lj, auxVar(0, 1)) : new Disjonctive(this, xi, li, xj, lj));
 					break;
 				case DECOMPOSITION:
 					post(new ConstraintIntension(this, new Variable[] { xi, xj }, or(le(add(xi, li), xj), le(add(xj, lj), xi))));
-					// intension(or(le(add(xi, li), xj), le(add(xj, lj), xi)));
 					break;
 				case TABLE_HYBRID:
-					if (head.control.global.noOverlapHybridAux)
-						post(CHybrid.noOverlap(this, xi, xj, li, lj, (Variable) auxVar(new Range(0, 2))));
-					else
-						post(CHybrid.noOverlap(this, xi, xj, li, lj));
+					post(options.noOverlapAux ? CHybrid.noOverlap(this, xi, xj, li, lj, auxVar(0, 1)) : CHybrid.noOverlap(this, xi, xj, li, lj));
 					break;
 				default:
 					throw new AssertionError("Invalid mode");
@@ -2854,11 +2864,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity noOverlap(Var[] origins, Var[] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
+
+		OptionsGlobal options = head.control.global;
 		for (int i = 0; i < origins.length; i++)
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i], xj = (Variable) origins[j];
 				Variable wi = (Variable) lengths[i], wj = (Variable) lengths[j];
-				switch (head.control.global.noOverlap1) {
+				switch (options.noOverlap1) {
 				case DEFAULT:
 					post(new DisjonctiveVar(this, xi, xj, wi, wj));
 					break;
@@ -2866,10 +2878,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi)));
 					break;
 				case TABLE_HYBRID:
-					if (head.control.global.noOverlapHybridAux)
-						post(CHybrid.noOverlap(this, xi, xj, wi, wj, (Variable) auxVar(new Range(0, 2))));
-					else
-						post(CHybrid.noOverlap(this, xi, xj, wi, wj));
+					post(options.noOverlapAux ? CHybrid.noOverlap(this, xi, xj, wi, wj, (Variable) auxVar(0, 1)) : CHybrid.noOverlap(this, xi, xj, wi, wj));
 					break;
 				default:
 					throw new AssertionError("Invalid mode");
@@ -2882,7 +2891,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final CtrEntity noOverlap(Var[][] origins, int[][] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
 		unimplementedIf(origins[0].length != 2, "noOverlap " + Utilities.join(origins));
-		if (origins.length >= head.control.global.redundNoOverlap) {
+
+		OptionsGlobal options = head.control.global;
+		if (origins.length >= options.noOverlapRedundLimit) {
 			// we post two redundant cumulative constraints, and a global noOverlap
 			// TODO post only if pressure is high (related to number of continues below)
 			Var[] ox = Stream.of(origins).map(t -> t[0]).toArray(Var[]::new), oy = Stream.of(origins).map(t -> t[1]).toArray(Var[]::new);
@@ -2904,9 +2915,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					continue;
 				if (yi.dom.lastValue() + hi <= yj.dom.firstValue() || yj.dom.lastValue() + hj <= yi.dom.firstValue())
 					continue;
-				switch (head.control.global.noOverlap2) {
+				switch (options.noOverlap2) {
 				case DEFAULT:
-					post(new Disjonctive2D(this, xi, xj, yi, yj, wi, wj, hi, hj));
+					post(options.noOverlapAux ? new Disjonctive2Reified2Cst(this, xi, xj, yi, yj, wi, wj, hi, hj, auxVar(0, 1, 2, 3))
+							: new Disjonctive2Cst(this, xi, xj, yi, yj, wi, wj, hi, hj));
 					break;
 				case DECOMPOSITION: // VERY expensive
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
@@ -2915,10 +2927,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					extension(vars(xi, xj, yi, yj), Table.starredNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true);
 					break;
 				case TABLE_HYBRID:
-					if (head.control.global.noOverlapHybridAux)
-						post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj, (Variable) auxVar(new Range(0, 4))));
-					else
-						post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
+					post(options.noOverlapAux ? CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj, auxVar(0, 1, 2, 3))
+							: CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 					break;
 				default:
 					throw new AssertionError("Invalid mode");
@@ -2930,28 +2940,29 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity noOverlap(Var[][] origins, Var[][] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
+
+		OptionsGlobal options = head.control.global;
 		for (int i = 0; i < origins.length; i++)
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i][0], xj = (Variable) origins[j][0], yi = (Variable) origins[i][1], yj = (Variable) origins[j][1];
 				Variable wi = (Variable) lengths[i][0], wj = (Variable) lengths[j][0], hi = (Variable) lengths[i][1], hj = (Variable) lengths[j][1];
 
 				// TODO to be tested if it is interesting
-				// if (head.control.global.noOverlap == TABLE_HYBRID && Stream.of(wi, wj, hi, hj).allMatch(x -> x.dom.initSize() == 2)) {
+				// if (options.noOverlap2 == TABLE_HYBRID && Stream.of(wi, wj, hi, hj).allMatch(x -> x.dom.initSize() == 2)) {
 				// post(CHybrid.noOverlapBin(this, xi, yi, xj, yj, wi, hi, wj, hj));
 				// continue;
 				// }
-				switch (head.control.global.noOverlap2) {
+				switch (options.noOverlap2) {
 				case DEFAULT:
-					post(new Disjonctive2Dc(this, xi, xj, yi, yj, wi, wj, hi, hj));
+					post(options.noOverlapAux ? new Disjonctive2ReifiedVar(this, xi, xj, yi, yj, wi, wj, hi, hj, auxVar(0, 1, 2, 3))
+							: new Disjonctive2Var(this, xi, xj, yi, yj, wi, wj, hi, hj));
 					break;
 				case DECOMPOSITION:
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
 					break;
 				case TABLE_HYBRID:
-					if (head.control.global.noOverlapHybridAux)
-						post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj, (Variable) auxVar(new Range(0, 4))));
-					else
-						post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
+					post(options.noOverlapAux ? CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj, auxVar(0, 1, 2, 3))
+							: CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 					break;
 				default:
 					throw new AssertionError("Invalid mode");
@@ -2962,23 +2973,26 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	public final CtrEntity noOverlap(Var[] xs, Var[] ys, Var[] lx, int[] ly, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
+
+		OptionsGlobal options = head.control.global;
 		for (int i = 0; i < xs.length; i++)
 			for (int j = i + 1; j < xs.length; j++) {
 				Variable xi = (Variable) xs[i], xj = (Variable) xs[j], yi = (Variable) ys[i], yj = (Variable) ys[j];
 				Variable wi = (Variable) lx[i], wj = (Variable) lx[j];
 				int hi = ly[i], hj = ly[j];
-				switch (head.control.global.noOverlap2) {
+				switch (options.noOverlap2) {
 				case DEFAULT:
-					post(new Disjonctive2Db(this, xi, xj, yi, yj, wi, wj, hi, hj));
+					// should we create aux var for hi and hj?
+					post(options.noOverlapAux
+							? new Disjonctive2ReifiedVar(this, xi, xj, yi, yj, wi, wj, auxVar(new int[] { hi }), auxVar(new int[] { hj }), auxVar(0, 1, 2, 3))
+							: new Disjonctive2Mix(this, xi, xj, yi, yj, wi, wj, hi, hj));
 					break;
 				case DECOMPOSITION:
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
 					break;
 				case TABLE_HYBRID:
-					if (head.control.global.noOverlapHybridAux)
-						post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj, (Variable) auxVar(new Range(0, 4))));
-					else
-						post(CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
+					post(options.noOverlapAux ? CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj, auxVar(0, 1, 2, 3))
+							: CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj));
 					break;
 				default:
 					throw new AssertionError("Invalid mode");

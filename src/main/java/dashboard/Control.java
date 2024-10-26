@@ -538,9 +538,9 @@ public final class Control {
 		public final int element = addI("element", "g_elt", 0, "Algorithm for Element");
 		public final int circuit = addI("circuit", "g_circ", 0, "Algorithm for Circuit");
 		public final int noOverlap1 = addI("noOverlap1", "g_no1", 0, "Algorithm for NoOverlap 1D");
-		public final int noOverlap2 = addI("noOverlap2", "g_no2", 12, "Algorithm for NoOverlap 2D");
-		public final boolean noOverlapHybridAux = addB("noOverlapHybridAux", "oha", true, "Aux Mode for the hybrid tables of NoOverlap");
-		public final int redundNoOverlap = addI("redundNoOverlap", "r_no", 10, "Arity limit for posting redundant constraints for NoOverlap?");
+		public final int noOverlap2 = addI("noOverlap2", "g_no2", 0, "Algorithm for NoOverlap 2D");
+		public final boolean noOverlapAux = addB("noOverlapAux", "g_noa", true, "Introducing aux variables for NoOverlap (when relevant)?");
+		public final int noOverlapRedundLimit = addI("noOverlapRedundLimit", "g_nor", 10, "Arity limit for posting redundant constraints for NoOverlap?");
 		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");
 		public final boolean viewForSum = addB("viewForSum", "vs", false, "Must we use views for Sum constraints, when possible?");
 		public final boolean eqDecForSum = addB("eqDecForSum", "eqs", false,

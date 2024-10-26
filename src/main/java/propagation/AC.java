@@ -93,6 +93,22 @@ public class AC extends Forward {
 	}
 
 	/**
+	 * Enforces AC on x + y <= z
+	 * 
+	 * @param dx
+	 *            the domain of x
+	 * @param dy
+	 *            the domain of y
+	 * @param dz
+	 *            the domain of z
+	 * @return false if an inconsistency is detected
+	 */
+	public static boolean enforceLE(Domain dx, Domain dy, Domain dz) { // x + y <= z
+		return dx.removeValuesGT(dz.lastValue() - dy.firstValue()) && dy.removeValuesGT(dz.lastValue() - dx.firstValue())
+				&& dz.removeValuesLT(dx.firstValue() + dy.firstValue());
+	}
+
+	/**
 	 * Enforces AC on x >= y
 	 * 
 	 * @param dx

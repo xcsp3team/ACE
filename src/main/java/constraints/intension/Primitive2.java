@@ -207,6 +207,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 	 */
 	public Primitive2(Problem pb, Variable x, Variable y, int k) {
 		super(pb, pb.api.vars(x, y));
+		control(scp.length == 2);
 		this.x = x;
 		this.y = y;
 		this.k = k;
