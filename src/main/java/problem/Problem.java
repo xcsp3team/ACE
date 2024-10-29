@@ -2124,7 +2124,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public CtrEntity sum(XNode<IVar>[] trees, int[] coeffs, Condition condition) {
 		control(trees.length > 0, "A constraint sum is posted with a scope of 0 variable");
-		System.out.println("jjjj");
 
 		if (coeffs != null && IntStream.of(coeffs).anyMatch(c -> c == 0)) { // we discard useless terms, if any
 			int[] clone = coeffs.clone(); // to be able to use streams
