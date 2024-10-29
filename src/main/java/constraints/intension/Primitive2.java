@@ -41,8 +41,10 @@ import constraints.intension.Primitive2.PrimitiveBinaryVariant2.Mod2b;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant2.Mul2b;
 import constraints.intension.Primitive2.PropagatorEQ.MultiPropagatorEQ;
 import constraints.intension.Primitive2.PropagatorEQ.SimplePropagatorEQ;
+import interfaces.SpecificPropagator;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
+import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagNotSymmetric;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
@@ -161,7 +163,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 	protected final Variable y;
 
 	/**
-	 * The constant used in the binary primitive constraint. Note that it is not relevant for two subclasses (propagators).
+	 * The constant used in the binary primitive constraint. Note that it is not relevant for a few subclasses (propagators).
 	 */
 	protected final int k;
 
@@ -314,6 +316,59 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				}
 				return true;
 			}
+		}
+
+	}
+
+	public static final class BoundEQSquare extends Constraint implements SpecificPropagator, TagNotAC, TagCallCompleteFiltering {
+
+		@Override
+		public boolean isSatisfiedBy(int[] t) {
+			return t[0] == t[1] * t[1]; // x = y * y
+		}
+
+		public BoundEQSquare(Problem pb, Variable x, Variable y) {
+			super(pb, pb.vars(x, y));
+			this.dx = x.dom;
+			this.dy = y.dom;
+		}
+
+		private final Domain dx, dy;
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			// dealing with min bounds
+			int v = dx.firstValue(), w = dy.firstValue();
+			while (v != w * w) {
+				if (v < w * w) {
+					if (dx.removeValuesLT(w * w) == false)
+						return false;
+					v = dx.firstValue();
+				} else {
+					assert v > w * w;
+					break;
+//					if (dy.removeValuesLT((int) Math.floor(Math.sqrt(v))) == false)
+//						return false;
+//					w = dy.firstValue();
+				}
+			}
+			// dealing with max bounds
+			v = dx.lastValue();
+			w = dy.lastValue();
+			while (v != w * w) {
+				if (v > w * w) {
+					if (dx.removeValuesGT(w * w) == false)
+						return false;
+					v = dx.lastValue();
+				} else {
+					assert v < w * w;
+					break;
+//					if (dy.removeValuesGT((int) Math.floor(Math.sqrt(v))) == false)
+//						return false;
+//					w = dy.lastValue();
+				}
+			}
+			return true;
 		}
 	}
 

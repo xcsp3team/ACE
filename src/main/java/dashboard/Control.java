@@ -534,14 +534,16 @@ public final class Control {
 		public final int distinctVectors = addI("distinctVectors", "g_dv", 0, "Algorithm for DistinctVectors");
 		public final int allEqual = addI("allEqual", "g_ae", 0, "Algorithm for AllEqual");
 		public final boolean redundantSumForCounts = addB("redundantSumForCounts", "rcs", true,
-				"Must we try to post redudant sums for sevaral counts acting as cardinality?");
+				"Must we try to post redudant sums for several counts acting as cardinality?");
 		public final int element = addI("element", "g_elt", 0, "Algorithm for Element");
 		public final int circuit = addI("circuit", "g_circ", 0, "Algorithm for Circuit");
+		public final int cumulativeAux = addI("cumulativeAux", "g_cua", 0, "Limit for introducing aux variables for Cumulative");
 		public final int noOverlap1 = addI("noOverlap1", "g_no1", 0, "Algorithm for NoOverlap 1D");
 		public final int noOverlap2 = addI("noOverlap2", "g_no2", 0, "Algorithm for NoOverlap 2D");
 		public final boolean noOverlapAux = addB("noOverlapAux", "g_noa", true, "Introducing aux variables for NoOverlap (when relevant)?");
 		public final int noOverlapRedundLimit = addI("noOverlapRedundLimit", "g_nor", 10, "Arity limit for posting redundant constraints for NoOverlap?");
 		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");
+		public final boolean binpackingRedun = addB("binpackingRedun", "g_bpr", false, "Redundant constraints for for BinPacking");
 		public final boolean viewForSum = addB("viewForSum", "vs", false, "Must we use views for Sum constraints, when possible?");
 		public final boolean eqDecForSum = addB("eqDecForSum", "eqs", false,
 				"Must we post two constraints for Sum constraints, when the operator is EQ (or IN)?");
@@ -551,6 +553,7 @@ public final class Control {
 		public final int allDifferentNb = addI("allDifferentNb", "adn", 10, "Number of possibly automatically inferred AllDifferent");
 		public final int allDifferentSize = addI("allDifferentSize", "ads", 5, "Limit on the size of possibly automatically inferred AllDifferent");
 
+		public final boolean test = addB("test", "test", false, "");
 		// public final boolean starred = addB("starred", "", false, "When true, some global constraints are encoded by starred tables");
 		// public final boolean hybrid = addB("hybrid", "", false, "When true, some global constraints are encoded by hybrid/smart tables");
 	}
@@ -652,7 +655,8 @@ public final class Control {
 		public final boolean antiRunProgressSaving = addB("antiRunProgressSaving", "arps", false, "Must we use run anti progress saving?");
 
 		public final int solutionSaving = addI("solutionSaving", "sos", 1, "Solution saving (0: disabled, 1: enabled, otherwise desactivation period");
-		public int solutionSavingStart = addI("solutionSavingStart", "soss", -1, "At which run solution saving must be activated?");
+		public final boolean solutionSavingExceptObj = addB("solutionSavingExceptObj", "sos_eo", false, "Must we discard variables of the objective function for sos?");
+		public int solutionSavingStart = addI("solutionSavingStart", "sos_st", -1, "At which run solution saving must be activated?");
 		public final String warmStart = addS("warmStart", "warm", "", "A starting instantiation (solution) to be used with solution saving");
 
 		public final boolean bivsFirst = addB("bivsFirst", "bivs_f", true, "Must we stop BIVS at first found solution?");

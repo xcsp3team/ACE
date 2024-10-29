@@ -244,9 +244,11 @@ public abstract class HeuristicValues extends Heuristic {
 			if (options.solutionSaving == 1 || solver.restarter.numRun == 0 || solver.restarter.numRun % options.solutionSaving != 0) {
 				// every k runs, we do not use solution saving, where k is the value of solutionSaving (if k > 1)
 				// int a = -1; if (x == solver.impacting) a = dx.first(); else
-				int a = solver.solutions.last[x.num];
-				if (dx.contains(a)) // && (!priorityVar || solver.rs.random.nextDouble() < 0.5))
-					return a;
+				if (!options.solutionSavingExceptObj || x.problem.optimizer == null || !((Constraint) x.problem.optimizer.ctr).involves(x)) {
+					int a = solver.solutions.last[x.num];
+					if (dx.contains(a)) // && (!priorityVar || solver.rs.random.nextDouble() < 0.5))
+						return a;
+				}
 			}
 		}
 		return computeBestValueIndex();

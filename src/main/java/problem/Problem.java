@@ -66,6 +66,7 @@ import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.unal
 import static org.xcsp.common.predicates.XNode.node;
 import static org.xcsp.common.predicates.XNodeParent.add;
 import static org.xcsp.common.predicates.XNodeParent.build;
+import static org.xcsp.common.predicates.XNodeParent.dist;
 import static org.xcsp.common.predicates.XNodeParent.eq;
 import static org.xcsp.common.predicates.XNodeParent.ge;
 import static org.xcsp.common.predicates.XNodeParent.in;
@@ -212,6 +213,7 @@ import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
 import constraints.global.Xor;
 import constraints.intension.Nogood;
 import constraints.intension.Primitive2;
+import constraints.intension.Primitive2.BoundEQSquare;
 import constraints.intension.Primitive2.PrimitiveBinaryNoCst;
 import constraints.intension.Primitive2.PrimitiveBinaryNoCst.Disjonctive;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Sub2;
@@ -223,9 +225,9 @@ import constraints.intension.Primitive4.Disjonctive2Cst;
 import constraints.intension.Primitive4.Disjonctive2Mix;
 import constraints.intension.Primitive4.Disjonctive2Var;
 import constraints.intension.Primitive4.DisjonctiveVar;
-import constraints.intension.Reification.DisjonctiveReified;
 import constraints.intension.Reification.Disjonctive2Reified2Cst;
 import constraints.intension.Reification.Disjonctive2ReifiedVar;
+import constraints.intension.Reification.DisjonctiveReified;
 import constraints.intension.Reification.Reif2.Reif2Rel;
 import constraints.intension.Reification.Reif2.Reif2Rel.Reif2EQ;
 import constraints.intension.Reification.Reif2.Reif2Set;
@@ -999,6 +1001,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return returned_vars; // aux;
 	}
 
+	private Var[] replaceByBoundVariables(XNode<IVar>[] trees) {
+		if (head.control.global.test)
+			for (int i = 0; i < trees.length; i++) {
+				if (trees[i].type == MUL && trees[i].sons.length == 2 && trees[i].sons[0].type == VAR && trees[i].sons[1].type == VAR
+						&& trees[i].sons[0].equals(trees[i].sons[1])) {
+					Var aux = auxVar(trees[i].possibleValues());
+					post(new BoundEQSquare(this, (Variable) aux, (Variable) trees[i].var(0)));
+					trees[i] = XNode.varLeaf(aux);
+				}
+			}
+		return replaceByVariables(trees);
+	}
+
 	/**
 	 * Returns an array of new (auxiliary) variables representing the specified tree expressions after having posted equality constraints, i.e., for each new
 	 * variable, a constraint forcing it to be equal to the corresponding tree expression in the stream
@@ -1466,7 +1481,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
-		// System.out.println("Tree remaining " + tree);
+		//System.out.println("Tree remaining " + tree);
 		return post(new ConstraintIntension(this, scp, tree));
 	}
 
@@ -2109,6 +2124,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public CtrEntity sum(XNode<IVar>[] trees, int[] coeffs, Condition condition) {
 		control(trees.length > 0, "A constraint sum is posted with a scope of 0 variable");
+		System.out.println("jjjj");
 
 		if (coeffs != null && IntStream.of(coeffs).anyMatch(c -> c == 0)) { // we discard useless terms, if any
 			int[] clone = coeffs.clone(); // to be able to use streams
@@ -2137,6 +2153,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 		if (coeffs == null)
 			coeffs = Kit.repeat(1, trees.length);
+		// if (condition instanceof ConditionVal && ((ConditionRel) condition).operator.oneOf(LT, LE, GE, GT))
+		// return sum(replaceByBoundVariables(trees), coeffs, condition);
 		return sum(replaceByVariables(trees), coeffs, condition);
 	}
 
@@ -2525,6 +2543,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity maximum(XNode<IVar>[] trees, Condition condition) {
+		boolean b = false; //head.control.global.test;
+		if (b && trees.length == 2 && trees[0].type == SUB && trees[1].type == SUB) {
+			XNode<IVar>[] sons0 = trees[0].sons, sons1 = trees[1].sons;
+			if (sons0[0].equals(sons1[1]) && sons0[1].equals(sons1[0])) {
+				Variable aux = replaceByVariable(dist(sons0[0], sons0[1]));
+				return intension(Condition.toNode(aux, condition));
+			}
+		}
+
 		return maximum(replaceByVariables(trees), condition);
 	}
 
@@ -3005,6 +3032,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Constraint Cumulative
 	// ************************************************************************
 
+	private void introduceTaskAux(Var[] vars) {
+		Var[] aux = auxVarArray((vars.length * (vars.length - 1)) / 2, new int[] { 0, 1 });
+		for (int cnt = 0, i = 0; i < vars.length; i++)
+			for (int j = i + 1; j < vars.length; j++)
+				intension(eq(aux[cnt++], le(vars[i], vars[j])));
+	}
+
 	private int[] discardableTasks(int[] lengths, int[] heights) {
 		int rl = lengths == null ? 0 : lengths.length, rh = heights == null ? 0 : heights.length;
 		assert rl == 0 || rh == 0 || rl == rh;
@@ -3025,6 +3059,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Variable[] new_origins = translate(discardable == null ? origins : IntStream.of(discardable).mapToObj(i -> origins[i]).toArray(Var[]::new));
 		int[] new_lengths = discardable == null ? lengths : IntStream.of(discardable).map(i -> lengths[i]).toArray();
 		int[] new_heights = discardable == null ? heights : IntStream.of(discardable).map(i -> heights[i]).toArray();
+
+		if (head.control.global.cumulativeAux > 0) // does not seem very interesting
+			introduceTaskAux(origins);
 
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
@@ -3160,15 +3197,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	public final CtrEntity binpacking(Var[] list, int[] sizes, Var[] capacities, boolean loads) {
 		control(list.length > 2 && list.length == sizes.length);
-		TypeConditionOperatorRel op = loads ? EQ : LE;
-		Variable[] vars = translate(list);
-		boolean sameType = Variable.haveSameDomainType(vars);
-		if (!loads || !sameType || head.control.global.binpacking == DECOMPOSITION) { // decomposing in sum constraints
-			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).sorted().toArray();
-			control(0 <= bins[0] && bins[bins.length - 1] < capacities.length);
-			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, Condition.buildFrom(op, capacities[bins[i]])));
-		}
-		return post(new BinPackingEnergeticLoad(this, vars, sizes, translate(capacities))); // TODO add nValues ? other ?
+		Variable[] t_list = translate(list), t_capacities = translate(capacities);
+
+		int[] bins = Variable.setOfvaluesIn(t_list).stream().mapToInt(v -> v).sorted().toArray();
+		control(0 == bins[0] && bins[bins.length - 1] == capacities.length - 1 && bins.length == capacities.length);
+
+		if (!loads || !Variable.haveSameDomainType(t_list) || head.control.global.binpacking == DECOMPOSITION) // decomposing in sum constraints
+			return forall(range(bins.length),
+					i -> sum(Stream.of(t_list).map(x -> api.eq(x, bins[i])), sizes, Condition.buildFrom(loads ? EQ : LE, t_capacities[bins[i]])));
+
+		if (loads && head.control.global.binpackingRedun) // does not seem interesting
+			sum(capacities, Kit.repeat(1, capacities.length), Condition.buildFrom(EQ, IntStream.of(sizes).sum()));
+
+		return post(new BinPackingEnergeticLoad(this, t_list, sizes, t_capacities));
 	}
 
 	public final CtrEntity binpacking(Var[] list, int[] sizes, Condition[] conditions, int startIndex) {
@@ -3523,6 +3564,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			control(type != NVALUES);
 			return optimize(opt, trees[0]);
 		}
+		// if (type == SUM)
+		// return optimize(opt, type, translate(replaceByBoundVariables(trees)));
 		return optimize(opt, type, translate(replaceByVariables(trees)));
 	}
 

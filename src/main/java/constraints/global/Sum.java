@@ -52,7 +52,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFiltering , TagPostponableFiltering {
+public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFiltering, TagPostponableFiltering {
 
 	/**
 	 * The limit (right-hand term) of the constraint
@@ -248,6 +248,41 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			public SumSimpleLE(Problem pb, Variable[] scp, long limit) {
 				super(pb, scp, Math.min(limit, maxPossibleSum(scp)));
+				this.bests = new short[scp.length];
+			}
+
+			private short[] bests;
+
+			private int mostContributor() {
+				int cnt = 0, bestValue = Integer.MIN_VALUE;
+				// for (short i = 0; i < scp.length; i++) {
+				// if (doms[i].contains(0)) // because we cannot do better with this variable
+				// continue;
+				// int v = doms[i].firstValue();
+				// if (bestValue == Integer.MIN_VALUE || v > bestValue) {
+				// cnt = 0;
+				// bests[cnt++] = i;
+				// bestValue = v;
+				// } else if (v == bestValue)
+				// bests[cnt++] = i;
+				// }
+				// return cnt == 0 ? -1 : bests[problem.head.random.nextInt(cnt)];
+
+				for (int i = futvars.limit; i >= 0; i--) {
+					short j = (short) futvars.dense[i];
+					Domain dom = scp[j].dom;
+					if (dom.contains(0)) // because we cannot do better with this variable
+						continue;
+					int v = dom.firstValue();
+					if (bestValue == Integer.MIN_VALUE || v > bestValue) {
+						cnt = 0;
+						bests[cnt++] = j;
+						bestValue = v;
+					} else if (v == bestValue)
+						bests[cnt++] = j;
+				}
+				return cnt == 0 ? -1 : bests[problem.head.random.nextInt(cnt)];
+
 			}
 
 			@Override
@@ -257,8 +292,13 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				recomputeBounds();
 				if (max <= limit)
 					return entailed();
-				if (min > limit)
+				if (min > limit) {
+					if (this.problem.head.control.global.test) {
+						int most = mostContributor();
+						return (most == -1 ? x : scp[most]).dom.fail();
+					}
 					return x == null ? false : x.dom.fail();
+				}
 				for (int i = futvars.limit; i >= 0; i--) {
 					Domain dom = scp[futvars.dense[i]].dom;
 					if (dom.size() == 1)
@@ -644,36 +684,59 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			public SumWeightedLE(Problem pb, Variable[] scp, int[] coeffs, long limit) {
 				super(pb, scp, coeffs, Math.min(limit, maxPossibleSum(scp, coeffs)));
+				this.bests = new short[scp.length];
+			}
+
+			private short[] bests;
+
+			private int mostContributor() {
+				int cnt = 0;
+				long bestValue = Long.MIN_VALUE;
+				boolean test = false;
+				if (test) {
+					for (short i = 0; i < scp.length; i++) {
+						if (doms[i].contains(0)) // because we cannot do better with this variable
+							continue;
+						int v = doms[i].firstValue() * coeffs[i];
+						if (bestValue == Integer.MIN_VALUE || v > bestValue) {
+							cnt = 0;
+							bests[cnt++] = i;
+							bestValue = v;
+						} else if (v == bestValue)
+							bests[cnt++] = i;
+					}
+				} else
+					for (int i = futvars.limit; i >= 0; i--) {
+						short j = (short) futvars.dense[i];
+						Domain dom = scp[j].dom;
+						if (dom.contains(0)) // because we cannot do better with this variable
+							continue;
+						long v = dom.firstValue() * coeffs[j];
+						if (bestValue == Long.MIN_VALUE || v > bestValue) {
+							cnt = 0;
+							bests[cnt++] = j;
+							bestValue = v;
+						} else if (v == bestValue)
+							bests[cnt++] = j;
+					}
+				return cnt == 0 ? -1 : bests[problem.head.random.nextInt(cnt)];
+
 			}
 
 			@Override
 			public boolean runPropagator(Variable x) {
 				if (limit == Constants.PLUS_INFINITY)
 					return true;
-				// if (limit == 0) { System.out.println(this); return true; }
 				recomputeBounds();
 				if (max <= limit)
 					return entailed();
-				boolean test = false;
-
-				// if (min > limit) {
-				// System.out.println("failing " + min + " " + scp[0].assignmentLevel);
-				// scp[0].dom.display(false);
-				// for (int i = 1; i < scp.length; i++)
-				// System.out.print(scp[i].dom.firstValue() + ".." + scp[i].dom.lastValue() + " ");
-				// System.out.println();
-				// // for (int i = futvars.limit; i >= 0; i--) {
-				// // Domain dom = scp[futvars.dense[i]].dom;
-				// // if (dom.size() != 1)
-				// // System.out.println("failing next");
-				// // }
-				//
-				// // return x == null ? false : x.dom.fail();
-				// }
-				// if (!test)
-				// return true;
-				if (min > limit)
+				if (min > limit) {
+					if (this.problem.head.control.global.test) {
+						int most = mostContributor();
+						return (most == -1 ? x : scp[most]).dom.fail();
+					}
 					return x == null ? false : x.dom.fail();
+				}
 				// boolean test = false;
 				// if (test)
 				for (int i = futvars.limit; i >= 0; i--) {
