@@ -772,6 +772,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
+				// TODO no overflow control performed for the moment
 				return weightedSum(t, coeffs) >= limit;
 			}
 
@@ -1233,7 +1234,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		public SumViewWeighted(Problem pb, XNode<IVar>[] trees, int[] coeffs, long limit) {
 			super(pb, Utilities.collect(Variable.class, Stream.of(trees).map(tree -> tree.vars())));
 			this.coeffs = coeffs;
-			// System.out.println("trees " + Kit.join(trees));
+			//System.out.println("trees " + Kit.join(trees));
 			this.views = Stream.of(trees).map(tree -> tree.type == TypeExpr.VAR ? new ViewVariable(tree) : new ViewTree01(tree)).toArray(View[]::new);
 			control(minComputableObjectiveValue() <= maxComputableObjectiveValue()); // Important: we check this way
 																						// that no overflow is possible

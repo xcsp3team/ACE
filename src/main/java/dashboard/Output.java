@@ -512,6 +512,10 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.separator(features.tableSizes.size() > 0);
 		m.put(TABLES, features.tableSizes.toString());
 		m.put(N_TUPLES, features.tableSizes.repartition.entrySet().stream().mapToLong(e -> e.getValue() * e.getKey()).sum());
+		m.separator(features.mddSizes.size() > 0);
+		m.put("mdds", features.mddSizes.toString());
+		m.put("nodes", features.mddSizes.repartition.entrySet().stream().mapToLong(e -> e.getValue() * e.getKey()).sum());
+	
 		int nExtStructures = 0, nSharedExtStructures = 0, nIntStructures = 0, nSharedintStructures = 0, nCftStructures = 0, nSharedCftStructures = 0;
 		for (Constraint c : head.problem.constraints) {
 			if (c instanceof ConstraintExtension)

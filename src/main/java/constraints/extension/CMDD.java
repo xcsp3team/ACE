@@ -222,9 +222,9 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive {
 	 * @return true if the terminal (true) node can be reached (while following valid branches) from the specified node
 	 */
 	protected boolean explore(Node node) {
-		if (node == mdd.nodeT || trueNodes[node.num] == trueTimestamp)
+		if (node == Node.nodeT || trueNodes[node.num] == trueTimestamp)
 			return true;
-		if (node == mdd.nodeF || (set != null && set.contains(node.num)) || (set == null && falseNodes[node.num] == falseTimestamp))
+		if (node == Node.nodeF || (set != null && set.contains(node.num)) || (set == null && falseNodes[node.num] == falseTimestamp))
 			return false;
 		boolean supported = recursiveExploration(node);
 		if (supported)

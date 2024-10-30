@@ -141,6 +141,7 @@ import constraints.ConstraintExtension.Extension1;
 import constraints.ConstraintIntension;
 import constraints.extension.CHybrid;
 import constraints.extension.CMDD.CMDDO;
+import constraints.extension.CMDD.CMDDS;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableHybrid.HybridTuple;
 import constraints.global.AllDifferent;
@@ -213,7 +214,6 @@ import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
 import constraints.global.Xor;
 import constraints.intension.Nogood;
 import constraints.intension.Primitive2;
-import constraints.intension.Primitive2.BoundEQSquare;
 import constraints.intension.Primitive2.PrimitiveBinaryNoCst;
 import constraints.intension.Primitive2.PrimitiveBinaryNoCst.Disjonctive;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Sub2;
@@ -1002,15 +1002,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private Var[] replaceByBoundVariables(XNode<IVar>[] trees) {
-		if (head.control.global.test)
-			for (int i = 0; i < trees.length; i++) {
-				if (trees[i].type == MUL && trees[i].sons.length == 2 && trees[i].sons[0].type == VAR && trees[i].sons[1].type == VAR
-						&& trees[i].sons[0].equals(trees[i].sons[1])) {
-					Var aux = auxVar(trees[i].possibleValues());
-					post(new BoundEQSquare(this, (Variable) aux, (Variable) trees[i].var(0)));
-					trees[i] = XNode.varLeaf(aux);
-				}
-			}
+//		if (head.control.global.test)
+//			for (int i = 0; i < trees.length; i++) {
+//				if (trees[i].type == MUL && trees[i].sons.length == 2 && trees[i].sons[0].type == VAR && trees[i].sons[1].type == VAR
+//						&& trees[i].sons[0].equals(trees[i].sons[1])) {
+//					Var aux = auxVar(trees[i].possibleValues());
+//					post(new BoundEQSquare(this, (Variable) aux, (Variable) trees[i].var(0)));
+//					trees[i] = XNode.varLeaf(aux);
+//				}
+//			}
 		return replaceByVariables(trees);
 	}
 
@@ -1599,7 +1599,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (!starred)
 				return post(new CMDDO(this, translate(list), (int[][]) tuples));
 			else
-				return post(new CMDDO(this, translate(list), (int[][]) tuples));
+				return post(new CMDDS(this, translate(list), (int[][]) tuples));
 		}
 		return post(ConstraintExtension.buildFrom(this, scp, tuples, positive, starred));
 	}

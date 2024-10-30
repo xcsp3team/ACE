@@ -32,9 +32,9 @@ import constraints.ConstraintExtension;
 import constraints.ConstraintExtension.Extension1;
 import constraints.ConstraintIntension;
 import constraints.extension.CHybrid;
+import constraints.extension.structures.MDD;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableHybrid;
-import dashboard.Output;
 import utility.Kit;
 import variables.Variable;
 
@@ -314,6 +314,8 @@ public final class Features {
 					tableSizes.add(((Table) c.extStructure()).tuples.length);
 				if (c instanceof CHybrid)
 					tableSizes.add(((TableHybrid) c.extStructure()).hybridTuples.length);
+				if (c.extStructure() instanceof MDD)
+					mddSizes.add(((MDD) c.extStructure()).nNodes());
 				if (c.postponable) {
 					nPostponableConstraints++;
 					// System.out.println(c + " " + c.getClass());
@@ -357,6 +359,11 @@ public final class Features {
 	 * Statistical repartition of table sizes
 	 */
 	public final Repartitioner<Integer> tableSizes;
+
+	/**
+	 * Statistical repartition of MDD sizes
+	 */
+	public final Repartitioner<Integer> mddSizes;
 
 	/**
 	 * Statistical repartition of constraint types
@@ -435,6 +442,7 @@ public final class Features {
 		this.ctrArities = new Repartitioner<>(verbose);
 		this.ctrTypes = new Repartitioner<>(true);
 		this.tableSizes = new Repartitioner<>(verbose);
+		this.mddSizes = new Repartitioner<>(verbose);
 	}
 
 	public boolean hasSharedExtensionStructures() {
