@@ -79,6 +79,7 @@ import static utility.Kit.log;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -1002,15 +1003,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private Var[] replaceByBoundVariables(XNode<IVar>[] trees) {
-//		if (head.control.global.test)
-//			for (int i = 0; i < trees.length; i++) {
-//				if (trees[i].type == MUL && trees[i].sons.length == 2 && trees[i].sons[0].type == VAR && trees[i].sons[1].type == VAR
-//						&& trees[i].sons[0].equals(trees[i].sons[1])) {
-//					Var aux = auxVar(trees[i].possibleValues());
-//					post(new BoundEQSquare(this, (Variable) aux, (Variable) trees[i].var(0)));
-//					trees[i] = XNode.varLeaf(aux);
-//				}
-//			}
+		// if (head.control.global.test)
+		// for (int i = 0; i < trees.length; i++) {
+		// if (trees[i].type == MUL && trees[i].sons.length == 2 && trees[i].sons[0].type == VAR && trees[i].sons[1].type == VAR
+		// && trees[i].sons[0].equals(trees[i].sons[1])) {
+		// Var aux = auxVar(trees[i].possibleValues());
+		// post(new BoundEQSquare(this, (Variable) aux, (Variable) trees[i].var(0)));
+		// trees[i] = XNode.varLeaf(aux);
+		// }
+		// }
 		return replaceByVariables(trees);
 	}
 
@@ -1481,7 +1482,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
-		//System.out.println("Tree remaining " + tree);
+		// System.out.println("Tree remaining " + tree);
 		return post(new ConstraintIntension(this, scp, tree));
 	}
 
@@ -2542,7 +2543,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity maximum(XNode<IVar>[] trees, Condition condition) {
-		boolean b = false; //head.control.global.test;
+		boolean b = false; // head.control.global.test;
 		if (b && trees.length == 2 && trees[0].type == SUB && trees[1].type == SUB) {
 			XNode<IVar>[] sons0 = trees[0].sons, sons1 = trees[1].sons;
 			if (sons0[0].equals(sons1[1]) && sons0[1].equals(sons1[0])) {
@@ -2839,6 +2840,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Constraint noOverlap
 	// ************************************************************************
 
+	private Set<String> set = new HashSet<>();
+
 	/**
 	 * 1-dimensional no-overlap
 	 * 
@@ -2861,8 +2864,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// }
 
 		OptionsGlobal options = head.control.global;
-		if (origins.length >= options.noOverlapRedundLimit)
-			cumulative(origins, lengths, null, Kit.repeat(1, origins.length), api.condition(LE, 1)); // TODO is that relevant?
+		// if (origins.length >= options.noOverlapRedundLimit)
+		// cumulative(origins, lengths, null, Kit.repeat(1, origins.length), api.condition(LE, 1)); // TODO is that relevant? and recursivity pb
 
 		for (int i = 0; i < origins.length; i++)
 			for (int j = i + 1; j < origins.length; j++) {
@@ -2870,6 +2873,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				int li = lengths[i], lj = lengths[j];
 				if (xi.dom.lastValue() + li <= xj.dom.firstValue() || xj.dom.lastValue() + lj <= xi.dom.firstValue())
 					continue;
+				String key = xi.num < xj.num ? (xi.num + "_" + xj.num + "_" + li + "_" + lj) : (xj.num + "_" + xi.num + "_" + lj + "_" + li);
+				if (set.contains(key)) {
+					//System.out.println("jjjjj");
+					continue;
+				}
+				set.add(key);
+
 				switch (options.noOverlap1) {
 				case DEFAULT:
 					post(options.noOverlapAux ? new DisjonctiveReified(this, xi, li, xj, lj, auxVar(0, 1)) : new Disjonctive(this, xi, li, xj, lj));
@@ -3066,6 +3076,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
+			control(limit - (op == LT ? 1 : 0) >= 1);
+			if (IntStream.of(new_heights).min().getAsInt() >= limit - (op == LT ? 1 : 0))
+				return noOverlap((Var[]) new_origins, new_lengths, true);
+
 			if (new_origins.length == 1) {
 				if (new_heights[0] <= limit - (op == LT ? 1 : 0)) // discarded constraint because initially entailed
 					return head.control.constraints.postCtrTrues ? post(new CtrTrue(this, new_origins, "Nogood trivially satisfied")) : null;

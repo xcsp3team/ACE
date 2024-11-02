@@ -224,7 +224,7 @@ public final class MDD extends ExtensionStructure {
 
 		public static Node buildRootFromTuples(int[][] tuples, boolean positive, Domain[] domains, boolean starred, boolean reductionWhileProcessingTuples) {
 			// the last parameter indicates if one must try to reduce the MDD when processing tuples
-			// TODO for the moment the code may be broken (is it still the case?) see reduce
+			// TODO for the moment the code may be broken when true (is it still the case?) see reduce
 
 			control(positive && tuples.length > 0);
 			int[] domainSizes = Stream.of(domains).mapToInt(dom -> dom.initSize()).toArray();
