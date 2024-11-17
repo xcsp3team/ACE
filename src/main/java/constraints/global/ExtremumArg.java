@@ -14,7 +14,6 @@ import static utility.Kit.control;
 
 import java.util.stream.IntStream;
 
-import org.xcsp.common.Range;
 import org.xcsp.common.Types.TypeRank;
 
 import constraints.ConstraintGlobal;

@@ -12,9 +12,6 @@ package constraints.intension;
 
 import static utility.Kit.control;
 
-import java.util.stream.IntStream;
-
-import constraints.ConstraintGlobal;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import problem.Problem;

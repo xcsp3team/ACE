@@ -30,7 +30,6 @@ import problem.Problem;
 import propagation.StrongConsistency;
 import sets.SetDenseReversible;
 import sets.SetSparse;
-import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 

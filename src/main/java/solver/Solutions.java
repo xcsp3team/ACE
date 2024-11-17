@@ -33,9 +33,6 @@ import org.xcsp.modeler.entities.VarEntities.VarArray;
 import org.xcsp.modeler.entities.VarEntities.VarEntity;
 
 import constraints.Constraint;
-import heuristics.HeuristicValues;
-import heuristics.HeuristicValuesDirect.First;
-import heuristics.HeuristicValuesDirect.Last;
 import main.HeadExtraction;
 import problem.Problem;
 import solver.Solver.Stopping;
@@ -367,7 +364,6 @@ public final class Solutions {
 		hamming[i++] = v;
 		if (v > 0)
 			sb.append(" ").append(Problem.AUXILIARY_VARIABLE_PREFIX).append(":").append(v);
-		int h = IntStream.of(hamming).sum();
 
 		assert IntStream.of(hamming).sum() == IntStream.range(0, last.length).filter(j -> last[j] != solver.problem.variables[j].dom.single()).count();
 

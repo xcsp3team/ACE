@@ -20,7 +20,6 @@ import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagPostponableFiltering;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
-import propagation.StrongConsistency;
 import utility.Kit;
 import variables.Variable;
 

@@ -22,6 +22,7 @@ import static org.xcsp.common.Types.TypeConditionOperatorRel.LE;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.LT;
 import static org.xcsp.common.Types.TypeConditionOperatorRel.NE;
 import static org.xcsp.common.Types.TypeConditionOperatorSet.IN;
+import static org.xcsp.common.Types.TypeConditionOperatorSet.NOTIN;
 import static org.xcsp.common.Types.TypeExpr.ADD;
 import static org.xcsp.common.Types.TypeExpr.AND;
 import static org.xcsp.common.Types.TypeExpr.IF;
@@ -279,6 +280,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public static final int TABLE_ORDINARY = 10;
 	public static final int TABLE_STARRED = 11;
 	public static final int TABLE_HYBRID = 12;
+
+	public static final boolean INVERSABLE = true;
+	public static final boolean NOT_INVERSABLE = false;
 
 	/**
 	 * Different ways of breaking symmetries
@@ -1066,6 +1070,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return t instanceof Variable[] ? (Variable[]) t : Stream.of(t).map(x -> (Variable) x).toArray(Variable[]::new);
 	}
 
+	public Var[] translateRev(IVar[] t) {
+		return t instanceof Var[] ? (Var[]) t : Stream.of(t).map(x -> (Var) x).toArray(Var[]::new);
+	}
+
 	private Range range(int length) {
 		return new Range(length);
 	}
@@ -1172,6 +1180,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		assert Variable.haveSameType(scp);
+
+		if (Constraint.howManyVariablesWithin(scp, options.spaceLimitToNogood) == Constants.ALL) {
+			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
+			int[] conflict = evaluator.getUniqueConflict(Variable.initDomainValues(scp));
+			if (conflict != null) {
+				features.collecting.addNogood(scp, conflict);
+				return null;
+			}
+		}
 
 		if (options.toHybrid) { // TODO section to finalize with various cases
 			if (tree.type == IMP) {
@@ -1363,6 +1380,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (max_relop.matches(tree))
 				return maximum((Var[]) tree.sons[0].vars(), basicCondition(tree));
 		}
+
 		if (options.recognizeSum) {
 			if (add_vars__relop.matches(tree) || relop__add_vars.matches(tree)) {
 				int side = add_vars__relop.matches(tree) ? 0 : 1;
@@ -1954,6 +1972,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ************************************************************************
 
 	public static class Term implements Comparable<Term> {
+
 		@Override
 		public int compareTo(Term term) {
 			return Long.compare(coeff, term.coeff);
@@ -1974,17 +1993,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private Term[] handleSumTerms(Variable[] list, int[] coeffs) {
-		// grouping together several occurrences of the same variables and discarding terms of coefficient 0
-		Term[] terms = new Term[list.length];
-		for (int i = 0; i < terms.length; i++)
-			terms[i] = new Term(coeffs == null ? 1 : coeffs[i], list[i]);
-
+		// building terms
+		Term[] terms = IntStream.range(0, list.length).mapToObj(i -> new Term(coeffs == null ? 1 : coeffs[i], list[i])).toArray(Term[]::new);
+		// grouping together terms involving the same objects, if any
 		if (!Variable.areAllDistinct(list)) {
 			Set<Entry<Object, Long>> entries = Stream.of(terms).collect(groupingBy(t -> t.obj, summingLong((Term t) -> (int) t.coeff))).entrySet();
 			terms = entries.stream().map(e -> new Term(e.getValue(), e.getKey())).toArray(Term[]::new);
 			log.info("Sum constraint with several ocurrences of the same variable");
 		}
-		// we discard terms of coeff 0 and sort them
+		// discarding terms of coeff 0 and sorting them
 		terms = Stream.of(terms).filter(t -> t.coeff != 0).sorted().toArray(Term[]::new);
 		control(Stream.of(terms).allMatch(t -> Utilities.isSafeInt(t.coeff)));
 		return terms;
@@ -1992,47 +2009,57 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private CtrEntity sum(Variable[] list, int[] coeffs, TypeConditionOperatorRel op, long limit, boolean inversable) {
 		Term[] terms = handleSumTerms(list, coeffs);
-		list = Stream.of(terms).map(t -> t.obj).toArray(Variable[]::new);
-		coeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
+		Variable[] newList = Stream.of(terms).map(t -> t.obj).toArray(Variable[]::new);
+		int[] newCoeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
 
 		// we reverse if possible (to have some opportunity to have only coeffs equal to 1)
-		if (inversable && coeffs[0] == -1 && coeffs[coeffs.length - 1] == -1) { // if only -1 since sorted
-			Arrays.fill(coeffs, 1);
+		if (inversable && newCoeffs[0] == -1 && newCoeffs[newCoeffs.length - 1] == -1) { // if only -1 since sorted
+			Arrays.fill(newCoeffs, 1);
 			op = op.arithmeticInversion();
 			limit = -limit;
 		}
-		if (list.length == 1) {
-			control(coeffs[0] != 0);
-			return postExprSubjectToCondition(coeffs[0] != 1 ? api.mul(list[0], coeffs[0]) : list[0], Condition.buildFrom(op, limit));
+		if (newList.length == 1) {
+			control(newCoeffs[0] != 0);
+			return postExprSubjectToCondition(newCoeffs[0] != 1 ? api.mul(newList[0], newCoeffs[0]) : newList[0], Condition.buildFrom(op, limit));
 		}
 
-		boolean only1 = coeffs[0] == 1 && coeffs[coeffs.length - 1] == 1; // if only 1 since sorted
+		boolean only1 = newCoeffs[0] == 1 && newCoeffs[newCoeffs.length - 1] == 1; // if only 1 since sorted
 		if (op == EQ) {
 			if (head.control.global.eqDecForSum) {
 				if (only1) {
-					post(new SumSimpleLE(this, list, limit));
-					post(new SumSimpleGE(this, list, limit));
+					post(new SumSimpleLE(this, newList, limit));
+					post(new SumSimpleGE(this, newList, limit));
 				} else {
-					post(new SumWeightedLE(this, list, coeffs, limit));
-					post(new SumWeightedGE(this, list, coeffs, limit));
+					post(new SumWeightedLE(this, newList, newCoeffs, limit));
+					post(new SumWeightedGE(this, newList, newCoeffs, limit));
 				}
 				return null; // null because several constraints // TODO returning a special value?
 				// return addCtr(new CtrExtensionMDD(this, list, coeffs, new Range(limit, limit+1))));
 			} else if (head.control.global.eqMddForSum) {
-				return post(new CMDDO(this, list, coeffs, new Range((int) limit, (int) limit + 1)));
+				return post(new CMDDO(this, newList, newCoeffs, new Range((int) limit, (int) limit + 1)));
+			} else if (Stream.of(newList).anyMatch(x -> x.dom.initSize() > 2)
+					&& Constraint.howManyVariablesWithin(newList, head.control.global.sumeqToTableSpaceLimit) == Constants.ALL) {
+				XNodeParent<IVar> tree = api.eq(
+						api.add(IntStream.range(0, newList.length).mapToObj(i -> newCoeffs[i] == 1 ? newList[i] : api.mul(newCoeffs[i], newList[i]))), limit);
+				return extension(newList, new TreeEvaluator(tree, symbolic.mapOfSymbols).generateSupports(Variable.initDomainValues(newList)), true, false);
 			}
 		}
 
 		if (only1) {
+			if (head.control.global.test2 && Variable.areAllInitiallyBoolean(newList)) {
+				if ((op == GE && limit == 1) || (op == GT && limit == 0))
+					return atLeast(Stream.of(newList).map(x -> (VariableInteger) x).toArray(VariableInteger[]::new), 1, 1); // at least1
+				if ((op == LE && limit == 1) || (op == LT && limit == 2))
+					return atMost(Stream.of(newList).map(x -> (VariableInteger) x).toArray(VariableInteger[]::new), 1, 1); // at most 1
+				// if ((op == LE && limit == 2) || (op == LT && limit == 3))
+				// return atMost(Stream.of(list).map(x -> (VariableInteger) x).toArray(VariableInteger[]::new), 1, 2); // at most 2
+			}
+
 			// TODO if op != NE && Variable.areInitiallyBoolean(list), return atMost, atLeast or exactly?
 			// not sure at all that it may be more efficient
-			return post(SumSimple.buildFrom(this, list, op, limit));
+			return post(SumSimple.buildFrom(this, newList, op, limit));
 		}
-		return post(SumWeighted.buildFrom(this, list, coeffs, op, limit));
-	}
-
-	private CtrEntity sum(IVar[] list, int[] coeffs, TypeConditionOperatorRel op, long limit) {
-		return sum(translate(list), coeffs, op, limit, true);
+		return post(SumWeighted.buildFrom(this, newList, newCoeffs, op, limit));
 	}
 
 	@Override
@@ -2041,37 +2068,44 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(Stream.of(list).noneMatch(x -> x == null), "A variable is null");
 		control(list.length == coeffs.length, "the number of variables is different from the number of coefficients");
 
+		Term[] terms = handleSumTerms(translate(list), coeffs);
+		Variable[] newList = Stream.of(terms).map(t -> t.obj).toArray(Variable[]::new);
+		int[] newCoeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
+
 		Object rightTerm = condition.rightTerm(); // a constant, a variable, a range or an int array
 
-		// we remove terms with coefficient 0
-		if (IntStream.of(coeffs).anyMatch(v -> v == 0)) {
-			int[] copy = coeffs.clone(); // to be able to use streams
-			coeffs = api.selectFromIndexing(coeffs, i -> copy[i] != 0);
-			control(coeffs.length > 0);
-			list = api.select(list, i -> copy[i] != 0);
-		}
-
-		// then, we handle the case where there is only one term (no need for a sum constraint)
-		if (list.length == 1) {
-			assert coeffs[0] != 0;
-			if (condition instanceof ConditionSet) // rightTerm is either an object Range or an int array
-				rightTerm = api.set(rightTerm);
-			XNodeParent<IVar> tree = build(condition.operatorTypeExpr(), coeffs[0] == 1 ? list[0] : api.mul(list[0], coeffs[0]), rightTerm);
+		// we handle the case where there is only one term (no need for a sum constraint)
+		if (newList.length == 1) {
+			assert newCoeffs[0] != 0;
+			Object right = condition instanceof ConditionIntset ? api.set((int[]) rightTerm)
+					: condition instanceof ConditionIntvl ? api.set(rightTerm) : rightTerm;
+			XNodeParent<IVar> tree = build(condition.operatorTypeExpr(), newCoeffs[0] == 1 ? newList[0] : api.mul(newList[0], newCoeffs[0]), right);
 			return extension(tree); // we directly generate a table constraint because the arity is 1 or 2
 		}
 
 		// then, we handle the cases when the condition involves a set operator (IN or NOTIN)
 		if (condition instanceof ConditionSet) {
 			TypeConditionOperatorSet op = ((ConditionSet) condition).operator;
-			if (op == TypeConditionOperatorSet.NOTIN) { // TODO should we introduce an auxiliary variable as for IN?
+
+			if (op == IN && ((ConditionSet) condition).nbValues() == 1)
+				return sum(translateRev(newList), newCoeffs, Condition.buildFrom(EQ, ((ConditionSet) condition).firstValue()));
+
+			if (Constraint.howManyVariablesWithin(newList, head.control.global.suminToTableSpaceLimit) == Constants.ALL) {
+				XNodeParent<IVar> tree = api.in(
+						api.add(IntStream.range(0, newList.length).mapToObj(i -> newCoeffs[i] == 1 ? newList[i] : api.mul(newCoeffs[i], newList[i]))),
+						condition instanceof ConditionIntset ? api.set((int[]) rightTerm) : api.set(rightTerm));
+				return extension(newList, new TreeEvaluator(tree, symbolic.mapOfSymbols).generateSupports(Variable.initDomainValues(newList)), true, false);
+			}
+
+			if (op == NOTIN) { // TODO should we introduce an auxiliary variable as for IN?
 				if (condition instanceof ConditionIntvl)
 					for (int v : ((Range) rightTerm))
-						sum(list, coeffs, NE, v);
+						sum(newList, newCoeffs, NE, v, INVERSABLE);
 				else
 					for (int v : (int[]) rightTerm)
-						sum(list, coeffs, NE, v);
+						sum(newList, newCoeffs, NE, v, INVERSABLE);
 			} else { // IN
-				return sum(list, coeffs, Condition.buildFrom(EQ, auxVar(rightTerm)));
+				return sum(translateRev(newList), newCoeffs, Condition.buildFrom(EQ, auxVar(rightTerm)));
 
 				// if (head.control.global.eqMddForSum)
 				// return post(new CMDDO(this, translate(list), coeffs, rightTerm));
@@ -2095,7 +2129,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 		// finally, we handle the cases where the condition involves a relational operator
 		TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
-		return condition instanceof ConditionVal ? sum(list, coeffs, op, (long) rightTerm) : sum(vars(list, (Variable) rightTerm), api.vals(coeffs, -1), op, 0);
+		if (condition instanceof ConditionVal)
+			return sum(newList, newCoeffs, op, (long) rightTerm, INVERSABLE);
+		return sum(vars(newList, (Variable) rightTerm), api.vals(newCoeffs, -1), op, 0, INVERSABLE);
 	}
 
 	@Override
@@ -2875,7 +2911,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					continue;
 				String key = xi.num < xj.num ? (xi.num + "_" + xj.num + "_" + li + "_" + lj) : (xj.num + "_" + xi.num + "_" + lj + "_" + li);
 				if (set.contains(key)) {
-					//System.out.println("jjjjj");
+					// System.out.println("jjjjj");
 					continue;
 				}
 				set.add(key);
@@ -3078,7 +3114,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
 			control(limit - (op == LT ? 1 : 0) >= 1);
 			if (IntStream.of(new_heights).min().getAsInt() >= limit - (op == LT ? 1 : 0))
-				return noOverlap((Var[]) new_origins, new_lengths, true);
+				// redundant constraint (if replacing cumulative, can be bad : see Filters-dct-1-1_c22.xml)
+				noOverlap(discardable == null ? origins : IntStream.of(discardable).mapToObj(i -> origins[i]).toArray(Var[]::new), new_lengths, true);
 
 			if (new_origins.length == 1) {
 				if (new_heights[0] <= limit - (op == LT ? 1 : 0)) // discarded constraint because initially entailed
@@ -3417,7 +3454,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			intension(opt == MINIMIZE ? le(list[0], limit) : ge(list[0], limit));
 		} else if (coeffs != null) {
 			control(obj == SUM);
-			sum(list, coeffs, opt == MINIMIZE ? LE : GE, limit);
+			sum(list, coeffs, opt == MINIMIZE ? LE : GE, limit, INVERSABLE);
 		} else {
 			control(obj.generalizable());
 			if (opt == MINIMIZE) {
@@ -3555,8 +3592,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (filtered_list.length == 1)
 				return optimize(opt, mul(filtered_list[0], filtered_coeffs[0]));
 			long lb = head.control.optimization.lb, ub = head.control.optimization.ub;
-			optimizer = buildOptimizer(opt, (Optimizable) ((CtrAlone) sum(filtered_list, filtered_coeffs, GE, lb, false)).ctr,
-					(Optimizable) ((CtrAlone) sum(filtered_list, filtered_coeffs, LE, ub, false)).ctr);
+			Optimizable clb = (Optimizable) ((CtrAlone) sum(filtered_list, filtered_coeffs, GE, lb, NOT_INVERSABLE)).ctr;
+			Optimizable cub = (Optimizable) ((CtrAlone) sum(filtered_list, filtered_coeffs, LE, ub, NOT_INVERSABLE)).ctr;
+			optimizer = buildOptimizer(opt, clb, cub);
 		}
 		return null;
 	}

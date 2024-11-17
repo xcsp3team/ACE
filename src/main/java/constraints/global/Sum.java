@@ -390,8 +390,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			public SumSimpleEQ(Problem pb, Variable[] scp, long limit) {
 				super(pb, scp, limit);
-				this.ac = Stream.of(scp).allMatch(x -> x.dom.initSize() <= 2); // in this case, bounds consistency is
-																				// equivalent to AC
+				this.ac = Stream.of(scp).allMatch(x -> x.dom.initSize() <= 2); // in this case, bounds consistency is equivalent to AC
 			}
 
 			@Override
@@ -854,7 +853,6 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				if (futvars.size() > 0) {
 					int lastModified = futvars.limit, i = futvars.limit;
 					do {
-						// System.out.println("turn" + cnt++ + " " + Variable.nValidValuesFor(scp));
 						Domain dom = scp[futvars.dense[i]].dom;
 						int sizeBefore = dom.size();
 						if (sizeBefore > 1) {
@@ -1234,7 +1232,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		public SumViewWeighted(Problem pb, XNode<IVar>[] trees, int[] coeffs, long limit) {
 			super(pb, Utilities.collect(Variable.class, Stream.of(trees).map(tree -> tree.vars())));
 			this.coeffs = coeffs;
-			//System.out.println("trees " + Kit.join(trees));
+			// System.out.println("trees " + Kit.join(trees));
 			this.views = Stream.of(trees).map(tree -> tree.type == TypeExpr.VAR ? new ViewVariable(tree) : new ViewTree01(tree)).toArray(View[]::new);
 			control(minComputableObjectiveValue() <= maxComputableObjectiveValue()); // Important: we check this way
 																						// that no overflow is possible

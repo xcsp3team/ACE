@@ -53,7 +53,6 @@ import learning.IpsReasoner;
 import learning.NogoodReasoner;
 import main.Head;
 import main.HeadExtraction;
-import optimization.Optimizer;
 import problem.Problem;
 import propagation.Propagation;
 import sets.SetDense;

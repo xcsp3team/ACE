@@ -13,7 +13,6 @@ package propagation;
 import static utility.Kit.control;
 
 import solver.Solver;
-import utility.Kit;
 import variables.Variable;
 
 /**

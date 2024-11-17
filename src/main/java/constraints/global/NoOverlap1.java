@@ -25,9 +25,6 @@ public final class NoOverlap1 extends ConstraintGlobal implements TagNotAC {
 
 	private SetSparseReversible relevantTasks; // currently relevant tasks
 
-	private long volume;
-	private long margin;
-
 	public NoOverlap1(Problem pb, Variable[] origins, int[] widths) {
 		super(pb, origins);
 		control(origins.length > 1 && origins.length == widths.length);
@@ -35,8 +32,8 @@ public final class NoOverlap1 extends ConstraintGlobal implements TagNotAC {
 
 		int horizon = IntStream.range(0, scp.length).map(i -> scp[i].dom.lastValue() + widths[i]).max().getAsInt();
 
-		this.volume = IntStream.of(widths).sum();
-		this.margin = horizon - volume;
+		// this.volume = IntStream.of(widths).sum();
+		// this.margin = horizon - volume;
 	}
 
 	@Override

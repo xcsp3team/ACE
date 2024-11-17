@@ -353,7 +353,7 @@ public class Reinforcer {
 				System.out.println("generator = " + generator.stream().map(t -> "[ " + Kit.join(t) + " ]").collect(joining()));
 		}
 
-		private static void displayGraph(int[] variableNodes, List<Node> constraintNodes) {
+		static void displayGraph(int[] variableNodes, List<Node> constraintNodes) {
 			System.out.println("variableNodes");
 			for (int i = 0; i < variableNodes.length; i++)
 				System.out.println((i + 1) + ":" + variableNodes[i]);

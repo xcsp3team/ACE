@@ -325,7 +325,6 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 					// updating vdom (and valueSentinels)
 					if (filterValue() == false)
 						return false;
-					int cnt = 0;
 					while (true) {
 						// updating idom (and indexSentinels)
 						int sizeBefore = idom.size();

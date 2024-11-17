@@ -36,8 +36,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This constraint AllDifferent ensures that all values assigned to the variables of its scope are all different. This
- * class is the root class of several filtering algorithms for the constraint AllDifferent.
+ * This constraint AllDifferent ensures that all values assigned to the variables of its scope are all different. This class is the root class of several
+ * filtering algorithms for the constraint AllDifferent.
  * 
  * @author Christophe Lecoutre and Vincent Perradin (for the complete algorithm)
  */
@@ -74,7 +74,8 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 	 * 
 	 * @author Vincent Perradin
 	 */
-	public static class AllDifferentComplete extends AllDifferent implements TagAC, TagCallCompleteFiltering, ObserverOnBacktracksSystematic, TagPostponableFiltering {
+	public static class AllDifferentComplete extends AllDifferent
+			implements TagAC, TagCallCompleteFiltering, ObserverOnBacktracksSystematic, TagPostponableFiltering {
 
 		@Override
 		public void restoreBefore(int depth) {
@@ -457,12 +458,12 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 					workingVarSet.add(x);
 					Domain dom = scp[x].dom;
 					for (int a = dom.first(); a != -1; a = dom.next(a))
-						workingDomSet.add(dom.toVal(a));
+						workingDomSet.add(a); // dom.toVal(a));
 					if (workingDomSet.size() < workingVarSet.size())
 						return false;
 					if (workingDomSet.size() == workingVarSet.size()) {
 						for (int k = workingVarSet.limit + 1; k < workingVarSet.capacity(); k++)
-							if (scp[workingVarSet.dense[k]].dom.removeValuesIn(workingDomSet) == false)
+							if (scp[workingVarSet.dense[k]].dom.remove(workingDomSet, true) == false) // removeValuesIn(workingDomSet) == false)
 								return false;
 					}
 					if (workingDomSet.size() > unfixedVars.size())

@@ -17,7 +17,6 @@ import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
-import utility.Kit;
 import variables.Variable;
 
 /**

@@ -20,7 +20,6 @@ import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import problem.Problem;
 import sets.SetDense;
-import utility.Kit;
 import variables.Variable;
 
 /**

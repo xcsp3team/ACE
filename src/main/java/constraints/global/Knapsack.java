@@ -23,8 +23,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- *  TO BE FINISHED
- *  
+ * TO BE FINISHED
+ * 
  * @author Christophe Lecoutre
  */
 public final class Knapsack extends ConstraintGlobal implements TagCallCompleteFiltering {
@@ -33,7 +33,7 @@ public final class Knapsack extends ConstraintGlobal implements TagCallCompleteF
 	public boolean isSatisfiedBy(int[] t) {
 
 		// TODO
-		
+
 		return true;
 
 	}

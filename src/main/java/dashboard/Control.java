@@ -505,6 +505,7 @@ public final class Control {
 		public final boolean toExtension1 = addB("toExtension1", "ie1", true, "Must we convert unary intension constraints to extension?");
 		public final int arityLimitToExtension = addI("arityLimitToExtension", "ale", 0, "Limit on arity for possibly converting to extension");
 		public final int spaceLimitToExtension = addI("spaceLimitToExtension", "sle", 20, "Limit on space for possibly converting to extension");
+		public final int spaceLimitToNogood = addI("spaceLimitToNogood", "sln", 0, "Limit on space for possibly converting to nogoods");
 		// The following options determine whether special forms of intension constraints must be recognized/intercepted
 		public final boolean recognizePrimitive2 = addB("recognizePrimitive2", "rp2", true, "Must we attempt to recognize binary primitives?");
 		public final boolean recognizePrimitive3 = addB("recognizePrimitive3", "rp3", true, "Must we attempt to recognize ternary primitives?");
@@ -549,11 +550,14 @@ public final class Control {
 				"Must we post two constraints for Sum constraints, when the operator is EQ (or IN)?");
 		public final boolean eqMddForSum = addB("eqMddForSum", "eqm", false,
 				"Must we post a MDD constraint for Sum constraints, when the operator is EQ (or IN)?");
+		public final int sumeqToTableSpaceLimit = addI("sumeqToTableSpaceLimit", "set", 8, "Limit on space for possibly converting sumeq to table");
+		public final int suminToTableSpaceLimit = addI("suminToTableSpaceLimit", "sit", 12, "Limit on space for possibly converting sumin to table");
 		public final boolean permutation = addB("permutation", "", false, "Must we use permutation constraints for AllDifferent if possible? (may be faster)");
 		public final int allDifferentNb = addI("allDifferentNb", "adn", 10, "Number of possibly automatically inferred AllDifferent");
 		public final int allDifferentSize = addI("allDifferentSize", "ads", 5, "Limit on the size of possibly automatically inferred AllDifferent");
 
 		public final boolean test = addB("test", "test", false, "");
+		public final boolean test2 = addB("test2", "test2", false, "");
 		// public final boolean starred = addB("starred", "", false, "When true, some global constraints are encoded by starred tables");
 		// public final boolean hybrid = addB("hybrid", "", false, "When true, some global constraints are encoded by hybrid/smart tables");
 	}

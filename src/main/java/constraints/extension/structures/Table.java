@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.xcsp.common.Range;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
