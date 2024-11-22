@@ -291,7 +291,7 @@ public final class Solutions {
 					Color.GREEN.println("\nd WRONG DECISIONS", " " + (solver.stats != null ? solver.stats.nWrongDecisions : 0));
 					Color.GREEN.println("d FOUND SOLUTIONS", " " + found);
 					if (framework == COP && found > 0)
-						Color.GREEN.println("d BOUND", " " + bestBound);
+						Color.GREEN.println("d BOUND", " " + (bestBound + solver.problem.optimizer.gapBound));
 					if (fullExploration)
 						Color.GREEN.println("d COMPLETE EXPLORATION");
 					else
@@ -404,7 +404,7 @@ public final class Solutions {
 				long bound = solver.problem.optimizer.value();
 				if (solver.problem.optimizer.minimization && bound < bestBound || !solver.problem.optimizer.minimization && bound > bestBound) {
 					bestBound = bound;
-					Color.GREEN.println("o " + bestBound, "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
+					Color.GREEN.println("o " + solver.problem.optimizer.valueWithGap(), "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
 					record(null);
 				}
 			} else
@@ -421,8 +421,8 @@ public final class Solutions {
 			bestBound = solver.problem.optimizer.value();
 			if (found == 1)
 				firstBound = bestBound;
-			Color.GREEN.println("o " + bestBound, "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()) + "  ham=" + IntStream.of(hamming).sum() + " ("
-					+ Kit.join(hamming) + ")" + "  opth=" + hammingOpt);
+			Color.GREEN.println("o " + solver.problem.optimizer.valueWithGap(), "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()) + "  ham="
+					+ IntStream.of(hamming).sum() + " (" + Kit.join(hamming) + ")" + "  opth=" + hammingOpt);
 
 			// solver.restarter.currCutoff += 1; //20;
 			// System.out.println("h1 : " + Kit.join(h1) + " h2 : " + h2);

@@ -481,7 +481,7 @@ public final class MDD extends ExtensionStructure {
 			canReachNodeT(new HashSet<Integer>(), new HashSet<Integer>()); // if root built from transitions, necessary ?
 			buildSonsClasses();
 			int nNodes = renameNodes(1, new HashMap<Integer, Node>()) + 1;
-			//System.out.println("MDD : nNodes=" + nNodes + " nBuiltNodes=" + Node.nCreatedNodes);
+			// System.out.println("MDD : nNodes=" + nNodes + " nBuiltNodes=" + Node.nCreatedNodes);
 			display();
 			assert controlUniqueNodes(new HashMap<Integer, Node>());
 			// buildSplitter();

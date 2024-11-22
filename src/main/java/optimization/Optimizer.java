@@ -134,6 +134,8 @@ public abstract class Optimizer implements ObserverOnRuns {
 	 */
 	public long maxBound;
 
+	public long gapBound;
+
 	public Optimizer(Problem pb, TypeOptimization opt, Optimizable clb, Optimizable cub) {
 		this.problem = pb;
 		control(opt != null && clb != null && cub != null);
@@ -155,12 +157,16 @@ public abstract class Optimizer implements ObserverOnRuns {
 		return cub.objectiveValue();
 	}
 
+	public final long valueWithGap() {
+		return value() + gapBound;
+	}
+
 	protected abstract void shiftLimitWhenSuccess();
 
 	protected abstract void shiftLimitWhenFailure();
 
 	public final String stringBounds() {
-		return (minBound == Long.MIN_VALUE ? "-infty" : minBound) + ".." + (maxBound == Long.MAX_VALUE ? "+infty" : maxBound);
+		return (minBound == Long.MIN_VALUE ? "-infty" : minBound + gapBound) + ".." + (maxBound == Long.MAX_VALUE ? "+infty" : maxBound + gapBound);
 	}
 
 	@Override

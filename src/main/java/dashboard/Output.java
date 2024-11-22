@@ -485,7 +485,10 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(N_SYMBOLIC, features.nSymbolicVars);
 		m.put(N_AUXILIARY, head.problem.nAuxVariables);
 		m.put(N_ARRAYS, "" + head.problem.varArrays.length);
-		m.put(PRIORITY_ARRAYS, "" + Stream.of(head.problem.priorityArrays).map(pa -> pa.id).collect(Collectors.joining(",")));
+		if (head.problem.priorityVars == head.problem.auxiliaryVars)
+			m.put(PRIORITY_ARRAYS, "aux_vars");
+		else
+			m.put(PRIORITY_ARRAYS, "" + Stream.of(head.problem.priorityArrays).map(pa -> pa.id).collect(Collectors.joining(",")));
 		m.put(DEGREES, features.varDegrees);
 		return m;
 	}
@@ -515,7 +518,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.separator(features.mddSizes.size() > 0);
 		m.put("mdds", features.mddSizes.toString());
 		m.put("nodes", features.mddSizes.repartition.entrySet().stream().mapToLong(e -> e.getValue() * e.getKey()).sum());
-	
+
 		int nExtStructures = 0, nSharedExtStructures = 0, nIntStructures = 0, nSharedintStructures = 0, nCftStructures = 0, nSharedCftStructures = 0;
 		for (Constraint c : head.problem.constraints) {
 			if (c instanceof ConstraintExtension)
@@ -616,7 +619,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 				m.put(SOLS, head.solver.solutions.found);
 			else {
 				if (head.problem.optimizer.minBound == 0 || head.problem.optimizer.minBound == Long.MIN_VALUE)
-					m.put(BOUND, numberFormat.format(head.solver.solutions.bestBound));
+					m.put(BOUND, numberFormat.format(head.solver.solutions.bestBound + head.problem.optimizer.gapBound));
 				else
 					m.put(BOUNDS, head.problem.optimizer.stringBounds());
 			}

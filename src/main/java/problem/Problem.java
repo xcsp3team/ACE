@@ -57,9 +57,11 @@ import static org.xcsp.common.predicates.MatcherInterface.set_vals;
 import static org.xcsp.common.predicates.MatcherInterface.val;
 import static org.xcsp.common.predicates.MatcherInterface.var;
 import static org.xcsp.common.predicates.MatcherInterface.varOrVal;
+import static org.xcsp.common.predicates.MatcherInterface.x_add_k;
 import static org.xcsp.common.predicates.MatcherInterface.x_eq_k;
 import static org.xcsp.common.predicates.MatcherInterface.x_ne_k;
 import static org.xcsp.common.predicates.MatcherInterface.x_ne_y;
+import static org.xcsp.common.predicates.MatcherInterface.x_sub_k;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.ariop;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.relop;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.setop;
@@ -319,7 +321,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		int[] indexes = Stream.of(Kit.extractFrom(head.control.variables.priorityArrays)).mapToInt(
 				v -> v instanceof Integer ? (Integer) v : IntStream.range(0, varArrays.length).filter(i -> varArrays[i].id.equals(v)).findFirst().orElse(-1))
 				.toArray();
-		if (IntStream.of(indexes).allMatch(i -> 0 <= i && i < varArrays.length))
+		if (IntStream.of(indexes).allMatch(i -> 0 <= i && i < varArrays.length)) // including indexes.length == 0
 			this.priorityArrays = IntStream.of(indexes).mapToObj(i -> varArrays[i]).toArray(VarArray[]::new);
 		else {
 			control(indexes.length == 1 && indexes[0] == varArrays.length, "value of option -pra not valid: " + head.control.variables.priorityArrays);
@@ -973,13 +975,18 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * @return an array of new (auxiliary) variables representing the specified tree expressions
 	 */
 	private Var[] replaceByVariables(XNode<IVar>[] trees) {
-		for (int i = 0; i < trees.length; i++)
+		control(trees.length > 0);
+		for (int i = 0; i < trees.length; i++) {
 			trees[i] = trees[i].canonization();
+			if (cacheForTrees.containsKey(trees[i]))
+				trees[i] = XNode.varLeaf(cacheForTrees.get(trees[i]));
+		}
 		if (trees.length == 1)
 			return new Var[] { trees[0].type == VAR ? (Var) ((XNodeLeaf<?>) trees[0]).value : (Var) replaceByVariable(trees[0]) };
 		Var[] vars = Stream.of(trees).map(tree -> tree.type == VAR ? (Var) ((XNodeLeaf<?>) tree).value : null).toArray(Var[]::new);
 		XNode<IVar>[] real_trees = Stream.of(trees).filter(tree -> tree.type != VAR).toArray(XNode[]::new);
-		control(real_trees.length > 0);
+		if (real_trees.length == 0)
+			return vars;
 		IntToDom doms = i -> {
 			Object values = real_trees[i].possibleValues();
 			return values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
@@ -994,8 +1001,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (head.control.intension.toExtension(treeVars, null))
 				tuples = new TreeEvaluator(real_trees[0]).computeTuples(Variable.initDomainValues(treeVars), null);
 		}
-		for (int i = 0; i < real_trees.length; i++)
+		for (int i = 0; i < real_trees.length; i++) {
 			replacement(aux[i], real_trees[i], similarTrees, tuples);
+			cacheForTrees.put(real_trees[i], (Variable) aux[i]);
+		}
 		int cnt = 0;
 		Var[] returned_vars = new Var[trees.length];
 		for (int i = 0; i < trees.length; i++)
@@ -2189,6 +2198,18 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 		if (coeffs == null)
 			coeffs = Kit.repeat(1, trees.length);
+		if (trees.length > 1 && condition instanceof ConditionVal && Stream.of(trees).allMatch(tree -> x_add_k.matches(tree) || x_sub_k.matches(tree))) {
+			// for the moment, only managed for ConditionVal
+			int[] clone = coeffs.clone(); // to be able to use streams
+			int gap = IntStream.range(0, trees.length).map(i -> trees[i].val(0) * (x_add_k.matches(trees[i]) ? 1 : -1) * clone[i]).sum();
+			return sum((Var[])vars((Object[]) trees), coeffs,Condition.buildFrom(((ConditionRel)condition).operator, ((Long)condition.rightTerm()).intValue() -gap));
+//			ObjEntity objEntity = optimize(opt, SUM, (Variable[]) vars((Object[]) trees), coeffs);
+//			optimizer.gapBound = IntStream.range(0, trees.length).map(i -> trees[i].val(0) * (x_add_k.matches(trees[i]) ? 1 : -1) * coeffs[i]).sum();
+//			// TODO control no overflow? and control ciorrectness
+//			return objEntity;
+		}
+		
+		
 		// if (condition instanceof ConditionVal && ((ConditionRel) condition).operator.oneOf(LT, LE, GE, GT))
 		// return sum(replaceByBoundVariables(trees), coeffs, condition);
 		return sum(replaceByVariables(trees), coeffs, condition);
@@ -2892,11 +2913,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		unimplementedIf(!zeroIgnored, "noOverlap");
 		// if (origins.length >= 10 && head.control.global.redundNoOverlap) { // TODO hard coding 10
 		// // we post redundant constraints (after introducing auxiliary variables)
-		// Var[] aux = auxVarArray(origins.length, range(origins.length));
-		// allDifferent(aux);
-		// for (int i = 0; i < origins.length; i++)
-		// for (int j = i + 1; j < origins.length; j++)
-		// intension(iff(le(aux[i], aux[j]), le(origins[i], origins[j])));
+		// Var[] aux = auxVarArray(origins.length, range(origins.length)); allDifferent(aux);
+		// for (int i = 0; i < origins.length; i++) for (int j = i + 1; j < origins.length; j++) intension(iff(le(aux[i], aux[j]), le(origins[i], origins[j])));
 		// }
 
 		OptionsGlobal options = head.control.global;
@@ -2910,10 +2928,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				if (xi.dom.lastValue() + li <= xj.dom.firstValue() || xj.dom.lastValue() + lj <= xi.dom.firstValue())
 					continue;
 				String key = xi.num < xj.num ? (xi.num + "_" + xj.num + "_" + li + "_" + lj) : (xj.num + "_" + xi.num + "_" + lj + "_" + li);
-				if (set.contains(key)) {
-					// System.out.println("jjjjj");
+				if (set.contains(key))
 					continue;
-				}
 				set.add(key);
 
 				switch (options.noOverlap1) {
@@ -3047,6 +3063,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		unimplementedIf(!zeroIgnored, "noOverlap");
 
 		OptionsGlobal options = head.control.global;
+		Variable[] auxVarCsts = options.noOverlap2 == DEFAULT ? IntStream.of(ly).mapToObj(h -> auxVar(new int[] { h })).toArray(Variable[]::new) : null;
+
 		for (int i = 0; i < xs.length; i++)
 			for (int j = i + 1; j < xs.length; j++) {
 				Variable xi = (Variable) xs[i], xj = (Variable) xs[j], yi = (Variable) ys[i], yj = (Variable) ys[j];
@@ -3055,8 +3073,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				switch (options.noOverlap2) {
 				case DEFAULT:
 					// should we create aux var for hi and hj?
-					post(options.noOverlapAux
-							? new Disjonctive2ReifiedVar(this, xi, xj, yi, yj, wi, wj, auxVar(new int[] { hi }), auxVar(new int[] { hj }), auxVar(0, 1, 2, 3))
+					post(options.noOverlapAux ? new Disjonctive2ReifiedVar(this, xi, xj, yi, yj, wi, wj, auxVarCsts[i], auxVarCsts[j], auxVar(0, 1, 2, 3))
 							: new Disjonctive2Mix(this, xi, xj, yi, yj, wi, wj, hi, hj));
 					break;
 				case DECOMPOSITION:
@@ -3615,6 +3632,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			control(type != NVALUES);
 			return optimize(opt, trees[0]);
 		}
+		if (type == SUM && Stream.of(trees).allMatch(tree -> x_add_k.matches(tree) || x_sub_k.matches(tree))) {
+			ObjEntity objEntity = optimize(opt, SUM, (Variable[]) vars((Object[]) trees));
+			optimizer.gapBound = Stream.of(trees).mapToInt(tree -> tree.val(0) * (x_add_k.matches(tree) ? 1 : -1)).sum(); // TODO control no overflow?
+			return objEntity;
+		}
 		// if (type == SUM)
 		// return optimize(opt, type, translate(replaceByBoundVariables(trees)));
 		return optimize(opt, type, translate(replaceByVariables(trees)));
@@ -3632,11 +3654,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private ObjEntity optimize(TypeOptimization opt, TypeObjective type, XNode<IVar>[] trees, int[] coeffs) {
 		control(type != EXPRESSION && type != LEX && trees.length == coeffs.length && trees.length > 0);
+		System.out.println("hhh0");
 		if (IntStream.of(coeffs).anyMatch(c -> c == 0)) // we discard useless terms, if any is present
 			return optimize(opt, type, IntStream.range(0, trees.length).filter(i -> coeffs[i] != 0).mapToObj(i -> trees[i]).toArray(XNode[]::new),
 					IntStream.range(0, trees.length).filter(i -> coeffs[i] != 0).map(i -> coeffs[i]).toArray());
+		if (type == SUM && trees.length > 1 && Stream.of(trees).allMatch(tree -> x_add_k.matches(tree) || x_sub_k.matches(tree))) {
+			ObjEntity objEntity = optimize(opt, SUM, (Variable[]) vars((Object[]) trees), coeffs);
+			optimizer.gapBound = IntStream.range(0, trees.length).map(i -> trees[i].val(0) * (x_add_k.matches(trees[i]) ? 1 : -1) * coeffs[i]).sum();
+			// TODO control no overflow? and control ciorrectness
+			return objEntity;
+		}
 		if (type == SUM && trees.length > 1)
 			return optimize(opt, type, translate(replaceByVariables(trees)), coeffs);
+
 		if (trees.length == 1) {
 			control(type != NVALUES);
 			return optimize(opt, mul(trees[0], coeffs[0]));
