@@ -102,6 +102,13 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		InformationBloc info = preproInfo();
 		record(PREPROCESSING, info, solver);
 		log.config("\n" + info + "\n");
+		if (head.control.general.removedAfterProcessing) {
+			System.out.println("  " + Color.BLUE.coloring("Domain State") + " after preprocessing");
+			for (Variable x : head.problem.variables)
+				if (x.dom.nRemoved() > 0)
+					System.out.println("    " + x + " : " + x.dom.stringOfRemovedValues());
+			System.out.println();
+		}
 		log.config(COMMENT_PREFIX + Color.BLUE.coloring("search"));
 	}
 

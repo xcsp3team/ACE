@@ -405,6 +405,7 @@ public final class Control {
 		public final String discardClasses = addS("discardClasses", "dc", "", "XCSP3 classes (tags) to be discarded (comma as separator)");
 		public final String campaignDir = addS("campaignDir", "cd", "", "Name of a campaign directory where results (XML files) are stored.");
 		public final String trace = addS("trace", "trace", "", "Displays a trace (with possible depth control as eg -trace=10-20");
+		public final boolean removedAfterProcessing = addB("removedAfterProcessing", "rap", false, "Displaying removed values after preprocessing ?");
 		public final int jsonLimit = addI("jsonLimit", "jl", 10000, "The limit on the number of variables for displaying solutions in JSON");
 		public final boolean jsonAux = addB("jsonAux", "ja", false, "Take auxiliary variables when displaying solutions in JSON");
 		public final String jsonSave = addS("jsonSave", "js", "", "Save the first solution in a file whose name is this value");

@@ -3654,7 +3654,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private ObjEntity optimize(TypeOptimization opt, TypeObjective type, XNode<IVar>[] trees, int[] coeffs) {
 		control(type != EXPRESSION && type != LEX && trees.length == coeffs.length && trees.length > 0);
-		System.out.println("hhh0");
 		if (IntStream.of(coeffs).anyMatch(c -> c == 0)) // we discard useless terms, if any is present
 			return optimize(opt, type, IntStream.range(0, trees.length).filter(i -> coeffs[i] != 0).mapToObj(i -> trees[i]).toArray(XNode[]::new),
 					IntStream.range(0, trees.length).filter(i -> coeffs[i] != 0).map(i -> coeffs[i]).toArray());

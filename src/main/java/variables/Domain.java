@@ -1395,6 +1395,15 @@ public interface Domain extends SetLinked {
 		return sb.append(prev == intervalMin ? prev : intervalMin + (prev == intervalMin + 1 ? " " : "..") + prev).toString();
 	}
 
+	default String stringOfRemovedValues() {
+		if (nRemoved() == 0)
+			return "";
+		StringBuilder sb = new StringBuilder();
+		for (int a = lastRemoved(); a != -1; a = prevRemoved(a))
+			sb.append(sb.length() > 0 ? " " : "").append(toVal(a));
+		return sb.toString();
+	}
+
 	/**
 	 * Prints a description of the domain. Detailed information is given if the specified boolean is true
 	 * 

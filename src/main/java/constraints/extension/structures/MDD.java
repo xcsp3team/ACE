@@ -284,6 +284,8 @@ public final class MDD extends ExtensionStructure {
 		 */
 		public static final Node nodeT = new Node(-1);
 
+		public static int nNodesBefore;
+
 		/**
 		 * The num(ber) of this node (must be unique)
 		 */
@@ -358,6 +360,8 @@ public final class MDD extends ExtensionStructure {
 		private Node(int level) {
 			this.num = nCreatedNodes++;
 			this.level = level; // this is -1 for the two special terminal nodes
+			if (level == 0)
+				nNodesBefore=nCreatedNodes;
 		}
 
 		/**
@@ -481,7 +485,7 @@ public final class MDD extends ExtensionStructure {
 			canReachNodeT(new HashSet<Integer>(), new HashSet<Integer>()); // if root built from transitions, necessary ?
 			buildSonsClasses();
 			int nNodes = renameNodes(1, new HashMap<Integer, Node>()) + 1;
-			// System.out.println("MDD : nNodes=" + nNodes + " nBuiltNodes=" + Node.nCreatedNodes);
+			// System.out.println("MDD : nNodes=" + nNodes + " nBuiltNodes=" + (Node.nCreatedNodes - Node.nNodesBefore));
 			display();
 			assert controlUniqueNodes(new HashMap<Integer, Node>());
 			// buildSplitter();

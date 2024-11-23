@@ -174,6 +174,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 				}
 			} else {
 				tt = possiblyDecompact(tt);
+				for (int i=0; i<tt.length;i++)
+					tt[i] = tt[i].endsWith(",") ? tt[i].substring(0,tt[i].length()-1) : tt[i];
+				
 				boolean test = true;
 				String[] t = test ? Stream.of(tt).filter(tok -> !tok.equals("*")).toArray(String[]::new) : tt;
 				this.instantiation = IntStream.range(0, t.length).map(i -> t[i].equals("*") ? -1 : problem.variables[i].dom.toIdxIfPresent(parseInt(t[i])))
