@@ -13,7 +13,10 @@ package variables;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import org.xcsp.common.Utilities;
+
 import constraints.Constraint;
+import utility.Kit;
 
 /**
  * This class allows us to iterate over the Cartesian product of the domains of a sequence of variables. For example, it allows us to find the first valid
@@ -268,6 +271,26 @@ public final class TupleIterator {
 				return true;
 		} while (nextValidTuple() != -1);
 		return false;
+	}
+
+	public int[] firstValidTupleNotIn(int[][] tuples) { // the specified tuple is assumed to contain values (and not indexes of values)
+		assert Kit.isLexIncreasing(tuples);
+		firstValidTuple();
+		int[] t = new int[currTuple.length];
+		int i = 0;
+		do {
+			for (int j = 0; j < t.length; j++)
+				t[j] = doms[j].toVal(currTuple[j]);
+			while (i < tuples.length && Utilities.lexComparatorInt.compare(tuples[i], t) < 0)
+				i++;
+			if (i == tuples.length)
+				return t.clone();
+			for (int j = 0; j < t.length; j++)
+				if (t[j] != tuples[i][j])
+					return t.clone();
+			i++;
+		} while (nextValidTuple() != -1);
+		return null;
 	}
 
 	/**

@@ -232,14 +232,14 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void loadVar(XVar v) {
 		implem.manageIdFor(v);
-		if (v.degree > 0) {
+		if (v.degree > 0 || !problem.head.control.variables.omit0DegreeVariables) {
 			if (v.dom instanceof Dom)
 				mapVar.put(v, (VariableInteger) var(v.id, (Dom) v.dom, v.note, v.classes));
 			else if (v.dom instanceof DomSymbolic)
 				mapVar.put(v, (VariableSymbolic) var(v.id, (DomSymbolic) v.dom, v.note, v.classes));
 			else
 				unimplementedCase(v);
-		} else
+		} else // if (problem.head.control.variables.omit0DegreeVariables)
 			omittedVariables.add(v.id);
 	}
 
@@ -256,20 +256,22 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void loadArray(XArray va) {
+		boolean omitZeroDegreeVariables = problem.head.control.variables.omit0DegreeVariables;
 		implem.manageIdFor(va);
 		Object a = null;
 		int[] sz = va.size;
 		if (va.getType() == TypeVar.integer) {
 			if (sz.length == 1)
-				a = array(va.id, size(sz[0]), i -> va.domAt(i), va.note, va.classes);
+				a = array(va.id, size(sz[0]), i -> va.domAt(omitZeroDegreeVariables, i), va.note, va.classes);
 			else if (sz.length == 2)
-				a = array(va.id, size(sz[0], sz[1]), (i, j) -> va.domAt(i, j), va.note, va.classes);
+				a = array(va.id, size(sz[0], sz[1]), (i, j) -> va.domAt(omitZeroDegreeVariables, i, j), va.note, va.classes);
 			else if (sz.length == 3)
-				a = array(va.id, size(sz[0], sz[1], sz[2]), (i, j, k) -> va.domAt(i, j, k), va.note, va.classes);
+				a = array(va.id, size(sz[0], sz[1], sz[2]), (i, j, k) -> va.domAt(omitZeroDegreeVariables, i, j, k), va.note, va.classes);
 			else if (sz.length == 4)
-				a = array(va.id, size(sz[0], sz[1], sz[2], sz[3]), (i, j, k, l) -> va.domAt(i, j, k, l), va.note, va.classes);
+				a = array(va.id, size(sz[0], sz[1], sz[2], sz[3]), (i, j, k, l) -> va.domAt(omitZeroDegreeVariables, i, j, k, l), va.note, va.classes);
 			else if (sz.length == 5)
-				a = array(va.id, size(sz[0], sz[1], sz[2], sz[3], sz[4]), (i, j, k, l, m) -> va.domAt(i, j, k, l, m), va.note, va.classes);
+				a = array(va.id, size(sz[0], sz[1], sz[2], sz[3], sz[4]), (i, j, k, l, m) -> va.domAt(omitZeroDegreeVariables, i, j, k, l, m), va.note,
+						va.classes);
 			else
 				unimplementedCase(va);
 		} else if (va.getType() == TypeVar.symbolic) {
@@ -753,7 +755,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrElement(String id, XNode<XVarInteger>[] trees, int value, XVarInteger reifiedBy) {
-		problem.member(trVar(trees), value, trVar(reifiedBy)); 
+		problem.member(trVar(trees), value, trVar(reifiedBy));
 	}
 
 	@Override

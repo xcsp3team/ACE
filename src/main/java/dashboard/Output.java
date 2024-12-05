@@ -103,9 +103,9 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		record(PREPROCESSING, info, solver);
 		log.config("\n" + info + "\n");
 		if (head.control.general.removedAfterProcessing) {
-			System.out.println("  " + Color.BLUE.coloring("Domain State") + " after preprocessing");
+			System.out.println("  " + Color.BLUE.coloring("Domain State") + " (removals after preprocessing)");
 			for (Variable x : head.problem.variables)
-				if (x.dom.nRemoved() > 0)
+				if (x.dom.nRemoved() > 0 && x.dom.lastRemoved() != -1)
 					System.out.println("    " + x + " : " + x.dom.stringOfRemovedValues());
 			System.out.println();
 		}

@@ -639,8 +639,7 @@ public interface Domain extends SetLinked {
 	 *            a value index
 	 */
 	default void removeAtConstructionTime(int a) {
-		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " at
-		// construction time");
+		//System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " at construction time");
 		Problem problem = var().problem;
 		control(problem.solver == null, () -> "Must be called before the solver being built.");
 		remove(a, 0);

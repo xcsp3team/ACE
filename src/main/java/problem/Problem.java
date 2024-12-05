@@ -262,6 +262,7 @@ import utility.Kit.Color;
 import utility.Stopwatch;
 import variables.Domain;
 import variables.DomainFinite.DomainRange;
+import variables.TupleIterator;
 import variables.Variable;
 import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
@@ -1159,10 +1160,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	@Override
-	public final CtrEntity intension(XNodeParent<IVar> tree) {
+	public final CtrEntity intension(XNodeParent<IVar> treeRoot) {
 		OptionsIntension options = head.control.intension;
 
-		tree = (XNodeParent<IVar>) tree.canonization(); // first, the tree is canonized
+		XNodeParent<IVar> tree = (XNodeParent<IVar>) treeRoot.canonization(); // first, the tree is canonized
 		Variable[] scp = (Variable[]) tree.vars(); // keep this statement here, after canonization
 		int arity = scp.length;
 		control(arity > 0);
@@ -1171,19 +1172,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		if (arity == 1) {
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
-			Variable x = (Variable) tree.var(0);
+			Domain dom = scp[0].dom;
 			if (head.mustPreserveUnaryConstraints()) {
 				if (!options.toExtension1)
 					return post(new ConstraintIntension(this, scp, tree));
-				int[] values = x.dom.valuesChecking(v -> evaluator.evaluate(v) != 1); // initially, conflicts
-				boolean positive = values.length >= x.dom.size() / 2;
+				int[] values = dom.valuesChecking(v -> evaluator.evaluate(v) != 1); // initially, conflicts
+				boolean positive = values.length >= dom.size() / 2;
 				if (positive)
-					values = x.dom.valuesChecking(v -> evaluator.evaluate(v) == 1); // we store supports instead
+					values = dom.valuesChecking(v -> evaluator.evaluate(v) == 1); // we store supports instead
 				if (values.length == 0 && !positive)
 					return null;
-				return post(new Extension1(this, x, values, positive));
+				return post(new Extension1(this, scp[0], values, positive));
 			}
-			x.dom.removeValuesAtConstructionTime(v -> evaluator.evaluate(v) != 1);
+			dom.removeValuesAtConstructionTime(v -> evaluator.evaluate(v) != 1);
 			features.nRemovedUnaryCtrs++;
 			return ctrEntities.new CtrAloneDummy("Removed unary constraint by domain reduction");
 		}
@@ -1288,7 +1289,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (c != null)
 				return post(c);
 		}
+		if (tree.type == OR || tree.type == IF) {
+			if (tree.sons.length == 2 && tree.sons[1].type == AND) // TODO should we avoid this if sons of AND are not decomposable (share variables)?
+				return forall(range(tree.sons[1].sons.length), i -> intension(XNode.node(tree.type, tree.sons[0], tree.sons[1].sons[i])));
+		}
+
 		if (tree.type == OR) {
+
 			if (arity > 2 && Stream.of(tree.sons).allMatch(son -> son.type == VAR))
 				return post(new AtLeast1(this, scp, 1)); // return post(SumSimple.buildFrom(this, scp, NE, 0));
 			if (arity >= 2) {
@@ -1505,7 +1512,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		if (options.toExtension(scp, tree) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
-			// System.out.println("converting " + tree );
+			// System.out.println("converting " + tree);
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
@@ -1600,6 +1607,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					return null;
 				}
 			}
+			Domain[] doms = Stream.of(scp).map(x -> x.dom).toArray(Domain[]::new);
+			if (tuples.length == Domain.nValidTuplesBounded(doms) - 1) {
+				assert Stream.of((int[][]) tuples).noneMatch(tuple -> IntStream.of(tuple).anyMatch(v -> v == STAR));
+				if (positive) {
+					int[] t = new TupleIterator(doms).firstValidTupleNotIn((int[][]) tuples);
+					if (t != null) {
+						features.collecting.addNogood(scp, t);
+						return null;
+					}
+				}
+				// TODO negative ?
+			}
+
 			if (Variable.areAllInitiallyBoolean(scp) && tuples.length == scp.length && positive) {
 				Integer[] conflict = new Integer[scp.length];
 				loop: {
@@ -2075,7 +2095,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final CtrEntity sum(Var[] list, int[] coeffs, Condition condition) {
 		control(list.length > 0, "A constraint sum is posted with a scope of 0 variable");
 		control(Stream.of(list).noneMatch(x -> x == null), "A variable is null");
-		control(list.length == coeffs.length, "the number of variables is different from the number of coefficients");
+		control(list.length == coeffs.length, "the number of variables is different from the number of coefficients: " + list.length + " vs " + coeffs.length);
 
 		Term[] terms = handleSumTerms(translate(list), coeffs);
 		Variable[] newList = Stream.of(terms).map(t -> t.obj).toArray(Variable[]::new);
@@ -2202,14 +2222,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			// for the moment, only managed for ConditionVal
 			int[] clone = coeffs.clone(); // to be able to use streams
 			int gap = IntStream.range(0, trees.length).map(i -> trees[i].val(0) * (x_add_k.matches(trees[i]) ? 1 : -1) * clone[i]).sum();
-			return sum((Var[])vars((Object[]) trees), coeffs,Condition.buildFrom(((ConditionRel)condition).operator, ((Long)condition.rightTerm()).intValue() -gap));
-//			ObjEntity objEntity = optimize(opt, SUM, (Variable[]) vars((Object[]) trees), coeffs);
-//			optimizer.gapBound = IntStream.range(0, trees.length).map(i -> trees[i].val(0) * (x_add_k.matches(trees[i]) ? 1 : -1) * coeffs[i]).sum();
-//			// TODO control no overflow? and control ciorrectness
-//			return objEntity;
+			return sum((Var[]) vars((Object[]) trees), coeffs,
+					Condition.buildFrom(((ConditionRel) condition).operator, ((Long) condition.rightTerm()).intValue() - gap));
+			// ObjEntity objEntity = optimize(opt, SUM, (Variable[]) vars((Object[]) trees), coeffs);
+			// optimizer.gapBound = IntStream.range(0, trees.length).map(i -> trees[i].val(0) * (x_add_k.matches(trees[i]) ? 1 : -1) * coeffs[i]).sum();
+			// // TODO control no overflow? and control ciorrectness
+			// return objEntity;
 		}
-		
-		
+
 		// if (condition instanceof ConditionVal && ((ConditionRel) condition).operator.oneOf(LT, LE, GE, GT))
 		// return sum(replaceByBoundVariables(trees), coeffs, condition);
 		return sum(replaceByVariables(trees), coeffs, condition);
@@ -3106,8 +3126,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		assert rl == 0 || rh == 0 || rl == rh;
 		if (IntStream.range(0, rl).anyMatch(i -> lengths[i] == 0) || IntStream.range(0, rh).anyMatch(i -> heights[i] == 0)) {
 			int[] t = IntStream.range(0, Math.max(rl, rh)).filter(i -> (rl == 0 || lengths[i] > 0) && (rh == 0 || heights[i] > 0)).toArray();
-			Kit.warning("Discarding " + (lengths.length - t.length) + " tasks (because of duration or height 0) of a Cumulative constraint");
-			control(t.length > 0);
+			Kit.warning(
+					"Discarding " + (lengths == null ? "" : lengths.length - t.length) + " tasks (because of duration or height 0) of a Cumulative constraint");
+			// control(t.length > 0);
 			return t;
 		}
 		return null;
@@ -3118,6 +3139,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		unimplementedIf(ends != null, "cumulative");
 
 		int[] discardable = discardableTasks(lengths, heights);
+		if (discardable != null && discardable.length == 0) {
+			Kit.warning("Discarding a cumulative constraint because all lengths or heights are equal to 0");
+			return null;
+		}
 		Variable[] new_origins = translate(discardable == null ? origins : IntStream.of(discardable).mapToObj(i -> origins[i]).toArray(Var[]::new));
 		int[] new_lengths = discardable == null ? lengths : IntStream.of(discardable).map(i -> lengths[i]).toArray();
 		int[] new_heights = discardable == null ? heights : IntStream.of(discardable).map(i -> heights[i]).toArray();
@@ -3155,6 +3180,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		unimplementedIf(ends != null, "cumulative");
 
 		int[] discardable = discardableTasks(null, heights);
+		if (discardable != null && discardable.length == 0) {
+			Kit.warning("Discarding a cumulative constraint because all heights are equal to 0");
+			return null;
+		}
 		Variable[] new_origins = translate(discardable == null ? origins : IntStream.of(discardable).mapToObj(i -> origins[i]).toArray(Variable[]::new));
 		Variable[] new_lengths = translate(discardable == null ? lengths : IntStream.of(discardable).mapToObj(i -> lengths[i]).toArray(Variable[]::new));
 		int[] new_heights = discardable == null ? heights : IntStream.of(discardable).map(i -> heights[i]).toArray();
@@ -3181,6 +3210,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		unimplementedIf(ends != null, "cumulative");
 
 		int[] discardable = discardableTasks(lengths, null);
+		if (discardable != null && discardable.length == 0) {
+			Kit.warning("Discarding a cumulative constraint because all lengths are equal to 0");
+			return null;
+		}
 		Variable[] new_origins = translate(discardable == null ? origins : IntStream.of(discardable).mapToObj(i -> origins[i]).toArray(Variable[]::new));
 		int[] new_lengths = discardable == null ? lengths : IntStream.of(discardable).map(i -> lengths[i]).toArray();
 		Variable[] new_heights = translate(discardable == null ? heights : IntStream.of(discardable).mapToObj(i -> heights[i]).toArray(Variable[]::new));
@@ -3231,11 +3264,20 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	public final CtrEntity binpacking(Var[] list, int[] sizes, Condition condition) {
 		control(list.length > 2 && list.length == sizes.length);
-		Variable[] vars = translate(list);
-		boolean sameType = Variable.haveSameDomainType(vars);
+
+		int[] discardable = discardableTasks(sizes, null);
+		if (discardable != null && discardable.length == 0) {
+			Kit.warning("Discarding a binpacking constraint because all sizes are equal to 0");
+			return null;
+		}
+		Variable[] new_list = translate(discardable == null ? list : IntStream.of(discardable).mapToObj(i -> list[i]).toArray(Variable[]::new));
+		int[] new_sizes = discardable == null ? sizes : IntStream.of(discardable).map(i -> sizes[i]).toArray();
+
+		// Variable[] new_list = translate(list);
+		boolean sameType = Variable.haveSameDomainType(new_list);
 		if (!sameType || !(condition instanceof ConditionVal) || head.control.global.binpacking == DECOMPOSITION) { // decomposing in sum constraints
-			int[] bins = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).sorted().toArray();
-			return forall(range(bins.length), i -> sum(Stream.of(list).map(x -> api.eq(x, bins[i])), sizes, condition));
+			int[] bins = Variable.setOfvaluesIn(new_list).stream().mapToInt(v -> v).sorted().toArray();
+			return forall(range(bins.length), i -> sum(Stream.of(new_list).map(x -> api.eq(x, bins[i])), new_sizes, condition));
 			// TODO add nValues ? other ?
 		}
 		if (condition instanceof ConditionVal) {
@@ -3243,7 +3285,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k);
 			// return post(new BinPackingSimple(this, vars, sizes, limit - (op == LT ? 1 : 0)));
-			return post(new BinPackingEnergetic(this, vars, sizes, limit - (op == LT ? 1 : 0)));
+			return post(new BinPackingEnergetic(this, new_list, new_sizes, limit - (op == LT ? 1 : 0)));
 			// TODO add nValues ? other ?
 		}
 		return unimplemented("binPacking");

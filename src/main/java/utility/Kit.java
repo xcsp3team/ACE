@@ -329,7 +329,7 @@ public final class Kit {
 	 * @return true if all rows in the specified matrix are strictly increasingly ordered
 	 */
 	public static boolean isLexIncreasing(int[][] t) {
-		return IntStream.range(0, t.length - 1).noneMatch(i -> Utilities.lexComparatorInt.compare(t[i], t[i + 1]) > 0);
+		return IntStream.range(0, t.length - 1).noneMatch(i -> Utilities.lexComparatorInt.compare(t[i], t[i + 1]) >= 0);
 	}
 
 	/**
