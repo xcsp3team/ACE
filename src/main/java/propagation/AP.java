@@ -28,8 +28,11 @@ import variables.Variable;
  */
 public class AP extends StrongConsistency {
 
+	// TODO hard coding
 	private final static int GAP = 60;
-
+	private final static int LIMIT1 = 100_000;
+	private final static int LIMIT2 = 10_000;
+	
 	private final ESAC3 esac;
 
 	private final SAC sac;
@@ -46,7 +49,7 @@ public class AP extends StrongConsistency {
 		super(solver);
 		this.esac = new ESAC3(solver);
 		this.esac.limitedEnforcment = 10;
-		this.sac = new SAC3(solver);
+		this.sac = Variable.nValidValuesFor(solver.problem.variables) > LIMIT1 ? null : new SAC3(solver);
 		this.alternatives = new Propagation[] { esac, sac };
 	}
 
@@ -57,7 +60,7 @@ public class AP extends StrongConsistency {
 
 	private Propagation whichStrongPropagation() {
 		Propagation p = alternatives[propagations.size() % alternatives.length];
-		if (p instanceof SAC3 && Variable.nValidValuesFor(solver.problem.variables) > 10000)
+		if (p == null || (p instanceof SAC3 && Variable.nValidValuesFor(solver.problem.variables) > LIMIT2))
 			p = esac;
 		return p;
 	}

@@ -304,7 +304,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 
 		@Override
 		public void beforeRun() {
-			if (++cnt % 8 == 0)
+			if (++cnt % 24 == 0)
 				branchSize = 0;
 		}
 
@@ -782,7 +782,6 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		this.solutions = new Solutions(this, head.control.general.solLimit);
 		// BE CAREFUL: build solutions before propagation
 		this.propagation = Propagation.buildFor(this); // may be null
-
 		this.restarter = Restarter.buildFor(this);
 		this.heuristic = HeuristicVariables.buildFor(this);
 		for (Variable x : problem.variables)

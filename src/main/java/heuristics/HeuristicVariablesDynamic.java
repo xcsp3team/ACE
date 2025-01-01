@@ -885,7 +885,6 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					}
 				}
 			}
-			// System.out.println("jjjjj " + Kit.join(a));
 		}
 
 		@Override

@@ -50,6 +50,7 @@ import learning.IpsReasonerEquivalence;
 import main.Head;
 import optimization.Optimizer;
 import problem.Features;
+import problem.Problem;
 import problem.XCSP3;
 import propagation.AC;
 import propagation.Propagation;
@@ -491,9 +492,10 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(N_FIXED, features.nFixedVars);
 		m.put(N_SYMBOLIC, features.nSymbolicVars);
 		m.put(N_AUXILIARY, head.problem.nAuxVariables);
-		m.put(N_ARRAYS, "" + head.problem.varArrays.length);
+		m.put(N_ARRAYS, "[" + Stream.of(head.problem.varArrays).map(va -> va.id + ":" + va.flatVars.length).collect(Collectors.joining(","))
+				+ (head.problem.auxiliaryVars.length == 0 ? "" : "," + Problem.AUXILIARY_VARIABLE_PREFIX + ":" + head.problem.auxiliaryVars.length) + "]");
 		if (head.problem.priorityVars == head.problem.auxiliaryVars)
-			m.put(PRIORITY_ARRAYS, "aux_vars");
+			m.put(PRIORITY_ARRAYS, Problem.AUXILIARY_VARIABLE_PREFIX);
 		else
 			m.put(PRIORITY_ARRAYS, "" + Stream.of(head.problem.priorityArrays).map(pa -> pa.id).collect(Collectors.joining(",")));
 		m.put(DEGREES, features.varDegrees);

@@ -639,7 +639,7 @@ public interface Domain extends SetLinked {
 	 *            a value index
 	 */
 	default void removeAtConstructionTime(int a) {
-		//System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " at construction time");
+		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " at construction time");
 		Problem problem = var().problem;
 		control(problem.solver == null, () -> "Must be called before the solver being built.");
 		remove(a, 0);
@@ -1398,8 +1398,22 @@ public interface Domain extends SetLinked {
 		if (nRemoved() == 0)
 			return "";
 		StringBuilder sb = new StringBuilder();
-		for (int a = lastRemoved(); a != -1; a = prevRemoved(a))
-			sb.append(sb.length() > 0 ? " " : "").append(toVal(a));
+		sb.append("#").append(nRemoved() + " --> ");
+		int a = 0;
+		while (a < initSize()) {
+			while (a < initSize() && contains(a))
+				a++;
+			if (a == initSize())
+				break;
+			int b = a + 1;
+			while (b < initSize() && !contains(b))
+				b++;
+			if (b == a + 1)
+				sb.append(toVal(a)).append(" ");
+			else
+				sb.append(toVal(a)).append("..").append(toVal(b - 1)).append(" ");
+			a = b;
+		}
 		return sb.toString();
 	}
 

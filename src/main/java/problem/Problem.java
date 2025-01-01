@@ -49,6 +49,7 @@ import static org.xcsp.common.predicates.MatcherInterface.add_mulVars;
 import static org.xcsp.common.predicates.MatcherInterface.add_vars;
 import static org.xcsp.common.predicates.MatcherInterface.add_varsOrTerms;
 import static org.xcsp.common.predicates.MatcherInterface.add_varsOrTerms_valEnding;
+import static org.xcsp.common.predicates.MatcherInterface.any;
 import static org.xcsp.common.predicates.MatcherInterface.logic_vars;
 import static org.xcsp.common.predicates.MatcherInterface.max_vars;
 import static org.xcsp.common.predicates.MatcherInterface.min_vars;
@@ -78,6 +79,7 @@ import static org.xcsp.common.predicates.XNodeParent.mul;
 import static org.xcsp.common.predicates.XNodeParent.or;
 import static org.xcsp.common.predicates.XNodeParent.set;
 import static utility.Kit.log;
+import static constraints.Constraint.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1143,6 +1145,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// product
 	private Matcher mul_vars__relop = new Matcher(node(relop, mul_vars, val));
 
+	// other
+	private Matcher or2_and2 = new Matcher(node(OR, node(AND, any, any), node(AND, any, any)));
+
 	private Condition basicCondition(XNodeParent<IVar> tree) {
 		if (!tree.type.isRelationalOperator() || tree.sons.length != 2)
 			return null;
@@ -1164,6 +1169,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		OptionsIntension options = head.control.intension;
 
 		XNodeParent<IVar> tree = (XNodeParent<IVar>) treeRoot.canonization(); // first, the tree is canonized
+		XNode<IVar>[] sons = tree.sons;
 		Variable[] scp = (Variable[]) tree.vars(); // keep this statement here, after canonization
 		int arity = scp.length;
 		control(arity > 0);
@@ -1171,17 +1177,17 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// System.out.println("tree " + tree);
 
 		if (arity == 1) {
-			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 			Domain dom = scp[0].dom;
+			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 			if (head.mustPreserveUnaryConstraints()) {
 				if (!options.toExtension1)
 					return post(new ConstraintIntension(this, scp, tree));
-				int[] values = dom.valuesChecking(v -> evaluator.evaluate(v) != 1); // initially, conflicts
+				int[] values = dom.valuesChecking(v -> evaluator.evaluate(v) != 1); // initially, we store conflicts
+				if (values.length == 0) // if zero conflict
+					return head.control.constraints.postCtrTrues ? post(new CtrTrue(this, scp, "Unary trivially satisfied constraint")) : null;
 				boolean positive = values.length >= dom.size() / 2;
 				if (positive)
 					values = dom.valuesChecking(v -> evaluator.evaluate(v) == 1); // we store supports instead
-				if (values.length == 0 && !positive)
-					return null;
 				return post(new Extension1(this, scp[0], values, positive));
 			}
 			dom.removeValuesAtConstructionTime(v -> evaluator.evaluate(v) != 1);
@@ -1191,7 +1197,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		assert Variable.haveSameType(scp);
 
-		if (Constraint.howManyVariablesWithin(scp, options.spaceLimitToNogood) == Constants.ALL) {
+		if (howManyVariablesWithin(scp, options.spaceLimitToNogood) == Constants.ALL) {
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 			int[] conflict = evaluator.getUniqueConflict(Variable.initDomainValues(scp));
 			if (conflict != null) {
@@ -1200,18 +1206,56 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			}
 		}
 
+		if (tree.type == AND) {
+			IVar[][] all_vars = Stream.of(sons).map(son -> son.vars()).toArray(IVar[][]::new);
+			boolean[] bs = new boolean[sons.length];
+			boolean strict = false; // TODo hard coding (what about cycles?)
+			int nbHoles = 0;
+			extern: for (int i = 0; i < sons.length; i++) {
+				control(sons[i].type.isPredicateOperator() || sons[i].type == VAR);
+				if (bs[i])
+					continue;
+				if (all_vars[i].length > 1) {
+					for (int j = 0; j < sons.length; j++) {
+						if (i == j || all_vars[j].length == 1) // unary terms are not a problem
+							continue;
+						int nShared = 0;
+						for (IVar x : all_vars[i])
+							for (IVar y : all_vars[j])
+								if (x == y) {
+									if (nShared == 1 || strict) {
+										bs[i] = true;
+										bs[j] = true;
+										continue extern;
+									} else
+										nShared++;
+								}
+					}
+				}
+				intension(sons[i].type == VAR ? api.eq(((XNodeLeaf<IVar>) sons[i]).value, 1) : (XNodeParent<IVar>) sons[i]);
+				sons[i] = null;
+				nbHoles++;
+			}
+			if (nbHoles == sons.length)
+				return null;
+			if (nbHoles == sons.length - 1)
+				return intension((XNodeParent<IVar>) Stream.of(sons).filter(son -> son != null).findFirst().orElseThrow());
+			if (nbHoles > 0)
+				return intension(api.and(Stream.of(sons).filter(son -> son != null).toArray()));
+		}
+
 		if (options.toHybrid) { // TODO section to finalize with various cases
 			if (tree.type == IMP) {
-				XNode<IVar> son0 = tree.sons[0], son1 = tree.sons[1];
+				XNode<IVar> son0 = sons[0], son1 = sons[1];
 				if (mayBeHybrid(son0) && mayBeHybrid(son1)) { // TODO and check no shared variables ?
 					XNodeParent<IVar> newson0 = XNodeParent.build(son0.type.logicalInversion(), (Object[]) son0.sons);
 					HybridTuple ht1 = new HybridTuple((int[]) null, newson0);
 					HybridTuple ht2 = new HybridTuple((int[]) null, (XNodeParent<IVar>) son1);
 					return hybrid(scp, ht1, ht2);
 				}
-			} else if (tree.type == OR && Stream.of(tree.sons).allMatch(son -> mayBeHybrid(son))) {
+			} else if (tree.type == OR && Stream.of(sons).allMatch(son -> mayBeHybrid(son))) {
 				// TODO and check no shared variables ?
-				Stream<HybridTuple> stream = Stream.of(tree.sons).map(son -> new HybridTuple((int[]) null, (XNodeParent<IVar>) son));
+				Stream<HybridTuple> stream = Stream.of(sons).map(son -> new HybridTuple((int[]) null, (XNodeParent<IVar>) son));
 				return hybrid(scp, stream);
 			}
 		}
@@ -1252,9 +1296,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			else if (unalop_x__eq_y.matches(tree))
 				c = Primitive2.buildFrom(this, scp[1], tree.unalop(0), scp[0]);
 			else if (disjonctive.matches(tree)) {
-				Variable[] scp0 = (Variable[]) tree.sons[0].vars(), scp1 = (Variable[]) tree.sons[1].vars();
+				Variable[] scp0 = (Variable[]) sons[0].vars(), scp1 = (Variable[]) sons[1].vars();
 				if (scp0.length == 2 && scp1.length == 2 && scp0[0] == scp1[1] && scp0[1] == scp1[0]) {
-					int k0 = tree.sons[0].val(0), k1 = tree.sons[1].val(0);
+					int k0 = sons[0].val(0), k1 = sons[1].val(0);
 					c = new Disjonctive(this, scp0[0], k0, scp[1], k1);
 				}
 			} else if (logic_or_x_y.matches(tree))
@@ -1289,18 +1333,38 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (c != null)
 				return post(c);
 		}
-		if (tree.type == OR || tree.type == IF) {
-			if (tree.sons.length == 2 && tree.sons[1].type == AND) // TODO should we avoid this if sons of AND are not decomposable (share variables)?
-				return forall(range(tree.sons[1].sons.length), i -> intension(XNode.node(tree.type, tree.sons[0], tree.sons[1].sons[i])));
+		boolean test = true;
+		if (test && or2_and2.matches(tree)) {
+			XNode<IVar> gs00 = sons[0].sons[0], gs01 = sons[0].sons[1], gs10 = sons[1].sons[0], gs11 = sons[1].sons[1];
+			Object res0 = XNode.logicallyInverse(gs00, gs10), res1 = XNode.logicallyInverse(gs01, gs11);
+			if (res0 != Boolean.FALSE && res1 != Boolean.FALSE) {
+				if (res0 == Boolean.TRUE && res1 == Boolean.TRUE)
+					return intension(eq(gs00, gs01));
+				control(res0 == Boolean.TRUE || res1 == Boolean.TRUE);
+				return intension(api.and(api.in(res0 != Boolean.TRUE ? res0 : res1, set(0, 1)), eq(gs00, gs01)));
+			}
+			res0 = XNode.logicallyInverse(gs00, gs11);
+			res1 = XNode.logicallyInverse(gs01, gs10);
+			if (res0 != Boolean.FALSE && res1 != Boolean.FALSE) {
+				if (res0 == Boolean.TRUE && res1 == Boolean.TRUE)
+					return intension(eq(gs00, gs01));
+				control(res0 == Boolean.TRUE || res1 == Boolean.TRUE);
+				return intension(api.and(api.in(res0 != Boolean.TRUE ? res0 : res1, set(0, 1)), eq(gs00, gs01)));
+			}
+			// if ((XNode.logicallyInverse(gs00, gs10) && XNode.logicallyInverse(gs01, gs11))
+			// || (XNode.logicallyInverse(gs00, gs11) && XNode.logicallyInverse(gs01, gs10)))
+			// return intension(eq(gs00, gs01));
+
 		}
-
+		if (tree.type == OR || tree.type == IF) {
+			if (sons.length == 2 && sons[1].type == AND) // TODO should we avoid this if sons of AND are not decomposable (share variables)?
+				return forall(range(sons[1].sons.length), i -> intension(XNode.node(tree.type, sons[0], sons[1].sons[i])));
+		}
 		if (tree.type == OR) {
-
-			if (arity > 2 && Stream.of(tree.sons).allMatch(son -> son.type == VAR))
+			if (arity > 2 && Stream.of(sons).allMatch(son -> son.type == VAR))
 				return post(new AtLeast1(this, scp, 1)); // return post(SumSimple.buildFrom(this, scp, NE, 0));
 			if (arity >= 2) {
-				if (Stream.of(tree.sons)
-						.allMatch(son -> son.type == VAR || x_ne_k.matches(son) || (x_eq_k.matches(son) && ((Variable) son.var(0)).dom.is01()))) {
+				if (Stream.of(sons).allMatch(son -> son.type == VAR || x_ne_k.matches(son) || (x_eq_k.matches(son) && ((Variable) son.var(0)).dom.is01()))) {
 					List<Integer> vals = new ArrayList<>();
 					for (XNode<IVar> son : tree.sons) {
 						int v = -1;
@@ -1322,31 +1386,29 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					return null; // post(new Nogood(this, scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray()));
 				}
 			}
-			if (arity >= options.arityForClauseUnaryTrees && arity == tree.sons.length) {
-				TreeUnaryBoolean[] terms = ClauseUnaryTrees.canBuildTreeUnaryBooleans(tree.sons);
+			if (arity >= options.arityForClauseUnaryTrees && arity == sons.length) {
+				TreeUnaryBoolean[] terms = ClauseUnaryTrees.canBuildTreeUnaryBooleans(sons);
 				if (terms != null)
 					return post(new ClauseUnaryTrees(this, terms));
 			}
 			if (arity >= options.arityForClauseHybridTrees) {
-				if (HybridTuple.canBuildHybridTuples(tree.sons))
-					return hybrid(scp, Stream.of(tree.sons).map(son -> new HybridTuple((XNodeParent<?>) son)));
+				if (HybridTuple.canBuildHybridTuples(sons))
+					return hybrid(scp, Stream.of(sons).map(son -> new HybridTuple((XNodeParent<?>) son)));
 			}
 
-			if (arity == 4 && tree.sons.length == 2 && Stream.of(tree.sons).allMatch(son -> x_ne_y.matches(son)))
-				return post(new DblDiff(this, (Variable) tree.sons[0].var(0), (Variable) tree.sons[0].var(1), (Variable) tree.sons[1].var(0),
-						(Variable) tree.sons[1].var(1)));
+			if (arity == 4 && sons.length == 2 && Stream.of(sons).allMatch(son -> x_ne_y.matches(son)))
+				return post(new DblDiff(this, (Variable) sons[0].var(0), (Variable) sons[0].var(1), (Variable) sons[1].var(0), (Variable) sons[1].var(1)));
 		}
 		if (arity > 2 && tree.type == XOR && options.recognizeXor > 0) {
 			if (options.recognizeXor == 2) // full recognition
-				return post(new Xor(this, Stream.of(tree.sons).map(son -> son.type == VAR ? son : replaceByVariable(son)).toArray(Variable[]::new)));
+				return post(new Xor(this, Stream.of(sons).map(son -> son.type == VAR ? son : replaceByVariable(son)).toArray(Variable[]::new)));
 			assert options.recognizeXor == 1;
-			if (Stream.of(tree.sons).allMatch(son -> son.type == VAR))
+			if (Stream.of(sons).allMatch(son -> son.type == VAR))
 				return post(new Xor(this, scp));
 		}
 
 		// Two cases with the ternary operator if
 		if (tree.type == IF && options.recognizeIf) {
-			XNode<IVar>[] sons = tree.sons;
 			Variable cnd = sons[0].type == VAR ? (Variable) sons[0].var(0) : replaceByVariable(sons[0]);
 			Variable y = sons[1].type == VAR ? (Variable) sons[1].var(0) : replaceByVariable(sons[1]);
 			Variable z = sons[2].type == VAR ? (Variable) sons[2].var(0) : replaceByVariable(sons[2]);
@@ -1354,17 +1416,17 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		if (tree.type == TypeExpr.EQ || tree.type == TypeExpr.IFF) {
-			if (tree.sons.length == 2 && tree.sons[0].type == IF && tree.sons[1].type == VAR && options.recognizeIf) {
-				Variable x = (Variable) tree.sons[1].var(0);
-				XNode<IVar>[] grandsons = tree.sons[0].sons;
+			if (sons.length == 2 && sons[0].type == IF && sons[1].type == VAR && options.recognizeIf) {
+				Variable x = (Variable) sons[1].var(0);
+				XNode<IVar>[] grandsons = sons[0].sons;
 				Variable cnd = grandsons[0].type == VAR ? (Variable) grandsons[0].var(0) : replaceByVariable(grandsons[0]);
 				Variable y = grandsons[1].type == VAR ? (Variable) grandsons[1].var(0) : replaceByVariable(grandsons[1]);
 				Variable z = grandsons[2].type == VAR ? (Variable) grandsons[2].var(0) : replaceByVariable(grandsons[2]);
 				return extension(vars(x, cnd, y, z), Table.starredIfThen(x, cnd, y, z), true, true);
 			}
-			if (tree.sons.length == 2 && options.recognizeEqAnd && (tree.sons[0].type == AND || tree.sons[1].type == AND)) {
-				XNode<?> son = tree.sons[0].type == AND ? tree.sons[1] : tree.sons[0];
-				XNode<IVar>[] grandSons = tree.sons[0].type == AND ? tree.sons[0].sons : tree.sons[1].sons;
+			if (sons.length == 2 && options.recognizeEqAnd && (sons[0].type == AND || sons[1].type == AND)) {
+				XNode<?> son = sons[0].type == AND ? sons[1] : sons[0];
+				XNode<IVar>[] grandSons = sons[0].type == AND ? sons[0].sons : sons[1].sons;
 				son = son.type == VAR ? XNode.node(TypeExpr.EQ, son, XNode.longLeaf(1)) : Problem.x_relop_k.matches(son) ? son : null;
 				if (son != null && Stream.of(grandSons)
 						.allMatch(grandson -> grandson.type == VAR || Problem.x_relop_k.matches(grandson) || Problem.x_relop_y.matches(grandson))) {
@@ -1392,31 +1454,31 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		if (options.recognizeExtremum) {
 			if (min_relop.matches(tree))
-				return minimum((Var[]) tree.sons[0].vars(), basicCondition(tree));
+				return minimum((Var[]) sons[0].vars(), basicCondition(tree));
 			if (max_relop.matches(tree))
-				return maximum((Var[]) tree.sons[0].vars(), basicCondition(tree));
+				return maximum((Var[]) sons[0].vars(), basicCondition(tree));
 		}
 
 		if (options.recognizeSum) {
 			if (add_vars__relop.matches(tree) || relop__add_vars.matches(tree)) {
 				int side = add_vars__relop.matches(tree) ? 0 : 1;
-				Var[] list = (Var[]) tree.sons[side].arrayOfVars();
+				Var[] list = (Var[]) sons[side].arrayOfVars();
 				return sum(list, Kit.repeat(1, list.length), basicCondition(tree));
 			}
 			if (add_mul_vals__relop.matches(tree) || relop__add_mul_vals.matches(tree)) {
 				int side = add_mul_vals__relop.matches(tree) ? 0 : 1;
-				Var[] list = (Var[]) tree.sons[side].arrayOfVars();
-				int[] coeffs = Stream.of(tree.sons[side].sons).mapToInt(s -> s.type == VAR ? 1 : s.val(0)).toArray();
+				Var[] list = (Var[]) sons[side].arrayOfVars();
+				int[] coeffs = Stream.of(sons[side].sons).mapToInt(s -> s.type == VAR ? 1 : s.val(0)).toArray();
 				return sum(list, coeffs, basicCondition(tree));
 			}
 			if (add_mul_vars__relop.matches(tree) || relop__add_mul_vars.matches(tree)) {
 				int side = add_mul_vars__relop.matches(tree) ? 0 : 1;
-				Var[] list = Stream.of(tree.sons[side].sons).map(s -> s.var(0)).toArray(Var[]::new);
-				Var[] coeffs = Stream.of(tree.sons[side].sons).map(s -> s.var(1)).toArray(Var[]::new);
+				Var[] list = Stream.of(sons[side].sons).map(s -> s.var(0)).toArray(Var[]::new);
+				Var[] coeffs = Stream.of(sons[side].sons).map(s -> s.var(1)).toArray(Var[]::new);
 				return sum(list, coeffs, basicCondition(tree));
 			}
 			if (relop__addOrSub_varOrVals.matches(tree)) {
-				XNode<IVar> son0 = tree.sons[0], son1 = tree.sons[1];
+				XNode<IVar> son0 = sons[0], son1 = sons[1];
 				List<Var> list = new ArrayList<>();
 				List<Integer> coeffs = new ArrayList<>();
 				long limit = 0;
@@ -1439,7 +1501,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return sum(list.stream().toArray(Var[]::new), coeffs.stream().mapToInt(v -> v).toArray(), new ConditionVal(tree.relop(0), limit));
 			}
 			if (relop__add_varOrTerms_valEnding__var.matches(tree)) {
-				XNode<?>[] gsons = tree.sons[0].sons;
+				XNode<?>[] gsons = sons[0].sons;
 				int nTerms = gsons.length;
 				Var[] list = new Var[nTerms];
 				int[] coeffs = new int[nTerms];
@@ -1447,7 +1509,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					list[i] = (Var) gsons[i].var(0);
 					coeffs[i] = gsons[i].type == VAR ? 1 : gsons[i].val(0);
 				}
-				list[nTerms - 1] = (Var) tree.sons[1].var(0);
+				list[nTerms - 1] = (Var) sons[1].var(0);
 				coeffs[nTerms - 1] = -1;
 				int limit = gsons[nTerms - 1].val(0);
 				return sum(list, coeffs, Condition.buildFrom(tree.relop(0), -limit));
@@ -1455,8 +1517,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 		if (mul_vars__relop.matches(tree)) {
 			Var[] list = (Var[]) tree.arrayOfVars();
-			if (tree.relop(0) == EQ && tree.sons[1].type == LONG) {
-				Integer k = tree.sons[1].val(0);
+			if (tree.relop(0) == EQ && sons[1].type == LONG) {
+				Integer k = sons[1].val(0);
 				if (k == 0)
 					return intension(or(Stream.of(list).map(x -> eq(x, 0))));
 				if (k == 1)
@@ -1477,7 +1539,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			// at most a variable occurring twice
 			tryingDecomposition = tryingDecomposition || options.decompose == 2;
 			if (tryingDecomposition) {
-				XNode<IVar>[] sons = tree.sons;
 				int nParentSons = 0;
 				if (tree.type == TypeExpr.EQ) {
 					// we reason with grandsons for avoiding recursive similar changes when making replacements
@@ -1516,7 +1577,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
-		// System.out.println("Tree remaining " + tree);
+		//System.out.println("Tree remaining " + tree);
 		return post(new ConstraintIntension(this, scp, tree));
 	}
 
@@ -1649,6 +1710,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			else
 				return post(new CMDDS(this, translate(list), (int[][]) tuples));
 		}
+		// System.out.println("yep " + Kit.join(list) + " " + positive + " " + ConstraintExtension.isStarred(tuples) + " " + tuples.length);
 		return post(ConstraintExtension.buildFrom(this, scp, tuples, positive, starred));
 	}
 
@@ -2332,7 +2394,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 
 			if (op == EQ && values.length == 1 && condition instanceof ConditionVar)
-				countEqCandidates.add(new Object[] { list, values[0], condition.rightTerm() });
+				countEqCandidates.add(new Object[] { translate(list), values[0], condition.rightTerm() });
 
 			Object rightTerm = condition.rightTerm();
 			if (condition instanceof ConditionVal) {
@@ -3126,8 +3188,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		assert rl == 0 || rh == 0 || rl == rh;
 		if (IntStream.range(0, rl).anyMatch(i -> lengths[i] == 0) || IntStream.range(0, rh).anyMatch(i -> heights[i] == 0)) {
 			int[] t = IntStream.range(0, Math.max(rl, rh)).filter(i -> (rl == 0 || lengths[i] > 0) && (rh == 0 || heights[i] > 0)).toArray();
-			Kit.warning(
-					"Discarding " + (lengths == null ? "" : lengths.length - t.length) + " tasks (because of duration or height 0) of a Cumulative constraint");
+			Kit.warning("Discarding " + (Math.max(rl, rh) - t.length) + " tasks (because of duration or height 0) of a Cumulative constraint");
 			// control(t.length > 0);
 			return t;
 		}
@@ -3153,18 +3214,21 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
-			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			control(limit - (op == LT ? 1 : 0) >= 1);
-			if (IntStream.of(new_heights).min().getAsInt() >= limit - (op == LT ? 1 : 0))
+			int limit = Utilities.safeInt(((ConditionVal) condition).k) - (op == LT ? 1 : 0); // limit for EQ
+			if (IntStream.of(new_heights).sum() <= limit) {
+				Kit.warning("Discarding a cumulative constraint because sum of heights are always less than or equal to the limit");
+				return null;
+			}
+			if (new_origins.length < 100 && IntStream.of(new_heights).min().getAsInt() >= limit) // TODO hard coding
 				// redundant constraint (if replacing cumulative, can be bad : see Filters-dct-1-1_c22.xml)
 				noOverlap(discardable == null ? origins : IntStream.of(discardable).mapToObj(i -> origins[i]).toArray(Var[]::new), new_lengths, true);
 
 			if (new_origins.length == 1) {
-				if (new_heights[0] <= limit - (op == LT ? 1 : 0)) // discarded constraint because initially entailed
+				if (new_heights[0] <= limit) // discarded constraint because initially entailed
 					return head.control.constraints.postCtrTrues ? post(new CtrTrue(this, new_origins, "Nogood trivially satisfied")) : null;
 				return post(new CtrFalse(this, new_origins, "Unary Cumulative"));
 			}
-			return post(new CumulativeCst(this, new_origins, new_lengths, new_heights, op == LT ? limit - 1 : limit));
+			return post(new CumulativeCst(this, new_origins, new_lengths, new_heights, limit));
 		}
 		if (condition instanceof ConditionVar) {
 			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
@@ -3190,11 +3254,26 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		if (!Variable.areAllDistinct(new_lengths))
 			new_lengths = Stream.of(new_lengths).map(x -> replaceByOtherVariable((Var) x)).toArray(Variable[]::new);
+
+		if (new_origins.length == 1) {
+			control(condition instanceof ConditionVal);
+			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
+			control(op == LT || op == LE);
+			int limit = Utilities.safeInt(((ConditionVal) condition).k) - (op == LT ? 1 : 0); // limit for EQ;
+			if (heights[0] <= limit) // discarded constraint because initially entailed
+				return head.control.constraints.postCtrTrues ? post(new CtrTrue(this, vars(new_origins, new_lengths), "Trivially satisfied")) : null;
+			return post(new CtrFalse(this, vars(new_origins, new_lengths), "Unary BinPacking unsatisfied"));
+		}
+
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
-			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			return post(new CumulativeVarW(this, new_origins, new_lengths, new_heights, op == LT ? limit - 1 : limit));
+			int limit = Utilities.safeInt(((ConditionVal) condition).k) - (op == LT ? 1 : 0); // limit for EQ;
+			if (IntStream.of(new_heights).sum() <= limit) {
+				Kit.warning("Discarding a cumulative constraint because sum of heights are always less than or equal to the limit");
+				return null;
+			}
+			return post(new CumulativeVarW(this, new_origins, new_lengths, new_heights, limit));
 		}
 		if (condition instanceof ConditionVar) {
 			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
@@ -3223,8 +3302,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
-			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			return post(new CumulativeVarH(this, new_origins, new_lengths, new_heights, op == LT ? limit - 1 : limit));
+			int limit = Utilities.safeInt(((ConditionVal) condition).k) - (op == LT ? 1 : 0); // limit for EQ;
+			return post(new CumulativeVarH(this, new_origins, new_lengths, new_heights, limit));
 		}
 		if (condition instanceof ConditionVar) {
 			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
@@ -3246,8 +3325,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
-			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			return post(new CumulativeVarWH(this, new_origins, new_lengths, new_heights, op == LT ? limit - 1 : limit));
+			int limit = Utilities.safeInt(((ConditionVal) condition).k) - (op == LT ? 1 : 0); // limit for EQ;
+			return post(new CumulativeVarWH(this, new_origins, new_lengths, new_heights, limit));
 		}
 		if (condition instanceof ConditionVar) {
 			TypeConditionOperatorRel op = ((ConditionVar) condition).operator;
@@ -3273,6 +3352,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Variable[] new_list = translate(discardable == null ? list : IntStream.of(discardable).mapToObj(i -> list[i]).toArray(Variable[]::new));
 		int[] new_sizes = discardable == null ? sizes : IntStream.of(discardable).map(i -> sizes[i]).toArray();
 
+		if (new_list.length == 1) {
+			control(condition instanceof ConditionVal);
+			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
+			control(op == LT || op == LE);
+			int limit = Utilities.safeInt(((ConditionVal) condition).k);
+			if (sizes[0] <= limit - (op == LT ? 1 : 0)) // discarded constraint because initially entailed
+				return head.control.constraints.postCtrTrues ? post(new CtrTrue(this, new_list, "Trivially satisfied")) : null;
+			return post(new CtrFalse(this, new_list, "Unary BinPacking unsatisfied"));
+		}
+
 		// Variable[] new_list = translate(list);
 		boolean sameType = Variable.haveSameDomainType(new_list);
 		if (!sameType || !(condition instanceof ConditionVal) || head.control.global.binpacking == DECOMPOSITION) { // decomposing in sum constraints
@@ -3283,9 +3372,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (condition instanceof ConditionVal) {
 			TypeConditionOperatorRel op = ((ConditionVal) condition).operator;
 			control(op == LT || op == LE);
-			int limit = Utilities.safeInt(((ConditionVal) condition).k);
-			// return post(new BinPackingSimple(this, vars, sizes, limit - (op == LT ? 1 : 0)));
-			return post(new BinPackingEnergetic(this, new_list, new_sizes, limit - (op == LT ? 1 : 0)));
+			int limit = Utilities.safeInt(((ConditionVal) condition).k) - (op == LT ? 1 : 0); // limit for EQ;
+			// return post(new BinPackingSimple(this, vars, sizes, limit));
+			return post(new BinPackingEnergetic(this, new_list, new_sizes, limit));
 			// TODO add nValues ? other ?
 		}
 		return unimplemented("binPacking");
@@ -3345,6 +3434,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	public final CtrEntity knapsack(Var[] list, int[] weights, Condition wcondition, int[] profits, Condition pcondition) {
 		// for the moment, no dedicated propagator (just decomposition)
+
+		boolean test = true;
 		sum(list, weights, wcondition);
 		return sum(list, profits, pcondition);
 	}

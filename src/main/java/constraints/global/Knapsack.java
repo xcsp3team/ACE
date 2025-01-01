@@ -23,7 +23,7 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * TO BE FINISHED
+ * TO BE FINISHED (extending it to limits defined by variables)
  * 
  * @author Christophe Lecoutre
  */
