@@ -1710,7 +1710,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			else
 				return post(new CMDDS(this, translate(list), (int[][]) tuples));
 		}
-		// System.out.println("yep " + Kit.join(list) + " " + positive + " " + ConstraintExtension.isStarred(tuples) + " " + tuples.length);
 		return post(ConstraintExtension.buildFrom(this, scp, tuples, positive, starred));
 	}
 
@@ -3435,7 +3434,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final CtrEntity knapsack(Var[] list, int[] weights, Condition wcondition, int[] profits, Condition pcondition) {
 		// for the moment, no dedicated propagator (just decomposition)
 
-		boolean test = true;
 		sum(list, weights, wcondition);
 		return sum(list, profits, pcondition);
 	}

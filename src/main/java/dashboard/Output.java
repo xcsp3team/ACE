@@ -33,6 +33,7 @@ import org.w3c.dom.Element;
 import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Types.TypeOptimization;
 import org.xcsp.common.Utilities;
+import org.xcsp.modeler.entities.VarEntities.VarArray;
 
 import constraints.Constraint;
 import constraints.ConstraintExtension;
@@ -492,7 +493,8 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(N_FIXED, features.nFixedVars);
 		m.put(N_SYMBOLIC, features.nSymbolicVars);
 		m.put(N_AUXILIARY, head.problem.nAuxVariables);
-		m.put(N_ARRAYS, "[" + Stream.of(head.problem.varArrays).map(va -> va.id + ":" + va.flatVars.length).collect(Collectors.joining(","))
+		m.put(N_ARRAYS, "["
+				+ Stream.of(head.problem.varArrays).map(va -> va.id + ":" + (va.flatVars != null ? va.flatVars.length : "")).collect(Collectors.joining(","))
 				+ (head.problem.auxiliaryVars.length == 0 ? "" : "," + Problem.AUXILIARY_VARIABLE_PREFIX + ":" + head.problem.auxiliaryVars.length) + "]");
 		if (head.problem.priorityVars == head.problem.auxiliaryVars)
 			m.put(PRIORITY_ARRAYS, Problem.AUXILIARY_VARIABLE_PREFIX);
