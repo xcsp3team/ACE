@@ -18,7 +18,7 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.LinkedHashSet;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -549,7 +549,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 			// the last constraint is the one with the largest scope
 			return null;
 		}
-		Set<Variable> set = new TreeSet<>();
+		Set<Variable> set = new LinkedHashSet<>();
 		for (Constraint c : ctrs)
 			for (Variable x : c.scp)
 				if (x != this) {
