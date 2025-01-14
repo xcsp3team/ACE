@@ -13,8 +13,8 @@ package dashboard;
 import static utility.Kit.control;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,7 +67,7 @@ public final class Input {
 	/**
 	 * The user arguments given on the command that concern the control panel (i.e., the solving process)
 	 */
-	public final static Map<String, String> argsForSolving = new HashMap<>(256);
+	public final static Map<String, String> argsForSolving = new LinkedHashMap<>(256);
 
 	/**
 	 * Indicates if a portfolio is used, i.e., various solving processes will be running in parallel
@@ -138,7 +138,7 @@ public final class Input {
 		Input.argsForProblem = list.toArray(new String[list.size()]);
 		// now, we look for solving options
 		Input.argsForSolving.clear();
-		Set<String> setOfUserKeys = new HashSet<>();
+		Set<String> setOfUserKeys = new LinkedHashSet<>();
 		for (; cursor < args.length; cursor++) {
 			String arg = args[cursor];
 			control(arg.startsWith(OPTION_PREFIX), () -> arg + " is not put at the right position");

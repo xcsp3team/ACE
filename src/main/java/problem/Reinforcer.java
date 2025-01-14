@@ -12,11 +12,10 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
@@ -194,8 +193,8 @@ public class Reinforcer {
 
 		private static int[] buildVariableNodes(Map<Integer, List<Integer>> groupsOfColors, List<Variable> vars) {
 			nCurrentColors = 0;
-			Map<String, Variable> mapOfDomainColors = new HashMap<>();
-			Map<String, Domain> mapOfModifiedDomains = new HashMap<>();
+			Map<String, Variable> mapOfDomainColors = new LinkedHashMap<>();
+			Map<String, Domain> mapOfModifiedDomains = new LinkedHashMap<>();
 			int[] variableNodes = new int[vars.size()]; // 1D = variable id ; value = color id
 			for (int i = 0; i < variableNodes.length; i++) {
 				String key = manageDomainKeyOf(mapOfModifiedDomains, vars.get(i).dom);
@@ -211,7 +210,7 @@ public class Reinforcer {
 		}
 
 		private static List<Node> buildConstraintNodes(Map<Integer, List<Integer>> groupsOfColors, Collection<Constraint> ctrs, int nVariables) {
-			Map<String, int[]> mapOfRelationColors = new HashMap<>();
+			Map<String, int[]> mapOfRelationColors = new LinkedHashMap<>();
 			List<Node> constraintNodes = new ArrayList<>();
 			int nNodes = nVariables; // because nodes for variables already built (one node per variable)
 			for (Constraint c : ctrs) {
@@ -284,8 +283,10 @@ public class Reinforcer {
 			out.print(']');
 		}
 
+		private static int cnt =0;
+		
 		private static String saveInGAPFormat(Map<Integer, List<Integer>> groupsOfColors, List<Node> constraintNodes, int nNodes) {
-			String graphFilename = "graph" + new Random().nextInt() + ".gap";
+			String graphFilename = "graph" + (cnt++) + ".gap";
 			try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(graphFilename)))) {
 				out.print("AutGroupGraph(UnderlyingGraph(EdgeOrbitsGraph( Group(()),");
 				buildGAPEdges(out, constraintNodes);
@@ -375,8 +376,7 @@ public class Reinforcer {
 		 */
 		public static List<List<int[]>> buildGenerators(List<Variable> variables, List<Constraint> constraints) {
 			stopwatch = new Stopwatch();
-			Map<Integer, List<Integer>> groupsOfColors = new HashMap<>(); // 1D = color number ; value = list of node
-																			// ids with this color
+			Map<Integer, List<Integer>> groupsOfColors = new LinkedHashMap<>(); // 1D = color number ; value = list of node ids with this color
 			int[] variableNodes = buildVariableNodes(groupsOfColors, variables);
 			List<Node> constraintNodes = buildConstraintNodes(groupsOfColors, constraints, variables.size());
 			String graphFilename = saveInGAPFormat(groupsOfColors, constraintNodes, variableNodes.length + constraintNodes.size());

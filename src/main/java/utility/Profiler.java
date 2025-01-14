@@ -10,7 +10,7 @@
 
 package utility;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import constraints.Constraint;
@@ -24,8 +24,8 @@ import utility.Kit.Color;
  */
 public final class Profiler {
 
-	Map<Class<?>, Long> wcks = new HashMap<>();
-	Map<Class<?>, Long> calls = new HashMap<>();
+	Map<Class<?>, Long> wcks = new LinkedHashMap<>();
+	Map<Class<?>, Long> calls = new LinkedHashMap<>();
 
 	private long start;
 
@@ -44,7 +44,7 @@ public final class Profiler {
 	}
 
 	public void display(Constraint[] constraints) {
-		Map<Class<?>, Long> nbs = new HashMap<>();
+		Map<Class<?>, Long> nbs = new LinkedHashMap<>();
 		for (Constraint c : constraints) {
 			if (!nbs.containsKey(c.getClass()))
 				nbs.put((Class<?>) c.getClass(), 0L);

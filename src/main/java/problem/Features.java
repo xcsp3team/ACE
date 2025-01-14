@@ -13,8 +13,8 @@ package problem;
 import static java.util.stream.Collectors.joining;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -176,12 +176,12 @@ public final class Features {
 		/**
 		 * The keys used for tables, that have been collected so far, and used when storing tuples of a table constraint. Relevant only for symmetry-breaking.
 		 */
-		public final Map<String, String> tableKeys = new HashMap<>();
+		public final Map<String, String> tableKeys = new LinkedHashMap<>();
 
 		/**
 		 * Ids of discarded variables
 		 */
-		public final Set<String> discardedVars = new HashSet<>();
+		public final Set<String> discardedVars = new LinkedHashSet<>();
 
 		/**
 		 * The ids or numbers of variables selected by the user (if empty, no selection)

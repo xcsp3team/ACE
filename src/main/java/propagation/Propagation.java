@@ -10,7 +10,7 @@
 
 package propagation;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import constraints.Constraint;
@@ -234,7 +234,7 @@ public abstract class Propagation {
 		// ? IntStream.range(0, nAuxQueues).mapToObj(i -> new
 		// SetSparseMap(solver.problem.constraints.length)).toArray(SetSparseMap[]::new)
 		// : null;
-		this.postponedConstraints = new HashSet<>();
+		this.postponedConstraints = new LinkedHashSet<>();
 		String clazz = solver.head.control.varh.clazz;
 		this.historyX = clazz.equals(PickOnDom.class.getSimpleName()) || clazz.equals(RunRobin.class.getSimpleName())
 				? new SetSparseCnt(solver.problem.variables.length)

@@ -19,7 +19,7 @@ import static utility.Kit.log;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -265,7 +265,7 @@ public final class Solutions {
 			HeadExtraction head = (HeadExtraction) solver.head;
 			for (List<Constraint> core : head.cores) {
 				Color.GREEN.println("\nc CORE",
-						" #C=" + core.size() + " #V=" + core.stream().collect(Collectors.toCollection(HashSet::new)).size() + " => { " + Kit.join(core) + " }");
+						" #C=" + core.size() + " #V=" + core.stream().collect(Collectors.toCollection(LinkedHashSet::new)).size() + " => { " + Kit.join(core) + " }");
 			}
 			Color.GREEN.println("d NRUNS " + head.nRuns);
 		} else {

@@ -10,7 +10,7 @@
 
 package learning;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.zip.Deflater;
 
@@ -62,7 +62,7 @@ public final class IpsReasonerEquivalence extends IpsReasoner {
 		int n = variables.length;
 		if (n > 1500) // hard coding
 			stopped = true;
-		this.mapOfHashKeys = new HashMap<>(2000);
+		this.mapOfHashKeys = new LinkedHashMap<>(2000);
 		this.openNodesKeys = new ByteArrayHashKey[n];
 		this.openNodesSols = new int[n];
 		this.nBytesPerVariableNum = n <= Math.pow(2, 8) ? 1 : n <= Math.pow(2, 16) ? 2 : n <= Math.pow(2, 24) ? 3 : 4;

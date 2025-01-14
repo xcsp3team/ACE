@@ -13,7 +13,7 @@ package constraints.global;
 import static java.util.stream.Collectors.toCollection;
 import static utility.Kit.control;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -77,8 +77,7 @@ public final class Among extends ConstraintGlobal implements TagAC, TagCallCompl
 		control(values.length > 1 && Kit.isStrictlyIncreasing(values), "Values must be given in increasing order");
 		control(0 < k && k < list.length, "Bad value of k=" + k);
 		control(Stream.of(list).allMatch(x -> x.dom.size() > 1 && IntStream.of(values).anyMatch(v -> x.dom.containsValue(v))), "Badly formed scope");
-		this.values = IntStream.of(values).boxed().collect(toCollection(HashSet::new)); // TODO HashSet better than
-																						// TreeSet?
+		this.values = IntStream.of(values).boxed().collect(toCollection(LinkedHashSet::new)); // TODO HashSet better than TreeSet?
 		this.k = k;
 		this.mixedVariables = new SetSparse(list.length);
 		defineKey(values, k);

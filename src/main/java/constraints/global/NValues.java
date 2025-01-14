@@ -13,7 +13,7 @@ package constraints.global;
 import static utility.Kit.control;
 
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -75,7 +75,7 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 	public NValues(Problem pb, Variable[] scp, Variable[] list) {
 		super(pb, scp);
 		this.list = list;
-		this.fixedVals = new HashSet<>(Variable.setOfvaluesIn(list).size());
+		this.fixedVals = new LinkedHashSet<>(Variable.setOfvaluesIn(list).size());
 		this.relevantUnfixedVars = new SetDense(list.length);
 		this.sentinels = new int[list.length];
 	}

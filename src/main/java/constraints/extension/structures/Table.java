@@ -15,7 +15,7 @@ import static utility.Kit.control;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -44,7 +44,7 @@ public class Table extends ExtensionStructure {
 	/**
 	 * Cache used for some starred constructions of global constraints
 	 */
-	private static Map<String, int[][]> cache = new HashMap<>();
+	private static Map<String, int[][]> cache = new LinkedHashMap<>();
 
 	/**
 	 * Returns a starred table corresponding to the specified Element constraint

@@ -14,7 +14,7 @@ import static utility.Kit.control;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -44,8 +44,7 @@ public final class Bits extends ExtensionStructure {
 	/**
 	 * Map used to share longs (seen as parts of bit vectors) in order to save memory space
 	 */
-	public static final Map<LongArrayHashKey, long[]> map = Collections.synchronizedMap(new HashMap<LongArrayHashKey, long[]>(2000)); // hard
-																																		// coding
+	public static final Map<LongArrayHashKey, long[]> map = Collections.synchronizedMap(new LinkedHashMap<LongArrayHashKey, long[]>(2000)); // hard coding
 
 	private static LongArrayHashKey hashKey = new LongArrayHashKey();
 

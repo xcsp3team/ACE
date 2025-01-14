@@ -33,7 +33,6 @@ import org.w3c.dom.Element;
 import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Types.TypeOptimization;
 import org.xcsp.common.Utilities;
-import org.xcsp.modeler.entities.VarEntities.VarArray;
 
 import constraints.Constraint;
 import constraints.ConstraintExtension;

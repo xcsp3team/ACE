@@ -10,6 +10,7 @@
 
 package problem;
 
+import static constraints.Constraint.howManyVariablesWithin;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingLong;
 import static org.xcsp.common.Constants.PLUS_INFINITY_INT;
@@ -79,12 +80,11 @@ import static org.xcsp.common.predicates.XNodeParent.mul;
 import static org.xcsp.common.predicates.XNodeParent.or;
 import static org.xcsp.common.predicates.XNodeParent.set;
 import static utility.Kit.log;
-import static constraints.Constraint.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -354,7 +354,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	public static final class Symbolic {
 
-		public final Map<String, Integer> mapOfSymbols = new HashMap<>();
+		public final Map<String, Integer> mapOfSymbols = new LinkedHashMap<>();
 
 		public int[] manageSymbols(String[] symbols) {
 			int[] t = new int[symbols.length];
@@ -819,12 +819,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	/**
 	 * A map that gives access to each variable through its id.
 	 */
-	private final Map<String, Variable> mapForVars = new HashMap<>();
+	private final Map<String, Variable> mapForVars = new LinkedHashMap<>();
 
 	/**
 	 * A cache used to avoid computing several times the same sets of values
 	 */
-	private final Map<Object, int[]> cache = new HashMap<>();
+	private final Map<Object, int[]> cache = new LinkedHashMap<>();
 
 	/**
 	 * Posts the specified variable, i.e., records it as being a variable of the problem
@@ -877,7 +877,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Replacing trees by variables and simplifying conditions
 	// ************************************************************************
 
-	private Map<XNode<IVar>, Variable> cacheForTrees = new TreeMap<>(); // BE CAREFUL : HASHMap does not call equals(), and we need it
+	private Map<XNode<IVar>, Variable> cacheForTrees = new TreeMap<>(); // BE CAREFUL : LinkedHashMap does not call equals(), and we need it
 
 	private XNode<IVar>[] treesToArray(Stream<XNode<IVar>> trees) {
 		return trees.toArray(XNode[]::new);
@@ -2978,7 +2978,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Constraint noOverlap
 	// ************************************************************************
 
-	private Set<String> set = new HashSet<>();
+	private Set<String> set = new LinkedHashSet<>();
 
 	/**
 	 * 1-dimensional no-overlap

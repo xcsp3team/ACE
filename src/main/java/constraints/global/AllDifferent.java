@@ -13,7 +13,7 @@ package constraints.global;
 import static java.util.stream.Collectors.joining;
 import static utility.Kit.control;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -221,7 +221,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 
 		public AllDifferentWeak(Problem pb, Variable[] scp, boolean stronger) {
 			super(pb, scp);
-			this.values = stronger ? new HashSet<>() : null;
+			this.values = stronger ? new LinkedHashSet<>() : null;
 		}
 
 		public AllDifferentWeak(Problem pb, Variable[] scp) {
@@ -301,7 +301,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 			super(pb, scp);
 			control(exceptValues == null || exceptValues.length > 0);
 			this.exceptValues = exceptValues;
-			this.values = new HashSet<>();
+			this.values = new LinkedHashSet<>();
 			this.stronger = stronger;
 			if (exceptValues != null)
 				defineKey(exceptValues);

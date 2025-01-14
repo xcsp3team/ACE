@@ -18,7 +18,7 @@ import static utility.Kit.control;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -256,7 +256,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			this.mode = solver.head.control.varh.pickMode;
 			this.cnts = new long[solver.problem.variables.length];
 			this.lastFailed = this.mode == 0 ? null : new long[solver.problem.variables.length];
-			this.set = new HashSet<Integer>();
+			this.set = new LinkedHashSet<Integer>();
 		}
 
 		@Override

@@ -21,8 +21,8 @@ import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -158,7 +158,7 @@ public class Head extends Thread {
 		/**
 		 * The map that associates all available classes (value) that inherit from a class (key)
 		 */
-		private Map<Class<?>, Set<Class<?>>> map = new HashMap<>();
+		private Map<Class<?>, Set<Class<?>>> map = new LinkedHashMap<>();
 
 		/**
 		 * Returns all available classes (value) that inherit from the specified class (seen as a key)
@@ -173,7 +173,7 @@ public class Head extends Thread {
 
 		private boolean dealWith(Class<?> clazz, Class<?> rootClass) {
 			if (rootClass.isAssignableFrom(clazz)) {
-				map.computeIfAbsent(rootClass, r -> new HashSet<>()).add(clazz);
+				map.computeIfAbsent(rootClass, r -> new LinkedHashSet<>()).add(clazz);
 				return true;
 			}
 			return false;
@@ -251,17 +251,17 @@ public class Head extends Thread {
 		/**
 		 * The map that associates an intension structure (tree evaluator) with an intension constraint key
 		 */
-		public Map<String, IntensionStructure> mapForIntension = new HashMap<>();
+		public Map<String, IntensionStructure> mapForIntension = new LinkedHashMap<>();
 
 		/**
 		 * The map that associates an extension structure with an extension constraint key
 		 */
-		public Map<String, ExtensionStructure> mapForExtension = new HashMap<>();
+		public Map<String, ExtensionStructure> mapForExtension = new LinkedHashMap<>();
 
 		/**
 		 * The map that associates an MDD with an MDD constraint key
 		 */
-		public Map<String, MDD> mapForMDDs = new HashMap<>();
+		public Map<String, MDD> mapForMDDs = new LinkedHashMap<>();
 
 		/**
 		 * Clears all maps that stores information about the sharing of data structures

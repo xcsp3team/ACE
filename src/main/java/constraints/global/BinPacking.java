@@ -1,5 +1,5 @@
 /*
-0 * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE (AbsCon Essence). 
  *
  * Copyright (c) 2021. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
@@ -27,9 +27,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This constraint BinPacking ensures that we cannot exceed the capacity (limit) of bins where we put various items (of
- * various sizes). The code is still experimental (problems to be tested: BinPacking2.py, NursingWorkload and
- * TestBinpacking from special).
+ * This constraint BinPacking ensures that we cannot exceed the capacity (limit) of bins where we put various items (of various sizes). The code is still
+ * experimental (problems to be tested: BinPacking2.py, NursingWorkload and TestBinpacking from special).
  * 
  * 
  * @author Christophe Lecoutre
@@ -79,7 +78,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 		this.nBins = limits.length;
 		control(IntStream.of(sizes).allMatch(v -> v >= 0));
 		control(nItems >= 2 && Variable.haveSameDomainType(IntStream.range(0, nItems).mapToObj(i -> scp[i]).toArray(Variable[]::new)));
-		control(nBins == scp[0].dom.initSize() && scp[0].dom.initiallyRange(nBins));
+		control(nBins == scp[0].dom.initSize() && scp[0].dom.initiallyRange(nBins), nBins + " vs " + scp[0].dom.initSize());
 		// TODO second condition above to be relaxed when possible
 		this.sizes = sizes;
 		this.limits = limits;
@@ -176,8 +175,8 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 		// private Bin[] sortedBins;
 
 		/**
-		 * fronts[i] is the set of items which are in front of the ith bin (in the ordered sequence of bins) such that i
-		 * is the first position where they can be put
+		 * fronts[i] is the set of items which are in front of the ith bin (in the ordered sequence of bins) such that i is the first position where they can be
+		 * put
 		 */
 		// private SetDense[] fronts;
 
@@ -466,17 +465,16 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
  * 
  * bug with java ace BinPackingGecode.xml
  * 
- * java ace BinPackingGecode.xml -warm="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 18 19 17 21 22 21 22 20 16
- * 23 23 24 24 15 13 14 22 12 21 24 23 23 24 20 11 2 3 4 0" (solution obtained with the other variant)
+ * java ace BinPackingGecode.xml -warm="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 18 19 17 21 22 21 22 20 16 23 23 24 24 15 13 14 22 12 21 24 23 23
+ * 24 20 11 2 3 4 0" (solution obtained with the other variant)
  * 
- * pb with java ace BinPackingGecode.xml disappear if '|| i < minUsableBin || i > maxUsableBin)' is put in comment (but
- * is it the origin of the problem?)
+ * pb with java ace BinPackingGecode.xml disappear if '|| i < minUsableBin || i > maxUsableBin)' is put in comment (but is it the origin of the problem?)
  * 
  * 
  * pb with Mapping-full2x2_mp3.xml disappear when using -varh=Dom does-it come from BinPacjking?
  * 
- * // another pb for the load variant seems to be to fixed for java ace GeneralizedBACP-reduced_UD2-gbac.xml -valh=Bivs
- * // also java ace TeamAssignment-data1_6_6.xml -valh=Asgs
+ * // another pb for the load variant seems to be to fixed for java ace GeneralizedBACP-reduced_UD2-gbac.xml -valh=Bivs // also java ace
+ * TeamAssignment-data1_6_6.xml -valh=Asgs
  * 
  */
 

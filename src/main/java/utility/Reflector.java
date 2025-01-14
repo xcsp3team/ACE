@@ -20,7 +20,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,7 +40,7 @@ public class Reflector {
 	public final static char JAR_SEPARATOR_CHAR = '/';
 
 	// need to synchronize access to this structure ?
-	private final static Map<String, String> mapOfClassNames = Collections.synchronizedMap(new HashMap<String, String>());
+	private final static Map<String, String> mapOfClassNames = Collections.synchronizedMap(new LinkedHashMap<String, String>());
 
 	/**
 	 * Returns the last but one super class of the specified class

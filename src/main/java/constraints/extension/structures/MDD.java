@@ -16,8 +16,8 @@ import static org.xcsp.common.Constants.STAR;
 import static utility.Kit.control;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +63,7 @@ public final class MDD extends ExtensionStructure {
 		// Start STATIC part
 
 		private static Map<String, List<Transition>> buildNextTransitions(Automaton automaton) {
-			Map<String, List<Transition>> map = new HashMap<>();
+			Map<String, List<Transition>> map = new LinkedHashMap<>();
 			map.put(automaton.startState, new ArrayList<>());
 			for (String s : automaton.finalStates)
 				map.put(s, new ArrayList<>());
@@ -83,7 +83,7 @@ public final class MDD extends ExtensionStructure {
 			control(domains.length > 1 && IntStream.range(1, domains.length).allMatch(i -> domains[i].typeIdentifier() == domains[0].typeIdentifier()));
 			Node root = new Node(0, domains[0].initSize(), starred, true, automaton.startState);
 			Map<String, List<Transition>> nextTrs = buildNextTransitions(automaton);
-			Map<String, Node> prevs = new HashMap<>(), nexts = new HashMap<>();
+			Map<String, Node> prevs = new LinkedHashMap<>(), nexts = new LinkedHashMap<>();
 			prevs.put((String) root.state, root);
 			Object allValues = domains[0].allValues(); // remember that all domains have the same type
 			int[] domValues = allValues instanceof Range ? ((Range) allValues).toArray() : (int[]) allValues;
@@ -122,9 +122,9 @@ public final class MDD extends ExtensionStructure {
 
 		public static Node buildRootFromTransitions(Transition[] transitions, Domain[] domains) {
 			boolean starred = false; // false because for the moment necessarily called for a CMDDO
-			Map<String, Node> nodes = new HashMap<>();
-			Set<String> possibleRoots = new HashSet<>(), notRoots = new HashSet<>();
-			Set<String> possibleWells = new HashSet<>(), notWells = new HashSet<>();
+			Map<String, Node> nodes = new LinkedHashMap<>();
+			Set<String> possibleRoots = new LinkedHashSet<>(), notRoots = new LinkedHashSet<>();
+			Set<String> possibleWells = new LinkedHashSet<>(), notWells = new LinkedHashSet<>();
 			for (Transition tr : transitions) {
 				String src = tr.start, tgt = tr.end;
 				notWells.add(src);
@@ -163,7 +163,7 @@ public final class MDD extends ExtensionStructure {
 		public static Node buildRootFromKnapsack(int[] coeffs, Object limits, int[][] values) {
 			boolean starred = false; // false because for the moment necessarily called for a CMDDO
 			Node root = new Node(0, values[0].length, starred, true, 0);
-			Map<Integer, Node> prevs = new HashMap<>(), nexts = new HashMap<>();
+			Map<Integer, Node> prevs = new LinkedHashMap<>(), nexts = new LinkedHashMap<>();
 			prevs.put((Integer) root.state, root);
 			for (int level = 0; level < coeffs.length; level++) {
 				for (Node node : prevs.values()) {
@@ -192,7 +192,7 @@ public final class MDD extends ExtensionStructure {
 			if (increasing) {
 				root.canReachNodeT(); // necessary ?
 				root = root.filter(values, Integer.MAX_VALUE);
-				root.recursiveReduction(new HashMap<>(2000));
+				root.recursiveReduction(new LinkedHashMap<>(2000));
 			}
 			root.finalizeRoot();
 			return root;
@@ -228,7 +228,7 @@ public final class MDD extends ExtensionStructure {
 
 			control(positive && tuples.length > 0);
 			int[] domainSizes = Stream.of(domains).mapToInt(dom -> dom.initSize()).toArray();
-			Map<IntArrayHashKey, Node> reductionMap = new HashMap<>(2000);
+			Map<IntArrayHashKey, Node> reductionMap = new LinkedHashMap<>(2000);
 			Node root = new Node(0, domainSizes[0], starred, positive);
 			if (Stream.of(domains).allMatch(dom -> dom.indexesMatchValues())) {
 				// if (c.indexesMatchValues) {
@@ -237,9 +237,6 @@ public final class MDD extends ExtensionStructure {
 					root.addTuple(tuples[i], positive, domainSizes);
 					if (reductionWhileProcessingTuples && i > 0)
 						reduce(root, tuples[i - 1], tuples[i], reductionMap);
-					// if (i % 100 == 0)
-					// System.out.println(" " + root.nInternalNodes(new HashSet<Integer>()));
-
 				}
 			} else {
 				// we need to pass from tuples of values in tuples of indexes (of values)
@@ -457,7 +454,7 @@ public final class MDD extends ExtensionStructure {
 		}
 
 		public boolean canReachNodeT() {
-			return canReachNodeT(new HashSet<Integer>(), new HashSet<Integer>());
+			return canReachNodeT(new LinkedHashSet<Integer>(), new LinkedHashSet<Integer>());
 		}
 
 		private int renameNodes(int lastId, Map<Integer, Node> map) {
@@ -482,12 +479,12 @@ public final class MDD extends ExtensionStructure {
 
 		private int finalizeRoot() {
 			control(level == 0); // must be called on a root
-			canReachNodeT(new HashSet<Integer>(), new HashSet<Integer>()); // if root built from transitions, necessary ?
+			canReachNodeT(new LinkedHashSet<Integer>(), new LinkedHashSet<Integer>()); // if root built from transitions, necessary ?
 			buildSonsClasses();
-			int nNodes = renameNodes(1, new HashMap<Integer, Node>()) + 1;
+			int nNodes = renameNodes(1, new LinkedHashMap<Integer, Node>()) + 1;
 			// System.out.println("MDD : nNodes=" + nNodes + " nBuiltNodes=" + (Node.nCreatedNodes - Node.nNodesBefore));
 			display();
-			assert controlUniqueNodes(new HashMap<Integer, Node>());
+			assert controlUniqueNodes(new LinkedHashMap<Integer, Node>());
 			// buildSplitter();
 			return nNodes;
 		}
@@ -600,7 +597,7 @@ public final class MDD extends ExtensionStructure {
 
 		public String getTransitions(Domain[] doms) {
 			StringBuilder sb = new StringBuilder("{\"transitions\":[");
-			for (_Transition tr : getTransitions(doms, new ArrayList<>(), new HashSet<Node>()))
+			for (_Transition tr : getTransitions(doms, new ArrayList<>(), new LinkedHashSet<Node>()))
 				sb.append("\n  [\"" + tr.src).append("\",").append(tr.val).append(",\"").append(tr.dst).append("\"],");
 			sb.deleteCharAt(sb.length() - 1);
 			sb.append("\n]\n}");
@@ -649,7 +646,7 @@ public final class MDD extends ExtensionStructure {
 	 * @return the number of nodes in the MDD
 	 */
 	public Integer nNodes() {
-		return nNodes != null ? nNodes : (nNodes = 2 + root.nInternalNodes(new HashSet<Integer>()));
+		return nNodes != null ? nNodes : (nNodes = 2 + root.nInternalNodes(new LinkedHashSet<Integer>()));
 	}
 
 	public MDD(CMDD c) {
@@ -715,7 +712,7 @@ public final class MDD extends ExtensionStructure {
 				else
 					splitMode[i] += 2; // because two additional variables
 			this.splitSets = IntStream.range(0, initialSplitMode.length).mapToObj(i -> new TreeSet<>(Utilities.lexComparatorInt)).toArray(Set[]::new);
-			this.auxiliaryLevelMaps = IntStream.range(0, initialSplitMode.length - 1).mapToObj(i -> new HashMap<>()).toArray(Map[]::new);
+			this.auxiliaryLevelMaps = IntStream.range(0, initialSplitMode.length - 1).mapToObj(i -> new LinkedHashMap<>()).toArray(Map[]::new);
 
 			split2(root, 0);
 			this.splitTuples = new int[splitSets.length][][];
@@ -837,13 +834,13 @@ public final class MDD extends ExtensionStructure {
 
 // if (!directEncodingFromAutomata) buildSubtree root.buildSubtree(nbLetters, transitions, finalStates, height + 1, 0,
 // new
-// HashMap<IntArrayHashKey,
+// LinkedHashMap<IntArrayHashKey,
 // MDDNode>(2000));
 
 // public static void storeTuples1(int nbStates, int nbLetters, int[][] transitions, int initialState, int[]
 // finalStates, int nbLevels) {
 // control(nbLevels > 1);
-// Map<Integer, MDDNode> map = new HashMap<Integer, MDDNode>();
+// Map<Integer, MDDNode> map = new LinkedHashMap<Integer, MDDNode>();
 // MDDNode root = new MDDNode(this,0, false, nbLetters); // TODO a virer la declaertaionxxxxxxxxxxxxxxxxxxxxxxxxxxx
 // List<MDDNode> listOfNodesAtCurrentLevel = new ArrayList<MDDNode>(), nextList = new ArrayList<MDDNode>();
 // listOfNodesAtCurrentLevel.add(root);
@@ -882,7 +879,7 @@ public final class MDD extends ExtensionStructure {
 // private static boolean buildSubtree(MDDNode node, int nbLetters, int[][] transitions, int[] finalStates, int
 // nbLevels, int level) {
 // boolean found = false;
-// Map<Integer, MDDNode> map = new HashMap<Integer, MDDNode>();
+// Map<Integer, MDDNode> map = new LinkedHashMap<Integer, MDDNode>();
 // for (int letter = 0; letter < nbLetters; letter++) {
 // int nextState = transitions[node.state][letter];
 //

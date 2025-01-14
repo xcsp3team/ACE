@@ -11,7 +11,7 @@
 package constraints.extension.structures;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -139,7 +139,7 @@ public abstract class ExtensionStructure implements ConstraintRegister {
 			}
 			return new int[] { 1, 1 };
 		}
-		Set<IntArrayHashKey> set = new HashSet<>();
+		Set<IntArrayHashKey> set = new LinkedHashSet<>();
 		for (int[] t : originalTuples)
 			set.add(new IntArrayHashKey(t));
 		int[] permutation = new int[scp.length];

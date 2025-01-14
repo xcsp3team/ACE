@@ -10,7 +10,7 @@
 
 package constraints.global;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -63,7 +63,7 @@ public final class SubsetAllDifferent extends ConstraintGlobal implements TagNot
 				.mapToObj(i -> IntStream.range(0, subsets[i].length).map(j -> Utilities.indexOf(subsets[i][j], scp)).toArray()).toArray(int[][]::new);
 		int n = pb.features.collecting.variables.size();
 		this.irreflexives = IntStream.range(0, n).mapToObj(i -> new boolean[i + 1]).toArray(boolean[][]::new);
-		Set<Integer>[] sets = IntStream.range(0, n).mapToObj(i -> new HashSet<>()).toArray(Set[]::new);
+		Set<Integer>[] sets = IntStream.range(0, n).mapToObj(i -> new LinkedHashSet<>()).toArray(Set[]::new);
 		for (int i = 0; i < subsets.length; i++) {
 			Variable[] subset = subsets[i];
 			for (int j = 0; j < subset.length; j++) {

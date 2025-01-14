@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -159,7 +159,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			}
 			String[] tt = s.split(Constants.REG_WS);
 			if (tt[0].indexOf("=") != -1) {
-				Map<String, Variable> map = new HashMap<>();
+				Map<String, Variable> map = new LinkedHashMap<>();
 				for (Variable x : problem.variables)
 					map.put(x.id, x);
 
@@ -203,7 +203,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		List<Variable> pretaboo = new ArrayList<>();
 		List<Variable> taboo = new ArrayList<>();
 
-		Map<Variable, Integer> map = new HashMap<>();
+		Map<Variable, Integer> map = new LinkedHashMap<>();
 
 		@Override
 		public void beforeRun() {
