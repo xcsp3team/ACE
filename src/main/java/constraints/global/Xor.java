@@ -64,7 +64,7 @@ public final class Xor extends ConstraintGlobal implements TagAC, TagCallComplet
 		for (Variable x : scp)
 			if (x != sentinel && x.dom.single() == 1)
 				cnt++;
-		return sentinel.dom.reduceTo(cnt % 2 == 0 ? 1 : 0) && entailed();
+		return sentinel.dom.reduceTo(cnt % 2 == 0 ? 1 : 0) && entail();
 	}
 
 	@Override

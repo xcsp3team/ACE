@@ -170,7 +170,7 @@ public class STR0 extends ExtensionSpecific {
 			int[] tuple = tuples[set.dense[i]];
 			if (isValidTuple(tuple)) {
 				if (universal)
-					return entailed();
+					return entail();
 				for (int j = sSupSize - 1; j >= 0; j--) {
 					int x = sSup[j];
 					int a = tuple[x];

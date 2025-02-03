@@ -188,7 +188,7 @@ public abstract class Product extends ConstraintGlobal implements TagCallComplet
 			public boolean runPropagator(Variable x) {
 				int n0 = recomputeBounds();
 				if (max <= limit)
-					return entailed();
+					return entail();
 				if (min > limit)
 					return x == null ? false : x.dom.fail();
 				for (int i = futvars.limit; i >= 0; i--) {
@@ -206,7 +206,7 @@ public abstract class Product extends ConstraintGlobal implements TagCallComplet
 					assert dom.size() > 0;
 					max = max * dom.lastValue();
 					if (max <= limit)
-						return entailed();
+						return entail();
 				}
 				return true;
 			}
@@ -233,7 +233,7 @@ public abstract class Product extends ConstraintGlobal implements TagCallComplet
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
 				if (min >= limit)
-					return entailed();
+					return entail();
 				if (max < limit)
 					return x == null ? false : x.dom.fail();
 				for (int i = futvars.limit; i >= 0; i--) {
@@ -245,7 +245,7 @@ public abstract class Product extends ConstraintGlobal implements TagCallComplet
 					assert dom.size() > 0;
 					min = min * dom.firstValue();
 					if (min >= limit)
-						return entailed();
+						return entail();
 				}
 				return true;
 			}

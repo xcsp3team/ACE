@@ -99,6 +99,22 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 			matcher.removeInconsistentValues(); // no more possible failure at this step
 			return true;
 		}
+
+		public int giveMostPromisingValueIndexFor(Variable x, boolean anti) {
+			int best = -1, bestScore = Integer.MAX_VALUE;
+			for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
+				int v = x.dom.toVal(a), cnt = 0;
+				for (int i = futvars.limit; i >= 0; i--)
+					if (scp[futvars.dense[i]].dom.toIdxIfPresent(v) != -1)
+						cnt++;
+				if (cnt < bestScore) {
+					best = a;
+					bestScore = cnt;
+				}
+			}
+			return best;
+		}
+
 	}
 
 	/**********************************************************************************************

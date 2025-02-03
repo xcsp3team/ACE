@@ -381,7 +381,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 					for (Variable y : scp)
 						if (y.dom.removeValuesGT(limit) == false)
 							return false;
-					return entailed();
+					return entail();
 				}
 			}
 
@@ -419,7 +419,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 							if (scp[sentinel2].dom.lastValue() < limit)
 								return x == null ? false : x.dom.fail();
 							scp[sentinel2].dom.removeValuesLT(limit);
-							return entailed();
+							return entail();
 						}
 					}
 					if (scp[sentinel2].dom.lastValue() < limit) {
@@ -432,7 +432,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 						else {
 							assert scp[sentinel1].dom.lastValue() >= limit;
 							scp[sentinel1].dom.removeValuesLT(limit);
-							return entailed();
+							return entail();
 
 						}
 					}
@@ -485,14 +485,14 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 						if (sentinel != null)
 							sentinel1 = sentinel;
 						else
-							return sentinel2.dom.reduceToValue(value) && entailed();
+							return sentinel2.dom.reduceToValue(value) && entail();
 					}
 					if (!sentinel2.dom.containsValue(value)) {
 						Variable sentinel = findAnotherSentinel();
 						if (sentinel != null)
 							sentinel2 = sentinel;
 						else
-							return sentinel1.dom.reduceToValue(value) && entailed();
+							return sentinel1.dom.reduceToValue(value) && entail();
 					}
 					return true;
 				}
@@ -588,7 +588,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 							if (scp[sentinel2].dom.firstValue() > limit)
 								return x == null ? false : x.dom.fail();
 							scp[sentinel2].dom.removeValuesGT(limit);
-							return entailed();
+							return entail();
 						}
 					}
 					if (scp[sentinel2].dom.firstValue() > limit) {
@@ -601,7 +601,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 						else {
 							assert scp[sentinel1].dom.firstValue() <= limit;
 							scp[sentinel1].dom.removeValuesGT(limit);
-							return entailed();
+							return entail();
 						}
 					}
 					return true;
@@ -630,7 +630,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 						for (Variable y : scp)
 						if (y.dom.removeValuesLT(limit) == false)
 							return false;
-					return entailed();
+					return entail();
 				}
 			}
 
@@ -678,14 +678,14 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 						if (sentinel != null)
 							sentinel1 = sentinel;
 						else
-							return sentinel2.dom.reduceToValue(value) && entailed();
+							return sentinel2.dom.reduceToValue(value) && entail();
 					}
 					if (!sentinel2.dom.containsValue(value)) {
 						Variable sentinel = findAnotherSentinel();
 						if (sentinel != null)
 							sentinel2 = sentinel;
 						else
-							return sentinel1.dom.reduceToValue(value) && entailed();
+							return sentinel1.dom.reduceToValue(value) && entail();
 					}
 					return true;
 				}

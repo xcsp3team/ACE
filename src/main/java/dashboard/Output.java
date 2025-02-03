@@ -38,6 +38,7 @@ import constraints.Constraint;
 import constraints.ConstraintExtension;
 import constraints.ConstraintIntension;
 import dashboard.Control.OptionsVariables;
+import heuristics.HeuristicValues;
 import heuristics.HeuristicValuesDirect;
 import heuristics.HeuristicVariablesDynamic.RunRobin;
 import interfaces.Observers.ObserverOnConstruction;
@@ -634,6 +635,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 					m.put(BOUNDS, head.problem.optimizer.stringBounds());
 			}
 		}
+		m.put("cntCBval", HeuristicValues.cntCBval);
 		if (head.control.general.verbose <= 1)
 			return m;
 		m.separator();

@@ -110,7 +110,7 @@ public abstract class ObjectiveVariable extends ConstraintGlobal implements Opti
 			if (x.dom.removeValuesGT(limit) == false)
 				return false;
 			assert x.dom.size() > 0;
-			return entailed();
+			return entail();
 		}
 	}
 
@@ -136,7 +136,7 @@ public abstract class ObjectiveVariable extends ConstraintGlobal implements Opti
 			if (x.dom.removeValuesLT(limit) == false)
 				return false;
 			assert x.dom.size() > 0;
-			return entailed();
+			return entail();
 		}
 	}
 }

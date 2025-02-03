@@ -217,7 +217,7 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 						for (int i = relevantUnfixedVars.limit; i >= 0; i--)
 							if (list[relevantUnfixedVars.dense[i]].dom.removeValuesNotIn(fixedVals) == false)
 								return false;
-						return entailed();
+						return entail();
 					}
 				}
 				return true;
@@ -248,7 +248,7 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 							if (list[relevantUnfixedVars.dense[i]].dom.removeValuesIn(fixedVals) == false)
 								return false;
 						if (relevantUnfixedVars.size() == 0)
-							return entailed();
+							return entail();
 					}
 				}
 				return true;
@@ -300,7 +300,7 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 							if (y != x && y.dom.removeIndexesChecking(b -> !distinctIdxs.contains(b)) == false)
 								return false;
 						}
-						return entailed();
+						return entail();
 					}
 					int cnt = 0; // we make a rough approximation to determine if limit can be reached
 					for (int j = futvars.limit; j >= 0; j--) {
@@ -382,7 +382,7 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 							for (int i = relevantUnfixedVars.limit; i >= 0; i--)
 								if (list[relevantUnfixedVars.dense[i]].dom.removeValuesNotIn(fixedVals) == false)
 									return false;
-							return entailed();
+							return entail();
 						} else if (fixedVals.size() + relevantUnfixedVars.size() == limit) {
 							for (int i = relevantUnfixedVars.limit; i >= 0; i--)
 								if (list[relevantUnfixedVars.dense[i]].dom.removeValuesIn(fixedVals) == false)

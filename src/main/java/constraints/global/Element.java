@@ -96,14 +96,14 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 					for (Variable x : list)
 						if (x.dom.removeValueIfPresent(value) == false)
 							return false;
-					return entailed();
+					return entail();
 				} else { // y = 1
 					int uniqueSentinel = -1;
 					for (int i = 0; i < list.length; i++) {
 						Domain dom = list[i].dom;
 						if (dom.size() == 1) {
 							if (dom.singleValue() == value)
-								return entailed();
+								return entail();
 						} else {
 							if (dom.containsValue(value)) {
 								if (uniqueSentinel == -1)
@@ -115,7 +115,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 					}
 					if (uniqueSentinel == -1)
 						return y.dom.fail();
-					return list[uniqueSentinel].dom.reduceToValue(value) && entailed();
+					return list[uniqueSentinel].dom.reduceToValue(value) && entail();
 				}
 			}
 			assert y.dom.size() == 2;
@@ -123,14 +123,14 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			for (Variable x : list) {
 				if (x.dom.size() == 1) {
 					if (x.dom.singleValue() == value)
-						return y.dom.remove(0) && entailed(); // no possible inconsistency here
+						return y.dom.remove(0) && entail(); // no possible inconsistency here
 				} else {
 					if (x.dom.containsValue(value))
 						found = true;
 				}
 			}
 			if (!found)
-				return y.dom.remove(1) && entailed(); // no possible inconsistency here
+				return y.dom.remove(1) && entail(); // no possible inconsistency here
 			return true;
 		}
 	}
@@ -231,7 +231,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 				// be careful : not a else because of statements above that may modify the domain of index
 				if (idom.size() > 1)
 					return true;
-				return list[idom.single()].dom.reduceToValue(k) && entailed();
+				return list[idom.single()].dom.reduceToValue(k) && entail();
 			}
 		}
 
@@ -346,7 +346,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 					if (AC.enforceEQ(list[idom.single()].dom, vdom) == false)
 						return false;
 					if (vdom.size() == 1)
-						return entailed();
+						return entail();
 				}
 				return true;
 			}
@@ -491,7 +491,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 				}
 				// be careful : below, not a else because of statements above that may modify the domain of indexes
 				// TODO are we sure it is AC?
-				return rdom.size() > 1 || cdom.size() > 1 || (matrix[rdom.singleValue()][cdom.singleValue()].dom.reduceToValue(k) && entailed());
+				return rdom.size() > 1 || cdom.size() > 1 || (matrix[rdom.singleValue()][cdom.singleValue()].dom.reduceToValue(k) && entail());
 			}
 		}
 
@@ -626,7 +626,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 					if (AC.enforceEQ(matrix[rdom.singleValue()][cdom.singleValue()].dom, vdom) == false)
 						return false;
 					if (vdom.size() == 1)
-						return entailed();
+						return entail();
 				}
 				return true;
 			}

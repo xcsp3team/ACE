@@ -174,9 +174,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 				}
 			} else {
 				tt = possiblyDecompact(tt);
-				for (int i=0; i<tt.length;i++)
-					tt[i] = tt[i].endsWith(",") ? tt[i].substring(0,tt[i].length()-1) : tt[i];
-				
+				for (int i = 0; i < tt.length; i++)
+					tt[i] = tt[i].endsWith(",") ? tt[i].substring(0, tt[i].length() - 1) : tt[i];
+
 				boolean test = true;
 				String[] t = test ? Stream.of(tt).filter(tok -> !tok.equals("*")).toArray(String[]::new) : tt;
 				this.instantiation = IntStream.range(0, t.length).map(i -> t[i].equals("*") ? -1 : problem.variables[i].dom.toIdxIfPresent(parseInt(t[i])))
@@ -946,8 +946,10 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 *            a variable
 	 * @return false if an inconsistency is detected
 	 */
-	private final boolean tryAssignment(Variable x) {
-		return tryAssignment(x, x.heuristic.bestValueIndex());
+	private final boolean tryAssignment() {
+		Variable x = heuristic.bestVariable();
+		int a = x.heuristic.bestValueIndex();
+		return tryAssignment(x, a);
 	}
 
 	/**
@@ -1028,7 +1030,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 					// if (oneUnfixed() == null || futVars.size() == 0)
 					break;
 				maxDepth = Math.max(maxDepth, depth());
-				if (tryAssignment(heuristic.bestVariable()) == false)
+				if (tryAssignment() == false)
 					manageContradiction(null);
 			}
 			if (futVars.size() == 0) {

@@ -106,14 +106,14 @@ public final class Among extends ConstraintGlobal implements TagAC, TagCallCompl
 		if (nGuaranteedVars == k) {
 			for (int i = mixedVariables.limit; i >= 0; i--)
 				scp[mixedVariables.dense[i]].dom.removeValuesIn(values); // no inconsistency possible
-			return entailed();
+			return entail();
 		}
 		if (nPossibleVars < k)
 			return x.dom.fail();
 		if (nPossibleVars == k) {
 			for (int i = mixedVariables.limit; i >= 0; i--)
 				scp[mixedVariables.dense[i]].dom.removeValuesNotIn(values); // no inconsistency possible
-			return entailed();
+			return entail();
 		}
 		return true;
 	}

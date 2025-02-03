@@ -341,4 +341,43 @@ public abstract class HeuristicValues extends Heuristic {
 		}
 	}
 
+	/*************************************************************************
+	 ***** Experimental
+	 *************************************************************************/
+
+	public static int cntCBval = 0;
+
+	public static class CBVal extends HeuristicValues {
+
+		public CBVal(Variable x, boolean anti) {
+			super(x, anti);
+		}
+
+		@Override
+		protected final int computeBestValueIndex() {
+			Constraint best = null;
+			double bestScore = -1;
+			for (Constraint c : x.ctrs) {
+				if (c.ignored || x.problem.solver.isEntailed(c))
+					continue;
+				if (c.wdeg() > bestScore) {
+					best = c;
+					bestScore = c.wdeg();
+				}
+			}
+			if (best == null)
+				return x.dom.first();
+			int a = best.giveMostPromisingValueIndexFor(x, options.antiCBval);
+			if (a != -1)
+				cntCBval++;
+			return a == -1 ? x.dom.first() : a;
+		}
+
+		@Override
+		protected double scoreOf(int a) {
+			throw new UnsupportedOperationException();
+		}
+
+	}
+
 }

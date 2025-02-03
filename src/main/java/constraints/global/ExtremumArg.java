@@ -161,7 +161,7 @@ public abstract class ExtremumArg extends ConstraintGlobal implements TagCallCom
 						return false;
 					if (rank == TypeRank.ANY && list[a].dom.firstValue() >= maxMaxd)
 						// if (list[a].dom.firstValue() >= maxMaxd - (rank == TypeRank.ANY ? 0 : 1)) // Not correct
-						return entailed();
+						return entail();
 
 				}
 				return true;
@@ -257,7 +257,7 @@ public abstract class ExtremumArg extends ConstraintGlobal implements TagCallCom
 					if (list[a].dom.removeValuesGT(minMaxd) == false)
 						return false;
 					if (rank == TypeRank.ANY && list[a].dom.lastValue() <= minMind)
-						return entailed();
+						return entail();
 
 				}
 				return true;

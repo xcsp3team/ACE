@@ -128,7 +128,7 @@ public final class Circuit extends AllDifferentComplete {
 				for (int k = 0; k < scp.length; k++)
 					if (j != k && !set.contains(k) && doms[k].reduceToValue(k) == false)
 						return false;
-				return entailed();
+				return entail();
 			}
 		}
 		if (nSelfLoops == scp.length) // TODO: we should prune when all but two variables are self loops

@@ -99,13 +99,13 @@ public final class Reification {
 				@Override
 				public boolean runPropagator(Variable dummy) {
 					if (dx.last() == 0)
-						return (dy.firstValue() > k || dy.removeValuesLE(k)) && entailed(); // x = 0 => y > k
+						return (dy.firstValue() > k || dy.removeValuesLE(k)) && entail(); // x = 0 => y > k
 					if (dx.first() == 1)
-						return (dy.lastValue() <= k || dy.removeValuesGT(k)) && entailed(); // x = 1 => y <= k
+						return (dy.lastValue() <= k || dy.removeValuesGT(k)) && entail(); // x = 1 => y <= k
 					if (dy.lastValue() <= k)
-						return dx.removeIfPresent(0) && entailed(); // y <= k => x != 0
+						return dx.removeIfPresent(0) && entail(); // y <= k => x != 0
 					if (dy.firstValue() > k)
-						return dx.removeIfPresent(1) && entailed(); // y > k => x != 1
+						return dx.removeIfPresent(1) && entail(); // y > k => x != 1
 					return true;
 				}
 			}
@@ -124,13 +124,13 @@ public final class Reification {
 				@Override
 				public boolean runPropagator(Variable dummy) {
 					if (dx.last() == 0)
-						return (dy.lastValue() < k || dy.removeValuesGE(k)) && entailed(); // x = 0 => y < k
+						return (dy.lastValue() < k || dy.removeValuesGE(k)) && entail(); // x = 0 => y < k
 					if (dx.first() == 1)
-						return (dy.firstValue() >= k || dy.removeValuesLT(k)) && entailed(); // x = 1 => y >= k
+						return (dy.firstValue() >= k || dy.removeValuesLT(k)) && entail(); // x = 1 => y >= k
 					if (dy.firstValue() >= k)
-						return dx.removeIfPresent(0) && entailed(); // y >= k => x != 0
+						return dx.removeIfPresent(0) && entail(); // y >= k => x != 0
 					if (dy.lastValue() < k)
-						return dx.removeIfPresent(1) && entailed(); // y < k => x != 1
+						return dx.removeIfPresent(1) && entail(); // y < k => x != 1
 					return true;
 				}
 			}
@@ -149,13 +149,13 @@ public final class Reification {
 				@Override
 				public boolean runPropagator(Variable dummy) {
 					if (dx.last() == 0)
-						return dy.removeValueIfPresent(k) && entailed(); // x = 0 => y != k
+						return dy.removeValueIfPresent(k) && entail(); // x = 0 => y != k
 					if (dx.first() == 1)
-						return dy.reduceToValue(k) && entailed(); // x = 1 => y = k
+						return dy.reduceToValue(k) && entail(); // x = 1 => y = k
 					if (!dy.containsValue(k))
-						return dx.removeIfPresent(1) && entailed(); // y != k => x != 1
+						return dx.removeIfPresent(1) && entail(); // y != k => x != 1
 					if (dy.size() == 1)
-						return dx.removeIfPresent(0) && entailed(); // y = k => x != 0
+						return dx.removeIfPresent(0) && entail(); // y = k => x != 0
 					return true;
 				}
 			}
@@ -174,13 +174,13 @@ public final class Reification {
 				@Override
 				public boolean runPropagator(Variable dummy) {
 					if (dx.last() == 0)
-						return dy.reduceToValue(k) && entailed(); // x = 0 => y = k
+						return dy.reduceToValue(k) && entail(); // x = 0 => y = k
 					if (dx.first() == 1)
-						return dy.removeValueIfPresent(k) && entailed(); // x = 1 => x != k
+						return dy.removeValueIfPresent(k) && entail(); // x = 1 => x != k
 					if (!dy.containsValue(k))
-						return dx.removeIfPresent(0) && entailed(); // y != k => x != 0
+						return dx.removeIfPresent(0) && entail(); // y != k => x != 0
 					if (dy.size() == 1)
-						return dx.removeIfPresent(1) && entailed(); // y = k => x != 1
+						return dx.removeIfPresent(1) && entail(); // y = k => x != 1
 					return true;
 				}
 			}
@@ -254,14 +254,14 @@ public final class Reification {
 				@Override
 				public boolean runPropagator(Variable dummy) {
 					if (dx.last() == 0)
-						return dy.removeValuesIn(values) && entailed(); // x = 0 => y not in S
+						return dy.removeValuesIn(values) && entail(); // x = 0 => y not in S
 					if (dx.first() == 1)
-						return dy.removeValuesNotIn(values) && entailed(); // x = 1 => y in S
+						return dy.removeValuesNotIn(values) && entail(); // x = 1 => y in S
 
 					if (!checkSentinelIn())
-						return dx.remove(1) && entailed();
+						return dx.remove(1) && entail();
 					if (!checkSentinelOut())
-						return dx.remove(0) && entailed();
+						return dx.remove(0) && entail();
 					return true;
 				}
 			}
@@ -414,7 +414,7 @@ public final class Reification {
 				if (dy.size() == 1 && dz.size() == 1)
 					return dx.removeIfPresent(dy.firstValue() == dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
 				if (dx.last() == 0)
-					return (dy.size() > 1 && dz.size() > 1) || (enforceNE(dy, dz) && entailed()); // x = 0 => y != z
+					return (dy.size() > 1 && dz.size() > 1) || (enforceNE(dy, dz) && entail()); // x = 0 => y != z
 				if (dx.first() == 1)
 					return enforceEQ(dy, dz); // x = 1 => y = z
 				assert dx.size() == 2;
@@ -426,7 +426,7 @@ public final class Reification {
 				if (v != Integer.MAX_VALUE)
 					residue = v;
 				else
-					return dx.remove(1) && entailed(); // since inconsistency not possible and dy and dz are disjoint
+					return dx.remove(1) && entail(); // since inconsistency not possible and dy and dz are disjoint
 				return true;
 			}
 		}
@@ -451,7 +451,7 @@ public final class Reification {
 				if (dx.last() == 0)
 					return enforceEQ(dy, dz); // x = 0 => y = z
 				if (dx.first() == 1)
-					return (dy.size() > 1 && dz.size() > 1) || (enforceNE(dy, dz) && entailed()); // x = 1 => y != z
+					return (dy.size() > 1 && dz.size() > 1) || (enforceNE(dy, dz) && entail()); // x = 1 => y != z
 				assert dx.size() == 2;
 				// we know that (x,1) is supported because the domain of y and/or the domain of z is not singleton
 				if (dy.containsValue(residue) && dz.containsValue(residue))
@@ -461,7 +461,7 @@ public final class Reification {
 				if (v != Integer.MAX_VALUE)
 					residue = v;
 				else {
-					return dx.remove(0) && entailed(); // since inconsistency not possible and dy and dz are disjoint
+					return dx.remove(0) && entail(); // since inconsistency not possible and dy and dz are disjoint
 				}
 				return true;
 			}
@@ -489,9 +489,9 @@ public final class Reification {
 		@Override
 		public boolean runPropagator(Variable dummy) {
 			if (dx.lastValue() + wx <= dy.firstValue()) // x + wx <= y => z = 0
-				return dz.removeIfPresent(1) && entailed();
+				return dz.removeIfPresent(1) && entail();
 			if (dy.lastValue() + wy <= dx.firstValue()) // y + wy <= x => z = 1
-				return dz.removeIfPresent(0) && entailed();
+				return dz.removeIfPresent(0) && entail();
 
 			if (dz.last() == 0) // z = 0 => x + wx <= y
 				return enforceLE(dx, dy, -wx);
@@ -725,12 +725,12 @@ public final class Reification {
 				@Override
 				public boolean runPropagator(Variable dummy) {
 					if (dx.first() == 1) // x = 1 => y = 1 and z = 1
-						return dy.removeIfPresent(0) && dz.removeIfPresent(0) && entailed();
+						return dy.removeIfPresent(0) && dz.removeIfPresent(0) && entail();
 					if (!dy.contains(1) || !dz.contains(1)) // y != 1 or z != 1 => x != 1
-						return dx.removeIfPresent(1) && entailed();
+						return dx.removeIfPresent(1) && entail();
 					// 0 is present in dx, and 1 in dy and 1 in dz; if present, (x,1) is supported
 					if (dy.size() == 1 && dz.size() == 1) // y = 1 and z = 1 => x = 1
-						return dx.remove(0) && entailed();
+						return dx.remove(0) && entail();
 					// (x,0) is supported
 					if (dx.size() == 2)
 						return true;
@@ -738,9 +738,9 @@ public final class Reification {
 					if (dy.size() == 2 && dz.size() == 2)
 						return true;
 					if (dy.size() == 2)
-						return dy.remove(1) && entailed();
+						return dy.remove(1) && entail();
 					// dz.size() == 2
-					return dz.remove(1) && entailed();
+					return dz.remove(1) && entail();
 				}
 			}
 
@@ -758,12 +758,12 @@ public final class Reification {
 				@Override
 				public boolean runPropagator(Variable dummy) {
 					if (dx.last() == 0) // x = 0 => y = 0 and z = 0
-						return dy.removeIfPresent(1) && dz.removeIfPresent(1) && entailed();
+						return dy.removeIfPresent(1) && dz.removeIfPresent(1) && entail();
 					if (!dy.contains(0) || !dz.contains(0)) // y != 0 or z != 0 => x != 0
-						return dx.removeIfPresent(0) && entailed();
+						return dx.removeIfPresent(0) && entail();
 					// 1 is present in dx, and 0 in dy and 0 in dz; if present, (x,0) is supported
 					if (dy.size() == 1 && dz.size() == 1) // y = 0 and z = 0 => x = 0
-						return dx.remove(1) && entailed();
+						return dx.remove(1) && entail();
 					// (x,1) is supported
 					if (dx.size() == 2)
 						return true;
@@ -771,9 +771,9 @@ public final class Reification {
 					if (dy.size() == 2 && dz.size() == 2)
 						return true;
 					if (dy.size() == 2)
-						return dy.remove(0) && entailed();
+						return dy.remove(0) && entail();
 					// dz.size() == 2
-					return dz.remove(0) && entailed();
+					return dz.remove(0) && entail();
 				}
 			}
 		}
@@ -824,25 +824,25 @@ public final class Reification {
 				public boolean runPropagator(Variable evt) {
 					for (Variable y : list)
 						if (y.dom.last() == 0)
-							return dx.removeIfPresent(1) && entailed(); // for some j, y_j = 0 => x = 0
+							return dx.removeIfPresent(1) && entail(); // for some j, y_j = 0 => x = 0
 					assert Stream.of(list).allMatch(y -> y.dom.last() == 1) : "1 should be present in the domain of every variable of the list";
 					if (dx.first() == 1) { // x = 1 => y_j = 1 for every j
 						for (Variable y : list)
 							y.dom.removeIfPresent(0); // no possible inconsistency since 1 is also present
-						return entailed();
+						return entail();
 					}
 					// it remains to check that (x,0) is supported (as well as any (y_j,0) equivalently)
 					if (dx.last() == 0) { // if x=0, we need two valid sentinels
 						if (sentinel1.dom.first() == 1) {
 							Variable y = findSentinel(sentinel2);
 							if (y == null)
-								return sentinel2.dom.remove(1) && entailed();
+								return sentinel2.dom.remove(1) && entail();
 							sentinel1 = y;
 						}
 						if (sentinel2.dom.first() == 1) {
 							Variable y = findSentinel(sentinel1);
 							if (y == null)
-								return sentinel1.dom.remove(1) && entailed();
+								return sentinel1.dom.remove(1) && entail();
 							sentinel2 = y;
 						}
 						return true;
@@ -855,7 +855,7 @@ public final class Reification {
 							sentinel1 = y;
 							return true;
 						}
-					return dx.remove(0) && entailed();
+					return dx.remove(0) && entail();
 				}
 			}
 
@@ -891,25 +891,25 @@ public final class Reification {
 				public boolean runPropagator(Variable evt) {
 					for (Variable y : list)
 						if (y.dom.first() == 1)
-							return dx.removeIfPresent(0) && entailed(); // for some j, y_j = 1 => x = 1
+							return dx.removeIfPresent(0) && entail(); // for some j, y_j = 1 => x = 1
 					assert Stream.of(list).allMatch(y -> y.dom.first() == 0) : "0 should be present in the domain of every variable of the list";
 					if (dx.last() == 0) { // x = 0 => y_j = 0 for every j
 						for (Variable y : list)
 							y.dom.removeIfPresent(1); // no possible inconsistency since 0 is also present
-						return entailed();
+						return entail();
 					}
 					// it remains to check that (x,1) is supported (as well as any (y_j,1) equivalently)
 					if (dx.first() == 1) { // if x=1, we need two valid sentinels
 						if (sentinel1.dom.last() == 0) {
 							Variable y = findSentinel(sentinel2);
 							if (y == null)
-								return sentinel2.dom.remove(0) && entailed();
+								return sentinel2.dom.remove(0) && entail();
 							sentinel1 = y;
 						}
 						if (sentinel2.dom.last() == 0) {
 							Variable y = findSentinel(sentinel1);
 							if (y == null)
-								return sentinel1.dom.remove(0) && entailed();
+								return sentinel1.dom.remove(0) && entail();
 							sentinel2 = y;
 						}
 						return true;
@@ -922,7 +922,7 @@ public final class Reification {
 							sentinel1 = y;
 							return true;
 						}
-					return dx.remove(1) && entailed();
+					return dx.remove(1) && entail();
 				}
 			}
 
@@ -969,7 +969,7 @@ public final class Reification {
 								if (z.dom.single() == 1)
 									cnt++;
 							int a = cnt % 2 == 0 ? 1 : 0;
-							return dx.remove(a) && entailed();
+							return dx.remove(a) && entail();
 						}
 						sentinel1 = y;
 						return true;
@@ -979,7 +979,7 @@ public final class Reification {
 						Variable y = findSentinel(sentinel2);
 						if (y == null) {
 							int a = toBeRemoved(sentinel2);
-							return sentinel2.dom.removeIfPresent(a) && entailed();
+							return sentinel2.dom.removeIfPresent(a) && entail();
 						}
 						sentinel1 = y;
 					}
@@ -988,7 +988,7 @@ public final class Reification {
 						Variable y = findSentinel(sentinel1);
 						if (y == null) {
 							int a = toBeRemoved(sentinel1);
-							return sentinel1.dom.removeIfPresent(a) && entailed();
+							return sentinel1.dom.removeIfPresent(a) && entail();
 						}
 						sentinel2 = y;
 					}
@@ -1027,28 +1027,28 @@ public final class Reification {
 								size2 = true;
 							else if (y.dom.first() == 0) { // y=0
 								if (sing1)
-									return dx.remove(1) & entailed();
+									return dx.remove(1) & entail();
 								sing0 = true;
 							} else { // y=1
 								if (sing0)
-									return dx.remove(1) & entailed();
+									return dx.remove(1) & entail();
 								sing1 = true;
 							}
 						}
 						if (!size2)
-							return dx.remove(0) & entailed(); // because all assigned to 0 or to 1 (in list)
+							return dx.remove(0) & entail(); // because all assigned to 0 or to 1 (in list)
 					} else if (dx.first() == 0) { // x=0 (so, we must have both 0 and 1 assigned)
 						// we use sentinel1 for a domain with 0 present and sentinel2 for a domain with 1 present
 						if (!sentinel1.dom.contains(0)) {
 							Variable y = findSentinel(sentinel2, 0);
 							if (y == null)
-								return sentinel2.dom.reduceTo(0) && entailed(); // may fail if 0 is not present
+								return sentinel2.dom.reduceTo(0) && entail(); // may fail if 0 is not present
 							sentinel1 = y;
 						}
 						if (!sentinel2.dom.contains(1)) {
 							Variable y = findSentinel(sentinel1, 1);
 							if (y == null)
-								return sentinel1.dom.reduceTo(1) && entailed();
+								return sentinel1.dom.reduceTo(1) && entail();
 							sentinel2 = y;
 						}
 						if (sentinel1.dom.size() == 2 && sentinel2.dom.size() == 2)
@@ -1058,7 +1058,7 @@ public final class Reification {
 						if (sentinel2.dom.size() == 2 && findSentinel(sentinel2, 1) == null)
 							sentinel2.dom.reduceTo(1); // no possible failure here
 						if (sentinel1.dom.size() == 1 && sentinel2.dom.size() == 1)
-							return entailed();
+							return entail();
 					} else {
 						// x=1 (so we must have all variables of list assigned to either 0 or 1)
 						for (Variable y : list) {
@@ -1068,7 +1068,7 @@ public final class Reification {
 								for (Variable z : list)
 									if (z != y && z.dom.reduceTo(a) == false)
 										return false;
-								return entailed();
+								return entail();
 							}
 						}
 					}

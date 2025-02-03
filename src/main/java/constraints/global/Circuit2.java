@@ -156,7 +156,7 @@ public final class Circuit2 extends AllDifferentComplete {
 			for (int k = 0; k < scp.length; k++)
 				if (!set.contains(k) && doms[k].reduceToValue(k) == false)
 					return false;
-			return entailed();
+			return entail();
 		}
 		int cnt = 0;
 		Arrays.fill(tmp, false);
@@ -195,7 +195,7 @@ public final class Circuit2 extends AllDifferentComplete {
 					for (int k = 0; k < scp.length; k++)
 						if (k != head && !set.contains(k) && doms[k].reduceToValue(k) == false)
 							return false;
-					return entailed();
+					return entail();
 				}
 			}
 		}

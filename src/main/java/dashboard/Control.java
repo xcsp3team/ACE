@@ -670,6 +670,7 @@ public final class Control {
 		public final int bivsDistance = addI("bivsDistance", "bivs_d", 2, "0: only if in the objective constraint; 1: if at distance 0 or 1; 2: any variable");
 		public final int bivsLimit = addI("bivsLimit", "bivs_l", Integer.MAX_VALUE, "BIVS applied only if the domain size is <= this value");
 		public final boolean optValHeuristic = addB("optValHeuristic", "ovalh", false, ""); // experimental
+		public final boolean antiCBval = addB("antiCBval", "acbv", false, "Must we use anti CBval?");
 	}
 
 	public class OptionsExtraction extends OptionGroup {

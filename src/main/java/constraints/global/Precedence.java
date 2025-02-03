@@ -164,7 +164,7 @@ public final class Precedence extends ConstraintGlobal implements TagNotAC, TagC
 			i--;
 		size = i + 1;
 		if (size <= 1)
-			return entailed();
+			return entail();
 		return true;
 	}
 

@@ -196,7 +196,7 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 					return false;
 				if (dom1.size() == 1 && dom2.size() == 1) {
 					if (dom1.singleValue() < dom2.singleValue())
-						return entailed();
+						return entail();
 					assert dom1.singleValue() == dom2.singleValue();
 					alpha++;
 				} else {
@@ -302,9 +302,9 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 				i++;
 			}
 			if (i == r)
-				return strictOrdering ? dummy.dom.fail() : entailed();
+				return strictOrdering ? dummy.dom.fail() : entail();
 			if (list[i].dom.lastValue() < limit[i])
-				return entailed();
+				return entail();
 			// it remains to find a support for (list[i],limit[i])
 			int j = i + 1;
 			while (j < r) {
@@ -350,9 +350,9 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 				i++;
 			}
 			if (i == r)
-				return strictOrdering ? dummy.dom.fail() : entailed();
+				return strictOrdering ? dummy.dom.fail() : entail();
 			if (list[i].dom.firstValue() > limit[i])
-				return entailed();
+				return entail();
 			// it remains to find a support for (list[i],limit[i])
 			int j = i + 1;
 			while (j < r) {

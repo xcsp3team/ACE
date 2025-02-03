@@ -96,9 +96,9 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 		@Override
 		public boolean runPropagator(Variable dummy) {
 			if (dx1.lastValue() + w1 <= dx2.firstValue() || dx2.lastValue() + w2 <= dx1.firstValue())
-				return entailed();
+				return entail();
 			if (dy1.lastValue() + h1 <= dy2.firstValue() || dy2.lastValue() + h2 <= dy1.firstValue())
-				return entailed();
+				return entail();
 			int minx1 = dx1.firstValue() + w1, minx2 = dx2.firstValue() + w2;
 			int miny1 = dy1.firstValue() + h1, miny2 = dy2.firstValue() + h2;
 			boolean bx1 = minx1 <= dx2.lastValue(), bx2 = minx2 <= dx1.lastValue();
@@ -143,9 +143,9 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 		@Override
 		public boolean runPropagator(Variable dummy) {
 			if (dx1.lastValue() + dw1.lastValue() <= dx2.firstValue() || dx2.lastValue() + dw2.lastValue() <= dx1.firstValue())
-				return entailed();
+				return entail();
 			if (dy1.lastValue() + h1 <= dy2.firstValue() || dy2.lastValue() + h2 <= dy1.firstValue())
-				return entailed();
+				return entail();
 			int minx1 = dx1.firstValue() + dw1.firstValue(), minx2 = dx2.firstValue() + dw2.firstValue();
 			int miny1 = dy1.firstValue() + h1, miny2 = dy2.firstValue() + h2;
 			boolean bx1 = minx1 <= dx2.lastValue(), bx2 = minx2 <= dx1.lastValue();
@@ -198,9 +198,9 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 		@Override
 		public boolean runPropagator(Variable dummy) {
 			if (dx1.lastValue() + dw1.lastValue() <= dx2.firstValue() || dx2.lastValue() + dw2.lastValue() <= dx1.firstValue())
-				return entailed();
+				return entail();
 			if (dy1.lastValue() + dh1.lastValue() <= dy2.firstValue() || dy2.lastValue() + dh2.lastValue() <= dy1.firstValue())
-				return entailed();
+				return entail();
 			int minx1 = dx1.firstValue() + dw1.firstValue(), minx2 = dx2.firstValue() + dw2.firstValue();
 			int miny1 = dy1.firstValue() + dh1.firstValue(), miny2 = dy2.firstValue() + dh2.firstValue();
 			boolean bx1 = minx1 <= dx2.lastValue(), bx2 = minx2 <= dx1.lastValue();
@@ -269,17 +269,17 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 			assert (doms[0].size() > 1 ? 1 : 0) + (doms[1].size() > 1 ? 1 : 0) + (doms[2].size() > 1 ? 1 : 0) + (doms[3].size() > 1 ? 1 : 0) <= 1;
 			Domain dom = doms[sentinel];
 			if (dom.size() == 1) // all 4 variables assigned
-				return doms[0].singleValue() != doms[1].singleValue() || doms[2].singleValue() != doms[3].singleValue() ? entailed() : dom.fail();
+				return doms[0].singleValue() != doms[1].singleValue() || doms[2].singleValue() != doms[3].singleValue() ? entail() : dom.fail();
 			if (sentinel < 2) {
 				if (doms[2].singleValue() != doms[3].singleValue())
-					return entailed();
+					return entail();
 				int v = doms[sentinel == 0 ? 1 : 0].singleValue();
-				return dom.removeValueIfPresent(v) && entailed(); // no inconsistency possible here
+				return dom.removeValueIfPresent(v) && entail(); // no inconsistency possible here
 			} else {
 				if (doms[0].singleValue() != doms[1].singleValue())
-					return entailed();
+					return entail();
 				int v = doms[sentinel == 2 ? 3 : 2].singleValue();
-				return dom.removeValueIfPresent(v) && entailed(); // no inconsistency possible here
+				return dom.removeValueIfPresent(v) && entail(); // no inconsistency possible here
 			}
 		}
 

@@ -152,7 +152,7 @@ public abstract class SumScalarBoolean extends ConstraintGlobal implements TagAC
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
 				if (max <= limit)
-					return entailed();
+					return entail();
 				if (min > limit)
 					return x.dom.fail();
 				if (min == limit) // this is the only case where we can filter
@@ -176,7 +176,7 @@ public abstract class SumScalarBoolean extends ConstraintGlobal implements TagAC
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
 				if (min >= limit)
-					return entailed();
+					return entail();
 				if (max < limit)
 					return x.dom.fail();
 				if (max == limit) // this is the only case where we can filter

@@ -623,6 +623,28 @@ public interface Domain extends SetLinked {
 		return Kit.intArray(values);
 	}
 
+	default int indexOfValueClosestTo(int v) {
+		int best = toIdxIfPresent(v);
+		if (best != -1)
+			return best;
+		int bestDistance = Integer.MAX_VALUE;
+		for (int a = first(); a != -1; a = next(a)) {
+			int dist = Math.abs(v - toVal(a));
+			if (dist < bestDistance) {
+				best = a;
+				bestDistance = dist;
+			} else
+				break;
+		}
+		return best;
+
+	}
+
+	default int indexOfValueFarthestTo(int v) {
+		return v - firstValue() > lastValue() - v ? first() : last();
+
+	}
+
 	/**********************************************************************************************
 	 * Methods for updating the domain (i.e., removing values)
 	 *********************************************************************************************/

@@ -68,30 +68,30 @@ public class Nogood extends ConstraintGlobal implements TagAC, TagCallCompleteFi
 	@Override
 	public boolean runPropagator(Variable dummy) {
 		if (vars[sentinel1].dom.containsValue(vals[sentinel1]) == false)
-			return entailed();
+			return entail();
 		if (vars[sentinel1].dom.size() == 1) {
 			int sentinel = findAnotherSentinel();
 			if (sentinel == Integer.MAX_VALUE)
-				return entailed();
+				return entail();
 			if (sentinel == -1) {
 				Domain dom = vars[sentinel2].dom;
 				if (dom.containsValue(vals[sentinel2]) && dom.removeValue(vals[sentinel2]) == false)
 					return dom.fail();
-				return entailed();
+				return entail();
 			} else
 				sentinel1 = sentinel;
 		}
 		if (vars[sentinel2].dom.containsValue(vals[sentinel2]) == false)
-			return entailed();
+			return entail();
 		if (vars[sentinel2].dom.size() == 1) {
 			int sentinel = findAnotherSentinel();
 			if (sentinel == Integer.MAX_VALUE)
-				return entailed();
+				return entail();
 			if (sentinel == -1) {
 				Domain dom = vars[sentinel1].dom;
 				if (dom.containsValue(vals[sentinel1]) && dom.removeValue(vals[sentinel1]) == false)
 					return dom.fail();
-				return entailed();
+				return entail();
 			} else
 				sentinel2 = sentinel;
 		}

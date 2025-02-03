@@ -109,6 +109,14 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 			this.dom = new DomainInfinite(this);
 		}
 
+		public long firstValue() {
+			return dom.firstValue();
+		}
+
+		public long lastValue() {
+			return dom.lastValue();
+		}
+
 		@Override
 		public Object allValues() {
 			return dom.allValues();

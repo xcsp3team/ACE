@@ -291,7 +291,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					return true;
 				recomputeBounds();
 				if (max <= limit)
-					return entailed();
+					return entail();
 				if (min > limit) {
 					if (this.problem.head.control.global.test) {
 						int most = mostContributor();
@@ -308,7 +308,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					assert dom.size() > 0;
 					max += dom.lastValue();
 					if (max <= limit)
-						return entailed();
+						return entail();
 				}
 				return true;
 			}
@@ -328,6 +328,10 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				}
 				System.out.println("bestgap " + bestGap);
 				return list.get(problem.head.random.nextInt(list.size()));
+			}
+
+			public int giveMostPromisingValueIndexFor(Variable x, boolean anti) {
+				return anti ? x.dom.last() : x.dom.first();
 			}
 		}
 
@@ -357,7 +361,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					return true;
 				recomputeBounds();
 				if (min >= limit)
-					return entailed();
+					return entail();
 				if (max < limit)
 					return x == null ? false : x.dom.fail();
 				for (int i = futvars.limit; i >= 0; i--) {
@@ -369,9 +373,13 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					assert dom.size() > 0;
 					min += dom.firstValue();
 					if (min >= limit)
-						return entailed();
+						return entail();
 				}
 				return true;
+			}
+
+			public int giveMostPromisingValueIndexFor(Variable x, boolean anti) {
+				return anti ? x.dom.first() : x.dom.last();
 			}
 		}
 
@@ -437,6 +445,22 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				control(Utilities.isSafeInt(res));
 				return (int) res;
 			}
+
+			public int giveMostPromisingValueIndexFor(Variable x, boolean anti) {
+				recomputeBounds();
+				if (min == max) // can this happen? not sure.
+					return -1;
+				double ratio = (limit - min) / (max - min);
+
+				int minx = x.dom.firstValue();
+				int maxx = x.dom.lastValue();
+
+				int target = (int) Math.round(ratio * (maxx - minx) + minx);
+				if (anti)
+					return x.dom.indexOfValueFarthestTo(target);
+				return x.dom.indexOfValueClosestTo(target);
+			}
+
 		}
 
 		// ************************************************************************
@@ -497,6 +521,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				}
 				return true;
 			}
+
 		}
 
 		// ************************************************************************
@@ -728,7 +753,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					return true;
 				recomputeBounds();
 				if (max <= limit)
-					return entailed();
+					return entail();
 				if (min > limit) {
 					if (this.problem.head.control.global.test) {
 						int most = mostContributor();
@@ -757,9 +782,13 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 						max += dom.firstValue() * coeff;
 					}
 					if (max <= limit)
-						return entailed();
+						return entail();
 				}
 				return true;
+			}
+
+			public int giveMostPromisingValueIndexFor(Variable x, boolean anti) {
+				return anti ^ (coeffs[positionOf(x)] < 0) ? x.dom.last() : x.dom.first();
 			}
 		}
 
@@ -790,7 +819,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					return true;
 				recomputeBounds();
 				if (min >= limit)
-					return entailed();
+					return entail();
 				if (max < limit)
 					return x == null ? false : x.dom.fail();
 				for (int i = futvars.limit; i >= 0; i--) {
@@ -810,9 +839,13 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 						min += dom.lastValue() * coeff;
 					}
 					if (min >= limit)
-						return entailed();
+						return entail();
 				}
 				return true;
+			}
+
+			public int giveMostPromisingValueIndexFor(Variable x, boolean anti) {
+				return anti ^ (coeffs[positionOf(x)] < 0) ? x.dom.first() : x.dom.last();
 			}
 		}
 
@@ -889,6 +922,22 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				scp[pos].dom.reduceTo((int) res); // , pb.solver.depth());
 				return (int) res;
 			}
+
+			public int giveMostPromisingValueIndexFor(Variable x, boolean anti) {
+				recomputeBounds();
+				if (min == max) // can this happen? not sure.
+					return -1;
+				double ratio = (limit - min) / (max - min);
+				if (coeffs[positionOf(x)] < 0)
+					ratio = 1 - ratio;
+
+				int minx = x.dom.firstValue();
+				int maxx = x.dom.lastValue();
+				int target = (int) Math.round(ratio * (maxx - minx) + minx);
+				if (anti)
+					return x.dom.indexOfValueFarthestTo(target);
+				return x.dom.indexOfValueClosestTo(target);
+			}
 		}
 
 		// ************************************************************************
@@ -931,7 +980,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				long v = (limit - sum) / coeffs[p];
 				if ((limit - sum) % coeffs[p] == 0 && Integer.MIN_VALUE <= v && v <= Integer.MAX_VALUE)
 					sentinel.dom.removeValueIfPresent((int) v); // no inconsistency possible since at least two values
-				return entailed();
+				return entail();
 			}
 
 			@Override
@@ -1275,7 +1324,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
 				if (max <= limit)
-					return entailed();
+					return entail();
 				if (min > limit)
 					return x == null ? false : x.dom.fail();
 				for (int i = futvars.limit; i >= 0; i--) {
@@ -1296,7 +1345,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 						max += view.minValue() * coeff;
 					}
 					if (max <= limit)
-						return entailed();
+						return entail();
 				}
 				return true;
 			}
@@ -1326,7 +1375,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
 				if (min >= limit)
-					return entailed();
+					return entail();
 				if (max < limit)
 					return x == null ? false : x.dom.fail();
 				for (int i = futvars.limit; i >= 0; i--) {
@@ -1347,7 +1396,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 						min += view.maxValue() * coeff;
 					}
 					if (min >= limit)
-						return entailed();
+						return entail();
 				}
 				return true;
 			}

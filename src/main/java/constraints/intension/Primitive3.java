@@ -910,13 +910,13 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 		public boolean runPropagator(Variable dummy) {
 			if (dx.size() == 2) {
 				if (!dy.contains(1))
-					return dx.remove(1) && dz.removeIfPresent(0) && entailed();
+					return dx.remove(1) && dz.removeIfPresent(0) && entail();
 				if (!dz.contains(1))
-					return dx.remove(0) && dy.removeIfPresent(0) && entailed();
+					return dx.remove(0) && dy.removeIfPresent(0) && entail();
 			} else if (!dx.contains(0))
-				return dy.removeIfPresent(0) && entailed();
+				return dy.removeIfPresent(0) && entail();
 			else // only 0 in dx
-				return dz.removeIfPresent(0) && entailed();
+				return dz.removeIfPresent(0) && entail();
 			return true;
 		}
 	}

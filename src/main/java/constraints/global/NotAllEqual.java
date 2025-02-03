@@ -65,7 +65,7 @@ public class NotAllEqual extends ConstraintGlobal implements TagAC, TagCallCompl
 				if (uniqueFixedVal == Integer.MAX_VALUE)
 					uniqueFixedVal = dom.singleValue();
 				else if (uniqueFixedVal != dom.singleValue())
-					return entailed(); // entailed because two fixed variables with different values
+					return entail(); // entailed because two fixed variables with different values
 			}
 		}
 		// iteration over past variable then
@@ -74,11 +74,11 @@ public class NotAllEqual extends ConstraintGlobal implements TagAC, TagCallCompl
 			if (uniqueFixedVal == Integer.MAX_VALUE)
 				uniqueFixedVal = dom.singleValue();
 			else if (uniqueFixedVal != dom.singleValue())
-				return entailed();
+				return entail();
 		}
 		if (unfixed == null)
 			return x.dom.fail(); // because all variables are assigned to the same value
 		assert uniqueFixedVal != Integer.MAX_VALUE;
-		return unfixed.dom.removeValueIfPresent(uniqueFixedVal) && entailed();
+		return unfixed.dom.removeValueIfPresent(uniqueFixedVal) && entail();
 	}
 }

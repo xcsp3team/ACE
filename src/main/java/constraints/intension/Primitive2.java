@@ -307,12 +307,12 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				if (dx.size() == 1) {
 					if (dx.single() == 0 && dy.removeIfPresent(0) == false)
 						return false;
-					return entailed();
+					return entail();
 				}
 				if (dy.size() == 1) {
 					if (dy.single() == 0 && dx.removeIfPresent(0) == false)
 						return false;
-					return entailed();
+					return entail();
 				}
 				return true;
 			}
@@ -1176,7 +1176,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				@Override
 				public boolean runPropagator(Variable dummy) {
 					if (dx.lastValue() + k <= dy.firstValue() || dy.lastValue() + k <= dx.firstValue())
-						return entailed();
+						return entail();
 					return dx.removeValuesInRange(dy.lastValue() - k + 1, dy.firstValue() + k)
 							&& dy.removeValuesInRange(dx.lastValue() - k + 1, dx.firstValue() + k);
 				}
@@ -1573,18 +1573,18 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				@Override
 				public boolean runPropagator(Variable dummy) {
 					if (dx.size() == 1)
-						return dy.removeValuesModIn(dx, k) && entailed();
+						return dy.removeValuesModIn(dx, k) && entail();
 					if (watch1 == -1 || !dy.contains(watch1))
 						watch1 = findWatch(watch2);
 					if (watch1 == -1) { // watch2 is the only remaining valid watch (we know that it is still valid
 										// since the domain is not empty)
 						assert watch2 != -1 && dy.contains(watch2);
-						return dx.removeValueIfPresent(dy.toVal(watch2) % k) && entailed();
+						return dx.removeValueIfPresent(dy.toVal(watch2) % k) && entail();
 					}
 					if (watch2 == -1 || !dy.contains(watch2))
 						watch2 = findWatch(watch1);
 					if (watch2 == -1)
-						return dx.removeValueIfPresent(dy.toVal(watch1) % k) && entailed();
+						return dx.removeValueIfPresent(dy.toVal(watch1) % k) && entail();
 					return true;
 				}
 			}

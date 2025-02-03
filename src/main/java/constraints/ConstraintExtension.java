@@ -115,7 +115,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 				return false;
 			if (!positive && scp[0].dom.removeValuesIn(values) == false)
 				return false;
-			return entailed();
+			return entail();
 		}
 	}
 

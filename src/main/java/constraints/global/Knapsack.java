@@ -105,7 +105,7 @@ public final class Knapsack extends ConstraintGlobal implements TagCallCompleteF
 	public boolean runPropagator(Variable event) {
 		recomputeBounds();
 		if (wmax <= wlimit && pmin >= plimit)
-			return entailed();
+			return entail();
 		if (wmin > wlimit || pmax < plimit)
 			return event == null ? false : event.dom.fail();
 		if (wmax > wlimit) { // otherwise nothing to do

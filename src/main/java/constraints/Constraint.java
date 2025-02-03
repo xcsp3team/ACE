@@ -574,9 +574,9 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * @return true is this constraint is currently entailed
+	 * @return sets this constraint as being entailed (if not yet), and returns true  
 	 */
-	public final boolean entailed() {
+	public final boolean entail() {
 		problem.solver.entail(this);
 		return true;
 	}
@@ -761,6 +761,10 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 */
 	public final long costOfCurrentInstantiation() {
 		return checkIndexes(instantiationIndexes()) ? 0 : cost;
+	}
+
+	public int giveMostPromisingValueIndexFor(Variable x, boolean anti) {
+		return -1;
 	}
 
 	/**

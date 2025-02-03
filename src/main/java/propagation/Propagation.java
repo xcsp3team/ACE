@@ -292,8 +292,10 @@ public abstract class Propagation {
 			historyC.clear();
 		while (true) {
 			while (queue.size() != 0) // propagation with respect to the main queue
-				if (pickAndFilter() == false)
+				if (pickAndFilter() == false) {
+					postponedConstraints.clear();
 					return false;
+				}
 			for (Constraint c : postponedConstraints) { // propagation with respect to postponed constraints
 				assert !c.ignored && !solver.isEntailed(c);
 				currFilteringCtr = c;
@@ -302,8 +304,10 @@ public abstract class Propagation {
 				if (historyC != null && solver.problem.nValueRemovals > bef)
 					historyC.add(c.num, solver.head.control.varh.pickMode == 0 ? 1 : consistent ? solver.problem.nValueRemovals - bef : 100);
 				currFilteringCtr = null;
-				if (!consistent)
+				if (!consistent) {
+					postponedConstraints.clear();
 					return false;
+				}
 			}
 			postponedConstraints.clear();
 			if (queue.size() == 0)

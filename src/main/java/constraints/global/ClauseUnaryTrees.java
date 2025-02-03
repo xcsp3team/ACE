@@ -257,22 +257,22 @@ public class ClauseUnaryTrees extends ConstraintGlobal implements TagAC, TagCall
 		if (sentinel1 == -1 || !terms[sentinel1].canFindFalse() || !terms[sentinel1].canFindTrue()) {
 			int sent = findSentinel();
 			if (sent == ENTAILED)
-				return entailed();
+				return entail();
 			if (sent == -1) {
 				if (sentinel2 == -1)
 					return event.dom.fail();
-				return terms[sentinel2].enforceTrue() && entailed();
+				return terms[sentinel2].enforceTrue() && entail();
 			} else
 				sentinel1 = sent;
 		}
 		if (sentinel2 == -1 || !terms[sentinel2].canFindFalse() || !terms[sentinel2].canFindTrue()) {
 			int sent = findSentinel();
 			if (sent == ENTAILED)
-				return entailed();
+				return entail();
 			if (sent == -1) {
 				if (sentinel1 == -1)
 					return event.dom.fail();
-				return terms[sentinel1].enforceTrue() && entailed();
+				return terms[sentinel1].enforceTrue() && entail();
 			} else
 				sentinel2 = sent;
 		}

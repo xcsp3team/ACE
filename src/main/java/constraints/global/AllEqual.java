@@ -99,7 +99,7 @@ public final class AllEqual extends ConstraintGlobal implements TagAC, TagCallCo
 	@Override
 	public boolean runPropagator(Variable x) {
 		if (remainingValues.size() == 1) // only one remaining value, so entailed
-			return entailed();
+			return entail();
 
 		// we look for a variable with a singleton domain
 		Variable y = x.dom.size() == 1 ? x : Variable.firstSingletonVariableIn(scp);
@@ -110,7 +110,7 @@ public final class AllEqual extends ConstraintGlobal implements TagAC, TagCallCo
 				if (z != y && z.dom.reduceToValue(v) == false)
 					return false;
 			remainingValues.reduceTo(map.get(v), problem.solver.depth());
-			return entailed();
+			return entail();
 		}
 		// we collect the set of removed values (since the last call) over all future variables
 		lastRemoved.clear();

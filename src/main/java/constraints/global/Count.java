@@ -169,7 +169,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 				for (Variable y : scp)
 					if (y != x && y.dom.removeValueIfPresent(value) == false)
 						return false;
-				return entailed();
+				return entail();
 			}
 		}
 		// ************************************************************************
@@ -212,7 +212,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 				for (int i = sentinels.limit; i >= 0; i--)
 					if (dense[i] != p && scp[dense[i]].dom.reduceToValue(value) == false)
 						return false;
-				return entailed();
+				return entail();
 			}
 		}
 
@@ -242,7 +242,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 						if (sentinel != null)
 							sentinel1 = sentinel;
 						else
-							return sentinel2.dom.reduceToValue(value) && entailed();
+							return sentinel2.dom.reduceToValue(value) && entail();
 						// before, was: if (sentinel2.dom.reduceToValue(value) == false) return false;
 					}
 				} else if (x == sentinel2) {
@@ -251,7 +251,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 						if (sentinel != null)
 							sentinel2 = sentinel;
 						else
-							return sentinel1.dom.reduceToValue(value) && entailed();
+							return sentinel1.dom.reduceToValue(value) && entail();
 						// before was: if (sentinel1.dom.reduceToValue(value) == false) return false;
 					}
 				}
@@ -303,7 +303,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 							toremove--;
 						}
 					}
-					return entailed();
+					return entail();
 				}
 				if (nPossibleOccurrences < k)
 					return x.dom.fail(); // inconsistency detected
@@ -317,7 +317,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 							toassign--;
 						}
 					}
-					return entailed();
+					return entail();
 				}
 				return true;
 			}
@@ -467,7 +467,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 								toremove--;
 							}
 						}
-						return entailed();
+						return entail();
 					}
 					if (vk == nPossibleOccurrences) {
 						int toassign = vk - nGuaranteedOccurrences;
@@ -479,7 +479,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 								toassign--;
 							}
 						}
-						return entailed();
+						return entail();
 					}
 				}
 				return true;

@@ -128,8 +128,8 @@ public abstract class DistinctLists extends ConstraintGlobal implements TagNotSy
 			if (dom1.size() > 1 && dom2.size() > 1)
 				return true;
 			if (dom1.size() == 1)
-				return dom2.removeValueIfPresent(dom1.singleValue()) && entailed();
-			return dom1.removeValueIfPresent(dom2.singleValue()) && entailed();
+				return dom2.removeValueIfPresent(dom1.singleValue()) && entail();
+			return dom1.removeValueIfPresent(dom2.singleValue()) && entail();
 		}
 
 		private boolean isGoodSentinel(Domain dom1, Domain dom2) {
@@ -151,7 +151,7 @@ public abstract class DistinctLists extends ConstraintGlobal implements TagNotSy
 			Domain dx1 = list1[sentinel1].dom, dx2 = list2[sentinel1].dom, dy1 = list1[sentinel2].dom, dy2 = list2[sentinel2].dom;
 			if (dx1.size() == 1 && dx2.size() == 1) { // possibly, sentinel1 is no more valid
 				if (dx1.singleValue() != dx2.singleValue())
-					return entailed();
+					return entail();
 				int sentinel = findAnotherSentinel();
 				if (sentinel != -1) {
 					sentinel1 = sentinel;
@@ -165,7 +165,7 @@ public abstract class DistinctLists extends ConstraintGlobal implements TagNotSy
 			}
 			if (dy1.size() == 1 && dy2.size() == 1) { // possibly, sentinel2 is no more valid
 				if (dy1.singleValue() != dy2.singleValue())
-					return entailed();
+					return entail();
 				int sentinel = findAnotherSentinel();
 				if (sentinel != -1) {
 					sentinel2 = sentinel;
