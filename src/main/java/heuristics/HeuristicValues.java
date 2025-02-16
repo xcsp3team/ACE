@@ -237,19 +237,35 @@ public abstract class HeuristicValues extends Heuristic {
 					} else if (dx.contains(a))
 						return a;
 				}
-			}
-		} else if (options.solutionSaving > 0 && !(this instanceof Bivs2) && solver.restarter.numRun >= options.solutionSavingStart) {
-			// note that solution saving may break determinism of search trees because it depends in which order domains
-			// are pruned (and become singleton or not)
-			if (options.solutionSaving == 1 || solver.restarter.numRun == 0 || solver.restarter.numRun % options.solutionSaving != 0) {
-				// every k runs, we do not use solution saving, where k is the value of solutionSaving (if k > 1)
-				// int a = -1; if (x == solver.impacting) a = dx.first(); else
-				if (!options.solutionSavingExceptObj || x.problem.optimizer == null || !((Constraint) x.problem.optimizer.ctr).involves(x)) {
-					int a = solver.solutions.last[x.num];
-					if (dx.contains(a)) // && (!priorityVar || solver.rs.random.nextDouble() < 0.5))
-						return a;
+			} else if (solver.sticking != null) {
+				int a = solver.sticking[x.num];
+				if (a != -1 && dx.contains(a)) {
+					if (options.stickingMode == 2)
+						solver.sticking[x.num] = -1;
+					return a;
 				}
 			}
+		} else { // at least one solution has been found
+			if (options.solutionSaving > 0 && !(this instanceof Bivs2) && solver.restarter.numRun >= options.solutionSavingStart) {
+				// note that solution saving may break determinism of search trees because it depends in which order domains
+				// are pruned (and become singleton or not)
+				if (options.solutionSaving == 1 || solver.restarter.numRun == 0 || solver.restarter.numRun % options.solutionSaving != 0) {
+					// every k runs, we do not use solution saving, where k is the value of solutionSaving (if k > 1)
+					// int a = -1; if (x == solver.impacting) a = dx.first(); else
+					if (!options.solutionSavingExceptObj || x.problem.optimizer == null || !((Constraint) x.problem.optimizer.ctr).involves(x)) {
+						int a = solver.solutions.last[x.num];
+						if (dx.contains(a)) // && (!priorityVar || solver.rs.random.nextDouble() < 0.5))
+							return a;
+					}
+				}
+			}
+			// if (solver.sticking != null) {
+			// int a = solver.sticking[x.num];
+			// if (a != -1 && dx.contains(a)) {
+			// solver.sticking[x.num] = -1;
+			// return a;
+			// }
+			// }
 		}
 		return computeBestValueIndex();
 	}

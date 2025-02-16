@@ -157,8 +157,8 @@ public abstract class Optimizer implements ObserverOnRuns {
 		return cub.objectiveValue();
 	}
 
-	public final long valueWithGap() {
-		return value() + gapBound;
+	public final long valueWithGap(long val ) {
+		return val + gapBound;
 	}
 
 	protected abstract void shiftLimitWhenSuccess();

@@ -92,6 +92,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Condition;
@@ -1148,6 +1149,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// other
 	private Matcher or2_and2 = new Matcher(node(OR, node(AND, any, any), node(AND, any, any)));
 
+	private Matcher lt_add_vars_val = new Matcher(node(TypeExpr.LT, add_vars, val));
+	private Matcher le_add_vars_val = new Matcher(node(TypeExpr.LE, add_vars, val));
+
 	private Condition basicCondition(XNodeParent<IVar> tree) {
 		if (!tree.type.isRelationalOperator() || tree.sons.length != 2)
 			return null;
@@ -1197,11 +1201,21 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		assert Variable.haveSameType(scp);
 
+		// Detecting some nogoods
 		if (howManyVariablesWithin(scp, options.spaceLimitToNogood) == Constants.ALL) {
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 			int[] conflict = evaluator.getUniqueConflict(Variable.initDomainValues(scp));
 			if (conflict != null) {
 				features.collecting.addNogood(scp, conflict);
+				return null;
+			}
+		}
+		if ((le_add_vars_val.matches(tree) || lt_add_vars_val.matches(tree)) && Stream.of(scp).allMatch(x -> x.dom.is01())) {
+			int[] max_values = Stream.of(scp).mapToInt(x -> x.dom.lastValue()).toArray();
+			int max_sum = Utilities.safeInt(IntStream.of(max_values).asLongStream().sum());
+			int limit = tree.val(0);
+			if ((tree.type == TypeExpr.LT && limit == max_sum) || (tree.type == TypeExpr.LE && limit == max_sum - 1)) {
+				features.collecting.addNogood(scp, max_values);
 				return null;
 			}
 		}
@@ -1577,7 +1591,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
-		//System.out.println("Tree remaining " + tree);
+		// System.out.println("Tree remaining " + tree);
 		return post(new ConstraintIntension(this, scp, tree));
 	}
 

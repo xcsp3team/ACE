@@ -82,6 +82,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					// continue;
 					if (x.dom.size() != 1)
 						bestScoredVariable.consider(x, scoreOptimizedOf(x));
+					else if (solver.sticking != null)
+						solver.sticking[x.num]=x.dom.single();
 				}
 			}
 			if (bestScoredVariable.variable == null) {

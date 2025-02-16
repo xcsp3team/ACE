@@ -33,6 +33,7 @@ import org.xcsp.modeler.entities.VarEntities.VarArray;
 import org.xcsp.modeler.entities.VarEntities.VarEntity;
 
 import constraints.Constraint;
+import dashboard.Output;
 import main.HeadExtraction;
 import problem.Problem;
 import solver.Solver.Stopping;
@@ -105,6 +106,10 @@ public final class Solutions {
 	private int[] hamming;
 
 	private int hammingOpt;
+
+	private String wckFirst;
+
+	private String wckLast;
 
 	/**
 	 * Class for outputting solutions in XML
@@ -264,8 +269,8 @@ public final class Solutions {
 		if (solver.head instanceof HeadExtraction) {
 			HeadExtraction head = (HeadExtraction) solver.head;
 			for (List<Constraint> core : head.cores) {
-				Color.GREEN.println("\nc CORE",
-						" #C=" + core.size() + " #V=" + core.stream().collect(Collectors.toCollection(LinkedHashSet::new)).size() + " => { " + Kit.join(core) + " }");
+				Color.GREEN.println("\nc CORE", " #C=" + core.size() + " #V=" + core.stream().collect(Collectors.toCollection(LinkedHashSet::new)).size()
+						+ " => { " + Kit.join(core) + " }");
 			}
 			Color.GREEN.println("d NRUNS " + head.nRuns);
 		} else {
@@ -288,10 +293,16 @@ public final class Solutions {
 						Color.GREEN.println("s SATISFIABLE");
 					if (!solver.head.control.general.xmlEachSolution && found > 0)
 						Color.GREEN.println("\nv", " " + xml.lastSolution());
-					Color.GREEN.println("\nd WRONG DECISIONS", " " + (solver.stats != null ? solver.stats.nWrongDecisions : 0));
+					Color.GREEN.println("\nd WRONG DECISIONS", " " + (solver.stats != null ? Output.numberFormat.format(solver.stats.nWrongDecisions) : 0));
 					Color.GREEN.println("d FOUND SOLUTIONS", " " + found);
 					if (framework == COP && found > 0)
 						Color.GREEN.println("d BOUND", " " + (bestBound + solver.problem.optimizer.gapBound));
+					if (found > 0) {
+						Color.GREEN.println("d WCK FIRST", wckFirst
+								+ (framework == COP ? " (" + Output.numberFormat.format(solver.problem.optimizer.valueWithGap(firstBound)) + ")" : ""));
+						Color.GREEN.println("d WCK LAST", " " + wckLast
+								+ (framework == COP ? " (" + Output.numberFormat.format(solver.problem.optimizer.valueWithGap(bestBound)) + ")" : ""));
+					}
 					if (fullExploration)
 						Color.GREEN.println("d COMPLETE EXPLORATION");
 					else
@@ -404,7 +415,7 @@ public final class Solutions {
 				long bound = solver.problem.optimizer.value();
 				if (solver.problem.optimizer.minimization && bound < bestBound || !solver.problem.optimizer.minimization && bound > bestBound) {
 					bestBound = bound;
-					Color.GREEN.println("o " + solver.problem.optimizer.valueWithGap(), "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
+					Color.GREEN.println("o " + solver.problem.optimizer.valueWithGap(bound), "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
 					record(null);
 				}
 			} else
@@ -413,16 +424,17 @@ public final class Solutions {
 		}
 		record(null);
 		solver.stats.times.onNewSolution();
-		if (solver.problem.framework == MAXCSP) {
-			int z = (int) Stream.of(solver.problem.constraints).filter(c -> !c.isSatisfiedByCurrentInstantiation()).count();
-			control(z < bestBound, () -> "z=" + z + " bb=" + bestBound);
-			bestBound = z;
-		} else if (solver.problem.optimizer != null) { // COP
+		String wck = solver.head.instanceStopwatch.wckTimeInSeconds();
+		if (found == 1) 
+			wckFirst = wck;
+		wckLast = wck;
+		
+		if (solver.problem.optimizer != null) { // COP
 			bestBound = solver.problem.optimizer.value();
-			if (found == 1)
+			if (found == 1) 
 				firstBound = bestBound;
-			Color.GREEN.println("o " + solver.problem.optimizer.valueWithGap(), "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()) + "  ham="
-					+ IntStream.of(hamming).sum() + " (" + Kit.join(hamming) + ")" + "  opth=" + hammingOpt);
+			Color.GREEN.println("o " + solver.problem.optimizer.valueWithGap(bestBound),
+					"  " + wck + "  ham=" + IntStream.of(hamming).sum() + " (" + Kit.join(hamming) + ")" + "  opth=" + hammingOpt);
 
 			// solver.restarter.currCutoff += 1; //20;
 			// System.out.println("h1 : " + Kit.join(h1) + " h2 : " + h2);

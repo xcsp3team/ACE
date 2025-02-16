@@ -32,7 +32,7 @@ import variables.Variable;
  * tuple formed by the values assigned to a second list. The filtering algorithm is derived from "Propagation algorithms
  * for lexicographic ordering constraints", Artificial Intelligence, 170(10): 803-834 (2006) by Alan M. Frisch, Brahim
  * Hnich, Zeynep Kiziltan, Ian Miguel, and Toby Walsh. The code below is quite close to the one that can be found in
- * Chapter 12 of "Constraint Networks", ISTE/Wiely (2009) by C. Lecoutre.
+ * Chapter 12 of "Constraint Networks", ISTE/Wiley (2009) by C. Lecoutre.
  * 
  * @author Christophe Lecoutre
  */

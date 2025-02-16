@@ -239,12 +239,8 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 			super(x, anti);
 		}
 
-		int cnt = 0;
-
 		@Override
 		public double scoreOf(int a) {
-			if (cnt % 100 == 0)
-				System.out.println(x + " :" + assignments);
 			return assignments.nPerValue[a] == 0 ? 0 : assignments.nFailedPerValue[a] / (double) assignments.nPerValue[a];
 		}
 	}

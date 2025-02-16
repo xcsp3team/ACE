@@ -513,7 +513,7 @@ public final class Kit {
 		 *            a string to be displayed in classical white color
 		 */
 		public void println(String coloredPart, String uncoloredPart) {
-			System.out.println(coloring(coloredPart) + uncoloredPart);
+			System.out.println(coloring(coloredPart) + " " + uncoloredPart);
 		}
 
 		/**

@@ -688,6 +688,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 * The object that allows us to apply the technique called "run progress saving"
 	 */
 	public final RunProgressSaver runProgressSaver;
+	
+	public final int[] sticking;
+	
 
 	/**
 	 * The object that allows us to guide search from an instantiation (solution) given by the user
@@ -804,6 +807,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		this.stats = new Statistics(this);
 
 		this.runProgressSaver = head.control.valh.runProgressSaving ? new RunProgressSaver() : null;
+		this.sticking = head.control.valh.stickingMode > 0 ? Stream.of(problem.variables).mapToInt(x -> -1).toArray() : null;
+		
 		this.warmStarter = head.control.valh.warmStart.length() > 0 ? new WarmStarter(head.control.valh.warmStart) : null;
 		this.lostReasoner = head.control.varh.lostDepth > 0 ? new LostReasoner() : null;
 

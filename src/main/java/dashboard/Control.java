@@ -422,7 +422,7 @@ public final class Control {
 		public final long seed = addL("seed", "seed", 0, "The seed that can be used for some random-based methods.");
 		public int verbose = addI("verbose", "v", 0, "Verbosity level (value between -1 and 3)" + s_verbose);
 		public final boolean runRobin = addB("runRobin", "rr", false, "Using a Run Robin search strategy");
-		public final boolean profiling = addB("profiling", "prof", false, "Using a profiler?");
+		public final boolean profiling = addB("profiling", "prof", false, "Using some very basic profiling information?");
 	}
 
 	public class OptionsProblem extends OptionGroup {
@@ -592,7 +592,7 @@ public final class Control {
 
 	public class OptionsLearning extends OptionGroup {
 		public final LearningNogood nogood = addE("nogood", "ng", LearningNogood.RST, "Nogood recording technique (from restarts by default)");
-		public final int nogoodBaseLimit = addI("nogoodBaseLimit", "ngbl", 500000, "The maximum number of nogoods that can be stored in the base");
+		public final int nogoodBaseLimit = addI("nogoodBaseLimit", "ngbl", 1_000_000, "The maximum number of nogoods that can be stored in the base");
 		public final int nogoodArityLimit = addI("nogoodArityLimit", "ngal", Integer.MAX_VALUE, "The maximum arity of a nogood that can be recorded");
 		public final LearningIps ips = addE("ips", "", LearningIps.NO, "IPS extraction technique (currently, no such learning by default)");
 		public final String ipsOperators = addS("ipsOperators", "ipso", "11011", "Reduction operators for IPSs; a sequence of 5 bits is used");
@@ -671,6 +671,8 @@ public final class Control {
 		public final int bivsLimit = addI("bivsLimit", "bivs_l", Integer.MAX_VALUE, "BIVS applied only if the domain size is <= this value");
 		public final boolean optValHeuristic = addB("optValHeuristic", "ovalh", false, ""); // experimental
 		public final boolean antiCBval = addB("antiCBval", "acbv", false, "Must we use anti CBval?");
+		
+		public final int stickingMode = addI("stickingMode", "stk", 0, "Must we use sticking a sticky mode (0 for none)?");
 	}
 
 	public class OptionsExtraction extends OptionGroup {

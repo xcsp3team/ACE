@@ -135,7 +135,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	/**
 	 * An object for formatting numbers when outputting
 	 */
-	private static NumberFormat numberFormat = NumberFormat.getInstance();
+	public static NumberFormat numberFormat = NumberFormat.getInstance();
 
 	/**
 	 * An object for formatting decimal numbers when outputting
