@@ -2022,7 +2022,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	public final void autolex(Var[] list, boolean strict) {
-		new AutoLex(this, translate(list), strict);
+		new AutoLex(this, translate(list), new int[]{0}, strict);
+	}
+
+	public final void autolex(Var[] list, int[] pattern, boolean strict) {
+		new AutoLex(this, translate(list), pattern, strict);
 	}
 
 	/**

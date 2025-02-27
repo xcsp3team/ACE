@@ -923,7 +923,11 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 		} else if (form.equals("AutoLex")) {
 			XVarInteger[] list = (XVarInteger[]) map.get("list");
 			boolean strict = (long) map.get("value") != 0;
-			problem.autolex(trVars(list), strict);
+			int[] pattern = (int[]) map.get("coeffs");
+			if(pattern == null)
+				problem.autolex(trVars(list), strict);
+			else
+				problem.autolex(trVars(list), pattern, strict);
 		}
 	}
 
