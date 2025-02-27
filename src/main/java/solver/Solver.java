@@ -688,9 +688,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 * The object that allows us to apply the technique called "run progress saving"
 	 */
 	public final RunProgressSaver runProgressSaver;
-	
+
 	public final int[] sticking;
-	
 
 	/**
 	 * The object that allows us to guide search from an instantiation (solution) given by the user
@@ -808,7 +807,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 
 		this.runProgressSaver = head.control.valh.runProgressSaving ? new RunProgressSaver() : null;
 		this.sticking = head.control.valh.stickingMode > 0 ? Stream.of(problem.variables).mapToInt(x -> -1).toArray() : null;
-		
+
 		this.warmStarter = head.control.valh.warmStart.length() > 0 ? new WarmStarter(head.control.valh.warmStart) : null;
 		this.lostReasoner = head.control.varh.lostDepth > 0 ? new LostReasoner() : null;
 
@@ -910,7 +909,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 *            the index of a value in the domain of x
 	 * @return false if an inconsistency is detected
 	 */
-	protected final boolean tryAssignment(Variable x, int a) {
+	private final boolean tryAssignment(Variable x, int a, boolean knownAsInconsistent) {
 		boolean b = false; // TODO temporary
 		if (b && x.heuristic instanceof Bivs) {
 			SetDense inconsistent = ((Bivs) x.heuristic).inconsistent;
@@ -932,7 +931,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		for (ObserverOnDecisions observer : observersOnDecisions)
 			observer.beforePositiveDecision(x, a);
 		assign(x, a);
-		boolean consistent = propagation.runAfterAssignment(x) && (ipsReasoner == null || ipsReasoner.whenOpeningNode());
+		boolean consistent = knownAsInconsistent ? false : propagation.runAfterAssignment(x) && (ipsReasoner == null || ipsReasoner.whenOpeningNode());
 		if (!consistent) {
 			for (ObserverOnAssignments observer : observersOnAssignments)
 				observer.afterFailedAssignment(x, a);
@@ -951,11 +950,11 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 *            a variable
 	 * @return false if an inconsistency is detected
 	 */
-	private final boolean tryAssignment() {
-		Variable x = heuristic.bestVariable();
-		int a = x.heuristic.bestValueIndex();
-		return tryAssignment(x, a);
-	}
+	// private final boolean tryAssignment() {
+	// Variable x = heuristic.bestVariable();
+	// int a = x.heuristic.bestValueIndex();
+	// return tryAssignment(x, a);
+	// }
 
 	/**
 	 * Performs a negative decision, x != a, followed by constraint propagation
@@ -966,7 +965,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 *            the index of a value in the domain of x
 	 * @return false if an inconsistency is detected
 	 */
-	protected final boolean tryRefutation(Variable x, int a) {
+	private final boolean tryRefutation(Variable x, int a) {
 		if (x.dom instanceof DomainInfinite)
 			return false;
 
@@ -1006,22 +1005,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			else {
 				int a = x.dom.single();
 				backtrack(x);
-				consistent = tryRefutation(x, a) && propagation.propagate(oc);
+				consistent = x.dom.size() == 1 ? false : tryRefutation(x, a) && propagation.propagate(oc);
 			}
 		}
-	}
-
-	private Variable residue;
-
-	private Variable oneUnfixed() {
-		if (residue != null && residue.dom.size() > 1)
-			return residue;
-		for (Variable x : problem.variables)
-			if (x.dom.size() > 1) {
-				residue = x;
-				return x;
-			}
-		return null;
 	}
 
 	/**
@@ -1030,35 +1016,46 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	protected void explore() {
 		maxDepth = 0;
 		while (!finished() && !restarter.currRunFinished()) {
-			while (!finished() && !restarter.currRunFinished()) {
-				if (futVars.size() == 0)
-					// if (oneUnfixed() == null || futVars.size() == 0)
-					break;
+			boolean foundSolution = false;
+			while (!foundSolution && !finished() && !restarter.currRunFinished()) {
 				maxDepth = Math.max(maxDepth, depth());
-				if (tryAssignment() == false)
-					manageContradiction(null);
+				Variable x = heuristic.bestVariable();
+				if (x == Variable.TAG) { // meaning all variables are fixed
+					assert Stream.of(problem.variables).allMatch(y -> y.dom.size() == 1);
+					assert Stream.of(problem.constraints).allMatch(c -> c.isSatisfiedByCurrentInstantiation());
+					foundSolution = true;
+
+					// boolean consistent = true;
+					// for (Constraint c : problem.constraints)
+					// if (c.isSatisfiedByCurrentInstantiation() == false) { consistent = false; break; }
+					// if (consistent == false) {
+					// x = futVars.lastPast();
+					// int a = x.dom.single();
+					// backtrack(x);
+					// tryAssignment(x, a, !consistent); // we replay it while showing it is inconsistent
+					// manageContradiction(null);
+					// }
+					// else foundSolution = true; // break;
+
+				} else {
+					int a = x.heuristic.bestValueIndex();
+					boolean consistent = tryAssignment(x, a, false);
+					if (consistent == false)
+						manageContradiction(null);
+					else if (futVars.size() == 0)
+						foundSolution = true; // break;
+				}
 			}
-			if (futVars.size() == 0) {
-				// if (oneUnfixed() == null || futVars.size() == 0) {
+			if (foundSolution) { // (futVars.size() == 0) {
 				solutions.handleNewSolution();
 				boolean copContinue = problem.framework == COP && !head.control.restarts.restartAfterSolution;
-				ConstraintGlobal oc = copContinue ? (ConstraintGlobal) problem.optimizer.ctr : null;
-				// oc is the objective constraint
+				ConstraintGlobal oc = copContinue ? (ConstraintGlobal) problem.optimizer.ctr : null; // oc is the objective constraint
 				if (copContinue) {
 					// first, we directly change the limit value of the leading objective constraint
 					problem.optimizer.ctr.limit(
 							problem.optimizer.ctr.objectiveValue() + (problem.optimizer.minimization ? -1 : 1) * head.control.optimization.boundDescentCoeff);
-					// next, we backtrack to the level where a value for a variable in the scope of the objective was
-					// removed for the last time
-					int backtrackLevel = -1;
-					for (int i = 0; i < oc.scp.length; i++) {
-						// variables (of the objective) from the last to the first assigned
-						Variable x = oc.scp[oc.futvars.dense[i]];
-						if (x.assignmentLevel <= backtrackLevel)
-							break;
-						backtrackLevel = Math.max(backtrackLevel, x.dom.lastRemovedLevel());
-					}
-					// assert backtrackLevel != -1;
+					// next, we backtrack to the level where a value for a variable in the scope of the objective was removed for the last time
+					int backtrackLevel = oc.getLevelOfLastRemovedValueInScope();
 					if (backtrackLevel == -1)
 						backtrack(futVars.lastPast());
 					else
@@ -1066,10 +1063,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 							backtrack(futVars.lastPast());
 					// check with java -ea ace Photo.xml.lzma -ev ; java -ea ace Recipe.xml.lzma
 				}
-				if (problem.framework == COP) {
-					// && isEntailed(objectiveCtr)) TODO why is-it incorrect to use the second part of the test?
+				if (problem.framework == COP) // && isEntailed(objectiveCtr)) TODO why is-it incorrect to use the second part of the test?
 					entailed.clear();
-				}
 				if (!finished() && !restarter.currRunFinished())
 					manageContradiction(oc);
 			}

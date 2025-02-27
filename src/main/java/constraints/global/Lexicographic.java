@@ -28,10 +28,9 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This constraint ensures that the tuple formed by the values assigned to a first list is less than (or equal to) the
- * tuple formed by the values assigned to a second list. The filtering algorithm is derived from "Propagation algorithms
- * for lexicographic ordering constraints", Artificial Intelligence, 170(10): 803-834 (2006) by Alan M. Frisch, Brahim
- * Hnich, Zeynep Kiziltan, Ian Miguel, and Toby Walsh. The code below is quite close to the one that can be found in
+ * This constraint ensures that the tuple formed by the values assigned to a first list is less than (or equal to) the tuple formed by the values assigned to a
+ * second list. The filtering algorithm is derived from "Propagation algorithms for lexicographic ordering constraints", Artificial Intelligence, 170(10):
+ * 803-834 (2006) by Alan M. Frisch, Brahim Hnich, Zeynep Kiziltan, Ian Miguel, and Toby Walsh. The code below is quite close to the one that can be found in
  * Chapter 12 of "Constraint Networks", ISTE/Wiley (2009) by C. Lecoutre.
  * 
  * @author Christophe Lecoutre
@@ -70,8 +69,8 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 	}
 
 	/**
-	 * This field indicates if the ordering between the two lists must be strictly respected; if true then we have to
-	 * enforce <= (le), otherwise we have to enforce < (lt)
+	 * This field indicates if the ordering between the two lists must be strictly respected; if true then we have to enforce <= (le), otherwise we have to
+	 * enforce < (lt)
 	 */
 	protected final boolean strictOrdering;
 
@@ -140,6 +139,8 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 		 */
 		private final int[] lex_vals;
 
+		private int alphaSafe;
+
 		/**
 		 * Build a constraint Lexicographic for the specified problem over the two specified lists of variables
 		 * 
@@ -188,8 +189,8 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 		}
 
 		@Override
-		public boolean runPropagator(Variable dummy) {
-			int alpha = 0;
+		public final boolean runPropagator(Variable dummy) {
+			int alpha = alphaSafe;
 			while (alpha < half) {
 				Domain dom1 = list1[alpha].dom, dom2 = list2[alpha].dom;
 				if (AC.enforceLE(dom1, dom2) == false) // enforce (AC on) x <= y (list1[alpha] <= list2[alpha])
@@ -211,6 +212,8 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 						if (dom1.removeValue(max1) == false)
 							return false;
 					assert dom1.firstValue() < dom2.lastValue();
+					if (problem.solver.depth() == 0)
+						alphaSafe = alpha;
 					return true;
 				}
 			}

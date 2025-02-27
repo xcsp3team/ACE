@@ -616,8 +616,6 @@ public class AC extends Forward {
 			return false;
 		preproRemovals = solver.problem.nValueRemovals - nBefore;
 		assert controlAC();
-		// for (Variable x : solver.problem.variables)
-		// x.dom.display(0);
 		return true;
 	}
 
@@ -636,7 +634,7 @@ public class AC extends Forward {
 		// was already singleton (no removed value at the current depth) and AC was already guaranteed.
 		// TODO : the control could be more precise? (is there a constraint for which there is a problem to have
 		// explicitly one less future variable?)
-		if (getClass() != AC.class || x.dom.lastRemovedLevel() == solver.depth() || !guaranteed || !hasSolverPropagatedAfterLastButOneDecision()) {
+		if (getClass() != AC.class || x.dom.lastRemovedLevel() == solver.depth() || !hasSolverPropagatedAfterLastButOneDecision() || !guaranteed) {
 			queue.add(x);
 			if (propagate() == false)
 				return false;

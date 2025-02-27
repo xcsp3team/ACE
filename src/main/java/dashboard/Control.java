@@ -640,6 +640,7 @@ public final class Control {
 		public String clazz = addS("clazz", "varh", Wdeg.class, HeuristicVariables.class, "Class of the variable ordering heuristic");
 		public final boolean anti = addB("anti", "anti_varh", false, "Must we use the reverse of the natural heuristic order?");
 		public final int lc = addI("lc", "lc", 2, "Value for lc (last conflict); 0 if not activated");
+		public final boolean lc1 = addB("lc1", "lc1", true, "Follow lc even if singleton domain?");
 		public ConstraintWeighting weighting = addE("weighting", "wt", ConstraintWeighting.CACD, "How to manage weights for wdeg variants");
 		public final int pickMode = addI("pickMode", "pm", 0, "How to manage incrementation of effective picked variables or constraints during propagation");
 		public final boolean mvarh = addB("mvarh", "mvarh", false, "Must we just maintain an approximation of the best scored variable?");
@@ -652,6 +653,7 @@ public final class Control {
 		public final int lostSize = addI("lostSize", "ls", 4, "xx");
 		public final int optVarHeuristic = addI("optVarHeuristic", "ovarh", 0,
 				"On how many variables must we branch in a fixed static way on ther variables of the objective (when a weighted sum) according to coeff values?"); // experimental
+		public final boolean alwaysAssignAllVariables = addB("alwaysAssignAllVariables", "aaa", false, "Must we always explicitly assign all variables?");
 	}
 
 	public class OptionsValh extends OptionGroup {
@@ -661,7 +663,8 @@ public final class Control {
 		public final boolean antiRunProgressSaving = addB("antiRunProgressSaving", "arps", false, "Must we use run anti progress saving?");
 
 		public final int solutionSaving = addI("solutionSaving", "sos", 1, "Solution saving (0: disabled, 1: enabled, otherwise desactivation period");
-		public final boolean solutionSavingExceptObj = addB("solutionSavingExceptObj", "sos_eo", false, "Must we discard variables of the objective function for sos?");
+		public final boolean solutionSavingExceptObj = addB("solutionSavingExceptObj", "sos_eo", false,
+				"Must we discard variables of the objective function for sos?");
 		public int solutionSavingStart = addI("solutionSavingStart", "sos_st", -1, "At which run solution saving must be activated?");
 		public final String warmStart = addS("warmStart", "warm", "", "A starting instantiation (solution) to be used with solution saving");
 
@@ -671,7 +674,7 @@ public final class Control {
 		public final int bivsLimit = addI("bivsLimit", "bivs_l", Integer.MAX_VALUE, "BIVS applied only if the domain size is <= this value");
 		public final boolean optValHeuristic = addB("optValHeuristic", "ovalh", false, ""); // experimental
 		public final boolean antiCBval = addB("antiCBval", "acbv", false, "Must we use anti CBval?");
-		
+
 		public final int stickingMode = addI("stickingMode", "stk", 0, "Must we use sticking a sticky mode (0 for none)?");
 	}
 

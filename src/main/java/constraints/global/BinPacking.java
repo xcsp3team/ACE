@@ -368,8 +368,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 		@Override
 		public boolean runPropagator(Variable x) {
 			if (futvars.size() == 0) {
-				// assert isSatisfiedBy(Stream.of(scp).mapToInt(y -> y.dom.singleValue()).toArray()); TODO: are we
-				// sure?
+				// assert isSatisfiedBy(Stream.of(scp).mapToInt(y -> y.dom.singleValue()).toArray()); TODO: are we sure?
 				return true;
 			}
 			// we call the super propagator after setting the highest possible limits

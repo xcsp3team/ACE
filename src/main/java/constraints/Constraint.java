@@ -245,20 +245,6 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * @param ctrs
-	 *            an array of constraints
-	 * @return the sum of costs of all constraints in the specified array that are covered by the current instantiation
-	 */
-	public static final long costOfCoveredConstraintsIn(Constraint[] ctrs) {
-		// note that using streams is costly
-		long cost = 0;
-		for (Constraint c : ctrs)
-			if (!c.ignored && c.futvars.size() == 0)
-				cost = Kit.addSafe(cost, c.costOfCurrentInstantiation());
-		return cost;
-	}
-
-	/**
 	 * Builds and returns a table with all tuples (instantiations) satisfying the specified constraints. Note that it may lead to a combinatorial explosion.
 	 * 
 	 * @param ctrs
@@ -574,7 +560,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	}
 
 	/**
-	 * @return sets this constraint as being entailed (if not yet), and returns true  
+	 * @return sets this constraint as being entailed (if not yet), and returns true
 	 */
 	public final boolean entail() {
 		problem.solver.entail(this);
@@ -931,6 +917,23 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		return seekFirstSupportWith(x, a);
 	}
 
+	public final int getLevelOfLastRemovedValueInScope() {
+		int backtrackLevel = -1;
+		// we consider first the explicitly assigned variables (i.e., not future variables)
+		for (int i = futvars.limit + 1; i < scp.length; i++) { // variables from the last to the first assigned
+			Variable x = scp[futvars.dense[i]];
+			if (x.assignmentLevel <= backtrackLevel)
+				break;
+			backtrackLevel = Math.max(backtrackLevel, x.dom.lastRemovedLevel());
+		}
+		// we update with respect to the domain of the future variables (if any)
+		for (int i = futvars.limit; i >= 0; i--) {
+			Variable x = scp[futvars.dense[i]];
+			backtrackLevel = Math.max(backtrackLevel, x.dom.lastRemovedLevel());
+		}
+		return backtrackLevel;
+	}
+
 	/**********************************************************************************************
 	 * Methods related to filtering
 	 *********************************************************************************************/
@@ -966,8 +969,19 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 * @return false if an inconsistency is detected
 	 */
 	private boolean genericFiltering(Variable x) {
-		if (futvars.size() > genericFilteringThreshold)
-			return true;
+		if (futvars.size() > genericFilteringThreshold) {
+			int nNonSingletons = 0;
+			double prod = 1;
+			for (int i = futvars.limit; i >= 0; i--) {
+				Variable y = scp[futvars.dense[i]];
+				if (y.dom.size() > 1) {
+					nNonSingletons++;
+					prod = prod * y.dom.size();
+					if (nNonSingletons > 1 && prod > 10_000) // hard coding : if at least two unfixed variables and space > 10 000
+						return true;
+				}
+			}
+		}
 		Reviser reviser = ((Forward) problem.solver.propagation).reviser;
 		if (x.assigned()) {
 			for (int i = futvars.limit; i >= 0; i--)
@@ -1004,9 +1018,6 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 			return true;
 		// For CSP, sometimes we can directly return true (because we know then that there is no filtering possibility)
 		if (problem.framework == TypeFramework.CSP) {
-			// TODO if the condition is replaced by != TypeFramework.MACSP, there is a pb with:
-			// java -ea ac PlaneparkingTask.xml -ea -cm=false -ev -trace
-			// possibly too with GraphColoring-sum-GraphColoring_1-fullins-3.xml.lzma
 			if (futvars.size() == 0) {
 				assert !isGuaranteedAC() || isSatisfiedByCurrentInstantiation() : "Unsatisfied constraint " + this + "while AC should be guaranteed";
 				return isGuaranteedAC() || isSatisfiedByCurrentInstantiation();

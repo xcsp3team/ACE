@@ -67,9 +67,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 		if (options.lc > 0) { // if last-conflict mode
 			Variable x = solver.lastConflict.priorityVariable();
-			if (x != null) {
+			if (x != null && (options.lc1 || x.dom.size() > 1))
 				return x;
-			}
 		}
 		bestScoredVariable.reset(false);
 		if (options.singleton == SingletonStrategy.LAST) {
@@ -83,8 +82,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					if (x.dom.size() != 1)
 						bestScoredVariable.consider(x, scoreOptimizedOf(x));
 					else if (solver.sticking != null)
-						solver.sticking[x.num]=x.dom.single();
+						solver.sticking[x.num] = x.dom.single();
 				}
+				if (bestScoredVariable.variable == null && !options.alwaysAssignAllVariables)
+					return Variable.TAG;
 			}
 			if (bestScoredVariable.variable == null) {
 				lastDepthWithOnlySingletons = solver.depth();
@@ -183,7 +184,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			if (runReset()) {
-				resettingMessage("stats"); 
+				resettingMessage("stats");
 				reset();
 			}
 		}

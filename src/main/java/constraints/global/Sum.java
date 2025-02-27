@@ -211,8 +211,12 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			return sum;
 		}
 
+		protected final int maxGap;
+
 		public SumSimple(Problem pb, Variable[] scp, long limit) {
 			super(pb, scp);
+			this.maxGap = Stream.of(scp).mapToInt(x -> Math.abs(x.dom.lastValue() - x.dom.firstValue())).max().getAsInt();
+
 			control(Variable.areAllDistinct(scp), "" + Utilities.join(scp));
 			control(minComputableObjectiveValue() <= maxComputableObjectiveValue());
 			setLimit(limit);
@@ -299,17 +303,19 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					}
 					return x == null ? false : x.dom.fail();
 				}
-				for (int i = futvars.limit; i >= 0; i--) {
-					Domain dom = scp[futvars.dense[i]].dom;
-					if (dom.size() == 1)
-						continue;
-					max -= dom.lastValue();
-					dom.removeValuesGT(limit - (min - dom.firstValue()));
-					assert dom.size() > 0;
-					max += dom.lastValue();
-					if (max <= limit)
-						return entail();
-				}
+				boolean useless = min + maxGap <= limit;
+				if (!useless)
+					for (int i = futvars.limit; i >= 0; i--) {
+						Domain dom = scp[futvars.dense[i]].dom;
+						if (dom.size() == 1)
+							continue;
+						max -= dom.lastValue();
+						dom.removeValuesGT(limit - (min - dom.firstValue()));
+						assert dom.size() > 0;
+						max += dom.lastValue();
+						if (max <= limit)
+							return entail();
+					}
 				return true;
 			}
 
@@ -364,17 +370,19 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					return entail();
 				if (max < limit)
 					return x == null ? false : x.dom.fail();
-				for (int i = futvars.limit; i >= 0; i--) {
-					Domain dom = scp[futvars.dense[i]].dom;
-					if (dom.size() == 1)
-						continue;
-					min -= dom.firstValue();
-					dom.removeValuesLT(limit - (max - dom.lastValue()));
-					assert dom.size() > 0;
-					min += dom.firstValue();
-					if (min >= limit)
-						return entail();
-				}
+				boolean useless = limit <= max - maxGap;
+				if (!useless)
+					for (int i = futvars.limit; i >= 0; i--) {
+						Domain dom = scp[futvars.dense[i]].dom;
+						if (dom.size() == 1)
+							continue;
+						min -= dom.firstValue();
+						dom.removeValuesLT(limit - (max - dom.lastValue()));
+						assert dom.size() > 0;
+						min += dom.firstValue();
+						if (min >= limit)
+							return entail();
+					}
 				return true;
 			}
 
@@ -411,7 +419,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				recomputeBounds();
 				if (limit < min || limit > max)
 					return evt.dom.fail();
-				if (futvars.size() > 0) {
+				boolean useless = min + maxGap <= limit && limit <= max - maxGap;
+				if (futvars.size() > 0 && !useless) { // if (futvars.size() > 0) {
 					int lastModified = futvars.limit, i = futvars.limit;
 					do {
 						Domain dom = scp[futvars.dense[i]].dom;
@@ -655,11 +664,14 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 		public final int[] coeffs;
 
+		protected final int maxGap;
+
 		public SumWeighted(Problem pb, Variable[] scp, int[] coeffs, long limit) {
 			super(pb, scp);
 			this.coeffs = coeffs;
-			control(minPossibleSum(scp, coeffs) <= maxPossibleSum(scp, coeffs)); // Important: we check this way that no
-																					// overflow is possible
+			this.maxGap = IntStream.range(0, scp.length).map(i -> Math.abs(coeffs[i] * scp[i].dom.distance())).max().getAsInt();
+
+			control(minPossibleSum(scp, coeffs) <= maxPossibleSum(scp, coeffs)); // Important: we check this way that no overflow is possible
 			setLimit(limit);
 			defineKey(coeffs, limit);
 			control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])), () -> "" + Kit.join(coeffs));
@@ -761,29 +773,27 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					}
 					return x == null ? false : x.dom.fail();
 				}
-				// boolean test = false;
-				// if (test)
-				for (int i = futvars.limit; i >= 0; i--) {
-					// if (futvars.dense[i] == 0)
-					// continue; // TTTTTTT just test
-					Domain dom = scp[futvars.dense[i]].dom;
-					if (dom.size() == 1)
-						continue;
-					int coeff = coeffs[futvars.dense[i]];
-					if (coeff >= 0) {
-						max -= dom.lastValue() * coeff;
-						dom.removeValues(GT, limit - (min - dom.firstValue() * coeff), coeff);
-						assert dom.size() > 0;
-						max += dom.lastValue() * coeff;
-					} else {
-						max -= dom.firstValue() * coeff;
-						dom.removeValues(GT, limit - (min - dom.lastValue() * coeff), coeff);
-						assert dom.size() > 0;
-						max += dom.firstValue() * coeff;
+				boolean useless = min + maxGap <= limit;
+				if (!useless)
+					for (int i = futvars.limit; i >= 0; i--) {
+						Domain dom = scp[futvars.dense[i]].dom;
+						if (dom.size() == 1)
+							continue;
+						int coeff = coeffs[futvars.dense[i]];
+						if (coeff >= 0) {
+							max -= dom.lastValue() * coeff;
+							dom.removeValues(GT, limit - (min - dom.firstValue() * coeff), coeff);
+							assert dom.size() > 0;
+							max += dom.lastValue() * coeff;
+						} else {
+							max -= dom.firstValue() * coeff;
+							dom.removeValues(GT, limit - (min - dom.lastValue() * coeff), coeff);
+							assert dom.size() > 0;
+							max += dom.firstValue() * coeff;
+						}
+						if (max <= limit)
+							return entail();
 					}
-					if (max <= limit)
-						return entail();
-				}
 				return true;
 			}
 
@@ -800,8 +810,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
-				// TODO no overflow control performed for the moment
-				return weightedSum(t, coeffs) >= limit;
+				return weightedSum(t, coeffs) >= limit; // TODO no overflow control performed for the moment
 			}
 
 			@Override
@@ -822,25 +831,27 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					return entail();
 				if (max < limit)
 					return x == null ? false : x.dom.fail();
-				for (int i = futvars.limit; i >= 0; i--) {
-					Domain dom = scp[futvars.dense[i]].dom;
-					if (dom.size() == 1)
-						continue;
-					int coeff = coeffs[futvars.dense[i]];
-					if (coeff >= 0) {
-						min -= dom.firstValue() * coeff;
-						dom.removeValues(LT, limit - (max - dom.lastValue() * coeff), coeff);
-						assert dom.size() > 0;
-						min += dom.firstValue() * coeff;
-					} else {
-						min -= dom.lastValue() * coeff;
-						dom.removeValues(LT, limit - (max - dom.firstValue() * coeff), coeff);
-						assert dom.size() > 0;
-						min += dom.lastValue() * coeff;
+				boolean useless = limit <= max - maxGap;
+				if (!useless)
+					for (int i = futvars.limit; i >= 0; i--) {
+						Domain dom = scp[futvars.dense[i]].dom;
+						if (dom.size() == 1)
+							continue;
+						int coeff = coeffs[futvars.dense[i]];
+						if (coeff >= 0) {
+							min -= dom.firstValue() * coeff;
+							dom.removeValues(LT, limit - (max - dom.lastValue() * coeff), coeff);
+							assert dom.size() > 0;
+							min += dom.firstValue() * coeff;
+						} else {
+							min -= dom.lastValue() * coeff;
+							dom.removeValues(LT, limit - (max - dom.firstValue() * coeff), coeff);
+							assert dom.size() > 0;
+							min += dom.lastValue() * coeff;
+						}
+						if (min >= limit)
+							return entail();
 					}
-					if (min >= limit)
-						return entail();
-				}
 				return true;
 			}
 
@@ -869,7 +880,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			public SumWeightedEQ(Problem pb, Variable[] scp, int[] coeffs, long limit) {
 				super(pb, scp, coeffs, limit);
 				this.ac = Stream.of(scp).allMatch(x -> x.dom.initSize() <= 2); // in this case, bounds consistency is AC
-				this.degraded = Variable.nInitValuesFor(scp) > RUNNING_LIMIT;
+				this.degraded = false; // Variable.nInitValuesFor(scp) > RUNNING_LIMIT;
 			}
 
 			@Override
@@ -880,10 +891,11 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			@Override
 			public boolean runPropagator(Variable x) {
 				recomputeBounds();
-				if (limit < min || limit > max)
+				if (limit < min || max < limit)
 					return x.dom.fail();
+				boolean useless = min + maxGap <= limit && limit <= max - maxGap;
 				// if (!degraded || Variable.nValidValuesFor(scp) <= RUNNING_LIMIT)
-				if (futvars.size() > 0) {
+				if (futvars.size() > 0 && !useless) {
 					int lastModified = futvars.limit, i = futvars.limit;
 					do {
 						Domain dom = scp[futvars.dense[i]].dom;
@@ -894,9 +906,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 							max -= coeff * (coeff >= 0 ? dom.lastValue() : dom.firstValue());
 							if (dom.removeValues(LT, limit - max, coeff) == false || dom.removeValues(GT, limit - min, coeff) == false)
 								return false;
-							// if (sizeBefore != dom.size())
-							// System.out.println("sizeBef=" + sizeBefore + " nRems=" + (sizeBefore - dom.size()));
-							// lastModified = i;
+							if (sizeBefore != dom.size())
+								lastModified = i;
 							min += coeff * (coeff >= 0 ? dom.firstValue() : dom.lastValue());
 							max += coeff * (coeff >= 0 ? dom.lastValue() : dom.firstValue());
 						}

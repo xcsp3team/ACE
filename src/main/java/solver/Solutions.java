@@ -12,12 +12,12 @@ package solver;
 
 import static org.xcsp.common.Types.TypeFramework.COP;
 import static org.xcsp.common.Types.TypeFramework.CSP;
-import static org.xcsp.common.Types.TypeFramework.MAXCSP;
 import static utility.Kit.control;
 import static utility.Kit.log;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -33,6 +33,7 @@ import org.xcsp.modeler.entities.VarEntities.VarArray;
 import org.xcsp.modeler.entities.VarEntities.VarEntity;
 
 import constraints.Constraint;
+import dashboard.Control.OptionsGeneral;
 import dashboard.Output;
 import main.HeadExtraction;
 import problem.Problem;
@@ -282,26 +283,27 @@ public final class Solutions {
 					if (solver.profiler != null)
 						solver.profiler.display(solver.problem.constraints);
 					System.out.println();
-					if (solver.head.control.general.verbose >= 0 && found > 0 && solver.problem.variables.length <= solver.head.control.general.jsonLimit)
-						System.out.println(
-								"\n  Solution " + found + " in JSON format:\n" + lastSolutionInJsonFormat(solver.head.control.general.jsonQuotes) + "\n");
+					OptionsGeneral options = solver.head.control.general;
+					if (options.verbose >= 0 && found > 0 && solver.problem.variables.length <= options.jsonLimit)
+						System.out.println("\n  Solution " + found + " in JSON format:\n" + lastSolutionInJsonFormat(options.jsonQuotes) + "\n");
 					if (fullExploration)
 						Color.GREEN.println(found == 0 ? "s UNSATISFIABLE" : framework == COP ? "s OPTIMUM FOUND" : "s SATISFIABLE");
 					else if (found == 0)
 						Color.RED.println("s UNKNOWN");
 					else
 						Color.GREEN.println("s SATISFIABLE");
-					if (!solver.head.control.general.xmlEachSolution && found > 0)
+					if (!options.xmlEachSolution && found > 0)
 						Color.GREEN.println("\nv", " " + xml.lastSolution());
-					Color.GREEN.println("\nd WRONG DECISIONS", " " + (solver.stats != null ? Output.numberFormat.format(solver.stats.nWrongDecisions) : 0));
-					Color.GREEN.println("d FOUND SOLUTIONS", " " + found);
+					NumberFormat nf = Output.numberFormat;
+					Color.GREEN.println("\nd WRONG DECISIONS", " " + (solver.stats != null ? nf.format(solver.stats.nWrongDecisions) : 0));
+					Color.GREEN.println("d FOUND SOLUTIONS", " " + nf.format(found));
 					if (framework == COP && found > 0)
-						Color.GREEN.println("d BOUND", " " + (bestBound + solver.problem.optimizer.gapBound));
+						Color.GREEN.println("d BOUND", " " + nf.format(bestBound + solver.problem.optimizer.gapBound));
 					if (found > 0) {
-						Color.GREEN.println("d WCK FIRST", wckFirst
-								+ (framework == COP ? " (" + Output.numberFormat.format(solver.problem.optimizer.valueWithGap(firstBound)) + ")" : ""));
-						Color.GREEN.println("d WCK LAST", " " + wckLast
-								+ (framework == COP ? " (" + Output.numberFormat.format(solver.problem.optimizer.valueWithGap(bestBound)) + ")" : ""));
+						Color.GREEN.println("d WCK FIRST",
+								wckFirst + (framework == COP ? " (" + nf.format(solver.problem.optimizer.valueWithGap(firstBound)) + ")" : ""));
+						Color.GREEN.println("d WCK LAST",
+								" " + wckLast + (framework == COP ? " (" + nf.format(solver.problem.optimizer.valueWithGap(bestBound)) + ")" : ""));
 					}
 					if (fullExploration)
 						Color.GREEN.println("d COMPLETE EXPLORATION");
@@ -328,33 +330,25 @@ public final class Solutions {
 		// System.out.println("ccccc most " + x + " " + x.dom.toVal(lastSolution[x.num]));
 	}
 
-	public Variable[] h1 = new Variable[0];
-
-	private int h2 = -1;
-
-	private void solutionHamming() {
-		if (found <= 1)
-			return;
-		h1 = IntStream.range(0, last.length).filter(i -> last[i] != solver.problem.variables[i].dom.single()).mapToObj(i -> solver.problem.variables[i])
-				.sorted((x, y) -> x.assignmentLevel - y.assignmentLevel).toArray(Variable[]::new); // count();
-		if (solver.problem.optimizer != null) {
-			Constraint c = (Constraint) solver.problem.optimizer.ctr;
-			h2 = (int) IntStream.range(0, last.length)
-					.filter(i -> last[i] != solver.problem.variables[i].dom.single() && c.involves(solver.problem.variables[i])).count();
-		}
-	}
+	// public Variable[] h1 = new Variable[0];
+	//
+	// private int h2 = -1;
+	//
+	// private void solutionHamming() {
+	// if (found <= 1)
+	// return;
+	// h1 = IntStream.range(0, last.length).filter(i -> last[i] != solver.problem.variables[i].dom.single()).mapToObj(i -> solver.problem.variables[i])
+	// .sorted((x, y) -> x.assignmentLevel - y.assignmentLevel).toArray(Variable[]::new); // count();
+	// if (solver.problem.optimizer != null) {
+	// Constraint c = (Constraint) solver.problem.optimizer.ctr;
+	// h2 = (int) IntStream.range(0, last.length)
+	// .filter(i -> last[i] != solver.problem.variables[i].dom.single() && c.involves(solver.problem.variables[i])).count();
+	// }
+	// }
 
 	private void hammingInformation() {
 		if (found <= 1)
 			return;
-		// int h = (int) IntStream.range(0, last.length).filter(i -> last[i] != solver.problem.variables[i].dom.single()).count();
-		// int hopt = -1;
-		// if (solver.problem.optimizer != null) {
-		// Constraint c = (Constraint) solver.problem.optimizer.ctr;
-		// hopt = (int) IntStream.range(0, last.length)
-		// .filter(i -> last[i] != solver.problem.variables[i].dom.single() && c.involves(solver.problem.variables[i])).count();
-		// }
-
 		StringBuilder sb = new StringBuilder();
 		int i = 0;
 		for (VarArray va : solver.problem.varArrays) {
@@ -406,7 +400,6 @@ public final class Solutions {
 		// System.out.println("changing to Rand");
 		// }
 		lastRun = solver.restarter.numRun;
-		solutionHamming();
 		hammingInformation();
 		if (found >= limit)
 			solver.stopping = Stopping.REACHED_GOAL;
@@ -425,13 +418,13 @@ public final class Solutions {
 		record(null);
 		solver.stats.times.onNewSolution();
 		String wck = solver.head.instanceStopwatch.wckTimeInSeconds();
-		if (found == 1) 
+		if (found == 1)
 			wckFirst = wck;
 		wckLast = wck;
-		
+
 		if (solver.problem.optimizer != null) { // COP
 			bestBound = solver.problem.optimizer.value();
-			if (found == 1) 
+			if (found == 1)
 				firstBound = bestBound;
 			Color.GREEN.println("o " + solver.problem.optimizer.valueWithGap(bestBound),
 					"  " + wck + "  ham=" + IntStream.of(hamming).sum() + " (" + Kit.join(hamming) + ")" + "  opth=" + hammingOpt);
@@ -453,7 +446,6 @@ public final class Solutions {
 			log.config(lastSolutionInJsonFormat(solver.head.control.general.jsonQuotes) + "\n");
 		if (solver.head.control.general.verbose > 2 || solver.head.control.general.xmlEachSolution)
 			Color.GREEN.println("v", " " + xml.lastSolution());
-		// solver.problem.api.prettyDisplay(vars_values(false, false).split("\\s+"));
 	}
 
 	/**
@@ -472,8 +464,6 @@ public final class Solutions {
 	private boolean controlFoundSolution() {
 		Variable x = Variable.firstNonSingletonVariableIn(solver.problem.variables);
 		control(x == null, () -> "Problem with last solution: variable " + x + " has not a unique value");
-		if (solver.problem.framework == MAXCSP)
-			return true;
 		Constraint c = Constraint.firstUnsatisfiedConstraint(solver.problem.constraints);
 		control(c == null, () -> {
 			int[] vals = Stream.of(c.scp).mapToInt(y -> y.dom.singleValue()).toArray();

@@ -49,10 +49,10 @@ public abstract class Optimizer implements ObserverOnRuns {
 		if (problem.solver.solutions.lastRun == problem.solver.restarter.numRun) {
 			// a better solution has been found during the last run
 			if (minimization) {
-				maxBound = problem.solver.solutions.bestBound - (1 * problem.head.control.optimization.boundDescentCoeff);
+				maxBound = problem.solver.solutions.bestBound - problem.head.control.optimization.boundDescentCoeff;
 				cub.limit(maxBound);
 			} else {
-				minBound = problem.solver.solutions.bestBound + (1 * problem.head.control.optimization.boundDescentCoeff);
+				minBound = problem.solver.solutions.bestBound + problem.head.control.optimization.boundDescentCoeff;
 				clb.limit(minBound);
 			}
 			possiblyUpdateLocalBounds();

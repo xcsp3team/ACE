@@ -412,21 +412,21 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		}
 	}
 
-	public static final class Bivs3 extends Bivs {
-
-		public Bivs3(Variable x, boolean anti) {
-			super(x, anti);
-		}
-
-		@Override
-		public int computeBestValueIndex() {
-			Variable[] h1 = x.problem.solver.solutions.h1;
-			boolean present = Utilities.indexOf(x, h1) >= 0;
-			if (!present)
-				return x.dom.first();
-			return super.computeBestValueIndex();
-		}
-	}
+	// public static final class Bivs3 extends Bivs {
+	//
+	// public Bivs3(Variable x, boolean anti) {
+	// super(x, anti);
+	// }
+	//
+	// @Override
+	// public int computeBestValueIndex() {
+	// Variable[] h1 = x.problem.solver.solutions.h1;
+	// boolean present = Utilities.indexOf(x, h1) >= 0;
+	// if (!present)
+	// return x.dom.first();
+	// return super.computeBestValueIndex();
+	// }
+	// }
 
 	// ************************************************************************
 	// ***** Other heuristics

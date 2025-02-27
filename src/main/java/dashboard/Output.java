@@ -156,6 +156,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	public static final String NUMBER = "number";
 	public static final String NAME = "name";
+	public static final String COMMAND = "command";
 	public static final String N_TYPES = "types";
 	public static final String N_VALUES = "values";
 	public static final String N_DELETED = "deleted";
@@ -467,6 +468,9 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		InformationBloc m = new InformationBloc(INSTANCE);
 		m.put(NAME, head.problem.name());
 		m.put(NUMBER, instanceNumber, Input.nInstancesToSolve > 1);
+		m.separator();
+		m.put(COMMAND, Stream.of(Input.args).collect(Collectors.joining(" ")));
+		
 		m.separator(options.selection.length() > 0 || options.instantiation.length() > 0 || options.priority1.length() > 0 || options.priority2.length() > 0);
 		m.put(SELECTION, options.selection);
 		m.put(INSTANTIATION, options.instantiation);
@@ -477,7 +481,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	private InformationBloc domainsInfo() {
 		InformationBloc m = new InformationBloc(DOMAINS);
 		m.put(N_TYPES, features.nDomTypes());
-		m.put(N_VALUES, Variable.nValidValuesFor(head.problem.variables));
+		m.put(N_VALUES, numberFormat.format(Variable.nValidValuesFor(head.problem.variables)));
 		control(features.nValuesRemovedAtConstructionTime == head.problem.nValueRemovals);
 		m.put(N_DELETED, head.problem.nValueRemovals);
 		m.put(SIZES, features.domSizes);
@@ -486,7 +490,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private InformationBloc variablesInfo() {
 		InformationBloc m = new InformationBloc(VARIABLES);
-		m.put(COUNT, head.problem.variables.length);
+		m.put(COUNT,  numberFormat.format(head.problem.variables.length));
 		m.put(N_OMITTED, features.nOmittedVars);
 		m.put(N_DISCARDED, features.collecting.discardedVars.size());
 		m.put(N_ISOLATED, features.nIsolatedVars);
@@ -506,7 +510,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private InformationBloc constraintsInfo() {
 		InformationBloc m = new InformationBloc(CONSTRAINTS);
-		m.put(COUNT, head.problem.constraints.length);
+		m.put(COUNT,  numberFormat.format(head.problem.constraints.length));
 		m.put(N_REMOVED1, features.nRemovedUnaryCtrs);
 		m.put(N_CONVERTED, features.nConvertedConstraints);
 		m.put("nNogoods", features.collecting.nogoods.size());
@@ -570,7 +574,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(WAY, (optimizer.minimization ? TypeOptimization.MINIMIZE : TypeOptimization.MAXIMIZE).shortName());
 		m.put(TYPE, optimizer.ctr.getClass().getSimpleName());
 		m.put("arity", ((Constraint) optimizer.ctr).scp.length);
-		m.put(BOUNDS, (optimizer.clb.limit() + ".." + optimizer.cub.limit()));
+		m.put(BOUNDS, (numberFormat.format(optimizer.clb.limit()) + ".." + numberFormat.format(optimizer.cub.limit())));
 		return m;
 	}
 
@@ -618,17 +622,16 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		String rb1 = head.solver.heuristic instanceof RunRobin ? ((RunRobin) head.solver.heuristic).current.getClass().getSimpleName() : "";
 		String rb2 = head.control.valh.clazz.equals("RunRobin") ? ((HeuristicValuesDirect.RunRobin) head.problem.variables[0].heuristic).currentClass() : "";
 		m.put("robin", rb1 + (rb1.length() > 0 && rb2.length() > 0 ? "-" : "") + rb2);
-		m.put(N_EFFECTIVE, features.nEffectiveFilterings);
-		m.put(N_FAILED, stats.nFailedAssignments);
-		m.put(N_WRONG, stats.nWrongDecisions);
+		m.put(N_EFFECTIVE, numberFormat.format(features.nEffectiveFilterings));
+		m.put(N_FAILED, numberFormat.format(stats.nFailedAssignments));
+		m.put(N_WRONG, numberFormat.format(stats.nWrongDecisions));
 		if (Kit.memory() > 10000000000L)
 			m.put(MEM, Kit.memoryInMb());
 		m.put(WCK, Stopwatch.formattedTimeInSeconds(stats.times.searchWck));
-		m.put(N_NOGOODS, head.solver.nogoodReasoner != null ? head.solver.nogoodReasoner.nNogoods : 0);
+		m.put(N_NOGOODS, numberFormat.format(head.solver.nogoodReasoner != null ? head.solver.nogoodReasoner.nNogoods : 0));
 		if (head.solver.solutions.found > 0) {
-			if (head.problem.framework == TypeFramework.CSP)
-				m.put(SOLS, head.solver.solutions.found);
-			else {
+			m.put(SOLS, numberFormat.format(head.solver.solutions.found));
+			if (head.problem.framework == TypeFramework.COP) {
 				if (head.problem.optimizer.minBound == 0 || head.problem.optimizer.minBound == Long.MIN_VALUE)
 					m.put(BOUND, numberFormat.format(head.solver.solutions.bestBound + head.problem.optimizer.gapBound));
 				else

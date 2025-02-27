@@ -121,8 +121,7 @@ public final class Input {
 	 *            arguments given by the sued on the command line
 	 */
 	public static void loadArguments(String... args) {
-		Input.args = args = Stream.of(args).filter(s -> s.length() > 0).toArray(String[]::new); // cleaning and storing
-																								// args
+		Input.args = args = Stream.of(args).filter(s -> s.length() > 0).toArray(String[]::new); // cleaning and storing args
 		control(args.length > 0);
 		Input.portfolio = Kit.isXMLFileWithRoot(lastArgument(), VARIANT_PARALLEL);
 		int cursor = 0;

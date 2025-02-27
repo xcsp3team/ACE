@@ -412,8 +412,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 			assert Stream.of(sets).allMatch(s -> s.isEmpty());
 			encounteredSizes.clear();
 
-			// we first filter future (i.e., non explicitly assigned) variables wrt new fixed (i.e., domain-singleton)
-			// variables
+			// we first filter future (i.e., non explicitly assigned) variables wrt new fixed (i.e., domain-singleton) variables
 			for (int i = unfixedVars.limit; i >= 0; i--) {
 				int p = unfixedVars.dense[i];
 				if (scp[p].dom.size() > 1)
