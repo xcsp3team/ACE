@@ -95,6 +95,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import constraints.global.*;
 import org.xcsp.common.Condition;
 import org.xcsp.common.Condition.ConditionIntset;
 import org.xcsp.common.Condition.ConditionIntvl;
@@ -151,20 +152,13 @@ import constraints.extension.CMDD.CMDDO;
 import constraints.extension.CMDD.CMDDS;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableHybrid.HybridTuple;
-import constraints.global.AllDifferent;
 import constraints.global.AllDifferent.AllDifferentComplete;
 import constraints.global.AllDifferent.AllDifferentCounting;
 import constraints.global.AllDifferent.AllDifferentExceptWeak;
 import constraints.global.AllDifferent.AllDifferentPermutation;
 import constraints.global.AllDifferent.AllDifferentWeak;
-import constraints.global.AllEqual;
-import constraints.global.Among;
 import constraints.global.BinPacking.BinPackingEnergetic;
 import constraints.global.BinPacking.BinPackingEnergeticLoad;
-import constraints.global.Cardinality;
-import constraints.global.Circuit;
-import constraints.global.Circuit2;
-import constraints.global.ClauseUnaryTrees;
 import constraints.global.ClauseUnaryTrees.TreeUnaryBoolean;
 import constraints.global.Count.CountCst.AtLeast1;
 import constraints.global.Count.CountCst.AtLeastK;
@@ -199,15 +193,11 @@ import constraints.global.Extremum.ExtremumVar.Maximum;
 import constraints.global.Extremum.ExtremumVar.Minimum;
 import constraints.global.ExtremumArg.ExtremumArgVar.MaximumArg;
 import constraints.global.ExtremumArg.ExtremumArgVar.MinimumArg;
-import constraints.global.Lexicographic;
 import constraints.global.NValues.NValuesCst;
 import constraints.global.NValues.NValuesCst.NValuesCstGE;
 import constraints.global.NValues.NValuesCst.NValuesCstLE;
 import constraints.global.NValues.NValuesVar;
-import constraints.global.NoOverlap;
-import constraints.global.Precedence;
 import constraints.global.Product.ProductSimple;
-import constraints.global.SubsetAllDifferent;
 import constraints.global.Sum.SumSimple;
 import constraints.global.Sum.SumSimple.SumSimpleGE;
 import constraints.global.Sum.SumSimple.SumSimpleLE;
@@ -218,7 +208,6 @@ import constraints.global.Sum.SumWeighted.SumWeightedGE;
 import constraints.global.Sum.SumWeighted.SumWeightedLE;
 import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
 import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
-import constraints.global.Xor;
 import constraints.intension.Nogood;
 import constraints.intension.Primitive2;
 import constraints.intension.Primitive2.PrimitiveBinaryNoCst;
@@ -2030,6 +2019,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	public final CtrEntity lex(Var[] list, int[] limit, TypeOperatorRel op) {
 		return post(Lexicographic.buildFrom(this, translate(list), limit, op));
+	}
+
+	public final void autolex(Var[] list, boolean strict) {
+		new AutoLex(this, translate(list), strict);
 	}
 
 	/**

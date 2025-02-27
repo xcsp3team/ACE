@@ -920,6 +920,10 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 			int[] coeffs = (int[]) map.get("coeffs");
 			Condition condition = (Condition) map.get("condition");
 			problem.sum(trVars(list), coeffs, trVar(condition));
+		} else if (form.equals("AutoLex")) {
+			XVarInteger[] list = (XVarInteger[]) map.get("list");
+			boolean strict = (long) map.get("value") != 0;
+			problem.autolex(trVars(list), strict);
 		}
 	}
 
