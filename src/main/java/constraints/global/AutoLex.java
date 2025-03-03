@@ -30,23 +30,24 @@ import static org.xcsp.common.predicates.XNodeParent.lt;
 
 /**
  * Implements an AutoLex / Lyndon words constraint on a list of binary variables
+ * 
  * @author Guillaume Derval
  */
 public class AutoLex {
 	/**
-	 * This field indicates if the ordering between the two lists must be strictly respected; if true then we have to
-	 * enforce <= (le), otherwise we have to enforce < (lt)
+	 * This field indicates if the ordering between the two lists must be strictly respected; if true then we have to enforce <= (le), otherwise we have to
+	 * enforce < (lt)
 	 */
 	protected final boolean strictOrdering;
 
 	protected Problem problem;
 	protected Variable[] scp;
-	//private int cutSinceBeginning = 0;
+	// private int cutSinceBeginning = 0;
 	private final long[][][][] innerlexTime;
 	private final int[][] forcedPairs;
 	private int nForcedPairs;
 
-    public AutoLex(Problem pb, Variable[] scp, boolean strictOrdering) {
+	public AutoLex(Problem pb, Variable[] scp, boolean strictOrdering) {
 		this.problem = pb;
 		this.scp = scp;
 		this.strictOrdering = strictOrdering;
@@ -57,14 +58,14 @@ public class AutoLex {
 		forcedPairs = new int[scp.length][2];
 		nForcedPairs = 0;
 
-		if(strictOrdering)
-			problem.intension(lt(scp[0], scp[scp.length-1]));
+		if (strictOrdering)
+			problem.intension(lt(scp[0], scp[scp.length - 1]));
 		else
-			problem.intension(le(scp[0], scp[scp.length-1]));
+			problem.intension(le(scp[0], scp[scp.length - 1]));
 
-		for	(int l = 2; l < scp.length; l++) {
+		for (int l = 2; l < scp.length; l++) {
 			Variable[] list1 = Arrays.stream(scp).limit(l).toArray(Variable[]::new);
-			Variable[] list2 = Arrays.stream(scp).skip(scp.length-l).limit(l).toArray(Variable[]::new);
+			Variable[] list2 = Arrays.stream(scp).skip(scp.length - l).limit(l).toArray(Variable[]::new);
 
 			int[] keep = IntStream.range(0, list1.length).filter(i -> list1[i] != list2[i]).toArray();
 			Variable[] safeList1 = keep.length == list1.length ? list1 : IntStream.of(keep).mapToObj(i -> list1[i]).toArray(Variable[]::new);
@@ -76,19 +77,20 @@ public class AutoLex {
 	}
 
 	/**
-	 * Empty the inner propagation queue. Must be done after each of the subconstraints have been run.
-	 * We maintain this queue separately to avoid interacting with the subconstraint while they propagate.
+	 * Empty the inner propagation queue. Must be done after each of the subconstraints have been run. We maintain this queue separately to avoid interacting
+	 * with the subconstraint while they propagate.
+	 * 
 	 * @return false if the node is infeasible
 	 */
 	protected boolean emptyQueue() {
-		for(int i = 0; i < nForcedPairs; i++) {
+		for (int i = 0; i < nForcedPairs; i++) {
 			int var = forcedPairs[i][0];
 			int val = forcedPairs[i][1];
-			//if(scp[var].dom.containsValue(1-val)) {
-			//	cutSinceBeginning += 1;
-			//	System.out.println("CUTS SINCE BEGINNING: " + cutSinceBeginning);
-			//}
-			if (!scp[var].dom.removeValueIfPresent(1-val))
+			// if(scp[var].dom.containsValue(1-val)) {
+			// cutSinceBeginning += 1;
+			// System.out.println("CUTS SINCE BEGINNING: " + cutSinceBeginning);
+			// }
+			if (!scp[var].dom.removeValueIfPresent(1 - val))
 				return false;
 		}
 		nForcedPairs = 0;
@@ -99,12 +101,12 @@ public class AutoLex {
 	 * ensures var1 = val1 OR var2 = val2
 	 */
 	private void insert2Clause(int var1, int val1, int var2, int val2) {
-		if(var1 > var2) {
+		if (var1 > var2) {
 			insert2Clause(var2, val2, var1, val1);
 			return;
 		}
-		if(var1 == var2) {
-			if(val1 == val2)
+		if (var1 == var2) {
+			if (val1 == val2)
 				System.out.println("WTF");
 			else
 				return;
@@ -112,9 +114,9 @@ public class AutoLex {
 
 		long nodeNumber = problem.solver.stats.safeNumber();
 
-		if(innerlexTime[var1][val1][var2][val2] != nodeNumber) {
+		if (innerlexTime[var1][val1][var2][val2] != nodeNumber) {
 			innerlexTime[var1][val1][var2][val2] = nodeNumber;
-			if(innerlexTime[var1][val1][var2][1-val2] == nodeNumber) {
+			if (innerlexTime[var1][val1][var2][1 - val2] == nodeNumber) {
 				// we have
 				// var1 = val1 OR var2 = val2
 				// AND
@@ -126,7 +128,7 @@ public class AutoLex {
 				nForcedPairs++;
 			}
 
-			if(innerlexTime[var1][1 - val1][var2][val2] == nodeNumber) {
+			if (innerlexTime[var1][1 - val1][var2][val2] == nodeNumber) {
 				// we have
 				// var1 = val1 OR var2 = val2
 				// AND
@@ -156,7 +158,7 @@ public class AutoLex {
 	public class LexicographicVar extends ConstraintGlobal implements Tags.TagAC, Tags.TagCallCompleteFiltering, TagNotSymmetric, TagPostponableFiltering {
 		public boolean isSatisfiedBy(int[] t) {
 			for (int i = 0; i < half; i++) {
-				int v = t[i], w = t[half+i];
+				int v = t[i], w = t[half + i];
 				if (v < w)
 					return true;
 				if (v > w)
@@ -254,7 +256,6 @@ public class AutoLex {
 			return !strictOrdering;
 		}
 
-
 		public boolean runPropagator(Variable dummy) {
 			boolean out = innerPropagator();
 			// the queue must ALWAYS be emptied
@@ -270,11 +271,10 @@ public class AutoLex {
 					return false;
 				if (dom1.size() == 1 && dom2.size() == 1) {
 					if (dom1.singleValue() < dom2.singleValue())
-						return entailed();
+						return entail();
 					assert dom1.singleValue() == dom2.singleValue();
 					alpha++;
-				}
-				else {
+				} else {
 					int min1 = dom1.firstValue(), min2 = dom2.firstValue();
 					assert min1 <= min2;
 					// happens on cases {a={0,1} b={0,1}} and {a={0} b={0,1}}
@@ -282,7 +282,7 @@ public class AutoLex {
 						assert min1 == 0;
 
 						ensureNeed(pos2[alpha], 0, pos1[alpha], 0);
-						if(!isConsistentPair(pos2[alpha], alpha, 0))
+						if (!isConsistentPair(pos2[alpha], alpha, 0))
 							if (dom2.removeValue(0) == false)
 								return false;
 					}

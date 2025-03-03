@@ -42,6 +42,7 @@ import interfaces.Tags.TagPostponableFiltering;
 import interfaces.Tags.TagSymmetric;
 import optimization.Optimizable;
 import problem.Problem;
+import sets.SetDense;
 import utility.Kit;
 import variables.Domain;
 import variables.DomainInfinite;
@@ -551,33 +552,35 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			@Override
 			public boolean runPropagator(Variable x) {
+				// if (limit == 1 && x.dom.containsOnly(1)) {
+				// for (Variable y : scp)
+				// if (y != x && y.dom.removeIfPresent(1) == false)
+				// return x.dom.fail();
+				// return entail();
+				// }
+
 				int cnt0 = 0, cnt1 = 0;
-				for (Variable y : scp)
-					if (y.dom.size() == 1)
-						if (y.dom.single() == 0)
+				for (Domain dom : doms) {
+					if (dom.size() == 1) {
+						if (dom.single() == 0)
 							cnt0++;
 						else
 							cnt1++;
+					}
+				}
 				int diff = scp.length - cnt0 - cnt1;
 				if (cnt1 > limit || cnt1 + diff < limit)
 					return x.dom.fail();
 				if (cnt1 < limit && cnt1 + diff > limit)
 					return true;
-				if (cnt1 == limit) { // remove all 1
-					for (int i = futvars.limit; i >= 0; i--) {
-						Domain dom = scp[futvars.dense[i]].dom;
-						if (dom.size() != 1)
-							dom.remove(1);
-					}
-				} else { // remove all 0
-					assert cnt1 + diff == limit;
-					for (int i = futvars.limit; i >= 0; i--) {
-						Domain dom = scp[futvars.dense[i]].dom;
-						if (dom.size() != 1)
-							dom.remove(0);
-					}
+				// at this point, either cnt1 == limit, and we have to remove all 1s or cnt1 + diff == limit, and we have to remove all 0s
+				int v = cnt1 == limit ? 1 : 0;
+				for (int i = futvars.limit; i >= 0; i--) {
+					Domain dom = scp[futvars.dense[i]].dom;
+					if (dom.size() != 1)
+						dom.remove(v);
 				}
-				return true;
+				return entail();
 			}
 		}
 
@@ -915,6 +918,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					} while (lastModified != i);
 				}
 				assert controlFCLevel();
+				if (min == limit)
+					return entail();
 				return true;
 			}
 

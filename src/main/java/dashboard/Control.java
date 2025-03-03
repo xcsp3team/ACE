@@ -423,6 +423,7 @@ public final class Control {
 		public int verbose = addI("verbose", "v", 0, "Verbosity level (value between -1 and 3)" + s_verbose);
 		public final boolean runRobin = addB("runRobin", "rr", false, "Using a Run Robin search strategy");
 		public final boolean profiling = addB("profiling", "prof", false, "Using some very basic profiling information?");
+		public final boolean controlSolutions = addB("controlSolutions", "cs", false, "Control solutions");
 	}
 
 	public class OptionsProblem extends OptionGroup {

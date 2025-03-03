@@ -659,6 +659,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private void reduceDomainsFromUserInstantiationAndRefutation() {
 		String instantiation = head.control.variables.instantiation;
 		if (instantiation.length() > 0) {
+			// String s = "";
 			String[] t = instantiation.split(":");
 			control(t.length == 2, "Problem with " + instantiation);
 			Object[] vars = Kit.extractFrom(t[0]);
@@ -669,7 +670,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				int v = vals[i];
 				assert x.dom.containsValue(v) : "Value " + v + " not present in domain of " + x + ". Check  -ins.";
 				x.dom.removeValuesAtConstructionTime(w -> w != v);
+				// s += x + "=" + v + " ";
 			}
+			// System.out.print(s);
 		}
 		String refutation = head.control.variables.refutation;
 		if (refutation.length() > 0) {

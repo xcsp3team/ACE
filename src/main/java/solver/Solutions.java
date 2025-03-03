@@ -379,83 +379,77 @@ public final class Solutions {
 	}
 
 	/**
-	 * This method must be called whenever a new solution is found by the solver.
-	 * 
-	 * @param controlSolution
-	 *            indicates if the solution must be checked
-	 */
-	public void handleNewSolution(boolean controlSolution) {
-		control(!controlSolution || controlFoundSolution());
-		found++;
-		// if (found == 1) {
-		// Constraint c = ((Constraint) solver.problem.optimizer.ctr);
-		// boolean minimization = solver.problem.optimizer.minimization;
-		// for (Variable x : c.scp)
-		// x.heuristic = minimization ? new First(x, false) : new Last(x, false); // the boolean is dummy
-		// Variable[] t = HeuristicValues.prioritySumVars(c.scp, null);
-		// // Variable[] vars = HeuristicValues.possibleOptimizationInterference(solver.problem);
-		// // solver.problem.priorityVars = c.scp;
-		// solver.heuristic.priorityVars = t;
-		// // solver.heuristic = new Rand(solver, false);
-		// System.out.println("changing to Rand");
-		// }
-		lastRun = solver.restarter.numRun;
-		hammingInformation();
-		if (found >= limit)
-			solver.stopping = Stopping.REACHED_GOAL;
-		if (solver.propagation.performingProperSearch) {
-			if (solver.problem.optimizer != null) { // COP
-				long bound = solver.problem.optimizer.value();
-				if (solver.problem.optimizer.minimization && bound < bestBound || !solver.problem.optimizer.minimization && bound > bestBound) {
-					bestBound = bound;
-					Color.GREEN.println("o " + solver.problem.optimizer.valueWithGap(bound), "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
-					record(null);
-				}
-			} else
-				record(null);
-			return;
-		}
-		record(null);
-		solver.stats.times.onNewSolution();
-		String wck = solver.head.instanceStopwatch.wckTimeInSeconds();
-		if (found == 1)
-			wckFirst = wck;
-		wckLast = wck;
-
-		if (solver.problem.optimizer != null) { // COP
-			bestBound = solver.problem.optimizer.value();
-			if (found == 1)
-				firstBound = bestBound;
-			Color.GREEN.println("o " + solver.problem.optimizer.valueWithGap(bestBound),
-					"  " + wck + "  ham=" + IntStream.of(hamming).sum() + " (" + Kit.join(hamming) + ")" + "  opth=" + hammingOpt);
-
-			// solver.restarter.currCutoff += 1; //20;
-			// System.out.println("h1 : " + Kit.join(h1) + " h2 : " + h2);
-			// for (Variable x : h1) System.out.println(x + " " + x.assignmentLevel);
-		}
-		// The following code must stay after recording/storing the solution
-		if (solver.head.control.general.jsonSave.length() > 0 && (solver.head.control.general.verbose > 1 || found == 1)) {
-			String s = lastSolutionInJsonFormat(true);
-			try (PrintWriter out = new PrintWriter(solver.head.control.general.jsonSave + found + ".json")) {
-				out.println(s);
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			}
-		}
-		if (solver.head.control.general.verbose > 1 || solver.head.control.general.jsonEachSolution)
-			log.config(lastSolutionInJsonFormat(solver.head.control.general.jsonQuotes) + "\n");
-		if (solver.head.control.general.verbose > 2 || solver.head.control.general.xmlEachSolution)
-			Color.GREEN.println("v", " " + xml.lastSolution());
-	}
-
-	/**
 	 * This method must be called whenever a new solution is found by the solver
 	 */
 	public void handleNewSolution() {
 		synchronized (lock) {
 			if (!lock.get()) {
 				lock.set(true);
-				handleNewSolution(true);
+				if (solver.head.control.general.controlSolutions)
+					controlFoundSolution();
+				else
+					assert controlFoundSolution();
+				found++;
+				// if (found == 1) {
+				// Constraint c = ((Constraint) solver.problem.optimizer.ctr);
+				// boolean minimization = solver.problem.optimizer.minimization;
+				// for (Variable x : c.scp)
+				// x.heuristic = minimization ? new First(x, false) : new Last(x, false); // the boolean is dummy
+				// Variable[] t = HeuristicValues.prioritySumVars(c.scp, null);
+				// // Variable[] vars = HeuristicValues.possibleOptimizationInterference(solver.problem);
+				// // solver.problem.priorityVars = c.scp;
+				// solver.heuristic.priorityVars = t;
+				// // solver.heuristic = new Rand(solver, false);
+				// System.out.println("changing to Rand");
+				// }
+				lastRun = solver.restarter.numRun;
+				hammingInformation();
+				if (found >= limit)
+					solver.stopping = Stopping.REACHED_GOAL;
+				if (solver.propagation.performingProperSearch) {
+					if (solver.problem.optimizer != null) { // COP
+						long bound = solver.problem.optimizer.value();
+						if (solver.problem.optimizer.minimization && bound < bestBound || !solver.problem.optimizer.minimization && bound > bestBound) {
+							bestBound = bound;
+							Color.GREEN.println("o " + solver.problem.optimizer.valueWithGap(bound), "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
+							record(null);
+						}
+					} else
+						record(null);
+					return;
+				}
+				record(null);
+				solver.stats.times.onNewSolution();
+				String wck = solver.head.instanceStopwatch.wckTimeInSeconds();
+				if (found == 1)
+					wckFirst = wck;
+				wckLast = wck;
+
+				if (solver.problem.optimizer != null) { // COP
+					bestBound = solver.problem.optimizer.value();
+					if (found == 1)
+						firstBound = bestBound;
+					Color.GREEN.println("o " + solver.problem.optimizer.valueWithGap(bestBound),
+							"  " + wck + "  ham=" + IntStream.of(hamming).sum() + " (" + Kit.join(hamming) + ")" + "  opth=" + hammingOpt);
+
+					// solver.restarter.currCutoff += 1; //20;
+					// System.out.println("h1 : " + Kit.join(h1) + " h2 : " + h2);
+					// for (Variable x : h1) System.out.println(x + " " + x.assignmentLevel);
+				}
+				// The following code must stay after recording/storing the solution
+				if (solver.head.control.general.jsonSave.length() > 0 && (solver.head.control.general.verbose > 1 || found == 1)) {
+					String s = lastSolutionInJsonFormat(true);
+					try (PrintWriter out = new PrintWriter(solver.head.control.general.jsonSave + found + ".json")) {
+						out.println(s);
+					} catch (FileNotFoundException e) {
+						e.printStackTrace();
+					}
+				}
+				if (solver.head.control.general.verbose > 1 || solver.head.control.general.jsonEachSolution)
+					log.config(lastSolutionInJsonFormat(solver.head.control.general.jsonQuotes) + "\n");
+				if (solver.head.control.general.verbose > 2 || solver.head.control.general.xmlEachSolution)
+					Color.GREEN.println("v", " " + xml.lastSolution());
+				// handleNewSolution(false);
 				lock.set(false);
 			}
 		}

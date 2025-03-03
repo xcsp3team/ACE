@@ -77,8 +77,7 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 	public Lexicographic(Problem pb, Variable[] scp, boolean strictOrdering) {
 		super(pb, scp);
 		this.strictOrdering = strictOrdering;
-		defineKey(strictOrdering); // TODO adding the positions pos1 and pos2? (in case there are several
-									// occurrences of the same variable)
+		defineKey(strictOrdering); // TODO adding the positions pos1 and pos2? (in case there are several occurrences of the same variable)
 	}
 
 	// ************************************************************************
@@ -214,11 +213,13 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 					assert dom1.firstValue() < dom2.lastValue();
 					if (problem.solver.depth() == 0)
 						alphaSafe = alpha;
+					// if (dom1.size() == 1 && dom2.size() == 1) # seems useless
+					// return entail();
 					return true;
 				}
 			}
 			assert alpha == half;
-			return !strictOrdering;
+			return !strictOrdering && entail();
 		}
 	}
 

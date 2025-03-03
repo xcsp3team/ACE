@@ -11,7 +11,7 @@
 import main.Head;
 
 /**
- * This is the main class of the constraint solver <code>ACE (AbsCon Essence)</code>
+ * This is the main class of the constraint solver <code>ACE</code>
  *
  * @author Christophe Lecoutre
  */
