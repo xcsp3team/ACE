@@ -45,16 +45,14 @@ public class AutoLex {
 	private final int[][] forcedPairsQueue;
 	private int nForcedPairs;
 
-<<<<<<< HEAD
-	public AutoLex(Problem pb, Variable[] scp, boolean strictOrdering) {
-=======
+
 	private final int[] additionalPattern;
 	private final int[] forbiddenPattern;
 
 	private final long ALWAYS_TRUE = -10;
 
     public AutoLex(Problem pb, Variable[] scp, int[] additionalPattern, boolean strictOrdering) {
->>>>>>> 39e9f39808ec1f3b48261b6f18df458ffcf79f25
+
 		this.problem = pb;
 		this.scp = scp;
 		this.strictOrdering = strictOrdering;
@@ -118,16 +116,6 @@ public class AutoLex {
 	 * @return false if the node is infeasible
 	 */
 	protected boolean emptyQueue() {
-<<<<<<< HEAD
-		for (int i = 0; i < nForcedPairs; i++) {
-			int var = forcedPairs[i][0];
-			int val = forcedPairs[i][1];
-			// if(scp[var].dom.containsValue(1-val)) {
-			// cutSinceBeginning += 1;
-			// System.out.println("CUTS SINCE BEGINNING: " + cutSinceBeginning);
-			// }
-			if (!scp[var].dom.removeValueIfPresent(1 - val))
-=======
 		for(int i = 0; i < nForcedPairs; i++) {
 			int var = forcedPairsQueue[i][0];
 			int val = forcedPairsQueue[i][1];
@@ -136,7 +124,6 @@ public class AutoLex {
 			//	System.out.println("CUTS SINCE BEGINNING: " + cutSinceBeginning);
 			//}
 			if (!scp[var].dom.removeValueIfPresent(1-val))
->>>>>>> 39e9f39808ec1f3b48261b6f18df458ffcf79f25
 				return false;
 		}
 		nForcedPairs = 0;
@@ -150,25 +137,6 @@ public class AutoLex {
 	/**
 	 * ensures var1 = val1 OR var2 = val2
 	 */
-<<<<<<< HEAD
-	private void insert2Clause(int var1, int val1, int var2, int val2) {
-		if (var1 > var2) {
-			insert2Clause(var2, val2, var1, val1);
-			return;
-		}
-		if (var1 == var2) {
-			if (val1 == val2)
-				System.out.println("WTF");
-			else
-				return;
-		}
-
-		long nodeNumber = problem.solver.stats.safeNumber();
-
-		if (innerlexTime[var1][val1][var2][val2] != nodeNumber) {
-			innerlexTime[var1][val1][var2][val2] = nodeNumber;
-			if (innerlexTime[var1][val1][var2][1 - val2] == nodeNumber) {
-=======
 	private void insert2Clause(int var1, int val1, int var2, int val2, long nodeNumber) {
 		if(var1 > var2) {
 			insert2Clause(var2, val2, var1, val1, nodeNumber);
@@ -187,7 +155,6 @@ public class AutoLex {
 		if(!clauseIsSet(var1, val1, var2, val2, nodeNumber)) {
 			innerlexTime[var1][val1][var2][val2] = nodeNumber;
 			if(clauseIsSet(var1, val1, var2, 1-val2, nodeNumber)) {
->>>>>>> 39e9f39808ec1f3b48261b6f18df458ffcf79f25
 				// we have
 				// var1 = val1 OR var2 = val2
 				// AND
@@ -199,11 +166,7 @@ public class AutoLex {
 				nForcedPairs++;
 			}
 
-<<<<<<< HEAD
-			if (innerlexTime[var1][1 - val1][var2][val2] == nodeNumber) {
-=======
 			if(clauseIsSet(var1, 1-val1, var2, val2, nodeNumber)) {
->>>>>>> 39e9f39808ec1f3b48261b6f18df458ffcf79f25
 				// we have
 				// var1 = val1 OR var2 = val2
 				// AND
@@ -391,13 +354,9 @@ public class AutoLex {
 						assert min1 == 0;
 
 						ensureNeed(pos2[alpha], 0, pos1[alpha], 0);
-<<<<<<< HEAD
-						if (!isConsistentPair(pos2[alpha], alpha, 0))
-							if (dom2.removeValue(0) == false)
-=======
+
 						if(!isConsistentPair(pos2[alpha], alpha, 0))
 							if (!dom2.removeValue(0))
->>>>>>> 39e9f39808ec1f3b48261b6f18df458ffcf79f25
 								return false;
 					}
 
