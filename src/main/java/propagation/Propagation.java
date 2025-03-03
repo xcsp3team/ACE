@@ -147,7 +147,9 @@ public abstract class Propagation {
 	 */
 	// public final SetSparseMap[] auxiliaryQueues;
 
-	public final Set<Constraint> postponedConstraints;
+	// public final Set<Constraint> postponedConstraints;
+
+	private final SetSparse postponed;
 
 	/**
 	 * This field is used as a clock to enumerate time. It is used to avoid performing some useless calls of constraint propagators by comparing time-stamps
@@ -207,7 +209,8 @@ public abstract class Propagation {
 
 	public void clear() {
 		queue.clear();
-		postponedConstraints.clear();
+		// postponedConstraints.clear();
+		postponed.clear();
 	}
 
 	/**
@@ -234,7 +237,8 @@ public abstract class Propagation {
 		// ? IntStream.range(0, nAuxQueues).mapToObj(i -> new
 		// SetSparseMap(solver.problem.constraints.length)).toArray(SetSparseMap[]::new)
 		// : null;
-		this.postponedConstraints = new LinkedHashSet<>();
+		// this.postponedConstraints = new LinkedHashSet<>();
+		this.postponed = new SetSparse(solver.problem.postponableConstraints.length);
 		String clazz = solver.head.control.varh.clazz;
 		this.historyX = clazz.equals(PickOnDom.class.getSimpleName()) || clazz.equals(RunRobin.class.getSimpleName())
 				? new SetSparseCnt(solver.problem.variables.length)
@@ -267,7 +271,8 @@ public abstract class Propagation {
 							historyC.add(c.num, pm == 0 ? 1 : consistent ? solver.problem.nValueRemovals - bef : 100);
 						currFilteringCtr = null;
 					} else {// if (c.time <= x.time)
-						postponedConstraints.add(c); // auxiliaryQueues[c.filteringComplexity - 1].add(c.num, x.num);
+						// postponedConstraints.add(c); // auxiliaryQueues[c.filteringComplexity - 1].add(c.num, x.num);
+						postponed.add(c.postponablePosition);
 						c.postponedEvent = x;
 					}
 				}
@@ -293,10 +298,14 @@ public abstract class Propagation {
 		while (true) {
 			while (queue.size() != 0) // propagation with respect to the main queue
 				if (pickAndFilter() == false) {
-					postponedConstraints.clear();
+					// postponedConstraints.clear();
+					postponed.clear();
 					return false;
 				}
-			for (Constraint c : postponedConstraints) { // propagation with respect to postponed constraints
+			for (int i = 0; i <= postponed.limit; i++) {
+				Constraint c = solver.problem.postponableConstraints[postponed.dense[i]];
+
+				// for (Constraint c : postponedConstraints) { // propagation with respect to postponed constraints
 				assert !c.ignored && !solver.isEntailed(c);
 				currFilteringCtr = c;
 				int bef = solver.problem.nValueRemovals;
@@ -305,11 +314,13 @@ public abstract class Propagation {
 					historyC.add(c.num, solver.head.control.varh.pickMode == 0 ? 1 : consistent ? solver.problem.nValueRemovals - bef : 100);
 				currFilteringCtr = null;
 				if (!consistent) {
-					postponedConstraints.clear();
+					// postponedConstraints.clear();
+					postponed.clear();
 					return false;
 				}
 			}
-			postponedConstraints.clear();
+			// postponedConstraints.clear();
+			postponed.clear();
 			if (queue.size() == 0)
 				break;
 		}

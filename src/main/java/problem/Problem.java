@@ -476,6 +476,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 */
 	public int nAuxConstraints;
 
+	/**
+	 * The set of postponable constraints of the problem, in the order they have been defined (posted).
+	 */
+	public Constraint[] postponableConstraints;
+
 	@Override
 	public final String name() {
 		String name = super.name();
@@ -629,6 +634,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		features.collecting.fix();
 		this.variables = features.collecting.variables.toArray(new Variable[0]);
 		this.constraints = features.collecting.constraints.toArray(new Constraint[0]);
+		this.postponableConstraints = Stream.of(constraints).filter(c -> c.postponable).toArray(Constraint[]::new);
+		for (int i = 0; i < postponableConstraints.length; i++)
+			postponableConstraints[i].postponablePosition = i;
 
 		Constraint[] sortedConstraints = features.collecting.constraints.stream().sorted((c1, c2) -> c1.scp.length - c2.scp.length).toArray(Constraint[]::new);
 		// TODO for the moment we cannot use the sortedConstraints as the main array (pb with nums, and anyway would it be useful?)
@@ -2025,7 +2033,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	public final void autolex(Var[] list, boolean strict) {
-		new AutoLex(this, translate(list), new int[]{0}, strict);
+		new AutoLex(this, translate(list), new int[] { 0 }, strict);
 	}
 
 	public final void autolex(Var[] list, int[] pattern, boolean strict) {

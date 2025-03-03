@@ -9,10 +9,9 @@ import java.util.stream.IntStream;
 import utility.Kit;
 
 /**
- * A sparse set is basically composed of two arrays (of integers) and a limit: at any time, it contains the elements
- * (typically, indexes of values) in the array 'dense' at indexes ranging from 0 to the limit (included). The presence
- * of elements can be checked with the array 'sparse'. Sparse sets are always simple, meaning that values in 'dense' are
- * necessarily indexes 0, 1, 2, ... Besides, we have dense[sparse[value]] = value.
+ * A sparse set is basically composed of two arrays (of integers) and a limit: at any time, it contains the elements (typically, indexes of values) in the array
+ * 'dense' at indexes ranging from 0 to the limit (included). The presence of elements can be checked with the array 'sparse'. Sparse sets are always simple,
+ * meaning that values in 'dense' are necessarily indexes 0, 1, 2, ... Besides, we have dense[sparse[value]] = value.
  * 
  * @author Christophe Lecoutre
  */
@@ -24,8 +23,8 @@ public class SetSparse extends SetDense {
 	public int[] sparse;
 
 	/**
-	 * Builds a sparse set with the specified capacity. The sparse set is simple, meaning that it is aimed at containing
-	 * indexes 0, 1, 2, ... Initially, the set is full or empty depending on the value of the specified boolean.
+	 * Builds a sparse set with the specified capacity. The sparse set is simple, meaning that it is aimed at containing indexes 0, 1, 2, ... Initially, the set
+	 * is full or empty depending on the value of the specified boolean.
 	 * 
 	 * @param capacity
 	 *            the capacity of the sparse set
@@ -34,13 +33,13 @@ public class SetSparse extends SetDense {
 	 */
 	public SetSparse(int capacity, boolean initiallyFull) {
 		super(capacity, initiallyFull);
-		this.sparse = Kit.series(capacity);
+		this.sparse = capacity == 0 ? new int[0] : Kit.series(capacity);
 		control(Arrays.equals(dense, sparse));
 	}
 
 	/**
-	 * Builds a sparse set with the specified capacity. The sparse set is simple, meaning that it is aimed at containing
-	 * indexes 0, 1, 2, ... Initially, the set is empty.
+	 * Builds a sparse set with the specified capacity. The sparse set is simple, meaning that it is aimed at containing indexes 0, 1, 2, ... Initially, the set
+	 * is empty.
 	 * 
 	 * @param capacity
 	 *            the capacity of the sparse set

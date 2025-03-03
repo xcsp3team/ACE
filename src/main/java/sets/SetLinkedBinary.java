@@ -24,17 +24,16 @@ public class SetLinkedBinary implements SetLinked {
 	/**
 	 * The size of the set (i.e., the current number of elements)
 	 */
-	private byte size;
+	protected byte size;
 
 	/**
 	 * The last deleted element (index) of the set.
 	 */
-	private byte lastRemoved;
+	protected byte lastRemoved;
 
 	/**
-	 * The level at which absent elements (indexes) have been removed from the set. Hence,
-	 * <code> removedLevels[a] == i </code> means that i is the removal level of the index a and
-	 * <code> removedLevels[a] == -1 </code> means that the index a is still present.
+	 * The level at which absent elements (indexes) have been removed from the set. Hence, <code> removedLevels[a] == i </code> means that i is the removal
+	 * level of the index a and <code> removedLevels[a] == -1 </code> means that the index a is still present.
 	 */
 	private int[] removedlevels;
 
@@ -80,7 +79,7 @@ public class SetLinkedBinary implements SetLinked {
 	}
 
 	@Override
-	public final int first() {
+	public int first() {
 		return removedlevels[0] == -1 ? 0 : removedlevels[1] == -1 ? 1 : -1;
 	}
 
@@ -90,7 +89,7 @@ public class SetLinkedBinary implements SetLinked {
 	}
 
 	@Override
-	public final int last() {
+	public int last() {
 		return removedlevels[1] == -1 ? 1 : removedlevels[0] == -1 ? 0 : -1;
 	}
 

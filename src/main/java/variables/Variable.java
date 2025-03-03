@@ -18,7 +18,6 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.LinkedHashSet;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -33,6 +32,8 @@ import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.Observers.ObserverOnBacktracks.ObserveronBacktracksUnsystematic;
 import problem.Problem;
 import utility.Kit;
+import variables.DomainBinary.DomainBinaryG;
+import variables.DomainBinary.DomainBinaryS;
 import variables.DomainFinite.DomainRange;
 import variables.DomainFinite.DomainSymbols;
 import variables.DomainFinite.DomainValues;
@@ -74,7 +75,8 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 				// TODO using DomainRange for better reasoning with ranges (when handling/combining expressions)?
 				this.dom = new DomainRange(this, firstValue, firstValue);
 			else if (values.length == 2)
-				this.dom = new DomainBinary(this, firstValue, lastValue);
+				// this.dom = new DomainBinaryG(this, firstValue, lastValue);
+				this.dom = firstValue == 0 && lastValue == 1 ? new DomainBinaryS(this, firstValue, lastValue) : new DomainBinaryG(this, firstValue, lastValue);
 			else {
 				boolean range = values.length == (lastValue - firstValue + 1);
 				this.dom = range ? new DomainRange(this, firstValue, lastValue) : new DomainValues(this, values);

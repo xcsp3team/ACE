@@ -223,8 +223,11 @@ public final class Solutions {
 		assert found > 0;
 		boolean discardAuxiliary = !solver.head.control.general.jsonAux;
 		String PREFIX = pure ? "" : "   ";
+		List<VarEntity> list = solver.problem.varEntities.allEntities;
+		if (list.size() == 1 && list.get(0) instanceof VarArray)
+			return PREFIX + "{'" + list.get(0).id + "': " + Variable.instantiationOf(VarArray.class.cast(list.get(0)).vars, PREFIX) + "}";
 		StringBuilder sb = new StringBuilder(PREFIX).append("{\n");
-		for (VarEntity va : solver.problem.varEntities.allEntities) {
+		for (VarEntity va : list) {
 			if (undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
 				continue;
 			sb.append(PREFIX).append(" ").append(pure ? "'" : "").append(va.id).append(pure ? "'" : "").append(": ");

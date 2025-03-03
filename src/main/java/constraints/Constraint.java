@@ -340,6 +340,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 
 	public final boolean postponable;
 
+	public int postponablePosition = -1;
+
 	public Variable postponedEvent;
 
 	/**
