@@ -14,6 +14,9 @@ import java.util.stream.IntStream;
 
 import sets.SetLinkedBinary;
 import utility.Kit;
+import variables.DomainFinite.DomainRange;
+import variables.DomainFinite.DomainRangeG;
+import variables.DomainFinite.DomainRangeS;
 
 /**
  * A binary domain for a variable (entity of a constraint network).
@@ -21,6 +24,10 @@ import utility.Kit;
  * @author Christophe Lecoutre
  */
 public abstract class DomainBinary extends SetLinkedBinary implements Domain {
+
+	public static DomainBinary buildDomainBinary(Variable x, int firstValue, int secondValue) {
+		return firstValue == 0 && secondValue == 1 ? new DomainBinaryS(x, firstValue, secondValue) : new DomainBinaryG(x, firstValue, secondValue);
+	}
 
 	protected Variable x;
 
@@ -95,6 +102,13 @@ public abstract class DomainBinary extends SetLinkedBinary implements Domain {
 	}
 
 	public static final class DomainBinaryS extends DomainBinary {
+
+		public static final int[] values = { 0, 1 };
+
+		@Override
+		public Object allValues() {
+			return values;
+		}
 
 		/**
 		 * Builds a binary domain for the specified variable from the specified values

@@ -23,8 +23,8 @@ import sets.SetLinkedFinite.SetLinkedFiniteWithBits;
 import utility.Kit;
 
 /**
- * A finite domain for a variable (from a constraint network), composed of a finite set of integers. Such a domain is
- * defined from a range or an array; see the two intern subclasses.
+ * A finite domain for a variable (from a constraint network), composed of a finite set of integers. Such a domain is defined from a range or an array; see the
+ * two intern subclasses.
  * 
  * @author Christophe Lecoutre
  */
@@ -90,11 +90,18 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 		return "dom(" + var() + ")";
 	}
 
+	/**********************************************************************************************
+	 * DomainRange
+	 *********************************************************************************************/
+
 	/**
-	 * This class gives the description of a domain composed of a list of integers included between two (integer)
-	 * bounds.
+	 * This class gives the description of a domain composed of a list of integers included between two (integer) bounds.
 	 */
-	public final static class DomainRange extends DomainFinite {
+	public abstract static class DomainRange extends DomainFinite {
+
+		public static DomainRange buildDomainRange(Variable x, int min, int max) {
+			return min == 0 ? new DomainRangeS(x, min, max) : new DomainRangeG(x, min, max);
+		}
 
 		/**
 		 * The minimal value of the domain
@@ -119,6 +126,21 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 		}
 
 		@Override
+		public Object allValues() {
+			return new Range(min, max + 1);
+		}
+	}
+
+	/**
+	 * This class gives the description of a general range domain.
+	 */
+	public final static class DomainRangeG extends DomainRange {
+
+		public DomainRangeG(Variable x, int min, int max) {
+			super(x, min, max);
+		}
+
+		@Override
 		public int toIdx(int v) {
 			return v < min || v > max ? -1 : v - min;
 		}
@@ -129,15 +151,71 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 			return a + min;
 		}
 
-		@Override
-		public Object allValues() {
-			return new Range(min, max + 1);
-		}
 	}
 
 	/**
-	 * This class describes domains composed of a list of integers that are not necessarily contiguous. Be careful: the
-	 * values are sorted.
+	 * This class gives the description of a specific range domain, i.e., a range starting at 0.
+	 */
+	public final static class DomainRangeS extends DomainRange {
+
+		public DomainRangeS(Variable x, int min, int max) {
+			super(x, min, max);
+			control(min == 0 && 0 <= max && max <= Constants.MAX_SAFE_INT, () -> "badly formed domain for variable " + x);
+		}
+
+		@Override
+		public int firstValue() {
+			return first;
+		}
+
+		@Override
+		public int lastValue() {
+			return last;
+		}
+
+		@Override
+		public int singleValue() {
+			return single();
+		}
+
+		@Override
+		public int anyValue() {
+			return any();
+		}
+
+		@Override
+		public int toIdx(int v) {
+			return v < 0 || v > max ? -1 : v;
+		}
+
+		@Override
+		public int toVal(int a) {
+			// assert 0 <= a && a <= max;
+			return a;
+		}
+
+		@Override
+		public boolean containsValue(int v) {
+			return (0 <= v && v <= max) && contains(v);
+		}
+
+		@Override
+		public boolean containsOnlyValue(int v) {
+			return size == 1 && v == first;
+		}
+
+		@Override
+		public Object allValues() {
+			return new Range(0, max + 1);
+		}
+	}
+
+	/**********************************************************************************************
+	 * DomainValues and DomainSymbols
+	 *********************************************************************************************/
+
+	/**
+	 * This class describes domains composed of a list of integers that are not necessarily contiguous. Be careful: the values are sorted.
 	 */
 	public static class DomainValues extends DomainFinite {
 
@@ -195,8 +273,8 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 	}
 
 	/**
-	 * This class describes domains composed of a list of symbols, where each such symbol is associated with a value
-	 * (just introduced to handle symbols in the solver).
+	 * This class describes domains composed of a list of symbols, where each such symbol is associated with a value (just introduced to handle symbols in the
+	 * solver).
 	 */
 	public final static class DomainSymbols extends DomainValues {
 

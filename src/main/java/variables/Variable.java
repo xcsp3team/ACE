@@ -35,6 +35,7 @@ import utility.Kit;
 import variables.DomainBinary.DomainBinaryG;
 import variables.DomainBinary.DomainBinaryS;
 import variables.DomainFinite.DomainRange;
+import variables.DomainFinite.DomainRangeG;
 import variables.DomainFinite.DomainSymbols;
 import variables.DomainFinite.DomainValues;
 
@@ -73,13 +74,13 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 			int firstValue = values[0], lastValue = values[values.length - 1];
 			if (values.length == 1)
 				// TODO using DomainRange for better reasoning with ranges (when handling/combining expressions)?
-				this.dom = new DomainRange(this, firstValue, firstValue);
+				this.dom = DomainRange.buildDomainRange(this, firstValue, firstValue);
 			else if (values.length == 2)
 				// this.dom = new DomainBinaryG(this, firstValue, lastValue);
-				this.dom = firstValue == 0 && lastValue == 1 ? new DomainBinaryS(this, firstValue, lastValue) : new DomainBinaryG(this, firstValue, lastValue);
+				this.dom = DomainBinary.buildDomainBinary(this, firstValue, lastValue);
 			else {
 				boolean range = values.length == (lastValue - firstValue + 1);
-				this.dom = range ? new DomainRange(this, firstValue, lastValue) : new DomainValues(this, values);
+				this.dom = range ? DomainRange.buildDomainRange(this, firstValue, lastValue) : new DomainValues(this, values);
 			}
 		}
 
@@ -95,7 +96,8 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 		 */
 		public VariableInteger(Problem problem, String id, IntegerInterval interval) {
 			super(problem, id);
-			this.dom = new DomainRange(this, Utilities.safeIntWhileHandlingInfinity(interval.inf), Utilities.safeIntWhileHandlingInfinity(interval.sup));
+			this.dom = DomainRange.buildDomainRange(this, Utilities.safeIntWhileHandlingInfinity(interval.inf),
+					Utilities.safeIntWhileHandlingInfinity(interval.sup));
 		}
 
 		/**
