@@ -14,9 +14,6 @@ import java.util.stream.IntStream;
 
 import sets.SetLinkedBinary;
 import utility.Kit;
-import variables.DomainFinite.DomainRange;
-import variables.DomainFinite.DomainRangeG;
-import variables.DomainFinite.DomainRangeS;
 
 /**
  * A binary domain for a variable (entity of a constraint network).

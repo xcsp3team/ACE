@@ -87,7 +87,7 @@ public final class Solutions {
 	/**
 	 * Stores all solutions found by the solver, if activated
 	 */
-	private final List<int[]> store;
+	public final List<int[]> store;
 
 	/**
 	 * The object used to output solutions in XML
@@ -258,7 +258,7 @@ public final class Solutions {
 		this.limit = limit;
 		this.bestBound = solver.problem.optimizer == null || solver.problem.optimizer.minimization ? solver.head.control.optimization.ub
 				: solver.head.control.optimization.lb;
-		this.store = null; // solver.head.control.general.recordSolutions ? new ArrayList<>() : null;
+		this.store = solver.head.control.general.saveSolutions ? new ArrayList<>() : null;
 		this.xml = new XML();
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
 		this.hamming = new int[solver.problem.varArrays.length + 2]; // +2 for stand-alone variables and solver auxiliary variables

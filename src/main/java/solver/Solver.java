@@ -943,20 +943,6 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	/**
-	 * Performs a positive decision (variable assignment) involving the specified variable. The value to be assigned is chosen by the value ordering heuristic
-	 * attached to the variable.
-	 * 
-	 * @param x
-	 *            a variable
-	 * @return false if an inconsistency is detected
-	 */
-	// private final boolean tryAssignment() {
-	// Variable x = heuristic.bestVariable();
-	// int a = x.heuristic.bestValueIndex();
-	// return tryAssignment(x, a);
-	// }
-
-	/**
 	 * Performs a negative decision, x != a, followed by constraint propagation
 	 * 
 	 * @param x

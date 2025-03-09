@@ -415,6 +415,7 @@ public final class Control {
 				"During search, display the Hamming distance between two successive solutions");
 		public final boolean xmlCompact = addB("xmlCompact", "xc", true, "Compress values when displaying solutions in XML");
 		public final boolean xmlEachSolution = addB("xmlEachSolution", "xe", false, "During search, display all found solutions in XML");
+		public final boolean saveSolutions = addB("storeSolutions", "sts", false, "Save all found solutions in a JSON file?");
 		public final boolean noPrintColors = addB("noPrintColors", "npc", false, "Don't use special color characters in the terminal");
 		public final boolean exceptionsVisible = addB("exceptionsVisible", "ev", false, "Makes exceptions visible.");
 		public final boolean enableAnnotations = addB("enableAnnotations", "ea", false, "Enables annotations (currently, mainly concerns priority variables).");

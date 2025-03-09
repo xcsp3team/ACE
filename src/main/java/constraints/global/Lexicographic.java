@@ -140,6 +140,8 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 
 		private int alphaSafe;
 
+		private int alpha;
+
 		/**
 		 * Build a constraint Lexicographic for the specified problem over the two specified lists of variables
 		 * 
@@ -189,7 +191,8 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 
 		@Override
 		public final boolean runPropagator(Variable dummy) {
-			int alpha = alphaSafe;
+			if (failSinceLastCall())
+				alpha = alphaSafe;
 			while (alpha < half) {
 				Domain dom1 = list1[alpha].dom, dom2 = list2[alpha].dom;
 				if (AC.enforceLE(dom1, dom2) == false) // enforce (AC on) x <= y (list1[alpha] <= list2[alpha])

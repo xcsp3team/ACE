@@ -385,6 +385,19 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 */
 	protected final int[] vals;
 
+	protected long lastCallNode = -1;
+
+	protected int lastCallDepth;
+
+	protected final boolean failSinceLastCall() {
+		if ((problem.solver.stats.nAssignments - lastCallNode) != (problem.solver.depth() - lastCallDepth)) {
+			lastCallNode = problem.solver.stats.nAssignments;
+			lastCallDepth = problem.solver.depth();
+			return true;
+		}
+		return false;
+	}
+
 	/**********************************************************************************************
 	 * General methods
 	 *********************************************************************************************/

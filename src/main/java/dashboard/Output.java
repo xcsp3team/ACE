@@ -15,6 +15,7 @@ import static utility.Kit.log;
 
 //import java.awt.Color;
 import java.io.File;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.DecimalFormat;
@@ -22,6 +23,7 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
@@ -126,6 +128,26 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		InformationBloc info = globalInfo();
 		record(GLOBAL, info, solver);
 		log.config("\n" + info);
+
+		if (head.solver.solutions.store != null) {
+			try (PrintWriter out = new PrintWriter("Solutions-" + head.problem.name() + ".json")) {
+				out.println("{");
+				out.println("\"scope\": [" + Stream.of(head.problem.variables).map(x -> "\"" + x.id + "\"").collect(Collectors.joining(", ")) + "], ");
+				out.print("\"table\": [");
+				int cnt = 0;
+				for (int[] t : head.solver.solutions.store) {
+					cnt++;
+					out.print(Arrays.toString(t));
+					if (cnt < head.solver.solutions.store.size())
+						out.println(", ");
+				}
+				out.println("]");
+				out.println("}");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
 	}
 
 	/**********************************************************************************************
@@ -156,7 +178,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	public static final String NUMBER = "number";
 	public static final String NAME = "name";
-	public static final String COMMAND = "command";
+	public static final String ARGS = "args";
 	public static final String N_TYPES = "types";
 	public static final String N_VALUES = "values";
 	public static final String N_DELETED = "deleted";
@@ -469,8 +491,8 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(NAME, head.problem.name());
 		m.put(NUMBER, instanceNumber, Input.nInstancesToSolve > 1);
 		m.separator();
-		m.put(COMMAND, Stream.of(Input.args).collect(Collectors.joining(" ")));
-		
+		m.put(ARGS, Stream.of(Input.args).collect(Collectors.joining(" ")));
+
 		m.separator(options.selection.length() > 0 || options.instantiation.length() > 0 || options.priority1.length() > 0 || options.priority2.length() > 0);
 		m.put(SELECTION, options.selection);
 		m.put(INSTANTIATION, options.instantiation);
@@ -490,7 +512,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private InformationBloc variablesInfo() {
 		InformationBloc m = new InformationBloc(VARIABLES);
-		m.put(COUNT,  numberFormat.format(head.problem.variables.length));
+		m.put(COUNT, numberFormat.format(head.problem.variables.length));
 		m.put(N_OMITTED, features.nOmittedVars);
 		m.put(N_DISCARDED, features.collecting.discardedVars.size());
 		m.put(N_ISOLATED, features.nIsolatedVars);
@@ -510,7 +532,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private InformationBloc constraintsInfo() {
 		InformationBloc m = new InformationBloc(CONSTRAINTS);
-		m.put(COUNT,  numberFormat.format(head.problem.constraints.length));
+		m.put(COUNT, numberFormat.format(head.problem.constraints.length));
 		m.put(N_REMOVED1, features.nRemovedUnaryCtrs);
 		m.put(N_CONVERTED, features.nConvertedConstraints);
 		m.put("nNogoods", features.collecting.nogoods.size());

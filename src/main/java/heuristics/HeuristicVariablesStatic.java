@@ -21,8 +21,8 @@ import utility.Kit;
 import variables.Variable;
 
 /**
- * This is the root class for building static variable ordering heuristics. It means that the order with which variables
- * are assigned is computed at initialization.
+ * This is the root class for building static variable ordering heuristics. It means that the order with which variables are assigned is computed at
+ * initialization.
  * 
  * @author Christophe Lecoutre
  */
@@ -80,6 +80,20 @@ public abstract class HeuristicVariablesStatic extends HeuristicVariables implem
 		@Override
 		public double scoreOf(Variable x) {
 			return -x.num;
+		}
+	}
+
+	public static final class Alternating extends HeuristicVariablesStatic {
+
+		public Alternating(Solver solver, boolean anti) {
+			super(solver, anti);
+		}
+
+		@Override
+		public double scoreOf(Variable x) {
+			int n = solver.problem.variables.length;
+			int score = x.num < n / 2 ? -2 * x.num : -2 * ((n - x.num) - 1) - 1;
+			return -score;
 		}
 	}
 

@@ -203,11 +203,6 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 		public boolean containsOnlyValue(int v) {
 			return size == 1 && v == first;
 		}
-
-		@Override
-		public Object allValues() {
-			return new Range(0, max + 1);
-		}
 	}
 
 	/**********************************************************************************************
