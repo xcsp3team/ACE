@@ -636,6 +636,7 @@ public final class Control {
 	public class OptionsRevh extends OptionGroup {
 		public final String clazz = addS("clazz", "revh", Dom.class, HeuristicRevisions.class, "Class of the revision ordering heuristic");
 		public final boolean anti = addB("anti", "anti_revh", false, "Must we use the reverse of the natural heuristic order?");
+		public final int revisionQueueLimit = addI("revisionQueueLimit", "rsl", 100, "Limit for searching the best variable in the revision queue");
 	}
 
 	public class OptionsVarh extends OptionGroup {
@@ -656,6 +657,7 @@ public final class Control {
 		public final int optVarHeuristic = addI("optVarHeuristic", "ovarh", 0,
 				"On how many variables must we branch in a fixed static way on ther variables of the objective (when a weighted sum) according to coeff values?"); // experimental
 		public final boolean alwaysAssignAllVariables = addB("alwaysAssignAllVariables", "aaa", false, "Must we always explicitly assign all variables?");
+		public final boolean secondScored = addB("secondScored", "ssc", false, "Must we use the second variable scored by the heuristic?");
 	}
 
 	public class OptionsValh extends OptionGroup {

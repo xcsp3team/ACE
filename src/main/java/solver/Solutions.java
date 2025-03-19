@@ -87,7 +87,7 @@ public final class Solutions {
 	/**
 	 * Stores all solutions found by the solver, if activated
 	 */
-	public final List<int[]> store;
+	public final List<Object> store;
 
 	/**
 	 * The object used to output solutions in XML

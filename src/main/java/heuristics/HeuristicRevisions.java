@@ -15,9 +15,9 @@ import propagation.Queue;
 import variables.Variable;
 
 /**
- * This is the root class for building revision ordering heuristics. A revision ordering heuristic is attached to the
- * propagation queue (i.e., set used to guide propagation). It is used by the solver (actually, the propagation object)
- * to iteratively select variables (from the propagation queue) in order to perform constraint propagation.
+ * This is the root class for building revision ordering heuristics. A revision ordering heuristic is attached to the propagation queue (i.e., set used to guide
+ * propagation). It is used by the solver (actually, the propagation object) to iteratively select variables (from the propagation queue) in order to perform
+ * constraint propagation.
  * 
  * @author Christophe Lecoutre
  */
@@ -27,6 +27,8 @@ public abstract class HeuristicRevisions extends Heuristic {
 	 * The queue (propagation set) to which the revision ordering heuristic is attached
 	 */
 	protected final Queue queue;
+
+	protected final int limit;
 
 	/**
 	 * Builds a revision ordering heuristic, to be used with the specified queue
@@ -39,6 +41,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 	public HeuristicRevisions(Queue queue, boolean anti) {
 		super(anti);
 		this.queue = queue;
+		this.limit = queue.propagation.solver.head.control.revh.revisionQueueLimit;
 	}
 
 	/**
@@ -51,8 +54,8 @@ public abstract class HeuristicRevisions extends Heuristic {
 	 *************************************************************************/
 
 	/**
-	 * This is the root class for building direct revision ordering heuristics, i.e., heuristics for which we directly
-	 * know which element (variable position in the queue) has to be returned (without searching)
+	 * This is the root class for building direct revision ordering heuristics, i.e., heuristics for which we directly know which element (variable position in
+	 * the queue) has to be returned (without searching)
 	 */
 	public static abstract class HeuristicRevisionsDirect extends HeuristicRevisions {
 
@@ -116,8 +119,8 @@ public abstract class HeuristicRevisions extends Heuristic {
 		}
 
 		/**
-		 * Returns the (raw) score of the specified variable (which is present in in the propagation queue). This is the
-		 * method to override for defining a new dynamic heuristic.
+		 * Returns the (raw) score of the specified variable (which is present in in the propagation queue). This is the method to override for defining a new
+		 * dynamic heuristic.
 		 * 
 		 * @param x
 		 *            a variable
@@ -127,6 +130,9 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		@Override
 		public int bestInQueue() {
+			if (queue.size() > limit)
+				return 0;
+
 			int pos = 0;
 			double bestScore = scoreOf(queue.var(0)) * multiplier;
 			for (int i = 1; i <= queue.limit; i++) {
@@ -147,6 +153,28 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 			public Dom(Queue queue, boolean anti) {
 				super(queue, anti);
+			}
+
+			@Override
+			public int bestInQueue() {
+				// if (queue.size() > limit)
+				// return 0;
+
+				int bestSize = queue.var(0).dom.size();
+				if (bestSize <= queue.domSizeLowerBound)
+					return 0; // if this is 1, it is not possible to do better
+				int pos = 0;
+				for (int i = 1; i <= queue.limit; i++) {
+					int otherSize = queue.var(i).dom.size();
+					if (otherSize < bestSize) {
+						if (otherSize <= queue.domSizeLowerBound)
+							return i; // if this is 1, it is not possible to do better
+						bestSize = otherSize;
+						pos = i;
+					}
+				}
+				queue.domSizeLowerBound = bestSize; // we can update the bound
+				return pos;
 			}
 
 			@Override

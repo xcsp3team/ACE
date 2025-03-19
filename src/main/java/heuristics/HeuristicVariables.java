@@ -71,6 +71,8 @@ public abstract class HeuristicVariables extends Heuristic {
 		 */
 		private boolean discardAux;
 
+		public Variable second;
+
 		public BestScoredVariable(boolean discardAux) {
 			this.discardAux = discardAux;
 		}
@@ -83,6 +85,7 @@ public abstract class HeuristicVariables extends Heuristic {
 			this.variable = null;
 			this.score = minimization ? Double.MAX_VALUE : Double.NEGATIVE_INFINITY;
 			this.minimization = minimization;
+			this.second = null;
 			return this;
 		}
 
@@ -102,6 +105,7 @@ public abstract class HeuristicVariables extends Heuristic {
 			}
 			boolean modification = ((minimization && s < score) || (!minimization && s > score));
 			if (modification) {
+				second = variable;
 				variable = x;
 				score = s;
 			}
@@ -243,8 +247,8 @@ public abstract class HeuristicVariables extends Heuristic {
 		return ((0 < numRun && numRun % solver.head.control.restarts.varhResetPeriod == 0)
 				|| (numRun - solver.solutions.lastRun) % solver.head.control.restarts.varhSolResetPeriod == 0);
 	}
-	
-	protected  void resettingMessage(String s) {
+
+	protected void resettingMessage(String s) {
 		Kit.log.config(Kit.Color.YELLOW.coloring(" ...resetting ") + s + " (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
 	}
 

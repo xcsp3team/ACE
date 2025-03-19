@@ -21,10 +21,9 @@ import utility.Reflector;
 import variables.Variable;
 
 /**
- * A queue is used to store the variables that have to be considered by constraint propagation. A variable is added to
- * the queue when its domain has been reduced so as to propagate this event. Constraint propagation iteratively involves
- * picking one variable in this set (by means of a so-called revision ordering heuristic) and then performs some
- * filtering.
+ * A queue is used to store the variables that have to be considered by constraint propagation. A variable is added to the queue when its domain has been
+ * reduced so as to propagate this event. Constraint propagation iteratively involves picking one variable in this set (by means of a so-called revision
+ * ordering heuristic) and then performs some filtering.
  * 
  * @author Christophe Lecoutre
  */
@@ -66,6 +65,14 @@ public final class Queue extends SetSparse {
 		this.variables = head.problem.variables;
 	}
 
+	public int domSizeLowerBound;
+
+	@Override
+	public void clear() {
+		super.clear();
+		domSizeLowerBound = Integer.MAX_VALUE;
+	}
+
 	/**
 	 * Returns the ith variable from the queue
 	 * 
@@ -79,8 +86,7 @@ public final class Queue extends SetSparse {
 	}
 
 	/**
-	 * Adds the specified variable to the queue. This method must be called when the domain of the specified variable
-	 * has been modified.
+	 * Adds the specified variable to the queue. This method must be called when the domain of the specified variable has been modified.
 	 * 
 	 * @param x
 	 *            a variable to be added
@@ -88,6 +94,8 @@ public final class Queue extends SetSparse {
 	public void add(Variable x) {
 		x.time = propagation.incrementTime();
 		add(x.num);
+		if (x.dom.size() < domSizeLowerBound)
+			domSizeLowerBound = x.dom.size();
 		assert !x.assigned() || x == propagation.solver.futVars.lastPast() : "variable " + x;
 	}
 

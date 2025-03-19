@@ -963,7 +963,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		if (consistent) {
 			if (head.control.solving.branching == Branching.NON)
 				return true;
+			// System.out.println("bef " + x.dom.size());
 			consistent = propagation.runAfterRefutation(x);
+			// System.out.println("aft");
 			if (!consistent)
 				stats.nWrongDecisions++;
 		}

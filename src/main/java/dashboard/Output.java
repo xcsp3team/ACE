@@ -23,11 +23,11 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.w3c.dom.Document;
@@ -135,9 +135,11 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 				out.println("\"scope\": [" + Stream.of(head.problem.variables).map(x -> "\"" + x.id + "\"").collect(Collectors.joining(", ")) + "], ");
 				out.print("\"table\": [");
 				int cnt = 0;
-				for (int[] t : head.solver.solutions.store) {
+				for (Object t : head.solver.solutions.store) {
 					cnt++;
-					out.print(Arrays.toString(t));
+					// out.print(t instanceof int[] ? Kit.compactValues((int[]) t, 3) : t);
+					// out.print(t instanceof int[] ? Arrays.toString((int[]) t) : t);
+					out.print(t instanceof int[] ? "[" + IntStream.of((int[]) t).mapToObj(v -> v + "").collect(Collectors.joining(",")) + "]" : t);
 					if (cnt < head.solver.solutions.store.size())
 						out.println(", ");
 				}

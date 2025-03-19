@@ -57,9 +57,12 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	private int lastDepthWithOnlySingletons = Integer.MAX_VALUE;
 
+	private int nCalls;
+
 	@Override
 	protected Variable bestUnpriorityVariable() {
 		assert solver.futVars.size() > 0;
+		nCalls++;
 		if (solver.head.control.solving.branching != Branching.BIN) { // if not binary branching
 			Variable x = solver.decisions.varOfLastDecisionIf(false);
 			if (x != null)
@@ -69,6 +72,12 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			Variable x = solver.lastConflict.priorityVariable();
 			if (x != null && (options.lc1 || x.dom.size() > 1))
 				return x;
+		}
+		if (nCalls % 2 == 0 && solver.head.control.varh.secondScored) {
+			Variable x = bestScoredVariable.second;
+			if (x != null && x.dom.size() > 1) {
+				return x;
+			}
 		}
 		bestScoredVariable.reset(false);
 		if (options.singleton == SingletonStrategy.LAST) {

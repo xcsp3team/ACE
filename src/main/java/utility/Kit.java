@@ -984,6 +984,29 @@ public final class Kit {
 		return limit;
 	}
 
+	public static StringBuilder compactValues(int[] values, int limit) {
+		assert values.length > 0;
+		StringBuilder sb = new StringBuilder("[");
+		int i = 0;
+		int last = values[0];
+		while (true) {
+			int before = i;
+			while (i < values.length && values[i] == last)
+				i++;
+			int nb = i - before;
+			if (nb >= limit)
+				sb.append(last + "x" + nb);
+			else
+				for (int j = 0; j < nb; j++)
+					sb.append(last);
+			if (i == values.length)
+				break;
+			else sb.append(",");
+			last = values[i];
+		}
+		return sb.append("]");
+	}
+
 	public static void main(String[] args) {
 		System.out.println(-1 / 9.0 + "");
 		for (int[] t : new int[][] { { 3, -5 }, { 3, 10 }, { -3, -5 }, { -3, 10 }, { 3, 0 }, { -3, 0 }, { 10, -20 }, { 9, -1 }, { -10, -1 } })
