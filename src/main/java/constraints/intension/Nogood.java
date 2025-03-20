@@ -47,7 +47,7 @@ public class Nogood extends ConstraintGlobal implements TagAC, TagCallCompleteFi
 		super(pb, vars);
 		this.vars = vars;
 		this.vals = vals;
-		control(vars.length > 1 && vars.length == vals.length);
+		control(vars.length > 1 && vars.length == vals.length, () -> "" + vars.length);
 		control(IntStream.range(0, vars.length).allMatch(i -> vars[i].dom.size() > 1 && vars[i].dom.containsValue(vals[i])));
 		sentinel1 = 0;
 		sentinel2 = 1;

@@ -162,13 +162,13 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 				int bestSize = queue.var(0).dom.size();
 				if (bestSize <= queue.domSizeLowerBound)
-					return 0; // if this is 1, it is not possible to do better
+					return 0; // because it is not possible to do better
 				int pos = 0;
 				for (int i = 1; i <= queue.limit; i++) {
 					int otherSize = queue.var(i).dom.size();
 					if (otherSize < bestSize) {
 						if (otherSize <= queue.domSizeLowerBound)
-							return i; // if this is 1, it is not possible to do better
+							return i; // because it is not possible to do better
 						bestSize = otherSize;
 						pos = i;
 					}

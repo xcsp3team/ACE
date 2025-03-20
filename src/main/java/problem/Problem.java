@@ -528,32 +528,43 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			log.info("Reduction to (#V=" + priorityVars.length + ",#C=" + Kit.countIn(true, presentConstraints) + ")");
 	}
 
+	private void postNogood(CollectedNogood nogood) {
+		if (nogood.vars.length == 1) {
+			assert nogood.vals.length == 1;
+			Variable x = nogood.vars[0];
+			int v = nogood.vals[0];
+			if (x.dom.containsValue(v))
+				x.dom.removeValueAtConstructionTime(v);
+		} else
+			post(new Nogood(this, nogood.vars, nogood.vals));
+
+	}
+
 	private void manageCollectedNogoods() {
 		if (features.collecting.nogoods.size() == 0)
 			return;
 		CollectedNogood[] nogoods = features.collecting.nogoods.toArray(CollectedNogood[]::new);
 		boolean[] t = new boolean[nogoods.length];
-		List<int[]> list = new ArrayList<>();
+		List<Integer> list = new ArrayList<>();
 		for (int i = 0; i < t.length; i++) {
 			if (t[i])
 				continue;
 			list.clear();
-			list.add(nogoods[i].vals);
+			list.add(i);
 			for (int j = i + 1; j < t.length; j++) {
 				if (!t[j] && nogoods[j].sameScopeAs(nogoods[i])) {
-					list.add(nogoods[j].vals);
+					list.add(j);
 					t[j] = true;
 				}
 			}
-			if (list.size() == 1)
-				post(new Nogood(this, nogoods[i].vars, nogoods[i].vals));
-			else {
+			if (list.size() == 1) {
+				postNogood(nogoods[i]);
+			} else {
 				if (list.size() > head.control.constraints.nogoodsMergingLimit)
-					post(ConstraintExtension.buildFrom(this, nogoods[i].vars, list.toArray(int[][]::new), false, false));
-				else {
-					for (int k = 0; k < list.size(); k++)
-						post(new Nogood(this, nogoods[i].vars, list.get(k)));
-				}
+					post(ConstraintExtension.buildFrom(this, nogoods[i].vars, list.stream().map(k -> nogoods[k].vals).toArray(int[][]::new), false, false));
+				else
+					for (int k : list)
+						postNogood(nogoods[k]);
 			}
 		}
 	}

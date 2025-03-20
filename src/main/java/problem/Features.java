@@ -151,6 +151,10 @@ public final class Features {
 			return true;
 		}
 
+		@Override
+		public String toString() {
+			return Kit.join(vars) + " != " + Kit.join(vals);
+		}
 	}
 
 	/**
