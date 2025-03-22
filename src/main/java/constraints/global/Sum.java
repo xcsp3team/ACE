@@ -42,7 +42,6 @@ import interfaces.Tags.TagPostponableFiltering;
 import interfaces.Tags.TagSymmetric;
 import optimization.Optimizable;
 import problem.Problem;
-import sets.SetDense;
 import utility.Kit;
 import variables.Domain;
 import variables.DomainInfinite;

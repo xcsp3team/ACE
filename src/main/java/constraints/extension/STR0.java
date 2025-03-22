@@ -18,6 +18,7 @@ import java.util.Arrays;
 import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
+import interfaces.Tags.TagStarredCompatible;
 import problem.Problem;
 import sets.SetDense;
 import variables.Variable;
@@ -28,7 +29,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public class STR0 extends ExtensionSpecific {
+public class STR0 extends ExtensionSpecific implements TagStarredCompatible {
 
 	/**********************************************************************************************
 	 * Implementing Interfaces

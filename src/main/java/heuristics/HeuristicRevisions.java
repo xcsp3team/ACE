@@ -173,7 +173,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 						pos = i;
 					}
 				}
-				queue.domSizeLowerBound = bestSize; // we can update the bound
+				queue.domSizeLowerBound = bestSize; // we can update the bound (even if it may remain an approximation)
 				return pos;
 			}
 

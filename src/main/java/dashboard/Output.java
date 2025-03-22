@@ -436,7 +436,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		}
 
 		private InformationBloc put(String key, Object value, boolean condition) {
-			if (value instanceof String && ((String) value).length() == 0)
+			if (value instanceof String && (value.equals("") || value.equals("0")))
 				return this; // not recorded because empty string
 			if (value instanceof Integer && ((Integer) value) == 0 && !key.contentEquals("run"))
 				return this; // not recorded because 0, except if the key is 'run'

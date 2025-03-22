@@ -10,9 +10,6 @@
 
 package propagation;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 import constraints.Constraint;
 import constraints.ConstraintGlobal;
 import dashboard.Control.OptionsPropagation;
@@ -206,7 +203,8 @@ public abstract class Propagation {
 	 *************************************************************************/
 
 	public void clear() {
-		queue.clear();
+		if (queue != null)
+			queue.clear();
 		currentPostponedConstraints.clear();
 	}
 
