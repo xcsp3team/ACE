@@ -542,7 +542,7 @@ public final class Control {
 		public final boolean redundantSumForCounts = addB("redundantSumForCounts", "rcs", true,
 				"Must we try to post redudant sums for several counts acting as cardinality?");
 		public final int element = addI("element", "g_elt", 0, "Algorithm for Element");
-		public final int circuit = addI("circuit", "g_circ", 0, "Algorithm for Circuit");
+		public final int circuit = addI("circuit", "g_circ", 1, "Algorithm for Circuit");
 		public final int cumulativeAux = addI("cumulativeAux", "g_cua", 0, "Limit for introducing aux variables for Cumulative");
 		public final int noOverlap1 = addI("noOverlap1", "g_no1", 0, "Algorithm for NoOverlap 1D");
 		public final int noOverlap2 = addI("noOverlap2", "g_no2", 0, "Algorithm for NoOverlap 2D");

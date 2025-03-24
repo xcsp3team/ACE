@@ -162,8 +162,8 @@ import constraints.global.AutoLex;
 import constraints.global.BinPacking.BinPackingEnergetic;
 import constraints.global.BinPacking.BinPackingEnergeticLoad;
 import constraints.global.Cardinality;
-import constraints.global.Circuit;
-import constraints.global.Circuit2;
+import constraints.global.Circuit.Circuit1;
+import constraints.global.Circuit.Circuit2;
 import constraints.global.ClauseUnaryTrees;
 import constraints.global.ClauseUnaryTrees.TreeUnaryBoolean;
 import constraints.global.Count.CountCst.AtLeast1;
@@ -623,6 +623,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		if (options.redundantSumForCounts && countEqCandidates.size() > 0) {
+			// Bug to be fixed for java ace /home/lecoutre/instances/MZN_V3/mzn12/ItemsetMining-germanCredit-k2_m12.xml.lzma 
+			// -rcs=0 necessary    -ea shows the problem
 			List<Integer> vals = new ArrayList<>();
 			List<Variable> vars = new ArrayList<>();
 			boolean[] t = new boolean[countEqCandidates.size()];
@@ -3515,7 +3517,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public CtrEntity circuit(Var[] list, int startIndex) {
 		unimplementedIf(startIndex != 0, "circuit");
 		Variable[] vars = translate(list);
-		return post(head.control.global.circuit == DEFAULT ? new Circuit(this, vars) : new Circuit2(this, vars));
+		return post(head.control.global.circuit == DEFAULT ? new Circuit1(this, vars) : new Circuit2(this, vars));
 	}
 
 	@Override

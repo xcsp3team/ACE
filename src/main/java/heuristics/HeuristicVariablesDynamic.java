@@ -93,7 +93,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					else if (solver.sticking != null)
 						solver.sticking[x.num] = x.dom.single();
 				}
-				if (bestScoredVariable.variable == null && !options.alwaysAssignAllVariables)
+				if (bestScoredVariable.variable == null && !options.alwaysAssignAllVariables && !options.connected)
 					return Variable.TAG;
 			}
 			if (bestScoredVariable.variable == null) {

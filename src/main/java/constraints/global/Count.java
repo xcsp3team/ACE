@@ -138,8 +138,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 			@Override
 			public boolean runPropagator(Variable x) {
 				if (!x.dom.containsOnlyValue(value))
-					return true; // because we only filter when the recently filtered variable x has been assigned to
-									// the value
+					return true; // because we only filter when the recently filtered variable x has been assigned to the value
 				int cnt = 0;
 				for (Variable y : scp)
 					if (y.dom.containsOnlyValue(value) && ++cnt > k)
@@ -164,8 +163,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 			@Override
 			public boolean runPropagator(Variable x) {
 				if (!x.dom.containsOnlyValue(value))
-					return true; // because we only filter when the recently filtered variable x has been assigned to
-									// the value
+					return true; // because we only filter when the recently filtered variable x has been assigned to the value
 				for (Variable y : scp)
 					if (y != x && y.dom.removeValueIfPresent(value) == false)
 						return false;

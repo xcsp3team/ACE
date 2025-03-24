@@ -14,6 +14,8 @@ import static org.xcsp.common.Constants.STAR;
 import static utility.Kit.control;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
@@ -29,7 +31,23 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public class STR0 extends ExtensionSpecific implements TagStarredCompatible {
+public abstract class STR0 extends ExtensionSpecific implements TagStarredCompatible {
+
+	/**********************************************************************************************
+	 * Static
+	 *********************************************************************************************/
+
+	public static STR0 buildFrom(Problem pb, Variable[] scp, int[][] tuples, boolean positive, Boolean starred) {
+		int cnt = 0;
+		for (int[] tuple : tuples)
+			for (int v : tuple)
+				if (v == STAR)
+					cnt++;
+		//System.out.println("ggggg " + cnt + " vs " + (tuples.length * scp.length) / 2);
+		if (cnt > (tuples.length * scp.length) / 2)
+			return new STR0b(pb, scp);
+		return new STR0a(pb, scp);
+	}
 
 	/**********************************************************************************************
 	 * Implementing Interfaces
@@ -128,26 +146,6 @@ public class STR0 extends ExtensionSpecific implements TagStarredCompatible {
 		}
 	}
 
-	boolean universal;
-
-	private boolean isValidTuple(int[] t) {
-		// for (int i = sValSize - 1; i >= 0; i--) {
-		// int x = sVal[i];
-		// if (tuple[x] != STAR && !doms[x].contains(tuple[x]))
-		// return false;
-		// }
-		universal = true;
-		for (int x = t.length - 1; x >= 0; x--) {
-			if (t[x] == STAR)
-				continue;
-			if (!doms[x].contains(t[x]))
-				return false;
-			if (doms[x].size() > 1)
-				universal = false;
-		}
-		return true;
-	}
-
 	/**
 	 * Updates the domains of the variables in the scope of the constraint at the end of the filtering process
 	 * 
@@ -164,29 +162,133 @@ public class STR0 extends ExtensionSpecific implements TagStarredCompatible {
 		return true;
 	}
 
-	@Override
-	public boolean runPropagator(Variable dummy) {
-		beforeFiltering();
-		for (int i = set.limit; i >= 0; i--) {
-			int[] tuple = tuples[set.dense[i]];
-			if (isValidTuple(tuple)) {
-				if (universal)
-					return entail();
-				for (int j = sSupSize - 1; j >= 0; j--) {
-					int x = sSup[j];
-					int a = tuple[x];
-					if (a == STAR) {
-						cnts[x] = 0;
-						sSup[j] = sSup[--sSupSize];
-					} else if (!ac[x][a]) {
-						ac[x][a] = true;
-						if (--cnts[x] == 0)
-							sSup[j] = sSup[--sSupSize];
-					}
-				}
-			} else
-				set.removeAtPosition(i);
+	/**********************************************************************************************
+	 * STR0a (no mechanism used to avoid iterating over stars)
+	 *********************************************************************************************/
+
+	public final static class STR0a extends STR0 {
+
+		private boolean lastValidTupleBeingUniversal;
+
+		public STR0a(Problem pb, Variable[] scp) {
+			super(pb, scp);
 		}
-		return updateDomains();
+
+		private boolean isValidTuple(int[] t) {
+			// for (int i = sValSize - 1; i >= 0; i--) {
+			// int x = sVal[i];
+			// if (tuple[x] != STAR && !doms[x].contains(tuple[x]))
+			// return false;
+			// }
+			lastValidTupleBeingUniversal = true;
+			for (int x = t.length - 1; x >= 0; x--) {
+				if (t[x] == STAR)
+					continue;
+				if (!doms[x].contains(t[x]))
+					return false;
+				if (doms[x].size() > 1)
+					lastValidTupleBeingUniversal = false;
+			}
+			return true;
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			beforeFiltering();
+			for (int i = set.limit; i >= 0; i--) {
+				int[] tuple = tuples[set.dense[i]];
+				if (isValidTuple(tuple)) {
+					if (lastValidTupleBeingUniversal)
+						return entail();
+					for (int j = sSupSize - 1; j >= 0; j--) {
+						int x = sSup[j];
+						int a = tuple[x];
+						if (a == STAR) {
+							cnts[x] = 0;
+							sSup[j] = sSup[--sSupSize];
+						} else if (!ac[x][a]) {
+							ac[x][a] = true;
+							if (--cnts[x] == 0)
+								sSup[j] = sSup[--sSupSize];
+						}
+					}
+				} else
+					set.removeAtPosition(i);
+			}
+			return updateDomains();
+		}
+
+	}
+
+	/**********************************************************************************************
+	 * STR0b (with mechanisms used to avoid iterating over stars))
+	 *********************************************************************************************/
+
+	public final static class STR0b extends STR0 { 
+		// TODO : not sure that it is very interesting
+
+		public void afterProblemConstruction(int n) {
+			super.afterProblemConstruction(n);
+			this.quickTuples = Stream.of(tuples).map(t -> new QuickTuple(t)).toArray(QuickTuple[]::new);
+		}
+
+		public class QuickTuple {
+
+			public final int[] tuple;
+
+			public final int[] unstarredPositions;
+
+			public boolean lastValidTupleBeingUniversal;
+
+			public QuickTuple(int[] tuple) {
+				this.tuple = tuple;
+				this.unstarredPositions = IntStream.range(0, tuple.length).filter(i -> tuple[i] != STAR).toArray();
+			}
+
+			private boolean isValid() {
+				lastValidTupleBeingUniversal = true;
+				for (int x : unstarredPositions) {
+					if (!doms[x].contains(tuple[x]))
+						return false;
+					if (doms[x].size() > 1)
+						lastValidTupleBeingUniversal = false;
+				}
+				return true;
+			}
+
+		}
+
+		private QuickTuple[] quickTuples;
+
+		public STR0b(Problem pb, Variable[] scp) {
+			super(pb, scp);
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			beforeFiltering();
+			for (int i = set.limit; i >= 0; i--) {
+				QuickTuple quickTuple = quickTuples[set.dense[i]];
+				if (quickTuple.isValid()) {
+					if (quickTuple.lastValidTupleBeingUniversal)
+						return entail();
+					for (int j = sSupSize - 1; j >= 0; j--) {
+						int x = sSup[j];
+						int a = quickTuple.tuple[x];
+						if (a == STAR) {
+							cnts[x] = 0;
+							sSup[j] = sSup[--sSupSize];
+						} else if (!ac[x][a]) {
+							ac[x][a] = true;
+							if (--cnts[x] == 0)
+								sSup[j] = sSup[--sSupSize];
+						}
+					}
+				} else
+					set.removeAtPosition(i);
+			}
+			return updateDomains();
+		}
+
 	}
 }
