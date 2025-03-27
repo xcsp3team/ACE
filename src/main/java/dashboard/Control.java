@@ -483,6 +483,8 @@ public final class Control {
 		public final OptimizationStrategy strategy = addE("strategy", "os", OptimizationStrategy.DECREASING, "Optimization strategy");
 		public final boolean replaceObjVar = addB("replaceObjVar", "rov", true,
 				"Must we replace the objective variable by an objective constraint, when possible?");
+		public final boolean keepTree = addB("keepTree", "kt", false,
+				"Must we keep the objective as it is when given under the form of a tree (except if a sum is recongnized)?");
 		public final int boundDescentCoeff = addI("boundDescentCoeff", "bdc", 1, "Bound descent coefficient");
 	}
 

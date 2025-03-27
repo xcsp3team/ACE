@@ -18,34 +18,38 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import org.xcsp.common.IVar;
+import org.xcsp.common.Types.TypeExpr;
 import org.xcsp.common.predicates.TreeEvaluator;
 import org.xcsp.common.predicates.TreeEvaluator.F1Evaluator;
 import org.xcsp.common.predicates.TreeEvaluator.F2Evaluator;
+import org.xcsp.common.predicates.TreeEvaluator.LongEvaluator;
+import org.xcsp.common.predicates.XNodeLeaf;
 import org.xcsp.common.predicates.XNodeParent;
 
 import constraints.intension.KeyCanonizer;
 import interfaces.ConstraintRegister;
 import interfaces.Tags.TagCallCompleteFiltering;
+import optimization.Optimizable;
 import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 import variables.Variable.VariableInteger;
 
 /**
- * The abstract class representing Intension constraints, which are constraints whose semantics is given by a Boolean
- * expression tree involving variables. Most of the times, primitives are used instead of this general form.
+ * The abstract class representing Intension constraints, which are constraints whose semantics is given by a Boolean expression tree involving variables. Most
+ * of the times, primitives are used instead of this general form.
  * 
  * @author Christophe Lecoutre
  */
-public final class ConstraintIntension extends Constraint implements TagCallCompleteFiltering {
+public final class ConstraintIntension extends Constraint implements TagCallCompleteFiltering, Optimizable {
 
 	/**********************************************************************************************
 	 * Intern class
 	 *********************************************************************************************/
 
 	/**
-	 * The structure for managing Boolean expression trees. This is basically a tree evaluator with additional
-	 * information concerning which constraints share the same structures.
+	 * The structure for managing Boolean expression trees. This is basically a tree evaluator with additional information concerning which constraints share
+	 * the same structures.
 	 */
 	public final static class IntensionStructure extends TreeEvaluator implements ConstraintRegister {
 
@@ -67,8 +71,8 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 		}
 
 		/**
-		 * Builds an intension structure for the specified Boolean expression tree, while using the specified map of
-		 * symbols because symbolic variables are involved
+		 * Builds an intension structure for the specified Boolean expression tree, while using the specified map of symbols because symbolic variables are
+		 * involved
 		 * 
 		 * @param tree
 		 *            a Boolean expression tree
@@ -78,6 +82,73 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 		public IntensionStructure(XNodeParent<? extends IVar> tree, Map<String, Integer> mapOfSymbols) {
 			super(tree, mapOfSymbols);
 		}
+	}
+
+	/**********************************************************************************************
+	 * When used for optimization
+	 *********************************************************************************************/
+
+	private TreeEvaluator optTreeEvaluator;
+
+	private XNodeLeaf<IVar> node;
+
+	private LongEvaluator le;
+
+	private int[] tmp;
+
+	public void setOptimizationStuff() {
+		control((tree.type == TypeExpr.LE || tree.type == TypeExpr.GE) && tree.sons.length == 2 && tree.sons[1].type == TypeExpr.LONG);
+		this.optTreeEvaluator = new TreeEvaluator(tree.sons[0]);
+		this.node = (XNodeLeaf<IVar>) tree.sons[1];
+		this.le = (LongEvaluator) treeEvaluator.evaluators[treeEvaluator.evaluators.length - 2];
+
+		this.tmp = new int[scp.length];
+		System.out.println(tree);
+	}
+
+	@Override
+	public long limit() {
+		return (long) node.value;
+	}
+
+	@Override
+	public void setLimit(long newLimit) {
+		node.value = newLimit;
+		treeEvaluator.evaluators[treeEvaluator.evaluators.length - 2] = treeEvaluator.new LongEvaluator(newLimit);
+	}
+
+	@Override
+	public void limit(long newLimit) {
+		setLimit(newLimit);
+		// assert minComputableObjectiveValue() - 1 <= newLimit && newLimit <= maxComputableObjectiveValue() + 1;
+	}
+
+	@Override
+	public long minComputableObjectiveValue() {
+		throw new UnsupportedOperationException("Not implemented (but only useful in an assert (deactivated here)");
+	}
+
+	@Override
+	public long maxComputableObjectiveValue() {
+		throw new UnsupportedOperationException("Not implemented (but only useful in an assert (deactivated here)");
+	}
+
+	@Override
+	public long minCurrentObjectiveValue() {
+		throw new UnsupportedOperationException("Not implemented (but currently only useful for BIVS (then being not compatible)");
+	}
+
+	@Override
+	public long maxCurrentObjectiveValue() {
+		throw new UnsupportedOperationException("Not implemented (but currently only useful for BIVS (then being not compatible)");
+	}
+
+	@Override
+	public long objectiveValue() {
+		assert Stream.of(scp).allMatch(x -> x.dom.size() == 1);
+		for (int i = 0; i < scp.length; i++)
+			tmp[i] = scp[i].dom.singleValue();
+		return optTreeEvaluator.evaluate(tmp);
 	}
 
 	/**********************************************************************************************
@@ -95,8 +166,7 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 	public XNodeParent<IVar> tree;
 
 	/**
-	 * The object that can be used to evaluate the Boolean expression tree, when values are specified for involved
-	 * variables
+	 * The object that can be used to evaluate the Boolean expression tree, when values are specified for involved variables
 	 */
 	private IntensionStructure treeEvaluator;
 
@@ -116,8 +186,7 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 	}
 
 	/**
-	 * Build an Intension constraint for the specified problem from the specified Boolean expression tree, and with the
-	 * specified scope
+	 * Build an Intension constraint for the specified problem from the specified Boolean expression tree, and with the specified scope
 	 * 
 	 * @param pb
 	 *            the problem to which this constraint belongs
@@ -134,7 +203,8 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 		this.keyCanonizer = scp.length > 30 || tree.size() > 200 ? null : new KeyCanonizer(tree); // TODO hard coding
 		String key = defineKey(keyCanonizer == null ? tree.toPostfixExpression(tree.vars()) : keyCanonizer.key());
 		Map<String, IntensionStructure> map = pb.head.structureSharing.mapForIntension;
-		this.treeEvaluator = map.computeIfAbsent(key,s -> scp[0] instanceof VariableInteger ? new IntensionStructure(tree) : new IntensionStructure(tree, pb.symbolic.mapOfSymbols));
+		this.treeEvaluator = map.computeIfAbsent(key,
+				s -> scp[0] instanceof VariableInteger ? new IntensionStructure(tree) : new IntensionStructure(tree, pb.symbolic.mapOfSymbols));
 		control(Stream.of(treeEvaluator.evaluators).noneMatch(e -> e instanceof F1Evaluator || e instanceof F2Evaluator));
 		treeEvaluator.register(this);
 	}

@@ -352,7 +352,11 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 
 			@Override
 			public long objectiveValue() {
-				return maxCurrentObjectiveValue(); // = minCurrentObjectiveValue()
+				long max = Long.MIN_VALUE;
+				for (Variable x : scp)
+					max = Math.max(max, x.dom.lastValue());
+				return max;
+				//return maxCurrentObjectiveValue(); // = minCurrentObjectiveValue()
 			}
 
 			public MaximumCst(Problem pb, Variable[] scp, long limit) {
@@ -547,7 +551,11 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 
 			@Override
 			public long objectiveValue() {
-				return minCurrentObjectiveValue(); // = maxCurrentObjectiveValue
+				long min = Long.MAX_VALUE;
+				for (Variable x : scp)
+					min = Math.min(min, x.dom.firstValue());
+				return min;
+				//return minCurrentObjectiveValue(); // = maxCurrentObjectiveValue
 			}
 
 			public MinimumCst(Problem pb, Variable[] scp, long limit) {

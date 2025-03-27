@@ -623,8 +623,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		if (options.redundantSumForCounts && countEqCandidates.size() > 0) {
-			// Bug to be fixed for java ace /home/lecoutre/instances/MZN_V3/mzn12/ItemsetMining-germanCredit-k2_m12.xml.lzma 
-			// -rcs=0 necessary    -ea shows the problem
 			List<Integer> vals = new ArrayList<>();
 			List<Variable> vars = new ArrayList<>();
 			boolean[] t = new boolean[countEqCandidates.size()];
@@ -633,13 +631,18 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					continue;
 				Variable[] list = (Variable[]) countEqCandidates.get(i)[0];
 				vals.clear();
+				vals.add((Integer) countEqCandidates.get(i)[1]);
 				vars.clear();
-				for (int j = i; j < t.length; j++) { // from i to be able to add the elements from position i
+				vars.add((Variable) countEqCandidates.get(i)[2]);
+				for (int j = i + 1; j < t.length; j++) {
 					Variable[] list2 = (Variable[]) countEqCandidates.get(j)[0];
 					if (list.length == list2.length && IntStream.range(0, list.length).allMatch(k -> list[k].equals(list2[k]))) {
 						t[j] = true;
-						vals.add((Integer) countEqCandidates.get(j)[1]);
-						vars.add((Variable) countEqCandidates.get(j)[2]);
+						int w = (Integer) countEqCandidates.get(j)[1];
+						if (vals.stream().allMatch(v -> v != w)) { // otherwise bug as in 'java -ea ace ItemsetMining-germanCredit-k2_m12.xml.lzma'
+							vals.add(w);
+							vars.add((Variable) countEqCandidates.get(j)[2]);
+						}
 					}
 				}
 				assert IntStream.range(0, vals.size()).noneMatch(k -> IntStream.range(k + 1, vals.size()).anyMatch(q -> vals.get(k).equals(vals.get(q))));
@@ -691,7 +694,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private void reduceDomainsFromUserInstantiationAndRefutation() {
 		String instantiation = head.control.variables.instantiation;
 		if (instantiation.length() > 0) {
-			// String s = "";
 			String[] t = instantiation.split(":");
 			control(t.length == 2, "Problem with " + instantiation);
 			Object[] vars = Kit.extractFrom(t[0]);
@@ -702,9 +704,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				int v = vals[i];
 				assert x.dom.containsValue(v) : "Value " + v + " not present in domain of " + x + ". Check  -ins.";
 				x.dom.removeValuesAtConstructionTime(w -> w != v);
-				// s += x + "=" + v + " ";
 			}
-			// System.out.print(s);
 		}
 		String refutation = head.control.variables.refutation;
 		if (refutation.length() > 0) {
@@ -1004,6 +1004,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 */
 	private Var[] replaceByVariables(XNode<IVar>[] trees) {
 		control(trees.length > 0);
+
 		for (int i = 0; i < trees.length; i++) {
 			trees[i] = trees[i].canonization();
 			if (cacheForTrees.containsKey(trees[i]))
@@ -1226,7 +1227,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		assert Variable.haveSameType(scp);
 
 		// Detecting some nogoods
-		if (howManyVariablesWithin(scp, options.spaceLimitToNogood) == Constants.ALL) {
+		boolean detectingNogoods = true;
+		if (detectingNogoods && howManyVariablesWithin(scp, options.spaceLimitToNogood) == Constants.ALL) {
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 			int[] conflict = evaluator.getUniqueConflict(Variable.initDomainValues(scp));
 			if (conflict != null) {
@@ -1234,7 +1236,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return null;
 			}
 		}
-		if ((le_add_vars_val.matches(tree) || lt_add_vars_val.matches(tree)) && Stream.of(scp).allMatch(x -> x.dom.is01())) {
+		if (detectingNogoods && (le_add_vars_val.matches(tree) || lt_add_vars_val.matches(tree)) && Stream.of(scp).allMatch(x -> x.dom.is01())) {
 			int[] max_values = Stream.of(scp).mapToInt(x -> x.dom.lastValue()).toArray();
 			int max_sum = Utilities.safeInt(IntStream.of(max_values).asLongStream().sum());
 			int limit = tree.val(0);
@@ -1402,7 +1404,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (arity > 2 && Stream.of(sons).allMatch(son -> son.type == VAR))
 				return post(new AtLeast1(this, scp, 1)); // return post(SumSimple.buildFrom(this, scp, NE, 0));
 			if (arity >= 2) {
-				if (Stream.of(sons).allMatch(son -> son.type == VAR || x_ne_k.matches(son) || (x_eq_k.matches(son) && ((Variable) son.var(0)).dom.is01()))) {
+				boolean detectingOtherNogoods = true;
+				if (detectingOtherNogoods && Stream.of(sons)
+						.allMatch(son -> son.type == VAR || x_ne_k.matches(son) || (x_eq_k.matches(son) && ((Variable) son.var(0)).dom.is01()))) {
 					List<Integer> vals = new ArrayList<>();
 					for (XNode<IVar> son : tree.sons) {
 						int v = -1;
@@ -1698,7 +1702,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return extension(scp[0], values, positive);
 		}
 		// we try to recognize nogoods
-		if (scp[0] instanceof VariableInteger) {
+		boolean recognizeNogoods = true;
+		if (recognizeNogoods && scp[0] instanceof VariableInteger) {
 			if (tuples.length == 1 && !positive) {
 				int[] tuple = (int[]) tuples[0];
 				if (IntStream.of(tuple).allMatch(v -> v != STAR)) {
@@ -2147,7 +2152,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Term[] terms = handleSumTerms(list, coeffs);
 		Variable[] newList = Stream.of(terms).map(t -> t.obj).toArray(Variable[]::new);
 		int[] newCoeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
-
 		// we reverse if possible (to have some opportunity to have only coeffs equal to 1)
 		if (inversable && newCoeffs[0] == -1 && newCoeffs[newCoeffs.length - 1] == -1) { // if only -1 since sorted
 			Arrays.fill(newCoeffs, 1);
@@ -2158,7 +2162,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			control(newCoeffs[0] != 0);
 			return postExprSubjectToCondition(newCoeffs[0] != 1 ? api.mul(newList[0], newCoeffs[0]) : newList[0], Condition.buildFrom(op, limit));
 		}
-
 		boolean only1 = newCoeffs[0] == 1 && newCoeffs[newCoeffs.length - 1] == 1; // if only 1 since sorted
 		if (op == EQ) {
 			if (head.control.global.eqDecForSum) {
@@ -2180,7 +2183,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return extension(newList, new TreeEvaluator(tree, symbolic.mapOfSymbols).generateSupports(Variable.initDomainValues(newList)), true, false);
 			}
 		}
-
 		if (only1) {
 			if (head.control.global.test2 && Variable.areAllInitiallyBoolean(newList)) {
 				if ((op == GE && limit == 1) || (op == GT && limit == 0))
@@ -2336,7 +2338,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			// // TODO control no overflow? and control ciorrectness
 			// return objEntity;
 		}
-
 		// if (condition instanceof ConditionVal && ((ConditionRel) condition).operator.oneOf(LT, LE, GE, GT))
 		// return sum(replaceByBoundVariables(trees), coeffs, condition);
 		return sum(replaceByVariables(trees), coeffs, condition);
@@ -3721,7 +3722,17 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			}
 			return optimize(opt, SUM, vars.stream().toArray(Variable[]::new), coeffs);
 		}
-		return optimize(opt, replaceByVariable(tree));
+		if (!head.control.optimization.keepTree)
+			return optimize(opt, replaceByVariable(tree));
+		else {
+			Variable[] treeScp = translate(tree.vars());
+			ConstraintIntension clb = new ConstraintIntension(this, treeScp, api.ge(tree, head.control.optimization.lb));
+			clb.setOptimizationStuff();
+			ConstraintIntension cub = new ConstraintIntension(this, treeScp, api.le(tree, head.control.optimization.ub));
+			cub.setOptimizationStuff();
+			optimizer = buildOptimizer(opt, postObj(clb), postObj(cub));
+			return null;
+		}
 	}
 
 	@Override
@@ -3754,7 +3765,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					throw new AssertionError("Unimplemented");
 			}
 
-			// TODO what about several occurrences of the same variable in list?0
+			// TODO what about several occurrences of the same variable in list?
 			// if SUM, should we transform into weighted sum, or just fail?
 			Constraint clb = type == SUM ? new SumSimpleGE(this, list, lb)
 					: type == MINIMUM ? new MinimumCstGE(this, list, lb)

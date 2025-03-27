@@ -12,6 +12,7 @@ package propagation;
 
 import constraints.Constraint;
 import constraints.ConstraintGlobal;
+import constraints.ConstraintIntension;
 import dashboard.Control.OptionsPropagation;
 import heuristics.HeuristicVariablesDynamic.PickOnDom;
 import heuristics.HeuristicVariablesDynamic.ProcOnDom;
@@ -349,7 +350,8 @@ public abstract class Propagation {
 		// must be forced anyway
 		int numRun = solver.restarter.numRun;
 		boolean rerun = runAtNextRoot || (solver.problem.optimizer != null && numRun - 1 == solver.solutions.lastRun)
-				|| (options.strongOnce && 0 < numRun && numRun % 60 == 0); // TODO hard coding for 60
+				|| (options.strongOnce && 0 < numRun && numRun % 60 == 0) // TODO hard coding for 60
+				|| (solver.problem.optimizer != null && solver.problem.optimizer.ctr instanceof ConstraintIntension);
 		if (rerun) {
 			if (runInitially() == false)
 				solver.stopping = Stopping.FULL_EXPLORATION;
