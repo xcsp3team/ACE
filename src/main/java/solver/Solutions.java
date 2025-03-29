@@ -12,6 +12,7 @@ package solver;
 
 import static org.xcsp.common.Types.TypeFramework.COP;
 import static org.xcsp.common.Types.TypeFramework.CSP;
+import static solver.Solver.Stopping.FULL_EXPLORATION;
 import static utility.Kit.control;
 import static utility.Kit.log;
 
@@ -402,9 +403,7 @@ public final class Solutions {
 				// // Variable[] vars = HeuristicValues.possibleOptimizationInterference(solver.problem);
 				// // solver.problem.priorityVars = c.scp;
 				// solver.heuristic.priorityVars = t;
-				// // solver.heuristic = new Rand(solver, false);
-				// System.out.println("changing to Rand");
-				// }
+				// solver.heuristic = new Rand(solver, false); }
 				lastRun = solver.restarter.numRun;
 				hammingInformation();
 				if (found >= limit)
@@ -436,8 +435,11 @@ public final class Solutions {
 							"  " + wck + "  ham=" + IntStream.of(hamming).sum() + " (" + Kit.join(hamming) + ")" + "  opth=" + hammingOpt);
 
 					// solver.restarter.currCutoff += 1; //20;
-					// System.out.println("h1 : " + Kit.join(h1) + " h2 : " + h2);
-					// for (Variable x : h1) System.out.println(x + " " + x.assignmentLevel);
+					
+					// System.out.println("h1 : " + Kit.join(h1) + " h2 : " + h2); for (Variable x : h1) System.out.println(x + " " + x.assignmentLevel);
+					
+					if (solver.problem.optimizer.isFinishedIf(bestBound))
+						solver.stopping = FULL_EXPLORATION; // we record it right now to avoid the cost of propagating (when backtracking) 
 				}
 				// The following code must stay after recording/storing the solution
 				if (solver.head.control.general.jsonSave.length() > 0 && (solver.head.control.general.verbose > 1 || found == 1)) {

@@ -147,6 +147,10 @@ public abstract class Optimizer implements ObserverOnRuns {
 		this.maxBound = cub.limit();
 	}
 
+	public boolean isFinishedIf(long bound) {
+		return minimization ? minBound == bound : bound == maxBound;
+	}
+
 	/**
 	 * Returns the value of the problem objective, computed with respect to the current complete instantiation
 	 * 
@@ -157,7 +161,7 @@ public abstract class Optimizer implements ObserverOnRuns {
 		return cub.objectiveValue();
 	}
 
-	public final long valueWithGap(long val ) {
+	public final long valueWithGap(long val) {
 		return val + gapBound;
 	}
 
