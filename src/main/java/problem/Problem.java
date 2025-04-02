@@ -83,6 +83,7 @@ import static utility.Kit.log;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -537,36 +538,76 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				x.dom.removeValueAtConstructionTime(v);
 		} else
 			post(new Nogood(this, nogood.vars, nogood.vals));
-
 	}
 
 	private void manageCollectedNogoods() {
 		if (features.collecting.nogoods.size() == 0)
 			return;
-		CollectedNogood[] nogoods = features.collecting.nogoods.toArray(CollectedNogood[]::new);
-		boolean[] t = new boolean[nogoods.length];
+		int nSharedNogoods = 0;
+
+		CollectedNogood[] nogoods = features.collecting.nogoods.stream().sorted(Comparator.comparing(ng -> ng.size())).toArray(CollectedNogood[]::new);
+		boolean[] flags = new boolean[nogoods.length];
 		List<Integer> list = new ArrayList<>();
-		for (int i = 0; i < t.length; i++) {
-			if (t[i])
+		for (int i = 0; i < flags.length; i++) { // first, we try to merge nogoods of same scope
+			if (flags[i])
 				continue;
 			list.clear();
 			list.add(i);
-			for (int j = i + 1; j < t.length; j++) {
-				if (!t[j] && nogoods[j].sameScopeAs(nogoods[i])) {
+			for (int j = i + 1; j < flags.length; j++) {
+				if (nogoods[i].size() < nogoods[j].size())
+					break;
+				if (!flags[j] && nogoods[j].sameScopeAs(nogoods[i]))
 					list.add(j);
-					t[j] = true;
-				}
 			}
-			if (list.size() == 1) {
-				postNogood(nogoods[i]);
-			} else {
-				if (list.size() > head.control.constraints.nogoodsMergingLimit)
-					post(ConstraintExtension.buildFrom(this, nogoods[i].vars, list.stream().map(k -> nogoods[k].vals).toArray(int[][]::new), false, false));
-				else
-					for (int k : list)
-						postNogood(nogoods[k]);
+			if (list.size() > head.control.constraints.nogoodsMergingLimit) {
+				list.stream().forEach(k -> flags[k] = true);
+				nSharedNogoods += list.size();
+
+				post(ConstraintExtension.buildFrom(this, nogoods[i].vars, list.stream().map(k -> nogoods[k].vals).toArray(int[][]::new), false, false));
 			}
 		}
+		for (int i = flags.length - 1; i >= 0; i--) { // second, we try to merge nogoods sharing scopes
+			if (flags[i])
+				continue;
+			Variable[] scp = nogoods[i].vars;
+			Domain[] doms = Stream.of(scp).map(x -> x.dom).toArray(Domain[]::new);
+			if (Domain.nValidTuplesBounded(doms) > 1000) // TODO hard coding
+				continue;
+			list.clear();
+			list.add(i);
+			for (int j = i - 1; j >= 0; j--)
+				if (nogoods[j].strictSubscopeOf(nogoods[i]))
+					list.add(j);
+			if (list.size() > 1) { // TODO hard coding
+				list.stream().forEach(k -> flags[k] = true);
+				nSharedNogoods += list.size();
+
+				int[] tmp = new int[scp.length];
+				TupleIterator ti = new TupleIterator(doms);
+				ti.firstValidTuple();
+				List<int[]> supports = new ArrayList<>();
+				ti.consumeValidTuples(tp -> {
+					boolean support = true;
+					for (int k : list) {
+						CollectedNogood ng = nogoods[k];
+						for (int j = 0; j < ng.vars.length; j++)
+							tmp[j] = tp[Utilities.indexOf(ng.vars[j], scp)];
+						if (ng.firstValuseOf(tmp)) {
+							support = false;
+							break;
+						}
+					}
+					if (support)
+						supports.add(tp.clone());
+				});
+				post(ConstraintExtension.buildFrom(this, scp, supports.stream().toArray(int[][]::new), true, false));
+			}
+		}
+		for (int i = 0; i < flags.length; i++) // third, we post remaining nogoods
+			if (!flags[i])
+				postNogood(nogoods[i]);
+		features.collecting.nCollectedNogoodsGathered += nSharedNogoods;
+
 	}
 
 	private void inferAdditionalConstraints() {
@@ -1027,8 +1068,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		int[][] tuples = null;
 		if (similarTrees) {
 			Variable[] treeVars = (Variable[]) real_trees[0].vars();
-			if (head.control.intension.toExtension(treeVars, null))
+			if (head.control.intension.toExtension(treeVars, null)) {
 				tuples = new TreeEvaluator(real_trees[0]).computeTuples(Variable.initDomainValues(treeVars), null);
+			}
 		}
 		for (int i = 0; i < real_trees.length; i++) {
 			replacement(aux[i], real_trees[i], similarTrees, tuples);
@@ -1572,9 +1614,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (Constraint.howManyVariablesWithin(scp, 19) == Constants.ALL && tree.size() > 10 && scp.length <= 3) { // 2^19 is about 500,000
 			features.nConvertedConstraints++;
 			return extension(tree);
-		}
-
-		if (Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) { // Constraint.computeGenericFilteringThreshold(scp) < scp.length) {
+		}		
+		
+		if (scp.length > 3 && Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) { // Constraint.computeGenericFilteringThreshold(scp) < scp.length) {
 			// if it may be useful to decompose
 
 			boolean tryingDecomposition = options.decompose > 0 && scp[0] instanceof VariableInteger; // && scp.length + 1 >= tree.listOfVars().size();
@@ -1613,9 +1655,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				}
 			}
 		}
-
 		if (options.toExtension(scp, tree) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
-			// System.out.println("converting " + tree);
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}

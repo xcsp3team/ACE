@@ -146,7 +146,35 @@ public final class Features {
 			if (vars.length != cn.vars.length)
 				return false;
 			for (int i = 0; i < vars.length; i++)
-				if (vars[i] != cn.vars[i])
+				if (vars[i].num != cn.vars[i].num)
+					return false;
+			return true;
+		}
+
+		public boolean strictSubscopeOf(CollectedNogood cn) {
+			// System.out.println("uuuu0");
+			if (vars.length > cn.vars.length)
+				return false;
+			// System.out.println("uuuu1");
+			for (int i = 0, j = 0; i < vars.length; i++) {
+				while (j < cn.vars.length && vars[i].num > cn.vars[j].num)
+					j++;
+				if (j == cn.vars.length)
+					return false;
+				if (vars[i].num != cn.vars[j].num)
+					return false;
+			}
+			// System.out.println("uuuu " + this + "\n " + cn);
+			return true;
+		}
+
+		public int size() {
+			return vars.length;
+		}
+
+		public boolean firstValuseOf(int[] t) {
+			for (int i = 0; i < vals.length; i++)
+				if (vals[i] != t[i])
 					return false;
 			return true;
 		}
@@ -192,6 +220,9 @@ public final class Features {
 		 */
 		private final Object[] selectedVars = Kit.extractFrom(problem.head.control.variables.selection);
 
+		
+		public int nCollectedNogoodsGathered;
+		
 		/**
 		 * Returns true if the specified variable must be discarded
 		 * 

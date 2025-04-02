@@ -12,6 +12,7 @@ package heuristics;
 
 import interfaces.Tags.TagMaximize;
 import propagation.Queue;
+import utility.Kit;
 import variables.Variable;
 
 /**
@@ -157,7 +158,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 			@Override
 			public int bestInQueue() {
-				// if (queue.size() > limit)
+				// if (queue.size() > limit)  
 				// return 0;
 
 				int bestSize = queue.var(0).dom.size();
@@ -167,8 +168,10 @@ public abstract class HeuristicRevisions extends Heuristic {
 				for (int i = 1; i <= queue.limit; i++) {
 					int otherSize = queue.var(i).dom.size();
 					if (otherSize < bestSize) {
-						if (otherSize <= queue.domSizeLowerBound)
+						if (otherSize <= queue.domSizeLowerBound) {
+							assert otherSize == queue.domSizeLowerBound;
 							return i; // because it is not possible to do better
+						}
 						bestSize = otherSize;
 						pos = i;
 					}

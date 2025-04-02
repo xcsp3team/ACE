@@ -54,8 +54,9 @@ import heuristics.HeuristicValues;
 import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicVariables;
 import heuristics.HeuristicVariablesDynamic.SingletonStrategy;
-import heuristics.HeuristicVariablesDynamic.Wdeg;
 import heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting;
+import heuristics.HeuristicVariablesDynamic.Wdeg;
+
 import interfaces.Tags.TagExperimental;
 import learning.IpsReasoner.LearningIps;
 import learning.NogoodReasoner.LearningNogood;
@@ -194,6 +195,8 @@ public final class Control {
 			restarts.cutoff = restarts.cutoff / 2;
 			restarts.factor = 1.05;
 		}
+		
+		
 
 	}
 
@@ -484,7 +487,7 @@ public final class Control {
 		public final boolean replaceObjVar = addB("replaceObjVar", "rov", true,
 				"Must we replace the objective variable by an objective constraint, when possible?");
 		public final boolean keepTree = addB("keepTree", "kt", false,
-				"Must we keep the objective as it is when given under the form of a tree (except if a sum is recongnized)?");
+				"Must we keep the objective as it is when given under the form of a tree (except if a sum is recognized)?");
 		public final int boundDescentCoeff = addI("boundDescentCoeff", "bdc", 1, "Bound descent coefficient");
 	}
 

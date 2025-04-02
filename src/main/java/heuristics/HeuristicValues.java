@@ -246,12 +246,19 @@ public abstract class HeuristicValues extends Heuristic {
 				}
 			}
 		} else { // at least one solution has been found
-			if (options.solutionSaving > 0 && !(this instanceof Bivs2) && solver.restarter.numRun >= options.solutionSavingStart) {
+			int numRun = solver.restarter.numRun;
+			if (options.solutionSaving > 0 && !(this instanceof Bivs2) && numRun >= options.solutionSavingStart) {
 				// note that solution saving may break determinism of search trees because it depends in which order domains
 				// are pruned (and become singleton or not)
-				if (options.solutionSaving == 1 || solver.restarter.numRun == 0 || solver.restarter.numRun % options.solutionSaving != 0) {
+				if (options.solutionSaving == 1 || numRun == 0 || numRun % options.solutionSaving != 0) {
 					// every k runs, we do not use solution saving, where k is the value of solutionSaving (if k > 1)
 					// int a = -1; if (x == solver.impacting) a = dx.first(); else
+					int nb = solver.restarter.howManyRunsSincelastSolution();
+					// System.out.println(nb);
+					// boolean followEvenObj = !options.solutionSavingExceptObj && !(nb > 12 && nb % 2 == 0);
+					// boolean followEvenObj = (nb == -1 || (numRun / 12) % 2 == 1); // nb <= 12 || (nb /12) %2 == 0);
+					// if (!followEvenObj)
+					// System.out.println(nb);
 					if (!options.solutionSavingExceptObj || x.problem.optimizer == null || !((Constraint) x.problem.optimizer.ctr).involves(x)) {
 						int a = solver.solutions.last[x.num];
 						if (dx.contains(a)) // && (!priorityVar || solver.rs.random.nextDouble() < 0.5))

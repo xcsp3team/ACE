@@ -288,6 +288,11 @@ public class Restarter implements ObserverOnRuns {
 		return numRun + 1 >= options.nRuns;
 	}
 
+	public int howManyRunsSincelastSolution() {
+		int v = solver.solutions.lastRun;
+		return v == -1 ? -1 : (numRun - v);
+	}
+
 	/**********************************************************************************************
 	 * TO BE FINALIZED: Subclasses for LNS
 	 *********************************************************************************************/

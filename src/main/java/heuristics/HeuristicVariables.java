@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import dashboard.Control.OptionsVarh;
+import dashboard.Output;
 import problem.Problem;
 import propagation.GIC.GIC2;
 import solver.Solver;
@@ -249,7 +250,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	}
 
 	protected void resettingMessage(String s) {
-		Kit.log.config(Kit.Color.YELLOW.coloring(" ...resetting ") + s + " (nValues: " + Variable.nValidValuesFor(solver.problem.variables) + ")");
+		Kit.log.config(Kit.Color.YELLOW.coloring(" ...resetting ") + s + " (nValues: " + Output.numberFormat.format(Variable.nValidValuesFor(solver.problem.variables)) + ")");
 	}
 
 	/*************************************************************************

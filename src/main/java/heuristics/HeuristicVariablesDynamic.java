@@ -90,8 +90,16 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					// continue;
 					if (x.dom.size() != 1)
 						bestScoredVariable.consider(x, scoreOptimizedOf(x));
-					else if (solver.sticking != null)
-						solver.sticking[x.num] = x.dom.single();
+					else {
+						if (solver.sticking != null)
+							solver.sticking[x.num] = x.dom.single();
+						if (this instanceof SingOnDom) {
+							if (x.dom.lastRemovedLevel() == solver.depth()) {
+								((SingOnDom) this).nSings[x.num] += solver.problem.variables.length - solver.depth();
+								// System.out.println("jjjjj " + x + " " + ((SingOnDom) this).nSings[x.num]);
+							}
+						}
+					}
 				}
 				if (bestScoredVariable.variable == null && !options.alwaysAssignAllVariables && !options.connected)
 					return Variable.TAG;
@@ -253,6 +261,72 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 	}
 
+	public static final class SingOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, TagMaximize {
+
+		private final long[] nSings;
+
+		public SingOnDom(Solver solver, boolean anti) {
+			super(solver, anti);
+			this.nSings = new long[solver.problem.variables.length];
+		}
+
+		@Override
+		public void reset() {
+			Arrays.fill(nSings, 0);
+		}
+
+		@Override
+		public void beforeRun() {
+			if (runReset()) {
+				resettingMessage("sings");
+				reset();
+			}
+		}
+
+		@Override
+		public double scoreOf(Variable x) {
+			return nSings[x.num] / (double) x.dom.size();
+		}
+	}
+
+	public static final class WipeOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize { 
+		// equivalent to WdegOnDom with variant=VAR
+
+		private final long[] nWipes;
+
+		public WipeOnDom(Solver solver, boolean anti) {
+			super(solver, anti);
+			this.nWipes = new long[solver.problem.variables.length];
+		}
+
+		@Override
+		public void reset() {
+			Arrays.fill(nWipes, 0);
+		}
+
+		@Override
+		public void beforeRun() {
+			if (runReset()) {
+				resettingMessage("wipes");
+				reset();
+			}
+		}
+
+		@Override
+		public void whenWipeout(Constraint c, Variable x) {
+			nWipes[x.num]++;
+		}
+
+		@Override
+		public void whenBacktrack() {
+		}
+
+		@Override
+		public double scoreOf(Variable x) {
+			return nWipes[x.num] / (double) x.dom.size();
+		}
+	}
+
 	public static final class OrgnOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
 
 		private int mode;
@@ -347,9 +421,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			int mode = solver.head.control.varh.mode;
 			if (mode >= 0)
 				Stream.of(new PickOnDom(solver, anti), new WdegOnDom(solver, anti), new FrbaOnDom(solver, anti), new Wdeg(solver, anti))
-						.forEach(h -> list.add(h)); // new CrbsOnDom(solver, anti),
+						.forEach(h -> list.add(h));
 			if (mode >= 1)
-				Stream.of(new Dom(solver, anti), new OrgnOnDom(solver, anti)).forEach(h -> list.add(h));
+				Stream.of(new SingOnDom(solver, anti)).forEach(h -> list.add(h));
+				//Stream.of(new SingOnDom(solver, anti), new OrgnOnDom(solver, anti)).forEach(h -> list.add(h));
 			this.pool = list.stream().toArray(HeuristicVariables[]::new);
 
 		}

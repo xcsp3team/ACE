@@ -226,7 +226,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		return (ConstraintExtension) Reflector.buildObject(className, classes, pb, scp);
 	}
 
-	private static int[][] reverseTuples(Variable[] scp, int[][] tuples) {
+	private static int[][] reverseTuples(Variable[] scp, int[][] tuples) {  // do not work with stars
 		control(Stream.of(scp).allMatch(x -> x.dom.nRemoved() == 0));
 		assert Kit.isLexIncreasing(tuples);
 		int cnt = 0;

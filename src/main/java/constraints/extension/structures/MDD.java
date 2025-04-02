@@ -358,7 +358,7 @@ public final class MDD extends ExtensionStructure {
 			this.num = nCreatedNodes++;
 			this.level = level; // this is -1 for the two special terminal nodes
 			if (level == 0)
-				nNodesBefore=nCreatedNodes;
+				nNodesBefore = nCreatedNodes;
 		}
 
 		/**
@@ -686,6 +686,7 @@ public final class MDD extends ExtensionStructure {
 	public void displayTuples() {
 		Domain[] doms = Stream.of(firstRegisteredCtr().scp).map(x -> x.dom).toArray(Domain[]::new);
 		int cnt = root.displayTuples(doms, new int[doms.length], 0, 0);
+		// System.out.println(" => " + cnt + " tuples");
 		Kit.log.info(" => " + cnt + " tuples");
 	}
 
