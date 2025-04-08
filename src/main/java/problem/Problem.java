@@ -1616,9 +1616,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return extension(tree);
 		}		
 		
-		if (scp.length > 3 && Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) { // Constraint.computeGenericFilteringThreshold(scp) < scp.length) {
+		if (scp.length > 2 && Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) {
+		//if (Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) { // Constraint.computeGenericFilteringThreshold(scp) < scp.length) {
 			// if it may be useful to decompose
-
 			boolean tryingDecomposition = options.decompose > 0 && scp[0] instanceof VariableInteger; // && scp.length + 1 >= tree.listOfVars().size();
 			// at most a variable occurring twice
 			tryingDecomposition = tryingDecomposition || options.decompose == 2;

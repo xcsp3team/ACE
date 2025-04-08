@@ -1037,8 +1037,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 				assert !isGuaranteedAC() || isSatisfiedByCurrentInstantiation() : "Unsatisfied constraint " + this + "while AC should be guaranteed";
 				return isGuaranteedAC() || isSatisfiedByCurrentInstantiation();
 			}
-			if (futvars.size() == 1 && !x.assigned() && scp.length > 1)
-				return true;
+			// if (futvars.size() == 1 && !x.assigned() && scp.length > 1) return true; // not correct because several variables may have been touched
+			// see java ace MetabolicNetwork/MetabolicNetwork-05.xml -satl=2 -s=all -pra=z -r_c=max for that problem
 		}
 		if (time > x.time && this instanceof TagCallCompleteFiltering && !(this instanceof TagNotCallCompleteFiltering) && !postponable)
 			return true;
