@@ -277,7 +277,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 */
 	public static ConstraintExtension buildFrom(Problem pb, Variable[] scp, Object tuples, boolean positive, Boolean starred) {
 		assert Variable.areAllDistinct(scp);
-		control(scp.length > 1 && Variable.haveSameType(scp));
+		control(scp.length > 1 && Variable.haveSameType(scp), () -> " scope " + Kit.join(scp));
 		control(Array.getLength(tuples) == 0 || Array.getLength(Array.get(tuples, 0)) == scp.length,
 				() -> "Badly formed extensional constraint " + scp.length + " " + Array.getLength(Array.get(tuples, 0)));
 		if (starred == null)

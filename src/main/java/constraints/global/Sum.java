@@ -591,6 +591,13 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 	public static abstract class SumWeighted extends Sum {
 
+		protected static long[] toLong(int[] coeffs) {
+			long[] t = new long[coeffs.length];
+			for (int i = 0; i < t.length; i++)
+				t[i] = coeffs[i];
+			return t;
+		}
+
 		public static SumWeighted buildFrom(Problem pb, Variable[] vs, int[] coeffs, TypeConditionOperatorRel op, long limit) {
 			switch (op) {
 			case LT:
@@ -608,16 +615,16 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			}
 		}
 
-		public static final long weightedSum(int[] t, int[] coeffs) {
+		public static final long weightedSum(int[] t, long[] coeffs) {
 			assert t.length == coeffs.length;
-			// note that no overflow control is performed here
+			// note that no overflow control is performed here (expected to have been done earlier)
 			long sum = 0;
 			for (int i = 0; i < t.length; i++)
 				sum += coeffs[i] * t[i];
 			return sum;
 		}
 
-		public static final long minPossibleSum(Variable[] scp, int[] coeffs) {
+		public static final long minPossibleSum(Variable[] scp, long[] coeffs) {
 			BigInteger sum = BigInteger.valueOf(0);
 			for (int i = 0; i < scp.length; i++) {
 				BigInteger value = BigInteger.valueOf(coeffs[i] >= 0 ? scp[i].dom.smallestInitialValue() : scp[i].dom.greatestInitialValue());
@@ -626,7 +633,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			return sum.longValueExact();
 		}
 
-		public static final long maxPossibleSum(Variable[] scp, int[] coeffs) {
+		public static final long maxPossibleSum(Variable[] scp, long[] coeffs) {
 			BigInteger sum = BigInteger.valueOf(0);
 			for (int i = 0; i < scp.length; i++) {
 				BigInteger value = BigInteger.valueOf(coeffs[i] >= 0 ? scp[i].dom.greatestInitialValue() : scp[i].dom.smallestInitialValue());
@@ -664,14 +671,17 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			return sum;
 		}
 
-		public final int[] coeffs;
+		public final int[] icoeffs; // original array with int
 
-		protected final int maxGap;
+		public final long[] coeffs; // it is safer to have an array with long
 
-		public SumWeighted(Problem pb, Variable[] scp, int[] coeffs, long limit) {
+		protected final long maxGap;
+
+		public SumWeighted(Problem pb, Variable[] scp, int[] icoeffs, long limit) {
 			super(pb, scp);
-			this.coeffs = coeffs;
-			this.maxGap = IntStream.range(0, scp.length).map(i -> Math.abs(coeffs[i] * scp[i].dom.distance())).max().getAsInt();
+			this.icoeffs = icoeffs;
+			this.coeffs = toLong(icoeffs);
+			this.maxGap = IntStream.range(0, scp.length).mapToLong(i -> Math.abs(coeffs[i] * scp[i].dom.distance())).max().getAsLong();
 
 			control(minPossibleSum(scp, coeffs) <= maxPossibleSum(scp, coeffs)); // Important: we check this way that no overflow is possible
 			setLimit(limit);
@@ -698,7 +708,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			min = max = 0;
 			for (int i = 0; i < scp.length; i++) {
 				Domain dom = scp[i].dom;
-				int coeff = coeffs[i];
+				long coeff = coeffs[i];
 				min += coeff * (coeff >= 0 ? dom.firstValue() : dom.lastValue());
 				max += coeff * (coeff >= 0 ? dom.lastValue() : dom.firstValue());
 			}
@@ -721,7 +731,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			}
 
 			public SumWeightedLE(Problem pb, Variable[] scp, int[] coeffs, long limit) {
-				super(pb, scp, coeffs, Math.min(limit, maxPossibleSum(scp, coeffs)));
+				super(pb, scp, coeffs, Math.min(limit, maxPossibleSum(scp, toLong(coeffs))));
 				this.bests = new short[scp.length];
 			}
 
@@ -735,7 +745,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					for (short i = 0; i < scp.length; i++) {
 						if (doms[i].contains(0)) // because we cannot do better with this variable
 							continue;
-						int v = doms[i].firstValue() * coeffs[i];
+						long v = doms[i].firstValue() * coeffs[i];
 						if (bestValue == Integer.MIN_VALUE || v > bestValue) {
 							cnt = 0;
 							bests[cnt++] = i;
@@ -781,15 +791,15 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 						Domain dom = scp[futvars.dense[i]].dom;
 						if (dom.size() == 1)
 							continue;
-						int coeff = coeffs[futvars.dense[i]];
+						long coeff = coeffs[futvars.dense[i]];
 						if (coeff >= 0) {
 							max -= dom.lastValue() * coeff;
-							dom.removeValues(GT, limit - (min - dom.firstValue() * coeff), coeff);
+							dom.removeValues(GT, limit - (min - dom.firstValue() * coeff), (int) coeff);
 							assert dom.size() > 0;
 							max += dom.lastValue() * coeff;
 						} else {
 							max -= dom.firstValue() * coeff;
-							dom.removeValues(GT, limit - (min - dom.lastValue() * coeff), coeff);
+							dom.removeValues(GT, limit - (min - dom.lastValue() * coeff), (int) coeff);
 							assert dom.size() > 0;
 							max += dom.firstValue() * coeff;
 						}
@@ -821,7 +831,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			}
 
 			public SumWeightedGE(Problem pb, Variable[] scp, int[] coeffs, long limit) {
-				super(pb, scp, coeffs, Math.max(limit, minPossibleSum(scp, coeffs)));
+				super(pb, scp, coeffs, Math.max(limit, minPossibleSum(scp, toLong(coeffs))));
 			}
 
 			@Override
@@ -839,15 +849,15 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 						Domain dom = scp[futvars.dense[i]].dom;
 						if (dom.size() == 1)
 							continue;
-						int coeff = coeffs[futvars.dense[i]];
+						long coeff = coeffs[futvars.dense[i]];
 						if (coeff >= 0) {
 							min -= dom.firstValue() * coeff;
-							dom.removeValues(LT, limit - (max - dom.lastValue() * coeff), coeff);
+							dom.removeValues(LT, limit - (max - dom.lastValue() * coeff), (int) coeff);
 							assert dom.size() > 0;
 							min += dom.firstValue() * coeff;
 						} else {
 							min -= dom.lastValue() * coeff;
-							dom.removeValues(LT, limit - (max - dom.firstValue() * coeff), coeff);
+							dom.removeValues(LT, limit - (max - dom.firstValue() * coeff), (int) coeff);
 							assert dom.size() > 0;
 							min += dom.lastValue() * coeff;
 						}
@@ -903,10 +913,10 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 						Domain dom = scp[futvars.dense[i]].dom;
 						int sizeBefore = dom.size();
 						if (sizeBefore > 1) {
-							int coeff = coeffs[futvars.dense[i]];
+							long coeff = coeffs[futvars.dense[i]];
 							min -= coeff * (coeff >= 0 ? dom.firstValue() : dom.lastValue());
 							max -= coeff * (coeff >= 0 ? dom.lastValue() : dom.firstValue());
-							if (dom.removeValues(LT, limit - max, coeff) == false || dom.removeValues(GT, limit - min, coeff) == false)
+							if (dom.removeValues(LT, limit - max, (int) coeff) == false || dom.removeValues(GT, limit - min, (int) coeff) == false)
 								return false;
 							if (sizeBefore != dom.size())
 								lastModified = i;
@@ -988,8 +998,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				long sum = 0;
 				for (int i = 0; i < scp.length; i++)
 					if (scp[i] != sentinel)
-						sum += scp[i].dom.singleValue() * coeffs[i]; // no overflow possible (controlled at
-																		// construction)
+						sum += scp[i].dom.singleValue() * coeffs[i]; // no overflow possible (controlled at construction)
 					else
 						p = i;
 				long v = (limit - sum) / coeffs[p];
@@ -1227,7 +1236,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			}
 		}
 
-		public static final long weightedSum(int[] t, View[] views, int[] coeffs) {
+		public static final long weightedSum(int[] t, View[] views, long[] coeffs) {
 			assert t.length == views.length && t.length == coeffs.length;
 			// note that no overflow control is performed here
 			long sum = 0;
@@ -1236,7 +1245,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			return sum;
 		}
 
-		public static final long minPossibleSum(View[] views, int[] coeffs) {
+		public static final long minPossibleSum(View[] views, long[] coeffs) {
 			BigInteger sum = BigInteger.valueOf(0);
 			for (int i = 0; i < views.length; i++) {
 				if (views[i] instanceof ViewVariable) {
@@ -1248,7 +1257,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			return sum.longValueExact();
 		}
 
-		public static final long maxPossibleSum(View[] views, int[] coeffs) {
+		public static final long maxPossibleSum(View[] views, long[] coeffs) {
 			BigInteger sum = BigInteger.valueOf(0);
 			for (int i = 0; i < views.length; i++) {
 				if (views[i] instanceof ViewVariable) {
@@ -1289,17 +1298,19 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			return sum;
 		}
 
-		protected final int[] coeffs;
+		protected final int[] icoeffs;
+
+		protected final long[] coeffs;
 
 		protected final View[] views;
 
-		public SumViewWeighted(Problem pb, XNode<IVar>[] trees, int[] coeffs, long limit) {
+		public SumViewWeighted(Problem pb, XNode<IVar>[] trees, int[] icoeffs, long limit) {
 			super(pb, Utilities.collect(Variable.class, Stream.of(trees).map(tree -> tree.vars())));
-			this.coeffs = coeffs;
+			this.icoeffs = icoeffs;
+			this.coeffs = SumWeighted.toLong(icoeffs);
 			// System.out.println("trees " + Kit.join(trees));
 			this.views = Stream.of(trees).map(tree -> tree.type == TypeExpr.VAR ? new ViewVariable(tree) : new ViewTree01(tree)).toArray(View[]::new);
-			control(minComputableObjectiveValue() <= maxComputableObjectiveValue()); // Important: we check this way
-																						// that no overflow is possible
+			control(minComputableObjectiveValue() <= maxComputableObjectiveValue()); // Important: we check this way that no overflow is possible
 			setLimit(limit);
 			defineKey(coeffs, limit);
 			control(IntStream.range(0, coeffs.length).allMatch(i -> coeffs[i] != 0 && (i == 0 || coeffs[i - 1] <= coeffs[i])));
@@ -1309,7 +1320,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		protected final void recomputeBounds() {
 			min = max = 0;
 			for (int i = 0; i < views.length; i++) {
-				int coeff = coeffs[i];
+				long coeff = coeffs[i];
 				min += coeff * (coeff >= 0 ? views[i].minValue() : views[i].maxValue());
 				max += coeff * (coeff >= 0 ? views[i].maxValue() : views[i].minValue());
 			}
@@ -1347,15 +1358,15 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					View view = views[p];
 					if (view.dom.size() == 1)
 						continue;
-					int coeff = coeffs[p];
+					long coeff = coeffs[p];
 					if (coeff >= 0) {
 						max -= view.maxValue() * coeff;
-						view.removeValues(GT, limit - (min - view.minValue() * coeff), coeff);
+						view.removeValues(GT, limit - (min - view.minValue() * coeff), (int) coeff);
 						assert view.dom.size() > 0;
 						max += view.maxValue() * coeff;
 					} else {
 						max -= view.minValue() * coeff;
-						view.removeValues(GT, limit - (min - view.maxValue() * coeff), coeff);
+						view.removeValues(GT, limit - (min - view.maxValue() * coeff), (int) coeff);
 						assert view.dom.size() > 0;
 						max += view.minValue() * coeff;
 					}
@@ -1398,15 +1409,15 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 					View view = views[p];
 					if (view.dom.size() == 1)
 						continue;
-					int coeff = coeffs[futvars.dense[i]];
+					long coeff = coeffs[futvars.dense[i]];
 					if (coeff >= 0) {
 						min -= view.minValue() * coeff;
-						view.removeValues(LT, limit - (max - view.maxValue() * coeff), coeff);
+						view.removeValues(LT, limit - (max - view.maxValue() * coeff), (int) coeff);
 						assert view.dom.size() > 0;
 						min += view.minValue() * coeff;
 					} else {
 						min -= view.maxValue() * coeff;
-						view.removeValues(LT, limit - (max - view.minValue() * coeff), coeff);
+						view.removeValues(LT, limit - (max - view.minValue() * coeff), (int) coeff);
 						assert view.dom.size() > 0;
 						min += view.maxValue() * coeff;
 					}
@@ -1445,10 +1456,10 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 						View view = views[p];
 						int sizeBefore = view.dom.size();
 						if (sizeBefore > 1) {
-							int coeff = coeffs[p];
+							long coeff = coeffs[p];
 							min -= coeff * (coeff >= 0 ? view.minValue() : view.maxValue());
 							max -= coeff * (coeff >= 0 ? view.maxValue() : view.minValue());
-							if (view.removeValues(LT, limit - max, coeff) == false || view.removeValues(GT, limit - min, coeff) == false)
+							if (view.removeValues(LT, limit - max, (int) coeff) == false || view.removeValues(GT, limit - min, (int) coeff) == false)
 								return false;
 							if (sizeBefore != view.dom.size())
 								lastModified = i;

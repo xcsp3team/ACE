@@ -294,6 +294,17 @@ public final class NogoodReasoner {
 		nogood.setWatch(position, firstWatch);
 	}
 
+	public Nogood addNogoodfromSingletons(Variable[] vars) {
+		assert Stream.of(vars).allMatch(x -> x.dom.size() == 1);
+		return addNogood(Stream.of(vars).mapToInt(x -> decisions.negativeDecisionFor(x.num, x.dom.singleValue())).toArray());
+	}
+	
+	public Nogood addNogoodfromSingletonsNonZero(Variable[] vars) {
+		assert Stream.of(vars).allMatch(x -> x.dom.size() == 1);
+		return addNogood(Stream.of(vars).filter(x -> x.dom.singleValue() != 0).mapToInt(x -> decisions.negativeDecisionFor(x.num, x.dom.singleValue())).toArray());
+	}
+
+
 	/**
 	 * Adds a nogood from the specified (negative) decisions
 	 * 
@@ -314,6 +325,10 @@ public final class NogoodReasoner {
 			// if (symmetryHandler != null) symmetryHandler.addNogood(decs);
 		}
 		return null;
+	}
+
+	private Nogood addNogood(int[] negativeDecisions) {
+		return addNogood(negativeDecisions, false);
 	}
 
 	/**

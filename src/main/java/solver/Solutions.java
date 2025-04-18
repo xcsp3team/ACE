@@ -226,7 +226,7 @@ public final class Solutions {
 		String PREFIX = pure ? "" : "   ";
 		List<VarEntity> list = solver.problem.varEntities.allEntities;
 		if (list.size() == 1 && list.get(0) instanceof VarArray)
-			return PREFIX + "{'" + list.get(0).id + "': " + Variable.instantiationOf(VarArray.class.cast(list.get(0)).vars, PREFIX) + "}";
+			return PREFIX + "{'" + list.get(0).id + "': " + Variable.instantiationOf(VarArray.class.cast(list.get(0)).vars, PREFIX,"") + "}";
 		StringBuilder sb = new StringBuilder(PREFIX).append("{\n");
 		for (VarEntity va : list) {
 			if (undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
@@ -239,7 +239,7 @@ public final class Solutions {
 				else if (x == solver.problem.replacedObjVar)
 					sb.append(bestBound);
 			} else
-				sb.append(Variable.instantiationOf(VarArray.class.cast(va).vars, PREFIX));
+				sb.append(Variable.instantiationOf(VarArray.class.cast(va).vars, PREFIX,""));
 			sb.append(",\n");
 		}
 		sb.delete(sb.length() - 2, sb.length());
@@ -435,11 +435,10 @@ public final class Solutions {
 							"  " + wck + "  ham=" + IntStream.of(hamming).sum() + " (" + Kit.join(hamming) + ")" + "  opth=" + hammingOpt);
 
 					// solver.restarter.currCutoff += 1; //20;
-					
 					// System.out.println("h1 : " + Kit.join(h1) + " h2 : " + h2); for (Variable x : h1) System.out.println(x + " " + x.assignmentLevel);
-					
+
 					if (solver.problem.optimizer.isFinishedIf(bestBound))
-						solver.stopping = FULL_EXPLORATION; // we record it right now to avoid the cost of propagating (when backtracking) 
+						solver.stopping = FULL_EXPLORATION; // we record it right now to avoid the cost of propagating (when backtracking)
 				}
 				// The following code must stay after recording/storing the solution
 				if (solver.head.control.general.jsonSave.length() > 0 && (solver.head.control.general.verbose > 1 || found == 1)) {

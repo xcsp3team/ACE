@@ -334,6 +334,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			this.priorityVars = this.auxiliaryVars;
 			this.priorityArrays = new VarArray[0];
 		}
+		if (head.control.variables.projectionArrays.length() > 0) {
+			int[] idxs = Stream.of(Kit.extractFrom(head.control.variables.projectionArrays)).mapToInt(v -> v instanceof Integer ? (Integer) v
+					: IntStream.range(0, varArrays.length).filter(i -> varArrays[i].id.equals(v)).findFirst().orElse(-1)).toArray();
+			List<Variable> list = new ArrayList<>();
+			for (int i : idxs)
+				for (IVar x : varArrays[i].flatVars)
+					list.add((Variable) x);
+			this.projectionVars = list.stream().toArray(Variable[]::new);
+		}
 
 		if (this.priorityVars.length == 0 && head.control.varh.optVarHeuristic > 0 && optimizer != null) { // experimental
 			Variable[] scp = ((Constraint) optimizer.ctr).scp;
@@ -493,6 +502,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 */
 	public Constraint[] postponableConstraints;
 
+	public Variable[] projectionVars;
+
 	@Override
 	public final String name() {
 		String name = super.name();
@@ -551,6 +562,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		for (int i = 0; i < flags.length; i++) { // first, we try to merge nogoods of same scope
 			if (flags[i])
 				continue;
+			if (nogoods[i].size() == 1) {
+				postNogood(nogoods[i]);
+				flags[i] = true;
+				continue;
+			}
+
 			list.clear();
 			list.add(i);
 			for (int j = i + 1; j < flags.length; j++) {
@@ -578,27 +595,30 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			for (int j = i - 1; j >= 0; j--)
 				if (nogoods[j].strictSubscopeOf(nogoods[i]))
 					list.add(j);
-			if (list.size() > 1) { // TODO hard coding
+			if (list.size() > 1) { // TODO hard coding (limit 1)
 				list.stream().forEach(k -> flags[k] = true);
 				nSharedNogoods += list.size();
 
+				int[] tv = new int[scp.length];
 				int[] tmp = new int[scp.length];
 				TupleIterator ti = new TupleIterator(doms);
 				ti.firstValidTuple();
 				List<int[]> supports = new ArrayList<>();
 				ti.consumeValidTuples(tp -> {
+					for (int k = 0; k < tp.length; k++)
+						tv[k] = doms[k].toVal(tp[k]);
 					boolean support = true;
 					for (int k : list) {
 						CollectedNogood ng = nogoods[k];
 						for (int j = 0; j < ng.vars.length; j++)
-							tmp[j] = tp[Utilities.indexOf(ng.vars[j], scp)];
+							tmp[j] = tv[Utilities.indexOf(ng.vars[j], scp)];
 						if (ng.firstValuseOf(tmp)) {
 							support = false;
 							break;
 						}
 					}
 					if (support)
-						supports.add(tp.clone());
+						supports.add(tv.clone());
 				});
 				post(ConstraintExtension.buildFrom(this, scp, supports.stream().toArray(int[][]::new), true, false));
 			}
@@ -805,7 +825,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (x.dom instanceof DomainRange && t.length == 3 && t[1] == optimizer.clb && t[2] == optimizer.cub) {
 				if (t[0] instanceof SumWeightedEQ) {
 					Variable[] scp = t[0].scp;
-					int[] coeffs = ((SumWeighted) t[0]).coeffs;
+					int[] coeffs = ((SumWeighted) t[0]).icoeffs;
 					int pos = Utilities.indexOf(x, t[0].scp);
 					control(pos != -1, " " + Kit.join(t[0].scp) + " - " + x + " " + pos);
 					if (coeffs[pos] == -1)
@@ -1614,10 +1634,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (Constraint.howManyVariablesWithin(scp, 19) == Constants.ALL && tree.size() > 10 && scp.length <= 3) { // 2^19 is about 500,000
 			features.nConvertedConstraints++;
 			return extension(tree);
-		}		
-		
-		if (scp.length > 2 && Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) {
-		//if (Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) { // Constraint.computeGenericFilteringThreshold(scp) < scp.length) {
+		}
+
+		if ((scp.length > 2 || (scp.length == 2 && scp.length == tree.listOfVars().size())) && Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) {
+			// if (Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) { // Constraint.computeGenericFilteringThreshold(scp) < scp.length) {
 			// if it may be useful to decompose
 			boolean tryingDecomposition = options.decompose > 0 && scp[0] instanceof VariableInteger; // && scp.length + 1 >= tree.listOfVars().size();
 			// at most a variable occurring twice
@@ -1659,7 +1679,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
-		// System.out.println("Tree remaining " + tree);
+		//System.out.println("Tree remaining " + tree);
 		return post(new ConstraintIntension(this, scp, tree));
 	}
 

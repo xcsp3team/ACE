@@ -924,7 +924,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 			XVarInteger[] list = (XVarInteger[]) map.get("list");
 			boolean strict = (long) map.get("value") != 0;
 			int[] pattern = (int[]) map.get("coeffs");
-			if(pattern == null)
+			if (pattern == null)
 				problem.autolex(trVars(list), strict);
 			else
 				problem.autolex(trVars(list), pattern, strict);

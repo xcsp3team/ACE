@@ -41,6 +41,12 @@ import variables.Variable;
 public abstract class Primitive3 extends Primitive implements TagAC, TagCallCompleteFiltering, TagNotSymmetric {
 	// TODO AC not true sometimes
 
+	private static final int RUNNING_LIMIT = 200; // TODO hard coding_
+
+	private static boolean tooLarge(int size1, int size2) {
+		return size1 > 1 && size2 > 1 && size1 * (double) size2 > RUNNING_LIMIT;
+	}
+
 	public static Constraint buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, Variable z) {
 		switch (aop) {
 		case ADD:
@@ -157,8 +163,6 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 
 	public static abstract class Add3 extends Primitive3 implements TagNotCallCompleteFiltering {
 
-		private static final int RUNNING_LIMIT = 200; // TODO hard coding_
-
 		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			switch (op) {
 			case EQ:
@@ -201,10 +205,13 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 				if (dz.size() == 1)
 					return AC.enforceEQb(dx, dy, dz.singleValue());
 
-				if (dx.size() * (double) dy.size() > RUNNING_LIMIT) {
+				if (tooLarge(dx.size(), dy.size())) {
 					if (dz.removeValuesLT(dx.firstValue() + dy.firstValue()) == false || dz.removeValuesGT(dx.lastValue() + dy.lastValue()) == false)
 						return false;
-					return AC.enforceAddGE(dx, dy, dz.firstValue()) && AC.enforceAddLE(dx, dy, dz.lastValue());
+					if ((AC.enforceAddGE(dx, dy, dz.firstValue()) && AC.enforceAddLE(dx, dy, dz.lastValue())) == false)
+						return false;
+					if (tooLarge(dx.size(), dy.size())) // otherwise we keep filtering below
+						return true;
 				}
 				boolean connexz = dz.connex();
 				boolean avoidx = false, avoidy = false;
@@ -369,8 +376,7 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 				if (dz.containsOnlyValue(0)) { // if z = 0
 					if (dx.first() == 0 && dy.containsValue(0)) // 0 in dx and 0 in dy => every value is supported
 						return true;
-					return dx.first() == 0 ? dx.reduceTo(0) : dy.reduceToValue(0); // if 0 not in dy => x must be 0,
-																					// else => y must be 0
+					return dx.first() == 0 ? dx.reduceTo(0) : dy.reduceToValue(0); // if 0 not in dy => x must be 0, else => y must be 0
 				}
 				if (dz.containsValue(0)) { // if 0 in dz
 					if (dx.first() == 1 && !dy.containsValue(0) && dz.removeValue(0) == false)
@@ -383,8 +389,7 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 
 				assert dx.size() == 2 && dz.containsValue(0) && dz.size() > 1;
 				// above, because if 0 not in z, dx.size() cannot be 2
-				// every value of dy is supported (by both 0 in x and z); we still need to filter z (and possibly 1 out
-				// of dx)
+				// every value of dy is supported (by both 0 in x and z); we still need to filter z (and possibly 1 out of dx)
 
 				int sizeBefore = dz.size();
 				for (int c = dz.first(); c != -1; c = dz.next(c)) {
@@ -422,14 +427,17 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about AC Guaranteed?
+				if (tooLarge(dx.size(), dy.size())) { // hard coding // TODO what about AC Guaranteed?
 					int v1 = dx.firstValue() * dy.firstValue(), v2 = dx.firstValue() * dy.lastValue();
 					int v3 = dx.lastValue() * dy.firstValue(), v4 = dx.lastValue() * dy.lastValue();
 					int min1 = Math.min(v1, v2), max1 = Math.max(v1, v2);
 					int min2 = Math.min(v3, v4), max2 = Math.max(v3, v4);
 					if (dz.removeValuesLT(Math.min(min1, min2)) == false || dz.removeValuesGT(Math.max(max1, max2)) == false)
 						return false;
-					return AC.enforceMulGE(dx, dy, dz.firstValue()) && AC.enforceMulLE(dx, dy, dz.lastValue());
+					if (AC.enforceMulGE(dx, dy, dz.firstValue()) && AC.enforceMulLE(dx, dy, dz.lastValue()) == false)
+						return false;
+					if (tooLarge(dx.size(), dy.size())) // otherwise we keep filtering below
+						return true;
 				}
 				if (!dy.containsValue(0) || !dz.containsValue(0))
 					// if 0 is present in dy and dz, all values of x are supported
@@ -488,8 +496,7 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 						continue;
 					for (int a = dx.first(); a != -1; a = dx.next(a)) {
 						int va = dx.toVal(a);
-						if (va == 0) // because it involves vc=0, and vc = 0 already handled (and we need to be careful
-										// about division by zero
+						if (va == 0) // because it involves vc=0, and vc = 0 already handled (and we need to be careful about division by zero
 							continue;
 						int vb = vc / va;
 						if (va > 0 && vc > 0 && va * dy.firstValue() > vc) // TODO other ways of breaking?
@@ -542,10 +549,13 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.size() * dy.size() > 200) { // hard coding // TODO what about AC Guaranteed?
+				if (tooLarge(dx.size(), dy.size())) { // hard coding // TODO what about AC Guaranteed?
 					if (dz.removeValuesLT(dx.firstValue() / dy.lastValue()) == false || dz.removeValuesGT(dx.lastValue() / dy.firstValue()) == false)
 						return false;
-					return AC.enforceDivGE(dx, dy, dz.firstValue()) && AC.enforceDivLE(dx, dy, dz.lastValue());
+					if ((AC.enforceDivGE(dx, dy, dz.firstValue()) && AC.enforceDivLE(dx, dy, dz.lastValue())) == false)
+						return false;
+					if (tooLarge(dx.size(), dy.size())) // otherwise we keep filtering below
+						return true;
 				}
 
 				if (dx.firstValue() >= dy.lastValue() && dz.removeValueIfPresent(0) == false)

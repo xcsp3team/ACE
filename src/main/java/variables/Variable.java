@@ -432,20 +432,34 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	 *            a prefix used when the specified object is an array with (at least) two dimensions
 	 * @return a string corresponding to the complete instantiation of the variables that are present in the specified object
 	 */
-	public static String instantiationOf(Object obj, String prefix) {
+	public static String instantiationOf(Object obj, String prefix, String star_prefix) {
 		if (obj == null)
-			return "*";
+			return star_prefix + "*";
 		if (obj instanceof Variable) {
 			Variable x = (Variable) obj;
 			return x.dom.prettyValueOf(x.problem.solver.solutions.last[x.num]);
 		}
 		assert obj.getClass().isArray();
 		if (obj instanceof Variable[]) {
+			Variable fx = Stream.of((Variable[]) obj).filter(x -> x != null).findFirst().orElse(null);
+			String sp = fx == null ? star_prefix : fx.dom.prefixForVal(1);
 			// assert Stream.of((Variable[]) obj).noneMatch(x -> x != null && x.dom.size() != 1);
-			return "[" + Stream.of((Variable[]) obj).map(x -> instantiationOf(x, null)).collect(joining(", ")) + "]";
+			return "[" + Stream.of((Variable[]) obj).map(x -> instantiationOf(x, null, sp)).collect(joining(", ")) + "]";
 		}
-		return "[\n" + prefix + "  " + Stream.of((Object[]) obj).map(o -> instantiationOf(o, prefix)).collect(joining(",\n" + prefix + "  ")) + "\n" + prefix
-				+ " ]";
+		if (obj instanceof Variable[][]) {
+			if (star_prefix == null || star_prefix.length() == 0) {
+				for (Variable[] t : (Variable[][]) obj) {
+					Variable fx = Stream.of(t).filter(x -> x != null).findFirst().orElse(null);
+					if (fx != null) {
+						star_prefix = fx.dom.prefixForVal(1);
+						break;
+					}
+				}
+			}
+		}
+		String sp = star_prefix;
+		return "[\n" + prefix + "  " + Stream.of((Object[]) obj).map(o -> instantiationOf(o, prefix, sp)).collect(joining(",\n" + prefix + "  ")) + "\n"
+				+ prefix + " ]";
 	}
 
 	/**
@@ -459,7 +473,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	public static String rawInstantiationOf(Object array) {
 		if (array instanceof Variable[]) {
 			// we call instantiation because of possible *; the prefix is useless
-			return Stream.of((Variable[]) array).map(x -> instantiationOf(x, null)).collect(joining(" "));
+			return Stream.of((Variable[]) array).map(x -> instantiationOf(x, null, "")).collect(joining(" "));
 		}
 		// recursive call
 		return Stream.of((Object[]) array).map(o -> rawInstantiationOf(o)).collect(joining(" "));

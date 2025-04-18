@@ -13,6 +13,7 @@ package solver;
 import static java.lang.Integer.parseInt;
 import static java.util.stream.Collectors.toCollection;
 import static org.xcsp.common.Types.TypeFramework.COP;
+import static org.xcsp.common.Types.TypeFramework.CSP;
 import static solver.Solver.Stopping.EXCEEDED_TIME;
 import static solver.Solver.Stopping.FULL_EXPLORATION;
 import static solver.Solver.Stopping.REACHED_GOAL;
@@ -50,6 +51,7 @@ import interfaces.Observers.ObserverOnRemovals;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Observers.ObserverOnSolving;
 import learning.IpsReasoner;
+import learning.Nogood;
 import learning.NogoodReasoner;
 import main.Head;
 import main.HeadExtraction;
@@ -1051,6 +1053,12 @@ public class Solver implements ObserverOnBacktracksSystematic {
 				}
 				if (problem.framework == COP) // && isEntailed(objectiveCtr)) TODO why is-it incorrect to use the second part of the test?
 					entailed.clear();
+				if (problem.framework == CSP && problem.projectionVars != null) { // TODO extend this later for COP?
+					// nogoodReasoner.addNogoodfromSingletonsNonZero(problem.projectionVars); // very specific for Maxime
+					nogoodReasoner.addNogoodfromSingletons(problem.projectionVars);
+					backtrackToTheRoot();
+					return; // we avoid recording the nogoods from the current branch
+				}
 				if (!finished() && !restarter.currRunFinished())
 					manageContradiction(oc);
 			}
