@@ -289,7 +289,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			m = reverseTuples(scp, m);
 			positive = !positive;
 		}
-		boolean build0 = positive && (m.length <= pb.head.control.extension.smallTableExt || scp.length > pb.head.control.extension.largeScopeExt);
+		boolean build0 = positive && (m.length <= pb.head.control.extension.smallTableExt); // || scp.length > pb.head.control.extension.largeScopeExt);
 		ConstraintExtension c = build0 ? STR0.buildFrom(pb, scp, m, positive, starred) : build(pb, scp, positive, starred);
 		c.storeTuples(m, positive);
 		return c;
