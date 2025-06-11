@@ -19,6 +19,7 @@ import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
 import problem.Problem;
+import utility.Kit;
 import variables.Variable;
 
 /**
@@ -106,7 +107,7 @@ public final class Precedence extends ConstraintGlobal implements TagNotAC, TagC
 		this.firsts = new int[k];
 		defineKey(values, covered);
 		for (int i = 1; i < k; i++)
-			for (int j = 0; j < i; j++)
+			for (int j = 0; j < Math.min(i, scp.length); j++)
 				scp[j].dom.removeValueAtConstructionTime(values[i]);
 	}
 

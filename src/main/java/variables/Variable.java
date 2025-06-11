@@ -204,6 +204,14 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 		return IntStream.range(0, vars.length).noneMatch(i -> IntStream.range(i + 1, vars.length).anyMatch(j -> vars[i] == vars[j]));
 	}
 
+	public static final boolean areAllDistinct(Variable[][] lists) {
+		List<Variable> t = new ArrayList<>();
+		for (Variable[] list : lists)
+			for (Variable x : list)
+				t.add(x);
+		return Variable.areAllDistinct(t.stream().toArray(Variable[]::new));
+	}
+
 	/**
 	 * @param vars
 	 *            an array of variables

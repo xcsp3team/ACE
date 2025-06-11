@@ -690,7 +690,9 @@ public interface Domain extends SetLinked {
 	 *            a value
 	 */
 	default void removeValueAtConstructionTime(int v) {
-		removeAtConstructionTime(toIdx(v));
+		int a = toIdx(v);
+		if (a != -1)
+			removeAtConstructionTime(a);
 	}
 
 	/**
@@ -1373,8 +1375,12 @@ public interface Domain extends SetLinked {
 						return v < 10 ? "  " : v < 100 ? " " : "";
 				}
 			} else {
-				if (min > -10 && max < 10)
+				if (-10 < min  && max < 10)
 					return v < 0 ? "" : " ";
+				if (-10 < min  && max < 100)
+					return v < 0 ? "" : v < 10 ? " " : "";
+				if (-10 < min  && max < 1000)
+					return v < 0 ? " " : v < 10 ? "  " : v <100 ? " " : "";
 			}
 		}
 		return "";
