@@ -210,7 +210,7 @@ public final class Solutions {
 		private String lastSolution() { // note that auxiliary variables are not considered
 			assert found > 0;
 			StringBuilder sb = new StringBuilder("<instantiation id='sol").append(found).append("' type='solution'");
-			sb.append(solver.problem.framework != CSP ? " cost='" + bestBound + "'" : "").append(">");
+			sb.append(solver.problem.framework != CSP ? " cost='" + solver.problem.optimizer.valueWithGap(bestBound) + "'" : "").append(">");
 			sb.append(" <list> ").append(xmlVars).append(" </list> <values> ");
 			sb.append(vals(solver.problem.options.xmlCompact, true));
 			return sb.append(" </values> </instantiation>").toString();
