@@ -42,6 +42,7 @@ import interfaces.Tags.TagPostponableFiltering;
 import interfaces.Tags.TagSymmetric;
 import optimization.Optimizable;
 import problem.Problem;
+import sets.SetDense;
 import utility.Kit;
 import variables.Domain;
 import variables.DomainInfinite;
@@ -539,6 +540,12 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 		public static final class SumSimpleEQBoolean extends SumSimple implements TagAC {
 
+			private SetDense unfixed; // Code for benefiting from some incrementality (but not any gain on Coing-Grid for example)
+
+			private int cnt0, cnt1;
+
+			private static int nb1, nb2;
+
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
 				return sum(t) == limit;
@@ -547,24 +554,41 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			public SumSimpleEQBoolean(Problem pb, Variable[] scp, long limit) {
 				super(pb, scp, limit);
 				control(Variable.areAllInitiallyBoolean(scp));
+				this.unfixed = new SetDense(scp.length, true);
 			}
 
 			@Override
 			public boolean runPropagator(Variable x) {
-				// if (limit == 1 && x.dom.containsOnly(1)) {
-				// for (Variable y : scp)
-				// if (y != x && y.dom.removeIfPresent(1) == false)
-				// return x.dom.fail();
-				// return entail();
-				// }
 
-				int cnt0 = 0, cnt1 = 0;
-				for (Domain dom : doms) {
-					if (dom.size() == 1) {
-						if (dom.single() == 0)
-							cnt0++;
-						else
-							cnt1++;
+				if (options.preserve1 == false) {
+					if (failSinceLastCall()) {
+						unfixed.fill();
+						cnt0 = cnt1 = 0;
+						nb1++;
+					} else
+						nb2++;
+//					if ((nb1 + nb2) % 1000 == 0)
+//						System.out.println("comparison " + nb1 + " " + nb2);
+					for (int i = unfixed.limit; i >= 0; i--) {
+						int j = unfixed.dense[i];
+						Domain dom = scp[j].dom;
+						if (dom.size() == 1) {
+							if (dom.single() == 0)
+								cnt0++;
+							else
+								cnt1++;
+							unfixed.removeAtPosition(i);
+						}
+					}
+				} else {
+					cnt0 = cnt1 = 0;
+					for (Domain dom : doms) {
+						if (dom.size() == 1) {
+							if (dom.single() == 0)
+								cnt0++;
+							else
+								cnt1++;
+						}
 					}
 				}
 				int diff = scp.length - cnt0 - cnt1;
@@ -577,7 +601,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				for (int i = futvars.limit; i >= 0; i--) {
 					Domain dom = scp[futvars.dense[i]].dom;
 					if (dom.size() != 1)
-						dom.remove(v);
+						dom.remove(v); // no possible inconsistency
 				}
 				return entail();
 			}

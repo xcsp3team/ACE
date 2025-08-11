@@ -2004,7 +2004,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private CtrEntity distinctVectors(Variable[][] lists) {
 		switch (head.control.global.distinctVectors) {
 		case DEFAULT:
-			if (Variable.areAllDistinct(lists))  // for the moment, not working when several occurrences of the same variable
+			if (Variable.areAllDistinct(lists)) // for the moment, not working when several occurrences of the same variable
 				return post(new DistinctListsK(this, lists));
 		case DECOMPOSITION:
 			return forall(range(lists.length).range(lists.length), (i, j) -> {

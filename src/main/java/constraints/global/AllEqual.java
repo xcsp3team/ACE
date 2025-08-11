@@ -29,9 +29,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This constraint AllEqual ensures that all values assigned to the variables of its scope are all equal. It is
- * essentially an ease of modeling for the user (because it can be trivially decomposed into binary equality
- * constraints).
+ * This constraint AllEqual ensures that all values assigned to the variables of its scope are all equal. It is essentially an ease of modeling for the user
+ * (because it can be trivially decomposed into binary equality constraints).
  * 
  * @author Christophe Lecoutre
  */
@@ -70,8 +69,7 @@ public final class AllEqual extends ConstraintGlobal implements TagAC, TagCallCo
 	private SetSparseReversible remainingValues;
 
 	/**
-	 * a map such that keys are all possible values (from variable domains), and values are their indexes in the
-	 * reversible sparse set
+	 * a map such that keys are all possible values (from variable domains), and values are their indexes in the reversible sparse set
 	 */
 	private final Map<Integer, Integer> map;
 

@@ -202,7 +202,7 @@ public class Head extends Thread {
 			try {
 				// first, we load classes from jar files (this is necessary when ACE is run from a jar)
 				for (String token : System.getProperty("java.class.path", ".").split(File.pathSeparator))
-					if (token.endsWith(".jar"))
+					if (token.endsWith(".jar")) {
 						try (JarInputStream jarFile = new JarInputStream(new FileInputStream(token))) {
 							while (true) {
 								JarEntry jarEntry = jarFile.getNextJarEntry();
@@ -217,8 +217,9 @@ public class Head extends Thread {
 									}
 							}
 						} catch (Exception e) {
-							e.printStackTrace();
+							Kit.warning("either a jar is not found or there is a problem with " + token); //e.printStackTrace();
 						}
+					}
 				// next, we load loaded classes
 				ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 				// however, if we need to look at unloaded classes, as for example some in a subclass of Propagation, we
