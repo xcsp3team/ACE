@@ -43,7 +43,8 @@ import variables.Variable;
  * @author Christophe Lecoutre
  */
 public abstract class Cumulative extends ConstraintGlobal
-		implements TagNotAC, TagCallCompleteFiltering, ObserverOnBacktracksSystematic, TagPostponableFiltering {
+		implements TagNotAC, ObserverOnBacktracksSystematic, TagPostponableFiltering {
+	// TagCallCompleteFiltering discarded because this seems not to be valid (and seems to be not compatible with Variable.TAG)
 
 	/**********************************************************************************************
 	 * Implementing interfaces
@@ -473,8 +474,8 @@ public abstract class Cumulative extends ConstraintGlobal
 
 		public CumulativeVar(Problem pb, Variable[] scp, Variable[] starts, int[] widths, int[] heights, int limit) {
 			super(pb, scp, starts, widths, heights, limit);
-			control(widths == null || IntStream.of(widths).allMatch(w -> w > 0),"The width of a task is zero");
-			control(heights == null || IntStream.of(heights).allMatch(h -> h > 0),"The height of a task is zero");
+			control(widths == null || IntStream.of(widths).allMatch(w -> w > 0), "The width of a task is zero");
+			control(heights == null || IntStream.of(heights).allMatch(h -> h > 0), "The height of a task is zero");
 		}
 
 		protected final void filterWidthVariables(Variable[] widths) {
