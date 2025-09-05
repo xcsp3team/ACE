@@ -195,9 +195,6 @@ public final class Control {
 			restarts.cutoff = restarts.cutoff / 2;
 			restarts.factor = 1.05;
 		}
-		
-		
-
 	}
 
 	public void framework(Optimizer optimizer) {

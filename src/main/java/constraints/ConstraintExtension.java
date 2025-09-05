@@ -221,7 +221,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			// currently, only STR2, STR2S, CT, CT2 and MDDSHORT
 			return c;
 		}
-		if (scp.length == 2 && options.generic2)
+		if (scp.length == 2 && options.generic2 && scp[0].dom.initSize() * scp[1].dom.initSize() < 100000)  // hard coding
 			return new ExtensionV(pb, scp); // return new STR2(pb, scp);
 		return (ConstraintExtension) Reflector.buildObject(className, classes, pb, scp);
 	}
