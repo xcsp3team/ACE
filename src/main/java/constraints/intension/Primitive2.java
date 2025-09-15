@@ -75,21 +75,26 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 	public static Constraint buildFrom(Problem pb, Variable x, TypeUnaryArithmeticOperator uaop, Variable y) {
 		switch (uaop) {
-		case ABS: // |x| = y
+		case ABS: // x = |y|
 			return new Dist2bEQ(pb, x, y, 0);
 		case NEG: // x = -y
 			return new Neg2EQ(pb, x, y); // TODO why not using x + y = 0 instead (one less propagator)?
-		case SQR: // x*x = y
+		case SQR: // x = y*y
 			List<int[]> list = new ArrayList<>();
-			for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
-				int v = x.dom.toVal(a), vv = Utilities.safeInt((long) v * v);
-				if (vv <= y.dom.greatestInitialValue() && y.dom.containsValue(vv))
-					list.add(new int[] { v, vv });
+			for (int a = y.dom.first(); a != -1; a = y.dom.next(a)) {
+				int v = y.dom.toVal(a), vv = Utilities.safeInt((long) v * v);
+				if (vv <= x.dom.greatestInitialValue() && x.dom.containsValue(vv))
+					list.add(new int[] { vv, v });
 			}
 			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), list.stream().toArray(int[][]::new), true, Boolean.FALSE);
-		default: // not(x) = y
-			control(x.dom.is01() && y.dom.is01());
+		case NOT: // x = not(y)
+			control(y.dom.is01()); // && y.dom.is01());
+			if (!x.dom.is01())
+				return null;
 			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), new int[][] { { 0, 1 }, { 1, 0 } }, true, Boolean.FALSE);
+
+		default:
+			throw new AssertionError("not implemented");
 		}
 	}
 
@@ -347,9 +352,9 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				} else {
 					assert v > w * w;
 					break;
-//					if (dy.removeValuesLT((int) Math.floor(Math.sqrt(v))) == false)
-//						return false;
-//					w = dy.firstValue();
+					// if (dy.removeValuesLT((int) Math.floor(Math.sqrt(v))) == false)
+					// return false;
+					// w = dy.firstValue();
 				}
 			}
 			// dealing with max bounds
@@ -363,9 +368,9 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				} else {
 					assert v < w * w;
 					break;
-//					if (dy.removeValuesGT((int) Math.floor(Math.sqrt(v))) == false)
-//						return false;
-//					w = dy.lastValue();
+					// if (dy.removeValuesGT((int) Math.floor(Math.sqrt(v))) == false)
+					// return false;
+					// w = dy.lastValue();
 				}
 			}
 			return true;

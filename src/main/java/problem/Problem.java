@@ -3216,8 +3216,34 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity noOverlap(Var[][] origins, Var[][] lengths, boolean zeroIgnored) {
 		unimplementedIf(!zeroIgnored, "noOverlap");
+		unimplementedIf(origins[0].length != 2 && origins[0].length != 3, "noOverlap " + Utilities.join(origins));
 
 		OptionsGlobal options = head.control.global;
+
+		if (origins[0].length == 3) {
+			for (int i = 0; i < origins.length; i++)
+				for (int j = i + 1; j < origins.length; j++) {
+					Variable xi = (Variable) origins[i][0], xj = (Variable) origins[j][0], yi = (Variable) origins[i][1], yj = (Variable) origins[j][1],
+							zi = (Variable) origins[i][2], zj = (Variable) origins[j][2];
+					Variable wi = (Variable) lengths[i][0], wj = (Variable) lengths[j][0], hi = (Variable) lengths[i][1], hj = (Variable) lengths[j][1],
+							di = (Variable) lengths[i][2], dj = (Variable) lengths[j][2];
+
+					switch (options.noOverlap3) {
+					case DECOMPOSITION:
+						intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi), le(add(zi, di), zj),
+								le(add(zj, dj), zi)));
+						break;
+					case TABLE_HYBRID:
+						post(options.noOverlapAux ? CHybrid.noOverlap(this, xi, yi, zi, xj, yj, zj, wi, hi, di, wj, hj, dj, auxVar(0, 1, 2, 3, 4, 5))
+								: CHybrid.noOverlap(this, xi, yi, zi, xj, yj, zj, wi, hi, di, wj, hj, dj));
+						break;
+					default:
+						throw new AssertionError("Invalid mode");
+					}
+				}
+			return null;
+		}
+
 		for (int i = 0; i < origins.length; i++)
 			for (int j = i + 1; j < origins.length; j++) {
 				Variable xi = (Variable) origins[i][0], xj = (Variable) origins[j][0], yi = (Variable) origins[i][1], yj = (Variable) origins[j][1];

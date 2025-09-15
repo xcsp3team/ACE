@@ -487,8 +487,8 @@ public final class Control {
 		public final boolean keepTree = addB("keepTree", "kt", false,
 				"Must we keep the objective as it is when given under the form of a tree (except if a sum is recognized)?");
 		public final int boundDescentCoeff = addI("boundDescentCoeff", "bdc", 1, "Bound descent coefficient");
-		
-		//public final boolean discardObjective = addB("discardObjective", "do", false, "Discard the objective if any");
+
+		// public final boolean discardObjective = addB("discardObjective", "do", false, "Discard the objective if any");
 	}
 
 	public class OptionsExtension extends OptionGroup {
@@ -551,6 +551,7 @@ public final class Control {
 		public final int cumulativeAux = addI("cumulativeAux", "g_cua", 0, "Limit for introducing aux variables for Cumulative");
 		public final int noOverlap1 = addI("noOverlap1", "g_no1", 0, "Algorithm for NoOverlap 1D");
 		public final int noOverlap2 = addI("noOverlap2", "g_no2", 0, "Algorithm for NoOverlap 2D");
+		public final int noOverlap3 = addI("noOverlap3", "g_no3", 12, "Algorithm for NoOverlap 3D");
 		public final boolean noOverlapAux = addB("noOverlapAux", "g_noa", true, "Introducing aux variables for NoOverlap (when relevant)?");
 		public final int noOverlapRedundLimit = addI("noOverlapRedundLimit", "g_nor", 10, "Arity limit for posting redundant constraints for NoOverlap?");
 		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");

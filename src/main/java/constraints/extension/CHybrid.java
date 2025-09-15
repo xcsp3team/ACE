@@ -182,6 +182,31 @@ public final class CHybrid extends ExtensionSpecific {
 		return new CHybrid(pb, pb.vars(x1, y1, x2, y2, w1, h1, w2, h2, aux), ht1, ht2, ht3, ht4);
 	}
 
+	// 3D, widths and lengths being variables
+
+	public static Constraint noOverlap(Problem pb, Variable x1, Variable y1, Variable z1, Variable x2, Variable y2, Variable z2, Variable w1, Variable h1,
+			Variable d1, Variable w2, Variable h2, Variable d2) {
+		HybridTuple ht1 = new HybridTuple(ge(x2, add(x1, w1))); // x2 >= x1 + w1
+		HybridTuple ht2 = new HybridTuple(ge(x1, add(x2, w2))); // x1 >= x2 + w2
+		HybridTuple ht3 = new HybridTuple(ge(y2, add(y1, h1))); // y2 >= y1 + h1
+		HybridTuple ht4 = new HybridTuple(ge(y1, add(y2, h2))); // y1 >= y2 + h2
+		HybridTuple ht5 = new HybridTuple(ge(z2, add(z1, d1))); // z2 >= z1 + d1
+		HybridTuple ht6 = new HybridTuple(ge(z1, add(z2, d2))); // z1 >= z2 + d2
+		return new CHybrid(pb, pb.vars(x1, y1, z1, x2, y2, z2, w1, h1, d1, w2, h2, d2), ht1, ht2, ht3, ht4, ht5, ht6);
+	}
+
+	public static Constraint noOverlap(Problem pb, Variable x1, Variable y1, Variable z1, Variable x2, Variable y2, Variable z2, Variable w1, Variable h1,
+			Variable d1, Variable w2, Variable h2, Variable d2, Variable aux) {
+		control(aux.dom.initiallyRange(6));
+		HybridTuple ht1 = new HybridTuple(eq(aux, 0), ge(x2, add(x1, w1))); // x2 >= x1 + w1
+		HybridTuple ht2 = new HybridTuple(eq(aux, 1), ge(x1, add(x2, w2))); // x1 >= x2 + w2
+		HybridTuple ht3 = new HybridTuple(eq(aux, 2), ge(y2, add(y1, h1))); // y2 >= y1 + h1
+		HybridTuple ht4 = new HybridTuple(eq(aux, 3), ge(y1, add(y2, h2))); // y1 >= y2 + h2
+		HybridTuple ht5 = new HybridTuple(eq(aux, 4), ge(z2, add(z1, d1))); // z2 >= z1 + d1
+		HybridTuple ht6 = new HybridTuple(eq(aux, 5), ge(z1, add(z2, d2))); // z1 >= z2 + d2
+		return new CHybrid(pb, pb.vars(x1, y1, z1, x2, y2, z2, w1, h1, d1, w2, h2, d2, aux), ht1, ht2, ht3, ht4, ht5, ht6);
+	}
+
 	// special case (TODO : to be checked if this remains relevant/interesting)
 
 	public static Constraint noOverlapBin(Problem pb, Variable x1, Variable y1, Variable x2, Variable y2, Variable w1, Variable h1, Variable w2, Variable h2) {
@@ -310,7 +335,7 @@ public final class CHybrid extends ExtensionSpecific {
 			hybridTuple.attach(this);
 		this.sVal = new int[scp.length];
 		this.sSup = new int[scp.length];
-		//System.out.println(this + " " + Kit.join(hybridTuples));
+		// System.out.println(this + " " + Kit.join(hybridTuples));
 	}
 
 	/**
@@ -408,7 +433,7 @@ public final class CHybrid extends ExtensionSpecific {
 		beforeFiltering();
 		for (int i = set.limit; i >= 0; i--) {
 			HybridTuple hybridTuple = hybridTuples[set.dense[i]];
-			if (!options.discardHybridEntailment && hybridTuple.isEntailed()) 
+			if (!options.discardHybridEntailment && hybridTuple.isEntailed())
 				return entail();
 			if (hybridTuple.isValid(sVal, sValSize)) {
 				sSupSize = hybridTuple.collect(sSup, sSupSize);
