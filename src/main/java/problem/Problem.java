@@ -1393,7 +1393,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				c = Reif2Rel.buildFrom(this, scp[1], scp[0], tree.relop(0), tree.val(0));
 			else if (logic_k_relop_y__eq_x.matches(tree) && scp[1].dom.is01())
 				c = Reif2Rel.buildFrom(this, scp[1], scp[0], tree.relop(1).arithmeticInversion(), tree.val(0));
-			else if (logic_y_setop_vals__eq_x.matches(tree) && scp[1].dom.is01())
+			else if (logic_y_setop_vals__eq_x.matches(tree) && scp[1].dom.is01() && tree.setop(0) != TypeConditionOperatorSet.NOTIN)  // TODO extending cases
 				c = Reif2Set.buildFrom(this, scp[1], scp[0], tree.setop(0), tree.arrayOfVals());
 			else if (unalop_x__eq_y.matches(tree))
 				c = Primitive2.buildFrom(this, scp[1], tree.unalop(0), scp[0]);

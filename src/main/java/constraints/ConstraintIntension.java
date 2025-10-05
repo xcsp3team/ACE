@@ -201,7 +201,7 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 		assert Variable.haveSameType(scp) : "Currently, it is not possible to mix integer and symbolic variables";
 		this.tree = tree; // canonize ? (XNodeParent<IVar>) tree.canonization() : tree;
 		this.keyCanonizer = scp.length > 30 || tree.size() > 200 ? null : new KeyCanonizer(tree); // TODO hard coding
-		String key = defineKey(keyCanonizer == null ? tree.toPostfixExpression(tree.vars()) : keyCanonizer.key());
+		String key = defineKey(tree.toPostfixExpression(tree.vars())); //keyCanonizer == null ? tree.toPostfixExpression(tree.vars()) : keyCanonizer.key());  BUG if keyCanonizer.key() see
 		Map<String, IntensionStructure> map = pb.head.structureSharing.mapForIntension;
 		this.treeEvaluator = map.computeIfAbsent(key,
 				s -> scp[0] instanceof VariableInteger ? new IntensionStructure(tree) : new IntensionStructure(tree, pb.symbolic.mapOfSymbols));
