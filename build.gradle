@@ -1,14 +1,14 @@
 apply plugin: 'java'
 
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
-    }
-}
+//java {
+//    toolchain {
+//        languageVersion = JavaLanguageVersion.of(11)
+//    }
+//}
 
-//sourceCompatibility = 1.11
-//targetCompatibility = 1.11 
+sourceCompatibility = 1.11
+targetCompatibility = 1.11 
 
 archivesBaseName = "ACE"
 version = '2.5'
