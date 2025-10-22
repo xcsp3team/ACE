@@ -219,6 +219,7 @@ import constraints.global.Sum.SumWeighted.SumWeightedGE;
 import constraints.global.Sum.SumWeighted.SumWeightedLE;
 import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
 import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
+import constraints.global.WakeUp;
 import constraints.global.Xor;
 import constraints.intension.Nogood;
 import constraints.intension.Primitive2;
@@ -269,6 +270,7 @@ import variables.DomainFinite.DomainRange;
 import variables.TupleIterator;
 import variables.Variable;
 import variables.Variable.VariableInteger;
+import variables.Variable.VariableIntegerSpecial;
 import variables.Variable.VariableSymbolic;
 
 /**
@@ -317,6 +319,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		this.priorityVars = priorityVars.length == 0 && annotations.decision != null ? (Variable[]) annotations.decision : priorityVars;
 		Variable[] r = HeuristicValues.possibleOptimizationInterference(this);
 		this.priorityVars = r != null ? r : priorityVars;
+		if (this.specialVariables.length > 0) {
+			control(this.priorityVars.length == 0);
+			this.priorityVars = specialVariables;
+		}
+
 		this.auxiliaryVars = Stream.of(variables).filter(x -> x.id().startsWith(AUXILIARY_VARIABLE_PREFIX)).toArray(Variable[]::new);
 
 		this.varArrays = varEntities.varArrays.stream().filter(va -> !va.id.startsWith(AUXILIARY_VARIABLE_PREFIX)).toArray(VarArray[]::new);
@@ -446,6 +453,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 * The auxiliary variables introducing when loading
 	 */
 	public Variable[] auxiliaryVars;
+
+	public VariableIntegerSpecial[] specialVariables;
 
 	/**
 	 * An object used to record many data corresponding to metrics and various features of the problem.
@@ -721,6 +730,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private final void storeToArrays() {
 		features.collecting.fix();
 		this.variables = features.collecting.variables.toArray(new Variable[0]);
+		this.specialVariables = Stream.of(this.variables).filter(x -> x instanceof VariableIntegerSpecial).toArray(VariableIntegerSpecial[]::new);
+
+		for (VariableIntegerSpecial x : specialVariables)
+			post(new WakeUp(this, x.leadingVariable, x));
+
+		System.out.println("hhhhh " + Kit.join(specialVariables) + " " + this.variables.length + " " + this.specialVariables.length);
 		this.constraints = features.collecting.constraints.toArray(new Constraint[0]);
 		this.postponableConstraints = Stream.of(constraints).filter(c -> c.postponable).toArray(Constraint[]::new);
 		for (int i = 0; i < postponableConstraints.length; i++)
@@ -944,14 +959,36 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return framework;
 	}
 
+	public int computeSpecialVariableSliceLength(int domainSize) {
+		if (domainSize < head.control.variables.specialDomainLimit)
+			return -1;
+		if (domainSize < 20_000)
+			return 100;
+		if (domainSize < 200_000)
+			return 1_000;
+		return 10_000;
+	}
+
 	@Override
 	public VariableInteger buildVarInteger(String id, Dom dom) {
-		VariableInteger x = null;
-		if (dom.values.length == 1 && dom.values[0] instanceof IntegerInterval)
-			x = new VariableInteger(this, id, (IntegerInterval) dom.values[0]);
-		else
-			x = new VariableInteger(this, id, cache.computeIfAbsent(dom.values, k -> IntegerEntity.toIntArray((IntegerEntity[]) k)));
-		return (VariableInteger) post(x);
+		// VariableInteger x = null;
+		if (dom.values.length == 1 && dom.values[0] instanceof IntegerInterval) {
+			int minValue = Utilities.safeInt(((IntegerInterval) dom.values[0]).inf);
+			int maxValue = Utilities.safeInt(((IntegerInterval) dom.values[0]).sup);
+			control(maxValue >= minValue);
+			int domainSize = maxValue - minValue + 1;
+			int sliceLength = computeSpecialVariableSliceLength(domainSize);
+//			if (sliceLength != -1) {
+//				int nSlices = domainSize / sliceLength + (domainSize % sliceLength != 0 ? 1 : 0);
+//				VariableInteger xx = new VariableInteger(this, id + "__abs", 0, nSlices - 1);
+//				post(xx);
+//				VariableIntegerSpecial x = new VariableIntegerSpecial(this, id, xx, minValue, maxValue, sliceLength);
+//				return (VariableInteger) post(x);
+//			}
+			return (VariableInteger) post(new VariableInteger(this, id, minValue, maxValue)); // (IntegerInterval) dom.values[0]);
+		} else
+			return (VariableInteger) post(new VariableInteger(this, id, cache.computeIfAbsent(dom.values, k -> IntegerEntity.toIntArray((IntegerEntity[]) k))));
+		// return (VariableInteger) post(x);
 	}
 
 	@Override
@@ -1065,7 +1102,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 */
 	private Var[] replaceByVariables(XNode<IVar>[] trees) {
 		control(trees.length > 0);
-
 		for (int i = 0; i < trees.length; i++) {
 			trees[i] = trees[i].canonization();
 			if (cacheForTrees.containsKey(trees[i]))
@@ -1393,7 +1429,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				c = Reif2Rel.buildFrom(this, scp[1], scp[0], tree.relop(0), tree.val(0));
 			else if (logic_k_relop_y__eq_x.matches(tree) && scp[1].dom.is01())
 				c = Reif2Rel.buildFrom(this, scp[1], scp[0], tree.relop(1).arithmeticInversion(), tree.val(0));
-			else if (logic_y_setop_vals__eq_x.matches(tree) && scp[1].dom.is01() && tree.setop(0) != TypeConditionOperatorSet.NOTIN)  // TODO extending cases
+			else if (logic_y_setop_vals__eq_x.matches(tree) && scp[1].dom.is01() && tree.setop(0) != TypeConditionOperatorSet.NOTIN) // TODO extending cases
 				c = Reif2Set.buildFrom(this, scp[1], scp[0], tree.setop(0), tree.arrayOfVals());
 			else if (unalop_x__eq_y.matches(tree))
 				c = Primitive2.buildFrom(this, scp[1], tree.unalop(0), scp[0]);

@@ -45,9 +45,9 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 
 	private Variable x;
 
-	private Integer typeIdentifier;
+	protected Integer typeIdentifier;
 
-	private Boolean indexesMatchValues;
+	protected Boolean indexesMatchValues;
 
 	@Override
 	public final Variable var() {
@@ -100,18 +100,18 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 	public abstract static class DomainRange extends DomainFinite {
 
 		public static DomainRange buildDomainRange(Variable x, int min, int max) {
-			return min == 0 ? new DomainRangeS(x, min, max) : new DomainRangeG(x, min, max);
+			return min == 0 ? new DomainRangeM(x, min, max) : new DomainRangeG(x, min, max);
 		}
 
 		/**
 		 * The minimal value of the domain
 		 */
-		public final int min;
+		public int min;
 
 		/**
 		 * The maximal value of the domain (included)
 		 */
-		public final int max;
+		public int max;
 
 		@Override
 		protected int computeTypeIdentifier() {
@@ -134,7 +134,7 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 	/**
 	 * This class gives the description of a general range domain.
 	 */
-	public final static class DomainRangeG extends DomainRange {
+	public static class DomainRangeG extends DomainRange {
 
 		public DomainRangeG(Variable x, int min, int max) {
 			super(x, min, max);
@@ -153,12 +153,36 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 
 	}
 
-	/**
-	 * This class gives the description of a specific range domain, i.e., a range starting at 0.
-	 */
-	public final static class DomainRangeS extends DomainRange {
+	public static class DomainRangeGSpecial extends DomainRangeG {
 
-		public DomainRangeS(Variable x, int min, int max) {
+		@Override
+		public boolean equals(Object obj) {
+			return false;
+		}
+
+		static int nTypes = 0;
+
+		public DomainRangeGSpecial(Variable x, int min, int max) {
+			super(x, min, max);
+			this.typeIdentifier = 1000 + nTypes++;
+			this.indexesMatchValues = false;
+		}
+
+		public void shift(int min, int max) {
+			control(nRemoved() == 0);
+			control(max - min + 1 == size());
+			this.min = min;
+			this.max = max;
+		}
+
+	}
+
+	/**
+	 * This class gives the description of a range domain where index and values match, i.e., a range starting at 0.
+	 */
+	public final static class DomainRangeM extends DomainRange {
+
+		public DomainRangeM(Variable x, int min, int max) {
 			super(x, min, max);
 			control(min == 0 && 0 <= max && max <= Constants.MAX_SAFE_INT, () -> "badly formed domain for variable " + x);
 		}

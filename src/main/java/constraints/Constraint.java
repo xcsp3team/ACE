@@ -31,6 +31,7 @@ import constraints.extension.structures.Bits;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.global.Sum.SumSimple.SumSimpleEQ;
 import constraints.global.Sum.SumWeighted.SumWeightedEQ;
+import constraints.global.WakeUp;
 import dashboard.Control.OptionsConstraints;
 import dashboard.Control.OptionsPropagation;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
@@ -54,6 +55,7 @@ import variables.Domain;
 import variables.DomainInfinite;
 import variables.TupleIterator;
 import variables.Variable;
+import variables.Variable.VariableIntegerSpecial;
 
 /**
  * A constraint is attached to a problem, involves a subset of variables of the problem, and allows us to reason so as to filter the search space (i.e., the
@@ -312,6 +314,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 * A dense set for storing (the positions in scp of) the variables that are not explicitly assigned by the solver
 	 */
 	public SetDense futvars;
+
+	public final VariableIntegerSpecial[] specialVariables;
 
 	/**
 	 * The object that can be used to iterate over the (valid) tuples of the Cartesian product of the domains of the constraint scope.
@@ -634,6 +638,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		this.problem = null;
 		this.scp = new Variable[0];
 		this.doms = null;
+		this.specialVariables = new VariableIntegerSpecial[0];
 		this.tupleIterator = null;
 		this.vals = null;
 		this.genericFilteringThreshold = Integer.MAX_VALUE;
@@ -652,11 +657,13 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 *            the scope of the constraint
 	 */
 	public Constraint(Problem pb, Variable[] scp) {
+		// System.out.println("building constraint " + this.getClass());
 		this.problem = pb;
 		this.scp = scp = Stream.of(scp).distinct().toArray(Variable[]::new); // IMPORTANT: this.scp and scp both updated
 		control(scp.length >= 1 && Stream.of(scp).allMatch(x -> x != null), () -> " constraint with a scope badly formed ");
 
 		this.doms = Stream.of(scp).map(x -> x.dom).toArray(Domain[]::new);
+		this.specialVariables = Stream.of(scp).filter(x -> x instanceof VariableIntegerSpecial).toArray(VariableIntegerSpecial[]::new);
 
 		this.tupleIterator = new TupleIterator(this.doms);
 		this.supporter = Supporter.buildFor(this);
@@ -1029,6 +1036,15 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		return true;
 	}
 
+	public boolean canBeFilteredConsideringSpecialVariables() {
+		if (this instanceof WakeUp)
+			return true; // because this is necessarily the leading variable that has been assigned
+		for (VariableIntegerSpecial x : specialVariables)
+			if (!x.waked())
+				return false;
+		return true;
+	}
+
 	/**
 	 * This is the method that is called for filtering domains. We know that the domain of the specified variable has been recently reduced, but this is not
 	 * necessarily the only one.
@@ -1038,7 +1054,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 * @return false if an inconsistency is detected
 	 */
 	public final boolean filterFrom(Variable x) {
-		// System.out.println("filtering " + " " + x + " " + getClass().getSimpleName() + " " + this + " " + Variable.nValidValuesFor(problem.variables));
+		// System.out.println("filteringFrom " + " " + x + " " + getClass().getSimpleName() + " " + this + " " + Variable.nValidValuesFor(problem.variables));
 		if (infiniteDomainVars.length > 0 && handleHugeDomains()) // Experimental (to be finished)
 			return true;
 		// For CSP, sometimes we can directly return true (because we know then that there is no filtering possibility)
@@ -1052,6 +1068,9 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		}
 		if (time > x.time && this instanceof TagCallCompleteFiltering && !(this instanceof TagNotCallCompleteFiltering) && !postponable)
 			return true;
+		if (!canBeFilteredConsideringSpecialVariables())
+			return true;
+
 		int nBefore = problem.nValueRemovals;
 		if (problem.solver.profiler != null)
 			problem.solver.profiler.beforeFiltering(this);

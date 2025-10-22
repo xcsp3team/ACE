@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 import org.xcsp.common.Types.TypeOptimization;
 
 import dashboard.Input;
+import dashboard.Output;
 import interfaces.Observers.ObserverOnRuns;
 import problem.Problem;
 import utility.Kit;
@@ -170,7 +171,7 @@ public abstract class Optimizer implements ObserverOnRuns {
 	protected abstract void shiftLimitWhenFailure();
 
 	public final String stringBounds() {
-		return (minBound == Long.MIN_VALUE ? "-infty" : minBound + gapBound) + ".." + (maxBound == Long.MAX_VALUE ? "+infty" : maxBound + gapBound);
+		return (minBound == Long.MIN_VALUE ? "-infty" : Output.numberFormat.format(minBound + gapBound) + ".." + (maxBound == Long.MAX_VALUE ? "+infty" :  Output.numberFormat.format(maxBound + gapBound)));
 	}
 
 	@Override

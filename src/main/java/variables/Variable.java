@@ -32,10 +32,8 @@ import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.Observers.ObserverOnBacktracks.ObserveronBacktracksUnsystematic;
 import problem.Problem;
 import utility.Kit;
-import variables.DomainBinary.DomainBinaryG;
-import variables.DomainBinary.DomainBinaryS;
 import variables.DomainFinite.DomainRange;
-import variables.DomainFinite.DomainRangeG;
+import variables.DomainFinite.DomainRangeGSpecial;
 import variables.DomainFinite.DomainSymbols;
 import variables.DomainFinite.DomainValues;
 
@@ -56,7 +54,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	/**
 	 * The class for integer variables
 	 */
-	public static final class VariableInteger extends Variable implements IVar.Var {
+	public static class VariableInteger extends Variable implements IVar.Var {
 
 		/**
 		 * Builds a variable with the specified id and a domain composed of all specified integer values
@@ -94,10 +92,11 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 		 * @param interval
 		 *            the interval of values of the domain
 		 */
-		public VariableInteger(Problem problem, String id, IntegerInterval interval) {
+		public VariableInteger(Problem problem, String id, int minValue, int maxValue) { //IntegerInterval interval) {
 			super(problem, id);
-			this.dom = DomainRange.buildDomainRange(this, Utilities.safeIntWhileHandlingInfinity(interval.inf),
-					Utilities.safeIntWhileHandlingInfinity(interval.sup));
+			if (!(this instanceof VariableIntegerSpecial))
+				this.dom = DomainRange.buildDomainRange(this, minValue, maxValue); //Utilities.safeIntWhileHandlingInfinity(interval.inf),
+						//Utilities.safeIntWhileHandlingInfinity(interval.sup));
 		}
 
 		/**
@@ -124,6 +123,25 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 		@Override
 		public Object allValues() {
 			return dom.allValues();
+		}
+	}
+
+	public static final class VariableIntegerSpecial extends VariableInteger {
+
+		public VariableInteger leadingVariable;
+
+		public int minValue, maxValue;
+
+		public boolean waked() {
+			return leadingVariable.assigned();
+		}
+
+		public VariableIntegerSpecial(Problem problem, String id, VariableInteger leadingVariable, int minValue, int maxValue, int sliceLength) {
+			super(problem, id);
+			this.leadingVariable = leadingVariable;
+			this.minValue = minValue;
+			this.maxValue = maxValue;
+			this.dom = new DomainRangeGSpecial(this, minValue, minValue + sliceLength - 1);
 		}
 	}
 
