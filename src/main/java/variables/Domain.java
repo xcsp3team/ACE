@@ -729,8 +729,8 @@ public interface Domain extends SetLinked {
 	 *            a value index
 	 */
 	default void removeElementary(int a) {
-		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " from "
-		// + var().problem.solver.propagation.currFilteringCtr);
+//		System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " from "
+//				+ var().problem.solver.propagation.currFilteringCtr);
 		Variable x = var();
 		assert !x.assigned() && contains(a) : x + " " + x.assigned() + " " + contains(a);
 		Solver solver = x.problem.solver;
@@ -1375,12 +1375,12 @@ public interface Domain extends SetLinked {
 						return v < 10 ? "  " : v < 100 ? " " : "";
 				}
 			} else {
-				if (-10 < min  && max < 10)
+				if (-10 < min && max < 10)
 					return v < 0 ? "" : " ";
-				if (-10 < min  && max < 100)
+				if (-10 < min && max < 100)
 					return v < 0 ? "" : v < 10 ? " " : "";
-				if (-10 < min  && max < 1000)
-					return v < 0 ? " " : v < 10 ? "  " : v <100 ? " " : "";
+				if (-10 < min && max < 1000)
+					return v < 0 ? " " : v < 10 ? "  " : v < 100 ? " " : "";
 			}
 		}
 		return "";
@@ -1402,22 +1402,23 @@ public interface Domain extends SetLinked {
 	 */
 	default String prettyValueOf(int a) {
 		int v = toVal(a);
+		//System.out.println("pretty " + a + " " + v);
 		return prefixForVal(v) + v;
-//		if (!var().problem.head.control.general.jsonQuotes && var().id.chars().filter(ch -> ch == '[').count() >= 2) {
-//			int min = toVal(0), max = toVal(initSize() - 1);
-//			if (min >= 0) {
-//				if (max > 9) {
-//					if (max < 100)
-//						return (v < 10 ? " " : "") + v;
-//					else if (max < 1000)
-//						return (v < 10 ? "  " : v < 100 ? " " : "") + v;
-//				}
-//			} else {
-//				if (min > -10 && max < 10)
-//					return (v < 0 ? "" : " ") + v;
-//			}
-//		}
-//		return v + "";
+		// if (!var().problem.head.control.general.jsonQuotes && var().id.chars().filter(ch -> ch == '[').count() >= 2) {
+		// int min = toVal(0), max = toVal(initSize() - 1);
+		// if (min >= 0) {
+		// if (max > 9) {
+		// if (max < 100)
+		// return (v < 10 ? " " : "") + v;
+		// else if (max < 1000)
+		// return (v < 10 ? " " : v < 100 ? " " : "") + v;
+		// }
+		// } else {
+		// if (min > -10 && max < 10)
+		// return (v < 0 ? "" : " ") + v;
+		// }
+		// }
+		// return v + "";
 	}
 
 	/**

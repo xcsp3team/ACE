@@ -36,7 +36,9 @@ import constraints.extension.structures.MDD;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableHybrid;
 import utility.Kit;
+import variables.DomainFinite.DomainRangeGSpecial;
 import variables.Variable;
+import variables.Variable.VariableInteger;
 
 /**
  * This class stores some information (features such as sizes of domains, types of constraints, etc.) about the problem (constraint network), and ways of
@@ -206,6 +208,11 @@ public final class Features {
 		public final List<CollectedNogood> nogoods = new ArrayList<>();
 
 		/**
+		 * The variables that have been collected so far
+		 */
+		public final List<VariableInteger> specialServants = new ArrayList<>();
+
+		/**
 		 * The keys used for tables, that have been collected so far, and used when storing tuples of a table constraint. Relevant only for symmetry-breaking.
 		 */
 		public final Map<String, String> tableKeys = new LinkedHashMap<>();
@@ -220,9 +227,8 @@ public final class Features {
 		 */
 		private final Object[] selectedVars = Kit.extractFrom(problem.head.control.variables.selection);
 
-		
 		public int nCollectedNogoodsGathered;
-		
+
 		/**
 		 * Returns true if the specified variable must be discarded
 		 * 
@@ -300,6 +306,8 @@ public final class Features {
 			int num = variables.size();
 			printNumber(num);
 			variables.add(x);
+			if (x.specialMaster != null)
+				specialServants.add((VariableInteger) x);
 			// domSizes.add(x.dom.initSize());
 			return num;
 		}
@@ -336,7 +344,7 @@ public final class Features {
 			int i = 0;
 			for (Variable x : variables) {
 				x.num = i++;
-				domSizes.add(x.dom.initSize());
+				domSizes.add(x.specialMaster != null ? ((DomainRangeGSpecial) x.dom).sliceLength : x.dom.initSize());
 			}
 			i = 0;
 			for (Constraint c : constraints) {

@@ -462,6 +462,7 @@ public final class Control {
 		public final boolean stayArrayFocus = addB("stayArrayFocus", "saf", false, "Should we stay focused on arrays when assigning variables");
 		public final boolean omit0DegreeVariables = addB("omit0DegreeVariables", "omv", true, "Ommit variables of degree 0");
 		public final boolean reduceIsolated = addB("reduceIsolated", "riv", true, "Arbitrary keeping a single value in the domain of isolated variables");
+		public final boolean useSpecialVariables = addB("useSpecialVariables", "usv", false, "Use special variables for large domains?");
 		public final int specialDomainLimit = addI("specialDomainLimit", "sdl", 2_000, "Domain size limit for building special variables");
 	}
 

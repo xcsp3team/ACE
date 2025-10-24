@@ -291,7 +291,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			}
 
 			@Override
-			public boolean runPropagator(Variable x) {
+			public boolean runPropagator(Variable x) {			
 				if (limit == Constants.PLUS_INFINITY)
 					return true;
 				recomputeBounds();

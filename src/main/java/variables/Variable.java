@@ -92,11 +92,15 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 		 * @param interval
 		 *            the interval of values of the domain
 		 */
-		public VariableInteger(Problem problem, String id, int minValue, int maxValue) { //IntegerInterval interval) {
+		public VariableInteger(Problem problem, String id, int minValue, int maxValue) {
 			super(problem, id);
-			if (!(this instanceof VariableIntegerSpecial))
-				this.dom = DomainRange.buildDomainRange(this, minValue, maxValue); //Utilities.safeIntWhileHandlingInfinity(interval.inf),
-						//Utilities.safeIntWhileHandlingInfinity(interval.sup));
+			this.dom = DomainRange.buildDomainRange(this, minValue, maxValue);
+		}
+
+		public VariableInteger(Problem problem, String id, VariableInteger master, int minValue, int maxValue, int sliceLength) { // means a special variable
+			super(problem, id);
+			this.specialMaster = master; // keep it here
+			this.dom = new DomainRangeGSpecial(this, master, minValue, maxValue, sliceLength);
 		}
 
 		/**
@@ -123,25 +127,6 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 		@Override
 		public Object allValues() {
 			return dom.allValues();
-		}
-	}
-
-	public static final class VariableIntegerSpecial extends VariableInteger {
-
-		public VariableInteger leadingVariable;
-
-		public int minValue, maxValue;
-
-		public boolean waked() {
-			return leadingVariable.assigned();
-		}
-
-		public VariableIntegerSpecial(Problem problem, String id, VariableInteger leadingVariable, int minValue, int maxValue, int sliceLength) {
-			super(problem, id);
-			this.leadingVariable = leadingVariable;
-			this.minValue = minValue;
-			this.maxValue = maxValue;
-			this.dom = new DomainRangeGSpecial(this, minValue, minValue + sliceLength - 1);
 		}
 	}
 
@@ -594,6 +579,10 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	 * failed[a] gives the number of assignments that directly failed with a
 	 */
 	public int[] failed;
+
+	public VariableInteger specialMaster;
+
+	public VariableInteger specialServant;
 
 	private Variable[] computeNeighbours(int neighborArityLimit) {
 		;

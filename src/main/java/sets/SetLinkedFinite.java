@@ -120,7 +120,7 @@ public class SetLinkedFinite implements SetLinked {
 	}
 
 	@Override
-	public final int first() {
+	public  int first() {
 		return first;
 	}
 
@@ -140,7 +140,7 @@ public class SetLinkedFinite implements SetLinked {
 	}
 
 	@Override
-	public final int last() {
+	public  int last() {
 		return last;
 	}
 

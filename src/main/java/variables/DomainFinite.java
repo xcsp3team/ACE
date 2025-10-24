@@ -21,6 +21,7 @@ import org.xcsp.common.Utilities;
 
 import sets.SetLinkedFinite.SetLinkedFiniteWithBits;
 import utility.Kit;
+import variables.Variable.VariableInteger;
 
 /**
  * A finite domain for a variable (from a constraint network), composed of a finite set of integers. Such a domain is defined from a range or an array; see the
@@ -106,12 +107,12 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 		/**
 		 * The minimal value of the domain
 		 */
-		public int min;
+		protected int min;
 
 		/**
 		 * The maximal value of the domain (included)
 		 */
-		public int max;
+		protected int max;
 
 		@Override
 		protected int computeTypeIdentifier() {
@@ -155,6 +156,10 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 
 	public static class DomainRangeGSpecial extends DomainRangeG {
 
+		private final VariableInteger master;
+
+		public int initMinValue, initMaxValue, initSize, sliceLength;
+
 		@Override
 		public boolean equals(Object obj) {
 			return false;
@@ -162,19 +167,90 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 
 		static int nTypes = 0;
 
-		public DomainRangeGSpecial(Variable x, int min, int max) {
-			super(x, min, max);
+		public DomainRangeGSpecial(Variable x, VariableInteger master, int minValue, int maxValue, int sliceLength) {
+			super(x, minValue, minValue + sliceLength - 1); // initially the first slice (but anyway, this is not relevant until the master is assigned)
 			this.typeIdentifier = 1000 + nTypes++;
 			this.indexesMatchValues = false;
+			this.master = master;
+			this.initMinValue = minValue;
+			this.initMaxValue = maxValue;
+			this.initSize = initMaxValue - initMinValue + 1;
+			this.sliceLength = sliceLength;
+			// System.out.println("qqqqqqqqqq" + initMinValue + " " + initMaxValue + " " +initSize);
 		}
 
 		public void shift(int min, int max) {
 			control(nRemoved() == 0);
-			control(max - min + 1 == size());
+			control(max - min + 1 == sliceLength);
 			this.min = min;
 			this.max = max;
 		}
 
+		@Override
+		public int initSize() {
+			if (!master.assigned())
+				return initSize;
+			return super.initSize();
+		}
+
+		public int toIdx(int v) {
+			if (!master.assigned())
+				return v < initMinValue || v > initMaxValue ? -1 : v - initMinValue;
+			return v < min || v > max ? -1 : v - min;
+		}
+
+		@Override
+		public int toVal(int a) {
+			if (!master.assigned())
+				return a + initMinValue;
+			// assert a + min <= max;
+			return a + min;
+		}
+
+		public int first() {
+			if (!master.assigned())
+				return 0;
+			return first;
+		}
+
+		@Override
+		public int last() {
+			if (!master.assigned())
+				return initSize - 1;
+			return last;
+		}
+
+		protected void removeElement(int a) {
+			if (!master.assigned())
+				throw new UnknownError("pb");
+			super.removeElement(a);
+		}
+
+		@Override
+		public void restoreBefore(int level) {
+			// if (!leadingVariable.waked())
+			// this.
+			// else
+			super.restoreBefore(level);
+
+		}
+
+		// protected void addElement(int a) {
+		// if (!leadingVariable.waked())
+		// throw new UnknownError("pb");
+		// super.addElement(a);
+		// }
+
+		public void removeAtConstructionTime(int a) {
+			throw new UnknownError("pb");
+		}
+
+		@Override
+		public Object allValues() {
+			if (!master.assigned())
+				return new Range(initMinValue, initMaxValue + 1);
+			return new Range(min, max + 1);
+		}
 	}
 
 	/**

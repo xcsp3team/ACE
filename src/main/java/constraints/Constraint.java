@@ -55,7 +55,7 @@ import variables.Domain;
 import variables.DomainInfinite;
 import variables.TupleIterator;
 import variables.Variable;
-import variables.Variable.VariableIntegerSpecial;
+import variables.Variable.VariableInteger;
 
 /**
  * A constraint is attached to a problem, involves a subset of variables of the problem, and allows us to reason so as to filter the search space (i.e., the
@@ -315,7 +315,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 */
 	public SetDense futvars;
 
-	public final VariableIntegerSpecial[] specialVariables;
+	public final VariableInteger[] specialServants;
 
 	/**
 	 * The object that can be used to iterate over the (valid) tuples of the Cartesian product of the domains of the constraint scope.
@@ -638,7 +638,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		this.problem = null;
 		this.scp = new Variable[0];
 		this.doms = null;
-		this.specialVariables = new VariableIntegerSpecial[0];
+		this.specialServants = new VariableInteger[0];
 		this.tupleIterator = null;
 		this.vals = null;
 		this.genericFilteringThreshold = Integer.MAX_VALUE;
@@ -663,7 +663,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		control(scp.length >= 1 && Stream.of(scp).allMatch(x -> x != null), () -> " constraint with a scope badly formed ");
 
 		this.doms = Stream.of(scp).map(x -> x.dom).toArray(Domain[]::new);
-		this.specialVariables = Stream.of(scp).filter(x -> x instanceof VariableIntegerSpecial).toArray(VariableIntegerSpecial[]::new);
+		this.specialServants = Stream.of(scp).filter(x -> x.specialMaster != null).toArray(VariableInteger[]::new);
 
 		this.tupleIterator = new TupleIterator(this.doms);
 		this.supporter = Supporter.buildFor(this);
@@ -1039,8 +1039,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	public boolean canBeFilteredConsideringSpecialVariables() {
 		if (this instanceof WakeUp)
 			return true; // because this is necessarily the leading variable that has been assigned
-		for (VariableIntegerSpecial x : specialVariables)
-			if (!x.waked())
+		for (VariableInteger x : specialServants)
+			if (!x.specialMaster.assigned())
 				return false;
 		return true;
 	}
