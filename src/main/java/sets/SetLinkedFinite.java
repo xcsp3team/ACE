@@ -43,14 +43,14 @@ public class SetLinkedFinite implements SetLinked {
 	protected int last;
 
 	/**
-	 * The backward linking of all present indexes of the list (from last to first). Hence, <code> prevs[a] == b </code>
-	 * means that b is the previous present index in the list before a, or -1 if there is none..
+	 * The backward linking of all present indexes of the list (from last to first). Hence, <code> prevs[a] == b </code> means that b is the previous present
+	 * index in the list before a, or -1 if there is none..
 	 */
 	private final int[] prevs;
 
 	/**
-	 * The forward linking of all present indexes of the list (from first to last). Hence, <code> nexts[a] == b </code>
-	 * means that b is the next present index in the list after a, or -1 if there is none.
+	 * The forward linking of all present indexes of the list (from first to last). Hence, <code> nexts[a] == b </code> means that b is the next present index
+	 * in the list after a, or -1 if there is none.
 	 */
 	private final int[] nexts;
 
@@ -60,16 +60,14 @@ public class SetLinkedFinite implements SetLinked {
 	protected int lastRemoved;
 
 	/**
-	 * The backward linking of all absent indexes of the list (from last to first). Hence,
-	 * <code> prevRemoved[a] == b </code> means that b is the previously deleted index of the list before a, or -1 if
-	 * there is none.
+	 * The backward linking of all absent indexes of the list (from last to first). Hence, <code> prevRemoved[a] == b </code> means that b is the previously
+	 * deleted index of the list before a, or -1 if there is none.
 	 */
 	private final int[] prevRemoved;
 
 	/**
-	 * The level at which absent indexes have been removed from the list. Hence, <code> removedLevels[a] == i </code>
-	 * means that i is the removal level of the index a and <code> removedLevels[a] == -1 </code> means that the index a
-	 * is still present.
+	 * The level at which absent indexes have been removed from the list. Hence, <code> removedLevels[a] == i </code> means that i is the removal level of the
+	 * index a and <code> removedLevels[a] == -1 </code> means that the index a is still present.
 	 */
 	public final int[] removedLevels;
 
@@ -110,17 +108,17 @@ public class SetLinkedFinite implements SetLinked {
 	}
 
 	@Override
-	public final int size() {
+	public int size() {
 		return size;
 	}
 
 	@Override
-	public final boolean contains(int a) {
+	public boolean contains(int a) {
 		return removedLevels[a] == -1;
 	}
 
 	@Override
-	public  int first() {
+	public int first() {
 		return first;
 	}
 
@@ -140,7 +138,7 @@ public class SetLinkedFinite implements SetLinked {
 	}
 
 	@Override
-	public  int last() {
+	public int last() {
 		return last;
 	}
 
@@ -199,7 +197,7 @@ public class SetLinkedFinite implements SetLinked {
 	}
 
 	@Override
-	public final void remove(int a, int level) {
+	public void remove(int a, int level) {
 		assert contains(a) && level >= 0 : "level = " + level + " absentLevel = " + removedLevels[a];
 		removedLevels[a] = level;
 		size--;
@@ -232,7 +230,7 @@ public class SetLinkedFinite implements SetLinked {
 		lastRemoved = prevRemoved[a];
 	}
 
-	private void restoreLastDropped() {
+	protected void restoreLastDropped() {
 		assert lastRemoved != -1 && !contains(lastRemoved);
 		removedLevels[lastRemoved] = -1;
 		size++;

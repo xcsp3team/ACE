@@ -258,7 +258,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			private short[] bests;
 
-			private int mostContributor() {
+			private int mostContributor() { // experimental
 				int cnt = 0, bestValue = Integer.MIN_VALUE;
 				// for (short i = 0; i < scp.length; i++) {
 				// if (doms[i].contains(0)) // because we cannot do better with this variable

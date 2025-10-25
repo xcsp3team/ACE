@@ -729,8 +729,8 @@ public interface Domain extends SetLinked {
 	 *            a value index
 	 */
 	default void removeElementary(int a) {
-//		System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " from "
-//				+ var().problem.solver.propagation.currFilteringCtr);
+		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " from "
+		// + var().problem.solver.propagation.currFilteringCtr);
 		Variable x = var();
 		assert !x.assigned() && contains(a) : x + " " + x.assigned() + " " + contains(a);
 		Solver solver = x.problem.solver;
@@ -1364,6 +1364,20 @@ public interface Domain extends SetLinked {
 	 * Control and Display
 	 *********************************************************************************************/
 
+	/**
+	 * Returns either an object Range or an array with all values of the initial domain
+	 * 
+	 * @return an object Range or an int array
+	 */
+	Object allValues();
+
+	/**
+	 * Returns a pretty string form of the specified value
+	 * 
+	 * @param v
+	 *            value
+	 * @return a pretty form of the specified value
+	 */
 	default String prefixForVal(int v) {
 		if (!var().problem.head.control.general.jsonQuotes && var().id.chars().filter(ch -> ch == '[').count() >= 2) {
 			int min = toVal(0), max = toVal(initSize() - 1);
@@ -1387,13 +1401,6 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
-	 * Returns either an object Range or an array with all values of the initial domain
-	 * 
-	 * @return an object Range or an int array
-	 */
-	Object allValues();
-
-	/**
 	 * Returns a pretty string form of the value whose index is specified
 	 * 
 	 * @param a
@@ -1402,7 +1409,7 @@ public interface Domain extends SetLinked {
 	 */
 	default String prettyValueOf(int a) {
 		int v = toVal(a);
-		//System.out.println("pretty " + a + " " + v);
+		// System.out.println("pretty " + a + " " + v);
 		return prefixForVal(v) + v;
 		// if (!var().problem.head.control.general.jsonQuotes && var().id.chars().filter(ch -> ch == '[').count() >= 2) {
 		// int min = toVal(0), max = toVal(initSize() - 1);

@@ -33,7 +33,7 @@ import interfaces.Observers.ObserverOnBacktracks.ObserveronBacktracksUnsystemati
 import problem.Problem;
 import utility.Kit;
 import variables.DomainFinite.DomainRange;
-import variables.DomainFinite.DomainRangeGSpecial;
+import variables.DomainFinite.DomainSpecial;
 import variables.DomainFinite.DomainSymbols;
 import variables.DomainFinite.DomainValues;
 
@@ -100,7 +100,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 		public VariableInteger(Problem problem, String id, VariableInteger master, int minValue, int maxValue, int sliceLength) { // means a special variable
 			super(problem, id);
 			this.specialMaster = master; // keep it here
-			this.dom = new DomainRangeGSpecial(this, master, minValue, maxValue, sliceLength);
+			this.dom = new DomainSpecial(this, master, minValue, maxValue, sliceLength);
 		}
 
 		/**
