@@ -27,6 +27,7 @@ import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstEQ;
 import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstGE;
 import constraints.global.Extremum.ExtremumCst.MinimumCst.MinimumCstLE;
 import interfaces.Tags.TagAC;
+import interfaces.Tags.TagBoundCompatible;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagSymmetric;
 import optimization.Optimizable;
@@ -56,7 +57,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 	 * ExtremumVar, with its two subclasses Maximum and Minimum
 	 *********************************************************************************************/
 
-	public abstract static class ExtremumVar extends Extremum {
+	public abstract static class ExtremumVar extends Extremum implements TagBoundCompatible {
 
 		/**
 		 * The domain of the target variable (used as value)
@@ -71,8 +72,11 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 		public ExtremumVar(Problem pb, Variable[] list, Variable value) {
 			super(pb, list, value);
 			this.vdom = value.dom;
-			this.sentinels = IntStream.range(0, vdom.initSize()).mapToObj(a -> findSentinelFor(vdom.toVal(a))).toArray(Variable[]::new);
-			vdom.removeAtConstructionTime(a -> sentinels[a] == null);
+			this.sentinels = specialServants.length == 0
+					? IntStream.range(0, vdom.initSize()).mapToObj(a -> findSentinelFor(vdom.toVal(a))).toArray(Variable[]::new)
+					: null; // otherwise may be too long (since large domains)
+			if (sentinels != null)
+				vdom.removeAtConstructionTime(a -> sentinels[a] == null);
 			control(list.length > 1 && Stream.of(list).noneMatch(x -> x == value), "vector length = " + list.length);
 		}
 
@@ -138,25 +142,30 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 				// Filtering vdom (the domain of the target extremum variable)
 				if (vdom.removeValuesLT(maxFirst) == false || vdom.removeValuesGT(maxLast) == false)
 					return false;
+
 				int sizeBefore = vdom.size();
 
-				if (vdom.removeIndexesChecking(a -> {
-					int v = vdom.toVal(a);
-					if (!sentinels[a].dom.containsValue(v)) {
-						Variable s = findSentinelFor(v);
-						if (s == null)
-							return true;
-						sentinels[a] = s;
-					}
-					return false;
-				}) == false)
-					return false;
+				if (sentinels != null)
+					if (vdom.removeIndexesChecking(a -> {
+						int v = vdom.toVal(a);
+						if (!sentinels[a].dom.containsValue(v)) {
+							Variable s = findSentinelFor(v);
+							if (s == null)
+								return true;
+							sentinels[a] = s;
+						}
+						return false;
+					}) == false)
+						return false;
 
 				// Filtering the domains of variables in the vector
 				int lastMax = vdom.lastValue();
 				for (Variable x : list)
 					if (x.dom.removeValuesGT(lastMax) == false)
 						return false;
+
+				if (sentinels == null)
+					return true;
 
 				// Possibly filtering the domain of the sentinel from the last value of vdom
 				Variable sentinel = sentinels[vdom.last()];
@@ -216,31 +225,37 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 					if (x.dom.lastValue() < minLast)
 						minLast = x.dom.lastValue();
 				}
-
 				// filtering the domain of vdom
 				if (vdom.removeValuesGT(minLast) == false || vdom.removeValuesLT(minFirst) == false)
 					return false;
+
 				int sizeBefore = vdom.size();
-				for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
-					int v = vdom.toVal(a);
-					if (!sentinels[a].dom.containsValue(v)) {
-						Variable s = findSentinelFor(v);
-						if (s != null)
-							sentinels[a] = s;
-						else if (vdom.size() == 1)
-							return vdom.fail();
-						else
-							vdom.removeElementary(a);
+
+				if (sentinels != null) {
+					for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
+						int v = vdom.toVal(a);
+						if (!sentinels[a].dom.containsValue(v)) {
+							Variable s = findSentinelFor(v);
+							if (s != null)
+								sentinels[a] = s;
+							else if (vdom.size() == 1)
+								return vdom.fail();
+							else
+								vdom.removeElementary(a);
+						}
 					}
+					if (vdom.afterElementaryCalls(sizeBefore) == false)
+						return false;
 				}
-				if (vdom.afterElementaryCalls(sizeBefore) == false)
-					return false;
 
 				// Filtering the domains of variables in the list
 				int firstMin = vdom.firstValue();
 				for (Variable x : list)
 					if (x.dom.removeValuesLT(firstMin) == false)
 						return false;
+
+				if (sentinels == null)
+					return true;
 
 				// Possibly filtering the domain of the sentinel for the first value of vdom
 				Variable sentinel = sentinels[vdom.first()];
@@ -356,14 +371,14 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 				for (Variable x : scp)
 					max = Math.max(max, x.dom.lastValue());
 				return max;
-				//return maxCurrentObjectiveValue(); // = minCurrentObjectiveValue()
+				// return maxCurrentObjectiveValue(); // = minCurrentObjectiveValue()
 			}
 
 			public MaximumCst(Problem pb, Variable[] scp, long limit) {
 				super(pb, scp, limit);
 			}
 
-			public static final class MaximumCstLE extends MaximumCst {
+			public static final class MaximumCstLE extends MaximumCst implements TagBoundCompatible {
 
 				@Override
 				public boolean isSatisfiedBy(int[] vals) {
@@ -555,7 +570,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 				for (Variable x : scp)
 					min = Math.min(min, x.dom.firstValue());
 				return min;
-				//return minCurrentObjectiveValue(); // = maxCurrentObjectiveValue
+				// return minCurrentObjectiveValue(); // = maxCurrentObjectiveValue
 			}
 
 			public MinimumCst(Problem pb, Variable[] scp, long limit) {
@@ -616,7 +631,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 				}
 			}
 
-			public static final class MinimumCstGE extends MinimumCst {
+			public static final class MinimumCstGE extends MinimumCst implements TagBoundCompatible {
 
 				@Override
 				public boolean isSatisfiedBy(int[] vals) {
@@ -633,9 +648,9 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 				@Override
 				public boolean runPropagator(Variable dummy) {
 					// control(problem.solver.depth() == 0);
-					 if (limit == Constants.MINUS_INFINITY)
-							return true;
-						for (Variable y : scp)
+					if (limit == Constants.MINUS_INFINITY)
+						return true;
+					for (Variable y : scp)
 						if (y.dom.removeValuesLT(limit) == false)
 							return false;
 					return entail();

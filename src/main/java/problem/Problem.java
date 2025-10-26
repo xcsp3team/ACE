@@ -877,6 +877,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		loadData(data, dataFormat, dataSaving);
 		head.output.afterData();
 		api.model();
+
 		if (subsetAllDifferentScopes.size() > 0)
 			post(new SubsetAllDifferent(this, subsetAllDifferentScopes.stream().toArray(Variable[][]::new), null));
 		if (subsetAllDifferentExceptScopes.size() > 0)

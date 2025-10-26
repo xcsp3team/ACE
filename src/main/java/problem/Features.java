@@ -36,7 +36,7 @@ import constraints.extension.structures.MDD;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableHybrid;
 import utility.Kit;
-import variables.DomainFinite.DomainSpecial;
+import variables.DomainFinite.DomainFiniteSpecial;
 import variables.Variable;
 import variables.Variable.VariableInteger;
 
@@ -344,7 +344,7 @@ public final class Features {
 			int i = 0;
 			for (Variable x : variables) {
 				x.num = i++;
-				domSizes.add(x.specialMaster != null ? ((DomainSpecial) x.dom).sliceLength : x.dom.initSize());
+				domSizes.add(x.dom.practicalInitSize()); //.specialMaster != null ? ((DomainSpecial) x.dom).sliceLength : x.dom.initSize());
 			}
 			i = 0;
 			for (Constraint c : constraints) {

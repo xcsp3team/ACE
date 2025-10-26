@@ -147,8 +147,8 @@ public final class NogoodReasoner {
 		this.decisions = solver.decisions;
 		this.options = solver.head.control.learning;
 		this.nogoods = new Nogood[options.nogoodBaseLimit];
-		this.pws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
-		this.nws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.initSize()]).toArray(WatchCell[][]::new);
+		this.pws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.practicalInitSize()]).toArray(WatchCell[][]::new);
+		this.nws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.practicalInitSize()]).toArray(WatchCell[][]::new);
 		this.tmp = new int[solver.problem.variables.length];
 		// nogoodMinimizer = options.nogood == LearningNogood.RST_MIN ? new NogoodMinimizer(solver) : null;
 		// symmetryHandler = options.nogood == RST_SYM ? new SymmetryHandler(this,problem.variables.length) : null;

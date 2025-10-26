@@ -173,7 +173,7 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 		// System.out.println(n1 + " vvs " + n2);
 		control(n1 + n2 < 31, () -> "Cannot represent decisions " + n1 + " " + n2);
 		this.OFFSET = (int) Math.pow(2, n2 + 1); // +1 because 0 excluded ???
-		int nValues = Variable.nInitValuesFor(variables);
+		int nValues = Variable.nInitPracticalValuesFor(variables);
 		this.set = new SetDense(nValues);
 		this.failedAssignments = new byte[nValues / 8 + 1];
 	}

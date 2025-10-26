@@ -36,6 +36,7 @@ import constraints.ConstraintGlobal;
 import constraints.global.Sum.SumViewWeighted.View.ViewTree01;
 import constraints.global.Sum.SumViewWeighted.View.ViewVariable;
 import interfaces.Tags.TagAC;
+import interfaces.Tags.TagBoundCompatible;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagPostponableFiltering;
@@ -239,7 +240,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		// ***** Constraint SumSimpleLE
 		// ************************************************************************
 
-		public static final class SumSimpleLE extends SumSimple implements TagAC, Optimizable {
+		public static final class SumSimpleLE extends SumSimple implements TagAC, TagBoundCompatible, Optimizable {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {
@@ -346,7 +347,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		// ***** Constraint SumSimpleGE
 		// ************************************************************************
 
-		public static final class SumSimpleGE extends SumSimple implements TagAC, Optimizable {
+		public static final class SumSimpleGE extends SumSimple implements TagAC, TagBoundCompatible, Optimizable {
 
 			@Override
 			public final boolean isSatisfiedBy(int[] t) {

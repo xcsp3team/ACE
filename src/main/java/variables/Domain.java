@@ -229,6 +229,10 @@ public interface Domain extends SetLinked {
 	 * Class Members
 	 *********************************************************************************************/
 
+	default int practicalInitSize() {
+		return size();
+	}
+
 	/**
 	 * @param range
 	 *            a number corresponding to the range 0 to itself -1

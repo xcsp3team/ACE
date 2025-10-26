@@ -36,8 +36,7 @@ public interface Tags {
 	}
 
 	/**
-	 * Tag for indicating that a constraint can produce full filtering at each call (not only around the specified event
-	 * variable)
+	 * Tag for indicating that a constraint can produce full filtering at each call (not only around the specified event variable)
 	 */
 	interface TagCallCompleteFiltering {
 	}
@@ -61,8 +60,14 @@ public interface Tags {
 	}
 
 	/**
-	 * Tag for indicating that a constraint can be postponed when filtering (requires a propagator independent of which
-	 * variables (domains) were recently reduced)
+	 * Tag for indicating that an object (e.g., a constraint) is able to reason on bounds (of domains).
+	 */
+	interface TagBoundCompatible {
+	}
+
+	/**
+	 * Tag for indicating that a constraint can be postponed when filtering (requires a propagator independent of which variables (domains) were recently
+	 * reduced)
 	 */
 	interface TagPostponableFiltering {
 	}
@@ -81,14 +86,12 @@ public interface Tags {
 
 	/**
 	 * Tag for indicating that a constraint may contain starred elements (i.e., may contain *)
-	 *
 	 */
 	interface TagStarredCompatible {
 	}
 
 	/**
-	 * Tag for indicating that an object (e.g., an heuristic) aims at maximizing an expression (variable, sum, maximum,
-	 * etc.)
+	 * Tag for indicating that an object (e.g., an heuristic) aims at maximizing an expression (variable, sum, maximum, etc.)
 	 */
 	interface TagMaximize {
 	}

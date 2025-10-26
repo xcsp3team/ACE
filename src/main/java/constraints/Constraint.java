@@ -38,6 +38,7 @@ import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.Observers.ObserverOnConstruction;
 import interfaces.SpecificPropagator;
 import interfaces.Tags.TagAC;
+import interfaces.Tags.TagBoundCompatible;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagNotCallCompleteFiltering;
@@ -513,6 +514,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 */
 	public final boolean isIrreflexive() {
 		control(scp.length == 2);
+		if (specialServants.length > 0)
+			return false; // would be too long to compute
 		int[] tuple = tupleIterator.buffer;
 		int x = scp[0].dom.size() > scp[1].dom.size() ? 1 : 0, y = x == 0 ? 1 : 0;
 		Domain dx = scp[x].dom, dy = scp[y].dom;
@@ -1039,6 +1042,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	public boolean canBeFilteredConsideringSpecialVariables() {
 		if (this instanceof WakeUp)
 			return true; // because this is necessarily the leading variable that has been assigned
+		if (this instanceof TagBoundCompatible)
+			return true;
 		for (VariableInteger x : specialServants)
 			if (!x.specialMaster.assigned())
 				return false;

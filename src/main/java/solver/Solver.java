@@ -409,7 +409,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			this.stack = new Variable[size];
 		}
 
-		// must be called before making modifications (i.e. before reducing the domain of the variable)
+		// BE CAREFUL: must be called before making modifications (i.e. before reducing the domain of the variable)
 		public int push(Variable x) {
 			int depth = depth();
 			assert x.dom.lastRemovedLevel() <= depth;
@@ -795,7 +795,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		this.decisions = new Decisions(this);
 		this.futVars = new FutureVariables(this);
 		int nLevels = problem.variables.length + 1;
-		int size = Stream.of(problem.variables).mapToInt(x -> x.dom.initSize()).reduce(0, (sum, domSize) -> sum + Math.min(nLevels, domSize));
+		int size = Stream.of(problem.variables).mapToInt(x -> x.dom.practicalInitSize()).reduce(0, (sum, domSize) -> sum + Math.min(nLevels, domSize));
 		this.stackedVariables = new StackedVariables(size + nLevels);
 
 		this.nogoodReasoner = NogoodReasoner.buildFor(this); // may be null

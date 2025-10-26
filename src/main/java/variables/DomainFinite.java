@@ -214,7 +214,11 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 		}
 	}
 
-	public static class DomainSpecial extends DomainFinite {
+	public static class DomainFiniteSpecial extends DomainFinite {
+
+		public static final int UNINITIALIZED = -2;
+
+		static int nTypes = 0;
 
 		@Override
 		public boolean equals(Object obj) {
@@ -226,7 +230,25 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 			throw new AssertionError("should not be called");
 		}
 
-		static int nTypes = 0;
+		public void setNumberOfLevels(int nLevels) {
+			super.setNumberOfLevels(nLevels);
+			lbs = IntStream.generate(() -> UNINITIALIZED).limit(nLevels).toArray();
+			ubs = IntStream.generate(() -> UNINITIALIZED).limit(nLevels).toArray();
+			lbs[0] = initMinValue;
+			ubs[0] = initMaxValue;
+		}
+
+		private final VariableInteger master;
+
+		private final Domain masterDom;
+
+		public final int initMinValue, initMaxValue, initSize, sliceLength, nSlices, nValuesLastSlice, nMissingValuesLastSlice;
+
+		public int lb, ub;
+
+		public int[] lbs;
+
+		public int[] ubs;
 
 		/**
 		 * The minimal value of the current slice (relevant if the master domain is singleton)
@@ -238,13 +260,7 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 		 */
 		private int maxSliceValue;
 
-		private final VariableInteger master;
-
-		private final Domain masterDom;
-
-		public final int initMinValue, initMaxValue, initSize, sliceLength, nSlices, nValuesLastSlice, nMissingValuesLastSlice;
-
-		public DomainSpecial(Variable x, VariableInteger master, int minValue, int maxValue, int sliceLength) {
+		public DomainFiniteSpecial(Variable x, VariableInteger master, int minValue, int maxValue, int sliceLength) {
 			super(x, sliceLength);
 			this.minSliceValue = minValue; // initially the first slice (but anyway, this is not relevant until the master is assigned
 			this.maxSliceValue = minValue + sliceLength - 1;
@@ -262,14 +278,46 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 			this.nValuesLastSlice = initSize % sliceLength == 0 ? sliceLength : initSize % sliceLength;
 			this.nMissingValuesLastSlice = sliceLength - nValuesLastSlice;
 
+			this.lb = initMinValue;
+			this.ub = initMaxValue;
+
 			System.out.println("sizeee " + size());
 		}
 
-		public void shift(int min, int max) {
-			control(nRemoved() == 0);
-			control(max - min + 1 == sliceLength);
+		private void updateLB(int b) {
+			if (b > lb) {
+				int depth = var().problem.solver.depth();
+				if (lbs[depth] == UNINITIALIZED)
+					lbs[depth] = lb;
+				lb = b;
+			}
+		}
+
+		private void updateUB(int b) {
+			if (b < ub) {
+				int depth = var().problem.solver.depth();
+				if (ubs[depth] == UNINITIALIZED)
+					ubs[depth] = ub;
+				ub = b;
+			}
+		}
+
+		public boolean shift(int min) {
+			control(masterDom.size() == 1);
+			control(nRemoved() == 0 || this.minSliceValue == min);
+			var().problem.solver.stackVariable(var());
+			
 			this.minSliceValue = min;
-			this.maxSliceValue = max;
+			this.maxSliceValue = min + sliceLength - 1;
+			//System.out.println("hhhh " + minSliceValue + " " + maxSliceValue + " " + lb + " " + ub + " " + var());
+			updateLB(minSliceValue);
+			updateUB(maxSliceValue);
+			//System.out.println("hhhh2 " + minSliceValue + " " + maxSliceValue + " " + lb + " " + ub + " " + var());
+			
+			
+			boolean consistent = removeValuesLT(lb) && removeValuesGT(ub);
+			control(consistent, "inconsistency not possible here");
+			return handleReduction();
 		}
 
 		@Override
@@ -280,27 +328,32 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 		@Override
 		public int size() {
 			if (masterDom.size() == 1)
-				return size;
-			return masterDom.size() * sliceLength - (masterDom.last() == nSlices - 1 ? nMissingValuesLastSlice : 0);
+				return super.size();
+			return ub - lb + 1; // masterDom.size() * sliceLength - (masterDom.last() == nSlices - 1 ? nMissingValuesLastSlice : 0);
+		}
+
+		public int practicalInitSize() {
+			return sliceLength;
 		}
 
 		public int nRemoved() {
 			if (masterDom.size() == 1)
-				return sliceLength - size();
-			return (nSlices - masterDom.size()) * sliceLength - (masterDom.last() < nSlices - 1 ? nMissingValuesLastSlice : 0);
+				return sliceLength - size(); // do not call super.nRemoved()
+			return initSize - (ub - lb + 1); // (nSlices - masterDom.size()) * sliceLength - (masterDom.last() < nSlices - 1 ? nMissingValuesLastSlice : 0);
 		}
 
 		@Override
 		public final boolean contains(int a) {
 			if (masterDom.size() == 1)
 				return super.contains(a);
-			throw new AssertionError("should not be called");
+			return first() <= a && a <= last();
+			// throw new AssertionError("should not be called");
 		}
 
 		public int first() {
 			if (masterDom.size() == 1)
 				return super.first();
-			return masterDom.first() * sliceLength;
+			return lb - initMinValue; // masterDom.first() * sliceLength;
 		}
 
 		@Override
@@ -314,7 +367,7 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 		public int last() {
 			if (masterDom.size() == 1)
 				return super.last();
-			return masterDom.last() * sliceLength + (masterDom.last() == nSlices - 1 ? nValuesLastSlice : sliceLength);
+			return ub - initMinValue; // masterDom.last() * sliceLength + (masterDom.last() == nSlices - 1 ? nValuesLastSlice : sliceLength);
 		}
 
 		@Override
@@ -398,8 +451,16 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 		public void restoreBefore(int level) {
 			if (masterDom.size() == 1)
 				super.restoreBefore(level);
-			else
-				throw new AssertionError("should not be called");
+			else {
+				if (lbs[level] != UNINITIALIZED) {
+					lb = lbs[level];
+					lbs[level] = UNINITIALIZED;
+				}
+				if (ubs[level] != UNINITIALIZED) {
+					ub = lbs[level];
+					ubs[level] = UNINITIALIZED;
+				}
+			}
 		}
 
 		@Override
@@ -546,7 +607,9 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 		}
 
 		public void removeAtConstructionTime(Predicate<Integer> p) {
-			throw new AssertionError("should not be called");
+			for (int a = first(); a != -1; a = next(a))
+				if (p.test(a))
+					throw new AssertionError("should not be called");
 		}
 
 		public void removeValueAtConstructionTime(int v) {
@@ -633,6 +696,34 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 		public boolean removeValuesLE(int limit) {
 			if (lastValue() <= limit)
 				return fail();
+			if (firstValue() > limit)
+				return true;
+			var().problem.solver.stackVariable(var());
+			// we are sure to remove some values with no risk of inconsistency
+			if (masterDom.size() > 1) {
+				control(lb <= limit);
+				// first, we modify master dom
+				int k = (limit - initMinValue + 1) / sliceLength; // +1 because LE
+				boolean consistent = masterDom.removeValuesLT(k);
+				control(consistent, "inconsistency not possible here");
+				// second, we check if singleton
+				if (masterDom.size() == 1) {
+					int startValue = initMinValue + (masterDom.single() * sliceLength);
+					shift(startValue);
+					consistent = removeValuesGT(ub);
+					control(consistent, "inconsistency not possible here");
+					// the rest of the filtering is done below
+				} else { // we modify lb
+					int depth = var().problem.solver.depth();
+					if (lbs[depth] == UNINITIALIZED)
+						lbs[depth] = lb; // imit + 1;
+					lb = limit + 1;
+					control(masterDom.first() == (lb - initMinValue) / sliceLength && masterDom.last() == (ub - initMinValue) / sliceLength);
+					return handleReduction();
+				}
+			}
+			control(masterDom.size() == 1);
+
 			int sizeBefore = size();
 			for (int a = first(); a != -1 && toVal(a) <= limit; a = next(a))
 				removeElementary(a);
@@ -642,6 +733,38 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 		public boolean removeValuesGE(int limit) {
 			if (firstValue() >= limit)
 				return fail();
+			if (lastValue() < limit)
+				return true;
+			control(masterDom.first() == (lb - initMinValue) / sliceLength && masterDom.last() == (ub - initMinValue) / sliceLength,
+					"App1 " + masterDom.first() + " " + masterDom.last() + " " + lb + " " + ub + " " + limit + " " + var());
+			var().problem.solver.stackVariable(var());
+			// we are sure to remove some values with no risk of inconsistency
+			if (masterDom.size() > 1) {
+
+				control(ub >= limit);
+				// first, we modify master dom
+				int k = (limit - initMinValue - 1) / sliceLength; // the first k indexes in masterDom are safe
+				boolean consistent = masterDom.removeValuesGT(k); // (limit - initMinValue) % sliceLength == 0 ? k : k + 1);
+				control(consistent, "inconsistency not possible here");
+				// second, we check if singleton
+				if (masterDom.size() == 1) {
+					int startValue = initMinValue + (masterDom.single() * sliceLength);
+					shift(startValue);
+					consistent = removeValuesLT(lb);
+					control(consistent, "inconsistency not possible here");
+					// the rest of the filtering is done below
+				} else { // we modify lb
+					int depth = var().problem.solver.depth();
+					if (ubs[depth] == UNINITIALIZED)
+						ubs[depth] = ub; // limit - 1;
+					ub = limit - 1;
+					control(masterDom.first() == (lb - initMinValue) / sliceLength && masterDom.last() == (ub - initMinValue) / sliceLength,
+							"App2 " + masterDom.first() + " " + masterDom.last() + " " + limit);
+					return handleReduction();
+				}
+			}
+			control(masterDom.size() == 1);
+
 			int sizeBefore = size();
 			for (int a = last(); a != -1 && toVal(a) >= limit; a = prev(a))
 				removeElementary(a);
@@ -761,10 +884,18 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 
 		@Override
 		public Object allValues() {
-			if (!master.assigned())
-				return new Range(initMinValue, initMaxValue + 1);
-			return new Range(minSliceValue, maxSliceValue + 1);
+			if (masterDom.size() == 1)
+				return new Range(minSliceValue, maxSliceValue + 1);
+			return new Range(initMinValue, initMaxValue + 1);
+
 		}
+
+		public boolean controlStructures() {
+			if (masterDom.size() == 1)
+				return super.controlStructures();
+			return true; // TODO checking something?
+		}
+
 	}
 
 	/**********************************************************************************************

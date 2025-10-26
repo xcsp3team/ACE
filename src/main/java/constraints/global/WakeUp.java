@@ -16,7 +16,7 @@ import constraints.ConstraintGlobal;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import problem.Problem;
-import variables.DomainFinite.DomainSpecial;
+import variables.DomainFinite.DomainFiniteSpecial;
 import variables.Variable;
 import variables.Variable.VariableInteger;
 
@@ -41,9 +41,9 @@ public final class WakeUp extends ConstraintGlobal implements TagAC, TagCallComp
 		super(pb, new Variable[] { master, servant });
 		this.master = master;
 		this.servant = servant;
-		this.minValue = ((DomainSpecial) servant.dom).initMinValue;
-		this.maxValue = ((DomainSpecial) servant.dom).initMaxValue;
-		this.sliceLength = ((DomainSpecial) servant.dom).sliceLength;
+		this.minValue = ((DomainFiniteSpecial) servant.dom).initMinValue;
+		this.maxValue = ((DomainFiniteSpecial) servant.dom).initMaxValue;
+		this.sliceLength = ((DomainFiniteSpecial) servant.dom).sliceLength;
 		this.nSlices = master.dom.initSize();
 
 		this.nValuesLastSlice = (maxValue - minValue + 1) % sliceLength;
@@ -51,13 +51,16 @@ public final class WakeUp extends ConstraintGlobal implements TagAC, TagCallComp
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
+		//master.dom.display(1);
 		if (master.assigned()) {
+			// System.out.println("ffffffffffff " + master.dom.lastRemovedLevel() + " " + problem.solver.depth());
+
 			control((master.dom.indexesMatchValues()));
-			int v = master.dom.singleValue();
-			int startValue = minValue + (v * sliceLength);
-			((DomainSpecial) servant.dom).shift(startValue, startValue + sliceLength - 1);
-			if (v == nSlices - 1 && nValuesLastSlice > 0)
-				servant.dom.removeValuesGE(startValue + nValuesLastSlice);
+			int startValue = minValue + (master.dom.single() * sliceLength);
+			((DomainFiniteSpecial) servant.dom).shift(startValue);
+
+			// if (v == nSlices - 1 && nValuesLastSlice > 0)
+			// servant.dom.removeValuesGE(startValue + nValuesLastSlice);
 			// specialVariable.dom.display(1);
 			problem.solver.propagation.queue.add(servant);
 			return entail();

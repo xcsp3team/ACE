@@ -33,7 +33,7 @@ import interfaces.Observers.ObserverOnBacktracks.ObserveronBacktracksUnsystemati
 import problem.Problem;
 import utility.Kit;
 import variables.DomainFinite.DomainRange;
-import variables.DomainFinite.DomainSpecial;
+import variables.DomainFinite.DomainFiniteSpecial;
 import variables.DomainFinite.DomainSymbols;
 import variables.DomainFinite.DomainValues;
 
@@ -100,7 +100,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 		public VariableInteger(Problem problem, String id, VariableInteger master, int minValue, int maxValue, int sliceLength) { // means a special variable
 			super(problem, id);
 			this.specialMaster = master; // keep it here
-			this.dom = new DomainSpecial(this, master, minValue, maxValue, sliceLength);
+			this.dom = new DomainFiniteSpecial(this, master, minValue, maxValue, sliceLength);
 		}
 
 		/**
@@ -317,6 +317,13 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 		int sum = 0;
 		for (Variable x : vars)
 			sum += x.dom.initSize();
+		return sum;
+	}
+
+	public static final int nInitPracticalValuesFor(Variable... vars) {
+		int sum = 0;
+		for (Variable x : vars)
+			sum += x.dom.practicalInitSize();
 		return sum;
 	}
 
@@ -578,7 +585,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	/**
 	 * failed[a] gives the number of assignments that directly failed with a
 	 */
-	public int[] failed;
+	// public int[] failed;
 
 	public VariableInteger specialMaster;
 
@@ -608,7 +615,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 		this.ctrs = constraints.stream().toArray(Constraint[]::new);
 		assert IntStream.range(0, ctrs.length - 1).allMatch(i -> ctrs[i].scp.length <= ctrs[i + 1].scp.length);
 		this.nghs = problem.variables.length > NB_VARIABLES_LIMIT_FOR_STORING_NEIGHBOURS ? null : computeNeighbours(NB_NEIGHBOURS_LIMIT_FOR_STORING_NEIGHBOURS);
-		this.failed = new int[dom.initSize()];
+		// this.failed = new int[dom.practicalInitSize()];
 		problem.features.varDegrees.add(deg());
 	}
 
