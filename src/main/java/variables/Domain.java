@@ -230,7 +230,7 @@ public interface Domain extends SetLinked {
 	 *********************************************************************************************/
 
 	default int practicalInitSize() {
-		return size();
+		return initSize();
 	}
 
 	/**
@@ -738,8 +738,7 @@ public interface Domain extends SetLinked {
 		Variable x = var();
 		assert !x.assigned() && contains(a) : x + " " + x.assigned() + " " + contains(a);
 		Solver solver = x.problem.solver;
-		int depth = solver.stackVariable(x);
-		// stacking variables (to keep track of propagation) must always be performed before domain reduction
+		int depth = solver.stackVariable(x); // NB: stacking variables (to keep track of propagation) must always be performed before domain reduction
 		remove(a, depth);
 		for (ObserverOnRemovals observer : solver.observersOnRemovals)
 			observer.afterRemoval(x, a);
@@ -857,8 +856,7 @@ public interface Domain extends SetLinked {
 			return 0; // 0 removal
 		Variable x = var();
 		Solver solver = x.problem.solver;
-		int depth = solver.stackVariable(x);
-		// stacking variables must always be performed before domain reduction
+		int depth = solver.stackVariable(x); // NB: stacking variables must always be performed before domain reduction
 		int nRemovals = reduceTo(a, depth);
 		for (ObserverOnRemovals observer : solver.observersOnRemovals)
 			observer.afterRemovals(x, nRemovals);
