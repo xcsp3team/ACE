@@ -86,6 +86,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -124,6 +125,7 @@ import org.xcsp.common.domains.Domains.DomSymbolic;
 import org.xcsp.common.domains.Values.IntegerEntity;
 import org.xcsp.common.domains.Values.IntegerInterval;
 import org.xcsp.common.predicates.MatcherInterface.Matcher;
+import org.xcsp.common.predicates.XNodeParent.InternNode;
 import org.xcsp.common.predicates.TreeEvaluator;
 import org.xcsp.common.predicates.XNode;
 import org.xcsp.common.predicates.XNodeLeaf;
@@ -1291,17 +1293,30 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return x_relop_k.matches(tree) || k_relop_x.matches(tree) || x_setop_vals.matches(tree) || x_relop_y.matches(tree);
 	}
 
+	private XNodeParent<IVar> replaceSimilarInternNodes(XNodeParent<IVar> tree) {
+		for (InternNode<IVar>[] t : tree.similarInternNodes()) {
+			Kit.warning("Replacing similar intern nodes");
+			control(t.length > 1);
+			Variable aux = replaceByVariable(t[0].parent.sons[t[0].sonIndex]);
+			for (InternNode<IVar> n : t)
+				n.parent.sons[n.sonIndex] = XNode.varLeaf(aux);
+		}
+		return tree;
+	}
+
 	@Override
 	public final CtrEntity intension(XNodeParent<IVar> treeRoot) {
 		OptionsIntension options = head.control.intension;
 
-		XNodeParent<IVar> tree = (XNodeParent<IVar>) treeRoot.canonization(); // first, the tree is canonized
+		XNodeParent<IVar> tree_canonized = (XNodeParent<IVar>) treeRoot.canonization(); // first, the tree is canonized
+		// System.out.println("tree_can " + tree_canonized);
+		XNodeParent<IVar> tree = options.replaceSimilarInternNodes ? replaceSimilarInternNodes(tree_canonized) : tree_canonized;
+		// System.out.println("tree " + tree);
+
 		XNode<IVar>[] sons = tree.sons;
 		Variable[] scp = (Variable[]) tree.vars(); // keep this statement here, after canonization
 		int arity = scp.length;
 		control(arity > 0);
-
-		// System.out.println("tree " + tree);
 
 		if (arity == 1) {
 			Domain dom = scp[0].dom;
@@ -1680,7 +1695,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			tryingDecomposition = tryingDecomposition || options.decompose == 2;
 			if (tryingDecomposition) {
 				int nParentSons = 0;
-				if (tree.type == TypeExpr.EQ) {
+				if (tree.type.isRelationalOperator()) { // tree.type == TypeExpr.EQ) {
 					// we reason with grandsons for avoiding recursive similar changes when making replacements
 					for (XNode<IVar> son : sons) {
 						if (son instanceof XNodeParent) {
@@ -1699,7 +1714,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 						}
 					}
 				}
-				if (tree.type != TypeExpr.EQ || nParentSons > 1) {
+				if (!tree.type.isRelationalOperator() || nParentSons > 1) {
+					// if (tree.type != TypeExpr.EQ || nParentSons > 1) {
 					// if not EQ or if more than one parent son then we flatten the first parent son
 					for (int i = 0; i < sons.length; i++) {
 						if (sons[i] instanceof XNodeParent && sons[i].type != SET && sons[i].sons.length <= 2) {

@@ -532,6 +532,7 @@ public final class Control {
 		public final int arityForClauseHybridTrees = addI("arityForClauseHybridTrees", "acht", PLUS_INFINITY_INT,
 				"Arity for recognizing clauses on hybrid tree expressions");
 		public final boolean toHybrid = addB("toHybrid", "toh", false, "Must we convert toward hybrid tables, when possible?");
+		public final boolean replaceSimilarInternNodes = addB("replaceSimilarInternNodes", "rsin", false, "Replace similar intern nodes by same variables?");
 
 		public boolean toExtension(Variable[] vars, XNode<IVar> tree) {
 			Variable[] t = tree == null || !(tree instanceof XNodeParent) || !((XNodeParent<?>) tree).isEqVar() ? vars
