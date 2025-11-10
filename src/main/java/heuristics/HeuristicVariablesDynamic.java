@@ -86,6 +86,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 					if (options.connected && x.firstAssignedNeighbor() == null)
 						continue;
+					// if (solver.problem.dependencies != null && solver.problem.dependencies[x.num] != null && solver.problem.dependencies[x.num].dom.size() >
+					// 1)  continue;
 					// if (x.ctrs.length <= 1)
 					// continue;
 					if (x.dom.size() != 1)
@@ -289,7 +291,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 	}
 
-	public static final class WipeOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize { 
+	public static final class WipeOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
 		// equivalent to WdegOnDom with variant=VAR
 
 		private final long[] nWipes;
@@ -424,7 +426,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 						.forEach(h -> list.add(h));
 			if (mode >= 1)
 				Stream.of(new SingOnDom(solver, anti)).forEach(h -> list.add(h));
-				//Stream.of(new SingOnDom(solver, anti), new OrgnOnDom(solver, anti)).forEach(h -> list.add(h));
+			// Stream.of(new SingOnDom(solver, anti), new OrgnOnDom(solver, anti)).forEach(h -> list.add(h));
 			this.pool = list.stream().toArray(HeuristicVariables[]::new);
 
 		}

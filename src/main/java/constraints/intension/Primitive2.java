@@ -1672,6 +1672,34 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 			}
 		}
 	}
+
+	// ************************************************************************
+	// ***** Class for min(x,k-x) <= y
+	// ************************************************************************
+
+	public static class Min2kLE extends Primitive2 {
+
+		@Override
+		public boolean isSatisfiedBy(int[] t) {
+			return Math.min(t[0], k - t[0]) <= t[1];
+		}
+
+		public Min2kLE(Problem pb, Variable x, Variable y, int k) {
+			super(pb, x, y, k);
+			control(scp.length == 2);
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			if (dy.removeValuesLT(Math.min(dx.firstValue(), k - dx.lastValue())) == false)
+				return false;
+			if (dx.removeValuesInRange(dy.lastValue() + 1, k - dy.lastValue()) == false)
+				return false;
+			if (dy.firstValue() >= Math.min(dx.lastValue(), k - dx.firstValue()))
+				return entail();
+			return true;
+		}
+	}
 }
 
 // public static final class MulLE2Old extends PrimitiveBinaryMul {

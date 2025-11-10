@@ -79,6 +79,7 @@ import static org.xcsp.common.predicates.XNodeParent.le;
 import static org.xcsp.common.predicates.XNodeParent.mul;
 import static org.xcsp.common.predicates.XNodeParent.or;
 import static org.xcsp.common.predicates.XNodeParent.set;
+import static utility.Kit.control;
 import static utility.Kit.log;
 
 import java.util.ArrayList;
@@ -86,7 +87,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -125,11 +125,11 @@ import org.xcsp.common.domains.Domains.DomSymbolic;
 import org.xcsp.common.domains.Values.IntegerEntity;
 import org.xcsp.common.domains.Values.IntegerInterval;
 import org.xcsp.common.predicates.MatcherInterface.Matcher;
-import org.xcsp.common.predicates.XNodeParent.InternNode;
 import org.xcsp.common.predicates.TreeEvaluator;
 import org.xcsp.common.predicates.XNode;
 import org.xcsp.common.predicates.XNodeLeaf;
 import org.xcsp.common.predicates.XNodeParent;
+import org.xcsp.common.predicates.XNodeParent.InternNode;
 import org.xcsp.common.structures.AbstractTuple;
 import org.xcsp.common.structures.Automaton;
 import org.xcsp.common.structures.Transition;
@@ -225,6 +225,7 @@ import constraints.global.WakeUp;
 import constraints.global.Xor;
 import constraints.intension.Nogood;
 import constraints.intension.Primitive2;
+import constraints.intension.Primitive2.Min2kLE;
 import constraints.intension.Primitive2.PrimitiveBinaryNoCst;
 import constraints.intension.Primitive2.PrimitiveBinaryNoCst.Disjonctive;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Sub2;
@@ -1119,7 +1120,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			Object values = real_trees[i].possibleValues();
 			return values instanceof Range ? api.dom((Range) values) : api.dom((int[]) values);
 		};
-		// if multiple occurrences of the same variable in a tree, this is managed in arSimialr
+		// if multiple occurrences of the same variable in a tree, this is managed in areSimilar
 		// boolean similarTrees = true; // Stream.of(real_trees).allMatch(tree -> tree.listOfVars().size() == tree.vars().length);
 		boolean similarTrees = IntStream.range(1, real_trees.length).allMatch(i -> areSimilar(real_trees[0], real_trees[i]));
 		Var[] aux = auxVarArray(real_trees.length, similarTrees ? doms.apply(0) : doms);
@@ -1245,6 +1246,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private Matcher x_mul_y__eq_k = new Matcher(node(TypeExpr.EQ, node(MUL, var, var), val));
 	private Matcher x_mul_y__eq_z = new Matcher(node(TypeExpr.EQ, node(MUL, var, var), var));
 
+	private Matcher min_k_minus_x_x__le_y = new Matcher(node(TypeExpr.LE, node(TypeExpr.MIN, node(SUB, val, var), var), var));
+
 	// ternary
 	private Matcher x_ariop_y__relop_z = new Matcher(node(relop, node(ariop, var, var), var));
 	private Matcher z_relop__x_ariop_y = new Matcher(node(relop, var, node(ariop, var, var)));
@@ -1293,8 +1296,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return x_relop_k.matches(tree) || k_relop_x.matches(tree) || x_setop_vals.matches(tree) || x_relop_y.matches(tree);
 	}
 
-	private XNodeParent<IVar> replaceSimilarInternNodes(XNodeParent<IVar> tree) {
-		for (InternNode<IVar>[] t : tree.similarInternNodes()) {
+	private XNodeParent<IVar> possiblyReplaceSimilarInternNodes(XNodeParent<IVar> tree) {
+		if (!head.control.intension.replaceSimilarInternNodes)
+			return tree;
+		for (InternNode<IVar>[] t : tree.similarInternNodes(head.control.intension.replaceSimilarInternNodesExcludingLimit)) {
 			Kit.warning("Replacing similar intern nodes");
 			control(t.length > 1);
 			Variable aux = replaceByVariable(t[0].parent.sons[t[0].sonIndex]);
@@ -1310,8 +1315,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		XNodeParent<IVar> tree_canonized = (XNodeParent<IVar>) treeRoot.canonization(); // first, the tree is canonized
 		// System.out.println("tree_can " + tree_canonized);
-		XNodeParent<IVar> tree = options.replaceSimilarInternNodes ? replaceSimilarInternNodes(tree_canonized) : tree_canonized;
-		// System.out.println("tree " + tree);
+		XNodeParent<IVar> tree = possiblyReplaceSimilarInternNodes(tree_canonized);
+		// System.out.println("tree aft " + tree);
 
 		XNode<IVar>[] sons = tree.sons;
 		Variable[] scp = (Variable[]) tree.vars(); // keep this statement here, after canonization
@@ -1460,7 +1465,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				Variable x = (Variable) tree.var(0), z = (Variable) tree.var(2);
 				int[] t = x.dom.valuesChecking(v -> z.dom.containsValue(v * v));
 				return extension(vars(x, z), IntStream.of(t).mapToObj(v -> new int[] { v, v * v }).toArray(int[][]::new), true, false);
-			}
+			} else if (min_k_minus_x_x__le_y.matches(tree))
+				c = new Min2kLE(this, scp[0], scp[1], tree.val(0)); // does not seem to be very interesting (see CyclicBandwidth-mesh2D25x26_c22.xml)
 			if (c != null)
 				return post(c);
 		}
@@ -1813,6 +1819,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			int[] values = Stream.of(m).mapToInt(t -> t[0]).toArray();
 			return extension(scp[0], values, positive);
 		}
+		// if (Stream.of(scp).anyMatch(x -> x.dom.size() ==1)) {
+		// }
+
 		// we try to recognize nogoods
 		boolean recognizeNogoods = true;
 		if (recognizeNogoods && scp[0] instanceof VariableInteger) {
@@ -3942,9 +3951,29 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return null;
 	}
 
+	public Variable[] dependencies;
+
+	public void setDependency(Variable bef, Variable aft) {
+		if (dependencies == null)
+			dependencies = new Variable[features.collecting.variables.size()];
+		control(dependencies[aft.num] == null);
+		dependencies[aft.num] = bef;
+	}
+
+	public void setDependencies(Variable[] sortedVariables) {
+		for (int i = 1; i < sortedVariables.length; i++)
+			setDependency(sortedVariables[i - 1], sortedVariables[i]);
+	}
+
 	@Override
 	public final ObjEntity minimize(TypeObjective type, IVar[] list, int[] coeffs) {
-		return optimize(MINIMIZE, type, translate(list), coeffs);
+		Variable[] vars = translate(list);
+
+		// Variable[] t = IntStream.range(0, list.length).mapToObj(i -> i).sorted((i, j) -> Integer.compare(coeffs[i], coeffs[j])).map(i -> vars[i])
+		// .toArray(Variable[]::new);
+		// setDependencies(t);
+
+		return optimize(MINIMIZE, type, vars, coeffs);
 	}
 
 	@Override
@@ -3970,6 +3999,30 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public ObjEntity minimize(TypeObjective type, XNode<IVar>[] trees) {
+		if (type == MAXIMUM && head.control.optimization.replaceMinMaximum) {
+			Integer minValue = null, maxValue = null;
+			boolean failed = false;
+			for (XNode<IVar> tree : trees) {
+				if (cacheForTrees.containsKey(tree.canonization())) {
+					failed = true;
+					break;
+				}
+				Object obj = tree.possibleValues();
+				if (obj == null) {
+					failed = true;
+					break;
+				}
+				int currMin = obj instanceof Range ? ((Range) obj).start : ((int[]) obj)[0];
+				int currMax = obj instanceof Range ? ((Range) obj).stop - 1 : ((int[]) obj)[((int[]) obj).length - 1];
+				minValue = minValue == null ? currMin : Math.max(minValue, currMin);
+				maxValue = maxValue == null ? currMax : Math.max(maxValue, currMax);
+			}
+			if (!failed) {
+				Var aux = auxVar(new Range(minValue, maxValue + 1));
+				forall(range(trees.length), i -> intension(le(trees[i], aux)));
+				return minimize(aux);
+			}
+		}
 		return optimize(MINIMIZE, type, trees);
 	}
 
@@ -3986,7 +4039,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (type == SUM && trees.length > 1 && Stream.of(trees).allMatch(tree -> x_add_k.matches(tree) || x_sub_k.matches(tree))) {
 			ObjEntity objEntity = optimize(opt, SUM, (Variable[]) vars((Object[]) trees), coeffs);
 			optimizer.gapBound = IntStream.range(0, trees.length).map(i -> trees[i].val(0) * (x_add_k.matches(trees[i]) ? 1 : -1) * coeffs[i]).sum();
-			// TODO control no overflow? and control ciorrectness
+			// TODO control no overflow? and control correctness
 			return objEntity;
 		}
 		if (type == SUM && trees.length > 1)

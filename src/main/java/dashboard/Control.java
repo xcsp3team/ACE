@@ -488,6 +488,8 @@ public final class Control {
 				"Must we replace the objective variable by an objective constraint, when possible?");
 		public final boolean keepTree = addB("keepTree", "kt", false,
 				"Must we keep the objective as it is when given under the form of a tree (except if a sum is recognized)?");
+		public final boolean replaceMinMaximum = addB("replaceMinMaximum", "rmm", true,
+				"Must we use a single aux variable when minimizing the maximum of trees ?");
 		public final int boundDescentCoeff = addI("boundDescentCoeff", "bdc", 1, "Bound descent coefficient");
 
 		// public final boolean discardObjective = addB("discardObjective", "do", false, "Discard the objective if any");
@@ -532,7 +534,9 @@ public final class Control {
 		public final int arityForClauseHybridTrees = addI("arityForClauseHybridTrees", "acht", PLUS_INFINITY_INT,
 				"Arity for recognizing clauses on hybrid tree expressions");
 		public final boolean toHybrid = addB("toHybrid", "toh", false, "Must we convert toward hybrid tables, when possible?");
-		public final boolean replaceSimilarInternNodes = addB("replaceSimilarInternNodes", "rsin", false, "Replace similar intern nodes by same variables?");
+		public final boolean replaceSimilarInternNodes = addB("replaceSimilarInternNodes", "rsin", true, "Replace similar intern nodes by same variables?");
+		public final int replaceSimilarInternNodesExcludingLimit = addI("replaceSimilarInternNodesExcludingLimit", "rsinel", 1,
+				"Limit for replacing similar intern nodes"); // should we set it to 2?
 
 		public boolean toExtension(Variable[] vars, XNode<IVar> tree) {
 			Variable[] t = tree == null || !(tree instanceof XNodeParent) || !((XNodeParent<?>) tree).isEqVar() ? vars

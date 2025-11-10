@@ -348,6 +348,8 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 			switch (op) {
 			case EQ:
 				return x.dom.is01() ? new Mul3bEQ(pb, x, y, z) : y.dom.is01() ? new Mul3bEQ(pb, y, x, z) : new Mul3EQ(pb, y, x, z);
+			case LE:
+				return new Mul3LE(pb, x, y, z);
 			default:
 				throw new AssertionError("not implemented");
 			}
@@ -355,6 +357,36 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 
 		public Mul3(Problem pb, Variable x, Variable y, Variable z) {
 			super(pb, x, y, z);
+		}
+
+		public static final class Mul3LE extends Mul3 {
+
+			@Override
+			public boolean isSatisfiedBy(int[] t) {
+				return t[0] * t[1] <= t[2];
+			}
+
+			public Mul3LE(Problem pb, Variable x, Variable y, Variable z) {
+				super(pb, x, y, z);
+				control(Utilities.isSafeInt(BigInteger.valueOf(dx.firstValue()).multiply(BigInteger.valueOf(dy.firstValue())).longValueExact()));
+				control(Utilities.isSafeInt(BigInteger.valueOf(dx.lastValue()).multiply(BigInteger.valueOf(dy.lastValue())).longValueExact()));
+				control(dx.firstValue() >= 0 && dy.firstValue() >= 0 && dz.firstValue() >= 0, "For the moment");
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				if (dz.removeValuesLT(dx.firstValue() * dy.firstValue()) == false)
+					return false;
+				if (!dy.containsValue(0))
+					if (dx.removeValuesGT(dz.lastValue() / dy.firstValue()) == false)
+						return false;
+				if (!dx.containsValue(0))
+					if (dy.removeValuesGT(dz.lastValue() / dx.firstValue()) == false)
+						return false;
+				if (dx.lastValue() * dy.lastValue() <= dz.firstValue())
+					return entail();
+				return true;
+			}
 		}
 
 		public static final class Mul3bEQ extends Mul3 {
@@ -897,6 +929,68 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 				}
 				return true;
 			}
+		}
+	}
+
+	// ************************************************************************
+	// ***** Class for min(x,y) <= z
+	// ************************************************************************
+
+	public static class Min3LE extends Primitive3 {
+
+		@Override
+		public boolean isSatisfiedBy(int[] t) {
+			return Math.min(t[0], t[1]) <= t[2];
+		}
+
+		public Min3LE(Problem pb, Variable x, Variable y, Variable z) {
+			super(pb, x, y, z);
+			control(scp.length == 3);
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			if (dz.removeValuesLT(Math.min(dx.firstValue(), dy.firstValue())) == false)
+				return false;
+			if (dx.firstValue() > dz.lastValue() && dy.removeValuesGT(dz.lastValue()) == false)
+				return false;
+			if (dy.firstValue() > dz.lastValue() && dx.removeValuesGT(dz.lastValue()) == false)
+				return false;
+			if (dz.firstValue() >= Math.min(dx.lastValue(), dy.lastValue()))
+				return entail();
+			return true;
+		}
+	}
+
+	// ************************************************************************
+	// ***** Class for min(x,k-y) <= z
+	// ************************************************************************
+
+	public static class Min3kLE extends Primitive3 {
+		private int k;
+
+		@Override
+		public boolean isSatisfiedBy(int[] t) {
+			return Math.min(t[0], k - t[1]) <= t[2];
+		}
+
+		public Min3kLE(Problem pb, Variable x, int k, Variable y, Variable z) {
+			super(pb, x, y, z);
+			control(scp.length == 3);
+			this.k = k;
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			if (dz.removeValuesLT(Math.min(dx.firstValue(), k - dy.lastValue())) == false)
+				return false;
+			if (dx.firstValue() > dz.lastValue() && dy.removeValuesLT(k - dz.lastValue()) == false)
+				return false;
+			if (k - dy.lastValue() > dz.lastValue() && dx.removeValuesGT(dz.lastValue()) == false)
+				return false;
+			if (dz.firstValue() >= Math.min(dx.lastValue(), k - dy.firstValue()))
+				return entail();
+			return true;
 		}
 	}
 
