@@ -1686,7 +1686,6 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 		public Min2kLE(Problem pb, Variable x, Variable y, int k) {
 			super(pb, x, y, k);
-			control(scp.length == 2);
 		}
 
 		@Override
@@ -1697,6 +1696,58 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				return false;
 			if (dy.firstValue() >= Math.min(dx.lastValue(), k - dx.firstValue()))
 				return entail();
+			return true;
+		}
+	}
+
+	// ************************************************************************
+	// ***** Class for x = max(y,k)
+	// ************************************************************************
+
+	public static class Max2kEQ extends Primitive2 {
+
+		@Override
+		public boolean isSatisfiedBy(int[] t) {
+			return t[0] == Math.max(t[1], k);
+		}
+
+		public Max2kEQ(Problem pb, Variable x, Variable y, int k) {
+			super(pb, x, y, k);
+			dx.removeValuesAtConstructionTime(v -> v < k);
+			control(dx.size() > 0);
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			assert dx.firstValue() >= k;
+			if (!dx.containsValue(k))
+				if (dy.removeValuesLE(k) == false)
+					return false;
+			if (dy.lastValue() <= k)
+				return dx.reduceToValue(k) && entail();
+			if (dy.firstValue() >= k)
+				return AC.enforceEQ(dx, dy);
+			assert dx.containsValue(k);
+			int currx = dx.last(), curry = dy.last();
+			int valx = dx.toVal(currx), valy = dy.toVal(curry);
+			while (valx > k || valy > k) {
+				if (valx < valy) {
+					if (dy.remove(curry) == false)
+						return false;
+					curry = dy.prev(curry);
+					valy = dy.toVal(curry);
+				} else if (valx > valy) {
+					if (dx.remove(currx) == false)
+						return false;
+					currx = dx.prev(currx);
+					valx = dx.toVal(currx);
+				} else {
+					curry = dy.prev(curry);
+					valy = dy.toVal(curry);
+					currx = dx.prev(currx);
+					valx = dx.toVal(currx);
+				}
+			}
 			return true;
 		}
 	}

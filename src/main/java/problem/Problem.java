@@ -79,7 +79,6 @@ import static org.xcsp.common.predicates.XNodeParent.le;
 import static org.xcsp.common.predicates.XNodeParent.mul;
 import static org.xcsp.common.predicates.XNodeParent.or;
 import static org.xcsp.common.predicates.XNodeParent.set;
-import static utility.Kit.control;
 import static utility.Kit.log;
 
 import java.util.ArrayList;
@@ -207,7 +206,6 @@ import constraints.global.NValues.NValuesCst;
 import constraints.global.NValues.NValuesCst.NValuesCstGE;
 import constraints.global.NValues.NValuesCst.NValuesCstLE;
 import constraints.global.NValues.NValuesVar;
-import constraints.global.NoOverlap;
 import constraints.global.Precedence;
 import constraints.global.Product.ProductSimple;
 import constraints.global.SubsetAllDifferent;
@@ -225,6 +223,7 @@ import constraints.global.WakeUp;
 import constraints.global.Xor;
 import constraints.intension.Nogood;
 import constraints.intension.Primitive2;
+import constraints.intension.Primitive2.Max2kEQ;
 import constraints.intension.Primitive2.Min2kLE;
 import constraints.intension.Primitive2.PrimitiveBinaryNoCst;
 import constraints.intension.Primitive2.PrimitiveBinaryNoCst.Disjonctive;
@@ -1245,6 +1244,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private Matcher x_mul_y__eq_k = new Matcher(node(TypeExpr.EQ, node(MUL, var, var), val));
 	private Matcher x_mul_y__eq_z = new Matcher(node(TypeExpr.EQ, node(MUL, var, var), var));
+	private Matcher x_max_k__eq_y = new Matcher(node(TypeExpr.EQ, node(TypeExpr.MAX, var, val), var));
 
 	private Matcher min_k_minus_x_x__le_y = new Matcher(node(TypeExpr.LE, node(TypeExpr.MIN, node(SUB, val, var), var), var));
 
@@ -1307,6 +1307,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				n.parent.sons[n.sonIndex] = XNode.varLeaf(aux);
 		}
 		return tree;
+	}
+
+	private XNode<IVar>[] possiblyReplaceSimilarInternNodes(XNode<IVar>[] trees) {
+		if (!head.control.intension.replaceSimilarInternNodes)
+			return trees;
+		if (Stream.of(trees).anyMatch(tree -> !(tree instanceof XNodeParent)))
+			return trees;
+
+		return Stream.of(trees).map(tree -> possiblyReplaceSimilarInternNodes((XNodeParent) tree)).toArray(XNode[]::new);
 	}
 
 	@Override
@@ -1465,6 +1474,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				Variable x = (Variable) tree.var(0), z = (Variable) tree.var(2);
 				int[] t = x.dom.valuesChecking(v -> z.dom.containsValue(v * v));
 				return extension(vars(x, z), IntStream.of(t).mapToObj(v -> new int[] { v, v * v }).toArray(int[][]::new), true, false);
+			} else if (x_max_k__eq_y.matches(tree)) {
+				c = new Max2kEQ(this, scp[1], scp[0], tree.val(0));
 			} else if (min_k_minus_x_x__le_y.matches(tree))
 				c = new Min2kLE(this, scp[0], scp[1], tree.val(0)); // does not seem to be very interesting (see CyclicBandwidth-mesh2D25x26_c22.xml)
 			if (c != null)
@@ -3241,7 +3252,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			int maxY = IntStream.range(0, oy.length).map(i -> ((Variable) oy[i]).dom.lastValue() + ty[i]).max().orElseThrow();
 			cumulative(ox, tx, null, ty, api.condition(LE, maxY - (long) minY));
 			cumulative(oy, ty, null, tx, api.condition(LE, maxX - (long) minX));
-			post(new NoOverlap(this, translate(ox), tx, translate(oy), ty)); // TODO: may be very expensive
+			// post(new NoOverlap(this, translate(ox), tx, translate(oy), ty)); // TODO: may be very expensive
 		}
 
 		for (int i = 0; i < origins.length; i++)
@@ -4023,6 +4034,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return minimize(aux);
 			}
 		}
+
+		// XNode<IVar>[] trees2 = possiblyReplaceSimilarInternNodes(trees);
 		return optimize(MINIMIZE, type, trees);
 	}
 

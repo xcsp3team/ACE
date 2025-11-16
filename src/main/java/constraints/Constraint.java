@@ -1018,25 +1018,35 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 			}
 		}
 		Reviser reviser = ((Forward) problem.solver.propagation).reviser;
-		if (x.assigned()) {
-			for (int i = futvars.limit; i >= 0; i--)
-				if (reviser.revise(this, scp[futvars.dense[i]]) == false)
-					return false;
-		} else {
-			boolean revisingEventVarToo = (scp.length == 1); // TODO can we just initialize it to false ?
-			for (int i = futvars.limit; i >= 0; i--) {
-				Variable y = scp[futvars.dense[i]];
-				if (y == x)
-					continue;
-				if (time < y.time)
-					revisingEventVarToo = true;
-				if (reviser.revise(this, y) == false)
-					return false;
-			}
-			if (revisingEventVarToo && reviser.revise(this, x) == false)
+		int nNonSingletons = 0;
+		// if (x.assigned()) {
+		for (int i = futvars.limit; i >= 0; i--) {
+			Variable y = scp[futvars.dense[i]];
+			if (reviser.revise(this, y) == false)
 				return false;
+			if (y.dom.size() > 1)
+				nNonSingletons++;
 		}
-		return true;
+		// } else {
+		// boolean revisingEventVarToo = (scp.length == 1); // TODO can we just initialize it to false ?
+		// for (int i = futvars.limit; i >= 0; i--) {
+		// Variable y = scp[futvars.dense[i]];
+		// if (y == x)
+		// continue;
+		// if (time < y.time)
+		// revisingEventVarToo = true;
+		// if (reviser.revise(this, y) == false)
+		// return false;
+		// if (y.dom.size() > 1)
+		// nNonSingletons++;
+		// }
+		// if (revisingEventVarToo && reviser.revise(this, x) == false)
+		// return false;
+		// if (x.dom.size() > 1)
+		// nNonSingletons++;
+		// }
+		//return true;
+		return nNonSingletons <= 1 ? entail() : true;
 	}
 
 	public boolean canBeFilteredConsideringSpecialVariables() {
