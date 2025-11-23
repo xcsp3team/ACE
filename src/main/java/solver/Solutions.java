@@ -289,31 +289,40 @@ public final class Solutions {
 					System.out.println();
 					OptionsGeneral options = solver.head.control.general;
 					if (options.verbose >= 0 && found > 0 && solver.problem.variables.length <= options.jsonLimit)
-						System.out.println("\n  Solution " + found + " in JSON format:\n" + lastSolutionInJsonFormat(options.jsonQuotes) + "\n");
+						System.out.println("\n  Solution " + found + " in JSON-like format:\n" + lastSolutionInJsonFormat(options.jsonQuotes) + "\n");
+					
 					if (fullExploration)
 						Color.GREEN.println(found == 0 ? "s UNSATISFIABLE" : framework == COP ? "s OPTIMUM FOUND" : "s SATISFIABLE");
 					else if (found == 0)
 						Color.RED.println("s UNKNOWN");
 					else
 						Color.GREEN.println("s SATISFIABLE");
+					
 					if (!options.xmlEachSolution && found > 0)
 						Color.GREEN.println("\nv", " " + xml.lastSolution());
+					
 					NumberFormat nf = Output.numberFormat;
-					Color.GREEN.println("\nd WRONG DECISIONS", " " + (solver.stats != null ? nf.format(solver.stats.nWrongDecisions) : 0));
-					Color.GREEN.println("d FOUND SOLUTIONS", " " + nf.format(found));
 					if (framework == COP && found > 0)
-						Color.GREEN.println("d BOUND", " " + nf.format(bestBound + solver.problem.optimizer.gapBound));
+						Color.GREEN.println("\nd BOUND", " " + nf.format(bestBound + solver.problem.optimizer.gapBound));
+					
+
+					Color.GREEN.println("\nd FOUND SOLUTIONS", " " + nf.format(found));
 					if (found > 0) {
-						Color.GREEN.println("d WCK FIRST",
-								wckFirst + (framework == COP ? " (" + nf.format(solver.problem.optimizer.valueWithGap(firstBound)) + ")" : ""));
-						Color.GREEN.println("d WCK LAST",
-								" " + wckLast + (framework == COP ? " (" + nf.format(solver.problem.optimizer.valueWithGap(bestBound)) + ")" : ""));
+						Color.GREEN.println("d WCK FIRST SOL",
+								" " + wckFirst + (framework == COP ? " (" + nf.format(solver.problem.optimizer.valueWithGap(firstBound)) + ")" : ""));
+						Color.GREEN.println("d WCK LAST  SOL",
+								" " +wckLast + (framework == COP ? " (" + nf.format(solver.problem.optimizer.valueWithGap(bestBound)) + ")" : ""));
 					}
+					
+					double cpu = solver.head.stopwatch.cpuTime() / 1000.0;
+					Color.GREEN.println("\nd WRONG DECISIONS", " " + (solver.stats != null ? nf.format(solver.stats.nWrongDecisions) + "  (" +  nf.format((long)(solver.stats.nWrongDecisions / cpu)) + " wrg/s)" : 0));
+					Color.GREEN.println("d CPU", solver.head.stopwatch.cpuTimeInSeconds());
+					System.out.println();
 					if (fullExploration)
 						Color.GREEN.println("d COMPLETE EXPLORATION");
 					else
 						Color.RED.println("d INCOMPLETE EXPLORATION");
-					Kit.log.config("\nc real time : " + solver.head.stopwatch.cpuTimeInSeconds());
+					
 					System.out.flush();
 
 				}

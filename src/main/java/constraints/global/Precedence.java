@@ -19,7 +19,6 @@ import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
 import problem.Problem;
-import utility.Kit;
 import variables.Variable;
 
 /**

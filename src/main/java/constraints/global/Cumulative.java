@@ -19,7 +19,6 @@ import java.util.stream.Stream;
 import constraints.ConstraintGlobal;
 import constraints.global.Cumulative.TimetableReasoner.Slot;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
-import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagPostponableFiltering;
 import problem.Problem;

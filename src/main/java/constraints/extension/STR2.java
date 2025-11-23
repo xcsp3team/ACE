@@ -85,7 +85,7 @@ public final class STR2 extends STR1Optimized implements TagStarredCompatible {
 				set.removeAtPosition(i, depth);
 		}
 		assert controlValidTuples();
-		// if (!table.starred && Variable.nValidTuplesBoundedAtMaxValueFor(scp) == set.size()) return entailed();
+		// if (!table.starred && Variable.nValidTuplesBoundedAtMaxValueFor(scp) == set.size()) return entail();
 		return updateDomains();
 	}
 }

@@ -265,7 +265,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 		 * Exactly k variables of the scope, where k is a constant, must be assigned to the specified value.
 		 * 
 		 */
-		public static class ExactlyK extends CountCst implements TagSymmetric {
+		public static class ExactlyK extends CountCst implements TagSymmetric, TagCallCompleteFiltering {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
@@ -278,9 +278,9 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 
 			@Override
 			public boolean runPropagator(Variable x) {
-				if (x.dom.size() > 1 && x.dom.containsValue(value))
-					// removing these two lines, and adding TagCallCompleteFiltering is an alternative
-					return true;
+//				if (x.dom.size() > 1 && x.dom.containsValue(value))
+//					// removing these two lines, and adding TagCallCompleteFiltering is an alternative
+//					return true;
 
 				// nGuaranteedOccurrences denotes the number of singleton domains with the specified value
 				// nPossibleOccurrences denotes the number of domains containing the specified value
@@ -397,7 +397,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 
 			public ExactlyVarK(Problem pb, Variable[] list, int value, Variable k) {
 				super(pb, list, value, k);
-				control(list.length > 1);
+				control(list.length > 1, "list: " + Kit.join(list) + " value: " + value + " k:" + k);
 			}
 
 			@Override

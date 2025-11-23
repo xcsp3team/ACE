@@ -129,7 +129,12 @@ public final class Queue extends SetSparse {
 	 * @return a variable of the queue
 	 */
 	public Variable pickAndDelete() {
-		return pickAndDelete(heuristic.bestInQueue());
+		if (propagation.solver.profiler != null)
+			propagation.solver.profiler.before();
+		Variable x = pickAndDelete(heuristic.bestInQueue());
+		if (propagation.solver.profiler != null)
+			propagation.solver.profiler.afterSelectingInQueue();
+		return x;
 	}
 
 	public void incrementTimeOfPresentVariables() {

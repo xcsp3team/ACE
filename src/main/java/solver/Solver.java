@@ -51,7 +51,6 @@ import interfaces.Observers.ObserverOnRemovals;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Observers.ObserverOnSolving;
 import learning.IpsReasoner;
-import learning.Nogood;
 import learning.NogoodReasoner;
 import main.Head;
 import main.HeadExtraction;
@@ -885,6 +884,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 *            a variable
 	 */
 	public final void backtrack(Variable x) { // should we call it unassign or retract instead?
+		if (profiler != null)
+			profiler.before();
 		int depthBeforeBacktrack = depth(); // keep it at this position
 		futVars.add(x);
 		x.unassign();
@@ -893,6 +894,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		for (ObserverOnBacktracksSystematic observer : observersOnBacktracksSystematic)
 			observer.restoreBefore(depthBeforeBacktrack);
 		propagation.clear();
+		if (profiler != null)
+			profiler.afterBacktracking();
 	}
 
 	/**
@@ -961,6 +964,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			observer.beforeNegativeDecision(x, a);
 		decisions.addNegativeDecision(x, a);
 		x.dom.removeElementary(a);
+
 		boolean consistent = x.dom.size() > 0;
 		if (consistent) {
 			if (head.control.solving.branching == Branching.NON)
@@ -976,6 +980,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			if (futVars.nPast() == 0)
 				stopping = Stopping.FULL_EXPLORATION;
 		}
+
 		return consistent;
 	}
 
@@ -1026,7 +1031,11 @@ public class Solver implements ObserverOnBacktracksSystematic {
 					// else foundSolution = true; // break;
 
 				} else {
+					if (profiler != null)
+						profiler.before();
 					int a = x.heuristic.bestValueIndex();
+					if (profiler != null)
+						profiler.afterSelectingValue();
 					boolean consistent = tryAssignment(x, a, false);
 					if (consistent == false)
 						manageContradiction(null);
@@ -1140,6 +1149,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			observer.beforeSolving();
 		if (Variable.firstWipeoutVariableIn(problem.variables) != null)
 			stopping = FULL_EXPLORATION; // because some search observers may detect an inconsistency
+		if (profiler != null)
+			profiler.initTime = head.stopwatch.wckTime();
 		if (!finished() && head.control.solving.enablePrepro)
 			doPrepro();
 		if (!finished() && head.control.solving.enableSearch)

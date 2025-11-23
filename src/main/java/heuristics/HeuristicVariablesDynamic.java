@@ -413,7 +413,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	public static final class RunRobin extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
 
-		private HeuristicVariables[] pool;
+		public HeuristicVariables[] pool;
 
 		public HeuristicVariables current;
 

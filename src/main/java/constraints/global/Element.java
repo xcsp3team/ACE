@@ -294,7 +294,14 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			}
 
 			private boolean filterIndex() {
-				return idom.removeIndexesChecking(i -> !validIndex(i));
+				int sizeBefore = idom.size();
+				if (sizeBefore == 1)
+					return validIndex(idom.first()) || idom.fail();
+				for (int a = idom.first(); a != -1; a = idom.next(a))
+					if (!validIndex(a))
+						idom.removeElementary(a);
+				return idom.afterElementaryCalls(sizeBefore);
+				// return idom.removeIndexesChecking(i -> !validIndex(i)); // seems to be 25% more expensive
 			}
 
 			private boolean validValue(int a) {
@@ -312,15 +319,21 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			}
 
 			private boolean filterValue() {
-				return vdom.removeIndexesChecking(a -> !validValue(a));
+				int sizeBefore = vdom.size();
+				if (sizeBefore == 1)
+					return validValue(vdom.first()) || vdom.fail();
+				for (int a = vdom.first(); a != -1; a = vdom.next(a))
+					if (!validValue(a))
+						vdom.removeElementary(a);
+				return vdom.afterElementaryCalls(sizeBefore);
+				// return vdom.removeIndexesChecking(a -> !validValue(a)); // seems to be 25% more expensive
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				// If idom is not singleton, we try to prune values :
 				// - in vdom, we prune the values which are not in any domain of the list variables
-				// - in idom, we prune the values i for which there is no v such that list[i].dom and vdom
-				// both contain v
+				// - in idom, we prune the values i for which there is no v such that list[i].dom and vdom both contain v
 				if (idom.size() > 1) {
 					// updating vdom (and valueSentinels)
 					if (filterValue() == false)
@@ -340,8 +353,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 							break;
 					}
 				}
-				// If index is singleton, we update dom(list[index]) and vdom so that they are both equal to the
-				// intersection of the two domains
+				// If index is singleton, we update dom(list[index]) and vdom so that they are both equal to the intersection of the two domains
 				if (idom.size() == 1) {
 					if (AC.enforceEQ(list[idom.single()].dom, vdom) == false)
 						return false;

@@ -14,8 +14,6 @@ import static utility.Kit.control;
 
 import java.util.Arrays;
 
-import org.xcsp.common.Utilities;
-
 import constraints.Constraint;
 import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequireFailedPerValue;
 import heuristics.HeuristicValuesDynamic.HeuristicUsingAssignments.TagRequirePerValue;

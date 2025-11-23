@@ -12,6 +12,7 @@ package main;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
+import static org.xcsp.common.Constants.PLUS_INFINITY ;
 import static utility.Kit.control;
 import static utility.Kit.log;
 
@@ -351,7 +352,8 @@ public class Head extends Thread {
 	 * @return true if time has expired for solving the current problem instance
 	 */
 	public boolean isTimeExpiredForCurrentInstance() {
-		return control.general.timeout <= instanceStopwatch.wckTime();
+		//return control.general.timeout <= instanceStopwatch.wckTime(); 
+		return control.general.timeout != PLUS_INFINITY && control.general.timeout <= instanceStopwatch.wckTime();  // we avoid calling wckTime() when no necessary
 	}
 
 	/**

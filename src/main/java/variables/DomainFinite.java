@@ -12,9 +12,7 @@ package variables;
 
 import static utility.Kit.control;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -24,10 +22,8 @@ import org.xcsp.common.Constants;
 import org.xcsp.common.Range;
 import org.xcsp.common.Utilities;
 
-import interfaces.Observers.ObserverOnRemovals;
 import sets.SetDense;
 import sets.SetLinkedFinite.SetLinkedFiniteWithBits;
-import solver.Solver;
 import utility.Kit;
 import variables.Variable.VariableInteger;
 

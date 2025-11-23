@@ -249,19 +249,25 @@ public abstract class Propagation {
 	 * @return false iff an inconsistency is detected
 	 */
 	protected final boolean pickAndFilter() {
-		boolean consistent = true;
 		Variable x = queue.pickAndDelete();
 		int pm = solver.head.control.varh.pickMode;
 		int before = solver.problem.nValueRemovals;
-		if (!nogoodReasoning.isNogoodConsistent(x))
-			consistent = false;
-		else {
+		if (solver.profiler != null)
+			solver.profiler.before();
+		boolean consistent = nogoodReasoning.isNogoodConsistent(x);
+		if (solver.profiler != null)
+			solver.profiler.afterNogoodFiltering();
+		if (consistent) {
+			// long tim = System.currentTimeMillis();
 			for (Constraint c : x.ctrs) {
+				// long tim2 = System.currentTimeMillis();
 				if (!c.ignored && !solver.isEntailed(c)) {
 					if (!c.postponable) {
 						currFilteringCtr = c;
 						int bef = solver.problem.nValueRemovals;
+						// long tim3 = System.currentTimeMillis();
 						consistent = c.filterFrom(x);
+						// solver.wckprop3 += (System.currentTimeMillis() - tim3);
 						if (historyC != null && solver.problem.nValueRemovals > bef)
 							historyC.add(c.num, pm == 0 ? 1 : consistent ? solver.problem.nValueRemovals - bef : 100);
 						currFilteringCtr = null;
@@ -270,9 +276,11 @@ public abstract class Propagation {
 						c.postponedEvent = x;
 					}
 				}
+				// solver.wckprop2 += (System.currentTimeMillis() - tim2);
 				if (!consistent)
 					break;
 			}
+			// solver.wckprop += (System.currentTimeMillis() - tim);
 		}
 		if (historyX != null && solver.problem.nValueRemovals > before)
 			historyX.add(x.num, pm == 0 ? 1 : consistent ? solver.problem.nValueRemovals - before : 100); // TODO: 100
@@ -290,11 +298,12 @@ public abstract class Propagation {
 		if (historyC != null)
 			historyC.clear();
 		while (true) {
-			while (queue.size() != 0) // propagation with respect to the main queue
+			while (queue.size() != 0) { // propagation with respect to the main queue
 				if (pickAndFilter() == false) {
 					currentPostponedConstraints.clear();
 					return false;
 				}
+			}
 			for (int i = 0; i <= currentPostponedConstraints.limit; i++) { // propagation with respect to postponed constraints
 				Constraint c = solver.problem.postponableConstraints[currentPostponedConstraints.dense[i]];
 				assert !c.ignored && !solver.isEntailed(c);
@@ -314,7 +323,6 @@ public abstract class Propagation {
 				break;
 		}
 		return true;
-
 	}
 
 	/**
@@ -327,7 +335,12 @@ public abstract class Propagation {
 	public final boolean propagate(ConstraintGlobal c) {
 		if (c == null || c.ignored || solver.isEntailed(c))
 			return true;
-		if (c.runPropagator(null) == false)
+		if (solver.profiler != null)
+			solver.profiler.before();
+		boolean consistent = c.runPropagator(null);
+		if (solver.profiler != null)
+			solver.profiler.afterObjPropagator();
+		if (!consistent)
 			return false;
 		return propagate(); // because the queue may be not empty
 	}

@@ -23,8 +23,6 @@ import java.util.stream.Stream;
 
 import org.xcsp.common.Constants;
 import org.xcsp.common.IVar;
-import org.xcsp.common.Utilities;
-import org.xcsp.common.domains.Values.IntegerInterval;
 
 import constraints.Constraint;
 import heuristics.HeuristicValues;
@@ -32,8 +30,8 @@ import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.Observers.ObserverOnBacktracks.ObserveronBacktracksUnsystematic;
 import problem.Problem;
 import utility.Kit;
-import variables.DomainFinite.DomainRange;
 import variables.DomainFinite.DomainFiniteSpecial;
+import variables.DomainFinite.DomainRange;
 import variables.DomainFinite.DomainSymbols;
 import variables.DomainFinite.DomainValues;
 

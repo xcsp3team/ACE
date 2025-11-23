@@ -341,10 +341,12 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void loadCtr(XCtr c) {
+		// System.out.println("loading " + c); //.id + " " + c.note);
 		if (problem.features.collecting.mustDiscard(c))
 			return;
 		int sizeBefore = problem.ctrEntities.allEntities.size();
 		XCallbacks2.super.loadCtr(c);
+		// System.out.println("loaded ");
 		if (sizeBefore == problem.ctrEntities.allEntities.size())
 			return; // must have been a true constraint (should be checked)
 		CtrEntity entity = problem.ctrEntities.allEntities.get(problem.ctrEntities.allEntities.size() - 1);
@@ -543,7 +545,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 	@Override
 	public void buildCtrSum(String id, XNode<XVarInteger>[] trees, Condition condition) {
 		problem.sum(trVar(trees), repeat(1, trees.length), trVar(condition));
-}
+	}
 
 	@Override
 	public void buildCtrSum(String id, XNode<XVarInteger>[] trees, int[] coeffs, Condition condition) {

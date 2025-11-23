@@ -617,6 +617,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		InformationBloc m = new InformationBloc(PREPROCESSING);
 		m.put(N_EFFECTIVE, head.problem.features.nEffectiveFilterings);
 		m.put(REVISIONS, "(" + stats.nRevisions() + ",useless=" + stats.nUselessRevisions() + ")", stats.nRevisions() > 0);
+		m.put("entailed", head.solver.entailed.size());
 		m.put(N_VALUES, Variable.nValidValuesFor(head.problem.variables));
 		Propagation propagation = head.solver.propagation;
 		m.put(REMOVED_BY_AC, propagation instanceof AC ? ((AC) (propagation)).preproRemovals : 0);

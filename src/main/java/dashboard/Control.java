@@ -54,9 +54,8 @@ import heuristics.HeuristicValues;
 import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicVariables;
 import heuristics.HeuristicVariablesDynamic.SingletonStrategy;
-import heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting;
 import heuristics.HeuristicVariablesDynamic.Wdeg;
-
+import heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting;
 import interfaces.Tags.TagExperimental;
 import learning.IpsReasoner.LearningIps;
 import learning.NogoodReasoner.LearningNogood;

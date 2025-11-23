@@ -94,6 +94,14 @@ public class Restarter implements ObserverOnRuns {
 			else
 				solver.heuristic.setPriorityVars((Variable[]) solver.problem.varArrays[index - 1].flatVars, 0);
 		}
+
+		if (solver.head.control.varh.secondScored) {
+			solver.heuristic.bestScoredVariable.second = null;
+			if (solver.heuristic instanceof RunRobin) {
+				for (HeuristicVariables h : ((RunRobin) solver.heuristic).pool)
+					h.bestScoredVariable.second = null;
+			}
+		}
 	}
 
 	@Override

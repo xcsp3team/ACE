@@ -139,7 +139,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	/**
 	 * The object used to record the best scored variable, when looking for it
 	 */
-	protected BestScoredVariable bestScoredVariable;
+	public BestScoredVariable bestScoredVariable;
 
 	public final void setPriorityVars(Variable[] priorityVars, int nbStrictPriorityVars) {
 		this.priorityVars = priorityVars;
@@ -234,8 +234,13 @@ public abstract class HeuristicVariables extends Heuristic {
 	 * Returns the preferred variable, i.e., the variable that should be assigned next by the solver
 	 */
 	public final Variable bestVariable() {
+		if (solver.profiler != null)
+			solver.profiler.before();
 		Variable x = bestPriorityVariable();
-		return x != null ? x : bestUnpriorityVariable();
+		x =  x != null ? x : bestUnpriorityVariable();
+		if (solver.profiler != null)
+			solver.profiler.afterSelectingVariable();
+		return x;
 	}
 
 	/**
@@ -250,7 +255,9 @@ public abstract class HeuristicVariables extends Heuristic {
 	}
 
 	protected void resettingMessage(String s) {
-		Kit.log.config(Kit.Color.YELLOW.coloring(" ...resetting ") + s + " (nValues: " + Output.numberFormat.format(Variable.nValidValuesFor(solver.problem.variables)) + ")");
+		Kit.log.config(
+				Kit.Color.YELLOW.coloring(" ...resetting ") + s + " (nValues:" + Output.numberFormat.format(Variable.nValidValuesFor(solver.problem.variables))
+						+ " - nEntailed:" + Output.numberFormat.format(solver.entailed.size()) + ")");
 	}
 
 	/*************************************************************************

@@ -1088,7 +1088,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 
 		int nBefore = problem.nValueRemovals;
 		if (problem.solver.profiler != null)
-			problem.solver.profiler.beforeFiltering(this);
+			problem.solver.profiler.before();
 		boolean consistent = this instanceof SpecificPropagator ? ((SpecificPropagator) this).runPropagator(x) : genericFiltering(x);
 		if (problem.solver.profiler != null)
 			problem.solver.profiler.afterFiltering(this);

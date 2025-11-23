@@ -1411,22 +1411,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return intension(api.and(Stream.of(sons).filter(son -> son != null).toArray()));
 		}
 
-		if (options.toHybrid) { // TODO section to finalize with various cases
-			if (tree.type == IMP) {
-				XNode<IVar> son0 = sons[0], son1 = sons[1];
-				if (mayBeHybrid(son0) && mayBeHybrid(son1)) { // TODO and check no shared variables ?
-					XNodeParent<IVar> newson0 = XNodeParent.build(son0.type.logicalInversion(), (Object[]) son0.sons);
-					HybridTuple ht1 = new HybridTuple((int[]) null, newson0);
-					HybridTuple ht2 = new HybridTuple((int[]) null, (XNodeParent<IVar>) son1);
-					return hybrid(scp, ht1, ht2);
-				}
-			} else if (tree.type == OR && Stream.of(sons).allMatch(son -> mayBeHybrid(son))) {
-				// TODO and check no shared variables ?
-				Stream<HybridTuple> stream = Stream.of(sons).map(son -> new HybridTuple((int[]) null, (XNodeParent<IVar>) son));
-				return hybrid(scp, stream);
-			}
-		}
-
 		if (arity == 2 && x_mul_y__eq_k.matches(tree)) {
 			int k = tree.val(0);
 			// we can intercept the cases where k=0 or k=1; below, we can use scp because we are sure
@@ -1492,6 +1476,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (c != null)
 				return post(c);
 		}
+
 
 		if (options.recognizeReifLogic) {
 			Constraint c = null;
@@ -1624,6 +1609,22 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			}
 		}
 
+		if (options.toHybrid) { // TODO section to finalize with various cases
+			if (tree.type == IMP) {
+				XNode<IVar> son0 = sons[0], son1 = sons[1];
+				if (mayBeHybrid(son0) && mayBeHybrid(son1)) { // TODO and check no shared variables ?
+					XNodeParent<IVar> newson0 = XNodeParent.build(son0.type.logicalInversion(), (Object[]) son0.sons);
+					HybridTuple ht1 = new HybridTuple((int[]) null, newson0);
+					HybridTuple ht2 = new HybridTuple((int[]) null, (XNodeParent<IVar>) son1);
+					return hybrid(scp, ht1, ht2);
+				}
+			} else if (tree.type == OR && Stream.of(sons).allMatch(son -> mayBeHybrid(son))) {
+				// TODO and check no shared variables ?
+				Stream<HybridTuple> stream = Stream.of(sons).map(son -> new HybridTuple((int[]) null, (XNodeParent<IVar>) son));
+				return hybrid(scp, stream);
+			}
+		}
+
 		if (options.recognizeExtremum) {
 			if (min_relop.matches(tree))
 				return minimum((Var[]) sons[0].vars(), basicCondition(tree));
@@ -1687,6 +1688,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return sum(list, coeffs, Condition.buildFrom(tree.relop(0), -limit));
 			}
 		}
+
 		if (mul_vars__relop.matches(tree)) {
 			Var[] list = (Var[]) tree.arrayOfVars();
 			if (tree.relop(0) == EQ && sons[1].type == LONG) {
@@ -1721,7 +1723,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 							boolean modified = false;
 							for (int j = 0; j < grandsons.length; j++) {
 								// we limit to arity 2 max TODO something else?
-								if (grandsons[j] instanceof XNodeParent && grandsons[j].type != SET && grandsons[j].sons.length <= 2) {
+								if (grandsons[j] instanceof XNodeParent && grandsons[j].type != SET && grandsons[j].type != MUL && grandsons[j].sons.length <= 2) {
 									grandsons[j] = new XNodeLeaf<>(VAR, replaceByVariable(grandsons[j]));
 									modified = true;
 								}
@@ -2573,7 +2575,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 
 			if (op == EQ && values.length == 1 && condition instanceof ConditionVar)
-				countEqCandidates.add(new Object[] { translate(list), values[0], condition.rightTerm() });
+				countEqCandidates.add(new Object[] { translate(scp), values[0], condition.rightTerm() });
 
 			Object rightTerm = condition.rightTerm();
 			if (condition instanceof ConditionVal) {
@@ -2582,7 +2584,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					return ce;
 			} else if (op == EQ) {
 				if (values.length == 1)
-					return list.length == 1 ? equal(eq(list[0], values[0]), rightTerm) : post(new ExactlyVarK(this, scp, values[0], (Variable) rightTerm));
+					return scp.length == 1 ? equal(eq(scp[0], values[0]), rightTerm) : post(new ExactlyVarK(this, scp, values[0], (Variable) rightTerm));
 				return sum(Stream.of(scp).map(x -> in(x, set(values))), condition);
 			}
 		}

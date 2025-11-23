@@ -597,34 +597,61 @@ public final class Reification {
 			this.dz = z.dom;
 		}
 
+		private int minx1, minx2, miny1, miny2;
+		private boolean bx1, bx2, by1, by2;
+
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			int minx1 = dx1.firstValue() + dw1.firstValue(), minx2 = dx2.firstValue() + dw2.firstValue();
-			int miny1 = dy1.firstValue() + dh1.firstValue(), miny2 = dy2.firstValue() + dh2.firstValue();
-			boolean bx1 = minx1 <= dx2.lastValue(), bx2 = minx2 <= dx1.lastValue();
-			boolean by1 = miny1 <= dy2.lastValue(), by2 = miny2 <= dy1.lastValue();
+			if (dz.size() > 1) {
+				minx2 = dx2.firstValue() + dw2.firstValue();
+				bx2 = minx2 <= dx1.lastValue();
+				if (!bx2 || (dx1.lastValue() + dw1.lastValue() <= dx2.firstValue())) // !bx2 or x1 + w1 <= x2 => z != 1
+					if (dz.removeIfPresent(1) == false)
+						return false;
 
-			if (!bx2 || (dx1.lastValue() + dw1.lastValue() <= dx2.firstValue())) // !bx2 or x1 + w1 <= x2 => z != 1
-				if (dz.removeIfPresent(1) == false)
-					return false;
-			if (!bx1 || (dx2.lastValue() + dw2.lastValue() <= dx1.firstValue())) // !bx1 or x2 + w2 <= x1 => z != 0
-				if (dz.removeIfPresent(0) == false)
-					return false;
-			if (!by2 || (dy1.lastValue() + dh1.lastValue() <= dy2.firstValue())) // !by2 or y1 + h1 <= y2 => z != 3
-				if (dz.removeIfPresent(3) == false)
-					return false;
-			if (!by1 || (dy2.lastValue() + dh2.lastValue() <= dy1.firstValue())) // !by1 or y2 + h2 <= y1 => z != 2
-				if (dz.removeIfPresent(2) == false)
-					return false;
+				minx1 = dx1.firstValue() + dw1.firstValue();
+				bx1 = minx1 <= dx2.lastValue();
+				if (!bx1 || (dx2.lastValue() + dw2.lastValue() <= dx1.firstValue())) // !bx1 or x2 + w2 <= x1 => z != 0
+					if (dz.removeIfPresent(0) == false)
+						return false;
+
+				miny2 = dy2.firstValue() + dh2.firstValue();
+				by2 = miny2 <= dy1.lastValue();
+				if (!by2 || (dy1.lastValue() + dh1.lastValue() <= dy2.firstValue())) // !by2 or y1 + h1 <= y2 => z != 3
+					if (dz.removeIfPresent(3) == false)
+						return false;
+
+				miny1 = dy1.firstValue() + dh1.firstValue();
+				by1 = miny1 <= dy2.lastValue();
+				if (!by1 || (dy2.lastValue() + dh2.lastValue() <= dy1.firstValue())) // !by1 or y2 + h2 <= y1 => z != 2
+					if (dz.removeIfPresent(2) == false)
+						return false;
+			}
 			if (dz.size() == 1) {
-				if (dz.single() == 0) // z = 0 => x1 + w1 <= x2
-					return enforceLE(dx1, dw1, dx2);
-				if (dz.single() == 1) // z = 1 => x2 + w2 <= x1
-					return enforceLE(dx2, dw2, dx1);
-				if (dz.single() == 2) // z = 2 => y1 + h1 <= y2
-					return enforceLE(dy1, dh1, dy2);
-				if (dz.single() == 3) // z = 3 => y2 + h2 <= y1
-					return enforceLE(dy2, dh2, dy1);
+				if (dz.single() == 0) {// z = 0 => x1 + w1 <= x2
+					if (enforceLE(dx1, dw1, dx2) == false)
+						return false;
+					// return true;
+					return dx1.lastValue() + dw1.lastValue() <= dx2.firstValue() ? entail() : true;
+				}
+				if (dz.single() == 1) {// z = 1 => x2 + w2 <= x1
+					if (enforceLE(dx2, dw2, dx1) == false)
+						return false;
+					// return true;
+					return dx2.lastValue() + dw2.lastValue() <= dx1.firstValue() ? entail() : true;
+				}
+				if (dz.single() == 2) {// z = 2 => y1 + h1 <= y2
+					if (enforceLE(dy1, dh1, dy2) == false)
+						return false;
+					// return true;
+					return dy1.lastValue() + dh1.lastValue() <= dy2.firstValue() ? entail() : true;
+				}
+				if (dz.single() == 3) {// z = 3 => y2 + h2 <= y1
+					if (enforceLE(dy2, dh2, dy1) == false)
+						return false;
+					// return true;
+					return dy2.lastValue() + dh2.lastValue() <= dy1.firstValue() ? entail() : true;
+				}
 			}
 
 			boolean bx = bx1 || bx2, by = by1 || by2;

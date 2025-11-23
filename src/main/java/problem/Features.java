@@ -36,7 +36,6 @@ import constraints.extension.structures.MDD;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.TableHybrid;
 import utility.Kit;
-import variables.DomainFinite.DomainFiniteSpecial;
 import variables.Variable;
 import variables.Variable.VariableInteger;
 

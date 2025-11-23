@@ -10,21 +10,23 @@
 
 package constraints.global;
 
-import constraints.ConstraintGlobal;
-import interfaces.Tags;
-import interfaces.Tags.TagNotSymmetric;
-import interfaces.Tags.TagPostponableFiltering;
-import org.xcsp.common.Utilities;
-import problem.Problem;
-import propagation.AC;
-import variables.Domain;
-import variables.Variable;
+import static org.xcsp.common.predicates.XNodeParent.le;
+import static org.xcsp.common.predicates.XNodeParent.lt;
+import static utility.Kit.control;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import static org.xcsp.common.predicates.XNodeParent.*;
-import static utility.Kit.control;
+import org.xcsp.common.Utilities;
+
+import constraints.ConstraintGlobal;
+import interfaces.Tags;
+import interfaces.Tags.TagNotSymmetric;
+import interfaces.Tags.TagPostponableFiltering;
+import problem.Problem;
+import propagation.AC;
+import variables.Domain;
+import variables.Variable;
 
 /**
  * Implements an AutoLex / Lyndon words constraint on a list of binary variables
