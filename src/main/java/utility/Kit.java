@@ -67,6 +67,7 @@ import org.xml.sax.SAXParseException;
 import dashboard.Control;
 import dashboard.Input;
 import main.Head;
+import variables.Variable;
 
 /**
  * This class contains many useful methods.
@@ -783,6 +784,26 @@ public final class Kit {
 		}
 	}
 
+	public static class VarScore implements Comparable<VarScore> {
+		public Variable x;
+
+		public double s;
+
+
+		public VarScore() {
+		}
+
+		public void set(Variable x, double s) {
+			this.x = x;
+			this.s = s;
+		}
+
+		@Override
+		public int compareTo(VarScore other) {
+			return Double.compare(other.s, s); // scores in decreasing order
+		}
+	}
+
 	/*************************************************************************
 	 ***** Handling Documents
 	 *************************************************************************/
@@ -1001,7 +1022,8 @@ public final class Kit {
 					sb.append(last);
 			if (i == values.length)
 				break;
-			else sb.append(",");
+			else
+				sb.append(",");
 			last = values[i];
 		}
 		return sb.append("]");

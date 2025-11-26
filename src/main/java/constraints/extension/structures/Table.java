@@ -280,8 +280,7 @@ public class Table extends ExtensionStructure {
 			}
 			return false;
 		}
-		return (Arrays.binarySearch(tuples, t, Utilities.lexComparatorInt) >= 0) == positive; // costly but not used
-																								// during filtering
+		return (Arrays.binarySearch(tuples, t, Utilities.lexComparatorInt) >= 0) == positive; // costly but not used during filtering
 	}
 
 	/**

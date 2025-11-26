@@ -671,6 +671,10 @@ public final class Control {
 				"On how many variables must we branch in a fixed static way on ther variables of the objective (when a weighted sum) according to coeff values?"); // experimental
 		public final boolean alwaysAssignAllVariables = addB("alwaysAssignAllVariables", "aaa", false, "Must we always explicitly assign all variables?");
 		public final boolean secondScored = addB("secondScored", "ssc", false, "Must we use the second variable scored by the heuristic?");
+		public final boolean quitWhenBetterThanPreviousChoice = addB("quitWhenBetterThanPreviousChoice", "qwb", false,
+				"Must we return a variable when its score is better than the score of the previously selected variable?");
+		public final boolean frozen = addB("frozen", "frozen", false, "Must we freeze variables during runs?");
+		public final int updateStackLength = addI("updateStackLength", "usl", 0, "Length of the stack used for recording sequentially better scored variables");
 	}
 
 	public class OptionsValh extends OptionGroup {

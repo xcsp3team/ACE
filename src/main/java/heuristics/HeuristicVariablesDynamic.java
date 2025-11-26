@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
@@ -33,6 +34,7 @@ import sets.SetDense;
 import sets.SetSparse.SetSparseCnt;
 import solver.Solver;
 import solver.Solver.Branching;
+import utility.Kit.VarScore;
 import variables.Domain;
 import variables.Variable;
 
@@ -51,17 +53,63 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		ANY, FIRST, LAST;
 	}
 
+	public class Freezer {
+
+		public Variable[] frozen;
+
+		private VarScore[] varScores;
+
+		public int numRun = -2;
+
+		public Freezer(int n) {
+			control(solver.problem.priorityVars.length == 0);
+			this.frozen = new Variable[n];
+			this.varScores = IntStream.range(0, n).mapToObj(i -> new VarScore()).toArray(VarScore[]::new);
+			solver.restarter.freezer = this;
+		}
+
+		public boolean isCurrentlyFrozen() {
+			return numRun == solver.restarter.numRun;
+		}
+
+		public void freezeAt(int numRun) {
+			if (this.numRun == numRun)
+				return;
+			this.numRun = numRun;
+			int nPast = solver.futVars.nPast();
+			for (int i = 0; i < solver.futVars.nPast(); i++)
+				frozen[i] = solver.futVars.getPast(i);
+			int nFutures = 0;
+			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x))
+				varScores[nFutures++].set(x, scoreOptimizedOf(x));
+			Arrays.sort(varScores, 0, nFutures);
+			for (int i = 0; i < nFutures; i++)
+				frozen[nPast + i] = varScores[i].x;
+		}
+
+	}
+
 	public HeuristicVariablesDynamic(Solver solver, boolean anti) {
 		super(solver, anti);
+		if (solver.head.control.varh.frozen)
+			this.freezer = new Freezer(solver.problem.variables.length);
 	}
 
 	private int lastDepthWithOnlySingletons = Integer.MAX_VALUE;
 
 	private int nCalls;
 
+	private double prevBestScore;
+	private int prevCall = -2;
+
+	public Freezer freezer;
+
 	@Override
 	protected Variable bestUnpriorityVariable() {
 		assert solver.futVars.size() > 0;
+		if (freezer != null && freezer.isCurrentlyFrozen())
+			return freezer.frozen[solver.futVars.nPast()];
+
 		nCalls++;
 		if (solver.head.control.solving.branching != Branching.BIN) { // if not binary branching
 			Variable x = solver.decisions.varOfLastDecisionIf(false);
@@ -73,13 +121,14 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			if (x != null && (options.lc1 || x.dom.size() > 1))
 				return x;
 		}
-		if (nCalls % 2 == 0 && solver.head.control.varh.secondScored) {
-			Variable x = bestScoredVariable.second;
+		//if (nCalls % 2 == 0 && solver.head.control.varh.secondScored) {
+		if (solver.head.control.varh.secondScored) {
+			Variable x = bestScoredVariable.second(nCalls);
 			if (x != null && x.dom.size() > 1) {
 				return x;
 			}
 		}
-		bestScoredVariable.reset(false);
+		bestScoredVariable.beforeIteration(nCalls, false);
 		if (options.singleton == SingletonStrategy.LAST) {
 			if (solver.depth() <= lastDepthWithOnlySingletons) {
 				lastDepthWithOnlySingletons = Integer.MAX_VALUE;
@@ -87,12 +136,17 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					if (options.connected && x.firstAssignedNeighbor() == null)
 						continue;
 					// if (solver.problem.dependencies != null && solver.problem.dependencies[x.num] != null && solver.problem.dependencies[x.num].dom.size() >
-					// 1)  continue;
+					// 1) continue;
 					// if (x.ctrs.length <= 1)
 					// continue;
-					if (x.dom.size() != 1)
+					if (x.dom.size() != 1) {
 						bestScoredVariable.consider(x, scoreOptimizedOf(x));
-					else {
+						if (options.quitWhenBetterThanPreviousChoice && prevCall + 1 == nCalls && bestScoredVariable.betterThan(prevBestScore)) {
+							prevBestScore = bestScoredVariable.score;
+							prevCall = nCalls;
+							return bestScoredVariable.variable;
+						}
+					} else {
 						if (solver.sticking != null)
 							solver.sticking[x.num] = x.dom.single();
 						if (this instanceof SingOnDom) {
@@ -120,6 +174,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			if (bestScoredVariable.variable == null) {
 				return solver.futVars.first(); // possible if discardAux was set to true
 			}
+		}
+		if (options.quitWhenBetterThanPreviousChoice) {
+			prevBestScore = bestScoredVariable.score;
+			prevCall = nCalls;
 		}
 		return bestScoredVariable.variable;
 
@@ -244,6 +302,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void whenWipeout(Constraint c, Variable x) {
+			if (freezer != null && freezer.isCurrentlyFrozen())
+				return;
 			int p = pickMode < 2 ? 0 : pickMode == 2 ? 100 : ((nPicks.length - solver.depth()) * 100) / nPicks.length;
 			int total = (int) set.total;
 			for (int i = set.limit; i >= 0; i--) {
@@ -638,6 +698,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void whenWipeout(Constraint c, Variable x) {
+			if (freezer != null && freezer.isCurrentlyFrozen())
+				return;
 			time++;
 			if (options.weighting == VAR)
 				vscores[x.num]++;
@@ -815,7 +877,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				}
 				posLastConflict = pos;
 			} else {
-				bestScoredVariable.reset(false);
+				bestScoredVariable.beforeIteration(0, false);
 				solver.futVars.execute(x -> bestScoredVariable.consider(x, scoreOptimizedOf(x)));
 				pos = posLastConflict = nOrdered;
 				order[nOrdered++] = bestScoredVariable.variable.num;
@@ -865,7 +927,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			assert lastVar != null || solver.depth() > lastDepth : lastVar + " " + solver.depth() + " " + lastDepth;
 			if (lastVar != null)
 				update();
-			bestScoredVariable.reset(true);
+			bestScoredVariable.beforeIteration(0, true);
 			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 				if (x.dom.size() > 1 || options.singleton != SingletonStrategy.LAST) {
 					lastSizes[x.num] = x.dom.size();

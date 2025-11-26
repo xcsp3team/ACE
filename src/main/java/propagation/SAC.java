@@ -674,7 +674,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			}
 
 			public Variable selectNextVariable() {
-				bestScoredVariable.reset(false);
+				bestScoredVariable.beforeIteration(0,false);
 				if (nUncheckedVars == 0) { // we keep building the branch
 					solver.futVars.execute(x -> bestScoredVariable.consider(x, varHeuristics[currIndexOfVarHeuristic].scoreOptimizedOf(x)));
 				} else {

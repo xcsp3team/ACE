@@ -17,6 +17,8 @@ import java.util.function.Supplier;
 import dashboard.Control.OptionsRestarts;
 import dashboard.Input;
 import heuristics.HeuristicVariables;
+import heuristics.HeuristicVariablesDynamic;
+import heuristics.HeuristicVariablesDynamic.Freezer;
 import heuristics.HeuristicVariablesDynamic.RunRobin;
 import interfaces.Observers.ObserverOnRuns;
 import optimization.Optimizer;
@@ -96,10 +98,10 @@ public class Restarter implements ObserverOnRuns {
 		}
 
 		if (solver.head.control.varh.secondScored) {
-			solver.heuristic.bestScoredVariable.second = null;
+			solver.heuristic.bestScoredVariable.cleanStack();
 			if (solver.heuristic instanceof RunRobin) {
 				for (HeuristicVariables h : ((RunRobin) solver.heuristic).pool)
-					h.bestScoredVariable.second = null;
+					h.bestScoredVariable.cleanStack();
 			}
 		}
 	}
@@ -216,6 +218,9 @@ public class Restarter implements ObserverOnRuns {
 	private int nRestartsSinceReset;
 
 	public LocalStats localStats;
+	
+	
+	public Freezer freezer;
 
 	/**
 	 * Resets the object. This is usually not used.
@@ -275,11 +280,16 @@ public class Restarter implements ObserverOnRuns {
 		Optimizer optimizer = solver.problem.optimizer;
 		if (Input.portfolio && optimizer != null && ((cnt++) % 5) == 0) // code for portfolio mode; hard coding
 			optimizer.possiblyUpdateLocalBounds();
-		if (measureSupplier.get() >= currCutoff)
+		long measure = measureSupplier.get();
+		if (measure >= currCutoff)
 			return true;
 		if (optimizer != null && solver.solutions.found - localStats.nFoundSolutionAtRunStart > 10)
 			// for CSP, may be a problem
 			return true;
+		if (freezer != null && !freezer.isCurrentlyFrozen()) {
+			if (2 * measure >= currCutoff)
+				freezer.freezeAt(numRun);
+		}
 		if (optimizer == null || numRun != solver.solutions.lastRun)
 			return false;
 		return options.restartAfterSolution;
