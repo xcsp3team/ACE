@@ -536,7 +536,8 @@ public final class Control {
 		public final boolean replaceSimilarInternNodes = addB("replaceSimilarInternNodes", "rsin", true, "Replace similar intern nodes by same variables?");
 		public final int replaceSimilarInternNodesExcludingLimit = addI("replaceSimilarInternNodesExcludingLimit", "rsinel", 1,
 				"Limit for replacing similar intern nodes"); // should we set it to 2?
-
+		public final boolean displayRemainingIntension = addB("displayRemainingIntension", "dri", false, "Must we display the predicates of remaining intensional constraints");
+		
 		public boolean toExtension(Variable[] vars, XNode<IVar> tree) {
 			Variable[] t = tree == null || !(tree instanceof XNodeParent) || !((XNodeParent<?>) tree).isEqVar() ? vars
 					: IntStream.range(0, vars.length - 1).mapToObj(i -> vars[i]).toArray(Variable[]::new);
@@ -595,6 +596,7 @@ public final class Control {
 				"generic AC is systematically enforced if the size of the Cartesian product of domains is less than or equal to 2 to the power of this value (or this value is -1)");
 		public boolean strongOnce = addB("strongOnce", "so", false, "Must we only apply the strong consistency (if chosen) before search?");
 		public final boolean strongAC = addB("strongAC", "sac", false, "Must we only apply the strong consistency (if chosen) when AC is effective?");
+		public final boolean justRefuted = addB("justRefuted", "jr", false, "Must we try to improve performances by exploiting just refuted variables?");
 	}
 
 	public class OptionsShaving extends OptionGroup {
@@ -637,6 +639,7 @@ public final class Control {
 		public final int varhSolResetPeriod = addI("varhSolResetPeriod", "r_vsrp", 30, "");
 		public boolean restartAfterSolution = addB("restartAfterSolution", "ras", false, "Must we restart every time a solution is found?");
 		public final boolean luby = addB("luby", "", false, "Must we use a Luby series instead of a geometric one?");
+		public final int solRunLimit = addI("solRunLimit", "srl", 10, "Limit on the number of solutions at each run");
 	}
 
 	public class OptionsLNS extends OptionGroup {

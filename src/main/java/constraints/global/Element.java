@@ -359,6 +359,17 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 						return false;
 					if (vdom.size() == 1)
 						return entail();
+				} else {
+					if (vdom.size() == 1) {
+						boolean b = true;
+						for (int i = idom.first(); b && i != -1; i = idom.next(i))
+							if (list[i].dom.size() > 1)
+								b = false;
+						if (b) {
+							//System.out.println("oiii");
+							return entail();
+						}
+					}
 				}
 				return true;
 			}

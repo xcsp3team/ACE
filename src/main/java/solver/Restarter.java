@@ -283,7 +283,7 @@ public class Restarter implements ObserverOnRuns {
 		long measure = measureSupplier.get();
 		if (measure >= currCutoff)
 			return true;
-		if (optimizer != null && solver.solutions.found - localStats.nFoundSolutionAtRunStart > 10)
+		if (optimizer != null && solver.solutions.found - localStats.nFoundSolutionAtRunStart > options.solRunLimit)
 			// for CSP, may be a problem
 			return true;
 		if (freezer != null && !freezer.isCurrentlyFrozen()) {

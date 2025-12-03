@@ -473,32 +473,36 @@ public final class Reification {
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
-			return ((t[2] == 0) && (t[0] + wx <= t[1])) || ((t[2] == 1) && (t[1] + wy <= t[0]));
+			return ((t[2] == 0) && (t[0] + w1 <= t[1])) || ((t[2] == 1) && (t[1] + w2 <= t[0]));
 		}
 
-		private final int wx, wy;
+		private final int w1, w2;
 
-		public DisjonctiveReified(Problem pb, Variable x, int wx, Variable y, int wy, Variable z) {
+		public DisjonctiveReified(Problem pb, Variable x, int w1, Variable y, int w2, Variable z) {
 			super(pb, x, y, z);
 			control(scp.length == 3 && z.dom.is01());
-			this.wx = wx;
-			this.wy = wy;
-			defineKey(wx, wy);
+			this.w1 = w1;
+			this.w2 = w2;
+			defineKey(w1, w2);
 		}
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			if (dx.lastValue() + wx <= dy.firstValue()) // x + wx <= y => z = 0
+			if (problem.solver.justLastRefutedVariable())
+				if (dummy.dom.lastRemovedInsideBounds())
+					return true;
+
+			if (dx.lastValue() + w1 <= dy.firstValue()) // x + wx <= y => z = 0
 				return dz.removeIfPresent(1) && entail();
-			if (dy.lastValue() + wy <= dx.firstValue()) // y + wy <= x => z = 1
+			if (dy.lastValue() + w2 <= dx.firstValue()) // y + wy <= x => z = 1
 				return dz.removeIfPresent(0) && entail();
 
 			if (dz.last() == 0) // z = 0 => x + wx <= y
-				return enforceLE(dx, dy, -wx);
+				return enforceLE(dx, dy, -w1);
 			if (dz.first() == 1) // z = 1 => y + wy <= x
-				return enforceLE(dy, dx, -wy);
-			return dx.removeValuesInRange(dy.lastValue() - wx + 1, dy.firstValue() + wy)
-					&& dy.removeValuesInRange(dx.lastValue() - wy + 1, dx.firstValue() + wx);
+				return enforceLE(dy, dx, -w2);
+			return dx.removeValuesInRange(dy.lastValue() - w1 + 1, dy.firstValue() + w2)
+					&& dy.removeValuesInRange(dx.lastValue() - w2 + 1, dx.firstValue() + w1);
 		}
 	}
 
@@ -532,6 +536,17 @@ public final class Reification {
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
+			if (problem.solver.justLastRefutedVariable())
+				if (dummy.dom.lastRemovedInsideBounds())
+					return true;
+
+			// Variable x = problem.solver.justLastRefutedVariable();
+			// if (x != null) {
+			// int a = problem.solver.decisions.idxOfLastDecision();
+			// if (x.dom.first() < a && a < x.dom.last())
+			// return true;
+			// }
+
 			int minx1 = dx1.firstValue() + w1, minx2 = dx2.firstValue() + w2;
 			int miny1 = dy1.firstValue() + h1, miny2 = dy2.firstValue() + h2;
 			boolean bx1 = minx1 <= dx2.lastValue(), bx2 = minx2 <= dx1.lastValue();

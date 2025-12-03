@@ -121,9 +121,9 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			if (x != null && (options.lc1 || x.dom.size() > 1))
 				return x;
 		}
-		//if (nCalls % 2 == 0 && solver.head.control.varh.secondScored) {
+		// if (nCalls % 2 == 0 && solver.head.control.varh.secondScored) {
 		if (solver.head.control.varh.secondScored) {
-			Variable x = bestScoredVariable.second(nCalls);
+			Variable x = bestScoredVariable.second2(nCalls);
 			if (x != null && x.dom.size() > 1) {
 				return x;
 			}
@@ -268,7 +268,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public double scoreOf(Variable x) {
-			return x.frbaOnDom();
+			return x.specificWeight * x.frbaOnDom();
 		}
 	}
 
@@ -284,12 +284,13 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			super(solver, anti);
 			this.set = solver.propagation.historyX;
 			this.nPicks = new long[solver.problem.variables.length];
+			reset();
 			this.pickMode = solver.head.control.varh.pickMode;
 		}
 
 		@Override
 		public void reset() {
-			Arrays.fill(nPicks, 0);
+			Arrays.fill(nPicks, 1);
 		}
 
 		@Override
@@ -319,7 +320,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public double scoreOf(Variable x) {
-			return nPicks[x.num] / (double) x.dom.size();
+			return (x.specificWeight * nPicks[x.num]) / (double) x.dom.size();
 		}
 	}
 
@@ -805,7 +806,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 						d += cscores[c.num];
 				return d;
 			}
-			return vscores[x.num];
+			return x.specificWeight * vscores[x.num];
 		}
 	}
 
@@ -827,7 +828,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 						d += cscores[c.num];
 				return d / x.dom.size();
 			}
-			return vscores[x.num] / x.dom.size();
+			return x.specificWeight * vscores[x.num] / x.dom.size();
 		}
 	}
 

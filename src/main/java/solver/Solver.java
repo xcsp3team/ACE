@@ -947,6 +947,13 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		return true;
 	}
 
+	public int nRemovalsJustAfterRefutation;
+
+	public boolean justLastRefutedVariable() {
+		return head.control.propagation.justRefuted && problem.nValueRemovals == nRemovalsJustAfterRefutation;
+
+	}
+
 	/**
 	 * Performs a negative decision, x != a, followed by constraint propagation
 	 * 
@@ -964,6 +971,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			observer.beforeNegativeDecision(x, a);
 		decisions.addNegativeDecision(x, a);
 		x.dom.removeElementary(a);
+		nRemovalsJustAfterRefutation = problem.nValueRemovals;
 
 		boolean consistent = x.dom.size() > 0;
 		if (consistent) {

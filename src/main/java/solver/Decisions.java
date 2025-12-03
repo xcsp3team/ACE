@@ -184,6 +184,13 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	public Variable varOfLastDecisionIf(boolean positive) {
 		return set.limit >= 0 && (set.last() >= 0) == positive ? varIn(set.last()) : null;
 	}
+	
+	/**
+	 * Returns the index of the value involved in the last taken decision, -1 if no decision is present.
+	 */
+	public int idxOfLastDecision() {
+		return set.limit >= 0 ? idxIn(set.last()) : -1;
+	}
 
 	/**
 	 * Returns true if the last but one decision was negative

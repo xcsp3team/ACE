@@ -16,8 +16,7 @@ import utility.Bit;
 import variables.Variable;
 
 /**
- * An IPS is an Inconsistent Partial State. It is composed of membership decisions and is equivalent to generalized
- * nogoods.
+ * An IPS is an Inconsistent Partial State. It is composed of membership decisions and is equivalent to generalized nogoods.
  * 
  * @author Christophe Lecoutre
  */

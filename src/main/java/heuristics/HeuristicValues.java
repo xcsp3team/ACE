@@ -23,6 +23,7 @@ import constraints.Constraint;
 import constraints.global.Extremum.ExtremumCst;
 import constraints.global.NValues.NValuesCst;
 import constraints.global.NValues.NValuesCst.NValuesCstLE;
+import constraints.global.Sum;
 import constraints.global.Sum.SumSimple;
 import constraints.global.Sum.SumWeighted;
 import dashboard.Control.OptionsValh;
@@ -107,11 +108,24 @@ public abstract class HeuristicValues extends Heuristic {
 	 * @return the variables that must be considered as being priority for search, or null
 	 */
 	public static Variable[] possibleOptimizationInterference(Problem problem) {
-		if (problem.optimizer == null || !problem.head.control.valh.optValHeuristic) // experimental
+		if (problem.optimizer == null)
 			return null;
-		boolean strong = true; // hard coding
 		Constraint c = ((Constraint) problem.optimizer.ctr);
 		boolean minimization = problem.optimizer.minimization;
+		if (problem.head.control.valh.optValHeuristic) {
+			if (c instanceof Sum) {
+				long[] t = IntStream.range(0, c.scp.length)
+						.mapToLong(i -> (c instanceof SumWeighted ? ((SumWeighted) c).coeffs[i] : 1) * c.scp[i].dom.distance()).toArray();
+				System.out.println("jjjjj " + Kit.join(t));
+				for (int i = 0; i < c.scp.length; i++)
+					c.scp[i].specificWeight = 1 / Math.max(1, Math.abs(t[i]));
+			}
+			return null;
+		}
+
+		if (!problem.head.control.valh.optValHeuristic) // experimental
+			return null;
+		boolean strong = true; // hard coding
 		if (c instanceof ObjectiveVariable) {
 			Variable x = c.scp[0];
 			x.heuristic = minimization ? new First(x, false) : new Last(x, false);
@@ -142,12 +156,9 @@ public abstract class HeuristicValues extends Heuristic {
 			// for (Variable x : vars) {
 			// int coeff = coeffs == null ? 1 : coeffs[c.positionOf(x)];
 			// boolean f = minimization && coeff >= 0 || !minimization && coeff < 0;
-			// System.out.println("before " + x + " " + x.heuristic);
 			// x.heuristic = f ? new First(x, false) : new Last(x, false); // the boolean is dummy
-			// System.out.println("after " + x.heuristic);
 			// }
-			// return vars;
-			// }
+			// return vars; }
 		}
 		return null;
 	}

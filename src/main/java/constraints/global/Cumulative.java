@@ -41,8 +41,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class Cumulative extends ConstraintGlobal
-		implements TagNotAC, ObserverOnBacktracksSystematic, TagPostponableFiltering {
+public abstract class Cumulative extends ConstraintGlobal implements TagNotAC, ObserverOnBacktracksSystematic, TagPostponableFiltering {
 	// TagCallCompleteFiltering discarded because this seems not to be valid (and seems to be not compatible with Variable.TAG)
 
 	/**********************************************************************************************
@@ -132,7 +131,7 @@ public abstract class Cumulative extends ConstraintGlobal
 			if (nRelevantTicks == 0)
 				return Boolean.TRUE;
 
-			Arrays.sort(slots, 0, nRelevantTicks, (t1, t2) -> t1.start < t2.start ? -1 : t1.start > t2.start ? 1 : 0);
+			Arrays.sort(slots, 0, nRelevantTicks, (t1, t2) -> t1.start - t2.start); // t1.start < t2.start ? -1 : t1.start > t2.start ? 1 : 0);
 			for (int k = 0, height = 0; k < nRelevantTicks - 1; k++) {
 				height += offsets[slots[k].start];
 				if (height > limit)
@@ -140,7 +139,7 @@ public abstract class Cumulative extends ConstraintGlobal
 				slots[k].end = slots[k + 1].start;
 				slots[k].height = height;
 			}
-			Arrays.sort(slots, 0, nRelevantTicks - 1, (t1, t2) -> t1.height > t2.height ? -1 : t1.height < t2.height ? 1 : 0);
+			Arrays.sort(slots, 0, nRelevantTicks - 1, (t1, t2) -> t2.height - t1.height); // t1.height > t2.height ? -1 : t1.height < t2.height ? 1 : 0);
 
 			nSlots = nRelevantTicks - 1;
 			while (slots[nSlots - 1].height == 0)
@@ -423,6 +422,17 @@ public abstract class Cumulative extends ConstraintGlobal
 
 	@Override
 	public boolean runPropagator(Variable dummy) {
+		if (problem.solver.justLastRefutedVariable()) // TODO: not sure that it is safe for CumulativeVar
+			if (dummy.dom.lastRemovedInsideBounds())
+				return true;
+
+		// Variable x = problem.solver.justLastRefutedVariable();
+		// if (x != null) {
+		// int a = problem.solver.decisions.idxOfLastDecision();
+		// if (x.dom.first() < a && a < x.dom.last())
+		// return true;
+		// }
+
 		long volume = this instanceof CumulativeCst ? ((CumulativeCst) this).volume : tasksVolume();
 		this.margin = horizon() * limit - volume;
 		if (margin < 0) { // it seems that we cannot limit (only use) this test at depth 0

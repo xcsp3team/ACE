@@ -580,6 +580,8 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	 */
 	public long time;
 
+	public double specificWeight = 1;
+
 	/**
 	 * failed[a] gives the number of assignments that directly failed with a
 	 */

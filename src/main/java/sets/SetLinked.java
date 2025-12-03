@@ -128,6 +128,14 @@ public interface SetLinked {
 	 * @return the last removed element of the set
 	 */
 	abstract int lastRemoved();
+	
+	
+	default boolean lastRemovedInsideBounds() {
+		assert 0 < size();
+		int a = lastRemoved();
+		return first() < a && a < last();  // if a = -1, false is returned (since size() > 0)
+	}
+	
 
 	/**
 	 * Returns the element (index of value) of the set that has been removed before the specified one, or -1 if there is

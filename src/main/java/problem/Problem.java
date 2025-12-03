@@ -1477,7 +1477,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return post(c);
 		}
 
-
 		if (options.recognizeReifLogic) {
 			Constraint c = null;
 			if (logic_X__eq_x.matches(tree)) {
@@ -1723,7 +1722,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 							boolean modified = false;
 							for (int j = 0; j < grandsons.length; j++) {
 								// we limit to arity 2 max TODO something else?
-								if (grandsons[j] instanceof XNodeParent && grandsons[j].type != SET && grandsons[j].type != MUL && grandsons[j].sons.length <= 2) {
+								if (grandsons[j] instanceof XNodeParent && grandsons[j].type != SET && grandsons[j].type != MUL
+										&& grandsons[j].sons.length <= 2) {
 									grandsons[j] = new XNodeLeaf<>(VAR, replaceByVariable(grandsons[j]));
 									modified = true;
 								}
@@ -1750,7 +1750,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
-		// System.out.println("Tree remaining " + tree);
+		if (options.displayRemainingIntension)
+			System.out.println("Tree remaining " + tree);
 		return post(new ConstraintIntension(this, scp, tree));
 	}
 
@@ -1892,6 +1893,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrAlone extension(Var[] list, int[][] tuples, boolean positive) {
+		// System.out.println("hhhh " + list.length + " " + tuples.length + " " + positive);
 		return extension(list, tuples, positive, DONT_KNOW);
 	}
 

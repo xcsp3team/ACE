@@ -292,9 +292,14 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			}
 
 			@Override
-			public boolean runPropagator(Variable x) {			
+			public boolean runPropagator(Variable x) {
 				if (limit == Constants.PLUS_INFINITY)
 					return true;
+				
+				if (problem.solver.justLastRefutedVariable()) 
+					if (x.dom.lastRemovedInsideBounds())
+						return true;
+				
 				recomputeBounds();
 				if (max <= limit)
 					return entail();
@@ -367,6 +372,11 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			public boolean runPropagator(Variable x) {
 				if (limit == Constants.MINUS_INFINITY)
 					return true;
+				
+				if (problem.solver.justLastRefutedVariable()) 
+					if (x.dom.lastRemovedInsideBounds())
+						return true;
+				
 				recomputeBounds();
 				if (min >= limit)
 					return entail();
@@ -418,6 +428,10 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			@Override
 			public boolean runPropagator(Variable evt) {
+				if (problem.solver.justLastRefutedVariable()) 
+					if (evt.dom.lastRemovedInsideBounds())
+						return true;
+				
 				recomputeBounds();
 				if (limit < min || limit > max)
 					return evt.dom.fail();
@@ -568,8 +582,8 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 						nb1++;
 					} else
 						nb2++;
-//					if ((nb1 + nb2) % 1000 == 0)
-//						System.out.println("comparison " + nb1 + " " + nb2);
+					// if ((nb1 + nb2) % 1000 == 0)
+					// System.out.println("comparison " + nb1 + " " + nb2);
 					for (int i = unfixed.limit; i >= 0; i--) {
 						int j = unfixed.dense[i];
 						Domain dom = scp[j].dom;
@@ -800,6 +814,11 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			public boolean runPropagator(Variable x) {
 				if (limit == Constants.PLUS_INFINITY)
 					return true;
+				
+				if (problem.solver.justLastRefutedVariable() && x != null) // x != null because it may be the case for an objective constraint
+					if (x.dom.lastRemovedInsideBounds())
+						return true;
+
 				recomputeBounds();
 				if (max <= limit)
 					return entail();
@@ -863,6 +882,11 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			public boolean runPropagator(Variable x) {
 				if (limit == Constants.MINUS_INFINITY)
 					return true;
+				
+				if (problem.solver.justLastRefutedVariable() && x != null) // x != null because it may be the case for an objective constraint
+					if (x.dom.lastRemovedInsideBounds())
+						return true;
+				
 				recomputeBounds();
 				if (min >= limit)
 					return entail();
@@ -927,6 +951,10 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 
 			@Override
 			public boolean runPropagator(Variable x) {
+				if (problem.solver.justLastRefutedVariable()) 
+					if (x.dom.lastRemovedInsideBounds())
+						return true;
+				
 				recomputeBounds();
 				if (limit < min || max < limit)
 					return x.dom.fail();
