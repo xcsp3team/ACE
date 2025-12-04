@@ -312,6 +312,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 				for (int i = idom.first(); i != -1; i = idom.next(i)) {
 					if (list[i].dom.containsValue(v)) {
 						valueSentinels[a] = i;
+						indexSentinels[i]=v;
 						return true;
 					}
 				}
@@ -320,7 +321,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 
 			private boolean filterValue() {
 				int sizeBefore = vdom.size();
-				if (sizeBefore == 1)
+				if (sizeBefore == 1) // we need this because it may be assigned (and we are not tolerated to remove values from assigned domains
 					return validValue(vdom.first()) || vdom.fail();
 				for (int a = vdom.first(); a != -1; a = vdom.next(a))
 					if (!validValue(a))
@@ -338,20 +339,25 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 					// updating vdom (and valueSentinels)
 					if (filterValue() == false)
 						return false;
-					while (true) {
-						// updating idom (and indexSentinels)
-						int sizeBefore = idom.size();
-						if (filterIndex() == false)
-							return false;
-						if (sizeBefore == idom.size())
-							break;
-						// updating vdom (and valueSentinels)
-						sizeBefore = vdom.size();
-						if (filterValue() == false)
-							return false;
-						if (sizeBefore == vdom.size())
-							break;
-					}
+					if (filterIndex() == false)
+						return false;
+					// while (true) {
+					// // updating idom (and indexSentinels)
+					// int sizeBefore = idom.size();
+					// if (filterIndex() == false)
+					// return false;
+					// if (sizeBefore == idom.size())
+					// break;
+					// // updating vdom (and valueSentinels)
+					// sizeBefore = vdom.size();
+					// if (filterValue() == false) {
+					// System.out.println("hhhhhhh");
+					// return false;
+					// }
+					// if (sizeBefore == vdom.size())
+					// break;
+					// else System.out.println("yyy");
+					// }
 				}
 				// If index is singleton, we update dom(list[index]) and vdom so that they are both equal to the intersection of the two domains
 				if (idom.size() == 1) {
@@ -360,15 +366,13 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 					if (vdom.size() == 1)
 						return entail();
 				} else {
-					if (vdom.size() == 1) {
+					if (vdom.size() == 1) { // not sure that it is very interesting for practical efficiency
 						boolean b = true;
 						for (int i = idom.first(); b && i != -1; i = idom.next(i))
 							if (list[i].dom.size() > 1)
 								b = false;
-						if (b) {
-							//System.out.println("oiii");
+						if (b)
 							return entail();
-						}
 					}
 				}
 				return true;

@@ -405,13 +405,16 @@ public final class Control {
 		public final String campaignDir = addS("campaignDir", "cd", "", "Name of a campaign directory where results (XML files) are stored.");
 		public final String trace = addS("trace", "trace", "", "Displays a trace (with possible depth control as eg -trace=10-20");
 		public final boolean removedAfterProcessing = addB("removedAfterProcessing", "rap", false, "Displaying removed values after preprocessing ?");
+
 		public final int jsonLimit = addI("jsonLimit", "jl", 10000, "The limit on the number of variables for displaying solutions in JSON");
 		public final boolean jsonAux = addB("jsonAux", "ja", false, "Take auxiliary variables when displaying solutions in JSON");
 		public final String jsonSave = addS("jsonSave", "js", "", "Save the first solution in a file whose name is this value");
 		public final boolean jsonQuotes = addB("jsonQuotes", "jq", false, "Surround keys with quotes when solutions are displayed on the standard output");
 		public final boolean jsonEachSolution = addB("jsonEachSolution", "je", false, "During search, display all found solutions in JSON");
+
 		public final boolean solutionHamming = addB("solutionHamming", "sh", true,
 				"During search, display the Hamming distance between two successive solutions");
+		
 		public final boolean xmlCompact = addB("xmlCompact", "xc", true, "Compress values when displaying solutions in XML");
 		public final boolean xmlEachSolution = addB("xmlEachSolution", "xe", false, "During search, display all found solutions in XML");
 		public final boolean saveSolutions = addB("storeSolutions", "sts", false, "Save all found solutions in a JSON file?");
@@ -536,8 +539,9 @@ public final class Control {
 		public final boolean replaceSimilarInternNodes = addB("replaceSimilarInternNodes", "rsin", true, "Replace similar intern nodes by same variables?");
 		public final int replaceSimilarInternNodesExcludingLimit = addI("replaceSimilarInternNodesExcludingLimit", "rsinel", 1,
 				"Limit for replacing similar intern nodes"); // should we set it to 2?
-		public final boolean displayRemainingIntension = addB("displayRemainingIntension", "dri", false, "Must we display the predicates of remaining intensional constraints");
-		
+		public final boolean displayRemainingIntension = addB("displayRemainingIntension", "dri", false,
+				"Must we display the predicates of remaining intensional constraints");
+
 		public boolean toExtension(Variable[] vars, XNode<IVar> tree) {
 			Variable[] t = tree == null || !(tree instanceof XNodeParent) || !((XNodeParent<?>) tree).isEqVar() ? vars
 					: IntStream.range(0, vars.length - 1).mapToObj(i -> vars[i]).toArray(Variable[]::new);
@@ -671,7 +675,7 @@ public final class Control {
 		public final int lostDepth = addI("lostDepth", "ld", 0, "xx");
 		public final int lostSize = addI("lostSize", "ls", 4, "xx");
 		public final int optVarHeuristic = addI("optVarHeuristic", "ovarh", 0,
-				"On how many variables must we branch in a fixed static way on ther variables of the objective (when a weighted sum) according to coeff values?"); // experimental
+				"On how many variables must we branch in a fixed static way on the variables of the objective (when a weighted sum) according to coeff values?"); // experimental
 		public final boolean alwaysAssignAllVariables = addB("alwaysAssignAllVariables", "aaa", false, "Must we always explicitly assign all variables?");
 		public final boolean secondScored = addB("secondScored", "ssc", false, "Must we use the second variable scored by the heuristic?");
 		public final boolean quitWhenBetterThanPreviousChoice = addB("quitWhenBetterThanPreviousChoice", "qwb", false,
