@@ -1515,8 +1515,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return forall(range(sons[1].sons.length), i -> intension(XNode.node(tree.type, sons[0], sons[1].sons[i])));
 		}
 		if (tree.type == OR) {
-			if (arity > 2 && Stream.of(sons).allMatch(son -> son.type == VAR))
-				return post(new AtLeast1(this, scp, 1)); // return post(SumSimple.buildFrom(this, scp, NE, 0));
+			if (arity > 2 && Stream.of(sons).allMatch(son -> son.type == VAR)) {
+				Variable[] filteredScp = Stream.of(scp).filter(x -> x.dom.containsValue(1)).toArray(Variable[]::new);
+				if (filteredScp.length == 1)
+					return equal(filteredScp[0], 1);
+				control(filteredScp.length > 1);
+				return post(new AtLeast1(this, filteredScp, 1)); // return post(SumSimple.buildFrom(this, scp, NE, 0));
+			}
 			if (arity >= 2) {
 				boolean detectingOtherNogoods = true;
 				if (detectingOtherNogoods && Stream.of(sons)

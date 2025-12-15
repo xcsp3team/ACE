@@ -12,7 +12,7 @@ package main;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
-import static org.xcsp.common.Constants.PLUS_INFINITY ;
+import static org.xcsp.common.Constants.PLUS_INFINITY;
 import static utility.Kit.control;
 import static utility.Kit.log;
 
@@ -218,7 +218,7 @@ public class Head extends Thread {
 									}
 							}
 						} catch (Exception e) {
-							Kit.warning("either a jar is not found or there is a problem with " + token); //e.printStackTrace();
+							Kit.warning("either a jar is not found or there is a problem with " + token); // e.printStackTrace();
 						}
 					}
 				// next, we load loaded classes
@@ -352,8 +352,8 @@ public class Head extends Thread {
 	 * @return true if time has expired for solving the current problem instance
 	 */
 	public boolean isTimeExpiredForCurrentInstance() {
-		//return control.general.timeout <= instanceStopwatch.wckTime(); 
-		return control.general.timeout != PLUS_INFINITY && control.general.timeout <= instanceStopwatch.wckTime();  // we avoid calling wckTime() when no necessary
+		// return control.general.timeout <= instanceStopwatch.wckTime();
+		return control.general.timeout != PLUS_INFINITY && control.general.timeout <= instanceStopwatch.wckTime(); // not calling wckTime() when no necessary
 	}
 
 	/**
@@ -401,8 +401,9 @@ public class Head extends Thread {
 			return (Problem) Kit.exit("The class " + Input.problemName + " cannot be found.", e);
 		}
 		this.problem = new Problem(api, control.problem.variant, control.problem.data, "", false, Input.argsForProblem, this);
-		for (ObserverOnConstruction obs : observersConstruction)
+		for (ObserverOnConstruction obs : observersConstruction) {
 			obs.afterProblemConstruction(this.problem.variables.length);
+		}
 		problem.display();
 		return problem;
 	}

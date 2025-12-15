@@ -406,18 +406,19 @@ public final class Control {
 		public final String trace = addS("trace", "trace", "", "Displays a trace (with possible depth control as eg -trace=10-20");
 		public final boolean removedAfterProcessing = addB("removedAfterProcessing", "rap", false, "Displaying removed values after preprocessing ?");
 
+		// JSON and XML (concerning solutions)
+		public final boolean xmlCompact = addB("xmlCompact", "xc", true, "Compress values when displaying solutions in XML");
+		public final boolean xmlEachSolution = addB("xmlEachSolution", "xe", false, "During search, display all found solutions in XML");
 		public final int jsonLimit = addI("jsonLimit", "jl", 10000, "The limit on the number of variables for displaying solutions in JSON");
 		public final boolean jsonAux = addB("jsonAux", "ja", false, "Take auxiliary variables when displaying solutions in JSON");
 		public final String jsonSave = addS("jsonSave", "js", "", "Save the first solution in a file whose name is this value");
 		public final boolean jsonQuotes = addB("jsonQuotes", "jq", false, "Surround keys with quotes when solutions are displayed on the standard output");
 		public final boolean jsonEachSolution = addB("jsonEachSolution", "je", false, "During search, display all found solutions in JSON");
-
+		public final boolean saveSolutions = addB("saveSolutions", "sts", false, "Save all found solutions in a JSON file?");
 		public final boolean solutionHamming = addB("solutionHamming", "sh", true,
 				"During search, display the Hamming distance between two successive solutions");
-		
-		public final boolean xmlCompact = addB("xmlCompact", "xc", true, "Compress values when displaying solutions in XML");
-		public final boolean xmlEachSolution = addB("xmlEachSolution", "xe", false, "During search, display all found solutions in XML");
-		public final boolean saveSolutions = addB("storeSolutions", "sts", false, "Save all found solutions in a JSON file?");
+		public final boolean controlSolutions = addB("controlSolutions", "cs", false, "Control solutions");
+
 		public final boolean noPrintColors = addB("noPrintColors", "npc", false, "Don't use special color characters in the terminal");
 		public final boolean exceptionsVisible = addB("exceptionsVisible", "ev", false, "Makes exceptions visible.");
 		public final boolean enableAnnotations = addB("enableAnnotations", "ea", false, "Enables annotations (currently, mainly concerns priority variables).");
@@ -426,7 +427,6 @@ public final class Control {
 		public int verbose = addI("verbose", "v", 0, "Verbosity level (value between -1 and 3)" + s_verbose);
 		public final boolean runRobin = addB("runRobin", "rr", false, "Using a Run Robin search strategy");
 		public final boolean profiling = addB("profiling", "prof", false, "Using some very basic profiling information?");
-		public final boolean controlSolutions = addB("controlSolutions", "cs", false, "Control solutions");
 	}
 
 	public class OptionsProblem extends OptionGroup {
@@ -510,6 +510,10 @@ public final class Control {
 		public final int smallTableExt = addI("smallTableExt", "stext", 16, "table size threshold for considering a special propagator");
 		public final int largeScopeExt = addI("largeScopeExt", "lsext", 50, "scope size threshold for considering a special propagator");
 		public final boolean toMDD = addB("toMDD", "tomdd", false, "Must we attempt to convert extension constraints into MDDs (if possible)");
+		public final int domainCompactTableLimit = addI("domainCompactTableLimit", "dctl", 5_000,
+				"Limit in term of the cumulated size of the domains for discarding CT (and use STR2)");
+		public final int chybridStackingLimit = addI("chybridStackingLimit", "hsl", 5_000,
+				"Limit (in term of the number n of variables) for building stacks useful for filtering CHybrid constraints");
 
 		public boolean reverse(int arity, boolean positive) {
 			return (positive && arity <= arityLimitToNegative) || (!positive && arity <= arityLimitToPositive);
@@ -657,6 +661,7 @@ public final class Control {
 		public final String clazz = addS("clazz", "revh", Dom.class, HeuristicRevisions.class, "Class of the revision ordering heuristic");
 		public final boolean anti = addB("anti", "anti_revh", false, "Must we use the reverse of the natural heuristic order?");
 		public final int revisionQueueLimit = addI("revisionQueueLimit", "rsl", 100, "Limit for searching the best variable in the revision queue");
+		public final boolean testr = addB("testr", "testr", false, "");
 	}
 
 	public class OptionsVarh extends OptionGroup {

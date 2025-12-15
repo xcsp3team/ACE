@@ -151,30 +151,65 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class Dom extends HeuristicRevisionsDynamic {
 
+			private int second = -1, secondDomSize = 0;
+
 			public Dom(Queue queue, boolean anti) {
 				super(queue, anti);
 			}
 
 			@Override
 			public int bestInQueue() {
-				// if (queue.size() > limit)  
+				// if (queue.size() > limit)
 				// return 0;
+				// System.out.println("gggg " + queue.size());
+
+				// if (second != -1 && queue.size() > 35 && second < queue.size()) {
+				// int i = second;
+				// second = -1;
+				// return i;
+				// }
 
 				int bestSize = queue.var(0).dom.size();
 				if (bestSize <= queue.domSizeLowerBound)
 					return 0; // because it is not possible to do better
 				int pos = 0;
-				for (int i = 1; i <= queue.limit; i++) {
-					int otherSize = queue.var(i).dom.size();
-					if (otherSize < bestSize) {
-						if (otherSize <= queue.domSizeLowerBound) {
-							assert otherSize == queue.domSizeLowerBound;
-							return i; // because it is not possible to do better
+
+				if (queue.propagation.solver.head.control.revh.testr)
+					// for (int i = 1; i <= queue.limit; i++) {
+					for (int i = queue.limit; i >= 1; i--) {
+						int otherSize = queue.var(i).dom.size();
+						if (otherSize < bestSize) {
+							// second = pos; secondDomSize = bestSize;
+							if (otherSize <= queue.domSizeLowerBound) {
+								assert otherSize == queue.domSizeLowerBound;
+								return i; // because it is not possible to do better
+							}
+							pos = i;
+							bestSize = otherSize;
 						}
-						bestSize = otherSize;
-						pos = i;
+						// else if (otherSize < secondDomSize) {
+						// second = i;
+						// secondDomSize = otherSize;
+						// }
 					}
-				}
+				else
+					for (int i = 1; i <= queue.limit; i++) {
+						int otherSize = queue.var(i).dom.size();
+						if (otherSize < bestSize) {
+							// second = pos; secondDomSize = bestSize;
+							if (otherSize <= queue.domSizeLowerBound) {
+								assert otherSize == queue.domSizeLowerBound;
+								return i; // because it is not possible to do better
+							}
+							pos = i;
+							bestSize = otherSize;
+						}
+						// else if (otherSize < secondDomSize) {
+						// second = i;
+						// secondDomSize = otherSize;
+						// }
+					}
+
 				queue.domSizeLowerBound = bestSize; // we can update the bound (even if it may remain an approximation)
 				return pos;
 			}

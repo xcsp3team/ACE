@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Handler;
@@ -528,6 +529,8 @@ public final class Kit {
 		}
 	}
 
+	public static Map<String, Integer> warningCounters = new TreeMap<>();
+
 	/**
 	 * Displays a warning based on the specified message
 	 * 
@@ -535,7 +538,12 @@ public final class Kit {
 	 *            the message to display
 	 */
 	public static void warning(String message) {
-		Color.ORANGE.println("\n  WARNING: " + message);
+		if (!warningCounters.containsKey(message))
+			warningCounters.put(message, 1);
+		else
+			warningCounters.put(message, warningCounters.get(message) + 1);
+		if (warningCounters.get(message) == 1)
+			Color.ORANGE.println("\n  WARNING: " + message);
 	}
 
 	/**
@@ -788,7 +796,6 @@ public final class Kit {
 		public Variable x;
 
 		public double s;
-
 
 		public VarScore() {
 		}

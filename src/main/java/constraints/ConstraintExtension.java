@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 
 import constraints.ConstraintExtension.ExtensionGeneric.ExtensionV;
 import constraints.extension.STR0;
+import constraints.extension.STR2;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.Tries;
@@ -214,6 +215,11 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		Set<Class<?>> classes = pb.head.availableClasses.get(ConstraintExtension.class);
 		String className = (positive ? options.positive : options.negative).toString();
 		className = className.equals("V") || className.equals("VA") ? "Extension" + className : className;
+
+		boolean avoidCT = Variable.nInitValuesFor(scp) > options.domainCompactTableLimit;
+		if (scp.length > 2 && avoidCT)
+			return new STR2(pb, scp);
+
 		if (starred) {
 			control(positive);
 			ConstraintExtension c = (ConstraintExtension) Reflector.buildObject(className, classes, pb, scp);
@@ -221,12 +227,14 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			// currently, only STR2, STR2S, CT, CT2 and MDDSHORT
 			return c;
 		}
-		if (scp.length == 2 && options.generic2 && scp[0].dom.initSize() * scp[1].dom.initSize() < 100000)  // hard coding
+		if (scp.length == 2 && options.generic2 && scp[0].dom.initSize() * scp[1].dom.initSize() < 100_000) // hard coding
 			return new ExtensionV(pb, scp); // return new STR2(pb, scp);
+		if (scp.length == 2 && avoidCT)
+			return new STR2(pb, scp);
 		return (ConstraintExtension) Reflector.buildObject(className, classes, pb, scp);
 	}
 
-	private static int[][] reverseTuples(Variable[] scp, int[][] tuples) {  // do not work with stars
+	private static int[][] reverseTuples(Variable[] scp, int[][] tuples) { // do not work with stars
 		control(Stream.of(scp).allMatch(x -> x.dom.nRemoved() == 0));
 		assert Kit.isLexIncreasing(tuples);
 		int cnt = 0;

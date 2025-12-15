@@ -242,15 +242,19 @@ public final class CHybrid extends ExtensionSpecific {
 	public void afterProblemConstruction(int n) {
 		super.afterProblemConstruction(n);
 		this.set = new SetDenseReversible(hybridTuples.length, n + 1);
-		this.lastSizesStack = new int[n + 1][scp.length];
-		Arrays.fill(lastSizesStack[0], UNINITIALIZED);
+
+		if (n < problem.head.control.extension.chybridStackingLimit) { // hard coding
+			this.lastSizesStack = new int[n + 1][scp.length];
+			Arrays.fill(lastSizesStack[0], UNINITIALIZED);
+		} else
+			this.lastSizesStack = null;
 	}
 
 	@Override
 	public void restoreBefore(int depth) {
 		set.restoreLimitAtLevel(depth);
 		lastDepth = Math.max(0, Math.min(lastDepth, depth - 1));
-		backtrack = true;
+		// backtrack = true;
 	}
 
 	/**********************************************************************************************
@@ -313,8 +317,8 @@ public final class CHybrid extends ExtensionSpecific {
 	 */
 	protected long lastSafeNumber;
 
-	@SuppressWarnings("unused")
-	private boolean backtrack;
+	// @SuppressWarnings("unused")
+	// private boolean backtrack;
 
 	/**
 	 * Builds a hybrid table constraint
@@ -356,12 +360,14 @@ public final class CHybrid extends ExtensionSpecific {
 	 * Makes, before filtering, some initialization with respect to the structures used for restoration
 	 */
 	protected void initRestorationStructuresBeforeFiltering() {
-		int depth = problem.solver.depth();
-		assert 0 <= lastDepth && lastDepth <= depth : depth + " " + lastDepth + " " + this;
-		for (int i = lastDepth + 1; i <= depth; i++)
-			System.arraycopy(lastSizesStack[lastDepth], 0, lastSizesStack[i], 0, lastSizesStack[lastDepth].length);
-		lastSizes = lastSizesStack[depth];
-		lastDepth = depth;
+		if (lastSizesStack != null) {
+			int depth = problem.solver.depth();
+			assert 0 <= lastDepth && lastDepth <= depth : depth + " " + lastDepth + " " + this;
+			for (int i = lastDepth + 1; i <= depth; i++)
+				System.arraycopy(lastSizesStack[lastDepth], 0, lastSizesStack[i], 0, lastSizesStack[lastDepth].length);
+			lastSizes = lastSizesStack[depth];
+			lastDepth = depth;
+		}
 	}
 
 	/**
@@ -375,7 +381,8 @@ public final class CHybrid extends ExtensionSpecific {
 			int x = lastPast == null ? -1 : positionOf(lastPast);
 			if (x != -1) {
 				sVal[sValSize++] = x;
-				lastSizes[x] = 1;
+				if (lastSizesStack != null)
+					lastSizes[x] = 1;
 			}
 		}
 	}
@@ -390,21 +397,28 @@ public final class CHybrid extends ExtensionSpecific {
 		for (int i = futvars.limit; i >= 0; i--) {
 			int x = futvars.dense[i];
 			Domain dom = scp[x].dom;
-			if (dom.size() == lastSizes[x]) {
-				// if (!backtrack && dom.size() == lastSizes[x])
-				nac[x].limit = lastSizes[x] - 1;
-				// control(scp[x].dom.isExactly(nac[x])); // TODO TO MODIFY AS AN ASSERT
-				// *************************************************
+			if (lastSizesStack != null) {
+				if (dom.size() == lastSizes[x]) {
+					// if (!backtrack && dom.size() == lastSizes[x])
+					nac[x].limit = lastSizes[x] - 1;
+					// control(scp[x].dom.isExactly(nac[x])); // TODO TO MODIFY AS AN ASSERT
+					// *************************************************
+				} else {
+					nac[x].clear();
+					for (int a = dom.first(); a != -1; a = dom.next(a))
+						nac[x].add(a);
+					// backtrack = false;
+				}
+				int domSize = dom.size();
+				if (lastSizes[x] != domSize) {
+					sVal[sValSize++] = x;
+					lastSizes[x] = domSize;
+				}
 			} else {
 				nac[x].clear();
 				for (int a = dom.first(); a != -1; a = dom.next(a))
 					nac[x].add(a);
-				backtrack = false;
-			}
-			int domSize = dom.size();
-			if (lastSizes[x] != domSize) {
 				sVal[sValSize++] = x;
-				lastSizes[x] = domSize;
 			}
 			sSup[sSupSize++] = x;
 		}
@@ -421,8 +435,10 @@ public final class CHybrid extends ExtensionSpecific {
 			assert !nac[x].isEmpty();
 			if (scp[x].dom.remove(nac[x]) == false)
 				return false;
-			nac[x].moveElementsAt(lastSizes[x] - 1);
-			lastSizes[x] = scp[x].dom.size();
+			if (lastSizesStack != null) {
+				nac[x].moveElementsAt(lastSizes[x] - 1);
+				lastSizes[x] = scp[x].dom.size();
+			}
 		}
 		return true;
 	}

@@ -43,7 +43,6 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 			for (int v : tuple)
 				if (v == STAR)
 					cnt++;
-		//System.out.println("ggggg " + cnt + " vs " + (tuples.length * scp.length) / 2);
 		if (cnt > (tuples.length * scp.length) / 2)
 			return new STR0b(pb, scp);
 		return new STR0a(pb, scp);
