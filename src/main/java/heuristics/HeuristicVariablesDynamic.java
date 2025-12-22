@@ -274,7 +274,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	public static final class PickOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
 
-		private final SetSparseCnt set;
+		private final SetSparseCnt collected;
 
 		private final long[] nPicks;
 
@@ -282,15 +282,20 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		public PickOnDom(Solver solver, boolean anti) {
 			super(solver, anti);
-			this.set = solver.propagation.historyX;
+			this.collected = new SetSparseCnt(solver.problem.variables.length);
 			this.nPicks = new long[solver.problem.variables.length];
-			reset();
 			this.pickMode = solver.head.control.varh.pickMode;
+			reset();
 		}
 
 		@Override
 		public void reset() {
-			Arrays.fill(nPicks, 1);
+			Arrays.fill(nPicks, 0);
+		}
+
+		public PickOnDom clearCollected() {
+			collected.clear();
+			return this;
 		}
 
 		@Override
@@ -306,16 +311,21 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			if (freezer != null && freezer.isCurrentlyFrozen())
 				return;
 			int p = pickMode < 2 ? 0 : pickMode == 2 ? 100 : ((nPicks.length - solver.depth()) * 100) / nPicks.length;
-			int total = (int) set.total;
-			for (int i = set.limit; i >= 0; i--) {
-				int num = set.dense[i];
-				long cnt = set.cnts[num];
+			int total = (int) collected.total;
+			for (int i = collected.limit; i >= 0; i--) {
+				int num = collected.dense[i];
+				long cnt = collected.cnts[num];
 				nPicks[num] += pickMode < 2 ? cnt : 1 + (p * cnt / total);
 			}
 		}
 
 		@Override
 		public void whenBacktrack() {
+		}
+
+		public void update(int xnum, int nRemoved, boolean consistent) {
+			assert nRemoved > 0;
+			collected.add(xnum, pickMode == 0 ? 1 : consistent ? nRemoved : 100); // TODO: 100
 		}
 
 		@Override
@@ -532,7 +542,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	public static final class ProcOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
 
-		private final SetSparseCnt set;
+		private final SetSparseCnt collected;
 
 		private final long[] weights;
 
@@ -542,7 +552,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		public ProcOnDom(Solver solver, boolean anti) {
 			super(solver, anti);
-			this.set = solver.propagation.historyC;
+			this.collected = new SetSparseCnt(solver.problem.constraints.length);
 			this.weights = new long[solver.problem.variables.length];
 			this.pickMode = solver.head.control.varh.pickMode;
 		}
@@ -550,6 +560,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void reset() {
 			Arrays.fill(weights, 0);
+		}
+
+		public ProcOnDom clearCollected() {
+			collected.clear();
+			return this;
 		}
 
 		@Override
@@ -564,14 +579,14 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public void whenWipeout(Constraint c, Variable x) {
 			int p = pickMode < 2 ? 0 : pickMode == 2 ? 100 : ((weights.length - solver.depth()) * 100) / weights.length;
 			// System.out.println("ffff " + p);
-			int total = (int) set.total;
+			int total = (int) collected.total;
 			// int m = 0;
-			for (int i = set.limit; i >= 0; i--) {
+			for (int i = collected.limit; i >= 0; i--) {
 				// m++;
 				// if (m > nb)
 				// break;
-				int num = set.dense[i];
-				long cnt = set.cnts[num];
+				int num = collected.dense[i];
+				long cnt = collected.cnts[num];
 				Constraint ctr = solver.problem.constraints[num];
 				SetDense futvars = ctr.futvars;
 				for (int k = futvars.limit; k >= 0; k--) {
@@ -583,6 +598,12 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void whenBacktrack() {
+		}
+
+		public void update(int cnum, int bef, boolean consistent) {
+			int nRemoved = solver.problem.nValueRemovals - bef;
+			if (nRemoved > 0)
+				collected.add(cnum, pickMode == 0 ? 1 : consistent ? nRemoved : 100);
 		}
 
 		@Override

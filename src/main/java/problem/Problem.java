@@ -1344,7 +1344,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		XNodeParent<IVar> tree_canonized = (XNodeParent<IVar>) treeRoot.canonization(); // first, the tree is canonized
 		// System.out.println("tree_can " + tree_canonized);
 		XNodeParent<IVar> tree = possiblyReplaceSimilarInternNodes(tree_canonized);
-		// System.out.println("tree aft " + tree);
+		//System.out.println("tree aft " + tree);
 
 		XNode<IVar>[] sons = tree.sons;
 		Variable[] scp = (Variable[]) tree.vars(); // keep this statement here, after canonization
@@ -1794,12 +1794,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 						terms.stream().mapToInt(term -> Utilities.safeInt(term.coeff)).toArray(), tree.type.toRelop(), limit, true);
 			}
 		}
-
-		if ((scp.length > 2 || (scp.length == 2 && scp.length == tree.listOfVars().size())) && Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) {
+		
+		if ((scp.length > 2 || (scp.length == 2 && scp.length == tree.listOfVars().size())) && Constraint.howManyVariablesWithin(scp, options.decompositionSpaceLimit) != Constants.ALL) {
 			// if (Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) { // Constraint.computeGenericFilteringThreshold(scp) < scp.length) {
 			// if it may be useful to decompose
 			boolean tryingDecomposition = options.decompose > 0 && scp[0] instanceof VariableInteger; // && scp.length + 1 >= tree.listOfVars().size();
 			// at most a variable occurring twice
+
 			tryingDecomposition = tryingDecomposition || options.decompose == 2;
 			if (tryingDecomposition) {
 				int nParentSons = 0;

@@ -10,15 +10,16 @@
 
 package constraints;
 
+import interfaces.SpecificPropagator;
 import problem.Problem;
 import variables.Variable;
 
 /**
- * The abstract class representing global constraints, which are essentially constraints with a specific form of filtering (propagator).
+ * The abstract class representing constraints with a specific filtering algorithm (propagator).
  * 
  * @author Christophe Lecoutre
  */
-public abstract class ConstraintGlobal extends ConstraintSpecific { // implements SpecificPropagator {
+public abstract class ConstraintSpecific extends Constraint implements SpecificPropagator {
 
 	/**
 	 * Builds a global constraint for the specified problem, and with the specified scope
@@ -28,7 +29,13 @@ public abstract class ConstraintGlobal extends ConstraintSpecific { // implement
 	 * @param scp
 	 *            the scope of the constraint
 	 */
-	public ConstraintGlobal(Problem pb, Variable[] scp) {
+	public ConstraintSpecific(Problem pb, Variable[] scp) {
 		super(pb, scp);
 	}
+
+	@Override
+	public final boolean launchFiltering(Variable x) {
+		return runPropagator(x);
+	}
+
 }

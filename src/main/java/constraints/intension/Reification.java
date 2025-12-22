@@ -25,14 +25,13 @@ import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Types.TypeConditionOperatorSet;
 import org.xcsp.common.Types.TypeLogicalOperator;
 
-import constraints.Constraint;
+import constraints.ConstraintSpecific;
 import constraints.intension.Reification.ReifLogic.ReifLogic2.LogEqAnd2;
 import constraints.intension.Reification.ReifLogic.ReifLogic2.LogEqOr2;
 import constraints.intension.Reification.ReifLogic.ReifLogicn.LogEqAnd;
 import constraints.intension.Reification.ReifLogic.ReifLogicn.LogEqIff;
 import constraints.intension.Reification.ReifLogic.ReifLogicn.LogEqOr;
 import constraints.intension.Reification.ReifLogic.ReifLogicn.LogEqXor;
-import interfaces.SpecificPropagator;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
@@ -506,7 +505,7 @@ public final class Reification {
 		}
 	}
 
-	public static final class Disjonctive2Reified2Cst extends Constraint implements TagNotAC, SpecificPropagator, TagCallCompleteFiltering, TagNotSymmetric {
+	public static final class Disjonctive2Reified2Cst extends ConstraintSpecific implements TagNotAC, TagCallCompleteFiltering, TagNotSymmetric {
 		// TODO TagNotAC ???
 
 		final int w1, w2, h1, h2;
@@ -586,7 +585,7 @@ public final class Reification {
 		}
 	}
 
-	public static final class Disjonctive2ReifiedVar extends Constraint implements TagNotAC, SpecificPropagator, TagCallCompleteFiltering, TagNotSymmetric {
+	public static final class Disjonctive2ReifiedVar extends ConstraintSpecific implements TagNotAC, TagCallCompleteFiltering, TagNotSymmetric {
 		// TODO TagNotAC ???
 
 		final Domain dx1, dx2, dy1, dy2, dw1, dw2, dh1, dh2, dz;

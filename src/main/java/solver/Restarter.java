@@ -17,7 +17,6 @@ import java.util.function.Supplier;
 import dashboard.Control.OptionsRestarts;
 import dashboard.Input;
 import heuristics.HeuristicVariables;
-import heuristics.HeuristicVariablesDynamic;
 import heuristics.HeuristicVariablesDynamic.Freezer;
 import heuristics.HeuristicVariablesDynamic.RunRobin;
 import interfaces.Observers.ObserverOnRuns;
@@ -263,7 +262,7 @@ public class Restarter implements ObserverOnRuns {
 		// this.cop = solver.head.control.general.framework == TypeFramework.COP;
 		this.options = solver.head.control.restarts;
 		if (solver.problem.optimizer != null && options.cutoff < Integer.MAX_VALUE)
-			options.cutoff *= 10; // For COPs, the cutoff value is multiplied by 10; hard coding
+			options.cutoff *= options.cutoffMultiplierForOpt; // For COPs, the cutoff value is multiplied by this value (10 for example); is it worthwhile?
 		this.measureSupplier = measureSupplier();
 		currCutoff = baseCutoff = options.cutoff; // reset();
 		this.localStats = new LocalStats(2000); // TODO: hard coding

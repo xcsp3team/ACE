@@ -97,7 +97,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	/**
 	 * A class for trivial constraints never satisfied or always satisfied (to be used in very special situations)
 	 */
-	public static abstract class CtrTrivial extends Constraint implements SpecificPropagator, TagAC, TagCallCompleteFiltering {
+	public static abstract class CtrTrivial extends ConstraintSpecific implements TagAC, TagCallCompleteFiltering {
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
@@ -343,7 +343,11 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 */
 	public boolean ignored;
 
+	public final boolean specific;
+
 	public final boolean postponable;
+
+	private final boolean canSkipFilteringDueToCompleteness;
 
 	public int postponablePosition = -1;
 
@@ -646,7 +650,9 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		this.vals = null;
 		this.genericFilteringThreshold = Integer.MAX_VALUE;
 		this.indexesMatchValues = false;
+		this.specific = false;
 		this.postponable = false;
+		this.canSkipFilteringDueToCompleteness = false;
 		this.infiniteDomainVars = new Variable[0];
 		this.supporter = null;
 	}
@@ -675,8 +681,10 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		this.indexesMatchValues = Stream.of(scp).allMatch(x -> x.dom.indexesMatchValues());
 		this.genericFilteringThreshold = this instanceof SpecificPropagator || this instanceof ConstraintExtension ? Integer.MAX_VALUE
 				: computeGenericFilteringThreshold(scp);
+		this.specific = this instanceof SpecificPropagator;
 		this.postponable = scp.length >= pb.head.control.propagation.postponableLimit && pb.head.control.propagation.postponableLimit > 0
 				&& this instanceof TagPostponableFiltering;
+		this.canSkipFilteringDueToCompleteness = !postponable && this instanceof TagCallCompleteFiltering && !(this instanceof TagNotCallCompleteFiltering);
 
 		pb.head.observersConstruction.add(this);
 
@@ -997,6 +1005,10 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		return false;
 	}
 
+	public boolean launchFiltering(Variable x) { // is redefined in ConstraintSpecific	 and ExtensionSpecific
+		return genericFiltering(x); // by default
+	}
+
 	/**
 	 * Performs a generic form of filtering
 	 * 
@@ -1071,8 +1083,10 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 */
 	public final boolean filterFrom(Variable x) {
 		// System.out.println("filteringFrom " + " " + x + " " + getClass().getSimpleName() + " " + this + " " + Variable.nValidValuesFor(problem.variables));
+
 		if (infiniteDomainVars.length > 0 && handleHugeDomains()) // Experimental (to be finished)
 			return true;
+
 		// For CSP, sometimes we can directly return true (because we know then that there is no filtering possibility)
 		if (problem.framework == TypeFramework.CSP) {
 			if (futvars.size() == 0) {
@@ -1082,23 +1096,24 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 			// if (futvars.size() == 1 && !x.assigned() && scp.length > 1) return true; // not correct because several variables may have been touched
 			// see java ace MetabolicNetwork-05.xml -satl=2 -s=all -pra=z -r_c=max for that problem
 		}
-		if (!postponable && time > x.time && this instanceof TagCallCompleteFiltering)  //&& !(this instanceof TagNotCallCompleteFiltering) && !postponable)
+
+		if (canSkipFilteringDueToCompleteness && time > x.time)
 			return true;
 
 		if (specialServants != null) {
-			if (!(this instanceof WakeUp) && !(this instanceof TagBoundCompatible)) // because for WakeUp this is necessarily the leading variable that has been assigned
+			if (!(this instanceof WakeUp) && !(this instanceof TagBoundCompatible)) // WakeUp: necessarily the leading variable that has been assigned
 				for (VariableInteger var : specialServants)
 					if (!var.specialMaster.assigned())
 						return true; // because we have to wait
 		}
-		//
-		// if (!canBeFilteredConsideringSpecialVariables())  // instanceof may be very expensive if we use this call instead of the code above ; see  MonitorPlacement-rocketfuel-rf6461_m24 -rr
+		// if (!canBeFilteredConsideringSpecialVariables()) // instanceof may be very expensive if we use this call instead of the code above ; see
+		// MonitorPlacement-rocketfuel-rf6461_m24 -rr
 		// return true;
 
 		int nBefore = problem.nValueRemovals;
 		if (problem.solver.profiler != null)
 			problem.solver.profiler.before();
-		boolean consistent = this instanceof SpecificPropagator ? ((SpecificPropagator) this).runPropagator(x) : genericFiltering(x);
+		boolean consistent = launchFiltering(x); // ? ((SpecificPropagator) this).runPropagator(x) : genericFiltering(x);
 		if (problem.solver.profiler != null)
 			problem.solver.profiler.afterFiltering(this);
 		if (!consistent || problem.nValueRemovals != nBefore) {

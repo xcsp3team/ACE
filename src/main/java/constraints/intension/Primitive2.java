@@ -26,6 +26,7 @@ import org.xcsp.common.predicates.XNodeParent;
 import constraints.Constraint;
 import constraints.ConstraintExtension;
 import constraints.ConstraintIntension;
+import constraints.ConstraintSpecific;
 import constraints.global.Sum.SumWeighted;
 import constraints.intension.Primitive2.PrimitiveBinaryNoCst.Neg2EQ;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Add2;
@@ -41,7 +42,6 @@ import constraints.intension.Primitive2.PrimitiveBinaryVariant2.Mod2b;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant2.Mul2b;
 import constraints.intension.Primitive2.PropagatorEQ.MultiPropagatorEQ;
 import constraints.intension.Primitive2.PropagatorEQ.SimplePropagatorEQ;
-import interfaces.SpecificPropagator;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
@@ -325,7 +325,7 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 	}
 
-	public static final class BoundEQSquare extends Constraint implements SpecificPropagator, TagNotAC, TagCallCompleteFiltering {
+	public static final class BoundEQSquare extends ConstraintSpecific implements TagNotAC, TagCallCompleteFiltering {
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {

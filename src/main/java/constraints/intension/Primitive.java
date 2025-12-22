@@ -10,8 +10,7 @@
 
 package constraints.intension;
 
-import constraints.Constraint;
-import interfaces.SpecificPropagator;
+import constraints.ConstraintSpecific;
 import problem.Problem;
 import variables.Variable;
 
@@ -22,7 +21,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class Primitive extends Constraint implements SpecificPropagator {
+public abstract class Primitive extends ConstraintSpecific { //implements SpecificPropagator {
 
 	/**
 	 * Builds a primitive constraint for the specified problem and with the specified scope

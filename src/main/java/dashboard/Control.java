@@ -522,6 +522,7 @@ public final class Control {
 
 	public class OptionsIntension extends OptionGroup {
 		public final int decompose = addI("decompose", "di", 1, "0: no decomposition, 1: conditional decomposition, 2: forced decompostion");
+		public final int decompositionSpaceLimit = addI("decompositionSpaceLimit", "dsl", 12, "Limit on space for decomposing");
 		public final boolean toExtension1 = addB("toExtension1", "ie1", true, "Must we convert unary intension constraints to extension?");
 		public final int arityLimitToExtension = addI("arityLimitToExtension", "ale", 0, "Limit on arity for possibly converting to extension");
 		public final int spaceLimitToExtension = addI("spaceLimitToExtension", "sle", 20, "Limit on space for possibly converting to extension");
@@ -598,7 +599,7 @@ public final class Control {
 		public final boolean bitResidues = addB("bitResidues", "bres", true, "Must we use bit resides (AC3bit+rm)?");
 		public final boolean multidirectionality = addB("multidirectionality", "mul", true, "Must we use multidirectionality");
 		// now, two ways of control on (G)AC for intention constraints
-		public final int arityLimit = addI("arityLimit", "al", 1,
+		public final int arityLimit = addI("arityLimit", "al", 2,
 				"generic AC is systematically enforced if the arity is less than or equal to this value (or this value is -1)");
 		public final int spaceLimit = addI("spaceLimit", "sl", 20,
 				"generic AC is systematically enforced if the size of the Cartesian product of domains is less than or equal to 2 to the power of this value (or this value is -1)");
@@ -637,6 +638,7 @@ public final class Control {
 	public class OptionsRestarts extends OptionGroup {
 		public int nRuns = addI("nRuns", "r_n", Integer.MAX_VALUE, "Maximal number of runs (restarts) to be performed");
 		public long cutoff = addL("cutoff", "r_c", 10, "Cutoff as a value of, e.g., the number of failed asignments before restarting");
+		public int cutoffMultiplierForOpt = addI("cutoffMultiplierForOpt", "r_cmc", 10, "Mutliplier of the cutoff for COP");
 		// the cutoff,for COP, it is initially multiplied by 10 in Restarter
 		public double factor = addD("factor", "r_f", 1.1, "The geometric increasing factor when updating the cutoff");
 		public final RestartMeasure measure = addE("measure", "r_m", RestartMeasure.FAILED, "The metrics used for measuring and comparing with the cutoff");

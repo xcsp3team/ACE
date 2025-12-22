@@ -70,7 +70,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 * This class is is used for unary extension constraints. Typically, filtering is performed at the root node of the search tree, and the constraint becomes
 	 * entailed. BE CAREFUL: this is not a subclass of ConstraintExtension.
 	 */
-	public static final class Extension1 extends Constraint implements SpecificPropagator, TagAC, TagCallCompleteFiltering {
+	public static final class Extension1 extends ConstraintSpecific implements TagAC, TagCallCompleteFiltering {
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
@@ -202,6 +202,10 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 
 		public ExtensionSpecific(Problem pb, Variable[] scp) {
 			super(pb, scp);
+		}
+		
+		public boolean launchFiltering(Variable x) {
+			return runPropagator(x);
 		}
 	}
 

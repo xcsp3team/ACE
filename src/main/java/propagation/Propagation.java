@@ -15,12 +15,10 @@ import constraints.ConstraintGlobal;
 import constraints.ConstraintIntension;
 import dashboard.Control.OptionsPropagation;
 import heuristics.HeuristicVariablesDynamic.PickOnDom;
-import heuristics.HeuristicVariablesDynamic.ProcOnDom;
 import heuristics.HeuristicVariablesDynamic.RunRobin;
 import interfaces.Observers.ObserverOnConflicts;
 import learning.IpsReasonerDominance;
 import sets.SetSparse;
-import sets.SetSparse.SetSparseCnt;
 import solver.Solver;
 import solver.Solver.Stopping;
 import utility.Reflector;
@@ -195,9 +193,9 @@ public abstract class Propagation {
 	 */
 	public boolean runAtNextRoot;
 
-	public SetSparseCnt historyX;
+	private PickOnDom pickOnDom;
 
-	public SetSparseCnt historyC;
+	// private ProcOnDom procOnDom;
 
 	/*************************************************************************
 	 * Methods
@@ -228,18 +226,9 @@ public abstract class Propagation {
 		this.solver = solver;
 		this.queue = this instanceof Forward ? new Queue((Forward) this) : null;
 		this.options = solver.head.control.propagation;
-		// int nAuxQueues = options.useAuxiliaryQueues ? MAX_FILTERING_COMPLEXITY : 0;
-		// this.auxiliaryQueues = this instanceof Forward
-		// ? IntStream.range(0, nAuxQueues).mapToObj(i -> new
-		// SetSparseMap(solver.problem.constraints.length)).toArray(SetSparseMap[]::new)
-		// : null;
+		// int nAuxQueues = options.useAuxiliaryQueues ? MAX_FILTERING_COMPLEXITY : 0; this.auxiliaryQueues = this instanceof Forward ?
+		// IntStream.range(0, nAuxQueues).mapToObj(i -> new SetSparseMap(solver.problem.constraints.length)).toArray(SetSparseMap[]::new): null;
 		this.currentPostponedConstraints = new SetSparse(solver.problem.postponableConstraints.length);
-		String clazz = solver.head.control.varh.clazz;
-		this.historyX = clazz.equals(PickOnDom.class.getSimpleName()) || clazz.equals(RunRobin.class.getSimpleName())
-				? new SetSparseCnt(solver.problem.variables.length)
-				: null;
-		this.historyC = clazz.equals(ProcOnDom.class.getSimpleName()) ? new SetSparseCnt(solver.problem.constraints.length) : null;
-
 	}
 
 	/**
@@ -250,40 +239,37 @@ public abstract class Propagation {
 	 */
 	protected final boolean pickAndFilter() {
 		Variable x = queue.pickAndDelete();
-		int pm = solver.head.control.varh.pickMode;
-		int before = solver.problem.nValueRemovals;
+
+		int nValuesBefore = solver.problem.nValueRemovals;
+
 		if (solver.profiler != null)
 			solver.profiler.before();
 		boolean consistent = nogoodReasoning.isNogoodConsistent(x);
 		if (solver.profiler != null)
 			solver.profiler.afterNogoodFiltering();
+
 		if (consistent) {
-			// long tim = System.currentTimeMillis();
 			for (Constraint c : x.ctrs) {
-				// long tim2 = System.currentTimeMillis();
 				if (!c.ignored && !solver.isEntailed(c)) {
 					if (!c.postponable) {
 						currFilteringCtr = c;
-						int bef = solver.problem.nValueRemovals;
-						// long tim3 = System.currentTimeMillis();
+						// int bef = solver.problem.nValueRemovals;
 						consistent = c.filterFrom(x);
-						// solver.wckprop3 += (System.currentTimeMillis() - tim3);
-						if (historyC != null && solver.problem.nValueRemovals > bef)
-							historyC.add(c.num, pm == 0 ? 1 : consistent ? solver.problem.nValueRemovals - bef : 100);
+						// if (procOnDom != null) procOnDom.update(c.num, bef, consistent);
 						currFilteringCtr = null;
 					} else {// if (c.time <= x.time)
 						currentPostponedConstraints.add(c.postponablePosition); // auxiliaryQueues[c.filteringComplexity - 1].add(c.num, x.num);
 						c.postponedEvent = x;
 					}
 				}
-				// solver.wckprop2 += (System.currentTimeMillis() - tim2);
 				if (!consistent)
 					break;
 			}
-			// solver.wckprop += (System.currentTimeMillis() - tim);
 		}
-		if (historyX != null && solver.problem.nValueRemovals > before)
-			historyX.add(x.num, pm == 0 ? 1 : consistent ? solver.problem.nValueRemovals - before : 100); // TODO: 100
+		
+		int nRemovedValues = solver.problem.nValueRemovals - nValuesBefore;
+		if (pickOnDom != null && nRemovedValues > 0)
+			pickOnDom.update(x.num, nRemovedValues, consistent);
 		return consistent;
 	}
 
@@ -293,10 +279,13 @@ public abstract class Propagation {
 	 * @return false iff an inconsistency is detected
 	 */
 	public boolean propagate() {
-		if (historyX != null)
-			historyX.clear();
-		if (historyC != null)
-			historyC.clear();
+		pickOnDom = solver.heuristic instanceof PickOnDom ? ((PickOnDom) solver.heuristic).clearCollected()
+				: solver.heuristic instanceof RunRobin && ((RunRobin) solver.heuristic).current instanceof PickOnDom
+						? ((PickOnDom) ((RunRobin) solver.heuristic).current).clearCollected()
+						: null;
+		// procOnDom = solver.heuristic instanceof ProcOnDom ? ((ProcOnDom) solver.heuristic).clearCollected() : null;
+		
+
 		while (true) {
 			while (queue.size() != 0) { // propagation with respect to the main queue
 				if (pickAndFilter() == false) {
@@ -308,10 +297,9 @@ public abstract class Propagation {
 				Constraint c = solver.problem.postponableConstraints[currentPostponedConstraints.dense[i]];
 				assert !c.ignored && !solver.isEntailed(c);
 				currFilteringCtr = c;
-				int bef = solver.problem.nValueRemovals;
+				// int bef = solver.problem.nValueRemovals;
 				boolean consistent = c.filterFrom(c.postponedEvent);
-				if (historyC != null && solver.problem.nValueRemovals > bef)
-					historyC.add(c.num, solver.head.control.varh.pickMode == 0 ? 1 : consistent ? solver.problem.nValueRemovals - bef : 100);
+				// if (procOnDom != null) procOnDom.update(c.num, bef, consistent);
 				currFilteringCtr = null;
 				if (!consistent) {
 					currentPostponedConstraints.clear();
