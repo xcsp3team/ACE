@@ -514,7 +514,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 */
 	public final boolean isIrreflexive() {
 		control(scp.length == 2);
-		if (specialServants.length > 0)
+		if (specialServants != null)
 			return false; // would be too long to compute
 		int[] tuple = tupleIterator.buffer;
 		int x = scp[0].dom.size() > scp[1].dom.size() ? 1 : 0, y = x == 0 ? 1 : 0;
@@ -641,7 +641,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		this.problem = null;
 		this.scp = new Variable[0];
 		this.doms = null;
-		this.specialServants = new VariableInteger[0];
+		this.specialServants = null; // new VariableInteger[0];
 		this.tupleIterator = null;
 		this.vals = null;
 		this.genericFilteringThreshold = Integer.MAX_VALUE;
@@ -666,7 +666,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		control(scp.length >= 1 && Stream.of(scp).allMatch(x -> x != null), () -> " constraint with a scope badly formed ");
 
 		this.doms = Stream.of(scp).map(x -> x.dom).toArray(Domain[]::new);
-		this.specialServants = Stream.of(scp).filter(x -> x.specialMaster != null).toArray(VariableInteger[]::new);
+		boolean involvingSpecialServants = Stream.of(scp).anyMatch(x -> x.specialMaster != null);
+		this.specialServants = involvingSpecialServants ? Stream.of(scp).filter(x -> x.specialMaster != null).toArray(VariableInteger[]::new) : null;
 
 		this.tupleIterator = new TupleIterator(this.doms);
 		this.supporter = Supporter.buildFor(this);
@@ -1045,20 +1046,20 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		// if (x.dom.size() > 1)
 		// nNonSingletons++;
 		// }
-		//return true;
+		// return true;
 		return nNonSingletons <= 1 ? entail() : true;
 	}
 
-	public boolean canBeFilteredConsideringSpecialVariables() {
-		if (this instanceof WakeUp)
-			return true; // because this is necessarily the leading variable that has been assigned
-		if (this instanceof TagBoundCompatible)
-			return true;
-		for (VariableInteger x : specialServants)
-			if (!x.specialMaster.assigned())
-				return false;
-		return true;
-	}
+	// public boolean canBeFilteredConsideringSpecialVariables() {
+	// // if (this instanceof WakeUp)
+	// // return true; // because this is necessarily the leading variable that has been assigned
+	// // if (this instanceof TagBoundCompatible)
+	// // return true;
+	// // for (VariableInteger x : specialServants)
+	// // if (!x.specialMaster.assigned())
+	// // return false;
+	// return true;
+	// }
 
 	/**
 	 * This is the method that is called for filtering domains. We know that the domain of the specified variable has been recently reduced, but this is not
@@ -1081,10 +1082,18 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 			// if (futvars.size() == 1 && !x.assigned() && scp.length > 1) return true; // not correct because several variables may have been touched
 			// see java ace MetabolicNetwork-05.xml -satl=2 -s=all -pra=z -r_c=max for that problem
 		}
-		if (time > x.time && this instanceof TagCallCompleteFiltering && !(this instanceof TagNotCallCompleteFiltering) && !postponable)
+		if (!postponable && time > x.time && this instanceof TagCallCompleteFiltering)  //&& !(this instanceof TagNotCallCompleteFiltering) && !postponable)
 			return true;
-		if (!canBeFilteredConsideringSpecialVariables())
-			return true;
+
+		if (specialServants != null) {
+			if (!(this instanceof WakeUp) && !(this instanceof TagBoundCompatible)) // because for WakeUp this is necessarily the leading variable that has been assigned
+				for (VariableInteger var : specialServants)
+					if (!var.specialMaster.assigned())
+						return true; // because we have to wait
+		}
+		//
+		// if (!canBeFilteredConsideringSpecialVariables())  // instanceof may be very expensive if we use this call instead of the code above ; see  MonitorPlacement-rocketfuel-rf6461_m24 -rr
+		// return true;
 
 		int nBefore = problem.nValueRemovals;
 		if (problem.solver.profiler != null)

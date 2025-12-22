@@ -72,7 +72,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 		public ExtremumVar(Problem pb, Variable[] list, Variable value) {
 			super(pb, list, value);
 			this.vdom = value.dom;
-			this.sentinels = specialServants.length == 0
+			this.sentinels = specialServants == null
 					? IntStream.range(0, vdom.initSize()).mapToObj(a -> findSentinelFor(vdom.toVal(a))).toArray(Variable[]::new)
 					: null; // otherwise may be too long (since large domains)
 			if (sentinels != null)

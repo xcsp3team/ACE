@@ -90,7 +90,7 @@ public abstract class HeuristicValues extends Heuristic {
 		// we discard terms of small coeffs
 		// terms = Stream.of(terms).filter(t -> t.coeff < -2 || t.coeff > 2).sorted().toArray(Term[]::new);
 		if (terms.length > 0) {
-			Variable[] t = Stream.of(terms).map(term -> term.obj).toArray(Variable[]::new);
+			Variable[] t = Stream.of(terms).map(term -> term.variable).toArray(Variable[]::new);
 			Variable[] tt = t.length > LIM ? Arrays.copyOfRange(t, t.length - LIM, t.length) : t;
 			return IntStream.range(0, tt.length).mapToObj(i -> tt[tt.length - 1 - i]).toArray(Variable[]::new);
 		}

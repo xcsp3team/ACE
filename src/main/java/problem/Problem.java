@@ -45,6 +45,7 @@ import static org.xcsp.common.Types.TypeObjective.SUM;
 import static org.xcsp.common.Types.TypeOptimization.MAXIMIZE;
 import static org.xcsp.common.Types.TypeOptimization.MINIMIZE;
 import static org.xcsp.common.Utilities.safeInt;
+import static org.xcsp.common.predicates.MatcherInterface.addOrSub;
 import static org.xcsp.common.predicates.MatcherInterface.addOrSub_varOrVals;
 import static org.xcsp.common.predicates.MatcherInterface.add_mulVars;
 import static org.xcsp.common.predicates.MatcherInterface.add_vars;
@@ -61,6 +62,7 @@ import static org.xcsp.common.predicates.MatcherInterface.var;
 import static org.xcsp.common.predicates.MatcherInterface.varOrVal;
 import static org.xcsp.common.predicates.MatcherInterface.x_add_k;
 import static org.xcsp.common.predicates.MatcherInterface.x_eq_k;
+import static org.xcsp.common.predicates.MatcherInterface.x_mul_k;
 import static org.xcsp.common.predicates.MatcherInterface.x_ne_k;
 import static org.xcsp.common.predicates.MatcherInterface.x_ne_y;
 import static org.xcsp.common.predicates.MatcherInterface.x_sub_k;
@@ -123,6 +125,7 @@ import org.xcsp.common.domains.Domains.Dom;
 import org.xcsp.common.domains.Domains.DomSymbolic;
 import org.xcsp.common.domains.Values.IntegerEntity;
 import org.xcsp.common.domains.Values.IntegerInterval;
+import org.xcsp.common.predicates.MatcherInterface;
 import org.xcsp.common.predicates.MatcherInterface.Matcher;
 import org.xcsp.common.predicates.TreeEvaluator;
 import org.xcsp.common.predicates.XNode;
@@ -1271,6 +1274,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private Matcher relop__addOrSub_varOrVals = new Matcher(node(relop, addOrSub_varOrVals, addOrSub_varOrVals));
 	private Matcher relop__add_varOrTerms_valEnding__var = new Matcher(node(relop, add_varsOrTerms_valEnding, var));
 
+	private Matcher add_relop_add = new Matcher(node(relop, addOrSub, addOrSub));
+	private Matcher add_relop_varOrVal = new Matcher(node(relop, MatcherInterface.add, varOrVal));
+
 	// product
 	private Matcher mul_vars__relop = new Matcher(node(relop, mul_vars, val));
 
@@ -1314,8 +1320,21 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return trees;
 		if (Stream.of(trees).anyMatch(tree -> !(tree instanceof XNodeParent)))
 			return trees;
-
 		return Stream.of(trees).map(tree -> possiblyReplaceSimilarInternNodes((XNodeParent) tree)).toArray(XNode[]::new);
+	}
+
+	private Integer collectForSum(List<Term> terms, XNode<IVar> node, boolean positive) {
+		if (node.type == LONG)
+			return node.val(0) * (positive ? 1 : -1);
+		Term term = null;
+		if (node.type == VAR)
+			term = new Term(1 * (positive ? 1 : -1), (Variable) node.var(0));
+		else if (x_mul_k.matches(node)) // normally, k_mul_x not possible because the term must be canonized
+			term = new Term(node.val(0) * (positive ? 1 : -1), (Variable) node.var(0));
+		else
+			term = new Term(1 * (positive ? 1 : -1), (Variable) replaceByVariable(node));
+		terms.add(term);
+		return null;
 	}
 
 	@Override
@@ -1332,6 +1351,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		int arity = scp.length;
 		control(arity > 0);
 
+		// *** Arity 1
 		if (arity == 1) {
 			Domain dom = scp[0].dom;
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
@@ -1353,23 +1373,25 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		assert Variable.haveSameType(scp);
 
-		// Detecting some nogoods
+		// *** Detecting some nogoods
 		boolean detectingNogoods = true;
-		if (detectingNogoods && howManyVariablesWithin(scp, options.spaceLimitToNogood) == Constants.ALL) {
-			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
-			int[] conflict = evaluator.getUniqueConflict(Variable.initDomainValues(scp));
-			if (conflict != null) {
-				features.collecting.addNogood(scp, conflict);
-				return null;
+		if (detectingNogoods) {
+			if (howManyVariablesWithin(scp, options.spaceLimitToNogood) == Constants.ALL) {
+				TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
+				int[] conflict = evaluator.getUniqueConflict(Variable.initDomainValues(scp));
+				if (conflict != null) {
+					features.collecting.addNogood(scp, conflict);
+					return null;
+				}
 			}
-		}
-		if (detectingNogoods && (le_add_vars_val.matches(tree) || lt_add_vars_val.matches(tree)) && Stream.of(scp).allMatch(x -> x.dom.is01())) {
-			int[] max_values = Stream.of(scp).mapToInt(x -> x.dom.lastValue()).toArray();
-			int max_sum = Utilities.safeInt(IntStream.of(max_values).asLongStream().sum());
-			int limit = tree.val(0);
-			if ((tree.type == TypeExpr.LT && limit == max_sum) || (tree.type == TypeExpr.LE && limit == max_sum - 1)) {
-				features.collecting.addNogood(scp, max_values);
-				return null;
+			if ((le_add_vars_val.matches(tree) || lt_add_vars_val.matches(tree)) && Stream.of(scp).allMatch(x -> x.dom.is01())) {
+				int[] max_values = Stream.of(scp).mapToInt(x -> x.dom.lastValue()).toArray();
+				int max_sum = Utilities.safeInt(IntStream.of(max_values).asLongStream().sum());
+				int limit = tree.val(0);
+				if ((tree.type == TypeExpr.LT && limit == max_sum) || (tree.type == TypeExpr.LE && limit == max_sum - 1)) {
+					features.collecting.addNogood(scp, max_values);
+					return null;
+				}
 			}
 		}
 
@@ -1637,6 +1659,45 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		if (options.recognizeSum) {
+			if (add_relop_add.matches(tree)) {
+				XNode<IVar> son0 = sons[0], son1 = sons[1];
+				long limit = 0;
+				List<Term> terms = new ArrayList<>();
+				if (son0.type == SUB) {
+					XNode<IVar> grandson0 = son0.sons[0], grandson1 = son0.sons[1];
+					Integer val = collectForSum(terms, grandson0, true);
+					if (val != null)
+						limit -= val; // - because the limit will be put on the right
+					val = collectForSum(terms, grandson1, false);
+					if (val != null)
+						limit -= val;
+				} else {
+					for (XNode<IVar> grandSon : son0.sons) {
+						Integer val = collectForSum(terms, grandSon, true);
+						if (val != null)
+							limit -= val;
+					}
+				}
+				if (son1.type == SUB) {
+					XNode<IVar> grandson0 = son1.sons[0], grandson1 = son1.sons[1];
+					Integer val = collectForSum(terms, grandson0, false);
+					if (val != null)
+						limit -= val; // + because the limit is on the right
+					val = collectForSum(terms, grandson1, true);
+					if (val != null)
+						limit -= val;
+				} else {
+					for (XNode<IVar> grandSon : son1.sons) {
+						Integer val = collectForSum(terms, grandSon, false);
+						if (val != null)
+							limit -= val;
+					}
+				}
+				// System.out.println("vars = " + Utilities.join(terms) + " " + tree.type + " " + limit);
+				return sum(terms.stream().map(term -> term.variable).toArray(Variable[]::new),
+						terms.stream().mapToInt(term -> Utilities.safeInt(term.coeff)).toArray(), tree.type.toRelop(), limit, true);
+			}
+
 			if (add_vars__relop.matches(tree) || relop__add_vars.matches(tree)) {
 				int side = add_vars__relop.matches(tree) ? 0 : 1;
 				Var[] list = (Var[]) sons[side].arrayOfVars();
@@ -1708,6 +1769,30 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (Constraint.howManyVariablesWithin(scp, 19) == Constants.ALL && tree.size() > 10 && scp.length <= 3) { // 2^19 is about 500,000
 			features.nConvertedConstraints++;
 			return extension(tree);
+		}
+
+		if (options.recognizeSum) { // last case for recognizing sums ; seems relevant to keep it after the possible conversion into table (just above) ?
+			if (add_relop_varOrVal.matches(tree)) {
+				XNode<IVar> son0 = sons[0], son1 = sons[1];
+				long limit = 0;
+				List<Term> terms = new ArrayList<>();
+				for (XNode<IVar> grandSon : son0.sons) {
+					Integer val = collectForSum(terms, grandSon, true);
+					if (val != null)
+						limit -= val;
+				}
+				if (son1.type == VAR && limit == 0)
+					return sum(terms.stream().map(term -> term.variable).toArray(Var[]::new),
+							terms.stream().mapToInt(term -> Utilities.safeInt(term.coeff)).toArray(), Condition.buildFrom(tree.relop(0), son1.var(0)));
+				// otherwise we use a constant limit
+				if (son1.type == VAR)
+					terms.add(new Term(-1, (Variable) son1.var(0)));
+				else
+					limit += son1.val(0);
+				// System.out.println("vars = " + Utilities.join(terms) + " " + tree.type + " " + limit);
+				return sum(terms.stream().map(term -> term.variable).toArray(Variable[]::new),
+						terms.stream().mapToInt(term -> Utilities.safeInt(term.coeff)).toArray(), tree.type.toRelop(), limit, true);
+			}
 		}
 
 		if ((scp.length > 2 || (scp.length == 2 && scp.length == tree.listOfVars().size())) && Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) {
@@ -2262,9 +2347,35 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		public long coeff;
-		public Object obj; // typically, a variable or a tree
 
-		public Term(long coeff, Object obj) {
+		public Variable variable;
+
+		public Term(long coeff, Variable variable) {
+			control(Utilities.isSafeInt(coeff));
+			this.coeff = coeff;
+			this.variable = variable;
+
+		}
+
+		@Override
+		public String toString() {
+			return coeff + "*" + variable;
+		}
+	}
+
+	public static class GeneralTerm implements Comparable<GeneralTerm> {
+
+		@Override
+		public int compareTo(GeneralTerm term) {
+			return Long.compare(coeff, term.coeff);
+		}
+
+		public long coeff;
+
+		public Object obj; // typically, a tree
+
+		public GeneralTerm(long coeff, Object obj) {
+			control(Utilities.isSafeInt(coeff));
 			this.coeff = coeff;
 			this.obj = obj;
 		}
@@ -2280,7 +2391,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Term[] terms = IntStream.range(0, list.length).mapToObj(i -> new Term(coeffs == null ? 1 : coeffs[i], list[i])).toArray(Term[]::new);
 		// grouping together terms involving the same objects, if any
 		if (!Variable.areAllDistinct(list)) {
-			Set<Entry<Object, Long>> entries = Stream.of(terms).collect(groupingBy(t -> t.obj, summingLong((Term t) -> (int) t.coeff))).entrySet();
+			Set<Entry<Variable, Long>> entries = Stream.of(terms).collect(groupingBy(t -> t.variable, summingLong((Term t) -> t.coeff))).entrySet();
 			terms = entries.stream().map(e -> new Term(e.getValue(), e.getKey())).toArray(Term[]::new);
 			log.info("Sum constraint with several ocurrences of the same variable");
 		}
@@ -2292,7 +2403,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private CtrEntity sum(Variable[] list, int[] coeffs, TypeConditionOperatorRel op, long limit, boolean inversable) {
 		Term[] terms = handleSumTerms(list, coeffs);
-		Variable[] newList = Stream.of(terms).map(t -> t.obj).toArray(Variable[]::new);
+		Variable[] newList = Stream.of(terms).map(t -> t.variable).toArray(Variable[]::new);
 		int[] newCoeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
 		// we reverse if possible (to have some opportunity to have only coeffs equal to 1)
 		if (inversable && newCoeffs[0] == -1 && newCoeffs[newCoeffs.length - 1] == -1) { // if only -1 since sorted
@@ -2349,7 +2460,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		control(list.length == coeffs.length, "the number of variables is different from the number of coefficients: " + list.length + " vs " + coeffs.length);
 
 		Term[] terms = handleSumTerms(translate(list), coeffs);
-		Variable[] newList = Stream.of(terms).map(t -> t.obj).toArray(Variable[]::new);
+		Variable[] newList = Stream.of(terms).map(t -> t.variable).toArray(Variable[]::new);
 		int[] newCoeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
 
 		Object rightTerm = condition.rightTerm(); // a constant, a variable, a range or an int array
@@ -2452,12 +2563,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			Object rightTerm = condition.rightTerm();
 			if (op != NE && Stream.of(trees).allMatch(tree -> tree.type.isPredicateOperator() && tree.vars().length == 1)) {
 				if (condition instanceof ConditionVar) {
-					Term[] terms = new Term[trees.length + 1];
+					GeneralTerm[] terms = new GeneralTerm[trees.length + 1];
 					for (int i = 0; i < trees.length; i++)
-						terms[i] = new Term(coeffs == null ? 1 : coeffs[i], trees[i]);
-					terms[terms.length - 1] = new Term(-1, new XNodeLeaf<>(VAR, (Variable) rightTerm));
+						terms[i] = new GeneralTerm(coeffs == null ? 1 : coeffs[i], trees[i]);
+					terms[terms.length - 1] = new GeneralTerm(-1, new XNodeLeaf<>(VAR, (Variable) rightTerm));
 					// we discard terms of coeff 0 and sort them
-					terms = Stream.of(terms).filter(t -> t.coeff != 0).sorted().toArray(Term[]::new);
+					terms = Stream.of(terms).filter(t -> t.coeff != 0).sorted().toArray(GeneralTerm[]::new);
 					XNode<IVar>[] tt = Stream.of(terms).map(t -> t.obj).toArray(XNode[]::new);
 					control(Stream.of(terms).allMatch(t -> Utilities.isSafeInt(t.coeff)));
 					coeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
@@ -3923,7 +4034,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (!Variable.areAllDistinct(list)) {
 				if (type == SUM) {
 					Term[] terms = handleSumTerms(list, null);
-					list = Stream.of(terms).map(t -> t.obj).toArray(Variable[]::new);
+					list = Stream.of(terms).map(t -> t.variable).toArray(Variable[]::new);
 					int[] coeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
 					return optimize(opt, type, list, coeffs);
 				} else if (type == MAXIMUM || type == MINIMUM || type == NVALUES)

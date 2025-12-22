@@ -29,10 +29,9 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * The constraint Count imposes that the number of variables from a specified list of variables that take their values
- * from a specified set (but typically, the set only contains one value) respects a numerical condition. This constraint
- * captures known constraints (usually) called AtLeast, AtMost, Exactly and Among. The constraint Among is defined in a
- * separate file.
+ * The constraint Count imposes that the number of variables from a specified list of variables that take their values from a specified set (but typically, the
+ * set only contains one value) respects a numerical condition. This constraint captures known constraints (usually) called AtLeast, AtMost, Exactly and Among.
+ * The constraint Among is defined in a separate file.
  * 
  * @author Christophe Lecoutre
  */
@@ -265,7 +264,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 		 * Exactly k variables of the scope, where k is a constant, must be assigned to the specified value.
 		 * 
 		 */
-		public static class ExactlyK extends CountCst implements TagSymmetric, TagCallCompleteFiltering {
+		public static class ExactlyK extends CountCst implements TagSymmetric , TagCallCompleteFiltering {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
@@ -278,8 +277,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 
 			@Override
 			public boolean runPropagator(Variable x) {
-//				if (x.dom.size() > 1 && x.dom.containsValue(value))
-//					// removing these two lines, and adding TagCallCompleteFiltering is an alternative
+//				if (x.dom.size() > 1 && x.dom.containsValue(value)) // removing these two lines, and adding TagCallCompleteFiltering is an alternative
 //					return true;
 
 				// nGuaranteedOccurrences denotes the number of singleton domains with the specified value
@@ -379,8 +377,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 		}
 
 		/**
-		 * Exactly k variables of the specified vector of variables, where k is a variable, must be assigned to the
-		 * specified value
+		 * Exactly k variables of the specified vector of variables, where k is a variable, must be assigned to the specified value
 		 */
 		public final static class ExactlyVarK extends CountVar implements TagCallCompleteFiltering {
 
