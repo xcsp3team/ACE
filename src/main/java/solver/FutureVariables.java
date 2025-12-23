@@ -17,6 +17,8 @@ import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
+import heuristics.HeuristicVariablesDynamic;
+import sets.SetDenseReversible;
 import variables.Variable;
 
 /**
@@ -25,6 +27,8 @@ import variables.Variable;
  * @author Christophe Lecoutre
  */
 public final class FutureVariables implements Iterable<Variable> {
+
+	private final Solver solver;
 
 	/**
 	 * The set (array) of variables form the problem (constraint network)
@@ -62,6 +66,8 @@ public final class FutureVariables implements Iterable<Variable> {
 	 */
 	private int pastLimit;
 
+	private final SetDenseReversible nonSingletonVariables;
+
 	/**
 	 * Builds an object to manage past and future variables, i.e, variables that are, or are not, explicitly assigned by the solver
 	 * 
@@ -69,6 +75,7 @@ public final class FutureVariables implements Iterable<Variable> {
 	 *            the solver to which this object is attached
 	 */
 	public FutureVariables(Solver solver) {
+		this.solver = solver;
 		this.vars = solver.problem.variables;
 		this.first = 0;
 		this.last = vars.length - 1;
@@ -77,6 +84,9 @@ public final class FutureVariables implements Iterable<Variable> {
 		this.pasts = new int[vars.length];
 		this.pastLimit = -1;
 		control(Variable.areNumsNormalized(vars));
+		this.nonSingletonVariables = solver.heuristic instanceof HeuristicVariablesDynamic
+				? ((HeuristicVariablesDynamic) solver.heuristic).nonSingletonVariables
+				: null;
 	}
 
 	/**
@@ -169,6 +179,11 @@ public final class FutureVariables implements Iterable<Variable> {
 			prevs[next] = prev;
 		// adding to the end of the list of absent elements
 		pasts[++pastLimit] = i;
+		if (nonSingletonVariables != null) {
+			//System.out.println("removing " + x + " " + i);
+			nonSingletonVariables.storeLimitAtLevel(nPast());  //moveAtPosition(x.num, nPast());
+			//System.out.println("limit === " + nonSingletonVariables.dense[nonSingletonVariables.limit]);
+		}
 	}
 
 	/**
@@ -178,6 +193,8 @@ public final class FutureVariables implements Iterable<Variable> {
 	 *            the variable to be removed
 	 */
 	public void add(Variable x) {
+		if (nonSingletonVariables != null)
+			nonSingletonVariables.restoreLimitAtLevel(nPast());
 		int i = x.num;
 		assert pastLimit >= 0 && pasts[pastLimit] == i;
 		// removing from the end of the list of absent elements

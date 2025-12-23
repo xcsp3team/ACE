@@ -111,7 +111,7 @@ public class SetDenseReversible extends SetDense {
 
 	/**
 	 * Removes the element at the specified position. Technically, this element is swapped with the last one, before
-	 * decrementing the limit of the set.If this is the first element removed at the specified level, the current limit
+	 * decrementing the limit of the set. If this is the first element removed at the specified level, the current limit
 	 * for this level is recorded.
 	 * 
 	 * @param i

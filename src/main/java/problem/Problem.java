@@ -1693,7 +1693,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 							limit -= val;
 					}
 				}
-				// System.out.println("vars = " + Utilities.join(terms) + " " + tree.type + " " + limit);
 				return sum(terms.stream().map(term -> term.variable).toArray(Variable[]::new),
 						terms.stream().mapToInt(term -> Utilities.safeInt(term.coeff)).toArray(), tree.type.toRelop(), limit, true);
 			}
@@ -1771,7 +1770,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return extension(tree);
 		}
 
-		if (options.recognizeSum) { // last case for recognizing sums ; seems relevant to keep it after the possible conversion into table (just above) ?
+		if (options.recognizeSum) { // last chance for recognizing sums ; seems relevant to keep it after the possible conversion into table (just above) ?
 			if (add_relop_varOrVal.matches(tree)) {
 				XNode<IVar> son0 = sons[0], son1 = sons[1];
 				long limit = 0;

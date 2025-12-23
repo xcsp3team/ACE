@@ -31,6 +31,7 @@ import interfaces.Observers.ObserverOnConflicts;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Tags.TagMaximize;
 import sets.SetDense;
+import sets.SetDenseReversible;
 import sets.SetSparse.SetSparseCnt;
 import solver.Solver;
 import solver.Solver.Branching;
@@ -89,20 +90,24 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	}
 
-	public HeuristicVariablesDynamic(Solver solver, boolean anti) {
-		super(solver, anti);
-		if (solver.head.control.varh.frozen)
-			this.freezer = new Freezer(solver.problem.variables.length);
-	}
-
 	private int lastDepthWithOnlySingletons = Integer.MAX_VALUE;
+
+	public final Freezer freezer;
+
+	public final SetDenseReversible nonSingletonVariables;
 
 	private int nCalls;
 
 	private double prevBestScore;
 	private int prevCall = -2;
+	private int cnt = 0;
 
-	public Freezer freezer;
+	public HeuristicVariablesDynamic(Solver solver, boolean anti) {
+		super(solver, anti);
+		int n = solver.problem.variables.length;
+		this.freezer = solver.head.control.varh.frozen ? new Freezer(n) : null;
+		this.nonSingletonVariables = solver.head.control.varh.discardSingletons ? new SetDenseReversible(n, n) : null;
+	}
 
 	@Override
 	protected Variable bestUnpriorityVariable() {
@@ -132,31 +137,58 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		if (options.singleton == SingletonStrategy.LAST) {
 			if (solver.depth() <= lastDepthWithOnlySingletons) {
 				lastDepthWithOnlySingletons = Integer.MAX_VALUE;
-				for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
-					if (options.connected && x.firstAssignedNeighbor() == null)
-						continue;
-					// if (solver.problem.dependencies != null && solver.problem.dependencies[x.num] != null && solver.problem.dependencies[x.num].dom.size() >
-					// 1) continue;
-					// if (x.ctrs.length <= 1)
-					// continue;
-					if (x.dom.size() != 1) {
-						bestScoredVariable.consider(x, scoreOptimizedOf(x));
-						if (options.quitWhenBetterThanPreviousChoice && prevCall + 1 == nCalls && bestScoredVariable.betterThan(prevBestScore)) {
-							prevBestScore = bestScoredVariable.score;
-							prevCall = nCalls;
-							return bestScoredVariable.variable;
-						}
-					} else {
-						if (solver.sticking != null)
-							solver.sticking[x.num] = x.dom.single();
-						if (this instanceof SingOnDom) {
-							if (x.dom.lastRemovedLevel() == solver.depth()) {
-								((SingOnDom) this).nSings[x.num] += solver.problem.variables.length - solver.depth();
-								// System.out.println("jjjjj " + x + " " + ((SingOnDom) this).nSings[x.num]);
+				if (nonSingletonVariables != null) {
+					// System.out.println("trying at level " + solver.depth() + " " + nonSingletonVariables.limit);
+					for (int i = 0; i <= nonSingletonVariables.limit; i++) {
+						Variable x = solver.problem.variables[nonSingletonVariables.dense[i]];
+						// if (x == solver.futVars.lastPast()) {
+						// nonSingletonVariables.removeAtPosition(i);
+						// continue;
+						// }
+						//
+						// control(x.assignmentLevel == Variable.UNASSIGNED , " ddd " + x);
+						if (options.connected && x.firstAssignedNeighbor() == null)
+							continue;
+						if (x.dom.size() != 1) {
+							bestScoredVariable.consider(x, scoreOptimizedOf(x));
+							if (options.quitWhenBetterThanPreviousChoice && prevCall + 1 == nCalls && bestScoredVariable.betterThan(prevBestScore)) {
+								prevBestScore = bestScoredVariable.score;
+								prevCall = nCalls;
+								return bestScoredVariable.variable;
 							}
+						} else {
+							if (solver.sticking != null)
+								solver.sticking[x.num] = x.dom.single();
+							if (this instanceof SingOnDom && x.dom.lastRemovedLevel() == solver.depth())
+								((SingOnDom) this).nSings[x.num] += solver.problem.variables.length - solver.depth();
+
+							nonSingletonVariables.removeAtPosition(i);
+							i--;
 						}
 					}
-				}
+				} else
+					for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
+						if (options.connected && x.firstAssignedNeighbor() == null)
+							continue;
+						// if (solver.problem.dependencies != null && solver.problem.dependencies[x.num] != null &&
+						// solver.problem.dependencies[x.num].dom.size() >
+						// 1) continue;
+						// if (x.ctrs.length <= 1)
+						// continue;
+						if (x.dom.size() != 1) {
+							bestScoredVariable.consider(x, scoreOptimizedOf(x));
+							if (options.quitWhenBetterThanPreviousChoice && prevCall + 1 == nCalls && bestScoredVariable.betterThan(prevBestScore)) {
+								prevBestScore = bestScoredVariable.score;
+								prevCall = nCalls;
+								return bestScoredVariable.variable;
+							}
+						} else {
+							if (solver.sticking != null)
+								solver.sticking[x.num] = x.dom.single();
+//							if (this instanceof SingOnDom && x.dom.lastRemovedLevel() == solver.depth())
+//								((SingOnDom) this).nSings[x.num] += solver.problem.variables.length - solver.depth();
+						}
+					}
 				if (bestScoredVariable.variable == null && !options.alwaysAssignAllVariables && !options.connected)
 					return Variable.TAG;
 			}

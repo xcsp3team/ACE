@@ -171,7 +171,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 
 	public static final int UNSET_NUM = -2;
 
-	private static final int UNASSIGNED = -1;
+	public static final int UNASSIGNED = -1;
 
 	private static final int NB_VARIABLES_LIMIT_FOR_STORING_NEIGHBOURS = 5000;
 

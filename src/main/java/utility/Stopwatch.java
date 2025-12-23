@@ -89,6 +89,10 @@ public class Stopwatch {
 	public String wckTimeInSeconds() {
 		return formattedTimeInSeconds(System.currentTimeMillis() - starWckTime);
 	}
+	
+	public String wckTimeInSecondsForRun(long before) {
+		return formattedTimeInSeconds(System.currentTimeMillis() - before);
+	}
 
 	/**
 	 * Returns the CPU time in milliseconds, or -1 if not supported. This is the CPU (of all involved threads) since the

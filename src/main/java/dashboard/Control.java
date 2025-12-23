@@ -677,6 +677,7 @@ public final class Control {
 		public final SingletonStrategy singleton = addE("singleton", "sing", SingletonStrategy.LAST, "How to manage singleton variables during search");
 		public final boolean connected = addB("connected", "", false, "Must we select a variable necessarily connected to an already explicitly assigned one?");
 		public final boolean discardAux = addB("discardAux", "da", false, "Must we not branch on auxiliary variables introduced by the solver?");
+		public final boolean discardSingletons = addB("discardSingletons", "ds", false, "Should we discard non explicitly singleton variables from futVars");
 		public final boolean arrayPriorityRunRobin = addB("arrayPriorityRunRobin", "aprr", false, "Must we set priority to variable arrays in turn?");
 		public final int mode = addI("mode", "mode", 0, "general option used differently according to the context");
 		public final int lostDepth = addI("lostDepth", "ld", 0, "xx");

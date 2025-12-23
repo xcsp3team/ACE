@@ -117,6 +117,12 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	}
 
 	@Override
+	public void beforeSearch() {
+		wckBeforeSearch = System.currentTimeMillis();
+	}
+
+	
+	@Override
 	public final void afterRun() {
 		InformationBloc info = runInfo();
 		record(RUN, info, solver);
@@ -318,6 +324,8 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	 * The filename of the generated XML file (with details about the solving process), if in campaign mode
 	 */
 	private String outputFileName;
+	
+	private long wckBeforeSearch;
 
 	/**
 	 * Builds an object Output for the specified head
@@ -653,7 +661,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(N_WRONG, stats.nWrongDecisions);
 		if (Kit.memory() > 10000000000L)
 			m.put(MEM, Kit.memoryInMb());
-		m.put(WCK, Stopwatch.formattedTimeInSeconds(stats.times.searchWck));
+		m.put(WCK, head.instanceStopwatch.wckTimeInSecondsForRun(wckBeforeSearch));
 		m.put(N_NOGOODS, head.solver.nogoodReasoner != null ? head.solver.nogoodReasoner.nNogoods : 0);
 		if (head.solver.solutions.found > 0) {
 			m.put(SOLS, head.solver.solutions.found);
