@@ -68,7 +68,7 @@ public class Restarter implements ObserverOnRuns {
 			if (solver.solutions.found == 0)
 				solver.head.control.valh.solutionSavingStart++;
 			else if (solver.head.control.valh.solutionSavingStart == numRun)
-				Kit.log.config("\tStarting SOS");
+				Kit.log.config(Kit.Color.YELLOW.coloring(" ...Starting SOS")); // Kit.log.config("\tStarting SOS");
 		}
 		if (numRun > 0 && numRun % options.resetPeriod == 0) {
 			// if ((numRun - solver.solutions.lastRun) % options.resetPeriod == 0) {
@@ -217,8 +217,7 @@ public class Restarter implements ObserverOnRuns {
 	private int nRestartsSinceReset;
 
 	public LocalStats localStats;
-	
-	
+
 	public Freezer freezer;
 
 	/**

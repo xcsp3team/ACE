@@ -39,6 +39,8 @@ import interfaces.Tags.TagPositive;
 import interfaces.Tags.TagStarredCompatible;
 import problem.Problem;
 import problem.Problem.SymmetryBreaking;
+import propagation.Forward;
+import propagation.Reviser;
 import utility.Kit;
 import utility.Reflector;
 import variables.Domain;
@@ -137,6 +139,39 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			super(pb, scp);
 		}
 
+		@Override
+		public boolean launchFiltering(Variable x) { 
+			Reviser reviser = ((Forward) problem.solver.propagation).reviser;
+			int nNonSingletons = 0;
+			if (x.assigned() || scp.length == 1) {
+				for (int i = futvars.limit; i >= 0; i--) {
+					Variable y = scp[futvars.dense[i]];
+					if (reviser.revise(this, y) == false)
+						return false;
+					if (y.dom.size() > 1)
+						nNonSingletons++;
+				}
+			} else {
+				boolean revisingEventVarToo = false;
+				for (int i = futvars.limit; i >= 0; i--) {
+					Variable y = scp[futvars.dense[i]];
+					if (y == x)
+						continue;
+					if (time < y.time)
+						revisingEventVarToo = true;
+					if (reviser.revise(this, y) == false)
+						return false;
+					if (y.dom.size() > 1)
+						nNonSingletons++;
+				}
+				if (revisingEventVarToo && reviser.revise(this, x) == false)
+					return false;
+				if (x.dom.size() > 1)
+					nNonSingletons++;
+			}
+			return nNonSingletons <= 1 ? entail() : true;
+		}
+
 		/**
 		 * This class is for extension constraints with a classical generic AC filtering (iterating over lists of valid tuples in order to find a support).
 		 */
@@ -203,7 +238,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		public ExtensionSpecific(Problem pb, Variable[] scp) {
 			super(pb, scp);
 		}
-		
+
 		public boolean launchFiltering(Variable x) {
 			return runPropagator(x);
 		}
@@ -231,7 +266,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			// currently, only STR2, STR2S, CT, CT2 and MDDSHORT
 			return c;
 		}
-		if (scp.length == 2 && options.generic2 && scp[0].dom.initSize() * scp[1].dom.initSize() < 100_000) // hard coding
+		if (scp.length == 2 && options.generic2 && scp[0].dom.initSize() * scp[1].dom.initSize() < 200_000) // hard coding
 			return new ExtensionV(pb, scp); // return new STR2(pb, scp);
 		if (scp.length == 2 && avoidCT)
 			return new STR2(pb, scp);

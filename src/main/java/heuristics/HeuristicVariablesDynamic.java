@@ -94,7 +94,16 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	public final Freezer freezer;
 
-	public final SetDenseReversible nonSingletonVariables;
+	private Variable[] current, other;
+
+	private int lastDepthOfBuildingNonSingletonList;
+
+	private int currentNonSingletonsLimit = -1;
+
+	public void possiblyClearCurrentNonSingletonList() {
+		if (solver.depth() < lastDepthOfBuildingNonSingletonList)
+			currentNonSingletonsLimit = -1;
+	}
 
 	private int nCalls;
 
@@ -106,7 +115,12 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		super(solver, anti);
 		int n = solver.problem.variables.length;
 		this.freezer = solver.head.control.varh.frozen ? new Freezer(n) : null;
-		this.nonSingletonVariables = solver.head.control.varh.discardSingletons ? new SetDenseReversible(n, n) : null;
+		// this.nonSingletonVariables = solver.head.control.varh.discardSingletons ? new SetDenseReversible(n, n) : null;
+		if (solver.head.control.varh.discardSingletons) {
+			this.current = new Variable[n];
+			this.other = new Variable[n];
+			this.currentNonSingletonsLimit = -1;
+		}
 	}
 
 	@Override
@@ -137,18 +151,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		if (options.singleton == SingletonStrategy.LAST) {
 			if (solver.depth() <= lastDepthWithOnlySingletons) {
 				lastDepthWithOnlySingletons = Integer.MAX_VALUE;
-				if (nonSingletonVariables != null) {
-					// System.out.println("trying at level " + solver.depth() + " " + nonSingletonVariables.limit);
-					for (int i = 0; i <= nonSingletonVariables.limit; i++) {
-						Variable x = solver.problem.variables[nonSingletonVariables.dense[i]];
-						// if (x == solver.futVars.lastPast()) {
-						// nonSingletonVariables.removeAtPosition(i);
-						// continue;
-						// }
-						//
-						// control(x.assignmentLevel == Variable.UNASSIGNED , " ddd " + x);
-						if (options.connected && x.firstAssignedNeighbor() == null)
-							continue;
+				int nNonSingletons = 0;
+				if (currentNonSingletonsLimit != -1) {
+					// System.out.println("limit vs " + limit + " vs " + solver.futVars.size());
+					for (int i = 0; i <= currentNonSingletonsLimit; i++) {
+						Variable x = current[i];
 						if (x.dom.size() != 1) {
 							bestScoredVariable.consider(x, scoreOptimizedOf(x));
 							if (options.quitWhenBetterThanPreviousChoice && prevCall + 1 == nCalls && bestScoredVariable.betterThan(prevBestScore)) {
@@ -156,25 +163,23 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 								prevCall = nCalls;
 								return bestScoredVariable.variable;
 							}
+							other[nNonSingletons++] = x;
 						} else {
-							if (solver.sticking != null)
+							if (solver.sticking != null && !x.assigned())
 								solver.sticking[x.num] = x.dom.single();
-							if (this instanceof SingOnDom && x.dom.lastRemovedLevel() == solver.depth())
-								((SingOnDom) this).nSings[x.num] += solver.problem.variables.length - solver.depth();
-
-							nonSingletonVariables.removeAtPosition(i);
-							i--;
+							cnt++;
 						}
 					}
-				} else
+					Variable[] tmp = current;
+					current = other;
+					other = tmp;
+				} else {
 					for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 						if (options.connected && x.firstAssignedNeighbor() == null)
 							continue;
 						// if (solver.problem.dependencies != null && solver.problem.dependencies[x.num] != null &&
-						// solver.problem.dependencies[x.num].dom.size() >
-						// 1) continue;
-						// if (x.ctrs.length <= 1)
-						// continue;
+						// solver.problem.dependencies[x.num].dom.size() > 1) continue;
+						// if (x.ctrs.length <= 1) continue;
 						if (x.dom.size() != 1) {
 							bestScoredVariable.consider(x, scoreOptimizedOf(x));
 							if (options.quitWhenBetterThanPreviousChoice && prevCall + 1 == nCalls && bestScoredVariable.betterThan(prevBestScore)) {
@@ -182,13 +187,20 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 								prevCall = nCalls;
 								return bestScoredVariable.variable;
 							}
+							if (current != null)
+								current[nNonSingletons++] = x;
 						} else {
 							if (solver.sticking != null)
 								solver.sticking[x.num] = x.dom.single();
-//							if (this instanceof SingOnDom && x.dom.lastRemovedLevel() == solver.depth())
-//								((SingOnDom) this).nSings[x.num] += solver.problem.variables.length - solver.depth();
+							// if (this instanceof SingOnDom && x.dom.lastRemovedLevel() == solver.depth())
+							// ((SingOnDom) this).nSings[x.num] += solver.problem.variables.length - solver.depth();
 						}
 					}
+				}
+				if (current != null) {
+					currentNonSingletonsLimit = nNonSingletons - 1;
+					lastDepthOfBuildingNonSingletonList = solver.depth();
+				}
 				if (bestScoredVariable.variable == null && !options.alwaysAssignAllVariables && !options.connected)
 					return Variable.TAG;
 			}

@@ -41,6 +41,7 @@ import problem.Problem;
 import solver.Solver.Stopping;
 import utility.Kit;
 import utility.Kit.Color;
+import utility.Stopwatch;
 import variables.Variable;
 
 /**
@@ -226,7 +227,7 @@ public final class Solutions {
 		String PREFIX = pure ? "" : "   ";
 		List<VarEntity> list = solver.problem.varEntities.allEntities;
 		if (list.size() == 1 && list.get(0) instanceof VarArray)
-			return PREFIX + "{'" + list.get(0).id + "': " + Variable.instantiationOf(VarArray.class.cast(list.get(0)).vars, PREFIX,"") + "}";
+			return PREFIX + "{'" + list.get(0).id + "': " + Variable.instantiationOf(VarArray.class.cast(list.get(0)).vars, PREFIX, "") + "}";
 		StringBuilder sb = new StringBuilder(PREFIX).append("{\n");
 		for (VarEntity va : list) {
 			if (undisplay.contains(va.id) || (discardAuxiliary && va.id.startsWith(Problem.AUXILIARY_VARIABLE_PREFIX)))
@@ -239,7 +240,7 @@ public final class Solutions {
 				else if (x == solver.problem.replacedObjVar)
 					sb.append(bestBound);
 			} else
-				sb.append(Variable.instantiationOf(VarArray.class.cast(va).vars, PREFIX,""));
+				sb.append(Variable.instantiationOf(VarArray.class.cast(va).vars, PREFIX, ""));
 			sb.append(",\n");
 		}
 		sb.delete(sb.length() - 2, sb.length());
@@ -290,39 +291,41 @@ public final class Solutions {
 					OptionsGeneral options = solver.head.control.general;
 					if (options.verbose >= 0 && found > 0 && solver.problem.variables.length <= options.jsonLimit)
 						System.out.println("\n  Solution " + found + " in JSON-like format:\n" + lastSolutionInJsonFormat(options.jsonQuotes) + "\n");
-					
+
 					if (fullExploration)
 						Color.GREEN.println(found == 0 ? "s UNSATISFIABLE" : framework == COP ? "s OPTIMUM FOUND" : "s SATISFIABLE");
 					else if (found == 0)
 						Color.RED.println("s UNKNOWN");
 					else
 						Color.GREEN.println("s SATISFIABLE");
-					
+
 					if (!options.xmlEachSolution && found > 0)
 						Color.GREEN.println("\nv", " " + xml.lastSolution());
-					
+
 					NumberFormat nf = Output.numberFormat;
 					if (framework == COP && found > 0)
 						Color.GREEN.println("\nd BOUND", " " + nf.format(bestBound + solver.problem.optimizer.gapBound));
-					
 
 					Color.GREEN.println("\nd FOUND SOLUTIONS", " " + nf.format(found));
 					if (found > 0) {
 						Color.GREEN.println("d WCK FIRST SOL",
 								" " + wckFirst + (framework == COP ? " (" + nf.format(solver.problem.optimizer.valueWithGap(firstBound)) + ")" : ""));
 						Color.GREEN.println("d WCK LAST  SOL",
-								" " +wckLast + (framework == COP ? " (" + nf.format(solver.problem.optimizer.valueWithGap(bestBound)) + ")" : ""));
+								" " + wckLast + (framework == COP ? " (" + nf.format(solver.problem.optimizer.valueWithGap(bestBound)) + ")" : ""));
 					}
-					
-					double cpu = solver.head.stopwatch.cpuTime() / 1000.0;
-					Color.GREEN.println("\nd WRONG DECISIONS", " " + (solver.stats != null ? nf.format(solver.stats.nWrongDecisions) + "  (" +  nf.format((long)(solver.stats.nWrongDecisions / cpu)) + " wrg/s)" : 0));
+
+					Color.GREEN.println("\nd WRONG DECISIONS",
+							" " + (solver.stats != null
+									? nf.format(solver.stats.nWrongDecisions) + "  ("
+											+ Stopwatch.df2.format(solver.stats.nWrongDecisions / ((System.currentTimeMillis() - solver.head.output.wckBeforeSearch) / 1000.0)) + " wrg/s)"
+									: 0));
 					Color.GREEN.println("d CPU", solver.head.stopwatch.cpuTimeInSeconds());
 					System.out.println();
 					if (fullExploration)
 						Color.GREEN.println("d COMPLETE EXPLORATION");
 					else
 						Color.RED.println("d INCOMPLETE EXPLORATION");
-					
+
 					System.out.flush();
 
 				}

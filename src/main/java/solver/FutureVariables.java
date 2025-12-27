@@ -18,7 +18,9 @@ import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import heuristics.HeuristicVariablesDynamic;
+import interfaces.Observers.ObserverOnSolving;
 import sets.SetDenseReversible;
+import utility.Kit;
 import variables.Variable;
 
 /**
@@ -26,7 +28,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public final class FutureVariables implements Iterable<Variable> {
+public final class FutureVariables implements Iterable<Variable>, ObserverOnSolving {
 
 	private final Solver solver;
 
@@ -57,7 +59,7 @@ public final class FutureVariables implements Iterable<Variable> {
 	private final int[] nexts;
 
 	/**
-	 * pasts[i] is the ith past variable (valid indexes from 0 to pastTop as in dense set)
+	 * pasts[i] is the ith past variable (valid indexes from 0 to pastLimit as in a dense set)
 	 */
 	private final int[] pasts;
 
@@ -66,7 +68,24 @@ public final class FutureVariables implements Iterable<Variable> {
 	 */
 	private int pastLimit;
 
-	private final SetDenseReversible nonSingletonVariables;
+	private int nPivot;
+
+	private final HeuristicVariablesDynamic heuristic;
+
+	// private final SetDenseReversible nonSingletonVariables;
+
+	@Override
+	public void afterPreprocessing() {
+		if (solver.head.control.varh.discardSingletonsAfterPrepro) {
+			for (Variable x : vars)
+				if (x.dom.size() == 1)
+					remove(x);
+			if (pastLimit != -1)
+				Kit.log.config(Kit.Color.YELLOW.coloring("\n ...Discarding " + (pastLimit + 1) + " singleton variables"));
+			nPivot = vars.length - (pastLimit + 1) - 1;
+			pastLimit = -1;
+		}
+	}
 
 	/**
 	 * Builds an object to manage past and future variables, i.e, variables that are, or are not, explicitly assigned by the solver
@@ -83,10 +102,12 @@ public final class FutureVariables implements Iterable<Variable> {
 		this.nexts = IntStream.range(1, vars.length + 1).map(i -> i < vars.length ? i : -1).toArray();
 		this.pasts = new int[vars.length];
 		this.pastLimit = -1;
+		this.nPivot = vars.length - 1;
 		control(Variable.areNumsNormalized(vars));
-		this.nonSingletonVariables = solver.heuristic instanceof HeuristicVariablesDynamic
-				? ((HeuristicVariablesDynamic) solver.heuristic).nonSingletonVariables
-				: null;
+		heuristic = solver.heuristic instanceof HeuristicVariablesDynamic ? (HeuristicVariablesDynamic) solver.heuristic : null;
+		// this.nonSingletonVariables = solver.heuristic instanceof HeuristicVariablesDynamic
+		// ? ((HeuristicVariablesDynamic) solver.heuristic).nonSingletonVariables
+		// : null;
 	}
 
 	/**
@@ -95,7 +116,7 @@ public final class FutureVariables implements Iterable<Variable> {
 	 * @return the number of future variables
 	 */
 	public int size() {
-		return vars.length - pastLimit - 1;
+		return nPivot - pastLimit;
 	}
 
 	/**
@@ -179,11 +200,11 @@ public final class FutureVariables implements Iterable<Variable> {
 			prevs[next] = prev;
 		// adding to the end of the list of absent elements
 		pasts[++pastLimit] = i;
-		if (nonSingletonVariables != null) {
-			//System.out.println("removing " + x + " " + i);
-			nonSingletonVariables.storeLimitAtLevel(nPast());  //moveAtPosition(x.num, nPast());
-			//System.out.println("limit === " + nonSingletonVariables.dense[nonSingletonVariables.limit]);
-		}
+		// if (nonSingletonVariables != null) {
+		// // System.out.println("removing " + x + " " + i);
+		// nonSingletonVariables.storeLimitAtLevel(nPast()); // moveAtPosition(x.num, nPast());
+		// // System.out.println("limit === " + nonSingletonVariables.dense[nonSingletonVariables.limit]);
+		// }
 	}
 
 	/**
@@ -193,8 +214,6 @@ public final class FutureVariables implements Iterable<Variable> {
 	 *            the variable to be removed
 	 */
 	public void add(Variable x) {
-		if (nonSingletonVariables != null)
-			nonSingletonVariables.restoreLimitAtLevel(nPast());
 		int i = x.num;
 		assert pastLimit >= 0 && pasts[pastLimit] == i;
 		// removing from the end of the list of absent elements
@@ -209,6 +228,8 @@ public final class FutureVariables implements Iterable<Variable> {
 			last = i;
 		else
 			prevs[next] = i;
+		if (heuristic != null) // keep it here after having added the last past variable
+			heuristic.possiblyClearCurrentNonSingletonList();
 	}
 
 	/**

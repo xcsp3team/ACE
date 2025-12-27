@@ -31,6 +31,8 @@ import interfaces.ConstraintRegister;
 import interfaces.Tags.TagCallCompleteFiltering;
 import optimization.Optimizable;
 import problem.Problem;
+import propagation.Forward;
+import propagation.Reviser;
 import utility.Kit;
 import variables.Variable;
 import variables.Variable.VariableInteger;
@@ -201,12 +203,40 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 		assert Variable.haveSameType(scp) : "Currently, it is not possible to mix integer and symbolic variables";
 		this.tree = tree; // canonize ? (XNodeParent<IVar>) tree.canonization() : tree;
 		this.keyCanonizer = scp.length > 30 || tree.size() > 200 ? null : new KeyCanonizer(tree); // TODO hard coding
-		String key = defineKey(tree.toPostfixExpression(tree.vars())); //keyCanonizer == null ? tree.toPostfixExpression(tree.vars()) : keyCanonizer.key());  BUG if keyCanonizer.key() see
+		String key = defineKey(tree.toPostfixExpression(tree.vars())); // keyCanonizer == null ? tree.toPostfixExpression(tree.vars()) : keyCanonizer.key());
+																		// BUG if keyCanonizer.key() see
 		Map<String, IntensionStructure> map = pb.head.structureSharing.mapForIntension;
 		this.treeEvaluator = map.computeIfAbsent(key,
 				s -> scp[0] instanceof VariableInteger ? new IntensionStructure(tree) : new IntensionStructure(tree, pb.symbolic.mapOfSymbols));
 		control(Stream.of(treeEvaluator.evaluators).noneMatch(e -> e instanceof F1Evaluator || e instanceof F2Evaluator));
 		treeEvaluator.register(this);
+	}
+
+	@Override
+	public boolean launchFiltering(Variable x) { 
+		if (futvars.size() > genericFilteringThreshold) {
+			int nNonSingletons = 0;
+			double prod = 1;
+			for (int i = futvars.limit; i >= 0; i--) {
+				Variable y = scp[futvars.dense[i]];
+				if (y.dom.size() > 1) {
+					nNonSingletons++;
+					prod = prod * y.dom.size();
+					if (nNonSingletons > 1 && prod > 10_000) // hard coding : if at least two unfixed variables and space > 10 000
+						return true;
+				}
+			}
+		}
+		Reviser reviser = ((Forward) problem.solver.propagation).reviser;
+		int nNonSingletons = 0;
+		for (int i = futvars.limit; i >= 0; i--) {  // we iterate over all variables because filtering was maybe incomplete before. Unless we are sure that it was never possible ?
+			Variable y = scp[futvars.dense[i]];
+			if (reviser.revise(this, y) == false)
+				return false;
+			if (y.dom.size() > 1)
+				nNonSingletons++;
+		}
+		return nNonSingletons <= 1 ? entail() : true;
 	}
 }
 

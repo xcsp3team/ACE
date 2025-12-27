@@ -62,7 +62,6 @@ import solver.Solver.Stopping;
 import solver.Statistics;
 import utility.Kit;
 import utility.Kit.Color;
-import utility.Stopwatch;
 import variables.Variable;
 
 /**
@@ -190,6 +189,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String N_TYPES = "types";
 	public static final String N_VALUES = "values";
 	public static final String N_DELETED = "deleted";
+	public static final String N_SINGLETONS = "singletons";
 	public static final String COUNT = "count";
 	public static final String N_OMITTED = "omitted";
 	public static final String N_DISCARDED = "discarded";
@@ -230,6 +230,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	public static final String DEPTHS = "dpts";
 	public static final String N_EFFECTIVE = "effs";
+	public static final String N_ENTAILED = "entailed";
 	public static final String N_WRONG = "wrgs";
 	public static final String N_DECISIONS = "decs";
 	public static final String N_BACKTRACKS = "backs";
@@ -325,7 +326,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	 */
 	private String outputFileName;
 	
-	private long wckBeforeSearch;
+	public long wckBeforeSearch;
 
 	/**
 	 * Builds an object Output for the specified head
@@ -625,11 +626,13 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		InformationBloc m = new InformationBloc(PREPROCESSING);
 		m.put(N_EFFECTIVE, head.problem.features.nEffectiveFilterings);
 		m.put(REVISIONS, "(" + stats.nRevisions() + ",useless=" + stats.nUselessRevisions() + ")", stats.nRevisions() > 0);
-		m.put("entailed", head.solver.entailed.size());
+		m.put(N_ENTAILED, head.solver.entailed.size());
 		m.put(N_VALUES, Variable.nValidValuesFor(head.problem.variables));
+		
 		Propagation propagation = head.solver.propagation;
 		m.put(REMOVED_BY_AC, propagation instanceof AC ? ((AC) (propagation)).preproRemovals : 0);
 		// m.put("nTotalRemovedValues", nPreproRemovedValues);
+		m.put(N_SINGLETONS, Variable.nSingletonsIn(head.problem.variables));
 		m.put(UNSAT, head.solver.stopping == Stopping.FULL_EXPLORATION);
 		m.separator(stats.preprocessing.nRemovedTuples > 0 || stats.preprocessing.nAddedNogoods > 0 || stats.preprocessing.nAddedCtrs > 0);
 		m.put(N_REMOVED_TUPLES, stats.preprocessing.nRemovedTuples);
@@ -651,7 +654,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private InformationBloc runInfo() {
 		InformationBloc m = new InformationBloc(RUN);
-		m.put("run", head.solver.restarter.numRun + 1);
+		m.put(RUN, head.solver.restarter.numRun + 1);
 		m.put(DEPTHS, head.solver.minDepth + ".." + head.solver.maxDepth);
 		String rb1 = head.solver.heuristic instanceof RunRobin ? ((RunRobin) head.solver.heuristic).current.getClass().getSimpleName() : "";
 		String rb2 = head.control.valh.clazz.equals("RunRobin") ? ((HeuristicValuesDirect.RunRobin) head.problem.variables[0].heuristic).currentClass() : "";

@@ -573,7 +573,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	private List<ObserverOnSolving> collectObserversOnSolving() {
-		Stream<Object> stream = Stream.concat(Stream.of(problem.constraints), Stream.of(stats, head.output));
+		Stream<Object> stream = Stream.concat(Stream.of(problem.constraints), Stream.of(futVars, stats, head.output));
 		return collectObservers(stream, ObserverOnSolving.class);
 	}
 

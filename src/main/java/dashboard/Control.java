@@ -194,6 +194,8 @@ public final class Control {
 			restarts.cutoff = restarts.cutoff / 2;
 			restarts.factor = 1.05;
 		}
+		control(varh.discardSingletonsAfterPrepro == false || varh.alwaysAssignAllVariables == false);
+		
 	}
 
 	public void framework(Optimizer optimizer) {
@@ -510,7 +512,7 @@ public final class Control {
 		public final int smallTableExt = addI("smallTableExt", "stext", 16, "table size threshold for considering a special propagator");
 		public final int largeScopeExt = addI("largeScopeExt", "lsext", 50, "scope size threshold for considering a special propagator");
 		public final boolean toMDD = addB("toMDD", "tomdd", false, "Must we attempt to convert extension constraints into MDDs (if possible)");
-		public final int domainCompactTableLimit = addI("domainCompactTableLimit", "dctl", 5_000,
+		public final int domainCompactTableLimit = addI("domainCompactTableLimit", "dctl", 8_000,
 				"Limit in term of the cumulated size of the domains for discarding CT (and use STR2)");
 		public final int chybridStackingLimit = addI("chybridStackingLimit", "hsl", 5_000,
 				"Limit (in term of the number n of variables) for building stacks useful for filtering CHybrid constraints");
@@ -677,6 +679,7 @@ public final class Control {
 		public final SingletonStrategy singleton = addE("singleton", "sing", SingletonStrategy.LAST, "How to manage singleton variables during search");
 		public final boolean connected = addB("connected", "", false, "Must we select a variable necessarily connected to an already explicitly assigned one?");
 		public final boolean discardAux = addB("discardAux", "da", false, "Must we not branch on auxiliary variables introduced by the solver?");
+		public final boolean discardSingletonsAfterPrepro = addB("discardSingletonsAfterPrepro", "dsap", true, "Should we discard non explicitly singleton variables from futVars after preprocessing");
 		public final boolean discardSingletons = addB("discardSingletons", "ds", false, "Should we discard non explicitly singleton variables from futVars");
 		public final boolean arrayPriorityRunRobin = addB("arrayPriorityRunRobin", "aprr", false, "Must we set priority to variable arrays in turn?");
 		public final int mode = addI("mode", "mode", 0, "general option used differently according to the context");

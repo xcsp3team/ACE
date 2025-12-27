@@ -159,11 +159,11 @@ public abstract class HeuristicVariables extends Heuristic {
 			control(stackMaxSize != 1 || updateStack.stackedVariableFor(newTime) == second, " " + updateStack.stackedVariableFor(newTime) + " vs " + second);
 			return updateStack.stackedVariableFor(newTime);
 			// }
-			//return null;
+			// return null;
 		}
 
 		private boolean test = false;
-		
+
 		/**
 		 * Considers the specified variable with the specified score: compares it with the current best scored variable, and updates it if necessary.
 		 * 
@@ -186,21 +186,21 @@ public abstract class HeuristicVariables extends Heuristic {
 					boolean modification = ((minimization && s < score) || (!minimization && s > score));
 					if (modification) {
 						second = variable;
-						secondScore=score;
+						secondScore = score;
 						variable = x;
 						score = s;
 						if (updateStack != null)
 							updateStack.add(x, s);
 					} else {
 						second = x;
-						secondScore=s;
+						secondScore = s;
 					}
 					return false;
 				} else {
 					boolean modification = ((minimization && s < score) || (!minimization && s > score));
 					if (modification) {
 						second = variable;
-						secondScore=score;
+						secondScore = score;
 						variable = x;
 						score = s;
 						if (updateStack != null)
@@ -209,8 +209,7 @@ public abstract class HeuristicVariables extends Heuristic {
 					return modification;
 				}
 			}
-			
-			
+
 			boolean modification = ((minimization && s < score) || (!minimization && s > score));
 			if (modification) {
 				second = variable;
@@ -370,6 +369,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	protected void resettingMessage(String s) {
 		Kit.log.config(
 				Kit.Color.YELLOW.coloring(" ...resetting ") + s + " (nValues:" + Output.numberFormat.format(Variable.nValidValuesFor(solver.problem.variables))
+				+ " - nSingletons:" + Output.numberFormat.format(Variable.nSingletonsIn(solver.problem.variables))
 						+ " - nEntailed:" + Output.numberFormat.format(solver.entailed.size()) + ")");
 	}
 

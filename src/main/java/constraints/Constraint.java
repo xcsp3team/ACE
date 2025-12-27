@@ -159,6 +159,11 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		public boolean isSatisfiedBy(int[] t) {
 			throw new AssertionError("should not be called");
 		}
+
+		@Override
+		public boolean launchFiltering(Variable x) {
+			throw new AssertionError("should not be called");
+		}
 	};
 
 	/**
@@ -1005,9 +1010,9 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		return false;
 	}
 
-	public boolean launchFiltering(Variable x) { // is redefined in ConstraintSpecific	 and ExtensionSpecific
-		return genericFiltering(x); // by default
-	}
+	public abstract boolean launchFiltering(Variable x); // { // is redefined in ConstraintSpecific and ExtensionSpecific
+	// return genericFiltering(x); // by default
+	// }
 
 	/**
 	 * Performs a generic form of filtering
@@ -1016,51 +1021,53 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 *            a variable whose domain has been recently reduced
 	 * @return false if an inconsistency is detected
 	 */
-	private boolean genericFiltering(Variable x) {
-		if (futvars.size() > genericFilteringThreshold) {
-			int nNonSingletons = 0;
-			double prod = 1;
-			for (int i = futvars.limit; i >= 0; i--) {
-				Variable y = scp[futvars.dense[i]];
-				if (y.dom.size() > 1) {
-					nNonSingletons++;
-					prod = prod * y.dom.size();
-					if (nNonSingletons > 1 && prod > 10_000) // hard coding : if at least two unfixed variables and space > 10 000
-						return true;
-				}
-			}
-		}
-		Reviser reviser = ((Forward) problem.solver.propagation).reviser;
-		int nNonSingletons = 0;
-		// if (x.assigned()) {
-		for (int i = futvars.limit; i >= 0; i--) {
-			Variable y = scp[futvars.dense[i]];
-			if (reviser.revise(this, y) == false)
-				return false;
-			if (y.dom.size() > 1)
-				nNonSingletons++;
-		}
-		// } else {
-		// boolean revisingEventVarToo = (scp.length == 1); // TODO can we just initialize it to false ?
-		// for (int i = futvars.limit; i >= 0; i--) {
-		// Variable y = scp[futvars.dense[i]];
-		// if (y == x)
-		// continue;
-		// if (time < y.time)
-		// revisingEventVarToo = true;
-		// if (reviser.revise(this, y) == false)
-		// return false;
-		// if (y.dom.size() > 1)
-		// nNonSingletons++;
-		// }
-		// if (revisingEventVarToo && reviser.revise(this, x) == false)
-		// return false;
-		// if (x.dom.size() > 1)
-		// nNonSingletons++;
-		// }
-		// return true;
-		return nNonSingletons <= 1 ? entail() : true;
-	}
+	// protected abstract boolean genericFiltering(Variable x);
+	// if (futvars.size() > genericFilteringThreshold) {
+	// int nNonSingletons = 0;
+	// double prod = 1;
+	// for (int i = futvars.limit; i >= 0; i--) {
+	// Variable y = scp[futvars.dense[i]];
+	// if (y.dom.size() > 1) {
+	// nNonSingletons++;
+	// prod = prod * y.dom.size();
+	// if (nNonSingletons > 1 && prod > 10_000) // hard coding : if at least two unfixed variables and space > 10 000
+	// return true;
+	// }
+	// }
+	// }
+	// Reviser reviser = ((Forward) problem.solver.propagation).reviser;
+	// int nNonSingletons = 0;
+	// //if (x.assigned() || scp.length == 1 ) {
+	// for (int i = futvars.limit; i >= 0; i--) {
+	// Variable y = scp[futvars.dense[i]];
+	// if (reviser.revise(this, y) == false)
+	// return false;
+	// if (y.dom.size() > 1)
+	// nNonSingletons++;
+	// }
+	// // } else
+	// //
+	// // {
+	// // boolean revisingEventVarToo = (scp.length == 1); // TODO can we just initialize it to false ?
+	// // for (int i = futvars.limit; i >= 0; i--) {
+	// // Variable y = scp[futvars.dense[i]];
+	// // if (y == x)
+	// // continue;
+	// // if (time < y.time)
+	// // revisingEventVarToo = true;
+	// // if (reviser.revise(this, y) == false)
+	// // return false;
+	// // if (y.dom.size() > 1)
+	// // nNonSingletons++;
+	// // }
+	// // if (revisingEventVarToo && reviser.revise(this, x) == false)
+	// // return false;
+	// // if (x.dom.size() > 1)
+	// // nNonSingletons++;
+	// // }
+	// // return true;
+	// return nNonSingletons <= 1 ? entail() : true;
+	// }
 
 	// public boolean canBeFilteredConsideringSpecialVariables() {
 	// // if (this instanceof WakeUp)

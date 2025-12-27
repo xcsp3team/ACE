@@ -328,6 +328,19 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	/**
 	 * @param vars
 	 *            an array of variables
+	 * @return the number of variables with a current domain being singleton
+	 */
+	public static int nSingletonsIn(Variable... vars) {
+		int cnt = 0;
+		for (Variable x : vars)
+			if (x.dom.size() == 1)
+				cnt++;
+		return cnt;
+	}
+
+	/**
+	 * @param vars
+	 *            an array of variables
 	 * @return the sum of the size of the current domains of the specified variables
 	 */
 	public static int nValidValuesFor(Variable... vars) {
