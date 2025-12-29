@@ -210,15 +210,15 @@ public abstract class HeuristicVariables extends Heuristic {
 				}
 			}
 
-			boolean modification = ((minimization && s < score) || (!minimization && s > score));
-			if (modification) {
+			if ((minimization && s < score) || (!minimization && s > score)) {
 				second = variable;
 				variable = x;
 				score = s;
 				if (updateStack != null)
 					updateStack.add(x, s);
+				return true;
 			}
-			return modification;
+			return false;
 		}
 
 		public boolean betterThan(double previousScore) {
@@ -292,6 +292,10 @@ public abstract class HeuristicVariables extends Heuristic {
 	 * Returns the score of the specified variable. This is the method to override when defining a new heuristic.
 	 */
 	public abstract double scoreOf(Variable x);
+
+	public double scoreDomain2Of(Variable x) {
+		throw new AssertionError("Not implemented for " + this.getClass());
+	}
 
 	/**
 	 * Returns the "optimized" score of the specified variable, i.e., the score of the variable while considering the optimization multiplier (to deal with
@@ -369,8 +373,8 @@ public abstract class HeuristicVariables extends Heuristic {
 	protected void resettingMessage(String s) {
 		Kit.log.config(
 				Kit.Color.YELLOW.coloring(" ...resetting ") + s + " (nValues:" + Output.numberFormat.format(Variable.nValidValuesFor(solver.problem.variables))
-				+ " - nSingletons:" + Output.numberFormat.format(Variable.nSingletonsIn(solver.problem.variables))
-						+ " - nEntailed:" + Output.numberFormat.format(solver.entailed.size()) + ")");
+						+ " - nSingletons:" + Output.numberFormat.format(Variable.nSingletonsIn(solver.problem.variables)) + " - nEntailed:"
+						+ Output.numberFormat.format(solver.entailed.size()) + ")");
 	}
 
 	/*************************************************************************

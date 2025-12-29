@@ -649,6 +649,10 @@ public final class Kit {
 		return join(c.toArray(), delimiters);
 	}
 
+	public static String join(Stream<?> c, String... delimiters) {
+		return join(c.toArray(), delimiters);
+	}
+
 	/**
 	 * @return a string with the current date involving the year, month, day, hour, and minute
 	 */

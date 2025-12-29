@@ -31,10 +31,10 @@ import interfaces.Observers.ObserverOnConflicts;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Tags.TagMaximize;
 import sets.SetDense;
-import sets.SetDenseReversible;
 import sets.SetSparse.SetSparseCnt;
 import solver.Solver;
 import solver.Solver.Branching;
+import utility.Kit;
 import utility.Kit.VarScore;
 import variables.Domain;
 import variables.Variable;
@@ -54,7 +54,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		ANY, FIRST, LAST;
 	}
 
-	public class Freezer {
+	public final class Freezer {
 
 		public Variable[] frozen;
 
@@ -87,40 +87,171 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			for (int i = 0; i < nFutures; i++)
 				frozen[nPast + i] = varScores[i].x;
 		}
-
 	}
 
-	private int lastDepthWithOnlySingletons = Integer.MAX_VALUE;
+	public final class SingletonManager {
+
+		Variable[] store1, store2; // stores of non singleton variables
+
+		int limit = -1; // limit in store1 (-1 if uninitialized)
+
+		private int lastDepthOfBuilding;
+
+		private int margin;
+
+		SingletonManager(int n) {
+			this.store1 = new Variable[n];
+			this.store2 = new Variable[n];
+			this.limit = -1;
+			this.margin = solver.head.control.varh.discardSingletonsMargin;
+		}
+
+		public void possiblyClearCurrentList() {
+			if (solver.depth() < lastDepthOfBuilding)
+				limit = -1;
+		}
+
+		public void possiblyUpdateList(int newLimit) {
+			assert limit == -1 || limit > newLimit : " limit " + limit + " vs " + newLimit;
+			if (limit == -1 || limit - newLimit > margin) {
+				Variable[] tmp = store1;
+				store1 = store2;
+				store2 = tmp;
+				limit = newLimit;
+				lastDepthOfBuilding = solver.depth();
+			}
+		}
+	}
+
+	public final class SafeSelector {
+
+		private static final int MAX = 50;
+
+		public Variable[] variables;
+
+		public double[] scores;
+
+		public int size;
+
+		public int capacity;
+
+		public int safeSize;
+
+		public int currentSafeIndex;
+
+		public double best2;
+
+		public SafeSelector() {
+			this.variables = new Variable[MAX];
+			this.scores = new double[MAX];
+			this.reset(solver.head.control.varh.safeSelectionCapacity);
+		}
+
+		public void reset(int capacity) {
+			this.capacity = capacity;
+			this.size = 0;
+			this.safeSize = 0;
+			this.currentSafeIndex = 0;
+			this.best2 = -1;
+		}
+
+		public void reset() {
+			reset(solver.head.control.varh.safeSelectionCapacity);
+		}
+
+		public void addPossibly(Variable x, double score) {
+			double score2 = scoreDomain2Of(x);
+			if (x.dom.size() > 2)
+				best2 = Math.max(best2, score2);
+			else {
+				assert x.dom.size() == 2 && size <= capacity && score2 == scoreOf(x);
+				if (score2 <= best2)
+					return;
+				if (size == capacity) {
+					if (scores[size - 1] >= score) // not better
+						return;
+					for (int i = size - 2; i >= 0; i--) {
+						if (scores[i] >= score) {
+							variables[i + 1] = x;
+							scores[i + 1] = score;
+							break;
+						} else {
+							variables[i + 1] = variables[i];
+							scores[i + 1] = scores[i];
+							if (i == 0) {
+								variables[0] = x;
+								scores[0] = score;
+							}
+						}
+					}
+				} else { // we insert it because there is room
+					if (size == 0) {
+						variables[0] = x;
+						scores[0] = score;
+						size++;
+					} else {
+						int pos = size;
+						for (int i = size - 1; i >= 0; i--)
+							if (score > scores[i])
+								pos--;
+						for (int i = size - 1; i >= pos; i--) {
+							variables[i + 1] = variables[i];
+							scores[i + 1] = scores[i];
+						}
+						variables[pos] = x;
+						scores[pos] = score;
+						size++;
+					}
+				}
+			}
+		}
+
+		public int buildSafeSelectionWrtBest2() {
+			assert IntStream.range(0, size - 1).allMatch(i -> scores[i] >= scores[i + 1]);
+
+			safeSize = size;
+			for (int i = 0; i < size; i++)
+				if (scores[i] <= best2) {
+					safeSize = i;
+					break;
+				}
+			// if (safeSize > 0)
+			// System.out.println("best2 " + best2 + " bests " + Kit.join(IntStream.range(0, size).mapToObj(i -> variables[i] + " " + scores[i])) + " safeSize "
+			// + safeSize);
+			return safeSize;
+		}
+
+		public Variable getSafeVariable() {
+			for (int i = currentSafeIndex; i < safeSize; i++) {
+				Variable x = variables[currentSafeIndex++];
+				if (x.dom.size() > 1)
+					return x;
+			}
+			return null;
+		}
+
+	}
 
 	public final Freezer freezer;
 
-	private Variable[] current, other;
+	public final SingletonManager singletonManager;
 
-	private int lastDepthOfBuildingNonSingletonList;
+	private int lastDepthWithOnlySingletons = Integer.MAX_VALUE;
 
-	private int currentNonSingletonsLimit = -1;
-
-	public void possiblyClearCurrentNonSingletonList() {
-		if (solver.depth() < lastDepthOfBuildingNonSingletonList)
-			currentNonSingletonsLimit = -1;
-	}
+	public final SafeSelector safeSelector;
 
 	private int nCalls;
 
 	private double prevBestScore;
 	private int prevCall = -2;
-	private int cnt = 0;
 
 	public HeuristicVariablesDynamic(Solver solver, boolean anti) {
 		super(solver, anti);
 		int n = solver.problem.variables.length;
 		this.freezer = solver.head.control.varh.frozen ? new Freezer(n) : null;
 		// this.nonSingletonVariables = solver.head.control.varh.discardSingletons ? new SetDenseReversible(n, n) : null;
-		if (solver.head.control.varh.discardSingletons) {
-			this.current = new Variable[n];
-			this.other = new Variable[n];
-			this.currentNonSingletonsLimit = -1;
-		}
+		this.singletonManager = solver.head.control.varh.discardSingletonsDuringSearch ? new SingletonManager(n) : null;
+		this.safeSelector = !(this instanceof Wdeg) && solver.head.control.varh.safeSelectionCapacity > 1 ? new SafeSelector() : null;
 	}
 
 	@Override
@@ -147,15 +278,25 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				return x;
 			}
 		}
+
+		SafeSelector safeSelector = this.safeSelector != null && !(this instanceof RunRobin && ((RunRobin) this).currentIndex == 3) ? this.safeSelector : null;
+		if (safeSelector != null) {
+			Variable x = safeSelector.getSafeVariable();
+			if (x != null) {
+				return x;
+			} else
+				safeSelector.reset();
+		}
+
 		bestScoredVariable.beforeIteration(nCalls, false);
 		if (options.singleton == SingletonStrategy.LAST) {
 			if (solver.depth() <= lastDepthWithOnlySingletons) {
 				lastDepthWithOnlySingletons = Integer.MAX_VALUE;
 				int nNonSingletons = 0;
-				if (currentNonSingletonsLimit != -1) {
-					// System.out.println("limit vs " + limit + " vs " + solver.futVars.size());
-					for (int i = 0; i <= currentNonSingletonsLimit; i++) {
-						Variable x = current[i];
+				int limit = singletonManager == null ? -1 : singletonManager.limit;
+				if (limit != -1) {
+					for (int i = 0; i <= limit; i++) {
+						Variable x = singletonManager.store1[i];
 						if (x.dom.size() != 1) {
 							bestScoredVariable.consider(x, scoreOptimizedOf(x));
 							if (options.quitWhenBetterThanPreviousChoice && prevCall + 1 == nCalls && bestScoredVariable.betterThan(prevBestScore)) {
@@ -163,16 +304,14 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 								prevCall = nCalls;
 								return bestScoredVariable.variable;
 							}
-							other[nNonSingletons++] = x;
+							singletonManager.store2[nNonSingletons++] = x;
+							if (safeSelector != null)
+								safeSelector.addPossibly(x, scoreOptimizedOf(x));
 						} else {
 							if (solver.sticking != null && !x.assigned())
 								solver.sticking[x.num] = x.dom.single();
-							cnt++;
 						}
 					}
-					Variable[] tmp = current;
-					current = other;
-					other = tmp;
 				} else {
 					for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
 						if (options.connected && x.firstAssignedNeighbor() == null)
@@ -187,20 +326,20 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 								prevCall = nCalls;
 								return bestScoredVariable.variable;
 							}
-							if (current != null)
-								current[nNonSingletons++] = x;
+							if (singletonManager != null)
+								singletonManager.store2[nNonSingletons++] = x;
+							if (safeSelector != null)
+								safeSelector.addPossibly(x, scoreOptimizedOf(x));
 						} else {
-							if (solver.sticking != null)
+							if (solver.sticking != null && !x.assigned())
 								solver.sticking[x.num] = x.dom.single();
 							// if (this instanceof SingOnDom && x.dom.lastRemovedLevel() == solver.depth())
 							// ((SingOnDom) this).nSings[x.num] += solver.problem.variables.length - solver.depth();
 						}
 					}
 				}
-				if (current != null) {
-					currentNonSingletonsLimit = nNonSingletons - 1;
-					lastDepthOfBuildingNonSingletonList = solver.depth();
-				}
+				if (singletonManager != null)
+					singletonManager.possiblyUpdateList(nNonSingletons - 1);
 				if (bestScoredVariable.variable == null && !options.alwaysAssignAllVariables && !options.connected)
 					return Variable.TAG;
 			}
@@ -223,8 +362,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			prevBestScore = bestScoredVariable.score;
 			prevCall = nCalls;
 		}
-		return bestScoredVariable.variable;
 
+		if (safeSelector != null) {
+			safeSelector.buildSafeSelectionWrtBest2();
+		}
+		return bestScoredVariable.variable;
 	}
 
 	// ************************************************************************
@@ -293,8 +435,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	public static final class FrbaOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, TagMaximize {
 
+		// private final VarAssignments[] varAssignments;
+
 		public FrbaOnDom(Solver solver, boolean anti) {
 			super(solver, anti);
+			// this.varAssignments = solver.stats.varAssignments;
 		}
 
 		@Override
@@ -312,7 +457,13 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public double scoreOf(Variable x) {
-			return x.specificWeight * x.frbaOnDom();
+			// return x.specificWeight * x.frbaOnDom();
+			return x.specificWeight * solver.stats.varAssignments[x.num].failureAgedRate() / x.dom.size();
+		}
+
+		@Override
+		public double scoreDomain2Of(Variable x) {
+			return x.specificWeight * solver.stats.varAssignments[x.num].failureAgedRate() / 2;
 		}
 	}
 
@@ -375,6 +526,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public double scoreOf(Variable x) {
 			return (x.specificWeight * nPicks[x.num]) / (double) x.dom.size();
+		}
+
+		@Override
+		public double scoreDomain2Of(Variable x) {
+			return (x.specificWeight * nPicks[x.num]) / 2.0;
 		}
 	}
 
@@ -532,6 +688,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		public HeuristicVariables current;
 
+		public int currentIndex;
+
+		private final boolean[] observerOnConflicts; // to avoid the expensive instanceof
+
 		public RunRobin(Solver solver, boolean anti) {
 			super(solver, anti);
 			List<HeuristicVariables> list = new ArrayList<>();
@@ -543,7 +703,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				Stream.of(new SingOnDom(solver, anti)).forEach(h -> list.add(h));
 			// Stream.of(new SingOnDom(solver, anti), new OrgnOnDom(solver, anti)).forEach(h -> list.add(h));
 			this.pool = list.stream().toArray(HeuristicVariables[]::new);
-
+			this.observerOnConflicts = new boolean[pool.length];
+			for (int i = 0; i < pool.length; i++)
+				if (pool[i] instanceof ObserverOnConflicts)
+					observerOnConflicts[i] = true;
 		}
 
 		@Override
@@ -555,7 +718,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void beforeRun() {
 			int run = solver.restarter.numRun;
-			current = pool[run % pool.length];
+			currentIndex = run % pool.length;
+			current = pool[currentIndex];
 			if (current instanceof Wdeg)
 				options.weighting = ConstraintWeighting.CACD;
 			else if (current instanceof WdegOnDom)
@@ -570,7 +734,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void whenWipeout(Constraint c, Variable x) {
-			if (current instanceof ObserverOnConflicts)
+			if (observerOnConflicts[currentIndex]) // current instanceof ObserverOnConflicts)
 				((ObserverOnConflicts) current).whenWipeout(c, x);
 		}
 
@@ -581,6 +745,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public double scoreOf(Variable x) {
 			return current.scoreOf(x);
+		}
+
+		@Override
+		public double scoreDomain2Of(Variable x) {
+			return current.scoreDomain2Of(x);
 		}
 	}
 
@@ -894,6 +1063,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				return d / x.dom.size();
 			}
 			return x.specificWeight * vscores[x.num] / x.dom.size();
+		}
+
+		@Override
+		public double scoreDomain2Of(Variable x) {
+			return x.specificWeight * vscores[x.num] / 2;
 		}
 	}
 

@@ -18,8 +18,10 @@ import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import heuristics.HeuristicVariablesDynamic;
+import heuristics.HeuristicVariablesDynamic.SafeSelector;
+import heuristics.HeuristicVariablesDynamic.SingletonManager;
 import interfaces.Observers.ObserverOnSolving;
-import sets.SetDenseReversible;
+import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 
@@ -70,7 +72,9 @@ public final class FutureVariables implements Iterable<Variable>, ObserverOnSolv
 
 	private int nPivot;
 
-	private final HeuristicVariablesDynamic heuristic;
+	private final SingletonManager singletonManager;
+
+	private final SafeSelector safeSelector;
 
 	// private final SetDenseReversible nonSingletonVariables;
 
@@ -82,9 +86,17 @@ public final class FutureVariables implements Iterable<Variable>, ObserverOnSolv
 					remove(x);
 			if (pastLimit != -1)
 				Kit.log.config(Kit.Color.YELLOW.coloring("\n ...Discarding " + (pastLimit + 1) + " singleton variables"));
-			nPivot = vars.length - (pastLimit + 1) - 1;
-			pastLimit = -1;
 		}
+		int before = pastLimit;
+		if (solver.head.control.varh.discardAux) {
+			for (Variable x : vars)
+				if (x.dom.size() > 1 && x.isAuxiliaryVariableIntroducedBySolver())
+					remove(x);
+			if (pastLimit != before)
+				Kit.log.config(Kit.Color.YELLOW.coloring("\n ...Discarding " + (pastLimit - before) + " aux variables"));
+		}
+		nPivot = vars.length - (pastLimit + 1) - 1;
+		pastLimit = -1;
 	}
 
 	/**
@@ -104,10 +116,8 @@ public final class FutureVariables implements Iterable<Variable>, ObserverOnSolv
 		this.pastLimit = -1;
 		this.nPivot = vars.length - 1;
 		control(Variable.areNumsNormalized(vars));
-		heuristic = solver.heuristic instanceof HeuristicVariablesDynamic ? (HeuristicVariablesDynamic) solver.heuristic : null;
-		// this.nonSingletonVariables = solver.heuristic instanceof HeuristicVariablesDynamic
-		// ? ((HeuristicVariablesDynamic) solver.heuristic).nonSingletonVariables
-		// : null;
+		this.singletonManager = solver.heuristic instanceof HeuristicVariablesDynamic ? ((HeuristicVariablesDynamic) solver.heuristic).singletonManager : null;
+		this.safeSelector = solver.heuristic instanceof HeuristicVariablesDynamic ? ((HeuristicVariablesDynamic) solver.heuristic).safeSelector : null;
 	}
 
 	/**
@@ -228,8 +238,11 @@ public final class FutureVariables implements Iterable<Variable>, ObserverOnSolv
 			last = i;
 		else
 			prevs[next] = i;
-		if (heuristic != null) // keep it here after having added the last past variable
-			heuristic.possiblyClearCurrentNonSingletonList();
+		if (singletonManager != null) // keep it here after having added the last past variable
+			singletonManager.possiblyClearCurrentList();
+		if (safeSelector != null) // keep it here after having added the last past variable
+			safeSelector.reset();
+
 	}
 
 	/**

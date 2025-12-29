@@ -195,7 +195,7 @@ public final class Control {
 			restarts.factor = 1.05;
 		}
 		control(varh.discardSingletonsAfterPrepro == false || varh.alwaysAssignAllVariables == false);
-		
+
 	}
 
 	public void framework(Optimizer optimizer) {
@@ -679,8 +679,15 @@ public final class Control {
 		public final SingletonStrategy singleton = addE("singleton", "sing", SingletonStrategy.LAST, "How to manage singleton variables during search");
 		public final boolean connected = addB("connected", "", false, "Must we select a variable necessarily connected to an already explicitly assigned one?");
 		public final boolean discardAux = addB("discardAux", "da", false, "Must we not branch on auxiliary variables introduced by the solver?");
-		public final boolean discardSingletonsAfterPrepro = addB("discardSingletonsAfterPrepro", "dsap", true, "Should we discard non explicitly singleton variables from futVars after preprocessing");
-		public final boolean discardSingletons = addB("discardSingletons", "ds", false, "Should we discard non explicitly singleton variables from futVars");
+		public final boolean discardSingletonsAfterPrepro = addB("discardSingletonsAfterPrepro", "dsp", true,
+				"Should we discard non explicitly singleton variables from futVars after preprocessing");
+		public final boolean discardSingletonsDuringSearch = addB("discardSingletonsDuringSearch", "dss", false,
+				"Should we discard non explicitly singleton variables from futVars during search");
+		public final int discardSingletonsMargin = addI("discardSingletonsMargin", "dsm", 5,
+				"Margin for temporarizing the building of new lists of singleton variables");
+
+		public final int safeSelectionCapacity = addI("safeSelectionCapacity", "ssc", 0, "Capacity of storing safe best scored variables");
+
 		public final boolean arrayPriorityRunRobin = addB("arrayPriorityRunRobin", "aprr", false, "Must we set priority to variable arrays in turn?");
 		public final int mode = addI("mode", "mode", 0, "general option used differently according to the context");
 		public final int lostDepth = addI("lostDepth", "ld", 0, "xx");
@@ -688,7 +695,7 @@ public final class Control {
 		public final int optVarHeuristic = addI("optVarHeuristic", "ovarh", 0,
 				"On how many variables must we branch in a fixed static way on the variables of the objective (when a weighted sum) according to coeff values?"); // experimental
 		public final boolean alwaysAssignAllVariables = addB("alwaysAssignAllVariables", "aaa", false, "Must we always explicitly assign all variables?");
-		public final boolean secondScored = addB("secondScored", "ssc", false, "Must we use the second variable scored by the heuristic?");
+		public final boolean secondScored = addB("secondScored", "sds", false, "Must we use the second variable scored by the heuristic?");
 		public final boolean quitWhenBetterThanPreviousChoice = addB("quitWhenBetterThanPreviousChoice", "qwb", false,
 				"Must we return a variable when its score is better than the score of the previously selected variable?");
 		public final boolean frozen = addB("frozen", "frozen", false, "Must we freeze variables during runs?");
