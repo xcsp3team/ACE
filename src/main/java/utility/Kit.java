@@ -796,12 +796,12 @@ public final class Kit {
 		}
 	}
 
-	public static class VarScore implements Comparable<VarScore> {
+	public static class ScoredVariable implements Comparable<ScoredVariable> {
 		public Variable x;
 
 		public double s;
 
-		public VarScore() {
+		public ScoredVariable() {
 		}
 
 		public void set(Variable x, double s) {
@@ -810,7 +810,7 @@ public final class Kit {
 		}
 
 		@Override
-		public int compareTo(VarScore other) {
+		public int compareTo(ScoredVariable other) {
 			return Double.compare(other.s, s); // scores in decreasing order
 		}
 	}

@@ -21,7 +21,6 @@ import heuristics.HeuristicVariablesDynamic;
 import heuristics.HeuristicVariablesDynamic.SafeSelector;
 import heuristics.HeuristicVariablesDynamic.SingletonManager;
 import interfaces.Observers.ObserverOnSolving;
-import problem.Problem;
 import utility.Kit;
 import variables.Variable;
 

@@ -46,8 +46,6 @@ import interfaces.Tags.TagNotSymmetric;
 import interfaces.Tags.TagPostponableFiltering;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
-import propagation.Forward;
-import propagation.Reviser;
 import propagation.Supporter;
 import sets.SetDense;
 import sets.SetSparse;

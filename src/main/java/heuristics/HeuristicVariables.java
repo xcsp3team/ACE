@@ -293,7 +293,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	 */
 	public abstract double scoreOf(Variable x);
 
-	public double scoreDomain2Of(Variable x) {
+	public double scoreIfBinaryDomainOf(Variable x) {
 		throw new AssertionError("Not implemented for " + this.getClass());
 	}
 
@@ -305,9 +305,8 @@ public abstract class HeuristicVariables extends Heuristic {
 	 *            a variable
 	 * @return the "optimized" score of the specified variable
 	 */
-	public final double scoreOptimizedOf(Variable x) {
-		if (x.dom instanceof DomainInfinite)
-			// because such variables must be computed (and not assigned); but EXPERIMENTAL
+	public double scoreOptimizedOf(Variable x) {
+		if (x.dom instanceof DomainInfinite) // because such variables must be computed (and not assigned); but EXPERIMENTAL
 			return multiplier == -1 ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 		return scoreOf(x) * multiplier;
 	}

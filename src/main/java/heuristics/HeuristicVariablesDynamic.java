@@ -34,9 +34,9 @@ import sets.SetDense;
 import sets.SetSparse.SetSparseCnt;
 import solver.Solver;
 import solver.Solver.Branching;
-import utility.Kit;
-import utility.Kit.VarScore;
+import utility.Kit.ScoredVariable;
 import variables.Domain;
+import variables.DomainInfinite;
 import variables.Variable;
 
 /**
@@ -54,18 +54,22 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		ANY, FIRST, LAST;
 	}
 
+	/*************************************************************************
+	 * Intern auxiliary classes
+	 *************************************************************************/
+
 	public final class Freezer {
 
 		public Variable[] frozen;
 
-		private VarScore[] varScores;
+		private ScoredVariable[] scoredVariables;
 
-		public int numRun = -2;
+		private int numRun = -2;
 
 		public Freezer(int n) {
 			control(solver.problem.priorityVars.length == 0);
 			this.frozen = new Variable[n];
-			this.varScores = IntStream.range(0, n).mapToObj(i -> new VarScore()).toArray(VarScore[]::new);
+			this.scoredVariables = IntStream.range(0, n).mapToObj(i -> new ScoredVariable()).toArray(ScoredVariable[]::new);
 			solver.restarter.freezer = this;
 		}
 
@@ -82,24 +86,24 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				frozen[i] = solver.futVars.getPast(i);
 			int nFutures = 0;
 			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x))
-				varScores[nFutures++].set(x, scoreOptimizedOf(x));
-			Arrays.sort(varScores, 0, nFutures);
+				scoredVariables[nFutures++].set(x, scoreOptimizedOf(x));
+			Arrays.sort(scoredVariables, 0, nFutures);
 			for (int i = 0; i < nFutures; i++)
-				frozen[nPast + i] = varScores[i].x;
+				frozen[nPast + i] = scoredVariables[i].x;
 		}
 	}
 
 	public final class SingletonManager {
 
-		Variable[] store1, store2; // stores of non singleton variables
+		public Variable[] store1, store2; // stores of non singleton variables
 
-		int limit = -1; // limit in store1 (-1 if uninitialized)
+		public int limit = -1; // limit in store1 (-1 if uninitialized)
 
 		private int lastDepthOfBuilding;
 
 		private int margin;
 
-		SingletonManager(int n) {
+		public SingletonManager(int n) {
 			this.store1 = new Variable[n];
 			this.store2 = new Variable[n];
 			this.limit = -1;
@@ -148,6 +152,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 
 		public void reset(int capacity) {
+			control(capacity <= MAX);
 			this.capacity = capacity;
 			this.size = 0;
 			this.safeSize = 0;
@@ -160,11 +165,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 
 		public void addPossibly(Variable x, double score) {
-			double score2 = scoreDomain2Of(x);
+			double score2 = scoreIfBinaryDomainOf(x); // we only deal with heuristics that maximizes (no need to care about the multiplier)
 			if (x.dom.size() > 2)
 				best2 = Math.max(best2, score2);
 			else {
-				assert x.dom.size() == 2 && size <= capacity && score2 == scoreOf(x);
+				assert x.dom.size() == 2 && size <= capacity && score2 == scoreOf(x); // idem; no need to care about the multiplier
 				if (score2 <= best2)
 					return;
 				if (size == capacity) {
@@ -185,28 +190,22 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 						}
 					}
 				} else { // we insert it because there is room
-					if (size == 0) {
-						variables[0] = x;
-						scores[0] = score;
-						size++;
-					} else {
-						int pos = size;
-						for (int i = size - 1; i >= 0; i--)
-							if (score > scores[i])
-								pos--;
-						for (int i = size - 1; i >= pos; i--) {
-							variables[i + 1] = variables[i];
-							scores[i + 1] = scores[i];
-						}
-						variables[pos] = x;
-						scores[pos] = score;
-						size++;
+					int pos = size;
+					for (int i = size - 1; i >= 0; i--)
+						if (score > scores[i])
+							pos--;
+					for (int i = size - 1; i >= pos; i--) {
+						variables[i + 1] = variables[i];
+						scores[i + 1] = scores[i];
 					}
+					variables[pos] = x;
+					scores[pos] = score;
+					size++;
 				}
 			}
 		}
 
-		public int buildSafeSelectionWrtBest2() {
+		public int buildSafeSelection() { // with respect to the best score if non-binary domains are assumed to be binary
 			assert IntStream.range(0, size - 1).allMatch(i -> scores[i] >= scores[i + 1]);
 
 			safeSize = size;
@@ -232,11 +231,15 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	}
 
+	/*************************************************************************
+	 * Fields and methods
+	 *************************************************************************/
+
+	private int lastDepthWithOnlySingletons = Integer.MAX_VALUE;
+
 	public final Freezer freezer;
 
 	public final SingletonManager singletonManager;
-
-	private int lastDepthWithOnlySingletons = Integer.MAX_VALUE;
 
 	public final SafeSelector safeSelector;
 
@@ -251,7 +254,9 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		this.freezer = solver.head.control.varh.frozen ? new Freezer(n) : null;
 		// this.nonSingletonVariables = solver.head.control.varh.discardSingletons ? new SetDenseReversible(n, n) : null;
 		this.singletonManager = solver.head.control.varh.discardSingletonsDuringSearch ? new SingletonManager(n) : null;
-		this.safeSelector = !(this instanceof Wdeg) && solver.head.control.varh.safeSelectionCapacity > 1 ? new SafeSelector() : null;
+		this.safeSelector = solver.head.control.varh.safeSelectionCapacity > 1
+				&& (this instanceof WdegOnDom || this instanceof FrbaOnDom || this instanceof PickOnDom || this instanceof RunRobin) ? new SafeSelector()
+						: null;
 	}
 
 	@Override
@@ -364,7 +369,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 
 		if (safeSelector != null) {
-			safeSelector.buildSafeSelectionWrtBest2();
+			safeSelector.buildSafeSelection();
 		}
 		return bestScoredVariable.variable;
 	}
@@ -462,7 +467,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 
 		@Override
-		public double scoreDomain2Of(Variable x) {
+		public double scoreIfBinaryDomainOf(Variable x) {
 			return x.specificWeight * solver.stats.varAssignments[x.num].failureAgedRate() / 2;
 		}
 	}
@@ -529,7 +534,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 
 		@Override
-		public double scoreDomain2Of(Variable x) {
+		public double scoreIfBinaryDomainOf(Variable x) {
 			return (x.specificWeight * nPicks[x.num]) / 2.0;
 		}
 	}
@@ -694,6 +699,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		public RunRobin(Solver solver, boolean anti) {
 			super(solver, anti);
+			control(anti == false);
 			List<HeuristicVariables> list = new ArrayList<>();
 			int mode = solver.head.control.varh.mode;
 			if (mode >= 0)
@@ -703,6 +709,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				Stream.of(new SingOnDom(solver, anti)).forEach(h -> list.add(h));
 			// Stream.of(new SingOnDom(solver, anti), new OrgnOnDom(solver, anti)).forEach(h -> list.add(h));
 			this.pool = list.stream().toArray(HeuristicVariables[]::new);
+			control(Stream.of(pool).allMatch(h -> h instanceof TagMaximize)
+					&& Stream.of(solver.problem.variables).allMatch(x -> !(x.dom instanceof DomainInfinite)));
 			this.observerOnConflicts = new boolean[pool.length];
 			for (int i = 0; i < pool.length; i++)
 				if (pool[i] instanceof ObserverOnConflicts)
@@ -748,8 +756,13 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 
 		@Override
-		public double scoreDomain2Of(Variable x) {
-			return current.scoreDomain2Of(x);
+		public final double scoreOptimizedOf(Variable x) {
+			return current.scoreOf(x); // because no need for a multiplier (all heuristics in RunRobin are about maximizing)
+		}
+
+		@Override
+		public double scoreIfBinaryDomainOf(Variable x) {
+			return current.scoreIfBinaryDomainOf(x);
 		}
 	}
 
@@ -1027,13 +1040,16 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	 */
 	public static final class Wdeg extends WdegVariant {
 
+		private final boolean chs;
+
 		public Wdeg(Solver solver, boolean anti) {
 			super(solver, anti);
+			this.chs = options.weighting == CHS;
 		}
 
 		@Override
 		public double scoreOf(Variable x) {
-			if (options.weighting == CHS) {
+			if (chs) {
 				double d = 0;
 				for (Constraint c : x.ctrs)
 					if (c.futvars.size() > 1)
@@ -1049,13 +1065,16 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	 */
 	public static class WdegOnDom extends WdegVariant {
 
+		private final boolean chs;
+
 		public WdegOnDom(Solver solver, boolean anti) {
 			super(solver, anti);
+			this.chs = options.weighting == CHS;
 		}
 
 		@Override
 		public double scoreOf(Variable x) {
-			if (options.weighting == CHS) {
+			if (chs) {
 				double d = 0;
 				for (Constraint c : x.ctrs)
 					if (c.futvars.size() > 1)
@@ -1066,7 +1085,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 
 		@Override
-		public double scoreDomain2Of(Variable x) {
+		public double scoreIfBinaryDomainOf(Variable x) {
+			assert chs == false;
 			return x.specificWeight * vscores[x.num] / 2;
 		}
 	}
