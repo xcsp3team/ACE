@@ -742,7 +742,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void whenWipeout(Constraint c, Variable x) {
-			if (observerOnConflicts[currentIndex]) // current instanceof ObserverOnConflicts)
+			if (current != null && observerOnConflicts[currentIndex]) // current instanceof ObserverOnConflicts)
 				((ObserverOnConflicts) current).whenWipeout(c, x);
 		}
 
