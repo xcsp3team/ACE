@@ -271,7 +271,7 @@ public abstract class HeuristicValues extends Heuristic {
 					// if (!followEvenObj)
 					// System.out.println(nb);
 					if (!options.solutionSavingExceptObj || x.problem.optimizer == null || !((Constraint) x.problem.optimizer.ctr).involves(x)) {
-						int a = solver.solutions.last[x.num];
+						int a = solver.solutions.last.idxs[x.num];
 						if (dx.contains(a)) // && (!priorityVar || solver.rs.random.nextDouble() < 0.5))
 							return a;
 					}

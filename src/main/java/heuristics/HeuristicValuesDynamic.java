@@ -390,7 +390,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		@Override
 		public int computeBestValueIndex() {
 			inconsistent.clear();
-			int last = solver.solutions.found == 0 ? -1 : solver.solutions.last[x.num];
+			int last = solver.solutions.found == 0 ? -1 : solver.solutions.last.idxs[x.num];
 			if ((options.bivsFirst && solver.solutions.found > 0) || dx.size() > options.bivsLimit) {
 				if (last != -1 && dx.contains(last))
 					return last; // solution saving in that case

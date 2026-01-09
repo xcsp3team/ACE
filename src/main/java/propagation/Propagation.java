@@ -350,7 +350,7 @@ public abstract class Propagation {
 		// we rerun propagation if a solution has just been found (since the objective constraint has changed), or if it
 		// must be forced anyway
 		int numRun = solver.restarter.numRun;
-		boolean rerun = runAtNextRoot || (solver.problem.optimizer != null && numRun - 1 == solver.solutions.lastRun)
+		boolean rerun = runAtNextRoot || (solver.problem.optimizer != null && numRun - 1 == solver.solutions.last.numRun)
 				|| (options.strongOnce && 0 < numRun && numRun % 60 == 0) // TODO hard coding for 60
 				|| (solver.problem.optimizer != null && solver.problem.optimizer.ctr instanceof ConstraintIntension);
 		if (rerun) {

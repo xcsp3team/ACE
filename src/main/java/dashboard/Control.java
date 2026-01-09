@@ -701,6 +701,8 @@ public final class Control {
 				"Must we return a variable when its score is better than the score of the previously selected variable?");
 		public final boolean frozen = addB("frozen", "frozen", false, "Must we freeze variables during runs?");
 		public final int updateStackLength = addI("updateStackLength", "usl", 0, "Length of the stack used for recording sequentially better scored variables");
+		
+		public final int solutionPreserving = addI("solutionPreserving", "sop", 10, "Percentage of the last solution preserved (0: disabled)");
 	}
 
 	public class OptionsValh extends OptionGroup {

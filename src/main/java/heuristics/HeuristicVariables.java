@@ -15,6 +15,7 @@ import static utility.Kit.control;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import dashboard.Control.OptionsRestarts;
 import dashboard.Control.OptionsVarh;
 import dashboard.Output;
 import problem.Problem;
@@ -365,8 +366,8 @@ public abstract class HeuristicVariables extends Heuristic {
 	 */
 	protected boolean runReset() {
 		int numRun = solver.restarter.numRun;
-		return ((0 < numRun && numRun % solver.head.control.restarts.varhResetPeriod == 0)
-				|| (numRun - solver.solutions.lastRun) % solver.head.control.restarts.varhSolResetPeriod == 0);
+		OptionsRestarts options = solver.head.control.restarts;
+		return ((0 < numRun && numRun % options.varhResetPeriod == 0) || (numRun - solver.solutions.last.numRun) % options.varhSolResetPeriod == 0);
 	}
 
 	protected void resettingMessage(String s) {

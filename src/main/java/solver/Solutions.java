@@ -77,19 +77,14 @@ public final class Solutions {
 	public long bestBound;
 
 	/**
-	 * The last found solution (array containing indexes of values, and not values), or null
-	 */
-	public int[] last;
-
-	/**
-	 * The number of the run where the last solution has been found, or -1 if no solution has been found
-	 */
-	public int lastRun = -1;
-
-	/**
 	 * Stores all solutions found by the solver, if activated
 	 */
 	public final List<Object> store;
+
+	/**
+	 * The object handling information about the last found solution
+	 */
+	public final LastSolution last;
 
 	/**
 	 * The object used to output solutions in XML
@@ -118,6 +113,75 @@ public final class Solutions {
 	/**********************************************************************************************
 	 * Auxiliary classes
 	 *********************************************************************************************/
+
+	public class LastSolution {
+
+		/**
+		 * The last found solution (array containing indexes of values, and not values), or null
+		 */
+		public int[] idxs;
+
+		/**
+		 * The number of the run where the last solution has been found, or -1 if no solution has been found
+		 */
+		public int numRun = -1;
+
+		private final Variable[] assignmentOrder;
+
+		private final int[] assignmentPos;
+
+		private int assignmentOrderSize;
+
+		private LastSolution() {
+			this.assignmentOrder = solver.head.control.varh.solutionPreserving > 0 ? new Variable[solver.problem.variables.length] : null;
+			this.assignmentPos = solver.head.control.varh.solutionPreserving > 0 ? new int[solver.problem.variables.length] : null;
+		}
+
+		private void record(int[] t) {
+			numRun = solver.restarter.numRun;
+			Variable[] variables = solver.problem.variables;
+			assert t == null || t.length == variables.length;
+			idxs = idxs == null ? new int[variables.length] : idxs;
+			for (int i = 0; i < idxs.length; i++)
+				idxs[i] = t != null ? t[i] : variables[i].dom.single();
+			if (store != null)
+				store.add(idxs.clone());
+
+			if (assignmentOrder != null) {
+				for (int i = 0; i < solver.futVars.nPast(); i++) {
+					Variable x = solver.futVars.getPast(i);
+					assignmentOrder[i] = x;
+					assignmentPos[x.num] = i;
+				}
+				// System.out.println("hhhh " + Kit.join(assignmentOrder));
+			}
+			// SumSimpleLE c = (SumSimpleLE) solver.pb.optimizer.ctr; Variable x = c.mostImpacting();
+			// System.out.println("ccccc most " + x + " " + x.dom.toVal(lastSolution[x.num]));
+		}
+
+		public Variable getVariable() {
+			if (found == 0)
+				return null;
+			int pos = 0;
+			Variable x = solver.futVars.lastPast();
+			if (x != null) {
+				int i = assignmentPos[x.num];
+				if (i < assignmentOrderSize && assignmentOrder[i] == x)
+					pos = i + 1;
+				else
+					return null;
+			}
+			// we select the next variable with the specified probability
+			while (pos < assignmentOrderSize) {
+				int v = solver.head.random.nextInt(100);
+				if (v < solver.head.control.varh.solutionPreserving)
+					return assignmentOrder[pos];
+				pos++;
+			}
+			return null;
+		}
+
+	}
 
 	/**
 	 * Class for outputting solutions in XML
@@ -149,7 +213,7 @@ public final class Solutions {
 			else if (object instanceof Variable) {
 				Variable x = (Variable) object;
 				if (solver.problem.features.collecting.variables.contains(x))
-					list.add(x.dom.toVal(last[x.num])); // ((Variable) object).valueIndexInLastSolution));
+					list.add(x.dom.toVal(last.idxs[x.num])); // ((Variable) object).valueIndexInLastSolution));
 				else if (x == solver.problem.replacedObjVar)
 					list.add((int) bestBound);
 			} else // recursive call
@@ -193,7 +257,7 @@ public final class Solutions {
 					sb.append("  ");
 				if (va instanceof VarAlone) {
 					Variable x = (Variable) ((VarAlone) va).var;
-					sb.append(x.dom.prettyValueOf(x == solver.problem.replacedObjVar ? (int) bestBound : last[x.num])); // .valueIndexInLastSolution));
+					sb.append(x.dom.prettyValueOf(x == solver.problem.replacedObjVar ? (int) bestBound : last.idxs[x.num])); // .valueIndexInLastSolution));
 				} else
 					sb.append(Variable.rawInstantiationOf(VarArray.class.cast(va).vars));
 			}
@@ -228,40 +292,44 @@ public final class Solutions {
 
 		int distanceOpt;
 
+		private final Variable[][] arraysVariables;
+
 		private HammingInformation() {
 			this.distances = new int[solver.problem.varArrays.length + 2]; // +2 for stand-alone variables and solver auxiliary variables
+			this.arraysVariables = Stream.of(solver.problem.varArrays).filter(va -> va.flatVars != null)
+					.map(va -> Stream.of(va.flatVars).map(x -> (Variable) x).toArray(Variable[]::new)).toArray(Variable[][]::new);
 		}
 
 		private void compute() {
 			if (found <= 1)
 				return;
-			StringBuilder sb = new StringBuilder();
+			int[] idxs = last.idxs;
 			int i = 0;
+			StringBuilder sb = new StringBuilder();
+
 			for (VarArray va : solver.problem.varArrays) {
 				if (va.flatVars != null) {
-					int v = (int) Stream.of(va.flatVars).filter(x -> last[((Variable) x).num] != solver.problem.variables[((Variable) x).num].dom.single())
-							.count();
+					int v = (int) Stream.of(arraysVariables[i]).filter(x -> idxs[x.num] != x.dom.single()).count();
 					distances[i++] = v;
 					if (v > 0)
 						sb.append(" ").append(va.id).append(":").append(v);
 				}
 			}
 
-			int v = (int) Stream.of(solver.problem.varAlones).filter(x -> last[x.num] != solver.problem.variables[x.num].dom.single()).count();
+			int v = (int) Stream.of(solver.problem.varAlones).filter(x -> idxs[x.num] != x.dom.single()).count();
 			distances[i++] = v;
 			if (v > 0)
 				sb.append(" ").append("aln").append(":").append(v);
 
-			v = (int) Stream.of(solver.problem.auxiliaryVars).filter(x -> last[x.num] != solver.problem.variables[x.num].dom.single()).count();
+			v = (int) Stream.of(solver.problem.auxiliaryVars).filter(x -> idxs[x.num] != x.dom.single()).count();
 			distances[i++] = v;
 			if (v > 0)
 				sb.append(" ").append(Problem.AUXILIARY_VARIABLE_PREFIX).append(":").append(v);
 
-			assert IntStream.of(distances).sum() == IntStream.range(0, last.length).filter(j -> last[j] != solver.problem.variables[j].dom.single()).count();
+			assert IntStream.of(distances).sum() == IntStream.range(0, idxs.length).filter(j -> idxs[j] != solver.problem.variables[j].dom.single()).count();
 
 			if (solver.problem.optimizer != null) {
-				distanceOpt = (int) Stream.of(((Constraint) solver.problem.optimizer.ctr).scp)
-						.filter(x -> last[x.num] != solver.problem.variables[x.num].dom.single()).count();
+				distanceOpt = (int) Stream.of(((Constraint) solver.problem.optimizer.ctr).scp).filter(x -> idxs[x.num] != x.dom.single()).count();
 			}
 		}
 
@@ -296,7 +364,7 @@ public final class Solutions {
 			if (va instanceof VarAlone) {
 				Variable x = (Variable) ((VarAlone) va).var;
 				if (solver.problem.features.collecting.variables.contains(x))
-					sb.append(x.dom.prettyValueOf(last[x.num])); // valueIndexInLastSolution));
+					sb.append(x.dom.prettyValueOf(last.idxs[x.num])); // valueIndexInLastSolution));
 				else if (x == solver.problem.replacedObjVar)
 					sb.append(bestBound);
 			} else
@@ -321,6 +389,7 @@ public final class Solutions {
 		this.bestBound = solver.problem.optimizer == null || solver.problem.optimizer.minimization ? solver.head.control.optimization.ub
 				: solver.head.control.optimization.lb;
 		this.store = solver.head.control.general.saveSolutions ? new ArrayList<>() : null;
+		this.last = new LastSolution();
 		this.xml = new XML();
 		this.hammingInformation = solver.head.control.solving.hammingInformation && solver.problem.framework == COP ? new HammingInformation() : null;
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
@@ -390,23 +459,9 @@ public final class Solutions {
 						Color.RED.println("d INCOMPLETE EXPLORATION");
 
 					System.out.flush();
-
 				}
 			}
 		}
-	}
-
-	private void record(int[] t) {
-		Variable[] variables = solver.problem.variables;
-		assert t == null || t.length == variables.length;
-		last = last == null ? new int[variables.length] : last;
-		for (int i = 0; i < last.length; i++)
-			last[i] = t != null ? t[i] : variables[i].dom.single();
-		if (store != null)
-			store.add(last.clone());
-
-		// SumSimpleLE c = (SumSimpleLE) solver.pb.optimizer.ctr; Variable x = c.mostImpacting();
-		// System.out.println("ccccc most " + x + " " + x.dom.toVal(lastSolution[x.num]));
 	}
 
 	/**
@@ -421,6 +476,9 @@ public final class Solutions {
 				else
 					assert controlFoundSolution();
 				found++;
+				if (found >= limit)
+					solver.stopping = Stopping.REACHED_GOAL;
+
 				// if (found == 1) {
 				// Constraint c = ((Constraint) solver.problem.optimizer.ctr);
 				// boolean minimization = solver.problem.optimizer.minimization;
@@ -431,24 +489,23 @@ public final class Solutions {
 				// // solver.problem.priorityVars = c.scp;
 				// solver.heuristic.priorityVars = t;
 				// solver.heuristic = new Rand(solver, false); }
-				lastRun = solver.restarter.numRun;
+
 				if (hammingInformation != null)
 					hammingInformation.compute();
-				if (found >= limit)
-					solver.stopping = Stopping.REACHED_GOAL;
+
 				if (solver.propagation.performingProperSearch) {
 					if (solver.problem.optimizer != null) { // COP
 						long bound = solver.problem.optimizer.value();
 						if (solver.problem.optimizer.minimization && bound < bestBound || !solver.problem.optimizer.minimization && bound > bestBound) {
 							bestBound = bound;
 							Color.GREEN.println("o " + solver.problem.optimizer.valueWithGap(bound), "  " + (solver.head.instanceStopwatch.wckTimeInSeconds()));
-							record(null);
+							last.record(null);
 						}
 					} else
-						record(null);
+						last.record(null);
 					return;
 				}
-				record(null);
+				last.record(null);
 				solver.stats.times.onNewSolution();
 				String wck = solver.head.instanceStopwatch.wckTimeInSeconds();
 				if (found == 1)

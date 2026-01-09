@@ -288,7 +288,7 @@ public class Restarter implements ObserverOnRuns {
 			if (2 * measure >= currCutoff)
 				freezer.freezeAt(numRun);
 		}
-		if (optimizer == null || numRun != solver.solutions.lastRun)
+		if (optimizer == null || numRun != solver.solutions.last.numRun)
 			return false;
 		return options.restartAfterSolution;
 		// for CSP, shouldnt'we add the last solution as nogood if restartAfterSolution (otherwise, possibility of
@@ -305,7 +305,7 @@ public class Restarter implements ObserverOnRuns {
 	}
 
 	public int howManyRunsSincelastSolution() {
-		int v = solver.solutions.lastRun;
+		int v = solver.solutions.last.numRun;
 		return v == -1 ? -1 : (numRun - v);
 	}
 
@@ -323,7 +323,7 @@ public class Restarter implements ObserverOnRuns {
 		@Override
 		public void beforeRun() {
 			super.beforeRun();
-			int[] solution = solver.solutions.last;
+			int[] solution = solver.solutions.last.idxs;
 			if (solution == null)
 				return;
 			heuristic.freezeVariables(solution);

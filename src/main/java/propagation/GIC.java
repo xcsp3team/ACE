@@ -241,7 +241,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 
 		@Override
 		protected void handleNewSolution(Variable x, int a) {
-			handleSolution(x, a, solver.solutions.last);
+			handleSolution(x, a, solver.solutions.last.idxs);
 		}
 
 		@Override
@@ -276,7 +276,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 
 		@Override
 		protected void handleNewSolution(Variable x, int a) {
-			int[] solution = solver.solutions.last;
+			int[] solution = solver.solutions.last.idxs;
 			handleSolution(x, a, solution);
 			if (residues[x.num][a] == null)
 				residues[x.num][a] = new int[solver.problem.variables.length];

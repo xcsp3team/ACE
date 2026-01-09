@@ -327,7 +327,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 			}
 
 			public Variable mostImpacting() { // experimental
-				int[] solution = problem.solver.solutions.last;
+				int[] solution = problem.solver.solutions.last.idxs;
 				List<Variable> list = new ArrayList<>();
 				int bestGap = Integer.MIN_VALUE;
 				for (Variable x : scp) {
