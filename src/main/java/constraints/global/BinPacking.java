@@ -376,6 +376,10 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 				limits[i] = loads[i].dom.lastValue();
 			if (super.runPropagator(x) == false)
 				return false;
+			
+//			boolean tst = true;  // TODO use an option to avoid the part below
+//			if (tst)
+//				return true;
 
 			Arrays.fill(sums, 0);
 			freeItems.clear();

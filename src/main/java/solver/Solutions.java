@@ -94,7 +94,12 @@ public final class Solutions {
 	/**
 	 * The object used to output solutions in XML
 	 */
-	private XML xml;
+	private final XML xml;
+
+	/**
+	 * The object used to compute Hamming distances between successive solutions
+	 */
+	private final HammingInformation hammingInformation;
 
 	/**
 	 * An object used for competitions
@@ -106,13 +111,13 @@ public final class Solutions {
 	 */
 	public List<String> undisplay = new ArrayList<>();
 
-	private int[] hamming;
-
-	private int hammingOpt;
-
 	private String wckFirst;
 
 	private String wckLast;
+
+	/**********************************************************************************************
+	 * Auxiliary classes
+	 *********************************************************************************************/
 
 	/**
 	 * Class for outputting solutions in XML
@@ -218,6 +223,61 @@ public final class Solutions {
 		}
 	}
 
+	private class HammingInformation {
+		int[] distances;
+
+		int distanceOpt;
+
+		private HammingInformation() {
+			this.distances = new int[solver.problem.varArrays.length + 2]; // +2 for stand-alone variables and solver auxiliary variables
+		}
+
+		private void compute() {
+			if (found <= 1)
+				return;
+			StringBuilder sb = new StringBuilder();
+			int i = 0;
+			for (VarArray va : solver.problem.varArrays) {
+				if (va.flatVars != null) {
+					int v = (int) Stream.of(va.flatVars).filter(x -> last[((Variable) x).num] != solver.problem.variables[((Variable) x).num].dom.single())
+							.count();
+					distances[i++] = v;
+					if (v > 0)
+						sb.append(" ").append(va.id).append(":").append(v);
+				}
+			}
+
+			int v = (int) Stream.of(solver.problem.varAlones).filter(x -> last[x.num] != solver.problem.variables[x.num].dom.single()).count();
+			distances[i++] = v;
+			if (v > 0)
+				sb.append(" ").append("aln").append(":").append(v);
+
+			v = (int) Stream.of(solver.problem.auxiliaryVars).filter(x -> last[x.num] != solver.problem.variables[x.num].dom.single()).count();
+			distances[i++] = v;
+			if (v > 0)
+				sb.append(" ").append(Problem.AUXILIARY_VARIABLE_PREFIX).append(":").append(v);
+
+			assert IntStream.of(distances).sum() == IntStream.range(0, last.length).filter(j -> last[j] != solver.problem.variables[j].dom.single()).count();
+
+			if (solver.problem.optimizer != null) {
+				distanceOpt = (int) Stream.of(((Constraint) solver.problem.optimizer.ctr).scp)
+						.filter(x -> last[x.num] != solver.problem.variables[x.num].dom.single()).count();
+			}
+		}
+
+		public String toString() {
+			return "ham=" + IntStream.of(distances).sum() + " (" + Kit.join(distances) + ")" + "  opth=" + distanceOpt;
+		}
+		// public Variable[] h1 = new Variable[0];
+
+		// h1 = IntStream.range(0, last.length).filter(i -> last[i] != solver.problem.variables[i].dom.single()).mapToObj(i -> solver.problem.variables[i])
+		// .sorted((x, y) -> x.assignmentLevel - y.assignmentLevel).toArray(Variable[]::new); // count();
+	}
+
+	/**********************************************************************************************
+	 * Class members
+	 *********************************************************************************************/
+
 	/**
 	 * @return the last found solution in JSON format
 	 */
@@ -262,8 +322,8 @@ public final class Solutions {
 				: solver.head.control.optimization.lb;
 		this.store = solver.head.control.general.saveSolutions ? new ArrayList<>() : null;
 		this.xml = new XML();
+		this.hammingInformation = solver.head.control.solving.hammingInformation && solver.problem.framework == COP ? new HammingInformation() : null;
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
-		this.hamming = new int[solver.problem.varArrays.length + 2]; // +2 for stand-alone variables and solver auxiliary variables
 	}
 
 	/**
@@ -314,11 +374,14 @@ public final class Solutions {
 								" " + wckLast + (framework == COP ? " (" + nf.format(solver.problem.optimizer.valueWithGap(bestBound)) + ")" : ""));
 					}
 
-					Color.GREEN.println("\nd WRONG DECISIONS",
-							" " + (solver.stats != null
-									? nf.format(solver.stats.nWrongDecisions) + "  ("
-											+ Stopwatch.df2.format(solver.stats.nWrongDecisions / ((System.currentTimeMillis() - solver.head.output.wckBeforeSearch) / 1000.0)) + " wrg/s)"
-									: 0));
+					Color.GREEN
+							.println("\nd WRONG DECISIONS",
+									" " + (solver.stats != null
+											? nf.format(solver.stats.nWrongDecisions) + "  ("
+													+ Stopwatch.df2.format(solver.stats.nWrongDecisions
+															/ ((System.currentTimeMillis() - solver.head.output.wckBeforeSearch) / 1000.0))
+													+ " wrg/s)"
+											: 0));
 					Color.GREEN.println("d CPU", solver.head.stopwatch.cpuTimeInSeconds());
 					System.out.println();
 					if (fullExploration)
@@ -346,54 +409,6 @@ public final class Solutions {
 		// System.out.println("ccccc most " + x + " " + x.dom.toVal(lastSolution[x.num]));
 	}
 
-	// public Variable[] h1 = new Variable[0];
-	//
-	// private int h2 = -1;
-	//
-	// private void solutionHamming() {
-	// if (found <= 1)
-	// return;
-	// h1 = IntStream.range(0, last.length).filter(i -> last[i] != solver.problem.variables[i].dom.single()).mapToObj(i -> solver.problem.variables[i])
-	// .sorted((x, y) -> x.assignmentLevel - y.assignmentLevel).toArray(Variable[]::new); // count();
-	// if (solver.problem.optimizer != null) {
-	// Constraint c = (Constraint) solver.problem.optimizer.ctr;
-	// h2 = (int) IntStream.range(0, last.length)
-	// .filter(i -> last[i] != solver.problem.variables[i].dom.single() && c.involves(solver.problem.variables[i])).count();
-	// }
-	// }
-
-	private void hammingInformation() {
-		if (found <= 1)
-			return;
-		StringBuilder sb = new StringBuilder();
-		int i = 0;
-		for (VarArray va : solver.problem.varArrays) {
-			if (va.flatVars != null) {
-				int v = (int) Stream.of(va.flatVars).filter(x -> last[((Variable) x).num] != solver.problem.variables[((Variable) x).num].dom.single()).count();
-				hamming[i++] = v;
-				if (v > 0)
-					sb.append(" ").append(va.id).append(":").append(v);
-			}
-		}
-
-		int v = (int) Stream.of(solver.problem.varAlones).filter(x -> last[x.num] != solver.problem.variables[x.num].dom.single()).count();
-		hamming[i++] = v;
-		if (v > 0)
-			sb.append(" ").append("aln").append(":").append(v);
-
-		v = (int) Stream.of(solver.problem.auxiliaryVars).filter(x -> last[x.num] != solver.problem.variables[x.num].dom.single()).count();
-		hamming[i++] = v;
-		if (v > 0)
-			sb.append(" ").append(Problem.AUXILIARY_VARIABLE_PREFIX).append(":").append(v);
-
-		assert IntStream.of(hamming).sum() == IntStream.range(0, last.length).filter(j -> last[j] != solver.problem.variables[j].dom.single()).count();
-
-		if (solver.problem.optimizer != null) {
-			hammingOpt = (int) Stream.of(((Constraint) solver.problem.optimizer.ctr).scp)
-					.filter(x -> last[x.num] != solver.problem.variables[x.num].dom.single()).count();
-		}
-	}
-
 	/**
 	 * This method must be called whenever a new solution is found by the solver
 	 */
@@ -417,7 +432,8 @@ public final class Solutions {
 				// solver.heuristic.priorityVars = t;
 				// solver.heuristic = new Rand(solver, false); }
 				lastRun = solver.restarter.numRun;
-				hammingInformation();
+				if (hammingInformation != null)
+					hammingInformation.compute();
 				if (found >= limit)
 					solver.stopping = Stopping.REACHED_GOAL;
 				if (solver.propagation.performingProperSearch) {
@@ -443,11 +459,11 @@ public final class Solutions {
 					bestBound = solver.problem.optimizer.value();
 					if (found == 1)
 						firstBound = bestBound;
+
 					Color.GREEN.println("o " + solver.problem.optimizer.valueWithGap(bestBound),
-							"  " + wck + "  ham=" + IntStream.of(hamming).sum() + " (" + Kit.join(hamming) + ")" + "  opth=" + hammingOpt);
+							"  " + wck + (hammingInformation == null ? "" : "  " + hammingInformation));
 
 					// solver.restarter.currCutoff += 1; //20;
-					// System.out.println("h1 : " + Kit.join(h1) + " h2 : " + h2); for (Variable x : h1) System.out.println(x + " " + x.assignmentLevel);
 
 					if (solver.problem.optimizer.isFinishedIf(bestBound))
 						solver.stopping = FULL_EXPLORATION; // we record it right now to avoid the cost of propagating (when backtracking)

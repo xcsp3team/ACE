@@ -635,6 +635,7 @@ public final class Control {
 		public final boolean enablePrepro = addB("enablePrepro", "prepro", true, "Must we perform preprocessing?");
 		public boolean enableSearch = addB("enableSearch", "search", true, "Must we perform search?");
 		public final Branching branching = addE("branching", "branching", Branching.BIN, "Branching scheme for search (binary or non-binary)");
+		public final boolean hammingInformation = addB("hammingInformation", "hi", true, "Must we display Hamming information between successive solutions (for optimization)");
 	}
 
 	public class OptionsRestarts extends OptionGroup {
