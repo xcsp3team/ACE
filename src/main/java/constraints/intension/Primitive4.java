@@ -241,6 +241,54 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 
 	public static final class DblDiff extends Primitive4 {
 
+		private Domain dom0, dom1, dom2, dom3;
+
+		@Override
+		public boolean isSatisfiedBy(int[] t) {
+			return t[0] != t[1] || t[2] != t[3]; // x1 != x2 or y1 != y2
+		}
+
+		public DblDiff(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2) {
+			super(pb, new Variable[] { x1, x2, y1, y2 });
+			this.dom0 = x1.dom;
+			this.dom1 = x2.dom;
+			this.dom2 = y1.dom;
+			this.dom3 = y2.dom;
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			boolean s0 = dom0.size() == 1, s1 = dom1.size() == 1, s2 = dom2.size() == 1, s3 = dom3.size() == 1;
+			boolean b1 = s0 && s1;
+			boolean b2 = s2 && s3;
+			if (!b1 && !b2)
+				return true;
+			if (b1 && b2)// all 4 variables assigned
+				return dom0.singleValue() != dom1.singleValue() || dom2.singleValue() != dom3.singleValue() ? entail() : dummy.dom.fail();
+			if (b1) {
+				if (dom0.singleValue() != dom1.singleValue())
+					return entail();
+				if (s2)
+					return dom3.removeValueIfPresent(dom2.singleValue()) && entail(); // no inconsistency possible here
+				if (s3)
+					return dom2.removeValueIfPresent(dom3.singleValue()) && entail(); // no inconsistency possible here
+				return true;
+			}
+			if (b2) {
+				if (dom2.singleValue() != dom3.singleValue())
+					return entail();
+				if (s0)
+					return dom1.removeValueIfPresent(dom0.singleValue()) && entail(); // no inconsistency possible here
+				if (s1)
+					return dom0.removeValueIfPresent(dom1.singleValue()) && entail(); // no inconsistency possible here
+				return true;
+			}
+			return true;
+		}
+	}
+
+	public static final class DblDiff2 extends Primitive4 { // old propagator (less efficient in time)
+
 		/** Two sentinels for tracking the presence of two non singleton domains. */
 		private int sentinel1, sentinel2;
 
@@ -249,7 +297,7 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 			return t[0] != t[1] || t[2] != t[3]; // x1 != x2 or y1 != y2
 		}
 
-		public DblDiff(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2) {
+		public DblDiff2(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2) {
 			super(pb, new Variable[] { x1, x2, y1, y2 });
 			sentinel1 = 0;
 			sentinel2 = 1;

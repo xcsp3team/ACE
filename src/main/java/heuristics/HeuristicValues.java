@@ -258,7 +258,8 @@ public abstract class HeuristicValues extends Heuristic {
 			}
 		} else { // at least one solution has been found
 			int numRun = solver.restarter.numRun;
-			if (options.solutionSaving > 0 && !(this instanceof Bivs2) && numRun >= options.solutionSavingStart) {
+			if (options.solutionSaving > 0 && numRun >= options.solutionSavingStart) { // && !(this instanceof Bivs2) && numRun >= options.solutionSavingStart)
+																						// {
 				// note that solution saving may break determinism of search trees because it depends in which order domains
 				// are pruned (and become singleton or not)
 				if (options.solutionSaving == 1 || numRun == 0 || numRun % options.solutionSaving != 0) {

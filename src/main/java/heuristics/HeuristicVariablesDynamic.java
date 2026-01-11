@@ -293,6 +293,12 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				safeSelector.reset();
 		}
 
+		if (solver.head.control.varh.solutionPreserving > 0) {
+			Variable x = solver.solutions.last.getVariable();
+			if (x != null)
+				return x;
+		}
+
 		bestScoredVariable.beforeIteration(nCalls, false);
 		if (options.singleton == SingletonStrategy.LAST) {
 			if (solver.depth() <= lastDepthWithOnlySingletons) {

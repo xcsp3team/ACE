@@ -381,7 +381,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	/**
 	 * BIVS with solution saving as tie-breaker
 	 */
-	public static final class Bivs2 extends Bivs {
+	public static final class Bivs2 extends Bivs { // TOD (this instanceof Bivs2 to be handled in HeuristicValues 
 
 		public Bivs2(Variable x, boolean anti) {
 			super(x, anti);

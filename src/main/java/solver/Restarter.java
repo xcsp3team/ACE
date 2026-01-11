@@ -1,5 +1,5 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+  * This file is part of the constraint solver ACE (AbsCon Essence). 
  *
  * Copyright (c) 2021. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
@@ -103,6 +103,7 @@ public class Restarter implements ObserverOnRuns {
 					h.bestScoredVariable.cleanStack();
 			}
 		}
+		solver.solutions.last.deactivated = false;
 	}
 
 	@Override

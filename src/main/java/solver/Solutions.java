@@ -132,6 +132,8 @@ public final class Solutions {
 
 		private int assignmentOrderSize;
 
+		public boolean deactivated;
+
 		private LastSolution() {
 			this.assignmentOrder = solver.head.control.varh.solutionPreserving > 0 ? new Variable[solver.problem.variables.length] : null;
 			this.assignmentPos = solver.head.control.varh.solutionPreserving > 0 ? new int[solver.problem.variables.length] : null;
@@ -153,31 +155,50 @@ public final class Solutions {
 					assignmentOrder[i] = x;
 					assignmentPos[x.num] = i;
 				}
-				// System.out.println("hhhh " + Kit.join(assignmentOrder));
+				assignmentOrderSize = solver.futVars.nPast();
+				deactivated = false;
 			}
 			// SumSimpleLE c = (SumSimpleLE) solver.pb.optimizer.ctr; Variable x = c.mostImpacting();
 			// System.out.println("ccccc most " + x + " " + x.dom.toVal(lastSolution[x.num]));
 		}
 
 		public Variable getVariable() {
-			if (found == 0)
+			if (deactivated || found == 0 || solver.restarter.numRun == numRun)
 				return null;
-			int pos = 0;
+			int pos = -1;
 			Variable x = solver.futVars.lastPast();
 			if (x != null) {
 				int i = assignmentPos[x.num];
 				if (i < assignmentOrderSize && assignmentOrder[i] == x)
-					pos = i + 1;
+					pos = i ;
 				else
 					return null;
 			}
 			// we select the next variable with the specified probability
-			while (pos < assignmentOrderSize) {
-				int v = solver.head.random.nextInt(100);
-				if (v < solver.head.control.varh.solutionPreserving)
-					return assignmentOrder[pos];
-				pos++;
+			while (true) {
+				// we compute a random offset (between 0 and the specified value *2)
+				int offset = 1+ solver.head.random.nextInt(solver.head.control.varh.solutionPreserving * 2);
+				pos = pos + offset;
+				if (pos < assignmentOrderSize) {
+					Variable y = assignmentOrder[pos];
+					if (!y.assigned()) { // may be the case by lc (last-conflict) mode
+						return assignmentOrder[pos];
+					}
+				} else
+					break;
 			}
+
+			// while (pos < assignmentOrderSize) {
+			// int v = solver.head.random.nextInt(100);
+			// if (v < solver.head.control.varh.solutionPreserving) {
+			// Variable y = assignmentOrder[pos];
+			// if (!y.assigned()) { // may be the case by lc (last-conflict) mode
+			// return assignmentOrder[pos];
+			// }
+			// }
+			// pos++;
+			// }
+			deactivated = true;
 			return null;
 		}
 
