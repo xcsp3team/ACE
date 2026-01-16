@@ -253,7 +253,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		int n = solver.problem.variables.length;
 		this.freezer = solver.head.control.varh.frozen ? new Freezer(n) : null;
 		// this.nonSingletonVariables = solver.head.control.varh.discardSingletons ? new SetDenseReversible(n, n) : null;
-		this.singletonManager = solver.head.control.varh.discardSingletonsDuringSearch ? new SingletonManager(n) : null;
+		this.singletonManager = solver.head.control.varh.discardSingletonsDuringSearchLimit <= solver.problem.variables.length ? new SingletonManager(n) : null; 
 		this.safeSelector = solver.head.control.varh.safeSelectionCapacity > 1
 				&& (this instanceof WdegOnDom || this instanceof FrbaOnDom || this instanceof PickOnDom || this instanceof RunRobin) ? new SafeSelector()
 						: null;

@@ -496,10 +496,20 @@ public final class Reification {
 			if (dy.lastValue() + w2 <= dx.firstValue()) // y + wy <= x => z = 1
 				return dz.removeIfPresent(0) && entail();
 
-			if (dz.last() == 0) // z = 0 => x + wx <= y
-				return enforceLE(dx, dy, -w1);
-			if (dz.first() == 1) // z = 1 => y + wy <= x
-				return enforceLE(dy, dx, -w2);
+			if (dz.last() == 0) {// z = 0 => x + wx <= y
+				if (enforceLE(dx, dy, -w1) == false)
+					return false;
+				if (dx.lastValue() + w1 <= dy.firstValue())
+					return entail();
+				return true;
+			}
+			if (dz.first() == 1) {// z = 1 => y + wy <= x
+				if (enforceLE(dy, dx, -w2) == false)
+					return false;
+				if (dy.lastValue() + w2 <= dx.firstValue())
+					return entail();
+				return true;
+			}
 			return dx.removeValuesInRange(dy.lastValue() - w1 + 1, dy.firstValue() + w2)
 					&& dy.removeValuesInRange(dx.lastValue() - w2 + 1, dx.firstValue() + w1);
 		}

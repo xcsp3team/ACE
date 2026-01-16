@@ -22,6 +22,9 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.xcsp.common.IVar.Var;
+import org.xcsp.common.Utilities;
+
 import constraints.Constraint;
 import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.TableHybrid;
@@ -30,6 +33,7 @@ import problem.Problem;
 import propagation.StrongConsistency;
 import sets.SetDenseReversible;
 import sets.SetSparse;
+import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
@@ -67,9 +71,11 @@ public final class CHybrid extends ExtensionSpecific {
 	}
 
 	public static Constraint element(Problem pb, Variable[] list, Variable index, Variable value) {
-		Variable[] scp = pb.distinct(pb.vars(list, index, value));
-		control(index.dom.firstValue() == 0 && scp.length == list.length + 2, () -> "Not handled for the moment");
-		Stream<HybridTuple> hts = IntStream.range(0, list.length).mapToObj(i -> new HybridTuple(eq(index, i), eq(list[i], value)));
+		Variable newindex = Utilities.indexOf(index, list) != -1 ? pb.replaceByOtherVariable((Var) index) : index;
+		Variable newvalue = Utilities.indexOf(value, list) != -1 ? pb.replaceByOtherVariable((Var) value) : value;
+		Variable[] scp = pb.distinct(pb.vars(list, newindex, newvalue));
+		control(newindex.dom.firstValue() == 0 && scp.length == list.length + 2, () -> "Not handled for the moment ");
+		Stream<HybridTuple> hts = IntStream.range(0, list.length).mapToObj(i -> new HybridTuple(eq(newindex, i), eq(list[i], newvalue)));
 		return new CHybrid(pb, scp, hts);
 	}
 

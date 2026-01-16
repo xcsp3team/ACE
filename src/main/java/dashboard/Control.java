@@ -635,7 +635,8 @@ public final class Control {
 		public final boolean enablePrepro = addB("enablePrepro", "prepro", true, "Must we perform preprocessing?");
 		public boolean enableSearch = addB("enableSearch", "search", true, "Must we perform search?");
 		public final Branching branching = addE("branching", "branching", Branching.BIN, "Branching scheme for search (binary or non-binary)");
-		public final boolean hammingInformation = addB("hammingInformation", "hi", true, "Must we display Hamming information between successive solutions (for optimization)");
+		public final boolean hammingInformation = addB("hammingInformation", "hi", true,
+				"Must we display Hamming information between successive solutions (for optimization)");
 	}
 
 	public class OptionsRestarts extends OptionGroup {
@@ -682,8 +683,8 @@ public final class Control {
 		public final boolean discardAux = addB("discardAux", "da", false, "Must we not branch on auxiliary variables introduced by the solver?");
 		public final boolean discardSingletonsAfterPrepro = addB("discardSingletonsAfterPrepro", "dsp", true,
 				"Should we discard non explicitly singleton variables from futVars after preprocessing");
-		public final boolean discardSingletonsDuringSearch = addB("discardSingletonsDuringSearch", "dss", false,
-				"Should we discard non explicitly singleton variables from futVars during search");
+		public final int discardSingletonsDuringSearchLimit = addI("discardSingletonsDuringSearchLimit", "dss", 750,
+				"Limit in number of variables to discard non explicitly singleton variables from futVars during search");
 		public final int discardSingletonsMargin = addI("discardSingletonsMargin", "dsm", 5,
 				"Margin for temporarizing the building of new lists of singleton variables");
 
@@ -701,7 +702,7 @@ public final class Control {
 				"Must we return a variable when its score is better than the score of the previously selected variable?");
 		public final boolean frozen = addB("frozen", "frozen", false, "Must we freeze variables during runs?");
 		public final int updateStackLength = addI("updateStackLength", "usl", 0, "Length of the stack used for recording sequentially better scored variables");
-		
+
 		public final int solutionPreserving = addI("solutionPreserving", "sop", 0, "Percentage of the last solution preserved (0: disabled)");
 	}
 

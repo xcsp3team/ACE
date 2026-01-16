@@ -350,6 +350,8 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 				return x.dom.is01() ? new Mul3bEQ(pb, x, y, z) : y.dom.is01() ? new Mul3bEQ(pb, y, x, z) : new Mul3EQ(pb, y, x, z);
 			case LE:
 				return new Mul3LE(pb, x, y, z);
+			case NE:
+				return new Mul3NE(pb, x, y, z);
 			default:
 				throw new AssertionError("not implemented");
 			}
@@ -542,6 +544,58 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 					if (dz.remove(c) == false)
 						return false;
 				}
+				return true;
+			}
+		}
+
+		public static final class Mul3NE extends Mul3 {
+
+			@Override
+			public boolean isSatisfiedBy(int[] t) {
+				return t[0] * t[1] != t[2];
+			}
+
+			public Mul3NE(Problem pb, Variable x, Variable y, Variable z) {
+				super(pb, x, y, z);
+				control(Utilities.isSafeInt(BigInteger.valueOf(dx.firstValue()).multiply(BigInteger.valueOf(dy.firstValue())).longValueExact()));
+				control(Utilities.isSafeInt(BigInteger.valueOf(dx.lastValue()).multiply(BigInteger.valueOf(dy.lastValue())).longValueExact()));
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				boolean sx = dx.size() == 1, sy = dy.size() == 1, sz = dz.size() == 1;
+				if (!sx && !sy && !sz)
+					return true;
+				if (sx && sy && sz)
+					return dx.singleValue() * dy.singleValue() != dz.singleValue() ? entail() : dummy.dom.fail();
+				if (sx && sy)
+					return dz.removeValueIfPresent(dx.singleValue() * dy.singleValue()) && entail();
+				if (sx && sz) {
+					int vx = dx.singleValue(), vz = dz.singleValue();
+					if (vx == 0)
+						return vz == 0 ? dummy.dom.fail() : entail();
+					int v = Math.abs(vz) / Math.abs(vx);
+					if (vx * v == vz && dy.removeValueIfPresent(v) == false)
+						return false;
+					if (vx * (-v) == vz && dy.removeValueIfPresent(-v) == false)
+						return false;
+					return entail();
+				}
+				if (sy && sz) {
+					int vy = dy.singleValue(), vz = dz.singleValue();
+					if (vy == 0)
+						return vz == 0 ? dummy.dom.fail() : entail();
+					int v = Math.abs(vz) / Math.abs(vy);
+					if (v * vy == vz && dx.removeValueIfPresent(v) == false)
+						return false;
+					if ((-v) * vy == vz && dx.removeValueIfPresent(-v) == false)
+						return false;
+					return entail();
+				}
+				if (sx)
+					return dx.singleValue() == 0 ? dz.removeValueIfPresent(0) && entail() : true;
+				if (sy)
+					return dy.singleValue() == 0 ? dz.removeValueIfPresent(0) && entail() : true;
 				return true;
 			}
 		}
@@ -798,6 +852,8 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 			switch (op) {
 			case EQ:
 				return new Dist3EQ(pb, x, y, z);
+			case NE:
+				return new Dist3NE(pb, x, y, z);
 			default:
 				return null; // to be able to post it differently, rather than throw new AssertionError
 			}
@@ -926,6 +982,60 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 						}
 					if (dz.remove(c) == false)
 						return false;
+				}
+				return true;
+			}
+		}
+
+		public static final class Dist3NE extends Dist3 {
+
+			@Override
+			public boolean isSatisfiedBy(int[] t) {
+				return Math.abs(t[0] - t[1]) != t[2];
+			}
+
+			public Dist3NE(Problem pb, Variable x, Variable y, Variable z) {
+				super(pb, x, y, z);
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				boolean sx = dx.size() == 1, sy = dy.size() == 1, sz = dz.size() == 1;
+				if (!sx && !sy && !sz)
+					return true;
+				if (sx && sy && sz)
+					return Math.abs(dx.singleValue() - dy.singleValue()) != dz.singleValue() ? entail() : dummy.dom.fail();
+				if (sx && sy)
+					return dz.removeValueIfPresent(Math.abs(dx.singleValue() - dy.singleValue())) && entail();
+				if (sx && sz) {
+					int vx = dx.singleValue(), vz = dz.singleValue();
+					if (dy.removeValueIfPresent(vx + vz) == false)
+						return false;
+					if (dy.removeValueIfPresent(vx - vz) == false)
+						return false;
+					return entail();
+				}
+				if (sy && sz) {
+					int vy = dy.singleValue(), vz = dz.singleValue();
+					if (dx.removeValueIfPresent(vy + vz) == false)
+						return false;
+					if (dx.removeValueIfPresent(vy - vz) == false)
+						return false;
+					return entail();
+				}
+				if (sx) {
+					if (dy.size() == 2) {
+						int vx = dx.singleValue();
+						if (Math.abs(vx - dy.firstValue()) == Math.abs(vx - dy.lastValue()))
+							return dz.removeValueIfPresent(Math.abs(vx - dy.firstValue())) && entail();
+					}
+				}
+				if (sy) {
+					if (dx.size() == 2) {
+						int vy = dy.singleValue();
+						if (Math.abs(vy - dx.firstValue()) == Math.abs(vy - dx.lastValue()))
+							return dz.removeValueIfPresent(Math.abs(vy - dx.firstValue())) && entail();
+					}
 				}
 				return true;
 			}

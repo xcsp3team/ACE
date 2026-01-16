@@ -1344,7 +1344,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		XNodeParent<IVar> tree_canonized = (XNodeParent<IVar>) treeRoot.canonization(); // first, the tree is canonized
 		// System.out.println("tree_can " + tree_canonized);
 		XNodeParent<IVar> tree = possiblyReplaceSimilarInternNodes(tree_canonized);
-		//System.out.println("tree aft " + tree);
+		// System.out.println("tree aft " + tree);
 
 		XNode<IVar>[] sons = tree.sons;
 		Variable[] scp = (Variable[]) tree.vars(); // keep this statement here, after canonization
@@ -1489,9 +1489,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 		if (arity == 3 && options.recognizePrimitive3) {
 			Constraint c = null;
-			if (x_ariop_y__relop_z.matches(tree))
+			if (x_ariop_y__relop_z.matches(tree)) {
 				c = Primitive3.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0), scp[2]);
-			else if (z_relop__x_ariop_y.matches(tree))
+			} else if (z_relop__x_ariop_y.matches(tree))
 				c = Primitive3.buildFrom(this, scp[1], tree.ariop(0), scp[2], tree.relop(0).arithmeticInversion(), scp[0]);
 			else if (logic_y_relop_z__eq_x.matches(tree))
 				c = Reif3.buildFrom(this, scp[2], scp[0], tree.relop(1), scp[1]);
@@ -1793,8 +1793,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 						terms.stream().mapToInt(term -> Utilities.safeInt(term.coeff)).toArray(), tree.type.toRelop(), limit, true);
 			}
 		}
-		
-		if ((scp.length > 2 || (scp.length == 2 && scp.length == tree.listOfVars().size())) && Constraint.howManyVariablesWithin(scp, options.decompositionSpaceLimit) != Constants.ALL) {
+
+		if ((scp.length > 2 || (scp.length == 2 && scp.length == tree.listOfVars().size()))
+				&& Constraint.howManyVariablesWithin(scp, options.decompositionSpaceLimit) != Constants.ALL) {
 			// if (Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) { // Constraint.computeGenericFilteringThreshold(scp) < scp.length) {
 			// if it may be useful to decompose
 			boolean tryingDecomposition = options.decompose > 0 && scp[0] instanceof VariableInteger; // && scp.length + 1 >= tree.listOfVars().size();
@@ -1802,6 +1803,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 			tryingDecomposition = tryingDecomposition || options.decompose == 2;
 			if (tryingDecomposition) {
+				// System.out.println("we try to decompose " + tree);
 				int nParentSons = 0;
 				if (tree.type.isRelationalOperator()) { // tree.type == TypeExpr.EQ) {
 					// we reason with grandsons for avoiding recursive similar changes when making replacements
@@ -3042,34 +3044,36 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return unimplemented("element");
 	}
 
-	private CtrAlone element(Var[] list, Var index, int value) {
+	private CtrAlone element(Var[] var_list, Var var_index, int value) {
+		Variable[] list = translate(var_list);
+		Variable index = Utilities.indexOf(var_index, var_list) != -1 ? replaceByOtherVariable(var_index) : (Variable) var_index;
+
 		switch (head.control.global.element) {
 		case DEFAULT:
-			return post(new ElementCst(this, translate(list), (Variable) index, value));
+			return post(new ElementCst(this, list, index, value));
 		case TABLE_STARRED:
 		case TABLE_HYBRID:
-			return extension(vars(index, list), Table.starredElement(translate(list), (Variable) index, value), true);
+			return extension(vars(index, list), Table.starredElement(list, index, value), true);
 		default:
 			throw new AssertionError("Invalid mode");
 		}
 	}
 
-	private CtrAlone element(Var[] list, Var index, Var value) {
-		if (index == value) {
-			control(Utilities.indexOf(value, list) == -1);
-			Var[] scp = vars(list, value);
-			return extension(scp, Table.starredElement(translate(list), (Variable) index), true);
-		}
+	private CtrAlone element(Var[] var_list, Var var_index, Var var_value) {
+		Variable[] list = translate(var_list);
+		Variable index = Utilities.indexOf(var_index, var_list) != -1 ? replaceByOtherVariable(var_index) : (Variable) var_index;
+		Variable value = Utilities.indexOf(var_value, var_list) != -1 ? replaceByOtherVariable(var_value) : (Variable) var_value;
+
+		if (index == value)
+			return extension(vars(list, value), Table.starredElement(list, index), true);
 
 		switch (head.control.global.element) {
 		case DEFAULT:
-			return post(new ElementVar(this, translate(list), (Variable) index, (Variable) value));
+			return post(new ElementVar(this, list, index, value));
 		case TABLE_STARRED:
-			// TODO controls (for example index != value and index not in list?
-			Var[] scp = Utilities.indexOf(value, list) == -1 ? vars(index, list, value) : vars(index, list);
-			return extension(scp, Table.starredElement(translate(list), (Variable) index, (Variable) value), true);
+			return extension(vars(index, list, value), Table.starredElement(list, index, value), true);
 		case TABLE_HYBRID:
-			return post(CHybrid.element(this, translate(list), (Variable) index, (Variable) value));
+			return post(CHybrid.element(this, list, index, value));
 		default:
 			throw new AssertionError("Invalid mode");
 		}
@@ -3540,7 +3544,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k) - (op == LT ? 1 : 0); // limit for EQ
 			if (IntStream.of(new_heights).sum() <= limit) {
-				Kit.warning("Discarding a cumulative constraint because sum of heights are always less than or equal to the limit");
+				Kit.warning("Discarding a cumulative constraint because the sum of height is always less than or equal to the limit");
 				return null;
 			}
 			if (new_origins.length < 100 && IntStream.of(new_heights).min().getAsInt() >= limit) // TODO hard coding
@@ -3594,7 +3598,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k) - (op == LT ? 1 : 0); // limit for EQ;
 			if (IntStream.of(new_heights).sum() <= limit) {
-				Kit.warning("Discarding a cumulative constraint because sum of heights are always less than or equal to the limit");
+				Kit.warning("Discarding a cumulative constraint because the sum of height is always less than or equal to the limit");
 				return null;
 			}
 			return post(new CumulativeVarW(this, new_origins, new_lengths, new_heights, limit));

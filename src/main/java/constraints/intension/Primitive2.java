@@ -661,7 +661,11 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return AC.enforceLE(dx, dy, k);
+					if (AC.enforceLE(dx, dy, k) == false)
+						return false;
+					if (dx.lastValue() <= k + dy.firstValue())
+						return entail();
+					return true;
 				}
 			}
 
@@ -678,7 +682,11 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return AC.enforceGE(dx, dy, k);
+					if (AC.enforceGE(dx, dy, k) == false)
+						return false;
+					if (dx.firstValue() >= k + dy.lastValue())
+						return entail();
+					return true;
 				}
 			}
 
@@ -737,9 +745,9 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				@Override
 				public boolean runPropagator(Variable dummy) {
 					if (dx.size() == 1)
-						return dy.removeValueIfPresent(dx.singleValue() - k);
+						return dy.removeValueIfPresent(dx.singleValue() - k) && entail();
 					if (dy.size() == 1)
-						return dx.removeValueIfPresent(dy.singleValue() + k);
+						return dx.removeValueIfPresent(dy.singleValue() + k) && entail();
 					return true;
 					// return enforceNE(dx, dy, k);
 				}
@@ -1661,12 +1669,14 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 				@Override
 				public boolean runPropagator(Variable dummy) {
 					if (dx.size() == 1)
-						return dy.removeValueIfPresent(k + dx.singleValue()) && dy.removeValueIfPresent(k - dx.singleValue());
-					int v = Math.abs(dy.firstValue() - k);
+						return dy.removeValueIfPresent(k + dx.singleValue()) && dy.removeValueIfPresent(k - dx.singleValue()) && entail();
 					if (dy.size() == 1)
-						return dx.removeValueIfPresent(v);
-					if (dy.size() == 2 && Math.abs(dy.lastValue() - k) == v)
-						return dx.removeValueIfPresent(v);
+						return dx.removeValueIfPresent(Math.abs(dy.singleValue() - k)) && entail();
+					if (dy.size() == 2) {
+						int v = Math.abs(dy.firstValue() - k);
+						if (Math.abs(dy.lastValue() - k) == v)
+							return dx.removeValueIfPresent(v) && entail();
+					}
 					return true;
 				}
 			}

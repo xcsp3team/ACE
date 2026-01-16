@@ -239,7 +239,7 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 		}
 	}
 
-	public static final class DblDiff extends Primitive4 {
+	public static final class DblDiff extends Primitive4 { // new propagator (seems to be 5-10% more efficient in time - see e.g. ExaminationTimetabling1-merged-D1-1-16.xml)
 
 		private Domain dom0, dom1, dom2, dom3;
 

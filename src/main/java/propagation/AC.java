@@ -32,6 +32,11 @@ import variables.Variable;
  */
 public class AC extends Forward {
 
+	/** The enum type specifying the different types of results by a filtering process. */
+	public static enum TypeFilteringResult {
+		FAIL, ENTAIL, FALSE, TRUE; // FAIl differ from FALSE by the fact that the solver is not aware of the inconsistency yet
+	}
+
 	/**********************************************************************************************
 	 * Static methods
 	 *********************************************************************************************/
@@ -573,6 +578,55 @@ public class AC extends Forward {
 		return dx.removeValuesNumeratorsLT(k, dy.firstValue()) && dy.removeValuesDenominatorsLT(k, dx.lastValue());
 	}
 
+	/**
+	 * Enforces AC on x * y != z
+	 * 
+	 * @param dx
+	 *            the domain of x
+	 * @param dy
+	 *            the domain of y
+	 * @param dz
+	 *            the domain of z
+	 * @return ENTAIL if entailment is proved FAIl if an inconsistency not yet processed if proved FALSE if an inconsistency already processed if proved TRUE if
+	 *         no inconsistency is encountered
+	 */
+	public static TypeFilteringResult enforceMUL3NE(Domain dx, Domain dy, Domain dz) { // x * y != z
+		boolean sx = dx.size() == 1, sy = dy.size() == 1, sz = dz.size() == 1;
+		if (!sx && !sy && !sz)
+			return TypeFilteringResult.TRUE;
+		if (sx && sy && sz)
+			return dx.singleValue() * dy.singleValue() != dz.singleValue() ? TypeFilteringResult.ENTAIL : TypeFilteringResult.FAIL;
+		if (sx && sy)
+			return dz.removeValueIfPresent(dx.singleValue() * dy.singleValue()) ? TypeFilteringResult.ENTAIL : TypeFilteringResult.FALSE;
+		if (sx && sz) {
+			int vx = dx.singleValue(), vz = dz.singleValue();
+			if (vx == 0)
+				return vz == 0 ? TypeFilteringResult.FAIL : TypeFilteringResult.ENTAIL;
+			int v = Math.abs(vz) / Math.abs(vx);
+			if (vx * v == vz && dy.removeValueIfPresent(v) == false)
+				return TypeFilteringResult.FALSE;
+			if (vx * (-v) == vz && dy.removeValueIfPresent(-v) == false)
+				return TypeFilteringResult.FALSE;
+			return TypeFilteringResult.ENTAIL;
+		}
+		if (sy && sz) {
+			int vy = dy.singleValue(), vz = dz.singleValue();
+			if (vy == 0)
+				return vz == 0 ? TypeFilteringResult.FAIL : TypeFilteringResult.ENTAIL;
+			int v = Math.abs(vz) / Math.abs(vy);
+			if (v * vy == vz && dx.removeValueIfPresent(v) == false)
+				return TypeFilteringResult.FALSE;
+			if ((-v) * vy == vz && dx.removeValueIfPresent(-v) == false)
+				return TypeFilteringResult.FALSE;
+			return TypeFilteringResult.ENTAIL;
+		}
+		if (sx)
+			return dx.singleValue() == 0 ? (dz.removeValueIfPresent(0) ? TypeFilteringResult.ENTAIL : TypeFilteringResult.FALSE) : TypeFilteringResult.TRUE;
+		if (sy)
+			return dy.singleValue() == 0 ? (dz.removeValueIfPresent(0) ? TypeFilteringResult.ENTAIL : TypeFilteringResult.FALSE) : TypeFilteringResult.TRUE;
+		return TypeFilteringResult.TRUE;
+	}
+
 	/**********************************************************************************************
 	 * Fields and Methods
 	 *********************************************************************************************/
@@ -634,7 +688,8 @@ public class AC extends Forward {
 		// was already singleton (no removed value at the current depth) and AC was already guaranteed.
 		// TODO : the control could be more precise? (is there a constraint for which there is a problem to have
 		// explicitly one less future variable?)
-		if (getClass() != AC.class || x.dom.lastRemovedLevel() == solver.depth() || !hasSolverPropagatedAfterLastButOneDecision() || !guaranteed || x.specialServant != null) {
+		if (getClass() != AC.class || x.dom.lastRemovedLevel() == solver.depth() || !hasSolverPropagatedAfterLastButOneDecision() || !guaranteed
+				|| x.specialServant != null) {
 			queue.add(x);
 			if (propagate() == false)
 				return false;
