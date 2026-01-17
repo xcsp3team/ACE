@@ -578,6 +578,28 @@ public class AC extends Forward {
 		return dx.removeValuesNumeratorsLT(k, dy.firstValue()) && dy.removeValuesDenominatorsLT(k, dx.lastValue());
 	}
 
+	public static TypeFilteringResult enforceDistNE(Domain dx, Domain dy, int k) { // |x - y| != k
+		if (dx.size() == 1) {
+			if (dy.removeValueIfPresent(dx.singleValue() - k) == false || dy.removeValueIfPresent(dx.singleValue() + k) == false)
+				return TypeFilteringResult.FALSE;
+			return TypeFilteringResult.ENTAIL;
+		}
+		if (dx.size() == 2 && dx.lastValue() - k == dx.firstValue() + k) {
+			if (dy.removeValueIfPresent(dx.lastValue() - k) == false)
+				return TypeFilteringResult.FALSE;
+		}
+		if (dy.size() == 1) {
+			if (dx.removeValueIfPresent(dy.singleValue() - k) == false || dx.removeValueIfPresent(dy.singleValue() + k) == false)
+				return TypeFilteringResult.FALSE;
+			return TypeFilteringResult.ENTAIL;
+		}
+		if (dy.size() == 2 && dy.lastValue() - k == dy.firstValue() + k) {
+			if (dx.removeValueIfPresent(dy.lastValue() - k) == false)
+				return TypeFilteringResult.FALSE;
+		}
+		return TypeFilteringResult.TRUE;
+	}
+
 	/**
 	 * Enforces AC on x * y != z
 	 * 

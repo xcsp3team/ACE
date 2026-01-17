@@ -239,6 +239,7 @@ import constraints.intension.Primitive4.Disjonctive2Cst;
 import constraints.intension.Primitive4.Disjonctive2Mix;
 import constraints.intension.Primitive4.Disjonctive2Var;
 import constraints.intension.Primitive4.DisjonctiveVar;
+import constraints.intension.Primitive4.DistDistNE;
 import constraints.intension.Reification.Disjonctive2Reified2Cst;
 import constraints.intension.Reification.Disjonctive2ReifiedVar;
 import constraints.intension.Reification.DisjonctiveReified;
@@ -1256,6 +1257,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private Matcher z_relop__x_ariop_y = new Matcher(node(relop, var, node(ariop, var, var)));
 	private Matcher logic_y_relop_z__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, var, var), var));
 
+	// quaternary
+	private Matcher dist_dist__ne = new Matcher(node(TypeExpr.NE, node(TypeExpr.DIST, var, var), node(TypeExpr.DIST, var, var)));
+
 	// logic
 	private Matcher logic_X__eq_x = new Matcher(node(TypeExpr.EQ, logic_vars, var));
 	private Matcher logic_X__ne_x = new Matcher(node(TypeExpr.NE, logic_vars, var));
@@ -1495,6 +1499,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				c = Primitive3.buildFrom(this, scp[1], tree.ariop(0), scp[2], tree.relop(0).arithmeticInversion(), scp[0]);
 			else if (logic_y_relop_z__eq_x.matches(tree))
 				c = Reif3.buildFrom(this, scp[2], scp[0], tree.relop(1), scp[1]);
+			if (c != null)
+				return post(c);
+		}
+
+		if (arity == 4 && options.recognizePrimitive4) {
+			Constraint c = null;
+			if (dist_dist__ne.matches(tree))
+				c = new DistDistNE(this, scp[0], scp[1], scp[2], scp[3]);
 			if (c != null)
 				return post(c);
 		}

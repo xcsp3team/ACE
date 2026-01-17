@@ -66,11 +66,14 @@ public final class Queue extends SetSparse {
 	}
 
 	public int domSizeLowerBound;
+	
+	public Variable domSizeBest;
 
 	@Override
 	public void clear() {
 		super.clear();
 		domSizeLowerBound = Integer.MAX_VALUE;
+		domSizeBest = null;
 	}
 
 	/**
@@ -94,8 +97,10 @@ public final class Queue extends SetSparse {
 	public void add(Variable x) {
 		x.time = propagation.incrementTime();
 		add(x.num);
-		if (x.dom.size() < domSizeLowerBound)
+		if (x.dom.size() < domSizeLowerBound) {
 			domSizeLowerBound = x.dom.size();
+			domSizeBest = x;
+		}
 		assert !x.assigned() || x == propagation.solver.futVars.lastPast() : "variable " + x;
 	}
 

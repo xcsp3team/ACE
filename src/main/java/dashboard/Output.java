@@ -120,7 +120,6 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		wckBeforeSearch = System.currentTimeMillis();
 	}
 
-	
 	@Override
 	public final void afterRun() {
 		InformationBloc info = runInfo();
@@ -325,7 +324,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	 * The filename of the generated XML file (with details about the solving process), if in campaign mode
 	 */
 	private String outputFileName;
-	
+
 	public long wckBeforeSearch;
 
 	/**
@@ -560,7 +559,14 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(N_CLIQUES, features.nCliques); // for redundant AllDifferent constraints
 		m.put(ARITIES, features.ctrArities);
 		m.separator();
-		m.put(DISTRIBUTION, features.ctrTypes);
+		if (features.ctrTypes1.size() > 0 || head.problem.optimizer != null) {
+			if (features.ctrTypes1.size() > 0)
+				m.put("unary", features.ctrTypes1);
+			if (head.problem.optimizer != null)
+				m.put("objective", "[" + head.problem.optimizer.clb.getClass().getSimpleName() + "," + head.problem.optimizer.cub.getClass().getSimpleName() + "]");
+			m.separator();
+		}
+		m.put("non_unary", features.ctrTypes);
 		m.separator(features.tableSizes.size() > 0);
 		m.put(TABLES, features.tableSizes.toString());
 		m.put(N_TUPLES, features.tableSizes.repartition.entrySet().stream().mapToLong(e -> e.getValue() * e.getKey()).sum());
@@ -628,7 +634,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(REVISIONS, "(" + stats.nRevisions() + ",useless=" + stats.nUselessRevisions() + ")", stats.nRevisions() > 0);
 		m.put(N_ENTAILED, head.solver.entailed.size());
 		m.put(N_VALUES, Variable.nValidValuesFor(head.problem.variables));
-		
+
 		Propagation propagation = head.solver.propagation;
 		m.put(REMOVED_BY_AC, propagation instanceof AC ? ((AC) (propagation)).preproRemovals : 0);
 		// m.put("nTotalRemovedValues", nPreproRemovedValues);
@@ -659,6 +665,11 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		String rb1 = head.solver.heuristic instanceof RunRobin ? ((RunRobin) head.solver.heuristic).current.getClass().getSimpleName() : "";
 		String rb2 = head.control.valh.clazz.equals("RunRobin") ? ((HeuristicValuesDirect.RunRobin) head.problem.variables[0].heuristic).currentClass() : "";
 		m.put("robin", rb1 + (rb1.length() > 0 && rb2.length() > 0 ? "-" : "") + rb2);
+
+		if (head.control.varh.arrayPriorityRunRobin) {
+			int index = head.solver.restarter.numRun % (head.problem.varArrays.length + 1);
+			m.put("aprr", index == 0 ? "_" : head.problem.varArrays[index - 1].id);
+		}
 		m.put(N_EFFECTIVE, features.nEffectiveFilterings);
 		m.put(N_FAILED, stats.nFailedAssignments);
 		m.put(N_WRONG, stats.nWrongDecisions);

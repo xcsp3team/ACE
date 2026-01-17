@@ -532,6 +532,7 @@ public final class Control {
 		// The following options determine whether special forms of intension constraints must be recognized/intercepted
 		public final boolean recognizePrimitive2 = addB("recognizePrimitive2", "rp2", true, "Must we attempt to recognize binary primitives?");
 		public final boolean recognizePrimitive3 = addB("recognizePrimitive3", "rp3", true, "Must we attempt to recognize ternary primitives?");
+		public final boolean recognizePrimitive4 = addB("recognizePrimitive4", "rp4", false, "Must we attempt to recognize quaternary primitives?");
 		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "Must we attempt to recognize logical reification forms?");
 		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "Must we attempt to recognize minimum/maximum constraints?");
 		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "Must we attempt to recognize sum constraints?");
@@ -701,7 +702,7 @@ public final class Control {
 		public final boolean quitWhenBetterThanPreviousChoice = addB("quitWhenBetterThanPreviousChoice", "qwb", false,
 				"Must we return a variable when its score is better than the score of the previously selected variable?");
 		public final boolean frozen = addB("frozen", "frozen", false, "Must we freeze variables during runs?");
-		public final int updateStackLength = addI("updateStackLength", "usl", 0, "Length of the stack used for recording sequentially better scored variables");
+		public final int updateStackLength = addI("updateStackLength", "usl", 1, "Length of the stack used for recording sequentially better scored variables");
 
 		public final int solutionPreserving = addI("solutionPreserving", "sop", 0, "Percentage of the last solution preserved (0: disabled)");
 	}
@@ -782,10 +783,13 @@ public final class Control {
 		private String stringFor(String shortcut, String tag, String att, Object defaultValue) {
 			// try first with shortcut
 			String s = shortcut == null ? null : Input.argsForSolving.get(shortcut);
+			if (s != null && att.equals("clazz") && s.equals("rr"))
+				s = "RunRobin";
 			if (s != null)
 				return s.length() == 0 && !(defaultValue instanceof String) ? defaultValue.toString() : s;
 			// try then with tag+attribute
 			s = Input.argsForSolving.get((tag != null ? tag + "/" : "") + att);
+
 			if (s != null)
 				return s;
 			if (document == null)

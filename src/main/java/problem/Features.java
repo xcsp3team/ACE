@@ -343,15 +343,20 @@ public final class Features {
 			int i = 0;
 			for (Variable x : variables) {
 				x.num = i++;
-				domSizes.add(x.dom.practicalInitSize()); //.specialMaster != null ? ((DomainSpecial) x.dom).sliceLength : x.dom.initSize());
+				domSizes.add(x.dom.practicalInitSize()); // .specialMaster != null ? ((DomainSpecial) x.dom).sliceLength : x.dom.initSize());
 			}
 			i = 0;
 			for (Constraint c : constraints) {
 				c.num = i++;
 				int arity = c.scp.length;
 				ctrArities.add(arity);
-				ctrTypes.add(c.getClass().getSimpleName() + (arity == 1 && !(c instanceof Extension1) ? "_1"
-						: (c instanceof ConstraintExtension ? "-" + c.extStructure().getClass().getSimpleName() : "")));
+				if (problem.optimizer == null || (c != problem.optimizer.clb && c != problem.optimizer.cub)) {
+					String ext = (c instanceof ConstraintExtension ? "-" + c.extStructure().getClass().getSimpleName() : "");
+					if (arity == 1)
+						ctrTypes1.add(c.getClass().getSimpleName() + ext);
+					else
+						ctrTypes.add(c.getClass().getSimpleName() + ext);
+				}
 				if (c.extStructure() instanceof Table)
 					tableSizes.add(((Table) c.extStructure()).tuples.length);
 				if (c instanceof CHybrid)
@@ -407,6 +412,10 @@ public final class Features {
 	 */
 	public final Repartitioner<Integer> mddSizes;
 
+	/**
+	 * Statistical repartition of unary constraint types
+	 */
+	public final Repartitioner<String> ctrTypes1;
 	/**
 	 * Statistical repartition of constraint types
 	 */
@@ -482,6 +491,7 @@ public final class Features {
 		this.varDegrees = new Repartitioner<>(verbose);
 		this.domSizes = new Repartitioner<>(verbose);
 		this.ctrArities = new Repartitioner<>(verbose);
+		this.ctrTypes1 = new Repartitioner<>(true);
 		this.ctrTypes = new Repartitioner<>(true);
 		this.tableSizes = new Repartitioner<>(verbose);
 		this.mddSizes = new Repartitioner<>(verbose);

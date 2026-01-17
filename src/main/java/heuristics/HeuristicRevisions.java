@@ -12,6 +12,7 @@ package heuristics;
 
 import interfaces.Tags.TagMaximize;
 import propagation.Queue;
+import utility.Kit;
 import variables.Variable;
 
 /**
@@ -160,18 +161,28 @@ public abstract class HeuristicRevisions extends Heuristic {
 			@Override
 			public int bestInQueue() {
 				// if (queue.size() > limit)
-				// return 0;
-				// System.out.println("gggg " + queue.size());
+
 
 				// if (second != -1 && queue.size() > 35 && second < queue.size()) {
 				// int i = second;
 				// second = -1;
 				// return i;
 				// }
+				
 
 				int bestSize = queue.var(0).dom.size();
 				if (bestSize <= queue.domSizeLowerBound)
 					return 0; // because it is not possible to do better
+				 
+//				if (queue.domSizeBest != null) {					// TODO to test/check
+//					if (queue.contains(queue.domSizeBest.num))  {
+//						int p = queue.sparse[queue.domSizeBest.num];
+//						Kit.control(queue.domSizeBest.dom.size() == queue.domSizeLowerBound);
+//						queue.domSizeBest = null;
+//						return p;
+//					}
+//				}
+				
 				int pos = 0;
 
 				if (queue.propagation.solver.head.control.revh.testr)

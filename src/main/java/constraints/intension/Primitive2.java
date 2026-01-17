@@ -49,6 +49,7 @@ import interfaces.Tags.TagNotSymmetric;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import propagation.AC;
+import propagation.AC.TypeFilteringResult;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -702,21 +703,21 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 					return k == 0;
 				}
 
-				private final SimplePropagatorEQ sp;
+				// private final SimplePropagatorEQ sp;
 
 				public Sub2EQ(Problem pb, Variable x, Variable y, int k) {
 					super(pb, x, y, k);
-					this.sp = new SimplePropagatorEQ(dx, dy, true) {
-						@Override
-						final int valxFor(int b) {
-							return k + dy.toVal(b);
-						}
-
-						@Override
-						final int valyFor(int a) {
-							return dx.toVal(a) - k;
-						}
-					};
+					// this.sp = new SimplePropagatorEQ(dx, dy, true) {
+					// @Override
+					// final int valxFor(int b) {
+					// return k + dy.toVal(b);
+					// }
+					//
+					// @Override
+					// final int valyFor(int a) {
+					// return dx.toVal(a) - k;
+					// }
+					// };
 				}
 
 				@Override
@@ -1242,17 +1243,22 @@ public abstract class Primitive2 extends Primitive implements TagAC, TagCallComp
 					super(pb, x, y, k);
 				}
 
-				private boolean revise(Domain d1, Domain d2) {
-					if (d1.size() == 1)
-						return d2.removeValueIfPresent(d1.singleValue() - k) && d2.removeValueIfPresent(d1.singleValue() + k);
-					if (d1.size() == 2 && d1.lastValue() - k == d1.firstValue() + k)
-						return d2.removeValueIfPresent(d1.lastValue() - k);
-					return true;
-				}
+				// private boolean revise(Domain d1, Domain d2) {
+				// if (d1.size() == 1)
+				// return d2.removeValueIfPresent(d1.singleValue() - k) && d2.removeValueIfPresent(d1.singleValue() + k) && entail();
+				// if (d1.size() == 2 && d1.lastValue() - k == d1.firstValue() + k)
+				// return d2.removeValueIfPresent(d1.lastValue() - k) ;
+				// return true;
+				// }
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return revise(dx, dy) && revise(dy, dx);
+					TypeFilteringResult res = AC.enforceDistNE(dx, dy, k);
+					if (res == TypeFilteringResult.ENTAIL)
+						return entail();
+					assert res == TypeFilteringResult.TRUE || res == TypeFilteringResult.FALSE; // FAIL not possible
+					return res == TypeFilteringResult.TRUE;
+					// return revise(dx, dy) && revise(dy, dx);
 				}
 			}
 		}

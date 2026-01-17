@@ -157,7 +157,7 @@ public abstract class HeuristicVariables extends Heuristic {
 				return null;
 
 			// if (updateStack != null && this.time + 1 == newTime) {
-			control(stackMaxSize != 1 || updateStack.stackedVariableFor(newTime) == second, " " + updateStack.stackedVariableFor(newTime) + " vs " + second);
+			assert stackMaxSize != 1 || updateStack.stackedVariableFor(newTime) == second: " " + updateStack.stackedVariableFor(newTime) + " vs " + second;
 			return updateStack.stackedVariableFor(newTime);
 			// }
 			// return null;
