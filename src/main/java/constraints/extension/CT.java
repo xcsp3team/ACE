@@ -189,7 +189,7 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 	 */
 	public CT(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		control(extOptions.decremental, "true is required for CT for the moment");
+		control(extOptions.decrementalCT, "true is required for CT for the moment");
 	}
 
 	private void fillTo1(long[] t) {

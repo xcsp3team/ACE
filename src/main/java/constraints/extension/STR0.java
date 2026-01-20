@@ -38,14 +38,14 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 	 *********************************************************************************************/
 
 	public static STR0 buildFrom(Problem pb, Variable[] scp, int[][] tuples, boolean positive, Boolean starred) {
-		int cnt = 0;
+		int nStars = 0;
 		for (int[] tuple : tuples)
 			for (int v : tuple)
 				if (v == STAR)
-					cnt++;
-		if (cnt > (tuples.length * scp.length) / 2)
-			return new STR0b(pb, scp);
-		return new STR0a(pb, scp);
+					nStars++;
+		if (nStars > (tuples.length * scp.length) / 2)
+			return new STR0b(pb, scp, nStars);
+		return new STR0a(pb, scp, nStars);
 	}
 
 	/**********************************************************************************************
@@ -73,6 +73,8 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 	 * The tuples of the table (redundant field)
 	 */
 	protected int[][] tuples;
+
+	protected final int nStars;
 
 	/**
 	 * The reversible dense set storing the indexes (of tuples) of the current table
@@ -111,12 +113,13 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 	 * @param scp
 	 *            the scope of the constraint
 	 */
-	public STR0(Problem pb, Variable[] scp) {
+	public STR0(Problem pb, Variable[] scp, int nStars) {
 		super(pb, scp);
 		control(scp.length > 1, "Arity must be at least 2");
 		this.ac = Variable.litterals(scp).booleanArray();
 		this.cnts = new int[scp.length];
 		this.sSup = new int[scp.length];
+		this.nStars = nStars;
 	}
 
 	@Override
@@ -169,8 +172,8 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 
 		private boolean lastValidTupleBeingUniversal;
 
-		public STR0a(Problem pb, Variable[] scp) {
-			super(pb, scp);
+		public STR0a(Problem pb, Variable[] scp, int nStars) {
+			super(pb, scp, nStars);
 		}
 
 		private boolean isValidTuple(int[] t) {
@@ -214,7 +217,14 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 				} else
 					set.removeAtPosition(i);
 			}
-			return updateDomains();
+
+			if (updateDomains() == false)
+				return false;
+			// if (nStars == 0 && Variable.spaceEqual(scp, set.size())) { // TODO can this be worthwhile?
+			// System.out.println("jjjentailes " + set.size());
+			// return entail();
+			// }
+			return true;
 		}
 
 	}
@@ -223,7 +233,7 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 	 * STR0b (with mechanisms used to avoid iterating over stars))
 	 *********************************************************************************************/
 
-	public final static class STR0b extends STR0 { 
+	public final static class STR0b extends STR0 {
 		// TODO : not sure that it is very interesting
 
 		public void afterProblemConstruction(int n) {
@@ -259,8 +269,8 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 
 		private QuickTuple[] quickTuples;
 
-		public STR0b(Problem pb, Variable[] scp) {
-			super(pb, scp);
+		public STR0b(Problem pb, Variable[] scp, int nStars) {
+			super(pb, scp, nStars);
 		}
 
 		@Override

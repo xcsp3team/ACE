@@ -87,12 +87,13 @@ public class Restarter implements ObserverOnRuns {
 
 		if (solver.head.control.varh.arrayPriorityRunRobin) {
 			// TODO control that aprr is not used with pr1 or pr2
-			int index = numRun % ( solver.problem.varArrays.length + 1);
+			int index = numRun % (solver.problem.varArrays.length + 1);
 			if (index == 0)
-				solver.heuristic.resetPriorityVars(); 
+				solver.heuristic.resetPriorityVars();
 			else
 				solver.heuristic.setPriorityVars((Variable[]) solver.problem.varArrays[index - 1].flatVars, 0);
 		}
+		solver.futVars.discardSingletonVariablesAtRunRoot(); // keep it at this place
 
 		if (solver.head.control.varh.secondScored) {
 			solver.heuristic.bestScoredVariable.cleanStack();

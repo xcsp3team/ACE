@@ -264,7 +264,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 		 * Exactly k variables of the scope, where k is a constant, must be assigned to the specified value.
 		 * 
 		 */
-		public static class ExactlyK extends CountCst implements TagSymmetric , TagCallCompleteFiltering {
+		public static class ExactlyK extends CountCst implements TagSymmetric, TagCallCompleteFiltering {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
@@ -277,8 +277,8 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 
 			@Override
 			public boolean runPropagator(Variable x) {
-//				if (x.dom.size() > 1 && x.dom.containsValue(value)) // removing these two lines, and adding TagCallCompleteFiltering is an alternative
-//					return true;
+				// if (x.dom.size() > 1 && x.dom.containsValue(value)) // removing these two lines, and adding TagCallCompleteFiltering is an alternative
+				// return true;
 
 				// nGuaranteedOccurrences denotes the number of singleton domains with the specified value
 				// nPossibleOccurrences denotes the number of domains containing the specified value
@@ -324,6 +324,67 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 			public Exactly1(Problem pb, Variable[] list, int value) {
 				super(pb, list, value, 1);
 			}
+//
+//			@Override
+//			public boolean runPropagator(Variable x) {
+//				boolean test = false;
+//				if (test)
+//					return super.runPropagator(x);
+//
+//				Variable y = problem.solver.futVars.lastPast();
+//				if (y != null && y.dom.singleValue() == value) {
+//					for (int j = 0; j < problem.solver.futVars.nPast(); j++) {
+//						Variable z = problem.solver.futVars.getPast(j);
+//						if (z != y && z.dom.singleValue() == value)
+//							control(false, () -> "pb here " + this + " " + z + " " + y);
+//					}
+//					for (int i = futvars.limit; i >= 0; i--) {
+//						Domain dom = scp[futvars.dense[i]].dom;
+//						if (dom.removeValueIfPresent(value) == false)
+//							return false;
+//					}
+//					return entail();
+//				}
+//
+//				return super.runPropagator(x);
+//
+//				// int nGuaranteedOccurrences = 0, nPossibleOccurrences = 0;
+//				// for (int i = futvars.limit; i >= 0; i--) {
+//				// Domain dom = scp[futvars.dense[i]].dom;
+//				// if (dom.containsValue(value)) {
+//				// nPossibleOccurrences++;
+//				// if (dom.size() == 1 && ++nGuaranteedOccurrences > k)
+//				// return dom.fail();
+//				// }
+//				// }
+//				// if (nGuaranteedOccurrences == k) {
+//				// int toremove = nPossibleOccurrences - k;
+//				// // remove value from all non singleton domains
+//				// for (int i = futvars.limit; i >= 0 && toremove > 0; i--) {
+//				// Domain dom = scp[futvars.dense[i]].dom;
+//				// if (dom.size() > 1 && dom.containsValue(value)) {
+//				// dom.removeValue(value); // no inconsistency possible
+//				// toremove--;
+//				// }
+//				// }
+//				// return entail();
+//				// }
+//				// if (nPossibleOccurrences < k)
+//				// return x.dom.fail(); // inconsistency detected
+//				// if (nPossibleOccurrences == k) {
+//				// int toassign = k - nGuaranteedOccurrences;
+//				// // assign all non singleton domains containing the value
+//				// for (int i = futvars.limit; i >= 0 && toassign > 0; i--) {
+//				// Domain dom = scp[futvars.dense[i]].dom;
+//				// if (dom.size() > 1 && dom.containsValue(value)) {
+//				// dom.reduceToValue(value);
+//				// toassign--;
+//				// }
+//				// }
+//				// return entail();
+//				// }
+//				// return true;
+//			}
 		}
 
 	}

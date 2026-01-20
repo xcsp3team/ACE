@@ -262,7 +262,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 				}
 				break;
 			}
-			boolean energetic = true;
+			boolean energetic = problem.head.control.global.binpackingEnergetic;
 			if (energetic) {
 				int cumulatedCapacities = 0, cumulatedSizes = 0, lost = 0;
 				for (int j = usableBins.limit; j >= 0; j--) {

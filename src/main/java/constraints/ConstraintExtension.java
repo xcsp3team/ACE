@@ -199,8 +199,8 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 
 			@Override
 			protected ExtensionStructure buildExtensionStructure() {
-				assert extOptions.variant == 0 || extOptions.variant == 1 || extOptions.variant == 11;
-				return extOptions.variant == 0 ? new Table(this).withSubtables() : new Tries(this, extOptions.variant == 11);
+				assert extOptions.variantVA == 0 || extOptions.variantVA == 1 || extOptions.variantVA == 11;
+				return extOptions.variantVA == 0 ? new Table(this).withSubtables() : new Tries(this, extOptions.variantVA == 11);
 			}
 
 			public ExtensionVA(Problem pb, Variable[] scp) {

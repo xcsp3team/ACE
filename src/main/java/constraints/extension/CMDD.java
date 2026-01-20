@@ -47,7 +47,7 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive {
 		super.afterProblemConstruction(n);
 		this.mdd = (MDD) extStructure();
 		this.trueNodes = new int[mdd.nNodes()];
-		if (extOptions.decremental)
+		if (extOptions.decrementalCMDD)
 			this.set = new SetSparseReversible(mdd.nNodes(), n + 1, false);
 		else
 			this.falseNodes = new int[mdd.nNodes()];
@@ -168,7 +168,7 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive {
 	 * @return true if the current exploration from the parent node can be terminated (due to early cutoff)
 	 */
 	protected boolean manageSuccessfulExploration(final int level, final int a) {
-		int cutoffVariant = extOptions.variant;
+		int cutoffVariant = extOptions.variantCMDD;
 		boolean future = !scp[level].assigned();
 		if (cutoffVariant == 2) {
 			if (future) {

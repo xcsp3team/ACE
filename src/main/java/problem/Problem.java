@@ -566,80 +566,83 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private void manageCollectedNogoods() {
 		if (features.collecting.nogoods.size() == 0)
 			return;
-		int nSharedNogoods = 0;
+		if (features.collecting.nogoods.size() > 5_000) { // TODO hard constant : to be put as an option (which default value ?) see e.g. RosterShifts-large_m23.xml
+			for (CollectedNogood nogood : features.collecting.nogoods)
+				postNogood(nogood);
+		} else {
+			int nSharedNogoods = 0;
+			CollectedNogood[] nogoods = features.collecting.nogoods.stream().sorted(Comparator.comparing(ng -> ng.size())).toArray(CollectedNogood[]::new);
+			boolean[] flags = new boolean[nogoods.length];
+			List<Integer> list = new ArrayList<>();
+			for (int i = 0; i < flags.length; i++) { // first, we try to merge nogoods of same scope
+				if (flags[i])
+					continue;
+				if (nogoods[i].size() == 1) {
+					postNogood(nogoods[i]);
+					flags[i] = true;
+					continue;
+				}
 
-		CollectedNogood[] nogoods = features.collecting.nogoods.stream().sorted(Comparator.comparing(ng -> ng.size())).toArray(CollectedNogood[]::new);
-		boolean[] flags = new boolean[nogoods.length];
-		List<Integer> list = new ArrayList<>();
-		for (int i = 0; i < flags.length; i++) { // first, we try to merge nogoods of same scope
-			if (flags[i])
-				continue;
-			if (nogoods[i].size() == 1) {
-				postNogood(nogoods[i]);
-				flags[i] = true;
-				continue;
+				list.clear();
+				list.add(i);
+				for (int j = i + 1; j < flags.length; j++) {
+					if (nogoods[i].size() < nogoods[j].size())
+						break;
+					if (!flags[j] && nogoods[j].sameScopeAs(nogoods[i]))
+						list.add(j);
+				}
+				if (list.size() > head.control.constraints.nogoodsMergingLimit) {
+					list.stream().forEach(k -> flags[k] = true);
+					nSharedNogoods += list.size();
+
+					post(ConstraintExtension.buildFrom(this, nogoods[i].vars, list.stream().map(k -> nogoods[k].vals).toArray(int[][]::new), false, false));
+				}
 			}
+			for (int i = flags.length - 1; i >= 0; i--) { // second, we try to merge nogoods sharing scopes
+				if (flags[i])
+					continue;
+				Variable[] scp = nogoods[i].vars;
+				Domain[] doms = Stream.of(scp).map(x -> x.dom).toArray(Domain[]::new);
+				if (Domain.nValidTuplesBounded(doms) > 1000) // TODO hard coding
+					continue;
+				list.clear();
+				list.add(i);
+				for (int j = i - 1; j >= 0; j--)
+					if (nogoods[j].strictSubscopeOf(nogoods[i]))
+						list.add(j);
+				if (list.size() > 1) { // TODO hard coding (limit 1)
+					list.stream().forEach(k -> flags[k] = true);
+					nSharedNogoods += list.size();
 
-			list.clear();
-			list.add(i);
-			for (int j = i + 1; j < flags.length; j++) {
-				if (nogoods[i].size() < nogoods[j].size())
-					break;
-				if (!flags[j] && nogoods[j].sameScopeAs(nogoods[i]))
-					list.add(j);
-			}
-			if (list.size() > head.control.constraints.nogoodsMergingLimit) {
-				list.stream().forEach(k -> flags[k] = true);
-				nSharedNogoods += list.size();
-
-				post(ConstraintExtension.buildFrom(this, nogoods[i].vars, list.stream().map(k -> nogoods[k].vals).toArray(int[][]::new), false, false));
-			}
-		}
-		for (int i = flags.length - 1; i >= 0; i--) { // second, we try to merge nogoods sharing scopes
-			if (flags[i])
-				continue;
-			Variable[] scp = nogoods[i].vars;
-			Domain[] doms = Stream.of(scp).map(x -> x.dom).toArray(Domain[]::new);
-			if (Domain.nValidTuplesBounded(doms) > 1000) // TODO hard coding
-				continue;
-			list.clear();
-			list.add(i);
-			for (int j = i - 1; j >= 0; j--)
-				if (nogoods[j].strictSubscopeOf(nogoods[i]))
-					list.add(j);
-			if (list.size() > 1) { // TODO hard coding (limit 1)
-				list.stream().forEach(k -> flags[k] = true);
-				nSharedNogoods += list.size();
-
-				int[] tv = new int[scp.length];
-				int[] tmp = new int[scp.length];
-				TupleIterator ti = new TupleIterator(doms);
-				ti.firstValidTuple();
-				List<int[]> supports = new ArrayList<>();
-				ti.consumeValidTuples(tp -> {
-					for (int k = 0; k < tp.length; k++)
-						tv[k] = doms[k].toVal(tp[k]);
-					boolean support = true;
-					for (int k : list) {
-						CollectedNogood ng = nogoods[k];
-						for (int j = 0; j < ng.vars.length; j++)
-							tmp[j] = tv[Utilities.indexOf(ng.vars[j], scp)];
-						if (ng.firstValuseOf(tmp)) {
-							support = false;
-							break;
+					int[] tv = new int[scp.length];
+					int[] tmp = new int[scp.length];
+					TupleIterator ti = new TupleIterator(doms);
+					ti.firstValidTuple();
+					List<int[]> supports = new ArrayList<>();
+					ti.consumeValidTuples(tp -> {
+						for (int k = 0; k < tp.length; k++)
+							tv[k] = doms[k].toVal(tp[k]);
+						boolean support = true;
+						for (int k : list) {
+							CollectedNogood ng = nogoods[k];
+							for (int j = 0; j < ng.vars.length; j++)
+								tmp[j] = tv[Utilities.indexOf(ng.vars[j], scp)];
+							if (ng.firstValuseOf(tmp)) {
+								support = false;
+								break;
+							}
 						}
-					}
-					if (support)
-						supports.add(tv.clone());
-				});
-				post(ConstraintExtension.buildFrom(this, scp, supports.stream().toArray(int[][]::new), true, false));
+						if (support)
+							supports.add(tv.clone());
+					});
+					post(ConstraintExtension.buildFrom(this, scp, supports.stream().toArray(int[][]::new), true, false));
+				}
 			}
+			for (int i = 0; i < flags.length; i++) // third, we post remaining nogoods
+				if (!flags[i])
+					postNogood(nogoods[i]);
+			features.collecting.nCollectedNogoodsGathered += nSharedNogoods;
 		}
-		for (int i = 0; i < flags.length; i++) // third, we post remaining nogoods
-			if (!flags[i])
-				postNogood(nogoods[i]);
-		features.collecting.nCollectedNogoodsGathered += nSharedNogoods;
-
 	}
 
 	private void inferAdditionalConstraints() {
@@ -883,7 +886,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		loadData(data, dataFormat, dataSaving);
 		head.output.afterData();
 		api.model();
-
 		if (subsetAllDifferentScopes.size() > 0)
 			post(new SubsetAllDifferent(this, subsetAllDifferentScopes.stream().toArray(Variable[][]::new), null));
 		if (subsetAllDifferentExceptScopes.size() > 0)
@@ -892,11 +894,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			post(new WakeUp(this, x.specialMaster, x));
 
 		replaceObjectiveVariable();
-
 		manageCollectedNogoods();
 		// after possibly adding some additional constraints, we store variables and constraints into arrays
 		inferAdditionalConstraints();
-
 		storeToArrays();
 
 		// we may reduce the domains of some variables
@@ -1997,7 +1997,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrAlone extension(Var[] list, int[][] tuples, boolean positive) {
-		// System.out.println("hhhh " + list.length + " " + tuples.length + " " + positive);
 		return extension(list, tuples, positive, DONT_KNOW);
 	}
 

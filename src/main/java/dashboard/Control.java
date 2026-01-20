@@ -507,8 +507,11 @@ public final class Control {
 		public final String structureClass3 = addS("structureClass3", "sc3", Matrix3D.class, null, "Structures to be used for ternary table constraints");
 		public final int arityLimitToPositive = addI("arityLimitToPositive", "alp", -1, "Limit on arity for converting negative table constraints to positive");
 		public final int arityLimitToNegative = addI("arityLimitToNegative", "aln", -1, "Limit on arity for converting positive table constraints to negative");
-		public final int variant = addI("variant", "extv", 0, "Variant to be used for some algorithms (e.g., VA or CMDD)");
-		public final boolean decremental = addB("decremental", "extd", true, "Must we use a decremental mode for some algorithms (e.g., STR2, CT or CMDD)");
+		public final int variantVA = addI("variantVA", "var_va", 0, "Variant to be used for VA (0, 1 or 11)");
+		public final int variantCMDD = addI("variantCMDD", "var_cmdd", 0, "Cutoff variant to be used for CMDD");
+		public final boolean decrementalSTR = addB("decrementalSTR", "dec_str", true, "Must we use a decremental mode for optimized STR algoroithms such as STR2");
+		public final boolean decrementalCT = addB("decrementalCT", "dec_ct", true, "Must we use a decremental mode for CT");
+		public final boolean decrementalCMDD = addB("decrementalCMDD", "dec_cmdd", false, "Must we use a decremental mode for CMDD");
 		public final int smallTableExt = addI("smallTableExt", "stext", 16, "table size threshold for considering a special propagator");
 		public final int largeScopeExt = addI("largeScopeExt", "lsext", 50, "scope size threshold for considering a special propagator");
 		public final boolean toMDD = addB("toMDD", "tomdd", false, "Must we attempt to convert extension constraints into MDDs (if possible)");
@@ -574,6 +577,8 @@ public final class Control {
 		public final boolean noOverlapAux = addB("noOverlapAux", "g_noa", true, "Introducing aux variables for NoOverlap (when relevant)?");
 		public final int noOverlapRedundLimit = addI("noOverlapRedundLimit", "g_nor", 10, "Arity limit for posting redundant constraints for NoOverlap?");
 		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");
+
+		public final boolean binpackingEnergetic = addB("binpackingEnergetic", "g_bpe", true, "Must we use energectic reasoning for BinPacking");
 		public final boolean binpackingRedun = addB("binpackingRedun", "g_bpr", false, "Redundant constraints for for BinPacking");
 		public final boolean viewForSum = addB("viewForSum", "vs", false, "Must we use views for Sum constraints, when possible?");
 		public final boolean eqDecForSum = addB("eqDecForSum", "eqs", false,
@@ -698,7 +703,7 @@ public final class Control {
 		public final int optVarHeuristic = addI("optVarHeuristic", "ovarh", 0,
 				"On how many variables must we branch in a fixed static way on the variables of the objective (when a weighted sum) according to coeff values?"); // experimental
 		public final boolean alwaysAssignAllVariables = addB("alwaysAssignAllVariables", "aaa", false, "Must we always explicitly assign all variables?");
-		public final boolean secondScored = addB("secondScored", "sds", false, "Must we use the second variable scored by the heuristic?");
+		public final boolean secondScored = addB("secondScored", "snds", false, "Must we use the second variable scored by the heuristic?");
 		public final boolean quitWhenBetterThanPreviousChoice = addB("quitWhenBetterThanPreviousChoice", "qwb", false,
 				"Must we return a variable when its score is better than the score of the previously selected variable?");
 		public final boolean frozen = addB("frozen", "frozen", false, "Must we freeze variables during runs?");

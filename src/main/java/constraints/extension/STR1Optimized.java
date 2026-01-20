@@ -31,14 +31,14 @@ public abstract class STR1Optimized extends STR1 {
 	@Override
 	public void afterProblemConstruction(int n) {
 		super.afterProblemConstruction(n);
-		if (extOptions.decremental && !(this instanceof STR2N))
+		if (extOptions.decrementalSTR && !(this instanceof STR2N))
 			this.lastSizesStack = new int[n + 1][scp.length];
 	}
 
 	@Override
 	public void restoreBefore(int depth) {
 		super.restoreBefore(depth);
-		if (extOptions.decremental && depth > 0) // second part (depth > 0) for ensuring that aggressive runs can be
+		if (extOptions.decrementalSTR && depth > 0) // second part (depth > 0) for ensuring that aggressive runs can be
 													// used
 			lastDepth = Math.max(0, Math.min(lastDepth, depth - 1));
 		else if (lastSizes != null)
@@ -109,14 +109,14 @@ public abstract class STR1Optimized extends STR1 {
 		super(pb, scp);
 		this.sVal = new int[scp.length];
 		this.sSup = new int[scp.length];
-		this.lastSizes = !extOptions.decremental && !(this instanceof STR2N) ? new int[scp.length] : null;
+		this.lastSizes = !extOptions.decrementalSTR && !(this instanceof STR2N) ? new int[scp.length] : null;
 	}
 
 	/**
 	 * Makes, before filtering, some initialization with respect to the structures used for restoration
 	 */
 	protected final void initRestorationStructuresBeforeFiltering() {
-		if (extOptions.decremental) {
+		if (extOptions.decrementalSTR) {
 			int depth = problem.solver.depth();
 			assert 0 <= lastDepth && lastDepth <= depth : depth + " " + lastDepth + " " + this;
 			for (int i = lastDepth + 1; i <= depth; i++)

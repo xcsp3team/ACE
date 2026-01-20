@@ -242,7 +242,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	 * nbStrictlyPriorityVars-1. Variables in priorityVars recorded between nbStriclytPriorityVars and priorityVars.length-1 must then be assigned in priority
 	 * but in any order given by the heuristic. Beyond priorityVars.length-1, the heuristic can select any future variable.
 	 */
-	private int nStrictlyPriorityVars;
+	public int nStrictlyPriorityVars;
 
 	/**
 	 * The options concerning the variable ordering heuristics

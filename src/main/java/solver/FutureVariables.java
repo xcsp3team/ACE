@@ -16,10 +16,12 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import heuristics.HeuristicVariablesDynamic;
 import heuristics.HeuristicVariablesDynamic.SafeSelector;
 import heuristics.HeuristicVariablesDynamic.SingletonManager;
+import heuristics.HeuristicVariablesDynamic.SingletonStrategy;
 import interfaces.Observers.ObserverOnSolving;
 import utility.Kit;
 import variables.Variable;
@@ -29,7 +31,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public final class FutureVariables implements Iterable<Variable>, ObserverOnSolving {
+public final class FutureVariables implements Iterable<Variable> {
 
 	private final Solver solver;
 
@@ -77,25 +79,43 @@ public final class FutureVariables implements Iterable<Variable>, ObserverOnSolv
 
 	// private final SetDenseReversible nonSingletonVariables;
 
-	@Override
-	public void afterPreprocessing() {
-		if (solver.head.control.varh.discardSingletonsAfterPrepro) {
-			for (Variable x : vars)
-				if (x.dom.size() == 1)
+	public void discardSingletonVariablesAtRunRoot() {
+		control(pastLimit == -1 && solver.depth() == 0);
+		if (solver.head.control.varh.discardSingletonsAfterPrepro && (solver.restarter.numRun % 10 == 0)) {
+			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
+				if (x.dom.size() == 1) {
 					remove(x);
-			if (pastLimit != -1)
-				Kit.log.config(Kit.Color.YELLOW.coloring("\n ...Discarding " + (pastLimit + 1) + " singleton variables"));
+					x.discarded = true;
+				}
+			}
+			if (pastLimit != -1) {
+				Kit.log.config(Kit.Color.YELLOW.coloring(" ...Discarding " + (pastLimit + 1) + " singleton variables"));
+				nPivot = vars.length - (pastLimit + 1) - 1;
+				pastLimit = -1;
+			}
 		}
-		int before = pastLimit;
+		int nPriorityDiscarded = (int) Stream.of(solver.heuristic.priorityVars).filter(x -> x.discarded).count();
+		if (nPriorityDiscarded > 0) {
+			control(solver.heuristic.nStrictlyPriorityVars == 0); // for the moment
+			solver.heuristic.priorityVars = Stream.of(solver.heuristic.priorityVars).filter(x -> !x.discarded).toArray(Variable[]::new);
+			Kit.log.config(Kit.Color.YELLOW.coloring(" ...Discarding " + nPriorityDiscarded + " priority variables (" + solver.heuristic.priorityVars.length + " remaining)"));
+		}
+	}
+
+	private void discardAux() {
+		control(pastLimit == -1);
 		if (solver.head.control.varh.discardAux) {
 			for (Variable x : vars)
-				if (x.dom.size() > 1 && x.isAuxiliaryVariableIntroducedBySolver())
+				if (x.isAuxiliaryVariableIntroducedBySolver()) {
 					remove(x);
-			if (pastLimit != before)
-				Kit.log.config(Kit.Color.YELLOW.coloring("\n ...Discarding " + (pastLimit - before) + " aux variables"));
+					x.discarded = true;
+				}
+			if (pastLimit != -1) {
+				Kit.log.config(Kit.Color.YELLOW.coloring("\n ...Discarding " + (pastLimit + 1) + " aux variables"));
+				nPivot = vars.length - (pastLimit + 1) - 1;
+				pastLimit = -1;
+			}
 		}
-		nPivot = vars.length - (pastLimit + 1) - 1;
-		pastLimit = -1;
 	}
 
 	/**
@@ -117,6 +137,7 @@ public final class FutureVariables implements Iterable<Variable>, ObserverOnSolv
 		control(Variable.areNumsNormalized(vars));
 		this.singletonManager = solver.heuristic instanceof HeuristicVariablesDynamic ? ((HeuristicVariablesDynamic) solver.heuristic).singletonManager : null;
 		this.safeSelector = solver.heuristic instanceof HeuristicVariablesDynamic ? ((HeuristicVariablesDynamic) solver.heuristic).safeSelector : null;
+		discardAux();
 	}
 
 	/**
@@ -135,6 +156,10 @@ public final class FutureVariables implements Iterable<Variable>, ObserverOnSolv
 	 */
 	public int nPast() {
 		return pastLimit + 1;
+	}
+
+	public int nDiscarded() {
+		return vars.length - nPivot - 1;
 	}
 
 	/**

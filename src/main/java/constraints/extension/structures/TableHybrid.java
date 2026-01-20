@@ -68,6 +68,10 @@ import variables.Variable;
  */
 public final class TableHybrid extends ExtensionStructure {
 
+	// public static enum TypeRestriction {
+	// RES1, RES2, RES3, RESC;
+	// }
+
 	@Override
 	public boolean checkIndexes(int[] t) {
 		for (HybridTuple hybridTuple : hybridTuples)
@@ -486,7 +490,8 @@ public final class TableHybrid extends ExtensionStructure {
 				Restriction restriction = whichRestrictions[x];
 				if (restriction == null) {
 					continue;
-				} else if (restriction instanceof RestrictionComplex) {
+				} else if (restriction.restrictionComplex) {
+					// } else if (restriction instanceof RestrictionComplex) {
 					RestrictionComplex rc = (RestrictionComplex) restriction;
 					if (rc.valTimeLocal != valTime) {
 						rc.valTimeLocal = valTime; // updated because we make below the validity check
@@ -521,7 +526,8 @@ public final class TableHybrid extends ExtensionStructure {
 						nac[x].clear();
 					else
 						nac[x].remove(a);
-				} else if (restriction instanceof RestrictionComplex) {
+				} else if (restriction.restrictionComplex) {
+					// else if (restriction instanceof RestrictionComplex) {
 					RestrictionComplex rc = (RestrictionComplex) restriction;
 					if (rc.supTimeLocal != supTime) {
 						rc.supTimeLocal = supTime; // updated because we make below the support searching (collect)
@@ -577,6 +583,9 @@ public final class TableHybrid extends ExtensionStructure {
 			 */
 			protected SetSparse nacx;
 
+			protected final boolean restrictionComplex; // to avoid instanceof
+			protected final boolean restriction2;
+
 			/**
 			 * Returns true iff the restriction validates the specified tuple of indexes.
 			 */
@@ -617,6 +626,8 @@ public final class TableHybrid extends ExtensionStructure {
 				this.domx = scp[x].dom;
 				this.nacx = nac[x];
 				control(tuple[x] == STAR, () -> getClass().getName() + " " + Kit.join(tuple));
+				this.restrictionComplex = this instanceof RestrictionComplex;
+				this.restriction2 = this instanceof Restriction2;
 			}
 		}
 
@@ -1033,7 +1044,7 @@ public final class TableHybrid extends ExtensionStructure {
 				this.nacy = nac[y];
 				control(x != y,
 						"Bad form for a binary restriction of a hybrid tuple: two occurrences of the same variable: " + scp[x] + " " + op + " " + scp[y]);
-				// control(domx.typeIdentifier() == domy.typeIdentifier() || this instanceof Rstr2EQVal);
+				// control(domx.typeIdentifier() == domy.typeIdentifier() || this instance of Rstr2EQVal);
 			}
 
 			/**
@@ -1768,12 +1779,11 @@ public final class TableHybrid extends ExtensionStructure {
 						nacx.resetTo(first);
 					else
 						nacx.clear();
-						
-					
-//					if (domy.size() == 1 && nacx.contains(domx.toIdx(domy.singleValue())))
-//						nacx.resetTo(domx.toIdx(domy.singleValue()));
-//					else
-//						nacx.clear();
+
+					// if (domy.size() == 1 && nacx.contains(domx.toIdx(domy.singleValue())))
+					// nacx.resetTo(domx.toIdx(domy.singleValue()));
+					// else
+					// nacx.clear();
 				}
 				if (!scp[y].assigned()) {
 					int first = domx.size() != 1 ? -1 : domy.toIdx(domx.singleValue());
@@ -1782,17 +1792,17 @@ public final class TableHybrid extends ExtensionStructure {
 					else
 						nacy.clear();
 				}
-					
-//					
-//					
-//					if (domx.size() != 1 || domy.toIdx(domx.singleValue())) == -1 )
-//						nacy.resetTo(domy.toIdx(domx.singleValue()));
-//					else
-//						nacy.clear();
-//					if (domx.size() == 1 && nacy.contains(domy.toIdx(domx.singleValue())))
-//						nacy.resetTo(domy.toIdx(domx.singleValue()));
-//					else
-//						nacy.clear();
+
+				//
+				//
+				// if (domx.size() != 1 || domy.toIdx(domx.singleValue())) == -1 )
+				// nacy.resetTo(domy.toIdx(domx.singleValue()));
+				// else
+				// nacy.clear();
+				// if (domx.size() == 1 && nacy.contains(domy.toIdx(domx.singleValue())))
+				// nacy.resetTo(domy.toIdx(domx.singleValue()));
+				// else
+				// nacy.clear();
 			}
 
 			@Override
@@ -1803,13 +1813,12 @@ public final class TableHybrid extends ExtensionStructure {
 						nacy.resetTo(first);
 					else
 						nacy.clear();
-					
-					
-//					int first = tmp.first();
-//					if (tmp.size() == 1 && nacy.contains(domy.toIdx(domx.toVal(first))))
-//						nacy.resetTo(domy.toIdx(domx.toVal(first)));
-//					else
-//						nacy.clear();
+
+					// int first = tmp.first();
+					// if (tmp.size() == 1 && nacy.contains(domy.toIdx(domx.toVal(first))))
+					// nacy.resetTo(domy.toIdx(domx.toVal(first)));
+					// else
+					// nacy.clear();
 				}
 			}
 
@@ -1879,7 +1888,7 @@ public final class TableHybrid extends ExtensionStructure {
 				this.z = z;
 				this.domz = scp[z].dom;
 				this.nacz = nac[z];
-				// control(domx.typeIdentifier() == domy.typeIdentifier() || this instanceof Rstr2EQVal);
+				// control(domx.typeIdentifier() == domy.typeIdentifier() || this instanc eof Rstr2EQVal);
 				control(x != y && x != z && y != z, "Bad form for a ternary restriction of a hybrid tuple: two occurrences of the same variable: " + scp[x]
 						+ " " + op + " " + scp[y] + (addition ? "+" : "-") + scp[z]);
 			}
@@ -2099,7 +2108,8 @@ public final class TableHybrid extends ExtensionStructure {
 					nacx.removeAll(tmp);
 				// we update the nac sets for the other involved variables
 				for (Restriction restriction : subrestrictions)
-					if (restriction instanceof Restriction2)
+					if (restriction.restriction2)
+						// if (restriction instanceof Restriction2)
 						((Restriction2) restriction).collectForY();
 			}
 

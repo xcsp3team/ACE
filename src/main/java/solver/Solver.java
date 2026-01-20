@@ -37,6 +37,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Constants;
+import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
 import constraints.ConstraintGlobal;
@@ -815,6 +816,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		this.observersOnSolving = collectObserversOnSolving();
 		this.observersOnRuns = collectObserversOnRuns();
 		this.observersOnBacktracksSystematic = collectObserversOnBacktracksSystematic();
+
 		this.observersOnDecisions = collectObserversOnDecisions();
 		this.observersOnAssignments = collectObserversOnAssignments();
 		this.observersOnRemovals = collectObserversOnRemovals();
