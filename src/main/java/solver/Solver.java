@@ -917,6 +917,16 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 * @return false if an inconsistency is detected
 	 */
 	private final boolean tryAssignment(Variable x, int a, boolean knownAsInconsistent) {
+
+//		for (Variable y = futVars.first(); y != null; y = futVars.next(y)) {
+//			if (y.dom.size() == 1)
+//				continue;
+//			Constraint[] cs = Stream.of(y.ctrs).filter(c -> !isEntailed(c) && c.futvars.size() > 1).toArray(Constraint[]::new);
+//			if (cs.length == 0 || (cs.length == 1 && problem.optimizer != null && problem.optimizer.ctr == cs[0]))
+//				System.out.println("\tjjjjjj " + depth() + " " + y + " " + (cs.length) + " vs " + y.ctrs.length + " " + (cs.length == 0 ? "" : cs[0].getId())
+//						+ " " + y.dom.size());
+//		}
+
 		boolean b = false; // TODO temporary
 		if (b && x.heuristic instanceof Bivs) {
 			SetDense inconsistent = ((Bivs) x.heuristic).inconsistent;
@@ -935,16 +945,19 @@ public class Solver implements ObserverOnBacktracksSystematic {
 				}
 			}
 		}
+		boolean singletonVariable = x.dom.size() == 1;
 		for (ObserverOnDecisions observer : observersOnDecisions)
 			observer.beforePositiveDecision(x, a);
 		assign(x, a);
+		int before = problem.nValueRemovals;
 		boolean consistent = knownAsInconsistent ? false : propagation.runAfterAssignment(x) && (ipsReasoner == null || ipsReasoner.whenOpeningNode());
 		if (!consistent) {
 			for (ObserverOnAssignments observer : observersOnAssignments)
 				observer.afterFailedAssignment(x, a);
 			// if (ngdRecorder != null) ngdRecorder.addCurrentNogood();
 			return false;
-		}
+		} else if (!singletonVariable && before == problem.nValueRemovals)
+			stats.nImpactlessAssignments++;
 		// if (ipsRecorder != null && !ipsRecorder.dealWhenOpeningNode()) return false;
 		return true;
 	}

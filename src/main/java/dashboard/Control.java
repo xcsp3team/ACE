@@ -509,7 +509,8 @@ public final class Control {
 		public final int arityLimitToNegative = addI("arityLimitToNegative", "aln", -1, "Limit on arity for converting positive table constraints to negative");
 		public final int variantVA = addI("variantVA", "var_va", 0, "Variant to be used for VA (0, 1 or 11)");
 		public final int variantCMDD = addI("variantCMDD", "var_cmdd", 0, "Cutoff variant to be used for CMDD");
-		public final boolean decrementalSTR = addB("decrementalSTR", "dec_str", true, "Must we use a decremental mode for optimized STR algoroithms such as STR2");
+		public final boolean decrementalSTR = addB("decrementalSTR", "dec_str", true,
+				"Must we use a decremental mode for optimized STR algoroithms such as STR2");
 		public final boolean decrementalCT = addB("decrementalCT", "dec_ct", true, "Must we use a decremental mode for CT");
 		public final boolean decrementalCMDD = addB("decrementalCMDD", "dec_cmdd", false, "Must we use a decremental mode for CMDD");
 		public final int smallTableExt = addI("smallTableExt", "stext", 16, "table size threshold for considering a special propagator");
@@ -587,12 +588,15 @@ public final class Control {
 				"Must we post a MDD constraint for Sum constraints, when the operator is EQ (or IN)?");
 		public final int sumeqToTableSpaceLimit = addI("sumeqToTableSpaceLimit", "set", 8, "Limit on space for possibly converting sumeq to table");
 		public final int suminToTableSpaceLimit = addI("suminToTableSpaceLimit", "sit", 12, "Limit on space for possibly converting sumin to table");
+		public final int sumSemiIncremental = addI("sumSemiIncremental", "ssi", 1, "Semi-incrementality mode for sums (0, 1 or 2)");
+		public final int countSemiIncremental = addI("countSemiIncremental", "csi", 0, "Semi-incrementality mode for counts (0, 1 or 2)");
 		public final boolean permutation = addB("permutation", "", false, "Must we use permutation constraints for AllDifferent if possible? (may be faster)");
 		public final int allDifferentNb = addI("allDifferentNb", "adn", 10, "Number of possibly automatically inferred AllDifferent");
 		public final int allDifferentSize = addI("allDifferentSize", "ads", 5, "Limit on the size of possibly automatically inferred AllDifferent");
 
 		public final boolean test = addB("test", "test", false, "");
 		public final boolean test2 = addB("test2", "test2", false, "");
+		public final boolean test3 = addB("test3", "test3", false, "");
 		// public final boolean starred = addB("starred", "", false, "When true, some global constraints are encoded by starred tables");
 		// public final boolean hybrid = addB("hybrid", "", false, "When true, some global constraints are encoded by hybrid/smart tables");
 	}

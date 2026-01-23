@@ -70,6 +70,13 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	}
 
 	@Override
+	public void beforeRun() {
+		nAssignmentsBeforeRun = nAssignments;
+		nFailedAssignmentsBeforeRun = nFailedAssignments;
+		nImpactlessAssignmentsBeforeRun = nImpactlessAssignments;
+	}
+
+	@Override
 	public void afterRun() {
 		times.searchWck = stopwatch.wckTime();
 	}
@@ -344,10 +351,18 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	 */
 	public long nAssignments;
 
+	private long nAssignmentsBeforeRun;
+
 	/**
 	 * The number of failed assignments (positive decisions directly leading to a failure) made by the solver when building the search tree
 	 */
 	public long nFailedAssignments;
+
+	private long nFailedAssignmentsBeforeRun;
+
+	public long nImpactlessAssignments;
+
+	private long nImpactlessAssignmentsBeforeRun;
 
 	/**
 	 * The object used to collect data about the preprocessing stage
@@ -402,6 +417,11 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 
 	public final long nUselessRevisions() {
 		return solver.propagation instanceof Forward ? ((Forward) solver.propagation).reviser.nUselessRevisions : 0;
+	}
+
+	public final String infoARunAssignemnts() {
+		return "(" + (nAssignments - nAssignmentsBeforeRun) + ",noefs=" + (nImpactlessAssignments - nImpactlessAssignmentsBeforeRun) + ",fails="
+				+ (nFailedAssignments - nFailedAssignmentsBeforeRun) + ")";
 	}
 
 }

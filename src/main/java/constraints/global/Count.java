@@ -271,49 +271,96 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 				return Kit.countIn(value, t) == k;
 			}
 
+			private int nGuaranteedOccurrences; // nGuaranteedOccurrences denotes the number of singleton domains with the specified value
+
+			private final Variable[] store;
+
+			private int storeSize;
+
 			public ExactlyK(Problem pb, Variable[] list, int value, int k) {
 				super(pb, list, value, k);
+				this.store = pb.head.control.global.countSemiIncremental > 0 ? new Variable[list.length] : null;
 			}
 
 			@Override
 			public boolean runPropagator(Variable x) {
-				// if (x.dom.size() > 1 && x.dom.containsValue(value)) // removing these two lines, and adding TagCallCompleteFiltering is an alternative
+				// if (x.dom.size() > 1 && x.dom.containsValue(value)) // removing these two lines, and adding TagCallCompleteFiltering is an alternative //
+				// TODO is that still true??
 				// return true;
 
-				// nGuaranteedOccurrences denotes the number of singleton domains with the specified value
-				// nPossibleOccurrences denotes the number of domains containing the specified value
-				int nGuaranteedOccurrences = 0, nPossibleOccurrences = 0;
-				for (Variable y : scp)
-					if (y.dom.containsValue(value)) {
-						nPossibleOccurrences++;
-						if (y.dom.size() == 1 && ++nGuaranteedOccurrences > k)
-							return y.dom.fail();
-					}
-				if (nGuaranteedOccurrences == k) {
-					int toremove = nPossibleOccurrences - k;
-					// remove value from all non singleton domains
-					for (int i = futvars.limit; i >= 0 && toremove > 0; i--) {
-						Domain dom = scp[futvars.dense[i]].dom;
-						if (dom.size() > 1 && dom.containsValue(value)) {
-							dom.removeValue(value); // no inconsistency possible
-							toremove--;
+				if (store != null) {
+					if (failSinceLastCall()) { // semi-incrementality
+						nGuaranteedOccurrences = 0;
+						storeSize = 0;
+						for (Variable y : scp)
+							if (y.dom.containsValue(value)) {
+								if (y.dom.size() == 1) {
+									if (++nGuaranteedOccurrences > k)
+										return y.dom.fail();
+								} else
+									store[storeSize++] = y;
+							}
+					} else {
+						int j = 0;
+						for (int i = 0; i < storeSize; i++) {
+							Variable y = store[i];
+							if (y.dom.containsValue(value)) {
+								if (y.dom.size() == 1) {
+									if (++nGuaranteedOccurrences > k)
+										return y.dom.fail();
+								} else
+									store[j++] = y;
+							}
 						}
+						storeSize = j;
 					}
-					return entail();
-				}
-				if (nPossibleOccurrences < k)
-					return x.dom.fail(); // inconsistency detected
-				if (nPossibleOccurrences == k) {
-					int toassign = k - nGuaranteedOccurrences;
-					// assign all non singleton domains containing the value
-					for (int i = futvars.limit; i >= 0 && toassign > 0; i--) {
-						Domain dom = scp[futvars.dense[i]].dom;
-						if (dom.size() > 1 && dom.containsValue(value)) {
-							dom.reduceToValue(value);
-							toassign--;
+					int nPossibleOccurrences = nGuaranteedOccurrences + storeSize;
+					if (nPossibleOccurrences < k) // inconsistency detected
+						return x.dom.fail();
+					if (nPossibleOccurrences == k) { // assign all non singleton domains containing the value
+						for (int i = 0; i < storeSize; i++)
+							store[i].dom.reduceToValue(value); // no inconsistency possible
+						return entail();
+					}
+					if (nGuaranteedOccurrences == k) { // remove value from all non singleton domains of the store
+						for (int i = 0; i < storeSize; i++)
+							store[i].dom.removeValue(value); // no inconsistency possible
+						return entail();
+					}
+					return true;
+				} else {
+					nGuaranteedOccurrences = 0;
+					int nPossibleOccurrences = 0; // nPossibleOccurrences denotes the number of domains containing the specified value
+					for (Variable y : scp)
+						if (y.dom.containsValue(value)) {
+							nPossibleOccurrences++;
+							if (y.dom.size() == 1 && ++nGuaranteedOccurrences > k)
+								return y.dom.fail();
 						}
+					if (nPossibleOccurrences < k)
+						return x.dom.fail(); // inconsistency detected
+					if (nPossibleOccurrences == k) {
+						int toassign = k - nGuaranteedOccurrences;
+						for (int i = futvars.limit; i >= 0 && toassign > 0; i--) { // assign all non singleton domains containing the value
+							Domain dom = scp[futvars.dense[i]].dom;
+							if (dom.size() > 1 && dom.containsValue(value)) {
+								dom.reduceToValue(value); // no inconsistency possible
+								toassign--;
+							}
+						}
+						return entail();
 					}
-					return entail();
+					if (nGuaranteedOccurrences == k) {
+						int toremove = nPossibleOccurrences - k;
+						for (int i = futvars.limit; i >= 0 && toremove > 0; i--) { // remove value from all non singleton domains
+							Domain dom = scp[futvars.dense[i]].dom;
+							if (dom.size() > 1 && dom.containsValue(value)) {
+								dom.removeValue(value); // no inconsistency possible
+								toremove--;
+							}
+						}
+						return entail();
+					}
 				}
 				return true;
 			}
@@ -324,67 +371,6 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 			public Exactly1(Problem pb, Variable[] list, int value) {
 				super(pb, list, value, 1);
 			}
-//
-//			@Override
-//			public boolean runPropagator(Variable x) {
-//				boolean test = false;
-//				if (test)
-//					return super.runPropagator(x);
-//
-//				Variable y = problem.solver.futVars.lastPast();
-//				if (y != null && y.dom.singleValue() == value) {
-//					for (int j = 0; j < problem.solver.futVars.nPast(); j++) {
-//						Variable z = problem.solver.futVars.getPast(j);
-//						if (z != y && z.dom.singleValue() == value)
-//							control(false, () -> "pb here " + this + " " + z + " " + y);
-//					}
-//					for (int i = futvars.limit; i >= 0; i--) {
-//						Domain dom = scp[futvars.dense[i]].dom;
-//						if (dom.removeValueIfPresent(value) == false)
-//							return false;
-//					}
-//					return entail();
-//				}
-//
-//				return super.runPropagator(x);
-//
-//				// int nGuaranteedOccurrences = 0, nPossibleOccurrences = 0;
-//				// for (int i = futvars.limit; i >= 0; i--) {
-//				// Domain dom = scp[futvars.dense[i]].dom;
-//				// if (dom.containsValue(value)) {
-//				// nPossibleOccurrences++;
-//				// if (dom.size() == 1 && ++nGuaranteedOccurrences > k)
-//				// return dom.fail();
-//				// }
-//				// }
-//				// if (nGuaranteedOccurrences == k) {
-//				// int toremove = nPossibleOccurrences - k;
-//				// // remove value from all non singleton domains
-//				// for (int i = futvars.limit; i >= 0 && toremove > 0; i--) {
-//				// Domain dom = scp[futvars.dense[i]].dom;
-//				// if (dom.size() > 1 && dom.containsValue(value)) {
-//				// dom.removeValue(value); // no inconsistency possible
-//				// toremove--;
-//				// }
-//				// }
-//				// return entail();
-//				// }
-//				// if (nPossibleOccurrences < k)
-//				// return x.dom.fail(); // inconsistency detected
-//				// if (nPossibleOccurrences == k) {
-//				// int toassign = k - nGuaranteedOccurrences;
-//				// // assign all non singleton domains containing the value
-//				// for (int i = futvars.limit; i >= 0 && toassign > 0; i--) {
-//				// Domain dom = scp[futvars.dense[i]].dom;
-//				// if (dom.size() > 1 && dom.containsValue(value)) {
-//				// dom.reduceToValue(value);
-//				// toassign--;
-//				// }
-//				// }
-//				// return entail();
-//				// }
-//				// return true;
-//			}
 		}
 
 	}
@@ -398,10 +384,10 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 	 */
 	public static abstract class CountVar extends Count {
 
-		public static CountVar buildFrom(Problem pb, Variable[] scp, int value, TypeConditionOperatorRel op, Variable k) {
+		public static CountVar buildFrom(Problem pb, Variable[] list, int value, TypeConditionOperatorRel op, Variable k) {
 			switch (op) {
 			case EQ:
-				return new ExactlyVarK(pb, scp, value, k);
+				return new ExactlyVarK(pb, list, value, k);
 			default:
 				throw new AssertionError("not implemented");
 			}
@@ -411,6 +397,8 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 		 * The right-operand used in the comparison (i.e., the number of occurrences used as a limit).
 		 */
 		protected final Variable k;
+
+		protected final Domain domk;
 
 		/**
 		 * The index of the variable in the list if present, -1 otherwise
@@ -432,6 +420,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 		public CountVar(Problem pb, Variable[] list, int value, Variable k) {
 			super(pb, pb.vars(list, k), list, value);
 			this.k = k;
+			this.domk = k.dom;
 			this.indexOfKInList = Utilities.indexOf(k, list);
 			defineKey(value, indexOfKInList);
 			// checking the domain of k ?
@@ -453,9 +442,19 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 				return cnt == t[t.length - 1];
 			}
 
+			private int nGuaranteedOccurrences; // nGuaranteedOccurrences denotes the number of singleton domains with the specified value
+
+			private int nPossibleOccurrences;
+
+			private final Variable[] store;
+
+			private int storeSize;
+
 			public ExactlyVarK(Problem pb, Variable[] list, int value, Variable k) {
 				super(pb, list, value, k);
+				assert Variable.areAllDistinct(list);
 				control(list.length > 1, "list: " + Kit.join(list) + " value: " + value + " k:" + k);
+				this.store = pb.head.control.global.countSemiIncremental > 0 ? new Variable[list.length] : null;
 			}
 
 			@Override
@@ -463,79 +462,163 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 				return IntStream.range(0, scp.length).map(i -> i == indexOfKInList || (indexOfKInList == -1 && i == scp.length - 1) ? 2 : 1).toArray();
 			}
 
-			@Override
-			public boolean runPropagator(Variable dummy) {
-				// counting the number of occurrences of value in list
-				int nGuaranteedOccurrences = 0, nPossibleOccurrences = 0;
-				for (Variable x : list)
-					if (x.dom.containsValue(value)) {
-						nPossibleOccurrences++;
-						if (x.dom.size() == 1)
-							nGuaranteedOccurrences++;
-					}
-				Domain dk = k.dom;
-				if (dk.size() == 1) {
-					int vk = dk.singleValue();
-					if (vk < nGuaranteedOccurrences || vk > nPossibleOccurrences)
-						return dk.fail();
-				} else {
-					// possible update of the domain of k when present in the vector, first by removing value (if
-					// present) so as to update immediately nPossibleOccurrences
+			private boolean possiblyFilteringK() {
+				if (domk.size() > 1) {
+					// possible update of domk when k present in the list, first by removing value (if present) so as to update immediately nPossibleOccurrences
 					if (indexOfKInList != -1) {
-						int a = dk.toIdxIfPresent(value);
+						int a = domk.toIdxIfPresent(value);
 						if (a != -1) {
 							boolean deleted = false;
-							for (int b = dk.first(); b != -1; b = dk.next(b))
+							for (int b = domk.first(); b != -1; b = domk.next(b))
 								if (b == a) {
-									if (value < nGuaranteedOccurrences + 1 || nPossibleOccurrences < value) {
+									if (nGuaranteedOccurrences + 1 > value || nPossibleOccurrences < value) {
 										// +1 by assuming we assign the value
-										if (dk.remove(a) == false)
+										if (domk.remove(a) == false)
 											return false;
 										deleted = true;
 									}
 								} else {
-									int vb = dk.toVal(b);
-									if (vb < nGuaranteedOccurrences || nPossibleOccurrences - 1 < vb) {
+									int vb = domk.toVal(b);
+									if (nGuaranteedOccurrences > vb || nPossibleOccurrences - 1 < vb) {
 										// -1 by assuming we assign vb (and not value)
-										if (dk.remove(b) == false)
+										if (domk.remove(b) == false)
 											return false;
 									}
 								}
 							if (deleted)
 								nPossibleOccurrences--;
 						} else {
-							if (dk.removeValuesLT(nGuaranteedOccurrences) == false || dk.removeValuesGT(nPossibleOccurrences) == false)
+							if (domk.removeValuesLT(nGuaranteedOccurrences) == false || domk.removeValuesGT(nPossibleOccurrences) == false)
 								return false;
 						}
-					} else if (dk.removeValuesLT(nGuaranteedOccurrences) == false || dk.removeValuesGT(nPossibleOccurrences) == false)
+					} else if (domk.removeValuesLT(nGuaranteedOccurrences) == false || domk.removeValuesGT(nPossibleOccurrences) == false)
 						return false;
 				}
-				// if k is singleton, possibly updating the domain of the other variables
-				if (dk.size() == 1) {
-					int vk = dk.singleValue();
-					if (vk == nGuaranteedOccurrences) {
-						int toremove = nPossibleOccurrences - vk;
-						// remove value from all non singleton domains
-						for (int i = futvars.limit; toremove > 0 && i >= 0; i--) {
-							Domain dom = scp[futvars.dense[i]].dom;
-							if (dom.size() > 1 && dom.containsValue(value)) {
-								dom.removeValue(value); // no inconsistency possible
-								toremove--;
+				return true;
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				if (store != null) {
+					int limit = domk.lastValue();
+					if (failSinceLastCall()) { // semi-incrementality
+						nGuaranteedOccurrences = 0;
+						storeSize = 0;
+						for (Variable y : list)
+							if (y.dom.containsValue(value)) {
+								if (y.dom.size() == 1) {
+									if (++nGuaranteedOccurrences > limit)
+										return y.dom.fail();
+								} else
+									store[storeSize++] = y;
+							}
+					} else {
+						//System.out.println("hhhhh " + storeSize + " versus " + list.length);
+						int j = 0;
+						for (int i = 0; i < storeSize; i++) {
+							Variable y = store[i];
+							if (y.dom.containsValue(value)) {
+								if (y.dom.size() == 1) {
+									if (++nGuaranteedOccurrences > limit)
+										return y.dom.fail();
+								} else
+									store[j++] = y;
 							}
 						}
-						return entail();
+						storeSize = j;
 					}
-					if (vk == nPossibleOccurrences) {
-						int toassign = vk - nGuaranteedOccurrences;
-						// // assign all non singleton domains containing the value
-						for (int i = futvars.limit; toassign > 0 && i >= 0; i--) {
-							Domain dom = scp[futvars.dense[i]].dom;
-							if (dom.size() > 1 && dom.containsValue(value)) {
-								dom.reduceToValue(value); // no inconsistency possible
-								toassign--;
+					nPossibleOccurrences = nGuaranteedOccurrences + storeSize;
+					
+					if (nPossibleOccurrences < domk.firstValue()) // inconsistency detected
+						return domk.fail();
+
+					int nPossibleOccurrencesBefore = nPossibleOccurrences;
+					if (possiblyFilteringK() == false)
+						return false;
+					boolean deleted = nPossibleOccurrences < nPossibleOccurrencesBefore;
+
+					if (domk.size() == 1) {
+						int vk = domk.singleValue();
+						if (nPossibleOccurrences == vk) {
+							int toassign = vk - nGuaranteedOccurrences;
+							for (int i = futvars.limit; toassign > 0 && i >= 0; i--) { // assign all non singleton domains containing the value
+								Domain dom = scp[futvars.dense[i]].dom;
+								if (dom.size() > 1 && dom.containsValue(value)) {
+									dom.reduceToValue(value); // no inconsistency possible
+									toassign--;
+								}
 							}
+							return entail();
 						}
-						return entail();
+						if (nGuaranteedOccurrences == vk) {
+							int toremove = nPossibleOccurrences - vk;
+							for (int i = futvars.limit; toremove > 0 && i >= 0; i--) { // remove value from all non singleton domains
+								Domain dom = scp[futvars.dense[i]].dom;
+								if (dom.size() > 1 && dom.containsValue(value)) {
+									dom.removeValue(value); // no inconsistency possible
+									toremove--;
+								}
+							}
+							return entail();
+						}
+					}
+					
+//					if (domk.size() == 1) {
+//						int vk = domk.singleValue();
+//						if (nPossibleOccurrences == vk) { // assign all non singleton domains containing the value
+//							for (int i = 0; i < storeSize; i++)
+//								if (!deleted || store[i] != k)
+//									store[i].dom.reduceToValue(value); // no inconsistency possible
+//							return entail();
+//						}
+//						if (nGuaranteedOccurrences == vk) { // remove value from all non singleton domains of the store
+//							for (int i = 0; i < storeSize; i++)
+//								if (!deleted || store[i] != k)
+//									store[i].dom.removeValue(value); // no inconsistency possible
+//							return entail();
+//						}
+//					}
+				} else {
+					nGuaranteedOccurrences = 0;
+					nPossibleOccurrences = 0;
+					int limit = domk.lastValue();
+					for (Variable y : list)
+						if (y.dom.containsValue(value)) {
+							nPossibleOccurrences++;
+							if (y.dom.size() == 1 && ++nGuaranteedOccurrences > limit)
+								return y.dom.fail();
+						}
+					if (nPossibleOccurrences < domk.firstValue())
+						return domk.fail(); // inconsistency detected
+
+					if (possiblyFilteringK() == false)
+						return false;
+
+					// if k is singleton, possibly updating the domain of the other variables
+					if (domk.size() == 1) {
+						int vk = domk.singleValue();
+						if (nPossibleOccurrences == vk) {
+							int toassign = vk - nGuaranteedOccurrences;
+							for (int i = futvars.limit; toassign > 0 && i >= 0; i--) { // assign all non singleton domains containing the value
+								Domain dom = scp[futvars.dense[i]].dom;
+								if (dom.size() > 1 && dom.containsValue(value)) {
+									dom.reduceToValue(value); // no inconsistency possible
+									toassign--;
+								}
+							}
+							return entail();
+						}
+						if (nGuaranteedOccurrences == vk) {
+							int toremove = nPossibleOccurrences - vk;
+							for (int i = futvars.limit; toremove > 0 && i >= 0; i--) { // remove value from all non singleton domains
+								Domain dom = scp[futvars.dense[i]].dom;
+								if (dom.size() > 1 && dom.containsValue(value)) {
+									dom.removeValue(value); // no inconsistency possible
+									toremove--;
+								}
+							}
+							return entail();
+						}
 					}
 				}
 				return true;

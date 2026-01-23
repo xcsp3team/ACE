@@ -309,6 +309,11 @@ public class Table extends ExtensionStructure {
 	}
 
 	@Override
+	public boolean isStarred() {
+		return starred;
+	}
+
+	@Override
 	public void storeTuples(int[][] m, boolean positive) {
 		this.starred = false;
 		if (m.length == 0)

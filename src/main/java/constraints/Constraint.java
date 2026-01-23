@@ -397,16 +397,16 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 */
 	protected final int[] vals;
 
-	private long lastCallNode = -1;
+	private long nAssignmentsOfBranchStart = -1;
 
-	private int lastCallDepth;
+	private int depthOfBranchStart;
 
 	private long lastCallNodeForMove = -1;
 
 	protected final boolean failSinceLastCall() {
-		if ((problem.solver.stats.nAssignments - lastCallNode) != (problem.solver.depth() - lastCallDepth)) {
-			lastCallNode = problem.solver.stats.nAssignments;
-			lastCallDepth = problem.solver.depth();
+		if ((problem.solver.stats.nAssignments - nAssignmentsOfBranchStart) != (problem.solver.depth() - depthOfBranchStart)) {
+			nAssignmentsOfBranchStart = problem.solver.stats.nAssignments;
+			depthOfBranchStart = problem.solver.depth();
 			return true;
 		}
 		return false;

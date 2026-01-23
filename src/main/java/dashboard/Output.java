@@ -563,7 +563,8 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 			if (features.ctrTypes1.size() > 0)
 				m.put("unary", features.ctrTypes1);
 			if (head.problem.optimizer != null)
-				m.put("objective", "[" + head.problem.optimizer.clb.getClass().getSimpleName() + "," + head.problem.optimizer.cub.getClass().getSimpleName() + "]");
+				m.put("objective",
+						"[" + head.problem.optimizer.clb.getClass().getSimpleName() + "," + head.problem.optimizer.cub.getClass().getSimpleName() + "]");
 			m.separator();
 		}
 		m.put("non_unary", features.ctrTypes);
@@ -671,6 +672,8 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 			m.put("aprr", index == 0 ? "_" : head.problem.varArrays[index - 1].id);
 		}
 		m.put(N_EFFECTIVE, features.nEffectiveFilterings);
+		m.put("asgs", stats.infoARunAssignemnts());
+		//m.put("less", stats.nImpactlessAssignmentsBeforeRun);
 		m.put(N_FAILED, stats.nFailedAssignments);
 		m.put(N_WRONG, stats.nWrongDecisions);
 		if (Kit.memory() > 10000000000L)

@@ -642,6 +642,11 @@ public final class MDD extends ExtensionStructure {
 	 */
 	private Integer nNodes;
 
+	@Override
+	public boolean isStarred() {
+		return root.starred;
+	}
+
 	/**
 	 * @return the number of nodes in the MDD
 	 */

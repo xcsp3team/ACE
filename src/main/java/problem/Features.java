@@ -351,7 +351,9 @@ public final class Features {
 				int arity = c.scp.length;
 				ctrArities.add(arity);
 				if (problem.optimizer == null || (c != problem.optimizer.clb && c != problem.optimizer.cub)) {
-					String ext = (c instanceof ConstraintExtension ? "-" + c.extStructure().getClass().getSimpleName() : "");
+					String ext = (c instanceof ConstraintExtension
+							? "-" + c.extStructure().getClass().getSimpleName() + (c.extStructure().isStarred() ? "*" : "")
+							: "");
 					if (arity == 1)
 						ctrTypes1.add(c.getClass().getSimpleName() + ext);
 					else
