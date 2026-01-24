@@ -918,14 +918,14 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 */
 	private final boolean tryAssignment(Variable x, int a, boolean knownAsInconsistent) {
 
-//		for (Variable y = futVars.first(); y != null; y = futVars.next(y)) {
-//			if (y.dom.size() == 1)
-//				continue;
-//			Constraint[] cs = Stream.of(y.ctrs).filter(c -> !isEntailed(c) && c.futvars.size() > 1).toArray(Constraint[]::new);
-//			if (cs.length == 0 || (cs.length == 1 && problem.optimizer != null && problem.optimizer.ctr == cs[0]))
-//				System.out.println("\tjjjjjj " + depth() + " " + y + " " + (cs.length) + " vs " + y.ctrs.length + " " + (cs.length == 0 ? "" : cs[0].getId())
-//						+ " " + y.dom.size());
-//		}
+		// for (Variable y = futVars.first(); y != null; y = futVars.next(y)) {
+		// if (y.dom.size() == 1)
+		// continue;
+		// Constraint[] cs = Stream.of(y.ctrs).filter(c -> !isEntailed(c) && c.futvars.size() > 1).toArray(Constraint[]::new);
+		// if (cs.length == 0 || (cs.length == 1 && problem.optimizer != null && problem.optimizer.ctr == cs[0]))
+		// System.out.println("\tjjjjjj " + depth() + " " + y + " " + (cs.length) + " vs " + y.ctrs.length + " " + (cs.length == 0 ? "" : cs[0].getId())
+		// + " " + y.dom.size());
+		// }
 
 		boolean b = false; // TODO temporary
 		if (b && x.heuristic instanceof Bivs) {
@@ -945,7 +945,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 				}
 			}
 		}
-		boolean singletonVariable = x.dom.size() == 1;
+		boolean singletonVariable = x.dom.size() == 1; // may happen, notably by lc
 		for (ObserverOnDecisions observer : observersOnDecisions)
 			observer.beforePositiveDecision(x, a);
 		assign(x, a);
@@ -956,8 +956,11 @@ public class Solver implements ObserverOnBacktracksSystematic {
 				observer.afterFailedAssignment(x, a);
 			// if (ngdRecorder != null) ngdRecorder.addCurrentNogood();
 			return false;
-		} else if (!singletonVariable && before == problem.nValueRemovals)
+		} else if (!singletonVariable && before == problem.nValueRemovals) {
 			stats.nImpactlessAssignments++;
+			if (head.control.varh.impactless)
+				heuristic.newImpactlessAssignment(x, a);
+		}
 		// if (ipsRecorder != null && !ipsRecorder.dealWhenOpeningNode()) return false;
 		return true;
 	}

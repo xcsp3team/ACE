@@ -492,6 +492,8 @@ public final class Control {
 				"Must we replace the objective variable by an objective constraint, when possible?");
 		public final boolean keepTree = addB("keepTree", "kt", false,
 				"Must we keep the objective as it is when given under the form of a tree (except if a sum is recognized)?");
+		public final boolean keepExpr1 = addB("keepExpr1", "k1", true, "Must we keep the objective when in the form of a unary expression?");
+		public final boolean trySum = addB("trySum", "trs", true, "Must we try to post the objective under the form of a constraint Sum?");
 		public final boolean replaceMinMaximum = addB("replaceMinMaximum", "rmm", true,
 				"Must we use a single aux variable when minimizing the maximum of trees ?");
 		public final int boundDescentCoeff = addI("boundDescentCoeff", "bdc", 1, "Bound descent coefficient");
@@ -513,7 +515,7 @@ public final class Control {
 				"Must we use a decremental mode for optimized STR algoroithms such as STR2");
 		public final boolean decrementalCT = addB("decrementalCT", "dec_ct", true, "Must we use a decremental mode for CT");
 		public final boolean decrementalCMDD = addB("decrementalCMDD", "dec_cmdd", false, "Must we use a decremental mode for CMDD");
-		public final int smallTableExt = addI("smallTableExt", "stext", 16, "table size threshold for considering a special propagator");
+		public final int smallTableExt = addI("smallTableExt", "stext", 128, "table size threshold for considering a special propagator");
 		public final int largeScopeExt = addI("largeScopeExt", "lsext", 50, "scope size threshold for considering a special propagator");
 		public final boolean toMDD = addB("toMDD", "tomdd", false, "Must we attempt to convert extension constraints into MDDs (if possible)");
 		public final int domainCompactTableLimit = addI("domainCompactTableLimit", "dctl", 8_000,
@@ -714,6 +716,8 @@ public final class Control {
 		public final int updateStackLength = addI("updateStackLength", "usl", 1, "Length of the stack used for recording sequentially better scored variables");
 
 		public final int solutionPreserving = addI("solutionPreserving", "sop", 0, "Percentage of the last solution preserved (0: disabled)");
+
+		public final boolean impactless = addB("impactless", "impl", false, "Must we take into acvcounf impactless assignemnts?");
 	}
 
 	public class OptionsValh extends OptionGroup {

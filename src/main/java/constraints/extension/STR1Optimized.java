@@ -38,8 +38,7 @@ public abstract class STR1Optimized extends STR1 {
 	@Override
 	public void restoreBefore(int depth) {
 		super.restoreBefore(depth);
-		if (extOptions.decrementalSTR && depth > 0) // second part (depth > 0) for ensuring that aggressive runs can be
-													// used
+		if (extOptions.decrementalSTR && depth > 0) // second part (depth > 0) for ensuring that aggressive runs can be used
 			lastDepth = Math.max(0, Math.min(lastDepth, depth - 1));
 		else if (lastSizes != null)
 			Arrays.fill(lastSizes, 0); // we can use 0 because domains are necessarily not empty when we start filtering

@@ -157,7 +157,7 @@ public abstract class HeuristicVariables extends Heuristic {
 				return null;
 
 			// if (updateStack != null && this.time + 1 == newTime) {
-			assert stackMaxSize != 1 || updateStack.stackedVariableFor(newTime) == second: " " + updateStack.stackedVariableFor(newTime) + " vs " + second;
+			assert stackMaxSize != 1 || updateStack.stackedVariableFor(newTime) == second : " " + updateStack.stackedVariableFor(newTime) + " vs " + second;
 			return updateStack.stackedVariableFor(newTime);
 			// }
 			// return null;
@@ -368,6 +368,9 @@ public abstract class HeuristicVariables extends Heuristic {
 		int numRun = solver.restarter.numRun;
 		OptionsRestarts options = solver.head.control.restarts;
 		return ((0 < numRun && numRun % options.varhResetPeriod == 0) || (numRun - solver.solutions.last.numRun) % options.varhSolResetPeriod == 0);
+	}
+
+	public void newImpactlessAssignment(Variable x, int a) {
 	}
 
 	protected void resettingMessage(String s) {

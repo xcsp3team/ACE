@@ -255,6 +255,8 @@ import heuristics.HeuristicValues;
 import heuristics.HeuristicValues.HeuristicValuesStatic.Arbitrary;
 import interfaces.Observers.ObserverOnConstruction;
 import main.Head;
+import optimization.ObjectiveUnaryExpression.ObjExpr1GE;
+import optimization.ObjectiveUnaryExpression.ObjExpr1LE;
 import optimization.ObjectiveVariable;
 import optimization.ObjectiveVariable.ObjVarGE;
 import optimization.ObjectiveVariable.ObjVarLE;
@@ -566,7 +568,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private void manageCollectedNogoods() {
 		if (features.collecting.nogoods.size() == 0)
 			return;
-		if (features.collecting.nogoods.size() > 5_000) { // TODO hard constant : to be put as an option (which default value ?) see e.g. RosterShifts-large_m23.xml
+		if (features.collecting.nogoods.size() > 5_000) { // TODO hard constant : to be put as an option (which default value ?) see e.g.
+															// RosterShifts-large_m23.xml
 			for (CollectedNogood nogood : features.collecting.nogoods)
 				postNogood(nogood);
 		} else {
@@ -3987,29 +3990,36 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private final ObjEntity optimize(TypeOptimization opt, XNode<IVar> tree) {
-		if (tree.type == ADD) { // recognizing a sum
+		Variable[] treeScp = translate(tree.vars());
+		if (head.control.optimization.keepExpr1 && treeScp.length == 1) {
+			long lb = head.control.optimization.lb, ub = head.control.optimization.ub;
+			optimizer = buildOptimizer(opt, postObj(new ObjExpr1GE(this, tree, lb)), postObj(new ObjExpr1LE(this, tree, ub)));
+			return null;
+		}
+		if (head.control.optimization.trySum && (tree.type == ADD || tree.type == SUB)) { // recognizing a sum
 			tree = (XNodeParent<IVar>) tree.canonization();
 			XNode<IVar>[] sons = tree.sons;
 			List<Variable> vars = new ArrayList<>();
 			int[] coeffs = new int[sons.length];
 			for (int i = 0; i < sons.length; i++) {
+				int multiplier = tree.type == SUB && i == 1 ? -1 : 1;
 				XNode<IVar> son = sons[i];
 				if (son.type == VAR) {
 					vars.add((Variable) son.var(0));
-					coeffs[i] = 1;
+					coeffs[i] = 1 * multiplier;
 				} else {
 					XNode<IVar>[] gsons = son.sons;
 					if (son.type == TypeExpr.MUL && gsons.length == 2 && (gsons[0].type == LONG || gsons[1].type == LONG)) {
 						if (gsons[0].type == LONG) {
 							vars.add(gsons[1].type == VAR ? (Variable) gsons[1].var(0) : replaceByVariable(gsons[1]));
-							coeffs[i] = gsons[0].val(0);
+							coeffs[i] = gsons[0].val(0) * multiplier;
 						} else {
 							vars.add(gsons[0].type == VAR ? (Variable) gsons[0].var(0) : replaceByVariable(gsons[0]));
-							coeffs[i] = gsons[1].val(0);
+							coeffs[i] = gsons[1].val(0) * multiplier;
 						}
 					} else {
 						vars.add(replaceByVariable(son));
-						coeffs[i] = 1;
+						coeffs[i] = 1 * multiplier;
 					}
 				}
 			}
@@ -4018,7 +4028,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (!head.control.optimization.keepTree)
 			return optimize(opt, replaceByVariable(tree));
 		else {
-			Variable[] treeScp = translate(tree.vars());
 			ConstraintIntension clb = new ConstraintIntension(this, treeScp, api.ge(tree, head.control.optimization.lb));
 			clb.setOptimizationStuff();
 			ConstraintIntension cub = new ConstraintIntension(this, treeScp, api.le(tree, head.control.optimization.ub));

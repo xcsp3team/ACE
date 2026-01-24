@@ -153,15 +153,13 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 	 * 
 	 * @return false if an inconsistency (empty domain) is detected
 	 */
-	protected boolean updateDomains() {
+	protected void updateDomains() {
 		for (int i = sSupSize - 1; i >= 0; i--) {
 			int x = sSup[i];
 			int nRemovals = cnts[x];
-			assert nRemovals > 0;
-			if (doms[x].remove(ac[x], nRemovals) == false)
-				return false;
+			assert nRemovals > 0 && nRemovals < doms[x].size();
+			doms[x].remove(ac[x], nRemovals); // no inconsistency possible 
 		}
-		return true;
 	}
 
 	/**********************************************************************************************
@@ -217,9 +215,9 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 				} else
 					set.removeAtPosition(i);
 			}
-
-			if (updateDomains() == false)
-				return false;
+			if (set.size() == 0)
+				return dummy.dom.fail(); // inconsistency detected
+			updateDomains();
 			// if (nStars == 0 && Variable.spaceEqual(scp, set.size())) { // TODO can this be worthwhile?
 			// System.out.println("jjjentailes " + set.size());
 			// return entail();
@@ -296,7 +294,10 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 				} else
 					set.removeAtPosition(i);
 			}
-			return updateDomains();
+			if (set.size() == 0)
+				return dummy.dom.fail(); // inconsistency detected
+			updateDomains();
+			return true;
 		}
 
 	}

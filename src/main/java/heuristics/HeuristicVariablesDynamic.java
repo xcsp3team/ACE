@@ -253,7 +253,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		int n = solver.problem.variables.length;
 		this.freezer = solver.head.control.varh.frozen ? new Freezer(n) : null;
 		// this.nonSingletonVariables = solver.head.control.varh.discardSingletons ? new SetDenseReversible(n, n) : null;
-		this.singletonManager = solver.head.control.varh.discardSingletonsDuringSearchLimit <= solver.problem.variables.length ? new SingletonManager(n) : null; 
+		this.singletonManager = solver.head.control.varh.discardSingletonsDuringSearchLimit <= solver.problem.variables.length ? new SingletonManager(n) : null;
 		this.safeSelector = solver.head.control.varh.safeSelectionCapacity > 1
 				&& (this instanceof WdegOnDom || this instanceof FrbaOnDom || this instanceof PickOnDom || this instanceof RunRobin) ? new SafeSelector()
 						: null;
@@ -476,6 +476,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public double scoreIfBinaryDomainOf(Variable x) {
 			return x.specificWeight * solver.stats.varAssignments[x.num].failureAgedRate() / 2;
 		}
+
+		@Override
+		public void newImpactlessAssignment(Variable x, int a) {
+			solver.stats.varAssignments[x.num].whenImpactlessAssignment(a);
+		}
 	}
 
 	public static final class PickOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
@@ -542,6 +547,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public double scoreIfBinaryDomainOf(Variable x) {
 			return (x.specificWeight * nPicks[x.num]) / 2.0;
+		}
+
+		@Override
+		public void newImpactlessAssignment(Variable x, int a) {
+			nPicks[x.num]--;
 		}
 	}
 
@@ -769,6 +779,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public double scoreIfBinaryDomainOf(Variable x) {
 			return current.scoreIfBinaryDomainOf(x);
+		}
+
+		@Override
+		public void newImpactlessAssignment(Variable x, int a) {
+			current.newImpactlessAssignment(x, a);
 		}
 	}
 
@@ -1064,6 +1079,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			}
 			return x.specificWeight * vscores[x.num];
 		}
+
+		@Override
+		public void newImpactlessAssignment(Variable x, int a) {
+			vscores[x.num]--;
+		}
 	}
 
 	/**
@@ -1094,6 +1114,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		public double scoreIfBinaryDomainOf(Variable x) {
 			assert chs == false;
 			return x.specificWeight * vscores[x.num] / 2;
+		}
+
+		@Override
+		public void newImpactlessAssignment(Variable x, int a) {
+			vscores[x.num]--;
 		}
 	}
 

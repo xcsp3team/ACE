@@ -224,6 +224,13 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 				nFailedPerValue[a]++;
 		}
 
+		public void whenImpactlessAssignment(int a) {
+			nFailed--;
+			if (nFailedPerValue != null)
+				nFailedPerValue[a]--;
+		}
+		
+		
 		public double failureRate() {
 			return nFailed / (double) n;
 		}
