@@ -225,6 +225,16 @@ public interface Domain extends SetLinked {
 		return IntStream.range(0, d).filter(a -> dom.toVal(a) >= v + (strict ? 1 : 0)).findFirst().orElse(Integer.MAX_VALUE);
 	}
 
+	static boolean domainSpaceExactlyEqualTo(Domain[] doms, int size) {
+		int prod = 1;
+		for (Domain dom : doms) {
+			prod *= dom.size();
+			if (prod > size)
+				return false;
+		}
+		return prod == size;
+	}
+
 	/**********************************************************************************************
 	 * Class Members
 	 *********************************************************************************************/

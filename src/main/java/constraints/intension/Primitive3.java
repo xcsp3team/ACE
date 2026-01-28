@@ -161,7 +161,7 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 	// ***** Classes for x + y <op> z
 	// ************************************************************************
 
-	public static abstract class Add3 extends Primitive3 implements TagNotCallCompleteFiltering {
+	public static abstract class Add3 extends Primitive3 implements TagCallCompleteFiltering {  // TODO CallComplete or not?
 
 		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			switch (op) {

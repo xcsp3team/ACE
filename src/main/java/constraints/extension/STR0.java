@@ -17,12 +17,15 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import constraints.ConstraintExtension;
 import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
+import interfaces.SpecificPropagator;
 import interfaces.Tags.TagStarredCompatible;
 import problem.Problem;
 import sets.SetDense;
+import variables.Domain;
 import variables.Variable;
 
 /**
@@ -31,19 +34,15 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class STR0 extends ExtensionSpecific implements TagStarredCompatible {
-
+public abstract class STR0 extends ConstraintExtension implements SpecificPropagator, TagStarredCompatible { 
+//public abstract class STR0 extends ExtensionSpecific implements TagStarredCompatible {
 	/**********************************************************************************************
 	 * Static
 	 *********************************************************************************************/
 
 	public static STR0 buildFrom(Problem pb, Variable[] scp, int[][] tuples, boolean positive, Boolean starred) {
-		int nStars = 0;
-		for (int[] tuple : tuples)
-			for (int v : tuple)
-				if (v == STAR)
-					nStars++;
-		if (nStars > (tuples.length * scp.length) / 2)
+		int nStars = Table.nStarsIn(tuples);
+		if (nStars > (tuples.length * scp.length) / 2) // TODO hard coding
 			return new STR0b(pb, scp, nStars);
 		return new STR0a(pb, scp, nStars);
 	}
@@ -60,9 +59,13 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 		this.set = new SetDense(tuples.length, true);
 	}
 
-	@Override
-	public void restoreBefore(int depth) {
-		set.fill();
+//	// @Override
+//	public void restoreBefore(int depth) {
+//		set.fill();
+//	}
+
+	public boolean launchFiltering(Variable x) {
+		return runPropagator(x);
 	}
 
 	/**********************************************************************************************
@@ -73,8 +76,6 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 	 * The tuples of the table (redundant field)
 	 */
 	protected int[][] tuples;
-
-	protected final int nStars;
 
 	/**
 	 * The reversible dense set storing the indexes (of tuples) of the current table
@@ -119,7 +120,6 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 		this.ac = Variable.litterals(scp).booleanArray();
 		this.cnts = new int[scp.length];
 		this.sSup = new int[scp.length];
-		this.nStars = nStars;
 	}
 
 	@Override
@@ -136,8 +136,7 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 		// sValSize = 0;
 		// for (int x = scp.length - 1; x >= 0; x--) {
 		// int lr = scp[x].dom.lastRemovedLevel();
-		// if (lr >= depth)
-		// sVal[sValSize++] = x;
+		// if (lr >= depth) sVal[sValSize++] = x;
 		// }
 		sSupSize = 0;
 		for (int i = futvars.limit; i >= 0; i--) {
@@ -158,7 +157,7 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 			int x = sSup[i];
 			int nRemovals = cnts[x];
 			assert nRemovals > 0 && nRemovals < doms[x].size();
-			doms[x].remove(ac[x], nRemovals); // no inconsistency possible 
+			doms[x].remove(ac[x], nRemovals); // no inconsistency possible
 		}
 	}
 
@@ -177,8 +176,7 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 		private boolean isValidTuple(int[] t) {
 			// for (int i = sValSize - 1; i >= 0; i--) {
 			// int x = sVal[i];
-			// if (tuple[x] != STAR && !doms[x].contains(tuple[x]))
-			// return false;
+			// if (tuple[x] != STAR && !doms[x].contains(tuple[x])) return false;
 			// }
 			lastValidTupleBeingUniversal = true;
 			for (int x = t.length - 1; x >= 0; x--) {
@@ -194,6 +192,9 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
+			if (failSinceLastCall())
+				set.fill();
+
 			beforeFiltering();
 			for (int i = set.limit; i >= 0; i--) {
 				int[] tuple = tuples[set.dense[i]];
@@ -215,13 +216,21 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 				} else
 					set.removeAtPosition(i);
 			}
+
 			if (set.size() == 0)
 				return dummy.dom.fail(); // inconsistency detected
+
 			updateDomains();
-			// if (nStars == 0 && Variable.spaceEqual(scp, set.size())) { // TODO can this be worthwhile?
-			// System.out.println("jjjentailes " + set.size());
-			// return entail();
-			// }
+
+			if (!extStructure.isStarred()) {
+				int prod = 1;
+				for (int i = futvars.limit; i >= 0; i--) {
+					prod *= doms[futvars.dense[i]].size();
+					if (prod > set.size())
+						return true;
+				}
+				return prod == set.size();
+			}
 			return true;
 		}
 
@@ -273,6 +282,9 @@ public abstract class STR0 extends ExtensionSpecific implements TagStarredCompat
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
+			if (failSinceLastCall())
+				set.fill();
+			
 			beforeFiltering();
 			for (int i = set.limit; i >= 0; i--) {
 				QuickTuple quickTuple = quickTuples[set.dense[i]];

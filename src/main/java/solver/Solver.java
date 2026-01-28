@@ -817,6 +817,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		this.observersOnRuns = collectObserversOnRuns();
 		this.observersOnBacktracksSystematic = collectObserversOnBacktracksSystematic();
 
+		// System.out.println("jjjj " + Kit.join(observersOnBacktracksSystematic.stream().map(ob -> ob.getClass().getSimpleName()).toArray()));
+
 		this.observersOnDecisions = collectObserversOnDecisions();
 		this.observersOnAssignments = collectObserversOnAssignments();
 		this.observersOnRemovals = collectObserversOnRemovals();

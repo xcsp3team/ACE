@@ -505,6 +505,10 @@ public final class Kit {
 			return useColors ? this.code + s + WHITE.code : s;
 		}
 
+		public void print(String coloredPart, String uncoloredPart) {
+			System.out.print(coloring(coloredPart) + " " + uncoloredPart);
+		}
+
 		/**
 		 * Prints the specified first string with this color, if colors can be used (otherwise, in classical white color), followed by the specified second
 		 * string in white

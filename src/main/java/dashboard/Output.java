@@ -46,6 +46,7 @@ import heuristics.HeuristicVariablesDynamic.RunRobin;
 import interfaces.Observers.ObserverOnConstruction;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Observers.ObserverOnSolving;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.SpecificPropagator;
 import learning.IpsExtractor;
 import learning.IpsReasoner;
@@ -548,6 +549,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put("nNogoods", features.collecting.nogoods.size());
 		m.put("nGatheredNogoods", features.collecting.nCollectedNogoodsGathered);
 		m.put(N_SPECIFIC, Stream.of(head.problem.constraints).filter(c -> c instanceof SpecificPropagator).count());
+		m.put("backtrack", Stream.of(head.problem.constraints).filter(c -> c instanceof ObserverOnBacktracksSystematic).count());
 		m.put(N_MERGED, features.nMergedCtrs);
 		m.put(N_DISCARDED, features.nDiscardedCtrs);
 		m.put(N_ADDED, features.nAddedCtrs);
@@ -673,7 +675,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		}
 		m.put(N_EFFECTIVE, features.nEffectiveFilterings);
 		m.put("asgs", stats.infoARunAssignemnts());
-		//m.put("less", stats.nImpactlessAssignmentsBeforeRun);
+		// m.put("less", stats.nImpactlessAssignmentsBeforeRun);
 		m.put(N_FAILED, stats.nFailedAssignments);
 		m.put(N_WRONG, stats.nWrongDecisions);
 		if (Kit.memory() > 10000000000L)
@@ -726,6 +728,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(REVISIONS, "(" + stats.nRevisions() + ",useless=" + stats.nUselessRevisions() + ")", stats.nRevisions() > 0);
 		m.put(N_SINGLETON_TESTS, head.solver.propagation.nSingletonTests);
 		m.put(N_EFFECTIVE_SINGLETON_TESTS, head.solver.propagation.nEffectiveSingletonTests);
+		m.put("noefs", stats.nImpactlessAssignments);
 		m.put(N_NOGOODS, head.solver.nogoodReasoner != null ? head.solver.nogoodReasoner.nNogoods : 0);
 		m.separator();
 		m.put(STOP, head.solver.stopping == null ? "no" : head.solver.stopping.toString());

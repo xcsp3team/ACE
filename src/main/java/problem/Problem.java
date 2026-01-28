@@ -224,6 +224,7 @@ import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
 import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
 import constraints.global.WakeUp;
 import constraints.global.Xor;
+import constraints.intension.Logic.LogicTree;
 import constraints.intension.Nogood;
 import constraints.intension.Primitive2;
 import constraints.intension.Primitive2.Max2kEQ;
@@ -1109,11 +1110,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 *            an array of tree expressions
 	 * @return an array of new (auxiliary) variables representing the specified tree expressions
 	 */
-	private Var[] replaceByVariables(XNode<IVar>[] trees) {
+	private Var[] replaceByVariables(XNode<IVar>[] trees, boolean distinctVariables) {
 		control(trees.length > 0);
 		for (int i = 0; i < trees.length; i++) {
 			trees[i] = trees[i].canonization();
-			if (cacheForTrees.containsKey(trees[i]))
+			if (trees[i].type == LONG)
+				trees[i] = XNode.varLeaf(auxVar(new int[] { trees[i].val(0) }));
+			if (!distinctVariables && cacheForTrees.containsKey(trees[i]))
 				trees[i] = XNode.varLeaf(cacheForTrees.get(trees[i]));
 		}
 		if (trees.length == 1)
@@ -1149,6 +1152,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			else
 				returned_vars[i] = aux[cnt++];
 		return returned_vars; // aux;
+	}
+
+	private Var[] replaceByVariables(XNode<IVar>[] trees) {
+		return replaceByVariables(trees, false);
 	}
 
 	private Var[] replaceByBoundVariables(XNode<IVar>[] trees) {
@@ -1229,8 +1236,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	// unary
 	public static Matcher x_relop_k = new Matcher(node(relop, var, val));
-	private Matcher k_relop_x = new Matcher(node(relop, val, var));
-	private Matcher x_setop_vals = new Matcher(node(setop, var, set_vals));
+	public static Matcher k_relop_x = new Matcher(node(relop, val, var));
+	public static Matcher x_setop_vals = new Matcher(node(setop, var, set_vals));
 
 	// binary
 	public static Matcher x_relop_y = new Matcher(node(relop, var, var));
@@ -1559,6 +1566,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				control(filteredScp.length > 1);
 				return post(new AtLeast1(this, filteredScp, 1)); // return post(SumSimple.buildFrom(this, scp, NE, 0));
 			}
+
+			if (options.recognizeOrUnaryTerms && Stream.of(sons)
+					.allMatch(son -> son.type == TypeExpr.VAR || x_relop_k.matches(son) || k_relop_x.matches(son) || x_setop_vals.matches(son)))
+				return post(new LogicTree(this, sons));
+
 			if (arity >= 2) {
 				boolean detectingOtherNogoods = true;
 				if (detectingOtherNogoods && Stream.of(sons)
@@ -1597,7 +1609,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (arity == 4 && sons.length == 2 && Stream.of(sons).allMatch(son -> x_ne_y.matches(son)))
 				return post(new DblDiff(this, (Variable) sons[0].var(0), (Variable) sons[0].var(1), (Variable) sons[1].var(0), (Variable) sons[1].var(1)));
 		}
-		if (arity > 2 && tree.type == XOR && options.recognizeXor > 0) {
+		if (arity > 2 && tree.type == XOR && options.recognizeXor > 0)
+
+		{
 			if (options.recognizeXor == 2) // full recognition
 				return post(new Xor(this, Stream.of(sons).map(son -> son.type == VAR ? son : replaceByVariable(son)).toArray(Variable[]::new)));
 			assert options.recognizeXor == 1;
@@ -1859,7 +1873,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 		if (options.displayRemainingIntension)
 			System.out.println("Tree remaining " + tree);
-		return post(new ConstraintIntension(this, scp, tree));
+		return
+
+		post(new ConstraintIntension(this, scp, tree));
 	}
 
 	// ************************************************************************
@@ -3018,7 +3034,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	final CtrEntity maximumArg(XNode<IVar>[] trees, TypeRank rank, Condition condition) {
-		return maximumArg(replaceByVariables(trees), rank, condition);
+		return maximumArg(replaceByVariables(trees, true), rank, condition);
 	}
 
 	final CtrEntity minimumArg(Var[] list, TypeRank rank, Condition condition) {
@@ -3027,7 +3043,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	final CtrEntity minimumArg(XNode<IVar>[] trees, TypeRank rank, Condition condition) {
-		return minimumArg(replaceByVariables(trees), rank, condition);
+		return minimumArg(replaceByVariables(trees, true), rank, condition);
 	}
 
 	// ************************************************************************

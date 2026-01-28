@@ -279,7 +279,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 
 			public ExactlyK(Problem pb, Variable[] list, int value, int k) {
 				super(pb, list, value, k);
-				this.store = pb.head.control.global.countSemiIncremental > 0 ? new Variable[list.length] : null;
+				this.store = pb.head.control.global.countSemiIncremental > 0 && list.length > 10 ? new Variable[list.length] : null; // TODO hard coding (10)
 			}
 
 			@Override
@@ -454,7 +454,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 				super(pb, list, value, k);
 				assert Variable.areAllDistinct(list);
 				control(list.length > 1, "list: " + Kit.join(list) + " value: " + value + " k:" + k);
-				this.store = pb.head.control.global.countSemiIncremental > 0 ? new Variable[list.length] : null;
+				this.store = pb.head.control.global.countSemiIncremental > 0 && list.length > 10 ? new Variable[list.length] : null; // TODO hard coding (10)
 			}
 
 			@Override
@@ -513,7 +513,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 									store[storeSize++] = y;
 							}
 					} else {
-						//System.out.println("hhhhh " + storeSize + " versus " + list.length);
+						// System.out.println("hhhhh " + storeSize + " versus " + list.length);
 						int j = 0;
 						for (int i = 0; i < storeSize; i++) {
 							Variable y = store[i];
@@ -528,7 +528,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 						storeSize = j;
 					}
 					nPossibleOccurrences = nGuaranteedOccurrences + storeSize;
-					
+
 					if (nPossibleOccurrences < domk.firstValue()) // inconsistency detected
 						return domk.fail();
 
@@ -562,22 +562,22 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 							return entail();
 						}
 					}
-					
-//					if (domk.size() == 1) {
-//						int vk = domk.singleValue();
-//						if (nPossibleOccurrences == vk) { // assign all non singleton domains containing the value
-//							for (int i = 0; i < storeSize; i++)
-//								if (!deleted || store[i] != k)
-//									store[i].dom.reduceToValue(value); // no inconsistency possible
-//							return entail();
-//						}
-//						if (nGuaranteedOccurrences == vk) { // remove value from all non singleton domains of the store
-//							for (int i = 0; i < storeSize; i++)
-//								if (!deleted || store[i] != k)
-//									store[i].dom.removeValue(value); // no inconsistency possible
-//							return entail();
-//						}
-//					}
+
+					// if (domk.size() == 1) {
+					// int vk = domk.singleValue();
+					// if (nPossibleOccurrences == vk) { // assign all non singleton domains containing the value
+					// for (int i = 0; i < storeSize; i++)
+					// if (!deleted || store[i] != k)
+					// store[i].dom.reduceToValue(value); // no inconsistency possible
+					// return entail();
+					// }
+					// if (nGuaranteedOccurrences == vk) { // remove value from all non singleton domains of the store
+					// for (int i = 0; i < storeSize; i++)
+					// if (!deleted || store[i] != k)
+					// store[i].dom.removeValue(value); // no inconsistency possible
+					// return entail();
+					// }
+					// }
 				} else {
 					nGuaranteedOccurrences = 0;
 					nPossibleOccurrences = 0;

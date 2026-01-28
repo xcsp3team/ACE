@@ -31,7 +31,7 @@ import variables.Variable;
 
 /**
  * This is the class for the tabular forms of extension structures. All supports (allowed tuples) or all conflicts (disallowed tuples) are simply recorded in an
- * array. Note that tuples are recorded with indexes (of values).
+ * array. Note that tuples are recorded with indexes (of values), and that STAR may be present.
  * 
  * @author Christophe Lecoutre
  */
@@ -265,6 +265,15 @@ public class Table extends ExtensionStructure {
 		return tuples.stream().toArray(int[][]::new);
 	}
 
+	public static int nStarsIn(int[][] tuples) {
+		int nStars = 0;
+		for (int[] tuple : tuples)
+			for (int v : tuple)
+				if (v == STAR)
+					nStars++;
+		return nStars;
+	}
+
 	/**********************************************************************************************
 	 * Class members
 	 *********************************************************************************************/
@@ -296,7 +305,7 @@ public class Table extends ExtensionStructure {
 	/**
 	 * Indicates if the table is a starred/short table (i.e., contains tuples with *)
 	 */
-	public boolean starred;
+	private boolean starred;
 
 	/**
 	 * Builds a table as extension structure for the specified extension constraint
@@ -309,7 +318,7 @@ public class Table extends ExtensionStructure {
 	}
 
 	@Override
-	public boolean isStarred() {
+	public final boolean isStarred() {
 		return starred;
 	}
 

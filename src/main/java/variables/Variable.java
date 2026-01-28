@@ -362,17 +362,6 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 		return sum;
 	}
 
-	public static boolean spaceEqual(Variable[] vars, int size) {
-		int prod = 1;
-		for (Variable x : vars) {
-			prod *= x.dom.size();
-			//System.out.println("gggggg " + prod + " " + size);
-			if (prod > size)
-				return false;
-		}
-		return prod == size;
-	}
-
 	/**
 	 * A useful class for building matrices to be associated with literals, i.e., pairs (x,a) where x is a variable of the problem and a a value index in the
 	 * domain of x
@@ -614,7 +603,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	public VariableInteger specialMaster;
 
 	public VariableInteger specialServant;
-	
+
 	public boolean discarded;
 
 	private Variable[] computeNeighbours(int neighborArityLimit) {

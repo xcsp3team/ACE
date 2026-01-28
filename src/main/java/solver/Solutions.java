@@ -170,14 +170,14 @@ public final class Solutions {
 			if (x != null) {
 				int i = assignmentPos[x.num];
 				if (i < assignmentOrderSize && assignmentOrder[i] == x)
-					pos = i ;
+					pos = i;
 				else
 					return null;
 			}
 			// we select the next variable with the specified probability
 			while (true) {
 				// we compute a random offset (between 0 and the specified value *2)
-				int offset = 1+ solver.head.random.nextInt(solver.head.control.varh.solutionPreserving * 2);
+				int offset = 1 + solver.head.random.nextInt(solver.head.control.varh.solutionPreserving * 2);
 				pos = pos + offset;
 				if (pos < assignmentOrderSize) {
 					Variable y = assignmentOrder[pos];
@@ -454,15 +454,9 @@ public final class Solutions {
 
 					NumberFormat nf = Output.numberFormat;
 					if (framework == COP && found > 0)
-						Color.GREEN.println("\nd BOUND", " " + nf.format(bestBound + solver.problem.optimizer.gapBound));
-
-					Color.GREEN.println("\nd FOUND SOLUTIONS", " " + nf.format(found));
-					if (found > 0) {
-						Color.GREEN.println("d WCK FIRST SOL",
-								" " + wckFirst + (framework == COP ? " (" + nf.format(solver.problem.optimizer.valueWithGap(firstBound)) + ")" : ""));
-						Color.GREEN.println("d WCK LAST  SOL",
-								" " + wckLast + (framework == COP ? " (" + nf.format(solver.problem.optimizer.valueWithGap(bestBound)) + ")" : ""));
-					}
+						Color.GREEN.println("\nd BOUND", " " + nf.format(bestBound + solver.problem.optimizer.gapBound) + "  (" + nf.format(found) + " sols)");
+					else
+						Color.GREEN.println("\nd FOUND SOLUTIONS", " " + nf.format(found));
 
 					Color.GREEN
 							.println("\nd WRONG DECISIONS",
@@ -472,7 +466,14 @@ public final class Solutions {
 															/ ((System.currentTimeMillis() - solver.head.output.wckBeforeSearch) / 1000.0))
 													+ " wrg/s)"
 											: 0));
-					Color.GREEN.println("d CPU", solver.head.stopwatch.cpuTimeInSeconds());
+					System.out.println();
+					if (found > 0) {
+						Color.GREEN.println("d WCK SOL 1",
+								" " + wckFirst + (framework == COP ? " (" + nf.format(solver.problem.optimizer.valueWithGap(firstBound)) + ")" : ""));
+						Color.GREEN.println("d WCK SOL-1",
+								" " + wckLast + (framework == COP ? " (" + nf.format(solver.problem.optimizer.valueWithGap(bestBound)) + ")" : ""));
+					}
+					Color.GREEN.println("d CPU       ", solver.head.stopwatch.cpuTimeInSeconds());
 					System.out.println();
 					if (fullExploration)
 						Color.GREEN.println("d COMPLETE EXPLORATION");

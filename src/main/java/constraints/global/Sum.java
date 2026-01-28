@@ -98,7 +98,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 	public Sum(Problem pb, Variable[] scp) {
 		super(pb, scp);
 		control(scp.length > 1);
-		this.store = pb.head.control.global.sumSemiIncremental > 0 ? new int[scp.length] : null;
+		this.store = pb.head.control.global.sumSemiIncremental > 0 && scp.length > 10 ? new int[scp.length] : null; // TODO hard coding (10)
 	}
 
 	/**

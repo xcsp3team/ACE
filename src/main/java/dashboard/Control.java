@@ -545,6 +545,7 @@ public final class Control {
 		public final boolean recognizeIf = addB("recognizeIf", "rif", true, "Must we recognize/decompose the ternary operator if?");
 		public final int recognizeXor = addI("recognizeXor", "rxo", 1, "Must we recognize Xor constraints (two modes 1 and 2)?");
 		public final boolean recognizeEqAnd = addB("recognizeEqAnd", "rea", false, "Must we recognize an expression eq-and (or iff-and)?");
+		public final boolean recognizeOrUnaryTerms = addB("recognizeOrUnaryTerms", "rout", true, "Must we recognize or expression on unary terms");
 		public final int arityForClauseUnaryTrees = addI("arityForClauseUnaryTrees", "acut", PLUS_INFINITY_INT,
 				"Arity for recognizing clauses on unary tree expressions");
 		public final int arityForClauseHybridTrees = addI("arityForClauseHybridTrees", "acht", PLUS_INFINITY_INT,
@@ -558,7 +559,7 @@ public final class Control {
 
 		public boolean toExtension(Variable[] vars, XNode<IVar> tree) {
 			Variable[] t = tree == null || !(tree instanceof XNodeParent) || !((XNodeParent<?>) tree).isEqVar() ? vars
-					: IntStream.range(0, vars.length - 1).mapToObj(i -> vars[i]).toArray(Variable[]::new);
+					: IntStream.range(0, vars.length).mapToObj(i -> vars[i]).toArray(Variable[]::new);
 			return t.length <= arityLimitToExtension && Constraint.howManyVariablesWithin(t, spaceLimitToExtension) == Constants.ALL;
 		}
 	}

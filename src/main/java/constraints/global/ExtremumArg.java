@@ -19,12 +19,13 @@ import org.xcsp.common.Types.TypeRank;
 import constraints.ConstraintGlobal;
 import interfaces.Tags.TagCallCompleteFiltering;
 import problem.Problem;
+import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
 /**
- * The constraints MinimumArg and MaximumArg ensure that the index of the minimal values or maximal values assigned to
- * the variables in the scope of the constraint respects a condition. This is the abstract root class.
+ * The constraints MinimumArg and MaximumArg ensure that the index of the minimal values or maximal values assigned to the variables in the scope of the
+ * constraint respects a condition. This is the abstract root class.
  * 
  * @author Christophe Lecoutre
  */
@@ -57,7 +58,7 @@ public abstract class ExtremumArg extends ConstraintGlobal implements TagCallCom
 			super(pb, list, index);
 			this.idom = index.dom;
 			this.rank = rank;
-			control(list.length > 1 && scp.length == list.length + 1, "vector length = " + list.length);
+			control(list.length > 1 && scp.length == list.length + 1, "vector length = " + list.length + " list=" + Kit.join(list) + " index=" + index);
 			control(idom.indexesMatchValues() && idom.initiallyRange(list.length)); // For the moment
 		}
 
@@ -162,7 +163,6 @@ public abstract class ExtremumArg extends ConstraintGlobal implements TagCallCom
 					if (rank == TypeRank.ANY && list[a].dom.firstValue() >= maxMaxd)
 						// if (list[a].dom.firstValue() >= maxMaxd - (rank == TypeRank.ANY ? 0 : 1)) // Not correct
 						return entail();
-
 				}
 				return true;
 			}
