@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -141,6 +141,10 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 			return true;
 
 		}
+
+		/**********************************************************************************************
+		 * Classes for unary arguments (tree expressions involving only one variable) 
+		 *********************************************************************************************/
 
 		static interface ArgLogic {
 

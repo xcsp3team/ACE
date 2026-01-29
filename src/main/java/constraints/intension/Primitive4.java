@@ -241,8 +241,8 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 		}
 	}
 
-	public static final class DblDiff extends Primitive4 { // new propagator (seems to be 5-10% more efficient in time - see e.g.
-															// ExaminationTimetabling1-merged-D1-1-16.xml)
+	public static final class DblDiff extends Primitive4 {
+		// new propagator (seems to be 5-10% more efficient in time - see e.g. ExaminationTimetabling1-merged-D1-1-16.xml)
 
 		private Domain dom0, dom1, dom2, dom3;
 
@@ -285,70 +285,6 @@ public abstract class Primitive4 extends Primitive implements TagAC, TagCallComp
 				if (s1)
 					return dom0.removeValueIfPresent(dom1.singleValue()) && entail(); // no inconsistency possible here
 				return true;
-			}
-			return true;
-		}
-	}
-
-	public static final class DblDiff2 extends Primitive4 { // old propagator (less efficient in time)
-
-		/** Two sentinels for tracking the presence of two non singleton domains. */
-		private int sentinel1, sentinel2;
-
-		@Override
-		public boolean isSatisfiedBy(int[] t) {
-			return t[0] != t[1] || t[2] != t[3]; // x1 != x2 or y1 != y2
-		}
-
-		public DblDiff2(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2) {
-			super(pb, new Variable[] { x1, x2, y1, y2 });
-			sentinel1 = 0;
-			sentinel2 = 1;
-		}
-
-		private int findAnotherSentinel() {
-			for (int i = 0; i < scp.length; i++) {
-				if (i == sentinel1 || i == sentinel2)
-					continue;
-				if (doms[i].size() > 1)
-					return i;
-			}
-			return -1;
-		}
-
-		private boolean justOneSentinel(int sentinel) {
-			assert (doms[0].size() > 1 ? 1 : 0) + (doms[1].size() > 1 ? 1 : 0) + (doms[2].size() > 1 ? 1 : 0) + (doms[3].size() > 1 ? 1 : 0) <= 1;
-			Domain dom = doms[sentinel];
-			if (dom.size() == 1) // all 4 variables assigned
-				return doms[0].singleValue() != doms[1].singleValue() || doms[2].singleValue() != doms[3].singleValue() ? entail() : dom.fail();
-			if (sentinel < 2) {
-				if (doms[2].singleValue() != doms[3].singleValue())
-					return entail();
-				int v = doms[sentinel == 0 ? 1 : 0].singleValue();
-				return dom.removeValueIfPresent(v) && entail(); // no inconsistency possible here
-			} else {
-				if (doms[0].singleValue() != doms[1].singleValue())
-					return entail();
-				int v = doms[sentinel == 2 ? 3 : 2].singleValue();
-				return dom.removeValueIfPresent(v) && entail(); // no inconsistency possible here
-			}
-		}
-
-		@Override
-		public boolean runPropagator(Variable dummy) {
-			if (doms[sentinel1].size() == 1) {
-				int sentinel = findAnotherSentinel();
-				if (sentinel == -1)
-					return justOneSentinel(sentinel2);
-				else
-					sentinel1 = sentinel;
-			}
-			if (doms[sentinel2].size() == 1) {
-				int sentinel = findAnotherSentinel();
-				if (sentinel == -1)
-					return justOneSentinel(sentinel1);
-				else
-					sentinel2 = sentinel;
 			}
 			return true;
 		}
