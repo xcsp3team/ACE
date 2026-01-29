@@ -34,16 +34,16 @@ import org.xcsp.common.predicates.XNode;
 import org.xcsp.common.predicates.XNodeLeaf;
 
 import constraints.ConstraintGlobal;
+import constraints.intension.Logic.LogicTree.ArgLogic.ArgSet.ArgIn;
+import constraints.intension.Logic.LogicTree.ArgLogic.ArgSet.ArgNotIn;
 import constraints.intension.Logic.LogicTree.ArgLogic.ArgVar;
 import constraints.intension.Logic.LogicTree.ArgLogic.ArgdRel.ArgEQ;
 import constraints.intension.Logic.LogicTree.ArgLogic.ArgdRel.ArgGE;
 import constraints.intension.Logic.LogicTree.ArgLogic.ArgdRel.ArgLE;
 import constraints.intension.Logic.LogicTree.ArgLogic.ArgdRel.ArgNE;
-import constraints.intension.Logic.LogicTree.ArgLogic.ArgSet.ArgIn;
-import constraints.intension.Logic.LogicTree.ArgLogic.ArgSet.ArgNotIn;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
-import interfaces.Tags.TagSymmetric;
+import interfaces.Tags.TagNotSymmetric;
 import problem.Problem;
 import utility.Kit;
 import variables.Domain;
@@ -55,7 +55,12 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 		super(pb, scp);
 	}
 
-	public static class LogicTree extends Logic implements TagSymmetric {
+	/**
+	 * This constraint ensures that a predicate expression corresponding to a disjunction where each disjunct only involves a (separate) variable is satisfied.
+	 * 
+	 * @author Christophe Lecoutre
+	 */
+	public static class LogicTree extends Logic implements TagNotSymmetric { // for identifying symmetry, we should compare disjuncts
 
 		@Override
 		public final boolean isSatisfiedBy(int[] t) {
@@ -75,23 +80,21 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 			List<ArgLogic> list = new ArrayList<>();
 
 			for (XNode<IVar> tree : trees) {
+				Domain dom = ((Variable) tree.var(0)).dom; // remember that the tree only involves a single variable
 				if (tree.type == TypeExpr.VAR)
-					list.add(new ArgVar(((Variable) tree.var(0)).dom));
+					list.add(new ArgVar(dom));
 				else if (x_relop_k.matches(tree)) {
-					Domain dom = ((Variable) tree.var(0)).dom;
 					TypeConditionOperatorRel op = tree.relop(0);
 					int k = tree.val(0);
-					control(op.oneOf(LE, GE, NE, EQ)); // because canonized
+					control(op.oneOf(LE, GE, NE, EQ)); // because the tree is in canonical form
 					list.add(op == LE ? new ArgLE(dom, k) : op == GE ? new ArgGE(dom, k) : op == NE ? new ArgNE(dom, k) : new ArgEQ(dom, k));
 				} else if (k_relop_x.matches(tree)) {
-					Domain dom = ((Variable) tree.var(0)).dom;
 					TypeConditionOperatorRel op = tree.relop(0);
 					int k = tree.val(0);
-					control(op.oneOf(LE, GE, NE, EQ)); // because canonized
+					control(op.oneOf(LE, GE, NE, EQ)); // because the tree is in canonical form
 					list.add(op == LE ? new ArgGE(dom, k) : op == GE ? new ArgLE(dom, k) : op == NE ? new ArgNE(dom, k) : new ArgEQ(dom, k));
 				} else {
 					control(x_setop_vals.matches(tree));
-					Domain dom = ((Variable) tree.var(0)).dom;
 					TypeConditionOperatorSet op = tree.setop(0);
 					int[] vals = Stream.of(tree.sons[1].sons).mapToInt(s -> safeInt((long) ((XNodeLeaf<?>) s).value)).toArray();
 					list.add(op == IN ? new ArgIn(dom, vals) : new ArgNotIn(dom, vals));
@@ -113,15 +116,14 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 		}
 
 		private ArgLogic findSentinel(ArgLogic other) {
-			for (ArgLogic argLogic : logicArgs)
-				if (argLogic != other && argLogic.canBe1())
-					return argLogic;
+			for (ArgLogic logicArg : logicArgs)
+				if (logicArg != other && logicArg.canBe1())
+					return logicArg;
 			return null;
 		}
 
 		@Override
 		public boolean runPropagator(Variable x) {
-			// System.out.println("sentinel1" + sentinel1);
 			if (!sentinel1.canBe1()) {
 				ArgLogic sent = findSentinel(sentinel2);
 				if (sent == null)
@@ -139,11 +141,10 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 			if (!sentinel2.canBe0())
 				return entail();
 			return true;
-
 		}
 
 		/**********************************************************************************************
-		 * Classes for unary arguments (tree expressions involving only one variable) 
+		 * Classes for unary conditions/arguments, i.e., 0/1 tree expressions involving only one variable
 		 *********************************************************************************************/
 
 		static interface ArgLogic {
@@ -404,11 +405,8 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 					return dom.removeIfPresent(0);
 				}
 			}
-
 		}
-
 	}
-
 }
 
 // LogicVarAnd => not relevant as we can post separate constraints

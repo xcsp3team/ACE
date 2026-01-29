@@ -36,7 +36,7 @@ public final class LastConflict implements ObserverOnRuns, ObserverOnDecisions {
 	@Override
 	public void beforeRun() {
 		storeSize = 0;
-		lastAssigned = null;
+		//lastAssigned = null;
 		candidate = null;
 	}
 

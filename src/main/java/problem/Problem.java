@@ -256,11 +256,11 @@ import heuristics.HeuristicValues;
 import heuristics.HeuristicValues.HeuristicValuesStatic.Arbitrary;
 import interfaces.Observers.ObserverOnConstruction;
 import main.Head;
-import optimization.ObjectiveUnaryExpression.ObjExpr1GE;
-import optimization.ObjectiveUnaryExpression.ObjExpr1LE;
-import optimization.ObjectiveVariable;
-import optimization.ObjectiveVariable.ObjVarGE;
-import optimization.ObjectiveVariable.ObjVarLE;
+import optimization.ObjectiveUnary.ObjectiveExpression.ObjExpr1GE;
+import optimization.ObjectiveUnary.ObjectiveExpression.ObjExpr1LE;
+import optimization.ObjectiveUnary.ObjectiveVariable;
+import optimization.ObjectiveUnary.ObjectiveVariable.ObjVarGE;
+import optimization.ObjectiveUnary.ObjectiveVariable.ObjVarLE;
 import optimization.Optimizable;
 import optimization.Optimizer;
 import optimization.Optimizer.OptimizationStrategy;
@@ -1596,7 +1596,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 			if (options.recognizeOrUnaryTerms && Stream.of(sons)
 					.allMatch(son -> son.type == TypeExpr.VAR || x_relop_k.matches(son) || k_relop_x.matches(son) || x_setop_vals.matches(son)))
-				if (tree.vars().length == tree.sons.length) // TODO merging subtrees of same variables (a unary table ?)
+				if (tree.vars().length == tree.sons.length) // TODO merging subtrees of same variables (with a unary table ?)
 					return post(new LogicTree(this, sons));
 
 			if (arity >= options.arityForClauseUnaryTrees && arity == sons.length) {
