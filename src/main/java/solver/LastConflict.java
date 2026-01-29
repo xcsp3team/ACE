@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -36,7 +36,7 @@ public final class LastConflict implements ObserverOnRuns, ObserverOnDecisions {
 	@Override
 	public void beforeRun() {
 		storeSize = 0;
-		//lastAssigned = null;
+		lastAssigned = null;
 		candidate = null;
 	}
 

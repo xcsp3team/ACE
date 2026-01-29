@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -1567,10 +1567,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return post(new AtLeast1(this, filteredScp, 1)); // return post(SumSimple.buildFrom(this, scp, NE, 0));
 			}
 
-			if (options.recognizeOrUnaryTerms && Stream.of(sons)
-					.allMatch(son -> son.type == TypeExpr.VAR || x_relop_k.matches(son) || k_relop_x.matches(son) || x_setop_vals.matches(son)))
-				return post(new LogicTree(this, sons));
-
+			
 			if (arity >= 2) {
 				boolean detectingOtherNogoods = true;
 				if (detectingOtherNogoods && Stream.of(sons)
@@ -1596,6 +1593,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					return null; // post(new Nogood(this, scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray()));
 				}
 			}
+
+			if (options.recognizeOrUnaryTerms && Stream.of(sons)
+					.allMatch(son -> son.type == TypeExpr.VAR || x_relop_k.matches(son) || k_relop_x.matches(son) || x_setop_vals.matches(son)))
+				if (tree.vars().length == tree.sons.length) // TODO merging subtrees of same variables (a unary table ?)
+					return post(new LogicTree(this, sons));
+
 			if (arity >= options.arityForClauseUnaryTrees && arity == sons.length) {
 				TreeUnaryBoolean[] terms = ClauseUnaryTrees.canBuildTreeUnaryBooleans(sons);
 				if (terms != null)

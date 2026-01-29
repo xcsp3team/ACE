@@ -39,8 +39,8 @@ import constraints.intension.Logic.LogicTree.ArgLogic.ArgdRel.ArgEQ;
 import constraints.intension.Logic.LogicTree.ArgLogic.ArgdRel.ArgGE;
 import constraints.intension.Logic.LogicTree.ArgLogic.ArgdRel.ArgLE;
 import constraints.intension.Logic.LogicTree.ArgLogic.ArgdRel.ArgNE;
-import constraints.intension.Logic.LogicTree.ArgLogic.ArgdSet.ArgIn;
-import constraints.intension.Logic.LogicTree.ArgLogic.ArgdSet.ArgNotIn;
+import constraints.intension.Logic.LogicTree.ArgLogic.ArgSet.ArgIn;
+import constraints.intension.Logic.LogicTree.ArgLogic.ArgSet.ArgNotIn;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagSymmetric;
@@ -93,18 +93,18 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 					control(x_setop_vals.matches(tree));
 					Domain dom = ((Variable) tree.var(0)).dom;
 					TypeConditionOperatorSet op = tree.setop(0);
-					int[] vals = Stream.of(tree.sons[1]).mapToInt(s -> safeInt((long) ((XNodeLeaf<?>) s).value)).toArray();
+					int[] vals = Stream.of(tree.sons[1].sons).mapToInt(s -> safeInt((long) ((XNodeLeaf<?>) s).value)).toArray();
 					list.add(op == IN ? new ArgIn(dom, vals) : new ArgNotIn(dom, vals));
 				}
 			}
-			System.out.println(Kit.join(list.stream().map(ll -> ll.getClass().getSimpleName())));
+			// System.out.println("aaaa" + Kit.join(trees) + " " + Kit.join(list.stream().map(ll -> ll.getClass().getSimpleName())));
 			return list.toArray(ArgLogic[]::new);
 		}
 
 		public LogicTree(Problem pb, XNode<IVar>[] trees) {
 			super(pb, Stream.of(trees).map(tree -> tree.var(0)).toArray(Variable[]::new));
 			control(trees.length > 1 && Stream.of(trees).allMatch(tree -> tree.vars().length == 1));
-			assert scp.length == trees.length && IntStream.range(0, scp.length).allMatch(i -> scp[i] == trees[i].var(0));
+			assert scp.length == trees.length && IntStream.range(0, scp.length).allMatch(i -> scp[i] == trees[i].var(0)) : " " + Kit.join(trees);
 
 			this.trees = trees;
 			this.logicArgs = buildLogicArgs(trees);
@@ -254,7 +254,7 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 				}
 			}
 
-			static abstract class ArgdSet implements ArgLogic {
+			static abstract class ArgSet implements ArgLogic {
 				protected Domain dom;
 				protected int[] vals;
 
@@ -286,20 +286,20 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 					return -1;
 				}
 
-				ArgdSet(Domain dom, int[] vals) {
+				ArgSet(Domain dom, int[] vals) {
 					this.dom = dom;
 					this.vals = vals;
 					control(vals.length > 1 && dom.size() > vals.length && IntStream.of(vals).allMatch(v -> dom.containsValue(v))
 							&& IntStream.range(0, vals.length - 1).allMatch(i -> vals[i] < vals[i + 1]));
 				}
 
-				static class ArgIn extends ArgdSet {
+				static class ArgIn extends ArgSet {
 
 					ArgIn(Domain dom, int[] vals) {
 						super(dom, vals);
 						this.sentinel0 = findIndexOfNotPresentValue();
 						this.sentinel1 = findIndexOfPresentValue();
-						control(sentinel0 != -1 && sentinel1 != 1);
+						control(sentinel0 != -1 && sentinel1 != -1, " " + dom + " " + Kit.join(vals));
 					}
 
 					public boolean canBeSatisfiedBy(int v) {
@@ -312,15 +312,21 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 					public boolean canBe0() {
 						if (dom.contains(sentinel0))
 							return true;
-						sentinel0 = findIndexOfNotPresentValue();
-						return sentinel0 != -1;
+						int sent = findIndexOfNotPresentValue();
+						if (sent == -1)
+							return false;
+						sentinel0 = sent;
+						return true;
 					}
 
 					public boolean canBe1() {
 						if (dom.contains(sentinel1))
 							return true;
-						sentinel1 = findIndexOfPresentValue();
-						return sentinel1 != -1;
+						int sent = findIndexOfPresentValue();
+						if (sent == -1)
+							return false;
+						sentinel1 = sent;
+						return true;
 					}
 
 					public boolean enforce1() {
@@ -328,13 +334,13 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 					}
 				}
 
-				static class ArgNotIn extends ArgdSet {
+				static class ArgNotIn extends ArgSet {
 
 					ArgNotIn(Domain dom, int[] vals) {
 						super(dom, vals);
 						this.sentinel0 = findIndexOfPresentValue();
 						this.sentinel1 = findIndexOfNotPresentValue();
-						control(sentinel0 != -1 && sentinel1 != 1);
+						control(sentinel0 != -1 && sentinel1 != -1);
 					}
 
 					public boolean canBeSatisfiedBy(int v) {
@@ -347,15 +353,21 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 					public boolean canBe0() {
 						if (dom.contains(sentinel0))
 							return true;
-						sentinel0 = findIndexOfPresentValue();
-						return sentinel0 != -1;
+						int sent = findIndexOfPresentValue();
+						if (sent == -1)
+							return false;
+						sentinel0 = sent;
+						return true;
 					}
 
 					public boolean canBe1() {
 						if (dom.contains(sentinel1))
 							return true;
-						sentinel1 = findIndexOfNotPresentValue();
-						return sentinel1 != -1;
+						int sent = findIndexOfNotPresentValue();
+						if (sent == -1)
+							return false;
+						sentinel1 = sent;
+						return true;
 					}
 
 					public boolean enforce1() {
