@@ -144,19 +144,32 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 					return false;
 
 				int sizeBefore = vdom.size();
-
-				if (sentinels != null)
-					if (vdom.removeIndexesChecking(a -> {
+				if (sentinels != null) {
+					for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
 						int v = vdom.toVal(a);
 						if (!sentinels[a].dom.containsValue(v)) {
 							Variable s = findSentinelFor(v);
 							if (s == null)
-								return true;
-							sentinels[a] = s;
+								vdom.removeElementary(a);
+							else
+								sentinels[a] = s;
 						}
+					}
+					if (vdom.afterElementaryCalls(sizeBefore) == false)
 						return false;
-					}) == false)
-						return false;
+
+					// if (vdom.removeIndexesChecking(a -> {
+					// int v = vdom.toVal(a);
+					// if (!sentinels[a].dom.containsValue(v)) {
+					// Variable s = findSentinelFor(v);
+					// if (s == null)
+					// return true;
+					// sentinels[a] = s;
+					// }
+					// return false;
+					// }) == false)
+					// return false;
+				}
 
 				// Filtering the domains of variables in the vector
 				int lastMax = vdom.lastValue();
@@ -230,7 +243,6 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 					return false;
 
 				int sizeBefore = vdom.size();
-
 				if (sentinels != null) {
 					for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
 						int v = vdom.toVal(a);
@@ -238,8 +250,8 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 							Variable s = findSentinelFor(v);
 							if (s != null)
 								sentinels[a] = s;
-							else if (vdom.size() == 1)
-								return vdom.fail();
+//							else if (vdom.size() == 1)
+//								return vdom.fail();
 							else
 								vdom.removeElementary(a);
 						}

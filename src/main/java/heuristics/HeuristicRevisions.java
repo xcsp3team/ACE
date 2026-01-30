@@ -12,7 +12,6 @@ package heuristics;
 
 import interfaces.Tags.TagMaximize;
 import propagation.Queue;
-import utility.Kit;
 import variables.Variable;
 
 /**

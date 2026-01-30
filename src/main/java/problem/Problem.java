@@ -51,6 +51,7 @@ import static org.xcsp.common.predicates.MatcherInterface.add_mulVars;
 import static org.xcsp.common.predicates.MatcherInterface.add_vars;
 import static org.xcsp.common.predicates.MatcherInterface.add_varsOrTerms;
 import static org.xcsp.common.predicates.MatcherInterface.add_varsOrTerms_valEnding;
+import static org.xcsp.common.predicates.MatcherInterface.andOrOr;
 import static org.xcsp.common.predicates.MatcherInterface.any;
 import static org.xcsp.common.predicates.MatcherInterface.logic_vars;
 import static org.xcsp.common.predicates.MatcherInterface.max_vars;
@@ -224,6 +225,13 @@ import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
 import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
 import constraints.global.WakeUp;
 import constraints.global.Xor;
+import constraints.intension.Disjonctive.Disjonctive2Cst;
+import constraints.intension.Disjonctive.Disjonctive2Mix;
+import constraints.intension.Disjonctive.Disjonctive2Reified2Cst;
+import constraints.intension.Disjonctive.Disjonctive2ReifiedVar;
+import constraints.intension.Disjonctive.Disjonctive2Var;
+import constraints.intension.Disjonctive.DisjonctiveReified;
+import constraints.intension.Disjonctive.DisjonctiveVar;
 import constraints.intension.Logic.LogicTree;
 import constraints.intension.Nogood;
 import constraints.intension.Primitive2;
@@ -236,14 +244,7 @@ import constraints.intension.Primitive3;
 import constraints.intension.Primitive3.Add3;
 import constraints.intension.Primitive3.IFT3;
 import constraints.intension.Primitive4.DblDiff;
-import constraints.intension.Primitive4.Disjonctive2Cst;
-import constraints.intension.Primitive4.Disjonctive2Mix;
-import constraints.intension.Primitive4.Disjonctive2Var;
-import constraints.intension.Primitive4.DisjonctiveVar;
 import constraints.intension.Primitive4.DistDistNE;
-import constraints.intension.Reification.Disjonctive2Reified2Cst;
-import constraints.intension.Reification.Disjonctive2ReifiedVar;
-import constraints.intension.Reification.DisjonctiveReified;
 import constraints.intension.Reification.Reif2.Reif2Rel;
 import constraints.intension.Reification.Reif2.Reif2Rel.Reif2EQ;
 import constraints.intension.Reification.Reif2.Reif2Set;
@@ -1273,6 +1274,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// logic
 	private Matcher logic_X__eq_x = new Matcher(node(TypeExpr.EQ, logic_vars, var));
 	private Matcher logic_X__ne_x = new Matcher(node(TypeExpr.NE, logic_vars, var));
+	private Matcher andOrOr__eq_x = new Matcher(node(TypeExpr.EQ, andOrOr, var));
 
 	// extremum
 	private Matcher min_relop = new Matcher(node(relop, min_vars, varOrVal));
@@ -1365,7 +1367,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		int arity = scp.length;
 		control(arity > 0);
 
-		// *** Arity 1
 		if (arity == 1) {
 			Domain dom = scp[0].dom;
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
@@ -1387,9 +1388,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		assert Variable.haveSameType(scp);
 
-		// *** Detecting some nogoods
-		boolean detectingNogoods = true;
-		if (detectingNogoods) {
+		if (options.detectNogoods) {
 			if (howManyVariablesWithin(scp, options.spaceLimitToNogood) == Constants.ALL) {
 				TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 				int[] conflict = evaluator.getUniqueConflict(Variable.initDomainValues(scp));
@@ -1456,6 +1455,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (k == 1)
 				return forall(range(2), i -> equal(scp[i], 1));
 		}
+
 		if (arity == 2 && options.recognizePrimitive2) {
 			Constraint c = null;
 			if (x_relop_y.matches(tree))
@@ -1501,6 +1501,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (c != null)
 				return post(c);
 		}
+
 		if (arity == 3 && options.recognizePrimitive3) {
 			Constraint c = null;
 			if (x_ariop_y__relop_z.matches(tree)) {
@@ -1522,6 +1523,19 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		if (options.recognizeReifLogic) {
+			boolean test = false;
+			if (test && andOrOr__eq_x.matches(tree)) {
+				XNode<IVar> s0 = sons[0];
+				boolean changed = false;
+				for (int i = 0; i < s0.sons.length; i++)
+					if (s0.sons[i].type != VAR) {
+						changed = true;
+						s0.sons[i] = XNode.varLeaf(replaceByVariable(s0.sons[i]));
+					}
+				control(logic_X__eq_x.matches(tree));
+				if (changed)
+					return intension(tree); // because the scope has changed
+			}
 			Constraint c = null;
 			if (logic_X__eq_x.matches(tree)) {
 				Variable[] list = IntStream.range(0, scp.length - 1).mapToObj(i -> scp[i]).toArray(Variable[]::new);
@@ -1531,8 +1545,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (c != null)
 				return post(c);
 		}
-		boolean test = true;
-		if (test && or2_and2.matches(tree)) {
+
+		if (options.recognizeMutualExclusion && or2_and2.matches(tree)) {
 			XNode<IVar> gs00 = sons[0].sons[0], gs01 = sons[0].sons[1], gs10 = sons[1].sons[0], gs11 = sons[1].sons[1];
 			Object res0 = XNode.logicallyInverse(gs00, gs10), res1 = XNode.logicallyInverse(gs01, gs11);
 			if (res0 != Boolean.FALSE && res1 != Boolean.FALSE) {
@@ -1554,10 +1568,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			// return intension(eq(gs00, gs01));
 
 		}
+
 		if (tree.type == OR || tree.type == IF) {
 			if (sons.length == 2 && sons[1].type == AND) // TODO should we avoid this if sons of AND are not decomposable (share variables)?
 				return forall(range(sons[1].sons.length), i -> intension(XNode.node(tree.type, sons[0], sons[1].sons[i])));
 		}
+
 		if (tree.type == OR) {
 			if (arity > 2 && Stream.of(sons).allMatch(son -> son.type == VAR)) {
 				Variable[] filteredScp = Stream.of(scp).filter(x -> x.dom.containsValue(1)).toArray(Variable[]::new);
@@ -1567,37 +1583,49 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return post(new AtLeast1(this, filteredScp, 1)); // return post(SumSimple.buildFrom(this, scp, NE, 0));
 			}
 
-			
-			if (arity >= 2) {
-				boolean detectingOtherNogoods = true;
-				if (detectingOtherNogoods && Stream.of(sons)
-						.allMatch(son -> son.type == VAR || x_ne_k.matches(son) || (x_eq_k.matches(son) && ((Variable) son.var(0)).dom.is01()))) {
-					List<Integer> vals = new ArrayList<>();
-					for (XNode<IVar> son : tree.sons) {
-						int v = -1;
-						if (son.type == VAR) {
-							control(((Variable) son.var(0)).dom.is01());
-							v = 0;
-						} else if (x_ne_k.matches(son))
-							v = son.val(0);
-						else {
-							assert x_eq_k.matches(son) && ((Variable) son.var(0)).dom.is01() && (son.val(0) == 0 || son.val(0) == 1);
-							v = son.val(0) == 1 ? 0 : 1;
-						}
-						vals.add(v);
-						if (!((Variable) son.var(0)).dom.containsValue(v))
-							return head.control.constraints.postCtrTrues ? post(new CtrTrue(this, scp, "Nogood trivially satisfied")) : null;
+			if (arity >= 2 && options.detectOtherNogoods
+					&& Stream.of(sons).allMatch(son -> son.type == VAR || x_ne_k.matches(son) || (x_eq_k.matches(son) && ((Variable) son.var(0)).dom.is01()))) {
+				List<Integer> vals = new ArrayList<>();
+				for (XNode<IVar> son : tree.sons) {
+					Domain dom = ((Variable) son.var(0)).dom;
+					int v = -1;
+					if (son.type == VAR) {
+						control(dom.is01());
+						v = 0;
+					} else if (x_ne_k.matches(son))
+						v = son.val(0);
+					else {
+						assert x_eq_k.matches(son) && dom.is01() && (son.val(0) == 0 || son.val(0) == 1);
+						v = son.val(0) == 1 ? 0 : 1;
 					}
-					features.collecting.addNogood(scp, vals.stream().mapToInt(v -> v).toArray());
-					// features.collecting.addNogood(scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray());
-					return null; // post(new Nogood(this, scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray()));
+					vals.add(v);
+					if (!dom.containsValue(v))
+						return head.control.constraints.postCtrTrues ? post(new CtrTrue(this, scp, "Nogood trivially satisfied")) : null;
 				}
+				features.collecting.addNogood(scp, vals.stream().mapToInt(v -> v).toArray());
+				// features.collecting.addNogood(scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray());
+				return null; // post(new Nogood(this, scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray()));
 			}
 
-			if (options.recognizeOrUnaryTerms && Stream.of(sons)
-					.allMatch(son -> son.type == TypeExpr.VAR || x_relop_k.matches(son) || k_relop_x.matches(son) || x_setop_vals.matches(son)))
-				if (tree.vars().length == tree.sons.length) // TODO merging subtrees of same variables (with a unary table ?)
+			if (options.recognizeOrUnaryTerms) {
+				boolean test = false;
+				if (test) {
+					int[] t = Stream.of(sons)
+							.mapToInt(son -> son.type == TypeExpr.VAR || x_relop_k.matches(son) || k_relop_x.matches(son) || x_setop_vals.matches(son) ? 0 : 1)
+							.toArray();
+					int nb = IntStream.of(t).sum();
+					// System.out.println("hhhhhh " + tree + " " + Kit.join(t) + " " + nb);
+					if (nb == 1) { // TODO hard coding
+						for (int i = 0; i < sons.length; i++)
+							if (t[i] == 1)
+								sons[i] = XNode.varLeaf(replaceByVariable(sons[i]));
+						return intension(tree); // because the scope has changed
+					}
+				}
+				if (scp.length == tree.sons.length && Stream.of(sons)
+						.allMatch(son -> son.type == TypeExpr.VAR || x_relop_k.matches(son) || k_relop_x.matches(son) || x_setop_vals.matches(son) )) // TODO merging subtrees of same variables (with a unary table ?)
 					return post(new LogicTree(this, sons));
+			}
 
 			if (arity >= options.arityForClauseUnaryTrees && arity == sons.length) {
 				TreeUnaryBoolean[] terms = ClauseUnaryTrees.canBuildTreeUnaryBooleans(sons);
@@ -1612,9 +1640,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (arity == 4 && sons.length == 2 && Stream.of(sons).allMatch(son -> x_ne_y.matches(son)))
 				return post(new DblDiff(this, (Variable) sons[0].var(0), (Variable) sons[0].var(1), (Variable) sons[1].var(0), (Variable) sons[1].var(1)));
 		}
-		if (arity > 2 && tree.type == XOR && options.recognizeXor > 0)
 
-		{
+		if (arity > 2 && tree.type == XOR && options.recognizeXor > 0) {
 			if (options.recognizeXor == 2) // full recognition
 				return post(new Xor(this, Stream.of(sons).map(son -> son.type == VAR ? son : replaceByVariable(son)).toArray(Variable[]::new)));
 			assert options.recognizeXor == 1;
@@ -1870,15 +1897,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				}
 			}
 		}
+
 		if (options.toExtension(scp, tree) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
+
 		if (options.displayRemainingIntension)
 			System.out.println("Tree remaining " + tree);
-		return
 
-		post(new ConstraintIntension(this, scp, tree));
+		return post(new ConstraintIntension(this, scp, tree));
 	}
 
 	// ************************************************************************

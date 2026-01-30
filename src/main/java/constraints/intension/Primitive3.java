@@ -19,11 +19,13 @@ import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
+import constraints.ConstraintSpecific;
 import constraints.global.Sum.SumWeighted;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
+import interfaces.Tags.TagPrimitive;
 import problem.Problem;
 import propagation.AC;
 import utility.Kit;
@@ -38,7 +40,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class Primitive3 extends Primitive implements TagAC, TagCallCompleteFiltering, TagNotSymmetric {
+public abstract class Primitive3 extends ConstraintSpecific implements TagAC, TagCallCompleteFiltering, TagNotSymmetric, TagPrimitive {
 	// TODO AC not true sometimes
 
 	private static final int RUNNING_LIMIT = 200; // TODO hard coding_

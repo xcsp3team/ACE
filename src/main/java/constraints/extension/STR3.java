@@ -21,6 +21,7 @@ import constraints.ConstraintExtension;
 import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Observers.ObserverOnSolving;
 import interfaces.Tags.TagPositive;
 import problem.Problem;
@@ -38,7 +39,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public final class STR3 extends ExtensionSpecific implements TagPositive, ObserverOnSolving {
+public final class STR3 extends ExtensionSpecific implements TagPositive, ObserverOnSolving, ObserverOnBacktracksSystematic {
 
 	/**********************************************************************************************
 	 * Implementing Interfaces

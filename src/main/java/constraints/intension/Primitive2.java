@@ -46,6 +46,7 @@ import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagNotSymmetric;
+import interfaces.Tags.TagPrimitive;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import propagation.AC;
@@ -66,7 +67,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class Primitive2 extends Primitive implements TagAC, TagCallCompleteFiltering {
+public abstract class Primitive2 extends ConstraintSpecific implements TagAC, TagCallCompleteFiltering, TagPrimitive {
 
 	/**********************************************************************************************
 	 * Static members

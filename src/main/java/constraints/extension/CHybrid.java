@@ -29,11 +29,10 @@ import constraints.Constraint;
 import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.TableHybrid;
 import constraints.extension.structures.TableHybrid.HybridTuple;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import problem.Problem;
-import propagation.StrongConsistency;
 import sets.SetDenseReversible;
 import sets.SetSparse;
-import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
@@ -47,7 +46,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public final class CHybrid extends ExtensionSpecific {
+public final class CHybrid extends ExtensionSpecific implements ObserverOnBacktracksSystematic {
 
 	/**********************************************************************************************
 	 * Static methods
@@ -380,7 +379,8 @@ public final class CHybrid extends ExtensionSpecific {
 	 * Makes, before filtering, some initialization with respect to the last variable explicitly assigned by the solver
 	 */
 	protected void manageLastPastVariable() {
-		if (lastSafeNumber != problem.solver.stats.safeNumber() ) { //|| problem.solver.propagation instanceof StrongConsistency) { // 2nd condition due to Inverse4
+		if (lastSafeNumber != problem.solver.stats.safeNumber()) { // || problem.solver.propagation instanceof StrongConsistency) { // 2nd condition due to
+																	// Inverse4
 			lastSafeNumber = problem.solver.stats.safeNumber();
 			Variable lastPast = problem.solver.futVars.lastPast();
 			int x = lastPast == null ? -1 : positionOf(lastPast);

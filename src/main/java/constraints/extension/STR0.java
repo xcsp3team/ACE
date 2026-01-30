@@ -17,15 +17,12 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import constraints.ConstraintExtension;
 import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
-import interfaces.SpecificPropagator;
 import interfaces.Tags.TagStarredCompatible;
 import problem.Problem;
 import sets.SetDense;
-import variables.Domain;
 import variables.Variable;
 
 /**
@@ -34,8 +31,8 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class STR0 extends ConstraintExtension implements SpecificPropagator, TagStarredCompatible { 
-//public abstract class STR0 extends ExtensionSpecific implements TagStarredCompatible {
+public abstract class STR0 extends ExtensionSpecific implements TagStarredCompatible {
+
 	/**********************************************************************************************
 	 * Static
 	 *********************************************************************************************/
@@ -59,14 +56,10 @@ public abstract class STR0 extends ConstraintExtension implements SpecificPropag
 		this.set = new SetDense(tuples.length, true);
 	}
 
-//	// @Override
-//	public void restoreBefore(int depth) {
-//		set.fill();
-//	}
-
-	public boolean launchFiltering(Variable x) {
-		return runPropagator(x);
-	}
+	// // @Override
+	// public void restoreBefore(int depth) {
+	// set.fill();
+	// }
 
 	/**********************************************************************************************
 	 * Fields
@@ -219,9 +212,7 @@ public abstract class STR0 extends ConstraintExtension implements SpecificPropag
 
 			if (set.size() == 0)
 				return dummy.dom.fail(); // inconsistency detected
-
 			updateDomains();
-
 			if (!extStructure.isStarred()) {
 				int prod = 1;
 				for (int i = futvars.limit; i >= 0; i--) {
@@ -229,7 +220,7 @@ public abstract class STR0 extends ConstraintExtension implements SpecificPropag
 					if (prod > set.size())
 						return true;
 				}
-				return prod == set.size();
+				return prod == set.size() && entail();
 			}
 			return true;
 		}
@@ -284,7 +275,7 @@ public abstract class STR0 extends ConstraintExtension implements SpecificPropag
 		public boolean runPropagator(Variable dummy) {
 			if (failSinceLastCall())
 				set.fill();
-			
+
 			beforeFiltering();
 			for (int i = set.limit; i >= 0; i--) {
 				QuickTuple quickTuple = quickTuples[set.dense[i]];

@@ -17,17 +17,18 @@ import java.util.Arrays;
 import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import problem.Problem;
 import sets.SetDenseReversible;
 import variables.Variable;
 
 /**
- * This is STR (Simple Tabular Reduction), for filtering extension (table) constraints, as introduced by Julian Ullmann:
- * "Partition search for non-binary constraint satisfaction". Inf. Sci. 177(18): 3639-3678 (2007).
+ * This is STR (Simple Tabular Reduction), for filtering extension (table) constraints, as introduced by Julian Ullmann: "Partition search for non-binary
+ * constraint satisfaction". Inf. Sci. 177(18): 3639-3678 (2007).
  * 
  * @author Christophe Lecoutre
  */
-public class STR1 extends ExtensionSpecific {
+public class STR1 extends ExtensionSpecific implements ObserverOnBacktracksSystematic {
 	// TODO why not using a counter 'time' and replace boolean[][] ac by int[][] ac
 	// we just do time++ instead of Arrays.fill(ac[x],false); the gain must be unnoticeable, right?
 
@@ -70,8 +71,7 @@ public class STR1 extends ExtensionSpecific {
 	protected boolean[][] ac;
 
 	/**
-	 * When used during filtering, cnts[x] is the number of values in the current domain of x with no found support
-	 * (yet)
+	 * When used during filtering, cnts[x] is the number of values in the current domain of x with no found support (yet)
 	 */
 	protected int[] cnts;
 
@@ -130,8 +130,10 @@ public class STR1 extends ExtensionSpecific {
 			int nRemovals = cnts[x];
 			if (nRemovals == 0)
 				continue;
-			if (doms[x].remove(ac[x], nRemovals) == false)
-				return false;
+			assert nRemovals < doms[x].size();
+			doms[x].remove(ac[x], nRemovals); // no inconsistency possible
+			// if (doms[x].remove(ac[x], nRemovals) == false)
+			// return false;
 			cnt -= nRemovals;
 		}
 		return true;
@@ -156,6 +158,20 @@ public class STR1 extends ExtensionSpecific {
 			} else
 				set.removeAtPosition(i, depth);
 		}
-		return updateDomains();
+
+		if (set.size() == 0)
+			return dummy.dom.fail(); // inconsistency detected
+		updateDomains();
+		if (!extStructure.isStarred()) {
+			int prod = 1;
+			for (int i = futvars.limit; i >= 0; i--) {
+				prod *= doms[futvars.dense[i]].size();
+				if (prod > set.size())
+					return true;
+			}
+			return prod == set.size() && entail();
+		}
+		return true;
+		// return updateDomains();
 	}
 }

@@ -22,6 +22,7 @@ import constraints.ConstraintExtension.ExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.MDD;
 import constraints.extension.structures.MDD.Node;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagPositive;
 import interfaces.Tags.TagStarredCompatible;
 import problem.Problem;
@@ -30,13 +31,12 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the code for CMDD, as described in: "An MDD-based generalized arc consistency algorithm for positive and
- * negative table constraints and some global constraints", Constraints An Int. J. 15(2): 265-304 (2010) by K. Cheng and
- * R. Yap.
+ * This is the code for CMDD, as described in: "An MDD-based generalized arc consistency algorithm for positive and negative table constraints and some global
+ * constraints", Constraints An Int. J. 15(2): 265-304 (2010) by K. Cheng and R. Yap.
  * 
  * @author Christophe Lecoutre
  */
-public abstract class CMDD extends ExtensionSpecific implements TagPositive {
+public abstract class CMDD extends ExtensionSpecific implements TagPositive, ObserverOnBacktracksSystematic {
 
 	/**********************************************************************************************
 	 * Implementing Interfaces
@@ -78,14 +78,13 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive {
 	protected SetSparseReversible set;
 
 	/**
-	 * ac[x][a] indicates if a support has been found for (x,a); actually, x denotes the level where the variable is
-	 * managed in the MDD
+	 * ac[x][a] indicates if a support has been found for (x,a); actually, x denotes the level where the variable is managed in the MDD
 	 */
 	protected boolean[][] ac;
 
 	/**
-	 * cnts[x] is the number of values in the current domain of x with no found support (yet); actually, x denotes the
-	 * level where the variable is managed in the MDD
+	 * cnts[x] is the number of values in the current domain of x with no found support (yet); actually, x denotes the level where the variable is managed in
+	 * the MDD
 	 */
 	protected int[] cnts;
 
@@ -158,8 +157,7 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive {
 	}
 
 	/**
-	 * Method to be called when the terminal node has been shown to be reached from the specified level with the
-	 * specified value index
+	 * Method to be called when the terminal node has been shown to be reached from the specified level with the specified value index
 	 * 
 	 * @param level
 	 *            a level in the MDD (corresponding to a variable)

@@ -96,4 +96,12 @@ public interface Tags {
 	interface TagMaximize {
 	}
 
+	/**
+	 * Tag for indicating that a constraint is a primitive. A primitive constraint is a constraint of small fixed arity defined by a Boolean tree expression
+	 * (i.e., it is an intension constraint) with a classical (i.e., well-identified) form. For example, it can be x < y, x%2 = y, or |x-y| = z. A specific
+	 * propagator is used.
+	 */
+	interface TagPrimitive {
+	}
+
 }

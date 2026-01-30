@@ -30,7 +30,6 @@ import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.Tries;
 import dashboard.Control.OptionsExtension;
-import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.SpecificPropagator;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
@@ -233,7 +232,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	/**
 	 * This is the root class of specific AC filtering for extension (table) constraints.
 	 */
-	public abstract static class ExtensionSpecific extends ConstraintExtension implements SpecificPropagator, ObserverOnBacktracksSystematic {
+	public abstract static class ExtensionSpecific extends ConstraintExtension implements SpecificPropagator {
 
 		public ExtensionSpecific(Problem pb, Variable[] scp) {
 			super(pb, scp);

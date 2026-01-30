@@ -542,6 +542,9 @@ public final class Control {
 		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "Must we attempt to recognize logical reification forms?");
 		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "Must we attempt to recognize minimum/maximum constraints?");
 		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "Must we attempt to recognize sum constraints?");
+		public final boolean recognizeMutualExclusion = addB("recognizeOr2And2", "ror2and2", true, "Must we recognize a disjunction in mutual exlusion?");
+		public final boolean detectNogoods = addB("detectNogoods", "dn", true, "Must we detect nogoods?");
+		public final boolean detectOtherNogoods = addB("detectOtherNogoods", "don", true, "Must we detect nogoods from particular tree expressions?");
 		public final boolean recognizeIf = addB("recognizeIf", "rif", true, "Must we recognize/decompose the ternary operator if?");
 		public final int recognizeXor = addI("recognizeXor", "rxo", 1, "Must we recognize Xor constraints (two modes 1 and 2)?");
 		public final boolean recognizeEqAnd = addB("recognizeEqAnd", "rea", false, "Must we recognize an expression eq-and (or iff-and)?");

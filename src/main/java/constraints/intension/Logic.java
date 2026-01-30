@@ -94,7 +94,7 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 					control(op.oneOf(LE, GE, NE, EQ)); // because the tree is in canonical form
 					list.add(op == LE ? new ArgGE(dom, k) : op == GE ? new ArgLE(dom, k) : op == NE ? new ArgNE(dom, k) : new ArgEQ(dom, k));
 				} else {
-					control(x_setop_vals.matches(tree));
+					control(x_setop_vals.matches(tree), " " + tree);
 					TypeConditionOperatorSet op = tree.setop(0);
 					int[] vals = Stream.of(tree.sons[1].sons).mapToInt(s -> safeInt((long) ((XNodeLeaf<?>) s).value)).toArray();
 					list.add(op == IN ? new ArgIn(dom, vals) : new ArgNotIn(dom, vals));

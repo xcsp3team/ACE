@@ -29,7 +29,6 @@ import org.xcsp.parser.entries.XObjectives.XObj;
 
 import constraints.Constraint;
 import constraints.ConstraintExtension;
-import constraints.ConstraintExtension.Extension1;
 import constraints.ConstraintIntension;
 import constraints.extension.CHybrid;
 import constraints.extension.structures.MDD;

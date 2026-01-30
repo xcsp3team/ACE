@@ -37,7 +37,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Constants;
-import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
 import constraints.ConstraintGlobal;

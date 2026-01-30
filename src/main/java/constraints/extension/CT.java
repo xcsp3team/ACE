@@ -18,7 +18,6 @@ import java.util.stream.Stream;
 
 import org.xcsp.common.Constants;
 
-import constraints.extension.structures.Table;
 import interfaces.Tags.TagStarredCompatible;
 import problem.Problem;
 import sets.SetDenseReversible;
