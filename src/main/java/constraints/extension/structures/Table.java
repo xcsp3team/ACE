@@ -11,6 +11,7 @@
 package constraints.extension.structures;
 
 import static org.xcsp.common.Constants.STAR;
+import static org.xcsp.common.Constants.STAR_SYMBOL;
 import static utility.Kit.control;
 
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import constraints.Constraint;
 import constraints.ConstraintExtension;
 import utility.Kit;
 import variables.Domain;
+import variables.TupleIterator;
 import variables.Variable;
 
 /**
@@ -36,6 +38,10 @@ import variables.Variable;
  * @author Christophe Lecoutre
  */
 public class Table extends ExtensionStructure {
+
+	public static final Boolean DONT_KNOW_IF_STARRED = null;
+	public static final Boolean NOT_STARRED = Boolean.FALSE;
+	public static final Boolean STARRED = Boolean.TRUE;
 
 	/**********************************************************************************************
 	 * Static Methods for Starred Tables
@@ -265,6 +271,29 @@ public class Table extends ExtensionStructure {
 		return tuples.stream().toArray(int[][]::new);
 	}
 
+	/**********************************************************************************************
+	 * Static methods
+	 *********************************************************************************************/
+
+	public static int[][] reverseTuples(Variable[] scp, int[][] tuples) { // do not work with stars
+		control(Stream.of(scp).allMatch(x -> x.dom.nRemoved() == 0));
+		assert nStarsIn(tuples) == 0;
+		assert Kit.isLexIncreasing(tuples);
+		int cnt = 0;
+		TupleIterator tupleIterator = new TupleIterator(Stream.of(scp).map(x -> x.dom).toArray(Domain[]::new));
+		int[] idxs = tupleIterator.firstValidTuple(), vals = new int[idxs.length];
+		List<int[]> list = new ArrayList<>();
+		do {
+			for (int i = vals.length - 1; i >= 0; i--)
+				vals[i] = scp[i].dom.toVal(idxs[i]);
+			if (cnt < tuples.length && Arrays.equals(vals, tuples[cnt]))
+				cnt++;
+			else
+				list.add(vals.clone());
+		} while (tupleIterator.nextValidTuple() != -1);
+		return list.stream().toArray(int[][]::new);
+	}
+
 	public static int nStarsIn(int[][] tuples) {
 		int nStars = 0;
 		for (int[] tuple : tuples)
@@ -272,6 +301,39 @@ public class Table extends ExtensionStructure {
 				if (v == STAR)
 					nStars++;
 		return nStars;
+	}
+
+	public static int nStarsIn(String[][] tuples) {
+		int nStars = 0;
+		for (String[] tuple : tuples)
+			for (String v : tuple)
+				if (v == STAR_SYMBOL)
+					nStars++;
+		return nStars;
+	}
+
+	public static int nStarsIn(Object tuples) {
+		return tuples instanceof int[][] ? nStarsIn((int[][]) tuples) : nStarsIn((String[][]) tuples);
+	}
+
+	public static boolean isStarred(int[][] tuples) {
+		for (int[] t : (int[][]) tuples)
+			for (int v : t)
+				if (v == STAR)
+					return true;
+		return false;
+	}
+
+	public static boolean isStarred(String[][] tuples) {
+		for (String[] t : (String[][]) tuples)
+			for (String s : t)
+				if (s.equals(STAR_SYMBOL))
+					return true;
+		return false;
+	}
+
+	public static boolean isStarred(Object tuples) {
+		return tuples instanceof int[][] ? isStarred((int[][]) tuples) : isStarred((String[][]) tuples);
 	}
 
 	/**********************************************************************************************

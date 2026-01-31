@@ -477,8 +477,10 @@ public final class Control {
 		public final String ignoreGroups = addS("ignoreGroups", "ig", "", "Index(es) of the group(s) of constraints that must be discarded");
 		public final int positionsLb = addI("positionsLb", "poslb", 3, "Minimal arity to build the array positions");
 		public final int positionsUb = addI("positionsUb", "posub", 10000, "Maximal number of variables to build the array positions");
-		public final int collectedNogoodsLimitExtern = addI("collectedNogoodsLimitExtern", "cnle", 5_000, "Limit number (max) to run a process for combining collected nogoods");
-		public final int collectedNogoodsLimitIntern = addI("collectedNogoodsLimitIntern", "cnli", 3, "Limit number (min) to merge (in a table) nogoods of same scope");
+		public final int collectedNogoodsLimitExtern = addI("collectedNogoodsLimitExtern", "cnle", 5_000,
+				"Limit number (max) to run a process for combining collected nogoods");
+		public final int collectedNogoodsLimitIntern = addI("collectedNogoodsLimitIntern", "cnli", 3,
+				"Limit number (min) to merge (in a table) nogoods of same scope");
 		public final boolean postCtrTrues = addB("postCtrTrues", "pct", false, "Must we post CtrTrue encountered while loading/reformualting constraints?");
 
 		public final boolean discardHybridEntailment = addB("discardHybridEntailment", "dec", true,
@@ -518,9 +520,15 @@ public final class Control {
 		public final boolean decrementalCMDD = addB("decrementalCMDD", "dec_cmdd", false, "Must we use a decremental mode for CMDD");
 		public final int smallTableExt = addI("smallTableExt", "stext", 100, "table size threshold for considering a special propagator");
 		public final int largeScopeExt = addI("largeScopeExt", "lsext", 50, "scope size threshold for considering a special propagator");
+		public final int avoidingCTLimit = addI("avoidingCTLimit", "actl", 8_000,
+				"Limit in term of the cumulated size of the domains for discarding CT (and use STR2 or V)");
+		public final int avoidingSTRLimit = addI("avoidingSTRLimit", "astrl", 1_000,
+				"Limit in term of the size of the table to consider possibly discarding STR2 (and use V)");
+		public final int avoidingSTRRatio = addI("avoidingSTRRatio", "astrr", 1,
+				"Ratio (max) 'number of valid tuples' per 'size of the table' for using STR2 and not V");
+
 		public final boolean toMDD = addB("toMDD", "tomdd", false, "Must we attempt to convert extension constraints into MDDs (if possible)");
-		public final int domainCompactTableLimit = addI("domainCompactTableLimit", "dctl", 8_000,
-				"Limit in term of the cumulated size of the domains for discarding CT (and use STR2)");
+
 		public final int chybridStackingLimit = addI("chybridStackingLimit", "hsl", 5_000,
 				"Limit (in term of the number n of variables) for building stacks useful for filtering CHybrid constraints");
 
@@ -596,7 +604,7 @@ public final class Control {
 		public final int sumeqToTableSpaceLimit = addI("sumeqToTableSpaceLimit", "set", 8, "Limit on space for possibly converting sumeq to table");
 		public final int suminToTableSpaceLimit = addI("suminToTableSpaceLimit", "sit", 12, "Limit on space for possibly converting sumin to table");
 		public final int sumSemiIncremental = addI("sumSemiIncremental", "ssi", 1, "Semi-incrementality mode for sums (0, 1 or 2)");
-		public final int countSemiIncremental = addI("countSemiIncremental", "csi", 0, "Semi-incrementality mode for counts (0, 1 or 2)");
+		public final int countSemiIncremental = addI("countSemiIncremental", "csi", 1, "Semi-incrementality mode for counts (0, 1 or 2)");
 		public final boolean permutation = addB("permutation", "", false, "Must we use permutation constraints for AllDifferent if possible? (may be faster)");
 		public final int allDifferentNb = addI("allDifferentNb", "adn", 10, "Number of possibly automatically inferred AllDifferent");
 		public final int allDifferentSize = addI("allDifferentSize", "ads", 5, "Limit on the size of possibly automatically inferred AllDifferent");

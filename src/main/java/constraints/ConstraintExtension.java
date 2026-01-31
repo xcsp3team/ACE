@@ -10,12 +10,13 @@
 
 package constraints;
 
+import static constraints.extension.structures.Table.DONT_KNOW_IF_STARRED;
+import static constraints.extension.structures.Table.isStarred;
+import static java.lang.reflect.Array.getLength;
 import static org.xcsp.common.Constants.STAR;
-import static org.xcsp.common.Constants.STAR_SYMBOL;
 import static utility.Kit.control;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -42,10 +43,7 @@ import propagation.Forward;
 import propagation.Reviser;
 import utility.Kit;
 import utility.Reflector;
-import variables.Domain;
-import variables.TupleIterator;
 import variables.Variable;
-import variables.Variable.VariableInteger;
 import variables.Variable.VariableSymbolic;
 
 /**
@@ -247,64 +245,31 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 ***** Static members
 	 *********************************************************************************************/
 
-	private static ConstraintExtension build(Problem pb, Variable[] scp, boolean positive, boolean starred) {
-		OptionsExtension options = pb.head.control.extension;
-		control(scp.length > 1);
-		Set<Class<?>> classes = pb.head.availableClasses.get(ConstraintExtension.class);
-		String className = (positive ? options.positive : options.negative).toString();
-		className = className.equals("V") || className.equals("VA") ? "Extension" + className : className;
-
-		boolean avoidCT = Variable.nInitValuesFor(scp) > options.domainCompactTableLimit;
-		if (scp.length > 2 && avoidCT)
-			return new STR2(pb, scp);
-
-		if (starred) {
-			control(positive);
-			ConstraintExtension c = (ConstraintExtension) Reflector.buildObject(className, classes, pb, scp);
-			control(c instanceof TagStarredCompatible, c.getClass() + " is not compatible with starred tables");
-			// currently, only STR2, STR2S, CT, CT2 and MDDSHORT
-			return c;
-		}
-		// System.out.println("hhhhh " + scp[0].dom.initSize() + " " + scp[1].dom.initSize());
-		if (scp.length == 2 && options.generic2 && scp[0].dom.initSize() * scp[1].dom.initSize() < 1_000_000) // hard coding
-			return new ExtensionV(pb, scp); // return new STR2(pb, scp);
-		if (scp.length == 2 && avoidCT)
-			return new STR2(pb, scp);
-		return (ConstraintExtension) Reflector.buildObject(className, classes, pb, scp);
-	}
-
-	private static int[][] reverseTuples(Variable[] scp, int[][] tuples) { // do not work with stars
-		control(Stream.of(scp).allMatch(x -> x.dom.nRemoved() == 0));
-		assert Kit.isLexIncreasing(tuples);
-		int cnt = 0;
-		TupleIterator tupleIterator = new TupleIterator(Stream.of(scp).map(x -> x.dom).toArray(Domain[]::new));
-		int[] idxs = tupleIterator.firstValidTuple(), vals = new int[idxs.length];
-		List<int[]> list = new ArrayList<>();
-		do {
-			for (int i = vals.length - 1; i >= 0; i--)
-				vals[i] = scp[i].dom.toVal(idxs[i]);
-			if (cnt < tuples.length && Arrays.equals(vals, tuples[cnt]))
-				cnt++;
-			else
-				list.add(vals.clone());
-		} while (tupleIterator.nextValidTuple() != -1);
-		return list.stream().toArray(int[][]::new);
-	}
-
-	public static boolean isStarred(Object tuples) {
-		if (tuples instanceof int[][]) {
-			for (int[] t : (int[][]) tuples)
-				for (int v : t)
-					if (v == STAR)
-						return true;
-		} else {
-			for (String[] t : (String[][]) tuples)
-				for (String s : t)
-					if (s.equals(STAR_SYMBOL))
-						return true;
-		}
-		return false;
-	}
+	// private static ConstraintExtension build(Problem pb, Variable[] scp, boolean positive, boolean starred) {
+	// OptionsExtension options = pb.head.control.extension;
+	// control(scp.length > 1);
+	// Set<Class<?>> classes = pb.head.availableClasses.get(ConstraintExtension.class);
+	// String className = (positive ? options.positive : options.negative).toString();
+	// className = className.equals("V") || className.equals("VA") ? "Extension" + className : className;
+	//
+	// boolean avoidCT = Variable.nInitValuesFor(scp) > options.domainCompactTableLimit;
+	// if (scp.length > 2 && avoidCT)
+	// return new STR2(pb, scp);
+	//
+	// if (starred) {
+	// control(positive);
+	// ConstraintExtension c = (ConstraintExtension) Reflector.buildObject(className, classes, pb, scp);
+	// control(c instanceof TagStarredCompatible, c.getClass() + " is not compatible with starred tables");
+	// // currently, only STR2, STR2S, CT, CT2 and MDDSHORT
+	// return c;
+	// }
+	// // System.out.println("hhhhh " + scp[0].dom.initSize() + " " + scp[1].dom.initSize());
+	// if (scp.length == 2 && options.generic2 && scp[0].dom.initSize() * scp[1].dom.initSize() < 1_000_000) // hard coding
+	// return new ExtensionV(pb, scp); // return new STR2(pb, scp);
+	// if (scp.length == 2 && avoidCT)
+	// return new STR2(pb, scp);
+	// return (ConstraintExtension) Reflector.buildObject(className, classes, pb, scp);
+	// }
 
 	/**
 	 * Builds and returns an extension constraint for the specified problem, with the specified scope and the semantics defined from the specified tuples.
@@ -323,24 +288,65 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 * @return an extension constraint
 	 */
 	public static ConstraintExtension buildFrom(Problem pb, Variable[] scp, Object tuples, boolean positive, Boolean starred) {
-		assert Variable.areAllDistinct(scp);
+		control(scp.length > 1, () -> " scope " + Kit.join(scp));
+		control(getLength(tuples) == 0 || getLength(Array.get(tuples, 0)) == scp.length, () -> scp.length + " vs " + getLength(Array.get(tuples, 0)));
 
-		control(scp.length > 1 && Variable.haveSameType(scp), () -> " scope " + Kit.join(scp));
-		control(Array.getLength(tuples) == 0 || Array.getLength(Array.get(tuples, 0)) == scp.length,
-				() -> "Badly formed extensional constraint " + scp.length + " " + Array.getLength(Array.get(tuples, 0)));
-		if (starred == null)
-			starred = isStarred(tuples);
-		else
-			assert starred == isStarred(tuples) : starred;
-		int[][] table = scp[0] instanceof VariableSymbolic ? pb.symbolic.replaceSymbols((String[][]) tuples) : (int[][]) tuples;
-		if (scp[0] instanceof VariableInteger && !starred && pb.head.control.extension.reverse(scp.length, positive)) {
-			table = reverseTuples(scp, table);
+		assert Variable.areAllDistinct(scp) && Variable.haveSameType(scp);
+		assert starred == DONT_KNOW_IF_STARRED || starred == isStarred(tuples);
+
+		starred = starred == DONT_KNOW_IF_STARRED ? isStarred(tuples) : starred;
+		control(!starred || positive);
+
+		OptionsExtension options = pb.head.control.extension;
+		boolean symbolic = scp[0] instanceof VariableSymbolic;
+
+		int[][] table = symbolic ? pb.symbolic.replaceSymbols((String[][]) tuples) : (int[][]) tuples;
+		if (!symbolic && !starred && options.reverse(scp.length, positive)) {
+			table = Table.reverseTuples(scp, table);
 			positive = !positive;
 		}
-		boolean build0 = positive && (table.length <= pb.head.control.extension.smallTableExt); // || scp.length > pb.head.control.extension.largeScopeExt);
-		ConstraintExtension c = build0 ? STR0.buildFrom(pb, scp, table, positive, starred) : build(pb, scp, positive, starred);
-		c.storeTuples(table, positive);
-		return c;
+
+		if (positive && table.length <= options.smallTableExt) // || scp.length > options.largeScopeExt);
+			return STR0.buildFrom(pb, scp, table, positive, starred).storeTuplesInExtensionStructure(table, positive, starred);
+
+		boolean avoidCT = Variable.nInitValuesFor(scp) > options.avoidingCTLimit;
+		if (scp.length > 3 && avoidCT) 
+			return new STR2(pb, scp).storeTuplesInExtensionStructure(table, positive, starred);
+
+		if (!starred && table.length > options.avoidingSTRLimit) { // currently, only STR2, STR2S, CT, CT2 and CMDDS are compatible with stars
+			if (scp.length == 2) {
+				long nb = scp[0].dom.initSize() * scp[1].dom.initSize();
+				// System.out.println(" ggggg " + nb + " " + table.length + " " + (100*table.length) + " " + (options.avoidingSTRRatio * nb));
+				if (100 * table.length > options.avoidingSTRRatio * nb)
+					return new ExtensionV(pb, scp).storeTuplesInExtensionStructure(table, positive, starred); // VA ?
+			}
+			if (scp.length == 3) { // TODO to be tested for arity 3, is it worthwhile to use V (or VA) ?
+				long nb = scp[0].dom.initSize() * scp[1].dom.initSize() * scp[2].dom.initSize();
+				if (100 * table.length > options.avoidingSTRRatio * nb)
+					return new ExtensionV(pb, scp).storeTuplesInExtensionStructure(table, positive, starred);
+			}
+		}
+		if (avoidCT)
+			return new STR2(pb, scp).storeTuplesInExtensionStructure(table, positive, starred);
+
+		// if (scp.length == 2 && !starred) { // currently, only STR2, STR2S, CT, CT2 and CMDDS are compatible with stars
+		//// long nb = scp[0].dom.initSize() * scp[1].dom.initSize();
+		//// if ()
+		//
+		// if (scp.length == 2 && scp[0].dom.initSize() * scp[1].dom.initSize() < 1_000_000) // hard coding
+		// return new ExtensionV(pb, scp).storeTuplesInExtensionStructure(table, positive, starred); // return new STR2(pb, scp);
+		// if (scp.length == 2 && avoidCT)
+		// return new STR2(pb, scp).storeTuplesInExtensionStructure(table, positive, starred);
+		// }
+
+		Set<Class<?>> classes = pb.head.availableClasses.get(ConstraintExtension.class);
+		String className = (positive ? options.positive : options.negative).toString();
+		className = className.equals("V") || className.equals("VA") ? "Extension" + className : className;
+
+		return ((ConstraintExtension) Reflector.buildObject(className, classes, pb, scp)).storeTuplesInExtensionStructure(table, positive, starred);
+
+		// ConstraintExtension c = build(pb, scp, positive, starred);
+		// return c.storeTuplesInExtensionStructure(table, positive, starred);
 	}
 
 	public static ConstraintExtension buildFrom(Problem pb, Variable[] scp, List<int[]> tuples, boolean positive, Boolean starred) {
@@ -448,16 +454,18 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 * @param positive
 	 *            indicates if the tuples are supports or conflicts
 	 */
-	public final void storeTuples(int[][] tuples, boolean positive) {
-		String tableKey = signature() + " " + tuples + " " + positive;
-		// TODO be careful, we assume that the address of tuples can be used. Is that correct?
-		String key = defineKey(problem.features.collecting.tableKeys.computeIfAbsent(tableKey, k -> "r" + problem.features.collecting.tableKeys.size()));
+	public final ConstraintExtension storeTuplesInExtensionStructure(int[][] tuples, boolean positive, boolean starred) {
 		control((positive && this instanceof TagPositive) || (!positive && this instanceof TagNegative)
 				|| (!(this instanceof TagPositive) && !(this instanceof TagNegative)), positive + " " + this.getClass().getName());
+		control(!starred || this instanceof TagStarredCompatible, this.getClass() + " is not compatible with starred tables");
+
+		// TODO be careful, we assume that the address of tuples can be used. Is that correct?
+		Map<String, ExtensionStructure> map = problem.head.structureSharing.mapForExtension;
+		String key = defineKey(problem.features.collecting.tableKeys.computeIfAbsent(signature() + " " + tuples + " " + positive,
+				k -> "r" + problem.features.collecting.tableKeys.size()));
 
 		// if (supporter != null) supporter).reset();
 
-		Map<String, ExtensionStructure> map = problem.head.structureSharing.mapForExtension;
 		extStructure = map.get(key);
 		if (extStructure == null) {
 			extStructure = buildExtensionStructure(tuples, positive);
@@ -466,6 +474,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			extStructure.register(this);
 			assert indexesMatchValues == extStructure.firstRegisteredCtr().indexesMatchValues;
 		}
+		return this;
 	}
 
 	boolean controlTuples(int[][] tuples) {

@@ -11,6 +11,8 @@
 package problem;
 
 import static constraints.Constraint.howManyVariablesWithin;
+import static constraints.extension.structures.Table.DONT_KNOW_IF_STARRED;
+import static constraints.extension.structures.Table.STARRED;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingLong;
 import static org.xcsp.common.Constants.PLUS_INFINITY_INT;
@@ -638,7 +640,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 						if (support)
 							supports.add(tv.clone());
 					});
-					post(ConstraintExtension.buildFrom(this, scp, supports.stream().toArray(int[][]::new), true, false));
+					post(ConstraintExtension.buildFrom(this, scp, supports, true, false));
 				}
 			}
 			for (int i = 0; i < flags.length; i++) // third, we post remaining nogoods
@@ -1627,17 +1629,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					}
 				}
 				if (scp.length == tree.sons.length && Stream.of(sons)
-						.allMatch(son -> son.type == TypeExpr.VAR || x_relop_k.matches(son) || k_relop_x.matches(son) || x_setop_vals.matches(son))) // TODO
-																																						// merging
-																																						// subtrees
-																																						// of
-																																						// same
-																																						// variables
-																																						// (with
-																																						// a
-																																						// unary
-																																						// table
-																																						// ?)
+						.allMatch(son -> son.type == TypeExpr.VAR || x_relop_k.matches(son) || k_relop_x.matches(son) || x_setop_vals.matches(son)))
+					// TODO merging subtrees of same variables (with a unary table ?)
 					return post(new LogicTree(this, sons));
 			}
 
@@ -1678,7 +1671,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				Variable cnd = grandsons[0].type == VAR ? (Variable) grandsons[0].var(0) : replaceByVariable(grandsons[0]);
 				Variable y = grandsons[1].type == VAR ? (Variable) grandsons[1].var(0) : replaceByVariable(grandsons[1]);
 				Variable z = grandsons[2].type == VAR ? (Variable) grandsons[2].var(0) : replaceByVariable(grandsons[2]);
-				return extension(vars(x, cnd, y, z), Table.starredIfThen(x, cnd, y, z), true, true);
+				return extension(vars(x, cnd, y, z), Table.starredIfThen(x, cnd, y, z), true, STARRED);
 			}
 			if (sons.length == 2 && options.recognizeEqAnd && (sons[0].type == AND || sons[1].type == AND)) {
 				XNode<?> son = sons[0].type == AND ? sons[1] : sons[0];
@@ -1967,7 +1960,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Constraint extension
 	// ************************************************************************
 
-	private static final Boolean DONT_KNOW = null;
+
 
 	/**
 	 * Posts a unary constraint
@@ -1996,7 +1989,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return post(positive ? new CtrFalse(this, scp, "Extension with 0 support")
 					: head.control.constraints.postCtrTrues ? new CtrTrue(this, scp, "Extension with 0 conflict") : null);
 		if (list.length == 1) {
-			control(starred == null);
+			control(starred == DONT_KNOW_IF_STARRED);
 			int[][] m = scp[0] instanceof VariableSymbolic ? symbolic.replaceSymbols((String[][]) tuples) : (int[][]) tuples;
 			int[] values = Stream.of(m).mapToInt(t -> t[0]).toArray();
 			return extension(scp[0], values, positive);
@@ -2049,8 +2042,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			}
 		}
 		if (list.length > 2 && head.control.extension.toMDD && positive) {
-			if (starred == null)
-				starred = ConstraintExtension.isStarred(tuples);
+			if (starred == DONT_KNOW_IF_STARRED)
+				starred = Table.isStarred(tuples);
 			if (!starred)
 				return post(new CMDDO(this, translate(list), (int[][]) tuples));
 			else
@@ -2061,12 +2054,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrAlone extension(Var[] list, int[][] tuples, boolean positive) {
-		return extension(list, tuples, positive, DONT_KNOW);
+		return extension(list, tuples, positive, DONT_KNOW_IF_STARRED);
 	}
 
 	@Override
 	public final CtrAlone extension(VarSymbolic[] list, String[][] tuples, boolean positive) {
-		return extension(list, tuples, positive, DONT_KNOW);
+		return extension(list, tuples, positive, DONT_KNOW_IF_STARRED);
 	}
 
 	@Override
@@ -2275,7 +2268,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return forall(range(m.length).range(m.length), (i, j) -> {
 			if (i < j) {
 				int[][] table = Table.starredDistinctVectors(m[i], m[j], except);
-				extension(vars(m[i], m[j]), table, true);
+				extension(vars(m[i], m[j]), table, true, STARRED);
 			}
 		});
 	}
@@ -3110,7 +3103,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Variable x = (Variable) ((ConditionVar) condition).x;
 			if (op == EQ)
-				return extension(vars(list, x), Table.starredMember(translate(list), x), true);
+				return extension(vars(list, x), Table.starredMember(translate(list), x), true, STARRED);
 			if (op == NE)
 				return forall(range(list.length), i -> different(list[i], x));
 		}
@@ -3128,7 +3121,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return post(new ElementCst(this, list, index, value));
 		case TABLE_STARRED:
 		case TABLE_HYBRID:
-			return extension(vars(index, list), Table.starredElement(list, index, value), true);
+			return extension(vars(index, list), Table.starredElement(list, index, value), true, STARRED);
 		default:
 			throw new AssertionError("Invalid mode");
 		}
@@ -3140,13 +3133,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Variable value = Utilities.indexOf(var_value, var_list) != -1 ? replaceByOtherVariable(var_value) : (Variable) var_value;
 
 		if (index == value)
-			return extension(vars(list, value), Table.starredElement(list, index), true);
+			return extension(vars(list, value), Table.starredElement(list, index), true, STARRED);
 
 		switch (head.control.global.element) {
 		case DEFAULT:
 			return post(new ElementVar(this, list, index, value));
 		case TABLE_STARRED:
-			return extension(vars(index, list, value), Table.starredElement(list, index, value), true);
+			return extension(vars(index, list, value), Table.starredElement(list, index, value), true, STARRED);
 		case TABLE_HYBRID:
 			return post(CHybrid.element(this, list, index, value));
 		default:
@@ -3471,7 +3464,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
 					break;
 				case TABLE_STARRED: // seems to be rather efficient
-					extension(vars(xi, xj, yi, yj), Table.starredNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true);
+					extension(vars(xi, xj, yi, yj), Table.starredNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, STARRED);
 					break;
 				case TABLE_HYBRID:
 					post(options.noOverlapAux ? CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj, auxVar(0, 1, 2, 3))

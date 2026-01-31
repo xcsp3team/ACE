@@ -119,7 +119,7 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive, Obs
 
 	public CMDD(Problem pb, Variable[] scp, int[][] tuples) {
 		this(pb, scp);
-		storeTuples(tuples, true);
+		//storeTuplesInExtensionStructure(tuples, true);
 	}
 
 	/**
@@ -256,6 +256,7 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive, Obs
 
 		public CMDDO(Problem pb, Variable[] scp, int[][] tuples) {
 			super(pb, scp, tuples);
+			storeTuplesInExtensionStructure(tuples, true, false);
 		}
 
 		public CMDDO(Problem pb, Variable[] scp, Node root) {
@@ -323,6 +324,7 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive, Obs
 
 		public CMDDS(Problem pb, Variable[] scp, int[][] tuples) {
 			super(pb, scp, tuples);
+			storeTuplesInExtensionStructure(tuples, true, true);
 		}
 
 		@Override

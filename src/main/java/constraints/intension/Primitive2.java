@@ -82,13 +82,13 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 		case NEG: // x = -y
 			return new Neg2EQ(pb, x, y); // TODO why not using x + y = 0 instead (one less propagator)?
 		case SQR: // x = y*y
-			List<int[]> list = new ArrayList<>();
+			List<int[]> table = new ArrayList<>();
 			for (int a = y.dom.first(); a != -1; a = y.dom.next(a)) {
 				int v = y.dom.toVal(a), vv = Utilities.safeInt((long) v * v);
 				if (vv <= x.dom.greatestInitialValue() && x.dom.containsValue(vv))
-					list.add(new int[] { vv, v });
+					table.add(new int[] { vv, v });
 			}
-			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), list.stream().toArray(int[][]::new), true, Boolean.FALSE);
+			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), table, true, Boolean.FALSE);
 		case NOT: // x = not(y)
 			control(y.dom.is01()); // && y.dom.is01());
 			if (!x.dom.is01())
@@ -96,7 +96,7 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), new int[][] { { 0, 1 }, { 1, 0 } }, true, Boolean.FALSE);
 
 		default:
-			throw new AssertionError("not implemented");
+			throw new AssertionError("not possible");
 		}
 	}
 
@@ -115,7 +115,7 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 		case DIST:
 			return Dist2.buildFrom(pb, x, y, op, k);
 		default: // POW
-			List<int[]> list = new ArrayList<>();
+			List<int[]> table = new ArrayList<>();
 			for (int a = x.dom.first(); a != -1; a = x.dom.next(a)) {
 				int v = x.dom.toVal(a);
 				for (int b = y.dom.first(); b != -1; b = y.dom.next(b)) {
@@ -123,10 +123,10 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 					double p = Math.pow(v, w);
 					int pi = (int) p;
 					if (pi == p && op.isValidFor(pi, k))
-						list.add(new int[] { v, w });
+						table.add(new int[] { v, w });
 				}
 			}
-			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), list.stream().toArray(int[][]::new), true, Boolean.FALSE);
+			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), table, true, Boolean.FALSE);
 		}
 	}
 
@@ -145,13 +145,13 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 		case DIST:
 			return Dist2b.buildFrom(pb, x, op, y, k);
 		default: // case POW:
-			List<int[]> list = new ArrayList<>();
+			List<int[]> table = new ArrayList<>();
 			for (int a = y.dom.first(); a != -1; a = y.dom.next(a)) {
 				int v = y.dom.toVal(a), vv = Utilities.safeInt((long) Math.pow(v, k));
 				if (x.dom.smallestInitialValue() <= vv && vv <= x.dom.greatestInitialValue() && x.dom.containsValue(vv))
-					list.add(new int[] { vv, v });
+					table.add(new int[] { vv, v });
 			}
-			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), list.stream().toArray(int[][]::new), true, Boolean.FALSE);
+			return ConstraintExtension.buildFrom(pb, pb.vars(x, y), table, true, Boolean.FALSE);
 		}
 	}
 

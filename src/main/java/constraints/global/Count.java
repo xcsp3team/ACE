@@ -317,16 +317,42 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 					int nPossibleOccurrences = nGuaranteedOccurrences + storeSize;
 					if (nPossibleOccurrences < k) // inconsistency detected
 						return x.dom.fail();
-					if (nPossibleOccurrences == k) { // assign all non singleton domains containing the value
-						for (int i = 0; i < storeSize; i++)
-							store[i].dom.reduceToValue(value); // no inconsistency possible
+					
+					if (nPossibleOccurrences == k) {
+						int toassign = k - nGuaranteedOccurrences;
+						for (int i = futvars.limit; i >= 0 && toassign > 0; i--) { // assign all non singleton domains containing the value
+							Domain dom = scp[futvars.dense[i]].dom;
+							if (dom.size() > 1 && dom.containsValue(value)) {
+								dom.reduceToValue(value); // no inconsistency possible
+								toassign--;
+							}
+						}
 						return entail();
 					}
-					if (nGuaranteedOccurrences == k) { // remove value from all non singleton domains of the store
-						for (int i = 0; i < storeSize; i++)
-							store[i].dom.removeValue(value); // no inconsistency possible
+					if (nGuaranteedOccurrences == k) {
+						int toremove = nPossibleOccurrences - k;
+						for (int i = futvars.limit; i >= 0 && toremove > 0; i--) { // remove value from all non singleton domains
+							Domain dom = scp[futvars.dense[i]].dom;
+							if (dom.size() > 1 && dom.containsValue(value)) {
+								dom.removeValue(value); // no inconsistency possible
+								toremove--;
+							}
+						}
 						return entail();
 					}
+					
+					// below, slightly more efficient but change the course of the heuristic (so difficult to compare)
+					
+//					if (nPossibleOccurrences == k) { // assign all non singleton domains containing the value
+//						for (int i = 0; i < storeSize; i++)
+//							store[i].dom.reduceToValue(value); // no inconsistency possible
+//						return entail();
+//					}
+//					if (nGuaranteedOccurrences == k) { // remove value from all non singleton domains of the store
+//						for (int i = 0; i < storeSize; i++)
+//							store[i].dom.removeValue(value); // no inconsistency possible
+//						return entail();
+//					}
 					return true;
 				} else {
 					nGuaranteedOccurrences = 0;
