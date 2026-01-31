@@ -477,7 +477,8 @@ public final class Control {
 		public final String ignoreGroups = addS("ignoreGroups", "ig", "", "Index(es) of the group(s) of constraints that must be discarded");
 		public final int positionsLb = addI("positionsLb", "poslb", 3, "Minimal arity to build the array positions");
 		public final int positionsUb = addI("positionsUb", "posub", 10000, "Maximal number of variables to build the array positions");
-		public final int nogoodsMergingLimit = addI("nogoodsMergingLimit", "nml", 3, "Limit for merging (in a table) nogoods of same scope");
+		public final int collectedNogoodsLimitExtern = addI("collectedNogoodsLimitExtern", "cnle", 5_000, "Limit number (max) to run a process for combining collected nogoods");
+		public final int collectedNogoodsLimitIntern = addI("collectedNogoodsLimitIntern", "cnli", 3, "Limit number (min) to merge (in a table) nogoods of same scope");
 		public final boolean postCtrTrues = addB("postCtrTrues", "pct", false, "Must we post CtrTrue encountered while loading/reformualting constraints?");
 
 		public final boolean discardHybridEntailment = addB("discardHybridEntailment", "dec", true,
@@ -515,7 +516,7 @@ public final class Control {
 				"Must we use a decremental mode for optimized STR algoroithms such as STR2");
 		public final boolean decrementalCT = addB("decrementalCT", "dec_ct", true, "Must we use a decremental mode for CT");
 		public final boolean decrementalCMDD = addB("decrementalCMDD", "dec_cmdd", false, "Must we use a decremental mode for CMDD");
-		public final int smallTableExt = addI("smallTableExt", "stext", 128, "table size threshold for considering a special propagator");
+		public final int smallTableExt = addI("smallTableExt", "stext", 100, "table size threshold for considering a special propagator");
 		public final int largeScopeExt = addI("largeScopeExt", "lsext", 50, "scope size threshold for considering a special propagator");
 		public final boolean toMDD = addB("toMDD", "tomdd", false, "Must we attempt to convert extension constraints into MDDs (if possible)");
 		public final int domainCompactTableLimit = addI("domainCompactTableLimit", "dctl", 8_000,
@@ -538,7 +539,7 @@ public final class Control {
 		// The following options determine whether special forms of intension constraints must be recognized/intercepted
 		public final boolean recognizePrimitive2 = addB("recognizePrimitive2", "rp2", true, "Must we attempt to recognize binary primitives?");
 		public final boolean recognizePrimitive3 = addB("recognizePrimitive3", "rp3", true, "Must we attempt to recognize ternary primitives?");
-		public final boolean recognizePrimitive4 = addB("recognizePrimitive4", "rp4", false, "Must we attempt to recognize quaternary primitives?");
+		public final boolean recognizePrimitive4 = addB("recognizePrimitive4", "rp4", true, "Must we attempt to recognize quaternary primitives?");
 		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "Must we attempt to recognize logical reification forms?");
 		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "Must we attempt to recognize minimum/maximum constraints?");
 		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "Must we attempt to recognize sum constraints?");
@@ -683,7 +684,7 @@ public final class Control {
 		public final String clazz = addS("clazz", "revh", Dom.class, HeuristicRevisions.class, "Class of the revision ordering heuristic");
 		public final boolean anti = addB("anti", "anti_revh", false, "Must we use the reverse of the natural heuristic order?");
 		public final int revisionQueueLimit = addI("revisionQueueLimit", "rsl", 100, "Limit for searching the best variable in the revision queue");
-		public final boolean testr = addB("testr", "testr", false, "");
+		public final boolean lifo = addB("lifo", "lifo", false, "Must we ieterate over the variables in the queue in LIFO mode?");
 	}
 
 	public class OptionsVarh extends OptionGroup {

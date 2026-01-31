@@ -23,11 +23,13 @@ import constraints.ConstraintSpecific;
 import constraints.global.Sum.SumWeighted;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
+import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagNotCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
 import interfaces.Tags.TagPrimitive;
 import problem.Problem;
 import propagation.AC;
+import propagation.AC.TypeFilteringResult;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -163,7 +165,7 @@ public abstract class Primitive3 extends ConstraintSpecific implements TagAC, Ta
 	// ***** Classes for x + y <op> z
 	// ************************************************************************
 
-	public static abstract class Add3 extends Primitive3 implements TagCallCompleteFiltering {  // TODO CallComplete or not?
+	public static abstract class Add3 extends Primitive3 implements TagCallCompleteFiltering { // TODO CallComplete or not?
 
 		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			switch (op) {
@@ -1134,6 +1136,93 @@ public abstract class Primitive3 extends ConstraintSpecific implements TagAC, Ta
 			else // only 0 in dx
 				return dz.removeIfPresent(0) && entail();
 			return true;
+		}
+	}
+
+	// ************************************************************************
+	// ***** Class for |x -y| != [x -z]
+	// ************************************************************************
+
+	public static final class DistDistNE3 extends ConstraintSpecific implements TagNotAC, TagCallCompleteFiltering, TagPrimitive {
+
+		private static final int NO = Integer.MAX_VALUE;
+
+		private Domain domx, domy, domz;
+
+		@Override
+		public boolean isSatisfiedBy(int[] t) {
+			return Math.abs(t[0] - t[1]) != Math.abs(t[0] - t[2]); // |x - y| != |x - z|
+		}
+
+		public DistDistNE3(Problem pb, Variable x, Variable y, Variable z) {
+			super(pb, new Variable[] { x, y, z });
+			this.domx = x.dom;
+			this.domy = y.dom;
+			this.domz = z.dom;
+		}
+
+		private int onlyOneRemaining(Domain d1, Domain d2) {
+			if (d1.size() == 1) {
+				if (d2.size() == 1)
+					return Math.abs(d1.singleValue() - d2.singleValue());
+				if (d2.size() == 2) {
+					int dst = Math.abs(d1.singleValue() - d2.firstValue());
+					if (dst == Math.abs(d1.singleValue() - d2.lastValue()))
+						return dst;
+				}
+				return NO;
+			}
+			if (d2.size() == 1) {
+				if (d1.size() == 2) {
+					int dst = Math.abs(d2.singleValue() - d1.firstValue());
+					if (dst == Math.abs(d2.singleValue() - d1.lastValue()))
+						return dst;
+				}
+				return NO;
+			}
+			return NO;
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			if (domy.size() == 1) {
+				if (domz.removeValueIfPresent(domy.singleValue()) == false)
+					return false;
+			}
+			if (domz.size() == 1) {
+				if (domy.removeValueIfPresent(domz.singleValue()) == false)
+					return false;
+			}
+			if (domy.size() == 1 && domz.size() == 1) {
+				int vy = domy.singleValue(), vz = domz.singleValue();
+				control(vy != vz); // because of code above
+				int maxv = vy > vz ? vy : vz, minv = vy > vz ? vz : vy;
+				int gap = Math.abs(maxv - minv);
+				if (gap % 2 != 0)
+					return entail();
+				int v = maxv - gap / 2;
+				return domx.removeValueIfPresent(v) && entail();
+			}
+			// if (domx.size() ==1) {
+			// }
+			int oneLeft = onlyOneRemaining(domx, domy), oneRight = onlyOneRemaining(domx, domz);
+			if (oneLeft == NO && oneRight == NO)
+				return true;
+			if (oneLeft != NO && oneRight != NO)
+				return oneLeft != oneRight ? entail() : dummy.dom.fail();
+			if (oneLeft != NO) {
+				TypeFilteringResult res = AC.enforceDistNE(domx, domz, oneLeft);
+				if (res == TypeFilteringResult.ENTAIL)
+					return entail();
+				assert res == TypeFilteringResult.TRUE || res == TypeFilteringResult.FALSE; // FAIL not possible
+				return res == TypeFilteringResult.TRUE;
+			}
+			assert oneRight != NO;
+			TypeFilteringResult res = AC.enforceDistNE(domx, domy, oneRight);
+			if (res == TypeFilteringResult.ENTAIL)
+				return entail();
+			assert res == TypeFilteringResult.TRUE || res == TypeFilteringResult.FALSE; // FAIL not possible
+			return res == TypeFilteringResult.TRUE;
 		}
 	}
 

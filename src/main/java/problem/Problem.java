@@ -242,6 +242,7 @@ import constraints.intension.Primitive2.PrimitiveBinaryNoCst.Disjonctive;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Sub2;
 import constraints.intension.Primitive3;
 import constraints.intension.Primitive3.Add3;
+import constraints.intension.Primitive3.DistDistNE3;
 import constraints.intension.Primitive3.IFT3;
 import constraints.intension.Primitive4.DblDiff;
 import constraints.intension.Primitive4.DistDistNE;
@@ -570,8 +571,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private void manageCollectedNogoods() {
 		if (features.collecting.nogoods.size() == 0)
 			return;
-		if (features.collecting.nogoods.size() > 5_000) { // TODO hard constant : to be put as an option (which default value ?) see e.g.
-															// RosterShifts-large_m23.xml
+		if (features.collecting.nogoods.size() > head.control.constraints.collectedNogoodsLimitExtern) { // see e.g. RosterShifts-large_m23
 			for (CollectedNogood nogood : features.collecting.nogoods)
 				postNogood(nogood);
 		} else {
@@ -587,7 +587,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					flags[i] = true;
 					continue;
 				}
-
 				list.clear();
 				list.add(i);
 				for (int j = i + 1; j < flags.length; j++) {
@@ -596,10 +595,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					if (!flags[j] && nogoods[j].sameScopeAs(nogoods[i]))
 						list.add(j);
 				}
-				if (list.size() > head.control.constraints.nogoodsMergingLimit) {
+				if (list.size() > head.control.constraints.collectedNogoodsLimitIntern) {
 					list.stream().forEach(k -> flags[k] = true);
 					nSharedNogoods += list.size();
-
 					post(ConstraintExtension.buildFrom(this, nogoods[i].vars, list.stream().map(k -> nogoods[k].vals).toArray(int[][]::new), false, false));
 				}
 			}
@@ -1510,6 +1508,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				c = Primitive3.buildFrom(this, scp[1], tree.ariop(0), scp[2], tree.relop(0).arithmeticInversion(), scp[0]);
 			else if (logic_y_relop_z__eq_x.matches(tree))
 				c = Reif3.buildFrom(this, scp[2], scp[0], tree.relop(1), scp[1]);
+			else if (dist_dist__ne.matches(tree)) {
+				Variable[] vars = (Variable[]) tree.arrayOfVars();
+				control(vars.length == 4 && vars[0] != vars[1] && vars[2] != vars[3]);
+				Variable x = vars[0] == vars[2] || vars[0] == vars[3] ? vars[0] : vars[1];
+				c = new DistDistNE3(this, x, x == vars[0] ? vars[1] : vars[0], x == vars[2] ? vars[3] : vars[2]);
+			}
 			if (c != null)
 				return post(c);
 		}
@@ -1623,7 +1627,17 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					}
 				}
 				if (scp.length == tree.sons.length && Stream.of(sons)
-						.allMatch(son -> son.type == TypeExpr.VAR || x_relop_k.matches(son) || k_relop_x.matches(son) || x_setop_vals.matches(son) )) // TODO merging subtrees of same variables (with a unary table ?)
+						.allMatch(son -> son.type == TypeExpr.VAR || x_relop_k.matches(son) || k_relop_x.matches(son) || x_setop_vals.matches(son))) // TODO
+																																						// merging
+																																						// subtrees
+																																						// of
+																																						// same
+																																						// variables
+																																						// (with
+																																						// a
+																																						// unary
+																																						// table
+																																						// ?)
 					return post(new LogicTree(this, sons));
 			}
 

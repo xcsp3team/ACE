@@ -1008,9 +1008,9 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		return false;
 	}
 
-	public abstract boolean launchFiltering(Variable x); // { // is redefined in ConstraintSpecific and ExtensionSpecific
+	public abstract boolean launchFiltering(Variable x); // is redefined in ConstraintSpecific and ExtensionSpecific
 	// return genericFiltering(x); // by default
-	// }
+	
 
 	/**
 	 * Performs a generic form of filtering

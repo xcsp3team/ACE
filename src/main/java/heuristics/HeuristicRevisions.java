@@ -184,7 +184,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 				
 				int pos = 0;
 
-				if (queue.propagation.solver.head.control.revh.testr)
+				if (queue.propagation.solver.head.control.revh.lifo)
 					// for (int i = 1; i <= queue.limit; i++) {
 					for (int i = queue.limit; i >= 1; i--) {
 						int otherSize = queue.var(i).dom.size();

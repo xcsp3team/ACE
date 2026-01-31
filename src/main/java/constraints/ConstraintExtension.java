@@ -139,7 +139,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		}
 
 		@Override
-		public boolean launchFiltering(Variable x) { 
+		public boolean launchFiltering(Variable x) {
 			Reviser reviser = ((Forward) problem.solver.propagation).reviser;
 			int nNonSingletons = 0;
 			if (x.assigned() || scp.length == 1) {
@@ -265,7 +265,8 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			// currently, only STR2, STR2S, CT, CT2 and MDDSHORT
 			return c;
 		}
-		if (scp.length == 2 && options.generic2 && scp[0].dom.initSize() * scp[1].dom.initSize() < 200_000) // hard coding
+		// System.out.println("hhhhh " + scp[0].dom.initSize() + " " + scp[1].dom.initSize());
+		if (scp.length == 2 && options.generic2 && scp[0].dom.initSize() * scp[1].dom.initSize() < 1_000_000) // hard coding
 			return new ExtensionV(pb, scp); // return new STR2(pb, scp);
 		if (scp.length == 2 && avoidCT)
 			return new STR2(pb, scp);
@@ -323,6 +324,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 */
 	public static ConstraintExtension buildFrom(Problem pb, Variable[] scp, Object tuples, boolean positive, Boolean starred) {
 		assert Variable.areAllDistinct(scp);
+
 		control(scp.length > 1 && Variable.haveSameType(scp), () -> " scope " + Kit.join(scp));
 		control(Array.getLength(tuples) == 0 || Array.getLength(Array.get(tuples, 0)) == scp.length,
 				() -> "Badly formed extensional constraint " + scp.length + " " + Array.getLength(Array.get(tuples, 0)));
@@ -330,15 +332,19 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			starred = isStarred(tuples);
 		else
 			assert starred == isStarred(tuples) : starred;
-		int[][] m = scp[0] instanceof VariableSymbolic ? pb.symbolic.replaceSymbols((String[][]) tuples) : (int[][]) tuples;
+		int[][] table = scp[0] instanceof VariableSymbolic ? pb.symbolic.replaceSymbols((String[][]) tuples) : (int[][]) tuples;
 		if (scp[0] instanceof VariableInteger && !starred && pb.head.control.extension.reverse(scp.length, positive)) {
-			m = reverseTuples(scp, m);
+			table = reverseTuples(scp, table);
 			positive = !positive;
 		}
-		boolean build0 = positive && (m.length <= pb.head.control.extension.smallTableExt); // || scp.length > pb.head.control.extension.largeScopeExt);
-		ConstraintExtension c = build0 ? STR0.buildFrom(pb, scp, m, positive, starred) : build(pb, scp, positive, starred);
-		c.storeTuples(m, positive);
+		boolean build0 = positive && (table.length <= pb.head.control.extension.smallTableExt); // || scp.length > pb.head.control.extension.largeScopeExt);
+		ConstraintExtension c = build0 ? STR0.buildFrom(pb, scp, table, positive, starred) : build(pb, scp, positive, starred);
+		c.storeTuples(table, positive);
 		return c;
+	}
+
+	public static ConstraintExtension buildFrom(Problem pb, Variable[] scp, List<int[]> tuples, boolean positive, Boolean starred) {
+		return buildFrom(pb, scp, (Object) tuples.stream().toArray(int[][]::new), positive, starred);
 	}
 
 	/**********************************************************************************************
