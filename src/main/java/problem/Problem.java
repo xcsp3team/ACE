@@ -702,7 +702,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					System.out.println("Time for generating redundant AllDifferent constraints: " + stopwatch.wckTimeInSeconds());
 			}
 		}
-
 		if (options.redundantSumForCounts && countEqCandidates.size() > 0) {
 			List<Integer> vals = new ArrayList<>();
 			List<Variable> vars = new ArrayList<>();
@@ -897,13 +896,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			post(new SubsetAllDifferent(this, subsetAllDifferentExceptScopes.stream().toArray(Variable[][]::new), allDifferentExceptValue));
 		for (VariableInteger x : features.collecting.specialServants)
 			post(new WakeUp(this, x.specialMaster, x));
-
 		replaceObjectiveVariable();
 		manageCollectedNogoods();
 		// after possibly adding some additional constraints, we store variables and constraints into arrays
 		inferAdditionalConstraints();
 		storeToArrays();
-
 		// we may reduce the domains of some variables
 		reduceDomainsFromUserInstantiationAndRefutation();
 		reduceDomainsOfIsolatedVariables();

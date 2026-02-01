@@ -519,7 +519,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 * 
 	 * @return true if the constraint is irreflexive
 	 */
-	public final boolean isIrreflexive() {
+	public boolean isIrreflexive() {
 		control(scp.length == 2);
 		if (specialServants != null)
 			return false; // would be too long to compute
@@ -1010,7 +1010,6 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 
 	public abstract boolean launchFiltering(Variable x); // is redefined in ConstraintSpecific and ExtensionSpecific
 	// return genericFiltering(x); // by default
-	
 
 	/**
 	 * Performs a generic form of filtering

@@ -36,6 +36,9 @@ public abstract class ExtensionStructure implements ConstraintRegister {
 	 */
 	public int[][] originalTuples;
 
+	public int nOriginalTuples;
+	
+	
 	/**
 	 * The Boolean as given initially for stating if the original tuples are supports or conflicts
 	 */

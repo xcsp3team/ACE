@@ -300,7 +300,7 @@ public final class Features {
 			if (mustDiscard(x))
 				return -1;
 			if (variables.isEmpty()) // first call
-				Kit.log.config(" " + Kit.Color.YELLOW.coloring("...Loading") + " variables");
+				Kit.log.config("\n " + Kit.Color.YELLOW.coloring("...Loading") + " variables");
 			int num = variables.size();
 			printNumber(num);
 			variables.add(x);

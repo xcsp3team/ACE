@@ -96,7 +96,7 @@ public final class FutureVariables implements Iterable<Variable> {
 		if (nPriorityDiscarded > 0) {
 			control(solver.heuristic.nStrictlyPriorityVars == 0); // for the moment
 			solver.heuristic.priorityVars = Stream.of(solver.heuristic.priorityVars).filter(x -> !x.discarded).toArray(Variable[]::new);
-			Kit.log.config(Kit.Color.YELLOW.coloring(" ...Discarding " + nPriorityDiscarded + " priority variables (" + solver.heuristic.priorityVars.length + " remaining)"));
+			//Kit.log.config(Kit.Color.YELLOW.coloring(" ...Discarding " + nPriorityDiscarded + " priority variables (" + solver.heuristic.priorityVars.length + " remaining)"));
 		}
 	}
 

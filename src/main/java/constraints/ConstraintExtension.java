@@ -43,6 +43,7 @@ import propagation.Forward;
 import propagation.Reviser;
 import utility.Kit;
 import utility.Reflector;
+import variables.Domain;
 import variables.Variable;
 import variables.Variable.VariableSymbolic;
 
@@ -310,24 +311,22 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			return STR0.buildFrom(pb, scp, table, positive, starred).storeTuplesInExtensionStructure(table, positive, starred);
 
 		boolean avoidCT = Variable.nInitValuesFor(scp) > options.avoidingCTLimit;
-		if (scp.length > 3 && avoidCT) 
+		if (scp.length > 3 && avoidCT)
 			return new STR2(pb, scp).storeTuplesInExtensionStructure(table, positive, starred);
 
 		if (!starred && table.length > options.avoidingSTRLimit) { // currently, only STR2, STR2S, CT, CT2 and CMDDS are compatible with stars
 			if (scp.length == 2) {
-				long nb = scp[0].dom.initSize() * scp[1].dom.initSize();
+				double nb = scp[0].dom.initSize() * (double) scp[1].dom.initSize();
 				// System.out.println(" ggggg " + nb + " " + table.length + " " + (100*table.length) + " " + (options.avoidingSTRRatio * nb));
 				if (100 * table.length > options.avoidingSTRRatio * nb)
 					return new ExtensionV(pb, scp).storeTuplesInExtensionStructure(table, positive, starred); // VA ?
 			}
 			if (scp.length == 3) { // TODO to be tested for arity 3, is it worthwhile to use V (or VA) ?
-				long nb = scp[0].dom.initSize() * scp[1].dom.initSize() * scp[2].dom.initSize();
+				double nb = (scp[0].dom.initSize() * (double) scp[1].dom.initSize()) * scp[2].dom.initSize();
 				if (100 * table.length > options.avoidingSTRRatio * nb)
 					return new ExtensionV(pb, scp).storeTuplesInExtensionStructure(table, positive, starred);
 			}
 		}
-		if (avoidCT)
-			return new STR2(pb, scp).storeTuplesInExtensionStructure(table, positive, starred);
 
 		// if (scp.length == 2 && !starred) { // currently, only STR2, STR2S, CT, CT2 and CMDDS are compatible with stars
 		//// long nb = scp[0].dom.initSize() * scp[1].dom.initSize();
@@ -342,6 +341,9 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		Set<Class<?>> classes = pb.head.availableClasses.get(ConstraintExtension.class);
 		String className = (positive ? options.positive : options.negative).toString();
 		className = className.equals("V") || className.equals("VA") ? "Extension" + className : className;
+
+		if (className.equals("CT") && avoidCT)
+			return new STR2(pb, scp).storeTuplesInExtensionStructure(table, positive, starred);
 
 		return ((ConstraintExtension) Reflector.buildObject(className, classes, pb, scp)).storeTuplesInExtensionStructure(table, positive, starred);
 
@@ -372,6 +374,14 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	@Override
 	public final boolean checkIndexes(int[] t) {
 		return extStructure.checkIndexes(t);
+	}
+
+	@Override
+	public final boolean isIrreflexive() {
+		control(scp.length == 2);
+		if (extStructure.nOriginalTuples > 1_000 || scp[0].dom.size() > 500 || scp[1].dom.size() > 500)  // TODO hard coding
+			return false; // too long to compute
+		return super.isIrreflexive();
 	}
 
 	/**
@@ -408,6 +418,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		ExtensionStructure es = buildExtensionStructure(); // note that the constraint is automatically registered
 		control(es != null, "Maybe you have to override buildExtensionStructure()");
 		es.originalTuples = this instanceof ExtensionGeneric || problem.head.control.problem.symmetryBreaking != SymmetryBreaking.NO ? tuples : null;
+		es.nOriginalTuples = tuples.length;
 		es.originalPositive = positive;
 		es.storeTuples(tuples, positive);
 		return es;

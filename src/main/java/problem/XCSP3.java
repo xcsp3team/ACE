@@ -156,6 +156,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 			OptionsGeneral options = problem.head.control.general;
 			if (options.verbose > 1)
 				XParser.VERBOSE = true;
+			Kit.log.config(" " + Kit.Color.YELLOW.coloring("...Parsing") + " " + name());
 			loadInstance(name(), options.discardClasses.split(","));
 		} catch (Exception e) {
 			e.printStackTrace();
