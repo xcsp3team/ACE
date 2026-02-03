@@ -149,10 +149,12 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 						int v = vdom.toVal(a);
 						if (!sentinels[a].dom.containsValue(v)) {
 							Variable s = findSentinelFor(v);
-							if (s == null)
-								vdom.removeElementary(a);
-							else
+							if (s != null)
 								sentinels[a] = s;
+							else if (vdom.size() == 1)  // we need this 
+								return vdom.fail();
+							else 
+								vdom.removeElementary(a);
 						}
 					}
 					if (vdom.afterElementaryCalls(sizeBefore) == false)
@@ -250,8 +252,8 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 							Variable s = findSentinelFor(v);
 							if (s != null)
 								sentinels[a] = s;
-//							else if (vdom.size() == 1)
-//								return vdom.fail();
+							else if (vdom.size() == 1) // we need this
+								return vdom.fail();
 							else
 								vdom.removeElementary(a);
 						}

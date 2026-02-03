@@ -62,6 +62,48 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 	 */
 	public static class LogicTree extends Logic implements TagNotSymmetric { // for identifying symmetry, we should compare disjuncts
 
+		public static ArgLogic[] buildTreeArgs(Problem pb, XNode<IVar>[] trees) {
+			control(trees.length > 1 && Stream.of(trees).allMatch(tree -> tree.vars().length == 1));
+			List<ArgLogic> list = new ArrayList<>();
+			for (XNode<IVar> tree : trees) {
+				Domain dom = ((Variable) tree.var(0)).dom; // remember that the tree only involves a single variable
+				if (tree.type == TypeExpr.VAR) {
+					if (dom.size() == 1) {
+						if (dom.firstValue() == 0)
+							list.add(null); // to discard this position/subtree later
+						else if (dom.firstValue() == 1)
+							return new ArgLogic[0];
+						else
+							list.add(new ArgVar(dom));
+					} else
+						list.add(new ArgVar(dom));
+				} else if (x_relop_k.matches(tree)) {
+					TypeConditionOperatorRel op = tree.relop(0);
+					int k = tree.val(0);
+					control(op.oneOf(LE, GE, NE, EQ)); // because the tree is in canonical form
+					list.add(op == LE ? new ArgLE(dom, k) : op == GE ? new ArgGE(dom, k) : op == NE ? new ArgNE(dom, k) : new ArgEQ(dom, k));
+				} else if (k_relop_x.matches(tree)) {
+					TypeConditionOperatorRel op = tree.relop(0);
+					int k = tree.val(0);
+					control(op.oneOf(LE, GE, NE, EQ)); // because the tree is in canonical form
+					list.add(op == LE ? new ArgGE(dom, k) : op == GE ? new ArgLE(dom, k) : op == NE ? new ArgNE(dom, k) : new ArgEQ(dom, k));
+				} else {
+					control(x_setop_vals.matches(tree), " " + tree);
+					TypeConditionOperatorSet op = tree.setop(0);
+					int[] vals = Stream.of(tree.sons[1].sons).mapToInt(s -> safeInt((long) ((XNodeLeaf<?>) s).value)).toArray();
+					control(vals.length > 1 && IntStream.of(vals).allMatch(v -> dom.containsValue(v))
+							&& IntStream.range(0, vals.length - 1).allMatch(i -> vals[i] < vals[i + 1]));
+					if (op == IN) {
+						if (dom.size() == vals.length)
+							return new ArgLogic[0]; // TODO other cases ?
+					}
+					list.add(op == IN ? new ArgIn(dom, vals) : new ArgNotIn(dom, vals));
+				}
+			}
+			// System.out.println("aaaa" + Kit.join(trees) + " " + Kit.join(list.stream().map(ll -> ll.getClass().getSimpleName())));
+			return list.toArray(ArgLogic[]::new);
+		}
+
 		@Override
 		public final boolean isSatisfiedBy(int[] t) {
 			for (int i = 0; i < logicArgs.length; i++)
@@ -76,41 +118,14 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 
 		ArgLogic sentinel1, sentinel2;
 
-		private ArgLogic[] buildLogicArgs(XNode<IVar>[] trees) {
-			List<ArgLogic> list = new ArrayList<>();
-
-			for (XNode<IVar> tree : trees) {
-				Domain dom = ((Variable) tree.var(0)).dom; // remember that the tree only involves a single variable
-				if (tree.type == TypeExpr.VAR)
-					list.add(new ArgVar(dom));
-				else if (x_relop_k.matches(tree)) {
-					TypeConditionOperatorRel op = tree.relop(0);
-					int k = tree.val(0);
-					control(op.oneOf(LE, GE, NE, EQ)); // because the tree is in canonical form
-					list.add(op == LE ? new ArgLE(dom, k) : op == GE ? new ArgGE(dom, k) : op == NE ? new ArgNE(dom, k) : new ArgEQ(dom, k));
-				} else if (k_relop_x.matches(tree)) {
-					TypeConditionOperatorRel op = tree.relop(0);
-					int k = tree.val(0);
-					control(op.oneOf(LE, GE, NE, EQ)); // because the tree is in canonical form
-					list.add(op == LE ? new ArgGE(dom, k) : op == GE ? new ArgLE(dom, k) : op == NE ? new ArgNE(dom, k) : new ArgEQ(dom, k));
-				} else {
-					control(x_setop_vals.matches(tree), " " + tree);
-					TypeConditionOperatorSet op = tree.setop(0);
-					int[] vals = Stream.of(tree.sons[1].sons).mapToInt(s -> safeInt((long) ((XNodeLeaf<?>) s).value)).toArray();
-					list.add(op == IN ? new ArgIn(dom, vals) : new ArgNotIn(dom, vals));
-				}
-			}
-			// System.out.println("aaaa" + Kit.join(trees) + " " + Kit.join(list.stream().map(ll -> ll.getClass().getSimpleName())));
-			return list.toArray(ArgLogic[]::new);
-		}
-
-		public LogicTree(Problem pb, XNode<IVar>[] trees) {
+		public LogicTree(Problem pb, XNode<IVar>[] trees, ArgLogic[] logicArgs) {
 			super(pb, Stream.of(trees).map(tree -> tree.var(0)).toArray(Variable[]::new));
-			control(trees.length > 1 && Stream.of(trees).allMatch(tree -> tree.vars().length == 1));
-			assert scp.length == trees.length && IntStream.range(0, scp.length).allMatch(i -> scp[i] == trees[i].var(0)) : " " + Kit.join(trees);
+			control(scp.length > 1 && scp.length == trees.length && trees.length == logicArgs.length
+					&& Stream.of(trees).allMatch(tree -> tree.vars().length == 1));
+			assert IntStream.range(0, scp.length).allMatch(i -> scp[i] == trees[i].var(0)) : " " + Kit.join(trees);
 
 			this.trees = trees;
-			this.logicArgs = buildLogicArgs(trees);
+			this.logicArgs = logicArgs;
 			this.sentinel1 = logicArgs[0];
 			this.sentinel2 = logicArgs[logicArgs.length - 1];
 		}
@@ -147,7 +162,7 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 		 * Classes for unary conditions/arguments, i.e., 0/1 tree expressions involving only one variable
 		 *********************************************************************************************/
 
-		static interface ArgLogic {
+		public static interface ArgLogic {
 
 			boolean canBeSatisfiedBy(int v);
 
@@ -294,8 +309,9 @@ public abstract class Logic extends ConstraintGlobal implements TagAC, TagCallCo
 				ArgSet(Domain dom, int[] vals) {
 					this.dom = dom;
 					this.vals = vals;
-					control(vals.length > 1 && dom.size() > vals.length && IntStream.of(vals).allMatch(v -> dom.containsValue(v))
-							&& IntStream.range(0, vals.length - 1).allMatch(i -> vals[i] < vals[i + 1]));
+					// control(vals.length > 1 && IntStream.of(vals).allMatch(v -> dom.containsValue(v))
+					// && IntStream.range(0, vals.length - 1).allMatch(i -> vals[i] < vals[i + 1]));
+					// control(dom.size() > vals.length);
 				}
 
 				static class ArgIn extends ArgSet {

@@ -62,7 +62,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 	 */
 	public AllDifferent(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		control(scp.length > 2);
+		control((this instanceof Circuit && scp.length >1) || scp.length > 2);
 	}
 
 	/**********************************************************************************************

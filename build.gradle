@@ -11,7 +11,7 @@ sourceCompatibility = 1.11
 targetCompatibility = 1.11 
 
 archivesBaseName = "ACE"
-version = '2.5'
+version = '2.6'
  
 repositories {
  mavenCentral()

@@ -235,6 +235,7 @@ import constraints.intension.Disjonctive.Disjonctive2Var;
 import constraints.intension.Disjonctive.DisjonctiveReified;
 import constraints.intension.Disjonctive.DisjonctiveVar;
 import constraints.intension.Logic.LogicTree;
+import constraints.intension.Logic.LogicTree.ArgLogic;
 import constraints.intension.Nogood;
 import constraints.intension.Primitive2;
 import constraints.intension.Primitive2.Max2kEQ;
@@ -1617,7 +1618,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 							.mapToInt(son -> son.type == TypeExpr.VAR || x_relop_k.matches(son) || k_relop_x.matches(son) || x_setop_vals.matches(son) ? 0 : 1)
 							.toArray();
 					int nb = IntStream.of(t).sum();
-					// System.out.println("hhhhhh " + tree + " " + Kit.join(t) + " " + nb);
 					if (nb == 1) { // TODO hard coding
 						for (int i = 0; i < sons.length; i++)
 							if (t[i] == 1)
@@ -1626,9 +1626,15 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					}
 				}
 				if (scp.length == tree.sons.length && Stream.of(sons)
-						.allMatch(son -> son.type == TypeExpr.VAR || x_relop_k.matches(son) || k_relop_x.matches(son) || x_setop_vals.matches(son)))
+						.allMatch(son -> son.type == TypeExpr.VAR || x_relop_k.matches(son) || k_relop_x.matches(son) || x_setop_vals.matches(son))) {
 					// TODO merging subtrees of same variables (with a unary table ?)
-					return post(new LogicTree(this, sons));
+					ArgLogic[] logicArgs = LogicTree.buildTreeArgs(this, sons);
+					if (logicArgs.length == 0)
+						return head.control.constraints.postCtrTrues ? post(new CtrTrue(this, scp, "Nogood trivially satisfied")) : null;
+					int[] validTrees = IntStream.range(0, logicArgs.length).filter(i -> logicArgs[i] != null).toArray();
+					return post(new LogicTree(this, IntStream.of(validTrees).mapToObj(i -> sons[i]).toArray(XNode[]::new),
+							IntStream.of(validTrees).mapToObj(i -> logicArgs[i]).toArray(ArgLogic[]::new)));
+				}
 			}
 
 			if (arity >= options.arityForClauseUnaryTrees && arity == sons.length) {
@@ -1956,8 +1962,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ************************************************************************
 	// ***** Constraint extension
 	// ************************************************************************
-
-
 
 	/**
 	 * Posts a unary constraint
