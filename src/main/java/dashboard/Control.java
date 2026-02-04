@@ -65,6 +65,8 @@ import optimization.Optimizer;
 import optimization.Optimizer.OptimizationStrategy;
 import problem.Problem.SymmetryBreaking;
 import propagation.AC;
+import propagation.Backward.BT;
+import propagation.Forward.FC;
 import propagation.Reviser;
 import propagation.Reviser.Reviser3;
 import solver.Restarter.RestartMeasure;
@@ -194,8 +196,17 @@ public final class Control {
 			restarts.cutoff = restarts.cutoff / 2;
 			restarts.factor = 1.05;
 		}
-		control(varh.discardSingletonsAfterPrepro == false || varh.alwaysAssignAllVariables == false);
 
+		if (propagation.clazz.equals(FC.class.getSimpleName()) || propagation.clazz.equals(BT.class.getSimpleName())) {
+			propagation.postponableLimit = -1;
+			varh.discardSingletonsAfterPrepro = false;
+			varh.discardSingletonsDuringSearchLimit = Integer.MAX_VALUE;
+			varh.alwaysAssignAllVariables = true;
+		}
+		if (propagation.clazz.equals(BT.class.getSimpleName()))
+			restarts.cutoff = Integer.MAX_VALUE;  // otherwise, it seems that we gave several times the same solutions; what can we do?
+
+		control(varh.discardSingletonsAfterPrepro == false || varh.alwaysAssignAllVariables == false);
 	}
 
 	public void framework(Optimizer optimizer) {
@@ -620,7 +631,7 @@ public final class Control {
 	public class OptionsPropagation extends OptionGroup {
 		public final String clazz = addS("clazz", "p", AC.class, null, "Class to be used for propagation (for example, FC, AC or SAC3)");
 		public final int variant = addI("variant", "pv", 0, "Propagation Variant (only used for some consistencies)");
-		public final int postponableLimit = addI("postponableLimit", "ppc", 100, "Arity limit for postponing the filtering of expensive constraints");
+		public int postponableLimit = addI("postponableLimit", "ppc", 100, "Arity limit for postponing the filtering of expensive constraints");
 		// above, the purpose is to propagate less often the most costly constraints (to be finalized)
 		public final String reviser = addS("reviser", "", Reviser3.class, Reviser.class, "Class to be used for performing revisions");
 		public final boolean residues = addB("residues", "res", true, "Must we use redidues (AC3rm)?");
@@ -707,9 +718,9 @@ public final class Control {
 		public final SingletonStrategy singleton = addE("singleton", "sing", SingletonStrategy.LAST, "How to manage singleton variables during search");
 		public final boolean connected = addB("connected", "", false, "Must we select a variable necessarily connected to an already explicitly assigned one?");
 		public final boolean discardAux = addB("discardAux", "da", false, "Must we not branch on auxiliary variables introduced by the solver?");
-		public final boolean discardSingletonsAfterPrepro = addB("discardSingletonsAfterPrepro", "dsp", true,
+		public boolean discardSingletonsAfterPrepro = addB("discardSingletonsAfterPrepro", "dsp", true,
 				"Should we discard non explicitly singleton variables from futVars after preprocessing");
-		public final int discardSingletonsDuringSearchLimit = addI("discardSingletonsDuringSearchLimit", "dss", 750,
+		public int discardSingletonsDuringSearchLimit = addI("discardSingletonsDuringSearchLimit", "dss", 750,
 				"Limit in number of variables to discard non explicitly singleton variables from futVars during search");
 		public final int discardSingletonsMargin = addI("discardSingletonsMargin", "dsm", 5,
 				"Margin for temporarizing the building of new lists of singleton variables");
@@ -722,7 +733,7 @@ public final class Control {
 		public final int lostSize = addI("lostSize", "ls", 4, "xx");
 		public final int optVarHeuristic = addI("optVarHeuristic", "ovarh", 0,
 				"On how many variables must we branch in a fixed static way on the variables of the objective (when a weighted sum) according to coeff values?"); // experimental
-		public final boolean alwaysAssignAllVariables = addB("alwaysAssignAllVariables", "aaa", false, "Must we always explicitly assign all variables?");
+		public boolean alwaysAssignAllVariables = addB("alwaysAssignAllVariables", "aaa", false, "Must we always explicitly assign all variables?");
 		public final boolean secondScored = addB("secondScored", "snds", false, "Must we use the second variable scored by the heuristic?");
 		public final boolean quitWhenBetterThanPreviousChoice = addB("quitWhenBetterThanPreviousChoice", "qwb", false,
 				"Must we return a variable when its score is better than the score of the previously selected variable?");

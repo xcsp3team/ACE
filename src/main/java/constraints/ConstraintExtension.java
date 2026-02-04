@@ -43,7 +43,6 @@ import propagation.Forward;
 import propagation.Reviser;
 import utility.Kit;
 import utility.Reflector;
-import variables.Domain;
 import variables.Variable;
 import variables.Variable.VariableSymbolic;
 
