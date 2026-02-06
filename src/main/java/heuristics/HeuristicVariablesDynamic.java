@@ -25,7 +25,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.Constraint;
-import heuristics.HeuristicRevisions.HeuristicRevisionsDynamic.WdegOnDom;
 import heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting;
 import interfaces.Observers.ObserverOnAssignments;
 import interfaces.Observers.ObserverOnConflicts;

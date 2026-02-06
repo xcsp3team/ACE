@@ -236,7 +236,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		}
 
 		private void add(int dec) {
-			Variable x = decisions.varIn(dec);
+			Variable x = decisions.decoder.varIn(dec);
 			if (!taboo.contains(x)) {
 				int v = map.getOrDefault(x, 0);
 				map.put(x, v + 1);
@@ -442,7 +442,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			if (stack[top] == null)
 				return false;
 			Variable x = Stream.of(problem.variables).filter(y -> !(y.dom instanceof DomainFiniteSpecial) && y.dom.lastRemovedLevel() >= depth).findFirst()
-					.orElse(null);
+					.orElse(null); // and DomainInfinite too in the filter ?
 			if (x != null) {
 				System.out.println("Pb with " + x);
 				x.dom.display(2);

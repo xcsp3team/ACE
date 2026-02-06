@@ -17,7 +17,9 @@ import java.util.stream.IntStream;
 import interfaces.Observers.ObserverOnAssignments;
 import interfaces.Observers.ObserverOnRuns;
 import sets.SetDense;
+import solver.Decisions.Decoder.Decoder1;
 import utility.Bit;
+import variables.Domain;
 import variables.Variable;
 
 /**
@@ -41,7 +43,7 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	@Override
 	public void afterAssignment(Variable x, int a) {
 		// Adds a positive decision x=a to the current store
-		set.add(positiveDecisionFor(x.num, a));
+		set.add(decoder.positiveDecisionFor(x.num, a));
 		Bit.setTo0(failedAssignments, set.limit);
 		assert controlDecisions();
 
@@ -61,7 +63,7 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 		else
 			while (dense[limit] < 0)
 				limit--; // for discarding the negative decisions that follow the positive decision
-		assert dense[limit] > 0 && numIn(dense[limit]) == x.num : toString();
+		assert dense[limit] > 0 && decoder.varIn(dense[limit]) == x : toString();
 		set.limit = limit - 1; // -1 for discarding the positive decision
 	}
 
@@ -69,76 +71,114 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	 * Coding/decoding decisions
 	 *********************************************************************************************/
 
-	private final int OFFSET;
+	public static abstract class Decoder {
 
-	/**
-	 * Returns the code for the specified positive decision
-	 * 
-	 * @param x
-	 *            the (number of the) variable involved in the positive decision
-	 * @param a
-	 *            the index (of value) involved in the positive decision
-	 * @return the code for the specified positive decision
-	 */
-	public final int positiveDecisionFor(int x, int a) {
-		return 1 + a + OFFSET * x;
-	}
+		protected final Solver solver;
 
-	/**
-	 * Returns the code for the specified negative decision
-	 * 
-	 * @param x
-	 *            the (number of the) variable involved in the negative decision
-	 * @param a
-	 *            the index (of value) involved in the negative decision
-	 * @return the code for the specified negative decision
-	 */
-	public final int negativeDecisionFor(int x, int a) {
-		return -(1 + a + OFFSET * x);
-	}
+		/**
+		 * The variables of the problem (redundant field)
+		 */
+		protected final Variable[] variables;
 
-	/**
-	 * Returns the number of the variable involved in the decision whose code is specified
-	 * 
-	 * @param dec
-	 *            the code of a decision
-	 * @return the number of the variable involved in the decision whose code is specified
-	 */
-	public final int numIn(int dec) {
-		return Math.abs(dec) / OFFSET;
-	}
+		public int x;
 
-	/**
-	 * Returns the variable involved in the decision whose code is specified
-	 * 
-	 * @param dec
-	 *            the code of a decision
-	 * @return the variable involved in the decision whose code is specified
-	 */
-	public final Variable varIn(int dec) {
-		return variables[Math.abs(dec) / OFFSET];
-	}
+		public int a;
 
-	/**
-	 * Returns the value index involved in the decision whose code is specified
-	 * 
-	 * @param dec
-	 *            the code of a decision
-	 * @return the value index involved in the decision whose code is specified
-	 */
-	public final int idxIn(int dec) {
-		return Math.abs(dec) % OFFSET - 1;
-	}
+		protected Decoder(Solver solver) {
+			this.solver = solver;
+			this.variables = solver.problem.variables;
+		}
 
-	/**
-	 * Returns the value corresponding to the index involved in the decision whose code is specified
-	 * 
-	 * @param dec
-	 *            the code of a decision
-	 * @return the value corresponding to the index involved in the decision whose code is specified
-	 */
-	public final int valIn(int dec) {
-		return varIn(dec).dom.toVal(idxIn(dec));
+		/**
+		 * Returns the code for the specified positive decision
+		 * 
+		 * @param x
+		 *            the (number of the) variable involved in the positive decision
+		 * @param a
+		 *            the index (of value) involved in the positive decision
+		 * @return the code for the specified positive decision
+		 */
+		public abstract int positiveDecisionFor(int x, int a);
+
+		/**
+		 * Returns the code for the specified negative decision
+		 * 
+		 * @param x
+		 *            the (number of the) variable involved in the negative decision
+		 * @param a
+		 *            the index (of value) involved in the negative decision
+		 * @return the code for the specified negative decision
+		 */
+		public abstract int negativeDecisionFor(int x, int a);
+
+		public abstract Decoder set(int decision);
+
+		public final boolean apply(int decision) {
+			set(decision);
+			Domain dom = variables[x].dom;
+			return decision > 0 ? dom.reduceTo(a) : dom.removeIfPresent(a);
+		}
+
+		public final boolean canBeValid(int decision) {
+			assert decision != 0;
+			set(decision);
+			Domain dom = variables[x].dom;
+			return decision > 0 ? dom.contains(a) : dom.size() > 1 || !dom.contains(a);
+		}
+
+		public final boolean containsIdx(int decision) {
+			set(decision);
+			return variables[x].dom.contains(a);
+		}
+
+		protected Variable varIn(int decision) {
+			set(decision);
+			return variables[x];
+		}
+
+		/**
+		 * Returns the string representation of the decision whose code is specified
+		 * 
+		 * @param decision
+		 *            the code of a decision
+		 * @return the string representation of the decision whose code is specified
+		 */
+		public final String stringOf(int decision) {
+			assert decision != 0;
+			Variable x = varIn(decision);
+			return x + (decision > 0 ? "=" : "!=") + x.dom.toVal(a);// + (valIn(dec) != idxIn(dec) ? "(" + idxIn(dec) + ")" : "");
+		}
+
+		public static final class Decoder1 extends Decoder {
+
+			private final int OFFSET;
+
+			protected Decoder1(Solver solver) {
+				super(solver);
+				Variable[] variables = solver.problem.variables;
+				int n1 = (int) Math.ceil(Math.log(variables.length) / Math.log(2));
+				int n2 = (int) Math.ceil(Math.log(solver.problem.features.maxDomSize()) / Math.log(2));
+				// System.out.println(n1 + " vvs " + n2);
+				control(n1 + n2 < 31, () -> "Cannot represent decisions " + n1 + " " + n2);
+				this.OFFSET = (int) Math.pow(2, n2 + 1); // +1 because 0 excluded ???
+			}
+
+			@Override
+			public final int positiveDecisionFor(int x, int a) {
+				return 1 + a + OFFSET * x;
+			}
+
+			@Override
+			public final int negativeDecisionFor(int x, int a) {
+				return -(1 + a + OFFSET * x);
+			}
+
+			public Decoder set(int decision) {
+				this.x = Math.abs(decision) / OFFSET;
+				this.a = Math.abs(decision) % OFFSET - 1;
+				return this;
+			}
+		}
 	}
 
 	/**********************************************************************************************
@@ -156,9 +196,9 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	private final byte[] failedAssignments;
 
 	/**
-	 * The variables of the problem (redundant field)
+	 * The encoder/decoder used to represent decisions under the form of integers.
 	 */
-	private final Variable[] variables;
+	public final Decoder decoder;
 
 	/**
 	 * Builds the store of decisions for the specified solver
@@ -167,13 +207,10 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	 *            the solver to which this object is attached
 	 */
 	public Decisions(Solver solver) {
-		this.variables = solver.problem.variables;
-		int n1 = (int) Math.ceil(Math.log(variables.length) / Math.log(2));
-		int n2 = (int) Math.ceil(Math.log(solver.problem.features.maxDomSize()) / Math.log(2));
-		// System.out.println(n1 + " vvs " + n2);
-		control(n1 + n2 < 31, () -> "Cannot represent decisions " + n1 + " " + n2);
-		this.OFFSET = (int) Math.pow(2, n2 + 1); // +1 because 0 excluded ???
-		int nValues = Variable.nInitPracticalValuesFor(variables);
+		boolean newDecoder = false;
+		this.decoder = newDecoder ? null : new Decoder1(solver); // TODO new decoder
+
+		int nValues = Variable.nInitPracticalValuesFor(solver.problem.variables);
 		this.set = new SetDense(nValues);
 		this.failedAssignments = new byte[nValues / 8 + 1];
 	}
@@ -182,15 +219,17 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	 * Returns the variable involved in the last taken decision if the type of this decision is the value of the specified Boolean, null otherwise.
 	 */
 	public Variable varOfLastDecisionIf(boolean positive) {
-		return set.limit >= 0 && (set.last() >= 0) == positive ? varIn(set.last()) : null;
+		if (set.limit == 0 || (set.last() >= 0) != positive)
+			return null;
+		return decoder.varIn(set.last());
 	}
-	
-	/**
-	 * Returns the index of the value involved in the last taken decision, -1 if no decision is present.
-	 */
-	public int idxOfLastDecision() {
-		return set.limit >= 0 ? idxIn(set.last()) : -1;
-	}
+
+	// /**
+	// * Returns the index of the value involved in the last taken decision, -1 if no decision is present.
+	// */
+	// public int idxOfLastDecision() {
+	// return set.limit >= 0 ? idxIn(set.last()) : -1;
+	// }
 
 	/**
 	 * Returns true if the last but one decision was negative
@@ -220,7 +259,7 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	 *            the index (of value) involved in the decision
 	 */
 	public void addNegativeDecision(Variable x, int a) {
-		set.add(negativeDecisionFor(x.num, a));
+		set.add(decoder.negativeDecisionFor(x.num, a));
 		assert controlDecisions();
 	}
 
@@ -236,24 +275,11 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 		return -1;
 	}
 
-	/**
-	 * Returns the string representation of the decision whose code is specified
-	 * 
-	 * @param dec
-	 *            the code of a decision
-	 * @return the string representation of the decision whose code is specified
-	 */
-	public final String stringOf(int dec) {
-		assert dec != 0;
-		return varIn(dec) + (dec > 0 ? "=" : "!=") + valIn(dec);
-		// + (valIn(dec) != idxIn(dec) ? "(" + idxIn(dec) + ")" : "");
-	}
-
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder().append(set.size()).append(" decisions : ");
 		for (int i = 0; i < set.size(); i++)
-			sb.append(stringOf(set.dense[i])).append(isFailedAssignment(i) ? " x" : "").append("  ");
+			sb.append(decoder.stringOf(set.dense[i])).append(isFailedAssignment(i) ? " x" : "").append("  ");
 		return sb.toString();
 	}
 

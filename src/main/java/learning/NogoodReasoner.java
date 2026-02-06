@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 
 import dashboard.Control.OptionsLearning;
 import sets.SetDense;
-import solver.Decisions;
+import solver.Decisions.Decoder;
 import solver.Solver;
 import utility.Kit;
 import variables.Variable;
@@ -87,17 +87,17 @@ public final class NogoodReasoner {
 	/**
 	 * The solver to which this object is attached
 	 */
-	public final Solver solver;
+	private final Solver solver;
 
 	/**
-	 * The decisions taken by the solver (redundant field)
+	 * The object used to encode/decode decisions (redundant field)
 	 */
-	public final Decisions decisions;
+	private final Decoder decoder;
 
 	/**
 	 * The options concerning learning
 	 */
-	final OptionsLearning options;
+	private final OptionsLearning options;
 
 	/**
 	 * Arrays with recorded nogoods (at indexes ranging from 0 to nNogoods, excluded)
@@ -144,7 +144,8 @@ public final class NogoodReasoner {
 	 */
 	public NogoodReasoner(Solver solver) {
 		this.solver = solver;
-		this.decisions = solver.decisions;
+		this.decoder = solver.decisions.decoder;
+
 		this.options = solver.head.control.learning;
 		this.nogoods = new Nogood[options.nogoodBaseLimit];
 		this.pws = Stream.of(solver.problem.variables).map(x -> new WatchCell[x.dom.practicalInitSize()]).toArray(WatchCell[][]::new);
@@ -166,37 +167,37 @@ public final class NogoodReasoner {
 		// control(symmetryHandler == null);
 	}
 
-	/**
-	 * Important: currently not called
-	 * 
-	 * @param t
-	 *            a tuple of indexes (of values)
-	 * @return true if the tuple of values corresponding to the specified tuple of indexes satisfies the nogoods
-	 */
-	public boolean checkIndexes(int[] t) {
-		// note that nogoods are stored with indexes of values
-		extern: for (int i = 0; i < nNogoods; i++) {
-			for (int d : nogoods[i].decisions) {
-				int x = decisions.numIn(d);
-				int a = decisions.idxIn(d);
-				if (t[x] != a)
-					continue extern;
-			}
-			return false;
-		}
-		return true;
-	}
+	// /**
+	// * Important: currently not called
+	// *
+	// * @param t
+	// * a tuple of indexes (of values)
+	// * @return true if the tuple of values corresponding to the specified tuple of indexes satisfies the nogoods
+	// */
+	// public boolean checkIndexes(int[] t) {
+	// // note that nogoods are stored with indexes of values
+	// extern: for (int i = 0; i < nNogoods; i++) {
+	// for (int d : nogoods[i].decisions) {
+	// int x = decisions.numIn(d);
+	// int a = decisions.idxIn(d);
+	// if (t[x] != a)
+	// continue extern;
+	// }
+	// return false;
+	// }
+	// return true;
+	// }
 
 	/**********************************************************************************************
 	 * About filtering
 	 *********************************************************************************************/
 
-	private boolean canBeWatched(int decision) {
-		assert decision != 0;
-		Variable x = decisions.varIn(decision);
-		int a = decisions.idxIn(decision);
-		return decision > 0 ? x.dom.contains(a) : x.dom.size() > 1 || !x.dom.contains(a);
-	}
+	// private boolean canBeWatched(int decision) {
+	// assert decision != 0;
+	// Variable x = decisions.varIn(decision);
+	// int a = decisions.idxIn(decision);
+	// return decision > 0 ? x.dom.contains(a) : x.dom.size() > 1 || !x.dom.contains(a);
+	// }
 
 	private boolean canFindAnotherWatchFor(Nogood nogood, boolean firstWatch) {
 		int[] literals = nogood.decisions;
@@ -204,7 +205,7 @@ public final class NogoodReasoner {
 		int r = literals.length, limit = r + start;
 		for (int j = start + 1; j < limit; j++) {
 			int i = j % r; // going from start+1 to literals.length and from 0 to start
-			if (!nogood.isWatch(i) && canBeWatched(literals[i])) {
+			if (!nogood.isWatch(i) && decoder.canBeValid(literals[i])) {
 				addWatchFor(nogood, i, firstWatch);
 				return true;
 			}
@@ -220,18 +221,15 @@ public final class NogoodReasoner {
 	 * @return false if an inconsistency is detected
 	 */
 	private boolean apply(int decision) {
-		Variable x = decisions.varIn(decision);
-		int a = decisions.idxIn(decision);
 		solver.propagation.currFilteringCtr = null;
-		return decision > 0 ? x.dom.reduceTo(a) : x.dom.removeIfPresent(a);
+		return decoder.apply(decision);
 	}
 
 	private boolean checkWatchesOf(WatchCell[] watchCells, int a, int watchedDecision) {
 		WatchCell previous = null, current = watchCells[a];
 		while (current != null) {
 			Nogood nogood = current.nogood;
-			int watchedDecision2 = nogood.watchedDecisionOtherThan(watchedDecision);
-			if (!decisions.varIn(watchedDecision2).dom.contains(decisions.idxIn(watchedDecision2))) {
+			if (!decoder.containsIdx(nogood.watchedDecisionOtherThan(watchedDecision))) {
 				previous = current;
 				current = current.next;
 			} else if (canFindAnotherWatchFor(nogood, nogood.firstWatchedDecision() == watchedDecision)) {
@@ -266,8 +264,8 @@ public final class NogoodReasoner {
 	 * @return false if an inconsistency is detected
 	 */
 	public boolean checkWatchesOf(Variable x, int a, boolean positive) {
-		return positive ? checkWatchesOf(pws[x.num], a, decisions.positiveDecisionFor(x.num, a))
-				: checkWatchesOf(nws[x.num], a, decisions.negativeDecisionFor(x.num, a));
+		return positive ? checkWatchesOf(pws[x.num], a, decoder.positiveDecisionFor(x.num, a))
+				: checkWatchesOf(nws[x.num], a, decoder.negativeDecisionFor(x.num, a));
 	}
 
 	// public boolean runPropagator(Variable x) {
@@ -280,8 +278,9 @@ public final class NogoodReasoner {
 
 	private void addWatchFor(Nogood nogood, int position, boolean firstWatch) {
 		int decision = nogood.decisions[position];
-		WatchCell[] cells = decision > 0 ? pws[decisions.numIn(decision)] : nws[decisions.numIn(decision)];
-		int a = decisions.idxIn(decision);
+		decoder.set(decision);
+		WatchCell[] cells = decision > 0 ? pws[decoder.x] : nws[decoder.x];
+		int a = decoder.a;
 		if (free == null)
 			cells[a] = new WatchCell(nogood, cells[a]);
 		else {
@@ -296,14 +295,14 @@ public final class NogoodReasoner {
 
 	public Nogood addNogoodfromSingletons(Variable[] vars) {
 		assert Stream.of(vars).allMatch(x -> x.dom.size() == 1);
-		return addNogood(Stream.of(vars).mapToInt(x -> decisions.negativeDecisionFor(x.num, x.dom.singleValue())).toArray());
-	}
-	
-	public Nogood addNogoodfromSingletonsNonZero(Variable[] vars) {
-		assert Stream.of(vars).allMatch(x -> x.dom.size() == 1);
-		return addNogood(Stream.of(vars).filter(x -> x.dom.singleValue() != 0).mapToInt(x -> decisions.negativeDecisionFor(x.num, x.dom.singleValue())).toArray());
+		return addNogood(Stream.of(vars).mapToInt(x -> decoder.negativeDecisionFor(x.num, x.dom.singleValue())).toArray());
 	}
 
+	public Nogood addNogoodfromSingletonsNonZero(Variable[] vars) {
+		assert Stream.of(vars).allMatch(x -> x.dom.size() == 1);
+		return addNogood(
+				Stream.of(vars).filter(x -> x.dom.singleValue() != 0).mapToInt(x -> decoder.negativeDecisionFor(x.num, x.dom.singleValue())).toArray());
+	}
 
 	/**
 	 * Adds a nogood from the specified (negative) decisions
@@ -337,7 +336,7 @@ public final class NogoodReasoner {
 	public void addNogoodsOfCurrentBranch() {
 		nPreviousNogoods = nNogoods;
 		unaryNogoodsofLastBranch.clear();
-		SetDense set = decisions.set;
+		SetDense set = solver.decisions.set;
 		if (!options.nogood.isRstType() || set.size() < 2)
 			return;
 		int nMetPositiveDecisions = 0;
@@ -350,7 +349,7 @@ public final class NogoodReasoner {
 				if (nMetPositiveDecisions == 0) {
 					unaryNogoodsofLastBranch.add(d);
 					if (options.nogoodDisplayLimit > 0)
-						System.out.println("      nogood: " + decisions.stringOf(-d));
+						System.out.println("      nogood: " + decoder.stringOf(-d));
 
 					// if (symmetryHandler != null) symmetryHandler.handleSymmetricUnaryNogoods(d);
 				} else {
@@ -373,7 +372,7 @@ public final class NogoodReasoner {
 					negativeDecisions[nMetPositiveDecisions] = d;
 					Nogood nogood = addNogood(negativeDecisions, false); // symmetryHandler != null);
 					if (options.nogoodDisplayLimit > 0 && nogood != null && nogood.decisions.length <= options.nogoodDisplayLimit)
-						System.out.println("      nogood: " + IntStream.of(nogood.decisions).mapToObj(dc -> decisions.stringOf(-dc)).collect(joining(" ")));
+						System.out.println("      nogood: " + IntStream.of(nogood.decisions).mapToObj(dc -> decoder.stringOf(-dc)).collect(joining(" ")));
 
 					// }
 					// if (symmetryHandler != null) symmetryHandler.handleSymmetricNaryNogoods(currentNogood);
@@ -393,7 +392,7 @@ public final class NogoodReasoner {
 	private boolean controlLists(WatchCell[][] watches, boolean positive) {
 		for (int x = 0; x < watches.length; x++)
 			for (int a = 0; a < watches[x].length; a++) {
-				int decision = positive ? decisions.positiveDecisionFor(x, a) : decisions.negativeDecisionFor(x, a);
+				int decision = positive ? decoder.positiveDecisionFor(x, a) : decoder.negativeDecisionFor(x, a);
 				for (WatchCell cell = watches[x][a]; cell != null; cell = cell.next)
 					if (!cell.nogood.isDecisionWatched(decision)) {
 						Kit.log.warning("nogood = " + cell.nogood + " is not watched");
@@ -404,7 +403,8 @@ public final class NogoodReasoner {
 	}
 
 	private boolean controlNogood(int watchedDecision, Nogood nogood) {
-		int x = decisions.numIn(watchedDecision), a = decisions.idxIn(watchedDecision);
+		decoder.set(watchedDecision);
+		int x = decoder.x, a = decoder.a;
 		WatchCell first = watchedDecision > 0 ? pws[x][a] : nws[x][a];
 		for (WatchCell cell = first; cell != null; cell = cell.next)
 			if (cell.nogood == nogood)
@@ -424,15 +424,11 @@ public final class NogoodReasoner {
 		return true;
 	}
 
-	private String appendNogood(StringBuilder sb, int i) {
-		return IntStream.of(nogoods[i].decisions).mapToObj(d -> decisions.stringOf(d)).collect(joining(" "));
-	}
-
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("Nogoods = {\n");
 		for (int i = 0; i < nNogoods; i++)
-			sb.append(IntStream.of(nogoods[i].decisions).mapToObj(d -> decisions.stringOf(d)).collect(joining(" "))).append("\n");
+			sb.append(IntStream.of(nogoods[i].decisions).mapToObj(d -> decoder.stringOf(d)).collect(joining(" "))).append("\n");
 		return sb.append("}").toString();
 	}
 }

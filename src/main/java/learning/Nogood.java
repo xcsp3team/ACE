@@ -13,10 +13,6 @@ package learning;
 import static utility.Kit.control;
 
 import java.util.Arrays;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import solver.Decisions;
 
 /**
  * Strictly speaking, an object of this class is used as if it was a nogood constraint, i.e. a disjunction of negative
@@ -120,8 +116,8 @@ public final class Nogood {
 		this.watch2 = negativeDecisions.length - 1;
 	}
 
-	public String toString(Decisions sdecisions) {
-		return IntStream.of(decisions).mapToObj(d -> sdecisions.stringOf(d)).collect(Collectors.joining(" "));
-	}
+//	public String toString(Decisions sdecisions) {
+//		return IntStream.of(decisions).mapToObj(d -> sdecisions.stringOf(d)).collect(Collectors.joining(" "));
+//	}
 
 }
