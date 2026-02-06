@@ -1067,13 +1067,13 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	// }
 
 	// public boolean canBeFilteredConsideringSpecialVariables() {
-	// // if (this instanceof WakeUp)
-	// // return true; // because this is necessarily the leading variable that has been assigned
-	// // if (this instanceof TagBoundCompatible)
-	// // return true;
-	// // for (VariableInteger x : specialServants)
-	// // if (!x.specialMaster.assigned())
-	// // return false;
+	// if (this instanceof WakeUp)
+	// return true; // because this is necessarily the leading variable that has been assigned
+	// if (this instanceof TagBoundCompatible)
+	// return true;
+	// for (VariableInteger x : specialServants)
+	// if (!x.specialMaster.assigned())
+	// return false;
 	// return true;
 	// }
 

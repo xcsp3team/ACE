@@ -317,7 +317,7 @@ public class SetLinkedFinite implements SetLinked {
 
 	public static class SetLinkedFiniteWithBits extends SetLinkedFinite {
 
-		protected long[] binaryRepresentation;
+		protected final long[] binaryRepresentation;
 
 		@Override
 		public long[] binary() {

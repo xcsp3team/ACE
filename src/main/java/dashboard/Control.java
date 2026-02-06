@@ -638,7 +638,7 @@ public final class Control {
 		public final boolean bitResidues = addB("bitResidues", "bres", true, "Must we use bit resides (AC3bit+rm)?");
 		public final boolean multidirectionality = addB("multidirectionality", "mul", true, "Must we use multidirectionality");
 		// now, two ways of control on (G)AC for intention constraints
-		public final int arityLimit = addI("arityLimit", "al", 2,
+		public final int arityLimit = addI("arityLimit", "al", 1,
 				"generic AC is systematically enforced if the arity is less than or equal to this value (or this value is -1)");
 		public final int spaceLimit = addI("spaceLimit", "sl", 20,
 				"generic AC is systematically enforced if the size of the Cartesian product of domains is less than or equal to 2 to the power of this value (or this value is -1)");

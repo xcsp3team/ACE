@@ -12,6 +12,7 @@ package heuristics;
 
 import interfaces.Tags.TagMaximize;
 import propagation.Queue;
+import propagation.Queue.SmallestDomainVariable;
 import variables.Variable;
 
 /**
@@ -114,8 +115,11 @@ public abstract class HeuristicRevisions extends Heuristic {
 	 */
 	public static abstract class HeuristicRevisionsDynamic extends HeuristicRevisions {
 
+		protected SmallestDomainVariable enqueuedSmallestDomainVariable;
+
 		public HeuristicRevisionsDynamic(Queue queue, boolean anti) {
 			super(queue, anti);
+			this.enqueuedSmallestDomainVariable = queue.enqueuedSmallestDomainVariable;
 		}
 
 		/**
@@ -151,47 +155,40 @@ public abstract class HeuristicRevisions extends Heuristic {
 
 		public final static class Dom extends HeuristicRevisionsDynamic {
 
-			private int second = -1, secondDomSize = 0;
-
 			public Dom(Queue queue, boolean anti) {
 				super(queue, anti);
 			}
 
 			@Override
 			public int bestInQueue() {
-				// if (queue.size() > limit)
+				if (queue.size() > limit) // we need to put this again, as we redefine the method
+					return queue.limit; // limit rather than 0 ? (mode LIFO)
 
-
-				// if (second != -1 && queue.size() > 35 && second < queue.size()) {
-				// int i = second;
-				// second = -1;
-				// return i;
-				// }
-				
+				int pos = enqueuedSmallestDomainVariable.validVariable();
+				if (pos != -1)
+					return pos;
 
 				int bestSize = queue.var(0).dom.size();
-				if (bestSize <= queue.domSizeLowerBound)
+				if (bestSize <= enqueuedSmallestDomainVariable.domSizeLowerBound)
 					return 0; // because it is not possible to do better
-				 
-//				if (queue.domSizeBest != null) {					// TODO to test/check
-//					if (queue.contains(queue.domSizeBest.num))  {
-//						int p = queue.sparse[queue.domSizeBest.num];
-//						Kit.control(queue.domSizeBest.dom.size() == queue.domSizeLowerBound);
-//						queue.domSizeBest = null;
-//						return p;
-//					}
-//				}
-				
-				int pos = 0;
 
+				// if (queue.domSizeBest != null) { // TODO to test/check
+				// if (queue.contains(queue.domSizeBest.num)) {
+				// int p = queue.sparse[queue.domSizeBest.num];
+				// Kit.control(queue.domSizeBest.dom.size() == queue.domSizeLowerBound);
+				// queue.domSizeBest = null;
+				// return p;
+				// }
+				// }
+
+				pos = 0;
 				if (queue.propagation.solver.head.control.revh.lifo)
-					// for (int i = 1; i <= queue.limit; i++) {
 					for (int i = queue.limit; i >= 1; i--) {
 						int otherSize = queue.var(i).dom.size();
 						if (otherSize < bestSize) {
 							// second = pos; secondDomSize = bestSize;
-							if (otherSize <= queue.domSizeLowerBound) {
-								assert otherSize == queue.domSizeLowerBound;
+							if (otherSize <= enqueuedSmallestDomainVariable.domSizeLowerBound) {
+								assert otherSize == enqueuedSmallestDomainVariable.domSizeLowerBound;
 								return i; // because it is not possible to do better
 							}
 							pos = i;
@@ -207,8 +204,8 @@ public abstract class HeuristicRevisions extends Heuristic {
 						int otherSize = queue.var(i).dom.size();
 						if (otherSize < bestSize) {
 							// second = pos; secondDomSize = bestSize;
-							if (otherSize <= queue.domSizeLowerBound) {
-								assert otherSize == queue.domSizeLowerBound;
+							if (otherSize <= enqueuedSmallestDomainVariable.domSizeLowerBound) {
+								assert otherSize == enqueuedSmallestDomainVariable.domSizeLowerBound;
 								return i; // because it is not possible to do better
 							}
 							pos = i;
@@ -220,7 +217,7 @@ public abstract class HeuristicRevisions extends Heuristic {
 						// }
 					}
 
-				queue.domSizeLowerBound = bestSize; // we can update the bound (even if it may remain an approximation)
+				enqueuedSmallestDomainVariable.domSizeLowerBound = bestSize; // we can update the bound (even if it may remain an approximation)
 				return pos;
 			}
 

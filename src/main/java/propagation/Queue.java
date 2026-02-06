@@ -34,6 +34,8 @@ public final class Queue extends SetSparse {
 	 */
 	public final Forward propagation;
 
+	public final SmallestDomainVariable enqueuedSmallestDomainVariable;
+
 	/**
 	 * The revision ordering heuristic used to pick variables from the queue.
 	 */
@@ -58,22 +60,48 @@ public final class Queue extends SetSparse {
 	public Queue(Forward propagation) {
 		super(propagation.solver.head.problem.variables.length);
 		this.propagation = propagation;
+		this.enqueuedSmallestDomainVariable = new SmallestDomainVariable(); // keep at this position
 		Head head = propagation.solver.head;
 		String className = head.problem.features.maxDomSize() <= 4 ? First.class.getSimpleName() : head.control.revh.clazz;
 		// above, 4 is used arbitrarily (hard coding)
 		this.heuristic = Reflector.buildObject(className, head.availableClasses.get(HeuristicRevisions.class), this, head.control.revh.anti);
 		this.variables = head.problem.variables;
+
 	}
 
-	public int domSizeLowerBound;
-	
-	public Variable domSizeBest;
+	public class SmallestDomainVariable {
+
+		public int domSizeLowerBound;
+
+		private Variable variable;
+
+		private int position;
+
+		void clear() {
+			domSizeLowerBound = Integer.MAX_VALUE;
+			variable = null;
+			position = 0;
+		}
+
+		void consider(Variable x) {
+			if (x.dom.size() < domSizeLowerBound) {
+				domSizeLowerBound = x.dom.size();
+				variable = x;
+				position = sparse[x.num];
+			}
+		}
+
+		public int validVariable() {
+			if (variable != null && position <= limit && var(position) == variable)
+				return position;
+			return -1;
+		}
+	}
 
 	@Override
 	public void clear() {
 		super.clear();
-		domSizeLowerBound = Integer.MAX_VALUE;
-		domSizeBest = null;
+		enqueuedSmallestDomainVariable.clear();
 	}
 
 	/**
@@ -97,10 +125,7 @@ public final class Queue extends SetSparse {
 	public void add(Variable x) {
 		x.time = propagation.incrementTime();
 		add(x.num);
-		if (x.dom.size() < domSizeLowerBound) {
-			domSizeLowerBound = x.dom.size();
-			domSizeBest = x;
-		}
+		enqueuedSmallestDomainVariable.consider(x);
 		assert !x.assigned() || x == propagation.solver.futVars.lastPast() : "variable " + x;
 	}
 

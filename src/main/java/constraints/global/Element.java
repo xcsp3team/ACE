@@ -289,24 +289,13 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 				if (v != Integer.MIN_VALUE && dom.containsValue(v) && vdom.containsValue(v))
 					return true;
 				for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
-					v = vdom.toVal(a); // singleValue();
+					v = vdom.toVal(a); 
 					if (dom.containsValue(v)) {
 						valueSentinels[a] = i;
 						indexSentinels[i] = v;
 						return true;
 					}
 				}
-
-				// Domain dom = list[i].dom;
-				// if (dom.size() > problem.head.control.global.elementVarBoundLimit)
-				// return true;
-				// for (int a = dom.first(); a != -1; a = dom.next(a)) {
-				// v = dom.toVal(a);
-				// if (vdom.containsValue(v)) {
-				// indexSentinels[i] = v;
-				// return true;
-				// }
-				// }
 				return false;
 			}
 
@@ -340,18 +329,6 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 				int sizeBefore = vdom.size();
 				if (sizeBefore == 1) // we need this because it may be assigned (and we are not tolerated to remove values from assigned domains
 					return validValue(vdom.first()) || vdom.fail();
-				// if (sizeBefore > problem.head.control.global.elementVarBoundLimit) { // bound reasoning
-				// for (int a = vdom.first(); a != -1; a = vdom.next(a))
-				// if (!validValue(a))
-				// vdom.removeElementary(a);
-				// else
-				// break;
-				// for (int a = vdom.last(); a != -1; a = vdom.prev(a))
-				// if (!validValue(a))
-				// vdom.removeElementary(a);
-				// else
-				// break;
-				// } else
 				for (int a = vdom.first(); a != -1; a = vdom.next(a))
 					if (!validValue(a))
 						vdom.removeElementary(a);

@@ -61,6 +61,7 @@ import sets.SetSparseReversible;
 import utility.Kit;
 import utility.Profiler;
 import variables.Domain;
+import variables.DomainFinite.DomainFiniteSpecial;
 import variables.DomainInfinite;
 import variables.Variable;
 
@@ -411,10 +412,14 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		// BE CAREFUL: must be called before making modifications (i.e. before reducing the domain of the variable)
 		public int push(Variable x) {
 			int depth = depth();
-			assert x.dom.lastRemovedLevel() <= depth;
+			assert x.dom.lastRemovedLevel() <= depth && (top == -1 || stack[top].dom.lastRemovedLevel() <= depth) : x + " " + x.dom.lastRemovedLevel() + " "
+					+ depth;
 			if (x.dom.lastRemovedLevel() != depth) { // because, otherwise, already present
-				if (top == -1 || stack[top].dom.lastRemovedLevel() != depth)
+				if (top == -1 || stack[top].dom.lastRemovedLevel() != depth) {
 					stack[++top] = null; // null is used as a separator
+					// System.out.println("new separator " + x + " " + depth + " " + top + " " + (top-1 < 0 ? "" :(stack[top - 1].dom.lastRemovedLevel()) + " "
+					// + stack[top - 1]));
+				}
 				stack[++top] = x;
 			}
 			return depth;
@@ -436,15 +441,30 @@ public class Solver implements ObserverOnBacktracksSystematic {
 				return true;
 			if (stack[top] == null)
 				return false;
-			Variable x = Stream.of(problem.variables).filter(y -> !(y.dom instanceof DomainInfinite) && y.dom.lastRemovedLevel() >= depth).findFirst()
+			Variable x = Stream.of(problem.variables).filter(y -> !(y.dom instanceof DomainFiniteSpecial) && y.dom.lastRemovedLevel() >= depth).findFirst()
 					.orElse(null);
 			if (x != null) {
 				System.out.println("Pb with " + x);
 				x.dom.display(2);
+				System.out.println(this);
 				return false;
 			}
 			return true;
 		}
+
+		public String toString() {
+			StringBuilder s = new StringBuilder(" Stack : ");
+			int cnt = 0;
+			for (int i = 0; i <= top; i++) {
+				if (stack[i] == null)
+					s.append("\n\tL").append((cnt++));
+				else
+					s.append(stack[i]); // + "(" + stack[i].num +")");
+				s.append(" ");
+			}
+			return s.toString();
+		}
+
 	}
 
 	public final class Proofer implements ObserverOnDecisions {
