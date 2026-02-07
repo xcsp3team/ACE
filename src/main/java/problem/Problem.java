@@ -3831,7 +3831,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	public final CtrEntity knapsack(Var[] list, int[] weights, Condition wcondition, int[] profits, Condition pcondition) {
 		// for the moment, no dedicated propagator (just decomposition)
-
 		sum(list, weights, wcondition);
 		return sum(list, profits, pcondition);
 	}

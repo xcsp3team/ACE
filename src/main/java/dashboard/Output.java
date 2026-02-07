@@ -624,6 +624,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	private InformationBloc solverInfo() {
 		InformationBloc m = new InformationBloc(SOLVER);
 		m.put(GUARANTEED_AC, head.solver.propagation.getClass() == AC.class ? ((AC) head.solver.propagation).guaranteed : "");
+		m.put("decoder", head.solver.decisions.decoder.getClass().getSimpleName());
 		m.separator();
 		m.put(WCK, head.instanceStopwatch.wckTimeInSeconds());
 		m.put(CPU, head.stopwatch.cpuTimeInSeconds());

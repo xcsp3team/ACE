@@ -204,7 +204,7 @@ public final class Control {
 			varh.alwaysAssignAllVariables = true;
 		}
 		if (propagation.clazz.equals(BT.class.getSimpleName()))
-			restarts.cutoff = Integer.MAX_VALUE;  // otherwise, it seems that we gave several times the same solutions; what can we do?
+			restarts.cutoff = Integer.MAX_VALUE; // otherwise, it seems that we gave several times the same solutions; what can we do?
 
 		control(varh.discardSingletonsAfterPrepro == false || varh.alwaysAssignAllVariables == false);
 	}
@@ -672,6 +672,7 @@ public final class Control {
 		public final boolean enablePrepro = addB("enablePrepro", "prepro", true, "Must we perform preprocessing?");
 		public boolean enableSearch = addB("enableSearch", "search", true, "Must we perform search?");
 		public final Branching branching = addE("branching", "branching", Branching.BIN, "Branching scheme for search (binary or non-binary)");
+		public final int decoder = addI("decoder", "decoder", 0, "Encoder/Decoder for decisions (0, 1 or 2; 0 is automatic choice)");
 		public final boolean hammingInformation = addB("hammingInformation", "hi", true,
 				"Must we display Hamming information between successive solutions (for optimization)");
 	}

@@ -12,15 +12,22 @@ package solver;
 
 import static utility.Kit.control;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.IntStream;
 
 import interfaces.Observers.ObserverOnAssignments;
 import interfaces.Observers.ObserverOnRuns;
 import sets.SetDense;
 import solver.Decisions.Decoder.Decoder1;
+import solver.Decisions.Decoder.Decoder2;
 import utility.Bit;
+import utility.Kit;
 import variables.Domain;
 import variables.Variable;
+
+import static java.lang.Math.log;
+import static java.lang.Math.ceil;
 
 /**
  * This object allows us to store the set of decisions taken by the solver during search. <br />
@@ -155,10 +162,8 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 
 			protected Decoder1(Solver solver) {
 				super(solver);
-				Variable[] variables = solver.problem.variables;
-				int n1 = (int) Math.ceil(Math.log(variables.length) / Math.log(2));
-				int n2 = (int) Math.ceil(Math.log(solver.problem.features.maxDomSize()) / Math.log(2));
-				// System.out.println(n1 + " vvs " + n2);
+				int n1 = (int) ceil(log(variables.length) / log(2));
+				int n2 = (int) ceil(log(solver.problem.features.maxDomSize()) / log(2));
 				control(n1 + n2 < 31, () -> "Cannot represent decisions " + n1 + " " + n2);
 				this.OFFSET = (int) Math.pow(2, n2 + 1); // +1 because 0 excluded ???
 			}
@@ -176,6 +181,76 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 			public Decoder set(int decision) {
 				this.x = Math.abs(decision) / OFFSET;
 				this.a = Math.abs(decision) % OFFSET - 1;
+				return this;
+			}
+		}
+
+		public static final class Decoder2 extends Decoder {
+
+			private final int[] offsets;
+
+			private final int[][] slices;
+
+			private final int[] starts;
+
+			protected Decoder2(Solver solver) {
+				super(solver);
+				List<int[]> list = new ArrayList<>();
+				this.offsets = new int[variables.length];
+				int sum = 0, start = 0, length = -1, nb = 0, pos = 0;
+				for (int i = 0; i < variables.length; i++) {
+					int size = variables[i].dom.initSize();
+					if (sum == 0) {
+						start = sum;
+						length = size;
+						nb = 1;
+						pos = i;
+					} else if (size == length)
+						nb++;
+					else {
+						list.add(new int[] { start, length, nb, pos });
+						start = sum;
+						length = size;
+						nb = 1;
+						pos = i;
+					}
+					offsets[i] = sum;
+					sum += size;
+				}
+				list.add(new int[] { start, length, nb, pos });
+				slices = list.stream().toArray(int[][]::new);
+				starts = list.stream().mapToInt(sl -> sl[0]).toArray();
+				// System.out.println("slices " + Kit.join(slices));
+				// System.out.println("starts " + Kit.join(starts));
+			}
+
+			@Override
+			public final int positiveDecisionFor(int x, int a) {
+				return 1 + offsets[x] + a;
+			}
+
+			@Override
+			public final int negativeDecisionFor(int x, int a) {
+				return -(1 + offsets[x] + a);
+			}
+
+			public Decoder set(int decision) {
+				int absdec = Math.abs(decision) - 1;
+				int left = 0, right = starts.length - 1;
+				while (left + 1 < right) {
+					int mid = (left + right) / 2;
+					if (starts[mid] <= absdec)
+						left = mid;
+					else
+						right = mid;
+				}
+				if (starts[right] <= absdec)
+					left = right;
+				assert starts[left] <= absdec && (left == starts.length - 1 || absdec < starts[left + 1]) : " " + starts[left] + " " + absdec;
+				int gap = absdec - starts[left], dvs = slices[left][1];
+				this.x = slices[left][3] + gap / dvs;
+				this.a = gap % dvs;
+				assert positiveDecisionFor(x, a) == Math.abs(decision) : " " + positiveDecisionFor(x, a) + " " + Math.abs(decision);
 				return this;
 			}
 		}
@@ -207,8 +282,12 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	 *            the solver to which this object is attached
 	 */
 	public Decisions(Solver solver) {
-		boolean newDecoder = false;
-		this.decoder = newDecoder ? null : new Decoder1(solver); // TODO new decoder
+		int decoderNum = solver.head.control.solving.decoder;
+		if (decoderNum == 0) { // automatic
+			boolean dec1 = (int) ceil(log(solver.problem.variables.length) / log(2)) + (int) ceil(log(solver.problem.features.maxDomSize()) / log(2)) < 31;
+			this.decoder = dec1 ? new Decoder1(solver) : new Decoder2(solver);
+		} else
+			this.decoder = decoderNum == 1 ? new Decoder1(solver) : new Decoder2(solver);
 
 		int nValues = Variable.nInitPracticalValuesFor(solver.problem.variables);
 		this.set = new SetDense(nValues);
