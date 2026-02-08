@@ -50,7 +50,7 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	@Override
 	public void afterAssignment(Variable x, int a) {
 		// Adds a positive decision x=a to the current store
-		set.add(decoder.positiveDecisionFor(x.num, a));
+		addToSet(decoder.positiveDecisionFor(x.num, a));
 		Bit.setTo0(failedAssignments, set.limit);
 		assert controlDecisions();
 
@@ -268,7 +268,7 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	/**
 	 * Structure that permits to associate a bit with any position (of a decision) in the store
 	 */
-	private final byte[] failedAssignments;
+	private byte[] failedAssignments;
 
 	/**
 	 * The encoder/decoder used to represent decisions under the form of integers.
@@ -289,9 +289,24 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 		} else
 			this.decoder = decoderNum == 1 ? new Decoder1(solver) : new Decoder2(solver);
 
-		int nValues = Variable.nInitPracticalValuesFor(solver.problem.variables);
-		this.set = new SetDense(nValues);
-		this.failedAssignments = new byte[nValues / 8 + 1];
+//		int nValues = Variable.nInitPracticalValuesFor(solver.problem.variables);
+//		this.set = new SetDense(nValues);
+		
+		
+		this.set= new SetDense(solver.problem.variables.length*4);
+		this.failedAssignments = new byte[set.capacity() / 8 + 1];
+	}
+
+	private void addToSet(int decision) {
+		if (set.isFull()) {
+			System.out.println("increaising");
+			set.increaseCapacity(2);
+			byte[] tmp = new byte[set.capacity() / 8 + 1];
+			for (int i = 0; i < failedAssignments.length; i++)
+				tmp[i] = failedAssignments[i];
+			failedAssignments = tmp;
+		}
+		set.add(decision);
 	}
 
 	/**
@@ -338,7 +353,7 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	 *            the index (of value) involved in the decision
 	 */
 	public void addNegativeDecision(Variable x, int a) {
-		set.add(decoder.negativeDecisionFor(x.num, a));
+		addToSet(decoder.negativeDecisionFor(x.num, a));
 		assert controlDecisions();
 	}
 

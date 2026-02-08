@@ -1318,8 +1318,7 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 
 				public Mul2bEQ(Problem pb, Variable x, Variable y, int k) {
 					super(pb, x, y, k);
-					dx.removeValuesAtConstructionTime(v -> v != 0 && v % k != 0); // non multiple deleted (important for
-																					// avoiding systematic checks)
+					dx.removeValuesAtConstructionTime(v -> v != 0 && v % k != 0); // non multiple deleted (important for avoiding systematic checks)
 					this.sp = new SimplePropagatorEQ(dx, dy, true) {
 						@Override
 						final int valxFor(int b) {

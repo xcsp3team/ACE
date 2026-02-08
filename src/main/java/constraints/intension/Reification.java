@@ -11,6 +11,7 @@
 package constraints.intension;
 
 import static propagation.AC.enforceEQ;
+import static propagation.AC.enforceEQc;
 import static propagation.AC.enforceGE;
 import static propagation.AC.enforceGT;
 import static propagation.AC.enforceLE;
@@ -430,6 +431,44 @@ public final class Reification {
 			}
 		}
 
+		public static final class Reif3EQb extends Reif3 {
+
+			private int k;
+
+			@Override
+			public boolean isSatisfiedBy(int[] t) {
+				return (t[0] == 1) == (t[1] * k == t[2]);
+			}
+
+			private int residue; // for a common value in the domains of y(*k) and z, supporting (x,1)
+
+			public Reif3EQb(Problem pb, Variable x, Variable y, int k, Variable z) { // x = (y*k = z)
+				super(pb, x, y, z);
+				this.k = k;
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				if (dy.size() == 1 && dz.size() == 1)
+					return dx.removeIfPresent(dy.firstValue() * k == dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
+				if (dx.last() == 0)
+					return (dy.size() > 1 && dz.size() > 1) || (enforceNE(dy, k, dz) && entail()); // x = 0 => y*k != z
+				if (dx.first() == 1)
+					return enforceEQc(dy, k, dz); // x = 1 => y*k = z
+				assert dx.size() == 2;
+				// we know that (x,0) is supported because the domain of y and/or the domain of z is not singleton
+				if (dy.containsValue(residue * k) && dz.containsValue(residue))
+					return true;
+				// we look for a support for (x,1), and record it as a residue
+				int v = dz.commonValueWith(dy, k);
+				if (v != Integer.MAX_VALUE)
+					residue = v;
+				else
+					return dx.remove(1) && entail(); // since inconsistency not possible and dy and dz are disjoint
+				return true;
+			}
+		}
+
 		public static final class Reif3NE extends Reif3 {
 
 			@Override
@@ -469,7 +508,8 @@ public final class Reification {
 	}
 
 	/**********************************************************************************************
-	 * Logical Reification : Classes for x = (y and z), x = (y or z), x (y xor z), x = (y iff z)  and their extensions to more than two variables in the right term
+	 * Logical Reification : Classes for x = (y and z), x = (y or z), x (y xor z), x = (y iff z) and their extensions to more than two variables in the right
+	 * term
 	 *********************************************************************************************/
 
 	public static abstract class ReifLogic extends ConstraintSpecific implements TagAC, TagCallCompleteFiltering, TagNotSymmetric, TagPrimitive {

@@ -488,6 +488,16 @@ public interface Domain extends SetLinked {
 		return Integer.MAX_VALUE;
 	}
 
+	default int commonValueWith(Domain dom, int coeff) {
+		Kit.control(coeff > 0); // for the moment
+		for (int a = dom.first(); a != -1; a = dom.next(a)) {
+			int v = dom.toVal(a) * coeff;
+			if (containsValue(v))
+				return v;
+		}
+		return Integer.MAX_VALUE;
+	}
+
 	/**
 	 * Returns true if the domain and the specified one contain a common value
 	 * 
@@ -743,8 +753,8 @@ public interface Domain extends SetLinked {
 	 *            a value index
 	 */
 	default void removeElementary(int a) {
-//		System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " from "
-//				+ var().problem.solver.propagation.currFilteringCtr + " at depth " + var().problem.solver.depth());
+		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " from "
+		// + var().problem.solver.propagation.currFilteringCtr + " at depth " + var().problem.solver.depth());
 		Variable x = var();
 		assert !x.assigned() && contains(a) : x + " " + x.assigned() + " " + contains(a);
 		Solver solver = x.problem.solver;

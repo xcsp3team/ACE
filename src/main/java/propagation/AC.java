@@ -18,6 +18,7 @@ import constraints.Constraint;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Mul2.Mul2GE;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Mul2.Mul2LE;
 import solver.Solver;
+import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
@@ -359,6 +360,43 @@ public class AC extends Forward {
 		return true;
 	}
 
+	public static boolean enforceEQc(Domain dx, int k, Domain dy) { // x*k = y (just on bounds)
+		assert k != 0 && dx != dy;
+		Kit.control(k > 0); // for the moment
+		//System.out.println("hhhhhhh");
+		int minx = dx.firstValue() * k, miny = dy.firstValue(); // in minx, we take k into account
+		while (minx != miny) {
+			if (minx < miny) {
+				if (dx.removeValuesLT(miny / k + (miny % k != 0 ? 1 : 0)) == false)
+					return false;
+				minx = dx.firstValue() * k;
+			}
+			if (miny < minx) {
+				if (dy.removeValuesLT(minx) == false)
+					return false;
+				miny = dy.firstValue();
+			}
+			//System.out.println("mmmmmm1 " + minx + " " + miny + " " + k);
+		}
+		int maxx = dx.lastValue() * k, maxy = dy.lastValue();
+		while (maxx != maxy) {
+			if (maxx > maxy) {
+				if (dx.removeValuesGT(maxy / k - (maxy % k != 0 ? 1 : 0)) == false)
+					return false;
+				maxx = dx.lastValue() * k;
+			}
+			if (maxy > maxx) {
+				if (dy.removeValuesGT(maxx) == false)
+					return false;
+				maxy = dy.lastValue();
+			}
+			//System.out.println("mmmmmm2 " + maxx + " " + maxy + " " + k);
+		}
+		// At this stage, we know that bounds of domains (modulo k) are both equal
+		//System.out.println("hhhhhhh2");
+		return true;
+	}
+
 	/**
 	 * Enforces AC on x = y
 	 * 
@@ -485,6 +523,23 @@ public class AC extends Forward {
 			return dy.removeValueIfPresent(dx.singleValue());
 		if (dy.size() == 1)
 			return dx.removeValueIfPresent(dy.singleValue());
+		return true;
+	}
+
+	public static boolean enforceNE(Domain dx, int k, Domain dy) { // x*k != y
+		Utilities.control(dx != dy && k != 0, "pb");
+		if (dx.size() == 1)
+			return dy.removeValueIfPresent(dx.singleValue() * k);
+		if (dy.size() == 1) {
+			int v = dy.singleValue();
+			if (v == 0)
+				return dx.removeValueIfPresent(0);
+			int r = Math.abs(v) % Math.abs(k);
+			if (r != 0)
+				return true;
+			int w = (Math.abs(v) / Math.abs(k)) * ((v > 0) == (k > 0) ? 1 : -1);
+			return dx.removeValueIfPresent(w);
+		}
 		return true;
 	}
 

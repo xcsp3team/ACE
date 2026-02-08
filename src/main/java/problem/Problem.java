@@ -253,6 +253,7 @@ import constraints.intension.Reification.Reif2.Reif2Rel;
 import constraints.intension.Reification.Reif2.Reif2Rel.Reif2EQ;
 import constraints.intension.Reification.Reif2.Reif2Set;
 import constraints.intension.Reification.Reif3;
+import constraints.intension.Reification.Reif3.Reif3EQb;
 import constraints.intension.Reification.ReifLogic;
 import dashboard.Control.OptionsGeneral;
 import dashboard.Control.OptionsGlobal;
@@ -1265,6 +1266,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private Matcher x_ariop_y__relop_z = new Matcher(node(relop, node(ariop, var, var), var));
 	private Matcher z_relop__x_ariop_y = new Matcher(node(relop, var, node(ariop, var, var)));
 	private Matcher logic_y_relop_z__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, var, var), var));
+	private Matcher x_mul_k_eq_y__eq_z = new Matcher(node(TypeExpr.EQ, node(TypeExpr.EQ, node(MUL, var, val), var), var));
 
 	// quaternary
 	private Matcher dist_dist__ne = new Matcher(node(TypeExpr.NE, node(TypeExpr.DIST, var, var), node(TypeExpr.DIST, var, var)));
@@ -1355,6 +1357,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final CtrEntity intension(XNodeParent<IVar> treeRoot) {
 		OptionsIntension options = head.control.intension;
 
+		// System.out.println("bef " + treeRoot);
 		XNodeParent<IVar> tree_canonized = (XNodeParent<IVar>) treeRoot.canonization(); // first, the tree is canonized
 		// System.out.println("tree_can " + tree_canonized);
 		XNodeParent<IVar> tree = possiblyReplaceSimilarInternNodes(tree_canonized);
@@ -1514,6 +1517,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				Variable x = vars[0] == vars[2] || vars[0] == vars[3] ? vars[0] : vars[1];
 				c = new DistDistNE3(this, x, x == vars[0] ? vars[1] : vars[0], x == vars[2] ? vars[3] : vars[2]);
 			}
+			// else if (x_mul_k_eq_y__eq_z.matches(tree) && tree.vars().length == arity) { // TODO to be tested on ATPS for example
+			// c = new Reif3EQb(this, scp[2], scp[0], tree.val(0), scp[1]);
+			// }
 			if (c != null)
 				return post(c);
 		}
@@ -1913,10 +1919,36 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return extension(tree);
 		}
 
+		// last chance : replace subtrees whose reification is cheap (ne, le, ge, ...)
+		if (scp.length == tree.listOfVars().size()) {
+			if (replaceInternNodeByCheapReificationpropagator(tree))
+				return intension(tree);
+		}
+
 		if (options.displayRemainingIntension)
 			System.out.println("Tree remaining " + tree);
 
 		return post(new ConstraintIntension(this, scp, tree));
+	}
+
+	private boolean replaceInternNodeByCheapReificationpropagator(XNodeParent<IVar> node) {
+		XNode<IVar>[] sons = node.sons;
+		for (int i = 0; i < sons.length; i++) {
+			if (sons[i].type.oneOf(TypeExpr.NE, TypeExpr.LE, TypeExpr.GE) && sons[i].sons[0].type.oneOf(TypeExpr.VAR, TypeExpr.LONG)
+					&& sons[i].sons[1].type.oneOf(TypeExpr.VAR, TypeExpr.LONG)) {
+				sons[i] = new XNodeLeaf<>(VAR, replaceByVariable(sons[i]));
+				return true;
+			}
+			if (sons[i].type == TypeExpr.EQ && sons[i].sons.length == 2 && sons[i].sons[0].type == VAR && sons[i].sons[1].type == LONG) {
+				sons[i] = new XNodeLeaf<>(VAR, replaceByVariable(sons[i]));
+				return true;
+			}
+			if (sons[i] instanceof XNodeParent) {
+				if (replaceInternNodeByCheapReificationpropagator((XNodeParent) sons[i]))
+					return true;
+			}
+		}
+		return false;
 	}
 
 	// ************************************************************************

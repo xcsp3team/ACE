@@ -40,9 +40,13 @@ public final class NogoodReasoner {
 	 * @return an object recording and reasoning with nogoods, or null
 	 */
 	public static NogoodReasoner buildFor(Solver solver) {
-		if (solver.head.control.solving.enableSearch && solver.head.control.learning.nogood != LearningNogood.NO && solver.propagation.queue != null)
-			return new NogoodReasoner(solver);
-		return null;
+		if (!solver.head.control.solving.enableSearch || solver.head.control.learning.nogood == LearningNogood.NO || solver.propagation.queue == null)
+			return null;
+		if (Variable.nInitValuesFor(solver.problem.variables) > 500_000_000) {  // TODO hard coding
+			Kit.warning("Discarding nogood reasoner because too many values: " + Variable.nInitValuesFor(solver.problem.variables));
+			return null;
+		}
+		return new NogoodReasoner(solver);
 	}
 
 	/**
