@@ -10,6 +10,9 @@
 
 package propagation;
 
+import static utility.Kit.control;
+
+import java.math.BigInteger;
 import java.util.stream.Stream;
 
 import org.xcsp.common.Utilities;
@@ -17,6 +20,7 @@ import org.xcsp.common.Utilities;
 import constraints.Constraint;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Mul2.Mul2GE;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Mul2.Mul2LE;
+import problem.Problem;
 import solver.Solver;
 import utility.Kit;
 import variables.Domain;
@@ -362,38 +366,45 @@ public class AC extends Forward {
 
 	public static boolean enforceEQc(Domain dx, int k, Domain dy) { // x*k = y (just on bounds)
 		assert k != 0 && dx != dy;
-		Kit.control(k > 0); // for the moment
-		//System.out.println("hhhhhhh");
-		int minx = dx.firstValue() * k, miny = dy.firstValue(); // in minx, we take k into account
-		while (minx != miny) {
-			if (minx < miny) {
-				if (dx.removeValuesLT(miny / k + (miny % k != 0 ? 1 : 0)) == false)
-					return false;
-				minx = dx.firstValue() * k;
+		Kit.control(k != 0); // for the moment
+
+		if (k > 0) {
+			int minx = dx.firstValue() * k, miny = dy.firstValue(); // in minx, we take k into account
+			while (minx != miny) {
+				if (minx < miny) {
+					if (dx.removeValuesLT(miny / k + (miny % k != 0 ? 1 : 0)) == false)
+						return false;
+					minx = dx.firstValue() * k;
+				}
+				if (miny < minx) {
+					if (dy.removeValuesLT(minx) == false)
+						return false;
+					miny = dy.firstValue();
+				}
+				// System.out.println("mmmmmm1 " + minx + " " + miny + " " + k);
 			}
-			if (miny < minx) {
-				if (dy.removeValuesLT(minx) == false)
-					return false;
-				miny = dy.firstValue();
+			int maxx = dx.lastValue() * k, maxy = dy.lastValue();
+			while (maxx != maxy) {
+				if (maxx > maxy) {
+					if (dx.removeValuesGT(maxy / k - (maxy % k != 0 ? 1 : 0)) == false)
+						return false;
+					maxx = dx.lastValue() * k;
+				}
+				if (maxy > maxx) {
+					if (dy.removeValuesGT(maxx) == false)
+						return false;
+					maxy = dy.lastValue();
+				}
+				// System.out.println("mmmmmm2 " + maxx + " " + maxy + " " + k);
 			}
-			//System.out.println("mmmmmm1 " + minx + " " + miny + " " + k);
+		} else {
+
+			// TODO
+
 		}
-		int maxx = dx.lastValue() * k, maxy = dy.lastValue();
-		while (maxx != maxy) {
-			if (maxx > maxy) {
-				if (dx.removeValuesGT(maxy / k - (maxy % k != 0 ? 1 : 0)) == false)
-					return false;
-				maxx = dx.lastValue() * k;
-			}
-			if (maxy > maxx) {
-				if (dy.removeValuesGT(maxx) == false)
-					return false;
-				maxy = dy.lastValue();
-			}
-			//System.out.println("mmmmmm2 " + maxx + " " + maxy + " " + k);
-		}
+
 		// At this stage, we know that bounds of domains (modulo k) are both equal
-		//System.out.println("hhhhhhh2");
+		// System.out.println("hhhhhhh2");
 		return true;
 	}
 
@@ -526,7 +537,16 @@ public class AC extends Forward {
 		return true;
 	}
 
-	public static boolean enforceNE(Domain dx, int k, Domain dy) { // x*k != y
+	public static boolean enforceNE(Domain dx, int k, Domain dy) { // x + k != y
+		Utilities.control(dx != dy && k != 0, "pb");
+		if (dx.size() == 1)
+			return dy.removeValueIfPresent(dx.singleValue() + k);
+		if (dy.size() == 1)
+			return dx.removeValueIfPresent(dy.singleValue() - k);
+		return true;
+	}
+
+	public static boolean enforceNEc(Domain dx, int k, Domain dy) { // x * k != y
 		Utilities.control(dx != dy && k != 0, "pb");
 		if (dx.size() == 1)
 			return dy.removeValueIfPresent(dx.singleValue() * k);
@@ -667,7 +687,7 @@ public class AC extends Forward {
 	 * @return ENTAIL if entailment is proved FAIl if an inconsistency not yet processed if proved FALSE if an inconsistency already processed if proved TRUE if
 	 *         no inconsistency is encountered
 	 */
-	public static TypeFilteringResult enforceMUL3NE(Domain dx, Domain dy, Domain dz) { // x * y != z
+	public static TypeFilteringResult enforceMUL3NETest(Domain dx, Domain dy, Domain dz) { // x * y != z
 		boolean sx = dx.size() == 1, sy = dy.size() == 1, sz = dz.size() == 1;
 		if (!sx && !sy && !sz)
 			return TypeFilteringResult.TRUE;
@@ -702,6 +722,116 @@ public class AC extends Forward {
 		if (sy)
 			return dy.singleValue() == 0 ? (dz.removeValueIfPresent(0) ? TypeFilteringResult.ENTAIL : TypeFilteringResult.FALSE) : TypeFilteringResult.TRUE;
 		return TypeFilteringResult.TRUE;
+	}
+
+	public static boolean enforceMul3EQBound(Domain dx, Domain dy, Domain dz) { // x * y = z
+		assert Utilities.isSafeInt(BigInteger.valueOf(dx.firstValue()).multiply(BigInteger.valueOf(dy.firstValue())).longValueExact());
+		assert Utilities.isSafeInt(BigInteger.valueOf(dx.lastValue()).multiply(BigInteger.valueOf(dy.lastValue())).longValueExact());
+		// assert dx.firstValue() >= 0 && dy.firstValue() >= 0 && dz.firstValue() >= 0;
+
+		boolean sx = dx.size() == 1, sy = dy.size() == 1, sz = dz.size() == 1;
+		if (sx && sy && sz)
+			return dx.singleValue() * dy.singleValue() == dz.singleValue();
+		if (sx && sy)
+			return dz.reduceToValue(dx.singleValue() * dy.singleValue());
+		if (sx && sz) {
+			int vx = dx.singleValue(), vz = dz.singleValue();
+			if (vx == 0)
+				return vz == 0;
+			int v = Math.abs(vz) / Math.abs(vx);
+			if (vx * v == vz && dy.reduceToValue(v) == false)
+				return false;
+			if (vx * (-v) == vz && dy.reduceToValue(-v) == false)
+				return false;
+			return true;
+		}
+		if (sy && sz) {
+			int vy = dy.singleValue(), vz = dz.singleValue();
+			if (vy == 0)
+				return vz == 0;
+			int v = Math.abs(vz) / Math.abs(vy);
+			if (v * vy == vz && dx.reduceToValue(v) == false)
+				return false;
+			if ((-v) * vy == vz && dx.reduceToValue(-v) == false)
+				return false;
+			return true;
+		}
+		if (sx)
+			return dx.singleValue() == 0 ? dz.reduceToValue(0) : enforceEQc(dy, dx.singleValue(), dz);
+		if (sy)
+			return dy.singleValue() == 0 ? dz.reduceToValue(0) : enforceEQc(dx, dy.singleValue(), dz);
+		// if (sz) {
+		// for (int a = dx.first(); a != -1 ; a= dx.next(a))
+		//
+		//
+		//
+		// }
+
+		// // x * y <= z
+		// int minProd = Math.min(dx.firstValue() < 0 ? dx.firstValue() * dy.lastValue() : dx.firstValue() * dy.firstValue(),
+		// dy.firstValue() < 0 ? dy.firstValue() * dx.lastValue() : dy.firstValue() * dx.firstValue());
+		// if (dz.removeValuesLT(minProd) == false)
+		// // if (dz.removeValuesLT(dx.firstValue() * dy.firstValue()) == false)
+		// return false;
+		// if (!dy.containsValue(0))
+		// if (dx.removeValuesGT(dz.lastValue() / dy.firstValue()) == false)
+		// return false;
+		// if (!dx.containsValue(0))
+		// if (dy.removeValuesGT(dz.lastValue() / dx.firstValue()) == false)
+		// return false;
+		//
+		// // x * y >= z
+		// int maxProd = Math.min(dx.lastValue() < 0 ? dx.lastValue() * dy.firstValue() : dx.lastValue() * dy.lastValue(),
+		// dy.lastValue() < 0 ? dy.lastValue() * dx.firstValue() : dy.lastValue() * dx.lastValue());
+		// if (dz.removeValuesGT(maxProd) == false)
+		// // if (dz.removeValuesGT(dx.lastValue() * dy.lastValue()) == false)
+		// return false;
+		// if (!dy.containsValue(0))
+		// if (dx.removeValuesLT(dz.firstValue() / dy.lastValue()) == false)
+		// return false;
+		// if (!dx.containsValue(0))
+		// if (dy.removeValuesLT(dz.firstValue() / dx.lastValue()) == false)
+		// return false;
+		//
+
+		return true;
+	}
+
+	public static boolean enforceMUL3NE(Domain dx, Domain dy, Domain dz) { // x * y != z
+		boolean sx = dx.size() == 1, sy = dy.size() == 1, sz = dz.size() == 1;
+		if (!sx && !sy && !sz)
+			return true;
+		if (sx && sy && sz)
+			return dx.singleValue() * dy.singleValue() != dz.singleValue();
+		if (sx && sy)
+			return dz.removeValueIfPresent(dx.singleValue() * dy.singleValue());
+		if (sx && sz) {
+			int vx = dx.singleValue(), vz = dz.singleValue();
+			if (vx == 0)
+				return vz != 0;
+			int v = Math.abs(vz) / Math.abs(vx);
+			if (vx * v == vz && dy.removeValueIfPresent(v) == false)
+				return false;
+			if (vx * (-v) == vz && dy.removeValueIfPresent(-v) == false)
+				return false;
+			return true;
+		}
+		if (sy && sz) {
+			int vy = dy.singleValue(), vz = dz.singleValue();
+			if (vy == 0)
+				return vz != 0;
+			int v = Math.abs(vz) / Math.abs(vy);
+			if (v * vy == vz && dx.removeValueIfPresent(v) == false)
+				return false;
+			if ((-v) * vy == vz && dx.removeValueIfPresent(-v) == false)
+				return false;
+			return true;
+		}
+		if (sx)
+			return dx.singleValue() == 0 ? dz.removeValueIfPresent(0) : true;
+		if (sy)
+			return dy.singleValue() == 0 ? dz.removeValueIfPresent(0) : true;
+		return true;
 	}
 
 	/**********************************************************************************************

@@ -488,7 +488,23 @@ public interface Domain extends SetLinked {
 		return Integer.MAX_VALUE;
 	}
 
-	default int commonValueWith(Domain dom, int coeff) {
+	default int commonValueWith(Domain dom, int k) {
+		if (size() <= dom.size())
+			for (int a = first(); a != -1; a = next(a)) {
+				int v = toVal(a);
+				if (dom.containsValue(v - k))
+					return v;
+			}
+		else
+			for (int a = dom.first(); a != -1; a = dom.next(a)) {
+				int v = dom.toVal(a);
+				if (containsValue(v + k))
+					return v;
+			}
+		return Integer.MAX_VALUE;
+	}
+
+	default int commonCoeffValueWith(Domain dom, int coeff) {
 		Kit.control(coeff > 0); // for the moment
 		for (int a = dom.first(); a != -1; a = dom.next(a)) {
 			int v = dom.toVal(a) * coeff;

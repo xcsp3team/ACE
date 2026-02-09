@@ -282,24 +282,24 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	 *            the solver to which this object is attached
 	 */
 	public Decisions(Solver solver) {
+		Variable[] variables = solver.problem.variables;
 		int decoderNum = solver.head.control.solving.decoder;
 		if (decoderNum == 0) { // automatic
-			boolean dec1 = (int) ceil(log(solver.problem.variables.length) / log(2)) + (int) ceil(log(solver.problem.features.maxDomSize()) / log(2)) < 31;
+			boolean dec1 = (int) ceil(log(variables.length) / log(2)) + (int) ceil(log(solver.problem.features.maxDomSize()) / log(2)) < 31;
 			this.decoder = dec1 ? new Decoder1(solver) : new Decoder2(solver);
 		} else
 			this.decoder = decoderNum == 1 ? new Decoder1(solver) : new Decoder2(solver);
 
-//		int nValues = Variable.nInitPracticalValuesFor(solver.problem.variables);
-//		this.set = new SetDense(nValues);
-		
-		
-		this.set= new SetDense(solver.problem.variables.length*4);
+		// int nValues = Variable.nInitPracticalValuesFor(solver.problem.variables);
+		// this.set = new SetDense(nValues);
+
+		this.set = new SetDense(Math.min(Variable.nInitPracticalValuesFor(variables), variables.length * 4));
 		this.failedAssignments = new byte[set.capacity() / 8 + 1];
 	}
 
 	private void addToSet(int decision) {
 		if (set.isFull()) {
-			System.out.println("increaising");
+			Kit.warning("Increasing the capacity of the set of decisions");
 			set.increaseCapacity(2);
 			byte[] tmp = new byte[set.capacity() / 8 + 1];
 			for (int i = 0; i < failedAssignments.length; i++)

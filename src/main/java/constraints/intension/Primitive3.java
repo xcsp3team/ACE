@@ -395,6 +395,36 @@ public abstract class Primitive3 extends ConstraintSpecific implements TagAC, Ta
 			}
 		}
 
+		public static final class Mul3GE extends Mul3 {
+
+			@Override
+			public boolean isSatisfiedBy(int[] t) {
+				return t[0] * t[1] >= t[2];
+			}
+
+			public Mul3GE(Problem pb, Variable x, Variable y, Variable z) {
+				super(pb, x, y, z);
+				control(Utilities.isSafeInt(BigInteger.valueOf(dx.firstValue()).multiply(BigInteger.valueOf(dy.firstValue())).longValueExact()));
+				control(Utilities.isSafeInt(BigInteger.valueOf(dx.lastValue()).multiply(BigInteger.valueOf(dy.lastValue())).longValueExact()));
+				control(dx.firstValue() >= 0 && dy.firstValue() >= 0 && dz.firstValue() >= 0, "For the moment");
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				if (dz.removeValuesGT(dx.lastValue() * dy.lastValue()) == false)
+					return false;
+				if (!dy.containsValue(0))
+					if (dx.removeValuesLT(dz.firstValue() / dy.lastValue()) == false)
+						return false;
+				if (!dx.containsValue(0))
+					if (dy.removeValuesLT(dz.firstValue() / dx.lastValue()) == false)
+						return false;
+				if (dx.firstValue() * dy.firstValue() >= dz.lastValue())
+					return entail();
+				return true;
+			}
+		}
+
 		public static final class Mul3bEQ extends Mul3 {
 
 			@Override

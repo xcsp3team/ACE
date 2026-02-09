@@ -28,14 +28,18 @@ import variables.Variable;
  */
 public abstract class Primitive4 extends ConstraintSpecific implements TagAC, TagCallCompleteFiltering, TagPrimitive {
 
-	public Primitive4(Problem pb, Variable[] scp) {
-		super(pb, scp);
+	protected Domain dx1, dx2, dy1, dy2;
+
+	public Primitive4(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2) {
+		super(pb, new Variable[] { x1, x2, y1, y2 });
+		this.dx1 = x1.dom;
+		this.dx2 = x2.dom;
+		this.dy1 = y1.dom;
+		this.dy2 = y2.dom;
 	}
 
 	public static final class DblDiff extends Primitive4 {
 		// new propagator (seems to be 5-10% more efficient in time - see e.g. ExaminationTimetabling1-merged-D1-1-16.xml)
-
-		private Domain dom0, dom1, dom2, dom3;
 
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
@@ -43,38 +47,34 @@ public abstract class Primitive4 extends ConstraintSpecific implements TagAC, Ta
 		}
 
 		public DblDiff(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2) {
-			super(pb, new Variable[] { x1, x2, y1, y2 });
-			this.dom0 = x1.dom;
-			this.dom1 = x2.dom;
-			this.dom2 = y1.dom;
-			this.dom3 = y2.dom;
+			super(pb, x1, x2, y1, y2);
 		}
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			boolean s0 = dom0.size() == 1, s1 = dom1.size() == 1, s2 = dom2.size() == 1, s3 = dom3.size() == 1;
+			boolean s0 = dx1.size() == 1, s1 = dx2.size() == 1, s2 = dy1.size() == 1, s3 = dy2.size() == 1;
 			boolean b1 = s0 && s1;
 			boolean b2 = s2 && s3;
 			if (!b1 && !b2)
 				return true;
 			if (b1 && b2)// all 4 variables assigned
-				return dom0.singleValue() != dom1.singleValue() || dom2.singleValue() != dom3.singleValue() ? entail() : dummy.dom.fail();
+				return dx1.singleValue() != dx2.singleValue() || dy1.singleValue() != dy2.singleValue() ? entail() : dummy.dom.fail();
 			if (b1) {
-				if (dom0.singleValue() != dom1.singleValue())
+				if (dx1.singleValue() != dx2.singleValue())
 					return entail();
 				if (s2)
-					return dom3.removeValueIfPresent(dom2.singleValue()) && entail(); // no inconsistency possible here
+					return dy2.removeValueIfPresent(dy1.singleValue()) && entail(); // no inconsistency possible here
 				if (s3)
-					return dom2.removeValueIfPresent(dom3.singleValue()) && entail(); // no inconsistency possible here
+					return dy1.removeValueIfPresent(dy2.singleValue()) && entail(); // no inconsistency possible here
 				return true;
 			}
 			if (b2) {
-				if (dom2.singleValue() != dom3.singleValue())
+				if (dy1.singleValue() != dy2.singleValue())
 					return entail();
 				if (s0)
-					return dom1.removeValueIfPresent(dom0.singleValue()) && entail(); // no inconsistency possible here
+					return dx2.removeValueIfPresent(dx1.singleValue()) && entail(); // no inconsistency possible here
 				if (s1)
-					return dom0.removeValueIfPresent(dom1.singleValue()) && entail(); // no inconsistency possible here
+					return dx1.removeValueIfPresent(dx2.singleValue()) && entail(); // no inconsistency possible here
 				return true;
 			}
 			return true;
@@ -85,19 +85,13 @@ public abstract class Primitive4 extends ConstraintSpecific implements TagAC, Ta
 
 		private static final int NO = Integer.MAX_VALUE;
 
-		private Domain domx1, domx2, domy1, domy2;
-
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
 			return Math.abs(t[0] - t[1]) != Math.abs(t[2] - t[3]); // |x1 - x2| != |y1 - y2|
 		}
 
 		public DistDistNE(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2) {
-			super(pb, new Variable[] { x1, x2, y1, y2 });
-			this.domx1 = x1.dom;
-			this.domx2 = x2.dom;
-			this.domy1 = y1.dom;
-			this.domy2 = y2.dom;
+			super(pb, x1, x2, y1, y2);
 		}
 
 		private int onlyOneRemaining(Domain d1, Domain d2) {
@@ -124,20 +118,20 @@ public abstract class Primitive4 extends ConstraintSpecific implements TagAC, Ta
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			int oneLeft = onlyOneRemaining(domx1, domx2), oneRight = onlyOneRemaining(domy1, domy2);
+			int oneLeft = onlyOneRemaining(dx1, dx2), oneRight = onlyOneRemaining(dy1, dy2);
 			if (oneLeft == NO && oneRight == NO)
 				return true;
 			if (oneLeft != NO && oneRight != NO)
 				return oneLeft != oneRight ? entail() : dummy.dom.fail();
 			if (oneLeft != NO) {
-				TypeFilteringResult res = AC.enforceDistNE(domy1, domy2, oneLeft);
+				TypeFilteringResult res = AC.enforceDistNE(dy1, dy2, oneLeft);
 				if (res == TypeFilteringResult.ENTAIL)
 					return entail();
 				assert res == TypeFilteringResult.TRUE || res == TypeFilteringResult.FALSE; // FAIL not possible
 				return res == TypeFilteringResult.TRUE;
 			}
 			assert oneRight != NO;
-			TypeFilteringResult res = AC.enforceDistNE(domx1, domx2, oneRight);
+			TypeFilteringResult res = AC.enforceDistNE(dx1, dx2, oneRight);
 			if (res == TypeFilteringResult.ENTAIL)
 				return entail();
 			assert res == TypeFilteringResult.TRUE || res == TypeFilteringResult.FALSE; // FAIL not possible

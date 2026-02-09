@@ -545,7 +545,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrSum(String id, XNode<XVarInteger>[] trees, Condition condition) {
-		problem.sum(trVar(trees), repeat(1, trees.length), trVar(condition));
+		problem.sum(trVar(trees), trVar(condition)); // do not put coeffs set to 1 here
 	}
 
 	@Override

@@ -16,7 +16,10 @@ import static propagation.AC.enforceGE;
 import static propagation.AC.enforceGT;
 import static propagation.AC.enforceLE;
 import static propagation.AC.enforceLT;
+import static propagation.AC.enforceMUL3NE;
+import static propagation.AC.enforceMul3EQBound;
 import static propagation.AC.enforceNE;
+import static propagation.AC.enforceNEc;
 import static utility.Kit.control;
 
 import java.util.stream.IntStream;
@@ -35,6 +38,7 @@ import constraints.intension.Reification.ReifLogic.ReifLogicn.LogEqOr;
 import constraints.intension.Reification.ReifLogic.ReifLogicn.LogEqXor;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
+import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagNotSymmetric;
 import interfaces.Tags.TagPrimitive;
 import problem.Problem;
@@ -193,7 +197,7 @@ public final class Reification {
 				case IN:
 					return new Reif2In(pb, x, y, values);
 				default: // NOTIN
-					throw new AssertionError("unimplemented case");
+					return new Reif2Notin(pb, x, y, values); // throw new AssertionError("unimplemented case");
 				}
 			}
 
@@ -203,6 +207,38 @@ public final class Reification {
 				super(pb, x, y, -1); // -1 is a dummy value
 				this.values = IntStream.of(values).sorted().toArray();
 				// defineKey(values); // TODO pb because already called (something to change in the hierachy)
+			}
+
+			protected int sentinelIn = -1, sentinelOut = -1; // storing indexes of values
+
+			protected boolean checkSentinelIn() {
+				if (sentinelIn != -1 && dy.contains(sentinelIn))
+					return true;
+				for (int v : values)
+					if (dy.containsValue(v)) {
+						sentinelIn = dy.toIdx(v);
+						return true;
+					}
+				return false;
+			}
+
+			protected boolean checkSentinelOut() {
+				if (dy.size() > values.length)
+					return true;
+				if (sentinelOut != -1 && dy.contains(sentinelOut))
+					return true;
+				int j = 0;
+				for (int a = dy.first(); a != -1; a = dy.next(a)) {
+					int v = dy.toVal(a);
+					while (j < values.length && values[j] < v)
+						j++;
+					if (j == values.length || values[j] != v) {
+						sentinelOut = a;
+						return true;
+					} else
+						j++;
+				}
+				return false;
 			}
 
 			public static final class Reif2In extends Reif2Set {
@@ -215,38 +251,6 @@ public final class Reification {
 					return t[0] == 0;
 				}
 
-				private int sentinelIn = -1, sentinelOut = -1; // storing indexes of values
-
-				private boolean checkSentinelIn() {
-					if (sentinelIn != -1 && dy.contains(sentinelIn))
-						return true;
-					for (int v : values)
-						if (dy.containsValue(v)) {
-							sentinelIn = dy.toIdx(v);
-							return true;
-						}
-					return false;
-				}
-
-				private boolean checkSentinelOut() {
-					if (dy.size() > values.length)
-						return true;
-					if (sentinelOut != -1 && dy.contains(sentinelOut))
-						return true;
-					int j = 0;
-					for (int a = dy.first(); a != -1; a = dy.next(a)) {
-						int v = dy.toVal(a);
-						while (j < values.length && values[j] < v)
-							j++;
-						if (j == values.length || values[j] != v) {
-							sentinelOut = a;
-							return true;
-						} else
-							j++;
-					}
-					return false;
-				}
-
 				public Reif2In(Problem pb, Variable x, Variable y, int[] values) {
 					super(pb, x, y, values);
 				}
@@ -257,11 +261,38 @@ public final class Reification {
 						return dy.removeValuesIn(values) && entail(); // x = 0 => y not in S
 					if (dx.first() == 1)
 						return dy.removeValuesNotIn(values) && entail(); // x = 1 => y in S
-
 					if (!checkSentinelIn())
-						return dx.remove(1) && entail();
+						return dx.remove(1) && entail(); // y not in S => x != 1
 					if (!checkSentinelOut())
-						return dx.remove(0) && entail();
+						return dx.remove(0) && entail(); // y in S => x != 0
+					return true;
+				}
+			}
+
+			public static final class Reif2Notin extends Reif2Set {
+
+				@Override
+				public boolean isSatisfiedBy(int[] t) {
+					for (int v : values)
+						if (v == t[1])
+							return t[0] == 0;
+					return t[0] == 1;
+				}
+
+				public Reif2Notin(Problem pb, Variable x, Variable y, int[] values) {
+					super(pb, x, y, values);
+				}
+
+				@Override
+				public boolean runPropagator(Variable dummy) {
+					if (dx.last() == 0)
+						return dy.removeValuesNotIn(values) && entail(); // x = 0 => y in S
+					if (dx.first() == 1)
+						return dy.removeValuesIn(values) && entail(); // x = 1 => y not in S
+					if (!checkSentinelIn())
+						return dx.remove(0) && entail(); // y not in S => x != 0
+					if (!checkSentinelOut())
+						return dx.remove(1) && entail(); // y in S => x != 1
 					return true;
 				}
 			}
@@ -405,7 +436,7 @@ public final class Reification {
 
 			private int residue; // for a common value in the domains of y and z, supporting (x,1)
 
-			public Reif3EQ(Problem pb, Variable x, Variable y, Variable z) {
+			public Reif3EQ(Problem pb, Variable x, Variable y, Variable z) { // x = (y = z)
 				super(pb, x, y, z);
 			}
 
@@ -437,12 +468,50 @@ public final class Reification {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
+				return (t[0] == 1) == (t[1] + k == t[2]);
+			}
+
+			private int residue; // for a common value in the domains of y(+k) and z, supporting (x,1)
+
+			public Reif3EQb(Problem pb, Variable x, Variable y, int k, Variable z) { // x = (y + k = z)
+				super(pb, x, y, z);
+				this.k = k;
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				if (dy.size() == 1 && dz.size() == 1)
+					return dx.removeIfPresent(dy.firstValue() + k == dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
+				if (dx.last() == 0)
+					return (dy.size() > 1 && dz.size() > 1) || (enforceNE(dy, k, dz) && entail()); // x = 0 => y + k != z
+				if (dx.first() == 1)
+					return enforceEQ(dz, dy, k); // x = 1 => y + k = z
+				assert dx.size() == 2;
+				// we know that (x,0) is supported because the domain of y and/or the domain of z is not singleton
+				if (dy.containsValue(residue) && dz.containsValue(residue))
+					return true;
+				// we look for a support for (x,1), and record it as a residue
+				int v = dz.commonValueWith(dy, k);
+				if (v != Integer.MAX_VALUE)
+					residue = v;
+				else
+					return dx.remove(1) && entail(); // since inconsistency not possible and dy and dz are disjoint
+				return true;
+			}
+		}
+
+		public static final class Reif3EQc extends Reif3 {
+
+			private int k;
+
+			@Override
+			public boolean isSatisfiedBy(int[] t) {
 				return (t[0] == 1) == (t[1] * k == t[2]);
 			}
 
 			private int residue; // for a common value in the domains of y(*k) and z, supporting (x,1)
 
-			public Reif3EQb(Problem pb, Variable x, Variable y, int k, Variable z) { // x = (y*k = z)
+			public Reif3EQc(Problem pb, Variable x, Variable y, int k, Variable z) { // x = (y * k = z)
 				super(pb, x, y, z);
 				this.k = k;
 			}
@@ -452,7 +521,7 @@ public final class Reification {
 				if (dy.size() == 1 && dz.size() == 1)
 					return dx.removeIfPresent(dy.firstValue() * k == dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
 				if (dx.last() == 0)
-					return (dy.size() > 1 && dz.size() > 1) || (enforceNE(dy, k, dz) && entail()); // x = 0 => y*k != z
+					return (dy.size() > 1 && dz.size() > 1) || (enforceNEc(dy, k, dz) && entail()); // x = 0 => y * k != z
 				if (dx.first() == 1)
 					return enforceEQc(dy, k, dz); // x = 1 => y*k = z
 				assert dx.size() == 2;
@@ -460,7 +529,7 @@ public final class Reification {
 				if (dy.containsValue(residue * k) && dz.containsValue(residue))
 					return true;
 				// we look for a support for (x,1), and record it as a residue
-				int v = dz.commonValueWith(dy, k);
+				int v = dz.commonCoeffValueWith(dy, k);
 				if (v != Integer.MAX_VALUE)
 					residue = v;
 				else
@@ -505,6 +574,71 @@ public final class Reification {
 			}
 		}
 
+	}
+
+	public static abstract class Reif4 extends Primitive4 {
+
+		// public static Reif3 buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
+		// switch (op) {
+		// case LT:
+		// return new Reif3LT(pb, x, y, z);
+		// case LE:
+		// return new Reif3LE(pb, x, y, z);
+		// case GE:
+		// return new Reif3GE(pb, x, y, z);
+		// case GT:
+		// return new Reif3GT(pb, x, y, z);
+		// case EQ:
+		// return new Reif3EQ(pb, x, y, z);
+		// default: // NE
+		// return new Reif3NE(pb, x, y, z);
+		// }
+		// }
+
+		public Reif4(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2) { // x1 = (x2 = y1*y2)
+			super(pb, x1, x2, y1, y2);
+			control(dx1.is01(), "The first variable should be of type 01");
+		}
+
+		public static final class Reif4MulEQ extends Reif4 {
+
+			@Override
+			public boolean isSatisfiedBy(int[] t) {
+				return (t[0] == 1) == (t[1] == t[2] * t[3]);
+			}
+
+			@Override
+			public boolean isGuaranteedAC() {
+				return false;
+			}
+
+			public Reif4MulEQ(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2) {
+				super(pb, x1, x2, y1, y2);
+				System.out.println(this + " " + x1 + " " + x2 + " " + y1 + " " + y2);
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+//				if (num == 606) {
+//					System.out.println("filterign " + this);
+//					dx1.display(1);
+//					dx2.display(1);
+//					dy1.display(1);
+//					dy2.display(1);
+//
+//				}
+
+				if (dx1.last() == 0)
+					return enforceMUL3NE(dy1, dy2, dx2); // x1 = 0 => x2 != y1*y2
+				if (dx1.first() == 1)
+					return enforceMul3EQBound(dy1, dy2, dx2); // x1 = 1 => x2 = y1*y2
+				if (dx2.size() == 1 && dy1.size() == 1 && dy2.size() == 1)
+					return dx1.removeIfPresent(dx2.singleValue() == dy1.singleValue() * dy2.singleValue() ? 0 : 1) && entail();
+				// if (dx2.lastValue() < dy1.firstValue() * dy2.firstValue() || dx2.firstValue() > dy1.lastValue() * dy2.lastValue())
+				// return dx1.removeIfPresent(1);
+				return true;
+			}
+		}
 	}
 
 	/**********************************************************************************************

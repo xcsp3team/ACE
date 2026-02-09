@@ -74,6 +74,7 @@ import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.relo
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.setop;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.unalop;
 import static org.xcsp.common.predicates.XNode.node;
+import static org.xcsp.common.predicates.XNode.varLeaf;
 import static org.xcsp.common.predicates.XNodeParent.add;
 import static org.xcsp.common.predicates.XNodeParent.build;
 import static org.xcsp.common.predicates.XNodeParent.dist;
@@ -254,6 +255,8 @@ import constraints.intension.Reification.Reif2.Reif2Rel.Reif2EQ;
 import constraints.intension.Reification.Reif2.Reif2Set;
 import constraints.intension.Reification.Reif3;
 import constraints.intension.Reification.Reif3.Reif3EQb;
+import constraints.intension.Reification.Reif3.Reif3EQc;
+import constraints.intension.Reification.Reif4.Reif4MulEQ;
 import constraints.intension.Reification.ReifLogic;
 import dashboard.Control.OptionsGeneral;
 import dashboard.Control.OptionsGlobal;
@@ -1267,9 +1270,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private Matcher z_relop__x_ariop_y = new Matcher(node(relop, var, node(ariop, var, var)));
 	private Matcher logic_y_relop_z__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, var, var), var));
 	private Matcher x_mul_k_eq_y__eq_z = new Matcher(node(TypeExpr.EQ, node(TypeExpr.EQ, node(MUL, var, val), var), var));
+	private Matcher x_add_k_eq_y__eq_z = new Matcher(node(TypeExpr.EQ, node(TypeExpr.EQ, node(ADD, var, val), var), var));
 
 	// quaternary
 	private Matcher dist_dist__ne = new Matcher(node(TypeExpr.NE, node(TypeExpr.DIST, var, var), node(TypeExpr.DIST, var, var)));
+	private Matcher x_mul_y_eq_w__eq_z = new Matcher(node(TypeExpr.EQ, node(TypeExpr.EQ, node(MUL, var, var), var), var));
 
 	// logic
 	private Matcher logic_X__eq_x = new Matcher(node(TypeExpr.EQ, logic_vars, var));
@@ -1479,7 +1484,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				c = Reif2Rel.buildFrom(this, scp[1], scp[0], tree.relop(0), tree.val(0));
 			else if (logic_k_relop_y__eq_x.matches(tree) && scp[1].dom.is01())
 				c = Reif2Rel.buildFrom(this, scp[1], scp[0], tree.relop(1).arithmeticInversion(), tree.val(0));
-			else if (logic_y_setop_vals__eq_x.matches(tree) && scp[1].dom.is01() && tree.setop(0) != TypeConditionOperatorSet.NOTIN) // TODO extending cases
+			else if (logic_y_setop_vals__eq_x.matches(tree) && scp[1].dom.is01()) // && tree.setop(0) != TypeConditionOperatorSet.NOTIN) // TODO extending cases
 				c = Reif2Set.buildFrom(this, scp[1], scp[0], tree.setop(0), tree.arrayOfVals());
 			else if (unalop_x__eq_y.matches(tree))
 				c = Primitive2.buildFrom(this, scp[1], tree.unalop(0), scp[0]);
@@ -1516,10 +1521,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				control(vars.length == 4 && vars[0] != vars[1] && vars[2] != vars[3]);
 				Variable x = vars[0] == vars[2] || vars[0] == vars[3] ? vars[0] : vars[1];
 				c = new DistDistNE3(this, x, x == vars[0] ? vars[1] : vars[0], x == vars[2] ? vars[3] : vars[2]);
-			}
-			// else if (x_mul_k_eq_y__eq_z.matches(tree) && tree.vars().length == arity) { // TODO to be tested on ATPS for example
-			// c = new Reif3EQb(this, scp[2], scp[0], tree.val(0), scp[1]);
-			// }
+			} else if (x_mul_k_eq_y__eq_z.matches(tree) && tree.vars().length == arity) // TODO to be tested on ATPS for example
+				c = new Reif3EQc(this, scp[2], scp[0], tree.val(0), scp[1]);
+			else if (x_add_k_eq_y__eq_z.matches(tree) && tree.vars().length == arity) // TODO to be tested on ArithmeticTarget for example
+				c = new Reif3EQb(this, scp[2], scp[0], tree.val(0), scp[1]);
 			if (c != null)
 				return post(c);
 		}
@@ -1528,6 +1533,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			Constraint c = null;
 			if (dist_dist__ne.matches(tree))
 				c = new DistDistNE(this, scp[0], scp[1], scp[2], scp[3]);
+			else if (x_mul_y_eq_w__eq_z.matches(tree) && tree.vars().length == arity) {// TODO to be tested on ArithmeticTarget for example
+				System.out.println("ggggg " + tree + " " + Kit.join(scp));
+				c = new Reif4MulEQ(this, scp[3], scp[2], scp[0], scp[1]);
+			}
 			if (c != null)
 				return post(c);
 		}
@@ -2654,6 +2663,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public CtrEntity sum(XNode<IVar>[] trees, int[] coeffs, Condition condition) {
+		// System.out.println("jjjjj " + Kit.join(trees) + " " + coeffs + " " + condition);
 		control(trees.length > 0, "A constraint sum is posted with a scope of 0 variable");
 
 		if (coeffs != null && IntStream.of(coeffs).anyMatch(c -> c == 0)) { // we discard useless terms, if any
@@ -2699,16 +2709,69 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return sum(replaceByVariables(trees), coeffs, condition);
 	}
 
-	private CtrEntity sum(XNode<IVar>[] trees, Condition condition) {
-		return sum(trees, null, condition);
-	}
-
 	private CtrEntity sum(Stream<XNode<IVar>> trees, int[] coeffs, Condition condition) {
 		return sum(treesToArray(trees), coeffs, condition);
 	}
 
-	private CtrEntity sum(Stream<XNode<IVar>> trees, Condition condition) {
+	private int addToList(XNode<IVar> tree, List<XNode<IVar>> list) {
+		int v = 0;
+		if (tree.type == LONG)
+			v += tree.val(0);
+		else if (tree.type == SUB && tree.sons[1].type == LONG) {
+			v += addToList(tree.sons[0], list);
+			v += tree.sons[1].val(0);
+		} else if (tree.type == ADD) {
+			for (int i = 0; i < tree.sons.length; i++)
+				v += addToList(tree.sons[i], list);
+		} else
+			list.add(tree);
+		return v;
+	}
+
+	private XNode<IVar>[] lastTrees;
+
+	private Variable lastVar;
+
+	public CtrEntity sum(XNode<IVar>[] trees, Condition condition) {
+		boolean test = false;
+		if (test) {
+			if (lastTrees != null && lastTrees.length <= trees.length) {
+				boolean similar = true;
+				for (int i = 0; similar && i < lastTrees.length; i++)
+					if (lastTrees[i].compareTo(trees[i]) != 0)
+						similar = false;
+				if (similar) {
+					XNode<IVar>[] newTrees = new XNode[trees.length - lastTrees.length + 1];
+					newTrees[0] = varLeaf(lastVar);
+					for (int j = 0; j < trees.length - lastTrees.length; j++)
+						newTrees[j + 1] = trees[j + lastTrees.length];
+					if (condition instanceof ConditionVar && ((ConditionVar) condition).operator == EQ) {
+						lastTrees = trees.clone();
+						lastVar = (Variable) ((ConditionVar) condition).x;
+					}
+					return sum(newTrees, null, condition);
+				}
+			}
+
+			if (condition instanceof ConditionVar && ((ConditionVar) condition).operator == EQ) {
+				lastTrees = trees.clone();
+				lastVar = (Variable) ((ConditionVar) condition).x;
+				System.out.println("recording");
+			}
+		}
+		// List<XNode<IVar>> list = new ArrayList<>();
+		// int v = 0;
+		// for (int i = 0; i < trees.length; i++)
+		// v += addToList(trees[i], list);
+		// if (v != 0)
+		// list.add(longLeaf(v));
+		// return sum(list.stream(), null, condition);
+
 		return sum(trees, null, condition);
+	}
+
+	private CtrEntity sum(Stream<XNode<IVar>> trees, Condition condition) {
+		return sum(treesToArray(trees), condition);
 	}
 
 	// ************************************************************************
