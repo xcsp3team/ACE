@@ -14,8 +14,6 @@ import constraints.Constraint;
 import constraints.extension.structures.Bits;
 import interfaces.SpecificPropagator;
 import problem.Problem;
-import sets.SetLinked;
-import sets.SetLinkedFinite.SetLinkedFiniteWithBits2;
 import sets.SetSparse;
 import utility.Kit;
 import variables.Domain;
@@ -198,24 +196,6 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 			return -1;
 		}
 
-		private short seekSupportPosition(long[] bitSup, long[] bitDom, int[] bitSupDense, SetSparse set) { // for the variant
-			if (set.size() <= bitSupDense.length) {
-				int[] dense = set.dense;
-				for (int i = set.limit; i >= 0; i--) {
-					int j = dense[i];
-					if ((bitSup[j] & bitDom[j]) != 0)
-						return (short) j;
-				}
-			} else {
-				for (int i = bitSupDense.length - 1; i >= 0; i--) {
-					int j = bitSupDense[i];
-					if ((bitSup[j] & bitDom[j]) != 0)
-						return (short) j;
-				}
-			}
-			return -1;
-		}
-
 		@Override
 		public void applyTo(Constraint c, Variable x) {
 			if (!(c.extStructure() instanceof Bits)) {
@@ -245,26 +225,45 @@ public class Reviser { // Basic object to perform revisions, as in AC3
 					for (int a = dom.first(); a != -1; a = dom.next(a))
 						if (seekSupportPosition(bitSups[a], bitDom) == -1)
 							dom.removeElementary(a);
-			} else {
-				SetLinkedFiniteWithBits2 sety = (SetLinkedFiniteWithBits2) ((SetLinked) y.dom);
-				int[][] bitSupsDense = ((Bits) c.extStructure()).supsFiletered(px);
-				if (residues != null) {
-					for (int a = dom.first(); a != -1; a = dom.next(a)) {
-						short i = residues[a];
-						if ((bitSups[a][i] & bitDom[i]) != 0)
-							continue;
-						i = seekSupportPosition(bitSups[a], bitDom, bitSupsDense[a], sety.set);
-						if (i == -1)
-							dom.removeElementary(a);
-						else
-							residues[a] = i;
-					}
-				} else
-					for (int a = dom.first(); a != -1; a = dom.next(a))
-						if (seekSupportPosition(bitSups[a], bitDom, bitSupsDense[a], sety.set) == -1)
-							dom.removeElementary(a);
 			}
+			// else {
+			// SetLinkedFiniteWithBits2 sety = (SetLinkedFiniteWithBits2) ((SetLinked) y.dom);
+			// int[][] bitSupsDense = ((Bits) c.extStructure()).supsFiletered(px);
+			// if (residues != null) {
+			// for (int a = dom.first(); a != -1; a = dom.next(a)) {
+			// short i = residues[a];
+			// if ((bitSups[a][i] & bitDom[i]) != 0)
+			// continue;
+			// i = seekSupportPosition(bitSups[a], bitDom, bitSupsDense[a], sety.set);
+			// if (i == -1)
+			// dom.removeElementary(a);
+			// else
+			// residues[a] = i;
+			// }
+			// } else
+			// for (int a = dom.first(); a != -1; a = dom.next(a))
+			// if (seekSupportPosition(bitSups[a], bitDom, bitSupsDense[a], sety.set) == -1)
+			// dom.removeElementary(a);
+			// }
 		}
+
+		// private short seekSupportPosition(long[] bitSup, long[] bitDom, int[] bitSupDense, SetSparse set) { // for the variant
+		// if (set.size() <= bitSupDense.length) {
+		// int[] dense = set.dense;
+		// for (int i = set.limit; i >= 0; i--) {
+		// int j = dense[i];
+		// if ((bitSup[j] & bitDom[j]) != 0)
+		// return (short) j;
+		// }
+		// } else {
+		// for (int i = bitSupDense.length - 1; i >= 0; i--) {
+		// int j = bitSupDense[i];
+		// if ((bitSup[j] & bitDom[j]) != 0)
+		// return (short) j;
+		// }
+		// }
+		// return -1;
+		// }
 	}
 
 }

@@ -10,8 +10,6 @@
 
 package propagation;
 
-import static utility.Kit.control;
-
 import java.math.BigInteger;
 import java.util.stream.Stream;
 
@@ -20,7 +18,6 @@ import org.xcsp.common.Utilities;
 import constraints.Constraint;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Mul2.Mul2GE;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Mul2.Mul2LE;
-import problem.Problem;
 import solver.Solver;
 import utility.Kit;
 import variables.Domain;

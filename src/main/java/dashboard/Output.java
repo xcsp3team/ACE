@@ -57,8 +57,10 @@ import problem.Features;
 import problem.Problem;
 import problem.XCSP3;
 import propagation.AC;
+import propagation.Forward;
 import propagation.Propagation;
 import propagation.SAC.SACGreedy;
+import sets.SetLinkedFinite;
 import solver.Solver.Stopping;
 import solver.Statistics;
 import utility.Kit;
@@ -203,6 +205,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String PRIORITY_ARRAYS = "priorityArrays";
 	public static final String N_REMOVED1 = "removed1";
 	public static final String N_CONVERTED = "converted";
+	public static final String N_GENERIC = "generic";
 	public static final String N_SPECIFIC = "specific";
 	public static final String N_MERGED = "merged";
 	public static final String N_ADDED = "added";
@@ -549,6 +552,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put("nNogoods", features.collecting.nogoods.size());
 		m.put("nGatheredNogoods", features.collecting.nCollectedNogoodsGathered);
 		m.put(N_SPECIFIC, Stream.of(head.problem.constraints).filter(c -> c instanceof SpecificPropagator).count());
+		m.put(N_GENERIC, Stream.of(head.problem.constraints).filter(c -> !(c instanceof SpecificPropagator)).count());
 		m.put("backtrackable", Stream.of(head.problem.constraints).filter(c -> c instanceof ObserverOnBacktracksSystematic).count());
 		m.put(N_MERGED, features.nMergedCtrs);
 		m.put(N_DISCARDED, features.nDiscardedCtrs);
@@ -624,7 +628,11 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	private InformationBloc solverInfo() {
 		InformationBloc m = new InformationBloc(SOLVER);
 		m.put(GUARANTEED_AC, head.solver.propagation.getClass() == AC.class ? ((AC) head.solver.propagation).guaranteed : "");
+		m.put("nBinary", Stream.of(head.problem.variables).filter(x -> x.dom.binary() != null && x.dom instanceof SetLinkedFinite).count());
+		if (head.solver.propagation instanceof Forward && ((Forward) head.solver.propagation).reviser != null)
+			m.put("reviser", ((Forward) head.solver.propagation).reviser.getClass().getSimpleName());
 		m.put("decoder", head.solver.decisions.decoder.getClass().getSimpleName());
+
 		m.separator();
 		m.put(WCK, head.instanceStopwatch.wckTimeInSeconds());
 		m.put(CPU, head.stopwatch.cpuTimeInSeconds());

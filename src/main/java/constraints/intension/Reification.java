@@ -38,7 +38,6 @@ import constraints.intension.Reification.ReifLogic.ReifLogicn.LogEqOr;
 import constraints.intension.Reification.ReifLogic.ReifLogicn.LogEqXor;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
-import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagNotSymmetric;
 import interfaces.Tags.TagPrimitive;
 import problem.Problem;

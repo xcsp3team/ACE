@@ -13,6 +13,7 @@ package constraints.intension;
 import static utility.Kit.control;
 
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import constraints.ConstraintGlobal;
 import interfaces.Tags.TagAC;
@@ -51,6 +52,10 @@ public class Nogood extends ConstraintGlobal implements TagAC, TagCallCompleteFi
 		control(IntStream.range(0, vars.length).allMatch(i -> vars[i].dom.size() > 1 && vars[i].dom.containsValue(vals[i])));
 		sentinel1 = 0;
 		sentinel2 = 1;
+	}
+
+	public Nogood(Problem pb, Stream<Variable> vars, IntStream vals) {
+		this(pb, vars.toArray(Variable[]::new), vals.toArray());
 	}
 
 	private int findAnotherSentinel() {

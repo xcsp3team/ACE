@@ -18,9 +18,7 @@ import static utility.Kit.control;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -622,87 +620,87 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 	}
 
-	public static final class OrgnOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
-
-		private int mode;
-		private int size = 3;
-
-		private final long[] cnts;
-		private final long[] lastFailed;
-
-		private Set<Integer> set;
-
-		public OrgnOnDom(Solver solver, boolean anti) {
-			super(solver, anti);
-			this.mode = solver.head.control.varh.pickMode;
-			this.cnts = new long[solver.problem.variables.length];
-			this.lastFailed = this.mode == 0 ? null : new long[solver.problem.variables.length];
-			this.set = new LinkedHashSet<Integer>();
-		}
-
-		@Override
-		public void reset() {
-			Arrays.fill(cnts, 0);
-		}
-
-		@Override
-		public void beforeRun() {
-			if (runReset()) {
-				resettingMessage("stats");
-				reset();
-			}
-		}
-
-		@Override
-		public void whenWipeout(Constraint c, Variable x) {
-			if (solver.depth() == 0)
-				return;
-
-			int num = solver.futVars.lastPast().num; // because some propagators do not effectively prune values before failing
-			cnts[num]++;
-			set.clear();
-			set.add(num);
-
-			if (lastFailed != null)
-				lastFailed[num] = solver.stats.nFailedAssignments;
-
-			Domain dx = x.dom;
-			for (int a = dx.lastRemoved(); a != -1; a = dx.prevRemoved(a)) {
-				int level = dx.removedLevelOf(a);
-				if (level == 0)
-					break;
-				num = solver.futVars.getPast(level - 1).num;
-				if (!set.contains(num)) {
-					cnts[num]++;
-					set.add(num);
-					if (set.size() >= size)
-						break;
-				}
-				// cnts[y.num]++;
-			}
-
-		}
-
-		@Override
-		public void whenBacktrack() {
-		}
-
-		@Override
-		public double scoreOf(Variable x) {
-			double r = 1;
-			if (mode == 1)
-				r = (1 / (double) (solver.stats.nFailedAssignments - lastFailed[x.num] + 1));
-			else if (mode == 2)
-				r = Math.sqrt((1 / (double) (solver.stats.nFailedAssignments - lastFailed[x.num] + 1)));
-			else if (mode == 3) {
-				r = (1 / (double) (solver.stats.nFailedAssignments - lastFailed[x.num] + 1));
-				r = r * r;
-			}
-			return cnts[x.num] * r / (double) x.dom.size();
-
-			// (nFailed / (double) n) + (1 / (double) (solver.stats.nFailedAssignments - lastFailed[x.num] + 1));
-		}
-	}
+//	public static final class OrgnOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
+//
+//		private int mode;
+//		private int size = 3;
+//
+//		private final long[] cnts;
+//		private final long[] lastFailed;
+//
+//		private Set<Integer> set;
+//
+//		public OrgnOnDom(Solver solver, boolean anti) {
+//			super(solver, anti);
+//			this.mode = solver.head.control.varh.pickMode;
+//			this.cnts = new long[solver.problem.variables.length];
+//			this.lastFailed = this.mode == 0 ? null : new long[solver.problem.variables.length];
+//			this.set = new LinkedHashSet<Integer>();
+//		}
+//
+//		@Override
+//		public void reset() {
+//			Arrays.fill(cnts, 0);
+//		}
+//
+//		@Override
+//		public void beforeRun() {
+//			if (runReset()) {
+//				resettingMessage("stats");
+//				reset();
+//			}
+//		}
+//
+//		@Override
+//		public void whenWipeout(Constraint c, Variable x) {
+//			if (solver.depth() == 0)
+//				return;
+//
+//			int num = solver.futVars.lastPast().num; // because some propagators do not effectively prune values before failing
+//			cnts[num]++;
+//			set.clear();
+//			set.add(num);
+//
+//			if (lastFailed != null)
+//				lastFailed[num] = solver.stats.nFailedAssignments;
+//
+//			Domain dx = x.dom;
+//			for (int a = dx.lastRemoved(); a != -1; a = dx.prevRemoved(a)) {
+//				int level = dx.removedLevelOf(a);
+//				if (level == 0)
+//					break;
+//				num = solver.futVars.getPast(level - 1).num;
+//				if (!set.contains(num)) {
+//					cnts[num]++;
+//					set.add(num);
+//					if (set.size() >= size)
+//						break;
+//				}
+//				// cnts[y.num]++;
+//			}
+//
+//		}
+//
+//		@Override
+//		public void whenBacktrack() {
+//		}
+//
+//		@Override
+//		public double scoreOf(Variable x) {
+//			double r = 1;
+//			if (mode == 1)
+//				r = (1 / (double) (solver.stats.nFailedAssignments - lastFailed[x.num] + 1));
+//			else if (mode == 2)
+//				r = Math.sqrt((1 / (double) (solver.stats.nFailedAssignments - lastFailed[x.num] + 1)));
+//			else if (mode == 3) {
+//				r = (1 / (double) (solver.stats.nFailedAssignments - lastFailed[x.num] + 1));
+//				r = r * r;
+//			}
+//			return cnts[x.num] * r / (double) x.dom.size();
+//
+//			// (nFailed / (double) n) + (1 / (double) (solver.stats.nFailedAssignments - lastFailed[x.num] + 1));
+//		}
+//	}
 
 	public static final class RunRobin extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
 

@@ -55,7 +55,9 @@ import learning.NogoodReasoner;
 import main.Head;
 import main.HeadExtraction;
 import problem.Problem;
+import propagation.Forward;
 import propagation.Propagation;
+import propagation.Supporter;
 import sets.SetDense;
 import sets.SetSparseReversible;
 import utility.Kit;
@@ -844,6 +846,15 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		this.observersOnConflicts = collectObserversOnConflicts();
 
 		this.profiler = head.control.general.profiling ? new Profiler() : null;
+
+		// finally, should we use binary representations of domains?
+
+		for (Constraint c : problem.constraints)
+			c.supporter = Supporter.buildFor(c);
+		if (problem.solver.propagation instanceof Forward)
+			for (Variable x : problem.variables) {
+				x.buildBinaryRepresentation();
+			}
 	}
 
 	/**

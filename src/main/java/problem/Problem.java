@@ -256,7 +256,6 @@ import constraints.intension.Reification.Reif2.Reif2Set;
 import constraints.intension.Reification.Reif3;
 import constraints.intension.Reification.Reif3.Reif3EQb;
 import constraints.intension.Reification.Reif3.Reif3EQc;
-import constraints.intension.Reification.Reif4.Reif4MulEQ;
 import constraints.intension.Reification.ReifLogic;
 import dashboard.Control.OptionsGeneral;
 import dashboard.Control.OptionsGlobal;
@@ -375,7 +374,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				this.priorityVars = IntStream.range(from, scp.length).map(i -> scp.length - i + from - 1).mapToObj(i -> scp[i]).toArray(Variable[]::new);
 				this.nStrictPriorityVars = this.priorityVars.length;
 			}
-		}
+		}		
 	}
 
 	@Override
@@ -565,14 +564,23 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private void postNogood(CollectedNogood nogood) {
-		if (nogood.vars.length == 1) {
-			assert nogood.vals.length == 1;
-			Variable x = nogood.vars[0];
-			int v = nogood.vals[0];
-			if (x.dom.containsValue(v))
-				x.dom.removeValueAtConstructionTime(v);
-		} else
-			post(new Nogood(this, nogood.vars, nogood.vals));
+		Variable[] vars = nogood.vars;
+		int[] vals = nogood.vals;
+		if (vars.length == 1) {
+			assert vals.length == 1;
+			if (vars[0].dom.containsValue(vals[0]))
+				vars[0].dom.removeValueAtConstructionTime(vals[0]);
+		} else {
+			boolean singleton = Stream.of(vars).anyMatch(x -> x.dom.size() == 1);
+			if (IntStream.range(0, vars.length).allMatch(i -> vars[i].dom.containsValue(vals[i]))) { // otherwise nogood trivially satisfied
+				if (!singleton)
+					post(new Nogood(this, vars, vals));
+				else {
+					post(new Nogood(this, Stream.of(vars).filter(x -> x.dom.size() > 1),
+							IntStream.range(0, vals.length).filter(i -> vars[i].dom.size() > 1).map(i -> vals[i])));
+				}
+			}
+		}
 	}
 
 	private void manageCollectedNogoods() {
@@ -1533,10 +1541,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			Constraint c = null;
 			if (dist_dist__ne.matches(tree))
 				c = new DistDistNE(this, scp[0], scp[1], scp[2], scp[3]);
-			else if (x_mul_y_eq_w__eq_z.matches(tree) && tree.vars().length == arity) {// TODO to be tested on ArithmeticTarget for example
-				System.out.println("ggggg " + tree + " " + Kit.join(scp));
-				c = new Reif4MulEQ(this, scp[3], scp[2], scp[0], scp[1]);
-			}
+			// else if (x_mul_y_eq_w__eq_z.matches(tree) && tree.vars().length == arity) {// TODO to be tested on ArithmeticTarget for example
+			// System.out.println("ggggg " + tree + " " + Kit.join(scp));
+			// c = new Reif4MulEQ(this, scp[3], scp[2], scp[0], scp[1]);
+			// }
 			if (c != null)
 				return post(c);
 		}
@@ -2155,7 +2163,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (scp.length <= 4 && scp[0] instanceof VariableInteger) { // TODO: increase the limit?
 			Set<Integer> sv = Variable.setOfvaluesIn(scp);
 			if (sv.size() == scp.length)
-				return extension((Var[]) scp, Kit.allPermutations(sv.stream().mapToInt(v -> v).toArray()), true);
+				return extension((Var[]) scp, Kit.allPermutations(sv.stream().mapToInt(v -> v).sorted().toArray()), true);
 		}
 
 		if (head.control.global.gatherAllDifferent) {
@@ -3027,7 +3035,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// binpacking((Var[]) scp, Kit.repeat(1, scp.length), occurs, true); // redundant constraint TODO to be checked (real interest?)
 
 		return forall(range(values.length), i -> {
-			post(new ExactlyVarK(this, Stream.of(scp).filter(x -> x.dom.containsValue(values[i])).toArray(Variable[]::new), values[i], (Variable) occurs[i]));
+			Variable[] newScp = Stream.of(scp).filter(x -> x.dom.containsValue(values[i])).toArray(Variable[]::new);
+			control(newScp.length > 0);
+			if (newScp.length == 1)
+				equal(eq(newScp[0], values[i]), occurs[i]);
+			else
+				post(new ExactlyVarK(this, newScp, values[i], (Variable) occurs[i]));
 		});
 	}
 

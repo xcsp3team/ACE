@@ -23,7 +23,7 @@ import org.xcsp.common.Range;
 import org.xcsp.common.Utilities;
 
 import sets.SetDense;
-import sets.SetLinkedFinite.SetLinkedFiniteWithBits;
+import sets.SetLinkedFinite;
 import utility.Kit;
 import variables.Variable.VariableInteger;
 
@@ -33,7 +33,7 @@ import variables.Variable.VariableInteger;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Domain {
+public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 
 	@Override
 	public boolean equals(Object obj) {
@@ -401,8 +401,8 @@ public abstract class DomainFinite extends SetLinkedFiniteWithBits implements Do
 
 		@Override
 		public int removedLevelOf(int a) {
-			if (masterDom.size() == 1)
-				return super.removedLevelOf(a);
+//			if (masterDom.size() == 1)
+//				return super.removedLevelOf(a);
 			throw new AssertionError("should not be called");
 		}
 

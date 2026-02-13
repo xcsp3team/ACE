@@ -137,7 +137,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		}
 
 		@Override
-		public boolean launchFiltering(Variable x) {
+		public final boolean launchFiltering(Variable x) {
 			Reviser reviser = ((Forward) problem.solver.propagation).reviser;
 			int nNonSingletons = 0;
 			if (x.assigned() || scp.length == 1) {

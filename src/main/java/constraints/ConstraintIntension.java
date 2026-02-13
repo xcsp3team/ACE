@@ -403,7 +403,7 @@ public final class ConstraintIntension extends Constraint implements TagCallComp
 	}
 
 	@Override
-	public boolean launchFiltering(Variable x) {
+	public final boolean launchFiltering(Variable x) {
 		if (futvars.size() > genericFilteringThreshold) {
 			int nNonSingletons = 0;
 			double prod = 1;

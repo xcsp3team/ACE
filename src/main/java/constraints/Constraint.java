@@ -329,7 +329,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	/**
 	 * An object that can be useful to look efficiently after supports (using a cache technique called residues); useful only with some kind of constraints
 	 */
-	protected final Supporter supporter;
+	public Supporter supporter;
 
 	/**
 	 * The object that manages information about the number of conflicts of pairs (x,a) for the constraint; useful only with some kind of constraints
@@ -657,7 +657,6 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		this.postponable = false;
 		this.canSkipFilteringDueToCompleteness = false;
 		this.infiniteDomainVars = new Variable[0];
-		this.supporter = null;
 	}
 
 	/**
@@ -679,7 +678,6 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		this.specialServants = involvingSpecialServants ? Stream.of(scp).filter(x -> x.specialMaster != null).toArray(VariableInteger[]::new) : null;
 
 		this.tupleIterator = new TupleIterator(this.doms);
-		this.supporter = Supporter.buildFor(this);
 
 		this.indexesMatchValues = Stream.of(scp).allMatch(x -> x.dom.indexesMatchValues());
 		this.genericFilteringThreshold = this instanceof SpecificPropagator || this instanceof ConstraintExtension ? Integer.MAX_VALUE

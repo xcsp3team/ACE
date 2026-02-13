@@ -25,10 +25,14 @@ import org.xcsp.common.Constants;
 import org.xcsp.common.IVar;
 
 import constraints.Constraint;
+import constraints.ConstraintExtension.ExtensionGeneric;
+import constraints.extension.structures.Bits;
 import heuristics.HeuristicValues;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.Observers.ObserverOnBacktracks.ObserveronBacktracksUnsystematic;
 import problem.Problem;
+import propagation.Forward;
+import propagation.Reviser.Reviser3;
 import utility.Kit;
 import variables.DomainFinite.DomainFiniteSpecial;
 import variables.DomainFinite.DomainRange;
@@ -651,6 +655,27 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	public void reset() {
 		assert !assigned() && dom.controlStructures(); // && control(dom.nRemoved() == 0 ??
 		time = 0;
+	}
+
+	public void buildBinaryRepresentation() {
+		if (!(dom instanceof DomainFinite))
+			return;
+		boolean needBinaryrepresentation = false;
+		for (Constraint c : ctrs) {
+			if (!(c instanceof ExtensionGeneric))
+				continue;
+			if (!(c.extStructure() instanceof Bits))
+				continue;
+			if (!(((Forward) problem.solver.propagation).reviser instanceof Reviser3) && c.supporter != null)
+				continue;
+			System.out.println("j jjjj  " + this + " " + c);
+			needBinaryrepresentation = true;
+			break;
+		}
+		if (needBinaryrepresentation) {
+			
+			((DomainFinite) dom).buildBinaryRepresentation(false); // TODO hard coding add an option for the parameter
+		}
 	}
 
 	/**

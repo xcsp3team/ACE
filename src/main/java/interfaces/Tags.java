@@ -60,6 +60,12 @@ public interface Tags {
 	}
 
 	/**
+	 * Tag for indicating that a constraint is performing some form of generic filtering.
+	 */
+	interface TagGenericFiltering {
+	}
+	
+	/**
 	 * Tag for indicating that an object (e.g., a constraint) is able to reason on bounds (of domains).
 	 */
 	interface TagBoundCompatible {

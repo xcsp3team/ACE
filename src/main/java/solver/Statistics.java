@@ -23,6 +23,7 @@ import interfaces.Observers.ObserverOnDecisions;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Observers.ObserverOnSolving;
 import propagation.Forward;
+import propagation.Reviser;
 import utility.Kit;
 import utility.Stopwatch;
 import variables.Variable;
@@ -229,8 +230,7 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 			if (nFailedPerValue != null)
 				nFailedPerValue[a]--;
 		}
-		
-		
+
 		public double failureRate() {
 			return nFailed / (double) n;
 		}
@@ -419,11 +419,13 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	}
 
 	public final long nRevisions() {
-		return solver.propagation instanceof Forward ? ((Forward) solver.propagation).reviser.nRevisions : 0;
+		Reviser reviser = solver.propagation instanceof Forward ? ((Forward) solver.propagation).reviser : null;
+		return reviser != null ? reviser.nRevisions : 0;
 	}
 
 	public final long nUselessRevisions() {
-		return solver.propagation instanceof Forward ? ((Forward) solver.propagation).reviser.nUselessRevisions : 0;
+		Reviser reviser = solver.propagation instanceof Forward ? ((Forward) solver.propagation).reviser : null;
+		return reviser != null ? reviser.nUselessRevisions : 0;
 	}
 
 	public final String infoARunAssignemnts() {

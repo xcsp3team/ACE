@@ -10,6 +10,8 @@
 
 package solver;
 
+import static java.lang.Math.ceil;
+import static java.lang.Math.log;
 import static utility.Kit.control;
 
 import java.util.ArrayList;
@@ -25,9 +27,6 @@ import utility.Bit;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
-
-import static java.lang.Math.log;
-import static java.lang.Math.ceil;
 
 /**
  * This object allows us to store the set of decisions taken by the solver during search. <br />
@@ -299,7 +298,7 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 
 	private void addToSet(int decision) {
 		if (set.isFull()) {
-			Kit.warning("Increasing the capacity of the set of decisions");
+			Kit.log.config(Kit.Color.YELLOW.coloring(" ...Increasing the capacity of the set of decisions"));
 			set.increaseCapacity(2);
 			byte[] tmp = new byte[set.capacity() / 8 + 1];
 			for (int i = 0; i < failedAssignments.length; i++)

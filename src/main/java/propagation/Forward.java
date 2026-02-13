@@ -12,14 +12,18 @@ package propagation;
 
 import static utility.Kit.control;
 
+import java.util.stream.Stream;
+
+import constraints.ConstraintIntension;
+import interfaces.SpecificPropagator;
 import solver.Solver;
 import solver.Solver.Branching;
 import utility.Reflector;
 import variables.Variable;
 
 /**
- * This is the root class for forward propagation. Such form of propagation corresponds to a prospective approach that
- * deals with unassigned variables. The domains of the unassigned variables can be filtered.
+ * This is the root class for forward propagation. Such form of propagation corresponds to a prospective approach that deals with unassigned variables. The
+ * domains of the unassigned variables can be filtered.
  * 
  * @author Christophe Lecoutre
  */
@@ -27,8 +31,8 @@ public abstract class Forward extends Propagation {
 
 	/**
 	 * The reviser object attached to the forward propagation object. <br />
-	 * IMPORTANT: It is used only by constraints whose filtering algorithms are given by a generic scheme (instead of
-	 * being given by specific propagators). It may be also useful when dealing with MaxCSP.
+	 * IMPORTANT: It is used only by constraints whose filtering algorithms are given by a generic scheme (instead of being given by specific propagators). It
+	 * may be also useful when dealing with MaxCSP.
 	 */
 	public final Reviser reviser;
 
@@ -40,7 +44,10 @@ public abstract class Forward extends Propagation {
 	 */
 	public Forward(Solver solver) {
 		super(solver);
-		this.reviser = Reflector.buildObject(options.reviser, Reviser.class, this);
+		if (Stream.of(solver.problem.constraints).anyMatch(c -> !(c instanceof SpecificPropagator))) // ConstraintIntension or ExtensionGeneric
+			this.reviser = Reflector.buildObject(options.reviser, Reviser.class, this);
+		else
+			this.reviser = null;
 	}
 
 	protected final boolean hasSolverPropagatedAfterLastButOneDecision() {
@@ -67,8 +74,7 @@ public abstract class Forward extends Propagation {
 
 	/**
 	 * This is the class for Forward Checking (FC). This code corresponds to the <i>nFC2 </i> algorithm of: <br>
-	 * "On Forward Checking for Non-binary Constraint Satisfaction", CP 1999: 88-102, by Christian Bessière, Pedro
-	 * Meseguer, Eugene C. Freuder, Javier Larrosa.
+	 * "On Forward Checking for Non-binary Constraint Satisfaction", CP 1999: 88-102, by Christian Bessière, Pedro Meseguer, Eugene C. Freuder, Javier Larrosa.
 	 */
 	public static final class FC extends Forward {
 

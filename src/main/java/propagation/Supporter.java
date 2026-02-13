@@ -39,11 +39,19 @@ public abstract class Supporter {
 	 * @return an object managing residues and multidirectionality
 	 */
 	public static Supporter buildFor(Constraint c) {
-		if (c.problem.head.control.propagation.residues && c.scp.length > 1 && !(c instanceof SpecificPropagator)
-				&& !(c.problem.head.control.propagation.reviser.equals(Reviser3.class.getSimpleName()) && c.extStructure() instanceof Bits)) {
-			return c.scp.length == 2 ? new SupporterBary(c) : new SupporterNary(c);
-		}
-		return null;
+		if (c instanceof SpecificPropagator)
+			return null;
+		if (c.problem.head.control.propagation.residues == false || c.scp.length == 1)
+			return null;
+		if  (c.problem.head.control.propagation.reviser.equals(Reviser3.class.getSimpleName()) && c.extStructure() instanceof Bits) 
+			return null;
+		return c.scp.length == 2 ? new SupporterBary(c) : new SupporterNary(c);
+		
+//		if (c.problem.head.control.propagation.residues && c.scp.length > 1 && !(c instanceof SpecificPropagator)
+//				&& !(c.problem.head.control.propagation.reviser.equals(Reviser3.class.getSimpleName()) && c.extStructure() instanceof Bits)) {
+//			return c.scp.length == 2 ? new SupporterBary(c) : new SupporterNary(c);
+//		}
+//		return null;
 	}
 
 	/**
