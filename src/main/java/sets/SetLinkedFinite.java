@@ -83,11 +83,9 @@ public class SetLinkedFinite implements SetLinked {
 
 	public void buildBinaryRepresentation(boolean withSetOfWords) {
 		int initSize = prevs.length;
-
 		this.binaryRepresentation = new long[initSize / Long.SIZE + (initSize % Long.SIZE != 0 ? 1 : 0)];
 		Arrays.fill(binaryRepresentation, Bit.ALL_LONG_BITS_TO_1);
 		binaryRepresentation[binaryRepresentation.length - 1] = Bit.bitsAt1To(initSize - ((binaryRepresentation.length - 1) * Long.SIZE));
-
 		if (withSetOfWords)
 			this.binaryRepresentationSetOfWords = new SetSparse(binaryRepresentation.length, true);
 	}

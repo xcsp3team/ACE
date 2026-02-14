@@ -100,22 +100,6 @@ public class AC extends Forward {
 	}
 
 	/**
-	 * Enforces AC on x + y <= z
-	 * 
-	 * @param dx
-	 *            the domain of x
-	 * @param dy
-	 *            the domain of y
-	 * @param dz
-	 *            the domain of z
-	 * @return false if an inconsistency is detected
-	 */
-	public static boolean enforceLE(Domain dx, Domain dy, Domain dz) { // x + y <= z
-		return dx.removeValuesGT(dz.lastValue() - dy.firstValue()) && dy.removeValuesGT(dz.lastValue() - dx.firstValue())
-				&& dz.removeValuesLT(dx.firstValue() + dy.firstValue());
-	}
-
-	/**
 	 * Enforces AC on x >= y
 	 * 
 	 * @param dx
@@ -172,6 +156,33 @@ public class AC extends Forward {
 	}
 
 	/**
+	 * Enforces AC on x != y
+	 * 
+	 * @param dx
+	 *            the domain of x
+	 * @param dy
+	 *            the domain of y
+	 * @return false if an inconsistency is detected
+	 */
+	public static boolean enforceNE(Domain dx, Domain dy) { // x != y
+		Utilities.control(dx != dy, "pb");
+		if (dx.size() == 1)
+			return dy.removeValueIfPresent(dx.singleValue());
+		if (dy.size() == 1)
+			return dx.removeValueIfPresent(dy.singleValue());
+		return true;
+	}
+
+	public static boolean enforceNE(Domain dx, int k, Domain dy) { // x + k != y
+		Utilities.control(dx != dy && k != 0, "pb");
+		if (dx.size() == 1)
+			return dy.removeValueIfPresent(dx.singleValue() + k);
+		if (dy.size() == 1)
+			return dx.removeValueIfPresent(dy.singleValue() - k);
+		return true;
+	}
+
+	/**
 	 * Enforces AC on x = y + k
 	 * 
 	 * @param dx
@@ -184,7 +195,7 @@ public class AC extends Forward {
 	 */
 	public static boolean enforceEQ(Domain dx, Domain dy, int k) { // x = y + k
 		if (dx == dy)
-			return k == 0 ? true : dx.fail();
+			return k == 0 ? true : false;
 		int minx = dx.firstValue(), miny = dy.firstValue() + k; // in miny, we take k into account
 		while (minx != miny) {
 			if (minx < miny) {
@@ -267,7 +278,36 @@ public class AC extends Forward {
 	}
 
 	/**
-	 * Enforces AC on x = k - y
+	 * Enforces AC on x = y
+	 * 
+	 * @param dx
+	 *            the domain of x
+	 * @param dy
+	 *            the domain of y
+	 * @return false if an inconsistency is detected
+	 */
+	public static boolean enforceEQ(Domain dx, Domain dy) { // x = y
+		boolean newAlgo = true;
+		if (newAlgo)
+			return enforceEQ(dx, dy, 0);
+		else { // old algo
+			if (dx == dy)
+				return true;
+			Domain d1 = dx.size() <= dy.size() ? dx : dy;
+			Domain d2 = d1 == dx ? dy : dx;
+			if (d1.removeValuesNotIn(d2) == false)
+				return false;
+			if (d1.size() == d2.size())
+				return true;
+			assert d1.size() < d2.size();
+			boolean consistent = d2.removeSurplusValuesWrt(d1);
+			assert consistent && d1.size() == d2.size();
+			return true;
+		}
+	}
+
+	/**
+	 * Enforces AC on x = k - y (x + y == k)
 	 * 
 	 * @param dx
 	 *            the domain of x
@@ -361,15 +401,52 @@ public class AC extends Forward {
 		return true;
 	}
 
-	public static boolean enforceEQc(Domain dx, int k, Domain dy) { // x*k = y (just on bounds)
-		assert k != 0 && dx != dy;
-		Kit.control(k != 0); // for the moment
+	public static int smallestIntegerMultipliedByPositiveCoefficientGE(int coeff, int limit) { // smallest integer v such that v * coeff >= limit with coeff > 0
+		assert coeff > 0;
+		if (limit == 0)
+			return 0;
+		if (limit > 0) // example x * 3 >= 10 gives 4 (3+1)
+			return limit / coeff + (limit % coeff != 0 ? 1 : 0);
+		return -(Math.abs(limit) / coeff); // example x * 3 >= -10 gives -3
+	}
 
+	public static int greatestIntegerMultipliedByNegativeCoefficientGE(int coeff, int limit) { // greatest integer v such that v * coeff >= limit with coeff < 0
+		assert coeff < 0;
+		if (limit == 0)
+			return 0;
+		if (limit > 0) // example x * -3 >= 10 gives -4 (-(3+1))
+			return -(limit / Math.abs(coeff) + (limit % Math.abs(coeff) != 0 ? 1 : 0));
+		return Math.abs(limit) / Math.abs(coeff); // example x * -3 >= -10 gives 3
+	}
+
+	public static int greatestIntegerMultipliedByPositiveCoefficientLE(int coeff, int limit) { // greatest integer v such that v * coeff <= limit with coeff > 0
+		assert coeff > 0;
+		if (limit == 0)
+			return 0;
+		if (limit > 0) // example x * 3 <= 10 gives 3
+			return limit / coeff;
+		return -(Math.abs(limit) / coeff + (Math.abs(limit) % coeff != 0 ? 1 : 0)); // example x * 3 <= -10 gives -4 (-(3+1))
+	}
+
+	public static int smallestIntegerMultipliedByNegativeCoefficientLE(int coeff, int limit) { // smallest integer v such that v * coeff <= limit with coeff < 0
+		assert coeff < 0;
+		if (limit == 0)
+			return 0;
+		if (limit > 0) // example x * -3 <= 10 gives -3
+			return -(limit / Math.abs(coeff));
+		return Math.abs(limit) / Math.abs(coeff) + (Math.abs(limit) % Math.abs(coeff) != 0 ? 1 : 0); // example x * -3 <= -10 gives 4
+	}
+
+	public static boolean enforceEQc(Domain dx, int k, Domain dy) { // x * k = y (just on bounds)
+		if (k == 0)
+			return dy.reduceToValue(0);
+		if (dx == dy)
+			return k == 1 ? true : false;
 		if (k > 0) {
 			int minx = dx.firstValue() * k, miny = dy.firstValue(); // in minx, we take k into account
 			while (minx != miny) {
 				if (minx < miny) {
-					if (dx.removeValuesLT(miny / k + (miny % k != 0 ? 1 : 0)) == false)
+					if (dx.removeValuesLT(smallestIntegerMultipliedByPositiveCoefficientGE(k, miny)) == false)
 						return false;
 					minx = dx.firstValue() * k;
 				}
@@ -378,12 +455,11 @@ public class AC extends Forward {
 						return false;
 					miny = dy.firstValue();
 				}
-				// System.out.println("mmmmmm1 " + minx + " " + miny + " " + k);
 			}
 			int maxx = dx.lastValue() * k, maxy = dy.lastValue();
 			while (maxx != maxy) {
 				if (maxx > maxy) {
-					if (dx.removeValuesGT(maxy / k - (maxy % k != 0 ? 1 : 0)) == false)
+					if (dx.removeValuesGT(greatestIntegerMultipliedByPositiveCoefficientLE(k, maxy)) == false)
 						return false;
 					maxx = dx.lastValue() * k;
 				}
@@ -392,159 +468,44 @@ public class AC extends Forward {
 						return false;
 					maxy = dy.lastValue();
 				}
-				// System.out.println("mmmmmm2 " + maxx + " " + maxy + " " + k);
 			}
 		} else {
-
-			// TODO
-
+			int minx = dx.lastValue() * k, miny = dy.firstValue(); // in minx, we take k into account
+			while (minx != miny) {
+				if (minx < miny) {
+					if (dx.removeValuesGT(greatestIntegerMultipliedByNegativeCoefficientGE(k, miny)) == false)
+						return false;
+					minx = dx.lastValue() * k;
+				}
+				if (miny < minx) {
+					if (dy.removeValuesLT(minx) == false)
+						return false;
+					miny = dy.firstValue();
+				}
+			}
+			int maxx = dx.firstValue() * k, maxy = dy.lastValue();
+			while (maxx != maxy) {
+				if (maxx > maxy) {
+					if (dx.removeValuesLT(smallestIntegerMultipliedByNegativeCoefficientLE(k, maxy)) == false)
+						return false;
+					maxx = dx.firstValue() * k;
+				}
+				if (maxy > maxx) {
+					if (dy.removeValuesGT(maxx) == false)
+						return false;
+					maxy = dy.lastValue();
+				}
+			}
 		}
-
 		// At this stage, we know that bounds of domains (modulo k) are both equal
-		// System.out.println("hhhhhhh2");
-		return true;
-	}
-
-	/**
-	 * Enforces AC on x = y
-	 * 
-	 * @param dx
-	 *            the domain of x
-	 * @param dy
-	 *            the domain of y
-	 * @return false if an inconsistency is detected
-	 */
-	public static boolean enforceEQ(Domain dx, Domain dy) { // x = y
-		if (dx == dy)
-			return true;
-		boolean newAlgo = true;
-		if (newAlgo)
-			return enforceEQ(dx, dy, 0);
-
-		// {
-		// int minx = dx.firstValue(), miny = dy.firstValue();
-		// while (minx != miny) {
-		// if (minx < miny) {
-		// if (dx.removeValuesLT(miny) == false)
-		// return false;
-		// minx = dx.firstValue();
-		// }
-		// if (miny < minx) {
-		// if (dy.removeValuesLT(minx) == false)
-		// return false;
-		// miny = dy.firstValue();
-		// }
-		// }
-		// int maxx = dx.lastValue(), maxy = dy.lastValue();
-		// while (maxx != maxy) {
-		// if (maxx > maxy) {
-		// if (dx.removeValuesGT(maxy) == false)
-		// return false;
-		// maxx = dx.lastValue();
-		// }
-		// if (maxy > maxx) {
-		// if (dy.removeValuesGT(maxx) == false)
-		// return false;
-		// maxy = dy.lastValue();
-		// }
-		// }
-		// // At this stage, we know that bounds of domains are both equal
-		// int cntx = dx.size() - 1, cnty = dy.size() - 1; // -1 for directly comparing with domain distances
-		// boolean connexx = cntx == dx.distance(), connexy = cnty == dy.distance(); // connex means "no hole"
-		// if (!connexx && !connexy) {
-		// int a = dx.next(dx.first()), b = dy.next(dy.first()); // we start with second values
-		// cntx--;
-		// cnty--;
-		// int v = dx.toVal(a), w = dy.toVal(b);
-		// while (!connexx || !connexy || v != w) {
-		// if (v == w) {
-		// a = dx.next(a);
-		// if (a == -1) {
-		// assert dy.next(b) == -1;
-		// return true;
-		// }
-		// b = dy.next(b);
-		// cntx--;
-		// cnty--;
-		// } else if (v < w) {
-		// if (dx.remove(a) == false)
-		// return false;
-		// a = dx.next(a);
-		// cntx--;
-		// } else {
-		// if (dy.remove(b) == false)
-		// return false;
-		// b = dy.next(b);
-		// cnty--;
-		// }
-		// v = dx.toVal(a);
-		// w = dy.toVal(b);
-		// connexx = cntx == (dx.lastValue() - v);
-		// connexy = cnty == (dy.lastValue() - w);
-		// }
-		// }
-		// if (connexx && connexy) // domains are then similar
-		// return true;
-		// if (connexx) { // this is only in dx that we can remove some values (no possible inconsistency)
-		// int nToBeRemoved = dx.size() - dy.size();
-		// for (int a = dx.first(); a != -1 && nToBeRemoved > 0; a = dx.next(a))
-		// if (!dy.containsValue(dx.toVal(a))) {
-		// dx.remove(a);
-		// nToBeRemoved--;
-		// }
-		// } else { // this is only in dy that we can remove some values (no possible inconsistency)
-		// int nToBeRemoved = dy.size() - dx.size();
-		// for (int b = dy.first(); b != -1 && nToBeRemoved > 0; b = dy.next(b))
-		// if (!dx.containsValue(dy.toVal(b))) {
-		// dy.remove(b);
-		// nToBeRemoved--;
-		// }
-		// }
-		// return true;
-		// }
-		{ // old algo
-			Domain d1 = dx.size() <= dy.size() ? dx : dy;
-			Domain d2 = d1 == dx ? dy : dx;
-			if (d1.removeValuesNotIn(d2) == false)
-				return false;
-			if (d1.size() == d2.size())
-				return true;
-			assert d1.size() < d2.size();
-			boolean consistent = d2.removeSurplusValuesWrt(d1);
-			assert consistent && d1.size() == d2.size();
-			return true;
-		}
-	}
-
-	/**
-	 * Enforces AC on x != y
-	 * 
-	 * @param dx
-	 *            the domain of x
-	 * @param dy
-	 *            the domain of y
-	 * @return false if an inconsistency is detected
-	 */
-	public static boolean enforceNE(Domain dx, Domain dy) { // x != y
-		Utilities.control(dx != dy, "pb");
-		if (dx.size() == 1)
-			return dy.removeValueIfPresent(dx.singleValue());
-		if (dy.size() == 1)
-			return dx.removeValueIfPresent(dy.singleValue());
-		return true;
-	}
-
-	public static boolean enforceNE(Domain dx, int k, Domain dy) { // x + k != y
-		Utilities.control(dx != dy && k != 0, "pb");
-		if (dx.size() == 1)
-			return dy.removeValueIfPresent(dx.singleValue() + k);
-		if (dy.size() == 1)
-			return dx.removeValueIfPresent(dy.singleValue() - k);
 		return true;
 	}
 
 	public static boolean enforceNEc(Domain dx, int k, Domain dy) { // x * k != y
-		Utilities.control(dx != dy && k != 0, "pb");
+		if (k == 0)
+			return dy.removeValueIfPresent(0);
+		if (dx == dy)
+			return k == 1 ? false : true;
 		if (dx.size() == 1)
 			return dy.removeValueIfPresent(dx.singleValue() * k);
 		if (dy.size() == 1) {
@@ -554,6 +515,7 @@ public class AC extends Forward {
 			int r = Math.abs(v) % Math.abs(k);
 			if (r != 0)
 				return true;
+			// examples: x * 3 != 6 gives 2; x * 3 != -6 gives -2; x * -3 != 6 gives -2; x * -3 != -6 gives 2
 			int w = (Math.abs(v) / Math.abs(k)) * ((v > 0) == (k > 0) ? 1 : -1);
 			return dx.removeValueIfPresent(w);
 		}
@@ -672,6 +634,26 @@ public class AC extends Forward {
 		return TypeFilteringResult.TRUE;
 	}
 
+	/**********************************************************************************************
+	 * Ternary static methods
+	 *********************************************************************************************/
+
+	/**
+	 * Enforces AC on x + y <= z
+	 * 
+	 * @param dx
+	 *            the domain of x
+	 * @param dy
+	 *            the domain of y
+	 * @param dz
+	 *            the domain of z
+	 * @return false if an inconsistency is detected
+	 */
+	public static boolean enforceLE(Domain dx, Domain dy, Domain dz) { // x + y <= z
+		return dx.removeValuesGT(dz.lastValue() - dy.firstValue()) && dy.removeValuesGT(dz.lastValue() - dx.firstValue())
+				&& dz.removeValuesLT(dx.firstValue() + dy.firstValue());
+	}
+
 	/**
 	 * Enforces AC on x * y != z
 	 * 
@@ -719,6 +701,43 @@ public class AC extends Forward {
 		if (sy)
 			return dy.singleValue() == 0 ? (dz.removeValueIfPresent(0) ? TypeFilteringResult.ENTAIL : TypeFilteringResult.FALSE) : TypeFilteringResult.TRUE;
 		return TypeFilteringResult.TRUE;
+	}
+
+	public static boolean enforceMUL3NE(Domain dx, Domain dy, Domain dz) { // x * y != z
+		boolean sx = dx.size() == 1, sy = dy.size() == 1, sz = dz.size() == 1;
+		if (!sx && !sy && !sz)
+			return true;
+		if (sx && sy && sz)
+			return dx.singleValue() * dy.singleValue() != dz.singleValue();
+		if (sx && sy)
+			return dz.removeValueIfPresent(dx.singleValue() * dy.singleValue());
+		if (sx && sz) {
+			int vx = dx.singleValue(), vz = dz.singleValue();
+			if (vx == 0)
+				return vz != 0;
+			int v = Math.abs(vz) / Math.abs(vx);
+			if (vx * v == vz && dy.removeValueIfPresent(v) == false)
+				return false;
+			if (vx * (-v) == vz && dy.removeValueIfPresent(-v) == false)
+				return false;
+			return true;
+		}
+		if (sy && sz) {
+			int vy = dy.singleValue(), vz = dz.singleValue();
+			if (vy == 0)
+				return vz != 0;
+			int v = Math.abs(vz) / Math.abs(vy);
+			if (v * vy == vz && dx.removeValueIfPresent(v) == false)
+				return false;
+			if ((-v) * vy == vz && dx.removeValueIfPresent(-v) == false)
+				return false;
+			return true;
+		}
+		if (sx)
+			return dx.singleValue() == 0 ? dz.removeValueIfPresent(0) : true;
+		if (sy)
+			return dy.singleValue() == 0 ? dz.removeValueIfPresent(0) : true;
+		return true;
 	}
 
 	public static boolean enforceMul3EQBound(Domain dx, Domain dy, Domain dz) { // x * y = z
@@ -791,43 +810,6 @@ public class AC extends Forward {
 		// return false;
 		//
 
-		return true;
-	}
-
-	public static boolean enforceMUL3NE(Domain dx, Domain dy, Domain dz) { // x * y != z
-		boolean sx = dx.size() == 1, sy = dy.size() == 1, sz = dz.size() == 1;
-		if (!sx && !sy && !sz)
-			return true;
-		if (sx && sy && sz)
-			return dx.singleValue() * dy.singleValue() != dz.singleValue();
-		if (sx && sy)
-			return dz.removeValueIfPresent(dx.singleValue() * dy.singleValue());
-		if (sx && sz) {
-			int vx = dx.singleValue(), vz = dz.singleValue();
-			if (vx == 0)
-				return vz != 0;
-			int v = Math.abs(vz) / Math.abs(vx);
-			if (vx * v == vz && dy.removeValueIfPresent(v) == false)
-				return false;
-			if (vx * (-v) == vz && dy.removeValueIfPresent(-v) == false)
-				return false;
-			return true;
-		}
-		if (sy && sz) {
-			int vy = dy.singleValue(), vz = dz.singleValue();
-			if (vy == 0)
-				return vz != 0;
-			int v = Math.abs(vz) / Math.abs(vy);
-			if (v * vy == vz && dx.removeValueIfPresent(v) == false)
-				return false;
-			if ((-v) * vy == vz && dx.removeValueIfPresent(-v) == false)
-				return false;
-			return true;
-		}
-		if (sx)
-			return dx.singleValue() == 0 ? dz.removeValueIfPresent(0) : true;
-		if (sy)
-			return dy.singleValue() == 0 ? dz.removeValueIfPresent(0) : true;
 		return true;
 	}
 
@@ -952,3 +934,44 @@ public class AC extends Forward {
 		return controlAC(false);
 	}
 }
+
+// public static boolean enforceEQc(Domain dx, int k, Domain dy) { // x * k = y (just on bounds)
+// if (k == 0)
+// return dy.reduceToValue(0);
+// if (dx == dy)
+// return k == 1 ? true : false;
+//
+// if (k > 0) {
+// int minx = dx.firstValue() * k, miny = dy.firstValue(); // in minx, we take k into account
+// while (minx != miny) {
+// if (minx < miny) {
+// if (dx.removeValuesLT(miny / k + (miny % k != 0 ? 1 : 0)) == false)
+// return false;
+// minx = dx.firstValue() * k;
+// }
+// if (miny < minx) {
+// if (dy.removeValuesLT(minx) == false)
+// return false;
+// miny = dy.firstValue();
+// }
+// // System.out.println("mmmmmm1 " + minx + " " + miny + " " + k);
+// }
+// int maxx = dx.lastValue() * k, maxy = dy.lastValue();
+// while (maxx != maxy) {
+// if (maxx > maxy) {
+// if (dx.removeValuesGT(maxy / k ) == false)
+// return false;
+// maxx = dx.lastValue() * k;
+// }
+// if (maxy > maxx) {
+// if (dy.removeValuesGT(maxx) == false)
+// return false;
+// maxy = dy.lastValue();
+// }
+// // System.out.println("mmmmmm2 " + maxx + " " + maxy + " " + k);
+// }
+// } else {
+//
+// // TODO
+//
+// }

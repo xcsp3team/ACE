@@ -256,6 +256,7 @@ import constraints.intension.Reification.Reif2.Reif2Set;
 import constraints.intension.Reification.Reif3;
 import constraints.intension.Reification.Reif3.Reif3EQb;
 import constraints.intension.Reification.Reif3.Reif3EQc;
+import constraints.intension.Reification.Reif4.Reif4MulEQ;
 import constraints.intension.Reification.ReifLogic;
 import dashboard.Control.OptionsGeneral;
 import dashboard.Control.OptionsGlobal;
@@ -374,7 +375,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				this.priorityVars = IntStream.range(from, scp.length).map(i -> scp.length - i + from - 1).mapToObj(i -> scp[i]).toArray(Variable[]::new);
 				this.nStrictPriorityVars = this.priorityVars.length;
 			}
-		}		
+		}
 	}
 
 	@Override
@@ -1541,10 +1542,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			Constraint c = null;
 			if (dist_dist__ne.matches(tree))
 				c = new DistDistNE(this, scp[0], scp[1], scp[2], scp[3]);
-			// else if (x_mul_y_eq_w__eq_z.matches(tree) && tree.vars().length == arity) {// TODO to be tested on ArithmeticTarget for example
-			// System.out.println("ggggg " + tree + " " + Kit.join(scp));
-			// c = new Reif4MulEQ(this, scp[3], scp[2], scp[0], scp[1]);
-			// }
+			else if (x_mul_y_eq_w__eq_z.matches(tree) && tree.vars().length == arity) {// TODO to be tested on ArithmeticTarget for example
+				c = new Reif4MulEQ(this, scp[3], scp[2], scp[0], scp[1]);
+			}
 			if (c != null)
 				return post(c);
 		}
@@ -1950,9 +1950,11 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private boolean replaceInternNodeByCheapReificationpropagator(XNodeParent<IVar> node) {
 		XNode<IVar>[] sons = node.sons;
+		boolean strong = false;
+		// if (node.type != TypeExpr.EQ)
 		for (int i = 0; i < sons.length; i++) {
-			if (sons[i].type.oneOf(TypeExpr.NE, TypeExpr.LE, TypeExpr.GE) && sons[i].sons[0].type.oneOf(TypeExpr.VAR, TypeExpr.LONG)
-					&& sons[i].sons[1].type.oneOf(TypeExpr.VAR, TypeExpr.LONG)) {
+			if (sons[i].type.oneOf(TypeExpr.NE, TypeExpr.LE, TypeExpr.GE)
+					&& (strong || (sons[i].sons[0].type.oneOf(TypeExpr.VAR, TypeExpr.LONG) && sons[i].sons[1].type.oneOf(TypeExpr.VAR, TypeExpr.LONG)))) {
 				sons[i] = new XNodeLeaf<>(VAR, replaceByVariable(sons[i]));
 				return true;
 			}
