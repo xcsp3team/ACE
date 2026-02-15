@@ -14,7 +14,6 @@ import constraints.Constraint;
 import constraints.extension.structures.Bits;
 import interfaces.SpecificPropagator;
 import problem.Problem;
-import sets.SetSparse;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;

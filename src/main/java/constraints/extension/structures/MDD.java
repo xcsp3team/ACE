@@ -691,7 +691,6 @@ public final class MDD extends ExtensionStructure {
 	public void displayTuples() {
 		Domain[] doms = Stream.of(firstRegisteredCtr().scp).map(x -> x.dom).toArray(Domain[]::new);
 		int cnt = root.displayTuples(doms, new int[doms.length], 0, 0);
-		// System.out.println(" => " + cnt + " tuples");
 		Kit.log.info(" => " + cnt + " tuples");
 	}
 

@@ -1937,9 +1937,36 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		}
 
 		// last chance : replace subtrees whose reification is cheap (ne, le, ge, ...)
-		if (scp.length == tree.listOfVars().size()) {
-			if (replaceInternNodeByCheapReificationpropagator(tree))
-				return intension(tree);
+		boolean lastChance = true;
+		if (lastChance) {
+			if (scp.length == tree.listOfVars().size()) {
+				if (replaceInternNodeByCheapReificationpropagator(tree))
+					return intension(tree);
+			}
+			// below, to be tested
+
+			// if (tree.type.oneOf(TypeExpr.AND, TypeExpr.OR)) {
+			// for (int i = 0; i < sons.length; i++) {
+			// if (sons[i].type != TypeExpr.VAR) {
+			// sons[i] = new XNodeLeaf<>(VAR, replaceByVariable(sons[i]));
+			// return intension(tree);
+			// }
+			// }
+			// }
+			// if (tree.type == TypeExpr.EQ) {
+			// for (int i = 0; i < sons.length; i++) {
+			// if (sons[i].type.oneOf(TypeExpr.AND, TypeExpr.OR)) {
+			// XNode<IVar>[] grandsons = sons[i].sons;
+			// for (int j = 0; j < grandsons.length; j++) {
+			// if (grandsons[j].type != TypeExpr.VAR) {
+			// grandsons[j] = new XNodeLeaf<>(VAR, replaceByVariable(grandsons[j]));
+			// return intension(tree);
+			// }
+			// }
+			// }
+			//
+			// }
+			// }
 		}
 
 		if (options.displayRemainingIntension)
@@ -1950,11 +1977,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	private boolean replaceInternNodeByCheapReificationpropagator(XNodeParent<IVar> node) {
 		XNode<IVar>[] sons = node.sons;
-		boolean strong = false;
 		// if (node.type != TypeExpr.EQ)
 		for (int i = 0; i < sons.length; i++) {
-			if (sons[i].type.oneOf(TypeExpr.NE, TypeExpr.LE, TypeExpr.GE)
-					&& (strong || (sons[i].sons[0].type.oneOf(TypeExpr.VAR, TypeExpr.LONG) && sons[i].sons[1].type.oneOf(TypeExpr.VAR, TypeExpr.LONG)))) {
+			if (sons[i].type.oneOf(TypeExpr.NE, TypeExpr.LE, TypeExpr.GE) && sons[i].sons[0].type.oneOf(TypeExpr.VAR, TypeExpr.LONG)
+					&& sons[i].sons[1].type.oneOf(TypeExpr.VAR, TypeExpr.LONG)) {
 				sons[i] = new XNodeLeaf<>(VAR, replaceByVariable(sons[i]));
 				return true;
 			}

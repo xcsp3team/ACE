@@ -152,10 +152,8 @@ public final class Features {
 		}
 
 		public boolean strictSubscopeOf(CollectedNogood cn) {
-			// System.out.println("uuuu0");
 			if (vars.length > cn.vars.length)
 				return false;
-			// System.out.println("uuuu1");
 			for (int i = 0, j = 0; i < vars.length; i++) {
 				while (j < cn.vars.length && vars[i].num > cn.vars[j].num)
 					j++;
@@ -164,7 +162,6 @@ public final class Features {
 				if (vars[i].num != cn.vars[j].num)
 					return false;
 			}
-			// System.out.println("uuuu " + this + "\n " + cn);
 			return true;
 		}
 

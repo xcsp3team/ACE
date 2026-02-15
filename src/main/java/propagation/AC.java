@@ -10,6 +10,8 @@
 
 package propagation;
 
+import static constraints.ConstraintIntension.tooLarge;
+
 import java.math.BigInteger;
 import java.util.stream.Stream;
 
@@ -19,7 +21,6 @@ import constraints.Constraint;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Mul2.Mul2GE;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Mul2.Mul2LE;
 import solver.Solver;
-import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
@@ -165,7 +166,7 @@ public class AC extends Forward {
 	 * @return false if an inconsistency is detected
 	 */
 	public static boolean enforceNE(Domain dx, Domain dy) { // x != y
-		Utilities.control(dx != dy, "pb");
+		assert dx != dy;
 		if (dx.size() == 1)
 			return dy.removeValueIfPresent(dx.singleValue());
 		if (dy.size() == 1)
@@ -173,13 +174,51 @@ public class AC extends Forward {
 		return true;
 	}
 
-	public static boolean enforceNE(Domain dx, int k, Domain dy) { // x + k != y
-		Utilities.control(dx != dy && k != 0, "pb");
+	public static boolean enforceNE(Domain dx, Domain dy, int k) { // x != y + k
+		assert dx != dy && k != 0;
 		if (dx.size() == 1)
-			return dy.removeValueIfPresent(dx.singleValue() + k);
+			return dy.removeValueIfPresent(dx.singleValue() - k);
 		if (dy.size() == 1)
-			return dx.removeValueIfPresent(dy.singleValue() - k);
+			return dx.removeValueIfPresent(dy.singleValue() + k);
 		return true;
+	}
+
+	private static int smallestIntegerPresent(Domain dx, Domain dy, int k) { // (index in dx of the) smallest integer v such that v in dx and v-k in dy
+		int a = dx.first(), b = dy.first();
+		int va = dx.toVal(a), vb = dy.toVal(b) + k;
+		while (va != vb) {
+			if (va < vb) {
+				a = dx.next(a);
+				if (a == -1)
+					return -1;
+				va = dx.toVal(a);
+			} else {
+				b = dy.next(b);
+				if (b == -1)
+					return -1;
+				vb = dy.toVal(b) + k;
+			}
+		}
+		return a;
+	}
+
+	private static int greatestIntegerPresent(Domain dx, Domain dy, int k) { // (index in dx of the) greatest integer v such that v in dx and v-k in dy
+		int a = dx.last(), b = dy.last();
+		int va = dx.toVal(a), vb = dy.toVal(b) + k;
+		while (va != vb) {
+			if (va > vb) {
+				a = dx.prev(a);
+				if (a == -1)
+					return -1;
+				va = dx.toVal(a);
+			} else {
+				b = dy.prev(b);
+				if (b == -1)
+					return -1;
+				vb = dy.toVal(b) + k;
+			}
+		}
+		return a;
 	}
 
 	/**
@@ -195,7 +234,15 @@ public class AC extends Forward {
 	 */
 	public static boolean enforceEQ(Domain dx, Domain dy, int k) { // x = y + k
 		if (dx == dy)
-			return k == 0 ? true : false;
+			return k == 0;
+		boolean sx = dx.size() == 1, sy = dy.size() == 1;
+		// if (sx && sy)
+		// return dx.reduceToValue(dy.singleValue() + k); // .singleValue() == dy.singleValue() + k;
+		// if (sx)
+		// return dy.reduceToValue(dx.singleValue() - k);
+		// if (sy)
+		// return dx.reduceToValue(dy.singleValue() + k);
+
 		int minx = dx.firstValue(), miny = dy.firstValue() + k; // in miny, we take k into account
 		while (minx != miny) {
 			if (minx < miny) {
@@ -223,6 +270,10 @@ public class AC extends Forward {
 			}
 		}
 		// At this stage, we know that bounds of domains (modulo k) are both equal
+
+		if (tooLarge(dx.size(), dy.size(), dx.var().problem.head.control.intension.tooLargeAdd))
+			return true;
+
 		int cntx = dx.size() - 1, cnty = dy.size() - 1; // -1 for directly comparing with domain distances
 		boolean connexx = cntx == dx.distance(), connexy = cnty == dy.distance(); // connex means "no hole"
 		if (!connexx && !connexy) {
@@ -317,7 +368,7 @@ public class AC extends Forward {
 	 *            an integer
 	 * @return false if an inconsistency is detected
 	 */
-	public static boolean enforceEQb(Domain dx, Domain dy, int k) { // x = k - y
+	public static boolean enforceEQb(Domain dx, Domain dy, int k) { // x + y = k (x = k - y)
 		if (dx == dy)
 			return k % 2 != 0 ? dx.fail() : dx.reduceToValue(k / 2);
 		int minx = dx.firstValue(), miny = k - dy.lastValue(); // in miny, we take k into account
@@ -347,6 +398,10 @@ public class AC extends Forward {
 			}
 		}
 		// At this stage, we know that bounds of domains (modulo k) are both equal
+		
+		if (tooLarge(dx.size(), dy.size(), dx.var().problem.head.control.intension.tooLargeAdd))
+			return true;
+		
 		int cntx = dx.size() - 1, cnty = dy.size() - 1; // -1 for directly comparing with domain distances
 		boolean connexx = cntx == dx.distance(), connexy = cnty == dy.distance(); // connex means "no hole"
 		if (!connexx && !connexy) {

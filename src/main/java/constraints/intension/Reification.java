@@ -482,7 +482,7 @@ public final class Reification {
 				if (dy.size() == 1 && dz.size() == 1)
 					return dx.removeIfPresent(dy.firstValue() + k == dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
 				if (dx.last() == 0)
-					return (dy.size() > 1 && dz.size() > 1) || (enforceNE(dy, k, dz) && entail()); // x = 0 => y + k != z
+					return (dy.size() > 1 && dz.size() > 1) || (enforceNE(dz, dy, k) && entail()); // x = 0 => z != y + k
 				if (dx.first() == 1)
 					return enforceEQ(dz, dy, k); // x = 1 => y + k = z
 				assert dx.size() == 2;
@@ -613,7 +613,7 @@ public final class Reification {
 
 			public Reif4MulEQ(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2) {
 				super(pb, x1, x2, y1, y2);
-				System.out.println(this + " " + x1 + " " + x2 + " " + y1 + " " + y2);
+				//System.out.println(this + " " + x1 + " " + x2 + " " + y1 + " " + y2);
 			}
 
 			@Override

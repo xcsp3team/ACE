@@ -824,7 +824,6 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void whenWipeout(Constraint c, Variable x) {
 			int p = pickMode < 2 ? 0 : pickMode == 2 ? 100 : ((weights.length - solver.depth()) * 100) / weights.length;
-			// System.out.println("ffff " + p);
 			int total = (int) collected.total;
 			// int m = 0;
 			for (int i = collected.limit; i >= 0; i--) {

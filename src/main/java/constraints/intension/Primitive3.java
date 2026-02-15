@@ -10,6 +10,7 @@
 
 package constraints.intension;
 
+import static constraints.ConstraintIntension.tooLarge;
 import static utility.Kit.control;
 
 import java.math.BigInteger;
@@ -44,12 +45,6 @@ import variables.Variable;
  */
 public abstract class Primitive3 extends ConstraintSpecific implements TagAC, TagCallCompleteFiltering, TagNotSymmetric, TagPrimitive {
 	// TODO AC not true sometimes
-
-	private static final int RUNNING_LIMIT = 200; // TODO hard coding_
-
-	private static boolean tooLarge(int size1, int size2) {
-		return size1 > 1 && size2 > 1 && size1 * (double) size2 > RUNNING_LIMIT;
-	}
 
 	public static Constraint buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, Variable z) {
 		switch (aop) {
@@ -181,13 +176,13 @@ public abstract class Primitive3 extends ConstraintSpecific implements TagAC, Ta
 			super(pb, x, y, z);
 		}
 
-		public static final class Add3EQ extends Add3 { // O(d^2)
+		public static final class Add3EQ extends Add3 { // x + y = z ; O(d^2)
 
 			boolean multidirectional = false; // hard coding
 
 			@Override
 			public boolean isGuaranteedAC() {
-				return dx.size() * (double) dy.size() <= RUNNING_LIMIT;
+				return !tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeAdd);
 			}
 
 			@Override
@@ -202,19 +197,25 @@ public abstract class Primitive3 extends ConstraintSpecific implements TagAC, Ta
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.size() == 1)
+				boolean sx = dx.size() == 1, sy = dy.size() == 1, sz = dz.size() == 1;
+				// if (sx && sy)
+				// return dz.reduceToValue(dx.singleValue() + dy.singleValue()) && entail();
+				// if (sx && sz)
+				// return dy.reduceToValue(dz.singleValue() - dx.singleValue()) && entail();
+				// if (sy && sz)
+				// return dx.reduceToValue(dz.singleValue() - dy.singleValue()) && entail();
+				if (sx)
 					return AC.enforceEQ(dz, dy, dx.singleValue());
-				if (dy.size() == 1)
+				if (sy)
 					return AC.enforceEQ(dz, dx, dy.singleValue());
-				if (dz.size() == 1)
+				if (sz)
 					return AC.enforceEQb(dx, dy, dz.singleValue());
-
-				if (tooLarge(dx.size(), dy.size())) {
+				if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeAdd)) {
 					if (dz.removeValuesLT(dx.firstValue() + dy.firstValue()) == false || dz.removeValuesGT(dx.lastValue() + dy.lastValue()) == false)
 						return false;
 					if ((AC.enforceAddGE(dx, dy, dz.firstValue()) && AC.enforceAddLE(dx, dy, dz.lastValue())) == false)
 						return false;
-					if (tooLarge(dx.size(), dy.size())) // otherwise we keep filtering below
+					if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeAdd)) // otherwise we keep filtering below
 						return true;
 				}
 				boolean connexz = dz.connex();
@@ -495,7 +496,7 @@ public abstract class Primitive3 extends ConstraintSpecific implements TagAC, Ta
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (tooLarge(dx.size(), dy.size())) { // hard coding // TODO what about AC Guaranteed?
+				if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeMul)) { // hard coding // TODO what about AC Guaranteed?
 					int v1 = dx.firstValue() * dy.firstValue(), v2 = dx.firstValue() * dy.lastValue();
 					int v3 = dx.lastValue() * dy.firstValue(), v4 = dx.lastValue() * dy.lastValue();
 					int min1 = Math.min(v1, v2), max1 = Math.max(v1, v2);
@@ -504,7 +505,7 @@ public abstract class Primitive3 extends ConstraintSpecific implements TagAC, Ta
 						return false;
 					if (AC.enforceMulGE(dx, dy, dz.firstValue()) && AC.enforceMulLE(dx, dy, dz.lastValue()) == false)
 						return false;
-					if (tooLarge(dx.size(), dy.size())) // otherwise we keep filtering below
+					if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeMul)) // otherwise we keep filtering below
 						return true;
 				}
 				if (!dy.containsValue(0) || !dz.containsValue(0))
@@ -669,12 +670,12 @@ public abstract class Primitive3 extends ConstraintSpecific implements TagAC, Ta
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (tooLarge(dx.size(), dy.size())) { // hard coding // TODO what about AC Guaranteed?
+				if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeDiv)) { // hard coding // TODO what about AC Guaranteed?
 					if (dz.removeValuesLT(dx.firstValue() / dy.lastValue()) == false || dz.removeValuesGT(dx.lastValue() / dy.firstValue()) == false)
 						return false;
 					if ((AC.enforceDivGE(dx, dy, dz.firstValue()) && AC.enforceDivLE(dx, dy, dz.lastValue())) == false)
 						return false;
-					if (tooLarge(dx.size(), dy.size())) // otherwise we keep filtering below
+					if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeDiv)) // otherwise we keep filtering below
 						return true;
 				}
 

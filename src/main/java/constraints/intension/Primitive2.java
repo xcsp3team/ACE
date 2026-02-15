@@ -10,6 +10,7 @@
 
 package constraints.intension;
 
+import static constraints.ConstraintIntension.tooLarge;
 import static utility.Kit.control;
 
 import java.math.BigInteger;
@@ -1367,12 +1368,12 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 		public static abstract class Div2b extends PrimitiveBinaryVariant2 {
 
 			public static Constraint buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
-				if (k == 1)
-					return new ConstraintIntension(pb, new Variable[] { x, y }, XNodeParent.build(op.toExpr(), x, y));
+				// if (k == 1)
+				// return new ConstraintIntension(pb, new Variable[] { x, y }, XNodeParent.build(op.toExpr(), x, y));
 				control(k > 1, x + " " + op + " " + y + "/" + k); // || or k < 0 ?
 				switch (op) {
 				case LT:
-					return k == 1 ? buildFrom(pb, x, op, y, TypeArithmeticOperator.ADD, 0) : new Div2bLT(pb, x, y, k);
+					return new Div2bLT(pb, x, y, k); // k == 1 ? buildFrom(pb, x, op, y, TypeArithmeticOperator.ADD, 0) :
 				case LE:
 					return new Div2bLE(pb, x, y, k);
 				case GE:
@@ -1380,11 +1381,11 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 				case GT:
 					return new Div2bGT(pb, x, y, k);
 				case EQ:
-					if (x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0 && k > 1)
+					if (x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0) // && k > 1)
 						return new Div2bEQ(pb, x, y, k);
 					break;
 				case NE:
-					if (x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0 && k > 1)
+					if (x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0) // && k > 1)
 						return new Div2bNE(pb, x, y, k);
 					break;
 				}
@@ -1489,6 +1490,14 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
+					if (dx.size() == 1)
+						return dy.removeValuesLT(dx.singleValue() * k) && dy.removeValuesGE(dx.singleValue() * k + k) && entail();
+					if (dy.firstValue() / k == dy.lastValue() / k) // if (dy.size() == 1)
+						return dx.reduceToValue(dy.singleValue() / k) && entail();
+
+					// if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeDiv))
+					// return true;
+
 					return sp.runPropagator(dummy);
 				}
 			}
@@ -1507,9 +1516,9 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 				@Override
 				public boolean runPropagator(Variable dummy) {
 					if (dx.size() == 1)
-						return dy.removeValuesInRange(dx.singleValue() * k, dx.singleValue() * k + k);
+						return dy.removeValuesInRange(dx.singleValue() * k, dx.singleValue() * k + k) && entail();
 					if (dy.firstValue() / k == dy.lastValue() / k)
-						return dx.removeValueIfPresent(dy.firstValue() / k);
+						return dx.removeValueIfPresent(dy.firstValue() / k) && entail();
 					return true;
 				}
 			}

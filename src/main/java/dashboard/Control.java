@@ -580,6 +580,12 @@ public final class Control {
 		public final boolean displayRemainingIntension = addB("displayRemainingIntension", "dri", false,
 				"Must we display the predicates of remaining intensional constraints");
 
+		public final int tooLargeAdd = addI("tooLargeAdd", "tla", 200,
+				"Space limit for iterating over two domains when an addition (subtraction) is involved in an equation");
+		public final int tooLargeMul = addI("tooLargeMul", "tlm", 200,
+				"Space limit for iterating over two domains when a multiplication is involved in an equation");
+		public final int tooLargeDiv = addI("tooLargeDiv", "tld", 200, "Space limit for iterating over two domains when a division is involved in an equation");
+
 		public boolean toExtension(Variable[] vars, XNode<IVar> tree) {
 			Variable[] t = tree == null || !(tree instanceof XNodeParent) || !((XNodeParent<?>) tree).isEqVar() ? vars
 					: IntStream.range(0, vars.length).mapToObj(i -> vars[i]).toArray(Variable[]::new);

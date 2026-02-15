@@ -50,6 +50,10 @@ import variables.Variable.VariableInteger;
  */
 public final class ConstraintIntension extends Constraint implements TagCallCompleteFiltering, Optimizable {
 
+	public static boolean tooLarge(int size1, int size2, int spaceLimit) {
+		return size1 > 1 && size2 > 1 && size1 * (double) size2 > spaceLimit;
+	}
+
 	/**********************************************************************************************
 	 * Intention structure
 	 *********************************************************************************************/

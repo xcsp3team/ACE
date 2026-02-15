@@ -14,7 +14,6 @@ import static utility.Kit.control;
 
 import java.util.stream.Stream;
 
-import constraints.ConstraintIntension;
 import interfaces.SpecificPropagator;
 import solver.Solver;
 import solver.Solver.Branching;
