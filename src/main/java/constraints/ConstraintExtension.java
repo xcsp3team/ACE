@@ -322,6 +322,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			}
 			if (scp.length == 3) { // TODO to be tested for arity 3, is it worthwhile to use V (or VA) ?
 				double nb = (scp[0].dom.initSize() * (double) scp[1].dom.initSize()) * scp[2].dom.initSize();
+				// System.out.println(" ggggg " + nb + " " + table.length + " " + (100*table.length) + " " + (options.avoidingSTRRatio * nb));
 				if (100 * table.length > options.avoidingSTRRatio * nb)
 					return new ExtensionV(pb, scp).storeTuplesInExtensionStructure(table, positive, starred);
 			}
@@ -378,7 +379,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	@Override
 	public final boolean isIrreflexive() {
 		control(scp.length == 2);
-		if (extStructure.nOriginalTuples > 1_000 || scp[0].dom.size() > 500 || scp[1].dom.size() > 500)  // TODO hard coding
+		if (extStructure.nOriginalTuples > 1_000 || scp[0].dom.size() > 500 || scp[1].dom.size() > 500) // TODO hard coding
 			return false; // too long to compute
 		return super.isIrreflexive();
 	}

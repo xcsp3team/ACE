@@ -611,6 +611,7 @@ public final class Control {
 		public final boolean noOverlapAux = addB("noOverlapAux", "g_noa", true, "Introducing aux variables for NoOverlap (when relevant)?");
 		public final int noOverlapRedundLimit = addI("noOverlapRedundLimit", "g_nor", 10, "Arity limit for posting redundant constraints for NoOverlap?");
 		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");
+		public final int cardinality = addI("cardinality", "g_card", 0, "Algorithm for Cardinality");
 
 		public final boolean binpackingEnergetic = addB("binpackingEnergetic", "g_bpe", true, "Must we use energectic reasoning for BinPacking");
 		public final boolean binpackingRedun = addB("binpackingRedun", "g_bpr", false, "Redundant constraints for for BinPacking");

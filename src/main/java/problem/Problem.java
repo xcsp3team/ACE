@@ -3005,7 +3005,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// }
 		if ((closed || mustBeClosed) && IntStream.of(occs).allMatch(v -> v == 1))
 			return allDifferent(scp);
-		return post(new Cardinality(this, scp, vals, occs));
+
+		switch (head.control.global.cardinality) {
+		case DEFAULT:
+			return post(new Cardinality(this, scp, vals, occs));
+		case DECOMPOSITION:
+			return forall(range(vals.length), i -> exactly((VariableInteger[]) scp, vals[i], occs[i]));
+		default:
+			throw new AssertionError("Invalid mode");
+		}
+		// return post(new Cardinality(this, scp, vals, occs));
 	}
 
 	@Override

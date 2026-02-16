@@ -235,6 +235,131 @@ public interface Domain extends SetLinked {
 		return prod == size;
 	}
 
+	/**
+	 * Returns the (index in dx of the) smallest integer v such that v is present in dx and v-k is present in dy, if such value v exists; -1 otherwise. This can
+	 * be called in the context of a constraint x = y - k.
+	 * 
+	 * @param dx
+	 *            a first domain
+	 * @param dy
+	 *            a second domain
+	 * @param k
+	 *            an integer to be added to values in dy
+	 * @return
+	 */
+	static int smallestIntegerPresentAdd(Domain dx, Domain dy, int k) { // (index in dx of the) smallest integer v such that v in dx and v-k in dy
+		int a = dx.first(), b = dy.first();
+		int va = dx.toVal(a), vb = dy.toVal(b) + k;
+		while (va != vb) {
+			if (va < vb) {
+				a = dx.next(a);
+				if (a == -1)
+					return -1;
+				va = dx.toVal(a);
+			} else {
+				b = dy.next(b);
+				if (b == -1)
+					return -1;
+				vb = dy.toVal(b) + k;
+			}
+		}
+		return a;
+	}
+
+	/**
+	 * Returns the (index in dx of the) greatest integer v such that v is present in dx and v-k is present in dy, if such value v exists; -1 otherwise. This can
+	 * be called in the context of a constraint x = y - k.
+	 * 
+	 * @param dx
+	 *            a first domain
+	 * @param dy
+	 *            a second domain
+	 * @param k
+	 *            an integer to be added to values in dy
+	 * @return
+	 */
+	static int greatestIntegerPresentAdd(Domain dx, Domain dy, int k) { // (index in dx of the) greatest integer v such that v in dx and v-k in dy
+		int a = dx.last(), b = dy.last();
+		int va = dx.toVal(a), vb = dy.toVal(b) + k;
+		while (va != vb) {
+			if (va > vb) {
+				a = dx.prev(a);
+				if (a == -1)
+					return -1;
+				va = dx.toVal(a);
+			} else {
+				b = dy.prev(b);
+				if (b == -1)
+					return -1;
+				vb = dy.toVal(b) + k;
+			}
+		}
+		return a;
+	}
+
+	/**
+	 * Returns the (index in dx of the) smallest integer v such that v is present in dx and there exists w in v*k..v*k+k-1 in dy, if such value v exists; -1
+	 * otherwise. This can be called in the context of a constraint x = y / k.
+	 * 
+	 * @param dx
+	 *            a first domain
+	 * @param dy
+	 *            a second domain
+	 * @param k
+	 *            an integer used to divide values in dy
+	 * @return
+	 */
+	static int smallestIntegerPresentDiv(Domain dx, Domain dy, int k) { // (index in dx of the) smallest integer v such that v in dx and exists
+		// w in v*k..v*k+k-1 in dy
+		int a = dx.first(), b = dy.first();
+		int va = dx.toVal(a), vb = dy.toVal(b) / k;
+		while (va != vb) {
+			if (va < vb) {
+				a = dx.next(a);
+				if (a == -1)
+					return -1;
+				va = dx.toVal(a);
+			} else {
+				b = dy.next(b);
+				if (b == -1)
+					return -1;
+				vb = dy.toVal(b) / k;
+			}
+		}
+		return a;
+	}
+
+	/**
+	 * Returns the (index in dx of the) greatest integer v such that v is present in dx and there exists w in v*k..v*k+k-1 in dy, if such value v exists; -1
+	 * otherwise. This can be called in the context of a constraint x = y / k.
+	 * 
+	 * @param dx
+	 *            a first domain
+	 * @param dy
+	 *            a second domain
+	 * @param k
+	 *            an integer used to divide values in dy
+	 * @return
+	 */
+	static int greatestIntegerPresentDiv(Domain dx, Domain dy, int k) {
+		int a = dx.last(), b = dy.last();
+		int va = dx.toVal(a), vb = dy.toVal(b) / k;
+		while (va != vb) {
+			if (va > vb) {
+				a = dx.prev(a);
+				if (a == -1)
+					return -1;
+				va = dx.toVal(a);
+			} else {
+				b = dy.prev(b);
+				if (b == -1)
+					return -1;
+				vb = dy.toVal(b) / k;
+			}
+		}
+		return a;
+	}
+
 	/**********************************************************************************************
 	 * Class Members
 	 *********************************************************************************************/
@@ -377,6 +502,23 @@ public interface Domain extends SetLinked {
 	 */
 	default boolean containsOnlyValue(int v) {
 		return size() == 1 && v == toVal(first());
+	}
+
+	/**
+	 * Returns true if at least one value from the specified range belongs to the current domain
+	 * 
+	 * @param start
+	 *            the lower bound (inclusive) of the range
+	 * @param stop
+	 *            the upper bound (exclusive) of the range
+	 */
+	default boolean containsValueInRange(int start, int stop) {
+		for (int v = start; v < stop; v++) {
+			int a = toIdx(v);
+			if (a >= 0 && contains(a))
+				return true;
+		}
+		return false;
 	}
 
 	/**

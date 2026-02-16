@@ -664,7 +664,7 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					if (AC.enforceLE(dx, dy, k) == false)
+					if (!AC.enforceLT(dx, dy, k + 1)) // avoid an indirection when we use if (AC.enforceLE(dx, dy, k) == false)
 						return false;
 					if (dx.lastValue() <= k + dy.firstValue())
 						return entail();
@@ -685,7 +685,7 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					if (AC.enforceGE(dx, dy, k) == false)
+					if (!AC.enforceGT(dx, dy, k - 1)) // avoid an indirection when we use if (AC.enforceGE(dx, dy, k) == false)
 						return false;
 					if (dx.firstValue() >= k + dy.lastValue())
 						return entail();
@@ -1368,9 +1368,8 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 		public static abstract class Div2b extends PrimitiveBinaryVariant2 {
 
 			public static Constraint buildFrom(Problem pb, Variable x, TypeConditionOperatorRel op, Variable y, int k) {
-				// if (k == 1)
-				// return new ConstraintIntension(pb, new Variable[] { x, y }, XNodeParent.build(op.toExpr(), x, y));
-				control(k > 1, x + " " + op + " " + y + "/" + k); // || or k < 0 ?
+				// if (k == 1) return new ConstraintIntension(pb, new Variable[] { x, y }, XNodeParent.build(op.toExpr(), x, y));
+				control(y.dom.firstValue() >= 0 && k > 1); // we ensure/tolerate positive divisions
 				switch (op) {
 				case LT:
 					return new Div2bLT(pb, x, y, k); // k == 1 ? buildFrom(pb, x, op, y, TypeArithmeticOperator.ADD, 0) :
@@ -1381,22 +1380,17 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 				case GT:
 					return new Div2bGT(pb, x, y, k);
 				case EQ:
-					if (x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0) // && k > 1)
-						return new Div2bEQ(pb, x, y, k);
-					break;
-				case NE:
-					if (x.dom.firstValue() >= 0 && y.dom.firstValue() >= 0) // && k > 1)
-						return new Div2bNE(pb, x, y, k);
-					break;
+					return new Div2bEQ(pb, x, y, k);
+				default:
+					assert op == TypeConditionOperatorRel.NE;
+					return new Div2bNE(pb, x, y, k);
 				}
-				XNodeParent<IVar> p = XNodeParent.build(op.toExpr(), x, XNodeParent.div(y, k));
-				return new ConstraintIntension(pb, new Variable[] { x, y }, p); // TODO may be very costly
-				// throw new AssertionError("not implemented");
 			}
 
 			public Div2b(Problem pb, Variable x, Variable y, int k) {
 				super(pb, x, y, k);
-				control(dx.firstValue() >= 0 && dy.firstValue() >= 0 && k > 1, dx.firstValue() + " " + dy.firstValue() + " " + k);
+				control(dy.firstValue() >= 0 && k > 1, dy.firstValue() + " " + k); // we ensure/tolerate positive divisions
+				dx.removeValuesAtConstructionTime(v -> v < 0);
 			}
 
 			public static final class Div2bLT extends Div2b {
@@ -1480,7 +1474,8 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 
 				public Div2bEQ(Problem pb, Variable x, Variable y, int k) {
 					super(pb, x, y, k);
-					this.sp = new SimplePropagatorEQ(dx, dy, false) {
+					boolean newAlgo = true;
+					this.sp = newAlgo ? null : new SimplePropagatorEQ(dx, dy, false) {
 						@Override
 						final int valxFor(int b) {
 							return dy.toVal(b) / k;
@@ -1490,15 +1485,43 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					if (dx.size() == 1)
-						return dy.removeValuesLT(dx.singleValue() * k) && dy.removeValuesGE(dx.singleValue() * k + k) && entail();
-					if (dy.firstValue() / k == dy.lastValue() / k) // if (dy.size() == 1)
-						return dx.reduceToValue(dy.singleValue() / k) && entail();
+					if (sp == null) { // if new algorithm
+						// STEP 1: trivial cases
+						if (dx.size() == 1)
+							return dy.removeValuesLT(dx.singleValue() * k) && dy.removeValuesGE(dx.singleValue() * k + k) && entail();
+						if (dy.firstValue() / k == dy.lastValue() / k) // if only one value possible for x
+							return dx.reduceToValue(dy.firstValue() / k) && entail();
 
-					// if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeDiv))
-					// return true;
+						// STEP 2: making bounds consistent
+						int a = Domain.smallestIntegerPresentDiv(dx, dy, k);
+						if (a == -1)
+							return dummy.dom.fail();
+						// from this point, no more possible inconsistency
+						dx.removeValuesLT(dx.toVal(a));
+						dy.removeValuesLT(dx.toVal(a) * k);
+						a = Domain.greatestIntegerPresentDiv(dx, dy, k);
+						control(a != -1);
+						dx.removeValuesGT(dx.toVal(a));
+						dy.removeValuesGE(dx.toVal(a) * k + k);
 
-					return sp.runPropagator(dummy);
+						// At this stage, we know that bounds of domains (modulo k) are both equal
+
+						// STEP 3 : making domains completely consistent
+						boolean connexx = dx.size() == dx.distance() + 1, connexy = dy.size() == dy.distance() + 1; // connex means "no hole"
+						if (!connexy) { // in dx we certainly can remove some values
+							for (a = dx.first(); a != -1; a = dx.next(a))
+								if (!dy.containsValueInRange(dx.toVal(a) * k, dx.toVal(a) * k + k))
+									dx.remove(a);
+						}
+						if (!connexx) { // in dy we can remove some values
+							for (int b = dy.first(); b != -1; b = dy.next(b))
+								if (!dx.containsValue(dy.toVal(b) / k))
+									dy.remove(b);
+						}
+						// TODO above, should we iterate only if the size of the iterated domain is not too large or if many holes are in the other domain?
+						return true;
+					} else
+						return sp.runPropagator(dummy); // old algorithm // compare performances on e.g. AircraftAssemblyLine-1-178-20-1_c23.xml
 				}
 			}
 
