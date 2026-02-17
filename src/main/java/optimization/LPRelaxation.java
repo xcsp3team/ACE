@@ -14,7 +14,6 @@ import org.ojalgo.optimisation.ExpressionsBasedModel;
 import org.ojalgo.optimisation.Variable;
 import org.ojalgo.optimisation.Optimisation;
 
-import org.ojalgo.optimisation.solver.cplex.SolverCPLEX;
 import problem.Problem;
 import constraints.Constraint;
 import constraints.global.Sum;
@@ -24,6 +23,13 @@ import optimization.linearization.ConstraintLinearizer;
 import optimization.linearization.LinearizationContext;
 import optimization.linearization.SumLinearizer;
 import optimization.linearization.CountLinearizer;
+import optimization.linearization.ExtremumLinearizer;
+import optimization.linearization.AllEqualLinearizer;
+import optimization.linearization.LexicographicLinearizer;
+import optimization.linearization.PrimitiveLinearizer;
+import optimization.linearization.ReificationLinearizer;
+import optimization.linearization.CumulativeLinearizer;
+import optimization.linearization.IntensionLinearizer;
 
 import java.util.List;
 import java.util.Map;
@@ -46,7 +52,14 @@ public class LPRelaxation {
      */
     private static final List<ConstraintLinearizer> LINEARIZERS = List.of(
         new SumLinearizer(),
-        new CountLinearizer()
+        new CountLinearizer(),
+        new ExtremumLinearizer(),
+        new AllEqualLinearizer(),
+        new LexicographicLinearizer(),
+        new PrimitiveLinearizer(),
+        new ReificationLinearizer(),
+        new CumulativeLinearizer(),
+        new IntensionLinearizer()
     );
 
     private final Problem problem;
@@ -378,14 +391,8 @@ public class LPRelaxation {
      * Note: Verbose/debug output is enabled dynamically in solve() only at root node.
      */
     private void configureSolver() {
-        ExpressionsBasedModel.Integration<SolverCPLEX> integration = SolverCPLEX.INTEGRATION;
-        model.options.setConfigurator(integration);
-        if (problem.head.control.general.verbose > 0) {
-            model.options.progress(SolverCPLEX.class);
-            if (problem.head.control.general.verbose > 1) {
-                model.options.debug(SolverCPLEX.class);
-            }
-        }
+        model.options.setConfigurator(new BoundAwareSolverCPLEX.Configurator());
+
         // Set time limit to prevent LP from taking too long
         // Abort LP solve when timeout is reached.
         if (lpTimeoutMs > 0L) {
@@ -401,6 +408,7 @@ public class LPRelaxation {
      * Solve the LP relaxation and return the bound value.
      * The model is reused across calls - only variable bounds are updated via updateDomains().
      *
+     * @param atRoot true if solving at root node (enables verbose output with -v=1)
      * @return the LP bound value, or null if LP is infeasible/unbounded or objective not set
      */
     public Double solve(boolean atRoot) {
@@ -422,30 +430,34 @@ public class LPRelaxation {
 
             // Minimize or maximize based on optimizer type
             Optimisation.Result result;
-            if (problem.optimizer.minimization) {
-                result = model.minimise();
-            } else {
-                result = model.maximise();
+            synchronized (ExpressionsBasedModel.class) {
+                ExpressionsBasedModel.removeIntegration(BoundAwareSolverCPLEX.INTEGRATION);
+                ExpressionsBasedModel.addPreferredSolver(BoundAwareSolverCPLEX.INTEGRATION);
+                try {
+                    if (problem.optimizer.minimization) {
+                        result = model.minimise();
+                    } else {
+                        result = model.maximise();
+                    }
+                } finally {
+                    ExpressionsBasedModel.removeIntegration(BoundAwareSolverCPLEX.INTEGRATION);
+                }
             }
+            double bestBound = BoundAwareSolverCPLEX.getLastBestBound();
 
             long elapsed = System.currentTimeMillis() - startTime;
             if (verbose) {
-                String valuePart = Double.isFinite(result.getValue()) ? ", value: " + result.getValue() : "";
-                Kit.log.config("LP solve time: " + elapsed + "ms, state: " + result.getState() + valuePart);
+                String primalPart = Double.isFinite(result.getValue()) ? ", primal: " + result.getValue() : "";
+                String dualPart = Double.isFinite(bestBound) ? ", bestBound: " + bestBound : "";
+                Kit.log.config("LP solve time: " + elapsed + "ms, state: " + result.getState() + primalPart + dualPart);
             }
 
             if (result.getState().isOptimal()) {
                 return result.getValue();
             }
 
-            if (result.getState().isFeasible() || result.getState().isUnexplored()) {
-                // Not optimal but we have information - return the best bound available
-                // For LP, when not optimal due to time limit, we return the current objective
-                // which serves as a valid bound (though possibly weaker than the true optimal)
-                // Note: For MIP, CPLEX would provide getBestObjValue() for the dual bound,
-                // but for pure LP relaxation, the current value is our best estimate
-                // return result.getValue();
-                return null;
+            if (Double.isFinite(bestBound)) {
+                return bestBound;
             }
 
             // LP infeasible means the current search branch is infeasible
