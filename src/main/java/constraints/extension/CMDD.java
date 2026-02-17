@@ -18,7 +18,7 @@ import org.xcsp.common.Constants;
 import org.xcsp.common.structures.Automaton;
 import org.xcsp.common.structures.Transition;
 
-import constraints.ConstraintExtension.ExtensionSpecific;
+import constraints.ConstraintExtension.ConstraintExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.MDD;
 import constraints.extension.structures.MDD.Node;
@@ -36,7 +36,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class CMDD extends ExtensionSpecific implements TagPositive, ObserverOnBacktracksSystematic {
+public abstract class CMDD extends ConstraintExtensionSpecific implements TagPositive, ObserverOnBacktracksSystematic {
 
 	/**********************************************************************************************
 	 * Implementing Interfaces

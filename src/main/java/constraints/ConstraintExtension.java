@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import constraints.ConstraintExtension.ExtensionGeneric.ExtensionV;
+import constraints.ConstraintExtension.ConstraintExtensionGeneric.ExtensionV;
 import constraints.extension.STR0;
 import constraints.extension.STR2;
 import constraints.extension.structures.ExtensionStructure;
@@ -58,71 +58,17 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 * Various filtering algorithms for extension (table) constraints
 	 */
 	public static enum Extension {
-		V, VA, STR0, STR1, STR2, STR3, STR1N, STR2N, CT, CMDDO, CMDDS; // , RPWC, RPWC2;
+		V, VA, STR0, STR1, STR2, STR3, STR1N, STR2N, CT, CMDDO, CMDDS;
 	}
 
 	/**********************************************************************************************
-	 ***** Inner classes (Extension1, ExtensionGeneric and ExtensionSpecific)
+	 ***** Inner classes for ConstraintExtensionGeneric (V and VA)
 	 *********************************************************************************************/
-
-	/**
-	 * This class is is used for unary extension constraints. Typically, filtering is performed at the root node of the search tree, and the constraint becomes
-	 * entailed. BE CAREFUL: this is not a subclass of ConstraintExtension.
-	 */
-	public static final class Extension1 extends ConstraintSpecific implements TagAC, TagCallCompleteFiltering {
-
-		@Override
-		public boolean isSatisfiedBy(int[] t) {
-			return (Arrays.binarySearch(values, t[0]) >= 0) == positive;
-		}
-
-		/**
-		 * The set of values authorized (if positive is true) or forbidden (if positive is false) by this unary constraint
-		 */
-		private final int[] values;
-
-		/**
-		 * This field indicates if values are supports (when true) or conflicts (when false)
-		 */
-		private final boolean positive;
-
-		/**
-		 * Builds a unary extension constraint for the specified problem, involving the specified variable, and with semantics defined from the specified values
-		 * and Boolean parameter
-		 * 
-		 * @param pb
-		 *            the problem to which the constraint is attached
-		 * @param x
-		 *            the variable involved in the unary constraint
-		 * @param values
-		 *            the values defining the semantics of the constraint
-		 * @param positive
-		 *            if true, values are supports; otherwise values are conflicts
-		 */
-		public Extension1(Problem pb, Variable x, int[] values, boolean positive) {
-			super(pb, new Variable[] { x });
-			assert values.length > 0 && Kit.isStrictlyIncreasing(values) : "" + values.length;
-			this.values = values;
-			this.positive = positive;
-			defineKey(values, positive);
-		}
-
-		@Override
-		public boolean runPropagator(Variable dummy) {
-			// control(problem.solver.depth() == 0); // note sure that it is true because after solutions, the entailed
-			// set may be reset
-			if (positive && scp[0].dom.removeValuesNotIn(values) == false)
-				return false;
-			if (!positive && scp[0].dom.removeValuesIn(values) == false)
-				return false;
-			return entail();
-		}
-	}
 
 	/**
 	 * This is the root class of generic AC filtering for extension constraints.
 	 */
-	public abstract static class ExtensionGeneric extends ConstraintExtension {
+	public abstract static class ConstraintExtensionGeneric extends ConstraintExtension {
 
 		/**
 		 * Builds an extension constraint with a generic AC filtering
@@ -132,8 +78,9 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		 * @param scp
 		 *            the scope of the constraint
 		 */
-		public ExtensionGeneric(Problem pb, Variable[] scp) {
+		public ConstraintExtensionGeneric(Problem pb, Variable[] scp) {
 			super(pb, scp);
+			control(scp.length > 1);
 		}
 
 		@Override
@@ -172,7 +119,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		/**
 		 * This class is for extension constraints with a classical generic AC filtering (iterating over lists of valid tuples in order to find a support).
 		 */
-		public static final class ExtensionV extends ExtensionGeneric {
+		public static final class ExtensionV extends ConstraintExtensionGeneric {
 
 			@Override
 			protected ExtensionStructure buildExtensionStructure() {
@@ -192,7 +139,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		 * This class is for extension constraints with a generic AC filtering following the VA (valid-allowed) scheme (iterating over both lists of valid
 		 * tuples and allowed tuples in order to find a support).
 		 */
-		public static final class ExtensionVA extends ExtensionGeneric implements TagPositive {
+		public static final class ExtensionVA extends ConstraintExtensionGeneric implements TagPositive {
 
 			@Override
 			protected ExtensionStructure buildExtensionStructure() {
@@ -227,18 +174,76 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		}
 	}
 
+	/**********************************************************************************************
+	 ***** Inner classes for ConstraintExtensionSpecific
+	 *********************************************************************************************/
+
 	/**
 	 * This is the root class of specific AC filtering for extension (table) constraints.
 	 */
-	public abstract static class ExtensionSpecific extends ConstraintExtension implements SpecificPropagator {
+	public abstract static class ConstraintExtensionSpecific extends ConstraintExtension implements SpecificPropagator {
 
-		public ExtensionSpecific(Problem pb, Variable[] scp) {
+		public ConstraintExtensionSpecific(Problem pb, Variable[] scp) {
 			super(pb, scp);
 		}
 
 		public boolean launchFiltering(Variable x) {
 			return runPropagator(x);
 		}
+
+		/**
+		 * This class is is used for unary extension constraints. Typically, filtering is performed at the root node of the search tree, and the constraint
+		 * becomes entailed. BE CAREFUL: this is not a subclass of ConstraintExtension.
+		 */
+		public static final class Extension1 extends ConstraintExtensionSpecific {
+
+			@Override
+			public boolean isSatisfiedBy(int[] t) {
+				return (Arrays.binarySearch(values, t[0]) >= 0) == positive;
+			}
+
+			/**
+			 * The set of values authorized (if positive is true) or forbidden (if positive is false) by this unary constraint
+			 */
+			private final int[] values;
+
+			/**
+			 * This field indicates if values are supports (when true) or conflicts (when false)
+			 */
+			private final boolean positive;
+
+			/**
+			 * Builds a unary extension constraint for the specified problem, involving the specified variable, and with semantics defined from the specified
+			 * values and Boolean parameter
+			 * 
+			 * @param pb
+			 *            the problem to which the constraint is attached
+			 * @param x
+			 *            the variable involved in the unary constraint
+			 * @param values
+			 *            the values defining the semantics of the constraint
+			 * @param positive
+			 *            if true, values are supports; otherwise values are conflicts
+			 */
+			public Extension1(Problem pb, Variable x, int[] values, boolean positive) {
+				super(pb, new Variable[] { x });
+				assert values.length > 0 && Kit.isStrictlyIncreasing(values) : "" + values.length;
+				this.values = values;
+				this.positive = positive;
+				defineKey(values, positive);
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				// control(problem.solver.depth() == 0); // note sure that it is true because after solutions, the entailed set may be reset
+				if (positive && scp[0].dom.removeValuesNotIn(values) == false)
+					return false;
+				if (!positive && scp[0].dom.removeValuesIn(values) == false)
+					return false;
+				return entail();
+			}
+		}
+
 	}
 
 	/**********************************************************************************************
@@ -360,7 +365,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 *********************************************************************************************/
 
 	@Override
-	public final boolean isSatisfiedBy(int[] t) {
+	public boolean isSatisfiedBy(int[] t) {
 		int[] buffer = tupleIterator.buffer;
 		for (int i = t.length - 1; i >= 0; i--)
 			buffer[i] = doms[i].toIdx(t[i]);
@@ -417,7 +422,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	protected ExtensionStructure buildExtensionStructure(int[][] tuples, boolean positive) {
 		ExtensionStructure es = buildExtensionStructure(); // note that the constraint is automatically registered
 		control(es != null, "Maybe you have to override buildExtensionStructure()");
-		es.originalTuples = this instanceof ExtensionGeneric || problem.head.control.problem.symmetryBreaking != SymmetryBreaking.NO ? tuples : null;
+		es.originalTuples = this instanceof ConstraintExtensionGeneric || problem.head.control.problem.symmetryBreaking != SymmetryBreaking.NO ? tuples : null;
 		es.nOriginalTuples = tuples.length;
 		es.originalPositive = positive;
 		es.storeTuples(tuples, positive);

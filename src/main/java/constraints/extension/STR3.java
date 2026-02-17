@@ -18,7 +18,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.ConstraintExtension;
-import constraints.ConstraintExtension.ExtensionSpecific;
+import constraints.ConstraintExtension.ConstraintExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
@@ -39,7 +39,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public final class STR3 extends ExtensionSpecific implements TagPositive, ObserverOnSolving, ObserverOnBacktracksSystematic {
+public final class STR3 extends ConstraintExtensionSpecific implements TagPositive, ObserverOnSolving, ObserverOnBacktracksSystematic {
 
 	/**********************************************************************************************
 	 * Implementing Interfaces

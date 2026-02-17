@@ -10,14 +10,12 @@
 
 package constraints.intension;
 
-import static constraints.ConstraintIntension.tooLarge;
 import static utility.Kit.control;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.xcsp.common.IVar;
 import org.xcsp.common.Types.TypeArithmeticOperator;
 import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Types.TypeUnaryArithmeticOperator;

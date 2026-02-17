@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 
 import org.xcsp.common.Constants;
 
-import constraints.ConstraintExtension.ExtensionGeneric;
+import constraints.ConstraintExtension.ConstraintExtensionGeneric;
 import constraints.ConstraintIntension.IntensionStructure;
 import constraints.extension.structures.ExtensionStructure;
 import heuristics.HeuristicValuesDynamic.Conflicts;
@@ -103,7 +103,7 @@ public final class ConflictsStructure implements ConstraintRegister {
 			ConstraintExtension c1 = (ConstraintExtension) structure.firstRegisteredCtr();
 			if (c1 instanceof SpecificPropagator || c1.scp.length == 1 || c1.infiniteDomainVars.length > 0)
 				continue;
-			control(c1 instanceof ExtensionGeneric);
+			control(c1 instanceof ConstraintExtensionGeneric);
 			if (Kit.memory() > MEMORY_LIMIT)
 				return;
 			ConflictsStructure conflictsStructure = new ConflictsStructure(c1);

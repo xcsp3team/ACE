@@ -26,7 +26,7 @@ import org.xcsp.common.IVar.Var;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
-import constraints.ConstraintExtension.ExtensionSpecific;
+import constraints.ConstraintExtension.ConstraintExtensionSpecific;
 import constraints.extension.structures.TableHybrid;
 import constraints.extension.structures.TableHybrid.HybridTuple;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
@@ -46,7 +46,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public final class CHybrid extends ExtensionSpecific implements ObserverOnBacktracksSystematic {
+public final class CHybrid extends ConstraintExtensionSpecific implements ObserverOnBacktracksSystematic {
 
 	/**********************************************************************************************
 	 * Static methods

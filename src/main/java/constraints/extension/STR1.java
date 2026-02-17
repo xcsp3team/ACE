@@ -14,12 +14,14 @@ import static utility.Kit.control;
 
 import java.util.Arrays;
 
-import constraints.ConstraintExtension.ExtensionSpecific;
+import constraints.ConstraintExtension.ConstraintExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
+import interfaces.Tags.TagNegative;
 import problem.Problem;
 import sets.SetDenseReversible;
+import variables.Domain;
 import variables.Variable;
 
 /**
@@ -28,7 +30,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public class STR1 extends ExtensionSpecific implements ObserverOnBacktracksSystematic {
+public class STR1 extends ConstraintExtensionSpecific implements ObserverOnBacktracksSystematic {
 	// TODO why not using a counter 'time' and replace boolean[][] ac by int[][] ac
 	// we just do time++ instead of Arrays.fill(ac[x],false); the gain must be unnoticeable, right?
 
@@ -173,5 +175,73 @@ public class STR1 extends ExtensionSpecific implements ObserverOnBacktracksSyste
 		}
 		return true;
 		// return updateDomains();
+	}
+
+	/**********************************************************************************************
+	 * STR1N
+	 *********************************************************************************************/
+
+	/**
+	 * This is STR (Simple Tabular Reduction) for filtering negative extension (table) constraints.
+	 * 
+	 * @author Christophe Lecoutre
+	 */
+	public static final class STR1N extends STR1 implements TagNegative {
+
+		/**
+		 * nConflicts[x][a] indicates, during filtering, the number of valid conflicts encountered with (x,a)
+		 */
+		private final int[][] nConflicts;
+
+		/**
+		 * Builds an extension constraint, with STR1N as specific filtering method
+		 * 
+		 * @param pb
+		 *            the problem to which the constraint is attached
+		 * @param scp
+		 *            the scope of the constraint
+		 */
+		public STR1N(Problem pb, Variable[] scp) {
+			super(pb, scp);
+			this.nConflicts = Variable.litterals(scp).intArray();
+		}
+
+		@Override
+		protected void beforeFiltering() {
+			super.beforeFiltering();
+			for (int i = futvars.limit; i >= 0; i--)
+				Arrays.fill(nConflicts[futvars.dense[i]], 0);
+		}
+
+		@Override
+		public boolean runPropagator(Variable evt) {
+			int depth = problem.solver.depth();
+			beforeFiltering();
+			for (int i = set.limit; i >= 0; i--) {
+				int[] tuple = tuples[set.dense[i]];
+				if (isValid(tuple)) {
+					for (int j = futvars.limit; j >= 0; j--) {
+						int x = futvars.dense[j];
+						int a = tuple[x];
+						nConflicts[x][a]++;
+					}
+				} else
+					set.removeAtPosition(i, depth);
+			}
+			long nValidTuples = Domain.nValidTuplesBounded(doms);
+			for (int i = futvars.limit; i >= 0; i--) {
+				int x = futvars.dense[i];
+				Domain dom = scp[x].dom;
+				long limit = nValidTuples / dom.size();
+				for (int a = dom.first(); a != -1; a = dom.next(a)) {
+					if (nConflicts[x][a] != limit) {
+						cnt--;
+						cnts[x]--;
+						ac[x][a] = true;
+					}
+				}
+			}
+			return updateDomains();
+		}
 	}
 }

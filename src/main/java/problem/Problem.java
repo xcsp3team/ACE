@@ -152,7 +152,7 @@ import constraints.Constraint;
 import constraints.Constraint.CtrTrivial.CtrFalse;
 import constraints.Constraint.CtrTrivial.CtrTrue;
 import constraints.ConstraintExtension;
-import constraints.ConstraintExtension.Extension1;
+import constraints.ConstraintExtension.ConstraintExtensionSpecific.Extension1;
 import constraints.ConstraintIntension;
 import constraints.extension.CHybrid;
 import constraints.extension.CMDD.CMDDO;

@@ -38,6 +38,7 @@ import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
 import constraints.ConstraintExtension;
+import constraints.ConstraintExtension.ConstraintExtensionSpecific.Extension1;
 import constraints.ConstraintIntension;
 import dashboard.Control.OptionsVariables;
 import heuristics.HeuristicValues;
@@ -583,7 +584,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 		int nExtStructures = 0, nSharedExtStructures = 0, nIntStructures = 0, nSharedintStructures = 0, nCftStructures = 0, nSharedCftStructures = 0;
 		for (Constraint c : head.problem.constraints) {
-			if (c instanceof ConstraintExtension)
+			if (c instanceof ConstraintExtension && !(c instanceof Extension1))
 				if (c.extStructure().firstRegisteredCtr() == c)
 					nExtStructures++;
 				else

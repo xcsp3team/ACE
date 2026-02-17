@@ -17,7 +17,7 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import constraints.ConstraintExtension.ExtensionSpecific;
+import constraints.ConstraintExtension.ConstraintExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import interfaces.Tags.TagStarredCompatible;
@@ -31,7 +31,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class STR0 extends ExtensionSpecific implements TagStarredCompatible {
+public abstract class STR0 extends ConstraintExtensionSpecific implements TagStarredCompatible {
 
 	/**********************************************************************************************
 	 * Static

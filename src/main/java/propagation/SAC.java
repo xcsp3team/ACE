@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 
 import constraints.extension.STR3;
 import heuristics.HeuristicVariables;
-import heuristics.HeuristicVariables.BestScoredVariable;
+import heuristics.HeuristicVariables.BestScoredSimple;
 import heuristics.HeuristicVariablesDynamic.WdegOnDom;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import propagation.SAC.SAC3.LocalQueue.Cell;
@@ -656,7 +656,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			 */
 			private Variable[] uncheckedVars;
 
-			private BestScoredVariable bestScoredVariable = new BestScoredVariable();
+			private BestScoredSimple bestScored = new BestScoredSimple(false);
 
 			private LocalQueue() {
 				this.uncheckedVars = new Variable[solver.problem.variables.length];
@@ -674,18 +674,18 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			}
 
 			public Variable selectNextVariable() {
-				bestScoredVariable.beforeIteration(0,false);
+				bestScored.beforeIteration(0,false);
 				if (nUncheckedVars == 0) { // we keep building the branch
-					solver.futVars.execute(x -> bestScoredVariable.consider(x, varHeuristics[currIndexOfVarHeuristic].scoreOptimizedOf(x)));
+					solver.futVars.execute(x -> bestScored.consider(x, varHeuristics[currIndexOfVarHeuristic].scoreOptimizedOf(x)));
 				} else {
 					assert controlUncheckedVariables();
 					int bestPos = 0;
 					for (int i = 0; i < nUncheckedVars; i++)
-						if (bestScoredVariable.consider(uncheckedVars[i], varHeuristics[currIndexOfVarHeuristic].scoreOptimizedOf(uncheckedVars[i])))
+						if (bestScored.consider(uncheckedVars[i], varHeuristics[currIndexOfVarHeuristic].scoreOptimizedOf(uncheckedVars[i])))
 							bestPos = i;
 					Kit.swap(uncheckedVars, --nUncheckedVars, bestPos);
 				}
-				return bestScoredVariable.variable;
+				return bestScored.bestVariable();
 			}
 
 			public Variable pick(Variable x) {

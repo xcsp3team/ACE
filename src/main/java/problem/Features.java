@@ -29,6 +29,7 @@ import org.xcsp.parser.entries.XObjectives.XObj;
 
 import constraints.Constraint;
 import constraints.ConstraintExtension;
+import constraints.ConstraintExtension.ConstraintExtensionSpecific.Extension1;
 import constraints.ConstraintIntension;
 import constraints.extension.CHybrid;
 import constraints.extension.structures.MDD;
@@ -347,7 +348,7 @@ public final class Features {
 				int arity = c.scp.length;
 				ctrArities.add(arity);
 				if (problem.optimizer == null || (c != problem.optimizer.clb && c != problem.optimizer.cub)) {
-					String ext = (c instanceof ConstraintExtension
+					String ext = (c instanceof ConstraintExtension && !(c instanceof Extension1)
 							? "-" + c.extStructure().getClass().getSimpleName() + (c.extStructure().isStarred() ? "*" : "")
 							: "");
 					if (arity == 1)

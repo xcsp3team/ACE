@@ -25,7 +25,7 @@ import org.xcsp.common.Constants;
 import org.xcsp.common.IVar;
 
 import constraints.Constraint;
-import constraints.ConstraintExtension.ExtensionGeneric;
+import constraints.ConstraintExtension.ConstraintExtensionGeneric;
 import constraints.extension.structures.Bits;
 import heuristics.HeuristicValues;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
@@ -662,7 +662,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 			return;
 		boolean needBinaryrepresentation = false;
 		for (Constraint c : ctrs) {
-			if (!(c instanceof ExtensionGeneric))
+			if (!(c instanceof ConstraintExtensionGeneric))
 				continue;
 			if (!(c.extStructure() instanceof Bits))
 				continue;

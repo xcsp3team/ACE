@@ -48,10 +48,228 @@ public abstract class HeuristicVariables extends Heuristic {
 		return null;
 	}
 
+	public static abstract class BestScored {
+
+		protected int time;
+
+		/**
+		 * true if we must prefer the variable with the lowest score, instead of the variable with the highest score
+		 */
+		public boolean minimization;
+
+		/**
+		 * true if we must ignore auxiliary variables (introduced by the solver)
+		 */
+		private boolean discardAux;
+
+		public BestScored(boolean discardAux) {
+			this.discardAux = discardAux;
+		}
+
+		public abstract void reset();
+
+		public BestScored beforeIteration(int time, boolean minimization) {
+			this.time = time;
+			this.minimization = minimization;
+			return this;
+		}
+
+		protected abstract boolean considerImplem(Variable x, double s);
+
+		/**
+		 * Considers the specified variable with the specified score: compares it with the current best scored variable, and updates it if necessary.
+		 * 
+		 * @param x
+		 *            a variable
+		 * @param s
+		 *            the score of the variable
+		 * @return true if x becomes the new best scored variable
+		 */
+		public boolean consider(Variable x, double s) {
+			if (discardAux && x.isAuxiliaryVariableIntroducedBySolver()) {
+				assert x.id().startsWith(Problem.AUXILIARY_VARIABLE_PREFIX);
+				return false;
+			}
+			return considerImplem(x, s);
+		}
+
+		public abstract Variable bestVariable();
+
+		public abstract Variable bestSecondVariable(int newTime);
+
+		public abstract boolean betterThan(double previousScore);
+	}
+
 	/**
 	 * Useful to record the best variable(s) out of a set, when considering a score computed for each of them
 	 */
-	public static class BestScoredVariable {
+	public static class BestScoredSimple extends BestScored {
+
+		/**
+		 * The current best variable, i.e., the variable with the current best score; used during an iteration over all variables
+		 */
+		protected Variable variable;
+
+		/**
+		 * The score of the current best variable
+		 */
+		protected double score;
+
+		private Variable secondVariable;
+
+		private double secondScore;
+
+		public BestScoredSimple(boolean discardAux) {
+			super(discardAux);
+		}
+
+		public BestScoredSimple beforeIteration(int time, boolean minimization) {
+			super.beforeIteration(time, minimization);
+			this.variable = null;
+			this.score = minimization ? Double.MAX_VALUE : Double.NEGATIVE_INFINITY;
+			this.secondVariable = null;
+			return this;
+		}
+
+		public void reset() {
+			this.variable = null;
+			this.secondVariable = null;
+		}
+
+		public Variable second(int newTime) {
+			if (secondVariable != null && this.time + 1 == newTime)
+				return secondVariable;
+			return null;
+		}
+
+		private boolean test = false;
+
+		/**
+		 * Considers the specified variable with the specified score: compares it with the current best scored variable, and updates it if necessary.
+		 * 
+		 * @param x
+		 *            a variable
+		 * @param s
+		 *            the score of the variable
+		 * @return true if x becomes the new best scored variable
+		 */
+		public boolean considerImplem(Variable x, double s) {
+			if (test) {
+				if (secondVariable != null) {
+					boolean entering = ((minimization && s < secondScore) || (!minimization && s > secondScore));
+					if (!entering)
+						return false;
+					boolean modification = ((minimization && s < score) || (!minimization && s > score));
+					if (modification) {
+						secondVariable = variable;
+						secondScore = score;
+						variable = x;
+						score = s;
+					} else {
+						secondVariable = x;
+						secondScore = s;
+					}
+					return false;
+				} else {
+					boolean modification = ((minimization && s < score) || (!minimization && s > score));
+					if (modification) {
+						secondVariable = variable;
+						secondScore = score;
+						variable = x;
+						score = s;
+					}
+					return modification;
+				}
+			}
+			if ((minimization && s < score) || (!minimization && s > score)) {
+				secondVariable = variable;
+				variable = x;
+				score = s;
+				return true;
+			}
+			return false;
+		}
+
+		public Variable bestVariable() {
+			return variable;
+		}
+
+		public Variable bestSecondVariable(int newTime) {
+			if (secondVariable != null && this.time + 1 == newTime)
+				return secondVariable;
+			return null;
+		}
+
+		public boolean betterThan(double previousScore) {
+			return minimization ? score < previousScore : score > previousScore;
+		}
+	}
+
+	public static class BestScoredStacked extends BestScored {
+
+		private int lastPossibleLimit;
+
+		private Variable[] vars;
+
+		private double[] scores;
+
+		private int limit;
+
+		public void reset() {
+			this.limit = -1;
+		}
+
+		public BestScoredStacked(boolean discardAux, int capacity) {
+			super(discardAux);
+			this.lastPossibleLimit = capacity - 1;
+			this.vars = new Variable[capacity];
+			this.scores = new double[capacity];
+			this.limit = -1;
+
+		}
+
+		public BestScoredStacked beforeIteration(int time, boolean minimization) {
+			super.beforeIteration(time, minimization);
+			reset();
+			return this;
+		}
+
+		public boolean considerImplem(Variable x, double score) {
+			for (int i = 0; i <= limit; i++) {
+				if (score > scores[i]) {
+					for (int j = Math.min(limit, lastPossibleLimit - 1); j >= i; j--) {
+						vars[j + 1] = vars[j];
+						scores[j + 1] = scores[j];
+					}
+					vars[i] = x;
+					scores[i] = score;
+					if (limit < lastPossibleLimit)
+						limit++;
+					return i == 0;
+				}
+			}
+			if (limit < lastPossibleLimit) {
+				limit++;
+				vars[limit] = x;
+				scores[limit] = score;
+			}
+			return limit == 0;
+		}
+
+		public Variable bestVariable() {
+			return null;
+		}
+
+		public Variable bestSecondVariable(int newTime) {
+			return null;
+		}
+
+		public boolean betterThan(double previousScore) {
+			return false; // minimization ? score < previousScore : score > previousScore;
+		}
+	}
+
+	public static class BestScoredVariable3 {
 
 		public int time;
 
@@ -117,18 +335,60 @@ public abstract class HeuristicVariables extends Heuristic {
 			}
 		}
 
-		public BestScoredVariable(boolean discardAux, int updateStackLength) {
+		public class BestStack {
+
+			private int lastPossibleLimit;
+
+			private Variable[] vars;
+
+			private double[] scores;
+
+			private int limit;
+
+			public void reset() {
+				this.limit = -1;
+			}
+
+			public BestStack(int capacity) {
+				this.lastPossibleLimit = capacity - 1;
+				this.vars = new Variable[capacity];
+				this.scores = new double[capacity];
+				this.limit = -1;
+			}
+
+			public void addPossibly(Variable x, double score) {
+				for (int i = 0; i <= limit; i++) {
+					if (score > scores[i]) {
+						for (int j = Math.min(limit, lastPossibleLimit - 1); j >= i; j--) {
+							vars[j + 1] = vars[j];
+							scores[j + 1] = scores[j];
+						}
+						vars[i] = x;
+						scores[i] = score;
+						limit = Math.min(limit + 1, lastPossibleLimit);
+						return;
+					}
+				}
+				if (limit < lastPossibleLimit) {
+					limit++;
+					vars[limit] = x;
+					scores[limit] = score;
+				}
+			}
+		}
+
+		public BestScoredVariable3(boolean discardAux, int updateStackLength) {
 			this.discardAux = discardAux;
 			this.stackMaxSize = updateStackLength;
 			if (updateStackLength > 0)
 				updateStack = new UpdateStack();
 		}
 
-		public BestScoredVariable() {
+		public BestScoredVariable3() {
 			this(false, 0);
 		}
 
-		public BestScoredVariable beforeIteration(int time, boolean minimization) {
+		public BestScoredVariable3 beforeIteration(int time, boolean minimization) {
 			this.time = time;
 			this.variable = null;
 			this.score = minimization ? Double.MAX_VALUE : Double.NEGATIVE_INFINITY;
@@ -252,7 +512,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	/**
 	 * The object used to record the best scored variable, when looking for it
 	 */
-	public BestScoredVariable bestScoredVariable;
+	public BestScoredSimple bestScored;
 
 	public final void setPriorityVars(Variable[] priorityVars, int nbStrictPriorityVars) {
 		this.priorityVars = priorityVars;
@@ -286,7 +546,7 @@ public abstract class HeuristicVariables extends Heuristic {
 			this.nStrictlyPriorityVars = solver.problem.nStrictPriorityVars;
 		}
 		this.options = solver.head.control.varh;
-		this.bestScoredVariable = new BestScoredVariable(solver.head.control.varh.discardAux, solver.head.control.varh.updateStackLength);
+		this.bestScored = new BestScoredSimple(solver.head.control.varh.discardAux); // , solver.head.control.varh.updateStackLength);
 	}
 
 	/**
