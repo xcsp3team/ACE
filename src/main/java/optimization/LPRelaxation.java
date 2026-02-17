@@ -153,7 +153,18 @@ public class LPRelaxation {
                     first = false;
                 }
             }
-        }
+            Kit.log.config(linStats.toString());
+
+            // Relaxed constraint types (if any)
+            if (!relaxedStats.isEmpty() && problem.head.control.general.verbose > 0) {
+                StringBuilder relStats = new StringBuilder("\tLP relaxed (not linearized): ");
+                first = true;
+                for (Map.Entry<String, Integer> e : relaxedStats.entrySet()) {
+                    if (!first) relStats.append(", ");
+                    relStats.append(e.getKey()).append(":").append(e.getValue());
+                    first = false;
+                }
+                Kit.log.config(relStats.toString());
 
                 // Show skipped Intension patterns (helps identify what to implement next)
                 Map<String, Integer> skippedPatterns = IntensionLinearizer.getSkippedPatterns();
@@ -279,13 +290,26 @@ public class LPRelaxation {
      * @return true if constraint was added, false otherwise
      */
     private boolean addConstraintIfLinear(Constraint c) {
+        return addConstraintIfLinearWithStats(c) != null;
+    }
+
+    /**
+     * Adds a constraint to the LP model if it can be linearized.
+     * Returns the name of the linearizer used, or null if not linearized.
+     *
+     * @param c the constraint to potentially add
+     * @return the linearizer class name if successful, null otherwise
+     */
+    private String addConstraintIfLinearWithStats(Constraint c) {
         for (ConstraintLinearizer linearizer : LINEARIZERS) {
             if (linearizer.canLinearize(c)) {
-                return linearizer.linearize(c, context);
+                if (linearizer.linearize(c, context)) {
+                    return linearizer.getClass().getSimpleName();
+                }
             }
         }
         // No linearizer found - constraint is relaxed away
-        return false;
+        return null;
     }
 
     /**
@@ -351,6 +375,7 @@ public class LPRelaxation {
 
     /**
      * Configure solver options. Called once during model building.
+     * Note: Verbose/debug output is enabled dynamically in solve() only at root node.
      */
     private void configureSolver() {
         ExpressionsBasedModel.Integration<SolverCPLEX> integration = SolverCPLEX.INTEGRATION;
