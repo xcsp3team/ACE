@@ -226,7 +226,7 @@ public abstract class Optimizer implements ObserverOnRuns {
 		}
 		
 		// Solve LP relaxation
-		Double lpBound = lpRelaxation.solve();
+		Double lpBound = lpRelaxation.solve(atRootNode);
 
 		if (lpBound != null && atRootNode) {
 			// ONLY update global bounds if we're at the root node!
