@@ -20,7 +20,7 @@ repositories {
 dependencies {
     implementation fileTree(dir: 'lib', include: ['*.jar'])
     implementation 'org.ojalgo:ojalgo:49.2.1'
-    implementation 'org.ojalgo:ojalgo-cplex:3.1.0'
+    implementation 'org.ojalgo:ojalgo-cplex:3.0.2'
     // implementation 'org.ojalgo:ojalgo-gurobi:3.1.0'
 
     // Optional CPLEX + ojAlgo extensions (provide local jars via -PcplexJar / -PojalgoExtJar or env vars).

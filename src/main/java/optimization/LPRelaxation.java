@@ -10,9 +10,13 @@
 
 package optimization;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
 import org.ojalgo.optimisation.ExpressionsBasedModel;
 import org.ojalgo.optimisation.Variable;
 import org.ojalgo.optimisation.Optimisation;
+import org.ojalgo.optimisation.solver.cplex.SolverCPLEX;
 
 import problem.Problem;
 import constraints.Constraint;
@@ -209,7 +213,7 @@ public class LPRelaxation {
         setObjective();
 
         // Add bound constraint for pruning (objective <= bestKnown for minimization, >= for maximization)
-        addBoundConstraint();
+        //addBoundConstraint();
 
         // Configure solver options (once)
         configureSolver();
@@ -391,7 +395,24 @@ public class LPRelaxation {
      * Note: Verbose/debug output is enabled dynamically in solve() only at root node.
      */
     private void configureSolver() {
-        model.options.setConfigurator(new BoundAwareSolverCPLEX.Configurator());
+        // Avoid numeric garbage from SolverCPLEX 3.0.x default logger stream handling.
+        model.options.setConfigurator((SolverCPLEX.Configurator) (cplex, options) -> {
+            try {
+                cplex.setParam(ilog.cplex.IloCplex.IntParam.Threads, 1);
+            } catch (Exception ignored) {
+                // Keep default CPLEX thread config if setting this parameter fails.
+            }
+            if (options.logger_appender != null) {
+                cplex.setOut(new OutputStream() {
+                    @Override
+                    public void write(final int b) throws IOException {
+                        options.logger_appender.print((char) b);
+                    }
+                });
+            } else {
+                cplex.setOut(OutputStream.nullOutputStream());
+            }
+        });
 
         // Set time limit to prevent LP from taking too long
         // Abort LP solve when timeout is reached.
@@ -446,7 +467,7 @@ public class LPRelaxation {
             double bestBound = BoundAwareSolverCPLEX.getLastBestBound();
 
             long elapsed = System.currentTimeMillis() - startTime;
-            if (verbose) {
+            if (verbose && ! result.getState().isFailure()) {
                 String primalPart = Double.isFinite(result.getValue()) ? ", primal: " + result.getValue() : "";
                 String dualPart = Double.isFinite(bestBound) ? ", bestBound: " + bestBound : "";
                 Kit.log.config("LP solve time: " + elapsed + "ms, state: " + result.getState() + primalPart + dualPart);
