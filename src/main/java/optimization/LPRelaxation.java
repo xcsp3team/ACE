@@ -26,6 +26,9 @@ import optimization.linearization.SumLinearizer;
 import optimization.linearization.CountLinearizer;
 
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.HashMap;
 
 
 /**
@@ -102,6 +105,13 @@ public class LPRelaxation {
         int linearConstraints = 0;
         int nonLinearConstraints = 0;
 
+        // Statistics tracking (for verbose mode)
+        Map<String, Integer> linearizerStats = new LinkedHashMap<>();
+        Map<String, Integer> relaxedStats = new HashMap<>();
+        for (ConstraintLinearizer lin : LINEARIZERS) {
+            linearizerStats.put(lin.getClass().getSimpleName(), 0);
+        }
+
         for (Constraint c : problem.constraints) {
             if (c.ignored) {
                 continue;
@@ -112,15 +122,64 @@ public class LPRelaxation {
                 continue;
             }
 
-            if (addConstraintIfLinear(c)) {
+            String linearizerUsed = addConstraintIfLinearWithStats(c);
+            if (linearizerUsed != null) {
                 linearConstraints++;
+                linearizerStats.merge(linearizerUsed, 1, Integer::sum);
             } else {
                 nonLinearConstraints++;
+                String ctrType = c.getClass().getSimpleName();
+                relaxedStats.merge(ctrType, 1, Integer::sum);
             }
         }
 
-        Kit.log.config("LP model: " + linearConstraints + " linear constraints, " + nonLinearConstraints + " non-linear (relaxed)");
-        Kit.log.config("LP cuts: " + context.getCoverCutCount());
+        // Log summary
+        Kit.log.config("\tLP model: " + linearConstraints + " linear constraints, " + nonLinearConstraints + " non-linear (relaxed)");
+        Kit.log.config("\tLP cuts: " + context.getCoverCutCount());
+
+        // Log detailed stats if verbose
+        if (problem.head.control.general.verbose > 0) {
+            int total = linearConstraints + nonLinearConstraints;
+            double coverage = total > 0 ? (100.0 * linearConstraints / total) : 0;
+            Kit.log.config(String.format("\tLP coverage: %.1f%% (%d/%d constraints)", coverage, linearConstraints, total));
+
+            // Linearizer breakdown
+            StringBuilder linStats = new StringBuilder("\tLP linearizers: ");
+            boolean first = true;
+            for (Map.Entry<String, Integer> e : linearizerStats.entrySet()) {
+                if (e.getValue() > 0) {
+                    if (!first) linStats.append(", ");
+                    linStats.append(e.getKey().replace("Linearizer", "")).append(":").append(e.getValue());
+                    first = false;
+                }
+            }
+        }
+
+                // Show skipped Intension patterns (helps identify what to implement next)
+                Map<String, Integer> skippedPatterns = IntensionLinearizer.getSkippedPatterns();
+                if (!skippedPatterns.isEmpty()) {
+                    StringBuilder patStats = new StringBuilder("\tLP skipped Intension patterns: ");
+                    first = true;
+                    // Sort by count descending, show top 5
+                    skippedPatterns.entrySet().stream()
+                        .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+                        .limit(5)
+                        .forEach(e -> {});
+                    int shown = 0;
+                    for (Map.Entry<String, Integer> e : skippedPatterns.entrySet()) {
+                        if (shown >= 5) break;
+                        if (!first) patStats.append(", ");
+                        patStats.append(e.getKey()).append(":").append(e.getValue());
+                        first = false;
+                        shown++;
+                    }
+                    if (skippedPatterns.size() > 5) {
+                        patStats.append(", ...(").append(skippedPatterns.size() - 5).append(" more)");
+                    }
+                    Kit.log.config(patStats.toString());
+                }
+            }
+        }
 
         // Set objective (from Optimizer)
         setObjective();
@@ -319,12 +378,21 @@ public class LPRelaxation {
      *
      * @return the LP bound value, or null if LP is infeasible/unbounded or objective not set
      */
-    public Double solve() {
+    public Double solve(boolean atRoot) {
         if (model == null || !objectiveSet) {
             return null;
         }
 
         try {
+            // Enable verbose LP solving at root when -v=1
+            boolean verbose = problem.head.control.general.verbose > 0;
+            if (atRoot && verbose) {
+                model.options.progress(BoundAwareSolverCPLEX.class);
+                if (problem.head.control.general.verbose > 1) {
+                    model.options.debug(BoundAwareSolverCPLEX.class);
+                }
+            }
+
             long startTime = System.currentTimeMillis();
 
             // Minimize or maximize based on optimizer type
@@ -336,8 +404,10 @@ public class LPRelaxation {
             }
 
             long elapsed = System.currentTimeMillis() - startTime;
-            if (problem.head.control.general.verbose > 0)
-                Kit.log.config("LP solve time: " + elapsed + "ms, state: " + result.getState() + ((result.getState().isOptimal() ||  result.getState().isFeasible() || result.getState().isUnexplored()) ?  ", value: " + result.getValue() : ""));
+            if (verbose) {
+                String valuePart = Double.isFinite(result.getValue()) ? ", value: " + result.getValue() : "";
+                Kit.log.config("LP solve time: " + elapsed + "ms, state: " + result.getState() + valuePart);
+            }
 
             if (result.getState().isOptimal()) {
                 return result.getValue();
