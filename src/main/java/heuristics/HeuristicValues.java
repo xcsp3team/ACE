@@ -115,7 +115,6 @@ public abstract class HeuristicValues extends Heuristic {
 			if (c instanceof Sum) {
 				long[] t = IntStream.range(0, c.scp.length)
 						.mapToLong(i -> (c instanceof SumWeighted ? ((SumWeighted) c).coeffs[i] : 1) * c.scp[i].dom.distance()).toArray();
-				System.out.println("jjjjj " + Kit.join(t));
 				for (int i = 0; i < c.scp.length; i++)
 					c.scp[i].specificWeight = 1 / Math.max(1, Math.abs(t[i]));
 			}

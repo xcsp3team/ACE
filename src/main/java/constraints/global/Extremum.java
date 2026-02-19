@@ -44,12 +44,12 @@ import variables.Variable;
 public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCallCompleteFiltering {
 
 	/**
-	 * The list (vector) of variables
+	 * The list (vector) of variables on which we apply a minimum/maximum computation
 	 */
 	protected final Variable[] list;
 
-	public Extremum(Problem pb, Variable[] list, Variable ext) {
-		super(pb, pb.api.vars(ext, list)); // ext may be null
+	public Extremum(Problem pb, Variable[] list, Variable z) {
+		super(pb, pb.api.vars(z, list)); // z may be null
 		this.list = list;
 	}
 
@@ -62,22 +62,22 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 		/**
 		 * The domain of the target variable (used as value)
 		 */
-		protected final Domain vdom;
+		protected final Domain zdom;
 
 		/**
 		 * sentinels[a] denotes the sentinel for the value at index a in the domain of the extremum variable
 		 */
 		protected final Variable[] sentinels;
 
-		public ExtremumVar(Problem pb, Variable[] list, Variable value) {
-			super(pb, list, value);
-			this.vdom = value.dom;
+		public ExtremumVar(Problem pb, Variable[] list, Variable z) {
+			super(pb, list, z);
+			this.zdom = z.dom;
 			this.sentinels = specialServants == null
-					? IntStream.range(0, vdom.initSize()).mapToObj(a -> findSentinelFor(vdom.toVal(a))).toArray(Variable[]::new)
+					? IntStream.range(0, zdom.initSize()).mapToObj(a -> findSentinelFor(zdom.toVal(a))).toArray(Variable[]::new)
 					: null; // otherwise may be too long (since large domains)
 			if (sentinels != null)
-				vdom.removeAtConstructionTime(a -> sentinels[a] == null);
-			control(list.length > 1 && Stream.of(list).noneMatch(x -> x == value), "vector length = " + list.length);
+				zdom.removeAtConstructionTime(a -> sentinels[a] == null);
+			control(list.length > 1 && Stream.of(list).noneMatch(x -> x == z), "vector length = " + list.length);
 		}
 
 		@Override
@@ -105,6 +105,8 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 
 		public static final class Maximum extends ExtremumVar {
 
+			private Domain domConnexAsSentinel;
+
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
 				boolean found = false;
@@ -117,13 +119,14 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 				return found;
 			}
 
-			public Maximum(Problem pb, Variable[] list, Variable value) {
-				super(pb, list, value);
+			public Maximum(Problem pb, Variable[] list, Variable z) {
+				super(pb, list, z);
+				this.domConnexAsSentinel = list[0].dom;
 			}
 
 			private int computeLimitForSentinel(Variable sentinel) {
-				for (int a = vdom.last(); a != -1; a = vdom.prev(a)) {
-					int v = vdom.toVal(a);
+				for (int a = zdom.last(); a != -1; a = zdom.prev(a)) {
+					int v = zdom.toVal(a);
 					if (sentinels[a] != sentinel || findSentinelFor(v, sentinel) != null)
 						return v;
 				}
@@ -132,72 +135,127 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				int maxFirst = Integer.MIN_VALUE, maxLast = Integer.MIN_VALUE;
+				// STEP 1 : cutting bounds of zdom (new bounds are not necessarily consistent)
+				int maxFirst = Integer.MIN_VALUE, maxLast = Integer.MIN_VALUE; // computing maxFirst..maxLast the possible domain of the target
 				for (Variable x : list) {
 					if (x.dom.firstValue() > maxFirst)
 						maxFirst = x.dom.firstValue();
 					if (x.dom.lastValue() > maxLast)
 						maxLast = x.dom.lastValue();
 				}
-				// Filtering vdom (the domain of the target extremum variable)
-				if (vdom.removeValuesLT(maxFirst) == false || vdom.removeValuesGT(maxLast) == false)
+				if (zdom.removeValuesLT(maxFirst) == false || zdom.removeValuesGT(maxLast) == false)
 					return false;
 
-				int sizeBefore = vdom.size();
-				if (sentinels != null) {
-					for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
-						int v = vdom.toVal(a);
+				// STEP 2 : Filtering all values of zdom
+				boolean allSupported = false;
+				// a) cheap checking that all values of zdom are supported (sentinels are not updated, which can perturbate search)
+				if (zdom.size() > 2) { // TODO hard coding // previously was : if (zdom.lastValue() == maxLast) {
+					int minz = zdom.firstValue(), maxz = zdom.lastValue();
+					if (domConnexAsSentinel.connex() && domConnexAsSentinel.firstValue() <= minz && maxz <= domConnexAsSentinel.lastValue())
+						allSupported = true;
+					else
+						for (Variable x : list) {
+							Domain dom = x.dom;
+							if (dom.connex() && dom.firstValue() <= minz && maxz <= dom.lastValue()) {
+								allSupported = true;
+								domConnexAsSentinel = dom;
+								break;
+							}
+						}
+				}
+				// b) more expensive checking that all values of zdom are supported, if necessary
+				if (!allSupported && sentinels != null) {
+					int sizeBefore = zdom.size();
+					for (int a = zdom.first(); a != -1; a = zdom.next(a)) {
+						int v = zdom.toVal(a);
 						if (!sentinels[a].dom.containsValue(v)) {
 							Variable s = findSentinelFor(v);
 							if (s != null)
 								sentinels[a] = s;
-							else if (vdom.size() == 1)  // we need this 
-								return vdom.fail();
-							else 
-								vdom.removeElementary(a);
+							else if (zdom.size() == 1) // we need this
+								return zdom.fail();
+							else
+								zdom.removeElementary(a);
 						}
 					}
-					if (vdom.afterElementaryCalls(sizeBefore) == false)
+					if (zdom.afterElementaryCalls(sizeBefore) == false)
 						return false;
-
-					// if (vdom.removeIndexesChecking(a -> {
-					// int v = vdom.toVal(a);
-					// if (!sentinels[a].dom.containsValue(v)) {
-					// Variable s = findSentinelFor(v);
-					// if (s == null)
-					// return true;
-					// sentinels[a] = s;
-					// }
-					// return false;
-					// }) == false)
-					// return false;
 				}
 
-				// Filtering the domains of variables in the vector
-				int lastMax = vdom.lastValue();
-				for (Variable x : list)
-					if (x.dom.removeValuesGT(lastMax) == false)
-						return false;
+				// STEP 3 : cutting upper bounds of the variables in the vector (list)
+				int maxz = zdom.lastValue();
+				if (maxz != maxLast)
+					for (Variable x : list)
+						if (x.dom.removeValuesGT(maxz) == false)
+							return false;
 
 				if (sentinels == null)
 					return true;
 
-				// Possibly filtering the domain of the sentinel from the last value of vdom
-				Variable sentinel = sentinels[vdom.last()];
-				int valLimit = computeLimitForSentinel(sentinel);
-				if (valLimit == lastMax)
-					return true; // because another sentinel exists
+				// STEP 4 : possibly filtering the domain of the sentinel of maxz
+				Variable sentinel = sentinels[zdom.last()];
 				Domain domSentinel = sentinel.dom;
-				sizeBefore = domSentinel.size();
-				for (int a = domSentinel.prev(domSentinel.last()); a != -1; a = domSentinel.prev(a)) {
-					int v = domSentinel.toVal(a);
-					if (v <= valLimit)
-						break;
-					if (!vdom.containsValue(v))
-						domSentinel.removeElementary(a);
+				int otherMax = Integer.MIN_VALUE;
+				for (Variable x : list)
+					if (x != sentinel && x.dom.lastValue() > otherMax) {
+						otherMax = x.dom.lastValue();
+						if (otherMax == maxz) // another sentinel exists for maxz
+							return zdom.size() == 1 && (domSentinel.size() == 1 || x.dom.size() == 1) ? entail() : true;
+					}
+				if (zdom.connex()) {
+					if (domSentinel.firstValue() > otherMax || zdom.firstValue() > otherMax)
+						domSentinel.removeValuesLT(zdom.firstValue()); // no possible inconsistency
+					else
+						domSentinel.removeValuesInRange(otherMax + 1, zdom.firstValue());  // no possible inconsistency
+				} else {
+					// below alternative code not finalized ; how to manage zdom and domSentinel correctly?
+					// int sizeBefore = domSentinel.size();
+					// for (int a = domSentinel.last(); a != -1; a = domSentinel.prev(a)) {
+					// int v = domSentinel.toVal(a);
+					// if (v > otherMax) { // not possible to a have a second support for v in the vector
+					// if (!zdom.containsValue(v))
+					// domSentinel.removeElementary(a);
+					// } else {
+					// if (sentinels[a] != sentinel || findSentinelFor(v, sentinel) != null)
+					// break; // we have two supports in the vector, so we stop
+					// if (!zdom.containsValue(v))
+					// domSentinel.removeElementary(a);
+					// }
+					// }
+					// return domSentinel.afterElementaryCalls(sizeBefore); // necessarily true
+
+					int valLimit = computeLimitForSentinel(sentinel);
+					control(valLimit < maxz); // must have returned true before
+					int sizeBefore = domSentinel.size();
+					for (int a = domSentinel.prev(domSentinel.last()); a != -1; a = domSentinel.prev(a)) {
+						int v = domSentinel.toVal(a);
+						if (v <= valLimit)
+							break;
+						if (!zdom.containsValue(v))
+							domSentinel.removeElementary(a);
+					}
+					domSentinel.afterElementaryCalls(sizeBefore); //  // no possible inconsistency (necessarily true)
 				}
-				return domSentinel.afterElementaryCalls(sizeBefore); // necessarily true
+				return zdom.size() == 1 && domSentinel.size() == 1 ? entail() : true;
 			}
+
+			// if (zdom.size() == 1) {
+			// int v = zdom.singleValue();
+			// boolean found = false, foundSingleton = false;
+			// for (Variable x : list) {
+			// if (x.dom.removeValuesGT(v) == false)
+			// return false;
+			// if (x.dom.containsValue(v)) {
+			// if (x.dom.size() == 1)
+			// foundSingleton = true;
+			// else
+			// found = true;
+			// }
+			// }
+			// if (foundSingleton)
+			// return entail();
+			// return found ? true : dummy.dom.fail();
+			// }
 		}
 
 		// ************************************************************************
@@ -223,8 +281,8 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 			}
 
 			private int computeLimitForSentinel(Variable sentinel) {
-				for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
-					int v = vdom.toVal(a);
+				for (int a = zdom.first(); a != -1; a = zdom.next(a)) {
+					int v = zdom.toVal(a);
 					if (sentinels[a] != sentinel || findSentinelFor(v, sentinel) != null)
 						return v;
 				}
@@ -241,29 +299,29 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 						minLast = x.dom.lastValue();
 				}
 				// filtering the domain of vdom
-				if (vdom.removeValuesGT(minLast) == false || vdom.removeValuesLT(minFirst) == false)
+				if (zdom.removeValuesGT(minLast) == false || zdom.removeValuesLT(minFirst) == false)
 					return false;
 
-				int sizeBefore = vdom.size();
+				int sizeBefore = zdom.size();
 				if (sentinels != null) {
-					for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
-						int v = vdom.toVal(a);
+					for (int a = zdom.first(); a != -1; a = zdom.next(a)) {
+						int v = zdom.toVal(a);
 						if (!sentinels[a].dom.containsValue(v)) {
 							Variable s = findSentinelFor(v);
 							if (s != null)
 								sentinels[a] = s;
-							else if (vdom.size() == 1) // we need this
-								return vdom.fail();
+							else if (zdom.size() == 1) // we need this
+								return zdom.fail();
 							else
-								vdom.removeElementary(a);
+								zdom.removeElementary(a);
 						}
 					}
-					if (vdom.afterElementaryCalls(sizeBefore) == false)
+					if (zdom.afterElementaryCalls(sizeBefore) == false)
 						return false;
 				}
 
 				// Filtering the domains of variables in the list
-				int firstMin = vdom.firstValue();
+				int firstMin = zdom.firstValue();
 				for (Variable x : list)
 					if (x.dom.removeValuesLT(firstMin) == false)
 						return false;
@@ -272,7 +330,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 					return true;
 
 				// Possibly filtering the domain of the sentinel for the first value of vdom
-				Variable sentinel = sentinels[vdom.first()];
+				Variable sentinel = sentinels[zdom.first()];
 				int valLimit = computeLimitForSentinel(sentinel);
 				if (valLimit == firstMin)
 					return true; // because another sentinel exists
@@ -282,7 +340,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 					int v = domSentinel.toVal(a);
 					if (v >= valLimit)
 						break;
-					if (!vdom.containsValue(v))
+					if (!zdom.containsValue(v))
 						domSentinel.removeElementary(a);
 				}
 				return domSentinel.afterElementaryCalls(sizeBefore); // necessarily true

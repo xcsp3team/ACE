@@ -33,7 +33,8 @@ jar {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
  }
-	
+
+
 test {
 	//executable = "/path/to/jdk/bin/java"
 	

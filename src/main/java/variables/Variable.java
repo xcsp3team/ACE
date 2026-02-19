@@ -668,7 +668,6 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 				continue;
 			if (!(((Forward) problem.solver.propagation).reviser instanceof Reviser3) && c.supporter != null)
 				continue;
-			System.out.println("j jjjj  " + this + " " + c);
 			needBinaryrepresentation = true;
 			break;
 		}

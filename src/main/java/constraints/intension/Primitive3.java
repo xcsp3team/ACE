@@ -218,6 +218,7 @@ public abstract class Primitive3 extends ConstraintSpecific implements TagAC, Ta
 					if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeAdd)) // otherwise we keep filtering below
 						return true;
 				}
+				
 				boolean connexz = dz.connex();
 				boolean avoidx = false, avoidy = false;
 				if (connexz) {

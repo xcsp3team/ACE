@@ -349,7 +349,6 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 
 		if (className.equals("CT") && avoidCT)
 			return new STR2(pb, scp).storeTuplesInExtensionStructure(table, positive, starred);
-
 		return ((ConstraintExtension) Reflector.buildObject(className, classes, pb, scp)).storeTuplesInExtensionStructure(table, positive, starred);
 
 		// ConstraintExtension c = build(pb, scp, positive, starred);

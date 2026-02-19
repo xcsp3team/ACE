@@ -56,8 +56,8 @@ public class Reflector {
 	}
 
 	/**
-	 * Replaces all occurrences of the given old char with the given new char. This method is used as the standard
-	 * method of the String class do not behave correctly for some characters.
+	 * Replaces all occurrences of the given old char with the given new char. This method is used as the standard method of the String class do not behave
+	 * correctly for some characters.
 	 */
 	private static String replaceAll(String s, char oldChar, char newChar) {
 		StringBuilder sb = new StringBuilder(s);
@@ -68,8 +68,8 @@ public class Reflector {
 	}
 
 	/**
-	 * Returns the absolute name of the specified class (without the extension .class) with respect to the specified
-	 * package name. Hence, this name starts with the given package name (and not with the root of a file system).
+	 * Returns the absolute name of the specified class (without the extension .class) with respect to the specified package name. Hence, this name starts with
+	 * the given package name (and not with the root of a file system).
 	 * 
 	 * @param classFile
 	 *            a File denoting a class.
@@ -120,8 +120,7 @@ public class Reflector {
 	}
 
 	/**
-	 * Returns a list of all (not abstract) classes which inherit from the given root class and which can be found from
-	 * the given directory.
+	 * Returns a list of all (not abstract) classes which inherit from the given root class and which can be found from the given directory.
 	 * 
 	 * @param rootClass
 	 *            a given class
@@ -145,8 +144,7 @@ public class Reflector {
 	}
 
 	/**
-	 * Returns a list of all (not abstract) classes which inherit from the given root class and which can be found from
-	 * the given directory.
+	 * Returns a list of all (not abstract) classes which inherit from the given root class and which can be found from the given directory.
 	 * 
 	 * @param rootClass
 	 *            a given class
@@ -191,8 +189,7 @@ public class Reflector {
 	}
 
 	/**
-	 * Returns all classes that inherit from the specified root class (by considering the CLASSPATH environment
-	 * variable).
+	 * Returns all classes that inherit from the specified root class (by considering the CLASSPATH environment variable).
 	 * 
 	 * @param rootClass
 	 *            a class
@@ -217,8 +214,7 @@ public class Reflector {
 	}
 
 	/**
-	 * Returns all classes that inherit from the specified root class (by considering the CLASSPATH environment
-	 * variable).
+	 * Returns all classes that inherit from the specified root class (by considering the CLASSPATH environment variable).
 	 * 
 	 * @param rootClass
 	 *            a class
@@ -308,8 +304,8 @@ public class Reflector {
 	}
 
 	/**
-	 * Builds and returns an object of the class whose name is specified. The class must inherit from the specified root
-	 * class. The constructor that is compatible with the specified parameters is called to build the object.
+	 * Builds and returns an object of the class whose name is specified. The class must inherit from the specified root class. The constructor that is
+	 * compatible with the specified parameters is called to build the object.
 	 * 
 	 * @param className
 	 *            the name of a class
@@ -348,9 +344,8 @@ public class Reflector {
 	}
 
 	/**
-	 * Builds and returns an object of the class whose name is specified. The class must be among those that are
-	 * specified (inheriting from the type T). The constructor that is compatible with the specified parameters is
-	 * called to build the object.
+	 * Builds and returns an object of the class whose name is specified. The class must be among those that are specified (inheriting from the type T). The
+	 * constructor that is compatible with the specified parameters is called to build the object.
 	 * 
 	 * @param <T>
 	 *            the root class of the object

@@ -38,6 +38,7 @@ import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Utilities;
 import org.xcsp.modeler.api.ProblemAPI;
 
+import constraints.Constraint;
 import constraints.ConstraintExtension;
 import constraints.ConstraintIntension.IntensionStructure;
 import constraints.extension.structures.Bits;
@@ -46,6 +47,7 @@ import constraints.extension.structures.MDD;
 import dashboard.Control;
 import dashboard.Input;
 import dashboard.Output;
+import heuristics.Heuristic;
 import heuristics.HeuristicRevisions;
 import heuristics.HeuristicValues;
 import heuristics.HeuristicVariables;
@@ -224,7 +226,8 @@ public class Head extends Thread {
 				// next, we load loaded classes
 				ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 				// however, if we need to look at unloaded classes, as for example some in a subclass of Propagation, we
-				// need to put lines as this one: Class<?> _ = Propagation.class;
+				// need to put lines as this one:
+				Class<?> _1 = Constraint.class, _2 = Propagation.class, _3 = Heuristic.class;
 				for (Package p : Package.getPackages()) {
 					String name = p.getName();
 					if (!name.startsWith("constraints") && !name.startsWith("heuristics") && !name.startsWith("propagation"))
