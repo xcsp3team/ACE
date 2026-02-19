@@ -100,7 +100,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 		}
 
 		// ************************************************************************
-		// ***** Constraint Maximum
+		// ***** Constraint Maximum : Maximum(x1, x2, ...) = z
 		// ************************************************************************
 
 		public static final class Maximum extends ExtremumVar {
@@ -135,6 +135,36 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
+				// STEP 0 : specific case where zdom is singleton
+				if (zdom.size() == 1) {
+					int v = zdom.singleValue();
+					int nbSupports = 0;
+					boolean foundSingleton = false;
+					Variable sentinel = null;
+					for (Variable x : list) {
+						if (x.dom.lastValue() < v)
+							continue;
+						if (x.dom.removeValuesGT(v) == false)
+							return false;
+						if (x.dom.containsValue(v)) {
+							if (x.dom.size() == 1)
+								foundSingleton = true;
+							else {
+								nbSupports++;
+								sentinel = x;
+							}
+						}
+					}
+					if (foundSingleton)
+						return entail();
+					if (nbSupports == 0)
+						return zdom.fail(); // dummy.dom.fail();
+					if (nbSupports == 1)
+						return sentinel.dom.removeValuesLT(zdom.firstValue()) && entail(); // no possible inconsistency
+					else // nbSupports > 1
+						return true;
+				}
+
 				// STEP 1 : cutting bounds of zdom (new bounds are not necessarily consistent)
 				int maxFirst = Integer.MIN_VALUE, maxLast = Integer.MIN_VALUE; // computing maxFirst..maxLast the possible domain of the target
 				for (Variable x : list) {
@@ -146,10 +176,10 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 				if (zdom.removeValuesLT(maxFirst) == false || zdom.removeValuesGT(maxLast) == false)
 					return false;
 
-				// STEP 2 : Filtering all values of zdom
+				// STEP 2 : Filtering all values of zdom (including bounds)
 				boolean allSupported = false;
-				// a) cheap checking that all values of zdom are supported (sentinels are not updated, which can perturbate search)
-				if (zdom.size() > 2) { // TODO hard coding // previously was : if (zdom.lastValue() == maxLast) {
+				// a) cheap checking that all values of zdom are supported (note that sentinels are not updated, which can perturbate search)
+				if (zdom.size() > 2) { // TODO hard coding (1 ? 2 ? ...)
 					int minz = zdom.firstValue(), maxz = zdom.lastValue();
 					if (domConnexAsSentinel.connex() && domConnexAsSentinel.firstValue() <= minz && maxz <= domConnexAsSentinel.lastValue())
 						allSupported = true;
@@ -194,72 +224,54 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 
 				// STEP 4 : possibly filtering the domain of the sentinel of maxz
 				Variable sentinel = sentinels[zdom.last()];
-				Domain domSentinel = sentinel.dom;
+				Domain sdom = sentinel.dom;
 				int otherMax = Integer.MIN_VALUE;
 				for (Variable x : list)
 					if (x != sentinel && x.dom.lastValue() > otherMax) {
 						otherMax = x.dom.lastValue();
 						if (otherMax == maxz) // another sentinel exists for maxz
-							return zdom.size() == 1 && (domSentinel.size() == 1 || x.dom.size() == 1) ? entail() : true;
+							return zdom.size() == 1 && (sdom.size() == 1 || x.dom.size() == 1) ? entail() : true;
 					}
 				if (zdom.connex()) {
-					if (domSentinel.firstValue() > otherMax || zdom.firstValue() > otherMax)
-						domSentinel.removeValuesLT(zdom.firstValue()); // no possible inconsistency
+					if (sdom.firstValue() > otherMax || zdom.firstValue() > otherMax)
+						sdom.removeValuesLT(zdom.firstValue()); // no possible inconsistency
 					else
-						domSentinel.removeValuesInRange(otherMax + 1, zdom.firstValue());  // no possible inconsistency
+						sdom.removeValuesInRange(otherMax + 1, zdom.firstValue()); // no possible inconsistency
 				} else {
-					// below alternative code not finalized ; how to manage zdom and domSentinel correctly?
-					// int sizeBefore = domSentinel.size();
-					// for (int a = domSentinel.last(); a != -1; a = domSentinel.prev(a)) {
-					// int v = domSentinel.toVal(a);
+					// below alternative code not finalized ; how to manage zdom and sdom correctly?
+					// int sizeBefore = sdom.size();
+					// for (int a = sdom.last(); a != -1; a = sdom.prev(a)) {
+					// int v = sdom.toVal(a);
 					// if (v > otherMax) { // not possible to a have a second support for v in the vector
 					// if (!zdom.containsValue(v))
-					// domSentinel.removeElementary(a);
+					// sdom.removeElementary(a);
 					// } else {
 					// if (sentinels[a] != sentinel || findSentinelFor(v, sentinel) != null)
 					// break; // we have two supports in the vector, so we stop
 					// if (!zdom.containsValue(v))
-					// domSentinel.removeElementary(a);
+					// sdom.removeElementary(a);
 					// }
 					// }
-					// return domSentinel.afterElementaryCalls(sizeBefore); // necessarily true
+					// return sdom.afterElementaryCalls(sizeBefore); // necessarily true
 
 					int valLimit = computeLimitForSentinel(sentinel);
-					control(valLimit < maxz); // must have returned true before
-					int sizeBefore = domSentinel.size();
-					for (int a = domSentinel.prev(domSentinel.last()); a != -1; a = domSentinel.prev(a)) {
-						int v = domSentinel.toVal(a);
+					control(valLimit < maxz); // would have returned true before
+					int sizeBefore = sdom.size();
+					for (int a = sdom.prev(sdom.last()); a != -1; a = sdom.prev(a)) {
+						int v = sdom.toVal(a);
 						if (v <= valLimit)
 							break;
 						if (!zdom.containsValue(v))
-							domSentinel.removeElementary(a);
+							sdom.removeElementary(a);
 					}
-					domSentinel.afterElementaryCalls(sizeBefore); //  // no possible inconsistency (necessarily true)
+					sdom.afterElementaryCalls(sizeBefore); // // no possible inconsistency (necessarily true)
 				}
-				return zdom.size() == 1 && domSentinel.size() == 1 ? entail() : true;
+				return zdom.size() == 1 && sdom.size() == 1 ? entail() : true;
 			}
-
-			// if (zdom.size() == 1) {
-			// int v = zdom.singleValue();
-			// boolean found = false, foundSingleton = false;
-			// for (Variable x : list) {
-			// if (x.dom.removeValuesGT(v) == false)
-			// return false;
-			// if (x.dom.containsValue(v)) {
-			// if (x.dom.size() == 1)
-			// foundSingleton = true;
-			// else
-			// found = true;
-			// }
-			// }
-			// if (foundSingleton)
-			// return entail();
-			// return found ? true : dummy.dom.fail();
-			// }
 		}
 
 		// ************************************************************************
-		// ***** Constraint Minimum
+		// ***** Constraint Minimum : Minimum(x1, x2, ...) = z
 		// ************************************************************************
 
 		public static final class Minimum extends ExtremumVar {

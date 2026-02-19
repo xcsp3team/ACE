@@ -699,6 +699,11 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 				}
 
 				@Override
+				public boolean isGuaranteedAC() {
+					return false;
+				}
+
+				@Override
 				public Boolean isSymmetric() {
 					return k == 0;
 				}

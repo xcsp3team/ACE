@@ -202,6 +202,11 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 				return (Arrays.binarySearch(values, t[0]) >= 0) == positive;
 			}
 
+			@Override
+			public final boolean checkIndexes(int[] t) {
+				return Kit.isPresent(scp[0].dom.toVal(t[0]), values) == positive;
+			}
+
 			/**
 			 * The set of values authorized (if positive is true) or forbidden (if positive is false) by this unary constraint
 			 */
@@ -376,7 +381,7 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 	 * values anymore (see the other method).
 	 */
 	@Override
-	public final boolean checkIndexes(int[] t) {
+	public boolean checkIndexes(int[] t) {
 		return extStructure.checkIndexes(t);
 	}
 

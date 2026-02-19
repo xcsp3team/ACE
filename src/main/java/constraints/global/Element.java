@@ -280,7 +280,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 
 			@Override
 			public boolean isGuaranteedAC() {
-				return idom.initSize() < problem.head.control.global.elementVarBoundLimit && vdom.initSize() < problem.head.control.global.elementVarBoundLimit;
+				return false; //idom.initSize() < problem.head.control.global.elementVarBoundLimit && vdom.initSize() < problem.head.control.global.elementVarBoundLimit;
 			}
 
 			private boolean validIndex(int i) {
