@@ -95,13 +95,13 @@ public class Restarter implements ObserverOnRuns {
 		}
 		solver.futVars.discardSingletonVariablesAtRunRoot(); // keep it at this place
 
-		if (solver.head.control.varh.secondScored) {
-			solver.heuristic.bestScored.reset();
-			if (solver.heuristic instanceof RunRobin) {
-				for (HeuristicVariables h : ((RunRobin) solver.heuristic).pool)
-					h.bestScored.reset();
-			}
+		// if (solver.head.control.varh.secondScored) {
+		solver.heuristic.bestScored.reset();
+		if (solver.heuristic instanceof RunRobin) {
+			for (HeuristicVariables h : ((RunRobin) solver.heuristic).pool)
+				h.bestScored.reset();
 		}
+		// }
 		solver.solutions.last.deactivated = false;
 	}
 

@@ -276,7 +276,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 		// if (nCalls % 2 == 0 && solver.head.control.varh.secondScored) {
 		if (solver.head.control.varh.secondScored) {
-			Variable x = bestScored.bestSecondVariable(nCalls);
+			Variable x = bestScored.secondVariable(nCalls);
 			if (x != null && x.dom.size() > 1) {
 				return x;
 			}
@@ -309,11 +309,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 						Variable x = singletonManager.store1[i];
 						if (x.dom.size() != 1) {
 							bestScored.consider(x, scoreOptimizedOf(x));
-							if (options.quitWhenBetterThanPreviousChoice && prevCall + 1 == nCalls && bestScored.betterThan(prevBestScore)) {
-								prevBestScore = bestScored.score;
-								prevCall = nCalls;
-								return bestScored.variable;
-							}
+							// if (options.quitWhenBetterThanPreviousChoice && prevCall + 1 == nCalls && bestScored.betterThan(prevBestScore)) {
+							// prevBestScore = bestScored.score;
+							// prevCall = nCalls;
+							// return bestScored.variable;
+							// }
 							singletonManager.store2[nNonSingletons++] = x;
 							if (safeSelector != null)
 								safeSelector.addPossibly(x, scoreOptimizedOf(x));
@@ -331,11 +331,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 						// if (x.ctrs.length <= 1) continue;
 						if (x.dom.size() != 1) {
 							bestScored.consider(x, scoreOptimizedOf(x));
-							if (options.quitWhenBetterThanPreviousChoice && prevCall + 1 == nCalls && bestScored.betterThan(prevBestScore)) {
-								prevBestScore = bestScored.score;
-								prevCall = nCalls;
-								return bestScored.variable;
-							}
+							// if (options.quitWhenBetterThanPreviousChoice && prevCall + 1 == nCalls && bestScored.betterThan(prevBestScore)) {
+							// prevBestScore = bestScored.score;
+							// prevCall = nCalls;
+							// return bestScored.variable;
+							// }
 							if (singletonManager != null)
 								singletonManager.store2[nNonSingletons++] = x;
 							if (safeSelector != null)
@@ -350,10 +350,10 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				}
 				if (singletonManager != null)
 					singletonManager.possiblyUpdateList(nNonSingletons - 1);
-				if (bestScored.variable == null && !options.alwaysAssignAllVariables && !options.connected)
+				if (bestScored.firstVariable() == null && !options.alwaysAssignAllVariables && !options.connected)
 					return Variable.TAG;
 			}
-			if (bestScored.variable == null) {
+			if (bestScored.firstVariable() == null) {
 				lastDepthWithOnlySingletons = solver.depth();
 				return solver.futVars.first();
 			}
@@ -364,19 +364,19 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					return x;
 				bestScored.consider(x, scoreOptimizedOf(x));
 			}
-			if (bestScored.variable == null) {
+			if (bestScored.firstVariable() == null) {
 				return solver.futVars.first(); // possible if discardAux was set to true
 			}
 		}
-		if (options.quitWhenBetterThanPreviousChoice) {
-			prevBestScore = bestScored.score;
-			prevCall = nCalls;
-		}
+		// if (options.quitWhenBetterThanPreviousChoice) {
+		// prevBestScore = bestScored.score;
+		// prevCall = nCalls;
+		// }
 
 		if (safeSelector != null) {
 			safeSelector.buildSafeSelection();
 		}
-		return bestScored.variable;
+		return bestScored.firstVariable();
 	}
 
 	// ************************************************************************
@@ -1169,7 +1169,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 				bestScored.beforeIteration(0, false);
 				solver.futVars.execute(x -> bestScored.consider(x, scoreOptimizedOf(x)));
 				pos = posLastConflict = nOrdered;
-				order[nOrdered++] = bestScored.variable.num;
+				order[nOrdered++] = bestScored.firstVariable().num;
 			}
 			return solver.problem.variables[order[pos]];
 		}
@@ -1223,13 +1223,14 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					bestScored.consider(x, scoreOptimizedOf(x));
 				}
 			}
-			if (bestScored.variable == null) {
+			Variable best = bestScored.firstVariable();
+			if (best == null) {
 				assert options.singleton == SingletonStrategy.LAST || solver.head.control.varh.discardAux;
 				return solver.futVars.first();
 			}
-			lastVar = bestScored.variable.dom.size() == 1 ? null : bestScored.variable;
+			lastVar = best.dom.size() == 1 ? null : best;
 			lastDepth = solver.depth();
-			return bestScored.variable;
+			return best;
 		}
 	}
 

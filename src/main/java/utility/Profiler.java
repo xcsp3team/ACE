@@ -10,8 +10,8 @@
 
 package utility;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import constraints.Constraint;
 import dashboard.Output;
@@ -24,8 +24,8 @@ import utility.Kit.Color;
  */
 public final class Profiler {
 
-	Map<Class<?>, Long> wcks = new LinkedHashMap<>();
-	Map<Class<?>, Long> calls = new LinkedHashMap<>();
+	Map<String, Long> wcks = new TreeMap<>();
+	Map<String, Long> calls = new TreeMap<>();
 
 	public long initTime;
 
@@ -64,12 +64,13 @@ public final class Profiler {
 	}
 
 	public void afterFiltering(Constraint c) {
-		if (!wcks.containsKey(c.getClass()))
-			wcks.put((Class<?>) c.getClass(), 0L);
-		wcks.computeIfPresent((Class<?>) c.getClass(), (k, v) -> v + (System.currentTimeMillis() - start));
-		if (!calls.containsKey(c.getClass()))
-			calls.put((Class<?>) c.getClass(), 0L);
-		calls.computeIfPresent((Class<?>) c.getClass(), (k, v) -> v + 1);
+		String s = c.getClass().getSimpleName();
+		if (!wcks.containsKey(s))
+			wcks.put(s, 0L);
+		wcks.computeIfPresent(s, (k, v) -> v + (System.currentTimeMillis() - start));
+		if (!calls.containsKey(s))
+			calls.put(s, 0L);
+		calls.computeIfPresent(s, (k, v) -> v + 1);
 	}
 
 	public void afterNogoodFiltering() {
@@ -85,26 +86,27 @@ public final class Profiler {
 	}
 
 	public void display(Constraint[] constraints) {
-		Map<Class<?>, Long> nbs = new LinkedHashMap<>();
+		Map<String, Long> nbs = new TreeMap<>();
 		for (Constraint c : constraints) {
-			if (!nbs.containsKey(c.getClass()))
-				nbs.put((Class<?>) c.getClass(), 0L);
-			nbs.computeIfPresent((Class<?>) c.getClass(), (k, v) -> v + 1);
+			String s = c.getClass().getSimpleName();
+			if (!nbs.containsKey(s))
+				nbs.put(s, 0L);
+			nbs.computeIfPresent(s, (k, v) -> v + 1);
 		}
 		System.out.println("\n" + Output.COMMENT_PREFIX + Color.BLUE.coloring("Profiler"));
-		for (Class<?> cl : wcks.keySet()) {
+		for (String cl : wcks.keySet()) {
 			String byConstraints = wcks.get(cl) + "/" + nbs.get(cl) + " = " + Stopwatch.df1.format(wcks.get(cl) / (double) nbs.get(cl));
 			// String byCalls = wcks.get(cl) + "/" + calls.get(cl) + " = "
 			// + (calls.get(cl) == 0 ? "NaN" : Stopwatch.df1.format(wcks.get(cl) / (double) calls.get(cl)));
-			System.out.println(Output.COMMENT_PREFIX + Output.COMMENT_PREFIX + buildWith(cl.getSimpleName(), 30)
-					+ buildWith("wck: " + Output.numberFormat.format(wcks.get(cl)), 30)
+			System.out.println(
+					Output.COMMENT_PREFIX + Output.COMMENT_PREFIX + buildWith(cl, 30) + buildWith("wck: " + Output.numberFormat.format(wcks.get(cl)), 30)
 					// + buildWith("percall: " + Stopwatch.df1.format(wcks.get(cl) / (double) calls.get(cl)), 30)
-					+ "(" + Output.numberFormat.format(calls.get(cl)) + " calls, " + Output.numberFormat.format(nbs.get(cl)) + " ctrs)");
+							+ "(" + Output.numberFormat.format(calls.get(cl)) + " calls, " + Output.numberFormat.format(nbs.get(cl)) + " ctrs)");
 		}
-		System.out.println(Output.COMMENT_PREFIX + Output.COMMENT_PREFIX + buildWith("NogooddReasoner", 30) + buildWith("wck: " + Output.numberFormat.format(nogoTime), 30)
-				+ "(" + Output.numberFormat.format(nogoCalls) + " calls)");
-		System.out.println(Output.COMMENT_PREFIX + Output.COMMENT_PREFIX + buildWith("ObjPropagator", 30) + buildWith("wck: " + Output.numberFormat.format(objpTime), 30)
-				+ "(" + Output.numberFormat.format(objpCalls) + " calls)");
+		System.out.println(Output.COMMENT_PREFIX + Output.COMMENT_PREFIX + buildWith("NogooddReasoner", 30)
+				+ buildWith("wck: " + Output.numberFormat.format(nogoTime), 30) + "(" + Output.numberFormat.format(nogoCalls) + " calls)");
+		System.out.println(Output.COMMENT_PREFIX + Output.COMMENT_PREFIX + buildWith("ObjPropagator", 30)
+				+ buildWith("wck: " + Output.numberFormat.format(objpTime), 30) + "(" + Output.numberFormat.format(objpCalls) + " calls)");
 		System.out.println(Output.COMMENT_PREFIX + Output.COMMENT_PREFIX + buildWith("                      Sum: ", 30)
 				+ buildWith("wck: " + Output.numberFormat.format(wcks.values().stream().reduce(0L, (a, v) -> a + v) + nogoTime + objpTime), 30));
 

@@ -656,7 +656,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			 */
 			private Variable[] uncheckedVars;
 
-			private BestScoredSimple bestScored = new BestScoredSimple(false);
+			private BestScoredSimple bestScored = new BestScoredSimple(solver,false);
 
 			private LocalQueue() {
 				this.uncheckedVars = new Variable[solver.problem.variables.length];
@@ -685,7 +685,7 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 							bestPos = i;
 					Kit.swap(uncheckedVars, --nUncheckedVars, bestPos);
 				}
-				return bestScored.bestVariable();
+				return bestScored.firstVariable();
 			}
 
 			public Variable pick(Variable x) {
