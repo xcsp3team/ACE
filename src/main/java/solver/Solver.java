@@ -62,6 +62,8 @@ import sets.SetDense;
 import sets.SetSparseReversible;
 import utility.Kit;
 import utility.Profiler;
+import utility.Profiler.ProfilerFake;
+import utility.Profiler.ProfilerReal;
 import variables.Domain;
 import variables.DomainFinite.DomainFiniteSpecial;
 import variables.DomainInfinite;
@@ -845,7 +847,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		this.observersOnRemovals = collectObserversOnRemovals();
 		this.observersOnConflicts = collectObserversOnConflicts();
 
-		this.profiler = head.control.general.profiling ? new Profiler() : null;
+		this.profiler = head.control.general.profiling ? new ProfilerReal() : new ProfilerFake(); // null;
 
 		// finally, should we use binary representations of domains?
 
@@ -918,8 +920,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 *            a variable
 	 */
 	public final void backtrack(Variable x) { // should we call it unassign or retract instead?
-		if (profiler != null)
-			profiler.before();
+		profiler.before();
 		int depthBeforeBacktrack = depth(); // keep it at this position
 		futVars.add(x);
 		x.unassign();
@@ -928,8 +929,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		for (ObserverOnBacktracksSystematic observer : observersOnBacktracksSystematic)
 			observer.restoreBefore(depthBeforeBacktrack);
 		propagation.clear();
-		if (profiler != null)
-			profiler.afterBacktracking();
+		profiler.afterBacktracking();
 	}
 
 	/**
@@ -1089,11 +1089,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 					// else foundSolution = true; // break;
 
 				} else {
-					if (profiler != null)
-						profiler.before();
+					profiler.before();
 					int a = x.heuristic.bestValueIndex();
-					if (profiler != null)
-						profiler.afterSelectingValue();
+					profiler.afterSelectingValue();
 					boolean consistent = tryAssignment(x, a, false);
 					if (consistent == false)
 						manageContradiction(null);
@@ -1207,8 +1205,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			observer.beforeSolving();
 		if (Variable.firstWipeoutVariableIn(problem.variables) != null)
 			stopping = FULL_EXPLORATION; // because some search observers may detect an inconsistency
-		if (profiler != null)
-			profiler.initTime = head.stopwatch.wckTime();
+		profiler.initTime(head.stopwatch.wckTime());
 		if (!finished() && head.control.solving.enablePrepro)
 			doPrepro();
 		if (!finished() && head.control.solving.enableSearch)

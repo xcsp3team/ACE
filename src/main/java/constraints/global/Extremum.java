@@ -207,6 +207,7 @@ public abstract class Extremum extends ConstraintGlobal implements TagAC, TagCal
 					return oldAlgo();
 
 				// STEP 0 : specific case when zdom is singleton
+				// NB : may change the course of search wrt old algo; see run 330 of AntimagicSquare-08 (because may fail first on a variable x instead of z)
 				if (zdom.size() == 1) {
 					int v = zdom.singleValue();
 					int nSupports = 0;

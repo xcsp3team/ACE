@@ -492,7 +492,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		public PickOnDom(Solver solver, boolean anti) {
 			super(solver, anti);
-			this.collected = new SetSparseCnt(solver.problem.variables.length);
+			this.collected = solver.propagation.queue.collected; 
 			this.nPicks = new long[solver.problem.variables.length];
 			this.pickMode = solver.head.control.varh.pickMode;
 			reset();
@@ -501,11 +501,6 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		@Override
 		public void reset() {
 			Arrays.fill(nPicks, 0);
-		}
-
-		public PickOnDom clearCollected() {
-			collected.clear();
-			return this;
 		}
 
 		@Override
@@ -531,11 +526,6 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public void whenBacktrack() {
-		}
-
-		public void update(int xnum, int nRemoved, boolean consistent) {
-			assert nRemoved > 0;
-			collected.add(xnum, pickMode == 0 ? 1 : consistent ? nRemoved : 100); // TODO: 100
 		}
 
 		@Override

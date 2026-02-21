@@ -618,12 +618,10 @@ public abstract class HeuristicVariables extends Heuristic {
 	 * Returns the preferred variable, i.e., the variable that should be assigned next by the solver
 	 */
 	public final Variable bestVariable() {
-		if (solver.profiler != null)
-			solver.profiler.before();
+		solver.profiler.before();
 		Variable x = bestPriorityVariable();
 		x = x != null ? x : bestUnpriorityVariable();
-		if (solver.profiler != null)
-			solver.profiler.afterSelectingVariable();
+		solver.profiler.afterSelectingVariable();
 		return x;
 	}
 

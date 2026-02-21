@@ -1113,11 +1113,11 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		// return true;
 
 		int nBefore = problem.nValueRemovals;
-		if (problem.solver.profiler != null)
-			problem.solver.profiler.before();
+
+		problem.solver.profiler.before();
 		boolean consistent = launchFiltering(x); // ? ((SpecificPropagator) this).runPropagator(x) : genericFiltering(x);
-		if (problem.solver.profiler != null)
-			problem.solver.profiler.afterFiltering(this);
+		problem.solver.profiler.afterFiltering(this);
+
 		if (!consistent || problem.nValueRemovals != nBefore) {
 			if (problem.solver.proofer != null)
 				problem.solver.proofer.updateProof(this);// TODO // ((SystematicSolver)solver).updateProofAll();
@@ -1142,7 +1142,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		for (int x = 0; x < scp.length; x++)
 			for (int a = doms[x].first(); a != -1; a = doms[x].next(a))
 				if (seekFirstSupportWith(x, a) == false) {
-					System.out.println(" " + scp[x] + "=" + doms[x].toVal(a) + " not supported by " + this + " " +  this.getClass().getSimpleName());
+					System.out.println(" " + scp[x] + "=" + doms[x].toVal(a) + " not supported by " + this + " " + this.getClass().getSimpleName());
 					for (Domain dom : doms)
 						dom.display(1);
 					display(true);

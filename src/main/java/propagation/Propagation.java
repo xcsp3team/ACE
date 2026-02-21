@@ -193,7 +193,7 @@ public abstract class Propagation {
 	 */
 	public boolean runAtNextRoot;
 
-	private PickOnDom pickOnDom;
+	// private PickOnDom pickOnDom;
 
 	// private ProcOnDom procOnDom;
 
@@ -242,11 +242,9 @@ public abstract class Propagation {
 
 		int nValuesBefore = solver.problem.nValueRemovals;
 
-		if (solver.profiler != null)
-			solver.profiler.before();
+		solver.profiler.before();
 		boolean consistent = nogoodReasoning.isNogoodConsistent(x);
-		if (solver.profiler != null)
-			solver.profiler.afterNogoodFiltering();
+		solver.profiler.afterNogoodFiltering();
 
 		if (consistent) {
 			for (Constraint c : x.ctrs) {
@@ -266,10 +264,10 @@ public abstract class Propagation {
 					break;
 			}
 		}
-		
+
 		int nRemovedValues = solver.problem.nValueRemovals - nValuesBefore;
-		if (pickOnDom != null && nRemovedValues > 0)
-			pickOnDom.update(x.num, nRemovedValues, consistent);
+		if (nRemovedValues > 0)
+			queue.collected.add(x.num, solver.head.control.varh.pickMode == 0 ? 1 : consistent ? nRemovedValues : 100); // TODO: 100
 		return consistent;
 	}
 
@@ -279,12 +277,13 @@ public abstract class Propagation {
 	 * @return false iff an inconsistency is detected
 	 */
 	public boolean propagate() {
-		pickOnDom = solver.heuristic instanceof PickOnDom ? ((PickOnDom) solver.heuristic).clearCollected()
-				: solver.heuristic instanceof RunRobin && ((RunRobin) solver.heuristic).current instanceof PickOnDom
-						? ((PickOnDom) ((RunRobin) solver.heuristic).current).clearCollected()
-						: null;
+		queue.collected.clear();
+
+		// pickOnDom = solver.heuristic instanceof PickOnDom ? ((PickOnDom) solver.heuristic).clearCollected()
+		// : solver.heuristic instanceof RunRobin && ((RunRobin) solver.heuristic).current instanceof PickOnDom
+		// ? ((PickOnDom) ((RunRobin) solver.heuristic).current).clearCollected()
+		// : null;
 		// procOnDom = solver.heuristic instanceof ProcOnDom ? ((ProcOnDom) solver.heuristic).clearCollected() : null;
-		
 
 		while (true) {
 			while (queue.size() != 0) { // propagation with respect to the main queue
@@ -323,11 +322,11 @@ public abstract class Propagation {
 	public final boolean propagate(ConstraintGlobal c) {
 		if (c == null || c.ignored || solver.isEntailed(c))
 			return true;
-		if (solver.profiler != null)
-			solver.profiler.before();
+
+		solver.profiler.before();
 		boolean consistent = c.runPropagator(null);
-		if (solver.profiler != null)
-			solver.profiler.afterObjPropagator();
+		solver.profiler.afterObjPropagator();
+
 		if (!consistent)
 			return false;
 		return propagate(); // because the queue may be not empty

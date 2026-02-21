@@ -17,6 +17,7 @@ import heuristics.HeuristicRevisions;
 import heuristics.HeuristicRevisions.HeuristicRevisionsDirect.First;
 import main.Head;
 import sets.SetSparse;
+import sets.SetSparse.SetSparseCnt;
 import utility.Reflector;
 import variables.Variable;
 
@@ -34,8 +35,6 @@ public final class Queue extends SetSparse {
 	 */
 	public final Forward propagation;
 
-	public final SmallestDomainVariable enqueuedSmallestDomainVariable;
-
 	/**
 	 * The revision ordering heuristic used to pick variables from the queue.
 	 */
@@ -50,6 +49,10 @@ public final class Queue extends SetSparse {
 	 * The number of times a variable has been picked from the queue
 	 */
 	public int nPicks;
+
+	public final SetSparseCnt collected;
+
+	public final SmallestDomainVariable enqueuedSmallestDomainVariable;
 
 	/**
 	 * Builds a queue for storing variables whose domains have been reduced (and so, must be propagated)
@@ -66,7 +69,7 @@ public final class Queue extends SetSparse {
 		// above, 4 is used arbitrarily (hard coding)
 		this.heuristic = Reflector.buildObject(className, head.availableClasses.get(HeuristicRevisions.class), this, head.control.revh.anti);
 		this.variables = head.problem.variables;
-
+		this.collected = new SetSparseCnt(variables.length);
 	}
 
 	public class SmallestDomainVariable {
@@ -159,11 +162,9 @@ public final class Queue extends SetSparse {
 	 * @return a variable of the queue
 	 */
 	public Variable pickAndDelete() {
-		if (propagation.solver.profiler != null)
-			propagation.solver.profiler.before();
+		propagation.solver.profiler.before();
 		Variable x = pickAndDelete(heuristic.bestInQueue());
-		if (propagation.solver.profiler != null)
-			propagation.solver.profiler.afterSelectingInQueue();
+		propagation.solver.profiler.afterSelectingInQueue();
 		return x;
 	}
 

@@ -435,8 +435,8 @@ public final class Solutions {
 			synchronized (lock) {
 				if (!lock.get()) {
 					lock.set(true);
-					if (solver.profiler != null)
-						solver.profiler.display(solver.problem.constraints);
+
+					solver.profiler.display(solver.problem.constraints);
 					System.out.println();
 					OptionsGeneral options = solver.head.control.general;
 					if (options.verbose >= 0 && found > 0 && solver.problem.variables.length <= options.jsonLimit)
