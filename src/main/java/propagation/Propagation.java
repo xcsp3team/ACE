@@ -278,11 +278,11 @@ public abstract class Propagation {
 	 */
 	public boolean propagate() {
 		queue.collected.clear();
+		queue.passedBy.clear();
 
 		// pickOnDom = solver.heuristic instanceof PickOnDom ? ((PickOnDom) solver.heuristic).clearCollected()
 		// : solver.heuristic instanceof RunRobin && ((RunRobin) solver.heuristic).current instanceof PickOnDom
-		// ? ((PickOnDom) ((RunRobin) solver.heuristic).current).clearCollected()
-		// : null;
+		// ? ((PickOnDom) ((RunRobin) solver.heuristic).current).clearCollected() : null;
 		// procOnDom = solver.heuristic instanceof ProcOnDom ? ((ProcOnDom) solver.heuristic).clearCollected() : null;
 
 		while (true) {

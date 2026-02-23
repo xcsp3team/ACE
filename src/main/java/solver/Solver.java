@@ -977,26 +977,29 @@ public class Solver implements ObserverOnBacktracksSystematic {
 				}
 			}
 		}
-		boolean singletonVariable = x.dom.size() == 1; // may happen, notably by lc
+		//boolean singletonVariable = x.dom.size() == 1; // may happen, notably by lc
 		for (ObserverOnDecisions observer : observersOnDecisions)
 			observer.beforePositiveDecision(x, a);
+		
 		assign(x, a);
-		int before = problem.nValueRemovals;
+		//int before = problem.nValueRemovals;
 		boolean consistent = knownAsInconsistent ? false : propagation.runAfterAssignment(x) && (ipsReasoner == null || ipsReasoner.whenOpeningNode());
+		heuristic.bestScored.update(consistent);
 		if (!consistent) {
 			for (ObserverOnAssignments observer : observersOnAssignments)
 				observer.afterFailedAssignment(x, a);
 			// if (ngdRecorder != null) ngdRecorder.addCurrentNogood();
 			return false;
-		} else {
-//			if (!singletonVariable)
-//				System.out.println("hhhhhhh " + propagation.queue.collected.size());
-			if (!singletonVariable && before == problem.nValueRemovals) {
-				stats.nImpactlessAssignments++;
-				if (head.control.varh.impactless)
-					heuristic.newImpactlessAssignment(x, a);
-			}
 		}
+//		else {
+//			// if (!singletonVariable)
+//			// System.out.println("hhhhhhh " + propagation.queue.collected.size());
+//			if (!singletonVariable && before == problem.nValueRemovals) {
+//				stats.nImpactlessAssignments++;
+//				if (head.control.varh.impactless)
+//					heuristic.newImpactlessAssignment(x, a);
+//			}
+//		}
 		// if (ipsRecorder != null && !ipsRecorder.dealWhenOpeningNode()) return false;
 		return true;
 	}

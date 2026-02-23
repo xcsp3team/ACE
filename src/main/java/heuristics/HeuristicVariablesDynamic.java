@@ -282,6 +282,16 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			}
 		}
 
+		if (solver.head.control.varh.updateScores) {
+			Variable x = bestScored.firstVariable();
+			if (x != null && x.dom.size() > 1) {
+				return x;
+			}
+		}
+		// Variable bsv = bestScored.firstVariable();
+		// if (bsv != null)
+		// System.out.println("hhhhhh1 " + bsv + " " + " " + bestScored.store1 + " -- " + bestScored.store2);
+
 		SafeSelector safeSelector = this.safeSelector != null && !(this instanceof RunRobin && ((RunRobin) this).currentIndex == 3) ? this.safeSelector : null;
 		if (safeSelector != null) {
 			Variable x = safeSelector.getSafeVariable();
@@ -376,8 +386,26 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		if (safeSelector != null) {
 			safeSelector.buildSafeSelection();
 		}
+		// System.out.println("hhhhhh " + bsv + " " + bestScored.firstVariable() + " st1=" + bestScored.store1 + " -- st2=" + bestScored.store2);
+//		if (bsv != null) {
+//			if (bsv == bestScored.firstVariable())
+//				cnt1++;
+//			else {
+//				cnt2++;
+//				// if (scoreOptimizedOf(bsv) != scoreOptimizedOf(bestScored.firstVariable())) {
+//				// System.out.println("pbbbb " + bsv + ": " + scoreOptimizedOf(bsv) + " vs " + bestScored.firstVariable() + " :" +
+//				// scoreOptimizedOf(bestScored.firstVariable()));
+//				// System.exit(1);
+//				// }
+//			}
+//			if ((cnt1 + cnt2) % 1000 == 0)
+//				System.out.println("cnnncncncncn " + cnt1 + "  " + cnt2);
+//		}
+
 		return bestScored.firstVariable();
 	}
+
+	int cnt1 = 0, cnt2 = 0;
 
 	// ************************************************************************
 	// ***** Subclasses for classical and failure-based dynamic heuristics
@@ -492,7 +520,7 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		public PickOnDom(Solver solver, boolean anti) {
 			super(solver, anti);
-			this.collected = solver.propagation.queue.collected; 
+			this.collected = solver.propagation.queue.collected;
 			this.nPicks = new long[solver.problem.variables.length];
 			this.pickMode = solver.head.control.varh.pickMode;
 			reset();

@@ -747,6 +747,7 @@ public final class Control {
 				"On how many variables must we branch in a fixed static way on the variables of the objective (when a weighted sum) according to coeff values?"); // experimental
 		public boolean alwaysAssignAllVariables = addB("alwaysAssignAllVariables", "aaa", false, "Must we always explicitly assign all variables?");
 		public final boolean secondScored = addB("secondScored", "snds", false, "Must we use the second variable scored by the heuristic?");
+		public final boolean updateScores = addB("updateScores", "us", false, "");
 		public final boolean quitWhenBetterThanPreviousChoice = addB("quitWhenBetterThanPreviousChoice", "qwb", false,
 				"Must we return a variable when its score is better than the score of the previously selected variable?");
 		public final boolean frozen = addB("frozen", "frozen", false, "Must we freeze variables during runs?");

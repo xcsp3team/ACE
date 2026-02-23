@@ -13,6 +13,7 @@ package heuristics;
 import static utility.Kit.control;
 
 import java.util.Set;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import dashboard.Control.OptionsRestarts;
@@ -20,6 +21,7 @@ import dashboard.Control.OptionsVarh;
 import dashboard.Output;
 import problem.Problem;
 import propagation.GIC.GIC2;
+import sets.SetSparse.SetSparseCnt;
 import solver.Solver;
 import utility.Kit;
 import utility.Reflector;
@@ -100,7 +102,19 @@ public abstract class HeuristicVariables extends Heuristic {
 
 		public abstract Variable secondVariable(int newTime);
 
-		public abstract void update(boolean consistent);
+		public void update(boolean consistent) {
+			if (consistent && solver.propagation.queue.collected.size() == 0) { // if consistent and no value removal
+				Variable x = solver.futVars.lastPast();
+				boolean singletonVariable = x.dom.lastRemovedLevel() != solver.depth();
+				// if (!singletonVariable)
+				// System.out.println("hhhhhhh " + solver.propagation.queue.collected.size());
+				if (!singletonVariable) {
+					solver.stats.nImpactlessAssignments++;
+					if (solver.head.control.varh.impactless)
+						solver.heuristic.newImpactlessAssignment(x, x.dom.single());
+				}
+			}
+		}
 
 	}
 
@@ -204,8 +218,9 @@ public abstract class HeuristicVariables extends Heuristic {
 			return null;
 		}
 
-		public void update(boolean consistent) {
-		}
+		// public void update(boolean consistent) {
+		// super.update(consistent);
+		// }
 
 		public boolean betterThan(double previousScore) {
 			return minimization ? score < previousScore : score > previousScore;
@@ -230,23 +245,69 @@ public abstract class HeuristicVariables extends Heuristic {
 
 		private final int lastPossibleLimit;
 
-		private final Variable[] vars;
+		public Store store1;
 
-		private final double[] scores;
+		public Store store2;
 
-		private int limit;
+		class Store {
+
+			private Variable[] vars;
+
+			private double[] scores;
+
+			private int limit;
+
+			Store(int capacity) {
+				this.vars = new Variable[capacity];
+				this.scores = new double[capacity];
+				this.limit = -1;
+			}
+
+			void reset() {
+				this.limit = -1;
+			}
+
+			boolean considerImplem(Variable x, double score) {
+				if (limit != -1 && score < scores[limit])
+					return false;
+				for (int i = 0; i <= limit; i++) {
+					if (score > scores[i]) {
+						for (int j = Math.min(limit, lastPossibleLimit - 1); j >= i; j--) {
+							vars[j + 1] = vars[j];
+							scores[j + 1] = scores[j];
+						}
+						vars[i] = x;
+						scores[i] = score;
+						if (limit < lastPossibleLimit)
+							limit++;
+						return i == 0;
+					}
+				}
+				if (limit < lastPossibleLimit) {
+					limit++;
+					vars[limit] = x;
+					scores[limit] = score;
+				}
+				return limit == 0;
+			}
+
+			public String toString() {
+				return limit == -1 ? "{}"
+						: IntStream.range(0, limit + 1).mapToObj(i -> "(" + vars[i] + "," + scores[i] + ")").reduce("", (a, b) -> a + " " + b);
+
+			}
+		}
 
 		public void reset() {
-			this.limit = -1;
+			store1.reset();
+			store2.reset();
 		}
 
 		public BestScoredStacked(Solver solver, boolean discardAux, int capacity) {
 			super(solver, discardAux);
 			this.lastPossibleLimit = capacity - 1;
-			this.vars = new Variable[capacity];
-			this.scores = new double[capacity];
-			this.limit = -1;
-
+			this.store1 = new Store(capacity);
+			this.store2 = new Store(capacity);
 		}
 
 		public BestScoredStacked beforeIteration(int time, boolean minimization) {
@@ -256,50 +317,66 @@ public abstract class HeuristicVariables extends Heuristic {
 		}
 
 		public boolean considerImplem(Variable x, double score) {
-			if (limit != -1 && score < scores[limit])
-				return false;
-			for (int i = 0; i <= limit; i++) {
-				if (score > scores[i]) {
-					for (int j = Math.min(limit, lastPossibleLimit - 1); j >= i; j--) {
-						vars[j + 1] = vars[j];
-						scores[j + 1] = scores[j];
-					}
-					vars[i] = x;
-					scores[i] = score;
-					if (limit < lastPossibleLimit)
-						limit++;
-					return i == 0;
-				}
-			}
-			if (limit < lastPossibleLimit) {
-				limit++;
-				vars[limit] = x;
-				scores[limit] = score;
-			}
-			return limit == 0;
+			return store1.considerImplem(x, score);
 		}
 
 		public Variable firstVariable() {
-			return limit == -1 ? null : vars[0];
+			return store1.limit == -1 ? null : store1.vars[0];
 		}
 
 		public Variable secondVariable(int newTime) {
-			if (limit >= 1 && this.time + 1 == newTime)
-				return vars[1];
+			if (store1.limit >= 1 && this.time + 1 == newTime)
+				return store1.vars[1];
 			return null;
 		}
-		
-		public  void update(boolean consistent) {
-			if (!consistent)
+
+		public void update(boolean consistent) {
+			super.update(consistent);
+			// System.out.println("updatingggg " + consistent + " " + store1 + " " + store1.limit);
+			// System.out.println(" -> " + solver.problem.variables[0] + " " + solver.heuristic.scoreOptimizedOf(solver.problem.variables[0]) + " " +
+			// solver.problem.variables[0].dom.size());
+			if (!consistent || store1.limit == -1)
 				reset();
 			else {
-				
-				
+				// System.out.println("updatinggggreconf " + consistent + " " + store1 + " " + store1.limit);
+				// System.out.println("updatingggg");
+				SetSparseCnt collected = solver.propagation.queue.passedBy;
+				double limitScore = store1.scores[store1.limit]; // the worst score of those being currently recorded (and computed at last call)
+				store2.reset();
+				// we first copy the current stored variables
+				for (int i = 0; i <= store1.limit; i++) {
+					Variable x = store1.vars[i];
+					// System.out.println(" ok? " + x.dom.size());
+					if (x.dom.size() == 1)
+						continue;
+					// System.out.println(" ok " + x);
+					if (collected.contains(x.num))
+						collected.cnts[x.num] = -1; // to know later that the variable has already been added
+					boolean added = store2.considerImplem(x, solver.heuristic.scoreOptimizedOf(x));
+					// control(added , "pb with " + x + " " + limitScore + " vs " + solver.heuristic.scoreOptimizedOf(x) + " " + store1 + " -- " + store2);
+				}
+				for (int i = 0; i <= collected.limit; i++) {
+					int num = collected.dense[i];
+//					System.out.println(
+//							" okkk ? " + solver.problem.variables[num] + " " + (collected.cnts[num] == -1) + " " + solver.problem.variables[num].dom.size()
+//									+ " " + (solver.heuristic.scoreOptimizedOf(solver.problem.variables[num])) + " " + limitScore);
+					if (collected.cnts[num] == -1)
+						continue;
+					Variable x = solver.problem.variables[num];
+					if (x.dom.size() == 1)
+						continue;
+					double score = solver.heuristic.scoreOptimizedOf(x);
+					if (score <= limitScore)
+						continue;
+					boolean added = store2.considerImplem(x, score);
+					// Wcontrol(added);
+				}
+				Store tmp = store1;
+				store1 = store2;
+				store2 = tmp;
+				// System.out.println("updatingggg2 " + consistent + " " + store1);
 			}
-			
-			
 		}
-
 	}
 
 	public static class BestScoredVariable3 {
@@ -537,7 +614,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	/**
 	 * The object used to record the best scored variable, when looking for it
 	 */
-	public BestScored bestScored;
+	public BestScoredStacked bestScored;
 
 	public final void setPriorityVars(Variable[] priorityVars, int nbStrictPriorityVars) {
 		this.priorityVars = priorityVars;
@@ -571,7 +648,7 @@ public abstract class HeuristicVariables extends Heuristic {
 			this.nStrictlyPriorityVars = solver.problem.nStrictPriorityVars;
 		}
 		this.options = solver.head.control.varh;
-		//this.bestScored = new BestScoredSimple(solver, solver.head.control.varh.discardAux); // solver.head.control.varh.updateStackLength);
+		// this.bestScored = new BestScoredSimple(solver, solver.head.control.varh.discardAux); // solver.head.control.varh.updateStackLength);
 		this.bestScored = new BestScoredStacked(solver, solver.head.control.varh.discardAux, 5);
 	}
 

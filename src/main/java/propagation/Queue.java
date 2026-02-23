@@ -52,6 +52,8 @@ public final class Queue extends SetSparse {
 
 	public final SetSparseCnt collected;
 
+	public final SetSparseCnt passedBy;
+
 	public final SmallestDomainVariable enqueuedSmallestDomainVariable;
 
 	/**
@@ -70,6 +72,7 @@ public final class Queue extends SetSparse {
 		this.heuristic = Reflector.buildObject(className, head.availableClasses.get(HeuristicRevisions.class), this, head.control.revh.anti);
 		this.variables = head.problem.variables;
 		this.collected = new SetSparseCnt(variables.length);
+		this.passedBy = new SetSparseCnt(variables.length);
 	}
 
 	public class SmallestDomainVariable {
@@ -128,6 +131,7 @@ public final class Queue extends SetSparse {
 	public void add(Variable x) {
 		x.time = propagation.incrementTime();
 		add(x.num);
+		passedBy.add(x.num, 1);
 		enqueuedSmallestDomainVariable.consider(x);
 		assert !x.assigned() || x == propagation.solver.futVars.lastPast() : "variable " + x;
 	}
