@@ -348,14 +348,6 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 
 	public final boolean specific;
 
-	public final boolean postponable;
-
-	private final boolean canSkipFilteringDueToCompleteness;
-
-	public int postponablePosition = -1;
-
-	public Variable postponedEvent;
-
 	/**
 	 * The key of the constraint. This field is only used for symmetry detection, when activated.
 	 */
@@ -402,6 +394,16 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	private int depthOfBranchStart;
 
 	private long lastCallNodeForMove = -1;
+
+	private int nVariablesWithLargeDomains;
+
+	public final boolean postponable;
+
+	private final boolean canSkipFilteringDueToCompleteness;
+
+	public int postponablePosition = -1;
+
+	public Variable postponedEvent;
 
 	protected final boolean failSinceLastCall() {
 		if ((problem.solver.stats.nAssignments - nAssignmentsOfBranchStart) != (problem.solver.depth() - depthOfBranchStart)) {
@@ -683,21 +685,30 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		this.genericFilteringThreshold = this instanceof SpecificPropagator || this instanceof ConstraintExtension ? Integer.MAX_VALUE
 				: computeGenericFilteringThreshold(scp);
 		this.specific = this instanceof SpecificPropagator;
-		this.postponable = scp.length >= pb.head.control.propagation.postponableLimit && pb.head.control.propagation.postponableLimit > 0
-				&& this instanceof TagPostponableFiltering;
-		this.canSkipFilteringDueToCompleteness = !postponable && this instanceof TagCallCompleteFiltering && !(this instanceof TagNotCallCompleteFiltering);
 
 		pb.head.observersConstruction.add(this);
 
 		this.infiniteDomainVars = Stream.of(scp).filter(x -> x.dom instanceof DomainInfinite).toArray(Variable[]::new);
 		this.vals = new int[scp.length];
 		this.options = pb.head.control.constraints;
+
+		this.nVariablesWithLargeDomains = (int) Stream.of(scp).filter(x -> x.dom.initSize() > pb.head.control.propagation.postponableLargeDomainLimit).count();
+		this.postponable = isPostponable();
+		this.canSkipFilteringDueToCompleteness = !postponable && this instanceof TagCallCompleteFiltering && !(this instanceof TagNotCallCompleteFiltering);
 	}
 
 	public final void reset() {
 		control(futvars.isFull());
 		nEffectiveFilterings = 0;
 		time = 0;
+	}
+
+	public boolean isPostponable() {
+		if (scp.length >= problem.head.control.propagation.postponableArityLimit && this instanceof TagPostponableFiltering)
+			return true;
+		// if (nVariablesWithLargeDomains > problem.head.control.propagation.postponableLargeDomainCount)
+		// return true;
+		return false;
 	}
 
 	/**********************************************************************************************

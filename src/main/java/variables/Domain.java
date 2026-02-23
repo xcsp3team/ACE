@@ -248,6 +248,18 @@ public interface Domain extends SetLinked {
 	 * @return
 	 */
 	static int smallestIntegerPresentAdd(Domain dx, Domain dy, int k) { // (index in dx of the) smallest integer v such that v in dx and v-k in dy
+		boolean cx = dx.connex(), cy = dy.connex();
+		if (cx && cy) {
+			int minx = dx.firstValue(), miny = dy.firstValue() + k;
+			int maxx = dx.lastValue(), maxy = dy.lastValue() + k;
+			if (maxx < miny || maxy < minx)
+				return -1;
+			if (minx <= miny && miny <= maxx)
+				return dx.toIdx(miny);
+			if (miny <= minx && minx <= maxy)
+				return dx.toIdx(minx);
+			return -1;
+		}
 		int a = dx.first(), b = dy.first();
 		int va = dx.toVal(a), vb = dy.toVal(b) + k;
 		while (va != vb) {
@@ -279,6 +291,18 @@ public interface Domain extends SetLinked {
 	 * @return
 	 */
 	static int greatestIntegerPresentAdd(Domain dx, Domain dy, int k) { // (index in dx of the) greatest integer v such that v in dx and v-k in dy
+		boolean cx = dx.connex(), cy = dy.connex();
+		if (cx && cy) {
+			int minx = dx.firstValue(), miny = dy.firstValue() + k;
+			int maxx = dx.lastValue(), maxy = dy.lastValue() + k;
+			if (maxx < miny || maxy < minx)
+				return -1;
+			if (minx <= maxy && maxy <= maxx)
+				return dx.toIdx(maxy);
+			if (miny <= maxx && maxx <= maxy)
+				return dx.toIdx(maxx);
+			return -1;
+		}
 		int a = dx.last(), b = dy.last();
 		int va = dx.toVal(a), vb = dy.toVal(b) + k;
 		while (va != vb) {
@@ -615,34 +639,134 @@ public interface Domain extends SetLinked {
 	 * @return a value present in both the domain and the specified one, or Integer.MAX_VALUE
 	 */
 	default int commonValueWith(Domain dom) {
-		if (size() <= dom.size())
+		int first1 = firstValue(), first2 = dom.firstValue();
+		int last1 = lastValue(), last2 = dom.lastValue();
+		if (last1 < first2 || last2 < first1)
+			return Integer.MAX_VALUE;
+		boolean c1 = connex(), c2 = dom.connex();
+		if (c1 && c2) {
+			if (first1 <= first2 && first2 <= last1)
+				return first2;
+			if (first2 <= first1 && first1 <= last2)
+				return first1;
+			return Integer.MAX_VALUE;
+		}
+		int maxFirst = Math.max(first1, first2);
+		int minLast = Math.min(last1, last2);
+		int virtualSize = minLast - maxFirst;
+		if (size() < virtualSize && size() <= dom.size())
 			for (int a = first(); a != -1; a = next(a)) {
 				int v = toVal(a);
 				if (dom.containsValue(v))
 					return v;
+				if (v > minLast)
+					break;
 			}
-		else
+		else if (dom.size() < virtualSize && dom.size() <= size())
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
 				int v = dom.toVal(a);
 				if (containsValue(v))
 					return v;
+				if (v > minLast)
+					break;
 			}
+		else {
+			if (containsValue(maxFirst)) {
+				for (int a = toIdx(maxFirst); a != -1; a = next(a)) {
+					int v = toVal(a);
+					if (dom.containsValue(v))
+						return v;
+					if (v > minLast)
+						break;
+				}
+			} else {
+				for (int a = dom.toIdx(maxFirst); a != -1; a = dom.next(a)) {
+					int v = dom.toVal(a);
+					if (containsValue(v))
+						return v;
+					if (v > minLast)
+						break;
+				}
+			}
+		}
+		// if (size() <= dom.size())
+		// for (int a = first(); a != -1; a = next(a)) {
+		// int v = toVal(a);
+		// if (dom.containsValue(v))
+		// return v;
+		// }
+		// else
+		// for (int a = dom.first(); a != -1; a = dom.next(a)) {
+		// int v = dom.toVal(a);
+		// if (containsValue(v))
+		// return v;
+		// }
 		return Integer.MAX_VALUE;
 	}
 
 	default int commonValueWith(Domain dom, int k) {
-		if (size() <= dom.size())
+		int first1 = firstValue(), first2 = dom.firstValue() + k;
+		int last1 = lastValue(), last2 = dom.lastValue() + k;
+		if (last1 < first2 || last2 < first1)
+			return Integer.MAX_VALUE;
+		boolean c1 = connex(), c2 = dom.connex();
+		if (c1 && c2) {
+			if (first1 <= first2 && first2 <= last1)
+				return first2;
+			if (first2 <= first1 && first1 <= last2)
+				return first1;
+			return Integer.MAX_VALUE;
+		}
+		int maxFirst = Math.max(first1, first2);
+		int minLast = Math.min(last1, last2);
+		int virtualSize = minLast - maxFirst;
+		if (size() < virtualSize && size() <= dom.size())
 			for (int a = first(); a != -1; a = next(a)) {
 				int v = toVal(a);
 				if (dom.containsValue(v - k))
 					return v;
+				if (v > minLast)
+					break;
 			}
-		else
+		else if (dom.size() < virtualSize && dom.size() <= size())
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
 				int v = dom.toVal(a);
 				if (containsValue(v + k))
 					return v;
+				if (v > minLast)
+					break;
 			}
+		else {
+			if (containsValue(maxFirst)) {
+				for (int a = toIdx(maxFirst); a != -1; a = next(a)) {
+					int v = toVal(a);
+					if (dom.containsValue(v - k))
+						return v;
+					if (v > minLast)
+						break;
+				}
+			} else {
+				for (int a = dom.toIdx(maxFirst - k); a != -1; a = dom.next(a)) {
+					int v = dom.toVal(a);
+					if (containsValue(v + k))
+						return v;
+					if (v > minLast)
+						break;
+				}
+			}
+		}
+//		if (size() <= dom.size())
+//			for (int a = first(); a != -1; a = next(a)) {
+//				int v = toVal(a);
+//				if (dom.containsValue(v - k))
+//					return v;
+//			}
+//		else
+//			for (int a = dom.first(); a != -1; a = dom.next(a)) {
+//				int v = dom.toVal(a);
+//				if (containsValue(v + k))
+//					return v;
+//			}
 		return Integer.MAX_VALUE;
 	}
 

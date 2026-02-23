@@ -10,6 +10,7 @@
 
 package constraints.intension;
 
+import static constraints.ConstraintIntension.tooLarge;
 import static propagation.AC.enforceEQ;
 import static propagation.AC.enforceEQc;
 import static propagation.AC.enforceGE;
@@ -29,6 +30,7 @@ import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Types.TypeConditionOperatorSet;
 import org.xcsp.common.Types.TypeLogicalOperator;
 
+import constraints.ConstraintIntension;
 import constraints.ConstraintSpecific;
 import constraints.intension.Reification.ReifLogic.ReifLogic2.LogEqAnd2;
 import constraints.intension.Reification.ReifLogic.ReifLogic2.LogEqOr2;
@@ -433,6 +435,11 @@ public final class Reification {
 				return (t[0] == 1) == (t[1] == t[2]);
 			}
 
+			// @Override
+			// public boolean isGuaranteedAC() {
+			// return !ConstraintIntension.tooLarge(dy.initSize(), dz.initSize(), problem.head.control.intension.tooLargeAdd);
+			// }
+
 			private int residue; // for a common value in the domains of y and z, supporting (x,1)
 
 			public Reif3EQ(Problem pb, Variable x, Variable y, Variable z) { // x = (y = z)
@@ -442,7 +449,7 @@ public final class Reification {
 			@Override
 			public boolean runPropagator(Variable dummy) {
 				if (dy.size() == 1 && dz.size() == 1)
-					return dx.removeIfPresent(dy.firstValue() == dz.firstValue() ? 0 : 1); // remember that indexes and values match for x
+					return dx.removeIfPresent(dy.firstValue() == dz.firstValue() ? 0 : 1) && entail(); // remember that indexes and values match for x
 				if (dx.last() == 0)
 					return (dy.size() > 1 && dz.size() > 1) || (enforceNE(dy, dz) && entail()); // x = 0 => y != z
 				if (dx.first() == 1)
@@ -451,6 +458,9 @@ public final class Reification {
 				// we know that (x,0) is supported because the domain of y and/or the domain of z is not singleton
 				if (dy.containsValue(residue) && dz.containsValue(residue))
 					return true;
+
+				// if (tooLarge(dy.size(), dz.size(), problem.head.control.intension.tooLargeAdd))
+				// return true;
 				// we look for a support for (x,1), and record it as a residue
 				int v = dy.commonValueWith(dz);
 				if (v != Integer.MAX_VALUE)
@@ -618,15 +628,6 @@ public final class Reification {
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-//				if (num == 606) {
-//					System.out.println("filterign " + this);
-//					dx1.display(1);
-//					dx2.display(1);
-//					dy1.display(1);
-//					dy2.display(1);
-//
-//				}
-
 				if (dx1.last() == 0)
 					return enforceMUL3NE(dy1, dy2, dx2); // x1 = 0 => x2 != y1*y2
 				if (dx1.first() == 1)

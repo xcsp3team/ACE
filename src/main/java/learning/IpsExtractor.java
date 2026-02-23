@@ -97,7 +97,7 @@ public final class IpsExtractor {
 
 	public IpsExtractor(IpsReasoner ipsReasoner) {
 		this.ipsReasoner = ipsReasoner;
-		this.acGuaranteed = ipsReasoner.solver.propagation.getClass() == AC.class && ((AC) ipsReasoner.solver.propagation).guaranteed;
+		this.acGuaranteed = ipsReasoner.solver.propagation.getClass() == AC.class && ((AC) ipsReasoner.solver.propagation).nNotAC == 0;
 		this.binaryNetwork = ipsReasoner.solver.problem.features.maxCtrArity() == 2;
 		String s = ipsReasoner.solver.head.control.learning.ipsOperators;
 		control(s.length() == 5);

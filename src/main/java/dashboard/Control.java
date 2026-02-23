@@ -198,7 +198,7 @@ public final class Control {
 		}
 
 		if (propagation.clazz.equals(FC.class.getSimpleName()) || propagation.clazz.equals(BT.class.getSimpleName())) {
-			propagation.postponableLimit = -1;
+			propagation.postponableArityLimit = -1;
 			varh.discardSingletonsAfterPrepro = false;
 			varh.discardSingletonsDuringSearchLimit = Integer.MAX_VALUE;
 			varh.alwaysAssignAllVariables = true;
@@ -638,7 +638,11 @@ public final class Control {
 	public class OptionsPropagation extends OptionGroup {
 		public final String clazz = addS("clazz", "p", AC.class, null, "Class to be used for propagation (for example, FC, AC or SAC3)");
 		public final int variant = addI("variant", "pv", 0, "Propagation Variant (only used for some consistencies)");
-		public int postponableLimit = addI("postponableLimit", "ppc", 100, "Arity limit for postponing the filtering of expensive constraints");
+		public int postponableArityLimit = addI("postponableArityLimit", "pal", 100, "Arity limit for postponing the filtering of expensive constraints");
+		public int postponableLargeDomainLimit = addI("postponableLargeDomainLimit", "pldl", 10_000,
+				"Limit for counting a variable beinf with a large doamin for postponability context");
+		public int postponableLargeDomainCount = addI("postponableLargeDomainCount", "pldc", 3,
+				"Number of variables with a large domain for triggering postponability");
 		// above, the purpose is to propagate less often the most costly constraints (to be finalized)
 		public final String reviser = addS("reviser", "", Reviser3.class, Reviser.class, "Class to be used for performing revisions");
 		public final boolean residues = addB("residues", "res", true, "Must we use redidues (AC3rm)?");

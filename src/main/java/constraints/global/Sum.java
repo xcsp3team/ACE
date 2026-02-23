@@ -1076,10 +1076,10 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 				if (problem.solver.justLastRefutedVariable())
 					if (x.dom.lastRemovedInsideBounds())
 						return true;
-
 				recomputeBounds();
 				if (limit < min || max < limit)
 					return x.dom.fail();
+
 				boolean useless = min + maxGap <= limit && limit <= max - maxGap;
 				// if (!degraded || Variable.nValidValuesFor(scp) <= RUNNING_LIMIT)
 				if (futvars.size() > 0 && !useless) {

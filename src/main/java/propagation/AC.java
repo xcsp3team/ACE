@@ -220,8 +220,8 @@ public class AC extends Forward {
 
 		// At this stage, we know that bounds of domains (modulo k) are both equal
 
-		 if (tooLarge(dx.size(), dy.size(), dx.var().problem.head.control.intension.tooLargeAdd))
-				 return true;
+		if (tooLarge(dx.size(), dy.size(), dx.var().problem.head.control.intension.tooLargeAdd))
+			return true;
 
 		// STEP 3 : making domains completely consistent
 		boolean connexx = dx.size() == dx.distance() + 1, connexy = dy.size() == dy.distance() + 1; // connex means "no hole"
@@ -884,10 +884,10 @@ public class AC extends Forward {
 	 *********************************************************************************************/
 
 	/**
-	 * Indicates if AC is guaranteed for each constraint (and so, for the full constraint network), either by a generic scheme that does not require to wait for
-	 * a certain number of assigned variables, or by a specific propagator.
+	 * Indicates the number of constraints not ensuring AC (either by a generic scheme that does not require to wait for a certain number of assigned variables,
+	 * or by a specific propagator).
 	 */
-	public final boolean guaranteed;
+	public final int nNotAC;
 
 	/**
 	 * The number of values deleted at preprocessing, by this propagation object
@@ -905,7 +905,7 @@ public class AC extends Forward {
 	 */
 	public AC(Solver solver) {
 		super(solver);
-		this.guaranteed = Stream.of(solver.problem.constraints).allMatch(c -> c.isGuaranteedAC());
+		this.nNotAC = (int) Stream.of(solver.problem.constraints).filter(c -> !c.isGuaranteedAC()).count();
 		// this.fvbc = FailedValueBasedConsistency.buildFor(options.classForFailedValues, this)
 	}
 
@@ -940,7 +940,7 @@ public class AC extends Forward {
 		// was already singleton (no removed value at the current depth) and AC was already guaranteed.
 		// TODO : the control could be more precise? (is there a constraint for which there is a problem to have
 		// explicitly one less future variable?)
-		if (getClass() != AC.class || x.dom.lastRemovedLevel() == solver.depth() || !hasSolverPropagatedAfterLastButOneDecision() || !guaranteed
+		if (getClass() != AC.class || x.dom.lastRemovedLevel() == solver.depth() || !hasSolverPropagatedAfterLastButOneDecision() || nNotAC > 0
 				|| x.specialServant != null) {
 			queue.add(x);
 			if (propagate() == false)

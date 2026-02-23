@@ -362,14 +362,8 @@ public final class Features {
 					tableSizes.add(((TableHybrid) c.extStructure()).hybridTuples.length);
 				if (c.extStructure() instanceof MDD)
 					mddSizes.add(((MDD) c.extStructure()).nNodes());
-				if (c.postponable) {
-					nPostponableConstraints++;
-					// System.out.println(c + " " + c.getClass());
-				}
 			}
-
 		}
-
 	}
 
 	/**********************************************************************************************
@@ -424,7 +418,7 @@ public final class Features {
 
 	public int nRemovedUnaryCtrs, nConvertedConstraints; // conversion intension to extension
 
-	public int nMergedCtrs, nDiscardedCtrs, nAddedCtrs, nPostponableConstraints;
+	public int nMergedCtrs, nDiscardedCtrs, nAddedCtrs; // , nPostponableConstraints;
 
 	/**
 	 * Number of times a (generic or specific) propagator for a constraint has been effective

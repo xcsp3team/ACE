@@ -100,6 +100,8 @@ public abstract class HeuristicVariables extends Heuristic {
 
 		public abstract Variable secondVariable(int newTime);
 
+		public abstract void update(boolean consistent);
+
 	}
 
 	/**
@@ -202,6 +204,9 @@ public abstract class HeuristicVariables extends Heuristic {
 			return null;
 		}
 
+		public void update(boolean consistent) {
+		}
+
 		public boolean betterThan(double previousScore) {
 			return minimization ? score < previousScore : score > previousScore;
 		}
@@ -251,6 +256,8 @@ public abstract class HeuristicVariables extends Heuristic {
 		}
 
 		public boolean considerImplem(Variable x, double score) {
+			if (limit != -1 && score < scores[limit])
+				return false;
 			for (int i = 0; i <= limit; i++) {
 				if (score > scores[i]) {
 					for (int j = Math.min(limit, lastPossibleLimit - 1); j >= i; j--) {
@@ -280,6 +287,17 @@ public abstract class HeuristicVariables extends Heuristic {
 			if (limit >= 1 && this.time + 1 == newTime)
 				return vars[1];
 			return null;
+		}
+		
+		public  void update(boolean consistent) {
+			if (!consistent)
+				reset();
+			else {
+				
+				
+			}
+			
+			
 		}
 
 	}
@@ -553,7 +571,7 @@ public abstract class HeuristicVariables extends Heuristic {
 			this.nStrictlyPriorityVars = solver.problem.nStrictPriorityVars;
 		}
 		this.options = solver.head.control.varh;
-		// this.bestScored = new BestScoredSimple(solver, solver.head.control.varh.discardAux); // solver.head.control.varh.updateStackLength);
+		//this.bestScored = new BestScoredSimple(solver, solver.head.control.varh.discardAux); // solver.head.control.varh.updateStackLength);
 		this.bestScored = new BestScoredStacked(solver, solver.head.control.varh.discardAux, 5);
 	}
 

@@ -558,7 +558,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(N_MERGED, features.nMergedCtrs);
 		m.put(N_DISCARDED, features.nDiscardedCtrs);
 		m.put(N_ADDED, features.nAddedCtrs);
-		m.put("postponable", features.nPostponableConstraints);
+		m.put("postponable", head.problem.postponableConstraints.length);
 		if (head.problem.api instanceof XCSP3)
 			m.put(N_GROUPS, ((XCSP3) head.problem.api).nGroups);
 		m.put(IGNORED_GROUPS, head.control.constraints.ignoreGroups);
@@ -628,7 +628,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private InformationBloc solverInfo() {
 		InformationBloc m = new InformationBloc(SOLVER);
-		m.put(GUARANTEED_AC, head.solver.propagation.getClass() == AC.class ? ((AC) head.solver.propagation).guaranteed : "");
+		m.put("nNotAC", head.solver.propagation.getClass() == AC.class ? ((AC) head.solver.propagation).nNotAC : "");
 		m.put("nBinary", Stream.of(head.problem.variables).filter(x -> x.dom.binary() != null && x.dom instanceof SetLinkedFinite).count());
 		if (head.solver.propagation instanceof Forward && ((Forward) head.solver.propagation).reviser != null)
 			m.put("reviser", ((Forward) head.solver.propagation).reviser.getClass().getSimpleName());
