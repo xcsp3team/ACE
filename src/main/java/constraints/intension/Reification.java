@@ -10,7 +10,6 @@
 
 package constraints.intension;
 
-import static constraints.ConstraintIntension.tooLarge;
 import static propagation.AC.enforceEQ;
 import static propagation.AC.enforceEQc;
 import static propagation.AC.enforceGE;
@@ -30,7 +29,6 @@ import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Types.TypeConditionOperatorSet;
 import org.xcsp.common.Types.TypeLogicalOperator;
 
-import constraints.ConstraintIntension;
 import constraints.ConstraintSpecific;
 import constraints.intension.Reification.ReifLogic.ReifLogic2.LogEqAnd2;
 import constraints.intension.Reification.ReifLogic.ReifLogic2.LogEqOr2;

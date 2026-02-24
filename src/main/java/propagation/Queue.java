@@ -17,7 +17,6 @@ import heuristics.HeuristicRevisions;
 import heuristics.HeuristicRevisions.HeuristicRevisionsDirect.First;
 import main.Head;
 import sets.SetSparse;
-import sets.SetSparse.SetSparseCnt;
 import utility.Reflector;
 import variables.Variable;
 

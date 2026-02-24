@@ -14,8 +14,6 @@ import constraints.Constraint;
 import constraints.ConstraintGlobal;
 import constraints.ConstraintIntension;
 import dashboard.Control.OptionsPropagation;
-import heuristics.HeuristicVariablesDynamic.PickOnDom;
-import heuristics.HeuristicVariablesDynamic.RunRobin;
 import interfaces.Observers.ObserverOnConflicts;
 import learning.IpsReasonerDominance;
 import sets.SetSparse;

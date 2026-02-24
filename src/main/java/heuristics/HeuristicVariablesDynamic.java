@@ -277,17 +277,16 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		// if (nCalls % 2 == 0 && solver.head.control.varh.secondScored) {
 		if (solver.head.control.varh.secondScored) {
 			Variable x = bestScored.secondVariable(nCalls);
-			if (x != null && x.dom.size() > 1) {
+			if (x != null && x.dom.size() > 1)
 				return x;
-			}
 		}
 
 		if (solver.head.control.varh.updateScores) {
 			Variable x = bestScored.firstVariable();
-			if (x != null && x.dom.size() > 1) {
+			if (x != null && x.dom.size() > 1)
 				return x;
-			}
 		}
+
 		// Variable bsv = bestScored.firstVariable();
 		// if (bsv != null)
 		// System.out.println("hhhhhh1 " + bsv + " " + " " + bestScored.store1 + " -- " + bestScored.store2);
@@ -387,20 +386,20 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			safeSelector.buildSafeSelection();
 		}
 		// System.out.println("hhhhhh " + bsv + " " + bestScored.firstVariable() + " st1=" + bestScored.store1 + " -- st2=" + bestScored.store2);
-//		if (bsv != null) {
-//			if (bsv == bestScored.firstVariable())
-//				cnt1++;
-//			else {
-//				cnt2++;
-//				// if (scoreOptimizedOf(bsv) != scoreOptimizedOf(bestScored.firstVariable())) {
-//				// System.out.println("pbbbb " + bsv + ": " + scoreOptimizedOf(bsv) + " vs " + bestScored.firstVariable() + " :" +
-//				// scoreOptimizedOf(bestScored.firstVariable()));
-//				// System.exit(1);
-//				// }
-//			}
-//			if ((cnt1 + cnt2) % 1000 == 0)
-//				System.out.println("cnnncncncncn " + cnt1 + "  " + cnt2);
-//		}
+		// if (bsv != null) {
+		// if (bsv == bestScored.firstVariable())
+		// cnt1++;
+		// else {
+		// cnt2++;
+		// // if (scoreOptimizedOf(bsv) != scoreOptimizedOf(bestScored.firstVariable())) {
+		// // System.out.println("pbbbb " + bsv + ": " + scoreOptimizedOf(bsv) + " vs " + bestScored.firstVariable() + " :" +
+		// // scoreOptimizedOf(bestScored.firstVariable()));
+		// // System.exit(1);
+		// // }
+		// }
+		// if ((cnt1 + cnt2) % 1000 == 0)
+		// System.out.println("cnnncncncncn " + cnt1 + " " + cnt2);
+		// }
 
 		return bestScored.firstVariable();
 	}

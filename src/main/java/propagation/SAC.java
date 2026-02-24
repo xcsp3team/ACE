@@ -17,8 +17,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.extension.STR3;
+import heuristics.BestScoredVariables.BestScoredSimple;
 import heuristics.HeuristicVariables;
-import heuristics.HeuristicVariables.BestScoredSimple;
 import heuristics.HeuristicVariablesDynamic.WdegOnDom;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import propagation.SAC.SAC3.LocalQueue.Cell;
@@ -649,14 +649,14 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			/**
 			 * The number of variables that still need to be checked to be ESAC
 			 */
-			private int nUncheckedVars;
+			private int nUncheckedVars; 
 
 			/**
 			 * The (dense) set of variables that still need to be checked to be ESAC
 			 */
 			private Variable[] uncheckedVars;
 
-			private BestScoredSimple bestScored = new BestScoredSimple(solver,false);
+			private BestScoredSimple bestScored = new BestScoredSimple(solver);
 
 			private LocalQueue() {
 				this.uncheckedVars = new Variable[solver.problem.variables.length];
