@@ -51,7 +51,17 @@ import variables.Variable.VariableInteger;
 public final class ConstraintIntension extends Constraint implements TagCallCompleteFiltering, Optimizable {
 
 	public static boolean tooLarge(int size1, int size2, int spaceLimit) {
-		return size1 > 1 && size2 > 1 && size1 * (double) size2 > spaceLimit;
+		int nSingletons = (size1 == 1 ? 1 : 0) + (size2 == 1 ? 1 : 0);
+		if (nSingletons >= 1)
+			return false;
+		return size1 * (double) size2 > spaceLimit;
+	}
+
+	public static boolean tooLarge(int size1, int size2, int size3, int spaceLimit) {
+		int nSingletons = (size1 == 1 ? 1 : 0) + (size2 == 1 ? 1 : 0) + (size3 == 1 ? 1 : 0);
+		if (nSingletons >= 2)
+			return false;
+		return size1 * (double) size2 * size3 > spaceLimit;
 	}
 
 	/**********************************************************************************************

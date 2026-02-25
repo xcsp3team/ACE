@@ -511,15 +511,12 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	public static final class PickOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
 
-		private final SetSparseCnt collected;
-
 		private final long[] nPicks;
 
 		private int pickMode;
 
 		public PickOnDom(Solver solver, boolean anti) {
 			super(solver, anti);
-			this.collected = solver.propagation.queue.collected;
 			this.nPicks = new long[solver.problem.variables.length];
 			this.pickMode = solver.head.control.varh.pickMode;
 			reset();
@@ -543,10 +540,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			if (freezer != null && freezer.isCurrentlyFrozen())
 				return;
 			int p = pickMode < 2 ? 0 : pickMode == 2 ? 100 : ((nPicks.length - solver.depth()) * 100) / nPicks.length;
-			int total = (int) collected.total;
-			for (int i = collected.limit; i >= 0; i--) {
-				int num = collected.dense[i];
-				long cnt = collected.cnts[num];
+			SetSparseCnt impactful = solver.propagation.queue.impactfulVariables;
+			int total = (int) impactful.total;
+			for (int i = impactful.limit; i >= 0; i--) {
+				int num = impactful.dense[i];
+				long cnt = impactful.cnts[num];
 				nPicks[num] += pickMode < 2 ? cnt : 1 + (p * cnt / total);
 			}
 		}

@@ -10,6 +10,7 @@
 
 package constraints.intension;
 
+import static constraints.ConstraintIntension.tooLarge;
 import static utility.Kit.control;
 
 import java.math.BigInteger;
@@ -1296,8 +1297,6 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 					// IMPORTANT: keep this order for the variables and the coefficients (must be in increasing order)
 					return SumWeighted.buildFrom(pb, pb.vars(y, x), new int[] { -k, 1 }, op, 0);
 				case EQ:
-					if (k == 0)
-						return new ConstraintIntension(pb, new Variable[] { x }, pb.api.eq(x, 0)); // TODO simplify
 					return new Mul2bEQ(pb, x, y, k);
 				default: // NE
 					return new Mul2bNE(pb, x, y, k);
@@ -1322,8 +1321,10 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 
 				public Mul2bEQ(Problem pb, Variable x, Variable y, int k) {
 					super(pb, x, y, k);
+					control(k > 1);
 					dx.removeValuesAtConstructionTime(v -> v != 0 && v % k != 0); // non multiple deleted (important for avoiding systematic checks)
-					this.sp = new SimplePropagatorEQ(dx, dy, true) {
+					boolean newAlgo = false;  // to be studied ; see Tower-any-070-070-15-070-06_m20 (new algo seems less efficient. why?)
+					this.sp = newAlgo ? null : new SimplePropagatorEQ(dx, dy, true) {
 						@Override
 						final int valxFor(int b) {
 							return dy.toVal(b) * k;
@@ -1338,7 +1339,50 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 
 				@Override
 				public boolean runPropagator(Variable dummy) {
-					return sp.runPropagator(dummy); // return enforceMulEQ(dx, dy, k);
+					if (sp == null) { // if new algorithm
+						// STEP 1: trivial cases
+						if (dx.size() == 1)
+							return dy.reduceToValue(dx.singleValue() / k) && entail();
+						if (dy.size() == 1)
+							return dx.reduceToValue(dy.firstValue() * k) && entail();
+
+						// STEP 2: making bounds consistent
+						int a = Domain.smallestIntegerPresentMul(dx, dy, k);
+						if (a == -1)
+							return dummy.dom.fail();
+						// from this point, no more possible inconsistency
+						dx.removeValuesLT(dx.toVal(a));
+						dy.removeValuesLT(dx.toVal(a) / k);
+						a = Domain.greatestIntegerPresentMul(dx, dy, k);
+						control(a != -1);
+						dx.removeValuesGT(dx.toVal(a));
+						dy.removeValuesGT(dx.toVal(a) / k);
+
+						// At this stage, we know that bounds of domains (modulo k) are both equal
+
+						// STEP 3 : making domains completely consistent
+						boolean connexx = dx.size() == dx.distance() + 1, connexy = dy.size() == dy.distance() + 1; // connex means "no hole"
+
+						if (connexy && dx.size() == dy.size())
+							return true;
+
+//						if (tooLarge(dx.size(), dy.size(), dx.var().problem.head.control.intension.tooLargeMul))
+//							return true;
+
+						if (!connexy) { // in dx we certainly can remove some values
+							for (a = dx.first(); a != -1; a = dx.next(a))
+								if (!dy.containsValue(dx.toVal(a) / k))
+									dx.remove(a);
+						}
+						if (!connexx) { // in dy we can remove some values
+							for (int b = dy.first(); b != -1; b = dy.next(b))
+								if (!dx.containsValue(dy.toVal(b) * k))
+									dy.remove(b);
+						}
+						// TODO above, should we iterate only if the size of the iterated domain is not too large or if many holes are in the other domain?
+						return true;
+					} else
+						return sp.runPropagator(dummy);
 				}
 			}
 

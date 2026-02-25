@@ -150,6 +150,8 @@ public class SetLinkedFinite implements SetLinked {
 		int next = nexts[a];
 		if (next == -1 || next > last)
 			return -1;
+
+		control(removedLevels[next] == -1);
 		while (removedLevels[next] != -1)
 			next = nexts[next];
 		return next;
@@ -170,6 +172,9 @@ public class SetLinkedFinite implements SetLinked {
 		int prev = prevs[a];
 		if (prev < first) // includes prev == -1
 			return -1;
+		control(removedLevels[prev] == -1);
+		// if (true)
+		// throw new ArithmeticException();
 		while (removedLevels[prev] != -1)
 			prev = prevs[prev];
 		return prev;

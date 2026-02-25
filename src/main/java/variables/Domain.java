@@ -383,6 +383,52 @@ public interface Domain extends SetLinked {
 		}
 		return a;
 	}
+	
+	
+	
+	static int smallestIntegerPresentMul(Domain dx, Domain dy, int k) { 
+		assert k > 1;
+		int a = dx.first(), b = dy.first();
+		int va = dx.toVal(a), vb = dy.toVal(b) * k;
+		while (va != vb) {
+			if (va < vb) {
+				a = dx.next(a);
+				if (a == -1)
+					return -1;
+				va = dx.toVal(a);
+			} else {
+				b = dy.next(b);
+				if (b == -1)
+					return -1;
+				vb = dy.toVal(b) * k;
+			}
+		}
+		return a;
+	}
+
+	
+	static int greatestIntegerPresentMul(Domain dx, Domain dy, int k) {
+		assert k > 1;
+		int a = dx.last(), b = dy.last();
+		int va = dx.toVal(a), vb = dy.toVal(b) * k;
+		while (va != vb) {
+			if (va > vb) {
+				a = dx.prev(a);
+				if (a == -1)
+					return -1;
+				va = dx.toVal(a);
+			} else {
+				b = dy.prev(b);
+				if (b == -1)
+					return -1;
+				vb = dy.toVal(b) * k;
+			}
+		}
+		return a;
+	}
+	
+	
+	
 
 	/**********************************************************************************************
 	 * Class Members

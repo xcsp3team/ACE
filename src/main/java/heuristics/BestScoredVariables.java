@@ -73,7 +73,7 @@ public abstract class BestScoredVariables {
 	public abstract Variable secondVariable(int newTime);
 
 	public void update(boolean consistent) {
-		if (consistent && solver.propagation.queue.collected.size() == 0) { // if consistent and no value removal
+		if (consistent && solver.propagation.queue.impactfulVariables.size() == 0) { // if consistent and no value removal apart from the assignment
 			Variable x = solver.futVars.lastPast();
 			boolean singletonVariable = x.dom.lastRemovedLevel() != solver.depth();
 			if (!singletonVariable) {
@@ -254,7 +254,7 @@ public abstract class BestScoredVariables {
 			if (!consistent || store1.limit == -1)
 				reset();
 			else {
-				SetSparseCnt collected = solver.propagation.queue.passedBy;
+				SetSparseCnt runacross = solver.propagation.queue.runacrossVariables;
 				double limitScore = store1.scores[store1.limit]; // the worst score of those being currently recorded (and computed at last call)
 				store2.reset();
 				// we first copy the current stored variables
@@ -262,14 +262,14 @@ public abstract class BestScoredVariables {
 					Variable x = store1.vars[i];
 					if (x.dom.size() == 1)
 						continue;
-					if (collected.contains(x.num))
-						collected.cnts[x.num] = -1; // to know later that the variable has already been added
+					if (runacross.contains(x.num))
+						runacross.cnts[x.num] = -1; // to know later that the variable has already been added
 					store2.considerImplem(x, solver.heuristic.scoreOptimizedOf(x));
 					// control(added , "pb with " + x + " " + limitScore + " vs " + solver.heuristic.scoreOptimizedOf(x) + " " + store1 + " -- " + store2);
 				}
-				for (int i = 0; i <= collected.limit; i++) {
-					int num = collected.dense[i];
-					if (collected.cnts[num] == -1)
+				for (int i = 0; i <= runacross.limit; i++) {
+					int num = runacross.dense[i];
+					if (runacross.cnts[num] == -1)
 						continue;
 					Variable x = solver.problem.variables[num];
 					if (x.dom.size() == 1)

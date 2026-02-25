@@ -66,7 +66,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 
 		private int value;
 
-		private Variable y;
+		private Domain ydom;
 
 		/**
 		 * Builds a constraint Element for the specified problem, with the specified arguments: list, value and 0/1 variable (y)
@@ -84,15 +84,15 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			super(pb, Utilities.collect(Variable.class, list, y));
 			this.list = list;
 			this.value = value;
-			this.y = y;
-			control(list.length >= 2 && Variable.areAllDistinct(list) && y.dom.is01() && Stream.of(list).allMatch(x -> x != y));
+			this.ydom = y.dom;
+			control(list.length >= 2 && Variable.areAllDistinct(list) && ydom.is01() && Stream.of(list).allMatch(x -> x != y));
 			control(scp[scp.length - 1] == y);
 		}
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			if (y.dom.size() == 1) {
-				if (y.dom.single() == 0) { // y = 0
+			if (ydom.size() == 1) {
+				if (ydom.single() == 0) { // y = 0
 					for (Variable x : list)
 						if (x.dom.removeValueIfPresent(value) == false)
 							return false;
@@ -114,23 +114,23 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 						}
 					}
 					if (uniqueSentinel == -1)
-						return y.dom.fail();
+						return ydom.fail();
 					return list[uniqueSentinel].dom.reduceToValue(value) && entail();
 				}
 			}
-			assert y.dom.size() == 2;
+			assert ydom.size() == 2;
 			boolean found = false;
 			for (Variable x : list) {
 				if (x.dom.size() == 1) {
 					if (x.dom.singleValue() == value)
-						return y.dom.remove(0) && entail(); // no possible inconsistency here
+						return ydom.remove(0) && entail(); // no possible inconsistency here
 				} else {
 					if (x.dom.containsValue(value))
 						found = true;
 				}
 			}
 			if (!found)
-				return y.dom.remove(1) && entail(); // no possible inconsistency here
+				return ydom.remove(1) && entail(); // no possible inconsistency here
 			return true;
 		}
 	}
@@ -280,7 +280,8 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 
 			@Override
 			public boolean isGuaranteedAC() {
-				return false; //idom.initSize() < problem.head.control.global.elementVarBoundLimit && vdom.initSize() < problem.head.control.global.elementVarBoundLimit;
+				return false; // idom.initSize() < problem.head.control.global.elementVarBoundLimit && vdom.initSize() <
+								// problem.head.control.global.elementVarBoundLimit;
 			}
 
 			private boolean validIndex(int i) {
@@ -289,7 +290,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 				if (v != Integer.MIN_VALUE && dom.containsValue(v) && vdom.containsValue(v))
 					return true;
 				for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
-					v = vdom.toVal(a); 
+					v = vdom.toVal(a);
 					if (dom.containsValue(v)) {
 						valueSentinels[a] = i;
 						indexSentinels[i] = v;
@@ -608,7 +609,27 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			}
 
 			private boolean filterIndex() {
-				return rdom.removeIndexesChecking(i -> !validRowIndex(i)) && cdom.removeIndexesChecking(j -> !validColIndex(j));
+				int sizeBefore = rdom.size();
+				if (sizeBefore == 1) {
+					if (!validRowIndex(rdom.first()))
+						return rdom.fail();
+				} else {
+					for (int i = rdom.first(); i != -1; i = rdom.next(i))
+						if (!validRowIndex(i))
+							rdom.removeElementary(i);
+					if (rdom.afterElementaryCalls(sizeBefore) == false)
+						return false;
+				}
+				sizeBefore = cdom.size();
+				if (sizeBefore == 1)
+					return validColIndex(cdom.first()) || cdom.fail();
+				for (int i = cdom.first(); i != -1; i = cdom.next(i))
+					if (!validColIndex(i))
+						cdom.removeElementary(i);
+				if (cdom.afterElementaryCalls(sizeBefore) == false)
+					return false;
+				return true;
+				// return rdom.removeIndexesChecking(i -> !validRowIndex(i)) && cdom.removeIndexesChecking(j -> !validColIndex(j));
 			}
 
 			private boolean validValue(int a) {
@@ -628,11 +649,31 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			}
 
 			private boolean filterValue() {
-				return vdom.removeIndexesChecking(a -> !validValue(a));
+				boolean test = true;
+				if (test) {
+					int sizeBefore = vdom.size();
+					if (sizeBefore == 1) // we need this because it may be assigned (and we are not tolerated to remove values from assigned domains
+						return validValue(vdom.first()) || vdom.fail();
+					for (int a = vdom.first(); a != -1; a = vdom.next(a))
+						if (!validValue(a))
+							vdom.removeElementary(a);
+					return vdom.afterElementaryCalls(sizeBefore);
+				} else
+					return vdom.removeIndexesChecking(a -> !validValue(a)); // seems to be 25% more expensive
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
+
+				// boolean test = true;
+				// if (test && idom.size() > 1 && vdom.size() > 1 && idom.size() < problem.head.control.global.elementVarBoundLimit
+				// && vdom.size() < problem.head.control.global.elementVarBoundLimit) {
+				// if (filterValue() == false)
+				// return false;
+				// if (filterIndex() == false)
+				// return false;
+				// }
+
 				// If indexes are not both singleton, we try to prune values :
 				// - in vdom, we prune the values which are not in any of the domains of the list variables
 				// - in rdom and cdom, we prune the values that cannot lead to any value in vdom
@@ -640,28 +681,40 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 					// updating vdom (and some sentinels)
 					if (filterValue() == false)
 						return false;
-					while (true) {
-						// updating rdom,and cdom (and some sentinels)
-						int sizeBefore = rdom.size() + cdom.size();
-						if (filterIndex() == false)
-							return false;
-						if (sizeBefore == rdom.size() + cdom.size())
-							break;
-						// updating vdom (and some sentinels)
-						sizeBefore = vdom.size();
-						if (filterValue() == false)
-							return false;
-						if (sizeBefore == vdom.size())
-							break;
-					}
+					if (filterIndex() == false)
+						return false;
 				}
+
 				// If indexes are both singleton, we enforce value to the corresponding cell of the matrix
 				if (rdom.size() == 1 && cdom.size() == 1) {
 					if (AC.enforceEQ(matrix[rdom.singleValue()][cdom.singleValue()].dom, vdom) == false)
 						return false;
 					if (vdom.size() == 1)
 						return entail();
+				} else {
+					// If value is singleton, we update rdom and cdom when possible
+					if (vdom.size() == 1) {
+						int v = vdom.singleValue();
+						if (rdom.size() == 1) {
+							int vi = rdom.singleValue();
+							int sizeBefore = cdom.size();
+							for (int j = cdom.first(); j != -1; j = cdom.next(j))
+								if (!matrix[vi][cdom.toVal(j)].dom.containsValue(v))
+									cdom.removeElementary(j);
+							if (cdom.afterElementaryCalls(sizeBefore) == false)
+								return false;
+						} else if (cdom.size() == 1) {
+							int vj = cdom.singleValue();
+							int sizeBefore = rdom.size();
+							for (int i = rdom.first(); i != -1; i = rdom.next(i))
+								if (!matrix[rdom.toVal(i)][vj].dom.containsValue(v))
+									rdom.removeElementary(i);
+							if (rdom.afterElementaryCalls(sizeBefore) == false)
+								return false;
+						}
+					}
 				}
+
 				return true;
 			}
 		}

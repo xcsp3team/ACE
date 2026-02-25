@@ -35,8 +35,6 @@ public abstract class Propagation {
 	 * Static members
 	 *************************************************************************/
 
-	private static final int MAX_FILTERING_COMPLEXITY = 2;
-
 	/**
 	 * Builds and returns the propagation to be attached to the specified solver. If preprocessing and search stages are disabled, null is returned.
 	 * 
@@ -265,7 +263,7 @@ public abstract class Propagation {
 
 		int nRemovedValues = solver.problem.nValueRemovals - nValuesBefore;
 		if (nRemovedValues > 0)
-			queue.collected.add(x.num, solver.head.control.varh.pickMode == 0 ? 1 : consistent ? nRemovedValues : 100); // TODO: 100
+			queue.impactfulVariables.add(x.num, solver.head.control.varh.pickMode == 0 ? 1 : consistent ? nRemovedValues : 100); // TODO: 100
 		return consistent;
 	}
 
@@ -275,8 +273,8 @@ public abstract class Propagation {
 	 * @return false iff an inconsistency is detected
 	 */
 	public boolean propagate() {
-		queue.collected.clear();
-		queue.passedBy.clear();
+		queue.impactfulVariables.clear();
+		queue.runacrossVariables.clear();
 
 		// pickOnDom = solver.heuristic instanceof PickOnDom ? ((PickOnDom) solver.heuristic).clearCollected()
 		// : solver.heuristic instanceof RunRobin && ((RunRobin) solver.heuristic).current instanceof PickOnDom

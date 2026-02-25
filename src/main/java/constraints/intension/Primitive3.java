@@ -218,7 +218,7 @@ public abstract class Primitive3 extends ConstraintSpecific implements TagAC, Ta
 					if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeAdd)) // otherwise we keep filtering below
 						return true;
 				}
-				
+
 				boolean connexz = dz.connex();
 				boolean avoidx = false, avoidy = false;
 				if (connexz) {
@@ -497,7 +497,13 @@ public abstract class Primitive3 extends ConstraintSpecific implements TagAC, Ta
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeMul)) { // hard coding // TODO what about AC Guaranteed?
+				// System.out.println("ggggx " + dx.size() + " " + dx.connex() + " " + dx.firstValue() + ".." + dx.lastValue());
+				// System.out.println("ggggy " + dy.size() + " " + dy.connex() + " " + dy.firstValue() + ".." + dy.lastValue());
+				// System.out.println("ggggz " + dz.size() + " " + dz.connex() + " " + dz.firstValue() + ".." + dz.lastValue());
+				// if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeMul)) { // hard coding // TODO what about AC Guaranteed?
+
+				if (tooLarge(dx.size(), dy.size(), dz.size(), problem.head.control.intension.tooLargeMul)) { // hard coding // TODO what about AC
+					// Guaranteed?
 					int v1 = dx.firstValue() * dy.firstValue(), v2 = dx.firstValue() * dy.lastValue();
 					int v3 = dx.lastValue() * dy.firstValue(), v4 = dx.lastValue() * dy.lastValue();
 					int min1 = Math.min(v1, v2), max1 = Math.max(v1, v2);
@@ -506,7 +512,8 @@ public abstract class Primitive3 extends ConstraintSpecific implements TagAC, Ta
 						return false;
 					if (AC.enforceMulGE(dx, dy, dz.firstValue()) && AC.enforceMulLE(dx, dy, dz.lastValue()) == false)
 						return false;
-					if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeMul)) // otherwise we keep filtering below
+					// if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeMul))
+					if (tooLarge(dx.size(), dy.size(), dz.size(), problem.head.control.intension.tooLargeMul)) // otherwise we keep filtering below
 						return true;
 				}
 				if (!dy.containsValue(0) || !dz.containsValue(0))
