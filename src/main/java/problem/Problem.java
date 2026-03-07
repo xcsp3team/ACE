@@ -1564,9 +1564,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					return intension(tree); // because the scope has changed
 			}
 			Constraint c = null;
-			if (logic_X__eq_x.matches(tree)) {
+			if (logic_X__eq_x.matches(tree)) { 
 				Variable[] list = IntStream.range(0, scp.length - 1).mapToObj(i -> scp[i]).toArray(Variable[]::new);
-				c = ReifLogic.buildFrom(this, scp[scp.length - 1], tree.logop(0), list);
+				if (Variable.areAllInitiallyBoolean(list))
+					c = ReifLogic.buildFrom(this, scp[scp.length - 1], tree.logop(0), list);
 			}
 			// TODO other cases to be implemented
 			if (c != null)

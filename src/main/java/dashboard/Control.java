@@ -686,6 +686,7 @@ public final class Control {
 		public final int decoder = addI("decoder", "decoder", 0, "Encoder/Decoder for decisions (0, 1 or 2; 0 is automatic choice)");
 		public final boolean hammingInformation = addB("hammingInformation", "hi", true,
 				"Must we display Hamming information between successive solutions (for optimization)");
+		public final boolean integerLinearProgramming = addB("integerLinearProgramming", "ilp", true, "Must we use integer linear programming");
 	}
 
 	public class OptionsRestarts extends OptionGroup {

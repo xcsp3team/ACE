@@ -293,6 +293,8 @@ public class Head extends Thread {
 	 */
 	public Solver solver;
 
+	// public ProblemILP problemILP;
+
 	/**
 	 * The object that stores all parameters for piloting the solving process
 	 */

@@ -103,6 +103,11 @@ public class Restarter implements ObserverOnRuns {
 		}
 		// }
 		solver.solutions.last.deactivated = false;
+		
+		
+//		if (numRun % 30 == 0 && solver.head.control.solving.integerLinearProgramming)
+//			new ProblemILP(solver.problem);
+		
 	}
 
 	@Override

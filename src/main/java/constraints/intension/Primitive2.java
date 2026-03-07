@@ -10,7 +10,6 @@
 
 package constraints.intension;
 
-import static constraints.ConstraintIntension.tooLarge;
 import static utility.Kit.control;
 
 import java.math.BigInteger;
@@ -172,7 +171,7 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 	/**
 	 * The constant used in the binary primitive constraint. Note that it is not relevant for a few subclasses (propagators).
 	 */
-	protected final int k;
+	public final int k;
 
 	/**
 	 * The domain of x, the first involved variable
@@ -1297,7 +1296,7 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 					// IMPORTANT: keep this order for the variables and the coefficients (must be in increasing order)
 					return SumWeighted.buildFrom(pb, pb.vars(y, x), new int[] { -k, 1 }, op, 0);
 				case EQ:
-					return new Mul2bEQ(pb, x, y, k);
+					return k > 1 ? new Mul2bEQ(pb, x, y, k) : null;
 				default: // NE
 					return new Mul2bNE(pb, x, y, k);
 				}
@@ -1321,7 +1320,7 @@ public abstract class Primitive2 extends ConstraintSpecific implements TagAC, Ta
 
 				public Mul2bEQ(Problem pb, Variable x, Variable y, int k) {
 					super(pb, x, y, k);
-					control(k > 1);
+					control(k > 1, "" + k);
 					dx.removeValuesAtConstructionTime(v -> v != 0 && v % k != 0); // non multiple deleted (important for avoiding systematic checks)
 					boolean newAlgo = false;  // to be studied ; see Tower-any-070-070-15-070-06_m20 (new algo seems less efficient. why?)
 					this.sp = newAlgo ? null : new SimplePropagatorEQ(dx, dy, true) {

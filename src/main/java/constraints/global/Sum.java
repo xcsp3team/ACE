@@ -33,8 +33,17 @@ import org.xcsp.common.predicates.TreeEvaluator;
 import org.xcsp.common.predicates.XNode;
 
 import constraints.ConstraintGlobal;
+import constraints.global.Sum.SumSimple.SumSimpleEQ;
+import constraints.global.Sum.SumSimple.SumSimpleEQBoolean;
+import constraints.global.Sum.SumSimple.SumSimpleGE;
+import constraints.global.Sum.SumSimple.SumSimpleLE;
+import constraints.global.Sum.SumSimple.SumSimpleNE;
 import constraints.global.Sum.SumViewWeighted.View.ViewTree01;
 import constraints.global.Sum.SumViewWeighted.View.ViewVariable;
+import constraints.global.Sum.SumWeighted.SumWeightedEQ;
+import constraints.global.Sum.SumWeighted.SumWeightedGE;
+import constraints.global.Sum.SumWeighted.SumWeightedLE;
+import constraints.global.Sum.SumWeighted.SumWeightedNE;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagBoundCompatible;
 import interfaces.Tags.TagCallCompleteFiltering;
@@ -59,7 +68,7 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 	/**
 	 * The limit (right-hand term) of the constraint
 	 */
-	protected long limit;
+	public long limit;
 
 	/**
 	 * The minimal sum (of the left-hand expression) that can be computed at a given moment; used during filtering in most of the subclasses
@@ -99,6 +108,18 @@ public abstract class Sum extends ConstraintGlobal implements TagCallCompleteFil
 		super(pb, scp);
 		control(scp.length > 1);
 		this.store = pb.head.control.global.sumSemiIncremental > 0 && scp.length > 10 ? new int[scp.length] : null; // TODO hard coding (10)
+	}
+
+	public TypeConditionOperatorRel getType() {
+		if (this instanceof SumSimpleLE || this instanceof SumWeightedLE)
+			return TypeConditionOperatorRel.LE;
+		if (this instanceof SumSimpleGE || this instanceof SumWeightedGE)
+			return TypeConditionOperatorRel.GE;
+		if (this instanceof SumSimpleEQ || this instanceof SumWeightedEQ || this instanceof SumSimpleEQBoolean)
+			return TypeConditionOperatorRel.EQ;
+		if (this instanceof SumSimpleNE || this instanceof SumWeightedNE)
+			return TypeConditionOperatorRel.NE;
+		throw new AssertionError("Case not possible for the moment " + this.getClass().getSimpleName());
 	}
 
 	/**

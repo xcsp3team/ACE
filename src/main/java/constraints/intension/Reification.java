@@ -621,7 +621,7 @@ public final class Reification {
 
 			public Reif4MulEQ(Problem pb, Variable x1, Variable x2, Variable y1, Variable y2) {
 				super(pb, x1, x2, y1, y2);
-				//System.out.println(this + " " + x1 + " " + x2 + " " + y1 + " " + y2);
+				// System.out.println(this + " " + x1 + " " + x2 + " " + y1 + " " + y2);
 			}
 
 			@Override
@@ -669,7 +669,8 @@ public final class Reification {
 			super(pb, pb.api.vars(x, list));
 			this.x = x;
 			this.dx = x.dom;
-			control(list.length > 1 && !x.presentIn(list) && Variable.areAllInitiallyBoolean(scp), "Variables must be 01");
+			control(list.length > 1 && !x.presentIn(list));
+			control(Variable.areAllInitiallyBoolean(scp), "Variables must be 01");
 		}
 
 		public static abstract class ReifLogic2 extends ReifLogic {
@@ -720,7 +721,7 @@ public final class Reification {
 				}
 			}
 
-			public static final class LogEqOr2 extends ReifLogic2 {
+			public static final class LogEqOr2 extends ReifLogic2 {  // x = y or z
 
 				@Override
 				public boolean isSatisfiedBy(int[] t) {

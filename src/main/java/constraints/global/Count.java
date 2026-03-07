@@ -46,7 +46,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 	/**
 	 * The value whose number of occurrences (in the list) must be counted
 	 */
-	protected final int value;
+	public final int value;
 
 	/**
 	 * Builds a constraint Count for the specified problem
@@ -96,7 +96,7 @@ public abstract class Count extends ConstraintGlobal implements TagAC {
 		/**
 		 * The right-operand used in the comparison (i.e., the number of occurrences used as a limit).
 		 */
-		protected final int k;
+		public final int k;
 
 		/**
 		 * Builds a constraint Count for the specified problem, with a limit (k) defined by a constant
