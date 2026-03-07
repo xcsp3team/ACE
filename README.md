@@ -4,7 +4,11 @@
 </div>
 
 ACE is an open-source constraint solver developed by Christophe Lecoutre (CRIL, Univ. Artois) in Java.
-ACE is embedded in the Python modeling library [PyCSP3](https://pycsp.org/), and is a competitive solver as shown by the results obtained at the [2022 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP22/), the [2023 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP23/), the [2024 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP24/) and the [2025 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP25/) .
+ACE is embedded in the Python modeling library [PyCSP3](https://pycsp.org/), and is a competitive solver as shown by the results obtained at:
+  - the [2022 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP22/),
+  - the [2023 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP23/),
+  - the [2024 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP24/)
+  - and the [2025 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP25/).
 
 The current stable version of ACE is 2.6 (March 1, 2026).
 
