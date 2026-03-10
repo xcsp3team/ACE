@@ -205,9 +205,9 @@ public abstract class Optimizer implements ObserverOnRuns {
 	 * 
 	 * For minimization, LP gives a lower bound; for maximization, an upper bound.
 	 */
-	public void computeLPBound() {
+	public boolean computeLPBound() {
 		if (!useLPBounds) {
-			return;
+			return true;
 		}
 
 		// Create LP relaxation if not already done
@@ -222,11 +222,12 @@ public abstract class Optimizer implements ObserverOnRuns {
 		if (!lpRelaxation.isViable()) {
 			Kit.log.config("LP disabled: objective type cannot be modeled in LP");
 			useLPBounds = false;
-			return;
+			return true;
 		}
 		
 		// Solve LP relaxation
 		Double lpBound = lpRelaxation.solve(atRootNode);
+		boolean consistent = true;
 
 		if (lpBound != null && atRootNode) {
 			// ONLY update global bounds if we're at the root node!
@@ -255,6 +256,24 @@ public abstract class Optimizer implements ObserverOnRuns {
 					cub.limit(maxBound);
 				}
 			}
+		} else if (lpBound != null) {
+			// During search, LP bounds are local to the current branch.
+			// They cannot tighten global bounds but can prove local infeasibility.
+			if (minimization) {
+				long roundedLowerBound = (long) Math.ceil(lpBound);
+				if (roundedLowerBound > maxBound) {
+					consistent = false;
+					if (problem.head.control.general.verbose > 0)
+						Kit.log.config("LP local prune: lower " + roundedLowerBound + " > incumbent " + maxBound);
+				}
+			} else {
+				long roundedUpperBound = (long) Math.floor(lpBound);
+				if (roundedUpperBound < minBound) {
+					consistent = false;
+					if (problem.head.control.general.verbose > 0)
+						Kit.log.config("LP local prune: upper " + roundedUpperBound + " < incumbent " + minBound);
+				}
+			}
 		}
 		
 		// After first LP solve, we're no longer at root
@@ -262,23 +281,25 @@ public abstract class Optimizer implements ObserverOnRuns {
 		
 		// Reset node counter after LP solve
 		nodesSinceLastLP = 0;
+		return consistent;
 	}
 	
 	/**
 	 * Called periodically during search to potentially solve LP and tighten bounds.
 	 * Only solves LP if lpSolveFrequency is configured and enough nodes have passed.
 	 */
-	public void possiblyComputeLPBoundDuringSearch() {
+	public boolean possiblyComputeLPBoundDuringSearch() {
 		int frequency = problem.head.control.optimization.lpSolveFrequency;
 		if (frequency <= 0 || !useLPBounds) {
-			return; // Periodic LP disabled or LP disabled entirely
+			return true; // Periodic LP disabled or LP disabled entirely
 		}
 		
 		nodesSinceLastLP++;
 		if (nodesSinceLastLP >= frequency) {
-			computeLPBound();
+			return computeLPBound();
 			// Note: nodesSinceLastLP is reset to 0 in computeLPBound()
 		}
+		return true;
 	}
 
 	protected abstract void shiftLimitWhenSuccess();
