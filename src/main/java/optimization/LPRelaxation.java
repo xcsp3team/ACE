@@ -85,6 +85,7 @@ public final class LPRelaxation {
 	private LinearizationContext context;
 	private boolean modelBuilt;
 	private boolean objectiveSet;
+	private boolean exactModel;
 
 	public LPRelaxation(Problem problem) {
 		this.problem = problem;
@@ -103,7 +104,9 @@ public final class LPRelaxation {
 		}
 
 		context = new LinearizationContext(model, lpVars, problem);
-		logLinearizedModel(addRelaxedConstraints());
+		Map<String, Integer> stats = addRelaxedConstraints();
+		exactModel = stats.get("__RELAXED__") == 0;
+		logLinearizedModel(stats);
 		setObjective();
 		configureModel();
 		modelBuilt = true;
@@ -111,6 +114,10 @@ public final class LPRelaxation {
 
 	public boolean isViable() {
 		return objectiveSet;
+	}
+
+	public boolean isExactModel() {
+		return objectiveSet && exactModel;
 	}
 
 	public void updateDomains() {

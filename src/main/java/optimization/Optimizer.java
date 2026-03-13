@@ -305,6 +305,12 @@ public abstract class Optimizer implements ObserverOnRuns {
 	public final void refineBoundsWithLpTree() {
 		if (!useLPBounds)
 			return;
+		// The LB tree is an incumbent-driven refinement. Before the first feasible
+		// solution, minBound/maxBound only reflect the raw objective domain, not a
+		// proven incumbent cutoff, so running the tree here can overstate what was
+		// actually proved.
+		if (problem.solver.solutions.found == 0)
+			return;
 		// Global LP-tree bounds are only valid from the root domains. After a run
 		// ending on a fresh solution, the solver may still sit on the solution
 		// branch, so rerunning the LP tree there would incorrectly publish a local
@@ -328,6 +334,12 @@ public abstract class Optimizer implements ObserverOnRuns {
 			useLPBounds = false;
 			return;
 		}
+		// This LP tree only remains sound when branching on an exact linear model.
+		// With relaxed/skipped constraints, a partial LP branch-and-bound can
+		// overstate what is globally proved, as seen on instances such as
+		// Warehouse. Keep the plain root LP bound, but skip the tree in that case.
+		if (!lpRelaxation.isExactModel())
+			return;
 
 		LpBoundTreeSearch tree = new LpBoundTreeSearch(lpRelaxation, minimization, incumbentCutoff, nodeLimit);
 		Long treeBound = tree.search();
