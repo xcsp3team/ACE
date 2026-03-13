@@ -305,6 +305,12 @@ public abstract class Optimizer implements ObserverOnRuns {
 	public final void refineBoundsWithLpTree() {
 		if (!useLPBounds)
 			return;
+		// Global LP-tree bounds are only valid from the root domains. After a run
+		// ending on a fresh solution, the solver may still sit on the solution
+		// branch, so rerunning the LP tree there would incorrectly publish a local
+		// subtree bound as a global one.
+		if (problem.solver.depth() != 0)
+			return;
 		int nodeLimit = problem.head.control.optimization.lbTreeMaxNodes;
 		if (nodeLimit <= 0)
 			return;
