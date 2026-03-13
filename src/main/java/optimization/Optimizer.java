@@ -334,16 +334,25 @@ public abstract class Optimizer implements ObserverOnRuns {
 		lastTreeSearchCutoff = incumbentCutoff;
 		if (treeBound == null)
 			return;
+		long safeTreeBound = treeBound;
+		// The LP tree is executed on the current improvement subproblem, after the
+		// incumbent cutoff has been posted in the CP model. If the LP bound already
+		// crosses that cutoff, the only universally safe global conclusion is that
+		// the incumbent cannot be improved, i.e. incumbentCutoff +/- 1.
+		if (minimization && safeTreeBound > maxBound)
+			safeTreeBound = maxBound + 1;
+		if (!minimization && safeTreeBound < minBound)
+			safeTreeBound = minBound - 1;
 
 		if (minimization) {
-			if (treeBound > minBound) {
-				Kit.log.config("LP tree bound: " + treeBound + " (was " + minBound + ", nodes=" + tree.exploredNodes() + ")");
-				minBound = treeBound;
+			if (safeTreeBound > minBound) {
+				Kit.log.config("LP tree bound: " + safeTreeBound + " (was " + minBound + ", nodes=" + tree.exploredNodes() + ")");
+				minBound = safeTreeBound;
 				clb.limit(minBound);
 			}
-		} else if (treeBound < maxBound) {
-			Kit.log.config("LP tree bound: " + treeBound + " (was " + maxBound + ", nodes=" + tree.exploredNodes() + ")");
-			maxBound = treeBound;
+		} else if (safeTreeBound < maxBound) {
+			Kit.log.config("LP tree bound: " + safeTreeBound + " (was " + maxBound + ", nodes=" + tree.exploredNodes() + ")");
+			maxBound = safeTreeBound;
 			cub.limit(maxBound);
 		}
 	}

@@ -92,11 +92,6 @@ public final class LPRelaxation {
 	}
 
 	public void buildModel() {
-		if (modelBuilt) {
-			updateDomains();
-			return;
-		}
-
 		model = new ExpressionsBasedModel();
 		variables.Variable[] cpVars = problem.variables;
 		lpVars = new Variable[cpVars.length];
