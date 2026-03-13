@@ -160,11 +160,6 @@ public abstract class Optimizer implements ObserverOnRuns {
 	 */
 	private int nodesSinceLastLP = 0;
 
-	/**
-	 * Last incumbent cutoff for which a root LP tree search has been executed.
-	 */
-	private long lastTreeSearchCutoff;
-
 	public Optimizer(Problem pb, TypeOptimization opt, Optimizable clb, Optimizable cub) {
 		this.problem = pb;
 		control(opt != null && clb != null && cub != null);
@@ -176,7 +171,6 @@ public abstract class Optimizer implements ObserverOnRuns {
 		this.maxBound = cub.limit();
 		// Read LP configuration from control options
 		this.useLPBounds = pb.head.control.optimization.useLPRelaxation;
-		this.lastTreeSearchCutoff = opt == MINIMIZE ? Long.MAX_VALUE : Long.MIN_VALUE;
 	}
 
 	public boolean isFinishedIf(long bound) {
@@ -311,20 +305,12 @@ public abstract class Optimizer implements ObserverOnRuns {
 		// actually proved.
 		if (problem.solver.solutions.found == 0)
 			return;
-		// Global LP-tree bounds are only valid from the root domains. After a run
-		// ending on a fresh solution, the solver may still sit on the solution
-		// branch, so rerunning the LP tree there would incorrectly publish a local
-		// subtree bound as a global one.
-		if (problem.solver.depth() != 0)
-			return;
 		int nodeLimit = problem.head.control.optimization.lbTreeMaxNodes;
 		if (nodeLimit <= 0)
 			return;
 
 		long incumbentCutoff = minimization ? maxBound : minBound;
 		if (minimization ? incumbentCutoff == Long.MAX_VALUE : incumbentCutoff == Long.MIN_VALUE)
-			return;
-		if (incumbentCutoff == lastTreeSearchCutoff)
 			return;
 
 		if (lpRelaxation == null)
@@ -334,23 +320,15 @@ public abstract class Optimizer implements ObserverOnRuns {
 			useLPBounds = false;
 			return;
 		}
-		// This LP tree only remains sound when branching on an exact linear model.
-		// With relaxed/skipped constraints, a partial LP branch-and-bound can
-		// overstate what is globally proved, as seen on instances such as
-		// Warehouse. Keep the plain root LP bound, but skip the tree in that case.
-		if (!lpRelaxation.isExactModel())
-			return;
 
-		LpBoundTreeSearch tree = new LpBoundTreeSearch(lpRelaxation, minimization, incumbentCutoff, nodeLimit);
+		LbTreeSearch tree = new LbTreeSearch(this, lpRelaxation, incumbentCutoff, nodeLimit);
 		Long treeBound = tree.search();
-		lastTreeSearchCutoff = incumbentCutoff;
 		if (treeBound == null)
 			return;
 		long safeTreeBound = treeBound;
-		// The LP tree is executed on the current improvement subproblem, after the
-		// incumbent cutoff has been posted in the CP model. If the LP bound already
-		// crosses that cutoff, the only universally safe global conclusion is that
-		// the incumbent cannot be improved, i.e. incumbentCutoff +/- 1.
+		// If the improving subproblem is proved infeasible, the only globally safe
+		// publication is the incumbent itself (represented internally by
+		// incumbentCutoff +/- 1 because the improvement cutoff is strict).
 		if (minimization && safeTreeBound > maxBound)
 			safeTreeBound = maxBound + 1;
 		if (!minimization && safeTreeBound < minBound)
@@ -358,12 +336,12 @@ public abstract class Optimizer implements ObserverOnRuns {
 
 		if (minimization) {
 			if (safeTreeBound > minBound) {
-				Kit.log.config("LP tree bound: " + safeTreeBound + " (was " + minBound + ", nodes=" + tree.exploredNodes() + ")");
+				Kit.log.config("LB tree bound: " + safeTreeBound + " (was " + minBound + ", nodes=" + tree.exploredNodes() + ")");
 				minBound = safeTreeBound;
 				clb.limit(minBound);
 			}
 		} else if (safeTreeBound < maxBound) {
-			Kit.log.config("LP tree bound: " + safeTreeBound + " (was " + maxBound + ", nodes=" + tree.exploredNodes() + ")");
+			Kit.log.config("LB tree bound: " + safeTreeBound + " (was " + maxBound + ", nodes=" + tree.exploredNodes() + ")");
 			maxBound = safeTreeBound;
 			cub.limit(maxBound);
 		}

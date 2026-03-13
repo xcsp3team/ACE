@@ -651,6 +651,12 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	public final Decisions decisions;
 
 	/**
+	 * Temporary mode used by auxiliary tree searches so they can branch on the
+	 * solver state without polluting the main decision trail.
+	 */
+	public boolean auxiliaryTreeSearchMode;
+
+	/**
 	 * The object handling/storing the solutions found by the solver
 	 */
 	public final Solutions solutions;
@@ -947,6 +953,18 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		return true;
 	}
 
+	/**
+	 * Performs a temporary assignment used by auxiliary tree searches. If the
+	 * assignment immediately fails, the solver is restored to the pre-branch
+	 * state so the caller can continue from the same node.
+	 */
+	public final boolean performBoundTreeAssignment(Variable x, int a) {
+		boolean consistent = tryAssignment(x, a, false);
+		if (!consistent)
+			backtrack(x);
+		return consistent;
+	}
+
 	public int nRemovalsJustAfterRefutation;
 
 	public boolean justLastRefutedVariable() {
@@ -990,6 +1008,19 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		}
 
 		return consistent;
+	}
+
+	/**
+	 * Performs a temporary refutation used by auxiliary tree searches.
+	 *
+	 * Contrary to {@link #performBoundTreeAssignment(Variable, int)}, the failed
+	 * state is intentionally kept when the refutation is inconsistent because
+	 * this branch is always the last one explored at a node. The caller is
+	 * expected to restore the enclosing assigned ancestor, or the root state,
+	 * afterwards.
+	 */
+	public final boolean performBoundTreeRefutation(Variable x, int a) {
+		return tryRefutation(x, a);
 	}
 
 	/**

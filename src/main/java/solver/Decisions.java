@@ -29,6 +29,8 @@ import variables.Variable;
  */
 public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 
+	private final Solver solver;
+
 	/**********************************************************************************************
 	 * Implementing interface
 	 *********************************************************************************************/
@@ -40,6 +42,8 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 
 	@Override
 	public void afterAssignment(Variable x, int a) {
+		if (solver.auxiliaryTreeSearchMode)
+			return;
 		// Adds a positive decision x=a to the current store
 		set.add(positiveDecisionFor(x.num, a));
 		Bit.setTo0(failedAssignments, set.limit);
@@ -53,6 +57,8 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 
 	@Override
 	public void afterUnassignment(Variable x) {
+		if (solver.auxiliaryTreeSearchMode)
+			return;
 		// deletes the last positive decision from the store as well as any potential negative decisions following it
 		int[] dense = set.dense;
 		int limit = set.limit;
@@ -167,6 +173,7 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	 *            the solver to which this object is attached
 	 */
 	public Decisions(Solver solver) {
+		this.solver = solver;
 		this.variables = solver.problem.variables;
 		int n1 = (int) Math.ceil(Math.log(variables.length) / Math.log(2));
 		int n2 = (int) Math.ceil(Math.log(solver.problem.features.maxDomSize()) / Math.log(2));
@@ -220,6 +227,8 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	 *            the index (of value) involved in the decision
 	 */
 	public void addNegativeDecision(Variable x, int a) {
+		if (solver.auxiliaryTreeSearchMode)
+			return;
 		set.add(negativeDecisionFor(x.num, a));
 		assert controlDecisions();
 	}
