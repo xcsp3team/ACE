@@ -499,6 +499,8 @@ public final class Control {
 				"LP solve frequency: 0=root only, N=every N nodes during search");
 		public final long lpTimeoutMs = addL("lpTimeoutMs", "lpt", 1_000L,
 				"Timeout in milliseconds for each LP solve (<=0 means no timeout)");
+		public final int lbTreeMaxNodes = addI("lbTreeMaxNodes", "lbtn", 31,
+				"Maximum number of LP lower-bound tree nodes explored at root after a finite incumbent is known (0 disables)");
 
 
 		// public final boolean discardObjective = addB("discardObjective", "do", false, "Discard the objective if any");

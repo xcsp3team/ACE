@@ -1177,6 +1177,11 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			boolean lpConsistent = problem.optimizer.computeLPBound();
 			if (!lpConsistent)
 				stopping = FULL_EXPLORATION;
+			else {
+				problem.optimizer.refineBoundsWithLpTree();
+				if (problem.optimizer.minBound > problem.optimizer.maxBound)
+					stopping = FULL_EXPLORATION;
+			}
 		}
 		
 		if (!finished() && head.control.solving.enableSearch)

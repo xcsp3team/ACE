@@ -45,6 +45,12 @@ public abstract class Optimizer implements ObserverOnRuns {
 	 *********************************************************************************************/
 
 	@Override
+	public void beforeRun() {
+		atRootNode = true;
+		nodesSinceLastLP = 0;
+	}
+
+	@Override
 	public final void afterRun() {
 		control(problem.framework == COP);
 		if (problem.solver.solutions.lastRun == problem.solver.restarter.numRun) {
@@ -52,18 +58,11 @@ public abstract class Optimizer implements ObserverOnRuns {
 			if (minimization) {
 				maxBound = problem.solver.solutions.bestBound - problem.head.control.optimization.boundDescentCoeff;
 				cub.limit(maxBound);
-				// Update LP bound constraint for pruning
-				if (lpRelaxation != null) {
-					lpRelaxation.updateBound(maxBound);
-				}
 			} else {
 				minBound = problem.solver.solutions.bestBound + problem.head.control.optimization.boundDescentCoeff;
 				clb.limit(minBound);
-				// Update LP bound constraint for pruning
-				if (lpRelaxation != null) {
-					lpRelaxation.updateBound(minBound);
-				}
 			}
+			refineBoundsWithLpTree();
 			possiblyUpdateLocalBounds();
 			control(minBound == Long.MIN_VALUE || minBound - 1 <= maxBound || problem.head.control.optimization.ub != Long.MAX_VALUE,
 					() -> " minB=" + minBound + " maxB=" + maxBound);
@@ -92,6 +91,7 @@ public abstract class Optimizer implements ObserverOnRuns {
 				cub.limit(maxBound);
 				clb.limit(minBound);
 			}
+			refineBoundsWithLpTree();
 			if (minBound <= maxBound) { // we continue after resetting
 				problem.solver.stopping = null;
 				control(problem.features.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
@@ -160,6 +160,11 @@ public abstract class Optimizer implements ObserverOnRuns {
 	 */
 	private int nodesSinceLastLP = 0;
 
+	/**
+	 * Last incumbent cutoff for which a root LP tree search has been executed.
+	 */
+	private long lastTreeSearchCutoff;
+
 	public Optimizer(Problem pb, TypeOptimization opt, Optimizable clb, Optimizable cub) {
 		this.problem = pb;
 		control(opt != null && clb != null && cub != null);
@@ -171,6 +176,7 @@ public abstract class Optimizer implements ObserverOnRuns {
 		this.maxBound = cub.limit();
 		// Read LP configuration from control options
 		this.useLPBounds = pb.head.control.optimization.useLPRelaxation;
+		this.lastTreeSearchCutoff = opt == MINIMIZE ? Long.MAX_VALUE : Long.MIN_VALUE;
 	}
 
 	public boolean isFinishedIf(long bound) {
@@ -225,11 +231,21 @@ public abstract class Optimizer implements ObserverOnRuns {
 			return true;
 		}
 		
-		// Solve LP relaxation
-		Double lpBound = lpRelaxation.solve(atRootNode);
+		LPRelaxation.SolveResult lpResult = lpRelaxation.solve(atRootNode);
 		boolean consistent = true;
+		if (lpResult.isInfeasible()) {
+			atRootNode = false;
+			nodesSinceLastLP = 0;
+			return false;
+		}
+		if (!lpResult.hasObjectiveBound()) {
+			atRootNode = false;
+			nodesSinceLastLP = 0;
+			return true;
+		}
+		double lpBound = lpResult.objectiveValue;
 
-		if (lpBound != null && atRootNode) {
+		if (atRootNode) {
 			// ONLY update global bounds if we're at the root node!
 			// LP bounds computed during search with reduced domains are only valid
 			// for the current subtree, not for the whole problem.
@@ -256,7 +272,9 @@ public abstract class Optimizer implements ObserverOnRuns {
 					cub.limit(maxBound);
 				}
 			}
-		} else if (lpBound != null) {
+			if (minBound > maxBound)
+				consistent = false;
+		} else {
 			// During search, LP bounds are local to the current branch.
 			// They cannot tighten global bounds but can prove local infeasibility.
 			if (minimization) {
@@ -282,6 +300,46 @@ public abstract class Optimizer implements ObserverOnRuns {
 		// Reset node counter after LP solve
 		nodesSinceLastLP = 0;
 		return consistent;
+	}
+
+	public final void refineBoundsWithLpTree() {
+		if (!useLPBounds)
+			return;
+		int nodeLimit = problem.head.control.optimization.lbTreeMaxNodes;
+		if (nodeLimit <= 0)
+			return;
+
+		long incumbentCutoff = minimization ? maxBound : minBound;
+		if (minimization ? incumbentCutoff == Long.MAX_VALUE : incumbentCutoff == Long.MIN_VALUE)
+			return;
+		if (incumbentCutoff == lastTreeSearchCutoff)
+			return;
+
+		if (lpRelaxation == null)
+			lpRelaxation = new LPRelaxation(problem);
+		lpRelaxation.buildModel();
+		if (!lpRelaxation.isViable()) {
+			useLPBounds = false;
+			return;
+		}
+
+		LpBoundTreeSearch tree = new LpBoundTreeSearch(lpRelaxation, minimization, incumbentCutoff, nodeLimit);
+		Long treeBound = tree.search();
+		lastTreeSearchCutoff = incumbentCutoff;
+		if (treeBound == null)
+			return;
+
+		if (minimization) {
+			if (treeBound > minBound) {
+				Kit.log.config("LP tree bound: " + treeBound + " (was " + minBound + ", nodes=" + tree.exploredNodes() + ")");
+				minBound = treeBound;
+				clb.limit(minBound);
+			}
+		} else if (treeBound < maxBound) {
+			Kit.log.config("LP tree bound: " + treeBound + " (was " + maxBound + ", nodes=" + tree.exploredNodes() + ")");
+			maxBound = treeBound;
+			cub.limit(maxBound);
+		}
 	}
 	
 	/**
@@ -310,7 +368,7 @@ public abstract class Optimizer implements ObserverOnRuns {
 		String boundsStr = (minBound == Long.MIN_VALUE ? "-infty" : Output.numberFormat.format(minBound + gapBound)) + ".." + 
 				(maxBound == Long.MAX_VALUE ? "+infty" : Output.numberFormat.format(maxBound + gapBound));
 
-		if (minBound != Long.MIN_VALUE && maxBound != Long.MAX_VALUE && minBound != maxBound) {
+		if (minBound != Long.MIN_VALUE && maxBound != Long.MAX_VALUE && minBound != maxBound && minBound != 0) {
 			boundsStr += String.format(" (gap: %.2f%%)", 100f * (maxBound - minBound) / Math.abs(minBound));
 		}
 

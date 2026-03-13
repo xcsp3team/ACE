@@ -20,34 +20,6 @@ repositories {
 dependencies {
     implementation fileTree(dir: 'lib', include: ['*.jar'])
     implementation 'org.ojalgo:ojalgo:49.2.1'
-    implementation 'org.ojalgo:ojalgo-cplex:3.0.2'
-    // implementation 'org.ojalgo:ojalgo-gurobi:3.1.0'
-
-    // Optional CPLEX + ojAlgo extensions (provide local jars via -PcplexJar / -PojalgoExtJar or env vars).
-    def cplexJar = project.findProperty('cplexJar') ?: System.getenv('CPLEX_JAR')
-    if (!cplexJar) {
-        def cplexDefault = '/Applications/CPLEX_Studio2211/cplex/lib/cplex.jar'
-        if (new File(cplexDefault).exists()) {
-            cplexJar = cplexDefault
-        }
-    }
-    if (cplexJar) {
-        implementation files(cplexJar)
-    }
-//    def gurobiJar = project.findProperty('gurobiJar') ?: System.getenv('GUROBI_JAR')
-//    if (!gurobiJar) {
-//        def gurobiDefault = '/Library/gurobi1301/macos_universal2/lib/gurobi.jar'
-//        if (new File(gurobiDefault).exists()) {
-//            gurobiJar = gurobiDefault
-//        }
-//    }
-//    if (gurobiJar) {
-//        implementation files(gurobiJar)
-//    }
-    def ojalgoExtJar = project.findProperty('ojalgoExtJar') ?: System.getenv('OJALGO_EXT_JAR')
-    if (ojalgoExtJar) {
-        implementation files(ojalgoExtJar)
-    }
     //testImplementation 'junit:junit:4.12'
 }
 
