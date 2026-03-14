@@ -115,6 +115,38 @@ final class LbTreeSearch {
 		}
 	}
 
+	private static final class DiveDecision {
+		final int variableNum;
+		final int valueIndex;
+		final boolean trueBranch;
+
+		DiveDecision(int variableNum, int valueIndex, boolean trueBranch) {
+			this.variableNum = variableNum;
+			this.valueIndex = valueIndex;
+			this.trueBranch = trueBranch;
+		}
+	}
+
+	private static final class StepOutcome {
+		final DiveDecision decision;
+		final BranchState state;
+
+		StepOutcome(DiveDecision decision, BranchState state) {
+			this.decision = decision;
+			this.state = state;
+		}
+	}
+
+	private static final class CompressionResult {
+		final ArrayList<DiveDecision> decisions;
+		final long bound;
+
+		CompressionResult(ArrayList<DiveDecision> decisions, long bound) {
+			this.decisions = decisions;
+			this.bound = bound;
+		}
+	}
+
 	private final Optimizer optimizer;
 	private final Solver solver;
 	private final LPRelaxation relaxation;
@@ -193,18 +225,7 @@ final class LbTreeSearch {
 					}
 				}
 
-				if (!active.hasDecision()) {
-					Decision decision = chooseDecision(state.lpValues);
-					if (decision == null) {
-						active.terminal = true;
-						continue;
-					}
-					active.decisionVariable = decision.variable.num;
-					active.decisionValueIndex = decision.valueIndex;
-				}
-
-				boolean firstBranch = selection.branchToExpand != null ? selection.branchToExpand.booleanValue() : preferredBranch(active);
-				dive(selection.path, firstBranch);
+				dive(selection.path, selection.branchToExpand, state);
 			}
 			return publishedBound;
 		} finally {
@@ -219,58 +240,186 @@ final class LbTreeSearch {
 		return minimization ? publishedBound > incumbentCutoff : publishedBound < incumbentCutoff;
 	}
 
-	private void dive(ArrayList<Integer> path, boolean firstBranch) {
+	private void dive(ArrayList<Integer> path, Boolean firstBranch, BranchState baseState) {
 		final long threshold = publishedBound;
-		boolean useProvidedBranch = true;
-		boolean branch = firstBranch;
+		int nodeIndex = path.get(path.size() - 1);
+		Node node = nodes.get(nodeIndex);
+		if (node.deleted || node.terminal || branchClosed(node.objective(minimization)))
+			return;
 
-		while (!stop && !path.isEmpty()) {
-			int nodeIndex = path.get(path.size() - 1);
-			Node node = nodes.get(nodeIndex);
-			if (node.deleted || node.terminal || branchClosed(node.objective(minimization)))
+		BranchState startState = baseState;
+		if (firstBranch != null) {
+			startState = followBranch(node, firstBranch.booleanValue(), path);
+			if (startState == null || crossedThreshold(startState.bound, threshold))
 				return;
-
-			BranchState stateBefore = currentBranchState();
-			node.updateObjective(stateBefore.bound, minimization);
-			propagateObjectives(path);
-			publishFromRoot();
-			if (treeClosed() || branchClosed(node.objective(minimization)))
-				return;
-
-			if (!node.hasDecision()) {
-				Decision decision = chooseDecision(stateBefore.lpValues);
-				if (decision == null) {
-					node.terminal = true;
-					return;
-				}
-				node.decisionVariable = decision.variable.num;
-				node.decisionValueIndex = decision.valueIndex;
-			}
-
-			if (!useProvidedBranch)
-				branch = preferredBranch(node);
-			useProvidedBranch = false;
-
-			BranchState stateAfter = followBranch(node, branch, path);
-			if (stateAfter == null)
-				return;
-
-			long branchBound = stateAfter.bound;
-			if (crossedThreshold(branchBound, threshold))
-				return;
-
-			int child = branch ? node.trueChild : node.falseChild;
-			if (child == NO_CHILD) {
-				if (createdNodes >= nodeLimit) {
-					stop = true;
-					return;
-				}
-				child = createChild(node, branch, threshold);
-			}
-			Node childNode = nodes.get(child);
-			childNode.updateObjective(branchBound, minimization);
-			path.add(child);
 		}
+
+		CompressionResult rawDive = collectFreeDive(startState, threshold);
+		if (rawDive == null) {
+			if (firstBranch == null && !node.hasDecision())
+				node.terminal = true;
+			return;
+		}
+
+		CompressionResult compressedDive = compressDive(path, firstBranch, rawDive.decisions, threshold);
+		if (compressedDive == null)
+			return;
+		appendCompressedDive(path, firstBranch, compressedDive, threshold);
+	}
+
+	private CompressionResult collectFreeDive(BranchState startState, long threshold) {
+		ArrayList<DiveDecision> decisions = new ArrayList<>();
+		BranchState state = startState;
+
+		while (!stop) {
+			Decision decision = chooseDecision(state.lpValues);
+			if (decision == null)
+				return null;
+			StepOutcome outcome = takeDiveDecision(decision);
+			decisions.add(outcome.decision);
+			state = outcome.state;
+			if (crossedThreshold(state.bound, threshold))
+				return new CompressionResult(decisions, state.bound);
+		}
+		return null;
+	}
+
+	private StepOutcome takeDiveDecision(Decision decision) {
+		Variable x = decision.variable;
+		int a = decision.valueIndex;
+		if (solver.performBoundTreeAssignment(x, a))
+			return new StepOutcome(new DiveDecision(x.num, a, true), currentBranchState());
+		if (solver.performBoundTreeRefutation(x, a))
+			return new StepOutcome(new DiveDecision(x.num, a, false), currentBranchState());
+		return new StepOutcome(new DiveDecision(x.num, a, false), new BranchState(infeasibleProofBound(), null));
+	}
+
+	private CompressionResult compressDive(List<Integer> path, Boolean firstBranch, List<DiveDecision> decisions, long threshold) {
+		ArrayList<DiveDecision> best = new ArrayList<>(decisions);
+		Long bestBound = replayDive(path, firstBranch, best, threshold);
+		if (bestBound == null)
+			return null;
+
+		for (int i = 0; i < best.size();) {
+			ArrayList<DiveDecision> candidate = new ArrayList<>(best);
+			candidate.remove(i);
+			Long candidateBound = replayDive(path, firstBranch, candidate, threshold);
+			if (candidateBound != null) {
+				best = candidate;
+				bestBound = candidateBound;
+			} else
+				i++;
+		}
+		return new CompressionResult(best, bestBound);
+	}
+
+	private Long replayDive(List<Integer> path, Boolean firstBranch, List<DiveDecision> decisions, long threshold) {
+		if (!resetToRootState())
+			return infeasibleProofBound();
+		if (!replayKnownPath(path))
+			return null;
+
+		Node active = nodes.get(path.get(path.size() - 1));
+		if (firstBranch != null) {
+			Boolean status = applyRecordedDecision(active.decisionVariable, active.decisionValueIndex, firstBranch.booleanValue());
+			if (status == null)
+				return null;
+			if (!status.booleanValue())
+				return infeasibleProofBound();
+		}
+
+		for (DiveDecision decision : decisions) {
+			Boolean status = applyRecordedDecision(decision.variableNum, decision.valueIndex, decision.trueBranch);
+			if (status == null)
+				return null;
+			if (!status.booleanValue())
+				return infeasibleProofBound();
+		}
+
+		BranchState state = currentBranchState();
+		return crossedThreshold(state.bound, threshold) ? state.bound : null;
+	}
+
+	private boolean replayKnownPath(List<Integer> path) {
+		for (int i = 0; i + 1 < path.size(); i++) {
+			Node node = nodes.get(path.get(i));
+			if (node.deleted || !node.hasDecision())
+				return false;
+			int child = path.get(i + 1);
+			boolean trueBranch;
+			if (child == node.trueChild)
+				trueBranch = true;
+			else if (child == node.falseChild)
+				trueBranch = false;
+			else
+				return false;
+			Boolean status = applyRecordedDecision(node.decisionVariable, node.decisionValueIndex, trueBranch);
+			if (status == null || !status.booleanValue())
+				return false;
+		}
+		return true;
+	}
+
+	private Boolean applyRecordedDecision(int variableNum, int valueIndex, boolean trueBranch) {
+		Variable x = optimizer.problem.variables[variableNum];
+		BranchStatus status = branchStatus(x, valueIndex, trueBranch);
+		if (status == BranchStatus.IMPOSSIBLE)
+			return null;
+		if (status == BranchStatus.ALREADY_SATISFIED)
+			return Boolean.TRUE;
+		boolean consistent = trueBranch ? solver.performBoundTreeAssignment(x, valueIndex) : solver.performBoundTreeRefutation(x, valueIndex);
+		return consistent ? Boolean.TRUE : Boolean.FALSE;
+	}
+
+	private void appendCompressedDive(ArrayList<Integer> path, Boolean firstBranch, CompressionResult result, long threshold) {
+		ArrayList<DiveDecision> decisions = result.decisions;
+		Node active = nodes.get(path.get(path.size() - 1));
+		ArrayList<Integer> extendedPath = new ArrayList<>(path);
+
+		if (firstBranch != null) {
+			if (decisions.isEmpty()) {
+				updateBranchObjective(active, firstBranch.booleanValue(), result.bound);
+				propagateObjectives(extendedPath);
+				publishFromRoot();
+				return;
+			}
+			int childIndex = attachDecisionChild(active, firstBranch.booleanValue(), decisions.get(0), threshold);
+			if (childIndex == NO_CHILD)
+				return;
+			extendedPath.add(childIndex);
+			Node current = nodes.get(childIndex);
+			for (int i = 1; i < decisions.size(); i++) {
+				childIndex = attachDecisionChild(current, decisions.get(i - 1).trueBranch, decisions.get(i), threshold);
+				if (childIndex == NO_CHILD)
+					return;
+				extendedPath.add(childIndex);
+				current = nodes.get(childIndex);
+			}
+			updateBranchObjective(current, decisions.get(decisions.size() - 1).trueBranch, result.bound);
+			propagateObjectives(extendedPath);
+			publishFromRoot();
+			return;
+		}
+
+		if (decisions.isEmpty()) {
+			active.terminal = true;
+			return;
+		}
+
+		DiveDecision firstDecision = decisions.get(0);
+		active.decisionVariable = firstDecision.variableNum;
+		active.decisionValueIndex = firstDecision.valueIndex;
+		Node current = active;
+		for (int i = 1; i < decisions.size(); i++) {
+			int childIndex = attachDecisionChild(current, decisions.get(i - 1).trueBranch, decisions.get(i), threshold);
+			if (childIndex == NO_CHILD)
+				return;
+			extendedPath.add(childIndex);
+			current = nodes.get(childIndex);
+		}
+		updateBranchObjective(current, decisions.get(decisions.size() - 1).trueBranch, result.bound);
+		propagateObjectives(extendedPath);
+		publishFromRoot();
 	}
 
 	private BranchState followBranch(Node node, boolean trueBranch, List<Integer> path) {
@@ -313,6 +462,25 @@ final class LbTreeSearch {
 		else
 			parent.falseChild = childIndex;
 		return childIndex;
+	}
+
+	private int attachDecisionChild(Node parent, boolean parentBranch, DiveDecision decision, long initialObjective) {
+		if (createdNodes >= nodeLimit) {
+			stop = true;
+			return NO_CHILD;
+		}
+		int child = createChild(parent, parentBranch, initialObjective);
+		Node childNode = nodes.get(child);
+		childNode.decisionVariable = decision.variableNum;
+		childNode.decisionValueIndex = decision.valueIndex;
+		return child;
+	}
+
+	private void updateBranchObjective(Node node, boolean trueBranch, long bound) {
+		if (trueBranch)
+			node.updateTrueObjective(bound, minimization);
+		else
+			node.updateFalseObjective(bound, minimization);
 	}
 
 	private boolean replayPath(List<Integer> path) {

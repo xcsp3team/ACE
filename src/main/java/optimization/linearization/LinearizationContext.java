@@ -10,6 +10,9 @@
 
 package optimization.linearization;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.ojalgo.optimisation.ExpressionsBasedModel;
 import org.ojalgo.optimisation.Variable;
 import org.ojalgo.optimisation.Expression;
@@ -29,7 +32,8 @@ public class LinearizationContext {
     private final ExpressionsBasedModel model;
     private final Variable[] lpVars;
     private final Problem problem;
-    private int coverCutCount;
+    private final List<LpCutGenerator> cutGenerators;
+    private int generatedCutCount;
 
     /**
      * Creates a new linearization context.
@@ -42,7 +46,8 @@ public class LinearizationContext {
         this.model = model;
         this.lpVars = lpVars;
         this.problem = problem;
-        this.coverCutCount = 0;
+        this.cutGenerators = new ArrayList<>();
+        this.generatedCutCount = 0;
     }
 
     /**
@@ -109,16 +114,53 @@ public class LinearizationContext {
      *
      * @return the next cover cut number
      */
-    public int nextCoverCutId() {
-        return coverCutCount++;
+    public int nextGeneratedCutId() {
+        return generatedCutCount++;
     }
 
     /**
-     * Get the total number of cover cuts generated.
+     * Register a cut generator to be called after LP solves.
      *
-     * @return the cover cut count
+     * @param generator the generator to register
      */
-    public int getCoverCutCount() {
-        return coverCutCount;
+    public void registerCutGenerator(LpCutGenerator generator) {
+        cutGenerators.add(generator);
+    }
+
+    /**
+     * Get the registered cut generators.
+     *
+     * @return the registered generators
+     */
+    public List<LpCutGenerator> getCutGenerators() {
+        return List.copyOf(cutGenerators);
+    }
+
+    /**
+     * Build a cut-generation context for the current LP solution.
+     *
+     * @param lpValues the current LP values
+     * @return the cut-generation context
+     */
+    public CutGenerationContext cutGenerationContext(double[] lpValues) {
+        return new CutGenerationContext(this, lpValues);
+    }
+
+    /**
+     * Get the total number of generated cuts.
+     *
+     * @return the generated cut count
+     */
+    public int getGeneratedCutCount() {
+        return generatedCutCount;
+    }
+
+    /**
+     * Get the number of registered cut generators.
+     *
+     * @return the generator count
+     */
+    public int getCutGeneratorCount() {
+        return cutGenerators.size();
     }
 }

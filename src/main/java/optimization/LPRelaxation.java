@@ -29,6 +29,7 @@ import optimization.linearization.CumulativeLinearizer;
 import optimization.linearization.ExtremumLinearizer;
 import optimization.linearization.IntensionLinearizer;
 import optimization.linearization.LexicographicLinearizer;
+import optimization.linearization.LpCutGenerator;
 import optimization.linearization.LinearizationContext;
 import optimization.linearization.PrimitiveLinearizer;
 import optimization.linearization.ReificationLinearizer;
@@ -65,6 +66,7 @@ public final class LPRelaxation {
 	}
 
 	private static final double ROUNDING_EPS = 1e-9;
+	private static final int MAX_CUT_ROUNDS = 3;
 
 	private static final List<ConstraintLinearizer> LINEARIZERS = List.of(
 			new SumLinearizer(),
@@ -83,6 +85,9 @@ public final class LPRelaxation {
 	private ExpressionsBasedModel model;
 	private Variable[] lpVars;
 	private LinearizationContext context;
+	// TODO: Port more cut generators here:
+	// all_diff, no_overlap, cumulative, lin_max.
+	private List<LpCutGenerator> cutGenerators;
 	private boolean modelBuilt;
 	private boolean objectiveSet;
 	private boolean exactModel;
@@ -105,6 +110,7 @@ public final class LPRelaxation {
 
 		context = new LinearizationContext(model, lpVars, problem);
 		Map<String, Integer> stats = addRelaxedConstraints();
+		cutGenerators = context.getCutGenerators();
 		exactModel = stats.get("__RELAXED__") == 0;
 		logLinearizedModel(stats);
 		setObjective();
@@ -158,27 +164,67 @@ public final class LPRelaxation {
 
 		try {
 			long start = System.currentTimeMillis();
-			Optimisation.Result result = problem.optimizer.minimization ? model.minimise() : model.maximise();
+			Optimisation.Result result = optimizeModel();
 			Optimisation.State state = result.getState();
-			long elapsed = System.currentTimeMillis() - start;
-
-			if (problem.head.control.general.verbose > 0) {
-				String location = atRoot ? "root" : "local";
-				String value = state.isOptimal() ? ", objective: " + result.getValue() : "";
-				Kit.log.config("LP solve (" + location + "): " + state + value + ", " + elapsed + "ms");
-			}
-
 			if (!state.isOptimal())
 				return new SolveResult(state, Double.NaN, null);
 
-			double[] values = new double[problem.variables.length];
-			for (int i = 0; i < values.length; i++)
-				values[i] = result.doubleValue(i);
+			double[] values = extractValues(result);
+			int generatedCuts = separateCuts(values);
+			if (generatedCuts > 0) {
+				result = optimizeModel();
+				state = result.getState();
+				if (!state.isOptimal())
+					return new SolveResult(state, Double.NaN, null);
+				values = extractValues(result);
+			}
+
+			long elapsed = System.currentTimeMillis() - start;
+			if (problem.head.control.general.verbose > 0) {
+				String location = atRoot ? "root" : "local";
+				String value = state.isOptimal() ? ", objective: " + result.getValue() : "";
+				String cuts = generatedCuts > 0 ? ", cuts: " + generatedCuts : "";
+				Kit.log.config("LP solve (" + location + "): " + state + value + cuts + ", " + elapsed + "ms");
+			}
 			return new SolveResult(state, result.getValue(), values);
 		} catch (Exception e) {
 			Kit.log.config("LP solver error: " + e.getMessage() + " (" + e.getClass().getSimpleName() + ")");
 			return new SolveResult(Optimisation.State.FAILED, Double.NaN, null);
 		}
+	}
+
+	private Optimisation.Result optimizeModel() {
+		return problem.optimizer.minimization ? model.minimise() : model.maximise();
+	}
+
+	private double[] extractValues(Optimisation.Result result) {
+		double[] values = new double[problem.variables.length];
+		for (int i = 0; i < values.length; i++)
+			values[i] = result.doubleValue(i);
+		return values;
+	}
+
+	private int separateCuts(double[] values) {
+		if (cutGenerators == null || cutGenerators.isEmpty())
+			return 0;
+
+		int totalCuts = 0;
+		double[] currentValues = values;
+		for (int round = 0; round < MAX_CUT_ROUNDS; round++) {
+			int roundCuts = 0;
+			var cutContext = context.cutGenerationContext(currentValues);
+			for (LpCutGenerator cutGenerator : cutGenerators)
+				roundCuts += cutGenerator.generateCuts(cutContext);
+			if (roundCuts == 0)
+				break;
+			totalCuts += roundCuts;
+
+			Optimisation.Result result = optimizeModel();
+			if (!result.getState().isOptimal())
+				break;
+			currentValues = extractValues(result);
+		}
+		return totalCuts;
 	}
 
 	private Map<String, Integer> addRelaxedConstraints() {
@@ -226,7 +272,8 @@ public final class LPRelaxation {
 		int linearConstraints = stats.remove("__LINEAR__");
 		int relaxedConstraints = stats.remove("__RELAXED__");
 		Kit.log.config("\tLP model: " + linearConstraints + " linear constraints, " + relaxedConstraints + " relaxed");
-		Kit.log.config("\tLP cuts: " + context.getCoverCutCount());
+		Kit.log.config("\tLP cut generators: " + context.getCutGeneratorCount());
+		Kit.log.config("\tLP cuts: " + context.getGeneratedCutCount());
 
 		if (problem.head.control.general.verbose <= 0)
 			return;

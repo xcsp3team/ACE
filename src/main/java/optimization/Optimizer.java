@@ -320,6 +320,12 @@ public abstract class Optimizer implements ObserverOnRuns {
 			useLPBounds = false;
 			return;
 		}
+		// The current LB tree publishes a global proof only from the objective
+		// bounds seen along explored branches. This matches OR-Tools only when the
+		// propagated LP model is exact. With omitted constraints, ACE still lacks
+		// the CP reason extraction needed to safely generalize those local proofs.
+		if (!lpRelaxation.isExactModel())
+			return;
 
 		LbTreeSearch tree = new LbTreeSearch(this, lpRelaxation, incumbentCutoff, nodeLimit);
 		Long treeBound = tree.search();

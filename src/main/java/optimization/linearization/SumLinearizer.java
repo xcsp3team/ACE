@@ -12,7 +12,9 @@ package optimization.linearization;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.ojalgo.optimisation.Expression;
 
@@ -31,6 +33,92 @@ import variables.Variable;
  * with binary variables, which strengthens the LP relaxation.
  */
 public class SumLinearizer implements ConstraintLinearizer {
+
+    private static final double CUT_VIOLATION_EPS = 1e-6;
+
+    private static final class KnapsackCoverCutGenerator implements LpCutGenerator {
+        private final int constraintNum;
+        private final Variable[] scp;
+        private final int[] coeffs;
+        private final long rhs;
+        private final Set<String> emittedCuts = new HashSet<>();
+
+        KnapsackCoverCutGenerator(Sum.SumWeighted sumCtr) {
+            this.constraintNum = sumCtr.num;
+            this.scp = sumCtr.scp;
+            this.coeffs = sumCtr.icoeffs;
+            this.rhs = sumCtr.limit();
+        }
+
+        @Override
+        public String name() {
+            return "KnapsackCover";
+        }
+
+        @Override
+        public int generateCuts(CutGenerationContext ctx) {
+            List<Integer> ordered = new ArrayList<>();
+            for (int i = 0; i < scp.length; i++) {
+                if (ctx.getLpValue(scp[i]) > CUT_VIOLATION_EPS) {
+                    ordered.add(i);
+                }
+            }
+            if (ordered.size() <= 1)
+                return 0;
+
+            ordered.sort((i, j) -> {
+                int byValue = Double.compare(ctx.getLpValue(scp[j]), ctx.getLpValue(scp[i]));
+                if (byValue != 0)
+                    return byValue;
+                return Integer.compare(coeffs[j], coeffs[i]);
+            });
+
+            List<Integer> cover = new ArrayList<>();
+            long coverWeight = 0;
+            for (int i : ordered) {
+                cover.add(i);
+                coverWeight += coeffs[i];
+                if (coverWeight > rhs)
+                    break;
+            }
+            if (coverWeight <= rhs || cover.size() <= 1)
+                return 0;
+
+            boolean changed;
+            do {
+                changed = false;
+                for (int p = 0; p < cover.size(); p++) {
+                    int i = cover.get(p);
+                    if (coverWeight - coeffs[i] > rhs) {
+                        coverWeight -= coeffs[i];
+                        cover.remove(p);
+                        changed = true;
+                        break;
+                    }
+                }
+            } while (changed && cover.size() > 1);
+
+            if (cover.size() <= 1)
+                return 0;
+
+            double activity = 0d;
+            for (int i : cover)
+                activity += ctx.getLpValue(scp[i]);
+            if (activity <= cover.size() - 1 + CUT_VIOLATION_EPS)
+                return 0;
+
+            cover.sort(Integer::compareTo);
+            String signature = cover.toString();
+            if (!emittedCuts.add(signature))
+                return 0;
+
+            Expression cut = ctx.addExpression("cover_" + constraintNum + "_" + ctx.nextGeneratedCutId());
+            for (int i : cover)
+                cut.set(ctx.getLpVar(scp[i]), 1);
+            cut.upper(cover.size() - 1);
+            return 1;
+        }
+    }
 
     @Override
     public boolean canLinearize(Constraint c) {
@@ -107,7 +195,7 @@ public class SumLinearizer implements ConstraintLinearizer {
         switch (op) {
             case "<=":
                 expr.upper(limit);
-                addKnapsackCoverCutIfRelevant(sumCtr, ctx);
+                registerKnapsackCoverCutGeneratorIfRelevant(sumCtr, ctx);
                 break;
             case ">=":
                 expr.lower(limit);
@@ -125,7 +213,7 @@ public class SumLinearizer implements ConstraintLinearizer {
      * A cover cut for knapsack sum(a_i * x_i) <= b identifies a minimal set C
      * of items whose total weight exceeds b, then adds: sum_{i in C} x_i <= |C| - 1
      */
-    private void addKnapsackCoverCutIfRelevant(Sum.SumWeighted sumCtr, LinearizationContext ctx) {
+    private void registerKnapsackCoverCutGeneratorIfRelevant(Sum.SumWeighted sumCtr, LinearizationContext ctx) {
         Variable[] scp = sumCtr.scp;
         int[] coeffs = sumCtr.icoeffs;
         long rhs = sumCtr.limit();
@@ -146,50 +234,6 @@ public class SumLinearizer implements ConstraintLinearizer {
             return;
         }
 
-        // Build cover greedily by selecting largest coefficients first
-        List<Integer> ordered = new ArrayList<>();
-        for (int i = 0; i < scp.length; i++) {
-            ordered.add(i);
-        }
-        ordered.sort(Comparator.comparingInt((Integer i) -> coeffs[i]).reversed());
-
-        List<Integer> cover = new ArrayList<>();
-        long coverWeight = 0;
-        for (int i : ordered) {
-            cover.add(i);
-            coverWeight += coeffs[i];
-            if (coverWeight > rhs) {
-                break;
-            }
-        }
-        if (coverWeight <= rhs || cover.size() <= 1) {
-            return;
-        }
-
-        // Minimize the cover greedily
-        boolean changed;
-        do {
-            changed = false;
-            for (int p = 0; p < cover.size(); p++) {
-                int i = cover.get(p);
-                if (coverWeight - coeffs[i] > rhs) {
-                    coverWeight -= coeffs[i];
-                    cover.remove(p);
-                    changed = true;
-                    break;
-                }
-            }
-        } while (changed && cover.size() > 1);
-
-        if (cover.size() <= 1) {
-            return;
-        }
-
-        // Add cover cut: sum_{i in cover} x_i <= |cover| - 1
-        Expression cut = ctx.addExpression("cover_" + sumCtr.num + "_" + ctx.nextCoverCutId());
-        for (int i : cover) {
-            cut.set(ctx.getLpVar(scp[i]), 1);
-        }
-        cut.upper(cover.size() - 1);
+        ctx.registerCutGenerator(new KnapsackCoverCutGenerator(sumCtr));
     }
 }
