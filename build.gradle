@@ -50,3 +50,16 @@ test {
   jvmArgs "-da" 
   jvmArgs "-Xmx12G"  // -d64 
 }
+
+task benchmarkLpVsNoLp(type: JavaExec) {
+	group = "verification"
+	description = "Benchmark ACE with LP enabled and disabled on the same optimization instances, focusing on proof, gap and nodes."
+	dependsOn testClasses
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "problems.BenchmarkLpVsNoLp"
+	jvmArgs "-da"
+	jvmArgs "-Xmx12G"
+	if (project.hasProperty("benchmarkArgs")) {
+		args project.property("benchmarkArgs").toString().trim().split("\\s+").findAll { !it.isEmpty() }
+	}
+}
