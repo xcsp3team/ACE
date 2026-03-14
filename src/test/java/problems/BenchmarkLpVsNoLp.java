@@ -29,7 +29,7 @@ import optimization.Optimizer;
  *
  * Usage examples:
  * ./gradlew benchmarkLpVsNoLp
- * ./gradlew benchmarkLpVsNoLp -PbenchmarkArgs="--iterations=1 --warmup=0 --arg=-t=30s --copdataset --limit=10"
+ * ./gradlew benchmarkLpVsNoLp -PbenchmarkArgs="--iterations=1 --warmup=0 --arg=-t=30s --cop-dataset --limit=10"
  * ./gradlew benchmarkLpVsNoLp -PbenchmarkArgs="--arg=-t=20s ./examples/XCSP25/COP25/"
  * ./gradlew benchmarkLpVsNoLp -PbenchmarkArgs="--filter=Warehouse --arg=-lbtn=63 /cop/Warehouse-Warehouse_example"
  */
@@ -238,7 +238,7 @@ public final class BenchmarkLpVsNoLp {
 				return "0";
 			if (finiteGapRuns == 0)
 				return "inf";
-			return finiteGapRuns == runs ? format(avgFiniteGap()) : "~" + format(avgFiniteGap());
+			return finiteGapRuns == runs ? formatCount(avgFiniteGap()) : "~" + formatCount(avgFiniteGap());
 		}
 
 		String bestLabel() {
@@ -307,7 +307,7 @@ public final class BenchmarkLpVsNoLp {
 				options.limit = Integer.parseInt(arg.substring("--limit=".length()));
 			} else if (arg.startsWith("--filter=")) {
 				options.filter = arg.substring("--filter=".length());
-			} else if (arg.equals("--cop-dataset")) {
+			} else if (arg.equals("--copdataset") || arg.equals("--cop-dataset")) {
 				options.includeCopDataset = true;
 			} else if (arg.startsWith("--dir=")) {
 				options.directorySpecs.add(arg.substring("--dir=".length()));
@@ -462,20 +462,23 @@ public final class BenchmarkLpVsNoLp {
 	private static void printInstanceSummary(BenchmarkResult result) {
 		Aggregate lp = result.withLp;
 		Aggregate noLp = result.withoutLp;
+		String[] headers = { "mode", "proof", "sol", "best", "bounds", "gap", "nodes", "wall", "search", "stop" };
+		int[] widths = { 6, 7, 5, 10, 17, 10, 12, 8, 8, 6 };
+		boolean[] rightAligned = { false, false, false, true, false, true, true, true, true, false };
 		System.out.println(result.displayName);
-		System.out.println("| mode | opt | sol | bounds | gap | avg nodes | avg wrong | avg wall(s) | avg search(s) | best | stop |");
-		System.out.println("| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |");
-		System.out.println(row(lp));
-		System.out.println(row(noLp));
+		System.out.println(fixedRow(headers, widths, rightAligned));
+		System.out.println(rule(widths));
+		System.out.println(row(lp, widths, rightAligned));
+		System.out.println(row(noLp, widths, rightAligned));
 		System.out.println(comparisonLine(lp, noLp));
 		System.out.println();
 	}
 
-	private static String row(Aggregate aggregate) {
-		return String.format(Locale.US, "| %s | %s | %s | %s | %s | %.1f | %.1f | %.3f | %.3f | %s | %s |", aggregate.mode.label,
-				aggregate.proofLabel(), aggregate.solutionLabel(), aggregate.boundsLabel(), aggregate.gapLabel(), aggregate.avgNodes(),
-				aggregate.avgWrongDecisions(), aggregate.avgWallSeconds(), aggregate.avgSearchSeconds(), aggregate.bestLabel(),
-				aggregate.stoppingLabel());
+	private static String row(Aggregate aggregate, int[] widths, boolean[] rightAligned) {
+		String[] values = { aggregate.mode.label, aggregate.proofLabel(), aggregate.solutionLabel(), aggregate.bestLabel(), aggregate.boundsLabel(),
+				aggregate.gapLabel(), formatCount(aggregate.avgNodes()), formatTime(aggregate.avgWallSeconds()),
+				formatTime(aggregate.avgSearchSeconds()), compactStopping(aggregate.stoppingLabel()) };
+		return fixedRow(values, widths, rightAligned);
 	}
 
 	private static String comparisonLine(Aggregate lp, Aggregate noLp) {
@@ -483,31 +486,9 @@ public final class BenchmarkLpVsNoLp {
 			return "comparison: n/a (error)";
 		String proof = lp.alwaysProvedOptimum() == noLp.alwaysProvedOptimum() ? (lp.alwaysProvedOptimum() ? "proof: both" : "proof: neither")
 				: lp.alwaysProvedOptimum() ? "proof: LP only" : "proof: NoLP only";
-		String gap = compareGap(lp, noLp);
-		String nodes = compareNodes(lp, noLp);
+		String gap = compareMetric("gap", lp.avgFiniteGap(), noLp.avgFiniteGap(), true);
+		String nodes = compareMetric("nodes", lp.avgNodes(), noLp.avgNodes(), true);
 		return proof + "  " + gap + "  " + nodes;
-	}
-
-	private static String compareGap(Aggregate lp, Aggregate noLp) {
-		double lpGap = lp.avgFiniteGap();
-		double noLpGap = noLp.avgFiniteGap();
-		if (Double.isInfinite(lpGap) && Double.isInfinite(noLpGap))
-			return "gap: neither finite";
-		if (lpGap < noLpGap)
-			return "gap: LP smaller";
-		if (lpGap > noLpGap)
-			return "gap: NoLP smaller";
-		return "gap: tie";
-	}
-
-	private static String compareNodes(Aggregate lp, Aggregate noLp) {
-		double lpNodes = lp.avgNodes();
-		double noLpNodes = noLp.avgNodes();
-		if (lpNodes < noLpNodes)
-			return "nodes: LP fewer";
-		if (lpNodes > noLpNodes)
-			return "nodes: NoLP fewer";
-		return "nodes: tie";
 	}
 
 	private static void printGlobalSummary(List<BenchmarkResult> results) {
@@ -521,10 +502,15 @@ public final class BenchmarkLpVsNoLp {
 		int lpFewerNodes = 0;
 		int noLpFewerNodes = 0;
 		int equalNodes = 0;
+		int instanceWidth = Math.max("instance".length(),
+				results.stream().map(result -> result.displayName.length()).max(Integer::compareTo).orElse(0));
+		String[] headers = { padRight("instance", instanceWidth), "LP", "NoLP", "LP gap", "NoLP gap", "LP nodes", "NoLP nodes" };
+		int[] widths = { instanceWidth, 4, 4, 10, 10, 12, 12 };
+		boolean[] rightAligned = { false, false, false, true, true, true, true };
 
 		System.out.println("Summary");
-		System.out.println("| instance | LP opt | NoLP opt | LP gap | NoLP gap | LP nodes | NoLP nodes |");
-		System.out.println("| --- | --- | --- | ---: | ---: | ---: | ---: |");
+		System.out.println(fixedRow(headers, widths, rightAligned));
+		System.out.println(rule(widths));
 		for (BenchmarkResult result : results) {
 			Aggregate lp = result.withLp;
 			Aggregate noLp = result.withoutLp;
@@ -559,8 +545,9 @@ public final class BenchmarkLpVsNoLp {
 					equalNodes++;
 			}
 
-			System.out.println(String.format(Locale.US, "| %s | %s | %s | %s | %s | %.1f | %.1f |", result.displayName, lp.proofLabel(),
-					noLp.proofLabel(), lp.gapLabel(), noLp.gapLabel(), lpNodes, noLpNodes));
+			String[] values = { result.displayName, lp.proofLabel(), noLp.proofLabel(), lp.gapLabel(), noLp.gapLabel(), formatCount(lpNodes),
+					formatCount(noLpNodes) };
+			System.out.println(fixedRow(values, widths, rightAligned));
 		}
 
 		System.out.println();
@@ -601,11 +588,82 @@ public final class BenchmarkLpVsNoLp {
 		return String.format(Locale.US, "%.3f", value);
 	}
 
+	private static String formatTime(double value) {
+		return String.format(Locale.US, "%.2f", value);
+	}
+
+	private static String formatCount(double value) {
+		double rounded = Math.rint(value);
+		if (Math.abs(value - rounded) < 0.05d)
+			return String.format(Locale.US, "%,d", (long) rounded);
+		return String.format(Locale.US, "%,.1f", value);
+	}
+
 	private static String formatLong(long value) {
 		if (value == Long.MIN_VALUE)
 			return "-inf";
 		if (value == Long.MAX_VALUE)
 			return "+inf";
-		return Long.toString(value);
+		return String.format(Locale.US, "%,d", value);
+	}
+
+	private static String compactStopping(String stopping) {
+		if ("FULL_EXPLORATION".equals(stopping))
+			return "full";
+		if ("EXCEEDED_TIME".equals(stopping))
+			return "time";
+		if ("REACHED_GOAL".equals(stopping))
+			return "goal";
+		if ("ERROR".equals(stopping))
+			return "error";
+		return stopping.toLowerCase(Locale.ROOT);
+	}
+
+	private static String compareMetric(String label, double lpValue, double noLpValue, boolean lowerIsBetter) {
+		if (Double.isInfinite(lpValue) && Double.isInfinite(noLpValue))
+			return label + ": tie";
+		if (Math.abs(lpValue - noLpValue) < 1e-9)
+			return label + ": tie";
+		boolean lpBetter = lowerIsBetter ? lpValue < noLpValue : lpValue > noLpValue;
+		double better = lpBetter ? lpValue : noLpValue;
+		double worse = lpBetter ? noLpValue : lpValue;
+		String winner = lpBetter ? "LP" : "NoLP";
+		if (better <= 0.0)
+			return label + ": " + winner + " better";
+		double ratio = worse / better;
+		return String.format(Locale.US, "%s: %s (x%.2f)", label, winner, ratio);
+	}
+
+	private static String fixedRow(String[] values, int[] widths, boolean[] rightAligned) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < values.length; i++) {
+			if (i > 0)
+				sb.append("  ");
+			String value = values[i] == null ? "" : values[i];
+			sb.append(rightAligned[i] ? padLeft(value, widths[i]) : padRight(value, widths[i]));
+		}
+		return sb.toString();
+	}
+
+	private static String rule(int[] widths) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < widths.length; i++) {
+			if (i > 0)
+				sb.append("  ");
+			sb.append("-".repeat(Math.max(1, widths[i])));
+		}
+		return sb.toString();
+	}
+
+	private static String padLeft(String value, int width) {
+		if (value.length() >= width)
+			return value;
+		return " ".repeat(width - value.length()) + value;
+	}
+
+	private static String padRight(String value, int width) {
+		if (value.length() >= width)
+			return value;
+		return value + " ".repeat(width - value.length());
 	}
 }
