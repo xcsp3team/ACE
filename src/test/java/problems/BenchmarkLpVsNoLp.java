@@ -30,7 +30,7 @@ import optimization.Optimizer;
  * Usage examples:
  * ./gradlew benchmarkLpVsNoLp
  * ./gradlew benchmarkLpVsNoLp -PbenchmarkArgs="--iterations=1 --warmup=0 --arg=-t=30s --copdataset --limit=10"
- * ./gradlew benchmarkLpVsNoLp -PbenchmarkArgs="--arg=-t=20s ~/Codes/research/pycsp3-solvers-extra/examples/XCSP25/COP25/"
+ * ./gradlew benchmarkLpVsNoLp -PbenchmarkArgs="--arg=-t=20s ./examples/XCSP25/COP25/"
  * ./gradlew benchmarkLpVsNoLp -PbenchmarkArgs="--filter=Warehouse --arg=-lbtn=63 /cop/Warehouse-Warehouse_example"
  */
 public final class BenchmarkLpVsNoLp {
@@ -44,7 +44,7 @@ public final class BenchmarkLpVsNoLp {
 			"/cop/Warehouse-Warehouse_example");
 
 	private static final List<String> COP_DATASET_DIR_CANDIDATES = List.of(
-			"~/Codes/research/pycsp3-solvers-extra/examples/XCSP25/COP25",
+			"./examples/XCSP25/COP25",
 			"./examples/XCSP25/COP25");
 
 	private enum Mode {
