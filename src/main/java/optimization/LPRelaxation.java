@@ -10,6 +10,8 @@
 
 package optimization;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,9 +21,13 @@ import org.ojalgo.optimisation.ExpressionsBasedModel;
 import org.ojalgo.optimisation.Expression;
 import org.ojalgo.optimisation.Optimisation;
 import org.ojalgo.optimisation.Variable;
+import org.ojalgo.structure.Access1D;
 
 import constraints.Constraint;
+import constraints.global.Extremum.ExtremumCst.MaximumCst;
+import constraints.global.Extremum.ExtremumCst.MinimumCst;
 import constraints.global.Sum;
+import optimization.linearization.AllDifferentLinearizer;
 import optimization.linearization.AllEqualLinearizer;
 import optimization.linearization.ConstraintLinearizer;
 import optimization.linearization.CountLinearizer;
@@ -45,19 +51,27 @@ import variables.Domain;
  */
 public final class LPRelaxation {
 
+	public static final String REDUCED_COSTS_PROPERTY = "ace.lp.reduced_costs";
+
 	public static final class SolveResult {
 		public final Optimisation.State state;
 		public final double objectiveValue;
 		public final double[] variableValues;
+		public final double[] reducedCosts;
 
-		private SolveResult(Optimisation.State state, double objectiveValue, double[] variableValues) {
+		private SolveResult(Optimisation.State state, double objectiveValue, double[] variableValues, double[] reducedCosts) {
 			this.state = state;
 			this.objectiveValue = objectiveValue;
 			this.variableValues = variableValues;
+			this.reducedCosts = reducedCosts;
 		}
 
 		public boolean hasObjectiveBound() {
 			return state != null && state.isOptimal();
+		}
+
+		public boolean hasReducedCosts() {
+			return reducedCosts != null;
 		}
 
 		public boolean isInfeasible() {
@@ -65,10 +79,65 @@ public final class LPRelaxation {
 		}
 	}
 
+	public static final class ReducedCostStats {
+		public final boolean enabled;
+		public final long rounds;
+		public final long tightenings;
+		public final long valuesRemoved;
+		public final long wipeouts;
+		public final long reoptimizations;
+		public final long improvingReoptimizations;
+
+		private ReducedCostStats(boolean enabled, long rounds, long tightenings, long valuesRemoved, long wipeouts, long reoptimizations,
+				long improvingReoptimizations) {
+			this.enabled = enabled;
+			this.rounds = rounds;
+			this.tightenings = tightenings;
+			this.valuesRemoved = valuesRemoved;
+			this.wipeouts = wipeouts;
+			this.reoptimizations = reoptimizations;
+			this.improvingReoptimizations = improvingReoptimizations;
+		}
+	}
+
+	private static final class ReducedCostFixingOutcome {
+		final boolean consistent;
+		final int tightenings;
+
+		ReducedCostFixingOutcome(boolean consistent, int tightenings) {
+			this.consistent = consistent;
+			this.tightenings = tightenings;
+		}
+	}
+
+	private static final class ReducedCostReflection {
+		final Class<?> simplexSolverClass;
+		final Method intermediateGetSolver;
+		final Field simplexTableauField;
+		final Method tableauCountConstraints;
+		final Method tableauCountProblemVariables;
+		final Method tableauSliceRow;
+
+		ReducedCostReflection() throws ReflectiveOperationException {
+			this.simplexSolverClass = Class.forName("org.ojalgo.optimisation.linear.SimplexSolver");
+			Class<?> simplexTableauClass = Class.forName("org.ojalgo.optimisation.linear.SimplexTableau");
+			this.intermediateGetSolver = findMethod(ExpressionsBasedModel.Intermediate.class, "getSolver");
+			this.simplexTableauField = findField(simplexSolverClass, "myTableau");
+			this.tableauCountConstraints = findMethod(simplexTableauClass, "countConstraints");
+			this.tableauCountProblemVariables = findMethod(simplexTableauClass, "countProblemVariables");
+			this.tableauSliceRow = findMethod(simplexTableauClass, "sliceTableauRow", int.class);
+		}
+	}
+
 	private static final double ROUNDING_EPS = 1e-9;
+	private static final double LP_BOUND_EPS = 1e-6;
+	private static final double REDUCED_COST_EPS = 1e-9;
 	private static final int MAX_CUT_ROUNDS = 3;
+	private static final int MAX_REDUCED_COST_ROUNDS = 3;
+	private static final ReducedCostReflection REDUCED_COST_REFLECTION = buildReducedCostReflection();
 
 	private static final List<ConstraintLinearizer> LINEARIZERS = List.of(
+			new AllDifferentLinearizer(),
 			new SumLinearizer(),
 			new CountLinearizer(),
 			new ExtremumLinearizer(),
@@ -81,24 +150,36 @@ public final class LPRelaxation {
 
 	private final Problem problem;
 	private final long lpTimeoutMs;
+	private final boolean reducedCostFixingEnabled;
 
 	private ExpressionsBasedModel model;
+	private ExpressionsBasedModel.Intermediate intermediate;
 	private Variable[] lpVars;
 	private LinearizationContext context;
 	// TODO: Port more cut generators here:
-	// all_diff, no_overlap, cumulative, lin_max.
+	// no_overlap via DisjonctiveReified (noOverlapAux), lin_max.
+	// TODO: use reduced costs not only for domain tightening, but also for
+	// proof explanations / branch compression in the LB tree, like CP-SAT.
 	private List<LpCutGenerator> cutGenerators;
 	private boolean modelBuilt;
 	private boolean objectiveSet;
-	private boolean exactModel;
+	private boolean fullyLinearizedConstraints;
+	private long reducedCostRounds;
+	private long reducedCostTightenings;
+	private long reducedCostValuesRemoved;
+	private long reducedCostWipeouts;
+	private long reducedCostReoptimizations;
+	private long reducedCostImprovingReoptimizations;
 
 	public LPRelaxation(Problem problem) {
 		this.problem = problem;
 		this.lpTimeoutMs = problem.head.control.optimization.lpTimeoutMs;
+		this.reducedCostFixingEnabled = Boolean.parseBoolean(System.getProperty(REDUCED_COSTS_PROPERTY, "true"));
 	}
 
 	public void buildModel() {
 		model = new ExpressionsBasedModel();
+		intermediate = null;
 		variables.Variable[] cpVars = problem.variables;
 		lpVars = new Variable[cpVars.length];
 
@@ -111,10 +192,11 @@ public final class LPRelaxation {
 		context = new LinearizationContext(model, lpVars, problem);
 		Map<String, Integer> stats = addRelaxedConstraints();
 		cutGenerators = context.getCutGenerators();
-		exactModel = stats.get("__RELAXED__") == 0;
+		fullyLinearizedConstraints = stats.get("__RELAXED__") == 0;
 		logLinearizedModel(stats);
 		setObjective();
 		configureModel();
+		intermediate = model.prepare();
 		modelBuilt = true;
 	}
 
@@ -122,8 +204,17 @@ public final class LPRelaxation {
 		return objectiveSet;
 	}
 
-	public boolean isExactModel() {
-		return objectiveSet && exactModel;
+	public boolean isFullyLinearizedConstraints() {
+		return objectiveSet && fullyLinearizedConstraints;
+	}
+
+	public boolean isReducedCostFixingEnabled() {
+		return reducedCostFixingEnabled;
+	}
+
+	public ReducedCostStats reducedCostStats() {
+		return new ReducedCostStats(reducedCostFixingEnabled, reducedCostRounds, reducedCostTightenings, reducedCostValuesRemoved, reducedCostWipeouts,
+				reducedCostReoptimizations, reducedCostImprovingReoptimizations);
 	}
 
 	public void updateDomains() {
@@ -135,6 +226,8 @@ public final class LPRelaxation {
 			lpVars[i].lower(dom.firstValue());
 			lpVars[i].upper(dom.lastValue());
 		}
+		if (intermediate != null)
+			intermediate.reset();
 	}
 
 	public int numOriginalVariables() {
@@ -152,6 +245,8 @@ public final class LPRelaxation {
 	public void setVariableBounds(int index, double lower, double upper) {
 		lpVars[index].lower(lower);
 		lpVars[index].upper(upper);
+		if (intermediate != null)
+			intermediate.reset();
 	}
 
 	public long roundObjectiveBound(double value, boolean minimization) {
@@ -160,23 +255,25 @@ public final class LPRelaxation {
 
 	public SolveResult solve(boolean atRoot) {
 		if (model == null || !objectiveSet)
-			return new SolveResult(Optimisation.State.INVALID, Double.NaN, null);
+			return new SolveResult(Optimisation.State.INVALID, Double.NaN, null, null);
 
 		try {
 			long start = System.currentTimeMillis();
 			Optimisation.Result result = optimizeModel();
 			Optimisation.State state = result.getState();
 			if (!state.isOptimal())
-				return new SolveResult(state, Double.NaN, null);
+				return new SolveResult(state, Double.NaN, null, null);
 
 			double[] values = extractValues(result);
+			double[] reducedCosts = extractReducedCosts();
 			int generatedCuts = separateCuts(values);
 			if (generatedCuts > 0) {
 				result = optimizeModel();
 				state = result.getState();
 				if (!state.isOptimal())
-					return new SolveResult(state, Double.NaN, null);
+					return new SolveResult(state, Double.NaN, null, null);
 				values = extractValues(result);
+				reducedCosts = extractReducedCosts();
 			}
 
 			long elapsed = System.currentTimeMillis() - start;
@@ -186,19 +283,56 @@ public final class LPRelaxation {
 				String cuts = generatedCuts > 0 ? ", cuts: " + generatedCuts : "";
 				Kit.log.config("LP solve (" + location + "): " + state + value + cuts + ", " + elapsed + "ms");
 			}
-			return new SolveResult(state, result.getValue(), values);
+			return new SolveResult(state, result.getValue(), values, reducedCosts);
 		} catch (Exception e) {
 			Kit.log.config("LP solver error: " + e.getMessage() + " (" + e.getClass().getSimpleName() + ")");
-			return new SolveResult(Optimisation.State.FAILED, Double.NaN, null);
+			return new SolveResult(Optimisation.State.FAILED, Double.NaN, null, null);
 		}
 	}
 
+	public SolveResult solveWithReducedCostFixing(boolean atRoot, long cutoff, boolean minimization) {
+		SolveResult result = solve(atRoot);
+		if (!reducedCostFixingEnabled || !hasFiniteCutoff(cutoff, minimization))
+			return result;
+
+		int totalTightenings = 0;
+		for (int round = 0; round < MAX_REDUCED_COST_ROUNDS; round++) {
+			if (!result.hasObjectiveBound() || !result.hasReducedCosts())
+				break;
+
+			ReducedCostFixingOutcome fixing = applyReducedCostFixing(result, cutoff, minimization);
+			if (!fixing.consistent)
+				return new SolveResult(Optimisation.State.INFEASIBLE, Double.NaN, null, null);
+			if (fixing.tightenings == 0)
+				break;
+
+			reducedCostRounds++;
+			reducedCostReoptimizations++;
+			totalTightenings += fixing.tightenings;
+			double previousObjective = result.objectiveValue;
+			updateDomains();
+			result = solve(atRoot);
+			if (result.hasObjectiveBound() && improvedObjective(result.objectiveValue, previousObjective, minimization))
+				reducedCostImprovingReoptimizations++;
+		}
+
+		if (totalTightenings > 0 && problem.head.control.general.verbose > 0)
+			Kit.log.config("LP reduced-cost tightenings: " + totalTightenings);
+		return result;
+	}
+
 	private Optimisation.Result optimizeModel() {
-		return problem.optimizer.minimization ? model.minimise() : model.maximise();
+		if (problem.optimizer.minimization)
+			model.setMinimisation();
+		else
+			model.setMaximisation();
+		if (intermediate == null)
+			intermediate = model.prepare();
+		return intermediate.solve(null);
 	}
 
 	private double[] extractValues(Optimisation.Result result) {
-		double[] values = new double[problem.variables.length];
+		double[] values = new double[Math.toIntExact(model.countVariables())];
 		for (int i = 0; i < values.length; i++)
 			values[i] = result.doubleValue(i);
 		return values;
@@ -218,6 +352,8 @@ public final class LPRelaxation {
 			if (roundCuts == 0)
 				break;
 			totalCuts += roundCuts;
+			if (intermediate != null)
+				intermediate.reset();
 
 			Optimisation.Result result = optimizeModel();
 			if (!result.getState().isOptimal())
@@ -351,7 +487,73 @@ public final class LPRelaxation {
 			objExpr.set(lpVars[((ObjectiveVariable) objective).x.num], 1);
 			objExpr.weight(1);
 			objectiveSet = true;
+		} else if (objective instanceof MaximumCst) {
+			setMaximumObjective((MaximumCst) objective, objExpr);
+		} else if (objective instanceof MinimumCst) {
+			setMinimumObjective((MinimumCst) objective, objExpr);
 		}
+	}
+
+	private void setMaximumObjective(MaximumCst objective, Expression objExpr) {
+		Variable maxVar = Variable.make("objective_max_" + ((Constraint) objective).num)
+				.lower(objective.minCurrentObjectiveValue())
+				.upper(objective.maxCurrentObjectiveValue());
+		model.addVariable(maxVar);
+
+		Expression choice = model.addExpression("objective_max_choice_" + ((Constraint) objective).num);
+		for (int i = 0; i < objective.scp.length; i++) {
+			variables.Variable xi = objective.scp[i];
+			Expression lb = model.addExpression("objective_max_lb_" + ((Constraint) objective).num + "_" + i);
+			lb.set(maxVar, 1);
+			lb.set(lpVars[xi.num], -1);
+			lb.lower(0);
+
+			double m = Math.max(0d, objective.maxCurrentObjectiveValue() - xi.dom.firstValue());
+			Variable zi = Variable.make("objective_max_z_" + ((Constraint) objective).num + "_" + i).lower(0).upper(1);
+			model.addVariable(zi);
+			choice.set(zi, 1);
+
+			Expression ub = model.addExpression("objective_max_ub_" + ((Constraint) objective).num + "_" + i);
+			ub.set(maxVar, 1);
+			ub.set(lpVars[xi.num], -1);
+			ub.set(zi, m);
+			ub.upper(m);
+		}
+		choice.level(1);
+		objExpr.set(maxVar, 1);
+		objExpr.weight(1);
+		objectiveSet = true;
+	}
+
+	private void setMinimumObjective(MinimumCst objective, Expression objExpr) {
+		Variable minVar = Variable.make("objective_min_" + ((Constraint) objective).num)
+				.lower(objective.minCurrentObjectiveValue())
+				.upper(objective.maxCurrentObjectiveValue());
+		model.addVariable(minVar);
+
+		Expression choice = model.addExpression("objective_min_choice_" + ((Constraint) objective).num);
+		for (int i = 0; i < objective.scp.length; i++) {
+			variables.Variable xi = objective.scp[i];
+			Expression ub = model.addExpression("objective_min_ub_" + ((Constraint) objective).num + "_" + i);
+			ub.set(minVar, 1);
+			ub.set(lpVars[xi.num], -1);
+			ub.upper(0);
+
+			double m = Math.max(0d, xi.dom.lastValue() - objective.minCurrentObjectiveValue());
+			Variable zi = Variable.make("objective_min_z_" + ((Constraint) objective).num + "_" + i).lower(0).upper(1);
+			model.addVariable(zi);
+			choice.set(zi, 1);
+
+			Expression lb = model.addExpression("objective_min_lb_" + ((Constraint) objective).num + "_" + i);
+			lb.set(minVar, 1);
+			lb.set(lpVars[xi.num], -1);
+			lb.set(zi, -m);
+			lb.lower(-m);
+		}
+		choice.level(1);
+		objExpr.set(minVar, 1);
+		objExpr.weight(1);
+		objectiveSet = true;
 	}
 
 	private void configureModel() {
@@ -359,5 +561,138 @@ public final class LPRelaxation {
 			model.options.time_abort = lpTimeoutMs;
 		model.options.sparse = Boolean.TRUE;
 		model.relax();
+	}
+
+	private ReducedCostFixingOutcome applyReducedCostFixing(SolveResult result, long cutoff, boolean minimization) {
+		double gap = minimization ? cutoff - result.objectiveValue : result.objectiveValue - cutoff;
+		if (gap < -ROUNDING_EPS)
+			return new ReducedCostFixingOutcome(true, 0);
+
+		int tightenings = 0;
+		for (int i = 0; i < problem.variables.length; i++) {
+			variables.Variable x = problem.variables[i];
+			Domain dom = x.dom;
+			if (dom.size() <= 1)
+				continue;
+
+			double value = result.variableValues[i];
+			double reducedCost = result.reducedCosts[i];
+			int lower = dom.firstValue();
+			int upper = dom.lastValue();
+
+				if (Math.abs(value - lower) <= LP_BOUND_EPS && reducedCost > REDUCED_COST_EPS) {
+					int highestAllowed = saturatingToInt((long) lower + maxShift(gap, reducedCost));
+					if (highestAllowed < upper) {
+						int sizeBefore = dom.size();
+						boolean consistent = dom.removeValuesGT(highestAllowed);
+						if (!consistent) {
+							reducedCostWipeouts++;
+							return new ReducedCostFixingOutcome(false, tightenings);
+						}
+						reducedCostTightenings++;
+						reducedCostValuesRemoved += Math.max(0, sizeBefore - dom.size());
+						tightenings++;
+					}
+				}
+
+			double worseningFromUpper = -reducedCost;
+				if (Math.abs(value - upper) <= LP_BOUND_EPS && worseningFromUpper > REDUCED_COST_EPS) {
+					int lowestAllowed = saturatingToInt((long) upper - maxShift(gap, worseningFromUpper));
+					if (lowestAllowed > lower) {
+						int sizeBefore = dom.size();
+						boolean consistent = dom.removeValuesLT(lowestAllowed);
+						if (!consistent) {
+							reducedCostWipeouts++;
+							return new ReducedCostFixingOutcome(false, tightenings);
+						}
+						reducedCostTightenings++;
+						reducedCostValuesRemoved += Math.max(0, sizeBefore - dom.size());
+						tightenings++;
+					}
+			}
+		}
+		return new ReducedCostFixingOutcome(true, tightenings);
+	}
+
+	private static boolean improvedObjective(double candidate, double reference, boolean minimization) {
+		return minimization ? candidate > reference + LP_BOUND_EPS : candidate < reference - LP_BOUND_EPS;
+	}
+
+	private static long maxShift(double gap, double perUnitWorsening) {
+		if (gap <= ROUNDING_EPS)
+			return 0L;
+		return Math.max(0L, (long) Math.floor((gap + ROUNDING_EPS) / perUnitWorsening));
+	}
+
+	private double[] extractReducedCosts() {
+		if (REDUCED_COST_REFLECTION == null || intermediate == null)
+			return null;
+		try {
+			Object solver = REDUCED_COST_REFLECTION.intermediateGetSolver.invoke(intermediate);
+			if (solver == null || !REDUCED_COST_REFLECTION.simplexSolverClass.isInstance(solver))
+				return null;
+			Object tableau = REDUCED_COST_REFLECTION.simplexTableauField.get(solver);
+			if (tableau == null)
+				return null;
+			int objectiveRow = ((Integer) REDUCED_COST_REFLECTION.tableauCountConstraints.invoke(tableau)).intValue();
+			int problemVariables = ((Integer) REDUCED_COST_REFLECTION.tableauCountProblemVariables.invoke(tableau)).intValue();
+			Access1D<?> row = (Access1D<?>) REDUCED_COST_REFLECTION.tableauSliceRow.invoke(tableau, objectiveRow);
+			if (row == null)
+				return null;
+
+			double[] reducedCosts = new double[problem.variables.length];
+			int limit = Math.min(problem.variables.length, problemVariables);
+			for (int i = 0; i < limit; i++)
+				reducedCosts[i] = row.doubleValue(i);
+			return reducedCosts;
+		} catch (ReflectiveOperationException | RuntimeException e) {
+			return null;
+		}
+	}
+
+	private static boolean hasFiniteCutoff(long cutoff, boolean minimization) {
+		return minimization ? cutoff != Long.MAX_VALUE : cutoff != Long.MIN_VALUE;
+	}
+
+	private static ReducedCostReflection buildReducedCostReflection() {
+		try {
+			return new ReducedCostReflection();
+		} catch (ReflectiveOperationException e) {
+			return null;
+		}
+	}
+
+	private static Field findField(Class<?> type, String name) throws NoSuchFieldException {
+		for (Class<?> current = type; current != null; current = current.getSuperclass()) {
+			try {
+				Field field = current.getDeclaredField(name);
+				field.setAccessible(true);
+				return field;
+			} catch (NoSuchFieldException e) {
+				// Try parent class.
+			}
+		}
+		throw new NoSuchFieldException(name);
+	}
+
+	private static Method findMethod(Class<?> type, String name, Class<?>... parameterTypes) throws NoSuchMethodException {
+		for (Class<?> current = type; current != null; current = current.getSuperclass()) {
+			try {
+				Method method = current.getDeclaredMethod(name, parameterTypes);
+				method.setAccessible(true);
+				return method;
+			} catch (NoSuchMethodException e) {
+				// Try parent class.
+			}
+		}
+		throw new NoSuchMethodException(name);
+	}
+
+	private static int saturatingToInt(long value) {
+		if (value <= Integer.MIN_VALUE)
+			return Integer.MIN_VALUE;
+		if (value >= Integer.MAX_VALUE)
+			return Integer.MAX_VALUE;
+		return (int) value;
 	}
 }

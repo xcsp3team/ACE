@@ -139,9 +139,16 @@ public abstract class Optimizer implements ObserverOnRuns {
 	public long minBound;
 
 	/**
+	 * Bounds snapshot recorded after the root phase and before search starts.
+	 */
+	public long rootMinBound;
+
+	/**
 	 * solutions searched for must have a cost less than or equal to this bound (valid for both minimization and maximization).
 	 */
 	public long maxBound;
+
+	public long rootMaxBound;
 
 	public long gapBound;
 
@@ -169,8 +176,15 @@ public abstract class Optimizer implements ObserverOnRuns {
 		this.ctr = opt == MINIMIZE ? cub : clb; // the leading constraint (used at some places in other classes)
 		this.minBound = clb.limit();
 		this.maxBound = cub.limit();
+		this.rootMinBound = minBound;
+		this.rootMaxBound = maxBound;
 		// Read LP configuration from control options
 		this.useLPBounds = pb.head.control.optimization.useLPRelaxation;
+	}
+
+	public final void recordRootBoundsSnapshot() {
+		rootMinBound = minBound;
+		rootMaxBound = maxBound;
 	}
 
 	public boolean isFinishedIf(long bound) {
@@ -225,7 +239,8 @@ public abstract class Optimizer implements ObserverOnRuns {
 			return true;
 		}
 		
-		LPRelaxation.SolveResult lpResult = lpRelaxation.solve(atRootNode);
+		long cutoff = minimization ? maxBound : minBound;
+		LPRelaxation.SolveResult lpResult = lpRelaxation.solveWithReducedCostFixing(atRootNode, cutoff, minimization);
 		boolean consistent = true;
 		if (lpResult.isInfeasible()) {
 			atRootNode = false;
@@ -324,7 +339,7 @@ public abstract class Optimizer implements ObserverOnRuns {
 		// bounds seen along explored branches. This matches OR-Tools only when the
 		// propagated LP model is exact. With omitted constraints, ACE still lacks
 		// the CP reason extraction needed to safely generalize those local proofs.
-		if (!lpRelaxation.isExactModel())
+		if (!lpRelaxation.isFullyLinearizedConstraints())
 			return;
 
 		LbTreeSearch tree = new LbTreeSearch(this, lpRelaxation, incumbentCutoff, nodeLimit);

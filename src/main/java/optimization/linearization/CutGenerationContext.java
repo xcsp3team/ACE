@@ -49,6 +49,11 @@ public final class CutGenerationContext {
 		return lpValues[index];
 	}
 
+	public double getLpValue(Variable lpVar) {
+		int index = linearizationContext.getLpIndex(lpVar);
+		return index >= 0 && index < lpValues.length ? lpValues[index] : Double.NaN;
+	}
+
 	public boolean isBinary01Domain(Domain dom) {
 		return linearizationContext.isBinary01Domain(dom);
 	}

@@ -10,6 +10,15 @@
 
 package optimization.linearization;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
 import org.ojalgo.optimisation.Expression;
 
 import constraints.Constraint;
@@ -34,6 +43,211 @@ import variables.Variable;
  * This linearizer captures these cases for an exact or near-exact LP relaxation.
  */
 public class PrimitiveLinearizer implements ConstraintLinearizer {
+
+    private static final String DISJUNCTIVE_REGISTRY_KEY = PrimitiveLinearizer.class.getName() + ".disjunctiveRegistry";
+    private static final double CUT_VIOLATION_EPS = 1e-6;
+    private static final int MAX_NO_OVERLAP_CUTS_PER_ROUND = 10;
+
+    private static final class TaskKey {
+        final int variableNum;
+        final int width;
+
+        TaskKey(int variableNum, int width) {
+            this.variableNum = variableNum;
+            this.width = width;
+        }
+
+        static final Comparator<TaskKey> COMPARATOR = Comparator
+                .comparingInt((TaskKey t) -> t.variableNum)
+                .thenComparingInt(t -> t.width);
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (!(obj instanceof TaskKey))
+                return false;
+            TaskKey other = (TaskKey) obj;
+            return variableNum == other.variableNum && width == other.width;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(variableNum, width);
+        }
+
+        @Override
+        public String toString() {
+            return variableNum + ":" + width;
+        }
+    }
+
+    private static final class PairKey {
+        final TaskKey first;
+        final TaskKey second;
+
+        PairKey(TaskKey a, TaskKey b) {
+            if (TaskKey.COMPARATOR.compare(a, b) <= 0) {
+                this.first = a;
+                this.second = b;
+            } else {
+                this.first = b;
+                this.second = a;
+            }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (!(obj instanceof PairKey))
+                return false;
+            PairKey other = (PairKey) obj;
+            return first.equals(other.first) && second.equals(other.second);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(first, second);
+        }
+    }
+
+    private static final class PairPrecedence {
+        final org.ojalgo.optimisation.Variable selector;
+        final boolean selectorMeansFirstBeforeSecond;
+
+        PairPrecedence(org.ojalgo.optimisation.Variable selector, boolean selectorMeansFirstBeforeSecond) {
+            this.selector = selector;
+            this.selectorMeansFirstBeforeSecond = selectorMeansFirstBeforeSecond;
+        }
+    }
+
+    private static final class DisjunctiveRegistry {
+        final Map<TaskKey, Variable> startVars = new HashMap<>();
+        final Map<PairKey, PairPrecedence> pairs = new HashMap<>();
+        final List<TaskKey> tasks = new ArrayList<>();
+
+        void add(TaskKey left, Variable leftVar, TaskKey right, Variable rightVar, org.ojalgo.optimisation.Variable selector) {
+            startVars.putIfAbsent(left, leftVar);
+            startVars.putIfAbsent(right, rightVar);
+            if (!startVars.containsKey(left) || !startVars.containsKey(right))
+                return;
+            if (!tasks.contains(left))
+                tasks.add(left);
+            if (!tasks.contains(right))
+                tasks.add(right);
+
+            PairKey key = new PairKey(left, right);
+            if (pairs.containsKey(key))
+                return;
+            boolean selectorMeansFirstBeforeSecond = key.first.equals(left);
+            pairs.put(key, new PairPrecedence(selector, selectorMeansFirstBeforeSecond));
+        }
+
+        boolean hasPrecedence(TaskKey from, TaskKey to) {
+            return pairs.containsKey(new PairKey(from, to));
+        }
+
+        double precedenceLpValue(TaskKey from, TaskKey to, CutGenerationContext ctx) {
+            PairPrecedence precedence = pairs.get(new PairKey(from, to));
+            if (precedence == null)
+                return Double.NaN;
+            double value = ctx.getLpValue(precedence.selector);
+            boolean forward = new PairKey(from, to).first.equals(from);
+            if (forward == precedence.selectorMeansFirstBeforeSecond)
+                return value;
+            return 1d - value;
+        }
+
+        double addPrecedenceTerm(Expression cut, TaskKey from, TaskKey to, CutGenerationContext ctx) {
+            PairPrecedence precedence = pairs.get(new PairKey(from, to));
+            if (precedence == null)
+                return 0d;
+            boolean forward = new PairKey(from, to).first.equals(from);
+            if (forward == precedence.selectorMeansFirstBeforeSecond) {
+                cut.set(precedence.selector, 1);
+                return 0d;
+            }
+            cut.set(precedence.selector, -1);
+            return 1d;
+        }
+    }
+
+    private static final class NoOverlapTriangleCutGenerator implements LpCutGenerator {
+        private final DisjunctiveRegistry registry;
+        private final Set<String> emittedCuts = new HashSet<>();
+
+        NoOverlapTriangleCutGenerator(DisjunctiveRegistry registry) {
+            this.registry = registry;
+        }
+
+        @Override
+        public String name() {
+            return "NoOverlapTriangle";
+        }
+
+        @Override
+        public int generateCuts(CutGenerationContext ctx) {
+            int cuts = 0;
+            List<TaskKey> tasks = new ArrayList<>(registry.tasks);
+            tasks.sort(TaskKey.COMPARATOR);
+
+            for (int i = 0; i < tasks.size() && cuts < MAX_NO_OVERLAP_CUTS_PER_ROUND; i++) {
+                TaskKey a = tasks.get(i);
+                for (int j = i + 1; j < tasks.size() && cuts < MAX_NO_OVERLAP_CUTS_PER_ROUND; j++) {
+                    TaskKey b = tasks.get(j);
+                    if (a.variableNum == b.variableNum)
+                        continue;
+                    for (int k = j + 1; k < tasks.size() && cuts < MAX_NO_OVERLAP_CUTS_PER_ROUND; k++) {
+                        TaskKey c = tasks.get(k);
+                        if (a.variableNum == c.variableNum || b.variableNum == c.variableNum)
+                            continue;
+                        if (!registry.hasPrecedence(a, b) || !registry.hasPrecedence(b, c) || !registry.hasPrecedence(c, a))
+                            continue;
+
+                        cuts += tryAddCycleCut(a, b, c, ctx);
+                        if (cuts >= MAX_NO_OVERLAP_CUTS_PER_ROUND)
+                            break;
+                        cuts += tryAddCycleCut(a, c, b, ctx);
+                    }
+                }
+            }
+            return cuts;
+        }
+
+        private int tryAddCycleCut(TaskKey first, TaskKey second, TaskKey third, CutGenerationContext ctx) {
+            double lhs = registry.precedenceLpValue(first, second, ctx)
+                    + registry.precedenceLpValue(second, third, ctx)
+                    + registry.precedenceLpValue(third, first, ctx);
+            if (lhs <= 2d + CUT_VIOLATION_EPS)
+                return 0;
+
+            String signature = cycleSignature(first, second, third);
+            if (!emittedCuts.add(signature))
+                return 0;
+
+            Expression cut = ctx.addExpression("noov_tri_" + ctx.nextGeneratedCutId());
+            double constant = 0d;
+            constant += registry.addPrecedenceTerm(cut, first, second, ctx);
+            constant += registry.addPrecedenceTerm(cut, second, third, ctx);
+            constant += registry.addPrecedenceTerm(cut, third, first, ctx);
+            cut.upper(2d - constant);
+            return 1;
+        }
+
+        private String cycleSignature(TaskKey first, TaskKey second, TaskKey third) {
+            TaskKey[] ordered = new TaskKey[] { first, second, third };
+            int best = 0;
+            for (int i = 1; i < 3; i++) {
+                if (TaskKey.COMPARATOR.compare(ordered[i], ordered[best]) < 0)
+                    best = i;
+            }
+            TaskKey a = ordered[best];
+            TaskKey b = ordered[(best + 1) % 3];
+            TaskKey c = ordered[(best + 2) % 3];
+            return a + ">" + b + ">" + c;
+        }
+    }
 
     @Override
     public boolean canLinearize(Constraint c) {
@@ -359,6 +573,18 @@ public class PrimitiveLinearizer implements ConstraintLinearizer {
         expr2.set(b, -M2);
         expr2.upper(-wy);
 
+        registerDisjunctiveNoOverlapCut(x, wx, y, wy, b, ctx);
+
         return true;
+    }
+
+    private void registerDisjunctiveNoOverlapCut(Variable x, int wx, Variable y, int wy, org.ojalgo.optimisation.Variable selector,
+            LinearizationContext ctx) {
+        DisjunctiveRegistry registry = ctx.getOrCreateMetadata(DISJUNCTIVE_REGISTRY_KEY, () -> {
+            DisjunctiveRegistry created = new DisjunctiveRegistry();
+            ctx.registerCutGenerator(new NoOverlapTriangleCutGenerator(created));
+            return created;
+        });
+        registry.add(new TaskKey(x.num, wx), x, new TaskKey(y.num, wy), y, selector);
     }
 }

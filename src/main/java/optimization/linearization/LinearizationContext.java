@@ -11,7 +11,10 @@
 package optimization.linearization;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 
 import org.ojalgo.optimisation.ExpressionsBasedModel;
 import org.ojalgo.optimisation.Variable;
@@ -33,6 +36,8 @@ public class LinearizationContext {
     private final Variable[] lpVars;
     private final Problem problem;
     private final List<LpCutGenerator> cutGenerators;
+    private final Map<Variable, Integer> variableIndexes;
+    private final Map<String, Object> metadata;
     private int generatedCutCount;
 
     /**
@@ -47,7 +52,12 @@ public class LinearizationContext {
         this.lpVars = lpVars;
         this.problem = problem;
         this.cutGenerators = new ArrayList<>();
+        this.variableIndexes = new HashMap<>();
+        this.metadata = new HashMap<>();
         this.generatedCutCount = 0;
+        for (int i = 0; i < lpVars.length; i++) {
+            this.variableIndexes.put(lpVars[i], i);
+        }
     }
 
     /**
@@ -67,6 +77,7 @@ public class LinearizationContext {
      */
     public void addVariable(Variable var) {
         model.addVariable(var);
+        variableIndexes.putIfAbsent(var, variableIndexes.size());
     }
 
     /**
@@ -87,6 +98,11 @@ public class LinearizationContext {
      */
     public Variable getLpVar(int index) {
         return lpVars[index];
+    }
+
+    public int getLpIndex(Variable lpVar) {
+        Integer index = variableIndexes.get(lpVar);
+        return index == null ? -1 : index.intValue();
     }
 
     /**
@@ -125,6 +141,11 @@ public class LinearizationContext {
      */
     public void registerCutGenerator(LpCutGenerator generator) {
         cutGenerators.add(generator);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getOrCreateMetadata(String key, Supplier<T> supplier) {
+        return (T) metadata.computeIfAbsent(key, k -> supplier.get());
     }
 
     /**

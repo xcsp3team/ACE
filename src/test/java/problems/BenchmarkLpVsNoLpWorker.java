@@ -72,6 +72,8 @@ public final class BenchmarkLpVsNoLpWorker {
 			values.put("bestBound", "0");
 			values.put("minBound", Long.toString(Long.MIN_VALUE));
 			values.put("maxBound", Long.toString(Long.MAX_VALUE));
+			values.put("rootMinBound", Long.toString(Long.MIN_VALUE));
+			values.put("rootMaxBound", Long.toString(Long.MAX_VALUE));
 			values.put("nodes", "0");
 			values.put("wrongDecisions", "0");
 			values.put("foundSolutions", "0");
@@ -91,12 +93,16 @@ public final class BenchmarkLpVsNoLpWorker {
 		if (optimizer == null) {
 			values.put("minBound", Long.toString(Long.MIN_VALUE));
 			values.put("maxBound", Long.toString(Long.MAX_VALUE));
+			values.put("rootMinBound", Long.toString(Long.MIN_VALUE));
+			values.put("rootMaxBound", Long.toString(Long.MAX_VALUE));
 			values.put("provedOptimum", "false");
 			return values;
 		}
 
 		values.put("minBound", Long.toString(optimizer.minBound));
 		values.put("maxBound", Long.toString(optimizer.maxBound));
+		values.put("rootMinBound", Long.toString(optimizer.rootMinBound));
+		values.put("rootMaxBound", Long.toString(optimizer.rootMaxBound));
 		values.put("provedOptimum", Boolean.toString(isOptimumProved(head, optimizer)));
 		return values;
 	}
@@ -117,6 +123,8 @@ public final class BenchmarkLpVsNoLpWorker {
 		values.put("bestBound", "0");
 		values.put("minBound", Long.toString(Long.MIN_VALUE));
 		values.put("maxBound", Long.toString(Long.MAX_VALUE));
+		values.put("rootMinBound", Long.toString(Long.MIN_VALUE));
+		values.put("rootMaxBound", Long.toString(Long.MAX_VALUE));
 		values.put("nodes", "0");
 		values.put("wrongDecisions", "0");
 		values.put("foundSolutions", "0");

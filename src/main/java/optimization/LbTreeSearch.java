@@ -171,7 +171,7 @@ final class LbTreeSearch {
 		this.incumbentCutoff = incumbentCutoff;
 		this.nodeLimit = nodeLimit;
 		this.hasLp = relaxation != null && relaxation.isViable();
-		this.exactLpModel = hasLp && relaxation.isExactModel();
+		this.exactLpModel = hasLp && relaxation.isFullyLinearizedConstraints();
 	}
 
 	int exploredNodes() {
@@ -649,7 +649,7 @@ final class LbTreeSearch {
 
 		if (hasLp) {
 			relaxation.updateDomains();
-			LPRelaxation.SolveResult lpResult = relaxation.solve(false);
+			LPRelaxation.SolveResult lpResult = relaxation.solveWithReducedCostFixing(false, incumbentCutoff, minimization);
 			if (lpResult.hasObjectiveBound()) {
 				long lpBound = relaxation.roundObjectiveBound(lpResult.objectiveValue, minimization);
 				cpBound = minimization ? Math.max(cpBound, lpBound) : Math.min(cpBound, lpBound);

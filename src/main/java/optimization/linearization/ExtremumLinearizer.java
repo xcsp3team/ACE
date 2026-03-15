@@ -202,6 +202,7 @@ public class ExtremumLinearizer implements ConstraintLinearizer {
             expr.set(ctx.getLpVar(xi), -1);
             expr.lower(0);
         }
+        addMaximumWitnessRelaxation(ctr, ctx);
         return true;
     }
 
@@ -220,6 +221,67 @@ public class ExtremumLinearizer implements ConstraintLinearizer {
             expr.set(ctx.getLpVar(xi), -1);
             expr.upper(0);
         }
+        addMinimumWitnessRelaxation(ctr, ctx);
         return true;
+    }
+
+    /**
+     * Strengthening inspired by CP-SAT's lin_max relaxation:
+     * one witness z_i selects which expression realizes the maximum.
+     *
+     * With z_i in [0,1] and sum z_i = 1, we add:
+     *   y <= x_i + M_i * (1 - z_i)
+     */
+    private void addMaximumWitnessRelaxation(ExtremumVar.Maximum ctr, LinearizationContext ctx) {
+        Variable y = ctr.scp[0];
+        double targetUpper = y.dom.lastValue();
+
+        org.ojalgo.optimisation.Variable[] selectors = new org.ojalgo.optimisation.Variable[ctr.scp.length - 1];
+        Expression exactlyOne = ctx.addExpression("max_choice_" + ctr.num);
+        for (int i = 1; i < ctr.scp.length; i++) {
+            Variable xi = ctr.scp[i];
+            double m = Math.max(0d, targetUpper - xi.dom.firstValue());
+
+            selectors[i - 1] = org.ojalgo.optimisation.Variable.make("max_" + ctr.num + "_z_" + (i - 1)).lower(0).upper(1);
+            ctx.addVariable(selectors[i - 1]);
+            exactlyOne.set(selectors[i - 1], 1);
+
+            Expression expr = ctx.addExpression("max_choice_ub_" + ctr.num + "_" + i);
+            expr.set(ctx.getLpVar(y), 1);
+            expr.set(ctx.getLpVar(xi), -1);
+            expr.set(selectors[i - 1], m);
+            expr.upper(m);
+        }
+        exactlyOne.level(1);
+    }
+
+    /**
+     * Symmetric strengthening for minimum:
+     * one witness z_i selects which expression realizes the minimum.
+     *
+     * With z_i in [0,1] and sum z_i = 1, we add:
+     *   y >= x_i - M_i * (1 - z_i)
+     */
+    private void addMinimumWitnessRelaxation(ExtremumVar.Minimum ctr, LinearizationContext ctx) {
+        Variable y = ctr.scp[0];
+        double targetLower = y.dom.firstValue();
+
+        org.ojalgo.optimisation.Variable[] selectors = new org.ojalgo.optimisation.Variable[ctr.scp.length - 1];
+        Expression exactlyOne = ctx.addExpression("min_choice_" + ctr.num);
+        for (int i = 1; i < ctr.scp.length; i++) {
+            Variable xi = ctr.scp[i];
+            double m = Math.max(0d, xi.dom.lastValue() - targetLower);
+
+            selectors[i - 1] = org.ojalgo.optimisation.Variable.make("min_" + ctr.num + "_z_" + (i - 1)).lower(0).upper(1);
+            ctx.addVariable(selectors[i - 1]);
+            exactlyOne.set(selectors[i - 1], 1);
+
+            Expression expr = ctx.addExpression("min_choice_lb_" + ctr.num + "_" + i);
+            expr.set(ctx.getLpVar(y), 1);
+            expr.set(ctx.getLpVar(xi), -1);
+            expr.set(selectors[i - 1], -m);
+            expr.lower(-m);
+        }
+        exactlyOne.level(1);
     }
 }

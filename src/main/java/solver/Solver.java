@@ -1213,6 +1213,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 				if (problem.optimizer.minBound > problem.optimizer.maxBound)
 					stopping = FULL_EXPLORATION;
 			}
+			problem.optimizer.recordRootBoundsSnapshot();
 		}
 		
 		if (!finished() && head.control.solving.enableSearch)
