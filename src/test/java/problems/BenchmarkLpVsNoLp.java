@@ -19,8 +19,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Benchmark runner comparing ACE with LP enabled and disabled on the same
- * optimization instances.
+ * Benchmark runner comparing ACE with LP+reduced-cost fixing, LP-only and
+ * NoLP on the same optimization instances.
  *
  * The benchmark is proof-oriented: it highlights whether optimality is proved
  * within the same budget, the final objective gap, and the explored nodes.
@@ -657,10 +657,28 @@ public final class BenchmarkLpVsNoLp {
 			List<String> lines = new ArrayList<>();
 			lines.add(csvRow(
 					"instance",
+					"family",
 					"spec",
 					"iterations",
 					"warmup",
 					"common_args",
+					"lp_rc_proof",
+					"lp_rc_solution",
+					"lp_rc_best",
+					"lp_rc_bounds",
+					"lp_rc_root_bounds",
+					"lp_rc_gap",
+					"lp_rc_nodes",
+					"lp_rc_wall_seconds",
+					"lp_rc_search_seconds",
+					"lp_rc_stop",
+					"lp_rc_failed",
+					"lp_rc_rounds",
+					"lp_rc_tightenings",
+					"lp_rc_values_removed",
+					"lp_rc_wipeouts",
+					"lp_rc_reoptimizations",
+					"lp_rc_improving_reoptimizations",
 					"lp_proof",
 					"lp_solution",
 					"lp_best",
@@ -683,18 +701,40 @@ public final class BenchmarkLpVsNoLp {
 					"nolp_search_seconds",
 					"nolp_stop",
 					"nolp_failed",
-					"proof_status",
-					"gap_improvement",
-					"nodes_improvement"));
+					"proof_status_rc_vs_lp",
+					"proof_status_lp_vs_nolp",
+					"gap_improvement_rc_vs_lp",
+					"nodes_improvement_rc_vs_lp",
+					"gap_improvement_lp_vs_nolp",
+					"nodes_improvement_lp_vs_nolp"));
 			for (BenchmarkResult result : results) {
-				Aggregate lp = result.withLp;
+				Aggregate lpRc = result.withLpReducedCosts;
+				Aggregate lp = result.withLpOnly;
 				Aggregate noLp = result.withoutLp;
 				lines.add(csvRow(
 						result.displayName,
+						result.family,
 						result.spec,
 						Integer.toString(options.iterations),
 						Integer.toString(options.warmup),
 						String.join(" ", options.solverArgs),
+						lpRc.proofLabel(),
+						lpRc.solutionLabel(),
+						lpRc.bestLabel(),
+						lpRc.boundsLabel(),
+						lpRc.rootBoundsLabel(),
+						lpRc.gapLabel(),
+						formatCount(lpRc.avgNodes()),
+						formatDouble(lpRc.avgWallSeconds()),
+						formatDouble(lpRc.avgSearchSeconds()),
+						compactStopping(lpRc.stoppingLabel()),
+						Boolean.toString(lpRc.hasFailures()),
+						formatCount(lpRc.avgReducedCostRounds()),
+						formatCount(lpRc.avgReducedCostTightenings()),
+						formatCount(lpRc.avgReducedCostValuesRemoved()),
+						formatCount(lpRc.avgReducedCostWipeouts()),
+						formatCount(lpRc.avgReducedCostReoptimizations()),
+						formatCount(lpRc.avgReducedCostImprovingReoptimizations()),
 						lp.proofLabel(),
 						lp.solutionLabel(),
 						lp.bestLabel(),
@@ -717,7 +757,10 @@ public final class BenchmarkLpVsNoLp {
 						formatDouble(noLp.avgSearchSeconds()),
 						compactStopping(noLp.stoppingLabel()),
 						Boolean.toString(noLp.hasFailures()),
-						proofStatus(lp, noLp),
+						proofStatusForCsv(lpRc, lp),
+						proofStatusForCsv(lp, noLp),
+						formatRelativeImprovement(lpRc.avgFiniteGap(), lp.avgFiniteGap(), true),
+						formatRelativeImprovement(lpRc.avgNodes(), lp.avgNodes(), true),
 						formatRelativeImprovement(lp.avgFiniteGap(), noLp.avgFiniteGap(), true),
 						formatRelativeImprovement(lp.avgNodes(), noLp.avgNodes(), true)));
 			}
@@ -819,13 +862,14 @@ public final class BenchmarkLpVsNoLp {
 		return String.format(Locale.US, "%.6f", improvement);
 	}
 
-	private static Map<String, String> runWorker(List<String> args) {
+	private static Map<String, String> runWorker(List<String> args, Mode mode) {
 		Path metricsFile = null;
 		try {
 			metricsFile = Files.createTempFile("ace-benchmark-", ".metrics");
 			List<String> command = new ArrayList<>();
 			command.add(javaExecutable());
 			command.addAll(forwardedJvmArgs());
+			command.add("-D" + optimization.LPRelaxation.REDUCED_COSTS_PROPERTY + "=" + mode.reducedCostsEnabled);
 			command.add("-cp");
 			command.add(System.getProperty("java.class.path"));
 			command.add("problems.BenchmarkLpVsNoLpWorker");
@@ -923,14 +967,35 @@ public final class BenchmarkLpVsNoLp {
 		return text == null ? "" : text.replace('\n', ' ').replace('\r', ' ').trim();
 	}
 
-	private static String proofStatus(Aggregate lp, Aggregate noLp) {
-		if (lp.alwaysProvedOptimum() && noLp.alwaysProvedOptimum())
+	private static String proofStatus(String label, Aggregate left, Aggregate right) {
+		if (left.alwaysProvedOptimum() && right.alwaysProvedOptimum())
+			return label + ": both";
+		if (left.alwaysProvedOptimum())
+			return label + ": " + left.mode.label;
+		if (right.alwaysProvedOptimum())
+			return label + ": " + right.mode.label;
+		return label + ": neither";
+	}
+
+	private static String proofStatusForCsv(Aggregate left, Aggregate right) {
+		if (left.alwaysProvedOptimum() && right.alwaysProvedOptimum())
 			return "both";
-		if (lp.alwaysProvedOptimum())
-			return "lp_only";
-		if (noLp.alwaysProvedOptimum())
-			return "nolp_only";
+		if (left.alwaysProvedOptimum())
+			return left.mode.label.toLowerCase(Locale.ROOT).replace("+", "_");
+		if (right.alwaysProvedOptimum())
+			return right.mode.label.toLowerCase(Locale.ROOT).replace("+", "_");
 		return "neither";
+	}
+
+	private static String familyName(String displayName) {
+		int dash = displayName.indexOf('-');
+		int underscore = displayName.indexOf('_');
+		int cut = dash >= 0 ? dash : underscore;
+		if (cut < 0)
+			return displayName;
+		if (underscore >= 0 && (dash < 0 || underscore < dash))
+			cut = underscore;
+		return cut == 0 ? displayName : displayName.substring(0, cut);
 	}
 
 	private static String csvRow(String... cells) {

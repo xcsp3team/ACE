@@ -5,6 +5,7 @@ import static solver.Solver.Stopping.FULL_EXPLORATION;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,6 +17,7 @@ import java.util.Map;
 
 import dashboard.Input;
 import main.Head;
+import optimization.LPRelaxation;
 import optimization.Optimizer;
 
 public final class BenchmarkLpVsNoLpWorker {
@@ -78,6 +80,13 @@ public final class BenchmarkLpVsNoLpWorker {
 			values.put("wrongDecisions", "0");
 			values.put("foundSolutions", "0");
 			values.put("provedOptimum", "false");
+			values.put("reducedCostsEnabled", "false");
+			values.put("reducedCostRounds", "0");
+			values.put("reducedCostTightenings", "0");
+			values.put("reducedCostValuesRemoved", "0");
+			values.put("reducedCostWipeouts", "0");
+			values.put("reducedCostReoptimizations", "0");
+			values.put("reducedCostImprovingReoptimizations", "0");
 			values.put("stopping", "ERROR");
 			return values;
 		}
@@ -96,6 +105,13 @@ public final class BenchmarkLpVsNoLpWorker {
 			values.put("rootMinBound", Long.toString(Long.MIN_VALUE));
 			values.put("rootMaxBound", Long.toString(Long.MAX_VALUE));
 			values.put("provedOptimum", "false");
+			values.put("reducedCostsEnabled", "false");
+			values.put("reducedCostRounds", "0");
+			values.put("reducedCostTightenings", "0");
+			values.put("reducedCostValuesRemoved", "0");
+			values.put("reducedCostWipeouts", "0");
+			values.put("reducedCostReoptimizations", "0");
+			values.put("reducedCostImprovingReoptimizations", "0");
 			return values;
 		}
 
@@ -104,7 +120,36 @@ public final class BenchmarkLpVsNoLpWorker {
 		values.put("rootMinBound", Long.toString(optimizer.rootMinBound));
 		values.put("rootMaxBound", Long.toString(optimizer.rootMaxBound));
 		values.put("provedOptimum", Boolean.toString(isOptimumProved(head, optimizer)));
+		LPRelaxation lpRelaxation = extractLpRelaxation(optimizer);
+		if (lpRelaxation == null) {
+			values.put("reducedCostsEnabled", "false");
+			values.put("reducedCostRounds", "0");
+			values.put("reducedCostTightenings", "0");
+			values.put("reducedCostValuesRemoved", "0");
+			values.put("reducedCostWipeouts", "0");
+			values.put("reducedCostReoptimizations", "0");
+			values.put("reducedCostImprovingReoptimizations", "0");
+		} else {
+			LPRelaxation.ReducedCostStats stats = lpRelaxation.reducedCostStats();
+			values.put("reducedCostsEnabled", Boolean.toString(stats.enabled));
+			values.put("reducedCostRounds", Long.toString(stats.rounds));
+			values.put("reducedCostTightenings", Long.toString(stats.tightenings));
+			values.put("reducedCostValuesRemoved", Long.toString(stats.valuesRemoved));
+			values.put("reducedCostWipeouts", Long.toString(stats.wipeouts));
+			values.put("reducedCostReoptimizations", Long.toString(stats.reoptimizations));
+			values.put("reducedCostImprovingReoptimizations", Long.toString(stats.improvingReoptimizations));
+		}
 		return values;
+	}
+
+	private static LPRelaxation extractLpRelaxation(Optimizer optimizer) {
+		try {
+			Field field = Optimizer.class.getDeclaredField("lpRelaxation");
+			field.setAccessible(true);
+			return (LPRelaxation) field.get(optimizer);
+		} catch (ReflectiveOperationException e) {
+			return null;
+		}
 	}
 
 	private static boolean isOptimumProved(Head head, Optimizer optimizer) {
@@ -129,6 +174,13 @@ public final class BenchmarkLpVsNoLpWorker {
 		values.put("wrongDecisions", "0");
 		values.put("foundSolutions", "0");
 		values.put("provedOptimum", "false");
+		values.put("reducedCostsEnabled", "false");
+		values.put("reducedCostRounds", "0");
+		values.put("reducedCostTightenings", "0");
+		values.put("reducedCostValuesRemoved", "0");
+		values.put("reducedCostWipeouts", "0");
+		values.put("reducedCostReoptimizations", "0");
+		values.put("reducedCostImprovingReoptimizations", "0");
 		values.put("stopping", "ERROR");
 		values.put("error", error == null ? "" : error);
 		return values;
