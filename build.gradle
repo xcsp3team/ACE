@@ -25,11 +25,13 @@ dependencies {
 
 // with this statement below (jar { }), we build a fat jar, i.e. a jar with included dependencies
 jar {
+    dependsOn testClasses
     manifest {
         attributes(
                 'Main-Class': 'main.Head'
         )
     }
+    from sourceSets.test.output
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }

@@ -1,24 +1,22 @@
 package problems;
 
-import static solver.Solver.Stopping.FULL_EXPLORATION;
-
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.InputStream;
+import java.lang.management.ManagementFactory;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import main.Head;
-import dashboard.Input;
-import optimization.Optimizer;
 
 /**
  * Benchmark runner comparing ACE with LP enabled and disabled on the same
@@ -29,8 +27,8 @@ import optimization.Optimizer;
  *
  * Usage examples:
  * ./gradlew benchmarkLpVsNoLp
- * ./gradlew benchmarkLpVsNoLp -PbenchmarkArgs="--iterations=1 --warmup=0 --arg=-t=30s --cop-dataset --limit=10"
- * ./gradlew benchmarkLpVsNoLp -PbenchmarkArgs="--arg=-t=20s ./examples/XCSP25/COP25/"
+ * ./gradlew benchmarkLpVsNoLp -PbenchmarkArgs="--iterations=1 --warmup=0 --arg=-t=30s --copdataset --limit=10"
+ * ./gradlew benchmarkLpVsNoLp -PbenchmarkArgs="--arg=-t=20s ~/Codes/research/pycsp3-solvers-extra/examples/XCSP25/COP25/"
  * ./gradlew benchmarkLpVsNoLp -PbenchmarkArgs="--filter=Warehouse --arg=-lbtn=63 /cop/Warehouse-Warehouse_example"
  */
 public final class BenchmarkLpVsNoLp {
@@ -44,8 +42,10 @@ public final class BenchmarkLpVsNoLp {
 			"/cop/Warehouse-Warehouse_example");
 
 	private static final List<String> COP_DATASET_DIR_CANDIDATES = List.of(
-			"./examples/XCSP25/COP25",
+			"~/Codes/research/pycsp3-solvers-extra/examples/XCSP25/COP25",
 			"./examples/XCSP25/COP25");
+
+	private static final Map<String, Path> EXTRACTED_RESOURCES = new LinkedHashMap<>();
 
 	private enum Mode {
 		LP_ON(true, "LP"),
@@ -65,6 +65,7 @@ public final class BenchmarkLpVsNoLp {
 		int warmup = 1;
 		int limit = Integer.MAX_VALUE;
 		String filter;
+		String csvPath = "build/reports/benchmark-lp-vs-nolp.csv";
 		boolean includeCopDataset;
 		final List<String> directorySpecs = new ArrayList<>();
 		final List<String> solverArgs = new ArrayList<>();
@@ -86,42 +87,19 @@ public final class BenchmarkLpVsNoLp {
 		final Long finiteGap;
 		final String stopping;
 
-		RunMetrics(Mode mode, Head head) {
+		RunMetrics(Mode mode, Map<String, String> values) {
 			this.mode = mode;
-			this.wallSeconds = head.instanceStopwatch.wckTime() / 1000.0;
-			if (head.solver == null) {
-				this.failed = true;
-				this.searchSeconds = 0.0;
-				this.bestBound = 0L;
-				this.nodes = 0L;
-				this.wrongDecisions = 0L;
-				this.foundSolutions = 0L;
-				this.stopping = "ERROR";
-				this.minBound = Long.MIN_VALUE;
-				this.maxBound = Long.MAX_VALUE;
-				this.provedOptimum = false;
-				this.finiteGap = null;
-				return;
-			}
-			this.failed = false;
-			this.searchSeconds = head.solver.stats.times.searchWck / 1000.0;
-			this.bestBound = head.solver.solutions.bestBound;
-			this.nodes = head.solver.stats.nNodes;
-			this.wrongDecisions = head.solver.stats.nWrongDecisions;
-			this.foundSolutions = head.solver.solutions.found;
-			this.stopping = head.solver.stopping == null ? "null" : head.solver.stopping.name();
-
-			Optimizer optimizer = head.problem == null ? null : head.problem.optimizer;
-			if (optimizer == null) {
-				this.minBound = Long.MIN_VALUE;
-				this.maxBound = Long.MAX_VALUE;
-				this.provedOptimum = false;
-				this.finiteGap = null;
-				return;
-			}
-			this.minBound = optimizer.minBound;
-			this.maxBound = optimizer.maxBound;
-			this.provedOptimum = isOptimumProved(head, optimizer);
+			this.failed = parseBoolean(values, "failed", false);
+			this.wallSeconds = parseDouble(values, "wallSeconds", 0.0);
+			this.searchSeconds = parseDouble(values, "searchSeconds", 0.0);
+			this.bestBound = parseLong(values, "bestBound", 0L);
+			this.nodes = parseLong(values, "nodes", 0L);
+			this.wrongDecisions = parseLong(values, "wrongDecisions", 0L);
+			this.foundSolutions = parseLong(values, "foundSolutions", 0L);
+			this.stopping = values.getOrDefault("stopping", "ERROR");
+			this.minBound = parseLong(values, "minBound", Long.MIN_VALUE);
+			this.maxBound = parseLong(values, "maxBound", Long.MAX_VALUE);
+			this.provedOptimum = parseBoolean(values, "provedOptimum", false);
 			this.finiteGap = minBound != Long.MIN_VALUE && maxBound != Long.MAX_VALUE ? Math.max(0L, maxBound - minBound) : null;
 		}
 	}
@@ -294,6 +272,7 @@ public final class BenchmarkLpVsNoLp {
 			printInstanceSummary(result);
 		}
 		printGlobalSummary(results);
+		writeCsv(results, options);
 	}
 
 	private static Options parseOptions(String[] args) {
@@ -307,7 +286,9 @@ public final class BenchmarkLpVsNoLp {
 				options.limit = Integer.parseInt(arg.substring("--limit=".length()));
 			} else if (arg.startsWith("--filter=")) {
 				options.filter = arg.substring("--filter=".length());
-			} else if (arg.equals("--copdataset") || arg.equals("--cop-dataset")) {
+			} else if (arg.startsWith("--csv=")) {
+				options.csvPath = arg.substring("--csv=".length());
+			} else if (arg.equals("--copdataset") || arg.equals("--cop-dataset") || arg.equals("--cop25")) {
 				options.includeCopDataset = true;
 			} else if (arg.startsWith("--dir=")) {
 				options.directorySpecs.add(arg.substring("--dir=".length()));
@@ -399,8 +380,7 @@ public final class BenchmarkLpVsNoLp {
 
 	private static RunMetrics runOne(String resolved, List<String> commonArgs, Mode mode) {
 		List<String> tokens = buildArgs(resolved, commonArgs, mode);
-		Head head = runResolutionSilently(tokens);
-		return new RunMetrics(mode, head);
+		return new RunMetrics(mode, runWorker(tokens));
 	}
 
 	private static List<String> buildArgs(String resolved, List<String> commonArgs, Mode mode) {
@@ -412,28 +392,6 @@ public final class BenchmarkLpVsNoLp {
 		return tokens;
 	}
 
-	private static Head runResolutionSilently(List<String> args) {
-		PrintStream previousOut = System.out;
-		PrintStream previousErr = System.err;
-		try (PrintStream silent = new PrintStream(OutputStream.nullOutputStream())) {
-			System.setOut(silent);
-			System.setErr(silent);
-			Input.loadArguments(args.toArray(new String[0]));
-			Head resolution = new Head();
-			try {
-				resolution.start();
-				resolution.join();
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-				throw new RuntimeException("Benchmark interrupted for args: " + args, e);
-			}
-			return resolution;
-		} finally {
-			System.setOut(previousOut);
-			System.setErr(previousErr);
-		}
-	}
-
 	private static String resolveSpec(String spec) {
 		String expanded = expandHome(spec);
 		Path path = Paths.get(expanded);
@@ -441,8 +399,33 @@ public final class BenchmarkLpVsNoLp {
 			return path.toString();
 		if (expanded.endsWith(".xml.lzma"))
 			return expanded;
-		URL resource = Head.class.getResource(expanded.endsWith(".xml") || expanded.endsWith(".lzma") ? expanded : expanded + ".xml.lzma");
-		return resource != null ? resource.getPath() : expanded;
+		String resourceName = expanded.endsWith(".xml") || expanded.endsWith(".lzma") ? expanded : expanded + ".xml.lzma";
+		URL resource = BenchmarkLpVsNoLp.class.getResource(resourceName);
+		return resource != null ? materializeResource(resourceName, resource) : expanded;
+	}
+
+	private static String materializeResource(String resourceName, URL resource) {
+		if ("file".equalsIgnoreCase(resource.getProtocol()))
+			return Paths.get(resource.getPath()).toString();
+		Path cached = EXTRACTED_RESOURCES.get(resourceName);
+		if (cached != null && Files.exists(cached))
+			return cached.toString();
+		String fileName = Paths.get(resourceName).getFileName().toString();
+		String prefix = fileName.contains(".") ? fileName.substring(0, fileName.indexOf('.')) : fileName;
+		if (prefix.length() < 3)
+			prefix = "ace" + prefix;
+		String suffix = fileName.contains(".") ? fileName.substring(fileName.indexOf('.')) : ".tmp";
+		try {
+			Path extracted = Files.createTempFile("ace-benchmark-" + prefix + "-", suffix);
+			try (InputStream in = resource.openStream()) {
+				Files.copy(in, extracted, StandardCopyOption.REPLACE_EXISTING);
+			}
+			extracted.toFile().deleteOnExit();
+			EXTRACTED_RESOURCES.put(resourceName, extracted);
+			return extracted.toString();
+		} catch (IOException e) {
+			throw new RuntimeException("Cannot extract benchmark resource: " + resourceName, e);
+		}
 	}
 
 	private static String displayName(String spec, String resolved) {
@@ -559,12 +542,80 @@ public final class BenchmarkLpVsNoLp {
 		System.out.println("Fewer explored nodes: LP " + lpFewerNodes + "  NoLP " + noLpFewerNodes + "  tie " + equalNodes + ".");
 	}
 
-	private static boolean isOptimumProved(Head head, Optimizer optimizer) {
-		if (head.solver.solutions.found == 0)
-			return false;
-		if (head.solver.stopping == FULL_EXPLORATION)
-			return true;
-		return optimizer.minimization ? optimizer.minBound == head.solver.solutions.bestBound : optimizer.maxBound == head.solver.solutions.bestBound;
+	private static void writeCsv(List<BenchmarkResult> results, Options options) {
+		Path csvFile = Paths.get(expandHome(options.csvPath));
+		try {
+			if (csvFile.getParent() != null)
+				Files.createDirectories(csvFile.getParent());
+			List<String> lines = new ArrayList<>();
+			lines.add(csvRow(
+					"instance",
+					"spec",
+					"iterations",
+					"warmup",
+					"common_args",
+					"lp_proof",
+					"lp_solution",
+					"lp_best",
+					"lp_bounds",
+					"lp_gap",
+					"lp_nodes",
+					"lp_wall_seconds",
+					"lp_search_seconds",
+					"lp_stop",
+					"lp_failed",
+					"nolp_proof",
+					"nolp_solution",
+					"nolp_best",
+					"nolp_bounds",
+					"nolp_gap",
+					"nolp_nodes",
+					"nolp_wall_seconds",
+					"nolp_search_seconds",
+					"nolp_stop",
+					"nolp_failed",
+					"proof_status",
+					"gap_improvement",
+					"nodes_improvement"));
+			for (BenchmarkResult result : results) {
+				Aggregate lp = result.withLp;
+				Aggregate noLp = result.withoutLp;
+				lines.add(csvRow(
+						result.displayName,
+						result.spec,
+						Integer.toString(options.iterations),
+						Integer.toString(options.warmup),
+						String.join(" ", options.solverArgs),
+						lp.proofLabel(),
+						lp.solutionLabel(),
+						lp.bestLabel(),
+						lp.boundsLabel(),
+						lp.gapLabel(),
+						formatCount(lp.avgNodes()),
+						formatDouble(lp.avgWallSeconds()),
+						formatDouble(lp.avgSearchSeconds()),
+						compactStopping(lp.stoppingLabel()),
+						Boolean.toString(lp.hasFailures()),
+						noLp.proofLabel(),
+						noLp.solutionLabel(),
+						noLp.bestLabel(),
+						noLp.boundsLabel(),
+						noLp.gapLabel(),
+						formatCount(noLp.avgNodes()),
+						formatDouble(noLp.avgWallSeconds()),
+						formatDouble(noLp.avgSearchSeconds()),
+						compactStopping(noLp.stoppingLabel()),
+						Boolean.toString(noLp.hasFailures()),
+						proofStatus(lp, noLp),
+						formatRelativeImprovement(lp.avgFiniteGap(), noLp.avgFiniteGap(), true),
+						formatRelativeImprovement(lp.avgNodes(), noLp.avgNodes(), true)));
+			}
+			Files.write(csvFile, lines, StandardCharsets.UTF_8);
+			System.out.println();
+			System.out.println("CSV saved to " + csvFile);
+		} catch (IOException e) {
+			throw new RuntimeException("Cannot write benchmark CSV: " + csvFile, e);
+		}
 	}
 
 	private static String expandHome(String value) {
@@ -586,6 +637,14 @@ public final class BenchmarkLpVsNoLp {
 
 	private static String format(double value) {
 		return String.format(Locale.US, "%.3f", value);
+	}
+
+	private static String formatDouble(double value) {
+		if (Double.isInfinite(value))
+			return "inf";
+		if (Double.isNaN(value))
+			return "nan";
+		return String.format(Locale.US, "%.6f", value);
 	}
 
 	private static String formatTime(double value) {
@@ -620,18 +679,158 @@ public final class BenchmarkLpVsNoLp {
 	}
 
 	private static String compareMetric(String label, double lpValue, double noLpValue, boolean lowerIsBetter) {
-		if (Double.isInfinite(lpValue) && Double.isInfinite(noLpValue))
-			return label + ": tie";
+		if (Double.isInfinite(lpValue) || Double.isInfinite(noLpValue))
+			return label + ": n/a";
 		if (Math.abs(lpValue - noLpValue) < 1e-9)
-			return label + ": tie";
-		boolean lpBetter = lowerIsBetter ? lpValue < noLpValue : lpValue > noLpValue;
-		double better = lpBetter ? lpValue : noLpValue;
-		double worse = lpBetter ? noLpValue : lpValue;
-		String winner = lpBetter ? "LP" : "NoLP";
-		if (better <= 0.0)
-			return label + ": " + winner + " better";
-		double ratio = worse / better;
-		return String.format(Locale.US, "%s: %s (x%.2f)", label, winner, ratio);
+			return label + ": x0.00";
+		if (Math.abs(noLpValue) < 1e-12) {
+			if (Math.abs(lpValue) < 1e-12)
+				return label + ": x0.00";
+			boolean improvedFromZero = lowerIsBetter ? lpValue < noLpValue : lpValue > noLpValue;
+			return label + ": " + (improvedFromZero ? "x+inf" : "x-inf");
+		}
+		double improvement = lowerIsBetter ? (noLpValue - lpValue) / Math.abs(noLpValue) : (lpValue - noLpValue) / Math.abs(noLpValue);
+		return String.format(Locale.US, "%s: x%+.2f", label, improvement);
+	}
+
+	private static String formatRelativeImprovement(double lpValue, double noLpValue, boolean lowerIsBetter) {
+		if (Double.isInfinite(lpValue) || Double.isInfinite(noLpValue))
+			return "";
+		if (Math.abs(lpValue - noLpValue) < 1e-9)
+			return "0.000000";
+		if (Math.abs(noLpValue) < 1e-12) {
+			if (Math.abs(lpValue) < 1e-12)
+				return "0.000000";
+			boolean improvedFromZero = lowerIsBetter ? lpValue < noLpValue : lpValue > noLpValue;
+			return improvedFromZero ? "inf" : "-inf";
+		}
+		double improvement = lowerIsBetter ? (noLpValue - lpValue) / Math.abs(noLpValue) : (lpValue - noLpValue) / Math.abs(noLpValue);
+		return String.format(Locale.US, "%.6f", improvement);
+	}
+
+	private static Map<String, String> runWorker(List<String> args) {
+		Path metricsFile = null;
+		try {
+			metricsFile = Files.createTempFile("ace-benchmark-", ".metrics");
+			List<String> command = new ArrayList<>();
+			command.add(javaExecutable());
+			command.addAll(forwardedJvmArgs());
+			command.add("-cp");
+			command.add(System.getProperty("java.class.path"));
+			command.add("problems.BenchmarkLpVsNoLpWorker");
+			command.add("--metrics=" + metricsFile.toAbsolutePath());
+			command.addAll(args);
+			Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+			String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+			int exitCode = process.waitFor();
+			Map<String, String> values = Files.exists(metricsFile) ? readMetrics(metricsFile) : failedMetrics("worker exited with code " + exitCode);
+			if (exitCode != 0 && !values.containsKey("error") && !output.isBlank())
+				values.put("error", sanitize(output));
+			return values;
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return failedMetrics("worker interrupted");
+		} catch (IOException e) {
+			return failedMetrics(e.getClass().getSimpleName() + ": " + e.getMessage());
+		} finally {
+			if (metricsFile != null) {
+				try {
+					Files.deleteIfExists(metricsFile);
+				} catch (IOException ignored) {
+				}
+			}
+		}
+	}
+
+	private static Map<String, String> readMetrics(Path metricsFile) throws IOException {
+		Map<String, String> values = new LinkedHashMap<>();
+		for (String line : Files.readAllLines(metricsFile, StandardCharsets.UTF_8)) {
+			int index = line.indexOf('=');
+			if (index <= 0)
+				continue;
+			values.put(line.substring(0, index), line.substring(index + 1));
+		}
+		return values;
+	}
+
+	private static Map<String, String> failedMetrics(String error) {
+		Map<String, String> values = new LinkedHashMap<>();
+		values.put("failed", "true");
+		values.put("wallSeconds", "0");
+		values.put("searchSeconds", "0");
+		values.put("bestBound", "0");
+		values.put("minBound", Long.toString(Long.MIN_VALUE));
+		values.put("maxBound", Long.toString(Long.MAX_VALUE));
+		values.put("nodes", "0");
+		values.put("wrongDecisions", "0");
+		values.put("foundSolutions", "0");
+		values.put("provedOptimum", "false");
+		values.put("stopping", "ERROR");
+		values.put("error", sanitize(error));
+		return values;
+	}
+
+	private static String javaExecutable() {
+		Path javaHome = Paths.get(System.getProperty("java.home"), "bin", "java");
+		return javaHome.toString();
+	}
+
+	private static List<String> forwardedJvmArgs() {
+		return ManagementFactory.getRuntimeMXBean().getInputArguments().stream()
+				.filter(arg -> arg.startsWith("-Xms") || arg.startsWith("-Xmx") || arg.equals("-ea") || arg.equals("-da"))
+				.collect(Collectors.toList());
+	}
+
+	private static boolean parseBoolean(Map<String, String> values, String key, boolean defaultValue) {
+		String value = values.get(key);
+		return value == null ? defaultValue : Boolean.parseBoolean(value);
+	}
+
+	private static double parseDouble(Map<String, String> values, String key, double defaultValue) {
+		String value = values.get(key);
+		if (value == null || value.isEmpty())
+			return defaultValue;
+		try {
+			return Double.parseDouble(value);
+		} catch (NumberFormatException e) {
+			return defaultValue;
+		}
+	}
+
+	private static long parseLong(Map<String, String> values, String key, long defaultValue) {
+		String value = values.get(key);
+		if (value == null || value.isEmpty())
+			return defaultValue;
+		try {
+			return Long.parseLong(value);
+		} catch (NumberFormatException e) {
+			return defaultValue;
+		}
+	}
+
+	private static String sanitize(String text) {
+		return text == null ? "" : text.replace('\n', ' ').replace('\r', ' ').trim();
+	}
+
+	private static String proofStatus(Aggregate lp, Aggregate noLp) {
+		if (lp.alwaysProvedOptimum() && noLp.alwaysProvedOptimum())
+			return "both";
+		if (lp.alwaysProvedOptimum())
+			return "lp_only";
+		if (noLp.alwaysProvedOptimum())
+			return "nolp_only";
+		return "neither";
+	}
+
+	private static String csvRow(String... cells) {
+		return Stream.of(cells).map(BenchmarkLpVsNoLp::csvCell).collect(Collectors.joining(","));
+	}
+
+	private static String csvCell(String value) {
+		String cell = value == null ? "" : value;
+		if (cell.contains(",") || cell.contains("\"") || cell.contains("\n") || cell.contains("\r"))
+			return "\"" + cell.replace("\"", "\"\"") + "\"";
+		return cell;
 	}
 
 	private static String fixedRow(String[] values, int[] widths, boolean[] rightAligned) {
