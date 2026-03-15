@@ -42,7 +42,9 @@ public final class BenchmarkLpVsNoLp {
 			"/cop/Warehouse-Warehouse_example");
 
 	private static final List<String> COP_DATASET_DIR_CANDIDATES = List.of(
-			"~/Codes/research/pycsp3-solvers-extra/examples/XCSP25/COP25",
+			"./XCSP25/COP25",
+			"./data/XCSP25/COP25",
+			"./benchmarks/XCSP25/COP25",
 			"./examples/XCSP25/COP25");
 
 	private static final Map<String, Path> EXTRACTED_RESOURCES = new LinkedHashMap<>();
