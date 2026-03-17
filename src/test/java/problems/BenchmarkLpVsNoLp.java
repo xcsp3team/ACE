@@ -533,9 +533,9 @@ public final class BenchmarkLpVsNoLp {
 		Aggregate lpRc = result.withLpReducedCosts;
 		Aggregate lp = result.withLpOnly;
 		Aggregate noLp = result.withoutLp;
-		String[] headers = { "mode", "proof", "sol", "best", "bounds", "gap", "nodes", "rcfix", "rcvals", "wall", "search", "stop" };
-		int[] widths = { 6, 7, 5, 10, 17, 10, 12, 10, 10, 8, 8, 6 };
-		boolean[] rightAligned = { false, false, false, true, false, true, true, true, true, true, true, false };
+		String[] headers = { "mode", "proof", "sol", "best", "bounds", "root", "gap", "nodes", "rcfix", "rcvals", "wall", "search", "stop" };
+		int[] widths = { 6, 7, 5, 10, 17, 17, 10, 12, 10, 10, 8, 8, 6 };
+		boolean[] rightAligned = { false, false, false, true, false, false, true, true, true, true, true, true, false };
 		System.out.println(result.displayName);
 		System.out.println(fixedRow(headers, widths, rightAligned));
 		System.out.println(rule(widths));
@@ -549,7 +549,7 @@ public final class BenchmarkLpVsNoLp {
 
 	private static String row(Aggregate aggregate, int[] widths, boolean[] rightAligned) {
 		String[] values = { aggregate.mode.label, aggregate.proofLabel(), aggregate.solutionLabel(), aggregate.bestLabel(), aggregate.boundsLabel(),
-				aggregate.gapLabel(), formatCount(aggregate.avgNodes()), formatCount(aggregate.avgReducedCostTightenings()),
+				aggregate.rootBoundsLabel(), aggregate.gapLabel(), formatCount(aggregate.avgNodes()), formatCount(aggregate.avgReducedCostTightenings()),
 				formatCount(aggregate.avgReducedCostValuesRemoved()), formatTime(aggregate.avgWallSeconds()), formatTime(aggregate.avgSearchSeconds()),
 				compactStopping(aggregate.stoppingLabel()) };
 		return fixedRow(values, widths, rightAligned);
@@ -836,15 +836,15 @@ public final class BenchmarkLpVsNoLp {
 		if (Double.isInfinite(lpValue) || Double.isInfinite(noLpValue))
 			return label + ": n/a";
 		if (Math.abs(lpValue - noLpValue) < 1e-9)
-			return label + ": x0.00";
+			return label + ": +0.00";
 		if (Math.abs(noLpValue) < 1e-12) {
 			if (Math.abs(lpValue) < 1e-12)
-				return label + ": x0.00";
+				return label + ": +0.00";
 			boolean improvedFromZero = lowerIsBetter ? lpValue < noLpValue : lpValue > noLpValue;
-			return label + ": " + (improvedFromZero ? "x+inf" : "x-inf");
+			return label + ": " + (improvedFromZero ? "+inf" : "-inf");
 		}
 		double improvement = lowerIsBetter ? (noLpValue - lpValue) / Math.abs(noLpValue) : (lpValue - noLpValue) / Math.abs(noLpValue);
-		return String.format(Locale.US, "%s: x%+.2f", label, improvement);
+		return String.format(Locale.US, "%s: %+.2f", label, improvement);
 	}
 
 	private static String formatRelativeImprovement(double lpValue, double noLpValue, boolean lowerIsBetter) {
