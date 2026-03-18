@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -505,6 +505,10 @@ public final class Kit {
 			return useColors ? this.code + s + WHITE.code : s;
 		}
 
+		public void print(String coloredPart, String uncoloredPart) {
+			System.out.print(coloring(coloredPart) + " " + uncoloredPart);
+		}
+
 		/**
 		 * Prints the specified first string with this color, if colors can be used (otherwise, in classical white color), followed by the specified second
 		 * string in white
@@ -646,6 +650,10 @@ public final class Kit {
 	 * @return a string obtained by concatenating the string representation of the objects in the specified collection while using the specified delimiters
 	 */
 	public static String join(Collection<?> c, String... delimiters) {
+		return join(c.toArray(), delimiters);
+	}
+
+	public static String join(Stream<?> c, String... delimiters) {
 		return join(c.toArray(), delimiters);
 	}
 
@@ -792,12 +800,12 @@ public final class Kit {
 		}
 	}
 
-	public static class VarScore implements Comparable<VarScore> {
+	public static class ScoredVariable implements Comparable<ScoredVariable> {
 		public Variable x;
 
 		public double s;
 
-		public VarScore() {
+		public ScoredVariable() {
 		}
 
 		public void set(Variable x, double s) {
@@ -806,7 +814,7 @@ public final class Kit {
 		}
 
 		@Override
-		public int compareTo(VarScore other) {
+		public int compareTo(ScoredVariable other) {
 			return Double.compare(other.s, s); // scores in decreasing order
 		}
 	}

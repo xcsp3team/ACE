@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -13,12 +13,10 @@ package constraints.extension;
 import java.util.Arrays;
 
 import problem.Problem;
-import propagation.StrongConsistency;
 import variables.Variable;
 
 /**
- * This is the root class of optimized STR-based (Simple Tabular Reduction) algorithms, notably STR2 and CT, for
- * filtering extension (table) constraints.
+ * This is the root class of optimized STR-based (Simple Tabular Reduction) algorithms, notably STR2 and CT, for filtering extension (table) constraints.
  * 
  * @author Christophe Lecoutre
  */
@@ -31,18 +29,21 @@ public abstract class STR1Optimized extends STR1 {
 	@Override
 	public void afterProblemConstruction(int n) {
 		super.afterProblemConstruction(n);
-		if (extOptions.decremental && !(this instanceof STR2N))
+		if (extOptions.decrementalSTR && !(this instanceof STR2N))
 			this.lastSizesStack = new int[n + 1][scp.length];
 	}
 
 	@Override
 	public void restoreBefore(int depth) {
 		super.restoreBefore(depth);
-		if (extOptions.decremental && depth > 0) // second part (depth > 0) for ensuring that aggressive runs can be
-													// used
-			lastDepth = Math.max(0, Math.min(lastDepth, depth - 1));
-		else if (lastSizes != null)
-			Arrays.fill(lastSizes, 0); // we can use 0 because domains are necessarily not empty when we start filtering
+		if (extOptions.decrementalSTR && depth > 0) {// second part (depth > 0) for ensuring that aggressive runs can be used
+			if (depth <= lastDepth)
+				lastDepth = depth - 1;
+			// lastDepth = Math.min(lastDepth, depth - 1); //lastDepth = Math.max(0, Math.min(lastDepth, depth - 1));
+		} else if (lastSizes != null) {
+			recentFail = true;
+			// Arrays.fill(lastSizes, 0); // we can use 0 because domains are necessarily not empty when we start filtering
+		}
 	}
 
 	/**********************************************************************************************
@@ -55,20 +56,17 @@ public abstract class STR1Optimized extends STR1 {
 	protected int sValSize;
 
 	/**
-	 * The (dense) set of positions of variables for which validity must be checked. Relevant positions are at indexes
-	 * from 0 to sValSize (excluded).
+	 * The (dense) set of positions of variables for which validity must be checked. Relevant positions are at indexes from 0 to sValSize (excluded).
 	 */
 	protected final int[] sVal;
 
 	/**
-	 * The number of variables for which support searching must be done (i.e., variables with some values that still
-	 * must be checked to be AC)
+	 * The number of variables for which support searching must be done (i.e., variables with some values that still must be checked to be AC)
 	 */
 	protected int sSupSize;
 
 	/**
-	 * The (dense) set of positions of variables for which support searching must be done. Relevant positions are at
-	 * indexes from 0 to sSupSize (excluded).
+	 * The (dense) set of positions of variables for which support searching must be done. Relevant positions are at indexes from 0 to sSupSize (excluded).
 	 */
 	protected final int[] sSup;
 
@@ -76,6 +74,8 @@ public abstract class STR1Optimized extends STR1 {
 	 * lastSizes[x] is the domain size of x at the last call
 	 */
 	protected int[] lastSizes;
+
+	protected boolean recentFail;
 
 	/**
 	 * lastSizesStack[i][x] is the domain size of x at the last call at level (depth) i
@@ -88,8 +88,7 @@ public abstract class STR1Optimized extends STR1 {
 	protected int lastDepth;
 
 	/**
-	 * A number used to determine whether the last past variable should be considered for validity testing (and for
-	 * possibly other roles in subclasses)
+	 * A number used to determine whether the last past variable should be considered for validity testing (and for possibly other roles in subclasses)
 	 */
 	protected long lastSafeNumber;
 
@@ -109,14 +108,14 @@ public abstract class STR1Optimized extends STR1 {
 		super(pb, scp);
 		this.sVal = new int[scp.length];
 		this.sSup = new int[scp.length];
-		this.lastSizes = !extOptions.decremental && !(this instanceof STR2N) ? new int[scp.length] : null;
+		this.lastSizes = !extOptions.decrementalSTR && !(this instanceof STR2N) ? new int[scp.length] : null;
 	}
 
 	/**
 	 * Makes, before filtering, some initialization with respect to the structures used for restoration
 	 */
 	protected final void initRestorationStructuresBeforeFiltering() {
-		if (extOptions.decremental) {
+		if (extOptions.decrementalSTR) {
 			int depth = problem.solver.depth();
 			assert 0 <= lastDepth && lastDepth <= depth : depth + " " + lastDepth + " " + this;
 			for (int i = lastDepth + 1; i <= depth; i++)
@@ -130,7 +129,7 @@ public abstract class STR1Optimized extends STR1 {
 	 * Makes, before filtering, some initialization with respect to the last variable explicitly assigned by the solver
 	 */
 	protected void manageLastPastVar() {
-		if (lastSafeNumber != problem.solver.stats.safeNumber() || problem.solver.propagation instanceof StrongConsistency) {
+		if (lastSafeNumber != problem.solver.stats.safeNumber()) { // || problem.solver.propagation instanceof StrongConsistency) {
 			// TODO 2nd part of the condition above still useful? (was relevant with the class Inverse4)
 			lastSafeNumber = problem.solver.stats.safeNumber();
 			Variable lastPast = problem.solver.futVars.lastPast();
@@ -151,13 +150,14 @@ public abstract class STR1Optimized extends STR1 {
 			int x = futvars.dense[i];
 			int domSize = doms[x].size();
 			cnts[x] = domSize;
-			if (lastSizes[x] != domSize) {
+			if (recentFail || lastSizes[x] != domSize) {
 				sVal[sValSize++] = x;
 				lastSizes[x] = domSize;
 			}
 			sSup[sSupSize++] = x;
 			Arrays.fill(ac[x], false);
 		}
+		recentFail = false;
 		// TODO to experiment the code below
 		// if (sValSize == 1) { int x = sVal[0]; for (int i = 0; i < sSupSize; i++) if (sSup[i] == x) { sSup[i] =
 		// sSup[--sSupSize]; break; } }

@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -15,9 +15,10 @@ import static utility.Kit.control;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import dashboard.Control.OptionsRestarts;
 import dashboard.Control.OptionsVarh;
 import dashboard.Output;
-import problem.Problem;
+import heuristics.BestScoredVariables.BestScoredStacked;
 import propagation.GIC.GIC2;
 import solver.Solver;
 import utility.Kit;
@@ -48,186 +49,6 @@ public abstract class HeuristicVariables extends Heuristic {
 	}
 
 	/**
-	 * Useful to record the best variable(s) out of a set, when considering a score computed for each of them
-	 */
-	public static class BestScoredVariable {
-
-		public int time;
-
-		/**
-		 * The current best variable, i.e., the variable with the current best score; used during an iteration over all variables
-		 */
-		public Variable variable;
-
-		/**
-		 * The score of the current best variable
-		 */
-		public double score;
-
-		/**
-		 * true if we must prefer the variable with the lowest score, instead of the variable with the highest score
-		 */
-		public boolean minimization;
-
-		/**
-		 * true if we must ignore auxiliary variables (introduced by the solver)
-		 */
-		private boolean discardAux;
-
-		private Variable second;
-		private double secondScore;
-
-		public UpdateStack updateStack;
-
-		private int stackMaxSize;
-
-		public class UpdateStack {
-
-			private static final int MAX = 50;
-
-			public Variable[] cyclicVariables;
-
-			public double[] cyclicScores;
-
-			public int size; // modulo
-
-			public void reset() {
-				this.size = 0;
-			}
-
-			public UpdateStack() {
-				this.cyclicVariables = new Variable[MAX];
-				this.cyclicScores = new double[MAX];
-				this.size = 0;
-			}
-
-			public void add(Variable x, double score) {
-				cyclicVariables[size % MAX] = x;
-				cyclicScores[size % MAX] = score;
-				size++;
-			}
-
-			public Variable stackedVariableFor(int newTime) {
-				int gap = newTime - time + 1; // -1 because the last variable is also recorded
-				if (gap >= MAX || gap > size)
-					return null;
-				int idx = (size - gap + MAX) % MAX;
-				return cyclicVariables[idx];
-			}
-		}
-
-		public BestScoredVariable(boolean discardAux, int updateStackLength) {
-			this.discardAux = discardAux;
-			this.stackMaxSize = updateStackLength;
-			if (updateStackLength > 0)
-				updateStack = new UpdateStack();
-		}
-
-		public BestScoredVariable() {
-			this(false, 0);
-		}
-
-		public BestScoredVariable beforeIteration(int time, boolean minimization) {
-			this.time = time;
-			this.variable = null;
-			this.score = minimization ? Double.MAX_VALUE : Double.NEGATIVE_INFINITY;
-			this.minimization = minimization;
-			this.second = null;
-			if (updateStack != null)
-				updateStack.reset();
-			return this;
-		}
-
-		public void cleanStack() {
-			this.variable = null;
-			this.second = null;
-			if (updateStack != null)
-				this.updateStack.reset();
-		}
-
-		public Variable second(int newTime) {
-			if (second != null && this.time + 1 == newTime)
-				return second;
-			return null;
-		}
-
-		public Variable second2(int newTime) {
-			if (updateStack == null || newTime - this.time > stackMaxSize)
-				return null;
-
-			// if (updateStack != null && this.time + 1 == newTime) {
-			control(stackMaxSize != 1 || updateStack.stackedVariableFor(newTime) == second, " " + updateStack.stackedVariableFor(newTime) + " vs " + second);
-			return updateStack.stackedVariableFor(newTime);
-			// }
-			//return null;
-		}
-
-		private boolean test = false;
-		
-		/**
-		 * Considers the specified variable with the specified score: compares it with the current best scored variable, and updates it if necessary.
-		 * 
-		 * @param x
-		 *            a variable
-		 * @param s
-		 *            the score of the variable
-		 * @return true if x becomes the new best scored variable
-		 */
-		public boolean consider(Variable x, double s) {
-			if (discardAux && x.isAuxiliaryVariableIntroducedBySolver()) {
-				assert x.id().startsWith(Problem.AUXILIARY_VARIABLE_PREFIX);
-				return false;
-			}
-			if (test) {
-				if (second != null) {
-					boolean entering = ((minimization && s < secondScore) || (!minimization && s > secondScore));
-					if (!entering)
-						return false;
-					boolean modification = ((minimization && s < score) || (!minimization && s > score));
-					if (modification) {
-						second = variable;
-						secondScore=score;
-						variable = x;
-						score = s;
-						if (updateStack != null)
-							updateStack.add(x, s);
-					} else {
-						second = x;
-						secondScore=s;
-					}
-					return false;
-				} else {
-					boolean modification = ((minimization && s < score) || (!minimization && s > score));
-					if (modification) {
-						second = variable;
-						secondScore=score;
-						variable = x;
-						score = s;
-						if (updateStack != null)
-							updateStack.add(x, s);
-					}
-					return modification;
-				}
-			}
-			
-			
-			boolean modification = ((minimization && s < score) || (!minimization && s > score));
-			if (modification) {
-				second = variable;
-				variable = x;
-				score = s;
-				if (updateStack != null)
-					updateStack.add(x, s);
-			}
-			return modification;
-		}
-
-		public boolean betterThan(double previousScore) {
-			return minimization ? score < previousScore : score > previousScore;
-		}
-	}
-
-	/**
 	 * The solver to which the heuristic is attached
 	 */
 	protected final Solver solver;
@@ -242,7 +63,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	 * nbStrictlyPriorityVars-1. Variables in priorityVars recorded between nbStriclytPriorityVars and priorityVars.length-1 must then be assigned in priority
 	 * but in any order given by the heuristic. Beyond priorityVars.length-1, the heuristic can select any future variable.
 	 */
-	private int nStrictlyPriorityVars;
+	public int nStrictlyPriorityVars;
 
 	/**
 	 * The options concerning the variable ordering heuristics
@@ -252,7 +73,7 @@ public abstract class HeuristicVariables extends Heuristic {
 	/**
 	 * The object used to record the best scored variable, when looking for it
 	 */
-	public BestScoredVariable bestScoredVariable;
+	public BestScoredVariables bestScored;
 
 	public final void setPriorityVars(Variable[] priorityVars, int nbStrictPriorityVars) {
 		this.priorityVars = priorityVars;
@@ -286,13 +107,18 @@ public abstract class HeuristicVariables extends Heuristic {
 			this.nStrictlyPriorityVars = solver.problem.nStrictPriorityVars;
 		}
 		this.options = solver.head.control.varh;
-		this.bestScoredVariable = new BestScoredVariable(solver.head.control.varh.discardAux, solver.head.control.varh.updateStackLength);
+		// this.bestScored = new BestScoredSimple(solver); 
+		this.bestScored = new BestScoredStacked(solver, 5);
 	}
 
 	/**
 	 * Returns the score of the specified variable. This is the method to override when defining a new heuristic.
 	 */
 	public abstract double scoreOf(Variable x);
+
+	public double scoreIfBinaryDomainOf(Variable x) {
+		throw new AssertionError("Not implemented for " + this.getClass());
+	}
 
 	/**
 	 * Returns the "optimized" score of the specified variable, i.e., the score of the variable while considering the optimization multiplier (to deal with
@@ -302,9 +128,8 @@ public abstract class HeuristicVariables extends Heuristic {
 	 *            a variable
 	 * @return the "optimized" score of the specified variable
 	 */
-	public final double scoreOptimizedOf(Variable x) {
-		if (x.dom instanceof DomainInfinite)
-			// because such variables must be computed (and not assigned); but EXPERIMENTAL
+	public double scoreOptimizedOf(Variable x) {
+		if (x.dom instanceof DomainInfinite) // because such variables must be computed (and not assigned); but EXPERIMENTAL
 			return multiplier == -1 ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 		return scoreOf(x) * multiplier;
 	}
@@ -347,12 +172,10 @@ public abstract class HeuristicVariables extends Heuristic {
 	 * Returns the preferred variable, i.e., the variable that should be assigned next by the solver
 	 */
 	public final Variable bestVariable() {
-		if (solver.profiler != null)
-			solver.profiler.before();
+		solver.profiler.before();
 		Variable x = bestPriorityVariable();
 		x = x != null ? x : bestUnpriorityVariable();
-		if (solver.profiler != null)
-			solver.profiler.afterSelectingVariable();
+		solver.profiler.afterSelectingVariable();
 		return x;
 	}
 
@@ -363,14 +186,18 @@ public abstract class HeuristicVariables extends Heuristic {
 	 */
 	protected boolean runReset() {
 		int numRun = solver.restarter.numRun;
-		return ((0 < numRun && numRun % solver.head.control.restarts.varhResetPeriod == 0)
-				|| (numRun - solver.solutions.lastRun) % solver.head.control.restarts.varhSolResetPeriod == 0);
+		OptionsRestarts options = solver.head.control.restarts;
+		return ((0 < numRun && numRun % options.varhResetPeriod == 0) || (numRun - solver.solutions.last.numRun) % options.varhSolResetPeriod == 0);
+	}
+
+	public void newImpactlessAssignment(Variable x, int a) {
 	}
 
 	protected void resettingMessage(String s) {
 		Kit.log.config(
 				Kit.Color.YELLOW.coloring(" ...resetting ") + s + " (nValues:" + Output.numberFormat.format(Variable.nValidValuesFor(solver.problem.variables))
-						+ " - nEntailed:" + Output.numberFormat.format(solver.entailed.size()) + ")");
+						+ " - nSingletons:" + Output.numberFormat.format(Variable.nSingletonsIn(solver.problem.variables)) + " - nEntailed:"
+						+ Output.numberFormat.format(solver.entailed.size()) + ")");
 	}
 
 	/*************************************************************************

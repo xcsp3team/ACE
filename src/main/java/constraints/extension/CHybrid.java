@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -22,12 +22,15 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.xcsp.common.IVar.Var;
+import org.xcsp.common.Utilities;
+
 import constraints.Constraint;
-import constraints.ConstraintExtension.ExtensionSpecific;
+import constraints.ConstraintExtension.ConstraintExtensionSpecific;
 import constraints.extension.structures.TableHybrid;
 import constraints.extension.structures.TableHybrid.HybridTuple;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import problem.Problem;
-import propagation.StrongConsistency;
 import sets.SetDenseReversible;
 import sets.SetSparse;
 import variables.Domain;
@@ -43,7 +46,7 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public final class CHybrid extends ExtensionSpecific {
+public final class CHybrid extends ConstraintExtensionSpecific implements ObserverOnBacktracksSystematic {
 
 	/**********************************************************************************************
 	 * Static methods
@@ -67,9 +70,11 @@ public final class CHybrid extends ExtensionSpecific {
 	}
 
 	public static Constraint element(Problem pb, Variable[] list, Variable index, Variable value) {
-		Variable[] scp = pb.distinct(pb.vars(list, index, value));
-		control(index.dom.firstValue() == 0 && scp.length == list.length + 2, () -> "Not handled for the moment");
-		Stream<HybridTuple> hts = IntStream.range(0, list.length).mapToObj(i -> new HybridTuple(eq(index, i), eq(list[i], value)));
+		Variable newindex = Utilities.indexOf(index, list) != -1 ? pb.replaceByOtherVariable((Var) index) : index;
+		Variable newvalue = Utilities.indexOf(value, list) != -1 ? pb.replaceByOtherVariable((Var) value) : value;
+		Variable[] scp = pb.distinct(pb.vars(list, newindex, newvalue));
+		control(newindex.dom.firstValue() == 0 && scp.length == list.length + 2, () -> "Not handled for the moment ");
+		Stream<HybridTuple> hts = IntStream.range(0, list.length).mapToObj(i -> new HybridTuple(eq(newindex, i), eq(list[i], newvalue)));
 		return new CHybrid(pb, scp, hts);
 	}
 
@@ -374,8 +379,8 @@ public final class CHybrid extends ExtensionSpecific {
 	 * Makes, before filtering, some initialization with respect to the last variable explicitly assigned by the solver
 	 */
 	protected void manageLastPastVariable() {
-		if (lastSafeNumber != problem.solver.stats.safeNumber() || problem.solver.propagation instanceof StrongConsistency) {
-			// 2nd condition due to Inverse4
+		if (lastSafeNumber != problem.solver.stats.safeNumber()) { // || problem.solver.propagation instanceof StrongConsistency) { // 2nd condition due to
+																	// Inverse4
 			lastSafeNumber = problem.solver.stats.safeNumber();
 			Variable lastPast = problem.solver.futVars.lastPast();
 			int x = lastPast == null ? -1 : positionOf(lastPast);

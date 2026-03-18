@@ -1,7 +1,7 @@
-/*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ /*
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -46,8 +46,6 @@ import interfaces.Tags.TagNotSymmetric;
 import interfaces.Tags.TagPostponableFiltering;
 import interfaces.Tags.TagSymmetric;
 import problem.Problem;
-import propagation.Forward;
-import propagation.Reviser;
 import propagation.Supporter;
 import sets.SetDense;
 import sets.SetSparse;
@@ -157,6 +155,11 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	public static final Constraint TAG = new Constraint() {
 		@Override
 		public boolean isSatisfiedBy(int[] t) {
+			throw new AssertionError("should not be called");
+		}
+
+		@Override
+		public boolean launchFiltering(Variable x) {
 			throw new AssertionError("should not be called");
 		}
 	};
@@ -326,7 +329,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	/**
 	 * An object that can be useful to look efficiently after supports (using a cache technique called residues); useful only with some kind of constraints
 	 */
-	protected final Supporter supporter;
+	public Supporter supporter;
 
 	/**
 	 * The object that manages information about the number of conflicts of pairs (x,a) for the constraint; useful only with some kind of constraints
@@ -344,14 +347,6 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	public boolean ignored;
 
 	public final boolean specific;
-
-	public final boolean postponable;
-
-	private final boolean canSkipFilteringDueToCompleteness;
-
-	public int postponablePosition = -1;
-
-	public Variable postponedEvent;
 
 	/**
 	 * The key of the constraint. This field is only used for symmetry detection, when activated.
@@ -394,16 +389,26 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 */
 	protected final int[] vals;
 
-	private long lastCallNode = -1;
+	private long nAssignmentsOfBranchStart = -1;
 
-	private int lastCallDepth;
+	private int depthOfBranchStart;
 
 	private long lastCallNodeForMove = -1;
 
+	private int nVariablesWithLargeDomains;
+
+	public final boolean postponable;
+
+	private final boolean canSkipFilteringDueToCompleteness;
+
+	public int postponablePosition = -1;
+
+	public Variable postponedEvent;
+
 	protected final boolean failSinceLastCall() {
-		if ((problem.solver.stats.nAssignments - lastCallNode) != (problem.solver.depth() - lastCallDepth)) {
-			lastCallNode = problem.solver.stats.nAssignments;
-			lastCallDepth = problem.solver.depth();
+		if ((problem.solver.stats.nAssignments - nAssignmentsOfBranchStart) != (problem.solver.depth() - depthOfBranchStart)) {
+			nAssignmentsOfBranchStart = problem.solver.stats.nAssignments;
+			depthOfBranchStart = problem.solver.depth();
 			return true;
 		}
 		return false;
@@ -516,7 +521,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 * 
 	 * @return true if the constraint is irreflexive
 	 */
-	public final boolean isIrreflexive() {
+	public boolean isIrreflexive() {
 		control(scp.length == 2);
 		if (specialServants != null)
 			return false; // would be too long to compute
@@ -654,7 +659,6 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		this.postponable = false;
 		this.canSkipFilteringDueToCompleteness = false;
 		this.infiniteDomainVars = new Variable[0];
-		this.supporter = null;
 	}
 
 	/**
@@ -676,27 +680,35 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		this.specialServants = involvingSpecialServants ? Stream.of(scp).filter(x -> x.specialMaster != null).toArray(VariableInteger[]::new) : null;
 
 		this.tupleIterator = new TupleIterator(this.doms);
-		this.supporter = Supporter.buildFor(this);
 
 		this.indexesMatchValues = Stream.of(scp).allMatch(x -> x.dom.indexesMatchValues());
 		this.genericFilteringThreshold = this instanceof SpecificPropagator || this instanceof ConstraintExtension ? Integer.MAX_VALUE
 				: computeGenericFilteringThreshold(scp);
 		this.specific = this instanceof SpecificPropagator;
-		this.postponable = scp.length >= pb.head.control.propagation.postponableLimit && pb.head.control.propagation.postponableLimit > 0
-				&& this instanceof TagPostponableFiltering;
-		this.canSkipFilteringDueToCompleteness = !postponable && this instanceof TagCallCompleteFiltering && !(this instanceof TagNotCallCompleteFiltering);
 
 		pb.head.observersConstruction.add(this);
 
 		this.infiniteDomainVars = Stream.of(scp).filter(x -> x.dom instanceof DomainInfinite).toArray(Variable[]::new);
 		this.vals = new int[scp.length];
 		this.options = pb.head.control.constraints;
+
+		this.nVariablesWithLargeDomains = (int) Stream.of(scp).filter(x -> x.dom.initSize() > pb.head.control.propagation.postponableLargeDomainLimit).count();
+		this.postponable = isPostponable();
+		this.canSkipFilteringDueToCompleteness = !postponable && this instanceof TagCallCompleteFiltering && !(this instanceof TagNotCallCompleteFiltering);
 	}
 
 	public final void reset() {
 		control(futvars.isFull());
 		nEffectiveFilterings = 0;
 		time = 0;
+	}
+
+	public boolean isPostponable() {
+		if (scp.length >= problem.head.control.propagation.postponableArityLimit && this instanceof TagPostponableFiltering)
+			return true;
+		// if (nVariablesWithLargeDomains > problem.head.control.propagation.postponableLargeDomainCount)
+		// return true;
+		return false;
 	}
 
 	/**********************************************************************************************
@@ -1005,9 +1017,8 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		return false;
 	}
 
-	public boolean launchFiltering(Variable x) { // is redefined in ConstraintSpecific	 and ExtensionSpecific
-		return genericFiltering(x); // by default
-	}
+	public abstract boolean launchFiltering(Variable x); // is redefined in ConstraintSpecific and ExtensionSpecific
+	// return genericFiltering(x); // by default
 
 	/**
 	 * Performs a generic form of filtering
@@ -1016,60 +1027,62 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 	 *            a variable whose domain has been recently reduced
 	 * @return false if an inconsistency is detected
 	 */
-	private boolean genericFiltering(Variable x) {
-		if (futvars.size() > genericFilteringThreshold) {
-			int nNonSingletons = 0;
-			double prod = 1;
-			for (int i = futvars.limit; i >= 0; i--) {
-				Variable y = scp[futvars.dense[i]];
-				if (y.dom.size() > 1) {
-					nNonSingletons++;
-					prod = prod * y.dom.size();
-					if (nNonSingletons > 1 && prod > 10_000) // hard coding : if at least two unfixed variables and space > 10 000
-						return true;
-				}
-			}
-		}
-		Reviser reviser = ((Forward) problem.solver.propagation).reviser;
-		int nNonSingletons = 0;
-		// if (x.assigned()) {
-		for (int i = futvars.limit; i >= 0; i--) {
-			Variable y = scp[futvars.dense[i]];
-			if (reviser.revise(this, y) == false)
-				return false;
-			if (y.dom.size() > 1)
-				nNonSingletons++;
-		}
-		// } else {
-		// boolean revisingEventVarToo = (scp.length == 1); // TODO can we just initialize it to false ?
-		// for (int i = futvars.limit; i >= 0; i--) {
-		// Variable y = scp[futvars.dense[i]];
-		// if (y == x)
-		// continue;
-		// if (time < y.time)
-		// revisingEventVarToo = true;
-		// if (reviser.revise(this, y) == false)
-		// return false;
-		// if (y.dom.size() > 1)
-		// nNonSingletons++;
-		// }
-		// if (revisingEventVarToo && reviser.revise(this, x) == false)
-		// return false;
-		// if (x.dom.size() > 1)
-		// nNonSingletons++;
-		// }
-		// return true;
-		return nNonSingletons <= 1 ? entail() : true;
-	}
+	// protected abstract boolean genericFiltering(Variable x);
+	// if (futvars.size() > genericFilteringThreshold) {
+	// int nNonSingletons = 0;
+	// double prod = 1;
+	// for (int i = futvars.limit; i >= 0; i--) {
+	// Variable y = scp[futvars.dense[i]];
+	// if (y.dom.size() > 1) {
+	// nNonSingletons++;
+	// prod = prod * y.dom.size();
+	// if (nNonSingletons > 1 && prod > 10_000) // hard coding : if at least two unfixed variables and space > 10 000
+	// return true;
+	// }
+	// }
+	// }
+	// Reviser reviser = ((Forward) problem.solver.propagation).reviser;
+	// int nNonSingletons = 0;
+	// //if (x.assigned() || scp.length == 1 ) {
+	// for (int i = futvars.limit; i >= 0; i--) {
+	// Variable y = scp[futvars.dense[i]];
+	// if (reviser.revise(this, y) == false)
+	// return false;
+	// if (y.dom.size() > 1)
+	// nNonSingletons++;
+	// }
+	// // } else
+	// //
+	// // {
+	// // boolean revisingEventVarToo = (scp.length == 1); // TODO can we just initialize it to false ?
+	// // for (int i = futvars.limit; i >= 0; i--) {
+	// // Variable y = scp[futvars.dense[i]];
+	// // if (y == x)
+	// // continue;
+	// // if (time < y.time)
+	// // revisingEventVarToo = true;
+	// // if (reviser.revise(this, y) == false)
+	// // return false;
+	// // if (y.dom.size() > 1)
+	// // nNonSingletons++;
+	// // }
+	// // if (revisingEventVarToo && reviser.revise(this, x) == false)
+	// // return false;
+	// // if (x.dom.size() > 1)
+	// // nNonSingletons++;
+	// // }
+	// // return true;
+	// return nNonSingletons <= 1 ? entail() : true;
+	// }
 
 	// public boolean canBeFilteredConsideringSpecialVariables() {
-	// // if (this instanceof WakeUp)
-	// // return true; // because this is necessarily the leading variable that has been assigned
-	// // if (this instanceof TagBoundCompatible)
-	// // return true;
-	// // for (VariableInteger x : specialServants)
-	// // if (!x.specialMaster.assigned())
-	// // return false;
+	// if (this instanceof WakeUp)
+	// return true; // because this is necessarily the leading variable that has been assigned
+	// if (this instanceof TagBoundCompatible)
+	// return true;
+	// for (VariableInteger x : specialServants)
+	// if (!x.specialMaster.assigned())
+	// return false;
 	// return true;
 	// }
 
@@ -1111,11 +1124,11 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		// return true;
 
 		int nBefore = problem.nValueRemovals;
-		if (problem.solver.profiler != null)
-			problem.solver.profiler.before();
+
+		problem.solver.profiler.before();
 		boolean consistent = launchFiltering(x); // ? ((SpecificPropagator) this).runPropagator(x) : genericFiltering(x);
-		if (problem.solver.profiler != null)
-			problem.solver.profiler.afterFiltering(this);
+		problem.solver.profiler.afterFiltering(this);
+
 		if (!consistent || problem.nValueRemovals != nBefore) {
 			if (problem.solver.proofer != null)
 				problem.solver.proofer.updateProof(this);// TODO // ((SystematicSolver)solver).updateProofAll();
@@ -1140,7 +1153,7 @@ public abstract class Constraint implements ObserverOnConstruction, Comparable<C
 		for (int x = 0; x < scp.length; x++)
 			for (int a = doms[x].first(); a != -1; a = doms[x].next(a))
 				if (seekFirstSupportWith(x, a) == false) {
-					System.out.println(" " + scp[x] + "=" + doms[x].toVal(a) + " not supported by " + this);
+					System.out.println(" " + scp[x] + "=" + doms[x].toVal(a) + " not supported by " + this + " " + this.getClass().getSimpleName());
 					for (Domain dom : doms)
 						dom.display(1);
 					display(true);

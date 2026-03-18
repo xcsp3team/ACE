@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -55,12 +55,17 @@ import learning.NogoodReasoner;
 import main.Head;
 import main.HeadExtraction;
 import problem.Problem;
+import propagation.Forward;
 import propagation.Propagation;
+import propagation.Supporter;
 import sets.SetDense;
 import sets.SetSparseReversible;
 import utility.Kit;
 import utility.Profiler;
+import utility.Profiler.ProfilerFake;
+import utility.Profiler.ProfilerReal;
 import variables.Domain;
+import variables.DomainFinite.DomainFiniteSpecial;
 import variables.DomainInfinite;
 import variables.Variable;
 
@@ -235,7 +240,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		}
 
 		private void add(int dec) {
-			Variable x = decisions.varIn(dec);
+			Variable x = decisions.decoder.varIn(dec);
 			if (!taboo.contains(x)) {
 				int v = map.getOrDefault(x, 0);
 				map.put(x, v + 1);
@@ -411,10 +416,14 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		// BE CAREFUL: must be called before making modifications (i.e. before reducing the domain of the variable)
 		public int push(Variable x) {
 			int depth = depth();
-			assert x.dom.lastRemovedLevel() <= depth;
+			assert x.dom.lastRemovedLevel() <= depth && (top == -1 || stack[top].dom.lastRemovedLevel() <= depth) : x + " " + x.dom.lastRemovedLevel() + " "
+					+ depth;
 			if (x.dom.lastRemovedLevel() != depth) { // because, otherwise, already present
-				if (top == -1 || stack[top].dom.lastRemovedLevel() != depth)
+				if (top == -1 || stack[top].dom.lastRemovedLevel() != depth) {
 					stack[++top] = null; // null is used as a separator
+					// System.out.println("new separator " + x + " " + depth + " " + top + " " + (top-1 < 0 ? "" :(stack[top - 1].dom.lastRemovedLevel()) + " "
+					// + stack[top - 1]));
+				}
 				stack[++top] = x;
 			}
 			return depth;
@@ -436,15 +445,30 @@ public class Solver implements ObserverOnBacktracksSystematic {
 				return true;
 			if (stack[top] == null)
 				return false;
-			Variable x = Stream.of(problem.variables).filter(y -> !(y.dom instanceof DomainInfinite) && y.dom.lastRemovedLevel() >= depth).findFirst()
-					.orElse(null);
+			Variable x = Stream.of(problem.variables).filter(y -> !(y.dom instanceof DomainFiniteSpecial) && y.dom.lastRemovedLevel() >= depth).findFirst()
+					.orElse(null); // and DomainInfinite too in the filter ?
 			if (x != null) {
 				System.out.println("Pb with " + x);
 				x.dom.display(2);
+				System.out.println(this);
 				return false;
 			}
 			return true;
 		}
+
+		public String toString() {
+			StringBuilder s = new StringBuilder(" Stack : ");
+			int cnt = 0;
+			for (int i = 0; i <= top; i++) {
+				if (stack[i] == null)
+					s.append("\n\tL").append((cnt++));
+				else
+					s.append(stack[i]); // + "(" + stack[i].num +")");
+				s.append(" ");
+			}
+			return s.toString();
+		}
+
 	}
 
 	public final class Proofer implements ObserverOnDecisions {
@@ -573,7 +597,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	private List<ObserverOnSolving> collectObserversOnSolving() {
-		Stream<Object> stream = Stream.concat(Stream.of(problem.constraints), Stream.of(stats, head.output));
+		Stream<Object> stream = Stream.concat(Stream.of(problem.constraints), Stream.of(futVars, stats, head.output));
 		return collectObservers(stream, ObserverOnSolving.class);
 	}
 
@@ -821,12 +845,24 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		this.observersOnSolving = collectObserversOnSolving();
 		this.observersOnRuns = collectObserversOnRuns();
 		this.observersOnBacktracksSystematic = collectObserversOnBacktracksSystematic();
+
+		// System.out.println("jjjj " + Kit.join(observersOnBacktracksSystematic.stream().map(ob -> ob.getClass().getSimpleName()).toArray()));
+
 		this.observersOnDecisions = collectObserversOnDecisions();
 		this.observersOnAssignments = collectObserversOnAssignments();
 		this.observersOnRemovals = collectObserversOnRemovals();
 		this.observersOnConflicts = collectObserversOnConflicts();
 
-		this.profiler = head.control.general.profiling ? new Profiler() : null;
+		this.profiler = head.control.general.profiling ? new ProfilerReal() : new ProfilerFake(); // null;
+
+		// finally, should we use binary representations of domains?
+
+		for (Constraint c : problem.constraints)
+			c.supporter = Supporter.buildFor(c);
+		if (problem.solver.propagation instanceof Forward)
+			for (Variable x : problem.variables) {
+				x.buildBinaryRepresentation();
+			}
 	}
 
 	/**
@@ -890,8 +926,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 *            a variable
 	 */
 	public final void backtrack(Variable x) { // should we call it unassign or retract instead?
-		if (profiler != null)
-			profiler.before();
+		profiler.before();
 		int depthBeforeBacktrack = depth(); // keep it at this position
 		futVars.add(x);
 		x.unassign();
@@ -900,8 +935,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		for (ObserverOnBacktracksSystematic observer : observersOnBacktracksSystematic)
 			observer.restoreBefore(depthBeforeBacktrack);
 		propagation.clear();
-		if (profiler != null)
-			profiler.afterBacktracking();
+		profiler.afterBacktracking();
 	}
 
 	/**
@@ -921,6 +955,16 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 * @return false if an inconsistency is detected
 	 */
 	private final boolean tryAssignment(Variable x, int a, boolean knownAsInconsistent) {
+
+		// for (Variable y = futVars.first(); y != null; y = futVars.next(y)) {
+		// if (y.dom.size() == 1)
+		// continue;
+		// Constraint[] cs = Stream.of(y.ctrs).filter(c -> !isEntailed(c) && c.futvars.size() > 1).toArray(Constraint[]::new);
+		// if (cs.length == 0 || (cs.length == 1 && problem.optimizer != null && problem.optimizer.ctr == cs[0]))
+		// System.out.println("\tjjjjjj " + depth() + " " + y + " " + (cs.length) + " vs " + y.ctrs.length + " " + (cs.length == 0 ? "" : cs[0].getId())
+		// + " " + y.dom.size());
+		// }
+
 		boolean b = false; // TODO temporary
 		if (b && x.heuristic instanceof Bivs) {
 			SetDense inconsistent = ((Bivs) x.heuristic).inconsistent;
@@ -939,16 +983,29 @@ public class Solver implements ObserverOnBacktracksSystematic {
 				}
 			}
 		}
+		//boolean singletonVariable = x.dom.size() == 1; // may happen, notably by lc
 		for (ObserverOnDecisions observer : observersOnDecisions)
 			observer.beforePositiveDecision(x, a);
+		
 		assign(x, a);
+		//int before = problem.nValueRemovals;
 		boolean consistent = knownAsInconsistent ? false : propagation.runAfterAssignment(x) && (ipsReasoner == null || ipsReasoner.whenOpeningNode());
+		heuristic.bestScored.update(consistent);
 		if (!consistent) {
 			for (ObserverOnAssignments observer : observersOnAssignments)
 				observer.afterFailedAssignment(x, a);
 			// if (ngdRecorder != null) ngdRecorder.addCurrentNogood();
 			return false;
 		}
+//		else {
+//			// if (!singletonVariable)
+//			// System.out.println("hhhhhhh " + propagation.queue.collected.size());
+//			if (!singletonVariable && before == problem.nValueRemovals) {
+//				stats.nImpactlessAssignments++;
+//				if (head.control.varh.impactless)
+//					heuristic.newImpactlessAssignment(x, a);
+//			}
+//		}
 		// if (ipsRecorder != null && !ipsRecorder.dealWhenOpeningNode()) return false;
 		return true;
 	}
@@ -1070,11 +1127,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 					// else foundSolution = true; // break;
 
 				} else {
-					if (profiler != null)
-						profiler.before();
+					profiler.before();
 					int a = x.heuristic.bestValueIndex();
-					if (profiler != null)
-						profiler.afterSelectingValue();
+					profiler.afterSelectingValue();
 					boolean consistent = tryAssignment(x, a, false);
 					if (consistent == false)
 						manageContradiction(null);
@@ -1198,8 +1253,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			observer.beforeSolving();
 		if (Variable.firstWipeoutVariableIn(problem.variables) != null)
 			stopping = FULL_EXPLORATION; // because some search observers may detect an inconsistency
-		if (profiler != null)
-			profiler.initTime = head.stopwatch.wckTime();
+		profiler.initTime(head.stopwatch.wckTime());
 		if (!finished() && head.control.solving.enablePrepro)
 			doPrepro();
 		

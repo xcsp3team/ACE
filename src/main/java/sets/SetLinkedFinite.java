@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -69,13 +69,31 @@ public class SetLinkedFinite implements SetLinked {
 	 * The level at which absent indexes have been removed from the list. Hence, <code> removedLevels[a] == i </code> means that i is the removal level of the
 	 * index a and <code> removedLevels[a] == -1 </code> means that the index a is still present.
 	 */
-	public final int[] removedLevels;
+	private final int[] removedLevels;
 
 	protected int mark;
 
 	protected int[] marks;
 
 	protected int nLevels;
+
+	private long[] binaryRepresentation;
+
+	private SetSparse binaryRepresentationSetOfWords;
+
+	public void buildBinaryRepresentation(boolean withSetOfWords) {
+		int initSize = prevs.length;
+		this.binaryRepresentation = new long[initSize / Long.SIZE + (initSize % Long.SIZE != 0 ? 1 : 0)];
+		Arrays.fill(binaryRepresentation, Bit.ALL_LONG_BITS_TO_1);
+		binaryRepresentation[binaryRepresentation.length - 1] = Bit.bitsAt1To(initSize - ((binaryRepresentation.length - 1) * Long.SIZE));
+		if (withSetOfWords)
+			this.binaryRepresentationSetOfWords = new SetSparse(binaryRepresentation.length, true);
+	}
+
+	@Override
+	public long[] binary() {
+		return binaryRepresentation;
+	}
 
 	@Override
 	public void setNumberOfLevels(int nLevels) {
@@ -132,6 +150,8 @@ public class SetLinkedFinite implements SetLinked {
 		int next = nexts[a];
 		if (next == -1 || next > last)
 			return -1;
+
+		control(removedLevels[next] == -1);
 		while (removedLevels[next] != -1)
 			next = nexts[next];
 		return next;
@@ -152,6 +172,9 @@ public class SetLinkedFinite implements SetLinked {
 		int prev = prevs[a];
 		if (prev < first) // includes prev == -1
 			return -1;
+		control(removedLevels[prev] == -1);
+		// if (true)
+		// throw new ArithmeticException();
 		while (removedLevels[prev] != -1)
 			prev = prevs[prev];
 		return prev;
@@ -160,6 +183,11 @@ public class SetLinkedFinite implements SetLinked {
 	@Override
 	public int lastRemoved() {
 		return lastRemoved;
+	}
+
+	@Override
+	public int prevRemoved(int a) {
+		return prevRemoved[a];
 	}
 
 	/**
@@ -173,11 +201,6 @@ public class SetLinkedFinite implements SetLinked {
 	@Override
 	public int removedLevelOf(int a) {
 		return removedLevels[a];
-	}
-
-	@Override
-	public int prevRemoved(int a) {
-		return prevRemoved[a];
 	}
 
 	protected void removeElement(int a) {
@@ -194,6 +217,10 @@ public class SetLinkedFinite implements SetLinked {
 		// add to the end of the list of absent elements
 		prevRemoved[a] = lastRemoved;
 		lastRemoved = a;
+
+		if (binaryRepresentation != null)
+			binaryRepresentation[a / Long.SIZE] &= Bit.ONE_LONG_BIT_TO_0[a % Long.SIZE];
+		// int i = a / Long.SIZE; if (binaryRepresentation[i] == 0) binaryRepresentationSetOfWords.remove(i);
 	}
 
 	@Override
@@ -228,6 +255,11 @@ public class SetLinkedFinite implements SetLinked {
 			prevs[next] = a;
 		// remove from the list of absent elements
 		lastRemoved = prevRemoved[a];
+
+		if (binaryRepresentation != null)
+			binaryRepresentation[a / Long.SIZE] |= Bit.ONE_LONG_BIT_TO_1[a % Long.SIZE];
+		// binaryRepresentationSetOfWords.add(a / Long.SIZE);
+
 	}
 
 	protected void restoreLastDropped() {
@@ -315,59 +347,59 @@ public class SetLinkedFinite implements SetLinked {
 		return true;
 	}
 
-	public static class SetLinkedFiniteWithBits extends SetLinkedFinite {
-
-		protected long[] binaryRepresentation;
-
-		@Override
-		public long[] binary() {
-			return binaryRepresentation;
-		}
-
-		public SetLinkedFiniteWithBits(int initSize) {
-			super(initSize);
-			binaryRepresentation = new long[initSize / Long.SIZE + (initSize % Long.SIZE != 0 ? 1 : 0)];
-			Arrays.fill(binaryRepresentation, Bit.ALL_LONG_BITS_TO_1);
-			binaryRepresentation[binaryRepresentation.length - 1] = Bit.bitsAt1To(initSize - ((binaryRepresentation.length - 1) * Long.SIZE));
-		}
-
-		@Override
-		protected void addElement(int a) {
-			super.addElement(a);
-			binaryRepresentation[a / Long.SIZE] |= Bit.ONE_LONG_BIT_TO_1[a % Long.SIZE];
-			// binaryRepresentation[element >> 6] |= Bit.ONE_LONG_BIT_TO_1[element & ((1 << 6) - 1)];
-		}
-
-		@Override
-		protected void removeElement(int a) {
-			super.removeElement(a);
-			binaryRepresentation[a / Long.SIZE] &= Bit.ONE_LONG_BIT_TO_0[a % Long.SIZE];
-			// binaryRepresentation[element >> 6] &= Bit.ONE_LONG_BIT_TO_0[element & ((1 << 6) - 1)];
-		}
-	}
-
-	public static final class SetLinkedFiniteWithBits2 extends SetLinkedFiniteWithBits {
-
-		public final SetSparse set;
-
-		public SetLinkedFiniteWithBits2(int initSize) {
-			super(initSize);
-			this.set = new SetSparse(binaryRepresentation.length, true);
-		}
-
-		@Override
-		protected void addElement(int a) {
-			super.addElement(a);
-			set.add(a / Long.SIZE);
-		}
-
-		@Override
-		protected void removeElement(int a) {
-			super.removeElement(a);
-			int i = a / Long.SIZE;
-			if (binaryRepresentation[i] == 0)
-				set.remove(i);
-		}
-	}
+	// public static class SetLinkedFiniteWithBits extends SetLinkedFinite {
+	//
+	// protected final long[] binaryRepresentation;
+	//
+	// @Override
+	// public long[] binary() {
+	// return binaryRepresentation;
+	// }
+	//
+	// public SetLinkedFiniteWithBits(int initSize) {
+	// super(initSize);
+	// binaryRepresentation = new long[initSize / Long.SIZE + (initSize % Long.SIZE != 0 ? 1 : 0)];
+	// Arrays.fill(binaryRepresentation, Bit.ALL_LONG_BITS_TO_1);
+	// binaryRepresentation[binaryRepresentation.length - 1] = Bit.bitsAt1To(initSize - ((binaryRepresentation.length - 1) * Long.SIZE));
+	// }
+	//
+	// @Override
+	// protected void addElement(int a) {
+	// super.addElement(a);
+	// binaryRepresentation[a / Long.SIZE] |= Bit.ONE_LONG_BIT_TO_1[a % Long.SIZE];
+	// // binaryRepresentation[element >> 6] |= Bit.ONE_LONG_BIT_TO_1[element & ((1 << 6) - 1)];
+	// }
+	//
+	// @Override
+	// protected void removeElement(int a) {
+	// super.removeElement(a);
+	// binaryRepresentation[a / Long.SIZE] &= Bit.ONE_LONG_BIT_TO_0[a % Long.SIZE];
+	// // binaryRepresentation[element >> 6] &= Bit.ONE_LONG_BIT_TO_0[element & ((1 << 6) - 1)];
+	// }
+	// }
+	//
+	// public static final class SetLinkedFiniteWithBits2 extends SetLinkedFiniteWithBits {
+	//
+	// public final SetSparse set;
+	//
+	// public SetLinkedFiniteWithBits2(int initSize) {
+	// super(initSize);
+	// this.set = new SetSparse(binaryRepresentation.length, true);
+	// }
+	//
+	// @Override
+	// protected void addElement(int a) {
+	// super.addElement(a);
+	// set.add(a / Long.SIZE);
+	// }
+	//
+	// @Override
+	// protected void removeElement(int a) {
+	// super.removeElement(a);
+	// int i = a / Long.SIZE;
+	// if (binaryRepresentation[i] == 0)
+	// set.remove(i);
+	// }
+	// }
 
 }

@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -14,8 +14,6 @@ import constraints.Constraint;
 import constraints.ConstraintGlobal;
 import constraints.ConstraintIntension;
 import dashboard.Control.OptionsPropagation;
-import heuristics.HeuristicVariablesDynamic.PickOnDom;
-import heuristics.HeuristicVariablesDynamic.RunRobin;
 import interfaces.Observers.ObserverOnConflicts;
 import learning.IpsReasonerDominance;
 import sets.SetSparse;
@@ -36,8 +34,6 @@ public abstract class Propagation {
 	/*************************************************************************
 	 * Static members
 	 *************************************************************************/
-
-	private static final int MAX_FILTERING_COMPLEXITY = 2;
 
 	/**
 	 * Builds and returns the propagation to be attached to the specified solver. If preprocessing and search stages are disabled, null is returned.
@@ -193,7 +189,7 @@ public abstract class Propagation {
 	 */
 	public boolean runAtNextRoot;
 
-	private PickOnDom pickOnDom;
+	// private PickOnDom pickOnDom;
 
 	// private ProcOnDom procOnDom;
 
@@ -242,11 +238,9 @@ public abstract class Propagation {
 
 		int nValuesBefore = solver.problem.nValueRemovals;
 
-		if (solver.profiler != null)
-			solver.profiler.before();
+		solver.profiler.before();
 		boolean consistent = nogoodReasoning.isNogoodConsistent(x);
-		if (solver.profiler != null)
-			solver.profiler.afterNogoodFiltering();
+		solver.profiler.afterNogoodFiltering();
 
 		if (consistent) {
 			for (Constraint c : x.ctrs) {
@@ -266,10 +260,10 @@ public abstract class Propagation {
 					break;
 			}
 		}
-		
+
 		int nRemovedValues = solver.problem.nValueRemovals - nValuesBefore;
-		if (pickOnDom != null && nRemovedValues > 0)
-			pickOnDom.update(x.num, nRemovedValues, consistent);
+		if (nRemovedValues > 0)
+			queue.impactfulVariables.add(x.num, solver.head.control.varh.pickMode == 0 ? 1 : consistent ? nRemovedValues : 100); // TODO: 100
 		return consistent;
 	}
 
@@ -279,12 +273,13 @@ public abstract class Propagation {
 	 * @return false iff an inconsistency is detected
 	 */
 	public boolean propagate() {
-		pickOnDom = solver.heuristic instanceof PickOnDom ? ((PickOnDom) solver.heuristic).clearCollected()
-				: solver.heuristic instanceof RunRobin && ((RunRobin) solver.heuristic).current instanceof PickOnDom
-						? ((PickOnDom) ((RunRobin) solver.heuristic).current).clearCollected()
-						: null;
+		queue.impactfulVariables.clear();
+		queue.runacrossVariables.clear();
+
+		// pickOnDom = solver.heuristic instanceof PickOnDom ? ((PickOnDom) solver.heuristic).clearCollected()
+		// : solver.heuristic instanceof RunRobin && ((RunRobin) solver.heuristic).current instanceof PickOnDom
+		// ? ((PickOnDom) ((RunRobin) solver.heuristic).current).clearCollected() : null;
 		// procOnDom = solver.heuristic instanceof ProcOnDom ? ((ProcOnDom) solver.heuristic).clearCollected() : null;
-		
 
 		while (true) {
 			while (queue.size() != 0) { // propagation with respect to the main queue
@@ -323,11 +318,11 @@ public abstract class Propagation {
 	public final boolean propagate(ConstraintGlobal c) {
 		if (c == null || c.ignored || solver.isEntailed(c))
 			return true;
-		if (solver.profiler != null)
-			solver.profiler.before();
+
+		solver.profiler.before();
 		boolean consistent = c.runPropagator(null);
-		if (solver.profiler != null)
-			solver.profiler.afterObjPropagator();
+		solver.profiler.afterObjPropagator();
+
 		if (!consistent)
 			return false;
 		return propagate(); // because the queue may be not empty
@@ -350,7 +345,7 @@ public abstract class Propagation {
 		// we rerun propagation if a solution has just been found (since the objective constraint has changed), or if it
 		// must be forced anyway
 		int numRun = solver.restarter.numRun;
-		boolean rerun = runAtNextRoot || (solver.problem.optimizer != null && numRun - 1 == solver.solutions.lastRun)
+		boolean rerun = runAtNextRoot || (solver.problem.optimizer != null && numRun - 1 == solver.solutions.last.numRun)
 				|| (options.strongOnce && 0 < numRun && numRun % 60 == 0) // TODO hard coding for 60
 				|| (solver.problem.optimizer != null && solver.problem.optimizer.ctr instanceof ConstraintIntension);
 		if (rerun) {

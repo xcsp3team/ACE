@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -62,7 +62,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 	 */
 	public AllDifferent(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		control(scp.length > 2);
+		control((this instanceof Circuit && scp.length >1) || scp.length > 2);
 	}
 
 	/**********************************************************************************************

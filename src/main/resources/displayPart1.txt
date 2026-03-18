@@ -1,4 +1,4 @@
-To run ACE (AbsCon Essence), you must use a command like:
+To run ACE, you must use a command like:
   java ace <xcsp3Instance> <options>
 
   <xcsp3Instance> is the name of a file containing an XCSP3 instance

@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -38,11 +38,13 @@ import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
 import constraints.ConstraintExtension;
+import constraints.ConstraintExtension.ConstraintExtensionSpecific.Extension1;
 import constraints.ConstraintIntension;
 import dashboard.Control.OptionsVariables;
 import heuristics.HeuristicValues;
 import heuristics.HeuristicValuesDirect;
 import heuristics.HeuristicVariablesDynamic.RunRobin;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Observers.ObserverOnConstruction;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Observers.ObserverOnSolving;
@@ -56,13 +58,14 @@ import problem.Features;
 import problem.Problem;
 import problem.XCSP3;
 import propagation.AC;
+import propagation.Forward;
 import propagation.Propagation;
 import propagation.SAC.SACGreedy;
+import sets.SetLinkedFinite;
 import solver.Solver.Stopping;
 import solver.Statistics;
 import utility.Kit;
 import utility.Kit.Color;
-import utility.Stopwatch;
 import variables.Variable;
 
 /**
@@ -121,7 +124,6 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		wckBeforeSearch = System.currentTimeMillis();
 	}
 
-	
 	@Override
 	public final void afterRun() {
 		InformationBloc info = runInfo();
@@ -190,6 +192,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String N_TYPES = "types";
 	public static final String N_VALUES = "values";
 	public static final String N_DELETED = "deleted";
+	public static final String N_SINGLETONS = "singletons";
 	public static final String COUNT = "count";
 	public static final String N_OMITTED = "omitted";
 	public static final String N_DISCARDED = "discarded";
@@ -203,6 +206,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String PRIORITY_ARRAYS = "priorityArrays";
 	public static final String N_REMOVED1 = "removed1";
 	public static final String N_CONVERTED = "converted";
+	public static final String N_GENERIC = "generic";
 	public static final String N_SPECIFIC = "specific";
 	public static final String N_MERGED = "merged";
 	public static final String N_ADDED = "added";
@@ -230,6 +234,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	public static final String DEPTHS = "dpts";
 	public static final String N_EFFECTIVE = "effs";
+	public static final String N_ENTAILED = "entailed";
 	public static final String N_WRONG = "wrgs";
 	public static final String N_DECISIONS = "decs";
 	public static final String N_BACKTRACKS = "backs";
@@ -324,8 +329,8 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	 * The filename of the generated XML file (with details about the solving process), if in campaign mode
 	 */
 	private String outputFileName;
-	
-	private long wckBeforeSearch;
+
+	public long wckBeforeSearch;
 
 	/**
 	 * Builds an object Output for the specified head
@@ -548,10 +553,12 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put("nNogoods", features.collecting.nogoods.size());
 		m.put("nGatheredNogoods", features.collecting.nCollectedNogoodsGathered);
 		m.put(N_SPECIFIC, Stream.of(head.problem.constraints).filter(c -> c instanceof SpecificPropagator).count());
+		m.put(N_GENERIC, Stream.of(head.problem.constraints).filter(c -> !(c instanceof SpecificPropagator)).count());
+		m.put("backtrackable", Stream.of(head.problem.constraints).filter(c -> c instanceof ObserverOnBacktracksSystematic).count());
 		m.put(N_MERGED, features.nMergedCtrs);
 		m.put(N_DISCARDED, features.nDiscardedCtrs);
 		m.put(N_ADDED, features.nAddedCtrs);
-		m.put("postponable", features.nPostponableConstraints);
+		m.put("postponable", head.problem.postponableConstraints.length);
 		if (head.problem.api instanceof XCSP3)
 			m.put(N_GROUPS, ((XCSP3) head.problem.api).nGroups);
 		m.put(IGNORED_GROUPS, head.control.constraints.ignoreGroups);
@@ -559,7 +566,15 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(N_CLIQUES, features.nCliques); // for redundant AllDifferent constraints
 		m.put(ARITIES, features.ctrArities);
 		m.separator();
-		m.put(DISTRIBUTION, features.ctrTypes);
+		if (features.ctrTypes1.size() > 0 || head.problem.optimizer != null) {
+			if (features.ctrTypes1.size() > 0)
+				m.put("unary", features.ctrTypes1);
+			if (head.problem.optimizer != null)
+				m.put("objective",
+						"[" + head.problem.optimizer.clb.getClass().getSimpleName() + "," + head.problem.optimizer.cub.getClass().getSimpleName() + "]");
+			m.separator();
+		}
+		m.put("non_unary", features.ctrTypes);
 		m.separator(features.tableSizes.size() > 0);
 		m.put(TABLES, features.tableSizes.toString());
 		m.put(N_TUPLES, features.tableSizes.repartition.entrySet().stream().mapToLong(e -> e.getValue() * e.getKey()).sum());
@@ -569,7 +584,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 		int nExtStructures = 0, nSharedExtStructures = 0, nIntStructures = 0, nSharedintStructures = 0, nCftStructures = 0, nSharedCftStructures = 0;
 		for (Constraint c : head.problem.constraints) {
-			if (c instanceof ConstraintExtension)
+			if (c instanceof ConstraintExtension && !(c instanceof Extension1))
 				if (c.extStructure().firstRegisteredCtr() == c)
 					nExtStructures++;
 				else
@@ -613,7 +628,12 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private InformationBloc solverInfo() {
 		InformationBloc m = new InformationBloc(SOLVER);
-		m.put(GUARANTEED_AC, head.solver.propagation.getClass() == AC.class ? ((AC) head.solver.propagation).guaranteed : "");
+		m.put("nNotAC", head.solver.propagation.getClass() == AC.class ? ((AC) head.solver.propagation).nNotAC : "");
+		m.put("nBinary", Stream.of(head.problem.variables).filter(x -> x.dom.binary() != null && x.dom instanceof SetLinkedFinite).count());
+		if (head.solver.propagation instanceof Forward && ((Forward) head.solver.propagation).reviser != null)
+			m.put("reviser", ((Forward) head.solver.propagation).reviser.getClass().getSimpleName());
+		m.put("decoder", head.solver.decisions.decoder.getClass().getSimpleName());
+
 		m.separator();
 		m.put(WCK, head.instanceStopwatch.wckTimeInSeconds());
 		m.put(CPU, head.stopwatch.cpuTimeInSeconds());
@@ -625,11 +645,13 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		InformationBloc m = new InformationBloc(PREPROCESSING);
 		m.put(N_EFFECTIVE, head.problem.features.nEffectiveFilterings);
 		m.put(REVISIONS, "(" + stats.nRevisions() + ",useless=" + stats.nUselessRevisions() + ")", stats.nRevisions() > 0);
-		m.put("entailed", head.solver.entailed.size());
+		m.put(N_ENTAILED, head.solver.entailed.size());
 		m.put(N_VALUES, Variable.nValidValuesFor(head.problem.variables));
+
 		Propagation propagation = head.solver.propagation;
 		m.put(REMOVED_BY_AC, propagation instanceof AC ? ((AC) (propagation)).preproRemovals : 0);
 		// m.put("nTotalRemovedValues", nPreproRemovedValues);
+		m.put(N_SINGLETONS, Variable.nSingletonsIn(head.problem.variables));
 		m.put(UNSAT, head.solver.stopping == Stopping.FULL_EXPLORATION);
 		m.separator(stats.preprocessing.nRemovedTuples > 0 || stats.preprocessing.nAddedNogoods > 0 || stats.preprocessing.nAddedCtrs > 0);
 		m.put(N_REMOVED_TUPLES, stats.preprocessing.nRemovedTuples);
@@ -651,12 +673,19 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private InformationBloc runInfo() {
 		InformationBloc m = new InformationBloc(RUN);
-		m.put("run", head.solver.restarter.numRun + 1);
+		m.put(RUN, head.solver.restarter.numRun + 1);
 		m.put(DEPTHS, head.solver.minDepth + ".." + head.solver.maxDepth);
 		String rb1 = head.solver.heuristic instanceof RunRobin ? ((RunRobin) head.solver.heuristic).current.getClass().getSimpleName() : "";
 		String rb2 = head.control.valh.clazz.equals("RunRobin") ? ((HeuristicValuesDirect.RunRobin) head.problem.variables[0].heuristic).currentClass() : "";
 		m.put("robin", rb1 + (rb1.length() > 0 && rb2.length() > 0 ? "-" : "") + rb2);
+
+		if (head.control.varh.arrayPriorityRunRobin) {
+			int index = head.solver.restarter.numRun % (head.problem.varArrays.length + 1);
+			m.put("aprr", index == 0 ? "_" : head.problem.varArrays[index - 1].id);
+		}
 		m.put(N_EFFECTIVE, features.nEffectiveFilterings);
+		m.put("asgs", stats.infoARunAssignemnts());
+		// m.put("less", stats.nImpactlessAssignmentsBeforeRun);
 		m.put(N_FAILED, stats.nFailedAssignments);
 		m.put(N_WRONG, stats.nWrongDecisions);
 		if (Kit.memory() > 10000000000L)
@@ -709,6 +738,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		m.put(REVISIONS, "(" + stats.nRevisions() + ",useless=" + stats.nUselessRevisions() + ")", stats.nRevisions() > 0);
 		m.put(N_SINGLETON_TESTS, head.solver.propagation.nSingletonTests);
 		m.put(N_EFFECTIVE_SINGLETON_TESTS, head.solver.propagation.nEffectiveSingletonTests);
+		m.put("noefs", stats.nImpactlessAssignments);
 		m.put(N_NOGOODS, head.solver.nogoodReasoner != null ? head.solver.nogoodReasoner.nNogoods : 0);
 		m.separator();
 		m.put(STOP, head.solver.stopping == null ? "no" : head.solver.stopping.toString());

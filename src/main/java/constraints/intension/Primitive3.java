@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -10,6 +10,7 @@
 
 package constraints.intension;
 
+import static constraints.ConstraintIntension.tooLarge;
 import static utility.Kit.control;
 
 import java.math.BigInteger;
@@ -19,13 +20,17 @@ import org.xcsp.common.Types.TypeConditionOperatorRel;
 import org.xcsp.common.Utilities;
 
 import constraints.Constraint;
+import constraints.ConstraintSpecific;
 import constraints.global.Sum.SumWeighted;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
+import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagNotCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
+import interfaces.Tags.TagPrimitive;
 import problem.Problem;
 import propagation.AC;
+import propagation.AC.TypeFilteringResult;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -38,14 +43,8 @@ import variables.Variable;
  * 
  * @author Christophe Lecoutre
  */
-public abstract class Primitive3 extends Primitive implements TagAC, TagCallCompleteFiltering, TagNotSymmetric {
+public abstract class Primitive3 extends ConstraintSpecific implements TagAC, TagCallCompleteFiltering, TagNotSymmetric, TagPrimitive {
 	// TODO AC not true sometimes
-
-	private static final int RUNNING_LIMIT = 200; // TODO hard coding_
-
-	private static boolean tooLarge(int size1, int size2) {
-		return size1 > 1 && size2 > 1 && size1 * (double) size2 > RUNNING_LIMIT;
-	}
 
 	public static Constraint buildFrom(Problem pb, Variable x, TypeArithmeticOperator aop, Variable y, TypeConditionOperatorRel op, Variable z) {
 		switch (aop) {
@@ -161,7 +160,7 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 	// ***** Classes for x + y <op> z
 	// ************************************************************************
 
-	public static abstract class Add3 extends Primitive3 implements TagNotCallCompleteFiltering {
+	public static abstract class Add3 extends Primitive3 implements TagCallCompleteFiltering { // TODO CallComplete or not?
 
 		public static Constraint buildFrom(Problem pb, Variable x, Variable y, TypeConditionOperatorRel op, Variable z) {
 			switch (op) {
@@ -177,13 +176,13 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 			super(pb, x, y, z);
 		}
 
-		public static final class Add3EQ extends Add3 { // O(d^2)
+		public static final class Add3EQ extends Add3 { // x + y = z ; O(d^2)
 
 			boolean multidirectional = false; // hard coding
 
 			@Override
 			public boolean isGuaranteedAC() {
-				return dx.size() * (double) dy.size() <= RUNNING_LIMIT;
+				return !tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeAdd);
 			}
 
 			@Override
@@ -198,21 +197,28 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (dx.size() == 1)
+				boolean sx = dx.size() == 1, sy = dy.size() == 1, sz = dz.size() == 1;
+				// if (sx && sy)
+				// return dz.reduceToValue(dx.singleValue() + dy.singleValue()) && entail();
+				// if (sx && sz)
+				// return dy.reduceToValue(dz.singleValue() - dx.singleValue()) && entail();
+				// if (sy && sz)
+				// return dx.reduceToValue(dz.singleValue() - dy.singleValue()) && entail();
+				if (sx)
 					return AC.enforceEQ(dz, dy, dx.singleValue());
-				if (dy.size() == 1)
+				if (sy)
 					return AC.enforceEQ(dz, dx, dy.singleValue());
-				if (dz.size() == 1)
+				if (sz)
 					return AC.enforceEQb(dx, dy, dz.singleValue());
-
-				if (tooLarge(dx.size(), dy.size())) {
+				if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeAdd)) {
 					if (dz.removeValuesLT(dx.firstValue() + dy.firstValue()) == false || dz.removeValuesGT(dx.lastValue() + dy.lastValue()) == false)
 						return false;
 					if ((AC.enforceAddGE(dx, dy, dz.firstValue()) && AC.enforceAddLE(dx, dy, dz.lastValue())) == false)
 						return false;
-					if (tooLarge(dx.size(), dy.size())) // otherwise we keep filtering below
+					if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeAdd)) // otherwise we keep filtering below
 						return true;
 				}
+
 				boolean connexz = dz.connex();
 				boolean avoidx = false, avoidy = false;
 				if (connexz) {
@@ -350,6 +356,8 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 				return x.dom.is01() ? new Mul3bEQ(pb, x, y, z) : y.dom.is01() ? new Mul3bEQ(pb, y, x, z) : new Mul3EQ(pb, y, x, z);
 			case LE:
 				return new Mul3LE(pb, x, y, z);
+			case NE:
+				return new Mul3NE(pb, x, y, z);
 			default:
 				throw new AssertionError("not implemented");
 			}
@@ -384,6 +392,36 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 					if (dy.removeValuesGT(dz.lastValue() / dx.firstValue()) == false)
 						return false;
 				if (dx.lastValue() * dy.lastValue() <= dz.firstValue())
+					return entail();
+				return true;
+			}
+		}
+
+		public static final class Mul3GE extends Mul3 {
+
+			@Override
+			public boolean isSatisfiedBy(int[] t) {
+				return t[0] * t[1] >= t[2];
+			}
+
+			public Mul3GE(Problem pb, Variable x, Variable y, Variable z) {
+				super(pb, x, y, z);
+				control(Utilities.isSafeInt(BigInteger.valueOf(dx.firstValue()).multiply(BigInteger.valueOf(dy.firstValue())).longValueExact()));
+				control(Utilities.isSafeInt(BigInteger.valueOf(dx.lastValue()).multiply(BigInteger.valueOf(dy.lastValue())).longValueExact()));
+				control(dx.firstValue() >= 0 && dy.firstValue() >= 0 && dz.firstValue() >= 0, "For the moment");
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				if (dz.removeValuesGT(dx.lastValue() * dy.lastValue()) == false)
+					return false;
+				if (!dy.containsValue(0))
+					if (dx.removeValuesLT(dz.firstValue() / dy.lastValue()) == false)
+						return false;
+				if (!dx.containsValue(0))
+					if (dy.removeValuesLT(dz.firstValue() / dx.lastValue()) == false)
+						return false;
+				if (dx.firstValue() * dy.firstValue() >= dz.lastValue())
 					return entail();
 				return true;
 			}
@@ -459,7 +497,13 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (tooLarge(dx.size(), dy.size())) { // hard coding // TODO what about AC Guaranteed?
+				// System.out.println("ggggx " + dx.size() + " " + dx.connex() + " " + dx.firstValue() + ".." + dx.lastValue());
+				// System.out.println("ggggy " + dy.size() + " " + dy.connex() + " " + dy.firstValue() + ".." + dy.lastValue());
+				// System.out.println("ggggz " + dz.size() + " " + dz.connex() + " " + dz.firstValue() + ".." + dz.lastValue());
+				// if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeMul)) { // hard coding // TODO what about AC Guaranteed?
+
+				if (tooLarge(dx.size(), dy.size(), dz.size(), problem.head.control.intension.tooLargeMul)) { // hard coding // TODO what about AC
+					// Guaranteed?
 					int v1 = dx.firstValue() * dy.firstValue(), v2 = dx.firstValue() * dy.lastValue();
 					int v3 = dx.lastValue() * dy.firstValue(), v4 = dx.lastValue() * dy.lastValue();
 					int min1 = Math.min(v1, v2), max1 = Math.max(v1, v2);
@@ -468,7 +512,8 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 						return false;
 					if (AC.enforceMulGE(dx, dy, dz.firstValue()) && AC.enforceMulLE(dx, dy, dz.lastValue()) == false)
 						return false;
-					if (tooLarge(dx.size(), dy.size())) // otherwise we keep filtering below
+					// if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeMul))
+					if (tooLarge(dx.size(), dy.size(), dz.size(), problem.head.control.intension.tooLargeMul)) // otherwise we keep filtering below
 						return true;
 				}
 				if (!dy.containsValue(0) || !dz.containsValue(0))
@@ -545,6 +590,58 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 				return true;
 			}
 		}
+
+		public static final class Mul3NE extends Mul3 {
+
+			@Override
+			public boolean isSatisfiedBy(int[] t) {
+				return t[0] * t[1] != t[2];
+			}
+
+			public Mul3NE(Problem pb, Variable x, Variable y, Variable z) {
+				super(pb, x, y, z);
+				control(Utilities.isSafeInt(BigInteger.valueOf(dx.firstValue()).multiply(BigInteger.valueOf(dy.firstValue())).longValueExact()));
+				control(Utilities.isSafeInt(BigInteger.valueOf(dx.lastValue()).multiply(BigInteger.valueOf(dy.lastValue())).longValueExact()));
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				boolean sx = dx.size() == 1, sy = dy.size() == 1, sz = dz.size() == 1;
+				if (!sx && !sy && !sz)
+					return true;
+				if (sx && sy && sz)
+					return dx.singleValue() * dy.singleValue() != dz.singleValue() ? entail() : dummy.dom.fail();
+				if (sx && sy)
+					return dz.removeValueIfPresent(dx.singleValue() * dy.singleValue()) && entail();
+				if (sx && sz) {
+					int vx = dx.singleValue(), vz = dz.singleValue();
+					if (vx == 0)
+						return vz == 0 ? dummy.dom.fail() : entail();
+					int v = Math.abs(vz) / Math.abs(vx);
+					if (vx * v == vz && dy.removeValueIfPresent(v) == false)
+						return false;
+					if (vx * (-v) == vz && dy.removeValueIfPresent(-v) == false)
+						return false;
+					return entail();
+				}
+				if (sy && sz) {
+					int vy = dy.singleValue(), vz = dz.singleValue();
+					if (vy == 0)
+						return vz == 0 ? dummy.dom.fail() : entail();
+					int v = Math.abs(vz) / Math.abs(vy);
+					if (v * vy == vz && dx.removeValueIfPresent(v) == false)
+						return false;
+					if ((-v) * vy == vz && dx.removeValueIfPresent(-v) == false)
+						return false;
+					return entail();
+				}
+				if (sx)
+					return dx.singleValue() == 0 ? dz.removeValueIfPresent(0) && entail() : true;
+				if (sy)
+					return dy.singleValue() == 0 ? dz.removeValueIfPresent(0) && entail() : true;
+				return true;
+			}
+		}
 	}
 
 	// ************************************************************************
@@ -581,12 +678,12 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				if (tooLarge(dx.size(), dy.size())) { // hard coding // TODO what about AC Guaranteed?
+				if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeDiv)) { // hard coding // TODO what about AC Guaranteed?
 					if (dz.removeValuesLT(dx.firstValue() / dy.lastValue()) == false || dz.removeValuesGT(dx.lastValue() / dy.firstValue()) == false)
 						return false;
 					if ((AC.enforceDivGE(dx, dy, dz.firstValue()) && AC.enforceDivLE(dx, dy, dz.lastValue())) == false)
 						return false;
-					if (tooLarge(dx.size(), dy.size())) // otherwise we keep filtering below
+					if (tooLarge(dx.size(), dy.size(), problem.head.control.intension.tooLargeDiv)) // otherwise we keep filtering below
 						return true;
 				}
 
@@ -798,6 +895,8 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 			switch (op) {
 			case EQ:
 				return new Dist3EQ(pb, x, y, z);
+			case NE:
+				return new Dist3NE(pb, x, y, z);
 			default:
 				return null; // to be able to post it differently, rather than throw new AssertionError
 			}
@@ -930,6 +1029,60 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 				return true;
 			}
 		}
+
+		public static final class Dist3NE extends Dist3 {
+
+			@Override
+			public boolean isSatisfiedBy(int[] t) {
+				return Math.abs(t[0] - t[1]) != t[2];
+			}
+
+			public Dist3NE(Problem pb, Variable x, Variable y, Variable z) {
+				super(pb, x, y, z);
+			}
+
+			@Override
+			public boolean runPropagator(Variable dummy) {
+				boolean sx = dx.size() == 1, sy = dy.size() == 1, sz = dz.size() == 1;
+				if (!sx && !sy && !sz)
+					return true;
+				if (sx && sy && sz)
+					return Math.abs(dx.singleValue() - dy.singleValue()) != dz.singleValue() ? entail() : dummy.dom.fail();
+				if (sx && sy)
+					return dz.removeValueIfPresent(Math.abs(dx.singleValue() - dy.singleValue())) && entail();
+				if (sx && sz) {
+					int vx = dx.singleValue(), vz = dz.singleValue();
+					if (dy.removeValueIfPresent(vx + vz) == false)
+						return false;
+					if (dy.removeValueIfPresent(vx - vz) == false)
+						return false;
+					return entail();
+				}
+				if (sy && sz) {
+					int vy = dy.singleValue(), vz = dz.singleValue();
+					if (dx.removeValueIfPresent(vy + vz) == false)
+						return false;
+					if (dx.removeValueIfPresent(vy - vz) == false)
+						return false;
+					return entail();
+				}
+				if (sx) {
+					if (dy.size() == 2) {
+						int vx = dx.singleValue();
+						if (Math.abs(vx - dy.firstValue()) == Math.abs(vx - dy.lastValue()))
+							return dz.removeValueIfPresent(Math.abs(vx - dy.firstValue())) && entail();
+					}
+				}
+				if (sy) {
+					if (dx.size() == 2) {
+						int vy = dy.singleValue();
+						if (Math.abs(vy - dx.firstValue()) == Math.abs(vy - dx.lastValue()))
+							return dz.removeValueIfPresent(Math.abs(vy - dx.firstValue())) && entail();
+					}
+				}
+				return true;
+			}
+		}
 	}
 
 	// ************************************************************************
@@ -1022,6 +1175,93 @@ public abstract class Primitive3 extends Primitive implements TagAC, TagCallComp
 			else // only 0 in dx
 				return dz.removeIfPresent(0) && entail();
 			return true;
+		}
+	}
+
+	// ************************************************************************
+	// ***** Class for |x -y| != [x -z]
+	// ************************************************************************
+
+	public static final class DistDistNE3 extends ConstraintSpecific implements TagNotAC, TagCallCompleteFiltering, TagPrimitive {
+
+		private static final int NO = Integer.MAX_VALUE;
+
+		private Domain domx, domy, domz;
+
+		@Override
+		public boolean isSatisfiedBy(int[] t) {
+			return Math.abs(t[0] - t[1]) != Math.abs(t[0] - t[2]); // |x - y| != |x - z|
+		}
+
+		public DistDistNE3(Problem pb, Variable x, Variable y, Variable z) {
+			super(pb, new Variable[] { x, y, z });
+			this.domx = x.dom;
+			this.domy = y.dom;
+			this.domz = z.dom;
+		}
+
+		private int onlyOneRemaining(Domain d1, Domain d2) {
+			if (d1.size() == 1) {
+				if (d2.size() == 1)
+					return Math.abs(d1.singleValue() - d2.singleValue());
+				if (d2.size() == 2) {
+					int dst = Math.abs(d1.singleValue() - d2.firstValue());
+					if (dst == Math.abs(d1.singleValue() - d2.lastValue()))
+						return dst;
+				}
+				return NO;
+			}
+			if (d2.size() == 1) {
+				if (d1.size() == 2) {
+					int dst = Math.abs(d2.singleValue() - d1.firstValue());
+					if (dst == Math.abs(d2.singleValue() - d1.lastValue()))
+						return dst;
+				}
+				return NO;
+			}
+			return NO;
+		}
+
+		@Override
+		public boolean runPropagator(Variable dummy) {
+			if (domy.size() == 1) {
+				if (domz.removeValueIfPresent(domy.singleValue()) == false)
+					return false;
+			}
+			if (domz.size() == 1) {
+				if (domy.removeValueIfPresent(domz.singleValue()) == false)
+					return false;
+			}
+			if (domy.size() == 1 && domz.size() == 1) {
+				int vy = domy.singleValue(), vz = domz.singleValue();
+				control(vy != vz); // because of code above
+				int maxv = vy > vz ? vy : vz, minv = vy > vz ? vz : vy;
+				int gap = Math.abs(maxv - minv);
+				if (gap % 2 != 0)
+					return entail();
+				int v = maxv - gap / 2;
+				return domx.removeValueIfPresent(v) && entail();
+			}
+			// if (domx.size() ==1) {
+			// }
+			int oneLeft = onlyOneRemaining(domx, domy), oneRight = onlyOneRemaining(domx, domz);
+			if (oneLeft == NO && oneRight == NO)
+				return true;
+			if (oneLeft != NO && oneRight != NO)
+				return oneLeft != oneRight ? entail() : dummy.dom.fail();
+			if (oneLeft != NO) {
+				TypeFilteringResult res = AC.enforceDistNE(domx, domz, oneLeft);
+				if (res == TypeFilteringResult.ENTAIL)
+					return entail();
+				assert res == TypeFilteringResult.TRUE || res == TypeFilteringResult.FALSE; // FAIL not possible
+				return res == TypeFilteringResult.TRUE;
+			}
+			assert oneRight != NO;
+			TypeFilteringResult res = AC.enforceDistNE(domx, domy, oneRight);
+			if (res == TypeFilteringResult.ENTAIL)
+				return entail();
+			assert res == TypeFilteringResult.TRUE || res == TypeFilteringResult.FALSE; // FAIL not possible
+			return res == TypeFilteringResult.TRUE;
 		}
 	}
 

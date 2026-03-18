@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -38,6 +38,7 @@ import org.xcsp.common.Types.TypeFramework;
 import org.xcsp.common.Utilities;
 import org.xcsp.modeler.api.ProblemAPI;
 
+import constraints.Constraint;
 import constraints.ConstraintExtension;
 import constraints.ConstraintIntension.IntensionStructure;
 import constraints.extension.structures.Bits;
@@ -46,6 +47,7 @@ import constraints.extension.structures.MDD;
 import dashboard.Control;
 import dashboard.Input;
 import dashboard.Output;
+import heuristics.Heuristic;
 import heuristics.HeuristicRevisions;
 import heuristics.HeuristicValues;
 import heuristics.HeuristicVariables;
@@ -224,7 +226,8 @@ public class Head extends Thread {
 				// next, we load loaded classes
 				ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 				// however, if we need to look at unloaded classes, as for example some in a subclass of Propagation, we
-				// need to put lines as this one: Class<?> _ = Propagation.class;
+				// need to put lines as this one:
+				Class<?> _1 = Constraint.class, _2 = Propagation.class, _3 = Heuristic.class;
 				for (Package p : Package.getPackages()) {
 					String name = p.getName();
 					if (!name.startsWith("constraints") && !name.startsWith("heuristics") && !name.startsWith("propagation"))
@@ -289,6 +292,8 @@ public class Head extends Thread {
 	 * The solver used to solve the current problem instance
 	 */
 	public Solver solver;
+
+	// public ProblemILP problemILP;
 
 	/**
 	 * The object that stores all parameters for piloting the solving process
@@ -443,7 +448,7 @@ public class Head extends Thread {
 
 	@Override
 	public void run() {
-		log.config("\n" + Color.ORANGE.coloring("ACE v2.5 ") + Kit.dateOf(Head.class) + "\n");
+		log.config("\n" + Color.ORANGE.coloring("ACE v2.6 ") + Kit.dateOf(Head.class) + "\n");
 		stopwatch.start();
 		boolean[] crashed = new boolean[Input.nInstancesToSolve];
 		for (int i = 0; i < Input.nInstancesToSolve; i++) {

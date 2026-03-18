@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -17,8 +17,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import constraints.extension.STR3;
+import heuristics.BestScoredVariables.BestScoredSimple;
 import heuristics.HeuristicVariables;
-import heuristics.HeuristicVariables.BestScoredVariable;
 import heuristics.HeuristicVariablesDynamic.WdegOnDom;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import propagation.SAC.SAC3.LocalQueue.Cell;
@@ -649,14 +649,14 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			/**
 			 * The number of variables that still need to be checked to be ESAC
 			 */
-			private int nUncheckedVars;
+			private int nUncheckedVars; 
 
 			/**
 			 * The (dense) set of variables that still need to be checked to be ESAC
 			 */
 			private Variable[] uncheckedVars;
 
-			private BestScoredVariable bestScoredVariable = new BestScoredVariable();
+			private BestScoredSimple bestScored = new BestScoredSimple(solver);
 
 			private LocalQueue() {
 				this.uncheckedVars = new Variable[solver.problem.variables.length];
@@ -674,18 +674,18 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 			}
 
 			public Variable selectNextVariable() {
-				bestScoredVariable.beforeIteration(0,false);
+				bestScored.beforeIteration(0,false);
 				if (nUncheckedVars == 0) { // we keep building the branch
-					solver.futVars.execute(x -> bestScoredVariable.consider(x, varHeuristics[currIndexOfVarHeuristic].scoreOptimizedOf(x)));
+					solver.futVars.execute(x -> bestScored.consider(x, varHeuristics[currIndexOfVarHeuristic].scoreOptimizedOf(x)));
 				} else {
 					assert controlUncheckedVariables();
 					int bestPos = 0;
 					for (int i = 0; i < nUncheckedVars; i++)
-						if (bestScoredVariable.consider(uncheckedVars[i], varHeuristics[currIndexOfVarHeuristic].scoreOptimizedOf(uncheckedVars[i])))
+						if (bestScored.consider(uncheckedVars[i], varHeuristics[currIndexOfVarHeuristic].scoreOptimizedOf(uncheckedVars[i])))
 							bestPos = i;
 					Kit.swap(uncheckedVars, --nUncheckedVars, bestPos);
 				}
-				return bestScoredVariable.variable;
+				return bestScored.firstVariable();
 			}
 
 			public Variable pick(Variable x) {

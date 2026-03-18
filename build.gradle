@@ -11,7 +11,7 @@ sourceCompatibility = 1.11
 targetCompatibility = 1.11 
 
 archivesBaseName = "ACE"
-version = '2.5'
+version = '2.6'
  
 repositories {
  mavenCentral()
@@ -36,7 +36,8 @@ jar {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
  }
-	
+
+
 test {
 	//executable = "/path/to/jdk/bin/java"
 	

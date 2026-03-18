@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -14,20 +14,23 @@ import static utility.Kit.control;
 
 import java.util.Arrays;
 
-import constraints.ConstraintExtension.ExtensionSpecific;
+import constraints.ConstraintExtension.ConstraintExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
+import interfaces.Tags.TagNegative;
 import problem.Problem;
 import sets.SetDenseReversible;
+import variables.Domain;
 import variables.Variable;
 
 /**
- * This is STR (Simple Tabular Reduction), for filtering extension (table) constraints, as introduced by Julian Ullmann:
- * "Partition search for non-binary constraint satisfaction". Inf. Sci. 177(18): 3639-3678 (2007).
+ * This is STR (Simple Tabular Reduction), for filtering extension (table) constraints, as introduced by Julian Ullmann: "Partition search for non-binary
+ * constraint satisfaction". Inf. Sci. 177(18): 3639-3678 (2007).
  * 
  * @author Christophe Lecoutre
  */
-public class STR1 extends ExtensionSpecific {
+public class STR1 extends ConstraintExtensionSpecific implements ObserverOnBacktracksSystematic {
 	// TODO why not using a counter 'time' and replace boolean[][] ac by int[][] ac
 	// we just do time++ instead of Arrays.fill(ac[x],false); the gain must be unnoticeable, right?
 
@@ -70,8 +73,7 @@ public class STR1 extends ExtensionSpecific {
 	protected boolean[][] ac;
 
 	/**
-	 * When used during filtering, cnts[x] is the number of values in the current domain of x with no found support
-	 * (yet)
+	 * When used during filtering, cnts[x] is the number of values in the current domain of x with no found support (yet)
 	 */
 	protected int[] cnts;
 
@@ -130,8 +132,10 @@ public class STR1 extends ExtensionSpecific {
 			int nRemovals = cnts[x];
 			if (nRemovals == 0)
 				continue;
-			if (doms[x].remove(ac[x], nRemovals) == false)
-				return false;
+			assert nRemovals < doms[x].size();
+			doms[x].remove(ac[x], nRemovals); // no inconsistency possible
+			// if (doms[x].remove(ac[x], nRemovals) == false)
+			// return false;
 			cnt -= nRemovals;
 		}
 		return true;
@@ -156,6 +160,88 @@ public class STR1 extends ExtensionSpecific {
 			} else
 				set.removeAtPosition(i, depth);
 		}
-		return updateDomains();
+
+		if (set.size() == 0)
+			return dummy.dom.fail(); // inconsistency detected
+		updateDomains();
+		if (!extStructure.isStarred()) {
+			int prod = 1;
+			for (int i = futvars.limit; i >= 0; i--) {
+				prod *= doms[futvars.dense[i]].size();
+				if (prod > set.size())
+					return true;
+			}
+			return prod == set.size() && entail();
+		}
+		return true;
+		// return updateDomains();
+	}
+
+	/**********************************************************************************************
+	 * STR1N
+	 *********************************************************************************************/
+
+	/**
+	 * This is STR (Simple Tabular Reduction) for filtering negative extension (table) constraints.
+	 * 
+	 * @author Christophe Lecoutre
+	 */
+	public static final class STR1N extends STR1 implements TagNegative {
+
+		/**
+		 * nConflicts[x][a] indicates, during filtering, the number of valid conflicts encountered with (x,a)
+		 */
+		private final int[][] nConflicts;
+
+		/**
+		 * Builds an extension constraint, with STR1N as specific filtering method
+		 * 
+		 * @param pb
+		 *            the problem to which the constraint is attached
+		 * @param scp
+		 *            the scope of the constraint
+		 */
+		public STR1N(Problem pb, Variable[] scp) {
+			super(pb, scp);
+			this.nConflicts = Variable.litterals(scp).intArray();
+		}
+
+		@Override
+		protected void beforeFiltering() {
+			super.beforeFiltering();
+			for (int i = futvars.limit; i >= 0; i--)
+				Arrays.fill(nConflicts[futvars.dense[i]], 0);
+		}
+
+		@Override
+		public boolean runPropagator(Variable evt) {
+			int depth = problem.solver.depth();
+			beforeFiltering();
+			for (int i = set.limit; i >= 0; i--) {
+				int[] tuple = tuples[set.dense[i]];
+				if (isValid(tuple)) {
+					for (int j = futvars.limit; j >= 0; j--) {
+						int x = futvars.dense[j];
+						int a = tuple[x];
+						nConflicts[x][a]++;
+					}
+				} else
+					set.removeAtPosition(i, depth);
+			}
+			long nValidTuples = Domain.nValidTuplesBounded(doms);
+			for (int i = futvars.limit; i >= 0; i--) {
+				int x = futvars.dense[i];
+				Domain dom = scp[x].dom;
+				long limit = nValidTuples / dom.size();
+				for (int a = dom.first(); a != -1; a = dom.next(a)) {
+					if (nConflicts[x][a] != limit) {
+						cnt--;
+						cnts[x]--;
+						ac[x][a] = true;
+					}
+				}
+			}
+			return updateDomains();
+		}
 	}
 }

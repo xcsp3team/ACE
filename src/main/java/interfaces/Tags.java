@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -60,6 +60,12 @@ public interface Tags {
 	}
 
 	/**
+	 * Tag for indicating that a constraint is performing some form of generic filtering.
+	 */
+	interface TagGenericFiltering {
+	}
+	
+	/**
 	 * Tag for indicating that an object (e.g., a constraint) is able to reason on bounds (of domains).
 	 */
 	interface TagBoundCompatible {
@@ -94,6 +100,14 @@ public interface Tags {
 	 * Tag for indicating that an object (e.g., an heuristic) aims at maximizing an expression (variable, sum, maximum, etc.)
 	 */
 	interface TagMaximize {
+	}
+
+	/**
+	 * Tag for indicating that a constraint is a primitive. A primitive constraint is a constraint of small fixed arity defined by a Boolean tree expression
+	 * (i.e., it is an intension constraint) with a classical (i.e., well-identified) form. For example, it can be x < y, x%2 = y, or |x-y| = z. A specific
+	 * propagator is used.
+	 */
+	interface TagPrimitive {
 	}
 
 }

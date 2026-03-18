@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -241,7 +241,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 
 		@Override
 		protected void handleNewSolution(Variable x, int a) {
-			handleSolution(x, a, solver.solutions.last);
+			handleSolution(x, a, solver.solutions.last.idxs);
 		}
 
 		@Override
@@ -276,7 +276,7 @@ public class GIC extends StrongConsistency { // GIC is GIC1
 
 		@Override
 		protected void handleNewSolution(Variable x, int a) {
-			int[] solution = solver.solutions.last;
+			int[] solution = solver.solutions.last.idxs;
 			handleSolution(x, a, solution);
 			if (residues[x.num][a] == null)
 				residues[x.num][a] = new int[solver.problem.variables.length];

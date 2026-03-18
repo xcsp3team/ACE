@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -23,6 +23,7 @@ import interfaces.Observers.ObserverOnDecisions;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Observers.ObserverOnSolving;
 import propagation.Forward;
+import propagation.Reviser;
 import utility.Kit;
 import utility.Stopwatch;
 import variables.Variable;
@@ -67,6 +68,13 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	@Override
 	public final void afterSolving() {
 		times.solvingWck += stopwatch.wckTime();
+	}
+
+	@Override
+	public void beforeRun() {
+		nAssignmentsBeforeRun = nAssignments;
+		nFailedAssignmentsBeforeRun = nFailedAssignments;
+		nImpactlessAssignmentsBeforeRun = nImpactlessAssignments;
 	}
 
 	@Override
@@ -217,6 +225,12 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 				nFailedPerValue[a]++;
 		}
 
+		public void whenImpactlessAssignment(int a) {
+			nFailed--;
+			if (nFailedPerValue != null)
+				nFailedPerValue[a]--;
+		}
+
 		public double failureRate() {
 			return nFailed / (double) n;
 		}
@@ -344,10 +358,18 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	 */
 	public long nAssignments;
 
+	private long nAssignmentsBeforeRun;
+
 	/**
 	 * The number of failed assignments (positive decisions directly leading to a failure) made by the solver when building the search tree
 	 */
 	public long nFailedAssignments;
+
+	private long nFailedAssignmentsBeforeRun;
+
+	public long nImpactlessAssignments;
+
+	private long nImpactlessAssignmentsBeforeRun;
 
 	/**
 	 * The object used to collect data about the preprocessing stage
@@ -397,11 +419,18 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	}
 
 	public final long nRevisions() {
-		return solver.propagation instanceof Forward ? ((Forward) solver.propagation).reviser.nRevisions : 0;
+		Reviser reviser = solver.propagation instanceof Forward ? ((Forward) solver.propagation).reviser : null;
+		return reviser != null ? reviser.nRevisions : 0;
 	}
 
 	public final long nUselessRevisions() {
-		return solver.propagation instanceof Forward ? ((Forward) solver.propagation).reviser.nUselessRevisions : 0;
+		Reviser reviser = solver.propagation instanceof Forward ? ((Forward) solver.propagation).reviser : null;
+		return reviser != null ? reviser.nUselessRevisions : 0;
+	}
+
+	public final String infoARunAssignemnts() {
+		return "(" + (nAssignments - nAssignmentsBeforeRun) + ",noefs=" + (nImpactlessAssignments - nImpactlessAssignmentsBeforeRun) + ",fails="
+				+ (nFailedAssignments - nFailedAssignmentsBeforeRun) + ")";
 	}
 
 }

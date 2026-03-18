@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence).
+ * This file is part of the constraint solver ACE.
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS.
  *
  * Licensed under the MIT License.
@@ -31,9 +31,8 @@ import heuristics.HeuristicValuesDirect.First;
 import heuristics.HeuristicValuesDirect.Last;
 import heuristics.HeuristicValuesDirect.Vals;
 import heuristics.HeuristicValuesDynamic.Bivs;
-import heuristics.HeuristicValuesDynamic.Bivs2;
 import interfaces.Tags.TagExperimental;
-import optimization.ObjectiveVariable;
+import optimization.ObjectiveUnary.ObjectiveVariable;
 import problem.Problem;
 import problem.Problem.Term;
 import solver.Solver;
@@ -116,7 +115,6 @@ public abstract class HeuristicValues extends Heuristic {
 			if (c instanceof Sum) {
 				long[] t = IntStream.range(0, c.scp.length)
 						.mapToLong(i -> (c instanceof SumWeighted ? ((SumWeighted) c).coeffs[i] : 1) * c.scp[i].dom.distance()).toArray();
-				System.out.println("jjjjj " + Kit.join(t));
 				for (int i = 0; i < c.scp.length; i++)
 					c.scp[i].specificWeight = 1 / Math.max(1, Math.abs(t[i]));
 			}
@@ -258,7 +256,8 @@ public abstract class HeuristicValues extends Heuristic {
 			}
 		} else { // at least one solution has been found
 			int numRun = solver.restarter.numRun;
-			if (options.solutionSaving > 0 && !(this instanceof Bivs2) && numRun >= options.solutionSavingStart) {
+			if (options.solutionSaving > 0 && numRun >= options.solutionSavingStart) { // && !(this instanceof Bivs2) && numRun >= options.solutionSavingStart)
+																						// {
 				// note that solution saving may break determinism of search trees because it depends in which order domains
 				// are pruned (and become singleton or not)
 				if (options.solutionSaving == 1 || numRun == 0 || numRun % options.solutionSaving != 0) {
@@ -271,7 +270,7 @@ public abstract class HeuristicValues extends Heuristic {
 					// if (!followEvenObj)
 					// System.out.println(nb);
 					if (!options.solutionSavingExceptObj || x.problem.optimizer == null || !((Constraint) x.problem.optimizer.ctr).involves(x)) {
-						int a = solver.solutions.last[x.num];
+						int a = solver.solutions.last.idxs[x.num];
 						if (dx.contains(a)) // && (!priorityVar || solver.rs.random.nextDouble() < 0.5))
 							return a;
 					}

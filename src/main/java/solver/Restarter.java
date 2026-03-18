@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+  * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -68,7 +68,7 @@ public class Restarter implements ObserverOnRuns {
 			if (solver.solutions.found == 0)
 				solver.head.control.valh.solutionSavingStart++;
 			else if (solver.head.control.valh.solutionSavingStart == numRun)
-				Kit.log.config("\tStarting SOS");
+				Kit.log.config(Kit.Color.YELLOW.coloring(" ...Starting SOS")); // Kit.log.config("\tStarting SOS");
 		}
 		if (numRun > 0 && numRun % options.resetPeriod == 0) {
 			// if ((numRun - solver.solutions.lastRun) % options.resetPeriod == 0) {
@@ -87,22 +87,27 @@ public class Restarter implements ObserverOnRuns {
 
 		if (solver.head.control.varh.arrayPriorityRunRobin) {
 			// TODO control that aprr is not used with pr1 or pr2
-			int k = solver.problem.varArrays.length;
-			// for (VarArray va : solver.problem.arrays) System.out.println("hhhh " + Kit.join(va.flatVars));
-			int index = numRun % (k + 1);
+			int index = numRun % (solver.problem.varArrays.length + 1);
 			if (index == 0)
 				solver.heuristic.resetPriorityVars();
 			else
 				solver.heuristic.setPriorityVars((Variable[]) solver.problem.varArrays[index - 1].flatVars, 0);
 		}
+		solver.futVars.discardSingletonVariablesAtRunRoot(); // keep it at this place
 
-		if (solver.head.control.varh.secondScored) {
-			solver.heuristic.bestScoredVariable.cleanStack();
-			if (solver.heuristic instanceof RunRobin) {
-				for (HeuristicVariables h : ((RunRobin) solver.heuristic).pool)
-					h.bestScoredVariable.cleanStack();
-			}
+		// if (solver.head.control.varh.secondScored) {
+		solver.heuristic.bestScored.reset();
+		if (solver.heuristic instanceof RunRobin) {
+			for (HeuristicVariables h : ((RunRobin) solver.heuristic).pool)
+				h.bestScored.reset();
 		}
+		// }
+		solver.solutions.last.deactivated = false;
+		
+		
+//		if (numRun % 30 == 0 && solver.head.control.solving.integerLinearProgramming)
+//			new ProblemILP(solver.problem);
+		
 	}
 
 	@Override
@@ -217,8 +222,7 @@ public class Restarter implements ObserverOnRuns {
 	private int nRestartsSinceReset;
 
 	public LocalStats localStats;
-	
-	
+
 	public Freezer freezer;
 
 	/**
@@ -289,7 +293,7 @@ public class Restarter implements ObserverOnRuns {
 			if (2 * measure >= currCutoff)
 				freezer.freezeAt(numRun);
 		}
-		if (optimizer == null || numRun != solver.solutions.lastRun)
+		if (optimizer == null || numRun != solver.solutions.last.numRun)
 			return false;
 		return options.restartAfterSolution;
 		// for CSP, shouldnt'we add the last solution as nogood if restartAfterSolution (otherwise, possibility of
@@ -306,7 +310,7 @@ public class Restarter implements ObserverOnRuns {
 	}
 
 	public int howManyRunsSincelastSolution() {
-		int v = solver.solutions.lastRun;
+		int v = solver.solutions.last.numRun;
 		return v == -1 ? -1 : (numRun - v);
 	}
 
@@ -324,7 +328,7 @@ public class Restarter implements ObserverOnRuns {
 		@Override
 		public void beforeRun() {
 			super.beforeRun();
-			int[] solution = solver.solutions.last;
+			int[] solution = solver.solutions.last.idxs;
 			if (solution == null)
 				return;
 			heuristic.freezeVariables(solution);

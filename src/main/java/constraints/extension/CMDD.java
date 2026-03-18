@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -18,10 +18,11 @@ import org.xcsp.common.Constants;
 import org.xcsp.common.structures.Automaton;
 import org.xcsp.common.structures.Transition;
 
-import constraints.ConstraintExtension.ExtensionSpecific;
+import constraints.ConstraintExtension.ConstraintExtensionSpecific;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.MDD;
 import constraints.extension.structures.MDD.Node;
+import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagPositive;
 import interfaces.Tags.TagStarredCompatible;
 import problem.Problem;
@@ -30,13 +31,12 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the code for CMDD, as described in: "An MDD-based generalized arc consistency algorithm for positive and
- * negative table constraints and some global constraints", Constraints An Int. J. 15(2): 265-304 (2010) by K. Cheng and
- * R. Yap.
+ * This is the code for CMDD, as described in: "An MDD-based generalized arc consistency algorithm for positive and negative table constraints and some global
+ * constraints", Constraints An Int. J. 15(2): 265-304 (2010) by K. Cheng and R. Yap.
  * 
  * @author Christophe Lecoutre
  */
-public abstract class CMDD extends ExtensionSpecific implements TagPositive {
+public abstract class CMDD extends ConstraintExtensionSpecific implements TagPositive, ObserverOnBacktracksSystematic {
 
 	/**********************************************************************************************
 	 * Implementing Interfaces
@@ -47,7 +47,7 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive {
 		super.afterProblemConstruction(n);
 		this.mdd = (MDD) extStructure();
 		this.trueNodes = new int[mdd.nNodes()];
-		if (extOptions.decremental)
+		if (extOptions.decrementalCMDD)
 			this.set = new SetSparseReversible(mdd.nNodes(), n + 1, false);
 		else
 			this.falseNodes = new int[mdd.nNodes()];
@@ -78,14 +78,13 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive {
 	protected SetSparseReversible set;
 
 	/**
-	 * ac[x][a] indicates if a support has been found for (x,a); actually, x denotes the level where the variable is
-	 * managed in the MDD
+	 * ac[x][a] indicates if a support has been found for (x,a); actually, x denotes the level where the variable is managed in the MDD
 	 */
 	protected boolean[][] ac;
 
 	/**
-	 * cnts[x] is the number of values in the current domain of x with no found support (yet); actually, x denotes the
-	 * level where the variable is managed in the MDD
+	 * cnts[x] is the number of values in the current domain of x with no found support (yet); actually, x denotes the level where the variable is managed in
+	 * the MDD
 	 */
 	protected int[] cnts;
 
@@ -120,7 +119,7 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive {
 
 	public CMDD(Problem pb, Variable[] scp, int[][] tuples) {
 		this(pb, scp);
-		storeTuples(tuples, true);
+		//storeTuplesInExtensionStructure(tuples, true);
 	}
 
 	/**
@@ -158,8 +157,7 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive {
 	}
 
 	/**
-	 * Method to be called when the terminal node has been shown to be reached from the specified level with the
-	 * specified value index
+	 * Method to be called when the terminal node has been shown to be reached from the specified level with the specified value index
 	 * 
 	 * @param level
 	 *            a level in the MDD (corresponding to a variable)
@@ -168,7 +166,7 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive {
 	 * @return true if the current exploration from the parent node can be terminated (due to early cutoff)
 	 */
 	protected boolean manageSuccessfulExploration(final int level, final int a) {
-		int cutoffVariant = extOptions.variant;
+		int cutoffVariant = extOptions.variantCMDD;
 		boolean future = !scp[level].assigned();
 		if (cutoffVariant == 2) {
 			if (future) {
@@ -258,6 +256,7 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive {
 
 		public CMDDO(Problem pb, Variable[] scp, int[][] tuples) {
 			super(pb, scp, tuples);
+			storeTuplesInExtensionStructure(tuples, true, false);
 		}
 
 		public CMDDO(Problem pb, Variable[] scp, Node root) {
@@ -325,6 +324,7 @@ public abstract class CMDD extends ExtensionSpecific implements TagPositive {
 
 		public CMDDS(Problem pb, Variable[] scp, int[][] tuples) {
 			super(pb, scp, tuples);
+			storeTuplesInExtensionStructure(tuples, true, true);
 		}
 
 		@Override

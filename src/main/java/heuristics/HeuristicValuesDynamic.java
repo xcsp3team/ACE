@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -381,7 +381,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 	/**
 	 * BIVS with solution saving as tie-breaker
 	 */
-	public static final class Bivs2 extends Bivs {
+	public static final class Bivs2 extends Bivs { // TOD (this instanceof Bivs2 to be handled in HeuristicValues 
 
 		public Bivs2(Variable x, boolean anti) {
 			super(x, anti);
@@ -390,7 +390,7 @@ public abstract class HeuristicValuesDynamic extends HeuristicValues {
 		@Override
 		public int computeBestValueIndex() {
 			inconsistent.clear();
-			int last = solver.solutions.found == 0 ? -1 : solver.solutions.last[x.num];
+			int last = solver.solutions.found == 0 ? -1 : solver.solutions.last.idxs[x.num];
 			if ((options.bivsFirst && solver.solutions.found > 0) || dx.size() > options.bivsLimit) {
 				if (last != -1 && dx.contains(last))
 					return last; // solution saving in that case

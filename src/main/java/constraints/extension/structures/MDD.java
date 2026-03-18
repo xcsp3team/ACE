@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -642,6 +642,11 @@ public final class MDD extends ExtensionStructure {
 	 */
 	private Integer nNodes;
 
+	@Override
+	public boolean isStarred() {
+		return root.starred;
+	}
+
 	/**
 	 * @return the number of nodes in the MDD
 	 */
@@ -686,7 +691,6 @@ public final class MDD extends ExtensionStructure {
 	public void displayTuples() {
 		Domain[] doms = Stream.of(firstRegisteredCtr().scp).map(x -> x.dom).toArray(Domain[]::new);
 		int cnt = root.displayTuples(doms, new int[doms.length], 0, 0);
-		// System.out.println(" => " + cnt + " tuples");
 		Kit.log.info(" => " + cnt + " tuples");
 	}
 

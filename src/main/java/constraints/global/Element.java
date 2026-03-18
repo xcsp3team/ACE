@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -66,7 +66,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 
 		private int value;
 
-		private Variable y;
+		private Domain ydom;
 
 		/**
 		 * Builds a constraint Element for the specified problem, with the specified arguments: list, value and 0/1 variable (y)
@@ -84,15 +84,15 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			super(pb, Utilities.collect(Variable.class, list, y));
 			this.list = list;
 			this.value = value;
-			this.y = y;
-			control(list.length >= 2 && Variable.areAllDistinct(list) && y.dom.is01() && Stream.of(list).allMatch(x -> x != y));
+			this.ydom = y.dom;
+			control(list.length >= 2 && Variable.areAllDistinct(list) && ydom.is01() && Stream.of(list).allMatch(x -> x != y));
 			control(scp[scp.length - 1] == y);
 		}
 
 		@Override
 		public boolean runPropagator(Variable dummy) {
-			if (y.dom.size() == 1) {
-				if (y.dom.single() == 0) { // y = 0
+			if (ydom.size() == 1) {
+				if (ydom.single() == 0) { // y = 0
 					for (Variable x : list)
 						if (x.dom.removeValueIfPresent(value) == false)
 							return false;
@@ -114,23 +114,23 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 						}
 					}
 					if (uniqueSentinel == -1)
-						return y.dom.fail();
+						return ydom.fail();
 					return list[uniqueSentinel].dom.reduceToValue(value) && entail();
 				}
 			}
-			assert y.dom.size() == 2;
+			assert ydom.size() == 2;
 			boolean found = false;
 			for (Variable x : list) {
 				if (x.dom.size() == 1) {
 					if (x.dom.singleValue() == value)
-						return y.dom.remove(0) && entail(); // no possible inconsistency here
+						return ydom.remove(0) && entail(); // no possible inconsistency here
 				} else {
 					if (x.dom.containsValue(value))
 						found = true;
 				}
 			}
 			if (!found)
-				return y.dom.remove(1) && entail(); // no possible inconsistency here
+				return ydom.remove(1) && entail(); // no possible inconsistency here
 			return true;
 		}
 	}
@@ -278,14 +278,21 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 				// TODO control that each value in vdom is in at least one domain of the list?
 			}
 
+			@Override
+			public boolean isGuaranteedAC() {
+				return false; // idom.initSize() < problem.head.control.global.elementVarBoundLimit && vdom.initSize() <
+								// problem.head.control.global.elementVarBoundLimit;
+			}
+
 			private boolean validIndex(int i) {
-				int v = indexSentinels[i];
-				if (v != Integer.MIN_VALUE && list[i].dom.containsValue(v) && vdom.containsValue(v))
-					return true;
 				Domain dom = list[i].dom;
-				for (int a = dom.first(); a != -1; a = dom.next(a)) {
-					v = dom.toVal(a);
-					if (vdom.containsValue(v)) {
+				int v = indexSentinels[i];
+				if (v != Integer.MIN_VALUE && dom.containsValue(v) && vdom.containsValue(v))
+					return true;
+				for (int a = vdom.first(); a != -1; a = vdom.next(a)) {
+					v = vdom.toVal(a);
+					if (dom.containsValue(v)) {
+						valueSentinels[a] = i;
 						indexSentinels[i] = v;
 						return true;
 					}
@@ -297,9 +304,9 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 				int sizeBefore = idom.size();
 				if (sizeBefore == 1)
 					return validIndex(idom.first()) || idom.fail();
-				for (int a = idom.first(); a != -1; a = idom.next(a))
-					if (!validIndex(a))
-						idom.removeElementary(a);
+				for (int i = idom.first(); i != -1; i = idom.next(i))
+					if (!validIndex(i))
+						idom.removeElementary(i);
 				return idom.afterElementaryCalls(sizeBefore);
 				// return idom.removeIndexesChecking(i -> !validIndex(i)); // seems to be 25% more expensive
 			}
@@ -312,7 +319,7 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 				for (int i = idom.first(); i != -1; i = idom.next(i)) {
 					if (list[i].dom.containsValue(v)) {
 						valueSentinels[a] = i;
-						indexSentinels[i]=v;
+						indexSentinels[i] = v;
 						return true;
 					}
 				}
@@ -332,49 +339,50 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
-				// If idom is not singleton, we try to prune values :
+				// If appropriate, we try to prune values :
 				// - in vdom, we prune the values which are not in any domain of the list variables
 				// - in idom, we prune the values i for which there is no v such that list[i].dom and vdom both contain v
-				if (idom.size() > 1) {
-					// updating vdom (and valueSentinels)
+				boolean test = true;
+				if (test && idom.size() > 1 && vdom.size() > 1 && idom.size() < problem.head.control.global.elementVarBoundLimit
+						&& vdom.size() < problem.head.control.global.elementVarBoundLimit) {
 					if (filterValue() == false)
 						return false;
 					if (filterIndex() == false)
 						return false;
-					// while (true) {
-					// // updating idom (and indexSentinels)
-					// int sizeBefore = idom.size();
-					// if (filterIndex() == false)
-					// return false;
-					// if (sizeBefore == idom.size())
-					// break;
-					// // updating vdom (and valueSentinels)
-					// sizeBefore = vdom.size();
-					// if (filterValue() == false) {
-					// System.out.println("hhhhhhh");
-					// return false;
-					// }
-					// if (sizeBefore == vdom.size())
-					// break;
-					// else System.out.println("yyy");
-					// }
+				}
+
+				// If value is singleton, we update idom so that only variables in the list having the value remain in the domain of index
+				if (vdom.size() == 1) {
+					int v = vdom.singleValue();
+					if (idom.size() == 1)
+						return list[idom.single()].dom.reduceToValue(v) && entail();
+					int sizeBefore = idom.size();
+					for (int i = idom.first(); i != -1; i = idom.next(i))
+						if (!list[i].dom.containsValue(v))
+							idom.removeElementary(i);
+					if (idom.afterElementaryCalls(sizeBefore) == false)
+						return false;
 				}
 				// If index is singleton, we update dom(list[index]) and vdom so that they are both equal to the intersection of the two domains
 				if (idom.size() == 1) {
 					if (AC.enforceEQ(list[idom.single()].dom, vdom) == false)
 						return false;
-					if (vdom.size() == 1)
+					if (vdom.size() == 1) {
+						assert list[idom.single()].dom.singleValue() == vdom.singleValue();
 						return entail();
-				} else {
-					if (vdom.size() == 1) { // not sure that it is very interesting for practical efficiency
-						boolean b = true;
-						for (int i = idom.first(); b && i != -1; i = idom.next(i))
-							if (list[i].dom.size() > 1)
-								b = false;
-						if (b)
-							return entail();
 					}
 				}
+
+				// else {
+				// if (vdom.size() == 1) { // not sure that it is very interesting for practical efficiency
+				// boolean b = true;
+				// for (int i = idom.first(); b && i != -1; i = idom.next(i))
+				// if (list[i].dom.size() > 1)
+				// b = false;
+				// if (b)
+				// return entail();
+				// }
+				// }
 				return true;
 			}
 
@@ -601,7 +609,27 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			}
 
 			private boolean filterIndex() {
-				return rdom.removeIndexesChecking(i -> !validRowIndex(i)) && cdom.removeIndexesChecking(j -> !validColIndex(j));
+				int sizeBefore = rdom.size();
+				if (sizeBefore == 1) {
+					if (!validRowIndex(rdom.first()))
+						return rdom.fail();
+				} else {
+					for (int i = rdom.first(); i != -1; i = rdom.next(i))
+						if (!validRowIndex(i))
+							rdom.removeElementary(i);
+					if (rdom.afterElementaryCalls(sizeBefore) == false)
+						return false;
+				}
+				sizeBefore = cdom.size();
+				if (sizeBefore == 1)
+					return validColIndex(cdom.first()) || cdom.fail();
+				for (int i = cdom.first(); i != -1; i = cdom.next(i))
+					if (!validColIndex(i))
+						cdom.removeElementary(i);
+				if (cdom.afterElementaryCalls(sizeBefore) == false)
+					return false;
+				return true;
+				// return rdom.removeIndexesChecking(i -> !validRowIndex(i)) && cdom.removeIndexesChecking(j -> !validColIndex(j));
 			}
 
 			private boolean validValue(int a) {
@@ -621,11 +649,31 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 			}
 
 			private boolean filterValue() {
-				return vdom.removeIndexesChecking(a -> !validValue(a));
+				boolean test = true;
+				if (test) {
+					int sizeBefore = vdom.size();
+					if (sizeBefore == 1) // we need this because it may be assigned (and we are not tolerated to remove values from assigned domains
+						return validValue(vdom.first()) || vdom.fail();
+					for (int a = vdom.first(); a != -1; a = vdom.next(a))
+						if (!validValue(a))
+							vdom.removeElementary(a);
+					return vdom.afterElementaryCalls(sizeBefore);
+				} else
+					return vdom.removeIndexesChecking(a -> !validValue(a)); // seems to be 25% more expensive
 			}
 
 			@Override
 			public boolean runPropagator(Variable dummy) {
+
+				// boolean test = true;
+				// if (test && idom.size() > 1 && vdom.size() > 1 && idom.size() < problem.head.control.global.elementVarBoundLimit
+				// && vdom.size() < problem.head.control.global.elementVarBoundLimit) {
+				// if (filterValue() == false)
+				// return false;
+				// if (filterIndex() == false)
+				// return false;
+				// }
+
 				// If indexes are not both singleton, we try to prune values :
 				// - in vdom, we prune the values which are not in any of the domains of the list variables
 				// - in rdom and cdom, we prune the values that cannot lead to any value in vdom
@@ -633,28 +681,40 @@ public abstract class Element extends ConstraintGlobal implements TagAC, TagCall
 					// updating vdom (and some sentinels)
 					if (filterValue() == false)
 						return false;
-					while (true) {
-						// updating rdom,and cdom (and some sentinels)
-						int sizeBefore = rdom.size() + cdom.size();
-						if (filterIndex() == false)
-							return false;
-						if (sizeBefore == rdom.size() + cdom.size())
-							break;
-						// updating vdom (and some sentinels)
-						sizeBefore = vdom.size();
-						if (filterValue() == false)
-							return false;
-						if (sizeBefore == vdom.size())
-							break;
-					}
+					if (filterIndex() == false)
+						return false;
 				}
+
 				// If indexes are both singleton, we enforce value to the corresponding cell of the matrix
 				if (rdom.size() == 1 && cdom.size() == 1) {
 					if (AC.enforceEQ(matrix[rdom.singleValue()][cdom.singleValue()].dom, vdom) == false)
 						return false;
 					if (vdom.size() == 1)
 						return entail();
+				} else {
+					// If value is singleton, we update rdom and cdom when possible
+					if (vdom.size() == 1) {
+						int v = vdom.singleValue();
+						if (rdom.size() == 1) {
+							int vi = rdom.singleValue();
+							int sizeBefore = cdom.size();
+							for (int j = cdom.first(); j != -1; j = cdom.next(j))
+								if (!matrix[vi][cdom.toVal(j)].dom.containsValue(v))
+									cdom.removeElementary(j);
+							if (cdom.afterElementaryCalls(sizeBefore) == false)
+								return false;
+						} else if (cdom.size() == 1) {
+							int vj = cdom.singleValue();
+							int sizeBefore = rdom.size();
+							for (int i = rdom.first(); i != -1; i = rdom.next(i))
+								if (!matrix[rdom.toVal(i)][vj].dom.containsValue(v))
+									rdom.removeElementary(i);
+							if (rdom.afterElementaryCalls(sizeBefore) == false)
+								return false;
+						}
+					}
 				}
+
 				return true;
 			}
 		}

@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -24,6 +24,7 @@ import dashboard.Input;
 import dashboard.Output;
 import interfaces.Observers.ObserverOnRuns;
 import problem.Problem;
+import solver.Solver;
 import utility.Kit;
 
 /**
@@ -52,14 +53,15 @@ public abstract class Optimizer implements ObserverOnRuns {
 
 	@Override
 	public final void afterRun() {
+		Solver solver = problem.solver;
 		control(problem.framework == COP);
-		if (problem.solver.solutions.lastRun == problem.solver.restarter.numRun) {
+		if (solver.solutions.last.numRun == solver.restarter.numRun) {
 			// a better solution has been found during the last run
 			if (minimization) {
-				maxBound = problem.solver.solutions.bestBound - problem.head.control.optimization.boundDescentCoeff;
+				maxBound = solver.solutions.bestBound - problem.head.control.optimization.boundDescentCoeff;
 				cub.limit(maxBound);
 			} else {
-				minBound = problem.solver.solutions.bestBound + problem.head.control.optimization.boundDescentCoeff;
+				minBound = solver.solutions.bestBound + problem.head.control.optimization.boundDescentCoeff;
 				clb.limit(minBound);
 			}
 			refineBoundsWithLpTree();
@@ -68,10 +70,10 @@ public abstract class Optimizer implements ObserverOnRuns {
 					() -> " minB=" + minBound + " maxB=" + maxBound);
 			possiblyUpdateSharedBounds();
 			if (minBound > maxBound)
-				problem.solver.stopping = FULL_EXPLORATION;
+				solver.stopping = FULL_EXPLORATION;
 			else
 				shiftLimitWhenSuccess();
-		} else if (problem.solver.stopping == FULL_EXPLORATION) { // last run leads to no new solution
+		} else if (solver.stopping == FULL_EXPLORATION) { // last run leads to no new solution
 			boolean clb_changed = clb.limit() != minBound, cub_changed = cub.limit() != maxBound;
 			control(!clb_changed || !cub_changed);
 			if (!clb_changed && !cub_changed) { // classical mode
@@ -93,12 +95,12 @@ public abstract class Optimizer implements ObserverOnRuns {
 			}
 			refineBoundsWithLpTree();
 			if (minBound <= maxBound) { // we continue after resetting
-				problem.solver.stopping = null;
+				solver.stopping = null;
 				control(problem.features.nValuesRemovedAtConstructionTime == 0, () -> "Not handled for the moment");
-				problem.solver.propagation.runAtNextRoot = true;
-				problem.solver.restoreProblem();
-				if (problem.solver.nogoodReasoner != null)
-					problem.solver.nogoodReasoner.reset();
+				solver.propagation.runAtNextRoot = true;
+				solver.restoreProblem();
+				if (solver.nogoodReasoner != null)
+					solver.nogoodReasoner.reset();
 				shiftLimitWhenFailure();
 			}
 		}

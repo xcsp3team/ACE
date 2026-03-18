@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -16,9 +16,12 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import heuristics.HeuristicVariablesDynamic;
-import sets.SetDenseReversible;
+import heuristics.HeuristicVariablesDynamic.SafeSelector;
+import heuristics.HeuristicVariablesDynamic.SingletonManager;
+import utility.Kit;
 import variables.Variable;
 
 /**
@@ -57,7 +60,7 @@ public final class FutureVariables implements Iterable<Variable> {
 	private final int[] nexts;
 
 	/**
-	 * pasts[i] is the ith past variable (valid indexes from 0 to pastTop as in dense set)
+	 * pasts[i] is the ith past variable (valid indexes from 0 to pastLimit as in a dense set)
 	 */
 	private final int[] pasts;
 
@@ -66,7 +69,52 @@ public final class FutureVariables implements Iterable<Variable> {
 	 */
 	private int pastLimit;
 
-	private final SetDenseReversible nonSingletonVariables;
+	private int nPivot;
+
+	private final SingletonManager singletonManager;
+
+	private final SafeSelector safeSelector;
+
+	// private final SetDenseReversible nonSingletonVariables;
+
+	public void discardSingletonVariablesAtRunRoot() {
+		control(pastLimit == -1 && solver.depth() == 0);
+		if (solver.head.control.varh.discardSingletonsAfterPrepro && (solver.restarter.numRun % 10 == 0)) {
+			for (Variable x = solver.futVars.first(); x != null; x = solver.futVars.next(x)) {
+				if (x.dom.size() == 1) {
+					remove(x);
+					x.discarded = true;
+				}
+			}
+			if (pastLimit != -1) {
+				Kit.log.config(Kit.Color.YELLOW.coloring(" ...Discarding " + (pastLimit + 1) + " singleton variables"));
+				nPivot = vars.length - (pastLimit + 1) - 1;
+				pastLimit = -1;
+			}
+		}
+		int nPriorityDiscarded = (int) Stream.of(solver.heuristic.priorityVars).filter(x -> x.discarded).count();
+		if (nPriorityDiscarded > 0) {
+			control(solver.heuristic.nStrictlyPriorityVars == 0); // for the moment
+			solver.heuristic.priorityVars = Stream.of(solver.heuristic.priorityVars).filter(x -> !x.discarded).toArray(Variable[]::new);
+			//Kit.log.config(Kit.Color.YELLOW.coloring(" ...Discarding " + nPriorityDiscarded + " priority variables (" + solver.heuristic.priorityVars.length + " remaining)"));
+		}
+	}
+
+	private void discardAux() {
+		control(pastLimit == -1);
+		if (solver.head.control.varh.discardAux) {
+			for (Variable x : vars)
+				if (x.isAuxiliaryVariableIntroducedBySolver()) {
+					remove(x);
+					x.discarded = true;
+				}
+			if (pastLimit != -1) {
+				Kit.log.config(Kit.Color.YELLOW.coloring("\n ...Discarding " + (pastLimit + 1) + " aux variables"));
+				nPivot = vars.length - (pastLimit + 1) - 1;
+				pastLimit = -1;
+			}
+		}
+	}
 
 	/**
 	 * Builds an object to manage past and future variables, i.e, variables that are, or are not, explicitly assigned by the solver
@@ -83,10 +131,11 @@ public final class FutureVariables implements Iterable<Variable> {
 		this.nexts = IntStream.range(1, vars.length + 1).map(i -> i < vars.length ? i : -1).toArray();
 		this.pasts = new int[vars.length];
 		this.pastLimit = -1;
+		this.nPivot = vars.length - 1;
 		control(Variable.areNumsNormalized(vars));
-		this.nonSingletonVariables = solver.heuristic instanceof HeuristicVariablesDynamic
-				? ((HeuristicVariablesDynamic) solver.heuristic).nonSingletonVariables
-				: null;
+		this.singletonManager = solver.heuristic instanceof HeuristicVariablesDynamic ? ((HeuristicVariablesDynamic) solver.heuristic).singletonManager : null;
+		this.safeSelector = solver.heuristic instanceof HeuristicVariablesDynamic ? ((HeuristicVariablesDynamic) solver.heuristic).safeSelector : null;
+		discardAux();
 	}
 
 	/**
@@ -95,7 +144,7 @@ public final class FutureVariables implements Iterable<Variable> {
 	 * @return the number of future variables
 	 */
 	public int size() {
-		return vars.length - pastLimit - 1;
+		return nPivot - pastLimit;
 	}
 
 	/**
@@ -105,6 +154,10 @@ public final class FutureVariables implements Iterable<Variable> {
 	 */
 	public int nPast() {
 		return pastLimit + 1;
+	}
+
+	public int nDiscarded() {
+		return vars.length - nPivot - 1;
 	}
 
 	/**
@@ -179,11 +232,11 @@ public final class FutureVariables implements Iterable<Variable> {
 			prevs[next] = prev;
 		// adding to the end of the list of absent elements
 		pasts[++pastLimit] = i;
-		if (nonSingletonVariables != null) {
-			//System.out.println("removing " + x + " " + i);
-			nonSingletonVariables.storeLimitAtLevel(nPast());  //moveAtPosition(x.num, nPast());
-			//System.out.println("limit === " + nonSingletonVariables.dense[nonSingletonVariables.limit]);
-		}
+		// if (nonSingletonVariables != null) {
+		// // System.out.println("removing " + x + " " + i);
+		// nonSingletonVariables.storeLimitAtLevel(nPast()); // moveAtPosition(x.num, nPast());
+		// // System.out.println("limit === " + nonSingletonVariables.dense[nonSingletonVariables.limit]);
+		// }
 	}
 
 	/**
@@ -193,8 +246,6 @@ public final class FutureVariables implements Iterable<Variable> {
 	 *            the variable to be removed
 	 */
 	public void add(Variable x) {
-		if (nonSingletonVariables != null)
-			nonSingletonVariables.restoreLimitAtLevel(nPast());
 		int i = x.num;
 		assert pastLimit >= 0 && pasts[pastLimit] == i;
 		// removing from the end of the list of absent elements
@@ -209,6 +260,11 @@ public final class FutureVariables implements Iterable<Variable> {
 			last = i;
 		else
 			prevs[next] = i;
+		if (singletonManager != null) // keep it here after having added the last past variable
+			singletonManager.possiblyClearCurrentList();
+		if (safeSelector != null) // keep it here after having added the last past variable
+			safeSelector.reset();
+
 	}
 
 	/**

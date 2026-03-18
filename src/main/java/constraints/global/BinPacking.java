@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -262,7 +262,7 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 				}
 				break;
 			}
-			boolean energetic = true;
+			boolean energetic = problem.head.control.global.binpackingEnergetic;
 			if (energetic) {
 				int cumulatedCapacities = 0, cumulatedSizes = 0, lost = 0;
 				for (int j = usableBins.limit; j >= 0; j--) {
@@ -376,6 +376,10 @@ public abstract class BinPacking extends ConstraintGlobal implements TagNotAC {
 				limits[i] = loads[i].dom.lastValue();
 			if (super.runPropagator(x) == false)
 				return false;
+			
+//			boolean tst = true;  // TODO use an option to avoid the part below
+//			if (tst)
+//				return true;
 
 			Arrays.fill(sums, 0);
 			freeItems.clear();

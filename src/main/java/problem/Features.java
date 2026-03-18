@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -29,7 +29,7 @@ import org.xcsp.parser.entries.XObjectives.XObj;
 
 import constraints.Constraint;
 import constraints.ConstraintExtension;
-import constraints.ConstraintExtension.Extension1;
+import constraints.ConstraintExtension.ConstraintExtensionSpecific.Extension1;
 import constraints.ConstraintIntension;
 import constraints.extension.CHybrid;
 import constraints.extension.structures.MDD;
@@ -153,10 +153,8 @@ public final class Features {
 		}
 
 		public boolean strictSubscopeOf(CollectedNogood cn) {
-			// System.out.println("uuuu0");
 			if (vars.length > cn.vars.length)
 				return false;
-			// System.out.println("uuuu1");
 			for (int i = 0, j = 0; i < vars.length; i++) {
 				while (j < cn.vars.length && vars[i].num > cn.vars[j].num)
 					j++;
@@ -165,7 +163,6 @@ public final class Features {
 				if (vars[i].num != cn.vars[j].num)
 					return false;
 			}
-			// System.out.println("uuuu " + this + "\n " + cn);
 			return true;
 		}
 
@@ -301,7 +298,7 @@ public final class Features {
 			if (mustDiscard(x))
 				return -1;
 			if (variables.isEmpty()) // first call
-				Kit.log.config(" " + Kit.Color.YELLOW.coloring("...Loading") + " variables");
+				Kit.log.config("\n " + Kit.Color.YELLOW.coloring("...Loading") + " variables");
 			int num = variables.size();
 			printNumber(num);
 			variables.add(x);
@@ -343,29 +340,30 @@ public final class Features {
 			int i = 0;
 			for (Variable x : variables) {
 				x.num = i++;
-				domSizes.add(x.dom.practicalInitSize()); //.specialMaster != null ? ((DomainSpecial) x.dom).sliceLength : x.dom.initSize());
+				domSizes.add(x.dom.practicalInitSize()); // .specialMaster != null ? ((DomainSpecial) x.dom).sliceLength : x.dom.initSize());
 			}
 			i = 0;
 			for (Constraint c : constraints) {
 				c.num = i++;
 				int arity = c.scp.length;
 				ctrArities.add(arity);
-				ctrTypes.add(c.getClass().getSimpleName() + (arity == 1 && !(c instanceof Extension1) ? "_1"
-						: (c instanceof ConstraintExtension ? "-" + c.extStructure().getClass().getSimpleName() : "")));
+				if (problem.optimizer == null || (c != problem.optimizer.clb && c != problem.optimizer.cub)) {
+					String ext = (c instanceof ConstraintExtension && !(c instanceof Extension1)
+							? "-" + c.extStructure().getClass().getSimpleName() + (c.extStructure().isStarred() ? "*" : "")
+							: "");
+					if (arity == 1)
+						ctrTypes1.add(c.getClass().getSimpleName() + ext);
+					else
+						ctrTypes.add(c.getClass().getSimpleName() + ext);
+				}
 				if (c.extStructure() instanceof Table)
 					tableSizes.add(((Table) c.extStructure()).tuples.length);
 				if (c instanceof CHybrid)
 					tableSizes.add(((TableHybrid) c.extStructure()).hybridTuples.length);
 				if (c.extStructure() instanceof MDD)
 					mddSizes.add(((MDD) c.extStructure()).nNodes());
-				if (c.postponable) {
-					nPostponableConstraints++;
-					// System.out.println(c + " " + c.getClass());
-				}
 			}
-
 		}
-
 	}
 
 	/**********************************************************************************************
@@ -408,6 +406,10 @@ public final class Features {
 	public final Repartitioner<Integer> mddSizes;
 
 	/**
+	 * Statistical repartition of unary constraint types
+	 */
+	public final Repartitioner<String> ctrTypes1;
+	/**
 	 * Statistical repartition of constraint types
 	 */
 	public final Repartitioner<String> ctrTypes;
@@ -416,7 +418,7 @@ public final class Features {
 
 	public int nRemovedUnaryCtrs, nConvertedConstraints; // conversion intension to extension
 
-	public int nMergedCtrs, nDiscardedCtrs, nAddedCtrs, nPostponableConstraints;
+	public int nMergedCtrs, nDiscardedCtrs, nAddedCtrs; // , nPostponableConstraints;
 
 	/**
 	 * Number of times a (generic or specific) propagator for a constraint has been effective
@@ -482,6 +484,7 @@ public final class Features {
 		this.varDegrees = new Repartitioner<>(verbose);
 		this.domSizes = new Repartitioner<>(verbose);
 		this.ctrArities = new Repartitioner<>(verbose);
+		this.ctrTypes1 = new Repartitioner<>(true);
 		this.ctrTypes = new Repartitioner<>(true);
 		this.tableSizes = new Repartitioner<>(verbose);
 		this.mddSizes = new Repartitioner<>(verbose);

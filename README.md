@@ -4,9 +4,13 @@
 </div>
 
 ACE is an open-source constraint solver developed by Christophe Lecoutre (CRIL, Univ. Artois) in Java.
-ACE is embedded in the Python modeling library [PyCSP3](https://pycsp.org/), and is a competitive solver as shown by the results obtained at the [2022 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP22/), the [2023 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP23/) and the [2024 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP24/).
+ACE is embedded in the Python modeling library [PyCSP3](https://pycsp.org/), and is a competitive solver as shown by the results obtained at:
+  - the [2022 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP22/),
+  - the [2023 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP23/),
+  - the [2024 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP24/)
+  - and the [2025 XCSP3 competition](https://www.cril.univ-artois.fr/XCSP25/).
 
-The current stable version of ACE is 2.5 (June 11, 2025).
+The current stable version of ACE is 2.6 (March 1, 2026).
 
 ACE focuses on:
 - integer variables, including 0/1 (Boolean) variables,
@@ -29,7 +33,7 @@ For some general information about the structure of the code of the solver ACE, 
 1. change directory:  
    `cd ACE`
 1. run Gradle (of course, you need Gradle to be installed; version > v7.0):  
-   `gradle build -x test`  
+   `gradle build`  
 1. test the JAR:  
    `java -jar build/libs/ACE-YY-MM.jar`   
 where you give the right values for YY and MM.
@@ -39,6 +43,7 @@ With this JAR, you can run ACE on any XCSP3 instance.
 
 ## Running Unit Tests
 
+Tests are no more included in this main repository. If ever, some would be installed, you could execute:
 1. run Gradle:  
    `gradle test`
 1. see results in:  

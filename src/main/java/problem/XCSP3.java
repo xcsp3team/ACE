@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -156,6 +156,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 			OptionsGeneral options = problem.head.control.general;
 			if (options.verbose > 1)
 				XParser.VERBOSE = true;
+			Kit.log.config(" " + Kit.Color.YELLOW.coloring("...Parsing") + " " + name());
 			loadInstance(name(), options.discardClasses.split(","));
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -544,7 +545,7 @@ public class XCSP3 implements ProblemAPI, XCallbacks2 {
 
 	@Override
 	public void buildCtrSum(String id, XNode<XVarInteger>[] trees, Condition condition) {
-		problem.sum(trVar(trees), repeat(1, trees.length), trVar(condition));
+		problem.sum(trVar(trees), trVar(condition)); // do not put coeffs set to 1 here
 	}
 
 	@Override

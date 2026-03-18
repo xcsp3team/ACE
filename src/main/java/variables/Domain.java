@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -225,6 +225,211 @@ public interface Domain extends SetLinked {
 		return IntStream.range(0, d).filter(a -> dom.toVal(a) >= v + (strict ? 1 : 0)).findFirst().orElse(Integer.MAX_VALUE);
 	}
 
+	static boolean domainSpaceExactlyEqualTo(Domain[] doms, int size) {
+		int prod = 1;
+		for (Domain dom : doms) {
+			prod *= dom.size();
+			if (prod > size)
+				return false;
+		}
+		return prod == size;
+	}
+
+	/**
+	 * Returns the (index in dx of the) smallest integer v such that v is present in dx and v-k is present in dy, if such value v exists; -1 otherwise. This can
+	 * be called in the context of a constraint x = y - k.
+	 * 
+	 * @param dx
+	 *            a first domain
+	 * @param dy
+	 *            a second domain
+	 * @param k
+	 *            an integer to be added to values in dy
+	 * @return
+	 */
+	static int smallestIntegerPresentAdd(Domain dx, Domain dy, int k) { // (index in dx of the) smallest integer v such that v in dx and v-k in dy
+		boolean cx = dx.connex(), cy = dy.connex();
+		if (cx && cy) {
+			int minx = dx.firstValue(), miny = dy.firstValue() + k;
+			int maxx = dx.lastValue(), maxy = dy.lastValue() + k;
+			if (maxx < miny || maxy < minx)
+				return -1;
+			if (minx <= miny && miny <= maxx)
+				return dx.toIdx(miny);
+			if (miny <= minx && minx <= maxy)
+				return dx.toIdx(minx);
+			return -1;
+		}
+		int a = dx.first(), b = dy.first();
+		int va = dx.toVal(a), vb = dy.toVal(b) + k;
+		while (va != vb) {
+			if (va < vb) {
+				a = dx.next(a);
+				if (a == -1)
+					return -1;
+				va = dx.toVal(a);
+			} else {
+				b = dy.next(b);
+				if (b == -1)
+					return -1;
+				vb = dy.toVal(b) + k;
+			}
+		}
+		return a;
+	}
+
+	/**
+	 * Returns the (index in dx of the) greatest integer v such that v is present in dx and v-k is present in dy, if such value v exists; -1 otherwise. This can
+	 * be called in the context of a constraint x = y - k.
+	 * 
+	 * @param dx
+	 *            a first domain
+	 * @param dy
+	 *            a second domain
+	 * @param k
+	 *            an integer to be added to values in dy
+	 * @return
+	 */
+	static int greatestIntegerPresentAdd(Domain dx, Domain dy, int k) { // (index in dx of the) greatest integer v such that v in dx and v-k in dy
+		boolean cx = dx.connex(), cy = dy.connex();
+		if (cx && cy) {
+			int minx = dx.firstValue(), miny = dy.firstValue() + k;
+			int maxx = dx.lastValue(), maxy = dy.lastValue() + k;
+			if (maxx < miny || maxy < minx)
+				return -1;
+			if (minx <= maxy && maxy <= maxx)
+				return dx.toIdx(maxy);
+			if (miny <= maxx && maxx <= maxy)
+				return dx.toIdx(maxx);
+			return -1;
+		}
+		int a = dx.last(), b = dy.last();
+		int va = dx.toVal(a), vb = dy.toVal(b) + k;
+		while (va != vb) {
+			if (va > vb) {
+				a = dx.prev(a);
+				if (a == -1)
+					return -1;
+				va = dx.toVal(a);
+			} else {
+				b = dy.prev(b);
+				if (b == -1)
+					return -1;
+				vb = dy.toVal(b) + k;
+			}
+		}
+		return a;
+	}
+
+	/**
+	 * Returns the (index in dx of the) smallest integer v such that v is present in dx and there exists w in v*k..v*k+k-1 in dy, if such value v exists; -1
+	 * otherwise. This can be called in the context of a constraint x = y / k.
+	 * 
+	 * @param dx
+	 *            a first domain
+	 * @param dy
+	 *            a second domain
+	 * @param k
+	 *            an integer used to divide values in dy
+	 * @return
+	 */
+	static int smallestIntegerPresentDiv(Domain dx, Domain dy, int k) { // (index in dx of the) smallest integer v such that v in dx and exists
+		// w in v*k..v*k+k-1 in dy
+		int a = dx.first(), b = dy.first();
+		int va = dx.toVal(a), vb = dy.toVal(b) / k;
+		while (va != vb) {
+			if (va < vb) {
+				a = dx.next(a);
+				if (a == -1)
+					return -1;
+				va = dx.toVal(a);
+			} else {
+				b = dy.next(b);
+				if (b == -1)
+					return -1;
+				vb = dy.toVal(b) / k;
+			}
+		}
+		return a;
+	}
+
+	/**
+	 * Returns the (index in dx of the) greatest integer v such that v is present in dx and there exists w in v*k..v*k+k-1 in dy, if such value v exists; -1
+	 * otherwise. This can be called in the context of a constraint x = y / k.
+	 * 
+	 * @param dx
+	 *            a first domain
+	 * @param dy
+	 *            a second domain
+	 * @param k
+	 *            an integer used to divide values in dy
+	 * @return
+	 */
+	static int greatestIntegerPresentDiv(Domain dx, Domain dy, int k) {
+		int a = dx.last(), b = dy.last();
+		int va = dx.toVal(a), vb = dy.toVal(b) / k;
+		while (va != vb) {
+			if (va > vb) {
+				a = dx.prev(a);
+				if (a == -1)
+					return -1;
+				va = dx.toVal(a);
+			} else {
+				b = dy.prev(b);
+				if (b == -1)
+					return -1;
+				vb = dy.toVal(b) / k;
+			}
+		}
+		return a;
+	}
+	
+	
+	
+	static int smallestIntegerPresentMul(Domain dx, Domain dy, int k) { 
+		assert k > 1;
+		int a = dx.first(), b = dy.first();
+		int va = dx.toVal(a), vb = dy.toVal(b) * k;
+		while (va != vb) {
+			if (va < vb) {
+				a = dx.next(a);
+				if (a == -1)
+					return -1;
+				va = dx.toVal(a);
+			} else {
+				b = dy.next(b);
+				if (b == -1)
+					return -1;
+				vb = dy.toVal(b) * k;
+			}
+		}
+		return a;
+	}
+
+	
+	static int greatestIntegerPresentMul(Domain dx, Domain dy, int k) {
+		assert k > 1;
+		int a = dx.last(), b = dy.last();
+		int va = dx.toVal(a), vb = dy.toVal(b) * k;
+		while (va != vb) {
+			if (va > vb) {
+				a = dx.prev(a);
+				if (a == -1)
+					return -1;
+				va = dx.toVal(a);
+			} else {
+				b = dy.prev(b);
+				if (b == -1)
+					return -1;
+				vb = dy.toVal(b) * k;
+			}
+		}
+		return a;
+	}
+	
+	
+	
+
 	/**********************************************************************************************
 	 * Class Members
 	 *********************************************************************************************/
@@ -370,6 +575,23 @@ public interface Domain extends SetLinked {
 	}
 
 	/**
+	 * Returns true if at least one value from the specified range belongs to the current domain
+	 * 
+	 * @param start
+	 *            the lower bound (inclusive) of the range
+	 * @param stop
+	 *            the upper bound (exclusive) of the range
+	 */
+	default boolean containsValueInRange(int start, int stop) {
+		for (int v = start; v < stop; v++) {
+			int a = toIdx(v);
+			if (a >= 0 && contains(a))
+				return true;
+		}
+		return false;
+	}
+
+	/**
 	 * Returns the index of the unique value of the current domain. This is similar to first(), but with an assert/control.
 	 */
 	default int single() {
@@ -463,18 +685,144 @@ public interface Domain extends SetLinked {
 	 * @return a value present in both the domain and the specified one, or Integer.MAX_VALUE
 	 */
 	default int commonValueWith(Domain dom) {
-		if (size() <= dom.size())
+		int first1 = firstValue(), first2 = dom.firstValue();
+		int last1 = lastValue(), last2 = dom.lastValue();
+		if (last1 < first2 || last2 < first1)
+			return Integer.MAX_VALUE;
+		boolean c1 = connex(), c2 = dom.connex();
+		if (c1 && c2) {
+			if (first1 <= first2 && first2 <= last1)
+				return first2;
+			if (first2 <= first1 && first1 <= last2)
+				return first1;
+			return Integer.MAX_VALUE;
+		}
+		int maxFirst = Math.max(first1, first2);
+		int minLast = Math.min(last1, last2);
+		int virtualSize = minLast - maxFirst;
+		if (size() < virtualSize && size() <= dom.size())
 			for (int a = first(); a != -1; a = next(a)) {
 				int v = toVal(a);
 				if (dom.containsValue(v))
 					return v;
+				if (v > minLast)
+					break;
 			}
-		else
+		else if (dom.size() < virtualSize && dom.size() <= size())
 			for (int a = dom.first(); a != -1; a = dom.next(a)) {
 				int v = dom.toVal(a);
 				if (containsValue(v))
 					return v;
+				if (v > minLast)
+					break;
 			}
+		else {
+			if (containsValue(maxFirst)) {
+				for (int a = toIdx(maxFirst); a != -1; a = next(a)) {
+					int v = toVal(a);
+					if (dom.containsValue(v))
+						return v;
+					if (v > minLast)
+						break;
+				}
+			} else {
+				for (int a = dom.toIdx(maxFirst); a != -1; a = dom.next(a)) {
+					int v = dom.toVal(a);
+					if (containsValue(v))
+						return v;
+					if (v > minLast)
+						break;
+				}
+			}
+		}
+		// if (size() <= dom.size())
+		// for (int a = first(); a != -1; a = next(a)) {
+		// int v = toVal(a);
+		// if (dom.containsValue(v))
+		// return v;
+		// }
+		// else
+		// for (int a = dom.first(); a != -1; a = dom.next(a)) {
+		// int v = dom.toVal(a);
+		// if (containsValue(v))
+		// return v;
+		// }
+		return Integer.MAX_VALUE;
+	}
+
+	default int commonValueWith(Domain dom, int k) {
+		int first1 = firstValue(), first2 = dom.firstValue() + k;
+		int last1 = lastValue(), last2 = dom.lastValue() + k;
+		if (last1 < first2 || last2 < first1)
+			return Integer.MAX_VALUE;
+		boolean c1 = connex(), c2 = dom.connex();
+		if (c1 && c2) {
+			if (first1 <= first2 && first2 <= last1)
+				return first2;
+			if (first2 <= first1 && first1 <= last2)
+				return first1;
+			return Integer.MAX_VALUE;
+		}
+		int maxFirst = Math.max(first1, first2);
+		int minLast = Math.min(last1, last2);
+		int virtualSize = minLast - maxFirst;
+		if (size() < virtualSize && size() <= dom.size())
+			for (int a = first(); a != -1; a = next(a)) {
+				int v = toVal(a);
+				if (dom.containsValue(v - k))
+					return v;
+				if (v > minLast)
+					break;
+			}
+		else if (dom.size() < virtualSize && dom.size() <= size())
+			for (int a = dom.first(); a != -1; a = dom.next(a)) {
+				int v = dom.toVal(a);
+				if (containsValue(v + k))
+					return v;
+				if (v > minLast)
+					break;
+			}
+		else {
+			if (containsValue(maxFirst)) {
+				for (int a = toIdx(maxFirst); a != -1; a = next(a)) {
+					int v = toVal(a);
+					if (dom.containsValue(v - k))
+						return v;
+					if (v > minLast)
+						break;
+				}
+			} else {
+				for (int a = dom.toIdx(maxFirst - k); a != -1; a = dom.next(a)) {
+					int v = dom.toVal(a);
+					if (containsValue(v + k))
+						return v;
+					if (v > minLast)
+						break;
+				}
+			}
+		}
+//		if (size() <= dom.size())
+//			for (int a = first(); a != -1; a = next(a)) {
+//				int v = toVal(a);
+//				if (dom.containsValue(v - k))
+//					return v;
+//			}
+//		else
+//			for (int a = dom.first(); a != -1; a = dom.next(a)) {
+//				int v = dom.toVal(a);
+//				if (containsValue(v + k))
+//					return v;
+//			}
+		return Integer.MAX_VALUE;
+	}
+
+	default int commonCoeffValueWith(Domain dom, int coeff) {
+		Kit.control(coeff > 0); // for the moment
+		for (int a = dom.first(); a != -1; a = dom.next(a)) {
+			int v = dom.toVal(a) * coeff;
+			if (containsValue(v))
+				return v;
+		}
 		return Integer.MAX_VALUE;
 	}
 
@@ -733,8 +1081,8 @@ public interface Domain extends SetLinked {
 	 *            a value index
 	 */
 	default void removeElementary(int a) {
-		// System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " from "
-		// + var().problem.solver.propagation.currFilteringCtr);
+//		 System.out.println("removing " + var() + "=" + toVal(a) + (a != toVal(a) ? " (index " + a + ")" : "") + " from "
+//		 + var().problem.solver.propagation.currFilteringCtr + " at depth " + var().problem.solver.depth());
 		Variable x = var();
 		assert !x.assigned() && contains(a) : x + " " + x.assigned() + " " + contains(a);
 		Solver solver = x.problem.solver;

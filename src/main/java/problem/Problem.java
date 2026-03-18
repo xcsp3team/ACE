@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -11,6 +11,8 @@
 package problem;
 
 import static constraints.Constraint.howManyVariablesWithin;
+import static constraints.extension.structures.Table.DONT_KNOW_IF_STARRED;
+import static constraints.extension.structures.Table.STARRED;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingLong;
 import static org.xcsp.common.Constants.PLUS_INFINITY_INT;
@@ -51,6 +53,7 @@ import static org.xcsp.common.predicates.MatcherInterface.add_mulVars;
 import static org.xcsp.common.predicates.MatcherInterface.add_vars;
 import static org.xcsp.common.predicates.MatcherInterface.add_varsOrTerms;
 import static org.xcsp.common.predicates.MatcherInterface.add_varsOrTerms_valEnding;
+import static org.xcsp.common.predicates.MatcherInterface.andOrOr;
 import static org.xcsp.common.predicates.MatcherInterface.any;
 import static org.xcsp.common.predicates.MatcherInterface.logic_vars;
 import static org.xcsp.common.predicates.MatcherInterface.max_vars;
@@ -71,6 +74,7 @@ import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.relo
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.setop;
 import static org.xcsp.common.predicates.MatcherInterface.AbstractOperation.unalop;
 import static org.xcsp.common.predicates.XNode.node;
+import static org.xcsp.common.predicates.XNode.varLeaf;
 import static org.xcsp.common.predicates.XNodeParent.add;
 import static org.xcsp.common.predicates.XNodeParent.build;
 import static org.xcsp.common.predicates.XNodeParent.dist;
@@ -148,7 +152,7 @@ import constraints.Constraint;
 import constraints.Constraint.CtrTrivial.CtrFalse;
 import constraints.Constraint.CtrTrivial.CtrTrue;
 import constraints.ConstraintExtension;
-import constraints.ConstraintExtension.Extension1;
+import constraints.ConstraintExtension.ConstraintExtensionSpecific.Extension1;
 import constraints.ConstraintIntension;
 import constraints.extension.CHybrid;
 import constraints.extension.CMDD.CMDDO;
@@ -224,6 +228,15 @@ import constraints.global.SumScalarBoolean.SumScalarBooleanCst;
 import constraints.global.SumScalarBoolean.SumScalarBooleanVar;
 import constraints.global.WakeUp;
 import constraints.global.Xor;
+import constraints.intension.Disjonctive.Disjonctive2Cst;
+import constraints.intension.Disjonctive.Disjonctive2Mix;
+import constraints.intension.Disjonctive.Disjonctive2Reified2Cst;
+import constraints.intension.Disjonctive.Disjonctive2ReifiedVar;
+import constraints.intension.Disjonctive.Disjonctive2Var;
+import constraints.intension.Disjonctive.DisjonctiveReified;
+import constraints.intension.Disjonctive.DisjonctiveVar;
+import constraints.intension.Logic.LogicTree;
+import constraints.intension.Logic.LogicTree.ArgLogic;
 import constraints.intension.Nogood;
 import constraints.intension.Primitive2;
 import constraints.intension.Primitive2.Max2kEQ;
@@ -233,19 +246,17 @@ import constraints.intension.Primitive2.PrimitiveBinaryNoCst.Disjonctive;
 import constraints.intension.Primitive2.PrimitiveBinaryVariant1.Sub2;
 import constraints.intension.Primitive3;
 import constraints.intension.Primitive3.Add3;
+import constraints.intension.Primitive3.DistDistNE3;
 import constraints.intension.Primitive3.IFT3;
 import constraints.intension.Primitive4.DblDiff;
-import constraints.intension.Primitive4.Disjonctive2Cst;
-import constraints.intension.Primitive4.Disjonctive2Mix;
-import constraints.intension.Primitive4.Disjonctive2Var;
-import constraints.intension.Primitive4.DisjonctiveVar;
-import constraints.intension.Reification.Disjonctive2Reified2Cst;
-import constraints.intension.Reification.Disjonctive2ReifiedVar;
-import constraints.intension.Reification.DisjonctiveReified;
+import constraints.intension.Primitive4.DistDistNE;
 import constraints.intension.Reification.Reif2.Reif2Rel;
 import constraints.intension.Reification.Reif2.Reif2Rel.Reif2EQ;
 import constraints.intension.Reification.Reif2.Reif2Set;
 import constraints.intension.Reification.Reif3;
+import constraints.intension.Reification.Reif3.Reif3EQb;
+import constraints.intension.Reification.Reif3.Reif3EQc;
+import constraints.intension.Reification.Reif4.Reif4MulEQ;
 import constraints.intension.Reification.ReifLogic;
 import dashboard.Control.OptionsGeneral;
 import dashboard.Control.OptionsGlobal;
@@ -254,9 +265,11 @@ import heuristics.HeuristicValues;
 import heuristics.HeuristicValues.HeuristicValuesStatic.Arbitrary;
 import interfaces.Observers.ObserverOnConstruction;
 import main.Head;
-import optimization.ObjectiveVariable;
-import optimization.ObjectiveVariable.ObjVarGE;
-import optimization.ObjectiveVariable.ObjVarLE;
+import optimization.ObjectiveUnary.ObjectiveExpression.ObjExpr1GE;
+import optimization.ObjectiveUnary.ObjectiveExpression.ObjExpr1LE;
+import optimization.ObjectiveUnary.ObjectiveVariable;
+import optimization.ObjectiveUnary.ObjectiveVariable.ObjVarGE;
+import optimization.ObjectiveUnary.ObjectiveVariable.ObjVarLE;
 import optimization.Optimizable;
 import optimization.Optimizer;
 import optimization.Optimizer.OptimizationStrategy;
@@ -552,93 +565,103 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private void postNogood(CollectedNogood nogood) {
-		if (nogood.vars.length == 1) {
-			assert nogood.vals.length == 1;
-			Variable x = nogood.vars[0];
-			int v = nogood.vals[0];
-			if (x.dom.containsValue(v))
-				x.dom.removeValueAtConstructionTime(v);
-		} else
-			post(new Nogood(this, nogood.vars, nogood.vals));
+		Variable[] vars = nogood.vars;
+		int[] vals = nogood.vals;
+		if (vars.length == 1) {
+			assert vals.length == 1;
+			if (vars[0].dom.containsValue(vals[0]))
+				vars[0].dom.removeValueAtConstructionTime(vals[0]);
+		} else {
+			boolean singleton = Stream.of(vars).anyMatch(x -> x.dom.size() == 1);
+			if (IntStream.range(0, vars.length).allMatch(i -> vars[i].dom.containsValue(vals[i]))) { // otherwise nogood trivially satisfied
+				if (!singleton)
+					post(new Nogood(this, vars, vals));
+				else {
+					post(new Nogood(this, Stream.of(vars).filter(x -> x.dom.size() > 1),
+							IntStream.range(0, vals.length).filter(i -> vars[i].dom.size() > 1).map(i -> vals[i])));
+				}
+			}
+		}
 	}
 
 	private void manageCollectedNogoods() {
 		if (features.collecting.nogoods.size() == 0)
 			return;
-		int nSharedNogoods = 0;
-
-		CollectedNogood[] nogoods = features.collecting.nogoods.stream().sorted(Comparator.comparing(ng -> ng.size())).toArray(CollectedNogood[]::new);
-		boolean[] flags = new boolean[nogoods.length];
-		List<Integer> list = new ArrayList<>();
-		for (int i = 0; i < flags.length; i++) { // first, we try to merge nogoods of same scope
-			if (flags[i])
-				continue;
-			if (nogoods[i].size() == 1) {
-				postNogood(nogoods[i]);
-				flags[i] = true;
-				continue;
+		if (features.collecting.nogoods.size() > head.control.constraints.collectedNogoodsLimitExtern) { // see e.g. RosterShifts-large_m23
+			for (CollectedNogood nogood : features.collecting.nogoods)
+				postNogood(nogood);
+		} else {
+			int nSharedNogoods = 0;
+			CollectedNogood[] nogoods = features.collecting.nogoods.stream().sorted(Comparator.comparing(ng -> ng.size())).toArray(CollectedNogood[]::new);
+			boolean[] flags = new boolean[nogoods.length];
+			List<Integer> list = new ArrayList<>();
+			for (int i = 0; i < flags.length; i++) { // first, we try to merge nogoods of same scope
+				if (flags[i])
+					continue;
+				if (nogoods[i].size() == 1) {
+					postNogood(nogoods[i]);
+					flags[i] = true;
+					continue;
+				}
+				list.clear();
+				list.add(i);
+				for (int j = i + 1; j < flags.length; j++) {
+					if (nogoods[i].size() < nogoods[j].size())
+						break;
+					if (!flags[j] && nogoods[j].sameScopeAs(nogoods[i]))
+						list.add(j);
+				}
+				if (list.size() > head.control.constraints.collectedNogoodsLimitIntern) {
+					list.stream().forEach(k -> flags[k] = true);
+					nSharedNogoods += list.size();
+					post(ConstraintExtension.buildFrom(this, nogoods[i].vars, list.stream().map(k -> nogoods[k].vals).toArray(int[][]::new), false, false));
+				}
 			}
+			for (int i = flags.length - 1; i >= 0; i--) { // second, we try to merge nogoods sharing scopes
+				if (flags[i])
+					continue;
+				Variable[] scp = nogoods[i].vars;
+				Domain[] doms = Stream.of(scp).map(x -> x.dom).toArray(Domain[]::new);
+				if (Domain.nValidTuplesBounded(doms) > 1000) // TODO hard coding
+					continue;
+				list.clear();
+				list.add(i);
+				for (int j = i - 1; j >= 0; j--)
+					if (nogoods[j].strictSubscopeOf(nogoods[i]))
+						list.add(j);
+				if (list.size() > 1) { // TODO hard coding (limit 1)
+					list.stream().forEach(k -> flags[k] = true);
+					nSharedNogoods += list.size();
 
-			list.clear();
-			list.add(i);
-			for (int j = i + 1; j < flags.length; j++) {
-				if (nogoods[i].size() < nogoods[j].size())
-					break;
-				if (!flags[j] && nogoods[j].sameScopeAs(nogoods[i]))
-					list.add(j);
-			}
-			if (list.size() > head.control.constraints.nogoodsMergingLimit) {
-				list.stream().forEach(k -> flags[k] = true);
-				nSharedNogoods += list.size();
-
-				post(ConstraintExtension.buildFrom(this, nogoods[i].vars, list.stream().map(k -> nogoods[k].vals).toArray(int[][]::new), false, false));
-			}
-		}
-		for (int i = flags.length - 1; i >= 0; i--) { // second, we try to merge nogoods sharing scopes
-			if (flags[i])
-				continue;
-			Variable[] scp = nogoods[i].vars;
-			Domain[] doms = Stream.of(scp).map(x -> x.dom).toArray(Domain[]::new);
-			if (Domain.nValidTuplesBounded(doms) > 1000) // TODO hard coding
-				continue;
-			list.clear();
-			list.add(i);
-			for (int j = i - 1; j >= 0; j--)
-				if (nogoods[j].strictSubscopeOf(nogoods[i]))
-					list.add(j);
-			if (list.size() > 1) { // TODO hard coding (limit 1)
-				list.stream().forEach(k -> flags[k] = true);
-				nSharedNogoods += list.size();
-
-				int[] tv = new int[scp.length];
-				int[] tmp = new int[scp.length];
-				TupleIterator ti = new TupleIterator(doms);
-				ti.firstValidTuple();
-				List<int[]> supports = new ArrayList<>();
-				ti.consumeValidTuples(tp -> {
-					for (int k = 0; k < tp.length; k++)
-						tv[k] = doms[k].toVal(tp[k]);
-					boolean support = true;
-					for (int k : list) {
-						CollectedNogood ng = nogoods[k];
-						for (int j = 0; j < ng.vars.length; j++)
-							tmp[j] = tv[Utilities.indexOf(ng.vars[j], scp)];
-						if (ng.firstValuseOf(tmp)) {
-							support = false;
-							break;
+					int[] tv = new int[scp.length];
+					int[] tmp = new int[scp.length];
+					TupleIterator ti = new TupleIterator(doms);
+					ti.firstValidTuple();
+					List<int[]> supports = new ArrayList<>();
+					ti.consumeValidTuples(tp -> {
+						for (int k = 0; k < tp.length; k++)
+							tv[k] = doms[k].toVal(tp[k]);
+						boolean support = true;
+						for (int k : list) {
+							CollectedNogood ng = nogoods[k];
+							for (int j = 0; j < ng.vars.length; j++)
+								tmp[j] = tv[Utilities.indexOf(ng.vars[j], scp)];
+							if (ng.firstValuseOf(tmp)) {
+								support = false;
+								break;
+							}
 						}
-					}
-					if (support)
-						supports.add(tv.clone());
-				});
-				post(ConstraintExtension.buildFrom(this, scp, supports.stream().toArray(int[][]::new), true, false));
+						if (support)
+							supports.add(tv.clone());
+					});
+					post(ConstraintExtension.buildFrom(this, scp, supports, true, false));
+				}
 			}
+			for (int i = 0; i < flags.length; i++) // third, we post remaining nogoods
+				if (!flags[i])
+					postNogood(nogoods[i]);
+			features.collecting.nCollectedNogoodsGathered += nSharedNogoods;
 		}
-		for (int i = 0; i < flags.length; i++) // third, we post remaining nogoods
-			if (!flags[i])
-				postNogood(nogoods[i]);
-		features.collecting.nCollectedNogoodsGathered += nSharedNogoods;
-
 	}
 
 	private void inferAdditionalConstraints() {
@@ -693,7 +716,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					System.out.println("Time for generating redundant AllDifferent constraints: " + stopwatch.wckTimeInSeconds());
 			}
 		}
-
 		if (options.redundantSumForCounts && countEqCandidates.size() > 0) {
 			List<Integer> vals = new ArrayList<>();
 			List<Variable> vars = new ArrayList<>();
@@ -882,22 +904,17 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		loadData(data, dataFormat, dataSaving);
 		head.output.afterData();
 		api.model();
-
 		if (subsetAllDifferentScopes.size() > 0)
 			post(new SubsetAllDifferent(this, subsetAllDifferentScopes.stream().toArray(Variable[][]::new), null));
 		if (subsetAllDifferentExceptScopes.size() > 0)
 			post(new SubsetAllDifferent(this, subsetAllDifferentExceptScopes.stream().toArray(Variable[][]::new), allDifferentExceptValue));
 		for (VariableInteger x : features.collecting.specialServants)
 			post(new WakeUp(this, x.specialMaster, x));
-
 		replaceObjectiveVariable();
-
 		manageCollectedNogoods();
 		// after possibly adding some additional constraints, we store variables and constraints into arrays
 		inferAdditionalConstraints();
-
 		storeToArrays();
-
 		// we may reduce the domains of some variables
 		reduceDomainsFromUserInstantiationAndRefutation();
 		reduceDomainsOfIsolatedVariables();
@@ -1105,11 +1122,13 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 *            an array of tree expressions
 	 * @return an array of new (auxiliary) variables representing the specified tree expressions
 	 */
-	private Var[] replaceByVariables(XNode<IVar>[] trees) {
+	private Var[] replaceByVariables(XNode<IVar>[] trees, boolean distinctVariables) {
 		control(trees.length > 0);
 		for (int i = 0; i < trees.length; i++) {
 			trees[i] = trees[i].canonization();
-			if (cacheForTrees.containsKey(trees[i]))
+			if (trees[i].type == LONG)
+				trees[i] = XNode.varLeaf(auxVar(new int[] { trees[i].val(0) }));
+			if (!distinctVariables && cacheForTrees.containsKey(trees[i]))
 				trees[i] = XNode.varLeaf(cacheForTrees.get(trees[i]));
 		}
 		if (trees.length == 1)
@@ -1145,6 +1164,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			else
 				returned_vars[i] = aux[cnt++];
 		return returned_vars; // aux;
+	}
+
+	private Var[] replaceByVariables(XNode<IVar>[] trees) {
+		return replaceByVariables(trees, false);
 	}
 
 	private Var[] replaceByBoundVariables(XNode<IVar>[] trees) {
@@ -1225,8 +1248,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	// unary
 	public static Matcher x_relop_k = new Matcher(node(relop, var, val));
-	private Matcher k_relop_x = new Matcher(node(relop, val, var));
-	private Matcher x_setop_vals = new Matcher(node(setop, var, set_vals));
+	public static Matcher k_relop_x = new Matcher(node(relop, val, var));
+	public static Matcher x_setop_vals = new Matcher(node(setop, var, set_vals));
 
 	// binary
 	public static Matcher x_relop_y = new Matcher(node(relop, var, var));
@@ -1255,10 +1278,17 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	private Matcher x_ariop_y__relop_z = new Matcher(node(relop, node(ariop, var, var), var));
 	private Matcher z_relop__x_ariop_y = new Matcher(node(relop, var, node(ariop, var, var)));
 	private Matcher logic_y_relop_z__eq_x = new Matcher(node(TypeExpr.EQ, node(relop, var, var), var));
+	private Matcher x_mul_k_eq_y__eq_z = new Matcher(node(TypeExpr.EQ, node(TypeExpr.EQ, node(MUL, var, val), var), var));
+	private Matcher x_add_k_eq_y__eq_z = new Matcher(node(TypeExpr.EQ, node(TypeExpr.EQ, node(ADD, var, val), var), var));
+
+	// quaternary
+	private Matcher dist_dist__ne = new Matcher(node(TypeExpr.NE, node(TypeExpr.DIST, var, var), node(TypeExpr.DIST, var, var)));
+	private Matcher x_mul_y_eq_w__eq_z = new Matcher(node(TypeExpr.EQ, node(TypeExpr.EQ, node(MUL, var, var), var), var));
 
 	// logic
 	private Matcher logic_X__eq_x = new Matcher(node(TypeExpr.EQ, logic_vars, var));
 	private Matcher logic_X__ne_x = new Matcher(node(TypeExpr.NE, logic_vars, var));
+	private Matcher andOrOr__eq_x = new Matcher(node(TypeExpr.EQ, andOrOr, var));
 
 	// extremum
 	private Matcher min_relop = new Matcher(node(relop, min_vars, varOrVal));
@@ -1341,17 +1371,17 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	public final CtrEntity intension(XNodeParent<IVar> treeRoot) {
 		OptionsIntension options = head.control.intension;
 
+		// System.out.println("bef " + treeRoot);
 		XNodeParent<IVar> tree_canonized = (XNodeParent<IVar>) treeRoot.canonization(); // first, the tree is canonized
 		// System.out.println("tree_can " + tree_canonized);
 		XNodeParent<IVar> tree = possiblyReplaceSimilarInternNodes(tree_canonized);
-		//System.out.println("tree aft " + tree);
+		// System.out.println("tree aft " + tree);
 
 		XNode<IVar>[] sons = tree.sons;
 		Variable[] scp = (Variable[]) tree.vars(); // keep this statement here, after canonization
 		int arity = scp.length;
 		control(arity > 0);
 
-		// *** Arity 1
 		if (arity == 1) {
 			Domain dom = scp[0].dom;
 			TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
@@ -1373,9 +1403,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 		assert Variable.haveSameType(scp);
 
-		// *** Detecting some nogoods
-		boolean detectingNogoods = true;
-		if (detectingNogoods) {
+		if (options.detectNogoods) {
 			if (howManyVariablesWithin(scp, options.spaceLimitToNogood) == Constants.ALL) {
 				TreeEvaluator evaluator = new TreeEvaluator(tree, symbolic.mapOfSymbols);
 				int[] conflict = evaluator.getUniqueConflict(Variable.initDomainValues(scp));
@@ -1442,6 +1470,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (k == 1)
 				return forall(range(2), i -> equal(scp[i], 1));
 		}
+
 		if (arity == 2 && options.recognizePrimitive2) {
 			Constraint c = null;
 			if (x_relop_y.matches(tree))
@@ -1464,7 +1493,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				c = Reif2Rel.buildFrom(this, scp[1], scp[0], tree.relop(0), tree.val(0));
 			else if (logic_k_relop_y__eq_x.matches(tree) && scp[1].dom.is01())
 				c = Reif2Rel.buildFrom(this, scp[1], scp[0], tree.relop(1).arithmeticInversion(), tree.val(0));
-			else if (logic_y_setop_vals__eq_x.matches(tree) && scp[1].dom.is01() && tree.setop(0) != TypeConditionOperatorSet.NOTIN) // TODO extending cases
+			else if (logic_y_setop_vals__eq_x.matches(tree) && scp[1].dom.is01()) // && tree.setop(0) != TypeConditionOperatorSet.NOTIN) // TODO extending cases
 				c = Reif2Set.buildFrom(this, scp[1], scp[0], tree.setop(0), tree.arrayOfVals());
 			else if (unalop_x__eq_y.matches(tree))
 				c = Primitive2.buildFrom(this, scp[1], tree.unalop(0), scp[0]);
@@ -1487,30 +1516,65 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (c != null)
 				return post(c);
 		}
+
 		if (arity == 3 && options.recognizePrimitive3) {
 			Constraint c = null;
-			if (x_ariop_y__relop_z.matches(tree))
+			if (x_ariop_y__relop_z.matches(tree)) {
 				c = Primitive3.buildFrom(this, scp[0], tree.ariop(0), scp[1], tree.relop(0), scp[2]);
-			else if (z_relop__x_ariop_y.matches(tree))
+			} else if (z_relop__x_ariop_y.matches(tree))
 				c = Primitive3.buildFrom(this, scp[1], tree.ariop(0), scp[2], tree.relop(0).arithmeticInversion(), scp[0]);
 			else if (logic_y_relop_z__eq_x.matches(tree))
 				c = Reif3.buildFrom(this, scp[2], scp[0], tree.relop(1), scp[1]);
+			else if (dist_dist__ne.matches(tree)) {
+				Variable[] vars = (Variable[]) tree.arrayOfVars();
+				control(vars.length == 4 && vars[0] != vars[1] && vars[2] != vars[3]);
+				Variable x = vars[0] == vars[2] || vars[0] == vars[3] ? vars[0] : vars[1];
+				c = new DistDistNE3(this, x, x == vars[0] ? vars[1] : vars[0], x == vars[2] ? vars[3] : vars[2]);
+			} else if (x_mul_k_eq_y__eq_z.matches(tree) && tree.vars().length == arity) // TODO to be tested on ATPS for example
+				c = new Reif3EQc(this, scp[2], scp[0], tree.val(0), scp[1]);
+			else if (x_add_k_eq_y__eq_z.matches(tree) && tree.vars().length == arity) // TODO to be tested on ArithmeticTarget for example
+				c = new Reif3EQb(this, scp[2], scp[0], tree.val(0), scp[1]);
+			if (c != null)
+				return post(c);
+		}
+
+		if (arity == 4 && options.recognizePrimitive4) {
+			Constraint c = null;
+			if (dist_dist__ne.matches(tree))
+				c = new DistDistNE(this, scp[0], scp[1], scp[2], scp[3]);
+			else if (x_mul_y_eq_w__eq_z.matches(tree) && tree.vars().length == arity) {// TODO to be tested on ArithmeticTarget for example
+				c = new Reif4MulEQ(this, scp[3], scp[2], scp[0], scp[1]);
+			}
 			if (c != null)
 				return post(c);
 		}
 
 		if (options.recognizeReifLogic) {
+			boolean test = false;
+			if (test && andOrOr__eq_x.matches(tree)) {
+				XNode<IVar> s0 = sons[0];
+				boolean changed = false;
+				for (int i = 0; i < s0.sons.length; i++)
+					if (s0.sons[i].type != VAR) {
+						changed = true;
+						s0.sons[i] = XNode.varLeaf(replaceByVariable(s0.sons[i]));
+					}
+				control(logic_X__eq_x.matches(tree));
+				if (changed)
+					return intension(tree); // because the scope has changed
+			}
 			Constraint c = null;
-			if (logic_X__eq_x.matches(tree)) {
+			if (logic_X__eq_x.matches(tree)) { 
 				Variable[] list = IntStream.range(0, scp.length - 1).mapToObj(i -> scp[i]).toArray(Variable[]::new);
-				c = ReifLogic.buildFrom(this, scp[scp.length - 1], tree.logop(0), list);
+				if (Variable.areAllInitiallyBoolean(list))
+					c = ReifLogic.buildFrom(this, scp[scp.length - 1], tree.logop(0), list);
 			}
 			// TODO other cases to be implemented
 			if (c != null)
 				return post(c);
 		}
-		boolean test = true;
-		if (test && or2_and2.matches(tree)) {
+
+		if (options.recognizeMutualExclusion && or2_and2.matches(tree)) {
 			XNode<IVar> gs00 = sons[0].sons[0], gs01 = sons[0].sons[1], gs10 = sons[1].sons[0], gs11 = sons[1].sons[1];
 			Object res0 = XNode.logicallyInverse(gs00, gs10), res1 = XNode.logicallyInverse(gs01, gs11);
 			if (res0 != Boolean.FALSE && res1 != Boolean.FALSE) {
@@ -1532,10 +1596,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			// return intension(eq(gs00, gs01));
 
 		}
+
 		if (tree.type == OR || tree.type == IF) {
 			if (sons.length == 2 && sons[1].type == AND) // TODO should we avoid this if sons of AND are not decomposable (share variables)?
 				return forall(range(sons[1].sons.length), i -> intension(XNode.node(tree.type, sons[0], sons[1].sons[i])));
 		}
+
 		if (tree.type == OR) {
 			if (arity > 2 && Stream.of(sons).allMatch(son -> son.type == VAR)) {
 				Variable[] filteredScp = Stream.of(scp).filter(x -> x.dom.containsValue(1)).toArray(Variable[]::new);
@@ -1544,31 +1610,57 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				control(filteredScp.length > 1);
 				return post(new AtLeast1(this, filteredScp, 1)); // return post(SumSimple.buildFrom(this, scp, NE, 0));
 			}
-			if (arity >= 2) {
-				boolean detectingOtherNogoods = true;
-				if (detectingOtherNogoods && Stream.of(sons)
-						.allMatch(son -> son.type == VAR || x_ne_k.matches(son) || (x_eq_k.matches(son) && ((Variable) son.var(0)).dom.is01()))) {
-					List<Integer> vals = new ArrayList<>();
-					for (XNode<IVar> son : tree.sons) {
-						int v = -1;
-						if (son.type == VAR) {
-							control(((Variable) son.var(0)).dom.is01());
-							v = 0;
-						} else if (x_ne_k.matches(son))
-							v = son.val(0);
-						else {
-							assert x_eq_k.matches(son) && ((Variable) son.var(0)).dom.is01() && (son.val(0) == 0 || son.val(0) == 1);
-							v = son.val(0) == 1 ? 0 : 1;
-						}
-						vals.add(v);
-						if (!((Variable) son.var(0)).dom.containsValue(v))
-							return head.control.constraints.postCtrTrues ? post(new CtrTrue(this, scp, "Nogood trivially satisfied")) : null;
+
+			if (arity >= 2 && options.detectOtherNogoods
+					&& Stream.of(sons).allMatch(son -> son.type == VAR || x_ne_k.matches(son) || (x_eq_k.matches(son) && ((Variable) son.var(0)).dom.is01()))) {
+				List<Integer> vals = new ArrayList<>();
+				for (XNode<IVar> son : tree.sons) {
+					Domain dom = ((Variable) son.var(0)).dom;
+					int v = -1;
+					if (son.type == VAR) {
+						control(dom.is01());
+						v = 0;
+					} else if (x_ne_k.matches(son))
+						v = son.val(0);
+					else {
+						assert x_eq_k.matches(son) && dom.is01() && (son.val(0) == 0 || son.val(0) == 1);
+						v = son.val(0) == 1 ? 0 : 1;
 					}
-					features.collecting.addNogood(scp, vals.stream().mapToInt(v -> v).toArray());
-					// features.collecting.addNogood(scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray());
-					return null; // post(new Nogood(this, scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray()));
+					vals.add(v);
+					if (!dom.containsValue(v))
+						return head.control.constraints.postCtrTrues ? post(new CtrTrue(this, scp, "Nogood trivially satisfied")) : null;
+				}
+				features.collecting.addNogood(scp, vals.stream().mapToInt(v -> v).toArray());
+				// features.collecting.addNogood(scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray());
+				return null; // post(new Nogood(this, scp, Stream.of(tree.sons).mapToInt(son -> son.type == VAR ? 0 : son.val(0)).toArray()));
+			}
+
+			if (options.recognizeOrUnaryTerms) {
+				boolean test = false;
+				if (test) {
+					int[] t = Stream.of(sons)
+							.mapToInt(son -> son.type == TypeExpr.VAR || x_relop_k.matches(son) || k_relop_x.matches(son) || x_setop_vals.matches(son) ? 0 : 1)
+							.toArray();
+					int nb = IntStream.of(t).sum();
+					if (nb == 1) { // TODO hard coding
+						for (int i = 0; i < sons.length; i++)
+							if (t[i] == 1)
+								sons[i] = XNode.varLeaf(replaceByVariable(sons[i]));
+						return intension(tree); // because the scope has changed
+					}
+				}
+				if (scp.length == tree.sons.length && Stream.of(sons)
+						.allMatch(son -> son.type == TypeExpr.VAR || x_relop_k.matches(son) || k_relop_x.matches(son) || x_setop_vals.matches(son))) {
+					// TODO merging subtrees of same variables (with a unary table ?)
+					ArgLogic[] logicArgs = LogicTree.buildTreeArgs(this, sons);
+					if (logicArgs.length == 0)
+						return head.control.constraints.postCtrTrues ? post(new CtrTrue(this, scp, "Nogood trivially satisfied")) : null;
+					int[] validTrees = IntStream.range(0, logicArgs.length).filter(i -> logicArgs[i] != null).toArray();
+					return post(new LogicTree(this, IntStream.of(validTrees).mapToObj(i -> sons[i]).toArray(XNode[]::new),
+							IntStream.of(validTrees).mapToObj(i -> logicArgs[i]).toArray(ArgLogic[]::new)));
 				}
 			}
+
 			if (arity >= options.arityForClauseUnaryTrees && arity == sons.length) {
 				TreeUnaryBoolean[] terms = ClauseUnaryTrees.canBuildTreeUnaryBooleans(sons);
 				if (terms != null)
@@ -1582,6 +1674,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (arity == 4 && sons.length == 2 && Stream.of(sons).allMatch(son -> x_ne_y.matches(son)))
 				return post(new DblDiff(this, (Variable) sons[0].var(0), (Variable) sons[0].var(1), (Variable) sons[1].var(0), (Variable) sons[1].var(1)));
 		}
+
 		if (arity > 2 && tree.type == XOR && options.recognizeXor > 0) {
 			if (options.recognizeXor == 2) // full recognition
 				return post(new Xor(this, Stream.of(sons).map(son -> son.type == VAR ? son : replaceByVariable(son)).toArray(Variable[]::new)));
@@ -1605,7 +1698,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				Variable cnd = grandsons[0].type == VAR ? (Variable) grandsons[0].var(0) : replaceByVariable(grandsons[0]);
 				Variable y = grandsons[1].type == VAR ? (Variable) grandsons[1].var(0) : replaceByVariable(grandsons[1]);
 				Variable z = grandsons[2].type == VAR ? (Variable) grandsons[2].var(0) : replaceByVariable(grandsons[2]);
-				return extension(vars(x, cnd, y, z), Table.starredIfThen(x, cnd, y, z), true, true);
+				return extension(vars(x, cnd, y, z), Table.starredIfThen(x, cnd, y, z), true, STARRED);
 			}
 			if (sons.length == 2 && options.recognizeEqAnd && (sons[0].type == AND || sons[1].type == AND)) {
 				XNode<?> son = sons[0].type == AND ? sons[1] : sons[0];
@@ -1793,8 +1886,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 						terms.stream().mapToInt(term -> Utilities.safeInt(term.coeff)).toArray(), tree.type.toRelop(), limit, true);
 			}
 		}
-		
-		if ((scp.length > 2 || (scp.length == 2 && scp.length == tree.listOfVars().size())) && Constraint.howManyVariablesWithin(scp, options.decompositionSpaceLimit) != Constants.ALL) {
+
+		if ((scp.length > 2 || (scp.length == 2 && scp.length == tree.listOfVars().size()))
+				&& Constraint.howManyVariablesWithin(scp, options.decompositionSpaceLimit) != Constants.ALL) {
 			// if (Constraint.howManyVariablesWithin(scp, 12) != Constants.ALL) { // Constraint.computeGenericFilteringThreshold(scp) < scp.length) {
 			// if it may be useful to decompose
 			boolean tryingDecomposition = options.decompose > 0 && scp[0] instanceof VariableInteger; // && scp.length + 1 >= tree.listOfVars().size();
@@ -1802,6 +1896,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 			tryingDecomposition = tryingDecomposition || options.decompose == 2;
 			if (tryingDecomposition) {
+				// System.out.println("we try to decompose " + tree);
 				int nParentSons = 0;
 				if (tree.type.isRelationalOperator()) { // tree.type == TypeExpr.EQ) {
 					// we reason with grandsons for avoiding recursive similar changes when making replacements
@@ -1836,13 +1931,70 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				}
 			}
 		}
+
 		if (options.toExtension(scp, tree) && Stream.of(scp).allMatch(x -> x instanceof Var)) {
 			features.nConvertedConstraints++;
 			return extension(tree);
 		}
+
+		// last chance : replace subtrees whose reification is cheap (ne, le, ge, ...)
+		boolean lastChance = true;
+		if (lastChance) {
+			if (scp.length == tree.listOfVars().size()) {
+				if (replaceInternNodeByCheapReificationpropagator(tree))
+					return intension(tree);
+			}
+			// below, to be tested
+
+			// if (tree.type.oneOf(TypeExpr.AND, TypeExpr.OR)) {
+			// for (int i = 0; i < sons.length; i++) {
+			// if (sons[i].type != TypeExpr.VAR) {
+			// sons[i] = new XNodeLeaf<>(VAR, replaceByVariable(sons[i]));
+			// return intension(tree);
+			// }
+			// }
+			// }
+			// if (tree.type == TypeExpr.EQ) {
+			// for (int i = 0; i < sons.length; i++) {
+			// if (sons[i].type.oneOf(TypeExpr.AND, TypeExpr.OR)) {
+			// XNode<IVar>[] grandsons = sons[i].sons;
+			// for (int j = 0; j < grandsons.length; j++) {
+			// if (grandsons[j].type != TypeExpr.VAR) {
+			// grandsons[j] = new XNodeLeaf<>(VAR, replaceByVariable(grandsons[j]));
+			// return intension(tree);
+			// }
+			// }
+			// }
+			//
+			// }
+			// }
+		}
+
 		if (options.displayRemainingIntension)
 			System.out.println("Tree remaining " + tree);
+
 		return post(new ConstraintIntension(this, scp, tree));
+	}
+
+	private boolean replaceInternNodeByCheapReificationpropagator(XNodeParent<IVar> node) {
+		XNode<IVar>[] sons = node.sons;
+		// if (node.type != TypeExpr.EQ)
+		for (int i = 0; i < sons.length; i++) {
+			if (sons[i].type.oneOf(TypeExpr.NE, TypeExpr.LE, TypeExpr.GE) && sons[i].sons[0].type.oneOf(TypeExpr.VAR, TypeExpr.LONG)
+					&& sons[i].sons[1].type.oneOf(TypeExpr.VAR, TypeExpr.LONG)) {
+				sons[i] = new XNodeLeaf<>(VAR, replaceByVariable(sons[i]));
+				return true;
+			}
+			if (sons[i].type == TypeExpr.EQ && sons[i].sons.length == 2 && sons[i].sons[0].type == VAR && sons[i].sons[1].type == LONG) {
+				sons[i] = new XNodeLeaf<>(VAR, replaceByVariable(sons[i]));
+				return true;
+			}
+			if (sons[i] instanceof XNodeParent) {
+				if (replaceInternNodeByCheapReificationpropagator((XNodeParent) sons[i]))
+					return true;
+			}
+		}
+		return false;
 	}
 
 	// ************************************************************************
@@ -1889,8 +2041,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ***** Constraint extension
 	// ************************************************************************
 
-	private static final Boolean DONT_KNOW = null;
-
 	/**
 	 * Posts a unary constraint
 	 * 
@@ -1918,7 +2068,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			return post(positive ? new CtrFalse(this, scp, "Extension with 0 support")
 					: head.control.constraints.postCtrTrues ? new CtrTrue(this, scp, "Extension with 0 conflict") : null);
 		if (list.length == 1) {
-			control(starred == null);
+			control(starred == DONT_KNOW_IF_STARRED);
 			int[][] m = scp[0] instanceof VariableSymbolic ? symbolic.replaceSymbols((String[][]) tuples) : (int[][]) tuples;
 			int[] values = Stream.of(m).mapToInt(t -> t[0]).toArray();
 			return extension(scp[0], values, positive);
@@ -1971,8 +2121,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			}
 		}
 		if (list.length > 2 && head.control.extension.toMDD && positive) {
-			if (starred == null)
-				starred = ConstraintExtension.isStarred(tuples);
+			if (starred == DONT_KNOW_IF_STARRED)
+				starred = Table.isStarred(tuples);
 			if (!starred)
 				return post(new CMDDO(this, translate(list), (int[][]) tuples));
 			else
@@ -1983,13 +2133,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrAlone extension(Var[] list, int[][] tuples, boolean positive) {
-		// System.out.println("hhhh " + list.length + " " + tuples.length + " " + positive);
-		return extension(list, tuples, positive, DONT_KNOW);
+		return extension(list, tuples, positive, DONT_KNOW_IF_STARRED);
 	}
 
 	@Override
 	public final CtrAlone extension(VarSymbolic[] list, String[][] tuples, boolean positive) {
-		return extension(list, tuples, positive, DONT_KNOW);
+		return extension(list, tuples, positive, DONT_KNOW_IF_STARRED);
 	}
 
 	@Override
@@ -2043,7 +2192,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (scp.length <= 4 && scp[0] instanceof VariableInteger) { // TODO: increase the limit?
 			Set<Integer> sv = Variable.setOfvaluesIn(scp);
 			if (sv.size() == scp.length)
-				return extension((Var[]) scp, Kit.allPermutations(sv.stream().mapToInt(v -> v).toArray()), true);
+				return extension((Var[]) scp, Kit.allPermutations(sv.stream().mapToInt(v -> v).sorted().toArray()), true);
 		}
 
 		if (head.control.global.gatherAllDifferent) {
@@ -2198,7 +2347,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return forall(range(m.length).range(m.length), (i, j) -> {
 			if (i < j) {
 				int[][] table = Table.starredDistinctVectors(m[i], m[j], except);
-				extension(vars(m[i], m[j]), table, true);
+				extension(vars(m[i], m[j]), table, true, STARRED);
 			}
 		});
 	}
@@ -2551,6 +2700,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public CtrEntity sum(XNode<IVar>[] trees, int[] coeffs, Condition condition) {
+		// System.out.println("jjjjj " + Kit.join(trees) + " " + coeffs + " " + condition);
 		control(trees.length > 0, "A constraint sum is posted with a scope of 0 variable");
 
 		if (coeffs != null && IntStream.of(coeffs).anyMatch(c -> c == 0)) { // we discard useless terms, if any
@@ -2596,16 +2746,69 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return sum(replaceByVariables(trees), coeffs, condition);
 	}
 
-	private CtrEntity sum(XNode<IVar>[] trees, Condition condition) {
-		return sum(trees, null, condition);
-	}
-
 	private CtrEntity sum(Stream<XNode<IVar>> trees, int[] coeffs, Condition condition) {
 		return sum(treesToArray(trees), coeffs, condition);
 	}
 
-	private CtrEntity sum(Stream<XNode<IVar>> trees, Condition condition) {
+	private int addToList(XNode<IVar> tree, List<XNode<IVar>> list) {
+		int v = 0;
+		if (tree.type == LONG)
+			v += tree.val(0);
+		else if (tree.type == SUB && tree.sons[1].type == LONG) {
+			v += addToList(tree.sons[0], list);
+			v += tree.sons[1].val(0);
+		} else if (tree.type == ADD) {
+			for (int i = 0; i < tree.sons.length; i++)
+				v += addToList(tree.sons[i], list);
+		} else
+			list.add(tree);
+		return v;
+	}
+
+	private XNode<IVar>[] lastTrees;
+
+	private Variable lastVar;
+
+	public CtrEntity sum(XNode<IVar>[] trees, Condition condition) {
+		boolean test = false;
+		if (test) {
+			if (lastTrees != null && lastTrees.length <= trees.length) {
+				boolean similar = true;
+				for (int i = 0; similar && i < lastTrees.length; i++)
+					if (lastTrees[i].compareTo(trees[i]) != 0)
+						similar = false;
+				if (similar) {
+					XNode<IVar>[] newTrees = new XNode[trees.length - lastTrees.length + 1];
+					newTrees[0] = varLeaf(lastVar);
+					for (int j = 0; j < trees.length - lastTrees.length; j++)
+						newTrees[j + 1] = trees[j + lastTrees.length];
+					if (condition instanceof ConditionVar && ((ConditionVar) condition).operator == EQ) {
+						lastTrees = trees.clone();
+						lastVar = (Variable) ((ConditionVar) condition).x;
+					}
+					return sum(newTrees, null, condition);
+				}
+			}
+
+			if (condition instanceof ConditionVar && ((ConditionVar) condition).operator == EQ) {
+				lastTrees = trees.clone();
+				lastVar = (Variable) ((ConditionVar) condition).x;
+				System.out.println("recording");
+			}
+		}
+		// List<XNode<IVar>> list = new ArrayList<>();
+		// int v = 0;
+		// for (int i = 0; i < trees.length; i++)
+		// v += addToList(trees[i], list);
+		// if (v != 0)
+		// list.add(longLeaf(v));
+		// return sum(list.stream(), null, condition);
+
 		return sum(trees, null, condition);
+	}
+
+	private CtrEntity sum(Stream<XNode<IVar>> trees, Condition condition) {
+		return sum(treesToArray(trees), condition);
 	}
 
 	// ************************************************************************
@@ -2803,7 +3006,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// }
 		if ((closed || mustBeClosed) && IntStream.of(occs).allMatch(v -> v == 1))
 			return allDifferent(scp);
-		return post(new Cardinality(this, scp, vals, occs));
+
+		switch (head.control.global.cardinality) {
+		case DEFAULT:
+			return post(new Cardinality(this, scp, vals, occs));
+		case DECOMPOSITION:
+			return forall(range(vals.length), i -> exactly((VariableInteger[]) scp, vals[i], occs[i]));
+		default:
+			throw new AssertionError("Invalid mode");
+		}
+		// return post(new Cardinality(this, scp, vals, occs));
 	}
 
 	@Override
@@ -2861,7 +3073,12 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		// binpacking((Var[]) scp, Kit.repeat(1, scp.length), occurs, true); // redundant constraint TODO to be checked (real interest?)
 
 		return forall(range(values.length), i -> {
-			post(new ExactlyVarK(this, Stream.of(scp).filter(x -> x.dom.containsValue(values[i])).toArray(Variable[]::new), values[i], (Variable) occurs[i]));
+			Variable[] newScp = Stream.of(scp).filter(x -> x.dom.containsValue(values[i])).toArray(Variable[]::new);
+			control(newScp.length > 0);
+			if (newScp.length == 1)
+				equal(eq(newScp[0], values[i]), occurs[i]);
+			else
+				post(new ExactlyVarK(this, newScp, values[i], (Variable) occurs[i]));
 		});
 	}
 
@@ -3002,7 +3219,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	final CtrEntity maximumArg(XNode<IVar>[] trees, TypeRank rank, Condition condition) {
-		return maximumArg(replaceByVariables(trees), rank, condition);
+		return maximumArg(replaceByVariables(trees, true), rank, condition);
 	}
 
 	final CtrEntity minimumArg(Var[] list, TypeRank rank, Condition condition) {
@@ -3011,7 +3228,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	final CtrEntity minimumArg(XNode<IVar>[] trees, TypeRank rank, Condition condition) {
-		return minimumArg(replaceByVariables(trees), rank, condition);
+		return minimumArg(replaceByVariables(trees, true), rank, condition);
 	}
 
 	// ************************************************************************
@@ -3033,7 +3250,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			TypeConditionOperatorRel op = ((ConditionRel) condition).operator;
 			Variable x = (Variable) ((ConditionVar) condition).x;
 			if (op == EQ)
-				return extension(vars(list, x), Table.starredMember(translate(list), x), true);
+				return extension(vars(list, x), Table.starredMember(translate(list), x), true, STARRED);
 			if (op == NE)
 				return forall(range(list.length), i -> different(list[i], x));
 		}
@@ -3042,34 +3259,36 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		return unimplemented("element");
 	}
 
-	private CtrAlone element(Var[] list, Var index, int value) {
+	private CtrAlone element(Var[] var_list, Var var_index, int value) {
+		Variable[] list = translate(var_list);
+		Variable index = Utilities.indexOf(var_index, var_list) != -1 ? replaceByOtherVariable(var_index) : (Variable) var_index;
+
 		switch (head.control.global.element) {
 		case DEFAULT:
-			return post(new ElementCst(this, translate(list), (Variable) index, value));
+			return post(new ElementCst(this, list, index, value));
 		case TABLE_STARRED:
 		case TABLE_HYBRID:
-			return extension(vars(index, list), Table.starredElement(translate(list), (Variable) index, value), true);
+			return extension(vars(index, list), Table.starredElement(list, index, value), true, STARRED);
 		default:
 			throw new AssertionError("Invalid mode");
 		}
 	}
 
-	private CtrAlone element(Var[] list, Var index, Var value) {
-		if (index == value) {
-			control(Utilities.indexOf(value, list) == -1);
-			Var[] scp = vars(list, value);
-			return extension(scp, Table.starredElement(translate(list), (Variable) index), true);
-		}
+	private CtrAlone element(Var[] var_list, Var var_index, Var var_value) {
+		Variable[] list = translate(var_list);
+		Variable index = Utilities.indexOf(var_index, var_list) != -1 ? replaceByOtherVariable(var_index) : (Variable) var_index;
+		Variable value = Utilities.indexOf(var_value, var_list) != -1 ? replaceByOtherVariable(var_value) : (Variable) var_value;
+
+		if (index == value)
+			return extension(vars(list, value), Table.starredElement(list, index), true, STARRED);
 
 		switch (head.control.global.element) {
 		case DEFAULT:
-			return post(new ElementVar(this, translate(list), (Variable) index, (Variable) value));
+			return post(new ElementVar(this, list, index, value));
 		case TABLE_STARRED:
-			// TODO controls (for example index != value and index not in list?
-			Var[] scp = Utilities.indexOf(value, list) == -1 ? vars(index, list, value) : vars(index, list);
-			return extension(scp, Table.starredElement(translate(list), (Variable) index, (Variable) value), true);
+			return extension(vars(index, list, value), Table.starredElement(list, index, value), true, STARRED);
 		case TABLE_HYBRID:
-			return post(CHybrid.element(this, translate(list), (Variable) index, (Variable) value));
+			return post(CHybrid.element(this, list, index, value));
 		default:
 			throw new AssertionError("Invalid mode");
 		}
@@ -3392,7 +3611,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					intension(or(le(add(xi, wi), xj), le(add(xj, wj), xi), le(add(yi, hi), yj), le(add(yj, hj), yi)));
 					break;
 				case TABLE_STARRED: // seems to be rather efficient
-					extension(vars(xi, xj, yi, yj), Table.starredNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, true);
+					extension(vars(xi, xj, yi, yj), Table.starredNoOverlap(xi, xj, yi, yj, wi, wj, hi, hj), true, STARRED);
 					break;
 				case TABLE_HYBRID:
 					post(options.noOverlapAux ? CHybrid.noOverlap(this, xi, yi, xj, yj, wi, hi, wj, hj, auxVar(0, 1, 2, 3))
@@ -3540,7 +3759,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k) - (op == LT ? 1 : 0); // limit for EQ
 			if (IntStream.of(new_heights).sum() <= limit) {
-				Kit.warning("Discarding a cumulative constraint because sum of heights are always less than or equal to the limit");
+				Kit.warning("Discarding a cumulative constraint because the sum of height is always less than or equal to the limit");
 				return null;
 			}
 			if (new_origins.length < 100 && IntStream.of(new_heights).min().getAsInt() >= limit) // TODO hard coding
@@ -3594,7 +3813,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			control(op == LT || op == LE);
 			int limit = Utilities.safeInt(((ConditionVal) condition).k) - (op == LT ? 1 : 0); // limit for EQ;
 			if (IntStream.of(new_heights).sum() <= limit) {
-				Kit.warning("Discarding a cumulative constraint because sum of heights are always less than or equal to the limit");
+				Kit.warning("Discarding a cumulative constraint because the sum of height is always less than or equal to the limit");
 				return null;
 			}
 			return post(new CumulativeVarW(this, new_origins, new_lengths, new_heights, limit));
@@ -3758,7 +3977,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	public final CtrEntity knapsack(Var[] list, int[] weights, Condition wcondition, int[] profits, Condition pcondition) {
 		// for the moment, no dedicated propagator (just decomposition)
-
 		sum(list, weights, wcondition);
 		return sum(list, profits, pcondition);
 	}
@@ -3972,29 +4190,36 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	private final ObjEntity optimize(TypeOptimization opt, XNode<IVar> tree) {
-		if (tree.type == ADD) { // recognizing a sum
+		Variable[] treeScp = translate(tree.vars());
+		if (head.control.optimization.keepExpr1 && treeScp.length == 1) {
+			long lb = head.control.optimization.lb, ub = head.control.optimization.ub;
+			optimizer = buildOptimizer(opt, postObj(new ObjExpr1GE(this, tree, lb)), postObj(new ObjExpr1LE(this, tree, ub)));
+			return null;
+		}
+		if (head.control.optimization.trySum && (tree.type == ADD || tree.type == SUB)) { // recognizing a sum
 			tree = (XNodeParent<IVar>) tree.canonization();
 			XNode<IVar>[] sons = tree.sons;
 			List<Variable> vars = new ArrayList<>();
 			int[] coeffs = new int[sons.length];
 			for (int i = 0; i < sons.length; i++) {
+				int multiplier = tree.type == SUB && i == 1 ? -1 : 1;
 				XNode<IVar> son = sons[i];
 				if (son.type == VAR) {
 					vars.add((Variable) son.var(0));
-					coeffs[i] = 1;
+					coeffs[i] = 1 * multiplier;
 				} else {
 					XNode<IVar>[] gsons = son.sons;
 					if (son.type == TypeExpr.MUL && gsons.length == 2 && (gsons[0].type == LONG || gsons[1].type == LONG)) {
 						if (gsons[0].type == LONG) {
 							vars.add(gsons[1].type == VAR ? (Variable) gsons[1].var(0) : replaceByVariable(gsons[1]));
-							coeffs[i] = gsons[0].val(0);
+							coeffs[i] = gsons[0].val(0) * multiplier;
 						} else {
 							vars.add(gsons[0].type == VAR ? (Variable) gsons[0].var(0) : replaceByVariable(gsons[0]));
-							coeffs[i] = gsons[1].val(0);
+							coeffs[i] = gsons[1].val(0) * multiplier;
 						}
 					} else {
 						vars.add(replaceByVariable(son));
-						coeffs[i] = 1;
+						coeffs[i] = 1 * multiplier;
 					}
 				}
 			}
@@ -4003,7 +4228,6 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (!head.control.optimization.keepTree)
 			return optimize(opt, replaceByVariable(tree));
 		else {
-			Variable[] treeScp = translate(tree.vars());
 			ConstraintIntension clb = new ConstraintIntension(this, treeScp, api.ge(tree, head.control.optimization.lb));
 			clb.setOptimizationStuff();
 			ConstraintIntension cub = new ConstraintIntension(this, treeScp, api.le(tree, head.control.optimization.ub));

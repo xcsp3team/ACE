@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -25,10 +25,14 @@ import org.xcsp.common.Constants;
 import org.xcsp.common.IVar;
 
 import constraints.Constraint;
+import constraints.ConstraintExtension.ConstraintExtensionGeneric;
+import constraints.extension.structures.Bits;
 import heuristics.HeuristicValues;
 import heuristics.HeuristicVariablesDynamic.WdegVariant;
 import interfaces.Observers.ObserverOnBacktracks.ObserveronBacktracksUnsystematic;
 import problem.Problem;
+import propagation.Forward;
+import propagation.Reviser.Reviser3;
 import utility.Kit;
 import variables.DomainFinite.DomainFiniteSpecial;
 import variables.DomainFinite.DomainRange;
@@ -328,6 +332,19 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	/**
 	 * @param vars
 	 *            an array of variables
+	 * @return the number of variables with a current domain being singleton
+	 */
+	public static int nSingletonsIn(Variable... vars) {
+		int cnt = 0;
+		for (Variable x : vars)
+			if (x.dom.size() == 1)
+				cnt++;
+		return cnt;
+	}
+
+	/**
+	 * @param vars
+	 *            an array of variables
 	 * @return the sum of the size of the current domains of the specified variables
 	 */
 	public static int nValidValuesFor(Variable... vars) {
@@ -453,7 +470,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 			return star_prefix + "*";
 		if (obj instanceof Variable) {
 			Variable x = (Variable) obj;
-			return x.dom.prettyValueOf(x.problem.solver.solutions.last[x.num]);
+			return x.dom.prettyValueOf(x.problem.solver.solutions.last.idxs[x.num]);
 		}
 		assert obj.getClass().isArray();
 		if (obj instanceof Variable[]) {
@@ -591,6 +608,8 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 
 	public VariableInteger specialServant;
 
+	public boolean discarded;
+
 	private Variable[] computeNeighbours(int neighborArityLimit) {
 		;
 		if (ctrs.length == 0 || ctrs[ctrs.length - 1].scp.length > neighborArityLimit) {
@@ -636,6 +655,26 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 	public void reset() {
 		assert !assigned() && dom.controlStructures(); // && control(dom.nRemoved() == 0 ??
 		time = 0;
+	}
+
+	public void buildBinaryRepresentation() {
+		if (!(dom instanceof DomainFinite))
+			return;
+		boolean needBinaryrepresentation = false;
+		for (Constraint c : ctrs) {
+			if (!(c instanceof ConstraintExtensionGeneric))
+				continue;
+			if (!(c.extStructure() instanceof Bits))
+				continue;
+			if (!(((Forward) problem.solver.propagation).reviser instanceof Reviser3) && c.supporter != null)
+				continue;
+			needBinaryrepresentation = true;
+			break;
+		}
+		if (needBinaryrepresentation) {
+			
+			((DomainFinite) dom).buildBinaryRepresentation(false); // TODO hard coding add an option for the parameter
+		}
 	}
 
 	/**

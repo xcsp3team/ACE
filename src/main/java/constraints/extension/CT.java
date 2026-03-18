@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -18,7 +18,6 @@ import java.util.stream.Stream;
 
 import org.xcsp.common.Constants;
 
-import constraints.extension.structures.Table;
 import interfaces.Tags.TagStarredCompatible;
 import problem.Problem;
 import sets.SetDenseReversible;
@@ -54,7 +53,7 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 		this.lastWord0Then1 = tuples.length % 64 != 0 ? Bit.bitsAt1From(tuples.length % 64) : 0L;
 		fillTo1(current);
 
-		this.starred = ((Table) extStructure()).starred;
+		this.starred = extStructure().isStarred();
 		this.masks = Stream.of(scp).map(x -> new long[x.dom.initSize()][nWords]).toArray(long[][][]::new);
 		if (!this.starred) {
 			for (int x = 0; x < scp.length; x++) {
@@ -189,7 +188,7 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 	 */
 	public CT(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		control(extOptions.decremental, "true is required for CT for the moment");
+		control(extOptions.decrementalCT, "true is required for CT for the moment");
 	}
 
 	private void fillTo1(long[] t) {

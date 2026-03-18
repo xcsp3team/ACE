@@ -1,7 +1,7 @@
 /*
- * This file is part of the constraint solver ACE (AbsCon Essence). 
+ * This file is part of the constraint solver ACE. 
  *
- * Copyright (c) 2021. All rights reserved.
+ * Copyright (c) 2026. All rights reserved.
  * Christophe Lecoutre, CRIL, Univ. Artois and CNRS. 
  * 
  * Licensed under the MIT License.
@@ -65,6 +65,8 @@ import optimization.Optimizer;
 import optimization.Optimizer.OptimizationStrategy;
 import problem.Problem.SymmetryBreaking;
 import propagation.AC;
+import propagation.Backward.BT;
+import propagation.Forward.FC;
 import propagation.Reviser;
 import propagation.Reviser.Reviser3;
 import solver.Restarter.RestartMeasure;
@@ -194,6 +196,17 @@ public final class Control {
 			restarts.cutoff = restarts.cutoff / 2;
 			restarts.factor = 1.05;
 		}
+
+		if (propagation.clazz.equals(FC.class.getSimpleName()) || propagation.clazz.equals(BT.class.getSimpleName())) {
+			propagation.postponableArityLimit = -1;
+			varh.discardSingletonsAfterPrepro = false;
+			varh.discardSingletonsDuringSearchLimit = Integer.MAX_VALUE;
+			varh.alwaysAssignAllVariables = true;
+		}
+		if (propagation.clazz.equals(BT.class.getSimpleName()))
+			restarts.cutoff = Integer.MAX_VALUE; // otherwise, it seems that we gave several times the same solutions; what can we do?
+
+		control(varh.discardSingletonsAfterPrepro == false || varh.alwaysAssignAllVariables == false);
 	}
 
 	public void framework(Optimizer optimizer) {
@@ -475,7 +488,10 @@ public final class Control {
 		public final String ignoreGroups = addS("ignoreGroups", "ig", "", "Index(es) of the group(s) of constraints that must be discarded");
 		public final int positionsLb = addI("positionsLb", "poslb", 3, "Minimal arity to build the array positions");
 		public final int positionsUb = addI("positionsUb", "posub", 10000, "Maximal number of variables to build the array positions");
-		public final int nogoodsMergingLimit = addI("nogoodsMergingLimit", "nml", 3, "Limit for merging (in a table) nogoods of same scope");
+		public final int collectedNogoodsLimitExtern = addI("collectedNogoodsLimitExtern", "cnle", 5_000,
+				"Limit number (max) to run a process for combining collected nogoods");
+		public final int collectedNogoodsLimitIntern = addI("collectedNogoodsLimitIntern", "cnli", 3,
+				"Limit number (min) to merge (in a table) nogoods of same scope");
 		public final boolean postCtrTrues = addB("postCtrTrues", "pct", false, "Must we post CtrTrue encountered while loading/reformualting constraints?");
 
 		public final boolean discardHybridEntailment = addB("discardHybridEntailment", "dec", true,
@@ -490,6 +506,8 @@ public final class Control {
 				"Must we replace the objective variable by an objective constraint, when possible?");
 		public final boolean keepTree = addB("keepTree", "kt", false,
 				"Must we keep the objective as it is when given under the form of a tree (except if a sum is recognized)?");
+		public final boolean keepExpr1 = addB("keepExpr1", "k1", true, "Must we keep the objective when in the form of a unary expression?");
+		public final boolean trySum = addB("trySum", "trs", true, "Must we try to post the objective under the form of a constraint Sum?");
 		public final boolean replaceMinMaximum = addB("replaceMinMaximum", "rmm", true,
 				"Must we use a single aux variable when minimizing the maximum of trees ?");
 		public final int boundDescentCoeff = addI("boundDescentCoeff", "bdc", 1, "Bound descent coefficient");
@@ -514,13 +532,23 @@ public final class Control {
 		public final String structureClass3 = addS("structureClass3", "sc3", Matrix3D.class, null, "Structures to be used for ternary table constraints");
 		public final int arityLimitToPositive = addI("arityLimitToPositive", "alp", -1, "Limit on arity for converting negative table constraints to positive");
 		public final int arityLimitToNegative = addI("arityLimitToNegative", "aln", -1, "Limit on arity for converting positive table constraints to negative");
-		public final int variant = addI("variant", "extv", 0, "Variant to be used for some algorithms (e.g., VA or CMDD)");
-		public final boolean decremental = addB("decremental", "extd", true, "Must we use a decremental mode for some algorithms (e.g., STR2, CT or CMDD)");
-		public final int smallTableExt = addI("smallTableExt", "stext", 16, "table size threshold for considering a special propagator");
+		public final int variantVA = addI("variantVA", "var_va", 0, "Variant to be used for VA (0, 1 or 11)");
+		public final int variantCMDD = addI("variantCMDD", "var_cmdd", 0, "Cutoff variant to be used for CMDD");
+		public final boolean decrementalSTR = addB("decrementalSTR", "dec_str", true,
+				"Must we use a decremental mode for optimized STR algoroithms such as STR2");
+		public final boolean decrementalCT = addB("decrementalCT", "dec_ct", true, "Must we use a decremental mode for CT");
+		public final boolean decrementalCMDD = addB("decrementalCMDD", "dec_cmdd", false, "Must we use a decremental mode for CMDD");
+		public final int smallTableExt = addI("smallTableExt", "stext", 100, "table size threshold for considering a special propagator");
 		public final int largeScopeExt = addI("largeScopeExt", "lsext", 50, "scope size threshold for considering a special propagator");
+		public final int avoidingCTLimit = addI("avoidingCTLimit", "actl", 8_000,
+				"Limit in term of the cumulated size of the domains for discarding CT (and use STR2 or V)");
+		public final int avoidingSTRLimit = addI("avoidingSTRLimit", "astrl", 1_000,
+				"Limit in term of the size of the table to consider possibly discarding STR2 (and use V)");
+		public final int avoidingSTRRatio = addI("avoidingSTRRatio", "astrr", 1,
+				"Ratio (max) 'number of valid tuples' per 'size of the table' for using STR2 and not V");
+
 		public final boolean toMDD = addB("toMDD", "tomdd", false, "Must we attempt to convert extension constraints into MDDs (if possible)");
-		public final int domainCompactTableLimit = addI("domainCompactTableLimit", "dctl", 5_000,
-				"Limit in term of the cumulated size of the domains for discarding CT (and use STR2)");
+
 		public final int chybridStackingLimit = addI("chybridStackingLimit", "hsl", 5_000,
 				"Limit (in term of the number n of variables) for building stacks useful for filtering CHybrid constraints");
 
@@ -539,12 +567,17 @@ public final class Control {
 		// The following options determine whether special forms of intension constraints must be recognized/intercepted
 		public final boolean recognizePrimitive2 = addB("recognizePrimitive2", "rp2", true, "Must we attempt to recognize binary primitives?");
 		public final boolean recognizePrimitive3 = addB("recognizePrimitive3", "rp3", true, "Must we attempt to recognize ternary primitives?");
+		public final boolean recognizePrimitive4 = addB("recognizePrimitive4", "rp4", true, "Must we attempt to recognize quaternary primitives?");
 		public final boolean recognizeReifLogic = addB("recognizeReifLogic", "rlog", true, "Must we attempt to recognize logical reification forms?");
 		public final boolean recognizeExtremum = addB("recognizeExtremum", "rext", true, "Must we attempt to recognize minimum/maximum constraints?");
 		public final boolean recognizeSum = addB("recognizeSum", "rsum", true, "Must we attempt to recognize sum constraints?");
+		public final boolean recognizeMutualExclusion = addB("recognizeOr2And2", "ror2and2", true, "Must we recognize a disjunction in mutual exlusion?");
+		public final boolean detectNogoods = addB("detectNogoods", "dn", true, "Must we detect nogoods?");
+		public final boolean detectOtherNogoods = addB("detectOtherNogoods", "don", true, "Must we detect nogoods from particular tree expressions?");
 		public final boolean recognizeIf = addB("recognizeIf", "rif", true, "Must we recognize/decompose the ternary operator if?");
 		public final int recognizeXor = addI("recognizeXor", "rxo", 1, "Must we recognize Xor constraints (two modes 1 and 2)?");
 		public final boolean recognizeEqAnd = addB("recognizeEqAnd", "rea", false, "Must we recognize an expression eq-and (or iff-and)?");
+		public final boolean recognizeOrUnaryTerms = addB("recognizeOrUnaryTerms", "rout", true, "Must we recognize or expression on unary terms");
 		public final int arityForClauseUnaryTrees = addI("arityForClauseUnaryTrees", "acut", PLUS_INFINITY_INT,
 				"Arity for recognizing clauses on unary tree expressions");
 		public final int arityForClauseHybridTrees = addI("arityForClauseHybridTrees", "acht", PLUS_INFINITY_INT,
@@ -556,9 +589,15 @@ public final class Control {
 		public final boolean displayRemainingIntension = addB("displayRemainingIntension", "dri", false,
 				"Must we display the predicates of remaining intensional constraints");
 
+		public final int tooLargeAdd = addI("tooLargeAdd", "tla", 200,
+				"Space limit for iterating over two domains when an addition (subtraction) is involved in an equation");
+		public final int tooLargeMul = addI("tooLargeMul", "tlm", 200,
+				"Space limit for iterating over two domains when a multiplication is involved in an equation");
+		public final int tooLargeDiv = addI("tooLargeDiv", "tld", 200, "Space limit for iterating over two domains when a division is involved in an equation");
+
 		public boolean toExtension(Variable[] vars, XNode<IVar> tree) {
 			Variable[] t = tree == null || !(tree instanceof XNodeParent) || !((XNodeParent<?>) tree).isEqVar() ? vars
-					: IntStream.range(0, vars.length - 1).mapToObj(i -> vars[i]).toArray(Variable[]::new);
+					: IntStream.range(0, vars.length).mapToObj(i -> vars[i]).toArray(Variable[]::new);
 			return t.length <= arityLimitToExtension && Constraint.howManyVariablesWithin(t, spaceLimitToExtension) == Constants.ALL;
 		}
 	}
@@ -572,6 +611,7 @@ public final class Control {
 		public final boolean redundantSumForCounts = addB("redundantSumForCounts", "rcs", true,
 				"Must we try to post redudant sums for several counts acting as cardinality?");
 		public final int element = addI("element", "g_elt", 0, "Algorithm for Element");
+		public final int elementVarBoundLimit = addI("elementVarBoundLimit", "evbl", 100, "Limit of domain size (of the value variable) to reason on bounds");
 		public final int circuit = addI("circuit", "g_circ", 1, "Algorithm for Circuit");
 		public final int cumulativeAux = addI("cumulativeAux", "g_cua", 0, "Limit for introducing aux variables for Cumulative");
 		public final int noOverlap1 = addI("noOverlap1", "g_no1", 0, "Algorithm for NoOverlap 1D");
@@ -580,6 +620,9 @@ public final class Control {
 		public final boolean noOverlapAux = addB("noOverlapAux", "g_noa", true, "Introducing aux variables for NoOverlap (when relevant)?");
 		public final int noOverlapRedundLimit = addI("noOverlapRedundLimit", "g_nor", 10, "Arity limit for posting redundant constraints for NoOverlap?");
 		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");
+		public final int cardinality = addI("cardinality", "g_card", 0, "Algorithm for Cardinality");
+
+		public final boolean binpackingEnergetic = addB("binpackingEnergetic", "g_bpe", true, "Must we use energectic reasoning for BinPacking");
 		public final boolean binpackingRedun = addB("binpackingRedun", "g_bpr", false, "Redundant constraints for for BinPacking");
 		public final boolean viewForSum = addB("viewForSum", "vs", false, "Must we use views for Sum constraints, when possible?");
 		public final boolean eqDecForSum = addB("eqDecForSum", "eqs", false,
@@ -588,12 +631,15 @@ public final class Control {
 				"Must we post a MDD constraint for Sum constraints, when the operator is EQ (or IN)?");
 		public final int sumeqToTableSpaceLimit = addI("sumeqToTableSpaceLimit", "set", 8, "Limit on space for possibly converting sumeq to table");
 		public final int suminToTableSpaceLimit = addI("suminToTableSpaceLimit", "sit", 12, "Limit on space for possibly converting sumin to table");
+		public final int sumSemiIncremental = addI("sumSemiIncremental", "ssi", 1, "Semi-incrementality mode for sums (0, 1 or 2)");
+		public final int countSemiIncremental = addI("countSemiIncremental", "csi", 1, "Semi-incrementality mode for counts (0, 1 or 2)");
 		public final boolean permutation = addB("permutation", "", false, "Must we use permutation constraints for AllDifferent if possible? (may be faster)");
 		public final int allDifferentNb = addI("allDifferentNb", "adn", 10, "Number of possibly automatically inferred AllDifferent");
 		public final int allDifferentSize = addI("allDifferentSize", "ads", 5, "Limit on the size of possibly automatically inferred AllDifferent");
 
 		public final boolean test = addB("test", "test", false, "");
 		public final boolean test2 = addB("test2", "test2", false, "");
+		public final boolean test3 = addB("test3", "test3", false, "");
 		// public final boolean starred = addB("starred", "", false, "When true, some global constraints are encoded by starred tables");
 		// public final boolean hybrid = addB("hybrid", "", false, "When true, some global constraints are encoded by hybrid/smart tables");
 	}
@@ -601,14 +647,18 @@ public final class Control {
 	public class OptionsPropagation extends OptionGroup {
 		public final String clazz = addS("clazz", "p", AC.class, null, "Class to be used for propagation (for example, FC, AC or SAC3)");
 		public final int variant = addI("variant", "pv", 0, "Propagation Variant (only used for some consistencies)");
-		public final int postponableLimit = addI("postponableLimit", "ppc", 100, "Arity limit for postponing the filtering of expensive constraints");
+		public int postponableArityLimit = addI("postponableArityLimit", "pal", 100, "Arity limit for postponing the filtering of expensive constraints");
+		public int postponableLargeDomainLimit = addI("postponableLargeDomainLimit", "pldl", 10_000,
+				"Limit for counting a variable beinf with a large doamin for postponability context");
+		public int postponableLargeDomainCount = addI("postponableLargeDomainCount", "pldc", 3,
+				"Number of variables with a large domain for triggering postponability");
 		// above, the purpose is to propagate less often the most costly constraints (to be finalized)
 		public final String reviser = addS("reviser", "", Reviser3.class, Reviser.class, "Class to be used for performing revisions");
 		public final boolean residues = addB("residues", "res", true, "Must we use redidues (AC3rm)?");
 		public final boolean bitResidues = addB("bitResidues", "bres", true, "Must we use bit resides (AC3bit+rm)?");
 		public final boolean multidirectionality = addB("multidirectionality", "mul", true, "Must we use multidirectionality");
 		// now, two ways of control on (G)AC for intention constraints
-		public final int arityLimit = addI("arityLimit", "al", 2,
+		public final int arityLimit = addI("arityLimit", "al", 1,
 				"generic AC is systematically enforced if the arity is less than or equal to this value (or this value is -1)");
 		public final int spaceLimit = addI("spaceLimit", "sl", 20,
 				"generic AC is systematically enforced if the size of the Cartesian product of domains is less than or equal to 2 to the power of this value (or this value is -1)");
@@ -642,6 +692,10 @@ public final class Control {
 		public final boolean enablePrepro = addB("enablePrepro", "prepro", true, "Must we perform preprocessing?");
 		public boolean enableSearch = addB("enableSearch", "search", true, "Must we perform search?");
 		public final Branching branching = addE("branching", "branching", Branching.BIN, "Branching scheme for search (binary or non-binary)");
+		public final int decoder = addI("decoder", "decoder", 0, "Encoder/Decoder for decisions (0, 1 or 2; 0 is automatic choice)");
+		public final boolean hammingInformation = addB("hammingInformation", "hi", true,
+				"Must we display Hamming information between successive solutions (for optimization)");
+		public final boolean integerLinearProgramming = addB("integerLinearProgramming", "ilp", true, "Must we use integer linear programming");
 	}
 
 	public class OptionsRestarts extends OptionGroup {
@@ -672,7 +726,7 @@ public final class Control {
 		public final String clazz = addS("clazz", "revh", Dom.class, HeuristicRevisions.class, "Class of the revision ordering heuristic");
 		public final boolean anti = addB("anti", "anti_revh", false, "Must we use the reverse of the natural heuristic order?");
 		public final int revisionQueueLimit = addI("revisionQueueLimit", "rsl", 100, "Limit for searching the best variable in the revision queue");
-		public final boolean testr = addB("testr", "testr", false, "");
+		public final boolean lifo = addB("lifo", "lifo", false, "Must we ieterate over the variables in the queue in LIFO mode?");
 	}
 
 	public class OptionsVarh extends OptionGroup {
@@ -686,19 +740,32 @@ public final class Control {
 		public final SingletonStrategy singleton = addE("singleton", "sing", SingletonStrategy.LAST, "How to manage singleton variables during search");
 		public final boolean connected = addB("connected", "", false, "Must we select a variable necessarily connected to an already explicitly assigned one?");
 		public final boolean discardAux = addB("discardAux", "da", false, "Must we not branch on auxiliary variables introduced by the solver?");
-		public final boolean discardSingletons = addB("discardSingletons", "ds", false, "Should we discard non explicitly singleton variables from futVars");
+		public boolean discardSingletonsAfterPrepro = addB("discardSingletonsAfterPrepro", "dsp", true,
+				"Should we discard non explicitly singleton variables from futVars after preprocessing");
+		public int discardSingletonsDuringSearchLimit = addI("discardSingletonsDuringSearchLimit", "dss", 750,
+				"Limit in number of variables to discard non explicitly singleton variables from futVars during search");
+		public final int discardSingletonsMargin = addI("discardSingletonsMargin", "dsm", 5,
+				"Margin for temporarizing the building of new lists of singleton variables");
+
+		public final int safeSelectionCapacity = addI("safeSelectionCapacity", "ssc", 0, "Capacity of storing safe best scored variables");
+
 		public final boolean arrayPriorityRunRobin = addB("arrayPriorityRunRobin", "aprr", false, "Must we set priority to variable arrays in turn?");
 		public final int mode = addI("mode", "mode", 0, "general option used differently according to the context");
 		public final int lostDepth = addI("lostDepth", "ld", 0, "xx");
 		public final int lostSize = addI("lostSize", "ls", 4, "xx");
 		public final int optVarHeuristic = addI("optVarHeuristic", "ovarh", 0,
 				"On how many variables must we branch in a fixed static way on the variables of the objective (when a weighted sum) according to coeff values?"); // experimental
-		public final boolean alwaysAssignAllVariables = addB("alwaysAssignAllVariables", "aaa", false, "Must we always explicitly assign all variables?");
-		public final boolean secondScored = addB("secondScored", "ssc", false, "Must we use the second variable scored by the heuristic?");
+		public boolean alwaysAssignAllVariables = addB("alwaysAssignAllVariables", "aaa", false, "Must we always explicitly assign all variables?");
+		public final boolean secondScored = addB("secondScored", "snds", false, "Must we use the second variable scored by the heuristic?");
+		public final boolean updateScores = addB("updateScores", "us", false, "");
 		public final boolean quitWhenBetterThanPreviousChoice = addB("quitWhenBetterThanPreviousChoice", "qwb", false,
 				"Must we return a variable when its score is better than the score of the previously selected variable?");
 		public final boolean frozen = addB("frozen", "frozen", false, "Must we freeze variables during runs?");
-		public final int updateStackLength = addI("updateStackLength", "usl", 0, "Length of the stack used for recording sequentially better scored variables");
+		public final int updateStackLength = addI("updateStackLength", "usl", 1, "Length of the stack used for recording sequentially better scored variables");
+
+		public final int solutionPreserving = addI("solutionPreserving", "sop", 0, "Percentage of the last solution preserved (0: disabled)");
+
+		public final boolean impactless = addB("impactless", "impl", false, "Must we take into acvcounf impactless assignemnts?");
 	}
 
 	public class OptionsValh extends OptionGroup {
@@ -777,10 +844,13 @@ public final class Control {
 		private String stringFor(String shortcut, String tag, String att, Object defaultValue) {
 			// try first with shortcut
 			String s = shortcut == null ? null : Input.argsForSolving.get(shortcut);
+			if (s != null && att.equals("clazz") && s.equals("rr"))
+				s = "RunRobin";
 			if (s != null)
 				return s.length() == 0 && !(defaultValue instanceof String) ? defaultValue.toString() : s;
 			// try then with tag+attribute
 			s = Input.argsForSolving.get((tag != null ? tag + "/" : "") + att);
+
 			if (s != null)
 				return s;
 			if (document == null)
