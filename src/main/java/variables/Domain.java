@@ -1070,7 +1070,7 @@ public interface Domain extends SetLinked {
 	 */
 	default boolean afterElementaryCalls(int sizeBefore) {
 		return size() == sizeBefore ? true : handleReduction();
-	}
+	} 
 
 	/**
 	 * Removes the value at the specified index. The value is assumed to be present, and the variable to which the domain is attached is assumed to be future

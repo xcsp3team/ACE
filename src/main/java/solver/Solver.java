@@ -616,7 +616,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	private List<ObserverOnDecisions> collectObserversOnDecisions() {
-		Stream<Object> stream = Stream.of(this, lastConflict, proofer, tracer, stats);
+		Stream<Object> stream = Stream.of(this, lastConflict, proofer, heuristic, tracer, stats);
 		return collectObservers(stream, ObserverOnDecisions.class);
 	}
 

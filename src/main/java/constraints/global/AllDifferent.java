@@ -62,7 +62,7 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 	 */
 	public AllDifferent(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		control((this instanceof Circuit && scp.length >1) || scp.length > 2);
+		control((this instanceof Circuit && scp.length > 1) || scp.length > 2);
 	}
 
 	/**********************************************************************************************
@@ -290,8 +290,10 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 			if (exceptValues == null)
 				return super.isSatisfiedBy(t);
 			for (int i = 0; i < t.length; i++) {
-				if (Utilities.indexOf(t[i], exceptValues) != -1)
+				if (t[i] == exceptValue)
 					continue;
+				// if (Utilities.indexOf(t[i], exceptValues) != -1)
+				// continue;
 				for (int j = i + 1; j < t.length; j++)
 					if (t[i] == t[j])
 						return false;
@@ -304,6 +306,8 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 		 */
 		private int[] exceptValues;
 
+		private int exceptValue;
+
 		/**
 		 * A temporary set used to collect values, during filtering
 		 */
@@ -315,8 +319,9 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 
 		public AllDifferentExceptWeak(Problem pb, Variable[] scp, int[] exceptValues, boolean stronger) {
 			super(pb, scp);
-			control(exceptValues == null || exceptValues.length > 0);
+			control(exceptValues == null || exceptValues.length == 1); // For the moment
 			this.exceptValues = exceptValues;
+			this.exceptValue = exceptValues[0];
 			this.values = new LinkedHashSet<>();
 			this.stronger = stronger;
 			if (exceptValues != null)
@@ -327,14 +332,17 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 		public boolean runPropagator(Variable x) {
 			int depth = problem.solver.depth();
 			values.clear();
-			if (x.assigned() && !treated.contains(positionOf(x)) && (exceptValues == null || Utilities.indexOf(x.dom.singleValue(), exceptValues) == -1)) {
+			if (x.assigned() && !treated.contains(positionOf(x)) && (exceptValues == null || x.dom.singleValue() != exceptValue)) {
+
+				// if (x.assigned() && !treated.contains(positionOf(x)) && (exceptValues == null || Utilities.indexOf(x.dom.singleValue(), exceptValues) == -1))
+				// {
 				values.add(x.dom.singleValue());
 				treated.add(positionOf(x), depth);
 			}
 			for (int i = futvars.limit; i >= 0; i--) {
 				Variable y = scp[futvars.dense[i]];
-				if (y.dom.size() == 1 && !treated.contains(positionOf(y))
-						&& (exceptValues == null || Utilities.indexOf(y.dom.singleValue(), exceptValues) == -1)) {
+				if (y.dom.size() == 1 && !treated.contains(positionOf(y)) && (exceptValues == null || y.dom.singleValue() != exceptValue)) {
+					// && (exceptValues == null || Utilities.indexOf(y.dom.singleValue(), exceptValues) == -1)) {
 					if (values.contains(y.dom.singleValue()))
 						return y.dom.fail();
 					values.add(y.dom.singleValue());
@@ -353,19 +361,20 @@ public abstract class AllDifferent extends ConstraintGlobal implements TagSymmet
 				return true;
 			// checking trivial inconsistency (less values than variables)
 			values.clear();
-			int nPastVariables = scp.length - futvars.size();
+			int nIgnorable = 0;
 			if (exceptValues != null)
 				for (int i = futvars.limit + 1; i < scp.length; i++) // past variables
-					if (Utilities.indexOf(scp[futvars.dense[i]].dom.singleValue(), exceptValues) != -1)
-						nPastVariables--; // because assigned to an ignored value
+					// if (Utilities.indexOf(scp[futvars.dense[i]].dom.singleValue(), exceptValues) != -1)
+					if (scp[futvars.dense[i]].dom.singleValue() == exceptValue)
+						nIgnorable++; // because assigned to an ignored value
 			for (int i = futvars.limit; i >= 0; i--) {
 				Domain dom = scp[futvars.dense[i]].dom;
-				for (int a = dom.first(); a != -1; a = dom.next(a)) {
-					int v = dom.toVal(a);
-					if (exceptValues == null || Utilities.indexOf(v, exceptValues) == -1)
-						values.add(v);
-				}
-				if (nPastVariables + values.size() >= scp.length)
+				if (exceptValues != null && dom.containsValue(exceptValue))
+					nIgnorable++;
+				else
+					for (int a = dom.first(); a != -1; a = dom.next(a)) 
+						values.add(dom.toVal(a));
+				if (nIgnorable + values.size() >= scp.length)
 					return true;
 			}
 			return x.dom.fail();

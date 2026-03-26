@@ -29,7 +29,7 @@ import variables.Variable;
 public class AP extends StrongConsistency {
 
 	// TODO hard coding
-	private final static int GAP = 60;
+	//private final static int GAP = 60;
 	private final static int LIMIT1 = 100_000;
 	private final static int LIMIT2 = 10_000;
 	
@@ -76,7 +76,7 @@ public class AP extends StrongConsistency {
 		if (solver.stopping == Stopping.FULL_EXPLORATION)
 			return rerun;
 		int numRun = solver.restarter.numRun;
-		if (0 < numRun && numRun % (GAP * coeff) == 0) {
+		if (0 < numRun && numRun % (solver.head.control.propagation.apGap * coeff) == 0) {
 			int before = Variable.nValidValuesFor(solver.problem.variables);
 			Propagation strong = whichStrongPropagation();
 			strong.time = time;

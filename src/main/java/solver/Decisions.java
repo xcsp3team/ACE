@@ -308,6 +308,10 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 		set.add(decision);
 	}
 
+	public Variable varOfLastDecision() {
+		return set.limit == -1 ? null : decoder.varIn(set.last());
+	}
+
 	/**
 	 * Returns the variable involved in the last taken decision if the type of this decision is the value of the specified Boolean, null otherwise.
 	 */
@@ -329,6 +333,13 @@ public final class Decisions implements ObserverOnRuns, ObserverOnAssignments {
 	 */
 	public boolean isLastButOneNegative() {
 		return set.limit >= 1 && set.dense[set.limit - 1] < 0;
+	}
+
+	/**
+	 * Returns true if the last decision was positive
+	 */
+	public boolean isLastPositive() {
+		return set.limit >= 0 && set.dense[set.limit] > 0;
 	}
 
 	/**

@@ -759,6 +759,8 @@ public class SAC extends StrongConsistency { // SAC is SAC1
 				// making the selection
 				boolean failMode = lastFailedVar != null && nBranchesBuilt >= varHeuristics.length;
 				Variable x = failMode ? localQueue.pick(lastFailedVar) : localQueue.selectNextVariable();
+				// if (x == null)
+				// break;
 				int a = chooseIndex(x, failMode); // randomMode && x.dom.size() < 500 ? x.dom.any() : test ? x.dom.first() : x.dom.contains(lastFailedIdx) ?
 													// lastFailedIdx : x.dom.first();
 

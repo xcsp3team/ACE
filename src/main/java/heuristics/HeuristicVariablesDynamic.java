@@ -26,6 +26,7 @@ import constraints.Constraint;
 import heuristics.HeuristicVariablesDynamic.WdegVariant.ConstraintWeighting;
 import interfaces.Observers.ObserverOnAssignments;
 import interfaces.Observers.ObserverOnConflicts;
+import interfaces.Observers.ObserverOnDecisions;
 import interfaces.Observers.ObserverOnRuns;
 import interfaces.Tags.TagMaximize;
 import sets.SetDense;
@@ -352,8 +353,6 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 						} else {
 							if (solver.sticking != null && !x.assigned())
 								solver.sticking[x.num] = x.dom.single();
-							// if (this instanceof SingOnDom && x.dom.lastRemovedLevel() == solver.depth())
-							// ((SingOnDom) this).nSings[x.num] += solver.problem.variables.length - solver.depth();
 						}
 					}
 				}
@@ -509,6 +508,163 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 		}
 	}
 
+	public static final class FrbaOnDom2 extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnDecisions, ObserverOnConflicts, TagMaximize {
+
+		private int nFailed;
+
+		private int[] nPos, nNeg;
+
+		private int[] nPosFailed, nNegFailed;
+
+		private int[] lastFailed;
+
+		public FrbaOnDom2(Solver solver, boolean anti) {
+			super(solver, anti);
+			int n = solver.problem.variables.length;
+			this.nPos = new int[n];
+			this.nNeg = new int[n];
+			this.nPosFailed = new int[n];
+			this.nNegFailed = new int[n];
+			this.lastFailed = new int[n];
+		}
+
+		@Override
+		public void reset() {
+			Arrays.fill(nPos, 2); // so as to have 0.5 as failure rate initially
+			Arrays.fill(nPosFailed, 1); // so as to have 0.5 as failure rate initially
+			Arrays.fill(nNeg, 0);
+			Arrays.fill(nNegFailed, 0);
+			Arrays.fill(lastFailed, 0);
+		}
+
+		@Override
+		public void beforeRun() {
+			if (runReset()) {
+				resettingMessage("stats");
+				reset();
+			}
+		}
+
+		public void beforePositiveDecision(Variable x, int a) {
+			nPos[x.num]++;
+		}
+
+		public void beforeNegativeDecision(Variable x, int a) {
+			nNeg[x.num]++;
+		}
+
+		@Override
+		public void whenWipeout(Constraint c, Variable x) {
+			nFailed++;
+			if (solver.decisions.set.size() > 0) {
+				Variable y = solver.decisions.varOfLastDecision();
+				boolean pos = solver.decisions.isLastPositive();
+				if (pos)
+					nPosFailed[y.num]++;
+				else
+					nNegFailed[y.num]++;
+				lastFailed[y.num] = nFailed;
+			}
+		}
+
+		@Override
+		public void whenBacktrack() {
+		}
+
+		@Override
+		public double scoreOf(Variable x) {
+			double frba = (nPosFailed[x.num] + nNegFailed[x.num]) / ((double) nPos[x.num] + nNeg[x.num]) + (1 / (double) (nFailed - lastFailed[x.num] + 1));
+			return x.specificWeight * frba / x.dom.size();
+		}
+
+		@Override
+		public double scoreIfBinaryDomainOf(Variable x) {
+			double frba = (nPosFailed[x.num] + nNegFailed[x.num]) / ((double) nPos[x.num] + nNeg[x.num]) + (1 / (double) (nFailed - lastFailed[x.num] + 1));
+			return x.specificWeight * frba / 2;
+		}
+
+		@Override
+		public void newImpactlessAssignment(Variable x, int a) {
+			solver.stats.varAssignments[x.num].whenImpactlessAssignment(a);
+		}
+	}
+
+	public static final class FrbaOnDom3 extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnDecisions, ObserverOnConflicts, TagMaximize {
+
+		private int nFailed;
+
+		private int[] nDecisions;
+
+		private int[] scoreFailed;
+
+		private int[] lastFailedTime;
+
+		public FrbaOnDom3(Solver solver, boolean anti) {
+			super(solver, anti);
+			int n = solver.problem.variables.length;
+			this.nDecisions = new int[n];
+			this.scoreFailed = new int[n];
+			this.lastFailedTime = new int[n];
+		}
+
+		@Override
+		public void reset() {
+			nFailed = 0;
+			Arrays.fill(nDecisions, 2); // so as to have 0.5 as failure rate initially
+			Arrays.fill(scoreFailed, 1); // so as to have 0.5 as failure rate initially
+			Arrays.fill(lastFailedTime, 0);
+		}
+
+		@Override
+		public void beforeRun() {
+			if (runReset()) {
+				resettingMessage("stats");
+				reset();
+			}
+		}
+
+		public void beforePositiveDecision(Variable x, int a) {
+			nDecisions[x.num]++;
+		}
+
+		public void beforeNegativeDecision(Variable x, int a) {
+			nDecisions[x.num]++;
+		}
+
+		@Override
+		public void whenWipeout(Constraint c, Variable x) {
+			nFailed++;
+			if (solver.decisions.set.size() > 0) {
+				Variable y = solver.decisions.varOfLastDecision();
+				scoreFailed[y.num] += Math.min(6, y.dom.size());
+				// if (pos) // scoreFailed[y.num]++;
+				// else // scoreFailed[y.num] += 2;
+				lastFailedTime[y.num] = nFailed;
+			}
+		}
+
+		@Override
+		public void whenBacktrack() {
+		}
+
+		@Override
+		public double scoreOf(Variable x) {
+			double frba = (scoreFailed[x.num]) / ((double) nDecisions[x.num]) + (1 / (double) (nFailed - lastFailedTime[x.num] + 1));
+			return x.specificWeight * frba / x.dom.size();
+		}
+
+		@Override
+		public double scoreIfBinaryDomainOf(Variable x) {
+			double frba = (scoreFailed[x.num]) / ((double) nDecisions[x.num]) + (1 / (double) (nFailed - lastFailedTime[x.num] + 1));
+			return x.specificWeight * frba / 2;
+		}
+
+		@Override
+		public void newImpactlessAssignment(Variable x, int a) {
+			solver.stats.varAssignments[x.num].whenImpactlessAssignment(a);
+		}
+	}
+
 	public static final class PickOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
 
 		private final long[] nPicks;
@@ -571,11 +727,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 	public static final class SingOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, TagMaximize {
 
-		private final long[] nSings;
+		private final int[] nSings;
 
 		public SingOnDom(Solver solver, boolean anti) {
 			super(solver, anti);
-			this.nSings = new long[solver.problem.variables.length];
+			this.nSings = new int[solver.problem.variables.length];
 		}
 
 		@Override
@@ -593,6 +749,8 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 
 		@Override
 		public double scoreOf(Variable x) {
+			if (x.dom.size() == 1 && x.dom.lastRemovedLevel() == solver.depth())
+				nSings[x.num] += solver.problem.variables.length - solver.depth();
 			return nSings[x.num] / (double) x.dom.size();
 		}
 	}
@@ -600,11 +758,11 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 	public static final class WipeOnDom extends HeuristicVariablesDynamic implements ObserverOnRuns, ObserverOnConflicts, TagMaximize {
 		// equivalent to WdegOnDom with variant=VAR
 
-		private final long[] nWipes;
+		private final int[] nWipes;
 
 		public WipeOnDom(Solver solver, boolean anti) {
 			super(solver, anti);
-			this.nWipes = new long[solver.problem.variables.length];
+			this.nWipes = new int[solver.problem.variables.length];
 		}
 
 		@Override
@@ -731,13 +889,24 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 			super(solver, anti);
 			control(anti == false);
 			List<HeuristicVariables> list = new ArrayList<>();
-			int mode = solver.head.control.varh.mode;
-			if (mode >= 0)
-				Stream.of(new PickOnDom(solver, anti), new WdegOnDom(solver, anti), new FrbaOnDom(solver, anti), new Wdeg(solver, anti))
-						.forEach(h -> list.add(h));
-			if (mode >= 1)
-				Stream.of(new SingOnDom(solver, anti)).forEach(h -> list.add(h));
-			// Stream.of(new SingOnDom(solver, anti), new OrgnOnDom(solver, anti)).forEach(h -> list.add(h));
+			for (char c : solver.head.control.general.runRobin.toCharArray()) {
+				if (c == 'p')
+					list.add(new PickOnDom(solver, anti));
+				else if (c == 'w')
+					list.add(new WdegOnDom(solver, anti));
+				else if (c == 'f')
+					list.add(new FrbaOnDom(solver, anti));
+				else if (c == 'c')
+					list.add(new Wdeg(solver, anti)); // cacd
+				else if (c == 'd')
+					list.add(new Dom(solver, anti));
+				else if (c == 'q')
+					list.add(new FrbaOnDom2(solver, anti));
+				else if (c == 'o')
+					list.add(new WipeOnDom(solver, anti));
+				else
+					throw new AssertionError("Pb");
+			}
 			this.pool = list.stream().toArray(HeuristicVariables[]::new);
 			control(Stream.of(pool).allMatch(h -> h instanceof TagMaximize)
 					&& Stream.of(solver.problem.variables).allMatch(x -> !(x.dom instanceof DomainInfinite)));

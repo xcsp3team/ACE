@@ -208,6 +208,10 @@ import constraints.global.Extremum.ExtremumVar.Maximum;
 import constraints.global.Extremum.ExtremumVar.Minimum;
 import constraints.global.ExtremumArg.ExtremumArgVar.MaximumArg;
 import constraints.global.ExtremumArg.ExtremumArgVar.MinimumArg;
+import constraints.global.Knapsack.KnapsackCst;
+import constraints.global.Knapsack.KnapsackVarP;
+import constraints.global.Knapsack.KnapsackVarW;
+import constraints.global.Knapsack.KnapsackVarWP;
 import constraints.global.Lexicographic;
 import constraints.global.NValues.NValuesCst;
 import constraints.global.NValues.NValuesCst.NValuesCstGE;
@@ -1564,9 +1568,9 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 					return intension(tree); // because the scope has changed
 			}
 			Constraint c = null;
-			if (logic_X__eq_x.matches(tree)) { 
+			if (logic_X__eq_x.matches(tree)) {
 				Variable[] list = IntStream.range(0, scp.length - 1).mapToObj(i -> scp[i]).toArray(Variable[]::new);
-				if (Variable.areAllInitiallyBoolean(list))
+				if (Variable.areAllInitiallyBoolean(scp))
 					c = ReifLogic.buildFrom(this, scp[scp.length - 1], tree.logop(0), list);
 			}
 			// TODO other cases to be implemented
@@ -3977,6 +3981,25 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	public final CtrEntity knapsack(Var[] list, int[] weights, Condition wcondition, int[] profits, Condition pcondition) {
 		// for the moment, no dedicated propagator (just decomposition)
+		control(wcondition instanceof ConditionRel && pcondition instanceof ConditionRel);
+		control(((ConditionRel) wcondition).operator == LE && ((ConditionRel) pcondition).operator == GE);
+		if (wcondition instanceof ConditionVal && pcondition instanceof ConditionVal) {
+			int wlimit = Utilities.safeInt(((ConditionVal) wcondition).k);
+			int plimit = Utilities.safeInt(((ConditionVal) pcondition).k);
+			return post(new KnapsackCst(this, translate(list), weights, wlimit, profits, plimit));
+		} else if (wcondition instanceof ConditionVar && pcondition instanceof ConditionVal) {
+			Variable wlimit = (Variable) (((ConditionVar) wcondition).x);
+			int plimit = Utilities.safeInt(((ConditionVal) pcondition).k);
+			return post(new KnapsackVarW(this, translate(list), weights, wlimit, profits, plimit));
+		} else if (wcondition instanceof ConditionVal && pcondition instanceof ConditionVar) {
+			int wlimit = Utilities.safeInt(((ConditionVal) wcondition).k);
+			Variable plimit = (Variable) (((ConditionVar) pcondition).x);
+			return post(new KnapsackVarP(this, translate(list), weights, wlimit, profits, plimit));
+		} else if (wcondition instanceof ConditionVar && pcondition instanceof ConditionVar) {
+			Variable wlimit = (Variable) (((ConditionVar) wcondition).x);
+			Variable plimit = (Variable) (((ConditionVar) pcondition).x);
+			post(new KnapsackVarWP(this, translate(list), weights, wlimit, profits, plimit));
+		}
 		sum(list, weights, wcondition);
 		return sum(list, profits, pcondition);
 	}
