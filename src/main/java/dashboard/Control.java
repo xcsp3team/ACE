@@ -187,7 +187,7 @@ public final class Control {
 			org.xcsp.modeler.Compiler.ev = true;
 		if (general.noPrintColors)
 			Kit.useColors = false;
-		
+
 		if (Input.argsForSolving.get("varh") == null && general.runRobin.length() > 0) {
 			varh.clazz = "RunRobin";
 			valh.clazz = "RunRobin";
@@ -612,6 +612,7 @@ public final class Control {
 		public final int noOverlapRedundLimit = addI("noOverlapRedundLimit", "g_nor", 10, "Arity limit for posting redundant constraints for NoOverlap?");
 		public final int binpacking = addI("binpacking", "g_bp", 0, "Algorithm for BinPacking");
 		public final int cardinality = addI("cardinality", "g_card", 0, "Algorithm for Cardinality");
+		public final int knapsack = addI("knapsack", "g_kna", 0, "Algorithm for Knapsack");
 
 		public final boolean binpackingEnergetic = addB("binpackingEnergetic", "g_bpe", true, "Must we use energectic reasoning for BinPacking");
 		public final boolean binpackingRedun = addB("binpackingRedun", "g_bpr", false, "Redundant constraints for for BinPacking");

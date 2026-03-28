@@ -3980,26 +3980,28 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	// ************************************************************************
 
 	public final CtrEntity knapsack(Var[] list, int[] weights, Condition wcondition, int[] profits, Condition pcondition) {
-		// for the moment, no dedicated propagator (just decomposition)
-		control(wcondition instanceof ConditionRel && pcondition instanceof ConditionRel);
-		control(((ConditionRel) wcondition).operator == LE && ((ConditionRel) pcondition).operator == GE);
-		if (wcondition instanceof ConditionVal && pcondition instanceof ConditionVal) {
-			int wlimit = Utilities.safeInt(((ConditionVal) wcondition).k);
-			int plimit = Utilities.safeInt(((ConditionVal) pcondition).k);
-			return post(new KnapsackCst(this, translate(list), weights, wlimit, profits, plimit));
-		} else if (wcondition instanceof ConditionVar && pcondition instanceof ConditionVal) {
-			Variable wlimit = (Variable) (((ConditionVar) wcondition).x);
-			int plimit = Utilities.safeInt(((ConditionVal) pcondition).k);
-			return post(new KnapsackVarW(this, translate(list), weights, wlimit, profits, plimit));
-		} else if (wcondition instanceof ConditionVal && pcondition instanceof ConditionVar) {
-			int wlimit = Utilities.safeInt(((ConditionVal) wcondition).k);
-			Variable plimit = (Variable) (((ConditionVar) pcondition).x);
-			return post(new KnapsackVarP(this, translate(list), weights, wlimit, profits, plimit));
-		} else if (wcondition instanceof ConditionVar && pcondition instanceof ConditionVar) {
-			Variable wlimit = (Variable) (((ConditionVar) wcondition).x);
-			Variable plimit = (Variable) (((ConditionVar) pcondition).x);
-			post(new KnapsackVarWP(this, translate(list), weights, wlimit, profits, plimit));
+		if (head.control.global.knapsack == 1) {
+			control(wcondition instanceof ConditionRel && pcondition instanceof ConditionRel);
+			control(((ConditionRel) wcondition).operator == LE && ((ConditionRel) pcondition).operator == GE);
+			if (wcondition instanceof ConditionVal && pcondition instanceof ConditionVal) {
+				int wlimit = Utilities.safeInt(((ConditionVal) wcondition).k);
+				int plimit = Utilities.safeInt(((ConditionVal) pcondition).k);
+				return post(new KnapsackCst(this, translate(list), weights, wlimit, profits, plimit));
+			} else if (wcondition instanceof ConditionVar && pcondition instanceof ConditionVal) {
+				Variable wlimit = (Variable) (((ConditionVar) wcondition).x);
+				int plimit = Utilities.safeInt(((ConditionVal) pcondition).k);
+				return post(new KnapsackVarW(this, translate(list), weights, wlimit, profits, plimit));
+			} else if (wcondition instanceof ConditionVal && pcondition instanceof ConditionVar) {
+				int wlimit = Utilities.safeInt(((ConditionVal) wcondition).k);
+				Variable plimit = (Variable) (((ConditionVar) pcondition).x);
+				return post(new KnapsackVarP(this, translate(list), weights, wlimit, profits, plimit));
+			} else if (wcondition instanceof ConditionVar && pcondition instanceof ConditionVar) {
+				Variable wlimit = (Variable) (((ConditionVar) wcondition).x);
+				Variable plimit = (Variable) (((ConditionVar) pcondition).x);
+				return post(new KnapsackVarWP(this, translate(list), weights, wlimit, profits, plimit));
+			}
 		}
+		// below decomposition into two separate constraints
 		sum(list, weights, wcondition);
 		return sum(list, profits, pcondition);
 	}

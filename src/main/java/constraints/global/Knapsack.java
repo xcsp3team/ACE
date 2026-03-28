@@ -23,7 +23,8 @@ import variables.Domain;
 import variables.Variable;
 
 /**
- * TO BE FINISHED (extending it to limits defined by variables)
+ * TO BE FINISHED (to be checked, and to deal with the presence of 0)
+ * WOULD BE BEST to code https://cdn.aaai.org/AAAI/2007/AAAI07-035.pdf ?
  * 
  * @author Christophe Lecoutre
  */
@@ -117,15 +118,26 @@ public abstract class Knapsack extends ConstraintGlobal implements TagNotAC {
 				if (profits[x] == 0)
 					continue;
 				assert dom.size() > 0;
+
+				// for (int a = dom.last(); a != -1; a = dom.prev(a)) {
+				// int v = dom.toVal(a);
+				// int nPossibleMoves = (int) Math.floor((wlimit - wmini - wcoeff * v) / minWeight); // should we replace minWeight by 1 if 0 present ? why ?
+				// if ((pmini + nPossibleMoves * maxProfit) + pcoeff * v < plimit) { //
+				// if (dom.removeValue(v) == false)
+				// return false;
+				// }
+				// }
+
 				while (true) {
 					int v = dom.lastValue();
-					int nPossibleMoves = (int) Math.floor((wlimit - wmini - wcoeff * v) / minWeight);  //1 if 0 present ? why ?
+					int nPossibleMoves = (int) Math.floor((wlimit - wmini - wcoeff * v) / minWeight); // should we replace minWeight by 1 if 0 present ? why ?
 					if ((pmini + nPossibleMoves * maxProfit) + pcoeff * v < plimit) { //
 						if (dom.removeValue(v) == false)
 							return false;
 					} else
 						break;
 				}
+
 				wmax += wcoeff * dom.lastValue();
 				pmax += pcoeff * dom.lastValue();
 				if (wmax <= wlimit)
@@ -147,6 +159,16 @@ public abstract class Knapsack extends ConstraintGlobal implements TagNotAC {
 				if (weights[x] == 0)
 					continue;
 				assert dom.size() > 0;
+
+				// for (int a = dom.first(); a !=-1; a = dom.next(a)) {
+				// int v = dom.toVal(a);
+				// int nPossibleMoves = (int) Math.floor((pmaxi + pcoeff * v - plimit) / minProfit); // 1 if 0 present ? why ?
+				// if ((wmaxi - nPossibleMoves * maxWeight) + wcoeff * v > wlimit) {
+				// if (dom.removeValue(v) == false)
+				// return false;
+				// }
+				// }
+
 				while (true) {
 					int v = dom.firstValue();
 					int nPossibleMoves = (int) Math.floor((pmaxi + pcoeff * v - plimit) / minProfit); // 1 if 0 present ? why ?
@@ -156,6 +178,7 @@ public abstract class Knapsack extends ConstraintGlobal implements TagNotAC {
 					} else
 						break;
 				}
+
 				wmin += wcoeff * dom.firstValue();
 				pmin += pcoeff * dom.firstValue();
 				if (pmin >= plimit)

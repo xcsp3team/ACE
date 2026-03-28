@@ -30,6 +30,7 @@ import constraints.extension.STR2;
 import constraints.extension.structures.ExtensionStructure;
 import constraints.extension.structures.Table;
 import constraints.extension.structures.Tries;
+import dashboard.Input;
 import dashboard.Control.OptionsExtension;
 import interfaces.SpecificPropagator;
 import interfaces.Tags.TagAC;
@@ -316,6 +317,15 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 			positive = !positive;
 		}
 
+		Set<Class<?>> classes = pb.head.availableClasses.get(ConstraintExtension.class);
+		String className = (positive ? options.positive : options.negative).toString();
+		className = className.equals("V") || className.equals("VA") ? "Extension" + className : className;
+
+		if (positive && Input.argsForSolving.get("positive") != null)
+			return ((ConstraintExtension) Reflector.buildObject(className, classes, pb, scp)).storeTuplesInExtensionStructure(table, positive, starred);
+		if (!positive && Input.argsForSolving.get("negative") != null)
+			return ((ConstraintExtension) Reflector.buildObject(className, classes, pb, scp)).storeTuplesInExtensionStructure(table, positive, starred);
+
 		if (positive && table.length <= options.smallTableExt) // || scp.length > options.largeScopeExt);
 			return STR0.buildFrom(pb, scp, table, positive, starred).storeTuplesInExtensionStructure(table, positive, starred);
 
@@ -347,10 +357,6 @@ public abstract class ConstraintExtension extends Constraint implements TagAC, T
 		// if (scp.length == 2 && avoidCT)
 		// return new STR2(pb, scp).storeTuplesInExtensionStructure(table, positive, starred);
 		// }
-
-		Set<Class<?>> classes = pb.head.availableClasses.get(ConstraintExtension.class);
-		String className = (positive ? options.positive : options.negative).toString();
-		className = className.equals("V") || className.equals("VA") ? "Extension" + className : className;
 
 		if (className.equals("CT") && avoidCT)
 			return new STR2(pb, scp).storeTuplesInExtensionStructure(table, positive, starred);
