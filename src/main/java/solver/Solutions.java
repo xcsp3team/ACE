@@ -417,6 +417,22 @@ public final class Solutions {
 	}
 
 	/**
+	 * resets counters and best bound so that a new solving phase starts with no recorded solution
+	 */
+	public void resetForNewSolvingPhase() {
+		found = 0;
+		firstBound = 0;
+		bestBound = solver.problem.optimizer == null || solver.problem.optimizer.minimization ? solver.head.control.optimization.ub
+				: solver.head.control.optimization.lb;
+		last.numRun = -1;
+		last.deactivated = false;
+	}
+
+	public void setBestMultiRestarts(long mrBestBounds, long mrBestSeeds, long mrBestTime){
+		bestBound = mrBestBounds;
+	}
+
+	/**
 	 * Displays final results when the solving process is finished (possibly, interrupted).
 	 */
 	public void displayFinalResults() {

@@ -440,6 +440,8 @@ public final class Control {
 		public int verbose = addI("verbose", "v", 0, "Verbosity level (value between -1 and 3)" + s_verbose);
 		public final String runRobin = addS("runRobin", "rr", "pwfc", "Mode of a Run Robin search strategy (empty string if none)");
 		public final boolean profiling = addB("profiling", "prof", false, "Using some very basic profiling information?");
+		public final int multiRestart = addI("multiRestart", "mr", 0, "Number of run before fully restarting with another seed");
+		public final long multiRestartSeed = addL("multiRestartSeed", "mrs", PLUS_INFINITY, "Sets the max seed that will be used for multiRestart");
 	}
 
 	public class OptionsProblem extends OptionGroup {

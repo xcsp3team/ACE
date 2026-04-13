@@ -14,6 +14,7 @@ import static java.lang.Integer.parseInt;
 import static java.util.stream.Collectors.toCollection;
 import static org.xcsp.common.Types.TypeFramework.COP;
 import static org.xcsp.common.Types.TypeFramework.CSP;
+import static solver.Solver.Stopping.EXCEEDED_RUN;
 import static solver.Solver.Stopping.EXCEEDED_TIME;
 import static solver.Solver.Stopping.FULL_EXPLORATION;
 import static solver.Solver.Stopping.REACHED_GOAL;
@@ -87,7 +88,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 * Different reasons why the solving process has stopped
 	 */
 	public static enum Stopping {
-		FULL_EXPLORATION, REACHED_GOAL, EXCEEDED_TIME;
+		FULL_EXPLORATION, REACHED_GOAL, EXCEEDED_TIME, EXCEEDED_RUN;
 	}
 
 	@Override
@@ -751,6 +752,13 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 */
 	private int nRecursiveRuns = 0;
 
+	/**
+	 * Variable used to store best solutions durint mr (Multi Restart)
+	 */
+	private long mrBestBounds;
+	private long mrBestSeed;
+	private long mrBestTime;
+
 	public final Profiler profiler;
 
 	/**
@@ -769,6 +777,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		if (head.isTimeExpiredForCurrentInstance()) {
 			stopping = EXCEEDED_TIME;
 			return true;
+		}
+		if (head.isRunExpiredForCurrentInstance()) {
+			stopping = EXCEEDED_RUN;
 		}
 		return false;
 	}
@@ -1205,6 +1216,58 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	/**
+	 * Save best bound, seed and time of every seeds to be used for final print
+	 * 
+	 * @param currentSeed current seed to be saved
+	 */
+	private final void saveBestBounds(long currentSeed){
+		long boundTime = head.stopwatch.wckTime();
+		if (boundTime < mrBestTime){
+			mrBestTime = boundTime; // Not really usefull but stored if we have to use it latter 
+		}
+
+		if (problem.optimizer.minimization){
+			if (mrBestBounds > head.control.optimization.ub){
+				mrBestBounds = head.control.optimization.ub;
+				mrBestSeed = currentSeed;
+			}
+		}
+		else {
+			if (mrBestBounds < head.control.optimization.lb){
+				mrBestBounds = head.control.optimization.lb;
+				mrBestSeed = currentSeed;
+			}
+		}
+
+		// mrBestBound = problem.optimizer == null || problem.optimizer.minimization ? solver.head.control.optimization.ub
+		// 		: solver.head.control.optimization.lb;
+	}
+
+	/**
+	 * Method used to restart the solver with differents seeds using -mr and -mrs parametters
+	 */
+	private final void multiRestartPhase(){
+		for (long seed = 0; seed < head.control.general.multiRestartSeed; seed++){
+			head.random.setSeed(seed);
+			head.stopwatch.start();
+			Kit.log.config(Kit.Color.RED.coloring("    Restarting... with seed : " + seed));
+			restarter.reset();
+			solutions.resetForNewSolvingPhase();
+			saveBestBounds(seed);
+			if (problem.optimizer != null)
+				problem.optimizer.reset();
+			stopping = null;
+			for (ObserverOnSolving observer : observersOnSolving)
+				observer.beforeSolving();
+			doSearch();
+			for (ObserverOnSolving observer : observersOnSolving){
+				observer.afterSolving();
+			}
+			restoreProblem();
+		}
+	}
+
+	/**
 	 * This method allows us to solve the attached problem instance
 	 */
 	public final void solve() {
@@ -1215,6 +1278,10 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		profiler.initTime(head.stopwatch.wckTime());
 		if (!finished() && head.control.solving.enablePrepro)
 			doPrepro();
+		if (head.control.general.multiRestart > 0) {
+			multiRestartPhase();
+			return;
+		}
 		if (!finished() && head.control.solving.enableSearch)
 			doSearch();
 		for (ObserverOnSolving observer : observersOnSolving)

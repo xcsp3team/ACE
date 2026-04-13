@@ -361,6 +361,10 @@ public class Head extends Thread {
 		return control.general.timeout != PLUS_INFINITY && control.general.timeout <= instanceStopwatch.wckTime(); // not calling wckTime() when no necessary
 	}
 
+	public boolean isRunExpiredForCurrentInstance() {
+        return control.general.multiRestart != 0 && control.general.multiRestart <= solver.restarter.numRun + 1;
+    }
+
 	/**
 	 * Builds the main resolution object
 	 * 
