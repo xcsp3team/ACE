@@ -439,6 +439,7 @@ public class Head extends Thread {
 		structureSharing.clear();
 		problem = buildProblem(i);
 		structureSharing.clear();
+		instanceStopwatch.start();
 		if (control.solving.enablePrepro || control.solving.enableSearch) {
 			solver = buildSolver(problem);
 			solver.solve();

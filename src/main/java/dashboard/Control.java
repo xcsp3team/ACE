@@ -782,6 +782,8 @@ public final class Control {
 		public final boolean antiCBval = addB("antiCBval", "acbv", false, "Must we use anti CBval?");
 
 		public final int stickingMode = addI("stickingMode", "stk", 0, "Must we use sticking a sticky mode (0 for none)?");
+
+		public final boolean randFirstRunRobin = addB("randFirstRunRobin", "rfrr", false, "If Run Robin, use Rand for the first run");
 	}
 
 	public class OptionsExtraction extends OptionGroup {

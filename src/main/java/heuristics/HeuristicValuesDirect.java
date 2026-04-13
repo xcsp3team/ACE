@@ -129,23 +129,28 @@ public abstract class HeuristicValuesDirect extends HeuristicValues {
 	 */
 	public static final class RunRobin extends HeuristicValuesDirect {
 
+		private final boolean ranfFirst;
+		private String[] names;
+
 		public RunRobin(Variable x, boolean anti) {
 			super(x, anti);
+			this.ranfFirst = x.problem.head.control.valh.randFirstRunRobin;
+			this.names = new String[] { ranfFirst ? "Rand" : "First", ranfFirst ? "First" : "Last", ranfFirst ? "Last" : "Rand" };
 		}
 
 		@Override
 		public int computeBestValueIndex() {
 			int mod = x.problem.solver.restarter.numRun % 3;
 			if (mod == 0)
-				return dx.first();
+				return ranfFirst ? dx.any() : dx.first();
 			if (mod == 1)
-				return dx.last();
-			return dx.any();
+				return ranfFirst ? dx.first() : dx.last();
+			return ranfFirst ? dx.last() : dx.any();
 		}
 
 		public String currentClass() {
 			int mod = x.problem.solver.restarter.numRun % 3;
-			return mod == 0 ? "First" : mod == 1 ? "Last" : "Rand";
+			return names[mod]; //mod == 0 ? "First" : mod == 1 ? "Last" : "Rand";
 		}
 	}
 
