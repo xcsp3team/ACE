@@ -184,6 +184,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String SOLVER = "solver";
 	public static final String PREPROCESSING = "preprocessing";
 	public static final String RUN = "run";
+	public static final String THREAD = "thread";
 	public static final String GLOBAL = "global";
 
 	public static final String NUMBER = "number";
@@ -673,6 +674,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private InformationBloc runInfo() {
 		InformationBloc m = new InformationBloc(RUN);
+		m.put(THREAD, head.instanceIndex);
 		m.put(RUN, head.solver.restarter.numRun + 1);
 		m.put(DEPTHS, head.solver.minDepth + ".." + head.solver.maxDepth);
 		String rb1 = head.solver.heuristic instanceof RunRobin ? ((RunRobin) head.solver.heuristic).current.getClass().getSimpleName() : "";

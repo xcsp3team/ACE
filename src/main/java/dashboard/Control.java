@@ -442,6 +442,8 @@ public final class Control {
 		public final boolean profiling = addB("profiling", "prof", false, "Using some very basic profiling information?");
 		public final int multiRestart = addI("multiRestart", "mr", 0, "Number of run before fully restarting with another seed");
 		public final long multiRestartSeed = addL("multiRestartSeed", "mrs", PLUS_INFINITY, "Sets the max seed that will be used for multiRestart");
+		public final int multiRestartThreads = addI("multiRestartThreads", "mrt", 1,
+				"Number of threads used to evaluate multiRestart seeds in parallel");
 	}
 
 	public class OptionsProblem extends OptionGroup {

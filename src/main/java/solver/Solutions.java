@@ -413,7 +413,8 @@ public final class Solutions {
 		this.last = new LastSolution();
 		this.xml = new XML();
 		this.hammingInformation = solver.head.control.solving.hammingInformation && solver.problem.framework == COP ? new HammingInformation() : null;
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
+		if (!solver.head.disableShutdownHook)
+			Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
 	}
 
 	/**

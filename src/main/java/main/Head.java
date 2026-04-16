@@ -28,6 +28,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.stream.Stream;
@@ -311,6 +316,11 @@ public class Head extends Thread {
 	private final List<ObserverOnConstruction> permamentObserversConstruction;
 
 	/**
+	 * When true, shutdown hooks are not registered for this head. Used by parallel worker heads.
+	 */
+	public boolean disableShutdownHook;
+
+	/**
 	 * The construction observers that are recorded with respect to the current instance to be solved
 	 */
 	public List<ObserverOnConstruction> observersConstruction = new ArrayList<>();
@@ -400,21 +410,113 @@ public class Head extends Thread {
 		random = new Random(control.general.seed + i);
 		ProblemAPI api = null;
 		try {
-			try {
-				api = (ProblemAPI) Reflector.buildObject(Input.problemName);
-			} catch (Exception e) {
-				api = (ProblemAPI) Reflector.buildObject("problems." + Input.problemName);
-				// is it still relevant to try that?
+			synchronized (Head.class) {
+				try {
+					api = (ProblemAPI) Reflector.buildObject(Input.problemName);
+				} catch (Exception e) {
+					api = (ProblemAPI) Reflector.buildObject("problems." + Input.problemName);
+					// is it still relevant to try that?
+				}
+				this.problem = new Problem(api, control.problem.variant, control.problem.data, "", false, Input.argsForProblem, this);
 			}
 		} catch (Exception e) {
 			return (Problem) Kit.exit("The class " + Input.problemName + " cannot be found.", e);
 		}
-		this.problem = new Problem(api, control.problem.variant, control.problem.data, "", false, Input.argsForProblem, this);
 		for (ObserverOnConstruction obs : observersConstruction) {
 			obs.afterProblemConstruction(this.problem.variables.length);
 		}
 		problem.display();
 		return problem;
+	}
+
+	private void solveBuiltProblem(boolean displayFinalResults) {
+		if (control.solving.enablePrepro || control.solving.enableSearch) {
+			if (solver == null)
+				solver = buildSolver(problem);
+			solver.solve();
+			if (displayFinalResults)
+				solver.solutions.displayFinalResults();
+		}
+	}
+
+	private boolean isBetterParallelResult(Head candidate, Head currentBest) {
+		if (currentBest == null)
+			return true;
+		if (candidate.solver.problem.optimizer != null) {
+			long candidateBound = candidate.solver.solutions.bestBound;
+			long bestBound = currentBest.solver.solutions.bestBound;
+			return candidate.solver.problem.optimizer.minimization ? candidateBound < bestBound : candidateBound > bestBound;
+		}
+		if (candidate.solver.solutions.found != currentBest.solver.solutions.found)
+			return candidate.solver.solutions.found > currentBest.solver.solutions.found;
+		return candidate.instanceStopwatch.wckTime() < currentBest.instanceStopwatch.wckTime();
+	}
+
+	private void saveParallelResults(Head winner, List<Head> workers) {
+		long totalWCKTime = 0;
+		long totalVisitedNodes = 0;
+		for (Head worker : workers) {
+			totalWCKTime += worker.instanceStopwatch.wckTime();
+			totalVisitedNodes += worker.solver.stats.nNodes;
+		}
+		String fileName = winner.output.save(totalWCKTime);
+		if (fileName != null) {
+			Document document = Kit.load(fileName);
+			Element root = document.getDocumentElement();
+			Element multiThreadedResults = document.createElement(Output.MULTITHREAD_RESULTS);
+			multiThreadedResults.setAttribute(Output.WCK, Double.toString((double) totalWCKTime / 1000));
+			multiThreadedResults.setAttribute(Output.N_NODES, Long.toString(totalVisitedNodes));
+			root.appendChild(multiThreadedResults);
+			Utilities.save(document, fileName);
+		}
+		winner.solver.solutions.displayFinalResults();
+	}
+
+	private void solveInstanceInParallel(int i) {
+		long seedCount = control.general.multiRestartSeed;
+		if (seedCount == PLUS_INFINITY || control.general.multiRestartThreads <= 1 || seedCount <= 1) {
+			problem = buildProblem(i);
+			solveBuiltProblem(true);
+			return;
+		}
+		int workerCount = (int) Math.min(control.general.multiRestartThreads, seedCount);
+		ExecutorService executor = Executors.newFixedThreadPool(workerCount);
+		List<Callable<Head>> tasks = new ArrayList<>();
+		for (long seed = 0; seed < seedCount; seed++) {
+			final long currentSeed = seed;
+			tasks.add(() -> {
+				Head worker = new Head(control.userSettings.controlFilename);
+				worker.disableShutdownHook = true;
+				worker.stopwatch.start();
+				worker.instanceStopwatch.start();
+				worker.instanceIndex = i;
+				worker.problem = worker.buildProblem(i);
+				worker.solver = worker.buildSolver(worker.problem);
+				worker.solver.setMultiRestartSeedRange(currentSeed, currentSeed + 1);
+				worker.solveBuiltProblem(false);
+				return worker;
+			});
+		}
+		try {
+			List<Future<Head>> futures = executor.invokeAll(tasks);
+			List<Head> workers = new ArrayList<>(futures.size());
+			Head winner = null;
+			for (Future<Head> future : futures) {
+				Head worker = future.get();
+				workers.add(worker);
+				if (isBetterParallelResult(worker, winner))
+					winner = worker;
+			}
+			if (winner != null)
+				saveParallelResults(winner, workers);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new RuntimeException(e);
+		} catch (ExecutionException e) {
+			throw new RuntimeException(e.getCause());
+		} finally {
+			executor.shutdownNow();
+		}
 	}
 
 	/**
@@ -441,12 +543,12 @@ public class Head extends Thread {
 	protected void solveInstance(int i) {
 		this.observersConstruction = permamentObserversConstruction.stream().collect(toCollection(ArrayList::new));
 		structureSharing.clear();
-		problem = buildProblem(i);
-		structureSharing.clear();
-		if (control.solving.enablePrepro || control.solving.enableSearch) {
-			solver = buildSolver(problem);
-			solver.solve();
-			solver.solutions.displayFinalResults();
+		if (control.general.multiRestart > 0 && control.general.multiRestartThreads > 1)
+			solveInstanceInParallel(i);
+		else {
+			problem = buildProblem(i);
+			structureSharing.clear();
+			solveBuiltProblem(true);
 		}
 	}
 

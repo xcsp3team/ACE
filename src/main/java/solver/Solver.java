@@ -12,6 +12,7 @@ package solver;
 
 import static java.lang.Integer.parseInt;
 import static java.util.stream.Collectors.toCollection;
+import static org.xcsp.common.Constants.PLUS_INFINITY;
 import static org.xcsp.common.Types.TypeFramework.COP;
 import static org.xcsp.common.Types.TypeFramework.CSP;
 import static solver.Solver.Stopping.EXCEEDED_RUN;
@@ -681,6 +682,16 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	public final Solutions solutions;
 
 	/**
+	 * Lower bound of the seed range processed by multiRestart. Inclusive.
+	 */
+	private long multiRestartSeedFrom = 0;
+
+	/**
+	 * Upper bound of the seed range processed by multiRestart. Exclusive.
+	 */
+	private long multiRestartSeedTo = PLUS_INFINITY;
+
+	/**
 	 * The object managing past and future variables, i.e., the variables that are, and are not, explicitly assigned by the solver
 	 */
 	public final FutureVariables futVars;
@@ -787,6 +798,12 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	public final void resetNoSolutions() {
 		stopping = null;
 		solutions.found = 0;
+	}
+
+	public void setMultiRestartSeedRange(long from, long to) {
+		control(from >= 0 && to > from);
+		this.multiRestartSeedFrom = from;
+		this.multiRestartSeedTo = to;
 	}
 
 	public void reset() { // called by very special objects (for example, when extracting a MUC)
@@ -1247,7 +1264,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 * Method used to restart the solver with differents seeds using -mr and -mrs parametters
 	 */
 	private final void multiRestartPhase(){
-		for (long seed = 0; seed < head.control.general.multiRestartSeed; seed++){
+		long seedLimit = multiRestartSeedTo != PLUS_INFINITY ? multiRestartSeedTo : head.control.general.multiRestartSeed;
+		for (long seed = multiRestartSeedFrom; seed < seedLimit; seed++){
 			head.random.setSeed(seed);
 			head.stopwatch.start();
 			Kit.log.config(Kit.Color.RED.coloring("    Restarting... with seed : " + seed));
