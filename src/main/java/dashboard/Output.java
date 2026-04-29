@@ -450,10 +450,10 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		}
 
 		private InformationBloc put(String key, Object value, boolean condition) {
-			if (value instanceof String && (value.equals("") || value.equals("0")))
+			if (value instanceof String && (value.equals("") || value.equals("0")) && !key.contentEquals("run") && !key.contentEquals("thread"))
 				return this; // not recorded because empty string
-			if (value instanceof Integer && ((Integer) value) == 0 && !key.contentEquals("run"))
-				return this; // not recorded because 0, except if the key is 'run'
+			if (value instanceof Integer && ((Integer) value) == 0 && !key.contentEquals("run") && !key.contentEquals("thread"))
+				return this; // not recorded because 0, except if the key is 'run' or 'thread'
 			if (value instanceof Long && ((Long) value) == 0)
 				return this; // not recorded because 0
 			if (condition)
@@ -674,7 +674,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private InformationBloc runInfo() {
 		InformationBloc m = new InformationBloc(RUN);
-		m.put(THREAD, head.instanceIndex);
+		m.put(THREAD, (int) Thread.currentThread().threadId());
 		m.put(RUN, head.solver.restarter.numRun + 1);
 		m.put(DEPTHS, head.solver.minDepth + ".." + head.solver.maxDepth);
 		String rb1 = head.solver.heuristic instanceof RunRobin ? ((RunRobin) head.solver.heuristic).current.getClass().getSimpleName() : "";
