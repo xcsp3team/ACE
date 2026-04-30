@@ -452,6 +452,41 @@ public class Head extends Thread {
 		return candidate.instanceStopwatch.wckTime() < currentBest.instanceStopwatch.wckTime();
 	}
 
+	private int compareParallelResults(Head left, Head right) {
+		if (left.solver.problem.optimizer != null) {
+			long leftBound = left.solver.solutions.bestBound;
+			long rightBound = right.solver.solutions.bestBound;
+			int cmp = left.solver.problem.optimizer.minimization ? Long.compare(leftBound, rightBound) : Long.compare(rightBound, leftBound);
+			if (cmp != 0)
+				return cmp;
+		}
+		if (left.solver.solutions.found != right.solver.solutions.found)
+			return Long.compare(right.solver.solutions.found, left.solver.solutions.found);
+		int cmp = Long.compare(left.instanceStopwatch.wckTime(), right.instanceStopwatch.wckTime());
+		if (cmp != 0)
+			return cmp;
+		return Integer.compare(left.instanceIndex, right.instanceIndex);
+	}
+
+	private void printParallelBestSeeds(List<Head> workers, int limit) {
+		List<Head> sorted = new ArrayList<>(workers);
+		sorted.sort(this::compareParallelResults);
+		int top = Math.min(limit, sorted.size());
+		System.out.println("[multiRestart] Best seeds after all workers finished:");
+		for (int i = 0; i < top; i++) {
+			Head worker = sorted.get(i);
+			long seed = worker.solver.bestMultiRestartRuns(1).isEmpty() ? -1 : worker.solver.bestMultiRestartRuns(1).get(0).seed;
+			System.out.println("[multiRestart] #" + (i + 1) + " seed=" + seed + " bound=" + worker.getTrueBestBound() + " found="
+					+ worker.solver.solutions.found + " wck=" + worker.instanceStopwatch.wckTime() + "ms");
+		}
+	}
+
+	private long getTrueBestBound() {
+		if (problem.optimizer.minBound == 0 || problem.optimizer.minBound == Long.MIN_VALUE)
+			return (solver.solutions.bestBound + problem.optimizer.gapBound);
+		return -1;
+	}
+
 	private void saveParallelResults(Head winner, List<Head> workers) {
 		long totalWCKTime = 0;
 		long totalVisitedNodes = 0;
@@ -469,6 +504,7 @@ public class Head extends Thread {
 			root.appendChild(multiThreadedResults);
 			Utilities.save(document, fileName);
 		}
+		printParallelBestSeeds(workers, Math.max((int) control.general.multiRestartSeed, 32));
 		winner.solver.solutions.displayFinalResults();
 	}
 
@@ -493,7 +529,11 @@ public class Head extends Thread {
 				worker.problem = worker.buildProblem(i);
 				worker.solver = worker.buildSolver(worker.problem);
 				worker.solver.setMultiRestartSeedRange(currentSeed, currentSeed + 1);
-				worker.solveBuiltProblem(false);
+				try {
+					worker.solveBuiltProblem(false);
+				} catch (Throwable e) {
+					throw e;
+				}
 				return worker;
 			});
 		}

@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -766,9 +767,27 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	/**
 	 * Variable used to store best solutions durint mr (Multi Restart)
 	 */
-	private long mrBestBounds;
-	private long mrBestSeed;
-	private long mrBestTime;
+	public static final class MultiRestartRun {
+
+		public final long seed;
+		public final long bestBound;
+		public final long wckTime;
+		public final long found;
+
+		public MultiRestartRun(long seed, long bestBound, long wckTime, long found) {
+			this.seed = seed;
+			this.bestBound = bestBound;
+			this.wckTime = wckTime;
+			this.found = found;
+		}
+
+		@Override
+		public String toString() {
+			return "seed=" + seed + " bound=" + bestBound + " found=" + found + " wck=" + wckTime;
+		}
+	}
+
+	private final List<MultiRestartRun> multiRestartRuns = new ArrayList<>();
 
 	public final Profiler profiler;
 
@@ -804,6 +823,34 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		control(from >= 0 && to > from);
 		this.multiRestartSeedFrom = from;
 		this.multiRestartSeedTo = to;
+	}
+
+	public List<MultiRestartRun> multiRestartRuns() {
+		return Collections.unmodifiableList(multiRestartRuns);
+	}
+
+	public List<MultiRestartRun> bestMultiRestartRuns(int limit) {
+		List<MultiRestartRun> runs = new ArrayList<>(multiRestartRuns);
+		runs.sort(this::compareMultiRestartRuns);
+		if (limit >= 0 && runs.size() > limit)
+			return new ArrayList<>(runs.subList(0, limit));
+		return runs;
+	}
+
+	private int compareMultiRestartRuns(MultiRestartRun left, MultiRestartRun right) {
+		if (problem.optimizer != null) {
+			int cmp = problem.optimizer.minimization ? Long.compare(left.bestBound, right.bestBound) : Long.compare(right.bestBound, left.bestBound);
+			if (cmp != 0)
+				return cmp;
+		} else {
+			int cmp = Long.compare(right.found, left.found);
+			if (cmp != 0)
+				return cmp;
+		}
+		int cmp = Long.compare(left.wckTime, right.wckTime);
+		if (cmp != 0)
+			return cmp;
+		return Long.compare(left.seed, right.seed);
 	}
 
 	public void reset() { // called by very special objects (for example, when extracting a MUC)
@@ -1008,7 +1055,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		//boolean singletonVariable = x.dom.size() == 1; // may happen, notably by lc
 		for (ObserverOnDecisions observer : observersOnDecisions)
 			observer.beforePositiveDecision(x, a);
-		
+
 		assign(x, a);
 		//int before = problem.nValueRemovals;
 		boolean consistent = knownAsInconsistent ? false : propagation.runAfterAssignment(x) && (ipsReasoner == null || ipsReasoner.whenOpeningNode());
@@ -1019,15 +1066,15 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			// if (ngdRecorder != null) ngdRecorder.addCurrentNogood();
 			return false;
 		}
-//		else {
-//			// if (!singletonVariable)
-//			// System.out.println("hhhhhhh " + propagation.queue.collected.size());
-//			if (!singletonVariable && before == problem.nValueRemovals) {
-//				stats.nImpactlessAssignments++;
-//				if (head.control.varh.impactless)
-//					heuristic.newImpactlessAssignment(x, a);
-//			}
-//		}
+		//		else {
+		//			// if (!singletonVariable)
+		//			// System.out.println("hhhhhhh " + propagation.queue.collected.size());
+		//			if (!singletonVariable && before == problem.nValueRemovals) {
+		//				stats.nImpactlessAssignments++;
+		//				if (head.control.varh.impactless)
+		//					heuristic.newImpactlessAssignment(x, a);
+		//			}
+		//		}
 		// if (ipsRecorder != null && !ipsRecorder.dealWhenOpeningNode()) return false;
 		return true;
 	}
@@ -1233,31 +1280,14 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	/**
-	 * Save best bound, seed and time of every seeds to be used for final print
+	 * Save the result of one run in a multi-restart phase.
 	 * 
 	 * @param currentSeed current seed to be saved
 	 */
 	private final void saveBestBounds(long currentSeed){
 		long boundTime = head.stopwatch.wckTime();
-		if (boundTime < mrBestTime){
-			mrBestTime = boundTime; // Not really usefull but stored if we have to use it latter 
-		}
-
-		if (problem.optimizer.minimization){
-			if (mrBestBounds > head.control.optimization.ub){
-				mrBestBounds = head.control.optimization.ub;
-				mrBestSeed = currentSeed;
-			}
-		}
-		else {
-			if (mrBestBounds < head.control.optimization.lb){
-				mrBestBounds = head.control.optimization.lb;
-				mrBestSeed = currentSeed;
-			}
-		}
-
-		// mrBestBound = problem.optimizer == null || problem.optimizer.minimization ? solver.head.control.optimization.ub
-		// 		: solver.head.control.optimization.lb;
+		MultiRestartRun currentRun = new MultiRestartRun(currentSeed, solutions.bestBound, boundTime, solutions.found);
+		multiRestartRuns.add(currentRun);
 	}
 
 	/**
@@ -1268,20 +1298,24 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		for (long seed = multiRestartSeedFrom; seed < seedLimit; seed++){
 			head.random.setSeed(seed);
 			head.stopwatch.start();
-			Kit.log.config(Kit.Color.RED.coloring("    Restarting... with seed : " + seed));
+			Kit.log.config(Kit.Color.ORANGE.coloring("    Restarting... with seed : " + seed));
 			restarter.reset();
 			solutions.resetForNewSolvingPhase();
-			saveBestBounds(seed);
 			if (problem.optimizer != null)
 				problem.optimizer.reset();
 			stopping = null;
 			for (ObserverOnSolving observer : observersOnSolving)
 				observer.beforeSolving();
 			doSearch();
+			saveBestBounds(seed);
 			for (ObserverOnSolving observer : observersOnSolving){
 				observer.afterSolving();
 			}
 			restoreProblem();
+		}
+		if (!multiRestartRuns.isEmpty()) {
+			MultiRestartRun bestRun = bestMultiRestartRuns(1).get(0);
+			solutions.setBestMultiRestarts(bestRun.bestBound, bestRun.seed, bestRun.wckTime);
 		}
 	}
 
