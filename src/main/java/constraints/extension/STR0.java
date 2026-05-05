@@ -220,7 +220,7 @@ public abstract class STR0 extends ConstraintExtensionSpecific implements TagSta
 					if (prod > set.size())
 						return true;
 				}
-				return prod == set.size() && entail();
+				return prod == set.size() ? entail() : true;
 			}
 			return true;
 		}
