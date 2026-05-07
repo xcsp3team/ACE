@@ -356,6 +356,11 @@ public class Head extends Thread {
 	public final Stopwatch instanceStopwatch = new Stopwatch();
 
 	/**
+	 * Id of the head, used to show whitch thread is used when using mr to the user output 
+	 */
+	public int id = 0;
+
+	/**
 	 * @return true if unary constraints must be preserved (and not be directly taken into account by reducing variable domains)
 	 */
 	public boolean mustPreserveUnaryConstraints() {
@@ -482,9 +487,7 @@ public class Head extends Thread {
 	}
 
 	private long getTrueBestBound() {
-		if (problem.optimizer.minBound == 0 || problem.optimizer.minBound == Long.MIN_VALUE)
-			return (solver.solutions.bestBound + problem.optimizer.gapBound);
-		return -1;
+		return (solver.solutions.bestBound + problem.optimizer.gapBound);
 	}
 
 	private void saveParallelResults(Head winner, List<Head> workers) {
@@ -510,11 +513,11 @@ public class Head extends Thread {
 
 	private void solveInstanceInParallel(int i) {
 		long seedCount = control.general.multiRestartSeed;
-		if (seedCount == PLUS_INFINITY || control.general.multiRestartThreads <= 1 || seedCount <= 1) {
-			problem = buildProblem(i);
-			solveBuiltProblem(true);
-			return;
-		}
+		// if (seedCount == PLUS_INFINITY || control.general.multiRestartThreads <= 1 || seedCount <= 1) {
+		// 	problem = buildProblem(i);
+		// 	solveBuiltProblem(true);
+		// 	return;
+		// }
 		int workerCount = (int) Math.min(control.general.multiRestartThreads, seedCount);
 		ExecutorService executor = Executors.newFixedThreadPool(workerCount);
 		List<Callable<Head>> tasks = new ArrayList<>();
@@ -526,6 +529,7 @@ public class Head extends Thread {
 				worker.stopwatch.start();
 				worker.instanceStopwatch.start();
 				worker.instanceIndex = i;
+				worker.id = (int) currentSeed;
 				worker.problem = worker.buildProblem(i);
 				worker.solver = worker.buildSolver(worker.problem);
 				worker.solver.setMultiRestartSeedRange(currentSeed, currentSeed + 1);
