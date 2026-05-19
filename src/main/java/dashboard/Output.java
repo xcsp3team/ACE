@@ -185,7 +185,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String SOLVER = "solver";
 	public static final String PREPROCESSING = "preprocessing";
 	public static final String RUN = "run";
-	public static final String SEED = "seed";
+	public static final String MRSEED = "mrseed";
 	public static final String GLOBAL = "global";
 
 	public static final String NUMBER = "number";
@@ -675,8 +675,8 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private InformationBloc runInfo() {
 		InformationBloc m = new InformationBloc(RUN);
-		if (head.control.general.multiRestartSeed < PLUS_INFINITY)
-			m.put(SEED, (int) head.id);
+		if (head.control.metarestart.multiRestartSeed < PLUS_INFINITY)
+			m.put(MRSEED, (int) head.startingSeed);
 		m.put(RUN, head.solver.restarter.numRun + 1);
 		m.put(DEPTHS, head.solver.minDepth + ".." + head.solver.maxDepth);
 		String rb1 = head.solver.heuristic instanceof RunRobin ? ((RunRobin) head.solver.heuristic).current.getClass().getSimpleName() : "";

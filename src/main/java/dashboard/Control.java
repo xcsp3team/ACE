@@ -131,6 +131,7 @@ public final class Control {
 	public final OptionsExtension extension;
 	public final OptionsIntension intension;
 	public final OptionsGlobal global;
+	public final OptionMetaRestart metarestart;
 
 	public final OptionsPropagation propagation;
 	public final OptionsShaving shaving;
@@ -160,6 +161,7 @@ public final class Control {
 		this.extension = new OptionsExtension();
 		this.intension = new OptionsIntension();
 		this.global = new OptionsGlobal();
+		this.metarestart = new OptionMetaRestart();
 
 		this.propagation = new OptionsPropagation();
 		this.shaving = new OptionsShaving();
@@ -440,10 +442,15 @@ public final class Control {
 		public int verbose = addI("verbose", "v", 0, "Verbosity level (value between -1 and 3)" + s_verbose);
 		public final String runRobin = addS("runRobin", "rr", "pwfc", "Mode of a Run Robin search strategy (empty string if none)");
 		public final boolean profiling = addB("profiling", "prof", false, "Using some very basic profiling information?");
+		}
+		
+	public class OptionMetaRestart extends OptionGroup {
 		public final int multiRestart = addI("multiRestart", "mr", 0, "Number of run before fully restarting with another seed");
-		public final long multiRestartSeed = addL("multiRestartSeed", "mrs", PLUS_INFINITY, "Sets the max seed that will be used for multiRestart");
+		public final long multiRestartSeed = addL("multiRestartSeed", "mrs", 1, "Sets the max seed that will be used for multiRestart");
 		public final int multiRestartThreads = addI("multiRestartThreads", "mrt", 1,
 				"Number of threads used to evaluate multiRestart seeds in parallel");
+		public int multiRestartPhases = addI("multiRestartPhases", "mrp", 1, "Sets the number of phase the solver will produce, a phase is composed of 'mrs' solving of 'mr' runs");
+			
 	}
 
 	public class OptionsProblem extends OptionGroup {

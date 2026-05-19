@@ -358,7 +358,7 @@ public class Head extends Thread {
 	/**
 	 * Id of the head, used to show whitch thread is used when using mr to the user output 
 	 */
-	public int id = 0;
+	public int startingSeed = 0;
 
 	/**
 	 * @return true if unary constraints must be preserved (and not be directly taken into account by reducing variable domains)
@@ -376,8 +376,11 @@ public class Head extends Thread {
 		return control.general.timeout != PLUS_INFINITY && control.general.timeout <= instanceStopwatch.wckTime(); // not calling wckTime() when no necessary
 	}
 
+	/**
+	 * @return true if the number of run exceeds the multirestart max run
+	 */
 	public boolean isRunExpiredForCurrentInstance() {
-        return control.general.multiRestart != 0 && control.general.multiRestart <= solver.restarter.numRun + 1;
+        return control.metarestart.multiRestart != 0 && control.metarestart.multiRestart <= solver.restarter.numRun + 1;
     }
 
 	/**
@@ -434,6 +437,10 @@ public class Head extends Thread {
 		return problem;
 	}
 
+	/**
+	 * Solves the problem in this.problem
+	 * @param displayFinalResults does the results appears on the terminal output
+	 */
 	private void solveBuiltProblem(boolean displayFinalResults) {
 		if (control.solving.enablePrepro || control.solving.enableSearch) {
 			if (solver == null)
@@ -457,6 +464,10 @@ public class Head extends Thread {
 		return candidate.instanceStopwatch.wckTime() < currentBest.instanceStopwatch.wckTime();
 	}
 
+	/**
+	 * Used to comprare two results, priotising the bound and then the number of solutions
+	 * @return left > right
+	 */
 	private int compareParallelResults(Head left, Head right) {
 		if (left.solver.problem.optimizer != null) {
 			long leftBound = left.solver.solutions.bestBound;
@@ -473,6 +484,9 @@ public class Head extends Thread {
 		return Integer.compare(left.instanceIndex, right.instanceIndex);
 	}
 
+	/**
+	 * Debug print the list of best seeds 
+	 */
 	private void printParallelBestSeeds(List<Head> workers, int limit) {
 		List<Head> sorted = new ArrayList<>(workers);
 		sorted.sort(this::compareParallelResults);
@@ -486,73 +500,74 @@ public class Head extends Thread {
 		}
 	}
 
+	/**
+	 * @return True best bound, offseted by the gap
+	 */
 	private long getTrueBestBound() {
 		return (solver.solutions.bestBound + problem.optimizer.gapBound);
 	}
 
-	private void saveParallelResults(Head winner, List<Head> workers) {
-		long totalWCKTime = 0;
-		long totalVisitedNodes = 0;
-		for (Head worker : workers) {
-			totalWCKTime += worker.instanceStopwatch.wckTime();
-			totalVisitedNodes += worker.solver.stats.nNodes;
+	/**
+	 * Runs all executors withs tasks, wait for all executors to finish and returns all solutions
+	 */
+	private List<Head> runPhase(ExecutorService executor, List<Callable<Head>> tasks) throws InterruptedException, ExecutionException{
+		List<Future<Head>> futures = executor.invokeAll(tasks);
+		List<Head> workers = new ArrayList<>(futures.size());
+		for (Future<Head> future : futures) {
+			Head worker = future.get();
+			workers.add(worker);
 		}
-		String fileName = winner.output.save(totalWCKTime);
-		if (fileName != null) {
-			Document document = Kit.load(fileName);
-			Element root = document.getDocumentElement();
-			Element multiThreadedResults = document.createElement(Output.MULTITHREAD_RESULTS);
-			multiThreadedResults.setAttribute(Output.WCK, Double.toString((double) totalWCKTime / 1000));
-			multiThreadedResults.setAttribute(Output.N_NODES, Long.toString(totalVisitedNodes));
-			root.appendChild(multiThreadedResults);
-			Utilities.save(document, fileName);
-		}
-		printParallelBestSeeds(workers, Math.max((int) control.general.multiRestartSeed, 32));
-		winner.solver.solutions.displayFinalResults();
+		return workers;
+	}
+
+	/**
+	 * Prepare tasks for the next phase, reset, input last best solution, ...
+	 */
+	private void prepareForNextPhase(List<Callable<Head>> tasks) {
+		// printParallelBestSeeds(workers, Math.max((int) control.general.multiRestartSeed, 32));
+		// winner.solver.solutions.displayFinalResults();
 	}
 
 	private void solveInstanceInParallel(int i) {
-		long seedCount = control.general.multiRestartSeed;
+		long seedCount = control.metarestart.multiRestartSeed;
+		int workerCount = (int) Math.min(control.metarestart.multiRestartThreads, seedCount);
+		ExecutorService executor = Executors.newFixedThreadPool(workerCount);
+		List<Callable<Head>> tasks = new ArrayList<>();
 		// if (seedCount == PLUS_INFINITY || control.general.multiRestartThreads <= 1 || seedCount <= 1) {
 		// 	problem = buildProblem(i);
 		// 	solveBuiltProblem(true);
 		// 	return;
 		// }
-		int workerCount = (int) Math.min(control.general.multiRestartThreads, seedCount);
-		ExecutorService executor = Executors.newFixedThreadPool(workerCount);
-		List<Callable<Head>> tasks = new ArrayList<>();
-		for (long seed = 0; seed < seedCount; seed++) {
-			final long currentSeed = seed;
-			tasks.add(() -> {
-				Head worker = new Head(control.userSettings.controlFilename);
-				worker.disableShutdownHook = true;
-				worker.stopwatch.start();
-				worker.instanceStopwatch.start();
-				worker.instanceIndex = i;
-				worker.id = (int) currentSeed;
-				worker.problem = worker.buildProblem(i);
-				worker.solver = worker.buildSolver(worker.problem);
-				worker.solver.setMultiRestartSeedRange(currentSeed, currentSeed + 1);
-				try {
-					worker.solveBuiltProblem(false);
-				} catch (Throwable e) {
-					throw e;
-				}
-				return worker;
-			});
-		}
+		// for (long seed = 0; seed < seedCount; seed++) {
+		// 	final long currentSeed = seed;
+		// 	tasks.add(() -> {
+		// 		Head worker = new Head(control.userSettings.controlFilename);
+		// 		worker.disableShutdownHook = true;
+		// 		worker.instanceStopwatch.start();
+		// 		worker.stopwatch.start();
+		// 		worker.instanceIndex = i;
+		// 		worker.startingSeed = (int) currentSeed;
+		// 		worker.problem = worker.buildProblem(i);
+		// 		worker.solver = worker.buildSolver(worker.problem);
+		// 		worker.solver.setMultiRestartSeedRange(currentSeed, currentSeed + 1);
+		// 		try {
+		// 			worker.solveBuiltProblem(false);
+		// 		} catch (Throwable e) {
+		// 			throw e;
+		// 		}
+		// 		return worker;
+		// 	});
+		// }
+		prepareForNextPhase(tasks);
 		try {
-			List<Future<Head>> futures = executor.invokeAll(tasks);
-			List<Head> workers = new ArrayList<>(futures.size());
-			Head winner = null;
-			for (Future<Head> future : futures) {
-				Head worker = future.get();
-				workers.add(worker);
-				if (isBetterParallelResult(worker, winner))
-					winner = worker;
+			List<Head> workers;
+			workers = runPhase(executor, tasks);
+			while (control.metarestart.multiRestartPhases > 1){
+				control.metarestart.multiRestartPhases--;
+				prepareForNextPhase(tasks);
+				workers = runPhase(executor, tasks);
 			}
-			if (winner != null)
-				saveParallelResults(winner, workers);
+			printParallelBestSeeds(workers, 32);
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			throw new RuntimeException(e);
@@ -562,6 +577,13 @@ public class Head extends Thread {
 			executor.shutdownNow();
 		}
 	}
+
+	/**
+	 * Makes a deep copy of the Head from, normaly useless 
+	 */
+	public static final Head deepCopy(Head from){
+		return new Head();
+	} 
 
 	/**
 	 * Builds and returns the solver that will be used to solve the specified problem (instance)
@@ -587,7 +609,7 @@ public class Head extends Thread {
 	protected void solveInstance(int i) {
 		this.observersConstruction = permamentObserversConstruction.stream().collect(toCollection(ArrayList::new));
 		structureSharing.clear();
-		if (control.general.multiRestart > 0 && control.general.multiRestartThreads > 1)
+		if (control.metarestart.multiRestart > 0 && control.metarestart.multiRestartThreads > 1)
 			solveInstanceInParallel(i);
 		else {
 			problem = buildProblem(i);
