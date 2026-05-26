@@ -131,7 +131,7 @@ public final class Control {
 	public final OptionsExtension extension;
 	public final OptionsIntension intension;
 	public final OptionsGlobal global;
-	public final OptionMetaRestart metarestart;
+	public final OptionsMetaRestart metarestart;
 
 	public final OptionsPropagation propagation;
 	public final OptionsShaving shaving;
@@ -161,7 +161,7 @@ public final class Control {
 		this.extension = new OptionsExtension();
 		this.intension = new OptionsIntension();
 		this.global = new OptionsGlobal();
-		this.metarestart = new OptionMetaRestart();
+		this.metarestart = new OptionsMetaRestart();
 
 		this.propagation = new OptionsPropagation();
 		this.shaving = new OptionsShaving();
@@ -444,7 +444,7 @@ public final class Control {
 		public final boolean profiling = addB("profiling", "prof", false, "Using some very basic profiling information?");
 		}
 		
-	public class OptionMetaRestart extends OptionGroup {
+	public class OptionsMetaRestart extends OptionGroup {
 		public final int multiRestart = addI("multiRestart", "mr", 0, "Number of run before fully restarting with another seed");
 		public final long multiRestartSeed = addL("multiRestartSeed", "mrs", 1, "Sets the max seed that will be used for multiRestart");
 		public final int multiRestartThreads = addI("multiRestartThreads", "mrt", 1,

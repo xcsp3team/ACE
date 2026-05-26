@@ -451,19 +451,6 @@ public class Head extends Thread {
 		}
 	}
 
-	private boolean isBetterParallelResult(Head candidate, Head currentBest) {
-		if (currentBest == null)
-			return true;
-		if (candidate.solver.problem.optimizer != null) {
-			long candidateBound = candidate.solver.solutions.bestBound;
-			long bestBound = currentBest.solver.solutions.bestBound;
-			return candidate.solver.problem.optimizer.minimization ? candidateBound < bestBound : candidateBound > bestBound;
-		}
-		if (candidate.solver.solutions.found != currentBest.solver.solutions.found)
-			return candidate.solver.solutions.found > currentBest.solver.solutions.found;
-		return candidate.instanceStopwatch.wckTime() < currentBest.instanceStopwatch.wckTime();
-	}
-
 	/**
 	 * Used to comprare two results, priotising the bound and then the number of solutions
 	 * @return left > right
@@ -528,41 +515,57 @@ public class Head extends Thread {
 		// winner.solver.solutions.displayFinalResults();
 	}
 
+	/**
+	 * Sets up workers with task, used when multi threading
+	 * @param seedCount number of seeds to be assigned to workers
+	 * @return Callable to call for each threads
+	 */
+	private List<Callable<Head>> setupTasks(int seedCount, int instanceIndex) {
+		List<Callable<Head>> res = new ArrayList<Callable<Head>>();
+
+		for (long seed = 0; seed < seedCount; seed++){
+			final int currentSeed = (int) seed;
+			res.add(() -> {
+				Head worker = new Head(control.userSettings.controlFilename);
+				worker.disableShutdownHook = true;
+				worker.instanceStopwatch.start();
+				worker.stopwatch.start();
+				worker.instanceIndex = instanceIndex;
+				worker.startingSeed = currentSeed;
+				worker.problem = worker.buildProblem(instanceIndex);
+				worker.solver = worker.buildSolver(worker.problem);
+				worker.solver.setMultiRestartSeedRange(currentSeed, currentSeed + 1);
+				try {
+					worker.solveBuiltProblem(false);
+				} catch (Throwable e){
+					throw e;
+				}
+				return worker;
+			});
+		}
+
+		return res;
+	}
+
 	private void solveInstanceInParallel(int i) {
 		long seedCount = control.metarestart.multiRestartSeed;
+
+		if (seedCount == PLUS_INFINITY || control.metarestart.multiRestartThreads <= 1 || seedCount <= 1) { // Sequenciel, ne devrait pas être lancer
+			log.warning(Kit.Color.RED.coloring("PROBLEM"));
+			// problem = buildProblem(i);
+			// 	solveBuiltProblem(true);
+			// 	return;
+		}
+
 		int workerCount = (int) Math.min(control.metarestart.multiRestartThreads, seedCount);
 		ExecutorService executor = Executors.newFixedThreadPool(workerCount);
-		List<Callable<Head>> tasks = new ArrayList<>();
-		// if (seedCount == PLUS_INFINITY || control.general.multiRestartThreads <= 1 || seedCount <= 1) {
-		// 	problem = buildProblem(i);
-		// 	solveBuiltProblem(true);
-		// 	return;
-		// }
-		// for (long seed = 0; seed < seedCount; seed++) {
-		// 	final long currentSeed = seed;
-		// 	tasks.add(() -> {
-		// 		Head worker = new Head(control.userSettings.controlFilename);
-		// 		worker.disableShutdownHook = true;
-		// 		worker.instanceStopwatch.start();
-		// 		worker.stopwatch.start();
-		// 		worker.instanceIndex = i;
-		// 		worker.startingSeed = (int) currentSeed;
-		// 		worker.problem = worker.buildProblem(i);
-		// 		worker.solver = worker.buildSolver(worker.problem);
-		// 		worker.solver.setMultiRestartSeedRange(currentSeed, currentSeed + 1);
-		// 		try {
-		// 			worker.solveBuiltProblem(false);
-		// 		} catch (Throwable e) {
-		// 			throw e;
-		// 		}
-		// 		return worker;
-		// 	});
-		// }
-		prepareForNextPhase(tasks);
+		List<Callable<Head>> tasks = setupTasks((int) seedCount, i);
+		// prepareForNextPhase(tasks);
 		try {
 			List<Head> workers;
 			workers = runPhase(executor, tasks);
 			while (control.metarestart.multiRestartPhases > 1){
+				System.out.println("Phase ! " + control.metarestart.multiRestartPhases);
 				control.metarestart.multiRestartPhases--;
 				prepareForNextPhase(tasks);
 				workers = runPhase(executor, tasks);
