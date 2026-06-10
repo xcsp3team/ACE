@@ -445,12 +445,13 @@ public final class Control {
 		}
 		
 	public class OptionsMetaRestart extends OptionGroup {
-		public final int multiRestart = addI("multiRestart", "mr", 0, "Number of run before fully restarting with another seed");
-		public final long multiRestartSeed = addL("multiRestartSeed", "mrs", 1, "Sets the max seed that will be used for multiRestart");
-		public final int multiRestartThreads = addI("multiRestartThreads", "mrt", 1,
+		public final int metaRestartLength = addI("metaRestartLength", "mrl", 100, "Number of run before fully restarting with another seed");
+		public final long metaRestartSeedStart = addL("metaRestartSeedStart", "mrb", 0, "Starting seed for meta restart"); // Not yet implemented
+		public final long metaRestartSeedStop = addL("metaRestartSeedStop", "mrs", 0, "Stopping seed for meta restart");
+		public final int metaRestartThreads = addI("metaRestartThreads", "mrt", 1,
 				"Number of threads used to evaluate multiRestart seeds in parallel");
-		public int multiRestartPhases = addI("multiRestartPhases", "mrp", 1, "Sets the number of phase the solver will produce, a phase is composed of 'mrs' solving of 'mr' runs");
-			
+		public final int metaRestartPhases = addI("metaRestartPhases", "mrp", 1,
+			"Sets the number of phase the solver will produce, a phase is composed of 'mrs' solving of 'mr' runs");
 	}
 
 	public class OptionsProblem extends OptionGroup {

@@ -358,7 +358,9 @@ public class Head extends Thread {
 	/**
 	 * Id of the head, used to show whitch thread is used when using mr to the user output 
 	 */
-	public int startingSeed = 0;
+	public int threadId = 0;
+
+	public long metaStartingSeed = 0;
 
 	/**
 	 * @return true if unary constraints must be preserved (and not be directly taken into account by reducing variable domains)
@@ -379,8 +381,8 @@ public class Head extends Thread {
 	/**
 	 * @return true if the number of run exceeds the multirestart max run
 	 */
-	public boolean isRunExpiredForCurrentInstance() {
-        return control.metarestart.multiRestart != 0 && control.metarestart.multiRestart <= solver.restarter.numRun + 1;
+	public boolean isMetaRunExpiredForCurrentInstance() {
+        return control.metarestart.metaRestartLength != 0 && control.metarestart.metaRestartLength <= solver.restarter.numRun + 1;
     }
 
 	/**
@@ -418,7 +420,7 @@ public class Head extends Thread {
 		random = new Random(control.general.seed + i);
 		ProblemAPI api = null;
 		try {
-			synchronized (Head.class) {
+			synchronized (Head.class) { // TODO : Apriorie ne pénalise pas si thread = 1 
 				try {
 					api = (ProblemAPI) Reflector.buildObject(Input.problemName);
 				} catch (Exception e) {
@@ -435,6 +437,15 @@ public class Head extends Thread {
 		}
 		problem.display();
 		return problem;
+	}
+
+	/**
+	 * Resets the head for a new phase
+	 */
+	private void reset() {
+		solver.reset();
+		// solver.warmStarter
+		// solver.setMetaRestartSeedRange
 	}
 
 	/**
@@ -510,31 +521,35 @@ public class Head extends Thread {
 	/**
 	 * Prepare tasks for the next phase, reset, input last best solution, ...
 	 */
-	private void prepareForNextPhase(List<Callable<Head>> tasks) {
-		// printParallelBestSeeds(workers, Math.max((int) control.general.multiRestartSeed, 32));
-		// winner.solver.solutions.displayFinalResults();
-	}
+	private void prepareForNextPhase(List<Head> workers) {
+		for (Head worker : workers) {
+			worker.reset();
+		}
+	}	
 
 	/**
 	 * Sets up workers with task, used when multi threading
 	 * @param seedCount number of seeds to be assigned to workers
 	 * @return Callable to call for each threads
 	 */
-	private List<Callable<Head>> setupTasks(int seedCount, int instanceIndex) {
+	private List<Callable<Head>> setupTasks(int seedCount, int workerCount) {
 		List<Callable<Head>> res = new ArrayList<Callable<Head>>();
 
-		for (long seed = 0; seed < seedCount; seed++){
-			final int currentSeed = (int) seed;
+		int seedPerWorker = Math.round((float) seedCount / (float) workerCount);
+
+		for (int w = 0; w < workerCount; w++){
+			final int currentWorker = w;
+			int currentSeed = seedPerWorker * w;
 			res.add(() -> {
 				Head worker = new Head(control.userSettings.controlFilename);
 				worker.disableShutdownHook = true;
 				worker.instanceStopwatch.start();
 				worker.stopwatch.start();
-				worker.instanceIndex = instanceIndex;
-				worker.startingSeed = currentSeed;
-				worker.problem = worker.buildProblem(instanceIndex);
+				worker.instanceIndex = 0;
+				worker.threadId = currentWorker;
+				worker.problem = worker.buildProblem(0);
 				worker.solver = worker.buildSolver(worker.problem);
-				worker.solver.setMultiRestartSeedRange(currentSeed, currentSeed + 1);
+				worker.solver.setMetaRestartSeedRange(currentSeed, Math.min(currentSeed + seedPerWorker, seedCount));
 				try {
 					worker.solveBuiltProblem(false);
 				} catch (Throwable e){
@@ -547,28 +562,22 @@ public class Head extends Thread {
 		return res;
 	}
 
-	private void solveInstanceInParallel(int i) {
-		long seedCount = control.metarestart.multiRestartSeed;
+	private void solveInstanceInParallel() {
+		long seedCount = control.metarestart.metaRestartSeedStop - control.metarestart.metaRestartSeedStart;
+		int phasesLeft = control.metarestart.metaRestartPhases;
 
-		if (seedCount == PLUS_INFINITY || control.metarestart.multiRestartThreads <= 1 || seedCount <= 1) { // Sequenciel, ne devrait pas être lancer
-			log.warning(Kit.Color.RED.coloring("PROBLEM"));
-			// problem = buildProblem(i);
-			// 	solveBuiltProblem(true);
-			// 	return;
-		}
-
-		int workerCount = (int) Math.min(control.metarestart.multiRestartThreads, seedCount);
+		int workerCount = (int) Math.min(control.metarestart.metaRestartThreads, seedCount);
 		ExecutorService executor = Executors.newFixedThreadPool(workerCount);
-		List<Callable<Head>> tasks = setupTasks((int) seedCount, i);
-		// prepareForNextPhase(tasks);
+		List<Callable<Head>> tasks = setupTasks((int) seedCount, workerCount); // Ré Implementer la distribution des seed par threads pour optimiser la size (Reduce Head Count)
+		// prepareForNextPhase(workers);
 		try {
 			List<Head> workers;
 			workers = runPhase(executor, tasks);
-			while (control.metarestart.multiRestartPhases > 1){
-				System.out.println("Phase ! " + control.metarestart.multiRestartPhases);
-				control.metarestart.multiRestartPhases--;
-				prepareForNextPhase(tasks);
+			while (phasesLeft > 1){
+				System.out.println("Phase ! " + phasesLeft);
+				prepareForNextPhase(workers);
 				workers = runPhase(executor, tasks);
+				phasesLeft--;
 			}
 			printParallelBestSeeds(workers, 32);
 		} catch (InterruptedException e) {
@@ -580,13 +589,6 @@ public class Head extends Thread {
 			executor.shutdownNow();
 		}
 	}
-
-	/**
-	 * Makes a deep copy of the Head from, normaly useless 
-	 */
-	public static final Head deepCopy(Head from){
-		return new Head();
-	} 
 
 	/**
 	 * Builds and returns the solver that will be used to solve the specified problem (instance)
@@ -612,8 +614,9 @@ public class Head extends Thread {
 	protected void solveInstance(int i) {
 		this.observersConstruction = permamentObserversConstruction.stream().collect(toCollection(ArrayList::new));
 		structureSharing.clear();
-		if (control.metarestart.multiRestart > 0 && control.metarestart.multiRestartThreads > 1)
-			solveInstanceInParallel(i);
+		if (control.metarestart.metaRestartLength > 0 || control.metarestart.metaRestartThreads > 1) { // TODO : SI MR > 1, vérifier stop
+			solveInstanceInParallel();
+		}
 		else {
 			problem = buildProblem(i);
 			structureSharing.clear();
