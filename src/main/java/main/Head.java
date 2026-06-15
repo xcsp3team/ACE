@@ -442,10 +442,11 @@ public class Head extends Thread {
 	/**
 	 * Resets the head for a new phase
 	 */
-	private void reset() {
-		solver.reset();
-		// solver.warmStarter
-		// solver.setMetaRestartSeedRange
+	private void reset(int seedOffsetNextPhase) {
+		solver.resetForNewSolvingPhase();
+		problem.reset();
+		solver.setWarmStarter("");
+		solver.offsetMetaRestartSeedRange(seedOffsetNextPhase);
 	}
 
 	/**
@@ -508,48 +509,56 @@ public class Head extends Thread {
 	/**
 	 * Runs all executors withs tasks, wait for all executors to finish and returns all solutions
 	 */
-	private List<Head> runPhase(ExecutorService executor, List<Callable<Head>> tasks) throws InterruptedException, ExecutionException{
+	private void runPhaseTasks(ExecutorService executor, List<Callable<Head>> tasks) throws InterruptedException, ExecutionException{
 		List<Future<Head>> futures = executor.invokeAll(tasks);
-		List<Head> workers = new ArrayList<>(futures.size());
 		for (Future<Head> future : futures) {
-			Head worker = future.get();
-			workers.add(worker);
+			future.get();
 		}
-		return workers;
 	}
 
 	/**
 	 * Prepare tasks for the next phase, reset, input last best solution, ...
 	 */
-	private void prepareForNextPhase(List<Head> workers) {
+	private void prepareForNextPhase(List<Head> workers, int seedOffsetNextPhase) {
 		for (Head worker : workers) {
-			worker.reset();
+			worker.reset(seedOffsetNextPhase);
 		}
 	}	
 
-	/**
-	 * Sets up workers with task, used when multi threading
-	 * @param seedCount number of seeds to be assigned to workers
-	 * @return Callable to call for each threads
-	 */
-	private List<Callable<Head>> setupTasks(int seedCount, int workerCount) {
-		List<Callable<Head>> res = new ArrayList<Callable<Head>>();
-
+	private List<Head> setupHeads(int seedCount, int workerCount){
+		List<Head> res = new ArrayList<Head>();
 		int seedPerWorker = Math.round((float) seedCount / (float) workerCount);
 
 		for (int w = 0; w < workerCount; w++){
-			final int currentWorker = w;
-			int currentSeed = seedPerWorker * w;
+			int seed = seedPerWorker * w;
+			Head h = new Head(control.userSettings.controlFilename);
+			h.disableShutdownHook = true;
+			h.instanceIndex = 0;
+			h.threadId = w;
+			h.problem = h.buildProblem(0);
+			h.solver = h.buildSolver(h.problem);
+			h.solver.setMetaRestartSeedRange(seed, Math.min(seed + seedPerWorker, seedCount));
+			res.add(h);
+		}
+
+		return res;
+	}
+
+	/**
+	 * Sets up workers with task, used when multi threading
+	 * @param heads Heads to setup in tasks
+	 * @return Callable to call for each threads
+	 */
+	private List<Callable<Head>> setupTasks(List<Head> heads) {
+		List<Callable<Head>> res = new ArrayList<Callable<Head>>();
+
+		for (int i = 0; i < heads.size(); i++){
+			final int index = i;
 			res.add(() -> {
-				Head worker = new Head(control.userSettings.controlFilename);
-				worker.disableShutdownHook = true;
+				Head worker = heads.get(index);
 				worker.instanceStopwatch.start();
 				worker.stopwatch.start();
-				worker.instanceIndex = 0;
-				worker.threadId = currentWorker;
-				worker.problem = worker.buildProblem(0);
-				worker.solver = worker.buildSolver(worker.problem);
-				worker.solver.setMetaRestartSeedRange(currentSeed, Math.min(currentSeed + seedPerWorker, seedCount));
+				worker.solver.resetForNewSolvingPhase(); 
 				try {
 					worker.solveBuiltProblem(false);
 				} catch (Throwable e){
@@ -568,15 +577,15 @@ public class Head extends Thread {
 
 		int workerCount = (int) Math.min(control.metarestart.metaRestartThreads, seedCount);
 		ExecutorService executor = Executors.newFixedThreadPool(workerCount);
-		List<Callable<Head>> tasks = setupTasks((int) seedCount, workerCount); // Ré Implementer la distribution des seed par threads pour optimiser la size (Reduce Head Count)
+		List<Head> workers = setupHeads((int) seedCount, workerCount);
+		List<Callable<Head>> tasks = setupTasks(workers);
 		// prepareForNextPhase(workers);
 		try {
-			List<Head> workers;
-			workers = runPhase(executor, tasks);
+			runPhaseTasks(executor, tasks);
 			while (phasesLeft > 1){
 				System.out.println("Phase ! " + phasesLeft);
-				prepareForNextPhase(workers);
-				workers = runPhase(executor, tasks);
+				prepareForNextPhase(workers, (int) seedCount);
+				runPhaseTasks(executor, tasks);
 				phasesLeft--;
 			}
 			printParallelBestSeeds(workers, 32);

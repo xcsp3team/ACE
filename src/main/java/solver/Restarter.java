@@ -199,7 +199,7 @@ public class Restarter implements ObserverOnRuns {
 	/**
 	 * The measure function used for handling cutoff values
 	 */
-	public final Supplier<Long> measureSupplier;
+	public Supplier<Long> measureSupplier;
 
 	/**
 	 * The number of the current run;
@@ -232,6 +232,7 @@ public class Restarter implements ObserverOnRuns {
 		numRun = -1;
 		currCutoff = baseCutoff = options.cutoff;
 		nRestartsSinceReset = 0;
+		this.measureSupplier = measureSupplier();
 	}
 
 	/**
@@ -283,7 +284,7 @@ public class Restarter implements ObserverOnRuns {
 		Optimizer optimizer = solver.problem.optimizer;
 		if (Input.portfolio && optimizer != null && ((cnt++) % 5) == 0) // code for portfolio mode; hard coding
 			optimizer.possiblyUpdateLocalBounds();
-		long measure = measureSupplier.get();
+		long measure = this.measureSupplier.get();
 		if (measure >= currCutoff)
 			return true;
 		if (optimizer != null && solver.solutions.found - localStats.nFoundSolutionAtRunStart > options.solRunLimit)

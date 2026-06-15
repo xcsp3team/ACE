@@ -660,7 +660,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	/**
 	 * The object that implements the restarting policy of the solver
 	 */
-	public final Restarter restarter;
+	public Restarter restarter;
 
 	/**
 	 * The variable ordering heuristic used to select variables
@@ -732,7 +732,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	/**
 	 * The object that allows us to guide search from an instantiation (solution) given by the user
 	 */
-	public final WarmStarter warmStarter;
+	public WarmStarter warmStarter;
 
 	public final LostReasoner lostReasoner;
 
@@ -820,6 +820,19 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		solutions.found = 0;
 	}
 
+	public void resetForNewSolvingPhase() {
+		solutions.resetForNewSolvingPhase();
+		if (problem.optimizer != null)
+			problem.optimizer.reset();
+		stats.clearVarAssignments();
+		stats.nFailedAssignments = 0;
+	}
+
+	public void offsetMetaRestartSeedRange(int offset){
+		this.metaRestartSeedFrom += offset;
+		this.metaRestartSeedTo += offset;
+	}
+
 	/**
 	 * Sets the range of seeds for this solver
 	 */
@@ -860,11 +873,13 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		return Long.compare(left.seed, right.seed);
 	}
 
-	public void reset() { // called by very special objects (for example, when extracting a MUC)
+	public void reset() { // called by very special objects (for example, when extracting a MUC) // Blocks Measure ?? - Each Reset, CurrCutOff x 10 ??
 		control(futVars.nPast() == 0);
 		propagation.clear();
 		propagation.nTuplesRemoved = 0;
-		restarter.reset();
+		nRecursiveRuns = 0;
+		// restarter.reset();
+		restarter = new Restarter(this);
 		resetNoSolutions();
 		control(decisions.set.isEmpty()); // otherwise decisions.set.clear();
 		heuristic.setPriorityVars(problem.priorityVars, 0);
@@ -875,6 +890,10 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		control(stackedVariables.top == -1, () -> "Top= " + stackedVariables.top);
 		this.stats = new Statistics(this); // for simplicity, stats are rebuilt
 		control(proofer == null);
+	}
+
+	public void setWarmStarter(String warmStart){
+		warmStarter = warmStart.length() > 0 ? new WarmStarter(warmStart) : null;
 	}
 
 	/**
@@ -1263,8 +1282,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	public final Solver doRun() {
 		lastPastBeforeRun[nRecursiveRuns++] = futVars.lastPast();
 		explore();
-		if (stopping != REACHED_GOAL || head instanceof HeadExtraction)
+		if (stopping != REACHED_GOAL || head instanceof HeadExtraction) {
 			backtrackTo(lastPastBeforeRun[--nRecursiveRuns]);
+		}
 		return this;
 	}
 
@@ -1274,11 +1294,12 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	private final void doSearch() {
 		for (ObserverOnSolving observer : observersOnSolving)
 			observer.beforeSearch();
-		while (!finished() && !restarter.allRunsFinished()) {
+		while (!finished() && !restarter.allRunsFinished()) { 
 			for (ObserverOnRuns observer : observersOnRuns)
 				observer.beforeRun();
-			if (stopping != FULL_EXPLORATION) // an observer might modify the object stopping
+			if (stopping != FULL_EXPLORATION) {
 				doRun();
+			}
 			for (ObserverOnRuns observer : observersOnRuns)
 				observer.afterRun();
 		}
@@ -1314,6 +1335,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			stopping = null;
 			for (ObserverOnSolving observer : observersOnSolving)
 				observer.beforeSolving();
+			System.out.println("Starting Search");
 			doSearch();
 			saveBestBounds(seed);
 			for (ObserverOnSolving observer : observersOnSolving){

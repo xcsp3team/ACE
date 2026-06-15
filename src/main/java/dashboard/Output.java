@@ -675,8 +675,12 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private InformationBloc runInfo() {
 		InformationBloc m = new InformationBloc(RUN);
-		if (head.control.metarestart.metaRestartSeedStop < PLUS_INFINITY)
-			m.put(MR, "" + head.metaStartingSeed + "@t" + head.threadId);
+		if (head.control.metarestart.metaRestartSeedStop < PLUS_INFINITY) {
+			if (head.control.metarestart.metaRestartThreads > 1)
+				m.put(MR, "" + head.metaStartingSeed + "@t" + head.threadId);
+			else
+				m.put(MR, head.metaStartingSeed);
+		}
 		m.put(RUN, head.solver.restarter.numRun + 1);
 		m.put(DEPTHS, head.solver.minDepth + ".." + head.solver.maxDepth);
 		String rb1 = head.solver.heuristic instanceof RunRobin ? ((RunRobin) head.solver.heuristic).current.getClass().getSimpleName() : "";
