@@ -89,7 +89,7 @@ public final class Solutions {
 	/**
 	 * The object used to output solutions in XML
 	 */
-	private final XML xml;
+	public final XML xml;
 
 	/**
 	 * The object used to compute Hamming distances between successive solutions
@@ -207,7 +207,7 @@ public final class Solutions {
 	/**
 	 * Class for outputting solutions in XML
 	 */
-	private class XML {
+	public class XML {
 
 		/**
 		 * The string used to display a solution in XML. It lists variables of the problem (but not the auxiliary variables that are been automatically
@@ -298,7 +298,7 @@ public final class Solutions {
 		/**
 		 * @return the last found solution in XML format
 		 */
-		private String lastSolution() { // note that auxiliary variables are not considered
+		public String lastSolution() { // note that auxiliary variables are not considered
 			assert found > 0;
 			StringBuilder sb = new StringBuilder("<instantiation id='sol").append(found).append("' type='solution'");
 			sb.append(solver.problem.framework != CSP ? " cost='" + solver.problem.optimizer.valueWithGap(bestBound) + "'" : "").append(">");
@@ -370,7 +370,7 @@ public final class Solutions {
 	/**
 	 * @return the last found solution in JSON format
 	 */
-	private String lastSolutionInJsonFormat(boolean pure) {
+	public String lastSolutionInJsonFormat(boolean pure) {
 		assert found > 0;
 		boolean discardAuxiliary = !solver.head.control.general.jsonAux;
 		String PREFIX = pure ? "" : "   ";

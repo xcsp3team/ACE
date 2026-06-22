@@ -154,7 +154,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		 * @param s
 		 *            the name of a file containing an instantiation or a string representing an instantiation
 		 */
-		private WarmStarter(String s) {
+		public WarmStarter(String s) {
 			File file = new File(s);
 			if (file.exists()) { // TODO if the string starts with ~/, that does not work (the path must be explicit)
 				try (BufferedReader in = new BufferedReader(new FileReader(s))) {
@@ -773,7 +773,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		public final long bestBound;
 		public final long wckTime;
 		public final long found;
-		// TODO : Add meta run solution, possile to save all solution or the best via argument
+		public String bestSolution; // Only the best solution for the head
 
 		public MetaRun(long seed, long bestBound, long wckTime, long found) {
 			this.seed = seed;
@@ -845,7 +845,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	/**
 	 * Sorts all run from this solver
 	 */
-	public List<MetaRun> bestMultiRestartRuns(int limit) {
+	public List<MetaRun> bestMetaRestartRuns(int limit) {
 		List<MetaRun> runs = new ArrayList<>(metaRestartRuns);
 		runs.sort(this::compareMultiRestartRuns);
 		if (limit >= 0 && runs.size() > limit)
@@ -893,7 +893,18 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	public void setWarmStarter(String warmStart){
-		warmStarter = warmStart.length() > 0 ? new WarmStarter(warmStart) : null;
+		warmStarter = warmStart.length() > 0 ? new WarmStarter(formatWarmStarter(warmStart)) : null;
+	}
+
+	private String formatWarmStarter(String warmStart){
+		StringBuilder res = new StringBuilder();
+		for(int i = 0, n = warmStart.length() ; i < n ; i++) { 
+    		char c = warmStart.charAt(i);
+			if (c == ',' || Character.isDigit(c) || c == ' '){
+				res.append(c);
+			} 
+		}
+		return res.toString().trim();
 	}
 
 	/**
@@ -1315,6 +1326,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	private final void saveBestBounds(long currentSeed){
 		long boundTime = head.stopwatch.wckTime();
 		MetaRun currentRun = new MetaRun(currentSeed, solutions.bestBound, boundTime, solutions.found);
+		currentRun.bestSolution = solutions.lastSolutionInJsonFormat(true);
 		metaRestartRuns.add(currentRun);
 	}
 
@@ -1335,7 +1347,6 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			stopping = null;
 			for (ObserverOnSolving observer : observersOnSolving)
 				observer.beforeSolving();
-			System.out.println("Starting Search");
 			doSearch();
 			saveBestBounds(seed);
 			for (ObserverOnSolving observer : observersOnSolving){
@@ -1344,7 +1355,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			restoreProblem();
 		}
 		if (!metaRestartRuns.isEmpty()) {
-			MetaRun bestRun = bestMultiRestartRuns(1).get(0);
+			MetaRun bestRun = bestMetaRestartRuns(1).get(0);
 			solutions.setBestMultiRestarts(bestRun.bestBound, bestRun.seed, bestRun.wckTime);
 		}
 	}

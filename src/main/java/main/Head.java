@@ -61,6 +61,7 @@ import problem.Problem;
 import problem.Problem.SymmetryBreaking;
 import propagation.Propagation;
 import solver.Solver;
+import solver.Solver.WarmStarter;
 import utility.Kit;
 import utility.Kit.Color;
 import utility.Reflector;
@@ -445,7 +446,7 @@ public class Head extends Thread {
 	private void reset(int seedOffsetNextPhase) {
 		solver.resetForNewSolvingPhase();
 		problem.reset();
-		solver.setWarmStarter("");
+		solver.setWarmStarter(solver.bestMetaRestartRuns(1).get(0).bestSolution);
 		solver.offsetMetaRestartSeedRange(seedOffsetNextPhase);
 	}
 
@@ -490,11 +491,11 @@ public class Head extends Thread {
 		List<Head> sorted = new ArrayList<>(workers);
 		sorted.sort(this::compareParallelResults);
 		int top = Math.min(limit, sorted.size());
-		System.out.println("[multiRestart] Best seeds after all workers finished:");
+		System.out.println("[metaRestart] Best seeds after all workers finished:");
 		for (int i = 0; i < top; i++) {
 			Head worker = sorted.get(i);
-			long seed = worker.solver.bestMultiRestartRuns(1).isEmpty() ? -1 : worker.solver.bestMultiRestartRuns(1).get(0).seed;
-			System.out.println("[multiRestart] #" + (i + 1) + " seed=" + seed + " bound=" + worker.getTrueBestBound() + " found="
+			long seed = worker.solver.bestMetaRestartRuns(1).isEmpty() ? -1 : worker.solver.bestMetaRestartRuns(1).get(0).seed;
+			System.out.println("[metaRestart] #" + (i + 1) + " seed=" + seed + " bound=" + worker.getTrueBestBound() + " found="
 					+ worker.solver.solutions.found + " wck=" + worker.instanceStopwatch.wckTime() + "ms");
 		}
 	}
@@ -522,6 +523,7 @@ public class Head extends Thread {
 	private void prepareForNextPhase(List<Head> workers, int seedOffsetNextPhase) {
 		for (Head worker : workers) {
 			worker.reset(seedOffsetNextPhase);
+			
 		}
 	}	
 

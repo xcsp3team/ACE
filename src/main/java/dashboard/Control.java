@@ -445,7 +445,7 @@ public final class Control {
 		}
 		
 	public class OptionsMetaRestart extends OptionGroup {
-		public final int metaRestartLength = addI("metaRestartLength", "mrl", 100, "Number of run before fully restarting with another seed");
+		public final int metaRestartLength = addI("metaRestartLength", "mrl", 0, "Number of run before fully restarting with another seed");
 		public final long metaRestartSeedStart = addL("metaRestartSeedStart", "mrb", 0, "Starting seed for meta restart"); // Not yet implemented
 		public final long metaRestartSeedStop = addL("metaRestartSeedStop", "mrs", 0, "Stopping seed for meta restart");
 		public final int metaRestartThreads = addI("metaRestartThreads", "mrt", 1,
