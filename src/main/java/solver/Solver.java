@@ -759,6 +759,11 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	private final Variable[] lastPastBeforeRun = new Variable[2];
 
 	/**
+	 * True if last phase of the metaRestart phases, keeps the solver searching, TODO : Find better name
+	 */
+	public Boolean keepPushing = false;
+
+	/**
 	 * The number of recursive runs called. This is possible because, in addition to the original run, some strong consistencies require some forms of local
 	 * runs.
 	 */
@@ -1371,7 +1376,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		profiler.initTime(head.stopwatch.wckTime());
 		if (!finished() && head.control.solving.enablePrepro)
 			doPrepro();
-		if (head.control.metarestart.metaRestartLength > 0) {
+		if (head.control.metarestart.metaRestartLength > 0 ) {
 			multiRestartPhase();
 			return;
 		}

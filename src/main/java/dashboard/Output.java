@@ -675,7 +675,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private InformationBloc runInfo() {
 		InformationBloc m = new InformationBloc(RUN);
-		if (head.control.metarestart.metaRestartSeedStop < PLUS_INFINITY) {
+		if (head.control.metarestart.metaRestartSeedStop < PLUS_INFINITY && !head.solver.keepPushing) {
 			if (head.control.metarestart.metaRestartThreads > 1)
 				m.put(MR, "" + head.metaStartingSeed + "@t" + head.threadId);
 			else

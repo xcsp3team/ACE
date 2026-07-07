@@ -383,7 +383,7 @@ public class Head extends Thread {
 	 * @return true if the number of run exceeds the multirestart max run
 	 */
 	public boolean isMetaRunExpiredForCurrentInstance() {
-        return control.metarestart.metaRestartLength != 0 && control.metarestart.metaRestartLength <= solver.restarter.numRun + 1;
+        return control.metarestart.metaRestartLength != 0 && control.metarestart.metaRestartLength <= solver.restarter.numRun + 1 && !solver.keepPushing;
     }
 
 	/**
@@ -496,8 +496,14 @@ public class Head extends Thread {
 			Head worker = sorted.get(i);
 			long seed = worker.solver.bestMetaRestartRuns(1).isEmpty() ? -1 : worker.solver.bestMetaRestartRuns(1).get(0).seed;
 			System.out.println("[metaRestart] #" + (i + 1) + " seed=" + seed + " bound=" + worker.getTrueBestBound() + " found="
-					+ worker.solver.solutions.found + " wck=" + worker.instanceStopwatch.wckTime() + "ms");
+					+ worker.solver.solutions.found + " wck=" + (double)worker.instanceStopwatch.wckTime() / 1000.0d + "s");
 		}
+	}
+
+	private Head getParallelBestHead(List<Head> workers){
+		List<Head> sorted = new ArrayList<>(workers);
+		sorted.sort(this::compareParallelResults);
+		return sorted.get(0);
 	}
 
 	/**
@@ -591,6 +597,12 @@ public class Head extends Thread {
 				phasesLeft--;
 			}
 			printParallelBestSeeds(workers, 32);
+			Head bestHead = getParallelBestHead(workers);
+			bestHead.disableShutdownHook = false;
+			bestHead.solver.resetForNewSolvingPhase();
+			bestHead.solver.setMetaRestartSeedRange(0, 1);
+			bestHead.solver.keepPushing = true;
+			bestHead.solveBuiltProblem(true);
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			throw new RuntimeException(e);
