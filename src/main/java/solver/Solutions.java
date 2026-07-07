@@ -384,7 +384,7 @@ public final class Solutions {
 			sb.append(PREFIX).append(" ").append(pure ? "'" : "").append(va.id).append(pure ? "'" : "").append(": ");
 			if (va instanceof VarAlone) {
 				Variable x = (Variable) ((VarAlone) va).var;
-				if (solver.problem.features.collecting.variables.contains(x))
+				if (solver.problem.features.collecting.variables.contains(x) && last.idxs != null)
 					sb.append(x.dom.prettyValueOf(last.idxs[x.num])); // valueIndexInLastSolution));
 				else if (x == solver.problem.replacedObjVar)
 					sb.append(bestBound);

@@ -446,7 +446,8 @@ public class Head extends Thread {
 	private void reset(int seedOffsetNextPhase) {
 		solver.resetForNewSolvingPhase();
 		problem.reset();
-		solver.setWarmStarter(solver.bestMetaRestartRuns(1).get(0).bestSolution);
+		if (solver.bestMetaRestartRuns(1).get(0).bestSolution != "") 
+			solver.setWarmStarter(solver.bestMetaRestartRuns(1).get(0).bestSolution);
 		solver.offsetMetaRestartSeedRange(seedOffsetNextPhase);
 	}
 

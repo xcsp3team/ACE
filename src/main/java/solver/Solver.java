@@ -778,7 +778,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		public final long bestBound;
 		public final long wckTime;
 		public final long found;
-		public String bestSolution; // Only the best solution for the head
+		public String bestSolution = ""; // Only the best solution for the head
 
 		public MetaRun(long seed, long bestBound, long wckTime, long found) {
 			this.seed = seed;
@@ -1331,7 +1331,8 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	private final void saveBestBounds(long currentSeed){
 		long boundTime = head.stopwatch.wckTime();
 		MetaRun currentRun = new MetaRun(currentSeed, solutions.bestBound, boundTime, solutions.found);
-		currentRun.bestSolution = solutions.lastSolutionInJsonFormat(true);
+		if (solutions.found > 0)
+			currentRun.bestSolution = solutions.lastSolutionInJsonFormat(false);
 		metaRestartRuns.add(currentRun);
 	}
 
