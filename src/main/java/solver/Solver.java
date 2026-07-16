@@ -59,6 +59,7 @@ import propagation.Forward;
 import propagation.Propagation;
 import propagation.Supporter;
 import sets.SetDense;
+import sets.SetLinked;
 import sets.SetSparseReversible;
 import utility.Kit;
 import utility.Profiler;
@@ -75,6 +76,33 @@ import variables.Variable;
  * @author Christophe Lecoutre
  */
 public class Solver implements ObserverOnBacktracksSystematic {
+
+	public static final RemovedValuesIterator removedValuesIterator = new RemovedValuesIterator();
+
+	public static final class RemovedValuesIterator {
+
+		public SetLinked dom;
+
+		public int a_current;
+
+		public RemovedValuesIterator() {
+		}
+
+		public int startFor(SetLinked dom) {
+			this.dom = dom;
+			a_current = dom.lastRemoved();
+			return a_current;
+		}
+
+		public int startFor(Variable x) {
+			return startFor(x.dom);
+		}
+
+		public int prev() {
+			a_current = dom.prevRemoved(a_current);
+			return a_current;
+		}
+	}
 
 	/**
 	 * Two ways of branching: binary (2-way) branching or non-binary (d-way) branching
@@ -977,12 +1005,12 @@ public class Solver implements ObserverOnBacktracksSystematic {
 				}
 			}
 		}
-		//boolean singletonVariable = x.dom.size() == 1; // may happen, notably by lc
+		// boolean singletonVariable = x.dom.size() == 1; // may happen, notably by lc
 		for (ObserverOnDecisions observer : observersOnDecisions)
 			observer.beforePositiveDecision(x, a);
-		
+
 		assign(x, a);
-		//int before = problem.nValueRemovals;
+		// int before = problem.nValueRemovals;
 		boolean consistent = knownAsInconsistent ? false : propagation.runAfterAssignment(x) && (ipsReasoner == null || ipsReasoner.whenOpeningNode());
 		heuristic.bestScored.update(consistent);
 		if (!consistent) {
@@ -991,15 +1019,15 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			// if (ngdRecorder != null) ngdRecorder.addCurrentNogood();
 			return false;
 		}
-//		else {
-//			// if (!singletonVariable)
-//			// System.out.println("hhhhhhh " + propagation.queue.collected.size());
-//			if (!singletonVariable && before == problem.nValueRemovals) {
-//				stats.nImpactlessAssignments++;
-//				if (head.control.varh.impactless)
-//					heuristic.newImpactlessAssignment(x, a);
-//			}
-//		}
+		// else {
+		// // if (!singletonVariable)
+		// // System.out.println("hhhhhhh " + propagation.queue.collected.size());
+		// if (!singletonVariable && before == problem.nValueRemovals) {
+		// stats.nImpactlessAssignments++;
+		// if (head.control.varh.impactless)
+		// heuristic.newImpactlessAssignment(x, a);
+		// }
+		// }
 		// if (ipsRecorder != null && !ipsRecorder.dealWhenOpeningNode()) return false;
 		return true;
 	}

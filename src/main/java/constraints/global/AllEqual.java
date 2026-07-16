@@ -25,6 +25,7 @@ import interfaces.Tags.TagSymmetric;
 import problem.Problem;
 import sets.SetDense;
 import sets.SetSparseReversible;
+import solver.Solver;
 import variables.Domain;
 import variables.Variable;
 
@@ -113,7 +114,8 @@ public final class AllEqual extends ConstraintGlobal implements TagAC, TagCallCo
 		// we collect the set of removed values (since the last call) over all future variables
 		lastRemoved.clear();
 		for (Domain dom : doms)
-			for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a)) {
+			for (int a = Solver.removedValuesIterator.startFor(dom); a != -1; a = Solver.removedValuesIterator.prev()) {
+				// for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a)) {
 				int v = dom.toVal(a);
 				if (!remainingValues.contains(map.get(v)))
 					break;
@@ -122,7 +124,9 @@ public final class AllEqual extends ConstraintGlobal implements TagAC, TagCallCo
 			}
 		if (lastRemoved.size() == remainingValues.size())
 			return x.dom.fail();
-		for (int i = scp.length - 1; i >= 0; i--)
+		for (
+
+				int i = scp.length - 1; i >= 0; i--)
 			// for domino-5000, the reverse (0 to scp.length) is very slow. (due to revision ordering heuristic)
 			doms[i].removeValuesIn(lastRemoved); // no possible inconsistency at this level
 		int depth = problem.solver.depth();

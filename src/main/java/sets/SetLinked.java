@@ -12,23 +12,23 @@ package sets;
 
 import java.util.function.Consumer;
 
+import solver.Solver;
+
 /**
- * This interface allows representing a list of elements perceived as indexes, i.e., elements whose values range from 0
- * to a specified capacity -1. For instance, if the initial size (capacity) of the object is 10, then the list of
- * indexes/elements is 0, 1, 2... , 9. One can remove indexes of the list. Then, one can iterate, in a forward way,
- * currently present indexes by using the methods <code> first </code> and <code> next </code>. Also, one can iterate,
- * in a backward way, currently present indexes by using the methods <code> last </code> and <code> prev </code>.
- * Initially, the set is full. One can iterate over deleted indexes by using the methods <code> lastRemoved </code> and
- * <code> prevRemoved </code>. Each deleted index has an associated level that can be obtained by using the method
- * removedLevelOf. This kind of interface is notably used for managing the indexes of values of variable domains.
+ * This interface allows representing a list of elements perceived as indexes, i.e., elements whose values range from 0 to a specified capacity -1. For
+ * instance, if the initial size (capacity) of the object is 10, then the list of indexes/elements is 0, 1, 2... , 9. One can remove indexes of the list. Then,
+ * one can iterate, in a forward way, currently present indexes by using the methods <code> first </code> and <code> next </code>. Also, one can iterate, in a
+ * backward way, currently present indexes by using the methods <code> last </code> and <code> prev </code>. Initially, the set is full. One can iterate over
+ * deleted indexes by using the methods <code> lastRemoved </code> and <code> prevRemoved </code>. Each deleted index has an associated level that can be
+ * obtained by using the method removedLevelOf. This kind of interface is notably used for managing the indexes of values of variable domains.
  * 
  * @author Christophe Lecoutre
  */
 public interface SetLinked {
 
 	/**
-	 * Records the number of levels where elements can be removed. This is called when the information is available
-	 * (e.g., when the problem has been built, and so, the number of variables is known).
+	 * Records the number of levels where elements can be removed. This is called when the information is available (e.g., when the problem has been built, and
+	 * so, the number of variables is known).
 	 * 
 	 * @param nLevels
 	 *            the number of levels where elements can be removed
@@ -75,8 +75,7 @@ public interface SetLinked {
 	int first();
 
 	/**
-	 * Returns the element (index of value) of the current set that comes after the specified one, or -1 if there is
-	 * none.
+	 * Returns the element (index of value) of the current set that comes after the specified one, or -1 if there is none.
 	 * 
 	 * @param a
 	 *            the index of a value
@@ -92,8 +91,7 @@ public interface SetLinked {
 	int last();
 
 	/**
-	 * Returns the element (index of value) of the current set that comes before the specified one, or -1 if there is
-	 * none.
+	 * Returns the element (index of value) of the current set that comes before the specified one, or -1 if there is none.
 	 * 
 	 * @param a
 	 *            the index of a value
@@ -102,8 +100,7 @@ public interface SetLinked {
 	int prev(int a);
 
 	/**
-	 * Returns the i+1th element of the set. BE CAREFUL: this operation is not in O(1), and so it only should be
-	 * performed in very specific cases.
+	 * Returns the i+1th element of the set. BE CAREFUL: this operation is not in O(1), and so it only should be performed in very specific cases.
 	 * 
 	 * @param i
 	 *            the position of the element in the set
@@ -128,18 +125,15 @@ public interface SetLinked {
 	 * @return the last removed element of the set
 	 */
 	abstract int lastRemoved();
-	
-	
+
 	default boolean lastRemovedInsideBounds() {
 		assert 0 < size();
 		int a = lastRemoved();
-		return first() < a && a < last();  // if a = -1, false is returned (since size() > 0)
+		return first() < a && a < last(); // if a = -1, false is returned (since size() > 0)
 	}
-	
 
 	/**
-	 * Returns the element (index of value) of the set that has been removed before the specified one, or -1 if there is
-	 * none.
+	 * Returns the element (index of value) of the set that has been removed before the specified one, or -1 if there is none.
 	 * 
 	 * @param a
 	 *            the index of a value
@@ -164,8 +158,8 @@ public interface SetLinked {
 	int removedLevelOf(int a);
 
 	/**
-	 * Removes the specified element (index of value) at the specified level. The value is assumed to be currently
-	 * present. BE CAREFUL: this method should normally not be called directly.
+	 * Removes the specified element (index of value) at the specified level. The value is assumed to be currently present. BE CAREFUL: this method should
+	 * normally not be called directly.
 	 * 
 	 * @param a
 	 *            the index of a value
@@ -175,8 +169,7 @@ public interface SetLinked {
 	void remove(int a, int level);
 
 	/**
-	 * Reduces the set to the specified element (index of value) at the specified level. BE CAREFUL: this method should
-	 * normally not be called directly.
+	 * Reduces the set to the specified element (index of value) at the specified level. BE CAREFUL: this method should normally not be called directly.
 	 * 
 	 * @param a
 	 *            the index of a value
@@ -228,8 +221,7 @@ public interface SetLinked {
 	int getMark();
 
 	/**
-	 * Executes the specified function (consumer) for each present element (either forwardly, or backwardly depending on
-	 * the specified boolean)
+	 * Executes the specified function (consumer) for each present element (either forwardly, or backwardly depending on the specified boolean)
 	 * 
 	 * @param consumer
 	 *            the function to be called for each present element
@@ -246,8 +238,7 @@ public interface SetLinked {
 	}
 
 	/**
-	 * Executes the specified function (consumer) for each present element (in a forward way, from the first element to
-	 * the last one)
+	 * Executes the specified function (consumer) for each present element (in a forward way, from the first element to the last one)
 	 * 
 	 * @param consumer
 	 *            the function to be called for each present element
@@ -257,10 +248,9 @@ public interface SetLinked {
 	}
 
 	/**
-	 * Returns the state of the object under the form of a sequence of bits. In other words, returns a binary
-	 * representation corresponding to the present/deleted elements. If the ith bit of the jth long of the returned
-	 * array is 1, it means that the (j*64)+ith value is currently present in the set. When not defined, null is
-	 * returned.
+	 * Returns the state of the object under the form of a sequence of bits. In other words, returns a binary representation corresponding to the
+	 * present/deleted elements. If the ith bit of the jth long of the returned array is 1, it means that the (j*64)+ith value is currently present in the set.
+	 * When not defined, null is returned.
 	 * 
 	 * @return the binary representation of the set, or null if not defined
 	 */
@@ -286,7 +276,8 @@ public interface SetLinked {
 		sb.append("\nBackward :");
 		execute(a -> sb.append(' ').append(a), true);
 		sb.append("\nDeleted :");
-		for (int a = lastRemoved(); a != -1; a = prevRemoved(a))
+		for (int a = Solver.removedValuesIterator.startFor(this); a != -1; a = Solver.removedValuesIterator.prev())
+			// for (int a = lastRemoved(); a != -1; a = prevRemoved(a))
 			sb.append(' ').append(a);
 		return sb.toString();
 	}

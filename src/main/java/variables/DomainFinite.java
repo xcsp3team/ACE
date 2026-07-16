@@ -208,6 +208,261 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 				return size == 1 && v == first;
 			}
 		}
+
+		public static class DomainRangeOpt extends DomainRange { // general version optimized
+
+			Slice[] stackedSlices;
+
+			int stackedSlicesLimit;
+
+			int[] removedStack;
+
+			int removedStackLimit;
+
+			private void addSlice(Slice slice) {
+				if (stackedSlicesLimit + 1 == stackedSlices.length) {
+					Slice[] tmp = new Slice[stackedSlices.length * 2];
+					for (int i = 0; i < stackedSlices.length; i++)
+						tmp[i] = stackedSlices[i];
+					stackedSlices = tmp;
+				}
+				stackedSlices[++stackedSlicesLimit] = slice;
+			}
+
+			private void addRemoved(int k) { // k may be positive or negative
+				if (removedStackLimit + 1 == removedStack.length) {
+					int[] tmp = new int[removedStack.length * 2];
+					for (int i = 0; i < removedStack.length; i++)
+						tmp[i] = removedStack[i];
+					removedStack = tmp;
+				}
+				removedStack[++removedStackLimit] = k;
+			}
+
+			public DomainRangeOpt(Variable x, int min, int max) {
+				super(x, min, max);
+
+				this.stackedSlices = new Slice[100];
+				this.stackedSlicesLimit = -1;
+
+				this.removedStack = new int[200];
+				this.removedStackLimit = -1;
+
+				control(binaryRepresentation == null);
+			}
+
+			@Override
+			public int toIdx(int v) {
+				return v < min || v > max ? -1 : v - min;
+			}
+
+			@Override
+			public int toVal(int a) {
+				// assert a + min <= max;
+				return a + min;
+			}
+
+			public boolean insideBounds(int a) { // but not necessarily present
+				return first <= a && a <= last;
+			}
+
+			public boolean contains(int a) {
+				return insideBounds(a) && super.contains(a);
+			}
+
+			public boolean reduceTo(int a) {
+				if (!contains(a))
+					return fail();
+				int v = toVal(a);
+				assert v != -1;
+				return removeValuesLT(v) && removeValuesGT(v);
+			}
+
+			public boolean reduceToValue(int v) {
+				if (!containsValue(v))
+					return fail();
+				return removeValuesLT(v) && removeValuesGT(v);
+			}
+
+			public int prevRemoved(int a) {
+				throw new AssertionError("TODo");
+			}
+
+			public int lastRemoved() {
+				if (removedStackLimit == -1)
+					return -1;
+				int k = removedStack[removedStackLimit];
+				if (k < 0) {
+					assert stackedSlicesLimit != -1;
+					return stackedSlices[stackedSlicesLimit].bnd;
+				} else
+					return k;
+			}
+
+			private int newSizeUpto(int a) {
+				assert first <= a && contains(a);
+				if (connex()) // no holes
+					return size - (a - first + 1);
+				// possibly, we can reason from stand-alone removed values if put in a list to compute newSize
+				int cnt = 0;
+				for (int b = first; b != a; b = nexts[b])
+					cnt++;
+				return size - (cnt + 1);
+			}
+
+			private int newSizeFrom(int a) {
+				assert a <= last && contains(a);
+				if (connex()) // no holes
+					return size - (last - a + 1);
+				// possibly, we can reason from stand-alone removed values if put in a list to compute newSize
+				int cnt = 0;
+				for (int b = a; b != -1; b = nexts[b])
+					cnt++;
+				return size - cnt;
+			}
+
+			public boolean removeValuesLE(int v) {
+				if (v < firstValue())
+					return true;
+				if (v >= lastValue())
+					return fail();
+				if (v == firstValue())
+					return removeValue(v);
+				assert firstValue() < v && v < lastValue();
+				int a = toIdx(v);
+				control(a >= 0);
+				if (!contains(a))
+					a = prev(a);
+				int currSize = size(), newSize = newSizeUpto(a);
+
+				int next = nexts[a];
+				prevs[next] = -1;
+				int bnd = first;
+				first = next;
+				size = newSize;
+
+				Slice slice = new Slice(true, next, a, bnd, currSize, var().problem.solver.stackVariable(var()));
+				addSlice(slice);
+				addRemoved(-1);
+
+				return afterElementaryCalls(currSize);
+			}
+
+			public boolean removeValuesGE(int v) {
+				if (v > lastValue())
+					return true;
+				if (v <= firstValue())
+					return fail();
+				if (v == lastValue())
+					return removeValue(v);
+				assert firstValue() < v && v < lastValue();
+				int a = toIdx(v);
+				control(a >= 0);
+				if (!contains(a))
+					a = next(a);
+				int currSize = size(), newSize = newSizeFrom(a);
+
+				int prev = prevs[a];
+				nexts[prev] = -1;
+				int bnd = last;
+				last = prev;
+				size = newSize;
+
+				Slice slice = new Slice(false, prev, a, bnd, currSize, var().problem.solver.stackVariable(var()));
+				addSlice(slice);
+				addRemoved(-1);
+
+				return afterElementaryCalls(currSize);
+			}
+
+			protected void removeElement(int a) {
+				super.removeElement(a);
+				addRemoved(a);
+			}
+
+			protected void restoreLastDropped() {
+				throw new AssertionError("Should not be called");
+			}
+
+			@Override
+			public void restoreBefore(int level) {
+				if (removedStackLimit == -1)
+					return;
+				// assert lastRemoved == -1 || removedLevels[lastRemoved] <= level; // TODO modify it ???
+
+				while (removedStackLimit != -1) {
+					int k = removedStack[removedStackLimit];
+					if (k < 0) {
+						assert stackedSlicesLimit != -1;
+						Slice slice = stackedSlices[stackedSlicesLimit];
+						if (slice.depth < level)
+							break;
+						if (slice.leftSide) {
+							nexts[slice.index] = slice.a;
+							first = slice.bnd;
+						} else {
+							prevs[slice.index] = slice.a;
+							last = slice.bnd;
+						}
+						size = slice.size;
+
+						stackedSlicesLimit--;
+					} else { // stand-alone removed value
+						// TODO assert control k is lastRemoved
+						if (removedLevels[k] < level)
+							break;
+						removedLevels[k] = -1;
+						size++;
+						addElement(k);
+					}
+					removedStackLimit--;
+				}
+
+				// for (int a = lastRemoved; a != -1 && removedLevels[a] >= level; a = lastRemoved)
+				// restoreLastDropped();
+			}
+
+			public void restoreAtMark() {
+				throw new AssertionError("Should not be called");
+			}
+
+			@Override
+			public void setMark(int level) {
+				throw new AssertionError("Should not be called");
+			}
+
+			@Override
+			public void restoreAtMark(int level) {
+				throw new AssertionError("Should not be called");
+			}
+		}
+
+		public static class Slice {
+			public boolean leftSide; // lower bound side if true, upper bound side otherwise
+
+			public int index;
+
+			public int a;
+
+			public int bnd;
+
+			public int size;
+
+			public int depth;
+
+			public Slice(boolean leftSide, int index, int a, int bnd, int size, int depth) {
+				this.leftSide = leftSide;
+				this.index = index;
+				this.a = a;
+				this.bnd = bnd;
+				this.size = size;
+				this.depth = depth;
+				// to restore :
+				// if leftSize: nexts[index] = a; first =bnd; size=size;
+				// else : prevs[index] = a; last =bnd; size=size;
+			}
+		}
+
 	}
 
 	public static class DomainFiniteSpecial extends DomainFinite {
@@ -300,7 +555,7 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 
 		public boolean shift(int min) {
 			control(masterDom.size() == 1);
-			//control(nRemoved() == 0 || this.minSliceValue == min, nRemoved() + " ");
+			// control(nRemoved() == 0 || this.minSliceValue == min, nRemoved() + " ");
 			var().problem.solver.stackVariable(var());
 
 			this.shiftDepth = var().problem.solver.depth();
@@ -401,8 +656,8 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 
 		@Override
 		public int removedLevelOf(int a) {
-//			if (masterDom.size() == 1)
-//				return super.removedLevelOf(a);
+			// if (masterDom.size() == 1)
+			// return super.removedLevelOf(a);
 			throw new AssertionError("should not be called");
 		}
 
@@ -700,35 +955,35 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 				return fail();
 			if (firstValue() > limit)
 				return true;
-			
+
 			if (masterDom.size() > 1)
 				return true;
-			
-//			//var().problem.solver.stackVariable(var());
-//			// we are sure to remove some values with no risk of inconsistency
-//			if (masterDom.size() > 1) {
-//				control(lb <= limit);
-//				// first, we modify master dom
-//				int k = (limit - initMinValue + 1) / sliceLength; // +1 because LE
-//				boolean consistent = masterDom.removeValuesLT(k);
-//				control(consistent, "inconsistency not possible here");
-//				// second, we check if singleton
-//				if (masterDom.size() == 1) {
-//					int startValue = initMinValue + (masterDom.single() * sliceLength);
-//					shift(startValue);
-//					consistent = removeValuesGT(ub);
-//					control(consistent, "inconsistency not possible here");
-//					// the rest of the filtering is done below
-//				} else { // we modify lb
-//					int depth = var().problem.solver.depth();
-//					if (lbs[depth] == UNINITIALIZED)
-//						lbs[depth] = lb; // imit + 1;
-//					lb = limit + 1;
-//					control(masterDom.first() == (lb - initMinValue) / sliceLength && masterDom.last() == (ub - initMinValue) / sliceLength);
-//					return handleReduction();
-//				}
-//			}
-			
+
+			// //var().problem.solver.stackVariable(var());
+			// // we are sure to remove some values with no risk of inconsistency
+			// if (masterDom.size() > 1) {
+			// control(lb <= limit);
+			// // first, we modify master dom
+			// int k = (limit - initMinValue + 1) / sliceLength; // +1 because LE
+			// boolean consistent = masterDom.removeValuesLT(k);
+			// control(consistent, "inconsistency not possible here");
+			// // second, we check if singleton
+			// if (masterDom.size() == 1) {
+			// int startValue = initMinValue + (masterDom.single() * sliceLength);
+			// shift(startValue);
+			// consistent = removeValuesGT(ub);
+			// control(consistent, "inconsistency not possible here");
+			// // the rest of the filtering is done below
+			// } else { // we modify lb
+			// int depth = var().problem.solver.depth();
+			// if (lbs[depth] == UNINITIALIZED)
+			// lbs[depth] = lb; // imit + 1;
+			// lb = limit + 1;
+			// control(masterDom.first() == (lb - initMinValue) / sliceLength && masterDom.last() == (ub - initMinValue) / sliceLength);
+			// return handleReduction();
+			// }
+			// }
+
 			control(masterDom.size() == 1);
 			int sizeBefore = size();
 			for (int a = first(); a != -1 && toVal(a) <= limit; a = next(a))
@@ -743,37 +998,37 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 				return true;
 			control(masterDom.first() == (lb - initMinValue) / sliceLength && masterDom.last() == (ub - initMinValue) / sliceLength,
 					"App1 " + masterDom.first() + " " + masterDom.last() + " " + lb + " " + ub + " " + limit + " " + var());
-			
+
 			if (masterDom.size() > 1)
 				return true;
-			
-			//var().problem.solver.stackVariable(var());
+
+			// var().problem.solver.stackVariable(var());
 			// we are sure to remove some values with no risk of inconsistency
-//			if (masterDom.size() > 1) {
-//
-//				control(ub >= limit);
-//				// first, we modify master dom
-//				int k = (limit - initMinValue - 1) / sliceLength; // the first k indexes in masterDom are safe
-//				boolean consistent = masterDom.removeValuesGT(k); // (limit - initMinValue) % sliceLength == 0 ? k : k + 1);
-//				control(consistent, "inconsistency not possible here");
-//				// second, we check if singleton
-//				if (masterDom.size() == 1) {
-//					int startValue = initMinValue + (masterDom.single() * sliceLength);
-//					shift(startValue);
-//					consistent = removeValuesLT(lb);
-//					control(consistent, "inconsistency not possible here");
-//					// the rest of the filtering is done below
-//				} else { // we modify lb
-//					int depth = var().problem.solver.depth();
-//					if (ubs[depth] == UNINITIALIZED)
-//						ubs[depth] = ub; // limit - 1;
-//					ub = limit - 1;
-//					control(masterDom.first() == (lb - initMinValue) / sliceLength && masterDom.last() == (ub - initMinValue) / sliceLength,
-//							"App2 " + masterDom.first() + " " + masterDom.last() + " " + limit);
-//					return handleReduction();
-//				}
-//			}
-			
+			// if (masterDom.size() > 1) {
+			//
+			// control(ub >= limit);
+			// // first, we modify master dom
+			// int k = (limit - initMinValue - 1) / sliceLength; // the first k indexes in masterDom are safe
+			// boolean consistent = masterDom.removeValuesGT(k); // (limit - initMinValue) % sliceLength == 0 ? k : k + 1);
+			// control(consistent, "inconsistency not possible here");
+			// // second, we check if singleton
+			// if (masterDom.size() == 1) {
+			// int startValue = initMinValue + (masterDom.single() * sliceLength);
+			// shift(startValue);
+			// consistent = removeValuesLT(lb);
+			// control(consistent, "inconsistency not possible here");
+			// // the rest of the filtering is done below
+			// } else { // we modify lb
+			// int depth = var().problem.solver.depth();
+			// if (ubs[depth] == UNINITIALIZED)
+			// ubs[depth] = ub; // limit - 1;
+			// ub = limit - 1;
+			// control(masterDom.first() == (lb - initMinValue) / sliceLength && masterDom.last() == (ub - initMinValue) / sliceLength,
+			// "App2 " + masterDom.first() + " " + masterDom.last() + " " + limit);
+			// return handleReduction();
+			// }
+			// }
+
 			control(masterDom.size() == 1);
 			int sizeBefore = size();
 			for (int a = last(); a != -1 && toVal(a) >= limit; a = prev(a))

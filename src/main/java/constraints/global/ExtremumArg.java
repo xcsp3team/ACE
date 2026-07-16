@@ -19,6 +19,7 @@ import org.xcsp.common.Types.TypeRank;
 import constraints.ConstraintGlobal;
 import interfaces.Tags.TagCallCompleteFiltering;
 import problem.Problem;
+import solver.Solver;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
@@ -109,7 +110,8 @@ public abstract class ExtremumArg extends ConstraintGlobal implements TagCallCom
 				}
 				// we remove too large values in other variables (those that cannot be anymore used to be indexed)
 				int maxMind = Integer.MIN_VALUE, maxMaxd = Integer.MIN_VALUE; // d for deleted indexes
-				for (int a = idom.lastRemoved(); a != -1; a = idom.prevRemoved(a)) {
+				for (int a = Solver.removedValuesIterator.startFor(idom); a != -1; a = Solver.removedValuesIterator.prev()) {
+					// for (int a = idom.lastRemoved(); a != -1; a = idom.prevRemoved(a)) {
 					if (list[a].dom.removeValuesGT(maxMax) == false)
 						return false;
 					maxMind = Math.max(maxMind, list[a].dom.firstValue());
@@ -205,7 +207,8 @@ public abstract class ExtremumArg extends ConstraintGlobal implements TagCallCom
 				}
 				// we remove too small values in other variables (those that cannot be anymore used to be indexed)
 				int minMind = Integer.MAX_VALUE, minMaxd = Integer.MAX_VALUE; // d for deleted indexes
-				for (int a = idom.lastRemoved(); a != -1; a = idom.prevRemoved(a)) {
+				for (int a = Solver.removedValuesIterator.startFor(idom); a != -1; a = Solver.removedValuesIterator.prev()) {
+					// for (int a = idom.lastRemoved(); a != -1; a = idom.prevRemoved(a)) {
 					if (list[a].dom.removeValuesLT(minMin) == false)
 						return false;
 					minMind = Math.min(minMind, list[a].dom.firstValue());

@@ -33,6 +33,7 @@ import interfaces.Observers.ObserverOnBacktracks.ObserveronBacktracksUnsystemati
 import problem.Problem;
 import propagation.Forward;
 import propagation.Reviser.Reviser3;
+import sets.SetLinked;
 import utility.Kit;
 import variables.DomainFinite.DomainFiniteSpecial;
 import variables.DomainFinite.DomainRange;
@@ -672,7 +673,7 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 			break;
 		}
 		if (needBinaryrepresentation) {
-			
+
 			((DomainFinite) dom).buildBinaryRepresentation(false); // TODO hard coding add an option for the parameter
 		}
 	}

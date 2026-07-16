@@ -78,13 +78,14 @@ public abstract class IpsReasoner implements ObserverOnRuns, ObserverOnConflicts
 		@Override
 		public void afterRemovals(Variable x, int nRemovals) {
 			Constraint c = solver.depth() == 0 ? Constraint.TAG : solver.propagation.currFilteringCtr;
-			for (int cnt = 0, a = x.dom.lastRemoved(); cnt < nRemovals; cnt++, a = x.dom.prevRemoved(a))
+			for (int cnt = 0, a = Solver.removedValuesIterator.startFor(x.dom); cnt < nRemovals; a = Solver.removedValuesIterator.prev())
+				// for (int cnt = 0, a = x.dom.lastRemoved(); cnt < nRemovals; cnt++, a = x.dom.prevRemoved(a))
 				justifications[x.num][a] = c;
 		}
 
 		/**
-		 * Stores which constraint is responsible of each value deletion. More precisely justifications[x][a] is either
-		 * null or the constraint responsible for the deletion of the value index a from the domain of the variable x
+		 * Stores which constraint is responsible of each value deletion. More precisely justifications[x][a] is either null or the constraint responsible for
+		 * the deletion of the value index a from the domain of the variable x
 		 */
 		public final Constraint[][] justifications;
 
