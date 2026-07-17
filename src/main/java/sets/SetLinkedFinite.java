@@ -28,7 +28,7 @@ import utility.Kit;
  */
 public class SetLinkedFinite implements SetLinked {
 
-	/**
+	/**+
 	 * The number of present elements (indexes).
 	 */
 	protected int size;

@@ -569,6 +569,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 
 		@Override
 		public void beforePositiveDecision(Variable x, int a) {
+			// System.out.println(" nNotConnex " + (problem.variables.length - problem.features.nConnexDomains()));
 			if (canCurrentlyPrint())
 				log.fine("At " + depth() + ", " + x + " = " + x.dom.toVal(a) + (x.dom.indexesMatchValues() ? "" : " (index " + a + ") ")
 						+ (x.dom.size() == 1 ? " singleton" : ""));

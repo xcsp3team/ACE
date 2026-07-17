@@ -105,11 +105,13 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 	public abstract static class DomainRange extends DomainFinite {
 
 		public static DomainRange buildDomainRange(Variable x, int min, int max) {
+			if (x.problem.head.control.variables.optRangeDomain && (max - min + 1) > 1000)
+				return new DomainRangeOpt(x, min, max);
 			return min == 0 ? new DomainRangeM(x, min, max) : new DomainRangeG(x, min, max);
 		}
 
 		/**
-		 * The minimal value of the domain
+		 * The minimal value of the domain (included)
 		 */
 		protected int min;
 
@@ -209,7 +211,9 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 			}
 		}
 
-		public static class DomainRangeOpt extends DomainRange { // general version optimized
+		public static class DomainRangeOpt extends DomainRangeG { // general version optimized
+
+			private static final int INIT_STACk_SIZE = 100;
 
 			Slice[] stackedSlices;
 
@@ -229,7 +233,7 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 				stackedSlices[++stackedSlicesLimit] = slice;
 			}
 
-			private void addRemoved(int k) { // k may be positive or negative
+			private void addRemoved(int k) { // k may be positive or -1 (indicating a slice)
 				if (removedStackLimit + 1 == removedStack.length) {
 					int[] tmp = new int[removedStack.length * 2];
 					for (int i = 0; i < removedStack.length; i++)
@@ -242,24 +246,13 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 			public DomainRangeOpt(Variable x, int min, int max) {
 				super(x, min, max);
 
-				this.stackedSlices = new Slice[100];
+				this.stackedSlices = new Slice[INIT_STACk_SIZE];
 				this.stackedSlicesLimit = -1;
 
-				this.removedStack = new int[200];
+				this.removedStack = new int[INIT_STACk_SIZE * 2];
 				this.removedStackLimit = -1;
 
 				control(binaryRepresentation == null);
-			}
-
-			@Override
-			public int toIdx(int v) {
-				return v < min || v > max ? -1 : v - min;
-			}
-
-			@Override
-			public int toVal(int a) {
-				// assert a + min <= max;
-				return a + min;
 			}
 
 			public boolean insideBounds(int a) { // but not necessarily present
@@ -314,7 +307,8 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 				assert a <= last && contains(a);
 				if (connex()) // no holes
 					return size - (last - a + 1);
-				// possibly, we can reason from stand-alone removed values if put in a list to compute newSize
+				// possibly, a) we can reason from stand-alone removed values if put in a list to compute newSize
+				// b) one can iterate over the domain at the right or the left of a
 				int cnt = 0;
 				for (int b = a; b != -1; b = nexts[b])
 					cnt++;
@@ -363,7 +357,7 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 				int currSize = size(), newSize = newSizeFrom(a);
 
 				int prev = prevs[a];
-				nexts[prev] = -1;
+				nexts[prev] = -1; // was a
 				int bnd = last;
 				last = prev;
 				size = newSize;
@@ -386,22 +380,20 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 
 			@Override
 			public void restoreBefore(int level) {
-				if (removedStackLimit == -1)
-					return;
 				// assert lastRemoved == -1 || removedLevels[lastRemoved] <= level; // TODO modify it ???
 
 				while (removedStackLimit != -1) {
 					int k = removedStack[removedStackLimit];
-					if (k < 0) {
+					if (k == -1) { // meaning a slice
 						assert stackedSlicesLimit != -1;
 						Slice slice = stackedSlices[stackedSlicesLimit];
 						if (slice.depth < level)
 							break;
 						if (slice.leftSide) {
-							nexts[slice.index] = slice.a;
+							prevs[slice.index] = slice.a;
 							first = slice.bnd;
 						} else {
-							prevs[slice.index] = slice.a;
+							nexts[slice.index] = slice.a;
 							last = slice.bnd;
 						}
 						size = slice.size;
@@ -417,6 +409,10 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 					}
 					removedStackLimit--;
 				}
+//				int cnt = 0;
+//				for (int a = first; a != -1; a = nexts[a])
+//					cnt++;
+//				System.out.println(cnt + " versus " + size);
 
 				// for (int a = lastRemoved; a != -1 && removedLevels[a] >= level; a = lastRemoved)
 				// restoreLastDropped();

@@ -479,6 +479,8 @@ public final class Control {
 		public final boolean reduceIsolated = addB("reduceIsolated", "riv", true, "Arbitrary keeping a single value in the domain of isolated variables");
 		public final boolean useSpecialVariables = addB("useSpecialVariables", "usv", false, "Use special variables for large domains?");
 		public final int specialDomainLimit = addI("specialDomainLimit", "sdl", 2_000, "Domain size limit for building special variables");
+
+		public final boolean optRangeDomain = addB("optRangeDomain", "ord", false, "Using optimized class for domains?");
 	}
 
 	public class OptionsConstraints extends OptionGroup {
