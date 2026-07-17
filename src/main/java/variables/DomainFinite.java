@@ -329,13 +329,16 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 					a = prev(a);
 				int currSize = size(), newSize = newSizeUpto(a);
 
+				int depth = var().problem.solver.stackVariable(var());
+				
 				int next = nexts[a];
-				prevs[next] = -1;
+				prevs[next] = -1; // was a
 				int bnd = first;
 				first = next;
 				size = newSize;
 
-				Slice slice = new Slice(true, next, a, bnd, currSize, var().problem.solver.stackVariable(var()));
+				//System.out.println("slice " + var() + " " + currSize + " " + newSize);
+				Slice slice = new Slice(true, next, a, bnd, currSize, depth);
 				addSlice(slice);
 				addRemoved(-1);
 
@@ -356,13 +359,16 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 					a = next(a);
 				int currSize = size(), newSize = newSizeFrom(a);
 
+				int depth = var().problem.solver.stackVariable(var());
+
 				int prev = prevs[a];
 				nexts[prev] = -1; // was a
 				int bnd = last;
 				last = prev;
 				size = newSize;
-
-				Slice slice = new Slice(false, prev, a, bnd, currSize, var().problem.solver.stackVariable(var()));
+				
+				//System.out.println("slice " + var() + " " + currSize + " " + newSize);
+				Slice slice = new Slice(false, prev, a, bnd, currSize, depth);
 				addSlice(slice);
 				addRemoved(-1);
 
@@ -396,6 +402,7 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 							nexts[slice.index] = slice.a;
 							last = slice.bnd;
 						}
+						//System.out.println("resto from " + var() + " " + size + " " + slice.size);
 						size = slice.size;
 
 						stackedSlicesLimit--;
@@ -409,10 +416,10 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 					}
 					removedStackLimit--;
 				}
-//				int cnt = 0;
-//				for (int a = first; a != -1; a = nexts[a])
-//					cnt++;
-//				System.out.println(cnt + " versus " + size);
+				// int cnt = 0;
+				// for (int a = first; a != -1; a = nexts[a])
+				// cnt++;
+				// System.out.println(cnt + " versus " + size);
 
 				// for (int a = lastRemoved; a != -1 && removedLevels[a] >= level; a = lastRemoved)
 				// restoreLastDropped();
@@ -430,6 +437,16 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 			@Override
 			public void restoreAtMark(int level) {
 				throw new AssertionError("Should not be called");
+			}
+
+			public final int lastRemovedLevel() {
+				if (removedStackLimit == -1)
+					return -1;
+				int k = removedStack[removedStackLimit];
+				if (k == -1)
+					return stackedSlices[stackedSlicesLimit].depth;
+				else
+					return removedLevels[k];
 			}
 		}
 

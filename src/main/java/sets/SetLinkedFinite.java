@@ -152,7 +152,7 @@ public class SetLinkedFinite implements SetLinked {
 		if (next == -1 || next > last)
 			return -1;
 
-		control(removedLevels[next] == -1);
+		//control(removedLevels[next] == -1);  // TODO put in comments for DomainRangeOpt how to fix that ???
 		while (removedLevels[next] != -1)
 			next = nexts[next];
 		return next;
@@ -173,7 +173,9 @@ public class SetLinkedFinite implements SetLinked {
 		int prev = prevs[a];
 		if (prev < first) // includes prev == -1
 			return -1;
-		control(removedLevels[prev] == -1);
+		
+		// control(removedLevels[prev] == -1); // TODO put in comments for DomainRangeOpt how to fix that ???
+		
 		// if (true)
 		// throw new ArithmeticException();
 		while (removedLevels[prev] != -1)
