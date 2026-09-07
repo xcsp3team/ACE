@@ -839,7 +839,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	}
 
 	/**
-	 * Sets the range of seeds for this solver
+	 * Sets the range of seeds for this solver, *from* inclusive, *to* exclusive
 	 */
 	public void setMetaRestartSeedRange(long from, long to) {
 		control(from >= 0 && to > from);

@@ -678,7 +678,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		if (head.control.metarestart.metaRestartSeedStop < PLUS_INFINITY && !head.solver.keepPushing) {
 			if (head.control.metarestart.metaRestartThreads > 1)
 				m.put(MR, "" + head.metaStartingSeed + "@t" + head.threadId);
-			else
+			else if (head.control.metarestart.metaRestartLength > 0)
 				m.put(MR, head.metaStartingSeed);
 		}
 		m.put(RUN, head.solver.restarter.numRun + 1);

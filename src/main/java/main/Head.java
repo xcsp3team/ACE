@@ -446,7 +446,8 @@ public class Head extends Thread {
 	private void reset(int seedOffsetNextPhase) {
 		solver.resetForNewSolvingPhase();
 		problem.reset();
-		if (solver.bestMetaRestartRuns(1).get(0).bestSolution != "") 
+		if (solver.bestMetaRestartRuns(1).get(0) != null && solver.bestMetaRestartRuns(1).get(0).bestSolution != "") 
+			System.out.println("SENDING WARMSTARTER");
 			solver.setWarmStarter(solver.bestMetaRestartRuns(1).get(0).bestSolution);
 		solver.offsetMetaRestartSeedRange(seedOffsetNextPhase);
 	}
@@ -474,6 +475,7 @@ public class Head extends Thread {
 			long leftBound = left.solver.solutions.bestBound;
 			long rightBound = right.solver.solutions.bestBound;
 			int cmp = left.solver.problem.optimizer.minimization ? Long.compare(leftBound, rightBound) : Long.compare(rightBound, leftBound);
+			System.out.println("COMPARING " + cmp);
 			if (cmp != 0)
 				return cmp;
 		}
@@ -588,7 +590,6 @@ public class Head extends Thread {
 		ExecutorService executor = Executors.newFixedThreadPool(workerCount);
 		List<Head> workers = setupHeads((int) seedCount, workerCount);
 		List<Callable<Head>> tasks = setupTasks(workers);
-		// prepareForNextPhase(workers);
 		try {
 			runPhaseTasks(executor, tasks);
 			while (phasesLeft > 1){
@@ -599,10 +600,10 @@ public class Head extends Thread {
 			}
 			printParallelBestSeeds(workers, 32);
 			Head bestHead = getParallelBestHead(workers);
+			bestHead.reset(0);
 			bestHead.disableShutdownHook = false;
-			bestHead.solver.resetForNewSolvingPhase();
-			bestHead.solver.setMetaRestartSeedRange(0, 1);
 			bestHead.solver.keepPushing = true;
+			bestHead.solver.setMetaRestartSeedRange(0, 1);
 			bestHead.solveBuiltProblem(true);
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
