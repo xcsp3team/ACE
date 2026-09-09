@@ -28,6 +28,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.stream.Stream;
@@ -56,6 +61,7 @@ import problem.Problem;
 import problem.Problem.SymmetryBreaking;
 import propagation.Propagation;
 import solver.Solver;
+import solver.Solver.WarmStarter;
 import utility.Kit;
 import utility.Kit.Color;
 import utility.Reflector;
@@ -311,6 +317,11 @@ public class Head extends Thread {
 	private final List<ObserverOnConstruction> permamentObserversConstruction;
 
 	/**
+	 * When true, shutdown hooks are not registered for this head. Used by parallel worker heads.
+	 */
+	public boolean disableShutdownHook;
+
+	/**
 	 * The construction observers that are recorded with respect to the current instance to be solved
 	 */
 	public List<ObserverOnConstruction> observersConstruction = new ArrayList<>();
@@ -346,6 +357,13 @@ public class Head extends Thread {
 	public final Stopwatch instanceStopwatch = new Stopwatch();
 
 	/**
+	 * Id of the head, used to show whitch thread is used when using mr to the user output 
+	 */
+	public int threadId = 0;
+
+	public long metaStartingSeed = 0;
+
+	/**
 	 * @return true if unary constraints must be preserved (and not be directly taken into account by reducing variable domains)
 	 */
 	public boolean mustPreserveUnaryConstraints() {
@@ -360,6 +378,13 @@ public class Head extends Thread {
 		// return control.general.timeout <= instanceStopwatch.wckTime();
 		return control.general.timeout != PLUS_INFINITY && control.general.timeout <= instanceStopwatch.wckTime(); // not calling wckTime() when no necessary
 	}
+
+	/**
+	 * @return true if the number of run exceeds the multirestart max run
+	 */
+	public boolean isMetaRunExpiredForCurrentInstance() {
+        return control.metarestart.metaRestartLength != 0 && control.metarestart.metaRestartLength <= solver.restarter.numRun + 1 && !solver.keepPushing;
+    }
 
 	/**
 	 * Builds the main resolution object
@@ -396,21 +421,198 @@ public class Head extends Thread {
 		random = new Random(control.general.seed + i);
 		ProblemAPI api = null;
 		try {
-			try {
-				api = (ProblemAPI) Reflector.buildObject(Input.problemName);
-			} catch (Exception e) {
-				api = (ProblemAPI) Reflector.buildObject("problems." + Input.problemName);
-				// is it still relevant to try that?
+			synchronized (Head.class) { // TODO : Apriorie ne pénalise pas si thread = 1 
+				try {
+					api = (ProblemAPI) Reflector.buildObject(Input.problemName);
+				} catch (Exception e) {
+					api = (ProblemAPI) Reflector.buildObject("problems." + Input.problemName);
+					// is it still relevant to try that?
+				}
+				this.problem = new Problem(api, control.problem.variant, control.problem.data, "", false, Input.argsForProblem, this);
 			}
 		} catch (Exception e) {
 			return (Problem) Kit.exit("The class " + Input.problemName + " cannot be found.", e);
 		}
-		this.problem = new Problem(api, control.problem.variant, control.problem.data, "", false, Input.argsForProblem, this);
 		for (ObserverOnConstruction obs : observersConstruction) {
 			obs.afterProblemConstruction(this.problem.variables.length);
 		}
 		problem.display();
 		return problem;
+	}
+
+	/**
+	 * Resets the head for a new phase
+	 */
+	private void reset(int seedOffsetNextPhase) {
+		solver.resetForNewSolvingPhase();
+		problem.reset();
+		if (solver.bestMetaRestartRuns(1).get(0) != null && solver.bestMetaRestartRuns(1).get(0).bestSolution != "") 
+			System.out.println("SENDING WARMSTARTER");
+			solver.setWarmStarter(solver.bestMetaRestartRuns(1).get(0).bestSolution);
+		solver.offsetMetaRestartSeedRange(seedOffsetNextPhase);
+	}
+
+	/**
+	 * Solves the problem in this.problem
+	 * @param displayFinalResults does the results appears on the terminal output
+	 */
+	private void solveBuiltProblem(boolean displayFinalResults) {
+		if (control.solving.enablePrepro || control.solving.enableSearch) {
+			if (solver == null)
+				solver = buildSolver(problem);
+			solver.solve();
+			if (displayFinalResults)
+				solver.solutions.displayFinalResults();
+		}
+	}
+
+	/**
+	 * Used to comprare two results, priotising the bound and then the number of solutions
+	 * @return left > right
+	 */
+	private int compareParallelResults(Head left, Head right) {
+		if (left.solver.problem.optimizer != null) {
+			long leftBound = left.solver.solutions.bestBound;
+			long rightBound = right.solver.solutions.bestBound;
+			int cmp = left.solver.problem.optimizer.minimization ? Long.compare(leftBound, rightBound) : Long.compare(rightBound, leftBound);
+			System.out.println("COMPARING " + cmp);
+			if (cmp != 0)
+				return cmp;
+		}
+		if (left.solver.solutions.found != right.solver.solutions.found)
+			return Long.compare(right.solver.solutions.found, left.solver.solutions.found);
+		int cmp = Long.compare(left.instanceStopwatch.wckTime(), right.instanceStopwatch.wckTime());
+		if (cmp != 0)
+			return cmp;
+		return Integer.compare(left.instanceIndex, right.instanceIndex);
+	}
+
+	/**
+	 * Debug print the list of best seeds 
+	 */
+	private void printParallelBestSeeds(List<Head> workers, int limit) {
+		List<Head> sorted = new ArrayList<>(workers);
+		sorted.sort(this::compareParallelResults);
+		int top = Math.min(limit, sorted.size());
+		System.out.println("[metaRestart] Best seeds after all workers finished:");
+		for (int i = 0; i < top; i++) {
+			Head worker = sorted.get(i);
+			long seed = worker.solver.bestMetaRestartRuns(1).isEmpty() ? -1 : worker.solver.bestMetaRestartRuns(1).get(0).seed;
+			System.out.println("[metaRestart] #" + (i + 1) + " seed=" + seed + " bound=" + worker.getTrueBestBound() + " found="
+					+ worker.solver.solutions.found + " wck=" + (double)worker.instanceStopwatch.wckTime() / 1000.0d + "s");
+		}
+	}
+
+	private Head getParallelBestHead(List<Head> workers){
+		List<Head> sorted = new ArrayList<>(workers);
+		sorted.sort(this::compareParallelResults);
+		return sorted.get(0);
+	}
+
+	/**
+	 * @return True best bound, offseted by the gap
+	 */
+	private long getTrueBestBound() {
+		return (solver.solutions.bestBound + problem.optimizer.gapBound);
+	}
+
+	/**
+	 * Runs all executors withs tasks, wait for all executors to finish and returns all solutions
+	 */
+	private void runPhaseTasks(ExecutorService executor, List<Callable<Head>> tasks) throws InterruptedException, ExecutionException{
+		List<Future<Head>> futures = executor.invokeAll(tasks);
+		for (Future<Head> future : futures) {
+			future.get();
+		}
+	}
+
+	/**
+	 * Prepare tasks for the next phase, reset, input last best solution, ...
+	 */
+	private void prepareForNextPhase(List<Head> workers, int seedOffsetNextPhase) {
+		for (Head worker : workers) {
+			worker.reset(seedOffsetNextPhase);
+			
+		}
+	}	
+
+	private List<Head> setupHeads(int seedCount, int workerCount){
+		List<Head> res = new ArrayList<Head>();
+		int seedPerWorker = Math.round((float) seedCount / (float) workerCount);
+
+		for (int w = 0; w < workerCount; w++){
+			int seed = seedPerWorker * w;
+			Head h = new Head(control.userSettings.controlFilename);
+			h.disableShutdownHook = true;
+			h.instanceIndex = 0;
+			h.threadId = w;
+			h.problem = h.buildProblem(0);
+			h.solver = h.buildSolver(h.problem);
+			h.solver.setMetaRestartSeedRange(seed, Math.min(seed + seedPerWorker, seedCount));
+			res.add(h);
+		}
+
+		return res;
+	}
+
+	/**
+	 * Sets up workers with task, used when multi threading
+	 * @param heads Heads to setup in tasks
+	 * @return Callable to call for each threads
+	 */
+	private List<Callable<Head>> setupTasks(List<Head> heads) {
+		List<Callable<Head>> res = new ArrayList<Callable<Head>>();
+
+		for (int i = 0; i < heads.size(); i++){
+			final int index = i;
+			res.add(() -> {
+				Head worker = heads.get(index);
+				worker.instanceStopwatch.start();
+				worker.stopwatch.start();
+				worker.solver.resetForNewSolvingPhase(); 
+				try {
+					worker.solveBuiltProblem(false);
+				} catch (Throwable e){
+					throw e;
+				}
+				return worker;
+			});
+		}
+
+		return res;
+	}
+
+	private void solveInstanceInParallel() {
+		long seedCount = control.metarestart.metaRestartSeedStop - control.metarestart.metaRestartSeedStart;
+		int phasesLeft = control.metarestart.metaRestartPhases;
+
+		int workerCount = (int) Math.min(control.metarestart.metaRestartThreads, seedCount);
+		ExecutorService executor = Executors.newFixedThreadPool(workerCount);
+		List<Head> workers = setupHeads((int) seedCount, workerCount);
+		List<Callable<Head>> tasks = setupTasks(workers);
+		try {
+			runPhaseTasks(executor, tasks);
+			while (phasesLeft > 1){
+				System.out.println("Phase ! " + phasesLeft);
+				prepareForNextPhase(workers, (int) seedCount);
+				runPhaseTasks(executor, tasks);
+				phasesLeft--;
+			}
+			printParallelBestSeeds(workers, 32);
+			Head bestHead = getParallelBestHead(workers);
+			bestHead.reset(0);
+			bestHead.disableShutdownHook = false;
+			bestHead.solver.keepPushing = true;
+			bestHead.solver.setMetaRestartSeedRange(0, 1);
+			bestHead.solveBuiltProblem(true);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new RuntimeException(e);
+		} catch (ExecutionException e) {
+			throw new RuntimeException(e.getCause());
+		} finally {
+			executor.shutdownNow();
+		}
 	}
 
 	/**
@@ -437,13 +639,14 @@ public class Head extends Thread {
 	protected void solveInstance(int i) {
 		this.observersConstruction = permamentObserversConstruction.stream().collect(toCollection(ArrayList::new));
 		structureSharing.clear();
-		problem = buildProblem(i);
-		structureSharing.clear();
-		instanceStopwatch.start();
-		if (control.solving.enablePrepro || control.solving.enableSearch) {
-			solver = buildSolver(problem);
-			solver.solve();
-			solver.solutions.displayFinalResults();
+		if (control.metarestart.metaRestartLength > 0 || control.metarestart.metaRestartThreads > 1) { // TODO : SI MR > 1, vérifier stop
+			solveInstanceInParallel();
+		}
+		else {
+			problem = buildProblem(i);
+			structureSharing.clear();
+			instanceStopwatch.start();
+			solveBuiltProblem(true);
 		}
 	}
 

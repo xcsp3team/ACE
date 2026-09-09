@@ -89,7 +89,7 @@ public final class Solutions {
 	/**
 	 * The object used to output solutions in XML
 	 */
-	private final XML xml;
+	public final XML xml;
 
 	/**
 	 * The object used to compute Hamming distances between successive solutions
@@ -207,7 +207,7 @@ public final class Solutions {
 	/**
 	 * Class for outputting solutions in XML
 	 */
-	private class XML {
+	public class XML {
 
 		/**
 		 * The string used to display a solution in XML. It lists variables of the problem (but not the auxiliary variables that are been automatically
@@ -298,7 +298,7 @@ public final class Solutions {
 		/**
 		 * @return the last found solution in XML format
 		 */
-		private String lastSolution() { // note that auxiliary variables are not considered
+		public String lastSolution() { // note that auxiliary variables are not considered
 			assert found > 0;
 			StringBuilder sb = new StringBuilder("<instantiation id='sol").append(found).append("' type='solution'");
 			sb.append(solver.problem.framework != CSP ? " cost='" + solver.problem.optimizer.valueWithGap(bestBound) + "'" : "").append(">");
@@ -370,7 +370,7 @@ public final class Solutions {
 	/**
 	 * @return the last found solution in JSON format
 	 */
-	private String lastSolutionInJsonFormat(boolean pure) {
+	public String lastSolutionInJsonFormat(boolean pure) {
 		assert found > 0;
 		boolean discardAuxiliary = !solver.head.control.general.jsonAux;
 		String PREFIX = pure ? "" : "   ";
@@ -384,7 +384,7 @@ public final class Solutions {
 			sb.append(PREFIX).append(" ").append(pure ? "'" : "").append(va.id).append(pure ? "'" : "").append(": ");
 			if (va instanceof VarAlone) {
 				Variable x = (Variable) ((VarAlone) va).var;
-				if (solver.problem.features.collecting.variables.contains(x))
+				if (solver.problem.features.collecting.variables.contains(x) && last.idxs != null)
 					sb.append(x.dom.prettyValueOf(last.idxs[x.num])); // valueIndexInLastSolution));
 				else if (x == solver.problem.replacedObjVar)
 					sb.append(bestBound);
@@ -413,7 +413,24 @@ public final class Solutions {
 		this.last = new LastSolution();
 		this.xml = new XML();
 		this.hammingInformation = solver.head.control.solving.hammingInformation && solver.problem.framework == COP ? new HammingInformation() : null;
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
+		if (!solver.head.disableShutdownHook)
+			Runtime.getRuntime().addShutdownHook(new Thread(() -> displayFinalResults()));
+	}
+
+	/**
+	 * resets counters and best bound so that a new solving phase starts with no recorded solution
+	 */
+	public void resetForNewSolvingPhase() {
+		found = 0;
+		firstBound = 0;
+		bestBound = solver.problem.optimizer == null || solver.problem.optimizer.minimization ? solver.head.control.optimization.ub
+				: solver.head.control.optimization.lb;
+		last.numRun = -1;
+		last.deactivated = false;
+	}
+
+	public void setBestMultiRestarts(long mrBestBounds, long mrBestSeeds, long mrBestTime){
+		bestBound = mrBestBounds;
 	}
 
 	/**
