@@ -17,6 +17,7 @@ import java.util.stream.IntStream;
 
 import org.xcsp.common.Constants;
 
+import solver.Solver;
 import utility.Bit;
 import utility.Kit;
 
@@ -27,7 +28,7 @@ import utility.Kit;
  */
 public class SetLinkedFinite implements SetLinked {
 
-	/**
+	/**+
 	 * The number of present elements (indexes).
 	 */
 	protected int size;
@@ -46,18 +47,18 @@ public class SetLinkedFinite implements SetLinked {
 	 * The backward linking of all present indexes of the list (from last to first). Hence, <code> prevs[a] == b </code> means that b is the previous present
 	 * index in the list before a, or -1 if there is none..
 	 */
-	private final int[] prevs;
+	protected final int[] prevs;
 
 	/**
 	 * The forward linking of all present indexes of the list (from first to last). Hence, <code> nexts[a] == b </code> means that b is the next present index
 	 * in the list after a, or -1 if there is none.
 	 */
-	private final int[] nexts;
+	protected final int[] nexts;
 
 	/**
 	 * The last dropped index of the list.
 	 */
-	protected int lastRemoved;
+	private int lastRemoved;
 
 	/**
 	 * The backward linking of all absent indexes of the list (from last to first). Hence, <code> prevRemoved[a] == b </code> means that b is the previously
@@ -69,7 +70,7 @@ public class SetLinkedFinite implements SetLinked {
 	 * The level at which absent indexes have been removed from the list. Hence, <code> removedLevels[a] == i </code> means that i is the removal level of the
 	 * index a and <code> removedLevels[a] == -1 </code> means that the index a is still present.
 	 */
-	private final int[] removedLevels;
+	protected final int[] removedLevels;
 
 	protected int mark;
 
@@ -77,7 +78,7 @@ public class SetLinkedFinite implements SetLinked {
 
 	protected int nLevels;
 
-	private long[] binaryRepresentation;
+	protected long[] binaryRepresentation;
 
 	private SetSparse binaryRepresentationSetOfWords;
 
@@ -151,7 +152,7 @@ public class SetLinkedFinite implements SetLinked {
 		if (next == -1 || next > last)
 			return -1;
 
-		control(removedLevels[next] == -1);
+		//control(removedLevels[next] == -1);  // TODO put in comments for DomainRangeOpt how to fix that ???
 		while (removedLevels[next] != -1)
 			next = nexts[next];
 		return next;
@@ -172,7 +173,9 @@ public class SetLinkedFinite implements SetLinked {
 		int prev = prevs[a];
 		if (prev < first) // includes prev == -1
 			return -1;
-		control(removedLevels[prev] == -1);
+		
+		// control(removedLevels[prev] == -1); // TODO put in comments for DomainRangeOpt how to fix that ???
+		
 		// if (true)
 		// throw new ArithmeticException();
 		while (removedLevels[prev] != -1)
@@ -313,7 +316,8 @@ public class SetLinkedFinite implements SetLinked {
 	public String stringOfStructures() {
 		String s = SetLinked.super.stringOfStructures();
 		StringBuilder sb = new StringBuilder().append("Levels: ");
-		for (int lastLevel = -1, a = lastRemoved(); a != -1; a = prevRemoved(a))
+		for (int lastLevel = -1, a = Solver.removedValuesIterator.startFor(this); a != -1; a = Solver.removedValuesIterator.prev())
+			// for (int lastLevel = -1, a = lastRemoved(); a != -1; a = prevRemoved(a))
 			if (removedLevels[a] != lastLevel) {
 				sb.append(a + "@" + removedLevels[a] + " ");
 				lastLevel = removedLevels[a];

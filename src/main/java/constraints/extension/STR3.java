@@ -28,14 +28,15 @@ import problem.Problem;
 import sets.SetDense;
 import sets.SetSparse;
 import sets.SetSparseReversible;
+import solver.Solver;
 import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
 /**
  * This is STR3 (Simple Tabular Reduction, v3), for filtering extension (table) constraints, as described in: <br />
- * "STR3: A path-optimal filtering algorithm for table constraints", Artificial Intelligence 220: 1-27 (2015) by C.
- * Lecoutre, C. Likitvivatanavong, and R. H. C. Yap.
+ * "STR3: A path-optimal filtering algorithm for table constraints", Artificial Intelligence 220: 1-27 (2015) by C. Lecoutre, C. Likitvivatanavong, and R. H. C.
+ * Yap.
  * 
  * @author Christophe Lecoutre
  */
@@ -247,8 +248,7 @@ public final class STR3 extends ConstraintExtensionSpecific implements TagPositi
 	private boolean[][] ac;
 
 	/**
-	 * Only used at preprocessing, cnts[x] is the number of values in the current domain of x with no found support
-	 * (yet)
+	 * Only used at preprocessing, cnts[x] is the number of values in the current domain of x with no found support (yet)
 	 */
 	private int[] cnts;
 
@@ -379,13 +379,15 @@ public final class STR3 extends ConstraintExtensionSpecific implements TagPositi
 	private void suppressInvalidTuplesFromRemovalsOf(int x) {
 		Domain dom = doms[x];
 		if (table.subtables != null) {
-			for (int a = dom.lastRemoved(); a != frontiers[x]; a = dom.prevRemoved(a)) {
+			for (int a = Solver.removedValuesIterator.startFor(dom); a != frontiers[x]; a = Solver.removedValuesIterator.prev()) {
+				// for (int a = dom.lastRemoved(); a != frontiers[x]; a = dom.prevRemoved(a)) {
 				int[] t = table.subtables[x][a];
 				for (int p = separators[x][a]; p >= 0; p--)
 					set.remove(t[p]);
 			}
 		} else {
-			for (int a = dom.lastRemoved(); a != frontiers[x]; a = dom.prevRemoved(a)) {
+			for (int a = Solver.removedValuesIterator.startFor(dom); a != frontiers[x]; a = Solver.removedValuesIterator.prev()) {
+				// for (int a = dom.lastRemoved(); a != frontiers[x]; a = dom.prevRemoved(a)) {
 				short[] t = table.subtablesShort[x][a];
 				for (int p = separatorsShort[x][a]; p >= 0; p--)
 					set.remove(t[p]);

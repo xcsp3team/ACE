@@ -12,6 +12,8 @@ package sets;
 
 import java.util.Arrays;
 
+import solver.Solver;
+
 /**
  * This class implements the interface SetLinked for sets containing only two elements (indexes 0 and 1).
  * 
@@ -196,7 +198,8 @@ public class SetLinkedBinary implements SetLinked {
 	public final String stringOfStructures() {
 		String s = SetLinked.super.stringOfStructures();
 		StringBuilder sb = new StringBuilder().append("Levels: ");
-		for (int lastLevel = -1, i = lastRemoved(); i != -1; i = prevRemoved(i))
+		for (int lastLevel = -1, i = Solver.removedValuesIterator.startFor(this); i != -1; i = Solver.removedValuesIterator.prev())
+			// for (int lastLevel = -1, i = lastRemoved(); i != -1; i = prevRemoved(i))
 			if (removedlevels[i] != lastLevel) {
 				sb.append(i + "@" + removedlevels[i] + " ");
 				lastLevel = removedlevels[i];

@@ -17,6 +17,7 @@ import java.util.Arrays;
 import constraints.Constraint;
 import propagation.AC;
 import solver.FutureVariables;
+import solver.Solver;
 import utility.Kit;
 import variables.Variable;
 
@@ -175,7 +176,8 @@ public final class IpsExtractor {
 
 	private boolean canEliminateDeduced(Variable x) {
 		Constraint[] justification = ipsReasoner.explainer.justifications[x.num];
-		for (int a = x.dom.lastRemoved(); a != -1; a = x.dom.prevRemoved(a)) {
+		for (int a = Solver.removedValuesIterator.startFor(x.dom); a != -1; a = Solver.removedValuesIterator.prev()) {
+			// for (int a = x.dom.lastRemoved(); a != -1; a = x.dom.prevRemoved(a)) {
 			Constraint explanation = justification[a];
 			if (explanation == null)
 				return false;

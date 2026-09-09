@@ -408,28 +408,53 @@ public abstract class Disjonctive extends ConstraintSpecific implements TagAC, T
 			if (dz.size() > 1) {
 				minx2 = dx2.firstValue() + dw2.firstValue();
 				bx2 = minx2 <= dx1.lastValue();
-				if (!bx2 || (dx1.lastValue() + dw1.lastValue() <= dx2.firstValue())) // !bx2 or x1 + w1 <= x2 => z != 1
+				if (!bx2) // !bx2 or x1 + w1 <= x2 => z != 1
 					if (dz.removeIfPresent(1) == false)
 						return false;
 
 				minx1 = dx1.firstValue() + dw1.firstValue();
 				bx1 = minx1 <= dx2.lastValue();
-				if (!bx1 || (dx2.lastValue() + dw2.lastValue() <= dx1.firstValue())) // !bx1 or x2 + w2 <= x1 => z != 0
+				if (!bx1) // !bx1 or x2 + w2 <= x1 => z != 0
 					if (dz.removeIfPresent(0) == false)
 						return false;
 
 				miny2 = dy2.firstValue() + dh2.firstValue();
 				by2 = miny2 <= dy1.lastValue();
-				if (!by2 || (dy1.lastValue() + dh1.lastValue() <= dy2.firstValue())) // !by2 or y1 + h1 <= y2 => z != 3
+				if (!by2) // !by2 or y1 + h1 <= y2 => z != 3
 					if (dz.removeIfPresent(3) == false)
 						return false;
 
 				miny1 = dy1.firstValue() + dh1.firstValue();
 				by1 = miny1 <= dy2.lastValue();
-				if (!by1 || (dy2.lastValue() + dh2.lastValue() <= dy1.firstValue())) // !by1 or y2 + h2 <= y1 => z != 2
+				if (!by1) // !by1 or y2 + h2 <= y1 => z != 2
 					if (dz.removeIfPresent(2) == false)
 						return false;
 			}
+			// if (dz.size() > 1) {
+			// minx2 = dx2.firstValue() + dw2.firstValue();
+			// bx2 = minx2 <= dx1.lastValue();
+			// if (!bx2 || (dx1.lastValue() + dw1.lastValue() <= dx2.firstValue())) // !bx2 or x1 + w1 <= x2 => z != 1
+			// if (dz.removeIfPresent(1) == false)
+			// return false;
+			//
+			// minx1 = dx1.firstValue() + dw1.firstValue();
+			// bx1 = minx1 <= dx2.lastValue();
+			// if (!bx1 || (dx2.lastValue() + dw2.lastValue() <= dx1.firstValue())) // !bx1 or x2 + w2 <= x1 => z != 0
+			// if (dz.removeIfPresent(0) == false)
+			// return false;
+			//
+			// miny2 = dy2.firstValue() + dh2.firstValue();
+			// by2 = miny2 <= dy1.lastValue();
+			// if (!by2 || (dy1.lastValue() + dh1.lastValue() <= dy2.firstValue())) // !by2 or y1 + h1 <= y2 => z != 3
+			// if (dz.removeIfPresent(3) == false)
+			// return false;
+			//
+			// miny1 = dy1.firstValue() + dh1.firstValue();
+			// by1 = miny1 <= dy2.lastValue();
+			// if (!by1 || (dy2.lastValue() + dh2.lastValue() <= dy1.firstValue())) // !by1 or y2 + h2 <= y1 => z != 2
+			// if (dz.removeIfPresent(2) == false)
+			// return false;
+			// }
 			if (dz.size() == 1) {
 				if (dz.single() == 0) {// z = 0 => x1 + w1 <= x2
 					if (enforceLE(dx1, dw1, dx2) == false)

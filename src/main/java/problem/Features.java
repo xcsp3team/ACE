@@ -477,6 +477,13 @@ public final class Features {
 		return ctrArities.repartition.lastKey();
 	}
 
+	/**
+	 * @return the number of connex variable domains (i.e., without any holes)
+	 */
+	public int nConnexDomains() {
+		return (int) Stream.of(problem.variables).filter(x -> x.dom.connex()).count();
+	}
+
 	protected Features(Problem problem) {
 		this.problem = problem;
 		this.collecting = new Collecting();

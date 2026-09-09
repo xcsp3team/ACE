@@ -109,8 +109,10 @@ public abstract class Propagation {
 				if (sentinelLevel[x.num] != solver.stats.safeNumber())
 					absentValuesSentinel[x.num] = -1;
 				int depth = solver.depth();
-				int lastRemoved = dom.lastRemoved();
-				for (int a = lastRemoved; a != absentValuesSentinel[x.num] && dom.removedLevelOf(a) == depth; a = dom.prevRemoved(a))
+
+				int lastRemoved = Solver.removedValuesIterator.startFor(dom); // dom.lastRemoved();
+				for (int a = lastRemoved; a != absentValuesSentinel[x.num] && dom.removedLevelOf(a) == depth; a = Solver.removedValuesIterator.prev())
+					// for (int a = lastRemoved; a != absentValuesSentinel[x.num] && dom.removedLevelOf(a) == depth; a = dom.prevRemoved(a))
 					if (!ipsReasoner.checkWatchesOf(x, a))
 						return false;
 				sentinelLevel[x.num] = solver.stats.safeNumber();

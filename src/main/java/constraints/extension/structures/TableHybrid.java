@@ -56,6 +56,7 @@ import constraints.extension.CHybrid;
 import problem.Problem;
 import sets.SetDense;
 import sets.SetSparse;
+import solver.Solver;
 import utility.Kit;
 import variables.Domain;
 import variables.DomainFinite.DomainSymbols;
@@ -1365,14 +1366,16 @@ public final class TableHybrid extends ExtensionStructure {
 			private void collectThroughRemovedValues() {
 				if (!scp[x].assigned()) {
 					tmp.clear();
-					for (int a = domy.lastRemoved(); a != -1; a = domy.prevRemoved(a))
+					for (int a = Solver.removedValuesIterator.startFor(domy); a != -1; a = Solver.removedValuesIterator.prev())
+						// for (int a = domy.lastRemoved(); a != -1; a = domy.prevRemoved(a))
 						if (nacx.contains(a))
 							tmp.add(a);
 					nacx.resetTo(tmp);
 				}
 				if (!scp[y].assigned()) {
 					tmp.clear();
-					for (int a = domx.lastRemoved(); a != -1; a = domx.prevRemoved(a))
+					for (int a = Solver.removedValuesIterator.startFor(domx); a != -1; a = Solver.removedValuesIterator.prev())
+						// for (int a = domx.lastRemoved(); a != -1; a = domx.prevRemoved(a))
 						if (nacy.contains(a))
 							tmp.add(a);
 					nacy.resetTo(tmp);
@@ -1495,7 +1498,8 @@ public final class TableHybrid extends ExtensionStructure {
 			private void collectThroughRemovedValues() {
 				if (!scp[x].assigned()) {
 					tmp.clear();
-					for (int a = domy.lastRemoved(); a != -1; a = domy.prevRemoved(a)) {
+					for (int a = Solver.removedValuesIterator.startFor(domy); a != -1; a = Solver.removedValuesIterator.prev()) {
+						// for (int a = domy.lastRemoved(); a != -1; a = domy.prevRemoved(a)) {
 						int v = domy.toVal(a) + k;
 						int b = domx.toIdxIfPresent(v);
 						if (b != -1 && nacx.contains(b))
@@ -1503,9 +1507,12 @@ public final class TableHybrid extends ExtensionStructure {
 					}
 					nacx.resetTo(tmp);
 				}
-				if (!scp[y].assigned()) {
+				if (!scp[y].assigned())
+
+				{
 					tmp.clear();
-					for (int a = domx.lastRemoved(); a != -1; a = domx.prevRemoved(a)) {
+					for (int a = Solver.removedValuesIterator.startFor(domx); a != -1; a = Solver.removedValuesIterator.prev()) {
+						// for (int a = domx.lastRemoved(); a != -1; a = domx.prevRemoved(a)) {
 						int v = domx.toVal(a) - k;
 						int b = domy.toIdxIfPresent(v);
 						if (b != -1 && nacy.contains(b))

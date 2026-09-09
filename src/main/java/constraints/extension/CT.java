@@ -21,14 +21,14 @@ import org.xcsp.common.Constants;
 import interfaces.Tags.TagStarredCompatible;
 import problem.Problem;
 import sets.SetDenseReversible;
+import solver.Solver;
 import utility.Bit;
 import variables.Domain;
 import variables.Variable;
 
 /**
- * This is the code for CT (Compact-Table), as described in: Jordan Demeulenaere, Renaud Hartert, Christophe Lecoutre,
- * Guillaume Perez, Laurent Perron, Jean-Charles Régin, Pierre Schaus: Compact-Table: Efficiently Filtering Table
- * Constraints with Reversible Sparse Bit-Sets. CP 2016: 207-223
+ * This is the code for CT (Compact-Table), as described in: Jordan Demeulenaere, Renaud Hartert, Christophe Lecoutre, Guillaume Perez, Laurent Perron,
+ * Jean-Charles Régin, Pierre Schaus: Compact-Table: Efficiently Filtering Table Constraints with Reversible Sparse Bit-Sets. CP 2016: 207-223
  * 
  * @author Christophe Lecoutre
  */
@@ -151,8 +151,7 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 	int topStacked = -1, topStack = -1;
 
 	/**
-	 * modifiedWords[i] indicates if the ith word has already been modified (and stored for future use when
-	 * backtracking)
+	 * modifiedWords[i] indicates if the ith word has already been modified (and stored for future use when backtracking)
 	 */
 	private boolean[] modifiedWords;
 
@@ -257,7 +256,8 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 		for (int x = 0; x < scp.length; x++) {
 			Domain dom = doms[x];
 			int cnt = 0;
-			for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a)) {
+			// for (int a = dom.lastRemoved(); a != -1; a = dom.prevRemoved(a)) {
+			for (int a = Solver.removedValuesIterator.startFor(dom); a != -1; a = Solver.removedValuesIterator.prev()) {
 				Bit.or(tmp, !starred ? masks[x][a] : masksS[x][a], nonZeros);
 				cnt++;
 			}
@@ -346,9 +346,11 @@ public class CT extends STR1Optimized implements TagStarredCompatible {
 			int x = sVal[i];
 			Domain dom = doms[x];
 			if (deltaSizes[x] <= dom.size()) {
-				for (int cnt = deltaSizes[x] - 1, a = dom.lastRemoved(); cnt >= 0; cnt--) {
+				for (int cnt = deltaSizes[x] - 1, a = Solver.removedValuesIterator.startFor(dom); cnt >= 0; cnt--) {
+					// for (int cnt = deltaSizes[x] - 1, a = dom.lastRemoved(); cnt >= 0; cnt--) {
 					Bit.or(tmp, !starred ? masks[x][a] : masksS[x][a], nonZeros);
-					a = dom.prevRemoved(a);
+					a = Solver.removedValuesIterator.prev();
+					// a = dom.prevRemoved(a);
 				}
 			} else if (dom.size() == 1) {
 				Bit.orInverse(tmp, masks[x][dom.first()], nonZeros);

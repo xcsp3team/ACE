@@ -479,6 +479,8 @@ public final class Control {
 		public final boolean reduceIsolated = addB("reduceIsolated", "riv", true, "Arbitrary keeping a single value in the domain of isolated variables");
 		public final boolean useSpecialVariables = addB("useSpecialVariables", "usv", false, "Use special variables for large domains?");
 		public final int specialDomainLimit = addI("specialDomainLimit", "sdl", 2_000, "Domain size limit for building special variables");
+
+		public final boolean optRangeDomain = addB("optRangeDomain", "ord", false, "Using optimized class for domains?");
 	}
 
 	public class OptionsConstraints extends OptionGroup {
@@ -695,7 +697,7 @@ public final class Control {
 	public class OptionsRestarts extends OptionGroup {
 		public int nRuns = addI("nRuns", "r_n", Integer.MAX_VALUE, "Maximal number of runs (restarts) to be performed");
 		public long cutoff = addL("cutoff", "r_c", 10, "Cutoff as a value of, e.g., the number of failed asignments before restarting");
-		public int cutoffMultiplierForOpt = addI("cutoffMultiplierForOpt", "r_cmc", 10, "Mutliplier of the cutoff for COP");
+		public final int cutoffMultiplierForOpt = addI("cutoffMultiplierForOpt", "r_cmc", 10, "Mutliplier of the cutoff for COP");
 		// the cutoff,for COP, it is initially multiplied by 10 in Restarter
 		public double factor = addD("factor", "r_f", 1.1, "The geometric increasing factor when updating the cutoff");
 		public final RestartMeasure measure = addE("measure", "r_m", RestartMeasure.FAILED, "The metrics used for measuring and comparing with the cutoff");

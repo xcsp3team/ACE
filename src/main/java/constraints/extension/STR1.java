@@ -171,7 +171,7 @@ public class STR1 extends ConstraintExtensionSpecific implements ObserverOnBackt
 				if (prod > set.size())
 					return true;
 			}
-			return prod == set.size() && entail();
+			return prod == set.size() ? entail() : true;
 		}
 		return true;
 		// return updateDomains();
