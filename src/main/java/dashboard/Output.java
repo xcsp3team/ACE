@@ -10,6 +10,7 @@
 
 package dashboard;
 
+import static org.xcsp.common.Constants.PLUS_INFINITY;
 import static utility.Kit.control;
 import static utility.Kit.log;
 
@@ -184,6 +185,7 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 	public static final String SOLVER = "solver";
 	public static final String PREPROCESSING = "preprocessing";
 	public static final String RUN = "run";
+	public static final String MR = "mr";
 	public static final String GLOBAL = "global";
 
 	public static final String NUMBER = "number";
@@ -449,10 +451,10 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 		}
 
 		private InformationBloc put(String key, Object value, boolean condition) {
-			if (value instanceof String && (value.equals("") || value.equals("0")))
+			if (value instanceof String && (value.equals("") || value.equals("0")) && !key.contentEquals("run") && !key.contentEquals("mr"))
 				return this; // not recorded because empty string
-			if (value instanceof Integer && ((Integer) value) == 0 && !key.contentEquals("run"))
-				return this; // not recorded because 0, except if the key is 'run'
+			if (value instanceof Integer && ((Integer) value) == 0 && !key.contentEquals("run") && !key.contentEquals("mr"))
+				return this; // not recorded because 0, except if the key is 'run' or 'seed'
 			if (value instanceof Long && ((Long) value) == 0)
 				return this; // not recorded because 0
 			if (condition)
@@ -673,6 +675,12 @@ public class Output implements ObserverOnConstruction, ObserverOnSolving, Observ
 
 	private InformationBloc runInfo() {
 		InformationBloc m = new InformationBloc(RUN);
+		if (head.control.metarestart.metaRestartSeedStop < PLUS_INFINITY && !head.solver.keepPushing) {
+			if (head.control.metarestart.metaRestartThreads > 1)
+				m.put(MR, "" + head.metaStartingSeed + "@t" + head.threadId);
+			else if (head.control.metarestart.metaRestartLength > 0)
+				m.put(MR, head.metaStartingSeed);
+		}
 		m.put(RUN, head.solver.restarter.numRun + 1);
 		m.put(DEPTHS, head.solver.minDepth + ".." + head.solver.maxDepth);
 		String rb1 = head.solver.heuristic instanceof RunRobin ? ((RunRobin) head.solver.heuristic).current.getClass().getSimpleName() : "";

@@ -137,6 +137,13 @@ public abstract class Optimizer implements ObserverOnRuns {
 	 */
 	public long maxBound;
 
+	/**
+	 * saving initial bounds, in case we are using -multirestart and we want to reset
+	 */
+	private final long initialMinBound;
+
+	private final long initialMaxBound;
+
 	public long gapBound;
 
 	public Optimizer(Problem pb, TypeOptimization opt, Optimizable clb, Optimizable cub) {
@@ -148,6 +155,23 @@ public abstract class Optimizer implements ObserverOnRuns {
 		this.ctr = opt == MINIMIZE ? cub : clb; // the leading constraint (used at some places in other classes)
 		this.minBound = clb.limit();
 		this.maxBound = cub.limit();
+		this.initialMinBound = this.minBound;
+		this.initialMaxBound = this.maxBound;
+	}
+
+	/**
+	 * Resets optimization bounds and strategy-specific state to their initial values.
+	 */
+	public void reset() {
+		minBound = initialMinBound;
+		maxBound = initialMaxBound;
+		clb.limit(minBound);
+		cub.limit(maxBound);
+		resetAdditionalData();
+	}
+
+	protected void resetAdditionalData() {
+		// default: nothing specific to reset
 	}
 
 	public boolean isFinishedIf(long bound) {
@@ -246,6 +270,11 @@ public abstract class Optimizer implements ObserverOnRuns {
 				cub.limit(minBound); // we keep same limits for clb and cub
 			else
 				clb.limit(maxBound); // we keep same limits for clb and cub
+		}
+
+		@Override
+		protected void resetAdditionalData() {
+			first = true;
 		}
 	}
 

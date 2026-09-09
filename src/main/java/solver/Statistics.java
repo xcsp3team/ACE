@@ -107,6 +107,7 @@ public final class Statistics implements ObserverOnSolving, ObserverOnRuns, Obse
 	@Override
 	public void afterFailedAssignment(Variable x, int a) {
 		nFailedAssignments++;
+		//System.out.println("Added Fail " + nFailedAssignments);
 		if (varAssignments != null && varAssignments[x.num] != null)
 			varAssignments[x.num].whenFailedAssignment(a);
 		nWrongDecisions++;

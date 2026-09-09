@@ -471,7 +471,9 @@ public abstract class Variable implements ObserveronBacktracksUnsystematic, Comp
 			return star_prefix + "*";
 		if (obj instanceof Variable) {
 			Variable x = (Variable) obj;
-			return x.dom.prettyValueOf(x.problem.solver.solutions.last.idxs[x.num]);
+			if (x.problem.solver.solutions.last.idxs != null)
+				return x.dom.prettyValueOf(x.problem.solver.solutions.last.idxs[x.num]);
+			return "";
 		}
 		assert obj.getClass().isArray();
 		if (obj instanceof Variable[]) {

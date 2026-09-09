@@ -12,8 +12,10 @@ package solver;
 
 import static java.lang.Integer.parseInt;
 import static java.util.stream.Collectors.toCollection;
+import static org.xcsp.common.Constants.PLUS_INFINITY;
 import static org.xcsp.common.Types.TypeFramework.COP;
 import static org.xcsp.common.Types.TypeFramework.CSP;
+import static solver.Solver.Stopping.FINISHED_META_RUN;
 import static solver.Solver.Stopping.EXCEEDED_TIME;
 import static solver.Solver.Stopping.FULL_EXPLORATION;
 import static solver.Solver.Stopping.REACHED_GOAL;
@@ -27,6 +29,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,7 +118,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 * Different reasons why the solving process has stopped
 	 */
 	public static enum Stopping {
-		FULL_EXPLORATION, REACHED_GOAL, EXCEEDED_TIME;
+		FULL_EXPLORATION, REACHED_GOAL, EXCEEDED_TIME, FINISHED_META_RUN;
 	}
 
 	@Override
@@ -179,7 +182,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		 * @param s
 		 *            the name of a file containing an instantiation or a string representing an instantiation
 		 */
-		private WarmStarter(String s) {
+		public WarmStarter(String s) {
 			File file = new File(s);
 			if (file.exists()) { // TODO if the string starts with ~/, that does not work (the path must be explicit)
 				try (BufferedReader in = new BufferedReader(new FileReader(s))) {
@@ -686,7 +689,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	/**
 	 * The object that implements the restarting policy of the solver
 	 */
-	public final Restarter restarter;
+	public Restarter restarter;
 
 	/**
 	 * The variable ordering heuristic used to select variables
@@ -707,6 +710,16 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	 * The object handling/storing the solutions found by the solver
 	 */
 	public final Solutions solutions;
+
+	/**
+	 * Lower bound of the seed range processed by multiRestart. Inclusive.
+	 */
+	private long metaRestartSeedFrom = 0;
+
+	/**
+	 * Upper bound of the seed range processed by multiRestart. Exclusive.
+	 */
+	private long metaRestartSeedTo = PLUS_INFINITY;
 
 	/**
 	 * The object managing past and future variables, i.e., the variables that are, and are not, explicitly assigned by the solver
@@ -748,7 +761,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	/**
 	 * The object that allows us to guide search from an instantiation (solution) given by the user
 	 */
-	public final WarmStarter warmStarter;
+	public WarmStarter warmStarter;
 
 	public final LostReasoner lostReasoner;
 
@@ -775,10 +788,41 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	private final Variable[] lastPastBeforeRun = new Variable[2];
 
 	/**
+	 * True if last phase of the metaRestart phases, keeps the solver searching, TODO : Find better name
+	 */
+	public Boolean keepPushing = false;
+
+	/**
 	 * The number of recursive runs called. This is possible because, in addition to the original run, some strong consistencies require some forms of local
 	 * runs.
 	 */
 	private int nRecursiveRuns = 0;
+
+	/**
+	 * Variable used to store best solutions durint mr (Multi Restart)
+	 */
+	public static final class MetaRun {
+
+		public final long seed;
+		public final long bestBound;
+		public final long wckTime;
+		public final long found;
+		public String bestSolution = ""; // Only the best solution for the head
+
+		public MetaRun(long seed, long bestBound, long wckTime, long found) {
+			this.seed = seed;
+			this.bestBound = bestBound;
+			this.wckTime = wckTime;
+			this.found = found;
+		}
+
+		@Override
+		public String toString() {
+			return "seed=" + seed + " bound=" + bestBound + " found=" + found + " wck=" + wckTime;
+		}
+	}
+
+	private final List<MetaRun> metaRestartRuns = new ArrayList<>();
 
 	public final Profiler profiler;
 
@@ -799,6 +843,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 			stopping = EXCEEDED_TIME;
 			return true;
 		}
+		if (head.isMetaRunExpiredForCurrentInstance()) {
+			stopping = FINISHED_META_RUN;
+		}
 		return false;
 	}
 
@@ -807,11 +854,66 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		solutions.found = 0;
 	}
 
-	public void reset() { // called by very special objects (for example, when extracting a MUC)
+	public void resetForNewSolvingPhase() {
+		solutions.resetForNewSolvingPhase();
+		if (problem.optimizer != null)
+			problem.optimizer.reset();
+		stats.clearVarAssignments();
+		stats.nFailedAssignments = 0;
+	}
+
+	public void offsetMetaRestartSeedRange(int offset){
+		this.metaRestartSeedFrom += offset;
+		this.metaRestartSeedTo += offset;
+	}
+
+	/**
+	 * Sets the range of seeds for this solver, *from* inclusive, *to* exclusive
+	 */
+	public void setMetaRestartSeedRange(long from, long to) {
+		control(from >= 0 && to > from);
+		this.metaRestartSeedFrom = from;
+		this.metaRestartSeedTo = to;
+	}
+
+	/**
+	 * Sorts all run from this solver
+	 */
+	public List<MetaRun> bestMetaRestartRuns(int limit) {
+		List<MetaRun> runs = new ArrayList<>(metaRestartRuns);
+		runs.sort(this::compareMultiRestartRuns);
+		if (limit >= 0 && runs.size() > limit)
+			return new ArrayList<>(runs.subList(0, limit));
+		return runs;
+	}
+
+	/**
+	 * Used to comprare two results, priotising the bound and then the number of solutions and finally the seed
+	 * @return left > right
+	 */
+	private int compareMultiRestartRuns(MetaRun left, MetaRun right) {
+		if (problem.optimizer != null) {
+			int cmp = problem.optimizer.minimization ? Long.compare(left.bestBound, right.bestBound) : Long.compare(right.bestBound, left.bestBound);
+			if (cmp != 0)
+				return cmp;
+		} else {
+			int cmp = Long.compare(right.found, left.found);
+			if (cmp != 0)
+				return cmp;
+		}
+		int cmp = Long.compare(left.wckTime, right.wckTime);
+		if (cmp != 0)
+			return cmp;
+		return Long.compare(left.seed, right.seed);
+	}
+
+	public void reset() { // called by very special objects (for example, when extracting a MUC) // Blocks Measure ?? - Each Reset, CurrCutOff x 10 ??
 		control(futVars.nPast() == 0);
 		propagation.clear();
 		propagation.nTuplesRemoved = 0;
-		restarter.reset();
+		nRecursiveRuns = 0;
+		// restarter.reset();
+		restarter = new Restarter(this);
 		resetNoSolutions();
 		control(decisions.set.isEmpty()); // otherwise decisions.set.clear();
 		heuristic.setPriorityVars(problem.priorityVars, 0);
@@ -822,6 +924,21 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		control(stackedVariables.top == -1, () -> "Top= " + stackedVariables.top);
 		this.stats = new Statistics(this); // for simplicity, stats are rebuilt
 		control(proofer == null);
+	}
+
+	public void setWarmStarter(String warmStart){
+		warmStarter = warmStart.length() > 0 ? new WarmStarter(formatWarmStarter(warmStart)) : null;
+	}
+
+	private String formatWarmStarter(String warmStart){
+		StringBuilder res = new StringBuilder();
+		for(int i = 0, n = warmStart.length() ; i < n ; i++) { 
+    		char c = warmStart.charAt(i);
+			if (c == ',' || Character.isDigit(c) || c == ' '){
+				res.append(c);
+			} 
+		}
+		return res.toString().trim();
 	}
 
 	/**
@@ -1009,6 +1126,7 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		// boolean singletonVariable = x.dom.size() == 1; // may happen, notably by lc
 		for (ObserverOnDecisions observer : observersOnDecisions)
 			observer.beforePositiveDecision(x, a);
+
 
 		assign(x, a);
 		// int before = problem.nValueRemovals;
@@ -1210,8 +1328,9 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	public final Solver doRun() {
 		lastPastBeforeRun[nRecursiveRuns++] = futVars.lastPast();
 		explore();
-		if (stopping != REACHED_GOAL || head instanceof HeadExtraction)
+		if (stopping != REACHED_GOAL || head instanceof HeadExtraction) {
 			backtrackTo(lastPastBeforeRun[--nRecursiveRuns]);
+		}
 		return this;
 	}
 
@@ -1221,16 +1340,60 @@ public class Solver implements ObserverOnBacktracksSystematic {
 	private final void doSearch() {
 		for (ObserverOnSolving observer : observersOnSolving)
 			observer.beforeSearch();
-		while (!finished() && !restarter.allRunsFinished()) {
+		while (!finished() && !restarter.allRunsFinished()) { 
 			for (ObserverOnRuns observer : observersOnRuns)
 				observer.beforeRun();
-			if (stopping != FULL_EXPLORATION) // an observer might modify the object stopping
+			if (stopping != FULL_EXPLORATION) {
 				doRun();
+			}
 			for (ObserverOnRuns observer : observersOnRuns)
 				observer.afterRun();
 		}
 		for (ObserverOnSolving observer : observersOnSolving)
 			observer.afterSearch();
+	}
+
+	/**
+	 * Save the result of one run in a multi-restart phase.
+	 * 
+	 * @param currentSeed current seed to be saved
+	 */
+	private final void saveBestBounds(long currentSeed){
+		long boundTime = head.stopwatch.wckTime();
+		MetaRun currentRun = new MetaRun(currentSeed, solutions.bestBound, boundTime, solutions.found);
+		if (solutions.found > 0)
+			currentRun.bestSolution = solutions.lastSolutionInJsonFormat(false);
+		metaRestartRuns.add(currentRun);
+	}
+
+	/**
+	 * Method used to restart the solver with differents seeds using -mr and -mrs parametters
+	 */
+	private final void multiRestartPhase(){
+		long seedLimit = metaRestartSeedTo != PLUS_INFINITY ? metaRestartSeedTo : head.control.metarestart.metaRestartSeedStop;
+		for (long seed = metaRestartSeedFrom; seed < seedLimit; seed++){
+			head.random.setSeed(seed);
+			head.metaStartingSeed = seed;
+			head.stopwatch.start();
+			Kit.log.config(Kit.Color.ORANGE.coloring("    Restarting... with seed : " + seed));
+			restarter.reset();
+			solutions.resetForNewSolvingPhase();
+			if (problem.optimizer != null)
+				problem.optimizer.reset();
+			stopping = null;
+			for (ObserverOnSolving observer : observersOnSolving)
+				observer.beforeSolving();
+			doSearch();
+			saveBestBounds(seed);
+			for (ObserverOnSolving observer : observersOnSolving){
+				observer.afterSolving();
+			}
+			restoreProblem();
+		}
+		if (!metaRestartRuns.isEmpty()) {
+			MetaRun bestRun = bestMetaRestartRuns(1).get(0);
+			solutions.setBestMultiRestarts(bestRun.bestBound, bestRun.seed, bestRun.wckTime);
+		}
 	}
 
 	/**
@@ -1244,6 +1407,10 @@ public class Solver implements ObserverOnBacktracksSystematic {
 		profiler.initTime(head.stopwatch.wckTime());
 		if (!finished() && head.control.solving.enablePrepro)
 			doPrepro();
+		if (head.control.metarestart.metaRestartLength > 0 ) {
+			multiRestartPhase();
+			return;
+		}
 		if (!finished() && head.control.solving.enableSearch)
 			doSearch();
 		for (ObserverOnSolving observer : observersOnSolving)
