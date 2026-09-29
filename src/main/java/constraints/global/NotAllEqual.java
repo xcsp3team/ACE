@@ -46,7 +46,7 @@ public class NotAllEqual extends ConstraintGlobal implements TagAC, TagCallCompl
 	 */
 	public NotAllEqual(Problem pb, Variable[] scp) {
 		super(pb, scp);
-		control(scp.length > 2);
+		control(scp.length >= 2);
 	}
 
 	@Override
