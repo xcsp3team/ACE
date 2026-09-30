@@ -2482,12 +2482,17 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	}
 
 	public final CtrEntity precedence(Var[] list) {
-		return post(new Precedence(this, translate(list)));
+		Variable[] vars = translate(list);
+		int[] values = Variable.setOfvaluesIn(vars).stream().mapToInt(v -> v).sorted().toArray();
+		return post(new Precedence(this, vars, values, false));
 	}
 
 	@Override
 	public final CtrEntity precedence(Var[] list, int[] values, boolean covered) {
-		return post(new Precedence(this, translate(list), values, covered));
+		Variable[] vars = translate(list);
+		if (covered && list.length < values.length)
+			return post(new CtrFalse(this, vars, "Precedence not permitting to cover all values"));
+		return post(new Precedence(this, vars, values, covered));
 		// return forall(range(values.length - 1), i -> precedence(list, values[i], values[i + 1]));
 	}
 

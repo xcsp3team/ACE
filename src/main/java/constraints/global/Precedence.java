@@ -22,9 +22,8 @@ import problem.Problem;
 import variables.Variable;
 
 /**
- * The constraint Precedence is defined over a sequence v of k values, and imposes over a sequence x of variables (the
- * scope) for any i in 1..k-1 that if there exists j such that x[j] = v[i], then there must exist j' < j such that x[j']
- * = v[i-1].
+ * The constraint Precedence is defined over a sequence v of k values, and imposes over a sequence x of variables (the scope) for any i in 1..k-1 that if there
+ * exists j such that x[j] = v[i], then there must exist j' < j such that x[j'] = v[i-1].
  * 
  * @author Christophe Lecoutre
  */
@@ -73,8 +72,7 @@ public final class Precedence extends ConstraintGlobal implements TagNotAC, TagC
 	private boolean covered;
 
 	/**
-	 * The number of values that still must be considered (those at indexes ranging from 0 to size-1) because of
-	 * possibly assigned values
+	 * The number of values that still must be considered (those at indexes ranging from 0 to size-1) because of possibly assigned values
 	 */
 	private int size;
 
@@ -98,7 +96,7 @@ public final class Precedence extends ConstraintGlobal implements TagNotAC, TagC
 	 */
 	public Precedence(Problem pb, Variable[] list, int[] values, boolean covered) {
 		super(pb, list);
-		control((!covered || list.length > values.length) && values.length > 1);
+		control((!covered || list.length >= values.length) && values.length > 1);
 		this.r = scp.length;
 		this.k = values.length;
 		this.values = values;
@@ -110,9 +108,9 @@ public final class Precedence extends ConstraintGlobal implements TagNotAC, TagC
 				scp[j].dom.removeValueAtConstructionTime(values[i]);
 	}
 
-	public Precedence(Problem pb, Variable[] list) {
-		this(pb, list, Variable.setOfvaluesIn(list).stream().mapToInt(v -> v).sorted().toArray(), false);
-	}
+	// public Precedence(Problem pb, Variable[] list) {
+	// this(pb, list, Variable.setOfvaluesIn(list).stream().mapToInt(v -> v).sorted().toArray(), false);
+	// }
 
 	@Override
 	public boolean runPropagator(Variable x) {
