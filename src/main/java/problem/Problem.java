@@ -2361,14 +2361,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	@Override
 	public final CtrEntity allDifferentMatrix(Var[][] matrix) {
 		CtrArray ctrSet1 = forall(range(matrix.length), i -> allDifferent(matrix[i]));
-		CtrArray ctrSet2 = forall(range(matrix[0].length), i -> allDifferent(api.columnOf(matrix, i)));
-		return ctrSet1.append(ctrSet2);
+		CtrArray ctrSet2 = forall(range(matrix[0].length), j -> allDifferent(api.columnOf(matrix, j)));
+		return null; //ctrSet1.append(ctrSet2); // otherwise, pb because different possible types of constraints 
 	}
 
 	public final CtrEntity allDifferentMatrix(Var[][] matrix, int[] exceptValues) {
 		CtrArray ctrSet1 = forall(range(matrix.length), i -> allDifferent(matrix[i], exceptValues));
-		CtrArray ctrSet2 = forall(range(matrix[0].length), i -> allDifferent(api.columnOf(matrix, i), exceptValues));
-		return ctrSet1.append(ctrSet2);
+		CtrArray ctrSet2 = forall(range(matrix[0].length), j -> allDifferent(api.columnOf(matrix, j), exceptValues));
+		return null; //ctrSet1.append(ctrSet2);
 	}
 
 	@Override
