@@ -2560,6 +2560,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Term[] terms = handleSumTerms(list, coeffs);
 		Variable[] newList = Stream.of(terms).map(t -> t.variable).toArray(Variable[]::new);
 		int[] newCoeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
+		if (newList.length == 0) {
+			assert newCoeffs.length == 0;
+			return op.isValidFor(0, limit) ? null: post(new CtrFalse(this, features.collecting.variables.toArray(new Variable[0]), "Unsat constraint sum"));
+		}
 		// we reverse if possible (to have some opportunity to have only coeffs equal to 1)
 		if (inversable && newCoeffs[0] == -1 && newCoeffs[newCoeffs.length - 1] == -1) { // if only -1 since sorted
 			Arrays.fill(newCoeffs, 1);
@@ -2617,7 +2621,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Term[] terms = handleSumTerms(translate(list), coeffs);
 		Variable[] newList = Stream.of(terms).map(t -> t.variable).toArray(Variable[]::new);
 		int[] newCoeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
-
+		
 		Object rightTerm = condition.rightTerm(); // a constant, a variable, a range or an int array
 
 		// we handle the case where there is only one term (no need for a sum constraint)
