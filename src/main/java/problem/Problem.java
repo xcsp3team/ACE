@@ -2805,7 +2805,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			if (condition instanceof ConditionVar && ((ConditionVar) condition).operator == EQ) {
 				lastTrees = trees.clone();
 				lastVar = (Variable) ((ConditionVar) condition).x;
-				System.out.println("recording");
+				// System.out.println("recording");
 			}
 		}
 		// List<XNode<IVar>> list = new ArrayList<>();

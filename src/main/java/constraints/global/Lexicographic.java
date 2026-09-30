@@ -10,14 +10,21 @@
 
 package constraints.global;
 
+import static org.xcsp.common.Types.TypeOperatorRel.GE;
+import static org.xcsp.common.Types.TypeOperatorRel.LE;
+import static org.xcsp.common.Types.TypeOperatorRel.LT;
 import static utility.Kit.control;
 
 import java.util.stream.IntStream;
 
+import org.xcsp.common.IVar;
 import org.xcsp.common.Types.TypeOperatorRel;
 import org.xcsp.common.Utilities;
+import org.xcsp.common.predicates.XNodeParent;
 
+import constraints.Constraint;
 import constraints.ConstraintGlobal;
+import constraints.ConstraintIntension;
 import interfaces.Tags.TagAC;
 import interfaces.Tags.TagCallCompleteFiltering;
 import interfaces.Tags.TagNotSymmetric;
@@ -37,11 +44,20 @@ import variables.Variable;
  */
 public abstract class Lexicographic extends ConstraintGlobal implements TagAC, TagCallCompleteFiltering, TagNotSymmetric, TagPostponableFiltering {
 
-	public static Lexicographic buildFrom(Problem pb, Variable[] list1, Variable[] list2, TypeOperatorRel op) {
+	public static Constraint buildFrom(Problem pb, Variable[] list1, Variable[] list2, TypeOperatorRel op) {
 		control(list1.length == list2.length);
 		int[] keep = IntStream.range(0, list1.length).filter(i -> list1[i] != list2[i]).toArray();
 		Variable[] safeList1 = keep.length == list1.length ? list1 : IntStream.of(keep).mapToObj(i -> list1[i]).toArray(Variable[]::new);
 		Variable[] safeList2 = keep.length == list1.length ? list2 : IntStream.of(keep).mapToObj(i -> list2[i]).toArray(Variable[]::new);
+
+		if (safeList1.length == 0)
+			return null; // TODO indicating a warning ?
+		if (safeList1.length == 1) {
+			Variable x = safeList1[0], y = safeList2[0];
+			XNodeParent<IVar> tree = op == LT ? pb.api.lt(x, y) : op == LE ? pb.api.le(x, y) : op == GE ? pb.api.ge(x, y) : pb.api.gt(x, y);
+			return new ConstraintIntension(pb, new Variable[] { x, y }, tree);
+		}
+
 		switch (op) {
 		case LT:
 			return new LexicographicLT(pb, safeList1, safeList2);
@@ -54,8 +70,17 @@ public abstract class Lexicographic extends ConstraintGlobal implements TagAC, T
 		}
 	}
 
-	public static Lexicographic buildFrom(Problem pb, Variable[] list, int[] limit, TypeOperatorRel op) {
+	public static Constraint buildFrom(Problem pb, Variable[] list, int[] limit, TypeOperatorRel op) {
 		control(list.length == limit.length);
+
+		if (list.length == 0)
+			return null; // TODO indicating a warning ?
+		if (list.length == 1) {
+			Variable x = list[0];
+			XNodeParent<IVar> tree = op == LT ? pb.api.lt(x, limit) : op == LE ? pb.api.le(x, limit) : op == GE ? pb.api.ge(x, limit) : pb.api.gt(x, limit);
+			return new ConstraintIntension(pb, new Variable[] { x }, tree);
+		}
+
 		switch (op) {
 		case LT:
 			return new LexicographicCstL(pb, list, limit, true);
