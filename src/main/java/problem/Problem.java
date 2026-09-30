@@ -2360,15 +2360,16 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity allDifferentMatrix(Var[][] matrix) {
+
 		CtrArray ctrSet1 = forall(range(matrix.length), i -> allDifferent(matrix[i]));
 		CtrArray ctrSet2 = forall(range(matrix[0].length), j -> allDifferent(api.columnOf(matrix, j)));
-		return null; //ctrSet1.append(ctrSet2); // otherwise, pb because different possible types of constraints 
+		return null; // ctrSet1.append(ctrSet2); // otherwise, pb because different possible types of constraints
 	}
 
 	public final CtrEntity allDifferentMatrix(Var[][] matrix, int[] exceptValues) {
 		CtrArray ctrSet1 = forall(range(matrix.length), i -> allDifferent(matrix[i], exceptValues));
 		CtrArray ctrSet2 = forall(range(matrix[0].length), j -> allDifferent(api.columnOf(matrix, j), exceptValues));
-		return null; //ctrSet1.append(ctrSet2);
+		return null; // ctrSet1.append(ctrSet2);
 	}
 
 	@Override
@@ -2562,7 +2563,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		int[] newCoeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
 		if (newList.length == 0) {
 			assert newCoeffs.length == 0;
-			return op.isValidFor(0, limit) ? null: post(new CtrFalse(this, features.collecting.variables.toArray(new Variable[0]), "Unsat constraint sum"));
+			return op.isValidFor(0, limit) ? null : post(new CtrFalse(this, features.collecting.variables.toArray(new Variable[0]), "Unsat constraint sum"));
 		}
 		// we reverse if possible (to have some opportunity to have only coeffs equal to 1)
 		if (inversable && newCoeffs[0] == -1 && newCoeffs[newCoeffs.length - 1] == -1) { // if only -1 since sorted
@@ -2621,7 +2622,7 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		Term[] terms = handleSumTerms(translate(list), coeffs);
 		Variable[] newList = Stream.of(terms).map(t -> t.variable).toArray(Variable[]::new);
 		int[] newCoeffs = Stream.of(terms).mapToInt(t -> (int) t.coeff).toArray();
-		
+
 		Object rightTerm = condition.rightTerm(); // a constant, a variable, a range or an int array
 
 		// we handle the case where there is only one term (no need for a sum constraint)
@@ -2641,9 +2642,10 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				return sum(translateRev(newList), newCoeffs, Condition.buildFrom(EQ, ((ConditionSet) condition).firstValue()));
 
 			if (Constraint.howManyVariablesWithin(newList, head.control.global.suminToTableSpaceLimit) == Constants.ALL) {
-				XNodeParent<IVar> tree = api.in(
-						api.add(IntStream.range(0, newList.length).mapToObj(i -> newCoeffs[i] == 1 ? newList[i] : api.mul(newCoeffs[i], newList[i]))),
-						condition instanceof ConditionIntset ? api.set((int[]) rightTerm) : api.set(rightTerm));
+				XNodeParent<IVar> left = api
+						.add(IntStream.range(0, newList.length).mapToObj(i -> newCoeffs[i] == 1 ? newList[i] : api.mul(newCoeffs[i], newList[i])));
+				XNode<IVar> right = condition instanceof ConditionIntset ? api.set((int[]) rightTerm) : api.set(rightTerm);
+				XNodeParent<IVar> tree = op == NOTIN ? api.notin(left, right) : api.in(left, right);
 				return extension(newList, new TreeEvaluator(tree, symbolic.mapOfSymbols).generateSupports(Variable.initDomainValues(newList)), true, false);
 			}
 
