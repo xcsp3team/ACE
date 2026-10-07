@@ -83,6 +83,7 @@ import static org.xcsp.common.predicates.XNodeParent.ge;
 import static org.xcsp.common.predicates.XNodeParent.in;
 import static org.xcsp.common.predicates.XNodeParent.le;
 import static org.xcsp.common.predicates.XNodeParent.mul;
+import static org.xcsp.common.predicates.XNodeParent.notin;
 import static org.xcsp.common.predicates.XNodeParent.or;
 import static org.xcsp.common.predicates.XNodeParent.set;
 import static utility.Kit.log;
@@ -2900,6 +2901,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 		if (op == EQ) {
 			if (l == list.length)
 				return forall(range(list.length), i -> intension(in(list[i], set(values))));
+			if (l == 0)
+				return forall(range(list.length), i -> intension(notin(list[i], set(values))));
 			return post(new Among(this, list, values, l));
 		}
 		return null; // so as to handle it differently after the call
