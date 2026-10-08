@@ -20,6 +20,7 @@ import interfaces.Tags.TagNotAC;
 import interfaces.Tags.TagNotSymmetric;
 import interfaces.Tags.TagPrimitive;
 import problem.Problem;
+import utility.Kit;
 import variables.Domain;
 import variables.Variable;
 
@@ -46,6 +47,7 @@ public abstract class Disjonctive extends ConstraintSpecific implements TagAC, T
 
 		public DisjonctiveVar(Problem pb, Variable x1, Variable x2, Variable w1, Variable w2) {
 			super(pb, new Variable[] { x1, x2, w1, w2 });
+			Kit.control(w1.dom.firstValue() > 0 && w2.dom.firstValue() > 0); 
 			this.x1 = x1;
 			this.x2 = x2;
 			this.w1 = w1;

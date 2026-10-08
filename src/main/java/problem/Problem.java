@@ -3574,7 +3574,17 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 
 	@Override
 	public final CtrEntity noOverlap(Var[] origins, Var[] lengths, boolean zeroIgnored) {
-		unimplementedIf(!zeroIgnored, "noOverlap");
+		int minValue = Stream.of(lengths).mapToInt(x -> ((Variable) x).dom.firstValue()).min().getAsInt();
+		control(minValue >= 0);
+		if (minValue == 0 && zeroIgnored) {
+			for (int i = 0; i < origins.length; i++)
+				for (int j = i + 1; j < origins.length; j++) {
+					Variable xi = (Variable) origins[i], xj = (Variable) origins[j];
+					Variable wi = (Variable) lengths[i], wj = (Variable) lengths[j];
+					intension(or(eq(wi, 0), eq(wj, 0), le(add(xi, wi), xj), le(add(xj, wj), xi))); // TODO: we could simplify if 0 not present in some domains
+				}
+			return null;
+		}
 
 		OptionsGlobal options = head.control.global;
 		for (int i = 0; i < origins.length; i++)
