@@ -1172,6 +1172,9 @@ public abstract class HeuristicVariablesDynamic extends HeuristicVariables {
 					SetDense futvars = c.futvars;
 					for (int i = futvars.limit; i >= 0; i--) {
 						Variable y = c.scp[futvars.dense[i]];
+						if (options.wopt && y.dom.lastRemovedLevel() <= 0)
+							continue;
+						
 						if (options.weighting == CACD || options.weighting == CACD_EXP) { // in this case, the increment is not 1 as for UNIT
 							Domain dom = y.dom;
 							// boolean test = false; // EXPERIMENTAL ; this variant does not seem to be interesting

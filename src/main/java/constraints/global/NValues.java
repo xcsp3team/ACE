@@ -26,6 +26,7 @@ import constraints.ConstraintGlobal;
 import constraints.global.AllDifferent.AllDifferentComplete;
 import interfaces.Observers.ObserverOnBacktracks.ObserverOnBacktracksSystematic;
 import interfaces.Tags.TagNotAC;
+import interfaces.Tags.TagNotCallCompleteFiltering;
 import optimization.Optimizable;
 import problem.Problem;
 import sets.SetDense;
@@ -255,7 +256,7 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 			}
 		}
 
-		public final static class NValuesCstEQ extends NValuesCst implements ObserverOnBacktracksSystematic {
+		public final static class NValuesCstEQ extends NValuesCst implements ObserverOnBacktracksSystematic, TagNotCallCompleteFiltering {
 
 			@Override
 			public boolean isSatisfiedBy(int[] t) {
@@ -304,15 +305,18 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 					}
 					int cnt = 0; // we make a rough approximation to determine if limit can be reached
 					for (int j = futvars.limit; j >= 0; j--) {
-						int y = futvars.dense[j];
-						Domain dy = scp[y].dom;
-						int b = residues[y];
+						Variable y = scp[futvars.dense[j]];
+						if (y == x)
+							continue;
+						int yi = futvars.dense[j];
+						Domain dy = y.dom;
+						int b = residues[yi];
 						if (dy.contains(b) && !distinctIdxs.contains(b))
 							cnt++;
 						else {
 							for (b = dy.first(); b != -1; b = dy.next(b)) {
 								if (!distinctIdxs.contains(b)) {
-									residues[y] = b;
+									residues[yi] = b;
 									cnt++;
 									break;
 								}
@@ -321,6 +325,8 @@ public abstract class NValues extends ConstraintGlobal implements TagNotAC { // 
 						if (p + cnt >= limit)
 							break;
 					}
+					if (p + cnt < limit)
+						return false;
 				}
 				return true;
 			}

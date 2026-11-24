@@ -330,14 +330,14 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 				int currSize = size(), newSize = newSizeUpto(a);
 
 				int depth = var().problem.solver.stackVariable(var());
-				
+
 				int next = nexts[a];
 				prevs[next] = -1; // was a
 				int bnd = first;
 				first = next;
 				size = newSize;
 
-				//System.out.println("slice " + var() + " " + currSize + " " + newSize);
+				// System.out.println("slice " + var() + " " + currSize + " " + newSize);
 				Slice slice = new Slice(true, next, a, bnd, currSize, depth);
 				addSlice(slice);
 				addRemoved(-1);
@@ -366,8 +366,8 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 				int bnd = last;
 				last = prev;
 				size = newSize;
-				
-				//System.out.println("slice " + var() + " " + currSize + " " + newSize);
+
+				// System.out.println("slice " + var() + " " + currSize + " " + newSize);
 				Slice slice = new Slice(false, prev, a, bnd, currSize, depth);
 				addSlice(slice);
 				addRemoved(-1);
@@ -402,7 +402,7 @@ public abstract class DomainFinite extends SetLinkedFinite implements Domain {
 							nexts[slice.index] = slice.a;
 							last = slice.bnd;
 						}
-						//System.out.println("resto from " + var() + " " + size + " " + slice.size);
+						// System.out.println("resto from " + var() + " " + size + " " + slice.size);
 						size = slice.size;
 
 						stackedSlicesLimit--;

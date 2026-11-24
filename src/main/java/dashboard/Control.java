@@ -774,6 +774,8 @@ public final class Control {
 		public final int solutionPreserving = addI("solutionPreserving", "sop", 0, "Percentage of the last solution preserved (0: disabled)");
 
 		public final boolean impactless = addB("impactless", "impl", false, "Must we take into accounf impactless assignments?");
+		
+		public final boolean wopt = addB("wopt", "wopt", false, "Must we use wdeg optimization?");
 	}
 
 	public class OptionsValh extends OptionGroup {

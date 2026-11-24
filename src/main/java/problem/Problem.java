@@ -2198,7 +2198,8 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 			Set<Integer> sv = Variable.setOfvaluesIn(scp);
 			if (sv.size() == scp.length) {
 				int[][] permutations = Kit.allPermutations(sv.stream().mapToInt(v -> v).sorted().toArray());
-				return extension((Var[]) scp, Stream.of(permutations).filter(t -> Variable.isValidTuple(scp, t, false)).toArray(int[][]::new), true);
+				Var[] vars = Stream.of(scp).map(x -> (Var) x).toArray(Var[]::new); // in some cases, we cannot use a direct cast
+				return extension(vars, Stream.of(permutations).filter(t -> Variable.isValidTuple(scp, t, false)).toArray(int[][]::new), true);
 			}
 		}
 
@@ -3533,7 +3534,24 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 	 */
 	@Override
 	public final CtrEntity noOverlap(Var[] origins, int[] lengths, boolean zeroIgnored) {
-		unimplementedIf(!zeroIgnored, "noOverlap");
+		int minValue = IntStream.of(lengths).min().getAsInt();
+		control(minValue >= 0);
+		if (minValue == 0 && zeroIgnored) {
+			for (int i = 0; i < origins.length; i++) {
+				if (lengths[i] == 0)
+					continue;
+				for (int j = i + 1; j < origins.length; j++) {
+					if (lengths[j] == 0)
+						continue;
+					Variable xi = (Variable) origins[i], xj = (Variable) origins[j];
+					List<Object> lst = new ArrayList<>();
+					lst.add(le(add(xi, lengths[i]), xj));
+					lst.add(le(add(xj, lengths[j]), xi));
+					intension(or(lst.toArray()));
+				}
+			}
+			return null;
+		}
 		// if (origins.length >= 10 && head.control.global.redundNoOverlap) { // TODO hard coding 10
 		// // we post redundant constraints (after introducing auxiliary variables)
 		// Var[] aux = auxVarArray(origins.length, range(origins.length)); allDifferent(aux);
@@ -3581,7 +3599,14 @@ public final class Problem extends ProblemIMP implements ObserverOnConstruction 
 				for (int j = i + 1; j < origins.length; j++) {
 					Variable xi = (Variable) origins[i], xj = (Variable) origins[j];
 					Variable wi = (Variable) lengths[i], wj = (Variable) lengths[j];
-					intension(or(eq(wi, 0), eq(wj, 0), le(add(xi, wi), xj), le(add(xj, wj), xi))); // TODO: we could simplify if 0 not present in some domains
+					List<Object> lst = new ArrayList<>();
+					if (wi.dom.containsValue(0))
+						lst.add(eq(wi, 0));
+					if (wj.dom.containsValue(0))
+						lst.add(eq(wj, 0));
+					lst.add(le(add(xi, wi), xj));
+					lst.add(le(add(xj, wj), xi));
+					intension(or(lst.toArray()));
 				}
 			return null;
 		}
